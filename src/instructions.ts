@@ -24,28 +24,28 @@ export const getProcessorStatus = () => {
 }
 
 const isCarry = () => { return ((PStatus & 0x01) !== 0); }
-const setCarry = () => PStatus |= 1;
-const clearCarry = () => PStatus &= 254;
+// const setCarry = () => PStatus |= 1;
+// const clearCarry = () => PStatus &= 254;
 
 const isZero = () => { return ((PStatus & 0x02) !== 0); }
 const setZero = () => PStatus |= 2;
 const clearZero = () => PStatus &= 253;
 
-const isInterrupt = () => { return ((PStatus & 0x04) !== 0); }
-const setInterrupt = () => PStatus |= 4;
-const clearInterrupt = () => PStatus &= 251;
+// const isInterrupt = () => { return ((PStatus & 0x04) !== 0); }
+// const setInterrupt = () => PStatus |= 4;
+// const clearInterrupt = () => PStatus &= 251;
 
-const isDecimal = () => { return ((PStatus & 0x08) !== 0); }
-const setDecimal = () => PStatus |= 8;
-const clearDecimal = () => PStatus &= 247;
+// const isDecimal = () => { return ((PStatus & 0x08) !== 0); }
+// const setDecimal = () => PStatus |= 8;
+// const clearDecimal = () => PStatus &= 247;
 
 export const isBreak = () => { return ((PStatus & 0x10) !== 0); }
 const setBreak = () => PStatus |= 0x10;
 export const clearBreak = () => PStatus &= 239;
 
 const isOverflow = () => { return ((PStatus & 0x40) !== 0); }
-const setOverflow = () => PStatus |= 0x40;
-const clearOverflow = () => PStatus &= 191;
+// const setOverflow = () => PStatus |= 0x40;
+// const clearOverflow = () => PStatus &= 191;
 
 const isNegative = () => { return ((PStatus & 0x80) !== 0); }
 const setNegative = () => PStatus |= 0x80;

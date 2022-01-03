@@ -1,4 +1,4 @@
-import { bank0, pcodes, PC, incrementPC, isBreak, getProcessorStatus, toHex } from './instructions'
+import { bank0, pcodes, PC, incrementPC, isBreak } from './instructions'
 
 const textPage = new Uint8Array(960);
 const TEXT_PAGE1 = 0x400;
@@ -24,10 +24,9 @@ export const processInstruction = () => {
       console.error("missing instruction: " + instr)
     }
     code.execute(valueLo, valueHi);
-    let out = `${getProcessorStatus()} ${code.name}`;
-    if (code.PC >= 2) {out += " " + toHex(valueLo)}
-    if (code.PC >= 3) {out += " " + toHex(valueHi)}
-    console.log(bank0[0x2009])
+    // let out = `${getProcessorStatus()} ${code.name}`;
+    // if (code.PC >= 2) {out += " " + toHex(valueLo)}
+    // if (code.PC >= 3) {out += " " + toHex(valueHi)}
     // console.log(out);
     incrementPC(code.PC);
   }

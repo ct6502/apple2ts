@@ -2,8 +2,7 @@ import { getTextPage1, processInstruction } from "./interp";
 import {
   bank0,
   setPC,
-  getProcessorStatus,
-  clearBreak, isBreak,
+  getProcessorStatus
 } from "./instructions";
 import { parseAssembly } from "./assembler";
 import { Buffer } from "buffer";
