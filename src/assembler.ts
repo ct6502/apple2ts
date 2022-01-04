@@ -1,7 +1,7 @@
 import { pcodes, MODE } from "./instructions";
 
-const parseOperand = (operand: string): [MODE | undefined, number] => {
-  let mode: MODE | undefined;
+const parseOperand = (operand: string): [MODE, number] => {
+  let mode: MODE = MODE.IMPLIED;
   let value = -1
 
   if (operand.length > 0) {
@@ -44,22 +44,24 @@ export const parseAssembly = (code: Array<string>): Array<number> => {
       const [mode, value] = parseOperand(operand)
 
       let match = -1
-      match = pcodes.findIndex(pc => pc && pc.name === instr && (!mode || pc.mode === mode))
+      match = pcodes.findIndex(pc => pc && pc.name === instr && pc.mode === mode)
       if (match >= 0) {
         const pcode = pcodes[match]
         instructions.push(match);
         if (value >= 0) {
           if (pcode.mode !== mode) {
             console.error("Mismatch between instruction and mode: " + line)
+            instructions = []
             return
           }
           instructions.push(value % 256)
-          if (pcodes[match].PC === 3) {
-            instructions.push(value / 256)
+          if (pcode.PC === 3) {
+            instructions.push(Math.trunc(value / 256))
           }
         }
       } else {
         console.error("Unknown instruction: " + line)
+        instructions = []
         return
       }
     }

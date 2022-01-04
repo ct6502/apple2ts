@@ -1,4 +1,4 @@
-import { bank0, pcodes, PC, incrementPC, isBreak } from './instructions'
+import { bank0, pcodes, PC, incrementPC, isBreak, setBreak, toHex } from './instructions'
 
 const textPage = new Uint8Array(960);
 const TEXT_PAGE1 = 0x400;
@@ -21,7 +21,9 @@ export const processInstruction = () => {
     const valueHi = PC < 0xFFFE ? bank0[PC + 2] : 0
     const code = pcodes[instr];
     if (!code) {
-      console.error("missing instruction: " + instr)
+      console.error("Missing instruction: $" + toHex(instr))
+      setBreak();
+      return;
     }
     code.execute(valueLo, valueHi);
     // let out = `${getProcessorStatus()} ${code.name}`;

@@ -47,7 +47,7 @@ BRK
     this.setState({
       counter: this.state.counter + 1,
     });
-    if (this.state.counter > 10000 && this.timerID) {
+    if (this.state.counter > 5000 && this.timerID) {
       clearInterval(this.timerID);
     }
   }
