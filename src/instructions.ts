@@ -1,3 +1,5 @@
+var startTime = performance.now()
+
 export let PStatus = 0;
 export let PC = 0x2000;
 export let bank0 = new Uint8Array(65536).fill(46); // "."
@@ -7,18 +9,17 @@ export let YReg = 0;
 export let StackPointer = 0x1FF;
 
 export enum MODE {
-  IMPLIED,
-  IMM,
-  ZP,  // also same as "Relative"
-  ZP_X,
-  ABS,
-  ABS_X,
-  ABS_Y,
-  IND_X,
-  IND_Y,
-  IND,
-  IND_REL,
-  ABS_IND
+  IMP,      // BRK
+  IMM,      // LDA #$01
+  ZP,       // LDA $C0 or BCC $FF
+  ZP_X,     // LDA $C0,X
+  ZP_Y,     // LDX $C0,Y
+  ABS,      // LDA $1234
+  ABS_X,    // LDA $1234,X
+  ABS_Y,    // LDA $1234,Y
+  IND_X,    // LDA ($FF,X) or JMP ($1234,X)
+  IND_Y,    // LDA ($FF),Y
+  IND       // JMP ($1234) or LDA ($C0)
 }
 
 export const incrementPC = (value: number) => {
@@ -89,9 +90,9 @@ interface PCodeFunc {
 
 export interface PCodeInstr {
     name: string
+    mode: MODE
     PC: number
     execute: PCodeFunc
-    mode?: MODE
 }
 
 export const doBranch = (offset: number) => {
@@ -100,45 +101,69 @@ export const doBranch = (offset: number) => {
 
 const oneByteAdd = (value: number, offset: number) => (value + offset + 256) % 256
 const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
-const twoByteAdd = (vLo: number, vHi: number, offset = 0) => (vHi*256 + vLo + offset + 65536) % 65536
+const twoByteAdd = (vLo: number, vHi: number, offset: number) => (vHi*256 + vLo + offset + 65536) % 65536
 
-const PCODE = (name: string, PC: number, code: PCodeFunc, mode: MODE = MODE.IMPLIED) => {
-  return {name: name, PC: PC, execute: code, mode: mode}
+export const pcodes = new Array<PCodeInstr>(256)
+
+const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeFunc) => {
+  if (pcodes[pcode]) {
+    console.error("Duplicate instruction: " + name + " mode=" + mode)
+  }
+  pcodes[pcode] = {name: name, mode: mode, PC: PC, execute: code}
 }
 
-export const pcodes = new Array<PCodeInstr>(256);
-pcodes[0x90] = PCODE('BCC', 2, (value) => {if (!isCarry()) {doBranch(value)}}, MODE.ZP)
-pcodes[0xB0] = PCODE('BCS', 2, (value) => {if (isCarry()) {doBranch(value)}}, MODE.ZP)
-pcodes[0xF0] = PCODE('BEQ', 2, (value) => {if (isZero()) {doBranch(value)}}, MODE.ZP)
-pcodes[0x30] = PCODE('BMI', 2, (value) => {if (isNegative()) {doBranch(value)}}, MODE.ZP)
-pcodes[0xD0] = PCODE('BNE', 2, (value) => {if (!isZero()) {doBranch(value)}}, MODE.ZP)
-pcodes[0x10] = PCODE('BPL', 2, (value) => {if (!isNegative()) {doBranch(value)}}, MODE.ZP)
-pcodes[0x50] = PCODE('BVC', 2, (value) => {if (!isOverflow()) {doBranch(value)}}, MODE.ZP)
-pcodes[0x70] = PCODE('BVS', 2, (value) => {if (isOverflow()) {doBranch(value)}}, MODE.ZP)
+PCODE('BCC', MODE.ZP, 0x90, 2, (value) => {if (!isCarry()) {doBranch(value)}})
+PCODE('BCS', MODE.ZP, 0xB0, 2, (value) => {if (isCarry()) {doBranch(value)}})
+PCODE('BEQ', MODE.ZP, 0xF0, 2, (value) => {if (isZero()) {doBranch(value)}})
+PCODE('BMI', MODE.ZP, 0x30, 2, (value) => {if (isNegative()) {doBranch(value)}})
+PCODE('BNE', MODE.ZP, 0xD0, 2, (value) => {if (!isZero()) {doBranch(value)}})
+PCODE('BPL', MODE.ZP, 0x10, 2, (value) => {if (!isNegative()) {doBranch(value)}})
+PCODE('BVC', MODE.ZP, 0x50, 2, (value) => {if (!isOverflow()) {doBranch(value)}})
+PCODE('BVS', MODE.ZP, 0x70, 2, (value) => {if (isOverflow()) {doBranch(value)}})
 
-pcodes[0x00] = PCODE('BRK', 1, () => {setBreak();})
+PCODE('BRK', MODE.IMP, 0x00, 1, () => {setBreak()})
 
-pcodes[0xCA] = PCODE('DEX', 1, () => {XReg = oneByteAdd(XReg, -1);
-  checkStatus(XReg)});
-pcodes[0x88] = PCODE('DEY', 1, () => {YReg = oneByteAdd(YReg, -1); checkStatus(YReg)})
+PCODE('DEX', MODE.IMP, 0xCA, 1, () => {XReg = oneByteAdd(XReg, -1); checkStatus(XReg)})
+PCODE('DEY', MODE.IMP, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1); checkStatus(YReg)})
 
-pcodes[0xEE] = PCODE('INC', 3, (vLo, vHi) => {const addr = address(vLo, vHi); let v = bank0[addr];
-  v = oneByteAdd(v, 1); bank0[addr] = v; checkStatus(v)}, MODE.ABS)
+PCODE('INC', MODE.ABS, 0xEE, 3, (vLo, vHi) => {const addr = address(vLo, vHi); let v = bank0[addr];
+  v = oneByteAdd(v, 1); bank0[addr] = v; checkStatus(v)})
 
-pcodes[0xE8] = PCODE('INX', 1, () => {XReg = oneByteAdd(XReg, 1); checkStatus(XReg)})
-pcodes[0xCB] = PCODE('INY', 1, () => {YReg = oneByteAdd(YReg, -1); checkStatus(YReg)})
+PCODE('INX', MODE.IMP, 0xE8, 1, () => {XReg = oneByteAdd(XReg, 1); checkStatus(XReg)})
+PCODE('INY', MODE.IMP, 0xCB, 1, () => {YReg = oneByteAdd(YReg, 1); checkStatus(YReg)})
 
-pcodes[0x4C] = PCODE('JMP', 3, (vLo, vHi) => {PC = twoByteAdd(vLo, vHi, -3)}, MODE.ABS)
+PCODE('JMP', MODE.ABS, 0x4C, 3, (vLo, vHi) => {PC = twoByteAdd(vLo, vHi, -3)})
+// 65c02 - this fixes the 6502 indirect JMP bug across page boundaries
+PCODE('JMP', MODE.IND, 0x6C, 3, (vLo, vHi) => {const a = address(vLo, vHi);
+  vLo = bank0[a]; vHi = bank0[(a + 1) % 65536]; PC = twoByteAdd(vLo, vHi, -3)})
+PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, XReg);
+  vLo = bank0[a]; vHi = bank0[(a + 1) % 65536]; PC = twoByteAdd(vLo, vHi, -3)})
 
-pcodes[0xA9] = PCODE('LDA', 2, (value) => {Accum = value; checkStatus(Accum)}, MODE.IMM)
-pcodes[0xA5] = PCODE('LDA', 2, (vZeroPage) => {Accum = bank0[vZeroPage]; checkStatus(Accum)}, MODE.ZP)
-pcodes[0xB5] = PCODE('LDA', 2, (vZeroPage) => {Accum = bank0[oneByteAdd(vZeroPage, XReg)]; checkStatus(Accum)}, MODE.ZP_X)
-pcodes[0xAD] = PCODE('LDA', 3, (vLo, vHi) => {Accum = bank0[address(vLo, vHi)]; checkStatus(Accum)}, MODE.ABS)
-pcodes[0xAD] = PCODE('LDA', 3, (vLo, vHi) => {Accum = bank0[address(vLo, vHi)]; checkStatus(Accum)}, MODE.ABS)
+PCODE('LDA', MODE.IMM, 0xA9, 2, (value) => {Accum = value; checkStatus(Accum)})
+PCODE('LDA', MODE.ZP, 0xA5, 2, (vZP) => {Accum = bank0[vZP]; checkStatus(Accum)})
+PCODE('LDA', MODE.ZP_X, 0xB5, 2, (vZP) => {Accum = bank0[oneByteAdd(vZP, XReg)];
+  checkStatus(Accum)})
+PCODE('LDA', MODE.ABS, 0xAD, 3, (vLo, vHi) => {Accum = bank0[address(vLo, vHi)];
+  checkStatus(Accum)})
+PCODE('LDA', MODE.ABS_X, 0xBD, 3, (vLo, vHi) => {Accum = bank0[twoByteAdd(vLo, vHi, XReg)];
+  checkStatus(Accum)})
+PCODE('LDA', MODE.ABS_Y, 0xB9, 3, (vLo, vHi) => {Accum = bank0[twoByteAdd(vLo, vHi, YReg)];
+  checkStatus(Accum)})
+PCODE('LDA', MODE.IND_X, 0xA1, 2, (vZP) => {Accum = 0; // bank0[twoByteAdd(vLo, vHi, YReg)];
+  checkStatus(Accum)})
+PCODE('LDA', MODE.IND_Y, 0xB1, 2, (vZP) => {Accum = 0; // bank0[twoByteAdd(vLo, vHi, YReg)];
+  checkStatus(Accum)})
+PCODE('LDA', MODE.IND, 0xB2, 2, (vZP) => {Accum = 0; // bank0[twoByteAdd(vLo, vHi, YReg)];
+  checkStatus(Accum)})
 
-pcodes[0xA2] = PCODE('LDX', 2, (value) => {XReg = value; checkStatus(XReg)}, MODE.IMM)
-pcodes[0xA0] = PCODE('LDY', 2, (value) => {YReg = value; checkStatus(YReg)}, MODE.IMM)
+PCODE('LDX', MODE.IMM, 0xA2, 2, (value) => {XReg = value; checkStatus(XReg)})
+PCODE('LDX', MODE.ZP_Y, 0xB6, 2, (vZP) => {XReg = bank0[oneByteAdd(vZP, YReg)];
+  checkStatus(XReg)})
+PCODE('LDY', MODE.IMM, 0xA0, 2, (value) => {YReg = value; checkStatus(YReg)})
 
-pcodes[0x8D] = PCODE('STA', 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = Accum;}, MODE.ABS)
-pcodes[0x8E] = PCODE('STX', 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = XReg;}, MODE.ABS)
-pcodes[0x8C] = PCODE('STY', 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = YReg;}, MODE.ABS)
+PCODE('STA', MODE.ABS, 0x8D, 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = Accum;})
+PCODE('STX', MODE.ABS, 0x8E, 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = XReg;})
+PCODE('STY', MODE.ABS, 0x8C, 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = YReg;})
+
+var endTime = performance.now()
+console.log("PCODE time = " + (endTime - startTime))

@@ -1,7 +1,7 @@
 import { pcodes, MODE } from "./instructions";
 
 const parseOperand = (operand: string): [MODE, number] => {
-  let mode: MODE = MODE.IMPLIED;
+  let mode: MODE = MODE.IMP;
   let value = -1
 
   if (operand.length > 0) {
@@ -12,15 +12,15 @@ const parseOperand = (operand: string): [MODE, number] => {
       if (operand.endsWith(",Y")) {
         mode = MODE.IND_Y
       } else if (operand.endsWith(",X)")) {
-        mode = (operand.length > 5) ? MODE.ABS_IND : MODE.IND_X
+        mode = MODE.IND_X
       } else {
-        mode = (operand.length > 5) ? MODE.IND : MODE.IND_REL
+        mode = MODE.IND
       }
       operand = operand.substring(1)
     } else if (operand.endsWith(",X")) {
       mode = (operand.length > 5) ? MODE.ABS_X : MODE.ZP_X
     } else if (operand.endsWith(",Y")) {
-      mode = MODE.ABS_Y
+      mode = (operand.length > 5) ? MODE.ABS_Y : MODE.ZP_Y
     } else {
       mode = (operand.length > 3) ? MODE.ABS : MODE.ZP
     }
