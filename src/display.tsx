@@ -34,6 +34,7 @@ JMP $2000
 BRK
 `;
     let pcode = parseAssembly(code.split("\n"));
+    bank0.fill(46)
     bank0.set(pcode, 0x2000);
     setPC(0x2000);
   }
