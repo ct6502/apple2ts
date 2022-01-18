@@ -1,3 +1,5 @@
+import { isPostfixUnaryExpression } from "typescript";
+
 var startTime = performance.now()
 
 export let PStatus = 0;
@@ -9,9 +11,9 @@ export let YReg = 0;
 export let StackPointer = 0x1FF;
 
 export enum MODE {
-  IMP,      // BRK
+  IMPLIED,  // BRK
   IMM,      // LDA #$01
-  ZP,       // LDA $C0 or BCC $FF
+  ZP_REL,   // LDA $C0 or BCC $FF
   ZP_X,     // LDA $C0,X
   ZP_Y,     // LDX $C0,Y
   ABS,      // LDA $1234
@@ -43,9 +45,9 @@ export const getProcessorStatus = () => {
   `Y=${toHex(YReg)} P=${toHex(PStatus)} S=${toHex(StackPointer)}`
 }
 
-const isCarry = () => { return ((PStatus & 0x01) !== 0); }
-// const setCarry = () => PStatus |= 1;
-// const clearCarry = () => PStatus &= 254;
+export const isCarry = () => { return ((PStatus & 0x01) !== 0); }
+const setCarry = () => PStatus |= 1;
+const clearCarry = () => PStatus &= 254;
 
 const isZero = () => { return ((PStatus & 0x02) !== 0); }
 const setZero = () => PStatus |= 2;
@@ -64,8 +66,8 @@ export const setBreak = () => PStatus |= 0x10;
 export const clearBreak = () => PStatus &= 239;
 
 const isOverflow = () => { return ((PStatus & 0x40) !== 0); }
-// const setOverflow = () => PStatus |= 0x40;
-// const clearOverflow = () => PStatus &= 191;
+const setOverflow = () => PStatus |= 0x40;
+const clearOverflow = () => PStatus &= 191;
 
 const isNegative = () => { return ((PStatus & 0x80) !== 0); }
 const setNegative = () => PStatus |= 0x80;
@@ -82,6 +84,24 @@ const checkStatus = (value: number) => {
   } else {
     clearNegative();
   }
+}
+
+const addWithOverflowCarry = (v1: number, v2: number): number => {
+  let tmp = v1 + v2 + (isCarry() ? 1 : 0)
+  if (tmp >= 256) {
+    setCarry()
+  } else {
+    clearCarry()
+  }
+  tmp = tmp % 256
+  const bothPositive = (v1 <= 127 && v2 <= 127)
+  const bothNegative = (v1 >= 128 && v2 >= 128)
+  if (tmp >= 128 ? bothPositive : bothNegative) {
+    setOverflow()
+  } else {
+    clearOverflow()
+  }
+  return tmp
 }
 
 interface PCodeFunc {
@@ -112,25 +132,32 @@ const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeF
   pcodes[pcode] = {name: name, mode: mode, PC: PC, execute: code}
 }
 
-PCODE('BCC', MODE.ZP, 0x90, 2, (value) => {if (!isCarry()) {doBranch(value)}})
-PCODE('BCS', MODE.ZP, 0xB0, 2, (value) => {if (isCarry()) {doBranch(value)}})
-PCODE('BEQ', MODE.ZP, 0xF0, 2, (value) => {if (isZero()) {doBranch(value)}})
-PCODE('BMI', MODE.ZP, 0x30, 2, (value) => {if (isNegative()) {doBranch(value)}})
-PCODE('BNE', MODE.ZP, 0xD0, 2, (value) => {if (!isZero()) {doBranch(value)}})
-PCODE('BPL', MODE.ZP, 0x10, 2, (value) => {if (!isNegative()) {doBranch(value)}})
-PCODE('BVC', MODE.ZP, 0x50, 2, (value) => {if (!isOverflow()) {doBranch(value)}})
-PCODE('BVS', MODE.ZP, 0x70, 2, (value) => {if (isOverflow()) {doBranch(value)}})
+PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {Accum = addWithOverflowCarry(Accum, value); 
+  checkStatus(Accum)})
 
-PCODE('BRK', MODE.IMP, 0x00, 1, () => {setBreak()})
+PCODE('BCC', MODE.ZP_REL, 0x90, 2, (value) => {if (!isCarry()) {doBranch(value)}})
+PCODE('BCS', MODE.ZP_REL, 0xB0, 2, (value) => {if (isCarry()) {doBranch(value)}})
+PCODE('BEQ', MODE.ZP_REL, 0xF0, 2, (value) => {if (isZero()) {doBranch(value)}})
+PCODE('BMI', MODE.ZP_REL, 0x30, 2, (value) => {if (isNegative()) {doBranch(value)}})
+PCODE('BNE', MODE.ZP_REL, 0xD0, 2, (value) => {if (!isZero()) {doBranch(value)}})
+PCODE('BPL', MODE.ZP_REL, 0x10, 2, (value) => {if (!isNegative()) {doBranch(value)}})
+PCODE('BVC', MODE.ZP_REL, 0x50, 2, (value) => {if (!isOverflow()) {doBranch(value)}})
+PCODE('BVS', MODE.ZP_REL, 0x70, 2, (value) => {if (isOverflow()) {doBranch(value)}})
 
-PCODE('DEX', MODE.IMP, 0xCA, 1, () => {XReg = oneByteAdd(XReg, -1); checkStatus(XReg)})
-PCODE('DEY', MODE.IMP, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1); checkStatus(YReg)})
+PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {setBreak()})
+
+PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {clearCarry()})
+
+PCODE('CMP', MODE.IMM, 0xC9, 2, (value) => {Accum = value; checkStatus(Accum)})
+
+PCODE('DEX', MODE.IMPLIED, 0xCA, 1, () => {XReg = oneByteAdd(XReg, -1); checkStatus(XReg)})
+PCODE('DEY', MODE.IMPLIED, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1); checkStatus(YReg)})
 
 PCODE('INC', MODE.ABS, 0xEE, 3, (vLo, vHi) => {const addr = address(vLo, vHi); let v = bank0[addr];
   v = oneByteAdd(v, 1); bank0[addr] = v; checkStatus(v)})
 
-PCODE('INX', MODE.IMP, 0xE8, 1, () => {XReg = oneByteAdd(XReg, 1); checkStatus(XReg)})
-PCODE('INY', MODE.IMP, 0xCB, 1, () => {YReg = oneByteAdd(YReg, 1); checkStatus(YReg)})
+PCODE('INX', MODE.IMPLIED, 0xE8, 1, () => {XReg = oneByteAdd(XReg, 1); checkStatus(XReg)})
+PCODE('INY', MODE.IMPLIED, 0xCB, 1, () => {YReg = oneByteAdd(YReg, 1); checkStatus(YReg)})
 
 PCODE('JMP', MODE.ABS, 0x4C, 3, (vLo, vHi) => {PC = twoByteAdd(vLo, vHi, -3)})
 // 65c02 - this fixes the 6502 indirect JMP bug across page boundaries
@@ -140,7 +167,7 @@ PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, 
   vLo = bank0[a]; vHi = bank0[(a + 1) % 65536]; PC = twoByteAdd(vLo, vHi, -3)})
 
 PCODE('LDA', MODE.IMM, 0xA9, 2, (value) => {Accum = value; checkStatus(Accum)})
-PCODE('LDA', MODE.ZP, 0xA5, 2, (vZP) => {Accum = bank0[vZP]; checkStatus(Accum)})
+PCODE('LDA', MODE.ZP_REL, 0xA5, 2, (vZP) => {Accum = bank0[vZP]; checkStatus(Accum)})
 PCODE('LDA', MODE.ZP_X, 0xB5, 2, (vZP) => {Accum = bank0[oneByteAdd(vZP, XReg)];
   checkStatus(Accum)})
 PCODE('LDA', MODE.ABS, 0xAD, 3, (vLo, vHi) => {Accum = bank0[address(vLo, vHi)];
@@ -160,6 +187,11 @@ PCODE('LDX', MODE.IMM, 0xA2, 2, (value) => {XReg = value; checkStatus(XReg)})
 PCODE('LDX', MODE.ZP_Y, 0xB6, 2, (vZP) => {XReg = bank0[oneByteAdd(vZP, YReg)];
   checkStatus(XReg)})
 PCODE('LDY', MODE.IMM, 0xA0, 2, (value) => {YReg = value; checkStatus(YReg)})
+
+PCODE('SBC', MODE.IMM, 0xE9, 2, (value) => {Accum = addWithOverflowCarry(Accum, 255 - value); 
+  checkStatus(Accum)})
+
+PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry()})
 
 PCODE('STA', MODE.ABS, 0x8D, 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = Accum;})
 PCODE('STX', MODE.ABS, 0x8E, 3, (vLo, vHi) => {bank0[address(vLo, vHi)] = XReg;})

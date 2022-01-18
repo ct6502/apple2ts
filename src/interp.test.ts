@@ -3,7 +3,7 @@ import {bank0, PC, setPC, Accum} from "./instructions";
 import {parseAssembly} from "./assembler";
 
 test('processInstruction', () => {
-  let pcode = parseAssembly(["LDA #$C0"]);
+  let pcode = parseAssembly(0x2000, [" LDA #$C0"]);
   bank0.set(pcode, 0x2000);
   setPC(0x2000);
   processInstruction()

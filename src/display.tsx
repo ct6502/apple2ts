@@ -1,6 +1,7 @@
 import { getTextPage1, processInstruction } from "./interp";
 import {
   bank0,
+  isBreak,
   setPC,
   getProcessorStatus
 } from "./instructions";
@@ -22,18 +23,17 @@ class DisplayApple2 extends React.Component<{}, { counter: number }> {
     this.timerID = setInterval(() => this.advance());
 
     const code = `
-LDX #$00
-LDY #65
-STX $2008
-STY $0400
-INX
-BNE $F7
-INC $2009
-INC $2003
-JMP $2000
-BRK
+START   LDA #65   ; "A"
+LOOP    STA $0400
+        INC LOOP+1
+        BNE LOOP
+        INC LOOP+2
+        INC START+1
+        CMP #69   ; "E"
+        BCC START
+        BRK
 `;
-    let pcode = parseAssembly(code.split("\n"));
+    let pcode = parseAssembly(0x2000, code.split("\n"));
     bank0.fill(46)
     bank0.set(pcode, 0x2000);
     setPC(0x2000);
@@ -48,7 +48,7 @@ BRK
     this.setState({
       counter: this.state.counter + 1,
     });
-    if (this.state.counter > 4400 && this.timerID) {
+    if (isBreak() && this.timerID) {
       clearInterval(this.timerID);
     }
   }
