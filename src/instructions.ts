@@ -1,4 +1,3 @@
-import { isPostfixUnaryExpression } from "typescript";
 
 var startTime = performance.now()
 
