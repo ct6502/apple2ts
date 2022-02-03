@@ -41,6 +41,31 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
+## Apple II ROMs
+
+This repository doesn't contain any Apple II ROMs. However, these are fairly easy to find on the web.
+To make a ROM image, save the raw binary data from the C000-FFFF ROM in a single file.
+Then convert the file to a Base64 encoding. On the Mac, I used the following command:
+
+    openssl base64 -in rom_2e.bin -out rom_2e.base64.ts
+
+Finally, edit the `.ts` file, and change the file to be an exported string variable by prepending:
+
+    export const rom=`
+
+Don't forget to append the trailing back quote ` at the end of the file. Your final file should look like:
+```
+export const rom=`AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAACxY/3AMOJAYuFAGATGOlJeahSeGNYpImEgIeI3/zyBY
+...
+SLnj/0ilMaAAhDFgvLK+mu/E7Km7pqQGlQcCBfAA65Onxpmyyb7wNYzWlq8XFysf
+g39dzLX8Fxf1A/sDYvr6ww==`
+```
+
 ## Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).

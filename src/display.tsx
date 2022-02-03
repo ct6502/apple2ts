@@ -1,4 +1,4 @@
-import { getTextPage1, processInstruction } from "./interp";
+import { getTextPage1, processInstruction, setDebug } from "./interp";
 import {
   bank0,
   isBreak,
@@ -11,32 +11,37 @@ import { Buffer } from "buffer";
 import React from "react";
 // import Test from "./components/test";
 
-class DisplayApple2 extends React.Component<{}, { counter: number }> {
+const startTime = performance.now();
+
+class DisplayApple2 extends React.Component<{}, { time: number }> {
   timerID: ReturnType<typeof setInterval> | undefined;
+  counter = 0
 
   constructor(props: any) {
     super(props);
-    this.state = { counter: 0 };
+    this.state = { time: 0 };
   }
 
   componentDidMount() {
     this.timerID = setInterval(() => this.advance());
 
     const code = `
-START   LDA #65   ; "A"
-LOOP    STA $0400
-        INC LOOP+1
-        BNE LOOP
-        INC LOOP+2
-        INC START+1
-        CMP #69   ; "E"
-        BCC START
+START   LDA #65     ; (2) "A"
+LOOP    STA $0400   ; (4)
+        INC LOOP+1  ; (6)
+        BNE LOOP    ; (2/3) = 255*13 + 12 = 3327
+        INC LOOP+2  ; (6)
+        INC START+1 ; (6)
+        CMP #68     ; (2) "D"
+        BNE START   ; (2/3) = 3327*4 + 19*3 + 18 = 13383 cycles ~ 13.4ms
         BRK
 `;
     let pcode = parseAssembly(0x2000, code.split("\n"));
-    bank0.fill(46)
     bank0.set(pcode, 0x2000);
-    setPC(0x2000);
+    setPC(0x2000)
+//    setPC(bank0[0xfffd] * 256 + bank0[0xfffc]);
+//    setDebug();
+    this.counter = 0;
   }
 
   componentWillUnmount() {
@@ -44,13 +49,18 @@ LOOP    STA $0400
   }
 
   advance() {
-    processInstruction();
-    this.setState({
-      counter: this.state.counter + 1,
-    });
-    if (isBreak() && this.timerID) {
-      clearInterval(this.timerID);
+    for (let i = 0; i < 4000; i++) {
+      processInstruction();
+//      this.counter++
+      if (isBreak() && this.timerID) {
+        clearInterval(this.timerID);
+        i = 4001;
+        break;
+      }
     }
+    this.setState({
+      time: performance.now() - startTime
+    });
   }
 
   render() {
@@ -64,11 +74,15 @@ LOOP    STA $0400
     }
 
     return (
-      <div>
-        <pre>{textOutput}</pre>
+      <div className="apple2">
+        <pre>
+          <span className="normal">{textOutput}</span>
+        </pre>
         {getProcessorStatus()}
         <br />
-        {this.state.counter}
+        Counter: {this.counter}
+        <br />
+        Time (ms): {Math.trunc(this.state.time)}
       </div>
     );
   }

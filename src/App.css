@@ -41,14 +41,48 @@
   white-space: pre-line;
 }
 
+body {
+  background-color: #C4C0AA;
+}
+
 @font-face {
   font-family: PrintChar21;
   src: url(./fonts/Print\ Char\ 21\ Pro.otf);
+}
+
+.apple2 {
+  margin: 20px;
 }
 
 pre 
 {
   font-family: PrintChar21, "Courier New", Courier, monospace;
   font-size: 24px;
+  line-height: 24px;
+  padding: 10px;
+  width: 840px;
+  background-color: #000;
+  border-radius: 20px;
 }
+
+.normal {
+  background: #000;
+  color: #fff;
+}
+.inverse {
+  background: #fff;
+  color: #000;
+}
+.blinking {
+  background: #000;
+  animation: blinkingText 0.4s infinite;
+}
+@keyframes blinkingText {
+  0% { color: #fff; }
+  49% { color: #fff; }
+  50% { color: #000; }
+  99% { color: #000; }
+  100% { color: #fff; }
+}
+
 
