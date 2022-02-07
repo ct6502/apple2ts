@@ -4,17 +4,17 @@ import {parseAssembly} from "./assembler";
 
 test('doBranch', () => {
   setPC(0x2000)
-  doBranch(0);
+  doBranch(true, 0);
   expect(PC).toEqual(0x2000);
-  doBranch(1);
+  doBranch(true, 1);
   expect(PC).toEqual(0x2001);
-  doBranch(127);
+  doBranch(true, 127);
   expect(PC).toEqual(0x2001 + 127);
-  doBranch(255);
+  doBranch(true, 255);
   expect(PC).toEqual(0x2001 + 126);
-  doBranch(128);
+  doBranch(true, 128);
   expect(PC).toEqual(0x1FFF);
-  doBranch(1);
+  doBranch(true, 1);
   expect(PC).toEqual(0x2000);
 });
 

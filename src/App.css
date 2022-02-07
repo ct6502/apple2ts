@@ -54,12 +54,16 @@ body {
   margin: 20px;
 }
 
+.appleWindow {
+  outline: none;
+}
+
 pre 
 {
   font-family: PrintChar21, "Courier New", Courier, monospace;
   font-size: 24px;
   line-height: 24px;
-  padding: 10px;
+  padding: 20px;
   width: 840px;
   background-color: #000;
   border-radius: 20px;
@@ -67,10 +71,10 @@ pre
 
 .normal {
   background: #000;
-  color: #fff;
+  color: #39FF14;
 }
 .inverse {
-  background: #fff;
+  background: #39FF14;
   color: #000;
 }
 .blinking {
@@ -78,11 +82,11 @@ pre
   animation: blinkingText 0.4s infinite;
 }
 @keyframes blinkingText {
-  0% { color: #fff; }
-  49% { color: #fff; }
+  0% { color: #39FF14; }
+  49% { color: #39FF14; }
   50% { color: #000; }
   99% { color: #000; }
-  100% { color: #fff; }
+  100% { color: #39FF14; }
 }
 
 
