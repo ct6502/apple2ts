@@ -326,6 +326,7 @@ PCODE('DEY', MODE.IMPLIED, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1);
   checkStatus(YReg); return 2})
 
 PCODE('EOR', MODE.IMM, 0x49, 2, (value) => {Accum ^= value; checkStatus(Accum); return 2})
+PCODE('EOR', MODE.ZP_REL, 0x45, 2, (vZP) => {Accum ^= bank0[vZP]; checkStatus(Accum); return 3})
 
 PCODE('INC', MODE.ZP_REL, 0xE6, 2, (vZP) => {let v = bank0[vZP];
   v = oneByteAdd(v, 1); bank0[vZP] = v; checkStatus(v); return 5})
