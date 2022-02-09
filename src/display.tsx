@@ -1,4 +1,4 @@
-import { getTextPage1, processInstruction, setDebug } from "./interp";
+import { processInstruction, setDebug, TEXT_LINES } from "./interp";
 import {
   bank0,
   doReset6502,
@@ -10,7 +10,6 @@ import {
   setSpeaker,
 } from "./instructions";
 import { parseAssembly } from "./assembler";
-import { Buffer } from "buffer";
 
 import React, {KeyboardEvent} from "react";
 // import Test from "./components/test";
@@ -63,37 +62,12 @@ let state6502 = STATE.IDLE
 let startTime = 0
 setBreak();
 
-const TEXT_LINES= [
-	0x400,
-	0x480,
-	0x500,
-	0x580,
-	0x600,
-	0x680,
-	0x700,
-	0x780,
-	0x428,
-	0x4A8,
-	0x528,
-	0x5A8,
-	0x628,
-	0x6A8,
-	0x728,
-	0x7A8,
-	0x450,
-	0x4D0,
-	0x550,
-	0x5D0,
-	0x650,
-	0x6D0,
-	0x750,
-	0x7D0
-];
+
 
 function renderText40(ctx: any) {
   let x= 7;
   let y= 7+22;
-  ctx.fillStyle= "white";
+  ctx.fillStyle= "#39FF14";
   ctx.font = '20px "PrintChar21"';
   for(let line= 0; line<24; line++)
     for(let column= 0; column<40; column++) {
@@ -102,9 +76,6 @@ function renderText40(ctx: any) {
 
       if(ascii === 0xA0)
         continue;
-
-      // if(ascii != 0x20)
-      // 	ctx.drawImage(this.cacheText40[0xA1], x+(15*column), y+(22*line));
 
       if(ascii<=0x1F)
         ascii+= 0xE140;
@@ -223,8 +194,7 @@ DRTN    DEX
         state6502 = STATE.IDLE;
         break;
       }
-      if (this.cycles >= 17030*5) {
-      // if (this.cycles >= 30000) {
+      if (this.cycles >= 17030) {
         break;
       }
     }
@@ -265,15 +235,6 @@ DRTN    DEX
   };
 
   render() {
-    const textPage = getTextPage1();
-    var textOutput = "";
-    for (var i = 0; i < 24; i++) {
-      const str = Buffer.from(textPage.slice(i * 40, (i + 1) * 40)).toString(
-        "utf-8"
-      );
-      textOutput += str + "\n";
-    }
-
     return (
       <div className="apple2">
         <div
@@ -282,9 +243,6 @@ DRTN    DEX
           onKeyDown={this.handleAppleKey}
         >
         <Canvas draw={draw} width="620" height="550"/>
-          {/* <pre>
-            <span className="normal">{textOutput}</span>
-          </pre> */}
         </div>
         {getProcessorStatus()}
         <br />
