@@ -276,15 +276,15 @@ DRTN    DEX
 
     return (
       <div className="apple2">
-        <Canvas draw={draw} width="620" height="550"/>
         <div
           className="appleWindow"
           tabIndex={0}
           onKeyDown={this.handleAppleKey}
         >
-          <pre>
+        <Canvas draw={draw} width="620" height="550"/>
+          {/* <pre>
             <span className="normal">{textOutput}</span>
-          </pre>
+          </pre> */}
         </div>
         {getProcessorStatus()}
         <br />
