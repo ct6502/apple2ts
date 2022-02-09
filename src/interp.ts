@@ -15,9 +15,6 @@ export function getTextPage1() {
     let start = TEXT_PAGE1 + offset[i]
     textPage.set(bank0.slice(start, start + 40), i * 40);
   }
-  textPage.forEach((element, index) => {
-    textPage[index] = (element & 0b01111111);
-  });
   return textPage;
 }
 

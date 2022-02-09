@@ -56,17 +56,20 @@ body {
 
 .appleWindow {
   outline: none;
-}
-
-pre 
-{
-  font-family: PrintChar21, "Courier New", Courier, monospace;
-  font-size: 24px;
-  line-height: 24px;
+  background-color: #000;
   padding: 20px;
   width: 840px;
+}
+
+.textWindow {
+  outline: none;
+  font-family: PrintChar21, "Courier New", Courier, monospace;
+  color: #39FF14;
+  font-size: 24px;
+  line-height: 24px;
+  padding: 0px;
+  width: 840px;
   background-color: #000;
-  border-radius: 20px;
 }
 
 .normal {
@@ -77,11 +80,17 @@ pre
   background: #39FF14;
   color: #000;
 }
-.blinking {
+.flashing {
   background: #000;
-  animation: blinkingText 0.4s infinite;
+  animation: flashingText 0.4s infinite;
 }
-@keyframes blinkingText {
+.cursor {
+  position:relative;
+  top:-2px;
+  background: #000;
+  animation: flashingText 0.4s infinite;
+}
+@keyframes flashingText {
   0% { color: #39FF14; }
   49% { color: #39FF14; }
   50% { color: #000; }

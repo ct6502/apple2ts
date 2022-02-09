@@ -25,6 +25,7 @@ const getAudioContext = () => {
   return audioContext
 }
 
+// https://marcgg.com/blog/2016/11/01/javascript-audio/
 let speakerStartTime = 0;
 const duration = 0.1
 const clickSpeaker = () => {
@@ -170,6 +171,9 @@ DRTN    DEX
     let key = 0
     if (e.key.length === 1) {
       key = e.key.charCodeAt(0)
+      if (e.ctrlKey) {
+        key = key & 0b00111111
+      }
     } else {
       if (e.key === "Enter") {
         key = 13
@@ -180,15 +184,33 @@ DRTN    DEX
     }
   };
 
-  render() {
-    const textPage = getTextPage1();
-    var textOutput = "";
+  processTextPage = (textPage: Uint8Array) => {
+    let buffer = []
     for (var i = 0; i < 24; i++) {
-      const str = Buffer.from(textPage.slice(i * 40, (i + 1) * 40)).toString(
-        "utf-8"
-      );
-      textOutput += str + "\n";
+      textPage.slice(i * 40, (i + 1) * 40).forEach((value) => {
+        let v = String.fromCharCode(value & 0b01111111);
+        if (v === " ") {
+          v = '\u00A0'
+        }
+        let cname = "normal"
+        if (value === 0x60) {
+          cname = "cursor"
+          v = String.fromCharCode(0x8e);
+        } else if (value < 64) {
+          cname = "inverse"
+        } else if (value < 128) {
+          cname = "flashing";
+        }
+        const key = buffer.length.toString()
+        buffer.push(<span className={cname} key={key}>{v}</span>);
+      })
+      buffer.push(<br key={'line'+i}/>)
     }
+    return (<div>{buffer}</div>);
+  }
+
+  render() {
+    const textPage = this.processTextPage(getTextPage1());
 
     return (
       <div className="apple2">
@@ -197,9 +219,7 @@ DRTN    DEX
           tabIndex={0}
           onKeyDown={this.handleAppleKey}
         >
-          <pre>
-            <span className="normal">{textOutput}</span>
-          </pre>
+          <span className="textWindow">{textPage}</span>
         </div>
         {getProcessorStatus()}
         <br />

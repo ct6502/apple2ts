@@ -182,7 +182,7 @@ export const setSpeaker = (speakFunc: () => void) => {
 }
 
 export const doReset6502 = () => {
-  bank0.fill(63)
+  bank0.fill(191)
   bank0.set(Buffer.from(rom.replaceAll('\n', ''), 'base64'), 0xC000)
   Accum = XReg = YReg = 0
   PStatus = 0b00100100
@@ -227,7 +227,7 @@ const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeF
   pcodes[pcode] = {name: name, mode: mode, PC: PC, execute: code}
 }
 
-const doADC = (value: number) => {
+const doADC1 = (value: number) => {
   let tmp = Accum + value + (isCarry() ? 1 : 0)
   setCarry(tmp >= 256)
   tmp = tmp % 256
@@ -237,8 +237,25 @@ const doADC = (value: number) => {
   Accum = tmp
   checkStatus(Accum)
 }
-PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {doADC(value); return 2})
-PCODE('ADC', MODE.ZP_REL, 0x65, 2, (vZP) => {doADC(bank0[vZP]); return 3})
+const doADC = (addr: number) => {
+  doADC1(bank0[addr])
+}
+PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {doADC1(value); return 2})
+PCODE('ADC', MODE.ZP_REL, 0x65, 2, (vZP) => {doADC(vZP); return 3})
+PCODE('ADC', MODE.ZP_X, 0x75, 2, (vZP) => {doADC(oneByteAdd(vZP, XReg)); return 4})
+PCODE('ADC', MODE.ABS, 0x6D, 3, (vLo, vHi) => {doADC(address(vLo, vHi)); return 4})
+PCODE('ADC', MODE.ABS_X, 0x7D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  doADC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('ADC', MODE.ABS_Y, 0x79, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
+  doADC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('ADC', MODE.IND_X, 0x61, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
+  doADC(address(bank0[vZP], bank0[vZP + 1])); return 6})
+PCODE('ADC', MODE.IND_Y, 0x71, 2, (vZP) => {
+  const vLo = bank0[vZP]
+  const vHi = bank0[(vZP + 1) % 256]
+  const addr = twoByteAdd(vLo, vHi, YReg)
+  doADC(addr)
+  return 5 + pageBoundary(addr, address(vLo, vHi))})
 
 PCODE('AND', MODE.IMM, 0x29, 2, (value) => {Accum &= value; checkStatus(Accum); return 2})
 PCODE('AND', MODE.ZP_REL, 0x25, 2, (vZP) => {Accum &= bank0[vZP]; checkStatus(Accum); return 3})
@@ -326,11 +343,16 @@ PCODE('DEY', MODE.IMPLIED, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1);
   checkStatus(YReg); return 2})
 
 PCODE('EOR', MODE.IMM, 0x49, 2, (value) => {Accum ^= value; checkStatus(Accum); return 2})
+PCODE('EOR', MODE.ZP_REL, 0x45, 2, (vZP) => {Accum ^= bank0[vZP]; checkStatus(Accum); return 3})
 
 PCODE('INC', MODE.ZP_REL, 0xE6, 2, (vZP) => {let v = bank0[vZP];
   v = oneByteAdd(v, 1); bank0[vZP] = v; checkStatus(v); return 5})
+PCODE('INC', MODE.ZP_X, 0xF6, 2, (vZP) => {const addr = oneByteAdd(vZP, XReg);
+  let v = bank0[addr]; v = oneByteAdd(v, 1); bank0[addr] = v; checkStatus(v); return 6})
 PCODE('INC', MODE.ABS, 0xEE, 3, (vLo, vHi) => {const addr = address(vLo, vHi);
   let v = bank0[addr]; v = oneByteAdd(v, 1); bank0[addr] = v; checkStatus(v); return 6})
+PCODE('INC', MODE.ABS_X, 0xFE, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  let v = bank0[addr]; v = oneByteAdd(v, 1); bank0[addr] = v; checkStatus(v); return 7})
 
 PCODE('INX', MODE.IMPLIED, 0xE8, 1, () => {XReg = oneByteAdd(XReg, 1);
   checkStatus(XReg); return 2})
@@ -381,6 +403,10 @@ PCODE('LDX', MODE.IMM, 0xA2, 2, (value) => {XReg = value; checkStatus(XReg); ret
 PCODE('LDX', MODE.ZP_REL, 0xA6, 2, (vZP) => {XReg = bank0[vZP]; checkStatus(XReg); return 3})
 PCODE('LDX', MODE.ZP_Y, 0xB6, 2, (vZP) => {XReg = bank0[oneByteAdd(vZP, YReg)];
   checkStatus(XReg); return 4})
+PCODE('LDX', MODE.ABS, 0xAE, 3, (vLo, vHi) => {XReg = bank0[address(vLo, vHi)]; checkStatus(XReg); return 4})
+PCODE('LDX', MODE.ABS_Y, 0xBE, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
+  XReg = bank0[addr]; checkStatus(XReg);
+  return 4 + pageBoundary(addr, address(vLo, vHi))})
 
 PCODE('LDY', MODE.IMM, 0xA0, 2, (value) => {YReg = value; checkStatus(YReg); return 2})
 PCODE('LDY', MODE.ZP_REL, 0xA4, 2, (vZP) => {YReg = bank0[vZP]; checkStatus(YReg); return 3})
@@ -419,23 +445,60 @@ PCODE('PLP', MODE.IMPLIED, 0x28, 1, () => {PStatus = popStack(); return 4})
 PCODE('PLX', MODE.IMPLIED, 0xFA, 1, () => {XReg = popStack(); checkStatus(XReg); return 4})
 PCODE('PLY', MODE.IMPLIED, 0x7A, 1, () => {YReg = popStack(); checkStatus(YReg); return 4})
 
+const doROL = (addr: number) => {
+  let v = bank0[addr]
+  const bit0 = isCarry() ? 1 : 0;
+  setCarry((v & 128) === 128)
+  v = ((v << 1) % 256) | bit0
+  checkStatus(v)
+  bank0[addr] = v}
+PCODE('ROL', MODE.IMPLIED, 0x2A, 1, () => {const bit0 = isCarry() ? 1 : 0;
+  setCarry((Accum & 128) === 128);
+  Accum = ((Accum << 1) % 256) | bit0; checkStatus(Accum); return 2})
+PCODE('ROL', MODE.ZP_REL, 0x26, 2, (vZP) => {doROL(vZP); return 5})
+PCODE('ROL', MODE.ZP_X, 0x36, 2, (vZP) => {doROL(oneByteAdd(vZP, XReg)); return 6})
+PCODE('ROL', MODE.ABS, 0x2E, 3, (vLo, vHi) => {doROL(address(vLo, vHi)); return 6})
+PCODE('ROL', MODE.ABS_X, 0x3E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  doROL(addr);
+  return 6 + pageBoundary(addr, address(vLo, vHi))})
+
+const doROR = (addr: number) => {
+  let v = bank0[addr]
+  const bit7 = isCarry() ? 0b10000000 : 0;
+  setCarry((v & 1) === 1)
+  v = (v >> 1) | bit7
+  checkStatus(v)
+  bank0[addr] = v}
+PCODE('ROR', MODE.IMPLIED, 0x6A, 1, () => {const bit0 = isCarry() ? 1 : 0;
+  setCarry((Accum & 128) === 128);
+  Accum = ((Accum << 1) % 256) | bit0; checkStatus(Accum); return 2})
+PCODE('ROR', MODE.ZP_REL, 0x66, 2, (vZP) => {doROR(vZP); return 5})
+PCODE('ROR', MODE.ZP_X, 0x76, 2, (vZP) => {doROR(oneByteAdd(vZP, XReg)); return 6})
+PCODE('ROR', MODE.ABS, 0x6E, 3, (vLo, vHi) => {doROR(address(vLo, vHi)); return 6})
+PCODE('ROR', MODE.ABS_X, 0x7E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  doROR(addr);
+  return 6 + pageBoundary(addr, address(vLo, vHi))})
+
 PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {PC = address(popStack(), popStack()); return 6})
 
-PCODE('SBC', MODE.IMM, 0xE9, 2, (value) => {doADC(255 - value); return 2})
-PCODE('SBC', MODE.ZP_REL, 0xE5, 2, (vZP) => {doADC(255 - bank0[vZP]); return 3})
-PCODE('SBC', MODE.ZP_X, 0xF5, 2, (vZP) => {doADC(255 - bank0[oneByteAdd(vZP, XReg)]); return 4})
-PCODE('SBC', MODE.ABS, 0xED, 3, (vLo, vHi) => {doADC(255 - bank0[address(vLo, vHi)]); return 4})
+const doSBC = (addr: number) => {
+  doADC1(255 - bank0[addr])
+}
+PCODE('SBC', MODE.IMM, 0xE9, 2, (value) => {doADC1(255 - value); return 2})
+PCODE('SBC', MODE.ZP_REL, 0xE5, 2, (vZP) => {doSBC(vZP); return 3})
+PCODE('SBC', MODE.ZP_X, 0xF5, 2, (vZP) => {doSBC(oneByteAdd(vZP, XReg)); return 4})
+PCODE('SBC', MODE.ABS, 0xED, 3, (vLo, vHi) => {doSBC(address(vLo, vHi)); return 4})
 PCODE('SBC', MODE.ABS_X, 0xFD, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
-  doADC(255 - bank0[addr]); return 4 + pageBoundary(addr, address(vLo, vHi))})
+  doSBC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('SBC', MODE.ABS_Y, 0xF9, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
-  doADC(255 - bank0[addr]); return 4 + pageBoundary(addr, address(vLo, vHi))})
+  doSBC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('SBC', MODE.IND_X, 0xE1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doADC(255 - bank0[address(bank0[vZP], bank0[vZP + 1])]); return 6})
+  doSBC(address(bank0[vZP], bank0[vZP + 1])); return 6})
 PCODE('SBC', MODE.IND_Y, 0xF1, 2, (vZP) => {
   const vLo = bank0[vZP]
   const vHi = bank0[(vZP + 1) % 256]
   const addr = twoByteAdd(vLo, vHi, YReg)
-  doADC(255 - bank0[addr])
+  doSBC(addr)
   return 5 + pageBoundary(addr, address(vLo, vHi))})
 
   PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
