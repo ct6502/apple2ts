@@ -1,5 +1,5 @@
 import { Accum, bank0, pcodes, PC, getInstrString, getProcessorStatus,
-  incrementPC, isBreak, setBreak, toHex } from './instructions'
+  incrementPC, toHex } from './instructions'
 
 let doDebug = false
 export const setDebug = (debug = true) => doDebug = debug;
@@ -20,28 +20,27 @@ export function getTextPage1() {
 
 export const processInstruction = () => {
   let cycles = 0;
-  if (!isBreak()) {
-    const instr = bank0[PC]
-    const vLo = PC < 0xFFFF ? bank0[PC + 1] : 0
-    const vHi = PC < 0xFFFE ? bank0[PC + 2] : 0
-    const code = pcodes[instr];
-    // Don't print debug during the Apple WAIT subroutine
-    // const PClocal = PC
-    // const bank0local = bank0
-    if (doDebug && (PC < 0xFCA8 || PC > 0xFCB3)) {
-      const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`
-      console.log(out);
+  const instr = bank0[PC]
+  const vLo = PC < 0xFFFF ? bank0[PC + 1] : 0
+  const vHi = PC < 0xFFFE ? bank0[PC + 2] : 0
+  const code = pcodes[instr];
+  // Don't print debug during the Apple WAIT subroutine
+  // const PClocal = PC
+  // const bank0local = bank0
+  if (doDebug && (PC < 0xFCA8 || PC > 0xFCB3)) {
+    const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`
+    console.log(out);
+  }
+  if (code) {
+    cycles = code.execute(vLo, vHi);
+    if (Accum > 255 || Accum < 0) {
+      console.error("Out of bounds")
+      return 0
     }
-    if (code) {
-      cycles = code.execute(vLo, vHi);
-      if (Accum > 255 || Accum < 0) {
-        console.error("Out of bounds")
-      }
-      incrementPC(code.PC);
-    } else {
-      console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(PC, 4))
-      setBreak();
-    }
+    incrementPC(code.PC);
+  } else {
+    console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(PC, 4))
+    return 0
   }
   return cycles
 }

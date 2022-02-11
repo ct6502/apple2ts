@@ -49,9 +49,30 @@ const popStack = () => {
   return bank0[0x100 + SP];
 }
 
+let keyBuffer = ''
+const popKey = () => {
+  if (bank0[0xC000] < 128 && keyBuffer !== '') {
+    let key = keyBuffer.charCodeAt(0)
+    if (key === 10) {
+      key = 13
+    }
+    bank0[0xC000] = key | 0b10000000
+    keyBuffer = keyBuffer.slice(1)
+  }
+}
+export const addToBuffer = (text: String) => {
+  keyBuffer += text
+  popKey()
+}
+
+export const keyPress = (key: number) => {
+  bank0[0xC000] = key | 0b10000000
+}
+
 const memAccess = (address: number) => {
   if (address === 0xC010) {
     bank0[0xC000] &= 0x01111111
+    popKey()
   }
   if (address === 0xC030) {
     clickSpeaker()
@@ -71,10 +92,6 @@ const memSet = (address: number, value: number) => {
     return
   }
   bank0[address] = value
-}
-
-export const keyPress = (key: number) => {
-  bank0[0xC000] = key | 0b10000000
 }
 
 export const toHex = (value: number, ndigits = 2) => {
@@ -182,7 +199,7 @@ export const setSpeaker = (speakFunc: () => void) => {
 }
 
 export const doReset6502 = () => {
-  bank0.fill(191)
+  bank0.fill(0xFF)
   bank0.set(Buffer.from(rom.replaceAll('\n', ''), 'base64'), 0xC000)
   Accum = XReg = YReg = 0
   PStatus = 0b00100100
@@ -293,7 +310,13 @@ const doBit = (addr: number) => {
 PCODE('BIT', MODE.ZP_REL, 0x24, 2, (vZP) => {doBit(vZP); return 3})
 PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(address(vLo, vHi)); return 4})
 
-PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {setBreak(); return 7})
+PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {setBreak();
+  const PC2 = (PC + 2) % 65536
+  pushStack(Math.trunc(PC2 / 256))
+  pushStack(PC2 % 256)
+  pushStack(PStatus)
+  PC = twoByteAdd(bank0[0xFFFE], bank0[0xFFFF], -1);
+  return 7})
 
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
 PCODE('CLD', MODE.IMPLIED, 0xD8, 1, () => {setDecimal(false); return 2})
@@ -342,8 +365,26 @@ PCODE('DEC', MODE.ZP_REL, 0xC6, 2, (vZP) => {bank0[vZP] = oneByteAdd(bank0[vZP],
 PCODE('DEY', MODE.IMPLIED, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1);
   checkStatus(YReg); return 2})
 
+const doEOR = (addr: number) => {
+  Accum ^= bank0[addr]
+  checkStatus(Accum)
+}
 PCODE('EOR', MODE.IMM, 0x49, 2, (value) => {Accum ^= value; checkStatus(Accum); return 2})
-PCODE('EOR', MODE.ZP_REL, 0x45, 2, (vZP) => {Accum ^= bank0[vZP]; checkStatus(Accum); return 3})
+PCODE('EOR', MODE.ZP_REL, 0x45, 2, (vZP) => {doEOR(vZP); return 3})
+PCODE('EOR', MODE.ZP_X, 0x55, 2, (vZP) => {doEOR(oneByteAdd(vZP, XReg)); return 4})
+PCODE('EOR', MODE.ABS, 0x4D, 3, (vLo, vHi) => {doEOR(address(vLo, vHi)); return 4})
+PCODE('EOR', MODE.ABS_X, 0x5D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  doEOR(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('EOR', MODE.ABS_Y, 0x59, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
+  doEOR(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('EOR', MODE.IND_X, 0x41, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
+  doEOR(address(bank0[vZP], bank0[vZP + 1])); return 6})
+PCODE('EOR', MODE.IND_Y, 0x51, 2, (vZP) => {
+  const vLo = bank0[vZP]
+  const vHi = bank0[(vZP + 1) % 256]
+  const addr = twoByteAdd(vLo, vHi, YReg)
+  doEOR(addr)
+  return 5 + pageBoundary(addr, address(vLo, vHi))})
 
 PCODE('INC', MODE.ZP_REL, 0xE6, 2, (vZP) => {let v = bank0[vZP];
   v = oneByteAdd(v, 1); bank0[vZP] = v; checkStatus(v); return 5})
@@ -367,7 +408,8 @@ PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, 
   vLo = bank0[a]; vHi = bank0[(a + 1) % 65536]; PC = twoByteAdd(vLo, vHi, -3); return 6})
 
 PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
-  pushStack(Math.trunc((PC + 2) / 256)); pushStack((PC + 2) % 256);
+  const PC2 = (PC + 2) % 65536
+  pushStack(Math.trunc(PC2 / 256)); pushStack(PC2 % 256);
   PC = twoByteAdd(vLo, vHi, -3); return 6})
 
 PCODE('LDA', MODE.IMM, 0xA9, 2, (value) => {Accum = value; checkStatus(Accum); return 2})

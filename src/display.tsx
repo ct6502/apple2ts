@@ -2,15 +2,14 @@ import { getTextPage1, processInstruction, setDebug } from "./interp";
 import {
   bank0,
   doReset6502,
-  isBreak,
+  addToBuffer,
   keyPress,
-  setBreak,
   setPC,
   getProcessorStatus,
   setSpeaker,
 } from "./instructions";
 import { parseAssembly } from "./assembler";
-import { Buffer } from "buffer";
+import { convertAppleKey } from "./keyboard"
 
 import React, {KeyboardEvent} from "react";
 // import Test from "./components/test";
@@ -32,7 +31,7 @@ const clickSpeaker = () => {
   if (getAudioContext().state !== "running") {
     audioContext.resume();
   }
-  if ((speakerStartTime + duration) >= audioContext.currentTime) {
+  if ((speakerStartTime + 2*duration) >= audioContext.currentTime) {
     return
   }
   try {
@@ -56,26 +55,24 @@ setSpeaker(clickSpeaker);
 enum STATE {
   IDLE,
   NEED_RESET,
-  IS_RUNNING
+  IS_RUNNING,
+  PAUSED
 }
 
-let state6502 = STATE.IDLE
 let startTime = 0
-setBreak();
 
-
-class DisplayApple2 extends React.Component<{}, { tick: number }> {
+class DisplayApple2 extends React.Component<{}, { _6502: STATE; tick: number }> {
   timerID: ReturnType<typeof setInterval> | undefined;
   cycles = 0;
   offset = 15;
   cycleTime = Array<number>(100).fill(0.2);
-  iCycle = 0
+  iCycle = 0;
   speed = Array<number>(100).fill(1000);
-  iSpeed = 0
+  iSpeed = 0;
 
   constructor(props: any) {
     super(props);
-    this.state = { tick: 0 };
+    this.state = { _6502: STATE.IDLE, tick: 0 };
   }
 
   doReset() {
@@ -109,7 +106,7 @@ DRTN    DEX
 
   componentDidMount() {
     this.doReset();
-    setBreak();
+    this.setState({ _6502: STATE.IDLE });
     this.timerID = setInterval(() => this.advance());
   }
 
@@ -119,46 +116,38 @@ DRTN    DEX
 
   advance() {
     const newTime = performance.now();
-    if ((newTime - startTime) < this.offset) {
+    if (newTime - startTime < this.offset) {
       return;
     }
     const timeDelta = newTime - startTime;
     startTime = newTime;
-    if (state6502 === STATE.NEED_RESET) {
-      this.doReset();
-      state6502 = STATE.IS_RUNNING;
+    if (this.state._6502 === STATE.IDLE || this.state._6502 === STATE.PAUSED) {
+      return;
     }
-    if (state6502 === STATE.IDLE) {
-      if (isBreak()) {
-        return;
-      }
-      state6502 = STATE.IS_RUNNING;
+    if (this.state._6502 === STATE.NEED_RESET) {
+      this.doReset();
+      this.setState({ _6502: STATE.IS_RUNNING });
     }
     while (true) {
       const cycles = processInstruction();
-      this.cycles += cycles;
-      if (isBreak()) {
-        state6502 = STATE.IDLE;
-        break;
+      if (cycles === 0) {
+        this.setState({ _6502: STATE.PAUSED });
+        return;
       }
+      this.cycles += cycles;
       if (this.cycles >= 17030) {
         break;
       }
     }
-    let newIndex = (this.iCycle + 1) % this.cycleTime.length
+    let newIndex = (this.iCycle + 1) % this.cycleTime.length;
     this.cycleTime[newIndex] =
-      this.cycleTime[this.iCycle] -
-      this.cycleTime[newIndex] / this.cycleTime.length +
-      (performance.now() - startTime) / this.cycleTime.length;
-    this.iCycle = newIndex
-    newIndex = (this.iSpeed + 1) % this.speed.length
-    this.speed[newIndex] =
-      this.speed[this.iSpeed] -
-      this.speed[newIndex] / this.speed.length +
-      this.cycles / timeDelta / this.speed.length;
-    this.iSpeed = newIndex
+      this.cycleTime[this.iCycle] - this.cycleTime[newIndex] / this.cycleTime.length + (performance.now() - startTime) / this.cycleTime.length;
+    this.iCycle = newIndex;
+    newIndex = (this.iSpeed + 1) % this.speed.length;
+    this.speed[newIndex] = this.speed[this.iSpeed] - this.speed[newIndex] / this.speed.length + this.cycles / timeDelta / this.speed.length;
+    this.iSpeed = newIndex;
     if (this.iSpeed === 0) {
-      this.offset += (this.speed[this.iSpeed] < 1020.484) ? -0.05 : 0.05;
+      this.offset += this.speed[this.iSpeed] < 1020.484 ? -0.05 : 0.05;
     }
     this.setState({
       tick: this.state.tick + 1,
@@ -166,59 +155,66 @@ DRTN    DEX
     this.cycles = 0;
   }
 
-  handleAppleKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    console.log("key="+e.key+" code="+e.code+" ctrl="+e.ctrlKey+" shift="+e.shiftKey);
-    let key = 0
-    if (e.key.length === 1) {
-      key = e.key.charCodeAt(0)
-      if (e.ctrlKey) {
-        key = key & 0b00111111
-      }
-    } else {
-      if (e.key === "Enter") {
-        key = 13
-      }
+  pasteHandler = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const data = event.clipboardData.getData("text")
+    if (data !== '') {
+      addToBuffer(data)
     }
+    event.preventDefault();
+  };
+
+  handleAppleKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "v" && e.metaKey) {
+      return;
+    }
+    const key = convertAppleKey(e);
     if (key > 0) {
       keyPress(key);
+    } else {
+      console.log("key=" + e.key + " code=" + e.code + " ctrl=" + e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
   };
 
   processTextPage = (textPage: Uint8Array) => {
-    let buffer = []
+    let buffer = [];
     for (var i = 0; i < 24; i++) {
       textPage.slice(i * 40, (i + 1) * 40).forEach((value) => {
-        let v = String.fromCharCode(value & 0b01111111);
-        if (v === " ") {
-          v = '\u00A0'
+        let value1 = value;
+        if ((value >= 0 && value <= 0x1f) || (value >= 0x61 && value <= 0x9f)) {
+          value1 += 0x40;
         }
-        let cname = "normal"
+        let v = String.fromCharCode(value1 & 0b01111111);
+        if (v === " ") {
+          v = "\u00A0";
+        }
+        let cname = "normal";
         if (value === 0x60) {
-          cname = "cursor"
-          v = String.fromCharCode(0x8e);
+          cname = "cursor";
+          v = "\u00A0"; //String.fromCharCode(0x8e);
         } else if (value < 64) {
-          cname = "inverse"
+          cname = "inverse";
         } else if (value < 128) {
           cname = "flashing";
         }
-        const key = buffer.length.toString()
-        buffer.push(<span className={cname} key={key}>{v}</span>);
-      })
-      buffer.push(<br key={'line'+i}/>)
+        const key = buffer.length.toString();
+        buffer.push(
+          <span className={cname} key={key}>
+            {v}
+          </span>
+        );
+      });
+      buffer.push(<br key={"line" + i} />);
     }
-    return (<div>{buffer}</div>);
-  }
+    return <div>{buffer}</div>;
+  };
 
   render() {
     const textPage = this.processTextPage(getTextPage1());
 
     return (
       <div className="apple2">
-        <div
-          className="appleWindow"
-          tabIndex={0}
-          onKeyDown={this.handleAppleKey}
-        >
+        <div className="appleWindow" tabIndex={0} onKeyDown={this.handleAppleKey}
+          onPaste={this.pasteHandler}>
           <span className="textWindow">{textPage}</span>
         </div>
         {getProcessorStatus()}
@@ -233,18 +229,20 @@ DRTN    DEX
         <br />
         <button
           onClick={() => {
-            clickSpeaker();
-            state6502 = STATE.NEED_RESET;
-          }}
-        >
+            if (getAudioContext().state !== "running") {
+              audioContext.resume();
+            }
+            this.setState({ _6502: STATE.NEED_RESET });
+          }}>
           Boot
         </button>
         <button
           onClick={() => {
-            setBreak(!isBreak());
+            const s = this.state._6502 === STATE.PAUSED ? STATE.IS_RUNNING : STATE.PAUSED;
+            this.setState({ _6502: s });
           }}
-        >
-          {isBreak() ? "Resume" : "Break"}
+          disabled={this.state._6502 === STATE.IDLE}>
+          {this.state._6502 === STATE.PAUSED ? "Resume" : "Pause"}
         </button>
       </div>
     );

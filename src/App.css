@@ -72,6 +72,23 @@ body {
   background-color: #000;
 }
 
+button {
+  background-color: #898677;
+  color: white;
+  font-size: 20px;
+  padding: 5px 40px;
+  border-radius: 10px;
+  margin: 10px 10px;
+  cursor: pointer;
+}
+
+button:disabled {
+  border: 1px solid #999999;
+  background-color: #cccccc;
+  color: #DDDDDD;
+  cursor: default;
+}
+
 .normal {
   background: #000;
   color: #39FF14;
@@ -91,11 +108,11 @@ body {
   animation: flashingText 0.4s infinite;
 }
 @keyframes flashingText {
-  0% { color: #39FF14; }
-  49% { color: #39FF14; }
-  50% { color: #000; }
-  99% { color: #000; }
-  100% { color: #39FF14; }
+  0% { color: #39FF14; background: #000; }
+  49% { color: #39FF14; background: #000; }
+  50% { color: #000; background: #39FF14; }
+  99% { color: #000; background: #39FF14; }
+  100% { color: #39FF14; background: #000; }
 }
 
 
