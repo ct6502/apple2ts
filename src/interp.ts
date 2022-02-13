@@ -27,12 +27,14 @@ export const processInstruction = () => {
   // Don't print debug during the Apple WAIT subroutine
   // const PClocal = PC
   // const bank0local = bank0
-  if (doDebug && (PC < 0xFCA8 || PC > 0xFCB3)) {
-    const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`
-    console.log(out);
-  }
   if (code) {
+    const PC1 = PC
     cycles = code.execute(vLo, vHi);
+    // Do not output during the Apple II's WAIT subroutine
+    if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
+      const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;
+      console.log(out);
+    }
     if (Accum > 255 || Accum < 0) {
       console.error("Out of bounds")
       return 0

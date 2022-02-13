@@ -52,6 +52,7 @@ body {
 
 .apple2 {
   margin: 20px;
+  width: 840px;
 }
 
 .appleWindow {
@@ -59,6 +60,7 @@ body {
   background-color: #000;
   padding: 20px;
   width: 840px;
+  border-radius: 20px;
 }
 
 .textWindow {
@@ -70,6 +72,15 @@ body {
   padding: 0px;
   width: 840px;
   background-color: #000;
+}
+
+.statusItem {
+  margin-right: 50px;
+}
+
+.fixed {
+  font-family: monospace;
+  font-size: large;
 }
 
 button {

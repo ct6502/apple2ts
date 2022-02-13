@@ -506,14 +506,14 @@ PCODE('ROL', MODE.ABS_X, 0x3E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 
 const doROR = (addr: number) => {
   let v = bank0[addr]
-  const bit7 = isCarry() ? 0b10000000 : 0;
+  const bit7 = isCarry() ? 128 : 0;
   setCarry((v & 1) === 1)
   v = (v >> 1) | bit7
   checkStatus(v)
   bank0[addr] = v}
-PCODE('ROR', MODE.IMPLIED, 0x6A, 1, () => {const bit0 = isCarry() ? 1 : 0;
-  setCarry((Accum & 128) === 128);
-  Accum = ((Accum << 1) % 256) | bit0; checkStatus(Accum); return 2})
+PCODE('ROR', MODE.IMPLIED, 0x6A, 1, () => {const bit7 = isCarry() ? 128 : 0;
+  setCarry((Accum & 1) === 1);
+  Accum = (Accum >> 1) | bit7; checkStatus(Accum); return 2})
 PCODE('ROR', MODE.ZP_REL, 0x66, 2, (vZP) => {doROR(vZP); return 5})
 PCODE('ROR', MODE.ZP_X, 0x76, 2, (vZP) => {doROR(oneByteAdd(vZP, XReg)); return 6})
 PCODE('ROR', MODE.ABS, 0x6E, 3, (vLo, vHi) => {doROR(address(vLo, vHi)); return 6})

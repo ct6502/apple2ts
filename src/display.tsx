@@ -61,7 +61,8 @@ enum STATE {
 
 let startTime = 0
 
-class DisplayApple2 extends React.Component<{}, { _6502: STATE; tick: number }> {
+class DisplayApple2 extends React.Component<{},
+  { _6502: STATE; tick: number; speedCheck: boolean }> {
   timerID: ReturnType<typeof setInterval> | undefined;
   cycles = 0;
   offset = 15;
@@ -72,7 +73,7 @@ class DisplayApple2 extends React.Component<{}, { _6502: STATE; tick: number }> 
 
   constructor(props: any) {
     super(props);
-    this.state = { _6502: STATE.IDLE, tick: 0 };
+    this.state = { _6502: STATE.IDLE, tick: 0, speedCheck: true };
   }
 
   doReset() {
@@ -116,7 +117,7 @@ DRTN    DEX
 
   advance() {
     const newTime = performance.now();
-    if (newTime - startTime < this.offset) {
+    if (this.state.speedCheck && newTime - startTime < this.offset) {
       return;
     }
     const timeDelta = newTime - startTime;
@@ -146,7 +147,7 @@ DRTN    DEX
     newIndex = (this.iSpeed + 1) % this.speed.length;
     this.speed[newIndex] = this.speed[this.iSpeed] - this.speed[newIndex] / this.speed.length + this.cycles / timeDelta / this.speed.length;
     this.iSpeed = newIndex;
-    if (this.iSpeed === 0) {
+    if (this.state.speedCheck && this.iSpeed === 0) {
       this.offset += this.speed[this.iSpeed] < 1020.484 ? -0.05 : 0.05;
     }
     this.setState({
@@ -156,9 +157,9 @@ DRTN    DEX
   }
 
   pasteHandler = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    const data = event.clipboardData.getData("text")
-    if (data !== '') {
-      addToBuffer(data)
+    const data = event.clipboardData.getData("text");
+    if (data !== "") {
+      addToBuffer(data);
     }
     event.preventDefault();
   };
@@ -173,6 +174,10 @@ DRTN    DEX
     } else {
       console.log("key=" + e.key + " code=" + e.code + " ctrl=" + e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
+  };
+
+  handleSpeedChange = () => {
+    this.setState({ speedCheck: !this.state.speedCheck });
   };
 
   processTextPage = (textPage: Uint8Array) => {
@@ -209,24 +214,51 @@ DRTN    DEX
   };
 
   render() {
-    const textPage = this.processTextPage(getTextPage1());
+    const textPage = this.processTextPage(getTextPage1())
+    const cycleTime = Math.abs(this.cycleTime[this.iCycle]).toFixed(3)
+    const speed = (this.speed[this.iSpeed] / 1000).toFixed(3)
 
     return (
       <div className="apple2">
-        <div className="appleWindow" tabIndex={0} onKeyDown={this.handleAppleKey}
+        <div
+          className="appleWindow"
+          tabIndex={0}
+          onKeyDown={this.handleAppleKey}
           onPaste={this.pasteHandler}>
           <span className="textWindow">{textPage}</span>
         </div>
-        {getProcessorStatus()}
         <br />
-        Refreshes: {this.state.tick}
+        <span className="statusItem">
+          Refreshes: <span className="fixed">{this.state.tick}</span>
+        </span>
+        <span className="statusItem">
+          <span className="fixed">{getProcessorStatus()}</span>
+        </span>
         <br />
-        Time (ms): {Math.round(this.cycleTime[this.iCycle] * 100) / 100}
+        <span className="statusItem">
+          Speed (MHz): <span className="fixed">{speed}</span>
+        </span>
+        <span className="statusItem">
+          <label>
+            <input
+              type="checkbox"
+              checked={this.state.speedCheck}
+              onChange={this.handleSpeedChange}
+            />
+            Limit speed
+          </label>
+        </span>
+        <span className="statusItem">
+          Time (ms):{" "}
+          <span className="fixed">{cycleTime}</span>
+        </span>
+        <span className="statusItem">
+          Offset (ms):{" "}
+          <span className="fixed">{this.offset.toFixed(2)}</span>
+        </span>
+
         <br />
-        Offset (ms): {Math.round(this.offset * 100) / 100}
-        <br />
-        Speed (MHz): {Math.round(this.speed[this.iSpeed]) / 1000}
-        <br />
+
         <button
           onClick={() => {
             if (getAudioContext().state !== "running") {
@@ -238,7 +270,10 @@ DRTN    DEX
         </button>
         <button
           onClick={() => {
-            const s = this.state._6502 === STATE.PAUSED ? STATE.IS_RUNNING : STATE.PAUSED;
+            const s =
+              this.state._6502 === STATE.PAUSED
+                ? STATE.IS_RUNNING
+                : STATE.PAUSED;
             this.setState({ _6502: s });
           }}
           disabled={this.state._6502 === STATE.IDLE}>
