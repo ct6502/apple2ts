@@ -54,6 +54,7 @@ Finally, edit the `.ts` file, and change the file to be an exported string varia
     export const rom=`
 
 Don't forget to append the trailing back quote ` at the end of the file. Your final file should look like:
+
 ```
 export const rom=`AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
