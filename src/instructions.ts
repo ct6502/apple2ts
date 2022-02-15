@@ -69,26 +69,45 @@ export const keyPress = (key: number) => {
   bank0[0xC000] = key | 0b10000000
 }
 
+type softSwitch = {
+  addrOff: number
+  addrOn: number
+  set: boolean
+}
+export let SWITCHES: Record<string, softSwitch> = {}
+const NewSwitch = (addrOff: number, addrOn: number, set = false): softSwitch => {
+  return {addrOff: addrOff, addrOn: addrOn, set: set}
+}
+SWITCHES.TEXTON  = NewSwitch(0xC050, 0xC051, true)
+SWITCHES.MIXEDON = NewSwitch(0xC052, 0xC053)
+SWITCHES.PAGE2ON = NewSwitch(0xC054, 0xC055)
+SWITCHES.HIRESON = NewSwitch(0xC056, 0xC057)
+
 const memAccess = (address: number) => {
-  if (address === 0xC010) {
-    bank0[0xC000] &= 0x01111111
-    popKey()
-  }
-  if (address === 0xC030) {
-    clickSpeaker()
+  if (address >= 0xC000) {
+    if (address === 0xC010) {
+      bank0[0xC000] &= 0x01111111
+      popKey()
+    } else if (address === 0xC030) {
+      clickSpeaker()
+    } else {
+      for (const [, sswitch] of Object.entries(SWITCHES)) {
+        if (address === sswitch.addrOff) {
+          sswitch.set = false
+          break
+        } else if (address === sswitch.addrOn) {
+          sswitch.set = true
+          break
+        }
+      }
+    }
   }
   return bank0[address]
 }
 
 const memSet = (address: number, value: number) => {
   if (address >= 0xC000) {
-    if (address === 0xC010) {
-      bank0[0xC000] &= 0x01111111
-      return
-    }
-    if (address === 0xC030) {
-      clickSpeaker()
-    }
+    memAccess(address)
     return
   }
   bank0[address] = value
