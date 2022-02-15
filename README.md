@@ -2,7 +2,7 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Available NPM Scripts
 
 In the project directory, you can run:
 
@@ -66,7 +66,15 @@ SLnj/0ilMaAAhDFgvLK+mu/E7Km7pqQGlQcCBfAA65Onxpmyyb7wNYzWlq8XFysf
 g39dzLX8Fxf1A/sDYvr6ww==`
 ```
 
-## Learn More
+## Apple II 6502 References
+
+[NMOS 6502 Opcodes](http://www.6502.org/tutorials/6502opcodes.html)
+
+[6502 Programmers Reference](https://www.csh.rit.edu/~moffitt/docs/6502.html#CLI)
+
+[Assembly Lines: The Complete Book](https://archive.org/details/AssemblyLinesCompleteWagner)
+
+## Create React App - Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
