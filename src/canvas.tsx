@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, KeyboardEvent } from 'react';
-import { getTextPage } from "./interp";
+import { getTextPage, getHGR } from "./interp";
 import { convertAppleKey } from "./keyboard"
 import { addToBuffer, keyPress, toHex, SWITCHES } from "./instructions";
 
@@ -35,22 +35,10 @@ for (let c = 0; c < 16; c++) {
   loresHex[c] = '#' + toHex(lores[c][0]) + toHex(lores[c][1]) + toHex(lores[c][2])
 }
 
-// const hiresColors = [
-//   [  0,   0,   0], //black1
-//   [ 20, 245,  60], //green 
-//   [255,  68, 253], //purple
-//   [255, 255, 255], //white1
-//   [  0,   0,   0], //black2
-//   [255, 106,  60], //orange
-//   [ 20, 207, 253], //blue  
-//   [255, 255, 255], //white2
-//   ] 
-
  const processTextPage = (ctx: CanvasRenderingContext2D,
   textPage2: boolean, mixedMode = false) => {
   const textPage = getTextPage(textPage2)
   ctx.font = cheight + "px PrintChar21"
-  ctx.fillStyle = "#39FF14";
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(refresh / 24) % 2) === 0
 
@@ -69,7 +57,7 @@ for (let c = 0; c < 16; c++) {
         }
         v = String.fromCharCode(v1 & 0b01111111);
       }
-      ctx.fillStyle = "#39FF14";
+      ctx.fillStyle = "#FFFFFF" // "#39FF14";
       if (value < 64) {
         // Inverse characters
         ctx.fillRect(xmargin + i*cwidth, ymargin + j*cheight, cwidth, cheight);
@@ -89,8 +77,6 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
   textPage2: boolean, mixedMode = false) => {
   const textPage = getTextPage(textPage2)
   const jstop = mixedMode ? 20 : 24
-//  const imgData = ctx.getImageData(0, 0, width, height)
-//  const data = imgData.data
 
   for (let j = 0; j < jstop; j++) {
     const yposUpper = ymargin + j*cheight
@@ -103,11 +89,69 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
       ctx.fillRect(xpos, yposUpper, cwidth, cheight/2)
       ctx.fillStyle = loresHex[lowerBlock]
       ctx.fillRect(xpos, yposLower, cwidth, cheight/2)
-//      for (let y=0; y < cheight/2; y++) {
-//        data.set(loresBlocks[upperBlock], yposUpper)
-//      }
     });
   }
+};
+
+const BLACK = [0, 0, 0]
+const GREEN = [1, 255, 1]
+const VIOLET = [255, 1, 255]
+// const WHITE = [255, 255, 255]
+const ORANGE = [255, 127, 1]
+const BLUE = [ 1, 127, 255] 
+
+const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolean) => {
+  if ((byte >> bit) & 1) {
+    return highBit ? (isEven ? BLUE : ORANGE) : (isEven ? VIOLET : GREEN)
+  }
+  return BLACK
+}
+
+const processHiRes = async (ctx: CanvasRenderingContext2D,
+  page2: boolean, mixedMode = false) => {
+  const hgrPage = getHGR(page2)  // 40 x 192 array
+  const hgr = new Uint8ClampedArray(280 * 192 * 4).fill(255);
+  for (let j = 0; j < 192; j++) {
+    const line = hgrPage.slice(j*40, j*40 + 40)
+    const joffset = j * 280 * 4
+    let isEven = true
+    for (let i = 0; i < 40; i++) {
+      const ioffset = joffset + i * 28
+      const byte = line[i]
+      const highBit = (byte & 128) === 128
+      for (let b = 0; b <= 6; b++) {
+        const color = decodeColor(byte, b, highBit, isEven)
+        hgr[ioffset + 4*b] = color[0]
+        hgr[ioffset + 4*b + 1] = color[1]
+        hgr[ioffset + 4*b + 2] = color[2]
+        isEven = !isEven
+      }
+    }
+    for (let i = 0; i < 280; i += 2) {
+      const ioffset = joffset + i * 4
+      if (hgr[ioffset]) {
+        if (hgr[ioffset + 4]) {
+          hgr.fill(255, ioffset, ioffset + 8)
+        } else {
+          hgr[ioffset + 4] = hgr[ioffset]
+          hgr[ioffset + 5] = hgr[ioffset + 1]
+          hgr[ioffset + 6] = hgr[ioffset + 2]
+        }
+      } else if (hgr[ioffset + 4]) {
+          hgr[ioffset] = hgr[ioffset + 4]
+          hgr[ioffset + 1] = hgr[ioffset + 5]
+          hgr[ioffset + 2] = hgr[ioffset + 6]
+      }
+    }
+  }
+  const image = new ImageData(hgr, 280, 192);
+  let imgHeight = height - 2*ymargin
+  if (mixedMode) {
+    imgHeight = Math.trunc(imgHeight * 160 / 192)
+  }
+  ctx.drawImage(await createImageBitmap(image),
+    0, 0, 280, mixedMode ? 160 : 192,
+    xmargin, ymargin, width - 2*xmargin, imgHeight);
 };
 
 const processDisplay = (ctx: CanvasRenderingContext2D) => {
@@ -119,7 +163,7 @@ const processDisplay = (ctx: CanvasRenderingContext2D) => {
     processTextPage(ctx, SWITCHES.PAGE2ON.set, true)
   }
   if (SWITCHES.HIRESON.set) {
-
+    processHiRes(ctx, SWITCHES.PAGE2ON.set, SWITCHES.MIXEDON.set)
   } else {
     processLoRes(ctx, SWITCHES.PAGE2ON.set, SWITCHES.MIXEDON.set)
   }
@@ -167,7 +211,7 @@ const Apple2Canvas = (props: any) => {
   refresh++
   const ctx = canvasCtxRef.current;
   if (ctx) {
-    ctx.fillStyle = "black";
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, width, height);
     processDisplay(ctx)
   }
