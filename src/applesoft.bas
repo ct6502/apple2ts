@@ -1,3 +1,5 @@
+https://github.com/AppleWin/AppleWin/issues/254
+
 10 HGR
 20 FOR Y=0 TO 63:FOR X=0 TO 7
 30 HCOLOR=INT(Y/8)
