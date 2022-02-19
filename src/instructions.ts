@@ -69,26 +69,45 @@ export const keyPress = (key: number) => {
   bank0[0xC000] = key | 0b10000000
 }
 
+type softSwitch = {
+  addrOff: number
+  addrOn: number
+  set: boolean
+}
+export let SWITCHES: Record<string, softSwitch> = {}
+const NewSwitch = (addrOff: number, addrOn: number, set = false): softSwitch => {
+  return {addrOff: addrOff, addrOn: addrOn, set: set}
+}
+SWITCHES.TEXTON  = NewSwitch(0xC050, 0xC051, true)
+SWITCHES.MIXEDON = NewSwitch(0xC052, 0xC053)
+SWITCHES.PAGE2ON = NewSwitch(0xC054, 0xC055)
+SWITCHES.HIRESON = NewSwitch(0xC056, 0xC057)
+
 const memAccess = (address: number) => {
-  if (address === 0xC010) {
-    bank0[0xC000] &= 0x01111111
-    popKey()
-  }
-  if (address === 0xC030) {
-    clickSpeaker()
+  if (address >= 0xC000) {
+    if (address === 0xC010) {
+      bank0[0xC000] &= 0x01111111
+      popKey()
+    } else if (address === 0xC030) {
+      clickSpeaker()
+    } else {
+      for (const [, sswitch] of Object.entries(SWITCHES)) {
+        if (address === sswitch.addrOff) {
+          sswitch.set = false
+          break
+        } else if (address === sswitch.addrOn) {
+          sswitch.set = true
+          break
+        }
+      }
+    }
   }
   return bank0[address]
 }
 
 const memSet = (address: number, value: number) => {
   if (address >= 0xC000) {
-    if (address === 0xC010) {
-      bank0[0xC000] &= 0x01111111
-      return
-    }
-    if (address === 0xC030) {
-      clickSpeaker()
-    }
+    memAccess(address)
     return
   }
   bank0[address] = value
@@ -327,12 +346,11 @@ PCODE('CLI', MODE.IMPLIED, 0x58, 1, () => {setInterrupt(false); return 2})
 PCODE('CLV', MODE.IMPLIED, 0xB8, 1, () => {setOverflow(false); return 2})
 
 const doCMP = (addr: number) => {
-  const tmp = Accum - bank0[addr]
-  setCarry(tmp >= 0)
-  checkStatus(tmp)
+  setCarry(Accum >= bank0[addr])
+  checkStatus((Accum - bank0[addr] + 256) % 256)
 }
-PCODE('CMP', MODE.IMM, 0xC9, 2, (value) => {const tmp = Accum - value;
-  setCarry(tmp >= 0); checkStatus(tmp); return 2})
+PCODE('CMP', MODE.IMM, 0xC9, 2, (value) => {setCarry(Accum >= value);
+  checkStatus((Accum - value + 256) % 256); return 2})
 PCODE('CMP', MODE.ZP_REL, 0xC5, 2, (vZP) => {doCMP(vZP); return 3})
 PCODE('CMP', MODE.ZP_X, 0xD5, 2, (vZP) => {doCMP(oneByteAdd(vZP, XReg)); return 4})
 PCODE('CMP', MODE.ABS, 0xCD, 3, (vLo, vHi) => {doCMP(address(vLo, vHi)); return 4})
@@ -345,22 +363,20 @@ PCODE('CMP', MODE.IND_X, 0xC1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, 
 PCODE('CMP', MODE.IND_Y, 0xD1, 2, (vZP) => doIndirectYinstruction(vZP, doCMP))
 
 const doCPX = (addr: number) => {
-  const tmp = XReg - bank0[addr]
-  setCarry(tmp >= 0)
-  checkStatus(tmp)
+  setCarry(XReg >= bank0[addr])
+  checkStatus((XReg - bank0[addr] + 256) % 256)
 }
-PCODE('CPX', MODE.IMM, 0xE0, 2, (value) => {const tmp = XReg - value;
-  setCarry(tmp >= 0); checkStatus(tmp); return 2})
+PCODE('CPX', MODE.IMM, 0xE0, 2, (value) => {setCarry(XReg >= value);
+  checkStatus((XReg - value + 256) % 256); return 2})
 PCODE('CPX', MODE.ZP_REL, 0xE4, 2, (vZP) => {doCPX(vZP); return 3})
 PCODE('CPX', MODE.ABS, 0xEC, 3, (vLo, vHi) => {doCPX(address(vLo, vHi)); return 4})
 
 const doCPY = (addr: number) => {
-  const tmp = YReg - bank0[addr]
-  setCarry(tmp >= 0)
-  checkStatus(tmp)
+  setCarry(YReg >= bank0[addr])
+  checkStatus((YReg - bank0[addr] + 256) % 256)
 }
-PCODE('CPY', MODE.IMM, 0xC0, 2, (value) => {const tmp = YReg - value;
-  setCarry(tmp >= 0); checkStatus(tmp); return 2})
+PCODE('CPY', MODE.IMM, 0xC0, 2, (value) => {setCarry(YReg >= value);
+  checkStatus((YReg - value + 256) % 256); return 2})
 PCODE('CPY', MODE.ZP_REL, 0xC4, 2, (vZP) => {doCPY(vZP); return 3})
 PCODE('CPY', MODE.ABS, 0xCC, 3, (vLo, vHi) => {doCPY(address(vLo, vHi)); return 4})
 

@@ -60,6 +60,12 @@ body {
   background-color: #000;
   padding: 20px;
   width: 840px;
+  height: 200px;
+  border-radius: 20px;
+}
+
+canvas {
+  outline: none;
   border-radius: 20px;
 }
 

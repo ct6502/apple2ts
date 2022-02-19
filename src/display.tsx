@@ -1,17 +1,15 @@
-import { getTextPage1, processInstruction, setDebug } from "./interp";
+import { processInstruction, setDebug } from "./interp";
 import {
   bank0,
   doReset6502,
-  addToBuffer,
-  keyPress,
   setPC,
   getProcessorStatus,
   setSpeaker,
 } from "./instructions";
 import { parseAssembly } from "./assembler";
-import { convertAppleKey } from "./keyboard"
+import Apple2Canvas from './canvas'
 
-import React, {KeyboardEvent} from "react";
+import React from "react";
 // import Test from "./components/test";
 
 let audioContext: AudioContext
@@ -156,77 +154,24 @@ DRTN    DEX
     this.cycles = 0;
   }
 
-  pasteHandler = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    const data = event.clipboardData.getData("text");
-    if (data !== "") {
-      addToBuffer(data);
-    }
-    event.preventDefault();
-  };
-
-  handleAppleKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "v" && e.metaKey) {
-      return;
-    }
-    const key = convertAppleKey(e);
-    if (key > 0) {
-      keyPress(key);
-    } else {
-      console.log("key=" + e.key + " code=" + e.code + " ctrl=" + e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
-    }
-  };
-
   handleSpeedChange = () => {
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
-  processTextPage = (textPage: Uint8Array) => {
-    let buffer = [];
-    for (var i = 0; i < 24; i++) {
-      textPage.slice(i * 40, (i + 1) * 40).forEach((value) => {
-        let value1 = value;
-        if ((value >= 0 && value <= 0x1f) || (value >= 0x61 && value <= 0x9f)) {
-          value1 += 0x40;
-        }
-        let v = String.fromCharCode(value1 & 0b01111111);
-        if (v === " ") {
-          v = "\u00A0";
-        }
-        let cname = "normal";
-        if (value === 0x60) {
-          cname = "cursor";
-          v = "\u00A0"; //String.fromCharCode(0x8e);
-        } else if (value < 64) {
-          cname = "inverse";
-        } else if (value < 128) {
-          cname = "flashing";
-        }
-        const key = buffer.length.toString();
-        buffer.push(
-          <span className={cname} key={key}>
-            {v}
-          </span>
-        );
-      });
-      buffer.push(<br key={"line" + i} />);
-    }
-    return <div>{buffer}</div>;
-  };
-
   render() {
-    const textPage = this.processTextPage(getTextPage1())
     const cycleTime = Math.abs(this.cycleTime[this.iCycle]).toFixed(3)
     const speed = (this.speed[this.iSpeed] / 1000).toFixed(3)
 
     return (
       <div className="apple2">
-        <div
+        <Apple2Canvas/>
+        {/* <div
           className="appleWindow"
           tabIndex={0}
           onKeyDown={this.handleAppleKey}
           onPaste={this.pasteHandler}>
           <span className="textWindow">{textPage}</span>
-        </div>
+        </div> */}
         <br />
         <span className="statusItem">
           Refreshes: <span className="fixed">{this.state.tick}</span>
