@@ -1,4 +1,25 @@
 import {KeyboardEvent} from "react";
+import { bank0 } from "./motherboard"
+
+let keyBuffer = ''
+export const popKey = () => {
+  if (bank0[0xC000] < 128 && keyBuffer !== '') {
+    let key = keyBuffer.charCodeAt(0)
+    if (key === 10) {
+      key = 13
+    }
+    bank0[0xC000] = key | 0b10000000
+    keyBuffer = keyBuffer.slice(1)
+  }
+}
+export const addToBuffer = (text: String) => {
+  keyBuffer += text
+  popKey()
+}
+
+export const keyPress = (key: number) => {
+  bank0[0xC000] = key | 0b10000000
+}
 
 export const convertAppleKey = (e: KeyboardEvent) => {
   let key = 0

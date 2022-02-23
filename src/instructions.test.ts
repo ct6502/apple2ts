@@ -1,6 +1,8 @@
-import {processInstruction} from "./interp";
-import {bank0, doBranch, PC, setPC, Accum, PStatus} from "./instructions";
+import {bank0, doReset, processInstruction} from "./motherboard";
+import {doBranch, PC, setPC, Accum, PStatus} from "./instructions";
 import {parseAssembly} from "./assembler";
+
+doReset()
 
 test('doBranch', () => {
   setPC(0x2000)

@@ -1,5 +1,5 @@
-import {processInstruction} from "./interp";
-import {bank0, PC, setPC, Accum} from "./instructions";
+import {bank0, processInstruction} from "./motherboard";
+import {PC, setPC, Accum} from "./instructions";
 import {parseAssembly} from "./assembler";
 
 test('processInstruction', () => {

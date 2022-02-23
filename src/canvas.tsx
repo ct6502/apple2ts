@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, KeyboardEvent } from 'react';
-import { getTextPage, getHGR } from "./interp";
-import { convertAppleKey } from "./keyboard"
-import { addToBuffer, keyPress, toHex, SWITCHES } from "./instructions";
+import { SWITCHES, toHex, getTextPage, getHGR } from "./motherboard";
+import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
 
 const xmargin = 20
 const ymargin = 20

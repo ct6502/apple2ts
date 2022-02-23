@@ -1,13 +1,5 @@
-import { processInstruction, setDebug } from "./interp";
-import {
-  bank0,
-  doBoot6502,
-  doReset,
-  setPC,
-  getProcessorStatus,
-  setSpeaker,
-  SWITCHES
-} from "./instructions";
+import { doBoot6502, doReset, setSpeaker,
+  SWITCHES, getProcessorStatus, processInstruction, setDebug } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from './canvas'
 import disk2off from './img/disk2.png'
@@ -97,7 +89,6 @@ class DisplayApple2 extends React.Component<{},
 //    let pcode = parseAssembly(0x2000, code.split("\n"));
 //    bank0.set(pcode, 0x2000);
 //    setPC(0x2000);
-    setPC(bank0[0xfffd] * 256 + bank0[0xfffc]);
     setDebug(false);
     this.cycles = 0;
     this.startTime = performance.now();

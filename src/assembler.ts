@@ -1,4 +1,5 @@
-import { pcodes, MODE, toHex } from "./instructions";
+import { pcodes, MODE } from "./instructions";
+import { toHex } from "./motherboard";
 
 const parseOperand = (operand: string): [MODE, number] => {
   let mode: MODE = MODE.IMPLIED;
