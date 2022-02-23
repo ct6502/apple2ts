@@ -55,29 +55,19 @@ body {
   width: 840px;
 }
 
-.appleWindow {
-  outline: none;
-  background-color: #000;
-  padding: 20px;
-  width: 840px;
-  height: 200px;
-  border-radius: 20px;
-}
-
 canvas {
   outline: none;
   border-radius: 20px;
 }
 
-.textWindow {
-  outline: none;
-  font-family: PrintChar21, "Courier New", Courier, monospace;
-  color: #39FF14;
-  font-size: 24px;
-  line-height: 24px;
-  padding: 0px;
-  width: 840px;
-  background-color: #000;
+.leftStatus {
+  display: inline-block;
+  width: 75%;
+}
+
+.rightStatus {
+  display: inline-block;
+  width: 25%;
 }
 
 .statusItem {
@@ -106,30 +96,15 @@ button:disabled {
   cursor: default;
 }
 
-.normal {
-  background: #000;
-  color: #39FF14;
+.disk2 {
+  float: right;
+  padding: 0;
+  font-size: 0px;
+  border: 1;
+  border-radius: 3px;
+  margin: 10px 10px;
 }
-.inverse {
-  background: #39FF14;
-  color: #000;
+.disk2 img {
+  width: 120px;
 }
-.flashing {
-  background: #000;
-  animation: flashingText 0.4s infinite;
-}
-.cursor {
-  position:relative;
-  top:-2px;
-  background: #000;
-  animation: flashingText 0.4s infinite;
-}
-@keyframes flashingText {
-  0% { color: #39FF14; background: #000; }
-  49% { color: #39FF14; background: #000; }
-  50% { color: #000; background: #39FF14; }
-  99% { color: #000; background: #39FF14; }
-  100% { color: #39FF14; background: #000; }
-}
-
 

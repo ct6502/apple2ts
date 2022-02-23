@@ -145,27 +145,24 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
     }
   }
   const image = new ImageData(hgr, 280, 192);
-  let imgHeight = height - 2*ymargin
-  if (mixedMode) {
-    imgHeight = Math.trunc(imgHeight * 160 / 192)
-  }
+  let imgHeight = height - 2*ymargin - (mixedMode ? 4*cheight : 0)
   ctx.drawImage(await createImageBitmap(image),
     0, 0, 280, mixedMode ? 160 : 192,
     xmargin, ymargin, width - 2*xmargin, imgHeight);
 };
 
 const processDisplay = (ctx: CanvasRenderingContext2D) => {
-  if (SWITCHES.TEXTON.set) {
-    processTextPage(ctx, SWITCHES.PAGE2ON.set)
+  if (SWITCHES.TEXT.set) {
+    processTextPage(ctx, SWITCHES.PAGE2.set)
     return
   }
-  if (SWITCHES.MIXEDON.set) {
-    processTextPage(ctx, SWITCHES.PAGE2ON.set, true)
+  if (SWITCHES.MIXED.set) {
+    processTextPage(ctx, SWITCHES.PAGE2.set, true)
   }
-  if (SWITCHES.HIRESON.set) {
-    processHiRes(ctx, SWITCHES.PAGE2ON.set, SWITCHES.MIXEDON.set)
+  if (SWITCHES.HIRES.set) {
+    processHiRes(ctx, SWITCHES.PAGE2.set, SWITCHES.MIXED.set)
   } else {
-    processLoRes(ctx, SWITCHES.PAGE2ON.set, SWITCHES.MIXEDON.set)
+    processLoRes(ctx, SWITCHES.PAGE2.set, SWITCHES.MIXED.set)
   }
 }
 

@@ -74,14 +74,16 @@ type softSwitch = {
   addrOn: number
   set: boolean
 }
-export let SWITCHES: Record<string, softSwitch> = {}
 const NewSwitch = (addrOff: number, addrOn: number, set = false): softSwitch => {
   return {addrOff: addrOff, addrOn: addrOn, set: set}
 }
-SWITCHES.TEXTON  = NewSwitch(0xC050, 0xC051, true)
-SWITCHES.MIXEDON = NewSwitch(0xC052, 0xC053)
-SWITCHES.PAGE2ON = NewSwitch(0xC054, 0xC055)
-SWITCHES.HIRESON = NewSwitch(0xC056, 0xC057)
+export const SWITCHES = {
+  TEXT: NewSwitch(0xC050, 0xC051, true),
+  MIXED: NewSwitch(0xC052, 0xC053),
+  PAGE2: NewSwitch(0xC054, 0xC055),
+  HIRES: NewSwitch(0xC056, 0xC057),
+  DRIVE: NewSwitch(0xC0E8, 0xC0E9),
+}
 
 const memAccess = (address: number) => {
   if (address >= 0xC000) {
@@ -217,16 +219,18 @@ export const setSpeaker = (speakFunc: () => void) => {
   clickSpeaker = speakFunc
 }
 
-export const doReset6502 = () => {
-  bank0.fill(0xFF)
-  bank0.set(Buffer.from(rom.replaceAll('\n', ''), 'base64'), 0xC000)
+export const doReset = () => {
   Accum = XReg = YReg = 0
   PStatus = 0b00100100
   SP = 0xFF
-  setPC(bank0[0xfffd] * 256 + bank0[0xfffc]);
+  setPC(bank0[0xFFFD] * 256 + bank0[0xFFFC]);
 }
 
-doReset6502()
+export const doBoot6502 = () => {
+  bank0.fill(0xFF)
+  bank0.set(Buffer.from(rom.replaceAll('\n', ''), 'base64'), 0xC000)
+  doReset()
+}
 
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
@@ -296,8 +300,20 @@ PCODE('ADC', MODE.IND_X, 0x61, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, 
   doADC(address(bank0[vZP], bank0[vZP + 1])); return 6})
 PCODE('ADC', MODE.IND_Y, 0x71, 2, (vZP) => doIndirectYinstruction(vZP, doADC))
 
+const doAND = (addr: number) => {
+  Accum &= bank0[addr]
+  checkStatus(Accum)}
 PCODE('AND', MODE.IMM, 0x29, 2, (value) => {Accum &= value; checkStatus(Accum); return 2})
-PCODE('AND', MODE.ZP_REL, 0x25, 2, (vZP) => {Accum &= bank0[vZP]; checkStatus(Accum); return 3})
+PCODE('AND', MODE.ZP_REL, 0x25, 2, (vZP) => {doAND(vZP); return 3})
+PCODE('AND', MODE.ZP_X, 0x35, 2, (vZP) => {doAND(oneByteAdd(vZP, XReg)); return 4})
+PCODE('AND', MODE.ABS, 0x2D, 3, (vLo, vHi) => {doAND(address(vLo, vHi)); return 4})
+PCODE('AND', MODE.ABS_X, 0x3D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  doAND(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('AND', MODE.ABS_Y, 0x39, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
+  doAND(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('AND', MODE.IND_X, 0x21, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
+  doAND(address(bank0[vZP], bank0[vZP + 1])); return 6})
+PCODE('AND', MODE.IND_Y, 0x31, 2, (vZP) => doIndirectYinstruction(vZP, doAND))
 
 const doASL = (addr: number) => {
   let v = bank0[addr]
@@ -382,6 +398,12 @@ PCODE('CPY', MODE.ABS, 0xCC, 3, (vLo, vHi) => {doCPY(address(vLo, vHi)); return 
 
 PCODE('DEC', MODE.ZP_REL, 0xC6, 2, (vZP) => {bank0[vZP] = oneByteAdd(bank0[vZP], -1);
   checkStatus(bank0[vZP]); return 5})
+PCODE('DEC', MODE.ZP_X, 0xD6, 2, (vZP) => {const addr = oneByteAdd(vZP, XReg);
+  bank0[addr] = oneByteAdd(bank0[addr], -1); return 6})
+PCODE('DEC', MODE.ABS, 0xCE, 3, (vLo, vHi) => {const addr = address(vLo, vHi);
+  bank0[addr] = oneByteAdd(bank0[addr], -1); return 6})
+PCODE('DEC', MODE.ABS_X, 0xDE, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  bank0[addr] = oneByteAdd(bank0[addr], -1); return 7})
 
 PCODE('DEX', MODE.IMPLIED, 0xCA, 1, () => {XReg = oneByteAdd(XReg, -1);
   checkStatus(XReg); return 2})
