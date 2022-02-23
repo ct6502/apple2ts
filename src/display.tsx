@@ -8,7 +8,7 @@ import {
   setSpeaker,
   SWITCHES
 } from "./instructions";
-import { parseAssembly } from "./assembler";
+// import { parseAssembly } from "./assembler";
 import Apple2Canvas from './canvas'
 import disk2off from './img/disk2.png'
 import disk2on from './img/disk2on.png'
@@ -80,19 +80,19 @@ class DisplayApple2 extends React.Component<{},
   }
 
   doBoot() {
-    const code = `
-START   LDA #$C1     ; (2) "A"
-PRINT   STA $0400    ; (4)
-        INC PRINT+1  ; (6)
-        BNE PRINT    ; (2/3) = 255*13 + 12 = 3327
-        INC PRINT+2  ; (6)
-        INC START+1  ; (6)
-        CMP #$C4     ; (2) "D"
-        BNE START    ; (2/3) = 3327*4 + 19*3 + 18 = 13383 cycles ~ 13.4ms
-        LDX #$F0
-BEEP    LDA $C030
-        BRK
-`;
+//     const code = `
+// START   LDA #$C1     ; (2) "A"
+// PRINT   STA $0400    ; (4)
+//         INC PRINT+1  ; (6)
+//         BNE PRINT    ; (2/3) = 255*13 + 12 = 3327
+//         INC PRINT+2  ; (6)
+//         INC START+1  ; (6)
+//         CMP #$C4     ; (2) "D"
+//         BNE START    ; (2/3) = 3327*4 + 19*3 + 18 = 13383 cycles ~ 13.4ms
+//         LDX #$F0
+// BEEP    LDA $C030
+//         BRK
+// `;
     doBoot6502();
 //    let pcode = parseAssembly(0x2000, code.split("\n"));
 //    bank0.set(pcode, 0x2000);
