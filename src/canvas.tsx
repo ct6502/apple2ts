@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, KeyboardEvent } from 'react';
 import { SWITCHES, toHex, getTextPage, getHGR } from "./motherboard";
-import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
+import { addToBuffer, pushbutton, keyPress, convertAppleKey } from "./keyboard"
 
 const xmargin = 20
 const ymargin = 20
@@ -165,8 +165,12 @@ const processDisplay = (ctx: CanvasRenderingContext2D) => {
   }
 }
 
-const handleAppleKey = (e: KeyboardEvent<HTMLCanvasElement>) => {
+const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
   if (e.key === "v" && e.metaKey) {
+    return;
+  }
+  if (e.metaKey && e.key === "Meta") {
+    pushbutton(true, e.code === "MetaLeft")
     return;
   }
   const key = convertAppleKey(e);
@@ -174,6 +178,13 @@ const handleAppleKey = (e: KeyboardEvent<HTMLCanvasElement>) => {
     keyPress(key);
   } else {
     console.log("key=" + e.key + " code=" + e.code + " ctrl=" + e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
+  }
+};
+
+const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
+  if (e.code === "MetaLeft" || e.code === "MetaRight") {
+    pushbutton(false, e.code === "MetaLeft")
+    return;
   }
 };
 
@@ -214,7 +225,8 @@ const Apple2Canvas = (props: any) => {
   return <canvas ref={canvasRef}
     height={height} width={width}
     tabIndex={0}
-    onKeyDown={handleAppleKey}>
+    onKeyDown={handleKeyDown}
+    onKeyUp={handleKeyUp}>
     </canvas>
 };
 

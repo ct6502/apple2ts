@@ -1,4 +1,4 @@
-import { memAccess, memSet } from "./motherboard"
+import { memGet, memSet } from "./motherboard"
 // var startTime = performance.now()
 
 export let PStatus = 0;
@@ -57,7 +57,7 @@ const pushStack = (value: number) => {
 
 const popStack = () => {
   SP = (SP + 1) % 256;
-  return memAccess(0x100 + SP);
+  return memGet(0x100 + SP);
 }
 
 export const isCarry = () => { return ((PStatus & 0x01) !== 0); }
@@ -122,8 +122,8 @@ const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeF
 }
 
 const doIndirectYinstruction = (vZP: number, doInstruction: (addr: number) => void) => {
-  const vLo = memAccess(vZP)
-  const vHi = memAccess((vZP + 1) % 256)
+  const vLo = memGet(vZP)
+  const vHi = memGet((vZP + 1) % 256)
   const addr = twoByteAdd(vLo, vHi, YReg)
   doInstruction(addr)
   return 5 + pageBoundary(addr, address(vLo, vHi))
@@ -140,7 +140,7 @@ const doADC1 = (value: number) => {
   checkStatus(Accum)
 }
 const doADC = (addr: number) => {
-  doADC1(memAccess(addr))
+  doADC1(memGet(addr))
 }
 PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {doADC1(value); return 2})
 PCODE('ADC', MODE.ZP_REL, 0x65, 2, (vZP) => {doADC(vZP); return 3})
@@ -151,11 +151,11 @@ PCODE('ADC', MODE.ABS_X, 0x7D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('ADC', MODE.ABS_Y, 0x79, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
   doADC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('ADC', MODE.IND_X, 0x61, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doADC(address(memAccess(vZP), memAccess(vZP + 1))); return 6})
+  doADC(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('ADC', MODE.IND_Y, 0x71, 2, (vZP) => doIndirectYinstruction(vZP, doADC))
 
 const doAND = (addr: number) => {
-  Accum &= memAccess(addr)
+  Accum &= memGet(addr)
   checkStatus(Accum)}
 PCODE('AND', MODE.IMM, 0x29, 2, (value) => {Accum &= value; checkStatus(Accum); return 2})
 PCODE('AND', MODE.ZP_REL, 0x25, 2, (vZP) => {doAND(vZP); return 3})
@@ -166,11 +166,11 @@ PCODE('AND', MODE.ABS_X, 0x3D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('AND', MODE.ABS_Y, 0x39, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
   doAND(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('AND', MODE.IND_X, 0x21, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doAND(address(memAccess(vZP), memAccess(vZP + 1))); return 6})
+  doAND(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('AND', MODE.IND_Y, 0x31, 2, (vZP) => doIndirectYinstruction(vZP, doAND))
 
 const doASL = (addr: number) => {
-  let v = memAccess(addr)
+  let v = memGet(addr)
   setCarry((v & 128) === 128)
   v = (v << 1) % 256
   memSet(addr, v)
@@ -194,7 +194,7 @@ PCODE('BVC', MODE.ZP_REL, 0x50, 2, (value) => doBranch(!isOverflow(), value))
 PCODE('BVS', MODE.ZP_REL, 0x70, 2, (value) => doBranch(isOverflow(), value))
 
 const doBit = (addr: number) => {
-  const value = memAccess(addr)
+  const value = memGet(addr)
   setZero((Accum & value) === 0);
   setNegative((value & 0b10000000) !== 0);
   setOverflow((value & 0b01000000) !== 0);
@@ -207,7 +207,7 @@ PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {setBreak();
   pushStack(Math.trunc(PC2 / 256))
   pushStack(PC2 % 256)
   pushStack(PStatus)
-  PC = twoByteAdd(memAccess(0xFFFE), memAccess(0xFFFF), -1);
+  PC = twoByteAdd(memGet(0xFFFE), memGet(0xFFFF), -1);
   return 7})
 
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
@@ -216,8 +216,8 @@ PCODE('CLI', MODE.IMPLIED, 0x58, 1, () => {setInterrupt(false); return 2})
 PCODE('CLV', MODE.IMPLIED, 0xB8, 1, () => {setOverflow(false); return 2})
 
 const doCMP = (addr: number) => {
-  setCarry(Accum >= memAccess(addr))
-  checkStatus((Accum - memAccess(addr) + 256) % 256)
+  setCarry(Accum >= memGet(addr))
+  checkStatus((Accum - memGet(addr) + 256) % 256)
 }
 PCODE('CMP', MODE.IMM, 0xC9, 2, (value) => {setCarry(Accum >= value);
   checkStatus((Accum - value + 256) % 256); return 2})
@@ -229,12 +229,12 @@ PCODE('CMP', MODE.ABS_X, 0xDD, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('CMP', MODE.ABS_Y, 0xD9, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
   doCMP(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('CMP', MODE.IND_X, 0xC1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doCMP(address(memAccess(vZP), memAccess(vZP + 1))); return 6})
+  doCMP(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('CMP', MODE.IND_Y, 0xD1, 2, (vZP) => doIndirectYinstruction(vZP, doCMP))
 
 const doCPX = (addr: number) => {
-  setCarry(XReg >= memAccess(addr))
-  checkStatus((XReg - memAccess(addr) + 256) % 256)
+  setCarry(XReg >= memGet(addr))
+  checkStatus((XReg - memGet(addr) + 256) % 256)
 }
 PCODE('CPX', MODE.IMM, 0xE0, 2, (value) => {setCarry(XReg >= value);
   checkStatus((XReg - value + 256) % 256); return 2})
@@ -242,8 +242,8 @@ PCODE('CPX', MODE.ZP_REL, 0xE4, 2, (vZP) => {doCPX(vZP); return 3})
 PCODE('CPX', MODE.ABS, 0xEC, 3, (vLo, vHi) => {doCPX(address(vLo, vHi)); return 4})
 
 const doCPY = (addr: number) => {
-  setCarry(YReg >= memAccess(addr))
-  checkStatus((YReg - memAccess(addr) + 256) % 256)
+  setCarry(YReg >= memGet(addr))
+  checkStatus((YReg - memGet(addr) + 256) % 256)
 }
 PCODE('CPY', MODE.IMM, 0xC0, 2, (value) => {setCarry(YReg >= value);
   checkStatus((YReg - value + 256) % 256); return 2})
@@ -251,7 +251,7 @@ PCODE('CPY', MODE.ZP_REL, 0xC4, 2, (vZP) => {doCPY(vZP); return 3})
 PCODE('CPY', MODE.ABS, 0xCC, 3, (vLo, vHi) => {doCPY(address(vLo, vHi)); return 4})
 
 const doDEC = (addr: number) => {
-  const v = oneByteAdd(memAccess(addr), -1)
+  const v = oneByteAdd(memGet(addr), -1)
   memSet(addr, v)
   checkStatus(v)
 }
@@ -266,7 +266,7 @@ PCODE('DEY', MODE.IMPLIED, 0x88, 1, () => {YReg = oneByteAdd(YReg, -1);
   checkStatus(YReg); return 2})
 
 const doEOR = (addr: number) => {
-  Accum ^= memAccess(addr)
+  Accum ^= memGet(addr)
   checkStatus(Accum)
 }
 PCODE('EOR', MODE.IMM, 0x49, 2, (value) => {Accum ^= value; checkStatus(Accum); return 2})
@@ -278,11 +278,11 @@ PCODE('EOR', MODE.ABS_X, 0x5D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('EOR', MODE.ABS_Y, 0x59, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
   doEOR(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('EOR', MODE.IND_X, 0x41, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doEOR(address(memAccess(vZP), memAccess(vZP + 1))); return 6})
+  doEOR(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('EOR', MODE.IND_Y, 0x51, 2, (vZP) => doIndirectYinstruction(vZP, doEOR))
 
 const doINC = (addr: number) => {
-  const v = oneByteAdd(memAccess(addr), 1)
+  const v = oneByteAdd(memGet(addr), 1)
   memSet(addr, v)
   checkStatus(v)
 }
@@ -299,9 +299,9 @@ PCODE('INY', MODE.IMPLIED, 0xC8, 1, () => {YReg = oneByteAdd(YReg, 1);
 PCODE('JMP', MODE.ABS, 0x4C, 3, (vLo, vHi) => {PC = twoByteAdd(vLo, vHi, -3); return 3})
 // 65c02 - this fixes the 6502 indirect JMP bug across page boundaries
 PCODE('JMP', MODE.IND, 0x6C, 3, (vLo, vHi) => {const a = address(vLo, vHi);
-  vLo = memAccess(a); vHi = memAccess((a + 1) % 65536); PC = twoByteAdd(vLo, vHi, -3); return 6})
+  vLo = memGet(a); vHi = memGet((a + 1) % 65536); PC = twoByteAdd(vLo, vHi, -3); return 6})
 PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, XReg);
-  vLo = memAccess(a); vHi = memAccess((a + 1) % 65536); PC = twoByteAdd(vLo, vHi, -3); return 6})
+  vLo = memGet(a); vHi = memGet((a + 1) % 65536); PC = twoByteAdd(vLo, vHi, -3); return 6})
 
 PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
   const PC2 = (PC + 2) % 65536
@@ -309,7 +309,7 @@ PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
   PC = twoByteAdd(vLo, vHi, -3); return 6})
 
 const doLDA = (addr: number) => {
-  Accum = memAccess(addr)
+  Accum = memGet(addr)
   checkStatus(Accum)
 }
 PCODE('LDA', MODE.IMM, 0xA9, 2, (value) => {Accum = value; checkStatus(Accum); return 2})
@@ -321,13 +321,13 @@ PCODE('LDA', MODE.ABS_X, 0xBD, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('LDA', MODE.ABS_Y, 0xB9, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
   doLDA(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('LDA', MODE.IND_X, 0xA1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doLDA(address(memAccess(vZP), memAccess((vZP + 1) % 256))); return 6})
+  doLDA(address(memGet(vZP), memGet((vZP + 1) % 256))); return 6})
 PCODE('LDA', MODE.IND_Y, 0xB1, 2, (vZP) => doIndirectYinstruction(vZP, doLDA))
 PCODE('LDA', MODE.IND, 0xB2, 2, (vZP) => {
-  doLDA(address(memAccess(vZP), memAccess((vZP + 1) % 256))); return 5})
+  doLDA(address(memGet(vZP), memGet((vZP + 1) % 256))); return 5})
 
 const doLDX = (addr: number) => {
-  XReg = memAccess(addr)
+  XReg = memGet(addr)
   checkStatus(XReg)
 }
 PCODE('LDX', MODE.IMM, 0xA2, 2, (value) => {XReg = value; checkStatus(XReg); return 2})
@@ -338,7 +338,7 @@ PCODE('LDX', MODE.ABS_Y, 0xBE, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
   doLDX(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 
 const doLDY = (addr: number) => {
-  YReg = memAccess(addr)
+  YReg = memGet(addr)
   checkStatus(YReg)
 }
 PCODE('LDY', MODE.IMM, 0xA0, 2, (value) => {YReg = value; checkStatus(YReg); return 2})
@@ -349,7 +349,7 @@ PCODE('LDY', MODE.ABS_X, 0xBC, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
   doLDY(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 
 const doLSR = (addr: number) => {
-  let v = memAccess(addr)
+  let v = memGet(addr)
   setCarry((v & 1) === 1)
   v >>= 1
   memSet(addr, v)
@@ -366,7 +366,7 @@ PCODE('LSR', MODE.ABS_X, 0x5E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('NOP', MODE.IMPLIED, 0xEA, 1, () => {return 2})
 
 PCODE('ORA', MODE.IMM, 0x09, 2, (value) => {Accum |= value; checkStatus(Accum); return 2})
-PCODE('ORA', MODE.ZP_REL, 0x05, 2, (vZP) => {Accum |= memAccess(vZP); checkStatus(Accum); return 3})
+PCODE('ORA', MODE.ZP_REL, 0x05, 2, (vZP) => {Accum |= memGet(vZP); checkStatus(Accum); return 3})
 
 PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack(Accum); return 3})
 PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack(PStatus); return 3})
@@ -378,7 +378,7 @@ PCODE('PLX', MODE.IMPLIED, 0xFA, 1, () => {XReg = popStack(); checkStatus(XReg);
 PCODE('PLY', MODE.IMPLIED, 0x7A, 1, () => {YReg = popStack(); checkStatus(YReg); return 4})
 
 const doROL = (addr: number) => {
-  let v = memAccess(addr)
+  let v = memGet(addr)
   const bit0 = isCarry() ? 1 : 0;
   setCarry((v & 128) === 128)
   v = ((v << 1) % 256) | bit0
@@ -395,7 +395,7 @@ PCODE('ROL', MODE.ABS_X, 0x3E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
   return 6 + pageBoundary(addr, address(vLo, vHi))})
 
 const doROR = (addr: number) => {
-  let v = memAccess(addr)
+  let v = memGet(addr)
   const bit7 = isCarry() ? 128 : 0;
   setCarry((v & 1) === 1)
   v = (v >> 1) | bit7
@@ -414,7 +414,7 @@ PCODE('ROR', MODE.ABS_X, 0x7E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {PC = address(popStack(), popStack()); return 6})
 
 const doSBC = (addr: number) => {
-  doADC1(255 - memAccess(addr))
+  doADC1(255 - memGet(addr))
 }
 PCODE('SBC', MODE.IMM, 0xE9, 2, (value) => {doADC1(255 - value); return 2})
 PCODE('SBC', MODE.ZP_REL, 0xE5, 2, (vZP) => {doSBC(vZP); return 3})
@@ -425,7 +425,7 @@ PCODE('SBC', MODE.ABS_X, 0xFD, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 PCODE('SBC', MODE.ABS_Y, 0xF9, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
   doSBC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('SBC', MODE.IND_X, 0xE1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doSBC(address(memAccess(vZP), memAccess(vZP + 1))); return 6})
+  doSBC(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('SBC', MODE.IND_Y, 0xF1, 2, (vZP) => doIndirectYinstruction(vZP, doSBC))
 
 PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
@@ -443,7 +443,7 @@ PCODE('STA', MODE.ABS, 0x8D, 3, (vLo, vHi) => {memSet(address(vLo, vHi), Accum);
 PCODE('STA', MODE.ABS_X, 0x9D, 3, (vLo, vHi) => {memSet(twoByteAdd(vLo, vHi, XReg), Accum); return 5})
 PCODE('STA', MODE.ABS_Y, 0x99, 3, (vLo, vHi) => {memSet(twoByteAdd(vLo, vHi, YReg), Accum); return 5})
 PCODE('STA', MODE.IND_X, 0x81, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  memSet(address(memAccess(vZP), memAccess(vZP + 1)), Accum); return 6})
+  memSet(address(memGet(vZP), memGet(vZP + 1)), Accum); return 6})
 const doSTA = (addr: number) => {
   memSet(addr, Accum)
 }

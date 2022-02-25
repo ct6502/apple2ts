@@ -1,50 +1,14 @@
-import { doBoot6502, doReset, setSpeaker,
+import { doBoot6502, doReset,
   SWITCHES, getProcessorStatus, processInstruction, setDebug } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from './canvas'
 import disk2off from './img/disk2.png'
 import disk2on from './img/disk2on.png'
+import { getAudioContext } from "./speaker";
+import { track } from "./diskdrive"
 
 import React from "react";
 // import Test from "./components/test";
-
-let audioContext: AudioContext
-let speaker: OscillatorNode
-
-const getAudioContext = () => {
-  if (!audioContext) {
-    audioContext = new AudioContext()
-  }
-  return audioContext
-}
-
-// https://marcgg.com/blog/2016/11/01/javascript-audio/
-let speakerStartTime = -99;
-const duration = 0.1
-const clickSpeaker = () => {
-  if (getAudioContext().state !== "running") {
-    audioContext.resume();
-  }
-  if ((speakerStartTime + 2*duration) >= audioContext.currentTime) {
-    return
-  }
-  try {
-    speaker = audioContext.createOscillator();
-    speaker.type = "square";
-    speaker.frequency.value = 930
-    const gain = audioContext.createGain();
-    speaker.connect(gain);
-    gain.connect(audioContext.destination);
-    gain.gain.value = 0.25;
-    speakerStartTime = audioContext.currentTime;
-    speaker.start(speakerStartTime);
-    speaker.stop(speakerStartTime + duration);
-  } catch (error) {
-    console.error("error")
-  }
-};
-
-setSpeaker(clickSpeaker);
 
 enum STATE {
   IDLE,
@@ -53,7 +17,6 @@ enum STATE {
   IS_RUNNING,
   PAUSED
 }
-
 
 class DisplayApple2 extends React.Component<{},
   { _6502: STATE; tick: number; speedCheck: boolean }> {
@@ -206,7 +169,7 @@ class DisplayApple2 extends React.Component<{},
           <button
             onClick={() => {
               if (getAudioContext().state !== "running") {
-                audioContext.resume();
+                getAudioContext().resume();
               }
               this.setState({ _6502: STATE.NEED_BOOT });
             }}>
@@ -215,7 +178,7 @@ class DisplayApple2 extends React.Component<{},
           <button
             onClick={() => {
               if (getAudioContext().state !== "running") {
-                audioContext.resume();
+                getAudioContext().resume();
               }
               this.setState({ _6502: STATE.NEED_RESET });
             }}
@@ -236,17 +199,20 @@ class DisplayApple2 extends React.Component<{},
           </button>
         </span>
         <span className="rightStatus">
-          <button className="disk2">
-            <img src={SWITCHES.DRIVE.set ? disk2on : disk2off} alt="Disk2"
-              onClick={() => this.hiddenFileInput!.click()} />
-          </button>
-        <input
-          type="file"
-          ref={input => this.hiddenFileInput = input}
-          onChange={this.handleDiskClick}
-          style={{display: 'none'}}
-        />
-      </span>
+          <span className = "floatRight">
+            <span className="fixed">{track}</span>
+            <button className="disk2">
+              <img src={SWITCHES.DRIVE.set ? disk2on : disk2off} alt="Disk2"
+                onClick={() => this.hiddenFileInput!.click()} />
+            </button>
+            <input
+              type="file"
+              ref={input => this.hiddenFileInput = input}
+              onChange={this.handleDiskClick}
+              style={{display: 'none'}}
+            />
+          </span>
+        </span>
       </div>
     );
   }

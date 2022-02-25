@@ -5,6 +5,8 @@ import { Accum, XReg, YReg, PStatus, SP,
 import { rom } from "./roms/rom_2+.base64";
 import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
+import { clickSpeaker } from "./speaker"
+import { handleDriveSwitch, doResetDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
 
@@ -18,6 +20,7 @@ export const doReset = () => {
   setPStatus(0b00100100)
   setSP(0xFF)
   setPC(bank0[0xFFFD] * 256 + bank0[0xFFFC]);
+  doResetDrive()
 }
 
 export const doBoot6502 = () => {
@@ -25,12 +28,6 @@ export const doBoot6502 = () => {
   bank0.set(Buffer.from(rom.replaceAll('\n', ''), 'base64'), 0xC000)
   doReset()
 }
-
-let clickSpeaker = () => {}
-export const setSpeaker = (speakFunc: () => void) => {
-  clickSpeaker = speakFunc
-}
-
 
 type softSwitch = {
   addrOff: number
@@ -57,31 +54,34 @@ export const SWITCHES = {
   DRVWRITE: NewSwitch(0xC08E + SLOT6),
 }
 
-export const memAccess = (address: number) => {
-  if (address >= 0xC000) {
-    if (address === 0xC010) {
+export const memGet = (addr: number) => {
+  if (addr >= 0xC000) {
+    if (addr === 0xC010) {
       bank0[0xC000] &= 0x01111111
       popKey()
-    } else if (address === 0xC030) {
+    } else if (addr === 0xC030) {
       clickSpeaker()
     } else {
       for (const [, sswitch] of Object.entries(SWITCHES)) {
-        if (address === sswitch.addrOff) {
+        if (addr === sswitch.addrOff) {
           sswitch.set = false
           break
-        } else if (address === sswitch.addrOn) {
+        } else if (addr === sswitch.addrOn) {
           sswitch.set = true
           break
         }
       }
+      if (addr >= SWITCHES.DRVSM0.addrOff && addr <= SWITCHES.DRVWRITE.addrOn) {
+        handleDriveSwitch(addr)
+      }
     }
   }
-  return bank0[address]
+  return bank0[addr]
 }
 
 export const memSet = (address: number, value: number) => {
   if (address >= 0xC000) {
-    memAccess(address)
+    memGet(address)
     return
   }
   bank0[address] = value

@@ -96,8 +96,11 @@ button:disabled {
   cursor: default;
 }
 
-.disk2 {
+.floatRight {
   float: right;
+}
+
+.disk2 {
   padding: 0;
   font-size: 0px;
   border: 1;
