@@ -1,4 +1,4 @@
-import { pcodes, MODE } from "./instructions";
+import { pcodes, MODE, isRelativeInstr } from "./instructions";
 import { toHex } from "./motherboard";
 
 const parseOperand = (operand: string): [MODE, number] => {
@@ -34,10 +34,6 @@ const parseOperand = (operand: string): [MODE, number] => {
 
   return [mode, value]
 }
-
-
-// A hack to determine if this is a relative instruction.
-const isRelativeInstr = (instr: string) => instr.startsWith('B') && instr !== "BIT"
 
 
 let labels: { [key: string]: number } = {};

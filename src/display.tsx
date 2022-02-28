@@ -1,11 +1,9 @@
 import { doBoot6502, doReset,
-  SWITCHES, getProcessorStatus, processInstruction, setDebug } from "./motherboard";
+  getProcessorStatus, processInstruction, setDebug } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from './canvas'
-import disk2off from './img/disk2.png'
-import disk2on from './img/disk2on.png'
 import { getAudioContext } from "./speaker";
-import { track } from "./diskdrive"
+import DiskDrive from "./diskdrive"
 
 import React from "react";
 // import Test from "./components/test";
@@ -116,21 +114,6 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
-  // Hidden file input element
-  hiddenFileInput: HTMLInputElement | null = null;
-
-  readDisk = async (file: File) => {
-    const buffer = await file.arrayBuffer();
-    const array = new Uint8Array(buffer);
-    console.log(array[0])
-  }
-
-  handleDiskClick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target?.files?.length) {
-      this.readDisk(e.target.files[0])
-    }
-  };
-
   render() {
     const cycleTime = Math.abs(this.cycleTime[this.iCycle]).toFixed(3)
     const speed = (this.speed[this.iSpeed] / 1000).toFixed(3)
@@ -200,17 +183,7 @@ class DisplayApple2 extends React.Component<{},
         </span>
         <span className="rightStatus">
           <span className = "floatRight">
-            <span className="fixed">{track}</span>
-            <button className="disk2">
-              <img src={SWITCHES.DRIVE.set ? disk2on : disk2off} alt="Disk2"
-                onClick={() => this.hiddenFileInput!.click()} />
-            </button>
-            <input
-              type="file"
-              ref={input => this.hiddenFileInput = input}
-              onChange={this.handleDiskClick}
-              style={{display: 'none'}}
-            />
+            <DiskDrive/>
           </span>
         </span>
       </div>

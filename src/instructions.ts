@@ -97,6 +97,9 @@ export interface PCodeInstr {
     execute: PCodeFunc
 }
 
+// A hack to determine if this is a relative instruction.
+export const isRelativeInstr = (instr: string) => instr.startsWith('B') && instr !== "BIT" && instr !== "BRK"
+
 // Return number of clock cycles taken
 export const doBranch = (takeBranch: boolean, offset: number) => {
   if (takeBranch) {
@@ -365,8 +368,21 @@ PCODE('LSR', MODE.ABS_X, 0x5E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 
 PCODE('NOP', MODE.IMPLIED, 0xEA, 1, () => {return 2})
 
+const doORA = (addr: number) => {
+  Accum |= memGet(addr)
+  checkStatus(Accum)
+}
 PCODE('ORA', MODE.IMM, 0x09, 2, (value) => {Accum |= value; checkStatus(Accum); return 2})
-PCODE('ORA', MODE.ZP_REL, 0x05, 2, (vZP) => {Accum |= memGet(vZP); checkStatus(Accum); return 3})
+PCODE('ORA', MODE.ZP_REL, 0x05, 2, (vZP) => {doORA(vZP); return 3})
+PCODE('ORA', MODE.ZP_X, 0x15, 2, (vZP) => {doORA(oneByteAdd(vZP, XReg)); return 4})
+PCODE('ORA', MODE.ABS, 0x0D, 3, (vLo, vHi) => {doORA(address(vLo, vHi)); return 4})
+PCODE('ORA', MODE.ABS_X, 0x1D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
+  doORA(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('ORA', MODE.ABS_Y, 0x19, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
+  doORA(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('ORA', MODE.IND_X, 0x01, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
+  doORA(address(memGet(vZP), memGet(vZP + 1))); return 6})
+PCODE('ORA', MODE.IND_Y, 0x11, 2, (vZP) => doIndirectYinstruction(vZP, doORA))
 
 PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack(Accum); return 3})
 PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack(PStatus); return 3})
@@ -429,6 +445,8 @@ PCODE('SBC', MODE.IND_X, 0xE1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, 
 PCODE('SBC', MODE.IND_Y, 0xF1, 2, (vZP) => doIndirectYinstruction(vZP, doSBC))
 
 PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
+
+PCODE('SEI', MODE.IMPLIED, 0x78, 1, () => {setInterrupt(); return 2})
 
 // Zero Page     STA $44       $85  2   3
 // Zero Page,X   STA $44,X     $95  2   4

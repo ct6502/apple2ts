@@ -1,6 +1,6 @@
 import { Accum, XReg, YReg, PStatus, SP,
   setAccum, setXregister, setYregister, setPStatus, setSP, setPC,
-  pcodes, PC, MODE,
+  pcodes, PC, MODE, isRelativeInstr,
   address, incrementPC } from './instructions'
 import { rom } from "./roms/rom_2+.base64";
 import { Buffer } from "buffer";
@@ -54,7 +54,7 @@ export const SWITCHES = {
   DRVWRITE: NewSwitch(0xC08E + SLOT6),
 }
 
-export const memGet = (addr: number) => {
+export const memGet = (addr: number): number => {
   if (addr >= 0xC000) {
     if (addr === 0xC010) {
       bank0[0xC000] &= 0x01111111
@@ -72,7 +72,7 @@ export const memGet = (addr: number) => {
         }
       }
       if (addr >= SWITCHES.DRVSM0.addrOff && addr <= SWITCHES.DRVWRITE.addrOn) {
-        handleDriveSwitch(addr)
+        return handleDriveSwitch(addr)
       }
     }
   }
@@ -140,16 +140,22 @@ export const getInstrString = (instr: number, vLo: number, vHi: number) => {
       prefix = `    ${code.name}   ${prefix}$`
       result += `${toHex(vLo)} `
     }
-    switch (code.PC) {
-      case 1:
-        result += `         ${code.name}`
-        break;
-      case 2:
-        result += `  ${prefix}${toHex(vLo)}${suffix}`
-        break;
-      case 3:
-        result += `${toHex(vHi)}${prefix}${toHex(address(vLo, vHi), 4)}${suffix}`
-        break;
+    if (isRelativeInstr(code.name)) {
+      // The extra +2 is for the branch instruction itself
+      const addr = PC + 2 + ((vLo > 127) ? (vLo - 256) : vLo)
+      result += `  ${prefix}${toHex(addr, 4)}${suffix}`
+    } else {
+      switch (code.PC) {
+        case 1:
+          result += `         ${code.name}`
+          break;
+        case 2:
+          result += `  ${prefix}${toHex(vLo)}${suffix}`
+          break;
+        case 3:
+          result += `${toHex(vHi)}${prefix}${toHex(address(vLo, vHi), 4)}${suffix}`
+          break;
+      }
     }
   } else {
     result += "         ???"
@@ -194,16 +200,15 @@ export const processInstruction = () => {
   // const bank0local = bank0
   if (code) {
     const PC1 = PC
-    // if (PC1 === 0xC638) {
-    //    doDebug = true
-    //    console.log("stop!")
-    // }
-    cycles = code.execute(vLo, vHi);
-    // Do not output during the Apple II's WAIT subroutine
+    if (PC1 === 0xC6A6) {
+//        doDebug = true
+    }
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;
       console.log(out);
     }
+    cycles = code.execute(vLo, vHi);
+    // Do not output during the Apple II's WAIT subroutine
     if (Accum > 255 || Accum < 0) {
       console.error("Out of bounds")
       return 0

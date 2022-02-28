@@ -13,6 +13,7 @@ export const getAudioContext = () => {
 let speakerStartTime = -99;
 const duration = 0.1
 export const clickSpeaker = () => {
+  if (true) return
   if (getAudioContext().state !== "running") {
     audioContext.resume();
   }
