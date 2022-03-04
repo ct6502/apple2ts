@@ -6,7 +6,7 @@ import { rom } from "./roms/rom_2+.base64";
 import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
 import { clickSpeaker } from "./speaker"
-import { handleDriveSwitch, doResetDrive } from "./diskdrive"
+import { handleDriveSoftSwitches, doResetDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
 
@@ -72,7 +72,7 @@ export const memGet = (addr: number): number => {
         }
       }
       if (addr >= SWITCHES.DRVSM0.addrOff && addr <= SWITCHES.DRVWRITE.addrOn) {
-        return handleDriveSwitch(addr)
+        return handleDriveSoftSwitches(addr)
       }
     }
   }
@@ -87,8 +87,8 @@ export const memSet = (address: number, value: number) => {
   bank0[address] = value
 }
 
-const toBinary = (value: number) => {
-  return ('00000000' + value.toString(2)).slice(-8)
+export const toBinary = (value: number, ndigits=8) => {
+  return ('0000000000000000' + value.toString(2)).slice(-ndigits)
 }
 
 export const toHex = (value: number, ndigits = 2) => {
@@ -189,6 +189,8 @@ export function getHGR(page2: boolean) {
   return hgrPage;
 }
 
+// let zpPrev = new Uint8Array(1)
+
 export const processInstruction = () => {
   let cycles = 0;
   const instr = bank0[PC]
@@ -200,12 +202,23 @@ export const processInstruction = () => {
   // const bank0local = bank0
   if (code) {
     const PC1 = PC
-    if (PC1 === 0xC6A6) {
-//        doDebug = true
+    if (PC1 === 0xB9F7 && Accum === 0x64 && SP === 0xD8) {
+      doDebug = false
     }
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;
       console.log(out);
+      doDebug = true
+      // const zp = bank0.slice(0, 256)
+      // if (zpPrev.length === 1) zpPrev = zp
+      // let diff = ''
+      // for (let i = 0; i < 256; i++) {
+      //   if (zp[i] !== zpPrev[i]) {
+      //     diff += " " + toHex(i) + ":" + toHex(zpPrev[i]) + ">" + toHex(zp[i])
+      //   }        
+      // }
+//      if (diff !== '') console.log(diff)
+//      zpPrev = zp
     }
     cycles = code.execute(vLo, vHi);
     // Do not output during the Apple II's WAIT subroutine

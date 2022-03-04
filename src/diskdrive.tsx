@@ -6,30 +6,16 @@ import disk2offEmpty from './img/disk2off-empty.png'
 import disk2onEmpty from './img/disk2on-empty.png'
 import driveMotor from './audio/driveMotor.mp3'
 import driveTrack from './audio/driveTrack.mp3'
+import { toHex } from "./motherboard";
 
-
-// export const SWITCHES = {
-//   TEXT: NewSwitch(0xC050, 0xC051, true),
-//   MIXED: NewSwitch(0xC052),
-//   PAGE2: NewSwitch(0xC054),
-//   HIRES: NewSwitch(0xC056),
-//   DRVSM0: NewSwitch(0xC080 + SLOT6),
-//   DRVSM1: NewSwitch(0xC082 + SLOT6),
-//   DRVSM2: NewSwitch(0xC084 + SLOT6),
-//   DRVSM3: NewSwitch(0xC086 + SLOT6),
-//   DRIVE: NewSwitch(0xC088 + SLOT6),
-//   DRVSEL: NewSwitch(0xC08A + SLOT6),
-//   DRVDATA: NewSwitch(0xC08C + SLOT6),
-//   DRVWRITE: NewSwitch(0xC08E + SLOT6),
-// }
 
 export let track = 0
 let readMode = false
-let previousMotor = -1
+let currentPhase = 0
 
 export const doResetDrive = () => {
   track = 17
-  previousMotor = -1
+  currentPhase = 0
   SWITCHES.DRIVE.set = false
 }
 
@@ -38,9 +24,10 @@ let motorElement: HTMLAudioElement | undefined
 let motorTimeout = 0
 
 let trackStart: Array<number> = new Array(40)
-let trackBits: Array<number> = new Array(40)
-let diskData: Uint8Array = new Uint8Array()
+let trackNbits: Array<number> = new Array(40)
+let diskData = new Uint8Array()
 let trackLocation = 0
+let isWriteProtected = false
 
 let trackContext: AudioContext | undefined
 let trackElement: HTMLAudioElement | undefined
@@ -84,71 +71,97 @@ const moveHead = (offset: number) => {
     playTrackOutOfRange()
     track = (track < 0) ? 0 : (track > 34 ? 34 : track)
   } else {
-
   }
 }
 
-export const handleDriveSwitch = (addr: number): number => {
+const getNextBit = () => {
+  trackLocation = trackLocation % trackNbits[track]
+  const fileOffset = trackStart[track] + (trackLocation >> 3)
+  let byte = diskData[fileOffset]
+  let bit = (byte & 2**(7 - trackLocation % 8)) ? 1 : 0
+  trackLocation++
+  return bit
+}
+
+const getNextByte = () => {
+  if (diskData.length === 0) {
+    return 0
+  }
   let result = 0
-  const i = SWITCHES.DRVSM0.addrOn
-  const motorAddresses = [i, i+2, i+4, i+6];
-  const offsetMotor = [1, 2, 3, 0]
-  let currentMotor = motorAddresses.findIndex((i) => i === addr)
-  if (currentMotor >= 0) {
-    if (previousMotor >= 0) {
-      if (offsetMotor[previousMotor] === currentMotor) {
+  let bit = 0
+  while (bit === 0) {
+    bit = getNextBit()
+  }
+  result = 0x80
+  for (let i = 6; i >= 0; i--) {
+    result |= getNextBit() << i
+  }
+  console.log(" trackLocation=" + trackLocation +
+    "  byte=" + toHex(result))
+  return result
+}
+
+export const handleDriveSoftSwitches = (addr: number): number => {
+  let result = 0
+  const phaseSwitches = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
+    SWITCHES.DRVSM2, SWITCHES.DRVSM3]
+  const a = addr - SWITCHES.DRVSM0.addrOff
+  // One of the stepper motors has been turned on or off
+  if (a >= 0 && a <= 7) {
+    const ascend = phaseSwitches[(currentPhase + 1) % 4]
+    const descend = phaseSwitches[(currentPhase + 3) % 4]
+    if (!phaseSwitches[currentPhase].set) {
+      if (ascend.set) {
         moveHead(0.5)
-      } else if (offsetMotor[currentMotor] === previousMotor) {
+        currentPhase = (currentPhase + 1) % 4
+        console.log("***** phase curr=" + currentPhase + " track=" + track)
+      } else if (descend.set) {
         moveHead(-0.5)
+        currentPhase = (currentPhase + 3) % 4
+        console.log("***** phase curr=" + currentPhase + " track=" + track)
       }
     }
-//    console.log("phase curr=" + currentMotor + " prev=" + previousMotor + " track=" + track)
-    previousMotor = currentMotor
   } else if (addr === SWITCHES.DRVWRITE.addrOff) {
     readMode = true
+    if (SWITCHES.DRVDATA.set) {
+      result = isWriteProtected ? 0xFF : 0
+    }
   } else if (addr === SWITCHES.DRVWRITE.addrOn) {
     readMode = false
   } else if (addr === SWITCHES.DRVDATA.addrOff && readMode) {
-    if (diskData.length > 0) {
-      trackLocation = trackLocation % trackBits[track]
-      const fileOffset = trackStart[track] + (trackLocation >> 3)
-      if ((fileOffset) < diskData.length) {
-        const data = (diskData[fileOffset] << 8) | diskData[fileOffset + 1]
-        const startBit = trackLocation % 8
-        // Strip off bits from front, and keep 10 bits
-        result = (data & (2**(16 - startBit) - 1)) >> (6 - startBit)
-        if (result === 0b1111111100) {
-          trackLocation += 10
-          result = 0xFF
-        } else {
-          trackLocation += 8
-          result = result >> 2
-        }
-//        console.log("  byte=" + result.toString(16))
-      } else {
-        console.error("diskData: out of range subscript")
-      }
-    }
+    result = getNextByte()
   }
   return result
 }
 
-const decodeWoz2 = () => {
+const decodeDiskData = () => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
-  for (let i = 0; i < woz2.length; i++) {
-    if (diskData[i] !== woz2[i]) {
-      console.log("Illegal WOZ2 file")
-      diskData = new Uint8Array()
-      return
+  const isWoz2 = woz2.find((value, i) => value !== diskData[i]) === undefined
+  if (isWoz2) {
+    isWriteProtected = diskData[22] === 1
+    for (let track=0; track < 40; track++) {
+      const tmap_value = 256 + 8*diskData[88 + track*4]
+      const trk = diskData.slice(tmap_value, tmap_value + 8)
+      trackStart[track] = 512*(trk[0] + (trk[1] << 8))
+      // const nBlocks = trk[2] + (trk[3] << 8)
+      trackNbits[track] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + (trk[7] << 24)
     }
+    return
   }
-  for (let track=0; track < 40; track++) {
-    const index = 256 + 8*diskData[88 + track*4]
-    const trk = diskData.slice(index, index + 8)
-    trackStart[track] = 512*(trk[0] + (trk[1] << 8))
-    // const nBlocks = trk[2] + (trk[3] << 8)
-    trackBits[track] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + (trk[7] << 24)
+  const woz1 = [0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A]
+  const isWoz1 = woz1.find((value, i) => value !== diskData[i]) === undefined
+  if (isWoz1) {
+    isWriteProtected = diskData[22] === 1
+    for (let track=0; track < 40; track++) {
+      const tmap_value = diskData[88 + track*4]
+      trackStart[track] = 256 + tmap_value * 6656
+      const trk = diskData.slice(trackStart[track] + 6646, trackStart[track] + 6656)
+      trackNbits[track] = trk[2] + (trk[3] << 8)
+    }
+    return
   }
+  console.error("Unknown disk format.")
+  diskData = new Uint8Array()
 }
 
 const doMotorTimeout = () => {
@@ -206,7 +219,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
   readDisk = async (file: File) => {
     const buffer = await file.arrayBuffer();
     diskData = new Uint8Array(buffer);
-    decodeWoz2()
+    decodeDiskData()
     this.setState({
       fileName: (diskData.length > 0) ? file.name : '',
     });
