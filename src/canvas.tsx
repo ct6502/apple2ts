@@ -8,7 +8,7 @@ const cwidth = 20
 const cheight = 24
 const width = cwidth*40 + 2*xmargin
 const height = cheight*24 + 2*ymargin
-let refresh = 0
+let frameCount = 0
 
 const lores = [
   [  0,   0,   0], //black   
@@ -39,7 +39,7 @@ for (let c = 0; c < 16; c++) {
   const textPage = getTextPage(textPage2)
   ctx.font = cheight + "px PrintChar21"
   const jstart = mixedMode ? 20 : 0
-  const doFlashCycle = (Math.trunc(refresh / 24) % 2) === 0
+  const doFlashCycle = (Math.trunc(frameCount / 12) % 2) === 0
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymargin + (j + 1)*cheight - 3
@@ -150,7 +150,9 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
     xmargin, ymargin, width - 2*xmargin, imgHeight);
 };
 
-const processDisplay = (ctx: CanvasRenderingContext2D) => {
+const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number) => {
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, width, height);
   if (SWITCHES.TEXT.set) {
     processTextPage(ctx, SWITCHES.PAGE2.set)
     return
@@ -177,7 +179,8 @@ const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
   if (key > 0) {
     keyPress(key);
   } else {
-    console.log("key=" + e.key + " code=" + e.code + " ctrl=" + e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
+    // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
+    //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
   }
 };
 
@@ -200,34 +203,40 @@ const pasteHandler = (e: ClipboardEvent) => {
 
 const Apple2Canvas = (props: any) => {
   let canvasRef = useRef<HTMLCanvasElement | null>(null);
-  let canvasCtxRef = React.useRef<CanvasRenderingContext2D | null>(null);
 
   // This code only runs once when the component first renders
   useEffect(() => {
+    let context: CanvasRenderingContext2D | null
+    let animationFrameId = 0
     if (canvasRef.current) {
-      canvasCtxRef.current = canvasRef.current.getContext('2d');
+      context = canvasRef.current.getContext('2d');
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
+
+    const render = () => {
+      frameCount++
+      if (context) {
+        processDisplay(context, frameCount)
+      }
+      animationFrameId = window.requestAnimationFrame(render)
+    }
+    render()
+
     // Return a cleanup function when component unmounts
     return () => {
       window.removeEventListener("paste", paste)
+      window.cancelAnimationFrame(animationFrameId)
     }
   }, []);
 
-  refresh++
-  const ctx = canvasCtxRef.current;
-  if (ctx) {
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, width, height);
-    processDisplay(ctx)
-  }
   return <canvas ref={canvasRef}
     height={height} width={width}
     tabIndex={0}
     onKeyDown={handleKeyDown}
-    onKeyUp={handleKeyUp}>
-    </canvas>
+    onKeyUp={handleKeyUp}
+    onMouseEnter={() => {canvasRef.current?.focus()}}
+    />
 };
 
 export default Apple2Canvas;

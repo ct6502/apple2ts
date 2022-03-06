@@ -5,8 +5,9 @@ import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
 import disk2onEmpty from './img/disk2on-empty.png'
 import driveMotor from './audio/driveMotor.mp3'
-import driveTrack from './audio/driveTrack.mp3'
-import { toHex } from "./motherboard";
+import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
+import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
+import { toHex, doDebug } from "./motherboard";
 
 
 export let track = 0
@@ -14,8 +15,6 @@ let readMode = false
 let currentPhase = 0
 
 export const doResetDrive = () => {
-  track = 17
-  currentPhase = 0
   SWITCHES.DRIVE.set = false
 }
 
@@ -29,35 +28,62 @@ let diskData = new Uint8Array()
 let trackLocation = 0
 let isWriteProtected = false
 
-let trackContext: AudioContext | undefined
-let trackElement: HTMLAudioElement | undefined
+let trackSeekContext: AudioContext | undefined
+let trackSeekElement: HTMLAudioElement | undefined
+let trackOffEndContext: AudioContext | undefined
+let trackOffEndElement: HTMLAudioElement | undefined
 let trackTimeout = 0
 //let startTime = 0
 
 const playTrackOutOfRange = () => {
-  // const p = performance.now()
-  // console.log(" time=" + (p - startTime))
-  // startTime = p
-  if (!trackContext) {
-    trackContext = new AudioContext();
-    trackElement = new Audio(driveTrack);
-    trackElement.volume = 0.25
-    const node = trackContext.createMediaElementSource(trackElement);
-    node.connect(trackContext.destination);
+  if (!trackOffEndContext) {
+    trackOffEndContext = new AudioContext();
+    trackOffEndElement = new Audio(driveTrackOffEnd);
+    trackOffEndElement.volume = 0.5
+    const node = trackOffEndContext.createMediaElementSource(trackOffEndElement);
+    node.connect(trackOffEndContext.destination);
   }
-  if (trackContext.state === 'suspended') {
-    trackContext.resume();
+  if (trackOffEndContext.state === 'suspended') {
+    trackOffEndContext.resume();
   }
-  if (!trackElement?.paused) {
+  if (!trackOffEndElement?.paused) {
     window.clearTimeout(trackTimeout)
-    trackTimeout = window.setTimeout(() => trackElement?.pause(), 309);
+    trackTimeout = window.setTimeout(() => trackOffEndElement?.pause(), 309);
     return
   }
-  const playPromise = trackElement?.play();
+  const playPromise = trackOffEndElement?.play();
   if (playPromise) {
     playPromise.then(function() {
       window.clearTimeout(trackTimeout)
-      trackTimeout = window.setTimeout(() => trackElement?.pause(), 309);
+      trackTimeout = window.setTimeout(() => trackOffEndElement?.pause(), 309);
+
+    }).catch(function(error) {
+      console.log(error)
+    });
+  }
+}
+
+const playTrackSeek = () => {
+  if (!trackSeekContext) {
+    trackSeekContext = new AudioContext();
+    trackSeekElement = new Audio(driveTrackSeek);
+    trackSeekElement.volume = 0.75
+    const node = trackSeekContext.createMediaElementSource(trackSeekElement);
+    node.connect(trackSeekContext.destination);
+  }
+  if (trackSeekContext.state === 'suspended') {
+    trackSeekContext.resume();
+  }
+  if (!trackSeekElement?.paused) {
+    window.clearTimeout(trackTimeout)
+    trackTimeout = window.setTimeout(() => trackSeekElement?.pause(), 50);
+    return
+  }
+  const playPromise = trackSeekElement?.play();
+  if (playPromise) {
+    playPromise.then(function() {
+      window.clearTimeout(trackTimeout)
+      trackTimeout = window.setTimeout(() => trackSeekElement?.pause(), 50);
 
     }).catch(function(error) {
       console.log(error)
@@ -71,6 +97,7 @@ const moveHead = (offset: number) => {
     playTrackOutOfRange()
     track = (track < 0) ? 0 : (track > 34 ? 34 : track)
   } else {
+    playTrackSeek()
   }
 }
 
@@ -96,8 +123,10 @@ const getNextByte = () => {
   for (let i = 6; i >= 0; i--) {
     result |= getNextBit() << i
   }
-  console.log(" trackLocation=" + trackLocation +
-    "  byte=" + toHex(result))
+  if (doDebug) {
+    console.log(" trackLocation=" + trackLocation +
+      "  byte=" + toHex(result))
+  }
   return result
 }
 
@@ -114,11 +143,15 @@ export const handleDriveSoftSwitches = (addr: number): number => {
       if (ascend.set) {
         moveHead(0.5)
         currentPhase = (currentPhase + 1) % 4
-        console.log("***** phase curr=" + currentPhase + " track=" + track)
+        if (doDebug) {
+          console.log("***** phase curr=" + currentPhase + " track=" + track)
+        }
       } else if (descend.set) {
         moveHead(-0.5)
         currentPhase = (currentPhase + 3) % 4
-        console.log("***** phase curr=" + currentPhase + " track=" + track)
+        if (doDebug) {
+          console.log("***** phase curr=" + currentPhase + " track=" + track)
+        }
       }
     }
   } else if (addr === SWITCHES.DRVWRITE.addrOff) {
@@ -169,7 +202,7 @@ const doMotorTimeout = () => {
   motorTimeout = 0
 }
 
-const handleMotorAudio = () => {
+const playMotorNoise = () => {
   if (!SWITCHES.DRIVE.set) {
     return
   }
@@ -177,7 +210,7 @@ const handleMotorAudio = () => {
     motorContext = new AudioContext();
     motorElement = new Audio(driveMotor);
     motorElement.loop = true
-    motorElement.volume = 0.25
+    motorElement.volume = 0.5
     document.body.appendChild(motorElement);
     const node = motorContext.createMediaElementSource(motorElement);
     node.connect(motorContext.destination);
@@ -232,7 +265,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
   };
 
   render() {
-    handleMotorAudio()
+    playMotorNoise()
     const img = (diskData.length > 0) ?
       (motorTimeout ? disk2on : disk2off) :
       (motorTimeout ? disk2onEmpty : disk2offEmpty)

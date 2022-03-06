@@ -10,7 +10,8 @@ import { handleDriveSoftSwitches, doResetDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
 
-let doDebug = false
+export let doDebug = false
+let doDebugZeroPage = false
 export const setDebug = (debug = true) => doDebug = debug;
 
 export const doReset = () => {
@@ -189,7 +190,19 @@ export function getHGR(page2: boolean) {
   return hgrPage;
 }
 
-// let zpPrev = new Uint8Array(1)
+let zpPrev = new Uint8Array(1)
+const debugZeroPage = () => {
+  const zp = bank0.slice(0, 256)
+  if (zpPrev.length === 1) zpPrev = zp
+  let diff = ''
+  for (let i = 0; i < 256; i++) {
+    if (zp[i] !== zpPrev[i]) {
+      diff += " " + toHex(i) + ":" + toHex(zpPrev[i]) + ">" + toHex(zp[i])
+    }        
+  }
+  if (diff !== '') console.log(diff)
+  zpPrev = zp
+}
 
 export const processInstruction = () => {
   let cycles = 0;
@@ -208,17 +221,9 @@ export const processInstruction = () => {
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;
       console.log(out);
-      doDebug = true
-      // const zp = bank0.slice(0, 256)
-      // if (zpPrev.length === 1) zpPrev = zp
-      // let diff = ''
-      // for (let i = 0; i < 256; i++) {
-      //   if (zp[i] !== zpPrev[i]) {
-      //     diff += " " + toHex(i) + ":" + toHex(zpPrev[i]) + ">" + toHex(zp[i])
-      //   }        
-      // }
-//      if (diff !== '') console.log(diff)
-//      zpPrev = zp
+      if (doDebugZeroPage) {
+        debugZeroPage()
+      }
     }
     cycles = code.execute(vLo, vHi);
     // Do not output during the Apple II's WAIT subroutine
