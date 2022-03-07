@@ -71,7 +71,7 @@ g39dzLX8Fxf1A/sDYvr6ww==`
 
 [NMOS 6502 Opcodes](http://www.6502.org/tutorials/6502opcodes.html)
 
-[6502 Programmers Reference](https://www.csh.rit.edu/~moffitt/docs/6502.html#CLI)
+[6502 Programmers Reference](https://www.csh.rit.edu/~moffitt/docs/6502.html)
 
 [Assembly Lines: The Complete Book](https://archive.org/details/AssemblyLinesCompleteWagner)
 

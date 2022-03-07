@@ -75,12 +75,12 @@ for (let c = 0; c < 16; c++) {
 const processLoRes = (ctx: CanvasRenderingContext2D,
   textPage2: boolean, mixedMode = false) => {
   const textPage = getTextPage(textPage2)
-  const jstop = mixedMode ? 20 : 24
+  const bottom = mixedMode ? 20 : 24
 
-  for (let j = 0; j < jstop; j++) {
-    const yposUpper = ymargin + j*cheight
+  for (let y = 0; y < bottom; y++) {
+    const yposUpper = ymargin + y*cheight
     const yposLower = yposUpper + cheight/2
-    textPage.slice(j * 40, (j + 1) * 40).forEach((value, i) => {
+    textPage.slice(y * 40, (y + 1) * 40).forEach((value, i) => {
       const xpos = xmargin + i*cwidth
       const upperBlock = value % 16
       const lowerBlock = Math.trunc(value / 16)
