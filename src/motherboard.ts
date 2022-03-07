@@ -10,6 +10,8 @@ import { handleDriveSoftSwitches, doResetDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
 
+let cycleCount = 0;
+
 export let doDebug = false
 let doDebugZeroPage = false
 export const setDebug = (debug = true) => doDebug = debug;
@@ -61,7 +63,7 @@ export const memGet = (addr: number): number => {
       bank0[0xC000] &= 0x01111111
       popKey()
     } else if (addr === 0xC030) {
-      clickSpeaker()
+      clickSpeaker(cycleCount)
     } else {
       for (const [, sswitch] of Object.entries(SWITCHES)) {
         if (addr === sswitch.addrOff) {
@@ -231,6 +233,7 @@ export const processInstruction = () => {
       console.error("Out of bounds")
       return 0
     }
+    cycleCount += cycles
     incrementPC(code.PC);
   } else {
     console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(PC, 4))

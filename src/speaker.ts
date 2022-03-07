@@ -1,35 +1,30 @@
 
 let audioContext: AudioContext
-let speaker: OscillatorNode
+let speaker: AudioWorkletNode
+
+const startOscillator = async () => {
+  audioContext = new AudioContext()
+  await audioContext.audioWorklet.addModule('worklet/oscillator.js')
+  speaker = new AudioWorkletNode(audioContext, 'oscillator')
+  speaker.connect(audioContext.destination)
+}
 
 export const getAudioContext = () => {
   if (!audioContext) {
-    audioContext = new AudioContext()
+    startOscillator()
   }
   return audioContext
 }
 
 // https://marcgg.com/blog/2016/11/01/javascript-audio/
-let speakerStartTime = -99;
-const duration = 0.1
-export const clickSpeaker = () => {
+export const clickSpeaker = (cycleCount: number) => {
   if (getAudioContext().state !== "running") {
     audioContext.resume();
   }
-  if ((speakerStartTime + 2*duration) >= audioContext.currentTime) {
-    return
-  }
   try {
-    speaker = audioContext.createOscillator();
-    speaker.type = "square";
-    speaker.frequency.value = 930
-    const gain = audioContext.createGain();
-    speaker.connect(gain);
-    gain.connect(audioContext.destination);
-    gain.gain.value = 0.05;
-    speakerStartTime = audioContext.currentTime;
-    speaker.start(speakerStartTime);
-    speaker.stop(speakerStartTime + duration);
+    if (speaker) {
+      speaker.port.postMessage(cycleCount)
+    }
   } catch (error) {
     console.error("error")
   }
