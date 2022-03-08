@@ -1,5 +1,4 @@
 https://github.com/AppleWin/AppleWin/issues/254
-
 10 HGR
 20 FOR Y=0 TO 63:FOR X=0 TO 7
 30 HCOLOR=INT(Y/8)
@@ -13,7 +12,7 @@ https://github.com/AppleWin/AppleWin/issues/254
 80 ? "3=WHITE1  7=WHITE2  8x8 HGR COLOR CHART";
 90 GET A$:END
 
-
+https://commons.wikimedia.org/wiki/File:Apple_II_low-resolution_graphics_demo_2.png
 100 GR
 110 FOR X = 0 TO 3
 120 FOR Y = 0 TO 39
