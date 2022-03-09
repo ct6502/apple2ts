@@ -69,7 +69,7 @@ const setZero = (set = true) => PStatus = set ? PStatus | 2 : PStatus & 253
 // const isInterrupt = () => { return ((PStatus & 0x04) !== 0); }
 const setInterrupt = (set = true) => PStatus = set ? PStatus | 4 : PStatus & 251
 
-// const isDecimal = () => { return ((PStatus & 0x08) !== 0); }
+const isDecimal = () => { return ((PStatus & 0x08) !== 0); }
 const setDecimal = (set = true) => PStatus = set ? PStatus | 8 : PStatus & 247
 
 export const isBreak = () => { return ((PStatus & 0x10) !== 0); }
@@ -133,8 +133,16 @@ const doIndirectYinstruction = (vZP: number, doInstruction: (addr: number) => vo
 }
 
 const doADC1 = (value: number) => {
-  let tmp = Accum + value + (isCarry() ? 1 : 0)
-  setCarry(tmp >= 256)
+  // For BCD mode, convert first number to BCD, wrapping any digits > 9,
+  // don't convert second number, just add it.
+  let tmp
+  if (isDecimal()) {
+    tmp = Accum + value + (isCarry() ? 1 : 0)
+    setCarry(tmp >= 100)
+  } else {
+    tmp = Accum + value + (isCarry() ? 1 : 0)
+    setCarry(tmp >= 256)
+  }
   tmp = tmp % 256
   const bothPositive = (Accum <= 127 && value <= 127)
   const bothNegative = (Accum >= 128 && value >= 128)
@@ -445,7 +453,7 @@ PCODE('SBC', MODE.IND_X, 0xE1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, 
 PCODE('SBC', MODE.IND_Y, 0xF1, 2, (vZP) => doIndirectYinstruction(vZP, doSBC))
 
 PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
-
+PCODE('SED', MODE.IMPLIED, 0xF8, 1, () => {setDecimal(); return 2})
 PCODE('SEI', MODE.IMPLIED, 0x78, 1, () => {setInterrupt(); return 2})
 
 // Zero Page     STA $44       $85  2   3

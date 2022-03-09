@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, KeyboardEvent } from 'react';
 import { SWITCHES, toHex, getTextPage, getHGR } from "./motherboard";
-import { addToBuffer, pushbutton, keyPress, convertAppleKey } from "./keyboard"
+import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
+import { handleGamePad, pressAppleKey } from "./joystick"
 
 const xmargin = 20
 const ymargin = 20
@@ -39,7 +40,7 @@ for (let c = 0; c < 16; c++) {
   const textPage = getTextPage(textPage2)
   ctx.font = cheight + "px PrintChar21"
   const jstart = mixedMode ? 20 : 0
-  const doFlashCycle = (Math.trunc(frameCount / 12) % 2) === 0
+  const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymargin + (j + 1)*cheight - 3
@@ -152,6 +153,7 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
 
 const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number) => {
   ctx.fillStyle = "#000000";
+  ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
   if (SWITCHES.TEXT.set) {
     processTextPage(ctx, SWITCHES.PAGE2.set)
@@ -172,7 +174,7 @@ const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
     return;
   }
   if (e.metaKey && e.key === "Meta") {
-    pushbutton(true, e.code === "MetaLeft")
+    pressAppleKey(true, e.code === "MetaLeft")
     return;
   }
   const key = convertAppleKey(e);
@@ -186,7 +188,7 @@ const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
 
 const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
   if (e.code === "MetaLeft" || e.code === "MetaRight") {
-    pushbutton(false, e.code === "MetaLeft")
+    pressAppleKey(false, e.code === "MetaLeft")
     return;
   }
 };
@@ -213,6 +215,8 @@ const Apple2Canvas = (props: any) => {
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
+    const gamepadID = window.setInterval(() => {
+      handleGamePad(navigator.getGamepads()[0])}, 100);
 
     const render = () => {
       frameCount++
@@ -227,6 +231,7 @@ const Apple2Canvas = (props: any) => {
     return () => {
       window.removeEventListener("paste", paste)
       window.cancelAnimationFrame(animationFrameId)
+      window.clearInterval(gamepadID)
     }
   }, []);
 

@@ -21,10 +21,6 @@ export const keyPress = (key: number) => {
   bank0[0xC000] = key | 0b10000000
 }
 
-export const pushbutton = (down: boolean, left: boolean) => {
-  bank0[left ? 0xC061 : 0xC062] = down ? 255 : 0
-}
-
 export const convertAppleKey = (e: KeyboardEvent) => {
   let key = 0
   if (e.key.length === 1) {

@@ -19,7 +19,6 @@ enum STATE {
 class DisplayApple2 extends React.Component<{},
   { _6502: STATE; tick: number; speedCheck: boolean }> {
   timerID: ReturnType<typeof setInterval> | undefined;
-  gamepadID: ReturnType<typeof setInterval> | undefined;
   cycles = 0;
   offset = 15;
   cycleTime = Array<number>(100).fill(0.2);
@@ -60,16 +59,10 @@ class DisplayApple2 extends React.Component<{},
     this.doBoot();
     this.setState({ _6502: STATE.IDLE });
     this.timerID = setInterval(() => this.advance());
-    window.addEventListener("gamepadconnected", function(e) {
-      console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
-      e.gamepad.index, e.gamepad.id,
-      e.gamepad.buttons.length, e.gamepad.axes.length);
-    })
   }
 
   componentWillUnmount() {
     if (this.timerID) clearInterval(this.timerID);
-    if (this.gamepadID) clearInterval(this.gamepadID);
   }
 
   advance() {
@@ -124,15 +117,6 @@ class DisplayApple2 extends React.Component<{},
   render() {
     const cycleTime = Math.abs(this.cycleTime[this.iCycle]).toFixed(3)
     const speed = (this.speed[this.iSpeed] / 1000).toFixed(3)
-    if (!this.gamepadID) {
-    this.gamepadID = setInterval(() => {
-      const myGamepad = navigator.getGamepads()[0];
-      if (myGamepad) {
-      console.log(`Left stick at (${myGamepad.axes[0]}, ${myGamepad.axes[1]})` );
-      console.log(`Right stick at (${myGamepad.axes[2]}, ${myGamepad.axes[3]})` );
-      }
-      }, 100);
-    }
 
     return (
       <div className="apple2">

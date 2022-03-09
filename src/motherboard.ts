@@ -6,6 +6,7 @@ import { rom } from "./roms/rom_2+.base64";
 import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
 import { clickSpeaker } from "./speaker"
+import { resetJoystick, checkJoystickValues } from './joystick';
 import { handleDriveSoftSwitches, doResetDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
@@ -60,10 +61,14 @@ export const SWITCHES = {
 export const memGet = (addr: number): number => {
   if (addr >= 0xC000) {
     if (addr === 0xC010) {
-      bank0[0xC000] &= 0x01111111
+      bank0[0xC000] &= 0b01111111
       popKey()
     } else if (addr === 0xC030) {
       clickSpeaker(cycleCount)
+    } else if (addr === 0xC070) {
+      resetJoystick(cycleCount)
+    } else if (addr >= 0xC064 && addr <= 0xC067) {
+      checkJoystickValues(cycleCount)
     } else {
       for (const [, sswitch] of Object.entries(SWITCHES)) {
         if (addr === sswitch.addrOff) {
@@ -212,14 +217,12 @@ export const processInstruction = () => {
   const vLo = PC < 0xFFFF ? bank0[PC + 1] : 0
   const vHi = PC < 0xFFFE ? bank0[PC + 2] : 0
   const code = pcodes[instr];
-  // Don't print debug during the Apple WAIT subroutine
-  // const PClocal = PC
-  // const bank0local = bank0
   if (code) {
     const PC1 = PC
-    if (PC1 === 0xB9F7 && Accum === 0x64 && SP === 0xD8) {
-      doDebug = false
-    }
+    // if (PC1 === 0x303 && Accum === 0xDA) {
+    //   doDebug = true
+    // }
+    // Do not output during the Apple II's WAIT subroutine
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;
       console.log(out);
@@ -228,7 +231,6 @@ export const processInstruction = () => {
       }
     }
     cycles = code.execute(vLo, vHi);
-    // Do not output during the Apple II's WAIT subroutine
     if (Accum > 255 || Accum < 0) {
       console.error("Out of bounds")
       return 0
