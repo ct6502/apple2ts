@@ -43,7 +43,7 @@ export const setYregister = (value: number) => {
 }
 
 export const setPStatus = (value: number) => {
-  PStatus = value
+  PStatus = value | 0b00100000
 }
 
 export const setSP = (value: number) => {
@@ -61,25 +61,33 @@ const popStack = () => {
 }
 
 export const isCarry = () => { return ((PStatus & 0x01) !== 0); }
-const setCarry = (set = true) => PStatus = set ? PStatus | 1 : PStatus & 254
+const setCarry = (set = true) => PStatus = set ? PStatus | 1 :
+  PStatus & 0b11111110
 
 const isZero = () => { return ((PStatus & 0x02) !== 0); }
-const setZero = (set = true) => PStatus = set ? PStatus | 2 : PStatus & 253
+const setZero = (set = true) => PStatus = set ? PStatus | 2 :
+  PStatus & 0b11111101
 
 // const isInterrupt = () => { return ((PStatus & 0x04) !== 0); }
-const setInterrupt = (set = true) => PStatus = set ? PStatus | 4 : PStatus & 251
+const setInterrupt = (set = true) => PStatus = set ? PStatus | 4 :
+  PStatus & 0b11111011
 
 const isDecimal = () => { return ((PStatus & 0x08) !== 0); }
-const setDecimal = (set = true) => PStatus = set ? PStatus | 8 : PStatus & 247
+const BCD = () => (isDecimal() ? 1 : 0)
+const setDecimal = (set = true) => PStatus = set ? PStatus | 8 :
+  PStatus & 0b11110111
 
 export const isBreak = () => { return ((PStatus & 0x10) !== 0); }
-export const setBreak = (set = true) => PStatus = set ? PStatus | 0x10 : PStatus & 239
+export const setBreak = (set = true) => PStatus = set ? PStatus | 0x10 :
+  PStatus & 0b11101111
 
 const isOverflow = () => { return ((PStatus & 0x40) !== 0); }
-const setOverflow = (set = true) => PStatus = set ? PStatus | 0x40 : PStatus & 191
+const setOverflow = (set = true) => PStatus = set ? PStatus | 0x40 :
+  PStatus & 0b10111111
 
 const isNegative = () => { return ((PStatus & 0x80) !== 0); }
-const setNegative = (set = true) => PStatus = set ? PStatus | 0x80 : PStatus & 127
+const setNegative = (set = true) => PStatus = set ? PStatus | 0x80 :
+  PStatus & 0b01111111
 
 const checkStatus = (value: number) => {
   setZero(value === 0);
@@ -124,25 +132,44 @@ const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeF
   pcodes[pcode] = {name: name, mode: mode, PC: PC, execute: code}
 }
 
-const doIndirectYinstruction = (vZP: number, doInstruction: (addr: number) => void) => {
+const doIndirectYinstruction = (vZP: number,
+  doInstruction: (addr: number) => void,
+  addBCD = false) => {
   const vLo = memGet(vZP)
   const vHi = memGet((vZP + 1) % 256)
   const addr = twoByteAdd(vLo, vHi, YReg)
   doInstruction(addr)
-  return 5 + pageBoundary(addr, address(vLo, vHi))
+  let cycles = 5 + pageBoundary(addr, address(vLo, vHi))
+  if (addBCD) cycles += BCD()
+  return cycles
 }
 
-const doADC1 = (value: number) => {
-  // For BCD mode, convert first number to BCD, wrapping any digits > 9,
-  // don't convert second number, just add it.
-  let tmp
-  if (isDecimal()) {
-    tmp = Accum + value + (isCarry() ? 1 : 0)
-    setCarry(tmp >= 100)
-  } else {
-    tmp = Accum + value + (isCarry() ? 1 : 0)
-    setCarry(tmp >= 256)
+// 300: F8 18 B8 A9 BD 69 00 D8 00
+const doADC_BCD = (value: number) => {
+  let ones = (Accum & 0x0F) + (value & 0x0F) + (isCarry() ? 1 : 0)
+  // Handle illegal BCD hex values by wrapping to "tens" digit
+  if (ones >= 0xA) {
+    ones += 6
   }
+  let tmp = (Accum & 0xF0) + (value & 0xF0) + ones
+  // Pretend we're doing normal addition to set overflow flag
+  const bothPositive = (Accum <= 127 && value <= 127)
+  const bothNegative = (Accum >= 128 && value >= 128)
+  setOverflow((tmp & 0xFF) >= 128 ? bothPositive : bothNegative)
+  // Handle illegal BCD hex values by wrapping to "hundreds" digit
+  setCarry(tmp >= 0xA0)
+  if (isCarry()) {
+    tmp += 0x60
+  }
+  Accum = tmp & 0xFF
+  // Assume we're a 65c02 and set the zero flag properly.
+  // This doesn't happen on a 6502 for BCD mode.
+  checkStatus(Accum)
+}
+
+const doADC_HEX = (value: number) => {
+  let tmp = Accum + value + (isCarry() ? 1 : 0)
+  setCarry(tmp >= 256)
   tmp = tmp % 256
   const bothPositive = (Accum <= 127 && value <= 127)
   const bothNegative = (Accum >= 128 && value >= 128)
@@ -150,20 +177,32 @@ const doADC1 = (value: number) => {
   Accum = tmp
   checkStatus(Accum)
 }
+
 const doADC = (addr: number) => {
-  doADC1(memGet(addr))
+  if (isDecimal()) {
+    doADC_BCD(memGet(addr))
+  } else {
+    doADC_HEX(memGet(addr))
+  }
 }
-PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {doADC1(value); return 2})
-PCODE('ADC', MODE.ZP_REL, 0x65, 2, (vZP) => {doADC(vZP); return 3})
-PCODE('ADC', MODE.ZP_X, 0x75, 2, (vZP) => {doADC(oneByteAdd(vZP, XReg)); return 4})
-PCODE('ADC', MODE.ABS, 0x6D, 3, (vLo, vHi) => {doADC(address(vLo, vHi)); return 4})
-PCODE('ADC', MODE.ABS_X, 0x7D, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
-  doADC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
-PCODE('ADC', MODE.ABS_Y, 0x79, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
-  doADC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
-PCODE('ADC', MODE.IND_X, 0x61, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doADC(address(memGet(vZP), memGet(vZP + 1))); return 6})
-PCODE('ADC', MODE.IND_Y, 0x71, 2, (vZP) => doIndirectYinstruction(vZP, doADC))
+
+PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {
+  if (BCD()) {doADC_BCD(value)} else {doADC_HEX(value)}; return 2 + BCD()})
+PCODE('ADC', MODE.ZP_REL, 0x65, 2, (vZP) => {doADC(vZP); return 3 + BCD()})
+PCODE('ADC', MODE.ZP_X, 0x75, 2, (vZP) =>
+  {doADC(oneByteAdd(vZP, XReg)); return 4 + BCD()})
+PCODE('ADC', MODE.ABS, 0x6D, 3, (vLo, vHi) =>
+  {doADC(address(vLo, vHi)); return 4 + BCD()})
+PCODE('ADC', MODE.ABS_X, 0x7D, 3, (vLo, vHi) =>
+  {const addr = twoByteAdd(vLo, vHi, XReg);
+  doADC(addr); return 4 + BCD() + pageBoundary(addr, address(vLo, vHi))})
+PCODE('ADC', MODE.ABS_Y, 0x79, 3, (vLo, vHi) =>
+  {const addr = twoByteAdd(vLo, vHi, YReg);
+  doADC(addr); return 4 + BCD() + pageBoundary(addr, address(vLo, vHi))})
+PCODE('ADC', MODE.IND_X, 0x61, 2, (vOffset) =>
+  {const vZP = oneByteAdd(vOffset, XReg);
+  doADC(address(memGet(vZP), memGet(vZP + 1))); return 6 + BCD()})
+PCODE('ADC', MODE.IND_Y, 0x71, 2, (vZP) => doIndirectYinstruction(vZP, doADC, true))
 
 const doAND = (addr: number) => {
   Accum &= memGet(addr)
@@ -213,11 +252,14 @@ const doBit = (addr: number) => {
 PCODE('BIT', MODE.ZP_REL, 0x24, 2, (vZP) => {doBit(vZP); return 3})
 PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(address(vLo, vHi)); return 4})
 
-PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {setBreak();
+PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
+  setBreak();
   const PC2 = (PC + 2) % 65536
   pushStack(Math.trunc(PC2 / 256))
   pushStack(PC2 % 256)
   pushStack(PStatus)
+  setDecimal(false)  // 65c02 only
+  setInterrupt()
   PC = twoByteAdd(memGet(0xFFFE), memGet(0xFFFF), -1);
   return 7})
 
@@ -397,7 +439,7 @@ PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack(PStatus); return 3})
 PCODE('PHX', MODE.IMPLIED, 0xDA, 1, () => {pushStack(XReg); return 3})
 PCODE('PHY', MODE.IMPLIED, 0x5A, 1, () => {pushStack(YReg); return 3})
 PCODE('PLA', MODE.IMPLIED, 0x68, 1, () => {Accum = popStack(); checkStatus(Accum); return 4})
-PCODE('PLP', MODE.IMPLIED, 0x28, 1, () => {PStatus = popStack(); return 4})
+PCODE('PLP', MODE.IMPLIED, 0x28, 1, () => {setPStatus(popStack()); return 4})
 PCODE('PLX', MODE.IMPLIED, 0xFA, 1, () => {XReg = popStack(); checkStatus(XReg); return 4})
 PCODE('PLY', MODE.IMPLIED, 0x7A, 1, () => {YReg = popStack(); checkStatus(YReg); return 4})
 
@@ -437,20 +479,59 @@ PCODE('ROR', MODE.ABS_X, 0x7E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 
 PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {PC = address(popStack(), popStack()); return 6})
 
-const doSBC = (addr: number) => {
-  doADC1(255 - memGet(addr))
+// 300: F8 38 B8 A9 00 E9 00 D8 00
+const doSBC_BCD = (value: number) => {
+  // On 65c02, do normal hex subtraction to set the carry & overflow flags.
+  const vtmp = 255 - value
+  let tmp = Accum + vtmp + (isCarry() ? 1 : 0)
+  const newCarry = (tmp >= 256)
+  const bothPositive = (Accum <= 127 && vtmp <= 127)
+  const bothNegative = (Accum >= 128 && vtmp >= 128)
+  setOverflow((tmp % 256) >= 128 ? bothPositive : bothNegative)
+
+  let ones = (Accum & 0x0F) - (value & 0x0F) + (isCarry() ? 0 : -1)
+  tmp = Accum - value + (isCarry() ? 0 : -1)
+  if (tmp < 0) {
+    tmp -= 0x60
+  }
+  if (ones < 0) {
+    tmp -= 0x06
+  }
+  Accum = tmp & 0xFF
+  // Assume we're a 65c02 and set the zero flag properly.
+  // This doesn't happen on a 6502 for BCD mode.
+  checkStatus(Accum)
+  setCarry(newCarry)
 }
-PCODE('SBC', MODE.IMM, 0xE9, 2, (value) => {doADC1(255 - value); return 2})
-PCODE('SBC', MODE.ZP_REL, 0xE5, 2, (vZP) => {doSBC(vZP); return 3})
-PCODE('SBC', MODE.ZP_X, 0xF5, 2, (vZP) => {doSBC(oneByteAdd(vZP, XReg)); return 4})
-PCODE('SBC', MODE.ABS, 0xED, 3, (vLo, vHi) => {doSBC(address(vLo, vHi)); return 4})
-PCODE('SBC', MODE.ABS_X, 0xFD, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, XReg);
-  doSBC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
-PCODE('SBC', MODE.ABS_Y, 0xF9, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, YReg);
-  doSBC(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
-PCODE('SBC', MODE.IND_X, 0xE1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, XReg);
-  doSBC(address(memGet(vZP), memGet(vZP + 1))); return 6})
-PCODE('SBC', MODE.IND_Y, 0xF1, 2, (vZP) => doIndirectYinstruction(vZP, doSBC))
+
+const doSBC = (addr: number) => {
+  if (BCD()) {
+    doSBC_BCD(memGet(addr))
+  } else {
+    doADC_HEX(255 - memGet(addr))
+  }
+}
+
+PCODE('SBC', MODE.IMM, 0xE9, 2, (value) => {
+  if (BCD()) {doSBC_BCD(value)} else {doADC_HEX(255 - value)}
+  return 2 + BCD()})
+PCODE('SBC', MODE.ZP_REL, 0xE5, 2, (vZP) =>
+  {doSBC(vZP); return 3 + BCD()})
+PCODE('SBC', MODE.ZP_X, 0xF5, 2, (vZP) =>
+  {doSBC(oneByteAdd(vZP, XReg)); return 4 + BCD()})
+PCODE('SBC', MODE.ABS, 0xED, 3, (vLo, vHi) =>
+  {doSBC(address(vLo, vHi)); return 4 + BCD()})
+PCODE('SBC', MODE.ABS_X, 0xFD, 3, (vLo, vHi) =>
+  {const addr = twoByteAdd(vLo, vHi, XReg);
+  doSBC(addr); return 4 + BCD() + pageBoundary(addr, address(vLo, vHi))})
+PCODE('SBC', MODE.ABS_Y, 0xF9, 3, (vLo, vHi) =>
+  {const addr = twoByteAdd(vLo, vHi, YReg);
+  doSBC(addr); return 4 + BCD() + pageBoundary(addr, address(vLo, vHi))})
+PCODE('SBC', MODE.IND_X, 0xE1, 2, (vOffset) =>
+  {const vZP = oneByteAdd(vOffset, XReg);
+  doSBC(address(memGet(vZP), memGet(vZP + 1))); return 6 + BCD()})
+PCODE('SBC', MODE.IND_Y, 0xF1, 2, (vZP) =>
+  doIndirectYinstruction(vZP, doSBC, true))
 
 PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
 PCODE('SED', MODE.IMPLIED, 0xF8, 1, () => {setDecimal(); return 2})
