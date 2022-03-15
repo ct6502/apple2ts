@@ -1,5 +1,5 @@
 import React from "react";
-import { SWITCHES } from "./motherboard"
+import { SWITCHES, toHex, bank0 } from "./motherboard"
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
@@ -7,12 +7,13 @@ import disk2onEmpty from './img/disk2on-empty.png'
 import driveMotor from './audio/driveMotor.mp3'
 import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
-import { toHex, doDebug } from "./motherboard";
+import { PC } from './instructions'
 
 
 export let track = 0
 let readMode = false
 let currentPhase = 0
+const doDebugDrive = false
 
 export const doResetDrive = () => {
   SWITCHES.DRIVE.set = false
@@ -101,17 +102,21 @@ const moveHead = (offset: number) => {
   }
 }
 
+const pickbit = [128, 64, 32, 16, 8, 4, 2, 1]
+
 const getNextBit = () => {
   trackLocation = trackLocation % trackNbits[track]
   const fileOffset = trackStart[track] + (trackLocation >> 3)
-  let byte = diskData[fileOffset]
-  let bit = (byte & 2**(7 - trackLocation % 8)) ? 1 : 0
+  const byte = diskData[fileOffset]
+  const b = trackLocation & 7
+  const bit = (byte & pickbit[b]) >> (7 - b)
   trackLocation++
   return bit
 }
 
 const getNextByte = () => {
-  if (diskData.length === 0) {
+  // Sanity check to make sure we aren't on a half track by mistake. 
+  if (diskData.length === 0 || (track % 1 !== 0)) {
     return 0
   }
   let result = 0
@@ -119,14 +124,14 @@ const getNextByte = () => {
   while (bit === 0) {
     bit = getNextBit()
   }
-  result = 0x80
+  result = 0x80   // the bit we just retrieved is the high bit
   for (let i = 6; i >= 0; i--) {
     result |= getNextBit() << i
   }
-  if (doDebug) {
-    console.log(" trackLocation=" + trackLocation +
-      "  byte=" + toHex(result))
-  }
+  // if (doDebugDrive) {
+  //   console.log(" trackLocation=" + trackLocation +
+  //     "  byte=" + toHex(result))
+  // }
   return result
 }
 
@@ -135,6 +140,7 @@ export const handleDriveSoftSwitches = (addr: number): number => {
   const phaseSwitches = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
     SWITCHES.DRVSM2, SWITCHES.DRVSM3]
   const a = addr - SWITCHES.DRVSM0.addrOff
+  let debug = ""
   // One of the stepper motors has been turned on or off
   if (a >= 0 && a <= 7) {
     const ascend = phaseSwitches[(currentPhase + 1) % 4]
@@ -143,16 +149,18 @@ export const handleDriveSoftSwitches = (addr: number): number => {
       if (ascend.set) {
         moveHead(0.5)
         currentPhase = (currentPhase + 1) % 4
-        if (doDebug) {
-          console.log("***** phase curr=" + currentPhase + " track=" + track)
-        }
+        debug = "  currPhase=" + currentPhase + " track=" + track
+
       } else if (descend.set) {
         moveHead(-0.5)
         currentPhase = (currentPhase + 3) % 4
-        if (doDebug) {
-          console.log("***** phase curr=" + currentPhase + " track=" + track)
-        }
+        debug = "  currPhase=" + currentPhase + " track=" + track
       }
+    }
+    if (doDebugDrive) {
+      console.log("***** PC=" + toHex(PC,4) + "  addr=" + toHex(addr,4) +
+        " phase=" + (a >> 1) + (a % 2 === 0 ? " off" : " on ") +
+        " 0x27=" + toHex(bank0[0x27]) + debug)
     }
   } else if (addr === SWITCHES.DRVWRITE.addrOff) {
     readMode = true
