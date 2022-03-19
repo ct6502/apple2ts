@@ -58,7 +58,7 @@ export const SWITCHES = {
   DRVWRITE: NewSwitch(0xC08E + SLOT6),
 }
 
-export const memGet = (addr: number): number => {
+export const memGet = (addr: number, value=-1): number => {
   if (addr >= 0xC000) {
     if (addr === 0xC010) {
       bank0[0xC000] &= 0b01111111
@@ -80,7 +80,7 @@ export const memGet = (addr: number): number => {
         }
       }
       if (addr >= SWITCHES.DRVSM0.addrOff && addr <= SWITCHES.DRVWRITE.addrOn) {
-        return handleDriveSoftSwitches(addr)
+        return handleDriveSoftSwitches(addr, value, cycleCount)
       }
     }
   }
@@ -88,11 +88,11 @@ export const memGet = (addr: number): number => {
 }
 
 export const memSet = (address: number, value: number) => {
-  if (address >= 0xC000) {
-    memGet(address)
-    return
+  if (address >= 0xC000 && address <= 0xC0FF) {
+    memGet(address, value)
+  } else if (address < 0xC000) {
+    bank0[address] = value
   }
-  bank0[address] = value
 }
 
 export const toBinary = (value: number, ndigits=8) => {

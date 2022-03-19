@@ -17,19 +17,17 @@ enum STATE {
 }
 
 class DisplayApple2 extends React.Component<{},
-  { _6502: STATE; tick: number; speedCheck: boolean }> {
-  timerID: ReturnType<typeof setInterval> | undefined;
+  { _6502: STATE; iCycle: number; speedCheck: boolean }> {
+  timerID = 0;
   cycles = 0;
-  offset = 15;
-  cycleTime = Array<number>(100).fill(0.2);
-  iCycle = 0;
-  speed = Array<number>(100).fill(1000);
-  iSpeed = 0;
+  timeDelta = 0;
+  speed = Array<number>(100).fill(1020);
+  refreshTime = 16.6881
   startTime = 0
 
   constructor(props: any) {
     super(props);
-    this.state = { _6502: STATE.IDLE, tick: 0, speedCheck: true };
+    this.state = { _6502: STATE.IDLE, iCycle: 0, speedCheck: true };
   }
 
   doBoot() {
@@ -51,14 +49,13 @@ class DisplayApple2 extends React.Component<{},
 //    bank0.set(pcode, 0x2000);
 //    setPC(0x2000);
     setDebug(false);
-    this.cycles = 0;
     this.startTime = performance.now();
   }
 
   componentDidMount() {
     this.doBoot();
     this.setState({ _6502: STATE.IDLE });
-    this.timerID = setInterval(() => this.advance());
+    this.timerID = window.setInterval(() => this.advance(), this.refreshTime);
   }
 
   componentWillUnmount() {
@@ -66,11 +63,8 @@ class DisplayApple2 extends React.Component<{},
   }
 
   advance() {
-    const newTime = performance.now();
-    if (this.state.speedCheck && newTime - this.startTime < this.offset) {
-      return;
-    }
-    const timeDelta = newTime - this.startTime;
+    const newTime = performance.now()
+    this.timeDelta = newTime - this.startTime
     this.startTime = newTime;
     if (this.state._6502 === STATE.IDLE || this.state._6502 === STATE.PAUSED) {
       return;
@@ -82,54 +76,44 @@ class DisplayApple2 extends React.Component<{},
       doReset();
       this.setState({ _6502: STATE.IS_RUNNING });
     }
+    let cycleTotal = 0
     while (true) {
       const cycles = processInstruction();
       if (cycles === 0) {
         this.setState({ _6502: STATE.PAUSED });
         return;
       }
-      this.cycles += cycles;
-      if (this.cycles >= 17030) {
+      cycleTotal += cycles;
+      if (cycleTotal >= 17030) {
         break;
       }
     }
-    let newIndex = (this.iCycle + 1) % this.cycleTime.length;
-    this.cycleTime[newIndex] =
-      this.cycleTime[this.iCycle] -
-      this.cycleTime[newIndex] / this.cycleTime.length + (performance.now() - this.startTime) / this.cycleTime.length;
-    this.iCycle = newIndex;
-    newIndex = (this.iSpeed + 1) % this.speed.length;
-    this.speed[newIndex] = this.speed[this.iSpeed] - this.speed[newIndex] / this.speed.length + this.cycles / timeDelta / this.speed.length;
-    this.iSpeed = newIndex;
-    if (this.state.speedCheck && this.iSpeed === 0) {
-      this.offset += this.speed[this.iSpeed] < 1020.484 ? -0.05 : 0.05;
-    }
+    const newIndex = (this.state.iCycle + 1) % this.speed.length;
+    const currentAvgSpeed = cycleTotal / this.timeDelta / this.speed.length
+    this.speed[newIndex] = this.speed[this.state.iCycle] -
+      this.speed[newIndex] / this.speed.length + currentAvgSpeed;
     this.setState({
-      tick: this.state.tick + 1,
+      iCycle: newIndex,
     });
-    this.cycles = 0;
   }
 
   handleSpeedChange = () => {
+    this.speed.fill(1020.484)
+    window.clearInterval(this.timerID)
+    this.timerID = window.setInterval(() => this.advance(),
+      this.state.speedCheck ? 0 : this.refreshTime)
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
   render() {
-    const cycleTime = Math.abs(this.cycleTime[this.iCycle]).toFixed(3)
-    const speed = (this.speed[this.iSpeed] / 1000).toFixed(3)
+    const delta = (this.timeDelta).toFixed(1)
+    const speed = (this.speed[this.state.iCycle] / 1000).toFixed(3)
 
     return (
       <div className="apple2">
         <Apple2Canvas/>
         <br />
         <span className="leftStatus">
-          <span className="statusItem">
-            Refreshes: <span className="fixed">{this.state.tick}</span>
-          </span>
-          <span className="statusItem">
-            <span className="fixed">{getProcessorStatus()}</span>
-          </span>
-          <br />
           <span className="statusItem">
             Speed (MHz): <span className="fixed">{speed}</span>
           </span>
@@ -144,8 +128,12 @@ class DisplayApple2 extends React.Component<{},
             </label>
           </span>
           <span className="statusItem">
-            Time (ms):{" "}
-            <span className="fixed">{cycleTime}</span>
+            Delay (ms):{" "}
+            <span className="fixed">{delta}</span>
+          </span>
+          <br />
+          <span className="statusItem">
+            <span className="fixed">{getProcessorStatus()}</span>
           </span>
           <br />
 
