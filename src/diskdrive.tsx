@@ -162,9 +162,11 @@ const doWriteByte = (cycleCount: number) => {
     }
     if (delta >= 36) {
       doWriteBit(0)
+      console.log("36 cycle zero")
     }
     if (delta >= 40) {
       doWriteBit(0)
+      console.log("40 cycle zero")
     }
   }
   prevCycleCount = cycleCount
@@ -343,6 +345,11 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
           onChange={this.handleDiskClick}
           style={{display: 'none'}}
         />
+        <button
+          onClick={() => {
+          }}>
+          Download
+        </button>
       </span>
     );
   }
