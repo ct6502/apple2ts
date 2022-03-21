@@ -103,6 +103,8 @@ const moveHead = (offset: number) => {
 }
 
 const pickbit = [128, 64, 32, 16, 8, 4, 2, 1]
+const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
+  0b11110111, 0b11111011, 0b11111101, 0b11111110]
 
 const getNextBit = () => {
   trackLocation = trackLocation % trackNbits[track]
@@ -135,8 +137,46 @@ const getNextByte = () => {
   return result
 }
 
-export const handleDriveSoftSwitches = (addr: number): number => {
+let writeByte = 0
+let prevCycleCount = 0
+
+const doWriteBit = (bit: 0 | 1) => {
+  trackLocation = trackLocation % trackNbits[track]
+  const fileOffset = trackStart[track] + (trackLocation >> 3)
+  let byte = diskData[fileOffset]
+  const b = trackLocation & 7
+  if (bit) {
+    byte |= pickbit[b]
+  } else {
+    byte &= clearbit[b]
+  }
+  diskData[fileOffset] = byte
+  trackLocation++
+}
+
+const doWriteByte = (cycleCount: number) => {
+  const delta = cycleCount - prevCycleCount
+  if (delta >= 32 && writeByte > 0) {
+    for (let i = 7; i >= 0; i--) {
+      doWriteBit(writeByte & 2**i ? 1 : 0)      
+    }
+    if (delta >= 36) {
+      doWriteBit(0)
+      console.log("36 cycle zero")
+    }
+    if (delta >= 40) {
+      doWriteBit(0)
+      console.log("40 cycle zero")
+    }
+  }
+  prevCycleCount = cycleCount
+  writeByte = 0
+}
+
+export const handleDriveSoftSwitches =
+  (addr: number, value: number, cycleCount: number): number => {
   let result = 0
+//  const delta = cycleCount - prevCycleCount
   const phaseSwitches = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
     SWITCHES.DRVSM2, SWITCHES.DRVSM3]
   const a = addr - SWITCHES.DRVSM0.addrOff
@@ -169,9 +209,24 @@ export const handleDriveSoftSwitches = (addr: number): number => {
     }
   } else if (addr === SWITCHES.DRVWRITE.addrOn) {
     readMode = false
-  } else if (addr === SWITCHES.DRVDATA.addrOff && readMode) {
-    result = getNextByte()
+    if (value >= 0) {
+      writeByte = value
+    }
+  } else if (addr === SWITCHES.DRVDATA.addrOff) {
+    if (readMode) {
+      result = getNextByte()
+    } else {
+      doWriteByte(cycleCount)
+    }
+  } else if (addr === SWITCHES.DRVDATA.addrOn) {
+    if (value >= 0) {
+      writeByte = value
+    }
   }
+//  if (result === 0) {
+//    console.log("addr=" + toHex(addr,4) + " writeByte=" +
+//      toHex(writeByte) + " cycles: " + delta)
+//  }
   return result
 }
 
@@ -290,6 +345,11 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
           onChange={this.handleDiskClick}
           style={{display: 'none'}}
         />
+        <button
+          onClick={() => {
+          }}>
+          Download
+        </button>
       </span>
     );
   }
