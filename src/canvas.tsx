@@ -93,13 +93,22 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
   }
 };
 
-const BLACK = [0, 0, 0]
-const GREEN = [1, 255, 1]
-const VIOLET = [255, 1, 255]
-// const WHITE = [255, 255, 255]
-const ORANGE = [255, 127, 1]
-const BLUE = [ 1, 127, 255] 
-
+const BLACK = 0
+const GREEN = 1
+const VIOLET = 2
+const WHITE = 3
+const ORANGE = 5
+const BLUE = 6
+const colors = [
+  [0, 0, 0],
+  [1, 255, 1],
+  [255, 1, 255],
+  [255, 255, 255],
+  [0, 0, 0],
+  [255, 127, 1],
+  [1, 127, 255],
+  [255, 255, 255]
+]
 const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolean) => {
   if ((byte >> bit) & 1) {
     return highBit ? (isEven ? BLUE : ORANGE) : (isEven ? VIOLET : GREEN)
@@ -110,41 +119,46 @@ const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolea
 const processHiRes = async (ctx: CanvasRenderingContext2D,
   page2: boolean, mixedMode = false) => {
   const hgrPage = getHGR(page2)  // 40 x 192 array
-  const hgr = new Uint8ClampedArray(280 * 192 * 4).fill(255);
+  const hgr = new Uint8Array(280 * 192).fill(0);
   for (let j = 0; j < 192; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
-    const joffset = j * 280 * 4
+    const joffset = j * 280
     let isEven = true
     for (let i = 0; i < 40; i++) {
-      const ioffset = joffset + i * 28
+      const ioffset = joffset + i * 7
       const byte = line[i]
       const highBit = (byte & 128) === 128
       for (let b = 0; b <= 6; b++) {
-        const color = decodeColor(byte, b, highBit, isEven)
-        hgr[ioffset + 4*b] = color[0]
-        hgr[ioffset + 4*b + 1] = color[1]
-        hgr[ioffset + 4*b + 2] = color[2]
+        hgr[ioffset + b] = decodeColor(byte, b, highBit, isEven)
         isEven = !isEven
       }
     }
+    for (let i = 0; i < 280; i++) {
+      const ioffset = joffset + i
+      if (hgr[ioffset] && hgr[ioffset + 1]) {
+        hgr[ioffset] = WHITE
+        hgr[ioffset + 1] = WHITE
+      }
+    }
     for (let i = 0; i < 280; i += 2) {
-      const ioffset = joffset + i * 4
+      const ioffset = joffset + i
       if (hgr[ioffset]) {
-        if (hgr[ioffset + 4]) {
-          hgr.fill(255, ioffset, ioffset + 8)
-        } else {
-          hgr[ioffset + 4] = hgr[ioffset]
-          hgr[ioffset + 5] = hgr[ioffset + 1]
-          hgr[ioffset + 6] = hgr[ioffset + 2]
+        if (!hgr[ioffset + 1]) {
+          hgr[ioffset + 1] = hgr[ioffset]
         }
-      } else if (hgr[ioffset + 4]) {
-          hgr[ioffset] = hgr[ioffset + 4]
-          hgr[ioffset + 1] = hgr[ioffset + 5]
-          hgr[ioffset + 2] = hgr[ioffset + 6]
+      } else if (hgr[ioffset + 1]) {
+        hgr[ioffset] = hgr[ioffset + 1]
       }
     }
   }
-  const image = new ImageData(hgr, 280, 192);
+  const hgrRGB = new Uint8ClampedArray(280 * 192 * 4).fill(255);
+  for (let i = 0; i < 280 * 192; i++) {
+    const c = colors[hgr[i]]
+    hgrRGB[4 * i] = c[0]
+    hgrRGB[4 * i + 1] = c[1]
+    hgrRGB[4 * i + 2] = c[2]
+  }
+  const image = new ImageData(hgrRGB, 280, 192);
   let imgHeight = height - 2*ymargin - (mixedMode ? 4*cheight : 0)
   ctx.drawImage(await createImageBitmap(image),
     0, 0, 280, mixedMode ? 160 : 192,
