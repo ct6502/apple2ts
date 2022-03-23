@@ -142,11 +142,11 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
     }
     for (let i = 0; i < 280; i += 2) {
       const ioffset = joffset + i
-      if (hgr[ioffset]) {
+      if (hgr[ioffset] && hgr[ioffset] !== WHITE) {
         if (!hgr[ioffset + 1]) {
           hgr[ioffset + 1] = hgr[ioffset]
         }
-      } else if (hgr[ioffset + 1]) {
+      } else if (hgr[ioffset + 1] && hgr[ioffset + 1] !== WHITE) {
         hgr[ioffset] = hgr[ioffset + 1]
       }
     }
