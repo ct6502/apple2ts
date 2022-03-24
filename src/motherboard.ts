@@ -1,7 +1,7 @@
 import { Accum, XReg, YReg, PStatus, SP,
   setAccum, setXregister, setYregister, setPStatus, setSP, setPC,
   pcodes, PC, MODE, isRelativeInstr,
-  address, incrementPC } from './instructions'
+  address, incrementPC, getStack } from './instructions'
 import { rom } from "./roms/rom_2+.base64";
 import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
@@ -197,6 +197,10 @@ export function getHGR(page2: boolean) {
   return hgrPage;
 }
 
+export const getStatus = () => {
+  return getStack().join('\n')
+}
+
 let zpPrev = new Uint8Array(1)
 const debugZeroPage = () => {
   const zp = bank0.slice(0, 256)
@@ -219,9 +223,9 @@ export const processInstruction = () => {
   const code = pcodes[instr];
   if (code) {
     const PC1 = PC
-    // if (PC1 === 0x303 && Accum === 0xDA) {
-    //   doDebug = true
-    // }
+    if (vHi === 0xC0 && vLo === 0x8F) {
+       doDebug = true
+    }
     // Do not output during the Apple II's WAIT subroutine
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;

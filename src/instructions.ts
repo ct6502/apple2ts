@@ -1,4 +1,4 @@
-import { memGet, memSet } from "./motherboard"
+import { memGet, memSet, toHex } from "./motherboard"
 // var startTime = performance.now()
 
 export let PStatus = 0;
@@ -50,9 +50,25 @@ export const setSP = (value: number) => {
   SP = value
 }
 
-const pushStack = (value: number) => {
-  memSet(0x100 + SP, value);
-  SP = (SP + 255) % 256;
+const stack = new Array<string>(256).fill('')
+
+export const getStack = () => {
+  const result = new Array<string>()
+  for (let i = 0xFF; i > SP; i--) {
+    let value = (stack[i] + "  ").substring(0,3) + " $" + toHex(memGet(0x100 + i))
+    if (stack[i].includes("Hi") && (i - 1) > SP) {
+      i--
+      value += toHex(memGet(0x100 + i))
+    }
+    result.push(toHex(0x100 + i, 4) + ": " + value)
+  }
+  return result
+}
+
+const pushStack = (call: string, value: number) => {
+  stack[SP] = call
+  memSet(0x100 + SP, value)
+  SP = (SP + 255) % 256
 }
 
 const popStack = () => {
@@ -255,9 +271,9 @@ PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(address(vLo, vHi)); return 
 PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
   setBreak();
   const PC2 = (PC + 2) % 65536
-  pushStack(Math.trunc(PC2 / 256))
-  pushStack(PC2 % 256)
-  pushStack(PStatus)
+  pushStack("BRKHi", Math.trunc(PC2 / 256))
+  pushStack("BRKLo", PC2 % 256)
+  pushStack("S", PStatus)
   setDecimal(false)  // 65c02 only
   setInterrupt()
   PC = twoByteAdd(memGet(0xFFFE), memGet(0xFFFF), -1);
@@ -358,7 +374,8 @@ PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, 
 
 PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
   const PC2 = (PC + 2) % 65536
-  pushStack(Math.trunc(PC2 / 256)); pushStack(PC2 % 256);
+  pushStack("JSRHi", Math.trunc(PC2 / 256));
+  pushStack("JSRLo", PC2 % 256);
   PC = twoByteAdd(vLo, vHi, -3); return 6})
 
 const doLDA = (addr: number) => {
@@ -434,10 +451,10 @@ PCODE('ORA', MODE.IND_X, 0x01, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, 
   doORA(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('ORA', MODE.IND_Y, 0x11, 2, (vZP) => doIndirectYinstruction(vZP, doORA))
 
-PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack(Accum); return 3})
-PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack(PStatus); return 3})
-PCODE('PHX', MODE.IMPLIED, 0xDA, 1, () => {pushStack(XReg); return 3})
-PCODE('PHY', MODE.IMPLIED, 0x5A, 1, () => {pushStack(YReg); return 3})
+PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack("A", Accum); return 3})
+PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack("S", PStatus); return 3})
+PCODE('PHX', MODE.IMPLIED, 0xDA, 1, () => {pushStack("X", XReg); return 3})
+PCODE('PHY', MODE.IMPLIED, 0x5A, 1, () => {pushStack("Y", YReg); return 3})
 PCODE('PLA', MODE.IMPLIED, 0x68, 1, () => {Accum = popStack(); checkStatus(Accum); return 4})
 PCODE('PLP', MODE.IMPLIED, 0x28, 1, () => {setPStatus(popStack()); return 4})
 PCODE('PLX', MODE.IMPLIED, 0xFA, 1, () => {XReg = popStack(); checkStatus(XReg); return 4})

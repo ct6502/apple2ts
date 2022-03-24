@@ -1,4 +1,4 @@
-import { doBoot6502, doReset,
+import { doBoot6502, doReset, getStatus,
   getProcessorStatus, processInstruction, setDebug } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from './canvas'
@@ -110,69 +110,74 @@ class DisplayApple2 extends React.Component<{},
     const speed = (this.speed[this.state.iCycle] / 1000).toFixed(3)
 
     return (
-      <div className="apple2">
-        <Apple2Canvas/>
-        <br />
-        <span className="leftStatus">
-          <span className="statusItem">
-            Speed (MHz): <span className="fixed">{speed}</span>
-          </span>
-          <span className="statusItem">
-            <label>
-              <input
-                type="checkbox"
-                checked={this.state.speedCheck}
-                onChange={this.handleSpeedChange}
-              />
-              Limit speed
-            </label>
-          </span>
-          <span className="statusItem">
-            Delay (ms):{" "}
-            <span className="fixed">{delta}</span>
-          </span>
+      <div>
+        <span className="apple2">
+          <Apple2Canvas/>
           <br />
-          <span className="statusItem">
-            <span className="fixed">{getProcessorStatus()}</span>
-          </span>
-          <br />
+          <span className="leftStatus">
+            <span className="statusItem">
+              Speed (MHz): <span className="fixed">{speed}</span>
+            </span>
+            <span className="statusItem">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={this.state.speedCheck}
+                  onChange={this.handleSpeedChange}
+                />
+                Limit speed
+              </label>
+            </span>
+            <span className="statusItem">
+              Delay (ms):{" "}
+              <span className="fixed">{delta}</span>
+            </span>
+            <br />
+            <span className="statusItem">
+              <span className="fixed">{getProcessorStatus()}</span>
+            </span>
+            <br />
 
-          <button
-            onClick={() => {
-              if (getAudioContext().state !== "running") {
-                getAudioContext().resume();
-              }
-              this.setState({ _6502: STATE.NEED_BOOT });
-            }}>
-            Boot
-          </button>
-          <button
-            onClick={() => {
-              if (getAudioContext().state !== "running") {
-                getAudioContext().resume();
-              }
-              this.setState({ _6502: STATE.NEED_RESET });
-            }}
-            disabled={this.state._6502 === STATE.IDLE || this.state._6502 === STATE.NEED_BOOT}
-            >
-            Reset
-          </button>
-          <button
-            onClick={() => {
-              const s =
-                this.state._6502 === STATE.PAUSED
-                  ? STATE.IS_RUNNING
-                  : STATE.PAUSED;
-              this.setState({ _6502: s });
-            }}
-            disabled={this.state._6502 === STATE.IDLE}>
-            {this.state._6502 === STATE.PAUSED ? "Resume" : "Pause"}
-          </button>
-        </span>
-        <span className="rightStatus">
-          <span className = "floatRight">
-            <DiskDrive/>
+            <button
+              onClick={() => {
+                if (getAudioContext().state !== "running") {
+                  getAudioContext().resume();
+                }
+                this.setState({ _6502: STATE.NEED_BOOT });
+              }}>
+              Boot
+            </button>
+            <button
+              onClick={() => {
+                if (getAudioContext().state !== "running") {
+                  getAudioContext().resume();
+                }
+                this.setState({ _6502: STATE.NEED_RESET });
+              }}
+              disabled={this.state._6502 === STATE.IDLE || this.state._6502 === STATE.NEED_BOOT}
+              >
+              Reset
+            </button>
+            <button
+              onClick={() => {
+                const s =
+                  this.state._6502 === STATE.PAUSED
+                    ? STATE.IS_RUNNING
+                    : STATE.PAUSED;
+                this.setState({ _6502: s });
+              }}
+              disabled={this.state._6502 === STATE.IDLE}>
+              {this.state._6502 === STATE.PAUSED ? "Resume" : "Pause"}
+            </button>
           </span>
+          <span className="rightStatus">
+            <span className = "floatRight">
+              <DiskDrive/>
+            </span>
+          </span>
+        </span>
+        <span className="statusPanel fixed">
+          {getStatus()}
         </span>
       </div>
     );

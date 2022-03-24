@@ -14,10 +14,7 @@ export let track = 0
 let readMode = false
 let currentPhase = 0
 const doDebugDrive = false
-
-export const doResetDrive = () => {
-  SWITCHES.DRIVE.set = false
-}
+let diskImageHasChanges = false
 
 let motorContext: AudioContext | undefined
 let motorElement: HTMLAudioElement | undefined
@@ -34,7 +31,10 @@ let trackSeekElement: HTMLAudioElement | undefined
 let trackOffEndContext: AudioContext | undefined
 let trackOffEndElement: HTMLAudioElement | undefined
 let trackTimeout = 0
-//let startTime = 0
+
+export const doResetDrive = () => {
+  SWITCHES.DRIVE.set = false
+}
 
 const playTrackOutOfRange = () => {
   if (!trackOffEndContext) {
@@ -117,7 +117,7 @@ const getNextBit = () => {
 }
 
 const getNextByte = () => {
-  // Sanity check to make sure we aren't on a half track by mistake. 
+  // Sanity check to make sure we aren't on a half track by mistake.
   if (diskData.length === 0 || (track % 1 !== 0)) {
     return 0
   }
@@ -155,6 +155,10 @@ const doWriteBit = (bit: 0 | 1) => {
 }
 
 const doWriteByte = (cycleCount: number) => {
+  // Sanity check to make sure we aren't on a half track by mistake.
+  if (diskData.length === 0 || (track % 1 !== 0)) {
+    return
+  }
   const delta = cycleCount - prevCycleCount
   if (delta >= 32 && writeByte > 0) {
     for (let i = 7; i >= 0; i--) {
@@ -171,6 +175,7 @@ const doWriteByte = (cycleCount: number) => {
   }
   prevCycleCount = cycleCount
   writeByte = 0
+  diskImageHasChanges = true
 }
 
 export const handleDriveSoftSwitches =
@@ -230,11 +235,43 @@ export const handleDriveSoftSwitches =
   return result
 }
 
-const decodeDiskData = () => {
+let crcTable = new Uint32Array(256).fill(0)
+
+const makeCRCTable = () => {
+  let c;
+  for (let n =0; n < 256; n++) {
+    c = n;
+    for (let k =0; k < 8; k++) {
+      c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+    }
+    crcTable[n] = c;
+  }
+}
+
+const crc32 = (data: Uint8Array, offset = 0) => {
+  if (crcTable[255] === 0) {
+    makeCRCTable()
+  }
+  let crc = 0 ^ (-1);
+  for (let i = offset; i < data.length; i++) {
+    crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xFF];
+  }
+
+  return (crc ^ (-1)) >>> 0;
+};
+
+const decodeDiskData = (fileName: string) => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz2 = woz2.find((value, i) => value !== diskData[i]) === undefined
+  diskImageHasChanges = false
   if (isWoz2) {
     isWriteProtected = diskData[22] === 1
+    const crc = diskData.slice(8, 12)
+    const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + (crc[3] << 24)
+    const actualCRC = crc32(diskData, 12)
+    if (storedCRC !== actualCRC) {
+      console.error("CRC checksum error: " + fileName)
+    }
     for (let track=0; track < 40; track++) {
       const tmap_value = 256 + 8*diskData[88 + track*4]
       const trk = diskData.slice(tmap_value, tmap_value + 8)
@@ -300,8 +337,6 @@ const playMotorNoise = () => {
   }
 }
 
-let fileName = ''
-
 class DiskDrive extends React.Component<{}, {fileName: string}> {
 
   // Hidden file input element
@@ -315,7 +350,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
   readDisk = async (file: File) => {
     const buffer = await file.arrayBuffer();
     diskData = new Uint8Array(buffer);
-    decodeDiskData()
+    decodeDiskData(file.name)
     this.setState({
       fileName: (diskData.length > 0) ? file.name : '',
     });
@@ -327,6 +362,23 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
     }
   };
 
+  downloadDisk = () => {
+    const crc = crc32(diskData, 12)
+    diskData[8] = crc & 0xFF
+    diskData[9] = (crc >>> 8) & 0xFF
+    diskData[10] = (crc >>> 16) & 0xFF
+    diskData[11] = (crc >>> 24) & 0xFF
+    const blob = new Blob([diskData]);
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', this.state.fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   render() {
     playMotorNoise()
     const img = (diskData.length > 0) ?
@@ -336,8 +388,22 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
       <span>
         <span className="fixed">{track}</span>
         <button className="disk2">
-          <img src={img} alt={fileName}
-            onClick={() => this.hiddenFileInput!.click()} />
+          <img src={img} alt={this.state.fileName} title={this.state.fileName}
+            onClick={() => {
+              if (diskData.length > 0) {
+                if (diskImageHasChanges) {
+                  this.downloadDisk()
+                }
+                diskData = new Uint8Array()
+                this.setState({fileName: ''});
+              } else {
+                if (this.hiddenFileInput) {
+                  // Hack - clear out old file so we can pick the same file again
+                  this.hiddenFileInput.value = "";
+                  this.hiddenFileInput.click()
+                }
+              }
+            }} />
         </button>
         <input
           type="file"
@@ -345,11 +411,6 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
           onChange={this.handleDiskClick}
           style={{display: 'none'}}
         />
-        <button
-          onClick={() => {
-          }}>
-          Download
-        </button>
       </span>
     );
   }

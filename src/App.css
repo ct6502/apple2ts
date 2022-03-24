@@ -50,7 +50,15 @@ body {
   src: url(./fonts/Print\ Char\ 21\ Pro.otf);
 }
 
+.statusPanel {
+  display: inline-block;
+  width: 100px;
+  margin: 20px;
+  vertical-align: top;
+}
+
 .apple2 {
+  display: inline-block;
   margin: 20px;
   width: 840px;
 }
@@ -77,6 +85,7 @@ canvas {
 .fixed {
   font-family: monospace;
   font-size: large;
+  white-space: pre;
 }
 
 button {
