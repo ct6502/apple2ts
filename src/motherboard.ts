@@ -243,7 +243,7 @@ export const processInstruction = () => {
     incrementPC(code.PC);
   } else {
     console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(PC, 4))
-    return 0
+    cycles = pcodes[0].execute(vLo, vHi);
   }
   return cycles
 }

@@ -55,12 +55,18 @@ const stack = new Array<string>(256).fill('')
 export const getStack = () => {
   const result = new Array<string>()
   for (let i = 0xFF; i > SP; i--) {
-    let value = (stack[i] + "  ").substring(0,3) + " $" + toHex(memGet(0x100 + i))
+    let value = "$" + toHex(memGet(0x100 + i))
+    let cmd = stack[i].substring(0, 3)
     if (stack[i].includes("Hi") && (i - 1) > SP) {
-      i--
-      value += toHex(memGet(0x100 + i))
+      if (stack[i-1].includes("Lo")) {
+        i--
+        value += toHex(memGet(0x100 + i))
+      } else {
+        cmd = ''
+      }
     }
-    result.push(toHex(0x100 + i, 4) + ": " + value)
+    value = (value + "   ").substring(0, 6)
+    result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
   }
   return result
 }
