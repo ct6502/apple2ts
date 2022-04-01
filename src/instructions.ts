@@ -56,9 +56,9 @@ export const getStack = () => {
   const result = new Array<string>()
   for (let i = 0xFF; i > SP; i--) {
     let value = "$" + toHex(memGet(0x100 + i))
-    let cmd = stack[i].substring(0, 3)
-    if (stack[i].includes("Hi") && (i - 1) > SP) {
-      if (stack[i-1].includes("Lo")) {
+    let cmd = stack[i]
+    if ((stack[i].length > 3) && (i - 1) > SP) {
+      if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
         i--
         value += toHex(memGet(0x100 + i))
       } else {
@@ -277,12 +277,14 @@ PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(address(vLo, vHi)); return 
 PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
   setBreak();
   const PC2 = (PC + 2) % 65536
-  pushStack("BRKHi", Math.trunc(PC2 / 256))
-  pushStack("BRKLo", PC2 % 256)
+  const vLo = memGet(0xFFFE)
+  const vHi = memGet(0xFFFF)
+  pushStack("BRK $" + toHex(vHi) + toHex(vLo), Math.trunc(PC2 / 256))
+  pushStack("BRK", PC2 % 256)
   pushStack("S", PStatus)
   setDecimal(false)  // 65c02 only
   setInterrupt()
-  PC = twoByteAdd(memGet(0xFFFE), memGet(0xFFFF), -1);
+  PC = twoByteAdd(vLo, vHi, -1);
   return 7})
 
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
@@ -380,8 +382,8 @@ PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, 
 
 PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
   const PC2 = (PC + 2) % 65536
-  pushStack("JSRHi", Math.trunc(PC2 / 256));
-  pushStack("JSRLo", PC2 % 256);
+  pushStack("JSR $" + toHex(vHi) + toHex(vLo), Math.trunc(PC2 / 256));
+  pushStack("JSR", PC2 % 256);
   PC = twoByteAdd(vLo, vHi, -3); return 6})
 
 const doLDA = (addr: number) => {

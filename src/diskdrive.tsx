@@ -11,6 +11,7 @@ import { PC } from './instructions'
 
 
 export let track = 0
+let prevTrack = 0
 let readMode = false
 let currentPhase = 0
 const doDebugDrive = false
@@ -18,7 +19,7 @@ let diskImageHasChanges = false
 
 let motorContext: AudioContext | undefined
 let motorElement: HTMLAudioElement | undefined
-let motorRunningTimer = 0
+let motorIsRunning = false
 
 let trackStart: Array<number> = new Array(40)
 let trackNbits: Array<number> = new Array(40)
@@ -34,7 +35,18 @@ let trackTimeout = 0
 
 export const doResetDrive = () => {
   SWITCHES.DRIVE.set = false
+  doMotorTimeout()
   track = 0
+}
+
+export const doPauseDrive = (resume = false) => {
+  if (resume) {
+    if (motorIsRunning) {
+      startMotor()
+    }
+  } else {
+    motorElement?.pause()
+  }
 }
 
 const playTrackOutOfRange = () => {
@@ -94,12 +106,24 @@ const playTrackSeek = () => {
 }
 
 const moveHead = (offset: number) => {
+  if (track % 1 === 0) {
+    prevTrack = track
+  }
   track += offset
   if (track < 0 || track > 34) {
     playTrackOutOfRange()
     track = (track < 0) ? 0 : (track > 34 ? 34 : track)
   } else {
     playTrackSeek()
+  }
+  // Adjust new track location based on arm position relative to old track loc.
+  if (track % 1 === 0 && prevTrack !== track) {
+    const oldloc = trackLocation
+    trackLocation = Math.floor(trackLocation * (trackNbits[track] / trackNbits[prevTrack]))
+    if (trackLocation > 3) {
+      trackLocation -= 4
+    }
+    console.log(` track=${track} ${oldloc} ${trackLocation} ` + trackNbits[track] + " " + trackNbits[prevTrack])
   }
 }
 
@@ -172,11 +196,9 @@ const doWriteByte = (cycleCount: number) => {
     }
     if (delta >= 36) {
       doWriteBit(0)
-      console.log("36 cycle zero")
     }
     if (delta >= 40) {
       doWriteBit(0)
-      console.log("40 cycle zero")
     }
   }
   prevCycleCount = cycleCount
@@ -187,7 +209,13 @@ const doWriteByte = (cycleCount: number) => {
 export const handleDriveSoftSwitches =
   (addr: number, value: number, cycleCount: number): number => {
   let result = 0
-//  const delta = cycleCount - prevCycleCount
+  if (addr === SWITCHES.DRIVE.addrOn) {
+    startMotor()
+    return result
+  } else if (addr === SWITCHES.DRIVE.addrOff) {
+    stopMotor()
+    return result
+  }
   const phaseSwitches = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
     SWITCHES.DRVSM2, SWITCHES.DRVSM3]
   const a = addr - SWITCHES.DRVSM0.addrOff
@@ -197,12 +225,12 @@ export const handleDriveSoftSwitches =
     const ascend = phaseSwitches[(currentPhase + 1) % 4]
     const descend = phaseSwitches[(currentPhase + 3) % 4]
     if (!phaseSwitches[currentPhase].set) {
-      if (motorRunningTimer && ascend.set) {
+      if (motorIsRunning && ascend.set) {
         moveHead(0.5)
         currentPhase = (currentPhase + 1) % 4
         debug = "  currPhase=" + currentPhase + " track=" + track
 
-      } else if (motorRunningTimer && descend.set) {
+      } else if (motorIsRunning && descend.set) {
         moveHead(-0.5)
         currentPhase = (currentPhase + 3) % 4
         debug = "  currPhase=" + currentPhase + " track=" + track
@@ -224,7 +252,7 @@ export const handleDriveSoftSwitches =
       writeByte = value
     }
   } else if (addr === SWITCHES.DRVDATA.addrOff) {
-    if (motorRunningTimer) {
+    if (motorIsRunning) {
       if (readMode) {
         result = getNextByte()
       } else {
@@ -313,14 +341,14 @@ const decodeDiskData = (fileName: string) => {
 }
 
 const doMotorTimeout = () => {
-  motorElement?.pause()
-  motorRunningTimer = 0
+  if (!SWITCHES.DRIVE.set) {
+    motorIsRunning = false
+    motorElement?.pause()
+  }
 }
 
-const playMotorNoise = () => {
-  if (!SWITCHES.DRIVE.set) {
-    return
-  }
+const startMotor = () => {
+  motorIsRunning = true
   if (!motorContext) {
     motorContext = new AudioContext();
     motorElement = new Audio(driveMotor);
@@ -337,19 +365,13 @@ const playMotorNoise = () => {
     motorContext.resume();
   }
   if (!motorElement.paused) {
-    window.clearTimeout(motorRunningTimer)
-    motorRunningTimer = window.setTimeout(() => doMotorTimeout(), 1000);
     return
   }
-  const playPromise = motorElement.play();
-  if (playPromise) {
-    playPromise.then(function() {
-    window.clearTimeout(motorRunningTimer)
-    motorRunningTimer = window.setTimeout(() => doMotorTimeout(), 1000);
-    }).catch(function(error) {
-      console.log(error)
-    });
-  }
+  motorElement.play();
+}
+
+const stopMotor = () => {
+  window.setTimeout(() => doMotorTimeout(), 1000);
 }
 
 class DiskDrive extends React.Component<{}, {fileName: string}> {
@@ -395,10 +417,9 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
   }
 
   render() {
-    playMotorNoise()
     const img = (diskData.length > 0) ?
-      (motorRunningTimer ? disk2on : disk2off) :
-      (motorRunningTimer ? disk2onEmpty : disk2offEmpty)
+      (motorIsRunning ? disk2on : disk2off) :
+      (motorIsRunning ? disk2onEmpty : disk2offEmpty)
     return (
       <span>
         <span className="fixed">{track}</span>

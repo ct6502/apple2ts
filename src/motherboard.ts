@@ -7,7 +7,7 @@ import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
 import { clickSpeaker } from "./speaker"
 import { resetJoystick, checkJoystickValues } from './joystick';
-import { handleDriveSoftSwitches, doResetDrive } from "./diskdrive"
+import { handleDriveSoftSwitches, doResetDrive, doPauseDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
 
@@ -25,6 +25,10 @@ export const doReset = () => {
   setSP(0xFF)
   setPC(bank0[0xFFFD] * 256 + bank0[0xFFFC]);
   doResetDrive()
+}
+
+export const doPause = (resume = false) => {
+  doPauseDrive(resume)
 }
 
 export const doBoot6502 = () => {
@@ -69,6 +73,8 @@ export const memGet = (addr: number, value=-1): number => {
       resetJoystick(cycleCount)
     } else if (addr >= 0xC064 && addr <= 0xC067) {
       checkJoystickValues(cycleCount)
+    } else if (addr >= 0xC080 && addr <= 0xC08F) {
+      console.error(`access address $${toHex(addr, 4)}`)
     } else {
       for (const [, sswitch] of Object.entries(SWITCHES)) {
         if (addr === sswitch.addrOff) {
@@ -223,9 +229,9 @@ export const processInstruction = () => {
   const code = pcodes[instr];
   if (code) {
     const PC1 = PC
-    if (vHi === 0xC0 && vLo === 0x8F) {
-       doDebug = true
-    }
+    // if (vHi === 0xC0 && vLo === 0x8F) {
+    //    doDebug = true
+    // }
     // Do not output during the Apple II's WAIT subroutine
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`;

@@ -1,4 +1,4 @@
-import { doBoot6502, doReset, getStatus,
+import { doBoot6502, doReset, doPause, getStatus,
   getProcessorStatus, processInstruction, setDebug } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from './canvas'
@@ -105,6 +105,12 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
+  handlePause = () => {
+    const s = this.state._6502 === STATE.PAUSED ? STATE.IS_RUNNING : STATE.PAUSED
+    this.setState({ _6502: s })
+    doPause((s === STATE.IS_RUNNING))
+  }
+
   render() {
     const delta = (this.timeDelta).toFixed(1)
     const speed = (this.speed[this.state.iCycle] / 1000).toFixed(3)
@@ -159,13 +165,7 @@ class DisplayApple2 extends React.Component<{},
               Reset
             </button>
             <button
-              onClick={() => {
-                const s =
-                  this.state._6502 === STATE.PAUSED
-                    ? STATE.IS_RUNNING
-                    : STATE.PAUSED;
-                this.setState({ _6502: s });
-              }}
+              onClick={this.handlePause}
               disabled={this.state._6502 === STATE.IDLE}>
               {this.state._6502 === STATE.PAUSED ? "Resume" : "Pause"}
             </button>
