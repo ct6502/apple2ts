@@ -10,8 +10,8 @@ import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
 import { PC } from './instructions'
 
 
-export let track = 0
-let prevTrack = 0
+export let halftrack = 0
+let prevHalfTrack = 0
 let readMode = false
 let currentPhase = 0
 const doDebugDrive = false
@@ -21,8 +21,8 @@ let motorContext: AudioContext | undefined
 let motorElement: HTMLAudioElement | undefined
 let motorIsRunning = false
 
-let trackStart: Array<number> = new Array(40)
-let trackNbits: Array<number> = new Array(40)
+let trackStart: Array<number> = new Array(80)
+let trackNbits: Array<number> = new Array(80)
 let diskData = new Uint8Array()
 let trackLocation = 0
 let isWriteProtected = false
@@ -36,7 +36,7 @@ let trackTimeout = 0
 export const doResetDrive = () => {
   SWITCHES.DRIVE.set = false
   doMotorTimeout()
-  track = 0
+  halftrack = 0
 }
 
 export const doPauseDrive = (resume = false) => {
@@ -106,24 +106,25 @@ const playTrackSeek = () => {
 }
 
 const moveHead = (offset: number) => {
-  if (track % 1 === 0) {
-    prevTrack = track
+  if (trackStart[halftrack] > 0) {
+    prevHalfTrack = halftrack
   }
-  track += offset
-  if (track < 0 || track > 34) {
+  halftrack += offset
+  if (halftrack < 0 || halftrack > 68) {
     playTrackOutOfRange()
-    track = (track < 0) ? 0 : (track > 34 ? 34 : track)
+    halftrack = (halftrack < 0) ? 0 : (halftrack > 68 ? 68 : halftrack)
   } else {
     playTrackSeek()
   }
   // Adjust new track location based on arm position relative to old track loc.
-  if (track % 1 === 0 && prevTrack !== track) {
-    const oldloc = trackLocation
-    trackLocation = Math.floor(trackLocation * (trackNbits[track] / trackNbits[prevTrack]))
+  if (trackStart[halftrack] > 0 && prevHalfTrack !== halftrack) {
+    // const oldloc = trackLocation
+    trackLocation = Math.floor(trackLocation * (trackNbits[halftrack] / trackNbits[prevHalfTrack]))
     if (trackLocation > 3) {
       trackLocation -= 4
     }
-    console.log(` track=${track} ${oldloc} ${trackLocation} ` + trackNbits[track] + " " + trackNbits[prevTrack])
+    // console.log(` track=${halftrack} ${oldloc} ${trackLocation} ` +
+    //   trackNbits[halftrack] + " " + trackNbits[prevHalfTrack])
   }
 }
 
@@ -132,14 +133,15 @@ const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
   0b11110111, 0b11111011, 0b11111101, 0b11111110]
 
 const getNextBit = () => {
-  trackLocation = trackLocation % trackNbits[track]
+  trackLocation = trackLocation % trackNbits[halftrack]
   let bit: number
-  if (trackStart[track] > 0) {
-    const fileOffset = trackStart[track] + (trackLocation >> 3)
+  if (trackStart[halftrack] > 0) {
+    const fileOffset = trackStart[halftrack] + (trackLocation >> 3)
     const byte = diskData[fileOffset]
     const b = trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
   } else {
+    // TODO: Freak out like a MC3470 and return random bits
     bit = 1
   }
   trackLocation++
@@ -147,8 +149,7 @@ const getNextBit = () => {
 }
 
 const getNextByte = () => {
-  // Sanity check to make sure we aren't on a half track by mistake.
-  if (diskData.length === 0 || (track % 1 !== 0)) {
+  if (diskData.length === 0) {
     return 0
   }
   let result = 0
@@ -171,22 +172,25 @@ let writeByte = 0
 let prevCycleCount = 0
 
 const doWriteBit = (bit: 0 | 1) => {
-  trackLocation = trackLocation % trackNbits[track]
-  const fileOffset = trackStart[track] + (trackLocation >> 3)
-  let byte = diskData[fileOffset]
-  const b = trackLocation & 7
-  if (bit) {
-    byte |= pickbit[b]
-  } else {
-    byte &= clearbit[b]
+  trackLocation = trackLocation % trackNbits[halftrack]
+  // TODO: What about writing to empty tracks?
+  if (trackStart[halftrack] > 0) {
+    const fileOffset = trackStart[halftrack] + (trackLocation >> 3)
+    let byte = diskData[fileOffset]
+    const b = trackLocation & 7
+    if (bit) {
+      byte |= pickbit[b]
+    } else {
+      byte &= clearbit[b]
+    }
+    diskData[fileOffset] = byte
   }
-  diskData[fileOffset] = byte
   trackLocation++
 }
 
 const doWriteByte = (cycleCount: number) => {
-  // Sanity check to make sure we aren't on a half track by mistake.
-  if (diskData.length === 0 || (track % 1 !== 0)) {
+  // Sanity check to make sure we aren't on an empty track. Is this correct?
+  if (diskData.length === 0 || trackStart[halftrack] === 0) {
     return
   }
   const delta = cycleCount - prevCycleCount
@@ -226,14 +230,14 @@ export const handleDriveSoftSwitches =
     const descend = phaseSwitches[(currentPhase + 3) % 4]
     if (!phaseSwitches[currentPhase].set) {
       if (motorIsRunning && ascend.set) {
-        moveHead(0.5)
+        moveHead(1)
         currentPhase = (currentPhase + 1) % 4
-        debug = "  currPhase=" + currentPhase + " track=" + track
+        debug = "  currPhase=" + currentPhase + " track=" + halftrack / 2
 
       } else if (motorIsRunning && descend.set) {
-        moveHead(-0.5)
+        moveHead(-1)
         currentPhase = (currentPhase + 3) % 4
-        debug = "  currPhase=" + currentPhase + " track=" + track
+        debug = "  currPhase=" + currentPhase + " track=" + halftrack / 2
       }
     }
     if (doDebugDrive) {
@@ -308,18 +312,18 @@ const decodeDiskData = (fileName: string) => {
     if (storedCRC !== 0 && storedCRC !== actualCRC) {
       console.error("CRC checksum error: " + fileName)
     }
-    for (let track=0; track < 40; track++) {
-      const tmap_index = diskData[88 + track*4]
+    for (let htrack=0; htrack < 80; htrack++) {
+      const tmap_index = diskData[88 + htrack * 2]
       if (tmap_index < 255) {
-        const tmap_offset = 256 + 8*diskData[88 + track*4]
+        const tmap_offset = 256 + 8 * tmap_index
         const trk = diskData.slice(tmap_offset, tmap_offset + 8)
-        trackStart[track] = 512*(trk[0] + (trk[1] << 8))
+        trackStart[htrack] = 512*(trk[0] + (trk[1] << 8))
         // const nBlocks = trk[2] + (trk[3] << 8)
-        trackNbits[track] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
+        trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
       } else {
-        trackStart[track] = 0
-        trackNbits[track] = 51200
-        console.log(`empty track ${track}`)
+        trackStart[htrack] = 0
+        trackNbits[htrack] = 51200
+        console.log(`empty woz2 track ${htrack / 2}`)
       }
     }
     return
@@ -328,11 +332,17 @@ const decodeDiskData = (fileName: string) => {
   const isWoz1 = woz1.find((value, i) => value !== diskData[i]) === undefined
   if (isWoz1) {
     isWriteProtected = diskData[22] === 1
-    for (let track=0; track < 40; track++) {
-      const tmap_value = diskData[88 + track*4]
-      trackStart[track] = 256 + tmap_value * 6656
-      const trk = diskData.slice(trackStart[track] + 6646, trackStart[track] + 6656)
-      trackNbits[track] = trk[2] + (trk[3] << 8)
+    for (let htrack=0; htrack < 80; htrack++) {
+      const tmap_index = diskData[88 + htrack * 2]
+      if (tmap_index < 255) {
+        trackStart[htrack] = 256 + tmap_index * 6656
+        const trk = diskData.slice(trackStart[htrack] + 6646, trackStart[htrack] + 6656)
+        trackNbits[htrack] = trk[2] + (trk[3] << 8)
+      } else {
+        trackStart[htrack] = 0
+        trackNbits[htrack] = 51200
+        console.log(`empty woz1 track ${htrack / 2}`)
+      }
     }
     return
   }
@@ -422,7 +432,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
       (motorIsRunning ? disk2onEmpty : disk2offEmpty)
     return (
       <span>
-        <span className="fixed">{track}</span>
+        <span className="fixed">{halftrack / 2}</span>
         <button className="disk2">
           <img src={img} alt={this.state.fileName} title={this.state.fileName}
             onClick={() => {
