@@ -232,7 +232,7 @@ const Apple2Canvas = (props: any) => {
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
     const gamepadID = window.setInterval(() => {
-      handleGamePad(navigator.getGamepads()[0])}, 100);
+      handleGamePad(navigator.getGamepads()[0])}, 33);
 
     const render = () => {
       frameCount++
