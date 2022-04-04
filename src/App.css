@@ -52,7 +52,7 @@ body {
 
 .statusPanel {
   display: inline-block;
-  width: 100px;
+  width: 370px;
   margin: 20px;
   vertical-align: top;
 }
@@ -85,7 +85,10 @@ canvas {
 .fixed {
   font-family: monospace;
   font-size: large;
-  white-space: pre;
+}
+
+.small {
+  font-size: small;
 }
 
 button {

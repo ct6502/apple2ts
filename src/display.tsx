@@ -1,23 +1,17 @@
 import { doBoot6502, doReset, doPause, getStatus,
-  getProcessorStatus, processInstruction, setDebug } from "./motherboard";
+  processInstruction, setDebug, STATE } from "./motherboard";
 // import { parseAssembly } from "./assembler";
-import Apple2Canvas from './canvas'
-import { getAudioContext } from "./speaker";
+import Apple2Canvas from "./canvas"
+import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
 
 import React from "react";
+import parse from "html-react-parser"
+
 // import Test from "./components/test";
 
-enum STATE {
-  IDLE,
-  NEED_BOOT,
-  NEED_RESET,
-  IS_RUNNING,
-  PAUSED
-}
-
 class DisplayApple2 extends React.Component<{},
-  { _6502: STATE; iCycle: number; speedCheck: boolean }> {
+  { _6502: STATE; iCycle: number; speedCheck: boolean; uppercase: boolean }> {
   timerID = 0;
   cycles = 0;
   timeDelta = 0;
@@ -27,7 +21,11 @@ class DisplayApple2 extends React.Component<{},
 
   constructor(props: any) {
     super(props);
-    this.state = { _6502: STATE.IDLE, iCycle: 0, speedCheck: true };
+    this.state = { _6502: STATE.IDLE,
+      iCycle: 0,
+      speedCheck: true,
+      uppercase: true,
+    };
   }
 
   doBoot() {
@@ -105,10 +103,22 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
+  handleUpperCaseChange = () => {
+    this.speed.fill(1020.484)
+    window.clearInterval(this.timerID)
+    this.timerID = window.setInterval(() => this.advance(),
+      this.state.speedCheck ? 0 : this.refreshTime)
+    this.setState({ uppercase: !this.state.uppercase });
+  };
+
   handlePause = () => {
     const s = this.state._6502 === STATE.PAUSED ? STATE.IS_RUNNING : STATE.PAUSED
     this.setState({ _6502: s })
     doPause((s === STATE.IS_RUNNING))
+  }
+
+  handle6502StateChange = (state: STATE) => {
+    this.setState({ _6502: state });
   }
 
   render() {
@@ -118,66 +128,24 @@ class DisplayApple2 extends React.Component<{},
     return (
       <div>
         <span className="apple2">
-          <Apple2Canvas/>
+          <Apple2Canvas uppercase={this.state.uppercase}/>
           <br />
-          <span className="leftStatus">
-            <span className="statusItem">
-              Speed (MHz): <span className="fixed">{speed}</span>
-            </span>
-            <span className="statusItem">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={this.state.speedCheck}
-                  onChange={this.handleSpeedChange}
-                />
-                Limit speed
-              </label>
-            </span>
-            <span className="statusItem">
-              Delay (ms):{" "}
-              <span className="fixed">{delta}</span>
-            </span>
-            <br />
-            <span className="statusItem">
-              <span className="fixed">{getProcessorStatus()}</span>
-            </span>
-            <br />
-
-            <button
-              onClick={() => {
-                if (getAudioContext().state !== "running") {
-                  getAudioContext().resume();
-                }
-                this.setState({ _6502: STATE.NEED_BOOT });
-              }}>
-              Boot
-            </button>
-            <button
-              onClick={() => {
-                if (getAudioContext().state !== "running") {
-                  getAudioContext().resume();
-                }
-                this.setState({ _6502: STATE.NEED_RESET });
-              }}
-              disabled={this.state._6502 === STATE.IDLE || this.state._6502 === STATE.NEED_BOOT}
-              >
-              Reset
-            </button>
-            <button
-              onClick={this.handlePause}
-              disabled={this.state._6502 === STATE.IDLE}>
-              {this.state._6502 === STATE.PAUSED ? "Resume" : "Pause"}
-            </button>
-          </span>
+          <ControlPanel _6502={this.state._6502}
+            speed={speed} delta={delta}
+            speedCheck={this.state.speedCheck}
+            handleSpeedChange={this.handleSpeedChange}
+            uppercase={this.state.uppercase}
+            handleUpperCaseChange={this.handleUpperCaseChange}
+            handlePause={this.handlePause}
+            handle6502StateChange={this.handle6502StateChange}/>
           <span className="rightStatus">
             <span className = "floatRight">
               <DiskDrive/>
             </span>
           </span>
         </span>
-        <span className="statusPanel fixed">
-          {getStatus()}
+        <span className="statusPanel fixed small">
+          {parse(getStatus())}
         </span>
       </div>
     );

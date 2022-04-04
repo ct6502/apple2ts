@@ -183,29 +183,7 @@ const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number) => {
   }
 }
 
-const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
-  if (e.key === "v" && e.metaKey) {
-    return;
-  }
-  if (e.metaKey && e.key === "Meta") {
-    pressAppleKey(true, e.code === "MetaLeft")
-    return;
-  }
-  const key = convertAppleKey(e);
-  if (key > 0) {
-    keyPress(key);
-  } else {
-    // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
-    //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
-  }
-};
 
-const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
-  if (e.code === "MetaLeft" || e.code === "MetaRight") {
-    pressAppleKey(false, e.code === "MetaLeft")
-    return;
-  }
-};
 
 const pasteHandler = (e: ClipboardEvent) => {
   if (e.clipboardData) {
@@ -219,6 +197,30 @@ const pasteHandler = (e: ClipboardEvent) => {
 
 const Apple2Canvas = (props: any) => {
   let canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
+    if (e.key === "v" && e.metaKey) {
+      return;
+    }
+    if (e.metaKey && e.key === "Meta") {
+      pressAppleKey(true, e.code === "MetaLeft")
+      return;
+    }
+    const key = convertAppleKey(e, props.uppercase);
+    if (key > 0) {
+      keyPress(key);
+    } else {
+      // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
+      //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
+    }
+  };
+
+  const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
+    if (e.code === "MetaLeft" || e.code === "MetaRight") {
+      pressAppleKey(false, e.code === "MetaLeft")
+      return;
+    }
+  };
 
   // This code only runs once when the component first renders
   useEffect(() => {

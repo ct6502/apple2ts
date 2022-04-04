@@ -21,7 +21,7 @@ export const keyPress = (key: number) => {
   bank0[0xC000] = key | 0b10000000
 }
 
-export const convertAppleKey = (e: KeyboardEvent) => {
+export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
   let key = 0
   if (e.key.length === 1) {
     key = e.key.charCodeAt(0)
@@ -34,6 +34,9 @@ export const convertAppleKey = (e: KeyboardEvent) => {
     }
     if (e.metaKey || e.altKey) {
       return 0
+    }
+    if (uppercase) {
+      key = e.key.toUpperCase().charCodeAt(0)
     }
   } else {
     const keymap: { [key: string]: number } = {

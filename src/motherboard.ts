@@ -11,6 +11,14 @@ import { handleDriveSoftSwitches, doResetDrive, doPauseDrive } from "./diskdrive
 
 export let bank0 = new Uint8Array(65536)
 
+export enum STATE {
+  IDLE,
+  NEED_BOOT,
+  NEED_RESET,
+  IS_RUNNING,
+  PAUSED
+}
+
 let cycleCount = 0;
 
 export let doDebug = false
@@ -74,7 +82,7 @@ export const memGet = (addr: number, value=-1): number => {
     } else if (addr >= 0xC064 && addr <= 0xC067) {
       checkJoystickValues(cycleCount)
     } else if (addr >= 0xC080 && addr <= 0xC08F) {
-      console.error(`access address $${toHex(addr, 4)}`)
+      console.error(`unhandled softswitch $${toHex(addr, 4)}`)
     } else {
       for (const [, sswitch] of Object.entries(SWITCHES)) {
         if (addr === sswitch.addrOff) {
@@ -95,6 +103,7 @@ export const memGet = (addr: number, value=-1): number => {
 
 export const memSet = (address: number, value: number) => {
   if (address >= 0xC000 && address <= 0xC0FF) {
+    memGet(address, value)
     memGet(address, value)
   } else if (address < 0xC000) {
     bank0[address] = value
@@ -204,7 +213,19 @@ export function getHGR(page2: boolean) {
 }
 
 export const getStatus = () => {
-  return getStack().join('\n')
+  const status = Array<String>(40).fill('')
+  const stack = getStack()
+  for (let i = 0; i < Math.min(20, stack.length); i++) {
+    status[i] = stack[i]
+  }
+  for (let j = 0; j < 16; j++) {
+    let s = '<b>' + toHex(16 * j) + '</b>:'
+    for (let i = 0; i < 16; i++) {
+      s += ' ' + toHex(bank0[j*16 + i])
+    }
+    status[status.length - 16 + j] = s
+  }
+  return status.join('<br/>')
 }
 
 let zpPrev = new Uint8Array(1)
