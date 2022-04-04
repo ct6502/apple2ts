@@ -8,7 +8,11 @@ class Oscillator extends AudioWorkletProcessor {
   constructor() {
     super();
     this.port.onmessage = (event) => {
-      const delta = Math.round((event.data - this.prevCycle)*this.sampling*4)/4
+      let delta = Math.round((event.data - this.prevCycle)*this.sampling*4)/4
+      if (delta < 1) {
+        delta = 3
+      }
+//      console.log("6502 delay = " + (event.data - this.prevCycle) + " JS delay = " + delta)
       this.newIndex = (this.newIndex + delta) % this.tick.length
       this.tick[Math.round(this.newIndex)] = 1
       this.prevCycle = event.data
