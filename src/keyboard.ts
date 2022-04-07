@@ -24,6 +24,9 @@ export const keyPress = (key: number) => {
 export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
   let key = 0
   if (e.key.length === 1) {
+    if (e.metaKey || e.altKey) {
+      return 0
+    }
     key = e.key.charCodeAt(0)
     if (e.ctrlKey) {
       if (key >= 0x40 && key <= 0x7E) {
@@ -31,11 +34,7 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
       } else {
         return 0
       }
-    }
-    if (e.metaKey || e.altKey) {
-      return 0
-    }
-    if (uppercase) {
+    } else if (uppercase) {
       key = e.key.toUpperCase().charCodeAt(0)
     }
   } else {
