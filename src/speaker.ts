@@ -3,7 +3,7 @@ let audioContext: AudioContext
 let speaker: AudioWorkletNode
 
 const startOscillator = async () => {
-  audioContext = new AudioContext()
+  audioContext = new AudioContext({latencyHint: 0, sampleRate: 44100})
   await audioContext.audioWorklet.addModule('worklet/oscillator.js')
   speaker = new AudioWorkletNode(audioContext, 'oscillator')
   speaker.connect(audioContext.destination)

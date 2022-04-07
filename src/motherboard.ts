@@ -75,7 +75,10 @@ export const memGet = (addr: number, value=-1): number => {
     if (addr === 0xC010) {
       bank0[0xC000] &= 0b01111111
       popKey()
+    } else if (addr === 0xC020) {
+      bank0[addr] = Math.floor(256*Math.random())
     } else if (addr === 0xC030) {
+      bank0[addr] = Math.floor(256*Math.random())
       clickSpeaker(cycleCount)
     } else if (addr === 0xC070) {
       resetJoystick(cycleCount)
