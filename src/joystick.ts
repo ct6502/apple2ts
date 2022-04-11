@@ -114,7 +114,7 @@ export const handleGamePad = (gamePad: Gamepad | null) => {
     let xstick = (gamePad.axes[0] !== 0) ? gamePad.axes[0] : gamePad.axes[2]
     let ystick = (gamePad.axes[1] !== 0) ? gamePad.axes[1] : gamePad.axes[3]
     const dist = Math.sqrt(xstick * xstick + ystick * ystick)
-    const clip = 0.95 * ((xstick === 0 && ystick === 0) ? 1 :
+    const clip = 0.95 * ((dist === 0) ? 1 :
       Math.max(Math.abs(xstick), Math.abs(ystick)) / dist)
     xstick = Math.min(Math.max(-clip, xstick), clip)
     ystick = Math.min(Math.max(-clip, ystick), clip)
