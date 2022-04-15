@@ -2,7 +2,7 @@ import { Accum, XReg, YReg, PStatus, SP,
   setAccum, setXregister, setYregister, setPStatus, setSP, setPC,
   pcodes, PC, MODE, isRelativeInstr,
   address, incrementPC, getStack } from './instructions'
-import { rom } from "./roms/rom_2+.base64";
+import { rom } from "./roms/rom_2e";
 import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
 import { clickSpeaker } from "./speaker"
