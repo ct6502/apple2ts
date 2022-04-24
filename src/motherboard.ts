@@ -1,8 +1,10 @@
-import { Accum, XReg, YReg, PStatus, SP,
+import { Accum, XReg, YReg, SP,
   setAccum, setXregister, setYregister, setPStatus, setSP, setPC,
   pcodes, PC, MODE, isRelativeInstr,
-  address, incrementPC, getStack } from './instructions'
-import { rom } from "./roms/rom_2e";
+  address, incrementPC, getStack, getPStatusString } from './instructions'
+import { romBase64 } from "./roms/rom_2e";
+import { slot_disk2 } from "./roms/slot_disk2_cx00";
+import { slot_omni } from "./roms/slot_omni_cx00";
 import { Buffer } from "buffer";
 import { popKey } from "./keyboard"
 import { clickSpeaker } from "./speaker"
@@ -10,6 +12,15 @@ import { resetJoystick, checkJoystickValues } from './joystick';
 import { handleDriveSoftSwitches, doResetDrive, doPauseDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
+const empty = new Uint8Array(256).fill(255)
+let slots = [
+  empty,
+  Buffer.from(slot_omni.replaceAll('\n', ''), 'base64'),
+  empty,
+  empty,
+  empty,
+  Buffer.from(slot_disk2.replaceAll('\n', ''), 'base64'),
+  empty]
 
 export enum STATE {
   IDLE,
@@ -31,7 +42,8 @@ export const doReset = () => {
   setYregister(0)
   setPStatus(0b00100100)
   setSP(0xFF)
-  setPC(bank0[0xFFFD] * 256 + bank0[0xFFFC]);
+  setPC(bank0[0xFFFD] * 256 + bank0[0xFFFC])
+  SWITCHES.TEXT.isSet = true
   doResetDrive()
 }
 
@@ -39,64 +51,101 @@ export const doPause = (resume = false) => {
   doPauseDrive(resume)
 }
 
+const rom = Buffer.from(romBase64.replaceAll('\n', ''), 'base64')
+
 export const doBoot6502 = () => {
   bank0.fill(0xFF)
-  bank0.set(Buffer.from(rom.replaceAll('\n', ''), 'base64'), 0xC000)
+  bank0.set(rom, 0xC000)
   doReset()
 }
 
-type softSwitch = {
-  addrOff: number
-  addrOn: number
-  set: boolean
+const setINTCXROM = () => {
+  if (SWITCHES.INTCXROM.isSet) {
+    bank0.set(rom.slice(0x100, 0x800), 0xC100)
+  } else {
+    for (let slot = 1; slot <= 7; slot++) {
+      bank0.set(slots[slot - 1], 0xC000 + 256 * slot)
+    }
+    setSLOTC3ROM()
+  }
 }
-const NewSwitch = (addrOff: number, addrOn = addrOff + 1, set = false): softSwitch => {
-  return {addrOff: addrOff, addrOn: addrOn, set: set}
+
+const setSLOTC3ROM = () => {
+  if (SWITCHES.SLOTC3ROM.isSet && !SWITCHES.INTCXROM.isSet) {
+    bank0.set(slots[2], 0xC300)
+  } else {
+    bank0.set(rom.slice(0x300, 0x100), 0xC300)
+  }
+}
+
+type softSwitch = {
+  offAddr: number
+  onAddr: number
+  isSetAddr: number
+  writeOnly: boolean
+  isSet: boolean
+  setFunc: (cycleCount: number) => void
+}
+const NewSwitch = (offAddr: number, isSetAddr: number,
+  writeOnly = false, setFunc = () => {}): softSwitch => {
+  return {offAddr: offAddr, onAddr: offAddr + 1, isSetAddr: isSetAddr,
+    writeOnly: writeOnly, isSet: false, setFunc: setFunc}
 }
 const SLOT6 = 0x60
 
+const rand = () => Math.floor(256*Math.random())
+
 export const SWITCHES = {
-  TEXT: NewSwitch(0xC050, 0xC051, true),
-  MIXED: NewSwitch(0xC052),
-  PAGE2: NewSwitch(0xC054),
-  HIRES: NewSwitch(0xC056),
-  DRVSM0: NewSwitch(0xC080 + SLOT6),
-  DRVSM1: NewSwitch(0xC082 + SLOT6),
-  DRVSM2: NewSwitch(0xC084 + SLOT6),
-  DRVSM3: NewSwitch(0xC086 + SLOT6),
-  DRIVE: NewSwitch(0xC088 + SLOT6),
-  DRVSEL: NewSwitch(0xC08A + SLOT6),
-  DRVDATA: NewSwitch(0xC08C + SLOT6),
-  DRVWRITE: NewSwitch(0xC08E + SLOT6),
+  STORE80: NewSwitch(0xC000, 0xC018, true),
+  INTCXROM: NewSwitch(0xC006, 0xC015, true, setINTCXROM),
+  SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true, setSLOTC3ROM),
+  COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
+  KBRDSTROBE: NewSwitch(0xC010, 0, false,
+    () => {bank0[0xC000] &= 0b01111111; popKey()}),
+  CASSETTE: NewSwitch(0xC020, 0, false, () => {
+    bank0[0xC020] = rand()}),
+  SPEAKER: NewSwitch(0xC030, 0, false,
+    () => {bank0[0xC030] = rand(); clickSpeaker(cycleCount)}),
+  TEXT: NewSwitch(0xC050, 0xC01A),
+  MIXED: NewSwitch(0xC052, 0xC01B),
+  PAGE2: NewSwitch(0xC054, 0xC01C),
+  HIRES: NewSwitch(0xC056, 0xC01D),
+  JOYSTICK12: NewSwitch(0xC064, 0, false,
+    () => {checkJoystickValues(cycleCount)}),
+  JOYSTICKRESET: NewSwitch(0xC070, 0, false,
+    () => {resetJoystick(cycleCount)}),
+  DRVSM0: NewSwitch(0xC080 + SLOT6, 0),
+  DRVSM1: NewSwitch(0xC082 + SLOT6, 0),
+  DRVSM2: NewSwitch(0xC084 + SLOT6, 0),
+  DRVSM3: NewSwitch(0xC086 + SLOT6, 0),
+  DRIVE: NewSwitch(0xC088 + SLOT6, 0),
+  DRVSEL: NewSwitch(0xC08A + SLOT6, 0),
+  DRVDATA: NewSwitch(0xC08C + SLOT6, 0),
+  DRVWRITE: NewSwitch(0xC08E + SLOT6, 0),
+}
+
+const checkSoftSwitches = (addr: number, isMemSet: boolean) => {
+  for (const [, sswitch] of Object.entries(SWITCHES)) {
+    if (addr === sswitch.offAddr || addr === sswitch.onAddr) {
+      if (sswitch.writeOnly === isMemSet) {
+        sswitch.isSet = addr === sswitch.onAddr
+        if (sswitch.isSetAddr > 0) {
+          bank0[sswitch.isSetAddr] = sswitch.isSet ? 0x8D : 0x0D
+        }
+        sswitch.setFunc(cycleCount)
+      }
+      return
+    }
+  }
 }
 
 export const memGet = (addr: number, value=-1): number => {
   if (addr >= 0xC000) {
-    if (addr === 0xC010) {
-      bank0[0xC000] &= 0b01111111
-      popKey()
-    } else if (addr === 0xC020) {
-      bank0[addr] = Math.floor(256*Math.random())
-    } else if (addr === 0xC030) {
-      bank0[addr] = Math.floor(256*Math.random())
-      clickSpeaker(cycleCount)
-    } else if (addr === 0xC070) {
-      resetJoystick(cycleCount)
-    } else if (addr >= 0xC064 && addr <= 0xC067) {
-      checkJoystickValues(cycleCount)
-    } else if (addr >= 0xC080 && addr <= 0xC08F) {
+    if (addr >= 0xC080 && addr <= 0xC08F) {
       console.error(`unhandled softswitch $${toHex(addr, 4)}`)
     } else {
-      for (const [, sswitch] of Object.entries(SWITCHES)) {
-        if (addr === sswitch.addrOff) {
-          sswitch.set = false
-          break
-        } else if (addr === sswitch.addrOn) {
-          sswitch.set = true
-          break
-        }
-      }
-      if (addr >= SWITCHES.DRVSM0.addrOff && addr <= SWITCHES.DRVWRITE.addrOn) {
+      checkSoftSwitches(addr, false)
+      if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
         return handleDriveSoftSwitches(addr, value, cycleCount)
       }
     }
@@ -104,12 +153,13 @@ export const memGet = (addr: number, value=-1): number => {
   return bank0[addr]
 }
 
-export const memSet = (address: number, value: number) => {
-  if (address >= 0xC000 && address <= 0xC0FF) {
-    memGet(address, value)
-    memGet(address, value)
-  } else if (address < 0xC000) {
-    bank0[address] = value
+export const memSet = (addr: number, value: number) => {
+  if (addr >= 0xC000 && addr <= 0xC0FF) {
+    memGet(addr, value)
+    memGet(addr, value)
+    checkSoftSwitches(addr, true)
+  } else if (addr < 0xC000) {
+    bank0[addr] = value
   }
 }
 
@@ -123,7 +173,7 @@ export const toHex = (value: number, ndigits = 2) => {
 
 export const getProcessorStatus = () => {
   return `${toHex(PC,4)}-  A=${toHex(Accum)} X=${toHex(XReg)} ` + 
-  `Y=${toHex(YReg)} P=${toBinary(PStatus)} S=${toHex(SP)}`
+  `Y=${toHex(YReg)} P=${getPStatusString()} S=${toHex(SP)}`
 }
 
 const modeString = (mode: MODE) => {

@@ -42,6 +42,10 @@ export const setYregister = (value: number) => {
   YReg = value
 }
 
+export const getPStatusString = () => {
+  return `NV-BDIZC`
+}
+
 export const setPStatus = (value: number) => {
   PStatus = value | 0b00100000
 }
@@ -276,6 +280,8 @@ PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(address(vLo, vHi)); return 
 
 PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
   setBreak();
+  memSet(0xC00A, 0)
+  memSet(0xC006, 0)
   const PC2 = (PC + 2) % 65536
   const vLo = memGet(0xFFFE)
   const vHi = memGet(0xFFFF)

@@ -34,7 +34,7 @@ let trackOffEndElement: HTMLAudioElement | undefined
 let trackTimeout = 0
 
 export const doResetDrive = () => {
-  SWITCHES.DRIVE.set = false
+  SWITCHES.DRIVE.isSet = false
   doMotorTimeout()
   halftrack = 0
 }
@@ -213,28 +213,28 @@ const doWriteByte = (cycleCount: number) => {
 export const handleDriveSoftSwitches =
   (addr: number, value: number, cycleCount: number): number => {
   let result = 0
-  if (addr === SWITCHES.DRIVE.addrOn) {
+  if (addr === SWITCHES.DRIVE.offAddr + 1) {
     startMotor()
     return result
-  } else if (addr === SWITCHES.DRIVE.addrOff) {
+  } else if (addr === SWITCHES.DRIVE.offAddr) {
     stopMotor()
     return result
   }
   const phaseSwitches = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
     SWITCHES.DRVSM2, SWITCHES.DRVSM3]
-  const a = addr - SWITCHES.DRVSM0.addrOff
+  const a = addr - SWITCHES.DRVSM0.offAddr
   let debug = ""
   // One of the stepper motors has been turned on or off
   if (a >= 0 && a <= 7) {
     const ascend = phaseSwitches[(currentPhase + 1) % 4]
     const descend = phaseSwitches[(currentPhase + 3) % 4]
-    if (!phaseSwitches[currentPhase].set) {
-      if (motorIsRunning && ascend.set) {
+    if (!phaseSwitches[currentPhase].isSet) {
+      if (motorIsRunning && ascend.isSet) {
         moveHead(1)
         currentPhase = (currentPhase + 1) % 4
         debug = "  currPhase=" + currentPhase + " track=" + halftrack / 2
 
-      } else if (motorIsRunning && descend.set) {
+      } else if (motorIsRunning && descend.isSet) {
         moveHead(-1)
         currentPhase = (currentPhase + 3) % 4
         debug = "  currPhase=" + currentPhase + " track=" + halftrack / 2
@@ -245,17 +245,17 @@ export const handleDriveSoftSwitches =
         " phase=" + (a >> 1) + (a % 2 === 0 ? " off" : " on ") +
         " 0x27=" + toHex(bank0[0x27]) + debug)
     }
-  } else if (addr === SWITCHES.DRVWRITE.addrOff) {
+  } else if (addr === SWITCHES.DRVWRITE.offAddr) {
     readMode = true
-    if (SWITCHES.DRVDATA.set) {
+    if (SWITCHES.DRVDATA.isSet) {
       result = isWriteProtected ? 0xFF : 0
     }
-  } else if (addr === SWITCHES.DRVWRITE.addrOn) {
+  } else if (addr === SWITCHES.DRVWRITE.offAddr + 1) {
     readMode = false
     if (value >= 0) {
       writeByte = value
     }
-  } else if (addr === SWITCHES.DRVDATA.addrOff) {
+  } else if (addr === SWITCHES.DRVDATA.offAddr) {
     if (motorIsRunning) {
       if (readMode) {
         result = getNextByte()
@@ -263,7 +263,7 @@ export const handleDriveSoftSwitches =
         doWriteByte(cycleCount)
       }
     }
-  } else if (addr === SWITCHES.DRVDATA.addrOn) {
+  } else if (addr === SWITCHES.DRVDATA.offAddr + 1) {
     if (value >= 0) {
       writeByte = value
     }
@@ -351,7 +351,7 @@ const decodeDiskData = (fileName: string) => {
 }
 
 const doMotorTimeout = () => {
-  if (!SWITCHES.DRIVE.set) {
+  if (!SWITCHES.DRIVE.isSet) {
     motorIsRunning = false
     motorElement?.pause()
   }

@@ -169,17 +169,17 @@ const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number) => {
   ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
-  if (SWITCHES.TEXT.set) {
-    processTextPage(ctx, SWITCHES.PAGE2.set)
+  if (SWITCHES.TEXT.isSet) {
+    processTextPage(ctx, SWITCHES.PAGE2.isSet)
     return
   }
-  if (SWITCHES.MIXED.set) {
-    processTextPage(ctx, SWITCHES.PAGE2.set, true)
+  if (SWITCHES.MIXED.isSet) {
+    processTextPage(ctx, SWITCHES.PAGE2.isSet, true)
   }
-  if (SWITCHES.HIRES.set) {
-    processHiRes(ctx, SWITCHES.PAGE2.set, SWITCHES.MIXED.set)
+  if (SWITCHES.HIRES.isSet) {
+    processHiRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet)
   } else {
-    processLoRes(ctx, SWITCHES.PAGE2.set, SWITCHES.MIXED.set)
+    processLoRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet)
   }
 }
 

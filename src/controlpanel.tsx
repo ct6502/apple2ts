@@ -1,5 +1,6 @@
 import { getProcessorStatus, STATE } from "./motherboard";
 import { getAudioContext } from "./speaker";
+import parse from "html-react-parser"
 
 const ControlPanel = (props: any) => {
   return (
@@ -33,7 +34,7 @@ const ControlPanel = (props: any) => {
       </span>
       <br />
       <span className="statusItem">
-        <span className="fixed">{getProcessorStatus()}</span>
+        <span className="fixed">{parse(getProcessorStatus())}</span>
       </span>
       <br />
 
