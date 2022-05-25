@@ -77,13 +77,13 @@ g39dzLX8Fxf1A/sDYvr6ww==`
 
 ## Flowcharts for Apple II Emulator
 
-![Apple II Emulator - Layout](https://user-images.githubusercontent.com/5461379/170176709-e4a08aed-33f6-4408-836a-857b6e3dad1c.png)
+![Apple II Emulator - Layout](images/Apple%20II%20Emulator%20-%20Layout.png)
 
-![Apple II Emulator - Main Loop](https://user-images.githubusercontent.com/5461379/170176756-84ac9346-ead5-4012-9119-e59e2282c5a8.png)
+![Apple II Emulator - Main Loop](images/Apple%20II%20Emulator%20-%20Main%20Loop.png)
 
-![Process Instruction](https://user-images.githubusercontent.com/5461379/170176787-259d8cab-3e38-4918-86eb-fe96c4ecc20e.png)
+![Process Instruction](images/Process%20Instruction.png)
 
-![ProcessDisplay](https://user-images.githubusercontent.com/5461379/170176801-e25a00a0-0a4a-4bd3-82f6-b7de435cfa43.png)
+![ProcessDisplay](images/ProcessDisplay.png)
 
 ## Create React App - Learn More
 
