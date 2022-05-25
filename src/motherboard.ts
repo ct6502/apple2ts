@@ -156,7 +156,6 @@ export const memGet = (addr: number, value=-1): number => {
 export const memSet = (addr: number, value: number) => {
   if (addr >= 0xC000 && addr <= 0xC0FF) {
     memGet(addr, value)
-    memGet(addr, value)
     checkSoftSwitches(addr, true)
   } else if (addr < 0xC000) {
     bank0[addr] = value

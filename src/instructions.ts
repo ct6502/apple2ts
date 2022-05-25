@@ -43,7 +43,15 @@ export const setYregister = (value: number) => {
 }
 
 export const getPStatusString = () => {
-  return `NV-BDIZC`
+  const result = ((PStatus & 0x80) ? 'N' : 'n') +
+    ((PStatus & 0x40) ? 'V' : 'v') +
+    '-' +
+    ((PStatus & 0x10) ? 'B' : 'b') +
+    ((PStatus & 0x8) ? 'D' : 'd') +
+    ((PStatus & 0x4) ? 'I' : 'i') +
+    ((PStatus & 0x2) ? 'Z' : 'z') +
+    ((PStatus & 0x1) ? 'C' : 'c')
+  return result
 }
 
 export const setPStatus = (value: number) => {

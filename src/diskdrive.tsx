@@ -213,7 +213,7 @@ const doWriteByte = (cycleCount: number) => {
 export const handleDriveSoftSwitches =
   (addr: number, value: number, cycleCount: number): number => {
   let result = 0
-  if (addr === SWITCHES.DRIVE.offAddr + 1) {
+  if (addr === SWITCHES.DRIVE.onAddr) {
     startMotor()
     return result
   } else if (addr === SWITCHES.DRIVE.offAddr) {
@@ -250,7 +250,7 @@ export const handleDriveSoftSwitches =
     if (SWITCHES.DRVDATA.isSet) {
       result = isWriteProtected ? 0xFF : 0
     }
-  } else if (addr === SWITCHES.DRVWRITE.offAddr + 1) {
+  } else if (addr === SWITCHES.DRVWRITE.onAddr) {
     readMode = false
     if (value >= 0) {
       writeByte = value
@@ -263,7 +263,7 @@ export const handleDriveSoftSwitches =
         doWriteByte(cycleCount)
       }
     }
-  } else if (addr === SWITCHES.DRVDATA.offAddr + 1) {
+  } else if (addr === SWITCHES.DRVDATA.onAddr) {
     if (value >= 0) {
       writeByte = value
     }
