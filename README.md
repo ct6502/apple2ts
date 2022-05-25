@@ -75,6 +75,16 @@ g39dzLX8Fxf1A/sDYvr6ww==`
 
 [Assembly Lines: The Complete Book](https://archive.org/details/AssemblyLinesCompleteWagner)
 
+## Flowcharts for Apple II Emulator
+
+![Apple II Emulator - Layout](https://user-images.githubusercontent.com/5461379/170176709-e4a08aed-33f6-4408-836a-857b6e3dad1c.png)
+
+![Apple II Emulator - Main Loop](https://user-images.githubusercontent.com/5461379/170176756-84ac9346-ead5-4012-9119-e59e2282c5a8.png)
+
+![Process Instruction](https://user-images.githubusercontent.com/5461379/170176787-259d8cab-3e38-4918-86eb-fe96c4ecc20e.png)
+
+![ProcessDisplay](https://user-images.githubusercontent.com/5461379/170176801-e25a00a0-0a4a-4bd3-82f6-b7de435cfa43.png)
+
 ## Create React App - Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
