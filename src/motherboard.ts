@@ -51,7 +51,7 @@ export const doPause = (resume = false) => {
   doPauseDrive(resume)
 }
 
-const rom = Buffer.from(romBase64.replaceAll('\n', ''), 'base64')
+const rom = new Uint8Array(Buffer.from(romBase64.replaceAll('\n', ''), 'base64'))
 
 export const doBoot6502 = () => {
   bank0.fill(0xFF)

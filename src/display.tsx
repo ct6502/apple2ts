@@ -5,7 +5,7 @@ import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
 
-import React from "react";
+import React, { useRef } from 'react';
 import parse from "html-react-parser"
 
 // import Test from "./components/test";
@@ -18,6 +18,7 @@ class DisplayApple2 extends React.Component<{},
   speed = Array<number>(100).fill(1020);
   refreshTime = 16.6881
   startTime = 0
+  myCanvas = React.createRef();
 
   constructor(props: any) {
     super(props);
@@ -128,10 +129,11 @@ class DisplayApple2 extends React.Component<{},
     return (
       <div>
         <span className="apple2">
-          <Apple2Canvas uppercase={this.state.uppercase}/>
+          <Apple2Canvas myCanvas={this.myCanvas} uppercase={this.state.uppercase}/>
           <br />
           <ControlPanel _6502={this.state._6502}
             speed={speed} delta={delta}
+            myCanvas={this.myCanvas}
             speedCheck={this.state.speedCheck}
             handleSpeedChange={this.handleSpeedChange}
             uppercase={this.state.uppercase}

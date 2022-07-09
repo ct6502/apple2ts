@@ -388,10 +388,24 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
 
   // Hidden file input element
   hiddenFileInput: HTMLInputElement | null = null;
+  // https://medium.com/@650egor/simple-drag-and-drop-file-upload-in-react-2cb409d88929
+  handleDrop = (e: any) => {this.dropHandler(e as DragEvent)}
+  handleDrag = (e: DragEvent) => 
+    {e.preventDefault(); e.stopPropagation()}
 
   constructor(props: any) {
     super(props);
     this.state = { fileName: '' };
+  }
+
+  componentDidMount() {
+    window.addEventListener('drop', this.handleDrop)
+    window.addEventListener('dragover', this.handleDrag)
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('drop', this.handleDrop)
+    window.removeEventListener('dragover', this.handleDrag)
   }
 
   readDisk = async (file: File) => {
@@ -424,6 +438,15 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  dropHandler = (e: DragEvent) => {    
+    e.preventDefault()
+    e.stopPropagation()
+    const f = e.dataTransfer?.files
+    if (f && f.length > 0) {
+      this.readDisk(f[0])
+    }
   }
 
   render() {

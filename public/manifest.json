@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Apple2TS",
+  "name": "Apple II Emulator in TypeScript",
   "icons": [
     {
       "src": "favicon.ico",

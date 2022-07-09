@@ -1,5 +1,6 @@
 import { getProcessorStatus, STATE } from "./motherboard";
 import { getAudioContext } from "./speaker";
+import fullscreen from './img/fullscreen.svg';
 import parse from "html-react-parser"
 
 const ControlPanel = (props: any) => {
@@ -7,10 +8,6 @@ const ControlPanel = (props: any) => {
     <span className="leftStatus">
       <span className="statusItem">
         Speed (MHz): <span className="fixed">{props.speed}</span>
-      </span>
-      <span className="statusItem">
-        Delay (ms):{" "}
-        <span className="fixed">{props.delta}</span>
       </span>
       <span className="statusItem">
         <label>
@@ -32,6 +29,9 @@ const ControlPanel = (props: any) => {
           Uppercase
         </label>
       </span>
+      <img src={fullscreen} alt="FS" width="20" height="20" onClick={() => {
+        props.myCanvas.current?.requestFullscreen()
+        }}/>
       <br />
       <span className="statusItem">
         <span className="fixed">{parse(getProcessorStatus())}</span>

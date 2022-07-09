@@ -196,7 +196,6 @@ const pasteHandler = (e: ClipboardEvent) => {
 };
 
 const Apple2Canvas = (props: any) => {
-  let canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.key === "v" && e.metaKey) {
@@ -226,8 +225,8 @@ const Apple2Canvas = (props: any) => {
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
     let animationFrameId = 0
-    if (canvasRef.current) {
-      context = canvasRef.current.getContext('2d');
+    if (props.myCanvas.current) {
+      context = props.myCanvas.current.getContext('2d');
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
@@ -249,14 +248,16 @@ const Apple2Canvas = (props: any) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, []);
+  }, [props.myCanvas]);
 
-  return <canvas ref={canvasRef}
+  return <canvas ref={props.myCanvas}
     height={height} width={width}
     tabIndex={0}
     onKeyDown={handleKeyDown}
     onKeyUp={handleKeyUp}
-    onMouseEnter={() => {canvasRef.current?.focus()}}
+    onMouseEnter={() => {
+      props.myCanvas.current?.focus()
+    }}
     />
 };
 
