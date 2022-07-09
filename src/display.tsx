@@ -5,7 +5,7 @@ import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
 
-import React, { useRef } from 'react';
+import React from 'react';
 import parse from "html-react-parser"
 
 // import Test from "./components/test";

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, KeyboardEvent } from 'react';
+import React, { useEffect, KeyboardEvent } from 'react';
 import { SWITCHES, toHex, getTextPage, getHGR } from "./motherboard";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
 import { handleGamePad, pressAppleKey } from "./joystick"
