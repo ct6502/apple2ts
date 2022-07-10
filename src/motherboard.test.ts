@@ -1,5 +1,5 @@
 import {bank0, processInstruction} from "./motherboard";
-import {PC, setPC, Accum} from "./instructions";
+import {s6502, setPC} from "./instructions";
 import {parseAssembly} from "./assembler";
 
 test('processInstruction', () => {
@@ -7,6 +7,6 @@ test('processInstruction', () => {
   bank0.set(pcode, 0x2000);
   setPC(0x2000);
   processInstruction()
-  expect(PC).toEqual(0x2002);
-  expect(Accum).toEqual(0xC0);
+  expect(s6502.PC).toEqual(0x2002);
+  expect(s6502.Accum).toEqual(0xC0);
 });

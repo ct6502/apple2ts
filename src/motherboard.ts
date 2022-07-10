@@ -1,6 +1,6 @@
-import { Accum, XReg, YReg, SP,
+import { s6502, set6502State,
   setAccum, setXregister, setYregister, setPStatus, setSP, setPC,
-  pcodes, PC, MODE, isRelativeInstr,
+  pcodes, MODE, isRelativeInstr,
   address, incrementPC, getStack, getPStatusString } from './instructions'
 import { romBase64 } from "./roms/rom_2e";
 import { slot_disk2 } from "./roms/slot_disk2_cx00";
@@ -29,6 +29,24 @@ export enum STATE {
   IS_RUNNING,
   PAUSED
 }
+
+export const getApple2State = () => {
+  return {
+    s6502: s6502,
+    switches: SWITCHES,
+    memory: Array.from(bank0)}
+}
+
+export const setApple2State = (newState: any) => {
+  set6502State(newState.s6502)
+  for (const key in newState.switches) {
+    const keyTyped = key as keyof typeof SWITCHES;
+    const value = SWITCHES[keyTyped] as softSwitch;
+    value.isSet = (newState.switches[key] as softSwitch).isSet
+  }
+  bank0 = Uint8Array.from(newState.memory)
+}
+
 
 let cycleCount = 0;
 
@@ -171,8 +189,8 @@ export const toHex = (value: number, ndigits = 2) => {
 }
 
 export const getProcessorStatus = () => {
-  return `${toHex(PC,4)}-  A=${toHex(Accum)} X=${toHex(XReg)} ` + 
-  `Y=${toHex(YReg)} P=${getPStatusString()} S=${toHex(SP)}`
+  return `${toHex(s6502.PC,4)}-  A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` + 
+  `Y=${toHex(s6502.YReg)} P=${getPStatusString()} S=${toHex(s6502.StackPtr)}`
 }
 
 const modeString = (mode: MODE) => {
@@ -217,7 +235,7 @@ export const getInstrString = (instr: number, vLo: number, vHi: number) => {
     }
     if (isRelativeInstr(code.name)) {
       // The extra +2 is for the branch instruction itself
-      const addr = PC + 2 + ((vLo > 127) ? (vLo - 256) : vLo)
+      const addr = s6502.PC + 2 + ((vLo > 127) ? (vLo - 256) : vLo)
       result += `  ${prefix}${toHex(addr, 4)}${suffix}`
     } else {
       switch (code.PC) {
@@ -296,12 +314,12 @@ const debugZeroPage = () => {
 
 export const processInstruction = () => {
   let cycles = 0;
-  const instr = bank0[PC]
-  const vLo = PC < 0xFFFF ? bank0[PC + 1] : 0
-  const vHi = PC < 0xFFFE ? bank0[PC + 2] : 0
+  const instr = bank0[s6502.PC]
+  const vLo = s6502.PC < 0xFFFF ? bank0[s6502.PC + 1] : 0
+  const vHi = s6502.PC < 0xFFFE ? bank0[s6502.PC + 2] : 0
   const code = pcodes[instr];
   if (code) {
-    const PC1 = PC
+    const PC1 = s6502.PC
     // if (vHi === 0xC0 && vLo === 0x8F) {
     //    doDebug = true
     // }
@@ -314,14 +332,14 @@ export const processInstruction = () => {
       }
     }
     cycles = code.execute(vLo, vHi);
-    if (Accum > 255 || Accum < 0) {
+    if (s6502.Accum > 255 || s6502.Accum < 0) {
       console.error("Out of bounds")
       return 0
     }
     cycleCount += cycles
     incrementPC(code.PC);
   } else {
-    console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(PC, 4))
+    console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(s6502.PC, 4))
     cycles = pcodes[0].execute(vLo, vHi);
   }
   return cycles

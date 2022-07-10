@@ -1,5 +1,5 @@
 import {bank0, doReset, processInstruction, toHex} from "./motherboard";
-import {doBranch, PC, setPC, Accum, PStatus, isBreak, setBreak} from "./instructions";
+import {doBranch, s6502, setPC, isBreak, setBreak} from "./instructions";
 import {parseAssembly} from "./assembler";
 
 doReset()
@@ -7,17 +7,17 @@ doReset()
 test('doBranch', () => {
   setPC(0x2000)
   doBranch(true, 0);
-  expect(PC).toEqual(0x2000);
+  expect(s6502.PC).toEqual(0x2000);
   doBranch(true, 1);
-  expect(PC).toEqual(0x2001);
+  expect(s6502.PC).toEqual(0x2001);
   doBranch(true, 127);
-  expect(PC).toEqual(0x2001 + 127);
+  expect(s6502.PC).toEqual(0x2001 + 127);
   doBranch(true, 255);
-  expect(PC).toEqual(0x2001 + 126);
+  expect(s6502.PC).toEqual(0x2001 + 126);
   doBranch(true, 128);
-  expect(PC).toEqual(0x1FFF);
+  expect(s6502.PC).toEqual(0x1FFF);
   doBranch(true, 1);
-  expect(PC).toEqual(0x2000);
+  expect(s6502.PC).toEqual(0x2000);
 });
 
 const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
@@ -26,14 +26,14 @@ const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
   bank0.set(pcode, start)
   setPC(start)
   setBreak(false)
-  while (PC < start + pcode.length) {
+  while (s6502.PC < start + pcode.length) {
     processInstruction()
     if (isBreak()) {
       break
     }
   }
-  expect(Accum).toEqual(accumExpect)
-  expect(PStatus).toEqual(pstat | 0b00100000)
+  expect(s6502.Accum).toEqual(accumExpect)
+  expect(s6502.PStatus).toEqual(pstat | 0b00100000)
 }
 
 const N = 0b10000000

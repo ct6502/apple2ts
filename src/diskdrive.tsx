@@ -7,26 +7,36 @@ import disk2onEmpty from './img/disk2on-empty.png'
 import driveMotor from './audio/driveMotor.mp3'
 import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
-import { PC } from './instructions'
+import { s6502 } from './instructions'
 
+export let dState = {
+  halftrack: 0,
+  prevHalfTrack: 0,
+  readMode: false,
+  currentPhase: 0,
+  diskImageHasChanges: false,
+  motorIsRunning: false,
+  trackStart: Array<number>(80),
+  trackNbits: Array<number>(80),
+  trackLocation: 0,
+  isWriteProtected: false
+}
 
-export let halftrack = 0
-let prevHalfTrack = 0
-let readMode = false
-let currentPhase = 0
+let diskData = new Uint8Array()
+
+export const getDriveState = () => {
+  return { dState: dState, data: Array.from(diskData) }
+}
+
+export const setDriveState = (newState: any) => {
+  dState = newState.dState
+  diskData = Uint8Array.from(newState.data)
+}
+
 const doDebugDrive = false
-let diskImageHasChanges = false
 
 let motorContext: AudioContext | undefined
 let motorElement: HTMLAudioElement | undefined
-let motorIsRunning = false
-
-let trackStart: Array<number> = new Array(80)
-let trackNbits: Array<number> = new Array(80)
-let diskData = new Uint8Array()
-let trackLocation = 0
-let isWriteProtected = false
-
 let trackSeekContext: AudioContext | undefined
 let trackSeekElement: HTMLAudioElement | undefined
 let trackOffEndContext: AudioContext | undefined
@@ -36,12 +46,12 @@ let trackTimeout = 0
 export const doResetDrive = () => {
   SWITCHES.DRIVE.isSet = false
   doMotorTimeout()
-  halftrack = 0
+  dState.halftrack = 0
 }
 
 export const doPauseDrive = (resume = false) => {
   if (resume) {
-    if (motorIsRunning) {
+    if (dState.motorIsRunning) {
       startMotor()
     }
   } else {
@@ -106,25 +116,25 @@ const playTrackSeek = () => {
 }
 
 const moveHead = (offset: number) => {
-  if (trackStart[halftrack] > 0) {
-    prevHalfTrack = halftrack
+  if (dState.trackStart[dState.halftrack] > 0) {
+    dState.prevHalfTrack = dState.halftrack
   }
-  halftrack += offset
-  if (halftrack < 0 || halftrack > 68) {
+  dState.halftrack += offset
+  if (dState.halftrack < 0 || dState.halftrack > 68) {
     playTrackOutOfRange()
-    halftrack = (halftrack < 0) ? 0 : (halftrack > 68 ? 68 : halftrack)
+    dState.halftrack = (dState.halftrack < 0) ? 0 : (dState.halftrack > 68 ? 68 : dState.halftrack)
   } else {
     playTrackSeek()
   }
   // Adjust new track location based on arm position relative to old track loc.
-  if (trackStart[halftrack] > 0 && prevHalfTrack !== halftrack) {
-    // const oldloc = trackLocation
-    trackLocation = Math.floor(trackLocation * (trackNbits[halftrack] / trackNbits[prevHalfTrack]))
-    if (trackLocation > 3) {
-      trackLocation -= 4
+  if (dState.trackStart[dState.halftrack] > 0 && dState.prevHalfTrack !== dState.halftrack) {
+    // const oldloc = dState.trackLocation
+    dState.trackLocation = Math.floor(dState.trackLocation * (dState.trackNbits[dState.halftrack] / dState.trackNbits[dState.prevHalfTrack]))
+    if (dState.trackLocation > 3) {
+      dState.trackLocation -= 4
     }
-    // console.log(` track=${halftrack} ${oldloc} ${trackLocation} ` +
-    //   trackNbits[halftrack] + " " + trackNbits[prevHalfTrack])
+    // console.log(` track=${halftrack} ${oldloc} ${dState.trackLocation} ` +
+    //   dState.trackNbits[halftrack] + " " + dState.trackNbits[dState.prevHalfTrack])
   }
 }
 
@@ -133,18 +143,18 @@ const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
   0b11110111, 0b11111011, 0b11111101, 0b11111110]
 
 const getNextBit = () => {
-  trackLocation = trackLocation % trackNbits[halftrack]
+  dState.trackLocation = dState.trackLocation % dState.trackNbits[dState.halftrack]
   let bit: number
-  if (trackStart[halftrack] > 0) {
-    const fileOffset = trackStart[halftrack] + (trackLocation >> 3)
+  if (dState.trackStart[dState.halftrack] > 0) {
+    const fileOffset = dState.trackStart[dState.halftrack] + (dState.trackLocation >> 3)
     const byte = diskData[fileOffset]
-    const b = trackLocation & 7
+    const b = dState.trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
   } else {
     // TODO: Freak out like a MC3470 and return random bits
     bit = 1
   }
-  trackLocation++
+  dState.trackLocation++
   return bit
 }
 
@@ -162,7 +172,7 @@ const getNextByte = () => {
     result |= getNextBit() << i
   }
   // if (doDebugDrive) {
-  //   console.log(" trackLocation=" + trackLocation +
+  //   console.log(" dState.trackLocation=" + dState.trackLocation +
   //     "  byte=" + toHex(result))
   // }
   return result
@@ -172,12 +182,12 @@ let writeByte = 0
 let prevCycleCount = 0
 
 const doWriteBit = (bit: 0 | 1) => {
-  trackLocation = trackLocation % trackNbits[halftrack]
+  dState.trackLocation = dState.trackLocation % dState.trackNbits[dState.halftrack]
   // TODO: What about writing to empty tracks?
-  if (trackStart[halftrack] > 0) {
-    const fileOffset = trackStart[halftrack] + (trackLocation >> 3)
+  if (dState.trackStart[dState.halftrack] > 0) {
+    const fileOffset = dState.trackStart[dState.halftrack] + (dState.trackLocation >> 3)
     let byte = diskData[fileOffset]
-    const b = trackLocation & 7
+    const b = dState.trackLocation & 7
     if (bit) {
       byte |= pickbit[b]
     } else {
@@ -185,12 +195,12 @@ const doWriteBit = (bit: 0 | 1) => {
     }
     diskData[fileOffset] = byte
   }
-  trackLocation++
+  dState.trackLocation++
 }
 
 const doWriteByte = (cycleCount: number) => {
   // Sanity check to make sure we aren't on an empty track. Is this correct?
-  if (diskData.length === 0 || trackStart[halftrack] === 0) {
+  if (diskData.length === 0 || dState.trackStart[dState.halftrack] === 0) {
     return
   }
   const delta = cycleCount - prevCycleCount
@@ -207,7 +217,7 @@ const doWriteByte = (cycleCount: number) => {
   }
   prevCycleCount = cycleCount
   writeByte = 0
-  diskImageHasChanges = true
+  dState.diskImageHasChanges = true
 }
 
 export const handleDriveSoftSwitches =
@@ -226,38 +236,38 @@ export const handleDriveSoftSwitches =
   let debug = ""
   // One of the stepper motors has been turned on or off
   if (a >= 0 && a <= 7) {
-    const ascend = phaseSwitches[(currentPhase + 1) % 4]
-    const descend = phaseSwitches[(currentPhase + 3) % 4]
-    if (!phaseSwitches[currentPhase].isSet) {
-      if (motorIsRunning && ascend.isSet) {
+    const ascend = phaseSwitches[(dState.currentPhase + 1) % 4]
+    const descend = phaseSwitches[(dState.currentPhase + 3) % 4]
+    if (!phaseSwitches[dState.currentPhase].isSet) {
+      if (dState.motorIsRunning && ascend.isSet) {
         moveHead(1)
-        currentPhase = (currentPhase + 1) % 4
-        debug = "  currPhase=" + currentPhase + " track=" + halftrack / 2
+        dState.currentPhase = (dState.currentPhase + 1) % 4
+        debug = "  currPhase=" + dState.currentPhase + " track=" + dState.halftrack / 2
 
-      } else if (motorIsRunning && descend.isSet) {
+      } else if (dState.motorIsRunning && descend.isSet) {
         moveHead(-1)
-        currentPhase = (currentPhase + 3) % 4
-        debug = "  currPhase=" + currentPhase + " track=" + halftrack / 2
+        dState.currentPhase = (dState.currentPhase + 3) % 4
+        debug = "  currPhase=" + dState.currentPhase + " track=" + dState.halftrack / 2
       }
     }
     if (doDebugDrive) {
-      console.log("***** PC=" + toHex(PC,4) + "  addr=" + toHex(addr,4) +
+      console.log("***** PC=" + toHex(s6502.PC,4) + "  addr=" + toHex(addr,4) +
         " phase=" + (a >> 1) + (a % 2 === 0 ? " off" : " on ") +
         " 0x27=" + toHex(bank0[0x27]) + debug)
     }
   } else if (addr === SWITCHES.DRVWRITE.offAddr) {
-    readMode = true
+    dState.readMode = true
     if (SWITCHES.DRVDATA.isSet) {
-      result = isWriteProtected ? 0xFF : 0
+      result = dState.isWriteProtected ? 0xFF : 0
     }
   } else if (addr === SWITCHES.DRVWRITE.onAddr) {
-    readMode = false
+    dState.readMode = false
     if (value >= 0) {
       writeByte = value
     }
   } else if (addr === SWITCHES.DRVDATA.offAddr) {
-    if (motorIsRunning) {
-      if (readMode) {
+    if (dState.motorIsRunning) {
+      if (dState.readMode) {
         result = getNextByte()
       } else {
         doWriteByte(cycleCount)
@@ -303,9 +313,9 @@ const crc32 = (data: Uint8Array, offset = 0) => {
 const decodeDiskData = (fileName: string) => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz2 = woz2.find((value, i) => value !== diskData[i]) === undefined
-  diskImageHasChanges = false
+  dState.diskImageHasChanges = false
   if (isWoz2) {
-    isWriteProtected = diskData[22] === 1
+    dState.isWriteProtected = diskData[22] === 1
     const crc = diskData.slice(8, 12)
     const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + crc[3] * (2 ** 24)
     const actualCRC = crc32(diskData, 12)
@@ -317,12 +327,12 @@ const decodeDiskData = (fileName: string) => {
       if (tmap_index < 255) {
         const tmap_offset = 256 + 8 * tmap_index
         const trk = diskData.slice(tmap_offset, tmap_offset + 8)
-        trackStart[htrack] = 512*(trk[0] + (trk[1] << 8))
+        dState.trackStart[htrack] = 512*(trk[0] + (trk[1] << 8))
         // const nBlocks = trk[2] + (trk[3] << 8)
-        trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
+        dState.trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
       } else {
-        trackStart[htrack] = 0
-        trackNbits[htrack] = 51200
+        dState.trackStart[htrack] = 0
+        dState.trackNbits[htrack] = 51200
         console.log(`empty woz2 track ${htrack / 2}`)
       }
     }
@@ -331,16 +341,16 @@ const decodeDiskData = (fileName: string) => {
   const woz1 = [0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz1 = woz1.find((value, i) => value !== diskData[i]) === undefined
   if (isWoz1) {
-    isWriteProtected = diskData[22] === 1
+    dState.isWriteProtected = diskData[22] === 1
     for (let htrack=0; htrack < 80; htrack++) {
       const tmap_index = diskData[88 + htrack * 2]
       if (tmap_index < 255) {
-        trackStart[htrack] = 256 + tmap_index * 6656
-        const trk = diskData.slice(trackStart[htrack] + 6646, trackStart[htrack] + 6656)
-        trackNbits[htrack] = trk[2] + (trk[3] << 8)
+        dState.trackStart[htrack] = 256 + tmap_index * 6656
+        const trk = diskData.slice(dState.trackStart[htrack] + 6646, dState.trackStart[htrack] + 6656)
+        dState.trackNbits[htrack] = trk[2] + (trk[3] << 8)
       } else {
-        trackStart[htrack] = 0
-        trackNbits[htrack] = 51200
+        dState.trackStart[htrack] = 0
+        dState.trackNbits[htrack] = 51200
         console.log(`empty woz1 track ${htrack / 2}`)
       }
     }
@@ -352,13 +362,13 @@ const decodeDiskData = (fileName: string) => {
 
 const doMotorTimeout = () => {
   if (!SWITCHES.DRIVE.isSet) {
-    motorIsRunning = false
+    dState.motorIsRunning = false
     motorElement?.pause()
   }
 }
 
 const startMotor = () => {
-  motorIsRunning = true
+  dState.motorIsRunning = true
   if (!motorContext) {
     motorContext = new AudioContext();
     motorElement = new Audio(driveMotor);
@@ -451,16 +461,16 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
 
   render() {
     const img = (diskData.length > 0) ?
-      (motorIsRunning ? disk2on : disk2off) :
-      (motorIsRunning ? disk2onEmpty : disk2offEmpty)
+      (dState.motorIsRunning ? disk2on : disk2off) :
+      (dState.motorIsRunning ? disk2onEmpty : disk2offEmpty)
     return (
       <span>
-        <span className="fixed">{halftrack / 2}</span>
+        <span className="fixed">{dState.halftrack / 2}</span>
         <button className="disk2">
           <img src={img} alt={this.state.fileName} title={this.state.fileName}
             onClick={() => {
               if (diskData.length > 0) {
-                if (diskImageHasChanges) {
+                if (dState.diskImageHasChanges) {
                   this.downloadDisk()
                 }
                 diskData = new Uint8Array()

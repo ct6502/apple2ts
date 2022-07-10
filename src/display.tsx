@@ -1,9 +1,10 @@
-import { doBoot6502, doReset, doPause, getStatus,
-  processInstruction, setDebug, STATE } from "./motherboard";
+import { doBoot6502, doReset, doPause, getApple2State, getStatus,
+  processInstruction, setApple2State, setDebug, STATE } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
+import { getDriveState, setDriveState } from "./diskdrive"
 
 import React from 'react';
 import parse from "html-react-parser"
@@ -19,6 +20,7 @@ class DisplayApple2 extends React.Component<{},
   refreshTime = 16.6881
   startTime = 0
   myCanvas = React.createRef();
+  hiddenFileOpen: HTMLInputElement | null = null;
 
   constructor(props: any) {
     super(props);
@@ -122,6 +124,47 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ _6502: state });
   }
 
+  readSavedState = async (file: File) => {
+    const fileread = new FileReader()
+    const set6502state = () => this.setState({ _6502: STATE.IS_RUNNING })
+    fileread.onload = function(e) {
+      if (e.target) {
+        const state = JSON.parse(e.target.result as string);
+        setApple2State(state.state6502)
+        setDriveState(state.driveState)
+        set6502state()
+      }
+    };
+    fileread.readAsText(file);
+  }
+
+  handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target?.files?.length) {
+      this.readSavedState(e.target.files[0])
+    }
+  };
+
+  handleFileOpen = () => {
+    if (this.hiddenFileOpen) {
+      // Hack - clear out old file so we can pick the same file again
+      this.hiddenFileOpen.value = "";
+      this.hiddenFileOpen.click()
+    }
+  }
+
+  handleFileSave = () => {
+    const state = { state6502: getApple2State(), driveState: getDriveState() }
+    const blob = new Blob([JSON.stringify(state)], {type: "text/plain"});
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', "apple2ts.dat");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   render() {
     const delta = (this.timeDelta).toFixed(1)
     const speed = (this.speed[this.state.iCycle] / 1000).toFixed(3)
@@ -139,7 +182,9 @@ class DisplayApple2 extends React.Component<{},
             uppercase={this.state.uppercase}
             handleUpperCaseChange={this.handleUpperCaseChange}
             handlePause={this.handlePause}
-            handle6502StateChange={this.handle6502StateChange}/>
+            handle6502StateChange={this.handle6502StateChange}
+            handleFileOpen={this.handleFileOpen}
+            handleFileSave={this.handleFileSave}/>
           <span className="rightStatus">
             <span className = "floatRight">
               <DiskDrive/>
@@ -149,6 +194,12 @@ class DisplayApple2 extends React.Component<{},
         <span className="statusPanel fixed small">
           {parse(getStatus())}
         </span>
+        <input
+          type="file"
+          ref={input => this.hiddenFileOpen = input}
+          onChange={this.handleRestoreState}
+          style={{display: 'none'}}
+        />
       </div>
     );
   }

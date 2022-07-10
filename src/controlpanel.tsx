@@ -7,7 +7,7 @@ const ControlPanel = (props: any) => {
   return (
     <span className="leftStatus">
       <span className="statusItem">
-        Speed (MHz): <span className="fixed">{props.speed}</span>
+        <span className="fixed">{props.speed}</span> MHz
       </span>
       <span className="statusItem">
         <label>
@@ -29,9 +29,8 @@ const ControlPanel = (props: any) => {
           Uppercase
         </label>
       </span>
-      <img src={fullscreen} alt="FS" width="20" height="20" onClick={() => {
-        props.myCanvas.current?.requestFullscreen()
-        }}/>
+      <img src={fullscreen} alt="FS" width="20" height="20"
+        onClick={() => {props.myCanvas.current?.requestFullscreen()}}/>
       <br />
       <span className="statusItem">
         <span className="fixed">{parse(getProcessorStatus())}</span>
@@ -63,6 +62,10 @@ const ControlPanel = (props: any) => {
         disabled={props._6502 === STATE.IDLE}>
         {props._6502 === STATE.PAUSED ? "Resume" : "Pause"}
       </button>
+      <img src={fullscreen} alt="File Open" title="File Open" width="20" height="20"
+        onClick={() => {props.handleFileOpen()}}/>
+      <img src={fullscreen} alt="File Save" title="File Save" width="20" height="20"
+        onClick={() => {props.handleFileSave()}}/>
     </span>
   )
 }
