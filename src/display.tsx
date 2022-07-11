@@ -1,13 +1,11 @@
-import { doBoot6502, doReset, doPause, getApple2State, getStatus,
+import { doBoot6502, doReset, doPause, getApple2State,
   processInstruction, setApple2State, setDebug, STATE } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
 import { getDriveState, setDriveState } from "./diskdrive"
-
 import React from 'react';
-import parse from "html-react-parser"
 
 // import Test from "./components/test";
 
@@ -186,14 +184,12 @@ class DisplayApple2 extends React.Component<{},
             handleFileOpen={this.handleFileOpen}
             handleFileSave={this.handleFileSave}/>
           <span className="rightStatus">
-            <span className = "floatRight">
-              <DiskDrive/>
-            </span>
+            <DiskDrive/>
           </span>
         </span>
-        <span className="statusPanel fixed small">
+        {/* <span className="statusPanel fixed small">
           {parse(getStatus())}
-        </span>
+        </span> */}
         <input
           type="file"
           ref={input => this.hiddenFileOpen = input}

@@ -1,5 +1,6 @@
 import React from "react";
 import { SWITCHES, toHex, bank0 } from "./motherboard"
+import { Buffer } from "buffer";
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
@@ -9,7 +10,10 @@ import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
 import { s6502 } from './instructions'
 
+const emptyDisk = "(empty)"
+
 export let dState = {
+  fileName: emptyDisk,
   halftrack: 0,
   prevHalfTrack: 0,
   readMode: false,
@@ -25,12 +29,13 @@ export let dState = {
 let diskData = new Uint8Array()
 
 export const getDriveState = () => {
-  return { dState: dState, data: Array.from(diskData) }
+  const data = Buffer.from(diskData).toString('base64')
+  return { dState: dState, data: data }
 }
 
 export const setDriveState = (newState: any) => {
   dState = newState.dState
-  diskData = Uint8Array.from(newState.data)
+  diskData = Buffer.from(newState.data, 'base64')
 }
 
 const doDebugDrive = false
@@ -405,7 +410,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
 
   constructor(props: any) {
     super(props);
-    this.state = { fileName: '' };
+    this.state = { fileName: emptyDisk };
   }
 
   componentDidMount() {
@@ -422,9 +427,8 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
     const buffer = await file.arrayBuffer();
     diskData = new Uint8Array(buffer);
     decodeDiskData(file.name)
-    this.setState({
-      fileName: (diskData.length > 0) ? file.name : '',
-    });
+    dState.fileName = (diskData.length > 0) ? file.name : emptyDisk
+    this.forceUpdate()
   }
 
   handleDiskClick = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -443,7 +447,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', this.state.fileName);
+    link.setAttribute('download', dState.fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -466,24 +470,24 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
     return (
       <span>
         <span className="fixed">{dState.halftrack / 2}</span>
-        <button className="disk2">
-          <img src={img} alt={this.state.fileName} title={this.state.fileName}
-            onClick={() => {
-              if (diskData.length > 0) {
-                if (dState.diskImageHasChanges) {
-                  this.downloadDisk()
-                }
-                diskData = new Uint8Array()
-                this.setState({fileName: ''});
-              } else {
-                if (this.hiddenFileInput) {
-                  // Hack - clear out old file so we can pick the same file again
-                  this.hiddenFileInput.value = "";
-                  this.hiddenFileInput.click()
-                }
+        <img className="disk2" src={img} alt={dState.fileName}
+          title={dState.fileName}
+          onClick={() => {
+            if (diskData.length > 0) {
+              if (dState.diskImageHasChanges) {
+                this.downloadDisk()
               }
-            }} />
-        </button>
+              diskData = new Uint8Array()
+              dState.fileName = emptyDisk
+              this.forceUpdate()
+            } else {
+              if (this.hiddenFileInput) {
+                // Hack - clear out old file so we can pick the same file again
+                this.hiddenFileInput.value = "";
+                this.hiddenFileInput.click()
+              }
+            }
+          }} />
         <input
           type="file"
           ref={input => this.hiddenFileInput = input}

@@ -31,20 +31,25 @@ export enum STATE {
 }
 
 export const getApple2State = () => {
+  const softSwitches: { [name: string]: boolean } = {};
+  for (const key in SWITCHES) {
+    softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
+  }
+  const memory = Buffer.from(bank0).toString('base64')
   return {
     s6502: s6502,
-    switches: SWITCHES,
-    memory: Array.from(bank0)}
+    softSwitches: softSwitches,
+    memory: memory}
 }
 
 export const setApple2State = (newState: any) => {
   set6502State(newState.s6502)
-  for (const key in newState.switches) {
+  const softSwitches: { [name: string]: boolean } = newState.softSwitches;
+  for (const key in softSwitches) {
     const keyTyped = key as keyof typeof SWITCHES;
-    const value = SWITCHES[keyTyped] as softSwitch;
-    value.isSet = (newState.switches[key] as softSwitch).isSet
+    SWITCHES[keyTyped].isSet = softSwitches[key]
   }
-  bank0 = Uint8Array.from(newState.memory)
+  bank0 = Buffer.from(newState.memory, 'base64')
 }
 
 

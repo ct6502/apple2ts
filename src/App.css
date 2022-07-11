@@ -69,13 +69,15 @@ canvas {
 }
 
 .leftStatus {
-  display: inline-block;
-  width: 75%;
+  float: left;
+  margin-left: 5px;
+  margin-top: 10px;
 }
 
 .rightStatus {
-  display: inline-block;
-  width: 25%;
+  float: right;
+  margin-right: 5px;
+  margin-top: 10px;
 }
 
 .statusItem {
@@ -92,17 +94,26 @@ canvas {
 }
 
 button {
-  background-color: #898677;
-  color: white;
-  font-size: 20px;
-  padding: 5px 40px;
+  border: 0;
+  border-color: #a4a08A;
+  background: none;
+  -webkit-appearance: none;
+/*  background-color: #a4a08A;*/
+  color: black;
+  font-size: 25px;
+  padding: 5px 5px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
-  margin: 10px 10px;
+  margin: 2px;
   cursor: pointer;
 }
 
+button:active {
+  background-color: #898677;
+}
 button:disabled {
-  border: 1px solid #999999;
+  border: 0;
   background-color: #cccccc;
   color: #DDDDDD;
   cursor: default;
@@ -110,16 +121,14 @@ button:disabled {
 
 .floatRight {
   float: right;
+  margin-top: 5px;
 }
 
 .disk2 {
-  padding: 0;
-  font-size: 0px;
-  border: 1;
-  border-radius: 3px;
-  margin: 10px 10px;
-}
-.disk2 img {
   width: 120px;
+  border: 1px solid #000;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 5px;
 }
 
