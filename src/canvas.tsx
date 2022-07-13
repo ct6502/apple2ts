@@ -1,12 +1,12 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { SWITCHES, toHex, getTextPage, getHGR } from "./motherboard";
+import { SWITCHES, toHex, getTextPage, getHGR, STATE } from "./motherboard";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
-import { handleGamePad, pressAppleKey } from "./joystick"
+import { handleGamePad, pressAppleKey, clearAppleKeys } from "./joystick"
 
 const xmargin = 20
 const ymargin = 20
-const cwidth = 20
-const cheight = 24
+const cwidth = 20*1.5
+const cheight = 24*1.5
 const width = cwidth*40 + 2*xmargin
 const height = cheight*24 + 2*ymargin
 let frameCount = 0
@@ -195,15 +195,55 @@ const pasteHandler = (e: ClipboardEvent) => {
   }
 };
 
-const Apple2Canvas = (props: any) => {
+interface Apple2CanvasProps {
+  myCanvas: any,
+  handleSpeedChange: () => void,
+  uppercase: boolean,
+  handlePause: () => void,
+  handle6502StateChange: (state: STATE) => void,
+  handleFileOpen: () => void,
+  handleFileSave: () => void,
+}
+
+const Apple2Canvas = (props: Apple2CanvasProps) => {
+  let keyHandled = false
 
   const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
-    if (e.key === "v" && e.metaKey) {
-      return;
-    }
     if (e.metaKey && e.key === "Meta") {
       pressAppleKey(true, e.code === "MetaLeft")
-      return;
+    }
+    if (e.metaKey) {
+      switch (e.key) {
+        case 'v':
+          return
+        case 'b':
+          props.handle6502StateChange(STATE.NEED_BOOT)
+          keyHandled = true
+          break;
+        case 'f':
+          props.handleSpeedChange()
+          keyHandled = true
+          break;
+        case 'o':
+          props.handleFileOpen()
+          keyHandled = true
+          break;
+        case 'p':
+          props.handlePause()
+          keyHandled = true
+          break;
+        case 'r':
+          props.handle6502StateChange(STATE.NEED_RESET)
+          keyHandled = true
+          break;
+        case 's':
+          props.handleFileSave()
+          keyHandled = true
+          break;
+      
+        default:
+          break;
+      }
     }
     const key = convertAppleKey(e, props.uppercase);
     if (key > 0) {
@@ -212,12 +252,22 @@ const Apple2Canvas = (props: any) => {
       // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
       //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
+    if (keyHandled) {
+      clearAppleKeys()
+      e.preventDefault()
+      e.stopPropagation()
+    }
   };
 
   const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.code === "MetaLeft" || e.code === "MetaRight") {
       pressAppleKey(false, e.code === "MetaLeft")
-      return;
+    }
+    if (keyHandled) {
+      keyHandled = false
+      e.preventDefault()
+      e.stopPropagation()
+      return
     }
   };
 

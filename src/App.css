@@ -60,12 +60,13 @@ body {
 .apple2 {
   display: inline-block;
   margin: 20px;
-  width: 840px;
+  width: 1240px;
 }
 
 canvas {
   outline: none;
   border-radius: 20px;
+  cursor: none;
 }
 
 .leftStatus {

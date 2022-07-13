@@ -11,14 +11,14 @@ import React from 'react';
 
 class DisplayApple2 extends React.Component<{},
   { _6502: STATE; iCycle: number; speedCheck: boolean; uppercase: boolean }> {
-  timerID = 0;
-  cycles = 0;
-  timeDelta = 0;
-  speed = Array<number>(100).fill(1020);
+  timerID = 0
+  cycles = 0
+  timeDelta = 0
+  speed = Array<number>(100).fill(1020)
   refreshTime = 16.6881
   startTime = 0
-  myCanvas = React.createRef();
-  hiddenFileOpen: HTMLInputElement | null = null;
+  myCanvas = React.createRef()
+  hiddenFileOpen: HTMLInputElement | null = null
 
   constructor(props: any) {
     super(props);
@@ -122,7 +122,7 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ _6502: state });
   }
 
-  readSavedState = async (file: File) => {
+  restoreSavedState = async (file: File) => {
     const fileread = new FileReader()
     const set6502state = () => this.setState({ _6502: STATE.IS_RUNNING })
     fileread.onload = function(e) {
@@ -138,7 +138,7 @@ class DisplayApple2 extends React.Component<{},
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
-      this.readSavedState(e.target.files[0])
+      this.restoreSavedState(e.target.files[0])
     }
   };
 
@@ -170,7 +170,13 @@ class DisplayApple2 extends React.Component<{},
     return (
       <div>
         <span className="apple2">
-          <Apple2Canvas myCanvas={this.myCanvas} uppercase={this.state.uppercase}/>
+          <Apple2Canvas myCanvas={this.myCanvas}
+            handle6502StateChange={this.handle6502StateChange}
+            handleFileOpen={this.handleFileOpen}
+            handleFileSave={this.handleFileSave}
+            handlePause={this.handlePause}
+            handleSpeedChange={this.handleSpeedChange}
+            uppercase={this.state.uppercase}/>
           <br />
           <ControlPanel _6502={this.state._6502}
             speed={speed} delta={delta}

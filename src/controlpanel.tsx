@@ -12,7 +12,22 @@ import {
   faSave
 } from "@fortawesome/free-solid-svg-icons";
 
-const ControlPanel = (props: any) => {
+interface ControlPanelProps {
+  _6502: STATE,
+  speed: string,
+  delta: string,
+  myCanvas: any,
+  speedCheck: boolean,
+  handleSpeedChange: () => void,
+  uppercase: boolean,
+  handleUpperCaseChange: () => void,
+  handlePause: () => void,
+  handle6502StateChange: (state: STATE) => void,
+  handleFileOpen: () => void,
+  handleFileSave: () => void,
+}
+
+const ControlPanel = (props: ControlPanelProps) => {
   return (
     <span className="leftStatus">
       <span>

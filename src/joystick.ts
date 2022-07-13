@@ -24,6 +24,11 @@ export const pressAppleKey = (isDown: boolean, left: boolean) => {
   setButtonState()
 }
 
+export const clearAppleKeys = () => {
+  pressAppleKey(false, false)
+  pressAppleKey(false, true)
+}
+
 const keyPress = (key: number) => {
   bank0[0xC000] = key | 0b10000000
 }
