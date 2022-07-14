@@ -1,3 +1,4 @@
+import DisplayProps from "./displayprops"
 import { getProcessorStatus, STATE } from "./motherboard";
 import { getAudioContext } from "./speaker";
 import parse from "html-react-parser"
@@ -12,22 +13,7 @@ import {
   faSave
 } from "@fortawesome/free-solid-svg-icons";
 
-interface ControlPanelProps {
-  _6502: STATE,
-  speed: string,
-  delta: string,
-  myCanvas: any,
-  speedCheck: boolean,
-  handleSpeedChange: () => void,
-  uppercase: boolean,
-  handleUpperCaseChange: () => void,
-  handlePause: () => void,
-  handle6502StateChange: (state: STATE) => void,
-  handleFileOpen: () => void,
-  handleFileSave: () => void,
-}
-
-const ControlPanel = (props: ControlPanelProps) => {
+const ControlPanel = (props: DisplayProps) => {
   return (
     <span className="leftStatus">
       <span>

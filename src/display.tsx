@@ -1,6 +1,7 @@
 import { doBoot6502, doReset, doPause, getApple2State,
   processInstruction, setApple2State, setDebug, STATE } from "./motherboard";
 // import { parseAssembly } from "./assembler";
+import DisplayProps from "./displayprops"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
@@ -17,8 +18,12 @@ class DisplayApple2 extends React.Component<{},
   speed = Array<number>(100).fill(1020)
   refreshTime = 16.6881
   startTime = 0
-  myCanvas = React.createRef()
+  myCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen: HTMLInputElement | null = null
+  iSaveState = 0
+  iTempState = 0
+  maxState = 60
+  saveStates = Array<string>(this.maxState).fill('')
 
   constructor(props: any) {
     super(props);
@@ -94,6 +99,41 @@ class DisplayApple2 extends React.Component<{},
     this.setState({
       iCycle: newIndex,
     });
+    if (newIndex === 0) {
+      this.iSaveState = (this.iSaveState + 1) % this.maxState
+      this.iTempState = this.iSaveState
+      this.saveStates[this.iSaveState] = this.getSaveState()
+    }
+  }
+
+  handleGoBackInTime = () => {
+    this.setState({ _6502: STATE.PAUSED })
+    doPause()
+    // if this is the first time we're called, make sure our current
+    // state is up to date
+    if (this.iTempState === this.iSaveState) {
+      this.saveStates[this.iSaveState] = this.getSaveState()
+    }
+    const newTmp = (this.iTempState + this.maxState - 1) % this.maxState
+    if (newTmp === this.iSaveState || this.saveStates[newTmp] === '') {
+      return
+    }
+    this.iTempState = newTmp
+    this.restoreSaveState(this.saveStates[newTmp])
+  }
+
+  handleGoForwardInTime = () => {
+    this.setState({ _6502: STATE.PAUSED })
+    doPause()
+    if (this.iTempState === this.iSaveState) {
+      return
+    }
+    const newTmp = (this.iTempState + 1) % this.maxState
+    if (this.saveStates[newTmp] === '') {
+      return
+    }
+    this.iTempState = newTmp
+    this.restoreSaveState(this.saveStates[newTmp])
   }
 
   handleSpeedChange = () => {
@@ -122,23 +162,24 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ _6502: state });
   }
 
-  restoreSavedState = async (file: File) => {
-    const fileread = new FileReader()
-    const set6502state = () => this.setState({ _6502: STATE.IS_RUNNING })
-    fileread.onload = function(e) {
-      if (e.target) {
-        const state = JSON.parse(e.target.result as string);
-        setApple2State(state.state6502)
-        setDriveState(state.driveState)
-        set6502state()
-      }
-    };
-    fileread.readAsText(file);
+  restoreSaveState = (sState: string) => {
+    const state = JSON.parse(sState);
+    setApple2State(state.state6502)
+    setDriveState(state.driveState)
   }
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
-      this.restoreSavedState(e.target.files[0])
+      const fileread = new FileReader()
+      const restoreState = this.restoreSaveState
+      const doRun = () => this.setState({ _6502: STATE.IS_RUNNING })
+      fileread.onload = function(e) {
+        if (e.target) {
+          restoreState(e.target.result as string)
+          doRun()
+        }
+      };
+      fileread.readAsText(e.target.files[0]);
     }
   };
 
@@ -150,9 +191,13 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
-  handleFileSave = () => {
+  getSaveState = () => {
     const state = { state6502: getApple2State(), driveState: getDriveState() }
-    const blob = new Blob([JSON.stringify(state)], {type: "text/plain"});
+    return JSON.stringify(state)
+  }
+
+  handleFileSave = () => {
+    const blob = new Blob([this.getSaveState()], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -166,29 +211,29 @@ class DisplayApple2 extends React.Component<{},
   render() {
     const delta = (this.timeDelta).toFixed(1)
     const speed = (this.speed[this.state.iCycle] / 1000).toFixed(3)
+    const props: DisplayProps = {
+      _6502: this.state._6502,
+      speed: speed,
+      delta: delta,
+      myCanvas: this.myCanvas,
+      speedCheck: this.state.speedCheck,
+      handleSpeedChange: this.handleSpeedChange,
+      uppercase: this.state.uppercase,
+      handleGoBackInTime: this.handleGoBackInTime,
+      handleGoForwardInTime: this.handleGoForwardInTime,
+      handleUpperCaseChange: this.handleUpperCaseChange,
+      handlePause: this.handlePause,
+      handle6502StateChange: this.handle6502StateChange,
+      handleFileOpen: this.handleFileOpen,
+      handleFileSave: this.handleFileSave,
+    }
 
     return (
       <div>
         <span className="apple2">
-          <Apple2Canvas myCanvas={this.myCanvas}
-            handle6502StateChange={this.handle6502StateChange}
-            handleFileOpen={this.handleFileOpen}
-            handleFileSave={this.handleFileSave}
-            handlePause={this.handlePause}
-            handleSpeedChange={this.handleSpeedChange}
-            uppercase={this.state.uppercase}/>
+          <Apple2Canvas {...props}/>
           <br />
-          <ControlPanel _6502={this.state._6502}
-            speed={speed} delta={delta}
-            myCanvas={this.myCanvas}
-            speedCheck={this.state.speedCheck}
-            handleSpeedChange={this.handleSpeedChange}
-            uppercase={this.state.uppercase}
-            handleUpperCaseChange={this.handleUpperCaseChange}
-            handlePause={this.handlePause}
-            handle6502StateChange={this.handle6502StateChange}
-            handleFileOpen={this.handleFileOpen}
-            handleFileSave={this.handleFileSave}/>
+          <ControlPanel {...props}/>
           <span className="rightStatus">
             <DiskDrive/>
           </span>

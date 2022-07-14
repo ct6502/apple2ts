@@ -1,4 +1,5 @@
 import React, { useEffect, KeyboardEvent } from 'react';
+import DisplayProps from "./displayprops"
 import { SWITCHES, toHex, getTextPage, getHGR, STATE } from "./motherboard";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
 import { handleGamePad, pressAppleKey, clearAppleKeys } from "./joystick"
@@ -195,17 +196,7 @@ const pasteHandler = (e: ClipboardEvent) => {
   }
 };
 
-interface Apple2CanvasProps {
-  myCanvas: any,
-  handleSpeedChange: () => void,
-  uppercase: boolean,
-  handlePause: () => void,
-  handle6502StateChange: (state: STATE) => void,
-  handleFileOpen: () => void,
-  handleFileSave: () => void,
-}
-
-const Apple2Canvas = (props: Apple2CanvasProps) => {
+const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
 
   const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
@@ -214,6 +205,14 @@ const Apple2Canvas = (props: Apple2CanvasProps) => {
     }
     if (e.metaKey) {
       switch (e.key) {
+        case 'ArrowLeft':
+          props.handleGoBackInTime()
+          keyHandled = true
+          break
+        case 'ArrowRight':
+          props.handleGoForwardInTime()
+          keyHandled = true
+          break
         case 'v':
           return
         case 'b':
@@ -240,22 +239,27 @@ const Apple2Canvas = (props: Apple2CanvasProps) => {
           props.handleFileSave()
           keyHandled = true
           break;
-      
         default:
           break;
       }
     }
-    const key = convertAppleKey(e, props.uppercase);
-    if (key > 0) {
-      keyPress(key);
-    } else {
-      // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
-      //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
+    // If we're paused, allow <space> to resume
+    if (props._6502 === STATE.PAUSED && e.key === ' ') {
+      props.handlePause()
+      keyHandled = true
     }
     if (keyHandled) {
       clearAppleKeys()
       e.preventDefault()
       e.stopPropagation()
+    } else {
+      const key = convertAppleKey(e, props.uppercase);
+      if (key > 0) {
+        keyPress(key);
+      } else {
+        // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
+        //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
+      }
     }
   };
 
