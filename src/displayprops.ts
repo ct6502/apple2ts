@@ -8,6 +8,7 @@ type DisplayProps = {
   speedCheck: boolean,
   handleSpeedChange: () => void,
   uppercase: boolean,
+  saveTimeSlice: () => void,
   handleGoBackInTime: () => void,
   handleGoForwardInTime: () => void,
   handleUpperCaseChange: () => void,

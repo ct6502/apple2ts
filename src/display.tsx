@@ -20,6 +20,7 @@ class DisplayApple2 extends React.Component<{},
   startTime = 0
   myCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen: HTMLInputElement | null = null
+  doSaveTimeSlice = false
   iSaveState = 0
   iTempState = 0
   maxState = 60
@@ -99,7 +100,8 @@ class DisplayApple2 extends React.Component<{},
     this.setState({
       iCycle: newIndex,
     });
-    if (newIndex === 0) {
+    if (this.doSaveTimeSlice) {
+      this.doSaveTimeSlice = false
       this.iSaveState = (this.iSaveState + 1) % this.maxState
       this.iTempState = this.iSaveState
       this.saveStates[this.iSaveState] = this.getSaveState()
@@ -168,6 +170,12 @@ class DisplayApple2 extends React.Component<{},
     setDriveState(state.driveState)
   }
 
+  saveTimeSlice = () => {
+    // Set a flag and save our slice at the end of the next 6502 display cycle.
+    // Otherwise we risk saving in the middle of a keystroke.
+    this.doSaveTimeSlice = true
+  }
+
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
@@ -219,6 +227,7 @@ class DisplayApple2 extends React.Component<{},
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
+      saveTimeSlice: this.saveTimeSlice,
       handleGoBackInTime: this.handleGoBackInTime,
       handleGoForwardInTime: this.handleGoForwardInTime,
       handleUpperCaseChange: this.handleUpperCaseChange,
