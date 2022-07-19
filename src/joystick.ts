@@ -1,5 +1,5 @@
 import { bank0 } from "./motherboard"
-import { addToBuffer } from "./keyboard"
+// import { addToBuffer } from "./keyboard"
 
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
 let paddle0timeout = maxTimeoutCycles / 2
@@ -29,9 +29,9 @@ export const clearAppleKeys = () => {
   pressAppleKey(false, true)
 }
 
-const keyPress = (key: number) => {
-  bank0[0xC000] = key | 0b10000000
-}
+// const keyPress = (key: number) => {
+//   bank0[0xC000] = key | 0b10000000
+// }
 
 export const resetJoystick = (cycleCount: number) => {
   bank0[0xC064] = 0x80
@@ -47,15 +47,15 @@ export const checkJoystickValues = (cycleCount: number) => {
   bank0[0xC065] = (diff < paddle1timeout) ? 0x80 : 0
 }
 
-const wolf = [
+const defaultButtons = [
   () => {leftButtonDown = true},
   () => {rightButtonDown = true},
-  () => {keyPress('U'.charCodeAt(0))},
-  () => {keyPress('T'.charCodeAt(0))},
   () => {leftButtonDown = true},
   () => {rightButtonDown = true},
-  () => {keyPress(' '.charCodeAt(0))},
-  () => {keyPress(13)},
+  () => {leftButtonDown = true},
+  () => {rightButtonDown = true},
+  () => {leftButtonDown = true},
+  () => {rightButtonDown = true},
   () => {leftButtonDown = true},
   () => {rightButtonDown = true},
   () => {leftButtonDown = true},
@@ -65,6 +65,25 @@ const wolf = [
   () => {paddle0timeout = 0},
   () => {paddle0timeout = maxTimeoutCycles},
 ]
+
+// const wolf = [
+//   () => {leftButtonDown = true},
+//   () => {rightButtonDown = true},
+//   () => {keyPress('U'.charCodeAt(0))},
+//   () => {keyPress('T'.charCodeAt(0))},
+//   () => {leftButtonDown = true},
+//   () => {rightButtonDown = true},
+//   () => {keyPress(' '.charCodeAt(0))},
+//   () => {keyPress(13)},
+//   () => {leftButtonDown = true},
+//   () => {rightButtonDown = true},
+//   () => {leftButtonDown = true},
+//   () => {rightButtonDown = true},
+//   () => {paddle1timeout = 0},
+//   () => {paddle1timeout = maxTimeoutCycles},
+//   () => {paddle0timeout = 0},
+//   () => {paddle0timeout = maxTimeoutCycles},
+// ]
 
 // AZTEC Controls
 // A, D: move left or right (while using weapon); face left or right (otherwise)
@@ -85,34 +104,34 @@ const wolf = [
 // M: stab at ground while using machete
 // G: switch from machete to gun
 // <spacebar>: fire gun
-let moving = false
-const aztec = [
-  () => {addToBuffer('J')},  // 0 A
-  () => {rightButtonDown = true},  // 1 B
-  () => {addToBuffer('U')},  // 2 X
-  () => {addToBuffer('T')},  // 3 Y
-  () => {leftButtonDown = true},  // 4 LB
-  () => {rightButtonDown = true},  // 5 RB
-  () => {addToBuffer('O'); addToBuffer('L'); addToBuffer('T')},  // 6 LT
-  () => {addToBuffer(' ')},  // 7 RT
-  () => {leftButtonDown = true},  // 8 Select?
-  () => {rightButtonDown = true},  // 9 Start?
-  () => {leftButtonDown = true},  // 10 Left thumb
-  () => {rightButtonDown = true},  // 11 Right thumb
-  () => {addToBuffer('R')},  // 12 D-pad U
-  () => {addToBuffer('W')},  // 13 D-pad D
-  () => {
-    addToBuffer(moving ? 'S' : 'A')
-    moving = !moving
-    if (moving) {addToBuffer('W')}},  // 14 D-pad L
-  () => {
-    addToBuffer(moving ? 'S' : 'D')
-    moving = !moving
-    if (moving) {addToBuffer('W')}},  // 15 D-pad R
-]
+// let moving = false
+// const aztec = [
+//   () => {addToBuffer('J')},  // 0 A
+//   () => {rightButtonDown = true},  // 1 B
+//   () => {addToBuffer('U')},  // 2 X
+//   () => {addToBuffer('T')},  // 3 Y
+//   () => {leftButtonDown = true},  // 4 LB
+//   () => {rightButtonDown = true},  // 5 RB
+//   () => {addToBuffer('O'); addToBuffer('L'); addToBuffer('T')},  // 6 LT
+//   () => {addToBuffer(' ')},  // 7 RT
+//   () => {leftButtonDown = true},  // 8 Select?
+//   () => {rightButtonDown = true},  // 9 Start?
+//   () => {leftButtonDown = true},  // 10 Left thumb
+//   () => {rightButtonDown = true},  // 11 Right thumb
+//   () => {addToBuffer('R')},  // 12 D-pad U
+//   () => {addToBuffer('W')},  // 13 D-pad D
+//   () => {
+//     addToBuffer(moving ? 'S' : 'A')
+//     moving = !moving
+//     if (moving) {addToBuffer('W')}},  // 14 D-pad L
+//   () => {
+//     addToBuffer(moving ? 'S' : 'D')
+//     moving = !moving
+//     if (moving) {addToBuffer('W')}},  // 15 D-pad R
+// ]
 
-let funcs = wolf
-funcs = aztec
+let funcs = defaultButtons
+// funcs = aztec
 
 export const handleGamePad = (gamePad: Gamepad | null) => {
   if (gamePad) {

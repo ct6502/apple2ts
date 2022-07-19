@@ -7,11 +7,17 @@ import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
 import { getDriveState, setDriveState } from "./diskdrive"
 import React from 'react';
+import { compress, decompress } from "lz-string"
+import { Buffer } from "buffer";
 
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
-  { _6502: STATE; iCycle: number; speedCheck: boolean; uppercase: boolean }> {
+  { _6502: STATE;
+    iCycle: number;
+    speedCheck: boolean;
+    uppercase: boolean;
+    iscolor: boolean }> {
   timerID = 0
   cycles = 0
   timeDelta = 0
@@ -32,6 +38,7 @@ class DisplayApple2 extends React.Component<{},
       iCycle: 0,
       speedCheck: true,
       uppercase: true,
+      iscolor: true,
     };
   }
 
@@ -146,6 +153,10 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
+  handleColorChange = () => {
+    this.setState({ iscolor: !this.state.iscolor });
+  };
+
   handleUpperCaseChange = () => {
     this.speed.fill(1020.484)
     window.clearInterval(this.timerID)
@@ -165,9 +176,12 @@ class DisplayApple2 extends React.Component<{},
   }
 
   restoreSaveState = (sState: string) => {
-    const state = JSON.parse(sState);
-    setApple2State(state.state6502)
-    setDriveState(state.driveState)
+    const data = decompress(Buffer.from(sState, 'base64').toString('ucs2'))
+    if (data) {
+      const state = JSON.parse(data);
+      setApple2State(state.state6502)
+      setDriveState(state.driveState)
+    }
   }
 
   saveTimeSlice = () => {
@@ -201,7 +215,7 @@ class DisplayApple2 extends React.Component<{},
 
   getSaveState = () => {
     const state = { state6502: getApple2State(), driveState: getDriveState() }
-    return JSON.stringify(state)
+    return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
   }
 
   handleFileSave = () => {
@@ -209,7 +223,10 @@ class DisplayApple2 extends React.Component<{},
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', "apple2ts.dat");
+    const d = new Date()
+    let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
+    datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
+    link.setAttribute('download', `apple2ts${datetime}.dat`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -227,6 +244,8 @@ class DisplayApple2 extends React.Component<{},
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
+      iscolor: this.state.iscolor,
+      handleColorChange: this.handleColorChange,
       saveTimeSlice: this.saveTimeSlice,
       handleGoBackInTime: this.handleGoBackInTime,
       handleGoForwardInTime: this.handleGoForwardInTime,

@@ -37,7 +37,7 @@ for (let c = 0; c < 16; c++) {
 }
 
  const processTextPage = (ctx: CanvasRenderingContext2D,
-  textPage2: boolean, mixedMode = false) => {
+  textPage2: boolean, mixedMode: boolean, iscolor: boolean) => {
   const textPage = getTextPage(textPage2)
   ctx.font = cheight + "px PrintChar21"
   const jstart = mixedMode ? 20 : 0
@@ -58,7 +58,7 @@ for (let c = 0; c < 16; c++) {
         }
         v = String.fromCharCode(v1 & 0b01111111);
       }
-      ctx.fillStyle = "#FFFFFF" // "#39FF14";
+      ctx.fillStyle = iscolor ? "#FFFFFF" : "#39FF14";
       if (value < 64) {
         // Inverse characters
         ctx.fillRect(xmargin + i*cwidth, ymargin + j*cheight, cwidth, cheight);
@@ -100,6 +100,7 @@ const VIOLET = 2
 const WHITE = 3
 const ORANGE = 5
 const BLUE = 6
+
 const colors = [
   [0, 0, 0],
   [1, 255, 1],
@@ -110,6 +111,19 @@ const colors = [
   [1, 127, 255],
   [255, 255, 255]
 ]
+
+const green = [0x39, 0xFF, 0x14]
+const greenscreen = [
+  [0, 0, 0],
+  green,
+  green,
+  green,
+  [0, 0, 0],
+  green,
+  green,
+  green
+]
+
 const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolean) => {
   if ((byte >> bit) & 1) {
     return highBit ? (isEven ? BLUE : ORANGE) : (isEven ? VIOLET : GREEN)
@@ -118,7 +132,7 @@ const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolea
 }
 
 const processHiRes = async (ctx: CanvasRenderingContext2D,
-  page2: boolean, mixedMode = false) => {
+  page2: boolean, mixedMode: boolean, iscolor: boolean) => {
   const hgrPage = getHGR(page2)  // 40 x 192 array
   const hgr = new Uint8Array(280 * 192).fill(0);
   for (let j = 0; j < 192; j++) {
@@ -134,27 +148,29 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
         isEven = !isEven
       }
     }
-    for (let i = 0; i < 280; i++) {
-      const ioffset = joffset + i
-      if (hgr[ioffset] && hgr[ioffset + 1]) {
-        hgr[ioffset] = WHITE
-        hgr[ioffset + 1] = WHITE
-      }
-    }
-    for (let i = 0; i < 280; i += 2) {
-      const ioffset = joffset + i
-      if (hgr[ioffset] && hgr[ioffset] !== WHITE) {
-        if (!hgr[ioffset + 1]) {
-          hgr[ioffset + 1] = hgr[ioffset]
+    if (iscolor) {
+      for (let i = 0; i < 280; i++) {
+        const ioffset = joffset + i
+        if (hgr[ioffset] && hgr[ioffset + 1]) {
+          hgr[ioffset] = WHITE
+          hgr[ioffset + 1] = WHITE
         }
-      } else if (hgr[ioffset + 1] && hgr[ioffset + 1] !== WHITE) {
-        hgr[ioffset] = hgr[ioffset + 1]
+      }
+      for (let i = 0; i < 280; i += 2) {
+        const ioffset = joffset + i
+        if (hgr[ioffset] && hgr[ioffset] !== WHITE) {
+          if (!hgr[ioffset + 1]) {
+            hgr[ioffset + 1] = hgr[ioffset]
+          }
+        } else if (hgr[ioffset + 1] && hgr[ioffset + 1] !== WHITE) {
+          hgr[ioffset] = hgr[ioffset + 1]
+        }
       }
     }
   }
   const hgrRGB = new Uint8ClampedArray(280 * 192 * 4).fill(255);
   for (let i = 0; i < 280 * 192; i++) {
-    const c = colors[hgr[i]]
+    const c = iscolor ? colors[hgr[i]] : greenscreen[hgr[i]]
     hgrRGB[4 * i] = c[0]
     hgrRGB[4 * i + 1] = c[1]
     hgrRGB[4 * i + 2] = c[2]
@@ -166,19 +182,19 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
     xmargin, ymargin, width - 2*xmargin, imgHeight);
 };
 
-const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number) => {
+const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, iscolor: boolean) => {
   ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
   if (SWITCHES.TEXT.isSet) {
-    processTextPage(ctx, SWITCHES.PAGE2.isSet)
+    processTextPage(ctx, SWITCHES.PAGE2.isSet, false, iscolor)
     return
   }
   if (SWITCHES.MIXED.isSet) {
-    processTextPage(ctx, SWITCHES.PAGE2.isSet, true)
+    processTextPage(ctx, SWITCHES.PAGE2.isSet, true, iscolor)
   }
   if (SWITCHES.HIRES.isSet) {
-    processHiRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet)
+    processHiRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet, iscolor)
   } else {
     processLoRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet)
   }
@@ -291,7 +307,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     const render = () => {
       frameCount++
       if (context) {
-        processDisplay(context, frameCount)
+        processDisplay(context, frameCount, props.iscolor)
       }
       animationFrameId = window.requestAnimationFrame(render)
     }
@@ -303,7 +319,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, [props.myCanvas]);
+  }, [props.myCanvas, props.iscolor]);
 
   return <canvas ref={props.myCanvas}
     height={height} width={width}

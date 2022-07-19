@@ -87,6 +87,16 @@ const ControlPanel = (props: DisplayProps) => {
           Uppercase
         </label>
       </span>
+      <span className="statusItem">
+        <label>
+          <input
+            type="checkbox"
+            checked={props.iscolor}
+            onChange={props.handleColorChange}
+          />
+          Color
+        </label>
+      </span>
       <br />
 
       <span className="statusItem">
