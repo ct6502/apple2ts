@@ -15,7 +15,7 @@ import {
 
 const ControlPanel = (props: DisplayProps) => {
   return (
-    <span className="leftStatus">
+    <span>
       <span>
         <button
           title="Boot"

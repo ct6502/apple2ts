@@ -2,14 +2,13 @@ import React, { useEffect, KeyboardEvent } from 'react';
 import DisplayProps from "./displayprops"
 import { SWITCHES, toHex, getTextPage, getHGR, STATE } from "./motherboard";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
-import { handleGamePad, pressAppleKey, clearAppleKeys } from "./joystick"
+import { handleGamePad, pressAppleKey, clearAppleKeys, setSaveTimeSlice } from "./joystick"
 
-const xmargin = 20
-const ymargin = 20
-const cwidth = 20*1.5
-const cheight = 24*1.5
-const width = cwidth*40 + 2*xmargin
-const height = cheight*24 + 2*ymargin
+const screenRatio = 1.33  // (20 * 40) / (24 * 24)
+const xmargin = 0.025
+const ymargin = 0.025
+let width = 800
+let height = 600
 let frameCount = 0
 
 const lores = [
@@ -38,13 +37,17 @@ for (let c = 0; c < 16; c++) {
 
  const processTextPage = (ctx: CanvasRenderingContext2D,
   textPage2: boolean, mixedMode: boolean, iscolor: boolean) => {
+  const cwidth = width * (1 - 2 * xmargin) / 40
+  const cheight = height * (1 - 2 * ymargin) / 24
+  const xmarginPx = xmargin * width
+  const ymarginPx = ymargin * height
   const textPage = getTextPage(textPage2)
   ctx.font = cheight + "px PrintChar21"
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
 
   for (let j = jstart; j < 24; j++) {
-    const yoffset = ymargin + (j + 1)*cheight - 3
+    const yoffset = ymarginPx + (j + 1)*cheight - 3
     textPage.slice(j * 40, (j + 1) * 40).forEach((value, i) => {
       let v: string
       if (value === 0x60) {
@@ -61,15 +64,15 @@ for (let c = 0; c < 16; c++) {
       ctx.fillStyle = iscolor ? "#FFFFFF" : "#39FF14";
       if (value < 64) {
         // Inverse characters
-        ctx.fillRect(xmargin + i*cwidth, ymargin + j*cheight, cwidth, cheight);
+        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, cwidth, cheight);
         ctx.fillStyle = "#000000";
       } else if (value < 128) {
         if (doFlashCycle) {
-          ctx.fillRect(xmargin + i*cwidth, ymargin + j*cheight, cwidth, cheight);
+          ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, cwidth, cheight);
           ctx.fillStyle = "#000000";
         }
       }
-      ctx.fillText(v, xmargin + i*cwidth, yoffset)
+      ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
     });
   }
 };
@@ -78,12 +81,16 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
   textPage2: boolean, mixedMode = false) => {
   const textPage = getTextPage(textPage2)
   const bottom = mixedMode ? 20 : 24
+  const cwidth = width * (1 - 2 * xmargin) / 40
+  const cheight = height * (1 - 2 * ymargin) / 24
+  const xmarginPx = xmargin * width
+  const ymarginPx = ymargin * height
 
   for (let y = 0; y < bottom; y++) {
-    const yposUpper = ymargin + y*cheight
+    const yposUpper = ymarginPx + y*cheight
     const yposLower = yposUpper + cheight/2
     textPage.slice(y * 40, (y + 1) * 40).forEach((value, i) => {
-      const xpos = xmargin + i*cwidth
+      const xpos = xmarginPx + i*cwidth
       const upperBlock = value % 16
       const lowerBlock = Math.trunc(value / 16)
       ctx.fillStyle = loresHex[upperBlock]
@@ -175,11 +182,14 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
     hgrRGB[4 * i + 1] = c[1]
     hgrRGB[4 * i + 2] = c[2]
   }
+  const cheight = height * (1 - 2 * ymargin) / 24
+  const xmarginPx = xmargin * width
+  const ymarginPx = ymargin * height
   const image = new ImageData(hgrRGB, 280, 192);
-  let imgHeight = height - 2*ymargin - (mixedMode ? 4*cheight : 0)
+  let imgHeight = height - 2*ymarginPx - (mixedMode ? 4*cheight : 0)
   ctx.drawImage(await createImageBitmap(image),
     0, 0, 280, mixedMode ? 160 : 192,
-    xmargin, ymargin, width - 2*xmargin, imgHeight);
+    xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
 };
 
 const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, iscolor: boolean) => {
@@ -292,6 +302,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
+
   // This code only runs once when the component first renders
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
@@ -301,12 +312,35 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
+    setSaveTimeSlice(props.saveTimeSlice)
     const gamepadID = window.setInterval(() => {
       handleGamePad(navigator.getGamepads()[0])}, 33);
+
+    const resizeCanvasToDisplaySize = () => {
+      const ctx = props.myCanvas.current?.getContext("2d");
+      if (!ctx) {
+        return
+      }
+      width = window.innerWidth - 40;
+      height = window.innerHeight - 160;
+      // shrink either width or height to preserve aspect ratio
+      if (width / screenRatio > height) {
+        width = height * screenRatio
+      } else {
+        height = width / screenRatio
+      }
+      width = Math.floor(width)
+      height = Math.floor(height)
+      if (window.innerWidth !== width || window.innerHeight !== height) {
+        ctx.canvas.width = width;
+        ctx.canvas.height = height;
+      }
+    }
 
     const render = () => {
       frameCount++
       if (context) {
+        resizeCanvasToDisplaySize()
         processDisplay(context, frameCount, props.iscolor)
       }
       animationFrameId = window.requestAnimationFrame(render)
@@ -319,7 +353,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, [props.myCanvas, props.iscolor]);
+  }, [props.myCanvas, props.iscolor, props.saveTimeSlice]);
 
   return <canvas ref={props.myCanvas}
     height={height} width={width}

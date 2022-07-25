@@ -256,12 +256,20 @@ class DisplayApple2 extends React.Component<{},
       handleFileSave: this.handleFileSave,
     }
 
+    const ctx = props.myCanvas.current?.getContext("2d")
+    let width = 1280
+    if (ctx) {
+      width = ctx.canvas.width;
+    }
+
     return (
       <div>
-        <span className="apple2">
+        <span className="apple2" style={{width:width}}>
           <Apple2Canvas {...props}/>
           <br />
-          <ControlPanel {...props}/>
+          <span className="leftStatus">
+            <ControlPanel {...props}/>
+          </span>
           <span className="rightStatus">
             <DiskDrive/>
           </span>

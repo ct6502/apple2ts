@@ -30,16 +30,26 @@ export enum STATE {
   PAUSED
 }
 
+let prevMemory = Buffer.from(bank0)
+
 export const getApple2State = () => {
   const softSwitches: { [name: string]: boolean } = {};
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
   }
-  const memory = Buffer.from(bank0).toString('base64')
+  let diff = 0
+  const memory = Buffer.from(bank0)
+  for (let i = 0; i < memory.length; i++) {
+    if (prevMemory[i] !== memory[i]) {
+      diff++
+    }    
+  }
+  prevMemory = memory
+  console.log("diff = " + diff)
   return {
     s6502: s6502,
     softSwitches: softSwitches,
-    memory: memory}
+    memory: memory.toString('base64')}
 }
 
 export const setApple2State = (newState: any) => {
@@ -133,10 +143,8 @@ export const SWITCHES = {
   MIXED: NewSwitch(0xC052, 0xC01B),
   PAGE2: NewSwitch(0xC054, 0xC01C),
   HIRES: NewSwitch(0xC056, 0xC01D),
-  JOYSTICK12: NewSwitch(0xC064, 0, false,
-    () => {checkJoystickValues(cycleCount)}),
-  JOYSTICKRESET: NewSwitch(0xC070, 0, false,
-    () => {resetJoystick(cycleCount)}),
+  JOYSTICK12: NewSwitch(0xC064, 0, false, () => {checkJoystickValues(cycleCount)}),
+  JOYSTICKRESET: NewSwitch(0xC070, 0, false, () => {resetJoystick(cycleCount)}),
   DRVSM0: NewSwitch(0xC080 + SLOT6, 0),
   DRVSM1: NewSwitch(0xC082 + SLOT6, 0),
   DRVSM2: NewSwitch(0xC084 + SLOT6, 0),

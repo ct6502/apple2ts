@@ -4,15 +4,27 @@ import { bank0 } from "./motherboard"
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
 let paddle0timeout = maxTimeoutCycles / 2
 let paddle1timeout = maxTimeoutCycles / 2
+let prevPaddle0timeout = paddle0timeout
+let prevPaddle1timeout = paddle1timeout
 let countStart = 0
 let leftAppleDown = false
 let rightAppleDown = false
 let leftButtonDown = false
 let rightButtonDown = false
+let isLeftDown = false
+let isRightDown = false
+let saveTimeSlice = () => {}
 
 const setButtonState = () => {
-  bank0[0xC061] = (leftAppleDown || leftButtonDown) ? 255 : 0
-  bank0[0xC062] = (rightAppleDown || rightButtonDown) ? 255 : 0
+  const wasLeftDown = isLeftDown
+  const wasRightDown = isRightDown
+  isLeftDown = leftAppleDown || leftButtonDown
+  isRightDown = rightAppleDown || rightButtonDown
+  memSet1(0xC061, (leftAppleDown || leftButtonDown) ? 255 : 0)
+  memSet1(0xC062, (rightAppleDown || rightButtonDown) ? 255 : 0)
+  if ((isLeftDown && !wasLeftDown) || (isRightDown && !wasRightDown)) {
+    saveTimeSlice()
+  }
 }
 
 export const pressAppleKey = (isDown: boolean, left: boolean) => {
@@ -25,26 +37,44 @@ export const pressAppleKey = (isDown: boolean, left: boolean) => {
 }
 
 export const clearAppleKeys = () => {
-  pressAppleKey(false, false)
-  pressAppleKey(false, true)
+  leftAppleDown = false
+  rightAppleDown = false
+  setButtonState()
 }
 
 // const keyPress = (key: number) => {
-//   bank0[0xC000] = key | 0b10000000
+//   memSet1(0xC000, key | 0b10000000)
 // }
 
+const memSet1 = (addr: number, value: number) => {
+  bank0[addr] = value
+}
 export const resetJoystick = (cycleCount: number) => {
-  bank0[0xC064] = 0x80
-  bank0[0xC065] = 0x80
-  bank0[0xC066] = 0
-  bank0[0xC067] = 0
+  memSet1(0xC064, 0x80)
+  memSet1(0xC065, 0x80)
+  memSet1(0xC066, 0)
+  memSet1(0xC067, 0)
   countStart = cycleCount
 }
 
+const largeDiff = (v1: number, v2: number) => {
+  return (Math.abs(v1 - v2) > 0.1 * maxTimeoutCycles)
+}
+
 export const checkJoystickValues = (cycleCount: number) => {
+  if (largeDiff(prevPaddle0timeout, paddle0timeout) ||
+    largeDiff(prevPaddle1timeout, paddle1timeout)) {
+    prevPaddle0timeout = paddle0timeout
+    prevPaddle1timeout = paddle1timeout
+    saveTimeSlice()
+  }
   const diff = cycleCount - countStart
-  bank0[0xC064] = (diff < paddle0timeout) ? 0x80 : 0
-  bank0[0xC065] = (diff < paddle1timeout) ? 0x80 : 0
+  memSet1(0xC064, (diff < paddle0timeout) ? 0x80 : 0)
+  memSet1(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
+}
+
+export const setSaveTimeSlice = (func: () => void) => {
+  saveTimeSlice = func
 }
 
 const defaultButtons = [

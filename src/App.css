@@ -66,7 +66,7 @@ body {
 canvas {
   outline: none;
   border-radius: 20px;
-  cursor: none;
+  /* cursor: none; */
 }
 
 .leftStatus {
