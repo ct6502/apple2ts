@@ -30,22 +30,21 @@ export enum STATE {
   PAUSED
 }
 
-let prevMemory = Buffer.from(bank0)
+// let prevMemory = Buffer.from(bank0)
 
 export const getApple2State = () => {
   const softSwitches: { [name: string]: boolean } = {};
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
   }
-  let diff = 0
   const memory = Buffer.from(bank0)
-  for (let i = 0; i < memory.length; i++) {
-    if (prevMemory[i] !== memory[i]) {
-      diff++
-    }    
-  }
-  prevMemory = memory
-  console.log("diff = " + diff)
+  // let memdiff: { [addr: number]: number } = {};
+  // for (let i = 0; i < memory.length; i++) {
+  //   if (prevMemory[i] !== memory[i]) {
+  //     memdiff[i] = memory[i]
+  //   }    
+  // }
+  // prevMemory = memory
   return {
     s6502: s6502,
     softSwitches: softSwitches,
