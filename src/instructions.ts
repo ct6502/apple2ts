@@ -29,10 +29,11 @@ export enum MODE {
 }
 
 export const incrementPC = (value: number) => {
-  s6502.PC = (s6502.PC + value + 65536) % 65536
+  setPC((s6502.PC + value + 65536) % 65536)
 }
 
 export const setPC = (value: number) => {
+  console.assert(!isNaN(value), "illegal PC")
   s6502.PC = value
 }
 
@@ -97,7 +98,11 @@ const pushStack = (call: string, value: number) => {
 
 const popStack = () => {
   s6502.StackPtr = (s6502.StackPtr + 1) % 256;
-  return memGet(0x100 + s6502.StackPtr);
+  const value = memGet(0x100 + s6502.StackPtr);
+  if (isNaN(value)) {
+    throw new Error("illegal stack value");
+  }
+  return value
 }
 
 export const isCarry = () => { return ((s6502.PStatus & 0x01) !== 0); }
@@ -166,9 +171,7 @@ const pageBoundary = (addr1: number, addr2: number) => (((addr1 >> 8) !== (addr2
 export const pcodes = new Array<PCodeInstr>(256)
 
 const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeFunc) => {
-  if (pcodes[pcode]) {
-    console.error("Duplicate instruction: " + name + " mode=" + mode)
-  }
+  console.assert(!pcodes[pcode], "Duplicate instruction: " + name + " mode=" + mode)
   pcodes[pcode] = {name: name, mode: mode, PC: PC, execute: code}
 }
 
@@ -304,7 +307,7 @@ PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
   pushStack("S", s6502.PStatus)
   setDecimal(false)  // 65c02 only
   setInterrupt()
-  s6502.PC = twoByteAdd(vLo, vHi, -1);
+  setPC(twoByteAdd(vLo, vHi, -1));
   return 7})
 
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
@@ -393,18 +396,18 @@ PCODE('INX', MODE.IMPLIED, 0xE8, 1, () => {s6502.XReg = oneByteAdd(s6502.XReg, 1
 PCODE('INY', MODE.IMPLIED, 0xC8, 1, () => {s6502.YReg = oneByteAdd(s6502.YReg, 1);
   checkStatus(s6502.YReg); return 2})
 
-PCODE('JMP', MODE.ABS, 0x4C, 3, (vLo, vHi) => {s6502.PC = twoByteAdd(vLo, vHi, -3); return 3})
+PCODE('JMP', MODE.ABS, 0x4C, 3, (vLo, vHi) => {setPC(twoByteAdd(vLo, vHi, -3)); return 3})
 // 65c02 - this fixes the 6502 indirect JMP bug across page boundaries
 PCODE('JMP', MODE.IND, 0x6C, 3, (vLo, vHi) => {const a = address(vLo, vHi);
-  vLo = memGet(a); vHi = memGet((a + 1) % 65536); s6502.PC = twoByteAdd(vLo, vHi, -3); return 6})
+  vLo = memGet(a); vHi = memGet((a + 1) % 65536); setPC(twoByteAdd(vLo, vHi, -3)); return 6})
 PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, s6502.XReg);
-  vLo = memGet(a); vHi = memGet((a + 1) % 65536); s6502.PC = twoByteAdd(vLo, vHi, -3); return 6})
+  vLo = memGet(a); vHi = memGet((a + 1) % 65536); setPC(twoByteAdd(vLo, vHi, -3)); return 6})
 
 PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
   const PC2 = (s6502.PC + 2) % 65536
   pushStack("JSR $" + toHex(vHi) + toHex(vLo), Math.trunc(PC2 / 256));
   pushStack("JSR", PC2 % 256);
-  s6502.PC = twoByteAdd(vLo, vHi, -3); return 6})
+  setPC(twoByteAdd(vLo, vHi, -3)); return 6})
 
 const doLDA = (addr: number) => {
   s6502.Accum = memGet(addr)
@@ -522,7 +525,7 @@ PCODE('ROR', MODE.ABS_X, 0x7E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
   doROR(addr);
   return 6 + pageBoundary(addr, address(vLo, vHi))})
 
-PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {s6502.PC = address(popStack(), popStack()); return 6})
+PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {setPC(address(popStack(), popStack())); return 6})
 
 // 300: F8 38 B8 A9 00 E9 00 D8 00
 const doSBC_BCD = (value: number) => {

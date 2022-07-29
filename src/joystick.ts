@@ -1,4 +1,4 @@
-import { bank0 } from "./motherboard"
+import { memC000 } from "./motherboard"
 // import { addToBuffer } from "./keyboard"
 
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
@@ -47,7 +47,7 @@ export const clearAppleKeys = () => {
 // }
 
 const memSet1 = (addr: number, value: number) => {
-  bank0[addr] = value
+  memC000[addr - 0xC000] = value
 }
 export const resetJoystick = (cycleCount: number) => {
   memSet1(0xC064, 0x80)

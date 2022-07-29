@@ -12,6 +12,8 @@ import { resetJoystick, checkJoystickValues } from './joystick';
 import { handleDriveSoftSwitches, doResetDrive, doPauseDrive } from "./diskdrive"
 
 export let bank0 = new Uint8Array(65536)
+export let bank1 = new Uint8Array(65536)
+export let memC000 = new Uint8Array(256)
 const empty = new Uint8Array(256).fill(255)
 let slots = [
   empty,
@@ -59,8 +61,8 @@ export const setApple2State = (newState: any) => {
     SWITCHES[keyTyped].isSet = softSwitches[key]
   }
   bank0 = Buffer.from(newState.memory, 'base64')
+  memC000 = bank0.slice(0xC000, 0xC100)
 }
-
 
 let cycleCount = 0;
 
@@ -74,8 +76,9 @@ export const doReset = () => {
   setYregister(0)
   setPStatus(0b00100100)
   setSP(0xFF)
-  setPC(bank0[0xFFFD] * 256 + bank0[0xFFFC])
+  // TODO: Reset the memory soft switches
   SWITCHES.TEXT.isSet = true
+  setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
   doResetDrive()
 }
 
@@ -86,28 +89,10 @@ export const doPause = (resume = false) => {
 const rom = new Uint8Array(Buffer.from(romBase64.replaceAll('\n', ''), 'base64'))
 
 export const doBoot6502 = () => {
+  memC000.fill(0)
   bank0.fill(0xFF)
-  bank0.set(rom, 0xC000)
+  bank1.fill(0xFF)
   doReset()
-}
-
-const setINTCXROM = () => {
-  if (SWITCHES.INTCXROM.isSet) {
-    bank0.set(rom.slice(0x100, 0x800), 0xC100)
-  } else {
-    for (let slot = 1; slot <= 7; slot++) {
-      bank0.set(slots[slot - 1], 0xC000 + 256 * slot)
-    }
-    setSLOTC3ROM()
-  }
-}
-
-const setSLOTC3ROM = () => {
-  if (SWITCHES.SLOTC3ROM.isSet && !SWITCHES.INTCXROM.isSet) {
-    bank0.set(slots[2], 0xC300)
-  } else {
-    bank0.set(rom.slice(0x300, 0x100), 0xC300)
-  }
 }
 
 type softSwitch = {
@@ -129,15 +114,15 @@ const rand = () => Math.floor(256*Math.random())
 
 export const SWITCHES = {
   STORE80: NewSwitch(0xC000, 0xC018, true),
-  INTCXROM: NewSwitch(0xC006, 0xC015, true, setINTCXROM),
-  SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true, setSLOTC3ROM),
+  INTCXROM: NewSwitch(0xC006, 0xC015, true),
+  SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true),
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
   KBRDSTROBE: NewSwitch(0xC010, 0, false,
-    () => {bank0[0xC000] &= 0b01111111; popKey()}),
+    () => {memC000[0] &= 0b01111111; popKey()}),
   CASSETTE: NewSwitch(0xC020, 0, false, () => {
-    bank0[0xC020] = rand()}),
+    memC000[0x20] = rand()}),
   SPEAKER: NewSwitch(0xC030, 0, false,
-    () => {bank0[0xC030] = rand(); clickSpeaker(cycleCount)}),
+    () => {memC000[0x30] = rand(); clickSpeaker(cycleCount)}),
   TEXT: NewSwitch(0xC050, 0xC01A),
   MIXED: NewSwitch(0xC052, 0xC01B),
   PAGE2: NewSwitch(0xC054, 0xC01C),
@@ -160,7 +145,7 @@ const checkSoftSwitches = (addr: number, isMemSet: boolean) => {
       if (sswitch.writeOnly === isMemSet) {
         sswitch.isSet = addr === sswitch.onAddr
         if (sswitch.isSetAddr > 0) {
-          bank0[sswitch.isSetAddr] = sswitch.isSet ? 0x8D : 0x0D
+          memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
         }
         sswitch.setFunc(cycleCount)
       }
@@ -170,7 +155,8 @@ const checkSoftSwitches = (addr: number, isMemSet: boolean) => {
 }
 
 export const memGet = (addr: number, value=-1): number => {
-  if (addr >= 0xC000) {
+
+  if (addr >= 0xC000 && addr <= 0xC0FF) {
     if (addr >= 0xC080 && addr <= 0xC08F) {
       console.error(`unhandled softswitch $${toHex(addr, 4)}`)
     } else {
@@ -179,7 +165,27 @@ export const memGet = (addr: number, value=-1): number => {
         return handleDriveSoftSwitches(addr, value, cycleCount)
       }
     }
+    return memC000[addr - 0xC000]
   }
+
+  if (addr >= 0xC100 && addr <= 0xCFFF) {
+    const isSlot3 = addr >= 0xC300 && addr <= 0xC3FF
+    if (SWITCHES.INTCXROM.isSet || (isSlot3 && !SWITCHES.SLOTC3ROM.isSet)) {
+      return rom[addr - 0xC000]
+    }
+    // TODO: This should return the card's ROM, not regular ROM.
+    if (addr >= 0xC800) {
+      return rom[addr - 0xC000]
+    }
+    const slot = Math.floor((addr - 0xC100) / 256)
+    return (slots[slot])[addr - 0xC100 - 256 * slot]
+  }
+
+  // TODO: This should return either ROM or banked memory.
+  if (addr >= 0xD000) {
+    return rom[addr - 0xC000]
+  }
+
   return bank0[addr]
 }
 
@@ -326,12 +332,12 @@ const debugZeroPage = () => {
 
 export const processInstruction = () => {
   let cycles = 0;
-  const instr = bank0[s6502.PC]
-  const vLo = s6502.PC < 0xFFFF ? bank0[s6502.PC + 1] : 0
-  const vHi = s6502.PC < 0xFFFE ? bank0[s6502.PC + 2] : 0
+  const PC1 = s6502.PC
+  const instr = memGet(s6502.PC)
+  const vLo = s6502.PC < 0xFFFF ? memGet(s6502.PC + 1) : 0
+  const vHi = s6502.PC < 0xFFFE ? memGet(s6502.PC + 2) : 0
   const code = pcodes[instr];
   if (code) {
-    const PC1 = s6502.PC
     // if (vHi === 0xC0 && vLo === 0x8F) {
     //    doDebug = true
     // }
@@ -344,9 +350,9 @@ export const processInstruction = () => {
       }
     }
     cycles = code.execute(vLo, vHi);
-    if (s6502.Accum > 255 || s6502.Accum < 0) {
-      console.error("Out of bounds")
-      return 0
+    if (!(s6502.Accum >= 0 && s6502.Accum <= 255)) {
+      const a = s6502.Accum
+      console.error("out of bounds, accum = " + a)
     }
     cycleCount += cycles
     incrementPC(code.PC);
