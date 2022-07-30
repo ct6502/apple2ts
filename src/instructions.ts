@@ -404,6 +404,7 @@ PCODE('JMP', MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, 
   vLo = memGet(a); vHi = memGet((a + 1) % 65536); setPC(twoByteAdd(vLo, vHi, -3)); return 6})
 
 PCODE('JSR', MODE.ABS, 0x20, 3, (vLo, vHi) => {
+  // Push the (address - 1) of the next instruction
   const PC2 = (s6502.PC + 2) % 65536
   pushStack("JSR $" + toHex(vHi) + toHex(vLo), Math.trunc(PC2 / 256));
   pushStack("JSR", PC2 % 256);
@@ -524,6 +525,10 @@ PCODE('ROR', MODE.ABS, 0x6E, 3, (vLo, vHi) => {doROR(address(vLo, vHi)); return 
 PCODE('ROR', MODE.ABS_X, 0x7E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
   doROR(addr);
   return 6 + pageBoundary(addr, address(vLo, vHi))})
+
+PCODE('RTI', MODE.IMPLIED, 0x40, 1, () => {
+  setPStatus(popStack());
+  setPC(address(popStack(), popStack()) - 1); return 6})
 
 PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {setPC(address(popStack(), popStack())); return 6})
 

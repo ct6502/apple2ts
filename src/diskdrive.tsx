@@ -338,7 +338,7 @@ const decodeDiskData = (fileName: string) => {
       } else {
         dState.trackStart[htrack] = 0
         dState.trackNbits[htrack] = 51200
-        console.log(`empty woz2 track ${htrack / 2}`)
+//        console.log(`empty woz2 track ${htrack / 2}`)
       }
     }
     return
@@ -356,7 +356,7 @@ const decodeDiskData = (fileName: string) => {
       } else {
         dState.trackStart[htrack] = 0
         dState.trackNbits[htrack] = 51200
-        console.log(`empty woz1 track ${htrack / 2}`)
+//        console.log(`empty woz1 track ${htrack / 2}`)
       }
     }
     return

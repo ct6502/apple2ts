@@ -1,5 +1,5 @@
 import { doBoot6502, doReset, doPause, getApple2State,
-  processInstruction, setApple2State, setDebug, STATE } from "./motherboard";
+  processInstruction, setApple2State, STATE } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import DisplayProps from "./displayprops"
 import Apple2Canvas from "./canvas"
@@ -60,7 +60,6 @@ class DisplayApple2 extends React.Component<{},
 //    let pcode = parseAssembly(0x2000, code.split("\n"));
 //    bank0.set(pcode, 0x2000);
 //    setPC(0x2000);
-    setDebug(false);
     this.startTime = performance.now();
   }
 
