@@ -1,6 +1,9 @@
 import React, { useEffect, KeyboardEvent } from 'react';
 import DisplayProps from "./displayprops"
-import { SWITCHES, toHex, getTextPage, getHGR, STATE } from "./motherboard";
+import { toHex } from "./utility"
+import { STATE } from "./motherboard";
+import { getTextPage, getHGR } from "./memory";
+import { SWITCHES } from "./softswitches";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
 import { handleGamePad, pressAppleKey, clearAppleKeys, setSaveTimeSlice } from "./joystick"
 

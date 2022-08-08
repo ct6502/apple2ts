@@ -1,6 +1,7 @@
-import {bank0, processInstruction} from "./motherboard";
-import {s6502, setPC} from "./instructions";
-import {parseAssembly} from "./assembler";
+import { processInstruction } from "./motherboard";
+import { bank0 } from "./memory";
+import { s6502, setPC } from "./instructions";
+import { parseAssembly } from "./assembler";
 
 test('processInstruction', () => {
   let pcode = parseAssembly(0x2000, [" LDA #$C0"]);

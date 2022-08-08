@@ -1,5 +1,5 @@
 import {KeyboardEvent} from "react";
-import { memC000 } from "./motherboard"
+import { memC000 } from "./memory"
 
 let keyBuffer = ''
 export const popKey = () => {

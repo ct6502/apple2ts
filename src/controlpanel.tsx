@@ -1,5 +1,6 @@
 import DisplayProps from "./displayprops"
-import { getProcessorStatus, STATE } from "./motherboard";
+import { STATE } from "./motherboard";
+import { getProcessorStatus } from "./utility";
 import { getAudioContext } from "./speaker";
 import parse from "html-react-parser"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -1,6 +1,8 @@
-import {bank0, doReset, processInstruction, toHex} from "./motherboard";
-import {doBranch, s6502, setPC, isBreak, setBreak} from "./instructions";
-import {parseAssembly} from "./assembler";
+import { toHex } from "./utility"
+import { doReset, processInstruction } from "./motherboard";
+import { bank0 } from "./memory";
+import { doBranch, s6502, setPC, isBreak, setBreak } from "./instructions";
+import { parseAssembly } from "./assembler";
 
 doReset()
 

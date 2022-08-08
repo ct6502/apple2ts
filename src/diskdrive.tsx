@@ -1,5 +1,7 @@
 import React from "react";
-import { SWITCHES, toHex, bank0 } from "./motherboard"
+import { toHex } from "./utility"
+import { cycleCount } from "./motherboard"
+import { SWITCHES } from "./softswitches";
 import { Buffer } from "buffer";
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
@@ -237,7 +239,7 @@ const doWriteByte = (cycleCount: number) => {
 }
 
 export const handleDriveSoftSwitches =
-  (addr: number, value: number, cycleCount: number): number => {
+  (addr: number, value: number): number => {
   let result = 0
   if (addr === SWITCHES.DRIVE.onAddr) {
     startMotor()
@@ -270,7 +272,7 @@ export const handleDriveSoftSwitches =
         `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
       console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
         `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
-        `$27=${toHex(bank0[0x27])} track=${dState.halftrack / 2}`)
+        `track=${dState.halftrack / 2}`)
     }
   } else if (addr === SWITCHES.DRVWRITE.offAddr) {
     dState.readMode = true

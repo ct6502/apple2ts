@@ -1,4 +1,4 @@
-import { memC000 } from "./motherboard"
+import { memC000 } from "./memory"
 // import { addToBuffer } from "./keyboard"
 
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)

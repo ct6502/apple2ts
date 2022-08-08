@@ -1,4 +1,5 @@
-import { memGet, memSet, toHex } from "./motherboard"
+import { toHex } from "./utility"
+import { memGet, memSet } from "./memory"
 // var startTime = performance.now()
 
 export let s6502 = {
@@ -12,6 +13,15 @@ export let s6502 = {
 
 export const set6502State = (new6502: any) => {
   s6502 = new6502
+}
+
+export const reset6502 = () => {
+  s6502.Accum = 0
+  s6502.XReg = 0
+  s6502.YReg = 0
+  s6502.PStatus = 0b00100100
+  s6502.PC = 0xFF
+  setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
 }
 
 export enum MODE {
@@ -37,58 +47,11 @@ export const setPC = (value: number) => {
   s6502.PC = value
 }
 
-export const setAccum = (value: number) => {
-  s6502.Accum = value
-}
-
-export const setXregister = (value: number) => {
-  s6502.XReg = value
-}
-
-export const setYregister = (value: number) => {
-  s6502.YReg = value
-}
-
-export const getPStatusString = () => {
-  const result = ((s6502.PStatus & 0x80) ? 'N' : 'n') +
-    ((s6502.PStatus & 0x40) ? 'V' : 'v') +
-    '-' +
-    ((s6502.PStatus & 0x10) ? 'B' : 'b') +
-    ((s6502.PStatus & 0x8) ? 'D' : 'd') +
-    ((s6502.PStatus & 0x4) ? 'I' : 'i') +
-    ((s6502.PStatus & 0x2) ? 'Z' : 'z') +
-    ((s6502.PStatus & 0x1) ? 'C' : 'c')
-  return result
-}
-
-export const setPStatus = (value: number) => {
+const setPStatus = (value: number) => {
   s6502.PStatus = value | 0b00100000
 }
 
-export const setSP = (value: number) => {
-  s6502.StackPtr = value
-}
-
-const stack = new Array<string>(256).fill('')
-
-export const getStack = () => {
-  const result = new Array<string>()
-  for (let i = 0xFF; i > s6502.StackPtr; i--) {
-    let value = "$" + toHex(memGet(0x100 + i))
-    let cmd = stack[i]
-    if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
-      if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
-        i--
-        value += toHex(memGet(0x100 + i))
-      } else {
-        cmd = ''
-      }
-    }
-    value = (value + "   ").substring(0, 6)
-    result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
-  }
-  return result
-}
+export const stack = new Array<string>(256).fill('')
 
 const pushStack = (call: string, value: number) => {
   stack[s6502.StackPtr] = call
