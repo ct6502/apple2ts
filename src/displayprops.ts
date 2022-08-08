@@ -2,6 +2,7 @@ import {  STATE } from "./motherboard";
 
 type DisplayProps = {
   _6502: STATE,
+  advance: () => void,
   speed: string,
   delta: string,
   myCanvas: React.RefObject<HTMLCanvasElement>,

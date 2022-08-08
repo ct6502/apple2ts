@@ -75,11 +75,11 @@ canvas {
   margin-top: 10px;
 }
 
-.rightStatus {
+/* .rightStatus {
   float: right;
   margin-right: 5px;
   margin-top: 10px;
-}
+} */
 
 .statusItem {
   margin-right: 30px;
@@ -120,16 +120,13 @@ button:disabled {
   cursor: default;
 }
 
-.floatRight {
-  float: right;
-  margin-top: 5px;
-}
-
 .disk2 {
   width: 120px;
+  height: 69px;
   border: 1px solid #000;
   border-radius: 4px;
   cursor: pointer;
   margin-left: 5px;
+  margin-top: 10px;
 }
 

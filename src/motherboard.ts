@@ -117,6 +117,13 @@ const rom = new Uint8Array(
   Buffer.from(romBase64.replaceAll("\n", ""), "base64")
 )
 
+// Set $C007: FF to see this code
+// Hack to change the cursor
+// rom[0xC26F - 0xC000] = 161
+// rom[0xC273 - 0xC000] = 161
+// Hack to speed up the cursor
+// rom[0xC288 - 0xC000] = 0x20
+
 export const doBoot6502 = () => {
   bank0.fill(0xFF)
   bank1.fill(0xFF)
@@ -177,7 +184,7 @@ export const SWITCHES = {
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
   ALTCHARSET: NewSwitch(0xC00E, 0xC01E, true),
   KBRDSTROBE: NewSwitch(0xC010, 0, false, () => {
-    memC000[0] &= 0b01111111
+    memC000.fill(memC000[0] & 0b01111111, 0, 16)
     popKey()
   }),
   BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
@@ -241,6 +248,7 @@ const checkSoftSwitches = (addr: number, calledFromMemSet: boolean) => {
       return
     }
     if (addr === sswitch.isSetAddr) {
+      memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
       return
     }
   }
@@ -291,6 +299,9 @@ export const memGet = (addr: number): number => {
   return (SWITCHES.RAMRD.isSet ? bank1[addr] : bank0[addr])
 }
 
+let prevCycleCount = cycleCount
+let stopDebug = true
+
 export const memSet = (addr: number, value: number) => {
   if (addr >= 0xC000 && addr <= 0xC0FF) {
     checkSoftSwitches(addr, false)
@@ -323,6 +334,17 @@ export const memSet = (addr: number, value: number) => {
       bank0[addr] = value
     }
   } else {
+    if (addr === (0x400 + 0x3d1) && ((value === 160 && bank0[addr] === 255) ||
+      (value === 255 && bank0[addr] === 160)) && cycleCount > 10000000) {
+      console.log("cycleCount diff=" + (cycleCount - prevCycleCount))
+      prevCycleCount = cycleCount
+      if (!doDebug && !stopDebug) {
+        doDebug = true
+      } else {
+        doDebug = false
+        stopDebug = true
+      }
+    }
     if (SWITCHES.RAMWRT.isSet) {
       bank1[addr] = value
     } else {
@@ -476,6 +498,8 @@ const debugZeroPage = () => {
   zpPrev = zp
 }
 
+const skipPCs = [0xC28B, 0xC28E, 0xC27D, 0xC27F]
+
 export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
@@ -489,8 +513,12 @@ export const processInstruction = () => {
     }
     // Do not output during the Apple II's WAIT subroutine
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
-      const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}`
-      console.log(out)
+      if (skipPCs.includes(PC1)) {
+        console.log("----")
+      } else {
+        const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}  ${cycleCount}`
+        console.log(out)
+      }
       if (doDebugZeroPage) {
         debugZeroPage()
       }

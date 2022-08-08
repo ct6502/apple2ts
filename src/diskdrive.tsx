@@ -11,6 +11,7 @@ import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
 import { s6502 } from './instructions'
 
 const emptyDisk = "(empty)"
+const doDebugDrive = true
 
 export let dState = {
   fileName: emptyDisk,
@@ -28,6 +29,18 @@ export let dState = {
 
 let diskData = new Uint8Array()
 
+export const getFilename = () => {
+  if (dState.fileName !== emptyDisk) {
+    let f = dState.fileName
+    const i = f.lastIndexOf('.')
+    if (i > 0) {
+      f = f.substring(0, i)
+    }
+    return f
+  }
+  return null
+}
+
 export const getDriveState = () => {
   const data = Buffer.from(diskData).toString('base64')
   return { dState: dState, data: data }
@@ -37,8 +50,6 @@ export const setDriveState = (newState: any) => {
   dState = newState.dState
   diskData = Buffer.from(newState.data, 'base64')
 }
-
-const doDebugDrive = false
 
 let motorContext: AudioContext | undefined
 let motorElement: HTMLAudioElement | undefined
@@ -51,7 +62,7 @@ let trackTimeout = 0
 export const doResetDrive = () => {
   SWITCHES.DRIVE.isSet = false
   doMotorTimeout()
-  dState.halftrack = 0
+  dState.halftrack = dState.prevHalfTrack = 68
 }
 
 export const doPauseDrive = (resume = false) => {
@@ -231,34 +242,35 @@ export const handleDriveSoftSwitches =
   if (addr === SWITCHES.DRIVE.onAddr) {
     startMotor()
     return result
-  } else if (addr === SWITCHES.DRIVE.offAddr) {
+  }
+  if (addr === SWITCHES.DRIVE.offAddr) {
     stopMotor()
     return result
   }
-  const phaseSwitches = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
+  const ps = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
     SWITCHES.DRVSM2, SWITCHES.DRVSM3]
   const a = addr - SWITCHES.DRVSM0.offAddr
-  let debug = ""
   // One of the stepper motors has been turned on or off
   if (a >= 0 && a <= 7) {
-    const ascend = phaseSwitches[(dState.currentPhase + 1) % 4]
-    const descend = phaseSwitches[(dState.currentPhase + 3) % 4]
-    if (!phaseSwitches[dState.currentPhase].isSet) {
+    const ascend = ps[(dState.currentPhase + 1) % 4]
+    const descend = ps[(dState.currentPhase + 3) % 4]
+    // Make sure our current phase motor has been turned off.
+    if (!ps[dState.currentPhase].isSet) {
       if (dState.motorIsRunning && ascend.isSet) {
         moveHead(1)
         dState.currentPhase = (dState.currentPhase + 1) % 4
-        debug = "  currPhase=" + dState.currentPhase + " track=" + dState.halftrack / 2
 
       } else if (dState.motorIsRunning && descend.isSet) {
         moveHead(-1)
         dState.currentPhase = (dState.currentPhase + 3) % 4
-        debug = "  currPhase=" + dState.currentPhase + " track=" + dState.halftrack / 2
       }
     }
     if (doDebugDrive) {
-      console.log("***** PC=" + toHex(s6502.PC,4) + "  addr=" + toHex(addr,4) +
-        " phase=" + (a >> 1) + (a % 2 === 0 ? " off" : " on ") +
-        " 0x27=" + toHex(bank0[0x27]) + debug)
+      const phases = `${ps[0].isSet ? 1 : 0}${ps[1].isSet ? 1 : 0}` +
+        `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
+      console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
+        `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
+        `$27=${toHex(bank0[0x27])} track=${dState.halftrack / 2}`)
     }
   } else if (addr === SWITCHES.DRVWRITE.offAddr) {
     dState.readMode = true
@@ -469,7 +481,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
       (dState.motorIsRunning ? disk2onEmpty : disk2offEmpty)
     return (
       <span>
-        <span className="fixed">{dState.halftrack / 2}</span>
+        <span>
         <img className="disk2" src={img} alt={dState.fileName}
           title={dState.fileName}
           onClick={() => {
@@ -494,6 +506,9 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
           onChange={this.handleDiskClick}
           style={{display: 'none'}}
         />
+        </span>
+        <br/>
+        <span className="fixed">{dState.halftrack / 2}</span>
       </span>
     );
   }

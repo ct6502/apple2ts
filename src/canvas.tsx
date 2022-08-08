@@ -49,24 +49,32 @@ for (let c = 0; c < 16; c++) {
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
     textPage.slice(j * 40, (j + 1) * 40).forEach((value, i) => {
-      let v: string
-      if (value === 0x60) {
-        value = 64 // flashing cursor
-        v = "\u00A0"
+      let doInverse = false
+      let v1 = value
+      if (SWITCHES.ALTCHARSET.isSet) {
+        if ((v1 >= 0 && v1 <= 31) || (v1 >= 64 && v1 <= 95)) {
+          v1 += 64
+        } else if (v1 >= 128 && v1 <= 159) {
+          v1 -= 64
+        } else if (v1 >= 160) {
+          v1 -= 128
+        }
+        doInverse = (value <= 63) || (value >= 96 && value <= 127)
       } else {
-        let v1 = value;
         // Shift Ctrl chars and second ASCII's into correct ASCII range
         if ((v1 >= 0 && v1 <= 0x1f) || (v1 >= 0x61 && v1 <= 0x9f)) {
-          v1 += 0x40;
+          v1 += 64
         }
-        v = String.fromCharCode(v1 & 0b01111111);
+        v1 &= 0b01111111
+        doInverse = (value <= 63)
       }
+      const v = String.fromCharCode(v1);
       ctx.fillStyle = iscolor ? "#FFFFFF" : "#39FF14";
-      if (value < 64) {
+      if (doInverse) {
         // Inverse characters
-        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, cwidth, cheight);
+        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + (j + 0.05)*cheight, 1.02*cwidth, 1.04*cheight);
         ctx.fillStyle = "#000000";
-      } else if (value < 128) {
+      } else if (value < 128 && !SWITCHES.ALTCHARSET.isSet) {
         if (doFlashCycle) {
           ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, cwidth, cheight);
           ctx.fillStyle = "#000000";
@@ -216,7 +224,7 @@ const pasteHandler = (e: ClipboardEvent) => {
   if (e.clipboardData) {
     const data = e.clipboardData.getData("text");
     if (data !== "") {
-      addToBuffer(data);
+      addToBuffer(data.replaceAll(/[”“]/g,'"'));
     }
     e.preventDefault();
   }
@@ -331,7 +339,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       }
       width = Math.floor(width)
       height = Math.floor(height)
-      if (window.innerWidth !== width || window.innerHeight !== height) {
+      if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
         ctx.canvas.width = width;
         ctx.canvas.height = height;
       }
@@ -353,7 +361,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, [props.myCanvas, props.iscolor, props.saveTimeSlice]);
+  }, [props.myCanvas, props.iscolor, props.saveTimeSlice, props]);
 
   return <canvas ref={props.myCanvas}
     height={height} width={width}

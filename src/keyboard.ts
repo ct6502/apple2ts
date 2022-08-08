@@ -8,7 +8,7 @@ export const popKey = () => {
     if (key === 10) {
       key = 13
     }
-    memC000[0] = key | 0b10000000
+    memC000.fill(key | 0b10000000, 0, 16)
     keyBuffer = keyBuffer.slice(1)
   }
 }
@@ -18,7 +18,7 @@ export const addToBuffer = (text: String) => {
 }
 
 export const keyPress = (key: number) => {
-  memC000[0] = key | 0b10000000
+  memC000.fill(key | 0b10000000, 0, 16)
 }
 
 export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {

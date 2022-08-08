@@ -5,7 +5,7 @@ import DisplayProps from "./displayprops"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
-import { getDriveState, setDriveState } from "./diskdrive"
+import { getDriveState, setDriveState, getFilename } from "./diskdrive"
 import React from 'react';
 import { compress, decompress } from "lz-string"
 import { Buffer } from "buffer";
@@ -13,11 +13,12 @@ import { Buffer } from "buffer";
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
-  { _6502: STATE;
-    iCycle: number;
+  { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
     iscolor: boolean }> {
+  _6502 = STATE.IDLE
+  iCycle = 0
   timerID = 0
   cycles = 0
   timeDelta = 0
@@ -34,8 +35,8 @@ class DisplayApple2 extends React.Component<{},
 
   constructor(props: any) {
     super(props);
-    this.state = { _6502: STATE.IDLE,
-      iCycle: 0,
+    this.state = {
+      currentSpeed: 0,
       speedCheck: true,
       uppercase: true,
       iscolor: true,
@@ -63,49 +64,57 @@ class DisplayApple2 extends React.Component<{},
     this.startTime = performance.now();
   }
 
+  update6502 = () => {
+    this.advance()
+    this.setState( {currentSpeed: this.speed[this.iCycle] / 1000} )
+  }
   componentDidMount() {
     this.doBoot();
-    this.setState({ _6502: STATE.IDLE });
-    this.timerID = window.setInterval(() => this.advance(), this.refreshTime);
+    this.handle6502StateChange(STATE.IDLE)
+    this.timerID = window.setInterval(() => this.update6502(), this.refreshTime)
   }
 
   componentWillUnmount() {
     if (this.timerID) clearInterval(this.timerID);
   }
 
-  advance() {
+  get6502state = () => {
+    return this._6502 //this.state._6502
+  }
+
+  MAXCYCLES = 17030
+
+  advance = () => {
     const newTime = performance.now()
     this.timeDelta = newTime - this.startTime
     this.startTime = newTime;
-    if (this.state._6502 === STATE.IDLE || this.state._6502 === STATE.PAUSED) {
+    if (this.get6502state() === STATE.IDLE || this.get6502state() === STATE.PAUSED) {
       return;
     }
-    if (this.state._6502 === STATE.NEED_BOOT) {
+    if (this.get6502state() === STATE.NEED_BOOT) {
       this.doBoot();
-      this.setState({ _6502: STATE.IS_RUNNING });
-    } else if (this.state._6502 === STATE.NEED_RESET) {
+      this.handle6502StateChange(STATE.IS_RUNNING)
+    } else if (this.get6502state() === STATE.NEED_RESET) {
       doReset();
-      this.setState({ _6502: STATE.IS_RUNNING });
+      this.handle6502StateChange(STATE.IS_RUNNING)
     }
     let cycleTotal = 0
     while (true) {
       const cycles = processInstruction();
       if (cycles === 0) {
-        this.setState({ _6502: STATE.PAUSED });
+        this.handle6502StateChange(STATE.PAUSED)
         return;
       }
       cycleTotal += cycles;
-      if (cycleTotal >= 17030) {
+      if (cycleTotal >= this.MAXCYCLES) {
         break;
       }
     }
-    const newIndex = (this.state.iCycle + 1) % this.speed.length;
+    const newIndex = (this.iCycle + 1) % this.speed.length;
     const currentAvgSpeed = cycleTotal / this.timeDelta / this.speed.length
-    this.speed[newIndex] = this.speed[this.state.iCycle] -
+    this.speed[newIndex] = this.speed[this.iCycle] -
       this.speed[newIndex] / this.speed.length + currentAvgSpeed;
-    this.setState({
-      iCycle: newIndex,
-    });
+    this.iCycle = newIndex
     if (this.doSaveTimeSlice) {
       this.doSaveTimeSlice = false
       this.iSaveState = (this.iSaveState + 1) % this.maxState
@@ -115,7 +124,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleGoBackInTime = () => {
-    this.setState({ _6502: STATE.PAUSED })
+    this.handle6502StateChange(STATE.PAUSED)
     doPause()
     // if this is the first time we're called, make sure our current
     // state is up to date
@@ -131,7 +140,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleGoForwardInTime = () => {
-    this.setState({ _6502: STATE.PAUSED })
+    this.handle6502StateChange(STATE.PAUSED)
     doPause()
     if (this.iTempState === this.iSaveState) {
       return
@@ -147,7 +156,7 @@ class DisplayApple2 extends React.Component<{},
   handleSpeedChange = () => {
     this.speed.fill(1020.484)
     window.clearInterval(this.timerID)
-    this.timerID = window.setInterval(() => this.advance(),
+    this.timerID = window.setInterval(() => this.update6502(),
       this.state.speedCheck ? 0 : this.refreshTime)
     this.setState({ speedCheck: !this.state.speedCheck });
   };
@@ -157,21 +166,18 @@ class DisplayApple2 extends React.Component<{},
   };
 
   handleUpperCaseChange = () => {
-    this.speed.fill(1020.484)
-    window.clearInterval(this.timerID)
-    this.timerID = window.setInterval(() => this.advance(),
-      this.state.speedCheck ? 0 : this.refreshTime)
     this.setState({ uppercase: !this.state.uppercase });
   };
 
   handlePause = () => {
-    const s = this.state._6502 === STATE.PAUSED ? STATE.IS_RUNNING : STATE.PAUSED
-    this.setState({ _6502: s })
+    const s = this.get6502state() === STATE.PAUSED ? STATE.IS_RUNNING : STATE.PAUSED
+    this.handle6502StateChange(s)
     doPause((s === STATE.IS_RUNNING))
   }
 
   handle6502StateChange = (state: STATE) => {
-    this.setState({ _6502: state });
+    this._6502 = state
+//    this.setState({_6502: state})
   }
 
   restoreSaveState = (sState: string) => {
@@ -193,7 +199,7 @@ class DisplayApple2 extends React.Component<{},
     if (e.target?.files?.length) {
       const fileread = new FileReader()
       const restoreState = this.restoreSaveState
-      const doRun = () => this.setState({ _6502: STATE.IS_RUNNING })
+      const doRun = () => this.handle6502StateChange(STATE.IS_RUNNING)
       fileread.onload = function(e) {
         if (e.target) {
           restoreState(e.target.result as string)
@@ -222,10 +228,14 @@ class DisplayApple2 extends React.Component<{},
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
+    let name = getFilename()
+    if (!name) {
+      name = "apple2ts"
+    }
     const d = new Date()
     let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
     datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
-    link.setAttribute('download', `apple2ts${datetime}.dat`);
+    link.setAttribute('download', `${name}${datetime}.dat`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -234,9 +244,10 @@ class DisplayApple2 extends React.Component<{},
 
   render() {
     const delta = (this.timeDelta).toFixed(1)
-    const speed = (this.speed[this.state.iCycle] / 1000).toFixed(3)
+    const speed = this.state.currentSpeed.toFixed(3) //(this.speed[this.iCycle] / 1000).toFixed(3)
     const props: DisplayProps = {
-      _6502: this.state._6502,
+      _6502: this.get6502state(),
+      advance: this.advance,
       speed: speed,
       delta: delta,
       myCanvas: this.myCanvas,
@@ -269,15 +280,14 @@ class DisplayApple2 extends React.Component<{},
           <span className="leftStatus">
             <ControlPanel {...props}/>
           </span>
-          <span className="rightStatus">
-            <DiskDrive/>
-          </span>
+          <span><DiskDrive/></span>
         </span>
         {/* <span className="statusPanel fixed small">
           {parse(getStatus())}
         </span> */}
         <input
           type="file"
+          accept=".dat"
           ref={input => this.hiddenFileOpen = input}
           onChange={this.handleRestoreState}
           style={{display: 'none'}}
