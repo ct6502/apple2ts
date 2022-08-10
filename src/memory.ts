@@ -1,5 +1,5 @@
-import { SWITCHES } from "./softswitches";
-import { toHex } from "./utility"
+import { SWITCHES, checkSoftSwitches } from "./softswitches";
+import { cycleCount } from "./instructions"
 import { handleDriveSoftSwitches } from "./diskdrive"
 import { romBase64 } from "./roms/rom_2e"
 import { slot_disk2 } from "./roms/slot_disk2_cx00"
@@ -32,32 +32,8 @@ const rom = new Uint8Array(
 // Hack to speed up the cursor
 // rom[0xC288 - 0xC000] = 0x20
 
-const checkSoftSwitches = (addr: number, calledFromMemSet: boolean) => {
-  for (const [, sswitch] of Object.entries(SWITCHES)) {
-    if (addr === sswitch.offAddr || addr === sswitch.onAddr) {
-      // Set switch if both true (memSet and writeOnly) or both false
-      if (calledFromMemSet === sswitch.writeOnly) {
-        if (sswitch.setFunc) {
-          sswitch.setFunc(addr)
-          } else {
-          sswitch.isSet = addr === sswitch.onAddr
-          if (sswitch.isSetAddr > 0) {
-            memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
-          }
-        }
-      }
-      return
-    }
-    if (addr === sswitch.isSetAddr) {
-      memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
-      return
-    }
-  }
-  console.error("Unknown softswitch " + toHex(addr))
-}
-
 const memGetSoftSwitch = (addr: number): number => {
-  checkSoftSwitches(addr, false)
+  checkSoftSwitches(addr, false, cycleCount)
   if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
     return handleDriveSoftSwitches(addr, -1)
   }
@@ -102,11 +78,11 @@ export const memGet = (addr: number): number => {
 
 export const memSet = (addr: number, value: number) => {
   if (addr >= 0xC000 && addr <= 0xC0FF) {
-    checkSoftSwitches(addr, false)
+    checkSoftSwitches(addr, false, cycleCount)
     if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
       handleDriveSoftSwitches(addr, value)
     }
-    checkSoftSwitches(addr, true)
+    checkSoftSwitches(addr, true, cycleCount)
     return
   }
   if (addr >= 0xC100 && addr <= 0xCFFF) {

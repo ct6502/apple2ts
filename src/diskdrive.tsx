@@ -1,8 +1,8 @@
 import React from "react";
-import { toHex } from "./utility"
-import { cycleCount } from "./motherboard"
-import { SWITCHES } from "./softswitches";
 import { Buffer } from "buffer";
+import { toHex } from "./utility"
+import { SWITCHES } from "./softswitches";
+import { s6502, cycleCount } from './instructions'
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
@@ -10,7 +10,6 @@ import disk2onEmpty from './img/disk2on-empty.png'
 import driveMotor from './audio/driveMotor.mp3'
 import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
-import { s6502 } from './instructions'
 
 const emptyDisk = "(empty)"
 const doDebugDrive = true

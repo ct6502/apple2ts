@@ -1,5 +1,5 @@
-import { pcodes, MODE, isRelativeInstr } from "./instructions";
-import { toHex } from "./utility";
+import { pcodes } from "./instructions";
+import { toHex, isRelativeInstr, MODE } from "./utility";
 
 const parseOperand = (operand: string): [MODE, number] => {
   let mode: MODE = MODE.IMPLIED;

@@ -1,10 +1,10 @@
 import { memC000 } from "./memory"
-import { cycleCount } from "./motherboard"
 import { popKey } from "./keyboard"
 import { clickSpeaker } from "./speaker"
 import { resetJoystick, checkJoystickValues } from "./joystick"
+import { toHex } from "./utility"
 
-type tSetFunc = ((addr: number) => void) | null
+type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
 type softSwitch = {
   offAddr: number
@@ -67,7 +67,7 @@ export const SWITCHES = {
   CASSETTE: NewSwitch(0xC020, 0, false, () => {
     memC000[0x20] = rand()
   }),
-  SPEAKER: NewSwitch(0xC030, 0, false, (addr) => {
+  SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
     memC000[0x30] = rand()
     clickSpeaker(cycleCount)
   }),
@@ -82,10 +82,10 @@ export const SWITCHES = {
   PB0: NewSwitch(0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0xC062),  // status location, not a switch
   PB2: NewSwitch(0, 0xC063),  // status location, not a switch
-  JOYSTICK12: NewSwitch(0xC064, 0, false, (addr) => {
+  JOYSTICK12: NewSwitch(0xC064, 0, false, (addr, cycleCount) => {
     checkJoystickValues(cycleCount)
   }),
-  JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr) => {
+  JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
   }),
   READBSR2: NewSwitch(0xC080, 0, false, (addr) => {handleBankedRAM(addr)}),
@@ -104,4 +104,29 @@ export const SWITCHES = {
   DRVSEL: NewSwitch(0xC08A + SLOT6, 0),
   DRVDATA: NewSwitch(0xC08C + SLOT6, 0),
   DRVWRITE: NewSwitch(0xC08E + SLOT6, 0),
+}
+
+export const checkSoftSwitches = (addr: number,
+  calledFromMemSet: boolean, cycleCount: number) => {
+  for (const [, sswitch] of Object.entries(SWITCHES)) {
+    if (addr === sswitch.offAddr || addr === sswitch.onAddr) {
+      // Set switch if both true (memSet and writeOnly) or both false
+      if (calledFromMemSet === sswitch.writeOnly) {
+        if (sswitch.setFunc) {
+          sswitch.setFunc(addr, cycleCount)
+          } else {
+          sswitch.isSet = addr === sswitch.onAddr
+          if (sswitch.isSetAddr > 0) {
+            memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
+          }
+        }
+      }
+      return
+    }
+    if (addr === sswitch.isSetAddr) {
+      memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
+      return
+    }
+  }
+  console.error("Unknown softswitch " + toHex(addr))
 }

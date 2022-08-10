@@ -1,6 +1,4 @@
-import DisplayProps from "./displayprops"
-import { STATE } from "./motherboard";
-import { getProcessorStatus } from "./utility";
+import { getProcessorStatus, STATE } from "./utility";
 import { getAudioContext } from "./speaker";
 import parse from "html-react-parser"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -101,7 +99,7 @@ const ControlPanel = (props: DisplayProps) => {
       <br />
 
       <span className="statusItem">
-        <span className="fixed">{parse(getProcessorStatus())}</span>
+        <span className="fixed">{parse(getProcessorStatus(props.s6502))}</span>
       </span>
     </span>
   )

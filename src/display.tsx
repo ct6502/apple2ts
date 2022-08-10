@@ -1,7 +1,8 @@
 import { doBoot6502, doReset, doPause, getApple2State,
-  processInstruction, setApple2State, STATE } from "./motherboard";
+  processInstruction, setApple2State } from "./motherboard";
 // import { parseAssembly } from "./assembler";
-import DisplayProps from "./displayprops"
+import { s6502 } from "./instructions"
+import { STATE } from "./utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
@@ -247,6 +248,7 @@ class DisplayApple2 extends React.Component<{},
     const speed = this.state.currentSpeed.toFixed(3) //(this.speed[this.iCycle] / 1000).toFixed(3)
     const props: DisplayProps = {
       _6502: this.get6502state(),
+      s6502: s6502,
       advance: this.advance,
       speed: speed,
       delta: delta,
@@ -283,7 +285,7 @@ class DisplayApple2 extends React.Component<{},
           <span><DiskDrive/></span>
         </span>
         {/* <span className="statusPanel fixed small">
-          {parse(getStatus())}
+          {parse(getStatuss6502, stack, bank0.slice(0, 512)))}
         </span> */}
         <input
           type="file"

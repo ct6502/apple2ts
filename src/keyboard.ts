@@ -1,4 +1,4 @@
-import {KeyboardEvent} from "react";
+import { KeyboardEvent } from "react"
 import { memC000 } from "./memory"
 
 let keyBuffer = ''

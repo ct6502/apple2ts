@@ -1,10 +1,34 @@
-import { s6502, pcodes, MODE, isRelativeInstr,
-  address, stack } from "./instructions"
-import { bank0, memGet } from "./memory"
+
+export enum STATE {
+  IDLE,
+  NEED_BOOT,
+  NEED_RESET,
+  IS_RUNNING,
+  PAUSED,
+}
+
+export enum MODE {
+  IMPLIED,  // BRK
+  IMM,      // LDA #$01
+  ZP_REL,   // LDA $C0 or BCC $FF
+  ZP_X,     // LDA $C0,X
+  ZP_Y,     // LDX $C0,Y
+  ABS,      // LDA $1234
+  ABS_X,    // LDA $1234,X
+  ABS_Y,    // LDA $1234,Y
+  IND_X,    // LDA ($FF,X) or JMP ($1234,X)
+  IND_Y,    // LDA ($FF),Y
+  IND       // JMP ($1234) or LDA ($C0)
+}
+
+// A hack to determine if this is a relative instruction.
+export const isRelativeInstr = (instr: string) => instr.startsWith('B') && instr !== "BIT" && instr !== "BRK"
 
 // export const toBinary = (value: number, ndigits = 8) => {
 //   return ("0000000000000000" + value.toString(2)).slice(-ndigits)
 // }
+
+const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
 
 export const toHex = (value: number, ndigits = 2) => {
   if (value > 0xFF) {
@@ -13,7 +37,7 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-const getPStatusString = () => {
+const getPStatusString = (s6502: STATE6502) => {
   const result = ((s6502.PStatus & 0x80) ? 'N' : 'n') +
     ((s6502.PStatus & 0x40) ? 'V' : 'v') +
     '-' +
@@ -25,22 +49,22 @@ const getPStatusString = () => {
   return result
 }
 
-export const getProcessorStatus = () => {
+export const getProcessorStatus = (s6502: STATE6502) => {
   return (
     `${toHex(s6502.PC, 4)}-  A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` +
-    `Y=${toHex(s6502.YReg)} P=${getPStatusString()} S=${toHex(s6502.StackPtr)}`
+    `Y=${toHex(s6502.YReg)} P=${getPStatusString(s6502)} S=${toHex(s6502.StackPtr)}`
   )
 }
 
-const getStack = () => {
+const getStack = (s6502: STATE6502, stack: Array<string>, stackvalues: Uint8Array) => {
   const result = new Array<string>()
   for (let i = 0xFF; i > s6502.StackPtr; i--) {
-    let value = "$" + toHex(memGet(0x100 + i))
+    let value = "$" + toHex(stackvalues[i])
     let cmd = stack[i]
     if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
       if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
         i--
-        value += toHex(memGet(0x100 + i))
+        value += toHex(stackvalues[i])
       } else {
         cmd = ''
       }
@@ -51,16 +75,16 @@ const getStack = () => {
   return result
 }
 
-export const getStatus = () => {
+export const getStatus = (s6502: STATE6502, stack: Array<string>, mem: Uint8Array) => {
   const status = Array<String>(40).fill("")
-  const stack = getStack()
-  for (let i = 0; i < Math.min(20, stack.length); i++) {
-    status[i] = stack[i]
+  const stackString = getStack(s6502, stack, mem.slice(256, 512))
+  for (let i = 0; i < Math.min(20, stackString.length); i++) {
+    status[i] = stackString[i]
   }
   for (let j = 0; j < 16; j++) {
     let s = "<b>" + toHex(16 * j) + "</b>:"
     for (let i = 0; i < 16; i++) {
-      s += " " + toHex(bank0[j * 16 + i])
+      s += " " + toHex(mem[j * 16 + i])
     }
     status[status.length - 16 + j] = s
   }
@@ -98,9 +122,8 @@ const modeString = (mode: MODE) => {
   return [prefix, suffix]
 }
 
-export const getInstrString = (instr: number, vLo: number, vHi: number) => {
-  const code = pcodes[instr]
-  let result = toHex(instr) + " "
+export const getInstrString = (code: PCodeInstr, vLo: number, vHi: number, PC: number) => {
+  let result = toHex(code.pcode) + " "
   if (code) {
     let [prefix, suffix] = modeString(code.mode)
     if (code.PC >= 2) {
@@ -109,7 +132,7 @@ export const getInstrString = (instr: number, vLo: number, vHi: number) => {
     }
     if (isRelativeInstr(code.name)) {
       // The extra +2 is for the branch instruction itself
-      const addr = s6502.PC + 2 + (vLo > 127 ? vLo - 256 : vLo)
+      const addr = PC + 2 + (vLo > 127 ? vLo - 256 : vLo)
       result += `  ${prefix}${toHex(addr, 4)}${suffix}`
     } else {
       switch (code.PC) {
@@ -134,8 +157,7 @@ export const getInstrString = (instr: number, vLo: number, vHi: number) => {
 }
 
 let zpPrev = new Uint8Array(1)
-export const debugZeroPage = () => {
-  const zp = bank0.slice(0, 256)
+export const debugZeroPage = (zp: Uint8Array) => {
   if (zpPrev.length === 1) zpPrev = zp
   let diff = ""
   for (let i = 0; i < 256; i++) {

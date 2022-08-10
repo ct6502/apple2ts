@@ -1,4 +1,5 @@
-import {MODE, pcodes} from "./instructions";
+import { pcodes } from "./instructions";
+import { MODE } from "./utility";
 import { parseAssembly } from "./assembler";
 
 test('parseAssembly address modes', () => {

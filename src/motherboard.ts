@@ -1,19 +1,12 @@
+import { Buffer } from "buffer"
 import { s6502, set6502State, reset6502, pcodes,
-  incrementPC } from "./instructions"
+  incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { toHex, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { Buffer } from "buffer"
 import { doResetDrive, doPauseDrive } from "./diskdrive"
 import { memGet, bank0, bank1, memC000 } from "./memory"
 
-export enum STATE {
-  IDLE,
-  NEED_BOOT,
-  NEED_RESET,
-  IS_RUNNING,
-  PAUSED,
-}
 
 // let prevMemory = Buffer.from(bank0)
 
@@ -48,8 +41,6 @@ export const setApple2State = (newState: any) => {
   bank0.set(Buffer.from(newState.memory, "base64"))
   memC000.set(Buffer.from(newState.memc000, "base64"))
 }
-
-export let cycleCount = 0
 
 export let DEBUG_ADDRESS = -1 // 0xBFB6
 let doDebug = false
@@ -97,11 +88,11 @@ export const processInstruction = () => {
       if (skipPCs.includes(PC1)) {
         console.log("----")
       } else {
-        const out = `${getProcessorStatus()}  ${getInstrString(instr, vLo, vHi)}  ${cycleCount}`
+        const out = `${getProcessorStatus(s6502)}  ${getInstrString(code, vLo, vHi, s6502.PC)}  ${cycleCount}`
         console.log(out)
       }
       if (doDebugZeroPage) {
-        debugZeroPage()
+        debugZeroPage(bank0.slice(0, 256))
       }
     }
     cycles = code.execute(vLo, vHi)
@@ -109,7 +100,7 @@ export const processInstruction = () => {
       const a = s6502.Accum
       console.error("out of bounds, accum = " + a)
     }
-    cycleCount += cycles
+    incrementCycleCount(cycles)
     incrementPC(code.PC)
   } else {
     console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(s6502.PC, 4))

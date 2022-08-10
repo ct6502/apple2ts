@@ -10,3 +10,46 @@ declare module "*.mp3" {
    const value: any;
    export = value;
 }
+
+interface PCodeFunc {
+  (valueLo: number, valueHi: number): number;
+}
+
+interface PCodeInstr {
+    name: string
+    pcode: number,
+    mode: MODE
+    PC: number
+    execute: PCodeFunc
+}
+
+type STATE6502 = {
+  PStatus: number,
+  PC: number,
+  Accum: number,
+  XReg: number,
+  YReg: number,
+  StackPtr: number
+}
+
+type DisplayProps = {
+  _6502: number,
+  s6502: STATE6502,
+  advance: () => void,
+  speed: string,
+  delta: string,
+  myCanvas: React.RefObject<HTMLCanvasElement>,
+  speedCheck: boolean,
+  handleSpeedChange: () => void,
+  uppercase: boolean,
+  iscolor: boolean,
+  handleColorChange: () => void,
+  saveTimeSlice: () => void,
+  handleGoBackInTime: () => void,
+  handleGoForwardInTime: () => void,
+  handleUpperCaseChange: () => void,
+  handlePause: () => void,
+  handle6502StateChange: (state: number) => void,
+  handleFileOpen: () => void,
+  handleFileSave: () => void,
+}

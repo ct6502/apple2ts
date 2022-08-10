@@ -1,8 +1,8 @@
-import { toHex } from "./utility"
+import { toHex, MODE } from "./utility"
 import { memGet, memSet } from "./memory"
 // var startTime = performance.now()
 
-export let s6502 = {
+export let s6502: STATE6502 = {
   PStatus: 0,
   PC: 0,
   Accum: 0,
@@ -10,6 +10,10 @@ export let s6502 = {
   YReg: 0,
   StackPtr: 0
 }
+
+export let cycleCount = 0
+
+export const incrementCycleCount = (cycles: number) => cycleCount += cycles
 
 export const set6502State = (new6502: any) => {
   s6502 = new6502
@@ -22,20 +26,6 @@ export const reset6502 = () => {
   s6502.PStatus = 0b00100100
   s6502.PC = 0xFF
   setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
-}
-
-export enum MODE {
-  IMPLIED,  // BRK
-  IMM,      // LDA #$01
-  ZP_REL,   // LDA $C0 or BCC $FF
-  ZP_X,     // LDA $C0,X
-  ZP_Y,     // LDX $C0,Y
-  ABS,      // LDA $1234
-  ABS_X,    // LDA $1234,X
-  ABS_Y,    // LDA $1234,Y
-  IND_X,    // LDA ($FF,X) or JMP ($1234,X)
-  IND_Y,    // LDA ($FF),Y
-  IND       // JMP ($1234) or LDA ($C0)
 }
 
 export const incrementPC = (value: number) => {
@@ -102,20 +92,6 @@ const checkStatus = (value: number) => {
   setNegative(value >= 128);
 }
 
-interface PCodeFunc {
-  (valueLo: number, valueHi: number): number;
-}
-
-export interface PCodeInstr {
-    name: string
-    mode: MODE
-    PC: number
-    execute: PCodeFunc
-}
-
-// A hack to determine if this is a relative instruction.
-export const isRelativeInstr = (instr: string) => instr.startsWith('B') && instr !== "BIT" && instr !== "BRK"
-
 // Return number of clock cycles taken
 export const doBranch = (takeBranch: boolean, offset: number) => {
   if (takeBranch) {
@@ -127,7 +103,7 @@ export const doBranch = (takeBranch: boolean, offset: number) => {
 }
 
 const oneByteAdd = (value: number, offset: number) => (value + offset + 256) % 256
-export const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
+const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
 const twoByteAdd = (vLo: number, vHi: number, offset: number) => (vHi*256 + vLo + offset + 65536) % 65536
 const pageBoundary = (addr1: number, addr2: number) => (((addr1 >> 8) !== (addr2 >> 8)) ? 1 : 0)
 
@@ -135,7 +111,7 @@ export const pcodes = new Array<PCodeInstr>(256)
 
 const PCODE = (name: string, mode: MODE, pcode: number, PC: number, code: PCodeFunc) => {
   console.assert(!pcodes[pcode], "Duplicate instruction: " + name + " mode=" + mode)
-  pcodes[pcode] = {name: name, mode: mode, PC: PC, execute: code}
+  pcodes[pcode] = {name: name, pcode: pcode, mode: mode, PC: PC, execute: code}
 }
 
 const doIndirectYinstruction = (vZP: number,
