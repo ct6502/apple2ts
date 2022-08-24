@@ -2,7 +2,7 @@ import React from "react";
 import { Buffer } from "buffer";
 import { toHex } from "./utility"
 import { SWITCHES } from "./softswitches";
-import { s6502, cycleCount } from './instructions'
+import { cycleCount } from './instructions'
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
@@ -12,13 +12,13 @@ import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
 
 const emptyDisk = "(empty)"
-const doDebugDrive = true
+let doDebugDrive = true
 
 export let dState = {
   fileName: emptyDisk,
   halftrack: 0,
   prevHalfTrack: 0,
-  readMode: false,
+  writeMode: false,
   currentPhase: 0,
   diskImageHasChanges: false,
   motorIsRunning: false,
@@ -150,8 +150,6 @@ const moveHead = (offset: number) => {
     if (dState.trackLocation > 3) {
       dState.trackLocation -= 4
     }
-    // console.log(` track=${halftrack} ${oldloc} ${dState.trackLocation} ` +
-    //   dState.trackNbits[halftrack] + " " + dState.trackNbits[dState.prevHalfTrack])
   }
 }
 
@@ -215,12 +213,11 @@ const doWriteBit = (bit: 0 | 1) => {
   dState.trackLocation++
 }
 
-const doWriteByte = (cycleCount: number) => {
+const doWriteByte = (delta: number) => {
   // Sanity check to make sure we aren't on an empty track. Is this correct?
   if (diskData.length === 0 || dState.trackStart[dState.halftrack] === 0) {
     return
   }
-  const delta = cycleCount - prevCycleCount
   if (delta >= 32 && writeByte > 0) {
     for (let i = 7; i >= 0; i--) {
       doWriteBit(writeByte & 2**i ? 1 : 0)      
@@ -232,20 +229,53 @@ const doWriteByte = (cycleCount: number) => {
       doWriteBit(0)
     }
   }
-  prevCycleCount = cycleCount
   writeByte = 0
   dState.diskImageHasChanges = true
+}
+
+let debugCache:number[] = []
+
+const dumpData = (addr: number) => {
+  if (writeByte !== 0) {
+    console.error(`addr=${toHex(addr)} writeByte= ${writeByte}`)
+  }
+  if (doDebugDrive && debugCache.length > 0) {
+    doDebugDrive = false
+    let output = `TRACK ${(dState.halftrack/2).toString(16)}: `
+    let out = ''
+    debugCache.forEach(element => {
+      switch (element) {
+        case 1: out = 'Ff'; break;
+        case 2: out = 'FF'; break;
+        default: out = element.toString(16); break;
+      }
+      output += out + ' '
+    });
+    console.log(output)
+    debugCache = []
+  }
 }
 
 export const handleDriveSoftSwitches =
   (addr: number, value: number): number => {
   let result = 0
-  if (addr === SWITCHES.DRIVE.onAddr) {
+  const delta = cycleCount - prevCycleCount
+  if (doDebugDrive) {
+    if ((writeByte === 0 || writeByte !== 0x96) && (value !== 0x96)) {
+      const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
+      const wb = (writeByte > 0) ? `  writeByte=$${toHex(writeByte)}` : ''
+      const v = (value > 0) ? `  value=$${toHex(value)}` : ''
+      console.log(`addr=$${toHex(addr)}${dc}${wb}${v}`)
+    }
+  }
+  if (addr === SWITCHES.DRIVE.onAddr) {  // $C089
     startMotor()
+    dumpData(addr)
     return result
   }
-  if (addr === SWITCHES.DRIVE.offAddr) {
+  if (addr === SWITCHES.DRIVE.offAddr) {  // $C088
     stopMotor()
+    dumpData(addr)
     return result
   }
   const ps = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
@@ -266,40 +296,44 @@ export const handleDriveSoftSwitches =
         dState.currentPhase = (dState.currentPhase + 3) % 4
       }
     }
-    if (doDebugDrive) {
-      const phases = `${ps[0].isSet ? 1 : 0}${ps[1].isSet ? 1 : 0}` +
-        `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
-      console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
-        `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
-        `track=${dState.halftrack / 2}`)
-    }
-  } else if (addr === SWITCHES.DRVWRITE.offAddr) {
-    dState.readMode = true
+    // if (doDebugDrive) {
+    //   const phases = `${ps[0].isSet ? 1 : 0}${ps[1].isSet ? 1 : 0}` +
+    //     `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
+    //   console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
+    //     `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
+    //     `track=${dState.halftrack / 2}`)
+    // }
+    dumpData(addr)
+  } else if (addr === SWITCHES.DRVWRITE.offAddr) {  // $C08E
+    dState.writeMode = false
     if (SWITCHES.DRVDATA.isSet) {
       result = dState.isWriteProtected ? 0xFF : 0
     }
-  } else if (addr === SWITCHES.DRVWRITE.onAddr) {
-    dState.readMode = false
+    dumpData(addr)
+  } else if (addr === SWITCHES.DRVWRITE.onAddr) {  // $C08F
+    dState.writeMode = true
     if (value >= 0) {
+      prevCycleCount = cycleCount
       writeByte = value
     }
-  } else if (addr === SWITCHES.DRVDATA.offAddr) {
+  } else if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C
     if (dState.motorIsRunning) {
-      if (dState.readMode) {
-        result = getNextByte()
+      if (dState.writeMode) {
+        prevCycleCount = cycleCount
+        if (doDebugDrive && delta >= 32 && writeByte > 0) {
+          debugCache.push(delta >= 40 ? 2 : delta >= 36 ? 1 : writeByte)
+        }
+        doWriteByte(delta)
       } else {
-        doWriteByte(cycleCount)
+        result = getNextByte()
       }
     }
-  } else if (addr === SWITCHES.DRVDATA.onAddr) {
+  } else if (addr === SWITCHES.DRVDATA.onAddr) {  // $C08D
     if (value >= 0) {
       writeByte = value
     }
   }
-//  if (result === 0) {
-//    console.log("addr=" + toHex(addr,4) + " writeByte=" +
-//      toHex(writeByte) + " cycles: " + delta)
-//  }
+
   return result
 }
 
@@ -328,54 +362,68 @@ const crc32 = (data: Uint8Array, offset = 0) => {
   return (crc ^ (-1)) >>> 0;
 };
 
-const decodeDiskData = (fileName: string) => {
+const decodeWoz2 = (): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz2 = woz2.find((value, i) => value !== diskData[i]) === undefined
-  dState.diskImageHasChanges = false
-  if (isWoz2) {
-    dState.isWriteProtected = diskData[22] === 1
-    const crc = diskData.slice(8, 12)
-    const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + crc[3] * (2 ** 24)
-    const actualCRC = crc32(diskData, 12)
-    if (storedCRC !== 0 && storedCRC !== actualCRC) {
-      console.error("CRC checksum error: " + fileName)
-    }
-    for (let htrack=0; htrack < 80; htrack++) {
-      const tmap_index = diskData[88 + htrack * 2]
-      if (tmap_index < 255) {
-        const tmap_offset = 256 + 8 * tmap_index
-        const trk = diskData.slice(tmap_offset, tmap_offset + 8)
-        dState.trackStart[htrack] = 512*(trk[0] + (trk[1] << 8))
-        // const nBlocks = trk[2] + (trk[3] << 8)
-        dState.trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
-      } else {
-        dState.trackStart[htrack] = 0
-        dState.trackNbits[htrack] = 51200
-//        console.log(`empty woz2 track ${htrack / 2}`)
-      }
-    }
-    return
+  if (!isWoz2) return false
+  dState.isWriteProtected = diskData[22] === 1
+  const crc = diskData.slice(8, 12)
+  const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + crc[3] * (2 ** 24)
+  const actualCRC = crc32(diskData, 12)
+  if (storedCRC !== 0 && storedCRC !== actualCRC) {
+    alert("CRC checksum error: " + dState.fileName)
+    return false
   }
+  for (let htrack=0; htrack < 80; htrack++) {
+    const tmap_index = diskData[88 + htrack * 2]
+    if (tmap_index < 255) {
+      const tmap_offset = 256 + 8 * tmap_index
+      const trk = diskData.slice(tmap_offset, tmap_offset + 8)
+      dState.trackStart[htrack] = 512*(trk[0] + (trk[1] << 8))
+      // const nBlocks = trk[2] + (trk[3] << 8)
+      dState.trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
+    } else {
+      dState.trackStart[htrack] = 0
+      dState.trackNbits[htrack] = 51200
+//        console.log(`empty woz2 track ${htrack / 2}`)
+    }
+  }
+  return true
+}
+
+const decodeWoz1 = (): boolean => {
   const woz1 = [0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz1 = woz1.find((value, i) => value !== diskData[i]) === undefined
-  if (isWoz1) {
-    dState.isWriteProtected = diskData[22] === 1
-    for (let htrack=0; htrack < 80; htrack++) {
-      const tmap_index = diskData[88 + htrack * 2]
-      if (tmap_index < 255) {
-        dState.trackStart[htrack] = 256 + tmap_index * 6656
-        const trk = diskData.slice(dState.trackStart[htrack] + 6646, dState.trackStart[htrack] + 6656)
-        dState.trackNbits[htrack] = trk[2] + (trk[3] << 8)
-      } else {
-        dState.trackStart[htrack] = 0
-        dState.trackNbits[htrack] = 51200
+  if (!isWoz1) {
+    return false
+  }
+  dState.isWriteProtected = diskData[22] === 1
+  for (let htrack=0; htrack < 80; htrack++) {
+    const tmap_index = diskData[88 + htrack * 2]
+    if (tmap_index < 255) {
+      dState.trackStart[htrack] = 256 + tmap_index * 6656
+      const trk = diskData.slice(dState.trackStart[htrack] + 6646, dState.trackStart[htrack] + 6656)
+      dState.trackNbits[htrack] = trk[2] + (trk[3] << 8)
+    } else {
+      dState.trackStart[htrack] = 0
+      dState.trackNbits[htrack] = 51200
 //        console.log(`empty woz1 track ${htrack / 2}`)
-      }
     }
-    return
+  }
+  return true
+}
+
+const decodeDiskData = (): boolean => {
+  dState.diskImageHasChanges = false
+  if (decodeWoz2()) {
+    return true
+  }
+  if (decodeWoz1()) {
+    return true
   }
   console.error("Unknown disk format.")
   diskData = new Uint8Array()
+  return false
 }
 
 const doMotorTimeout = () => {
@@ -439,8 +487,10 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
   readDisk = async (file: File) => {
     const buffer = await file.arrayBuffer();
     diskData = new Uint8Array(buffer);
-    decodeDiskData(file.name)
-    dState.fileName = (diskData.length > 0) ? file.name : emptyDisk
+    dState.fileName = file.name
+    if (!decodeDiskData()) {
+      dState.fileName = emptyDisk
+    }
     this.forceUpdate()
   }
 
