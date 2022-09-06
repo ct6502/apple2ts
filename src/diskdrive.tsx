@@ -12,7 +12,7 @@ import driveTrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import driveTrackSeek from './audio/driveTrackSeekLong.mp3'
 
 const emptyDisk = "(empty)"
-let doDebugDrive = true
+let doDebugDrive = false
 
 export let dState = {
   fileName: emptyDisk,
@@ -193,7 +193,7 @@ const getNextByte = () => {
   return result
 }
 
-let writeByte = 0
+let dataRegister = 0
 let prevCycleCount = 0
 
 const doWriteBit = (bit: 0 | 1) => {
@@ -218,9 +218,11 @@ const doWriteByte = (delta: number) => {
   if (diskData.length === 0 || dState.trackStart[dState.halftrack] === 0) {
     return
   }
-  if (delta >= 32 && writeByte > 0) {
-    for (let i = 7; i >= 0; i--) {
-      doWriteBit(writeByte & 2**i ? 1 : 0)      
+  if (dataRegister > 0) {
+    if (delta >= 16) {
+      for (let i = 7; i >= 0; i--) {
+        doWriteBit(dataRegister & 2**i ? 1 : 0)      
+      }
     }
     if (delta >= 36) {
       doWriteBit(0)
@@ -228,30 +230,32 @@ const doWriteByte = (delta: number) => {
     if (delta >= 40) {
       doWriteBit(0)
     }
+    debugCache.push(delta >= 40 ? 2 : delta >= 36 ? 1 : dataRegister)
+    dState.diskImageHasChanges = true
+    dataRegister = 0
   }
-  writeByte = 0
-  dState.diskImageHasChanges = true
 }
 
 let debugCache:number[] = []
 
 const dumpData = (addr: number) => {
-  if (writeByte !== 0) {
-    console.error(`addr=${toHex(addr)} writeByte= ${writeByte}`)
+  if (dataRegister !== 0) {
+    console.error(`addr=${toHex(addr)} writeByte= ${dataRegister}`)
   }
-  if (doDebugDrive && debugCache.length > 0) {
-    doDebugDrive = false
-    let output = `TRACK ${(dState.halftrack/2).toString(16)}: `
-    let out = ''
-    debugCache.forEach(element => {
-      switch (element) {
-        case 1: out = 'Ff'; break;
-        case 2: out = 'FF'; break;
-        default: out = element.toString(16); break;
-      }
-      output += out + ' '
-    });
-    console.log(output)
+  if (debugCache.length > 0 && dState.halftrack === 2 * 0x00) {
+    if (doDebugDrive) {
+      let output = `TRACK ${toHex(dState.halftrack/2)}: `
+      let out = ''
+      debugCache.forEach(element => {
+        switch (element) {
+          case 1: out = 'Ff'; break;
+          case 2: out = 'FF'; break;
+          default: out = element.toString(16); break;
+        }
+        output += out + ' '
+      });
+      console.log(output)
+    }
     debugCache = []
   }
 }
@@ -260,13 +264,11 @@ export const handleDriveSoftSwitches =
   (addr: number, value: number): number => {
   let result = 0
   const delta = cycleCount - prevCycleCount
-  if (doDebugDrive) {
-    if ((writeByte === 0 || writeByte !== 0x96) && (value !== 0x96)) {
-      const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
-      const wb = (writeByte > 0) ? `  writeByte=$${toHex(writeByte)}` : ''
-      const v = (value > 0) ? `  value=$${toHex(value)}` : ''
-      console.log(`addr=$${toHex(addr)}${dc}${wb}${v}`)
-    }
+  if (doDebugDrive && value !== 0x96) {
+    const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
+    const wb = (dataRegister > 0) ? `  writeByte=$${toHex(dataRegister)}` : ''
+    const v = (value > 0) ? `  value=$${toHex(value)}` : ''
+    console.log(`write ${dState.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
   }
   if (addr === SWITCHES.DRIVE.onAddr) {  // $C089
     startMotor()
@@ -304,33 +306,40 @@ export const handleDriveSoftSwitches =
     //     `track=${dState.halftrack / 2}`)
     // }
     dumpData(addr)
-  } else if (addr === SWITCHES.DRVWRITE.offAddr) {  // $C08E
+  } else if (addr === SWITCHES.DRVWRITE.offAddr) {  // $C08E READ
+    if (dState.motorIsRunning && dState.writeMode) {
+      doWriteByte(delta)
+      // Reset the Disk II Logic State Sequencer clock
+      prevCycleCount = cycleCount
+    }
     dState.writeMode = false
     if (SWITCHES.DRVDATA.isSet) {
       result = dState.isWriteProtected ? 0xFF : 0
     }
     dumpData(addr)
-  } else if (addr === SWITCHES.DRVWRITE.onAddr) {  // $C08F
+  } else if (addr === SWITCHES.DRVWRITE.onAddr) {  // $C08F WRITE
     dState.writeMode = true
+    prevCycleCount = cycleCount
     if (value >= 0) {
-      prevCycleCount = cycleCount
-      writeByte = value
+      dataRegister = value
     }
-  } else if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C
+  } else if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C SHIFT/READ
     if (dState.motorIsRunning) {
       if (dState.writeMode) {
-        prevCycleCount = cycleCount
-        if (doDebugDrive && delta >= 32 && writeByte > 0) {
-          debugCache.push(delta >= 40 ? 2 : delta >= 36 ? 1 : writeByte)
-        }
-        doWriteByte(delta)
       } else {
         result = getNextByte()
       }
     }
-  } else if (addr === SWITCHES.DRVDATA.onAddr) {  // $C08D
-    if (value >= 0) {
-      writeByte = value
+  } else if (addr === SWITCHES.DRVDATA.onAddr) {  // $C08D LOAD/READ
+    if (dState.motorIsRunning) {
+      if (dState.writeMode) {
+        doWriteByte(delta)
+        // Reset the Disk II Logic State Sequencer clock
+        prevCycleCount = cycleCount
+      }
+      if (value >= 0) {
+        dataRegister = value
+      }
     }
   }
 
