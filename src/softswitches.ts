@@ -34,11 +34,6 @@ const rand = () => Math.floor(256 * Math.random())
 export const handleBankedRAM = (addr: number) => {
   // Only keep bits 0, 1, 3 of the 0xC08* number
   addr &= 0b1011
-  const BSRBANK2 = (addr <= 3)
-  const BSRREADRAM = [0, 3, 8, 0x0B].includes(addr)
-  // Set soft switches for reading the bank-switched RAM status
-  memC000[0x11] = BSRBANK2 ? 0x8D : 0x0D
-  memC000[0x12] = BSRREADRAM ? 0x8D : 0x0D
   SWITCHES.READBSR2.isSet = addr === 0
   SWITCHES.WRITEBSR2.isSet = addr === 1
   SWITCHES.OFFBSR2.isSet = addr === 2
@@ -47,6 +42,9 @@ export const handleBankedRAM = (addr: number) => {
   SWITCHES.WRITEBSR1.isSet = addr === 9
   SWITCHES.OFFBSR1.isSet = addr === 0x0A
   SWITCHES.RDWRBSR1.isSet = addr === 0x0B
+  // Set soft switches for reading the bank-switched RAM status
+  SWITCHES.BSRBANK2.isSet = (addr <= 3)
+  SWITCHES.BSRREADRAM.isSet = [0, 3, 8, 0x0B].includes(addr)
 }
 
 export const SWITCHES = {
@@ -58,7 +56,7 @@ export const SWITCHES = {
   SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true),
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
   ALTCHARSET: NewSwitch(0xC00E, 0xC01E, true),
-  KBRDSTROBE: NewSwitch(0xC010, 0, false, () => {
+  KBRDSTROBE: NewSwitch(0, 0xC010, false, () => {
     memC000.fill(memC000[0] & 0b01111111, 0, 16)
     popKey()
   }),
@@ -106,15 +104,21 @@ export const SWITCHES = {
   DRVWRITE: NewSwitch(0xC08E + SLOT6, 0),
 }
 
+// const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
+
 export const checkSoftSwitches = (addr: number,
   calledFromMemSet: boolean, cycleCount: number) => {
+  // if (!skipDebugFlags.includes(addr)) {
+  //   const s = memC000[addr - 0xC000] > 0x80 ? 1 : 0
+  //   console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "set" : ""}`)
+  // }
   for (const [, sswitch] of Object.entries(SWITCHES)) {
     if (addr === sswitch.offAddr || addr === sswitch.onAddr) {
       // Set switch if both true (memSet and writeOnly) or both false
       if (calledFromMemSet === sswitch.writeOnly) {
         if (sswitch.setFunc) {
           sswitch.setFunc(addr, cycleCount)
-          } else {
+        } else {
           sswitch.isSet = addr === sswitch.onAddr
           if (sswitch.isSetAddr > 0) {
             memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
@@ -124,7 +128,11 @@ export const checkSoftSwitches = (addr: number,
       return
     }
     if (addr === sswitch.isSetAddr) {
-      memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
+      if (sswitch.setFunc) {
+        sswitch.setFunc(addr, cycleCount)
+      } else {
+        memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
+      }
       return
     }
   }

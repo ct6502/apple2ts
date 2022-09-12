@@ -50,6 +50,11 @@ body {
   src: url(./fonts/Print\ Char\ 21\ Pro.otf);
 }
 
+@font-face {
+  font-family: PRNumber3;
+  src: url(./fonts/PR\ Number\ 3\ Pro.otf);
+}
+
 .statusPanel {
   display: inline-block;
   width: 370px;

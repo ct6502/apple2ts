@@ -33,6 +33,11 @@ const rom = new Uint8Array(
 // rom[0xC288 - 0xC000] = 0x20
 
 const memGetSoftSwitch = (addr: number): number => {
+  // $C019 Vertical blanking status (0 = vertical blanking, 1 = beam on)
+  if (addr === 0xC019) {
+    // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
+    return ((cycleCount % 17030) > 12480) ? 0x0D : 0x8D
+  }
   checkSoftSwitches(addr, false, cycleCount)
   if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
     return handleDriveSoftSwitches(addr, -1)
@@ -41,12 +46,14 @@ const memGetSoftSwitch = (addr: number): number => {
 }
 
 const memGetBankC000 = (addr: number): number => {
-  const isSlot3 = addr >= 0xC300 && addr <= 0xC3FF
-  if (SWITCHES.INTCXROM.isSet || (isSlot3 && !SWITCHES.SLOTC3ROM.isSet)) {
+  if (SWITCHES.INTCXROM.isSet) {
     return rom[addr - 0xC000]
   }
   // TODO: This should return the card's ROM, not regular ROM.
   if (addr >= 0xC800) {
+    return rom[addr - 0xC000]
+  }
+  if ((addr >= 0xC300 && addr <= 0xC3FF) && !SWITCHES.SLOTC3ROM.isSet) {
     return rom[addr - 0xC000]
   }
   const slot = Math.floor((addr - 0xC100) / 256)
@@ -60,20 +67,33 @@ export const memGet = (addr: number): number => {
   if (addr >= 0xC100 && addr <= 0xCFFF) {
     return memGetBankC000(addr)
   }
-  // TODO: This should return either ROM or banked memory.
   if (addr >= 0xD000) {
-    if (memC000[0x12] < 0x80) {
+    if (!SWITCHES.BSRREADRAM.isSet) {
       return rom[addr - 0xC000]
     }
     // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
-    if (addr <= 0xDFFF && memC000[0x11] < 0x80) {
+    if (addr <= 0xDFFF && !SWITCHES.BSRBANK2.isSet) {
       addr -= 0x1000
     }
   }
+
+  let readAuxMem = SWITCHES.RAMRD.isSet
+
   if (addr <= 0x1FF || addr >= 0xC000) {
-    return (SWITCHES.ALTZP.isSet ? bank1[addr] : bank0[addr])
+    readAuxMem = SWITCHES.ALTZP.isSet
+  } else if (addr >= 0x400 && addr <= 0x7FF) {
+    if (SWITCHES.STORE80.isSet) {
+      readAuxMem = SWITCHES.PAGE2.isSet
+    }
+  } else if (addr >= 0x2000 && addr <= 0x3FFF) {
+    if (SWITCHES.STORE80.isSet) {
+      if (SWITCHES.HIRES.isSet) {
+        readAuxMem = SWITCHES.PAGE2.isSet
+      }
+    }
   }
-  return (SWITCHES.RAMRD.isSet ? bank1[addr] : bank0[addr])
+
+  return (readAuxMem ? bank1[addr] : bank0[addr])
 }
 
 export const memSet = (addr: number, value: number) => {
@@ -96,23 +116,31 @@ export const memSet = (addr: number, value: number) => {
       return
     }
     // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
-    if (addr <= 0xDFFF && memC000[0x11] < 0x80) {
+    if (addr <= 0xDFFF && !SWITCHES.BSRBANK2.isSet) {
       addr -= 0x1000
     }
   }
 
+  let writeAuxMem = SWITCHES.RAMWRT.isSet
+
   if (addr <= 0x1FF || addr >= 0xC000) {
-    if (SWITCHES.ALTZP.isSet) {
-      bank1[addr] = value
-    } else {
-      bank0[addr] = value
+    writeAuxMem = SWITCHES.ALTZP.isSet
+  } else if (addr >= 0x400 && addr <= 0x7FF) {
+    if (SWITCHES.STORE80.isSet) {
+      writeAuxMem = SWITCHES.PAGE2.isSet
     }
+  } else if (addr >= 0x2000 && addr <= 0x3FFF) {
+    if (SWITCHES.STORE80.isSet) {
+      if (SWITCHES.HIRES.isSet) {
+        writeAuxMem = SWITCHES.PAGE2.isSet
+      }
+    }
+  }
+
+  if (writeAuxMem) {
+    bank1[addr] = value
   } else {
-    if (SWITCHES.RAMWRT.isSet) {
-      bank1[addr] = value
-    } else {
-      bank0[addr] = value
-    }
+    bank0[addr] = value
   }
 }
 
@@ -124,17 +152,28 @@ const offset = [
   0x3D0,
 ]
 
-export function getTextPage(textPage2: boolean) {
-  const textPage = new Uint8Array(960)
+export function getTextPage() {
+  const pageOffSet = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
+  if (SWITCHES.COLUMN80.isSet) {
+    const textPage = new Uint8Array(80 * 24).fill(0xA0)
+    for (let j = 0; j < 24; j++) {
+      for (let i = 0; i < 40; i++) {
+        textPage[j * 80 + 2 * i + 1] = bank0[pageOffSet + offset[j] + i]
+        textPage[j * 80 + 2 * i] = bank1[pageOffSet + offset[j] + i]
+      }
+    }
+    return textPage
+  }
+  const textPage = new Uint8Array(40 * 24)
   for (let j = 0; j < 24; j++) {
-    let start = (textPage2 ? TEXT_PAGE2 : TEXT_PAGE1) + offset[j]
+    let start = pageOffSet + offset[j]
     textPage.set(bank0.slice(start, start + 40), j * 40)
   }
   return textPage
 }
 
-export function getHGR(page2: boolean) {
-  const offset = page2 ? 0x4000 : 0x2000
+export function getHGR() {
+  const offset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
   const hgrPage = new Uint8Array(40 * 192)
   for (let j = 0; j < 192; j++) {
     const addr =

@@ -90,7 +90,7 @@ const ControlPanel = (props: DisplayProps) => {
         <label>
           <input
             type="checkbox"
-            checked={props.iscolor}
+            checked={props.isColor}
             onChange={props.handleColorChange}
           />
           Color

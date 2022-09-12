@@ -1,4 +1,5 @@
 import { memC000 } from "./memory"
+import { SWITCHES } from "./softswitches";
 // import { addToBuffer } from "./keyboard"
 
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
@@ -15,19 +16,19 @@ let isLeftDown = false
 let isRightDown = false
 let saveTimeSlice = () => {}
 
-const setButtonState = () => {
+export const setButtonState = () => {
   const wasLeftDown = isLeftDown
   const wasRightDown = isRightDown
   isLeftDown = leftAppleDown || leftButtonDown
   isRightDown = rightAppleDown || rightButtonDown
-  memSet1(0xC061, (leftAppleDown || leftButtonDown) ? 255 : 0)
-  memSet1(0xC062, (rightAppleDown || rightButtonDown) ? 255 : 0)
+  SWITCHES.PB0.isSet = (leftAppleDown || leftButtonDown)
+  SWITCHES.PB1.isSet = (isRightDown || rightButtonDown)
   if ((isLeftDown && !wasLeftDown) || (isRightDown && !wasRightDown)) {
     saveTimeSlice()
   }
 }
 
-export const pressAppleKey = (isDown: boolean, left: boolean) => {
+export const pressAppleCommandKey = (isDown: boolean, left: boolean) => {
   if (left) {
     leftAppleDown = isDown
   } else {
@@ -36,7 +37,7 @@ export const pressAppleKey = (isDown: boolean, left: boolean) => {
   setButtonState()
 }
 
-export const clearAppleKeys = () => {
+export const clearAppleCommandKeys = () => {
   leftAppleDown = false
   rightAppleDown = false
   setButtonState()

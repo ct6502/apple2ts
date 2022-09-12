@@ -49,7 +49,9 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
       Shift: -1,
       Control: -1
     };
-    if (e.key in keymap) {
+    if (e.key === "Backspace" && e.shiftKey) {
+      key = 0x7F
+    } else if (e.key in keymap) {
       key = keymap[e.key]
     }
   }

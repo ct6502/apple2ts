@@ -6,6 +6,7 @@ import { toHex, getProcessorStatus, getInstrString, debugZeroPage } from "./util
 import { SWITCHES } from "./softswitches";
 import { doResetDrive, doPauseDrive } from "./diskdrive"
 import { memGet, bank0, bank1, memC000 } from "./memory"
+import { setButtonState } from "./joystick"
 
 
 // let prevMemory = Buffer.from(bank0)
@@ -16,6 +17,7 @@ export const getApple2State = () => {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
   }
   const memory = Buffer.from(bank0)
+  const memAux = Buffer.from(bank1)
   // let memdiff: { [addr: number]: number } = {};
   // for (let i = 0; i < memory.length; i++) {
   //   if (prevMemory[i] !== memory[i]) {
@@ -27,6 +29,7 @@ export const getApple2State = () => {
     s6502: s6502,
     softSwitches: softSwitches,
     memory: memory.toString("base64"),
+    memAux: memAux.toString("base64"),
     memc000: Buffer.from(memC000).toString("base64"),
   }
 }
@@ -40,9 +43,12 @@ export const setApple2State = (newState: any) => {
   }
   bank0.set(Buffer.from(newState.memory, "base64"))
   memC000.set(Buffer.from(newState.memc000, "base64"))
+  if (newState.memAux !== undefined) {
+    bank1.set(Buffer.from(newState.memAux, "base64"))
+  }
 }
 
-export let DEBUG_ADDRESS = -1 // 0xBFB6
+export let DEBUG_ADDRESS = -1 // 0x9631
 let doDebug = false
 let doDebugZeroPage = false
 
@@ -57,6 +63,7 @@ export const doReset = () => {
   // Reset banked RAM
   memGet(0xC082)
   doResetDrive()
+  setButtonState()
 }
 
 export const doPause = (resume = false) => {
@@ -70,7 +77,7 @@ export const doBoot6502 = () => {
 }
 
 
-const skipPCs = [0xC28B, 0xC28E, 0xC27D, 0xC27F]
+const skipPCs = [-1]//0xC28B, 0xC28E, 0xC27D, 0xC27F]
 
 export const processInstruction = () => {
   let cycles = 0

@@ -3,7 +3,7 @@ import { toHex, STATE } from "./utility"
 import { getTextPage, getHGR } from "./memory";
 import { SWITCHES } from "./softswitches";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
-import { handleGamePad, pressAppleKey, clearAppleKeys, setSaveTimeSlice } from "./joystick"
+import { handleGamePad, pressAppleCommandKey, clearAppleCommandKeys, setSaveTimeSlice } from "./joystick"
 
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 const xmargin = 0.025
@@ -32,24 +32,26 @@ const lores = [
   ]
 
 let loresHex = new Array<string>(16)
+let loresHexGreen = new Array<string>(16)
 for (let c = 0; c < 16; c++) {
-  loresHex[c] = '#' + toHex(lores[c][0]) + toHex(lores[c][1]) + toHex(lores[c][2])
+  loresHex[c] = `#${toHex(lores[c][0])}${toHex(lores[c][1])}${toHex(lores[c][2])}`
+  loresHexGreen[c] = `#00${toHex(lores[c][1])}00`
 }
 
- const processTextPage = (ctx: CanvasRenderingContext2D,
-  textPage2: boolean, mixedMode: boolean, iscolor: boolean) => {
-  const cwidth = width * (1 - 2 * xmargin) / 40
+ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const nchars = SWITCHES.COLUMN80.isSet ? 80 : 40
+  const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
-  const textPage = getTextPage(textPage2)
-  ctx.font = cheight + "px PrintChar21"
-  const jstart = mixedMode ? 20 : 0
+  const textPage = getTextPage()
+  ctx.font = `${cheight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
+  const jstart = SWITCHES.TEXT.isSet ? 0 : 20
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
-    textPage.slice(j * 40, (j + 1) * 40).forEach((value, i) => {
+    textPage.slice(j * nchars, (j + 1) * nchars).forEach((value, i) => {
       let doInverse = false
       let v1 = value
       if (SWITCHES.ALTCHARSET.isSet) {
@@ -70,7 +72,7 @@ for (let c = 0; c < 16; c++) {
         doInverse = (value <= 63)
       }
       const v = String.fromCharCode(v1);
-      ctx.fillStyle = iscolor ? "#FFFFFF" : "#39FF14";
+      ctx.fillStyle = isColor ? "#FFFFFF" : "#39FF14";
       if (doInverse) {
         // Inverse characters
         ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + (j + 0.05)*cheight, 1.02*cwidth, 1.04*cheight);
@@ -86,14 +88,14 @@ for (let c = 0; c < 16; c++) {
   }
 };
 
-const processLoRes = (ctx: CanvasRenderingContext2D,
-  textPage2: boolean, mixedMode = false) => {
-  const textPage = getTextPage(textPage2)
-  const bottom = mixedMode ? 20 : 24
+const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const textPage = getTextPage()
+  const bottom = SWITCHES.MIXED.isSet ? 20 : 24
   const cwidth = width * (1 - 2 * xmargin) / 40
   const cheight = height * (1 - 2 * ymargin) / 24
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
+  const colors = isColor ? loresHex : loresHexGreen
 
   for (let y = 0; y < bottom; y++) {
     const yposUpper = ymarginPx + y*cheight
@@ -102,9 +104,9 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
       const xpos = xmarginPx + i*cwidth
       const upperBlock = value % 16
       const lowerBlock = Math.trunc(value / 16)
-      ctx.fillStyle = loresHex[upperBlock]
+      ctx.fillStyle = colors[upperBlock]
       ctx.fillRect(xpos, yposUpper, cwidth, cheight/2)
-      ctx.fillStyle = loresHex[lowerBlock]
+      ctx.fillStyle = colors[lowerBlock]
       ctx.fillRect(xpos, yposLower, cwidth, cheight/2)
     });
   }
@@ -147,9 +149,8 @@ const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolea
   return BLACK
 }
 
-const processHiRes = async (ctx: CanvasRenderingContext2D,
-  page2: boolean, mixedMode: boolean, iscolor: boolean) => {
-  const hgrPage = getHGR(page2)  // 40 x 192 array
+const processHiRes = async (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const hgrPage = getHGR()  // 40 x 192 array
   const hgr = new Uint8Array(280 * 192).fill(0);
   for (let j = 0; j < 192; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
@@ -164,7 +165,7 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
         isEven = !isEven
       }
     }
-    if (iscolor) {
+    if (isColor) {
       for (let i = 0; i < 280; i++) {
         const ioffset = joffset + i
         if (hgr[ioffset] && hgr[ioffset + 1]) {
@@ -186,7 +187,7 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
   }
   const hgrRGB = new Uint8ClampedArray(280 * 192 * 4).fill(255);
   for (let i = 0; i < 280 * 192; i++) {
-    const c = iscolor ? colors[hgr[i]] : greenscreen[hgr[i]]
+    const c = isColor ? colors[hgr[i]] : greenscreen[hgr[i]]
     hgrRGB[4 * i] = c[0]
     hgrRGB[4 * i + 1] = c[1]
     hgrRGB[4 * i + 2] = c[2]
@@ -195,31 +196,28 @@ const processHiRes = async (ctx: CanvasRenderingContext2D,
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
   const image = new ImageData(hgrRGB, 280, 192);
-  let imgHeight = height - 2*ymarginPx - (mixedMode ? 4*cheight : 0)
+  let imgHeight = height - 2*ymarginPx - (SWITCHES.MIXED.isSet ? 4*cheight : 0)
   ctx.drawImage(await createImageBitmap(image),
-    0, 0, 280, mixedMode ? 160 : 192,
+    0, 0, 280, SWITCHES.MIXED.isSet ? 160 : 192,
     xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
 };
 
-const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, iscolor: boolean) => {
+const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, isColor: boolean) => {
   ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
-  if (SWITCHES.TEXT.isSet) {
-    processTextPage(ctx, SWITCHES.PAGE2.isSet, false, iscolor)
-    return
-  }
-  if (SWITCHES.MIXED.isSet) {
-    processTextPage(ctx, SWITCHES.PAGE2.isSet, true, iscolor)
+  if (SWITCHES.TEXT.isSet || SWITCHES.MIXED.isSet) {
+    processTextPage(ctx, isColor)
+    if (SWITCHES.TEXT.isSet) {
+      return
+    }
   }
   if (SWITCHES.HIRES.isSet) {
-    processHiRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet, iscolor)
+    processHiRes(ctx, isColor)
   } else {
-    processLoRes(ctx, SWITCHES.PAGE2.isSet, SWITCHES.MIXED.isSet)
+    processLoRes(ctx, isColor)
   }
 }
-
-
 
 const pasteHandler = (e: ClipboardEvent) => {
   if (e.clipboardData) {
@@ -231,12 +229,29 @@ const pasteHandler = (e: ClipboardEvent) => {
   }
 };
 
+const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D) => {
+  width = window.innerWidth - 40;
+  height = window.innerHeight - 160;
+  // shrink either width or height to preserve aspect ratio
+  if (width / screenRatio > height) {
+    width = height * screenRatio
+  } else {
+    height = width / screenRatio
+  }
+  width = Math.floor(width)
+  height = Math.floor(height)
+  if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
+    ctx.canvas.width = width;
+    ctx.canvas.height = height;
+  }
+}
+
 const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
 
   const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.metaKey && e.key === "Meta") {
-      pressAppleKey(true, e.code === "MetaLeft")
+      pressAppleCommandKey(true, e.code === "MetaLeft")
     }
     if (e.metaKey) {
       switch (e.key) {
@@ -284,7 +299,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       keyHandled = true
     }
     if (keyHandled) {
-      clearAppleKeys()
+      clearAppleCommandKeys()
       e.preventDefault()
       e.stopPropagation()
     } else {
@@ -301,7 +316,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.code === "MetaLeft" || e.code === "MetaRight") {
-      pressAppleKey(false, e.code === "MetaLeft")
+      pressAppleCommandKey(false, e.code === "MetaLeft")
     }
     if (keyHandled) {
       keyHandled = false
@@ -311,6 +326,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
+  setSaveTimeSlice(props.saveTimeSlice)
 
   // This code only runs once when the component first renders
   useEffect(() => {
@@ -321,36 +337,14 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
-    setSaveTimeSlice(props.saveTimeSlice)
     const gamepadID = window.setInterval(() => {
       handleGamePad(navigator.getGamepads()[0])}, 33);
-
-    const resizeCanvasToDisplaySize = () => {
-      const ctx = props.myCanvas.current?.getContext("2d");
-      if (!ctx) {
-        return
-      }
-      width = window.innerWidth - 40;
-      height = window.innerHeight - 160;
-      // shrink either width or height to preserve aspect ratio
-      if (width / screenRatio > height) {
-        width = height * screenRatio
-      } else {
-        height = width / screenRatio
-      }
-      width = Math.floor(width)
-      height = Math.floor(height)
-      if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
-        ctx.canvas.width = width;
-        ctx.canvas.height = height;
-      }
-    }
 
     const render = () => {
       frameCount++
       if (context) {
-        resizeCanvasToDisplaySize()
-        processDisplay(context, frameCount, props.iscolor)
+        resizeCanvasToDisplaySize(context)
+        processDisplay(context, frameCount, props.isColor)
       }
       animationFrameId = window.requestAnimationFrame(render)
     }
@@ -362,7 +356,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, [props.myCanvas, props.iscolor, props.saveTimeSlice, props]);
+  }, [props.myCanvas, props.isColor]);
 
   return <canvas ref={props.myCanvas}
     height={height} width={width}
