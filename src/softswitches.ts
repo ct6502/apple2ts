@@ -57,16 +57,16 @@ export const SWITCHES = {
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
   ALTCHARSET: NewSwitch(0xC00E, 0xC01E, true),
   KBRDSTROBE: NewSwitch(0, 0xC010, false, () => {
-    memC000.fill(memC000[0] & 0b01111111, 0, 16)
+    memC000.fill(memC000[0] & 0b01111111, 0, 32)
     popKey()
   }),
   BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0xC012),  // status location, not a switch
   CASSETTE: NewSwitch(0xC020, 0, false, () => {
-    memC000[0x20] = rand()
+    memC000.fill(rand(), 0x20, 16)
   }),
   SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
-    memC000[0x30] = rand()
+    memC000.fill(rand(), 0x30, 16)
     clickSpeaker(cycleCount)
   }),
   TEXT: NewSwitch(0xC050, 0xC01A),

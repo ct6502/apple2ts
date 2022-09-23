@@ -168,3 +168,8 @@ export const debugZeroPage = (zp: Uint8Array) => {
   if (diff !== "") console.log(diff)
   zpPrev = zp
 }
+
+export const toASCII = (s: String) => s.split('').map(char => char.charCodeAt(0))
+export const uint16toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF]
+export const uint32toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF,
+  (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]

@@ -1,8 +1,10 @@
-import React from "react";
-import { Buffer } from "buffer";
+import React from "react"
+import { Buffer } from "buffer"
 import { toHex } from "./utility"
-import { SWITCHES } from "./softswitches";
+import { SWITCHES } from "./softswitches"
 import { cycleCount } from './instructions'
+import { uint32toBytes } from "./utility"
+import { convertdsk2woz } from "./convertdsk2woz"
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
@@ -319,6 +321,7 @@ export const handleDriveSoftSwitches =
     dumpData(addr)
   } else if (addr === SWITCHES.DRVWRITE.onAddr) {  // $C08F WRITE
     dState.writeMode = true
+    // Reset the Disk II Logic State Sequencer clock
     prevCycleCount = cycleCount
     if (value >= 0) {
       dataRegister = value
@@ -422,12 +425,26 @@ const decodeWoz1 = (): boolean => {
   return true
 }
 
+const decodeDSK = () => {
+  const f = dState.fileName.toUpperCase()
+  const isDSK = f.endsWith(".DSK")
+  const isPO = f.endsWith(".PO")
+  if (!isDSK && !isPO) return false
+  diskData = convertdsk2woz(diskData, isPO)
+  if (diskData.length === 0) return false
+  dState.fileName = getFilename() + '.woz'
+  return decodeWoz2()
+}
+
 const decodeDiskData = (): boolean => {
   dState.diskImageHasChanges = false
   if (decodeWoz2()) {
     return true
   }
   if (decodeWoz1()) {
+    return true
+  }
+  if (decodeDSK()) {
     return true
   }
   console.error("Unknown disk format.")
@@ -511,10 +528,7 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
 
   downloadDisk = () => {
     const crc = crc32(diskData, 12)
-    diskData[8] = crc & 0xFF
-    diskData[9] = (crc >>> 8) & 0xFF
-    diskData[10] = (crc >>> 16) & 0xFF
-    diskData[11] = (crc >>> 24) & 0xFF
+    diskData.set(uint32toBytes(crc), 8)
     const blob = new Blob([diskData]);
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
