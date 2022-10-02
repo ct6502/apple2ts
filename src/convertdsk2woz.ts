@@ -3,52 +3,6 @@
 //
 import { toASCII, uint16toBytes, uint32toBytes } from "./utility"
 
-export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
-  if (dskData.length !== 35 * 16 * 256) {
-    return new Uint8Array()
-  }
-  const woz = new Uint8Array(512*3 + 512*35*13).fill(0)
-  woz.set(toASCII("WOZ2\xFF\n\r\n"), 0)
-  woz.set(toASCII("INFO"), 12)
-  woz[16] = 60    // Chunk size
-  woz[20] = 2     // INFO version: 2
-  woz[21] = 1     // Disk type: 5.25"
-  woz[22] = 0     // Write protection: disabled
-  woz[23] = 0     // Cross-track synchronised image: no
-  woz[24] = 1     // MC3470 fake bits have been removed: yes
-  woz.fill(32, 25, 57)
-  woz.set(toASCII("Apple2TS (CT6502)"), 25)
-  woz[57] = 1     // Disk sides: 1
-  woz[58] = 0     // Boot sector format: 0 (unknown)
-  woz[59] = 32    // Optimal bit timing: 32 (4us)
-  woz[60] = 0     // Compatible hardware: 0 (unknown)
-  woz[62] = 0     // Required RAM: 0 (unknown)
-  woz[64] = 13    // Largest track blocks (512 bytes): 13 (default track size)
-  woz.set(toASCII("TMAP"), 80)
-  woz[84] = 160    // Chunk size
-  woz.fill(0xFF, 88, 88 + 160)  // Fill the TMAP with empty tracks
-  // Now fill in the quarter tracks around each whole track
-  let offset = 0;
-  for (let c = 0; c < 35; c++) {
-    offset = 88 + (c << 2)
-    if (c > 0) woz[offset - 1] = c
-    woz[offset] = woz[offset + 1] = c
-  }
-  woz.set(toASCII("TRKS"), 248)
-  woz.set(uint32toBytes(1280 + 35*13*512), 252)
-  for (let c = 0; c < 35; c++) {
-    offset = 256 + (c << 3);
-    woz.set(uint16toBytes(3 + c*13), offset)  // start block
-    woz[offset + 2] = 13   // block count
-    woz.set(uint32toBytes(50304), offset + 4)  // start block
-    const trackInput = dskData.slice(c * 16 * 256, (c + 1) * 16 * 256)
-    const trackData = serialise_track(trackInput, c, isPO)
-    offset = 512 * (3 + 13 * c)
-    woz.set(trackData, offset)
-  }
-  return woz
-}
-
 /**
   Appends a byte to a woz at a supplied position: number, returning the
   position immediately after the byte.
@@ -212,4 +166,50 @@ const serialise_track = (src: Uint8Array, track_number: number, is_prodos: boole
     }
   }
   return dest
+}
+
+export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
+  if (dskData.length !== 35 * 16 * 256) {
+    return new Uint8Array()
+  }
+  const woz = new Uint8Array(512*3 + 512*35*13).fill(0)
+  woz.set(toASCII("WOZ2\xFF\n\r\n"), 0)
+  woz.set(toASCII("INFO"), 12)
+  woz[16] = 60    // Chunk size
+  woz[20] = 2     // INFO version: 2
+  woz[21] = 1     // Disk type: 5.25"
+  woz[22] = 0     // Write protection: disabled
+  woz[23] = 0     // Cross-track synchronised image: no
+  woz[24] = 1     // MC3470 fake bits have been removed: yes
+  woz.fill(32, 25, 57)
+  woz.set(toASCII("Apple2TS (CT6502)"), 25)
+  woz[57] = 1     // Disk sides: 1
+  woz[58] = 0     // Boot sector format: 0 (unknown)
+  woz[59] = 32    // Optimal bit timing: 32 (4us)
+  woz[60] = 0     // Compatible hardware: 0 (unknown)
+  woz[62] = 0     // Required RAM: 0 (unknown)
+  woz[64] = 13    // Largest track blocks (512 bytes): 13 (default track size)
+  woz.set(toASCII("TMAP"), 80)
+  woz[84] = 160    // Chunk size
+  woz.fill(0xFF, 88, 88 + 160)  // Fill the TMAP with empty tracks
+  // Now fill in the quarter tracks around each whole track
+  let offset = 0;
+  for (let c = 0; c < 35; c++) {
+    offset = 88 + (c << 2)
+    if (c > 0) woz[offset - 1] = c
+    woz[offset] = woz[offset + 1] = c
+  }
+  woz.set(toASCII("TRKS"), 248)
+  woz.set(uint32toBytes(1280 + 35*13*512), 252)
+  for (let c = 0; c < 35; c++) {
+    offset = 256 + (c << 3);
+    woz.set(uint16toBytes(3 + c*13), offset)  // start block
+    woz[offset + 2] = 13   // block count
+    woz.set(uint32toBytes(50304), offset + 4)  // start block
+    const trackInput = dskData.slice(c * 16 * 256, (c + 1) * 16 * 256)
+    const trackData = serialise_track(trackInput, c, isPO)
+    offset = 512 * (3 + 13 * c)
+    woz.set(trackData, offset)
+  }
+  return woz
 }

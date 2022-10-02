@@ -80,7 +80,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   get6502state = () => {
-    return this._6502 //this.state._6502
+    return this._6502
   }
 
   MAXCYCLES = 17030
@@ -229,7 +229,7 @@ class DisplayApple2 extends React.Component<{},
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    let name = getFilename()
+    let name = getFilename(0)
     if (!name) {
       name = "apple2ts"
     }

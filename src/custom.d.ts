@@ -53,3 +53,18 @@ type DisplayProps = {
   handleFileOpen: () => void,
   handleFileSave: () => void,
 }
+
+type DriveData = {
+  fileName: string,
+  diskData: Uint8Array,
+  halftrack: number,
+  prevHalfTrack: number,
+  writeMode: boolean,
+  currentPhase: number,
+  diskImageHasChanges: boolean,
+  motorIsRunning: boolean,
+  trackStart: Array<number>,
+  trackNbits: Array<number>,
+  trackLocation: number,
+  isWriteProtected: boolean
+}
