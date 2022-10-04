@@ -8,7 +8,7 @@ import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
 import { getDriveState, setDriveState, getFilename } from "./diskdrive"
 import React from 'react';
-import { compress, decompress } from "lz-string"
+import { decompress } from "lz-string"
 import { Buffer } from "buffer";
 
 // import Test from "./components/test";
