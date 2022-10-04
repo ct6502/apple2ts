@@ -54,9 +54,8 @@ type DisplayProps = {
   handleFileSave: () => void,
 }
 
-type DriveData = {
+type DriveState = {
   fileName: string,
-  diskData: Uint8Array,
   halftrack: number,
   prevHalfTrack: number,
   writeMode: boolean,

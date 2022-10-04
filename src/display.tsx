@@ -181,10 +181,24 @@ class DisplayApple2 extends React.Component<{},
 //    this.setState({_6502: state})
   }
 
+  oldFormat = false
+
+  getSaveState = () => {
+    const state = { state6502: getApple2State(), driveState: getDriveState() }
+    return JSON.stringify(state)
+//    return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
+  }
+
   restoreSaveState = (sState: string) => {
-    const data = decompress(Buffer.from(sState, 'base64').toString('ucs2'))
-    if (data) {
-      const state = JSON.parse(data);
+    if (this.oldFormat) {
+      const data = decompress(Buffer.from(sState, 'base64').toString('ucs2'))
+      if (data) {
+        const state = JSON.parse(data);
+        setApple2State(state.state6502)
+        setDriveState(state.driveState)
+      }
+    } else {
+      const state = JSON.parse(sState);
       setApple2State(state.state6502)
       setDriveState(state.driveState)
     }
@@ -217,11 +231,6 @@ class DisplayApple2 extends React.Component<{},
       this.hiddenFileOpen.value = "";
       this.hiddenFileOpen.click()
     }
-  }
-
-  getSaveState = () => {
-    const state = { state6502: getApple2State(), driveState: getDriveState() }
-    return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
   }
 
   handleFileSave = () => {
