@@ -44,6 +44,7 @@ type DisplayProps = {
   uppercase: boolean,
   isColor: boolean,
   handleColorChange: () => void,
+  handleCopyToClipboard: () => void,
   saveTimeSlice: () => void,
   handleGoBackInTime: () => void,
   handleGoForwardInTime: () => void,

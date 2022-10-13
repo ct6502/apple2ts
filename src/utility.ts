@@ -156,6 +156,26 @@ export const getInstrString = (code: PCodeInstr, vLo: number, vHi: number, PC: n
   return result
 }
 
+export const getPrintableChar = (value: number, isAltCharSet: boolean) => {
+  let v1 = value
+  if (isAltCharSet) {
+    if ((v1 >= 0 && v1 <= 31) || (v1 >= 64 && v1 <= 95)) {
+      v1 += 64
+    } else if (v1 >= 128 && v1 <= 159) {
+      v1 -= 64
+    } else if (v1 >= 160) {
+      v1 -= 128
+    }
+  } else {
+    // Shift Ctrl chars and second ASCII's into correct ASCII range
+    if ((v1 >= 0 && v1 <= 0x1f) || (v1 >= 0x60 && v1 <= 0x9f)) {
+      v1 += 64
+    }
+    v1 &= 0b01111111
+  }
+  return v1
+}
+
 let zpPrev = new Uint8Array(1)
 export const debugZeroPage = (zp: Uint8Array) => {
   if (zpPrev.length === 1) zpPrev = zp

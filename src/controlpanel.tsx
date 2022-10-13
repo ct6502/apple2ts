@@ -4,6 +4,7 @@ import parse from "html-react-parser"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
+  faCopy,
   faExpand,
   faFolderOpen,
   faPause,
@@ -59,6 +60,10 @@ const ControlPanel = (props: DisplayProps) => {
         <button title="Full Screen"
           onClick={() => props.myCanvas.current?.requestFullscreen()}>
           <FontAwesomeIcon icon={faExpand}/>
+        </button>
+        <button title="Copy Screen"
+          onClick={() => props.handleCopyToClipboard()}>
+          <FontAwesomeIcon icon={faCopy}/>
         </button>
       </span>
       <br/>

@@ -1,5 +1,5 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { toHex, STATE } from "./utility"
+import { toHex, STATE, getPrintableChar } from "./utility"
 import { getTextPage, getHGR } from "./memory";
 import { SWITCHES } from "./softswitches";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
@@ -38,7 +38,7 @@ for (let c = 0; c < 16; c++) {
   loresHexGreen[c] = `#00${toHex(lores[c][1])}00`
 }
 
- const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   const nchars = SWITCHES.COLUMN80.isSet ? 80 : 40
   const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
@@ -52,25 +52,11 @@ for (let c = 0; c < 16; c++) {
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
     textPage.slice(j * nchars, (j + 1) * nchars).forEach((value, i) => {
-      let doInverse = false
-      let v1 = value
+      let doInverse = (value <= 63)
       if (SWITCHES.ALTCHARSET.isSet) {
-        if ((v1 >= 0 && v1 <= 31) || (v1 >= 64 && v1 <= 95)) {
-          v1 += 64
-        } else if (v1 >= 128 && v1 <= 159) {
-          v1 -= 64
-        } else if (v1 >= 160) {
-          v1 -= 128
-        }
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
-      } else {
-        // Shift Ctrl chars and second ASCII's into correct ASCII range
-        if ((v1 >= 0 && v1 <= 0x1f) || (v1 >= 0x60 && v1 <= 0x9f)) {
-          v1 += 64
-        }
-        v1 &= 0b01111111
-        doInverse = (value <= 63)
       }
+      let v1 = getPrintableChar(value, SWITCHES.ALTCHARSET.isSet)
       const v = String.fromCharCode(v1);
       ctx.fillStyle = isColor ? "#FFFFFF" : "#39FF14";
       if (doInverse) {
@@ -264,6 +250,10 @@ const Apple2Canvas = (props: DisplayProps) => {
           props.handleGoForwardInTime()
           keyHandled = true
           break
+        case 'c':
+          props.handleCopyToClipboard()
+          keyHandled = true
+          break;
         case 'v':
           return
         case 'b':
@@ -334,7 +324,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     let context: CanvasRenderingContext2D | null
     let animationFrameId = 0
     if (props.myCanvas.current) {
-      context = props.myCanvas.current.getContext('2d');
+      context = props.myCanvas.current.getContext('2d')
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)

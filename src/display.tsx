@@ -2,10 +2,12 @@ import { doBoot6502, doReset, doPause, getApple2State,
   processInstruction, setApple2State } from "./motherboard";
 // import { parseAssembly } from "./assembler";
 import { s6502 } from "./instructions"
-import { STATE } from "./utility"
+import { STATE, getPrintableChar } from "./utility"
+import { getTextPage } from "./memory";
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskDrive from "./diskdrive"
+import { SWITCHES } from "./softswitches";
 import { getDriveState, setDriveState, getFilename } from "./diskdrive"
 import React from 'react';
 import { decompress } from "lz-string"
@@ -252,6 +254,47 @@ class DisplayApple2 extends React.Component<{},
     document.body.removeChild(link);
   }
 
+  /**
+   * For text mode, copy all of the screen text.
+   * For graphics mode, do a bitmap copy of the canvas.
+   */
+  handleCopyToClipboard = () => {
+    if (SWITCHES.TEXT.isSet) {
+      const textPage = getTextPage()
+      const nchars = textPage.length / 24
+      let output = ''
+      for (let j = 0; j < 24; j++) {
+        let line = ''
+        for (let i = 0; i < nchars; i++) {
+          let value = textPage[j * nchars + i]
+          let v1 = getPrintableChar(value, SWITCHES.ALTCHARSET.isSet)
+          if (v1 >= 32 && v1 !== 127) {
+            const c = String.fromCharCode(v1);
+            line += c
+          }
+        }
+        line = line.trim()
+        output += line + '\n'
+      }
+      navigator.clipboard.writeText(output);
+    } else {
+      try {
+        this.myCanvas.current?.toBlob((blob) => {
+          if (blob) {
+            navigator.clipboard.write([
+              new ClipboardItem({
+                'image/png': blob,
+              })
+            ])
+          }
+        })
+      }
+      catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
   render() {
     const delta = (this.timeDelta).toFixed(1)
     const speed = this.state.currentSpeed.toFixed(3) //(this.speed[this.iCycle] / 1000).toFixed(3)
@@ -267,6 +310,7 @@ class DisplayApple2 extends React.Component<{},
       uppercase: this.state.uppercase,
       isColor: this.state.iscolor,
       handleColorChange: this.handleColorChange,
+      handleCopyToClipboard: this.handleCopyToClipboard,
       saveTimeSlice: this.saveTimeSlice,
       handleGoBackInTime: this.handleGoBackInTime,
       handleGoForwardInTime: this.handleGoForwardInTime,
