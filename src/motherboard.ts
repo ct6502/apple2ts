@@ -5,19 +5,19 @@ import { toHex, getProcessorStatus, getInstrString, debugZeroPage } from "./util
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { doResetDrive, doPauseDrive } from "./diskdrive"
-import { memGet, bank0, bank1, memC000 } from "./memory"
+import { memGet, mainMem, auxMem, memC000 } from "./memory"
 import { setButtonState } from "./joystick"
 
 
-// let prevMemory = Buffer.from(bank0)
+// let prevMemory = Buffer.from(mainMem)
 
 export const getApple2State = () => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
   }
-  const memory = Buffer.from(bank0)
-  const memAux = Buffer.from(bank1)
+  const memory = Buffer.from(mainMem)
+  const memAux = Buffer.from(auxMem)
   // let memdiff: { [addr: number]: number } = {};
   // for (let i = 0; i < memory.length; i++) {
   //   if (prevMemory[i] !== memory[i]) {
@@ -41,10 +41,10 @@ export const setApple2State = (newState: any) => {
     const keyTyped = key as keyof typeof SWITCHES
     SWITCHES[keyTyped].isSet = softSwitches[key]
   }
-  bank0.set(Buffer.from(newState.memory, "base64"))
+  mainMem.set(Buffer.from(newState.memory, "base64"))
   memC000.set(Buffer.from(newState.memc000, "base64"))
   if (newState.memAux !== undefined) {
-    bank1.set(Buffer.from(newState.memAux, "base64"))
+    auxMem.set(Buffer.from(newState.memAux, "base64"))
   }
 }
 
@@ -71,8 +71,8 @@ export const doPause = (resume = false) => {
 }
 
 export const doBoot6502 = () => {
-  bank0.fill(0xFF)
-  bank1.fill(0xFF)
+  mainMem.fill(0xFF)
+  auxMem.fill(0xFF)
   doReset()
 }
 
@@ -99,7 +99,7 @@ export const processInstruction = () => {
         console.log(out)
       }
       if (doDebugZeroPage) {
-        debugZeroPage(bank0.slice(0, 256))
+        debugZeroPage(mainMem.slice(0, 256))
       }
     }
     cycles = code.execute(vLo, vHi)

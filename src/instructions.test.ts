@@ -1,6 +1,6 @@
 import { toHex } from "./utility"
 import { doReset, processInstruction } from "./motherboard";
-import { bank0 } from "./memory";
+import { mainMem } from "./memory";
 import { doBranch, s6502, setPC, isBreak, setBreak } from "./instructions";
 import { parseAssembly } from "./assembler";
 
@@ -25,7 +25,7 @@ test('doBranch', () => {
 const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
   const start = 0x2000
   let pcode = parseAssembly(start, instr)
-  bank0.set(pcode, start)
+  mainMem.set(pcode, start)
   setPC(start)
   setBreak(false)
   while (s6502.PC < start + pcode.length) {

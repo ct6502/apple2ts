@@ -51,7 +51,7 @@ export const getFilename = (diskDrive: number) => {
 export const getDriveState = () => {
   const driveData = [Buffer.from(diskData[0]).toString("base64"),
     Buffer.from(diskData[1]).toString("base64")]
-  return { currentDrive: currentDrive, driveState: driveState, driveData: driveData }
+  return { currentDrive: currentDrive, driveState: driveData, driveData: driveData }
 }
 
 const oldFormat = false
@@ -304,20 +304,12 @@ export const handleDriveSoftSwitches =
     dumpData(addr)
     return result
   }
-  if (addr === SWITCHES.DRVSEL.offAddr) {  // $C08A
-    if (driveState[1].motorIsRunning) {
-      driveState[1].motorIsRunning = false
-      driveState[0].motorIsRunning = true
+  if (addr === SWITCHES.DRVSEL.offAddr || addr === SWITCHES.DRVSEL.onAddr) {
+    currentDrive = (addr === SWITCHES.DRVSEL.offAddr) ? 0 : 1
+    if (driveState[1 - currentDrive].motorIsRunning) {
+      driveState[1 - currentDrive].motorIsRunning = false
+      driveState[currentDrive].motorIsRunning = true
     }
-    currentDrive = 0
-    return result
-  }
-  if (addr === SWITCHES.DRVSEL.onAddr) {  // $C08B
-    if (driveState[0].motorIsRunning) {
-      driveState[0].motorIsRunning = false
-      driveState[1].motorIsRunning = true
-    }
-    currentDrive = 1
     return result
   }
   const ps = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,

@@ -5,10 +5,10 @@ import { romBase64 } from "./roms/rom_2e"
 import { slot_disk2 } from "./roms/slot_disk2_cx00"
 import { Buffer } from "buffer";
 
-// Bank2 of $D000-$DFFF is stored in bank0/1 at 0xD000-0xDFFF
-// Bank1 of $D000-$DFFF is stored in bank0/1 at 0xC000-0xCFFF
-export let bank0 = new Uint8Array(65536)
-export let bank1 = new Uint8Array(65536)
+// Bank1 of $D000-$DFFF is stored in mainMem (and auxMem) at 0xC000-0xCFFF
+// Bank2 of $D000-$DFFF is stored in mainMem (and auxMem) at 0xD000-0xDFFF
+export let mainMem = new Uint8Array(65536)
+export let auxMem = new Uint8Array(65536)
 export let memC000 = new Uint8Array(256)
 const empty = new Uint8Array(256).fill(255)
 let slots = [
@@ -93,16 +93,16 @@ export const memGet = (addr: number): number => {
     }
   }
 
-  return (readAuxMem ? bank1[addr] : bank0[addr])
+  return (readAuxMem ? auxMem[addr] : mainMem[addr])
 }
 
 export const memSet = (addr: number, value: number) => {
   if (addr >= 0xC000 && addr <= 0xC0FF) {
-    checkSoftSwitches(addr, false, cycleCount)
     if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
       handleDriveSoftSwitches(addr, value)
+    } else {
+      checkSoftSwitches(addr, true, cycleCount)
     }
-    checkSoftSwitches(addr, true, cycleCount)
     return
   }
   if (addr >= 0xC100 && addr <= 0xCFFF) {
@@ -138,9 +138,9 @@ export const memSet = (addr: number, value: number) => {
   }
 
   if (writeAuxMem) {
-    bank1[addr] = value
+    auxMem[addr] = value
   } else {
-    bank0[addr] = value
+    mainMem[addr] = value
   }
 }
 
@@ -158,8 +158,8 @@ export function getTextPage() {
     const textPage = new Uint8Array(80 * 24).fill(0xA0)
     for (let j = 0; j < 24; j++) {
       for (let i = 0; i < 40; i++) {
-        textPage[j * 80 + 2 * i + 1] = bank0[pageOffSet + offset[j] + i]
-        textPage[j * 80 + 2 * i] = bank1[pageOffSet + offset[j] + i]
+        textPage[j * 80 + 2 * i + 1] = mainMem[pageOffSet + offset[j] + i]
+        textPage[j * 80 + 2 * i] = auxMem[pageOffSet + offset[j] + i]
       }
     }
     return textPage
@@ -167,7 +167,7 @@ export function getTextPage() {
   const textPage = new Uint8Array(40 * 24)
   for (let j = 0; j < 24; j++) {
     let start = pageOffSet + offset[j]
-    textPage.set(bank0.slice(start, start + 40), j * 40)
+    textPage.set(mainMem.slice(start, start + 40), j * 40)
   }
   return textPage
 }
@@ -181,7 +181,7 @@ export function getHGR() {
       40 * Math.trunc(j / 64) +
       1024 * (j % 8) +
       128 * (Math.trunc(j / 8) & 7)
-    hgrPage.set(bank0.slice(addr, addr + 40), j * 40)
+    hgrPage.set(mainMem.slice(addr, addr + 40), j * 40)
   }
   return hgrPage
 }

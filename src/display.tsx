@@ -60,7 +60,7 @@ class DisplayApple2 extends React.Component<{},
 // `;
     doBoot6502();
 //    let pcode = parseAssembly(0x2000, code.split("\n"));
-//    bank0.set(pcode, 0x2000);
+//    mainMem.set(pcode, 0x2000);
 //    setPC(0x2000);
     this.startTime = performance.now();
   }
@@ -294,7 +294,7 @@ class DisplayApple2 extends React.Component<{},
           <span><DiskDrive/></span>
         </span>
         {/* <span className="statusPanel fixed small">
-          {parse(getStatuss6502, stack, bank0.slice(0, 512)))}
+          {parse(getStatuss6502, stack, mainMem.slice(0, 512)))}
         </span> */}
         <input
           type="file"

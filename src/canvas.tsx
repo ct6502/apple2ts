@@ -65,7 +65,7 @@ for (let c = 0; c < 16; c++) {
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
       } else {
         // Shift Ctrl chars and second ASCII's into correct ASCII range
-        if ((v1 >= 0 && v1 <= 0x1f) || (v1 >= 0x61 && v1 <= 0x9f)) {
+        if ((v1 >= 0 && v1 <= 0x1f) || (v1 >= 0x60 && v1 <= 0x9f)) {
           v1 += 64
         }
         v1 &= 0b01111111
@@ -89,9 +89,10 @@ for (let c = 0; c < 16; c++) {
 };
 
 const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const nchars = 40//SWITCHES.COLUMN80.isSet ? 80 : 40
   const textPage = getTextPage()
   const bottom = SWITCHES.MIXED.isSet ? 20 : 24
-  const cwidth = width * (1 - 2 * xmargin) / 40
+  const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
@@ -100,7 +101,7 @@ const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   for (let y = 0; y < bottom; y++) {
     const yposUpper = ymarginPx + y*cheight
     const yposLower = yposUpper + cheight/2
-    textPage.slice(y * 40, (y + 1) * 40).forEach((value, i) => {
+    textPage.slice(y * nchars, (y + 1) * nchars).forEach((value, i) => {
       const xpos = xmarginPx + i*cwidth
       const upperBlock = value % 16
       const lowerBlock = Math.trunc(value / 16)
