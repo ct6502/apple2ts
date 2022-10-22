@@ -152,9 +152,9 @@ const offset = [
   0x3D0,
 ]
 
-export function getTextPage() {
+export function getTextPage(is80column = SWITCHES.COLUMN80.isSet) {
   const pageOffSet = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
-  if (SWITCHES.COLUMN80.isSet) {
+  if (is80column) {
     const textPage = new Uint8Array(80 * 24).fill(0xA0)
     for (let j = 0; j < 24; j++) {
       for (let i = 0; i < 40; i++) {

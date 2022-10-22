@@ -238,15 +238,19 @@ PCODE('BNE', MODE.ZP_REL, 0xD0, 2, (value) => doBranch(!isZero(), value))
 PCODE('BPL', MODE.ZP_REL, 0x10, 2, (value) => doBranch(!isNegative(), value))
 PCODE('BVC', MODE.ZP_REL, 0x50, 2, (value) => doBranch(!isOverflow(), value))
 PCODE('BVS', MODE.ZP_REL, 0x70, 2, (value) => doBranch(isOverflow(), value))
+PCODE('BRA', MODE.ZP_REL, 0x80, 2, (value) => doBranch(true, value))
 
-const doBit = (addr: number) => {
-  const value = memGet(addr)
+const doBit = (value: number) => {
   setZero((s6502.Accum & value) === 0);
   setNegative((value & 0b10000000) !== 0);
   setOverflow((value & 0b01000000) !== 0);
 }
-PCODE('BIT', MODE.ZP_REL, 0x24, 2, (vZP) => {doBit(vZP); return 3})
-PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(address(vLo, vHi)); return 4})
+PCODE('BIT', MODE.ZP_REL, 0x24, 2, (vZP) => {doBit(memGet(vZP)); return 3})
+PCODE('BIT', MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(memGet(address(vLo, vHi))); return 4})
+PCODE('BIT', MODE.IMM, 0x89, 2, (value) => {doBit(value); return 2})
+PCODE('BIT', MODE.ZP_X, 0x34, 2, (vZP) => {doBit(memGet(oneByteAdd(vZP, s6502.XReg))); return 4})
+PCODE('BIT', MODE.ABS_X, 0x3C, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
+  doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))})
 
 PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
   setBreak();
@@ -312,6 +316,8 @@ const doDEC = (addr: number) => {
   memSet(addr, v)
   checkStatus(v)
 }
+PCODE('DEC', MODE.IMPLIED, 0x3A, 1, () => {s6502.Accum = oneByteAdd(s6502.Accum, -1);
+  checkStatus(s6502.Accum); return 2})
 PCODE('DEC', MODE.ZP_REL, 0xC6, 2, (vZP) => {doDEC(vZP); return 5})
 PCODE('DEC', MODE.ZP_X, 0xD6, 2, (vZP) => {doDEC(oneByteAdd(vZP, s6502.XReg)); return 6})
 PCODE('DEC', MODE.ABS, 0xCE, 3, (vLo, vHi) => {doDEC(address(vLo, vHi)); return 6})
@@ -344,6 +350,8 @@ const doINC = (addr: number) => {
   memSet(addr, v)
   checkStatus(v)
 }
+PCODE('INC', MODE.IMPLIED, 0x1A, 1, () => {s6502.Accum = oneByteAdd(s6502.Accum, 1);
+  checkStatus(s6502.Accum); return 2})
 PCODE('INC', MODE.ZP_REL, 0xE6, 2, (vZP) => {doINC(vZP); return 5})
 PCODE('INC', MODE.ZP_X, 0xF6, 2, (vZP) => {doINC(oneByteAdd(vZP, s6502.XReg)); return 6})
 PCODE('INC', MODE.ABS, 0xEE, 3, (vLo, vHi) => {doINC(address(vLo, vHi)); return 6})
@@ -423,6 +431,9 @@ PCODE('LSR', MODE.ABS_X, 0x5E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
   return 6 + pageBoundary(addr, address(vLo, vHi))})
 
 PCODE('NOP', MODE.IMPLIED, 0xEA, 1, () => {return 2})
+
+// Undocumented 65c02 1-cycle NOP
+PCODE('NOP', MODE.IMPLIED, 0xEB, 1, () => {return 1})
 
 const doORA = (addr: number) => {
   s6502.Accum |= memGet(addr)
@@ -578,6 +589,11 @@ PCODE('STX', MODE.ABS, 0x8E, 3, (vLo, vHi) => {memSet(address(vLo, vHi), s6502.X
 PCODE('STY', MODE.ZP_REL, 0x84, 2, (vZP) => {memSet(vZP, s6502.YReg); return 3})
 PCODE('STY', MODE.ZP_X, 0x94, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), s6502.YReg); return 4})
 PCODE('STY', MODE.ABS, 0x8C, 3, (vLo, vHi) => {memSet(address(vLo, vHi), s6502.YReg); return 4})
+
+PCODE('STZ', MODE.ZP_REL, 0x64, 2, (vZP) => {memSet(vZP, 0); return 3})
+PCODE('STZ', MODE.ZP_X, 0x74, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), 0); return 4})
+PCODE('STZ', MODE.ABS, 0x9C, 3, (vLo, vHi) => {memSet(address(vLo, vHi), 0); return 4})
+PCODE('STZ', MODE.ABS_X, 0x9E, 3, (vLo, vHi) => {memSet(twoByteAdd(vLo, vHi, s6502.XReg), 0); return 5})
 
 PCODE('TAX', MODE.IMPLIED, 0xAA, 1, () => {s6502.XReg = s6502.Accum; checkStatus(s6502.XReg); return 2})
 PCODE('TAY', MODE.IMPLIED, 0xA8, 1, () => {s6502.YReg = s6502.Accum; checkStatus(s6502.YReg); return 2})

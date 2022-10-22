@@ -62,7 +62,7 @@ export const SWITCHES = {
   }),
   BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0xC012),  // status location, not a switch
-  CASSETTE: NewSwitch(0xC020, 0, false, () => {
+  CASSOUT: NewSwitch(0xC020, 0, false, () => {
     memC000.fill(rand(), 0x20, 16)
   }),
   SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
@@ -77,12 +77,14 @@ export const SWITCHES = {
   AN1: NewSwitch(0xC05A, 0),
   AN2: NewSwitch(0xC05C, 0),
   AN3: NewSwitch(0xC05E, 0),
+  CASSIN1: NewSwitch(0, 0xC060, false, () => {memC000[0xC060] = rand()}),
   PB0: NewSwitch(0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0xC062),  // status location, not a switch
   PB2: NewSwitch(0, 0xC063),  // status location, not a switch
   JOYSTICK12: NewSwitch(0xC064, 0, false, (addr, cycleCount) => {
     checkJoystickValues(cycleCount)
   }),
+  CASSIN2: NewSwitch(0, 0xC068, false, () => {memC000[0xC068] = rand()}),
   JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
   }),

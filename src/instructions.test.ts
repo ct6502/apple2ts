@@ -39,7 +39,7 @@ const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
 
 const N = 0b10000000
 const V = 0b01000000
-// const B = 0b00010000
+const B = 0b00010000
 const D = 0b00001000
 const I = 0b00000100
 const Z = 0b00000010
@@ -206,3 +206,83 @@ test('ORA ($12)', () => testInstr(indirect('', 0x0E, 0xFC, 'ORA ($12)'), 0xFE, N
 test('SBC ($12)', () => testInstr(indirect('SEC', 0xFF, 0xC0, 'SBC ($12)'), 0x3F, C))
 test('SBC ($12) SED', () => testInstr(indirect('SEC\n  SED', 0x75, 0x25, 'SBC ($12)'), 0x50, C | D))
 test('STA ($12)', () => testInstr(indirect('', 0xF1, 0xC0, 'STA ($12)\n LDA $3001'), 0xF1, N))
+
+const jmpIndexedAbsIndirect =
+` JMP $2006
+  LDA #$99
+  BRK
+  LDA #$03
+  STA $3002
+  LDA #$20
+  STA $3003
+  LDX #$02
+  JMP ($3000,X)
+`;
+test('JMP ($3000,X)', () => testInstr(jmpIndexedAbsIndirect.split('\n'), 0x99, N | B | I))
+
+test('DEC', () => testInstr([' LDA #$99', ' DEC'], 0x98, N))
+test('INC', () => testInstr([' LDA #$99', ' INC'], 0x9A, N))
+
+test('BIT #$F0', () => testInstr([' LDA #$0F', ' BIT #$F0'], 0x0F, Z | V | N))
+test('BIT #$80', () => testInstr([' LDA #$0F', ' BIT #$80'], 0x0F, Z | N))
+test('BIT #$70', () => testInstr([' LDA #$0F', ' BIT #$70'], 0x0F, Z | V))
+test('BIT #$FF', () => testInstr([' LDA #$0F', ' BIT #$FF'], 0x0F, V | N))
+const bitZP_X =
+` LDY #$F0
+  STY $14
+  LDA #$0F
+  LDX #$02
+  BIT $12,X
+`;
+test('BIT $12,X', () => testInstr(bitZP_X.split('\n'), 0x0F, Z | V | N))
+const bitABS_X =
+` LDY #$F0
+  STY $1236
+  LDA #$0F
+  LDX #$02
+  BIT $1234,X
+`;
+test('BIT $1234,X', () => testInstr(bitABS_X.split('\n'), 0x0F, Z | V | N))
+
+const BRA =
+` BRA $01
+  BRK
+  LDA #$C0
+`;
+test('BRA', () => testInstr(BRA.split('\n'), 0xC0, N))
+
+test('PHX', () => testInstr([' LDX #$99', ' PHX', ' PLA'], 0x99, N))
+test('PHY', () => testInstr([' LDY #$98', ' PHY', ' PLA'], 0x98, N))
+test('PLX', () => testInstr([' LDX #$97', ' PHX', ' PLX', ' TXA'], 0x97, N))
+test('PLY', () => testInstr([' LDY #$97', ' PHY', ' PLY', ' TYA'], 0x97, N))
+
+const STZ_ZP =
+` LDA #$01
+  STA $02
+  STZ $02
+  LDA $02
+`;
+test('STZ $FF', () => testInstr(STZ_ZP.split('\n'), 0x0, Z))
+const STZ_ZP_X =
+` LDA #$01
+  STA $12
+  LDX #$10
+  STZ $02,X
+  LDA $12
+`;
+test('STZ $FF,X', () => testInstr(STZ_ZP_X.split('\n'), 0x0, Z))
+const STZ_ABS =
+` LDA #$01
+  STA $1234
+  STZ $1234
+  LDA $1234
+`;
+test('STZ $FFFF', () => testInstr(STZ_ABS.split('\n'), 0x0, Z))
+const STZ_ABS_X =
+` LDA #$01
+  STA $1244
+  LDX #$10
+  STZ $1234,X
+  LDA $1244
+`;
+test('STZ $FFFF,X', () => testInstr(STZ_ABS_X.split('\n'), 0x0, Z))

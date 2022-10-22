@@ -39,7 +39,10 @@ export const setApple2State = (newState: any) => {
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
     const keyTyped = key as keyof typeof SWITCHES
-    SWITCHES[keyTyped].isSet = softSwitches[key]
+    try {
+      SWITCHES[keyTyped].isSet = softSwitches[key]    
+    } catch (error) {
+    }
   }
   mainMem.set(Buffer.from(newState.memory, "base64"))
   memC000.set(Buffer.from(newState.memc000, "base64"))
@@ -103,15 +106,13 @@ export const processInstruction = () => {
       }
     }
     cycles = code.execute(vLo, vHi)
-    if (!(s6502.Accum >= 0 && s6502.Accum <= 255)) {
-      const a = s6502.Accum
-      console.error("out of bounds, accum = " + a)
-    }
     incrementCycleCount(cycles)
     incrementPC(code.PC)
   } else {
     console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(s6502.PC, 4))
     cycles = pcodes[0].execute(vLo, vHi)
+    incrementCycleCount(cycles)
+    incrementPC(pcodes[0].PC)
   }
   return cycles
 }

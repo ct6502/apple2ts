@@ -51,7 +51,7 @@ export const getFilename = (diskDrive: number) => {
 export const getDriveState = () => {
   const driveData = [Buffer.from(diskData[0]).toString("base64"),
     Buffer.from(diskData[1]).toString("base64")]
-  return { currentDrive: currentDrive, driveState: driveData, driveData: driveData }
+  return { currentDrive: currentDrive, driveState: driveState, driveData: driveData }
 }
 
 const oldFormat = false
@@ -68,6 +68,7 @@ export const setDriveState = (newState: any) => {
   }
 }
 
+let playDriveNoise = true
 let motorContext: AudioContext | undefined
 let motorElement: HTMLAudioElement | undefined
 let trackSeekContext: AudioContext | undefined
@@ -96,6 +97,10 @@ export const doPauseDrive = (resume = false) => {
 }
 
 const playTrackOutOfRange = () => {
+  if (!playDriveNoise) {
+    trackOffEndElement?.pause()
+    return
+  }
   if (!trackOffEndContext) {
     trackOffEndContext = new AudioContext();
     trackOffEndElement = new Audio(driveTrackOffEnd);
@@ -124,6 +129,10 @@ const playTrackOutOfRange = () => {
 }
 
 const playTrackSeek = () => {
+  if (!playDriveNoise) {
+    trackSeekElement?.pause()
+    return
+  }
   if (!trackSeekContext) {
     trackSeekContext = new AudioContext();
     trackSeekElement = new Audio(driveTrackSeek);
@@ -494,6 +503,10 @@ const doMotorTimeout = () => {
 
 const startMotor = () => {
   driveState[currentDrive].motorIsRunning = true
+  if (!playDriveNoise) {
+    motorElement?.pause()
+    return
+  }
   if (!motorContext) {
     motorContext = new AudioContext();
     motorElement = new Audio(driveMotor);
@@ -519,7 +532,7 @@ const stopMotor = () => {
   window.setTimeout(() => doMotorTimeout(), 1000);
 }
 
-class DiskDrive extends React.Component<{}, {fileName: string}> {
+class DiskDrive extends React.Component<{speedCheck: boolean}, {fileName: string}> {
 
   // Hidden file input element
   hiddenFileInput1: HTMLInputElement | null = null;
@@ -590,6 +603,9 @@ class DiskDrive extends React.Component<{}, {fileName: string}> {
   }
 
   render() {
+    if (this.props.speedCheck !== playDriveNoise) {
+      playDriveNoise = this.props.speedCheck
+    }
     const img1 = (diskData[0].length > 0) ?
       (driveState[0].motorIsRunning ? disk2on : disk2off) :
       (driveState[0].motorIsRunning ? disk2onEmpty : disk2offEmpty)

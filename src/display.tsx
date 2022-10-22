@@ -335,7 +335,7 @@ class DisplayApple2 extends React.Component<{},
           <span className="leftStatus">
             <ControlPanel {...props}/>
           </span>
-          <span><DiskDrive/></span>
+          <span><DiskDrive speedCheck={this.state.speedCheck}/></span>
         </span>
         {/* <span className="statusPanel fixed small">
           {parse(getStatuss6502, stack, mainMem.slice(0, 512)))}

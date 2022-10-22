@@ -31,6 +31,25 @@ const lores = [
   [255, 255, 255], //white   
   ]
 
+const loresGreen = [
+  [0,   0, 0], //black   
+  [0,  58, 0], //red     
+  [0,  30, 0], //dk blue 
+  [0,  84, 0], //purple  
+  [0, 133, 0], //dk green
+  [0, 104, 0], //gray    
+  [0,  68, 0], //med blue
+  [0, 185, 0], //lt blue 
+  [0, 106, 0], //brown   
+  [0, 131, 0], //orange  
+  [0, 184, 0], //grey    
+  [0, 175, 0], //pink    
+  [0, 219, 0], //lt green
+  [0, 251, 0], //yellow  
+  [0, 247, 0], //aqua    
+  [0, 255, 0], //white   
+  ]
+
 let loresHex = new Array<string>(16)
 let loresHexGreen = new Array<string>(16)
 for (let c = 0; c < 16; c++) {
@@ -74,29 +93,42 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   }
 };
 
-const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const nchars = 40//SWITCHES.COLUMN80.isSet ? 80 : 40
-  const textPage = getTextPage()
-  const bottom = SWITCHES.MIXED.isSet ? 20 : 24
-  const cwidth = width * (1 - 2 * xmargin) / nchars
-  const cheight = height * (1 - 2 * ymargin) / 24
-  const xmarginPx = xmargin * width
-  const ymarginPx = ymargin * height
-  const colors = isColor ? loresHex : loresHexGreen
+const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
+const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
+  const nchars = doubleRes ? 80 : 40
+  const textPage = getTextPage(doubleRes)
+  const bottom = SWITCHES.MIXED.isSet ? 20 : 24
+  const cwidth = doubleRes ? 7 : 14
+  const colors = isColor ? lores : loresGreen
+
+  const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
   for (let y = 0; y < bottom; y++) {
-    const yposUpper = ymarginPx + y*cheight
-    const yposLower = yposUpper + cheight/2
     textPage.slice(y * nchars, (y + 1) * nchars).forEach((value, i) => {
-      const xpos = xmarginPx + i*cwidth
-      const upperBlock = value % 16
-      const lowerBlock = Math.trunc(value / 16)
-      ctx.fillStyle = colors[upperBlock]
-      ctx.fillRect(xpos, yposUpper, cwidth, cheight/2)
-      ctx.fillStyle = colors[lowerBlock]
-      ctx.fillRect(xpos, yposLower, cwidth, cheight/2)
+      let upperBlock = value % 16
+      let lowerBlock = Math.trunc(value / 16)
+      if (doubleRes && (i % 2 === 0)) {
+        upperBlock = translateLoresColor[upperBlock]
+        lowerBlock = translateLoresColor[lowerBlock]
+      }
+      const c1 = colors[upperBlock]
+      const c2 = colors[lowerBlock]
+      for (let y1 = 0; y1 < 4; y1++) {
+        for (let x1 = 0; x1 < cwidth; x1++) {
+          const i1 = 560 * (y1 + 8 * y) + cwidth * i + x1
+          const i2 = 560 * (y1 + 4 + 8 * y) + cwidth * i + x1
+          hgrRGB[4 * i1] = c1[0]
+          hgrRGB[4 * i1 + 1] = c1[1]
+          hgrRGB[4 * i1 + 2] = c1[2]
+          hgrRGB[4 * i2] = c2[0]
+          hgrRGB[4 * i2 + 1] = c2[1]
+          hgrRGB[4 * i2 + 2] = c2[2]
+        }
+      }
     });
   }
+  drawImage(ctx, hgrRGB)
 };
 
 const BLACK = 0
@@ -136,7 +168,18 @@ const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolea
   return BLACK
 }
 
-const processHiRes = async (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGB: Uint8ClampedArray) => {
+    const cheight = height * (1 - 2 * ymargin) / 24
+  const xmarginPx = xmargin * width
+  const ymarginPx = ymargin * height
+  const image = new ImageData(hgrRGB, 560, 192);
+  let imgHeight = height - 2*ymarginPx - (SWITCHES.MIXED.isSet ? 4*cheight : 0)
+  ctx.drawImage(await createImageBitmap(image),
+    0, 0, 560, SWITCHES.MIXED.isSet ? 160 : 192,
+    xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
+}
+
+const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   const hgrPage = getHGR()  // 40 x 192 array
   const hgr = new Uint8Array(280 * 192).fill(0);
   for (let j = 0; j < 192; j++) {
@@ -172,21 +215,17 @@ const processHiRes = async (ctx: CanvasRenderingContext2D, isColor: boolean) => 
       }
     }
   }
-  const hgrRGB = new Uint8ClampedArray(280 * 192 * 4).fill(255);
+  const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
   for (let i = 0; i < 280 * 192; i++) {
     const c = isColor ? colors[hgr[i]] : greenscreen[hgr[i]]
-    hgrRGB[4 * i] = c[0]
-    hgrRGB[4 * i + 1] = c[1]
-    hgrRGB[4 * i + 2] = c[2]
+    hgrRGB[8 * i] = c[0]
+    hgrRGB[8 * i + 1] = c[1]
+    hgrRGB[8 * i + 2] = c[2]
+    hgrRGB[8 * i + 4] = c[0]
+    hgrRGB[8 * i + 5] = c[1]
+    hgrRGB[8 * i + 6] = c[2]
   }
-  const cheight = height * (1 - 2 * ymargin) / 24
-  const xmarginPx = xmargin * width
-  const ymarginPx = ymargin * height
-  const image = new ImageData(hgrRGB, 280, 192);
-  let imgHeight = height - 2*ymarginPx - (SWITCHES.MIXED.isSet ? 4*cheight : 0)
-  ctx.drawImage(await createImageBitmap(image),
-    0, 0, 280, SWITCHES.MIXED.isSet ? 160 : 192,
-    xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
+  drawImage(ctx, hgrRGB)
 };
 
 const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, isColor: boolean) => {

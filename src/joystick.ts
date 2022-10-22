@@ -178,7 +178,8 @@ export const handleGamePad = (gamePad: Gamepad | null) => {
     leftButtonDown = false
     rightButtonDown = false
     gamePad.buttons.forEach((button, i) => {
-      if (button.pressed) {
+      if (button.pressed && i < funcs.length) {
+        console.log(i)
         funcs[i]()
       }
     });
