@@ -1,6 +1,6 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { cycleCount } from "./instructions"
-import { handleDriveSoftSwitches } from "./diskdrive"
+import { handleDriveSoftSwitches } from "./diskinterface"
 import { romBase64 } from "./roms/rom_2e"
 import { slot_disk2 } from "./roms/slot_disk2_cx00"
 import { Buffer } from "buffer";
@@ -153,23 +153,26 @@ const offset = [
 ]
 
 export function getTextPage(is80column = SWITCHES.COLUMN80.isSet) {
-  const pageOffSet = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
   if (is80column) {
+    // Only select second 80-column text page if STORE80 is also OFF
+    const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? TEXT_PAGE2 : TEXT_PAGE1
     const textPage = new Uint8Array(80 * 24).fill(0xA0)
     for (let j = 0; j < 24; j++) {
       for (let i = 0; i < 40; i++) {
-        textPage[j * 80 + 2 * i + 1] = mainMem[pageOffSet + offset[j] + i]
-        textPage[j * 80 + 2 * i] = auxMem[pageOffSet + offset[j] + i]
+        textPage[j * 80 + 2 * i + 1] = mainMem[pageOffset + offset[j] + i]
+        textPage[j * 80 + 2 * i] = auxMem[pageOffset + offset[j] + i]
       }
     }
     return textPage
+  } else {
+    const pageOffset = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
+    const textPage = new Uint8Array(40 * 24)
+    for (let j = 0; j < 24; j++) {
+      let start = pageOffset + offset[j]
+      textPage.set(mainMem.slice(start, start + 40), j * 40)
+    }
+    return textPage
   }
-  const textPage = new Uint8Array(40 * 24)
-  for (let j = 0; j < 24; j++) {
-    let start = pageOffSet + offset[j]
-    textPage.set(mainMem.slice(start, start + 40), j * 40)
-  }
-  return textPage
 }
 
 export function getHGR() {

@@ -69,9 +69,6 @@ const ControlPanel = (props: DisplayProps) => {
       <br/>
 
       <span className="statusItem">
-        <span className="fixed">{props.speed}</span> MHz
-      </span>
-      <span className="statusItem">
         <label>
           <input
             type="checkbox"
@@ -103,6 +100,9 @@ const ControlPanel = (props: DisplayProps) => {
       </span>
       <br />
 
+      <span className="statusItem">
+        <span className="fixed">{props.speed}</span> MHz
+      </span>
       <span className="statusItem">
         <span className="fixed">{parse(getProcessorStatus(props.s6502))}</span>
       </span>

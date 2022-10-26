@@ -116,6 +116,7 @@ export const checkSoftSwitches = (addr: number,
   // }
   for (const [, sswitch] of Object.entries(SWITCHES)) {
     if (addr === sswitch.offAddr || addr === sswitch.onAddr) {
+      if (addr !== 0xC000) console.log("addr=" + addr.toString(16))
       if ((sswitch.writeOnly && calledFromMemSet) || !sswitch.writeOnly) {
         if (sswitch.setFunc) {
           sswitch.setFunc(addr, cycleCount)
@@ -129,6 +130,7 @@ export const checkSoftSwitches = (addr: number,
       return
     }
     if (addr === sswitch.isSetAddr) {
+      if (addr !== 0xC000) console.log("isSetAddr=" + addr.toString(16))
       if (sswitch.setFunc) {
         sswitch.setFunc(addr, cycleCount)
       } else {

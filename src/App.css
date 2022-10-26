@@ -95,6 +95,19 @@ canvas {
   font-size: large;
 }
 
+.fixedwidth {
+  font-family: monospace;
+  font-size: large;
+  width: 5em;
+  position: relative;
+  top: 17px;
+  left: calc(-5em - 2px);
+  margin-right: -4em;
+  margin-bottom: 10px;
+  display: inline-block;
+  text-align: right;
+}
+
 .small {
   font-size: small;
 }

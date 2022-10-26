@@ -6,9 +6,9 @@ import { STATE, getPrintableChar } from "./utility"
 import { getTextPage } from "./memory";
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
-import DiskDrive from "./diskdrive"
+import DiskInterface from "./diskinterface"
 import { SWITCHES } from "./softswitches";
-import { getDriveState, setDriveState, getFilename } from "./diskdrive"
+import { getDriveState, setDriveState, getFilename } from "./diskinterface"
 import React from 'react';
 import { decompress } from "lz-string"
 import { Buffer } from "buffer";
@@ -335,7 +335,7 @@ class DisplayApple2 extends React.Component<{},
           <span className="leftStatus">
             <ControlPanel {...props}/>
           </span>
-          <span><DiskDrive speedCheck={this.state.speedCheck}/></span>
+          <span><DiskInterface speedCheck={this.state.speedCheck}/></span>
         </span>
         {/* <span className="statusPanel fixed small">
           {parse(getStatuss6502, stack, mainMem.slice(0, 512)))}

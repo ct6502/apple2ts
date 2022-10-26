@@ -4,7 +4,7 @@ import { s6502, set6502State, reset6502, pcodes,
 import { toHex, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { doResetDrive, doPauseDrive } from "./diskdrive"
+import { doResetDrive, doPauseDrive } from "./diskinterface"
 import { memGet, mainMem, auxMem, memC000 } from "./memory"
 import { setButtonState } from "./joystick"
 
