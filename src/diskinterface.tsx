@@ -559,17 +559,10 @@ class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
     this.forceUpdate()
   }
 
-  handleDiskClick1 = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target?.files?.length) {
-      this.readDisk(e.target.files[0], 0)
-    }
-  };
-
-  handleDiskClick2 = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target?.files?.length) {
-      this.readDisk(e.target.files[0], 1)
-    }
-  };
+  resetDrive = (drive: number) => {
+    diskData[drive] = new Uint8Array()
+    driveState[drive].fileName = emptyDisk
+  }
 
   downloadDisk = (drive: number) => {
     const crc = crc32(diskData[drive], 12)
@@ -602,9 +595,11 @@ class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
       <span>
         <span>
         <DiskDrive drive={0} driveState={driveState[0]}
-          diskData={diskData[0]} readDisk={this.readDisk}/>
+          diskData={diskData[0]} readDisk={this.readDisk}
+          resetDrive={this.resetDrive}/>
         <DiskDrive drive={1} driveState={driveState[1]}
-          diskData={diskData[1]} readDisk={this.readDisk}/>
+          diskData={diskData[1]} readDisk={this.readDisk}
+          resetDrive={this.resetDrive}/>
         </span>
         <br/>
       </span>

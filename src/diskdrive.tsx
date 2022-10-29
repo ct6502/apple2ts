@@ -5,8 +5,6 @@ import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
 import disk2onEmpty from './img/disk2on-empty.png'
 
-const emptyDisk = "(empty)"
-
 const downloadDisk = (diskData: Uint8Array, fileName: string) => {
   const crc = crc32(diskData, 12)
   diskData.set(uint32toBytes(crc), 8)
@@ -21,7 +19,7 @@ const downloadDisk = (diskData: Uint8Array, fileName: string) => {
   document.body.removeChild(link);
 }
 
-const DiskDrive = (props: any) => {
+const DiskDrive = (props: DriveProps) => {
   let hiddenFileInput: HTMLInputElement | null
   const img1 = (props.diskData.length > 0) ?
     (props.driveState.motorIsRunning ? disk2on : disk2off) :
@@ -35,8 +33,7 @@ const DiskDrive = (props: any) => {
             if (props.driveState.diskImageHasChanges) {
               downloadDisk(props.diskData, props.driveState.fileName)
             }
-            props.diskData = new Uint8Array()
-            props.driveState.fileName = emptyDisk
+            props.resetDrive(props.drive)
           }
           if (hiddenFileInput) {
             // Hack - clear out old file so we can pick the same file again

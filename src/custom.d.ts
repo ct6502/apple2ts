@@ -68,3 +68,11 @@ type DriveState = {
   trackLocation: number,
   isWriteProtected: boolean
 }
+
+type DriveProps = {
+  drive: number,
+  driveState: DriveState,
+  diskData: Uint8Array,
+  readDisk: (file: File, drive: number) => void,
+  resetDrive: (drive: number) => void,
+}
