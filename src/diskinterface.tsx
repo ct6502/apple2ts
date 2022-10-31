@@ -294,11 +294,16 @@ export const handleDriveSoftSwitches =
   const dd = driveState[currentDrive]
   let result = 0
   const delta = cycleCount - prevCycleCount
-  if (doDebugDrive && value !== 0x96) {
-    const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
-    const wb = (dataRegister > 0) ? `  writeByte=$${toHex(dataRegister)}` : ''
-    const v = (value > 0) ? `  value=$${toHex(value)}` : ''
-    console.log(`write ${dd.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
+  // if (doDebugDrive && value !== 0x96) {
+  //   const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
+  //   const wb = (dataRegister > 0) ? `  writeByte=$${toHex(dataRegister)}` : ''
+  //   const v = (value > 0) ? `  value=$${toHex(value)}` : ''
+  //   console.log(`write ${dd.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
+  // }
+  if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C SHIFT/READ
+    if (dd.motorIsRunning && !dd.writeMode) {
+      return getNextByte()
+    }
   }
   if (addr === SWITCHES.DRIVE.onAddr) {  // $C089
     startMotor()
@@ -361,12 +366,6 @@ export const handleDriveSoftSwitches =
     prevCycleCount = cycleCount
     if (value >= 0) {
       dataRegister = value
-    }
-  } else if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C SHIFT/READ
-    if (dd.motorIsRunning) {
-      if (!dd.writeMode) {
-        result = getNextByte()
-      }
     }
   } else if (addr === SWITCHES.DRVDATA.onAddr) {  // $C08D LOAD/READ
     if (dd.motorIsRunning) {

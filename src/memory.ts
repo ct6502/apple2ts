@@ -32,16 +32,40 @@ const rom = new Uint8Array(
 // Hack to speed up the cursor
 // rom[0xC288 - 0xC000] = 0x20
 
-const memGetSoftSwitch = (addr: number): number => {
+// let nn = 0
+
+const memGetSoftSwitch = (addr: number, code=0): number => {
   // $C019 Vertical blanking status (0 = vertical blanking, 1 = beam on)
   if (addr === 0xC019) {
     // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
     return ((cycleCount % 17030) > 12480) ? 0x0D : 0x8D
   }
-  checkSoftSwitches(addr, false, cycleCount)
-  if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
-    return handleDriveSoftSwitches(addr, -1)
-  }
+  // if (code === 0xDD && addr === 0xC0EC) {
+  //   let t = performance.now()
+  //   for (let index = 0; index < nn; index++) {
+  //     checkSoftSwitches(addr, false, cycleCount)
+  //   }
+  //   let t1 = (performance.now() - t)
+  //   console.log(`checkSoftSwitches t=${t1}`)
+  //   t = performance.now()
+  //   let result = 0
+  //   for (let index = 0; index < nn; index++) {
+  //     if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
+  //       result = handleDriveSoftSwitches(addr, -1)
+  //     }
+  //   }
+  //   t1 = (performance.now() - t)
+  //   console.log(`handleDriveSoftSwitches t=${t1}`)
+  //   return result
+  // } else {
+    checkSoftSwitches(addr, false, cycleCount)
+    if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
+//      nn++
+//      console.log(`${nn}`)
+      return handleDriveSoftSwitches(addr, -1)
+    }
+//  }
+
   return memC000[addr - 0xC000]
 }
 
@@ -60,9 +84,9 @@ const memGetBankC000 = (addr: number): number => {
   return slots[slot][addr - 0xC100 - 256 * slot]
 }
 
-export const memGet = (addr: number): number => {
+export const memGet = (addr: number, code=0): number => {
   if (addr >= 0xC000 && addr <= 0xC0FF) {
-    return memGetSoftSwitch(addr)
+    return memGetSoftSwitch(addr, code)
   }
   if (addr >= 0xC100 && addr <= 0xCFFF) {
     return memGetBankC000(addr)

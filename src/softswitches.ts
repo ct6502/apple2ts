@@ -14,6 +14,9 @@ type softSwitch = {
   isSet: boolean
   setFunc: tSetFunc
 }
+
+const sswitch: Array<softSwitch> = []
+
 const NewSwitch = (offAddr: number, isSetAddr: number,
   writeOnly = false,
   setFunc: tSetFunc = null): softSwitch => {
@@ -25,8 +28,16 @@ const NewSwitch = (offAddr: number, isSetAddr: number,
     isSet: false,
     setFunc: setFunc,
   }
+  if (offAddr >= 0xC000) {
+    sswitch[offAddr - 0xC000] = result
+    sswitch[offAddr + 1 - 0xC000] = result
+  } 
+  if (isSetAddr >= 0xC000) {
+    sswitch[isSetAddr - 0xC000] = result
+  } 
   return result
 }
+
 const SLOT6 = 0x60
 
 const rand = () => Math.floor(256 * Math.random())
@@ -69,6 +80,7 @@ export const SWITCHES = {
     memC000.fill(rand(), 0x30, 16)
     clickSpeaker(cycleCount)
   }),
+  EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memC000[0xC04F] = 0xCD}),
   TEXT: NewSwitch(0xC050, 0xC01A),
   MIXED: NewSwitch(0xC052, 0xC01B),
   PAGE2: NewSwitch(0xC054, 0xC01C),
@@ -114,30 +126,27 @@ export const checkSoftSwitches = (addr: number,
   //   const s = memC000[addr - 0xC000] > 0x80 ? 1 : 0
   //   console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "set" : ""}`)
   // }
-  for (const [, sswitch] of Object.entries(SWITCHES)) {
-    if (addr === sswitch.offAddr || addr === sswitch.onAddr) {
-//      if (addr !== 0xC000) console.log("addr=" + addr.toString(16))
-      if ((sswitch.writeOnly && calledFromMemSet) || !sswitch.writeOnly) {
-        if (sswitch.setFunc) {
-          sswitch.setFunc(addr, cycleCount)
-        } else {
-          sswitch.isSet = addr === sswitch.onAddr
-          if (sswitch.isSetAddr > 0) {
-            memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
-          }
+  if (sswitch[addr - 0xC000]) {
+    const sswitch1 = sswitch[addr - 0xC000]
+    const func = sswitch1.setFunc
+    if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
+      if (func) {
+        func(addr, cycleCount)
+      } else {
+        sswitch1.isSet = (addr === sswitch1.onAddr)
+        if (sswitch1.isSetAddr) {
+          memC000[sswitch1.isSetAddr - 0xC000] = sswitch1.isSet ? 0x8D : 0x0D
         }
       }
-      return
-    }
-    if (addr === sswitch.isSetAddr) {
-//      if (addr !== 0xC000) console.log("isSetAddr=" + addr.toString(16))
-      if (sswitch.setFunc) {
-        sswitch.setFunc(addr, cycleCount)
+    } else if (addr === sswitch1.isSetAddr) {
+      if (func) {
+        func(addr, cycleCount)
       } else {
-        memC000[sswitch.isSetAddr - 0xC000] = sswitch.isSet ? 0x8D : 0x0D
+        memC000[addr - 0xC000] = sswitch1.isSet ? 0x8D : 0x0D
       }
-      return
     }
+    return
   }
+
   console.error("Unknown softswitch " + toHex(addr))
 }

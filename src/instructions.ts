@@ -217,6 +217,7 @@ PCODE('AND', MODE.IND, 0x32, 2, (vZP) => doIndirectInstruction(vZP, doAND, false
 
 const doASL = (addr: number) => {
   let v = memGet(addr)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
   setCarry((v & 128) === 128)
   v = (v << 1) % 256
   memSet(addr, v)
@@ -277,13 +278,21 @@ const doCMP = (addr: number) => {
   setCarry(s6502.Accum >= value)
   checkStatus((s6502.Accum - value + 256) % 256)
 }
+const doCMP1 = (addr: number) => {
+  const value = memGet(addr)
+  if (addr === 0xC0EC) {
+    memGet(addr) // this is a hack to avoid slowing down DOS
+  }
+  setCarry(s6502.Accum >= value)
+  checkStatus((s6502.Accum - value + 256) % 256)
+}
 PCODE('CMP', MODE.IMM, 0xC9, 2, (value) => {setCarry(s6502.Accum >= value);
   checkStatus((s6502.Accum - value + 256) % 256); return 2})
 PCODE('CMP', MODE.ZP_REL, 0xC5, 2, (vZP) => {doCMP(vZP); return 3})
 PCODE('CMP', MODE.ZP_X, 0xD5, 2, (vZP) => {doCMP(oneByteAdd(vZP, s6502.XReg)); return 4})
 PCODE('CMP', MODE.ABS, 0xCD, 3, (vLo, vHi) => {doCMP(address(vLo, vHi)); return 4})
 PCODE('CMP', MODE.ABS_X, 0xDD, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
-  doCMP(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
+  doCMP1(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('CMP', MODE.ABS_Y, 0xD9, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.YReg);
   doCMP(addr); return 4 + pageBoundary(addr, address(vLo, vHi))})
 PCODE('CMP', MODE.IND_X, 0xC1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
@@ -321,7 +330,11 @@ PCODE('DEC', MODE.IMPLIED, 0x3A, 1, () => {s6502.Accum = oneByteAdd(s6502.Accum,
 PCODE('DEC', MODE.ZP_REL, 0xC6, 2, (vZP) => {doDEC(vZP); return 5})
 PCODE('DEC', MODE.ZP_X, 0xD6, 2, (vZP) => {doDEC(oneByteAdd(vZP, s6502.XReg)); return 6})
 PCODE('DEC', MODE.ABS, 0xCE, 3, (vLo, vHi) => {doDEC(address(vLo, vHi)); return 6})
-PCODE('DEC', MODE.ABS_X, 0xDE, 3, (vLo, vHi) => {doDEC(twoByteAdd(vLo, vHi, s6502.XReg)); return 7})
+PCODE('DEC', MODE.ABS_X, 0xDE, 3, (vLo, vHi) => {
+  const addr = twoByteAdd(vLo, vHi, s6502.XReg)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
+  doDEC(addr)
+  return 7})
 
 PCODE('DEX', MODE.IMPLIED, 0xCA, 1, () => {s6502.XReg = oneByteAdd(s6502.XReg, -1);
   checkStatus(s6502.XReg); return 2})
@@ -355,7 +368,11 @@ PCODE('INC', MODE.IMPLIED, 0x1A, 1, () => {s6502.Accum = oneByteAdd(s6502.Accum,
 PCODE('INC', MODE.ZP_REL, 0xE6, 2, (vZP) => {doINC(vZP); return 5})
 PCODE('INC', MODE.ZP_X, 0xF6, 2, (vZP) => {doINC(oneByteAdd(vZP, s6502.XReg)); return 6})
 PCODE('INC', MODE.ABS, 0xEE, 3, (vLo, vHi) => {doINC(address(vLo, vHi)); return 6})
-PCODE('INC', MODE.ABS_X, 0xFE, 3, (vLo, vHi) => {doINC(twoByteAdd(vLo, vHi, s6502.XReg)); return 7})
+PCODE('INC', MODE.ABS_X, 0xFE, 3, (vLo, vHi) => {
+  const addr = twoByteAdd(vLo, vHi, s6502.XReg)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
+  doINC(addr)
+  return 7})
 
 PCODE('INX', MODE.IMPLIED, 0xE8, 1, () => {s6502.XReg = oneByteAdd(s6502.XReg, 1);
   checkStatus(s6502.XReg); return 2})
@@ -417,6 +434,7 @@ PCODE('LDY', MODE.ABS_X, 0xBC, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 
 const doLSR = (addr: number) => {
   let v = memGet(addr)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
   setCarry((v & 1) === 1)
   v >>= 1
   memSet(addr, v)
@@ -463,6 +481,7 @@ PCODE('PLY', MODE.IMPLIED, 0x7A, 1, () => {s6502.YReg = popStack(); checkStatus(
 
 const doROL = (addr: number) => {
   let v = memGet(addr)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
   const bit0 = isCarry() ? 1 : 0;
   setCarry((v & 128) === 128)
   v = ((v << 1) % 256) | bit0
@@ -480,6 +499,7 @@ PCODE('ROL', MODE.ABS_X, 0x3E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 
 const doROR = (addr: number) => {
   let v = memGet(addr)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
   const bit7 = isCarry() ? 128 : 0;
   setCarry((v & 1) === 1)
   v = (v >> 1) | bit7
@@ -571,7 +591,11 @@ PCODE('SEI', MODE.IMPLIED, 0x78, 1, () => {setInterrupt(); return 2})
 PCODE('STA', MODE.ZP_REL, 0x85, 2, (vZP) => {memSet(vZP, s6502.Accum); return 3})
 PCODE('STA', MODE.ZP_X, 0x95, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), s6502.Accum); return 4})
 PCODE('STA', MODE.ABS, 0x8D, 3, (vLo, vHi) => {memSet(address(vLo, vHi), s6502.Accum); return 4})
-PCODE('STA', MODE.ABS_X, 0x9D, 3, (vLo, vHi) => {memSet(twoByteAdd(vLo, vHi, s6502.XReg), s6502.Accum); return 5})
+PCODE('STA', MODE.ABS_X, 0x9D, 3, (vLo, vHi) => {
+  const addr = twoByteAdd(vLo, vHi, s6502.XReg)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
+  memSet(addr, s6502.Accum)
+  return 5})
 PCODE('STA', MODE.ABS_Y, 0x99, 3, (vLo, vHi) => {memSet(twoByteAdd(vLo, vHi, s6502.YReg), s6502.Accum); return 5})
 PCODE('STA', MODE.IND_X, 0x81, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
   memSet(address(memGet(vZP), memGet(vZP + 1)), s6502.Accum); return 6})
@@ -593,7 +617,11 @@ PCODE('STY', MODE.ABS, 0x8C, 3, (vLo, vHi) => {memSet(address(vLo, vHi), s6502.Y
 PCODE('STZ', MODE.ZP_REL, 0x64, 2, (vZP) => {memSet(vZP, 0); return 3})
 PCODE('STZ', MODE.ZP_X, 0x74, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), 0); return 4})
 PCODE('STZ', MODE.ABS, 0x9C, 3, (vLo, vHi) => {memSet(address(vLo, vHi), 0); return 4})
-PCODE('STZ', MODE.ABS_X, 0x9E, 3, (vLo, vHi) => {memSet(twoByteAdd(vLo, vHi, s6502.XReg), 0); return 5})
+PCODE('STZ', MODE.ABS_X, 0x9E, 3, (vLo, vHi) => {
+  const addr = twoByteAdd(vLo, vHi, s6502.XReg)
+  memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
+  memSet(addr, 0)
+  return 5})
 
 PCODE('TAX', MODE.IMPLIED, 0xAA, 1, () => {s6502.XReg = s6502.Accum; checkStatus(s6502.XReg); return 2})
 PCODE('TAY', MODE.IMPLIED, 0xA8, 1, () => {s6502.YReg = s6502.Accum; checkStatus(s6502.YReg); return 2})

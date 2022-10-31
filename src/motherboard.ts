@@ -82,6 +82,8 @@ export const doBoot6502 = () => {
 
 const skipPCs = [-1]//0xC28B, 0xC28E, 0xC27D, 0xC27F]
 
+// let nn = 0
+
 export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
@@ -93,6 +95,10 @@ export const processInstruction = () => {
     if (PC1 === DEBUG_ADDRESS) {
       doDebug = true
     }
+    // if ((PC1 >= 0xBD9A && PC1 <= 0xBDA9)) {
+    //   nn++
+    //   if (nn % 1000 === 0) {console.log(`${nn}`)}
+    // }
     // Do not output during the Apple II's WAIT subroutine
     if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
       if (skipPCs.includes(PC1)) {
