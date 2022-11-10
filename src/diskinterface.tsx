@@ -31,7 +31,8 @@ const initDriveState = (): DriveState => {
 let driveState: DriveState[] = [initDriveState(), initDriveState()];
 const diskData = [new Uint8Array(), new Uint8Array()]
 
-let currentDrive = 0;
+let currentDrive = 0
+let motorOffTimeout = 0
 
 export const getFilename = (drive: number) => {
   if (driveState[drive].fileName !== emptyDisk) {
@@ -200,27 +201,27 @@ const getNextBit = () => {
   return bit
 }
 
+let dataRegister = 0
+
 const getNextByte = () => {
-  if (diskData[currentDrive].length === 0) {
-    return 0
-  }
   let result = 0
-  let bit = 0
-  while (bit === 0) {
-    bit = getNextBit()
+  if (dataRegister === 0) {
+    while (getNextBit() === 0) {}
+    dataRegister = 0x40
+    for (let i = 5; i >= 0; i--) {
+      dataRegister |= getNextBit() << i
+    }
+  } else {
+    const bit = getNextBit()
+    dataRegister = (dataRegister << 1) | bit
   }
-  result = 0x80   // the bit we just retrieved is the high bit
-  for (let i = 6; i >= 0; i--) {
-    result |= getNextBit() << i
+  result = dataRegister
+  if (dataRegister > 127) {
+    dataRegister = 0
   }
-  // if (doDebugDrive) {
-  //   console.log(" dState.trackLocation=" + dState.trackLocation +
-  //     "  byte=" + toHex(result))
-  // }
   return result
 }
 
-let dataRegister = 0
 let prevCycleCount = 0
 
 const doWriteBit = (bit: 0 | 1) => {
@@ -268,9 +269,9 @@ const doWriteByte = (delta: number) => {
 let debugCache:number[] = []
 
 const dumpData = (addr: number) => {
-  if (dataRegister !== 0) {
-    console.error(`addr=${toHex(addr)} writeByte= ${dataRegister}`)
-  }
+  // if (dataRegister !== 0) {
+  //   console.error(`addr=${toHex(addr)} writeByte= ${dataRegister}`)
+  // }
   if (debugCache.length > 0 && driveState[currentDrive].halftrack === 2 * 0x00) {
     if (doDebugDrive) {
       let output = `TRACK ${toHex(driveState[currentDrive].halftrack/2)}: `
@@ -491,6 +492,7 @@ const decodeDiskData = (drive: number): boolean => {
 }
 
 const doMotorTimeout = () => {
+  motorOffTimeout = 0
   if (!SWITCHES.DRIVE.isSet) {
     driveState[currentDrive].motorIsRunning = false
     motorElement?.pause()
@@ -498,6 +500,10 @@ const doMotorTimeout = () => {
 }
 
 const startMotor = () => {
+  if (motorOffTimeout) {
+    clearTimeout(motorOffTimeout)
+    motorOffTimeout = 0
+  }
   driveState[currentDrive].motorIsRunning = true
   if (!playDriveNoise) {
     motorElement?.pause()
@@ -525,7 +531,9 @@ const startMotor = () => {
 }
 
 const stopMotor = () => {
-  window.setTimeout(() => doMotorTimeout(), 1000);
+  if (motorOffTimeout === 0) {
+    motorOffTimeout = window.setTimeout(() => doMotorTimeout(), 1000);
+  }
 }
 
 class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {

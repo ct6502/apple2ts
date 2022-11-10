@@ -79,10 +79,8 @@ export const doBoot6502 = () => {
   doReset()
 }
 
-
-const skipPCs = [-1]//0xC28B, 0xC28E, 0xC27D, 0xC27F]
-
-// let nn = 0
+const instrTrail = new Array<string>(1000)
+let posTrail = 0
 
 export const processInstruction = () => {
   let cycles = 0
@@ -92,26 +90,31 @@ export const processInstruction = () => {
   const vHi = s6502.PC < 0xFFFE ? memGet(s6502.PC + 2) : 0
   const code = pcodes[instr]
   if (code) {
-    if (PC1 === DEBUG_ADDRESS) {
-      doDebug = true
-    }
-    // if ((PC1 >= 0xBD9A && PC1 <= 0xBDA9)) {
-    //   nn++
-    //   if (nn % 1000 === 0) {console.log(`${nn}`)}
+//    const mainMem1 = mainMem
+    // if (PC1 === 0xC26C || PC1 === 0xBD4B) {
+    //   doDebug = true
     // }
+    cycles = code.execute(vLo, vHi)
+    let out = '----'
     // Do not output during the Apple II's WAIT subroutine
-    if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
-      if (skipPCs.includes(PC1)) {
-        console.log("----")
-      } else {
-        const out = `${getProcessorStatus(s6502)}  ${getInstrString(code, vLo, vHi, s6502.PC)}  ${cycleCount}`
-        console.log(out)
-      }
+    if (PC1 < 0xFCA8 || PC1 > 0xFCB3) {
+      const cc = (cycleCount.toString() + '      ').slice(0, 10)
+      const ins = getInstrString(code, vLo, vHi, PC1) + '            '
+      out = `${cc}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
+    }
+    instrTrail[posTrail] = out
+    posTrail = (posTrail + 1) % instrTrail.length
+    if (doDebug) {
+      console.log(out)
       if (doDebugZeroPage) {
         debugZeroPage(mainMem.slice(0, 256))
       }
     }
-    cycles = code.execute(vLo, vHi)
+    // if (doDebug) {
+    //   instrTrail.slice(posTrail).forEach(s => console.log(s));
+    //   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
+    //   console.log("stop!!!")
+    // }
     incrementCycleCount(cycles)
     incrementPC(code.PC)
   } else {

@@ -37,22 +37,22 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-const getPStatusString = (s6502: STATE6502) => {
-  const result = ((s6502.PStatus & 0x80) ? 'N' : 'n') +
-    ((s6502.PStatus & 0x40) ? 'V' : 'v') +
+const getPStatusString = (P: number) => {
+  const result = ((P & 0x80) ? 'N' : 'n') +
+    ((P & 0x40) ? 'V' : 'v') +
     '-' +
-    ((s6502.PStatus & 0x10) ? 'B' : 'b') +
-    ((s6502.PStatus & 0x8) ? 'D' : 'd') +
-    ((s6502.PStatus & 0x4) ? 'I' : 'i') +
-    ((s6502.PStatus & 0x2) ? 'Z' : 'z') +
-    ((s6502.PStatus & 0x1) ? 'C' : 'c')
+    ((P & 0x10) ? 'B' : 'b') +
+    ((P & 0x8) ? 'D' : 'd') +
+    ((P & 0x4) ? 'I' : 'i') +
+    ((P & 0x2) ? 'Z' : 'z') +
+    ((P & 0x1) ? 'C' : 'c')
   return result
 }
 
 export const getProcessorStatus = (s6502: STATE6502) => {
   return (
-    `${toHex(s6502.PC, 4)}-  A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` +
-    `Y=${toHex(s6502.YReg)} P=${getPStatusString(s6502)} S=${toHex(s6502.StackPtr)}`
+    `A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` +
+    `Y=${toHex(s6502.YReg)} P=${toHex(s6502.PStatus)} ${getPStatusString(s6502.PStatus)} S=${toHex(s6502.StackPtr)}`
   )
 }
 
@@ -123,30 +123,26 @@ const modeString = (mode: MODE) => {
 }
 
 export const getInstrString = (code: PCodeInstr, vLo: number, vHi: number, PC: number) => {
-  let result = toHex(code.pcode) + " "
+  let result = `${toHex(PC,4)}`
   if (code) {
     let [prefix, suffix] = modeString(code.mode)
     if (code.PC >= 2) {
-      prefix = `    ${code.name}   ${prefix}$`
-      result += `${toHex(vLo)} `
+      prefix = `   ${code.name}   ${prefix}$`
     }
     if (isRelativeInstr(code.name)) {
       // The extra +2 is for the branch instruction itself
       const addr = PC + 2 + (vLo > 127 ? vLo - 256 : vLo)
-      result += `  ${prefix}${toHex(addr, 4)}${suffix}`
+      result += `${prefix}${toHex(addr, 4)}${suffix}`
     } else {
       switch (code.PC) {
         case 1:
-          result += `         ${code.name}`
+          result += `   ${code.name}`
           break
         case 2:
-          result += `  ${prefix}${toHex(vLo)}${suffix}`
+          result += `${prefix}${toHex(vLo)}${suffix}`
           break
         case 3:
-          result += `${toHex(vHi)}${prefix}${toHex(
-            address(vLo, vHi),
-            4
-          )}${suffix}`
+          result += `${prefix}${toHex(address(vLo, vHi),4)}${suffix}`
           break
       }
     }

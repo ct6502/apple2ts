@@ -38,7 +38,7 @@ export const setPC = (value: number) => {
 }
 
 const setPStatus = (value: number) => {
-  s6502.PStatus = value | 0b00100000
+  s6502.PStatus = value | 0b00110000
 }
 
 export const stack = new Array<string>(256).fill('')
@@ -280,9 +280,6 @@ const doCMP = (addr: number) => {
 }
 const doCMP1 = (addr: number) => {
   const value = memGet(addr)
-  if (addr === 0xC0EC) {
-    memGet(addr) // this is a hack to avoid slowing down DOS
-  }
   setCarry(s6502.Accum >= value)
   checkStatus((s6502.Accum - value + 256) % 256)
 }
