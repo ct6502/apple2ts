@@ -204,14 +204,18 @@ const getNextBit = () => {
 let dataRegister = 0
 
 const getNextByte = () => {
+  if (diskData[currentDrive].length === 0) return 0
   let result = 0
   if (dataRegister === 0) {
     while (getNextBit() === 0) {}
+    // This will become the high bit on the next read
     dataRegister = 0x40
+    // Read the next 6 bits, all except the last one.
     for (let i = 5; i >= 0; i--) {
       dataRegister |= getNextBit() << i
     }
   } else {
+    // Read the last bit.
     const bit = getNextBit()
     dataRegister = (dataRegister << 1) | bit
   }
