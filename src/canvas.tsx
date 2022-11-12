@@ -132,13 +132,13 @@ const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
 };
 
 const BLACK = 0
-const GREEN = 1
-const VIOLET = 2
 const WHITE = 3
-const ORANGE = 5
-const BLUE = 6
+// const GREEN = 1
+// const VIOLET = 2
+// const ORANGE = 5
+// const BLUE = 6
 
-const colors = [
+const hgrcolors = [
   [0, 0, 0],
   [1, 255, 1],
   [255, 1, 255],
@@ -161,12 +161,69 @@ const greenscreen = [
   green
 ]
 
-const decodeColor = (byte: number, bit: number, highBit: boolean, isEven: boolean) => {
-  if ((byte >> bit) & 1) {
-    return highBit ? (isEven ? BLUE : ORANGE) : (isEven ? VIOLET : GREEN)
+const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+//  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
+  const hgrPage = getHGR()  // 40 x 192 array
+  const hgr = new Uint8Array(560 * 192).fill(BLACK);
+  for (let j = 0; j < 192; j++) {
+    const line = hgrPage.slice(j*40, j*40 + 40)
+    const joffset = j * 560
+    let imaxLine = (j + 1) * 560 - 1
+    let isEven = 1
+    let skip = false
+    let previousWhite = false
+    for (let i = 0; i < 40; i++) {
+      const ioffset = joffset + i * 14
+      const byte1 = line[i]
+      const byte2bit0 = (i < 39) ? (line[i + 1] & 1) : 0
+      const highBit = (byte1 & 128) ? 1 : 0
+      for (let b = 0; b <= 6; b++) {
+        if (skip) {
+          skip = false
+          continue
+        }
+        const bit1 = byte1 & (1 << b)
+        const bit2 = (b < 6) ? (byte1 & (1 << (b + 1))) : byte2bit0
+        if (bit1) {
+          let istart = ioffset + 2 * b + highBit
+          // How many pixels do we fill in
+          let imax = istart + (isColor ? 3 : 1)
+          // If we're already doing white, first pixel is also white.
+          // Otherwise, white starts with one pixel of the current bit's color
+          // GREEN=1, VIOLET=2, ORANGE=5, BLUE=6
+          let color1 = previousWhite ? WHITE : 1 + 4 * highBit + isEven
+          let color = color1
+          if (bit2) {
+            color = WHITE
+            // Fill in a couple extra pixels (may get changed later)
+            imax += isColor ? 2 : 3
+            previousWhite = true
+          } else {
+            previousWhite = false
+          }
+          if (imax > imaxLine) imax = imaxLine
+          hgr[istart] = color1
+          for (let ix = istart + 1; ix <= imax; ix++) {
+            hgr[ix] = color
+          }
+          // We just processed 2 bits (4 pixels on the 560-pixel line)
+          skip = true
+        } else {
+          previousWhite = false
+          isEven = 1 - isEven
+        }
+      }
+    }
   }
-  return BLACK
-}
+  const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
+  const colors = isColor ? hgrcolors : greenscreen
+  for (let i = 0; i < 560 * 192; i++) {
+    hgrRGB[4 * i] = colors[hgr[i]][0]
+    hgrRGB[4 * i + 1] = colors[hgr[i]][1]
+    hgrRGB[4 * i + 2] = colors[hgr[i]][2]
+  }
+  drawImage(ctx, hgrRGB)
+};
 
 const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGB: Uint8ClampedArray) => {
     const cheight = height * (1 - 2 * ymargin) / 24
@@ -178,55 +235,6 @@ const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGB: Uint8ClampedArra
     0, 0, 560, SWITCHES.MIXED.isSet ? 160 : 192,
     xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
 }
-
-const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const hgrPage = getHGR()  // 40 x 192 array
-  const hgr = new Uint8Array(280 * 192).fill(0);
-  for (let j = 0; j < 192; j++) {
-    const line = hgrPage.slice(j*40, j*40 + 40)
-    const joffset = j * 280
-    let isEven = true
-    for (let i = 0; i < 40; i++) {
-      const ioffset = joffset + i * 7
-      const byte = line[i]
-      const highBit = (byte & 128) === 128
-      for (let b = 0; b <= 6; b++) {
-        hgr[ioffset + b] = decodeColor(byte, b, highBit, isEven)
-        isEven = !isEven
-      }
-    }
-    if (isColor) {
-      for (let i = 0; i < 280; i++) {
-        const ioffset = joffset + i
-        if (hgr[ioffset] && hgr[ioffset + 1]) {
-          hgr[ioffset] = WHITE
-          hgr[ioffset + 1] = WHITE
-        }
-      }
-      for (let i = 0; i < 280; i += 2) {
-        const ioffset = joffset + i
-        if (hgr[ioffset] && hgr[ioffset] !== WHITE) {
-          if (!hgr[ioffset + 1]) {
-            hgr[ioffset + 1] = hgr[ioffset]
-          }
-        } else if (hgr[ioffset + 1] && hgr[ioffset + 1] !== WHITE) {
-          hgr[ioffset] = hgr[ioffset + 1]
-        }
-      }
-    }
-  }
-  const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
-  for (let i = 0; i < 280 * 192; i++) {
-    const c = isColor ? colors[hgr[i]] : greenscreen[hgr[i]]
-    hgrRGB[8 * i] = c[0]
-    hgrRGB[8 * i + 1] = c[1]
-    hgrRGB[8 * i + 2] = c[2]
-    hgrRGB[8 * i + 4] = c[0]
-    hgrRGB[8 * i + 5] = c[1]
-    hgrRGB[8 * i + 6] = c[2]
-  }
-  drawImage(ctx, hgrRGB)
-};
 
 const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, isColor: boolean) => {
   ctx.fillStyle = "#000000";
