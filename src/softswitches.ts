@@ -80,7 +80,7 @@ export const SWITCHES = {
     memC000.fill(rand(), 0x30, 16)
     clickSpeaker(cycleCount)
   }),
-  EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memC000[0xC04F] = 0xCD}),
+  EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memC000[0x4F] = 0xCD}),
   TEXT: NewSwitch(0xC050, 0xC01A),
   MIXED: NewSwitch(0xC052, 0xC01B),
   PAGE2: NewSwitch(0xC054, 0xC01C),
@@ -89,16 +89,17 @@ export const SWITCHES = {
   AN1: NewSwitch(0xC05A, 0),
   AN2: NewSwitch(0xC05C, 0),
   AN3: NewSwitch(0xC05E, 0),
-  CASSIN1: NewSwitch(0, 0xC060, false, () => {memC000[0xC060] = rand()}),
+  CASSIN1: NewSwitch(0, 0xC060, false, () => {memC000[0x60] = rand()}),
   PB0: NewSwitch(0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0xC062),  // status location, not a switch
   PB2: NewSwitch(0, 0xC063),  // status location, not a switch
   JOYSTICK12: NewSwitch(0xC064, 0, false, (addr, cycleCount) => {
     checkJoystickValues(cycleCount)
   }),
-  CASSIN2: NewSwitch(0, 0xC068, false, () => {memC000[0xC068] = rand()}),
+  CASSIN2: NewSwitch(0, 0xC068, false, () => {memC000[0x68] = rand()}),
   JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
+    memC000[0x70] = rand()
   }),
   READBSR2: NewSwitch(0xC080, 0, false, (addr) => {handleBankedRAM(addr)}),
   WRITEBSR2: NewSwitch(0xC081, 0, false, (addr) => {handleBankedRAM(addr)}),
@@ -133,7 +134,9 @@ export const checkSoftSwitches = (addr: number,
       if (func) {
         func(addr, cycleCount)
       } else {
-        sswitch1.isSet = (addr === sswitch1.onAddr)
+        if (!sswitch1.writeOnly || calledFromMemSet) {
+          sswitch1.isSet = (addr === sswitch1.onAddr)
+        }
         if (sswitch1.isSetAddr) {
           memC000[sswitch1.isSetAddr - 0xC000] = sswitch1.isSet ? 0x8D : 0x0D
         }

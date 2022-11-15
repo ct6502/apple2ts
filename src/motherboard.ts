@@ -75,7 +75,7 @@ export const doPause = (resume = false) => {
 
 export const doBoot6502 = () => {
   mainMem.fill(0xFF)
-  auxMem.fill(0xFF)
+  auxMem.fill(0x00)
   doReset()
 }
 
@@ -91,13 +91,16 @@ export const processInstruction = () => {
   const code = pcodes[instr]
   if (code) {
 //    const mainMem1 = mainMem
-    // if (PC1 === 0xC26C || PC1 === 0xBD4B) {
-    //   doDebug = true
-    // }
+//    if (PC1 === 0x4B10) {
+//      doDebug = true
+//    }
+//    if (PC1 === 0xFF46) {
+//      doDebug = true
+//    }
     cycles = code.execute(vLo, vHi)
     let out = '----'
     // Do not output during the Apple II's WAIT subroutine
-    if (PC1 < 0xFCA8 || PC1 > 0xFCB3) {
+    if ((PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
       const cc = (cycleCount.toString() + '      ').slice(0, 10)
       const ins = getInstrString(code, vLo, vHi, PC1) + '            '
       out = `${cc}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
@@ -118,10 +121,14 @@ export const processInstruction = () => {
     incrementCycleCount(cycles)
     incrementPC(code.PC)
   } else {
+    instrTrail.slice(posTrail).forEach(s => console.log(s));
+    instrTrail.slice(0, posTrail).forEach(s => console.log(s));
     console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(s6502.PC, 4))
-    cycles = pcodes[0].execute(vLo, vHi)
-    incrementCycleCount(cycles)
-    incrementPC(pcodes[0].PC)
+    return 0;
+    // memGet(0xC082)
+    // cycles = pcodes[0].execute(vLo, vHi)
+    // incrementCycleCount(cycles)
+    // incrementPC(pcodes[0].PC)
   }
   return cycles
 }

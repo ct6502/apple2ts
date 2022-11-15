@@ -199,16 +199,28 @@ export function getTextPage(is80column = SWITCHES.COLUMN80.isSet) {
   }
 }
 
-export function getHGR() {
-  const offset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
-  const hgrPage = new Uint8Array(40 * 192)
-  for (let j = 0; j < 192; j++) {
-    const addr =
-      offset +
-      40 * Math.trunc(j / 64) +
-      1024 * (j % 8) +
-      128 * (Math.trunc(j / 8) & 7)
-    hgrPage.set(mainMem.slice(addr, addr + 40), j * 40)
+export function getHGR(doubleRes: boolean) {
+  if (doubleRes) {
+    // Only select second 80-column text page if STORE80 is also OFF
+    const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
+    const hgrPage = new Uint8Array(80 * 192)
+    for (let j = 0; j < 192; j++) {
+      const addr = pageOffset + 40 * Math.trunc(j / 64) +
+        1024 * (j % 8) + 128 * (Math.trunc(j / 8) & 7)
+      for (let i = 0; i < 40; i++) {
+        hgrPage[j * 80 + 2 * i + 1] = mainMem[addr + i]
+        hgrPage[j * 80 + 2 * i] = auxMem[addr + i]
+      }
+    }
+    return hgrPage
+  } else {
+    const pageOffset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
+    const hgrPage = new Uint8Array(40 * 192)
+    for (let j = 0; j < 192; j++) {
+      const addr = pageOffset + 40 * Math.trunc(j / 64) +
+        1024 * (j % 8) + 128 * (Math.trunc(j / 8) & 7)
+      hgrPage.set(mainMem.slice(addr, addr + 40), j * 40)
+    }
+    return hgrPage
   }
-  return hgrPage
 }

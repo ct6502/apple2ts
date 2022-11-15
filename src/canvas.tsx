@@ -1,5 +1,5 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { toHex, STATE, getPrintableChar } from "./utility"
+import { STATE, getPrintableChar } from "./utility"
 import { getTextPage, getHGR } from "./memory";
 import { SWITCHES } from "./softswitches";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
@@ -12,7 +12,7 @@ let width = 800
 let height = 600
 let frameCount = 0
 
-const lores = [
+const loresColors = [
   [  0,   0,   0], //black   
   [211,  58,  72], //red     
   [  9,  30, 163], //dk blue 
@@ -50,20 +50,13 @@ const loresGreen = [
   [0, 255, 0], //white   
   ]
 
-let loresHex = new Array<string>(16)
-let loresHexGreen = new Array<string>(16)
-for (let c = 0; c < 16; c++) {
-  loresHex[c] = `#${toHex(lores[c][0])}${toHex(lores[c][1])}${toHex(lores[c][2])}`
-  loresHexGreen[c] = `#00${toHex(lores[c][1])}00`
-}
-
 const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const nchars = SWITCHES.COLUMN80.isSet ? 80 : 40
+  const textPage = getTextPage()
+  const nchars = textPage.length / 24
   const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
-  const textPage = getTextPage()
   ctx.font = `${cheight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
   const jstart = SWITCHES.TEXT.isSet ? 0 : 20
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
@@ -101,7 +94,7 @@ const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   const textPage = getTextPage(doubleRes)
   const bottom = SWITCHES.MIXED.isSet ? 20 : 24
   const cwidth = doubleRes ? 7 : 14
-  const colors = isColor ? lores : loresGreen
+  const colors = isColor ? loresColors : loresGreen
 
   const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
   for (let y = 0; y < bottom; y++) {
@@ -138,7 +131,7 @@ const WHITE = 3
 // const ORANGE = 5
 // const BLUE = 6
 
-const hgrcolors = [
+const hgrRGBcolors = [
   [0, 0, 0],
   [1, 255, 1],
   [255, 1, 255],
@@ -150,7 +143,7 @@ const hgrcolors = [
 ]
 
 const green = [0x39, 0xFF, 0x14]
-const greenscreen = [
+const hgrGreenScreen = [
   [0, 0, 0],
   green,
   green,
@@ -161,10 +154,8 @@ const greenscreen = [
   green
 ]
 
-const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-//  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
-  const hgrPage = getHGR()  // 40 x 192 array
-  const hgr = new Uint8Array(560 * 192).fill(BLACK);
+const getHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
+  const hgrColors = new Uint8Array(560 * 192).fill(BLACK);
   for (let j = 0; j < 192; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
     const joffset = j * 560
@@ -202,9 +193,9 @@ const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
             previousWhite = false
           }
           if (imax > imaxLine) imax = imaxLine
-          hgr[istart] = color1
+          hgrColors[istart] = color1
           for (let ix = istart + 1; ix <= imax; ix++) {
-            hgr[ix] = color
+            hgrColors[ix] = color
           }
           // We just processed 2 bits (4 pixels on the 560-pixel line)
           skip = true
@@ -215,12 +206,41 @@ const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
       }
     }
   }
+  return hgrColors
+}
+
+const getDoubleHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
+  const hgrColors = new Uint8Array(560 * 192).fill(BLACK);
+  for (let j = 0; j < 192; j++) {
+    const line = hgrPage.slice(j*80, j*80 + 80)
+    const bits = new Uint8Array(560)
+    const joffset = j * 560
+    let b = 0
+    for (let i = 0; i < 560; i++) {
+      bits[i] = (line[Math.floor(i / 7)] >> b) & 1
+      b = (b + 1) % 7
+    }
+    for (let i = 0; i < 140; i++) {
+      const colorValue = bits[4 * i] + (bits[4 * i + 1] << 1) +
+        (bits[4 * i + 2] << 2) + (bits[4 * i + 3] << 3)
+      hgrColors.fill(translateLoresColor[colorValue], joffset + 4 * i, joffset + 4 * i + 4)
+    }
+  }
+  return hgrColors
+}
+
+const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
+  const hgrPage = getHGR(doubleRes)  // 40 x 192 array
+  const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, isColor) :
+    getHiresColors(hgrPage, isColor)
   const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
-  const colors = isColor ? hgrcolors : greenscreen
+  const colors = doubleRes ? (isColor ? loresColors : loresGreen) :
+    (isColor ? hgrRGBcolors : hgrGreenScreen)
   for (let i = 0; i < 560 * 192; i++) {
-    hgrRGB[4 * i] = colors[hgr[i]][0]
-    hgrRGB[4 * i + 1] = colors[hgr[i]][1]
-    hgrRGB[4 * i + 2] = colors[hgr[i]][2]
+    hgrRGB[4 * i] = colors[hgrColors[i]][0]
+    hgrRGB[4 * i + 1] = colors[hgrColors[i]][1]
+    hgrRGB[4 * i + 2] = colors[hgrColors[i]][2]
   }
   drawImage(ctx, hgrRGB)
 };
