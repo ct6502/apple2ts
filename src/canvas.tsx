@@ -31,6 +31,8 @@ const loresColors = [
   [255, 255, 255], //white   
   ]
 
+const translateDHGR = [0, 1, 8, 9, 4, 5, 12, 13, 2, 3, 10, 11, 6, 7, 14, 15]
+
 const loresGreen = [
   [0,   0, 0], //black   
   [0,  58, 0], //red     
@@ -213,17 +215,25 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
   const hgrColors = new Uint8Array(560 * 192).fill(BLACK);
   for (let j = 0; j < 192; j++) {
     const line = hgrPage.slice(j*80, j*80 + 80)
-    const bits = new Uint8Array(560)
+    const bits = new Uint8Array(563).fill(0)
     const joffset = j * 560
     let b = 0
     for (let i = 0; i < 560; i++) {
       bits[i] = (line[Math.floor(i / 7)] >> b) & 1
       b = (b + 1) % 7
     }
-    for (let i = 0; i < 140; i++) {
-      const colorValue = bits[4 * i] + (bits[4 * i + 1] << 1) +
-        (bits[4 * i + 2] << 2) + (bits[4 * i + 3] << 3)
-      hgrColors.fill(translateLoresColor[colorValue], joffset + 4 * i, joffset + 4 * i + 4)
+    if (isColor) {
+      for (let i = 0; i < 560; i++) {
+        const colorValue = (bits[i + 3] << (3 - ((i + 3) % 4))) +
+          (bits[i + 2] << (3 - ((i + 2) % 4))) +
+          (bits[i + 1] << (3 - ((i + 1) % 4))) +
+          (bits[i] << (3 - (i % 4)))
+        hgrColors[joffset + i] = translateDHGR[colorValue]
+      }
+    } else {
+      for (let i = 0; i < 560; i++) {
+        if (bits[i]) hgrColors[joffset + i] = 15
+      }
     }
   }
   return hgrColors

@@ -1,7 +1,7 @@
 import { Buffer } from "buffer"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
-import { toHex, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
+import { getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { doResetDrive, doPauseDrive } from "./diskinterface"
@@ -88,7 +88,10 @@ export const processInstruction = () => {
   const instr = memGet(s6502.PC)
   const vLo = s6502.PC < 0xFFFF ? memGet(s6502.PC + 1) : 0
   const vHi = s6502.PC < 0xFFFE ? memGet(s6502.PC + 2) : 0
-  const code = pcodes[instr]
+  let code = pcodes[instr]
+  if (!code) {
+    code = pcodes[0xEA]
+  }
   if (code) {
 //    const mainMem1 = mainMem
 //    if (PC1 === 0x4B10) {
@@ -120,15 +123,6 @@ export const processInstruction = () => {
     // }
     incrementCycleCount(cycles)
     incrementPC(code.PC)
-  } else {
-    instrTrail.slice(posTrail).forEach(s => console.log(s));
-    instrTrail.slice(0, posTrail).forEach(s => console.log(s));
-    console.error("Missing instruction: $" + toHex(instr) + " PC=" + toHex(s6502.PC, 4))
-    return 0;
-    // memGet(0xC082)
-    // cycles = pcodes[0].execute(vLo, vHi)
-    // incrementCycleCount(cycles)
-    // incrementPC(pcodes[0].PC)
   }
   return cycles
 }

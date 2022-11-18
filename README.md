@@ -41,6 +41,28 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
+## VS Code Chrome Debugging
+
+Stop all running Chrome instances and then:
+
+`/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222`
+
+Use `npm start` to start the running instance.
+
+In launch.json, add a launch configuration:
+
+```
+    {
+      "name": "Attach to Chrome",
+      "port": 9222,
+      "request": "attach",
+      "type": "chrome",
+      "url": "http://localhost:8097",
+      "webRoot": "${workspaceFolder}"
+    },
+
+```
+
 ## Apple II ROMs
 
 This repository doesn't contain any Apple II ROMs. However, these are fairly easy to find on the web.

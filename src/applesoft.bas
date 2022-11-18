@@ -27,22 +27,31 @@ REM print values for $C000, $C010, $C020, $C030
 530 PRINT " CHARACTER SET IS:"
 540 RETURN
 
+
 HGR
-call-151
-c00d:ff
-c05e:ff
-2000:0
-2001<2000.3FFFM
-2000<2000.3FFF^Y
-2001:66
-2401:66
-2801:66
-2C01:66
-3001:66
-2050:33
-3402<2050.2050^Y
-3802<2050.2050^Y
-3C02<2050.2050^Y
+CALL-151
+!
+0300:LDA   #$00
+  STA  $C005
+  LDX   #$00
+  STX   $06
+  LDX   #$20
+  STX   $07
+  LDY   #$00
+  STA   ($06),Y
+  INY
+  BNE   $030F
+  INC   $07
+  LDY   $07
+  CPY   #$40
+  BCC   $030D
+  STA  $C004
+  RTS
+300G
+C00D: FF
+C05E
+
+
 
 
 10 print chr$(4);"PR#3"
