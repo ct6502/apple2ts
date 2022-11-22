@@ -56,7 +56,6 @@ let doDebug = false
 let doDebugZeroPage = false
 
 export const doReset = () => {
-  reset6502()
   memC000.fill(0)
   for (const key in SWITCHES) {
     const keyTyped = key as keyof typeof SWITCHES
@@ -65,6 +64,7 @@ export const doReset = () => {
   SWITCHES.TEXT.isSet = true
   // Reset banked RAM
   memGet(0xC082)
+  reset6502()
   doResetDrive()
   setButtonState()
 }

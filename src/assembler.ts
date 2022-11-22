@@ -39,7 +39,8 @@ const parseOperand = (operand: string): [MODE, number] => {
 let labels: { [key: string]: number } = {};
 
 
-const getInstructionModeValue = (pc: number, instr: string, operand: string): [MODE, number] => {
+const getInstructionModeValue =
+  (pc: number, instr: string, operand: string, pass: 1 | 2): [MODE, number] => {
     let mode = MODE.IMPLIED
     let value = -1
     const opParts = operand.match(
@@ -49,10 +50,13 @@ const getInstructionModeValue = (pc: number, instr: string, operand: string): [M
         [mode, value] = parseOperand(operand)
       } else if (opParts.label) {
         if (!(opParts.label in labels)) {
-          console.error("Missing label: " + opParts.label)
-          return [mode, value]
+          if (pass === 2) {
+            console.error("Missing label: " + opParts.label)
+            return [mode, value]
+          }
+        } else {
+          value = labels[opParts.label]
         }
-        value = labels[opParts.label]
         if (isRelativeInstr(instr)) {
           mode = MODE.ZP_REL
           value = (value - pc + 254) % 256
@@ -71,28 +75,19 @@ const getInstructionModeValue = (pc: number, instr: string, operand: string): [M
     return [mode, value]
 }
 
-
-export const parseAssembly = (start: number, code: Array<string>): Array<number> => {
-  labels = {}
+const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<number> => {
   let pc = start
   let instructions: Array<number> = [];
   code.forEach(line => {
     let newInstructions: Array<number> = [];
-    let output = toHex(pc, 4) + "- "
     let hexValue = ''
 
     line = (line.split(';'))[0].trimEnd().toUpperCase()
+
+    let output = (line + '                   ').slice(0, 30) + toHex(pc, 4) + "- "
+
     const parts = line.match(/(?<label>[A-Z]*) *(?<instr>[A-Z]*) *(?<operand>.*)/)?.groups
     if (line && parts) {
-
-      if (parts.label) {
-        if (parts.label in labels) {
-          console.error("Redefined label: " + parts.label)
-          instructions = []
-          return
-        }
-        labels[parts.label] = pc
-      }
 
       parts.operand = parts.operand.replace(/\s/g, '')
       if (parts.operand && !parts.instr) {
@@ -101,7 +96,36 @@ export const parseAssembly = (start: number, code: Array<string>): Array<number>
         return
       }
 
-      const [mode, value] = getInstructionModeValue(pc, parts.instr, parts.operand)
+      if (parts.instr === 'ORG') {
+        if (pass === 2) console.log(output)
+        return
+      }
+
+      if (pass === 1 && parts.label) {
+        if (parts.label in labels) {
+          console.error("Redefined label: " + parts.label)
+          instructions = []
+          return
+        }
+        if (parts.instr === 'EQU') {
+          const [mode, value] = parseOperand(parts.operand)
+          if (mode !== MODE.ABS && mode !== MODE.ZP_REL) {
+            console.error("Illegal EQU value: " + parts.operand)
+            instructions = []
+            return
+          }
+          labels[parts.label] = value
+          console.log(output)
+          return
+        } else {
+          labels[parts.label] = pc
+        }
+      }
+      if (parts.instr === 'EQU') {
+        return
+      }
+
+      const [mode, value] = getInstructionModeValue(pc, parts.instr, parts.operand, pass)
 
       let match = -1
       match = pcodes.findIndex(pc => pc && pc.name === parts.instr && pc.mode === mode)
@@ -135,11 +159,19 @@ export const parseAssembly = (start: number, code: Array<string>): Array<number>
         return
       }
 
-      output += '  ' + parts.instr + " $" + hexValue
-      if (false) console.log(output)
+      output += '  ' + parts.instr + (hexValue !== '' ? " $" + hexValue : '')
+      if (pass === 2) console.log(output)
       instructions.push(...newInstructions)
     }
   });
 
   return instructions
 }
+
+export const parseAssembly = (start: number, code: Array<string>): Array<number> => {
+  labels = {}
+  parseOnce(start, code, 1)
+  const instructions = parseOnce(start, code, 2)
+  return instructions
+}
+

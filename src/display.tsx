@@ -1,6 +1,7 @@
 import { doBoot6502, doReset, doPause, getApple2State,
   processInstruction, setApple2State } from "./motherboard";
-// import { parseAssembly } from "./assembler";
+import { parseAssembly } from "./assembler";
+import { mainMem } from "./memory";
 import { s6502 } from "./instructions"
 import { STATE, getPrintableChar } from "./utility"
 import { getTextPage } from "./memory";
@@ -9,6 +10,7 @@ import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
 import { SWITCHES } from "./softswitches";
 import { getDriveState, setDriveState, getFilename } from "./diskinterface"
+import { code } from "./assemblycode"
 import React from 'react';
 import { decompress } from "lz-string"
 import { Buffer } from "buffer";
@@ -47,23 +49,11 @@ class DisplayApple2 extends React.Component<{},
   }
 
   doBoot() {
-//     const code = `
-// START   LDA #$C1     ; (2) "A"
-// PRINT   STA $0400    ; (4)
-//         INC PRINT+1  ; (6)
-//         BNE PRINT    ; (2/3) = 255*13 + 12 = 3327
-//         INC PRINT+2  ; (6)
-//         INC START+1  ; (6)
-//         CMP #$C4     ; (2) "D"
-//         BNE START    ; (2/3) = 3327*4 + 19*3 + 18 = 13383 cycles ~ 13.4ms
-//         LDX #$F0
-// BEEP    LDA $C030
-//         BRK
-// `;
     doBoot6502();
-//    let pcode = parseAssembly(0x2000, code.split("\n"));
-//    mainMem.set(pcode, 0x2000);
-//    setPC(0x2000);
+    if (code.length > 0) {
+      let pcode = parseAssembly(0x300, code.split("\n"));
+      mainMem.set(pcode, 0x300);
+    }
     this.startTime = performance.now();
   }
 
