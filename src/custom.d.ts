@@ -32,12 +32,18 @@ type STATE6502 = {
   StackPtr: number
 }
 
+type SAVEAPPLE2STATE = {
+  s6502: STATE6502
+  softSwitches: {[name: string]: boolean}
+  memory: string
+  memAux: string
+  memc000: string
+}
+
 type DisplayProps = {
-  _6502: number,
+  machineState: STATE,
   s6502: STATE6502,
-  advance: () => void,
   speed: string,
-  delta: string,
   myCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
   handleSpeedChange: () => void,
@@ -50,7 +56,8 @@ type DisplayProps = {
   handleGoForwardInTime: () => void,
   handleUpperCaseChange: () => void,
   handlePause: () => void,
-  handle6502StateChange: (state: number) => void,
+  handleBoot: () => void,
+  handleReset: () => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
 }

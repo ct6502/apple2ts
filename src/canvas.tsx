@@ -334,7 +334,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         case 'v':
           return
         case 'b':
-          props.handle6502StateChange(STATE.NEED_BOOT)
+          props.handleBoot()
           keyHandled = true
           break;
         case 'f':
@@ -350,7 +350,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           keyHandled = true
           break;
         case 'r':
-          props.handle6502StateChange(STATE.NEED_RESET)
+          props.handleReset()
           keyHandled = true
           break;
         case 's':
@@ -362,7 +362,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       }
     }
     // If we're paused, allow <space> to resume
-    if (props._6502 === STATE.PAUSED && e.key === ' ') {
+    if (props.machineState === STATE.PAUSED && e.key === ' ') {
       props.handlePause()
       keyHandled = true
     }

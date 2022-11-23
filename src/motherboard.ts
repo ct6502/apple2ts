@@ -1,17 +1,20 @@
 import { Buffer } from "buffer"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
-import { getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
+import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
+import { getDriveState, setDriveState } from "./diskinterface"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { doResetDrive, doPauseDrive } from "./diskinterface"
 import { memGet, mainMem, auxMem, memC000 } from "./memory"
 import { setButtonState } from "./joystick"
+import { parseAssembly } from "./assembler";
+import { code } from "./assemblycode"
 
 
 // let prevMemory = Buffer.from(mainMem)
 
-export const getApple2State = () => {
+export const getApple2State = (): SAVEAPPLE2STATE => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
@@ -34,7 +37,7 @@ export const getApple2State = () => {
   }
 }
 
-export const setApple2State = (newState: any) => {
+export const setApple2State = (newState: SAVEAPPLE2STATE) => {
   set6502State(newState.s6502)
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
@@ -49,6 +52,18 @@ export const setApple2State = (newState: any) => {
   if (newState.memAux !== undefined) {
     auxMem.set(Buffer.from(newState.memAux, "base64"))
   }
+}
+
+export const doGetSaveState = () => {
+  const state = { state6502: getApple2State(), driveState: getDriveState() }
+  return JSON.stringify(state)
+//  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
+}
+
+export const doRestoreSaveState = (sState: string) => {
+  const state = JSON.parse(sState);
+  setApple2State(state.state6502 as SAVEAPPLE2STATE)
+  setDriveState(state.driveState)
 }
 
 export let DEBUG_ADDRESS = -1 // 0x9631
@@ -69,14 +84,28 @@ export const doReset = () => {
   setButtonState()
 }
 
-export const doPause = (resume = false) => {
-  doPauseDrive(resume)
+export const doPause = (toggle = false) => {
+  let newState = STATE.PAUSED
+  if (toggle && (machineState === STATE.PAUSED)) {
+    newState = STATE.IS_RUNNING
+  }
+  setMachineState(newState)
 }
 
-export const doBoot6502 = () => {
+export const doRun = () => {
+  setMachineState(STATE.IS_RUNNING)
+}
+
+export const doBoot = () => {
   mainMem.fill(0xFF)
   auxMem.fill(0x00)
   doReset()
+  if (code.length > 0) {
+    let pcode = parseAssembly(0x300, code.split("\n"));
+    mainMem.set(pcode, 0x300);
+  }
+  startTime = performance.now();
+  setMachineState(STATE.IS_RUNNING)
 }
 
 const instrTrail = new Array<string>(1000)
@@ -125,4 +154,78 @@ export const processInstruction = () => {
     incrementPC(code.PC)
   }
   return cycles
+}
+
+let startTime = performance.now();
+let timeDelta = 0
+let machineState = STATE.IDLE
+let iCycle = 0
+const speed = Array<number>(100).fill(1020)
+let doSaveTimeSlice = false
+let iSaveState = 0
+// let iTempState = 0
+let maxState = 60
+let saveStates = Array<string>(maxState).fill('')
+
+export const getSpeed = () => {
+  return speed[iCycle] / 1000
+}
+
+export const setNormalSpeed = (normal: boolean) => {
+
+}
+
+export const setMachineState = (state: STATE) => {
+  machineState = state
+  if (state === STATE.PAUSED || state === STATE.IS_RUNNING) {
+    doPauseDrive(state === STATE.IS_RUNNING)
+  }
+//    this.setState({_6502: state})
+}
+
+export const getMachineState = () => machineState
+
+const getSaveState = () => {
+  const state = { state6502: getApple2State(), driveState: getDriveState() }
+  return JSON.stringify(state)
+//    return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
+}
+
+export const advance6502 = () => {
+  const newTime = performance.now()
+  timeDelta = newTime - startTime
+  startTime = newTime;
+  if (machineState === STATE.IDLE || machineState === STATE.PAUSED) {
+    return;
+  }
+  if (machineState === STATE.NEED_BOOT) {
+    doBoot();
+    setMachineState(STATE.IS_RUNNING)
+  } else if (machineState === STATE.NEED_RESET) {
+    doReset();
+    setMachineState(STATE.IS_RUNNING)
+  }
+  let cycleTotal = 0
+  while (true) {
+    const cycles = processInstruction();
+    if (cycles === 0) {
+      setMachineState(STATE.PAUSED)
+      return;
+    }
+    cycleTotal += cycles;
+    if (cycleTotal >= 17030) {
+      break;
+    }
+  }
+  const newIndex = (iCycle + 1) % speed.length;
+  const currentAvgSpeed = cycleTotal / timeDelta / speed.length
+  speed[newIndex] = speed[iCycle] -
+    speed[newIndex] / speed.length + currentAvgSpeed;
+  iCycle = newIndex
+  if (doSaveTimeSlice) {
+    doSaveTimeSlice = false
+    iSaveState = (iSaveState + 1) % maxState
+//    iTempState = iSaveState
+    saveStates[iSaveState] = getSaveState()
+  }
 }

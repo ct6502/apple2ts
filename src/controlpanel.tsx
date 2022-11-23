@@ -23,7 +23,7 @@ const ControlPanel = (props: DisplayProps) => {
             if (getAudioContext().state !== "running") {
               getAudioContext().resume();
             }
-            props.handle6502StateChange(STATE.NEED_BOOT)
+            props.handleBoot()
           }}>
           <FontAwesomeIcon icon={faPowerOff}/>
         </button>
@@ -33,17 +33,17 @@ const ControlPanel = (props: DisplayProps) => {
             if (getAudioContext().state !== "running") {
               getAudioContext().resume();
             }
-            props.handle6502StateChange(STATE.NEED_RESET)
+            props.handleReset()
           }}
-          disabled={props._6502 === STATE.IDLE || props._6502 === STATE.NEED_BOOT}
+          disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
           >
           <FontAwesomeIcon icon={faArrowRotateRight}/>
         </button>
         <button
-          title={props._6502 === STATE.PAUSED ? "Resume" : "Pause"}
+          title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
           onClick={props.handlePause}
-          disabled={props._6502 === STATE.IDLE}>
-          {props._6502 === STATE.PAUSED ?
+          disabled={props.machineState === STATE.IDLE}>
+          {props.machineState === STATE.PAUSED ?
           <FontAwesomeIcon icon={faPlay}/> :
           <FontAwesomeIcon icon={faPause}/>}
         </button>
@@ -53,7 +53,7 @@ const ControlPanel = (props: DisplayProps) => {
         </button>
         <button title="Save State"
           onClick={() => props.handleFileSave()}
-          disabled={props._6502 === STATE.IDLE || props._6502 === STATE.NEED_BOOT}
+          disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
         >
           <FontAwesomeIcon icon={faSave}/>
         </button>
