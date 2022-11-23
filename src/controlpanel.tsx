@@ -1,6 +1,6 @@
-import { getProcessorStatus, STATE } from "./utility";
+import { STATE } from "./utility";
 import { getAudioContext } from "./speaker";
-import parse from "html-react-parser"
+import { toHex } from "./utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -104,7 +104,7 @@ const ControlPanel = (props: DisplayProps) => {
         <span className="fixed">{props.speed}</span> MHz
       </span>
       <span className="statusItem">
-        <span className="fixed">{parse(getProcessorStatus(props.s6502))}</span>
+        <span className="fixed">{toHex(props.s6502.PC, 4)}</span>
       </span>
     </span>
   )

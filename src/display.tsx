@@ -328,7 +328,7 @@ class DisplayApple2 extends React.Component<{},
           <span><DiskInterface speedCheck={this.state.speedCheck}/></span>
         </span>
         {/* <span className="statusPanel fixed small">
-          {parse(getStatuss6502, stack, mainMem.slice(0, 512)))}
+          {getStatuss6502, stack, mainMem.slice(0, 512))}
         </span> */}
         <input
           type="file"
