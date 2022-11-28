@@ -1,5 +1,6 @@
-import { getMachineState, doBoot, doReset, doPause, doRun, advance6502,
-  doGetSaveState, doRestoreSaveState, getSpeed, setNormalSpeed } from "./motherboard";
+import { doGetMachineState, doBoot, doReset, doPause, doRun, advance6502,
+  doGetSaveState, doRestoreSaveState, doGetSpeed, doSetNormalSpeed, doSaveTimeSlice,
+  doGoBackInTime, doGoForwardInTime } from "./motherboard";
 import { s6502 } from "./instructions"
 import { getPrintableChar } from "./utility"
 import { getTextPage } from "./memory";
@@ -17,15 +18,9 @@ class DisplayApple2 extends React.Component<{},
     uppercase: boolean;
     iscolor: boolean }> {
   timerID = 0
-  cycles = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen: HTMLInputElement | null = null
-  doSaveTimeSlice = false
-  iSaveState = 0
-  iTempState = 0
-  maxState = 60
-  saveStates = Array<string>(this.maxState).fill('')
 
   constructor(props: any) {
     super(props);
@@ -39,7 +34,7 @@ class DisplayApple2 extends React.Component<{},
 
   update6502 = () => {
     advance6502()
-    this.setState( {currentSpeed: getSpeed()} )
+    this.setState( {currentSpeed: doGetSpeed()} )
   }
 
   componentDidMount() {
@@ -52,35 +47,15 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleGoBackInTime = () => {
-    doPause()
-    // if this is the first time we're called, make sure our current
-    // state is up to date
-    if (this.iTempState === this.iSaveState) {
-      this.saveStates[this.iSaveState] = this.getSaveState()
-    }
-    const newTmp = (this.iTempState + this.maxState - 1) % this.maxState
-    if (newTmp === this.iSaveState || this.saveStates[newTmp] === '') {
-      return
-    }
-    this.iTempState = newTmp
-    this.restoreSaveState(this.saveStates[newTmp])
+    doGoBackInTime()
   }
 
   handleGoForwardInTime = () => {
-    doPause()
-    if (this.iTempState === this.iSaveState) {
-      return
-    }
-    const newTmp = (this.iTempState + 1) % this.maxState
-    if (this.saveStates[newTmp] === '') {
-      return
-    }
-    this.iTempState = newTmp
-    this.restoreSaveState(this.saveStates[newTmp])
+    doGoForwardInTime()
   }
 
   handleSpeedChange = () => {
-    setNormalSpeed(this.state.speedCheck)
+    doSetNormalSpeed(this.state.speedCheck)
     window.clearInterval(this.timerID)
     this.timerID = window.setInterval(() => this.update6502(),
       this.state.speedCheck ? 0 : this.refreshTime)
@@ -116,9 +91,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   saveTimeSlice = () => {
-    // Set a flag and save our slice at the end of the next 6502 display cycle.
-    // Otherwise we risk saving in the middle of a keystroke.
-    this.doSaveTimeSlice = true
+    doSaveTimeSlice()
   }
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,7 +179,7 @@ class DisplayApple2 extends React.Component<{},
   render() {
     const speed = this.state.currentSpeed.toFixed(3)
     const props: DisplayProps = {
-      machineState: getMachineState(),
+      machineState: doGetMachineState(),
       s6502: s6502,
       speed: speed,
       myCanvas: this.myCanvas,

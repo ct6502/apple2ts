@@ -6,15 +6,29 @@ import { getDriveState, setDriveState } from "./diskinterface"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { doResetDrive, doPauseDrive } from "./diskinterface"
-import { memGet, mainMem, auxMem, memC000 } from "./memory"
+import { memGet, mainMem, auxMem, memC000, getTextPage, getHGR } from "./memory"
 import { setButtonState } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 
-
+let startTime = performance.now();
+let timeDelta = 0
+let machineState = STATE.IDLE
+let iCycle = 0
+const speed = Array<number>(100).fill(1020)
+let saveTimeSlice = false
+let iSaveState = 0
+let iTempState = 0
+let maxState = 60
+let saveStates = Array<string>(maxState).fill('')
 // let prevMemory = Buffer.from(mainMem)
+// let DEBUG_ADDRESS = -1 // 0x9631
+let doDebug = false
+let doDebugZeroPage = false
+const instrTrail = new Array<string>(1000)
+let posTrail = 0
 
-export const getApple2State = (): SAVEAPPLE2STATE => {
+const getApple2State = (): SAVEAPPLE2STATE => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
@@ -37,7 +51,7 @@ export const getApple2State = (): SAVEAPPLE2STATE => {
   }
 }
 
-export const setApple2State = (newState: SAVEAPPLE2STATE) => {
+const setApple2State = (newState: SAVEAPPLE2STATE) => {
   set6502State(newState.s6502)
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
@@ -54,6 +68,22 @@ export const setApple2State = (newState: SAVEAPPLE2STATE) => {
   }
 }
 
+export const doGetTextPage = () => {
+  return getTextPage()
+}
+
+export const doMemget = (addr: number) => {
+  return memGet(addr)
+}
+
+export const doGetLores = () => {
+  return getTextPage(true)
+}
+
+export const doGetHGR = () => {
+  return getHGR()
+}
+
 export const doGetSaveState = () => {
   const state = { state6502: getApple2State(), driveState: getDriveState() }
   return JSON.stringify(state)
@@ -65,10 +95,6 @@ export const doRestoreSaveState = (sState: string) => {
   setApple2State(state.state6502 as SAVEAPPLE2STATE)
   setDriveState(state.driveState)
 }
-
-export let DEBUG_ADDRESS = -1 // 0x9631
-let doDebug = false
-let doDebugZeroPage = false
 
 export const doReset = () => {
   memC000.fill(0)
@@ -108,8 +134,57 @@ export const doBoot = () => {
   setMachineState(STATE.IS_RUNNING)
 }
 
-const instrTrail = new Array<string>(1000)
-let posTrail = 0
+export const doGetSpeed = () => {
+  return speed[iCycle] / 1000
+}
+
+export const doSetNormalSpeed = (normal: boolean) => {
+
+}
+
+export const doGoBackInTime = () => {
+  doPause()
+  // if this is the first time we're called, make sure our current
+  // state is up to date
+  if (iTempState === iSaveState) {
+    saveStates[iSaveState] = doGetSaveState()
+  }
+  const newTmp = (iTempState + maxState - 1) % maxState
+  if (newTmp === iSaveState || saveStates[newTmp] === '') {
+    return
+  }
+  iTempState = newTmp
+  doRestoreSaveState(saveStates[newTmp])
+}
+
+export const doGoForwardInTime = () => {
+  doPause()
+  if (iTempState === iSaveState) {
+    return
+  }
+  const newTmp = (iTempState + 1) % maxState
+  if (saveStates[newTmp] === '') {
+    return
+  }
+  iTempState = newTmp
+  doRestoreSaveState(saveStates[newTmp])
+}
+
+export const doSaveTimeSlice = () => {
+  // Set a flag and save our slice at the end of the next 6502 display cycle.
+  // Otherwise we risk saving in the middle of a keystroke.
+  saveTimeSlice = true
+}
+
+const setMachineState = (state: STATE) => {
+  machineState = state
+  if (state === STATE.PAUSED || state === STATE.IS_RUNNING) {
+    doPauseDrive(state === STATE.IS_RUNNING)
+  }
+//    setState({_6502: state})
+}
+
+export const doGetMachineState = () => machineState
 
 export const processInstruction = () => {
   let cycles = 0
@@ -156,41 +231,6 @@ export const processInstruction = () => {
   return cycles
 }
 
-let startTime = performance.now();
-let timeDelta = 0
-let machineState = STATE.IDLE
-let iCycle = 0
-const speed = Array<number>(100).fill(1020)
-let doSaveTimeSlice = false
-let iSaveState = 0
-// let iTempState = 0
-let maxState = 60
-let saveStates = Array<string>(maxState).fill('')
-
-export const getSpeed = () => {
-  return speed[iCycle] / 1000
-}
-
-export const setNormalSpeed = (normal: boolean) => {
-
-}
-
-export const setMachineState = (state: STATE) => {
-  machineState = state
-  if (state === STATE.PAUSED || state === STATE.IS_RUNNING) {
-    doPauseDrive(state === STATE.IS_RUNNING)
-  }
-//    this.setState({_6502: state})
-}
-
-export const getMachineState = () => machineState
-
-const getSaveState = () => {
-  const state = { state6502: getApple2State(), driveState: getDriveState() }
-  return JSON.stringify(state)
-//    return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
-}
-
 export const advance6502 = () => {
   const newTime = performance.now()
   timeDelta = newTime - startTime
@@ -222,10 +262,10 @@ export const advance6502 = () => {
   speed[newIndex] = speed[iCycle] -
     speed[newIndex] / speed.length + currentAvgSpeed;
   iCycle = newIndex
-  if (doSaveTimeSlice) {
-    doSaveTimeSlice = false
+  if (saveTimeSlice) {
+    saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState
-//    iTempState = iSaveState
-    saveStates[iSaveState] = getSaveState()
+    iTempState = iSaveState
+    saveStates[iSaveState] = doGetSaveState()
   }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, KeyboardEvent } from 'react';
 import { STATE, getPrintableChar } from "./utility"
-import { getTextPage, getHGR } from "./memory";
+import { doMemget, doGetTextPage, doGetLores, doGetHGR } from "./motherboard";
 import { SWITCHES } from "./softswitches";
 import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
 import { handleGamePad, pressAppleCommandKey, clearAppleCommandKeys, setSaveTimeSlice } from "./joystick"
@@ -53,31 +53,37 @@ const loresGreen = [
   ]
 
 const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const textPage = getTextPage()
-  const nchars = textPage.length / 24
+  const textPage = doGetTextPage()
+  if (textPage.length === 0) return
+  const doubleRes = textPage.length === 320 || textPage.length === 1920
+  const mixedMode = textPage.length === 160 || textPage.length === 320
+  const nchars = doubleRes ? 80 : 40
   const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
   ctx.font = `${cheight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
-  const jstart = SWITCHES.TEXT.isSet ? 0 : 20
+  // full text page will be more than 80 char x 4 lines
+  const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
+  const isAltCharSet = doMemget(SWITCHES.ALTCHARSET.isSetAddr) > 127
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
-    textPage.slice(j * nchars, (j + 1) * nchars).forEach((value, i) => {
+    const joffset = (j - jstart) * nchars
+    textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)
-      if (SWITCHES.ALTCHARSET.isSet) {
+      if (isAltCharSet) {
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
       }
-      let v1 = getPrintableChar(value, SWITCHES.ALTCHARSET.isSet)
+      let v1 = getPrintableChar(value, isAltCharSet)
       const v = String.fromCharCode(v1);
       ctx.fillStyle = isColor ? "#FFFFFF" : "#39FF14";
       if (doInverse) {
         // Inverse characters
         ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + (j + 0.05)*cheight, 1.02*cwidth, 1.04*cheight);
         ctx.fillStyle = "#000000";
-      } else if (value < 128 && !SWITCHES.ALTCHARSET.isSet) {
+      } else if (value < 128 && !isAltCharSet) {
         if (doFlashCycle) {
           ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, cwidth, cheight);
           ctx.fillStyle = "#000000";
@@ -91,14 +97,17 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
 const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
+  const textPage = doGetLores()
+  if (textPage.length === 0) return;
+  const doubleRes = textPage.length === 1600 || textPage.length === 1920
+  const mixedMode = textPage.length === 800 || textPage.length === 1600
+  const nlines = mixedMode ? 160 : 192
   const nchars = doubleRes ? 80 : 40
-  const textPage = getTextPage(doubleRes)
-  const bottom = SWITCHES.MIXED.isSet ? 20 : 24
+  const bottom = mixedMode ? 20 : 24
   const cwidth = doubleRes ? 7 : 14
   const colors = isColor ? loresColors : loresGreen
 
-  const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
+  const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
   for (let y = 0; y < bottom; y++) {
     textPage.slice(y * nchars, (y + 1) * nchars).forEach((value, i) => {
       let upperBlock = value % 16
@@ -113,17 +122,17 @@ const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
         for (let x1 = 0; x1 < cwidth; x1++) {
           const i1 = 560 * (y1 + 8 * y) + cwidth * i + x1
           const i2 = 560 * (y1 + 4 + 8 * y) + cwidth * i + x1
-          hgrRGB[4 * i1] = c1[0]
-          hgrRGB[4 * i1 + 1] = c1[1]
-          hgrRGB[4 * i1 + 2] = c1[2]
-          hgrRGB[4 * i2] = c2[0]
-          hgrRGB[4 * i2 + 1] = c2[1]
-          hgrRGB[4 * i2 + 2] = c2[2]
+          hgrRGBA[4 * i1] = c1[0]
+          hgrRGBA[4 * i1 + 1] = c1[1]
+          hgrRGBA[4 * i1 + 2] = c1[2]
+          hgrRGBA[4 * i2] = c2[0]
+          hgrRGBA[4 * i2 + 1] = c2[1]
+          hgrRGBA[4 * i2 + 2] = c2[2]
         }
       }
     });
   }
-  drawImage(ctx, hgrRGB)
+  drawImage(ctx, hgrRGBA)
 };
 
 const BLACK = 0
@@ -157,8 +166,9 @@ const hgrGreenScreen = [
 ]
 
 const getHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
-  const hgrColors = new Uint8Array(560 * 192).fill(BLACK);
-  for (let j = 0; j < 192; j++) {
+  const nlines = hgrPage.length / 40
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
+  for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
     const joffset = j * 560
     let imaxLine = (j + 1) * 560 - 1
@@ -212,8 +222,9 @@ const getHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
 }
 
 const getDoubleHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
-  const hgrColors = new Uint8Array(560 * 192).fill(BLACK);
-  for (let j = 0; j < 192; j++) {
+  const nlines = hgrPage.length / 80
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
+  for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*80, j*80 + 80)
     const bits = new Uint8Array(563).fill(0)
     const joffset = j * 560
@@ -239,48 +250,42 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
   return hgrColors
 }
 
-const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
-  const hgrPage = getHGR(doubleRes)  // 40 x 192 array
-  const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, isColor) :
-    getHiresColors(hgrPage, isColor)
-  const hgrRGB = new Uint8ClampedArray(4 * 560 * 192).fill(255);
-  const colors = doubleRes ? (isColor ? loresColors : loresGreen) :
-    (isColor ? hgrRGBcolors : hgrGreenScreen)
-  for (let i = 0; i < 560 * 192; i++) {
-    hgrRGB[4 * i] = colors[hgrColors[i]][0]
-    hgrRGB[4 * i + 1] = colors[hgrColors[i]][1]
-    hgrRGB[4 * i + 2] = colors[hgrColors[i]][2]
-  }
-  drawImage(ctx, hgrRGB)
-};
-
-const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGB: Uint8ClampedArray) => {
-    const cheight = height * (1 - 2 * ymargin) / 24
+const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGBA: Uint8ClampedArray) => {
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
-  const image = new ImageData(hgrRGB, 560, 192);
-  let imgHeight = height - 2*ymarginPx - (SWITCHES.MIXED.isSet ? 4*cheight : 0)
-  ctx.drawImage(await createImageBitmap(image),
-    0, 0, 560, SWITCHES.MIXED.isSet ? 160 : 192,
+  const nlines = hgrRGBA.length / (4 * 560)
+  const image = new ImageData(hgrRGBA, 560, nlines);
+  let imgHeight = height * (1 - 2 * ymargin) / 192 * nlines
+  ctx.drawImage(await createImageBitmap(image), 0, 0, 560, nlines,
     xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
 }
+
+const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+  const hgrPage = doGetHGR()  // 40x160, 40x192, 80x160, 80x192
+  if (hgrPage.length === 0) return;
+  const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
+  const nlines = mixedMode ? 160 : 192
+  const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
+  const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, isColor) :
+    getHiresColors(hgrPage, isColor)
+  const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
+  const colors = doubleRes ? (isColor ? loresColors : loresGreen) :
+    (isColor ? hgrRGBcolors : hgrGreenScreen)
+  for (let i = 0; i < 560 * nlines; i++) {
+    hgrRGBA[4 * i] = colors[hgrColors[i]][0]
+    hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
+    hgrRGBA[4 * i + 2] = colors[hgrColors[i]][2]
+  }
+  drawImage(ctx, hgrRGBA)
+};
 
 const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, isColor: boolean) => {
   ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
-  if (SWITCHES.TEXT.isSet || SWITCHES.MIXED.isSet) {
-    processTextPage(ctx, isColor)
-    if (SWITCHES.TEXT.isSet) {
-      return
-    }
-  }
-  if (SWITCHES.HIRES.isSet) {
-    processHiRes(ctx, isColor)
-  } else {
-    processLoRes(ctx, isColor)
-  }
+  processTextPage(ctx, isColor)
+  processLoRes(ctx, isColor)
+  processHiRes(ctx, isColor)
 }
 
 const pasteHandler = (e: ClipboardEvent) => {
