@@ -1,6 +1,6 @@
 import { STATE } from "./utility";
+import { handleBoot, handlePause, handleReset } from "./iworker"
 import { getAudioContext } from "./speaker";
-import { toHex } from "./utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -23,7 +23,7 @@ const ControlPanel = (props: DisplayProps) => {
             if (getAudioContext().state !== "running") {
               getAudioContext().resume();
             }
-            props.handleBoot()
+            handleBoot()
           }}>
           <FontAwesomeIcon icon={faPowerOff}/>
         </button>
@@ -33,7 +33,7 @@ const ControlPanel = (props: DisplayProps) => {
             if (getAudioContext().state !== "running") {
               getAudioContext().resume();
             }
-            props.handleReset()
+            handleReset()
           }}
           disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
           >
@@ -41,7 +41,7 @@ const ControlPanel = (props: DisplayProps) => {
         </button>
         <button
           title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
-          onClick={props.handlePause}
+          onClick={handlePause}
           disabled={props.machineState === STATE.IDLE}>
           {props.machineState === STATE.PAUSED ?
           <FontAwesomeIcon icon={faPlay}/> :
@@ -103,9 +103,9 @@ const ControlPanel = (props: DisplayProps) => {
       <span className="statusItem">
         <span className="fixed">{props.speed}</span> MHz
       </span>
-      <span className="statusItem">
+      {/* <span className="statusItem">
         <span className="fixed">{toHex(props.s6502.PC, 4)}</span>
-      </span>
+      </span> */}
     </span>
   )
 }

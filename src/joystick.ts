@@ -1,7 +1,9 @@
 import { memC000 } from "./memory"
-import { SWITCHES } from "./softswitches";
+import { SWITCHES } from "./softswitches"
+import { doSaveTimeSlice } from "./motherboard"
 // import { addToBuffer } from "./keyboard"
 
+let gamePad: Gamepad | null = null
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
 let paddle0timeout = maxTimeoutCycles / 2
 let paddle1timeout = maxTimeoutCycles / 2
@@ -14,7 +16,6 @@ let leftButtonDown = false
 let rightButtonDown = false
 let isLeftDown = false
 let isRightDown = false
-let saveTimeSlice = () => {}
 
 export const setButtonState = () => {
   const wasLeftDown = isLeftDown
@@ -24,7 +25,7 @@ export const setButtonState = () => {
   SWITCHES.PB0.isSet = (leftAppleDown || leftButtonDown)
   SWITCHES.PB1.isSet = (isRightDown || rightButtonDown)
   if ((isLeftDown && !wasLeftDown) || (isRightDown && !wasRightDown)) {
-    saveTimeSlice()
+    doSaveTimeSlice()
   }
 }
 
@@ -36,16 +37,6 @@ export const pressAppleCommandKey = (isDown: boolean, left: boolean) => {
   }
   setButtonState()
 }
-
-export const clearAppleCommandKeys = () => {
-  leftAppleDown = false
-  rightAppleDown = false
-  setButtonState()
-}
-
-// const keyPress = (key: number) => {
-//   memSet1(0xC000, key | 0b10000000)
-// }
 
 const memSet1 = (addr: number, value: number) => {
   memC000[addr - 0xC000] = value
@@ -67,15 +58,11 @@ export const checkJoystickValues = (cycleCount: number) => {
     largeDiff(prevPaddle1timeout, paddle1timeout)) {
     prevPaddle0timeout = paddle0timeout
     prevPaddle1timeout = paddle1timeout
-    saveTimeSlice()
+    doSaveTimeSlice()
   }
   const diff = cycleCount - countStart
   memSet1(0xC064, (diff < paddle0timeout) ? 0x80 : 0)
   memSet1(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
-}
-
-export const setSaveTimeSlice = (func: () => void) => {
-  saveTimeSlice = func
 }
 
 const defaultButtons = [
@@ -100,12 +87,12 @@ const defaultButtons = [
 // const wolf = [
 //   () => {leftButtonDown = true},
 //   () => {rightButtonDown = true},
-//   () => {keyPress('U'.charCodeAt(0))},
-//   () => {keyPress('T'.charCodeAt(0))},
+//   () => {addToBuffer('U'.charCodeAt(0))},
+//   () => {addToBuffer('T'.charCodeAt(0))},
 //   () => {leftButtonDown = true},
 //   () => {rightButtonDown = true},
-//   () => {keyPress(' '.charCodeAt(0))},
-//   () => {keyPress(13)},
+//   () => {addToBuffer(' '.charCodeAt(0))},
+//   () => {addToBuffer('\r')},
 //   () => {leftButtonDown = true},
 //   () => {rightButtonDown = true},
 //   () => {leftButtonDown = true},
@@ -164,7 +151,11 @@ const defaultButtons = [
 let funcs = defaultButtons
 // funcs = aztec
 
-export const handleGamePad = (gamePad: Gamepad | null) => {
+export const setGamePad = (gamePadIn: Gamepad | null) => {
+  gamePad = gamePadIn
+}
+
+export const handleGamePad = () => {
   if (gamePad) {
     let xstick = (gamePad.axes[0] !== 0) ? gamePad.axes[0] : gamePad.axes[2]
     let ystick = (gamePad.axes[1] !== 0) ? gamePad.axes[1] : gamePad.axes[3]

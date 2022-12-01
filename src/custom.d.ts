@@ -42,7 +42,6 @@ type SAVEAPPLE2STATE = {
 
 type DisplayProps = {
   machineState: STATE,
-  s6502: STATE6502,
   speed: string,
   myCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
@@ -51,13 +50,7 @@ type DisplayProps = {
   isColor: boolean,
   handleColorChange: () => void,
   handleCopyToClipboard: () => void,
-  saveTimeSlice: () => void,
-  handleGoBackInTime: () => void,
-  handleGoForwardInTime: () => void,
   handleUpperCaseChange: () => void,
-  handlePause: () => void,
-  handleBoot: () => void,
-  handleReset: () => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
 }

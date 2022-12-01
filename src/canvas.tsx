@@ -1,10 +1,11 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { STATE, getPrintableChar } from "./utility"
-import { doMemget, doGetTextPage, doGetLores, doGetHGR } from "./motherboard";
+import { handleMemget, handleGetTextPage, handleGetLores, handleGetHGR,
+  handleGoBackInTime, handleGoForwardInTime,
+  handleBoot, handlePause, handleReset,
+  handleSaveTimeSlice, handleKeyboardBuffer, handleSetGamePad,
+  handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./iworker"
+import { STATE, getPrintableChar, convertAppleKey } from "./utility"
 import { SWITCHES } from "./softswitches";
-import { addToBuffer, keyPress, convertAppleKey } from "./keyboard"
-import { handleGamePad, pressAppleCommandKey, clearAppleCommandKeys, setSaveTimeSlice } from "./joystick"
-
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 const xmargin = 0.025
 const ymargin = 0.025
@@ -53,7 +54,7 @@ const loresGreen = [
   ]
 
 const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const textPage = doGetTextPage()
+  const textPage = handleGetTextPage()
   if (textPage.length === 0) return
   const doubleRes = textPage.length === 320 || textPage.length === 1920
   const mixedMode = textPage.length === 160 || textPage.length === 320
@@ -66,7 +67,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
-  const isAltCharSet = doMemget(SWITCHES.ALTCHARSET.isSetAddr) > 127
+  const isAltCharSet = handleMemget(SWITCHES.ALTCHARSET.isSetAddr) > 127
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -97,7 +98,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
 const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const textPage = doGetLores()
+  const textPage = handleGetLores()
   if (textPage.length === 0) return;
   const doubleRes = textPage.length === 1600 || textPage.length === 1920
   const mixedMode = textPage.length === 800 || textPage.length === 1600
@@ -261,7 +262,7 @@ const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGBA: Uint8ClampedArr
 }
 
 const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const hgrPage = doGetHGR()  // 40x160, 40x192, 80x160, 80x192
+  const hgrPage = handleGetHGR()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length === 0) return;
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
@@ -279,7 +280,7 @@ const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   drawImage(ctx, hgrRGBA)
 };
 
-const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, isColor: boolean) => {
+const processDisplay = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
@@ -288,48 +289,50 @@ const processDisplay = (ctx: CanvasRenderingContext2D, frameCount: number, isCol
   processHiRes(ctx, isColor)
 }
 
-const pasteHandler = (e: ClipboardEvent) => {
-  if (e.clipboardData) {
-    const data = e.clipboardData.getData("text");
-    if (data !== "") {
-      addToBuffer(data.replaceAll(/[”“]/g,'"'));
-    }
-    e.preventDefault();
-  }
-};
-
-const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D) => {
-  width = window.innerWidth - 40;
-  height = window.innerHeight - 160;
-  // shrink either width or height to preserve aspect ratio
-  if (width / screenRatio > height) {
-    width = height * screenRatio
-  } else {
-    height = width / screenRatio
-  }
-  width = Math.floor(width)
-  height = Math.floor(height)
-  if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
-    ctx.canvas.width = width;
-    ctx.canvas.height = height;
-  }
-}
-
 const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
 
+
+
+  const pasteHandler = (e: ClipboardEvent) => {
+    if (e.clipboardData) {
+      const data = e.clipboardData.getData("text");
+      if (data !== "") {
+        handleKeyboardBuffer(data.replaceAll(/[”“]/g,'"'));
+      }
+      e.preventDefault();
+    }
+  };
+
+  const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D) => {
+    width = window.innerWidth - 40;
+    height = window.innerHeight - 160;
+    // shrink either width or height to preserve aspect ratio
+    if (width / screenRatio > height) {
+      width = height * screenRatio
+    } else {
+      height = width / screenRatio
+    }
+    width = Math.floor(width)
+    height = Math.floor(height)
+    if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
+      ctx.canvas.width = width;
+      ctx.canvas.height = height;
+    }
+  }
+
   const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.metaKey && e.key === "Meta") {
-      pressAppleCommandKey(true, e.code === "MetaLeft")
+      handleAppleCommandKeyPress(e.code === "MetaLeft")
     }
     if (e.metaKey) {
       switch (e.key) {
         case 'ArrowLeft':
-          props.handleGoBackInTime()
+          handleGoBackInTime()
           keyHandled = true
           break
         case 'ArrowRight':
-          props.handleGoForwardInTime()
+          handleGoForwardInTime()
           keyHandled = true
           break
         case 'c':
@@ -339,7 +342,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         case 'v':
           return
         case 'b':
-          props.handleBoot()
+          handleBoot()
           keyHandled = true
           break;
         case 'f':
@@ -351,11 +354,11 @@ const Apple2Canvas = (props: DisplayProps) => {
           keyHandled = true
           break;
         case 'p':
-          props.handlePause()
+          handlePause()
           keyHandled = true
           break;
         case 'r':
-          props.handleReset()
+          handleReset()
           keyHandled = true
           break;
         case 's':
@@ -368,18 +371,19 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     // If we're paused, allow <space> to resume
     if (props.machineState === STATE.PAUSED && e.key === ' ') {
-      props.handlePause()
+      handlePause()
       keyHandled = true
     }
     if (keyHandled) {
-      clearAppleCommandKeys()
+      handleAppleCommandKeyRelease(true)
+      handleAppleCommandKeyRelease(false)
       e.preventDefault()
       e.stopPropagation()
     } else {
       const key = convertAppleKey(e, props.uppercase);
       if (key > 0) {
-        keyPress(key)
-        props.saveTimeSlice()
+        handleKeyboardBuffer(String.fromCharCode(key))
+        handleSaveTimeSlice()
       } else {
         // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
         //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
@@ -389,7 +393,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.code === "MetaLeft" || e.code === "MetaRight") {
-      pressAppleCommandKey(false, e.code === "MetaLeft")
+      handleAppleCommandKeyRelease(e.code === "MetaLeft")
     }
     if (keyHandled) {
       keyHandled = false
@@ -398,8 +402,6 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
   };
-
-  setSaveTimeSlice(props.saveTimeSlice)
 
   // This code only runs once when the component first renders
   useEffect(() => {
@@ -410,18 +412,27 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
+    // Check for new gamepads on a regular basis
     const gamepadID = window.setInterval(() => {
-      handleGamePad(navigator.getGamepads()[0])}, 33);
-
-    const render = () => {
+      const gamePads = navigator.getGamepads()
+      let gamePad: Gamepad | null = null
+      for (let i = 0; i < gamePads.length; i++) {
+        if (gamePads[i]) {
+          gamePad = gamePads[i]
+          break
+        }        
+      }
+      handleSetGamePad(gamePad)
+    }, 1000)
+    const renderCanvas = () => {
       frameCount++
       if (context) {
         resizeCanvasToDisplaySize(context)
-        processDisplay(context, frameCount, props.isColor)
+        processDisplay(context, props.isColor)
       }
-      animationFrameId = window.requestAnimationFrame(render)
+      animationFrameId = window.requestAnimationFrame(renderCanvas)
     }
-    render()
+    renderCanvas()
 
     // Return a cleanup function when component unmounts
     return () => {

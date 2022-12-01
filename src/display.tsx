@@ -1,9 +1,7 @@
-import { doGetMachineState, doBoot, doReset, doPause, doRun, advance6502,
-  doGetSaveState, doRestoreSaveState, doGetSpeed, doSetNormalSpeed, doSaveTimeSlice,
-  doGoBackInTime, doGoForwardInTime } from "./motherboard";
-import { s6502 } from "./instructions"
+import { handleGetMachineState, handleRun, handleAdvance6502,
+  handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
+  handleBoot, restoreSaveState, getSaveState, handleMemget } from "./iworker"
 import { getPrintableChar } from "./utility"
-import { getTextPage } from "./memory";
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
@@ -16,7 +14,7 @@ class DisplayApple2 extends React.Component<{},
   { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
-    iscolor: boolean }> {
+    isColor: boolean }> {
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
@@ -28,17 +26,17 @@ class DisplayApple2 extends React.Component<{},
       currentSpeed: 0,
       speedCheck: true,
       uppercase: true,
-      iscolor: true,
+      isColor: true,
     };
   }
 
   update6502 = () => {
-    advance6502()
-    this.setState( {currentSpeed: doGetSpeed()} )
+    handleAdvance6502()
+    this.setState( {currentSpeed: handleGetSpeed()} )
   }
 
   componentDidMount() {
-    this.handleBoot();
+    handleBoot();
     this.timerID = window.setInterval(() => this.update6502(), this.refreshTime)
   }
 
@@ -46,62 +44,35 @@ class DisplayApple2 extends React.Component<{},
     if (this.timerID) clearInterval(this.timerID);
   }
 
-  handleGoBackInTime = () => {
-    doGoBackInTime()
-  }
-
-  handleGoForwardInTime = () => {
-    doGoForwardInTime()
-  }
-
   handleSpeedChange = () => {
-    doSetNormalSpeed(this.state.speedCheck)
+    handleSetNormalSpeed(this.state.speedCheck)
     window.clearInterval(this.timerID)
     this.timerID = window.setInterval(() => this.update6502(),
       this.state.speedCheck ? 0 : this.refreshTime)
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
+  handleIsColor = () => {
+    return this.state.isColor
+  }
+
   handleColorChange = () => {
-    this.setState({ iscolor: !this.state.iscolor });
+    this.setState({ isColor: !this.state.isColor });
   };
 
   handleUpperCaseChange = () => {
     this.setState({ uppercase: !this.state.uppercase });
   };
 
-  handlePause = () => {
-    doPause(true)
-  }
-
-  handleBoot = () => {
-    doBoot()
-  }
-
-  handleReset = () => {
-    doReset()
-  }
-
-  getSaveState = () => {
-    return doGetSaveState()
-  }
-
-  restoreSaveState = (sState: string) => {
-    doRestoreSaveState(sState)
-  }
-
-  saveTimeSlice = () => {
-    doSaveTimeSlice()
-  }
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
-      const restoreSaveStateFunc = this.restoreSaveState
+      const restoreSaveStateFunc = restoreSaveState
       fileread.onload = function(e) {
         if (e.target) {
           restoreSaveStateFunc(e.target.result as string)
-          doRun()
+          handleRun()
         }
       };
       fileread.readAsText(e.target.files[0]);
@@ -117,7 +88,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleFileSave = () => {
-    const blob = new Blob([this.getSaveState()], {type: "text/plain"});
+    const blob = new Blob([getSaveState()], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -140,15 +111,16 @@ class DisplayApple2 extends React.Component<{},
    * For graphics mode, do a bitmap copy of the canvas.
    */
   handleCopyToClipboard = () => {
-    if (SWITCHES.TEXT.isSet) {
-      const textPage = getTextPage()
+    const textPage = handleGetTextPage()
+    if (textPage.length === 960 || textPage.length === 1920) {
       const nchars = textPage.length / 24
+      const isAltCharSet = handleMemget(SWITCHES.ALTCHARSET.isSetAddr) > 127
       let output = ''
       for (let j = 0; j < 24; j++) {
         let line = ''
         for (let i = 0; i < nchars; i++) {
           let value = textPage[j * nchars + i]
-          let v1 = getPrintableChar(value, SWITCHES.ALTCHARSET.isSet)
+          let v1 = getPrintableChar(value, isAltCharSet)
           if (v1 >= 32 && v1 !== 127) {
             const c = String.fromCharCode(v1);
             line += c
@@ -179,23 +151,16 @@ class DisplayApple2 extends React.Component<{},
   render() {
     const speed = this.state.currentSpeed.toFixed(3)
     const props: DisplayProps = {
-      machineState: doGetMachineState(),
-      s6502: s6502,
+      machineState: handleGetMachineState(),
       speed: speed,
       myCanvas: this.myCanvas,
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
-      isColor: this.state.iscolor,
+      isColor: this.state.isColor,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
-      saveTimeSlice: this.saveTimeSlice,
-      handleGoBackInTime: this.handleGoBackInTime,
-      handleGoForwardInTime: this.handleGoForwardInTime,
       handleUpperCaseChange: this.handleUpperCaseChange,
-      handlePause: this.handlePause,
-      handleBoot: this.handleBoot,
-      handleReset: this.handleReset,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
     }

@@ -2,12 +2,11 @@ import { Buffer } from "buffer"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
-import { getDriveState, setDriveState } from "./diskinterface"
+import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskinterface"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { doResetDrive, doPauseDrive } from "./diskinterface"
 import { memGet, mainMem, auxMem, memC000, getTextPage, getHGR } from "./memory"
-import { setButtonState } from "./joystick"
+import { setButtonState, handleGamePad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 
@@ -231,7 +230,7 @@ export const processInstruction = () => {
   return cycles
 }
 
-export const advance6502 = () => {
+export const doAdvance6502 = () => {
   const newTime = performance.now()
   timeDelta = newTime - startTime
   startTime = newTime;
@@ -262,6 +261,7 @@ export const advance6502 = () => {
   speed[newIndex] = speed[iCycle] -
     speed[newIndex] / speed.length + currentAvgSpeed;
   iCycle = newIndex
+  handleGamePad()
   if (saveTimeSlice) {
     saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState
