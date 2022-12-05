@@ -4,7 +4,7 @@ export enum STATE {
   IDLE,
   NEED_BOOT,
   NEED_RESET,
-  IS_RUNNING,
+  RUNNING,
   PAUSED,
 }
 

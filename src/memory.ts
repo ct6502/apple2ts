@@ -1,6 +1,6 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { cycleCount } from "./instructions"
-import { handleDriveSoftSwitches } from "./diskinterface"
+import { handleDriveSoftSwitches } from "./diskdata"
 import { romBase64 } from "./roms/rom_2e"
 import { slot_disk2 } from "./roms/slot_disk2_cx00"
 import { Buffer } from "buffer";

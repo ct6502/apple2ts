@@ -160,7 +160,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
       }
 
       output += '  ' + parts.instr + (hexValue !== '' ? " $" + hexValue : '')
-      if (pass === 2) console.log(output)
+//      if (pass === 2) console.log(output)
       instructions.push(...newInstructions)
     }
   });

@@ -2,7 +2,7 @@ import { Buffer } from "buffer"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
-import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskinterface"
+import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memGet, mainMem, auxMem, memC000, getTextPage, getHGR } from "./memory"
@@ -89,13 +89,25 @@ export const doGetSaveState = () => {
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
-export const doRestoreSaveState = (sState: string) => {
+export const doSetSaveState = (sState: string) => {
   const state = JSON.parse(sState);
   setApple2State(state.state6502 as SAVEAPPLE2STATE)
   setDriveState(state.driveState)
 }
 
-export const doReset = () => {
+const doBoot = () => {
+  mainMem.fill(0xFF)
+  auxMem.fill(0x00)
+  doReset()
+  if (code.length > 0) {
+    let pcode = parseAssembly(0x300, code.split("\n"));
+    mainMem.set(pcode, 0x300);
+  }
+  startTime = performance.now();
+  doSetMachineState(STATE.RUNNING)
+}
+
+const doReset = () => {
   memC000.fill(0)
   for (const key in SWITCHES) {
     const keyTyped = key as keyof typeof SWITCHES
@@ -107,30 +119,7 @@ export const doReset = () => {
   reset6502()
   doResetDrive()
   setButtonState()
-}
-
-export const doPause = (toggle = false) => {
-  let newState = STATE.PAUSED
-  if (toggle && (machineState === STATE.PAUSED)) {
-    newState = STATE.IS_RUNNING
-  }
-  setMachineState(newState)
-}
-
-export const doRun = () => {
-  setMachineState(STATE.IS_RUNNING)
-}
-
-export const doBoot = () => {
-  mainMem.fill(0xFF)
-  auxMem.fill(0x00)
-  doReset()
-  if (code.length > 0) {
-    let pcode = parseAssembly(0x300, code.split("\n"));
-    mainMem.set(pcode, 0x300);
-  }
-  startTime = performance.now();
-  setMachineState(STATE.IS_RUNNING)
+  doSetMachineState(STATE.RUNNING)
 }
 
 export const doGetSpeed = () => {
@@ -142,7 +131,7 @@ export const doSetNormalSpeed = (normal: boolean) => {
 }
 
 export const doGoBackInTime = () => {
-  doPause()
+  doSetMachineState(STATE.PAUSED)
   // if this is the first time we're called, make sure our current
   // state is up to date
   if (iTempState === iSaveState) {
@@ -153,11 +142,11 @@ export const doGoBackInTime = () => {
     return
   }
   iTempState = newTmp
-  doRestoreSaveState(saveStates[newTmp])
+  doSetSaveState(saveStates[newTmp])
 }
 
 export const doGoForwardInTime = () => {
-  doPause()
+  doSetMachineState(STATE.PAUSED)
   if (iTempState === iSaveState) {
     return
   }
@@ -166,7 +155,7 @@ export const doGoForwardInTime = () => {
     return
   }
   iTempState = newTmp
-  doRestoreSaveState(saveStates[newTmp])
+  doSetSaveState(saveStates[newTmp])
 }
 
 export const doSaveTimeSlice = () => {
@@ -175,15 +164,17 @@ export const doSaveTimeSlice = () => {
   saveTimeSlice = true
 }
 
-const setMachineState = (state: STATE) => {
+export const doSetMachineState = (state: STATE) => {
   machineState = state
-  if (state === STATE.PAUSED || state === STATE.IS_RUNNING) {
-    doPauseDrive(state === STATE.IS_RUNNING)
+  if (state === STATE.PAUSED || state === STATE.RUNNING) {
+    doPauseDrive(state === STATE.RUNNING)
   }
 //    setState({_6502: state})
 }
 
 export const doGetMachineState = () => machineState
+
+machineState = STATE.IDLE
 
 export const processInstruction = () => {
   let cycles = 0
@@ -239,16 +230,14 @@ export const doAdvance6502 = () => {
   }
   if (machineState === STATE.NEED_BOOT) {
     doBoot();
-    setMachineState(STATE.IS_RUNNING)
   } else if (machineState === STATE.NEED_RESET) {
     doReset();
-    setMachineState(STATE.IS_RUNNING)
   }
   let cycleTotal = 0
   while (true) {
     const cycles = processInstruction();
     if (cycles === 0) {
-      setMachineState(STATE.PAUSED)
+      doSetMachineState(STATE.PAUSED)
       return;
     }
     cycleTotal += cycles;

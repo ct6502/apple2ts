@@ -1,12 +1,12 @@
 import { handleGetMachineState, handleRun, handleAdvance6502,
   handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
-  handleBoot, restoreSaveState, getSaveState, handleMemget } from "./iworker"
+  handleSetSaveState, handleGetSaveState, handleMemget } from "./iworker"
 import { getPrintableChar } from "./utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
 import { SWITCHES } from "./softswitches";
-import { getFilename } from "./diskinterface"
+import { getFilename } from "./diskdata"
 import React from 'react';
 // import Test from "./components/test";
 
@@ -36,7 +36,6 @@ class DisplayApple2 extends React.Component<{},
   }
 
   componentDidMount() {
-    handleBoot();
     this.timerID = window.setInterval(() => this.update6502(), this.refreshTime)
   }
 
@@ -68,7 +67,7 @@ class DisplayApple2 extends React.Component<{},
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
-      const restoreSaveStateFunc = restoreSaveState
+      const restoreSaveStateFunc = handleSetSaveState
       fileread.onload = function(e) {
         if (e.target) {
           restoreSaveStateFunc(e.target.result as string)
@@ -88,7 +87,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleFileSave = () => {
-    const blob = new Blob([getSaveState()], {type: "text/plain"});
+    const blob = new Blob([handleGetSaveState()], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);

@@ -56,13 +56,13 @@ type DisplayProps = {
 }
 
 type DriveState = {
-  fileName: string,
+  filename: string,
   halftrack: number,
   prevHalfTrack: number,
   writeMode: boolean,
   currentPhase: number,
-  diskImageHasChanges: boolean,
-  motorIsRunning: boolean,
+  diskHasChanges: boolean,
+  motorRunning: boolean,
   trackStart: Array<number>,
   trackNbits: Array<number>,
   trackLocation: number,
@@ -71,8 +71,16 @@ type DriveState = {
 
 type DriveProps = {
   drive: number,
-  driveState: DriveState,
+  filename: filename,
+  motorRunning: boolean,
+  halftrack: number,
+  diskHasChanges: boolean,
   diskData: Uint8Array,
   readDisk: (file: File, drive: number) => void,
   resetDrive: (drive: number) => void,
+}
+
+type AudioDevice = {
+  context: AudioContext,
+  element: HTMLAudioElement
 }

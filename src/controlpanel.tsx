@@ -1,5 +1,5 @@
 import { STATE } from "./utility";
-import { handleBoot, handlePause, handleReset } from "./iworker"
+import { handleBoot, handlePause, handleRun, handleReset } from "./iworker"
 import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -41,7 +41,7 @@ const ControlPanel = (props: DisplayProps) => {
         </button>
         <button
           title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
-          onClick={handlePause}
+          onClick={() => {props.machineState === STATE.PAUSED ? handleRun() : handlePause()}}
           disabled={props.machineState === STATE.IDLE}>
           {props.machineState === STATE.PAUSED ?
           <FontAwesomeIcon icon={faPlay}/> :

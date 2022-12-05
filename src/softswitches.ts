@@ -119,6 +119,8 @@ export const SWITCHES = {
   DRVWRITE: NewSwitch(0xC08E + SLOT6, 0),
 }
 
+SWITCHES.TEXT.isSet = true
+
 // const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
 
 export const checkSoftSwitches = (addr: number,

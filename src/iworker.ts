@@ -1,6 +1,7 @@
-import { doGetMachineState, doBoot, doReset, doPause, doRun, doAdvance6502,
-  doGetSaveState, doRestoreSaveState, doGetSpeed, doSetNormalSpeed, doSaveTimeSlice,
+import { doGetMachineState, doSetMachineState, doAdvance6502,
+  doGetSaveState, doSetSaveState, doGetSpeed, doSetNormalSpeed, doSaveTimeSlice,
   doGoBackInTime, doGoForwardInTime, doGetTextPage, doMemget, doGetLores, doGetHGR } from "./motherboard";
+import { STATE } from "./utility"
 import { addToBuffer } from "./keyboard"
 import { pressAppleCommandKey, setGamePad } from "./joystick"
 
@@ -9,7 +10,19 @@ export const handleGetMachineState = () => {
 }
 
 export const handleRun = () => {
-  doRun()
+  doSetMachineState(STATE.RUNNING)
+}
+
+export const handlePause = () => {
+  doSetMachineState(STATE.PAUSED)
+}
+
+export const handleBoot = () => {
+  doSetMachineState(STATE.NEED_BOOT)
+}
+
+export const handleReset = () => {
+  doSetMachineState(STATE.NEED_RESET)
 }
 
 export const handleAdvance6502 = () => {
@@ -48,24 +61,12 @@ export const handleGoForwardInTime = () => {
   doGoForwardInTime()
 }
 
-export const handlePause = () => {
-  doPause(true)
-}
-
-export const handleBoot = () => {
-  doBoot()
-}
-
-export const handleReset = () => {
-  doReset()
-}
-
-export const getSaveState = () => {
+export const handleGetSaveState = () => {
   return doGetSaveState()
 }
 
-export const restoreSaveState = (sState: string) => {
-  doRestoreSaveState(sState)
+export const handleSetSaveState = (sState: string) => {
+  doSetSaveState(sState)
 }
 
 export const handleSaveTimeSlice = () => {

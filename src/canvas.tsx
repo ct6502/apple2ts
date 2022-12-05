@@ -1,7 +1,7 @@
 import React, { useEffect, KeyboardEvent } from 'react';
 import { handleMemget, handleGetTextPage, handleGetLores, handleGetHGR,
   handleGoBackInTime, handleGoForwardInTime,
-  handleBoot, handlePause, handleReset,
+  handleBoot, handlePause, handleRun, handleReset,
   handleSaveTimeSlice, handleKeyboardBuffer, handleSetGamePad,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./iworker"
 import { STATE, getPrintableChar, convertAppleKey } from "./utility"
@@ -354,7 +354,11 @@ const Apple2Canvas = (props: DisplayProps) => {
           keyHandled = true
           break;
         case 'p':
-          handlePause()
+          if (props.machineState === STATE.PAUSED) {
+            handleRun()
+          } else {
+            handlePause()
+          }
           keyHandled = true
           break;
         case 'r':
@@ -371,7 +375,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     // If we're paused, allow <space> to resume
     if (props.machineState === STATE.PAUSED && e.key === ' ') {
-      handlePause()
+      handleRun()
       keyHandled = true
     }
     if (keyHandled) {
