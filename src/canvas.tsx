@@ -1,8 +1,8 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { handleMemget, handleGetTextPage, handleGetLores, handleGetHGR,
+import { handleMemget, handleGetTextPage, handleGetLores, handleGetHires,
   handleGoBackInTime, handleGoForwardInTime,
   handleBoot, handlePause, handleRun, handleReset,
-  handleSaveTimeSlice, handleKeyboardBuffer, handleSetGamePad,
+  handleKeyboardBuffer, handleSetGamePad,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./iworker"
 import { STATE, getPrintableChar, convertAppleKey } from "./utility"
 import { SWITCHES } from "./softswitches";
@@ -262,7 +262,7 @@ const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGBA: Uint8ClampedArr
 }
 
 const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
-  const hgrPage = handleGetHGR()  // 40x160, 40x192, 80x160, 80x192
+  const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length === 0) return;
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
@@ -387,7 +387,6 @@ const Apple2Canvas = (props: DisplayProps) => {
       const key = convertAppleKey(e, props.uppercase);
       if (key > 0) {
         handleKeyboardBuffer(String.fromCharCode(key))
-        handleSaveTimeSlice()
       } else {
         // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
         //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);

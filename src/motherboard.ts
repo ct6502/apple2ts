@@ -1,11 +1,13 @@
 import { Buffer } from "buffer"
+import { passMachineState, passMachineSpeed,
+  passTextPage, passLores, passHires } from "./iworker"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memGet, mainMem, auxMem, memC000, getTextPage, getHGR } from "./memory"
+import { memGet, mainMem, auxMem, memC000, getTextPage, getHires } from "./memory"
 import { setButtonState, handleGamePad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
@@ -67,20 +69,8 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
   }
 }
 
-export const doGetTextPage = () => {
-  return getTextPage()
-}
-
 export const doMemget = (addr: number) => {
   return memGet(addr)
-}
-
-export const doGetLores = () => {
-  return getTextPage(true)
-}
-
-export const doGetHGR = () => {
-  return getHGR()
 }
 
 export const doGetSaveState = () => {
@@ -93,6 +83,7 @@ export const doSetSaveState = (sState: string) => {
   const state = JSON.parse(sState);
   setApple2State(state.state6502 as SAVEAPPLE2STATE)
   setDriveState(state.driveState)
+  updateExternalMachineState()
 }
 
 const doBoot = () => {
@@ -120,10 +111,6 @@ const doReset = () => {
   doResetDrive()
   setButtonState()
   doSetMachineState(STATE.RUNNING)
-}
-
-export const doGetSpeed = () => {
-  return speed[iCycle] / 1000
 }
 
 export const doSetNormalSpeed = (normal: boolean) => {
@@ -169,10 +156,8 @@ export const doSetMachineState = (state: STATE) => {
   if (state === STATE.PAUSED || state === STATE.RUNNING) {
     doPauseDrive(state === STATE.RUNNING)
   }
-//    setState({_6502: state})
+  passMachineState(machineState)
 }
-
-export const doGetMachineState = () => machineState
 
 machineState = STATE.IDLE
 
@@ -221,6 +206,14 @@ export const processInstruction = () => {
   return cycles
 }
 
+const updateExternalMachineState = () => {
+  passMachineState(machineState)
+  passMachineSpeed(speed[iCycle] / 1000)
+  passTextPage(getTextPage())
+  passLores(getTextPage(true))
+  passHires(getHires())
+}
+
 export const doAdvance6502 = () => {
   const newTime = performance.now()
   timeDelta = newTime - startTime
@@ -250,6 +243,7 @@ export const doAdvance6502 = () => {
   speed[newIndex] = speed[iCycle] -
     speed[newIndex] / speed.length + currentAvgSpeed;
   iCycle = newIndex
+  updateExternalMachineState()
   handleGamePad()
   if (saveTimeSlice) {
     saveTimeSlice = false

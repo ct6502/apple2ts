@@ -61,6 +61,20 @@ const passData = () => {
 export const setDriveState = (newState: any) => {
   currentDrive = newState.currentDrive
   driveState = newState.driveState
+  for (let i = 0; i < driveState.length; i++) {
+    if ("fileName" in newState.driveState[i]) {
+      driveState[i].filename = newState.driveState[i].fileName
+      delete (driveState[i] as any).fileName
+    }
+    if ("diskImageHasChanges" in newState.driveState[i]) {
+      driveState[i].diskHasChanges = newState.driveState[i].diskImageHasChanges
+      delete (driveState[i] as any).diskImageHasChanges
+    }
+    if ("motorIsRunning" in newState.driveState[i]) {
+      driveState[i].motorRunning = newState.driveState[i].motorIsRunning
+      delete (driveState[i] as any).motorIsRunning
+    }
+  }
   diskData[0] = new Uint8Array(Buffer.from(newState.driveData[0], 'base64'))
   diskData[1] = new Uint8Array(Buffer.from(newState.driveData[1], 'base64'))
   passData()

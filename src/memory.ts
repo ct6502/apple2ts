@@ -217,7 +217,7 @@ export function getTextPage(getLores = false) {
   }
 }
 
-export function getHGR() {
+export function getHires() {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }

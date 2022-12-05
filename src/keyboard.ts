@@ -1,4 +1,5 @@
 import { memC000 } from "./memory"
+import { doSaveTimeSlice } from "./motherboard"
 
 let keyBuffer = ''
 export const popKey = () => {
@@ -9,6 +10,9 @@ export const popKey = () => {
     }
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
+    if (keyBuffer.length === 0) {
+      doSaveTimeSlice()
+    }
   }
 }
 export const addToBuffer = (text: String) => {
