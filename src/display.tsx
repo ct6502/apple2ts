@@ -1,11 +1,10 @@
-import { handleGetMachineState, handleRun, handleAdvance6502,
+import { handleGetState, handleRun, handleAdvance6502,
   handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
-  handleSetSaveState, handleGetSaveState, handleMemget } from "./iworker"
+  handleSetSaveState, handleGetSaveState, handleGetAltCharSet } from "./iworker"
 import { getPrintableChar } from "./utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
-import { SWITCHES } from "./softswitches";
 import { getFilename } from "./diskdata"
 import React from 'react';
 // import Test from "./components/test";
@@ -113,7 +112,7 @@ class DisplayApple2 extends React.Component<{},
     const textPage = handleGetTextPage()
     if (textPage.length === 960 || textPage.length === 1920) {
       const nchars = textPage.length / 24
-      const isAltCharSet = handleMemget(SWITCHES.ALTCHARSET.isSetAddr) > 127
+      const isAltCharSet = handleGetAltCharSet()
       let output = ''
       for (let j = 0; j < 24; j++) {
         let line = ''
@@ -150,7 +149,7 @@ class DisplayApple2 extends React.Component<{},
   render() {
     const speed = this.state.currentSpeed.toFixed(3)
     const props: DisplayProps = {
-      machineState: handleGetMachineState(),
+      machineState: handleGetState(),
       speed: speed,
       myCanvas: this.myCanvas,
       speedCheck: this.state.speedCheck,

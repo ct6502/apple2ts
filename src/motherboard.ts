@@ -1,6 +1,5 @@
 import { Buffer } from "buffer"
-import { passMachineState, passMachineSpeed,
-  passTextPage, passLores, passHires } from "./iworker"
+import { passMachineState, passSaveState } from "./iworker"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
@@ -14,7 +13,7 @@ import { code } from "./assemblycode"
 
 let startTime = performance.now();
 let timeDelta = 0
-let machineState = STATE.IDLE
+let cpuState = STATE.IDLE
 let iCycle = 0
 const speed = Array<number>(100).fill(1020)
 let saveTimeSlice = false
@@ -69,8 +68,8 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
   }
 }
 
-export const doMemget = (addr: number) => {
-  return memGet(addr)
+export const doRequestSaveState = () => {
+  passSaveState(doGetSaveState())
 }
 
 export const doGetSaveState = () => {
@@ -95,7 +94,7 @@ const doBoot = () => {
     mainMem.set(pcode, 0x300);
   }
   startTime = performance.now();
-  doSetMachineState(STATE.RUNNING)
+  doSetCPUState(STATE.RUNNING)
 }
 
 const doReset = () => {
@@ -110,7 +109,7 @@ const doReset = () => {
   reset6502()
   doResetDrive()
   setButtonState()
-  doSetMachineState(STATE.RUNNING)
+  doSetCPUState(STATE.RUNNING)
 }
 
 export const doSetNormalSpeed = (normal: boolean) => {
@@ -118,7 +117,7 @@ export const doSetNormalSpeed = (normal: boolean) => {
 }
 
 export const doGoBackInTime = () => {
-  doSetMachineState(STATE.PAUSED)
+  doSetCPUState(STATE.PAUSED)
   // if this is the first time we're called, make sure our current
   // state is up to date
   if (iTempState === iSaveState) {
@@ -133,7 +132,7 @@ export const doGoBackInTime = () => {
 }
 
 export const doGoForwardInTime = () => {
-  doSetMachineState(STATE.PAUSED)
+  doSetCPUState(STATE.PAUSED)
   if (iTempState === iSaveState) {
     return
   }
@@ -151,15 +150,15 @@ export const doSaveTimeSlice = () => {
   saveTimeSlice = true
 }
 
-export const doSetMachineState = (state: STATE) => {
-  machineState = state
-  if (state === STATE.PAUSED || state === STATE.RUNNING) {
-    doPauseDrive(state === STATE.RUNNING)
+export const doSetCPUState = (cpuStateIn: STATE) => {
+  cpuState = cpuStateIn
+  if (cpuState === STATE.PAUSED || cpuState === STATE.RUNNING) {
+    doPauseDrive(cpuState === STATE.RUNNING)
   }
-  passMachineState(machineState)
+  updateExternalMachineState()
 }
 
-machineState = STATE.IDLE
+cpuState = STATE.IDLE
 
 export const processInstruction = () => {
   let cycles = 0
@@ -207,30 +206,34 @@ export const processInstruction = () => {
 }
 
 const updateExternalMachineState = () => {
-  passMachineState(machineState)
-  passMachineSpeed(speed[iCycle] / 1000)
-  passTextPage(getTextPage())
-  passLores(getTextPage(true))
-  passHires(getHires())
+  const state: MachineState = {
+    state: cpuState,
+    speed: speed[iCycle] / 1000,
+    altChar: SWITCHES.ALTCHARSET.isSet,
+    textPage: getTextPage(),
+    lores: getTextPage(true),
+    hires: getHires()
+  }
+  passMachineState(state)
 }
 
 export const doAdvance6502 = () => {
   const newTime = performance.now()
   timeDelta = newTime - startTime
   startTime = newTime;
-  if (machineState === STATE.IDLE || machineState === STATE.PAUSED) {
+  if (cpuState === STATE.IDLE || cpuState === STATE.PAUSED) {
     return;
   }
-  if (machineState === STATE.NEED_BOOT) {
+  if (cpuState === STATE.NEED_BOOT) {
     doBoot();
-  } else if (machineState === STATE.NEED_RESET) {
+  } else if (cpuState === STATE.NEED_RESET) {
     doReset();
   }
   let cycleTotal = 0
   while (true) {
     const cycles = processInstruction();
     if (cycles === 0) {
-      doSetMachineState(STATE.PAUSED)
+      doSetCPUState(STATE.PAUSED)
       return;
     }
     cycleTotal += cycles;

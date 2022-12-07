@@ -1,11 +1,10 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { handleMemget, handleGetTextPage, handleGetLores, handleGetHires,
+import { handleGetAltCharSet, handleGetTextPage, handleGetLores, handleGetHires,
   handleGoBackInTime, handleGoForwardInTime,
   handleBoot, handlePause, handleRun, handleReset,
   handleKeyboardBuffer, handleSetGamePad,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./iworker"
 import { STATE, getPrintableChar, convertAppleKey } from "./utility"
-import { SWITCHES } from "./softswitches";
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 const xmargin = 0.025
 const ymargin = 0.025
@@ -67,7 +66,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
-  const isAltCharSet = handleMemget(SWITCHES.ALTCHARSET.isSetAddr) > 127
+  const isAltCharSet = handleGetAltCharSet()
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3

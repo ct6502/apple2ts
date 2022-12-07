@@ -1,24 +1,24 @@
-import { doSetMachineState, doAdvance6502,
-  doGetSaveState, doSetSaveState, doSetNormalSpeed,
-  doGoBackInTime, doGoForwardInTime, doMemget } from "./motherboard";
+import { doSetCPUState, doAdvance6502,
+  doRequestSaveState, doSetSaveState, doSetNormalSpeed,
+  doGoBackInTime, doGoForwardInTime } from "./motherboard";
 import { STATE } from "./utility"
 import { addToBuffer } from "./keyboard"
 import { pressAppleCommandKey, setGamePad } from "./joystick"
 
 export const handleRun = () => {
-  doSetMachineState(STATE.RUNNING)
+  doSetCPUState(STATE.RUNNING)
 }
 
 export const handlePause = () => {
-  doSetMachineState(STATE.PAUSED)
+  doSetCPUState(STATE.PAUSED)
 }
 
 export const handleBoot = () => {
-  doSetMachineState(STATE.NEED_BOOT)
+  doSetCPUState(STATE.NEED_BOOT)
 }
 
 export const handleReset = () => {
-  doSetMachineState(STATE.NEED_RESET)
+  doSetCPUState(STATE.NEED_RESET)
 }
 
 export const handleAdvance6502 = () => {
@@ -58,58 +58,71 @@ export const handleSetGamePad = (gamePad: Gamepad | null) => {
   setGamePad(gamePad)
 }
 
-let machineState: STATE = STATE.IDLE
-let machineSpeed = 0
-let textPage = new Uint8Array(960).fill(0xFF)
-let lores = new Uint8Array()
-let hires = new Uint8Array()
+let machineState: MachineState = {
+  state: STATE.IDLE,
+  speed: 0,
+  altChar: false,
+  textPage: new Uint8Array(960).fill(0xFF),
+  lores: new Uint8Array(),
+  hires: new Uint8Array()
+}
+let saveState = ""
 
-export const handleGetMachineState = () => {
-  return machineState
+export const handleGetState = () => {
+  return machineState.state
 }
 
 export const handleGetSpeed = () => {
-  return machineSpeed
+  return machineState.speed
 }
 
 export const handleGetTextPage = () => {
-  return textPage
+  return machineState.textPage
 }
 
 export const handleGetLores = () => {
-  return lores
+  return machineState.lores
 }
 
 export const handleGetHires = () => {
-  return hires
+  return machineState.hires
 }
 
-export const handleMemget = (addr: number) => {
-  return doMemget(addr)
+export const handleGetAltCharSet = () => {
+  return machineState.altChar
 }
 
 export const handleGetSaveState = () => {
-  return doGetSaveState()
+  doRequestSaveState()
+  return saveState
 }
 
-export const passMachineState = (state: STATE) => {
-  machineState = state
+export const passSaveState = (saveStateIn: string) => {
+  saveState = saveStateIn
 }
 
-export const passMachineSpeed = (speed: number) => {
-  machineSpeed = speed
+export const passMachineState = (state: MachineState) => {
+   machineState = state
 }
 
-export const passTextPage = (data: Uint8Array) => {
-  textPage = data
-}
+// export const passMachineSpeed = (speed: number) => {
+//   machineSpeed = speed
+// }
 
-export const passLores = (data: Uint8Array) => {
-  lores = data
-}
+// export const passAltCharSet = (isAlt: boolean) => {
+//   altCharSet = isAlt
+// }
 
-export const passHires = (data: Uint8Array) => {
-  hires = data
-}
+// export const passTextPage = (data: Uint8Array) => {
+//   textPage = data
+// }
+
+// export const passLores = (data: Uint8Array) => {
+//   lores = data
+// }
+
+// export const passHires = (data: Uint8Array) => {
+//   hires = data
+// }
 
 

@@ -55,6 +55,15 @@ type DisplayProps = {
   handleFileSave: () => void,
 }
 
+type MachineState = {
+  state: STATE,
+  speed: number,
+  altChar: boolean,
+  textPage: Uint8Array,
+  lores: Uint8Array,
+  hires: Uint8Array
+}
+
 type DriveState = {
   filename: string,
   halftrack: number,
@@ -71,14 +80,14 @@ type DriveState = {
 
 type DriveProps = {
   drive: number,
-  filename: filename,
+  filename: string,
   motorRunning: boolean,
   halftrack: number,
   diskHasChanges: boolean,
-  diskData: Uint8Array,
-  readDisk: (file: File, drive: number) => void,
-  resetDrive: (drive: number) => void,
+  diskData: Uint8Array
 }
+//  readDisk: (file: File, drive: number) => void,
+//  resetDrive: (drive: number) => void,
 
 type AudioDevice = {
   context: AudioContext,

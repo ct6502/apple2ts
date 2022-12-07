@@ -1,9 +1,7 @@
 import { Buffer } from "buffer"
 import { handlePlayTrackOffEnd, handlePlayTrackSeek,
-  handleMotorOn, handleMotorOff,
-  handleSetFilename, handleSetHalftrack,
-  handleSetDiskHasChanges, handleSetMotorRunning,
-  handleSetData } from "./diskinterface"
+  handleMotorOn, handleMotorOff } from "./diskinterface"
+import { passDriveProps } from "./iworkerdisk"
 import { SWITCHES } from "./softswitches"
 import { cycleCount } from './instructions'
 import { toHex } from "./utility"
@@ -50,11 +48,15 @@ export const getDriveState = () => {
 
 const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
-    handleSetFilename(i, driveState[i].filename)
-    handleSetHalftrack(i, driveState[i].halftrack)
-    handleSetDiskHasChanges(i, driveState[i].diskHasChanges)
-    handleSetMotorRunning(i, driveState[i].motorRunning)
-    handleSetData(i, diskData[i])
+    const dprops: DriveProps = {
+      drive: i,
+      filename: driveState[i].filename,
+      motorRunning: driveState[i].motorRunning,
+      halftrack: driveState[i].halftrack,
+      diskHasChanges: driveState[i].diskHasChanges,
+      diskData: diskData[i]
+    }
+    passDriveProps(dprops)
   }
 }
 
@@ -112,7 +114,7 @@ const moveHead = (offset: number) => {
   } else {
     handlePlayTrackSeek()
   }
-  handleSetHalftrack(currentDrive, dd.halftrack)
+  passData()
   // Adjust new track location based on arm position relative to old track loc.
   if (dd.trackStart[dd.halftrack] > 0 && dd.prevHalfTrack !== dd.halftrack) {
     // const oldloc = dState.trackLocation
@@ -295,7 +297,7 @@ export const handleDriveSoftSwitches =
       driveState[1 - currentDrive].motorRunning = false
       driveState[currentDrive].motorRunning = true
       for (let i = 0; i < driveState.length; i++) {
-        handleSetMotorRunning(i, driveState[i].motorRunning)
+        passData()
       }
     }
     return result
@@ -365,7 +367,6 @@ export const handleSetDiskData = (drive: number, data: Uint8Array, filename: str
   driveState[drive].filename = filename
   if (data.length > 0) {
     diskData[drive] = decodeDiskData(driveState[drive], diskData[drive])
-    handleSetFilename(drive, driveState[drive].filename)
   }
   passData()
 }
