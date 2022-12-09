@@ -1,5 +1,5 @@
 import { STATE } from "./utility";
-import { handleBoot, handlePause, handleRun, handleReset } from "./iworker"
+import { handleSetCPUState } from "./iworker"
 import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -23,7 +23,7 @@ const ControlPanel = (props: DisplayProps) => {
             if (getAudioContext().state !== "running") {
               getAudioContext().resume();
             }
-            handleBoot()
+            handleSetCPUState(STATE.NEED_BOOT)
           }}>
           <FontAwesomeIcon icon={faPowerOff}/>
         </button>
@@ -33,7 +33,7 @@ const ControlPanel = (props: DisplayProps) => {
             if (getAudioContext().state !== "running") {
               getAudioContext().resume();
             }
-            handleReset()
+            handleSetCPUState(STATE.NEED_RESET)
           }}
           disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
           >
@@ -41,7 +41,8 @@ const ControlPanel = (props: DisplayProps) => {
         </button>
         <button
           title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
-          onClick={() => {props.machineState === STATE.PAUSED ? handleRun() : handlePause()}}
+          onClick={() => {props.machineState === STATE.PAUSED ?
+            handleSetCPUState(STATE.RUNNING) : handleSetCPUState(STATE.PAUSED)}}
           disabled={props.machineState === STATE.IDLE}>
           {props.machineState === STATE.PAUSED ?
           <FontAwesomeIcon icon={faPlay}/> :

@@ -11,7 +11,11 @@ import { setButtonState, handleGamePad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 
+const { setInterval } = window
+let timerID: number = 0
 let startTime = performance.now();
+let normalSpeed = true
+const refreshTime = 16.6881
 let timeDelta = 0
 let cpuState = STATE.IDLE
 let iCycle = 0
@@ -112,8 +116,16 @@ const doReset = () => {
   doSetCPUState(STATE.RUNNING)
 }
 
-export const doSetNormalSpeed = (normal: boolean) => {
+const startCPUTimer = () => {
+  if (timerID) {
+    clearInterval(timerID)
+  }
+  timerID = setInterval(doAdvance6502, normalSpeed ? refreshTime : 0)
+}
 
+export const doSetNormalSpeed = (normal: boolean) => {
+  normalSpeed = normal
+  startCPUTimer()
 }
 
 export const doGoBackInTime = () => {
@@ -156,6 +168,9 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
     doPauseDrive(cpuState === STATE.RUNNING)
   }
   updateExternalMachineState()
+  if (!timerID) {
+    startCPUTimer()
+  }
 }
 
 cpuState = STATE.IDLE
@@ -217,7 +232,7 @@ const updateExternalMachineState = () => {
   passMachineState(state)
 }
 
-export const doAdvance6502 = () => {
+const doAdvance6502 = () => {
   const newTime = performance.now()
   timeDelta = newTime - startTime
   startTime = newTime;

@@ -1,7 +1,7 @@
-import { handleGetState, handleRun, handleAdvance6502,
+import { handleGetState, handleSetCPUState,
   handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
   handleSetSaveState, handleGetSaveState, handleGetAltCharSet } from "./iworker"
-import { getPrintableChar } from "./utility"
+import { STATE, getPrintableChar } from "./utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
@@ -29,13 +29,13 @@ class DisplayApple2 extends React.Component<{},
     };
   }
 
-  update6502 = () => {
-    handleAdvance6502()
+  updateDisplay = () => {
+//    handleAdvance6502()
     this.setState( {currentSpeed: handleGetSpeed()} )
   }
 
   componentDidMount() {
-    this.timerID = window.setInterval(() => this.update6502(), this.refreshTime)
+    this.timerID = window.setInterval(() => this.updateDisplay(), this.refreshTime)
   }
 
   componentWillUnmount() {
@@ -43,10 +43,10 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleSpeedChange = () => {
-    handleSetNormalSpeed(this.state.speedCheck)
-    window.clearInterval(this.timerID)
-    this.timerID = window.setInterval(() => this.update6502(),
-      this.state.speedCheck ? 0 : this.refreshTime)
+    handleSetNormalSpeed(!this.state.speedCheck)
+//    window.clearInterval(this.timerID)
+//    this.timerID = window.setInterval(() => this.update6502(),
+//      this.state.speedCheck ? 0 : this.refreshTime)
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
@@ -70,7 +70,7 @@ class DisplayApple2 extends React.Component<{},
       fileread.onload = function(e) {
         if (e.target) {
           restoreSaveStateFunc(e.target.result as string)
-          handleRun()
+          handleSetCPUState(STATE.RUNNING)
         }
       };
       fileread.readAsText(e.target.files[0]);

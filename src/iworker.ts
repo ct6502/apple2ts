@@ -1,30 +1,13 @@
-import { doSetCPUState, doAdvance6502,
+import { doSetCPUState,
   doRequestSaveState, doSetSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime } from "./motherboard";
 import { STATE } from "./utility"
 import { addToBuffer } from "./keyboard"
 import { pressAppleCommandKey, setGamePad } from "./joystick"
 
-export const handleRun = () => {
-  doSetCPUState(STATE.RUNNING)
+export const handleSetCPUState = (state: STATE) => {
+  doSetCPUState(state)
 }
-
-export const handlePause = () => {
-  doSetCPUState(STATE.PAUSED)
-}
-
-export const handleBoot = () => {
-  doSetCPUState(STATE.NEED_BOOT)
-}
-
-export const handleReset = () => {
-  doSetCPUState(STATE.NEED_RESET)
-}
-
-export const handleAdvance6502 = () => {
-  doAdvance6502()
-}
-
 
 export const handleSetNormalSpeed = (normal: boolean) => {
   doSetNormalSpeed(normal)
@@ -104,25 +87,3 @@ export const passSaveState = (saveStateIn: string) => {
 export const passMachineState = (state: MachineState) => {
    machineState = state
 }
-
-// export const passMachineSpeed = (speed: number) => {
-//   machineSpeed = speed
-// }
-
-// export const passAltCharSet = (isAlt: boolean) => {
-//   altCharSet = isAlt
-// }
-
-// export const passTextPage = (data: Uint8Array) => {
-//   textPage = data
-// }
-
-// export const passLores = (data: Uint8Array) => {
-//   lores = data
-// }
-
-// export const passHires = (data: Uint8Array) => {
-//   hires = data
-// }
-
-

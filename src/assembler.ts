@@ -97,7 +97,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
       }
 
       if (parts.instr === 'ORG') {
-        if (pass === 2) console.log(output)
+//        if (pass === 2) console.log(output)
         return
       }
 
