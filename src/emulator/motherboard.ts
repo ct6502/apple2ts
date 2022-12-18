@@ -1,5 +1,5 @@
 import { Buffer } from "buffer"
-import { passMachineState } from "./emulator/worker2main"
+import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
@@ -7,7 +7,7 @@ import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./disk
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memGet, mainMem, auxMem, memC000, getTextPage, getHires } from "./memory"
-import { setButtonState, handleGamePad } from "./joystick"
+import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 
@@ -258,7 +258,7 @@ const doAdvance6502 = () => {
   iCycle++
   speed = (iCycle * 17.030) / (performance.now() - startTime)
   updateExternalMachineState()
-  handleGamePad()
+  handleGamepad()
   if (saveTimeSlice) {
     saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState

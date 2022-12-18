@@ -93,3 +93,9 @@ type AudioDevice = {
   context: AudioContext,
   element: HTMLAudioElement
 }
+
+type EmuGamepad = {
+  connected: boolean,
+  axes: Array<number>,
+  buttons: Array<boolean>
+}

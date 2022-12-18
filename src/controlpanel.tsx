@@ -1,4 +1,4 @@
-import { STATE } from "./utility";
+import { STATE } from "./emulator/utility";
 import { handleSetCPUState } from "./main2worker"
 import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

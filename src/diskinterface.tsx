@@ -1,6 +1,6 @@
 import React from "react"
 import DiskDrive from "./diskdrive"
-import { DRIVE } from "./utility"
+import { DRIVE } from "./emulator/utility"
 import mp3DriveMotor from './audio/driveMotor.mp3'
 import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'

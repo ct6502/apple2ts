@@ -2,7 +2,7 @@ import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename } from "./main2worker"
-import { STATE, getPrintableChar } from "./utility"
+import { STATE, getPrintableChar } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"

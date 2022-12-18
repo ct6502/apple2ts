@@ -3,12 +3,12 @@ import { SWITCHES } from "./softswitches"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBuffer } from "./keyboard"
 
-let gamePad: Gamepad | null = null
+let gamePad: EmuGamepad | null = null
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
 let paddle0timeout = maxTimeoutCycles / 2
 let paddle1timeout = maxTimeoutCycles / 2
-let prevPaddle0timeout = paddle0timeout
-let prevPaddle1timeout = paddle1timeout
+// let prevPaddle0timeout = paddle0timeout
+// let prevPaddle1timeout = paddle1timeout
 let countStart = 0
 let leftAppleDown = false
 let rightAppleDown = false
@@ -49,17 +49,17 @@ export const resetJoystick = (cycleCount: number) => {
   countStart = cycleCount
 }
 
-const largeDiff = (v1: number, v2: number) => {
-  return (Math.abs(v1 - v2) > 0.1 * maxTimeoutCycles)
-}
+// const largeDiff = (v1: number, v2: number) => {
+//   return (Math.abs(v1 - v2) > 0.1 * maxTimeoutCycles)
+// }
 
 export const checkJoystickValues = (cycleCount: number) => {
-  if (largeDiff(prevPaddle0timeout, paddle0timeout) ||
-    largeDiff(prevPaddle1timeout, paddle1timeout)) {
-    prevPaddle0timeout = paddle0timeout
-    prevPaddle1timeout = paddle1timeout
-//    doSaveTimeSlice()
-  }
+//   if (largeDiff(prevPaddle0timeout, paddle0timeout) ||
+//     largeDiff(prevPaddle1timeout, paddle1timeout)) {
+//     prevPaddle0timeout = paddle0timeout
+//     prevPaddle1timeout = paddle1timeout
+//     doSaveTimeSlice()
+//   }
   const diff = cycleCount - countStart
   memSet1(0xC064, (diff < paddle0timeout) ? 0x80 : 0)
   memSet1(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
@@ -151,14 +151,22 @@ const defaultButtons = [
 let funcs = defaultButtons
 // funcs = aztec
 
-export const setGamePad = (gamePadIn: Gamepad | null) => {
+export const setGamepad = (gamePadIn: EmuGamepad) => {
   gamePad = gamePadIn
 }
 
-export const handleGamePad = () => {
-  if (gamePad) {
-    let xstick = (gamePad.axes[0] !== 0) ? gamePad.axes[0] : gamePad.axes[2]
-    let ystick = (gamePad.axes[1] !== 0) ? gamePad.axes[1] : gamePad.axes[3]
+const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
+
+export const handleGamepad = () => {
+  if (gamePad && gamePad.connected) {
+    let xstick = gamePad.axes[0]
+    let ystick = gamePad.axes[1]
+    if (nearZero(gamePad.axes[0]) && nearZero(gamePad.axes[1])) {
+      xstick = gamePad.axes[2]
+      ystick = gamePad.axes[3]
+    }
+    if (Math.abs(xstick) < 0.01) xstick = 0
+    if (Math.abs(ystick) < 0.01) ystick = 0
     const dist = Math.sqrt(xstick * xstick + ystick * ystick)
     const clip = 0.95 * ((dist === 0) ? 1 :
       Math.max(Math.abs(xstick), Math.abs(ystick)) / dist)
@@ -169,8 +177,8 @@ export const handleGamePad = () => {
     leftButtonDown = false
     rightButtonDown = false
     gamePad.buttons.forEach((button, i) => {
-      if (button.pressed && i < funcs.length) {
-        console.log(i)
+      if (button && i < funcs.length) {
+//        console.log(i)
         funcs[i]()
       }
     });

@@ -1,10 +1,10 @@
 import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
-  doGoBackInTime, doGoForwardInTime } from "../motherboard";
-import { doSetDriveProps } from "../diskdata"
-import { addToBuffer } from "../keyboard"
-import { pressAppleCommandKey } from "../joystick"
-import { DRIVE } from "../utility";
+  doGoBackInTime, doGoForwardInTime } from "./motherboard";
+import { doSetDriveProps } from "./diskdata"
+import { addToBuffer } from "./keyboard"
+import { pressAppleCommandKey, setGamepad } from "./joystick"
+import { DRIVE } from "./utility";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -66,6 +66,9 @@ self.onmessage = (e: MessageEvent) => {
     case "DRIVE_PROPS":
       doSetDriveProps(e.data.payload)
       break;
+    case "GAMEPAD":
+      setGamepad(e.data.payload)
+      break
     default:
       console.log("worker2main onmessage: unknown msg: " + JSON.stringify(e.data))
       break;

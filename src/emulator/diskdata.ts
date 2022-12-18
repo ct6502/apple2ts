@@ -1,5 +1,5 @@
 import { Buffer } from "buffer"
-import { passDriveProps, passDriveSound } from "./emulator/worker2main"
+import { passDriveProps, passDriveSound } from "./worker2main"
 import { SWITCHES } from "./softswitches"
 import { cycleCount } from './instructions'
 import { toHex, DRIVE } from "./utility"

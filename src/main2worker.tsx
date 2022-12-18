@@ -1,4 +1,4 @@
-import { STATE, DRIVE } from "./utility"
+import { STATE, DRIVE } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 
 let worker: Worker | null = null
@@ -50,9 +50,10 @@ export const handleAppleCommandKeyRelease = (left: boolean) => {
   doPostMessage("APPLE_RELEASE", left)
 }
 
-export const handleSetGamePad = (gamePad: Gamepad | null) => {
+export const handleSetGamepad = (gamePad: EmuGamepad | null) => {
+  doPostMessage("GAMEPAD", gamePad)
   // TODO GAMEPAD msg not implemented yet
-//  setGamePad(gamePad)
+//  setGamepad(gamePad)
 }
 
 let machineState: MachineState = {

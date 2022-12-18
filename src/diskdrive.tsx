@@ -1,6 +1,6 @@
 import React from "react"
-import { uint32toBytes } from "./utility"
-import { crc32 } from "./decodedisk"
+import { uint32toBytes } from "./emulator/utility"
+import { crc32 } from "./emulator/decodedisk"
 import { handleGetDriveProps, handleSetDiskData } from "./main2worker"
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'

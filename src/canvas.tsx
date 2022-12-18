@@ -2,9 +2,9 @@ import React, { useEffect, KeyboardEvent } from 'react';
 import { handleGetAltCharSet, handleGetTextPage, handleGetLores, handleGetHires,
   handleGoBackInTime, handleGoForwardInTime,
   handleSetCPUState,
-  handleKeyboardBuffer, handleSetGamePad,
+  handleKeyboardBuffer, handleSetGamepad,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./main2worker"
-import { STATE, getPrintableChar, convertAppleKey } from "./utility"
+import { STATE, getPrintableChar, convertAppleKey } from "./emulator/utility"
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 const xmargin = 0.025
 const ymargin = 0.025
@@ -407,6 +407,34 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
+  const checkGamepad = () => {
+    const gamePads = navigator.getGamepads()
+    let gamePad: EmuGamepad = {
+      connected: false,
+      axes: [],
+      buttons: []
+    }
+    for (let i = 0; i < gamePads.length; i++) {
+      if (gamePads[i]) {
+        const axes = gamePads[i]?.axes
+        const buttons = gamePads[i]?.buttons
+        if (axes && buttons) {
+          gamePad.connected = true
+          for (let i = 0; i < axes.length; i++) {
+            gamePad.axes[i] = axes[i]
+          }
+          for (let i = 0; i < buttons.length; i++) {
+            gamePad.buttons[i] = buttons[i].pressed
+          }
+        }
+        break
+      }        
+    }
+    if (gamePad.connected) {
+      handleSetGamepad(gamePad)
+    }
+  }
+
   // This code only runs once when the component first renders
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
@@ -417,17 +445,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
     // Check for new gamepads on a regular basis
-    const gamepadID = window.setInterval(() => {
-      const gamePads = navigator.getGamepads()
-      let gamePad: Gamepad | null = null
-      for (let i = 0; i < gamePads.length; i++) {
-        if (gamePads[i]) {
-          gamePad = gamePads[i]
-          break
-        }        
-      }
-      handleSetGamePad(gamePad)
-    }, 1000)
+    const gamepadID = window.setInterval(checkGamepad, 34)
     const renderCanvas = () => {
       frameCount++
       if (context) {

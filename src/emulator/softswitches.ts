@@ -1,6 +1,6 @@
 import { memC000 } from "./memory"
 import { popKey } from "./keyboard"
-import { clickSpeaker } from "./speaker"
+import { clickSpeaker } from "../speaker"
 import { resetJoystick, checkJoystickValues } from "./joystick"
 import { toHex } from "./utility"
 
