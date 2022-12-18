@@ -38,6 +38,7 @@ const parseOperand = (operand: string): [MODE, number] => {
 
 let labels: { [key: string]: number } = {};
 
+const doOutput = false
 
 const getInstructionModeValue =
   (pc: number, instr: string, operand: string, pass: 1 | 2): [MODE, number] => {
@@ -97,7 +98,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
       }
 
       if (parts.instr === 'ORG') {
-//        if (pass === 2) console.log(output)
+        if (doOutput && pass === 2) console.log(output)
         return
       }
 
@@ -115,7 +116,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
             return
           }
           labels[parts.label] = value
-          console.log(output)
+          if (doOutput) console.log(output)
           return
         } else {
           labels[parts.label] = pc
@@ -160,7 +161,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
       }
 
       output += '  ' + parts.instr + (hexValue !== '' ? " $" + hexValue : '')
-//      if (pass === 2) console.log(output)
+      if (doOutput && pass === 2) console.log(output)
       instructions.push(...newInstructions)
     }
   });

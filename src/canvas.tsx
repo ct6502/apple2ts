@@ -3,7 +3,7 @@ import { handleGetAltCharSet, handleGetTextPage, handleGetLores, handleGetHires,
   handleGoBackInTime, handleGoForwardInTime,
   handleSetCPUState,
   handleKeyboardBuffer, handleSetGamePad,
-  handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./iworker"
+  handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./main2worker"
 import { STATE, getPrintableChar, convertAppleKey } from "./utility"
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 const xmargin = 0.025
@@ -295,9 +295,11 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const pasteHandler = (e: ClipboardEvent) => {
     if (e.clipboardData) {
-      const data = e.clipboardData.getData("text");
+      let data = e.clipboardData.getData("text");
       if (data !== "") {
-        handleKeyboardBuffer(data.replaceAll(/[”“]/g,'"'));
+        data = data.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
+        data = data.replaceAll('\n','\r')  // LFs to CRs
+        handleKeyboardBuffer(data);
       }
       e.preventDefault();
     }

@@ -8,6 +8,13 @@ export enum STATE {
   PAUSED,
 }
 
+export enum DRIVE {
+  MOTOR_OFF,
+  MOTOR_ON,
+  TRACK_END,
+  TRACK_SEEK,
+}
+
 export enum MODE {
   IMPLIED,  // BRK
   IMM,      // LDA #$01

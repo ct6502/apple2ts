@@ -1,10 +1,8 @@
 import { Buffer } from "buffer"
-import { handlePlayTrackOffEnd, handlePlayTrackSeek,
-  handleMotorOn, handleMotorOff } from "./diskinterface"
-import { passDriveProps } from "./iworkerdisk"
+import { passDriveProps, passDriveSound } from "./emulator/worker2main"
 import { SWITCHES } from "./softswitches"
 import { cycleCount } from './instructions'
-import { toHex } from "./utility"
+import { toHex, DRIVE } from "./utility"
 import { decodeDiskData } from "./decodedisk"
 
 const initDriveState = (): DriveState => {
@@ -26,19 +24,7 @@ let driveState: DriveState[] = [initDriveState(), initDriveState()];
 const diskData = [new Uint8Array(), new Uint8Array()]
 
 let currentDrive = 0
-let motorOffTimeout = 0
-
-export const getFilename = (drive: number) => {
-  if (driveState[drive].filename !== "") {
-    let f = driveState[drive].filename
-    const i = f.lastIndexOf('.')
-    if (i > 0) {
-      f = f.substring(0, i)
-    }
-    return f
-  }
-  return null
-}
+let motorOffTimeout: any = 0
 
 export const getDriveState = () => {
   const driveData = [Buffer.from(diskData[0]).toString("base64"),
@@ -98,7 +84,7 @@ export const doPauseDrive = (resume = false) => {
       startMotor()
     }
   } else {
-    handleMotorOff()
+    passDriveSound(DRIVE.MOTOR_OFF)
   }
 }
 
@@ -109,10 +95,10 @@ const moveHead = (offset: number) => {
   }
   dd.halftrack += offset
   if (dd.halftrack < 0 || dd.halftrack > 68) {
-    handlePlayTrackOffEnd()
+    passDriveSound(DRIVE.TRACK_END)
     dd.halftrack = (dd.halftrack < 0) ? 0 : (dd.halftrack > 68 ? 68 : dd.halftrack)
   } else {
-    handlePlayTrackSeek()
+    passDriveSound(DRIVE.TRACK_SEEK)
   }
   passData()
   // Adjust new track location based on arm position relative to old track loc.
@@ -221,7 +207,7 @@ const doMotorTimeout = () => {
     driveState[currentDrive].motorRunning = false
   }
   passData()
-  handleMotorOff()
+  passDriveSound(DRIVE.MOTOR_OFF)
 }
 
 const startMotor = () => {
@@ -231,12 +217,12 @@ const startMotor = () => {
   }
   driveState[currentDrive].motorRunning = true
   passData()
-  handleMotorOn()
+  passDriveSound(DRIVE.MOTOR_ON)
 }
 
 const stopMotor = () => {
   if (motorOffTimeout === 0) {
-    motorOffTimeout = window.setTimeout(() => doMotorTimeout(), 1000);
+    motorOffTimeout = setTimeout(() => doMotorTimeout(), 1000);
   }
 }
 
@@ -362,11 +348,12 @@ export const handleDriveSoftSwitches =
   return result
 }
 
-export const handleSetDiskData = (drive: number, data: Uint8Array, filename: string) => {
-  diskData[drive] = data
-  driveState[drive].filename = filename
-  if (data.length > 0) {
-    diskData[drive] = decodeDiskData(driveState[drive], diskData[drive])
+export const doSetDriveProps = (props: DriveProps) => {
+  driveState[props.drive] = initDriveState()
+  diskData[props.drive] = new Uint8Array()
+  driveState[props.drive].filename = props.filename
+  if (props.diskData.length > 0) {
+    diskData[props.drive] = decodeDiskData(driveState[props.drive], props.diskData)
   }
   passData()
 }

@@ -9,7 +9,7 @@ const root = createRoot(container);
 root.render(
     <App/>
 );
-// TODO: StrictMode turns on additional debugging
+// StrictMode turns on additional debugging
 // root.render(
 //   <React.StrictMode>
 //     <App/>

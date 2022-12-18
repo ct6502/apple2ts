@@ -1,5 +1,6 @@
 import React from "react"
 import DiskDrive from "./diskdrive"
+import { DRIVE } from "./utility"
 import mp3DriveMotor from './audio/driveMotor.mp3'
 import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'
@@ -46,21 +47,21 @@ const constructAudio = (mp3track: any) => {
   return audioDevice
 }
 
-export const handlePlayTrackOffEnd = () => {
+const playTrackOffEnd = () => {
   if (!trackOffEndAudio) {
     trackOffEndAudio = constructAudio(mp3TrackOffEnd)
   }
   playAudio(trackOffEndAudio, 309)
 }
 
-export const handlePlayTrackSeek = () => {
+const playTrackSeek = () => {
   if (!trackSeekAudio) {
     trackSeekAudio = constructAudio(mp3TrackSeek)
   }
   playAudio(trackSeekAudio, 50)
 }
 
-export const handleMotorOn = () => {
+const playMotorOn = () => {
   if (!motorAudio) {
     motorAudio = constructAudio(mp3DriveMotor)
     motorAudio.element.loop = true
@@ -77,8 +78,25 @@ export const handleMotorOn = () => {
   }
 }
 
-export const handleMotorOff = () => {
+const playMotorOff = () => {
   motorAudio?.element.pause()
+}
+
+export const doPlayDriveSound = (sound: DRIVE) => {
+  switch (sound) {
+    case DRIVE.MOTOR_OFF:
+      playMotorOff()
+      break
+    case DRIVE.MOTOR_ON:
+      playMotorOn()
+      break
+    case DRIVE.TRACK_END:
+      playTrackOffEnd()
+      break
+    case DRIVE.TRACK_SEEK:
+      playTrackSeek()
+      break
+  }
 }
 
 class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {

@@ -1,8 +1,7 @@
 import React from "react"
 import { uint32toBytes } from "./utility"
 import { crc32 } from "./decodedisk"
-import { handleSetDiskData } from "./diskdata"
-import { handleGetDriveProps } from "./iworkerdisk"
+import { handleGetDriveProps, handleSetDiskData } from "./main2worker"
 import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'

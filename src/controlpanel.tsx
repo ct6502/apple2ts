@@ -1,5 +1,5 @@
 import { STATE } from "./utility";
-import { handleSetCPUState } from "./iworker"
+import { handleSetCPUState } from "./main2worker"
 import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {

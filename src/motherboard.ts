@@ -1,5 +1,5 @@
 import { Buffer } from "buffer"
-import { passMachineState, passSaveState } from "./iworker"
+import { passMachineState } from "./emulator/worker2main"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, incrementCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
@@ -11,15 +11,15 @@ import { setButtonState, handleGamePad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 
-const { setInterval } = window
-let timerID: number = 0
-let startTime = performance.now();
+// let timerID: any | number = 0
+let startTime = 0
+let prevTime = 0
 let normalSpeed = true
-const refreshTime = 16.6881
+let speed = 0
+let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
 let cpuState = STATE.IDLE
 let iCycle = 0
-const speed = Array<number>(100).fill(1020)
 let saveTimeSlice = false
 let iSaveState = 0
 let iTempState = 0
@@ -72,9 +72,9 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
   }
 }
 
-export const doRequestSaveState = () => {
-  passSaveState(doGetSaveState())
-}
+// export const doRequestSaveState = () => {
+//   passSaveState(doGetSaveState())
+// }
 
 export const doGetSaveState = () => {
   const state = { state6502: getApple2State(), driveState: getDriveState() }
@@ -82,7 +82,7 @@ export const doGetSaveState = () => {
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
-export const doSetSaveState = (sState: string) => {
+export const doRestoreSaveState = (sState: string) => {
   const state = JSON.parse(sState);
   setApple2State(state.state6502 as SAVEAPPLE2STATE)
   setDriveState(state.driveState)
@@ -97,7 +97,6 @@ const doBoot = () => {
     let pcode = parseAssembly(0x300, code.split("\n"));
     mainMem.set(pcode, 0x300);
   }
-  startTime = performance.now();
   doSetCPUState(STATE.RUNNING)
 }
 
@@ -116,16 +115,10 @@ const doReset = () => {
   doSetCPUState(STATE.RUNNING)
 }
 
-const startCPUTimer = () => {
-  if (timerID) {
-    clearInterval(timerID)
-  }
-  timerID = setInterval(doAdvance6502, normalSpeed ? refreshTime : 0)
-}
-
 export const doSetNormalSpeed = (normal: boolean) => {
   normalSpeed = normal
-  startCPUTimer()
+  refreshTime = normalSpeed ? 16.6881 : 0
+  resetCycleCounter()
 }
 
 export const doGoBackInTime = () => {
@@ -140,7 +133,7 @@ export const doGoBackInTime = () => {
     return
   }
   iTempState = newTmp
-  doSetSaveState(saveStates[newTmp])
+  doRestoreSaveState(saveStates[newTmp])
 }
 
 export const doGoForwardInTime = () => {
@@ -153,7 +146,7 @@ export const doGoForwardInTime = () => {
     return
   }
   iTempState = newTmp
-  doSetSaveState(saveStates[newTmp])
+  doRestoreSaveState(saveStates[newTmp])
 }
 
 export const doSaveTimeSlice = () => {
@@ -162,18 +155,23 @@ export const doSaveTimeSlice = () => {
   saveTimeSlice = true
 }
 
+const resetCycleCounter = () => {
+  iCycle = 0
+  prevTime = performance.now()
+  startTime = prevTime
+}
+
 export const doSetCPUState = (cpuStateIn: STATE) => {
   cpuState = cpuStateIn
   if (cpuState === STATE.PAUSED || cpuState === STATE.RUNNING) {
     doPauseDrive(cpuState === STATE.RUNNING)
   }
   updateExternalMachineState()
-  if (!timerID) {
-    startCPUTimer()
+  resetCycleCounter()
+  if (speed === 0) {
+    doAdvance6502Timer()
   }
 }
-
-cpuState = STATE.IDLE
 
 export const processInstruction = () => {
   let cycles = 0
@@ -223,7 +221,7 @@ export const processInstruction = () => {
 const updateExternalMachineState = () => {
   const state: MachineState = {
     state: cpuState,
-    speed: speed[iCycle] / 1000,
+    speed: speed,
     altChar: SWITCHES.ALTCHARSET.isSet,
     textPage: getTextPage(),
     lores: getTextPage(true),
@@ -234,8 +232,9 @@ const updateExternalMachineState = () => {
 
 const doAdvance6502 = () => {
   const newTime = performance.now()
-  timeDelta = newTime - startTime
-  startTime = newTime;
+  timeDelta = newTime - prevTime
+  if (timeDelta < refreshTime) return
+  prevTime = newTime
   if (cpuState === STATE.IDLE || cpuState === STATE.PAUSED) {
     return;
   }
@@ -256,17 +255,26 @@ const doAdvance6502 = () => {
       break;
     }
   }
-  const newIndex = (iCycle + 1) % speed.length;
-  const currentAvgSpeed = cycleTotal / timeDelta / speed.length
-  speed[newIndex] = speed[iCycle] -
-    speed[newIndex] / speed.length + currentAvgSpeed;
-  iCycle = newIndex
+  iCycle++
+  speed = (iCycle * 17.030) / (performance.now() - startTime)
   updateExternalMachineState()
   handleGamePad()
   if (saveTimeSlice) {
     saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState
     iTempState = iSaveState
+    console.log("iSaveState " + iSaveState)
     saveStates[iSaveState] = doGetSaveState()
   }
+}
+
+const doAdvance6502Timer = () => {
+  doAdvance6502()
+  if (cpuState === STATE.RUNNING) {
+    const iCycleFinish = (iCycle + 9)
+    while (iCycle !== iCycleFinish) {
+      doAdvance6502()
+    }
+  }
+  setTimeout(doAdvance6502Timer, 0)
 }

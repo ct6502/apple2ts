@@ -23,9 +23,7 @@
     "start": "PORT=8097 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "depcruise": "depcruise --config .dependency-cruiser.js src",
-    "architecture": "depcruise --config .dependency-cruiser.js --include-only \"^src\" --output-type dot src | dot -T svg > dependencygraph.svg"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
@@ -44,8 +42,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "dependency-cruiser": "^11.14.1"
   }
 }

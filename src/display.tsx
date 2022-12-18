@@ -1,11 +1,11 @@
-import { handleGetState, handleSetCPUState,
+import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
-  handleSetSaveState, handleGetSaveState, handleGetAltCharSet } from "./iworker"
+  handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
+  handleGetFilename } from "./main2worker"
 import { STATE, getPrintableChar } from "./utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
-import { getFilename } from "./diskdata"
 import React from 'react';
 // import Test from "./components/test";
 
@@ -30,12 +30,19 @@ class DisplayApple2 extends React.Component<{},
   }
 
   updateDisplay = () => {
-//    handleAdvance6502()
+//    this.worker?.postMessage({hello:`${this.time}`});
+//    this.time++
     this.setState( {currentSpeed: handleGetSpeed()} )
   }
 
   componentDidMount() {
-    this.timerID = window.setInterval(() => this.updateDisplay(), this.refreshTime)
+//    this.timerID = window.setInterval(() => this.updateDisplay(), this.refreshTime)
+    setUpdateDisplay(this.updateDisplay)
+// //    this.worker = new Worker('worker2main.js');
+//     this.worker = new Worker(new URL('./emulator/worker', import.meta.url))
+//     this.worker.onmessage = (e) => {
+//       this.time = e.data.time
+//     }
   }
 
   componentWillUnmount() {
@@ -44,6 +51,8 @@ class DisplayApple2 extends React.Component<{},
 
   handleSpeedChange = () => {
     handleSetNormalSpeed(!this.state.speedCheck)
+//    console.log("postMessage...")
+//    this.worker?.postMessage(["a", 1.23]);
 //    window.clearInterval(this.timerID)
 //    this.timerID = window.setInterval(() => this.update6502(),
 //      this.state.speedCheck ? 0 : this.refreshTime)
@@ -66,7 +75,7 @@ class DisplayApple2 extends React.Component<{},
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
-      const restoreSaveStateFunc = handleSetSaveState
+      const restoreSaveStateFunc = handleRestoreSaveState
       fileread.onload = function(e) {
         if (e.target) {
           restoreSaveStateFunc(e.target.result as string)
@@ -85,12 +94,12 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
-  handleFileSave = () => {
-    const blob = new Blob([handleGetSaveState()], {type: "text/plain"});
+  doSaveStateCallback = (state: string) => {
+    const blob = new Blob([state], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    let name = getFilename(0)
+    let name = handleGetFilename(0)
     if (!name) {
       name = "apple2ts"
     }
@@ -102,6 +111,10 @@ class DisplayApple2 extends React.Component<{},
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  handleFileSave = () => {
+    handleGetSaveState(this.doSaveStateCallback)
   }
 
   /**

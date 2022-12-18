@@ -1,6 +1,6 @@
 import { memC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
-import { doSaveTimeSlice } from "./motherboard"
+// import { doSaveTimeSlice } from "./motherboard"
 // import { addToBuffer } from "./keyboard"
 
 let gamePad: Gamepad | null = null
@@ -25,7 +25,7 @@ export const setButtonState = () => {
   SWITCHES.PB0.isSet = (leftAppleDown || leftButtonDown)
   SWITCHES.PB1.isSet = (isRightDown || rightButtonDown)
   if ((isLeftDown && !wasLeftDown) || (isRightDown && !wasRightDown)) {
-    doSaveTimeSlice()
+//    doSaveTimeSlice()
   }
 }
 
@@ -58,7 +58,7 @@ export const checkJoystickValues = (cycleCount: number) => {
     largeDiff(prevPaddle1timeout, paddle1timeout)) {
     prevPaddle0timeout = paddle0timeout
     prevPaddle1timeout = paddle1timeout
-    doSaveTimeSlice()
+//    doSaveTimeSlice()
   }
   const diff = cycleCount - countStart
   memSet1(0xC064, (diff < paddle0timeout) ? 0x80 : 0)

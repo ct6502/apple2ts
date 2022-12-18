@@ -18,15 +18,15 @@ export const getAudioContext = () => {
 
 // https://marcgg.com/blog/2016/11/01/javascript-audio/
 export const clickSpeaker = (cycleCount: number) => {
-  if (getAudioContext().state !== "running") {
-    audioContext.resume();
-  }
-  try {
-    if (speaker) {
-      speaker.port.postMessage(cycleCount)
-    }
-  } catch (error) {
-    console.error("error")
-  }
+  // if (getAudioContext().state !== "running") {
+  //   audioContext.resume();
+  // }
+  // try {
+  //   if (speaker) {
+  //     speaker.port.postMessage(cycleCount)
+  //   }
+  // } catch (error) {
+  //   console.error("error")
+  // }
 };
 

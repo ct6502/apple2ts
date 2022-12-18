@@ -5,9 +5,6 @@ let keyBuffer = ''
 export const popKey = () => {
   if (memC000[0] < 128 && keyBuffer !== '') {
     let key = keyBuffer.charCodeAt(0)
-    if (key === 10) {
-      key = 13
-    }
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
     if (keyBuffer.length === 0) {
