@@ -1,0 +1,26 @@
+{
+  "files": {
+    "main.css": "/apple2ts/static/css/main.7f35a785.css",
+    "main.js": "/apple2ts/static/js/main.2b53178f.js",
+    "static/js/376.e4f8ef8b.chunk.js": "/apple2ts/static/js/376.e4f8ef8b.chunk.js",
+    "static/js/766.cd8d8aa5.chunk.js": "/apple2ts/static/js/766.cd8d8aa5.chunk.js",
+    "static/media/driveMotor.mp3": "/apple2ts/static/media/driveMotor.c3b305104615ef3a178a.mp3",
+    "static/media/disk2on.png": "/apple2ts/static/media/disk2on.7923c2832444f4c52934.png",
+    "static/media/disk2on-empty.png": "/apple2ts/static/media/disk2on-empty.471e9f489a6e1574eb57.png",
+    "static/media/disk2off-empty.png": "/apple2ts/static/media/disk2off-empty.4675a639e3ec84cd1cfe.png",
+    "static/media/Print Char 21 Pro.otf": "/apple2ts/static/media/Print Char 21 Pro.d162d667ce372988c7e6.otf",
+    "static/media/disk2off.png": "/apple2ts/static/media/disk2off.b33d1a161920a49d2dcf.png",
+    "static/media/PR Number 3 Pro.otf": "/apple2ts/static/media/PR Number 3 Pro.ebdefa868db504cf885f.otf",
+    "static/media/driveTrackSeekLong.mp3": "/apple2ts/static/media/driveTrackSeekLong.40995cd7771e5fff122b.mp3",
+    "static/media/driveTrackOffEnd.mp3": "/apple2ts/static/media/driveTrackOffEnd.66bb138ca27c55aa3de6.mp3",
+    "index.html": "/apple2ts/index.html",
+    "main.7f35a785.css.map": "/apple2ts/static/css/main.7f35a785.css.map",
+    "main.2b53178f.js.map": "/apple2ts/static/js/main.2b53178f.js.map",
+    "376.e4f8ef8b.chunk.js.map": "/apple2ts/static/js/376.e4f8ef8b.chunk.js.map",
+    "766.cd8d8aa5.chunk.js.map": "/apple2ts/static/js/766.cd8d8aa5.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7f35a785.css",
+    "static/js/main.2b53178f.js"
+  ]
+}
