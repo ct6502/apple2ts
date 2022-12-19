@@ -21,6 +21,10 @@ export const passMachineState = (state: MachineState) => {
   doPostMessage("MACHINE_STATE", state)
 }
 
+export const passClickSpeaker = (cycleCount: number) => {
+  doPostMessage("CLICK", cycleCount)
+}
+
 export const passDriveProps = (props: DriveProps) => {
   doPostMessage("DRIVE_PROPS", props)
 }

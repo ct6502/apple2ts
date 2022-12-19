@@ -1,5 +1,6 @@
 import { STATE, DRIVE } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
+import { clickSpeaker } from "./speaker"
 
 let worker: Worker | null = null
 
@@ -76,6 +77,9 @@ const doOnMessage = (e: MessageEvent) => {
       saveState = e.data.payload
       saveStateCallback(saveState)
       break;
+    case "CLICK":
+      clickSpeaker(e.data.payload)
+      break
     case "DRIVE_PROPS":
       const props: DriveProps = e.data.payload
       driveProps[props.drive] = props

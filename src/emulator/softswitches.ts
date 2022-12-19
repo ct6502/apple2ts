@@ -1,6 +1,6 @@
 import { memC000 } from "./memory"
 import { popKey } from "./keyboard"
-import { clickSpeaker } from "../speaker"
+import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./joystick"
 import { toHex } from "./utility"
 
@@ -78,7 +78,7 @@ export const SWITCHES = {
   }),
   SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
     memC000.fill(rand(), 0x30, 16)
-    clickSpeaker(cycleCount)
+    passClickSpeaker(cycleCount)
   }),
   EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memC000[0x4F] = 0xCD}),
   TEXT: NewSwitch(0xC050, 0xC01A),
