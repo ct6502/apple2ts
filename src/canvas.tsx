@@ -77,7 +77,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
       }
       let v1 = getPrintableChar(value, isAltCharSet)
-      const v = String.fromCharCode(v1);
+      const v = String.fromCharCode(v1 < 127 ? v1 : (v1 + 0xE000))
       ctx.fillStyle = isColor ? "#FFFFFF" : "#39FF14";
       if (doInverse) {
         // Inverse characters
