@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/apple2ts/static/css/main.7f35a785.css",
-    "main.js": "/apple2ts/static/js/main.2b53178f.js",
+    "main.js": "/apple2ts/static/js/main.679bb9b8.js",
     "static/js/376.e4f8ef8b.chunk.js": "/apple2ts/static/js/376.e4f8ef8b.chunk.js",
     "static/js/766.cd8d8aa5.chunk.js": "/apple2ts/static/js/766.cd8d8aa5.chunk.js",
     "static/media/driveMotor.mp3": "/apple2ts/static/media/driveMotor.c3b305104615ef3a178a.mp3",
@@ -15,12 +15,12 @@
     "static/media/driveTrackOffEnd.mp3": "/apple2ts/static/media/driveTrackOffEnd.66bb138ca27c55aa3de6.mp3",
     "index.html": "/apple2ts/index.html",
     "main.7f35a785.css.map": "/apple2ts/static/css/main.7f35a785.css.map",
-    "main.2b53178f.js.map": "/apple2ts/static/js/main.2b53178f.js.map",
+    "main.679bb9b8.js.map": "/apple2ts/static/js/main.679bb9b8.js.map",
     "376.e4f8ef8b.chunk.js.map": "/apple2ts/static/js/376.e4f8ef8b.chunk.js.map",
     "766.cd8d8aa5.chunk.js.map": "/apple2ts/static/js/766.cd8d8aa5.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.7f35a785.css",
-    "static/js/main.2b53178f.js"
+    "static/js/main.679bb9b8.js"
   ]
 }

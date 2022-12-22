@@ -1,7 +1,7 @@
 class Oscillator extends AudioWorkletProcessor {
-  tick = new Array(128000);
+  tick = new Array(16384);
   index = 0;
-  newIndex = 0;
+  newIndex = 1024;
   prevCycle = 0;
   sampling = 44100/1.020484e6;
   value = 0.1
