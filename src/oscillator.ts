@@ -1,7 +1,7 @@
-class Oscillator extends AudioWorkletProcessor {
-  tick = new Array(16384);
+export class Oscillator extends AudioWorkletProcessor {
+  tick = new Array(128000);
   index = 0;
-  newIndex = 1024;
+  newIndex = 0;
   prevCycle = 0;
   sampling = 44100/1.020484e6;
   value = 0.1
@@ -23,7 +23,7 @@ class Oscillator extends AudioWorkletProcessor {
     }
   }
 
-  process(inputs, outputs, parameters) {
+  process(inputs: any, outputs: any, parameters: any) {
     const channel = outputs[0][0];
     for (let i = 0; i < channel.length; i++) {
       if (this.tick[this.index]) {
