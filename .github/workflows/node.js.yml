@@ -11,6 +11,10 @@ on:
 
 jobs:
   build:
+    env:
+      MY_EMAIL: chris_torrence@comcast.net
+      MY_NAME: Chris Torrence
+      MY_USERNAME: chris-torrence
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,3 +30,7 @@ jobs:
     - run: npm ci
     - run: npm run build
     - run: npm test
+    - run: git config --global user.email $MY_EMAIL
+    - run: git config --global user.name "$MY_NAME"
+    - run: git remote set-url origin https://$MY_USERNAME:${{ secrets.GH_SECRET }}@github.com/chris-torrence/apple2ts.git
+    - run: npm run deploy

@@ -1,3 +1,4 @@
+// Chris Torrence, 2022
 import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,

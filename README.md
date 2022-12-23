@@ -1,4 +1,4 @@
-# Apple II Emulator in Typescript
+# Apple II Emulator in Typescript - Chris Torrence, 2022
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
