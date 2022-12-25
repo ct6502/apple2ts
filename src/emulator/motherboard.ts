@@ -11,6 +11,7 @@ import { memGet, mainMem, auxMem, memC000, getTextPage, getHires } from "./memor
 import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
+import { enableHardDrive, processHardDriveBlockAccess } from "./harddrive"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -93,11 +94,12 @@ export const doRestoreSaveState = (sState: string) => {
 const doBoot = () => {
   mainMem.fill(0xFF)
   auxMem.fill(0x00)
-  doReset()
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
     mainMem.set(pcode, 0x300);
   }
+  enableHardDrive()
+  doReset()
   doSetCPUState(STATE.RUNNING)
 }
 
@@ -186,9 +188,14 @@ export const processInstruction = () => {
   }
   if (code) {
 //    const mainMem1 = mainMem
-//    if (PC1 === 0x4B10) {
-//      doDebug = true
-//    }
+    // HACK
+    if (PC1 === 0xC7EA) {
+      processHardDriveBlockAccess()
+    }
+    // END HACK
+    // if (PC1 >= 0xC700 && PC1 <= 0xC7FF) {
+    //   doDebug = true
+    // }
 //    if (PC1 === 0xFF46) {
 //      doDebug = true
 //    }
@@ -203,6 +210,7 @@ export const processInstruction = () => {
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
     if (doDebug) {
+      if (instr === 0) doDebug = false
       console.log(out)
       if (doDebugZeroPage) {
         debugZeroPage(mainMem.slice(0, 256))
@@ -264,7 +272,7 @@ const doAdvance6502 = () => {
     saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState
     iTempState = iSaveState
-    console.log("iSaveState " + iSaveState)
+//    console.log("iSaveState " + iSaveState)
     saveStates[iSaveState] = doGetSaveState()
   }
 }

@@ -2,7 +2,7 @@ import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { cycleCount } from "./instructions"
 import { handleDriveSoftSwitches } from "./diskdata"
 import { romBase64 } from "./roms/rom_2e"
-import { slot_disk2 } from "./roms/slot_disk2_cx00"
+import { disk2driver } from "./roms/slot_disk2_cx00"
 import { Buffer } from "buffer";
 
 // Bank1 of $D000-$DFFF is stored in mainMem (and auxMem) at 0xC000-0xCFFF
@@ -13,13 +13,17 @@ export let memC000 = new Uint8Array(256)
 const empty = new Uint8Array(256).fill(255)
 let slots = [
   empty,
-  empty, // Buffer.from(slot_omni.replaceAll("\n", ""), "base64"),
   empty,
   empty,
   empty,
-  Buffer.from(slot_disk2.replaceAll("\n", ""), "base64"),
+  empty,
+  disk2driver,
   empty,
 ]
+
+export const setSlotDriver = (slot: number, driver: Uint8Array) => {
+  slots[slot - 1] = driver
+}
 
 const rom = new Uint8Array(
   Buffer.from(romBase64.replaceAll("\n", ""), "base64")

@@ -352,6 +352,7 @@ export const doSetDriveProps = (props: DriveProps) => {
   driveState[props.drive] = initDriveState()
   diskData[props.drive] = new Uint8Array()
   driveState[props.drive].filename = props.filename
+  driveState[props.drive].motorRunning = props.motorRunning
   if (props.diskData.length > 0) {
     diskData[props.drive] = decodeDiskData(driveState[props.drive], props.diskData)
   }

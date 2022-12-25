@@ -153,7 +153,7 @@ export const handleGetDriveProps = (drive: number) => {
 }
 
 export const handleSetDiskData = (drive: number, data: Uint8Array, filename: string) => {
-  const props = initDriveProps()
+  const props = driveProps[drive]
   props.drive = drive
   props.filename = filename
   props.diskData = data
