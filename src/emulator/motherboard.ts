@@ -11,7 +11,7 @@ import { memGet, mainMem, auxMem, memC000, getTextPage, getHires } from "./memor
 import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
-import { enableHardDrive, processHardDriveBlockAccess } from "./harddrive"
+import { enableHardDrive, processHardDriveBlockAccess } from "./harddrivedata"
 
 // let timerID: any | number = 0
 let startTime = 0

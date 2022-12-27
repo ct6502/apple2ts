@@ -79,8 +79,10 @@ type DriveState = {
 }
 
 type DriveProps = {
+  hardDrive: boolean,
   drive: number,
   filename: string,
+  status: string,
   motorRunning: boolean,
   halftrack: number,
   diskHasChanges: boolean,

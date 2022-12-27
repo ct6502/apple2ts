@@ -126,15 +126,17 @@ export const handleGetSaveState = (callback: (state: string) => void) => {
 
 const initDriveProps = (): DriveProps => {
   return {
+    hardDrive: false,
     drive: 0,
     filename: "",
+    status: "",
     halftrack: 0,
     diskHasChanges: false,
     motorRunning: false,
     diskData: new Uint8Array()
   }
 }
-let driveProps: DriveProps[] = [initDriveProps(), initDriveProps()];
+let driveProps: DriveProps[] = [initDriveProps(), initDriveProps(), initDriveProps()];
 
 export const handleGetFilename = (drive: number) => {
   let f = driveProps[drive].filename
@@ -152,8 +154,10 @@ export const handleGetDriveProps = (drive: number) => {
   return driveProps[drive]
 }
 
-export const handleSetDiskData = (drive: number, data: Uint8Array, filename: string) => {
+export const handleSetDiskData = (hardDrive: boolean, drive: number,
+  data: Uint8Array, filename: string) => {
   const props = driveProps[drive]
+  props.hardDrive = hardDrive
   props.drive = drive
   props.filename = filename
   props.diskData = data

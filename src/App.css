@@ -95,19 +95,6 @@ canvas {
   font-size: large;
 }
 
-.fixedwidth {
-  font-family: monospace;
-  font-size: large;
-  width: 5em;
-  position: relative;
-  top: 17px;
-  left: calc(-5em - 2px);
-  margin-right: -4em;
-  margin-bottom: 10px;
-  display: inline-block;
-  text-align: right;
-}
-
 .small {
   font-size: small;
 }
@@ -138,13 +125,46 @@ button:disabled {
   cursor: default;
 }
 
+.drives {
+  display: flex;
+  flex-direction: row;
+}
+
+.drive {
+  display: flex;
+  flex-direction: column;
+}
+
 .disk2 {
   width: 120px;
   height: 69px;
   border: 1px solid #000;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
   margin-left: 5px;
+  margin-right: 5px;
   margin-top: 10px;
 }
 
+.harddrive {
+  border: 1px solid #555;
+  height: auto;
+  margin-right: 7px;
+}
+
+.fixedAlignRight {
+  width: 120px;
+  height: 1.5em;
+  font-family: monospace;
+  font-size: large;
+  margin-right: 4pt;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.fixedSmall {
+  margin-left: 0.5em;
+  font-size: small;
+}

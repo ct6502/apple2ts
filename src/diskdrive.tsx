@@ -23,11 +23,11 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
 
 const readDisk = async (file: File, drive: number) => {
   const buffer = await file.arrayBuffer();
-  handleSetDiskData(drive, new Uint8Array(buffer), file.name)
+  handleSetDiskData(false, drive, new Uint8Array(buffer), file.name)
 }
 
 const resetDrive = (drive: number) => {
-  handleSetDiskData(drive, new Uint8Array(), "")
+  handleSetDiskData(false, drive, new Uint8Array(), "")
 }
 
 class DiskDrive extends React.Component<{drive: number}, {}> {
@@ -68,11 +68,11 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
     (dprops.motorRunning ? disk2onEmpty : disk2offEmpty)
     const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
     return (
-      <span>
+      <span className="drive">
         <img className="disk2" src={img1} alt={filename}
           title={filename}
           onClick={() => {
-            if (dprops.diskData.length > 0) {
+            if (dprops.filename.length > 0) {
               if (dprops.diskHasChanges) {
                 downloadDisk(dprops.diskData, filename)
               }
@@ -94,7 +94,7 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
           }}
           style={{display: 'none'}}
         />
-        <span className="fixedwidth">{dprops.halftrack / 2}</span>
+        <span className="fixedAlignRight">{dprops.status}</span>
       </span>
     )
   }

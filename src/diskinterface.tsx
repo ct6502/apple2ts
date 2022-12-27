@@ -1,5 +1,6 @@
 import React from "react"
 import DiskDrive from "./diskdrive"
+import HardDrive from "./harddrive"
 import { DRIVE } from "./emulator/utility"
 import mp3DriveMotor from './audio/driveMotor.mp3'
 import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
@@ -106,7 +107,8 @@ class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
     }
     return (
       <span>
-        <span>
+        <span className="drives">
+          <HardDrive drive={2}/>
           <DiskDrive drive={0}/>
           <DiskDrive drive={1}/>
         </span>

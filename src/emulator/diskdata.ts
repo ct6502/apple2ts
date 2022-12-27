@@ -35,8 +35,10 @@ export const getDriveState = () => {
 const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
     const dprops: DriveProps = {
+      hardDrive: false,
       drive: i,
       filename: driveState[i].filename,
+      status: (driveState[i].halftrack / 2).toString(),
       motorRunning: driveState[i].motorRunning,
       halftrack: driveState[i].halftrack,
       diskHasChanges: driveState[i].diskHasChanges,
