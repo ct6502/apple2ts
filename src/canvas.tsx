@@ -472,6 +472,9 @@ const Apple2Canvas = (props: DisplayProps) => {
     onMouseEnter={() => {
       props.myCanvas.current?.focus()
     }}
+    onMouseDown={() => {
+      props.myCanvas.current?.focus()
+    }}
     />
 };
 
