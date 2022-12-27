@@ -4,6 +4,7 @@ import { passDriveProps } from "./worker2main"
 
 let currentDrive = 0
 let timerID: any | number = 0
+const driverAddress = 0xC7EA
 
 const code1 = `
          LDX   #$20
@@ -21,12 +22,17 @@ const code1 = `
          STA   $46
          STA   $47
          JSR   $C7EA
+         BCS   ERROR
          LDX   #$70
          JMP   $801
+ERROR    JMP   $E000
 `
 const code2 = `
          CLC
          LDA   #$00
+         RTS
+         SEC         ; addr + 4
+         LDA   #$27
          RTS
 `
 const prodos8driver = () => {
@@ -72,6 +78,8 @@ const decodeDiskData = (driveState: DriveProps, diskData: Uint8Array): Uint8Arra
 export const doSetHardDriveProps = (props: DriveProps) => {
   currentDrive = props.drive
   driveState[props.drive] = initDriveProps()
+  driveState[props.drive].hardDrive = props.hardDrive
+  driveState[props.drive].drive = props.drive
   driveState[props.drive].diskData = new Uint8Array()
   driveState[props.drive].status = props.filename
   driveState[props.drive].filename = props.filename
@@ -84,17 +92,19 @@ export const doSetHardDriveProps = (props: DriveProps) => {
 
 const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
-    const dprops: DriveProps = {
-      hardDrive: true,
-      drive: i,
-      filename: driveState[i].filename,
-      status: driveState[i].status,
-      motorRunning: driveState[i].motorRunning,
-      halftrack: driveState[i].halftrack,
-      diskHasChanges: driveState[i].diskHasChanges,
-      diskData: new Uint8Array()
+    if (driveState[i].hardDrive) {
+      const dprops: DriveProps = {
+        hardDrive: true,
+        drive: i,
+        filename: driveState[i].filename,
+        status: driveState[i].status,
+        motorRunning: driveState[i].motorRunning,
+        halftrack: driveState[i].halftrack,
+        diskHasChanges: driveState[i].diskHasChanges,
+        diskData: new Uint8Array()
+      }
+      passDriveProps(dprops)
     }
-    passDriveProps(dprops)
   }
 }
 
@@ -105,9 +115,10 @@ const motorTimeout = () => {
 }
 
 export const processHardDriveBlockAccess = () => {
+  let result = driverAddress
   if (mainMem[0x43] !== 0x70) {
     console.log("illegal value in 0x42: " + mainMem[0x43])
-    return
+    return result
   }
   switch (mainMem[0x42]) {
     case 0:
@@ -117,12 +128,16 @@ export const processHardDriveBlockAccess = () => {
       const block = mainMem[0x46] + 256 * mainMem[0x47]
       const blockStart = 512 * block
       const addr = mainMem[0x44] + 256 * mainMem[0x45]
+      if (driveState[currentDrive].filename.length === 0 && addr === 0x800) {
+        result += 4
+      }
       const data = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
       mainMem.set(data, addr)
       driveState[currentDrive].motorRunning = true
       if (!timerID) {
         timerID = setTimeout(motorTimeout, 500)
       }
+      console.log(`addr = ${addr}`)
       passData()
       break;
     case 2:
@@ -135,4 +150,5 @@ export const processHardDriveBlockAccess = () => {
       console.log("unknown hard drive command")
       break;
   }
+  return result
 }

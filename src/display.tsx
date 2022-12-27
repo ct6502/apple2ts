@@ -188,10 +188,10 @@ class DisplayApple2 extends React.Component<{},
         <span className="apple2" style={{width:width}}>
           <Apple2Canvas {...props}/>
           <br />
-          <span className="leftStatus">
-            <ControlPanel {...props}/>
+          <span className="controlBar">
+              <ControlPanel {...props}/>
+              <DiskInterface speedCheck={this.state.speedCheck}/>
           </span>
-          <span><DiskInterface speedCheck={this.state.speedCheck}/></span>
         </span>
         {/* <span className="statusPanel fixed small">
           {getStatuss6502, stack, mainMem.slice(0, 512))}

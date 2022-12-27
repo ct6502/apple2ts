@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
-  incrementPC, cycleCount, incrementCycleCount } from "./instructions"
+  incrementPC, cycleCount, incrementCycleCount, setPC } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
 // import { slot_omni } from "./roms/slot_omni_cx00"
@@ -178,7 +178,7 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
 
 export const processInstruction = () => {
   let cycles = 0
-  const PC1 = s6502.PC
+  let PC1 = s6502.PC
   const instr = memGet(s6502.PC)
   const vLo = s6502.PC < 0xFFFF ? memGet(s6502.PC + 1) : 0
   const vHi = s6502.PC < 0xFFFE ? memGet(s6502.PC + 2) : 0
@@ -190,11 +190,15 @@ export const processInstruction = () => {
 //    const mainMem1 = mainMem
     // HACK
     if (PC1 === 0xC7EA) {
-      processHardDriveBlockAccess()
+      PC1 = processHardDriveBlockAccess()
+      if (PC1 !== s6502.PC) {
+        setPC(PC1)
+        return 0
+      }
     }
     // END HACK
     // if (PC1 >= 0xC700 && PC1 <= 0xC7FF) {
-    //   doDebug = true
+    //    doDebug = true
     // }
 //    if (PC1 === 0xFF46) {
 //      doDebug = true
@@ -255,10 +259,6 @@ const doAdvance6502 = () => {
   let cycleTotal = 0
   while (true) {
     const cycles = processInstruction();
-    if (cycles === 0) {
-      doSetCPUState(STATE.PAUSED)
-      return;
-    }
     cycleTotal += cycles;
     if (cycleTotal >= 17030) {
       break;
