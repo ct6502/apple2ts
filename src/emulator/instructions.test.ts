@@ -1,7 +1,7 @@
 import { toHex } from "./utility"
 import { processInstruction } from "./motherboard";
 import { mainMem } from "./memory";
-import { reset6502, doBranch, s6502, setPC, isBreak, setBreak, setInterrupt } from "./instructions";
+import { reset6502, doBranch, s6502, setPC, isBreak, setInterrupt } from "./instructions";
 import { parseAssembly } from "./assembler";
 
 test('doBranch', () => {

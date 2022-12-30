@@ -55,6 +55,12 @@ type DisplayProps = {
   handleFileSave: () => void,
 }
 
+type DebugProps = {
+  breakpoint: string,
+  handleBreakpoint: (bp: string) => void,
+  handleStepOnce: () => void,
+}
+
 type MachineState = {
   state: STATE,
   speed: number,

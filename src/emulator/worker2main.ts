@@ -1,6 +1,6 @@
-import { doSetCPUState,
+import { doSetCPUState, doSetBreakpoint,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
-  doGoBackInTime, doGoForwardInTime } from "./motherboard";
+  doGoBackInTime, doGoForwardInTime, doStepOnce } from "./motherboard";
 import { doSetDriveProps } from "./diskdata"
 import { doSetHardDriveProps } from "./harddrivedata"
 import { addToBuffer } from "./keyboard"
@@ -42,6 +42,12 @@ self.onmessage = (e: MessageEvent) => {
   switch (e.data.msg) {
     case "STATE":
       doSetCPUState(e.data.payload)
+      break;
+    case "BREAKPOINT":
+      doSetBreakpoint(e.data.payload)
+      break;
+    case "STEP_ONCE":
+      doStepOnce()
       break;
     case "SPEED":
       doSetNormalSpeed(e.data.payload)

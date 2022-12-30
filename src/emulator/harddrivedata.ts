@@ -1,5 +1,6 @@
 import { parseAssembly } from "./assembler"
 import { setSlotDriver, mainMem } from "./memory"
+import { SWITCHES } from "./softswitches"
 import { passDriveProps } from "./worker2main"
 
 let currentDrive = 0
@@ -14,16 +15,26 @@ const code1 = `
          STA   $42
          LDA   #$70
          STA   $43
-         LDA   #$00
-         STA   $44
          LDA   #$08
          STA   $45
          LDA   #$00
+         STA   $44
          STA   $46
          STA   $47
          JSR   $C7EA
          BCS   ERROR
-         LDX   #$70
+         LDA   #$0A
+         STA   $45
+         LDA   #$01
+         STA   $46
+         JSR   $C7EA
+         BCS   ERROR
+         LDA   $0801
+         BEQ   ERROR
+         LDA   #$01
+         CMP   $0800
+         BNE   ERROR
+         LDX   $43
          JMP   $801
 ERROR    JMP   $E000
 `
@@ -115,40 +126,55 @@ const motorTimeout = () => {
 }
 
 export const processHardDriveBlockAccess = () => {
-  let result = driverAddress
+  const result = driverAddress
   if (mainMem[0x43] !== 0x70) {
     console.log("illegal value in 0x42: " + mainMem[0x43])
     return result
   }
+  if (driveState[currentDrive].filename.length === 0) {
+    return result + 4
+  }
+  const block = mainMem[0x46] + 256 * mainMem[0x47]
+  const blockStart = 512 * block
+  let addr = mainMem[0x44] + 256 * mainMem[0x45]
+  console.log(`cmd=${mainMem[0x42]} addr=${addr.toString(16)} block=${block.toString(16)}`)
+  if (addr >= 0xD000 && addr <= 0xDFFF) {
+    // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
+    if (!SWITCHES.BSRBANK2.isSet) {
+      addr -= 0x1000
+    }
+  }
+
   switch (mainMem[0x42]) {
     case 0:
       console.log("status")
       break;
     case 1:
-      const block = mainMem[0x46] + 256 * mainMem[0x47]
-      const blockStart = 512 * block
-      const addr = mainMem[0x44] + 256 * mainMem[0x45]
-      if (driveState[currentDrive].filename.length === 0 && addr === 0x800) {
-        result += 4
+      if (blockStart + 512 > driveState[currentDrive].diskData.length) {
+        console.error("block start > harddisk length")
       }
-      const data = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
-      mainMem.set(data, addr)
-      driveState[currentDrive].motorRunning = true
-      if (!timerID) {
-        timerID = setTimeout(motorTimeout, 500)
-      }
-      console.log(`addr = ${addr}`)
-      passData()
+      const dataRead = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
+      mainMem.set(dataRead, addr)
       break;
     case 2:
-      console.log("write")
+      if (blockStart + 512 > driveState[currentDrive].diskData.length) {
+        console.error("block start > harddisk length")
+      }
+      const dataWrite = mainMem.slice(addr, addr + 512)
+      driveState[currentDrive].diskData.set(dataWrite, blockStart)
       break;
     case 3:
       console.log("format")
       break;
     default:
       console.log("unknown hard drive command")
-      break;
+      return result + 4
   }
+
+  driveState[currentDrive].motorRunning = true
+  if (!timerID) {
+    timerID = setTimeout(motorTimeout, 500)
+  }
+  passData()
   return result
 }

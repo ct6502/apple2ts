@@ -13,7 +13,7 @@ export let s6502: STATE6502 = {
 
 export let cycleCount = 0
 
-export const incrementCycleCount = (cycles: number) => cycleCount += cycles
+export const setCycleCount = (cycles: number) => { cycleCount = cycles }
 
 export const set6502State = (new6502: any) => {
   s6502 = new6502
@@ -24,7 +24,7 @@ export const reset6502 = () => {
   s6502.XReg = 0
   s6502.YReg = 0
   s6502.PStatus = 0b00100100
-  s6502.PC = 0xFF
+  s6502.StackPtr = 0xFF
   setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
 }
 
@@ -76,7 +76,7 @@ const setDecimal = (set = true) => s6502.PStatus = set ? s6502.PStatus | 8 :
   s6502.PStatus & 0b11110111
 
 export const isBreak = () => { return ((s6502.PStatus & 0x10) !== 0); }
-export const setBreak = (set = true) => s6502.PStatus = set ? s6502.PStatus | 0x10 :
+const setBreak = (set = true) => s6502.PStatus = set ? s6502.PStatus | 0x10 :
   s6502.PStatus & 0b11101111
 
 const isOverflow = () => { return ((s6502.PStatus & 0x40) !== 0); }
@@ -468,7 +468,7 @@ PCODE('ORA', MODE.IND_Y, 0x11, 2, (vZP) => doIndirectYinstruction(vZP, doORA, fa
 PCODE('ORA', MODE.IND, 0x12, 2, (vZP) => doIndirectInstruction(vZP, doORA, false))
 
 PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack("A", s6502.Accum); return 3})
-PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack("S", s6502.PStatus); return 3})
+PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {setBreak(); pushStack("S", s6502.PStatus); return 3})
 PCODE('PHX', MODE.IMPLIED, 0xDA, 1, () => {pushStack("X", s6502.XReg); return 3})
 PCODE('PHY', MODE.IMPLIED, 0x5A, 1, () => {pushStack("Y", s6502.YReg); return 3})
 PCODE('PLA', MODE.IMPLIED, 0x68, 1, () => {s6502.Accum = popStack(); checkStatus(s6502.Accum); return 4})

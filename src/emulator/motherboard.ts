@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
-  incrementPC, cycleCount, incrementCycleCount, setPC } from "./instructions"
+  incrementPC, cycleCount, setCycleCount, setPC } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
 // import { slot_omni } from "./roms/slot_omni_cx00"
@@ -21,7 +21,7 @@ let speed = 0
 let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
 let cpuState = STATE.IDLE
-let iCycle = 0
+let iRefresh = 0
 let saveTimeSlice = false
 let iSaveState = 0
 let iTempState = 0
@@ -33,6 +33,7 @@ let doDebug = false
 let doDebugZeroPage = false
 const instrTrail = new Array<string>(1000)
 let posTrail = 0
+let breakpoint = 0
 
 const getApple2State = (): SAVEAPPLE2STATE => {
   const softSwitches: { [name: string]: boolean } = {}
@@ -92,15 +93,15 @@ export const doRestoreSaveState = (sState: string) => {
 }
 
 const doBoot = () => {
+  setCycleCount(0)
   mainMem.fill(0xFF)
-  auxMem.fill(0x00)
+  auxMem.fill(0xFF)
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
     mainMem.set(pcode, 0x300);
   }
   enableHardDrive()
   doReset()
-  doSetCPUState(STATE.RUNNING)
 }
 
 const doReset = () => {
@@ -115,13 +116,12 @@ const doReset = () => {
   reset6502()
   doResetDrive()
   setButtonState()
-  doSetCPUState(STATE.RUNNING)
 }
 
 export const doSetNormalSpeed = (normal: boolean) => {
   normalSpeed = normal
   refreshTime = normalSpeed ? 16.6881 : 0
-  resetCycleCounter()
+  resetRefreshCounter()
 }
 
 export const doGoBackInTime = () => {
@@ -158,8 +158,18 @@ export const doSaveTimeSlice = () => {
   saveTimeSlice = true
 }
 
-const resetCycleCounter = () => {
-  iCycle = 0
+export const doStepOnce = () => {
+  doDebug = true
+  if (cpuState === STATE.IDLE) {
+    doBoot()
+  }
+  processInstruction(true)
+  cpuState = STATE.PAUSED
+  updateExternalMachineState()
+}
+
+const resetRefreshCounter = () => {
+  iRefresh = 0
   prevTime = performance.now()
   startTime = prevTime
 }
@@ -170,13 +180,18 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
     doPauseDrive(cpuState === STATE.RUNNING)
   }
   updateExternalMachineState()
-  resetCycleCounter()
+  resetRefreshCounter()
   if (speed === 0) {
     doAdvance6502Timer()
   }
 }
 
-export const processInstruction = () => {
+export const doSetBreakpoint = (breakpt: number) => {
+  breakpoint = breakpt
+  if (breakpoint !== 0) doDebug = true
+}
+
+export const processInstruction = (step = false) => {
   let cycles = 0
   let PC1 = s6502.PC
   const instr = memGet(s6502.PC)
@@ -188,8 +203,18 @@ export const processInstruction = () => {
   }
   if (code) {
 //    const mainMem1 = mainMem
+    if (PC1 === breakpoint && !step) {
+      cpuState = STATE.PAUSED
+      return -1
+    }
     // HACK
-    if (PC1 === 0xC7EA) {
+    // if (PC1 === 0xFA62 && cycleCount > 10000) {
+    //   doDebug = true
+    // }
+    // if (PC1 === 0xC700) {
+    //   doDebug = false
+    // }
+    if (PC1 === 0xC7EA && !SWITCHES.INTCXROM.isSet) {
       PC1 = processHardDriveBlockAccess()
       if (PC1 !== s6502.PC) {
         setPC(PC1)
@@ -198,11 +223,14 @@ export const processInstruction = () => {
     }
     // END HACK
     // if (PC1 >= 0xC700 && PC1 <= 0xC7FF) {
+    //     doDebug = true
+    // }
+    // if (PC1 === 0x22E8) {
+    //   doDebug = false
+    // }
+    // if (PC1 === 0xD229) {
     //    doDebug = true
     // }
-//    if (PC1 === 0xFF46) {
-//      doDebug = true
-//    }
     cycles = code.execute(vLo, vHi)
     let out = '----'
     // Do not output during the Apple II's WAIT subroutine
@@ -214,6 +242,7 @@ export const processInstruction = () => {
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
     if (doDebug) {
+//      const mem = mainMem.slice(0, 256)
       if (instr === 0) doDebug = false
       console.log(out)
       if (doDebugZeroPage) {
@@ -225,7 +254,7 @@ export const processInstruction = () => {
     //   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
     //   console.log("stop!!!")
     // }
-    incrementCycleCount(cycles)
+    setCycleCount(cycleCount + cycles)
     incrementPC(code.PC)
   }
   return cycles
@@ -253,19 +282,22 @@ const doAdvance6502 = () => {
   }
   if (cpuState === STATE.NEED_BOOT) {
     doBoot();
+    doSetCPUState(STATE.RUNNING)
   } else if (cpuState === STATE.NEED_RESET) {
     doReset();
+    doSetCPUState(STATE.RUNNING)
   }
   let cycleTotal = 0
   while (true) {
     const cycles = processInstruction();
+    if (cycles < 0) break
     cycleTotal += cycles;
     if (cycleTotal >= 17030) {
       break;
     }
   }
-  iCycle++
-  speed = (iCycle * 17.030) / (performance.now() - startTime)
+  iRefresh++
+  speed = (iRefresh * 17.030) / (performance.now() - startTime)
   updateExternalMachineState()
   handleGamepad()
   if (saveTimeSlice) {
@@ -279,11 +311,9 @@ const doAdvance6502 = () => {
 
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  if (cpuState === STATE.RUNNING) {
-    const iCycleFinish = (iCycle + 9)
-    while (iCycle !== iCycleFinish) {
-      doAdvance6502()
-    }
+  const iRefreshFinish = (iRefresh + 9)
+  while (cpuState === STATE.RUNNING && iRefresh !== iRefreshFinish) {
+    doAdvance6502()
   }
   setTimeout(doAdvance6502Timer, 0)
 }

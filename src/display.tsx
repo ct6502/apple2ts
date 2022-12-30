@@ -1,20 +1,22 @@
 // Chris Torrence, 2022
 import { setUpdateDisplay, handleGetState, handleSetCPUState,
-  handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
+  handleSetBreakpoint, handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename } from "./main2worker"
+  handleGetFilename, handleStepOnce } from "./main2worker"
 import { STATE, getPrintableChar } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
 import React from 'react';
+import DebugPanel from "./debugpanel"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
   { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
-    isColor: boolean }> {
+    isColor: boolean;
+    breakpoint: string }> {
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
@@ -27,6 +29,7 @@ class DisplayApple2 extends React.Component<{},
       speedCheck: true,
       uppercase: true,
       isColor: true,
+      breakpoint: '',
     };
   }
 
@@ -66,6 +69,11 @@ class DisplayApple2 extends React.Component<{},
 
   handleColorChange = () => {
     this.setState({ isColor: !this.state.isColor });
+  };
+
+  handleBreakpoint = (breakpoint: string) => {
+    handleSetBreakpoint(parseInt(breakpoint ? breakpoint : '0', 16))
+    this.setState({ breakpoint: breakpoint });
   };
 
   handleUpperCaseChange = () => {
@@ -176,6 +184,11 @@ class DisplayApple2 extends React.Component<{},
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
     }
+    const debugProps: DebugProps = {
+      breakpoint: this.state.breakpoint,
+      handleBreakpoint: this.handleBreakpoint,
+      handleStepOnce: handleStepOnce,
+    }
 
     const ctx = props.myCanvas.current?.getContext("2d")
     let width = 1280
@@ -192,6 +205,8 @@ class DisplayApple2 extends React.Component<{},
               <ControlPanel {...props}/>
               <DiskInterface speedCheck={this.state.speedCheck}/>
           </span>
+          <br />
+          <DebugPanel {...debugProps}/>
         </span>
         {/* <span className="statusPanel fixed small">
           {getStatuss6502, stack, mainMem.slice(0, 512))}

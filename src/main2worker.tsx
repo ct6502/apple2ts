@@ -23,6 +23,14 @@ export const handleSetCPUState = (state: STATE) => {
   doPostMessage("STATE", state)
 }
 
+export const handleSetBreakpoint = (breakpoint: number) => {
+  doPostMessage("BREAKPOINT", breakpoint)
+}
+
+export const handleStepOnce = () => {
+  doPostMessage("STEP_ONCE", true)
+}
+
 export const handleSetNormalSpeed = (normal: boolean) => {
   doPostMessage("SPEED", normal)
 }
