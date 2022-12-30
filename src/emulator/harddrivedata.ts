@@ -1,6 +1,5 @@
 import { parseAssembly } from "./assembler"
-import { setSlotDriver, mainMem } from "./memory"
-import { SWITCHES } from "./softswitches"
+import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { passDriveProps } from "./worker2main"
 
 let currentDrive = 0
@@ -127,25 +126,19 @@ const motorTimeout = () => {
 
 export const processHardDriveBlockAccess = () => {
   const result = driverAddress
-  if (mainMem[0x43] !== 0x70) {
-    console.log("illegal value in 0x42: " + mainMem[0x43])
-    return result
+  if (memGet(0x43) !== 0x70) {
+    console.log("illegal value in 0x42: " + memGet(0x43))
+    return result + 4
   }
   if (driveState[currentDrive].filename.length === 0) {
     return result + 4
   }
-  const block = mainMem[0x46] + 256 * mainMem[0x47]
+  const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
-  let addr = mainMem[0x44] + 256 * mainMem[0x45]
-  console.log(`cmd=${mainMem[0x42]} addr=${addr.toString(16)} block=${block.toString(16)}`)
-  if (addr >= 0xD000 && addr <= 0xDFFF) {
-    // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
-    if (!SWITCHES.BSRBANK2.isSet) {
-      addr -= 0x1000
-    }
-  }
+  let addr = memGet(0x44) + 256 * memGet(0x45)
+  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
 
-  switch (mainMem[0x42]) {
+  switch (memGet(0x42)) {
     case 0:
       console.log("status")
       break;
@@ -154,13 +147,13 @@ export const processHardDriveBlockAccess = () => {
         console.error("block start > harddisk length")
       }
       const dataRead = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
-      mainMem.set(dataRead, addr)
+      setDataBlock(addr, dataRead)
       break;
     case 2:
       if (blockStart + 512 > driveState[currentDrive].diskData.length) {
         console.error("block start > harddisk length")
       }
-      const dataWrite = mainMem.slice(addr, addr + 512)
+      const dataWrite = getDataBlock(addr)
       driveState[currentDrive].diskData.set(dataWrite, blockStart)
       break;
     case 3:

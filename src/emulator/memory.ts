@@ -38,6 +38,24 @@ const rom = new Uint8Array(
 
 // let nn = 0
 
+export const readWriteAuxMem = (addr: number, write = false) => {
+  let useAux = write ? SWITCHES.RAMWRT.isSet : SWITCHES.RAMRD.isSet
+  if (addr <= 0x1FF || addr >= 0xC000) {
+    useAux = SWITCHES.ALTZP.isSet
+  } else if (addr >= 0x400 && addr <= 0x7FF) {
+    if (SWITCHES.STORE80.isSet) {
+      useAux = SWITCHES.PAGE2.isSet
+    }
+  } else if (addr >= 0x2000 && addr <= 0x3FFF) {
+    if (SWITCHES.STORE80.isSet) {
+      if (SWITCHES.HIRES.isSet) {
+        useAux = SWITCHES.PAGE2.isSet
+      }
+    }
+  }
+  return useAux
+}
+
 const memGetSoftSwitch = (addr: number, code=0): number => {
   // $C019 Vertical blanking status (0 = vertical blanking, 1 = beam on)
   if (addr === 0xC019) {
@@ -88,6 +106,14 @@ const memGetBankC000 = (addr: number): number => {
   return slots[slot][addr - 0xC100 - 256 * slot]
 }
 
+const bankRamAdjust = (addr: number) => {
+  // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
+  if (addr >= 0xD000 && addr <= 0xDFFF && !SWITCHES.BSRBANK2.isSet) {
+    addr -= 0x1000
+  }
+  return addr
+}
+
 export const memGet = (addr: number, code=0): number => {
   if (addr >= 0xC000 && addr <= 0xC0FF) {
     return memGetSoftSwitch(addr, code)
@@ -99,29 +125,10 @@ export const memGet = (addr: number, code=0): number => {
     if (!SWITCHES.BSRREADRAM.isSet) {
       return rom[addr - 0xC000]
     }
-    // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
-    if (addr <= 0xDFFF && !SWITCHES.BSRBANK2.isSet) {
-      addr -= 0x1000
-    }
+    addr = bankRamAdjust(addr)
   }
 
-  let readAuxMem = SWITCHES.RAMRD.isSet
-
-  if (addr <= 0x1FF || addr >= 0xC000) {
-    readAuxMem = SWITCHES.ALTZP.isSet
-  } else if (addr >= 0x400 && addr <= 0x7FF) {
-    if (SWITCHES.STORE80.isSet) {
-      readAuxMem = SWITCHES.PAGE2.isSet
-    }
-  } else if (addr >= 0x2000 && addr <= 0x3FFF) {
-    if (SWITCHES.STORE80.isSet) {
-      if (SWITCHES.HIRES.isSet) {
-        readAuxMem = SWITCHES.PAGE2.isSet
-      }
-    }
-  }
-
-  return (readAuxMem ? auxMem[addr] : mainMem[addr])
+  return (readWriteAuxMem(addr) ? auxMem[addr] : mainMem[addr])
 }
 
 export const memSet = (addr: number, value: number) => {
@@ -143,29 +150,10 @@ export const memSet = (addr: number, value: number) => {
     if (!writeRAM) {
       return
     }
-    // Bank1 of $D000-$DFFF is stored in $C000, so adjust address if necessary
-    if (addr <= 0xDFFF && !SWITCHES.BSRBANK2.isSet) {
-      addr -= 0x1000
-    }
+    addr = bankRamAdjust(addr)
   }
 
-  let writeAuxMem = SWITCHES.RAMWRT.isSet
-
-  if (addr <= 0x1FF || addr >= 0xC000) {
-    writeAuxMem = SWITCHES.ALTZP.isSet
-  } else if (addr >= 0x400 && addr <= 0x7FF) {
-    if (SWITCHES.STORE80.isSet) {
-      writeAuxMem = SWITCHES.PAGE2.isSet
-    }
-  } else if (addr >= 0x2000 && addr <= 0x3FFF) {
-    if (SWITCHES.STORE80.isSet) {
-      if (SWITCHES.HIRES.isSet) {
-        writeAuxMem = SWITCHES.PAGE2.isSet
-      }
-    }
-  }
-
-  if (writeAuxMem) {
+  if (readWriteAuxMem(addr, true)) {
     auxMem[addr] = value
   } else {
     mainMem[addr] = value
@@ -249,5 +237,23 @@ export function getHires() {
       hgrPage.set(mainMem.slice(addr, addr + 40), j * 40)
     }
     return hgrPage
+  }
+}
+
+export const getDataBlock = (addr: number) => {
+  const doAux = readWriteAuxMem(addr, true)
+  addr = bankRamAdjust(addr)
+  const result = doAux ?
+    mainMem.slice(addr, addr + 512) : auxMem.slice(addr, addr + 512)
+  return result
+}
+
+export const setDataBlock = (addr: number, data: Uint8Array) => {
+  const doAux = readWriteAuxMem(addr, true)
+  addr = bankRamAdjust(addr)
+  if (doAux) {
+    auxMem.set(data, addr)
+  } else {
+    mainMem.set(data, addr)
   }
 }
