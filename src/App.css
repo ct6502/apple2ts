@@ -83,8 +83,6 @@ canvas {
 textarea {
   grid-column: 1;
   grid-row: 1;
-  width: 400px;
-  height: 300px;
   opacity: 0;
 }
 
@@ -171,8 +169,8 @@ button:disabled {
 }
 
 .disk2 {
-  width: 120px;
-  height: 69px;
+  width: 100px;
+  height: 57px;
   border: 1px solid #000;
   border-radius: 5px;
   cursor: pointer;

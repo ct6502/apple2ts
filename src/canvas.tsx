@@ -304,8 +304,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D) => {
-    width = 400;//window.innerWidth - 40;
+  const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D, text: HTMLTextAreaElement | null) => {
+    width = window.innerWidth - 40;
     height = window.innerHeight - 160;
     // shrink either width or height to preserve aspect ratio
     if (width / screenRatio > height) {
@@ -318,6 +318,10 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
       ctx.canvas.width = width;
       ctx.canvas.height = height;
+    }
+    if (text) {
+      text.style.width = width + "px"
+      text.style.height = height + "px"
     }
   }
 
@@ -448,7 +452,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     const renderCanvas = () => {
       frameCount++
       if (context) {
-        resizeCanvasToDisplaySize(context)
+        resizeCanvasToDisplaySize(context, myText.current)
         processDisplay(context, props.isColor)
       }
       animationFrameId = window.requestAnimationFrame(renderCanvas)
@@ -461,7 +465,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, [props.myCanvas, props.isColor]);
+  }, [props.myCanvas, props.isColor, myText]);
 
   return <span className="canvasText"><canvas ref={props.myCanvas}
     height={height} width={width}
