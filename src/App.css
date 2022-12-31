@@ -68,10 +68,24 @@ body {
   /* width: 1240px; */
 }
 
+.canvasText {
+  display: grid
+}
+
 canvas {
+  grid-column: 1;
+  grid-row: 1;
   outline: none;
   border-radius: 20px;
   /* cursor: none; */
+}
+
+textarea {
+  grid-column: 1;
+  grid-row: 1;
+  width: 400px;
+  height: 300px;
+  opacity: 0;
 }
 
 .controlBar {
@@ -111,13 +125,29 @@ button {
   -webkit-appearance: none;
 /*  background-color: #a4a08A;*/
   color: black;
-  font-size: 25px;
-  padding: 5px 5px;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  font-size: 20px;
+  padding: 0px 0px;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   margin: 2px;
   cursor: pointer;
+}
+
+.cropBottom {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 0% 50%);
+}
+
+.cropTop {
+  clip-path: polygon(0% 50%, 50% 75%, 100% 50%, 100% 100%, 0% 100%);
+}
+
+.small {
+  font-size: 0.5em;
+}
+
+.icon {
+  vertical-align: top;
 }
 
 button:active {

@@ -56,9 +56,13 @@ type DisplayProps = {
 }
 
 type DebugProps = {
+  doDebug: boolean,
   breakpoint: string,
+  handleDebugChange: () => void,
   handleBreakpoint: (bp: string) => void,
-  handleStepOnce: () => void,
+  handleStepInto: () => void,
+  handleStepOver: () => void,
+  handleStepOut: () => void,
 }
 
 type MachineState = {

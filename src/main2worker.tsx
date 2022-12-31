@@ -27,8 +27,20 @@ export const handleSetBreakpoint = (breakpoint: number) => {
   doPostMessage("BREAKPOINT", breakpoint)
 }
 
-export const handleStepOnce = () => {
-  doPostMessage("STEP_ONCE", true)
+export const handleStepInto = () => {
+  doPostMessage("STEP_INTO", true)
+}
+
+export const handleStepOver = () => {
+  doPostMessage("STEP_OVER", true)
+}
+
+export const handleStepOut = () => {
+  doPostMessage("STEP_OUT", true)
+}
+
+export const handleSetDebug = (doDebug: boolean) => {
+  doPostMessage("DEBUG", doDebug)
 }
 
 export const handleSetNormalSpeed = (normal: boolean) => {

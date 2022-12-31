@@ -290,8 +290,7 @@ const processDisplay = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
 
 const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
-
-
+  let myText = React.createRef<HTMLTextAreaElement>()
 
   const pasteHandler = (e: ClipboardEvent) => {
     if (e.clipboardData) {
@@ -306,7 +305,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   };
 
   const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D) => {
-    width = window.innerWidth - 40;
+    width = 400;//window.innerWidth - 40;
     height = window.innerHeight - 160;
     // shrink either width or height to preserve aspect ratio
     if (width / screenRatio > height) {
@@ -322,7 +321,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.metaKey && e.key === "Meta") {
       handleAppleCommandKeyPress(e.code === "MetaLeft")
     }
@@ -395,7 +394,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const handleKeyUp = (e: KeyboardEvent<HTMLCanvasElement>) => {
+  const handleKeyUp = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.code === "MetaLeft" || e.code === "MetaRight") {
       handleAppleCommandKeyRelease(e.code === "MetaLeft")
     }
@@ -464,18 +463,22 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }, [props.myCanvas, props.isColor]);
 
-  return <canvas ref={props.myCanvas}
+  return <span className="canvasText"><canvas ref={props.myCanvas}
     height={height} width={width}
     tabIndex={0}
-    onKeyDown={handleKeyDown}
-    onKeyUp={handleKeyUp}
     onMouseEnter={() => {
-      props.myCanvas.current?.focus()
+      myText.current?.focus()
+      // props.myCanvas.current?.focus()
     }}
     onMouseDown={() => {
-      props.myCanvas.current?.focus()
+      myText.current?.focus()
+//      props.myCanvas.current?.focus()
     }}
+    /><textarea hidden={false} ref={myText}
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
     />
+    </span>
 };
 
 export default Apple2Canvas;

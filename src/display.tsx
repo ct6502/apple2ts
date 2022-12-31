@@ -1,8 +1,9 @@
 // Chris Torrence, 2022
 import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetBreakpoint, handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
+  handleSetDebug,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, handleStepOnce } from "./main2worker"
+  handleGetFilename, handleStepInto, handleStepOver, handleStepOut } from "./main2worker"
 import { STATE, getPrintableChar } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
@@ -16,6 +17,7 @@ class DisplayApple2 extends React.Component<{},
     speedCheck: boolean;
     uppercase: boolean;
     isColor: boolean;
+    doDebug: boolean;
     breakpoint: string }> {
   timerID = 0
   refreshTime = 16.6881
@@ -25,6 +27,7 @@ class DisplayApple2 extends React.Component<{},
   constructor(props: any) {
     super(props);
     this.state = {
+      doDebug: false,
       currentSpeed: 0,
       speedCheck: true,
       uppercase: true,
@@ -63,12 +66,13 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
-  handleIsColor = () => {
-    return this.state.isColor
-  }
-
   handleColorChange = () => {
     this.setState({ isColor: !this.state.isColor });
+  };
+
+  handleDebugChange = () => {
+    handleSetDebug(!this.state.doDebug)
+    this.setState({ doDebug: !this.state.doDebug });
   };
 
   handleBreakpoint = (breakpoint: string) => {
@@ -185,9 +189,13 @@ class DisplayApple2 extends React.Component<{},
       handleFileSave: this.handleFileSave,
     }
     const debugProps: DebugProps = {
+      doDebug: this.state.doDebug,
       breakpoint: this.state.breakpoint,
+      handleDebugChange: this.handleDebugChange,
       handleBreakpoint: this.handleBreakpoint,
-      handleStepOnce: handleStepOnce,
+      handleStepInto: handleStepInto,
+      handleStepOver: handleStepOver,
+      handleStepOut: handleStepOut,
     }
 
     const ctx = props.myCanvas.current?.getContext("2d")
@@ -208,9 +216,6 @@ class DisplayApple2 extends React.Component<{},
           <br />
           <DebugPanel {...debugProps}/>
         </span>
-        {/* <span className="statusPanel fixed small">
-          {getStatuss6502, stack, mainMem.slice(0, 512))}
-        </span> */}
         <input
           type="file"
           accept=".dat"

@@ -112,7 +112,6 @@ class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
           <DiskDrive drive={0}/>
           <DiskDrive drive={1}/>
         </span>
-        <br/>
       </span>
     );
   }

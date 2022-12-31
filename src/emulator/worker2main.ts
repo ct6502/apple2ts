@@ -1,6 +1,7 @@
 import { doSetCPUState, doSetBreakpoint,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
-  doGoBackInTime, doGoForwardInTime, doStepOnce } from "./motherboard";
+  doGoBackInTime, doGoForwardInTime, doSetDebug,
+  doStepInto, doStepOver, doStepOut } from "./motherboard";
 import { doSetDriveProps } from "./diskdata"
 import { doSetHardDriveProps } from "./harddrivedata"
 import { addToBuffer } from "./keyboard"
@@ -43,11 +44,20 @@ self.onmessage = (e: MessageEvent) => {
     case "STATE":
       doSetCPUState(e.data.payload)
       break;
+    case "DEBUG":
+      doSetDebug(e.data.payload)
+      break;
     case "BREAKPOINT":
       doSetBreakpoint(e.data.payload)
       break;
-    case "STEP_ONCE":
-      doStepOnce()
+    case "STEP_INTO":
+      doStepInto()
+      break;
+    case "STEP_OVER":
+      doStepOver()
+      break;
+    case "STEP_OUT":
+      doStepOut()
       break;
     case "SPEED":
       doSetNormalSpeed(e.data.payload)

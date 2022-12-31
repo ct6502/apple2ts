@@ -34,6 +34,7 @@ let doDebugZeroPage = false
 const instrTrail = new Array<string>(1000)
 let posTrail = 0
 let breakpoint = 0
+let runToRTS = false
 
 const getApple2State = (): SAVEAPPLE2STATE => {
   const softSwitches: { [name: string]: boolean } = {}
@@ -158,14 +159,41 @@ export const doSaveTimeSlice = () => {
   saveTimeSlice = true
 }
 
-export const doStepOnce = () => {
+export const doStepInto = () => {
   doDebug = true
   if (cpuState === STATE.IDLE) {
     doBoot()
+    cpuState = STATE.PAUSED
   }
   processInstruction(true)
   cpuState = STATE.PAUSED
   updateExternalMachineState()
+}
+
+export const doStepOver = () => {
+  doDebug = true
+  if (cpuState === STATE.IDLE) {
+    doBoot()
+    cpuState = STATE.PAUSED
+  }
+  if (memGet(s6502.PC) === 0x20) {
+    // If we're at a JSR then briefly step in, then step out.
+    processInstruction(true)
+    doStepOut()
+  } else {
+    // Otherwise just do a single step.
+    doStepInto()
+  }
+}
+
+export const doStepOut = () => {
+  doDebug = true
+  if (cpuState === STATE.IDLE) {
+    doBoot()
+    cpuState = STATE.PAUSED
+  }
+  runToRTS = true
+  doSetCPUState(STATE.RUNNING)
 }
 
 const resetRefreshCounter = () => {
@@ -184,6 +212,10 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   if (speed === 0) {
     doAdvance6502Timer()
   }
+}
+
+export const doSetDebug = (debug: boolean) => {
+  doDebug = debug
 }
 
 export const doSetBreakpoint = (breakpt: number) => {
@@ -208,12 +240,6 @@ export const processInstruction = (step = false) => {
       return -1
     }
     // HACK
-    // if (PC1 === 0xFA62 && cycleCount > 10000) {
-    //   doDebug = true
-    // }
-    // if (PC1 === 0xC700) {
-    //   doDebug = false
-    // }
     if (PC1 === 0xC7EA && !SWITCHES.INTCXROM.isSet) {
       PC1 = processHardDriveBlockAccess()
       if (PC1 !== s6502.PC) {
@@ -222,15 +248,6 @@ export const processInstruction = (step = false) => {
       }
     }
     // END HACK
-    // if (PC1 >= 0xC700 && PC1 <= 0xC7FF) {
-    //     doDebug = true
-    // }
-    // if (PC1 === 0x22E8) {
-    //   doDebug = false
-    // }
-    // if (PC1 === 0xD229) {
-    //    doDebug = true
-    // }
     cycles = code.execute(vLo, vHi)
     let out = '----'
     // Do not output during the Apple II's WAIT subroutine
@@ -256,6 +273,11 @@ export const processInstruction = (step = false) => {
     // }
     setCycleCount(cycleCount + cycles)
     incrementPC(code.PC)
+    if (code.pcode === 0x60 && runToRTS) {
+      runToRTS = false
+      cpuState = STATE.PAUSED
+      return -1
+    }
   }
   return cycles
 }
