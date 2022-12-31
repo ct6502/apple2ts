@@ -4,8 +4,9 @@
   "private": true,
   "homepage": "http://ct6502.com",
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.1.1",
-    "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/free-regular-svg-icons": "^6.2.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@types/audioworklet": "^0.0.35",
     "@types/jest": "^28.1.2",
@@ -31,7 +32,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
-},
+  },
   "eslintConfig": {
     "extends": [
       "react-app",

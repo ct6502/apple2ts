@@ -48,6 +48,7 @@ type DisplayProps = {
   handleSpeedChange: () => void,
   uppercase: boolean,
   isColor: boolean,
+  sendKey: (key: number) => void,
   handleColorChange: () => void,
   handleCopyToClipboard: () => void,
   handleUpperCaseChange: () => void,

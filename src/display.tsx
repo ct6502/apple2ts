@@ -3,7 +3,7 @@ import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetBreakpoint, handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
   handleSetDebug,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, handleStepInto, handleStepOver, handleStepOut } from "./main2worker"
+  handleGetFilename, handleStepInto, handleStepOver, handleStepOut, handleKeyboardBuffer } from "./main2worker"
 import { STATE, getPrintableChar } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
@@ -172,6 +172,10 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
+  sendKey = (key: number) => {
+    handleKeyboardBuffer(String.fromCharCode(key))
+  }
+
   render() {
     const speed = this.state.currentSpeed.toFixed(3)
     const props: DisplayProps = {
@@ -182,6 +186,7 @@ class DisplayApple2 extends React.Component<{},
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
       isColor: this.state.isColor,
+      sendKey: this.sendKey,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,

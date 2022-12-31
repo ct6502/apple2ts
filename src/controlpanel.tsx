@@ -10,8 +10,14 @@ import {
   faPause,
   faPlay,
   faPowerOff,
-  faSave
+  faSave,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSquareCaretLeft as iconLeftArrow,
+  faSquareCaretRight as iconRightArrow,
+  faSquareCaretUp as iconUpArrow,
+  faSquareCaretDown as iconDownArrow,
+} from "@fortawesome/free-regular-svg-icons";
 
 const ControlPanel = (props: DisplayProps) => {
   return (
@@ -65,6 +71,24 @@ const ControlPanel = (props: DisplayProps) => {
         <button title="Copy Screen"
           onClick={() => props.handleCopyToClipboard()}>
           <FontAwesomeIcon icon={faCopy}/>
+        </button>
+      </span>
+      <span>
+        <button title="Left"
+          onClick={() => props.sendKey(8)}>
+          <FontAwesomeIcon icon={iconLeftArrow}/>
+        </button>
+        <button title="Right"
+          onClick={() => props.sendKey(21)}>
+          <FontAwesomeIcon icon={iconRightArrow}/>
+        </button>
+        <button title="Down"
+          onClick={() => props.sendKey(10)}>
+          <FontAwesomeIcon icon={iconUpArrow}/>
+        </button>
+        <button title="Up"
+          onClick={() => props.sendKey(11)}>
+          <FontAwesomeIcon icon={iconDownArrow}/>
         </button>
       </span>
       <br/>

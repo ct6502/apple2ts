@@ -69,7 +69,8 @@ body {
 }
 
 .canvasText {
-  display: grid
+  display: grid;
+  padding-bottom: 0px;
 }
 
 canvas {
