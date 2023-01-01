@@ -305,7 +305,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   };
 
   const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D, text: HTMLTextAreaElement | null) => {
-    width = window.innerWidth - 40;
+    width = window.innerWidth - 20;
     height = window.innerHeight - 160;
     // shrink either width or height to preserve aspect ratio
     if (width / screenRatio > height) {

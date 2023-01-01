@@ -111,7 +111,7 @@ const passData = () => {
         motorRunning: driveState[i].motorRunning,
         halftrack: driveState[i].halftrack,
         diskHasChanges: driveState[i].diskHasChanges,
-        diskData: new Uint8Array()
+        diskData: driveState[i].diskData
       }
       passDriveProps(dprops)
     }
@@ -155,6 +155,7 @@ export const processHardDriveBlockAccess = () => {
       }
       const dataWrite = getDataBlock(addr)
       driveState[currentDrive].diskData.set(dataWrite, blockStart)
+      driveState[currentDrive].diskHasChanges = true
       break;
     case 3:
       console.log("format")

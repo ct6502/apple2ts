@@ -11,18 +11,17 @@ import {
   faPlay,
   faPowerOff,
   faSave,
+  faCaretLeft as iconLeftArrow,
+  faCaretRight as iconRightArrow,
+  faCaretUp as iconUpArrow,
+  faCaretDown as iconDownArrow,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  faSquareCaretLeft as iconLeftArrow,
-  faSquareCaretRight as iconRightArrow,
-  faSquareCaretUp as iconUpArrow,
-  faSquareCaretDown as iconDownArrow,
 } from "@fortawesome/free-regular-svg-icons";
 
 const ControlPanel = (props: DisplayProps) => {
-  return (
-    <span>
-      <span>
+//  const narrow = window.innerWidth < 400
+  const controlButtons = <span>
         <button
           title="Boot"
           onClick={() => {
@@ -73,24 +72,28 @@ const ControlPanel = (props: DisplayProps) => {
           <FontAwesomeIcon icon={faCopy}/>
         </button>
       </span>
-      <span>
-        <button title="Left"
+  const arrowButtons = <span>
+        <button title="Left"  className="largeButton"
           onClick={() => props.sendKey(8)}>
           <FontAwesomeIcon icon={iconLeftArrow}/>
         </button>
-        <button title="Right"
+        <button title="Right" className="largeButton"
           onClick={() => props.sendKey(21)}>
           <FontAwesomeIcon icon={iconRightArrow}/>
         </button>
-        <button title="Down"
+        <button title="Down" className="largeButton"
           onClick={() => props.sendKey(10)}>
           <FontAwesomeIcon icon={iconUpArrow}/>
         </button>
-        <button title="Up"
+        <button title="Up" className="largeButton"
           onClick={() => props.sendKey(11)}>
           <FontAwesomeIcon icon={iconDownArrow}/>
         </button>
       </span>
+  return (
+    <span>
+      {controlButtons}
+      {arrowButtons}
       <br/>
 
       <span className="statusItem">

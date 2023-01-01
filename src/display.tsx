@@ -213,9 +213,9 @@ class DisplayApple2 extends React.Component<{},
       <div>
         <span className="apple2" style={{width:width}}>
           <Apple2Canvas {...props}/>
-          <br />
           <span className="controlBar">
               <ControlPanel {...props}/>
+              <br/>
               <DiskInterface speedCheck={this.state.speedCheck}/>
           </span>
           <br />
