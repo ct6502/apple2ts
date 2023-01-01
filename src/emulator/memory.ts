@@ -244,7 +244,7 @@ export const getDataBlock = (addr: number) => {
   const doAux = readWriteAuxMem(addr, true)
   addr = bankRamAdjust(addr)
   const result = doAux ?
-    mainMem.slice(addr, addr + 512) : auxMem.slice(addr, addr + 512)
+    auxMem.slice(addr, addr + 512) : mainMem.slice(addr, addr + 512)
   return result
 }
 
