@@ -1,5 +1,5 @@
 import { STATE } from "./emulator/utility";
-import { handleSetCPUState } from "./main2worker"
+import { handleAppleCommandKeyPress, handleAppleCommandKeyRelease, handleSetCPUState } from "./main2worker"
 import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,10 +11,8 @@ import {
   faPlay,
   faPowerOff,
   faSave,
-  faCaretLeft as iconLeftArrow,
-  faCaretRight as iconRightArrow,
-  faCaretUp as iconUpArrow,
-  faCaretDown as iconDownArrow,
+  faCircle as iconLeftButton,
+  faCircle as iconRightButton,
 } from "@fortawesome/free-solid-svg-icons";
 import {
 } from "@fortawesome/free-regular-svg-icons";
@@ -73,21 +71,19 @@ const ControlPanel = (props: DisplayProps) => {
         </button>
       </span>
   const arrowButtons = <span>
-        <button title="Left"  className="largeButton"
-          onClick={() => props.sendKey(8)}>
-          <FontAwesomeIcon icon={iconLeftArrow}/>
+        <button title="Left"
+          onClick={() => {
+            handleAppleCommandKeyPress(true)
+            setTimeout(() => handleAppleCommandKeyRelease(true), 500)
+          }}>
+          <FontAwesomeIcon icon={iconLeftButton}/>
         </button>
-        <button title="Right" className="largeButton"
-          onClick={() => props.sendKey(21)}>
-          <FontAwesomeIcon icon={iconRightArrow}/>
-        </button>
-        <button title="Down" className="largeButton"
-          onClick={() => props.sendKey(10)}>
-          <FontAwesomeIcon icon={iconUpArrow}/>
-        </button>
-        <button title="Up" className="largeButton"
-          onClick={() => props.sendKey(11)}>
-          <FontAwesomeIcon icon={iconDownArrow}/>
+        <button title="Right"
+          onClick={() => {
+            handleAppleCommandKeyPress(false)
+            setTimeout(() => handleAppleCommandKeyRelease(false), 500)
+          }}>
+          <FontAwesomeIcon icon={iconRightButton}/>
         </button>
       </span>
   return (
@@ -103,7 +99,7 @@ const ControlPanel = (props: DisplayProps) => {
             checked={props.speedCheck}
             onChange={props.handleSpeedChange}
           />
-          Limit speed
+          1 MHz
         </label>
       </span>
       <span className="statusItem">

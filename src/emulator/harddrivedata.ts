@@ -136,7 +136,7 @@ export const processHardDriveBlockAccess = () => {
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   let addr = memGet(0x44) + 256 * memGet(0x45)
-  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
+//  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
 
   switch (memGet(0x42)) {
     case 0:
