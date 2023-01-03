@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { setUpdateDisplay, handleGetState, handleSetCPUState,
-  handleSetBreakpoint, handleGetSpeed, handleSetNormalSpeed, handleGetTextPage,
-  handleSetDebug,
+  handleSetBreakpoint, handleSetNormalSpeed, handleGetTextPage,
+  handleSetDebug, handleGetSpeed,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleStepInto, handleStepOver, handleStepOut, handleKeyboardBuffer } from "./main2worker"
 import { STATE, getPrintableChar } from "./emulator/utility"
@@ -37,32 +37,21 @@ class DisplayApple2 extends React.Component<{},
   }
 
   updateDisplay = () => {
-//    this.worker?.postMessage({hello:`${this.time}`});
-//    this.time++
     this.setState( {currentSpeed: handleGetSpeed()} )
   }
 
   componentDidMount() {
-//    this.timerID = window.setInterval(() => this.updateDisplay(), this.refreshTime)
     setUpdateDisplay(this.updateDisplay)
-// //    this.worker = new Worker('worker2main.js');
-//     this.worker = new Worker(new URL('./emulator/worker', import.meta.url))
-//     this.worker.onmessage = (e) => {
-//       this.time = e.data.time
-//     }
+//    window.addEventListener("resize", handleResize)
   }
 
   componentWillUnmount() {
     if (this.timerID) clearInterval(this.timerID);
+//    window.removeEventListener("resize", handleResize)
   }
 
   handleSpeedChange = () => {
     handleSetNormalSpeed(!this.state.speedCheck)
-//    console.log("postMessage...")
-//    this.worker?.postMessage(["a", 1.23]);
-//    window.clearInterval(this.timerID)
-//    this.timerID = window.setInterval(() => this.update6502(),
-//      this.state.speedCheck ? 0 : this.refreshTime)
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
@@ -203,15 +192,9 @@ class DisplayApple2 extends React.Component<{},
       handleStepOut: handleStepOut,
     }
 
-    const ctx = props.myCanvas.current?.getContext("2d")
-    let width = 1280
-    if (ctx) {
-      width = ctx.canvas.width;
-    }
-
     return (
       <div>
-        <span className="apple2" style={{width:width}}>
+        <span className="apple2">
           <Apple2Canvas {...props}/>
           <span className="controlBar">
               <ControlPanel {...props}/>

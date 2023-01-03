@@ -304,7 +304,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const resizeCanvasToDisplaySize = (ctx: CanvasRenderingContext2D, text: HTMLTextAreaElement | null) => {
+  const getSizes = () => {
     width = window.innerWidth - 20;
     height = window.innerHeight - 160;
     // shrink either width or height to preserve aspect ratio
@@ -315,14 +315,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     width = Math.floor(width)
     height = Math.floor(height)
-    if (ctx.canvas.width !== width || ctx.canvas.height !== height) {
-      ctx.canvas.width = width;
-      ctx.canvas.height = height;
-    }
-    if (text) {
-      text.style.width = width + "px"
-      text.style.height = height + "px"
-    }
+    return [width, height]
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -445,14 +438,22 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (props.myCanvas.current) {
       context = props.myCanvas.current.getContext('2d')
     }
+    const handleResize = () => {
+      if (context) {
+        [width, height] = getSizes()
+        context.canvas.width = width;
+        context.canvas.height = height;
+      }
+    }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
+    window.addEventListener("resize", handleResize)
+
     // Check for new gamepads on a regular basis
     const gamepadID = window.setInterval(checkGamepad, 34)
     const renderCanvas = () => {
       frameCount++
       if (context) {
-        resizeCanvasToDisplaySize(context, myText.current)
         processDisplay(context, props.isColor)
       }
       animationFrameId = window.requestAnimationFrame(renderCanvas)
@@ -465,20 +466,22 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
     }
-  }, [props.myCanvas, props.isColor, myText]);
+  }, [props.myCanvas, props.isColor]);
 
-  return <span className="canvasText"><canvas ref={props.myCanvas}
-    height={height} width={width}
-    tabIndex={0}
-    onMouseEnter={() => {
-      myText.current?.focus()
-      // props.myCanvas.current?.focus()
-    }}
-    onMouseDown={() => {
-      myText.current?.focus()
-//      props.myCanvas.current?.focus()
-    }}
-    /><textarea hidden={false} ref={myText}
+  [width, height] = getSizes()
+
+  return <span className="canvasText">
+    <canvas ref={props.myCanvas}
+      width={width} height={height}
+      tabIndex={0}
+      onMouseEnter={() => {
+        myText.current?.focus()
+      }}
+      onMouseDown={() => {
+        myText.current?.focus()
+      }}
+    />
+    <textarea hidden={false} ref={myText}
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
     />

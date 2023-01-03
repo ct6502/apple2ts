@@ -91,7 +91,7 @@ const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg) {
     case "MACHINE_STATE":
       machineState = e.data.payload
-      updateDisplay()
+//      updateDisplay()
       break;
     case "SAVE_STATE":
       saveState = e.data.payload

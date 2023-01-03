@@ -11,8 +11,8 @@ import {
   faPlay,
   faPowerOff,
   faSave,
-  faCircle as iconLeftButton,
-  faCircle as iconRightButton,
+  // faCircle as iconLeftButton,
+  // faCircle as iconRightButton,
 } from "@fortawesome/free-solid-svg-icons";
 import {
 } from "@fortawesome/free-regular-svg-icons";
@@ -75,15 +75,15 @@ const ControlPanel = (props: DisplayProps) => {
           onClick={() => {
             handleAppleCommandKeyPress(true)
             setTimeout(() => handleAppleCommandKeyRelease(true), 500)
-          }}>
-          <FontAwesomeIcon icon={iconLeftButton}/>
+          }}><b>&#x2460;</b>
+          {/* <FontAwesomeIcon icon={iconLeftButton}/> */}
         </button>
         <button title="Right"
           onClick={() => {
             handleAppleCommandKeyPress(false)
             setTimeout(() => handleAppleCommandKeyRelease(false), 500)
-          }}>
-          <FontAwesomeIcon icon={iconRightButton}/>
+          }}><b>&#x2461;</b>
+          {/* <FontAwesomeIcon icon={iconRightButton}/> */}
         </button>
       </span>
   return (
@@ -124,9 +124,9 @@ const ControlPanel = (props: DisplayProps) => {
       </span>
       <br />
 
-      <span className="statusItem">
-        <span className="fixed">{props.speed}</span> MHz
-      </span>
+      {/* <span className="statusItem">
+        <span className="fixed">{handleGetSpeed()}</span> MHz
+      </span> */}
       {/* <span className="statusItem">
         <span className="fixed">{toHex(props.s6502.PC, 4)}</span>
       </span> */}
