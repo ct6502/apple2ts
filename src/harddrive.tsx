@@ -1,16 +1,16 @@
 import React from "react"
-import { uint32toBytes } from "./emulator/utility"
-import { crc32 } from "./emulator/decodedisk"
+// import { uint32toBytes } from "./emulator/utility"
+// import { crc32 } from "./emulator/decodedisk"
 import { handleGetDriveProps, handleSetDiskData } from "./main2worker"
 import hardDriveOff from './img/harddrive.png'
 import hardDriveOn from './img/harddriveOn.png'
-// import disk2on from './img/disk2on.png'
+// import disk2on from './img/dissk2on.png'
 // import disk2offEmpty from './img/disk2off-empty.png'
 // import disk2onEmpty from './img/disk2on-empty.png'
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
-  const crc = crc32(diskData, 12)
-  diskData.set(uint32toBytes(crc), 8)
+  // const crc = crc32(diskData, 12)
+  // diskData.set(uint32toBytes(crc), 8)
   const blob = new Blob([diskData]);
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
@@ -65,9 +65,6 @@ class HardDrive extends React.Component<{drive: number}, {}> {
   render() {
     const dprops = handleGetDriveProps(this.props.drive)
     const img1 = dprops.motorRunning ? hardDriveOn : hardDriveOff
-    // const img1 = (dprops.filename.length > 0) ?
-    // (dprops.motorRunning ? disk2on : disk2off) :
-    // (dprops.motorRunning ? disk2onEmpty : disk2offEmpty)
     const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
     return (
       <span className="drive">
@@ -96,7 +93,7 @@ class HardDrive extends React.Component<{drive: number}, {}> {
           }}
           style={{display: 'none'}}
         />
-        <span className="fixedAlignRight fixedSmall">{dprops.status}</span>
+        <span className="fixedAlignRight">{dprops.status}</span>
       </span>
     )
   }
