@@ -198,7 +198,6 @@ class DisplayApple2 extends React.Component<{},
           <Apple2Canvas {...props}/>
           <span className="controlBar">
               <ControlPanel {...props}/>
-              <br/>
               <DiskInterface speedCheck={this.state.speedCheck}/>
           </span>
           <br />

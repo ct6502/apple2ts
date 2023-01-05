@@ -1,10 +1,10 @@
 import { parseAssembly } from "./assembler"
+import { setX, setY } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { passDriveProps } from "./worker2main"
 
 let currentDrive = 0
 let timerID: any | number = 0
-const driverAddress = 0xC7EA
 
 const code1 = `
          LDX   #$20
@@ -12,7 +12,17 @@ const code1 = `
          LDX   #$03
          LDA   #$01
          STA   $42
-         LDA   #$70
+         BIT   $CFFF
+         LDA   #$4C   ; JMP $CsDC
+         STA   $07FD
+         LDA   #$DC
+         STA   $07FE
+         LDA   $07F8  ; holds $Cs, where s is current slot number
+         STA   $07FF
+         ASL
+         ASL
+         ASL
+         ASL
          STA   $43
          LDA   #$08
          STA   $45
@@ -20,13 +30,13 @@ const code1 = `
          STA   $44
          STA   $46
          STA   $47
-         JSR   $C7EA
+         JSR   $07FD
          BCS   ERROR
          LDA   #$0A
          STA   $45
          LDA   #$01
          STA   $46
-         JSR   $C7EA
+         JSR   $07FD
          BCS   ERROR
          LDA   $0801
          BEQ   ERROR
@@ -37,11 +47,15 @@ const code1 = `
          JMP   $801
 ERROR    JMP   $E000
 `
+const statusOffset = 4
+const errOffset = 8
 const code2 = `
          CLC
          LDA   #$00
          RTS
-         SEC         ; addr + 4
+         LDX   #$00  ; addr + 4
+         LDY   #$00
+         SEC         ; addr + 8
          LDA   #$27
          RTS
 `
@@ -50,14 +64,14 @@ const prodos8driver = () => {
   let pcode = parseAssembly(0x0, code1.split("\n"))
   driver.set(pcode, 0)
   pcode = parseAssembly(0x0, code2.split("\n"))
-  driver.set(pcode, 0xEA)
+  driver.set(pcode, 0xDC)
   driver[0xFE] = 0b00010011
-  driver[0xFF] = 0xEA
+  driver[0xFF] = 0xDC
   return driver
 }
 
 export const enableHardDrive = () => {
-  setSlotDriver(7, prodos8driver())
+  setSlotDriver(7, prodos8driver(), 0xC7DC, processHardDriveBlockAccess)
 }
 
 const initDriveProps = (): DriveProps => {
@@ -151,14 +165,11 @@ const motorTimeout = () => {
   passData()
 }
 
-export const processHardDriveBlockAccess = () => {
+export const processHardDriveBlockAccess = (driverAddress: number) => {
   const result = driverAddress
-  if (memGet(0x43) !== 0x70) {
-    console.log("illegal value in 0x42: " + memGet(0x43))
-    return result + 4
-  }
-  if (driveState[currentDrive].filename.length === 0) {
-    return result + 4
+  if (memGet(0x43) !== 16 * (memGet(0x7F8) & 0xF)) {
+    console.log("illegal value in 0x43: " + memGet(0x43))
+    return result + errOffset
   }
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
@@ -167,11 +178,19 @@ export const processHardDriveBlockAccess = () => {
 
   switch (memGet(0x42)) {
     case 0:
-      console.log("status")
+      // Status test: 300: A2 AB A0 CD 8D 06 C0 A9 00 85 42 A9 70 85 43 20 EA C7 00
+      const len = driveState[currentDrive].diskData.length
+      if (driveState[currentDrive].filename.length === 0 || len === 0) {
+        return result + statusOffset
+      }
+      const nblocks = len / 512
+      setX(nblocks & 0xFF)
+      setY(nblocks >>> 8)
       break;
     case 1:
       if (blockStart + 512 > driveState[currentDrive].diskData.length) {
         console.error("block start > harddisk length")
+        return result + errOffset
       }
       const dataRead = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
       setDataBlock(addr, dataRead)
@@ -179,6 +198,7 @@ export const processHardDriveBlockAccess = () => {
     case 2:
       if (blockStart + 512 > driveState[currentDrive].diskData.length) {
         console.error("block start > harddisk length")
+        return result + errOffset
       }
       const dataWrite = getDataBlock(addr)
       driveState[currentDrive].diskData.set(dataWrite, blockStart)
@@ -188,8 +208,8 @@ export const processHardDriveBlockAccess = () => {
       console.log("format")
       break;
     default:
-      console.log("unknown hard drive command")
-      return result + 4
+      console.error("unknown hard drive command")
+      return result + errOffset
   }
 
   driveState[currentDrive].motorRunning = true

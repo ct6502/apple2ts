@@ -11,7 +11,7 @@
 }
 
 body {
-  background-color: #C4C0AA;
+  background-color: #BFBB98;
 }
 
 @font-face {
@@ -60,6 +60,7 @@ textarea {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .leftStatus {
@@ -171,6 +172,26 @@ button:disabled {
   margin-left: 0.5em;
   margin-right: 0.5em;
   text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.hdText {
+  background-color: black;
+  color: white;
+  border-radius: 3px;
+  transform: translate(0, -52px);
+  width: 84px;
+  pointer-events: none;
+  height: 16px;
+  top: 30px;
+  padding-left: 3px;
+  padding-top: 0px;
+  line-height: 16px;
+  margin-left: 12px;
+  text-align: center;
+  font-size: x-small;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;

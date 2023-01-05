@@ -93,7 +93,7 @@ class HardDrive extends React.Component<{drive: number}, {}> {
           }}
           style={{display: 'none'}}
         />
-        <span className="fixedAlignRight">{dprops.status}</span>
+        <span className="hdText">{dprops.status}</span>
       </span>
     )
   }

@@ -11,6 +11,14 @@ export let s6502: STATE6502 = {
   StackPtr: 0
 }
 
+export const setX = (value: number) => {
+  s6502.XReg = value
+}
+
+export const setY = (value: number) => {
+  s6502.YReg = value
+}
+
 export let cycleCount = 0
 
 export const setCycleCount = (cycles: number) => { cycleCount = cycles }

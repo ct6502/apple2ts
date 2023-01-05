@@ -7,11 +7,11 @@ import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./util
 import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memGet, mainMem, auxMem, memC000, getTextPage, getHires } from "./memory"
+import { memGet, mainMem, auxMem, memC000, getTextPage, getHires, specialJumpTable } from "./memory"
 import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
-import { enableHardDrive, processHardDriveBlockAccess } from "./harddrivedata"
+import { enableHardDrive } from "./harddrivedata"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -220,7 +220,7 @@ export const doSetDebug = (debug: boolean) => {
 
 export const doSetBreakpoint = (breakpt: number) => {
   breakpoint = breakpt
-  if (breakpoint !== 0) doDebug = true
+//  if (breakpoint !== 0) doDebug = true
 }
 
 export const processInstruction = (step = false) => {
@@ -240,8 +240,9 @@ export const processInstruction = (step = false) => {
       return -1
     }
     // HACK
-    if (PC1 === 0xC7EA && !SWITCHES.INTCXROM.isSet) {
-      PC1 = processHardDriveBlockAccess()
+    const fn = specialJumpTable.get(PC1)
+    if (fn && !SWITCHES.INTCXROM.isSet) {
+      PC1 = fn(PC1)
       if (PC1 !== s6502.PC) {
         setPC(PC1)
         return 0

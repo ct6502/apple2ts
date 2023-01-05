@@ -4,7 +4,7 @@ import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
-  faCopy,
+  faClipboard,
   faExpand,
   faFolderOpen,
   faPause,
@@ -61,13 +61,31 @@ const ControlPanel = (props: DisplayProps) => {
         >
           <FontAwesomeIcon icon={faSave}/>
         </button>
-        <button title="Full Screen"
-          onClick={() => props.myCanvas.current?.requestFullscreen()}>
-          <FontAwesomeIcon icon={faExpand}/>
-        </button>
         <button title="Copy Screen"
           onClick={() => props.handleCopyToClipboard()}>
-          <FontAwesomeIcon icon={faCopy}/>
+          <FontAwesomeIcon icon={faClipboard}/>
+        </button>
+        <button title="Full Screen"
+          onClick={() => {
+            const context = props.myCanvas.current
+            if (context) {
+              let requestFullScreen: any
+              if ('webkitRequestFullscreen' in context) {
+                requestFullScreen = context.webkitRequestFullscreen
+              } else if ('mozRequestFullScreen' in context) {
+                requestFullScreen = context.mozRequestFullScreen
+              } else if ('msRequestFullscreen' in context) {
+                requestFullScreen = context.msRequestFullscreen
+              } else if ('requestFullscreen' in context) {
+                requestFullScreen = context.requestFullscreen
+              }
+              if (requestFullScreen) {
+                requestFullScreen.call(context);
+              }
+            }
+          }
+            }>
+          <FontAwesomeIcon icon={faExpand}/>
         </button>
       </span>
   const arrowButtons = <span>

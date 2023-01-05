@@ -90,8 +90,9 @@ let saveState = ""
 const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg) {
     case "MACHINE_STATE":
+      const cpuStateChanged = machineState.state !== e.data.payload.state
       machineState = e.data.payload
-//      updateDisplay()
+      if (cpuStateChanged) updateDisplay()
       break;
     case "SAVE_STATE":
       saveState = e.data.payload
