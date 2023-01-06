@@ -21,9 +21,9 @@ let slots = [
   empty,
 ]
 
-export const specialJumpTable = new Map<number, (PC: number) => number>();
+export const specialJumpTable = new Map<number, () => void>();
 
-export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (PC: number) => 0) => {
+export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
   slots[slot - 1] = driver
   if (jump) {
     specialJumpTable.set(jump, fn)

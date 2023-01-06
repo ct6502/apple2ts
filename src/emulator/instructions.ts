@@ -67,7 +67,7 @@ const popStack = () => {
 }
 
 export const isCarry = () => { return ((s6502.PStatus & 0x01) !== 0); }
-const setCarry = (set = true) => s6502.PStatus = set ? s6502.PStatus | 1 :
+export const setCarry = (set = true) => s6502.PStatus = set ? s6502.PStatus | 1 :
   s6502.PStatus & 0b11111110
 
 const isZero = () => { return ((s6502.PStatus & 0x02) !== 0); }

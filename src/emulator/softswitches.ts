@@ -97,10 +97,14 @@ export const SWITCHES = {
     checkJoystickValues(cycleCount)
   }),
   CASSIN2: NewSwitch(0, 0xC068, false, () => {memC000[0x68] = rand()}),
+  FASTCHIP_LOCK: NewSwitch(0xC06A, 0),   // used by Total Replay
+  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0), // used by Total Replay
+  FASTCHIP_SPEED: NewSwitch(0xC06D, 0),  // used by Total Replay
   JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
     memC000[0x70] = rand()
   }),
+  LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay
   READBSR2: NewSwitch(0xC080, 0, false, (addr) => {handleBankedRAM(addr)}),
   WRITEBSR2: NewSwitch(0xC081, 0, false, (addr) => {handleBankedRAM(addr)}),
   OFFBSR2: NewSwitch(0xC082, 0, false, (addr) => {handleBankedRAM(addr)}),

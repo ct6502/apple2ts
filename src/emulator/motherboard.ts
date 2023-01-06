@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
-  incrementPC, cycleCount, setCycleCount, setPC } from "./instructions"
+  incrementPC, cycleCount, setCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
 import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
 // import { slot_omni } from "./roms/slot_omni_cx00"
@@ -242,11 +242,7 @@ export const processInstruction = (step = false) => {
     // HACK
     const fn = specialJumpTable.get(PC1)
     if (fn && !SWITCHES.INTCXROM.isSet) {
-      PC1 = fn(PC1)
-      if (PC1 !== s6502.PC) {
-        setPC(PC1)
-        return 0
-      }
+      fn()
     }
     // END HACK
     cycles = code.execute(vLo, vHi)

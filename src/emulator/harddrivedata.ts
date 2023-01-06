@@ -1,5 +1,5 @@
 import { parseAssembly } from "./assembler"
-import { setX, setY } from "./instructions"
+import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { passDriveProps } from "./worker2main"
 
@@ -17,9 +17,13 @@ const code1 = `
          STA   $07FD
          LDA   #$DC
          STA   $07FE
-         LDA   $07F8  ; holds $Cs, where s is current slot number
+         LDA   #$60   ; Fake RTS to determine our slot
          STA   $07FF
-         ASL
+         JSR   $07FF
+         TSX
+         LDA   $100,X  ; High byte of slot adddress
+         STA   $07FF
+         ASL           ; Shift $Cs up to $s0
          ASL
          ASL
          ASL
@@ -47,16 +51,11 @@ const code1 = `
          JMP   $801
 ERROR    JMP   $E000
 `
-const statusOffset = 4
-const errOffset = 8
 const code2 = `
-         CLC
+         BCS   ERR
          LDA   #$00
          RTS
-         LDX   #$00  ; addr + 4
-         LDY   #$00
-         SEC         ; addr + 8
-         LDA   #$27
+ERR      LDA   #$27
          RTS
 `
 const prodos8driver = () => {
@@ -165,57 +164,57 @@ const motorTimeout = () => {
   passData()
 }
 
-export const processHardDriveBlockAccess = (driverAddress: number) => {
-  const result = driverAddress
-  if (memGet(0x43) !== 16 * (memGet(0x7F8) & 0xF)) {
-    console.log("illegal value in 0x43: " + memGet(0x43))
-    return result + errOffset
-  }
+export const processHardDriveBlockAccess = () => {
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   let addr = memGet(0x44) + 256 * memGet(0x45)
+  const dataLen = driveState[currentDrive].diskData.length
 //  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
 
   switch (memGet(0x42)) {
     case 0:
       // Status test: 300: A2 AB A0 CD 8D 06 C0 A9 00 85 42 A9 70 85 43 20 EA C7 00
-      const len = driveState[currentDrive].diskData.length
-      if (driveState[currentDrive].filename.length === 0 || len === 0) {
-        return result + statusOffset
+      if (driveState[currentDrive].filename.length === 0 || dataLen === 0) {
+        setX(0)
+        setY(0)
+        setCarry()
+        return
       }
-      const nblocks = len / 512
+      const nblocks = dataLen / 512
       setX(nblocks & 0xFF)
       setY(nblocks >>> 8)
       break;
     case 1:
-      if (blockStart + 512 > driveState[currentDrive].diskData.length) {
-        console.error("block start > harddisk length")
-        return result + errOffset
+      if (blockStart + 512 > dataLen) {
+        setCarry()
+        return
       }
       const dataRead = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
       setDataBlock(addr, dataRead)
       break;
     case 2:
-      if (blockStart + 512 > driveState[currentDrive].diskData.length) {
-        console.error("block start > harddisk length")
-        return result + errOffset
+      if (blockStart + 512 > dataLen) {
+        setCarry()
+        return
       }
       const dataWrite = getDataBlock(addr)
       driveState[currentDrive].diskData.set(dataWrite, blockStart)
       driveState[currentDrive].diskHasChanges = true
       break;
     case 3:
-      console.log("format")
-      break;
+      console.error("Hard drive format not implemented yet")
+      setCarry()
+      return
     default:
       console.error("unknown hard drive command")
-      return result + errOffset
+      setCarry()
+      return
   }
 
+  setCarry(false)
   driveState[currentDrive].motorRunning = true
   if (!timerID) {
     timerID = setTimeout(motorTimeout, 500)
   }
   passData()
-  return result
 }
