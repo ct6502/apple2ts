@@ -318,7 +318,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     return [width, height]
   }
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
     if (e.metaKey && e.key === "Meta") {
       handleAppleCommandKeyPress(e.code === "MetaLeft")
     }
@@ -391,7 +391,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const handleKeyUp = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyUp = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
     if (e.code === "MetaLeft" || e.code === "MetaRight") {
       handleAppleCommandKeyRelease(e.code === "MetaLeft")
     }
@@ -470,10 +470,20 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   [width, height] = getSizes()
 
+  // Make keyboard events work on iPhone by using a hidden textarea.
+  const smallSize = width < 600
+  const txt = smallSize ? 
+      <textarea hidden={false} ref={myText}
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
+      /> : <span></span>
+
   return <span className="canvasText">
     <canvas ref={props.myCanvas}
       width={width} height={height}
       tabIndex={0}
+      onKeyDown={smallSize ? ()=>{} : handleKeyDown}
+      onKeyUp={smallSize ? ()=>{} : handleKeyUp}
       onMouseEnter={() => {
         myText.current?.focus()
       }}
@@ -481,10 +491,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         myText.current?.focus()
       }}
     />
-    <textarea hidden={false} ref={myText}
-      onKeyDown={handleKeyDown}
-      onKeyUp={handleKeyUp}
-    />
+    {txt}
     </span>
 };
 

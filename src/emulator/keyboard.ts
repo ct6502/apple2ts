@@ -12,7 +12,15 @@ export const popKey = () => {
     }
   }
 }
+
+let prevKey = ''
+
 export const addToBuffer = (text: String) => {
+  // Avoid repeating keys in the buffer if the Apple isn't processing them.
+  if (text === prevKey && keyBuffer.length > 0) {
+    return
+  }
+  prevKey = text.slice(0,1)
   keyBuffer += text
   popKey()
 }
