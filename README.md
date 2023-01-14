@@ -57,7 +57,7 @@ In launch.json, add a launch configuration:
       "port": 9222,
       "request": "attach",
       "type": "chrome",
-      "url": "http://localhost:8097",
+      "url": "http://localhost:6502",
       "webRoot": "${workspaceFolder}"
     },
 
