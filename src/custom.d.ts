@@ -72,7 +72,8 @@ type MachineState = {
   altChar: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,
-  hires: Uint8Array
+  hires: Uint8Array,
+  zeroPageStack: string
 }
 
 type DriveState = {

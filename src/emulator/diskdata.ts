@@ -32,6 +32,10 @@ export const getDriveState = () => {
   return { currentDrive: currentDrive, driveState: driveState, driveData: driveData }
 }
 
+export const getFilename = () => {
+  return driveState[currentDrive].filename
+}
+
 const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
     const dprops: DriveProps = {

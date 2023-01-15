@@ -4,6 +4,7 @@ import {
   faArrowsRotate as iconStepOver,
   faArrowUpFromBracket as iconStepOut,
 } from "@fortawesome/free-solid-svg-icons";
+import { handleGetZeroPageStack } from "./main2worker";
 
 const DebugPanel = (props: DebugProps) => {
   const handleBreakpointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -12,6 +13,9 @@ const DebugPanel = (props: DebugProps) => {
   }
   return (
     <span>
+      <span className="fixed small">
+        <pre>{handleGetZeroPageStack()}</pre>
+      </span>
       <label>
         <input
           type="checkbox"

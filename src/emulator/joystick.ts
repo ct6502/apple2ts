@@ -1,7 +1,9 @@
+import { getFilename } from "./diskdata"
+import { addToBuffer, addToBufferDebounce } from "./keyboard"
 import { memC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
 // import { doSaveTimeSlice } from "./motherboard"
-// import { addToBuffer } from "./keyboard"
+// import { addToBufferDebounce } from "./keyboard"
 
 let gamePad: EmuGamepad | null = null
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
@@ -87,12 +89,12 @@ const defaultButtons = [
 // const wolf = [
 //   () => {leftButtonDown = true},
 //   () => {rightButtonDown = true},
-//   () => {addToBuffer('U'.charCodeAt(0))},
-//   () => {addToBuffer('T'.charCodeAt(0))},
+//   () => {addToBufferDebounce('U'.charCodeAt(0))},
+//   () => {addToBufferDebounce('T'.charCodeAt(0))},
 //   () => {leftButtonDown = true},
 //   () => {rightButtonDown = true},
-//   () => {addToBuffer(' '.charCodeAt(0))},
-//   () => {addToBuffer('\r')},
+//   () => {addToBufferDebounce(' '.charCodeAt(0))},
+//   () => {addToBufferDebounce('\r', timeout)},
 //   () => {leftButtonDown = true},
 //   () => {rightButtonDown = true},
 //   () => {leftButtonDown = true},
@@ -122,37 +124,42 @@ const defaultButtons = [
 // M: stab at ground while using machete
 // G: switch from machete to gun
 // <spacebar>: fire gun
-// let moving = false
-// const aztec = [
-//   () => {addToBuffer('J')},  // 0 A
-//   () => {rightButtonDown = true},  // 1 B
-//   () => {addToBuffer('U')},  // 2 X
-//   () => {addToBuffer('T')},  // 3 Y
-//   () => {leftButtonDown = true},  // 4 LB
-//   () => {rightButtonDown = true},  // 5 RB
-//   () => {addToBuffer('O'); addToBuffer('L'); addToBuffer('T')},  // 6 LT
-//   () => {addToBuffer(' ')},  // 7 RT
-//   () => {leftButtonDown = true},  // 8 Select?
-//   () => {rightButtonDown = true},  // 9 Start?
-//   () => {leftButtonDown = true},  // 10 Left thumb
-//   () => {rightButtonDown = true},  // 11 Right thumb
-//   () => {addToBuffer('R')},  // 12 D-pad U
-//   () => {addToBuffer('W')},  // 13 D-pad D
-//   () => {
-//     addToBuffer(moving ? 'S' : 'A')
-//     moving = !moving
-//     if (moving) {addToBuffer('W')}},  // 14 D-pad L
-//   () => {
-//     addToBuffer(moving ? 'S' : 'D')
-//     moving = !moving
-//     if (moving) {addToBuffer('W')}},  // 15 D-pad R
-// ]
+//let moving = false
+const timeout = 300
+const aztec = [
+  () => {addToBufferDebounce('J', timeout)},  // 0 A
+  () => {addToBuffer('O'); addToBufferDebounce('L', timeout)},  // 1 B
+  () => {addToBufferDebounce('G', timeout)},  // 2 X
+  () => {addToBufferDebounce('T', timeout)},  // 3 Y
+  () => {leftButtonDown = true},  // 4 LB
+  () => {addToBuffer('F'); addToBufferDebounce('L', timeout)},  // 5 RB
+  () => {addToBuffer('O'); addToBuffer('L'); addToBufferDebounce('T', timeout)},  // 6 LT
+  () => {addToBufferDebounce(' ', timeout)},  // 7 RT
+  () => {leftButtonDown = true},  // 8 Select?
+  () => {rightButtonDown = true},  // 9 Start?
+  () => {leftButtonDown = true},  // 10 Left thumb
+  () => {rightButtonDown = true},  // 11 Right thumb
+  () => {addToBufferDebounce('C', timeout)},  // 12 D-pad U
+  () => {addToBufferDebounce('S', timeout)},  // 13 D-pad D
+  () => {
+    addToBuffer('A')
+    addToBufferDebounce('W', timeout)},  // 14 D-pad L
+  () => {
+    addToBuffer('D')
+    addToBufferDebounce('W', timeout)},  // 15 D-pad R
+]
 
 let funcs = defaultButtons
 // funcs = aztec
 
 export const setGamepad = (gamePadIn: EmuGamepad) => {
   gamePad = gamePadIn
+  const filename = getFilename()
+  if (filename.toLowerCase().includes("aztec")) {
+    funcs = aztec
+  } else {
+    funcs = defaultButtons
+  }
 }
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
@@ -178,7 +185,6 @@ export const handleGamepad = () => {
     rightButtonDown = false
     gamePad.buttons.forEach((button, i) => {
       if (button && i < funcs.length) {
-//        console.log(i)
         funcs[i]()
       }
     });

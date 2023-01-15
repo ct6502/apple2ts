@@ -64,41 +64,6 @@ export const getProcessorStatus = (s6502: STATE6502) => {
   )
 }
 
-const getStack = (s6502: STATE6502, stack: Array<string>, stackvalues: Uint8Array) => {
-  const result = new Array<string>()
-  for (let i = 0xFF; i > s6502.StackPtr; i--) {
-    let value = "$" + toHex(stackvalues[i])
-    let cmd = stack[i]
-    if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
-      if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
-        i--
-        value += toHex(stackvalues[i])
-      } else {
-        cmd = ''
-      }
-    }
-    value = (value + "   ").substring(0, 6)
-    result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
-  }
-  return result
-}
-
-export const getStatus = (s6502: STATE6502, stack: Array<string>, mem: Uint8Array) => {
-  const status = Array<String>(40).fill("")
-  const stackString = getStack(s6502, stack, mem.slice(256, 512))
-  for (let i = 0; i < Math.min(20, stackString.length); i++) {
-    status[i] = stackString[i]
-  }
-  for (let j = 0; j < 16; j++) {
-    let s = "<b>" + toHex(16 * j) + "</b>:"
-    for (let i = 0; i < 16; i++) {
-      s += " " + toHex(mem[j * 16 + i])
-    }
-    status[status.length - 16 + j] = s
-  }
-  return status.join("<br/>")
-}
-
 const modeString = (mode: MODE) => {
   let prefix = ""
   let suffix = ""

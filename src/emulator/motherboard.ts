@@ -279,6 +279,43 @@ export const processInstruction = (step = false) => {
   return cycles
 }
 
+// const getStackString = () => {
+//   const stackvalues = mainMem.slice(256, 512)
+//   const result = new Array<string>()
+//   for (let i = 0xFF; i > s6502.StackPtr; i--) {
+//     let value = "$" + toHex(stackvalues[i])
+//     let cmd = stack[i]
+//     if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
+//       if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
+//         i--
+//         value += toHex(stackvalues[i])
+//       } else {
+//         cmd = ''
+//       }
+//     }
+//     value = (value + "   ").substring(0, 6)
+//     result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
+//   }
+//   return result
+// }
+
+const getDebugString = () => {
+  return ''
+  // const status = Array<String>(16).fill("")
+  // // const stackString = getStackString()
+  // // for (let i = 0; i < Math.min(20, stackString.length); i++) {
+  // //   status[i] = stackString[i]
+  // // }
+  // for (let j = 0; j < 16; j++) {
+  //   let s = toHex(16 * j) + ":"
+  //   for (let i = 0; i < 16; i++) {
+  //     s += " " + toHex(mainMem[j * 16 + i])
+  //   }
+  //   status[j] = s
+  // }
+  // return status.join('\n')
+}
+
 const updateExternalMachineState = () => {
   const state: MachineState = {
     state: cpuState,
@@ -286,7 +323,8 @@ const updateExternalMachineState = () => {
     altChar: SWITCHES.ALTCHARSET.isSet,
     textPage: getTextPage(),
     lores: getTextPage(true),
-    hires: getHires()
+    hires: getHires(),
+    zeroPageStack: getDebugString()
   }
   passMachineState(state)
 }
@@ -318,7 +356,6 @@ const doAdvance6502 = () => {
   iRefresh++
   speed = (iRefresh * 17.030) / (performance.now() - startTime)
   updateExternalMachineState()
-  handleGamepad()
   if (saveTimeSlice) {
     saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState
@@ -330,9 +367,12 @@ const doAdvance6502 = () => {
 
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  const iRefreshFinish = (iRefresh + 9)
+  const iRefreshFinish = (iRefresh + 5)
   while (cpuState === STATE.RUNNING && iRefresh !== iRefreshFinish) {
     doAdvance6502()
+  }
+  if (cpuState === STATE.RUNNING) {
+    handleGamepad()
   }
   setTimeout(doAdvance6502Timer, 0)
 }
