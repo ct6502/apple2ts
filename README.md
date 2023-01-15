@@ -1,5 +1,8 @@
 # Apple II Emulator in Typescript - Chris Torrence, 2022
 
+![node.js CI](https://github.com/chris-torrence/apple2ts/actions/workflows/node.js.yml/badge.svg)
+![build/deploy](https://github.com/chris-torrence/apple2ts/actions/workflows/pages/pages-build-deployment/badge.svg)
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available NPM Scripts
