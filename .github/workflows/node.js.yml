@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     env:
-      MY_EMAIL: chris_torrence@comcast.net
+      MY_EMAIL: 5461379+ct6502@users.noreply.github.com
       MY_NAME: Chris Torrence
       MY_USERNAME: ct6502
     runs-on: ubuntu-latest
