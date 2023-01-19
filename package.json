@@ -2,7 +2,7 @@
   "name": "apple2ts",
   "version": "0.9.0",
   "private": true,
-  "homepage": "http://ct6502.com",
+  "homepage": "http://apple2ts.com",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.2.1",
     "@fortawesome/free-solid-svg-icons": "^6.2.1",
