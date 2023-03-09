@@ -1,6 +1,32 @@
 
 // export const code = ''
 export const code = `
+        ORG   $300
+; set up Mockingboard
+        LDA #$C0    ; enable Mockingboard
+        STA $C030
+        LDA #$80    ; select channel 0
+        STA $C010
+        LDA #$00    ; set frequency LSB to 0
+        STA $C012
+        LDA #$05    ; set frequency MSB to 5 (261 Hz)
+        STA $C013
+        LDA #$0F    ; set volume to maximum
+        STA $C015
+
+; play notes
+        LDA #$80    ; start sound
+        STA $C010
+        LDX #20     ; loop for 20 cycles (approx. 1 second)
+LOOP    DEX
+        BNE LOOP
+        LDA #$00    ; stop sound
+        STA $C010
+
+; end of program
+        RTS
+`
+export const code2 = `
          ORG   $300
 FREQ     EQU   $350
 PLSWIDTH EQU   $352

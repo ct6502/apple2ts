@@ -324,7 +324,9 @@ const updateExternalMachineState = () => {
     textPage: getTextPage(),
     lores: getTextPage(true),
     hires: getHires(),
-    zeroPageStack: getDebugString()
+    zeroPageStack: getDebugString(),
+    button0: SWITCHES.PB0.isSet,
+    button1: SWITCHES.PB1.isSet,
   }
   passMachineState(state)
 }

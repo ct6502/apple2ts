@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetBreakpoint, handleSetNormalSpeed, handleGetTextPage,
-  handleSetDebug, handleGetSpeed,
+  handleSetDebug, handleGetSpeed, handleGetButton,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleStepInto, handleStepOver, handleStepOut, handleKeyboardBuffer } from "./main2worker"
 import { STATE, getPrintableChar } from "./emulator/utility"
@@ -181,6 +181,8 @@ class DisplayApple2 extends React.Component<{},
       handleUpperCaseChange: this.handleUpperCaseChange,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
+      button0: handleGetButton(true),
+      button1: handleGetButton(false),
     }
     const debugProps: DebugProps = {
       doDebug: this.state.doDebug,

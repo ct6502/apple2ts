@@ -54,6 +54,8 @@ type DisplayProps = {
   handleUpperCaseChange: () => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
+  button0: boolean,
+  button1: boolean,
 }
 
 type DebugProps = {
@@ -73,7 +75,9 @@ type MachineState = {
   textPage: Uint8Array,
   lores: Uint8Array,
   hires: Uint8Array,
-  zeroPageStack: string
+  zeroPageStack: string,
+  button0: boolean,
+  button1: boolean
 }
 
 type DriveState = {

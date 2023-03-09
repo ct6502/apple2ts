@@ -12,7 +12,7 @@ const DebugPanel = (props: DebugProps) => {
     props.handleBreakpoint(result)
   }
   return (
-    <span>
+    <span style={{display: 'none'}}>
       <span className="fixed small">
         <pre>{handleGetZeroPageStack()}</pre>
       </span>

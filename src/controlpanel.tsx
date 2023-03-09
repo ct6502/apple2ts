@@ -11,10 +11,11 @@ import {
   faPlay,
   faPowerOff,
   faSave,
-  // faCircle as iconLeftButton,
+  faCircle as iconClosedButton,
   // faCircle as iconRightButton,
 } from "@fortawesome/free-solid-svg-icons";
 import {
+  faCircle as iconOpenButton,
 } from "@fortawesome/free-regular-svg-icons";
 
 const ControlPanel = (props: DisplayProps) => {
@@ -90,18 +91,14 @@ const ControlPanel = (props: DisplayProps) => {
       </span>
   const arrowButtons = <span>
         <button title="Left"
-          onClick={() => {
-            handleAppleCommandKeyPress(true)
-            setTimeout(() => handleAppleCommandKeyRelease(true), 500)
-          }}><b>&#x2460;</b>
-          {/* <FontAwesomeIcon icon={iconLeftButton}/> */}
+          onMouseDown={() => handleAppleCommandKeyPress(true)}
+          onMouseUp={() => handleAppleCommandKeyRelease(true)}>
+          <FontAwesomeIcon icon={props.button0 ? iconClosedButton : iconOpenButton}/>
         </button>
         <button title="Right"
-          onClick={() => {
-            handleAppleCommandKeyPress(false)
-            setTimeout(() => handleAppleCommandKeyRelease(false), 500)
-          }}><b>&#x2461;</b>
-          {/* <FontAwesomeIcon icon={iconRightButton}/> */}
+          onMouseDown={() => handleAppleCommandKeyPress(false)}
+          onMouseUp={() => handleAppleCommandKeyRelease(false)}>
+          <FontAwesomeIcon icon={props.button1 ? iconClosedButton : iconOpenButton}/>
         </button>
       </span>
   return (

@@ -84,7 +84,9 @@ let machineState: MachineState = {
   textPage: new Uint8Array(960).fill(0xFF),
   lores: new Uint8Array(),
   hires: new Uint8Array(),
-  zeroPageStack: ''
+  zeroPageStack: '',
+  button0: false,
+  button1: false
 }
 let saveState = ""
 
@@ -92,7 +94,9 @@ const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg) {
     case "MACHINE_STATE":
       const cpuStateChanged = machineState.state !== e.data.payload.state ||
-        machineState.zeroPageStack !== e.data.payload.zeroPageStack
+        machineState.zeroPageStack !== e.data.payload.zeroPageStack ||
+        machineState.button0 !== e.data.payload.button0 ||
+        machineState.button1 !== e.data.payload.button1
       machineState = e.data.payload
       if (cpuStateChanged) updateDisplay()
       break;
@@ -144,6 +148,10 @@ export const handleGetAltCharSet = () => {
 
 export const handleGetZeroPageStack = () => {
   return machineState.zeroPageStack
+}
+
+export const handleGetButton = (left: boolean) => {
+  return left ? machineState.button0 : machineState.button1
 }
 
 export const handleGetSaveState = (callback: (state: string) => void) => {
