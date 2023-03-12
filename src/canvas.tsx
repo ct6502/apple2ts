@@ -1,4 +1,4 @@
-import React, { useEffect, KeyboardEvent } from 'react';
+import React, { useEffect, useState, KeyboardEvent } from 'react';
 import { handleGetAltCharSet, handleGetTextPage, handleGetLores, handleGetHires,
   handleGoBackInTime, handleGoForwardInTime,
   handleSetCPUState,
@@ -403,7 +403,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const checkGamepad = () => {
+  const checkGamepad = (x: number, y: number) => {
     const gamePads = navigator.getGamepads()
     let gamePad: EmuGamepad = {
       connected: false,
@@ -424,7 +424,12 @@ const Apple2Canvas = (props: DisplayProps) => {
           }
         }
         break
-      }        
+      }
+    }
+    if (!gamePad.connected) {
+      gamePad.connected = true
+      gamePad.axes[0] = x
+      gamePad.axes[1] = y
     }
     if (gamePad.connected) {
       handleSetGamepad(gamePad)
@@ -435,8 +440,21 @@ const Apple2Canvas = (props: DisplayProps) => {
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
     let animationFrameId = 0
+    let x = 0
+    let y = 0
+    const handleMouseMove = (event: MouseEvent) => {
+      const scale = (xx: number, ww: number) => {
+        xx = 6 * xx / ww - 3
+        return Math.min(Math.max(xx, -1), 1)}
+      if (props.myCanvas.current && context) {
+        const rect = props.myCanvas.current.getBoundingClientRect();
+        x = scale(event.clientX - rect.left, rect.width);
+        y = scale(event.clientY - rect.top, rect.height);
+      }
+    }
     if (props.myCanvas.current) {
       context = props.myCanvas.current.getContext('2d')
+      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
     }
     const handleResize = () => {
       if (context) {
@@ -450,7 +468,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     window.addEventListener("resize", handleResize)
 
     // Check for new gamepads on a regular basis
-    const gamepadID = window.setInterval(checkGamepad, 34)
+    const gamepadID = window.setInterval(() => {checkGamepad(x, y)}, 34)
     const renderCanvas = () => {
       frameCount++
       if (context) {
@@ -465,6 +483,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.removeEventListener("paste", paste)
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
+      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
     }
   }, [props.myCanvas, props.isColor]);
 
