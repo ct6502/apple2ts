@@ -1,85 +1,17 @@
-import { Buffer } from "buffer"
-import { passDriveProps, passDriveSound } from "./worker2main"
+import { passDriveSound } from "./worker2main"
 import { SWITCHES } from "./softswitches"
 import { cycleCount } from './instructions'
 import { toHex, DRIVE } from "./utility"
-import { decodeDiskData } from "./decodedisk"
+import { getDriveState, passData } from "./drivestate"
 
-export const initDriveState = (): DriveState => {
-  return {
-    hardDrive: false,
-    drive: 0,
-    status: "",
-    filename: "",
-    diskData: new Uint8Array(),
-    diskHasChanges: false,
-    motorRunning: false,
-    isWriteProtected: false,
-    halftrack: 0,
-    prevHalfTrack: 0,
-    writeMode: false,
-    currentPhase: 0,
-    trackStart: Array<number>(80),
-    trackNbits: Array<number>(80),
-    trackLocation: 0,
-  }
-}
-
-let driveState: DriveState[] = [initDriveState(), initDriveState()];
 
 let currentDrive = 0
 let motorOffTimeout: any = 0
 
-export const getDriveState = () => {
-  const driveData = [Buffer.from(driveState[0].diskData).toString("base64"),
-    Buffer.from(driveState[1].diskData).toString("base64")]
-  return { currentDrive: currentDrive, driveState: driveState, driveData: driveData }
-}
-
-export const getFilename = () => {
-  return driveState[currentDrive].filename
-}
-
-const passData = () => {
-  for (let i = 0; i < driveState.length; i++) {
-    const dprops: DriveProps = {
-      hardDrive: false,
-      drive: i,
-      filename: driveState[i].filename,
-      status: (driveState[i].halftrack / 2).toString(),
-      motorRunning: driveState[i].motorRunning,
-      diskHasChanges: driveState[i].diskHasChanges,
-      diskData: driveState[i].diskData
-    }
-    passDriveProps(dprops)
-  }
-}
-
-export const setDriveState = (newState: any) => {
-  currentDrive = newState.currentDrive
-  driveState = newState.driveState
-  for (let i = 0; i < driveState.length; i++) {
-    if ("fileName" in newState.driveState[i]) {
-      driveState[i].filename = newState.driveState[i].fileName
-      delete (driveState[i] as any).fileName
-    }
-    if ("diskImageHasChanges" in newState.driveState[i]) {
-      driveState[i].diskHasChanges = newState.driveState[i].diskImageHasChanges
-      delete (driveState[i] as any).diskImageHasChanges
-    }
-    if ("motorIsRunning" in newState.driveState[i]) {
-      driveState[i].motorRunning = newState.driveState[i].motorIsRunning
-      delete (driveState[i] as any).motorIsRunning
-    }
-  }
-  driveState[0].diskData = new Uint8Array(Buffer.from(newState.driveData[0], 'base64'))
-  driveState[1].diskData = new Uint8Array(Buffer.from(newState.driveData[1], 'base64'))
-  passData()
-}
-
-export const doResetDrive = () => {
+export const doResetDiskDrive = (driveState: DriveState[]) => {
   SWITCHES.DRIVE.isSet = false
-  doMotorTimeout()
+  doMotorTimeout(driveState[0])
+  doMotorTimeout(driveState[1])
   driveState[0].halftrack = 68
   driveState[0].prevHalfTrack = 68
   driveState[1].halftrack = 68
@@ -87,18 +19,17 @@ export const doResetDrive = () => {
   passData()
 }
 
-export const doPauseDrive = (resume = false) => {
+export const doPauseDiskDrive = (driveState: DriveState[], resume = false) => {
   if (resume) {
     if (driveState[currentDrive].motorRunning) {
-      startMotor()
+      startMotor(driveState[currentDrive])
     }
   } else {
     passDriveSound(DRIVE.MOTOR_OFF)
   }
 }
 
-const moveHead = (offset: number) => {
-  const dd = driveState[currentDrive]
+const moveHead = (dd: DriveState, offset: number) => {
   if (dd.trackStart[dd.halftrack] > 0) {
     dd.prevHalfTrack = dd.halftrack
   }
@@ -124,8 +55,7 @@ const pickbit = [128, 64, 32, 16, 8, 4, 2, 1]
 const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
   0b11110111, 0b11111011, 0b11111101, 0b11111110]
 
-const getNextBit = () => {
-  const dd = driveState[currentDrive]
+const getNextBit = (dd: DriveState) => {
   dd.trackLocation = dd.trackLocation % dd.trackNbits[dd.halftrack]
   let bit: number
   if (dd.trackStart[dd.halftrack] > 0) {
@@ -143,20 +73,20 @@ const getNextBit = () => {
 
 let dataRegister = 0
 
-const getNextByte = () => {
-  if (driveState[currentDrive].diskData.length === 0) return 0
+const getNextByte = (dd: DriveState) => {
+  if (dd.diskData.length === 0) return 0
   let result = 0
   if (dataRegister === 0) {
-    while (getNextBit() === 0) {}
+    while (getNextBit(dd) === 0) {}
     // This will become the high bit on the next read
     dataRegister = 0x40
     // Read the next 6 bits, all except the last one.
     for (let i = 5; i >= 0; i--) {
-      dataRegister |= getNextBit() << i
+      dataRegister |= getNextBit(dd) << i
     }
   } else {
     // Read the last bit.
-    const bit = getNextBit()
+    const bit = getNextBit(dd)
     dataRegister = (dataRegister << 1) | bit
   }
   result = dataRegister
@@ -168,8 +98,7 @@ const getNextByte = () => {
 
 let prevCycleCount = 0
 
-const doWriteBit = (bit: 0 | 1) => {
-  const dd = driveState[currentDrive]
+const doWriteBit = (dd: DriveState, bit: 0 | 1) => {
   dd.trackLocation = dd.trackLocation % dd.trackNbits[dd.halftrack]
   // TODO: What about writing to empty tracks?
   if (dd.trackStart[dd.halftrack] > 0) {
@@ -186,8 +115,7 @@ const doWriteBit = (bit: 0 | 1) => {
   dd.trackLocation++
 }
 
-const doWriteByte = (delta: number) => {
-  const dd = driveState[currentDrive]
+const doWriteByte = (dd: DriveState, delta: number) => {
   // Sanity check to make sure we aren't on an empty track. Is this correct?
   if (dd.diskData.length === 0 || dd.trackStart[dd.halftrack] === 0) {
     return
@@ -195,14 +123,14 @@ const doWriteByte = (delta: number) => {
   if (dataRegister > 0) {
     if (delta >= 16) {
       for (let i = 7; i >= 0; i--) {
-        doWriteBit(dataRegister & 2**i ? 1 : 0)      
+        doWriteBit(dd, dataRegister & 2**i ? 1 : 0)      
       }
     }
     if (delta >= 36) {
-      doWriteBit(0)
+      doWriteBit(dd, 0)
     }
     if (delta >= 40) {
-      doWriteBit(0)
+      doWriteBit(dd, 0)
     }
     debugCache.push(delta >= 40 ? 2 : delta >= 36 ? 1 : dataRegister)
     dd.diskHasChanges = true
@@ -210,41 +138,41 @@ const doWriteByte = (delta: number) => {
   }
 }
 
-const doMotorTimeout = () => {
+const doMotorTimeout = (dd: DriveState) => {
   motorOffTimeout = 0
   if (!SWITCHES.DRIVE.isSet) {
-    driveState[currentDrive].motorRunning = false
+    dd.motorRunning = false
   }
   passData()
   passDriveSound(DRIVE.MOTOR_OFF)
 }
 
-const startMotor = () => {
+const startMotor = (dd: DriveState) => {
   if (motorOffTimeout) {
     clearTimeout(motorOffTimeout)
     motorOffTimeout = 0
   }
-  driveState[currentDrive].motorRunning = true
+  dd.motorRunning = true
   passData()
   passDriveSound(DRIVE.MOTOR_ON)
 }
 
-const stopMotor = () => {
+const stopMotor = (dd: DriveState) => {
   if (motorOffTimeout === 0) {
-    motorOffTimeout = setTimeout(() => doMotorTimeout(), 1000);
+    motorOffTimeout = setTimeout(() => doMotorTimeout(dd), 1000);
   }
 }
 
 let debugCache:number[] = []
 const doDebugDrive = false
 
-const dumpData = (addr: number) => {
+const dumpData = (dd: DriveState, addr: number) => {
   // if (dataRegister !== 0) {
   //   console.error(`addr=${toHex(addr)} writeByte= ${dataRegister}`)
   // }
-  if (debugCache.length > 0 && driveState[currentDrive].halftrack === 2 * 0x00) {
+  if (debugCache.length > 0 && dd.halftrack === 2 * 0x00) {
     if (doDebugDrive) {
-      let output = `TRACK ${toHex(driveState[currentDrive].halftrack/2)}: `
+      let output = `TRACK ${toHex(dd.halftrack/2)}: `
       let out = ''
       debugCache.forEach(element => {
         switch (element) {
@@ -262,7 +190,7 @@ const dumpData = (addr: number) => {
 
 export const handleDriveSoftSwitches =
   (addr: number, value: number): number => {
-  const dd = driveState[currentDrive]
+  let dd = getDriveState(currentDrive)
   let result = 0
   const delta = cycleCount - prevCycleCount
   // if (doDebugDrive && value !== 0x96) {
@@ -273,27 +201,27 @@ export const handleDriveSoftSwitches =
   // }
   if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C SHIFT/READ
     if (dd.motorRunning && !dd.writeMode) {
-      return getNextByte()
+      return getNextByte(dd)
     }
   }
   if (addr === SWITCHES.DRIVE.onAddr) {  // $C089
-    startMotor()
-    dumpData(addr)
+    startMotor(dd)
+    dumpData(dd, addr)
     return result
   }
   if (addr === SWITCHES.DRIVE.offAddr) {  // $C088
-    stopMotor()
-    dumpData(addr)
+    stopMotor(dd)
+    dumpData(dd, addr)
     return result
   }
   if (addr === SWITCHES.DRVSEL.offAddr || addr === SWITCHES.DRVSEL.onAddr) {
     currentDrive = (addr === SWITCHES.DRVSEL.offAddr) ? 0 : 1
-    if (driveState[1 - currentDrive].motorRunning) {
-      driveState[1 - currentDrive].motorRunning = false
-      driveState[currentDrive].motorRunning = true
-      for (let i = 0; i < driveState.length; i++) {
-        passData()
-      }
+    const ddOld = getDriveState(1 - currentDrive)
+    dd = getDriveState(currentDrive)
+    if (ddOld.motorRunning) {
+      ddOld.motorRunning = false
+      dd.motorRunning = true
+      passData()
     }
     return result
   }
@@ -307,11 +235,11 @@ export const handleDriveSoftSwitches =
     // Make sure our current phase motor has been turned off.
     if (!ps[dd.currentPhase].isSet) {
       if (dd.motorRunning && ascend.isSet) {
-        moveHead(1)
+        moveHead(dd, 1)
         dd.currentPhase = (dd.currentPhase + 1) % 4
 
       } else if (dd.motorRunning && descend.isSet) {
-        moveHead(-1)
+        moveHead(dd, -1)
         dd.currentPhase = (dd.currentPhase + 3) % 4
       }
     }
@@ -322,10 +250,10 @@ export const handleDriveSoftSwitches =
     //     `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
     //     `track=${dState.halftrack / 2}`)
     // }
-    dumpData(addr)
+    dumpData(dd, addr)
   } else if (addr === SWITCHES.DRVWRITE.offAddr) {  // $C08E READ
     if (dd.motorRunning && dd.writeMode) {
-      doWriteByte(delta)
+      doWriteByte(dd, delta)
       // Reset the Disk II Logic State Sequencer clock
       prevCycleCount = cycleCount
     }
@@ -333,7 +261,7 @@ export const handleDriveSoftSwitches =
     if (SWITCHES.DRVDATA.isSet) {
       result = dd.isWriteProtected ? 0xFF : 0
     }
-    dumpData(addr)
+    dumpData(dd, addr)
   } else if (addr === SWITCHES.DRVWRITE.onAddr) {  // $C08F WRITE
     dd.writeMode = true
     // Reset the Disk II Logic State Sequencer clock
@@ -344,7 +272,7 @@ export const handleDriveSoftSwitches =
   } else if (addr === SWITCHES.DRVDATA.onAddr) {  // $C08D LOAD/READ
     if (dd.motorRunning) {
       if (dd.writeMode) {
-        doWriteByte(delta)
+        doWriteByte(dd, delta)
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = cycleCount
       }
@@ -355,15 +283,4 @@ export const handleDriveSoftSwitches =
   }
 
   return result
-}
-
-export const doSetDriveProps = (props: DriveProps) => {
-  driveState[props.drive] = initDriveState()
-  driveState[props.drive].diskData = new Uint8Array()
-  driveState[props.drive].filename = props.filename
-  driveState[props.drive].motorRunning = props.motorRunning
-  if (props.diskData.length > 0) {
-    driveState[props.drive].diskData = decodeDiskData(driveState[props.drive], props.diskData)
-  }
-  passData()
 }

@@ -2,7 +2,7 @@ import { doSetCPUState, doSetBreakpoint,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime, doSetDebug,
   doStepInto, doStepOver, doStepOut } from "./motherboard";
-import { doSetDriveProps } from "./diskdata"
+import { doSetDriveProps } from "./drivestate"
 import { doSetHardDriveProps } from "./harddrivedata"
 import { addToBuffer } from "./keyboard"
 import { pressAppleCommandKey, setGamepad } from "./joystick"

@@ -1,4 +1,4 @@
-import { getFilename } from "./diskdata"
+import { getFilename } from "./drivestate"
 import { addToBuffer, addToBufferDebounce } from "./keyboard"
 import { memC000 } from "./memory"
 import { SWITCHES } from "./softswitches"

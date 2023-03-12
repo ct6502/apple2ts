@@ -3,7 +3,7 @@ import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { passDriveProps } from "./worker2main"
 import { decodeDiskData } from "./decodedisk"
-import { initDriveState } from "./diskdata"
+import { initDriveState } from "./drivestate"
 
 let currentDrive = 0
 let timerID: any | number = 0

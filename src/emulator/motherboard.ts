@@ -4,7 +4,7 @@ import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, setCycleCount } from "./instructions"
 import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
-import { getDriveState, setDriveState, doResetDrive, doPauseDrive } from "./diskdata"
+import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memGet, mainMem, auxMem, memC000, getTextPage, getHires, specialJumpTable } from "./memory"
@@ -81,7 +81,7 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
 // }
 
 export const doGetSaveState = () => {
-  const state = { state6502: getApple2State(), driveState: getDriveState() }
+  const state = { state6502: getApple2State(), driveState: getDriveSaveState() }
   return JSON.stringify(state)
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
@@ -89,7 +89,7 @@ export const doGetSaveState = () => {
 export const doRestoreSaveState = (sState: string) => {
   const state = JSON.parse(sState);
   setApple2State(state.state6502 as SAVEAPPLE2STATE)
-  setDriveState(state.driveState)
+  restoreDriveSaveState(state.driveState)
   updateExternalMachineState()
 }
 
