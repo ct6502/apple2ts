@@ -81,17 +81,21 @@ type MachineState = {
 }
 
 type DriveState = {
+  hardDrive: boolean,
+  drive: number,
+  status: string,
   filename: string,
+  diskData: Uint8Array,
+  diskHasChanges: boolean,
+  motorRunning: boolean,
+  isWriteProtected: boolean,
   halftrack: number,
   prevHalfTrack: number,
   writeMode: boolean,
   currentPhase: number,
-  diskHasChanges: boolean,
-  motorRunning: boolean,
   trackStart: Array<number>,
   trackNbits: Array<number>,
   trackLocation: number,
-  isWriteProtected: boolean
 }
 
 type DriveProps = {

@@ -5,21 +5,26 @@ import { cycleCount } from './instructions'
 import { toHex, DRIVE } from "./utility"
 import { decodeDiskData } from "./decodedisk"
 
-const initDriveState = (): DriveState => {
+export const initDriveState = (): DriveState => {
   return {
+    hardDrive: false,
+    drive: 0,
+    status: "",
     filename: "",
+    diskData: new Uint8Array(),
+    diskHasChanges: false,
+    motorRunning: false,
+    isWriteProtected: false,
     halftrack: 0,
     prevHalfTrack: 0,
     writeMode: false,
     currentPhase: 0,
-    diskHasChanges: false,
-    motorRunning: false,
     trackStart: Array<number>(80),
     trackNbits: Array<number>(80),
     trackLocation: 0,
-    isWriteProtected: false
   }
 }
+
 let driveState: DriveState[] = [initDriveState(), initDriveState()];
 const diskData = [new Uint8Array(), new Uint8Array()]
 

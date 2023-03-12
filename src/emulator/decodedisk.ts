@@ -97,8 +97,37 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   return diskData
 }
 
+const int32 = (data: Uint8Array) => {
+  return data[0] + 256 * (data[1] + 256 * (data[2] + 256 * data[3]))
+}
+
+const decode2MG = (driveState: DriveState, diskData: Uint8Array) => {
+//    const nblocks = int32(diskData.slice(0x14, 0x18))
+  const offset = int32(diskData.slice(0x18, 0x1c))
+  const nbytes = int32(diskData.slice(0x1c, 0x20))
+  let magic = ''
+  for (let i = 0; i < 4; i++) magic += String.fromCharCode(diskData[i]) 
+  if (magic !== '2IMG') {
+    console.error("Corrupt 2MG file.")
+    driveState.filename = ""
+    return new Uint8Array()
+  }
+  if (diskData[12] !== 1) {
+    console.error("Only ProDOS 2MG files are supported.")
+    driveState.filename = ""
+    return new Uint8Array()
+  }
+  return diskData.slice(offset, offset + nbytes)
+}
+
 export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
   driveState.diskHasChanges = false
+  const fname = driveState.filename.toLowerCase()
+  if (fname.endsWith('.hdv') || fname.endsWith('.po')) {
+    return diskData
+  } else if (fname.endsWith('.2mg')) {
+    return decode2MG(driveState, diskData)
+  }
   if (isDSK(driveState.filename)) {
     diskData = decodeDSK(driveState, diskData)
   }

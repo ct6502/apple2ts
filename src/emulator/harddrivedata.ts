@@ -2,6 +2,8 @@ import { parseAssembly } from "./assembler"
 import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { passDriveProps } from "./worker2main"
+import { decodeDiskData } from "./decodedisk"
+import { initDriveState } from "./diskdata"
 
 let currentDrive = 0
 let timerID: any | number = 0
@@ -73,61 +75,13 @@ export const enableHardDrive = () => {
   setSlotDriver(7, prodos8driver(), 0xC7DC, processHardDriveBlockAccess)
 }
 
-const initDriveProps = (): DriveProps => {
-  return {
-    hardDrive: false,
-    drive: 0,
-    filename: "",
-    status: "",
-    halftrack: 0,
-    diskHasChanges: false,
-    motorRunning: false,
-    diskData: new Uint8Array()
-  }
-}
-let driveState: DriveProps[] = [initDriveProps(), initDriveProps(), initDriveProps()];
 
-const int32 = (data: Uint8Array) => {
-  return data[0] + 256 * (data[1] + 256 * (data[2] + 256 * data[3]))
-}
+let driveState: DriveState[] = [initDriveState(), initDriveState(), initDriveState()];
 
-const decode2MG = (driveState: DriveProps, diskData: Uint8Array) => {
-//    const nblocks = int32(diskData.slice(0x14, 0x18))
-  const offset = int32(diskData.slice(0x18, 0x1c))
-  const nbytes = int32(diskData.slice(0x1c, 0x20))
-  let magic = ''
-  for (let i = 0; i < 4; i++) magic += String.fromCharCode(diskData[i]) 
-  if (magic !== '2IMG') {
-    console.error("Corrupt 2MG file.")
-    driveState.filename = ""
-    return new Uint8Array()
-  }
-  if (diskData[12] !== 1) {
-    console.error("Only ProDOS 2MG files are supported.")
-    driveState.filename = ""
-    return new Uint8Array()
-  }
-  return diskData.slice(offset, offset + nbytes)
-}
-
-const decodeDiskData = (driveState: DriveProps, diskData: Uint8Array): Uint8Array => {
-  driveState.diskHasChanges = false
-  const fname = driveState.filename.toLowerCase()
-  if (fname.endsWith('.hdv')) {
-    return diskData
-  } else if (fname.endsWith('.2mg')) {
-    return decode2MG(driveState, diskData)
-  } else if (fname.endsWith('.po')) {
-    return diskData
-  }
-  console.error("Unknown disk format.")
-  driveState.filename = ""
-  return new Uint8Array()
-}
 
 export const doSetHardDriveProps = (props: DriveProps) => {
   currentDrive = props.drive
-  driveState[props.drive] = initDriveProps()
+  driveState[props.drive] = initDriveState()
   driveState[props.drive].hardDrive = props.hardDrive
   driveState[props.drive].drive = props.drive
   driveState[props.drive].diskData = new Uint8Array()
