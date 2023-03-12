@@ -1,4 +1,4 @@
-import React, { useEffect, useState, KeyboardEvent } from 'react';
+import React, { useEffect, KeyboardEvent } from 'react';
 import { handleGetAltCharSet, handleGetTextPage, handleGetLores, handleGetHires,
   handleGoBackInTime, handleGoForwardInTime,
   handleSetCPUState,
