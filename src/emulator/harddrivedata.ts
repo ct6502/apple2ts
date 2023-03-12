@@ -103,7 +103,6 @@ const passData = () => {
         filename: driveState[i].filename,
         status: driveState[i].status,
         motorRunning: driveState[i].motorRunning,
-        halftrack: driveState[i].halftrack,
         diskHasChanges: driveState[i].diskHasChanges,
         diskData: driveState[i].diskHasChanges ? driveState[i].diskData : new Uint8Array()
       }

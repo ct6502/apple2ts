@@ -26,14 +26,13 @@ export const initDriveState = (): DriveState => {
 }
 
 let driveState: DriveState[] = [initDriveState(), initDriveState()];
-const diskData = [new Uint8Array(), new Uint8Array()]
 
 let currentDrive = 0
 let motorOffTimeout: any = 0
 
 export const getDriveState = () => {
-  const driveData = [Buffer.from(diskData[0]).toString("base64"),
-    Buffer.from(diskData[1]).toString("base64")]
+  const driveData = [Buffer.from(driveState[0].diskData).toString("base64"),
+    Buffer.from(driveState[1].diskData).toString("base64")]
   return { currentDrive: currentDrive, driveState: driveState, driveData: driveData }
 }
 
@@ -49,9 +48,8 @@ const passData = () => {
       filename: driveState[i].filename,
       status: (driveState[i].halftrack / 2).toString(),
       motorRunning: driveState[i].motorRunning,
-      halftrack: driveState[i].halftrack,
       diskHasChanges: driveState[i].diskHasChanges,
-      diskData: diskData[i]
+      diskData: driveState[i].diskData
     }
     passDriveProps(dprops)
   }
@@ -74,8 +72,8 @@ export const setDriveState = (newState: any) => {
       delete (driveState[i] as any).motorIsRunning
     }
   }
-  diskData[0] = new Uint8Array(Buffer.from(newState.driveData[0], 'base64'))
-  diskData[1] = new Uint8Array(Buffer.from(newState.driveData[1], 'base64'))
+  driveState[0].diskData = new Uint8Array(Buffer.from(newState.driveData[0], 'base64'))
+  driveState[1].diskData = new Uint8Array(Buffer.from(newState.driveData[1], 'base64'))
   passData()
 }
 
@@ -132,7 +130,7 @@ const getNextBit = () => {
   let bit: number
   if (dd.trackStart[dd.halftrack] > 0) {
     const fileOffset = dd.trackStart[dd.halftrack] + (dd.trackLocation >> 3)
-    const byte = diskData[currentDrive][fileOffset]
+    const byte = dd.diskData[fileOffset]
     const b = dd.trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
   } else {
@@ -146,7 +144,7 @@ const getNextBit = () => {
 let dataRegister = 0
 
 const getNextByte = () => {
-  if (diskData[currentDrive].length === 0) return 0
+  if (driveState[currentDrive].diskData.length === 0) return 0
   let result = 0
   if (dataRegister === 0) {
     while (getNextBit() === 0) {}
@@ -176,14 +174,14 @@ const doWriteBit = (bit: 0 | 1) => {
   // TODO: What about writing to empty tracks?
   if (dd.trackStart[dd.halftrack] > 0) {
     const fileOffset = dd.trackStart[dd.halftrack] + (dd.trackLocation >> 3)
-    let byte = diskData[currentDrive][fileOffset]
+    let byte = dd.diskData[fileOffset]
     const b = dd.trackLocation & 7
     if (bit) {
       byte |= pickbit[b]
     } else {
       byte &= clearbit[b]
     }
-    diskData[currentDrive][fileOffset] = byte
+    dd.diskData[fileOffset] = byte
   }
   dd.trackLocation++
 }
@@ -191,7 +189,7 @@ const doWriteBit = (bit: 0 | 1) => {
 const doWriteByte = (delta: number) => {
   const dd = driveState[currentDrive]
   // Sanity check to make sure we aren't on an empty track. Is this correct?
-  if (diskData[currentDrive].length === 0 || dd.trackStart[dd.halftrack] === 0) {
+  if (dd.diskData.length === 0 || dd.trackStart[dd.halftrack] === 0) {
     return
   }
   if (dataRegister > 0) {
@@ -361,11 +359,11 @@ export const handleDriveSoftSwitches =
 
 export const doSetDriveProps = (props: DriveProps) => {
   driveState[props.drive] = initDriveState()
-  diskData[props.drive] = new Uint8Array()
+  driveState[props.drive].diskData = new Uint8Array()
   driveState[props.drive].filename = props.filename
   driveState[props.drive].motorRunning = props.motorRunning
   if (props.diskData.length > 0) {
-    diskData[props.drive] = decodeDiskData(driveState[props.drive], props.diskData)
+    driveState[props.drive].diskData = decodeDiskData(driveState[props.drive], props.diskData)
   }
   passData()
 }

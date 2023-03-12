@@ -165,7 +165,6 @@ const initDriveProps = (): DriveProps => {
     drive: 0,
     filename: "",
     status: "",
-    halftrack: 0,
     diskHasChanges: false,
     motorRunning: false,
     diskData: new Uint8Array()

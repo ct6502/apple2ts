@@ -104,7 +104,6 @@ type DriveProps = {
   filename: string,
   status: string,
   motorRunning: boolean,
-  halftrack: number,
   diskHasChanges: boolean,
   diskData: Uint8Array
 }
