@@ -1,11 +1,10 @@
 import { parseAssembly } from "./assembler"
 import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
-import { passDriveProps } from "./worker2main"
 import { decodeDiskData } from "./decodedisk"
-import { initDriveState } from "./drivestate"
+import { getDriveState, passData } from "./drivestate"
 
-let currentDrive = 0
+let currentDrive = 2
 let timerID: any | number = 0
 
 const code1 = `
@@ -75,59 +74,33 @@ export const enableHardDrive = () => {
   setSlotDriver(7, prodos8driver(), 0xC7DC, processHardDriveBlockAccess)
 }
 
-
-let driveState: DriveState[] = [initDriveState(), initDriveState(), initDriveState()];
-
-
 export const doSetHardDriveProps = (props: DriveProps) => {
   currentDrive = props.drive
-  driveState[props.drive] = initDriveState()
-  driveState[props.drive].hardDrive = props.hardDrive
-  driveState[props.drive].drive = props.drive
-  driveState[props.drive].diskData = new Uint8Array()
-  driveState[props.drive].status = props.filename
-  driveState[props.drive].filename = props.filename
-  driveState[props.drive].motorRunning = props.motorRunning
+  let dd = getDriveState(currentDrive)
+  dd.hardDrive = props.hardDrive
+  dd.drive = props.drive
+  dd.diskData = new Uint8Array()
+  dd.status = props.filename
+  dd.filename = props.filename
+  dd.motorRunning = props.motorRunning
   if (props.diskData.length > 0) {
-    driveState[props.drive].diskData = decodeDiskData(driveState[props.drive], props.diskData)
+    dd.diskData = decodeDiskData(dd, props.diskData)
   }
-  passData()
-}
-
-const passData = () => {
-  for (let i = 0; i < driveState.length; i++) {
-    if (driveState[i].hardDrive) {
-      const dprops: DriveProps = {
-        hardDrive: true,
-        drive: i,
-        filename: driveState[i].filename,
-        status: driveState[i].status,
-        motorRunning: driveState[i].motorRunning,
-        diskHasChanges: driveState[i].diskHasChanges,
-        diskData: driveState[i].diskHasChanges ? driveState[i].diskData : new Uint8Array()
-      }
-      passDriveProps(dprops)
-    }
-  }
-}
-
-const motorTimeout = () => {
-  timerID = 0
-  driveState[currentDrive].motorRunning = false
   passData()
 }
 
 export const processHardDriveBlockAccess = () => {
+  let dd = getDriveState(currentDrive)
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   let addr = memGet(0x44) + 256 * memGet(0x45)
-  const dataLen = driveState[currentDrive].diskData.length
+  const dataLen = dd.diskData.length
 //  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
 
   switch (memGet(0x42)) {
     case 0:
       // Status test: 300: A2 AB A0 CD 8D 06 C0 A9 00 85 42 A9 70 85 43 20 EA C7 00
-      if (driveState[currentDrive].filename.length === 0 || dataLen === 0) {
+      if (dd.filename.length === 0 || dataLen === 0) {
         setX(0)
         setY(0)
         setCarry()
@@ -142,7 +115,7 @@ export const processHardDriveBlockAccess = () => {
         setCarry()
         return
       }
-      const dataRead = driveState[currentDrive].diskData.slice(blockStart, blockStart + 512)
+      const dataRead = dd.diskData.slice(blockStart, blockStart + 512)
       setDataBlock(addr, dataRead)
       break;
     case 2:
@@ -151,8 +124,8 @@ export const processHardDriveBlockAccess = () => {
         return
       }
       const dataWrite = getDataBlock(addr)
-      driveState[currentDrive].diskData.set(dataWrite, blockStart)
-      driveState[currentDrive].diskHasChanges = true
+      dd.diskData.set(dataWrite, blockStart)
+      dd.diskHasChanges = true
       break;
     case 3:
       console.error("Hard drive format not implemented yet")
@@ -165,9 +138,13 @@ export const processHardDriveBlockAccess = () => {
   }
 
   setCarry(false)
-  driveState[currentDrive].motorRunning = true
+  dd.motorRunning = true
   if (!timerID) {
-    timerID = setTimeout(motorTimeout, 500)
+    timerID = setTimeout(() => {
+      timerID = 0
+      dd.motorRunning = false
+      passData()
+    }, 500)
   }
   passData()
 }

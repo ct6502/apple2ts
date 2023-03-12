@@ -3,7 +3,7 @@ import { passDriveProps } from "./worker2main"
 import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
 
-export const initDriveState = (): DriveState => {
+const initDriveState = (): DriveState => {
   return {
     hardDrive: false,
     drive: 0,
@@ -34,7 +34,7 @@ export const getDriveState = (drive: number) => {
 export const getDriveSaveState = () => {
   const driveData = [Buffer.from(driveState[0].diskData).toString("base64"),
     Buffer.from(driveState[1].diskData).toString("base64")]
-  return { currentDrive: currentDrive, driveState: driveState, driveData: driveData }
+  return { currentDrive: currentDrive, driveState: driveState.slice(0, 2), driveData: driveData }
 }
 
 export const getFilename = () => {
@@ -47,10 +47,10 @@ export const passData = () => {
       hardDrive: false,
       drive: i,
       filename: driveState[i].filename,
-      status: (driveState[i].halftrack / 2).toString(),
+      status: driveState[i].status,
       motorRunning: driveState[i].motorRunning,
       diskHasChanges: driveState[i].diskHasChanges,
-      diskData: driveState[i].diskData
+      diskData: driveState[i].diskHasChanges ? driveState[i].diskData : new Uint8Array()
     }
     passDriveProps(dprops)
   }
@@ -58,7 +58,8 @@ export const passData = () => {
 
 export const restoreDriveSaveState = (newState: any) => {
   currentDrive = newState.currentDrive
-  driveState = newState.driveState
+  driveState[0] = newState.driveState[0]
+  driveState[1] = newState.driveState[1]
   for (let i = 0; i < driveState.length; i++) {
     if ("fileName" in newState.driveState[i]) {
       driveState[i].filename = newState.driveState[i].fileName
