@@ -6,6 +6,8 @@ import disk2off from './img/disk2off.png'
 import disk2on from './img/disk2on.png'
 import disk2offEmpty from './img/disk2off-empty.png'
 import disk2onEmpty from './img/disk2on-empty.png'
+import hardDriveOff from './img/harddrive.png'
+import hardDriveOn from './img/harddriveOn.png'
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   const crc = crc32(diskData, 12)
@@ -63,13 +65,19 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
 
   render() {
     const dprops = handleGetDriveProps(this.props.drive)
-    const img1 = (dprops.filename.length > 0) ?
-    (dprops.motorRunning ? disk2on : disk2off) :
-    (dprops.motorRunning ? disk2onEmpty : disk2offEmpty)
+    let img1: any
+    if (dprops.hardDrive) {
+      img1 = dprops.motorRunning ? hardDriveOn : hardDriveOff
+    } else {
+      img1 = (dprops.filename.length > 0) ?
+        (dprops.motorRunning ? disk2on : disk2off) :
+        (dprops.motorRunning ? disk2onEmpty : disk2offEmpty)
+    }
     const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
     return (
       <span className="drive">
-        <img className="disk2" src={img1} alt={filename}
+        <img className={dprops.hardDrive ? "harddrive disk2" : "disk2"}
+          src={img1} alt={filename}
           title={filename}
           onClick={() => {
             if (dprops.filename.length > 0) {
@@ -94,7 +102,8 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
           }}
           style={{display: 'none'}}
         />
-        <span className="fixedAlignRight">{dprops.status}</span>
+        <span className={dprops.hardDrive ?
+          "hdText" : "fixedAlignRight"}>{dprops.status}</span>
       </span>
     )
   }

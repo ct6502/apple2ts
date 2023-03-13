@@ -1,7 +1,6 @@
 import { parseAssembly } from "./assembler"
 import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
-import { decodeDiskData } from "./decodedisk"
 import { getDriveState, passData } from "./drivestate"
 
 let currentDrive = 2
@@ -72,21 +71,6 @@ const prodos8driver = () => {
 
 export const enableHardDrive = () => {
   setSlotDriver(7, prodos8driver(), 0xC7DC, processHardDriveBlockAccess)
-}
-
-export const doSetHardDriveProps = (props: DriveProps) => {
-  currentDrive = props.drive
-  let dd = getDriveState(currentDrive)
-  dd.hardDrive = props.hardDrive
-  dd.drive = props.drive
-  dd.diskData = new Uint8Array()
-  dd.status = props.filename
-  dd.filename = props.filename
-  dd.motorRunning = props.motorRunning
-  if (props.diskData.length > 0) {
-    dd.diskData = decodeDiskData(dd, props.diskData)
-  }
-  passData()
 }
 
 export const processHardDriveBlockAccess = () => {

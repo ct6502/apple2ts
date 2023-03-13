@@ -44,7 +44,7 @@ export const getFilename = () => {
 export const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
     const dprops: DriveProps = {
-      hardDrive: false,
+      hardDrive: driveState[i].hardDrive,
       drive: i,
       filename: driveState[i].filename,
       status: driveState[i].status,
@@ -91,11 +91,15 @@ export const doPauseDrive = (resume = false) => {
 
 export const doSetDriveProps = (props: DriveProps) => {
   driveState[props.drive] = initDriveState()
-  driveState[props.drive].diskData = new Uint8Array()
+  driveState[props.drive].hardDrive = props.hardDrive
+  driveState[props.drive].diskData = props.diskData
   driveState[props.drive].filename = props.filename
   driveState[props.drive].motorRunning = props.motorRunning
-  if (props.diskData.length > 0) {
-    driveState[props.drive].diskData = decodeDiskData(driveState[props.drive], props.diskData)
+  if (driveState[props.drive].diskData.length > 0) {
+    if (!decodeDiskData(driveState[props.drive])) {
+      driveState[props.drive].diskData = new Uint8Array()
+      driveState[props.drive].filename = ''
+    }
   }
   passData()
 }

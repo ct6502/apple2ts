@@ -3,7 +3,6 @@ import { doSetCPUState, doSetBreakpoint,
   doGoBackInTime, doGoForwardInTime, doSetDebug,
   doStepInto, doStepOver, doStepOut } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
-import { doSetHardDriveProps } from "./harddrivedata"
 import { addToBuffer } from "./keyboard"
 import { pressAppleCommandKey, setGamepad } from "./joystick"
 import { DRIVE } from "./utility";
@@ -86,11 +85,7 @@ self.onmessage = (e: MessageEvent) => {
       break;
     case "DRIVE_PROPS":
       const props = e.data.payload as DriveProps
-      if (props.hardDrive) {
-        doSetHardDriveProps(props)
-      } else {
-        doSetDriveProps(props)
-      }
+      doSetDriveProps(props)
       break;
     case "GAMEPAD":
       setGamepad(e.data.payload)
