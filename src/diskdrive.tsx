@@ -29,7 +29,8 @@ const readDisk = async (file: File, drive: number) => {
 }
 
 const resetDrive = (drive: number) => {
-  handleSetDiskData(false, drive, new Uint8Array(), "")
+  const dprops = handleGetDriveProps(drive)
+  handleSetDiskData(dprops.hardDrive, drive, new Uint8Array(), "")
 }
 
 class DiskDrive extends React.Component<{drive: number}, {}> {

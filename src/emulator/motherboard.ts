@@ -11,7 +11,6 @@ import { memGet, mainMem, auxMem, memC000, getTextPage, getHires, specialJumpTab
 import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
-import { enableHardDrive } from "./harddrivedata"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -101,7 +100,6 @@ const doBoot = () => {
     let pcode = parseAssembly(0x300, code.split("\n"));
     mainMem.set(pcode, 0x300);
   }
-  enableHardDrive()
   doReset()
 }
 

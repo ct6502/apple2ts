@@ -2,6 +2,7 @@ import { Buffer } from "buffer"
 import { passDriveProps } from "./worker2main"
 import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
+import { enableHardDrive } from "./harddrivedata"
 
 const initDriveState = (): DriveState => {
   return {
@@ -58,9 +59,9 @@ export const passData = () => {
 
 export const restoreDriveSaveState = (newState: any) => {
   currentDrive = newState.currentDrive
-  driveState[0] = newState.driveState[0]
-  driveState[1] = newState.driveState[1]
-  for (let i = 0; i < driveState.length; i++) {
+  for (let i = 0; i < newState.length; i++) {
+    driveState[i] = newState.driveState[i]
+    driveState[i].diskData = new Uint8Array(Buffer.from(newState.driveData[i], 'base64'))
     if ("fileName" in newState.driveState[i]) {
       driveState[i].filename = newState.driveState[i].fileName
       delete (driveState[i] as any).fileName
@@ -74,8 +75,6 @@ export const restoreDriveSaveState = (newState: any) => {
       delete (driveState[i] as any).motorIsRunning
     }
   }
-  driveState[0].diskData = new Uint8Array(Buffer.from(newState.driveData[0], 'base64'))
-  driveState[1].diskData = new Uint8Array(Buffer.from(newState.driveData[1], 'base64'))
   passData()
 }
 
@@ -99,6 +98,10 @@ export const doSetDriveProps = (props: DriveProps) => {
     if (!decodeDiskData(driveState[props.drive])) {
       driveState[props.drive].diskData = new Uint8Array()
       driveState[props.drive].filename = ''
+    }
+  } else {
+    if (driveState[props.drive].hardDrive) {
+      enableHardDrive(false)
     }
   }
   passData()

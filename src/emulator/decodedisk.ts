@@ -1,4 +1,5 @@
 import { convertdsk2woz } from "./convertdsk2woz"
+import { enableHardDrive } from "./harddrivedata";
 
 let crcTable = new Uint32Array(256).fill(0)
 
@@ -134,11 +135,14 @@ export const decodeDiskData = (driveState: DriveState) => {
   const fname = driveState.filename.toLowerCase()
   if (fname.endsWith('.hdv') || fname.endsWith('.po')) {
     driveState.hardDrive = true
+    enableHardDrive()
     return true
   } else if (fname.endsWith('.2mg')) {
     driveState.hardDrive = true
+    enableHardDrive()
     return decode2MG(driveState)
   }
+  enableHardDrive(false)
   if (isDSK(driveState.filename)) {
     return decodeDSK(driveState)
   }

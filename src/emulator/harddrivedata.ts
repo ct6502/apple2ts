@@ -7,7 +7,7 @@ let currentDrive = 2
 let timerID: any | number = 0
 
 const code1 = `
-         LDX   #$20
+         LDX   #$20   ; Apple IIe looks for magic bytes $20, $00, $03
          LDA   #$00
          LDX   #$03
          LDA   #$01
@@ -69,8 +69,15 @@ const prodos8driver = () => {
   return driver
 }
 
-export const enableHardDrive = () => {
-  setSlotDriver(7, prodos8driver(), 0xC7DC, processHardDriveBlockAccess)
+let code = new Uint8Array()
+
+export const enableHardDrive = (enable = true) => {
+  const slot = 7
+  if (code.length === 0) {
+    code = prodos8driver()
+  }
+  code[1] = enable ? 0x20 : 0x00
+  setSlotDriver(slot, code, 0xC0DC + slot * 0x100, processHardDriveBlockAccess)
 }
 
 export const processHardDriveBlockAccess = () => {
