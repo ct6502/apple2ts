@@ -3,14 +3,15 @@ import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
   incrementPC, cycleCount, setCycleCount } from "./instructions"
-import { STATE, getProcessorStatus, getInstrString, debugZeroPage } from "./utility"
+import { STATE, getProcessorStatus, getInstrString } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memGet, mainMem, auxMem, memC000, getTextPage, getHires, specialJumpTable } from "./memory"
+import { memory, memGet, getTextPage, getHires, specialJumpTable, setSlotDriver, memoryReset } from "./memory"
 import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
+import { disk2driver } from "./roms/slot_disk2_cx00"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -29,7 +30,7 @@ let saveStates = Array<string>(maxState).fill('')
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
 let doDebug = false
-let doDebugZeroPage = false
+// let doDebugZeroPage = false
 const instrTrail = new Array<string>(1000)
 let posTrail = 0
 let breakpoint = 0
@@ -40,8 +41,7 @@ const getApple2State = (): SAVEAPPLE2STATE => {
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
   }
-  const memory = Buffer.from(mainMem)
-  const memAux = Buffer.from(auxMem)
+  const membuffer = Buffer.from(memory)
   // let memdiff: { [addr: number]: number } = {};
   // for (let i = 0; i < memory.length; i++) {
   //   if (prevMemory[i] !== memory[i]) {
@@ -52,9 +52,9 @@ const getApple2State = (): SAVEAPPLE2STATE => {
   return {
     s6502: s6502,
     softSwitches: softSwitches,
-    memory: memory.toString("base64"),
-    memAux: memAux.toString("base64"),
-    memc000: Buffer.from(memC000).toString("base64"),
+    memory: membuffer.toString("base64"),
+    memAux: '',
+    memc000: '',
   }
 }
 
@@ -68,11 +68,13 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
     } catch (error) {
     }
   }
-  mainMem.set(Buffer.from(newState.memory, "base64"))
-  memC000.set(Buffer.from(newState.memc000, "base64"))
-  if (newState.memAux !== undefined) {
-    auxMem.set(Buffer.from(newState.memAux, "base64"))
-  }
+  memory.set(Buffer.from(newState.memory, "base64"))
+  memGet(0xC0FF)
+  // mainMem.set(Buffer.from(newState.memory, "base64"))
+  // memC000.set(Buffer.from(newState.memc000, "base64"))
+  // if (newState.memAux !== undefined) {
+  //   auxMem.set(Buffer.from(newState.memAux, "base64"))
+  // }
 }
 
 // export const doRequestSaveState = () => {
@@ -92,19 +94,39 @@ export const doRestoreSaveState = (sState: string) => {
   updateExternalMachineState()
 }
 
+// const testTiming = () => {
+//   let t0 = performance.now()
+//   for (let j = 0; j < 10000; j++) {
+//     for (let i = 0; i < 0xBFFF; i++) {
+//       memGet(i)    
+//     }
+//   }
+//   let tdiff = performance.now() - t0
+//   console.log(`memGet time = ${tdiff}`)
+//   t0 = performance.now()
+//   for (let j = 0; j < 10000; j++) {
+//     for (let i = 0; i < 0xBFFF; i++) {
+//       memSet(i, 255)    
+//     }
+//   }
+//   tdiff = performance.now() - t0
+//   console.log(`memSet time = ${tdiff}`)
+// }
+
 const doBoot = () => {
   setCycleCount(0)
-  mainMem.fill(0xFF)
-  auxMem.fill(0xFF)
+  memoryReset()
+  setSlotDriver(6, Uint8Array.from(disk2driver))
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
-    mainMem.set(pcode, 0x300);
+    memory.set(pcode, 0x300);
   }
+//  testTiming()
   doReset()
 }
 
 const doReset = () => {
-  memC000.fill(0)
+//  memoryReset()
   for (const key in SWITCHES) {
     const keyTyped = key as keyof typeof SWITCHES
     SWITCHES[keyTyped].isSet = false
@@ -232,7 +254,6 @@ export const processInstruction = (step = false) => {
     code = pcodes[0xEA]
   }
   if (code) {
-//    const mainMem1 = mainMem
     if (PC1 === breakpoint && !step) {
       cpuState = STATE.PAUSED
       return -1
@@ -254,12 +275,11 @@ export const processInstruction = (step = false) => {
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
     if (doDebug) {
-//      const mem = mainMem.slice(0, 256)
       if (instr === 0) doDebug = false
       console.log(out)
-      if (doDebugZeroPage) {
-        debugZeroPage(mainMem.slice(0, 256))
-      }
+//      if (doDebugZeroPage) {
+//        debugZeroPage(mainMem.slice(0, 256))
+//      }
     }
     // if (doDebug) {
     //   instrTrail.slice(posTrail).forEach(s => console.log(s));

@@ -82,7 +82,6 @@ type MachineState = {
 
 type DriveState = {
   hardDrive: boolean,
-  drive: number,
   status: string,
   filename: string,
   diskData: Uint8Array,

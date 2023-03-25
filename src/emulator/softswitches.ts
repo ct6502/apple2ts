@@ -1,4 +1,4 @@
-import { memC000 } from "./memory"
+import { memGetC000, memSetC000 } from "./memory"
 import { popKey } from "./keyboard"
 import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./joystick"
@@ -68,19 +68,20 @@ export const SWITCHES = {
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
   ALTCHARSET: NewSwitch(0xC00E, 0xC01E, true),
   KBRDSTROBE: NewSwitch(0, 0xC010, false, () => {
-    memC000.fill(memC000[0] & 0b01111111, 0, 32)
+    const keyvalue = memGetC000(0xC000) & 0b01111111
+    memSetC000(0xC000, keyvalue, 32)
     popKey()
   }),
   BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0xC012),  // status location, not a switch
   CASSOUT: NewSwitch(0xC020, 0, false, () => {
-    memC000.fill(rand(), 0x20, 16)
+    memSetC000(0xC020, rand(), 16)
   }),
   SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
-    memC000.fill(rand(), 0x30, 16)
+    memSetC000(0xC030, rand(), 16)
     passClickSpeaker(cycleCount)
   }),
-  EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memC000[0x4F] = 0xCD}),
+  EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memSetC000(0xC04F, 0xCD)}),
   TEXT: NewSwitch(0xC050, 0xC01A),
   MIXED: NewSwitch(0xC052, 0xC01B),
   PAGE2: NewSwitch(0xC054, 0xC01C),
@@ -89,20 +90,20 @@ export const SWITCHES = {
   AN1: NewSwitch(0xC05A, 0),
   AN2: NewSwitch(0xC05C, 0),
   AN3: NewSwitch(0xC05E, 0),
-  CASSIN1: NewSwitch(0, 0xC060, false, () => {memC000[0x60] = rand()}),
+  CASSIN1: NewSwitch(0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
   PB0: NewSwitch(0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0xC062),  // status location, not a switch
   PB2: NewSwitch(0, 0xC063),  // status location, not a switch
   JOYSTICK12: NewSwitch(0xC064, 0, false, (addr, cycleCount) => {
     checkJoystickValues(cycleCount)
   }),
-  CASSIN2: NewSwitch(0, 0xC068, false, () => {memC000[0x68] = rand()}),
+  CASSIN2: NewSwitch(0, 0xC068, false, () => {memSetC000(0xC068, rand())}),
   FASTCHIP_LOCK: NewSwitch(0xC06A, 0),   // used by Total Replay
   FASTCHIP_ENABLE: NewSwitch(0xC06B, 0), // used by Total Replay
   FASTCHIP_SPEED: NewSwitch(0xC06D, 0),  // used by Total Replay
   JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
-    memC000[0x70] = rand()
+    memSetC000(0xC070, rand())
   }),
   LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay
   READBSR2: NewSwitch(0xC080, 0, false, (addr) => {handleBankedRAM(addr)}),
@@ -144,14 +145,14 @@ export const checkSoftSwitches = (addr: number,
           sswitch1.isSet = (addr === sswitch1.onAddr)
         }
         if (sswitch1.isSetAddr) {
-          memC000[sswitch1.isSetAddr - 0xC000] = sswitch1.isSet ? 0x8D : 0x0D
+          memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? 0x8D : 0x0D)
         }
       }
     } else if (addr === sswitch1.isSetAddr) {
       if (func) {
         func(addr, cycleCount)
       } else {
-        memC000[addr - 0xC000] = sswitch1.isSet ? 0x8D : 0x0D
+        memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
       }
     }
     return

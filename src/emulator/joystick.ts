@@ -1,6 +1,6 @@
 import { getFilename } from "./drivestate"
 import { addToBuffer, addToBufferDebounce } from "./keyboard"
-import { memC000 } from "./memory"
+import { memSetC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBufferDebounce } from "./keyboard"
@@ -41,7 +41,7 @@ export const pressAppleCommandKey = (isDown: boolean, left: boolean) => {
 }
 
 const memSet1 = (addr: number, value: number) => {
-  memC000[addr - 0xC000] = value
+  memSetC000(addr, value)
 }
 export const resetJoystick = (cycleCount: number) => {
   memSet1(0xC064, 0x80)

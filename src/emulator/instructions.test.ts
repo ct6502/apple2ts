@@ -1,6 +1,6 @@
 import { toHex } from "./utility"
 import { processInstruction } from "./motherboard";
-import { mainMem } from "./memory";
+import { memory } from "./memory";
 import { reset6502, doBranch, s6502, setPC, isBreak, setInterrupt } from "./instructions";
 import { parseAssembly } from "./assembler";
 
@@ -25,7 +25,7 @@ const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
   reset6502()
   setInterrupt(false)
   let pcode = parseAssembly(start, instr)
-  mainMem.set(pcode, start)
+  memory.set(pcode, start)
   setPC(start)
   while (s6502.PC < start + pcode.length) {
     processInstruction()

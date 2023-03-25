@@ -91,7 +91,6 @@ self.onmessage = (e: MessageEvent) => {
       setGamepad(e.data.payload)
       break
     default:
-      console.log("worker2main onmessage: unknown msg: " + JSON.stringify(e.data))
       break;
   }
 }

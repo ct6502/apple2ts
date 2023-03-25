@@ -7,7 +7,6 @@ import { enableHardDrive } from "./harddrivedata"
 const initDriveState = (): DriveState => {
   return {
     hardDrive: false,
-    drive: 0,
     status: "",
     filename: "",
     diskData: new Uint8Array(),
@@ -25,6 +24,7 @@ const initDriveState = (): DriveState => {
 }
 
 let driveState: DriveState[] = [initDriveState(), initDriveState(), initDriveState()];
+driveState[0].hardDrive = true
 
 let currentDrive = 0
 
@@ -33,9 +33,10 @@ export const getDriveState = (drive: number) => {
 }
 
 export const getDriveSaveState = () => {
-  const driveData = [Buffer.from(driveState[0].diskData).toString("base64"),
-    Buffer.from(driveState[1].diskData).toString("base64")]
-  return { currentDrive: currentDrive, driveState: driveState.slice(0, 2), driveData: driveData }
+  const driveData = [Buffer.from(driveState[1].diskData).toString("base64"),
+    Buffer.from(driveState[2].diskData).toString("base64")]
+  return { currentDrive: currentDrive,
+    driveState: [driveState[1], driveState[2]], driveData: driveData }
 }
 
 export const getFilename = () => {
@@ -90,7 +91,7 @@ export const doPauseDrive = (resume = false) => {
 
 export const doSetDriveProps = (props: DriveProps) => {
   driveState[props.drive] = initDriveState()
-  driveState[props.drive].hardDrive = props.hardDrive
+  driveState[0].hardDrive = true
   driveState[props.drive].diskData = props.diskData
   driveState[props.drive].filename = props.filename
   driveState[props.drive].motorRunning = props.motorRunning

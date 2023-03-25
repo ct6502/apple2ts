@@ -5,17 +5,17 @@ import { toHex, DRIVE } from "./utility"
 import { getDriveState, passData } from "./drivestate"
 
 
-let currentDrive = 0
+let currentDrive = 1
 let motorOffTimeout: any = 0
 
 export const doResetDiskDrive = (driveState: DriveState[]) => {
   SWITCHES.DRIVE.isSet = false
-  doMotorTimeout(driveState[0])
   doMotorTimeout(driveState[1])
-  driveState[0].halftrack = 68
-  driveState[0].prevHalfTrack = 68
+  doMotorTimeout(driveState[2])
   driveState[1].halftrack = 68
   driveState[1].prevHalfTrack = 68
+  driveState[2].halftrack = 68
+  driveState[2].prevHalfTrack = 68
   passData()
 }
 
@@ -193,6 +193,7 @@ export const handleDriveSoftSwitches =
   (addr: number, value: number): number => {
   let dd = getDriveState(currentDrive)
   let result = 0
+  if (dd.hardDrive) return result
   const delta = cycleCount - prevCycleCount
   // if (doDebugDrive && value !== 0x96) {
   //   const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
@@ -216,8 +217,8 @@ export const handleDriveSoftSwitches =
     return result
   }
   if (addr === SWITCHES.DRVSEL.offAddr || addr === SWITCHES.DRVSEL.onAddr) {
-    currentDrive = (addr === SWITCHES.DRVSEL.offAddr) ? 0 : 1
-    const ddOld = getDriveState(1 - currentDrive)
+    currentDrive = (addr === SWITCHES.DRVSEL.offAddr) ? 1 : 2
+    const ddOld = getDriveState(currentDrive === 1 ? 2 : 1)
     dd = getDriveState(currentDrive)
     if (ddOld.motorRunning) {
       ddOld.motorRunning = false

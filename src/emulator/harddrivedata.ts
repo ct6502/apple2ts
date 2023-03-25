@@ -3,7 +3,6 @@ import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { getDriveState, passData } from "./drivestate"
 
-let currentDrive = 2
 let timerID: any | number = 0
 
 const code1 = `
@@ -81,7 +80,8 @@ export const enableHardDrive = (enable = true) => {
 }
 
 export const processHardDriveBlockAccess = () => {
-  let dd = getDriveState(currentDrive)
+  let dd = getDriveState(0)
+  if (!dd.hardDrive) return
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   let addr = memGet(0x44) + 256 * memGet(0x45)
@@ -133,7 +133,7 @@ export const processHardDriveBlockAccess = () => {
   if (!timerID) {
     timerID = setTimeout(() => {
       timerID = 0
-      dd.motorRunning = false
+      if (dd) dd.motorRunning = false
       passData()
     }, 500)
   }

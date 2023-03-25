@@ -107,9 +107,9 @@ class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
     return (
       <span>
         <span className="drives">
-          <DiskDrive drive={2}/>
           <DiskDrive drive={0}/>
           <DiskDrive drive={1}/>
+          <DiskDrive drive={2}/>
         </span>
       </span>
     );

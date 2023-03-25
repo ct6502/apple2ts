@@ -1,9 +1,9 @@
-import { memC000 } from "./memory"
+import { memGetC000, memSetC000 } from "./memory"
 import { doSaveTimeSlice } from "./motherboard"
 
 let keyBuffer = ''
 export const popKey = () => {
-  if (memC000[0] < 128 && keyBuffer !== '') {
+  if (memGetC000(0xC000) < 128 && keyBuffer !== '') {
     let key = keyBuffer.charCodeAt(0)
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
@@ -40,6 +40,6 @@ export const addToBufferDebounce = (text: String, timeout: number) => {
 }
 
 const keyPress = (key: number) => {
-  memC000.fill(key | 0b10000000, 0, 32)
+  memSetC000(0xC000, key | 0b10000000, 32)
 }
 
