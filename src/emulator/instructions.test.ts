@@ -1,6 +1,6 @@
 import { toHex } from "./utility"
 import { processInstruction } from "./motherboard";
-import { memory } from "./memory";
+import { memory, updateAddressTables } from "./memory";
 import { reset6502, doBranch, s6502, setPC, isBreak, setInterrupt } from "./instructions";
 import { parseAssembly } from "./assembler";
 
@@ -23,6 +23,7 @@ test('doBranch', () => {
 const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
   const start = 0x2000
   reset6502()
+  updateAddressTables()
   setInterrupt(false)
   let pcode = parseAssembly(start, instr)
   memory.set(pcode, start)
