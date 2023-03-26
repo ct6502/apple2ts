@@ -4,35 +4,62 @@ import { handleDriveSoftSwitches } from "./diskdata"
 import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
 
-// Bank1 of $D000-$DFFF is stored in mainMem (and auxMem) at 0xC000-0xCFFF
-// Bank2 of $D000-$DFFF is stored in mainMem (and auxMem) at 0xD000-0xDFFF
-
-// 00...BF: main memory 00...BF
-// C0: soft switches
-// C1...FF: main ROM
-// 100: main memory 
+// 00000: main memory
+// 10000: aux memory 
+// 20000...23FFF: ROM
+// 24000...246FF: Slots 1-7
+// Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
+// Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
 export let memory = (new Uint8Array(1024 * 256)).fill(255)
+
+// Mappings from real Apple II address to memory array above.
+// 256 pages of memory, from $00xx to $FFxx
 const addressGetTable = (new Array<number>(256)).fill(-1)
 const addressSetTable = (new Array<number>(256)).fill(-1)
 
 const ROMindexMinusC0 = 0x200 - 0xC0
 const SLOTindexMinusC1 = 0x240 - 0xC1
-const AUXstart = 0x10000
+const AUXindex = 0x100
 const ROMstartMinusC000 = 256 * ROMindexMinusC0
 const SLOTstartMinusC100 = 256 * SLOTindexMinusC1
+const AUXstart = 256 * AUXindex
 
-export const updateAddressTables = () => {
-  const offset = 0 // for aux add 0x100
-  for (let i = 0; i < 256; i++) {
-    addressGetTable[i] = i + offset;
-    addressSetTable[i] = i + offset;
+const updateMainAuxMemoryTable = () => {
+  const offsetAuxRead = SWITCHES.RAMRD.isSet ? AUXindex : 0
+  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? AUXindex : 0
+  const offsetPage2 = SWITCHES.PAGE2.isSet ? AUXindex : 0
+  const offsetTextPageRead = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxRead
+  const offsetTextPageWrite = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxWrite
+  const offsetHgrPageRead = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
+  const offsetHgrPageWrite = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxWrite
+  for (let i = 2; i < 256; i++) {
+    addressGetTable[i] = i + offsetAuxRead;
+    addressSetTable[i] = i + offsetAuxWrite;
   }
-  // Read RAM instead of ROM (already set the mapping above)
+  for (let i = 4; i <= 7; i++) {
+    addressGetTable[i] = i + offsetTextPageRead;
+    addressSetTable[i] = i + offsetTextPageWrite;
+  }
+  for (let i = 0x20; i <= 0x3F; i++) {
+    addressGetTable[i] = i + offsetHgrPageRead;
+    addressSetTable[i] = i + offsetHgrPageWrite;
+  }
+}
+
+const updateReadBankSwitchedRamTable = () => {
+  const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
+  addressGetTable[0] = offsetZP;
+  addressGetTable[1] = 1 + offsetZP;
+  addressSetTable[0] = offsetZP;
+  addressSetTable[1] = 1 + offsetZP;
   if (SWITCHES.BSRREADRAM.isSet) {
-    if (SWITCHES.BSRBANK2.isSet) {
-      // Bank2 of $D000-$DFFF is actually in 0xC0...0xCF
+    for (let i = 0xD0; i <= 0xFF; i++) {
+      addressGetTable[i] = i + offsetZP;
+    }
+    if (!SWITCHES.BSRBANK2.isSet) {
+      // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
       for (let i = 0xD0; i <= 0xDF; i++) {
-        addressGetTable[i] = i - 0x10 + offset;
+        addressGetTable[i] = i - 0x10 + offsetZP;
       }
     }
   } else {
@@ -41,13 +68,20 @@ export const updateAddressTables = () => {
       addressGetTable[i] = ROMindexMinusC0 + i;
     }
   }
+}
+
+const updateWriteBankSwitchedRamTable = () => {
+  const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
   const writeRAM = SWITCHES.WRITEBSR1.isSet || SWITCHES.WRITEBSR2.isSet ||
     SWITCHES.RDWRBSR1.isSet || SWITCHES.RDWRBSR2.isSet
   if (writeRAM) {
-    if (SWITCHES.BSRBANK2.isSet) {
-      // Bank2 of $D000-$DFFF is actually in 0xC0...0xCF
+    for (let i = 0xD0; i <= 0xFF; i++) {
+      addressSetTable[i] = i + offsetZP;
+    }
+    if (!SWITCHES.BSRBANK2.isSet) {
+      // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
       for (let i = 0xD0; i <= 0xDF; i++) {
-        addressSetTable[i] = i - 0x10 + offset;
+        addressSetTable[i] = i - 0x10 + offsetZP;
       }
     }
   } else {
@@ -56,7 +90,9 @@ export const updateAddressTables = () => {
       addressSetTable[i] = -1;
     }
   }
+}
 
+const updateSlotRomTable = () => {
   // Read peripheral slot ROM
   if (!SWITCHES.INTCXROM.isSet) {
     // TODO: Currently, $C800-$CFFF is not being filled in for cards.
@@ -67,6 +103,14 @@ export const updateAddressTables = () => {
   if (!SWITCHES.SLOTC3ROM.isSet) {
     addressGetTable[0xC3] = ROMindexMinusC0 + 0xC3
   }
+}
+
+export const updateAddressTables = () => {
+  updateMainAuxMemoryTable()
+  updateReadBankSwitchedRamTable()
+  updateWriteBankSwitchedRamTable()
+  updateSlotRomTable()
+  // Scale all of our mappings up by 256 to get to offsets in memory array.
   for (let i = 0; i < 256; i++) {
     addressGetTable[i] = 256 * addressGetTable[i];
     addressSetTable[i] = 256 * addressSetTable[i];
@@ -153,7 +197,7 @@ export const memSet = (addr: number, value: number) => {
     return
   }
   const shifted = addressSetTable[page]
-  if (shifted === -1) return
+  if (shifted < 0) return
   memory[shifted + (addr & 255)] = value
 }
 
@@ -247,11 +291,11 @@ export function getHires() {
 }
 
 export const getDataBlock = (addr: number) => {
-  const offset = addressGetTable[addr >> 8]
+  const offset = addressGetTable[addr >>> 8]
   return memory.slice(offset, offset + 512)
 }
 
 export const setDataBlock = (addr: number, data: Uint8Array) => {
-  const offset = addressSetTable[addr >> 8]
+  const offset = addressSetTable[addr >>> 8] + (addr & 255)
   memory.set(data, offset)
 }

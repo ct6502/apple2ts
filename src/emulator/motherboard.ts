@@ -7,7 +7,7 @@ import { STATE, getProcessorStatus, getInstrString } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memory, memGet, getTextPage, getHires, specialJumpTable, setSlotDriver, memoryReset } from "./memory"
+import { memory, memGet, getTextPage, getHires, specialJumpTable, setSlotDriver, memoryReset, updateAddressTables } from "./memory"
 import { setButtonState, handleGamepad } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
@@ -69,7 +69,7 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
     }
   }
   memory.set(Buffer.from(newState.memory, "base64"))
-  memGet(0xC0FF)
+  updateAddressTables()
   // mainMem.set(Buffer.from(newState.memory, "base64"))
   // memC000.set(Buffer.from(newState.memc000, "base64"))
   // if (newState.memAux !== undefined) {
