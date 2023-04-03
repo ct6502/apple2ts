@@ -393,6 +393,8 @@ const doAdvance6502Timer = () => {
   }
   if (cpuState === STATE.RUNNING) {
     handleGamepad()
+    setTimeout(doAdvance6502Timer, 0)
+  } else {
+    setTimeout(doAdvance6502Timer, 10)
   }
-  setTimeout(doAdvance6502Timer, 0)
 }

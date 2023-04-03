@@ -10,7 +10,7 @@ import { Buffer } from "buffer";
 // 24000...246FF: Slots 1-7
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-export let memory = (new Uint8Array(1024 * 256)).fill(255)
+export let memory = (new Uint8Array(600 * 256)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx

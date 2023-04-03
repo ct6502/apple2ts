@@ -144,15 +144,12 @@ export const decodeDiskData = (driveState: DriveState) => {
   }
   enableHardDrive(false)
   if (isDSK(driveState.filename)) {
-    return decodeDSK(driveState)
+    decodeDSK(driveState)
   }
   if (decodeWoz2(driveState)) {
     return true
   }
   if (decodeWoz1(driveState)) {
-    return true
-  }
-  if (decodeDSK(driveState)) {
     return true
   }
   console.error("Unknown disk format.")

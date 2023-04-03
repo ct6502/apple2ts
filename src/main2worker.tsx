@@ -189,11 +189,31 @@ export const handleGetDriveProps = (drive: number) => {
   return driveProps[drive]
 }
 
+// async function fetchData(url: string): Promise<Uint8Array> {
+//   let result: Uint8Array
+//   try {
+//     const response = await fetch(url, {mode:'cors'});
+//     const buffer = await response.arrayBuffer();
+//     const uint8Array = new Uint8Array(buffer);
+//     result = uint8Array;
+//   } catch (error) {
+//     console.error('Error:', error);
+//     result = new Uint8Array()
+//   }
+//   return result
+// }
+
 export const handleSetDiskData = (hardDrive: boolean, drive: number,
   data: Uint8Array, filename: string) => {
   const props = driveProps[drive]
   props.drive = drive
   props.filename = filename
+  // const url = 'https://archive.org/download/TotalReplay/Total%20Replay%20v5.0-beta.3.hdv'
+  // fetchData(url)
+  // .then(data => {
+  //   props.diskData = data
+  //   doPostMessage("DRIVE_PROPS", props)
+  // })
   props.diskData = data
   doPostMessage("DRIVE_PROPS", props)
 }

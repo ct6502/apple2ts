@@ -455,9 +455,6 @@ PCODE('LSR', MODE.ABS_X, 0x5E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
 
 PCODE('NOP', MODE.IMPLIED, 0xEA, 1, () => {return 2})
 
-// Undocumented 65c02 1-cycle NOP
-PCODE('NOP', MODE.IMPLIED, 0xEB, 1, () => {return 1})
-
 const doORA = (addr: number) => {
   s6502.Accum |= memGet(addr)
   checkStatus(s6502.Accum)
@@ -635,5 +632,40 @@ PCODE('TXA', MODE.IMPLIED, 0x8A, 1, () => {s6502.Accum = s6502.XReg; checkStatus
 PCODE('TXS', MODE.IMPLIED, 0x9A, 1, () => {s6502.StackPtr = s6502.XReg; return 2})
 PCODE('TYA', MODE.IMPLIED, 0x98, 1, () => {s6502.Accum = s6502.YReg; checkStatus(s6502.Accum); return 2})
 
-// var endTime = performance.now()
-// console.log("PCODE time = " + (endTime - startTime))
+// Undocumented 65c02 NOP's
+// http://www.6502.org/tutorials/65c02opcodes.html
+//       x2:     x3:     x4:     x7:     xB:     xC:     xF:
+//      -----   -----   -----   -----   -----   -----   -----
+// 0x:  2 2 .   1 1 .   . . .   1 1 a   1 1 .   . . .   1 1 c
+// 1x:  . . .   1 1 .   . . .   1 1 a   1 1 .   . . .   1 1 c
+// 2x:  2 2 .   1 1 .   . . .   1 1 a   1 1 .   . . .   1 1 c
+// 3x:  . . .   1 1 .   . . .   1 1 a   1 1 .   . . .   1 1 c
+// 4x:  2 2 .   1 1 .   2 3 g   1 1 a   1 1 .   . . .   1 1 c
+// 5x:  . . .   1 1 .   2 4 h   1 1 a   1 1 .   3 8 j   1 1 c
+// 6x:  2 2 .   1 1 .   . . .   1 1 a   1 1 .   . . .   1 1 c
+// 7x:  . . .   1 1 .   . . .   1 1 a   1 1 .   . . .   1 1 c
+// 8x:  2 2 .   1 1 .   . . .   1 1 b   1 1 .   . . .   1 1 d
+// 9x:  . . .   1 1 .   . . .   1 1 b   1 1 .   . . .   1 1 d
+// Ax:  . . .   1 1 .   . . .   1 1 b   1 1 .   . . .   1 1 d
+// Bx:  . . .   1 1 .   . . .   1 1 b   1 1 .   . . .   1 1 d
+// Cx:  2 2 .   1 1 .   . . .   1 1 b   1 1 e   . . .   1 1 d
+// Dx:  . . .   1 1 .   2 4 h   1 1 b   1 1 f   3 4 i   1 1 d
+// Ex:  2 2 .   1 1 .   . . .   1 1 b   1 1 .   . . .   1 1 d
+// Fx:  . . .   1 1 .   2 4 h   1 1 b   1 1 .   3 4 i   1 1 d
+const twoByteNops = [0x02, 0x22, 0x42, 0x62, 0x82, 0xC2, 0xE2]
+twoByteNops.forEach(instr => {
+  PCODE('NOP', MODE.IMPLIED, instr, 2, () => {return 2})
+});
+for (let i = 0; i <= 15; i++) {
+  PCODE('NOP', MODE.IMPLIED, 3 + 16 * i, 1, () => {return 1})
+  PCODE('NOP', MODE.IMPLIED, 7 + 16 * i, 1, () => {return 1})
+  PCODE('NOP', MODE.IMPLIED, 0xB + 16 * i, 1, () => {return 1})  
+  PCODE('NOP', MODE.IMPLIED, 0xF + 16 * i, 1, () => {return 1})  
+}
+PCODE('NOP', MODE.IMPLIED, 0x44, 2, () => {return 3})
+PCODE('NOP', MODE.IMPLIED, 0x54, 2, () => {return 4})
+PCODE('NOP', MODE.IMPLIED, 0xD4, 2, () => {return 4})
+PCODE('NOP', MODE.IMPLIED, 0xF4, 2, () => {return 4})
+PCODE('NOP', MODE.IMPLIED, 0x5C, 3, () => {return 8})
+PCODE('NOP', MODE.IMPLIED, 0xDC, 3, () => {return 4})
+PCODE('NOP', MODE.IMPLIED, 0xFC, 3, () => {return 4})

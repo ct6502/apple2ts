@@ -59,12 +59,12 @@ ERR      LDA   #$27
 `
 const prodos8driver = () => {
   const driver = new Uint8Array(256).fill(0)
-  let pcode = parseAssembly(0x0, code1.split("\n"))
-  driver.set(pcode, 0)
-  pcode = parseAssembly(0x0, code2.split("\n"))
-  driver.set(pcode, 0xDC)
-  driver[0xFE] = 0b00010011
-  driver[0xFF] = 0xDC
+  const pcode1 = parseAssembly(0x0, code1.split("\n"))
+  driver.set(pcode1, 0)
+  const pcode2 = parseAssembly(0x0, code2.split("\n"))
+  driver.set(pcode2, 0xDC)
+  driver[0xFE] = 0b00010011  // flags = ???
+  driver[0xFF] = 0xDC  // jump address for our hard drive driver
   return driver
 }
 
