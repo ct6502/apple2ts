@@ -84,7 +84,6 @@ type DriveState = {
   hardDrive: boolean,
   status: string,
   filename: string,
-  diskData: Uint8Array,
   diskHasChanges: boolean,
   motorRunning: boolean,
   isWriteProtected: boolean,

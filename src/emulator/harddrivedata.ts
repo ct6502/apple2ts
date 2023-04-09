@@ -1,7 +1,7 @@
 import { parseAssembly } from "./assembler"
 import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
-import { getDriveState, passData } from "./drivestate"
+import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
 
 let timerID: any | number = 0
 
@@ -80,18 +80,19 @@ export const enableHardDrive = (enable = true) => {
 }
 
 export const processHardDriveBlockAccess = () => {
-  let dd = getDriveState(0)
-  if (!dd.hardDrive) return
+  const ds = getHardDriveState()
+  const dd = getHardDriveData()
+  if (!ds.hardDrive) return
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   let addr = memGet(0x44) + 256 * memGet(0x45)
-  const dataLen = dd.diskData.length
+  const dataLen = dd.length
 //  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
 
   switch (memGet(0x42)) {
     case 0:
       // Status test: 300: A2 AB A0 CD 8D 06 C0 A9 00 85 42 A9 70 85 43 20 EA C7 00
-      if (dd.filename.length === 0 || dataLen === 0) {
+      if (ds.filename.length === 0 || dataLen === 0) {
         setX(0)
         setY(0)
         setCarry()
@@ -106,7 +107,7 @@ export const processHardDriveBlockAccess = () => {
         setCarry()
         return
       }
-      const dataRead = dd.diskData.slice(blockStart, blockStart + 512)
+      const dataRead = dd.slice(blockStart, blockStart + 512)
       setDataBlock(addr, dataRead)
       break;
     case 2:
@@ -115,8 +116,8 @@ export const processHardDriveBlockAccess = () => {
         return
       }
       const dataWrite = getDataBlock(addr)
-      dd.diskData.set(dataWrite, blockStart)
-      dd.diskHasChanges = true
+      dd.set(dataWrite, blockStart)
+      ds.diskHasChanges = true
       break;
     case 3:
       console.error("Hard drive format not implemented yet")
@@ -129,11 +130,11 @@ export const processHardDriveBlockAccess = () => {
   }
 
   setCarry(false)
-  dd.motorRunning = true
+  ds.motorRunning = true
   if (!timerID) {
     timerID = setTimeout(() => {
       timerID = 0
-      if (dd) dd.motorRunning = false
+      if (ds) ds.motorRunning = false
       passData()
     }, 500)
   }

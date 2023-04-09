@@ -1,5 +1,4 @@
 import { convertdsk2woz } from "./convertdsk2woz"
-import { enableHardDrive } from "./harddrivedata";
 
 let crcTable = new Uint32Array(256).fill(0)
 
@@ -26,8 +25,7 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
   return (crc ^ (-1)) >>> 0;
 };
 
-const decodeWoz2 = (driveState: DriveState): boolean => {
-  const diskData = driveState.diskData
+const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz2 = woz2.find((value, i) => value !== diskData[i]) === undefined
   if (!isWoz2) return false
@@ -56,8 +54,7 @@ const decodeWoz2 = (driveState: DriveState): boolean => {
   return true
 }
 
-const decodeWoz1 = (driveState: DriveState): boolean => {
-  const diskData = driveState.diskData
+const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz1 = [0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A]
   const isWoz1 = woz1.find((value, i) => value !== diskData[i]) === undefined
   if (!isWoz1) {
@@ -92,66 +89,68 @@ const replaceSuffix = (fname: String, suffix: String) => {
   return fname.substring(0, i) + suffix
 }
 
-const decodeDSK = (driveState: DriveState) => {
+const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   let f = driveState.filename.toLowerCase()
   const isPO = f.endsWith(".po")
-  const diskData = convertdsk2woz(driveState.diskData, isPO)
-  if (diskData.length === 0) {
-    return false
+  const newData = convertdsk2woz(diskData, isPO)
+  if (newData.length === 0) {
+    return new Uint8Array()
   }
   driveState.filename = replaceSuffix(driveState.filename, 'woz')
-  driveState.diskData = diskData
   driveState.diskHasChanges = true
-  return true
+  return newData
 }
 
 const int32 = (data: Uint8Array) => {
   return data[0] + 256 * (data[1] + 256 * (data[2] + 256 * data[3]))
 }
 
-const decode2MG = (driveState: DriveState) => {
+const decode2MG = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
 //    const nblocks = int32(diskData.slice(0x14, 0x18))
-  const diskData = driveState.diskData
   const offset = int32(diskData.slice(0x18, 0x1c))
   const nbytes = int32(diskData.slice(0x1c, 0x20))
   let magic = ''
   for (let i = 0; i < 4; i++) magic += String.fromCharCode(diskData[i]) 
   if (magic !== '2IMG') {
     console.error("Corrupt 2MG file.")
-    return false
+    return new Uint8Array()
   }
   if (diskData[12] !== 1) {
     console.error("Only ProDOS 2MG files are supported.")
-    return false
+    return new Uint8Array()
   }
   driveState.filename = replaceSuffix(driveState.filename, 'hdv')
-  driveState.diskData = diskData.slice(offset, offset + nbytes)
   driveState.diskHasChanges = true
-  return true
+  return diskData.slice(offset, offset + nbytes)
 }
 
-export const decodeDiskData = (driveState: DriveState) => {
+export const isHardDriveImage = (filename: string) => {
+  const f = filename.toLowerCase()
+  return f.endsWith('.hdv') || f.endsWith('.po') || f.endsWith('.2mg')
+}
+
+export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
-  if (fname.endsWith('.hdv') || fname.endsWith('.po')) {
+  if (isHardDriveImage(fname)) {
     driveState.hardDrive = true
-    enableHardDrive()
-    return true
-  } else if (fname.endsWith('.2mg')) {
-    driveState.hardDrive = true
-    enableHardDrive()
-    return decode2MG(driveState)
+    driveState.status = driveState.filename
+    if (fname.endsWith('.hdv') || fname.endsWith('.po')) {
+      return diskData
+    }
+    if (fname.endsWith('.2mg')) {
+      return decode2MG(driveState, diskData)
+    }
   }
-  enableHardDrive(false)
   if (isDSK(driveState.filename)) {
-    decodeDSK(driveState)
+    diskData = decodeDSK(driveState, diskData)
   }
-  if (decodeWoz2(driveState)) {
-    return true
+  if (decodeWoz2(driveState, diskData)) {
+    return diskData
   }
-  if (decodeWoz1(driveState)) {
-    return true
+  if (decodeWoz1(driveState, diskData)) {
+    return diskData
   }
   console.error("Unknown disk format.")
-  return false
+  return new Uint8Array()
 }
