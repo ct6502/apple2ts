@@ -8,6 +8,26 @@ export enum STATE {
   PAUSED,
 }
 
+export enum COLOR_MODE {
+  COLOR,
+  NOFRINGE,
+  GREEN,
+  AMBER
+}
+
+export const colorToName = (mode: COLOR_MODE) => {
+  return ["Color", "Color (no fringe)", "Green", "Amber"][mode]
+}
+
+export const nameToColorMode = (name: string) => {
+  switch (name) {
+    case "Color (no fringe)": return COLOR_MODE.NOFRINGE
+    case "Green": return COLOR_MODE.GREEN
+    case "Amber": return COLOR_MODE.AMBER
+    default: return COLOR_MODE.COLOR
+  }
+}
+
 export enum DRIVE {
   MOTOR_OFF,
   MOTOR_ON,

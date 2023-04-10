@@ -47,9 +47,9 @@ type DisplayProps = {
   speedCheck: boolean,
   handleSpeedChange: () => void,
   uppercase: boolean,
-  isColor: boolean,
+  colorMode: COLOR_MODE,
   sendKey: (key: number) => void,
-  handleColorChange: () => void,
+  handleColorChange: (mode: COLOR_MODE) => void,
   handleCopyToClipboard: () => void,
   handleUpperCaseChange: () => void,
   handleFileOpen: () => void,
@@ -70,7 +70,7 @@ type DebugProps = {
 
 type MachineState = {
   state: STATE,
-  speed: number,
+  speed: string,
   altChar: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,

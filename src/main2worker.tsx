@@ -79,7 +79,7 @@ export const handleSetGamepad = (gamePad: EmuGamepad | null) => {
 
 let machineState: MachineState = {
   state: STATE.IDLE,
-  speed: 0,
+  speed: '',
   altChar: false,
   textPage: new Uint8Array(960).fill(0xFF),
   lores: new Uint8Array(),
@@ -96,7 +96,8 @@ const doOnMessage = (e: MessageEvent) => {
       const cpuStateChanged = machineState.state !== e.data.payload.state ||
         machineState.zeroPageStack !== e.data.payload.zeroPageStack ||
         machineState.button0 !== e.data.payload.button0 ||
-        machineState.button1 !== e.data.payload.button1
+        machineState.button1 !== e.data.payload.button1 ||
+        machineState.speed !== e.data.payload.speed
       machineState = e.data.payload
       if (cpuStateChanged) updateDisplay()
       break;

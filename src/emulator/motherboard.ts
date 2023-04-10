@@ -337,7 +337,7 @@ const getDebugString = () => {
 const updateExternalMachineState = () => {
   const state: MachineState = {
     state: cpuState,
-    speed: speed,
+    speed: speed.toFixed(2),
     altChar: SWITCHES.ALTCHARSET.isSet,
     textPage: getTextPage(),
     lores: getTextPage(true),

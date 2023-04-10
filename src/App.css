@@ -87,10 +87,34 @@ textarea {
   font-size: small;
 }
 
+select {
+  font-size: medium;
+  border-radius: 4px;
+  padding: 2px;
+  outline-width: 0;
+  border-width: 0px;
+  background-color: #CFCBA8;
+}
+
+.noSelect {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.noSelect:focus {
+  outline: none !important;
+}
+
 button {
   border: 0;
   border-color: #a4a08A;
   background: none;
+  appearance: none;
   -webkit-appearance: none;
 /*  background-color: #a4a08A;*/
   color: black;

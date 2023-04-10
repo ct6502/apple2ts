@@ -4,7 +4,7 @@ import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetDebug, handleGetSpeed, handleGetButton,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleStepInto, handleStepOver, handleStepOut, handleKeyboardBuffer } from "./main2worker"
-import { STATE, getPrintableChar } from "./emulator/utility"
+import { STATE, getPrintableChar, COLOR_MODE, nameToColorMode } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
@@ -13,10 +13,10 @@ import DebugPanel from "./debugpanel"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
-  { currentSpeed: number;
+  { currentSpeed: string;
     speedCheck: boolean;
     uppercase: boolean;
-    isColor: boolean;
+    colorMode: COLOR_MODE;
     doDebug: boolean;
     breakpoint: string }> {
   timerID = 0
@@ -28,16 +28,17 @@ class DisplayApple2 extends React.Component<{},
     super(props);
     this.state = {
       doDebug: false,
-      currentSpeed: 0,
+      currentSpeed: '',
       speedCheck: true,
       uppercase: true,
-      isColor: true,
+      colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
     };
   }
 
   updateDisplay = () => {
-    this.setState( {currentSpeed: handleGetSpeed()} )
+    const s = handleGetSpeed()
+    this.setState( {currentSpeed: s} )
   }
 
   componentDidMount() {
@@ -55,8 +56,9 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
-  handleColorChange = () => {
-    this.setState({ isColor: !this.state.isColor });
+  handleColorChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const mode = nameToColorMode(event.target.value)
+    this.setState({ colorMode: mode });
   };
 
   handleDebugChange = () => {
@@ -166,15 +168,14 @@ class DisplayApple2 extends React.Component<{},
   }
 
   render() {
-    const speed = this.state.currentSpeed.toFixed(3)
     const props: DisplayProps = {
       machineState: handleGetState(),
-      speed: speed,
+      speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
-      isColor: this.state.isColor,
+      colorMode: this.state.colorMode,
       sendKey: this.sendKey,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,

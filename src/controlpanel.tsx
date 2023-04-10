@@ -1,4 +1,4 @@
-import { STATE } from "./emulator/utility";
+import { colorToName, STATE } from "./emulator/utility";
 import { handleAppleCommandKeyPress, handleAppleCommandKeyRelease, handleSetCPUState } from "./main2worker"
 import { getAudioContext } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -128,20 +128,17 @@ const ControlPanel = (props: DisplayProps) => {
         </label>
       </span>
       <span className="statusItem">
-        <label>
-          <input
-            type="checkbox"
-            checked={props.isColor}
-            onChange={props.handleColorChange}
-          />
-          Color
-        </label>
+        <select className="noSelect" value={colorToName(props.colorMode)} onChange={props.handleColorChange}>
+          <option value="Color">Color</option>
+          <option value="Color (no fringe)">Color (no fringe)</option>
+          <option value="Green">Green</option>
+          <option value="Amber">Amber</option>
+        </select>
       </span>
       <br />
-
-      {/* <span className="statusItem">
-        <span className="fixed">{handleGetSpeed()}</span> MHz
-      </span> */}
+      <span className="statusItem">
+        <span className="fixed">{props.speed}</span> MHz
+      </span>
       {/* <span className="statusItem">
         <span className="fixed">{toHex(props.s6502.PC, 4)}</span>
       </span> */}

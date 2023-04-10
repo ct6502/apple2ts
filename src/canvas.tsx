@@ -4,7 +4,7 @@ import { handleGetAltCharSet, handleGetTextPage, handleGetLores, handleGetHires,
   handleSetCPUState,
   handleKeyboardBuffer, handleSetGamepad,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./main2worker"
-import { STATE, getPrintableChar, convertAppleKey } from "./emulator/utility"
+import { STATE, getPrintableChar, convertAppleKey, COLOR_MODE } from "./emulator/utility"
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 const xmargin = 0.025
 const ymargin = 0.025
@@ -12,47 +12,67 @@ let width = 800
 let height = 600
 let frameCount = 0
 
-const loresColors = [
-  [  0,   0,   0], //black   
-  [211,  58,  72], //red     
-  [  9,  30, 163], //dk blue 
-  [213,  84, 221], //purple  
-  [ 54, 133,  57], //dk green
-  [104, 104, 104], //gray    
-  [ 51,  68, 246], //med blue
-  [134, 185, 249], //lt blue 
-  [147, 106,  33], //brown   
-  [240, 131,  49], //orange  
-  [184, 184, 184], //grey    
-  [244, 175, 157], //pink    
-  [ 97, 219,  64], //lt green
-  [254, 251,  82], //yellow  
-  [134, 247, 210], //aqua    
-  [255, 255, 255], //white   
-  ]
+const TEXT_GREEN = '#39FF14'
+const green = [0x39, 0xFF, 0x14]
+const TEXT_AMBER = '#FFA500'
+const amber = [0xFF, 0xA5, 0x0]
+
+const loresHex: string[] = [
+  "#000000", //black
+  "#DD0033", //red
+  "#000099", //dk blue
+  "#DD22DD", //purple
+  "#007722", //dk green
+  "#555555", //gray
+  "#2222FF", //med blue
+  "#66AAFF", //lt blue
+  "#885500", //brown
+  "#FF6600", //orange
+  "#AAAAAA", //grey
+  "#FF9988", //pink
+  "#11DD00", //lt green
+  "#FFFF00", //yellow
+  "#4AFDC5", //aqua
+  "#FFFFFF"] //white
+
+const hgrRGBcolors = [
+  [0, 0, 0],      //black1
+  [1, 255, 1],    //green
+  [255, 1, 255],  //violet
+  [255, 255, 255],//white1
+  [0, 0, 0],      //black2
+  [255, 127, 1],  //orange
+  [1, 127, 255],  //blue
+  [255, 255, 255] //white2
+]
+
+const loresColors: number[][] = loresHex.map(hex => {
+  const red = parseInt(hex.substring(1, 3), 16);
+  const green = parseInt(hex.substring(3, 5), 16);
+  const blue = parseInt(hex.substring(5, 7), 16);
+  return [red, green, blue];
+});
 
 const translateDHGR = [0, 1, 8, 9, 4, 5, 12, 13, 2, 3, 10, 11, 6, 7, 14, 15]
 
-const loresGreen = [
-  [0,   0, 0], //black   
-  [0,  58, 0], //red     
-  [0,  30, 0], //dk blue 
-  [0,  84, 0], //purple  
-  [0, 133, 0], //dk green
-  [0, 104, 0], //gray    
-  [0,  68, 0], //med blue
-  [0, 185, 0], //lt blue 
-  [0, 106, 0], //brown   
-  [0, 131, 0], //orange  
-  [0, 184, 0], //grey    
-  [0, 175, 0], //pink    
-  [0, 219, 0], //lt green
-  [0, 251, 0], //yellow  
-  [0, 247, 0], //aqua    
-  [0, 255, 0], //white   
-  ]
+const loresGreen: number[][] = loresColors.map(c => {
+  return [0, (c[0] + c[1] + c[2]) / 3, 0]
+})
 
-const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+const loresAmber: number[][] = loresColors.map(c => {
+  const c1 = (c[0] + c[1] + c[2]) / 3
+  return [c1, c1 * (0xA5 / 255), 0]
+})
+
+const hgrGreenScreen = [
+  [0, 0, 0], green, green, green, [0, 0, 0], green, green, green
+]
+
+const hgrAmberScreen = [
+  [0, 0, 0], amber, amber, amber, [0, 0, 0], amber, amber, amber
+]
+
+const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
   const textPage = handleGetTextPage()
   if (textPage.length === 0) return
   const doubleRes = textPage.length === 320 || textPage.length === 1920
@@ -67,6 +87,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
+  let colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -78,7 +99,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
       }
       let v1 = getPrintableChar(value, isAltCharSet)
       const v = String.fromCharCode(v1 < 127 ? v1 : (v1 + 0xE000))
-      ctx.fillStyle = isColor ? "#FFFFFF" : "#39FF14";
+      ctx.fillStyle = colorFill
       if (doInverse) {
         // Inverse characters
         ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + (j + 0.05)*cheight, 1.02*cwidth, 1.04*cheight);
@@ -96,7 +117,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
-const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+const processLoRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
   const textPage = handleGetLores()
   if (textPage.length === 0) return;
   const doubleRes = textPage.length === 1600 || textPage.length === 1920
@@ -105,7 +126,7 @@ const processLoRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   const nchars = doubleRes ? 80 : 40
   const bottom = mixedMode ? 20 : 24
   const cwidth = doubleRes ? 7 : 14
-  const colors = isColor ? loresColors : loresGreen
+  const colors = [loresColors, loresColors, loresGreen, loresAmber][colorMode]
 
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
   for (let y = 0; y < bottom; y++) {
@@ -142,32 +163,10 @@ const WHITE = 3
 // const ORANGE = 5
 // const BLUE = 6
 
-const hgrRGBcolors = [
-  [0, 0, 0],
-  [1, 255, 1],
-  [255, 1, 255],
-  [255, 255, 255],
-  [0, 0, 0],
-  [255, 127, 1],
-  [1, 127, 255],
-  [255, 255, 255]
-]
-
-const green = [0x39, 0xFF, 0x14]
-const hgrGreenScreen = [
-  [0, 0, 0],
-  green,
-  green,
-  green,
-  [0, 0, 0],
-  green,
-  green,
-  green
-]
-
-const getHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
+const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   const nlines = hgrPage.length / 40
   const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
+  const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
     const joffset = j * 560
@@ -198,6 +197,7 @@ const getHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
           let color = color1
           if (bit2) {
             color = WHITE
+            if (colorMode === COLOR_MODE.NOFRINGE && !previousWhite) color1 = BLACK
             // Fill in a couple extra pixels (may get changed later)
             imax += isColor ? 2 : 3
             previousWhite = true
@@ -221,9 +221,10 @@ const getHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
   return hgrColors
 }
 
-const getDoubleHiresColors = (hgrPage: Uint8Array, isColor: boolean) => {
+const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   const nlines = hgrPage.length / 80
   const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
+  const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*80, j*80 + 80)
     const bits = new Uint8Array(563).fill(0)
@@ -260,17 +261,17 @@ const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGBA: Uint8ClampedArr
     xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
 }
 
-const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+const processHiRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length === 0) return;
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
-  const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, isColor) :
-    getHiresColors(hgrPage, isColor)
+  const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
+    getHiresColors(hgrPage, colorMode)
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
-  const colors = doubleRes ? (isColor ? loresColors : loresGreen) :
-    (isColor ? hgrRGBcolors : hgrGreenScreen)
+  const colors = doubleRes ? [loresColors, loresColors, loresGreen, loresAmber][colorMode] :
+    [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen][colorMode]
   for (let i = 0; i < 560 * nlines; i++) {
     hgrRGBA[4 * i] = colors[hgrColors[i]][0]
     hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
@@ -279,13 +280,13 @@ const processHiRes = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
   drawImage(ctx, hgrRGBA)
 };
 
-const processDisplay = (ctx: CanvasRenderingContext2D, isColor: boolean) => {
+const processDisplay = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
   ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
   ctx.fillRect(0, 0, width, height);
-  processTextPage(ctx, isColor)
-  processLoRes(ctx, isColor)
-  processHiRes(ctx, isColor)
+  processTextPage(ctx, colorMode)
+  processLoRes(ctx, colorMode)
+  processHiRes(ctx, colorMode)
 }
 
 const Apple2Canvas = (props: DisplayProps) => {
@@ -472,7 +473,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     const renderCanvas = () => {
       frameCount++
       if (context) {
-        processDisplay(context, props.isColor)
+        processDisplay(context, props.colorMode)
       }
       animationFrameId = window.requestAnimationFrame(renderCanvas)
     }
@@ -485,13 +486,13 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.clearInterval(gamepadID)
       props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
     }
-  }, [props.myCanvas, props.isColor]);
+  }, [props.myCanvas, props.colorMode]);
 
   [width, height] = getSizes()
 
   // Make keyboard events work on iPhone by using a hidden textarea.
   const smallSize = width < 600
-  const txt = smallSize ? 
+  const txt = smallSize ?
       <textarea hidden={false} ref={myText}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
