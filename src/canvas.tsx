@@ -36,14 +36,20 @@ const loresHex: string[] = [
   "#FFFFFF"] //white
 
 const hgrRGBcolors = [
-  [0, 0, 0],      //black1
-  [1, 255, 1],    //green
-  [255, 1, 255],  //violet
-  [255, 255, 255],//white1
-  [0, 0, 0],      //black2
-  [255, 127, 1],  //orange
-  [1, 127, 255],  //blue
-  [255, 255, 255] //white2
+  [0, 0, 0],       // black1
+  [1, 255, 1],     // green
+  [255, 1, 255],   // violet
+  [255, 255, 255], // white1
+  [0, 0, 0],       // black2
+  [255, 127, 1],   // orange
+  [1, 127, 255],   // blue
+  [255, 255, 255], // white2
+  [254, 251, 82],  // yellow (extended green)
+  [183, 184, 249], // light blue (extended violet)
+  [255, 255, 255],
+  [0, 0, 0],
+  [148, 106, 33],  // brown (extended orange)
+  [9, 29, 162],    // dark blue (extended blue)
 ]
 
 const loresColors: number[][] = loresHex.map(hex => {
@@ -163,14 +169,37 @@ const WHITE = 3
 // const ORANGE = 5
 // const BLUE = 6
 
-const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
+const getHiresGreen = (hgrPage: Uint8Array) => {
   const nlines = hgrPage.length / 40
   const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
-  const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
     const joffset = j * 560
-    let imaxLine = (j + 1) * 560 - 1
+    let bitSet = 0
+    let prevHighBit = 1
+    for (let i = 0; i < 40; i++) {
+      const ioffset = joffset + i * 14
+      const byte1 = line[i]
+      const highBit = (byte1 & 128) ? 1 : 0
+      for (let b = 0; b <= 6; b++) {
+        const ioff1 = ioffset + 2 * b + highBit
+        if (b === 0 && bitSet && highBit && !prevHighBit) hgrColors[ioff1 - 1] = 1
+        bitSet = (byte1 & (1 << b)) ? 1 : 0
+        hgrColors[ioff1] = bitSet
+        hgrColors[ioff1 + 1] = bitSet
+      }
+      prevHighBit = highBit
+    }
+  }
+  return hgrColors
+}
+
+const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
+  const nlines = hgrPage.length / 40
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j*40, j*40 + 40)
+    const joffset = j * 560
     let isEven = 1
     let skip = false
     let previousWhite = false
@@ -179,6 +208,7 @@ const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
       const byte1 = line[i]
       const byte2bit0 = (i < 39) ? (line[i + 1] & 1) : 0
       const highBit = (byte1 & 128) ? 1 : 0
+      const nextHighBit = (i < 39) ? (line[i + 1] & 0x80) : 0
       for (let b = 0; b <= 6; b++) {
         if (skip) {
           skip = false
@@ -189,31 +219,57 @@ const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
         if (bit1) {
           let istart = ioffset + 2 * b + highBit
           // How many pixels do we fill in
-          let imax = istart + (isColor ? 3 : 1)
+          let imax = istart + 3
           // If we're already doing white, first pixel is also white.
           // Otherwise, white starts with one pixel of the current bit's color
           // GREEN=1, VIOLET=2, ORANGE=5, BLUE=6
-          let color1 = previousWhite ? WHITE : 1 + 4 * highBit + isEven
-          let color = color1
+          let color1 = previousWhite ? WHITE : (1 + 4 * highBit + isEven)
+          let color2 = color1
           if (bit2) {
-            color = WHITE
+            color2 = WHITE
             if (colorMode === COLOR_MODE.NOFRINGE && !previousWhite) color1 = BLACK
-            // Fill in a couple extra pixels (may get changed later)
-            imax += isColor ? 2 : 3
+            // Fill in a couple extra pixels
+            imax += 2
             previousWhite = true
+            // Handle interactions between adjacent bytes (ALCB p. 208)
+            if (b === 5) {
+              if (!highBit && nextHighBit) {
+                imax--
+                hgrColors[imax + 1] = 9 - isEven
+                hgrColors[imax + 2] = 9 - isEven
+              } else if (highBit && !nextHighBit) {
+                imax--
+                color2 = 13 - isEven
+                hgrColors[istart++] = color1
+                hgrColors[istart++] = color1
+              }
+            }
           } else {
             previousWhite = false
+            // Handle interactions between adjacent bytes (ALCB p. 208)
+            if (b === 6) {
+              if (!highBit && nextHighBit) {
+                imax -= 2
+                hgrColors[imax + 1] = isEven + 8
+                hgrColors[imax + 2] = isEven + 8
+                hgrColors[imax + 3] = isEven + 8
+              } else if (highBit && !nextHighBit) {
+                color1 = isEven + 12
+                color2 = color1
+                imax--
+              }
+            }
           }
-          if (imax > imaxLine) imax = imaxLine
           hgrColors[istart] = color1
           for (let ix = istart + 1; ix <= imax; ix++) {
-            hgrColors[ix] = color
+            hgrColors[ix] = color2
           }
           // We just processed 2 bits (4 pixels on the 560-pixel line)
           skip = true
         } else {
-          previousWhite = false
+          // We only processed 1 bit, so flip our isEven flag
           isEven = 1 - isEven
+          previousWhite = false
         }
       }
     }
@@ -267,10 +323,12 @@ const processHiRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
+  const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    getHiresColors(hgrPage, colorMode)
+    (isColor ? getHiresColors(hgrPage, colorMode) : getHiresGreen(hgrPage))
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
-  const colors = doubleRes ? [loresColors, loresColors, loresGreen, loresAmber][colorMode] :
+  const colors = doubleRes ?
+    [loresColors, loresColors, loresGreen, loresAmber][colorMode] :
     [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen][colorMode]
   for (let i = 0; i < 560 * nlines; i++) {
     hgrRGBA[4 * i] = colors[hgrColors[i]][0]

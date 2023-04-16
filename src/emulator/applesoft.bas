@@ -1,3 +1,14 @@
+HGR graphics:
+color, white, cross-byte color, cross-byte white, 11011 patterns
+ violet
+ green
+ blue
+ orange
+2000: 01 03 40 80 60 80 00 00 00 1B
+2400: 02 06 00 40 80 60 80 00 00 36
+2800: 81 83 C0 00 E0 00 E0 01 00 6C
+2c00: 82 86 00 C0 00 E0 00 E0 01
+
 REM print values for $C000, $C010, $C020, $C030
 10 FOR X = 0 TO 15: PRINT PEEK(49152+X)" ";: NEXT : PRINT : GOTO 10
 10 FOR X = 0 TO 15: PRINT PEEK(49168+X)" ";: NEXT : PRINT : GOTO 10
