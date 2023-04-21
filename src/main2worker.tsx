@@ -1,6 +1,7 @@
 import { STATE, DRIVE } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker } from "./speaker"
+import { startupTextPage } from "./emulator/roms/startuptextpage"
 
 let worker: Worker | null = null
 
@@ -80,8 +81,8 @@ export const handleSetGamepad = (gamePad: EmuGamepad | null) => {
 let machineState: MachineState = {
   state: STATE.IDLE,
   speed: '',
-  altChar: false,
-  textPage: new Uint8Array(960).fill(0xFF),
+  altChar: true,
+  textPage: startupTextPage,
   lores: new Uint8Array(),
   hires: new Uint8Array(),
   zeroPageStack: '',
