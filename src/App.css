@@ -16,12 +16,12 @@ body {
 
 @font-face {
   font-family: PrintChar21;
-  src: url(./fonts/Print\ Char\ 21\ Pro.otf);
+  src: url(./fonts/PrintChar21.ttf);
 }
 
 @font-face {
   font-family: PRNumber3;
-  src: url(./fonts/PR\ Number\ 3\ Pro.otf);
+  src: url(./fonts/PRNumber3.ttf);
 }
 
 .statusPanel {

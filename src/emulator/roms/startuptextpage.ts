@@ -14,15 +14,15 @@ let text=
 ]
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? 'Cmd+' : 'Ctrl+'
+const key = isMac ? '\xC3' : '^'
 if (!("ontouchstart" in document.documentElement)) {
   text = text.concat([
     'Keyboard Shortcuts:',
+    '',
     `${key}B Boot    ${key}C Copy Screen`,
     `${key}R Reset   ${key}V Paste Text `,
     `${key}P Pause   ${key}O Open State `,
     `${key}F Speed   ${key}S Save State `,
-    '',
     `${key}\xC8: Go back in Time`,
     `${key}\xD5: Forward in Time`
   ])
@@ -31,7 +31,7 @@ if (!("ontouchstart" in document.documentElement)) {
 const textPage = new Array<String>(24).fill('')
 const n = text.length
 for (let j = 0; j < n; j++) {
-  textPage[j + 11 - Math.floor(n/2)] = text[j]
+  textPage[j + 12 - Math.floor(n/2)] = text[j]
 }
 textPage[0] = '*'.repeat(40)
 textPage[23] = '*'.repeat(40)
@@ -45,6 +45,7 @@ for (let j = 1; j < 23; j++) {
 export const startupTextPage = new Uint8Array(40 * 24)
 for (let j = 0; j < 24; j++) {
   for (let i = 0; i < 40; i++) {
-    startupTextPage[40 * j + i] = (textPage[j].charCodeAt(i) + 128) % 256
+    const c = textPage[j].charCodeAt(i)
+    startupTextPage[40 * j + i] = (c + 128) % 256
   }
 }
