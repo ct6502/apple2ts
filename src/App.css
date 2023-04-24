@@ -93,10 +93,6 @@ select {
   padding: 2px;
   outline-width: 0;
   border-width: 0px;
-  background-color: #CFCBA8;
-}
-
-.noSelect {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -104,13 +100,27 @@ select {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  color: black;
+  background-color: inherit;
+  border: 0.75px solid black !important;
 }
 
-.noSelect:focus {
-  outline: none !important;
+.textButton {
+  font-size: medium !important;
+  line-height: 1.5 !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  padding-top: 1px !important;
+  padding-bottom: 1px !important;
+  margin-top: 3px !important;
+  font-variant-caps: normal !important;
+  color: black !important;
+  background-color: inherit !important;
+  text-transform: none !important;
+  border: 0.75px solid black!important;
 }
 
-button {
+.pushButton {
   border: 0;
   border-color: #a4a08A;
   background: none;

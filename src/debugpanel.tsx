@@ -33,12 +33,12 @@ const DebugPanel = (props: DebugProps) => {
           value={props.breakpoint}
           onChange={handleBreakpointChange}
         />
-        <button
+        <button className="pushButton"
           title={"Step Into"}
           onClick={props.handleStepInto}>
           <FontAwesomeIcon icon={iconStepInto} className="fa-rotate-90 icon"/>
         </button>
-        <button
+        <button className="pushButton"
           title={"Step Over"}
           onClick={props.handleStepOver}>
           <span className="fa-stack small icon">
@@ -46,7 +46,7 @@ const DebugPanel = (props: DebugProps) => {
           <FontAwesomeIcon icon={iconStepOver} className="cropBottom fa-stack-2x icon"/>
           </span>
         </button>
-        <button
+        <button className="pushButton"
           title={"Step Out"}
           onClick={props.handleStepOut}>
           <FontAwesomeIcon icon={iconStepOut} className="icon"/>

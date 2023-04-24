@@ -21,7 +21,7 @@ import {
 const ControlPanel = (props: DisplayProps) => {
 //  const narrow = window.innerWidth < 400
   const controlButtons = <span>
-        <button
+        <button className="pushButton"
           title="Boot"
           onClick={() => {
             if (getAudioContext().state !== "running") {
@@ -31,7 +31,7 @@ const ControlPanel = (props: DisplayProps) => {
           }}>
           <FontAwesomeIcon icon={faPowerOff}/>
         </button>
-        <button
+        <button className="pushButton"
           title="Reset"
           onClick={() => {
             if (getAudioContext().state !== "running") {
@@ -43,7 +43,7 @@ const ControlPanel = (props: DisplayProps) => {
           >
           <FontAwesomeIcon icon={faArrowRotateRight}/>
         </button>
-        <button
+        <button className="pushButton"
           title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
           onClick={() => {props.machineState === STATE.PAUSED ?
             handleSetCPUState(STATE.RUNNING) : handleSetCPUState(STATE.PAUSED)}}
@@ -52,21 +52,21 @@ const ControlPanel = (props: DisplayProps) => {
           <FontAwesomeIcon icon={faPlay}/> :
           <FontAwesomeIcon icon={faPause}/>}
         </button>
-        <button title="Restore State"
+        <button className="pushButton" title="Restore State"
           onClick={() => props.handleFileOpen()}>
           <FontAwesomeIcon icon={faFolderOpen}/>
         </button>
-        <button title="Save State"
+        <button className="pushButton" title="Save State"
           onClick={() => props.handleFileSave()}
           disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
         >
           <FontAwesomeIcon icon={faSave}/>
         </button>
-        <button title="Copy Screen"
+        <button className="pushButton" title="Copy Screen"
           onClick={() => props.handleCopyToClipboard()}>
           <FontAwesomeIcon icon={faClipboard}/>
         </button>
-        <button title="Full Screen"
+        <button className="pushButton" title="Full Screen"
           onClick={() => {
             const context = props.myCanvas.current
             if (context) {
@@ -90,12 +90,12 @@ const ControlPanel = (props: DisplayProps) => {
         </button>
       </span>
   const arrowButtons = <span>
-        <button title="Left"
+        <button className="pushButton" title="Left"
           onMouseDown={() => handleAppleCommandKeyPress(true)}
           onMouseUp={() => handleAppleCommandKeyRelease(true)}>
           <FontAwesomeIcon icon={props.button0 ? iconClosedButton : iconOpenButton}/>
         </button>
-        <button title="Right"
+        <button className="pushButton" title="Right"
           onMouseDown={() => handleAppleCommandKeyPress(false)}
           onMouseUp={() => handleAppleCommandKeyRelease(false)}>
           <FontAwesomeIcon icon={props.button1 ? iconClosedButton : iconOpenButton}/>
@@ -128,7 +128,7 @@ const ControlPanel = (props: DisplayProps) => {
         </label>
       </span>
       <span className="statusItem">
-        <select className="noSelect" value={colorToName(props.colorMode)} onChange={props.handleColorChange}>
+        <select value={colorToName(props.colorMode)} onChange={props.handleColorChange}>
           <option value="Color">Color</option>
           <option value="Color (no fringe)">Color (no fringe)</option>
           <option value="Green">Green</option>

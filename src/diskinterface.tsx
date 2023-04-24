@@ -4,6 +4,7 @@ import { DRIVE } from "./emulator/utility"
 import mp3DriveMotor from './audio/driveMotor.mp3'
 import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'
+import { DiskImageChooser } from "./diskimagechooser"
 
 let playDriveNoise = true
 let motorAudio: AudioDevice | undefined
@@ -106,6 +107,7 @@ class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
     }
     return (
       <span>
+        <DiskImageChooser/>
         <span className="drives">
           <DiskDrive drive={0}/>
           <DiskDrive drive={1}/>
