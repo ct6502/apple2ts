@@ -1,3 +1,5 @@
+declare module 'list-react-files'
+
 declare module "*.svg" {
    const value: any;
    export = value;
@@ -7,6 +9,10 @@ declare module "*.png" {
    export = value;
 }
 declare module "*.mp3" {
+   const value: any;
+   export = value;
+}
+declare module "*.woz" {
    const value: any;
    export = value;
 }

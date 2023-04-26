@@ -1,4 +1,5 @@
 import { convertdsk2woz } from "./convertdsk2woz"
+import { replaceSuffix } from "./utility";
 
 let crcTable = new Uint32Array(256).fill(0)
 
@@ -82,11 +83,6 @@ const isDSK = (filename: String) => {
   const isDSK = f.endsWith(".dsk") || f.endsWith(".do")
   const isPO = f.endsWith(".po")
   return isDSK || isPO
-}
-
-const replaceSuffix = (fname: String, suffix: String) => {
-  const i = fname.lastIndexOf('.') + 1
-  return fname.substring(0, i) + suffix
 }
 
 const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {

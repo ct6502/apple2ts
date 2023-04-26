@@ -25,12 +25,12 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
 
 const readDisk = async (file: File, drive: number) => {
   const buffer = await file.arrayBuffer();
-  handleSetDiskData(false, drive, new Uint8Array(buffer), file.name)
+  handleSetDiskData(drive, new Uint8Array(buffer), file.name)
 }
 
 const resetDrive = (drive: number) => {
-  const dprops = handleGetDriveProps(drive)
-  handleSetDiskData(dprops.hardDrive, drive, new Uint8Array(), "")
+//  const dprops = handleGetDriveProps(drive)
+  handleSetDiskData(drive, new Uint8Array(), "")
 }
 
 class DiskDrive extends React.Component<{drive: number}, {}> {

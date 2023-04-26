@@ -205,7 +205,7 @@ export const handleGetDriveProps = (drive: number) => {
 //   return result
 // }
 
-export const handleSetDiskData = (hardDrive: boolean, drive: number,
+export const handleSetDiskData = (drive: number,
   data: Uint8Array, filename: string) => {
   const props = driveProps[drive]
   props.drive = drive

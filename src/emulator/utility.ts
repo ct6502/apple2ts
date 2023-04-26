@@ -219,3 +219,9 @@ export const toASCII = (s: String) => s.split('').map(char => char.charCodeAt(0)
 export const uint16toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF]
 export const uint32toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF,
   (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]
+
+export const replaceSuffix = (fname: String, suffix: String) => {
+  const i = fname.lastIndexOf('.') + 1
+  return fname.substring(0, i) + suffix
+}
+
