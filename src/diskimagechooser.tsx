@@ -30,16 +30,18 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
     onClose(value);
   };
 
+  const isPhone = "ontouchstart" in document.documentElement
+
   return (
     <Dialog onClose={handleClose} open={open}>
       <DialogTitle>Choose a disk image...</DialogTitle>
-      <ImageList sx={{ width: 500, height: 450 }} cols={3}>
+      <ImageList sx={{ width: 500, height: 500 }} cols={isPhone ? 2 : 3} rowHeight={104}>
         {diskImages.map((disk) => (
           <ImageListItem key={disk}
             onClick={() => handleListItemClick(disk)}
           >
             <img
-              src={`${'/disks/'+replaceSuffix(disk, 'png')}?w=248&fit=crop&auto=format`}
+              src={`${'/disks/'+replaceSuffix(disk, 'png')}?w=248&h=248&fit=clip&auto=format`}
               alt={disk}
               loading="lazy"
             />

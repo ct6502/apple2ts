@@ -24,6 +24,17 @@ body {
   src: url(./fonts/PRNumber3.ttf);
 }
 
+.MuiDialog-paper {
+  margin: 0 !important;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: 10px !important;
+}
+
+.MuiDialogTitle-root {
+  padding: 5px !important;
+}
+
 .statusPanel {
   display: inline-block;
   width: 370px;
