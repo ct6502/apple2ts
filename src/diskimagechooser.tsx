@@ -1,5 +1,5 @@
 import React from "react"
-import { Button, Dialog, DialogTitle, List, ListItem, ListItemButton, ListItemText } from "@mui/material"
+import { Button, Dialog, DialogTitle, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
 import { handleSetDiskData } from "./main2worker";
 import { replaceSuffix } from "./emulator/utility";
 
@@ -33,16 +33,22 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
   return (
     <Dialog onClose={handleClose} open={open}>
       <DialogTitle>Choose a disk image...</DialogTitle>
-      <List sx={{ pt: 0 }} >
-        {diskImages.map((disk: string) => (
-          <ListItem disableGutters key={disk}>
-            <ListItemButton onClick={() => handleListItemClick(disk)} key={disk}>
-              <ListItemText primary={disk} />
-              <img src={'/disks/'+replaceSuffix(disk, 'png')} alt="" width={200}></img>
-            </ListItemButton>
-          </ListItem>
+      <ImageList sx={{ width: 500, height: 450 }} cols={3}>
+        {diskImages.map((disk) => (
+          <ImageListItem key={disk}
+            onClick={() => handleListItemClick(disk)}
+          >
+            <img
+              src={`${'/disks/'+replaceSuffix(disk, 'png')}?w=248&fit=crop&auto=format`}
+              alt={disk}
+              loading="lazy"
+            />
+            <ImageListItemBar
+              title={disk}
+            />
+          </ImageListItem>
         ))}
-      </List>
+      </ImageList>
     </Dialog>
   );
 }
