@@ -136,7 +136,7 @@ select {
 }
 
 .pushButton {
-  border: 0;
+  border-width: 0;
   border-color: #a4a08A;
   background: none;
   appearance: none;
@@ -145,12 +145,26 @@ select {
   color: black;
   font-size: 20px;
   padding: 0px 0px;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 7px;
   margin: 2px;
   cursor: pointer;
   font-weight: 900;
+}
+
+.keyButton {
+  border-width: 1px;
+  border-style: outset;
+}
+
+.textKey {
+  font-size: medium;
+  position: relative;
+  letter-spacing: -0.05em;
+  font-weight: 600;
+  top: -0.15em;
+  left: -0.02em;
 }
 
 .cropBottom {
