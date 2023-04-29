@@ -35,7 +35,7 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
   return (
     <Dialog onClose={handleClose} open={open}>
       <DialogTitle>Choose a disk image...</DialogTitle>
-      <ImageList sx={{ width: isPhone ? 414 : 600, height: 500 }} cols={isPhone ? 2 : 3}>
+      <ImageList sx={{ width: isPhone ? 368 : 600, height: 500 }} cols={isPhone ? 2 : 3}>
         {diskImages.map((disk) => (
           <ImageListItem key={disk}
             onClick={() => handleListItemClick(disk)}

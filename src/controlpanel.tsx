@@ -1,6 +1,6 @@
 import { colorToName, STATE } from "./emulator/utility";
 import { handleAppleCommandKeyPress, handleAppleCommandKeyRelease, handleSetCPUState } from "./main2worker"
-import { getAudioContext } from "./speaker";
+import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -11,6 +11,8 @@ import {
   faPlay,
   faPowerOff,
   faSave,
+  faVolumeHigh,
+  faVolumeXmark,
   faCircle as iconClosedButton,
   // faCircle as iconRightButton,
 } from "@fortawesome/free-solid-svg-icons";
@@ -24,9 +26,6 @@ const ControlPanel = (props: DisplayProps) => {
         <button className="pushButton"
           title="Boot"
           onClick={() => {
-            if (getAudioContext().state !== "running") {
-              getAudioContext().resume();
-            }
             handleSetCPUState(STATE.NEED_BOOT)
           }}>
           <FontAwesomeIcon icon={faPowerOff}/>
@@ -34,9 +33,6 @@ const ControlPanel = (props: DisplayProps) => {
         <button className="pushButton"
           title="Reset"
           onClick={() => {
-            if (getAudioContext().state !== "running") {
-              getAudioContext().resume();
-            }
             handleSetCPUState(STATE.NEED_RESET)
           }}
           disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
@@ -51,6 +47,11 @@ const ControlPanel = (props: DisplayProps) => {
           {props.machineState === STATE.PAUSED ?
           <FontAwesomeIcon icon={faPlay}/> :
           <FontAwesomeIcon icon={faPause}/>}
+        </button>
+        <button className="pushButton"
+          title={props.machineState === STATE.PAUSED ? "Unmute" : "Mute"}
+          onClick={() => {audioEnable(!isAudioEnabled); props.updateDisplay()}}>
+          <FontAwesomeIcon icon={isAudioEnabled ? faVolumeHigh : faVolumeXmark}/>
         </button>
         <button className="pushButton" title="Restore State"
           onClick={() => props.handleFileOpen()}>

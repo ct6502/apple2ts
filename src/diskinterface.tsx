@@ -5,6 +5,7 @@ import mp3DriveMotor from './audio/driveMotor.mp3'
 import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'
 import { DiskImageChooser } from "./diskimagechooser"
+import {isAudioEnabled, registerAudioContext} from "./speaker"
 
 let playDriveNoise = true
 let motorAudio: AudioDevice | undefined
@@ -17,7 +18,7 @@ const playAudio = (audioDevice: AudioDevice, timeout: number) => {
     audioDevice.element.pause()
     return
   }
-  if (audioDevice.context.state === 'suspended') {
+  if (audioDevice.context.state === 'suspended' && isAudioEnabled) {
     audioDevice.context.resume();
   }
   if (!audioDevice.element.paused) {
@@ -42,6 +43,7 @@ const constructAudio = (mp3track: any) => {
     context: new AudioContext(),
     element: new Audio(mp3track)
   }
+  registerAudioContext(audioDevice.context)
   audioDevice.element.volume = 0.5
   const node = audioDevice.context.createMediaElementSource(audioDevice.element);
   node.connect(audioDevice.context.destination);
@@ -52,14 +54,18 @@ const playTrackOffEnd = () => {
   if (!trackOffEndAudio) {
     trackOffEndAudio = constructAudio(mp3TrackOffEnd)
   }
-  playAudio(trackOffEndAudio, 309)
+  if (isAudioEnabled) {
+    playAudio(trackOffEndAudio, 309)
+  }
 }
 
 const playTrackSeek = () => {
   if (!trackSeekAudio) {
     trackSeekAudio = constructAudio(mp3TrackSeek)
   }
-  playAudio(trackSeekAudio, 50)
+  if (isAudioEnabled) {
+    playAudio(trackSeekAudio, 50)
+  }
 }
 
 const playMotorOn = () => {
@@ -71,7 +77,7 @@ const playMotorOn = () => {
     motorAudio.element.pause()
     return
   }
-  if (motorAudio.context.state === 'suspended') {
+  if (motorAudio.context.state === 'suspended' && isAudioEnabled) {
     motorAudio.context.resume();
   }
   if (motorAudio.element.paused) {

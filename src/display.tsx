@@ -182,6 +182,7 @@ class DisplayApple2 extends React.Component<{},
       handleUpperCaseChange: this.handleUpperCaseChange,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
+      updateDisplay: this.updateDisplay,
       button0: handleGetButton(true),
       button1: handleGetButton(false),
     }
