@@ -33,7 +33,7 @@ let doDebug = false
 // let doDebugZeroPage = false
 const instrTrail = new Array<string>(1000)
 let posTrail = 0
-let breakpoint = 0
+let breakpoint = -1
 let runToRTS = false
 
 const getApple2State = (): SAVEAPPLE2STATE => {
