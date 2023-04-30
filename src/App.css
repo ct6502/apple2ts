@@ -141,7 +141,6 @@ select {
   background: none;
   appearance: none;
   -webkit-appearance: none;
-/*  background-color: #a4a08A;*/
   color: black;
   font-size: 20px;
   padding: 0px 0px;
@@ -153,6 +152,10 @@ select {
   font-weight: 900;
 }
 
+.isActive {
+  background-color: #898677;
+}
+
 .keyButton {
   border-width: 1px;
   border-style: outset;
@@ -160,11 +163,35 @@ select {
 
 .textKey {
   font-size: medium;
-  position: relative;
   letter-spacing: -0.05em;
   font-weight: 600;
+  position: relative;
   top: -0.15em;
   left: -0.02em;
+}
+
+.innerSquare {
+  transform: scaleY(0.80) translateY(-0.1em);
+}
+
+.colorMode0 {
+  color: white;
+  opacity: 0.75;
+}
+
+.colorMode1 {
+  color: white;
+  opacity: 0.75;
+}
+
+.colorMode2 {
+  color: #39FF14;
+  opacity: 0.5;
+}
+
+.colorMode3 {
+  color: #FFA500;
+  opacity: 0.5;
 }
 
 .cropBottom {

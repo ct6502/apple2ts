@@ -8,6 +8,7 @@ const diskImages = [
 'Aztec.woz',
 'Chivalry.woz',
 'Gameboy Tetris.woz',
+'MECC-Inspector.woz',
 'Nox Archaist Demo.hdv',
 'Olympic Decathlon.woz',
 'Puyo.woz',

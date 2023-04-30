@@ -1,4 +1,4 @@
-import { STATE } from "./emulator/utility";
+import { COLOR_MODE, STATE, colorToName } from "./emulator/utility";
 import { handleSetCPUState } from "./main2worker"
 import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,10 +13,34 @@ import {
   faSave,
   faVolumeHigh,
   faVolumeXmark,
-  // faCircle as iconRightButton,
+  faWalking,
+  faTruckFast,
+  faDisplay,
 } from "@fortawesome/free-solid-svg-icons";
 
 const ControlButtons = (props: DisplayProps) => {
+  let svgRect: any
+  switch (props.colorMode) {
+    case COLOR_MODE.COLOR:
+      svgRect = <svg>
+        <rect width={5} height={14} fill="#00ff00"/>
+        <rect width={5} height={14} x={5} fill="#ff00ff"/>
+        <rect width={5} height={14} x={10} fill="#007fff"/>
+        <rect width={5} height={14} x={15} fill="#ff7f00"/>
+      </svg>
+      break
+    case COLOR_MODE.NOFRINGE:
+      svgRect = <rect width={20} height={14} fill="#ffffff"/>
+      break
+    case COLOR_MODE.GREEN:
+      svgRect = <rect width={20} height={14} fill="#39FF14" opacity={0.5}/>
+      break;
+    case COLOR_MODE.AMBER:
+      svgRect = <rect width={20} height={14} fill="#FFA500" opacity={0.75}/>
+      break;
+    default:
+      break;
+  }
   return <span>
     <button className="pushButton"
       title="Boot"
@@ -44,7 +68,22 @@ const ControlButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faPause}/>}
     </button>
     <button className="pushButton"
-      title={props.machineState === STATE.PAUSED ? "Unmute" : "Mute"}
+      title={props.speedCheck ? "1 MHz" : "Fast Speed"}
+      onClick={props.handleSpeedChange}>
+      <FontAwesomeIcon icon={props.speedCheck ? faWalking : faTruckFast}/>
+    </button>
+    <button className="pushButton"
+      title={colorToName(props.colorMode)}
+      onClick={props.handleColorChange}>
+      <span className="fa-layers fa-fw">
+        <svg width="20" height="18">
+          {svgRect}
+        </svg>
+        <FontAwesomeIcon icon={faDisplay}/>
+      </span>
+    </button>
+    <button className="pushButton"
+      title={"Toggle Sound"}
       onClick={() => {audioEnable(!isAudioEnabled); props.updateDisplay()}}>
       <FontAwesomeIcon icon={isAudioEnabled ? faVolumeHigh : faVolumeXmark}/>
     </button>

@@ -5,24 +5,20 @@ import {
   faArrowLeft,
   faArrowDown,
   faArrowUp,
-  faCircle as iconClosedButton,
-  // faCircle as iconRightButton,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  faCircle as iconOpenButton,
-} from "@fortawesome/free-regular-svg-icons";
+import { appleOutline, appleSolid } from "./appleicons";
 
 const KeyboardButtons = (props: DisplayProps) => {
   return <span>
-    <button className="pushButton keyButton" title="Left"
+    <button className={`pushButton keyButton ${props.button0 ? 'isActive' : ''}`} title="Open Apple"
       onMouseDown={() => handleAppleCommandKeyPress(true)}
       onMouseUp={() => handleAppleCommandKeyRelease(true)}>
-      <FontAwesomeIcon icon={props.button0 ? iconClosedButton : iconOpenButton}/>
+      {appleOutline}
     </button>
-    <button className="pushButton keyButton" title="Right"
+    <button className={`pushButton keyButton ${props.button1 ? 'isActive' : ''}`} title="Closed Apple"
       onMouseDown={() => handleAppleCommandKeyPress(false)}
       onMouseUp={() => handleAppleCommandKeyRelease(false)}>
-      <FontAwesomeIcon icon={props.button1 ? iconClosedButton : iconOpenButton}/>
+      {appleSolid}
     </button>
     <button className="pushButton keyButton" title="Escape"
       onMouseDown={() => handleKeyboardBuffer(String.fromCharCode(27))}>

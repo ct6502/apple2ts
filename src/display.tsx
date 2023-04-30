@@ -4,7 +4,7 @@ import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetDebug, handleGetSpeed, handleGetButton,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleStepInto, handleStepOver, handleStepOut, handleKeyboardBuffer } from "./main2worker"
-import { STATE, getPrintableChar, COLOR_MODE, nameToColorMode } from "./emulator/utility"
+import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
@@ -28,7 +28,7 @@ class DisplayApple2 extends React.Component<{},
     super(props);
     this.state = {
       doDebug: false,
-      currentSpeed: '',
+      currentSpeed: '1.02',
       speedCheck: true,
       uppercase: true,
       colorMode: COLOR_MODE.COLOR,
@@ -56,8 +56,8 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
-  handleColorChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const mode = nameToColorMode(event.target.value)
+  handleColorChange = () => {
+    const mode = (this.state.colorMode + 1) % 4
     this.setState({ colorMode: mode });
   };
 
@@ -204,7 +204,9 @@ class DisplayApple2 extends React.Component<{},
               <ControlPanel {...props}/>
               <DiskInterface speedCheck={this.state.speedCheck}/>
           </span>
-          <br />
+          <span className="statusItem">
+            <span className="fixed">{props.speed}</span> MHz
+          </span>
           <DebugPanel {...debugProps}/>
         </span>
         <input

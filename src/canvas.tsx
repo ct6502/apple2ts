@@ -101,10 +101,11 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) =
     textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)
       if (isAltCharSet) {
-        doInverse = (value <= 63) || (value >= 96 && value <= 127)
+        // value=32 is the special cursor character - don't want inverse
+        doInverse = (value <= 63 && value !== 32) || (value >= 96 && value <= 127)
       }
       let v1 = getPrintableChar(value, isAltCharSet)
-      const v = String.fromCharCode(v1 < 127 ? v1 : (v1 + 0xE000))
+      const v = String.fromCharCode(v1 <= 127 ? v1 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
       if (doInverse) {
         // Inverse characters
