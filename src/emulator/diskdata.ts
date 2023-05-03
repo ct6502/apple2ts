@@ -35,7 +35,7 @@ const moveHead = (ds: DriveState, offset: number) => {
   } else {
     passDriveSound(DRIVE.TRACK_SEEK)
   }
-  ds.status = (ds.halftrack / 2).toString()
+  ds.status = ` Track ${ds.halftrack / 2}`
   passData()
   // Adjust new track location based on arm position relative to old track loc.
   if (ds.trackStart[ds.halftrack] > 0 && ds.prevHalfTrack !== ds.halftrack) {

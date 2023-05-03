@@ -130,7 +130,7 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
   const fname = driveState.filename.toLowerCase()
   if (isHardDriveImage(fname)) {
     driveState.hardDrive = true
-    driveState.status = driveState.filename
+    driveState.status = ''
     if (fname.endsWith('.hdv') || fname.endsWith('.po')) {
       return diskData
     }

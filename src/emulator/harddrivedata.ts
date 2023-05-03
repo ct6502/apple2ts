@@ -2,6 +2,7 @@ import { parseAssembly } from "./assembler"
 import { setX, setY, setCarry } from "./instructions"
 import { setSlotDriver, memGet, getDataBlock, setDataBlock } from "./memory"
 import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
+import { toHex } from "./utility"
 
 let timerID: any | number = 0
 
@@ -87,6 +88,7 @@ export const processHardDriveBlockAccess = () => {
   const blockStart = 512 * block
   let addr = memGet(0x44) + 256 * memGet(0x45)
   const dataLen = dd.length
+  ds.status = ` B${toHex(block, 4)} $${toHex(addr, 4)}`
 //  console.log(`cmd=${memGet(0x42)} addr=${addr.toString(16)} block=${block.toString(16)}`)
 
   switch (memGet(0x42)) {

@@ -24,6 +24,10 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => handleKeyboardBuffer(String.fromCharCode(27))}>
       <span className="textKey">esc</span>
     </button>
+    <button className="pushButton keyButton" title="Escape"
+      onMouseDown={() => handleKeyboardBuffer(String.fromCharCode(9))}>
+      <span className="textKey">tab</span>
+    </button>
     <button className="pushButton keyButton" title="Left"
       onMouseDown={() => handleKeyboardBuffer(String.fromCharCode(8))}>
       <FontAwesomeIcon icon={faArrowLeft}/>

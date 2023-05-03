@@ -75,6 +75,8 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
         (dprops.motorRunning ? disk2onEmpty : disk2offEmpty)
     }
     const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
+    let status = ['S7 D1', 'S6 D1', 'S6 D2'][this.props.drive]
+    status += dprops.status
     return (
       <span className="drive">
         <img className={dprops.hardDrive ? "harddrive disk2" : "disk2"}
@@ -103,8 +105,8 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
           }}
           style={{display: 'none'}}
         />
-        <span className={dprops.hardDrive ?
-          "hdText" : "fixedAlignRight"}>{dprops.status}</span>
+        <span className={"diskLabel"}>{dprops.filename}</span>
+        <span className={"statusItem"}>{status}</span>
       </span>
     )
   }

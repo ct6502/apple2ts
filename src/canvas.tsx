@@ -444,6 +444,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       const key = convertAppleKey(e, props.uppercase);
       if (key > 0) {
         handleKeyboardBuffer(String.fromCharCode(key))
+        e.preventDefault()
+        e.stopPropagation()
       } else {
         // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
         //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);

@@ -89,10 +89,6 @@ textarea {
   margin-top: 10px;
 } */
 
-.statusItem {
-  margin-right: 30px;
-}
-
 .fixed {
   font-family: monospace;
   font-size: large;
@@ -255,34 +251,34 @@ button:disabled {
   margin-right: 7px;
 }
 
-.fixedAlignRight {
+.statusItem {
   width: 100px;
+  /* transform: translate(0, -12px); */
   height: 1.5em;
-  font-family: monospace;
-  font-size: small;
+  font-size: 7.5pt;
   margin-left: 0.5em;
   margin-right: 0.5em;
-  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
 }
 
-.hdText {
-  background-color: black;
+.diskLabel {
+  /* background-color: black; */
+  position: relative;
   color: white;
   border-radius: 3px;
-  transform: translate(0, -52px);
-  width: 84px;
+  width: 87px;
   pointer-events: none;
-  height: 16px;
-  top: 30px;
-  padding-left: 3px;
+  height: 1.5em;
+  top: -44px;
+  margin-top: -1.2em;
+  padding-left: 0px;
   padding-top: 0px;
   line-height: 16px;
   margin-left: 12px;
   text-align: center;
-  font-size: x-small;
+  font-size: 7pt;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;

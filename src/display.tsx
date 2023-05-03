@@ -205,7 +205,8 @@ class DisplayApple2 extends React.Component<{},
               <DiskInterface speedCheck={this.state.speedCheck}/>
           </span>
           <span className="statusItem">
-            <span className="fixed">{props.speed}</span> MHz
+            <span>{props.speed} MHz</span>
+            <span><a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
           </span>
           <DebugPanel {...debugProps}/>
         </span>

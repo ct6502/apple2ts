@@ -170,6 +170,7 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
       ArrowUp: 11,
       ArrowDown: 10,
       Escape: 27,
+      Tab: 9,
       Shift: -1,
       Control: -1
     };
