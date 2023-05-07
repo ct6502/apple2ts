@@ -97,6 +97,7 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
           }} />
         <input
           type="file"
+          accept=".hdv,.2mg,.dsk,.woz,.po,.do"
           ref={input => this.hiddenFileInput = input}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target?.files?.length) {

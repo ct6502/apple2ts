@@ -206,7 +206,8 @@ class DisplayApple2 extends React.Component<{},
           </span>
           <span className="statusItem">
             <span>{props.speed} MHz</span>
-            <span><a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+            <br/>
+            <span>Apple2TS ©2023 Chris Torrence <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
           </span>
           <DebugPanel {...debugProps}/>
         </span>
