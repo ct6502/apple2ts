@@ -106,14 +106,14 @@ export const SWITCHES = {
     memSetC000(0xC070, rand())
   }),
   LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay
-  READBSR2: NewSwitch(0xC080, 0, false, (addr) => {handleBankedRAM(addr)}),
-  WRITEBSR2: NewSwitch(0xC081, 0, false, (addr) => {handleBankedRAM(addr)}),
-  OFFBSR2: NewSwitch(0xC082, 0, false, (addr) => {handleBankedRAM(addr)}),
-  RDWRBSR2: NewSwitch(0xC083, 0, false, (addr) => {handleBankedRAM(addr)}),
-  READBSR1: NewSwitch(0xC088, 0, false, (addr) => {handleBankedRAM(addr)}),
-  WRITEBSR1: NewSwitch(0xC089, 0, false, (addr) => {handleBankedRAM(addr)}),
-  OFFBSR1: NewSwitch(0xC08A, 0, false, (addr) => {handleBankedRAM(addr)}),
-  RDWRBSR1: NewSwitch(0xC08B, 0, false, (addr) => {handleBankedRAM(addr)}),
+  READBSR2: NewSwitch(0xC080, 0, false),
+  WRITEBSR2: NewSwitch(0xC081, 0, false),
+  OFFBSR2: NewSwitch(0xC082, 0, false),
+  RDWRBSR2: NewSwitch(0xC083, 0, false),
+  READBSR1: NewSwitch(0xC088, 0, false),
+  WRITEBSR1: NewSwitch(0xC089, 0, false),
+  OFFBSR1: NewSwitch(0xC08A, 0, false),
+  RDWRBSR1: NewSwitch(0xC08B, 0, false),
   DRVSM0: NewSwitch(0xC080 + SLOT6, 0),
   DRVSM1: NewSwitch(0xC082 + SLOT6, 0),
   DRVSM2: NewSwitch(0xC084 + SLOT6, 0),
@@ -134,29 +134,31 @@ export const checkSoftSwitches = (addr: number,
   //   const s = memC000[addr - 0xC000] > 0x80 ? 1 : 0
   //   console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "set" : ""}`)
   // }
-  if (sswitch[addr - 0xC000]) {
-    const sswitch1 = sswitch[addr - 0xC000]
-    const func = sswitch1.setFunc
-    if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
-      if (func) {
-        func(addr, cycleCount)
-      } else {
-        if (!sswitch1.writeOnly || calledFromMemSet) {
-          sswitch1.isSet = (addr === sswitch1.onAddr)
-        }
-        if (sswitch1.isSetAddr) {
-          memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? 0x8D : 0x0D)
-        }
-      }
-    } else if (addr === sswitch1.isSetAddr) {
-      if (func) {
-        func(addr, cycleCount)
-      } else {
-        memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
-      }
-    }
+  // Handle banked-RAM soft switches, since these have duplicate addresses
+  // and need to call our special function.
+  if (addr >= 0xC080 && addr <= 0xC08F) {
+    // $C084...87 --> $C080...83, $C08C...8F --> $C088...8B
+    addr -= addr & 4
+    handleBankedRAM(addr)
     return
   }
-
-  console.error("Unknown softswitch " + toHex(addr))
+  const sswitch1 = sswitch[addr - 0xC000]
+  if (!sswitch1) {
+    console.error("Unknown softswitch " + toHex(addr))
+    return
+  }
+  if (sswitch1.setFunc) {
+    sswitch1.setFunc(addr, cycleCount)
+    return
+  }
+  if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
+    if (!sswitch1.writeOnly || calledFromMemSet) {
+      sswitch1.isSet = (addr === sswitch1.onAddr)
+    }
+    if (sswitch1.isSetAddr) {
+      memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? 0x8D : 0x0D)
+    }
+  } else if (addr === sswitch1.isSetAddr) {
+    memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
+  }
 }

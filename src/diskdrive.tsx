@@ -10,8 +10,11 @@ import hardDriveOff from './img/harddrive.png'
 import hardDriveOn from './img/harddriveOn.png'
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
-  const crc = crc32(diskData, 12)
-  diskData.set(uint32toBytes(crc), 8)
+  // Only WOZ requires a checksum. Other formats should be ready to download.
+  if (filename.toLowerCase().endsWith('.woz')) {
+    const crc = crc32(diskData, 12)
+    diskData.set(uint32toBytes(crc), 8)
+  }
   const blob = new Blob([diskData]);
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);

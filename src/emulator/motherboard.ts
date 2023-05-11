@@ -2,8 +2,8 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, pcodes,
-  incrementPC, cycleCount, setCycleCount } from "./instructions"
-import { STATE, getProcessorStatus, getInstrString } from "./utility"
+  incrementPC, cycleCount, setCycleCount, stack } from "./instructions"
+import { STATE, getProcessorStatus, getInstrString, toHex } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
@@ -243,6 +243,8 @@ export const doSetBreakpoint = (breakpt: number) => {
 //  if (breakpoint !== 0) doDebug = true
 }
 
+let ndebug = 0
+
 export const processInstruction = (step = false) => {
   let cycles = 0
   let PC1 = s6502.PC
@@ -264,6 +266,7 @@ export const processInstruction = (step = false) => {
       fn()
     }
     // END HACK
+//    if (PC1 === 0xC7C3) doDebug = true
     cycles = code.execute(vLo, vHi)
     let out = '----'
     // Do not output during the Apple II's WAIT subroutine
@@ -277,6 +280,13 @@ export const processInstruction = (step = false) => {
     if (doDebug) {
       if (instr === 0) doDebug = false
       console.log(out)
+      ndebug++
+      if (ndebug > 10000) {
+        doDebug = false
+        cpuState = STATE.PAUSED
+        return -1
+      }
+//      console.log(getStackString())
 //      if (doDebugZeroPage) {
 //        debugZeroPage(mainMem.slice(0, 256))
 //      }
@@ -297,25 +307,25 @@ export const processInstruction = (step = false) => {
   return cycles
 }
 
-// const getStackString = () => {
-//   const stackvalues = mainMem.slice(256, 512)
-//   const result = new Array<string>()
-//   for (let i = 0xFF; i > s6502.StackPtr; i--) {
-//     let value = "$" + toHex(stackvalues[i])
-//     let cmd = stack[i]
-//     if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
-//       if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
-//         i--
-//         value += toHex(stackvalues[i])
-//       } else {
-//         cmd = ''
-//       }
-//     }
-//     value = (value + "   ").substring(0, 6)
-//     result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
-//   }
-//   return result
-// }
+export const getStackString = () => {
+  const stackvalues = memory.slice(256, 512)
+  const result = new Array<string>()
+  for (let i = 0xFF; i > s6502.StackPtr; i--) {
+    let value = "$" + toHex(stackvalues[i])
+    let cmd = stack[i]
+    if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
+      if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
+        i--
+        value += toHex(stackvalues[i])
+      } else {
+        cmd = ''
+      }
+    }
+    value = (value + "   ").substring(0, 6)
+    result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
+  }
+  return result
+}
 
 const getDebugString = () => {
   return ''

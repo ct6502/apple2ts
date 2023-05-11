@@ -11,8 +11,10 @@ const diskImages = [
 'MECC-Inspector.woz',
 'Nox Archaist Demo.hdv',
 'Olympic Decathlon.woz',
+'Pitch Dark.hdv',
 'Puyo.woz',
-'Total Replay 5.0b3.hdv'];
+'Total Replay 5.0b3.hdv',
+'Wizardry Proving Grounds.po'];
 
 export interface DiskImageDialogProps {
   open: boolean;
@@ -32,11 +34,14 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
   };
 
   const isPhone = "ontouchstart" in document.documentElement
-
+  const width = isPhone ? 368 : 600
+  const nrows = Math.ceil(diskImages.length / 3)
+  const height = nrows * (width / 3 / 1.33)
   return (
     <Dialog onClose={handleClose} open={open}>
       <DialogTitle>Choose a disk image...</DialogTitle>
-      <ImageList sx={{ width: isPhone ? 368 : 600, height: 500 }} cols={isPhone ? 2 : 3}>
+      <ImageList sx={{ width: width, height: height }}
+        cols={isPhone ? 3 : 3}>
         {diskImages.map((disk) => (
           <ImageListItem key={disk}
             onClick={() => handleListItemClick(disk)}

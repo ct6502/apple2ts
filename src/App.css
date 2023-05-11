@@ -32,11 +32,24 @@ body {
 }
 
 .MuiDialogTitle-root {
-  padding: 5px !important;
+  padding:5px !important;
 }
 
 .MuiImageListItem-root {
-  margin-bottom: 30px;
+  margin-bottom: 0px;
+}
+
+.MuiImageListItemBar-root {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+
+.MuiImageListItemBar-titleWrap {
+  padding: 4px !important;
+}
+
+.MuiImageListItemBar-title {
+  font-size: small !important;
+  margin-top: 20;
 }
 
 .statusPanel {

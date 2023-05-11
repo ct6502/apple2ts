@@ -654,18 +654,18 @@ PCODE('TYA', MODE.IMPLIED, 0x98, 1, () => {s6502.Accum = s6502.YReg; checkStatus
 // Fx:  . . .   1 1 .   2 4 h   1 1 b   1 1 .   3 4 i   1 1 d
 const twoByteNops = [0x02, 0x22, 0x42, 0x62, 0x82, 0xC2, 0xE2]
 twoByteNops.forEach(instr => {
-  PCODE('NOP', MODE.IMPLIED, instr, 2, () => {return 2})
+  PCODE('NOPX', MODE.IMPLIED, instr, 2, () => {return 2})
 });
 for (let i = 0; i <= 15; i++) {
-  PCODE('NOP', MODE.IMPLIED, 3 + 16 * i, 1, () => {return 1})
-  PCODE('NOP', MODE.IMPLIED, 7 + 16 * i, 1, () => {return 1})
-  PCODE('NOP', MODE.IMPLIED, 0xB + 16 * i, 1, () => {return 1})  
-  PCODE('NOP', MODE.IMPLIED, 0xF + 16 * i, 1, () => {return 1})  
+  PCODE('NOPX', MODE.IMPLIED, 3 + 16 * i, 1, () => {return 1})
+  PCODE('NOPX', MODE.IMPLIED, 7 + 16 * i, 1, () => {return 1})
+  PCODE('NOPX', MODE.IMPLIED, 0xB + 16 * i, 1, () => {return 1})  
+  PCODE('NOPX', MODE.IMPLIED, 0xF + 16 * i, 1, () => {return 1})  
 }
-PCODE('NOP', MODE.IMPLIED, 0x44, 2, () => {return 3})
-PCODE('NOP', MODE.IMPLIED, 0x54, 2, () => {return 4})
-PCODE('NOP', MODE.IMPLIED, 0xD4, 2, () => {return 4})
-PCODE('NOP', MODE.IMPLIED, 0xF4, 2, () => {return 4})
-PCODE('NOP', MODE.IMPLIED, 0x5C, 3, () => {return 8})
-PCODE('NOP', MODE.IMPLIED, 0xDC, 3, () => {return 4})
-PCODE('NOP', MODE.IMPLIED, 0xFC, 3, () => {return 4})
+PCODE('NOPX', MODE.IMPLIED, 0x44, 2, () => {return 3})
+PCODE('NOPX', MODE.IMPLIED, 0x54, 2, () => {return 4})
+PCODE('NOPX', MODE.IMPLIED, 0xD4, 2, () => {return 4})
+PCODE('NOPX', MODE.IMPLIED, 0xF4, 2, () => {return 4})
+PCODE('NOPX', MODE.IMPLIED, 0x5C, 3, () => {return 8})
+PCODE('NOPX', MODE.IMPLIED, 0xDC, 3, () => {return 4})
+PCODE('NOPX', MODE.IMPLIED, 0xFC, 3, () => {return 4})
