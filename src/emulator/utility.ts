@@ -192,9 +192,6 @@ export const getPrintableChar = (value: number, isAltCharSet: boolean) => {
       v1 -= 64
     } else if (v1 >= 160) {
       v1 -= 128
-    } else if (v1 === 32) {
-      // Special cursor character
-      v1 = 0x8E
     }
   } else {
     // Shift Ctrl chars and second ASCII's into correct ASCII range
