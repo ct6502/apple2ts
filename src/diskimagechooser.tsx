@@ -1,36 +1,30 @@
 import React from "react"
-import { Button, Dialog, DialogTitle, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
+import { Button, Dialog, DialogTitle, IconButton, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
+import HelpIcon from '@mui/icons-material/Help';
 import { handleSetDiskData } from "./main2worker";
 import { replaceSuffix } from "./emulator/utility";
-
-const diskImages = [
-'AppleIIeDiagnostic2.1.woz',
-'Aztec.woz',
-'Chivalry.woz',
-'Gameboy Tetris.woz',
-'MECC-Inspector.woz',
-'Nox Archaist Demo.hdv',
-'Olympic Decathlon.woz',
-'Pitch Dark.hdv',
-'Puyo.woz',
-'Total Replay 5.0b3.hdv',
-'Wizardry Proving Grounds.po'];
+import { diskImages } from "./diskimages";
 
 export interface DiskImageDialogProps {
   open: boolean;
-  selectedValue: string;
-  onClose: (value: string) => void;
+  onClose: () => void;
+  onSelect: (value: diskImage) => void;
 }
 
 const DiskImageDialog = (props: DiskImageDialogProps) => {
-  const { onClose, selectedValue, open } = props;
+  const { open, onClose, onSelect } = props;
+  let helpButton = false;
 
   const handleClose = () => {
-    onClose(selectedValue);
+    onClose()
   };
 
-  const handleListItemClick = (value: string) => {
-    onClose(value);
+  const handleListItemClick = (value: diskImage) => {
+    if (helpButton) {
+      helpButton = false
+      return
+    }
+    onSelect(value);
   };
 
   const isPhone = "ontouchstart" in document.documentElement
@@ -43,16 +37,26 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
       <ImageList sx={{ width: width, height: height }}
         cols={isPhone ? 3 : 3}>
         {diskImages.map((disk) => (
-          <ImageListItem key={disk}
+          <ImageListItem key={disk.file}
             onClick={() => handleListItemClick(disk)}
           >
             <img
-              src={`${'/disks/'+replaceSuffix(disk, 'png')}`}
-              alt={disk}
+              src={`${'/disks/'+replaceSuffix(disk.file, 'png')}`}
+              alt={disk.file}
               loading="lazy"
             />
             <ImageListItemBar
-              title={disk}
+              title={disk.file}
+              actionIcon={disk.url ? <IconButton
+                hidden={true}
+                onClick = {() => {helpButton = true}}
+                href={disk.url}
+                target="_blank"
+                sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                aria-label={`info about ${disk.file}`}>
+              <HelpIcon sx={{ fontSize: '1rem' }} />
+              </IconButton> : <span></span>
+              }
             />
           </ImageListItem>
         ))}
@@ -63,7 +67,6 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
 
 export const DiskImageChooser = () => {
   const [open, setOpen] = React.useState(false)
-  const [selectedValue, setSelectedValue] = React.useState(diskImages[1])
 
   const handleClickOpen = () => {
     setOpen(true)
@@ -75,10 +78,9 @@ export const DiskImageChooser = () => {
     handleSetDiskData(1, new Uint8Array(data), diskImage)
   }
 
-  const handleClose = (value: string) => {
+  const handleSelect = (disk: diskImage) => {
     setOpen(false)
-    setSelectedValue(value)
-    setDiskImage(value)
+    setDiskImage(disk.file)
   };
 
   return (
@@ -88,9 +90,9 @@ export const DiskImageChooser = () => {
         Choose Disk Image
       </Button>
       <DiskImageDialog
-        selectedValue={selectedValue}
+        onSelect={handleSelect}
         open={open}
-        onClose={handleClose}
+        onClose={() => setOpen(false)}
       />
     </div>
   )

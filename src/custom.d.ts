@@ -125,3 +125,8 @@ type EmuGamepad = {
   axes: Array<number>,
   buttons: Array<boolean>
 }
+
+type diskImage = {
+  file: string
+  url: string
+};
