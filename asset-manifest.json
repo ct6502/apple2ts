@@ -1,9 +1,10 @@
 {
   "files": {
-    "main.css": "/static/css/main.b06553a8.css",
-    "main.js": "/static/js/main.498a3a36.js",
+    "main.css": "/static/css/main.347ee920.css",
+    "main.js": "/static/js/main.0c47e3e0.js",
     "static/js/645.e6787975.chunk.js": "/static/js/645.e6787975.chunk.js",
     "static/js/787.89fab646.chunk.js": "/static/js/787.89fab646.chunk.js",
+    "static/media/paper.png": "/static/media/paper.1ee8b462cfdcc747b2e4.png",
     "static/media/harddriveOn.png": "/static/media/harddriveOn.492b3bbfbb43217866af.png",
     "static/media/harddrive.png": "/static/media/harddrive.01c96c478a8015b21ed7.png",
     "static/media/driveMotor.mp3": "/static/media/driveMotor.c3b305104615ef3a178a.mp3",
@@ -16,13 +17,13 @@
     "static/media/driveTrackSeekLong.mp3": "/static/media/driveTrackSeekLong.40995cd7771e5fff122b.mp3",
     "static/media/driveTrackOffEnd.mp3": "/static/media/driveTrackOffEnd.66bb138ca27c55aa3de6.mp3",
     "index.html": "/index.html",
-    "main.b06553a8.css.map": "/static/css/main.b06553a8.css.map",
-    "main.498a3a36.js.map": "/static/js/main.498a3a36.js.map",
+    "main.347ee920.css.map": "/static/css/main.347ee920.css.map",
+    "main.0c47e3e0.js.map": "/static/js/main.0c47e3e0.js.map",
     "645.e6787975.chunk.js.map": "/static/js/645.e6787975.chunk.js.map",
     "787.89fab646.chunk.js.map": "/static/js/787.89fab646.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.b06553a8.css",
-    "static/js/main.498a3a36.js"
+    "static/css/main.347ee920.css",
+    "static/js/main.0c47e3e0.js"
   ]
 }
