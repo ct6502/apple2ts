@@ -1,9 +1,10 @@
 import React from "react"
 import { Button, Dialog, DialogTitle, IconButton, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
 import HelpIcon from '@mui/icons-material/Help';
-import { handleSetDiskData } from "./main2worker";
-import { replaceSuffix } from "./emulator/utility";
+import { handleSetCPUState, handleSetDiskData, updateDisplay } from "./main2worker";
+import { STATE, replaceSuffix } from "./emulator/utility";
 import { diskImages } from "./diskimages";
+import { resetAllDiskDrives } from "./diskinterface";
 
 export interface DiskImageDialogProps {
   open: boolean;
@@ -72,22 +73,32 @@ export const DiskImageChooser = () => {
     setOpen(true)
   };
 
-  const setDiskImage = async (diskImage: string) => {
-    const res = await fetch("/disks/" + diskImage)
+  const setDiskImage = async (disk: diskImage) => {
+    const res = await fetch("/disks/" + disk.file)
     const data = await res.arrayBuffer()
-    handleSetDiskData(1, new Uint8Array(data), diskImage)
+    resetAllDiskDrives()
+    handleSetDiskData(1, new Uint8Array(data), disk.file)
+    const helpFile = replaceSuffix(disk.file, 'txt')
+    const help = await fetch("/disks/" + helpFile)
+    if (help.ok) {
+      const data = await help.text()
+      if (data.length > 0) {
+        updateDisplay(data)
+      }
+    }
+    handleSetCPUState(STATE.NEED_BOOT)
   }
 
   const handleSelect = (disk: diskImage) => {
     setOpen(false)
-    setDiskImage(disk.file)
+    setDiskImage(disk)
   };
 
   return (
-    <div>
+    <div className="DiskImageChooser">
       <Button className="textButton" variant="contained"
         onClick={handleClickOpen}>
-        Choose Disk Image
+        Disk
       </Button>
       <DiskImageDialog
         onSelect={handleSelect}

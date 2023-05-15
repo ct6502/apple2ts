@@ -1,7 +1,7 @@
 import React, { useEffect, KeyboardEvent } from 'react';
 import { handleGoBackInTime, handleGoForwardInTime,
   handleSetCPUState, handleKeyboardBuffer, handleSetGamepad,
-  handleAppleCommandKeyPress, handleAppleCommandKeyRelease } from "./main2worker"
+  handleAppleCommandKeyPress, handleAppleCommandKeyRelease, updateDisplay } from "./main2worker"
 import { STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
@@ -183,11 +183,13 @@ const Apple2Canvas = (props: DisplayProps) => {
         [width, height] = getSizes()
         context.canvas.width = width;
         context.canvas.height = height;
+        updateDisplay()
       }
     }
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
     window.addEventListener("resize", handleResize)
+    updateDisplay()
 
     // Check for new gamepads on a regular basis
     const gamepadID = window.setInterval(() => {checkGamepad(x, y)}, 34)

@@ -9,6 +9,7 @@ import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
 import DiskInterface from "./diskinterface"
 import React from 'react';
+import HelpPanel from "./helppanel"
 import DebugPanel from "./debugpanel"
 // import Test from "./components/test";
 
@@ -18,7 +19,9 @@ class DisplayApple2 extends React.Component<{},
     uppercase: boolean;
     colorMode: COLOR_MODE;
     doDebug: boolean;
-    breakpoint: string }> {
+    breakpoint: string;
+    helpText: string;
+  }> {
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
@@ -33,12 +36,21 @@ class DisplayApple2 extends React.Component<{},
       uppercase: true,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
+      helpText: '',
     };
   }
 
-  updateDisplay = () => {
+  updateDisplay = (helpText = '') => {
     const s = handleGetSpeed()
-    this.setState( {currentSpeed: s} )
+    if (helpText) {
+      this.setState( {helpText} )
+    } else {
+      this.setState( {currentSpeed: s} )
+    }
+  }
+
+  updateHelpText = (helpText: string) => {
+    this.setState( {helpText} )
   }
 
   componentDidMount() {
@@ -195,21 +207,29 @@ class DisplayApple2 extends React.Component<{},
       handleStepOver: handleStepOver,
       handleStepOut: handleStepOut,
     }
-
+    const width = props.myCanvas.current?.width
+    const height = props.myCanvas.current?.height
     return (
       <div>
-        <span className="apple2">
-          <Apple2Canvas {...props}/>
-          <span className="controlBar">
-              <ControlPanel {...props}/>
-              <DiskInterface speedCheck={this.state.speedCheck}/>
+        <span className="topRow">
+          <span className="apple2">
+            <Apple2Canvas {...props}/>
+            <div className="controlBar" style={{width: width, display: width ? '' : 'none'}}>
+                <ControlPanel {...props}/>
+                <DiskInterface
+                  speedCheck={this.state.speedCheck}
+                />
+            </div>
+            <span className="statusItem">
+              <span>{props.speed} MHz</span>
+              <br/>
+              <span>Apple2TS ©2023 Chris Torrence <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+            </span>
           </span>
-          <span className="statusItem">
-            <span>{props.speed} MHz</span>
-            <br/>
-            <span>Apple2TS ©2023 Chris Torrence <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+          <span className="sideContent">
+            <HelpPanel helpText={this.state.helpText} height={height ? height : 400}/>
+            <DebugPanel {...debugProps}/>
           </span>
-          <DebugPanel {...debugProps}/>
         </span>
         <input
           type="file"

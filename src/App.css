@@ -12,6 +12,7 @@
 
 body {
   background-color: #BFBB98;
+  margin: 10px;
 }
 
 @font-face {
@@ -24,39 +25,6 @@ body {
   src: url(./fonts/PRNumber3.ttf);
 }
 
-.MuiDialog-paper {
-  margin: 0 !important;
-  padding-left: 10px;
-  padding-right: 10px;
-  border-radius: 10px !important;
-}
-
-.MuiDialogTitle-root {
-  padding:5px !important;
-}
-
-.MuiImageListItem-root {
-  margin-bottom: 0px;
-  cursor: pointer;
-}
-
-.MuiImageListItemBar-root {
-  background: rgba(0, 0, 0, 0.65) !important;
-}
-
-.MuiImageListItemBar-titleWrap {
-  padding: 4px !important;
-}
-
-.MuiImageListItemBar-title {
-  font-size: small !important;
-  margin-top: 20;
-}
-
-.MuiIconButton-root {
-  cursor: help !important;
-}
-
 .statusPanel {
   display: inline-block;
   width: 370px;
@@ -64,10 +32,21 @@ body {
   vertical-align: top;
 }
 
+.topRow {
+  display: flex;
+  flex-direction: row;
+}
+
 .apple2 {
-  display: inline-block;
-  margin: 10px;
-  /* width: 1240px; */
+  display: flex;
+  flex-direction: column;
+    /* width: 1240px; */
+}
+
+.sideContent {
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
 }
 
 .canvasText {
@@ -101,15 +80,23 @@ textarea {
   margin-top: 10px;
 }
 
-/* .rightStatus {
-  float: right;
-  margin-right: 5px;
-  margin-top: 10px;
-} */
-
-.fixed {
+.helpPanel {
+  display: flex;
   font-family: monospace;
-  font-size: large;
+  font-size: medium;
+  width: 300px;
+  margin-left: 15px;
+  overflow: auto;
+  background-color: lightgray;
+  background-image: url(./img/paper.png);
+  background-size: cover;
+  margin-top: 15px;
+  opacity: 80%;
+}
+
+.helpText {
+  margin-left: 40px;
+  margin-top: 5px;
 }
 
 .small {
@@ -246,6 +233,12 @@ button:disabled {
 .drives {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.DiskImageChooser {
+  margin-top: 3px;
+  margin-right: 10px;
 }
 
 .drive {
@@ -279,8 +272,6 @@ button:disabled {
   margin-left: 0;
   margin-right: 0.5em;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
   user-select: none;
 }
 
@@ -303,4 +294,50 @@ button:disabled {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
+}
+
+.diskStatus {
+  width: 100px;
+  /* transform: translate(0, -12px); */
+  height: 1.5em;
+  font-size: 7.5pt;
+  margin-left: 0;
+  margin-right: 0.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  user-select: none;
+}
+
+.MuiDialog-paper {
+  margin: 0 !important;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: 10px !important;
+}
+
+.MuiDialogTitle-root {
+  padding: 5px !important;
+}
+
+.MuiImageListItem-root {
+  margin-bottom: 0px;
+  cursor: pointer;
+}
+
+.MuiImageListItemBar-root {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+
+.MuiImageListItemBar-titleWrap {
+  padding: 4px !important;
+}
+
+.MuiImageListItemBar-title {
+  font-size: small !important;
+  margin-top: 20;
+}
+
+.MuiIconButton-root {
+  cursor: help !important;
 }

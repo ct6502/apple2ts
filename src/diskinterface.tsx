@@ -6,6 +6,7 @@ import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
 import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'
 import { DiskImageChooser } from "./diskimagechooser"
 import {isAudioEnabled, registerAudioContext} from "./speaker"
+import { handleSetDiskData } from "./main2worker"
 
 let playDriveNoise = true
 let motorAudio: AudioDevice | undefined
@@ -106,19 +107,27 @@ export const doPlayDriveSound = (sound: DRIVE) => {
   }
 }
 
-class DiskInterface extends React.Component<{speedCheck: boolean}, {}> {
+export const resetAllDiskDrives = () => {
+  handleSetDiskData(0, new Uint8Array(), "")
+  handleSetDiskData(1, new Uint8Array(), "")
+  handleSetDiskData(2, new Uint8Array(), "")
+}
+
+class DiskInterface extends React.Component<{
+  speedCheck: boolean
+  }, {}> {
   render() {
     if (this.props.speedCheck !== playDriveNoise) {
       playDriveNoise = this.props.speedCheck
     }
     return (
-      <span>
+      <span className="drives">
+        <DiskImageChooser/>
         <span className="drives">
           <DiskDrive drive={0}/>
           <DiskDrive drive={1}/>
           <DiskDrive drive={2}/>
         </span>
-        <DiskImageChooser/>
       </span>
     );
   }

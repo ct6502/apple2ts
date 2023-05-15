@@ -7,8 +7,8 @@ let worker: Worker | null = null
 
 let saveStateCallback: (state: string) => void
 
-let updateDisplay = () => {}
-export const setUpdateDisplay = (updateIn: () => void) => {
+export let updateDisplay = (helpText = '') => {}
+export const setUpdateDisplay = (updateIn: (helpText?: string) => void) => {
   updateDisplay = updateIn
 }
 

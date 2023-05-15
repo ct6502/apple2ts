@@ -60,7 +60,7 @@ type DisplayProps = {
   handleUpperCaseChange: () => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
-  updateDisplay: () => void,
+  updateDisplay: (helpText?: string) => void,
   button0: boolean,
   button1: boolean,
 }

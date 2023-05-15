@@ -13,7 +13,7 @@ const DebugPanel = (props: DebugProps) => {
   }
   return (
     <span style={{display: 'none'}}>
-      <span className="fixed small">
+      <span className="helpPanel small">
         <pre>{handleGetZeroPageStack()}</pre>
       </span>
       <label>

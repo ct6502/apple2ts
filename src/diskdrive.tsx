@@ -110,7 +110,7 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
           style={{display: 'none'}}
         />
         <span className={"diskLabel"}>{dprops.filename}</span>
-        <span className={"statusItem"}>{status}</span>
+        <span className={"diskStatus"}>{status}</span>
       </span>
     )
   }

@@ -8,9 +8,6 @@ const ControlPanel = (props: DisplayProps) => {
       <br/>
       <KeyboardButtons {...props}/>
       <br/>
-      {/* <span className="statusItem">
-        <span className="fixed">{toHex(props.s6502.PC, 4)}</span>
-      </span> */}
     </span>
   )
 }
