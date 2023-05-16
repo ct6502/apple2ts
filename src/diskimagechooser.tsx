@@ -79,13 +79,17 @@ export const DiskImageChooser = () => {
     resetAllDiskDrives()
     handleSetDiskData(1, new Uint8Array(data), disk.file)
     const helpFile = replaceSuffix(disk.file, 'txt')
-    const help = await fetch("/disks/" + helpFile)
+    const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
+    let helpText = ' '
     if (help.ok) {
-      const data = await help.text()
-      if (data.length > 0) {
-        updateDisplay(data)
+      helpText = await help.text()
+      // Hack: when running on localhost, if the file is missing it just
+      // returns the index.html. So just return an empty string instead.
+      if (helpText.startsWith('<!DOCTYPE html>')) {
+        helpText = ' '
       }
     }
+    updateDisplay(helpText)
     handleSetCPUState(STATE.NEED_BOOT)
   }
 

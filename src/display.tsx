@@ -208,7 +208,7 @@ class DisplayApple2 extends React.Component<{},
       handleStepOut: handleStepOut,
     }
     const width = props.myCanvas.current?.width
-    const height = props.myCanvas.current?.height
+    const height = window.innerHeight - 30
     return (
       <div>
         <span className="topRow">
