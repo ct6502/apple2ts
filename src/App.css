@@ -84,7 +84,6 @@ textarea {
   display: flex;
   font-family: monospace;
   font-size: medium;
-  width: 300px;
   overflow: auto;
   background-color: lightgray;
   background-image: url(./img/paper.png);
@@ -98,6 +97,7 @@ textarea {
 .helpText {
   margin-left: 40px;
   margin-top: 5px;
+  white-space: pre-wrap;
 }
 
 .small {

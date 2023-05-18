@@ -209,6 +209,8 @@ class DisplayApple2 extends React.Component<{},
     }
     const width = props.myCanvas.current?.width
     const height = window.innerHeight - 30
+    let paperWidth = window.innerWidth - (width ? width : 600) - 50
+    if (paperWidth < 300) paperWidth = 300
     return (
       <div>
         <span className="topRow">
@@ -227,7 +229,8 @@ class DisplayApple2 extends React.Component<{},
             </span>
           </span>
           <span className="sideContent">
-            <HelpPanel helpText={this.state.helpText} height={height ? height : 400}/>
+            <HelpPanel helpText={this.state.helpText}
+              height={height ? height : 400} width={paperWidth} />
             <DebugPanel {...debugProps}/>
           </span>
         </span>
