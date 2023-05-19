@@ -1,8 +1,8 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires } from "./main2worker"
 import { getPrintableChar, COLOR_MODE } from "./emulator/utility"
-const xmargin = 0.025
-const ymargin = 0.025
+const xmargin = 0.075
+const ymargin = 0.075
 let frameCount = 0
 
 const TEXT_GREEN = '#39FF14'
@@ -338,9 +338,10 @@ const processHiRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
 export const processDisplay = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   width: number, height: number) => {
   frameCount++
-  ctx.fillStyle = "#000000";
   ctx.imageSmoothingEnabled = false;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(xmargin * width, ymargin * height,
+    width * (1 - 2 * xmargin) + 1, height * (1 - 2 * ymargin) + 1);
   processTextPage(ctx, colorMode, width, height)
   processLoRes(ctx, colorMode, width, height)
   processHiRes(ctx, colorMode, width, height)

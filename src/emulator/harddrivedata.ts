@@ -171,7 +171,7 @@ export const processHardDriveBlockAccess = () => {
   const blockStart = 512 * block
   let bufferAddr = memGet(0x44) + 256 * memGet(0x45)
   const dataLen = dd.length
-  ds.status = ` #${toHex(block, 4)} $${toHex(bufferAddr, 4)}`
+  ds.status = ` ${toHex(block, 4)} ${toHex(bufferAddr, 4)}`
 //  console.log(`cmd=${memGet(0x42)} ${ds.status}`)
 
   switch (memGet(0x42)) {

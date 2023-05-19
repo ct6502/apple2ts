@@ -287,3 +287,34 @@ const STZ_ABS_X =
   LDA $1244
 `;
 test('STZ $FFFF,X', () => testInstr(STZ_ABS_X.split('\n'), 0x0, Z))
+
+const TEST_BCD =
+`BIN    EQU $0
+BCD     EQU $2
+        LDA #$80
+        STA BIN
+        LDA #$00
+        STA BIN+1
+        SED              ; Switch to decimal mode
+        LDA #0           ; Ensure the result is clear
+        STA BCD+0
+        STA BCD+1
+        STA BCD+2
+        LDX #16          ; The number of source bits
+CNVBIT  ASL BIN+0        ; Shift out one bit
+        ROL BIN+1
+        LDA BCD+0        ; And add into result
+        ADC BCD+0
+        STA BCD+0
+        LDA BCD+1        ; propagating any carry
+        ADC BCD+1
+        STA BCD+1
+        LDA BCD+2        ; ... thru whole result
+        ADC BCD+2
+        STA BCD+2
+        DEX              ; And repeat for next bit
+        BNE CNVBIT
+        CLD              ; Back to binary
+        LDA BCD
+`;
+test('TEST_BCD', () => testInstr(TEST_BCD.split('\n'), 0x28, 0))

@@ -5,6 +5,7 @@ import { handleSetCPUState, handleSetDiskData, updateDisplay } from "./main2work
 import { STATE, replaceSuffix } from "./emulator/utility";
 import { diskImages } from "./diskimages";
 import { resetAllDiskDrives } from "./diskinterface";
+import disks from "./img/disks.png"
 
 export interface DiskImageDialogProps {
   open: boolean;
@@ -100,9 +101,9 @@ export const DiskImageChooser = () => {
 
   return (
     <div className="DiskImageChooser">
-      <Button className="textButton" variant="contained"
+      <Button className="imgButton" variant="contained"
         onClick={handleClickOpen}>
-        Disk
+        <img className="multiDisk" src={disks} alt="disks" height="57px"/>
       </Button>
       <DiskImageDialog
         onSelect={handleSelect}

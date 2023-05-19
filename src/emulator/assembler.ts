@@ -1,6 +1,8 @@
 import { pcodes } from "./instructions";
 import { toHex, isRelativeInstr, MODE } from "./utility";
 
+const doOutput = false
+
 const parseOperand = (operand: string): [MODE, number] => {
   let mode: MODE = MODE.IMPLIED;
   let value = -1
@@ -37,8 +39,6 @@ const parseOperand = (operand: string): [MODE, number] => {
 
 
 let labels: { [key: string]: number } = {};
-
-const doOutput = false
 
 const getInstructionModeValue =
   (pc: number, instr: string, operand: string, pass: 1 | 2): [MODE, number] => {
@@ -90,6 +90,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
     const parts = line.match(/(?<label>[A-Z]*) *(?<instr>[A-Z]*) *(?<operand>.*)/)?.groups
     if (line && parts) {
 
+      // Remove all whitespace
       parts.operand = parts.operand.replace(/\s/g, '')
       if (parts.operand && !parts.instr) {
         console.error("Missing instruction: " + line)

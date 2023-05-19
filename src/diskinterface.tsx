@@ -123,11 +123,9 @@ class DiskInterface extends React.Component<{
     return (
       <span className="drives">
         <DiskImageChooser/>
-        <span className="drives">
           <DiskDrive drive={0}/>
           <DiskDrive drive={1}/>
           <DiskDrive drive={2}/>
-        </span>
       </span>
     );
   }

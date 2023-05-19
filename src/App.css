@@ -35,6 +35,7 @@ body {
 .topRow {
   display: flex;
   flex-direction: row;
+  user-select: none;
 }
 
 .apple2 {
@@ -57,9 +58,12 @@ body {
 canvas {
   grid-column: 1;
   grid-row: 1;
-  outline: none;
   border-radius: 20px;
-  /* cursor: none; */
+  border-color: #000;
+  background-color: black;
+  background-image: url(./img/crt.png);
+  background-size: cover;
+  outline: none;
 }
 
 textarea {
@@ -88,10 +92,12 @@ textarea {
   background-color: lightgray;
   background-image: url(./img/paper.png);
   background-size: cover;
-  margin-top: 15px;
+  margin-top: 5px;
   margin-left: 15px;
-  margin-right: 5px;
+  margin-right: 15px;
   opacity: 80%;
+  box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.5),
+    inset -1px 0px 1px 1px #BFBB98;
 }
 
 .helpText {
@@ -122,19 +128,20 @@ select {
   border: 0.75px solid black !important;
 }
 
-.textButton {
-  font-size: medium !important;
-  line-height: 1.5 !important;
-  padding-left: 5px !important;
-  padding-right: 5px !important;
-  padding-top: 1px !important;
-  padding-bottom: 1px !important;
+.imgButton {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
   margin-top: 3px !important;
-  font-variant-caps: normal !important;
-  color: black !important;
   background-color: inherit !important;
-  text-transform: none !important;
-  border: 0.75px solid black!important;
+  border: none;
+  outline: none;
+  box-shadow: none !important;
+}
+
+.multiDisk {
+  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
 }
 
 .pushButton {
@@ -249,8 +256,8 @@ button:disabled {
 }
 
 .disk2 {
-  width: 100px;
-  height: 57px;
+  width: 80px;
+  height: 50px;
   border: 1px solid #000;
   border-radius: 5px;
   cursor: pointer;
@@ -258,12 +265,7 @@ button:disabled {
   margin-right: 10px;
   margin-top: 6px;
   -webkit-touch-callout: none;
-}
-
-.harddrive {
-  border: 1px solid #555;
-  height: 57px;
-  margin-right: 7px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .statusItem {
@@ -282,10 +284,10 @@ button:disabled {
   position: relative;
   color: white;
   border-radius: 3px;
-  width: 87px;
+  width: 70px;
   pointer-events: none;
   height: 1.5em;
-  top: -44px;
+  top: -38px;
   margin-top: -1.2em;
   padding-left: 0px;
   padding-top: 0px;
@@ -299,7 +301,7 @@ button:disabled {
 }
 
 .diskStatus {
-  width: 100px;
+  width: 80px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
   font-size: 7.5pt;
