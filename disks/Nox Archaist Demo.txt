@@ -1,4 +1,4 @@
-_____ GENERAL & COMBAT _____
+_____ GENERAL _____
 A  attack
 C  cast spell
 F  fire cannon (ships only)
