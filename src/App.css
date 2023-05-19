@@ -262,7 +262,7 @@ button:disabled {
   border-radius: 5px;
   cursor: pointer;
   margin-left: 0px;
-  margin-right: 10px;
+  margin-right: 9px;
   margin-top: 6px;
   -webkit-touch-callout: none;
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
@@ -301,12 +301,12 @@ button:disabled {
 }
 
 .diskStatus {
-  width: 80px;
+  width: 82px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
   font-size: 7.5pt;
   margin-left: 0;
-  margin-right: 0.5em;
+  margin-right: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
