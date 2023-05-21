@@ -136,6 +136,14 @@ export const memoryReset = () => {
   updateAddressTables()
 }
 
+// Fill all pages of either main or aux memory with 0, 1, 2,...
+export const memorySetForTests = (aux = false) => {
+  memoryReset()
+  const offset = aux ? AUXstart : 0
+  for (let i=0; i <= 0xFF; i++) {
+    memory.fill(i, i * 256 + offset, (i + 1) * 256 + offset)
+  }
+}
 
 // Set $C007: FF to see this code
 // Hack to change the cursor

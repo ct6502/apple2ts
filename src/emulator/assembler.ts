@@ -95,6 +95,7 @@ const getOperandModeValue =
       if (isRelativeInstr(instr)) {
         mode = MODE.ZP_REL
         value = (value - pc + 254)
+        if (value > 255) value -= 256
       } else {
         if (isImmediate) {
           mode = MODE.IMM
@@ -179,7 +180,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
     const [mode, value] = getOperandModeValue(pc, codeLine.instr, codeLine.operand, pass)
 
     if (isRelativeInstr(codeLine.instr) && (value < 0 || value > 255)) {
-      throw new Error("Branch instruction out of range: " + line);
+      throw new Error(`Branch instruction out of range: ${line} value: ${value}`);
     }
 
     const match = pcodes.findIndex(pc => pc && pc.name === codeLine.instr && pc.mode === mode)

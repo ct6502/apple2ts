@@ -147,6 +147,8 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
   if (decodeWoz1(driveState, diskData)) {
     return diskData
   }
-  console.error("Unknown disk format.")
+  if (fname !== '') {
+    console.error("Unknown disk format.")
+  }
   return new Uint8Array()
 }
