@@ -1,47 +1,36 @@
-import { processInstruction } from "./motherboard";
-import { memGet, memSet, memory, memoryReset, memorySetForTests } from "./memory";
-import { s6502, setPC } from "./instructions";
-import { parseAssembly } from "./assembler";
-import { toHex } from "./utility";
+import { memGet, memSet, memoryReset, memorySetForTests } from "./memory";
 
-const executeCode = (instr: Array<string>) => {
-  const start = 0x05
-  let pcode = parseAssembly(start, instr)
-  memory.set(pcode, start)
-  setPC(start)
-  while (s6502.PC < start + pcode.length) {
-    processInstruction()
-  }
-}
+type ExpectValue = (i: number) => void
 
-type MemTest = {
-  doWrite: boolean,
-  expectFF: boolean,
-}
-
-const doTestMemory = (offset: number, start: number, end: number, flags: MemTest) => {
+const doWriteIndexToMemory = (offset: number, start: number, end: number) => {
   for (let i = start; i <= end; i++) {
-    if (i === 0xC0) continue
-    const addr = (i * 256 + offset) % 65536
-    const mem = toHex(addr)
-    let instr: Array<string> = []
-    const expectValue = flags.expectFF ? 0xFF : ((addr < 0xC000) ? i : memGet(addr))
-    if (flags.doWrite) {
-      instr = [` LDA #${i}`, ` STA $${mem}`, ` LDA $${mem}`]
-    } else {
-      instr = [` LDA $${mem}`]
-    }
-    executeCode(instr)
-    expect(s6502.Accum).toEqual(expectValue);
+    const addr = (i * 256 + offset)
+    memSet(addr, i)
   }
 }
+
+const doWriteValueToMemory = (offset: number, start: number, end: number, value: number) => {
+  for (let i = start; i <= end; i++) {
+    const addr = (i * 256 + offset)
+    memSet(addr, value)
+  }
+}
+
+const doTestMemory = (offset: number, start: number, end: number, expectValue: ExpectValue) => {
+  for (let i = start; i <= end; i++) {
+    const addr = (i * 256 + offset)
+    expect(memGet(addr)).toEqual(expectValue(i));
+  }
+}
+
+const expectIndex = (i: number = 0) => i
 
 test('readMainMemIndex', () => {
   memorySetForTests()
-  doTestMemory(0, 0, 0xFF, {doWrite: false, expectFF: false})
-  doTestMemory(1, 0, 0xFF, {doWrite: false, expectFF: false})
-  doTestMemory(0xFE, 0, 0xFF, {doWrite: false, expectFF: false})
-  doTestMemory(0xFF, 0, 0xFF, {doWrite: false, expectFF: false})
+  doTestMemory(0, 0, 0xBF, expectIndex)
+  doTestMemory(1, 0, 0xBF, expectIndex)
+  doTestMemory(0xFE, 0, 0xBF, expectIndex)
+  doTestMemory(0xFF, 0, 0xBF, expectIndex)
 })
 
 test('readAuxMemEmpty', () => {
@@ -49,35 +38,67 @@ test('readAuxMemEmpty', () => {
   // AUX read enable
   memSet(0xC003, 1)
   expect(memGet(0xC013)).toEqual(0x8d);
-  doTestMemory(0, 0x02, 0xBF, {doWrite: false, expectFF: true})
+  doTestMemory(0, 0x02, 0xBF, () => 0xFF)
   // Pages 0 and 1 should still be from MAIN
-  doTestMemory(0, 0, 0x01, {doWrite: false, expectFF: false})
+  doTestMemory(0, 0, 0x01, expectIndex)
+  // This should still write to MAIN
+  doWriteIndexToMemory(0, 0, 0xBF)
+  doTestMemory(0, 0x02, 0xBF, () => 0xFF)
   // MAIN read enable
   memSet(0xC002, 1)
   expect(memGet(0xC013)).toEqual(0x0d);
+  // First value in each page of main should have that index
+  doTestMemory(0, 0x02, 0xBF, expectIndex)
 })
 
 test('readAuxMemIndex', () => {
+  // Put index in AUX; main should just be 0xFF's
   memorySetForTests(true)
   // AUX read enable
   memSet(0xC003, 1)
-  doTestMemory(0, 0x02, 0xFF, {doWrite: false, expectFF: false})
-  doTestMemory(1, 0x02, 0xFF, {doWrite: false, expectFF: false})
-  doTestMemory(0xFE, 0x02, 0xFF, {doWrite: false, expectFF: false})
-  doTestMemory(0xFF, 0x02, 0xFF, {doWrite: false, expectFF: false})
+  doTestMemory(0, 0x02, 0xBF, expectIndex)
+  doTestMemory(1, 0x02, 0xBF, expectIndex)
+  doTestMemory(0xFE, 0x02, 0xBF, expectIndex)
+  doTestMemory(0xFF, 0x02, 0xBF, expectIndex)
+  memSet(0xC002, 1)
 })
 
 test('readMainMemEmpty', () => {
+  // Put index in AUX; main should just be 0xFF's
   memorySetForTests(true)
-  // MAIN read enable
-  memSet(0xC002, 1)
-  doTestMemory(0, 0x02, 0xBF, {doWrite: false, expectFF: true})
+  doTestMemory(0, 0, 0xBF, () => 0xFF)
 })
 
 test('readWriteMainMem', () => {
   memoryReset()
-  doTestMemory(0, 0, 0xFF, {doWrite: true, expectFF: false})
-  doTestMemory(1, 0, 0xFF, {doWrite: true, expectFF: false})
-  doTestMemory(0xFE, 0, 0xFF, {doWrite: true, expectFF: false})
-  doTestMemory(0xFF, 0, 0xFF, {doWrite: true, expectFF: false})
+  doWriteIndexToMemory(0, 0, 0xBF)
+  doTestMemory(0, 0, 0xBF, expectIndex)
+  doWriteIndexToMemory(1, 0, 0xBF)
+  doTestMemory(1, 0, 0xBF, expectIndex)
+  doWriteIndexToMemory(0xFE, 0, 0xBF)
+  doTestMemory(0xFE, 0, 0xBF, expectIndex)
+  doWriteIndexToMemory(0xFF, 0, 0xBF)
+  doTestMemory(0xFF, 0, 0xBF, expectIndex)
+})
+
+test('readWriteAuxMem', () => {
+  memoryReset()
+  // AUX write enable
+  memSet(0xC005, 1)
+  expect(memGet(0xC014)).toEqual(0x8d);
+  doWriteIndexToMemory(0, 0, 0xBF)
+  // Should still be reading from MAIN
+  doTestMemory(0, 0x02, 0xBF, () => 0xFF)
+  // AUX read enable
+  memSet(0xC003, 1)
+  doTestMemory(0, 0x02, 0xBF, expectIndex)
+  // MAIN write enable, and write some values
+  memSet(0xC004, 1)
+  expect(memGet(0xC014)).toEqual(0x0d)
+  doWriteValueToMemory(0, 0, 0xBF, 0xA0)
+  // Should still be reading from AUX
+  doTestMemory(0, 0x02, 0xBF, expectIndex)
+  // MAIN read enable
+  memSet(0xC002, 1)
+  doTestMemory(0, 0x02, 0xBF, () => 0xA0)
 })

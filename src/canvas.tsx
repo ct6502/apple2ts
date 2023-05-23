@@ -212,9 +212,9 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   [width, height] = getSizes()
 
-  // Make keyboard events work on iPhone by using a hidden textarea.
-  const smallSize = width < 600
-  const txt = smallSize ?
+  // Make keyboard events work on touch devices by using a hidden textarea.
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const txt = isTouchDevice ?
       <textarea hidden={false} ref={myText}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
@@ -224,8 +224,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     <canvas ref={props.myCanvas}
       width={width} height={height}
       tabIndex={0}
-      onKeyDown={smallSize ? ()=>{} : handleKeyDown}
-      onKeyUp={smallSize ? ()=>{} : handleKeyUp}
+      onKeyDown={isTouchDevice ? ()=>{} : handleKeyDown}
+      onKeyUp={isTouchDevice ? ()=>{} : handleKeyUp}
       onMouseEnter={() => {
         myText.current?.focus()
       }}

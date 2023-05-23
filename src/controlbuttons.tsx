@@ -41,7 +41,7 @@ const ControlButtons = (props: DisplayProps) => {
     default:
       break;
   }
-  const isPhone = "ontouchstart" in document.documentElement
+  const isTouchDevice = "ontouchstart" in document.documentElement
   return <span>
     <button className="pushButton"
       title="Boot"
@@ -108,7 +108,7 @@ const ControlButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faClipboard}/>
     </button>
     <button className="pushButton" title="Full Screen"
-      style={{display: isPhone ? 'none' : ''}}
+      style={{display: isTouchDevice ? 'none' : ''}}
       onClick={() => {
         const context = props.myCanvas.current
         if (context) {

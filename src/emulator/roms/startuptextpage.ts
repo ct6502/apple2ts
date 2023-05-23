@@ -15,8 +15,8 @@ let text=
 
 const isMac = navigator.platform.startsWith('Mac')
 const key = isMac ? '\xC3' : '^'
-const isPhone = "ontouchstart" in document.documentElement
-if (!isPhone) {
+const isTouchDevice = "ontouchstart" in document.documentElement
+if (!isTouchDevice) {
   text = text.concat([
     'Keyboard Shortcuts:',
     '',
