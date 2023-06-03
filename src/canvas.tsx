@@ -125,7 +125,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const checkGamepad = (x: number, y: number) => {
+  const checkGamepad = (x: number, y: number, useMouseAsGamepad: boolean) => {
     const gamePads = navigator.getGamepads()
     let gamePad: EmuGamepad = {
       connected: false,
@@ -148,7 +148,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         break
       }
     }
-    if (!gamePad.connected) {
+    if (!gamePad.connected && useMouseAsGamepad) {
       gamePad.connected = true
       gamePad.axes[0] = x
       gamePad.axes[1] = y
@@ -166,7 +166,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     let y = 0
     const handleMouseMove = (event: MouseEvent) => {
       const scale = (xx: number, ww: number) => {
-        xx = 6 * xx / ww - 3
+        // Scale the mouse "joystick" so the range covers most of the screen.
+        xx = 3 * xx / ww - 1.5
         return Math.min(Math.max(xx, -1), 1)}
       if (props.myCanvas.current && context) {
         const rect = props.myCanvas.current.getBoundingClientRect();
@@ -192,7 +193,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     updateDisplay()
 
     // Check for new gamepads on a regular basis
-    const gamepadID = window.setInterval(() => {checkGamepad(x, y)}, 34)
+    const gamepadID = window.setInterval(() => {checkGamepad(x, y, props.useMouseAsGamepad)}, 34)
     const renderCanvas = () => {
       if (context) {
         processDisplay(context, props.colorMode, width, height)
@@ -208,7 +209,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.clearInterval(gamepadID)
       props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
     }
-  }, [props.myCanvas, props.colorMode]);
+  }, [props.myCanvas, props.colorMode, props.useMouseAsGamepad]);
 
   [width, height] = getSizes()
 

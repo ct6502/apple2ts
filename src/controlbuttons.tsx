@@ -17,6 +17,8 @@ import {
   faTruckFast,
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons";
+import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
+import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ControlButtons = (props: DisplayProps) => {
   let svgRect: any
@@ -42,6 +44,11 @@ const ControlButtons = (props: DisplayProps) => {
       break;
   }
   const isTouchDevice = "ontouchstart" in document.documentElement
+  const useMouseAsGamepad = props.useMouseAsGamepad ?
+    <VideogameAssetIcon className="pushMuiButton" /> :
+    <VideogameAssetOffIcon className="pushMuiButton" />
+
+
   return <span>
     <button className="pushButton"
       title="Boot"
@@ -92,6 +99,11 @@ const ControlButtons = (props: DisplayProps) => {
       title={props.uppercase ? "Uppercase" : "Lowercase"}
       onClick={props.handleUpperCaseChange}>
       {props.uppercase ? <span>A</span> : <span>a</span>}
+    </button>
+    <button className="pushButton"
+      title={"Mouse Joystick"}
+      onClick={props.handleUseMouseAsGamepad}>
+      {useMouseAsGamepad}
     </button>
     <button className="pushButton" title="Restore State"
       onClick={() => props.handleFileOpen()}>

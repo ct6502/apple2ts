@@ -1,5 +1,9 @@
-import { memGetC000, memSetC000 } from "./memory"
+import { matchMemory, memGetC000, memSetC000 } from "./memory"
 import { doSaveTimeSlice } from "./motherboard"
+
+const keyPress = (key: number) => {
+  memSetC000(0xC000, key | 0b10000000, 32)
+}
 
 let keyBuffer = ''
 export const popKey = () => {
@@ -15,7 +19,7 @@ export const popKey = () => {
 
 let prevKey = ''
 
-export const addToBuffer = (text: String) => {
+export const addToBuffer = (text: string) => {
   // Avoid repeating keys in the buffer if the Apple isn't processing them.
   if (text === prevKey && keyBuffer.length > 0) {
     return
@@ -27,7 +31,7 @@ export const addToBuffer = (text: String) => {
 
 let tPrev = 0
 
-export const addToBufferDebounce = (text: String, timeout: number) => {
+export const addToBufferDebounce = (text: string, timeout: number) => {
   // Avoid repeating keys in the buffer if the Apple isn't processing them.
   const t = performance.now()
   if ((t - tPrev) < timeout) {
@@ -39,7 +43,23 @@ export const addToBufferDebounce = (text: String, timeout: number) => {
   popKey()
 }
 
-const keyPress = (key: number) => {
-  memSetC000(0xC000, key | 0b10000000, 32)
-}
+type KeyMap = {
+  [key: string]: string;
+};
 
+export const sendTextToEmulator = (text: string) => {
+  if (text.length === 1) {
+    let mapping: KeyMap = {}
+    const isKarateka = matchMemory(0x6E6C, [0xAD, 0x00, 0xC0])
+    if (isKarateka) {
+      mapping['N'] = '\x08'
+      mapping['M'] = '\x15'
+      mapping[','] = '\x08'
+      mapping['.'] = '\x15'
+    }
+    const key = (text in mapping) ? mapping[text] : text
+    addToBuffer(key)
+  } else {
+    addToBuffer(text)
+  }
+}

@@ -3,7 +3,7 @@ import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetBreakpoint, handleSetNormalSpeed, handleGetTextPage,
   handleSetDebug, handleGetSpeed, handleGetButton,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, handleStepInto, handleStepOver, handleStepOut, handleKeyboardBuffer } from "./main2worker"
+  handleGetFilename, handleStepInto, handleStepOver, handleStepOut } from "./main2worker"
 import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
@@ -17,6 +17,7 @@ class DisplayApple2 extends React.Component<{},
   { currentSpeed: string;
     speedCheck: boolean;
     uppercase: boolean;
+    useMouseAsGamepad: boolean;
     colorMode: COLOR_MODE;
     doDebug: boolean;
     breakpoint: string;
@@ -34,6 +35,7 @@ class DisplayApple2 extends React.Component<{},
       currentSpeed: '1.02',
       speedCheck: true,
       uppercase: true,
+      useMouseAsGamepad: false,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
       helpText: '',
@@ -87,6 +89,9 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ uppercase: !this.state.uppercase });
   };
 
+  handleUseMouseAsGamepad = () => {
+    this.setState({ useMouseAsGamepad: !this.state.useMouseAsGamepad });
+  };
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
@@ -175,10 +180,6 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
-  sendKey = (key: number) => {
-    handleKeyboardBuffer(String.fromCharCode(key))
-  }
-
   render() {
     const props: DisplayProps = {
       machineState: handleGetState(),
@@ -187,11 +188,12 @@ class DisplayApple2 extends React.Component<{},
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
+      useMouseAsGamepad: this.state.useMouseAsGamepad,
       colorMode: this.state.colorMode,
-      sendKey: this.sendKey,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
+      handleUseMouseAsGamepad: this.handleUseMouseAsGamepad,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
       updateDisplay: this.updateDisplay,

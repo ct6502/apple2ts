@@ -3,7 +3,7 @@ import { doSetCPUState, doSetBreakpoint,
   doGoBackInTime, doGoForwardInTime, doSetDebug,
   doStepInto, doStepOver, doStepOut } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
-import { addToBuffer } from "./keyboard"
+import { sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepad } from "./joystick"
 import { DRIVE } from "./utility";
 
@@ -72,7 +72,7 @@ self.onmessage = (e: MessageEvent) => {
       doRestoreSaveState(e.data.payload)
       break;
     case "KEYBUFFER":
-      addToBuffer(e.data.payload)
+      sendTextToEmulator(e.data.payload)
       break;
     case "APPLE_PRESS":
       pressAppleCommandKey(true, e.data.payload)

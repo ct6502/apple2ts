@@ -62,7 +62,7 @@ canvas {
   border-color: #000;
   background-color: black;
   background-image: url(./img/crt.png);
-  background-size: cover;
+  background-size: 100% 100%;
   outline: none;
 }
 
@@ -161,6 +161,11 @@ select {
   cursor: pointer;
   font-weight: 900;
   user-select: none;
+}
+
+.pushMuiButton {
+  font-size: 1.75rem;
+  vertical-align: text-bottom;
 }
 
 .isActive {

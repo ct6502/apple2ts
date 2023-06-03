@@ -307,3 +307,10 @@ export const setDataBlock = (addr: number, data: Uint8Array) => {
   const offset = addressSetTable[addr >>> 8] + (addr & 255)
   memory.set(data, offset)
 }
+
+export const matchMemory = (addr: number, data: number[]) => {
+  for (let i = 0; i < data.length; i++) {
+   if (memGet(addr + i) !== data[i]) return false
+  }
+  return true
+}
