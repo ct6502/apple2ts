@@ -227,7 +227,7 @@ class DisplayApple2 extends React.Component<{},
             <span className="statusItem">
               <span>{props.speed} MHz</span>
               <br/>
-              <span>Apple2TS ©2023 Chris Torrence <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+              <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence (git {process.env.REACT_APP_GIT_SHA}) <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
             </span>
           </span>
           <span className="sideContent">

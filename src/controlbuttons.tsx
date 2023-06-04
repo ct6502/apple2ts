@@ -52,8 +52,6 @@ const ControlButtons = (props: DisplayProps) => {
   return <span>
     <button className="pushButton"
       title="Boot"
-      onTouchStart={() => {
-        handleSetCPUState(STATE.NEED_BOOT)}}
       onClick={() => {
         handleSetCPUState(STATE.NEED_BOOT)
       }}>
