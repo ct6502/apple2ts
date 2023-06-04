@@ -1,7 +1,7 @@
 
 let audioContext: AudioContext
 let speaker: AudioWorkletNode
-export let isAudioEnabled = true
+export let isAudioEnabled = typeof AudioContext !== 'undefined'
 
 const audioContexts = new Array<AudioContext>()
 

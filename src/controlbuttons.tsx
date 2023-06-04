@@ -84,7 +84,7 @@ const ControlButtons = (props: DisplayProps) => {
       title={colorToName(props.colorMode)}
       onClick={props.handleColorChange}>
       <span className="fa-layers fa-fw">
-        <svg width="20" height="18">
+        <svg width="20" height="19">
           {svgRect}
         </svg>
         <FontAwesomeIcon icon={faDisplay}/>
@@ -92,6 +92,7 @@ const ControlButtons = (props: DisplayProps) => {
     </button>
     <button className="pushButton"
       title={"Toggle Sound"}
+      style={{display: typeof AudioContext !== 'undefined' ? '' : 'none'}}
       onClick={() => {audioEnable(!isAudioEnabled); props.updateDisplay()}}>
       <FontAwesomeIcon icon={isAudioEnabled ? faVolumeHigh : faVolumeXmark}/>
     </button>
@@ -101,6 +102,7 @@ const ControlButtons = (props: DisplayProps) => {
       {props.uppercase ? <span>A</span> : <span>a</span>}
     </button>
     <button className="pushButton"
+      style={{display: isTouchDevice ? 'none' : ''}}
       title={"Mouse Joystick"}
       onClick={props.handleUseMouseAsGamepad}>
       {useMouseAsGamepad}

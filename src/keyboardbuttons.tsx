@@ -11,11 +11,15 @@ import { appleOutline, appleSolid } from "./appleicons";
 const KeyboardButtons = (props: DisplayProps) => {
   return <span>
     <button className={`pushButton keyButton ${props.button0 ? 'isActive' : ''}`} title="Open Apple"
+      onTouchStart={() => handleAppleCommandKeyPress(true)}
+      onTouchEnd={() => handleAppleCommandKeyRelease(true)}
       onMouseDown={() => handleAppleCommandKeyPress(true)}
       onMouseUp={() => handleAppleCommandKeyRelease(true)}>
       {appleOutline}
     </button>
     <button className={`pushButton keyButton ${props.button1 ? 'isActive' : ''}`} title="Closed Apple"
+      onTouchStart={() => handleAppleCommandKeyPress(false)}
+      onTouchEnd={() => handleAppleCommandKeyRelease(false)}
       onMouseDown={() => handleAppleCommandKeyPress(false)}
       onMouseUp={() => handleAppleCommandKeyRelease(false)}>
       {appleSolid}

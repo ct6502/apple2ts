@@ -195,8 +195,9 @@ const Apple2Canvas = (props: DisplayProps) => {
     // Check for new gamepads on a regular basis
     const gamepadID = window.setInterval(() => {checkGamepad(x, y, props.useMouseAsGamepad)}, 34)
     const renderCanvas = () => {
-      if (context) {
-        processDisplay(context, props.colorMode, width, height)
+      const hiddenContext = props.hiddenCanvas.current?.getContext('2d')
+      if (context && hiddenContext) {
+        processDisplay(context, hiddenContext, props.colorMode, width, height)
       }
       animationFrameId = window.requestAnimationFrame(renderCanvas)
     }
@@ -209,7 +210,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.clearInterval(gamepadID)
       props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
     }
-  }, [props.myCanvas, props.colorMode, props.useMouseAsGamepad]);
+  }, [props.myCanvas, props.hiddenCanvas, props.colorMode, props.useMouseAsGamepad]);
 
   [width, height] = getSizes()
 
@@ -234,6 +235,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         myText.current?.focus()
       }}
     />
+    <canvas ref={props.hiddenCanvas}
+      hidden={true}
+      width={560} height={192} />
     {txt}
     </span>
 };

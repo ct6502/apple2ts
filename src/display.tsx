@@ -26,6 +26,7 @@ class DisplayApple2 extends React.Component<{},
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
+  hiddenCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen: HTMLInputElement | null = null
 
   constructor(props: any) {
@@ -185,6 +186,7 @@ class DisplayApple2 extends React.Component<{},
       machineState: handleGetState(),
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
+      hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,

@@ -50,6 +50,7 @@ type DisplayProps = {
   machineState: STATE,
   speed: string,
   myCanvas: React.RefObject<HTMLCanvasElement>,
+  hiddenCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
   handleSpeedChange: () => void,
   uppercase: boolean,

@@ -117,8 +117,9 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
-const processLoRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
-  width: number, height: number) => {
+const processLoRes = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE, width: number, height: number) => {
   const textPage = handleGetLores()
   if (textPage.length === 0) return;
   const doubleRes = textPage.length === 1600 || textPage.length === 1920
@@ -154,7 +155,7 @@ const processLoRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
       }
     });
   }
-  drawImage(ctx, hgrRGBA, width, height)
+  drawImage(ctx, hiddenContext, hgrRGBA, width, height)
 };
 
 const BLACK = 0
@@ -195,6 +196,7 @@ const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*40, j*40 + 40)
     const joffset = j * 560
+    const joffsetMax = (j + 1) * 560 - 1
     let isEven = 1
     let skip = false
     let previousWhite = false
@@ -256,6 +258,8 @@ const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
             }
           }
           hgrColors[istart] = color1
+          // Don't leak onto the next line
+          if (imax > joffsetMax) imax = joffsetMax
           for (let ix = istart + 1; ix <= imax; ix++) {
             hgrColors[ix] = color2
           }
@@ -302,19 +306,26 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   return hgrColors
 }
 
-const drawImage = async (ctx: CanvasRenderingContext2D, hgrRGBA: Uint8ClampedArray,
-  width: number, height: number) => {
+const drawImage = async (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  hgrRGBA: Uint8ClampedArray, width: number, height: number) => {
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
   const nlines = hgrRGBA.length / (4 * 560)
-  const image = new ImageData(hgrRGBA, 560, nlines);
-  let imgHeight = height * (1 - 2 * ymargin) / 192 * nlines
-  ctx.drawImage(await createImageBitmap(image), 0, 0, 560, nlines,
-    xmarginPx, ymarginPx, width - 2*xmarginPx, imgHeight);
+  const imageData = new ImageData(hgrRGBA, 560, nlines);
+  const imgHeight = height * (1 - 2 * ymargin) / 192 * nlines
+  const imgWidth = width - 2 * xmarginPx
+  hiddenContext.putImageData(imageData, 0, 0)
+  ctx.drawImage(hiddenContext.canvas, 0, 0, 560, nlines,
+    xmarginPx, ymarginPx, imgWidth, imgHeight);
+// New way, using createImageBitmap, available in iOS 15+
+//  ctx.drawImage(await createImageBitmap(imageData), 0, 0, 560, nlines,
+//    xmarginPx, ymarginPx, imgWidth, imgHeight);
 }
 
-const processHiRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
-  width: number, height: number) => {
+const processHiRes = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE, width: number, height: number) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length === 0) return;
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
@@ -332,18 +343,19 @@ const processHiRes = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
     hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
     hgrRGBA[4 * i + 2] = colors[hgrColors[i]][2]
   }
-  drawImage(ctx, hgrRGBA, width, height)
+  drawImage(ctx, hiddenContext, hgrRGBA, width, height)
 };
 
-export const processDisplay = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
+export const processDisplay = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   width: number, height: number) => {
   frameCount++
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#000000";
   ctx.fillRect(xmargin * width, ymargin * height,
-    width * (1 - 2 * xmargin) + 1, height * (1 - 2 * ymargin) + 1);
+    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 1);
   processTextPage(ctx, colorMode, width, height)
-  processLoRes(ctx, colorMode, width, height)
-  processHiRes(ctx, colorMode, width, height)
+  processLoRes(ctx, hiddenContext, colorMode, width, height)
+  processHiRes(ctx, hiddenContext, colorMode, width, height)
 }
 

@@ -126,12 +126,12 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
   }
 }
 
-const rom = new Uint8Array(
-  Buffer.from(romBase64.replaceAll("\n", ""), "base64")
-)
-
 export const memoryReset = () => {
   memory.fill(0xFF, 0, 0x1FFFF)
+  const rom64 = romBase64.replace(/\n/g, "")
+  const rom = new Uint8Array(
+    Buffer.from(rom64, "base64")
+  )
   memory.set(rom, ROMstartMinusC000 + 0xC000)
   updateAddressTables()
 }
