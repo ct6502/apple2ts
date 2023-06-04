@@ -161,6 +161,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   // This code only runs once when the component first renders
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
+    let hiddenContext: CanvasRenderingContext2D | null
     let animationFrameId = 0
     let x = 0
     let y = 0
@@ -179,6 +180,9 @@ const Apple2Canvas = (props: DisplayProps) => {
       context = props.myCanvas.current.getContext('2d')
       props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
     }
+    if (props.hiddenCanvas.current) {
+      hiddenContext = props.hiddenCanvas.current.getContext('2d')
+    }
     const handleResize = () => {
       if (context) {
         [width, height] = getSizes()
@@ -195,7 +199,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     // Check for new gamepads on a regular basis
     const gamepadID = window.setInterval(() => {checkGamepad(x, y, props.useMouseAsGamepad)}, 34)
     const renderCanvas = () => {
-      const hiddenContext = props.hiddenCanvas.current?.getContext('2d')
       if (context && hiddenContext) {
         processDisplay(context, hiddenContext, props.colorMode, width, height)
       }
