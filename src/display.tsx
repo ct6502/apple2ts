@@ -17,7 +17,7 @@ class DisplayApple2 extends React.Component<{},
   { currentSpeed: string;
     speedCheck: boolean;
     uppercase: boolean;
-    useMouseAsGamepad: boolean;
+    useArrowKeysAsJoystick: boolean;
     colorMode: COLOR_MODE;
     doDebug: boolean;
     breakpoint: string;
@@ -36,7 +36,7 @@ class DisplayApple2 extends React.Component<{},
       currentSpeed: '1.02',
       speedCheck: true,
       uppercase: true,
-      useMouseAsGamepad: false,
+      useArrowKeysAsJoystick: true,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
       helpText: '',
@@ -90,8 +90,8 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ uppercase: !this.state.uppercase });
   };
 
-  handleUseMouseAsGamepad = () => {
-    this.setState({ useMouseAsGamepad: !this.state.useMouseAsGamepad });
+  handleUseArrowKeyJoystick = () => {
+    this.setState({ useArrowKeysAsJoystick: !this.state.useArrowKeysAsJoystick });
   };
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,12 +190,12 @@ class DisplayApple2 extends React.Component<{},
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
       uppercase: this.state.uppercase,
-      useMouseAsGamepad: this.state.useMouseAsGamepad,
+      useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
-      handleUseMouseAsGamepad: this.handleUseMouseAsGamepad,
+      handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
       updateDisplay: this.updateDisplay,

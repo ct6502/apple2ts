@@ -71,13 +71,22 @@ ERR      LDA   #$27
          RTS
 `
 
+// $CnFE status byte
+//  bit 7 - Medium is removable.
+//  bit 6 - Device is interruptable.
+//  bit 5-4 - Number of volumes on the device (0-3).
+//  bit 3 - The device supports formatting.
+//  bit 2 - The device can be written to.
+//  bit 1 - The device can be read from (must be on).
+//  bit 0 - The device's status can be read (must be on).
+
 const prodos8driver = () => {
   const driver = new Uint8Array(256).fill(0)
   const pcode1 = parseAssembly(0x0, code1.split("\n"))
   driver.set(pcode1, 0)
   const pcode2 = parseAssembly(0x0, code2.split("\n"))
   driver.set(pcode2, driverAddr)
-  driver[0xFE] = 0b00010011  // flags = ???
+  driver[0xFE] = 0b00010111  // see above
   driver[0xFF] = driverAddr
   return driver
 }

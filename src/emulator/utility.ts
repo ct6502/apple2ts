@@ -15,6 +15,13 @@ export enum COLOR_MODE {
   AMBER
 }
 
+export enum ARROW {
+  LEFT,
+  RIGHT,
+  UP,
+  DOWN
+}
+
 export const colorToName = (mode: COLOR_MODE) => {
   return ["Color", "Color (no fringe)", "Green", "Amber"][mode]
 }

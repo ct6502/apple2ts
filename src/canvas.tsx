@@ -1,9 +1,10 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { handleGoBackInTime, handleGoForwardInTime,
-  handleSetCPUState, handleKeyboardBuffer, handleSetGamepad,
-  handleAppleCommandKeyPress, handleAppleCommandKeyRelease, updateDisplay } from "./main2worker"
-import { STATE, convertAppleKey } from "./emulator/utility"
+import { handleSetCPUState, handleKeyboardBuffer, handleSetGamepad,
+  handleAppleCommandKeyPress, handleAppleCommandKeyRelease,
+  updateDisplay } from "./main2worker"
+import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
+import { handleArrowKey } from './keyboardbuttons';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
@@ -38,57 +39,63 @@ const Apple2Canvas = (props: DisplayProps) => {
     return [width, height]
   }
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
-    if (e.metaKey && e.key === "Meta") {
-      handleAppleCommandKeyPress(e.code === "MetaLeft")
+  const handleMetaKey = (key: string) => {
+    switch (key) {
+      // case 'ArrowLeft':
+      //   handleGoBackInTime()
+      //   break
+      // case 'ArrowRight':
+      //   handleGoForwardInTime()
+      //   break
+      case 'c':
+        props.handleCopyToClipboard()
+        break;
+      case 'v':
+        return false
+      case 'b':
+        handleSetCPUState(STATE.NEED_BOOT)
+        break;
+      case 'f':
+        props.handleSpeedChange()
+        break;
+      case 'o':
+        props.handleFileOpen()
+        break;
+      case 'p':
+        if (props.machineState === STATE.PAUSED) {
+        handleSetCPUState(STATE.RUNNING)
+        } else {
+        handleSetCPUState(STATE.PAUSED)
+        }
+        break;
+      case 'r':
+        handleSetCPUState(STATE.NEED_RESET)
+        break;
+      case 's':
+        props.handleFileSave()
+        break;
+      default:
+        return false
     }
-    if (e.metaKey) {
-      switch (e.key) {
-        case 'ArrowLeft':
-          handleGoBackInTime()
-          keyHandled = true
-          break
-        case 'ArrowRight':
-          handleGoForwardInTime()
-          keyHandled = true
-          break
-        case 'c':
-          props.handleCopyToClipboard()
-          keyHandled = true
-          break;
-        case 'v':
-          return
-        case 'b':
-          handleSetCPUState(STATE.NEED_BOOT)
-          keyHandled = true
-          break;
-        case 'f':
-          props.handleSpeedChange()
-          keyHandled = true
-          break;
-        case 'o':
-          props.handleFileOpen()
-          keyHandled = true
-          break;
-        case 'p':
-          if (props.machineState === STATE.PAUSED) {
-          handleSetCPUState(STATE.RUNNING)
-          } else {
-          handleSetCPUState(STATE.PAUSED)
-          }
-          keyHandled = true
-          break;
-        case 'r':
-          handleSetCPUState(STATE.NEED_RESET)
-          keyHandled = true
-          break;
-        case 's':
-          props.handleFileSave()
-          keyHandled = true
-          break;
-        default:
-          break;
-      }
+    return true
+  }
+
+  const arrowKeys: { [key: string]: ARROW } = {
+    ArrowLeft: ARROW.LEFT,
+    ArrowRight: ARROW.RIGHT,
+    ArrowUp: ARROW.UP,
+    ArrowDown: ARROW.DOWN,
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
+    if (e.shiftKey && e.key === "Shift") {
+      handleAppleCommandKeyPress(true)
+    }
+    if (e.altKey && e.key === "Alt") {
+      handleAppleCommandKeyPress(false)
+    }
+    if (e.metaKey || e.ctrlKey) {
+      keyHandled = handleMetaKey(e.key)
     }
     // If we're paused, allow <space> to resume
     if (props.machineState === STATE.PAUSED && e.key === ' ') {
@@ -100,32 +107,43 @@ const Apple2Canvas = (props: DisplayProps) => {
       handleAppleCommandKeyRelease(false)
       e.preventDefault()
       e.stopPropagation()
+      return
+    }
+
+    if (e.key in arrowKeys && props.useArrowKeysAsJoystick) {
+      handleArrowKey(arrowKeys[e.key], false)
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+
+    const key = convertAppleKey(e, props.uppercase);
+    if (key > 0) {
+      handleKeyboardBuffer(String.fromCharCode(key))
+      e.preventDefault()
+      e.stopPropagation()
     } else {
-      const key = convertAppleKey(e, props.uppercase);
-      if (key > 0) {
-        handleKeyboardBuffer(String.fromCharCode(key))
-        e.preventDefault()
-        e.stopPropagation()
-      } else {
-        // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
-        //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
-      }
+      // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
+      //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
   };
 
   const handleKeyUp = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
-    if (e.code === "MetaLeft" || e.code === "MetaRight") {
-      handleAppleCommandKeyRelease(e.code === "MetaLeft")
+    if (e.key === 'Shift') {
+      handleAppleCommandKeyRelease(true)
+    } else if (e.key === 'Alt') {
+      handleAppleCommandKeyRelease(false)
+    } else if (e.key in arrowKeys) {
+      handleArrowKey(arrowKeys[e.key], true)
     }
     if (keyHandled) {
       keyHandled = false
       e.preventDefault()
       e.stopPropagation()
-      return
     }
-  };
+  }
 
-  const checkGamepad = (x: number, y: number, useMouseAsGamepad: boolean) => {
+  const checkGamepad = () => {
     const gamePads = navigator.getGamepads()
     let gamePad: EmuGamepad = {
       connected: false,
@@ -148,11 +166,6 @@ const Apple2Canvas = (props: DisplayProps) => {
         break
       }
     }
-    if (!gamePad.connected && useMouseAsGamepad) {
-      gamePad.connected = true
-      gamePad.axes[0] = x
-      gamePad.axes[1] = y
-    }
     if (gamePad.connected) {
       handleSetGamepad(gamePad)
     }
@@ -163,22 +176,22 @@ const Apple2Canvas = (props: DisplayProps) => {
     let context: CanvasRenderingContext2D | null
     let hiddenContext: CanvasRenderingContext2D | null
     let animationFrameId = 0
-    let x = 0
-    let y = 0
-    const handleMouseMove = (event: MouseEvent) => {
-      const scale = (xx: number, ww: number) => {
-        // Scale the mouse "joystick" so the range covers most of the screen.
-        xx = 3 * xx / ww - 1.5
-        return Math.min(Math.max(xx, -1), 1)}
-      if (props.myCanvas.current && context) {
-        const rect = props.myCanvas.current.getBoundingClientRect();
-        x = scale(event.clientX - rect.left, rect.width);
-        y = scale(event.clientY - rect.top, rect.height);
-      }
-    }
+    // let x = 0
+    // let y = 0
+    // const handleMouseMove = (event: MouseEvent) => {
+    //   const scale = (xx: number, ww: number) => {
+    //     // Scale the mouse "joystick" so the range covers most of the screen.
+    //     xx = 3 * xx / ww - 1.5
+    //     return Math.min(Math.max(xx, -1), 1)}
+    //   if (props.myCanvas.current && context) {
+    //     const rect = props.myCanvas.current.getBoundingClientRect();
+    //     x = scale(event.clientX - rect.left, rect.width);
+    //     y = scale(event.clientY - rect.top, rect.height);
+    //   }
+    // }
     if (props.myCanvas.current) {
       context = props.myCanvas.current.getContext('2d')
-      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
+//      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
     }
     if (props.hiddenCanvas.current) {
       hiddenContext = props.hiddenCanvas.current.getContext('2d')
@@ -197,7 +210,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     updateDisplay()
 
     // Check for new gamepads on a regular basis
-    const gamepadID = window.setInterval(() => {checkGamepad(x, y, props.useMouseAsGamepad)}, 34)
+//    const gamepadID = window.setInterval(() => {checkGamepad(x, y, props.useArrowKeysAsJoystick)}, 34)
+    const gamepadID = window.setInterval(() => {checkGamepad()}, 34)
     const renderCanvas = () => {
       if (context && hiddenContext) {
         processDisplay(context, hiddenContext, props.colorMode, width, height)
@@ -211,9 +225,9 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.removeEventListener("paste", paste)
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
-      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
+//      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
     }
-  }, [props.myCanvas, props.hiddenCanvas, props.colorMode, props.useMouseAsGamepad]);
+  }, [props.myCanvas, props.hiddenCanvas, props.colorMode]);
 
   [width, height] = getSizes()
 
