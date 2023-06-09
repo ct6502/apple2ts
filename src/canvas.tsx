@@ -1,7 +1,9 @@
 import React, { useEffect, KeyboardEvent } from 'react';
 import { handleSetCPUState, handleKeyboardBuffer, handleSetGamepad,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease,
-  updateDisplay } from "./main2worker"
+  updateDisplay, 
+  handleGoBackInTime,
+  handleGoForwardInTime} from "./main2worker"
 import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './keyboardbuttons';
@@ -39,45 +41,24 @@ const Apple2Canvas = (props: DisplayProps) => {
     return [width, height]
   }
 
+  const metaKeyHandlers: { [key: string]: () => void } = {
+    ArrowLeft: () => handleGoBackInTime(),
+    ArrowRight: () => handleGoForwardInTime(),
+    b: () => handleSetCPUState(STATE.NEED_BOOT),
+    c: () => props.handleCopyToClipboard(),
+    f: () => props.handleSpeedChange(),
+    o: () => props.handleFileOpen(),
+    p: () => handleSetCPUState(props.machineState === STATE.PAUSED ? STATE.RUNNING : STATE.PAUSED),
+    r: () => handleSetCPUState(STATE.NEED_RESET),
+    s: () => props.handleFileSave()
+  }
+
   const handleMetaKey = (key: string) => {
-    switch (key) {
-      // case 'ArrowLeft':
-      //   handleGoBackInTime()
-      //   break
-      // case 'ArrowRight':
-      //   handleGoForwardInTime()
-      //   break
-      case 'c':
-        props.handleCopyToClipboard()
-        break;
-      case 'v':
-        return false
-      case 'b':
-        handleSetCPUState(STATE.NEED_BOOT)
-        break;
-      case 'f':
-        props.handleSpeedChange()
-        break;
-      case 'o':
-        props.handleFileOpen()
-        break;
-      case 'p':
-        if (props.machineState === STATE.PAUSED) {
-        handleSetCPUState(STATE.RUNNING)
-        } else {
-        handleSetCPUState(STATE.PAUSED)
-        }
-        break;
-      case 'r':
-        handleSetCPUState(STATE.NEED_RESET)
-        break;
-      case 's':
-        props.handleFileSave()
-        break;
-      default:
-        return false
+    if (key in metaKeyHandlers) {
+      metaKeyHandlers[key]()
+      return true
     }
-    return true
+    return false
   }
 
   const arrowKeys: { [key: string]: ARROW } = {

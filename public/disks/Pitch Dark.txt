@@ -1,0 +1,48 @@
+Pitch Dark Games List
+
+A Mind Forever Voyaging
+Ballyhoo
+Beyond Zork: The Coconut of Quendor
+Border Zone: A Game of Intrigue
+Bureaucracy: a paranoid fantasy
+Cutthroats
+Deadline: an Interlogic mystery
+Enchanter
+The Hitchhiker's Guide to the Galaxy
+Hollywood Hijinx: a zany treasure hunt
+Infidel
+Leather Goddesses of Phobos: a racy space-age spoof
+The Lurking Horror
+Mini-Zork I: The Great Underground Empire
+Mini-Zork II: The Wizard of Frobozz
+Moonmist
+Nord and Bert Couldn't Make Head or Tail of It
+Planetfall
+Plundered Hearts
+Seastalker: <Your Name> and the Ultramarine Bioceptor
+Sherlock: The Riddle of the Crown Jewels
+Sorcerer
+Spellbreaker
+Starcross
+Stationfall
+Suspect
+Suspended
+Trinity
+Wishbringer: The Magick Stone of Dreams
+The Witness: an Interlogic mystery
+Zork I: The Great Underground Empire
+Zork II: The Wizard of Frobozz
+Zork III: The Dungeon Master
+Zork Zero: The Revenge of Megaboz
+Zork: The Undiscovered Underground
+
+
+MIT License
+
+Copyright (c) 2018-2021 4am
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

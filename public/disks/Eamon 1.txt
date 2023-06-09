@@ -1,0 +1,162 @@
+WELCOME TO THE WONDERFUL WORLD OF EAMON
+by Donald Brown 
+
+EAMON is a computerized version of what are called "Fantasy Role-Playing Games".  When you enter the universe of one of these games, you are no longer John (or Jane) Smith, mild-mannered computer hobbyist.  Instead, you become a character in a land of adventure, doing almost anything.  In the land of Eamon, you will be a member of the select Adventurers Guild, which is made up of hardy individuals like yourself who want to live by your wits, defeating horrible monsters and finding glorious treasures. 
+
+The basic system of EAMON was created by Donald Brown and further developed by a number of other people.  The individual adventures were created by various people. Non-commercial distribution is encouraged. 
+
+EAMON is a fantasy role-playing game.  This means that the computer will generate a character for you and you will pretend to be that person.  You will command your character into fierce battle, where hopefully he/she will emerge victorious and wealthy.  Obviously, not all characters are equal in ability. Three numbers (called attributes) describe various parts of your physical condition.  You also will have various abilities with weapons, which will increase as you gain experience with them and learn how to better use them.  Additionally, you will be able to learn some magic spells. 
+
+Each Eamon adventure is a separate adventure in its own right and (with a few exceptions) has no relation to any other Eamon adventure.  Some use the Eamon scenario, while others use different mythologies or may be set in modern times or in the far future.  Most of them will have a quest that you must fulfill while others stick you in a bad situation and leave it up to you to find a way out.  Some are full of logic puzzles while others are 'hack and slash' slugfests.  The adventures were written by dozens of different people, each with their own idea of what makes a good Eamon adventure.  You never know what you will find in the next one! 
+
+          CHARACTER ATTRIBUTES 
+
+Three numbers describe the basic attributes of your character.  They are randomly determined by selecting 3 numbers from 1 to 8 and summing them. Thus the numbers can range from 3 to 24, with more numbers around twelve to fifteen. (By the way, this is called 'three die eight' or written as '3D8'. This terminology comes from older role-playing games where you roll strange dice, and means roll three  eight-sided dice and add). The three attributes are HARDINESS, AGILITY, and CHARISMA. 
+
+               HARDINESS 
+
+Your character's hardiness has two major effects.  The most important is that it is the number of points of damage that your body can withstand before you die.  In other words, assume Hedric the Horrible is fighting a Troll.  Hedric has a Hardiness of 13.  The Troll swings his Battle axe (as described later in the COMBAT section of the manual) and hits Hedric for 10 points of damage. This brings Hedric down to 3 more points of damage before death--if the Troll can hit Hedric again and do more than 2 points of damage (before Hedric can go home or heal himself with magic), Hedric will die! 
+
+The other effect of hardiness is the total weight that you can carry. You  can  carry  up to ten times your hardiness in weight.  Therefore, Hedric can carry up to 130 pounds. Note that weight-carrying ability is based on the characters base hardiness, not the number of hits he has left.  In his encounter with the  Troll, Hedric can still carry 130 pounds, even though he only has three hits left before death. 
+
+As with all 3 basic attributes, a character's hardiness is not normally changed. (Unusual magic items or spells might change them). Thus, a player who starts life as a 90-pound weakling will remain one until he dies. 
+
+                 AGILITY 
+
+The second basic ability is the player's Agility. Agility's major effect is in combat--an attacker with high Agility is more likely to hit an opponent. 
+
+                CHARISMA 
+
+The last basic attribute for the player is his Charisma. Charisma is mostly a measure of the character's likeability. Charisma is an important attribute, at least for the beginning character.  The first major effect of charisma is on the prices you'll have to pay for goods and services and the prices people will pay you for your booty.  Obviously, if somebody likes you, he will give you a better price than if you disgust him. 
+
+The second effect of charisma is on how citizens of Eamon (generically called monsters) will react to you. Not all monsters are bad--you can sometimes make friends with them, and their assistance may make the difference between life and death! The higher your charisma, the better the chance that they will befriend you. Unfortunately a rat with a friendliness rating of 0 will never make friends with you. 
+
+                COMBAT 
+
+Being a rough and violent world, combat is a very important aspect of Eamon.  In most adventures, combat is taken  care of on a blow-by-blow method - every player or monster in turn uses his weapon on one enemy, the effects are calculated, and then applied to that one enemy. 
+
+Every time that a player or monster attempts to strike someone there is a percentage chance of success.  The computer will generate a number from 1 to 100, and if the number is less than the chance to hit, the blow landed. 
+
+Several factors determine just what that chance to hit is. If a combatant has no armor, there are 3 factors--the combatant's agility, his ability with his weapon, and the quality of the weapon (called its complexity). 
+
+Roughly speaking, all weapons in the world of Eamon can be divided into 5 types--axes, bows (includes all thrown weapons and guns), clubs (any blunt weapon), spears (or other pole weapon), and swords. Every player has 'weapon expertise' in each class.  All players start at the same levels: 5% for  axes, -10% for bows, 20% for clubs, 10% for spears and 0% for swords. (These numbers are to reflect the fact that somebody who doesn't know what he's doing is more likely to hit with a club than with an arrow.)  Your chance of hitting your target is determined by your agility and your ability with the weapon you are using, plus the complexity of the weapon you are using. 
+
+Weapon expertise can be increased through use in combat. The chance to improve one's ability is exactly the same as the chance of missing, and is meant to simulate 'learning' about the weapon as it is used. 
+
+Weapon complexity is added directly into the calculation that computes the  chance to hit.  The higher the complexity, the better the chance of hitting. 
+
+If an attacker is wearing armor, the chance of hitting is reduced. After all, one just isn't as agile when one is fighting from within a tin can! A player may carry a shield, which will also lower the chance to hit, and may also wear either leather armor, chain , or plate armor.  A player becomes used to the constricting effect of wearing armor, and builds an armor expertise. It is built the same way that weapon expertise is increased- it is related to the chance that a blow will miss.  However, the effect of armor expertise can never increase the chance to hit but can only reduce the amount by which the armor hinders. 
+
+When a blow hits, a random amount of damage is done to the target.  This amount of damage is based on the weapon and will be given in '#D#' format. (Remember 3D8 for the 3 basic attributes?) This base number of damage is usually lowered by the armor worn by the defender--leather armor and shield each take one point of damage, chain takes 2, and plate armor takes 5 points of damage away from that taken on the body (all effects are cumulative. 
+
+That, of course, is what usually happens.  However, due to flashes of good luck or clumsiness other things can happen. About 5% of the time an attacker will make a 'critical hit' which will get one of these results (each result is followed by the percentage chance of its occurence): Ignore armor (50%), 1-1/2 times normal damage (35%), twice normal damage (10%), triple normal damage (4%), or automatic kill (1%). 
+
+About 4% of the time the attacker will fumble with his weapon. It will have one of these effects: Recover from fumble (35%), Drop weapon (40% but if the attacker is using natural weapons such as claws it simply recovers instead), Break weapon (20%, with a 10% chance of hitting oneself at the same time), Hit self (4%), and Kill self (1%). 
+
+                  MAGIC 
+
+The strange shifting forces around Eamon sometimes give results that can only be called 'Magical'. However, most of these effects are extremely localized, and will not be consistent from one adventure to the next. 
+
+There are 4 spells that work almost everywhere.  Anyone can be taught these spells. When you learn a spell, you will start with a random ability in it from 25 to 75% (you will not know what your ability is). As with combat experience, this can be increased every time you successfully cast the spell- If a random percentage roll is less than your chance to not have cast it, your ability will go up by 2%. However, there is a catch in casting spells-- due to the tiring effects of sending all this power through your body, every time that you attempt to cast a spell REGARDLESS OF WHETHER OR NOT THE ATTEMPT WAS SUCCESSFUL your chance to recast the spell is halved for the rest of the adventure. Thus, a spell ability of 100% will always work the first time, work half the time on the second attempt, 1/4 the time on the third, and so on, until it bottoms out at a 5% chance of working. 
+
+The 4 basic spells are: 
+
+                 BLAST 
+
+This spell sends a magical blast at your opponent.  Armor will absorb damage from it, but if the spell is successfully cast it will always hit its target, regardless of the range. Targets must be seen by the person casting it. The blast will do 1D6 of damage (a random number from 1 to 6).  
+
+                 HEAL 
+
+The Heal spell removes hits from the body of the person casting it. It will cure 10 hits, up to but never beyond perfect health. 
+
+                 SPEED 
+
+This spell will double the caster's agility for a random number of turns.  You will know when you have cast the spell successfully, however you will not be told when it wears off. If you  successfully cast a Speed spell while one is already in effect on you, the new spell will reset the time for you but it will not have the effect of quadrupling your agility.  When you cast the Speed spell your chance of hitting goes up accordingly. 
+
+                 POWER 
+
+The Power spell is the most powerful spell available to you, and also the most uncertain.  It has no set effect but is a call to the gods saying "Hey, do something!".  What they do will certainly differ from place to place, and may even differ from one moment to the next!  It could kill all of your enemies, teleport you randomly somewhere else in the place you are exploring, cause an earthquake that kills you, or do other unpredictable things.  Power is a last-resort kind of spell, to be used when all else fails. 
+
+For all of these spells, it should be pointed out that this is the way they USUALLY work out. In some obscure sections of Eamon spells may not drop in ability every time you use them, in other places spells may not work at all! 
+
+         RELATING WITH CITIZENS 
+
+There are two places you will be encountering other people of Eamon, on your adventures and at the Main Hall. 
+
+At the Main Hall, you will be able to communicate with the various people there and do business.  However, they will not do you any real favors and you will not be permitted to fight with anybody there.  Essentially, they are business people out to relieve you of some of your gold while helping outfit you to go get more. 
+
+On the other hand, during your adventures outside the Main Hall, you will not be able to communicate with most of the people you find. Additionally, they will usually be rather simple-minded- when meeting you they will decide if they like you. If they do like you, they will follow you around and fight on your side during any battles.  If they don't like you, they will try to kill you. These people are rather set in their ways- once they make up their mind about you they will keep with their decisions unless you attack a friend or bribe an enemy to become your friend. 
+
+However, just because they do or do not like you does not mean that they will always fight to the bitter end. Some people or things you encounter will be less courageous (or smarter) than others and will run from what they view as a losing battle- both your enemies and your friends.  When someone retreats they usually kick up a cloud of dust so you cannot see which way they ran.  They will usually only run to an adjacent room but sometimes they leave the dungeon completely! 
+
+Once again note that all of the statements above were prefaced by the word 'usually'. In some adventures you may be able to work quite well with others, give orders, get ideas, even play games with them.  
+
+           HOW TO PLAY EAMON 
+
+To actually run EAMON on the Apple II, you must first run the program EAMON.MASTER on the Eamon Master, number 001 of the Eamon series. After you are shown the dragon (which you can break out of early by hitting any key), you will be almost ready to enter the Main Hall. Simply follow directions and go to the desk. If you are new to Eamon or your old character was killed, you will be directed to the man in charge of new adventurers. He will show you what the attributes of your new character are, and let you read some instructions that are stored on the disk. If you have this manual, you don't need to read his instructions. Finally, you will be sent to the Main Hall. 
+
+The Main Hall will serve as your headquarters. You can buy spells, weaponry and armor. You can examine yourself- your attributes and abilities.  You can also keep some money with the banker there. He gives no interest, but money in the bank is safe if  you're robbed on an adventure.  (Of course, you won't have it to use while adventuring, either!). 
+
+          GOING ON AN ADVENTURE 
+
+The main purpose of the Main Hall is as a place to leave from to go on adventures.  Many of your exploits will be exploring caves and old ruins, doing similar things as in the popular Adventure games.  However, Eamon is wide enough to also have you go to casinos and gamble your money away, raise an army to fight invaders (both from other countries and from space!), or do just about any other activity you can think of. 
+
+Each Eamon adventure must be stored on its own 5.25 diskette or in its own directory on a larger disk.  To go on an adventure, work from the Main Hall as directed, inserting the diskette with the new adventure (if it is on a different disk from the Master) into any disk drive at the proper time.  From then on, you're on your own. (Notice: characters who do not return from adventures are considered dead. Thus, turning off the computer in the midst of an adventure or halting it by Ctrl-C or 'RESET' merely commits suicide). 
+
+To help your character get some gold to equip himself properly and gather a little bit of experience, one adventure is included on the diskette- The Beginners Cave. It's a gentle little romp through a set of caves underground.  I strongly advise that you do send your new character through this first.  If he can't survive this, there's no point in going out to the dangerous places. 
+
+      BUYING WEAPONS AND ARMOR 
+
+You will have 200 gold pieces when you start a character, and hopefully more after your adventures. One of the most important things for you to do with this gold is to buy weapons and armor. Additionally, you may sometimes want to sell a weapon, be it because you have no need of it or because you have reached the legal limit on weapon ownership of four. 
+
+Marcos Cavelli owns a small weaponry store in the Main Hall that will do this for you.  Marcos carries 5 standard weapons- an axe, which does 1D6 of damage and has a base price of 25 gold pieces, a 1D6 bow with a base price of 40, a 1D4 mace with a base price of 20, a 1D5 spear with a base price of 25, and a 1D8 sword with a base price of 50. For each weapon Marcos sells three grades of quality-- poor (weapon complexity of -10%, but only half the base price), medium (weapon complexity of 0, at base price), and good (weapon complexity of 10%, at double the base price). Furthermore, the price you are given can vary  from 1/3 to 3 times the normal price, depending upon how your charisma affects how Marcos feels about you. 
+
+Marcos will also buy old weapons. If it's of a type that he doesn't sell, Marcos will pay an average of 100 gold pieces for a weapon.  If it is a weapon from his stock, he will pay around 1/4 the normal price. 
+
+Marcos's base prices for armor are 50 gold pieces for a shield, 100 for leather, 200 for chain mail, and 500 for plate armor. He will also give you a trade-in of your old armor at its old price, subject to adjustment for the way he feels about you. 
+
+Marcos's credit terms, like all of the businesses in the Hall, are very simple- cash only. 
+
+             BUYING SPELLS 
+
+Hokas Tokas, the local wizard in the Main Hall, is willing to teach anybody spells for a price.  His base prices for spells are: Power (100 gold pieces), Heal (1000), Blast (3000), and Speed (5000). As with Marcos, Hokas will adjust his prices for how much he likes you, but he will never give credit.  Though he may grumble, he is a nice fellow and will never do anything to you if you try to buy a spell you can't afford, or try to buy a spell twice. 
+
+               THE BANKER 
+
+Shylock McFenney, the local banker, will open up an account for anybody. He is absolutely trustworthy with the funds you leave in his care, although he does not pay interest, nor does he make loans.  (He makes enough money from adventurers who deposit money with him and never come back.) 
+
+           EXAMINING YOURSELF 
+
+Unlike most things at the Hall, it does not cost you anything to examine your attributes. It is generally a good idea to examine your attributes last thing before leaving to go on an adventure, and write them down- you cannot examine yourself in the midst of an adventure! 
+
+          LEAVING THE UNIVERSE 
+
+This is simply ending the game. However, your character is stored on the diskette, so he or she can be called up again the next time you play. You should only leave the system this way- otherwise some disk files may be destroyed, and your character will be trapped forever in the horrible bit bucket! 
+
+ That's really about all there is to say about playing Eamon. Of course, the best way to learn is by starting up a character and running him through a few adventures.  One thing I would warn you about- do not get too attached to any character.  Unfortunately, while wealth and expertise come rather quickly in this world, so does death. 
+
+ 
+
+          THE BEGINNERS CAVE 
+
+The Beginners Cave has been set up as a service to all Free Adventurers, giving  them a chance to try their skills in a not-too-dangerous setting. Only beginners are permitted in the Cave. A beginner is someone who has no armor expertise and who still has all of the starting levels of weapon expertise. You are permitted to carry in only one weapon and any armor you wish. A Knight Marshall is on duty to be sure that you do not break the rules and to keep you from doing something really stupid, like entering the cave without any weapon at all!. 
+
+Once you are in the Cave you will give commands by entering verbs and subjects, such as "GET STONE". If you use a verb that the computer doesn't understand, all verbs will be listed. You must be very exact and use the words that the computer knows.  For example, if you are carrying a DEAD MONKEY and you say DROP MONKEY the computer will not understand. (Sometimes the computer does recognize more than one word for an object, though). If you want to repeat the last command given, simply hit 'return' when asked for your next command. 
+
+A few commands you should know about: 
+
+N, S, E, W, U, D, NORTH, SOUTH, EAST, WEST, UP, and DOWN all will move you in the direction given. 
+
+INVENTORY or "I" will list all of the items you are currently carrying. 
+
+READY selects the weapon used in an ATTACK command. 
+
+GET picks up an object (not a monster!) from the floor. GET ALL gets all objects there. If you get a weapon and you have no weapon ready, it will ready that weapon automatically. 
+
+Other commands are either self-explanatory or they are designed to make you experiment. 
+
+ To return to the Main Hall, you must leave the cave (go to the Cave Entrance and move North). Once you have done so, Sam Slicker (the local dealer for treasures and booty) will pay you what they are worth (with the price adjusted by your Charisma). You will then be returned to the Main Hall. 
+
+Of course, that is only if you survive. If you die, remember that it probably wasn't that great a character anyway! 
+
+NOTE: If you stop the program while it is running, (such as accidentally hitting <Ctrl-C>), you may be able to continue by entering: POKE 51,0:GOTO 1000
