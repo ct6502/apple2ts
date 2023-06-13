@@ -1,7 +1,7 @@
-import { getFilename } from "./drivestate"
-import { addToBuffer, addToBufferDebounce } from "./keyboard"
-import { memSetC000 } from "./memory"
+import { getCustomGamepad } from "./joystick_mapping"
+import { matchMemory, memGet, memSetC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
+import { passRumble } from "./worker2main"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBufferDebounce } from "./keyboard"
 
@@ -18,6 +18,17 @@ let leftButtonDown = false
 let rightButtonDown = false
 let isLeftDown = false
 let isRightDown = false
+
+export const setLeftButtonDown = () => {leftButtonDown = true}
+export const setRightButtonDown = () => {rightButtonDown = true}
+export const setGamepad0 = (value: number) => {
+  value = Math.min(Math.max(value, -1), 1)
+  paddle0timeout = (value + 1) / (2 * maxTimeoutCycles)
+}
+export const setGamepad1 = (value: number) => {
+  value = Math.min(Math.max(value, -1), 1)
+  paddle1timeout = (value + 1) / (2 * maxTimeoutCycles)
+}
 
 export const setButtonState = () => {
   const wasLeftDown = isLeftDown
@@ -67,102 +78,16 @@ export const checkJoystickValues = (cycleCount: number) => {
   memSet1(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
 }
 
-const defaultButtons = [
-  () => {leftButtonDown = true},
-  () => {rightButtonDown = true},
-  () => {leftButtonDown = true},
-  () => {rightButtonDown = true},
-  () => {leftButtonDown = true},
-  () => {rightButtonDown = true},
-  () => {leftButtonDown = true},
-  () => {rightButtonDown = true},
-  () => {leftButtonDown = true},
-  () => {rightButtonDown = true},
-  () => {leftButtonDown = true},
-  () => {rightButtonDown = true},
-  () => {paddle1timeout = 0},
-  () => {paddle1timeout = maxTimeoutCycles},
-  () => {paddle0timeout = 0},
-  () => {paddle0timeout = maxTimeoutCycles},
-]
-
-// const wolf = [
-//   () => {leftButtonDown = true},
-//   () => {rightButtonDown = true},
-//   () => {addToBufferDebounce('U'.charCodeAt(0))},
-//   () => {addToBufferDebounce('T'.charCodeAt(0))},
-//   () => {leftButtonDown = true},
-//   () => {rightButtonDown = true},
-//   () => {addToBufferDebounce(' '.charCodeAt(0))},
-//   () => {addToBufferDebounce('\r', timeout)},
-//   () => {leftButtonDown = true},
-//   () => {rightButtonDown = true},
-//   () => {leftButtonDown = true},
-//   () => {rightButtonDown = true},
-//   () => {paddle1timeout = 0},
-//   () => {paddle1timeout = maxTimeoutCycles},
-//   () => {paddle0timeout = 0},
-//   () => {paddle0timeout = maxTimeoutCycles},
-// ]
-
-// AZTEC Controls
-// A, D: move left or right (while using weapon); face left or right (otherwise)
-// W: go to walk mode
-// R: go to run mode
-// C: go to climb mode (ascends steps or mounds)
-// J: jump
-// S: stop walking, running, or climbing
-// G: crawl once
-// P: set explosive (must be crawling)
-// O: open box or clear trash mound
-// L: look in box
-// T: take object from ground or box
-// Z: inventory
-// F: draw machete if you have one, gun otherwise, does nothin if unarmed
-// S: turn around while using weapon
-// L: lunge while using machete
-// M: stab at ground while using machete
-// G: switch from machete to gun
-// <spacebar>: fire gun
-//let moving = false
-const timeout = 300
-const aztec = [
-  () => {addToBufferDebounce('J', timeout)},  // 0 A
-  () => {addToBuffer('O'); addToBufferDebounce('L', timeout)},  // 1 B
-  () => {addToBufferDebounce('G', timeout)},  // 2 X
-  () => {addToBufferDebounce('T', timeout)},  // 3 Y
-  () => {leftButtonDown = true},  // 4 LB
-  () => {addToBuffer('F'); addToBufferDebounce('L', timeout)},  // 5 RB
-  () => {addToBuffer('O'); addToBuffer('L'); addToBufferDebounce('T', timeout)},  // 6 LT
-  () => {addToBufferDebounce(' ', timeout)},  // 7 RT
-  () => {leftButtonDown = true},  // 8 Select?
-  () => {rightButtonDown = true},  // 9 Start?
-  () => {leftButtonDown = true},  // 10 Left thumb
-  () => {rightButtonDown = true},  // 11 Right thumb
-  () => {addToBufferDebounce('C', timeout)},  // 12 D-pad U
-  () => {addToBufferDebounce('S', timeout)},  // 13 D-pad D
-  () => {
-    addToBuffer('A')
-    addToBufferDebounce('W', timeout)},  // 14 D-pad L
-  () => {
-    addToBuffer('D')
-    addToBufferDebounce('W', timeout)},  // 15 D-pad R
-]
-
-let funcs = defaultButtons
-// funcs = aztec
+let funcs: (() => void)[]
 
 export const setGamepad = (gamePadIn: EmuGamepad) => {
   gamePad = gamePadIn
-  const filename = getFilename()
-  if (filename.toLowerCase().includes("aztec")) {
-    funcs = aztec
-  } else {
-    funcs = defaultButtons
-  }
+  funcs = getCustomGamepad()
 }
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
+
+let memB6 = 14
 
 export const handleGamepad = () => {
   if (gamePad && gamePad.connected) {
@@ -172,8 +97,8 @@ export const handleGamepad = () => {
       xstick = gamePad.axes[2]
       ystick = gamePad.axes[3]
     }
-    if (Math.abs(xstick) < 0.01) xstick = 0
-    if (Math.abs(ystick) < 0.01) ystick = 0
+    if (nearZero(xstick)) xstick = 0
+    if (nearZero(ystick)) ystick = 0
     const dist = Math.sqrt(xstick * xstick + ystick * ystick)
     const clip = 0.95 * ((dist === 0) ? 1 :
       Math.max(Math.abs(xstick), Math.abs(ystick)) / dist)
@@ -188,6 +113,16 @@ export const handleGamepad = () => {
         funcs[i]()
       }
     });
+
+    const isKarateka = matchMemory(0x6E6C, [0xAD, 0x00, 0xC0])
+    if (isKarateka) {
+      const newValue = memGet(0xB6)
+      if (memB6 < 20 && newValue < memB6) {
+        passRumble(300, 220)
+      }
+      memB6 = newValue
+    }
+
     setButtonState()
   }
 

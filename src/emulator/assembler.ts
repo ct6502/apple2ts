@@ -100,7 +100,7 @@ const getOperandModeValue =
         if (isImmediate) {
           mode = MODE.IMM
         } else {
-          mode = (value <= 255) ? MODE.ZP_REL : MODE.ABS
+          mode = (value >= 0 && value <= 255) ? MODE.ZP_REL : MODE.ABS
         }
       }
     }
@@ -185,7 +185,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
 
     const match = pcodes.findIndex(pc => pc && pc.name === codeLine.instr && pc.mode === mode)
     if (match < 0) {
-      throw new Error("Unknown instruction: " + line);
+      throw new Error(`Unknown instruction: ${codeLine.instr} mode=${mode} pass=${pass}`);
     }
     const newInstructions = getHexCodesForInstruction(match, value)
     pc += pcodes[match].PC

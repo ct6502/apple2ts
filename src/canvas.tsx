@@ -1,5 +1,5 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { handleSetCPUState, handleKeyboardBuffer, handleSetGamepad,
+import { handleSetCPUState, handleKeyboardBuffer,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease,
   updateDisplay, 
   handleGoBackInTime,
@@ -7,6 +7,7 @@ import { handleSetCPUState, handleKeyboardBuffer, handleSetGamepad,
 import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './keyboardbuttons';
+import { checkGamepad } from './gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
@@ -121,34 +122,6 @@ const Apple2Canvas = (props: DisplayProps) => {
       keyHandled = false
       e.preventDefault()
       e.stopPropagation()
-    }
-  }
-
-  const checkGamepad = () => {
-    const gamePads = navigator.getGamepads()
-    let gamePad: EmuGamepad = {
-      connected: false,
-      axes: [],
-      buttons: []
-    }
-    for (let i = 0; i < gamePads.length; i++) {
-      if (gamePads[i]) {
-        const axes = gamePads[i]?.axes
-        const buttons = gamePads[i]?.buttons
-        if (axes && buttons) {
-          gamePad.connected = true
-          for (let i = 0; i < axes.length; i++) {
-            gamePad.axes[i] = axes[i]
-          }
-          for (let i = 0; i < buttons.length; i++) {
-            gamePad.buttons[i] = buttons[i].pressed
-          }
-        }
-        break
-      }
-    }
-    if (gamePad.connected) {
-      handleSetGamepad(gamePad)
     }
   }
 

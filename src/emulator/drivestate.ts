@@ -37,7 +37,10 @@ export const getHardDriveState = () => driveState[0]
 export const getHardDriveData = () => driveData[0]
 
 export const getFilename = () => {
-  return driveState[currentDrive].filename
+  for (let i = 0; i < driveState.length; i++) {
+    if (driveState[i].filename !== "") return driveState[i].filename
+  }
+  return ""
 }
 
 export const passData = () => {

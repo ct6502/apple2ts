@@ -2,6 +2,7 @@ import { STATE, DRIVE } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker } from "./speaker"
 import { startupTextPage } from "./emulator/roms/startuptextpage"
+import { doRumble } from "./gamepad"
 
 let worker: Worker | null = null
 
@@ -74,8 +75,6 @@ export const handleAppleCommandKeyRelease = (left: boolean) => {
 
 export const handleSetGamepad = (gamePad: EmuGamepad | null) => {
   doPostMessage("GAMEPAD", gamePad)
-  // TODO GAMEPAD msg not implemented yet
-//  setGamepad(gamePad)
 }
 
 let machineState: MachineState = {
@@ -117,6 +116,9 @@ const doOnMessage = (e: MessageEvent) => {
     case "DRIVE_SOUND":
       const sound: DRIVE = e.data.payload
       doPlayDriveSound(sound)
+      break
+    case "RUMBLE":
+      doRumble(e.data.payload.duration, e.data.payload.delay)
       break
     default:
     console.log("main2worker: unknown msg: " + JSON.stringify(e.data))

@@ -38,6 +38,10 @@ const passSaveState = (saveState: string) => {
   doPostMessage("SAVE_STATE", saveState)
 }
 
+export const passRumble = (duration: number, delay: number) => {
+  doPostMessage("RUMBLE", { duration, delay})
+}
+
 self.onmessage = (e: MessageEvent) => {
   switch (e.data.msg) {
     case "STATE":

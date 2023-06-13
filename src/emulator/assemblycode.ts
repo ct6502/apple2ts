@@ -1,6 +1,6 @@
 
 // export const code = ''
-export const code = `
+export const code2 = `
         ORG   $300
 ; set up Mockingboard
         LDA #$C0    ; enable Mockingboard
@@ -26,7 +26,7 @@ LOOP    DEX
 ; end of program
         RTS
 `
-export const code2 = `
+export const code = `
          ORG   $300
 FREQ     EQU   $350
 PLSWIDTH EQU   $352
