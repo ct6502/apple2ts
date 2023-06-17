@@ -20,5 +20,5 @@ F: goes to fight mode:
    D: move one to right
    L: lunge with machete
    M: strike down with machete
-   G: draw fun
+   G: draw gun
    Space: shoot gun
