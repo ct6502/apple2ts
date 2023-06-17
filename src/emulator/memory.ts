@@ -3,6 +3,7 @@ import { cycleCount } from "./instructions"
 import { handleDriveSoftSwitches } from "./diskdata"
 import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
+import { handleHelptext } from "./game_mappings";
 
 // 00000: main memory
 // 10000: aux memory 
@@ -306,6 +307,7 @@ export const getDataBlock = (addr: number) => {
 export const setDataBlock = (addr: number, data: Uint8Array) => {
   const offset = addressSetTable[addr >>> 8] + (addr & 255)
   memory.set(data, offset)
+  handleHelptext()
 }
 
 export const matchMemory = (addr: number, data: number[]) => {

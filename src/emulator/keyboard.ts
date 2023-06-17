@@ -1,4 +1,5 @@
-import { matchMemory, memGetC000, memSetC000 } from "./memory"
+import { keyMapping } from "./game_mappings"
+import { memGetC000, memSetC000 } from "./memory"
 import { doSaveTimeSlice } from "./motherboard"
 
 const keyPress = (key: number) => {
@@ -43,22 +44,9 @@ export const addToBufferDebounce = (text: string, timeout: number) => {
   popKey()
 }
 
-type KeyMap = {
-  [key: string]: string;
-};
-
 export const sendTextToEmulator = (text: string) => {
   if (text.length === 1) {
-    let mapping: KeyMap = {}
-    const isKarateka = matchMemory(0x6E6C, [0xAD, 0x00, 0xC0])
-    if (isKarateka) {
-      mapping['N'] = '\x08'
-      mapping['M'] = '\x15'
-      mapping[','] = '\x08'
-      mapping['.'] = '\x15'
-    }
-    const key = (text in mapping) ? mapping[text] : text
-    addToBuffer(key)
+    addToBuffer(keyMapping(text))
   } else {
     addToBuffer(text)
   }

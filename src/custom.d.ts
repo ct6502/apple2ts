@@ -62,7 +62,7 @@ type DisplayProps = {
   handleUseArrowKeyJoystick: () => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
-  updateDisplay: (helpText?: string) => void,
+  updateDisplay: (helptext?: string) => void,
   button0: boolean,
   button1: boolean,
 }
@@ -123,7 +123,6 @@ type AudioDevice = {
 }
 
 type EmuGamepad = {
-  connected: boolean,
   axes: Array<number>,
   buttons: Array<boolean>
 }
@@ -132,3 +131,24 @@ type diskImage = {
   file: string
   url: string
 };
+
+type GamePadActuatorEffect = {
+  startDelay: number,
+  duration: number,
+  weakMagnitude: number,
+  strongMagnitude: number,
+}
+
+type KeyMap = {
+  [key: string]: string;
+};
+
+type GameLibraryItem = {
+  address: number,
+  data: number[],
+  keymap: KeyMap,
+  gamepad: (button: number) => void,
+  rumble: () => void,
+  helptext: string}
+
+type GamePadMapping = (button: number, dualJoysticks: boolean, isJoystick2: boolean) => void

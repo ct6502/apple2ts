@@ -8,8 +8,8 @@ let worker: Worker | null = null
 
 let saveStateCallback: (state: string) => void
 
-export let updateDisplay = (helpText = '') => {}
-export const setUpdateDisplay = (updateIn: (helpText?: string) => void) => {
+export let updateDisplay = (helptext = '') => {}
+export const setUpdateDisplay = (updateIn: (helptext?: string) => void) => {
   updateDisplay = updateIn
 }
 
@@ -73,8 +73,8 @@ export const handleAppleCommandKeyRelease = (left: boolean) => {
   doPostMessage("APPLE_RELEASE", left)
 }
 
-export const handleSetGamepad = (gamePad: EmuGamepad | null) => {
-  doPostMessage("GAMEPAD", gamePad)
+export const handleSetGamepads = (gamePads: EmuGamepad[] | null) => {
+  doPostMessage("GAMEPAD", gamePads)
 }
 
 let machineState: MachineState = {
@@ -118,7 +118,12 @@ const doOnMessage = (e: MessageEvent) => {
       doPlayDriveSound(sound)
       break
     case "RUMBLE":
-      doRumble(e.data.payload.duration, e.data.payload.delay)
+      const params: GamePadActuatorEffect = e.data.payload
+      doRumble(params)
+      break
+    case "HELP_TEXT":
+      const helptext = e.data.payload
+      updateDisplay(helptext)
       break
     default:
     console.log("main2worker: unknown msg: " + JSON.stringify(e.data))

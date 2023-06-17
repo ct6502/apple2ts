@@ -1,14 +1,15 @@
-import { getCustomGamepad } from "./joystick_mapping"
-import { matchMemory, memGet, memSetC000 } from "./memory"
+import { gamepadMapping, handleRumbleMapping } from "./game_mappings"
+import { memSetC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
-import { passRumble } from "./worker2main"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBufferDebounce } from "./keyboard"
 
-let gamePad: EmuGamepad | null = null
+let gamePads: EmuGamepad[]
 const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
 let paddle0timeout = maxTimeoutCycles / 2
 let paddle1timeout = maxTimeoutCycles / 2
+let paddle2timeout = maxTimeoutCycles / 2
+let paddle3timeout = maxTimeoutCycles / 2
 // let prevPaddle0timeout = paddle0timeout
 // let prevPaddle1timeout = paddle1timeout
 let countStart = 0
@@ -16,18 +17,30 @@ let leftAppleDown = false
 let rightAppleDown = false
 let leftButtonDown = false
 let rightButtonDown = false
+let isPB2down = false
 let isLeftDown = false
 let isRightDown = false
 
-export const setLeftButtonDown = () => {leftButtonDown = true}
-export const setRightButtonDown = () => {rightButtonDown = true}
-export const setGamepad0 = (value: number) => {
+export const setLeftButtonDown = () => { leftButtonDown = true }
+export const setRightButtonDown = () => { rightButtonDown = true }
+export const setPushButton2 = () => { isPB2down = true }
+
+const valueToTimeout = (value: number) => {
   value = Math.min(Math.max(value, -1), 1)
-  paddle0timeout = (value + 1) / (2 * maxTimeoutCycles)
+  return (value + 1) * maxTimeoutCycles / 2
+}
+
+export const setGamepad0 = (value: number) => {
+  paddle0timeout = valueToTimeout(value)
 }
 export const setGamepad1 = (value: number) => {
-  value = Math.min(Math.max(value, -1), 1)
-  paddle1timeout = (value + 1) / (2 * maxTimeoutCycles)
+  paddle1timeout = valueToTimeout(value)
+}
+export const setGamepad2 = (value: number) => {
+  paddle2timeout = valueToTimeout(value)
+}
+export const setGamepad3 = (value: number) => {
+  paddle3timeout = valueToTimeout(value)
 }
 
 export const setButtonState = () => {
@@ -35,8 +48,9 @@ export const setButtonState = () => {
   const wasRightDown = isRightDown
   isLeftDown = leftAppleDown || leftButtonDown
   isRightDown = rightAppleDown || rightButtonDown
-  SWITCHES.PB0.isSet = (leftAppleDown || leftButtonDown)
-  SWITCHES.PB1.isSet = (isRightDown || rightButtonDown)
+  SWITCHES.PB0.isSet = isLeftDown
+  SWITCHES.PB1.isSet = isRightDown || isPB2down
+  SWITCHES.PB2.isSet = isPB2down
   if ((isLeftDown && !wasLeftDown) || (isRightDown && !wasRightDown)) {
 //    doSaveTimeSlice()
   }
@@ -51,14 +65,11 @@ export const pressAppleCommandKey = (isDown: boolean, left: boolean) => {
   setButtonState()
 }
 
-const memSet1 = (addr: number, value: number) => {
-  memSetC000(addr, value)
-}
 export const resetJoystick = (cycleCount: number) => {
-  memSet1(0xC064, 0x80)
-  memSet1(0xC065, 0x80)
-  memSet1(0xC066, 0)
-  memSet1(0xC067, 0)
+  memSetC000(0xC064, 0x80)
+  memSetC000(0xC065, 0x80)
+  memSetC000(0xC066, 0x80)
+  memSetC000(0xC067, 0x80)
   countStart = cycleCount
 }
 
@@ -74,56 +85,64 @@ export const checkJoystickValues = (cycleCount: number) => {
 //     doSaveTimeSlice()
 //   }
   const diff = cycleCount - countStart
-  memSet1(0xC064, (diff < paddle0timeout) ? 0x80 : 0)
-  memSet1(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
+  memSetC000(0xC064, (diff < paddle0timeout) ? 0x80 : 0)
+  memSetC000(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
+  memSetC000(0xC066, (diff < paddle2timeout) ? 0x80 : 0)
+  memSetC000(0xC067, (diff < paddle3timeout) ? 0x80 : 0)
 }
 
-let funcs: (() => void)[]
+let mapping: GamePadMapping
 
-export const setGamepad = (gamePadIn: EmuGamepad) => {
-  gamePad = gamePadIn
-  funcs = getCustomGamepad()
+export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
+  gamePads = gamePadsIn
+  mapping = gamepadMapping()
 }
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
 
-let memB6 = 14
+const convertGamepadAxes = (axes: number[]) => {
+  let xstick = axes[nearZero(axes[0]) ? 2 : 0]
+  let ystick = axes[nearZero(axes[1]) ? 3 : 1]
+  if (nearZero(xstick)) xstick = 0
+  if (nearZero(ystick)) ystick = 0
+  const dist = Math.sqrt(xstick * xstick + ystick * ystick)
+  const clip = 0.95 * ((dist === 0) ? 1 :
+    Math.max(Math.abs(xstick), Math.abs(ystick)) / dist)
+  xstick = Math.min(Math.max(-clip, xstick), clip)
+  ystick = Math.min(Math.max(-clip, ystick), clip)
+  xstick = Math.trunc(maxTimeoutCycles*(xstick + clip)/(2*clip))
+  ystick = Math.trunc(maxTimeoutCycles*(ystick + clip)/(2*clip))
+  return [xstick, ystick]
+}
 
-export const handleGamepad = () => {
-  if (gamePad && gamePad.connected) {
-    let xstick = gamePad.axes[0]
-    let ystick = gamePad.axes[1]
-    if (nearZero(gamePad.axes[0]) && nearZero(gamePad.axes[1])) {
-      xstick = gamePad.axes[2]
-      ystick = gamePad.axes[3]
-    }
-    if (nearZero(xstick)) xstick = 0
-    if (nearZero(ystick)) ystick = 0
-    const dist = Math.sqrt(xstick * xstick + ystick * ystick)
-    const clip = 0.95 * ((dist === 0) ? 1 :
-      Math.max(Math.abs(xstick), Math.abs(ystick)) / dist)
-    xstick = Math.min(Math.max(-clip, xstick), clip)
-    ystick = Math.min(Math.max(-clip, ystick), clip)
-    paddle0timeout = Math.trunc(maxTimeoutCycles*(xstick + clip)/(2*clip))
-    paddle1timeout = Math.trunc(maxTimeoutCycles*(ystick + clip)/(2*clip))
+const handleGamepad = (gp: number) => {
+  if (!gamePads || gamePads.length < gp) return
+  const stick = convertGamepadAxes(gamePads[gp].axes)
+  if (gp === 0) {
+    paddle0timeout = stick[0]
+    paddle1timeout = stick[1]
     leftButtonDown = false
     rightButtonDown = false
-    gamePad.buttons.forEach((button, i) => {
-      if (button && i < funcs.length) {
-        funcs[i]()
-      }
-    });
-
-    const isKarateka = matchMemory(0x6E6C, [0xAD, 0x00, 0xC0])
-    if (isKarateka) {
-      const newValue = memGet(0xB6)
-      if (memB6 < 20 && newValue < memB6) {
-        passRumble(300, 220)
-      }
-      memB6 = newValue
-    }
-
-    setButtonState()
+  } else {
+    paddle2timeout = stick[0]
+    paddle3timeout = stick[1]
+    isPB2down = false
   }
+  let buttonPressed = false
+  gamePads[gp].buttons.forEach((button, i) => {
+    if (button) {
+      mapping(i, gamePads.length > 1, gp === 1)
+      buttonPressed = true
+    }
+  });
+  // Special "no buttons down" call
+  if (!buttonPressed) mapping(-1, gamePads.length > 1, gp === 1)
 
+  handleRumbleMapping()
+  setButtonState()
+}
+
+export const handleGamepads = () => {
+  handleGamepad(0)
+  handleGamepad(1)
 }

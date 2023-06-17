@@ -4,7 +4,7 @@ import { doSetCPUState, doSetBreakpoint,
   doStepInto, doStepOver, doStepOut } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
 import { sendTextToEmulator } from "./keyboard"
-import { pressAppleCommandKey, setGamepad } from "./joystick"
+import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE } from "./utility";
 
 // This file must have worker types, but not DOM types.
@@ -38,8 +38,12 @@ const passSaveState = (saveState: string) => {
   doPostMessage("SAVE_STATE", saveState)
 }
 
-export const passRumble = (duration: number, delay: number) => {
-  doPostMessage("RUMBLE", { duration, delay})
+export const passRumble = (params: GamePadActuatorEffect) => {
+  doPostMessage("RUMBLE", params)
+}
+
+export const passHelptext = (helptext: string) => {
+  doPostMessage("HELP_TEXT", helptext)
 }
 
 self.onmessage = (e: MessageEvent) => {
@@ -85,14 +89,14 @@ self.onmessage = (e: MessageEvent) => {
       pressAppleCommandKey(false, e.data.payload)
       break;
     case "GET_SAVE_STATE":
-      passSaveState(doGetSaveState())
+      passSaveState(doGetSaveState(true))
       break;
     case "DRIVE_PROPS":
       const props = e.data.payload as DriveProps
       doSetDriveProps(props)
       break;
     case "GAMEPAD":
-      setGamepad(e.data.payload)
+      setGamepads(e.data.payload)
       break
     default:
       break;

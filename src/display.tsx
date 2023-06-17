@@ -21,7 +21,7 @@ class DisplayApple2 extends React.Component<{},
     colorMode: COLOR_MODE;
     doDebug: boolean;
     breakpoint: string;
-    helpText: string;
+    helptext: string;
   }> {
   timerID = 0
   refreshTime = 16.6881
@@ -39,21 +39,21 @@ class DisplayApple2 extends React.Component<{},
       useArrowKeysAsJoystick: true,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
-      helpText: '',
+      helptext: '',
     };
   }
 
-  updateDisplay = (helpText = '') => {
+  updateDisplay = (helptext = '') => {
     const s = handleGetSpeed()
-    if (helpText) {
-      this.setState( {helpText} )
+    if (helptext) {
+      this.setState( {helptext} )
     } else {
       this.setState( {currentSpeed: s} )
     }
   }
 
-  updateHelpText = (helpText: string) => {
-    this.setState( {helpText} )
+  updatehelptext = (helptext: string) => {
+    this.setState( {helptext} )
   }
 
   componentDidMount() {
@@ -233,7 +233,7 @@ class DisplayApple2 extends React.Component<{},
             </span>
           </span>
           <span className="sideContent">
-            <HelpPanel helpText={this.state.helpText}
+            <HelpPanel helptext={this.state.helptext}
               height={height ? height : 400} width={paperWidth} />
             <DebugPanel {...debugProps}/>
           </span>

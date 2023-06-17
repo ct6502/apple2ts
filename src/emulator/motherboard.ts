@@ -8,10 +8,11 @@ import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } 
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, specialJumpTable, setSlotDriver, memoryReset, updateAddressTables } from "./memory"
-import { setButtonState, handleGamepad } from "./joystick"
+import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 import { disk2driver } from "./roms/slot_disk2_cx00"
+import { handleHelptext } from "./game_mappings"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -70,6 +71,7 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
   }
   memory.set(Buffer.from(newState.memory, "base64"))
   updateAddressTables()
+  handleHelptext(true)
   // mainMem.set(Buffer.from(newState.memory, "base64"))
   // memC000.set(Buffer.from(newState.memc000, "base64"))
   // if (newState.memAux !== undefined) {
@@ -81,8 +83,8 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
 //   passSaveState(doGetSaveState())
 // }
 
-export const doGetSaveState = () => {
-  const state = { state6502: getApple2State(), driveState: getDriveSaveState() }
+export const doGetSaveState = (full = false) => {
+  const state = { state6502: getApple2State(), driveState: getDriveSaveState(full) }
   return JSON.stringify(state)
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
@@ -402,7 +404,7 @@ const doAdvance6502Timer = () => {
     doAdvance6502()
   }
   if (cpuState === STATE.RUNNING) {
-    handleGamepad()
+    handleGamepads()
     setTimeout(doAdvance6502Timer, 0)
   } else {
     setTimeout(doAdvance6502Timer, 10)

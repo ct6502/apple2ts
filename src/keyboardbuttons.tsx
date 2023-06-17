@@ -1,4 +1,4 @@
-import { handleAppleCommandKeyPress, handleAppleCommandKeyRelease, handleKeyboardBuffer, handleSetGamepad } from "./main2worker"
+import { handleAppleCommandKeyPress, handleAppleCommandKeyRelease, handleKeyboardBuffer, handleSetGamepads } from "./main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -31,12 +31,11 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
     }
   }
 
-  let gamePad: EmuGamepad = {
-      connected: true,
+  let gamePads: EmuGamepad[] = [{
       axes: [arrowGamePad[0], arrowGamePad[1], 0, 0],
       buttons: []
-  }
-  handleSetGamepad(gamePad)
+  }]
+  handleSetGamepads(gamePads)
 }
 
 const KeyboardButtons = (props: DisplayProps) => {

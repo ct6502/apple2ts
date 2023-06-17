@@ -58,19 +58,26 @@ export const passData = () => {
   }
 }
 
-export const getDriveSaveState = () => {
-  const data = [Buffer.from(driveData[1]).toString("base64"),
-    Buffer.from(driveData[2]).toString("base64")]
+export const getDriveSaveState = (full: boolean) => {
+  let data = ['', '', '']
+  for (let i=(full ? 0 : 1); i < 3; i++) {
+    data[i] = Buffer.from(driveData[i]).toString("base64")
+  }
   return { currentDrive: currentDrive,
-    driveState: [driveState[1], driveState[2]], driveData: data }
+    driveState: driveState, driveData: data }
 }
 
 export const restoreDriveSaveState = (newState: any) => {
   currentDrive = newState.currentDrive
-  driveState[1] = newState.driveState[0]
-  driveData[1] = new Uint8Array(Buffer.from(newState.driveData[0], 'base64'))
-  driveState[2] = newState.driveState[1]
-  driveData[2] = new Uint8Array(Buffer.from(newState.driveData[1], 'base64'))
+  for (let i=0; i < 3; i++) {
+    driveState[i] = newState.driveState[i]
+    if (newState.driveData[i] !== '') {
+      driveData[i] = new Uint8Array(Buffer.from(newState.driveData[i], 'base64'))
+    }
+  }
+  if (driveState[0].hardDrive) {
+    enableHardDrive(driveState[0].filename !== '')
+  }
   passData()
 }
 
