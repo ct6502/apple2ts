@@ -1,4 +1,3 @@
-import { setLeftButtonDown, setRightButtonDown } from "../joystick"
 import { addToBuffer, addToBufferDebounce } from "../keyboard"
 
 // AZTEC Controls
@@ -54,7 +53,7 @@ const gamepad = (button: number) => {
     case 5: addToBuffer('P'); addToBufferDebounce('T', timeout); break  // 5 RB
     case 6: break  // 6 LT
     case 7: addToBufferDebounce(' ', timeout); break  // 7 RT
-    case 8: setLeftButtonDown(); break  // 8 Select?
+    case 8: break  // 8 Select?
     case 9: addToBufferDebounce('N', timeout); break  // 9 Start?
     case 10: addToBufferDebounce('G', timeout); break  // 10 Left thumb button
     case 11: break  // 11 Right thumb button
