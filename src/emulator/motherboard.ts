@@ -247,6 +247,32 @@ export const doSetBreakpoint = (breakpt: number) => {
 
 let ndebug = 0
 
+// let memZP = new Uint8Array(256).fill(0)
+// const checkZeroPageDiff = () => {
+//   const mem = getDataBlock(0)
+//   const diff = new Uint8Array(256)
+//   let ndiff = 0
+//   for (let i=0; i < 256; i++) {
+//     diff[i] = mem[i] - memZP[i]
+//     memZP[i] = mem[i]
+//     if (diff[i]) ndiff++
+//   }
+//   const skip = [0x4E, 0xEB, 0xEC, 0xED, 0xF9, 0xFA, 0xFB, 0xFC]
+//   for (let i = 0; i < skip.length; i++) {
+//     if (diff[skip[i]]) {
+//       diff[skip[i]] = 0
+//       ndiff--
+//     }
+//   }
+//   let s = ''
+//   if (ndiff > 0 && ndiff < 127) {
+//     for (let i=0; i < 256; i++) {
+//       if (diff[i]) s += ` ${toHex(i)}:${toHex(diff[i])}`
+//     }
+//     console.log(s)
+//   }
+// }
+
 export const processInstruction = (step = false) => {
   let cycles = 0
   let PC1 = s6502.PC

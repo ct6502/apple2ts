@@ -227,7 +227,7 @@ const offset = [
   0x3D0,
 ]
 
-export function getTextPage(getLores = false) {
+export const getTextPage = (getLores = false) => {
   let jstart = 0
   let jend = 24
   let is80column = false
@@ -268,7 +268,11 @@ export function getTextPage(getLores = false) {
   }
 }
 
-export function getHires() {
+export const getTextPageAsString = () => {
+  return Buffer.from(getTextPage().map((n) => (n &= 127))).toString()
+}
+
+export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }

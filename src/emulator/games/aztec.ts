@@ -1,4 +1,5 @@
 import { addToBuffer, addToBufferDebounce } from "../keyboard"
+import { getTextPageAsString } from "../memory"
 
 // AZTEC Controls
 // A, D: move left or right (while using weapon); face left or right (otherwise)
@@ -20,26 +21,34 @@ import { addToBuffer, addToBufferDebounce } from "../keyboard"
 // G: switch from machete to gun
 // <spacebar>: fire gun
 const timeout = 300
-let leftdown = false
-let rightdown = false
+let leftdown = 0
+let rightdown = 0
 let buttonreleased = false
 const gamepad = (button: number) => {
   if (button === 14) {
-    if (leftdown && buttonreleased) {
+    rightdown = 0
+    if (leftdown === 0) {
+      addToBuffer('A')
+      leftdown++
+    } else if (leftdown === 1 && buttonreleased) {
+      addToBufferDebounce('W', timeout)
+      leftdown++
+    } else if (leftdown === 2 && buttonreleased) {
       addToBufferDebounce('R', timeout);
-    } else if (!leftdown) {
-      leftdown = true
-      addToBuffer('A'); addToBufferDebounce('W', timeout);
     }
     buttonreleased = false
     return
   }
   if (button === 15) {
-    if (rightdown && buttonreleased) {
+    leftdown = 0
+    if (rightdown === 0) {
+      addToBuffer('D')
+      rightdown++
+    } else if (rightdown === 1 && buttonreleased) {
+      addToBufferDebounce('W', timeout);
+      rightdown++
+    } else if (rightdown === 2 && buttonreleased) {
       addToBufferDebounce('R', timeout);
-    } else {
-      rightdown = true
-      addToBuffer('D'); addToBufferDebounce('W', timeout);
     }
     buttonreleased = false
     return
@@ -54,7 +63,17 @@ const gamepad = (button: number) => {
     case 6: break  // 6 LT
     case 7: addToBufferDebounce(' ', timeout); break  // 7 RT
     case 8: break  // 8 Select?
-    case 9: addToBufferDebounce('N', timeout); break  // 9 Start?
+    case 9: const str = getTextPageAsString();
+      if (str.includes("'N'")) {
+        addToBuffer('N');
+      } else if (str.includes("'S'")) {
+        addToBuffer('S');
+      } else if (str.includes("NUMERIC KEY")) {
+        addToBuffer('1');
+      } else {
+        addToBuffer('N');
+      }
+      break  // 9 Start?
     case 10: addToBufferDebounce('G', timeout); break  // 10 Left thumb button
     case 11: break  // 11 Right thumb button
     case 12: addToBufferDebounce('C', timeout); break  // 12 D-pad U, climb
@@ -65,8 +84,8 @@ const gamepad = (button: number) => {
     case -1: buttonreleased = true; return
     default: break;
   }
-  leftdown = false
-  rightdown = false
+  leftdown = 0
+  rightdown = 0
   buttonreleased = false
 }
 

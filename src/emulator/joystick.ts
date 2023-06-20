@@ -116,7 +116,7 @@ const convertGamepadAxes = (axes: number[]) => {
 }
 
 const handleGamepad = (gp: number) => {
-  if (!gamePads || gamePads.length < gp) return
+  if (!gamePads || gamePads.length <= gp) return
   const stick = convertGamepadAxes(gamePads[gp].axes)
   if (gp === 0) {
     paddle0timeout = stick[0]
