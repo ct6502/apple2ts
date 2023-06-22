@@ -1,4 +1,4 @@
-import { processInstruction } from "./motherboard";
+import { processInstruction } from "./cpu6502";
 import { memory, updateAddressTables } from "./memory";
 import { s6502, setPC } from "./instructions";
 import { parseAssembly } from "./assembler";

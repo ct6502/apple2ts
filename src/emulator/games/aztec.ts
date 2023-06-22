@@ -123,5 +123,6 @@ export const aztec: GameLibraryItem = {
   keymap: {},
   gamepad: gamepad,
   rumble: () => {},
+  setup: () => {},
   helptext: helptext}
 

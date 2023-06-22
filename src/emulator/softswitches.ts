@@ -74,22 +74,21 @@ export const SWITCHES = {
   }),
   BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0xC012),  // status location, not a switch
-  CASSOUT: NewSwitch(0xC020, 0, false, () => {
-    memSetC000(0xC020, rand(), 16)
-  }),
+  CASSOUT: NewSwitch(0xC020, 0),  // random value filled in checkSoftSwitches
   SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
-    memSetC000(0xC030, rand(), 16)
+    memSetC000(0xC030, rand())
     passClickSpeaker(cycleCount)
   }),
+  GCSTROBE: NewSwitch(0xC040, 0),    // strobe output to game connector
   EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memSetC000(0xC04F, 0xCD)}),
   TEXT: NewSwitch(0xC050, 0xC01A),
   MIXED: NewSwitch(0xC052, 0xC01B),
   PAGE2: NewSwitch(0xC054, 0xC01C),
   HIRES: NewSwitch(0xC056, 0xC01D),
-  AN0: NewSwitch(0xC058, 0),
-  AN1: NewSwitch(0xC05A, 0),
-  AN2: NewSwitch(0xC05C, 0),
-  AN3: NewSwitch(0xC05E, 0),
+  AN0: NewSwitch(0xC058, 0),  // random value filled in checkSoftSwitches
+  AN1: NewSwitch(0xC05A, 0),  // random value filled in checkSoftSwitches
+  AN2: NewSwitch(0xC05C, 0),  // random value filled in checkSoftSwitches
+  AN3: NewSwitch(0xC05E, 0),  // random value filled in checkSoftSwitches
   CASSIN1: NewSwitch(0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
   PB0: NewSwitch(0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0xC062),  // status location, not a switch
@@ -108,15 +107,16 @@ export const SWITCHES = {
     resetJoystick(cycleCount)
     memSetC000(0xC070, rand())
   }),
-  LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay
-  READBSR2: NewSwitch(0xC080, 0, false),
-  WRITEBSR2: NewSwitch(0xC081, 0, false),
-  OFFBSR2: NewSwitch(0xC082, 0, false),
-  RDWRBSR2: NewSwitch(0xC083, 0, false),
-  READBSR1: NewSwitch(0xC088, 0, false),
-  WRITEBSR1: NewSwitch(0xC089, 0, false),
-  OFFBSR1: NewSwitch(0xC08A, 0, false),
-  RDWRBSR1: NewSwitch(0xC08B, 0, false),
+  BANKSEL: NewSwitch(0xC073, 0),  // Applied Engineering RAMWorks (ignored)
+  LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay (ignored)
+  READBSR2: NewSwitch(0xC080, 0),
+  WRITEBSR2: NewSwitch(0xC081, 0),
+  OFFBSR2: NewSwitch(0xC082, 0),
+  RDWRBSR2: NewSwitch(0xC083, 0),
+  READBSR1: NewSwitch(0xC088, 0),
+  WRITEBSR1: NewSwitch(0xC089, 0),
+  OFFBSR1: NewSwitch(0xC08A, 0),
+  RDWRBSR1: NewSwitch(0xC08B, 0),
   DRVSM0: NewSwitch(0xC080 + SLOT6, 0),
   DRVSM1: NewSwitch(0xC082 + SLOT6, 0),
   DRVSM2: NewSwitch(0xC084 + SLOT6, 0),
@@ -148,6 +148,7 @@ export const checkSoftSwitches = (addr: number,
   const sswitch1 = sswitch[addr - 0xC000]
   if (!sswitch1) {
     console.error("Unknown softswitch " + toHex(addr))
+    memSetC000(addr, rand())
     return
   }
   if (sswitch1.setFunc) {
@@ -161,6 +162,8 @@ export const checkSoftSwitches = (addr: number,
     if (sswitch1.isSetAddr) {
       memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? 0x8D : 0x0D)
     }
+    // Many games expect random "noise" from these soft switches.
+    if (addr >= 0xC020) memSetC000(addr, rand())
   } else if (addr === sswitch1.isSetAddr) {
     memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
   }

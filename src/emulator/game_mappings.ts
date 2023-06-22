@@ -6,11 +6,13 @@ import { setGamepad0, setGamepad1,
 import { passHelptext } from "./worker2main";
 import { aztec } from "./games/aztec";
 import { karateka } from "./games/karateka";
+import { wolfenstein } from "./games/wolfenstein";
 
 const gameLibrary = new Array<GameLibraryItem>()
 
 gameLibrary.push(aztec)
 gameLibrary.push(karateka)
+gameLibrary.push(wolfenstein)
 
 const defaultButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
@@ -36,26 +38,6 @@ const defaultButtons: GamePadMapping = (button: number,
     }
   }
 }
-
-// const wolf = [
-//   () => {setLeftButtonDown()},
-//   () => {setRightButtonDown()},
-//   () => {addToBufferDebounce('U'.charCodeAt(0))},
-//   () => {addToBufferDebounce('T'.charCodeAt(0))},
-//   () => {setLeftButtonDown()},
-//   () => {setRightButtonDown()},
-//   () => {addToBufferDebounce(' '.charCodeAt(0))},
-//   () => {addToBufferDebounce('\r', timeout)},
-//   () => {setLeftButtonDown()},
-//   () => {setRightButtonDown()},
-//   () => {setLeftButtonDown()},
-//   () => {setRightButtonDown()},
-//   () => {paddle1timeout = 0},
-//   () => {paddle1timeout = maxTimeoutCycles},
-//   () => {paddle0timeout = 0},
-//   () => {paddle0timeout = maxTimeoutCycles},
-// ]
-
 
 export const keyMapping = (key: string) => {
   for (let game of gameLibrary) {
@@ -84,10 +66,11 @@ export const handleRumbleMapping = () => {
   }
 }
 
-export const handleHelptext = (reset = false) => {
+export const handleGameSetup = (reset = false) => {
   for (let game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       passHelptext(game.helptext ? game.helptext : ' ')
+      game.setup()
       return
     }   
   }

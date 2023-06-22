@@ -1,18 +1,18 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
-import { s6502, set6502State, reset6502, pcodes,
-  incrementPC, cycleCount, setCycleCount, stack } from "./instructions"
-import { STATE, getProcessorStatus, getInstrString, toHex } from "./utility"
+import { s6502, set6502State, reset6502, setCycleCount, stack } from "./instructions"
+import { STATE, toHex } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memory, memGet, getTextPage, getHires, specialJumpTable, setSlotDriver, memoryReset, updateAddressTables } from "./memory"
+import { memory, memGet, getTextPage, getHires,  setSlotDriver, memoryReset, updateAddressTables } from "./memory"
 import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 import { disk2driver } from "./roms/slot_disk2_cx00"
-import { handleHelptext } from "./game_mappings"
+import { handleGameSetup } from "./game_mappings"
+import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -28,14 +28,6 @@ let iSaveState = 0
 let iTempState = 0
 let maxState = 60
 let saveStates = Array<string>(maxState).fill('')
-// let prevMemory = Buffer.from(mainMem)
-// let DEBUG_ADDRESS = -1 // 0x9631
-let doDebug = false
-// let doDebugZeroPage = false
-const instrTrail = new Array<string>(1000)
-let posTrail = 0
-let breakpoint = -1
-let runToRTS = false
 
 const getApple2State = (): SAVEAPPLE2STATE => {
   const softSwitches: { [name: string]: boolean } = {}
@@ -71,7 +63,7 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
   }
   memory.set(Buffer.from(newState.memory, "base64"))
   updateAddressTables()
-  handleHelptext(true)
+  handleGameSetup(true)
   // mainMem.set(Buffer.from(newState.memory, "base64"))
   // memC000.set(Buffer.from(newState.memc000, "base64"))
   // if (newState.memAux !== undefined) {
@@ -182,7 +174,7 @@ export const doSaveTimeSlice = () => {
 }
 
 export const doStepInto = () => {
-  doDebug = true
+  doSetDebug()
   if (cpuState === STATE.IDLE) {
     doBoot()
     cpuState = STATE.PAUSED
@@ -193,7 +185,7 @@ export const doStepInto = () => {
 }
 
 export const doStepOver = () => {
-  doDebug = true
+  doSetDebug()
   if (cpuState === STATE.IDLE) {
     doBoot()
     cpuState = STATE.PAUSED
@@ -209,12 +201,12 @@ export const doStepOver = () => {
 }
 
 export const doStepOut = () => {
-  doDebug = true
+  doSetDebug()
   if (cpuState === STATE.IDLE) {
     doBoot()
     cpuState = STATE.PAUSED
   }
-  runToRTS = true
+  doSetRunToRTS()
   doSetCPUState(STATE.RUNNING)
 }
 
@@ -234,105 +226,6 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   if (speed === 0) {
     doAdvance6502Timer()
   }
-}
-
-export const doSetDebug = (debug: boolean) => {
-  doDebug = debug
-}
-
-export const doSetBreakpoint = (breakpt: number) => {
-  breakpoint = breakpt
-//  if (breakpoint !== 0) doDebug = true
-}
-
-let ndebug = 0
-
-// let memZP = new Uint8Array(256).fill(0)
-// const checkZeroPageDiff = () => {
-//   const mem = getDataBlock(0)
-//   const diff = new Uint8Array(256)
-//   let ndiff = 0
-//   for (let i=0; i < 256; i++) {
-//     diff[i] = mem[i] - memZP[i]
-//     memZP[i] = mem[i]
-//     if (diff[i]) ndiff++
-//   }
-//   const skip = [0x4E, 0xEB, 0xEC, 0xED, 0xF9, 0xFA, 0xFB, 0xFC]
-//   for (let i = 0; i < skip.length; i++) {
-//     if (diff[skip[i]]) {
-//       diff[skip[i]] = 0
-//       ndiff--
-//     }
-//   }
-//   let s = ''
-//   if (ndiff > 0 && ndiff < 127) {
-//     for (let i=0; i < 256; i++) {
-//       if (diff[i]) s += ` ${toHex(i)}:${toHex(diff[i])}`
-//     }
-//     console.log(s)
-//   }
-// }
-
-export const processInstruction = (step = false) => {
-  let cycles = 0
-  let PC1 = s6502.PC
-  const instr = memGet(s6502.PC)
-  const vLo = s6502.PC < 0xFFFF ? memGet(s6502.PC + 1) : 0
-  const vHi = s6502.PC < 0xFFFE ? memGet(s6502.PC + 2) : 0
-  let code = pcodes[instr]
-  if (!code) {
-    code = pcodes[0xEA]
-  }
-  if (code) {
-    if (PC1 === breakpoint && !step) {
-      cpuState = STATE.PAUSED
-      return -1
-    }
-    // HACK
-    const fn = specialJumpTable.get(PC1)
-    if (fn && !SWITCHES.INTCXROM.isSet) {
-      fn()
-    }
-    // END HACK
-//    if (PC1 === 0xC7C3) doDebug = true
-    cycles = code.execute(vLo, vHi)
-    let out = '----'
-    // Do not output during the Apple II's WAIT subroutine
-    if ((PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
-      const cc = (cycleCount.toString() + '      ').slice(0, 10)
-      const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-      out = `${cc}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
-    }
-    instrTrail[posTrail] = out
-    posTrail = (posTrail + 1) % instrTrail.length
-    if (doDebug) {
-      if (instr === 0) doDebug = false
-      console.log(out)
-      ndebug++
-      if (ndebug > 10000) {
-        doDebug = false
-        cpuState = STATE.PAUSED
-        return -1
-      }
-//      console.log(getStackString())
-//      if (doDebugZeroPage) {
-//        debugZeroPage(mainMem.slice(0, 256))
-//      }
-    }
-    // if (doDebug) {
-    //   instrTrail.slice(posTrail).forEach(s => console.log(s));
-    //   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
-    //   console.log("stop!!!")
-    // }
-    setCycleCount(cycleCount + cycles)
-    incrementPC(code.PC)
-    if (code.pcode === 0x60 && runToRTS) {
-      runToRTS = false
-      cpuState = STATE.PAUSED
-      return -1
-    }
-  }
-  return cycles
 }
 
 export const getStackString = () => {

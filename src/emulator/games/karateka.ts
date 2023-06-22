@@ -54,5 +54,6 @@ export const karateka: GameLibraryItem = {
   keymap: {'N': '\x08', 'M': '\x15', ',': '\x08', '.': '\x15'},
   gamepad: () => {},
   rumble: karatekaRumble,
+  setup: () => {},
   helptext: helptext}
 

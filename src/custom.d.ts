@@ -149,6 +149,7 @@ type GameLibraryItem = {
   keymap: KeyMap,
   gamepad: (button: number) => void,
   rumble: () => void,
+  setup: () => void,
   helptext: string}
 
 type GamePadMapping = (button: number, dualJoysticks: boolean, isJoystick2: boolean) => void

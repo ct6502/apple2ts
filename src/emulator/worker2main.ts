@@ -1,11 +1,12 @@
-import { doSetCPUState, doSetBreakpoint,
+import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
-  doGoBackInTime, doGoForwardInTime, doSetDebug,
+  doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
 import { sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE } from "./utility";
+import { doSetBreakpoint, doSetDebug } from "./cpu6502";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.

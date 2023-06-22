@@ -1,5 +1,5 @@
 import { toHex } from "./utility"
-import { processInstruction } from "./motherboard";
+import { processInstruction } from "./cpu6502";
 import { memory, updateAddressTables } from "./memory";
 import { reset6502, doBranch, s6502, setPC, isBreak, setInterrupt } from "./instructions";
 import { parseAssembly } from "./assembler";
