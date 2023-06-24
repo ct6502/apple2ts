@@ -5,7 +5,6 @@ import DisplayApple2 from "./display";
 const App = () => {
   return (
     <SettingsProvider>
-        <link rel="preload" href="./src/fonts/PrintChar21.woff2" as="font"/>
       <DisplayApple2 />
     </SettingsProvider>
   );

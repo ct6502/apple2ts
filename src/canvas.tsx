@@ -3,7 +3,8 @@ import { handleSetCPUState, handleKeyboardBuffer,
   handleAppleCommandKeyPress, handleAppleCommandKeyRelease,
   updateDisplay, 
   handleGoBackInTime,
-  handleGoForwardInTime} from "./main2worker"
+  handleGoForwardInTime,
+  setStartTextPage} from "./main2worker"
 import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './keyboardbuttons';
@@ -174,6 +175,15 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     renderCanvas()
 
+    // To prevent flicker, wait until font is downloaded before rendering startup text.
+    const setStartTextAfterFontLoad = () => {
+      if (document.fonts.check("12px PrintChar21")) {
+        setStartTextPage()
+        clearInterval(timeOut)
+      }
+    }
+    const timeOut = setInterval(setStartTextAfterFontLoad, 50);
+
     // Return a cleanup function when component unmounts
     return () => {
       window.removeEventListener("paste", paste)
@@ -206,6 +216,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         myText.current?.focus()
       }}
     />
+    {/* Use hidden canvas/context so image rescaling works in iOS < 15.
+        See graphics.ts drawImage() */}
     <canvas ref={props.hiddenCanvas}
       hidden={true}
       width={560} height={192} />

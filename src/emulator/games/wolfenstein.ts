@@ -52,7 +52,7 @@ const gamepad = (button: number) => {
       break  // 9 Start?
     case 10: setLeftButtonDown(); break  // 10 Left thumb button
     case -1: break
-    default: console.log(`${button}`); break;
+    default: break
   }
 }
 

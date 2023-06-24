@@ -81,7 +81,7 @@ let machineState: MachineState = {
   state: STATE.IDLE,
   speed: '',
   altChar: true,
-  textPage: startupTextPage,
+  textPage: new Uint8Array(1).fill(32),
   lores: new Uint8Array(),
   hires: new Uint8Array(),
   zeroPageStack: '',
@@ -141,6 +141,10 @@ export const handleGetSpeed = () => {
 
 export const handleGetTextPage = () => {
   return machineState.textPage
+}
+
+export const setStartTextPage = () => {
+  machineState.textPage = startupTextPage
 }
 
 export const handleGetLores = () => {

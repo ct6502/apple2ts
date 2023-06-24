@@ -315,6 +315,7 @@ const drawImage = async (ctx: CanvasRenderingContext2D,
   const imageData = new ImageData(hgrRGBA, 560, nlines);
   const imgHeight = height * (1 - 2 * ymargin) / 192 * nlines
   const imgWidth = width - 2 * xmarginPx
+  // Use hidden canvas/context so image rescaling works in iOS < 15
   hiddenContext.putImageData(imageData, 0, 0)
   ctx.drawImage(hiddenContext.canvas, 0, 0, 560, nlines,
     xmarginPx, ymarginPx, imgWidth, imgHeight);
