@@ -16,8 +16,6 @@ const karatekaRumble = () => {
   memB7 = newValue
 }
 
-// Karateka - allows N/M and ,/. to work as left/right arrow keys, for phones
-
 const helptext = `KARATEKA
 Jordan Mechner, Brøderbund 1984
 Press K for Keyboard control
@@ -42,12 +40,13 @@ Push the joystick up to stand up, and release it to get into a fighting stance.
 
 Fighting stance:
 Button 1: punch
-Button 0: kick.
+Button 0: kick
 Move the joystick up and down to control the height of your punches  and kicks. Move it right to advance and left to retreat.
 
 To run forward, start from a standing position. Then move the joystick to the upper right. Press button 1 to bow.
 `
 
+// Karateka - allows N/M and ,/. to work as left/right arrow keys, for phones
 export const karateka: GameLibraryItem = {
   address: 0x6E6C,
   data: [0xAD, 0x00, 0xC0],

@@ -7,8 +7,11 @@ const keyPress = (key: number) => {
 }
 
 let keyBuffer = ''
-export const popKey = () => {
-  if (memGetC000(0xC000) < 128 && keyBuffer !== '') {
+let prevCount = 0
+export const popKey = (cycleCount: number) => {
+  const diff = cycleCount - prevCount
+  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || diff > 100000)) {
+    prevCount = cycleCount
     let key = keyBuffer.charCodeAt(0)
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
@@ -25,9 +28,8 @@ export const addToBuffer = (text: string) => {
   if (text === prevKey && keyBuffer.length > 0) {
     return
   }
-  prevKey = text.slice(0,1)
+  prevKey = text.length === 1 ? text : ''
   keyBuffer += text
-  popKey()
 }
 
 let tPrev = 0
@@ -41,12 +43,12 @@ export const addToBufferDebounce = (text: string, timeout: number) => {
   tPrev = t
   prevKey = text.slice(0,1)
   keyBuffer += text
-  popKey()
 }
 
 export const sendTextToEmulator = (text: string) => {
   if (text.length === 1) {
     addToBuffer(keyMapping(text))
+//    keyPress(keyMapping(text).charCodeAt(0))
   } else {
     addToBuffer(text)
   }

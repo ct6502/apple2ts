@@ -17,12 +17,16 @@ body {
 
 @font-face {
   font-family: PrintChar21;
-  src: url(./fonts/PrintChar21.ttf);
+  src: url(./fonts/PrintChar21.woff2);
 }
 
 @font-face {
   font-family: PRNumber3;
-  src: url(./fonts/PRNumber3.ttf);
+  src: url(./fonts/PRNumber3.woff2);
+}
+
+.loadFontEarly {
+  font-family: PrintChar21;
 }
 
 .statusPanel {
@@ -61,7 +65,7 @@ canvas {
   border-radius: 20px;
   border-color: #000;
   background-color: black;
-  background-image: url(./img/crt.png);
+  background-image: url(./img/crt.jpg);
   background-size: 100% 100%;
   outline: none;
 }
@@ -90,7 +94,7 @@ textarea {
   font-size: medium;
   overflow: auto;
   background-color: lightgray;
-  background-image: url(./img/paper.png);
+  background-image: url(./img/paper.jpg);
   background-size: cover;
   margin-top: 5px;
   margin-left: 15px;

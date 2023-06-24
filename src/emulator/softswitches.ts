@@ -70,7 +70,6 @@ export const SWITCHES = {
   KBRDSTROBE: NewSwitch(0, 0xC010, false, () => {
     const keyvalue = memGetC000(0xC000) & 0b01111111
     memSetC000(0xC000, keyvalue, 32)
-    popKey()
   }),
   BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0xC012),  // status location, not a switch
@@ -143,6 +142,10 @@ export const checkSoftSwitches = (addr: number,
     // $C084...87 --> $C080...83, $C08C...8F --> $C088...8B
     addr -= addr & 4
     handleBankedRAM(addr)
+    return
+  }
+  if (addr === 0xC000 && !calledFromMemSet) {
+    popKey(cycleCount)
     return
   }
   const sswitch1 = sswitch[addr - 0xC000]

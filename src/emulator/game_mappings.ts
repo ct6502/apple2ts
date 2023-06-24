@@ -5,12 +5,14 @@ import { setGamepad0, setGamepad1,
   setLeftButtonDown, setPushButton2, setRightButtonDown } from "./joystick"
 import { passHelptext } from "./worker2main";
 import { aztec } from "./games/aztec";
+import { firebug } from "./games/firebug";
 import { karateka } from "./games/karateka";
 import { wolfenstein } from "./games/wolfenstein";
 
 const gameLibrary = new Array<GameLibraryItem>()
 
 gameLibrary.push(aztec)
+gameLibrary.push(firebug)
 gameLibrary.push(karateka)
 gameLibrary.push(wolfenstein)
 
