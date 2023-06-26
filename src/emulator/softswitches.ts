@@ -145,7 +145,7 @@ export const checkSoftSwitches = (addr: number,
     return
   }
   if (addr === 0xC000 && !calledFromMemSet) {
-    popKey(cycleCount)
+    popKey()
     return
   }
   const sswitch1 = sswitch[addr - 0xC000]

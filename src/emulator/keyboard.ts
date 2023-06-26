@@ -7,11 +7,14 @@ const keyPress = (key: number) => {
 }
 
 let keyBuffer = ''
-let prevCount = 0
-export const popKey = (cycleCount: number) => {
-  const diff = cycleCount - prevCount
-  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || diff > 100000)) {
-    prevCount = cycleCount
+let forceKeyPress = false
+export const popKey = () => {
+  // Make sure that key presses get processed in a timely manner,
+  // even if $C010 (the keyboard strobe) isn't being called properly.
+  // This was a problem for certain games such as Firebug or Wolfenstein,
+  // which only access $C010 if it was a valid game key.
+  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (forceKeyPress))) {
+    forceKeyPress = false
     let key = keyBuffer.charCodeAt(0)
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
@@ -47,9 +50,9 @@ export const addToBufferDebounce = (text: string, timeout: number) => {
 
 export const sendTextToEmulator = (text: string) => {
   if (text.length === 1) {
-    addToBuffer(keyMapping(text))
-//    keyPress(keyMapping(text).charCodeAt(0))
-  } else {
-    addToBuffer(text)
+    text = keyMapping(text)
+    // Process key presses quickly. See popKey for details.
+    forceKeyPress = true
   }
+  addToBuffer(text)
 }
