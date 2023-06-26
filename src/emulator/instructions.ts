@@ -261,7 +261,7 @@ PCODE('BIT', MODE.ZP_X, 0x34, 2, (vZP) => {doBit(memGet(oneByteAdd(vZP, s6502.XR
 PCODE('BIT', MODE.ABS_X, 0x3C, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
   doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))})
 
-PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
+const doBrk = () => {
   setBreak();
   memSet(0xC00A, 0)
   memSet(0xC006, 0)
@@ -274,7 +274,9 @@ PCODE('BRK', MODE.IMPLIED, 0x00, 1, () => {
   setDecimal(false)  // 65c02 only
   setInterrupt()
   setPC(twoByteAdd(vLo, vHi, -1));
-  return 7})
+  return 7
+}
+PCODE('BRK', MODE.IMPLIED, 0x00, 1, doBrk)
 
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
 PCODE('CLD', MODE.IMPLIED, 0xD8, 1, () => {setDecimal(false); return 2})
@@ -669,3 +671,12 @@ PCODE('NOPX', MODE.IMPLIED, 0xF4, 2, () => {return 4})
 PCODE('NOPX', MODE.IMPLIED, 0x5C, 3, () => {return 8})
 PCODE('NOPX', MODE.IMPLIED, 0xDC, 3, () => {return 4})
 PCODE('NOPX', MODE.IMPLIED, 0xFC, 3, () => {return 4})
+
+// Fill the rest of the 65c02 with BRK instructions. This avoids needing
+// to do a check in processInstruction, and also breaks on a bad op code.
+// Turns out there are only 4 of these: 0x04, 0x0C, 0x14, 0x1C
+for (let i = 0; i < 256; i++) {
+  if (!pcodes[i]) {
+    PCODE('BRK', MODE.IMPLIED, i, 1, doBrk)
+  }
+}

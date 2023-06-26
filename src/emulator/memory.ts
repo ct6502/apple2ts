@@ -14,9 +14,10 @@ import { handleGameSetup } from "./game_mappings";
 export let memory = (new Uint8Array(600 * 256)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
-// 256 pages of memory, from $00xx to $FFxx
-const addressGetTable = (new Array<number>(256)).fill(-1)
-const addressSetTable = (new Array<number>(256)).fill(-1)
+// 256 pages of memory, from $00xx to $FFxx.
+// Include one extra slot, to avoid needing memory checks for > 65535.
+const addressGetTable = (new Array<number>(257)).fill(0)
+const addressSetTable = (new Array<number>(257)).fill(0)
 
 const ROMindexMinusC0 = 0x200 - 0xC0
 const SLOTindexMinusC1 = 0x240 - 0xC1

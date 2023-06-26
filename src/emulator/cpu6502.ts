@@ -61,42 +61,36 @@ export const processInstruction = (step = false) => {
   let cycles = 0
   let PC1 = s6502.PC
   const instr = memGet(s6502.PC)
-  const vLo = s6502.PC < 0xFFFF ? memGet(s6502.PC + 1) : 0
-  const vHi = s6502.PC < 0xFFFE ? memGet(s6502.PC + 2) : 0
-  let code = pcodes[instr]
-  if (!code) {
-    code = pcodes[0xEA]
+  const vLo = memGet(s6502.PC + 1)
+  const vHi = memGet(s6502.PC + 2)
+  let code =  pcodes[instr]
+  if (PC1 === breakpoint && !step) {
+    doSetCPUState(STATE.PAUSED)
+    return -1
   }
-  if (code) {
-    if (PC1 === breakpoint && !step) {
-      doSetCPUState(STATE.PAUSED)
-      return -1
-    }
-    // HACK
-    const fn = specialJumpTable.get(PC1)
-    if (fn && !SWITCHES.INTCXROM.isSet) {
-      fn()
-    }
-    // END HACK
+  // HACK
+  const fn = specialJumpTable.get(PC1)
+  if (fn && !SWITCHES.INTCXROM.isSet) {
+    fn()
+  }
+  // END HACK
+  cycles = code.execute(vLo, vHi)
+  // Do not output during the Apple II's WAIT subroutine
+  if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
     if (false && PC1 === 0x5887) {
       outputInstructionTrail()
-      doDebug = true
     }
-    cycles = code.execute(vLo, vHi)
-    // Do not output during the Apple II's WAIT subroutine
-    if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
-      const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-      const out = `${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
-      instrTrail[posTrail] = out
-      posTrail = (posTrail + 1) % instrTrail.length
-    }
-    setCycleCount(cycleCount + cycles)
-    incrementPC(code.PC)
-    if (code.pcode === 0x60 && runToRTS) {
-      runToRTS = false
-      doSetCPUState(STATE.PAUSED)
-      return -1
-    }
+    const ins = getInstrString(code, vLo, vHi, PC1) + '            '
+    const out = `${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
+    instrTrail[posTrail] = out
+    posTrail = (posTrail + 1) % instrTrail.length
+  }
+  setCycleCount(cycleCount + cycles)
+  incrementPC(code.PC)
+  if (runToRTS && code.pcode === 0x60) {
+    runToRTS = false
+    doSetCPUState(STATE.PAUSED)
+    return -1
   }
   return cycles
 }
