@@ -3,17 +3,19 @@ import { setGamepad0, setGamepad1,
   setGamepad2,
   setGamepad3,
   setLeftButtonDown, setPushButton2, setRightButtonDown } from "./joystick"
-import { passHelptext } from "./worker2main";
-import { aztec } from "./games/aztec";
-import { firebug } from "./games/firebug";
-import { karateka } from "./games/karateka";
-import { wolfenstein } from "./games/wolfenstein";
+import { passHelptext } from "./worker2main"
+import { aztec } from "./games/aztec"
+import { firebug } from "./games/firebug"
+import { karateka } from "./games/karateka"
+import { noxarchaist } from "./games/noxarchaist"
+import { wolfenstein } from "./games/wolfenstein"
 
 const gameLibrary = new Array<GameLibraryItem>()
 
 gameLibrary.push(aztec)
 gameLibrary.push(firebug)
 gameLibrary.push(karateka)
+gameLibrary.push(noxarchaist)
 gameLibrary.push(wolfenstein)
 
 const defaultButtons: GamePadMapping = (button: number,
@@ -50,7 +52,7 @@ export const keyMapping = (key: string) => {
   return key
 }
 
-export const gamepadMapping = () => {
+export const getGamepadMapping = () => {
   for (let game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       return (game.gamepad.length > 0) ? game.gamepad : defaultButtons

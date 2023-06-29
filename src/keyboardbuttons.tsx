@@ -63,6 +63,8 @@ const KeyboardButtons = (props: DisplayProps) => {
      {arrowKeys.map((key, i) => (
         <button className="pushButton keyButton" title={key.name}
           key={key.name}
+          onTouchStart={() => handleArrowKey(i, false)}
+          onTouchEnd={() => handleArrowKey(i, true)}
           onMouseDown={() => handleArrowKey(i, false)}
           onMouseUp={() => handleArrowKey(i, true)}
         >

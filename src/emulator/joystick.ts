@@ -1,4 +1,4 @@
-import { gamepadMapping, handleRumbleMapping } from "./game_mappings"
+import { getGamepadMapping, handleRumbleMapping } from "./game_mappings"
 import { memSetC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
 // import { doSaveTimeSlice } from "./motherboard"
@@ -91,18 +91,19 @@ export const checkJoystickValues = (cycleCount: number) => {
   memSetC000(0xC067, (diff < paddle3timeout) ? 0x80 : 0)
 }
 
-let mapping: GamePadMapping
+let gamePadMapping: GamePadMapping
 
 export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
   gamePads = gamePadsIn
-  mapping = gamepadMapping()
+  gamePadMapping = getGamepadMapping()
+
 }
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
 
 const convertGamepadAxes = (axes: number[]) => {
-  let xstick = axes[nearZero(axes[0]) ? 2 : 0]
-  let ystick = axes[nearZero(axes[1]) ? 3 : 1]
+  let xstick = axes[0]
+  let ystick = axes[1]
   if (nearZero(xstick)) xstick = 0
   if (nearZero(ystick)) ystick = 0
   const dist = Math.sqrt(xstick * xstick + ystick * ystick)
@@ -131,12 +132,12 @@ const handleGamepad = (gp: number) => {
   let buttonPressed = false
   gamePads[gp].buttons.forEach((button, i) => {
     if (button) {
-      mapping(i, gamePads.length > 1, gp === 1)
+      gamePadMapping(i, gamePads.length > 1, gp === 1)
       buttonPressed = true
     }
   });
   // Special "no buttons down" call
-  if (!buttonPressed) mapping(-1, gamePads.length > 1, gp === 1)
+  if (!buttonPressed) gamePadMapping(-1, gamePads.length > 1, gp === 1)
 
   handleRumbleMapping()
   setButtonState()
