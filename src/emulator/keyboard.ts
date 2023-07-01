@@ -1,4 +1,4 @@
-import { keyMapping } from "./game_mappings"
+import { handleKeyMapping } from "./game_mappings"
 import { memGetC000, memSetC000 } from "./memory"
 import { doSaveTimeSlice } from "./motherboard"
 
@@ -31,26 +31,26 @@ export const addToBuffer = (text: string) => {
   if (text === prevKey && keyBuffer.length > 0) {
     return
   }
-  prevKey = text.length === 1 ? text : ''
+  prevKey = text
   keyBuffer += text
 }
 
 let tPrev = 0
 
-export const addToBufferDebounce = (text: string, timeout: number) => {
+export const addToBufferDebounce = (text: string, timeout = 300) => {
   // Avoid repeating keys in the buffer if the Apple isn't processing them.
   const t = performance.now()
   if ((t - tPrev) < timeout) {
     return
   }
   tPrev = t
-  prevKey = text.slice(0,1)
-  keyBuffer += text
+  addToBuffer(text)
 }
 
 export const sendTextToEmulator = (text: string) => {
   if (text.length === 1) {
-    text = keyMapping(text)
+    console.log(text.charCodeAt(0))
+    text = handleKeyMapping(text)
     // Process key presses quickly. See popKey for details.
     forceKeyPress = true
   }

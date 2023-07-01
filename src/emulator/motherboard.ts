@@ -305,6 +305,7 @@ const doAdvance6502 = () => {
     }
   }
   iRefresh++
+  handleGamepads()
   speed = (iRefresh * 17.030) / (performance.now() - startTime)
   updateExternalMachineState()
   if (saveTimeSlice) {
@@ -323,7 +324,6 @@ const doAdvance6502Timer = () => {
     doAdvance6502()
   }
   if (cpuState === STATE.RUNNING) {
-    handleGamepads()
     setTimeout(doAdvance6502Timer, 0)
   } else {
     setTimeout(doAdvance6502Timer, 10)

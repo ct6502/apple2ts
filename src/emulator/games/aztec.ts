@@ -14,55 +14,24 @@ import { getTextPageAsString } from "../memory"
 // L: look in box
 // T: take object from ground or box
 // Z: inventory
+//
 // F: draw machete if you have one, gun otherwise, does nothing if unarmed
 // S: turn around while using weapon
 // L: lunge while using machete
 // M: stab at ground while using machete
 // G: switch from machete to gun
 // <spacebar>: fire gun
-const timeout = 300
-let leftdown = 0
-let rightdown = 0
-let buttonreleased = false
 const gamepad = (button: number) => {
-  if (button === 14) {
-    rightdown = 0
-    if (leftdown === 0) {
-      addToBuffer('A')
-      leftdown++
-    } else if (leftdown === 1 && buttonreleased) {
-      addToBufferDebounce('W', timeout)
-      leftdown++
-    } else if (leftdown === 2 && buttonreleased) {
-      addToBufferDebounce('R', timeout);
-    }
-    buttonreleased = false
-    return
-  }
-  if (button === 15) {
-    leftdown = 0
-    if (rightdown === 0) {
-      addToBuffer('D')
-      rightdown++
-    } else if (rightdown === 1 && buttonreleased) {
-      addToBufferDebounce('W', timeout);
-      rightdown++
-    } else if (rightdown === 2 && buttonreleased) {
-      addToBufferDebounce('R', timeout);
-    }
-    buttonreleased = false
-    return
-  }
   switch (button) {
-    case 0: addToBufferDebounce('J', timeout); break  // jump
-    case 1: addToBufferDebounce('G', 50); break       // crawl
-    case 2: addToBuffer('M'); addToBufferDebounce('O', timeout); break  // open/dig
-    case 3: addToBufferDebounce('L', timeout); break  // look/lunge
-    case 4: addToBufferDebounce('F', timeout); break
-    case 5: addToBuffer('P'); addToBufferDebounce('T', timeout); break  // 5 RB
+    case 0: addToBufferDebounce('JL'); break  // jump
+    case 1: addToBufferDebounce('G', 200); break       // crawl
+    case 2: addToBuffer('M'); addToBufferDebounce('O'); break  // open/dig
+    case 3: addToBufferDebounce('L'); break  // look/lunge
+    case 4: addToBufferDebounce('F'); break  // LB
+    case 5: addToBuffer('P'); addToBufferDebounce('T'); break  // 5 RB
     case 6: break  // 6 LT
-    case 7: addToBufferDebounce(' ', timeout); break  // 7 RT
-    case 8: break  // 8 Select?
+    case 7: break  // 7 RT
+    case 8: addToBufferDebounce('Z'); break  // 8 Select?
     case 9: const str = getTextPageAsString();
       if (str.includes("'N'")) {
         addToBuffer('N');
@@ -74,19 +43,61 @@ const gamepad = (button: number) => {
         addToBuffer('N');
       }
       break  // 9 Start?
-    case 10: addToBufferDebounce('G', timeout); break  // 10 Left thumb button
+    case 10: break  // 10 Left thumb button
     case 11: break  // 11 Right thumb button
-    case 12: addToBufferDebounce('C', timeout); break  // 12 D-pad U, climb
-    case 13: addToBufferDebounce('S', timeout); break  // 13 D-pad D, stop
-    case 14:  // 14 D-pad L
-      break
-    case 15: break // 15 D-pad R
-    case -1: buttonreleased = true; return
+    case 12: addToBufferDebounce('L'); break  // 12 D-pad U, climb
+    case 13: addToBufferDebounce('M'); break  // 13 D-pad D, stop/spin
+    case 14: addToBufferDebounce('A'); break // 14 D-pad L
+    case 15: addToBufferDebounce('D'); break // 15 D-pad R
+    case -1: return
     default: break;
   }
-  leftdown = 0
-  rightdown = 0
-  buttonreleased = false
+  // leftdown = 0
+  // rightdown = 0
+}
+
+let leftdown = 0
+let rightdown = 0
+let buttonreleased = false
+const threshold = 0.5
+const joystick = (axes: number[]) => {
+  if (axes[0] < -threshold) {
+    rightdown = 0
+    if (leftdown === 0 || leftdown > 2) {
+      leftdown = 0
+      addToBuffer('A')
+    } else if (leftdown === 1 && buttonreleased) {
+      addToBufferDebounce('W')
+    } else if (leftdown === 2 && buttonreleased) {
+      addToBufferDebounce('R');
+    }
+    leftdown++
+    buttonreleased = false
+    return axes
+  }
+  if (axes[0] > threshold) {
+    leftdown = 0
+    if (rightdown === 0 || rightdown > 2) {
+      rightdown = 0
+      addToBuffer('D')
+    } else if (rightdown === 1 && buttonreleased) {
+      addToBufferDebounce('W');
+    } else if (rightdown === 2 && buttonreleased) {
+      addToBufferDebounce('R');
+    }
+    rightdown++
+    buttonreleased = false
+    return axes
+  }
+  if (axes[1] < -threshold) {
+    addToBufferDebounce('C');
+    return axes
+  } else if (axes[1] > threshold) {
+    addToBufferDebounce('S');
+    return axes
+  }
+  buttonreleased = true
+  return axes
 }
 
 // Aztec gamepad
@@ -96,33 +107,54 @@ Paul Stephenson, Datamost 1982
 
 W: walk
 R: run
-J: jump
-S: stop
-C: climb
-A: turn left
-D: turn right
-G: crawl (G to move)
-P: place and light explosive
-T: take item
-O: opens box or dig in trash
-L: look in box
+J (A button): jump
+S (Thumb down): stop
+C (Thumb up): climb
+A (Thumb left): turn left
+D (Thumb right): turn right
+G (B button): crawl (G to move)
+P (RB button): place and light explosive
+T (RB button): take item
+O (X button): opens box or dig in trash
+L (Y button): look in box
 Z: inventory
 
-F: goes to fight mode:
-   S: spin around
-   A: move one to left
-   D: move one to right
+F (LB button): goes to fight mode:
+   S (Thumb down): spin around
+   A (Dpad left): move one to left
+   D (Dpad right): move one to right
    L: lunge with machete
-   M: strike down with machete
-   G: draw gun
-   Space: shoot gun`
+   M (Dpad down): strike down with machete
+   G (B button): draw gun
+   L (A button): shoot gun
+
+Thumbwheel
+              Climb
+  Walk/run left   Walk/run right
+            Stop/spin
+
+D-pad
+        Lunge/shoot
+  Move left    Move right
+        Strike down
+
+A:  jump/lunge/shoot
+B:  crawl/switch to gun
+X:  open box/dig in trash
+Y:  look in box
+RB: place explosive (crawling) or take item (box/trash)
+LB: fight mode
+Select: inventory
+Start:  start the game
+`
 
 export const aztec: GameLibraryItem = {
   address: 0x196D,
   data: [0xAD, 0x00, 0xC0],
   keymap: {},
+  joystick: joystick,
   gamepad: gamepad,
-  rumble: () => {},
-  setup: () => {},
+  rumble: null,
+  setup: null,
   helptext: helptext}
 

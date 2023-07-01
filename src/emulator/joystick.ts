@@ -1,4 +1,4 @@
-import { getGamepadMapping, handleRumbleMapping } from "./game_mappings"
+import { defaultButtons, getGameMapping } from "./game_mappings"
 import { memSetC000 } from "./memory"
 import { SWITCHES } from "./softswitches"
 // import { doSaveTimeSlice } from "./motherboard"
@@ -91,12 +91,13 @@ export const checkJoystickValues = (cycleCount: number) => {
   memSetC000(0xC067, (diff < paddle3timeout) ? 0x80 : 0)
 }
 
+let gameMapping: GameLibraryItem
 let gamePadMapping: GamePadMapping
 
 export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
   gamePads = gamePadsIn
-  gamePadMapping = getGamepadMapping()
-
+  gameMapping = getGameMapping()
+  gamePadMapping = gameMapping.gamepad ? gameMapping.gamepad : defaultButtons
 }
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
@@ -118,7 +119,9 @@ const convertGamepadAxes = (axes: number[]) => {
 
 const handleGamepad = (gp: number) => {
   if (!gamePads || gamePads.length <= gp) return
-  const stick = convertGamepadAxes(gamePads[gp].axes)
+  const axes = gameMapping.joystick ?
+    gameMapping.joystick(gamePads[gp].axes) : gamePads[gp].axes
+  const stick = convertGamepadAxes(axes)
   if (gp === 0) {
     paddle0timeout = stick[0]
     paddle1timeout = stick[1]
@@ -139,7 +142,7 @@ const handleGamepad = (gp: number) => {
   // Special "no buttons down" call
   if (!buttonPressed) gamePadMapping(-1, gamePads.length > 1, gp === 1)
 
-  handleRumbleMapping()
+  if (gameMapping.rumble) gameMapping.rumble()
   setButtonState()
 }
 

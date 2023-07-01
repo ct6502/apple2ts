@@ -18,7 +18,7 @@ gameLibrary.push(karateka)
 gameLibrary.push(noxarchaist)
 gameLibrary.push(wolfenstein)
 
-const defaultButtons: GamePadMapping = (button: number,
+export const defaultButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
   if (isJoystick2) {
     switch (button) {
@@ -43,7 +43,18 @@ const defaultButtons: GamePadMapping = (button: number,
   }
 }
 
-export const keyMapping = (key: string) => {
+const defaultGame: GameLibraryItem = {
+  address: 0,
+  data: [],
+  keymap: {},
+  gamepad: null,
+  joystick: (axes: number[]) => axes,
+  rumble: null,
+  setup: null,
+  helptext: ''
+}
+
+export const handleKeyMapping = (key: string) => {
   for (let game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       return (key in game.keymap) ? game.keymap[key] : key
@@ -52,29 +63,20 @@ export const keyMapping = (key: string) => {
   return key
 }
 
-export const getGamepadMapping = () => {
+export const getGameMapping = () => {
   for (let game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
-      return (game.gamepad.length > 0) ? game.gamepad : defaultButtons
+      return game
     }   
   }
-  return defaultButtons
-}
-
-export const handleRumbleMapping = () => {
-  for (let game of gameLibrary) {
-    if (matchMemory(game.address, game.data)) {
-      game.rumble()
-      return
-    }   
-  }
+  return defaultGame
 }
 
 export const handleGameSetup = (reset = false) => {
   for (let game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       passHelptext(game.helptext ? game.helptext : ' ')
-      game.setup()
+      if (game.setup) game.setup()
       return
     }   
   }

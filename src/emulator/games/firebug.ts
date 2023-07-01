@@ -24,8 +24,9 @@ export const firebug: GameLibraryItem = {
   address: 0x452A,
   data: [0xAD, 0x00, 0xC0],
   keymap: {'\x08': 'A', '\x15': 'D', '\x0B': 'W', '\x0A': 'X', 'P': '\x0D', 'M': '\x20'},
-  gamepad: () => {},
-  rumble: () => {},
-  setup: () => {},
+  joystick: null,
+  gamepad: null,
+  rumble: null,
+  setup: null,
   helptext: helptext}
 
