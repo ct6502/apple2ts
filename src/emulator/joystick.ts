@@ -93,9 +93,11 @@ export const checkJoystickValues = (cycleCount: number) => {
 
 let gameMapping: GameLibraryItem
 let gamePadMapping: GamePadMapping
+let isKeyboardJoystick = false
 
 export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
   gamePads = gamePadsIn
+  isKeyboardJoystick = !gamePads.length || !gamePads[0].buttons.length
   gameMapping = getGameMapping()
   gamePadMapping = gameMapping.gamepad ? gameMapping.gamepad : defaultButtons
 }
@@ -119,7 +121,7 @@ const convertGamepadAxes = (axes: number[]) => {
 
 const handleGamepad = (gp: number) => {
   const axes = gameMapping.joystick ?
-    gameMapping.joystick(gamePads[gp].axes) : gamePads[gp].axes
+    gameMapping.joystick(gamePads[gp].axes, isKeyboardJoystick) : gamePads[gp].axes
   const stick = convertGamepadAxes(axes)
   if (gp === 0) {
     paddle0timeout = stick[0]

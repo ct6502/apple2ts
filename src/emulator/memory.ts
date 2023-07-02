@@ -197,20 +197,26 @@ export const memGet = (addr: number, code=0): number => {
   return memory[shifted + (addr & 255)]
 }
 
+const memSetSoftSwitch = (addr: number, value: number) => {
+  if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
+    handleDriveSoftSwitches(addr, value)
+  } else {
+    checkSoftSwitches(addr, true, cycleCount)
+    if (addr <= 0xC00F || addr >= 0xC050) {
+      updateAddressTables()
+    }
+  }
+}
+
 export const memSet = (addr: number, value: number) => {
   const page = addr >>> 8
   if (page === 0xC0) {
-    if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
-      handleDriveSoftSwitches(addr, value)
-    } else {
-      checkSoftSwitches(addr, true, cycleCount)
-      updateAddressTables()
-    }
-    return
+    memSetSoftSwitch(addr, value)
+  } else {
+    const shifted = addressSetTable[page]
+    if (shifted < 0) return
+    memory[shifted + (addr & 255)] = value
   }
-  const shifted = addressSetTable[page]
-  if (shifted < 0) return
-  memory[shifted + (addr & 255)] = value
 }
 
 export const memGetC000 = (addr: number) => {

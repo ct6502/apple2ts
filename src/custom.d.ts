@@ -147,7 +147,7 @@ type GameLibraryItem = {
   address: number,
   data: number[],
   keymap: KeyMap,
-  joystick: null | ((axes: number[]) => number[]),
+  joystick: null | ((axes: number[], isKeyboardJoystick: boolean) => number[]),
   gamepad: null | ((button: number, dualJoysticks: boolean, isJoystick2: boolean) => void),
   rumble: null | (() => void),
   setup: null | (() => void),

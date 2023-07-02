@@ -24,42 +24,24 @@ const gamepad = (button: number) => {
 }
 
 const threshold = 0.5
-const joystick = (axes: number[]) => {
-  let key1 = ''
-  let key2 = ''
-  if (axes[0] < -threshold) {
-    key1 = '\x08'  // West
-  } else if (axes[0] > threshold) {
-    key1 = '\x15'  // East
-  }
-  if (axes[1] < -threshold) {
-    key2 = '\x0B'  // North
-  } else if (axes[1] > threshold) {
-    key2 = '\x0A'  // South
-  }
-  if (key1 && key2) {
-    addToBufferDebounce(key1 + key2)
-  } else if (key1) {
-    addToBufferDebounce(key1)
-  } else if (key2) {
-    addToBufferDebounce(key2)
-  } else {
-    key1 = ''
-    if (axes[2] < -threshold) {
-      key1 = 'L\x08'  // West
-    } else if (axes[2] > threshold) {
-      key1 = 'L\x15'  // East
-    }
-    if (axes[3] < -threshold) {
-      key1 = 'L\x0B'  // North
-    } else if (axes[3] > threshold) {
-      key1 = 'L\x0A'  // South
-    }
-    if (key1) {
-      addToBufferDebounce(key1)
+const joystick = (axes: number[], isKeyboardJoystick: boolean) => {
+  // If we're only using arrow keys as a joystick, just quietly return,
+  // as Nox already uses arrows for movement and we don't want to double move.
+  if (isKeyboardJoystick) return axes
+  let key1 = (axes[0] < -threshold) ? '\x08' : (axes[0] > threshold) ? '\x15' : ''
+  let key2 = (axes[1] < -threshold) ? '\x0B' : (axes[1] > threshold) ? '\x0A' : ''
+  // Combine W/E and N/S to allow diagonal moves
+  let key = key1 + key2
+  if (!key) {
+    key = (axes[2] < -threshold) ? 'L\x08' : (axes[2] > threshold) ? 'L\x15' : ''
+    if (!key) {
+      key = (axes[3] < -threshold) ? 'L\x0B' : (axes[3] > threshold) ? 'L\x0A' : ''
     }
   }
-  return axes
+  if (key) {
+    addToBufferDebounce(key, 200)
+  }
+  return [0, 0, 0, 0]
 }
 
 const helptext = 
