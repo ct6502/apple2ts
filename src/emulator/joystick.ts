@@ -118,7 +118,6 @@ const convertGamepadAxes = (axes: number[]) => {
 }
 
 const handleGamepad = (gp: number) => {
-  if (!gamePads || gamePads.length <= gp) return
   const axes = gameMapping.joystick ?
     gameMapping.joystick(gamePads[gp].axes) : gamePads[gp].axes
   const stick = convertGamepadAxes(axes)
@@ -147,6 +146,10 @@ const handleGamepad = (gp: number) => {
 }
 
 export const handleGamepads = () => {
-  handleGamepad(0)
-  handleGamepad(1)
+  if (gamePads && gamePads.length > 0) {
+    handleGamepad(0)
+    if (gamePads.length > 1) {
+      handleGamepad(1)
+    }
+  }
 }

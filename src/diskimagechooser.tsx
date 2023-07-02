@@ -90,7 +90,7 @@ export const DiskImageChooser = () => {
         helptext = ' '
       }
     }
-    updateDisplay(helptext)
+    updateDisplay(0, helptext)
     handleSetCPUState(STATE.NEED_BOOT)
   }
 

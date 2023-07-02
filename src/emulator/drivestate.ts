@@ -1,8 +1,9 @@
 import { Buffer } from "buffer"
-import { passDriveProps } from "./worker2main"
+import { passDriveProps, passDriveSound } from "./worker2main"
 import { decodeDiskData, isHardDriveImage } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
 import { enableHardDrive } from "./harddrivedata"
+import { DRIVE } from "./utility"
 
 const initDriveState = (drive: number): DriveState => {
   return {
@@ -68,6 +69,7 @@ export const getDriveSaveState = (full: boolean) => {
 }
 
 export const restoreDriveSaveState = (newState: any) => {
+  passDriveSound(DRIVE.MOTOR_OFF)
   currentDrive = newState.currentDrive
   for (let i=0; i < 3; i++) {
     driveState[i] = newState.driveState[i]

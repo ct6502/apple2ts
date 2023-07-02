@@ -48,7 +48,7 @@ type SAVEAPPLE2STATE = {
 
 type DisplayProps = {
   machineState: STATE,
-  speed: string,
+  speed: number,
   myCanvas: React.RefObject<HTMLCanvasElement>,
   hiddenCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
@@ -62,7 +62,7 @@ type DisplayProps = {
   handleUseArrowKeyJoystick: () => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
-  updateDisplay: (helptext?: string) => void,
+  updateDisplay: (speed?: number, helptext?: string) => void,
   button0: boolean,
   button1: boolean,
 }
@@ -79,7 +79,7 @@ type DebugProps = {
 
 type MachineState = {
   state: STATE,
-  speed: string,
+  speed: number,
   altChar: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,

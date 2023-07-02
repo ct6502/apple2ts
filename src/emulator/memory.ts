@@ -182,7 +182,9 @@ const memGetSoftSwitch = (addr: number, code=0): number => {
   if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
     return handleDriveSoftSwitches(addr, -1)
   }
-  updateAddressTables()
+  if (addr >= 0xC050) {
+    updateAddressTables()
+  }
   return memory[ROMstartMinusC000 + addr]
 }
 

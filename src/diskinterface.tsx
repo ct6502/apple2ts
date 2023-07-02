@@ -17,22 +17,17 @@ let trackTimeout = 0
 
 const playAudio = (audioDevice: AudioDevice | undefined, timeout: number) => {
   if (!playDriveNoise || !audioDevice) {
-    audioDevice?.element.pause()
+    audioDevice?.context.suspend()
     return
   }
   if (audioDevice.context.state === 'suspended' && isAudioEnabled) {
     audioDevice.context.resume();
   }
-  if (!audioDevice.element.paused) {
-    window.clearTimeout(trackTimeout)
-    trackTimeout = window.setTimeout(() => audioDevice.element.pause(), timeout);
-    return
-  }
   const playPromise = audioDevice.element.play();
   if (playPromise) {
     playPromise.then(function() {
       window.clearTimeout(trackTimeout)
-      trackTimeout = window.setTimeout(() => audioDevice.element.pause(), timeout);
+      trackTimeout = window.setTimeout(() => audioDevice?.context.suspend(), timeout);
 
     }).catch(function(error) {
       console.log(error)
@@ -77,19 +72,17 @@ const playMotorOn = () => {
     if (motorAudio) motorAudio.element.loop = true
   }
   if (!playDriveNoise || !motorAudio) {
-    motorAudio?.element.pause()
+    motorAudio?.context.suspend()
     return
   }
   if (motorAudio.context.state === 'suspended' && isAudioEnabled) {
     motorAudio.context.resume();
   }
-  if (motorAudio.element.paused) {
-    motorAudio.element.play();
-  }
+  motorAudio.element.play();
 }
 
 const playMotorOff = () => {
-  motorAudio?.element.pause()
+  motorAudio?.context.suspend()
 }
 
 export const doPlayDriveSound = (sound: DRIVE) => {

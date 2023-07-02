@@ -1,4 +1,4 @@
-import { STATE, DRIVE } from "./emulator/utility"
+import { STATE, DRIVE, MSG_WORKER, MSG_MAIN } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker } from "./speaker"
 import { startupTextPage } from "./emulator/roms/startuptextpage"
@@ -8,12 +8,12 @@ let worker: Worker | null = null
 
 let saveStateCallback: (state: string) => void
 
-export let updateDisplay = (helptext = '') => {}
-export const setUpdateDisplay = (updateIn: (helptext?: string) => void) => {
+export let updateDisplay = (speed = 0, helptext = '') => {}
+export const setUpdateDisplay = (updateIn: (speed?: number, helptext?: string) => void) => {
   updateDisplay = updateIn
 }
 
-const doPostMessage = (msg: string, payload: any) => {
+const doPostMessage = (msg: MSG_MAIN, payload: any) => {
   if (!worker) {
     worker = new Worker(new URL('./emulator/worker2main', import.meta.url))
     worker.onmessage = doOnMessage
@@ -22,64 +22,64 @@ const doPostMessage = (msg: string, payload: any) => {
 }
 
 export const handleSetCPUState = (state: STATE) => {
-  doPostMessage("STATE", state)
+  doPostMessage(MSG_MAIN.STATE, state)
 }
 
 export const handleSetBreakpoint = (breakpoint: number) => {
-  doPostMessage("BREAKPOINT", breakpoint)
+  doPostMessage(MSG_MAIN.BREAKPOINT, breakpoint)
 }
 
 export const handleStepInto = () => {
-  doPostMessage("STEP_INTO", true)
+  doPostMessage(MSG_MAIN.STEP_INTO, true)
 }
 
 export const handleStepOver = () => {
-  doPostMessage("STEP_OVER", true)
+  doPostMessage(MSG_MAIN.STEP_OVER, true)
 }
 
 export const handleStepOut = () => {
-  doPostMessage("STEP_OUT", true)
+  doPostMessage(MSG_MAIN.STEP_OUT, true)
 }
 
 export const handleSetDebug = (doDebug: boolean) => {
-  doPostMessage("DEBUG", doDebug)
+  doPostMessage(MSG_MAIN.DEBUG, doDebug)
 }
 
 export const handleSetNormalSpeed = (normal: boolean) => {
-  doPostMessage("SPEED", normal)
+  doPostMessage(MSG_MAIN.SPEED, normal)
 }
 
 export const handleGoForwardInTime = () => {
-  doPostMessage("TIME_TRAVEL", "FORWARD")
+  doPostMessage(MSG_MAIN.TIME_TRAVEL, "FORWARD")
 }
 
 export const handleGoBackInTime = () => {
-  doPostMessage("TIME_TRAVEL", "BACKWARD")
+  doPostMessage(MSG_MAIN.TIME_TRAVEL, "BACKWARD")
 }
 
 export const handleRestoreSaveState = (sState: string) => {
-  doPostMessage("RESTORE_STATE", sState)
+  doPostMessage(MSG_MAIN.RESTORE_STATE, sState)
 }
 
 export const handleKeyboardBuffer = (text: String) => {
-  doPostMessage("KEYBUFFER", text)
+  doPostMessage(MSG_MAIN.KEYBUFFER, text)
 }
 
 export const handleAppleCommandKeyPress = (left: boolean) => {
-  doPostMessage("APPLE_PRESS", left)
+  doPostMessage(MSG_MAIN.APPLE_PRESS, left)
 }
 
 export const handleAppleCommandKeyRelease = (left: boolean) => {
-  doPostMessage("APPLE_RELEASE", left)
+  doPostMessage(MSG_MAIN.APPLE_RELEASE, left)
 }
 
 export const handleSetGamepads = (gamePads: EmuGamepad[] | null) => {
-  doPostMessage("GAMEPAD", gamePads)
+  doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
 }
 
 let machineState: MachineState = {
   state: STATE.IDLE,
-  speed: '',
+  speed: 0,
   altChar: true,
   textPage: new Uint8Array(1).fill(32),
   lores: new Uint8Array(),
@@ -91,52 +91,48 @@ let machineState: MachineState = {
 let saveState = ""
 
 const doOnMessage = (e: MessageEvent) => {
-  switch (e.data.msg) {
-    case "MACHINE_STATE":
-      const cpuStateChanged = machineState.state !== e.data.payload.state ||
+  switch (e.data.msg as MSG_WORKER) {
+    case MSG_WORKER.MACHINE_STATE:
+      const cpuStateChanged = machineState.speed !== e.data.payload.speed ||
+        machineState.state !== e.data.payload.state ||
         machineState.zeroPageStack !== e.data.payload.zeroPageStack ||
         machineState.button0 !== e.data.payload.button0 ||
-        machineState.button1 !== e.data.payload.button1 ||
-        machineState.speed !== e.data.payload.speed
+        machineState.button1 !== e.data.payload.button1
       machineState = e.data.payload
-      if (cpuStateChanged) updateDisplay()
-      break;
-    case "SAVE_STATE":
+      if (cpuStateChanged) updateDisplay(machineState.speed)
+      break
+    case MSG_WORKER.SAVE_STATE:
       saveState = e.data.payload
       saveStateCallback(saveState)
-      break;
-    case "CLICK":
+      break
+    case MSG_WORKER.CLICK:
       clickSpeaker(e.data.payload)
       break
-    case "DRIVE_PROPS":
+    case MSG_WORKER.DRIVE_PROPS:
       const props: DriveProps = e.data.payload
       driveProps[props.drive] = props
       updateDisplay()
-      break;
-    case "DRIVE_SOUND":
+      break
+    case MSG_WORKER.DRIVE_SOUND:
       const sound: DRIVE = e.data.payload
       doPlayDriveSound(sound)
       break
-    case "RUMBLE":
+    case MSG_WORKER.RUMBLE:
       const params: GamePadActuatorEffect = e.data.payload
       doRumble(params)
       break
-    case "HELP_TEXT":
+    case MSG_WORKER.HELP_TEXT:
       const helptext = e.data.payload
       updateDisplay(helptext)
       break
     default:
-    console.log("main2worker: unknown msg: " + JSON.stringify(e.data))
-      break;
+      console.log("main2worker: unknown msg: " + JSON.stringify(e.data))
+      break
   }
 }
 
 export const handleGetState = () => {
   return machineState.state
-}
-
-export const handleGetSpeed = () => {
-  return machineState.speed
 }
 
 export const handleGetTextPage = () => {
@@ -169,7 +165,7 @@ export const handleGetButton = (left: boolean) => {
 
 export const handleGetSaveState = (callback: (state: string) => void) => {
   saveStateCallback = callback
-  doPostMessage("GET_SAVE_STATE", true)
+  doPostMessage(MSG_MAIN.GET_SAVE_STATE, true)
 }
 
 const initDriveProps = (drive: number): DriveProps => {
@@ -225,8 +221,8 @@ export const handleSetDiskData = (drive: number,
   // fetchData(url)
   // .then(data => {
   //   props.diskData = data
-  //   doPostMessage("DRIVE_PROPS", props)
+  //   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
   // })
   props.diskData = data
-  doPostMessage("DRIVE_PROPS", props)
+  doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }

@@ -49,7 +49,6 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
     } else {
       driveState.trackStart[htrack] = 0
       driveState.trackNbits[htrack] = 51200
-//        console.log(`empty woz2 track ${htrack / 2}`)
     }
   }
   return true
@@ -72,7 +71,6 @@ const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
     } else {
       driveState.trackStart[htrack] = 0
       driveState.trackNbits[htrack] = 51200
-//        console.log(`empty woz1 track ${htrack / 2}`)
     }
   }
   return true

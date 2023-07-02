@@ -224,6 +224,7 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   updateExternalMachineState()
   resetRefreshCounter()
   if (speed === 0) {
+    speed = 1
     doAdvance6502Timer()
   }
 }
@@ -268,7 +269,7 @@ const getDebugString = () => {
 const updateExternalMachineState = () => {
   const state: MachineState = {
     state: cpuState,
-    speed: speed.toFixed(2),
+    speed: speed,
     altChar: SWITCHES.ALTCHARSET.isSet,
     textPage: getTextPage(),
     lores: getTextPage(true),
@@ -305,9 +306,11 @@ const doAdvance6502 = () => {
     }
   }
   iRefresh++
-  handleGamepads()
-  speed = (iRefresh * 17.030) / (performance.now() - startTime)
-  updateExternalMachineState()
+  speed = Math.round((iRefresh * 1703) / (performance.now() - startTime)) / 100
+  if (iRefresh % 2) {
+    handleGamepads()
+    updateExternalMachineState()
+  }
   if (saveTimeSlice) {
     saveTimeSlice = false
     iSaveState = (iSaveState + 1) % maxState
@@ -326,6 +329,6 @@ const doAdvance6502Timer = () => {
   if (cpuState === STATE.RUNNING) {
     setTimeout(doAdvance6502Timer, 0)
   } else {
-    setTimeout(doAdvance6502Timer, 10)
+    setTimeout(doAdvance6502Timer, 20)
   }
 }

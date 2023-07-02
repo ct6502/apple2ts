@@ -49,7 +49,6 @@ export const addToBufferDebounce = (text: string, timeout = 300) => {
 
 export const sendTextToEmulator = (text: string) => {
   if (text.length === 1) {
-    console.log(text.charCodeAt(0))
     text = handleKeyMapping(text)
     // Process key presses quickly. See popKey for details.
     forceKeyPress = true

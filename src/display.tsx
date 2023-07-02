@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { setUpdateDisplay, handleGetState, handleSetCPUState,
   handleSetBreakpoint, handleSetNormalSpeed, handleGetTextPage,
-  handleSetDebug, handleGetSpeed, handleGetButton,
+  handleSetDebug, handleGetButton,
   handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleStepInto, handleStepOver, handleStepOut } from "./main2worker"
 import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
@@ -14,7 +14,7 @@ import DebugPanel from "./debugpanel"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
-  { currentSpeed: string;
+  { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
     useArrowKeysAsJoystick: boolean;
@@ -33,7 +33,7 @@ class DisplayApple2 extends React.Component<{},
     super(props);
     this.state = {
       doDebug: false,
-      currentSpeed: '1.02',
+      currentSpeed: 1.02,
       speedCheck: true,
       uppercase: true,
       useArrowKeysAsJoystick: true,
@@ -43,12 +43,11 @@ class DisplayApple2 extends React.Component<{},
     };
   }
 
-  updateDisplay = (helptext = '') => {
-    const s = handleGetSpeed()
+  updateDisplay = (speed = 0, helptext = '') => {
     if (helptext) {
       this.setState( {helptext} )
     } else {
-      this.setState( {currentSpeed: s} )
+      this.setState( {currentSpeed: (speed ? speed : this.state.currentSpeed)} )
     }
   }
 
