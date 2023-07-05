@@ -1,9 +1,9 @@
 // Chris Torrence, 2022
-import { setUpdateDisplay, handleGetState, handleSetCPUState,
-  handleSetBreakpoint, handleSetNormalSpeed, handleGetTextPage,
-  handleSetDebug, handleGetButton,
-  handleRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, handleStepInto, handleStepOver, handleStepOut } from "./main2worker"
+import { setUpdateDisplay, handleGetState, passSetCPUState,
+  passSetBreakpoint, passSetNormalSpeed, handleGetTextPage,
+  passSetDebug, handleGetButton,
+  passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
+  handleGetFilename, passStepInto, passStepOver, passStepOut } from "./main2worker"
 import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
@@ -66,7 +66,7 @@ class DisplayApple2 extends React.Component<{},
   }
 
   handleSpeedChange = () => {
-    handleSetNormalSpeed(!this.state.speedCheck)
+    passSetNormalSpeed(!this.state.speedCheck)
     this.setState({ speedCheck: !this.state.speedCheck });
   };
 
@@ -76,12 +76,12 @@ class DisplayApple2 extends React.Component<{},
   };
 
   handleDebugChange = () => {
-    handleSetDebug(!this.state.doDebug)
+    passSetDebug(!this.state.doDebug)
     this.setState({ doDebug: !this.state.doDebug });
   };
 
   handleBreakpoint = (breakpoint: string) => {
-    handleSetBreakpoint(parseInt(breakpoint ? breakpoint : '0', 16))
+    passSetBreakpoint(parseInt(breakpoint ? breakpoint : '0', 16))
     this.setState({ breakpoint: breakpoint });
   };
 
@@ -96,11 +96,20 @@ class DisplayApple2 extends React.Component<{},
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
-      const restoreSaveStateFunc = handleRestoreSaveState
+      const restoreSaveStateFunc = (saveState: EmulatorSaveState) => {
+        passRestoreSaveState(saveState)
+        if (saveState.emulator.colorMode !== undefined) {
+          this.setState({colorMode: saveState.emulator.colorMode})
+        }
+        if (saveState.emulator.uppercase !== undefined) {
+          this.setState({uppercase: saveState.emulator.uppercase})
+        }
+      }
       fileread.onload = function(e) {
         if (e.target) {
-          restoreSaveStateFunc(e.target.result as string)
-          handleSetCPUState(STATE.RUNNING)
+          const saveState: EmulatorSaveState = JSON.parse(e.target.result as string)
+          restoreSaveStateFunc(saveState)
+          passSetCPUState(STATE.RUNNING)
         }
       };
       fileread.readAsText(e.target.files[0]);
@@ -115,7 +124,17 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
-  doSaveStateCallback = (state: string) => {
+  doSaveStateCallback = (saveState: EmulatorSaveState) => {
+    const d = new Date()
+    let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
+    saveState.emulator = {
+      name: `Apple2TS Emulator (git ${process.env.REACT_APP_GIT_SHA})`,
+      date: datetime,
+      help: this.state.helptext.split('\n')[0],
+      colorMode: this.state.colorMode,
+      uppercase: this.state.uppercase,
+    }
+    const state = JSON.stringify(saveState, null, 2)
     const blob = new Blob([state], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -124,10 +143,8 @@ class DisplayApple2 extends React.Component<{},
     if (!name) {
       name = "apple2ts"
     }
-    const d = new Date()
-    let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
     datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
-    link.setAttribute('download', `${name}${datetime}.dat`);
+    link.setAttribute('download', `${name}${datetime}.json`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -206,9 +223,9 @@ class DisplayApple2 extends React.Component<{},
       breakpoint: this.state.breakpoint,
       handleDebugChange: this.handleDebugChange,
       handleBreakpoint: this.handleBreakpoint,
-      handleStepInto: handleStepInto,
-      handleStepOver: handleStepOver,
-      handleStepOut: handleStepOut,
+      handleStepInto: passStepInto,
+      handleStepOver: passStepOver,
+      handleStepOut: passStepOut,
     }
     const width = props.myCanvas.current?.width
     const height = window.innerHeight - 30
@@ -239,7 +256,7 @@ class DisplayApple2 extends React.Component<{},
         </span>
         <input
           type="file"
-          accept=".dat"
+          accept=".json"
           ref={input => this.hiddenFileOpen = input}
           onChange={this.handleRestoreState}
           style={{display: 'none'}}

@@ -154,7 +154,6 @@ const processSmartPortAccess = () => {
       setDataBlock(bufferAddr, dataRead)
       break
     case 2:
-      break
     default:
       console.error(`SmartPort command ${spCommand} not implemented`)
       setCarry()
@@ -172,7 +171,7 @@ const processSmartPortAccess = () => {
   passData()
 }
 
-export const processHardDriveBlockAccess = () => {
+const processHardDriveBlockAccess = () => {
   const ds = getHardDriveState()
   if (!ds.hardDrive) return
   const dd = getHardDriveData()

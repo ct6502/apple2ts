@@ -1,4 +1,4 @@
-import { handleSetGamepads } from "./main2worker"
+import { passSetGamepads } from "./main2worker"
 
 export const checkGamepad = () => {
   const gamepads = navigator.getGamepads()
@@ -12,7 +12,7 @@ export const checkGamepad = () => {
     }
   }
   if (gamePad.length > 0) {
-    handleSetGamepads(gamePad)
+    passSetGamepads(gamePad)
   }
 }
 

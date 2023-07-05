@@ -27,9 +27,9 @@ let saveTimeSlice = false
 let iSaveState = 0
 let iTempState = 0
 let maxState = 60
-let saveStates = Array<string>(maxState).fill('')
+let saveStates = Array<EmulatorSaveState>(maxState)
 
-const getApple2State = (): SAVEAPPLE2STATE => {
+const getApple2State = (): Apple2SaveState => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
@@ -46,12 +46,10 @@ const getApple2State = (): SAVEAPPLE2STATE => {
     s6502: s6502,
     softSwitches: softSwitches,
     memory: membuffer.toString("base64"),
-    memAux: '',
-    memc000: '',
   }
 }
 
-const setApple2State = (newState: SAVEAPPLE2STATE) => {
+const setApple2State = (newState: Apple2SaveState) => {
   set6502State(newState.s6502)
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
@@ -64,27 +62,25 @@ const setApple2State = (newState: SAVEAPPLE2STATE) => {
   memory.set(Buffer.from(newState.memory, "base64"))
   updateAddressTables()
   handleGameSetup(true)
-  // mainMem.set(Buffer.from(newState.memory, "base64"))
-  // memC000.set(Buffer.from(newState.memc000, "base64"))
-  // if (newState.memAux !== undefined) {
-  //   auxMem.set(Buffer.from(newState.memAux, "base64"))
-  // }
 }
 
 // export const doRequestSaveState = () => {
 //   passSaveState(doGetSaveState())
 // }
 
-export const doGetSaveState = (full = false) => {
-  const state = { state6502: getApple2State(), driveState: getDriveSaveState(full) }
-  return JSON.stringify(state)
+export const doGetSaveState = (full = false): EmulatorSaveState => {
+  return { emulator: null,
+    state6502: getApple2State(),
+    driveState: getDriveSaveState(full)
+  }
+//  return full ? JSON.stringify(state, null, 2) : JSON.stringify(state)
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
-export const doRestoreSaveState = (sState: string) => {
-  const state = JSON.parse(sState);
-  setApple2State(state.state6502 as SAVEAPPLE2STATE)
-  restoreDriveSaveState(state.driveState)
+export const doRestoreSaveState = (sState: EmulatorSaveState) => {
+//  const state = JSON.parse(sState);
+  setApple2State(sState.state6502)
+  restoreDriveSaveState(sState.driveState)
   updateExternalMachineState()
 }
 
@@ -147,7 +143,7 @@ export const doGoBackInTime = () => {
     saveStates[iSaveState] = doGetSaveState()
   }
   const newTmp = (iTempState + maxState - 1) % maxState
-  if (newTmp === iSaveState || saveStates[newTmp] === '') {
+  if (newTmp === iSaveState || !saveStates[newTmp]) {
     return
   }
   iTempState = newTmp
@@ -160,7 +156,7 @@ export const doGoForwardInTime = () => {
     return
   }
   const newTmp = (iTempState + 1) % maxState
-  if (saveStates[newTmp] === '') {
+  if (!saveStates[newTmp]) {
     return
   }
   iTempState = newTmp

@@ -38,12 +38,10 @@ type STATE6502 = {
   StackPtr: number
 }
 
-type SAVEAPPLE2STATE = {
-  s6502: STATE6502
-  softSwitches: {[name: string]: boolean}
+type Apple2SaveState = {
+  s6502: STATE6502,
+  softSwitches: {[name: string]: boolean},
   memory: string
-  memAux: string
-  memc000: string
 }
 
 type DisplayProps = {
@@ -114,8 +112,18 @@ type DriveProps = {
   diskHasChanges: boolean,
   diskData: Uint8Array
 }
-//  readDisk: (file: File, drive: number) => void,
-//  resetDrive: (drive: number) => void,
+
+type DriveSaveState = {
+  currentDrive: number,
+  driveState: DriveState[],
+  driveData: string[]
+}
+
+type EmulatorSaveState = {
+  emulator: any,
+  state6502: Apple2SaveState,
+  driveState: DriveSaveState
+}
 
 type AudioDevice = {
   context: AudioContext,

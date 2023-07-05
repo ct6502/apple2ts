@@ -1,4 +1,4 @@
-# Apple II Emulator in Typescript - Chris Torrence, 2022
+# Apple II Emulator in Typescript - Chris Torrence
 
 ![node.js CI](https://github.com/chris-torrence/apple2ts/actions/workflows/node.js.yml/badge.svg)
 ![build/deploy](https://github.com/chris-torrence/apple2ts/actions/workflows/pages/pages-build-deployment/badge.svg)
@@ -102,13 +102,9 @@ g39dzLX8Fxf1A/sDYvr6ww==`
 
 ## Flowcharts for Apple II Emulator
 
-![Apple II Emulator - Layout](images/Apple%20II%20Emulator%20-%20Layout.png)
-
 ![Apple II Emulator - Main Loop](images/Apple%20II%20Emulator%20-%20Main%20Loop.png)
 
 ![Process Instruction](images/Process%20Instruction.png)
-
-![ProcessDisplay](images/ProcessDisplay.png)
 
 ## Create React App - Learn More
 

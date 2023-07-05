@@ -85,8 +85,8 @@ export const processInstruction = (step = false) => {
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
   }
-  setCycleCount(cycleCount + cycles)
   incrementPC(code.PC)
+  setCycleCount(cycleCount + cycles)
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
     doSetCPUState(STATE.PAUSED)

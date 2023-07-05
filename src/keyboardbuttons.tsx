@@ -1,4 +1,4 @@
-import { handleAppleCommandKeyPress, handleAppleCommandKeyRelease, handleKeyboardBuffer, handleSetGamepads } from "./main2worker"
+import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeyboardBuffer, passSetGamepads } from "./main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -21,7 +21,7 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
       case ARROW.UP: code = 11; arrowGamePad[1] = -1; break
       case ARROW.DOWN: code = 10; arrowGamePad[1] = 1; break
     }
-    handleKeyboardBuffer(String.fromCharCode(code))
+    passKeyboardBuffer(String.fromCharCode(code))
   } else {
     switch (key) {
       case ARROW.LEFT: // fall thru
@@ -35,7 +35,7 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
       axes: [arrowGamePad[0], arrowGamePad[1], 0, 0],
       buttons: []
   }]
-  handleSetGamepads(gamePads)
+  passSetGamepads(gamePads)
 }
 
 const KeyboardButtons = (props: DisplayProps) => {
@@ -47,17 +47,17 @@ const KeyboardButtons = (props: DisplayProps) => {
   ]
   return <span>
     <button className={`pushButton keyButton ${props.button0 ? 'isActive' : ''}`} title="Open Apple"
-      onTouchStart={() => handleAppleCommandKeyPress(true)}
-      onTouchEnd={() => handleAppleCommandKeyRelease(true)}
-      onMouseDown={() => handleAppleCommandKeyPress(true)}
-      onMouseUp={() => handleAppleCommandKeyRelease(true)}>
+      onTouchStart={() => passAppleCommandKeyPress(true)}
+      onTouchEnd={() => passAppleCommandKeyRelease(true)}
+      onMouseDown={() => passAppleCommandKeyPress(true)}
+      onMouseUp={() => passAppleCommandKeyRelease(true)}>
       {appleOutline}
     </button>
     <button className={`pushButton keyButton ${props.button1 ? 'isActive' : ''}`} title="Closed Apple"
-      onTouchStart={() => handleAppleCommandKeyPress(false)}
-      onTouchEnd={() => handleAppleCommandKeyRelease(false)}
-      onMouseDown={() => handleAppleCommandKeyPress(false)}
-      onMouseUp={() => handleAppleCommandKeyRelease(false)}>
+      onTouchStart={() => passAppleCommandKeyPress(false)}
+      onTouchEnd={() => passAppleCommandKeyRelease(false)}
+      onMouseDown={() => passAppleCommandKeyPress(false)}
+      onMouseUp={() => passAppleCommandKeyRelease(false)}>
       {appleSolid}
     </button>
      {arrowKeys.map((key, i) => (
@@ -72,11 +72,11 @@ const KeyboardButtons = (props: DisplayProps) => {
         </button>
      ))}
     <button className="pushButton keyButton" title="Escape"
-      onMouseDown={() => handleKeyboardBuffer(String.fromCharCode(27))}>
+      onMouseDown={() => passKeyboardBuffer(String.fromCharCode(27))}>
       <span className="textKey">esc</span>
     </button>
     <button className="pushButton keyButton" title="Tab"
-      onMouseDown={() => handleKeyboardBuffer(String.fromCharCode(9))}>
+      onMouseDown={() => passKeyboardBuffer(String.fromCharCode(9))}>
       <span className="textKey">tab</span>
     </button>
   </span>

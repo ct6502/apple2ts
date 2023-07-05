@@ -1,5 +1,5 @@
 import { COLOR_MODE, STATE, colorToName } from "./emulator/utility";
-import { handleSetCPUState } from "./main2worker"
+import { passSetCPUState } from "./main2worker"
 import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -53,14 +53,14 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title="Boot"
       onClick={() => {
-        handleSetCPUState(STATE.NEED_BOOT)
+        passSetCPUState(STATE.NEED_BOOT)
       }}>
       <FontAwesomeIcon icon={faPowerOff}/>
     </button>
     <button className="pushButton"
       title="Reset"
       onClick={() => {
-        handleSetCPUState(STATE.NEED_RESET)
+        passSetCPUState(STATE.NEED_RESET)
       }}
       disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
       >
@@ -69,7 +69,7 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
       onClick={() => {props.machineState === STATE.PAUSED ?
-        handleSetCPUState(STATE.RUNNING) : handleSetCPUState(STATE.PAUSED)}}
+        passSetCPUState(STATE.RUNNING) : passSetCPUState(STATE.PAUSED)}}
       disabled={props.machineState === STATE.IDLE}>
       {props.machineState === STATE.PAUSED ?
       <FontAwesomeIcon icon={faPlay}/> :

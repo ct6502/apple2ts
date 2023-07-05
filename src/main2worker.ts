@@ -6,7 +6,7 @@ import { doRumble } from "./gamepad"
 
 let worker: Worker | null = null
 
-let saveStateCallback: (state: string) => void
+let saveStateCallback: (saveState: EmulatorSaveState) => void
 
 export let updateDisplay = (speed = 0, helptext = '') => {}
 export const setUpdateDisplay = (updateIn: (speed?: number, helptext?: string) => void) => {
@@ -21,59 +21,59 @@ const doPostMessage = (msg: MSG_MAIN, payload: any) => {
   worker.postMessage({msg, payload});
 }
 
-export const handleSetCPUState = (state: STATE) => {
+export const passSetCPUState = (state: STATE) => {
   doPostMessage(MSG_MAIN.STATE, state)
 }
 
-export const handleSetBreakpoint = (breakpoint: number) => {
+export const passSetBreakpoint = (breakpoint: number) => {
   doPostMessage(MSG_MAIN.BREAKPOINT, breakpoint)
 }
 
-export const handleStepInto = () => {
+export const passStepInto = () => {
   doPostMessage(MSG_MAIN.STEP_INTO, true)
 }
 
-export const handleStepOver = () => {
+export const passStepOver = () => {
   doPostMessage(MSG_MAIN.STEP_OVER, true)
 }
 
-export const handleStepOut = () => {
+export const passStepOut = () => {
   doPostMessage(MSG_MAIN.STEP_OUT, true)
 }
 
-export const handleSetDebug = (doDebug: boolean) => {
+export const passSetDebug = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
 }
 
-export const handleSetNormalSpeed = (normal: boolean) => {
+export const passSetNormalSpeed = (normal: boolean) => {
   doPostMessage(MSG_MAIN.SPEED, normal)
 }
 
-export const handleGoForwardInTime = () => {
+export const passGoForwardInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL, "FORWARD")
 }
 
-export const handleGoBackInTime = () => {
+export const passGoBackInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL, "BACKWARD")
 }
 
-export const handleRestoreSaveState = (sState: string) => {
-  doPostMessage(MSG_MAIN.RESTORE_STATE, sState)
+export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
+  doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
 }
 
-export const handleKeyboardBuffer = (text: String) => {
+export const passKeyboardBuffer = (text: String) => {
   doPostMessage(MSG_MAIN.KEYBUFFER, text)
 }
 
-export const handleAppleCommandKeyPress = (left: boolean) => {
+export const passAppleCommandKeyPress = (left: boolean) => {
   doPostMessage(MSG_MAIN.APPLE_PRESS, left)
 }
 
-export const handleAppleCommandKeyRelease = (left: boolean) => {
+export const passAppleCommandKeyRelease = (left: boolean) => {
   doPostMessage(MSG_MAIN.APPLE_RELEASE, left)
 }
 
-export const handleSetGamepads = (gamePads: EmuGamepad[] | null) => {
+export const passSetGamepads = (gamePads: EmuGamepad[] | null) => {
   doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
 }
 
@@ -88,7 +88,6 @@ let machineState: MachineState = {
   button0: false,
   button1: false
 }
-let saveState = ""
 
 const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_WORKER) {
@@ -102,28 +101,28 @@ const doOnMessage = (e: MessageEvent) => {
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
     case MSG_WORKER.SAVE_STATE:
-      saveState = e.data.payload
+      const saveState = e.data.payload as EmulatorSaveState
       saveStateCallback(saveState)
       break
     case MSG_WORKER.CLICK:
-      clickSpeaker(e.data.payload)
+      clickSpeaker(e.data.payload as number)
       break
     case MSG_WORKER.DRIVE_PROPS:
-      const props: DriveProps = e.data.payload
+      const props = e.data.payload as DriveProps
       driveProps[props.drive] = props
       updateDisplay()
       break
     case MSG_WORKER.DRIVE_SOUND:
-      const sound: DRIVE = e.data.payload
+      const sound = e.data.payload as DRIVE
       doPlayDriveSound(sound)
       break
     case MSG_WORKER.RUMBLE:
-      const params: GamePadActuatorEffect = e.data.payload
+      const params = e.data.payload as GamePadActuatorEffect
       doRumble(params)
       break
     case MSG_WORKER.HELP_TEXT:
-      const helptext = e.data.payload
-      updateDisplay(helptext)
+      const helptext = e.data.payload as string
+      updateDisplay(0, helptext)
       break
     default:
       console.log("main2worker: unknown msg: " + JSON.stringify(e.data))
@@ -163,7 +162,7 @@ export const handleGetButton = (left: boolean) => {
   return left ? machineState.button0 : machineState.button1
 }
 
-export const handleGetSaveState = (callback: (state: string) => void) => {
+export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void) => {
   saveStateCallback = callback
   doPostMessage(MSG_MAIN.GET_SAVE_STATE, true)
 }

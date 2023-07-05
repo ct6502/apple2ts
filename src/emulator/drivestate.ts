@@ -59,8 +59,15 @@ export const passData = () => {
   }
 }
 
-export const getDriveSaveState = (full: boolean) => {
+const isTotalReplay = (filename: string) => {
+  return filename.replace(/ /g, '').toLowerCase().includes('totalreplay')
+}
+
+export const getDriveSaveState = (full: boolean): DriveSaveState => {
   let data = ['', '', '']
+  if (full && isTotalReplay(driveState[0].filename)) {
+    return {currentDrive: 0, driveState: [], driveData: []}
+  }
   for (let i=(full ? 0 : 1); i < 3; i++) {
     data[i] = Buffer.from(driveData[i]).toString("base64")
   }
@@ -68,10 +75,14 @@ export const getDriveSaveState = (full: boolean) => {
     driveState: driveState, driveData: data }
 }
 
-export const restoreDriveSaveState = (newState: any) => {
+export const restoreDriveSaveState = (newState: DriveSaveState) => {
   passDriveSound(DRIVE.MOTOR_OFF)
   currentDrive = newState.currentDrive
   for (let i=0; i < 3; i++) {
+    driveState[i] = initDriveState(i)
+    driveData[i] = new Uint8Array()
+  }
+  for (let i=0; i < newState.driveState.length; i++) {
     driveState[i] = newState.driveState[i]
     if (newState.driveData[i] !== '') {
       driveData[i] = new Uint8Array(Buffer.from(newState.driveData[i], 'base64'))

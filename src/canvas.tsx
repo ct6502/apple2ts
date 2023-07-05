@@ -1,9 +1,9 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { handleSetCPUState, handleKeyboardBuffer,
-  handleAppleCommandKeyPress, handleAppleCommandKeyRelease,
+import { passSetCPUState, passKeyboardBuffer,
+  passAppleCommandKeyPress, passAppleCommandKeyRelease,
   updateDisplay, 
-  handleGoBackInTime,
-  handleGoForwardInTime,
+  passGoBackInTime,
+  passGoForwardInTime,
   setStartTextPage} from "./main2worker"
 import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
@@ -23,7 +23,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (data !== "") {
         data = data.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
         data = data.replaceAll('\n','\r')  // LFs to CRs
-        handleKeyboardBuffer(data);
+        passKeyboardBuffer(data);
       }
       e.preventDefault();
     }
@@ -44,14 +44,14 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const metaKeyHandlers: { [key: string]: () => void } = {
-    ArrowLeft: () => handleGoBackInTime(),
-    ArrowRight: () => handleGoForwardInTime(),
-    b: () => handleSetCPUState(STATE.NEED_BOOT),
+    ArrowLeft: () => passGoBackInTime(),
+    ArrowRight: () => passGoForwardInTime(),
+    b: () => passSetCPUState(STATE.NEED_BOOT),
     c: () => props.handleCopyToClipboard(),
     f: () => props.handleSpeedChange(),
     o: () => props.handleFileOpen(),
-    p: () => handleSetCPUState(props.machineState === STATE.PAUSED ? STATE.RUNNING : STATE.PAUSED),
-    r: () => handleSetCPUState(STATE.NEED_RESET),
+    p: () => passSetCPUState(props.machineState === STATE.PAUSED ? STATE.RUNNING : STATE.PAUSED),
+    r: () => passSetCPUState(STATE.NEED_RESET),
     s: () => props.handleFileSave()
   }
 
@@ -72,22 +72,22 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
     if (e.shiftKey && e.key === "Shift") {
-      handleAppleCommandKeyPress(true)
+      passAppleCommandKeyPress(true)
     }
     if (e.altKey && e.key === "Alt") {
-      handleAppleCommandKeyPress(false)
+      passAppleCommandKeyPress(false)
     }
     if (e.metaKey || e.ctrlKey) {
       keyHandled = handleMetaKey(e.key)
     }
     // If we're paused, allow <space> to resume
     if (props.machineState === STATE.PAUSED && e.key === ' ') {
-      handleSetCPUState(STATE.RUNNING)
+      passSetCPUState(STATE.RUNNING)
       keyHandled = true
     }
     if (keyHandled) {
-      handleAppleCommandKeyRelease(true)
-      handleAppleCommandKeyRelease(false)
+      passAppleCommandKeyRelease(true)
+      passAppleCommandKeyRelease(false)
       e.preventDefault()
       e.stopPropagation()
       return
@@ -102,7 +102,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const key = convertAppleKey(e, props.uppercase);
     if (key > 0) {
-      handleKeyboardBuffer(String.fromCharCode(key))
+      passKeyboardBuffer(String.fromCharCode(key))
       e.preventDefault()
       e.stopPropagation()
     } else {
@@ -113,9 +113,9 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyUp = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
     if (e.key === 'Shift') {
-      handleAppleCommandKeyRelease(true)
+      passAppleCommandKeyRelease(true)
     } else if (e.key === 'Alt') {
-      handleAppleCommandKeyRelease(false)
+      passAppleCommandKeyRelease(false)
     } else if (e.key in arrowKeys) {
       handleArrowKey(arrowKeys[e.key], true)
     }

@@ -1,7 +1,7 @@
 import React from "react"
 import { Button, Dialog, DialogTitle, IconButton, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
 import HelpIcon from '@mui/icons-material/Help';
-import { handleSetCPUState, handleSetDiskData, updateDisplay } from "./main2worker";
+import { passSetCPUState, handleSetDiskData, updateDisplay } from "./main2worker";
 import { STATE, replaceSuffix } from "./emulator/utility";
 import { diskImages } from "./diskimages";
 import { resetAllDiskDrives } from "./diskinterface";
@@ -91,7 +91,7 @@ export const DiskImageChooser = () => {
       }
     }
     updateDisplay(0, helptext)
-    handleSetCPUState(STATE.NEED_BOOT)
+    passSetCPUState(STATE.NEED_BOOT)
   }
 
   const handleSelect = (disk: diskImage) => {
