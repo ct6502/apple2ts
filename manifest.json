@@ -3,29 +3,9 @@
   "name": "Apple II Emulator in TypeScript",
   "icons": [
     {
-      "src": "favicon-192.png",
+      "src": "favicon.png",
       "sizes": "192x192",
       "type": "image/png"
-    },
-    {
-      "src": "favicon-180.png",
-      "sizes": "180x180",
-      "type": "image/png"
-    },
-    {
-      "src": "favicon-128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "favicon.ico",
-      "sizes": "256x256",
-      "type": "image/x-icon"
     },
     {
       "src": "logo192.png",
@@ -42,5 +22,5 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#C4C0AA"
+  "background_color": "#BFBB98"
 }
