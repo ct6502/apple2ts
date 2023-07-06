@@ -34,16 +34,6 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
 ## VS Code Chrome Debugging
 
 Stop all running Chrome instances and then:
@@ -54,7 +44,7 @@ Use `npm start` to start the running instance.
 
 In launch.json, add a launch configuration:
 
-```
+```json
     {
       "name": "Attach to Chrome",
       "port": 9222,
@@ -66,31 +56,30 @@ In launch.json, add a launch configuration:
 
 ```
 
+## Localhost Certificates
+
+Gamepads will only work with a secure (https) context.
+To enable https when running from localhost, you need to [generate a
+certificate](https://flaviocopes.com/react-how-to-configure-https-localhost/)
+and [install it on your system](https://flaviocopes.com/macos-install-ssl-local/).
+
 ## Apple II ROMs
 
 This repository doesn't contain any Apple II ROMs. However, these are fairly easy to find on the web.
 To make a ROM image, save the raw binary data from the C000-FFFF ROM in a single file.
 Then convert the file to a Base64 encoding. On the Mac, I used the following command:
 
+```sh
     openssl base64 -in rom_2e.bin -out rom_2e.base64.ts
+```
 
 Finally, edit the `.ts` file, and change the file to be an exported string variable by prepending:
 
+```ts
     export const rom=`
-
-Don't forget to append the trailing back quote ` at the end of the file. Your final file should look like:
-
 ```
-export const rom=`AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAAAAAAAAAAACxY/3AMOJAYuFAGATGOlJeahSeGNYpImEgIeI3/zyBY
-...
-SLnj/0ilMaAAhDFgvLK+mu/E7Km7pqQGlQcCBfAA65Onxpmyyb7wNYzWlq8XFysf
-g39dzLX8Fxf1A/sDYvr6ww==`
-```
+
+Don't forget to append the trailing back quote ` at the end of the file.
 
 ## Apple II 6502 References
 
@@ -106,7 +95,9 @@ g39dzLX8Fxf1A/sDYvr6ww==`
 
 ![Process Instruction](images/Process%20Instruction.png)
 
-## Create React App - Learn More
+## Original Create React App README
+
+### Create React App - Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
@@ -137,3 +128,13 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+### `npm run eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.

@@ -2,17 +2,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Launch Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:6502",
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      },
+    },
+    {
       "name": "Attach to Chrome",
       "port": 9222,
       "request": "attach",
       "type": "chrome",
-      "url": "http://localhost:6502",
-      "webRoot": "${workspaceFolder}"
-    },
-    {
-      "type": "pwa-chrome",
-      "request": "launch",
-      "name": "Launch Chrome against localhost",
       "url": "http://localhost:6502",
       "webRoot": "${workspaceFolder}"
     }
