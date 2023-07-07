@@ -1,6 +1,17 @@
 {
   "short_name": "Apple2TS",
   "name": "Apple II Emulator in TypeScript",
+  "description": "An emulator for an enhanced Apple IIe with 128k of memory, a hard drive, two floppy disk drives, and support for gamepads. Written in TypeScript, using the React JS library, and hosted on Github Pages. Chris Torrence, CT6502",
+  "id": "/",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#BFBB98",
+  "categories": [
+    "games",
+    "development",
+    "graphics"
+  ],
   "icons": [
     {
       "src": "favicon.png",
@@ -18,9 +29,18 @@
       "sizes": "512x512"
     }
   ],
-  "id": "/",
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#BFBB98"
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "768x472",
+      "type": "image/png",
+      "label": "Apple IIe Karateka Game"
+    },
+    {
+      "src": "screenshot2.png",
+      "sizes": "768x472",
+      "type": "image/png",
+      "label": "Apple IIe Green Screen"
+    }
+  ]
 }

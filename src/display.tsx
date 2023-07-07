@@ -57,7 +57,17 @@ class DisplayApple2 extends React.Component<{},
 
   componentDidMount() {
     setUpdateDisplay(this.updateDisplay)
-//    window.addEventListener("resize", handleResize)
+    if ("launchQueue" in window) {
+      const queue: any = window.launchQueue
+      queue.setConsumer(async (launchParams: any) => {
+        const files: FileSystemFileHandle[] = launchParams.files
+        if (files && files.length) {
+          const fileContents = await (await files[0].getFile()).text()
+          this.restoreSaveStateFunc(fileContents)
+        }
+      });
+    }
+  //    window.addEventListener("resize", handleResize)
   }
 
   componentWillUnmount() {
@@ -93,23 +103,25 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ useArrowKeysAsJoystick: !this.state.useArrowKeysAsJoystick });
   };
 
+  restoreSaveStateFunc = (fileContents: string) => {
+    const saveState: EmulatorSaveState = JSON.parse(fileContents)
+    passRestoreSaveState(saveState)
+    if (saveState.emulator?.colorMode !== undefined) {
+      this.setState({colorMode: saveState.emulator.colorMode})
+    }
+    if (saveState.emulator?.uppercase !== undefined) {
+      this.setState({uppercase: saveState.emulator.uppercase})
+    }
+    passSetCPUState(STATE.RUNNING)
+  }
+
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
-      const restoreSaveStateFunc = (saveState: EmulatorSaveState) => {
-        passRestoreSaveState(saveState)
-        if (saveState.emulator.colorMode !== undefined) {
-          this.setState({colorMode: saveState.emulator.colorMode})
-        }
-        if (saveState.emulator.uppercase !== undefined) {
-          this.setState({uppercase: saveState.emulator.uppercase})
-        }
-      }
+      const saveStateReader = this.restoreSaveStateFunc
       fileread.onload = function(e) {
         if (e.target) {
-          const saveState: EmulatorSaveState = JSON.parse(e.target.result as string)
-          restoreSaveStateFunc(saveState)
-          passSetCPUState(STATE.RUNNING)
+          saveStateReader(e.target.result as string)
         }
       };
       fileread.readAsText(e.target.files[0]);
@@ -144,7 +156,7 @@ class DisplayApple2 extends React.Component<{},
       name = "apple2ts"
     }
     datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
-    link.setAttribute('download', `${name}${datetime}.json`);
+    link.setAttribute('download', `${name}${datetime}.a2ts`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -256,7 +268,7 @@ class DisplayApple2 extends React.Component<{},
         </span>
         <input
           type="file"
-          accept=".json"
+          accept=".a2ts"
           ref={input => this.hiddenFileOpen = input}
           onChange={this.handleRestoreState}
           style={{display: 'none'}}
