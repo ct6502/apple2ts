@@ -1,7 +1,7 @@
 {
   "short_name": "Apple2TS",
-  "name": "Apple II Emulator in TypeScript",
-  "description": "An emulator for an enhanced Apple IIe with 128k of memory, a hard drive, two floppy disk drives, and support for gamepads. Written in TypeScript, using the React JS library, and hosted on Github Pages. Chris Torrence, CT6502",
+  "name": "Apple2TS",
+  "description": "Apple II Emulator in TypeScript. Emulates an enhanced Apple IIe with 128k of memory, a hard drive, two floppy disk drives, and gamepad support. Written in TypeScript, using the React JS library, and hosted on Github Pages. Chris Torrence, CT6502",
   "id": "/",
   "start_url": ".",
   "display": "standalone",
@@ -11,6 +11,16 @@
     "games",
     "development",
     "graphics"
+  ],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "application/json": [
+          ".a2ts"
+        ]
+      }
+    }
   ],
   "icons": [
     {
