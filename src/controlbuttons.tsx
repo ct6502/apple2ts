@@ -1,4 +1,4 @@
-import { COLOR_MODE, STATE, colorToName } from "./emulator/utility";
+import { COLOR_MODE, DRIVE, STATE, colorToName } from "./emulator/utility";
 import { passSetCPUState } from "./main2worker"
 import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -17,6 +17,7 @@ import {
   faTruckFast,
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons";
+import { doPlayDriveSound } from "./diskinterface";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
@@ -53,6 +54,7 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title="Boot"
       onClick={() => {
+        doPlayDriveSound(DRIVE.REQUEST_AUDIO)
         passSetCPUState(STATE.NEED_BOOT)
       }}>
       <FontAwesomeIcon icon={faPowerOff}/>

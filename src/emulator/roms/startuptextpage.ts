@@ -14,19 +14,21 @@ let text=
 ]
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? '\xC3' : '^'
+const key = isMac ? `⌘` : '^'
 const isTouchDevice = "ontouchstart" in document.documentElement
+export let extraHelpText = ''
 if (!isTouchDevice) {
-  text = text.concat([
-    'Keyboard Shortcuts:',
-    '',
-    `${key}B Boot    ${key}C Copy Screen`,
-    `${key}R Reset   ${key}V Paste Text `,
-    `${key}P Pause   ${key}O Open State `,
-    `${key}F Speed   ${key}S Save State `,
-    `${key}\xC8: Go back in Time`,
-    `${key}\xD5: Forward in Time`
-  ])
+  extraHelpText = `Keyboard Shortcuts:
+ 
+${key}B Boot    ${key}C Copy Screen
+${key}R Reset   ${key}V Paste Text 
+${key}P Pause   ${key}O Open State 
+${key}F Speed   ${key}S Save State 
+${key}← Go back in Time
+${key}→ Forward in Time`
+// Replace Unicode ⌘ with my fake MouseText character
+  const tmp = extraHelpText.replaceAll(`⌘`, '\xC3').replaceAll('←', '\xC8').replaceAll('→', '\xD5')
+  text = text.concat(tmp.split('\n'))
 }
 
 const textPage = new Array<String>(24).fill('')

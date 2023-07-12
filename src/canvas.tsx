@@ -12,6 +12,7 @@ import { checkGamepad } from './gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
+let startupTextTimeout = 0
 
 const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
@@ -126,6 +127,18 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
+  // To prevent flicker, wait until font is downloaded before rendering startup text.
+  if (startupTextTimeout === 0) {
+    const setStartTextAfterFontLoad = () => {
+      if (document.fonts.check("12px PrintChar21")) {
+        setStartTextPage()
+        clearInterval(startupTextTimeout)
+        startupTextTimeout = -1
+      }
+    }
+    startupTextTimeout = window.setInterval(setStartTextAfterFontLoad, 50);
+  }
+
   // This code only runs once when the component first renders
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
@@ -174,15 +187,6 @@ const Apple2Canvas = (props: DisplayProps) => {
       animationFrameId = window.requestAnimationFrame(renderCanvas)
     }
     renderCanvas()
-
-    // To prevent flicker, wait until font is downloaded before rendering startup text.
-    const setStartTextAfterFontLoad = () => {
-      if (document.fonts.check("12px PrintChar21")) {
-        setStartTextPage()
-        clearInterval(timeOut)
-      }
-    }
-    const timeOut = setInterval(setStartTextAfterFontLoad, 50);
 
     // Return a cleanup function when component unmounts
     return () => {

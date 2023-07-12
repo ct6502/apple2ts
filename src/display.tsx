@@ -11,6 +11,7 @@ import DiskInterface from "./diskinterface"
 import React from 'react';
 import HelpPanel from "./helppanel"
 import DebugPanel from "./debugpanel"
+import { preloadAssets } from "./assets"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
@@ -67,6 +68,8 @@ class DisplayApple2 extends React.Component<{},
         }
       });
     }
+    preloadAssets()
+    passSetNormalSpeed(true)
   //    window.addEventListener("resize", handleResize)
   }
 

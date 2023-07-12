@@ -2,12 +2,7 @@ import React from "react"
 import { uint32toBytes } from "./emulator/utility"
 import { crc32 } from "./emulator/decodedisk"
 import { handleGetDriveProps, handleSetDiskData } from "./main2worker"
-import disk2off from './img/disk2off.png'
-import disk2on from './img/disk2on.png'
-import disk2offEmpty from './img/disk2off-empty.png'
-import disk2onEmpty from './img/disk2on-empty.png'
-import hardDriveOff from './img/harddrive.png'
-import hardDriveOn from './img/harddriveOn.png'
+import { imageList } from "./assets"
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -71,11 +66,11 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
     const dprops = handleGetDriveProps(this.props.drive)
     let img1: any
     if (dprops.hardDrive) {
-      img1 = dprops.motorRunning ? hardDriveOn : hardDriveOff
+      img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
     } else {
       img1 = (dprops.filename.length > 0) ?
-        (dprops.motorRunning ? disk2on : disk2off) :
-        (dprops.motorRunning ? disk2onEmpty : disk2offEmpty)
+        (dprops.motorRunning ? imageList.disk2on : imageList.disk2off) :
+        (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
     }
     const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
     let status = ['S7D1', 'S6D1', 'S6D2'][this.props.drive]

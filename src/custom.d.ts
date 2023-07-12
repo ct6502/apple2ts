@@ -1,20 +1,24 @@
 declare module 'list-react-files'
 
-declare module "*.svg" {
-   const value: any;
-   export = value;
-}
 declare module "*.png" {
-   const value: any;
+   const value: string;
    export = value;
 }
 declare module "*.mp3" {
-   const value: any;
+   const value: string;
    export = value;
 }
 declare module "*.woz" {
-   const value: any;
+   const value: string;
    export = value;
+}
+declare module "*.po" {
+  const value: string;
+  export = value;
+}
+declare module "*.hdv" {
+  const value: string;
+  export = value;
 }
 
 interface PCodeFunc {

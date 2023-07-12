@@ -1,9 +1,7 @@
 import React from "react"
 import DiskDrive from "./diskdrive"
 import { DRIVE } from "./emulator/utility"
-import mp3DriveMotor from './audio/driveMotor.mp3'
-import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
-import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'
+import { mp3List } from "./assets"
 import { DiskImageChooser } from "./diskimagechooser"
 import {isAudioEnabled, registerAudioContext} from "./speaker"
 import { handleSetDiskData } from "./main2worker"
@@ -20,18 +18,17 @@ const playAudio = (audioDevice: AudioDevice | undefined, timeout: number) => {
     audioDevice?.context.suspend()
     return
   }
-  if (audioDevice.context.state === 'suspended' && isAudioEnabled) {
+  if (audioDevice.context.state === 'suspended') {
     audioDevice.context.resume();
   }
   const playPromise = audioDevice.element.play();
   if (playPromise) {
-    playPromise.then(function() {
+    playPromise.then(() => {
       window.clearTimeout(trackTimeout)
-      trackTimeout = window.setTimeout(() => audioDevice?.context.suspend(), timeout);
-
-    }).catch(function(error) {
-      console.log(error)
-    });
+      trackTimeout = window.setTimeout(() => audioDevice?.context.suspend(), timeout)
+    }).catch((error: DOMException) => {
+//      console.log(error)
+    })
   }
 }
 
@@ -48,10 +45,17 @@ const constructAudio = (mp3track: any) => {
   return audioDevice
 }
 
+const playRequestAudio = () => {
+  if (!trackSeekAudio) {
+    trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
+  }
+//   playAudio(trackSeekAudio, 1)
+}
+
 const playTrackOffEnd = () => {
   if (isAudioEnabled) {
     if (!trackOffEndAudio) {
-      trackOffEndAudio = constructAudio(mp3TrackOffEnd)
+      trackOffEndAudio = constructAudio(mp3List.mp3TrackOffEnd)
     }
     playAudio(trackOffEndAudio, 309)
   }
@@ -60,15 +64,16 @@ const playTrackOffEnd = () => {
 const playTrackSeek = () => {
   if (isAudioEnabled) {
     if (!trackSeekAudio) {
-      trackSeekAudio = constructAudio(mp3TrackSeek)
+      trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
     }
     playAudio(trackSeekAudio, 50)
   }
 }
 
 const playMotorOn = () => {
+  if (!isAudioEnabled) return
   if (!motorAudio) {
-    motorAudio = constructAudio(mp3DriveMotor)
+    motorAudio = constructAudio(mp3List.mp3DriveMotor)
     if (motorAudio) motorAudio.element.loop = true
   }
   if (!playDriveNoise || !motorAudio) {
@@ -78,7 +83,13 @@ const playMotorOn = () => {
   if (motorAudio.context.state === 'suspended' && isAudioEnabled) {
     motorAudio.context.resume();
   }
-  motorAudio.element.play();
+  const playPromise = motorAudio.element.play();
+  if (playPromise) {
+    playPromise.then(() => {
+    }).catch((error: DOMException) => {
+      console.log(error)
+    })
+  }
 }
 
 const playMotorOff = () => {
@@ -87,6 +98,9 @@ const playMotorOff = () => {
 
 export const doPlayDriveSound = (sound: DRIVE) => {
   switch (sound) {
+    case DRIVE.REQUEST_AUDIO:
+      playRequestAudio()
+      break
     case DRIVE.MOTOR_OFF:
       playMotorOff()
       break
