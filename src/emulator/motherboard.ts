@@ -1,12 +1,13 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
-import { s6502, set6502State, reset6502, setCycleCount, stack } from "./instructions"
+import { s6502, set6502State, reset6502, setCycleCount, stack, setPC } from "./instructions"
 import { STATE, toHex } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memory, memGet, getTextPage, getHires,  setSlotDriver, memoryReset, updateAddressTables } from "./memory"
+import { memory, memGet, getTextPage, getHires,  setSlotDriver, memoryReset,
+  updateAddressTables, setMemoryBlock } from "./memory"
 import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
@@ -103,10 +104,14 @@ export const doRestoreSaveState = (sState: EmulatorSaveState) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-const doBoot = () => {
+const registerDiskDriver = () => {
+  setSlotDriver(6, Uint8Array.from(disk2driver))
+}
+
+const doBoot = (setDrive = true) => {
   setCycleCount(0)
   memoryReset()
-  setSlotDriver(6, Uint8Array.from(disk2driver))
+  if (setDrive) registerDiskDriver()
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
     memory.set(pcode, 0x300);
@@ -222,6 +227,28 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   if (speed === 0) {
     speed = 1
     doAdvance6502Timer()
+  }
+}
+
+export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) => {
+  const loadBlock = () => {
+    setMemoryBlock(addr, data)
+    if (run) {
+      setPC(addr)
+    }
+  }
+  if (cpuState === STATE.IDLE) {
+    // Do not register our disk driver, just boot/reset to BASIC prompt.
+    doBoot(false)
+    doSetCPUState(STATE.NEED_RESET)
+    // Wait a bit for the cpu to boot and go to prompt.
+    setTimeout(() => {
+      // Now register our disk driver, after we've booted.
+      registerDiskDriver()
+      loadBlock()
+    }, 200)
+  } else {
+    loadBlock()
   }
 }
 

@@ -1,7 +1,7 @@
 import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
 import { sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
@@ -99,7 +99,12 @@ self.onmessage = (e: MessageEvent) => {
     case MSG_MAIN.GAMEPAD:
       setGamepads(e.data.payload)
       break
-    default:
+    case MSG_MAIN.SET_BINARY_BLOCK:
+      const memBlock = e.data.payload as SetMemoryBlock
+      doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
+      break
+      default:
+      console.error(`worker2main: unhandled msg: ${e.data.msg}`)
       break;
   }
 }

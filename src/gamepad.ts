@@ -20,7 +20,7 @@ export const doRumble = (params: GamePadActuatorEffect) => {
   const gamepads = navigator.getGamepads()
   if (!gamepads || gamepads.length < 1) return
   const gp = gamepads[0] as any
-  if ('vibrationActuator' in gp) {
+  if (gp && 'vibrationActuator' in gp) {
     gp.vibrationActuator.playEffect("dual-rumble", params);
   }
 }

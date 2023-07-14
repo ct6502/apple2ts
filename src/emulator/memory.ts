@@ -317,7 +317,7 @@ export const getDataBlock = (addr: number) => {
   return memory.slice(offset, offset + 512)
 }
 
-export const setDataBlock = (addr: number, data: Uint8Array) => {
+export const setMemoryBlock = (addr: number, data: Uint8Array) => {
   const offset = addressSetTable[addr >>> 8] + (addr & 255)
   memory.set(data, offset)
   handleGameSetup()

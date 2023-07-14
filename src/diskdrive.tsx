@@ -1,8 +1,8 @@
 import React from "react"
-import { uint32toBytes } from "./emulator/utility"
-import { crc32 } from "./emulator/decodedisk"
+import { crc32, uint32toBytes } from "./emulator/utility"
 import { handleGetDriveProps, handleSetDiskData } from "./main2worker"
 import { imageList } from "./assets"
+import BinaryFileDialog from "./binaryfiledialog"
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -21,18 +21,22 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
   document.body.removeChild(link);
 }
 
-const readDisk = async (file: File, drive: number) => {
-  const buffer = await file.arrayBuffer();
-  handleSetDiskData(drive, new Uint8Array(buffer), file.name)
-}
-
 const resetDrive = (drive: number) => {
 //  const dprops = handleGetDriveProps(drive)
   handleSetDiskData(drive, new Uint8Array(), "")
 }
 
-class DiskDrive extends React.Component<{drive: number}, {}> {
+class DiskDrive extends React.Component<{drive: number},
+  { displayBinaryDialog: boolean }> {
   hiddenFileInput: HTMLInputElement | null = null
+  binaryBuffer: Uint8Array = new Uint8Array()
+
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      displayBinaryDialog: false,
+    };
+  }
 
   // https://medium.com/@650egor/simple-drag-and-drop-file-upload-in-react-2cb409d88929
   handleDrop = (e: any) => {this.dropHandler(e as DragEvent)}
@@ -53,12 +57,26 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
     }
   }
 
+  readDisk = async (file: File, drive: number) => {
+    const buffer = await file.arrayBuffer();
+    if (file.name.toLowerCase().endsWith('.bin')) {
+      // throw up dialog, ask for address
+      // put into memory
+      this.binaryBuffer = new Uint8Array(buffer)
+      if (this.binaryBuffer.length > 0) {
+        this.setState( {displayBinaryDialog: true} )
+      }
+      return
+    }
+    handleSetDiskData(drive, new Uint8Array(buffer), file.name)
+  }
+  
   dropHandler = (e: DragEvent) => {    
     e.preventDefault()
     e.stopPropagation()
     const f = e.dataTransfer?.files
     if (f && f.length > 0) {
-      readDisk(f[0], 0)
+      this.readDisk(f[0], 0)
     }
   }
 
@@ -95,17 +113,20 @@ class DiskDrive extends React.Component<{drive: number}, {}> {
           }} />
         <input
           type="file"
-          accept=".hdv,.2mg,.dsk,.woz,.po,.do"
+          accept=".hdv,.2mg,.dsk,.woz,.po,.do,.bin"
           ref={input => this.hiddenFileInput = input}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target?.files?.length) {
-              readDisk(e.target.files[0], this.props.drive)
+              this.readDisk(e.target.files[0], this.props.drive)
             }
           }}
           style={{display: 'none'}}
         />
         <span className={"diskLabel"}>{dprops.filename}</span>
         <span className={"diskStatus"}>{status}</span>
+        <BinaryFileDialog displayDialog={this.state.displayBinaryDialog}
+          displayClose={() => this.setState({displayBinaryDialog: false})}
+          binaryBuffer={this.binaryBuffer}/>
       </span>
     )
   }

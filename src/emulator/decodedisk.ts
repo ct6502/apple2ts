@@ -1,30 +1,5 @@
 import { convertdsk2woz } from "./convertdsk2woz"
-import { replaceSuffix } from "./utility";
-
-let crcTable = new Uint32Array(256).fill(0)
-
-const makeCRCTable = () => {
-  let c;
-  for (let n =0; n < 256; n++) {
-    c = n;
-    for (let k =0; k < 8; k++) {
-      c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
-    }
-    crcTable[n] = c;
-  }
-}
-
-export const crc32 = (data: Uint8Array, offset = 0) => {
-  if (crcTable[255] === 0) {
-    makeCRCTable()
-  }
-  let crc = 0 ^ (-1);
-  for (let i = offset; i < data.length; i++) {
-    crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xFF];
-  }
-
-  return (crc ^ (-1)) >>> 0;
-};
+import { crc32, replaceSuffix } from "./utility";
 
 const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]

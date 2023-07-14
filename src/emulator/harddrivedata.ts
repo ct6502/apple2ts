@@ -1,6 +1,6 @@
 import { parseAssembly } from "./assembler"
 import { setX, setY, setCarry, s6502 } from "./instructions"
-import { setSlotDriver, memGet, getDataBlock, setDataBlock, memSet } from "./memory"
+import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "./memory"
 import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
 import { toHex } from "./utility"
 
@@ -151,7 +151,7 @@ const processSmartPortAccess = () => {
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
       const dataRead = dd.slice(blockStart, blockStart + 512)
-      setDataBlock(bufferAddr, dataRead)
+      setMemoryBlock(bufferAddr, dataRead)
       break
     case 2:
     default:
@@ -201,7 +201,7 @@ const processHardDriveBlockAccess = () => {
         return
       }
       const dataRead = dd.slice(blockStart, blockStart + 512)
-      setDataBlock(bufferAddr, dataRead)
+      setMemoryBlock(bufferAddr, dataRead)
       break;
     case 2:
       if (blockStart + 512 > dataLen) {

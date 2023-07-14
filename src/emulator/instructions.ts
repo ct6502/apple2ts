@@ -41,7 +41,6 @@ export const incrementPC = (value: number) => {
 }
 
 export const setPC = (value: number) => {
-  console.assert(!isNaN(value), "illegal PC")
   s6502.PC = value
 }
 

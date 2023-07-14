@@ -1,4 +1,4 @@
-import { extraHelpText } from "./emulator/roms/startuptextpage";
+import { extraHelpText } from "./startuptextpage";
 
 const HelpPanel = (props: {helptext: string, height: number, width: number}) => {
   return (

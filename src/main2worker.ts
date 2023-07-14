@@ -1,7 +1,7 @@
 import { STATE, DRIVE, MSG_WORKER, MSG_MAIN } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker } from "./speaker"
-import { startupTextPage } from "./emulator/roms/startuptextpage"
+import { startupTextPage } from "./startuptextpage"
 import { doRumble } from "./gamepad"
 
 let worker: Worker | null = null
@@ -77,6 +77,11 @@ export const passSetGamepads = (gamePads: EmuGamepad[] | null) => {
   doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
 }
 
+export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boolean) => {
+  const memBlock: SetMemoryBlock = {address, data, run}
+  doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
+}
+
 let machineState: MachineState = {
   state: STATE.IDLE,
   speed: 0,
@@ -125,7 +130,7 @@ const doOnMessage = (e: MessageEvent) => {
       updateDisplay(0, helptext)
       break
     default:
-      console.log("main2worker: unknown msg: " + JSON.stringify(e.data))
+      console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
   }
 }

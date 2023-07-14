@@ -34,6 +34,7 @@ export enum MSG_MAIN {
   GET_SAVE_STATE,
   DRIVE_PROPS,
   GAMEPAD,
+  SET_BINARY_BLOCK,
 }
 
 export enum COLOR_MODE {
@@ -262,3 +263,27 @@ export const replaceSuffix = (fname: String, suffix: String) => {
   return fname.substring(0, i) + suffix
 }
 
+let crcTable = new Uint32Array(256).fill(0)
+
+const makeCRCTable = () => {
+  let c;
+  for (let n =0; n < 256; n++) {
+    c = n;
+    for (let k =0; k < 8; k++) {
+      c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+    }
+    crcTable[n] = c;
+  }
+}
+
+export const crc32 = (data: Uint8Array, offset = 0) => {
+  if (crcTable[255] === 0) {
+    makeCRCTable()
+  }
+  let crc = 0 ^ (-1);
+  for (let i = offset; i < data.length; i++) {
+    crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xFF];
+  }
+
+  return (crc ^ (-1)) >>> 0;
+};

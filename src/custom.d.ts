@@ -129,6 +129,12 @@ type EmulatorSaveState = {
   driveState: DriveSaveState
 }
 
+type SetMemoryBlock = {
+  address: number,
+  data: Uint8Array,
+  run: boolean
+}
+
 type AudioDevice = {
   context: AudioContext,
   element: HTMLAudioElement
