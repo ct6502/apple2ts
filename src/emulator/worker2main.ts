@@ -3,7 +3,7 @@ import { doSetCPUState,
   doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
-import { sendTextToEmulator } from "./keyboard"
+import { sendPastedText, sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility";
 import { doSetBreakpoint, doSetDebug } from "./cpu6502";
@@ -80,8 +80,11 @@ self.onmessage = (e: MessageEvent) => {
     case MSG_MAIN.RESTORE_STATE:
       doRestoreSaveState(e.data.payload)
       break;
-    case MSG_MAIN.KEYBUFFER:
+    case MSG_MAIN.KEYPRESS:
       sendTextToEmulator(e.data.payload)
+      break;
+    case MSG_MAIN.PASTE_TEXT:
+      sendPastedText(e.data.payload)
       break;
     case MSG_MAIN.APPLE_PRESS:
       pressAppleCommandKey(true, e.data.payload)

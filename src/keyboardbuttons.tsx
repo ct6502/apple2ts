@@ -1,4 +1,4 @@
-import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeyboardBuffer, passSetGamepads } from "./main2worker"
+import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passSetGamepads } from "./main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -21,7 +21,7 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
       case ARROW.UP: code = 11; arrowGamePad[1] = -1; break
       case ARROW.DOWN: code = 10; arrowGamePad[1] = 1; break
     }
-    passKeyboardBuffer(String.fromCharCode(code))
+    passKeypress(String.fromCharCode(code))
   } else {
     switch (key) {
       case ARROW.LEFT: // fall thru
@@ -72,11 +72,11 @@ const KeyboardButtons = (props: DisplayProps) => {
         </button>
      ))}
     <button className="pushButton keyButton" title="Escape"
-      onMouseDown={() => passKeyboardBuffer(String.fromCharCode(27))}>
+      onMouseDown={() => passKeypress(String.fromCharCode(27))}>
       <span className="textKey">esc</span>
     </button>
     <button className="pushButton keyButton" title="Tab"
-      onMouseDown={() => passKeyboardBuffer(String.fromCharCode(9))}>
+      onMouseDown={() => passKeypress(String.fromCharCode(9))}>
       <span className="textKey">tab</span>
     </button>
   </span>

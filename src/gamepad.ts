@@ -1,7 +1,12 @@
 import { passSetGamepads } from "./main2worker"
 
+const getGamepads = () => {
+  const gamepads = navigator.getGamepads().filter((gp) => (gp !== null))
+  return gamepads
+}
+
 export const checkGamepad = () => {
-  const gamepads = navigator.getGamepads()
+  const gamepads = getGamepads()
   if (!gamepads || gamepads.length < 1) return
   let gamePad: EmuGamepad[] = []
   for (let i = 0; i < gamepads.length; i++) {
@@ -17,7 +22,7 @@ export const checkGamepad = () => {
 }
 
 export const doRumble = (params: GamePadActuatorEffect) => {
-  const gamepads = navigator.getGamepads()
+  const gamepads = getGamepads()
   if (!gamepads || gamepads.length < 1) return
   const gp = gamepads[0] as any
   if (gp && 'vibrationActuator' in gp) {

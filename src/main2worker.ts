@@ -61,8 +61,12 @@ export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
   doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
 }
 
-export const passKeyboardBuffer = (text: String) => {
-  doPostMessage(MSG_MAIN.KEYBUFFER, text)
+export const passKeypress = (text: String) => {
+  doPostMessage(MSG_MAIN.KEYPRESS, text)
+}
+
+export const passPasteText = (text: String) => {
+  doPostMessage(MSG_MAIN.PASTE_TEXT, text)
 }
 
 export const passAppleCommandKeyPress = (left: boolean) => {

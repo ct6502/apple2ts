@@ -74,8 +74,6 @@ C00D: FF
 C05E
 
 
-
-
 10 print chr$(4);"PR#3"
 20 HGR
 30 poke 49246, 0 : REM turn on AN3
@@ -160,3 +158,6 @@ https://commons.wikimedia.org/wiki/File:Apple_II_low-resolution_graphics_demo_2.
 240 NEXT I
 250 PRINT
 
+0 REM Test pasting long lines
+2 HPLOT X*14,Y*2+D:A=PEEK(38)+256*PEEK(39):P=A+X*2:POKE P,B*(1-D):POKE P+1,0: POKE P+9,B*(1-D):POKE P+10,0: POKE A+18,127:POKE A+20,255: POKE A+23,127:POKE A+25:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D
+10 REM Did this line get pasted correctly?

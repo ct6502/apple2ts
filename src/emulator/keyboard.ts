@@ -6,15 +6,23 @@ const keyPress = (key: number) => {
   memSetC000(0xC000, key | 0b10000000, 32)
 }
 
+// Make sure that key presses get processed in a timely manner,
+// even if $C010 (the keyboard strobe) isn't being called properly.
+// This was a problem for certain games such as Firebug or Wolfenstein,
+// which only clear the $C010 strobe if it is a valid game key.
+// 1500 ms was heuristically chosen, as that's about how long it takes
+// Applesoft BASIC to process a huge line of code.
+// TODO: We could use two buffers - one for keypress (with a short delay)
+// and another for pasted text, with a longer delay to give Applesoft BASIC
+// time to process
+
 let keyBuffer = ''
-let forceKeyPress = false
+let tPrevPop = 1000000000
 export const popKey = () => {
-  // Make sure that key presses get processed in a timely manner,
-  // even if $C010 (the keyboard strobe) isn't being called properly.
-  // This was a problem for certain games such as Firebug or Wolfenstein,
-  // which only access $C010 if it was a valid game key.
-  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (forceKeyPress))) {
-    forceKeyPress = false
+  // See note above about this time cutoff before dropping buffer text.
+  const t = performance.now()
+  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 1500)) {
+    tPrevPop = t
     let key = keyBuffer.charCodeAt(0)
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
@@ -50,8 +58,15 @@ export const addToBufferDebounce = (text: string, timeout = 300) => {
 export const sendTextToEmulator = (text: string) => {
   if (text.length === 1) {
     text = handleKeyMapping(text)
-    // Process key presses quickly. See popKey for details.
-    forceKeyPress = true
+  }
+  addToBuffer(text)
+}
+
+// TODO: Does this need its own buffer, so we can guarantee that chars
+// won't get dropped from the text if it takes too long to process?
+export const sendPastedText = (text: string) => {
+  if (text.length === 1) {
+    text = handleKeyMapping(text)
   }
   addToBuffer(text)
 }

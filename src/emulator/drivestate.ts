@@ -59,15 +59,15 @@ export const passData = () => {
   }
 }
 
-const isTotalReplay = (filename: string) => {
-  return filename.replace(/ /g, '').toLowerCase().includes('totalreplay')
-}
+// const isTotalReplay = (filename: string) => {
+//   return filename.replace(/ /g, '').toLowerCase().includes('totalreplay')
+// }
 
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
   let data = ['', '', '']
-  if (full && isTotalReplay(driveState[0].filename)) {
-    return {currentDrive: 0, driveState: [], driveData: []}
-  }
+  // if (full && isTotalReplay(driveState[0].filename)) {
+  //   return {currentDrive: 0, driveState: [], driveData: []}
+  // }
   for (let i=(full ? 0 : 1); i < 3; i++) {
     data[i] = Buffer.from(driveData[i]).toString("base64")
   }

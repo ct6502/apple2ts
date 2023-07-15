@@ -1,10 +1,11 @@
 import React, { useEffect, KeyboardEvent } from 'react';
-import { passSetCPUState, passKeyboardBuffer,
+import { passSetCPUState, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   updateDisplay, 
   passGoBackInTime,
   passGoForwardInTime,
-  setStartTextPage} from "./main2worker"
+  setStartTextPage,
+  passPasteText} from "./main2worker"
 import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './keyboardbuttons';
@@ -24,7 +25,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (data !== "") {
         data = data.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
         data = data.replaceAll('\n','\r')  // LFs to CRs
-        passKeyboardBuffer(data);
+        passPasteText(data)
       }
       e.preventDefault();
     }
@@ -103,7 +104,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const key = convertAppleKey(e, props.uppercase);
     if (key > 0) {
-      passKeyboardBuffer(String.fromCharCode(key))
+      passKeypress(String.fromCharCode(key))
       e.preventDefault()
       e.stopPropagation()
     } else {
