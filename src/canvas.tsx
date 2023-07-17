@@ -72,14 +72,36 @@ const Apple2Canvas = (props: DisplayProps) => {
     ArrowDown: ARROW.DOWN,
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
-    if (e.shiftKey && e.key === "Shift") {
+  type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
+
+  const isOpenAppleDown = (e: keyEvent) => {
+    return e.code === 'ShiftLeft'
+  }
+
+  const isOpenAppleUp = (e: keyEvent) => {
+    return e.code === 'ShiftLeft'
+  }
+
+  const isClosedAppleDown = (e: keyEvent) => {
+    return e.code === 'ShiftRight'
+  }
+
+  const isClosedAppleUp = (e: keyEvent) => {
+    return e.code === 'ShiftRight'
+  }
+
+  const isMac = navigator.platform.startsWith('Mac')
+
+  const handleKeyDown = (e: keyEvent) => {
+    if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
     }
-    if (e.altKey && e.key === "Alt") {
+    if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
     }
-    if (e.metaKey || e.ctrlKey) {
+    // TODO: What modifier key should be used on Windows? Can't use Ctrl
+    // because that interferes with Apple II control keys like Ctrl+S
+    if (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')) {
       keyHandled = handleMetaKey(e.key)
     }
     // If we're paused, allow <space> to resume
@@ -113,10 +135,10 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const handleKeyUp = (e: KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>) => {
-    if (e.key === 'Shift') {
+  const handleKeyUp = (e: keyEvent) => {
+    if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
-    } else if (e.key === 'Alt') {
+    } else if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     } else if (e.key in arrowKeys) {
       handleArrowKey(arrowKeys[e.key], true)

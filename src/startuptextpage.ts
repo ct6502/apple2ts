@@ -14,7 +14,7 @@ let text=
 ]
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? `⌘` : '^'
+const key = isMac ? `⌘` : 'Alt+'
 const isTouchDevice = "ontouchstart" in document.documentElement
 
 export let extraHelpText = ''
