@@ -40,6 +40,9 @@ const setup = () => {
 }
 
 // Allow N/M and ,/. to work as left/right arrow keys, for phones
+// Since Snoggle moves all of its memory around after startup, we need to
+// add two mappings - one for the initial help and to disable the splash,
+// and the other to pick up keyboard and joystick handlers.
 export const snoggle: GameLibraryItem[] = [
   {
     address: 0x8866,
