@@ -354,7 +354,7 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#000000";
   ctx.fillRect(xmargin * width, ymargin * height - 1,
-    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 2);
+    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 3);
   processTextPage(ctx, colorMode, width, height)
   processLoRes(ctx, hiddenContext, colorMode, width, height)
   processHiRes(ctx, hiddenContext, colorMode, width, height)

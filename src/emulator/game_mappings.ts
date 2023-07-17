@@ -8,15 +8,25 @@ import { aztec } from "./games/aztec"
 import { firebug } from "./games/firebug"
 import { karateka } from "./games/karateka"
 import { noxarchaist } from "./games/noxarchaist"
+import { snoggle } from "./games/snoggle"
 import { wolfenstein } from "./games/wolfenstein"
 
 const gameLibrary = new Array<GameLibraryItem>()
 
-gameLibrary.push(aztec)
-gameLibrary.push(firebug)
-gameLibrary.push(karateka)
-gameLibrary.push(noxarchaist)
-gameLibrary.push(wolfenstein)
+export const AddGameLibraryItem = (item: GameLibraryItem | GameLibraryItem[]) => {
+  if (Array.isArray(item)) {
+    gameLibrary.push(...item)
+  } else {
+    gameLibrary.push(item)
+  }
+}
+
+AddGameLibraryItem(aztec)
+AddGameLibraryItem(firebug)
+AddGameLibraryItem(karateka)
+AddGameLibraryItem(noxarchaist)
+AddGameLibraryItem(snoggle)
+AddGameLibraryItem(wolfenstein)
 
 export const defaultButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
