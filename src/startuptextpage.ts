@@ -19,16 +19,32 @@ const isTouchDevice = "ontouchstart" in document.documentElement
 
 export let extraHelpText = ''
 if (!isTouchDevice) {
-  extraHelpText = `Keyboard Shortcuts
+  extraHelpText = `Apple2TS Emulator
+Chris Torrence
+
+Keyboard Shortcuts
  
+${key}B Boot
+${key}R Reset
+${key}C Copy Screen
+${key}V Paste Text 
+${key}P Pause
+${key}F Speed
+${key}O Open State 
+${key}S Save State 
+${key}← Go Back in Time
+${key}→ Forward in Time`
+
+  let tmp = `Keyboard Shortcuts
+
 ${key}B Boot    ${key}C Copy Screen
 ${key}R Reset   ${key}V Paste Text 
 ${key}P Pause   ${key}O Open State 
 ${key}F Speed   ${key}S Save State 
-${key}← Go back in Time
+${key}← Go Back in Time
 ${key}→ Forward in Time`
-// Replace Unicode ⌘ with my fake MouseText character
-  const tmp = extraHelpText.replaceAll(`⌘`, '\xC3').replaceAll('←', '\xC8').replaceAll('→', '\xD5')
+  // Replace Unicode ⌘ with my fake MouseText character
+  tmp = tmp.replaceAll(`⌘`, '\xC3').replaceAll('←', '\xC8').replaceAll('→', '\xD5')
   text = text.concat(tmp.split('\n'))
 }
 
