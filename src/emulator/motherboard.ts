@@ -28,7 +28,7 @@ let saveTimeSlice = false
 let iSaveState = 0
 let iTempState = 0
 let maxState = 60
-let saveStates = Array<EmulatorSaveState>(maxState)
+let saveStates = Array<string>(maxState).fill('')
 
 const getApple2State = (): Apple2SaveState => {
   const softSwitches: { [name: string]: boolean } = {}
@@ -69,19 +69,20 @@ const setApple2State = (newState: Apple2SaveState) => {
 //   passSaveState(doGetSaveState())
 // }
 
-export const doGetSaveState = (full = false): EmulatorSaveState => {
-  return { emulator: null,
+export const doGetSaveState = (full = false) => {
+  const state = { emulator: null,
     state6502: getApple2State(),
     driveState: getDriveSaveState(full)
   }
+  return JSON.stringify(state)
 //  return full ? JSON.stringify(state, null, 2) : JSON.stringify(state)
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
-export const doRestoreSaveState = (sState: EmulatorSaveState) => {
-//  const state = JSON.parse(sState);
-  setApple2State(sState.state6502)
-  restoreDriveSaveState(sState.driveState)
+export const doRestoreSaveState = (sState: string) => {
+  const state: EmulatorSaveState = JSON.parse(sState);
+  setApple2State(state.state6502)
+  restoreDriveSaveState(state.driveState)
   updateExternalMachineState()
 }
 

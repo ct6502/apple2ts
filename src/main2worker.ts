@@ -6,7 +6,7 @@ import { doRumble } from "./gamepad"
 
 let worker: Worker | null = null
 
-let saveStateCallback: (saveState: EmulatorSaveState) => void
+let saveStateCallback: (saveState: string) => void
 
 export let updateDisplay = (speed = 0, helptext = '') => {}
 export const setUpdateDisplay = (updateIn: (speed?: number, helptext?: string) => void) => {
@@ -57,7 +57,7 @@ export const passGoBackInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL, "BACKWARD")
 }
 
-export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
+export const passRestoreSaveState = (saveState: string) => {
   doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
 }
 
@@ -110,7 +110,7 @@ const doOnMessage = (e: MessageEvent) => {
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
     case MSG_WORKER.SAVE_STATE:
-      const saveState = e.data.payload as EmulatorSaveState
+      const saveState = e.data.payload as string
       saveStateCallback(saveState)
       break
     case MSG_WORKER.CLICK:
@@ -171,7 +171,7 @@ export const handleGetButton = (left: boolean) => {
   return left ? machineState.button0 : machineState.button1
 }
 
-export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void) => {
+export const handleGetSaveState = (callback: (saveState: string) => void) => {
   saveStateCallback = callback
   doPostMessage(MSG_MAIN.GET_SAVE_STATE, true)
 }

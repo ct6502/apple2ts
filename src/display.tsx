@@ -108,7 +108,7 @@ class DisplayApple2 extends React.Component<{},
 
   restoreSaveStateFunc = (fileContents: string) => {
     const saveState: EmulatorSaveState = JSON.parse(fileContents)
-    passRestoreSaveState(saveState)
+    passRestoreSaveState(fileContents)
     if (saveState.emulator?.colorMode !== undefined) {
       this.setState({colorMode: saveState.emulator.colorMode})
     }
@@ -139,9 +139,10 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
-  doSaveStateCallback = (saveState: EmulatorSaveState) => {
+  doSaveStateCallback = (state: string) => {
     const d = new Date()
     let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
+    let saveState: EmulatorSaveState = JSON.parse(state)
     saveState.emulator = {
       name: `Apple2TS Emulator (git ${process.env.REACT_APP_GIT_SHA})`,
       date: datetime,
@@ -149,7 +150,7 @@ class DisplayApple2 extends React.Component<{},
       colorMode: this.state.colorMode,
       uppercase: this.state.uppercase,
     }
-    const state = JSON.stringify(saveState, null, 2)
+//    const state = JSON.stringify(saveState, null, 2)
     const blob = new Blob([state], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);

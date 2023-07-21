@@ -35,7 +35,7 @@ export const passDriveSound = (sound: DRIVE) => {
   doPostMessage(MSG_WORKER.DRIVE_SOUND, sound)
 }
 
-const passSaveState = (saveState: EmulatorSaveState) => {
+const passSaveState = (saveState: string) => {
   doPostMessage(MSG_WORKER.SAVE_STATE, saveState)
 }
 
