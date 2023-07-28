@@ -57,7 +57,7 @@ export const passGoBackInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL, "BACKWARD")
 }
 
-export const passRestoreSaveState = (saveState: string) => {
+export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
   doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
 }
 
@@ -95,7 +95,9 @@ let machineState: MachineState = {
   hires: new Uint8Array(),
   zeroPageStack: '',
   button0: false,
-  button1: false
+  button1: false,
+  canGoBackward: true,
+  canGoForward: true
 }
 
 const doOnMessage = (e: MessageEvent) => {
@@ -105,7 +107,9 @@ const doOnMessage = (e: MessageEvent) => {
         machineState.state !== e.data.payload.state ||
         machineState.zeroPageStack !== e.data.payload.zeroPageStack ||
         machineState.button0 !== e.data.payload.button0 ||
-        machineState.button1 !== e.data.payload.button1
+        machineState.button1 !== e.data.payload.button1 ||
+        machineState.canGoBackward !== e.data.payload.canGoBackward ||
+        machineState.canGoForward !== e.data.payload.canGoForward
       machineState = e.data.payload
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
@@ -169,6 +173,14 @@ export const handleGetZeroPageStack = () => {
 
 export const handleGetButton = (left: boolean) => {
   return left ? machineState.button0 : machineState.button1
+}
+
+export const handleCanGoBackward = () => {
+  return machineState.canGoBackward
+}
+
+export const handleCanGoForward = () => {
+  return machineState.canGoForward
 }
 
 export const handleGetSaveState = (callback: (saveState: string) => void) => {

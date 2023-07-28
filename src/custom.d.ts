@@ -55,6 +55,8 @@ type DisplayProps = {
   hiddenCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
   handleSpeedChange: () => void,
+  canGoBackward: boolean,
+  canGoForward: boolean,
   uppercase: boolean,
   useArrowKeysAsJoystick: boolean,
   colorMode: COLOR_MODE,
@@ -88,7 +90,9 @@ type MachineState = {
   hires: Uint8Array,
   zeroPageStack: string,
   button0: boolean,
-  button1: boolean
+  button1: boolean,
+  canGoBackward: boolean,
+  canGoForward: boolean
 }
 
 type DriveState = {

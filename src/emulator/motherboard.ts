@@ -28,9 +28,11 @@ let saveTimeSlice = false
 let iSaveState = 0
 let iTempState = 0
 let maxState = 60
-let saveStates = Array<string>(maxState).fill('')
+let saveStates = Array<EmulatorSaveState>(maxState)
 
 const getApple2State = (): Apple2SaveState => {
+  // Make a copy
+  const save6502 = JSON.parse(JSON.stringify(s6502))
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
@@ -44,14 +46,14 @@ const getApple2State = (): Apple2SaveState => {
   // }
   // prevMemory = memory
   return {
-    s6502: s6502,
+    s6502: save6502,
     softSwitches: softSwitches,
     memory: membuffer.toString("base64"),
   }
 }
 
 const setApple2State = (newState: Apple2SaveState) => {
-  set6502State(newState.s6502)
+  set6502State(JSON.parse(JSON.stringify(newState.s6502)))
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
     const keyTyped = key as keyof typeof SWITCHES
@@ -74,15 +76,13 @@ export const doGetSaveState = (full = false) => {
     state6502: getApple2State(),
     driveState: getDriveSaveState(full)
   }
-  return JSON.stringify(state)
-//  return full ? JSON.stringify(state, null, 2) : JSON.stringify(state)
+  return state
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
 
-export const doRestoreSaveState = (sState: string) => {
-  const state: EmulatorSaveState = JSON.parse(sState);
-  setApple2State(state.state6502)
-  restoreDriveSaveState(state.driveState)
+export const doRestoreSaveState = (sState: EmulatorSaveState) => {
+  setApple2State(sState.state6502)
+  restoreDriveSaveState(sState.driveState)
   updateExternalMachineState()
 }
 
@@ -141,32 +141,48 @@ export const doSetNormalSpeed = (normal: boolean) => {
   resetRefreshCounter()
 }
 
-export const doGoBackInTime = () => {
-  doSetCPUState(STATE.PAUSED)
-  // if this is the first time we're called, make sure our current
-  // state is up to date
-  if (iTempState === iSaveState) {
-    saveStates[iSaveState] = doGetSaveState()
-  }
+const getGoBackwardIndex = () => {
   const newTmp = (iTempState + maxState - 1) % maxState
   if (newTmp === iSaveState || !saveStates[newTmp]) {
-    return
+    return -1
   }
-  iTempState = newTmp
-  doRestoreSaveState(saveStates[newTmp])
+  return newTmp
 }
 
-export const doGoForwardInTime = () => {
-  doSetCPUState(STATE.PAUSED)
+const getGoForwardIndex = () => {
   if (iTempState === iSaveState) {
-    return
+    return -1
   }
   const newTmp = (iTempState + 1) % maxState
   if (!saveStates[newTmp]) {
-    return
+    return -1
   }
-  iTempState = newTmp
-  doRestoreSaveState(saveStates[newTmp])
+  return newTmp
+}
+
+export const doGoBackInTime = () => {
+  const newTmp = getGoBackwardIndex()
+  if (newTmp < 0) return
+  doSetCPUState(STATE.PAUSED)
+  setTimeout(() => {
+    // if this is the first time we're called, make sure our current
+    // state is up to date
+    if (iTempState === iSaveState) {
+      saveStates[iSaveState] = doGetSaveState()
+    }
+    iTempState = newTmp
+    doRestoreSaveState(saveStates[newTmp])    
+  }, 50)
+}
+
+export const doGoForwardInTime = () => {
+  const newTmp = getGoForwardIndex()
+  if (newTmp < 0) return
+  doSetCPUState(STATE.PAUSED)
+  setTimeout(() => {
+    iTempState = newTmp
+    doRestoreSaveState(saveStates[newTmp])
+  }, 50)
 }
 
 export const doSaveTimeSlice = () => {
@@ -227,6 +243,7 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   resetRefreshCounter()
   if (speed === 0) {
     speed = 1
+    doSaveTimeSlice()
     doAdvance6502Timer()
   }
 }
@@ -301,6 +318,8 @@ const updateExternalMachineState = () => {
     zeroPageStack: getDebugString(),
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
+    canGoBackward: getGoBackwardIndex() >= 0,
+    canGoForward: getGoForwardIndex() >= 0
   }
   passMachineState(state)
 }
@@ -337,10 +356,10 @@ const doAdvance6502 = () => {
   }
   if (saveTimeSlice) {
     saveTimeSlice = false
-    iSaveState = (iSaveState + 1) % maxState
-    iTempState = iSaveState
 //    console.log("iSaveState " + iSaveState)
     saveStates[iSaveState] = doGetSaveState()
+    iSaveState = (iSaveState + 1) % maxState
+    iTempState = iSaveState
   }
 }
 
@@ -350,9 +369,5 @@ const doAdvance6502Timer = () => {
   while (cpuState === STATE.RUNNING && iRefresh !== iRefreshFinish) {
     doAdvance6502()
   }
-  if (cpuState === STATE.RUNNING) {
-    setTimeout(doAdvance6502Timer, 0)
-  } else {
-    setTimeout(doAdvance6502Timer, 20)
-  }
+  setTimeout(doAdvance6502Timer, cpuState === STATE.RUNNING ? 1 : 20)
 }

@@ -3,7 +3,7 @@ import { setUpdateDisplay, handleGetState, passSetCPUState,
   passSetBreakpoint, passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, passStepInto, passStepOver, passStepOut } from "./main2worker"
+  handleGetFilename, passStepInto, passStepOver, passStepOut, handleCanGoBackward, handleCanGoForward } from "./main2worker"
 import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
@@ -108,7 +108,7 @@ class DisplayApple2 extends React.Component<{},
 
   restoreSaveStateFunc = (fileContents: string) => {
     const saveState: EmulatorSaveState = JSON.parse(fileContents)
-    passRestoreSaveState(fileContents)
+    passRestoreSaveState(saveState)
     if (saveState.emulator?.colorMode !== undefined) {
       this.setState({colorMode: saveState.emulator.colorMode})
     }
@@ -221,6 +221,8 @@ class DisplayApple2 extends React.Component<{},
       hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
       handleSpeedChange: this.handleSpeedChange,
+      canGoBackward: handleCanGoBackward(),
+      canGoForward: handleCanGoForward(),
       uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,

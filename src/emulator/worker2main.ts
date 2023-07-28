@@ -35,7 +35,7 @@ export const passDriveSound = (sound: DRIVE) => {
   doPostMessage(MSG_WORKER.DRIVE_SOUND, sound)
 }
 
-const passSaveState = (saveState: string) => {
+const passSaveState = (saveState: EmulatorSaveState) => {
   doPostMessage(MSG_WORKER.SAVE_STATE, saveState)
 }
 
@@ -78,7 +78,7 @@ self.onmessage = (e: MessageEvent) => {
       }
       break;
     case MSG_MAIN.RESTORE_STATE:
-      doRestoreSaveState(e.data.payload)
+      doRestoreSaveState(e.data.payload as EmulatorSaveState)
       break;
     case MSG_MAIN.KEYPRESS:
       sendTextToEmulator(e.data.payload)

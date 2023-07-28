@@ -1,11 +1,13 @@
 import { COLOR_MODE, DRIVE, STATE, colorToName } from "./emulator/utility";
-import { passSetCPUState } from "./main2worker"
+import { passSetCPUState, passGoBackInTime, passGoForwardInTime, handleCanGoBackward, handleCanGoForward } from "./main2worker"
 import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
   faClipboard,
   faExpand,
+  faFastBackward,
+  faFastForward,
   faFolderOpen,
   faPause,
   faPlay,
@@ -76,6 +78,18 @@ const ControlButtons = (props: DisplayProps) => {
       {props.machineState === STATE.PAUSED ?
       <FontAwesomeIcon icon={faPlay}/> :
       <FontAwesomeIcon icon={faPause}/>}
+    </button>
+    <button className="pushButton"
+      title={"Go back in time"}
+      onClick={passGoBackInTime}
+      disabled={handleCanGoBackward()}>
+      <FontAwesomeIcon icon={faFastBackward}/>
+    </button>
+    <button className="pushButton"
+      title={"Go forward in time"}
+      onClick={passGoForwardInTime}
+      disabled={handleCanGoForward()}>
+      <FontAwesomeIcon icon={faFastForward}/>
     </button>
     <button className="pushButton"
       title={props.speedCheck ? "1 MHz" : "Fast Speed"}
