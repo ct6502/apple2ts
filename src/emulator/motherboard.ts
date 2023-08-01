@@ -365,9 +365,9 @@ const doAdvance6502 = () => {
 
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  const iRefreshFinish = (iRefresh + 5)
+  const iRefreshFinish = (iRefresh + 1)
   while (cpuState === STATE.RUNNING && iRefresh !== iRefreshFinish) {
     doAdvance6502()
   }
-  setTimeout(doAdvance6502Timer, cpuState === STATE.RUNNING ? 1 : 20)
+  setTimeout(doAdvance6502Timer, cpuState === STATE.RUNNING ? 0 : 20)
 }

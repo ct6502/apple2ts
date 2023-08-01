@@ -9,6 +9,7 @@ import { firebug } from "./games/firebug"
 import { karateka } from "./games/karateka"
 import { noxarchaist } from "./games/noxarchaist"
 import { snoggle } from "./games/snoggle"
+import { wizardry } from "./games/wizardry"
 import { wolfenstein } from "./games/wolfenstein"
 
 const gameLibrary = new Array<GameLibraryItem>()
@@ -26,6 +27,7 @@ AddGameLibraryItem(firebug)
 AddGameLibraryItem(karateka)
 AddGameLibraryItem(noxarchaist)
 AddGameLibraryItem(snoggle)
+AddGameLibraryItem(wizardry)
 AddGameLibraryItem(wolfenstein)
 
 export const defaultButtons: GamePadMapping = (button: number,
