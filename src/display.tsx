@@ -139,10 +139,9 @@ class DisplayApple2 extends React.Component<{},
     }
   }
 
-  doSaveStateCallback = (state: string) => {
+  doSaveStateCallback = (saveState: EmulatorSaveState) => {
     const d = new Date()
     let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
-    let saveState: EmulatorSaveState = JSON.parse(state)
     saveState.emulator = {
       name: `Apple2TS Emulator (git ${process.env.REACT_APP_GIT_SHA})`,
       date: datetime,
@@ -150,14 +149,17 @@ class DisplayApple2 extends React.Component<{},
       colorMode: this.state.colorMode,
       uppercase: this.state.uppercase,
     }
-//    const state = JSON.stringify(saveState, null, 2)
+    const state = JSON.stringify(saveState, null, 2)
     const blob = new Blob([state], {type: "text/plain"});
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
     let name = handleGetFilename(0)
     if (!name) {
-      name = "apple2ts"
+      name = handleGetFilename(1)
+      if (!name) {
+        name = "apple2ts"
+      }
     }
     datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
     link.setAttribute('download', `${name}${datetime}.a2ts`);

@@ -6,7 +6,7 @@ import { doRumble } from "./gamepad"
 
 let worker: Worker | null = null
 
-let saveStateCallback: (saveState: string) => void
+let saveStateCallback: (saveState: EmulatorSaveState) => void
 
 export let updateDisplay = (speed = 0, helptext = '') => {}
 export const setUpdateDisplay = (updateIn: (speed?: number, helptext?: string) => void) => {
@@ -114,7 +114,7 @@ const doOnMessage = (e: MessageEvent) => {
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
     case MSG_WORKER.SAVE_STATE:
-      const saveState = e.data.payload as string
+      const saveState = e.data.payload as EmulatorSaveState
       saveStateCallback(saveState)
       break
     case MSG_WORKER.CLICK:
@@ -183,7 +183,7 @@ export const handleCanGoForward = () => {
   return machineState.canGoForward
 }
 
-export const handleGetSaveState = (callback: (saveState: string) => void) => {
+export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void) => {
   saveStateCallback = callback
   doPostMessage(MSG_MAIN.GET_SAVE_STATE, true)
 }

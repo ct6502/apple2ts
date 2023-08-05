@@ -71,7 +71,7 @@ const setApple2State = (newState: Apple2SaveState) => {
 //   passSaveState(doGetSaveState())
 // }
 
-export const doGetSaveState = (full = false) => {
+export const doGetSaveState = (full = false): EmulatorSaveState => {
   const state = { emulator: null,
     state6502: getApple2State(),
     driveState: getDriveSaveState(full)
