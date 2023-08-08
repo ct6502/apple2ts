@@ -77,13 +77,14 @@ export const processInstruction = (step = false) => {
   cycles = code.execute(vLo, vHi)
   // Do not output during the Apple II's WAIT subroutine
   if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
-    if (false && PC1 === 0x5887) {
+    if (PC1 === 0xFFFFF) {
       outputInstructionTrail()
     }
     const ins = getInstrString(code, vLo, vHi, PC1) + '            '
     const out = `${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
+    console.log(out)
   }
   incrementPC(code.PC)
   setCycleCount(cycleCount + cycles)

@@ -65,8 +65,8 @@ const updateReadBankSwitchedRamTable = () => {
       }
     }
   } else {
-    // ROM ($C000...$FFFF) is in 0x200...0x23F
-    for (let i = 0xC0; i <= 0xFF; i++) {
+    // ROM ($D000...$FFFF) is in 0x210...0x23F
+    for (let i = 0xD0; i <= 0xFF; i++) {
       addressGetTable[i] = ROMindexMinusC0 + i;
     }
   }
@@ -95,8 +95,13 @@ const updateWriteBankSwitchedRamTable = () => {
 }
 
 const updateSlotRomTable = () => {
-  // Read peripheral slot ROM
-  if (!SWITCHES.INTCXROM.isSet) {
+  if (SWITCHES.INTCXROM.isSet) {
+    // ROM ($C000...$CFFF) is in 0x200...0x20F
+    for (let i = 0xC0; i <= 0xCF; i++) {
+      addressGetTable[i] = ROMindexMinusC0 + i;
+    }
+  } else {
+    // Read peripheral slot ROM
     // TODO: Currently, $C800-$CFFF is not being filled in for cards.
     for (let i = 0xC1; i <= 0xC7; i++) {
       addressGetTable[i] = SLOTindexMinusC1 + i;
