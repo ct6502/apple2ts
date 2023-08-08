@@ -78,7 +78,7 @@ class Oscillator extends AudioWorkletProcessor {
   process(inputs, outputs, parameters) {
     const channel = outputs[0][0];
     for (let i = 0; i < channel.length; i++) {
-      channel[i] = 0.2 * this.tick[this.playbackIndex]
+      channel[i] = 0.1 * this.tick[this.playbackIndex]
       this.tick[this.playbackIndex] = 0
       this.playbackIndex = (this.playbackIndex + 1) % this.len;
     }
