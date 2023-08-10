@@ -126,6 +126,14 @@ export const updateAddressTables = () => {
 
 export const specialJumpTable = new Map<number, () => void>();
 
+/**
+ * Add peripheral card ROM.
+ *
+ * @param slot - The slot number 1-7.
+ * @param driver - The ROM code for the driver.
+ * @param jump - An optional jump address. If the program counter equals this address, then function `fn` will be called.
+ * @param fn - An optional function to jump to.
+ */
 export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
   memory.set(driver, SLOTstartMinusC100 + 0xC000 + slot * 0x100)
   if (jump) {
