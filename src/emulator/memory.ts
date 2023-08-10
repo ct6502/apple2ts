@@ -95,20 +95,20 @@ const updateWriteBankSwitchedRamTable = () => {
 }
 
 const updateSlotRomTable = () => {
-  if (SWITCHES.INTCXROM.isSet) {
-    // ROM ($C000...$CFFF) is in 0x200...0x20F
-    for (let i = 0xC0; i <= 0xCF; i++) {
-      addressGetTable[i] = ROMindexMinusC0 + i;
-    }
-  } else {
+  // ROM ($C000...$CFFF) is in 0x200...0x20F
+  for (let i = 0xC0; i <= 0xCF; i++) {
+    addressGetTable[i] = ROMindexMinusC0 + i;
+  }
+  if (!SWITCHES.INTCXROM.isSet) {
     // Read peripheral slot ROM
     // TODO: Currently, $C800-$CFFF is not being filled in for cards.
     for (let i = 0xC1; i <= 0xC7; i++) {
       addressGetTable[i] = SLOTindexMinusC1 + i;
     }
-  }
-  if (!SWITCHES.SLOTC3ROM.isSet) {
-    addressGetTable[0xC3] = ROMindexMinusC0 + 0xC3
+    // SLOTC3ROM switch only has an effect if INTCXROM is off
+    if (!SWITCHES.SLOTC3ROM.isSet) {
+      addressGetTable[0xC3] = ROMindexMinusC0 + 0xC3
+    }
   }
 }
 

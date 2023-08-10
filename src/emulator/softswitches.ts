@@ -3,6 +3,7 @@ import { popKey } from "./keyboard"
 import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./joystick"
 import { toHex } from "./utility"
+import { s6502 } from "./instructions"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
@@ -128,14 +129,14 @@ export const SWITCHES = {
 
 SWITCHES.TEXT.isSet = true
 
-// const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
+const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
 
 export const checkSoftSwitches = (addr: number,
   calledFromMemSet: boolean, cycleCount: number) => {
-  // if (!skipDebugFlags.includes(addr)) {
-  //   const s = memC000[addr - 0xC000] > 0x80 ? 1 : 0
-  //   console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "set" : ""}`)
-  // }
+  if (addr > 0xFFFFF && !skipDebugFlags.includes(addr)) {
+    const s = memGetC000(addr) > 0x80 ? 1 : 0
+    console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "write" : ""}`)
+  }
   // Handle banked-RAM soft switches, since these have duplicate addresses
   // and need to call our special function.
   if (addr >= 0xC080 && addr <= 0xC08F) {
