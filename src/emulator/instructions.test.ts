@@ -1,7 +1,7 @@
 import { toHex } from "./utility"
-import { processInstruction } from "./cpu6502";
+import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cpu6502";
 import { memory, updateAddressTables } from "./memory";
-import { reset6502, doBranch, s6502, setPC, isBreak, setInterrupt } from "./instructions";
+import { reset6502, doBranch, s6502, setPC, setInterruptDisabled } from "./instructions";
 import { parseAssembly } from "./assembler";
 
 test('doBranch', () => {
@@ -20,22 +20,20 @@ test('doBranch', () => {
   expect(s6502.PC).toEqual(0x2000);
 });
 
-const testInstr = (instr: string[], accumExpect: number, pstat: number) => {
+const testInstr = (instr: string[], accumExpect: number, pstat: number, debug=false) => {
   const start = 0x2000
   reset6502()
   updateAddressTables()
-  setInterrupt(false)
+  setInterruptDisabled(false)
   let pcode = parseAssembly(start, instr)
   memory.set(pcode, start)
   setPC(start)
   while (s6502.PC < start + pcode.length) {
+    if (debug) console.log(s6502.PC.toString(16))
     processInstruction()
-    if (isBreak()) {
-      break
-    }
   }
   expect(s6502.Accum).toEqual(accumExpect)
-  expect(s6502.PStatus).toEqual(pstat | 0b00100000)
+  expect(s6502.PStatus).toEqual(pstat | 0x20)
 }
 
 const N = 0b10000000
@@ -209,17 +207,19 @@ test('SBC ($12) SED', () => testInstr(indirect('SEC\n  SED', 0x75, 0x25, 'SBC ($
 test('STA ($12)', () => testInstr(indirect('', 0xF1, 0xC0, 'STA ($12)\n LDA $3001'), 0xF1, N))
 
 const jmpIndexedAbsIndirect =
-` JMP $2006
-  LDA #$99
-  BRK
-  LDA #$03
-  STA $3002
-  LDA #$20
-  STA $3003
-  LDX #$02
-  JMP ($3000,X)
+`     JMP skip
+      LDA #$99   ; $2003
+      JMP done
+skip  LDA #$03
+      STA $3002
+      LDA #$20
+      STA $3003
+      LDX #$02
+      JMP ($3000,X)   ; JMP -> $2003
+      LDA #$01    ; should not reach here
+done  NOP
 `;
-test('JMP ($3000,X)', () => testInstr(jmpIndexedAbsIndirect.split('\n'), 0x99, N | B | I))
+test('JMP ($3000,X)', () => testInstr(jmpIndexedAbsIndirect.split('\n'), 0x99, N))
 
 test('DEC', () => testInstr([' LDA #$99', ' DEC'], 0x98, N))
 test('INC', () => testInstr([' LDA #$99', ' INC'], 0x9A, N))
@@ -246,9 +246,10 @@ const bitABS_X =
 test('BIT $1234,X', () => testInstr(bitABS_X.split('\n'), 0x0F, Z | V | N))
 
 const BRA =
-` BRA $01
-  BRK
-  LDA #$C0
+`    BRA $03
+     JMP done  ; should not reach here
+     LDA #$C0
+done NOP
 `;
 test('BRA', () => testInstr(BRA.split('\n'), 0xC0, N))
 
@@ -318,3 +319,119 @@ CNVBIT  ASL BIN+0        ; Shift out one bit
         LDA BCD
 `;
 test('TEST_BCD', () => testInstr(TEST_BCD.split('\n'), 0x28, 0))
+
+const brk =
+` BRK
+  LDA #$99   ; should not reach here
+  PHA        ; should not reach here
+  PLA        ; BRK should jump to here - get saved processor status
+`;
+test('BRK',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFE] = 0x04
+  memory[0x23FFF] = 0x20
+  // Interrupt flag should be set.
+  testInstr(brk.split("\n"), B | 0x20, I)
+})
+
+const brk_rti =
+`    BRK
+     NOP        ; BRK returns to original PC+2, so add a dummy instruction
+     LDA #$33   ; $2002 - should reach here after RTI
+     JMP done
+     PLA        ; $2007 - BRK should jump here - get saved processor status
+     PHA
+     RTI
+done NOP
+`;
+test('BRK with RTI',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFE] = 0x07
+  memory[0x23FFF] = 0x20
+  // Interrupt flag should be clear.
+  testInstr(brk_rti.split("\n"), 0x33, 0)
+})
+
+const irqmasked =
+`    SEI
+     LDA #$33   ; should just go to this line
+     JMP done
+     LDA #$99   ; $2006 - should not reach here
+done NOP
+`;
+test('IRQ masked',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFE] = 0x06
+  memory[0x23FFF] = 0x20
+  // This should interrupt right after our first instruction
+  interruptRequest()
+  testInstr(irqmasked.split("\n"), 0x33, I)
+})
+
+const irqenabled =
+`    CLI
+     LDA #$99   ; should NOT go to this line
+     JMP done
+     LDA #$22   ; $2006 - SHOULD reach here
+done NOP
+`;
+test('IRQ enabled',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFE] = 0x06
+  memory[0x23FFF] = 0x20
+  // This should interrupt right after our first instruction
+  interruptRequest()
+  testInstr(irqenabled.split("\n"), 0x22, I)
+})
+
+const irq_rti =
+`    CLI
+     ADC #$11   ; should go here next
+     JMP done
+     LDA #$22   ; $2006 - should reach here first
+     RTI
+done NOP
+`;
+test('IRQ with RTI',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFE] = 0x06
+  memory[0x23FFF] = 0x20
+  // This should interrupt right after our first instruction
+  interruptRequest()
+  testInstr(irq_rti.split("\n"), 0x33, 0)
+})
+
+const nmi =
+`    CLC
+     LDA #$99   ; should NOT go to this line
+     JMP done
+     LDA #$22   ; $2006 - SHOULD reach here
+     SEC        ; no RTI so this should still be set
+done NOP
+`;
+test('NMI',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFA] = 0x06
+  memory[0x23FFB] = 0x20
+  // This should interrupt right after our first instruction
+  nonMaskableInterrupt()
+  testInstr(nmi.split("\n"), 0x22, I | C)
+})
+
+const nmi_rti =
+`    SEC
+     ADC #$11   ; should go here next
+     JMP done
+     LDA #$22   ; $2006 - should reach here first
+     CLC
+     RTI        ; This should restore P and set the carry again
+done NOP
+`;
+test('NMI with RTI',   () => {
+  // Force our fake ROM's BRK/IRQ vector to point to our handler
+  memory[0x23FFA] = 0x06
+  memory[0x23FFB] = 0x20
+  // This should interrupt right after our first instruction
+  nonMaskableInterrupt()
+  testInstr(nmi_rti.split("\n"), 0x34, 0)
+})

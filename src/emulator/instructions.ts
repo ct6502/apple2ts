@@ -31,7 +31,7 @@ export const reset6502 = () => {
   s6502.Accum = 0
   s6502.XReg = 0
   s6502.YReg = 0
-  s6502.PStatus = 0b00100100
+  s6502.PStatus = 0b00100100  // bit 2 (Interrupt) + bit 5 (unused)
   s6502.StackPtr = 0xFF
   setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
 }
@@ -73,8 +73,8 @@ const isZero = () => { return ((s6502.PStatus & 0x02) !== 0); }
 const setZero = (set = true) => s6502.PStatus = set ? s6502.PStatus | 2 :
   s6502.PStatus & 0b11111101
 
-// const isInterrupt = () => { return ((PStatus & 0x04) !== 0); }
-export const setInterrupt = (set = true) => s6502.PStatus = set ? s6502.PStatus | 4 :
+const isInterruptDisabled = () => { return ((s6502.PStatus & 0x04) !== 0); }
+export const setInterruptDisabled = (set = true) => s6502.PStatus = set ? s6502.PStatus | 4 :
   s6502.PStatus & 0b11111011
 
 const isDecimal = () => { return ((s6502.PStatus & 0x08) !== 0); }
@@ -260,26 +260,43 @@ PCODE('BIT', MODE.ZP_X, 0x34, 2, (vZP) => {doBit(memGet(oneByteAdd(vZP, s6502.XR
 PCODE('BIT', MODE.ABS_X, 0x3C, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
   doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))})
 
-const doBrk = () => {
-  setBreak();
-  memSet(0xC00A, 0)
-  memSet(0xC006, 0)
-  const PC2 = (s6502.PC + 2) % 65536
-  const vLo = memGet(0xFFFE)
-  const vHi = memGet(0xFFFF)
-  pushStack("BRK $" + toHex(vHi) + toHex(vLo), Math.trunc(PC2 / 256))
-  pushStack("BRK", PC2 % 256)
-  pushStack("S", s6502.PStatus)
+const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
+  // I don't think the real Apple IIe switches back to main ROM $C300
+  // Comment these out and see if we run into problems
+  // memSet(0xC006, 0)  // slot ROM $C100-$CFFF
+  // memSet(0xC00A, 0)  // main ROM $C300-$C3FF
+  const PCreturn = (s6502.PC + pcOffset) % 65536
+  const vLo = memGet(addr)
+  const vHi = memGet(addr + 1)
+  pushStack(`${name} $` + toHex(vHi) + toHex(vLo), Math.trunc(PCreturn / 256))
+  pushStack(name, PCreturn % 256)
+  pushStack("P", s6502.PStatus | 0x10)  // add B (break) to P status
   setDecimal(false)  // 65c02 only
-  setInterrupt()
-  setPC(twoByteAdd(vLo, vHi, -1));
+  setInterruptDisabled()
+  // Since we're in the middle of the BRK, set our new program counter to
+  // be one less than our vector address. Don't do this for IRQ and NMI.
+  setPC(twoByteAdd(vLo, vHi, name === "BRK" ? -1 : 0));
+}
+const doBrk = () => {
+  doInterrupt("BRK", 0xFFFE, 2)
   return 7
 }
 PCODE('BRK', MODE.IMPLIED, 0x00, 1, doBrk)
 
+export const doInterruptRequest = () => {
+  if (isInterruptDisabled()) return
+  setBreak(false)
+  doInterrupt("IRQ", 0xFFFE)
+}
+
+export const doNonMaskableInterrupt = () => {
+  setBreak(false)
+  doInterrupt("NMI", 0xFFFA)
+}
+
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
 PCODE('CLD', MODE.IMPLIED, 0xD8, 1, () => {setDecimal(false); return 2})
-PCODE('CLI', MODE.IMPLIED, 0x58, 1, () => {setInterrupt(false); return 2})
+PCODE('CLI', MODE.IMPLIED, 0x58, 1, () => {setInterruptDisabled(false); return 2})
 PCODE('CLV', MODE.IMPLIED, 0xB8, 1, () => {setOverflow(false); return 2})
 
 const doCMP = (addr: number) => {
@@ -473,10 +490,10 @@ PCODE('ORA', MODE.IND_X, 0x01, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, 
 PCODE('ORA', MODE.IND_Y, 0x11, 2, (vZP) => doIndirectYinstruction(vZP, doORA, false))
 PCODE('ORA', MODE.IND, 0x12, 2, (vZP) => doIndirectInstruction(vZP, doORA, false))
 
-PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack("A", s6502.Accum); return 3})
-PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {setBreak(); pushStack("S", s6502.PStatus); return 3})
-PCODE('PHX', MODE.IMPLIED, 0xDA, 1, () => {pushStack("X", s6502.XReg); return 3})
-PCODE('PHY', MODE.IMPLIED, 0x5A, 1, () => {pushStack("Y", s6502.YReg); return 3})
+PCODE('PHA', MODE.IMPLIED, 0x48, 1, () => {pushStack("PHA", s6502.Accum); return 3})
+PCODE('PHP', MODE.IMPLIED, 0x08, 1, () => {pushStack("PHP", s6502.PStatus | 0x10); return 3})
+PCODE('PHX', MODE.IMPLIED, 0xDA, 1, () => {pushStack("PHX", s6502.XReg); return 3})
+PCODE('PHY', MODE.IMPLIED, 0x5A, 1, () => {pushStack("PHY", s6502.YReg); return 3})
 PCODE('PLA', MODE.IMPLIED, 0x68, 1, () => {s6502.Accum = popStack(); checkStatus(s6502.Accum); return 4})
 PCODE('PLP', MODE.IMPLIED, 0x28, 1, () => {setPStatus(popStack()); return 4})
 PCODE('PLX', MODE.IMPLIED, 0xFA, 1, () => {s6502.XReg = popStack(); checkStatus(s6502.XReg); return 4})
@@ -519,7 +536,10 @@ PCODE('ROR', MODE.ABS_X, 0x7E, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vH
   return 6 + pageBoundary(addr, address(vLo, vHi))})
 
 PCODE('RTI', MODE.IMPLIED, 0x40, 1, () => {
-  setPStatus(popStack());
+  setPStatus(popStack())
+  // We don't really care what the break bit is set to, since it will only
+  // get looked at after a BRK/IRQ, which will set it automatically.
+  setBreak(false)
   setPC(address(popStack(), popStack()) - 1); return 6})
 
 PCODE('RTS', MODE.IMPLIED, 0x60, 1, () => {setPC(address(popStack(), popStack())); return 6})
@@ -582,7 +602,7 @@ PCODE('SBC', MODE.IND, 0xF2, 2, (vZP) =>
 
 PCODE('SEC', MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
 PCODE('SED', MODE.IMPLIED, 0xF8, 1, () => {setDecimal(); return 2})
-PCODE('SEI', MODE.IMPLIED, 0x78, 1, () => {setInterrupt(); return 2})
+PCODE('SEI', MODE.IMPLIED, 0x78, 1, () => {setInterruptDisabled(); return 2})
 
 // Zero Page     STA $44       $85  2   3
 // Zero Page,X   STA $44,X     $95  2   4

@@ -34,8 +34,8 @@ const hgrRGBcolors = [
   [255, 1, 255],   // violet
   [255, 255, 255], // white1
   [0, 0, 0],       // black2
-  [255, 127, 1],   // orange
-  [1, 127, 255],   // blue
+  [255, 150, 1],   // orange
+  [1, 150, 255],   // blue
   [255, 255, 255], // white2
   [254, 251, 82],  // yellow (extended green)
   [183, 184, 249], // light blue (extended violet)

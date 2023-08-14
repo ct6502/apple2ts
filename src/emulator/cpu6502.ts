@@ -1,4 +1,4 @@
-import { cycleCount, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { cycleCount, doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
@@ -57,6 +57,16 @@ const outputInstructionTrail = () => {
   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
 }
 
+let flagIRQ = false
+export const interruptRequest = () => {
+  flagIRQ = true
+}
+
+let flagNMI = false
+export const nonMaskableInterrupt = () => {
+  flagNMI = true
+}
+
 export const processInstruction = (step = false) => {
   let cycles = 0
   let PC1 = s6502.PC
@@ -88,6 +98,14 @@ export const processInstruction = (step = false) => {
   }
   incrementPC(code.PC)
   setCycleCount(cycleCount + cycles)
+  if (flagIRQ) {
+    flagIRQ = false
+    doInterruptRequest()
+  }
+  if (flagNMI) {
+    flagNMI = false
+    doNonMaskableInterrupt()
+  }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
     doSetCPUState(STATE.PAUSED)

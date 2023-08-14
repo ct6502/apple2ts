@@ -206,6 +206,9 @@ export const memGet = (addr: number, code=0): number => {
   if (page === 0xC0) {
     return memGetSoftSwitch(addr, code)
   }
+  // if (page === 0xC4) {
+  //   console.log(`get $${addr.toString(16)} PC=$${s6502.PC.toString(16)}`)
+  // }
   const shifted = addressGetTable[page]
   return memory[shifted + (addr & 255)]
 }
@@ -226,6 +229,9 @@ export const memSet = (addr: number, value: number) => {
   if (page === 0xC0) {
     memSetSoftSwitch(addr, value)
   } else {
+    // if (page === 0xC4) {
+    //   console.log(`set $${addr.toString(16)} = $${value.toString(16)}`)
+    // }
     const shifted = addressSetTable[page]
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value
