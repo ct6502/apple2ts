@@ -29,6 +29,14 @@ let iSaveState = 0
 let iTempState = 0
 let maxState = 60
 let saveStates = Array<EmulatorSaveState>(maxState)
+export let inVBL = false
+
+// methods to capture start and end of VBL for other devices that may need it (mouse)
+const startVBL = (): void => {
+}
+
+const endVBL = (): void => {
+}
 
 const getApple2State = (): Apple2SaveState => {
   // Make a copy
@@ -344,7 +352,15 @@ const doAdvance6502 = () => {
     const cycles = processInstruction();
     if (cycles < 0) break
     cycleTotal += cycles;
+    if (cycleTotal >= 12480) {
+      if (inVBL === false) {
+        inVBL = true
+        startVBL()
+      }
+    }
     if (cycleTotal >= 17030) {
+      inVBL = false
+      endVBL()
       break;
     }
   }
