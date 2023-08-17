@@ -83,6 +83,9 @@ self.onmessage = (e: MessageEvent) => {
     case MSG_MAIN.KEYPRESS:
       sendTextToEmulator(e.data.payload)
       break;
+    case MSG_MAIN.MOUSEEVENT:
+      // do soemthing here later
+      break;
     case MSG_MAIN.PASTE_TEXT:
       sendPastedText(e.data.payload)
       break;

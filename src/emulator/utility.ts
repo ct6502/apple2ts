@@ -29,6 +29,7 @@ export enum MSG_MAIN {
   TIME_TRAVEL,
   RESTORE_STATE,
   KEYPRESS,
+  MOUSEEVENT,
   PASTE_TEXT,
   APPLE_PRESS,
   APPLE_RELEASE,
@@ -50,6 +51,17 @@ export enum ARROW {
   RIGHT,
   UP,
   DOWN
+}
+
+export type MouseEventSimple = {
+  x : number; // 0.0 -> 1.0 for movement, -1 on button
+  y : number; // 0.0 -> 1.0 for movement, -1 on button
+  //    -1:  mouse move
+  //  0x00:  button 0 up
+  //  0x10:  button 0 down
+  //  0x01:  button 1 up
+  //  0x11:  button 1 down
+  buttons : number;
 }
 
 export const colorToName = (mode: COLOR_MODE) => {

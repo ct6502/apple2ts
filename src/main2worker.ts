@@ -1,4 +1,4 @@
-import { STATE, DRIVE, MSG_WORKER, MSG_MAIN } from "./emulator/utility"
+import { STATE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker } from "./speaker"
 import { startupTextPage } from "./startuptextpage"
@@ -63,6 +63,10 @@ export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
 
 export const passKeypress = (text: String) => {
   doPostMessage(MSG_MAIN.KEYPRESS, text)
+}
+
+export const passMouseEvent = (event: MouseEventSimple) => {
+  doPostMessage(MSG_MAIN.MOUSEEVENT, event)
 }
 
 export const passPasteText = (text: String) => {
