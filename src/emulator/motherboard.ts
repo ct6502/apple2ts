@@ -14,6 +14,7 @@ import { code } from "./assemblycode"
 import { disk2driver } from "./roms/slot_disk2_cx00"
 import { handleGameSetup } from "./game_mappings"
 import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
+import { enableClockCard } from "./clock"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -112,6 +113,7 @@ const registerDiskDriver = () => {
 const doBoot = (setDrive = true) => {
   setCycleCount(0)
   memoryReset()
+  enableClockCard(true,2)
   if (setDrive) registerDiskDriver()
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
