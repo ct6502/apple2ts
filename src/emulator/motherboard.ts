@@ -33,9 +33,11 @@ export let inVBL = false
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
+  inVBL = true
 }
 
 const endVBL = (): void => {
+  inVBL = false
 }
 
 const getApple2State = (): Apple2SaveState => {
@@ -354,12 +356,10 @@ const doAdvance6502 = () => {
     cycleTotal += cycles;
     if (cycleTotal >= 12480) {
       if (inVBL === false) {
-        inVBL = true
         startVBL()
       }
     }
     if (cycleTotal >= 17030) {
-      inVBL = false
       endVBL()
       break;
     }
