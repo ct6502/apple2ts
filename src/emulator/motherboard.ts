@@ -113,7 +113,7 @@ const registerDiskDriver = () => {
 const doBoot = (setDrive = true) => {
   setCycleCount(0)
   memoryReset()
-  enableClockCard(true,2)
+  enableClockCard()
   if (setDrive) registerDiskDriver()
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));

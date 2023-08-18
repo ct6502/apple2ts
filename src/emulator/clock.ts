@@ -53,13 +53,12 @@ const handleClockRead = () => {
   //
   // would represent Thursday, July 14, 10:46 p.m. The year is looked up in a table in the clock driver.
 
-  let date: Date = new Date()
-
-  let output: string = zeroPad(date.getMonth() + 1, 2)  + ','
-                     + zeroPad(date.getDay(), 2)    + ','
-                     + zeroPad(date.getDate(), 2)   + ','
-                     + zeroPad(date.getHours(), 2)  + ','
-                     + zeroPad(date.getMinutes(), 2)
+  const date = new Date()
+  const output = zeroPad(date.getMonth() + 1, 2)  + ','
+               + zeroPad(date.getDay(), 2)    + ','
+               + zeroPad(date.getDate(), 2)   + ','
+               + zeroPad(date.getHours(), 2)  + ','
+               + zeroPad(date.getMinutes(), 2)
 
   // write to 0x200 and convert to high ascii
   for(let i=0;i<output.length;i++)
