@@ -54,9 +54,9 @@ export enum ARROW {
 }
 
 export type MouseEventSimple = {
-  x : number; // 0.0 -> 1.0 for movement, -1 on button
-  y : number; // 0.0 -> 1.0 for movement, -1 on button
-  //    -1:  mouse move
+  x : number; // 0.0 -> 1.0
+  y : number; // 0.0 -> 1.0
+  //    -1:  on mouse move
   //  0x00:  button 0 up
   //  0x10:  button 0 down
   //  0x01:  button 1 up
