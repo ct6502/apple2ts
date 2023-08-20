@@ -14,6 +14,7 @@ import { code } from "./assemblycode"
 import { disk2driver } from "./roms/slot_disk2_cx00"
 import { handleGameSetup } from "./game_mappings"
 import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
+import { enableClockCard } from "./clock"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -29,6 +30,16 @@ let iSaveState = 0
 let iTempState = 0
 let maxState = 60
 let saveStates = Array<EmulatorSaveState>(maxState)
+export let inVBL = false
+
+// methods to capture start and end of VBL for other devices that may need it (mouse)
+const startVBL = (): void => {
+  inVBL = true
+}
+
+const endVBL = (): void => {
+  inVBL = false
+}
 
 const getApple2State = (): Apple2SaveState => {
   // Make a copy
@@ -112,6 +123,7 @@ const registerDiskDriver = () => {
 const doBoot = (setDrive = true) => {
   setCycleCount(0)
   memoryReset()
+  enableClockCard()
   if (setDrive) registerDiskDriver()
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
@@ -344,7 +356,13 @@ const doAdvance6502 = () => {
     const cycles = processInstruction();
     if (cycles < 0) break
     cycleTotal += cycles;
+    if (cycleTotal >= 12480) {
+      if (inVBL === false) {
+        startVBL()
+      }
+    }
     if (cycleTotal >= 17030) {
+      endVBL()
       break;
     }
   }

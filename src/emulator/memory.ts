@@ -4,6 +4,7 @@ import { handleDriveSoftSwitches } from "./diskdata"
 import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./game_mappings";
+import { inVBL } from "./motherboard";
 
 // 00000: main memory
 // 10000: aux memory 
@@ -125,6 +126,31 @@ export const updateAddressTables = () => {
 }
 
 export const specialJumpTable = new Map<number, () => void>();
+const slotIOJumpTable = new Array<(a:number, value: number, isRead:boolean) => number>(8)
+
+const checkSlotIO = (addr : number): any => {
+  if (addr < 0xC090 || addr > 0xC0FF)
+    return null;
+
+  addr >>= 4;
+  addr &= 7;
+
+  let f = slotIOJumpTable[addr]
+  if (f === undefined)
+    return null
+  else
+    return f
+}
+
+/**
+ * Add peripheral card IO callback.
+ *
+ * @param slot - The slot number 1-7.
+ * @param fn - A function to jump to when IO of this slot is accessed
+ */
+export const setSlotIODriver = (slot: number, fn: (a:number, v: number, isRead:boolean) => number) => {
+  slotIOJumpTable[slot] = fn;
+}
 
 /**
  * Add peripheral card ROM.
@@ -189,9 +215,12 @@ const memGetSoftSwitch = (addr: number, code=0): number => {
   // $C019 Vertical blanking status (0 = vertical blanking, 1 = beam on)
   if (addr === 0xC019) {
     // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
-    return ((cycleCount % 17030) > 12480) ? 0x0D : 0x8D
+    return inVBL ? 0x0D : 0x8D
   }
   checkSoftSwitches(addr, false, cycleCount)
+  const func = checkSlotIO(addr)
+  if (func)
+    return func(addr, 0, true)
   if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
     return handleDriveSoftSwitches(addr, -1)
   }
@@ -217,9 +246,15 @@ const memSetSoftSwitch = (addr: number, value: number) => {
   if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
     handleDriveSoftSwitches(addr, value)
   } else {
-    checkSoftSwitches(addr, true, cycleCount)
-    if (addr <= 0xC00F || addr >= 0xC050) {
-      updateAddressTables()
+    const func = checkSlotIO(addr)
+    if (func) {
+      func(addr, value, false)
+      // do i need to call updateAddressTables() here?
+    } else {
+      checkSoftSwitches(addr, true, cycleCount)
+      if (addr <= 0xC00F || addr >= 0xC050) {
+        updateAddressTables()
+      }
     }
   }
 }

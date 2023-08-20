@@ -35,6 +35,10 @@ class Oscillator extends AudioWorkletProcessor {
       let newSample = event.data * this.sampling
       let delta = newSample - this.currSample
       this.currSample = newSample
+      // Sanity check in case we just rebooted and our cycleCount reset to 0.
+      if (delta < 0) {
+        return
+      }
       // If we got a large audio delta, assume this is the start of a new sound
       // and shift our starting index to just a few cycles downstream of the
       // current (44100Hz) index. That way the sound starts immediately instead
