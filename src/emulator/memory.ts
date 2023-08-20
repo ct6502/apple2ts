@@ -1,10 +1,10 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
-import { cycleCount } from "./instructions"
-import { handleDriveSoftSwitches } from "./diskdata"
+import { cycleCount, s6502 } from "./instructions"
 import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./game_mappings";
 import { inVBL } from "./motherboard";
+import { handleMockingboard } from "./mockingboard";
 
 // 00000: main memory
 // 10000: aux memory 
@@ -95,21 +95,23 @@ const updateWriteBankSwitchedRamTable = () => {
   }
 }
 
+const slotIsActive = (slot: number) => {
+  if (SWITCHES.INTCXROM.isSet) return false
+  // SLOTC3ROM switch only has an effect if INTCXROM is off
+  return (slot !== 3) ? true : SWITCHES.SLOTC3ROM.isSet
+}
+
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x200...0x20F
-  for (let i = 0xC0; i <= 0xCF; i++) {
-    addressGetTable[i] = ROMindexMinusC0 + i;
+  addressGetTable[0xC0] = ROMindexMinusC0
+  for (let slot = 1; slot <= 7; slot++) {
+    const page = 0xC0 + slot
+    addressGetTable[page] = page +
+      (slotIsActive(slot) ? SLOTindexMinusC1 : ROMindexMinusC0)
   }
-  if (!SWITCHES.INTCXROM.isSet) {
-    // Read peripheral slot ROM
-    // TODO: Currently, $C800-$CFFF is not being filled in for cards.
-    for (let i = 0xC1; i <= 0xC7; i++) {
-      addressGetTable[i] = SLOTindexMinusC1 + i;
-    }
-    // SLOTC3ROM switch only has an effect if INTCXROM is off
-    if (!SWITCHES.SLOTC3ROM.isSet) {
-      addressGetTable[0xC3] = ROMindexMinusC0 + 0xC3
-    }
+  // TODO: Currently, $C800-$CFFF is not being filled in for cards.
+  for (let i = 0xC8; i <= 0xCF; i++) {
+    addressGetTable[i] = ROMindexMinusC0 + i;
   }
 }
 
@@ -126,20 +128,17 @@ export const updateAddressTables = () => {
 }
 
 export const specialJumpTable = new Map<number, () => void>();
-const slotIOJumpTable = new Array<(a:number, value: number, isRead:boolean) => number>(8)
+const slotIOJumpTable = new Array<(addr:number, value: number) => number>(8)
 
-const checkSlotIO = (addr : number): any => {
-  if (addr < 0xC090 || addr > 0xC0FF)
-    return null;
-
-  addr >>= 4;
-  addr &= 7;
-
-  let f = slotIOJumpTable[addr]
-  if (f === undefined)
-    return null
-  else
-    return f
+// Value = -1 indicates that this was a read/get operation
+const checkSlotIO = (addr : number, value = -1) => {
+  const fn = slotIOJumpTable[(addr >> 4) & 7]
+  if (fn !== undefined) {
+    const result = fn(addr, value)
+    // Set value in either slot memory or $C000 softswitch memory
+    const offset = (addr >= 0xC100) ? SLOTstartMinusC100 : ROMstartMinusC000
+    memory[addr + offset] = result
+  }
 }
 
 /**
@@ -148,7 +147,7 @@ const checkSlotIO = (addr : number): any => {
  * @param slot - The slot number 1-7.
  * @param fn - A function to jump to when IO of this slot is accessed
  */
-export const setSlotIODriver = (slot: number, fn: (a:number, v: number, isRead:boolean) => number) => {
+export const setSlotIODriver = (slot: number, fn: (addr: number, value: number) => number) => {
   slotIOJumpTable[slot] = fn;
 }
 
@@ -157,8 +156,8 @@ export const setSlotIODriver = (slot: number, fn: (a:number, v: number, isRead:b
  *
  * @param slot - The slot number 1-7.
  * @param driver - The ROM code for the driver.
- * @param jump - An optional jump address. If the program counter equals this address, then function `fn` will be called.
- * @param fn - An optional function to jump to.
+ * @param jump - (optional) If the program counter equals this address, then `fn` will be called.
+ * @param fn - (optional) The function to jump to.
  */
 export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
   memory.set(driver, SLOTstartMinusC100 + 0xC000 + slot * 0x100)
@@ -211,18 +210,16 @@ export const readWriteAuxMem = (addr: number, write = false) => {
   return useAux
 }
 
-const memGetSoftSwitch = (addr: number, code=0): number => {
+const memGetSoftSwitch = (addr: number): number => {
   // $C019 Vertical blanking status (0 = vertical blanking, 1 = beam on)
   if (addr === 0xC019) {
     // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
     return inVBL ? 0x0D : 0x8D
   }
-  checkSoftSwitches(addr, false, cycleCount)
-  const func = checkSlotIO(addr)
-  if (func)
-    return func(addr, 0, true)
-  if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
-    return handleDriveSoftSwitches(addr, -1)
+  if (addr >= 0xC090) {
+    checkSlotIO(addr)
+  } else {
+    checkSoftSwitches(addr, false, cycleCount)
   }
   if (addr >= 0xC050) {
     updateAddressTables()
@@ -230,43 +227,43 @@ const memGetSoftSwitch = (addr: number, code=0): number => {
   return memory[ROMstartMinusC000 + addr]
 }
 
-export const memGet = (addr: number, code=0): number => {
-  const page = addr >>> 8
-  if (page === 0xC0) {
-    return memGetSoftSwitch(addr, code)
+const debugSlot = (slot: number, addr: number, value = -1) => {
+  if (!slotIsActive(slot)) return
+  if (((addr - 0xC080) >> 4) === slot || ((addr >> 8) - 0xC0) === slot) {
+    let s = `$${s6502.PC.toString(16)}: $${addr.toString(16)}`
+    if (value >= 0) s += ` = $${value.toString(16)}`
+    console.log(s)
+    handleMockingboard(addr, value)
   }
-  // if (page === 0xC4) {
-  //   console.log(`get $${addr.toString(16)} PC=$${s6502.PC.toString(16)}`)
-  // }
+}
+
+export const memGet = (addr: number): number => {
+  const page = addr >>> 8
+  debugSlot(4, addr)
+  if (page === 0xC0) {
+    return memGetSoftSwitch(addr)
+  }
   const shifted = addressGetTable[page]
   return memory[shifted + (addr & 255)]
 }
 
 const memSetSoftSwitch = (addr: number, value: number) => {
-  if (addr >= SWITCHES.DRVSM0.offAddr && addr <= SWITCHES.DRVWRITE.onAddr) {
-    handleDriveSoftSwitches(addr, value)
+  if (addr >= 0xC090) {
+    checkSlotIO(addr, value)
   } else {
-    const func = checkSlotIO(addr)
-    if (func) {
-      func(addr, value, false)
-      // do i need to call updateAddressTables() here?
-    } else {
-      checkSoftSwitches(addr, true, cycleCount)
-      if (addr <= 0xC00F || addr >= 0xC050) {
-        updateAddressTables()
-      }
-    }
+    checkSoftSwitches(addr, true, cycleCount)
+  }
+  if (addr <= 0xC00F || addr >= 0xC050) {
+    updateAddressTables()
   }
 }
 
 export const memSet = (addr: number, value: number) => {
   const page = addr >>> 8
+  debugSlot(4, addr, value)
   if (page === 0xC0) {
     memSetSoftSwitch(addr, value)
   } else {
-    // if (page === 0xC4) {
-    //   console.log(`set $${addr.toString(16)} = $${value.toString(16)}`)
-    // }
     const shifted = addressSetTable[page]
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value

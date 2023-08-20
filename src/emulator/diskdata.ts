@@ -1,13 +1,24 @@
 import { passDriveSound } from "./worker2main"
-import { SWITCHES } from "./softswitches"
 import { cycleCount } from './instructions'
 import { toHex, DRIVE } from "./utility"
 import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
 
 let motorOffTimeout: any = 0
 
+const SWITCH = {
+  MOTOR_OFF: 8,
+  MOTOR_ON: 9,
+  DRIVE1: 0xA,
+  DRIVE2: 0xB,
+  DATA_LATCH_OFF: 0xC,
+  DATA_LATCH_ON: 0xD,
+  WRITE_OFF: 0xE,
+  WRITE_ON: 0xF,
+  MOTOR_RUNNING: false,
+  DATA_LATCH: false,
+}
 export const doResetDiskDrive = (driveState: DriveState) => {
-  SWITCHES.DRIVE.isSet = false
+  SWITCH.MOTOR_RUNNING = false
   doMotorTimeout(driveState)
   driveState.halftrack = 68
   driveState.prevHalfTrack = 68
@@ -136,7 +147,7 @@ const doWriteByte = (ds: DriveState, dd: Uint8Array, delta: number) => {
 
 const doMotorTimeout = (ds: DriveState) => {
   motorOffTimeout = 0
-  if (!SWITCHES.DRIVE.isSet) {
+  if (!SWITCH.MOTOR_RUNNING) {
     ds.motorRunning = false
   }
   passData()
@@ -184,12 +195,14 @@ const dumpData = (ds: DriveState, addr: number) => {
   }
 }
 
+let STEPPER_MOTORS = [0, 0, 0, 0]
+
 export const handleDriveSoftSwitches =
   (addr: number, value: number): number => {
   let ds = getCurrentDriveState()
   let dd = getCurrentDriveData()
+  if (ds.hardDrive) return 0
   let result = 0
-  if (ds.hardDrive) return result
   const delta = cycleCount - prevCycleCount
   // if (doDebugDrive && value !== 0x96) {
   //   const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
@@ -197,23 +210,27 @@ export const handleDriveSoftSwitches =
   //   const v = (value > 0) ? `  value=$${toHex(value)}` : ''
   //   console.log(`write ${ds.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
   // }
-  if (addr === SWITCHES.DRVDATA.offAddr) {  // $C08C SHIFT/READ
+  addr = addr & 0xF
+  if (addr === SWITCH.DATA_LATCH_OFF) {  // SHIFT/READ
+    SWITCH.DATA_LATCH = false
     if (ds.motorRunning && !ds.writeMode) {
       return getNextByte(ds, dd)
     }
   }
-  if (addr === SWITCHES.DRIVE.onAddr) {  // $C089
+  if (addr === SWITCH.MOTOR_ON) {
+    SWITCH.MOTOR_RUNNING = true
     startMotor(ds)
     dumpData(ds, addr)
     return result
   }
-  if (addr === SWITCHES.DRIVE.offAddr) {  // $C088
+  if (addr === SWITCH.MOTOR_OFF) {
+    SWITCH.MOTOR_RUNNING = false
     stopMotor(ds)
     dumpData(ds, addr)
     return result
   }
-  if (addr === SWITCHES.DRVSEL.offAddr || addr === SWITCHES.DRVSEL.onAddr) {
-    const currentDrive = (addr === SWITCHES.DRVSEL.offAddr) ? 1 : 2
+  if (addr === SWITCH.DRIVE1 || addr === SWITCH.DRIVE2) {
+    const currentDrive = (addr === SWITCH.DRIVE1) ? 1 : 2
     const dsOld = getCurrentDriveState()
     setCurrentDrive(currentDrive)
     ds = getCurrentDriveState()
@@ -224,20 +241,18 @@ export const handleDriveSoftSwitches =
     }
     return result
   }
-  const ps = [SWITCHES.DRVSM0, SWITCHES.DRVSM1,
-    SWITCHES.DRVSM2, SWITCHES.DRVSM3]
-  const a = addr - SWITCHES.DRVSM0.offAddr
   // One of the stepper motors has been turned on or off
-  if (a >= 0 && a <= 7) {
-    const ascend = ps[(ds.currentPhase + 1) % 4]
-    const descend = ps[(ds.currentPhase + 3) % 4]
+  if (addr >= 0 && addr <= 7) {
+    STEPPER_MOTORS[Math.floor(addr / 2)] = addr % 2
+    const ascend = STEPPER_MOTORS[(ds.currentPhase + 1) % 4]
+    const descend = STEPPER_MOTORS[(ds.currentPhase + 3) % 4]
     // Make sure our current phase motor has been turned off.
-    if (!ps[ds.currentPhase].isSet) {
-      if (ds.motorRunning && ascend.isSet) {
+    if (!STEPPER_MOTORS[ds.currentPhase]) {
+      if (ds.motorRunning && ascend) {
         moveHead(ds, 1)
         ds.currentPhase = (ds.currentPhase + 1) % 4
 
-      } else if (ds.motorRunning && descend.isSet) {
+      } else if (ds.motorRunning && descend) {
         moveHead(ds, -1)
         ds.currentPhase = (ds.currentPhase + 3) % 4
       }
@@ -250,25 +265,32 @@ export const handleDriveSoftSwitches =
     //     `track=${dState.halftrack / 2}`)
     // }
     dumpData(ds, addr)
-  } else if (addr === SWITCHES.DRVWRITE.offAddr) {  // $C08E READ
+    return result
+  }
+  if (addr === SWITCH.WRITE_OFF) {  // READ, Q7LOW
     if (ds.motorRunning && ds.writeMode) {
       doWriteByte(ds, dd, delta)
       // Reset the Disk II Logic State Sequencer clock
       prevCycleCount = cycleCount
     }
     ds.writeMode = false
-    if (SWITCHES.DRVDATA.isSet) {
+    if (SWITCH.DATA_LATCH) {
       result = ds.isWriteProtected ? 0xFF : 0
     }
     dumpData(ds, addr)
-  } else if (addr === SWITCHES.DRVWRITE.onAddr) {  // $C08F WRITE
+    return result
+  }
+  if (addr === SWITCH.WRITE_ON) {  // WRITE, Q7HIGH
     ds.writeMode = true
     // Reset the Disk II Logic State Sequencer clock
     prevCycleCount = cycleCount
     if (value >= 0) {
       dataRegister = value
     }
-  } else if (addr === SWITCHES.DRVDATA.onAddr) {  // $C08D LOAD/READ
+    return result
+  }
+  if (addr === SWITCH.DATA_LATCH_ON) {  // LOAD/READ, Q6HIGH
+    SWITCH.DATA_LATCH = true
     if (ds.motorRunning) {
       if (ds.writeMode) {
         doWriteByte(ds, dd, delta)
@@ -279,7 +301,7 @@ export const handleDriveSoftSwitches =
         dataRegister = value
       }
     }
+    return result
   }
-
-  return result
+  return 0
 }

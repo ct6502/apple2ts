@@ -39,8 +39,6 @@ const NewSwitch = (offAddr: number, isSetAddr: number,
   return result
 }
 
-const SLOT6 = 0x60
-
 const rand = () => Math.floor(256 * Math.random())
 
 export const handleBankedRAM = (addr: number) => {
@@ -117,14 +115,6 @@ export const SWITCHES = {
   WRITEBSR1: NewSwitch(0xC089, 0),
   OFFBSR1: NewSwitch(0xC08A, 0),
   RDWRBSR1: NewSwitch(0xC08B, 0),
-  DRVSM0: NewSwitch(0xC080 + SLOT6, 0),
-  DRVSM1: NewSwitch(0xC082 + SLOT6, 0),
-  DRVSM2: NewSwitch(0xC084 + SLOT6, 0),
-  DRVSM3: NewSwitch(0xC086 + SLOT6, 0),
-  DRIVE: NewSwitch(0xC088 + SLOT6, 0),
-  DRVSEL: NewSwitch(0xC08A + SLOT6, 0),
-  DRVDATA: NewSwitch(0xC08C + SLOT6, 0),
-  DRVWRITE: NewSwitch(0xC08E + SLOT6, 0),
 }
 
 SWITCHES.TEXT.isSet = true
