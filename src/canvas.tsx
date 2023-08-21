@@ -5,8 +5,9 @@ import { passSetCPUState, passKeypress,
   passGoBackInTime,
   passGoForwardInTime,
   setStartTextPage,
+  passMouseEvent,
   passPasteText} from "./main2worker"
-import { ARROW, STATE, convertAppleKey } from "./emulator/utility"
+import { ARROW, STATE, convertAppleKey, MouseEventSimple } from "./emulator/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './keyboardbuttons';
 import { checkGamepad } from './gamepad';
@@ -180,9 +181,56 @@ const Apple2Canvas = (props: DisplayProps) => {
     //     y = scale(event.clientY - rect.top, rect.height);
     //   }
     // }
+    const scaleMouseEvent = (event: MouseEvent): MouseEventSimple => {
+      // Scale mouse to go 0.0 -> 1.0 between inner canvas borders
+      // where the apple screen is rendered
+      const scale = (xx: number, ww: number) => {
+        const offset = 50
+
+        if (xx < offset)
+          return 0.0
+        else if (xx > (ww - offset))
+          return 1.0
+
+        xx = (xx-offset) / (ww-(2*offset))
+        return Math.min(Math.max(xx, -1), 1)
+      }
+
+      let x = 0
+      let y = 0
+      if (props.myCanvas.current) {
+        const rect = props.myCanvas.current.getBoundingClientRect()
+        x = scale(event.clientX - rect.left, rect.width)
+        y = scale(event.clientY - rect.top, rect.height)
+      }
+
+      return {x:x,y:y,buttons:-1}
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      passMouseEvent(scaleMouseEvent(event))
+    }
+
+    const handleMouseDown = (event: MouseEvent) => {
+      let evt = scaleMouseEvent(event)
+      evt.buttons = event.which === 1 ? 0x10 : 0x11
+
+      passMouseEvent(evt)
+    }
+
+    const handleMouseUp = (event: MouseEvent) => {
+      let evt = scaleMouseEvent(event)
+      evt.buttons = event.which === 1 ? 0x00 : 0x01
+
+      passMouseEvent(evt)
+    }
+
     if (props.myCanvas.current) {
       context = props.myCanvas.current.getContext('2d')
 //      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
+      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
+      props.myCanvas.current.addEventListener('mousedown', handleMouseDown)
+      props.myCanvas.current.addEventListener('mouseup', handleMouseUp)
     }
     if (props.hiddenCanvas.current) {
       hiddenContext = props.hiddenCanvas.current.getContext('2d')
@@ -217,6 +265,9 @@ const Apple2Canvas = (props: DisplayProps) => {
       window.cancelAnimationFrame(animationFrameId)
       window.clearInterval(gamepadID)
 //      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
+      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
+      props.myCanvas.current?.removeEventListener('mousedown', handleMouseDown)
+      props.myCanvas.current?.removeEventListener('mouseup', handleMouseUp)
     }
   }, [props.myCanvas, props.hiddenCanvas, props.colorMode]);
 
