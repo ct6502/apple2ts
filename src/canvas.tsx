@@ -168,34 +168,18 @@ const Apple2Canvas = (props: DisplayProps) => {
     let context: CanvasRenderingContext2D | null
     let hiddenContext: CanvasRenderingContext2D | null
     let animationFrameId = 0
-    // let x = 0
-    // let y = 0
-    // const handleMouseMove = (event: MouseEvent) => {
-    //   const scale = (xx: number, ww: number) => {
-    //     // Scale the mouse "joystick" so the range covers most of the screen.
-    //     xx = 3 * xx / ww - 1.5
-    //     return Math.min(Math.max(xx, -1), 1)}
-    //   if (props.myCanvas.current && context) {
-    //     const rect = props.myCanvas.current.getBoundingClientRect();
-    //     x = scale(event.clientX - rect.left, rect.width);
-    //     y = scale(event.clientY - rect.top, rect.height);
-    //   }
-    // }
     const scaleMouseEvent = (event: MouseEvent): MouseEventSimple => {
       // Scale mouse to go 0.0 -> 1.0 between inner canvas borders
       // where the apple screen is rendered
       const scale = (xx: number, ww: number) => {
         const offset = 50
-
         if (xx < offset)
           return 0.0
         else if (xx > (ww - offset))
           return 1.0
-
         xx = (xx-offset) / (ww-(2*offset))
         return Math.min(Math.max(xx, -1), 1)
       }
-
       let x = 0
       let y = 0
       if (props.myCanvas.current) {
@@ -203,8 +187,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         x = scale(event.clientX - rect.left, rect.width)
         y = scale(event.clientY - rect.top, rect.height)
       }
-
-      return {x:x,y:y,buttons:-1}
+      return {x: x, y: y, buttons: -1}
     }
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -213,21 +196,20 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const handleMouseDown = (event: MouseEvent) => {
       let evt = scaleMouseEvent(event)
-      evt.buttons = event.which === 1 ? 0x10 : 0x11
+      evt.buttons = event.button === 1 ? 0x10 : 0x11
 
       passMouseEvent(evt)
     }
 
     const handleMouseUp = (event: MouseEvent) => {
       let evt = scaleMouseEvent(event)
-      evt.buttons = event.which === 1 ? 0x00 : 0x01
+      evt.buttons = event.button === 1 ? 0x00 : 0x01
 
       passMouseEvent(evt)
     }
 
     if (props.myCanvas.current) {
       context = props.myCanvas.current.getContext('2d')
-//      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
       props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
       props.myCanvas.current.addEventListener('mousedown', handleMouseDown)
       props.myCanvas.current.addEventListener('mouseup', handleMouseUp)
