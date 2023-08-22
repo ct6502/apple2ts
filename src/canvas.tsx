@@ -196,14 +196,14 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const handleMouseDown = (event: MouseEvent) => {
       let evt = scaleMouseEvent(event)
-      evt.buttons = event.button === 1 ? 0x10 : 0x11
+      evt.buttons = event.button === 0 ? 0x10 : 0x11
 
       passMouseEvent(evt)
     }
 
     const handleMouseUp = (event: MouseEvent) => {
       let evt = scaleMouseEvent(event)
-      evt.buttons = event.button === 1 ? 0x00 : 0x01
+      evt.buttons = event.button === 0 ? 0x00 : 0x01
 
       passMouseEvent(evt)
     }
