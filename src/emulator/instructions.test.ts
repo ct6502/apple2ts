@@ -331,7 +331,7 @@ test('BRK',   () => {
   memory[0x23FFE] = 0x04
   memory[0x23FFF] = 0x20
   // Interrupt flag should be set.
-  testInstr(brk.split("\n"), B | 0x20, I)
+  testInstr(brk.split("\n"), B | 0x20, I | B)
 })
 
 const brk_rti =

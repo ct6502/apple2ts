@@ -270,7 +270,7 @@ const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
   const vHi = memGet(addr + 1)
   pushStack(`${name} $` + toHex(vHi) + toHex(vLo), Math.trunc(PCreturn / 256))
   pushStack(name, PCreturn % 256)
-  pushStack("P", s6502.PStatus | 0x10)  // add B (break) to P status
+  pushStack("P", s6502.PStatus)
   setDecimal(false)  // 65c02 only
   setInterruptDisabled()
   // Since we're in the middle of the BRK, set our new program counter to
@@ -278,6 +278,7 @@ const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
   setPC(twoByteAdd(vLo, vHi, name === "BRK" ? -1 : 0));
 }
 const doBrk = () => {
+  setBreak()
   doInterrupt("BRK", 0xFFFE, 2)
   return 7
 }
