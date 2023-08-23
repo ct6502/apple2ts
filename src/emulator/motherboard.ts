@@ -15,8 +15,10 @@ import { disk2driver } from "./roms/slot_disk2_cx00"
 import { handleGameSetup } from "./game_mappings"
 import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
 import { enableClockCard } from "./clock"
+import { enableMouseCard } from "./mouse"
 import { enableMockingboard } from "./mockingboard"
 import { handleDriveSoftSwitches } from "./diskdata"
+import { onMouseVBL } from "./mouse"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -37,6 +39,7 @@ export let inVBL = false
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
   inVBL = true
+  onMouseVBL()
 }
 
 const endVBL = (): void => {
@@ -127,6 +130,7 @@ const doBoot = (setDrive = true) => {
   setCycleCount(0)
   memoryReset()
   enableClockCard()
+  enableMouseCard()
   enableMockingboard()
   if (setDrive) registerDiskDriver()
   if (code.length > 0) {

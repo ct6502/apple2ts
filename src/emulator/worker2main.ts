@@ -7,6 +7,7 @@ import { sendPastedText, sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility";
 import { doSetBreakpoint, doSetDebug } from "./cpu6502";
+import { MouseCardEvent } from "./mouse";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -84,7 +85,7 @@ self.onmessage = (e: MessageEvent) => {
       sendTextToEmulator(e.data.payload)
       break;
     case MSG_MAIN.MOUSEEVENT:
-      // do something here later
+      MouseCardEvent(e.data.payload)
       break;
     case MSG_MAIN.PASTE_TEXT:
       sendPastedText(e.data.payload)
