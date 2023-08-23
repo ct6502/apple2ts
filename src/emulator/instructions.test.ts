@@ -21,16 +21,23 @@ test('doBranch', () => {
 });
 
 const testInstr = (instr: string[], accumExpect: number, pstat: number, debug=false) => {
+  const irqClear = 0x1fff
   const start = 0x2000
   reset6502()
   updateAddressTables()
   setInterruptDisabled(false)
   let pcode = parseAssembly(start, instr)
   memory.set(pcode, start)
+  memory[irqClear] = 0x00  
   setPC(start)
   while (s6502.PC < start + pcode.length) {
     if (debug) console.log(s6502.PC.toString(16))
     processInstruction()
+    if (memory[irqClear]) {
+      // deassert IRQ if set
+      interruptRequest(0,false)
+      nonMaskableInterrupt(false)
+    }
   }
   expect(s6502.Accum).toEqual(accumExpect)
   expect(s6502.PStatus).toEqual(pstat | 0x20)
@@ -357,6 +364,7 @@ const irqmasked =
      LDA #$33   ; should just go to this line
      JMP done
      LDA #$99   ; $2006 - should not reach here
+     STA $1FFF  ; Clear IRQ just in case test fails
 done NOP
 `;
 test('IRQ masked',   () => {
@@ -373,6 +381,7 @@ const irqenabled =
      LDA #$99   ; should NOT go to this line
      JMP done
      LDA #$22   ; $2006 - SHOULD reach here
+     STA $1FFF  ; Clear IRQ
 done NOP
 `;
 test('IRQ enabled',   () => {
@@ -389,6 +398,7 @@ const irq_rti =
      ADC #$11   ; should go here next
      JMP done
      LDA #$22   ; $2006 - should reach here first
+     STA $1FFF  ; Clear IRQ
      RTI
 done NOP
 `;
@@ -406,6 +416,7 @@ const nmi =
      LDA #$99   ; should NOT go to this line
      JMP done
      LDA #$22   ; $2006 - SHOULD reach here
+     STA $1FFF  ; Clear IRQ
      SEC        ; no RTI so this should still be set
 done NOP
 `;
@@ -423,6 +434,7 @@ const nmi_rti =
      ADC #$11   ; should go here next
      JMP done
      LDA #$22   ; $2006 - should reach here first
+     STA $1FFF  ; Clear IRQ
      CLC
      RTI        ; This should restore P and set the carry again
 done NOP
