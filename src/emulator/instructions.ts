@@ -284,15 +284,17 @@ const doBrk = () => {
 }
 PCODE('BRK', MODE.IMPLIED, 0x00, 1, doBrk)
 
-export const doInterruptRequest = () => {
-  if (isInterruptDisabled()) return
+export const doInterruptRequest = (): number => {
+  if (isInterruptDisabled()) return 0
   setBreak(false)
   doInterrupt("IRQ", 0xFFFE)
+  return 7
 }
 
-export const doNonMaskableInterrupt = () => {
+export const doNonMaskableInterrupt = (): number => {
   setBreak(false)
   doInterrupt("NMI", 0xFFFA)
+  return 7
 }
 
 PCODE('CLC', MODE.IMPLIED, 0x18, 1, () => {setCarry(false); return 2})
