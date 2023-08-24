@@ -4,7 +4,6 @@ import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./game_mappings";
 import { inVBL } from "./motherboard";
-import { handleMockingboard } from "./mockingboard";
 
 // 00000: main memory
 // 10000: aux memory 
@@ -127,17 +126,26 @@ export const updateAddressTables = () => {
   }
 }
 
+// Used for jumping to custom TS functions when program counter hits an address.
 export const specialJumpTable = new Map<number, () => void>();
-const slotIOJumpTable = new Array<(addr:number, value: number) => number>(8)
+
+// Custom callbacks for mem get/set to $C090-$C0FF slot I/O and $C100-$C7FF.
+const slotIOCallbackTable = new Array<AddressCallback>(8)
 
 // Value = -1 indicates that this was a read/get operation
 const checkSlotIO = (addr : number, value = -1) => {
-  const fn = slotIOJumpTable[(addr >> 4) & 7]
+  const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
+  if (addr >= 0xC100 && !slotIsActive(slot)) {
+    return
+  }
+  const fn = slotIOCallbackTable[slot]
   if (fn !== undefined) {
     const result = fn(addr, value)
-    // Set value in either slot memory or $C000 softswitch memory
-    const offset = (addr >= 0xC100) ? SLOTstartMinusC100 : ROMstartMinusC000
-    memory[addr + offset] = result
+    if (result >= 0) {
+      // Set value in either slot memory or $C000 softswitch memory
+      const offset = (addr >= 0xC100) ? SLOTstartMinusC100 : ROMstartMinusC000
+      memory[addr + offset] = result
+    }
   }
 }
 
@@ -147,8 +155,8 @@ const checkSlotIO = (addr : number, value = -1) => {
  * @param slot - The slot number 1-7.
  * @param fn - A function to jump to when IO of this slot is accessed
  */
-export const setSlotIODriver = (slot: number, fn: (addr: number, value: number) => number) => {
-  slotIOJumpTable[slot] = fn;
+export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
+  slotIOCallbackTable[slot] = fn;
 }
 
 /**
@@ -227,21 +235,23 @@ const memGetSoftSwitch = (addr: number): number => {
   return memory[ROMstartMinusC000 + addr]
 }
 
-const debugSlot = (slot: number, addr: number, value = -1) => {
+export const debugSlot = (slot: number, addr: number, value = -1) => {
   if (!slotIsActive(slot)) return
   if (((addr - 0xC080) >> 4) === slot || ((addr >> 8) - 0xC0) === slot) {
     let s = `$${s6502.PC.toString(16)}: $${addr.toString(16)}`
     if (value >= 0) s += ` = $${value.toString(16)}`
     console.log(s)
-    handleMockingboard(addr, value)
   }
 }
 
 export const memGet = (addr: number): number => {
   const page = addr >>> 8
-  debugSlot(4, addr)
+  // debugSlot(4, addr)
   if (page === 0xC0) {
     return memGetSoftSwitch(addr)
+  }
+  if (page >= 0xC1 && page <= 0xCF) {
+    checkSlotIO(addr)
   }
   const shifted = addressGetTable[page]
   return memory[shifted + (addr & 255)]
@@ -260,10 +270,13 @@ const memSetSoftSwitch = (addr: number, value: number) => {
 
 export const memSet = (addr: number, value: number) => {
   const page = addr >>> 8
-  debugSlot(4, addr, value)
+  // debugSlot(4, addr, value)
   if (page === 0xC0) {
     memSetSoftSwitch(addr, value)
   } else {
+    if (page >= 0xC1 && page <= 0xCF) {
+      checkSlotIO(addr)
+    }
     const shifted = addressSetTable[page]
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value

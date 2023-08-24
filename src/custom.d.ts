@@ -176,3 +176,7 @@ type GameLibraryItem = {
   helptext: string}
 
 type GamePadMapping = (button: number, dualJoysticks: boolean, isJoystick2: boolean) => void
+
+interface AddressCallback {
+  (addr: number, value: number): number;
+}
