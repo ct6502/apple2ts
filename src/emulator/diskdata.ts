@@ -197,8 +197,10 @@ const dumpData = (ds: DriveState, addr: number) => {
 
 let STEPPER_MOTORS = [0, 0, 0, 0]
 
-export const handleDriveSoftSwitches =
+export const handleDriveSoftSwitches: AddressCallback =
   (addr: number, value: number): number => {
+  // We don't care about memgets to our card firmware, only to our card I/O
+  if (addr >= 0xC100) return -1
   let ds = getCurrentDriveState()
   let dd = getCurrentDriveData()
   if (ds.hardDrive) return 0
@@ -211,97 +213,95 @@ export const handleDriveSoftSwitches =
   //   console.log(`write ${ds.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
   // }
   addr = addr & 0xF
-  if (addr === SWITCH.DATA_LATCH_OFF) {  // SHIFT/READ
-    SWITCH.DATA_LATCH = false
-    if (ds.motorRunning && !ds.writeMode) {
-      return getNextByte(ds, dd)
-    }
-  }
-  if (addr === SWITCH.MOTOR_ON) {
-    SWITCH.MOTOR_RUNNING = true
-    startMotor(ds)
-    dumpData(ds, addr)
-    return result
-  }
-  if (addr === SWITCH.MOTOR_OFF) {
-    SWITCH.MOTOR_RUNNING = false
-    stopMotor(ds)
-    dumpData(ds, addr)
-    return result
-  }
-  if (addr === SWITCH.DRIVE1 || addr === SWITCH.DRIVE2) {
-    const currentDrive = (addr === SWITCH.DRIVE1) ? 1 : 2
-    const dsOld = getCurrentDriveState()
-    setCurrentDrive(currentDrive)
-    ds = getCurrentDriveState()
-    if (ds !== dsOld && dsOld.motorRunning) {
-      dsOld.motorRunning = false
-      ds.motorRunning = true
-      passData()
-    }
-    return result
-  }
-  // One of the stepper motors has been turned on or off
-  if (addr >= 0 && addr <= 7) {
-    STEPPER_MOTORS[Math.floor(addr / 2)] = addr % 2
-    const ascend = STEPPER_MOTORS[(ds.currentPhase + 1) % 4]
-    const descend = STEPPER_MOTORS[(ds.currentPhase + 3) % 4]
-    // Make sure our current phase motor has been turned off.
-    if (!STEPPER_MOTORS[ds.currentPhase]) {
-      if (ds.motorRunning && ascend) {
-        moveHead(ds, 1)
-        ds.currentPhase = (ds.currentPhase + 1) % 4
-
-      } else if (ds.motorRunning && descend) {
-        moveHead(ds, -1)
-        ds.currentPhase = (ds.currentPhase + 3) % 4
+  switch (addr) {
+    case SWITCH.DATA_LATCH_OFF:  // SHIFT/READ
+      SWITCH.DATA_LATCH = false
+      if (ds.motorRunning && !ds.writeMode) {
+        result = getNextByte(ds, dd)
       }
-    }
-    // if (doDebugDrive) {
-    //   const phases = `${ps[0].isSet ? 1 : 0}${ps[1].isSet ? 1 : 0}` +
-    //     `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
-    //   console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
-    //     `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
-    //     `track=${dState.halftrack / 2}`)
-    // }
-    dumpData(ds, addr)
-    return result
-  }
-  if (addr === SWITCH.WRITE_OFF) {  // READ, Q7LOW
-    if (ds.motorRunning && ds.writeMode) {
-      doWriteByte(ds, dd, delta)
-      // Reset the Disk II Logic State Sequencer clock
-      prevCycleCount = cycleCount
-    }
-    ds.writeMode = false
-    if (SWITCH.DATA_LATCH) {
-      result = ds.isWriteProtected ? 0xFF : 0
-    }
-    dumpData(ds, addr)
-    return result
-  }
-  if (addr === SWITCH.WRITE_ON) {  // WRITE, Q7HIGH
-    ds.writeMode = true
-    // Reset the Disk II Logic State Sequencer clock
-    prevCycleCount = cycleCount
-    if (value >= 0) {
-      dataRegister = value
-    }
-    return result
-  }
-  if (addr === SWITCH.DATA_LATCH_ON) {  // LOAD/READ, Q6HIGH
-    SWITCH.DATA_LATCH = true
-    if (ds.motorRunning) {
-      if (ds.writeMode) {
+      break
+    case SWITCH.MOTOR_ON:
+      SWITCH.MOTOR_RUNNING = true
+      startMotor(ds)
+      dumpData(ds, addr)
+      break
+    case SWITCH.MOTOR_OFF:
+      SWITCH.MOTOR_RUNNING = false
+      stopMotor(ds)
+      dumpData(ds, addr)
+      break
+    case SWITCH.DRIVE1: // fall thru
+    case SWITCH.DRIVE2:
+      const currentDrive = (addr === SWITCH.DRIVE1) ? 1 : 2
+      const dsOld = getCurrentDriveState()
+      setCurrentDrive(currentDrive)
+      ds = getCurrentDriveState()
+      if (ds !== dsOld && dsOld.motorRunning) {
+        dsOld.motorRunning = false
+        ds.motorRunning = true
+        passData()
+      }
+      break
+    case SWITCH.WRITE_OFF:  // READ, Q7LOW
+      if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, delta)
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = cycleCount
       }
+      ds.writeMode = false
+      if (SWITCH.DATA_LATCH) {
+        result = ds.isWriteProtected ? 0xFF : 0
+      }
+      dumpData(ds, addr)
+      break
+    case SWITCH.WRITE_ON:  // WRITE, Q7HIGH
+      ds.writeMode = true
+      // Reset the Disk II Logic State Sequencer clock
+      prevCycleCount = cycleCount
       if (value >= 0) {
         dataRegister = value
       }
-    }
-    return result
+      break
+    case SWITCH.DATA_LATCH_ON:  // LOAD/READ, Q6HIGH
+      SWITCH.DATA_LATCH = true
+      if (ds.motorRunning) {
+        if (ds.writeMode) {
+          doWriteByte(ds, dd, delta)
+          // Reset the Disk II Logic State Sequencer clock
+          prevCycleCount = cycleCount
+        }
+        if (value >= 0) {
+          dataRegister = value
+        }
+      }
+      break
+    default:
+      if (addr < 0 || addr > 7) break
+      // One of the stepper motors has been turned on or off
+      STEPPER_MOTORS[Math.floor(addr / 2)] = addr % 2
+      const ascend = STEPPER_MOTORS[(ds.currentPhase + 1) % 4]
+      const descend = STEPPER_MOTORS[(ds.currentPhase + 3) % 4]
+      // Make sure our current phase motor has been turned off.
+      if (!STEPPER_MOTORS[ds.currentPhase]) {
+        if (ds.motorRunning && ascend) {
+          moveHead(ds, 1)
+          ds.currentPhase = (ds.currentPhase + 1) % 4
+
+        } else if (ds.motorRunning && descend) {
+          moveHead(ds, -1)
+          ds.currentPhase = (ds.currentPhase + 3) % 4
+        }
+      }
+      // if (doDebugDrive) {
+      //   const phases = `${ps[0].isSet ? 1 : 0}${ps[1].isSet ? 1 : 0}` +
+      //     `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
+      //   console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
+      //     `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
+      //     `track=${dState.halftrack / 2}`)
+      // }
+      dumpData(ds, addr)
+      break
   }
-  return 0
+
+  return result
 }

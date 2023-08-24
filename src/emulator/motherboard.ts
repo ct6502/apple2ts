@@ -7,7 +7,7 @@ import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } 
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires,  setSlotDriver, memoryReset,
-  updateAddressTables, setMemoryBlock, setSlotIODriver } from "./memory"
+  updateAddressTables, setMemoryBlock, setSlotIOCallback } from "./memory"
 import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
@@ -120,7 +120,7 @@ export const doRestoreSaveState = (sState: EmulatorSaveState) => {
 
 const registerDiskDriver = () => {
   setSlotDriver(6, Uint8Array.from(disk2driver))
-  setSlotIODriver(6, handleDriveSoftSwitches)
+  setSlotIOCallback(6, handleDriveSoftSwitches)
 }
 
 const doBoot = (setDrive = true) => {
