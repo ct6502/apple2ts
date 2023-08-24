@@ -1,6 +1,6 @@
 // Mouse Driver for Apple2TS - Copyright 2023 Michael Morrison <codebythepound@gmail.com>
 
-import { setSlotDriver, setSlotIODriver, memGet, memSet } from "./memory"
+import { setSlotDriver, setSlotIODriver, memGet } from "./memory"
 import { MouseEventSimple } from "./utility"
 import { interruptRequest } from "./cpu6502"
 import { s6502 } from "./instructions"
