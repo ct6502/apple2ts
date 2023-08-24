@@ -1,6 +1,6 @@
 // Mouse Driver for Apple2TS - Copyright 2023 Michael Morrison <codebythepound@gmail.com>
 
-import { setSlotDriver, setSlotIODriver, memGet } from "./memory"
+import { setSlotDriver, setSlotIOCallback, memGet } from "./memory"
 import { MouseEventSimple } from "./utility"
 import { interruptRequest } from "./cpu6502"
 import { s6502 } from "./instructions"
@@ -69,7 +69,7 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
   //console.log('AppleMouse compatible in slot', slot)
   const basicAddr = 0xc000 + slot * 0x100
   setSlotDriver(slot, driver, basicAddr + basicEntry,  handleBasic)
-  setSlotIODriver(slot, handleMouse)
+  setSlotIOCallback(slot, handleMouse)
 
   mode = 0x00
   bstatus = 0x00
@@ -288,7 +288,10 @@ const basicWrite = () => {
   }
 }
 
-const handleMouse = (addr:number, value: number): number => {
+const handleMouse: AddressCallback = (addr:number, value: number): number => {
+
+  // We don't care about memgets to our card firmware, only to our card I/O
+  if (addr >= 0xC100) return -1
 
   const isRead = value < 0
 
