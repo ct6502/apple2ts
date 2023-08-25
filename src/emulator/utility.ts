@@ -16,6 +16,7 @@ export enum MSG_WORKER {
   SAVE_STATE,
   RUMBLE,
   HELP_TEXT,
+  SHOW_MOUSE,
 }
 
 export enum MSG_MAIN {

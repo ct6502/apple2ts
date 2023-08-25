@@ -16,6 +16,11 @@ let width = 800
 let height = 600
 let startupTextTimeout = 0
 
+let showMouse = true
+export const setShowMouse = (set = true) => {
+  showMouse = set
+}
+
 const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
   let myText = React.createRef<HTMLTextAreaElement>()
@@ -265,6 +270,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   return <span className="canvasText">
     <canvas ref={props.myCanvas}
+      style={{cursor: showMouse ? "auto" : "none"}}
       width={width} height={height}
       tabIndex={0}
       onKeyDown={isTouchDevice ? ()=>{} : handleKeyDown}

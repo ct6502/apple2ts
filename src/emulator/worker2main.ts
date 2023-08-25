@@ -48,6 +48,10 @@ export const passHelptext = (helptext: string) => {
   doPostMessage(MSG_WORKER.HELP_TEXT, helptext)
 }
 
+export const passShowMouse = (state: boolean) => {
+  doPostMessage(MSG_WORKER.SHOW_MOUSE, state)
+}
+
 self.onmessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_MAIN) {
     case MSG_MAIN.STATE:
