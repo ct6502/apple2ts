@@ -6,17 +6,16 @@ import { STATE, toHex } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
-import { memory, memGet, getTextPage, getHires,  setSlotDriver, memoryReset,
-  updateAddressTables, setMemoryBlock, setSlotIOCallback } from "./memory"
+import { memory, memGet, getTextPage, getHires, memoryReset,
+  updateAddressTables, setMemoryBlock } from "./memory"
 import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
-import { disk2driver } from "./roms/slot_disk2_cx00"
 import { handleGameSetup } from "./game_mappings"
 import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
 import { enableClockCard } from "./clock"
 import { enableMockingboard } from "./mockingboard"
-import { handleDriveSoftSwitches } from "./diskdata"
+import { enableDiskDrive } from "./diskdata"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -118,17 +117,19 @@ export const doRestoreSaveState = (sState: EmulatorSaveState) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-const registerDiskDriver = () => {
-  setSlotDriver(6, Uint8Array.from(disk2driver))
-  setSlotIOCallback(6, handleDriveSoftSwitches)
-}
-
-const doBoot = (setDrive = true) => {
-  setCycleCount(0)
-  memoryReset()
+let didConfiguration = false
+const configureMachine = () => {
+  if (didConfiguration) return
+  didConfiguration = true
   enableClockCard()
   enableMockingboard()
-  if (setDrive) registerDiskDriver()
+  enableDiskDrive()
+}
+
+const doBoot = () => {
+  setCycleCount(0)
+  memoryReset()
+  configureMachine()
   if (code.length > 0) {
     let pcode = parseAssembly(0x300, code.split("\n"));
     memory.set(pcode, 0x300);
@@ -251,6 +252,7 @@ const resetRefreshCounter = () => {
 }
 
 export const doSetCPUState = (cpuStateIn: STATE) => {
+  configureMachine()
   cpuState = cpuStateIn
   if (cpuState === STATE.PAUSED || cpuState === STATE.RUNNING) {
     doPauseDrive(cpuState === STATE.RUNNING)
@@ -272,14 +274,14 @@ export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) =
     }
   }
   if (cpuState === STATE.IDLE) {
-    // Do not register our disk driver, just boot/reset to BASIC prompt.
-    doBoot(false)
-    doSetCPUState(STATE.NEED_RESET)
-    // Wait a bit for the cpu to boot and go to prompt.
+    doSetCPUState(STATE.NEED_BOOT)
+    // Wait a bit for the cpu to boot and then do reset.
     setTimeout(() => {
-      // Now register our disk driver, after we've booted.
-      registerDiskDriver()
-      loadBlock()
+      doSetCPUState(STATE.NEED_RESET)
+      // After giving the reset some time, load the binary block.
+      setTimeout(() => {
+        loadBlock()
+      }, 200)
     }, 200)
   } else {
     loadBlock()
