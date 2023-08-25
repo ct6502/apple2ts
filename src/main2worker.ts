@@ -3,6 +3,7 @@ import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker } from "./speaker"
 import { startupTextPage } from "./startuptextpage"
 import { doRumble } from "./gamepad"
+import { setShowMouse } from "./canvas"
 
 let worker: Worker | null = null
 
@@ -140,6 +141,10 @@ const doOnMessage = (e: MessageEvent) => {
     case MSG_WORKER.HELP_TEXT:
       const helptext = e.data.payload as string
       updateDisplay(0, helptext)
+      break
+    case MSG_WORKER.SHOW_MOUSE:
+      const set = e.data.payload as boolean
+      setShowMouse(set)
       break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
