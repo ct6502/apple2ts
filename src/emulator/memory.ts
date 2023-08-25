@@ -133,7 +133,7 @@ export const specialJumpTable = new Map<number, () => void>();
 const slotIOCallbackTable = new Array<AddressCallback>(8)
 
 // Value = -1 indicates that this was a read/get operation
-const checkSlotIO = (addr : number, value = -1) => {
+const checkSlotIO = (addr: number, value = -1) => {
   const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
   if (addr >= 0xC100 && !slotIsActive(slot)) {
     return
@@ -275,7 +275,7 @@ export const memSet = (addr: number, value: number) => {
     memSetSoftSwitch(addr, value)
   } else {
     if (page >= 0xC1 && page <= 0xCF) {
-      checkSlotIO(addr)
+      checkSlotIO(addr, value)
     }
     const shifted = addressSetTable[page]
     if (shifted < 0) return

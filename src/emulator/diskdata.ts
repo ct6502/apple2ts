@@ -2,6 +2,8 @@ import { passDriveSound } from "./worker2main"
 import { cycleCount } from './instructions'
 import { toHex, DRIVE } from "./utility"
 import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
+import { setSlotDriver, setSlotIOCallback } from "./memory"
+import { disk2driver } from "./roms/slot_disk2_cx00"
 
 let motorOffTimeout: any = 0
 
@@ -305,3 +307,9 @@ export const handleDriveSoftSwitches: AddressCallback =
 
   return result
 }
+
+export const enableDiskDrive = () => {
+  setSlotDriver(6, Uint8Array.from(disk2driver))
+  setSlotIOCallback(6, handleDriveSoftSwitches)
+}
+
