@@ -1,9 +1,10 @@
 // Mouse Driver for Apple2TS - Copyright 2023 Michael Morrison <codebythepound@gmail.com>
 
-import { setSlotDriver, setSlotIOCallback, memGet } from "./memory"
+import { setSlotDriver, setSlotIOCallback, memGet, memSet } from "./memory"
 import { MouseEventSimple } from "./utility"
 import { interruptRequest } from "./cpu6502"
 import { s6502 } from "./instructions"
+import { passShowMouse } from "./worker2main"
 
 //  Custom ROM
 const driver = new Uint8Array([
@@ -32,6 +33,25 @@ const driver = new Uint8Array([
   0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 
   0xd6, 0xd6, 0xd6])
 
+export const resetMouse = () => {
+  mousex = 0
+  mousey = 0
+  clampxmin = 0
+  clampymin = 0
+  clampxmax = 0x3ff
+  clampymax = 0x3ff
+  setMode(0x00)
+  bstatus = 0x00
+  istatus = 0x00
+  lastbstatus = 0x00
+  lastmousex = 0
+  lastmousey = 0
+
+  tmpmousex = 0
+  tmpmousey = 0
+
+  servestatus = 0
+}
 
 let mousex = 0
 let mousey = 0
@@ -71,10 +91,7 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
   setSlotDriver(slot, driver, basicAddr + basicEntry,  handleBasic)
   setSlotIOCallback(slot, handleMouse)
 
-  mode = 0x00
-  bstatus = 0x00
-  istatus = 0x00
-  servestatus = 0x00
+  resetMouse()
 }
 
 // The interrupt status byte is defined as follows:
@@ -125,6 +142,14 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
 // CLAMPX EQU $6    ;               clamp x values to x -> y
 // CLAMPY EQU $7    ;               clamp y values to x -> y
 // POS    EQU $8    ;               set positions
+
+const setMode = (value: number) => {
+  mode = value
+  if (value)
+    passShowMouse(false)
+  else
+    passShowMouse(true)
+}
 
 export const onMouseVBL = () => {
   // make sure previous int was ACK'd
@@ -228,6 +253,8 @@ export const MouseCardEvent = (event: MouseEventSimple) => {
 
 let basicPos = 0
 let basicString = ""
+let CSWHSave = 0
+let CSWLSave = 0
 
 // entry: X: (anything)  Y: (anything)  A: (char.out) if CSW
 // exit : X: (unchanged) Y: (unchanged) A: (char.in)  if KSW
@@ -245,6 +272,15 @@ const handleBasic = () => {
 
 const basicRead = () => {
   if (basicPos === 0) {
+    // Hack to avoid echo.  Not sure if this is how they do it on the real
+    // mouse card or not.  This sets the CSW to point to a RTS in our ROM
+    // which will just drop the incoming characters until the end of the 
+    // string when we restore it.
+    let SLH = 0xC0 + slot
+    CSWHSave = memGet(CSWH)
+    CSWLSave = memGet(CSWL)
+    memSet(CSWH, SLH) 
+    memSet(CSWL, 0x01)
     const changed = ((bstatus&0x80) !== (lastbstatus&0x80))?true:false
     let button = 0
     if (bstatus&0x80) {
@@ -252,15 +288,20 @@ const basicRead = () => {
     } else {
       button = changed ? 3 : 4
     }
+    // if keyboard was hit, mouse button value should be negative
+    const kb = memGet(0xC000)
+    if (kb & 0x80)
+      button = -button
     lastbstatus = bstatus
     basicString = mousex.toString() + "," + mousey.toString() + "," + button.toString()
     //console.log("Mouse String: " + basicString)
   }
-  //console.log("basic.read: " + basicPos)
 
   if (basicPos >= basicString.length) {
     s6502.Accum = 0x8D
     basicPos = 0
+    memSet(CSWH, CSWHSave) 
+    memSet(CSWL, CSWLSave)
   }
   else {
     s6502.Accum = basicString.charCodeAt(basicPos) | 0x80
@@ -276,12 +317,12 @@ const basicWrite = () => {
     case 0x80:
       console.log("mouse off")
       // turn off mouse
-      mode = 0
+      setMode(0)
       break
     case 0x81:
       console.log("mouse on")
       // turn on mouse
-      mode = 1
+      setMode(1)
       break
     default:
       break
@@ -359,7 +400,7 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
 
     case REG.MODE:
         if (isRead === false) {
-          mode = value
+          setMode(value)
           console.log('Mouse mode: 0x', mode.toString(16))
         }
         else {

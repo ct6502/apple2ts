@@ -3,6 +3,7 @@ export const diskImages: Array<diskImage> = [
   {file: 'Aztec.po', url: ''},
   {file: 'Eamon 1.po', url: 'https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)'},
   {file: 'MECC-Inspector.woz', url: ''},
+  {file: 'MousePaint.woz', url: ''},
   {file: 'Nox Archaist Demo.hdv', url: 'https://noxarchaist.com'},
   {file: 'Olympic Decathlon.woz', url: 'https://archive.org/details/microsoft-olympic-decathlon-a2-ph/'},
   {file: 'One on One.po', url: 'https://archive.org/details/electronic-arts-one-on-one-a2-ph/'},
