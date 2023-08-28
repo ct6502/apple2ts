@@ -52,6 +52,10 @@ export const passShowMouse = (state: boolean) => {
   doPostMessage(MSG_WORKER.SHOW_MOUSE, state)
 }
 
+export const passMockingboard = (sound: MockingboardSound) => {
+  doPostMessage(MSG_WORKER.MBOARD_SOUND, sound)
+}
+
 self.onmessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_MAIN) {
     case MSG_MAIN.STATE:

@@ -180,3 +180,8 @@ type GamePadMapping = (button: number, dualJoysticks: boolean, isJoystick2: bool
 interface AddressCallback {
   (addr: number, value: number): number;
 }
+
+type MockingboardSound = {
+  chip: number,
+  params: Array<number>,
+}

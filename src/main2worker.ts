@@ -4,6 +4,7 @@ import { clickSpeaker } from "./speaker"
 import { startupTextPage } from "./startuptextpage"
 import { doRumble } from "./gamepad"
 import { setShowMouse } from "./canvas"
+import { playMockingboard } from "./mockingboard_audio"
 
 let worker: Worker | null = null
 
@@ -146,7 +147,11 @@ const doOnMessage = (e: MessageEvent) => {
       const set = e.data.payload as boolean
       setShowMouse(set)
       break
-    default:
+    case MSG_WORKER.MBOARD_SOUND:
+      const mboard = e.data.payload as MockingboardSound
+      playMockingboard(mboard)
+      break
+      default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
   }

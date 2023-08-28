@@ -17,6 +17,7 @@ export enum MSG_WORKER {
   RUMBLE,
   HELP_TEXT,
   SHOW_MOUSE,
+  MBOARD_SOUND,
 }
 
 export enum MSG_MAIN {
