@@ -7,8 +7,9 @@ import { inVBL } from "./motherboard";
 
 // 00000: main memory
 // 10000: aux memory 
-// 20000...23FFF: ROM
-// 24000...246FF: Slots 1-7
+// 20000...23FFF: ROM (including page $C0 soft switches)
+// 24000...246FF: Peripheral card ROM $C100-$C7FF
+// 24700...24EFF: Peripheral card expansion ROM ($C800-$CFFF)
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
 export let memory = (new Uint8Array(600 * 256)).fill(0)
@@ -100,6 +101,11 @@ const slotIsActive = (slot: number) => {
   return (slot !== 3) ? true : SWITCHES.SLOTC3ROM.isSet
 }
 
+// TODO: Need a way for peripheral cards to register their $C800-$CFFF
+// expansion ROM, and also activate that ROM when their slot ROM is accessed.
+// Currently there are no peripheral cards that require this, so ignore for now.
+let expansionROMisActive = false
+
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x200...0x20F
   addressGetTable[0xC0] = ROMindexMinusC0
@@ -108,9 +114,8 @@ const updateSlotRomTable = () => {
     addressGetTable[page] = page +
       (slotIsActive(slot) ? SLOTindexMinusC1 : ROMindexMinusC0)
   }
-  // TODO: Currently, $C800-$CFFF is not being filled in for cards.
   for (let i = 0xC8; i <= 0xCF; i++) {
-    addressGetTable[i] = ROMindexMinusC0 + i;
+    addressGetTable[i] = i + (expansionROMisActive ? SLOTindexMinusC1 : ROMindexMinusC0)
   }
 }
 
@@ -250,8 +255,12 @@ export const memGet = (addr: number): number => {
   if (page === 0xC0) {
     return memGetSoftSwitch(addr)
   }
-  if (page >= 0xC1 && page <= 0xCF) {
+  if (page >= 0xC1 && page <= 0xC7) {
     checkSlotIO(addr)
+  }
+  if (addr === 0xCFFF) {
+    expansionROMisActive = false
+    updateAddressTables()
   }
   const shifted = addressGetTable[page]
   return memory[shifted + (addr & 255)]
@@ -274,8 +283,12 @@ export const memSet = (addr: number, value: number) => {
   if (page === 0xC0) {
     memSetSoftSwitch(addr, value)
   } else {
-    if (page >= 0xC1 && page <= 0xCF) {
+    if (page >= 0xC1 && page <= 0xC7) {
       checkSlotIO(addr, value)
+    }
+    if (addr === 0xCFFF) {
+      expansionROMisActive = false
+      updateAddressTables()
     }
     const shifted = addressSetTable[page]
     if (shifted < 0) return

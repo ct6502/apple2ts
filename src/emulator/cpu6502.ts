@@ -91,12 +91,10 @@ export const processInstruction = (step = false) => {
     doSetCPUState(STATE.PAUSED)
     return -1
   }
-  // HACK
   const fn = specialJumpTable.get(PC1)
   if (fn && !SWITCHES.INTCXROM.isSet) {
     fn()
   }
-  // END HACK
   cycles = code.execute(vLo, vHi)
   // Do not output during the Apple II's WAIT subroutine
   if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {

@@ -56,16 +56,16 @@ const handleCommand = (chip: Channel, value: number) => {
 }
 
 export const handleMockingboard: AddressCallback = (addr: number, value = -1) => {
-  if (addr < 0xC100) return -1
+  if (addr < 0x9C100) return -1
 //  debugSlot(currentSlot, addr, value)
   const address = addr & 0xFF
   switch (address) {
     case 0x04: // fall thru
     case 0x84: return 255 - (cycleCount % 256)
-    case 0x02: break // $07 6522-1 Data direction register B - always enable
-    case 0x03: break // $FF 6522-1 Data direction register A - always enable
-    case 0x82: break // $07 6522-2 Data direction register B - always enable
-    case 0x83: break // $FF 6522-2 Data direction register A - always enable
+    case 0x02: break // $07 Data direction register B - output bits 1,2,4
+    case 0x03: break // $FF Data direction register A - all output
+    case 0x82: break // $07 Data direction register B - output bits 1,2,4
+    case 0x83: break // $FF Data direction register A - all output
     case 0x00: handleCommand(0, value); break   // ORB #1
     case 0x80: handleCommand(1, value); break   // ORB #2
     case 0x01: if (value >= 0) PORT_A_DATA[0] = value; break
