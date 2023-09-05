@@ -5,6 +5,8 @@ let mockingboardAudio: AudioDevice | undefined
 let tones: OscillatorNode[][]
 let gains: GainNode[][]
 let noiseFilter: BiquadFilterNode[][]
+let envelope: OscillatorNode[]
+let envGain: GainNode[]
 
 const createNoise = (ctx: AudioContext) => {
   const bufferSize = 2 * ctx.sampleRate
@@ -40,19 +42,26 @@ const constructAudio = () => {
     element: new Audio()
   }
   registerAudioContext(audioDevice.context)
-  audioDevice.element.volume = 0.5
   const stereoMerge = audioDevice.context.createChannelMerger(2)
   stereoMerge.connect(audioDevice.context.destination)
   gains = []
   tones = []
   noiseFilter = []
+  envelope = []
+  envGain = []
 
   for (let chip = 0; chip <= 1; chip++) {
-    const chipMerge = audioDevice.context.createGain()
+    const chipMerge = new GainNode(audioDevice.context, {gain: 0.05})
     chipMerge.connect(stereoMerge, 0, chip)
     gains[chip] = []
     tones[chip] = []
     noiseFilter[chip] = []
+    envelope[chip] = new OscillatorNode(audioDevice.context, {type: "sawtooth"})
+    envGain[chip] = new GainNode(audioDevice.context, {gain: 0.5})
+    const constantSourceNode = new ConstantSourceNode(audioDevice.context, {offset: 1})
+    constantSourceNode.connect(envGain[chip])
+    envelope[chip].connect(envGain[chip])
+    envelope[chip].start()
 
     for (let i = 0; i <= 2; i++) {
       gains[chip][i] = new GainNode(audioDevice.context, {gain: 0})
@@ -60,6 +69,7 @@ const constructAudio = () => {
       tones[chip][i] = new OscillatorNode(audioDevice.context, {type: "square"})
       tones[chip][i].connect(gains[chip][i])
       tones[chip][i].start()
+      envGain[chip].connect(gains[chip][i].gain)
       gains[chip][i + 3] = new GainNode(audioDevice.context, {gain: 0})
       gains[chip][i + 3].connect(chipMerge)
       noiseFilter[chip][i + 3] = new BiquadFilterNode(audioDevice.context, {type: "bandpass"})
@@ -101,20 +111,18 @@ const computeQ = (freq: number) => {
   return Q
 }
 
-// const computeEnvFreq = (fine: number, coarse: number) => {
-//   const factor = (coarse * 65536) + 256 * fine
-//   let freq = (factor > 0) ? (clock / factor) : 0
-//   if (freq > 24000) freq = 24000
-//   return freq
-// }
-
-const masterVolume = 0.15
+const computeEnvFreq = (fine: number, coarse: number) => {
+  const factor = (coarse * 65536) + 256 * fine
+  let freq = (factor > 0) ? (clock / factor) : 0
+  if (freq > 24000) freq = 24000
+  return freq
+}
 
 const computeGain = (bit: number, enable: number, level: number) => {
   if (enable & (1 << bit)) return 0
   level = level & 0x1F
   // TODO: level = 16 should indicate variable amplitude (using envelope)
-  let gain = (level <= 15) ? (masterVolume * (level / 15)) : masterVolume
+  let gain = (level <= 15) ? (level / 15) : 1
   return gain
 }
 
@@ -146,6 +154,12 @@ export const playMockingboard = (sound: MockingboardSound) => {
   for (let bit = 3; bit <= 5; bit++) {
     noiseFilter[sound.chip][bit].frequency.value = freq
     noiseFilter[sound.chip][bit].Q.value = Q
+  }
+  const envFreq = computeEnvFreq(sound.params[11], sound.params[12])
+  if (sound.params[8] & 16) {
+    envelope[sound.chip].frequency.value = envFreq
+  } else {
+    envelope[sound.chip].frequency.value = 0
   }
 
   if (mockingboardAudio.context.state === 'suspended') {

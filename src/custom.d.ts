@@ -185,3 +185,5 @@ type MockingboardSound = {
   chip: number,
   params: Array<number>,
 }
+
+type Chip6522 = 0 | 1
