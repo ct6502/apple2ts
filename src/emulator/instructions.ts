@@ -275,7 +275,8 @@ const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
   setInterruptDisabled()
   // Since we're in the middle of the BRK, set our new program counter to
   // be one less than our vector address. Don't do this for IRQ and NMI.
-  setPC(twoByteAdd(vLo, vHi, name === "BRK" ? -1 : 0));
+  const PC = twoByteAdd(vLo, vHi, name === "BRK" ? -1 : 0)
+  setPC(PC);
 }
 const doBrk = () => {
   setBreak()
