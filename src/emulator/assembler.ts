@@ -79,7 +79,7 @@ const getOperandModeValue =
       if (labelOperand.label in labels) {
         value = labels[labelOperand.label]
       } else if (pass === 2) {
-          throw new Error("Missing label: " + labelOperand.label);
+        throw new Error("Missing label: " + labelOperand.label);
       }
       if (labelOperand.operation && labelOperand.value) {
         switch (labelOperand.operation) {
@@ -127,8 +127,10 @@ const handleLabel = (parts: CodeLine, pc: number) => {
     if (mode !== MODE.ABS && mode !== MODE.ZP_REL) {
       throw new Error("Illegal EQU value: " + parts.operand)
     }
+    // console.log(`LABEL=${parts.label} VALUE=${value}`)
     labels[parts.label] = value
   } else {
+    // console.log(`LABEL=${parts.label} PC=${pc}`)
     labels[parts.label] = pc
   }
 }
@@ -179,8 +181,8 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
 
     const [mode, value] = getOperandModeValue(pc, codeLine.instr, codeLine.operand, pass)
 
-    if (isRelativeInstr(codeLine.instr) && (value < 0 || value > 255)) {
-      throw new Error(`Branch instruction out of range: ${line} value: ${value}`);
+    if (pass === 2 && isRelativeInstr(codeLine.instr) && (value < 0 || value > 255)) {
+      throw new Error(`Branch instruction out of range: ${line} value: ${value} pass: ${pass}`);
     }
 
     const match = pcodes.findIndex(pc => pc && pc.name === codeLine.instr && pc.mode === mode)
@@ -201,8 +203,11 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
 }
 
 export const parseAssembly = (start: number, code: Array<string>): Array<number> => {
-  labels = {}
-  try {
+  for (var key in labels){
+    if (labels.hasOwnProperty(key)){
+        delete labels[key];
+    }
+}  try {
     parseOnce(start, code, 1)
     const instructions = parseOnce(start, code, 2)
     return instructions
