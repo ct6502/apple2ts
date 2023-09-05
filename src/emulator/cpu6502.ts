@@ -65,19 +65,26 @@ export const interruptRequest = (slot = 0, set = true) => {
   } else {
     flagIRQ &= ~(1<<slot)
   }
-
   flagIRQ &= 0xff
 }
 
 let flagNMI = false
-let nmiState = false
 export const nonMaskableInterrupt = (set = true) => {
   // NMI is edge sensitive, and is only activated on positive transition.
   // That also means if multiple cards activate NMI at the same time
   // there will be only 1 NMI transition and interrupt, so multiple slot state is
   // not required.
-  flagNMI = set === true && nmiState === false
-  nmiState = set
+  flagNMI = set === true
+}
+
+const cycleCountCallbacks: Array<() => void> = []
+export const registerCycleCountCallback = (fn: () => void) => {
+  if (!cycleCountCallbacks.includes(fn)) {
+    cycleCountCallbacks.push(fn)
+  }
+}
+const processCycleCountCallbacks = () => {
+  cycleCountCallbacks.forEach(fn => fn())
 }
 
 export const processInstruction = (step = false) => {
@@ -108,16 +115,19 @@ export const processInstruction = (step = false) => {
     console.log(out)
   }
   incrementPC(code.PC)
+  setCycleCount(cycleCount + cycles)
+  processCycleCountCallbacks()
   // NMI has higher priority, and is edge sensitive
   if (flagNMI) {
     // reset flag after a single activation
     flagNMI = false
-    cycles += doNonMaskableInterrupt()
+    cycles = doNonMaskableInterrupt()
+    setCycleCount(cycleCount + cycles)
   }
   if (flagIRQ) {
-    cycles += doInterruptRequest()
+    cycles = doInterruptRequest()
+    setCycleCount(cycleCount + cycles)
   }
-  setCycleCount(cycleCount + cycles)
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
     doSetCPUState(STATE.PAUSED)
