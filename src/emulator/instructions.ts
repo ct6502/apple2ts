@@ -293,7 +293,6 @@ export const doInterruptRequest = (): number => {
 }
 
 export const doNonMaskableInterrupt = (): number => {
-  setBreak(false)
   doInterrupt("NMI", 0xFFFA)
   return 7
 }

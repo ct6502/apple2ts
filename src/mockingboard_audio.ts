@@ -92,22 +92,22 @@ const clock = 1020488
 const computeToneFreq = (fine: number, coarse: number) => {
   const factor = 4096 * (coarse & 0x0F) + 16 * fine
   let freq = (factor > 0) ? (clock / factor) : 440
-  if (freq > 24000) freq = 24000
+  if (freq < 15 || freq > 24000) freq = 0
   return freq
 }
 
 const computeNoiseFreq = (param: number) => {
-  const factor = 16 * 8 * param
-  let freq = (factor > 0) ? (clock / factor) : 12000
-  if (freq > 12000) freq = 12000
+  const factor = 16 * 8 * (param & 31)
+  let freq = (factor > 0) ? (clock / factor) : 0
+  if (freq < 15 || freq > 12000) freq = 0
   return freq
 }
 
 const computeQ = (freq: number) => {
+  if (!freq) return 1
   const top = (freq < 12000) ? freq * 2 : 24000
   const bottom = freq / 8
   const Q = 2 * freq / (top - bottom)
-  console.log(`freq ${freq}  Q ${Q}`)
   return Q
 }
 
@@ -122,44 +122,63 @@ const computeGain = (bit: number, enable: number, level: number) => {
   if (enable & (1 << bit)) return 0
   level = level & 0x1F
   // TODO: level = 16 should indicate variable amplitude (using envelope)
-  let gain = (level <= 15) ? (level / 15) : 1
-  return gain
+  return 7 / 15
+  // console.log(`${bit} ${level}`)
+  // let gain = (level <= 15) ? (level / 15) : 1
+  // return gain
 }
 
-export const playMockingboard = (sound: MockingboardSound) => {
+const doReset = (params: MockingboardSound) => {
+  for (let chip = 0; chip <= 1; chip++) {
+    // Only process sound if at least one tone/noise channel is enabled.
+    if ((params[chip][7] & 0x3F) !== 0x3F) {
+      for (let i = 0; i < 16; i++) {
+        if (params[chip][i] > 0) {
+          return false
+        }
+      }
+    }
+  }
+  return true
+}
+
+export const playMockingboard = (params: MockingboardSound) => {
   if (!hasAudioContext || !isAudioEnabled) return
   if (!mockingboardAudio) {
     mockingboardAudio = constructAudio()
   }
   if (!mockingboardAudio) return
-  let doReset = true
-  for (let i = 0; i < 16; i++) {
-    if (sound.params[i] > 0) {
-      doReset = false
-      break
-    }
-  }
-  if (doReset) {
+
+  if (doReset(params)) {
     mockingboardAudio.context.suspend()
     return
   }
-  tones[sound.chip][0].frequency.value = computeToneFreq(sound.params[0], sound.params[1])
-  tones[sound.chip][1].frequency.value = computeToneFreq(sound.params[2], sound.params[3])
-  tones[sound.chip][2].frequency.value = computeToneFreq(sound.params[4], sound.params[5])
-  for (let bit = 0; bit <= 5; bit++) {
-    gains[sound.chip][bit].gain.value = computeGain(bit, sound.params[7], sound.params[8])
-  }
-  const freq = computeNoiseFreq(sound.params[6])
-  const Q = computeQ(freq)
-  for (let bit = 3; bit <= 5; bit++) {
-    noiseFilter[sound.chip][bit].frequency.value = freq
-    noiseFilter[sound.chip][bit].Q.value = Q
-  }
-  const envFreq = computeEnvFreq(sound.params[11], sound.params[12])
-  if (sound.params[8] & 16) {
-    envelope[sound.chip].frequency.value = envFreq
-  } else {
-    envelope[sound.chip].frequency.value = 0
+
+  for (let chip = 0; chip <= 1; chip++) {
+    let freqA = computeToneFreq(params[chip][0], params[chip][1])
+    let freqB = computeToneFreq(params[chip][2], params[chip][3])
+    let freqC = computeToneFreq(params[chip][4], params[chip][5])
+    tones[chip][0].frequency.value = freqA
+    tones[chip][1].frequency.value = freqB
+    tones[chip][2].frequency.value = freqC
+    gains[chip][0].gain.value = freqA ? computeGain(0, params[chip][7], params[chip][8]) : 0
+    gains[chip][1].gain.value = freqB ? computeGain(1, params[chip][7], params[chip][8]) : 0
+    gains[chip][2].gain.value = freqC ? computeGain(2, params[chip][7], params[chip][8]) : 0
+    const noiseFreq = computeNoiseFreq(params[chip][6])
+    gains[chip][3].gain.value = noiseFreq ? computeGain(3, params[chip][7], params[chip][8]) : 0
+    gains[chip][4].gain.value = noiseFreq ? computeGain(4, params[chip][7], params[chip][8]) : 0
+    const Q = computeQ(noiseFreq)
+    for (let bit = 3; bit <= 5; bit++) {
+      noiseFilter[chip][bit].frequency.value = noiseFreq
+      noiseFilter[chip][bit].Q.value = Q
+    }
+    if (params[chip][8] & 16) {
+      console.log("envelope!!!")
+      const envFreq = computeEnvFreq(params[chip][11], params[chip][12])
+      envelope[chip].frequency.value = envFreq
+    } else {
+      envelope[chip].frequency.value = 0
+    }
   }
 
   if (mockingboardAudio.context.state === 'suspended') {

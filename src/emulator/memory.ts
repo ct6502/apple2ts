@@ -77,6 +77,10 @@ const updateWriteBankSwitchedRamTable = () => {
   const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
   const writeRAM = SWITCHES.WRITEBSR1.isSet || SWITCHES.WRITEBSR2.isSet ||
     SWITCHES.RDWRBSR1.isSet || SWITCHES.RDWRBSR2.isSet
+  // Start out with Slot ROM and regular ROM as not writeable
+  for (let i = 0xC0; i <= 0xFF; i++) {
+    addressSetTable[i] = -1;
+  }
   if (writeRAM) {
     for (let i = 0xD0; i <= 0xFF; i++) {
       addressSetTable[i] = i + offsetZP;
@@ -86,11 +90,6 @@ const updateWriteBankSwitchedRamTable = () => {
       for (let i = 0xD0; i <= 0xDF; i++) {
         addressSetTable[i] = i - 0x10 + offsetZP;
       }
-    }
-  } else {
-    // ROM is not writeable
-    for (let i = 0xC0; i <= 0xFF; i++) {
-      addressSetTable[i] = -1;
     }
   }
 }
@@ -240,6 +239,17 @@ const memGetSoftSwitch = (addr: number): number => {
   return memory[ROMstartMinusC000 + addr]
 }
 
+export const memGetSlotROM = (slot: number, addr: number) => {
+  return memory[SLOTstartMinusC100 + 0xC000 + slot * 0x100 + (addr & 0xFF)]
+}
+
+export const memSetSlotROM = (slot: number, addr: number, value: number) => {
+  if (value >= 0) {
+    const offset = SLOTstartMinusC100 + 0xC000 + slot * 0x100 + (addr & 0xFF)
+    memory[offset] = value & 0xFF
+  }
+}
+
 export const debugSlot = (slot: number, addr: number, value = -1) => {
   if (!slotIsActive(slot)) return
   if (((addr - 0xC080) >> 4) === slot || ((addr >> 8) - 0xC0) === slot) {
@@ -291,6 +301,7 @@ export const memSet = (addr: number, value: number) => {
       updateAddressTables()
     }
     const shifted = addressSetTable[page]
+    // This will prevent us from setting slot ROM or motherboard ROM
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value
   }

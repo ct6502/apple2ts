@@ -181,9 +181,6 @@ interface AddressCallback {
   (addr: number, value: number): number;
 }
 
-type MockingboardSound = {
-  chip: number,
-  params: Array<number>,
-}
+type MockingboardSound = number[][]
 
 type Chip6522 = 0 | 1
