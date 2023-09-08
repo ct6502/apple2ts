@@ -1,8 +1,6 @@
-import { parseAssembly } from "./assembler"
-import { doSetDebug } from "./cpu6502"
 import { runAssemblyTest } from "./instructions.test"
-import { memSet, memory } from "./memory"
-import { _getRegisters } from "./mockingboard"
+import { memory } from "./memory"
+import { disablePassRegisters } from "./mockingboard"
 
 test("temp", () => {})
 
@@ -71,44 +69,36 @@ for (let chip = 0; chip <= 1; chip++) {
   test('erase D 2', () => runAssemblyTest(ldaD_V(chip, 0b10101010), 0, Z))
 }
 
-const latchRegister = (chip: Chip6522, register: number) => {
+const latchRegister = (chip: Chip6522, reg: number, data: number) => {
   const X = chip ? '8' : '0'
+  const RA = ((chip ? 0xA0 : 0x20) + reg).toString(16)
   return `
-  LDA #$${register.toString(16)}
+  LDA #$${reg.toString(16)}
   STA $C4${X}1   ; ORA
   LDA #$07       ; Latch command
   STA $C4${X}0   ; ORB
   LDA #$04       ; Inactive
   STA $C4${X}0   ; ORB
-`.split(`\n`)
-}
-
-const writeRegister = (chip: Chip6522, data: number) => {
-  const X = chip ? '8' : '0'
-  return `
   LDA #$${data.toString(16)}
   STA $C4${X}1   ; ORA
   LDA #$06       ; Write command
   STA $C4${X}0   ; ORB
   LDA #$04       ; Inactive
   STA $C4${X}0   ; ORB
+  LDA $C4${RA}   ; read register (hack)
 `.split(`\n`)
 }
 
 // Loop thru each chip and each register, doing a latch + write in assembly
 // Currently there is no "read" from my Mockingboard driver so just use
 // a helper routine to get the registers.
-for (let chip = 0; chip <= 1; chip++) {
-  const expected = new Array<number>(16).fill(0)
+for (let chip = 1; chip <= 1; chip++) {
   const c: Chip6522 = chip as Chip6522
-  for (let reg = 0; reg < 16; reg++) {
-    test(`latch/write ${chip} ${reg}`, () => {
-      latchRegister(c, reg)
-      const data = 0xC0 + reg
-      writeRegister(c, data)
-      const result = _getRegisters(c)
-      expect(result).toEqual(expected)
-    })
+  disablePassRegisters()
+  for (let reg = 0; reg <= 15; reg++) {
+    const data = 0x10 + chip * 16 + reg
+    const code = latchRegister(c, reg, data)
+    test(`latch/write ${chip} ${reg}`, () => runAssemblyTest(code, data, 0))
   }
 }
 

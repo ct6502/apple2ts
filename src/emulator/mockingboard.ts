@@ -13,9 +13,6 @@ export const enableMockingboard = (enable = true, slotIn = 4) => {
   registerCycleCountCallback(cycleCountCallback)
 }
 
-
-const registers = [Array<number>(16).fill(0),
-  Array<number>(16).fill(0)]
 const ORB = [0x0, 0x80]
 const ORA = [0x1, 0x81]
 // CL/CH = counter low/high
@@ -37,14 +34,10 @@ const IER = [0xE, 0x8E]
 const T2LL = [0x10, 0x91]
 const REG_LATCH = [0x11, 0x91]
 const TIMER_FIRED = [0x12, 0x92]
+const REG = [0x20, 0xA0]   // $C420...C42F and $C4A0...$C4AF
 
 const TIMER1 = 64
 const TIMER2 = 32
-
-// Used for tests only
-export const _getRegisters = (chip: Chip6522) => {
-  return registers[chip]
-}
 
 const T1enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !== 0
 const T1fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
@@ -124,12 +117,34 @@ const cycleCountCallback = () => {
   prevCycleCount = cycleCount
 }
 
+const getAllRegisters = () => {
+  let registers: number[][] = []
+  for (let chip = 0; chip <= 15; chip++) {
+    registers[chip] = []
+    for (let reg = 0; reg <= 15; reg++) {
+      registers[chip][reg] = memGetSlotROM(slot, REG[chip] + reg)
+    }
+  }
+  return registers
+}
+
+let doPassRegisters = () => {
+  passMockingboard(getAllRegisters())
+}
+
+// Needed for tests, because they don't run in a worker thread.
+export const disablePassRegisters = () => {
+  doPassRegisters = () => {}
+}
+
 const handleCommand = (chip: Chip6522) => {
   const orb = memGetSlotROM(slot, ORB[chip])
   switch (orb) {
     case 0:   // RESET command
-      registers[chip].fill(0)
-      passMockingboard(registers)
+      for (let reg = 0; reg <= 15; reg++) {
+        memSetSlotROM(slot, REG[chip] + reg, 0)
+      }
+      doPassRegisters()
       break
     case 7:   // LATCH command, save the appropriate register number
       memSetSlotROM(slot, REG_LATCH[chip], memGetSlotROM(slot, ORA[chip]))
@@ -137,9 +152,10 @@ const handleCommand = (chip: Chip6522) => {
     case 6:   // WRITE command
       // Store the stashed value in the previously-latched register
       const reg =  memGetSlotROM(slot, REG_LATCH[chip])
+      const value = memGetSlotROM(slot, ORA[chip])
       if (reg >= 0 && reg <= 15) {
-        registers[chip][reg] = memGetSlotROM(slot, ORA[chip])
-        passMockingboard(registers)
+        memSetSlotROM(slot, REG[chip] + reg, value)
+        doPassRegisters()
       }
       break
     case 4:   // Inactive
@@ -262,15 +278,8 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
     case IER[chip]: // Interrupt enable register
       handleInterruptEnable(chip, value)
       break
-    default: //debugSlot(currentSlot, addr, value)
+    default: // debugSlot(slot, addr, value)
       break;
   }
   return -1
 }
-// $30a: $c40b = $40
-// $30d: $c40e = $7f
-// $399: $c40d = $c0
-// $39c: $c40e = $c0
-// $3a1: $c405 = $26
-// $30a: $c40b = $4
-// $30d: $c40e = $4
