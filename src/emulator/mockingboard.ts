@@ -15,11 +15,11 @@ export const enableMockingboard = (enable = true, slotIn = 4) => {
 
 const ORB = [0x0, 0x80]
 const ORA = [0x1, 0x81]
-// CL/CH = counter low/high
-// LL/LH = latch low/high
-const T1CL = [0x4, 0x84]
+const DDRB = [0x02, 0x82]
+const DDRA = [0x03, 0x83]
+const T1CL = [0x4, 0x84] // CL/CH = counter low/high
 const T1CH = [0x5, 0x85]
-const T1LL = [0x6, 0x86]
+const T1LL = [0x6, 0x86] // LL/LH = latch low/high
 const T1LH = [0x7, 0x87]
 const T2CL = [0x8, 0x88]
 const T2CH = [0x9, 0x89]
@@ -219,14 +219,14 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
   const chip: Chip6522 = (address & 0x80) ? 1 : 0
   switch (address) {
     case ORB[chip]: // ORB
-      memSetSlotROM(slot, ORB[chip], value)
-      if (value >= 0) handleCommand(chip)
+      if (value >= 0) {
+        memSetSlotROM(slot, ORB[chip], value)
+        handleCommand(chip)
+      }
       break
-    case ORA[chip]: // ORA
-    case 0x02: // $07 Data direction register B - output bits 1,2,4
-    case 0x82: // $07 Data direction register B - output bits 1,2,4
-    case 0x03: // $FF Data direction register A - all output
-    case 0x83: // $FF Data direction register A - all output
+    case ORA[chip]: // Output register A
+    case DDRB[chip]: // $07 Data direction register B - output bits 1,2,4
+    case DDRA[chip]: // $FF Data direction register A - all output
     case SHR[chip]: // Shift register (unused)
     case ACR[chip]: // Auxiliary control register
     case PCR[chip]: // Peripheral control register (unused)

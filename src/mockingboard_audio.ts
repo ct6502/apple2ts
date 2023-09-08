@@ -43,7 +43,9 @@ const constructAudio = () => {
   }
   registerAudioContext(audioDevice.context)
   const stereoMerge = audioDevice.context.createChannelMerger(2)
-  stereoMerge.connect(audioDevice.context.destination)
+  const chipMerge = new GainNode(audioDevice.context, {gain: 0.05})
+  chipMerge.connect(audioDevice.context.destination)
+  stereoMerge.connect(chipMerge)
   gains = []
   tones = []
   noiseFilter = []
@@ -51,8 +53,6 @@ const constructAudio = () => {
   envGain = []
 
   for (let chip = 0; chip <= 1; chip++) {
-    const chipMerge = new GainNode(audioDevice.context, {gain: 0.05})
-    chipMerge.connect(stereoMerge, 0, chip)
     gains[chip] = []
     tones[chip] = []
     noiseFilter[chip] = []
@@ -65,11 +65,11 @@ const constructAudio = () => {
 
     for (let i = 0; i <= 2; i++) {
       gains[chip][i] = new GainNode(audioDevice.context, {gain: 0})
-      gains[chip][i].connect(chipMerge)
+      gains[chip][i].connect(stereoMerge, 0, chip)
       tones[chip][i] = new OscillatorNode(audioDevice.context, {type: "square"})
       tones[chip][i].connect(gains[chip][i])
       tones[chip][i].start()
-      envGain[chip].connect(gains[chip][i].gain)
+//      envGain[chip].connect(gains[chip][i].gain)
       gains[chip][i + 3] = new GainNode(audioDevice.context, {gain: 0})
       gains[chip][i + 3].connect(chipMerge)
       noiseFilter[chip][i + 3] = new BiquadFilterNode(audioDevice.context, {type: "bandpass"})
@@ -122,10 +122,10 @@ const computeGain = (bit: number, enable: number, level: number) => {
   if (enable & (1 << bit)) return 0
   level = level & 0x1F
   // TODO: level = 16 should indicate variable amplitude (using envelope)
-  return 7 / 15
-  // console.log(`${bit} ${level}`)
-  // let gain = (level <= 15) ? (level / 15) : 1
-  // return gain
+  // TODO: The gain should probably follow the log steps from the AY-3-8910
+  // datasheet, but it sounds okay to me.
+  let gain = (level <= 15) ? (level / 15) : 1
+  return gain
 }
 
 const doReset = (params: MockingboardSound) => {
@@ -161,9 +161,12 @@ export const playMockingboard = (params: MockingboardSound) => {
     tones[chip][0].frequency.value = freqA
     tones[chip][1].frequency.value = freqB
     tones[chip][2].frequency.value = freqC
-    gains[chip][0].gain.value = freqA ? computeGain(0, params[chip][7], params[chip][8]) : 0
-    gains[chip][1].gain.value = freqB ? computeGain(1, params[chip][7], params[chip][8]) : 0
-    gains[chip][2].gain.value = freqC ? computeGain(2, params[chip][7], params[chip][8]) : 0
+    const gainA = computeGain(0, params[chip][7], params[chip][8])
+    const gainB = computeGain(1, params[chip][7], params[chip][9])
+    const gainC = computeGain(2, params[chip][7], params[chip][10])
+    gains[chip][0].gain.value = freqA ? gainA : 0
+    gains[chip][1].gain.value = freqB ? gainB : 0
+    gains[chip][2].gain.value = freqC ? gainC : 0
     const noiseFreq = computeNoiseFreq(params[chip][6])
     gains[chip][3].gain.value = noiseFreq ? computeGain(3, params[chip][7], params[chip][8]) : 0
     gains[chip][4].gain.value = noiseFreq ? computeGain(4, params[chip][7], params[chip][8]) : 0
