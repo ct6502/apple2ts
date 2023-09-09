@@ -15,6 +15,7 @@ import { handleGameSetup } from "./game_mappings"
 import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
 import { enableClockCard } from "./clock"
 import { enableMouseCard } from "./mouse"
+import { enableSerialCard } from "./serial"
 import { enableMockingboard } from "./mockingboard"
 import { resetMouse, onMouseVBL } from "./mouse"
 import { enableDiskDrive } from "./diskdata"
@@ -124,9 +125,10 @@ let didConfiguration = false
 const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
+  enableSerialCard()
   enableClockCard()
   enableMouseCard()
-  enableMockingboard()
+//  enableMockingboard()
   enableDiskDrive()
 }
 
