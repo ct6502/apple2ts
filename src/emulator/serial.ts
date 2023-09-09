@@ -1,5 +1,5 @@
+// Super Serial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
-import { passHelptext } from "./worker2main"
 import { setSlotDriver, setSlotIOCallback } from "./memory"
 
 //  Apple II Super Serial Card ROM - 341-0065-A.bin
@@ -194,9 +194,8 @@ const rom = new Uint8Array([
 ])
 
 let slot = 1
-let command = 0x02
+let command = 0x00 // should be 0x02 but hack to force reset
 let control = 0x00
-let buffer: string = ""
 
 export const enableSerialCard = (enable = true, aslot = 1) => {
   if (!enable)
@@ -204,22 +203,32 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
 
   slot = aslot
 
-  // Table 4-4 Address remapping
-  const driver = rom.slice(0x700, 0x800)
+  // remap rom to be 256 byte section first, then 2k area
+  let driver = new Uint8Array(rom.length + 256)
+  // Table 4-4 Address remapping (old serial card manual)
+  driver.set(rom.slice(0x700, 0x800))
+  driver.set(rom, 0x100)
 
   setSlotDriver(slot, driver);
   setSlotIOCallback(slot, handleSerialIO)
 }
 
+let buffer = new Uint8Array(20)
+let bufpos = 0
+
+const printChar = (ch: number) => {
+  buffer[bufpos] = ch
+  bufpos++
+  if (bufpos >= buffer.length) {
+    console.log("Serial: ", buffer)
+    bufpos = 0
+  }
+}
+
 const handleSerialIO = (addr: number, val: number = -1): number => {
 
-  // Table 4-4 Address remapping
-  if (addr >= 0xC800) {
-    const off = addr - 0xc800
-    //console.log("SS: " + addr.toString(16) + " -> " + off + " = " + rom[off].toString(16))
-    return rom[off]
-  }
-  else if (addr >= 0xC100)
+  // We don't manage the ROM
+  if (addr >= 0xC100)
     return -1
 
   const REG = {
@@ -248,10 +257,7 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
     case REG.IOREG:
         if (val >= 0) {
           // strip high bit for normal ascii
-          const charOut = String.fromCharCode(val & 0x7f)
-          console.log("serial: '" + charOut + "'")
-          buffer += charOut
-          passHelptext(buffer)
+          printChar(val)
         }
         else {
           console.log("serial: read");
@@ -262,7 +268,7 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
         if(val >= 0)
         {
           // a write resets the 6551
-          console.log('SuperSerial RESET')
+          console.log('SSC RESET')
           command = 0x02
           control = 0x00
         }
@@ -280,7 +286,8 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
     case REG.COMMAND:
         if(val >= 0)
         {
-          console.log('SuperSerial COMMAND: 0x' + val.toString(16) )
+          // ignored
+          console.log('SSC COMMAND: 0x' + val.toString(16) )
           command = val
           break
         }
@@ -290,7 +297,8 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
     case REG.CONTROL:
         if(val >= 0)
         {
-          console.log('SuperSerial CONTROL: 0x' + val.toString(16) )
+          // ignored
+          console.log('SSC CONTROL: 0x' + val.toString(16) )
           control = val
           break
         }
@@ -298,7 +306,7 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
           return control
 
     default:
-        console.log('SuperSerial unknown softswitch', (addr&0xf).toString(16))
+        console.log('SSC unknown softswitch', (addr&0xf).toString(16))
         break
     }
 
