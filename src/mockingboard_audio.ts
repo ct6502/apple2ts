@@ -6,12 +6,14 @@ let tones: OscillatorNode[][]
 let gains: GainNode[][]
 let noiseFilter: BiquadFilterNode[][]
 let envelope: (AudioBufferSourceNode | null)[]
-//let connectedParam: (AudioParam | null)[][]
 
-const createNoise = (ctx: AudioContext, chip: number) => {
-  const bufferSize = 2 * ctx.sampleRate
-  const noiseBuffer = ctx.createBuffer(2, bufferSize, ctx.sampleRate)
-  const output = noiseBuffer.getChannelData(chip);
+const createNoise = (context: AudioContext, chip: number) => {
+  const bufferSize = 2 * context.sampleRate
+  // We have to create a two-channel stereo buffer and then assign one chip
+  // to each channel. Using a mono buffer will play thru both speakers.
+  const buffer = new AudioBuffer({numberOfChannels: 2,
+    length: bufferSize, sampleRate: context.sampleRate})
+  const output = buffer.getChannelData(chip);
   let b0 = 0
   let b1 = 0
   let b2 = 0
@@ -30,9 +32,7 @@ const createNoise = (ctx: AudioContext, chip: number) => {
     output[i] = 4 * (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362);
     b6 = white * 0.115926;
   }
-  const whiteNoise = new AudioBufferSourceNode(ctx,
-    {buffer: noiseBuffer, loop: true});
-  return whiteNoise
+  return new AudioBufferSourceNode(context, {buffer: buffer, loop: true})
 }
 
 const constructAudio = () => {
@@ -50,13 +50,11 @@ const constructAudio = () => {
   tones = []
   noiseFilter = []
   envelope = []
-//  connectedParam = []
 
   for (let chip = 0; chip <= 1; chip++) {
     gains[chip] = []
     tones[chip] = []
     noiseFilter[chip] = []
-//    connectedParam[chip] = []
     envelope[chip] = null
 
     for (let i = 0; i <= 2; i++) {
@@ -72,8 +70,6 @@ const constructAudio = () => {
       noise.connect(noiseFilter[chip][i])
       noiseFilter[chip][i].connect(gains[chip][i + 3])
       noise.start()
-//      connectedParam[chip][i] = null
-//      connectedParam[chip][i + 3] = null
     }
   }
 
@@ -86,7 +82,7 @@ const clock = 1020488
 const computeToneFreq = (fine: number, coarse: number) => {
   const factor = 4096 * (coarse & 0x0F) + 16 * fine
   let freq = (factor > 0) ? (clock / factor) : 0
-  if (freq < 15 || freq > 24000) freq = 0
+  if (freq < 10 || freq > 24000) freq = 0
   return freq
 }
 
@@ -119,28 +115,14 @@ const computeGain = (level: number) => {
   return gain
 }
 
-const doReset = (params: MockingboardSound) => {
-  for (let chip = 0; chip <= 1; chip++) {
-    // Only process sound if at least one tone/noise channel is enabled.
-    if ((params[chip][7] & 0x3F) !== 0x3F) {
-      for (let i = 0; i < 16; i++) {
-        if (params[chip][i] > 0) {
-          return false
-        }
-      }
-    }
-  }
-  return true
-}
-
 const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: number, shape: number) => {
   if (freq === 0) return null
   let length = context.sampleRate / freq
   length = (length > 3) ? length : 3
-  if (shape === 10 || shape === 13) length *= 2
-  const buffer = new AudioBuffer({numberOfChannels: 2,
+  if (shape === 10 || shape === 14) length *= 2
+  const buffer = new AudioBuffer({numberOfChannels: 1,
     length: (length >= 2) ? length : 2, sampleRate: context.sampleRate})
-  const buf = buffer.getChannelData(chip)
+  const buf = buffer.getChannelData(0)
   const len = buffer.length
   const half = (len - 1) / 2
   switch (shape) {
@@ -176,59 +158,54 @@ const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: numb
   return new AudioBufferSourceNode(context, {loop: !hold, buffer: buffer})
 }
 
-export const playMockingboard = (params: MockingboardSound) => {
+export const playMockingboard = (sound: MockingboardSound) => {
   if (!hasAudioContext || !isAudioEnabled) return
   if (!mockingboardAudio) {
     mockingboardAudio = constructAudio()
   }
   if (!mockingboardAudio) return
 
-  if (doReset(params)) {
-    mockingboardAudio.context.suspend()
-    return
-  }
-
-  for (let chip = 0; chip <= 1; chip++) {
-    if (envelope[chip]) {
-      for (let c = 0; c <= 5; c++) {
-        try {
-          envelope[chip]?.disconnect(gains[chip][c].gain)
-        } catch (error) {
-        }
-      }
+  const chip = sound.chip
+  const params = sound.params
+  if (envelope[chip]) {
+    for (let c = 0; c <= 5; c++) {
       try {
-        envelope[chip]?.stop()
+        envelope[chip]?.disconnect(gains[chip][c].gain)
       } catch (error) {
       }
-      envelope[chip] = null
     }
-    for (let c = 0; c <= 5; c++) {
-      let freq = 0
-      if (c <= 2) {
-        freq = computeToneFreq(params[chip][2 * c], params[chip][2 * c + 1])
-        tones[chip][c].frequency.value = freq
-      } else {
-        freq = computeNoiseFreq(params[chip][6])
-        const Q = computeQ(freq)
-        noiseFilter[chip][c % 3].frequency.value = freq
-        noiseFilter[chip][c % 3].Q.value = Q
+    try {
+      envelope[chip]?.stop()
+    } catch (error) {
+    }
+    envelope[chip] = null
+  }
+  for (let c = 0; c <= 5; c++) {
+    let freq = 0
+    if (c <= 2) {
+      freq = computeToneFreq(params[2 * c], params[2 * c + 1])
+      tones[chip][c].frequency.value = freq
+    } else {
+      freq = computeNoiseFreq(params[6])
+      const Q = computeQ(freq)
+      noiseFilter[chip][c % 3].frequency.value = freq
+      noiseFilter[chip][c % 3].Q.value = Q
+    }
+    const levelParam = params[8 + (c % 3)] & 0x1F
+    const isEnabled = !(params[7] & (1 << c))
+    const envFreq = computeEnvFreq(params[11], params[12])
+//    if (isEnabled) console.log(`${chip} ${(255 - params[7]).toString(2)} ${c} ${envFreq}`)
+    if (isEnabled && (levelParam === 16) && envFreq > 0) {
+      gains[chip][c].gain.value = 0
+      if (!envelope[chip]) {
+        envelope[chip] = constructEnvelopeBuffer(mockingboardAudio.context,
+          chip, envFreq, params[13] & 0xF)
+        envelope[chip]?.start()
       }
-      const levelParam = params[chip][8 + (c % 3)] & 0x1F
-      const isEnabled = !(params[chip][7] & (1 << c))
-      const envFreq = computeEnvFreq(params[chip][11], params[chip][12])
-      if (isEnabled && (levelParam === 16) && envFreq > 0) {
-        gains[chip][c].gain.value = 0
-        console.log(`${chip} ${c} ${envFreq}`)
-        if (!envelope[chip]) {
-          envelope[chip] = constructEnvelopeBuffer(mockingboardAudio.context,
-            chip, envFreq, params[chip][13] & 0xF)
-          envelope[chip]?.start()
-        }
-        envelope[chip]?.connect(gains[chip][c].gain)
-      } else {
-        const gain = isEnabled ? computeGain(levelParam) : 0
-        gains[chip][c].gain.value = freq ? gain : 0
-      }
+      envelope[chip]?.connect(gains[chip][c].gain)
+    } else {
+      const gain = isEnabled ? computeGain(levelParam) : 0
+      gains[chip][c].gain.value = freq ? gain : 0
     }
   }
 

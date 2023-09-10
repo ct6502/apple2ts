@@ -14,7 +14,7 @@ const C = 0b00000001
 
 // Dynamically set the enable register to a specific value,
 // then load the enable register into the Accumulator.
-const ldaE_V = (chip: Chip6522 | number, value: number) => {
+const ldaE_V = (chip: number, value: number) => {
   const X = chip ? '8' : '0'
   return `
   LDA #$${value.toString(16)}
@@ -25,7 +25,7 @@ const ldaE_V = (chip: Chip6522 | number, value: number) => {
 
 // Dynamically set the interrupt flag register to a specific value,
 // then load the interrupt register into the Accumulator.
-const ldaD_V = (chip: Chip6522 | number, value: number) => {
+const ldaD_V = (chip: number, value: number) => {
   const X = chip ? '8' : '0'
   return `
   LDA #$${value.toString(16)}
@@ -69,7 +69,7 @@ for (let chip = 0; chip <= 1; chip++) {
   test('erase D 2', () => runAssemblyTest(ldaD_V(chip, 0b10101010), 0, Z))
 }
 
-const latchRegister = (chip: Chip6522, reg: number, data: number) => {
+const latchRegister = (chip: number, reg: number, data: number) => {
   const X = chip ? '8' : '0'
   const RA = ((chip ? 0xA0 : 0x20) + reg).toString(16)
   return `
@@ -93,11 +93,10 @@ const latchRegister = (chip: Chip6522, reg: number, data: number) => {
 // Currently there is no "read" from my Mockingboard driver so just use
 // a helper routine to get the registers.
 for (let chip = 1; chip <= 1; chip++) {
-  const c: Chip6522 = chip as Chip6522
   disablePassRegisters()
   for (let reg = 0; reg <= 15; reg++) {
     const data = 0x10 + chip * 16 + reg
-    const code = latchRegister(c, reg, data)
+    const code = latchRegister(chip, reg, data)
     test(`latch/write ${chip} ${reg}`, () => runAssemblyTest(code, data, 0))
   }
 }

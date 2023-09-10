@@ -43,7 +43,7 @@ const T1enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !=
 const T1fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
 const T1continuous = (chip: number) => (memGetSlotROM(slot, ACR[chip]) & 64) !== 0
 
-const handleTimerT1 = (chip: Chip6522, cycleDelta: number) => {
+const handleTimerT1 = (chip: number, cycleDelta: number) => {
   let t1low = memGetSlotROM(slot, T1CL[chip]) - cycleDelta
   memSetSlotROM(slot, T1CL[chip], t1low)
   if (t1low < 0) {
@@ -78,7 +78,7 @@ const handleTimerT1 = (chip: Chip6522, cycleDelta: number) => {
 const T2enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER2) !== 0
 const T2fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER2) !== 0
 
-const handleTimerT2 = (chip: Chip6522, cycleDelta: number) => {
+const handleTimerT2 = (chip: number, cycleDelta: number) => {
   // If Timer2 is in pulse-counting mode just bail
   if ((memGetSlotROM(slot, ACR[chip]) & TIMER2) !== 0) return
   let t2low = memGetSlotROM(slot, T2CL[chip]) - cycleDelta
@@ -117,19 +117,25 @@ const cycleCountCallback = () => {
   prevCycleCount = cycleCount
 }
 
-const getAllRegisters = () => {
-  let registers: number[][] = []
-  for (let chip = 0; chip <= 15; chip++) {
-    registers[chip] = []
-    for (let reg = 0; reg <= 15; reg++) {
-      registers[chip][reg] = memGetSlotROM(slot, REG[chip] + reg)
-    }
+const getRegisters = (chip: number) => {
+  let registers: number[] = []
+  for (let reg = 0; reg <= 15; reg++) {
+    registers[reg] = memGetSlotROM(slot, REG[chip] + reg)
   }
   return registers
 }
 
-let doPassRegisters = () => {
-  passMockingboard(getAllRegisters())
+const compareArrays = (a: number[], b: number[]) =>
+  a.length === b.length && a.every((x, i) => x === b[i]);
+
+const prev: MockingboardSound = {chip: -1, params: [-1]}
+
+let doPassRegisters = (chip: number) => {
+  const params = getRegisters(chip)
+  if (chip === prev.chip && compareArrays(params, prev.params)) return
+  prev.chip = chip
+  prev.params = params
+  passMockingboard({chip, params})
 }
 
 // Needed for tests, because they don't run in a worker thread.
@@ -137,14 +143,14 @@ export const disablePassRegisters = () => {
   doPassRegisters = () => {}
 }
 
-const handleCommand = (chip: Chip6522) => {
+const handleCommand = (chip: number) => {
   const orb = memGetSlotROM(slot, ORB[chip])
   switch (orb) {
     case 0:   // RESET command
       for (let reg = 0; reg <= 15; reg++) {
         memSetSlotROM(slot, REG[chip] + reg, 0)
       }
-      doPassRegisters()
+      doPassRegisters(chip)
       break
     case 7:   // LATCH command, save the appropriate register number
       memSetSlotROM(slot, REG_LATCH[chip], memGetSlotROM(slot, ORA[chip]))
@@ -155,7 +161,7 @@ const handleCommand = (chip: Chip6522) => {
       const value = memGetSlotROM(slot, ORA[chip])
       if (reg >= 0 && reg <= 15) {
         memSetSlotROM(slot, REG[chip] + reg, value)
-        doPassRegisters()
+        doPassRegisters(chip)
       }
       break
     case 4:   // Inactive
@@ -166,7 +172,7 @@ const handleCommand = (chip: Chip6522) => {
   }
 }
 
-const handleInterruptFlag = (chip: Chip6522, value: number) => {
+const handleInterruptFlag = (chip: number, value: number) => {
   let ifr = memGetSlotROM(slot, IFR[chip])
   if (value >= 0) {
     // Turn off any interrupt bits that are set in our value.
@@ -188,7 +194,7 @@ const handleInterruptFlag = (chip: Chip6522, value: number) => {
   }
 }
 
-const handleInterruptEnable = (chip: Chip6522, value: number) => {
+const handleInterruptEnable = (chip: number, value: number) => {
   let ier = memGetSlotROM(slot, IER[chip])
   if (value >= 0) {
     value = value & 255
@@ -212,11 +218,11 @@ let debug = 1000
 export const handleMockingboard: AddressCallback = (addr: number, value = -1) => {
   if (addr < 0xC100) return -1
   const address = addr & 0xFF
-  if (debug < 500 && ((address >= 0x4 && address < 0x80) || address >= 0x84)) {
+  if (debug < 500) {//} && ((address >= 0x4 && address < 0x80) || address >= 0x84)) {
     debug++
     debugSlot(slot, addr, value)
   }
-  const chip: Chip6522 = (address & 0x80) ? 1 : 0
+  const chip = (address & 0x80) ? 1 : 0
   switch (address) {
     case ORB[chip]: // ORB
       if (value >= 0) {

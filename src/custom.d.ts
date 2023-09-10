@@ -173,7 +173,8 @@ type GameLibraryItem = {
   gamepad: null | ((button: number, dualJoysticks: boolean, isJoystick2: boolean) => void),
   rumble: null | (() => void),
   setup: null | (() => void),
-  helptext: string}
+  helptext: string
+}
 
 type GamePadMapping = (button: number, dualJoysticks: boolean, isJoystick2: boolean) => void
 
@@ -181,6 +182,7 @@ interface AddressCallback {
   (addr: number, value: number): number;
 }
 
-type MockingboardSound = number[][]
-
-type Chip6522 = 0 | 1
+type MockingboardSound = {
+  chip: number,
+  params: number[]
+}
