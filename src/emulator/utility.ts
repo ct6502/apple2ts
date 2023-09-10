@@ -45,7 +45,8 @@ export enum COLOR_MODE {
   COLOR,
   NOFRINGE,
   GREEN,
-  AMBER
+  AMBER,
+  BLACKANDWHITE,
 }
 
 export enum ARROW {
@@ -67,7 +68,7 @@ export type MouseEventSimple = {
 }
 
 export const colorToName = (mode: COLOR_MODE) => {
-  return ["Color", "Color (no fringe)", "Green", "Amber"][mode]
+  return ["Color", "Color (no fringe)", "Green", "Amber", "Black and White"][mode]
 }
 
 export const nameToColorMode = (name: string) => {
@@ -75,6 +76,7 @@ export const nameToColorMode = (name: string) => {
     case "Color (no fringe)": return COLOR_MODE.NOFRINGE
     case "Green": return COLOR_MODE.GREEN
     case "Amber": return COLOR_MODE.AMBER
+    case "Black and White": return COLOR_MODE.BLACKANDWHITE
     default: return COLOR_MODE.COLOR
   }
 }

@@ -43,6 +43,12 @@ const ControlButtons = (props: DisplayProps) => {
     case COLOR_MODE.AMBER:
       svgRect = <rect width={20} height={14} fill="#FFA500" opacity={0.75}/>
       break;
+    case COLOR_MODE.BLACKANDWHITE:
+      svgRect = <svg>
+        <rect width={10} height={14} fill="#000000"/>
+        <rect width={10} height={14} x={10} fill="#F0F0F0"/>
+      </svg>
+      break;
     default:
       break;
   }

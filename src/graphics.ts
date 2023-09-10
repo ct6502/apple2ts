@@ -9,6 +9,8 @@ const TEXT_GREEN = '#39FF14'
 const green = [0x39, 0xFF, 0x14]
 const TEXT_AMBER = '#FFA500'
 const amber = [0xFF, 0xA5, 0x0]
+const TEXT_WHITE = '#F0F0F0'
+const white = [0xF0, 0xF0, 0xF0]
 
 const loresHex: string[] = [
   "#000000", //black
@@ -63,12 +65,21 @@ const loresAmber: number[][] = loresColors.map(c => {
   return [c1, c1 * (0xA5 / 255), 0]
 })
 
+const loresWhite: number[][] = loresColors.map(c => {
+  const c1 = (c[0] + c[1] + c[2]) / 3
+  return [c1, c1 * (0xF0 / 255), 0]
+})
+
 const hgrGreenScreen = [
   [0, 0, 0], green, green, green, [0, 0, 0], green, green, green
 ]
 
 const hgrAmberScreen = [
   [0, 0, 0], amber, amber, amber, [0, 0, 0], amber, amber, amber
+]
+
+const hgrWhiteScreen = [
+  [0, 0, 0], white, white, white, [0, 0, 0], white, white, white
 ]
 
 const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
@@ -87,7 +98,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
-  let colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER][colorMode]
+  let colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -128,7 +139,7 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
   const nchars = doubleRes ? 80 : 40
   const bottom = mixedMode ? 20 : 24
   const cwidth = doubleRes ? 7 : 14
-  const colors = [loresColors, loresColors, loresGreen, loresAmber][colorMode]
+  const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
   for (let y = 0; y < bottom; y++) {
@@ -337,8 +348,8 @@ const processHiRes = (ctx: CanvasRenderingContext2D,
     (isColor ? getHiresColors(hgrPage, colorMode) : getHiresGreen(hgrPage))
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
   const colors = doubleRes ?
-    [loresColors, loresColors, loresGreen, loresAmber][colorMode] :
-    [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen][colorMode]
+    [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode] :
+    [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen, hgrWhiteScreen][colorMode]
   for (let i = 0; i < 560 * nlines; i++) {
     hgrRGBA[4 * i] = colors[hgrColors[i]][0]
     hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
