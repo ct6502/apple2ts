@@ -14,23 +14,18 @@ const createNoise = (context: AudioContext, chip: number) => {
   const buffer = new AudioBuffer({numberOfChannels: 2,
     length: bufferSize, sampleRate: context.sampleRate})
   const output = buffer.getChannelData(chip);
-  let b0 = 0
-  let b1 = 0
-  let b2 = 0
-  let b3 = 0
-  let b4 = 0
-  let b5 = 0
-  let b6 = 0
+  const b = new Float32Array(7).fill(0)
+  const c1 = [0.99886, 0.99332, 0.96900, 0.86650, 0.55000, -0.7616, 0.115926]
+  const c2 = [0.0555179, 0.0750759, 0.1538520, 0.3104856, 0.5329522, -0.0168980, 0.5362]
   for (let i = 0; i < bufferSize; i++) {
-    var white = Math.random() * 2 - 1;
-    b0 = 0.99886 * b0 + white * 0.0555179;
-    b1 = 0.99332 * b1 + white * 0.0750759;
-    b2 = 0.96900 * b2 + white * 0.1538520;
-    b3 = 0.86650 * b3 + white * 0.3104856;
-    b4 = 0.55000 * b4 + white * 0.5329522;
-    b5 = -0.7616 * b5 - white * 0.0168980;
-    output[i] = 4 * (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362);
-    b6 = white * 0.115926;
+    const white = Math.random() * 2 - 1;
+    let sum = 0
+    for (let c = 0; c <= 5; c++) {
+      b[c] = c1[c] * b[c] + white * c2[c]
+      sum += b[c]
+    }
+    output[i] = (sum + b[6] + white * c2[6]) / 1.5;
+    b[6] = white * c1[6];
   }
   return new AudioBufferSourceNode(context, {buffer: buffer, loop: true})
 }
@@ -43,7 +38,7 @@ const constructAudio = () => {
   }
   registerAudioContext(audioDevice.context)
   const stereoMerge = audioDevice.context.createChannelMerger(2)
-  const chipMerge = new GainNode(audioDevice.context, {gain: 0.05})
+  const chipMerge = new GainNode(audioDevice.context, {gain: 0.18})
   chipMerge.connect(audioDevice.context.destination)
   stereoMerge.connect(chipMerge)
   gains = []
@@ -108,12 +103,9 @@ const computeEnvFreq = (fine: number, coarse: number) => {
   return freq
 }
 
-const computeGain = (level: number) => {
-  // TODO: The gain should probably follow the log steps from the AY-3-8910
-  // datasheet, but it sounds okay to me.
-  let gain = level / 15
-  return gain
-}
+const volts = [0, 0.008, 0.011, 0.016, 0.022, 0.032, 0.045, 0.063,
+  0.089, 0.126, 0.178, 0.251, 0.355, 0.501, 0.708, 1, 1]
+const computeGain = (x: number) => volts[Math.floor(16 * x)]
 
 const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: number, shape: number) => {
   if (freq === 0) return null
@@ -133,14 +125,20 @@ const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: numb
     case 9:  // sawtooth down (hold 0)
     case 11: // sawtooth down (hold 1)
     case 8:  // sawtooth down
-      for (let i = 0; i < len; i++) buf[i] = 1 - i / (len - 1)
+      for (let i = 0; i < len; i++) {
+        buf[i] = computeGain(1 - i / (len - 1))
+      }
       if (shape === 11) buf[len - 1] = 1
       break
     case 10:  // down triangle
-      for (let i = 0; i < len; i++) buf[i] = Math.abs(half - i) / half
+      for (let i = 0; i < len; i++) {
+        buf[i] = computeGain(Math.abs(half - i) / half)
+      }
       break
     case 14:  // up triangle
-      for (let i = 0; i < len; i++) buf[i] = 1 - Math.abs(half - i) / half
+      for (let i = 0; i < len; i++) {
+        buf[i] = computeGain(1 - Math.abs(half - i) / half)
+      }
       break
     case 4:  // sawtooth up (hold 0)
     case 5:  // sawtooth up (hold 0)
@@ -149,7 +147,9 @@ const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: numb
     case 15: // sawtooth up (hold 0)
     case 13: // sawtooth up (hold 1)
     case 12: // sawtooth up
-      for (let i = 0; i < len; i++) buf[i] = i / (len - 1)
+      for (let i = 0; i < len; i++) {
+        buf[i] = computeGain(i / (len - 1))
+      }
       // shapes 4,5,6,7,15 jump down to zero at the end
       if (shape <= 7 || shape === 15) buf[len - 1] = 0
       break
@@ -204,7 +204,7 @@ export const playMockingboard = (sound: MockingboardSound) => {
       }
       envelope[chip]?.connect(gains[chip][c].gain)
     } else {
-      const gain = isEnabled ? computeGain(levelParam) : 0
+      const gain = isEnabled ? computeGain(levelParam / 15) : 0
       gains[chip][c].gain.value = freq ? gain : 0
     }
   }
