@@ -2,6 +2,7 @@ import {isAudioEnabled, registerAudioContext} from "./speaker"
 
 const hasAudioContext = typeof AudioContext !== 'undefined'
 let mockingboardAudio: AudioDevice | undefined
+let chipMerge: GainNode
 let tones: OscillatorNode[][]
 let gains: GainNode[][]
 let noiseFilter: BiquadFilterNode[][]
@@ -38,7 +39,7 @@ const constructAudio = () => {
   }
   registerAudioContext(audioDevice.context)
   const stereoMerge = audioDevice.context.createChannelMerger(2)
-  const chipMerge = new GainNode(audioDevice.context, {gain: 0.18})
+  chipMerge = new GainNode(audioDevice.context, {gain: 0.15})
   chipMerge.connect(audioDevice.context.destination)
   stereoMerge.connect(chipMerge)
   gains = []
@@ -55,7 +56,7 @@ const constructAudio = () => {
     for (let i = 0; i <= 2; i++) {
       gains[chip][i] = new GainNode(audioDevice.context, {gain: 0})
       gains[chip][i].connect(stereoMerge, 0, chip)
-      tones[chip][i] = new OscillatorNode(audioDevice.context, {type: "square"})
+      tones[chip][i] = new OscillatorNode(audioDevice.context)
       tones[chip][i].connect(gains[chip][i])
       tones[chip][i].start()
       gains[chip][i + 3] = new GainNode(audioDevice.context, {gain: 0})
@@ -67,7 +68,7 @@ const constructAudio = () => {
       noise.start()
     }
   }
-
+  changeMockingboardMode(modeSave)
   mockingboardAudio?.context.suspend()
   return audioDevice
 }
@@ -103,9 +104,11 @@ const computeEnvFreq = (fine: number, coarse: number) => {
   return freq
 }
 
-const volts = [0, 0.008, 0.011, 0.016, 0.022, 0.032, 0.045, 0.063,
-  0.089, 0.126, 0.178, 0.251, 0.355, 0.501, 0.708, 1, 1]
-const computeGain = (x: number) => volts[Math.floor(16 * x)]
+// These were measured using an oscilloscope on a Phasor sound card.
+const volts = [0, 0.018, 0.025, 0.037, 0.051, 0.074, 0.100, 0.139,
+  0.170, 0.230, 0.302, 0.380, 0.500, 0.650, 0.780, 1, 1]
+
+  const computeGain = (x: number) => volts[Math.floor(16 * x)]
 
 const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: number, shape: number) => {
   if (freq === 0) return null
@@ -158,6 +161,32 @@ const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: numb
   return new AudioBufferSourceNode(context, {loop: !hold, buffer: buffer})
 }
 
+const real = new Float32Array([0,0.4,0.4,1,1,1,0.3,0.7,0.6,0.5,0.9,0.8]);
+const imag = new Float32Array(real.length)
+let hornTable: PeriodicWave
+let modeSave = 0
+
+export const changeMockingboardMode = (mode: number) => {
+  modeSave = mode
+  if (!chipMerge) return
+  for (let chip = 0; chip <= 1; chip++) {
+    for (let c = 0; c <= 2; c++) {
+      switch (mode) {
+        case 0: tones[chip][c].type = "square"; chipMerge.gain.value = 0.15; break
+        case 1: tones[chip][c].type = "sawtooth"; chipMerge.gain.value = 0.2; break
+        case 2:
+        case 3:
+          if (!hornTable && mockingboardAudio) {
+            hornTable = mockingboardAudio?.context.createPeriodicWave(real, imag)
+          }
+          tones[chip][c].setPeriodicWave(hornTable)
+          chipMerge.gain.value = 0.3
+          break
+      }
+    }
+  }
+}
+
 export const playMockingboard = (sound: MockingboardSound) => {
   if (!hasAudioContext || !isAudioEnabled) return
   if (!mockingboardAudio) {
@@ -195,14 +224,16 @@ export const playMockingboard = (sound: MockingboardSound) => {
     const isEnabled = !(params[7] & (1 << c))
     const envFreq = computeEnvFreq(params[11], params[12])
 //    if (isEnabled) console.log(`${chip} ${(255 - params[7]).toString(2)} ${c} ${envFreq}`)
-    if (isEnabled && (levelParam === 16) && envFreq > 0) {
+    if (isEnabled && (levelParam === 16)) {
       gains[chip][c].gain.value = 0
-      if (!envelope[chip]) {
-        envelope[chip] = constructEnvelopeBuffer(mockingboardAudio.context,
-          chip, envFreq, params[13] & 0xF)
-        envelope[chip]?.start()
+      if (envFreq > 0) {
+        if (!envelope[chip]) {
+          envelope[chip] = constructEnvelopeBuffer(mockingboardAudio.context,
+            chip, envFreq, params[13] & 0xF)
+          envelope[chip]?.start()
+        }
+        envelope[chip]?.connect(gains[chip][c].gain)
       }
-      envelope[chip]?.connect(gains[chip][c].gain)
     } else {
       const gain = isEnabled ? computeGain(levelParam / 15) : 0
       gains[chip][c].gain.value = freq ? gain : 0

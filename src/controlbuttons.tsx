@@ -1,5 +1,6 @@
 import { COLOR_MODE, DRIVE, STATE, colorToName } from "./emulator/utility";
-import { passSetCPUState, passGoBackInTime, passGoForwardInTime, handleCanGoBackward, handleCanGoForward } from "./main2worker"
+import { passSetCPUState, passGoBackInTime, passGoForwardInTime,
+  handleCanGoBackward, handleCanGoForward } from "./main2worker"
 import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,12 +19,18 @@ import {
   faWalking,
   faTruckFast,
   faDisplay,
+  faWaveSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { doPlayDriveSound } from "./diskinterface";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ControlButtons = (props: DisplayProps) => {
+  const svgSawtooth = <svg viewBox="0 0 20 20">
+  <polyline style={{fill: 'none', stroke: 'black', strokeWidth: '2.5px', strokeLinecap: 'round', strokeMiterlimit: 7.46}}
+  points="0 9.847 6.379 3.135 6.269 16.048 14.035 3.611 13.973 16.424 19.5 9.348"/>
+</svg>
+
   let svgRect: any
   switch (props.colorMode) {
     case COLOR_MODE.COLOR:
@@ -116,6 +123,13 @@ const ControlButtons = (props: DisplayProps) => {
       title={props.uppercase ? "Uppercase" : "Lowercase"}
       onClick={props.handleUpperCaseChange}>
       {props.uppercase ? <span>A</span> : <span>a</span>}
+    </button>
+    <button className="pushButton"
+      title="Mockingboard Mode"
+      onClick={props.handleMockingboardMode}>
+      {(props.mockingboardMode === 1) ?
+        <svg className="svg-inline--fa" width="30" height="30">{svgSawtooth}</svg> :
+      <FontAwesomeIcon icon={faWaveSquare}/>}
     </button>
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}

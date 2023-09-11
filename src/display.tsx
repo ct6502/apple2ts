@@ -12,12 +12,14 @@ import React from 'react';
 import HelpPanel from "./helppanel"
 import DebugPanel from "./debugpanel"
 import { preloadAssets } from "./assets"
+import { changeMockingboardMode } from "./mockingboard_audio"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
   { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
+    mockingboardMode: number;
     useArrowKeysAsJoystick: boolean;
     colorMode: COLOR_MODE;
     doDebug: boolean;
@@ -37,6 +39,7 @@ class DisplayApple2 extends React.Component<{},
       currentSpeed: 1.02,
       speedCheck: true,
       uppercase: true,
+      mockingboardMode: 0,
       useArrowKeysAsJoystick: true,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
@@ -100,6 +103,12 @@ class DisplayApple2 extends React.Component<{},
 
   handleUpperCaseChange = () => {
     this.setState({ uppercase: !this.state.uppercase });
+  };
+
+  handleMockingboardMode = () => {
+    const mockingboardMode = (this.state.mockingboardMode + 1) % 2
+    changeMockingboardMode(mockingboardMode)
+    this.setState({ mockingboardMode })
   };
 
   handleUseArrowKeyJoystick = () => {
@@ -226,11 +235,13 @@ class DisplayApple2 extends React.Component<{},
       canGoBackward: handleCanGoBackward(),
       canGoForward: handleCanGoForward(),
       uppercase: this.state.uppercase,
+      mockingboardMode: this.state.mockingboardMode,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
+      handleMockingboardMode: this.handleMockingboardMode,
       handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
