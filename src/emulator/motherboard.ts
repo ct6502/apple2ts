@@ -3,7 +3,7 @@ import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, setCycleCount, stack, setPC } from "./instructions"
 import { STATE, toHex } from "./utility"
-import { getDriveSaveState, restoreDriveSaveState, doResetDrive, doPauseDrive } from "./drivestate"
+import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
@@ -12,10 +12,10 @@ import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 import { handleGameSetup } from "./game_mappings"
-import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
+import { clearInterrupts, doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
 import { enableClockCard } from "./clock"
 import { enableMouseCard } from "./mouse"
-import { enableMockingboard } from "./mockingboard"
+import { enableMockingboard, resetMockingboard } from "./mockingboard"
 import { resetMouse, onMouseVBL } from "./mouse"
 import { enableDiskDrive } from "./diskdata"
 
@@ -96,6 +96,7 @@ export const doGetSaveState = (full = false): EmulatorSaveState => {
 }
 
 export const doRestoreSaveState = (sState: EmulatorSaveState) => {
+  doReset()
   setApple2State(sState.state6502)
   restoreDriveSaveState(sState.driveState)
   updateExternalMachineState()
@@ -130,6 +131,13 @@ const configureMachine = () => {
   enableDiskDrive()
 }
 
+const resetMachine = () => {
+  resetDrive()
+  setButtonState()
+  resetMouse()
+  resetMockingboard()
+}
+
 const doBoot = () => {
   setCycleCount(0)
   memoryReset()
@@ -143,7 +151,7 @@ const doBoot = () => {
 }
 
 const doReset = () => {
-//  memoryReset()
+  clearInterrupts()
   for (const key in SWITCHES) {
     const keyTyped = key as keyof typeof SWITCHES
     SWITCHES[keyTyped].isSet = false
@@ -152,9 +160,7 @@ const doReset = () => {
   // Reset banked RAM
   memGet(0xC082)
   reset6502()
-  doResetDrive()
-  setButtonState()
-  resetMouse()
+  resetMachine()
 }
 
 export const doSetNormalSpeed = (normal: boolean) => {

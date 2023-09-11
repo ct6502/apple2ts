@@ -94,7 +94,7 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
   passData()
 }
 
-export const doResetDrive = () => {
+export const resetDrive = () => {
   doResetDiskDrive(driveState[1])
   doResetDiskDrive(driveState[2])
   passData()

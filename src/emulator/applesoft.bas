@@ -9,6 +9,14 @@ color, white, cross-byte color, cross-byte white, 11011 patterns
 2800: 81 83 C0 00 E0 00 E0 01 00 6C
 2c00: 82 86 00 C0 00 E0 00 E0 01
 
+Assembly code to product a nice tone:
+!
+300: LDA $C030
+ LDX #$DF
+ DEX
+ BNE $305
+ JMP $300
+
 REM print values for $C000, $C010, $C020, $C030
 10 FOR X = 0 TO 15: PRINT PEEK(49152+X)" ";: NEXT : PRINT : GOTO 10
 10 FOR X = 0 TO 15: PRINT PEEK(49168+X)" ";: NEXT : PRINT : GOTO 10

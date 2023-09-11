@@ -77,6 +77,11 @@ export const nonMaskableInterrupt = (set = true) => {
   flagNMI = set === true
 }
 
+export const clearInterrupts = () => {
+  flagIRQ = 0
+  flagNMI = false
+}
+
 const cycleCountCallbacks: Array<() => void> = []
 export const registerCycleCountCallback = (fn: () => void) => {
   if (!cycleCountCallbacks.includes(fn)) {

@@ -39,6 +39,18 @@ const REG = [0x20, 0xA0]   // $C420...C42F and $C4A0...$C4AF
 const TIMER1 = 64
 const TIMER2 = 32
 
+export const resetMockingboard = () => {
+  // Clear out all our old parameters and interrupt flags.
+  // Otherwise we hang on a reset or reboot.
+  for (let addr = 0; addr <= 255; addr++) {
+    memSetSlotROM(slot, addr, 0)
+  }
+  // Stop the music.
+  for (let chip = 0; chip <= 1; chip++) {
+    doPassRegisters(chip)
+  }
+}
+
 const T1enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !== 0
 const T1fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
 const T1continuous = (chip: number) => (memGetSlotROM(slot, ACR[chip]) & 64) !== 0
