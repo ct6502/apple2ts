@@ -9,10 +9,10 @@ import { inVBL } from "./motherboard";
 // 10000: aux memory 
 // 20000...23FFF: ROM (including page $C0 soft switches)
 // 24000...246FF: Peripheral card ROM $C100-$C7FF
-// 24700...24EFF: Peripheral card expansion ROM ($C800-$CFFF)
+// 24700...27FFF: Slots 1-7 (8*256 byte C800 range for each card)
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-export let memory = (new Uint8Array(600 * 256)).fill(0)
+export let memory = (new Uint8Array(700 * 256)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -22,10 +22,15 @@ const addressSetTable = (new Array<number>(257)).fill(0)
 
 const ROMindexMinusC0 = 0x200 - 0xC0
 const SLOTindexMinusC1 = 0x240 - 0xC1
+const SLOTC8indexMinusC8 = 0x247 - 0xC8
+const SLOTC8pages = 8 // 2k each for C800-CFFF
 const AUXindex = 0x100
 const ROMstartMinusC000 = 256 * ROMindexMinusC0
 const SLOTstartMinusC100 = 256 * SLOTindexMinusC1
+const SLOTC8startMinusC800 = 256 * SLOTC8indexMinusC8
 const AUXstart = 256 * AUXindex
+let   INTC8ROM = false
+let   C800Slot = 0
 
 const updateMainAuxMemoryTable = () => {
   const offsetAuxRead = SWITCHES.RAMRD.isSet ? AUXindex : 0
@@ -100,10 +105,58 @@ const slotIsActive = (slot: number) => {
   return (slot !== 3) ? true : SWITCHES.SLOTC3ROM.isSet
 }
 
-// TODO: Need a way for peripheral cards to register their $C800-$CFFF
-// expansion ROM, and also activate that ROM when their slot ROM is accessed.
-// Currently there are no peripheral cards that require this, so ignore for now.
-let expansionROMisActive = false
+// Below description modified from AppleWin source
+//
+// INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
+// . Set:   On access to $C3XX with SLOTC3ROM reset
+//			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
+//			   an access is made to $CFFF or until the MMU detects a system reset."
+// . Reset: On access to $CFFF or an MMU reset
+//
+// - Acts like a card in slot 3, except it doesn't require CFFF to activate like
+//   a slot.
+//
+// INTCXROM   INTC8ROM   $C800-CFFF
+//    0           0         slot   
+//    0           1       internal 
+//    1           0       internal 
+//    1           1       internal 
+
+const slotC8IsActive = () => {
+  if (SWITCHES.INTCXROM.isSet || INTC8ROM) return false
+  // Will happen for one cycle after CFFF in slot ROM, or if CFFF was accessed
+  // outside of slot ROM space.
+  if (C800Slot <= 0) return false
+  return true
+}
+
+const manageC800 = (slot: number) => {
+
+  if (slot < 8) {
+    if (SWITCHES.INTCXROM.isSet)
+      return
+
+    // This combination forces INTC8ROM on
+    if (slot === 3 && !SWITCHES.SLOTC3ROM.isSet) {
+      if (INTC8ROM === false) {
+        INTC8ROM = true
+        C800Slot = -1
+        updateAddressTables()
+      }
+    }
+    if (C800Slot === 0) {
+      // If C800Slot is zero, then set it to first card accessed
+      C800Slot = slot
+      updateAddressTables();
+    }
+  } else {
+    // if slot > 7 then it was an access to 0xCFFF
+    // accessing CFFF resets everything WRT C8
+    INTC8ROM = false
+    C800Slot = 0
+    updateAddressTables()
+  }
+}
 
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x200...0x20F
@@ -113,8 +166,19 @@ const updateSlotRomTable = () => {
     addressGetTable[page] = page +
       (slotIsActive(slot) ? SLOTindexMinusC1 : ROMindexMinusC0)
   }
-  for (let i = 0xC8; i <= 0xCF; i++) {
-    addressGetTable[i] = i + (expansionROMisActive ? SLOTindexMinusC1 : ROMindexMinusC0)
+
+  // Fill in $C800-CFFF for cards
+  if (slotC8IsActive()) {
+    const slotC8 = 0xC8 + SLOTC8indexMinusC8 + ((C800Slot-1)*SLOTC8pages)
+    for (let i = 0; i < 8; i++) {
+      const page = 0xC8 + i
+      addressGetTable[page] = slotC8 + i;
+    }
+  }
+  else {
+    for (let i = 0xC8; i <= 0xCF; i++) {
+      addressGetTable[i] = ROMindexMinusC0 + i;
+    }
   }
 }
 
@@ -139,8 +203,10 @@ const slotIOCallbackTable = new Array<AddressCallback>(8)
 // Value = -1 indicates that this was a read/get operation
 const checkSlotIO = (addr: number, value = -1) => {
   const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
-  if (addr >= 0xC100 && !slotIsActive(slot)) {
-    return
+  if (addr >= 0xC100) {
+    manageC800(slot)
+    if (!slotIsActive(slot))
+      return
   }
   const fn = slotIOCallbackTable[slot]
   if (fn !== undefined) {
@@ -168,11 +234,18 @@ export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
  *
  * @param slot - The slot number 1-7.
  * @param driver - The ROM code for the driver.
+ *                 Range 0x00-0xff is the slot Cx00 space driver
+ *                 Anything above is considered C800 space to be activated for this card.
  * @param jump - (optional) If the program counter equals this address, then `fn` will be called.
  * @param fn - (optional) The function to jump to.
  */
 export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
-  memory.set(driver, SLOTstartMinusC100 + 0xC000 + slot * 0x100)
+  memory.set(driver.slice(0,0x100), SLOTstartMinusC100 + 0xC000 + slot * 0x100)
+  if (driver.length > 0x100) {
+    // only allow up to 2k for C8 range
+    const end = (driver.length > 0x900) ? 0x900 : driver.length;
+    memory.set(driver.slice(0x100,end), SLOTC8startMinusC800 + 0xC800 + (slot-1) * (SLOTC8pages*0x100))
+  }
   if (jump) {
     specialJumpTable.set(jump, fn)
   }
@@ -185,6 +258,8 @@ export const memoryReset = () => {
     Buffer.from(rom64, "base64")
   )
   memory.set(rom, ROMstartMinusC000 + 0xC000)
+  C800Slot = 0
+  INTC8ROM = false
   updateAddressTables()
 }
 
@@ -267,10 +342,8 @@ export const memGet = (addr: number): number => {
   }
   if (page >= 0xC1 && page <= 0xC7) {
     checkSlotIO(addr)
-  }
-  if (addr === 0xCFFF) {
-    expansionROMisActive = false
-    updateAddressTables()
+  } else if (addr === 0xCFFF) {
+    manageC800(0xFF);
   }
   const shifted = addressGetTable[page]
   return memory[shifted + (addr & 255)]
@@ -295,10 +368,8 @@ export const memSet = (addr: number, value: number) => {
   } else {
     if (page >= 0xC1 && page <= 0xC7) {
       checkSlotIO(addr, value)
-    }
-    if (addr === 0xCFFF) {
-      expansionROMisActive = false
-      updateAddressTables()
+    } else if (addr === 0xCFFF) {
+      manageC800(0xFF);
     }
     const shifted = addressSetTable[page]
     // This will prevent us from setting slot ROM or motherboard ROM
