@@ -92,6 +92,10 @@ export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boole
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
 }
 
+export const passRxCommData = (data: Uint8Array) => {
+  doPostMessage(MSG_MAIN.COMM_DATA, data)
+}
+
 let machineState: MachineState = {
   state: STATE.IDLE,
   speed: 0,
@@ -153,6 +157,10 @@ const doOnMessage = (e: MessageEvent) => {
       break
       default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
+      break
+    case MSG_WORKER.COMM_DATA:
+      //const commdata = e.data.payload as Uint8Array
+      // throw away for now
       break
   }
 }

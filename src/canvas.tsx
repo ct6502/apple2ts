@@ -270,6 +270,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   return <span className="canvasText">
     <canvas ref={props.myCanvas}
+      className="mainCanvas"
       style={{cursor: showMouse ? "auto" : "none"}}
       width={width} height={height}
       tabIndex={0}

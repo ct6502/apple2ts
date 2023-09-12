@@ -18,6 +18,7 @@ export enum MSG_WORKER {
   HELP_TEXT,
   SHOW_MOUSE,
   MBOARD_SOUND,
+  COMM_DATA,
 }
 
 export enum MSG_MAIN {
@@ -39,6 +40,7 @@ export enum MSG_MAIN {
   DRIVE_PROPS,
   GAMEPAD,
   SET_BINARY_BLOCK,
+  COMM_DATA,
 }
 
 export enum COLOR_MODE {
