@@ -87,7 +87,7 @@ class DisplayApple2 extends React.Component<{},
   };
 
   handleColorChange = () => {
-    const mode = (this.state.colorMode + 1) % 4
+    const mode = (this.state.colorMode + 1) % 5
     this.setState({ colorMode: mode });
   };
 
