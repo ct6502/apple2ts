@@ -29,7 +29,6 @@ const ROMstartMinusC000 = 256 * ROMindexMinusC0
 const SLOTstartMinusC100 = 256 * SLOTindexMinusC1
 const SLOTC8startMinusC800 = 256 * SLOTC8indexMinusC8
 const AUXstart = 256 * AUXindex
-let   INTC8ROM = false
 let   C800Slot = 0
 
 const updateMainAuxMemoryTable = () => {
@@ -123,7 +122,7 @@ const slotIsActive = (slot: number) => {
 //    1           1       internal 
 
 const slotC8IsActive = () => {
-  if (SWITCHES.INTCXROM.isSet || INTC8ROM) return false
+  if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) return false
   // Will happen for one cycle after CFFF in slot ROM, or if CFFF was accessed
   // outside of slot ROM space.
   if (C800Slot <= 0) return false
@@ -138,8 +137,8 @@ const manageC800 = (slot: number) => {
 
     // This combination forces INTC8ROM on
     if (slot === 3 && !SWITCHES.SLOTC3ROM.isSet) {
-      if (INTC8ROM === false) {
-        INTC8ROM = true
+      if (!SWITCHES.INTC8ROM.isSet) {
+        SWITCHES.INTC8ROM.isSet = true
         C800Slot = -1
         updateAddressTables()
       }
@@ -152,7 +151,7 @@ const manageC800 = (slot: number) => {
   } else {
     // if slot > 7 then it was an access to 0xCFFF
     // accessing CFFF resets everything WRT C8
-    INTC8ROM = false
+    SWITCHES.INTC8ROM.isSet = false
     C800Slot = 0
     updateAddressTables()
   }
@@ -259,7 +258,6 @@ export const memoryReset = () => {
   )
   memory.set(rom, ROMstartMinusC000 + 0xC000)
   C800Slot = 0
-  INTC8ROM = false
   updateAddressTables()
 }
 

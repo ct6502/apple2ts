@@ -62,6 +62,7 @@ export const SWITCHES = {
   RAMRD: NewSwitch(0xC002, 0xC013, true),
   RAMWRT: NewSwitch(0xC004, 0xC014, true),
   INTCXROM: NewSwitch(0xC006, 0xC015, true),
+  INTC8ROM: NewSwitch(0, 0),  // Unreadable soft switch; add here so it is saved/restored
   ALTZP: NewSwitch(0xC008, 0xC016, true),
   SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true),
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
