@@ -5,14 +5,14 @@ import { Buffer } from "buffer";
 import { handleGameSetup } from "./game_mappings";
 import { inVBL } from "./motherboard";
 
-// 00000: main memory
-// 10000: aux memory 
-// 20000...23FFF: ROM (including page $C0 soft switches)
-// 24000...246FF: Peripheral card ROM $C100-$C7FF
-// 24700...27FFF: Slots 1-7 (8*256 byte C800 range for each card)
+// 0x00000: main memory
+// 0x10000: aux memory 
+// 0x20000...23FFF: ROM (including page $C0 soft switches)
+// 0x24000...246FF: Peripheral card ROM $C100-$C7FF
+// 0x24700...27EFF: Slots 1-7 (8*256 byte $C800-$CFFF range for each card)
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-export let memory = (new Uint8Array(700 * 256)).fill(0)
+export let memory = (new Uint8Array(0x27F00)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -20,14 +20,13 @@ export let memory = (new Uint8Array(700 * 256)).fill(0)
 const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 
-const ROMindexMinusC0 = 0x200 - 0xC0
-const SLOTindexMinusC1 = 0x240 - 0xC1
-const SLOTC8indexMinusC8 = 0x247 - 0xC8
-const SLOTC8pages = 8 // 2k each for C800-CFFF
+const ROMindex = 0x200
+const SLOTindex = 0x240
+const SLOTC8index = 0x247
 const AUXindex = 0x100
-const ROMstartMinusC000 = 256 * ROMindexMinusC0
-const SLOTstartMinusC100 = 256 * SLOTindexMinusC1
-const SLOTC8startMinusC800 = 256 * SLOTC8indexMinusC8
+const ROMstart = 256 * ROMindex
+const SLOTstart = 256 * SLOTindex
+const SLOTC8start = 256 * SLOTC8index
 const AUXstart = 256 * AUXindex
 let   C800Slot = 0
 
@@ -72,7 +71,7 @@ const updateReadBankSwitchedRamTable = () => {
   } else {
     // ROM ($D000...$FFFF) is in 0x210...0x23F
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressGetTable[i] = ROMindexMinusC0 + i;
+      addressGetTable[i] = ROMindex + i - 0xC0;
     }
   }
 }
@@ -123,8 +122,8 @@ const slotIsActive = (slot: number) => {
 
 const slotC8IsActive = () => {
   if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) return false
-  // Will happen for one cycle after CFFF in slot ROM, or if CFFF was accessed
-  // outside of slot ROM space.
+  // Will happen for one cycle after $CFFF in slot ROM,
+  // or if $CFFF was accessed outside of slot ROM space.
   if (C800Slot <= 0) return false
   return true
 }
@@ -149,8 +148,8 @@ const manageC800 = (slot: number) => {
       updateAddressTables();
     }
   } else {
-    // if slot > 7 then it was an access to 0xCFFF
-    // accessing CFFF resets everything WRT C8
+    // if slot > 7 then it was an access to $CFFF
+    // accessing $CFFF resets everything WRT C8
     SWITCHES.INTC8ROM.isSet = false
     C800Slot = 0
     updateAddressTables()
@@ -159,24 +158,24 @@ const manageC800 = (slot: number) => {
 
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x200...0x20F
-  addressGetTable[0xC0] = ROMindexMinusC0
+  addressGetTable[0xC0] = ROMindex - 0xC0
   for (let slot = 1; slot <= 7; slot++) {
     const page = 0xC0 + slot
-    addressGetTable[page] = page +
-      (slotIsActive(slot) ? SLOTindexMinusC1 : ROMindexMinusC0)
+    addressGetTable[page] = slot +
+      (slotIsActive(slot) ? (SLOTindex - 1) : ROMindex)
   }
 
   // Fill in $C800-CFFF for cards
   if (slotC8IsActive()) {
-    const slotC8 = 0xC8 + SLOTC8indexMinusC8 + ((C800Slot-1)*SLOTC8pages)
-    for (let i = 0; i < 8; i++) {
+    const slotC8 = SLOTC8index + 8 * (C800Slot - 1)
+    for (let i = 0; i <= 7; i++) {
       const page = 0xC8 + i
       addressGetTable[page] = slotC8 + i;
     }
   }
   else {
     for (let i = 0xC8; i <= 0xCF; i++) {
-      addressGetTable[i] = ROMindexMinusC0 + i;
+      addressGetTable[i] = ROMindex + i - 0xC0;
     }
   }
 }
@@ -212,8 +211,8 @@ const checkSlotIO = (addr: number, value = -1) => {
     const result = fn(addr, value)
     if (result >= 0) {
       // Set value in either slot memory or $C000 softswitch memory
-      const offset = (addr >= 0xC100) ? SLOTstartMinusC100 : ROMstartMinusC000
-      memory[addr + offset] = result
+      const offset = (addr >= 0xC100) ? (SLOTstart - 0x100) : ROMstart
+      memory[addr - 0xC000 + offset] = result
     }
   }
 }
@@ -239,11 +238,12 @@ export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
  * @param fn - (optional) The function to jump to.
  */
 export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
-  memory.set(driver.slice(0,0x100), SLOTstartMinusC100 + 0xC000 + slot * 0x100)
+  memory.set(driver.slice(0, 0x100), SLOTstart + (slot - 1) * 0x100)
   if (driver.length > 0x100) {
     // only allow up to 2k for C8 range
     const end = (driver.length > 0x900) ? 0x900 : driver.length;
-    memory.set(driver.slice(0x100,end), SLOTC8startMinusC800 + 0xC800 + (slot-1) * (SLOTC8pages*0x100))
+    const addr = SLOTC8start + (slot - 1) * 0x800
+    memory.set(driver.slice(0x100,end), addr)
   }
   if (jump) {
     specialJumpTable.set(jump, fn)
@@ -256,7 +256,7 @@ export const memoryReset = () => {
   const rom = new Uint8Array(
     Buffer.from(rom64, "base64")
   )
-  memory.set(rom, ROMstartMinusC000 + 0xC000)
+  memory.set(rom, ROMstart)
   C800Slot = 0
   updateAddressTables()
 }
@@ -309,16 +309,17 @@ const memGetSoftSwitch = (addr: number): number => {
   if (addr >= 0xC050) {
     updateAddressTables()
   }
-  return memory[ROMstartMinusC000 + addr]
+  return memory[ROMstart + addr - 0xC000]
 }
 
 export const memGetSlotROM = (slot: number, addr: number) => {
-  return memory[SLOTstartMinusC100 + 0xC000 + slot * 0x100 + (addr & 0xFF)]
+  const offset = SLOTstart + (slot - 1) * 0x100 + (addr & 0xFF)
+  return memory[offset]
 }
 
 export const memSetSlotROM = (slot: number, addr: number, value: number) => {
   if (value >= 0) {
-    const offset = SLOTstartMinusC100 + 0xC000 + slot * 0x100 + (addr & 0xFF)
+    const offset = SLOTstart + (slot - 1) * 0x100 + (addr & 0xFF)
     memory[offset] = value & 0xFF
   }
 }
@@ -377,11 +378,11 @@ export const memSet = (addr: number, value: number) => {
 }
 
 export const memGetC000 = (addr: number) => {
-  return memory[ROMstartMinusC000 + addr]
+  return memory[ROMstart + addr - 0xC000]
 }
 
 export const memSetC000 = (addr: number, value: number, repeat = 1) => {
-  const start = ROMstartMinusC000 + addr
+  const start = ROMstart + addr - 0xC000
   memory.fill(value, start, start + repeat)
 }
 
