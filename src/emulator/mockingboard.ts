@@ -53,7 +53,7 @@ export const resetMockingboard = () => {
 
 const T1enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !== 0
 const T1fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
-const T1continuous = (chip: number) => (memGetSlotROM(slot, ACR[chip]) & 64) !== 0
+const T1continuous = (chip: number) => (memGetSlotROM(slot, ACR[chip]) & TIMER1) !== 0
 
 const handleTimerT1 = (chip: number, cycleDelta: number) => {
   let t1low = memGetSlotROM(slot, T1CL[chip]) - cycleDelta
@@ -74,8 +74,8 @@ const handleTimerT1 = (chip: number, cycleDelta: number) => {
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired | TIMER1)
         const ifr = memGetSlotROM(slot, IFR[chip])
-        memSetSlotROM(slot, IFR[chip], ifr | 128 | TIMER1)
-        handleInterruptFlag(chip ? 1 : 0, -1)
+        memSetSlotROM(slot, IFR[chip], ifr | TIMER1)
+        handleInterruptFlag(chip, -1)
         if (T1continuous(chip)) {
           const t1NewHigh = memGetSlotROM(slot, T1LH[chip])
           const t1NewLow = memGetSlotROM(slot, T1LL[chip])
@@ -111,7 +111,7 @@ const handleTimerT2 = (chip: number, cycleDelta: number) => {
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired | TIMER2)
         const ifr = memGetSlotROM(slot, IFR[chip])
-        memSetSlotROM(slot, IFR[chip], ifr | 128 | TIMER2)
+        memSetSlotROM(slot, IFR[chip], ifr | TIMER2)
         handleInterruptFlag(chip, -1)
       }
     }
@@ -123,8 +123,8 @@ let prevCycleCount = 0
 const cycleCountCallback = () => {
   const cycleDelta = cycleCount - prevCycleCount
   for (let chip = 0; chip <= 1; chip++) {
-    handleTimerT1(chip ? 1 : 0, cycleDelta)
-    handleTimerT2(chip ? 1 : 0, cycleDelta)
+    handleTimerT1(chip, cycleDelta)
+    handleTimerT2(chip, cycleDelta)
   }
   prevCycleCount = cycleCount
 }
@@ -157,7 +157,8 @@ export const disablePassRegisters = () => {
 
 const handleCommand = (chip: number) => {
   const orb = memGetSlotROM(slot, ORB[chip])
-  switch (orb) {
+  // Some programs (Ultima 5) pass extra bits, so just remove them
+  switch (orb & 7) {
     case 0:   // RESET command
       for (let reg = 0; reg <= 15; reg++) {
         memSetSlotROM(slot, REG[chip] + reg, 0)
@@ -190,19 +191,11 @@ const handleInterruptFlag = (chip: number, value: number) => {
     // Turn off any interrupt bits that are set in our value.
     // Leave other bits alone.
     ifr &= (127 - (value & 127))
+    memSetSlotROM(slot, IFR[chip], ifr)
   }
-  // Set bit 7 if any other interrupt flags are set
-  if (ifr & 127) {
-    ifr |= 128
-  } else {
-    ifr = 0
-  }
-  memSetSlotROM(slot, IFR[chip], ifr)
-  const ifr0 = memGetSlotROM(slot, IFR[0])
-  const ifr1 = memGetSlotROM(slot, IFR[1])
   switch (chip) {
-    case 0: interruptRequest(slot, ifr0 !== 0); break
-    case 1: nonMaskableInterrupt(ifr1 !== 0); break
+    case 0: interruptRequest(slot, ifr !== 0); break
+    case 1: nonMaskableInterrupt(ifr !== 0); break
   }
 }
 
@@ -254,10 +247,9 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
       if (value >= 0) {
         // Copy counter into latch
         memSetSlotROM(slot, T1LL[chip], value)
-      } else {
-        // reset T1 interrupt flag
-        handleInterruptFlag(chip, TIMER1)
       }
+      // Reset T1 interrupt (Note that a "write" also does a "read")
+      handleInterruptFlag(chip, TIMER1)
       break
     case T1CH[chip]: // Timer 1 high-order counter, fall thru
       if (value >= 0) {
@@ -270,15 +262,27 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         handleInterruptFlag(chip, TIMER1)
       }
       break
-    case T1LL[chip]: break // Timer 1 low-order latch
-    case T1LH[chip]: break // Timer 1 high-order latch
+    case T1LL[chip]: // Timer 1 low-order latch
+      if (value >= 0) {
+        memSetSlotROM(slot, address, value)
+        // This seems weird (and contradicts the datasheet?) but writing into
+        // the low-order latch also does a read from the low-order counter,
+        // and hence resets the interrupt flag. This was the only
+        // way to get Ultima 5 to play music.
+        handleInterruptFlag(chip, TIMER1)
+      }
+      break
+    case T1LH[chip]: // Timer 1 high-order latch
+      if (value >= 0) {
+        memSetSlotROM(slot, address, value)
+      }
+      break
     case T2CL[chip]: // Timer 2 low-order latch/counter
       if (value >= 0) {
         memSetSlotROM(slot, T2LL[chip], value)
-      } else {
-        // Reset T2 interrupt flag
-        handleInterruptFlag(chip, TIMER2)
       }
+      // Reset T2 interrupt (Note that a "write" also does a "read")
+      handleInterruptFlag(chip, TIMER2)
       break
     case T2CH[chip]: // Timer 2 high-order counter
       if (value >= 0) {
@@ -291,7 +295,9 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
       }
       break
     case IFR[chip]: // Interrupt flag register
-      handleInterruptFlag(chip, value)
+      if (value >= 0) {
+        handleInterruptFlag(chip, value)
+      }
       break
     case IER[chip]: // Interrupt enable register
       handleInterruptEnable(chip, value)

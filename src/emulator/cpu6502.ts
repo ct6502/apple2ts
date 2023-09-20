@@ -114,7 +114,7 @@ export const processInstruction = (step = false) => {
       outputInstructionTrail()
     }
     const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-    const out = `${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
+    const out = `${cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
     console.log(out)

@@ -58,6 +58,42 @@ REM print values for $C000, $C010, $C020, $C030
 8 B=B+1:NEXT:NEXT:B=0
 9 FOR I=0 TO 7:HCOLOR=I:HPLOT 0,132+I*2 TO 28,132+I*2:NEXT
 
+call -151
+!
+300: JMP $31A ; skipover
+ SEI
+ LDX #$7F
+ STX $C40D   ; reset Mock interrupt
+ BIT $C030
+ DEX
+ BNE $309
+ RTI
+ CLI         ; loop
+ LDA $C405   ; Mock timer1 counter high
+ STA $2FF
+ JMP $310    ; to loop
+ CLI         ; skipover
+ BIT $C08B   ; bank switched ram enable
+ BIT $C08B
+ LDA #$03    ; irq vector
+ STA $FFFE
+ STA $FFFF
+ LDA #$FF    ; enable Mockingboard
+ STA $C403
+ LDA #$7
+ STA $C402
+ LDA #$40    ; Mock make timer1 continuous
+ STA $C40B
+ LDA #$FF    ; Mock timer1 counter low
+ STA $C404
+ LDA #$FF    ; Mock timer1 counter high
+ STA $C405
+ LDA #$C0    ; Mock timer1 enable
+ STA $C40E
+ JMP $310   ; to loop
+
+
+
 HGR
 CALL-151
 !
