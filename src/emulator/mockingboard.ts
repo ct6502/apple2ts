@@ -1,5 +1,5 @@
 import { interruptRequest, nonMaskableInterrupt, registerCycleCountCallback } from "./cpu6502";
-import { cycleCount } from "./instructions";
+import { s6502 } from "./instructions";
 import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "./memory"
 import { passMockingboard } from "./worker2main"
 
@@ -121,12 +121,12 @@ const handleTimerT2 = (chip: number, cycleDelta: number) => {
 let prevCycleCount = 0
 
 const cycleCountCallback = () => {
-  const cycleDelta = cycleCount - prevCycleCount
+  const cycleDelta = s6502.cycleCount - prevCycleCount
   for (let chip = 0; chip <= 1; chip++) {
     handleTimerT1(chip, cycleDelta)
     handleTimerT2(chip, cycleDelta)
   }
-  prevCycleCount = cycleCount
+  prevCycleCount = s6502.cycleCount
 }
 
 const getRegisters = (chip: number) => {

@@ -1,5 +1,5 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
-import { cycleCount, s6502 } from "./instructions"
+import { s6502 } from "./instructions"
 import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./game_mappings";
@@ -304,7 +304,7 @@ const memGetSoftSwitch = (addr: number): number => {
   if (addr >= 0xC090) {
     checkSlotIO(addr)
   } else {
-    checkSoftSwitches(addr, false, cycleCount)
+    checkSoftSwitches(addr, false, s6502.cycleCount)
   }
   if (addr >= 0xC050) {
     updateAddressTables()
@@ -352,7 +352,7 @@ const memSetSoftSwitch = (addr: number, value: number) => {
   if (addr >= 0xC090) {
     checkSlotIO(addr, value)
   } else {
-    checkSoftSwitches(addr, true, cycleCount)
+    checkSoftSwitches(addr, true, s6502.cycleCount)
   }
   if (addr <= 0xC00F || addr >= 0xC050) {
     updateAddressTables()

@@ -34,12 +34,15 @@ interface PCodeInstr {
 }
 
 type STATE6502 = {
+  cycleCount: number,
   PStatus: number,
   PC: number,
   Accum: number,
   XReg: number,
   YReg: number,
-  StackPtr: number
+  StackPtr: number,
+  flagIRQ: number,
+  flagNMI: boolean
 }
 
 type Apple2SaveState = {

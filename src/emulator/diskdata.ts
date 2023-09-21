@@ -1,5 +1,5 @@
 import { passDriveSound } from "./worker2main"
-import { cycleCount } from './instructions'
+import { s6502 } from './instructions'
 import { toHex, DRIVE } from "./utility"
 import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
 import { setSlotDriver, setSlotIOCallback } from "./memory"
@@ -207,7 +207,7 @@ export const handleDriveSoftSwitches: AddressCallback =
   let dd = getCurrentDriveData()
   if (ds.hardDrive) return 0
   let result = 0
-  const delta = cycleCount - prevCycleCount
+  const delta = s6502.cycleCount - prevCycleCount
   // if (doDebugDrive && value !== 0x96) {
   //   const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
   //   const wb = (dataRegister > 0) ? `  writeByte=$${toHex(dataRegister)}` : ''
@@ -248,7 +248,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, delta)
         // Reset the Disk II Logic State Sequencer clock
-        prevCycleCount = cycleCount
+        prevCycleCount = s6502.cycleCount
       }
       ds.writeMode = false
       if (SWITCH.DATA_LATCH) {
@@ -259,7 +259,7 @@ export const handleDriveSoftSwitches: AddressCallback =
     case SWITCH.WRITE_ON:  // WRITE, Q7HIGH
       ds.writeMode = true
       // Reset the Disk II Logic State Sequencer clock
-      prevCycleCount = cycleCount
+      prevCycleCount = s6502.cycleCount
       if (value >= 0) {
         dataRegister = value
       }
@@ -270,7 +270,7 @@ export const handleDriveSoftSwitches: AddressCallback =
         if (ds.writeMode) {
           doWriteByte(ds, dd, delta)
           // Reset the Disk II Logic State Sequencer clock
-          prevCycleCount = cycleCount
+          prevCycleCount = s6502.cycleCount
         }
         if (value >= 0) {
           dataRegister = value

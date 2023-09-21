@@ -1,4 +1,4 @@
-import { cycleCount, doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
@@ -57,29 +57,27 @@ const outputInstructionTrail = () => {
   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
 }
 
-let flagIRQ = 0x00
 export const interruptRequest = (slot = 0, set = true) => {
   // IRQ is level sensitive, so it is always active while true
   if (set) {
-    flagIRQ |= (1<<slot)
+    s6502.flagIRQ |= (1<<slot)
   } else {
-    flagIRQ &= ~(1<<slot)
+    s6502.flagIRQ &= ~(1<<slot)
   }
-  flagIRQ &= 0xff
+  s6502.flagIRQ &= 0xff
 }
 
-let flagNMI = false
 export const nonMaskableInterrupt = (set = true) => {
   // NMI is edge sensitive, and is only activated on positive transition.
   // That also means if multiple cards activate NMI at the same time
   // there will be only 1 NMI transition and interrupt, so multiple slot state is
   // not required.
-  flagNMI = set === true
+  s6502.flagNMI = set === true
 }
 
 export const clearInterrupts = () => {
-  flagIRQ = 0
-  flagNMI = false
+  s6502.flagIRQ = 0
+  s6502.flagNMI = false
 }
 
 const cycleCountCallbacks: Array<() => void> = []
@@ -114,24 +112,24 @@ export const processInstruction = (step = false) => {
       outputInstructionTrail()
     }
     const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-    const out = `${cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
+    const out = `${s6502.cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
     console.log(out)
   }
   incrementPC(code.PC)
-  setCycleCount(cycleCount + cycles)
+  setCycleCount(s6502.cycleCount + cycles)
   processCycleCountCallbacks()
   // NMI has higher priority, and is edge sensitive
-  if (flagNMI) {
+  if (s6502.flagNMI) {
     // reset flag after a single activation
-    flagNMI = false
+    s6502.flagNMI = false
     cycles = doNonMaskableInterrupt()
-    setCycleCount(cycleCount + cycles)
+    setCycleCount(s6502.cycleCount + cycles)
   }
-  if (flagIRQ) {
+  if (s6502.flagIRQ) {
     cycles = doInterruptRequest()
-    setCycleCount(cycleCount + cycles)
+    setCycleCount(s6502.cycleCount + cycles)
   }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false

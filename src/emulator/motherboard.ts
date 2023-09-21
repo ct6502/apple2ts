@@ -69,7 +69,8 @@ const getApple2State = (): Apple2SaveState => {
 }
 
 const setApple2State = (newState: Apple2SaveState) => {
-  set6502State(JSON.parse(JSON.stringify(newState.s6502)))
+  const new6502: STATE6502 = JSON.parse(JSON.stringify(newState.s6502))
+  set6502State(new6502)
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
     const keyTyped = key as keyof typeof SWITCHES

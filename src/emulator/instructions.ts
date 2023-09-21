@@ -2,13 +2,16 @@ import { toHex, MODE } from "./utility"
 import { memGet, memSet } from "./memory"
 // var startTime = performance.now()
 
-export let s6502: STATE6502 = {
+export const s6502: STATE6502 = {
+  cycleCount: 0,
   PStatus: 0,
   PC: 0,
   Accum: 0,
   XReg: 0,
   YReg: 0,
-  StackPtr: 0
+  StackPtr: 0,
+  flagIRQ: 0,
+  flagNMI: false
 }
 
 export const setX = (value: number) => {
@@ -19,12 +22,14 @@ export const setY = (value: number) => {
   s6502.YReg = value
 }
 
-export let cycleCount = 0
+export const setCycleCount = (cycles: number) => { s6502.cycleCount = cycles }
 
-export const setCycleCount = (cycles: number) => { cycleCount = cycles }
-
-export const set6502State = (new6502: any) => {
-  s6502 = new6502
+export const set6502State = (restore6502: STATE6502) => {
+  // Ensure that any properties that aren't in restore6502 get reset.
+  reset6502()
+  // This should only copy properties that currently exist in restore6502.
+  // So it should be safe to add new properties to s6502.
+  Object.assign(s6502, restore6502)
 }
 
 export const reset6502 = () => {
@@ -34,6 +39,8 @@ export const reset6502 = () => {
   s6502.PStatus = 0b00100100  // bit 2 (Interrupt) + bit 5 (unused)
   s6502.StackPtr = 0xFF
   setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
+  s6502.flagIRQ = 0
+  s6502.flagNMI = false
 }
 
 export const incrementPC = (value: number) => {

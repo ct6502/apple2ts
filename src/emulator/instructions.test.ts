@@ -32,7 +32,12 @@ test('doBranch', () => {
 export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: number, debug=false) => {
   const irqClear = 0x1FFF
   const start = 0x2000
+  // Make sure reset6502 doesn't stomp on our flags for our interrupt tests.
+  const irq = s6502.flagIRQ
+  const nmi = s6502.flagNMI
   reset6502()
+  s6502.flagIRQ = irq
+  s6502.flagNMI = nmi
   enableMockingboard()
   updateAddressTables()
   setInterruptDisabled(false)
