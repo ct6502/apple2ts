@@ -53,7 +53,7 @@ const playRequestAudio = () => {
 }
 
 const playTrackOffEnd = () => {
-  if (isAudioEnabled) {
+  if ((isAudioEnabled())) {
     if (!trackOffEndAudio) {
       trackOffEndAudio = constructAudio(mp3List.mp3TrackOffEnd)
     }
@@ -62,7 +62,7 @@ const playTrackOffEnd = () => {
 }
 
 const playTrackSeek = () => {
-  if (isAudioEnabled) {
+  if (isAudioEnabled()) {
     if (!trackSeekAudio) {
       trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
     }
@@ -71,7 +71,7 @@ const playTrackSeek = () => {
 }
 
 const playMotorOn = () => {
-  if (!isAudioEnabled) return
+  if (!isAudioEnabled()) return
   if (!motorAudio) {
     motorAudio = constructAudio(mp3List.mp3DriveMotor)
     if (motorAudio) motorAudio.element.loop = true
@@ -80,7 +80,7 @@ const playMotorOn = () => {
     motorAudio?.context.suspend()
     return
   }
-  if (motorAudio.context.state === 'suspended' && isAudioEnabled) {
+  if (motorAudio.context.state === 'suspended' && isAudioEnabled()) {
     motorAudio.context.resume();
   }
   const playPromise = motorAudio.element.play();

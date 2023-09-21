@@ -13,6 +13,7 @@ import HelpPanel from "./helppanel"
 import DebugPanel from "./debugpanel"
 import { preloadAssets } from "./assets"
 import { changeMockingboardMode } from "./mockingboard_audio"
+import { audioEnable } from "./speaker"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
@@ -21,6 +22,7 @@ class DisplayApple2 extends React.Component<{},
     uppercase: boolean;
     mockingboardMode: number;
     useArrowKeysAsJoystick: boolean;
+    audioEnable: boolean;
     colorMode: COLOR_MODE;
     doDebug: boolean;
     breakpoint: string;
@@ -40,6 +42,7 @@ class DisplayApple2 extends React.Component<{},
       speedCheck: true,
       uppercase: true,
       mockingboardMode: 0,
+      audioEnable: true,
       useArrowKeysAsJoystick: true,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
@@ -81,19 +84,23 @@ class DisplayApple2 extends React.Component<{},
 //    window.removeEventListener("resize", handleResize)
   }
 
-  handleSpeedChange = () => {
-    passSetNormalSpeed(!this.state.speedCheck)
-    this.setState({ speedCheck: !this.state.speedCheck });
+  handleSpeedChange = (enable: boolean) => {
+    passSetNormalSpeed(enable)
+    this.setState({ speedCheck: enable });
   };
 
-  handleColorChange = () => {
-    const mode = (this.state.colorMode + 1) % 5
+  handleColorChange = (mode: COLOR_MODE) => {
     this.setState({ colorMode: mode });
   };
 
-  handleDebugChange = () => {
-    passSetDebug(!this.state.doDebug)
-    this.setState({ doDebug: !this.state.doDebug });
+  handleAudioChange = (enable: boolean) => {
+    audioEnable(enable)
+    this.setState({ audioEnable: enable })
+  };
+
+  handleDebugChange = (enable: boolean) => {
+    passSetDebug(enable)
+    this.setState({ doDebug: enable });
   };
 
   handleBreakpoint = (breakpoint: string) => {
@@ -101,28 +108,33 @@ class DisplayApple2 extends React.Component<{},
     this.setState({ breakpoint: breakpoint });
   };
 
-  handleUpperCaseChange = () => {
-    this.setState({ uppercase: !this.state.uppercase });
+  handleUpperCaseChange = (enable: boolean) => {
+    this.setState({ uppercase: enable });
   };
 
-  handleMockingboardMode = () => {
-    const mockingboardMode = (this.state.mockingboardMode + 1) % 2
-    changeMockingboardMode(mockingboardMode)
-    this.setState({ mockingboardMode })
+  handleMockingboardMode = (mode: number) => {
+    changeMockingboardMode(mode)
+    this.setState({ mockingboardMode: mode })
   };
 
-  handleUseArrowKeyJoystick = () => {
-    this.setState({ useArrowKeysAsJoystick: !this.state.useArrowKeysAsJoystick });
+  handleUseArrowKeyJoystick = (enable: boolean) => {
+    this.setState({ useArrowKeysAsJoystick: enable });
   };
 
   restoreSaveStateFunc = (fileContents: string) => {
     const saveState: EmulatorSaveState = JSON.parse(fileContents)
     passRestoreSaveState(saveState)
     if (saveState.emulator?.colorMode !== undefined) {
-      this.setState({colorMode: saveState.emulator.colorMode})
+      this.handleColorChange(saveState.emulator.colorMode)
     }
     if (saveState.emulator?.uppercase !== undefined) {
-      this.setState({uppercase: saveState.emulator.uppercase})
+      this.handleUpperCaseChange(saveState.emulator.uppercase)
+    }
+    if (saveState.emulator?.audioEnable !== undefined) {
+      this.handleAudioChange(saveState.emulator.audioEnable)
+    }
+    if (saveState.emulator?.mockingboardMode !== undefined) {
+      this.handleMockingboardMode(saveState.emulator.mockingboardMode)
     }
     passSetCPUState(STATE.RUNNING)
   }
@@ -157,6 +169,8 @@ class DisplayApple2 extends React.Component<{},
       help: this.state.helptext.split('\n')[0],
       colorMode: this.state.colorMode,
       uppercase: this.state.uppercase,
+      audioEnable: this.state.audioEnable,
+      mockingboardMode: this.state.mockingboardMode,
     }
     const state = JSON.stringify(saveState, null, 2)
     const blob = new Blob([state], {type: "text/plain"});
@@ -231,14 +245,16 @@ class DisplayApple2 extends React.Component<{},
       myCanvas: this.myCanvas,
       hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
-      handleSpeedChange: this.handleSpeedChange,
       canGoBackward: handleCanGoBackward(),
       canGoForward: handleCanGoForward(),
       uppercase: this.state.uppercase,
       mockingboardMode: this.state.mockingboardMode,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
+      audioEnable: this.state.audioEnable,
+      handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
+      handleAudioChange: this.handleAudioChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
       handleMockingboardMode: this.handleMockingboardMode,

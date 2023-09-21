@@ -188,7 +188,7 @@ export const changeMockingboardMode = (mode: number) => {
 }
 
 export const playMockingboard = (sound: MockingboardSound) => {
-  if (!hasAudioContext || !isAudioEnabled) return
+  if (!hasAudioContext || !isAudioEnabled()) return
   if (!mockingboardAudio) {
     mockingboardAudio = constructAudio()
   }

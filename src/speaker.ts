@@ -1,30 +1,38 @@
-
 let audioContext: AudioContext
 let speaker: AudioWorkletNode
-export let isAudioEnabled = typeof AudioContext !== 'undefined'
+export let isAudioEnabled = () => (isAudioButtonEnabled && emulatorSoundEnabled)
 
 const audioContexts = new Array<AudioContext>()
 
-// This is primarily used by the Disk Drives.
 // Any AudioContext registered here will be suspended/resumed when
 // audioEnable is called.
 export const registerAudioContext = (context: AudioContext)  => {
   audioContexts.push(context)
   // Our audio might be disabled from the beginning.
-  if (!isAudioEnabled) {
+  if (!isAudioEnabled()) {
     context.suspend()
   }
 }
 
+let isAudioButtonEnabled = true
+let emulatorSoundEnabled = true
+
 export const audioEnable = (enable: boolean) => {
-  isAudioEnabled = enable
-  audioContexts.forEach(context => {
-    if (isAudioEnabled) {
-      context.resume()
-    } else {
-      context.suspend()
-    }
-  });
+  isAudioButtonEnabled = enable
+  changeAudioContexts()
+}
+
+export const emulatorSoundEnable = (enable: boolean) => {
+  emulatorSoundEnabled = enable
+  changeAudioContexts()
+}
+
+const changeAudioContexts = () => {
+  if (isAudioButtonEnabled && emulatorSoundEnabled) {
+    audioContexts.forEach(context => context.resume());
+  } else {
+    audioContexts.forEach(context => context.suspend());
+  }
 }
 
 const startOscillator = async () => {
@@ -44,7 +52,7 @@ const getAudioContext = () => {
 
 // https://marcgg.com/blog/2016/11/01/javascript-audio/
 export const clickSpeaker = (cycleCount: number) => {
-  if (!isAudioEnabled) return
+  if (!(isAudioEnabled())) return
   if (getAudioContext().state !== "running") {
     audioContext.resume();
   }

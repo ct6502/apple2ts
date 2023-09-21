@@ -1,6 +1,6 @@
 import { STATE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
-import { clickSpeaker } from "./speaker"
+import { clickSpeaker, emulatorSoundEnable } from "./speaker"
 import { startupTextPage } from "./startuptextpage"
 import { doRumble } from "./gamepad"
 import { setShowMouse } from "./canvas"
@@ -120,6 +120,9 @@ const doOnMessage = (e: MessageEvent) => {
         machineState.button1 !== e.data.payload.button1 ||
         machineState.canGoBackward !== e.data.payload.canGoBackward ||
         machineState.canGoForward !== e.data.payload.canGoForward
+      if (machineState.state !== e.data.payload.state) {
+        emulatorSoundEnable(e.data.payload.state === STATE.RUNNING)
+      }
       machineState = e.data.payload
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
@@ -155,14 +158,14 @@ const doOnMessage = (e: MessageEvent) => {
       const mboard = e.data.payload as MockingboardSound
       playMockingboard(mboard)
       break
-      default:
-      console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
-      break
     case MSG_WORKER.COMM_DATA:
       //const commdata = e.data.payload as Uint8Array
       // throw away for now
       break
-  }
+    default:
+      console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
+      break
+    }
 }
 
 export const handleGetState = () => {

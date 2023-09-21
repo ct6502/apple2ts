@@ -1,7 +1,6 @@
 import { COLOR_MODE, DRIVE, STATE, colorToName } from "./emulator/utility";
 import { passSetCPUState, passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward } from "./main2worker"
-import { isAudioEnabled, audioEnable } from "./speaker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -106,12 +105,12 @@ const ControlButtons = (props: DisplayProps) => {
     </button>
     <button className="pushButton"
       title={props.speedCheck ? "1 MHz" : "Fast Speed"}
-      onClick={props.handleSpeedChange}>
+      onClick={() => props.handleSpeedChange(!props.speedCheck)}>
       <FontAwesomeIcon icon={props.speedCheck ? faWalking : faTruckFast}/>
     </button>
     <button className="pushButton"
       title={colorToName(props.colorMode)}
-      onClick={props.handleColorChange}>
+      onClick={() => props.handleColorChange((props.colorMode + 1) % 5)}>
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
           {svgRect}
@@ -122,24 +121,24 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={"Toggle Sound"}
       style={{display: typeof AudioContext !== 'undefined' ? '' : 'none'}}
-      onClick={() => {audioEnable(!isAudioEnabled); props.updateDisplay()}}>
-      <FontAwesomeIcon icon={isAudioEnabled ? faVolumeHigh : faVolumeXmark}/>
+      onClick={() => {props.handleAudioChange(!props.audioEnable)}}>
+      <FontAwesomeIcon icon={props.audioEnable ? faVolumeHigh : faVolumeXmark}/>
     </button>
     <button className="pushButton"
       title={props.uppercase ? "Uppercase" : "Lowercase"}
-      onClick={props.handleUpperCaseChange}>
+      onClick={() => props.handleUpperCaseChange(!props.uppercase)}>
       {props.uppercase ? <span>A</span> : <span>a</span>}
     </button>
     <button className="pushButton"
       title="Mockingboard Mode"
-      onClick={props.handleMockingboardMode}>
+      onClick={() => props.handleMockingboardMode((props.mockingboardMode + 1) % 2)}>
       {(props.mockingboardMode === 1) ?
         <svg className="svg-inline--fa" width="30" height="30">{svgSawtooth}</svg> :
       <FontAwesomeIcon icon={faWaveSquare}/>}
     </button>
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}
-      onClick={props.handleUseArrowKeyJoystick}>
+      onClick={() => props.handleUseArrowKeyJoystick(props.useArrowKeysAsJoystick)}>
       {useArrowKeysAsJoystick}
     </button> */}
     <button className="pushButton" title="Restore State"

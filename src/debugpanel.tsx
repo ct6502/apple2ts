@@ -20,7 +20,7 @@ const DebugPanel = (props: DebugProps) => {
         <input
           type="checkbox"
           checked={props.doDebug}
-          onChange={props.handleDebugChange}
+          onChange={() => props.handleDebugChange(!props.doDebug)}
         />
         Debug
       </label>

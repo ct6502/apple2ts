@@ -56,7 +56,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     ArrowRight: () => passGoForwardInTime(),
     b: () => passSetCPUState(STATE.NEED_BOOT),
     c: () => props.handleCopyToClipboard(),
-    f: () => props.handleSpeedChange(),
+    f: () => props.handleSpeedChange(!props.speedCheck),
     o: () => props.handleFileOpen(),
     p: () => passSetCPUState(props.machineState === STATE.PAUSED ? STATE.RUNNING : STATE.PAUSED),
     r: () => passSetCPUState(STATE.NEED_RESET),
