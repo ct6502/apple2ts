@@ -8,7 +8,7 @@ import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility";
 import { doSetBreakpoint, doSetDebug } from "./cpu6502";
 import { MouseCardEvent } from "./mouse";
-//import { receiveCommData } from "./serial";
+import { receiveCommData } from "./serial";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -124,7 +124,7 @@ self.onmessage = (e: MessageEvent) => {
       doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
       break
     case MSG_MAIN.COMM_DATA:
-      //receiveCommData(e.data.payload)
+      receiveCommData(e.data.payload)
       break;
       default:
       console.error(`worker2main: unhandled msg: ${e.data.msg}`)
