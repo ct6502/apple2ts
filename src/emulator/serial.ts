@@ -1,5 +1,6 @@
 // Super Serial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
+import { passTxCommData } from "./worker2main"
 import { setSlotDriver, setSlotIOCallback } from "./memory"
 
 //  Apple II Super Serial Card ROM - 341-0065-A.bin
@@ -213,16 +214,21 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
   setSlotIOCallback(slot, handleSerialIO)
 }
 
-let buffer = new Uint8Array(20)
-let bufpos = 0
+let receiveBuffer = new Uint8Array(0)
+let receivePos = -1
 
-const printChar = (ch: number) => {
-  buffer[bufpos] = ch
-  bufpos++
-  if (bufpos >= buffer.length) {
-    console.log("Serial: ", buffer)
-    bufpos = 0
-  }
+export const receiveCommData = (data: Uint8Array) => {
+  let tmpbuffer = new Uint8Array(receiveBuffer.length + data.length)
+  // new data first
+  tmpbuffer.set(data)
+  tmpbuffer.set(receiveBuffer, data.length)
+  receiveBuffer = tmpbuffer
+  receivePos += data.length
+}
+
+const sendCommChar = (data: number) => {
+  const sendBuffer = new Uint8Array(1).fill(data)
+  passTxCommData(sendBuffer)
 }
 
 const handleSerialIO = (addr: number, val: number = -1): number => {
@@ -256,12 +262,13 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
         return 0x28
     case REG.IOREG:
         if (val >= 0) {
-          // strip high bit for normal ascii
-          printChar(val)
-        }
-        else {
-          console.log("serial: read");
-          return 0
+          sendCommChar(val);
+        } else {
+          if (receivePos >= 0)
+            return receiveBuffer[receivePos--]
+          else
+            // error
+            return 0
         }
         break
     case REG.STATUS:
@@ -278,7 +285,7 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
           // bit 4 = transmit reg empty
           // bit 3 = receive reg ful
           var stat = 0x10
-          //  stat |= charsAvail() ? 0x08 : 0  
+          stat |= (receivePos >= 0) ? 0x08 : 0  
           return stat
         }
         break
