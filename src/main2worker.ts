@@ -5,6 +5,7 @@ import { startupTextPage } from "./startuptextpage"
 import { doRumble } from "./gamepad"
 import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./mockingboard_audio"
+import { receiveCommData } from "./imagewriter"
 
 let worker: Worker | null = null
 
@@ -159,8 +160,8 @@ const doOnMessage = (e: MessageEvent) => {
       playMockingboard(mboard)
       break
     case MSG_WORKER.COMM_DATA:
-      //const commdata = e.data.payload as Uint8Array
-      // throw away for now
+      const commdata = e.data.payload as Uint8Array
+      receiveCommData(commdata);
       break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
