@@ -205,3 +205,67 @@ https://commons.wikimedia.org/wiki/File:Apple_II_low-resolution_graphics_demo_2.
 0 REM Test pasting long lines
 2 HPLOT X*14,Y*2+D:A=PEEK(38)+256*PEEK(39):P=A+X*2:POKE P,B*(1-D):POKE P+1,0: POKE P+9,B*(1-D):POKE P+10,0: POKE A+18,127:POKE A+20,255: POKE A+23,127:POKE A+25:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D:HPLOT X*14,Y*2+D
 10 REM Did this line get pasted correctly?
+
+0 REM TEST IMAGEWRITER PRINTER FONTS
+110 HOME
+115 D$ = CHR$ (4)
+120 PRINT D$;"PR#1"
+123 FOR I=0 TO 2 STEP 1
+124 PRINT CHR$(27);"N"; :REM 80cpi font default
+125 IF I=0 THEN PRINT CHR$(27);"a0Correspondence Font"
+126 IF I=1 THEN PRINT CHR$(27);"a1Draft Font"
+127 IF I=2 THEN PRINT CHR$(27);"a2NLQ Font"
+130 PRINT "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+135 PRINT "!@#$%^&*()_+=-0987654321`~{}|\][;':,./<>?"
+137 PRINT "_gjp;yq"
+140 PRINT CHR$(27);"X";
+150 PRINT "Underlined"
+160 PRINT CHR$(27);"Y";
+180 PRINT CHR$(27);"!";
+190 PRINT "This is in Boldface"
+210 PRINT CHR$(27);CHR$ (34);
+220 PRINT CHR$ (14);
+231 PRINT "This is the Doublewide Mode"
+240 PRINT CHR$ (15);
+300 PRINT "Normal Height Mode ";
+340 PRINT CHR$(27);"w";
+350 PRINT "Half Height";
+360 PRINT CHR$(27);"X";
+370 PRINT "With Underline";
+371 PRINT CHR$(27);"Y";
+380 PRINT CHR$(27);"W";
+390 PRINT "Normal Height Again"
+400 PRINT "Super";
+440 PRINT CHR$(27);"x";
+450 PRINT "Script"
+460 PRINT CHR$(27);"z";
+470 PRINT "Sub";
+480 PRINT CHR$(27);"y";
+490 PRINT "Script"
+491 PRINT CHR$(27);"z";
+494 REM MouseText
+495 PRINT CHR$(27);"&";
+496 PRINT "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_"
+497 PRINT CHR$(27);"$";
+510 PRINT CHR$(27);"p"; :REM Proportional 144dpi
+520 PRINT CHR$(27);"s1"; :REM 1 dot spacing
+530 PRINT "Proportional 144 DPI 1DS abcdefghijklmnopqrstuvwxyz"
+540 PRINT CHR$(27);"s3"; :REM 3 dot spacing
+550 PRINT "Proportional 144 DPI 3DS abcdefghijklmnopqrstuvwxyz"
+560 PRINT CHR$(27);"s1"; :REM 1 dot spacing
+570 PRINT "5 dot spacing ->";
+580 PRINT CHR$(27);"5"; :REM Insert 2 spaces
+590 PRINT "<- here"
+610 PRINT CHR$(27);"P"; :REM Proportional 160dpi
+620 PRINT CHR$(27);"s1"; :REM 1 dot spacing
+630 PRINT "Proportional 160 DPI 1DS abcdefghijklmnopqrstuvwxyz"
+640 PRINT CHR$(27);"s3"; :REM 3 dot spacing
+650 PRINT "Proportional 160 DPI 3DS abcdefghijklmnopqrstuvwxyz"
+660 PRINT CHR$(27);"s1"; :REM 1 dot spacing
+670 PRINT "5 dot spacing ->";
+680 PRINT CHR$(27);"5"; :REM Insert 2 spaces
+690 PRINT "<- here"
+800 NEXT I
+900 PRINT D$; "PR#0"
+901 END
+
