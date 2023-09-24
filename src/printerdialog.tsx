@@ -62,7 +62,7 @@ export interface PrinterDialogProps {
 
 const PrinterDialog = (props: PrinterDialogProps) => {
   const { open, onClose } = props;
-  const [ state, setState ] = useState({
+  const [ state ] = useState({
     canvasRef: React.createRef<HTMLCanvasElement>()
   })
 

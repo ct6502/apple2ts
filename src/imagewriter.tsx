@@ -7,7 +7,6 @@ import { ImageWriterII } from "./iwii"
 
 let printing = false
 let printingTimeout = 0
-let commData = new Uint8Array(0)
 let iwcomponent: any = 0
 
 const setPrinting = (state: boolean) => {
