@@ -110,6 +110,28 @@ textarea {
   white-space: pre-wrap;
 }
 
+.printPanel {
+  display: flex;
+  font-family: monospace;
+  font-size: medium;
+  overflow: auto;
+  background-color: white;
+  margin-top: 5px;
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  opacity: 100%;
+  box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.5),
+    inset -1px 0px 1px 1px #BFBB98;
+}
+
+.printtext {
+  margin-left: 5px;
+  margin-left: 5px;
+  margin-top: 5px;
+  white-space: pre-wrap;
+}
+
 .small {
   font-size: small;
 }
