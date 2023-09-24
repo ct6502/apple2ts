@@ -161,7 +161,7 @@ const doOnMessage = (e: MessageEvent) => {
       break
     case MSG_WORKER.COMM_DATA:
       const commdata = e.data.payload as Uint8Array
-      receiveCommData(commdata);
+      receiveCommData(commdata)
       break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
