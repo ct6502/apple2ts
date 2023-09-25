@@ -14,6 +14,7 @@ import DebugPanel from "./debugpanel"
 import { preloadAssets } from "./assets"
 import { changeMockingboardMode } from "./mockingboard_audio"
 import { audioEnable } from "./speaker"
+import ImageWriter from "./imagewriter"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<{},
@@ -288,6 +289,7 @@ class DisplayApple2 extends React.Component<{},
                 <DiskInterface
                   speedCheck={this.state.speedCheck}
                 />
+                <ImageWriter />
             </div>
             <span className="statusItem">
               <span>{props.speed} MHz</span>
