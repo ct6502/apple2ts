@@ -1,4 +1,4 @@
-import { COLOR_MODE, DRIVE, STATE, colorToName } from "./emulator/utility";
+import { DRIVE, STATE, colorToName } from "./emulator/utility";
 import { passSetCPUState, passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward } from "./main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -21,49 +21,30 @@ import {
   faWaveSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { doPlayDriveSound } from "./diskinterface";
+import { getColorModeSVG, svgLowercase, svgUppercase } from "./icons";
+import { getMockingboardName } from "./mockingboard_audio";
+import { ListItemButton, Menu } from "@mui/material";
+import React from "react";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ControlButtons = (props: DisplayProps) => {
-  const svgSawtooth = <svg viewBox="0 0 20 20">
-  <polyline style={{fill: 'none', stroke: 'black', strokeWidth: '2.5px', strokeLinecap: 'round', strokeMiterlimit: 7.46}}
-  points="0 9.847 6.379 3.135 6.269 16.048 14.035 3.611 13.973 16.424 19.5 9.348"/>
-</svg>
-
-  let svgRect: any
-  switch (props.colorMode) {
-    case COLOR_MODE.COLOR:
-      svgRect = <svg>
-        <rect width={5} height={14} fill="#00ff00"/>
-        <rect width={5} height={14} x={5} fill="#ff00ff"/>
-        <rect width={5} height={14} x={10} fill="#007fff"/>
-        <rect width={5} height={14} x={15} fill="#ff7f00"/>
-      </svg>
-      break
-    case COLOR_MODE.NOFRINGE:
-      svgRect = <rect width={20} height={14} fill="#ffffff"/>
-      break
-    case COLOR_MODE.GREEN:
-      svgRect = <rect width={20} height={14} fill="#39FF14" opacity={0.5}/>
-      break;
-    case COLOR_MODE.AMBER:
-      svgRect = <rect width={20} height={14} fill="#FFA500" opacity={0.75}/>
-      break;
-    case COLOR_MODE.BLACKANDWHITE:
-      svgRect = <svg>
-        <rect width={10} height={14} fill="#000000"/>
-        <rect width={10} height={14} x={10} fill="#F0F0F0"/>
-      </svg>
-      break;
-    default:
-      break;
-  }
+  const [anchorButton, setAnchorButton] = React.useState<null | HTMLElement>(null);
+  let mockOpen = Boolean(anchorButton);
   const isTouchDevice = "ontouchstart" in document.documentElement
   // const useArrowKeysAsJoystick = props.useArrowKeysAsJoystick ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
 
-
+  const handleMockClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorButton(event.currentTarget);
+  };
+  const handleMockClose = (index = -1) => {
+    setAnchorButton(null);
+    if (index >= 0) props.handleMockingboardMode(index)
+  };
+  const squareWave = <FontAwesomeIcon icon={faWaveSquare}/>
+  
   return <span>
     <button className="pushButton"
       title="Boot"
@@ -113,7 +94,7 @@ const ControlButtons = (props: DisplayProps) => {
       onClick={() => props.handleColorChange((props.colorMode + 1) % 5)}>
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
-          {svgRect}
+          {getColorModeSVG(props.colorMode)}
         </svg>
         <FontAwesomeIcon icon={faDisplay}/>
       </span>
@@ -127,15 +108,32 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={props.uppercase ? "Uppercase" : "Lowercase"}
       onClick={() => props.handleUpperCaseChange(!props.uppercase)}>
-      {props.uppercase ? <span>A</span> : <span>a</span>}
+      {props.uppercase ? svgUppercase : svgLowercase}
     </button>
-    <button className="pushButton"
-      title="Mockingboard Mode"
-      onClick={() => props.handleMockingboardMode((props.mockingboardMode + 1) % 2)}>
-      {(props.mockingboardMode === 1) ?
-        <svg className="svg-inline--fa" width="30" height="30">{svgSawtooth}</svg> :
-      <FontAwesomeIcon icon={faWaveSquare}/>}
-    </button>
+
+    <button
+        id="basic-button"
+        className="pushButton"
+        title="Mockingboard wave form"
+        aria-controls={mockOpen ? 'basic-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={mockOpen ? 'true' : undefined}
+        onClick={handleMockClick}
+      >
+        {squareWave}
+      </button>
+      <Menu
+        id="basic-menu"
+        anchorEl={anchorButton}
+        open={mockOpen}
+        onClose={(event) => handleMockClose()}
+        MenuListProps={{
+          'aria-labelledby': 'basic-button',
+        }}>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+        <ListItemButton key={i} onClick={(event) => handleMockClose(i)} selected={i === props.mockingboardMode}>
+          {i === props.mockingboardMode ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}</ListItemButton>))}
+      </Menu>
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}
       onClick={() => props.handleUseArrowKeyJoystick(props.useArrowKeysAsJoystick)}>

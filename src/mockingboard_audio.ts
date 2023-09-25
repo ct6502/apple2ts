@@ -1,4 +1,8 @@
 import {isAudioEnabled, registerAudioContext} from "./speaker"
+import {Organ2} from "./wavetables/Organ2"
+import {PhonemeEe} from "./wavetables/PhonemeEe"
+import {TwelveStringGuitar1} from "./wavetables/TwelveStringGuitar1"
+import {Wurlitzer2} from "./wavetables/Wurlitzer2"
 
 const hasAudioContext = typeof AudioContext !== 'undefined'
 let mockingboardAudio: AudioDevice | undefined
@@ -161,28 +165,45 @@ const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: numb
   return new AudioBufferSourceNode(context, {loop: !hold, buffer: buffer})
 }
 
-const real = new Float32Array([0,0.4,0.4,1,1,1,0.3,0.7,0.6,0.5,0.9,0.8]);
-const imag = new Float32Array(real.length)
-let hornTable: PeriodicWave
+// const real = new Float32Array([0,0.4,0.4,1,1,1,0.3,0.7,0.6,0.5,0.9,0.8]);
+// const imag = new Float32Array(real.length)
+// let hornTable: PeriodicWave
 let modeSave = 0
+
+export const getMockingboardName = (index: number) => {
+  const names = ["Square","Sawtooth","Organ","12 String Guitar","Phoneme Ee","Wurlitzer"]
+  return names[index]
+}
 
 export const changeMockingboardMode = (mode: number) => {
   modeSave = mode
   if (!chipMerge) return
   for (let chip = 0; chip <= 1; chip++) {
     for (let c = 0; c <= 2; c++) {
+      let t: {real: number[], imag: number[]} = {real: [], imag: []}
+      let v = 0.30
       switch (mode) {
-        case 0: tones[chip][c].type = "square"; chipMerge.gain.value = 0.15; break
-        case 1: tones[chip][c].type = "sawtooth"; chipMerge.gain.value = 0.2; break
-        case 2:
-        case 3:
-          if (!hornTable && mockingboardAudio) {
-            hornTable = mockingboardAudio?.context.createPeriodicWave(real, imag)
-          }
-          tones[chip][c].setPeriodicWave(hornTable)
-          chipMerge.gain.value = 0.3
-          break
+        case 0: tones[chip][c].type = "square"; v = 0.15; break
+        case 1: tones[chip][c].type = "sawtooth"; v = 0.2; break
+        case 2: t = Organ2; break
+        case 3: t = TwelveStringGuitar1; break
+        case 4: t = PhonemeEe; break
+        case 5: t = Wurlitzer2; break
       }
+      if (t.real.length > 0) {
+        const table = mockingboardAudio?.context.createPeriodicWave(t.real, t.imag)
+        if (table) tones[chip][c].setPeriodicWave(table)
+      }
+      chipMerge.gain.value = v
+      // switch (mode) {
+      //   case 0: tones[chip][c].type = "square"; chipMerge.gain.value = 0.15; break
+      //   case 1: tones[chip][c].type = "sawtooth"; chipMerge.gain.value = 0.2; break
+      //   case 2:
+      //     const table = mockingboardAudio?.context.createPeriodicWave(Bass.real, Bass.imag)
+      //     if (table) tones[chip][c].setPeriodicWave(table)
+      //     chipMerge.gain.value = 0.3
+      //     break
+      // }
     }
   }
 }
