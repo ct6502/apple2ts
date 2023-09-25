@@ -5,48 +5,38 @@ import iwiioff from "./img/iwiioff.png"
 import PrinterDialog from "./printerdialog"
 import { ImageWriterII } from "./iwii"
 
-let printing = false
-let printingTimeout = 0
-let iwcomponent: any = 0
+let doSetPrinting: () => void
 
-const setPrinting = (state: boolean) => {
-  if (state === printing)
-    return
-
-  if (state === true) {
-    window.clearTimeout(printingTimeout)
-    printingTimeout = window.setTimeout(setPrinting, 1000, false)
-    printing = true;
-    // HACK
-    iwcomponent?.forceUpdate()
-  }
-  else if (state === false) {
-    printing = false;
-    // HACK
-    iwcomponent?.forceUpdate()
-  }
+const registerSetPrinting = (fn: () => void) => {
+  doSetPrinting = fn
 }
-
 export const receiveCommData = (data: Uint8Array) => {
-  setPrinting(true)
-
+  console.log(data.length)
+  if (doSetPrinting) doSetPrinting()
   ImageWriterII.write(data)
 }
 
 class ImageWriter extends React.Component {
-  
   canvas: HTMLCanvasElement
-
   state = {
     open: false,
+    printingTimeout: 0,
   }
 
   constructor(props: any)
   {
     super(props)
     this.canvas =  document.createElement("canvas");
-    // HACK
-    iwcomponent = this
+  }
+
+  setPrinting = () => {
+    if (this.state.printingTimeout !== 0) {
+      clearTimeout(this.state.printingTimeout);
+    }
+    const timeout = window.setTimeout(() => {
+      this.setState({printingTimeout: 0})
+    }, 1000)
+    this.setState({printingTimeout: timeout})
   }
 
   handleClickOpen = () =>
@@ -56,11 +46,12 @@ class ImageWriter extends React.Component {
 
   componentDidMount = () => {
     ImageWriterII.startup(this.canvas)
+    registerSetPrinting(this.setPrinting)
   }
 
   render() {
-    let status = printing ? 'PRINTING' : 'IDLE'
-    let img1 = printing ? iwiion : iwiioff
+    let status = this.state.printingTimeout ? 'PRINTING' : 'IDLE'
+    let img1 = this.state.printingTimeout ? iwiion : iwiioff
 
     return (
       <span className="drive">
