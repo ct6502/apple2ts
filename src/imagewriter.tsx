@@ -11,7 +11,6 @@ const registerSetPrinting = (fn: () => void) => {
   doSetPrinting = fn
 }
 export const receiveCommData = (data: Uint8Array) => {
-  console.log(data.length)
   if (doSetPrinting) doSetPrinting()
   ImageWriterII.write(data)
 }
