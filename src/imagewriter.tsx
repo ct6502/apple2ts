@@ -49,7 +49,6 @@ class ImageWriter extends React.Component {
   }
 
   render() {
-    let status = this.state.printingTimeout ? 'PRINTING' : 'IDLE'
     let img1 = this.state.printingTimeout ? iwiion : iwiioff
 
     return (
@@ -58,7 +57,6 @@ class ImageWriter extends React.Component {
           onClick={this.handleClickOpen}>
           <img className="iwii" src={img1} alt="iwii" height="57px"/>
         </Button>
-        <span className={"diskStatus"}>{status}</span>
         <PrinterDialog
           open={this.state.open}
           onClose={() => {this.setState({open: false})}}
