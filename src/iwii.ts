@@ -178,6 +178,7 @@ let _tmargin = _tbm
 let _bmargin = 0
 const _paperDPI = 180
 const _dpih = 144
+const _72DPIV = 2 // 2 = force 72dpi vertical (majority of software)
 let _dpi = _paperDPI
 let _tof = _tmargin
 let _lm = _lmargin
@@ -898,44 +899,6 @@ function setxscale(which:number)
                     v,    0,0);
 }
 
-function zsetxscale(which:number)
-{
-  // get old x scaling
-  let scale = 1.0 / _ctx.getTransform().a;
-
-  // undo previous scale
-  _px *= scale;
-
-  // XXX - i think this is right.
-  if (which === SCALE.FONTS)
-    scaletabs(scale); 
-
-  // compute new scale
-  scale = _paperDPI/_dpi;
-  
-  if (which === SCALE.FONTS)
-  {
-    scale *= (_usePropFont ? _propScale : _fixedScale);
-    // XXX - i think this is right.
-    scaletabs(scale); 
-  }
-
-  _px *= scale;
-
-  // recompute margins
-  _lmargin = _lrm;
-  _rmargin = _canvas.width - _lrm;
-
-  _lmargin *= (1.0/scale);
-  _rmargin *= (1.0/scale);
-
-  dbg("lmargin: " + _lmargin + " _rmargin: " + _rmargin);
-
-  const v = 1.0;
-  _ctx.setTransform(scale,0,0,
-                    v,    0,0);
-}
-
 function scaletabs(scale: number)
 {
   for(let i=0;i<_tabstops.length;i++)
@@ -1225,15 +1188,21 @@ function gfx(ch:number)
       _ctx.fillRect(_px+xoff, _py+2*7, 1, 1);
   }
 
-  for(let i=0;i<doubleLoop;i++)
+  const oldPY = _py;
+  for(let d=0;d<_72DPIV;d++)
   {
-    let x = i*2;
-    for(let j=0;j<boldLoop;j++)
+    _py += d;
+    for(let i=0;i<doubleLoop;i++)
     {
-      x += (j*0.25);
-      fgfx(ch,x);
+      let x = i*2;
+      for(let j=0;j<boldLoop;j++)
+      {
+        x += (j*0.25);
+        fgfx(ch,x);
+      }
     }
   }
+  _py = oldPY;
 
   incx(doubleLoop);
 }
@@ -1280,15 +1249,21 @@ export function fontGfx(ch:number)
       _ctx.fillRect(_px+xoff, _py+yoff+vdpi*8, 1, 1);
   }
 
-  for(let i=0;i<doubleLoop;i++)
+  const oldPY = _py;
+  for(let d=0;d<_72DPIV;d++)
   {
-    xoff = i*2;
-    for(let j=0;j<boldLoop;j++)
+    _py += d;
+    for(let i=0;i<doubleLoop;i++)
     {
-      xoff += (j*0.25);
-      fgfx(ch);
+      xoff = i*2;
+      for(let j=0;j<boldLoop;j++)
+      {
+        xoff += (j*0.25);
+        fgfx(ch);
+      }
     }
   }
+  _py = oldPY;
 
   incx(doubleLoop);
 }
