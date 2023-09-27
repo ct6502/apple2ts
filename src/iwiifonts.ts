@@ -1217,6 +1217,7 @@ export const NLQPropFontData = new Uint8Array([
 export interface Font {
   width: number;
   height: number;
+  scale: number;
   drawGlyph(code: number): void;
   data: Uint8Array;
   table: {width:number, offset:number} [];
@@ -1225,6 +1226,7 @@ export interface Font {
 export const DraftFont : Font = {
   width: 12,
   height: 8,
+  scale: 8/12,
   drawGlyph: function (code) {
     const offset = code * this.width;
     for(let i=0;i<this.width;i++)
@@ -1237,6 +1239,7 @@ export const DraftFont : Font = {
 export const CspFont : Font = {
   width: 8,
   height: 8,
+  scale: 8/8,
   drawGlyph: function (code) {
     const offset = code * this.width;
     for(let i=0;i<this.width;i++)
@@ -1249,6 +1252,7 @@ export const CspFont : Font = {
 export const CspPropFont : Font = {
   width: 12,
   height: 8,
+  scale: 1,
   drawGlyph: function (code) {
     const offset = this.table[code].offset;
     const gwidth = this.table[code].width; 
@@ -1262,6 +1266,7 @@ export const CspPropFont : Font = {
 export const NLQFont : Font = {
   width: 16,
   height: 16,
+  scale: 8/16,
   drawGlyph: function (code) {
     // data is over/under interleaved
     const offset = code * this.width * 2;
@@ -1277,6 +1282,7 @@ export const NLQFont : Font = {
 export const NLQPropFont : Font = {
   width: 16,
   height: 16,
+  scale: 1,
   drawGlyph: function (code) {
     // data is over/under interleaved, so multiply from table
     const offset = this.table[code].offset*2;
