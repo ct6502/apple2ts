@@ -92,21 +92,22 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     }
   }, [state.canvasRef, props.canvas]);
 
+  const defaultcursor = {cursor: 'default'}
+
   return (
     <Dialog onClose={handleClose} open={open}>
       <DialogTitle>ImageWriter II</DialogTitle>
-        <Tooltip title="Close">
-          <IconButton
-            aria-label="close"
+        <Tooltip title="Close Dialog">
+          <IconButton 
             onClick={handleClose}
             sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
             }}
             >
-            <CloseIcon />
+            <CloseIcon style={defaultcursor} />
           </IconButton>
         </Tooltip>
 
@@ -121,7 +122,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
             color: (theme) => theme.palette.grey[500],
             }}
             >
-            <DeleteIcon />
+            <DeleteIcon style={defaultcursor} />
           </IconButton>
         </Tooltip>
 
@@ -136,7 +137,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
             color: (theme) => theme.palette.grey[500],
             }}
             >
-            <PrintIcon />
+            <PrintIcon style={defaultcursor} />
           </IconButton>
         </Tooltip>
 
@@ -151,7 +152,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
             color: (theme) => theme.palette.grey[500],
             }}
             >
-            <RedoIcon />
+            <RedoIcon style={defaultcursor} />
           </IconButton>
         </Tooltip>
 
@@ -166,7 +167,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
             color: (theme) => theme.palette.grey[500],
             }}
             >
-            <SaveIcon />
+            <SaveIcon style={defaultcursor} />
           </IconButton>
         </Tooltip>
 

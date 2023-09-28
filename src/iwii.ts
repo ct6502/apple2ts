@@ -130,6 +130,7 @@ let CustomFontTable = [
 let CustomFont : Font = {
   width: 8,
   height: 8,
+  scale: 8/8,
   drawGlyph: function (code) {
     const offset = this.table[code].offset;
     let gwidth = this.table[code].width; 
@@ -177,6 +178,7 @@ let _tmargin = _tbm
 let _bmargin = 0
 const _paperDPI = 180
 const _dpih = 144
+const _72DPIV = 2 // 2 = force 72dpi vertical (majority of software)
 let _dpi = _paperDPI
 let _tof = _tmargin
 let _lm = _lmargin
@@ -189,6 +191,11 @@ let customdata: any = []
 
 let _tabstops = new Array(32);
 
+const SCALE = 
+{
+  FONTS: 0,
+  GFX: 1
+};
 let _slashZero = false;
 let _mapmousetext = false;
 let _bold = false;
@@ -198,11 +205,13 @@ let _halfHeight = false;
 let _underline = false;
 let _doubleWidth = false;
 let _rawoutput = false;
+let _fixedScale = 1;
 let _forceCspFont = false;
 let _cspFont = CspFont;
 let _font = DraftFont;
 let _propFont = CspPropFont;
 let _usePropFont = false;
+let _propScale = 1;
 let _useCustomFont = false;
 let _mapHighAscii = false;
 let _propSpacing = 0;
@@ -215,12 +224,15 @@ function usepropfont(onoff:boolean)
 
   if (_usePropFont)
   {
+    dbg("proportional font");
     _cspFont = CspPropFont;
   }
   else
   {
     _cspFont = CspFont;
   }
+
+  checkforcecsp();
 }
 
 function usecustomfont(onoff:boolean)
@@ -704,6 +716,35 @@ function setprintquality(q:number)
       log("Unhandled font code: " + q);
       break;
   }
+  setfontscale(q);
+  //checkforcecsp does a setxscale
+  checkforcecsp();
+}
+
+function setfontscale(q:number)
+{
+  // correspondance, draft, nlq
+  switch(q)
+  {
+    case 0: //correspondence
+      dbg("printquality: correspondence font");
+      _fixedScale = CspFont.scale;
+      _propScale = CspPropFont.scale;
+      break;
+    case 1: //draft
+      dbg("printquality: draft font");
+      _fixedScale = DraftFont.scale;
+      _propScale = CspPropFont.scale;
+      break;
+    case 2: //NLQ
+      dbg("printquality: NLQ font");
+      _fixedScale = NLQFont.scale;
+      _propScale = NLQPropFont.scale;
+      break;
+    default:
+      log("Unhandled font code: " + q);
+      break;
+  }
 }
 
 function mapmousetext(onoff:boolean)
@@ -729,10 +770,21 @@ function checkforcecsp()
 {
   if (_halfHeight || _superscript || _subscript)
     _forceCspFont = true;
-  else if (!_usePropFont && (_font === DraftFont) && (_bold || _doubleWidth))
+  else if ((_font === DraftFont) && (_bold || _doubleWidth || _usePropFont))
     _forceCspFont = true;
   else
     _forceCspFont = false;
+
+  if (_forceCspFont)
+  {
+    dbg("force csp font");
+    _fixedScale = CspFont.scale;
+  }
+  else
+  {
+    _fixedScale = _font.scale;
+  }
+  setxscale(SCALE.FONTS);
 }
 
 function bold(onoff:boolean)
@@ -772,7 +824,6 @@ function subscript(onoff:boolean)
 
 function setdpi(f:number)
 {
-  const oldDPI = _dpi;
   switch(f)
   {
     case DPI.F9CPI:
@@ -814,22 +865,42 @@ function setdpi(f:number)
   }
 
   dbg("setdpi: " + _dpi + " (" + f + ") -> virtual " + _canvas.width + "x" + _canvas.height );
-  var h = _paperDPI/_dpi;
-  translatex(oldDPI, _dpi);
-  var v = 1.0;
-  _ctx.setTransform(h,0,0,
-                    v,0,0);
+
+  setxscale(SCALE.FONTS);
 }
 
-function translatex(oldDPI:number, newDPI:number)
+function setxscale(which:number)
 {
-  // reposition all 'fixed' X-based values in translated space
-  const scale = (newDPI / oldDPI);
+  // compute new scale
+  let scale = _paperDPI/_dpi;
+  
+  if (which === SCALE.FONTS)
+    scale *= (_usePropFont ? _propScale : _fixedScale);
 
-  _px *= scale;
-  _lmargin *= scale;
-  _rmargin *= scale;
+  let rescale = _ctx.getTransform().a / scale;
 
+  _px *= rescale;
+
+  // I think this is right
+  if (which === SCALE.FONTS)
+    scaletabs(rescale); 
+
+  // recompute margins
+  _lmargin = _lrm;
+  _rmargin = _canvas.width - _lrm;
+
+  _lmargin *= (1.0/scale);
+  _rmargin *= (1.0/scale);
+
+  dbg("lmargin: " + _lmargin + " _rmargin: " + _rmargin);
+
+  const v = 1.0;
+  _ctx.setTransform(scale,0,0,
+                    v,    0,0);
+}
+
+function scaletabs(scale: number)
+{
   for(let i=0;i<_tabstops.length;i++)
   {
     _tabstops[i] *= scale;
@@ -846,6 +917,7 @@ function incx( n:number )
   }
   else if( _px > _rmargin )
   {
+    //dbg("_px: _rmargin: " + _px);
     _px = _rmargin;
   }
   //dbg("_px: " + _px);
@@ -950,13 +1022,29 @@ function autocr(onoff:boolean)
   _autoCRonLF = onoff;
 }
 
+function dbgchar(ascii:number)
+{
+  if (!_dbg)
+    return;
+    
+  let font = " F ";
+  if (_useCustomFont)
+    font = " C ";
+  else if (_forceCspFont)
+    font = " FC ";
+  else if (_usePropFont)
+    font = " P ";
+
+  const out = ("char: ").concat("'", String.fromCharCode(ascii), "' ", ascii.toString(16), font, " pos: ", _px.toString(), " ", _py.toString());
+  dbg(out)
+}
+
 function output(val:number)
 {
   prerender();
 
   const ascii = val & 0x7f;
-  const out = ("char: ").concat("'", String.fromCharCode(ascii), "' ", val.toString(), " pos: ", _px.toString(), " ", _py.toString());
-  dbg(out)
+  dbgchar(ascii);
 
   if (ascii >= 0x20)
     drawChar(ascii);
@@ -968,15 +1056,6 @@ function output(val:number)
 function reset()
 {
   resizeCanvas(_paperDPI*8, _dpih*11);
-
-  setprintquality(0);
-  setdpi(DPI.F12CPI);
-
-  // black
-  setcolor(48);
-  setswitches( 0xff, 0xff, 'Z' );
-  // defaults
-  setswitches( 0x50, 0x24, 'D' );
 
   _lfSpacing = 24;
   _lmargin = 0;
@@ -1007,6 +1086,15 @@ function reset()
   _customFont = CustomFont;
   _customGlyphWidth = 0;
 
+  setprintquality(0);
+  setdpi(DPI.F10CPI);
+
+  // black
+  setcolor(48);
+  setswitches( 0xff, 0xff, 'Z' );
+  // defaults
+  setswitches( 0x50, 0x24, 'D' );
+
   setinitialtabstops();
 }
 
@@ -1028,32 +1116,42 @@ function setcolor(c:number)
       _ctx.globalAlpha = 0.5;
       break;
     case 50: // magenta`
-      _ctx.fillStyle = '#FF00FF';
-      _ctx.strokeStyle = '#FF00FF';
+//      _ctx.fillStyle = '#FF00FF';
+//      _ctx.strokeStyle = '#FF00FF';
+      _ctx.fillStyle = '#9B1525';
+      _ctx.strokeStyle = '#9B1525';
       _ctx.globalCompositeOperation = "source-over";
       _ctx.globalAlpha = 0.5;
       break;
     case 51: // cyan`
-      _ctx.fillStyle = '#00FFFF';
-      _ctx.strokeStyle = '#00FFFF';
+//      _ctx.fillStyle = '#00FFFF';
+//      _ctx.strokeStyle = '#00FFFF';
+      _ctx.fillStyle = '#0B48CB';
+      _ctx.strokeStyle = '#0B48CB';
       _ctx.globalCompositeOperation = "source-over";
       _ctx.globalAlpha = 0.5;
       break;
     case 52: // orange
-      _ctx.fillStyle = '#FFA500';
-      _ctx.strokeStyle = '#FFA500';
+//      _ctx.fillStyle = '#FFA500';
+//      _ctx.strokeStyle = '#FFA500';
+      _ctx.fillStyle = '#AC180A';
+      _ctx.strokeStyle = '#AC180A';
       _ctx.globalCompositeOperation = "source-over";
       _ctx.globalAlpha = 0.5;
       break;
     case 53: // green
-      _ctx.fillStyle = '#00FF00';
-      _ctx.strokeStyle = '#00FF00';
+//      _ctx.fillStyle = '#00FF00';
+//      _ctx.strokeStyle = '#00FF00';
+      _ctx.fillStyle = '#10361B';
+      _ctx.strokeStyle = '#10361B';
       _ctx.globalCompositeOperation = "source-over";
       _ctx.globalAlpha = 0.5;
       break;
     case 54: // purple
-      _ctx.fillStyle = '#800080';
-      _ctx.strokeStyle = '#800080';
+//      _ctx.fillStyle = '#800080';
+//      _ctx.strokeStyle = '#800080';
+      _ctx.fillStyle = '#040A1B';
+      _ctx.strokeStyle = '#040A1B';
       _ctx.globalCompositeOperation = "source-over";
       _ctx.globalAlpha = 0.5;
       break;
@@ -1090,15 +1188,21 @@ function gfx(ch:number)
       _ctx.fillRect(_px+xoff, _py+2*7, 1, 1);
   }
 
-  for(let i=0;i<doubleLoop;i++)
+  const oldPY = _py;
+  for(let d=0;d<_72DPIV;d++)
   {
-    let x = i*2;
-    for(let j=0;j<boldLoop;j++)
+    _py += d;
+    for(let i=0;i<doubleLoop;i++)
     {
-      x += (j*0.25);
-      fgfx(ch,x);
+      let x = i*2;
+      for(let j=0;j<boldLoop;j++)
+      {
+        x += (j*0.25);
+        fgfx(ch,x);
+      }
     }
   }
+  _py = oldPY;
 
   incx(doubleLoop);
 }
@@ -1145,15 +1249,21 @@ export function fontGfx(ch:number)
       _ctx.fillRect(_px+xoff, _py+yoff+vdpi*8, 1, 1);
   }
 
-  for(let i=0;i<doubleLoop;i++)
+  const oldPY = _py;
+  for(let d=0;d<_72DPIV;d++)
   {
-    xoff = i*2;
-    for(let j=0;j<boldLoop;j++)
+    _py += d;
+    for(let i=0;i<doubleLoop;i++)
     {
-      xoff += (j*0.25);
-      fgfx(ch);
+      xoff = i*2;
+      for(let j=0;j<boldLoop;j++)
+      {
+        xoff += (j*0.25);
+        fgfx(ch);
+      }
     }
   }
+  _py = oldPY;
 
   incx(doubleLoop);
 }
@@ -1649,6 +1759,7 @@ function parseChar(raw:number)
       command.push(String.fromCharCode(ch));
       if(command.length === 4)
       {
+        setxscale(SCALE.GFX);
         state.cur = state.GFX;
         _ignoreBit8 = 0xff;
         const cmd = command[0] + command[1] + command[2] + command[3];
@@ -1663,6 +1774,7 @@ function parseChar(raw:number)
       command.push(String.fromCharCode(ch));
       if(command.length === 3)
       {
+        setxscale(SCALE.GFX);
         state.cur = state.GFX;
         _ignoreBit8 = 0xff;
         const cmd = command[0] + command[1] + command[2];
@@ -1680,6 +1792,7 @@ function parseChar(raw:number)
         state.cur = state.OUTER;
         _ignoreBit8 = 0x7f;
         dbg("gfxend");
+        setxscale(SCALE.FONTS);
       }
       break;
 
@@ -1698,12 +1811,14 @@ function parseChar(raw:number)
       break;
 
     case state.GFXR:
+      setxscale(SCALE.GFX);
       while(_gfxchars--)
       {
         gfx(ch);
       }
       state.cur = state.OUTER;
       _ignoreBit8 = 0x7f;
+      setxscale(SCALE.FONTS);
       break;
 
     case state.HPOS:
@@ -1711,10 +1826,12 @@ function parseChar(raw:number)
       command.push(String.fromCharCode(ch));
       if(command.length === 4)
       {
+        setxscale(SCALE.GFX);
         state.cur = state.OUTER;
         const cmd = command[0] + command[1] + command[2] + command[3];
         _px = parseInt(cmd);;
         dbg("hpos: " + _px);
+        setxscale(SCALE.FONTS);
       }
       break;
 

@@ -211,7 +211,7 @@ https://commons.wikimedia.org/wiki/File:Apple_II_low-resolution_graphics_demo_2.
 115 D$ = CHR$ (4)
 120 PRINT D$;"PR#1"
 123 FOR I=0 TO 2 STEP 1
-124 PRINT CHR$(27);"N"; :REM 80cpi font default
+124 PRINT CHR$(27);"N"; :REM 80cpl font default
 125 IF I=0 THEN PRINT CHR$(27);"a0Correspondence Font"
 126 IF I=1 THEN PRINT CHR$(27);"a1Draft Font"
 127 IF I=2 THEN PRINT CHR$(27);"a2NLQ Font"
@@ -265,7 +265,50 @@ https://commons.wikimedia.org/wiki/File:Apple_II_low-resolution_graphics_demo_2.
 670 PRINT "5 dot spacing ->";
 680 PRINT CHR$(27);"5"; :REM Insert 2 spaces
 690 PRINT "<- here"
-800 NEXT I
+700 NEXT I
+800 PRINT D$; "PR#0"
+801 END
+
+REM width tests
+115 D$ = CHR$ (4)
+120 PRINT D$;"PR#1"
+800 PRINT CHR$(27);"a0";CHR$(27);"n9cpi(Extended)"
+805 GOSUB 2000
+810 PRINT CHR$(27);"a0";CHR$(27);"N10cpi(Pica)"
+815 GOSUB 2000
+820 PRINT CHR$(27);"a0";CHR$(27);"E12cpi(Elite)"
+825 GOSUB 2000
+830 PRINT CHR$(27);"a0";CHR$(27);"e13.4cpi(Semicondensed)"
+835 GOSUB 2000
+840 PRINT CHR$(27);"a0";CHR$(27);"q15cpi(Condensed)"
+845 GOSUB 2000
+850 PRINT CHR$(27);"a0";CHR$(27);"Q17cpi(Ultracondensed)"
+855 GOSUB 2000
+860 PRINT CHR$(27);"a0";CHR$(27);"p144dpi (Pica)"
+865 GOSUB 2000
+870 PRINT CHR$(27);"a0";CHR$(27);"P160dpi (Elite)"
+875 GOSUB 2000
+
 900 PRINT D$; "PR#0"
 901 END
 
+1000 PRINT "0 ABCDEFG 1 abcdefg 2 !@#$%^& 3         4         5         6         7         8         9        10"
+1005 PRINT "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+1010 RETURN
+
+2000 PRINT CHR$(27);"a0";
+2010 GOSUB 1000
+2020 PRINT CHR$(27);"a1";
+2030 GOSUB 1000
+2040 PRINT CHR$(27);"a2";
+2050 GOSUB 1000
+2060 RETURN
+
+REM another width test
+115 D$ = CHR$ (4)
+120 PRINT D$; "PR#1"
+830 PRINT CHR$(27);"a0";CHR$(27);"e13.4cpi(Semicondensed)"
+900 PRINT CHR$(27);"a2NLQ  ";
+1000 PRINT "     1 ABCDEFG 2 !@#$%^& 3 abcdefg 4         5         6         7         8         9         10        11"
+1005 PRINT "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+2000 PRINT D$; "PR#0"
