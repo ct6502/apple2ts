@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useRef } from "react"
-import { Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material"
-import PrintIcon from '@mui/icons-material/Print'
-import CloseIcon from '@mui/icons-material/Close'
-import DeleteIcon from '@mui/icons-material/Delete'
-import SaveIcon from '@mui/icons-material/Save'
-import RedoIcon from '@mui/icons-material/Redo'
+import { Dialog, DialogContent } from "@mui/material"
 import { Printer } from "./iwii"
-
+import { imagewriter2 } from "./img/imagewriter2";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFolderOpen,
+  faPrint,
+  faSave,
+  faTrash,
+  faXmark
+} from "@fortawesome/free-solid-svg-icons";
 export interface CopyCanvasProps {
   srcCanvas: HTMLCanvasElement
 }
@@ -92,84 +95,38 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     }
   }, [state.canvasRef, props.canvas]);
 
-  const defaultcursor = {cursor: 'default'}
-
   return (
     <Dialog onClose={handleClose} open={open}>
-      <DialogTitle>ImageWriter II</DialogTitle>
-        <Tooltip title="Close Dialog">
-          <IconButton 
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-            >
-            <CloseIcon style={defaultcursor} />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Tear off Page and Reset">
-          <IconButton
-            aria-label="delete"
-            onClick={handleClear}
-            sx={{
-            position: 'absolute',
-            right: 50,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-            }}
-            >
-            <DeleteIcon style={defaultcursor} />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Send to Printer">
-          <IconButton
-            aria-label="print"
-            onClick={handlePrint}
-            sx={{
-            position: 'absolute',
-            right: 92,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-            }}
-            >
-            <PrintIcon style={defaultcursor} />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Reprint from Stored Data">
-          <IconButton
-            aria-label="reprint"
-            onClick={handleReprint}
-            sx={{
-            position: 'absolute',
-            right: 134,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-            }}
-            >
-            <RedoIcon style={defaultcursor} />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Save Stored Data">
-          <IconButton
-            aria-label="save data"
-            onClick={handleSaveData}
-            sx={{
-            position: 'absolute',
-            right: 176,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-            }}
-            >
-            <SaveIcon style={defaultcursor} />
-          </IconButton>
-        </Tooltip>
+      <div className="controlBar">
+      <svg height="35" width="150">{imagewriter2}</svg>
+        <div>
+        <button className="pushButton darkgray"
+          title="Save Stored Data"
+          onClick={handleSaveData}>
+          <FontAwesomeIcon icon={faSave}/>
+        </button>
+        <button className="pushButton darkgray"
+          title="Reprint from Stored Data"
+          onClick={handleReprint}>
+          <FontAwesomeIcon icon={faFolderOpen}/>
+        </button>
+        <button className="pushButton darkgray"
+          title="Send to Printer"
+          onClick={handlePrint}>
+          <FontAwesomeIcon icon={faPrint}/>
+        </button>
+        <button className="pushButton darkgray"
+          title="Tear off Page and Reset"
+          onClick={handleClear}>
+          <FontAwesomeIcon icon={faTrash}/>
+        </button>
+        <button className="pushButton darkgray"
+          title="Close Dialog"
+          onClick={handleClose}>
+          <FontAwesomeIcon icon={faXmark}/>
+        </button>
+        </div>
+      </div>
 
         <DialogContent>
         <CopyCanvas srcCanvas={props.canvas} />

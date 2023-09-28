@@ -45,7 +45,7 @@ body {
 .apple2 {
   display: flex;
   flex-direction: column;
-    /* width: 1240px; */
+  /* width: 1240px; */
 }
 
 .sideContent {
@@ -263,6 +263,7 @@ select {
 button:active {
   background-color: #898677;
 }
+
 button:disabled {
   border: 0;
   background-color: #cccccc;
@@ -373,6 +374,6 @@ button:disabled {
   margin-top: 20;
 }
 
-.MuiIconButton-root {
-  cursor: help !important;
+.darkgray {
+  color: #404040
 }
