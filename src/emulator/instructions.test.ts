@@ -38,7 +38,7 @@ export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: num
   reset6502()
   s6502.flagIRQ = irq
   s6502.flagNMI = nmi
-  enableMockingboard()
+  enableMockingboard(true, 4)
   updateAddressTables()
   setInterruptDisabled(false)
   if (instr.length === 1) {

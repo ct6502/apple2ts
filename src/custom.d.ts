@@ -190,6 +190,7 @@ interface AddressCallback {
 }
 
 type MockingboardSound = {
+  slot: number,
   chip: number,
   params: number[]
 }

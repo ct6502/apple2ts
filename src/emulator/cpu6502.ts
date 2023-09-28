@@ -6,7 +6,7 @@ import { STATE, getInstrString, getProcessorStatus } from "./utility"
 
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
-let doDebug = false
+let doDebug = 10000
 // let doDebugZeroPage = false
 const instrTrail = new Array<string>(1000)
 let posTrail = 0
@@ -14,7 +14,7 @@ let breakpoint = -1
 let runToRTS = false
 
 export const doSetDebug = (debug = true) => {
-  doDebug = debug
+  doDebug = debug ? 0 : 1000
 }
 
 export const doSetRunToRTS = (run = true) => {
@@ -80,14 +80,16 @@ export const clearInterrupts = () => {
   s6502.flagNMI = false
 }
 
-const cycleCountCallbacks: Array<() => void> = []
-export const registerCycleCountCallback = (fn: () => void) => {
-  if (!cycleCountCallbacks.includes(fn)) {
-    cycleCountCallbacks.push(fn)
-  }
+const cycleCountCallbacks: Array<(userdata: any) => void> = []
+const cycleCountCBdata: Array<any> = []
+export const registerCycleCountCallback = (fn: (userdata: any) => void, userdata: any) => {
+  cycleCountCallbacks.push(fn)
+  cycleCountCBdata.push(userdata)
 }
 const processCycleCountCallbacks = () => {
-  cycleCountCallbacks.forEach(fn => fn())
+  for (let i = 0; i < cycleCountCallbacks.length; i++) {
+    cycleCountCallbacks[i](cycleCountCBdata[i])    
+  }
 }
 
 export const processInstruction = (step = false) => {
@@ -107,7 +109,8 @@ export const processInstruction = (step = false) => {
   }
   cycles = code.execute(vLo, vHi)
   // Do not output during the Apple II's WAIT subroutine
-  if (doDebug && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
+  if (doDebug < 1000 && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
+    doDebug++
     if (PC1 === 0xFFFFF) {
       outputInstructionTrail()
     }

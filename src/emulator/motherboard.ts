@@ -130,7 +130,8 @@ const configureMachine = () => {
   enableSerialCard()
   enableClockCard()
   enableMouseCard()
-  enableMockingboard()
+  enableMockingboard(true, 4)
+//  enableMockingboard(true, 5)
   enableDiskDrive()
 }
 
@@ -138,7 +139,8 @@ const resetMachine = () => {
   resetDrive()
   setButtonState()
   resetMouse()
-  resetMockingboard()
+  resetMockingboard(4)
+//  resetMockingboard(5)
 }
 
 const doBoot = () => {

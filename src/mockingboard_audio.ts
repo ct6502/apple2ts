@@ -5,12 +5,23 @@ import {TwelveStringGuitar1} from "./wavetables/TwelveStringGuitar1"
 import {Wurlitzer2} from "./wavetables/Wurlitzer2"
 
 const hasAudioContext = typeof AudioContext !== 'undefined'
-let mockingboardAudio: AudioDevice | undefined
+let mboardContext: AudioContext
+let stereoMerge: ChannelMergerNode
 let chipMerge: GainNode
-let tones: OscillatorNode[][]
-let gains: GainNode[][]
-let noiseFilter: BiquadFilterNode[][]
-let envelope: (AudioBufferSourceNode | null)[]
+
+type ChipNodes = {
+  tones: OscillatorNode[]
+  gains: GainNode[]
+  noise: BiquadFilterNode[]
+  envelope: (AudioBufferSourceNode | null)
+}
+
+let nodes: Array<Array<ChipNodes>> = []
+
+// let tones: OscillatorNode[][]
+// let gains: GainNode[][]
+// let noiseFilter: BiquadFilterNode[][]
+// let envelope: (AudioBufferSourceNode | null)[]
 
 const createNoise = (context: AudioContext, chip: number) => {
   const bufferSize = 2 * context.sampleRate
@@ -35,46 +46,42 @@ const createNoise = (context: AudioContext, chip: number) => {
   return new AudioBufferSourceNode(context, {buffer: buffer, loop: true})
 }
 
-const constructAudio = () => {
+const constructAudio = (slot: number) => {
   if (!hasAudioContext) return
-  const audioDevice: AudioDevice = {
-    context: new AudioContext(),
-    element: new Audio()
+  if (!mboardContext) {
+    mboardContext = new AudioContext()
+    registerAudioContext(mboardContext)
+    stereoMerge = mboardContext.createChannelMerger(2)
+    chipMerge = new GainNode(mboardContext, {gain: 0.15})
+    chipMerge.connect(mboardContext.destination)
+    stereoMerge.connect(chipMerge)
   }
-  registerAudioContext(audioDevice.context)
-  const stereoMerge = audioDevice.context.createChannelMerger(2)
-  chipMerge = new GainNode(audioDevice.context, {gain: 0.15})
-  chipMerge.connect(audioDevice.context.destination)
-  stereoMerge.connect(chipMerge)
-  gains = []
-  tones = []
-  noiseFilter = []
-  envelope = []
+  nodes[slot] = []
 
   for (let chip = 0; chip <= 1; chip++) {
-    gains[chip] = []
-    tones[chip] = []
-    noiseFilter[chip] = []
-    envelope[chip] = null
-
+    nodes[slot][chip] = {
+      gains: [],
+      tones: [],
+      noise: [],
+      envelope: null
+    }
     for (let i = 0; i <= 2; i++) {
-      gains[chip][i] = new GainNode(audioDevice.context, {gain: 0})
-      gains[chip][i].connect(stereoMerge, 0, chip)
-      tones[chip][i] = new OscillatorNode(audioDevice.context)
-      tones[chip][i].connect(gains[chip][i])
-      tones[chip][i].start()
-      gains[chip][i + 3] = new GainNode(audioDevice.context, {gain: 0})
-      gains[chip][i + 3].connect(chipMerge)
-      noiseFilter[chip][i] = new BiquadFilterNode(audioDevice.context, {type: "bandpass"})
-      let noise = createNoise(audioDevice.context, chip)
-      noise.connect(noiseFilter[chip][i])
-      noiseFilter[chip][i].connect(gains[chip][i + 3])
+      nodes[slot][chip].gains[i] = new GainNode(mboardContext, {gain: 0})
+      nodes[slot][chip].gains[i].connect(stereoMerge, 0, chip)
+      nodes[slot][chip].tones[i] = new OscillatorNode(mboardContext)
+      nodes[slot][chip].tones[i].connect(nodes[slot][chip].gains[i])
+      nodes[slot][chip].tones[i].start()
+      nodes[slot][chip].gains[i + 3] = new GainNode(mboardContext, {gain: 0})
+      nodes[slot][chip].gains[i + 3].connect(chipMerge)
+      nodes[slot][chip].noise[i] = new BiquadFilterNode(mboardContext, {type: "bandpass"})
+      let noise = createNoise(mboardContext, chip)
+      noise.connect(nodes[slot][chip].noise[i])
+      nodes[slot][chip].noise[i].connect(nodes[slot][chip].gains[i + 3])
       noise.start()
     }
   }
   changeMockingboardMode(modeSave)
-  mockingboardAudio?.context.suspend()
-  return audioDevice
+  mboardContext?.suspend()
 }
 
 const clock = 1020488
@@ -178,90 +185,82 @@ export const getMockingboardName = (index: number) => {
 export const changeMockingboardMode = (mode: number) => {
   modeSave = mode
   if (!chipMerge) return
-  for (let chip = 0; chip <= 1; chip++) {
-    for (let c = 0; c <= 2; c++) {
-      let t: {real: number[], imag: number[]} = {real: [], imag: []}
-      let v = 0.30
-      switch (mode) {
-        case 0: tones[chip][c].type = "square"; v = 0.15; break
-        case 1: tones[chip][c].type = "sawtooth"; v = 0.2; break
-        case 2: t = Organ2; break
-        case 3: t = TwelveStringGuitar1; break
-        case 4: t = PhonemeEe; break
-        case 5: t = Wurlitzer2; break
+  nodes.forEach(nodes1 => {
+    for (let chip = 0; chip <= 1; chip++) {
+      for (let c = 0; c <= 2; c++) {
+        let t: {real: number[], imag: number[]} = {real: [], imag: []}
+        let v = 0.30
+        switch (mode) {
+          case 0: nodes1[chip].tones[c].type = "square"; v = 0.15; break
+          case 1: nodes1[chip].tones[c].type = "sawtooth"; v = 0.2; break
+          case 2: t = Organ2; break
+          case 3: t = TwelveStringGuitar1; break
+          case 4: t = PhonemeEe; break
+          case 5: t = Wurlitzer2; break
+        }
+        if (t.real.length > 0) {
+          const table = mboardContext?.createPeriodicWave(t.real, t.imag)
+          if (table) nodes1[chip].tones[c].setPeriodicWave(table)
+        }
+        chipMerge.gain.value = v
       }
-      if (t.real.length > 0) {
-        const table = mockingboardAudio?.context.createPeriodicWave(t.real, t.imag)
-        if (table) tones[chip][c].setPeriodicWave(table)
-      }
-      chipMerge.gain.value = v
-      // switch (mode) {
-      //   case 0: tones[chip][c].type = "square"; chipMerge.gain.value = 0.15; break
-      //   case 1: tones[chip][c].type = "sawtooth"; chipMerge.gain.value = 0.2; break
-      //   case 2:
-      //     const table = mockingboardAudio?.context.createPeriodicWave(Bass.real, Bass.imag)
-      //     if (table) tones[chip][c].setPeriodicWave(table)
-      //     chipMerge.gain.value = 0.3
-      //     break
-      // }
-    }
-  }
+    }      
+  });
 }
 
 export const playMockingboard = (sound: MockingboardSound) => {
   if (!hasAudioContext || !isAudioEnabled()) return
-  if (!mockingboardAudio) {
-    mockingboardAudio = constructAudio()
+  if (!nodes[sound.slot]) {
+    constructAudio(sound.slot)
   }
-  if (!mockingboardAudio) return
-
+  if (!mboardContext) return
   const chip = sound.chip
   const params = sound.params
-  if (envelope[chip]) {
+  if (nodes[sound.slot][chip].envelope) {
     for (let c = 0; c <= 5; c++) {
       try {
-        envelope[chip]?.disconnect(gains[chip][c].gain)
+        nodes[sound.slot][chip].envelope?.disconnect(nodes[sound.slot][chip].gains[c].gain)
       } catch (error) {
       }
     }
     try {
-      envelope[chip]?.stop()
+      nodes[sound.slot][chip].envelope?.stop()
     } catch (error) {
     }
-    envelope[chip] = null
+    nodes[sound.slot][chip].envelope = null
   }
   for (let c = 0; c <= 5; c++) {
     let freq = 0
     if (c <= 2) {
       freq = computeToneFreq(params[2 * c], params[2 * c + 1])
-      tones[chip][c].frequency.value = freq
+      nodes[sound.slot][chip].tones[c].frequency.value = freq
     } else {
       freq = computeNoiseFreq(params[6])
       const Q = computeQ(freq)
-      noiseFilter[chip][c % 3].frequency.value = freq
-      noiseFilter[chip][c % 3].Q.value = Q
+      nodes[sound.slot][chip].noise[c % 3].frequency.value = freq
+      nodes[sound.slot][chip].noise[c % 3].Q.value = Q
     }
     const levelParam = params[8 + (c % 3)] & 0x1F
     const isEnabled = !(params[7] & (1 << c))
     const envFreq = computeEnvFreq(params[11], params[12])
 //    if (isEnabled) console.log(`${chip} ${(255 - params[7]).toString(2)} ${c} ${envFreq}`)
     if (isEnabled && (levelParam === 16)) {
-      gains[chip][c].gain.value = 0
+      nodes[sound.slot][chip].gains[c].gain.value = 0
       if (envFreq > 0) {
-        if (!envelope[chip]) {
-          envelope[chip] = constructEnvelopeBuffer(mockingboardAudio.context,
+        if (!nodes[sound.slot][chip].envelope) {
+          nodes[sound.slot][chip].envelope = constructEnvelopeBuffer(mboardContext,
             chip, envFreq, params[13] & 0xF)
-          envelope[chip]?.start()
+            nodes[sound.slot][chip].envelope?.start()
         }
-        envelope[chip]?.connect(gains[chip][c].gain)
+        nodes[sound.slot][chip].envelope?.connect(nodes[sound.slot][chip].gains[c].gain)
       }
     } else {
       const gain = isEnabled ? computeGain(levelParam / 15) : 0
-      gains[chip][c].gain.value = freq ? gain : 0
+      nodes[sound.slot][chip].gains[c].gain.value = freq ? gain : 0
     }
   }
 
-  if (mockingboardAudio.context.state === 'suspended') {
-    mockingboardAudio.context.resume();
+  if (mboardContext.state === 'suspended') {
+    mboardContext.resume();
   }
 }

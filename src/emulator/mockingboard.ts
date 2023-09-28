@@ -3,14 +3,11 @@ import { s6502 } from "./instructions";
 import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "./memory"
 import { passMockingboard } from "./worker2main"
 
-let slot = 0
-
-export const enableMockingboard = (enable = true, slotIn = 4) => {
+export const enableMockingboard = (enable = true, slot = 4) => {
   if (!enable)
     return
-  slot = slotIn
   setSlotIOCallback(slot, handleMockingboard)
-  registerCycleCountCallback(cycleCountCallback)
+  registerCycleCountCallback(cycleCountCallback, slot)
 }
 
 const ORB = [0x0, 0x80]
@@ -39,7 +36,7 @@ const REG = [0x20, 0xA0]   // $C420...C42F and $C4A0...$C4AF
 const TIMER1 = 64
 const TIMER2 = 32
 
-export const resetMockingboard = () => {
+export const resetMockingboard = (slot = 4) => {
   // Clear out all our old parameters and interrupt flags.
   // Otherwise we hang on a reset or reboot.
   for (let addr = 0; addr <= 255; addr++) {
@@ -47,15 +44,15 @@ export const resetMockingboard = () => {
   }
   // Stop the music.
   for (let chip = 0; chip <= 1; chip++) {
-    doPassRegisters(chip)
+    doPassRegisters(slot, chip)
   }
 }
 
-const T1enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !== 0
-const T1fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
-const T1continuous = (chip: number) => (memGetSlotROM(slot, ACR[chip]) & TIMER1) !== 0
+const T1enabled = (slot: number, chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER1) !== 0
+const T1fired = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER1) !== 0
+const T1continuous = (slot: number, chip: number) => (memGetSlotROM(slot, ACR[chip]) & TIMER1) !== 0
 
-const handleTimerT1 = (chip: number, cycleDelta: number) => {
+const handleTimerT1 = (slot: number, chip: number, cycleDelta: number) => {
   let t1low = memGetSlotROM(slot, T1CL[chip]) - cycleDelta
   memSetSlotROM(slot, T1CL[chip], t1low)
   if (t1low < 0) {
@@ -70,13 +67,13 @@ const handleTimerT1 = (chip: number, cycleDelta: number) => {
       // if (T1enabled(chip)) {
       //   console.log(`T1: ${T1enabled(chip)} ${T1fired(chip)} ${T1continuous(chip)}`)
       // }
-      if (T1enabled(chip) && (!T1fired(chip) || T1continuous(chip))) {
+      if (T1enabled(slot, chip) && (!T1fired(slot, chip) || T1continuous(slot, chip))) {
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired | TIMER1)
         const ifr = memGetSlotROM(slot, IFR[chip])
         memSetSlotROM(slot, IFR[chip], ifr | TIMER1)
-        handleInterruptFlag(chip, -1)
-        if (T1continuous(chip)) {
+        handleInterruptFlag(slot, chip, -1)
+        if (T1continuous(slot, chip)) {
           const t1NewHigh = memGetSlotROM(slot, T1LH[chip])
           const t1NewLow = memGetSlotROM(slot, T1LL[chip])
           memSetSlotROM(slot, T1CL[chip], t1NewLow)
@@ -87,10 +84,10 @@ const handleTimerT1 = (chip: number, cycleDelta: number) => {
   }
 }
 
-const T2enabled = (chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER2) !== 0
-const T2fired = (chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER2) !== 0
+const T2enabled = (slot: number, chip: number) => (memGetSlotROM(slot, IER[chip]) & TIMER2) !== 0
+const T2fired = (slot: number, chip: number) => (memGetSlotROM(slot, TIMER_FIRED[chip]) & TIMER2) !== 0
 
-const handleTimerT2 = (chip: number, cycleDelta: number) => {
+const handleTimerT2 = (slot: number, chip: number, cycleDelta: number) => {
   // If Timer2 is in pulse-counting mode just bail
   if ((memGetSlotROM(slot, ACR[chip]) & TIMER2) !== 0) return
   let t2low = memGetSlotROM(slot, T2CL[chip]) - cycleDelta
@@ -107,29 +104,29 @@ const handleTimerT2 = (chip: number, cycleDelta: number) => {
 //      if (T2enabled(chip)) {
 //        console.log(`T2: ${T2enabled(chip)} ${T2_DIDFIRE[chip]}`)
 //      }
-      if (T2enabled(chip) && !T2fired(chip)) {
+      if (T2enabled(slot, chip) && !T2fired(slot, chip)) {
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired | TIMER2)
         const ifr = memGetSlotROM(slot, IFR[chip])
         memSetSlotROM(slot, IFR[chip], ifr | TIMER2)
-        handleInterruptFlag(chip, -1)
+        handleInterruptFlag(slot, chip, -1)
       }
     }
   }
 }
 
-let prevCycleCount = 0
+let prevCycleCount = new Array<number>(8).fill(0)
 
-const cycleCountCallback = () => {
-  const cycleDelta = s6502.cycleCount - prevCycleCount
+const cycleCountCallback = (slot: number) => {
+  const cycleDelta = s6502.cycleCount - prevCycleCount[slot]
   for (let chip = 0; chip <= 1; chip++) {
-    handleTimerT1(chip, cycleDelta)
-    handleTimerT2(chip, cycleDelta)
+    handleTimerT1(slot, chip, cycleDelta)
+    handleTimerT2(slot, chip, cycleDelta)
   }
-  prevCycleCount = s6502.cycleCount
+  prevCycleCount[slot] = s6502.cycleCount
 }
 
-const getRegisters = (chip: number) => {
+const getRegisters = (slot: number, chip: number) => {
   let registers: number[] = []
   for (let reg = 0; reg <= 15; reg++) {
     registers[reg] = memGetSlotROM(slot, REG[chip] + reg)
@@ -140,14 +137,15 @@ const getRegisters = (chip: number) => {
 const compareArrays = (a: number[], b: number[]) =>
   a.length === b.length && a.every((x, i) => x === b[i]);
 
-const prev: MockingboardSound = {chip: -1, params: [-1]}
+const prev: MockingboardSound = {slot: -1, chip: -1, params: [-1]}
 
-let doPassRegisters = (chip: number) => {
-  const params = getRegisters(chip)
-  if (chip === prev.chip && compareArrays(params, prev.params)) return
+let doPassRegisters = (slot: number, chip: number) => {
+  const params = getRegisters(slot, chip)
+  if (slot === prev.slot && chip === prev.chip && compareArrays(params, prev.params)) return
+  prev.slot = slot
   prev.chip = chip
   prev.params = params
-  passMockingboard({chip, params})
+  passMockingboard({slot, chip, params})
 }
 
 // Needed for tests, because they don't run in a worker thread.
@@ -155,7 +153,7 @@ export const disablePassRegisters = () => {
   doPassRegisters = () => {}
 }
 
-const handleCommand = (chip: number) => {
+const handleCommand = (slot: number, chip: number) => {
   const orb = memGetSlotROM(slot, ORB[chip])
   // Some programs (Ultima 5) pass extra bits, so just remove them
   switch (orb & 7) {
@@ -163,7 +161,7 @@ const handleCommand = (chip: number) => {
       for (let reg = 0; reg <= 15; reg++) {
         memSetSlotROM(slot, REG[chip] + reg, 0)
       }
-      doPassRegisters(chip)
+      doPassRegisters(slot, chip)
       break
     case 7:   // LATCH command, save the appropriate register number
       memSetSlotROM(slot, REG_LATCH[chip], memGetSlotROM(slot, ORA[chip]))
@@ -174,7 +172,7 @@ const handleCommand = (chip: number) => {
       const value = memGetSlotROM(slot, ORA[chip])
       if (reg >= 0 && reg <= 15) {
         memSetSlotROM(slot, REG[chip] + reg, value)
-        doPassRegisters(chip)
+        doPassRegisters(slot, chip)
       }
       break
     case 4:   // Inactive
@@ -185,7 +183,7 @@ const handleCommand = (chip: number) => {
   }
 }
 
-const handleInterruptFlag = (chip: number, value: number) => {
+const handleInterruptFlag = (slot: number, chip: number, value: number) => {
   let ifr = memGetSlotROM(slot, IFR[chip])
   if (value >= 0) {
     // Turn off any interrupt bits that are set in our value.
@@ -199,7 +197,7 @@ const handleInterruptFlag = (chip: number, value: number) => {
   }
 }
 
-const handleInterruptEnable = (chip: number, value: number) => {
+const handleInterruptEnable = (slot: number, chip: number, value: number) => {
   let ier = memGetSlotROM(slot, IER[chip])
   if (value >= 0) {
     value = value & 255
@@ -222,17 +220,19 @@ let debug = 1000
 
 export const handleMockingboard: AddressCallback = (addr: number, value = -1) => {
   if (addr < 0xC100) return -1
+  const slot = (addr & 0xF00) >> 8
   const address = addr & 0xFF
   if (debug < 500) {//} && ((address >= 0x4 && address < 0x80) || address >= 0x84)) {
     debug++
-    debugSlot(slot, addr, value)
+    const oldvalue = memGetSlotROM(slot, address)
+    debugSlot(slot, addr, oldvalue, value)
   }
   const chip = (address & 0x80) ? 1 : 0
   switch (address) {
     case ORB[chip]: // ORB
       if (value >= 0) {
         memSetSlotROM(slot, ORB[chip], value)
-        handleCommand(chip)
+        handleCommand(slot, chip)
       }
       break
     case ORA[chip]: // Output register A
@@ -249,7 +249,7 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         memSetSlotROM(slot, T1LL[chip], value)
       }
       // Reset T1 interrupt (Note that a "write" also does a "read")
-      handleInterruptFlag(chip, TIMER1)
+      handleInterruptFlag(slot, chip, TIMER1)
       break
     case T1CH[chip]: // Timer 1 high-order counter, fall thru
       if (value >= 0) {
@@ -259,7 +259,7 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         // Reset T1 interrupt flag
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER1)
-        handleInterruptFlag(chip, TIMER1)
+        handleInterruptFlag(slot, chip, TIMER1)
       }
       break
     case T1LL[chip]: // Timer 1 low-order latch
@@ -269,7 +269,7 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         // the low-order latch also does a read from the low-order counter,
         // and hence resets the interrupt flag. This was the only
         // way to get Ultima 5 to play music.
-        handleInterruptFlag(chip, TIMER1)
+        handleInterruptFlag(slot, chip, TIMER1)
       }
       break
     case T1LH[chip]: // Timer 1 high-order latch
@@ -282,7 +282,7 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         memSetSlotROM(slot, T2LL[chip], value)
       }
       // Reset T2 interrupt (Note that a "write" also does a "read")
-      handleInterruptFlag(chip, TIMER2)
+      handleInterruptFlag(slot, chip, TIMER2)
       break
     case T2CH[chip]: // Timer 2 high-order counter
       if (value >= 0) {
@@ -291,16 +291,16 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
         // Reset T2 interrupt flag
         const fired = memGetSlotROM(slot, TIMER_FIRED[chip])
         memSetSlotROM(slot, TIMER_FIRED[chip], fired & ~TIMER2)
-        handleInterruptFlag(chip, TIMER2)
+        handleInterruptFlag(slot, chip, TIMER2)
       }
       break
     case IFR[chip]: // Interrupt flag register
       if (value >= 0) {
-        handleInterruptFlag(chip, value)
+        handleInterruptFlag(slot, chip, value)
       }
       break
     case IER[chip]: // Interrupt enable register
-      handleInterruptEnable(chip, value)
+      handleInterruptEnable(slot, chip, value)
       break
     default: // debugSlot(slot, addr, value)
       break;
