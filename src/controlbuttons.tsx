@@ -49,7 +49,7 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title="Boot"
       onClick={() => {
-        doPlayDriveSound(DRIVE.REQUEST_AUDIO)
+        doPlayDriveSound(DRIVE.TRACK_SEEK)
         passSetCPUState(STATE.NEED_BOOT)
       }}>
       <FontAwesomeIcon icon={faPowerOff}/>

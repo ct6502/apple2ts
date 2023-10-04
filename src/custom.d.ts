@@ -148,7 +148,8 @@ type SetMemoryBlock = {
 
 type AudioDevice = {
   context: AudioContext,
-  element: HTMLAudioElement
+  element: HTMLAudioElement,
+  timeout: number
 }
 
 type EmuGamepad = {

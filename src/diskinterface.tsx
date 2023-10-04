@@ -9,27 +9,13 @@ import { handleSetDiskData } from "./main2worker"
 let motorAudio: AudioDevice
 let trackSeekAudio: AudioDevice
 let trackOffEndAudio: AudioDevice
-let trackTimeout = 0
-
-const playAudio = (audioDevice: AudioDevice, timeout: number) => {
-  if (audioDevice.context.state === 'suspended') {
-    audioDevice.context.resume();
-  }
-  const playPromise = audioDevice.element.play();
-  if (playPromise) {
-    playPromise.then(() => {
-      window.clearTimeout(trackTimeout)
-      trackTimeout = window.setTimeout(() => audioDevice.context.suspend(), timeout)
-    }).catch((error: DOMException) => {
-//      console.log(error)
-    })
-  }
-}
+let motorIsRunning = false
 
 const constructAudio = (mp3track: any) => {
   const audioDevice: AudioDevice = {
     context: new AudioContext(),
-    element: new Audio(mp3track)
+    element: new Audio(mp3track),
+    timeout: 0
   }
   audioDevice.element.volume = 0.5
   const node = audioDevice.context.createMediaElementSource(audioDevice.element);
@@ -37,42 +23,44 @@ const constructAudio = (mp3track: any) => {
   return audioDevice
 }
 
-const playRequestAudio = () => {
-  if (!trackSeekAudio) {
-    trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
+const playAudio = (audioDevice: AudioDevice, timeout: number) => {
+  if (isAudioEnabled() && audioDevice.context.state === 'suspended') {
+    audioDevice.context.resume();
   }
-//   playAudio(trackSeekAudio, 1)
+  const playPromise = audioDevice.element.play();
+  if (playPromise) {
+    playPromise.then(() => {
+      window.clearTimeout(audioDevice.timeout)
+      audioDevice.timeout = window.setTimeout(() => audioDevice.context.suspend(), timeout)
+    }).catch((error: DOMException) => {
+//      console.log(error)
+    })
+  }
 }
 
 const playTrackOffEnd = () => {
-  if ((isAudioEnabled())) {
-    if (!trackOffEndAudio) {
-      trackOffEndAudio = constructAudio(mp3List.mp3TrackOffEnd)
-      registerAudioContext((enable: boolean) => {
-        // Just turn off audio if disabled, don't bother to turn it
-        // back on because this sound is so short.
-        if (!enable) trackOffEndAudio.context.suspend()
-      })
-    }
-    playAudio(trackOffEndAudio, 309)
+  if (!trackOffEndAudio) {
+    trackOffEndAudio = constructAudio(mp3List.mp3TrackOffEnd)
+    registerAudioContext((enable: boolean) => {
+      // Just turn off audio if disabled, don't bother to turn it
+      // back on because this sound is so short.
+      if (!enable) trackOffEndAudio.context.suspend()
+    })
   }
+  playAudio(trackOffEndAudio, 309)
 }
 
 const playTrackSeek = () => {
-  if (isAudioEnabled()) {
-    if (!trackSeekAudio) {
-      trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
-      registerAudioContext((enable: boolean) => {
-        // Just turn off audio if disabled, don't bother to turn it
-        // back on because this sound is so short.
-        if (!enable) trackSeekAudio.context.suspend()
-      })
-    }
-    playAudio(trackSeekAudio, 50)
+  if (!trackSeekAudio) {
+    trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
+    registerAudioContext((enable: boolean) => {
+      // Just turn off audio if disabled, don't bother to turn it
+      // back on because this sound is so short.
+      if (!enable) trackSeekAudio.context.suspend()
+    })
   }
+  playAudio(trackSeekAudio, 50)
 }
-
-let motorIsRunning = false
 
 const playMotorOn = () => {
   motorIsRunning = true
@@ -87,16 +75,8 @@ const playMotorOn = () => {
       }
     })
   }
-  if (isAudioEnabled() && motorAudio.context.state === 'suspended') {
-    motorAudio.context.resume();
-  }
-  const playPromise = motorAudio.element.play();
-  if (playPromise) {
-    playPromise.then(() => {
-    }).catch((error: DOMException) => {
-      console.log(error)
-    })
-  }
+  // Motor should stay on forever, but 10 minutes is plenty long.
+  playAudio(motorAudio, 600000)
 }
 
 const playMotorOff = () => {
@@ -108,9 +88,6 @@ const playMotorOff = () => {
 
 export const doPlayDriveSound = (sound: DRIVE) => {
   switch (sound) {
-    case DRIVE.REQUEST_AUDIO:
-      playRequestAudio()
-      break
     case DRIVE.MOTOR_OFF:
       playMotorOff()
       break

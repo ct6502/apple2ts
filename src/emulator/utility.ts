@@ -84,7 +84,6 @@ export const nameToColorMode = (name: string) => {
 }
 
 export enum DRIVE {
-  REQUEST_AUDIO,
   MOTOR_OFF,
   MOTOR_ON,
   TRACK_END,
