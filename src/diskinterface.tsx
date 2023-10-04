@@ -6,18 +6,12 @@ import { DiskImageChooser } from "./diskimagechooser"
 import {isAudioEnabled, registerAudioContext} from "./speaker"
 import { handleSetDiskData } from "./main2worker"
 
-const hasAudioContext = typeof AudioContext !== 'undefined'
-let playDriveNoise = hasAudioContext
-let motorAudio: AudioDevice | undefined
-let trackSeekAudio: AudioDevice | undefined
-let trackOffEndAudio: AudioDevice | undefined
+let motorAudio: AudioDevice
+let trackSeekAudio: AudioDevice
+let trackOffEndAudio: AudioDevice
 let trackTimeout = 0
 
-const playAudio = (audioDevice: AudioDevice | undefined, timeout: number) => {
-  if (!playDriveNoise || !audioDevice) {
-    audioDevice?.context.suspend()
-    return
-  }
+const playAudio = (audioDevice: AudioDevice, timeout: number) => {
   if (audioDevice.context.state === 'suspended') {
     audioDevice.context.resume();
   }
@@ -25,7 +19,7 @@ const playAudio = (audioDevice: AudioDevice | undefined, timeout: number) => {
   if (playPromise) {
     playPromise.then(() => {
       window.clearTimeout(trackTimeout)
-      trackTimeout = window.setTimeout(() => audioDevice?.context.suspend(), timeout)
+      trackTimeout = window.setTimeout(() => audioDevice.context.suspend(), timeout)
     }).catch((error: DOMException) => {
 //      console.log(error)
     })
@@ -33,12 +27,10 @@ const playAudio = (audioDevice: AudioDevice | undefined, timeout: number) => {
 }
 
 const constructAudio = (mp3track: any) => {
-  if (!hasAudioContext) return
   const audioDevice: AudioDevice = {
     context: new AudioContext(),
     element: new Audio(mp3track)
   }
-  registerAudioContext(audioDevice.context)
   audioDevice.element.volume = 0.5
   const node = audioDevice.context.createMediaElementSource(audioDevice.element);
   node.connect(audioDevice.context.destination);
@@ -56,6 +48,11 @@ const playTrackOffEnd = () => {
   if ((isAudioEnabled())) {
     if (!trackOffEndAudio) {
       trackOffEndAudio = constructAudio(mp3List.mp3TrackOffEnd)
+      registerAudioContext((enable: boolean) => {
+        // Just turn off audio if disabled, don't bother to turn it
+        // back on because this sound is so short.
+        if (!enable) trackOffEndAudio.context.suspend()
+      })
     }
     playAudio(trackOffEndAudio, 309)
   }
@@ -65,22 +62,32 @@ const playTrackSeek = () => {
   if (isAudioEnabled()) {
     if (!trackSeekAudio) {
       trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
+      registerAudioContext((enable: boolean) => {
+        // Just turn off audio if disabled, don't bother to turn it
+        // back on because this sound is so short.
+        if (!enable) trackSeekAudio.context.suspend()
+      })
     }
     playAudio(trackSeekAudio, 50)
   }
 }
 
+let motorIsRunning = false
+
 const playMotorOn = () => {
-  if (!isAudioEnabled()) return
+  motorIsRunning = true
   if (!motorAudio) {
     motorAudio = constructAudio(mp3List.mp3DriveMotor)
-    if (motorAudio) motorAudio.element.loop = true
+    motorAudio.element.loop = true
+    registerAudioContext((enable: boolean) => {
+      if (enable && motorIsRunning && isAudioEnabled()) {
+        motorAudio.context.resume()
+      } else {
+        motorAudio.context.suspend()
+      }
+    })
   }
-  if (!playDriveNoise || !motorAudio) {
-    motorAudio?.context.suspend()
-    return
-  }
-  if (motorAudio.context.state === 'suspended' && isAudioEnabled()) {
+  if (isAudioEnabled() && motorAudio.context.state === 'suspended') {
     motorAudio.context.resume();
   }
   const playPromise = motorAudio.element.play();
@@ -93,7 +100,10 @@ const playMotorOn = () => {
 }
 
 const playMotorOff = () => {
-  motorAudio?.context.suspend()
+  if (motorIsRunning) {
+    motorIsRunning = false
+    motorAudio.context.suspend()
+  }
 }
 
 export const doPlayDriveSound = (sound: DRIVE) => {
@@ -122,13 +132,8 @@ export const resetAllDiskDrives = () => {
   handleSetDiskData(2, new Uint8Array(), "")
 }
 
-class DiskInterface extends React.Component<{
-  speedCheck: boolean
-  }, {}> {
+class DiskInterface extends React.Component<{}, {}> {
   render() {
-    if (this.props.speedCheck !== playDriveNoise) {
-      playDriveNoise = this.props.speedCheck && hasAudioContext
-    }
     return (
       <span className="drives">
         <DiskImageChooser/>

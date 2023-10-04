@@ -46,11 +46,19 @@ const createNoise = (context: AudioContext, chip: number) => {
   return new AudioBufferSourceNode(context, {buffer: buffer, loop: true})
 }
 
+const enableContext = (enable: boolean) => {
+  if (enable) {
+    mboardContext.resume()
+  } else {
+    mboardContext.suspend()
+  }
+}
+
 const constructAudio = (slot: number) => {
   if (!hasAudioContext) return
   if (!mboardContext) {
     mboardContext = new AudioContext()
-    registerAudioContext(mboardContext)
+    registerAudioContext(enableContext)
     stereoMerge = mboardContext.createChannelMerger(2)
     chipMerge = new GainNode(mboardContext, {gain: 0.15})
     chipMerge.connect(mboardContext.destination)

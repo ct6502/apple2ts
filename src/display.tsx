@@ -286,9 +286,7 @@ class DisplayApple2 extends React.Component<{},
             <Apple2Canvas {...props}/>
             <div className="controlBar" style={{width: width, display: width ? '' : 'none'}}>
                 <ControlPanel {...props}/>
-                <DiskInterface
-                  speedCheck={this.state.speedCheck}
-                />
+                <DiskInterface />
                 <ImageWriter />
             </div>
             <span className="statusItem">

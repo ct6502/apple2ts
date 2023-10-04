@@ -2,15 +2,15 @@ let audioContext: AudioContext
 let speaker: AudioWorkletNode
 export let isAudioEnabled = () => (isAudioButtonEnabled && emulatorSoundEnabled)
 
-const audioContexts = new Array<AudioContext>()
+const audioContexts = new Array<(enable: boolean) => void>()
 
 // Any AudioContext registered here will be suspended/resumed when
 // audioEnable is called.
-export const registerAudioContext = (context: AudioContext)  => {
-  audioContexts.push(context)
+export const registerAudioContext = (fn: (enable: boolean) => void) => {
+  audioContexts.push(fn)
   // Our audio might be disabled from the beginning.
   if (!isAudioEnabled()) {
-    context.suspend()
+    fn(false)
   }
 }
 
@@ -29,15 +29,23 @@ export const emulatorSoundEnable = (enable: boolean) => {
 
 const changeAudioContexts = () => {
   if (isAudioButtonEnabled && emulatorSoundEnabled) {
-    audioContexts.forEach(context => context.resume());
+    audioContexts.forEach(fn => fn(true));
   } else {
-    audioContexts.forEach(context => context.suspend());
+    audioContexts.forEach(fn => fn(false));
+  }
+}
+
+const enableContext = (enable: boolean) => {
+  if (enable) {
+    audioContext.resume()
+  } else {
+    audioContext.suspend()
   }
 }
 
 const startOscillator = async () => {
   audioContext = new AudioContext({latencyHint: 0, sampleRate: 44100})
-  registerAudioContext(audioContext)
+  registerAudioContext(enableContext)
   await audioContext.audioWorklet.addModule('worklet/oscillator.js')
   speaker = new AudioWorkletNode(audioContext, 'oscillator')
   speaker.connect(audioContext.destination)
