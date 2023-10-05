@@ -346,6 +346,7 @@ const updateExternalMachineState = () => {
     state: cpuState,
     speed: speed,
     altChar: SWITCHES.ALTCHARSET.isSet,
+    noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
     textPage: getTextPage(),
     lores: getTextPage(true),
     hires: getHires(),

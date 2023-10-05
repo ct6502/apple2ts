@@ -1,5 +1,5 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires } from "./main2worker"
+  handleGetLores, handleGetHires, handleGetNoDelayMode } from "./main2worker"
 import { getPrintableChar, COLOR_MODE } from "./emulator/utility"
 const xmargin = 0.075
 const ymargin = 0.075
@@ -202,6 +202,7 @@ const getHiresGreen = (hgrPage: Uint8Array) => {
 }
 
 const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
+  const noDelayMode = handleGetNoDelayMode()
   const nlines = hgrPage.length / 40
   const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
   for (let j = 0; j < nlines; j++) {
@@ -215,8 +216,8 @@ const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
       const ioffset = joffset + i * 14
       const byte1 = line[i]
       const byte2bit0 = (i < 39) ? (line[i + 1] & 1) : 0
-      const highBit = (byte1 & 128) ? 1 : 0
-      const nextHighBit = (i < 39) ? (line[i + 1] & 0x80) : 0
+      const highBit = (byte1 & 0x80 && !noDelayMode) ? 1 : 0
+      const nextHighBit = (i < 39) ? (line[i + 1] & 0x80 && !noDelayMode) : 0
       for (let b = 0; b <= 6; b++) {
         if (skip) {
           skip = false

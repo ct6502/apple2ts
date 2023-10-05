@@ -101,6 +101,7 @@ let machineState: MachineState = {
   state: STATE.IDLE,
   speed: 0,
   altChar: true,
+  noDelayMode: false,
   textPage: new Uint8Array(1).fill(32),
   lores: new Uint8Array(),
   hires: new Uint8Array(),
@@ -187,6 +188,10 @@ export const handleGetLores = () => {
 
 export const handleGetHires = () => {
   return machineState.hires
+}
+
+export const handleGetNoDelayMode = () => {
+  return machineState.noDelayMode
 }
 
 export const handleGetAltCharSet = () => {

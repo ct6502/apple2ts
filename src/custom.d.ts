@@ -92,6 +92,7 @@ type MachineState = {
   state: STATE,
   speed: number,
   altChar: boolean,
+  noDelayMode: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,
   hires: Uint8Array,
