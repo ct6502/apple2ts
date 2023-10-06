@@ -1,8 +1,10 @@
-import React from "react"
 import { Dialog, DialogTitle, IconButton, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
-import HelpIcon from '@mui/icons-material/Help';
 import { replaceSuffix } from "./emulator/utility";
 import { diskImages } from "./diskimages";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faQuestionCircle,
+} from "@fortawesome/free-solid-svg-icons";
 
 export interface DiskImageDialogProps {
   open: boolean;
@@ -51,9 +53,9 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
                 onClick = {() => {helpButton = true}}
                 href={disk.url}
                 target="_blank"
-                sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                sx={{ color: 'rgba(255, 255, 255, 0.44)' }}
                 aria-label={`info about ${disk.file}`}>
-              <HelpIcon sx={{ fontSize: '1rem' }} />
+                <FontAwesomeIcon icon={faQuestionCircle}/>
               </IconButton> : <span></span>
               }
             />

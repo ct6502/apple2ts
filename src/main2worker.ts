@@ -23,7 +23,7 @@ export const setDisplay = (displayIn: DisplayApple2) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const doPostMessage = (msg: MSG_MAIN, payload: any) => {
   if (!worker) {
-    worker = new Worker(new URL('./emulator/worker2main', import.meta.url))
+    worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
     worker.onmessage = doOnMessage
   }
   worker.postMessage({msg, payload});
