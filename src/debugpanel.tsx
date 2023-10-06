@@ -8,7 +8,7 @@ import { handleGetZeroPageStack } from "./main2worker";
 
 const DebugPanel = (props: DebugProps) => {
   const handleBreakpointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let result = e.target.value.replace(/[^0-9a-f]/gi, '');
+    const result = e.target.value.replace(/[^0-9a-f]/gi, '');
     props.handleBreakpoint(result)
   }
   return (

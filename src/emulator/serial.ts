@@ -205,7 +205,7 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
   slot = aslot
 
   // remap rom to be 256 byte section first, then 2k area
-  let driver = new Uint8Array(rom.length + 256)
+  const driver = new Uint8Array(rom.length + 256)
   // Table 4-4 Address remapping (old serial card manual)
   driver.set(rom.slice(0x700, 0x800))
   driver.set(rom, 0x100)
@@ -218,7 +218,7 @@ let receiveBuffer = new Uint8Array(0)
 let receivePos = -1
 
 export const receiveCommData = (data: Uint8Array) => {
-  let tmpbuffer = new Uint8Array(receiveBuffer.length + data.length)
+  const tmpbuffer = new Uint8Array(receiveBuffer.length + data.length)
   // new data first
   tmpbuffer.set(data)
   tmpbuffer.set(receiveBuffer, data.length)
@@ -231,7 +231,7 @@ const sendCommChar = (data: number) => {
   passTxCommData(sendBuffer)
 }
 
-const handleSerialIO = (addr: number, val: number = -1): number => {
+const handleSerialIO = (addr: number, val = -1): number => {
 
   // We don't manage the ROM
   if (addr >= 0xC100)
@@ -284,7 +284,7 @@ const handleSerialIO = (addr: number, val: number = -1): number => {
           // ignore all status and errors except recv/send registers.
           // bit 4 = transmit reg empty
           // bit 3 = receive reg ful
-          var stat = 0x10
+          let stat = 0x10
           stat |= (receivePos >= 0) ? 0x08 : 0  
           return stat
         }

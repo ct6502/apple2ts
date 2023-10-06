@@ -11,7 +11,7 @@ const BinaryFileDialog = (props:
   const [runAddress, setRunAddress] = useState('07FD');
 
   const handleSetRunAddress = (event: React.ChangeEvent<HTMLInputElement>) => {
-    let newValue = event.target.value.toUpperCase()
+    const newValue = event.target.value.toUpperCase()
     if (newValue.match(/^([A-F0-9]{0,4})$/)) {
       setRunAddress(newValue)
     } else {

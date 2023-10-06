@@ -6,16 +6,21 @@ import { doRumble } from "./gamepad"
 import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./mockingboard_audio"
 import { receiveCommData } from "./imagewriter"
+import DisplayApple2 from "./display"
 
 let worker: Worker | null = null
 
 let saveStateCallback: (saveState: EmulatorSaveState) => void
 
-export let updateDisplay = (speed = 0, helptext = '') => {}
-export const setUpdateDisplay = (updateIn: (speed?: number, helptext?: string) => void) => {
-  updateDisplay = updateIn
+let display: DisplayApple2
+export const updateDisplay = (speed?: number, helptext?: string) => {
+  display.updateDisplay(speed, helptext)
+}
+export const setDisplay = (displayIn: DisplayApple2) => {
+  display = displayIn
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const doPostMessage = (msg: MSG_MAIN, payload: any) => {
   if (!worker) {
     worker = new Worker(new URL('./emulator/worker2main', import.meta.url))
@@ -64,7 +69,7 @@ export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
   doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
 }
 
-export const passKeypress = (text: String) => {
+export const passKeypress = (text: string) => {
   doPostMessage(MSG_MAIN.KEYPRESS, text)
 }
 
@@ -72,7 +77,7 @@ export const passMouseEvent = (event: MouseEventSimple) => {
   doPostMessage(MSG_MAIN.MOUSEEVENT, event)
 }
 
-export const passPasteText = (text: String) => {
+export const passPasteText = (text: string) => {
   doPostMessage(MSG_MAIN.PASTE_TEXT, text)
 }
 
@@ -114,7 +119,7 @@ let machineState: MachineState = {
 
 const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_WORKER) {
-    case MSG_WORKER.MACHINE_STATE:
+    case MSG_WORKER.MACHINE_STATE: {
       const cpuStateChanged = machineState.speed !== e.data.payload.speed ||
         machineState.state !== e.data.payload.state ||
         machineState.zeroPageStack !== e.data.payload.zeroPageStack ||
@@ -128,42 +133,51 @@ const doOnMessage = (e: MessageEvent) => {
       machineState = e.data.payload
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
-    case MSG_WORKER.SAVE_STATE:
+    }
+    case MSG_WORKER.SAVE_STATE: {
       const saveState = e.data.payload as EmulatorSaveState
       saveStateCallback(saveState)
       break
+    }
     case MSG_WORKER.CLICK:
       clickSpeaker(e.data.payload as number)
       break
-    case MSG_WORKER.DRIVE_PROPS:
+    case MSG_WORKER.DRIVE_PROPS: {
       const props = e.data.payload as DriveProps
       driveProps[props.drive] = props
       updateDisplay()
       break
-    case MSG_WORKER.DRIVE_SOUND:
+    }
+    case MSG_WORKER.DRIVE_SOUND: {
       const sound = e.data.payload as DRIVE
       doPlayDriveSound(sound)
       break
-    case MSG_WORKER.RUMBLE:
+    }
+    case MSG_WORKER.RUMBLE: {
       const params = e.data.payload as GamePadActuatorEffect
       doRumble(params)
       break
-    case MSG_WORKER.HELP_TEXT:
+    }
+    case MSG_WORKER.HELP_TEXT: {
       const helptext = e.data.payload as string
       updateDisplay(0, helptext)
       break
-    case MSG_WORKER.SHOW_MOUSE:
+    }
+    case MSG_WORKER.SHOW_MOUSE: {
       const set = e.data.payload as boolean
       setShowMouse(set)
       break
-    case MSG_WORKER.MBOARD_SOUND:
+    }
+    case MSG_WORKER.MBOARD_SOUND: {
       const mboard = e.data.payload as MockingboardSound
       playMockingboard(mboard)
       break
-    case MSG_WORKER.COMM_DATA:
+    }
+    case MSG_WORKER.COMM_DATA: {
       const commdata = e.data.payload as Uint8Array
       receiveCommData(commdata)
       break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -230,7 +244,7 @@ const initDriveProps = (drive: number): DriveProps => {
     diskData: new Uint8Array()
   }
 }
-let driveProps: DriveProps[] = [initDriveProps(0), initDriveProps(1), initDriveProps(2)];
+const driveProps: DriveProps[] = [initDriveProps(0), initDriveProps(1), initDriveProps(2)];
 driveProps[0].hardDrive = true
 
 export const handleGetFilename = (drive: number) => {

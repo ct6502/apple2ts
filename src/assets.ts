@@ -17,6 +17,7 @@ export const preloadAssets = () => {
   for (keyImg in imageList) {
     const newImage = new Image()
     newImage.src = imageList[keyImg]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     window[imageList[keyImg] as any] = newImage as any
   }
   let mp3Img: keyof typeof mp3List

@@ -67,7 +67,7 @@ const defaultGame: GameLibraryItem = {
 }
 
 export const handleKeyMapping = (key: string) => {
-  for (let game of gameLibrary) {
+  for (const game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       return (key in game.keymap) ? game.keymap[key] : key
     }   
@@ -76,7 +76,7 @@ export const handleKeyMapping = (key: string) => {
 }
 
 export const getGameMapping = () => {
-  for (let game of gameLibrary) {
+  for (const game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       return game
     }   
@@ -85,7 +85,7 @@ export const getGameMapping = () => {
 }
 
 export const handleGameSetup = (reset = false) => {
-  for (let game of gameLibrary) {
+  for (const game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
       passHelptext(game.helptext ? game.helptext : ' ')
       if (game.setup) game.setup()

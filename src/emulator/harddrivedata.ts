@@ -4,7 +4,7 @@ import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "./m
 import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
 import { toHex } from "./utility"
 
-let timerID: any | number = 0
+let timerID: NodeJS.Timeout | number = 0
 
 // $Cx00 + driverAddr = address for our hard drive driver
 // SmartPort driver is this address + 3
@@ -117,7 +117,7 @@ const processSmartPortAccess = () => {
   const bufferAddr = memGet(spParamList + 2) + 256 * memGet(spParamList + 3)
 
   switch (spCommand) {
-    case 0:
+    case 0: {
       if (memGet(spParamList) !== 0x03) {
         console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
         setCarry()
@@ -141,7 +141,8 @@ const processSmartPortAccess = () => {
           break
       }
       return
-    case 1:
+    }
+    case 1: {
       if (memGet(spParamList) !== 0x03) {
         console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
         setCarry()
@@ -153,6 +154,7 @@ const processSmartPortAccess = () => {
       const dataRead = dd.slice(blockStart, blockStart + 512)
       setMemoryBlock(bufferAddr, dataRead)
       break
+    }
     case 2:
     default:
       console.error(`SmartPort command ${spCommand} not implemented`)
@@ -177,13 +179,13 @@ const processHardDriveBlockAccess = () => {
   const dd = getHardDriveData()
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
-  let bufferAddr = memGet(0x44) + 256 * memGet(0x45)
+  const bufferAddr = memGet(0x44) + 256 * memGet(0x45)
   const dataLen = dd.length
   ds.status = ` ${toHex(block, 4)} ${toHex(bufferAddr, 4)}`
 //  console.log(`cmd=${memGet(0x42)} ${ds.status}`)
 
   switch (memGet(0x42)) {
-    case 0:
+    case 0: {
       // Status test: 300: A2 AB A0 CD 8D 06 C0 A9 00 85 42 A9 70 85 43 20 EA C7 00
       if (ds.filename.length === 0 || dataLen === 0) {
         setX(0)
@@ -195,7 +197,8 @@ const processHardDriveBlockAccess = () => {
       setX(nblocks & 0xFF)
       setY(nblocks >>> 8)
       break
-    case 1:
+    }
+    case 1: {
       if (blockStart + 512 > dataLen) {
         setCarry()
         return
@@ -203,7 +206,8 @@ const processHardDriveBlockAccess = () => {
       const dataRead = dd.slice(blockStart, blockStart + 512)
       setMemoryBlock(bufferAddr, dataRead)
       break;
-    case 2:
+    }
+    case 2: {
       if (blockStart + 512 > dataLen) {
         setCarry()
         return
@@ -212,6 +216,7 @@ const processHardDriveBlockAccess = () => {
       dd.set(dataWrite, blockStart)
       ds.diskHasChanges = true
       break
+    }
     case 3:
       console.error("Hard drive format not implemented yet")
       setCarry()

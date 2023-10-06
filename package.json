@@ -55,6 +55,9 @@
     ]
   },
   "devDependencies": {
+    "eslint": "^8.45.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
   }
 }

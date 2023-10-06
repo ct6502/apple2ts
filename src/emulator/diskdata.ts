@@ -5,7 +5,7 @@ import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } 
 import { setSlotDriver, setSlotIOCallback } from "./memory"
 import { disk2driver } from "./roms/slot_disk2_cx00"
 
-let motorOffTimeout: any = 0
+let motorOffTimeout: NodeJS.Timeout | number = 0
 
 const SWITCH = {
   MOTOR_OFF: 8,
@@ -86,7 +86,7 @@ const getNextByte = (ds: DriveState, dd: Uint8Array) => {
   if (dd.length === 0) return 0
   let result = 0
   if (dataRegister === 0) {
-    while (getNextBit(ds, dd) === 0) {}
+    while (getNextBit(ds, dd) === 0) {null}
     // This will become the high bit on the next read
     dataRegister = 0x40
     // Read the next 6 bits, all except the last one.
@@ -175,7 +175,7 @@ const stopMotor = (ds: DriveState) => {
 let debugCache:number[] = []
 const doDebugDrive = false
 
-const dumpData = (ds: DriveState, addr: number) => {
+const dumpData = (ds: DriveState) => {
   // if (dataRegister !== 0) {
   //   console.error(`addr=${toHex(addr)} writeByte= ${dataRegister}`)
   // }
@@ -197,14 +197,14 @@ const dumpData = (ds: DriveState, addr: number) => {
   }
 }
 
-let STEPPER_MOTORS = [0, 0, 0, 0]
+const STEPPER_MOTORS = [0, 0, 0, 0]
 
 export const handleDriveSoftSwitches: AddressCallback =
   (addr: number, value: number): number => {
   // We don't care about memgets to our card firmware, only to our card I/O
   if (addr >= 0xC100) return -1
   let ds = getCurrentDriveState()
-  let dd = getCurrentDriveData()
+  const dd = getCurrentDriveData()
   if (ds.hardDrive) return 0
   let result = 0
   const delta = s6502.cycleCount - prevCycleCount
@@ -225,15 +225,15 @@ export const handleDriveSoftSwitches: AddressCallback =
     case SWITCH.MOTOR_ON:
       SWITCH.MOTOR_RUNNING = true
       startMotor(ds)
-      dumpData(ds, addr)
+      dumpData(ds)
       break
     case SWITCH.MOTOR_OFF:
       SWITCH.MOTOR_RUNNING = false
       stopMotor(ds)
-      dumpData(ds, addr)
+      dumpData(ds)
       break
     case SWITCH.DRIVE1: // fall thru
-    case SWITCH.DRIVE2:
+    case SWITCH.DRIVE2: {
       const currentDrive = (addr === SWITCH.DRIVE1) ? 1 : 2
       const dsOld = getCurrentDriveState()
       setCurrentDrive(currentDrive)
@@ -244,6 +244,7 @@ export const handleDriveSoftSwitches: AddressCallback =
         passData()
       }
       break
+    }
     case SWITCH.WRITE_OFF:  // READ, Q7LOW
       if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, delta)
@@ -254,7 +255,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       if (SWITCH.DATA_LATCH) {
         result = ds.isWriteProtected ? 0xFF : 0
       }
-      dumpData(ds, addr)
+      dumpData(ds)
       break
     case SWITCH.WRITE_ON:  // WRITE, Q7HIGH
       ds.writeMode = true
@@ -277,7 +278,7 @@ export const handleDriveSoftSwitches: AddressCallback =
         }
       }
       break
-    default:
+    default: {
       if (addr < 0 || addr > 7) break
       // One of the stepper motors has been turned on or off
       STEPPER_MOTORS[Math.floor(addr / 2)] = addr % 2
@@ -301,8 +302,9 @@ export const handleDriveSoftSwitches: AddressCallback =
       //     `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
       //     `track=${dState.halftrack / 2}`)
       // }
-      dumpData(ds, addr)
+      dumpData(ds)
       break
+    }
   }
 
   return result

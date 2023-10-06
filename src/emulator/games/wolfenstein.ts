@@ -38,7 +38,8 @@ const gamepad = (button: number) => {
     case 3: addToBufferDebounce('U'); break  // Use chest contents
     case 4: addToBufferDebounce('\r'); break
     case 5: addToBufferDebounce('T'); break
-    case 9: const str = getTextPageAsString();
+    case 9: {
+      const str = getTextPageAsString();
       if (str.includes("'N'")) {
         addToBuffer('N');
       } else if (str.includes("'S'")) {
@@ -49,6 +50,7 @@ const gamepad = (button: number) => {
         addToBuffer('N');
       }
       break  // 9 Start?
+    }
     case 10: setLeftButtonDown(); break  // 10 Left thumb button
     case -1: break
     default: break

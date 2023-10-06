@@ -31,7 +31,7 @@ export interface Printer {
 
 export const ImageWriterII : Printer = {
   startup: (canvas) => { return initcanvas(canvas) },
-  shutdown: () => {},
+  shutdown: () => {null},
   reset: function() {
     this.localReset();
     this.incomingData = new Uint8Array(0);
@@ -50,7 +50,7 @@ export const ImageWriterII : Printer = {
 
   write: function (data: Uint8Array) {
 
-    let tmp = new Uint8Array(this.incomingData.length + data.length);
+    const tmp = new Uint8Array(this.incomingData.length + data.length);
     tmp.set(this.incomingData);
     tmp.set(data, this.incomingData.length);
     this.incomingData = tmp;
@@ -71,7 +71,7 @@ export const ImageWriterII : Printer = {
     _dbg = false
   },
 
-  load: function() {},
+  load: function() {null},
   save: function() {
     const blob = new Blob([this.incomingData]);
     const link = document.createElement('a');
@@ -103,7 +103,7 @@ export const ImageWriterII : Printer = {
     {
       html +="<style> @page { size: auto;  margin: 0mm; } </style>"
       html += "<div style='width:100%;height:100%;page-break-after:always;'>"
-      let durl = _canvas.toDataURL("image/png")
+      const durl = _canvas.toDataURL("image/png")
       html += "<img style='position:absolute;width:100%;height:100%;' src='"+durl+"'/>"
       html += "</div>"
     }
@@ -127,7 +127,7 @@ let CustomFontTable = [
   {"width":0, "offset":0},
 ];
 
-let CustomFont : Font = {
+const CustomFont : Font = {
   width: 8,
   height: 8,
   scale: 8/8,
@@ -170,8 +170,8 @@ let _softSelect = false
 let _perfSkip = false
 let _ignoreBit8 = 0x7f
 let _gfxchars = 0
-let _tbm = 0 //10;
-let _lrm = 0 //40;  // 1/4" margins
+const _tbm = 0 //10;
+const _lrm = 0 //40;  // 1/4" margins
 let _lmargin = _lrm
 let _rmargin = 0;
 let _tmargin = _tbm
@@ -181,15 +181,18 @@ const _dpih = 144
 const _72DPIV = 2 // 2 = force 72dpi vertical (majority of software)
 let _dpi = _paperDPI
 let _tof = _tmargin
-let _lm = _lmargin
+const _lm = _lmargin
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _pages: any[] = []
 let _renders = 0
 let _px = _lm
 let _py = _tof
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let command: any = []
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let customdata: any = []
 
-let _tabstops = new Array(32);
+const _tabstops = new Array(32);
 
 const SCALE = 
 {
@@ -296,12 +299,12 @@ function loadcustomglyph()
   }
   let width = customfontwidth(customdata[1]);
   const lower = customdata[1] > 80;
-  let glyph = new Uint8Array(width);
+  const glyph = new Uint8Array(width);
   for(let i=0;i<width;i++)
     glyph[i] = customdata[i+2];
 
   const offset = CustomFontData.length;
-  let fd = new Uint8Array(offset + width);
+  const fd = new Uint8Array(offset + width);
   fd.set(CustomFontData);
   fd.set(glyph, offset);
   CustomFontData = fd;
@@ -453,14 +456,17 @@ function dbg(msg: string)
 function initcanvas(canvas: HTMLCanvasElement)
 {
   _canvas = canvas;
-  _ctx = _canvas.getContext('2d', {alpha: false})!;
-  _canvas.style.width = '100%';
-  _canvas.style.height = '100%';
-  _ctx.fillStyle = '#FFFFFF';
-  _ctx.strokeStyle = '#FFFFFF';
-  _ctx.globalCompositeOperation = "source-over";
-  _ctx.imageSmoothingEnabled = false;
-  _ctx.globalAlpha = 1.0;
+  const ctx = _canvas.getContext('2d', {alpha: false});
+  if (ctx) {
+    _ctx = ctx
+    _canvas.style.width = '100%';
+    _canvas.style.height = '100%';
+    _ctx.fillStyle = '#FFFFFF';
+    _ctx.strokeStyle = '#FFFFFF';
+    _ctx.globalCompositeOperation = "source-over";
+    _ctx.imageSmoothingEnabled = false;
+    _ctx.globalAlpha = 1.0;
+  }
 
   reset();
   clearcustomfonts();
@@ -877,7 +883,7 @@ function setxscale(which:number)
   if (which === SCALE.FONTS)
     scale *= (_usePropFont ? _propScale : _fixedScale);
 
-  let rescale = _ctx.getTransform().a / scale;
+  const rescale = _ctx.getTransform().a / scale;
 
   _px *= rescale;
 
@@ -987,7 +993,7 @@ function clearcanvas()
   _ctx.restore();
 }
 
-function linefeed(n:number = 1)
+function linefeed(n = 1)
 {
   dbg("(lf)(" + n + ")");
   if(_autoCRonLF && !_autoLFonCR)
@@ -1804,7 +1810,7 @@ function parseChar(raw:number)
         state.cur = state.GFXR;
         _ignoreBit8 = 0xff;
         const cmd = command[0] + command[1] + command[2] + command[3];
-        _gfxchars = parseInt(cmd);;
+        _gfxchars = parseInt(cmd);
         dbg("repeatGfx: " + _gfxchars);
         prerender();
       }
@@ -1829,7 +1835,7 @@ function parseChar(raw:number)
         setxscale(SCALE.GFX);
         state.cur = state.OUTER;
         const cmd = command[0] + command[1] + command[2] + command[3];
-        _px = parseInt(cmd);;
+        _px = parseInt(cmd);
         dbg("hpos: " + _px);
         setxscale(SCALE.FONTS);
       }
@@ -1842,7 +1848,7 @@ function parseChar(raw:number)
       {
         state.cur = state.RCHAR;
         const cmd = command[0] + command[1] + command[2];
-        _gfxchars = parseInt(cmd);;
+        _gfxchars = parseInt(cmd);
         dbg("repeatChar: " + _gfxchars);
       }
       break;
@@ -1904,7 +1910,7 @@ function parseChar(raw:number)
       }
       break;
 
-    case state.FEEDLINES:
+    case state.FEEDLINES: {
       state.cur = state.OUTER;
       const count = "0123456789:;<=>?";
       const cf = String.fromCharCode(ch);
@@ -1912,6 +1918,7 @@ function parseChar(raw:number)
       if (nl > 0)
         linefeed(nl);
       break;
+    }
 
     case state.LMARGIN:
       // expect 3 chars

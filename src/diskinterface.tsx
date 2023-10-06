@@ -11,7 +11,7 @@ let trackSeekAudio: AudioDevice
 let trackOffEndAudio: AudioDevice
 let motorIsRunning = false
 
-const constructAudio = (mp3track: any) => {
+const constructAudio = (mp3track: string) => {
   const audioDevice: AudioDevice = {
     context: new AudioContext(),
     element: new Audio(mp3track),
@@ -32,7 +32,7 @@ const playAudio = (audioDevice: AudioDevice, timeout: number) => {
     playPromise.then(() => {
       window.clearTimeout(audioDevice.timeout)
       audioDevice.timeout = window.setTimeout(() => audioDevice.context.suspend(), timeout)
-    }).catch((error: DOMException) => {
+    }).catch(() => {
 //      console.log(error)
     })
   }
@@ -86,6 +86,7 @@ const playMotorOff = () => {
   }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const doPlayDriveSound = (sound: DRIVE) => {
   switch (sound) {
     case DRIVE.MOTOR_OFF:
@@ -103,13 +104,14 @@ export const doPlayDriveSound = (sound: DRIVE) => {
   }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const resetAllDiskDrives = () => {
   handleSetDiskData(0, new Uint8Array(), "")
   handleSetDiskData(1, new Uint8Array(), "")
   handleSetDiskData(2, new Uint8Array(), "")
 }
 
-class DiskInterface extends React.Component<{}, {}> {
+class DiskInterface extends React.Component<object, object> {
   render() {
     return (
       <span className="drives">

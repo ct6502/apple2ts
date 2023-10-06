@@ -51,7 +51,7 @@ const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   return true
 }
 
-const isDSK = (filename: String) => {
+const isDSK = (filename: string) => {
   const f = filename.toLowerCase()
   const isDSK = f.endsWith(".dsk") || f.endsWith(".do")
   const isPO = f.endsWith(".po")
@@ -59,7 +59,7 @@ const isDSK = (filename: String) => {
 }
 
 const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
-  let f = driveState.filename.toLowerCase()
+  const f = driveState.filename.toLowerCase()
   const isPO = f.endsWith(".po")
   const newData = convertdsk2woz(diskData, isPO)
   if (newData.length === 0) {

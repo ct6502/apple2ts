@@ -173,7 +173,9 @@ const modeString = (mode: MODE) => {
 export const getInstrString = (code: PCodeInstr, vLo: number, vHi: number, PC: number) => {
   let result = `${toHex(PC,4)}`
   if (code) {
-    let [prefix, suffix] = modeString(code.mode)
+    const ms = modeString(code.mode)
+    let prefix = ms[0]
+    const suffix = ms[1]
     if (code.PC >= 2) {
       prefix = `   ${code.name}   ${prefix}$`
     }
@@ -271,17 +273,17 @@ export const debugZeroPage = (zp: Uint8Array) => {
   zpPrev = zp
 }
 
-export const toASCII = (s: String) => s.split('').map(char => char.charCodeAt(0))
+export const toASCII = (s: string) => s.split('').map(char => char.charCodeAt(0))
 export const uint16toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF]
 export const uint32toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF,
   (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]
 
-export const replaceSuffix = (fname: String, suffix: String) => {
+export const replaceSuffix = (fname: string, suffix: string) => {
   const i = fname.lastIndexOf('.') + 1
   return fname.substring(0, i) + suffix
 }
 
-let crcTable = new Uint32Array(256).fill(0)
+const crcTable = new Uint32Array(256).fill(0)
 
 const makeCRCTable = () => {
   let c;

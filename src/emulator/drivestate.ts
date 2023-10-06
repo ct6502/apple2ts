@@ -64,7 +64,7 @@ export const passData = () => {
 // }
 
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
-  let data = ['', '', '']
+  const data = ['', '', '']
   // if (full && isTotalReplay(driveState[0].filename)) {
   //   return {currentDrive: 0, driveState: [], driveData: []}
   // }

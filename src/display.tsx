@@ -1,5 +1,5 @@
 // Chris Torrence, 2022
-import { setUpdateDisplay, handleGetState, passSetCPUState,
+import { setDisplay, handleGetState, passSetCPUState,
   passSetBreakpoint, passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
@@ -17,7 +17,7 @@ import { audioEnable } from "./speaker"
 import ImageWriter from "./imagewriter"
 // import Test from "./components/test";
 
-class DisplayApple2 extends React.Component<{},
+class DisplayApple2 extends React.Component<object,
   { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
@@ -35,7 +35,7 @@ class DisplayApple2 extends React.Component<{},
   hiddenCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen: HTMLInputElement | null = null
 
-  constructor(props: any) {
+  constructor(props: object) {
     super(props);
     this.state = {
       doDebug: false,
@@ -64,9 +64,11 @@ class DisplayApple2 extends React.Component<{},
   }
 
   componentDidMount() {
-    setUpdateDisplay(this.updateDisplay)
+    setDisplay(this)
     if ("launchQueue" in window) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const queue: any = window.launchQueue
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       queue.setConsumer(async (launchParams: any) => {
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
@@ -210,8 +212,8 @@ class DisplayApple2 extends React.Component<{},
       for (let j = 0; j < 24; j++) {
         let line = ''
         for (let i = 0; i < nchars; i++) {
-          let value = textPage[j * nchars + i]
-          let v1 = getPrintableChar(value, isAltCharSet)
+          const value = textPage[j * nchars + i]
+          const v1 = getPrintableChar(value, isAltCharSet)
           if (v1 >= 32 && v1 !== 127) {
             const c = String.fromCharCode(v1);
             line += c

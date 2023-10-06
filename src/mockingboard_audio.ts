@@ -16,7 +16,7 @@ type ChipNodes = {
   envelope: (AudioBufferSourceNode | null)
 }
 
-let nodes: Array<Array<ChipNodes>> = []
+const nodes: Array<Array<ChipNodes>> = []
 
 // let tones: OscillatorNode[][]
 // let gains: GainNode[][]
@@ -82,7 +82,7 @@ const constructAudio = (slot: number) => {
       nodes[slot][chip].gains[i + 3] = new GainNode(mboardContext, {gain: 0})
       nodes[slot][chip].gains[i + 3].connect(chipMerge)
       nodes[slot][chip].noise[i] = new BiquadFilterNode(mboardContext, {type: "bandpass"})
-      let noise = createNoise(mboardContext, chip)
+      const noise = createNoise(mboardContext, chip)
       noise.connect(nodes[slot][chip].noise[i])
       nodes[slot][chip].noise[i].connect(nodes[slot][chip].gains[i + 3])
       noise.start()
@@ -228,13 +228,11 @@ export const playMockingboard = (sound: MockingboardSound) => {
     for (let c = 0; c <= 5; c++) {
       try {
         nodes[sound.slot][chip].envelope?.disconnect(nodes[sound.slot][chip].gains[c].gain)
-      } catch (error) {
-      }
+      } catch (error) { null }
     }
     try {
       nodes[sound.slot][chip].envelope?.stop()
-    } catch (error) {
-    }
+    } catch (error) { null }
     nodes[sound.slot][chip].envelope = null
   }
   for (let c = 0; c <= 5; c++) {

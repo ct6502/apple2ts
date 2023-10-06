@@ -48,7 +48,7 @@ ${key}→ Forward in Time`
   text = text.concat(tmp.split('\n'))
 }
 
-const textPage = new Array<String>(24).fill('')
+const textPage = new Array<string>(24).fill('')
 const n = text.length
 for (let j = 0; j < n; j++) {
   textPage[j + 12 - Math.floor(n/2)] = text[j]

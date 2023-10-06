@@ -259,7 +259,7 @@ let CSWLSave = 0
 // entry: X: (anything)  Y: (anything)  A: (char.out) if CSW
 // exit : X: (unchanged) Y: (unchanged) A: (char.in)  if KSW
 const handleBasic = () => {
-  let SLH = 0xC0 + slot
+  const SLH = 0xC0 + slot
 
   if (memGet(CSWH) === SLH && memGet(CSWL) === 0x00) {
     // if CSW hook is set (or both are set), it was from PR#N, and is output
@@ -276,7 +276,7 @@ const basicRead = () => {
     // mouse card or not.  This sets the CSW to point to a RTS in our ROM
     // which will just drop the incoming characters until the end of the 
     // string when we restore it.
-    let SLH = 0xC0 + slot
+    const SLH = 0xC0 + slot
     CSWHSave = memGet(CSWH)
     CSWLSave = memGet(CSWL)
     memSet(CSWH, SLH) 

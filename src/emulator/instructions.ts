@@ -195,7 +195,7 @@ const doADC = (addr: number) => {
 }
 
 PCODE('ADC', MODE.IMM, 0x69, 2, (value) => {
-  if (BCD()) {doADC_BCD(value)} else {doADC_HEX(value)}; return 2 + BCD()})
+  if (BCD()) {doADC_BCD(value)} else {doADC_HEX(value)} return 2 + BCD()})
 PCODE('ADC', MODE.ZP_REL, 0x65, 2, (vZP) => {doADC(vZP); return 3 + BCD()})
 PCODE('ADC', MODE.ZP_X, 0x75, 2, (vZP) =>
   {doADC(oneByteAdd(vZP, s6502.XReg)); return 4 + BCD()})
@@ -564,7 +564,7 @@ const doSBC_BCD = (value: number) => {
   const bothNegative = (s6502.Accum >= 128 && vtmp >= 128)
   setOverflow((tmp % 256) >= 128 ? bothPositive : bothNegative)
 
-  let ones = (s6502.Accum & 0x0F) - (value & 0x0F) + (isCarry() ? 0 : -1)
+  const ones = (s6502.Accum & 0x0F) - (value & 0x0F) + (isCarry() ? 0 : -1)
   tmp = s6502.Accum - value + (isCarry() ? 0 : -1)
   if (tmp < 0) {
     tmp -= 0x60

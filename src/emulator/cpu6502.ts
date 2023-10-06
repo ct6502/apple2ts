@@ -80,9 +80,9 @@ export const clearInterrupts = () => {
   s6502.flagNMI = false
 }
 
-const cycleCountCallbacks: Array<(userdata: any) => void> = []
-const cycleCountCBdata: Array<any> = []
-export const registerCycleCountCallback = (fn: (userdata: any) => void, userdata: any) => {
+const cycleCountCallbacks: Array<(userdata: number) => void> = []
+const cycleCountCBdata: Array<number> = []
+export const registerCycleCountCallback = (fn: (userdata: number) => void, userdata: number) => {
   cycleCountCallbacks.push(fn)
   cycleCountCBdata.push(userdata)
 }
@@ -94,11 +94,11 @@ const processCycleCountCallbacks = () => {
 
 export const processInstruction = (step = false) => {
   let cycles = 0
-  let PC1 = s6502.PC
+  const PC1 = s6502.PC
   const instr = memGet(s6502.PC)
   const vLo = memGet(s6502.PC + 1)
   const vHi = memGet(s6502.PC + 2)
-  let code =  pcodes[instr]
+  const code =  pcodes[instr]
   if (PC1 === breakpoint && !step) {
     doSetCPUState(STATE.PAUSED)
     return -1

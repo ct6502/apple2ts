@@ -32,7 +32,8 @@ const gamepad = (button: number) => {
     case 6: break  // 6 LT
     case 7: break  // 7 RT
     case 8: addToBufferDebounce('Z'); break  // 8 Select?
-    case 9: const str = getTextPageAsString();
+    case 9: {
+      const str = getTextPageAsString();
       if (str.includes("'N'")) {
         addToBuffer('N');
       } else if (str.includes("'S'")) {
@@ -43,6 +44,7 @@ const gamepad = (button: number) => {
         addToBuffer('N');
       }
       break  // 9 Start?
+    }
     case 10: break  // 10 Left thumb button
     case 11: break  // 11 Right thumb button
     case 12: addToBufferDebounce('L'); break  // 12 D-pad U, climb

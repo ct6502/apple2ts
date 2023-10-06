@@ -136,7 +136,7 @@ const handleLabel = (parts: CodeLine, pc: number) => {
 }
 
 const getHexCodesForInstruction = (match: number, value: number) => {
-  let newInstructions: Array<number> = [];
+  const newInstructions: Array<number> = [];
   const pcode = pcodes[match]
   newInstructions.push(match);
   if (value >= 0) {
@@ -150,7 +150,7 @@ const getHexCodesForInstruction = (match: number, value: number) => {
 
 const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<number> => {
   let pc = start
-  let instructions: Array<number> = [];
+  const instructions: Array<number> = [];
   let prevLabel = ''
   code.forEach(line => {
     line = (line.split(';'))[0].trimEnd().toUpperCase()
@@ -203,11 +203,8 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
 }
 
 export const parseAssembly = (start: number, code: Array<string>): Array<number> => {
-  for (var key in labels){
-    if (labels.hasOwnProperty(key)){
-        delete labels[key];
-    }
-}  try {
+  labels = {}
+  try {
     parseOnce(start, code, 1)
     const instructions = parseOnce(start, code, 2)
     return instructions

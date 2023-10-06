@@ -12,7 +12,7 @@ import { inVBL } from "./motherboard";
 // 0x24700...27EFF: Slots 1-7 (8*256 byte $C800-$CFFF range for each card)
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-export let memory = (new Uint8Array(0x27F00)).fill(0)
+export const memory = (new Uint8Array(0x27F00)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -237,7 +237,7 @@ export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
  * @param jump - (optional) If the program counter equals this address, then `fn` will be called.
  * @param fn - (optional) The function to jump to.
  */
-export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
+export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {null}) => {
   memory.set(driver.slice(0, 0x100), SLOTstart + (slot - 1) * 0x100)
   if (driver.length > 0x100) {
     // only allow up to 2k for C8 range
@@ -428,7 +428,7 @@ export const getTextPage = (getLores = false) => {
     const textPage = new Uint8Array(40 * (jend - jstart))
     for (let j = jstart; j < jend; j++) {
       const joffset = 40 * (j - jstart)
-      let start = pageOffset + offset[j]
+      const start = pageOffset + offset[j]
       textPage.set(memory.slice(start, start + 40), joffset)
     }
     return textPage

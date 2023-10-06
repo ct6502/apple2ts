@@ -98,7 +98,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
-  let colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
+  const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -108,7 +108,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
       if (isAltCharSet) {
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
       }
-      let v1 = getPrintableChar(value, isAltCharSet)
+      const v1 = getPrintableChar(value, isAltCharSet)
       const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
       if (doInverse) {

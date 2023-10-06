@@ -32,8 +32,8 @@ let iRefresh = 0
 let saveTimeSlice = false
 let iSaveState = 0
 let iTempState = 0
-let maxState = 60
-let saveStates = Array<EmulatorSaveState>(maxState)
+const maxState = 60
+const saveStates = Array<EmulatorSaveState>(maxState)
 export let inVBL = false
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
@@ -77,6 +77,7 @@ const setApple2State = (newState: Apple2SaveState) => {
     try {
       SWITCHES[keyTyped].isSet = softSwitches[key]    
     } catch (error) {
+      null
     }
   }
   memory.set(Buffer.from(newState.memory, "base64"))
@@ -148,7 +149,7 @@ const doBoot = () => {
   memoryReset()
   configureMachine()
   if (code.length > 0) {
-    let pcode = parseAssembly(0x300, code.split("\n"));
+    const pcode = parseAssembly(0x300, code.split("\n"));
     memory.set(pcode, 0x300);
   }
 //  testTiming()
@@ -375,7 +376,7 @@ const doAdvance6502 = () => {
     doSetCPUState(STATE.RUNNING)
   }
   let cycleTotal = 0
-  while (true) {
+  for (;;) {
     const cycles = processInstruction();
     if (cycles < 0) break
     cycleTotal += cycles;

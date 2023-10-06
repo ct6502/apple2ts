@@ -23,7 +23,7 @@ export const popKey = () => {
   const t = performance.now()
   if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 1500)) {
     tPrevPop = t
-    let key = keyBuffer.charCodeAt(0)
+    const key = keyBuffer.charCodeAt(0)
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
     if (keyBuffer.length === 0) {

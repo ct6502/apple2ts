@@ -11,6 +11,7 @@ import { ARROW } from "./emulator/utility";
 
 const arrowGamePad = [0, 0]
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const handleArrowKey = (key: ARROW, release: boolean) => {
 
   if (!release) {
@@ -31,7 +32,7 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
     }
   }
 
-  let gamePads: EmuGamepad[] = [{
+  const gamePads: EmuGamepad[] = [{
       axes: [arrowGamePad[0], arrowGamePad[1], 0, 0],
       buttons: []
   }]

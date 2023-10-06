@@ -1,7 +1,7 @@
 import { COLOR_MODE } from "./emulator/utility";
 
 export const appleOutline = <svg version="1.1" id="Layer_1" width="20" height="20"
-	 viewBox="0 -20 384 512"><g>
+  viewBox="0 -20 384 512"><g>
 	<path d="M278,174.1c1.1,0,2.2,0,3.3,0.1l0,0l0,0c13.1,1,24.6,3.9,34.1,8.5c-5.5,6.2-10.4,12.7-14.5,19.6
 		c-11.5,19.4-17.3,41.6-17.2,66c-0.2,9.5,0.7,28.4,9.6,50.2c9,22.3,23.8,41.4,43.5,56.4c-6.1,12.7-13.8,26.4-22.4,38.5
 		c-16.4,22.9-30.1,31.3-36.8,31.5c-6.6-0.1-12.7-2.3-22.8-6.2c-13.5-5.2-30.4-11.7-53.3-11.7c-24.2,0-41.8,6.7-56,12.1
@@ -30,6 +30,7 @@ export const svgLowercase = <svg className="svg-inline--fa" width="30" height="3
 export const svgUppercase = <svg className="svg-inline--fa" width="30" height="30"><svg id="Layer_1" viewBox="0 0 22.5 22.5"><rect x="1.25" y="1.25" width="20" height="20" rx="1" ry="1" style={{fill: 'none', stroke: 'black', strokeWidth: '2.5px', strokeLinecap: 'round', strokeMiterlimit: 10}}/><path d="m18.07,18.05h-2.99l-1.19-3.09h-5.44l-1.12,3.09h-2.91l5.3-13.6h2.9l5.45,13.6Zm-5.06-5.38l-1.87-5.05-1.84,5.05h3.71Z"/></svg></svg>
 
 export const getColorModeSVG = (colorMode: COLOR_MODE) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let svgRect: any
   switch (colorMode) {
     case COLOR_MODE.COLOR:

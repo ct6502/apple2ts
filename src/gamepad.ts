@@ -8,7 +8,7 @@ const getGamepads = () => {
 export const checkGamepad = () => {
   const gamepads = getGamepads()
   if (!gamepads || gamepads.length < 1) return
-  let gamePad: EmuGamepad[] = []
+  const gamePad: EmuGamepad[] = []
   for (let i = 0; i < gamepads.length; i++) {
     const axes = gamepads[i]?.axes
     const buttons = gamepads[i]?.buttons
@@ -24,6 +24,7 @@ export const checkGamepad = () => {
 export const doRumble = (params: GamePadActuatorEffect) => {
   const gamepads = getGamepads()
   if (!gamepads || gamepads.length < 1) return
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gp = gamepads[0] as any
   if (gp && 'vibrationActuator' in gp) {
     gp.vibrationActuator.playEffect("dual-rumble", params);

@@ -30,7 +30,7 @@ import React from "react";
 
 const ControlButtons = (props: DisplayProps) => {
   const [anchorButton, setAnchorButton] = React.useState<null | HTMLElement>(null);
-  let mockOpen = Boolean(anchorButton);
+  const mockOpen = Boolean(anchorButton);
   const isTouchDevice = "ontouchstart" in document.documentElement
   // const useArrowKeysAsJoystick = props.useArrowKeysAsJoystick ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
@@ -126,12 +126,12 @@ const ControlButtons = (props: DisplayProps) => {
         id="basic-menu"
         anchorEl={anchorButton}
         open={mockOpen}
-        onClose={(event) => handleMockClose()}
+        onClose={() => handleMockClose()}
         MenuListProps={{
           'aria-labelledby': 'basic-button',
         }}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
-        <ListItemButton key={i} onClick={(event) => handleMockClose(i)} selected={i === props.mockingboardMode}>
+        <ListItemButton key={i} onClick={() => handleMockClose(i)} selected={i === props.mockingboardMode}>
           {i === props.mockingboardMode ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}</ListItemButton>))}
       </Menu>
     {/* <button className="pushButton"
@@ -158,6 +158,7 @@ const ControlButtons = (props: DisplayProps) => {
       onClick={() => {
         const context = props.myCanvas.current
         if (context) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let requestFullScreen: any
           if ('webkitRequestFullscreen' in context) {
             requestFullScreen = context.webkitRequestFullscreen

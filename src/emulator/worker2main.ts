@@ -14,9 +14,10 @@ import { receiveCommData } from "./serial";
 // The global should be that of a dedicated worker.
 
 // This fixes `self`'s type.
-declare var self: DedicatedWorkerGlobalScope;
+declare let self: DedicatedWorkerGlobalScope;
 export {};
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const doPostMessage = (msg: MSG_WORKER, payload: any) => {
   self.postMessage({msg, payload});
 }
@@ -112,17 +113,19 @@ self.onmessage = (e: MessageEvent) => {
     case MSG_MAIN.GET_SAVE_STATE:
       passSaveState(doGetSaveState(true))
       break;
-    case MSG_MAIN.DRIVE_PROPS:
+    case MSG_MAIN.DRIVE_PROPS: {
       const props = e.data.payload as DriveProps
       doSetDriveProps(props)
       break;
+    }
     case MSG_MAIN.GAMEPAD:
       setGamepads(e.data.payload)
       break
-    case MSG_MAIN.SET_BINARY_BLOCK:
+    case MSG_MAIN.SET_BINARY_BLOCK: {
       const memBlock = e.data.payload as SetMemoryBlock
       doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
       break
+    }
     case MSG_MAIN.COMM_DATA:
       receiveCommData(e.data.payload)
       break;

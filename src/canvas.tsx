@@ -17,13 +17,14 @@ let height = 600
 let startupTextTimeout = 0
 
 let showMouse = true
+// eslint-disable-next-line react-refresh/only-export-components
 export const setShowMouse = (set = true) => {
   showMouse = set
 }
 
 const Apple2Canvas = (props: DisplayProps) => {
   let keyHandled = false
-  let myText = React.createRef<HTMLTextAreaElement>()
+  const myText = React.createRef<HTMLTextAreaElement>()
 
   const pasteHandler = (e: ClipboardEvent) => {
     if (e.clipboardData) {
@@ -200,14 +201,14 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
 
     const handleMouseDown = (event: MouseEvent) => {
-      let evt = scaleMouseEvent(event)
+      const evt = scaleMouseEvent(event)
       evt.buttons = event.button === 0 ? 0x10 : 0x11
 
       passMouseEvent(evt)
     }
 
     const handleMouseUp = (event: MouseEvent) => {
-      let evt = scaleMouseEvent(event)
+      const evt = scaleMouseEvent(event)
       evt.buttons = event.button === 0 ? 0x00 : 0x01
 
       passMouseEvent(evt)
@@ -230,6 +231,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         updateDisplay()
       }
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
     window.addEventListener("resize", handleResize)
@@ -274,8 +276,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       style={{cursor: showMouse ? "auto" : "none"}}
       width={width} height={height}
       tabIndex={0}
-      onKeyDown={isTouchDevice ? ()=>{} : handleKeyDown}
-      onKeyUp={isTouchDevice ? ()=>{} : handleKeyUp}
+      onKeyDown={isTouchDevice ? ()=>{null} : handleKeyDown}
+      onKeyUp={isTouchDevice ? ()=>{null} : handleKeyUp}
       onMouseEnter={() => {
         myText.current?.focus()
       }}

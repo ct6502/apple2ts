@@ -16,11 +16,12 @@ export interface CopyCanvasProps {
 
 const CopyCanvas = (props: CopyCanvasProps) => {
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { srcCanvas, ...rest } = props
   const canvasRef = useRef(null)
   // these dimensions represent a max dpi page
-  let width = 1360
-  let height = 1584
+  const width = 1360
+  const height = 1584
   
   useEffect(() => {
     let intervalId = 0
@@ -28,7 +29,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
     const render = () => {
       if (canvasRef.current) {
         const destCanvas: HTMLCanvasElement = canvasRef.current
-        const destContext: CanvasRenderingContext2D = destCanvas.getContext('2d')!
+        const destContext: CanvasRenderingContext2D | null = destCanvas.getContext('2d')
         // copy internal canvas over the other one
         if (destContext) {
             //copy the data, scale if necessary
@@ -90,9 +91,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   };
 
   useEffect(() => {
-
-    return () => {
-    }
+    return () => { null }
   }, [state.canvasRef, props.canvas]);
 
   return (

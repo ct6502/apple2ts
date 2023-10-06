@@ -1,6 +1,6 @@
 let audioContext: AudioContext
 let speaker: AudioWorkletNode
-export let isAudioEnabled = () => (isAudioButtonEnabled && emulatorSoundEnabled)
+export const isAudioEnabled = () => (isAudioButtonEnabled && emulatorSoundEnabled)
 
 const audioContexts = new Array<(enable: boolean) => void>()
 

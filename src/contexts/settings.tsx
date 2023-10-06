@@ -61,4 +61,5 @@ function useSettingsDispatch() {
   }
   return context;
 }
+// eslint-disable-next-line react-refresh/only-export-components
 export { SettingsProvider, useSettingsState, useSettingsDispatch };

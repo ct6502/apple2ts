@@ -31,7 +31,7 @@ class DiskDrive extends React.Component<{drive: number},
   hiddenFileInput: HTMLInputElement | null = null
   binaryBuffer: Uint8Array = new Uint8Array()
 
-  constructor(props: any) {
+  constructor(props: {drive: number}) {
     super(props);
     this.state = {
       displayBinaryDialog: false,
@@ -39,6 +39,7 @@ class DiskDrive extends React.Component<{drive: number},
   }
 
   // https://medium.com/@650egor/simple-drag-and-drop-file-upload-in-react-2cb409d88929
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleDrop = (e: any) => {this.dropHandler(e as DragEvent)}
   handleDrag = (e: DragEvent) => 
     {e.preventDefault(); e.stopPropagation()}
@@ -82,7 +83,7 @@ class DiskDrive extends React.Component<{drive: number},
 
   render() {
     const dprops = handleGetDriveProps(this.props.drive)
-    let img1: any
+    let img1: string
     if (dprops.hardDrive) {
       img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
     } else {

@@ -115,7 +115,7 @@ const handleTimerT2 = (slot: number, chip: number, cycleDelta: number) => {
   }
 }
 
-let prevCycleCount = new Array<number>(8).fill(0)
+const prevCycleCount = new Array<number>(8).fill(0)
 
 const cycleCountCallback = (slot: number) => {
   const cycleDelta = s6502.cycleCount - prevCycleCount[slot]
@@ -127,7 +127,7 @@ const cycleCountCallback = (slot: number) => {
 }
 
 const getRegisters = (slot: number, chip: number) => {
-  let registers: number[] = []
+  const registers: number[] = []
   for (let reg = 0; reg <= 15; reg++) {
     registers[reg] = memGetSlotROM(slot, REG[chip] + reg)
   }
@@ -150,7 +150,7 @@ let doPassRegisters = (slot: number, chip: number) => {
 
 // Needed for tests, because they don't run in a worker thread.
 export const disablePassRegisters = () => {
-  doPassRegisters = () => {}
+  doPassRegisters = () => {null}
 }
 
 const handleCommand = (slot: number, chip: number) => {
@@ -166,7 +166,7 @@ const handleCommand = (slot: number, chip: number) => {
     case 7:   // LATCH command, save the appropriate register number
       memSetSlotROM(slot, REG_LATCH[chip], memGetSlotROM(slot, ORA[chip]))
       break
-    case 6:   // WRITE command
+    case 6: {  // WRITE command
       // Store the stashed value in the previously-latched register
       const reg =  memGetSlotROM(slot, REG_LATCH[chip])
       const value = memGetSlotROM(slot, ORA[chip])
@@ -175,6 +175,7 @@ const handleCommand = (slot: number, chip: number) => {
         doPassRegisters(slot, chip)
       }
       break
+    }
     case 4:   // Inactive
       // Do I need to do something here?
       break
