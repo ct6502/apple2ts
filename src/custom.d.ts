@@ -135,8 +135,18 @@ type DriveSaveState = {
   driveData: string[]
 }
 
+type DisplaySaveState = {
+  name: string,
+  date: string,
+  help: string,
+  colorMode: number,
+  uppercase: boolean,
+  audioEnable: boolean,
+  mockingboardMode: number
+}
+
 type EmulatorSaveState = {
-  emulator: any,
+  emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState
 }
