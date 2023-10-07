@@ -4,7 +4,7 @@ import { s6502, setPC } from "./instructions";
 import { parseAssembly } from "./assembler";
 
 test('processInstruction', () => {
-  let pcode = parseAssembly(0x2000, [" LDA #$C0"]);
+  const pcode = parseAssembly(0x2000, [" LDA #$C0"]);
   memory.set(pcode, 0x2000);
   updateAddressTables()
   setPC(0x2000);

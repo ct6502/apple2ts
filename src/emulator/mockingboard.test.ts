@@ -4,7 +4,7 @@ import { disablePassRegisters } from "./mockingboard"
 
 test("temp", () => {})
 
-let slot = 4
+const slot = 4
 
 const N = 0b10000000
 // const V = 0b01000000

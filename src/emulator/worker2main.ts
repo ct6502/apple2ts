@@ -14,7 +14,7 @@ import { receiveCommData } from "./serial";
 // The global should be that of a dedicated worker.
 
 // This fixes `self`'s type.
-declare let self: DedicatedWorkerGlobalScope;
+declare const self: DedicatedWorkerGlobalScope;
 export {};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

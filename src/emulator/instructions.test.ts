@@ -44,7 +44,7 @@ export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: num
   if (instr.length === 1) {
     instr[0] = ' ' + instr[0]
   }
-  let pcode = parseAssembly(start, instr)
+  const pcode = parseAssembly(start, instr)
   memory.set(pcode, start)
   memory[irqClear] = 0x00  
   setPC(start)
@@ -142,7 +142,7 @@ test('LDA #$01', () => runAssemblyTest([' LDA #$01'], 0x01, 0))
 test('SED', () => runAssemblyTest([' SED', ' LDA #$99'], 0x99, N | D))
 
 const doSED_ADC = (v1: number, v2 = 0) => {
-  let instr = [
+  const instr = [
     ' SED',
     ' LDA #$' + toHex(v1),
     ' ADC #$' + toHex(v2)]
@@ -173,7 +173,7 @@ test('SED ADC 99,99', () => runAssemblyTest(doSED_ADC(0x99, 0x99), 0x98, N | V |
 test('SED ADC B1,C1', () => runAssemblyTest(doSED_ADC(0xB1, 0xC1), 0xD2, N | V | C | D))
 
 const doSED_SBC = (v1: number, v2 = 0) => {
-  let instr = [
+  const instr = [
     ' SED',
     ' SEC',
     ' LDA #$' + toHex(v1),
