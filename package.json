@@ -1,17 +1,16 @@
 {
   "name": "apple2ts",
-  "version": "1.0.0",
   "private": true,
+  "version": "1.1.0",
   "homepage": "http://apple2ts.com",
   "scripts": {
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "start": "REACT_APP_GIT_SHA=`git rev-parse --short HEAD` PORT=6502 react-scripts start",
-    "startsecure": "export HTTPS=true&&SSL_CRT_FILE=cert.pem&&SSL_KEY_FILE=key.pem REACT_APP_GIT_SHA=`git rev-parse --short HEAD` PORT=6502 react-scripts start",
-    "build": "REACT_APP_GIT_SHA=`git rev-parse --short HEAD` react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "analyze": "source-map-explorer 'build/static/js/*.js'"
+    "deploy": "gh-pages -d dist",
+    "start": "vite --open",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "jest"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -22,26 +21,25 @@
     "buffer": "^6.0.3",
     "gh-pages": "^6.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "^5.0.1",
-    "typescript": "^4.9.5"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/audioworklet": "^0.0.50",
     "@types/jest": "^29.5.5",
-    "@types/react": "^18.2.25",
-    "@types/react-dom": "^18.2.10",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
     "@types/react-fontawesome": "^1.6.6",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react-swc": "^3.3.2",
     "eslint": "^8.51.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
   },
   "browserslist": {
     "production": [
