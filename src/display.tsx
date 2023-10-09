@@ -167,7 +167,7 @@ class DisplayApple2 extends React.Component<object,
     const d = new Date()
     let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
     saveState.emulator = {
-      name: `Apple2TS Emulator`,
+      name: `Apple2TS Emulator (git ${import.meta.env.VITE_GIT_SHA})`,
       date: datetime,
       help: this.state.helptext.split('\n')[0],
       colorMode: this.state.colorMode,
@@ -294,7 +294,7 @@ class DisplayApple2 extends React.Component<object,
             <span className="statusItem">
               <span>{props.speed} MHz</span>
               <br/>
-              <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+              <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence (git {import.meta.env.VITE_GIT_SHA}) <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
             </span>
           </span>
           <span className="sideContent">
