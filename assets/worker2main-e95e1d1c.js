@@ -147,10 +147,10 @@ Jun Wada and Ken Iba
 Star Craft (Brøderbund) 1981
 
 KEYBOARD
-A    up
-Z    down
-N , ←     left
-M . →     right
+A      up
+Z      down
+N ← ,  left
+M → .  right
 `,oi=t=>{switch(t){case 1:R(109,255);break;case 12:Y("A");break;case 13:Y("Z");break;case 14:Y("\b");break;case 15:Y("");break}},_e=.75,ii=[{address:34918,data:[32,0,96],keymap:{},joystick:null,gamepad:null,rumble:null,setup:()=>{R(25025,173),R(25036,64)},helptext:Hn},{address:7291,data:[173,0,192],keymap:{N:"\b",M:"",",":"\b",".":""},joystick:t=>{const e=t[0]<-_e?"\b":t[0]>_e?"":t[1]<-_e?"A":t[1]>_e?"Z":"";return e&&Y(e),t},gamepad:oi,rumble:null,setup:null,helptext:Hn}],si={address:46999,data:[173,0,192],keymap:{},gamepad:null,joystick:null,rumble:null,setup:null,helptext:`Wizardry
 Andrew Greenberg and Robert Woodhead
 Sir-Tech Software, 1981
