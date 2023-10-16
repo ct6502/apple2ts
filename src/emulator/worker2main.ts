@@ -1,12 +1,12 @@
 import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
 import { sendPastedText, sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility";
-import { doSetBreakpoint, doSetDebug } from "./cpu6502";
+import { doSetBreakpoint } from "./cpu6502";
 import { MouseCardEvent } from "./mouse";
 import { receiveCommData } from "./serial";
 
@@ -68,7 +68,8 @@ self.onmessage = (e: MessageEvent) => {
       doSetCPUState(e.data.payload)
       break;
     case MSG_MAIN.DEBUG:
-      doSetDebug(e.data.payload)
+//      doSetDebug(e.data.payload)
+      doSetIsDebugging(e.data.payload)
       break;
     case MSG_MAIN.BREAKPOINT:
       doSetBreakpoint(e.data.payload)

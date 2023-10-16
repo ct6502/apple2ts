@@ -4,7 +4,7 @@ import {
   faArrowsRotate as iconStepOver,
   faArrowUpFromBracket as iconStepOut,
 } from "@fortawesome/free-solid-svg-icons";
-import { handleGetZeroPageStack } from "./main2worker";
+import { handleGetDebugDump } from "./main2worker";
 
 const DebugPanel = (props: DebugProps) => {
   const handleBreakpointChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -12,21 +12,8 @@ const DebugPanel = (props: DebugProps) => {
     props.handleBreakpoint(result)
   }
   return (
-    <span style={{display: 'none'}}>
-      <span className="helpPanel small">
-        <pre>{handleGetZeroPageStack()}</pre>
-      </span>
-      <label>
-        <input
-          type="checkbox"
-          checked={props.doDebug}
-          onChange={() => props.handleDebugChange(!props.doDebug)}
-        />
-        Debug
-      </label>
-      {/* <span hidden={!props.doDebug}> */}
+    <div className="controlBar">
       <span>
-        <br/>
         <input
           type="text"
           placeholder=""
@@ -52,10 +39,10 @@ const DebugPanel = (props: DebugProps) => {
           <FontAwesomeIcon icon={iconStepOut} className="icon"/>
         </button>
       </span>
-      <span className="statusPanel fixed small">
+      <span>
+        <pre>{handleGetDebugDump()}</pre>
       </span>
-
-    </span>
+    </div>
   )
 }
 

@@ -4,6 +4,8 @@ import { passSetCPUState, passGoBackInTime, passGoForwardInTime,
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
+  faBug,
+  faBugSlash,
   faClipboard,
   faExpand,
   faFastBackward,
@@ -18,32 +20,18 @@ import {
   faWalking,
   faTruckFast,
   faDisplay,
-  faWaveSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { doPlayDriveSound } from "./diskinterface";
 import { getColorModeSVG, svgLowercase, svgUppercase } from "./icons";
-import { getMockingboardName } from "./mockingboard_audio";
-import { ListItemButton, Menu } from "@mui/material";
-import React from "react";
+import { MockingboardWaveform } from "./mockingboardwaveform";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ControlButtons = (props: DisplayProps) => {
-  const [anchorButton, setAnchorButton] = React.useState<null | HTMLElement>(null);
-  const mockOpen = Boolean(anchorButton);
   const isTouchDevice = "ontouchstart" in document.documentElement
   // const useArrowKeysAsJoystick = props.useArrowKeysAsJoystick ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
-
-  const handleMockClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorButton(event.currentTarget);
-  };
-  const handleMockClose = (index = -1) => {
-    setAnchorButton(null);
-    if (index >= 0) props.handleMockingboardMode(index)
-  };
-  const squareWave = <FontAwesomeIcon icon={faWaveSquare}/>
   
   return <span>
     <button className="pushButton"
@@ -111,29 +99,8 @@ const ControlButtons = (props: DisplayProps) => {
       {props.uppercase ? svgUppercase : svgLowercase}
     </button>
 
-    <button
-        id="basic-button"
-        className="pushButton"
-        title="Mockingboard wave form"
-        aria-controls={mockOpen ? 'basic-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={mockOpen ? 'true' : undefined}
-        onClick={handleMockClick}
-      >
-        {squareWave}
-      </button>
-      <Menu
-        id="basic-menu"
-        anchorEl={anchorButton}
-        open={mockOpen}
-        onClose={() => handleMockClose()}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}>
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-        <ListItemButton key={i} onClick={() => handleMockClose(i)} selected={i === props.mockingboardMode}>
-          {i === props.mockingboardMode ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}</ListItemButton>))}
-      </Menu>
+    <MockingboardWaveform mode={props.mockingboardMode} change={props.handleMockingboardMode}/>
+
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}
       onClick={() => props.handleUseArrowKeyJoystick(props.useArrowKeysAsJoystick)}>
@@ -152,6 +119,10 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton" title="Copy Screen"
       onClick={() => props.handleCopyToClipboard()}>
       <FontAwesomeIcon icon={faClipboard}/>
+    </button>
+    <button className="pushButton" title="Toggle Debug"
+      onClick={() => props.handleDebugChange(!props.doDebug)}>
+      <FontAwesomeIcon icon={props.doDebug ? faBug : faBugSlash}/>
     </button>
     <button className="pushButton" title="Full Screen"
       style={{display: isTouchDevice ? 'none' : ''}}

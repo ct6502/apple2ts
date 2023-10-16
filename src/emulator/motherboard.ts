@@ -1,13 +1,13 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
-import { s6502, set6502State, reset6502, setCycleCount, stack, setPC } from "./instructions"
+import { s6502, set6502State, reset6502, setCycleCount, stackDump, setPC, get6502StateString } from "./instructions"
 import { STATE, toHex } from "./utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
-  updateAddressTables, setMemoryBlock } from "./memory"
+  updateAddressTables, setMemoryBlock, getZeroPage } from "./memory"
 import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
@@ -25,6 +25,7 @@ let startTime = 0
 let prevTime = 0
 let normalSpeed = true
 let speed = 0
+let isDebugging = false
 let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
 let cpuState = STATE.IDLE
@@ -175,6 +176,10 @@ export const doSetNormalSpeed = (normal: boolean) => {
   resetRefreshCounter()
 }
 
+export const doSetIsDebugging = (enable: boolean) => {
+  isDebugging = enable
+}
+
 const getGoBackwardIndex = () => {
   const newTmp = (iTempState + maxState - 1) % maxState
   if (newTmp === iSaveState || !saveStates[newTmp]) {
@@ -310,9 +315,9 @@ export const getStackString = () => {
   const result = new Array<string>()
   for (let i = 0xFF; i > s6502.StackPtr; i--) {
     let value = "$" + toHex(stackvalues[i])
-    let cmd = stack[i]
-    if ((stack[i].length > 3) && (i - 1) > s6502.StackPtr) {
-      if (stack[i-1] === "JSR" || stack[i-1] === "BRK") {
+    let cmd = stackDump[i]
+    if ((stackDump[i].length > 3) && (i - 1) > s6502.StackPtr) {
+      if (stackDump[i-1] === "JSR" || stackDump[i-1] === "BRK") {
         i--
         value += toHex(stackvalues[i])
       } else {
@@ -325,21 +330,15 @@ export const getStackString = () => {
   return result
 }
 
-const getDebugString = () => {
-  return ''
-  // const status = Array<String>(16).fill("")
-  // // const stackString = getStackString()
-  // // for (let i = 0; i < Math.min(20, stackString.length); i++) {
-  // //   status[i] = stackString[i]
-  // // }
-  // for (let j = 0; j < 16; j++) {
-  //   let s = toHex(16 * j) + ":"
-  //   for (let i = 0; i < 16; i++) {
-  //     s += " " + toHex(mainMem[j * 16 + i])
-  //   }
-  //   status[j] = s
-  // }
-  // return status.join('\n')
+export const getDebugDump = () => {
+  if (!isDebugging) return ''
+  const status = [get6502StateString()]
+  status.push(getZeroPage())
+  const stackString = getStackString()
+  for (let i = 0; i < Math.min(20, stackString.length); i++) {
+    status.push(stackString[i])
+  }
+  return status.join('\n')
 }
 
 const updateExternalMachineState = () => {
@@ -351,7 +350,7 @@ const updateExternalMachineState = () => {
     textPage: getTextPage(),
     lores: getTextPage(true),
     hires: getHires(),
-    zeroPageStack: getDebugString(),
+    debugDump: getDebugDump(),
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,

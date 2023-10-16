@@ -55,10 +55,34 @@ const setPStatus = (value: number) => {
   s6502.PStatus = value | 0b00110000
 }
 
-export const stack = new Array<string>(256).fill('')
+const getPStatusString = (P: number) => {
+  const result = ((P & 0x80) ? 'N' : 'n') +
+    ((P & 0x40) ? 'V' : 'v') +
+    '-' +
+    ((P & 0x10) ? 'B' : 'b') +
+    ((P & 0x8) ? 'D' : 'd') +
+    ((P & 0x4) ? 'I' : 'i') +
+    ((P & 0x2) ? 'Z' : 'z') +
+    ((P & 0x1) ? 'C' : 'c')
+  return result
+}
+
+export const getProcessorStatus = () => {
+  return (
+    `A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` +
+    `Y=${toHex(s6502.YReg)} P=${toHex(s6502.PStatus)} ` +
+    `${getPStatusString(s6502.PStatus)} S=${toHex(s6502.StackPtr)}`
+  )
+}
+
+export const get6502StateString = () => {
+  return `PC= ${toHex(s6502.PC)}  ${getProcessorStatus()}`  
+}
+
+export const stackDump = new Array<string>(256).fill('')
 
 const pushStack = (call: string, value: number) => {
-  stack[s6502.StackPtr] = call
+  stackDump[s6502.StackPtr] = call
   memSet(0x100 + s6502.StackPtr, value)
   s6502.StackPtr = (s6502.StackPtr + 255) % 256
 }

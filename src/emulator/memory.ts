@@ -4,6 +4,7 @@ import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./game_mappings";
 import { inVBL } from "./motherboard";
+import { toHex } from "./utility";
 
 // 0x00000: main memory
 // 0x10000: aux memory 
@@ -486,4 +487,19 @@ export const matchMemory = (addr: number, data: number[]) => {
    if (memGet(addr + i) !== data[i]) return false
   }
   return true
+}
+
+export const getZeroPage = () => {
+  const status = ['']
+  const offset = addressGetTable[0]
+  const mem = memory.slice(offset, offset + 256)
+  status[0] = '     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F'
+  for (let j = 0; j < 16; j++) {
+    let s = toHex(16 * j) + ":"
+    for (let i = 0; i < 16; i++) {
+      s += " " + toHex(mem[j * 16 + i])
+    }
+    status[j + 1] = s
+  }
+  return status.join('\n')
 }

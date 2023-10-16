@@ -120,25 +120,6 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-const getPStatusString = (P: number) => {
-  const result = ((P & 0x80) ? 'N' : 'n') +
-    ((P & 0x40) ? 'V' : 'v') +
-    '-' +
-    ((P & 0x10) ? 'B' : 'b') +
-    ((P & 0x8) ? 'D' : 'd') +
-    ((P & 0x4) ? 'I' : 'i') +
-    ((P & 0x2) ? 'Z' : 'z') +
-    ((P & 0x1) ? 'C' : 'c')
-  return result
-}
-
-export const getProcessorStatus = (s6502: STATE6502) => {
-  return (
-    `A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` +
-    `Y=${toHex(s6502.YReg)} P=${toHex(s6502.PStatus)} ${getPStatusString(s6502.PStatus)} S=${toHex(s6502.StackPtr)}`
-  )
-}
-
 const modeString = (mode: MODE) => {
   let prefix = ""
   let suffix = ""

@@ -255,6 +255,8 @@ class DisplayApple2 extends React.Component<object,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
       audioEnable: this.state.audioEnable,
+      doDebug: this.state.doDebug,
+      handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
       handleAudioChange: this.handleAudioChange,
@@ -279,7 +281,7 @@ class DisplayApple2 extends React.Component<object,
     }
     const width = props.myCanvas.current?.width
     const height = window.innerHeight - 30
-    let paperWidth = window.innerWidth - (width ? width : 600) - 50
+    let paperWidth = window.innerWidth - (width ? width : 600) - 70
     if (paperWidth < 300) paperWidth = 300
     return (
       <div>
@@ -298,9 +300,9 @@ class DisplayApple2 extends React.Component<object,
             </span>
           </span>
           <span className="sideContent">
-            <HelpPanel helptext={this.state.helptext}
-              height={height ? height : 400} width={paperWidth} />
-            <DebugPanel {...debugProps}/>
+            {props.doDebug ? <DebugPanel {...debugProps}/> :
+              <HelpPanel helptext={this.state.helptext}
+                height={height ? height : 400} width={paperWidth} />}
           </span>
         </span>
         <input

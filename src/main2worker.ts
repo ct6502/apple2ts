@@ -110,7 +110,7 @@ let machineState: MachineState = {
   textPage: new Uint8Array(1).fill(32),
   lores: new Uint8Array(),
   hires: new Uint8Array(),
-  zeroPageStack: '',
+  debugDump: '',
   button0: false,
   button1: false,
   canGoBackward: true,
@@ -122,7 +122,7 @@ const doOnMessage = (e: MessageEvent) => {
     case MSG_WORKER.MACHINE_STATE: {
       const cpuStateChanged = machineState.speed !== e.data.payload.speed ||
         machineState.state !== e.data.payload.state ||
-        machineState.zeroPageStack !== e.data.payload.zeroPageStack ||
+        machineState.debugDump !== e.data.payload.debugDump ||
         machineState.button0 !== e.data.payload.button0 ||
         machineState.button1 !== e.data.payload.button1 ||
         machineState.canGoBackward !== e.data.payload.canGoBackward ||
@@ -212,8 +212,8 @@ export const handleGetAltCharSet = () => {
   return machineState.altChar
 }
 
-export const handleGetZeroPageStack = () => {
-  return machineState.zeroPageStack
+export const handleGetDebugDump = () => {
+  return machineState.debugDump
 }
 
 export const handleGetButton = (left: boolean) => {

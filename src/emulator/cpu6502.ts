@@ -1,8 +1,8 @@
-import { doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { doInterruptRequest, doNonMaskableInterrupt, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { STATE, getInstrString, getProcessorStatus } from "./utility"
+import { STATE, getInstrString } from "./utility"
 
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
@@ -115,7 +115,7 @@ export const processInstruction = (step = false) => {
       outputInstructionTrail()
     }
     const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-    const out = `${s6502.cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus(s6502)}`
+    const out = `${s6502.cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus()}`
     instrTrail[posTrail] = out
     posTrail = (posTrail + 1) % instrTrail.length
     console.log(out)
