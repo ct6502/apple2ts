@@ -65,6 +65,7 @@ type DisplayProps = {
   colorMode: COLOR_MODE,
   audioEnable: boolean,
   doDebug: boolean,
+  handleSetCPUState: (state: STATE) => void,
   handleDebugChange: (enable: boolean) => void,
   handleSpeedChange: (enable: boolean) => void,
   handleAudioChange: (enable: boolean) => void,
@@ -83,7 +84,6 @@ type DisplayProps = {
 type DebugProps = {
   doDebug: boolean,
   breakpoint: string,
-  handleDebugChange: (enable: boolean) => void,
   handleBreakpoint: (bp: string) => void,
   handleStepInto: () => void,
   handleStepOver: () => void,
@@ -93,12 +93,13 @@ type DebugProps = {
 type MachineState = {
   state: STATE,
   speed: number,
-  altChar: boolean,
-  noDelayMode: boolean,
+  altChar: boolean,  //
+  noDelayMode: boolean, //
   textPage: Uint8Array,
   lores: Uint8Array,
   hires: Uint8Array,
   debugDump: string,
+  disassembly: string,
   button0: boolean,
   button1: boolean,
   canGoBackward: boolean,

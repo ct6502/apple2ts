@@ -3,11 +3,11 @@ import { setDisplay, handleGetState, passSetCPUState,
   passSetBreakpoint, passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, passStepInto, passStepOver, passStepOut, handleCanGoBackward, handleCanGoForward } from "./main2worker"
-import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
+  handleGetFilename, passStepInto, passStepOver, passStepOut, handleCanGoBackward, handleCanGoForward, passSetDisassembleAddress } from "./main2worker"
+import { STATE, getPrintableChar, COLOR_MODE, DRIVE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
-import DiskInterface from "./diskinterface"
+import DiskInterface, { doPlayDriveSound } from "./diskinterface"
 import React from 'react';
 import HelpPanel from "./helppanel"
 import DebugPanel from "./debugpanel"
@@ -85,6 +85,18 @@ class DisplayApple2 extends React.Component<object,
   componentWillUnmount() {
     if (this.timerID) clearInterval(this.timerID);
 //    window.removeEventListener("resize", handleResize)
+  }
+
+  handleSetCPUState = (state: STATE) => {
+    if (state === STATE.NEED_BOOT) {
+      doPlayDriveSound(DRIVE.TRACK_SEEK)
+    }
+    if (state === STATE.PAUSED) {
+      passSetDisassembleAddress(-2)
+    } else {
+      passSetDisassembleAddress(-1)
+    }
+    passSetCPUState(state)
   }
 
   handleSpeedChange = (enable: boolean) => {
@@ -256,6 +268,7 @@ class DisplayApple2 extends React.Component<object,
       colorMode: this.state.colorMode,
       audioEnable: this.state.audioEnable,
       doDebug: this.state.doDebug,
+      handleSetCPUState: this.handleSetCPUState,
       handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
@@ -273,7 +286,6 @@ class DisplayApple2 extends React.Component<object,
     const debugProps: DebugProps = {
       doDebug: this.state.doDebug,
       breakpoint: this.state.breakpoint,
-      handleDebugChange: this.handleDebugChange,
       handleBreakpoint: this.handleBreakpoint,
       handleStepInto: passStepInto,
       handleStepOver: passStepOver,

@@ -88,6 +88,21 @@ textarea {
   margin-top: 10px;
 }
 
+.debugPanel {
+  cursor: pointer;
+  user-select: text;
+  white-space: pre;
+  font-family: monospace;
+  font-size: 8pt;
+  line-height: 10pt;
+  margin: 3px;
+  padding: 2px;
+  border-width: 1px;
+  border-radius: 5px;
+  border-color: #898677;
+  border-style: solid;
+}
+
 .helpPanel {
   display: flex;
   font-family: monospace;

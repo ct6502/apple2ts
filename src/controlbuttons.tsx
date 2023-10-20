@@ -1,5 +1,5 @@
-import { DRIVE, STATE, colorToName } from "./emulator/utility";
-import { passSetCPUState, passGoBackInTime, passGoForwardInTime,
+import { STATE, colorToName } from "./emulator/utility";
+import { passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward } from "./main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -21,7 +21,6 @@ import {
   faTruckFast,
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons";
-import { doPlayDriveSound } from "./diskinterface";
 import { getColorModeSVG, svgLowercase, svgUppercase } from "./icons";
 import { MockingboardWaveform } from "./mockingboardwaveform";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
@@ -36,25 +35,22 @@ const ControlButtons = (props: DisplayProps) => {
   return <span>
     <button className="pushButton"
       title="Boot"
-      onClick={() => {
-        doPlayDriveSound(DRIVE.TRACK_SEEK)
-        passSetCPUState(STATE.NEED_BOOT)
-      }}>
+      onClick={() => { props.handleSetCPUState(STATE.NEED_BOOT) }}>
       <FontAwesomeIcon icon={faPowerOff}/>
     </button>
     <button className="pushButton"
       title="Reset"
-      onClick={() => {
-        passSetCPUState(STATE.NEED_RESET)
-      }}
+      onClick={() => { props.handleSetCPUState(STATE.NEED_RESET) }}
       disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
       >
       <FontAwesomeIcon icon={faArrowRotateRight}/>
     </button>
     <button className="pushButton"
       title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
-      onClick={() => {props.machineState === STATE.PAUSED ?
-        passSetCPUState(STATE.RUNNING) : passSetCPUState(STATE.PAUSED)}}
+      onClick={() => {
+        props.handleSetCPUState(props.machineState === STATE.PAUSED ?
+          STATE.RUNNING : STATE.PAUSED)
+      }}
       disabled={props.machineState === STATE.IDLE}>
       {props.machineState === STATE.PAUSED ?
       <FontAwesomeIcon icon={faPlay}/> :

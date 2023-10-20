@@ -53,6 +53,10 @@ export const passSetDebug = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
 }
 
+export const passSetDisassembleAddress = (addr: number) => {
+  doPostMessage(MSG_MAIN.DISASSEMBLE_ADDR, addr)
+}
+
 export const passSetNormalSpeed = (normal: boolean) => {
   doPostMessage(MSG_MAIN.SPEED, normal)
 }
@@ -111,6 +115,7 @@ let machineState: MachineState = {
   lores: new Uint8Array(),
   hires: new Uint8Array(),
   debugDump: '',
+  disassembly: '',
   button0: false,
   button1: false,
   canGoBackward: true,
@@ -120,17 +125,19 @@ let machineState: MachineState = {
 const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_WORKER) {
     case MSG_WORKER.MACHINE_STATE: {
-      const cpuStateChanged = machineState.speed !== e.data.payload.speed ||
-        machineState.state !== e.data.payload.state ||
-        machineState.debugDump !== e.data.payload.debugDump ||
-        machineState.button0 !== e.data.payload.button0 ||
-        machineState.button1 !== e.data.payload.button1 ||
-        machineState.canGoBackward !== e.data.payload.canGoBackward ||
-        machineState.canGoForward !== e.data.payload.canGoForward
-      if (machineState.state !== e.data.payload.state) {
-        emulatorSoundEnable(e.data.payload.state === STATE.RUNNING)
+      const newState = e.data.payload as MachineState
+      const cpuStateChanged = machineState.speed !== newState.speed ||
+        machineState.state !== newState.state ||
+        machineState.debugDump !== newState.debugDump ||
+        machineState.disassembly !== newState.disassembly ||
+        machineState.button0 !== newState.button0 ||
+        machineState.button1 !== newState.button1 ||
+        machineState.canGoBackward !== newState.canGoBackward ||
+        machineState.canGoForward !== newState.canGoForward
+      if (machineState.state !== newState.state) {
+        emulatorSoundEnable(newState.state === STATE.RUNNING)
       }
-      machineState = e.data.payload
+      machineState = newState
       if (cpuStateChanged) updateDisplay(machineState.speed)
       break
     }
@@ -214,6 +221,10 @@ export const handleGetAltCharSet = () => {
 
 export const handleGetDebugDump = () => {
   return machineState.debugDump
+}
+
+export const handleGetDisassembly = () => {
+  return machineState.disassembly
 }
 
 export const handleGetButton = (left: boolean) => {

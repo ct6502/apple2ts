@@ -1,7 +1,7 @@
 import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress } from "./motherboard";
 import { doSetDriveProps } from "./drivestate"
 import { sendPastedText, sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
@@ -70,6 +70,9 @@ self.onmessage = (e: MessageEvent) => {
     case MSG_MAIN.DEBUG:
 //      doSetDebug(e.data.payload)
       doSetIsDebugging(e.data.payload)
+      break;
+    case MSG_MAIN.DISASSEMBLE_ADDR:
+      doSetDisassembleAddress(e.data.payload)
       break;
     case MSG_MAIN.BREAKPOINT:
       doSetBreakpoint(e.data.payload)

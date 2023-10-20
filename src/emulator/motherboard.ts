@@ -19,6 +19,7 @@ import { enableMouseCard } from "./mouse"
 import { enableMockingboard, resetMockingboard } from "./mockingboard"
 import { resetMouse, onMouseVBL } from "./mouse"
 import { enableDiskDrive } from "./diskdata"
+import { getDisassembly } from "./disassemble"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -26,6 +27,7 @@ let prevTime = 0
 let normalSpeed = true
 let speed = 0
 let isDebugging = false
+let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
 let cpuState = STATE.IDLE
@@ -180,6 +182,10 @@ export const doSetIsDebugging = (enable: boolean) => {
   isDebugging = enable
 }
 
+export const doSetDisassembleAddress = (addr: number) => {
+  disassemblyAddr = addr
+}
+
 const getGoBackwardIndex = () => {
   const newTmp = (iTempState + maxState - 1) % maxState
   if (newTmp === iSaveState || !saveStates[newTmp]) {
@@ -277,6 +283,7 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   configureMachine()
   cpuState = cpuStateIn
   if (cpuState === STATE.PAUSED || cpuState === STATE.RUNNING) {
+    doSetDisassembleAddress(cpuState === STATE.RUNNING ? -1 : -2)
     doPauseDrive(cpuState === STATE.RUNNING)
   }
   updateExternalMachineState()
@@ -330,7 +337,7 @@ export const getStackString = () => {
   return result
 }
 
-export const getDebugDump = () => {
+const getDebugDump = () => {
   if (!isDebugging) return ''
   const status = [get6502StateString()]
   status.push(getZeroPage())
@@ -351,6 +358,7 @@ const updateExternalMachineState = () => {
     lores: getTextPage(true),
     hires: getHires(),
     debugDump: getDebugDump(),
+    disassembly: getDisassembly(disassemblyAddr),
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,

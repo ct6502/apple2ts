@@ -349,6 +349,12 @@ export const memGet = (addr: number): number => {
   return memory[shifted + (addr & 255)]
 }
 
+export const memGetRaw = (addr: number): number => {
+  const page = addr >>> 8
+  const shifted = addressGetTable[page]
+  return memory[shifted + (addr & 255)]
+}
+
 const memSetSoftSwitch = (addr: number, value: number) => {
   if (addr >= 0xC090) {
     checkSlotIO(addr, value)

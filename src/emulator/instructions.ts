@@ -708,22 +708,23 @@ PCODE('TYA', MODE.IMPLIED, 0x98, 1, () => {s6502.Accum = s6502.YReg; checkStatus
 // Ex:  2 2 .   1 1 .   . . .   1 1 b   1 1 .   . . .   1 1 d
 // Fx:  . . .   1 1 .   2 4 h   1 1 b   1 1 .   3 4 i   1 1 d
 const twoByteNops = [0x02, 0x22, 0x42, 0x62, 0x82, 0xC2, 0xE2]
+const nopUndoc = '???'
 twoByteNops.forEach(instr => {
-  PCODE('NOPX', MODE.IMPLIED, instr, 2, () => {return 2})
+  PCODE(nopUndoc, MODE.IMPLIED, instr, 2, () => {return 2})
 });
 for (let i = 0; i <= 15; i++) {
-  PCODE('NOPX', MODE.IMPLIED, 3 + 16 * i, 1, () => {return 1})
-  PCODE('NOPX', MODE.IMPLIED, 7 + 16 * i, 1, () => {return 1})
-  PCODE('NOPX', MODE.IMPLIED, 0xB + 16 * i, 1, () => {return 1})  
-  PCODE('NOPX', MODE.IMPLIED, 0xF + 16 * i, 1, () => {return 1})  
+  PCODE(nopUndoc, MODE.IMPLIED, 3 + 16 * i, 1, () => {return 1})
+  PCODE(nopUndoc, MODE.IMPLIED, 7 + 16 * i, 1, () => {return 1})
+  PCODE(nopUndoc, MODE.IMPLIED, 0xB + 16 * i, 1, () => {return 1})  
+  PCODE(nopUndoc, MODE.IMPLIED, 0xF + 16 * i, 1, () => {return 1})  
 }
-PCODE('NOPX', MODE.IMPLIED, 0x44, 2, () => {return 3})
-PCODE('NOPX', MODE.IMPLIED, 0x54, 2, () => {return 4})
-PCODE('NOPX', MODE.IMPLIED, 0xD4, 2, () => {return 4})
-PCODE('NOPX', MODE.IMPLIED, 0xF4, 2, () => {return 4})
-PCODE('NOPX', MODE.IMPLIED, 0x5C, 3, () => {return 8})
-PCODE('NOPX', MODE.IMPLIED, 0xDC, 3, () => {return 4})
-PCODE('NOPX', MODE.IMPLIED, 0xFC, 3, () => {return 4})
+PCODE(nopUndoc, MODE.IMPLIED, 0x44, 2, () => {return 3})
+PCODE(nopUndoc, MODE.IMPLIED, 0x54, 2, () => {return 4})
+PCODE(nopUndoc, MODE.IMPLIED, 0xD4, 2, () => {return 4})
+PCODE(nopUndoc, MODE.IMPLIED, 0xF4, 2, () => {return 4})
+PCODE(nopUndoc, MODE.IMPLIED, 0x5C, 3, () => {return 8})
+PCODE(nopUndoc, MODE.IMPLIED, 0xDC, 3, () => {return 4})
+PCODE(nopUndoc, MODE.IMPLIED, 0xFC, 3, () => {return 4})
 
 // Fill the rest of the 65c02 with BRK instructions. This avoids needing
 // to do a check in processInstruction, and also breaks on a bad op code.
