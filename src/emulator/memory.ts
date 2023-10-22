@@ -11,9 +11,12 @@ import { toHex } from "./utility";
 // 0x20000...23FFF: ROM (including page $C0 soft switches)
 // 0x24000...246FF: Peripheral card ROM $C100-$C7FF
 // 0x24700...27EFF: Slots 1-7 (8*256 byte $C800-$CFFF range for each card)
+// 0x27F00...??F00: RAMWorks expanded memory
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-export const memory = (new Uint8Array(0x27F00)).fill(0)
+const RAMWorksSize = (1024-64) // in K 256, 512, 1024, 4096, 8192
+const RAMWorksMaxBank = RAMWorksSize / 64
+export const memory = (new Uint8Array(0x27F00 + RAMWorksMaxBank*0x10000)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -21,20 +24,22 @@ export const memory = (new Uint8Array(0x27F00)).fill(0)
 const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 
+const AUXindex = 0x100
 const ROMindex = 0x200
 const SLOTindex = 0x240
 const SLOTC8index = 0x247
-const AUXindex = 0x100
+const RAMWorksIndex = 0x27F
 const ROMstart = 256 * ROMindex
 const SLOTstart = 256 * SLOTindex
 const SLOTC8start = 256 * SLOTC8index
 const AUXstart = 256 * AUXindex
 let   C800Slot = 0
+let   RAMWorksBankIndex = 0
 
 const updateMainAuxMemoryTable = () => {
-  const offsetAuxRead = SWITCHES.RAMRD.isSet ? AUXindex : 0
-  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? AUXindex : 0
-  const offsetPage2 = SWITCHES.PAGE2.isSet ? AUXindex : 0
+  const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
+  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex: AUXindex) : 0
+  const offsetPage2 = SWITCHES.PAGE2.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
   const offsetTextPageRead = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxRead
   const offsetTextPageWrite = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxWrite
   const offsetHgrPageRead = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
@@ -54,7 +59,7 @@ const updateMainAuxMemoryTable = () => {
 }
 
 const updateReadBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
+  const offsetZP = SWITCHES.ALTZP.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
   addressGetTable[0] = offsetZP;
   addressGetTable[1] = 1 + offsetZP;
   addressSetTable[0] = offsetZP;
@@ -78,7 +83,7 @@ const updateReadBankSwitchedRamTable = () => {
 }
 
 const updateWriteBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
+  const offsetZP = SWITCHES.ALTZP.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
   const writeRAM = SWITCHES.WRITEBSR1.isSet || SWITCHES.WRITEBSR2.isSet ||
     SWITCHES.RDWRBSR1.isSet || SWITCHES.RDWRBSR2.isSet
   // Start out with Slot ROM and regular ROM as not writeable
@@ -259,6 +264,7 @@ export const memoryReset = () => {
   )
   memory.set(rom, ROMstart)
   C800Slot = 0
+  RAMWorksBankIndex = 0
   updateAddressTables()
 }
 
@@ -350,7 +356,13 @@ export const memGet = (addr: number): number => {
 }
 
 const memSetSoftSwitch = (addr: number, value: number) => {
-  if (addr >= 0xC090) {
+  // these are write-only soft switches that don't work like the others, since
+  // we need the full byte of data being written
+  if (addr === 0xC071 || addr === 0xC073) {
+    if (value > RAMWorksMaxBank)
+      return // do nothing
+    RAMWorksBankIndex = value ? (((value-1)*(0x100)) + RAMWorksIndex) : 0 
+  } else if (addr >= 0xC090) {
     checkSlotIO(addr, value)
   } else {
     checkSoftSwitches(addr, true, s6502.cycleCount)
