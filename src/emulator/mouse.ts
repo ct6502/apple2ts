@@ -1,37 +1,278 @@
 // Mouse Driver for Apple2TS - Copyright 2023 Michael Morrison <codebythepound@gmail.com>
+// Now combined Mouse/Clock driver
 
+import { parseAssembly } from "./assembler"
 import { setSlotDriver, setSlotIOCallback, memGet, memSet } from "./memory"
 import { MouseEventSimple } from "./utility"
 import { interruptRequest } from "./cpu6502"
 import { s6502 } from "./instructions"
 import { passShowMouse } from "./worker2main"
+import { handleClockRead } from "./clock"
 
-//  Custom ROM
-const driver = new Uint8Array([
-  0x60, 0x60, 0x60, 0x00, 0x00, 0x38, 0x00, 0x18, 0x00, 0x00, 0x00, 
-  0x01, 0x20, 0x1d, 0x1d, 0x1d, 0x1d, 0x00, 0x28, 0x36, 0xb6, 0xc6, 
-  0xaa, 0x92, 0xce, 0xd5, 0x23, 0x00, 0x21, 0xa2, 0x03, 0x38, 0x60, 
-  0x18, 0x60, 0x9e, 0xb8, 0x04, 0x18, 0x60, 0xc9, 0x10, 0xb0, 0x09, 
-  0x99, 0x85, 0xc0, 0xb9, 0x85, 0xc0, 0x9d, 0x38, 0x07, 0x60, 0xa4, 
-  0x06, 0xa9, 0x60, 0x85, 0x06, 0x20, 0x06, 0x00, 0x84, 0x06, 0xba, 
-  0xbd, 0x00, 0x01, 0xaa, 0x0a, 0x0a, 0x0a, 0x0a, 0xa8, 0xa9, 0x04, 
-  0x99, 0x86, 0xc0, 0xb9, 0x84, 0xc0, 0x29, 0x0e, 0x38, 0xf0, 0xdd, 
-  0x1d, 0xb8, 0x06, 0x9d, 0xb8, 0x06, 0x18, 0x60, 0xbd, 0xb8, 0x03, 
-  0x99, 0x80, 0xc0, 0xbd, 0x38, 0x04, 0x99, 0x82, 0xc0, 0xbd, 0xb8, 
-  0x04, 0x99, 0x81, 0xc0, 0xbd, 0x38, 0x05, 0x99, 0x83, 0xc0, 0x60, 
-  0xb9, 0x80, 0xc0, 0x9d, 0xb8, 0x03, 0xb9, 0x82, 0xc0, 0x9d, 0x38, 
-  0x04, 0xb9, 0x81, 0xc0, 0x9d, 0xb8, 0x04, 0xb9, 0x83, 0xc0, 0x9d, 
-  0x38, 0x05, 0x60, 0x29, 0x01, 0x9d, 0xb8, 0x05, 0xda, 0xda, 0xa2, 
-  0xc0, 0xa9, 0x9f, 0x48, 0x80, 0xc0, 0xfa, 0xa9, 0x06, 0x1d, 0xb8, 
-  0x05, 0x99, 0x86, 0xc0, 0x60, 0xda, 0xa9, 0xaf, 0x48, 0x80, 0xb0, 
-  0xa9, 0x08, 0x99, 0x86, 0xc0, 0x60, 0xa9, 0x01, 0x99, 0x86, 0xc0, 
-  0xb9, 0x84, 0xc0, 0x29, 0xf1, 0x9d, 0xb8, 0x06, 0x18, 0x80, 0xb3, 
-  0xa9, 0x02, 0x99, 0x86, 0xc0, 0x18, 0x80, 0xab, 0xa9, 0x05, 0x99, 
-  0x86, 0xc0, 0x18, 0x60, 0xa9, 0x00, 0x99, 0x86, 0xc0, 0xb9, 0x85, 
-  0xc0, 0x9d, 0x38, 0x07, 0x80, 0xd4, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 
-  0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 
-  0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 0xd6, 
-  0xd6, 0xd6, 0xd6])
+//  To be recognized as a clock, need the following bytes:
+//  offset 0x00  = 0x08
+//  offset 0x02  = 0x28
+//  offset 0x04  = 0x58
+//  offset 0x06  = 0x70
+//  offset Cx08 = clock read
+//  offset Cx0B = clock write
+//
+//  To be recognized as a mouse need
+//  offset 0x05 = 0x38  Pascal signature bytes
+//  offset 0x07 = 0x18  "
+//  offset 0x0B = 0x01  "
+//  offset 0x0C = 0x20  X,Y pointing device
+//  offset 0xFB = 0xD6  Additional byte for mice
+
+const mouseDriver = `
+Cx00	php	        ; BASIC entry (handled in JS)  This will only work for mouse
+Cx01	sei         ; Clock bytes required as above.
+Cx02	plp
+Cx03	rts
+Cx04	db $58      ; Clock
+Cx05	db $38      ; Pascal ID Byte
+Cx06	db $70      ; Clock
+Cx07	db $18      ; Pascal ID Byte
+Cx08	rts         ; Clock Read Method - handled by JS
+Cx09	db $00
+Cx0a	db $00
+Cx0b	db $01      ; Pascal Generic Signature  / Clock Write (method & value ignored)
+Cx0c	db $20      ; $2x = Pascal XY Pointing Device, ID=x0 apple mouse
+Cx0d	rts         ; init pascal (for clock need an RTS here)  could move methods to offset 60
+Cx0e	db <PASCAL  ; read
+Cx0f	db <PASCAL  ; write
+Cx10	db <PASCAL  ; status
+Cx11	db $00      ; Pascal optional routines follow
+
+Cx12    db <SETMOUSE
+Cx13    db <SERVEMOUSE
+Cx14    db <READMOUSE
+Cx15    db <CLEARMOUSE
+Cx16    db <POSMOUSE
+Cx17    db <CLAMPMOUSE
+Cx18    db <HOMEMOUSE
+Cx19    db <INITMOUSE
+Cx1a    db <GETCLAMP
+Cx1b    db <UNDOCUMENTED      ; applemouse has methods here
+Cx1c    db <TIMEDATA
+Cx1d    db <UNDOCUMENTED      ; not sure if some will call them 
+Cx1e    db <UNDOCUMENTED
+Cx1f    db <UNDOCUMENTED
+
+;
+; All methods (except SERVEMOUSE) entered with X = Cn, Y = n0
+;
+; $0478 + slot        Low byte of absolute X position
+; $04F8 + slot        Low byte of absolute Y position
+; $0578 + slot        High byte of absolute X position
+; $05F8 + slot        High byte of absolute Y position
+; $0678 + slot        Reserved and used by the firmware
+; $06F8 + slot        Reserved and used by the firmware
+; $0778 + slot        Button 0/1 interrupt status byte
+; $07F8 + slot        Mode byte
+; 
+; The interrupt status byte is defined as follows:
+; 
+; Bit 7 6 5 4 3 2 1 0
+;     | | | | | | | |
+;     | | | | | | | \---  Previously, button 1 was up (0) or down (1)
+;     | | | | | | \-----  Movement interrupt
+;     | | | | | \-------  Button 0/1 interrupt
+;     | | | | \---------  VBL interrupt
+;     | | | \-----------  Currently, button 1 is up (0) or down (1)
+;     | | \-------------  X/Y moved since last READMOUSE
+;     | \---------------  Previously, button 0 was up (0) or down (1)
+;     \-----------------  Currently, button 0 is up (0) or down (1)
+; 
+; (Button 1 is not physically present on the mouse, and is probably only
+; supported for an ADB mouse on the IIgs.)
+; 
+; 
+; The mode byte is defined as follows.
+; 
+; Bit 7 6 5 4 3 2 1 0
+;     | | | | | | | |
+;     | | | | | | | \---  Mouse off (0) or on (1)
+;     | | | | | | \-----  Interrupt if mouse is moved
+;     | | | | | \-------  Interrupt if button is pressed
+;     | | | | \---------  Interrupt on VBL
+;     | | | \-----------  Reserved
+;     | | \-------------  Reserved
+;     | \---------------  Reserved
+;     \-----------------  Reserved
+; 
+
+SLOWX   EQU $0478-$c0 ; + Cs        Low byte of absolute X position
+SLOWY   EQU $04F8-$c0 ; + Cs        Low byte of absolute Y position
+SHIGHX  EQU $0578-$c0 ; + Cs        High byte of absolute X position
+SHIGHY  EQU $05F8-$c0 ; + Cs        High byte of absolute Y position
+STEMPA  EQU $0678-$c0 ; + Cs        Reserved and used by the firmware
+STEMPB  EQU $06F8-$c0 ; + Cs        Reserved and used by the firmware
+SBUTTON EQU $0778-$c0 ; + Cs        Button 0/1 interrupt status byte
+SMODE   EQU $07F8-$c0 ; + Cs        Mode byte
+
+LOWX   EQU $c081 ; + s0        Low byte of absolute X position
+HIGHX  EQU $c082 ; + s0        High byte of absolute X position
+LOWY   EQU $c083 ; + s0        Low byte of absolute Y position
+HIGHY  EQU $c084 ; + s0        High byte of absolute Y position
+BUTTON EQU $c085 ; + s0        Button 0/1 interrupt status byte
+MODE   EQU $c086 ; + s0        Mode byte
+CLAMP  EQU $c087 ; + s0        clamp value
+
+CMD    EQU $c08a ; + slot        Command reg
+INIT   EQU $0    ;               initialize
+READ   EQU $1    ;               read mouse and update regs, clear ints
+CLEAR  EQU $2    ;               clear mouse and update regs, clear ints
+GCLAMP EQU $3    ;               get mouse clamping
+SERVE  EQU $4    ;               check/serve mouse int
+HOME   EQU $5    ;               set to clamping window upper left
+CLAMPX EQU $6    ;               clamp x values to x -> y
+CLAMPY EQU $7    ;               clamp y values to x -> y
+POS    EQU $8    ;               set positions
+UNDOC  EQU $9    ;               calling an undocumented entry
+
+PASCAL
+    ldx #$03        ; return error for pascal
+
+UNDOCUMENTED
+    sec
+    rts
+                    ; Technote #2
+TIMEDATA            ; A bit 0: 1 - 50hz, 0 = 60hz VBL
+    clc
+    rts
+                    ; Technote #7
+                    ; Return 8 clamping bytes one at a time to $578
+GETCLAMP
+    lda $478        ; index byte, starting at $4E according to technote
+    sta CLAMP,y     ; indicates which byte in the order we want
+    lda #GCLAMP
+    sta CMD,y
+    lda CLAMP,y
+    sta $578
+    clc             ; In this order: minXH, minYH, minXL, minYL
+    rts             ;                maxXH, maxYH, maxXL, maxYL
+
+SETMOUSE 
+    cmp #$10
+    bcs return      ; invalid
+    sta MODE,y      ; set mode
+    lda MODE,y      ; reread to ensure valid
+    sta SMODE,x
+return 
+    rts
+
+SERVEMOUSE 
+    ldy $06
+    lda #$60
+    sta $06
+    jsr $0006       ; start by finding our slot - not entered with X,Y set
+    sty $06
+    tsx
+    lda $100,x
+    tax             ; X = Cs
+    asl
+    asl
+    asl
+    asl
+    tay             ; Y = s0
+
+    lda #SERVE
+    sta CMD,y
+
+    lda BUTTON,y 
+    and #$0e
+    sec
+    beq return      ; exit without changing anything
+
+    ora SBUTTON,x
+    sta SBUTTON,x
+    clc             ; claim it
+    rts
+
+copyin 
+    lda SLOWX,x
+    sta LOWX,y
+    lda SLOWY,x
+    sta LOWY,y
+    lda SHIGHX,x
+    sta HIGHX,y
+    lda SHIGHY,x
+    sta HIGHY,y
+    rts
+
+copyout 
+    lda LOWX,y
+    sta SLOWX,x
+    lda LOWY,y
+    sta SLOWY,x
+    lda HIGHX,y
+    sta SHIGHX,x
+    lda HIGHY,y
+    sta SHIGHY,x
+    rts
+
+CLAMPMOUSE 
+    and #$1
+    sta STEMPA,x
+    phx
+    phx
+    ldx #$c0      ; note load from screen hole 0, not slot
+
+    lda <cmcont-1
+    pha
+    bra copyin
+
+cmcont 
+    plx
+    lda #CLAMPX  ; a = 1 for Y
+    ora STEMPA,x
+    sta CMD,y
+    rts
+
+POSMOUSE 
+    phx
+    lda <pmcont-1
+    pha
+    bra copyin
+
+pmcont 
+    lda #POS
+    sta CMD,y
+    rts
+
+READMOUSE 
+    lda #READ
+    sta CMD,y
+
+    lda BUTTON,y
+    and #$F1        ; mask off interrupts
+    sta SBUTTON,x
+    clc
+    bra copyout
+
+CLEARMOUSE 
+    lda #CLEAR
+    sta CMD,y
+    clc
+    bra copyout
+
+HOMEMOUSE 
+    lda #HOME
+    sta CMD,y
+    clc
+    rts
+
+INITMOUSE 
+    lda #INIT
+    sta CMD,y
+
+    lda MODE,y
+    sta SMODE,x
+    bra READMOUSE
+
+    ; should leave about 13 bytes
+`
 
 export const resetMouse = () => {
   mousex = 0
@@ -51,6 +292,8 @@ export const resetMouse = () => {
   tmpmousey = 0
 
   servestatus = 0
+
+  clampidx = 0
 }
 
 let mousex = 0
@@ -59,6 +302,7 @@ let clampxmin = 0
 let clampymin = 0
 let clampxmax = 0x3ff
 let clampymax = 0x3ff
+let clampidx = 0
 let mode = 0x00
 let bstatus = 0x00
 let istatus = 0x00
@@ -74,11 +318,21 @@ let servestatus = 0
 let command = 0
 
 let slot = 5
-const basicEntry = 0x00
 const CSWL = 0x36 // Character output SWitch
 const CSWH = 0x37
 const KSWL = 0x38 // Keyboard input SWitch
 const KSWH = 0x39
+
+const slotROM = () => {
+  const driver = new Uint8Array(256).fill(0)
+  const pcode = parseAssembly(0x0, mouseDriver.split("\n"))
+  driver.set(pcode, 0)
+  // d6 at FB is required for a mouse driver
+  driver[0xFB] = 0xd6
+  // I think this is a ROM version value, or a marker for first page of ROM
+  driver[0xFF] = 0x01
+  return driver
+}
 
 export const enableMouseCard = (enable = true, aslot = 5) => {
   if (!enable)
@@ -88,7 +342,9 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
 
   //console.log('AppleMouse compatible in slot', slot)
   const basicAddr = 0xc000 + slot * 0x100
-  setSlotDriver(slot, driver, basicAddr + basicEntry,  handleBasic)
+  const clockReadAddr = 0xc000 + slot * 0x100 + 0x08
+  setSlotDriver(slot, slotROM(), basicAddr, handleBasic)
+  setSlotDriver(slot, slotROM(), clockReadAddr, handleClockRead)
   setSlotIOCallback(slot, handleMouse)
 
   resetMouse()
@@ -131,8 +387,9 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
 // HIGHY  EQU $c083 ; + s0        High byte of absolute Y position
 // BUTTON EQU $c084 ; + s0        Button 0/1 interrupt status byte
 // MODE   EQU $c085 ; + s0        Mode // byte
+// CLAMP  EQU $c086 ; + s0        Mode // byte
 // 
-// CMD    EQU $c086 ; + slot        Command reg
+// CMD    EQU $c08a ; + slot        Command reg
 // INIT   EQU $0    ;               initialize
 // READ   EQU $1    ;               read mouse and update regs, clear ints
 // CLEAR  EQU $2    ;               clear mouse and update regs, clear ints
@@ -280,7 +537,7 @@ const basicRead = () => {
     CSWHSave = memGet(CSWH)
     CSWLSave = memGet(CSWL)
     memSet(CSWH, SLH) 
-    memSet(CSWL, 0x01)
+    memSet(CSWL, 0x03)
     const changed = ((bstatus&0x80) !== (lastbstatus&0x80))?true:false
     let button = 0
     if (bstatus&0x80) {
@@ -337,20 +594,23 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
   const isRead = value < 0
 
   const REG = {
-      LOWX:     0x00,
-      HIGHX:    0x01,
-      LOWY:     0x02,
-      HIGHY:    0x03,
-      STATUS:   0x04,
-      MODE:     0x05,
-      COMMAND:  0x06,
+      CLOCK:    0x00,
+      LOWX:     0x01,
+      HIGHX:    0x02,
+      LOWY:     0x03,
+      HIGHY:    0x04,
+      STATUS:   0x05,
+      MODE:     0x06,
+      CLAMP:    0x07,
+      CLOCKMAGIC: 0x08,
+      COMMAND:  0x0a,
   }
 
   const CMD = {
     INIT:   0,    //               initialize
     READ:   1,    //               read mouse and update regs, clear ints
     CLEAR:  2,    //               clear mouse and update regs, clear ints
-    GETCLAMP: 3,  //               get mouse clamping
+    GCLAMP: 3,    //               get mouse clamping
     SERVE:  4,    //               check/serve mouse int
     HOME:   5,    //               set to clamping window upper left
     CLAMPX: 6,    //               clamp x values to x -> y
@@ -362,7 +622,8 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
     case REG.LOWX:
         if (isRead === false) {
           tmpmousex = (tmpmousex & 0xff00) | value
-          console.log('lowx', tmpmousex)
+          tmpmousex &= 0xffff
+          //console.log('lowx', tmpmousex)
         }
         else {
           return mousex & 0xff
@@ -371,7 +632,8 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
     case REG.HIGHX:
         if (isRead === false) {
           tmpmousex = (((value<<8) | (tmpmousex & 0x00ff)))
-          console.log('highx', tmpmousex)
+          tmpmousex &= 0xffff
+          //console.log('highx', tmpmousex)
         }
         else {
           return (mousex >> 8) & 0xff
@@ -380,7 +642,8 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
     case REG.LOWY:
         if (isRead === false) {
           tmpmousey = (tmpmousey & 0xff00) | value
-          console.log('lowy', tmpmousey)
+          tmpmousey &= 0xffff
+          //console.log('lowy', tmpmousey)
         }
         else {
           return mousey & 0xff
@@ -389,7 +652,8 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
     case REG.HIGHY:
         if (isRead === false) {
           tmpmousey = (((value<<8) | (tmpmousey & 0x00ff)))
-          console.log('highy', tmpmousey)
+          tmpmousey &= 0xffff
+          //console.log('highy', tmpmousey)
         }
         else {
           return (mousey >> 8) & 0xff
@@ -407,6 +671,43 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
           return mode
         }
         break
+
+    case REG.CLAMP:
+        if (isRead === false) {
+          clampidx = 0x4e - value
+        }
+        else {
+          // returned In this order: minXH, minYH, minXL, minYL
+          //                         maxXH, maxYH, maxXL, maxYL
+          switch (clampidx)
+          {
+            case 0:
+              return (clampxmin>>8)&0xff
+            case 1:
+              return (clampymin>>8)&0xff
+            case 2:
+              return clampxmin&0xff
+            case 3:
+              return clampymin&0xff
+            case 4:
+              return (clampxmax>>8)&0xff
+            case 5:
+              return (clampymax>>8)&0xff
+            case 6:
+              return clampxmax&0xff
+            case 7:
+              return clampymax&0xff
+            default:
+              console.log("AppleMouse: invalid clamp index: " + clampidx)
+              return 0
+          }
+        }
+        break
+        
+    case REG.CLOCK:
+    case REG.CLOCKMAGIC:
+      console.log("clock registers not implemented: C080, C088")
+      return 0
 
     case REG.COMMAND:
         if (isRead === false) {
@@ -478,19 +779,19 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
               mousex = clampxmin
               mousey = clampymin
               break
-            //case CMD.CLAMP:      //               set mouse clamping
-            //  break
             case CMD.CLAMPX:     //               clamp x values to x -> y
               console.log('cmd.clampx')
-              clampxmin = tmpmousex
+              clampxmin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
               clampxmax = tmpmousey
+              console.log(clampxmin + " -> " + clampxmax)
               break
             case CMD.CLAMPY:     //               clamp y values to x -> y
               console.log('cmd.clampy')
-              clampymin = tmpmousex
+              clampymin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
               clampymax = tmpmousey
+              console.log(clampymin + " -> " + clampymax)
               break
-            case CMD.GETCLAMP:     //
+            case CMD.GCLAMP:     //
               console.log('cmd.getclamp')
               break
             case CMD.POS:        //               set positions

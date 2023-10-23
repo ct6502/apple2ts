@@ -14,7 +14,6 @@ import { code } from "./assemblycode"
 import { handleGameSetup } from "./game_mappings"
 import { clearInterrupts, doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
 import { enableSerialCard } from "./serial"
-import { enableClockCard } from "./clock"
 import { enableMouseCard } from "./mouse"
 import { enableMockingboard, resetMockingboard } from "./mockingboard"
 import { resetMouse, onMouseVBL } from "./mouse"
@@ -132,7 +131,6 @@ const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   enableSerialCard()
-  enableClockCard()
   enableMouseCard(true, 2)
   enableMockingboard(true, 4)
   enableMockingboard(true, 5)

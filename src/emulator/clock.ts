@@ -33,7 +33,7 @@ export const enableClockCard = (enable = true, slot = 2) => {
   setSlotDriver(slot, code, addr, handleClockRead)
 }
 
-const handleClockRead = () => {
+export const handleClockRead = () => {
   // from prodos8 manual:
   // The ProDOS clock driver expects the clock card to send an ASCII string to the GETLN input buffer ($200).
   // This string must have the following format (including the commas):
