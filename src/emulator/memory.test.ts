@@ -209,3 +209,66 @@ test('testC800', () => {
   memGet(0xC200)
   expect(memGet(0xC800)).not.toEqual(0x02)
 })
+
+test('test RAMWorks', () => {
+  memoryReset()
+
+  // check regular zp
+  memSet(0x00C0, 0xDE)
+  expect(memGet(0x00C0)).toEqual(0xDE)
+ 
+  // altzp
+  memSet(0xC009,0)
+  expect(memGet(0x00C0)).not.toEqual(0xDE)
+  memSet(0x00C0, 0x01)
+  expect(memGet(0x00C0)).toEqual(0x01)
+  // ramworks bank 0 is alt
+  memSet(0xC073,0x00)
+  expect(memGet(0x00C0)).toEqual(0x01)
+
+  // switch to ramworks bank 1
+  memSet(0xC073, 0x01)
+  expect(memGet(0x00C0)).not.toEqual(0x01)
+  memSet(0x00C0, 0x02)
+  expect(memGet(0x00C0)).toEqual(0x02)
+
+  // switch off altzp
+  memSet(0xC008,0)
+  expect(memGet(0x00C0)).not.toEqual(0x02)
+  expect(memGet(0x00C0)).toEqual(0xDE)
+
+  // switch to ramworks bank 2
+  memSet(0xC073, 0x02)
+  // since altzp is still off
+  expect(memGet(0x00C0)).toEqual(0xDE)
+  // altzp on
+  memSet(0xC009,0)
+  expect(memGet(0x00C0)).not.toEqual(0xDE)
+  memSet(0x00C0, 0x03)
+  expect(memGet(0x00C0)).toEqual(0x03)
+
+  memSet(0xC073,0x00)
+  memSet(0x00C0, 0x00)
+  memSet(0xC073,0x01)
+  memSet(0x00C0, 0x01)
+  memSet(0xC073,0x02)
+  memSet(0x00C0, 0x02)
+  memSet(0xC073,0x03)
+  memSet(0x00C0, 0x03)
+
+  memSet(0xC073,0x00)
+  expect(memGet(0x00C0)).toEqual(0x00)
+  memSet(0xC073,0x01)
+  expect(memGet(0x00C0)).toEqual(0x01)
+  memSet(0xC073,0x02)
+  expect(memGet(0x00C0)).toEqual(0x02)
+  memSet(0xC073,0x03)
+  expect(memGet(0x00C0)).toEqual(0x03)
+
+  // switch off altzp
+  memSet(0xC008,0)
+  expect(memGet(0x00C0)).toEqual(0xDE)
+
+  memSet(0xC009,0)
+  expect(memGet(0x00C0)).toEqual(0x03)
+})
