@@ -1,11 +1,11 @@
 import { KeyboardEvent } from "react"
 
 export enum STATE {
-  IDLE,
-  NEED_BOOT,
-  NEED_RESET,
-  RUNNING,
-  PAUSED,
+  IDLE = 0,
+  RUNNING = -1,
+  PAUSED = -2,
+  NEED_BOOT = -3,
+  NEED_RESET = -4,
 }
 
 export enum MSG_WORKER {

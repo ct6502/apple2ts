@@ -1,4 +1,4 @@
-import { pcodes, s6502 } from "./instructions"
+import { pcodes } from "./instructions"
 import { memGetRaw } from "./memory"
 import { MODE, isBranchInstruction, toHex } from "./utility"
 
@@ -37,9 +37,8 @@ const getInstructionString = (addr: number, code: PCodeInstr,
   return `${toHex(addr, 4)}: ${hex}  ${code.name}${value}`
 }
 
-export const getDisassembly = (addr: number) => {
-  if (addr === -1) return ''
-  if (addr === -2) addr = s6502.PC
+export const getDisassembly = (start: number) => {
+  let addr = start
   if (addr > (0xFFFF - nlines)) addr = 0xFFFF - nlines
   let r = ''
   for (let i=0; i < nlines; i++) {
@@ -54,6 +53,17 @@ export const getDisassembly = (addr: number) => {
     r += getInstructionString(addr, code, vLo, vHi) + '\n'
     addr += code.PC
   }
-
   return r
+}
+
+export const verifyAddressWithinDisassembly = (start: number, check: number) => {
+  if (check < start || start < 0) return false
+  let addr = start
+  for (let i=0; i < nlines; i++) {
+    if (addr === check) return true
+    const instr = memGetRaw(addr)
+    addr += pcodes[instr].PC
+    if (addr > 0xFFFF) break
+  }
+  return false
 }

@@ -18,7 +18,7 @@ import { enableMouseCard } from "./mouse"
 import { enableMockingboard, resetMockingboard } from "./mockingboard"
 import { resetMouse, onMouseVBL } from "./mouse"
 import { enableDiskDrive } from "./diskdata"
-import { getDisassembly } from "./disassemble"
+import { getDisassembly, verifyAddressWithinDisassembly } from "./disassemble"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -183,6 +183,7 @@ export const doSetIsDebugging = (enable: boolean) => {
 export const doSetDisassembleAddress = (addr: number) => {
   disassemblyAddr = addr
   updateExternalMachineState()
+  if (addr === STATE.PAUSED) disassemblyAddr = s6502.PC
 }
 
 const getGoBackwardIndex = () => {
@@ -242,8 +243,7 @@ export const doStepInto = () => {
     cpuState = STATE.PAUSED
   }
   processInstruction(true)
-  cpuState = STATE.PAUSED
-  updateExternalMachineState()
+  doSetCPUState(STATE.PAUSED)
 }
 
 export const doStepOver = () => {
@@ -281,10 +281,14 @@ const resetRefreshCounter = () => {
 export const doSetCPUState = (cpuStateIn: STATE) => {
   configureMachine()
   cpuState = cpuStateIn
-  if (cpuState === STATE.PAUSED || cpuState === STATE.RUNNING) {
-    disassemblyAddr = cpuState === STATE.RUNNING ? -1 : -2
-    doPauseDrive(cpuState === STATE.RUNNING)
-    if (cpuState === STATE.RUNNING) doSetBreakpointSkipOnce()
+  if (cpuState === STATE.PAUSED) {
+    doPauseDrive()
+    if (!verifyAddressWithinDisassembly(disassemblyAddr, s6502.PC)) {
+      disassemblyAddr = s6502.PC
+    }
+  } else if (cpuState === STATE.RUNNING) {
+    doPauseDrive(true)
+    doSetBreakpointSkipOnce()
   }
   updateExternalMachineState()
   resetRefreshCounter()
@@ -348,6 +352,11 @@ const getDebugDump = () => {
   return status.join('\n')
 }
 
+const doGetDisassembly = () => {
+  if (cpuState === STATE.RUNNING) return ''
+  return getDisassembly(disassemblyAddr >= 0 ? disassemblyAddr : s6502.PC)
+}
+
 const updateExternalMachineState = () => {
   const state: MachineState = {
     state: cpuState,
@@ -359,7 +368,7 @@ const updateExternalMachineState = () => {
     lores: getTextPage(true),
     hires: getHires(),
     debugDump: getDebugDump(),
-    disassembly: getDisassembly(disassemblyAddr),
+    disassembly: doGetDisassembly(),
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,

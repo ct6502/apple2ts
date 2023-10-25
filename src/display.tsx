@@ -93,9 +93,9 @@ class DisplayApple2 extends React.Component<object,
       doPlayDriveSound(DRIVE.TRACK_SEEK)
     }
     if (state === STATE.PAUSED) {
-      passSetDisassembleAddress(-2)
+      passSetDisassembleAddress(STATE.PAUSED)
     } else {
-      passSetDisassembleAddress(-1)
+      passSetDisassembleAddress(STATE.RUNNING)
     }
     passSetCPUState(state)
   }
