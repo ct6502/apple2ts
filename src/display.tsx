@@ -1,9 +1,10 @@
 // Chris Torrence, 2022
 import { setDisplay, handleGetState, passSetCPUState,
-  passSetBreakpoint, passSetNormalSpeed, handleGetTextPage,
+  passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, passStepInto, passStepOver, passStepOut, handleCanGoBackward, handleCanGoForward, passSetDisassembleAddress } from "./main2worker"
+  handleGetFilename, handleCanGoBackward, handleCanGoForward,
+  passSetDisassembleAddress } from "./main2worker"
 import { STATE, getPrintableChar, COLOR_MODE, DRIVE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controlpanel"
@@ -38,7 +39,7 @@ class DisplayApple2 extends React.Component<object,
   constructor(props: object) {
     super(props);
     this.state = {
-      doDebug: false,
+      doDebug: true,
       currentSpeed: 1.02,
       speedCheck: true,
       uppercase: true,
@@ -116,11 +117,6 @@ class DisplayApple2 extends React.Component<object,
   handleDebugChange = (enable: boolean) => {
     passSetDebug(enable)
     this.setState({ doDebug: enable });
-  };
-
-  handleBreakpoint = (breakpoint: string) => {
-    passSetBreakpoint(parseInt(breakpoint ? breakpoint : '0', 16))
-    this.setState({ breakpoint: breakpoint });
   };
 
   handleUpperCaseChange = (enable: boolean) => {
@@ -283,14 +279,6 @@ class DisplayApple2 extends React.Component<object,
       button0: handleGetButton(true),
       button1: handleGetButton(false),
     }
-    const debugProps: DebugProps = {
-      doDebug: this.state.doDebug,
-      breakpoint: this.state.breakpoint,
-      handleBreakpoint: this.handleBreakpoint,
-      handleStepInto: passStepInto,
-      handleStepOver: passStepOver,
-      handleStepOut: passStepOut,
-    }
     const width = props.myCanvas.current?.width
     const height = window.innerHeight - 30
     let paperWidth = window.innerWidth - (width ? width : 600) - 70
@@ -312,7 +300,7 @@ class DisplayApple2 extends React.Component<object,
             </span>
           </span>
           <span className="sideContent">
-            {props.doDebug ? <DebugPanel {...debugProps}/> :
+            {props.doDebug ? <DebugPanel/> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}
           </span>

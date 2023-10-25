@@ -1,28 +1,28 @@
-import { doInterruptRequest, doNonMaskableInterrupt, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { STATE, getInstrString } from "./utility"
+import { STATE } from "./utility"
 
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
-let doDebug = 10000
+let breakpointSkipOnce = false
 // let doDebugZeroPage = false
-const instrTrail = new Array<string>(1000)
-let posTrail = 0
-let breakpoint = -1
+// const instrTrail = new Array<string>(1000)
+// let posTrail = 0
+let breakpoints: Breakpoints = new Map()
 let runToRTS = false
 
-export const doSetDebug = (debug = true) => {
-  doDebug = debug ? 0 : 1000
+export const doSetBreakpointSkipOnce = () => {
+  breakpointSkipOnce = true
 }
 
 export const doSetRunToRTS = (run = true) => {
   runToRTS = run
 }
 
-export const doSetBreakpoint = (breakpt: number) => {
-  breakpoint = breakpt
+export const doSetBreakpoints = (bp: Breakpoints) => {
+  breakpoints = bp
 //  if (breakpoint !== 0) doDebug = true
 }
 
@@ -52,10 +52,10 @@ export const doSetBreakpoint = (breakpt: number) => {
 //   }
 // }
 
-const outputInstructionTrail = () => {
-  instrTrail.slice(posTrail).forEach(s => console.log(s));
-  instrTrail.slice(0, posTrail).forEach(s => console.log(s));
-}
+// const outputInstructionTrail = () => {
+//   instrTrail.slice(posTrail).forEach(s => console.log(s));
+//   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
+// }
 
 export const interruptRequest = (slot = 0, set = true) => {
   // IRQ is level sensitive, so it is always active while true
@@ -99,27 +99,32 @@ export const processInstruction = (step = false) => {
   const vLo = memGet(s6502.PC + 1)
   const vHi = memGet(s6502.PC + 2)
   const code =  pcodes[instr]
-  if (PC1 === breakpoint && !step) {
-    doSetCPUState(STATE.PAUSED)
-    return -1
+  // TODO: Why is the !step here?
+  if (breakpoints.size > 0 && !step) {
+    const breakpoint = breakpoints.get(PC1)
+    if (breakpoint && !breakpoint.disabled && !breakpointSkipOnce) {
+      doSetCPUState(STATE.PAUSED)
+      return -1
+    }
   }
+  breakpointSkipOnce = false
   const fn = specialJumpTable.get(PC1)
   if (fn && !SWITCHES.INTCXROM.isSet) {
     fn()
   }
   cycles = code.execute(vLo, vHi)
   // Do not output during the Apple II's WAIT subroutine
-  if (doDebug < 1000 && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
-    doDebug++
-    if (PC1 === 0xFFFFF) {
-      outputInstructionTrail()
-    }
-    const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-    const out = `${s6502.cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus()}`
-    instrTrail[posTrail] = out
-    posTrail = (posTrail + 1) % instrTrail.length
-    console.log(out)
-  }
+  // if (doDebug < 1000 && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
+  //   doDebug++
+  //   if (PC1 === 0xFFFFF) {
+  //     outputInstructionTrail()
+  //   }
+  //   const ins = getInstrString(code, vLo, vHi, PC1) + '            '
+  //   const out = `${s6502.cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus()}`
+  //   instrTrail[posTrail] = out
+  //   posTrail = (posTrail + 1) % instrTrail.length
+  //   console.log(out)
+  // }
   incrementPC(code.PC)
   setCycleCount(s6502.cycleCount + cycles)
   processCycleCountCallbacks()

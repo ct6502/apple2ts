@@ -6,7 +6,7 @@ import { doSetDriveProps } from "./drivestate"
 import { sendPastedText, sendTextToEmulator } from "./keyboard"
 import { pressAppleCommandKey, setGamepads } from "./joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility";
-import { doSetBreakpoint } from "./cpu6502";
+import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./mouse";
 import { receiveCommData } from "./serial";
 
@@ -66,61 +66,61 @@ self.onmessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_MAIN) {
     case MSG_MAIN.STATE:
       doSetCPUState(e.data.payload)
-      break;
+      break
     case MSG_MAIN.DEBUG:
 //      doSetDebug(e.data.payload)
       doSetIsDebugging(e.data.payload)
-      break;
+      break
     case MSG_MAIN.DISASSEMBLE_ADDR:
       doSetDisassembleAddress(e.data.payload)
-      break;
-    case MSG_MAIN.BREAKPOINT:
-      doSetBreakpoint(e.data.payload)
-      break;
+      break
+    case MSG_MAIN.BREAKPOINTS:
+      doSetBreakpoints(e.data.payload)
+      break
     case MSG_MAIN.STEP_INTO:
       doStepInto()
-      break;
+      break
     case MSG_MAIN.STEP_OVER:
       doStepOver()
-      break;
+      break
     case MSG_MAIN.STEP_OUT:
       doStepOut()
-      break;
+      break
     case MSG_MAIN.SPEED:
       doSetNormalSpeed(e.data.payload)
-      break;
+      break
     case MSG_MAIN.TIME_TRAVEL:
       if (e.data.payload === "FORWARD") {
           doGoForwardInTime()
       } else {
           doGoBackInTime()
       }
-      break;
+      break
     case MSG_MAIN.RESTORE_STATE:
       doRestoreSaveState(e.data.payload as EmulatorSaveState)
-      break;
+      break
     case MSG_MAIN.KEYPRESS:
       sendTextToEmulator(e.data.payload)
-      break;
+      break
     case MSG_MAIN.MOUSEEVENT:
       MouseCardEvent(e.data.payload)
-      break;
+      break
     case MSG_MAIN.PASTE_TEXT:
       sendPastedText(e.data.payload)
-      break;
+      break
     case MSG_MAIN.APPLE_PRESS:
       pressAppleCommandKey(true, e.data.payload)
-      break;
+      break
     case MSG_MAIN.APPLE_RELEASE:
       pressAppleCommandKey(false, e.data.payload)
-      break;
+      break
     case MSG_MAIN.GET_SAVE_STATE:
       passSaveState(doGetSaveState(true))
-      break;
+      break
     case MSG_MAIN.DRIVE_PROPS: {
       const props = e.data.payload as DriveProps
       doSetDriveProps(props)
-      break;
+      break
     }
     case MSG_MAIN.GAMEPAD:
       setGamepads(e.data.payload)
@@ -132,9 +132,9 @@ self.onmessage = (e: MessageEvent) => {
     }
     case MSG_MAIN.COMM_DATA:
       receiveCommData(e.data.payload)
-      break;
-      default:
+      break
+    default:
       console.error(`worker2main: unhandled msg: ${e.data.msg}`)
-      break;
+      break
   }
 }

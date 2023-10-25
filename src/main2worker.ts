@@ -1,4 +1,4 @@
-import { STATE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple } from "./emulator/utility"
+import { STATE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility"
 import { doPlayDriveSound } from "./diskinterface"
 import { clickSpeaker, emulatorSoundEnable } from "./speaker"
 import { startupTextPage } from "./startuptextpage"
@@ -33,8 +33,8 @@ export const passSetCPUState = (state: STATE) => {
   doPostMessage(MSG_MAIN.STATE, state)
 }
 
-export const passSetBreakpoint = (breakpoint: number) => {
-  doPostMessage(MSG_MAIN.BREAKPOINT, breakpoint)
+export const passBreakpoints = (breakpoints: Breakpoints) => {
+  doPostMessage(MSG_MAIN.BREAKPOINTS, breakpoints)
 }
 
 export const passStepInto = () => {
@@ -54,7 +54,9 @@ export const passSetDebug = (doDebug: boolean) => {
 }
 
 export const passSetDisassembleAddress = (addr: number) => {
-  doPostMessage(MSG_MAIN.DISASSEMBLE_ADDR, addr)
+  if (addr >= -2 && addr <= 0xFFFF) {
+    doPostMessage(MSG_MAIN.DISASSEMBLE_ADDR, addr)
+  }
 }
 
 export const passSetNormalSpeed = (normal: boolean) => {
@@ -108,6 +110,7 @@ export const passRxCommData = (data: Uint8Array) => {
 
 let machineState: MachineState = {
   state: STATE.IDLE,
+  s6502: default6502State(),
   speed: 0,
   altChar: true,
   noDelayMode: false,
@@ -193,6 +196,10 @@ const doOnMessage = (e: MessageEvent) => {
 
 export const handleGetState = () => {
   return machineState.state
+}
+
+export const handleGetS6502 = () => {
+  return machineState.s6502
 }
 
 export const handleGetTextPage = () => {

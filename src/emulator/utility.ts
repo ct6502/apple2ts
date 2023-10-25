@@ -25,7 +25,7 @@ export enum MSG_MAIN {
   STATE,
   DEBUG,
   DISASSEMBLE_ADDR,
-  BREAKPOINT,
+  BREAKPOINTS,
   STEP_INTO,
   STEP_OVER,
   STEP_OUT,
@@ -105,83 +105,32 @@ export enum MODE {
   IND       // JMP ($1234) or LDA ($C0)
 }
 
+export const default6502State = (): STATE6502 => {
+  return {
+    cycleCount: 0,
+    PStatus: 0,
+    PC: 0,
+    Accum: 0,
+    XReg: 0,
+    YReg: 0,
+    StackPtr: 0,
+    flagIRQ: 0,
+    flagNMI: false
+  }
+}
+
 // A hack to determine if this is a relative instruction.
-export const isRelativeInstr = (instr: string) => instr.startsWith('B') && instr !== "BIT" && instr !== "BRK"
+export const isBranchInstruction = (instr: string) => instr.startsWith('B') && instr !== "BIT" && instr !== "BRK"
 
 // export const toBinary = (value: number, ndigits = 8) => {
 //   return ("0000000000000000" + value.toString(2)).slice(-ndigits)
 // }
-
-const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
 
 export const toHex = (value: number, ndigits = 2) => {
   if (value > 0xFF) {
     ndigits = 4
   }
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
-}
-
-const modeString = (mode: MODE) => {
-  let prefix = ""
-  let suffix = ""
-  switch (mode) {
-    case MODE.IMM:
-      prefix = "#"
-      break
-    case MODE.ZP_X:
-    case MODE.ABS_X:
-      suffix = ",X"
-      break
-    case MODE.ZP_Y:
-    case MODE.ABS_Y:
-      suffix = ",Y"
-      break
-    case MODE.IND:
-      prefix = "("
-      suffix = ")"
-      break
-    case MODE.IND_X:
-      prefix = "("
-      suffix = ",X)"
-      break
-    case MODE.IND_Y:
-      prefix = "("
-      suffix = "),Y"
-      break
-  }
-  return [prefix, suffix]
-}
-
-export const getInstrString = (code: PCodeInstr, vLo: number, vHi: number, PC: number) => {
-  let result = `${toHex(PC,4)}`
-  if (code) {
-    const ms = modeString(code.mode)
-    let prefix = ms[0]
-    const suffix = ms[1]
-    if (code.PC >= 2) {
-      prefix = `   ${code.name}   ${prefix}$`
-    }
-    if (isRelativeInstr(code.name)) {
-      // The extra +2 is for the branch instruction itself
-      const addr = PC + 2 + (vLo > 127 ? vLo - 256 : vLo)
-      result += `${prefix}${toHex(addr, 4)}${suffix}`
-    } else {
-      switch (code.PC) {
-        case 1:
-          result += `   ${code.name}`
-          break
-        case 2:
-          result += `${prefix}${toHex(vLo)}${suffix}`
-          break
-        case 3:
-          result += `${prefix}${toHex(address(vLo, vHi),4)}${suffix}`
-          break
-      }
-    }
-  } else {
-    result += "         ???"
-  }
-  return result
 }
 
 export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {

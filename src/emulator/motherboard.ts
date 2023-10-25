@@ -12,7 +12,7 @@ import { setButtonState, handleGamepads } from "./joystick"
 import { parseAssembly } from "./assembler";
 import { code } from "./assemblycode"
 import { handleGameSetup } from "./game_mappings"
-import { clearInterrupts, doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
+import { clearInterrupts, doSetBreakpointSkipOnce, doSetRunToRTS, processInstruction } from "./cpu6502"
 import { enableSerialCard } from "./serial"
 import { enableMouseCard } from "./mouse"
 import { enableMockingboard, resetMockingboard } from "./mockingboard"
@@ -25,7 +25,7 @@ let startTime = 0
 let prevTime = 0
 let normalSpeed = true
 let speed = 0
-let isDebugging = false
+let isDebugging = true
 let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
@@ -182,6 +182,7 @@ export const doSetIsDebugging = (enable: boolean) => {
 
 export const doSetDisassembleAddress = (addr: number) => {
   disassemblyAddr = addr
+  updateExternalMachineState()
 }
 
 const getGoBackwardIndex = () => {
@@ -235,7 +236,7 @@ export const doSaveTimeSlice = () => {
 }
 
 export const doStepInto = () => {
-  doSetDebug()
+  doSetBreakpointSkipOnce()
   if (cpuState === STATE.IDLE) {
     doBoot()
     cpuState = STATE.PAUSED
@@ -246,7 +247,7 @@ export const doStepInto = () => {
 }
 
 export const doStepOver = () => {
-  doSetDebug()
+  doSetBreakpointSkipOnce()
   if (cpuState === STATE.IDLE) {
     doBoot()
     cpuState = STATE.PAUSED
@@ -262,7 +263,7 @@ export const doStepOver = () => {
 }
 
 export const doStepOut = () => {
-  doSetDebug()
+  doSetBreakpointSkipOnce()
   if (cpuState === STATE.IDLE) {
     doBoot()
     cpuState = STATE.PAUSED
@@ -281,8 +282,9 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   configureMachine()
   cpuState = cpuStateIn
   if (cpuState === STATE.PAUSED || cpuState === STATE.RUNNING) {
-    doSetDisassembleAddress(cpuState === STATE.RUNNING ? -1 : -2)
+    disassemblyAddr = cpuState === STATE.RUNNING ? -1 : -2
     doPauseDrive(cpuState === STATE.RUNNING)
+    if (cpuState === STATE.RUNNING) doSetBreakpointSkipOnce()
   }
   updateExternalMachineState()
   resetRefreshCounter()
@@ -349,6 +351,7 @@ const getDebugDump = () => {
 const updateExternalMachineState = () => {
   const state: MachineState = {
     state: cpuState,
+    s6502: s6502,
     speed: speed,
     altChar: SWITCHES.ALTCHARSET.isSet,
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,

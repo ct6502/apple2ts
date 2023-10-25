@@ -1,18 +1,8 @@
-import { toHex, MODE } from "./utility"
+import { toHex, MODE, default6502State } from "./utility"
 import { memGet, memSet } from "./memory"
 // var startTime = performance.now()
 
-export const s6502: STATE6502 = {
-  cycleCount: 0,
-  PStatus: 0,
-  PC: 0,
-  Accum: 0,
-  XReg: 0,
-  YReg: 0,
-  StackPtr: 0,
-  flagIRQ: 0,
-  flagNMI: false
-}
+export const s6502: STATE6502 = default6502State()
 
 export const setX = (value: number) => {
   s6502.XReg = value

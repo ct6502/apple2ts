@@ -81,17 +81,9 @@ type DisplayProps = {
   button1: boolean,
 }
 
-type DebugProps = {
-  doDebug: boolean,
-  breakpoint: string,
-  handleBreakpoint: (bp: string) => void,
-  handleStepInto: () => void,
-  handleStepOver: () => void,
-  handleStepOut: () => void,
-}
-
 type MachineState = {
   state: STATE,
+  s6502: STATE6502,
   speed: number,
   altChar: boolean,  //
   noDelayMode: boolean, //
@@ -209,3 +201,9 @@ type MockingboardSound = {
   chip: number,
   params: number[]
 }
+
+type Breakpoint = {
+  disabled: false
+}
+
+type Breakpoints = Map<number, Breakpoint>

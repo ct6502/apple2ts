@@ -1,5 +1,5 @@
 import { pcodes } from "./instructions";
-import { toHex, isRelativeInstr, MODE } from "./utility";
+import { toHex, isBranchInstruction, MODE } from "./utility";
 
 const doOutput = false
 
@@ -17,7 +17,7 @@ type LabelOperand = {
 }
 
 const splitOperand = (operand: string) => {
-  let idx = operand.split(',')
+  const idx = operand.split(',')
   const s = idx[0].split(/([+-])/)
   const codeLine: LabelOperand = {
     label: s[0] ? s[0] : '',
@@ -114,7 +114,7 @@ const getOperandModeValue =
         }
         value = (value % 65536 + 65536) % 65536
       }
-      if (isRelativeInstr(instr)) {
+      if (isBranchInstruction(instr)) {
         mode = MODE.ZP_REL
         value = (value - pc + 254)
         if (value > 255) value -= 256
@@ -243,7 +243,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
           pc++
         }
       } else {
-        if (pass === 2 && isRelativeInstr(codeLine.instr) && (value < 0 || value > 255)) {
+        if (pass === 2 && isBranchInstruction(codeLine.instr) && (value < 0 || value > 255)) {
           throw new Error(`Branch instruction out of range: ${line} value: ${value} pass: ${pass}`);
         }
 
