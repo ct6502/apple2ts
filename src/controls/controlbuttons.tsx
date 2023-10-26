@@ -1,6 +1,6 @@
-import { STATE, colorToName } from "./emulator/utility";
+import { STATE, colorToName } from "../emulator/utility";
 import { passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward } from "./main2worker"
+  handleCanGoBackward, handleCanGoForward } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRotateRight,
@@ -21,8 +21,8 @@ import {
   faTruckFast,
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons";
-import { getColorModeSVG, svgLowercase, svgUppercase } from "./icons";
-import { MockingboardWaveform } from "./mockingboardwaveform";
+import { getColorModeSVG, svgLowercase, svgUppercase } from "../img/icons";
+import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 

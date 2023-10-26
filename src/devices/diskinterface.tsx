@@ -1,10 +1,11 @@
 import React from "react"
+import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
-import { DRIVE } from "./emulator/utility"
+import { DRIVE } from "../emulator/utility"
 import { mp3List } from "./assets"
 import { DiskImageChooser } from "./diskimagechooser"
 import {isAudioEnabled, registerAudioContext} from "./speaker"
-import { handleSetDiskData } from "./main2worker"
+import { handleSetDiskData } from "../main2worker"
 
 let motorAudio: AudioDevice
 let trackSeekAudio: AudioDevice

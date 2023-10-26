@@ -1,0 +1,66 @@
+.address {
+  font-family: monospace;
+  font-size: 10pt;
+  width: 4em;
+  text-align: right;
+  margin-left: 3px;
+  border-radius: 3px;
+  border-width: 1px;
+}
+
+.address:focus {
+  outline: none;
+  border: 1px solid blue;
+}
+
+.cropBottom {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 0% 50%);
+}
+
+.cropTop {
+  clip-path: polygon(0% 50%, 50% 75%, 100% 50%, 100% 100%, 0% 100%);
+}
+
+.smallButton {
+  font-size: 0.5em;
+  vertical-align: top;
+}
+
+.debugPanel {
+  cursor: pointer;
+  user-select: text;
+  white-space: pre;
+  font-family: monospace;
+  font-size: 8pt;
+  line-height: 10pt;
+  margin: 3px;
+  padding: 2px;
+  border-width: 1px;
+  border-radius: 5px;
+  border-color: #898677;
+  border-style: solid;
+}
+
+.programCounter {
+  background-color: black;
+  opacity: 20%;
+  width: 200px;
+  height: 14px;
+  position: absolute;
+  left: 7px;
+  pointer-events: none;
+}
+
+.breakpointStyle {
+  cursor: pointer;
+  font-size: 7pt;
+  color: #d2331f;
+  position: absolute;
+  left: 10px;
+}
+
+.fakePoint {
+  opacity: 50%;
+  display: none;
+  pointer-events: none;
+}

@@ -1,7 +1,7 @@
 import React from "react"
 import { Button } from "@mui/material"
-import { passSetCPUState, handleSetDiskData, updateDisplay } from "./main2worker";
-import { STATE, replaceSuffix } from "./emulator/utility";
+import { passSetCPUState, handleSetDiskData, updateDisplay } from "../main2worker";
+import { STATE, replaceSuffix } from "../emulator/utility";
 import { resetAllDiskDrives } from "./diskinterface";
 import disks from "./img/disks.png"
 import DiskImageDialog from "./diskimagedialog";
@@ -39,7 +39,7 @@ export const DiskImageChooser = () => {
   };
 
   return (
-    <div className="DiskImageChooser">
+    <div className="diskImageMargins">
       <Button className="imgButton" variant="contained"
         onClick={handleClickOpen}>
         <img className="multiDisk" src={disks} alt="disks" height="57px"/>

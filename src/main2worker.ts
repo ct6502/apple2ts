@@ -1,11 +1,11 @@
 import { STATE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility"
-import { doPlayDriveSound } from "./diskinterface"
-import { clickSpeaker, emulatorSoundEnable } from "./speaker"
-import { startupTextPage } from "./startuptextpage"
-import { doRumble } from "./gamepad"
+import { doPlayDriveSound } from "./devices/diskinterface"
+import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
+import { startupTextPage } from "./panels/startuptextpage"
+import { doRumble } from "./devices/gamepad"
 import { setShowMouse } from "./canvas"
-import { playMockingboard } from "./mockingboard_audio"
-import { receiveCommData } from "./imagewriter"
+import { playMockingboard } from "./devices/mockingboard_audio"
+import { receiveCommData } from "./devices/imagewriter"
 import DisplayApple2 from "./display"
 
 let worker: Worker | null = null

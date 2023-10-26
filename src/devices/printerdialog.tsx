@@ -94,32 +94,39 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     return () => { null }
   }, [state.canvasRef, props.canvas]);
 
+  const buttonColor = "#404040"
+
   return (
     <Dialog onClose={handleClose} open={open}>
-      <div className="controlBar">
+      <div className="controlBar wrap">
       <svg height="35" width="150">{imagewriter2}</svg>
         <div>
-        <button className="pushButton darkgray"
+        <button className="pushButton"
+          style={{color: `${buttonColor}`}}
           title="Save Stored Data"
           onClick={handleSaveData}>
           <FontAwesomeIcon icon={faSave}/>
         </button>
-        <button className="pushButton darkgray"
+        <button className="pushButton"
+          style={{color: `${buttonColor}`}}
           title="Reprint from Stored Data"
           onClick={handleReprint}>
           <FontAwesomeIcon icon={faFolderOpen}/>
         </button>
-        <button className="pushButton darkgray"
+        <button className="pushButton"
+          style={{color: `${buttonColor}`}}
           title="Send to Printer"
           onClick={handlePrint}>
           <FontAwesomeIcon icon={faPrint}/>
         </button>
-        <button className="pushButton darkgray"
+        <button className="pushButton"
+          style={{color: `${buttonColor}`}}
           title="Tear off Page and Reset"
           onClick={handleClear}>
           <FontAwesomeIcon icon={faTrash}/>
         </button>
-        <button className="pushButton darkgray"
+        <button className="pushButton"
+          style={{color: `${buttonColor}`}}
           title="Close Dialog"
           onClick={handleClose}>
           <FontAwesomeIcon icon={faXmark}/>

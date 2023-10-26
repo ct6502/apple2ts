@@ -1,4 +1,4 @@
-import { passSetGamepads } from "./main2worker"
+import { passSetGamepads } from "../main2worker"
 
 const getGamepads = () => {
   const gamepads = navigator.getGamepads().filter((gp) => (gp !== null))

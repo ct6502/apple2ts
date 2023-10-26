@@ -1,8 +1,9 @@
 import { KeyboardEvent } from "react";
+import "./debugpanel.css"
 import { handleGetDebugDump, handleGetDisassembly,
   handleGetS6502,
   passBreakpoints,
-  passSetDisassembleAddress, passStepInto, passStepOut, passStepOver } from "./main2worker";
+  passSetDisassembleAddress, passStepInto, passStepOut, passStepOver } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCircle as iconBreakpoint,
@@ -10,7 +11,7 @@ import {
   faArrowsRotate as iconStepOver,
   faArrowUpFromBracket as iconStepOut,
 } from "@fortawesome/free-solid-svg-icons";
-import { toHex } from "./emulator/utility";
+import { toHex } from "../emulator/utility";
 import React from "react";
 
 let lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels
@@ -230,7 +231,7 @@ class DebugPanel extends React.Component<object,
     const programCounterBar = (pc >= 0) ?
       <div className="programCounter" style={{top: `${pc}px`}}></div> : <></>
     return (
-      <div className="controlBarNoWrap">
+      <div className="controlBar">
         <span>
           <span>
             <input className="address"
@@ -243,24 +244,24 @@ class DebugPanel extends React.Component<object,
             <button className="pushButton"
               title={"Step Into"}
               onClick={passStepInto}>
-              <FontAwesomeIcon icon={iconStepInto} className="fa-rotate-90 icon"/>
+              <FontAwesomeIcon icon={iconStepInto} className="fa-rotate-90"/>
             </button>
             <button className="pushButton"
               title={"Step Over"}
               onClick={passStepOver}>
-              <span className="fa-stack small icon">
-              <FontAwesomeIcon icon={iconStepOut} className="cropTop fa-stack-2x icon"/>
-              <FontAwesomeIcon icon={iconStepOver} className="cropBottom fa-stack-2x icon"/>
+              <span className="fa-stack smallButton">
+              <FontAwesomeIcon icon={iconStepOut} className="cropTop fa-stack-2x"/>
+              <FontAwesomeIcon icon={iconStepOver} className="cropBottom fa-stack-2x"/>
               </span>
             </button>
             <button className="pushButton"
               title={"Step Out"}
               onClick={passStepOut}>
-              <FontAwesomeIcon icon={iconStepOut} className="icon"/>
+              <FontAwesomeIcon icon={iconStepOut}/>
             </button>
           </span>
           <br/>
-          <div className="controlBarNoWrap">
+          <div className="controlBar">
             <div ref={this.breakpointRef} 
                 style={{
                 position: "relative",

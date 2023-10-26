@@ -7,15 +7,15 @@ import { setDisplay, handleGetState, passSetCPUState,
   passSetDisassembleAddress } from "./main2worker"
 import { STATE, getPrintableChar, COLOR_MODE, DRIVE } from "./emulator/utility"
 import Apple2Canvas from "./canvas"
-import ControlPanel from "./controlpanel"
-import DiskInterface, { doPlayDriveSound } from "./diskinterface"
+import ControlPanel from "./controls/controlpanel"
+import DiskInterface, { doPlayDriveSound } from "./devices/diskinterface"
 import React from 'react';
-import HelpPanel from "./helppanel"
-import DebugPanel from "./debugpanel"
-import { preloadAssets } from "./assets"
-import { changeMockingboardMode } from "./mockingboard_audio"
-import { audioEnable } from "./speaker"
-import ImageWriter from "./imagewriter"
+import HelpPanel from "./panels/helppanel"
+import DebugPanel from "./panels/debugpanel"
+import { preloadAssets } from "./devices/assets"
+import { changeMockingboardMode } from "./devices/mockingboard_audio"
+import { audioEnable } from "./devices/speaker"
+import ImageWriter from "./devices/imagewriter"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<object,
@@ -285,10 +285,10 @@ class DisplayApple2 extends React.Component<object,
     if (paperWidth < 300) paperWidth = 300
     return (
       <div>
-        <span className="topRow">
-          <span className="apple2">
+        <span className="flexRow">
+          <span className="apple2core">
             <Apple2Canvas {...props}/>
-            <div className="controlBar" style={{width: width, display: width ? '' : 'none'}}>
+            <div className="controlBar wrap" style={{width: width, display: width ? '' : 'none'}}>
                 <ControlPanel {...props}/>
                 <DiskInterface />
                 <ImageWriter />
@@ -299,7 +299,7 @@ class DisplayApple2 extends React.Component<object,
               <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence (git {import.meta.env.VITE_GIT_SHA}) <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
             </span>
           </span>
-          <span className="sideContent">
+          <span className="sidePanels">
             {props.doDebug ? <DebugPanel/> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}

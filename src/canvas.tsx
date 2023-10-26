@@ -1,4 +1,5 @@
 import React, { useEffect, KeyboardEvent } from 'react';
+import "./canvas.css"
 import { passSetCPUState, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   updateDisplay, 
@@ -9,8 +10,8 @@ import { passSetCPUState, passKeypress,
   passPasteText} from "./main2worker"
 import { ARROW, STATE, convertAppleKey, MouseEventSimple } from "./emulator/utility"
 import { processDisplay } from './graphics';
-import { handleArrowKey } from './keyboardbuttons';
-import { checkGamepad } from './gamepad';
+import { handleArrowKey } from './controls/keyboardbuttons';
+import { checkGamepad } from './devices/gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
@@ -265,7 +266,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isTouchDevice = "ontouchstart" in document.documentElement
   const txt = isTouchDevice ?
-      <textarea hidden={false} ref={myText}
+      <textarea className="hiddenTextarea" hidden={false} ref={myText}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       /> : <span></span>

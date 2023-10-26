@@ -1,5 +1,5 @@
 import { Dialog, DialogTitle, IconButton, ImageList, ImageListItem, ImageListItemBar } from "@mui/material"
-import { replaceSuffix } from "./emulator/utility";
+import { replaceSuffix } from "../emulator/utility";
 import { diskImages } from "./diskimages";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {

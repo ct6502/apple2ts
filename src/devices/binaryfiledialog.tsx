@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, Checkbox, Dialog, DialogActions, DialogContent,
   DialogContentText, DialogTitle, FormControlLabel, InputAdornment, TextField } from "@mui/material"
-import { passSetBinaryBlock } from "./main2worker";
+import { passSetBinaryBlock } from "../main2worker";
 
 const BinaryFileDialog = (props:
   {displayDialog: boolean,

@@ -1,4 +1,4 @@
-import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passSetGamepads } from "./main2worker"
+import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passSetGamepads } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -6,8 +6,8 @@ import {
   faArrowDown,
   faArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { appleOutline, appleSolid } from "./icons";
-import { ARROW } from "./emulator/utility";
+import { appleOutline, appleSolid } from "../img/icons";
+import { ARROW } from "../emulator/utility";
 
 const arrowGamePad = [0, 0]
 
@@ -47,14 +47,14 @@ const KeyboardButtons = (props: DisplayProps) => {
     {name: 'Down', icon: faArrowDown},
   ]
   return <span>
-    <button className={`pushButton keyButton ${props.button0 ? 'isActive' : ''}`} title="Open Apple"
+    <button className={`pushButton keyButton ${props.button0 ? 'isButtonActive' : ''}`} title="Open Apple"
       onTouchStart={() => passAppleCommandKeyPress(true)}
       onTouchEnd={() => passAppleCommandKeyRelease(true)}
       onMouseDown={() => passAppleCommandKeyPress(true)}
       onMouseUp={() => passAppleCommandKeyRelease(true)}>
       {appleOutline}
     </button>
-    <button className={`pushButton keyButton ${props.button1 ? 'isActive' : ''}`} title="Closed Apple"
+    <button className={`pushButton keyButton ${props.button1 ? 'isButtonActive' : ''}`} title="Closed Apple"
       onTouchStart={() => passAppleCommandKeyPress(false)}
       onTouchEnd={() => passAppleCommandKeyRelease(false)}
       onMouseDown={() => passAppleCommandKeyPress(false)}
