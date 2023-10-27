@@ -89,6 +89,7 @@ class DisplayApple2 extends React.Component<object,
   }
 
   handleSetCPUState = (state: STATE) => {
+    // This is a hack to force the browser to start playing sound after a user gesture.
     if (state === STATE.NEED_BOOT) {
       doPlayDriveSound(DRIVE.TRACK_SEEK)
     }
@@ -300,7 +301,7 @@ class DisplayApple2 extends React.Component<object,
             </span>
           </span>
           <span className="sidePanels">
-            {props.doDebug ? <DebugPanel/> :
+            {props.doDebug ? <DebugPanel setCPUState={this.handleSetCPUState}/> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}
           </span>

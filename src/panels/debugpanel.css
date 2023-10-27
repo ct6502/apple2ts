@@ -27,7 +27,7 @@
 }
 
 .debugPanel {
-  cursor: pointer;
+  cursor: text;
   user-select: text;
   white-space: pre;
   font-family: monospace;
