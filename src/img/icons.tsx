@@ -1,4 +1,4 @@
-import { COLOR_MODE } from "../emulator/utility";
+import { COLOR_MODE } from "../emulator/utility/utility";
 
 export const appleOutline = <svg version="1.1" id="Layer_1" width="20" height="20"
   viewBox="0 -20 384 512"><g>

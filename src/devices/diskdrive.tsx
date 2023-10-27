@@ -1,5 +1,5 @@
 import React from "react"
-import { crc32, uint32toBytes } from "../emulator/utility"
+import { crc32, uint32toBytes } from "../emulator/utility/utility"
 import { handleGetDriveProps, handleSetDiskData } from "../main2worker"
 import { imageList } from "./assets"
 import BinaryFileDialog from "./binaryfiledialog"

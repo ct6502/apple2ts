@@ -1,7 +1,7 @@
 import React from "react"
 import { Button } from "@mui/material"
 import { passSetCPUState, handleSetDiskData, updateDisplay } from "../main2worker";
-import { STATE, replaceSuffix } from "../emulator/utility";
+import { STATE, replaceSuffix } from "../emulator/utility/utility";
 import { resetAllDiskDrives } from "./diskinterface";
 import disks from "./img/disks.png"
 import DiskImageDialog from "./diskimagedialog";

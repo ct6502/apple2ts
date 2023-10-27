@@ -1,4 +1,4 @@
-import { addToBuffer, addToBufferDebounce } from "../keyboard"
+import { addToBuffer, addToBufferDebounce } from "../devices/keyboard"
 
 const gamepad = (button: number) => {
   switch (button) {

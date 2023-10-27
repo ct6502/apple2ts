@@ -1,5 +1,5 @@
-import { runAssemblyTest } from "./instructions.test"
-import { memory } from "./memory"
+import { runAssemblyTest } from "../instructions.test"
+import { memory } from "../memory"
 import { disablePassRegisters } from "./mockingboard"
 
 test("temp", () => {})

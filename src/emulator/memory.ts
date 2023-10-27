@@ -2,9 +2,9 @@ import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { s6502 } from "./instructions"
 import { romBase64 } from "./roms/rom_2e"
 import { Buffer } from "buffer";
-import { handleGameSetup } from "./game_mappings";
+import { handleGameSetup } from "./games/game_mappings";
 import { inVBL } from "./motherboard";
-import { toHex } from "./utility";
+import { toHex } from "./utility/utility";
 
 // 0x00000: main memory
 // 0x10000: aux memory 

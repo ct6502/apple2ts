@@ -11,7 +11,7 @@ import {
   faArrowsRotate as iconStepOver,
   faArrowUpFromBracket as iconStepOut,
 } from "@fortawesome/free-solid-svg-icons";
-import { toHex } from "../emulator/utility";
+import { toHex } from "../emulator/utility/utility";
 import React from "react";
 
 let lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels

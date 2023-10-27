@@ -1,9 +1,9 @@
 import { Buffer } from "buffer"
-import { passDriveProps, passDriveSound } from "./worker2main"
+import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData, isHardDriveImage } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
 import { enableHardDrive } from "./harddrivedata"
-import { DRIVE } from "./utility"
+import { DRIVE } from "../utility/utility"
 
 const initDriveState = (drive: number): DriveState => {
   return {

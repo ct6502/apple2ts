@@ -1,8 +1,8 @@
 import { memGetC000, memSetC000 } from "./memory"
-import { popKey } from "./keyboard"
+import { popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
-import { resetJoystick, checkJoystickValues } from "./joystick"
-import { toHex } from "./utility"
+import { resetJoystick, checkJoystickValues } from "./devices/joystick"
+import { toHex } from "./utility/utility"
 import { s6502 } from "./instructions"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null

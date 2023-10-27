@@ -1,7 +1,7 @@
 import React from "react"
 import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
-import { DRIVE } from "../emulator/utility"
+import { DRIVE } from "../emulator/utility/utility"
 import { mp3List } from "./assets"
 import { DiskImageChooser } from "./diskimagechooser"
 import {isAudioEnabled, registerAudioContext} from "./speaker"

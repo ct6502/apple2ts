@@ -1,4 +1,4 @@
-import { pcodes } from "./instructions";
+import { pcodes } from "../instructions";
 import { toHex, isBranchInstruction, MODE } from "./utility";
 
 const doOutput = false

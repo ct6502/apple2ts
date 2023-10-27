@@ -1,5 +1,5 @@
 import { convertdsk2woz } from "./convertdsk2woz"
-import { crc32, replaceSuffix } from "./utility";
+import { crc32, replaceSuffix } from "../utility/utility";
 
 const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]

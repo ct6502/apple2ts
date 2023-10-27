@@ -1,4 +1,4 @@
-import { addToBuffer } from "../keyboard";
+import { addToBuffer } from "../devices/keyboard";
 import { memSet } from "../memory"
 
 const helptext = `SNOGGLE

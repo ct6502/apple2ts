@@ -1,12 +1,12 @@
 // Mouse Driver for Apple2TS - Copyright 2023 Michael Morrison <codebythepound@gmail.com>
 // Now combined Mouse/Clock driver
 
-import { parseAssembly } from "./assembler"
-import { setSlotDriver, setSlotIOCallback, memGet, memSet } from "./memory"
-import { MouseEventSimple } from "./utility"
-import { interruptRequest } from "./cpu6502"
-import { s6502 } from "./instructions"
-import { passShowMouse } from "./worker2main"
+import { parseAssembly } from "../utility/assembler"
+import { setSlotDriver, setSlotIOCallback, memGet, memSet } from "../memory"
+import { MouseEventSimple } from "../utility/utility"
+import { interruptRequest } from "../cpu6502"
+import { s6502 } from "../instructions"
+import { passShowMouse } from "../worker2main"
 import { handleClockRead } from "./clock"
 
 //  To be recognized as a clock, need the following bytes:

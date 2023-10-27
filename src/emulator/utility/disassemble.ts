@@ -1,5 +1,5 @@
-import { pcodes } from "./instructions"
-import { memGetRaw } from "./memory"
+import { pcodes } from "../instructions"
+import { memGetRaw } from "../memory"
 import { MODE, isBranchInstruction, toHex } from "./utility"
 
 const nlines = 40  // should this be an argument?

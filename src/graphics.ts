@@ -1,6 +1,6 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode } from "./main2worker"
-import { getPrintableChar, COLOR_MODE } from "./emulator/utility"
+import { getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
 const xmargin = 0.075
 const ymargin = 0.075
 let frameCount = 0

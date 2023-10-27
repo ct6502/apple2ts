@@ -2,13 +2,13 @@ import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress } from "./motherboard";
-import { doSetDriveProps } from "./drivestate"
-import { sendPastedText, sendTextToEmulator } from "./keyboard"
-import { pressAppleCommandKey, setGamepads } from "./joystick"
-import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility";
+import { doSetDriveProps } from "./devices/drivestate"
+import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
+import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
+import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility/utility";
 import { doSetBreakpoints } from "./cpu6502";
-import { MouseCardEvent } from "./mouse";
-import { receiveCommData } from "./serial";
+import { MouseCardEvent } from "./devices/mouse";
+import { receiveCommData } from "./devices/serial";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.

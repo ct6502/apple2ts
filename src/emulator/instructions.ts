@@ -1,4 +1,4 @@
-import { toHex, MODE, default6502State } from "./utility"
+import { toHex, MODE, default6502State } from "./utility/utility"
 import { memGet, memSet } from "./memory"
 // var startTime = performance.now()
 

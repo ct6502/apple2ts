@@ -2,7 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502,
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { STATE } from "./utility"
+import { STATE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631

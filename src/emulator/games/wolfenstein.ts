@@ -1,5 +1,5 @@
-import { setLeftButtonDown, setRightButtonDown } from "../joystick"
-import { addToBuffer, addToBufferDebounce } from "../keyboard"
+import { setLeftButtonDown, setRightButtonDown } from "../devices/joystick"
+import { addToBuffer, addToBufferDebounce } from "../devices/keyboard"
 import { getTextPageAsString, memGet, memSet } from "../memory"
 import { passRumble } from "../worker2main"
 

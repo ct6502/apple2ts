@@ -1,6 +1,6 @@
-import { handleKeyMapping } from "./game_mappings"
-import { memGetC000, memSetC000 } from "./memory"
-import { doSaveTimeSlice } from "./motherboard"
+import { handleKeyMapping } from "../games/game_mappings"
+import { memGetC000, memSetC000 } from "../memory"
+import { doSaveTimeSlice } from "../motherboard"
 
 const keyPress = (key: number) => {
   memSetC000(0xC000, key | 0b10000000, 32)

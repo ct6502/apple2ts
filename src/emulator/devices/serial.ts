@@ -1,7 +1,7 @@
 // Super Serial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
-import { passTxCommData } from "./worker2main"
-import { setSlotDriver, setSlotIOCallback } from "./memory"
+import { passTxCommData } from "../worker2main"
+import { setSlotDriver, setSlotIOCallback } from "../memory"
 
 //  Apple II Super Serial Card ROM - 341-0065-A.bin
 const rom = new Uint8Array([

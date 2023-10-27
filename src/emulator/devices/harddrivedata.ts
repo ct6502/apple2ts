@@ -1,8 +1,8 @@
-import { parseAssembly } from "./assembler"
-import { setX, setY, setCarry, s6502 } from "./instructions"
-import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "./memory"
+import { parseAssembly } from "../utility/assembler"
+import { setX, setY, setCarry, s6502 } from "../instructions"
+import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "../memory"
 import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
-import { toHex } from "./utility"
+import { toHex } from "../utility/utility"
 
 let timerID: NodeJS.Timeout | number = 0
 

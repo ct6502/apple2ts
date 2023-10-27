@@ -5,7 +5,7 @@ import { setDisplay, handleGetState, passSetCPUState,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleCanGoBackward, handleCanGoForward,
   passSetDisassembleAddress } from "./main2worker"
-import { STATE, getPrintableChar, COLOR_MODE, DRIVE } from "./emulator/utility"
+import { STATE, getPrintableChar, COLOR_MODE, DRIVE } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface, { doPlayDriveSound } from "./devices/diskinterface"

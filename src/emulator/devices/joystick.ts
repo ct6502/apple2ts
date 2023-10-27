@@ -1,6 +1,6 @@
-import { defaultButtons, getGameMapping } from "./game_mappings"
-import { memSetC000 } from "./memory"
-import { SWITCHES } from "./softswitches"
+import { defaultButtons, getGameMapping } from "../games/game_mappings"
+import { memSetC000 } from "../memory"
+import { SWITCHES } from "../softswitches"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBufferDebounce } from "./keyboard"
 

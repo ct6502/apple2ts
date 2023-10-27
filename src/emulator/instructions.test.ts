@@ -1,9 +1,9 @@
-import { toHex } from "./utility"
+import { toHex } from "./utility/utility"
 import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cpu6502";
 import { memory, updateAddressTables } from "./memory";
 import { reset6502, doBranch, s6502, setPC, setInterruptDisabled } from "./instructions";
-import { parseAssembly } from "./assembler";
-import { enableMockingboard } from "./mockingboard";
+import { parseAssembly } from "./utility/assembler";
+import { enableMockingboard } from "./devices/mockingboard";
 
 test('doBranch', () => {
   setPC(0x2000)

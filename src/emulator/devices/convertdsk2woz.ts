@@ -1,7 +1,7 @@
 // Code converted from the C code library available at:
 // https://github.com/mr-stivo/dsk2woz2
 //
-import { toASCII, uint16toBytes, uint32toBytes } from "./utility"
+import { toASCII, uint16toBytes, uint32toBytes } from "../utility/utility"
 
 /**
   Appends a byte to a woz at a supplied position: number, returning the

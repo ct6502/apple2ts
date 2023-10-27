@@ -1,9 +1,9 @@
-import { passDriveSound } from "./worker2main"
-import { s6502 } from './instructions'
-import { toHex, DRIVE } from "./utility"
+import { passDriveSound } from "../worker2main"
+import { s6502 } from '../instructions'
+import { toHex, DRIVE } from "../utility/utility"
 import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
-import { setSlotDriver, setSlotIOCallback } from "./memory"
-import { disk2driver } from "./roms/slot_disk2_cx00"
+import { setSlotDriver, setSlotIOCallback } from "../memory"
+import { disk2driver } from "../roms/slot_disk2_cx00"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
 

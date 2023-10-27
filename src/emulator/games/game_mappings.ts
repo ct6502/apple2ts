@@ -1,16 +1,16 @@
-import { matchMemory } from "./memory"
+import { matchMemory } from "../memory"
 import { setGamepad0, setGamepad1,
   setGamepad2,
   setGamepad3,
-  setLeftButtonDown, setPushButton2, setRightButtonDown } from "./joystick"
-import { passHelptext } from "./worker2main"
-import { aztec } from "./games/aztec"
-import { firebug } from "./games/firebug"
-import { karateka } from "./games/karateka"
-import { noxarchaist } from "./games/noxarchaist"
-import { snoggle } from "./games/snoggle"
-import { wizardry } from "./games/wizardry"
-import { wolfenstein } from "./games/wolfenstein"
+  setLeftButtonDown, setPushButton2, setRightButtonDown } from "../devices/joystick"
+import { passHelptext } from "../worker2main"
+import { aztec } from "./aztec"
+import { firebug } from "./firebug"
+import { karateka } from "./karateka"
+import { noxarchaist } from "./noxarchaist"
+import { snoggle } from "./snoggle"
+import { wizardry } from "./wizardry"
+import { wolfenstein } from "./wolfenstein"
 
 const gameLibrary = new Array<GameLibraryItem>()
 

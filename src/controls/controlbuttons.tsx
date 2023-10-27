@@ -1,4 +1,4 @@
-import { STATE, colorToName } from "../emulator/utility";
+import { STATE, colorToName } from "../emulator/utility/utility";
 import { passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

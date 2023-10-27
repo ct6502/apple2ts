@@ -8,7 +8,7 @@ import { passSetCPUState, passKeypress,
   setStartTextPage,
   passMouseEvent,
   passPasteText} from "./main2worker"
-import { ARROW, STATE, convertAppleKey, MouseEventSimple } from "./emulator/utility"
+import { ARROW, STATE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './controls/keyboardbuttons';
 import { checkGamepad } from './devices/gamepad';

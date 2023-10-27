@@ -1,6 +1,6 @@
 // Clock Driver for Apple2TS by Michael Morrison (codebythepound@gmail.com)
 
-import { setSlotDriver, memSet } from "./memory"
+import { setSlotDriver, memSet } from "../memory"
 
 const zeroPad = (num : number, places : number) => String(num).padStart(places, '0')
 

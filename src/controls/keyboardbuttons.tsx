@@ -7,7 +7,7 @@ import {
   faArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { appleOutline, appleSolid } from "../img/icons";
-import { ARROW } from "../emulator/utility";
+import { ARROW } from "../emulator/utility/utility";
 
 const arrowGamePad = [0, 0]
 

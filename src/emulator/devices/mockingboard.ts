@@ -1,7 +1,7 @@
-import { interruptRequest, nonMaskableInterrupt, registerCycleCountCallback } from "./cpu6502";
-import { s6502 } from "./instructions";
-import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "./memory"
-import { passMockingboard } from "./worker2main"
+import { interruptRequest, nonMaskableInterrupt, registerCycleCountCallback } from "../cpu6502";
+import { s6502 } from "../instructions";
+import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "../memory"
+import { passMockingboard } from "../worker2main"
 
 export const enableMockingboard = (enable = true, slot = 4) => {
   if (!enable)

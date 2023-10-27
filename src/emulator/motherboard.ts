@@ -2,23 +2,23 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, setCycleCount, stackDump, setPC, get6502StateString } from "./instructions"
-import { STATE, toHex } from "./utility"
-import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./drivestate"
+import { STATE, toHex } from "./utility/utility"
+import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, getZeroPage } from "./memory"
-import { setButtonState, handleGamepads } from "./joystick"
-import { parseAssembly } from "./assembler";
-import { code } from "./assemblycode"
-import { handleGameSetup } from "./game_mappings"
+import { setButtonState, handleGamepads } from "./devices/joystick"
+import { parseAssembly } from "./utility/assembler";
+import { code } from "./utility/assemblycode"
+import { handleGameSetup } from "./games/game_mappings"
 import { clearInterrupts, doSetBreakpointSkipOnce, doSetRunToRTS, processInstruction } from "./cpu6502"
-import { enableSerialCard } from "./serial"
-import { enableMouseCard } from "./mouse"
-import { enableMockingboard, resetMockingboard } from "./mockingboard"
-import { resetMouse, onMouseVBL } from "./mouse"
-import { enableDiskDrive } from "./diskdata"
-import { getDisassembly, verifyAddressWithinDisassembly } from "./disassemble"
+import { enableSerialCard } from "./devices/serial"
+import { enableMouseCard } from "./devices/mouse"
+import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
+import { resetMouse, onMouseVBL } from "./devices/mouse"
+import { enableDiskDrive } from "./devices/diskdata"
+import { getDisassembly, verifyAddressWithinDisassembly } from "./utility/disassemble"
 
 // let timerID: any | number = 0
 let startTime = 0
