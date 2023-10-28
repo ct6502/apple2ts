@@ -287,7 +287,7 @@ class DisplayApple2 extends React.Component<object,
     return (
       <div>
         <span className="flexRow">
-          <span className="apple2core">
+          <span className="flexColumn">
             <Apple2Canvas {...props}/>
             <div className="controlBar wrap" style={{width: width, display: width ? '' : 'none'}}>
                 <ControlPanel {...props}/>

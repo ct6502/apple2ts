@@ -32,7 +32,7 @@ const ControlButtons = (props: DisplayProps) => {
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
   
-  return <span>
+  return <span className="flexRow">
     <button className="pushButton"
       title="Boot"
       onClick={() => { props.handleSetCPUState(STATE.NEED_BOOT) }}>

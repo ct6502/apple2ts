@@ -46,7 +46,7 @@ const KeyboardButtons = (props: DisplayProps) => {
     {name: 'Up', icon: faArrowUp},
     {name: 'Down', icon: faArrowDown},
   ]
-  return <span>
+  return <span className="flexRow">
     <button className={`pushButton keyButton ${props.button0 ? 'isButtonActive' : ''}`} title="Open Apple"
       onTouchStart={() => passAppleCommandKeyPress(true)}
       onTouchEnd={() => passAppleCommandKeyRelease(true)}

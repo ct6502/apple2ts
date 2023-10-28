@@ -3,11 +3,11 @@ import "./debugpanel.css"
 import { handleGetDebugDump,
   handleGetState,
   passSetDisassembleAddress, passStepInto, passStepOut, passStepOver } from "../main2worker";
+import bpStepOver from './img/bpStepOver.svg';
+import bpStepInto from './img/bpStepInto.svg';
+import bpStepOut from './img/bpStepOut.svg';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowRightToBracket as iconStepInto,
-  faArrowsRotate as iconStepOver,
-  faArrowUpFromBracket as iconStepOut,
   faPause,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
@@ -27,7 +27,8 @@ class DebugPanel extends React.Component<{setCPUState: (state: STATE) => void},
   }
 
   handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({address: e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase()});
+    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 4)
+    this.setState({address: newvalue});
   }
 
   handleDisassembleAddrKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -44,7 +45,7 @@ class DebugPanel extends React.Component<{setCPUState: (state: STATE) => void},
     return (
       <div className="controlBar">
         <span>
-          <span>
+          <span className="flexRow">
             <input className="address"
               type="text"
               placeholder=""
@@ -64,25 +65,24 @@ class DebugPanel extends React.Component<{setCPUState: (state: STATE) => void},
               <FontAwesomeIcon icon={faPause}/>}
             </button>
             <button className="pushButton"
-              title={"Step Into"}
-              onClick={passStepInto}>
-              <FontAwesomeIcon icon={iconStepInto} className="fa-rotate-90"/>
+              title={"Step Over"}
+              onClick={passStepOver}
+              disabled={machineState !== STATE.PAUSED}>
+              <img src={bpStepOver} alt="Step Over" width={23} height={23}/>
             </button>
             <button className="pushButton"
-              title={"Step Over"}
-              onClick={passStepOver}>
-              <span className="fa-stack smallButton">
-              <FontAwesomeIcon icon={iconStepOut} className="cropTop fa-stack-2x"/>
-              <FontAwesomeIcon icon={iconStepOver} className="cropBottom fa-stack-2x"/>
-              </span>
+              title={"Step Into"}
+              onClick={passStepInto}
+              disabled={machineState !== STATE.PAUSED}>
+              <img src={bpStepInto} alt="Step Into" width={23} height={23}/>
             </button>
             <button className="pushButton"
               title={"Step Out"}
-              onClick={passStepOut}>
-              <FontAwesomeIcon icon={iconStepOut}/>
+              onClick={passStepOut}
+              disabled={machineState !== STATE.PAUSED}>
+              <img src={bpStepOut} alt="Step Out" width={23} height={23}/>
             </button>
           </span>
-          <br/>
           <Disassembly/>
         </span>
         <span>

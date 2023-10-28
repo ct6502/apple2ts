@@ -29,7 +29,7 @@ body {
   user-select: none;
 }
 
-.apple2core {
+.flexColumn {
   display: flex;
   flex-direction: column;
   /* width: 1240px; */
@@ -70,6 +70,9 @@ body {
 } */
 
 .pushButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-width: 0;
   border-color: #a4a08A;
   background: none;
@@ -81,11 +84,21 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 7px;
-  margin: 2px;
-  margin-top: 4px;
+  margin: 0px;
+  margin-top: 2px;
   cursor: pointer;
   font-weight: 900;
   user-select: none;
+}
+
+.pushButton:active {
+  background-color: #898677;
+}
+
+.pushButton:disabled {
+  border: 0;
+  opacity: 30%;
+  cursor: default;
 }
 
 /* .pushMuiButton {
@@ -107,19 +120,8 @@ body {
   letter-spacing: -0.05em;
   font-weight: 600;
   position: relative;
-  top: -0.15em;
-  left: -0.02em;
-}
-
-button:active {
-  background-color: #898677;
-}
-
-button:disabled {
-  border: 0;
-  background-color: #cccccc;
-  color: #DDDDDD;
-  cursor: default;
+  top: -0.0em;
+  left: -0.00em;
 }
 
 .statusItem {

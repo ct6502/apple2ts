@@ -2,8 +2,11 @@
   font-family: monospace;
   font-size: 10pt;
   width: 4em;
+  padding: 3px;
+  align-self: center;
   text-align: right;
   margin-left: 3px;
+  margin-right: 3px;
   border-radius: 3px;
   border-width: 1px;
 }
@@ -27,6 +30,7 @@
 }
 
 .debugPanel {
+  outline: none;
   cursor: text;
   user-select: text;
   white-space: pre;

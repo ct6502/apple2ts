@@ -53,9 +53,6 @@ class Disassembly extends React.Component<object,
       if (this.timeout) clearTimeout(this.timeout)
       if (this.breakpointRef.current) this.breakpointRef.current.style.display = 'none'
       this.timeout = window.setTimeout(() => {
-        console.log(`handleScroll ${this.codeRef.current ? this.codeRef.current.scrollTop : 0} newScrollAddress=${this.newScrollAddress.toString(16)}`)
-        //          const bgColor = window.getComputedStyle(document.body).backgroundColor
-//          if (disassemblyRef.current) disassemblyRef.current.style.color = bgColor
         this.timeout = 0
         passSetDisassembleAddress(this.newScrollAddress)
       }, 50)
@@ -192,7 +189,6 @@ class Disassembly extends React.Component<object,
       if (this.codeRef.current) {
         this.enableScrollEvent = false
         if (this.lineHeight === 0) this.computeLineHeight()
-        console.log(`constructDisassembly addrTop=${addrTop.toString(16)} currentScrollTop=${this.codeRef.current.scrollTop} new scrollTop=${scrollPos * this.lineHeight}`)
         this.codeRef.current.scrollTop = scrollPos * this.lineHeight + 2
         if (this.breakpointRef.current) this.breakpointRef.current.style.display = 'block'
       }
