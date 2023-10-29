@@ -67,3 +67,8 @@ export const verifyAddressWithinDisassembly = (start: number, check: number) => 
   }
   return false
 }
+
+export const getInstruction = (addr: number) => {
+  const instr = memGetRaw(addr)
+  return pcodes[instr].name
+}

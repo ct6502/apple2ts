@@ -1,5 +1,5 @@
 import { toHex, MODE, default6502State } from "./utility/utility"
-import { memGet, memSet } from "./memory"
+import { memGet, memSet, memory } from "./memory"
 // var startTime = performance.now()
 
 export const s6502: STATE6502 = default6502State()
@@ -69,7 +69,39 @@ export const get6502StateString = () => {
   return `PC= ${toHex(s6502.PC)}  ${getProcessorStatus()}`  
 }
 
-export const stackDump = new Array<string>(256).fill('')
+const stackDump = new Array<string>(256).fill('')
+
+export const getStackString = () => {
+  const stackvalues = memory.slice(256, 512)
+  const result = new Array<string>()
+  for (let i = 0xFF; i > s6502.StackPtr; i--) {
+    let value = "$" + toHex(stackvalues[i])
+    let cmd = stackDump[i]
+    if ((stackDump[i].length > 3) && (i - 1) > s6502.StackPtr) {
+      if (stackDump[i-1] === "JSR" || stackDump[i-1] === "BRK") {
+        i--
+        value += toHex(stackvalues[i])
+      } else {
+        cmd = ''
+      }
+    }
+    value = (value + "   ").substring(0, 6)
+    result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
+  }
+  return result
+}
+
+export const getLastJSR = () => {
+  const stackvalues = memory.slice(256, 512)
+  for (let i = s6502.StackPtr - 2; i <= 0xFF; i++) {
+    const vHi = stackvalues[i]
+    if ((stackDump[i].startsWith("JSR")) && (i - 1) > s6502.StackPtr && stackDump[i-1] === "JSR") {
+      const vLo = stackvalues[i - 1] + 1
+      return (vHi << 8) + vLo
+    }
+  }
+  return -1
+}
 
 const pushStack = (call: string, value: number) => {
   stackDump[s6502.StackPtr] = call

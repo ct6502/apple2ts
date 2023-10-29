@@ -170,7 +170,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     startupTextTimeout = window.setInterval(setStartTextAfterFontLoad, 50);
   }
 
-  // This code only runs once when the component first renders
   useEffect(() => {
     let context: CanvasRenderingContext2D | null
     let hiddenContext: CanvasRenderingContext2D | null

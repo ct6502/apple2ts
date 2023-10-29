@@ -1,8 +1,8 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
-import { s6502, set6502State, reset6502, setCycleCount, stackDump, setPC, get6502StateString } from "./instructions"
-import { STATE, toHex } from "./utility/utility"
+import { s6502, set6502State, reset6502, setCycleCount, setPC, get6502StateString, getStackString } from "./instructions"
+import { STATE } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
@@ -12,13 +12,13 @@ import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
 import { handleGameSetup } from "./games/game_mappings"
-import { clearInterrupts, doSetBreakpointSkipOnce, doSetRunToRTS, processInstruction } from "./cpu6502"
+import { clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
 import { enableSerialCard } from "./devices/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
-import { getDisassembly, verifyAddressWithinDisassembly } from "./utility/disassemble"
+import { getDisassembly, getInstruction, verifyAddressWithinDisassembly } from "./utility/disassemble"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -104,6 +104,7 @@ export const doRestoreSaveState = (sState: EmulatorSaveState) => {
   doReset()
   setApple2State(sState.state6502)
   restoreDriveSaveState(sState.driveState)
+  disassemblyAddr = s6502.PC
   updateExternalMachineState()
 }
 
@@ -268,7 +269,7 @@ export const doStepOut = () => {
     doBoot()
     cpuState = STATE.PAUSED
   }
-  doSetRunToRTS()
+  setStepOut()
   doSetCPUState(STATE.RUNNING)
 }
 
@@ -321,26 +322,6 @@ export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) =
   }
 }
 
-export const getStackString = () => {
-  const stackvalues = memory.slice(256, 512)
-  const result = new Array<string>()
-  for (let i = 0xFF; i > s6502.StackPtr; i--) {
-    let value = "$" + toHex(stackvalues[i])
-    let cmd = stackDump[i]
-    if ((stackDump[i].length > 3) && (i - 1) > s6502.StackPtr) {
-      if (stackDump[i-1] === "JSR" || stackDump[i-1] === "BRK") {
-        i--
-        value += toHex(stackvalues[i])
-      } else {
-        cmd = ''
-      }
-    }
-    value = (value + "   ").substring(0, 6)
-    result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
-  }
-  return result
-}
-
 const getDebugDump = () => {
   if (!isDebugging) return ''
   const status = [get6502StateString()]
@@ -369,6 +350,7 @@ const updateExternalMachineState = () => {
     hires: getHires(),
     debugDump: getDebugDump(),
     disassembly: doGetDisassembly(),
+    nextInstruction: getInstruction(s6502.PC),
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,

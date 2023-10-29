@@ -1,4 +1,4 @@
-import { doInterruptRequest, doNonMaskableInterrupt, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
@@ -17,13 +17,21 @@ export const doSetBreakpointSkipOnce = () => {
   breakpointSkipOnce = true
 }
 
-export const doSetRunToRTS = (run = true) => {
-  runToRTS = run
+export const setStepOut = () => {
+  // If we have a new Step Out, remove any old "hit once" breakpoints
+  const bpTmp = new Map(breakpoints)
+  bpTmp.forEach((bp, key) => {
+    if (bp.once) breakpoints.delete(key)
+  });
+  const addr = getLastJSR()
+  if (addr < 0) return
+  if (breakpoints.get(addr)) return
+  breakpoints.set(addr, {disabled: false, hidden: true, once: true})
 }
 
 export const doSetBreakpoints = (bp: Breakpoints) => {
+  // This will automatically erase any "hit once" breakpoints, which is okay.
   breakpoints = bp
-//  if (breakpoint !== 0) doDebug = true
 }
 
 // let memZP = new Uint8Array(256).fill(0)
@@ -103,6 +111,7 @@ export const processInstruction = (step = false) => {
   if (breakpoints.size > 0 && !step) {
     const breakpoint = breakpoints.get(PC1)
     if (breakpoint && !breakpoint.disabled && !breakpointSkipOnce) {
+      if (breakpoint.once) breakpoints.delete(PC1)
       doSetCPUState(STATE.PAUSED)
       return -1
     }

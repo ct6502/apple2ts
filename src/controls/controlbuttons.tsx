@@ -59,13 +59,13 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={"Go back in time"}
       onClick={passGoBackInTime}
-      disabled={handleCanGoBackward()}>
+      disabled={!handleCanGoBackward()}>
       <FontAwesomeIcon icon={faFastBackward}/>
     </button>
     <button className="pushButton"
       title={"Go forward in time"}
       onClick={passGoForwardInTime}
-      disabled={handleCanGoForward()}>
+      disabled={!handleCanGoForward()}>
       <FontAwesomeIcon icon={faFastForward}/>
     </button>
     <button className="pushButton"

@@ -119,6 +119,7 @@ let machineState: MachineState = {
   hires: new Uint8Array(),
   debugDump: '',
   disassembly: '',
+  nextInstruction: '',
   button0: false,
   button1: false,
   canGoBackward: true,
@@ -133,6 +134,7 @@ const doOnMessage = (e: MessageEvent) => {
         machineState.state !== newState.state ||
         machineState.debugDump !== newState.debugDump ||
         machineState.disassembly !== newState.disassembly ||
+        machineState.nextInstruction !== newState.nextInstruction ||
         machineState.button0 !== newState.button0 ||
         machineState.button1 !== newState.button1 ||
         machineState.canGoBackward !== newState.canGoBackward ||
@@ -232,6 +234,10 @@ export const handleGetDebugDump = () => {
 
 export const handleGetDisassembly = () => {
   return machineState.disassembly
+}
+
+export const handleGetNextInstruction = () => {
+  return machineState.nextInstruction
 }
 
 export const handleGetButton = (left: boolean) => {

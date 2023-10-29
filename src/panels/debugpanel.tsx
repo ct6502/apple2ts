@@ -1,11 +1,13 @@
 import { KeyboardEvent } from "react";
 import "./debugpanel.css"
 import { handleGetDebugDump,
+  handleGetNextInstruction,
   handleGetState,
   passSetDisassembleAddress, passStepInto, passStepOut, passStepOver } from "../main2worker";
 import bpStepOver from './img/bpStepOver.svg';
 import bpStepInto from './img/bpStepInto.svg';
 import bpStepOut from './img/bpStepOut.svg';
+import bpStepStmt from './img/bpStepStmt.svg';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPause,
@@ -16,8 +18,13 @@ import Disassembly from "./disassembly";
 import { STATE } from "../emulator/utility/utility";
 
 class DebugPanel extends React.Component<{setCPUState: (state: STATE) => void},
-  { address: string;
-  }> {
+  { address: string; }>
+{
+  // The tooltips obscure the first line of disassembly.
+  // Only show them until each button has been clicked once.
+  tooltipStepOverShow = true
+  tooltipStepIntoShow = true
+  tooltipStepOutShow = true
 
   constructor(props: {setCPUState: (state: STATE) => void}) {
     super(props);
@@ -42,6 +49,7 @@ class DebugPanel extends React.Component<{setCPUState: (state: STATE) => void},
 
   render() {
     const machineState = handleGetState()
+    const isJSR = handleGetNextInstruction() === 'JSR'
     return (
       <div className="controlBar">
         <span>
@@ -65,20 +73,20 @@ class DebugPanel extends React.Component<{setCPUState: (state: STATE) => void},
               <FontAwesomeIcon icon={faPause}/>}
             </button>
             <button className="pushButton"
-              title={"Step Over"}
-              onClick={passStepOver}
+              title={this.tooltipStepOverShow ? (isJSR ? "Step Over" : " Step") : ""}
+              onClick={() => {this.tooltipStepOverShow = false; passStepOver()}}
               disabled={machineState !== STATE.PAUSED}>
-              <img src={bpStepOver} alt="Step Over" width={23} height={23}/>
+              <img src={isJSR ? bpStepOver : bpStepStmt} alt="Step Over" width={23} height={23}/>
             </button>
             <button className="pushButton"
-              title={"Step Into"}
-              onClick={passStepInto}
-              disabled={machineState !== STATE.PAUSED}>
+              title={this.tooltipStepIntoShow ? "Step Into" : ""}
+              onClick={() => {this.tooltipStepIntoShow = false; passStepInto()}}
+              disabled={machineState !== STATE.PAUSED || !isJSR}>
               <img src={bpStepInto} alt="Step Into" width={23} height={23}/>
             </button>
             <button className="pushButton"
-              title={"Step Out"}
-              onClick={passStepOut}
+              title={this.tooltipStepOutShow ? "Step Out" : ""}
+              onClick={() => {this.tooltipStepOutShow = false; passStepOut()}}
               disabled={machineState !== STATE.PAUSED}>
               <img src={bpStepOut} alt="Step Out" width={23} height={23}/>
             </button>

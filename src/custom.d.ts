@@ -51,6 +51,10 @@ type Apple2SaveState = {
   memory: string
 }
 
+type SaveStateThumbnail = {
+  s6502: STATE6502
+}
+
 type DisplayProps = {
   machineState: STATE,
   speed: number,
@@ -85,13 +89,14 @@ type MachineState = {
   state: STATE,
   s6502: STATE6502,
   speed: number,
-  altChar: boolean,  //
-  noDelayMode: boolean, //
+  altChar: boolean,
+  noDelayMode: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,
   hires: Uint8Array,
   debugDump: string,
   disassembly: string,
+  nextInstruction: string,
   button0: boolean,
   button1: boolean,
   canGoBackward: boolean,
@@ -203,7 +208,9 @@ type MockingboardSound = {
 }
 
 type Breakpoint = {
-  disabled: false
+  disabled: boolean,
+  hidden: boolean,
+  once: boolean,
 }
 
 type Breakpoints = Map<number, Breakpoint>

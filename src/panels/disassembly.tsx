@@ -103,7 +103,7 @@ class Disassembly extends React.Component<object,
         if (line < 0 || line >= this.nlines) return
         const addrStr = handleGetDisassembly().split('\n')[line]
         const addr = parseInt(addrStr.slice(0, addrStr.indexOf(':')), 16)
-        const newBreakpoint: Breakpoint = {disabled: false}
+        const newBreakpoint: Breakpoint = {disabled: false, hidden: false, once: false}
         const breakpoints: Breakpoints = new Map(this.state.breakpoints);
         breakpoints.set(addr, newBreakpoint)
         this.setState({breakpoints})
