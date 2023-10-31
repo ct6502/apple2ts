@@ -68,3 +68,11 @@
   display: none;
   pointer-events: none;
 }
+
+.stateLine {
+  margin: 0;
+}
+
+.highlightLine {
+  background-color: #99967a;
+}

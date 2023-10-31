@@ -32,10 +32,9 @@ let timeDelta = 0
 let cpuState = STATE.IDLE
 let iRefresh = 0
 let saveTimeSlice = false
-let iSaveState = 0
 let iTempState = 0
-const maxState = 60
-const saveStates = Array<EmulatorSaveState>(maxState)
+const maxState = 5
+const saveStates: Array<EmulatorSaveState> = []
 export let inVBL = false
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
@@ -188,36 +187,43 @@ export const doSetDisassembleAddress = (addr: number) => {
 }
 
 const getGoBackwardIndex = () => {
-  const newTmp = (iTempState + maxState - 1) % maxState
-  if (newTmp === iSaveState || !saveStates[newTmp]) {
+  const newTmp = iTempState - 1
+  if (newTmp < 0 || !saveStates[newTmp]) {
     return -1
   }
   return newTmp
 }
 
 const getGoForwardIndex = () => {
-  if (iTempState === iSaveState) {
-    return -1
-  }
-  const newTmp = (iTempState + 1) % maxState
-  if (!saveStates[newTmp]) {
+  const newTmp = iTempState + 1
+  if (newTmp >= saveStates.length || !saveStates[newTmp]) {
     return -1
   }
   return newTmp
 }
 
+const doSaveState = () => {
+  if (saveStates.length === maxState) {
+    saveStates.shift()
+  }
+  saveStates.push(doGetSaveState())
+  // This is at the current "time" and is just past our recently-saved state.
+  iTempState = saveStates.length
+}
+
 export const doGoBackInTime = () => {
-  const newTmp = getGoBackwardIndex()
+  let newTmp = getGoBackwardIndex()
   if (newTmp < 0) return
   doSetCPUState(STATE.PAUSED)
   setTimeout(() => {
     // if this is the first time we're called, make sure our current
     // state is up to date
-    if (iTempState === iSaveState) {
-      saveStates[iSaveState] = doGetSaveState()
+    if (iTempState === saveStates.length) {
+      doSaveState()
+      newTmp = Math.max(iTempState - 2, 0)
     }
     iTempState = newTmp
-    doRestoreSaveState(saveStates[newTmp])    
+    doRestoreSaveState(saveStates[iTempState])
   }, 50)
 }
 
@@ -229,6 +235,14 @@ export const doGoForwardInTime = () => {
     iTempState = newTmp
     doRestoreSaveState(saveStates[newTmp])
   }, 50)
+}
+
+const getTimeTravelThumbnails = () => {
+  const result: Array<TimeTravelThumbnail> = []
+  for (let i = 0; i < saveStates.length; i++) {
+    result[i] = {s6502: saveStates[i].state6502.s6502}
+  }
+  return result
 }
 
 export const doSaveTimeSlice = () => {
@@ -354,7 +368,10 @@ const updateExternalMachineState = () => {
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,
-    canGoForward: getGoForwardIndex() >= 0
+    canGoForward: getGoForwardIndex() >= 0,
+    maxState: maxState,
+    iTempState: iTempState,
+    timeTravelThumbnails: getTimeTravelThumbnails(),
   }
   passMachineState(state)
 }
@@ -398,9 +415,7 @@ const doAdvance6502 = () => {
   if (saveTimeSlice) {
     saveTimeSlice = false
 //    console.log("iSaveState " + iSaveState)
-    saveStates[iSaveState] = doGetSaveState()
-    iSaveState = (iSaveState + 1) % maxState
-    iTempState = iSaveState
+    doSaveState()
   }
 }
 

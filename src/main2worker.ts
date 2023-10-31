@@ -123,7 +123,10 @@ let machineState: MachineState = {
   button0: false,
   button1: false,
   canGoBackward: true,
-  canGoForward: true
+  canGoForward: true,
+  maxState: 0,
+  iTempState: 0,
+  timeTravelThumbnails: new Array<TimeTravelThumbnail>
 }
 
 const doOnMessage = (e: MessageEvent) => {
@@ -250,6 +253,18 @@ export const handleCanGoBackward = () => {
 
 export const handleCanGoForward = () => {
   return machineState.canGoForward
+}
+
+export const handleGetMaxState = () => {
+  return machineState.maxState
+}
+
+export const handleGetTempStateIndex = () => {
+  return machineState.iTempState
+}
+
+export const handleGetTimeTravelThumbnails = () => {
+  return machineState.timeTravelThumbnails
 }
 
 export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void) => {

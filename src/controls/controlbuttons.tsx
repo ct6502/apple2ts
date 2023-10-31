@@ -23,6 +23,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG, svgLowercase, svgUppercase } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
+import { handleSetCPUState } from "../controller";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
@@ -35,12 +36,12 @@ const ControlButtons = (props: DisplayProps) => {
   return <span className="flexRow">
     <button className="pushButton"
       title="Boot"
-      onClick={() => { props.handleSetCPUState(STATE.NEED_BOOT) }}>
+      onClick={() => { handleSetCPUState(STATE.NEED_BOOT) }}>
       <FontAwesomeIcon icon={faPowerOff}/>
     </button>
     <button className="pushButton"
       title="Reset"
-      onClick={() => { props.handleSetCPUState(STATE.NEED_RESET) }}
+      onClick={() => { handleSetCPUState(STATE.NEED_RESET) }}
       disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
       >
       <FontAwesomeIcon icon={faArrowRotateRight}/>
@@ -48,7 +49,7 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
       onClick={() => {
-        props.handleSetCPUState(props.machineState === STATE.PAUSED ?
+        handleSetCPUState(props.machineState === STATE.PAUSED ?
           STATE.RUNNING : STATE.PAUSED)
       }}
       disabled={props.machineState === STATE.IDLE}>

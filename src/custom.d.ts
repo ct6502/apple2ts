@@ -51,10 +51,6 @@ type Apple2SaveState = {
   memory: string
 }
 
-type SaveStateThumbnail = {
-  s6502: STATE6502
-}
-
 type DisplayProps = {
   machineState: STATE,
   speed: number,
@@ -69,7 +65,6 @@ type DisplayProps = {
   colorMode: COLOR_MODE,
   audioEnable: boolean,
   doDebug: boolean,
-  handleSetCPUState: (state: STATE) => void,
   handleDebugChange: (enable: boolean) => void,
   handleSpeedChange: (enable: boolean) => void,
   handleAudioChange: (enable: boolean) => void,
@@ -100,7 +95,10 @@ type MachineState = {
   button0: boolean,
   button1: boolean,
   canGoBackward: boolean,
-  canGoForward: boolean
+  canGoForward: boolean,
+  maxState: number,
+  iTempState: number,
+  timeTravelThumbnails: Array<TimeTravelThumbnail>
 }
 
 type DriveState = {
@@ -149,6 +147,10 @@ type EmulatorSaveState = {
   emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState
+}
+
+type TimeTravelThumbnail = {
+  s6502: STATE6502
 }
 
 type SetMemoryBlock = {

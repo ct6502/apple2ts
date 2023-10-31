@@ -3,12 +3,11 @@ import { setDisplay, handleGetState, passSetCPUState,
   passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, handleCanGoBackward, handleCanGoForward,
-  passSetDisassembleAddress } from "./main2worker"
-import { STATE, getPrintableChar, COLOR_MODE, DRIVE } from "./emulator/utility/utility"
+  handleGetFilename, handleCanGoBackward, handleCanGoForward } from "./main2worker"
+import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
-import DiskInterface, { doPlayDriveSound } from "./devices/diskinterface"
+import DiskInterface from "./devices/diskinterface"
 import React from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugPanel from "./panels/debugpanel"
@@ -86,19 +85,6 @@ class DisplayApple2 extends React.Component<object,
   componentWillUnmount() {
     if (this.timerID) clearInterval(this.timerID);
 //    window.removeEventListener("resize", handleResize)
-  }
-
-  handleSetCPUState = (state: STATE) => {
-    // This is a hack to force the browser to start playing sound after a user gesture.
-    if (state === STATE.NEED_BOOT) {
-      doPlayDriveSound(DRIVE.TRACK_SEEK)
-    }
-    if (state === STATE.PAUSED) {
-      passSetDisassembleAddress(STATE.PAUSED)
-    } else {
-      passSetDisassembleAddress(STATE.RUNNING)
-    }
-    passSetCPUState(state)
   }
 
   handleSpeedChange = (enable: boolean) => {
@@ -265,7 +251,6 @@ class DisplayApple2 extends React.Component<object,
       colorMode: this.state.colorMode,
       audioEnable: this.state.audioEnable,
       doDebug: this.state.doDebug,
-      handleSetCPUState: this.handleSetCPUState,
       handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
@@ -301,7 +286,7 @@ class DisplayApple2 extends React.Component<object,
             </span>
           </span>
           <span className="sidePanels">
-            {props.doDebug ? <DebugPanel setCPUState={this.handleSetCPUState}/> :
+            {props.doDebug ? <DebugPanel/> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}
           </span>
