@@ -709,6 +709,24 @@ PCODE('TXA', MODE.IMPLIED, 0x8A, 1, () => {s6502.Accum = s6502.XReg; checkStatus
 PCODE('TXS', MODE.IMPLIED, 0x9A, 1, () => {s6502.StackPtr = s6502.XReg; return 2})
 PCODE('TYA', MODE.IMPLIED, 0x98, 1, () => {s6502.Accum = s6502.YReg; checkStatus(s6502.Accum); return 2})
 
+const doTRB = (addr: number) => {
+  const value = memGet(addr)
+  setZero((s6502.Accum & value) === 0)
+  memSet(addr, value & ~s6502.Accum)
+}
+
+PCODE('TRB', MODE.ZP_REL, 0x14, 2, (vZP) => { doTRB(vZP); return 5})
+PCODE('TRB', MODE.ABS,    0x1C, 3, (vLo, vHi) => {doTRB(address(vLo, vHi)); return 6})
+
+const doTSB = (addr: number) => {
+  const value = memGet(addr)
+  setZero((s6502.Accum & value) === 0)
+  memSet(addr, value | s6502.Accum)
+}
+
+PCODE('TSB', MODE.ZP_REL, 0x04, 2, (vZP) => {doTSB(vZP); return 5})
+PCODE('TSB', MODE.ABS,    0x0C, 3, (vLo, vHi) => {doTSB(address(vLo, vHi)); return 6})
+
 // Undocumented 65c02 NOP's
 // http://www.6502.org/tutorials/65c02opcodes.html
 //       x2:     x3:     x4:     x7:     xB:     xC:     xF:
@@ -750,9 +768,9 @@ PCODE(nopUndoc, MODE.IMPLIED, 0xFC, 3, () => {return 4})
 
 // Fill the rest of the 65c02 with BRK instructions. This avoids needing
 // to do a check in processInstruction, and also breaks on a bad op code.
-// Turns out there are only 4 of these: 0x04, 0x0C, 0x14, 0x1C
 for (let i = 0; i < 256; i++) {
   if (!pcodes[i]) {
+    console.log("ERROR: OPCODE " + i.toString(16) + " should be implemented")
     PCODE('BRK', MODE.IMPLIED, i, 1, doBrk)
   }
 }
