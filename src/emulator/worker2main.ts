@@ -1,7 +1,7 @@
 import { doSetCPUState,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -96,7 +96,10 @@ self.onmessage = (e: MessageEvent) => {
           doGoBackInTime()
       }
       break
-    case MSG_MAIN.RESTORE_STATE:
+    case MSG_MAIN.TIME_TRAVEL_INDEX:
+      doGotoTimeTravelIndex(e.data.payload)
+      break
+      case MSG_MAIN.RESTORE_STATE:
       doRestoreSaveState(e.data.payload as EmulatorSaveState)
       break
     case MSG_MAIN.KEYPRESS:

@@ -132,7 +132,7 @@ class Disassembly extends React.Component<object,
         if (line >= 0 && line < this.nlines) {
           this.codeRef.current.style.cursor = 'pointer'
           this.fakePointRef.current.style.display = 'initial'
-          this.fakePointRef.current.style.top = `${6 + line * this.lineHeight}px`
+          this.fakePointRef.current.style.top = `${2 + line * this.lineHeight}px`
           return
         }
       }
@@ -198,14 +198,14 @@ class Disassembly extends React.Component<object,
 
   getBreakpointDiv = () => {
     if (handleGetDisassembly().length <= 1) return <></>
-    const pc = 4 + this.getLineOfDisassembly(handleGetS6502().PC) * this.lineHeight
+    const pc = this.getLineOfDisassembly(handleGetS6502().PC) * this.lineHeight
     const programCounterBar = (pc >= 0) ?
       <div className="programCounter" style={{top: `${pc}px`}}></div> : <></>
     return <div ref={this.breakpointRef} 
         style={{
         position: "relative",
-        width: '0px', // Set the width to your desired value
-        height: `${this.nlines * 10 - 2}pt`, // Set the height to your desired value
+        width: '0px',
+        height: `${this.nlines * 10 - 2}pt`,
       }}>
       <FontAwesomeIcon icon={iconBreakpoint} ref={this.fakePointRef}
         className="breakpointStyle fakePoint"/>
@@ -216,7 +216,7 @@ class Disassembly extends React.Component<object,
             key={key} data-key={key}
             onClick={this.handleBreakpointClick}
             style={{
-              top: `${6 + this.getLineOfDisassembly(key) * this.lineHeight}px`,
+              top: `${2 + this.getLineOfDisassembly(key) * this.lineHeight}px`,
               }}/> :
           <span key={key}></span>
         )
@@ -227,7 +227,7 @@ class Disassembly extends React.Component<object,
 
   render() {
     return (
-      <div className="controlBar">
+      <div className="flexRow thinBorder">
         {this.getBreakpointDiv()}
         <div className="debugPanel"
           ref={this.codeRef}

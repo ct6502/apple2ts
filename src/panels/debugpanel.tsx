@@ -8,7 +8,7 @@ class DebugPanel extends React.Component<object, object>
 {
   render() {
     return (
-      <div className="controlBar">
+      <div className="flexRow">
         <DisassemblyPanel/>
         <span className="flexColumn">
           <TimeTravelPanel/>

@@ -2,7 +2,8 @@ import React from "react";
 import "./debugpanel.css"
 import { handleGetMaxState,
   handleGetTimeTravelThumbnails,
-  handleGetTempStateIndex } from "../main2worker";
+  handleGetTempStateIndex, 
+  passTimeTravelIndex} from "../main2worker";
 
 class TimeTravelPanel extends React.Component<object, object>
 {
@@ -34,7 +35,7 @@ class TimeTravelPanel extends React.Component<object, object>
   }
 
   selectStateLine = (index: number) => {
-    console.log(index)
+    passTimeTravelIndex(index)
   }
 
   render() {
@@ -45,15 +46,17 @@ class TimeTravelPanel extends React.Component<object, object>
       timeTravelThumbnails = <>{thumb.map((line, index) => (
         <p key={index}
           id={index === iTempState ? "tempStateIndex" : ""}
-          className={"stateLine" + (index === iTempState ? " highlightLine" : "")}
+          className="stateLine"
           onClick={() => this.selectStateLine(index)}>
           {line}
+          {index === iTempState ? <div className="highlightLine"></div> : <></>}
         </p>
         ))}
       </>
     }
     return (
-      <span>
+      <div className="roundRectBorder">
+        <p className="defaultFont panelTitle bgColor">Time Travel</p>
         <div ref={this.stateThumbRef} className="debugPanel"
           style={{
             width: '330px', // Set the width to your desired value
@@ -63,7 +66,7 @@ class TimeTravelPanel extends React.Component<object, object>
           }}>
           {timeTravelThumbnails}
         </div>
-      </span>
+      </div>
     )
   }
 }

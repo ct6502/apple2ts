@@ -71,6 +71,10 @@ export const passGoBackInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL, "BACKWARD")
 }
 
+export const passTimeTravelIndex = (index: number) => {
+  doPostMessage(MSG_MAIN.TIME_TRAVEL_INDEX, index)
+}
+
 export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
   doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
 }

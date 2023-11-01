@@ -274,12 +274,12 @@ class DisplayApple2 extends React.Component<object,
         <span className="flexRow">
           <span className="flexColumn">
             <Apple2Canvas {...props}/>
-            <div className="controlBar wrap" style={{width: width, display: width ? '' : 'none'}}>
+            <div className="flexRowSpaceBetween wrap" style={{width: width, display: width ? '' : 'none'}}>
                 <ControlPanel {...props}/>
                 <DiskInterface />
                 <ImageWriter />
             </div>
-            <span className="statusItem">
+            <span className="defaultFont statusItem">
               <span>{props.speed} MHz</span>
               <br/>
               <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence (git {import.meta.env.VITE_GIT_SHA}) <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>

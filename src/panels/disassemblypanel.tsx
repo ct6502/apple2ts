@@ -23,12 +23,13 @@ class DisassemblyPanel extends React.Component<object,
 
   render() {
     return (
-      <span>
+      <div className="roundRectBorder">
+        <p className="defaultFont panelTitle bgColor">Disassembly</p>
         <DisassemblyControls/>
         <Disassembly/>
-      </span>
+      </div>
     )
   }
 }
 
-export default DisassemblyPanel;
+export default DisassemblyPanel

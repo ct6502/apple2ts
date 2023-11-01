@@ -33,7 +33,7 @@ let cpuState = STATE.IDLE
 let iRefresh = 0
 let saveTimeSlice = false
 let iTempState = 0
-const maxState = 5
+const maxState = 60
 const saveStates: Array<EmulatorSaveState> = []
 export let inVBL = false
 
@@ -237,6 +237,15 @@ export const doGoForwardInTime = () => {
   }, 50)
 }
 
+export const doGotoTimeTravelIndex = (index: number) => {
+  if (index < 0 || index >= saveStates.length) return
+  doSetCPUState(STATE.PAUSED)
+  setTimeout(() => {
+    iTempState = index
+    doRestoreSaveState(saveStates[index])
+  }, 50)
+}
+
 const getTimeTravelThumbnails = () => {
   const result: Array<TimeTravelThumbnail> = []
   for (let i = 0; i < saveStates.length; i++) {
@@ -304,6 +313,9 @@ export const doSetCPUState = (cpuStateIn: STATE) => {
   } else if (cpuState === STATE.RUNNING) {
     doPauseDrive(true)
     doSetBreakpointSkipOnce()
+    // If we go back in time and then resume running, remove all future states.
+    while (saveStates.length > 0 && iTempState < (saveStates.length - 1)) saveStates.pop()
+    iTempState = saveStates.length
   }
   updateExternalMachineState()
   resetRefreshCounter()

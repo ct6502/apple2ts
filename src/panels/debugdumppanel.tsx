@@ -6,7 +6,8 @@ class DebugDumpPanel extends React.Component<object, object>
 {
   render() {
     return (
-      <span>
+      <div className="roundRectBorder">
+        <p className="defaultFont panelTitle bgColor">Debug Info</p>
         <div className="debugPanel"
           style={{
             width: '330px', // Set the width to your desired value
@@ -15,7 +16,7 @@ class DebugDumpPanel extends React.Component<object, object>
             }}>
           {handleGetDebugDump()}
         </div>
-      </span>
+      </div>
     )
   }
 }

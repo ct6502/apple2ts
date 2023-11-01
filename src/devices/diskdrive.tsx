@@ -124,7 +124,7 @@ class DiskDrive extends React.Component<{drive: number},
           style={{display: 'none'}}
         />
         <span className={"diskLabel"}>{dprops.filename}</span>
-        <span className={"diskStatus"}>{status}</span>
+        <span className={"defaultFont diskStatus"}>{status}</span>
         <BinaryFileDialog displayDialog={this.state.displayBinaryDialog}
           displayClose={() => this.setState({displayBinaryDialog: false})}
           binaryBuffer={this.binaryBuffer}/>

@@ -98,7 +98,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <div className="controlBar wrap">
+      <div className="flexRowSpaceBetween wrap">
       <svg height="35" width="150">{imagewriter2}</svg>
         <div>
         <button className="pushButton"

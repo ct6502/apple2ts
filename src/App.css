@@ -9,6 +9,10 @@ body {
   margin: 10px;
 }
 
+.bgColor {
+  background-color: #BFBB98;
+}
+
 @font-face {
   font-family: PrintChar21;
   src: url(./fonts/PrintChar21.woff2);
@@ -41,7 +45,7 @@ body {
   margin-left: 10px;
 }
 
-.controlBar {
+.flexRowSpaceBetween {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -124,11 +128,14 @@ body {
   left: -0.00em;
 }
 
+.defaultFont {
+  font-size: 8pt;
+}
+
 .statusItem {
   width: 100px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
-  font-size: 7.5pt;
   margin-left: 0;
   margin-right: 0.5em;
   white-space: nowrap;
