@@ -1,7 +1,7 @@
 import { KeyboardEvent } from "react";
 import "./debugpanel.css"
 import { handleGetNextInstruction,
-  handleGetState,
+  handleGetRunMode,
   passSetDisassembleAddress, passStepInto, passStepOut, passStepOver } from "../main2worker";
 import bpStepOver from './img/bpStepOver.svg';
 import bpStepInto from './img/bpStepInto.svg';
@@ -13,7 +13,7 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
-import { STATE } from "../emulator/utility/utility";
+import { RUN_MODE } from "../emulator/utility/utility";
 import { handleSetCPUState } from "../controller";
 
 class DisassemblyControls extends React.Component<object, { address: string; }>
@@ -24,7 +24,7 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
   tooltipStepIntoShow = true
   tooltipStepOutShow = true
 
-  constructor(props: {setCPUState: (state: STATE) => void}) {
+  constructor(props: object) {
     super(props);
     this.state = {
       address: '',
@@ -46,7 +46,7 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
   }
 
   render() {
-    const machineState = handleGetState()
+    const runMode = handleGetRunMode()
     const isJSR = handleGetNextInstruction() === 'JSR'
     return (
       <span className="flexRow">
@@ -58,32 +58,32 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
           onKeyDown={this.handleDisassembleAddrKeyDown}
         />
         <button className="pushButton"
-          title={machineState === STATE.PAUSED ? "Resume" : "Pause"}
+          title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
           onClick={() => {
-            handleSetCPUState(machineState === STATE.PAUSED ?
-              STATE.RUNNING : STATE.PAUSED)
+            handleSetCPUState(runMode === RUN_MODE.PAUSED ?
+              RUN_MODE.RUNNING : RUN_MODE.PAUSED)
           }}
-          disabled={machineState === STATE.IDLE}>
-          {machineState === STATE.PAUSED ?
+          disabled={runMode === RUN_MODE.IDLE}>
+          {runMode === RUN_MODE.PAUSED ?
           <FontAwesomeIcon icon={faPlay}/> :
           <FontAwesomeIcon icon={faPause}/>}
         </button>
         <button className="pushButton"
           title={this.tooltipStepOverShow ? (isJSR ? "Step Over" : " Step") : ""}
           onClick={() => {this.tooltipStepOverShow = false; passStepOver()}}
-          disabled={machineState !== STATE.PAUSED}>
+          disabled={runMode !== RUN_MODE.PAUSED}>
           <img src={isJSR ? bpStepOver : bpStepStmt} alt="Step Over" width={23} height={23}/>
         </button>
         <button className="pushButton"
           title={this.tooltipStepIntoShow ? "Step Into" : ""}
           onClick={() => {this.tooltipStepIntoShow = false; passStepInto()}}
-          disabled={machineState !== STATE.PAUSED || !isJSR}>
+          disabled={runMode !== RUN_MODE.PAUSED || !isJSR}>
           <img src={bpStepInto} alt="Step Into" width={23} height={23}/>
         </button>
         <button className="pushButton"
           title={this.tooltipStepOutShow ? "Step Out" : ""}
           onClick={() => {this.tooltipStepOutShow = false; passStepOut()}}
-          disabled={machineState !== STATE.PAUSED}>
+          disabled={runMode !== RUN_MODE.PAUSED}>
           <img src={bpStepOut} alt="Step Out" width={23} height={23}/>
         </button>
       </span>

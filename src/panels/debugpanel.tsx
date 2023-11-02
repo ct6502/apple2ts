@@ -1,7 +1,7 @@
 import React from "react";
 import "./debugpanel.css"
 import DisassemblyPanel from "./disassemblypanel";
-import DebugDumpPanel from "./debugdumppanel";
+import DebugInfoPanel from "./debuginfopanel";
 import TimeTravelPanel from "./timetravelpanel";
 
 class DebugPanel extends React.Component<object, object>
@@ -12,7 +12,7 @@ class DebugPanel extends React.Component<object, object>
         <DisassemblyPanel/>
         <span className="flexColumn">
           <TimeTravelPanel/>
-          <DebugDumpPanel/>
+          <DebugInfoPanel/>
         </span>
       </div>
     )

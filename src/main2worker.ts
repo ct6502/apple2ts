@@ -1,4 +1,4 @@
-import { STATE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility/utility"
+import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility/utility"
 import { doPlayDriveSound } from "./devices/diskinterface"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
@@ -29,7 +29,7 @@ const doPostMessage = (msg: MSG_MAIN, payload: any) => {
   worker.postMessage({msg, payload});
 }
 
-export const passSetCPUState = (state: STATE) => {
+export const passSetCPUState = (state: RUN_MODE) => {
   doPostMessage(MSG_MAIN.STATE, state)
 }
 
@@ -113,7 +113,7 @@ export const passRxCommData = (data: Uint8Array) => {
 }
 
 let machineState: MachineState = {
-  state: STATE.IDLE,
+  runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   speed: 0,
   altChar: true,
@@ -138,7 +138,7 @@ const doOnMessage = (e: MessageEvent) => {
     case MSG_WORKER.MACHINE_STATE: {
       const newState = e.data.payload as MachineState
       const cpuStateChanged = machineState.speed !== newState.speed ||
-        machineState.state !== newState.state ||
+        machineState.runMode !== newState.runMode ||
         machineState.debugDump !== newState.debugDump ||
         machineState.disassembly !== newState.disassembly ||
         machineState.nextInstruction !== newState.nextInstruction ||
@@ -146,8 +146,8 @@ const doOnMessage = (e: MessageEvent) => {
         machineState.button1 !== newState.button1 ||
         machineState.canGoBackward !== newState.canGoBackward ||
         machineState.canGoForward !== newState.canGoForward
-      if (machineState.state !== newState.state) {
-        emulatorSoundEnable(newState.state === STATE.RUNNING)
+      if (machineState.runMode !== newState.runMode) {
+        emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
       machineState = newState
       if (cpuStateChanged) updateDisplay(machineState.speed)
@@ -203,11 +203,11 @@ const doOnMessage = (e: MessageEvent) => {
     }
 }
 
-export const handleGetState = () => {
-  return machineState.state
+export const handleGetRunMode = () => {
+  return machineState.runMode
 }
 
-export const handleGetS6502 = () => {
+export const handleGetState6502 = () => {
   return machineState.s6502
 }
 

@@ -8,7 +8,7 @@ import { passSetCPUState, passKeypress,
   setStartTextPage,
   passMouseEvent,
   passPasteText} from "./main2worker"
-import { ARROW, STATE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './controls/keyboardbuttons';
 import { checkGamepad } from './devices/gamepad';
@@ -56,12 +56,12 @@ const Apple2Canvas = (props: DisplayProps) => {
   const metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
-    b: () => passSetCPUState(STATE.NEED_BOOT),
+    b: () => passSetCPUState(RUN_MODE.NEED_BOOT),
     c: () => props.handleCopyToClipboard(),
     f: () => props.handleSpeedChange(!props.speedCheck),
     o: () => props.handleFileOpen(),
-    p: () => passSetCPUState(props.machineState === STATE.PAUSED ? STATE.RUNNING : STATE.PAUSED),
-    r: () => passSetCPUState(STATE.NEED_RESET),
+    p: () => passSetCPUState(props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
+    r: () => passSetCPUState(RUN_MODE.NEED_RESET),
     s: () => props.handleFileSave()
   }
 
@@ -113,8 +113,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       keyHandled = handleMetaKey(e.key)
     }
     // If we're paused, allow <space> to resume
-    if (props.machineState === STATE.PAUSED && e.key === ' ') {
-      passSetCPUState(STATE.RUNNING)
+    if (props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
+      passSetCPUState(RUN_MODE.RUNNING)
       keyHandled = true
     }
     if (keyHandled) {

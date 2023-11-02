@@ -1,6 +1,6 @@
 import React, { KeyboardEvent } from "react";
 import { handleGetDisassembly,
-  handleGetS6502,
+  handleGetState6502,
   passBreakpoints,
   passSetDisassembleAddress } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -198,7 +198,7 @@ class Disassembly extends React.Component<object,
 
   getBreakpointDiv = () => {
     if (handleGetDisassembly().length <= 1) return <></>
-    const pc = this.getLineOfDisassembly(handleGetS6502().PC) * this.lineHeight
+    const pc = this.getLineOfDisassembly(handleGetState6502().PC) * this.lineHeight
     const programCounterBar = (pc >= 0) ?
       <div className="programCounter" style={{top: `${pc}px`}}></div> : <></>
     return <div ref={this.breakpointRef} 

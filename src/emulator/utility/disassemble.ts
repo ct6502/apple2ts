@@ -1,6 +1,6 @@
 import { pcodes } from "../instructions"
 import { memGetRaw } from "../memory"
-import { MODE, isBranchInstruction, toHex } from "./utility"
+import { ADDR_MODE, isBranchInstruction, toHex } from "./utility"
 
 const nlines = 40  // should this be an argument?
 
@@ -22,17 +22,17 @@ const getInstructionString = (addr: number, code: PCodeInstr,
   }
   const vRel = isBranchInstruction(code.name) ? toHex(decodeBranch(addr, vLo)) : sLo
   switch (code.mode) {
-    case MODE.IMPLIED: break  // BRK
-    case MODE.IMM: value = ` #$${sLo}`; break      // LDA #$01
-    case MODE.ZP_REL: value = ` $${vRel}`; break   // LDA $C0 or BCC $FF
-    case MODE.ZP_X: value = ` $${sLo},X`; break     // LDA $C0,X
-    case MODE.ZP_Y: value = ` $${sLo},Y`; break     // LDX $C0,Y
-    case MODE.ABS: value = ` $${sHi}${sLo}`; break      // LDA $1234
-    case MODE.ABS_X: value = ` $${sHi}${sLo},X`; break    // LDA $1234,X
-    case MODE.ABS_Y: value = ` $${sHi}${sLo},Y`; break    // LDA $1234,Y
-    case MODE.IND_X: value = ` ($${sHi.trim()}${sLo},X)`; break    // LDA ($FF,X) or JMP ($1234,X)
-    case MODE.IND_Y: value = ` ($${sLo}),Y`; break    // LDA ($FF),Y
-    case MODE.IND: value = ` ($${sHi.trim()}${sLo})`; break       // JMP ($1234) or LDA ($C0)
+    case ADDR_MODE.IMPLIED: break  // BRK
+    case ADDR_MODE.IMM: value = ` #$${sLo}`; break      // LDA #$01
+    case ADDR_MODE.ZP_REL: value = ` $${vRel}`; break   // LDA $C0 or BCC $FF
+    case ADDR_MODE.ZP_X: value = ` $${sLo},X`; break     // LDA $C0,X
+    case ADDR_MODE.ZP_Y: value = ` $${sLo},Y`; break     // LDX $C0,Y
+    case ADDR_MODE.ABS: value = ` $${sHi}${sLo}`; break      // LDA $1234
+    case ADDR_MODE.ABS_X: value = ` $${sHi}${sLo},X`; break    // LDA $1234,X
+    case ADDR_MODE.ABS_Y: value = ` $${sHi}${sLo},Y`; break    // LDA $1234,Y
+    case ADDR_MODE.IND_X: value = ` ($${sHi.trim()}${sLo},X)`; break    // LDA ($FF,X) or JMP ($1234,X)
+    case ADDR_MODE.IND_Y: value = ` ($${sLo}),Y`; break    // LDA ($FF),Y
+    case ADDR_MODE.IND: value = ` ($${sHi.trim()}${sLo})`; break       // JMP ($1234) or LDA ($C0)
   }
   return `${toHex(addr, 4)}: ${hex}  ${code.name}${value}`
 }

@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, set6502State, reset6502, setCycleCount, setPC, get6502StateString, getStackString } from "./instructions"
-import { STATE } from "./utility/utility"
+import { RUN_MODE } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
@@ -29,7 +29,7 @@ let isDebugging = true
 let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
-let cpuState = STATE.IDLE
+let cpuState = RUN_MODE.IDLE
 let iRefresh = 0
 let saveTimeSlice = false
 let iTempState = 0
@@ -183,7 +183,7 @@ export const doSetIsDebugging = (enable: boolean) => {
 export const doSetDisassembleAddress = (addr: number) => {
   disassemblyAddr = addr
   updateExternalMachineState()
-  if (addr === STATE.PAUSED) disassemblyAddr = s6502.PC
+  if (addr === RUN_MODE.PAUSED) disassemblyAddr = s6502.PC
 }
 
 const getGoBackwardIndex = () => {
@@ -214,7 +214,7 @@ const doSaveState = () => {
 export const doGoBackInTime = () => {
   let newTmp = getGoBackwardIndex()
   if (newTmp < 0) return
-  doSetCPUState(STATE.PAUSED)
+  doSetCPUState(RUN_MODE.PAUSED)
   setTimeout(() => {
     // if this is the first time we're called, make sure our current
     // state is up to date
@@ -230,7 +230,7 @@ export const doGoBackInTime = () => {
 export const doGoForwardInTime = () => {
   const newTmp = getGoForwardIndex()
   if (newTmp < 0) return
-  doSetCPUState(STATE.PAUSED)
+  doSetCPUState(RUN_MODE.PAUSED)
   setTimeout(() => {
     iTempState = newTmp
     doRestoreSaveState(saveStates[newTmp])
@@ -239,7 +239,7 @@ export const doGoForwardInTime = () => {
 
 export const doGotoTimeTravelIndex = (index: number) => {
   if (index < 0 || index >= saveStates.length) return
-  doSetCPUState(STATE.PAUSED)
+  doSetCPUState(RUN_MODE.PAUSED)
   setTimeout(() => {
     iTempState = index
     doRestoreSaveState(saveStates[index])
@@ -262,19 +262,19 @@ export const doSaveTimeSlice = () => {
 
 export const doStepInto = () => {
   doSetBreakpointSkipOnce()
-  if (cpuState === STATE.IDLE) {
+  if (cpuState === RUN_MODE.IDLE) {
     doBoot()
-    cpuState = STATE.PAUSED
+    cpuState = RUN_MODE.PAUSED
   }
   processInstruction(true)
-  doSetCPUState(STATE.PAUSED)
+  doSetCPUState(RUN_MODE.PAUSED)
 }
 
 export const doStepOver = () => {
   doSetBreakpointSkipOnce()
-  if (cpuState === STATE.IDLE) {
+  if (cpuState === RUN_MODE.IDLE) {
     doBoot()
-    cpuState = STATE.PAUSED
+    cpuState = RUN_MODE.PAUSED
   }
   if (memGet(s6502.PC) === 0x20) {
     // If we're at a JSR then briefly step in, then step out.
@@ -288,12 +288,12 @@ export const doStepOver = () => {
 
 export const doStepOut = () => {
   doSetBreakpointSkipOnce()
-  if (cpuState === STATE.IDLE) {
+  if (cpuState === RUN_MODE.IDLE) {
     doBoot()
-    cpuState = STATE.PAUSED
+    cpuState = RUN_MODE.PAUSED
   }
   setStepOut()
-  doSetCPUState(STATE.RUNNING)
+  doSetCPUState(RUN_MODE.RUNNING)
 }
 
 const resetRefreshCounter = () => {
@@ -302,15 +302,15 @@ const resetRefreshCounter = () => {
   startTime = prevTime
 }
 
-export const doSetCPUState = (cpuStateIn: STATE) => {
+export const doSetCPUState = (cpuStateIn: RUN_MODE) => {
   configureMachine()
   cpuState = cpuStateIn
-  if (cpuState === STATE.PAUSED) {
+  if (cpuState === RUN_MODE.PAUSED) {
     doPauseDrive()
     if (!verifyAddressWithinDisassembly(disassemblyAddr, s6502.PC)) {
       disassemblyAddr = s6502.PC
     }
-  } else if (cpuState === STATE.RUNNING) {
+  } else if (cpuState === RUN_MODE.RUNNING) {
     doPauseDrive(true)
     doSetBreakpointSkipOnce()
     // If we go back in time and then resume running, remove all future states.
@@ -333,11 +333,11 @@ export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) =
       setPC(addr)
     }
   }
-  if (cpuState === STATE.IDLE) {
-    doSetCPUState(STATE.NEED_BOOT)
+  if (cpuState === RUN_MODE.IDLE) {
+    doSetCPUState(RUN_MODE.NEED_BOOT)
     // Wait a bit for the cpu to boot and then do reset.
     setTimeout(() => {
-      doSetCPUState(STATE.NEED_RESET)
+      doSetCPUState(RUN_MODE.NEED_RESET)
       // After giving the reset some time, load the binary block.
       setTimeout(() => {
         loadBlock()
@@ -360,13 +360,13 @@ const getDebugDump = () => {
 }
 
 const doGetDisassembly = () => {
-  if (cpuState === STATE.RUNNING) return ''
+  if (cpuState === RUN_MODE.RUNNING) return ''
   return getDisassembly(disassemblyAddr >= 0 ? disassemblyAddr : s6502.PC)
 }
 
 const updateExternalMachineState = () => {
   const state: MachineState = {
-    state: cpuState,
+    runMode: cpuState,
     s6502: s6502,
     speed: speed,
     altChar: SWITCHES.ALTCHARSET.isSet,
@@ -393,15 +393,15 @@ const doAdvance6502 = () => {
   timeDelta = newTime - prevTime
   if (timeDelta < refreshTime) return
   prevTime = newTime
-  if (cpuState === STATE.IDLE || cpuState === STATE.PAUSED) {
+  if (cpuState === RUN_MODE.IDLE || cpuState === RUN_MODE.PAUSED) {
     return;
   }
-  if (cpuState === STATE.NEED_BOOT) {
+  if (cpuState === RUN_MODE.NEED_BOOT) {
     doBoot();
-    doSetCPUState(STATE.RUNNING)
-  } else if (cpuState === STATE.NEED_RESET) {
+    doSetCPUState(RUN_MODE.RUNNING)
+  } else if (cpuState === RUN_MODE.NEED_RESET) {
     doReset();
-    doSetCPUState(STATE.RUNNING)
+    doSetCPUState(RUN_MODE.RUNNING)
   }
   let cycleTotal = 0
   for (;;) {
@@ -434,8 +434,8 @@ const doAdvance6502 = () => {
 const doAdvance6502Timer = () => {
   doAdvance6502()
   const iRefreshFinish = (iRefresh + 1)
-  while (cpuState === STATE.RUNNING && iRefresh !== iRefreshFinish) {
+  while (cpuState === RUN_MODE.RUNNING && iRefresh !== iRefreshFinish) {
     doAdvance6502()
   }
-  setTimeout(doAdvance6502Timer, cpuState === STATE.RUNNING ? 0 : 20)
+  setTimeout(doAdvance6502Timer, cpuState === RUN_MODE.RUNNING ? 0 : 20)
 }

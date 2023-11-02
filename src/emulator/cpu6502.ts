@@ -2,7 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pc
 import { memGet, specialJumpTable } from "./memory"
 import { doSetCPUState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { STATE } from "./utility/utility"
+import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
@@ -112,7 +112,7 @@ export const processInstruction = (step = false) => {
     const breakpoint = breakpoints.get(PC1)
     if (breakpoint && !breakpoint.disabled && !breakpointSkipOnce) {
       if (breakpoint.once) breakpoints.delete(PC1)
-      doSetCPUState(STATE.PAUSED)
+      doSetCPUState(RUN_MODE.PAUSED)
       return -1
     }
   }
@@ -150,7 +150,7 @@ export const processInstruction = (step = false) => {
   }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
-    doSetCPUState(STATE.PAUSED)
+    doSetCPUState(RUN_MODE.PAUSED)
     return -1
   }
   return cycles

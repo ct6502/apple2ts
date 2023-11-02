@@ -1,7 +1,7 @@
 import React from "react"
 import { Button } from "@mui/material"
 import { passSetCPUState, handleSetDiskData, updateDisplay } from "../main2worker";
-import { STATE, replaceSuffix } from "../emulator/utility/utility";
+import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { resetAllDiskDrives } from "./diskinterface";
 import disks from "./img/disks.png"
 import DiskImageDialog from "./diskimagedialog";
@@ -30,7 +30,7 @@ export const DiskImageChooser = () => {
       }
     }
     updateDisplay(0, helptext)
-    passSetCPUState(STATE.NEED_BOOT)
+    passSetCPUState(RUN_MODE.NEED_BOOT)
   }
 
   const handleSelect = (disk: diskImage) => {

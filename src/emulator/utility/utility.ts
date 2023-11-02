@@ -1,6 +1,6 @@
 import { KeyboardEvent } from "react"
 
-export enum STATE {
+export enum RUN_MODE {
   IDLE = 0,
   RUNNING = -1,
   PAUSED = -2,
@@ -92,7 +92,7 @@ export enum DRIVE {
   TRACK_SEEK,
 }
 
-export enum MODE {
+export enum ADDR_MODE {
   IMPLIED,  // BRK
   IMM,      // LDA #$01
   ZP_REL,   // LDA $C0 or BCC $FF

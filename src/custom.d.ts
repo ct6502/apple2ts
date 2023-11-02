@@ -52,7 +52,7 @@ type Apple2SaveState = {
 }
 
 type DisplayProps = {
-  machineState: STATE,
+  runMode: RUN_MODE,
   speed: number,
   myCanvas: React.RefObject<HTMLCanvasElement>,
   hiddenCanvas: React.RefObject<HTMLCanvasElement>,
@@ -81,7 +81,7 @@ type DisplayProps = {
 }
 
 type MachineState = {
-  state: STATE,
+  runMode: number,
   s6502: STATE6502,
   speed: number,
   altChar: boolean,

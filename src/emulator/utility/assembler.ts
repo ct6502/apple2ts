@@ -1,5 +1,5 @@
 import { pcodes } from "../instructions";
-import { toHex, isBranchInstruction, MODE } from "./utility";
+import { toHex, isBranchInstruction, ADDR_MODE } from "./utility";
 
 const doOutput = false
 
@@ -28,29 +28,29 @@ const splitOperand = (operand: string) => {
   return codeLine
 }
 
-const parseNumberOptionalAddressMode = (operand: string): [MODE, number] => {
-  let mode: MODE = MODE.IMPLIED;
+const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] => {
+  let mode: ADDR_MODE = ADDR_MODE.IMPLIED;
   let value = -1
 
   if (operand.length > 0) {
     if (operand.startsWith('#')) {
-      mode = MODE.IMM
+      mode = ADDR_MODE.IMM
       operand = operand.substring(1)
     } else if (operand.startsWith('(')) {
       if (operand.endsWith(",Y")) {
-        mode = MODE.IND_Y
+        mode = ADDR_MODE.IND_Y
       } else if (operand.endsWith(",X)")) {
-        mode = MODE.IND_X
+        mode = ADDR_MODE.IND_X
       } else {
-        mode = MODE.IND
+        mode = ADDR_MODE.IND
       }
       operand = operand.substring(1)
     } else if (operand.endsWith(",X")) {
-      mode = (operand.length > 5) ? MODE.ABS_X : MODE.ZP_X
+      mode = (operand.length > 5) ? ADDR_MODE.ABS_X : ADDR_MODE.ZP_X
     } else if (operand.endsWith(",Y")) {
-      mode = (operand.length > 5) ? MODE.ABS_Y : MODE.ZP_Y
+      mode = (operand.length > 5) ? ADDR_MODE.ABS_Y : ADDR_MODE.ZP_Y
     } else {
-      mode = (operand.length > 3) ? MODE.ABS : MODE.ZP_REL
+      mode = (operand.length > 3) ? ADDR_MODE.ABS : ADDR_MODE.ZP_REL
     }
 
     if (operand.startsWith('$')) {
@@ -78,8 +78,8 @@ const parseNumberOptionalAddressMode = (operand: string): [MODE, number] => {
 let labels: { [key: string]: number } = {};
 
 const getOperandModeValue =
-  (pc: number, instr: string, operand: string, pass: 1 | 2): [MODE, number] => {
-    let mode = MODE.IMPLIED
+  (pc: number, instr: string, operand: string, pass: 1 | 2): [ADDR_MODE, number] => {
+    let mode = ADDR_MODE.IMPLIED
     let value = -1
     if (operand.match(/^[#]?[$0-9()]+/)) {
       return parseNumberOptionalAddressMode(operand)
@@ -115,16 +115,16 @@ const getOperandModeValue =
         value = (value % 65536 + 65536) % 65536
       }
       if (isBranchInstruction(instr)) {
-        mode = MODE.ZP_REL
+        mode = ADDR_MODE.ZP_REL
         value = (value - pc + 254)
         if (value > 255) value -= 256
       } else {
         if (isImmediate) {
-          mode = MODE.IMM
+          mode = ADDR_MODE.IMM
         } else {
-          mode = (value >= 0 && value <= 255) ? MODE.ZP_REL : MODE.ABS
-          mode = (labelOperand.idx === 'X') ? (mode === MODE.ABS ? MODE.ABS_X : MODE.ZP_X) : mode
-          mode = (labelOperand.idx === 'Y') ? (mode === MODE.ABS ? MODE.ABS_Y : MODE.ZP_Y) : mode
+          mode = (value >= 0 && value <= 255) ? ADDR_MODE.ZP_REL : ADDR_MODE.ABS
+          mode = (labelOperand.idx === 'X') ? (mode === ADDR_MODE.ABS ? ADDR_MODE.ABS_X : ADDR_MODE.ZP_X) : mode
+          mode = (labelOperand.idx === 'Y') ? (mode === ADDR_MODE.ABS ? ADDR_MODE.ABS_Y : ADDR_MODE.ZP_Y) : mode
         }
       }
     }
@@ -149,7 +149,7 @@ const handleLabel = (parts: CodeLine, pc: number) => {
   if (parts.instr === 'EQU') {
     //const [mode, value] = parseNumberOptionalAddressMode(parts.operand)
     const [mode, value] = getOperandModeValue(pc, parts.instr, parts.operand, 2)
-    if (mode !== MODE.ABS && mode !== MODE.ZP_REL) {
+    if (mode !== ADDR_MODE.ABS && mode !== ADDR_MODE.ZP_REL) {
       throw new Error("Illegal EQU value: " + parts.operand)
     }
     // console.log(`LABEL=${parts.label} VALUE=${value.toString(16)}`)
@@ -205,7 +205,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
     }
 
     let newInstructions: Array<number> = []
-    let mode: MODE
+    let mode: ADDR_MODE
     let value: number
 
     // Check psdudo-ops first

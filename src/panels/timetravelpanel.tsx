@@ -44,13 +44,13 @@ class TimeTravelPanel extends React.Component<object, object>
     const thumb = this.getTimeTravelThumbnails().split('\n')
     if (thumb.length > 1) {
       timeTravelThumbnails = <>{thumb.map((line, index) => (
-        <p key={index}
+        <div key={index}
           id={index === iTempState ? "tempStateIndex" : ""}
           className="stateLine"
           onClick={() => this.selectStateLine(index)}>
           {line}
           {index === iTempState ? <div className="highlightLine"></div> : <></>}
-        </p>
+        </div>
         ))}
       </>
     }

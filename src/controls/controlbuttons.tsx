@@ -1,4 +1,4 @@
-import { STATE, colorToName } from "../emulator/utility/utility";
+import { RUN_MODE, colorToName } from "../emulator/utility/utility";
 import { passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -36,24 +36,24 @@ const ControlButtons = (props: DisplayProps) => {
   return <span className="flexRow">
     <button className="pushButton"
       title="Boot"
-      onClick={() => { handleSetCPUState(STATE.NEED_BOOT) }}>
+      onClick={() => { handleSetCPUState(RUN_MODE.NEED_BOOT) }}>
       <FontAwesomeIcon icon={faPowerOff}/>
     </button>
     <button className="pushButton"
       title="Reset"
-      onClick={() => { handleSetCPUState(STATE.NEED_RESET) }}
-      disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
+      onClick={() => { handleSetCPUState(RUN_MODE.NEED_RESET) }}
+      disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
       >
       <FontAwesomeIcon icon={faArrowRotateRight}/>
     </button>
     <button className="pushButton"
-      title={props.machineState === STATE.PAUSED ? "Resume" : "Pause"}
+      title={props.runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
       onClick={() => {
-        handleSetCPUState(props.machineState === STATE.PAUSED ?
-          STATE.RUNNING : STATE.PAUSED)
+        handleSetCPUState(props.runMode === RUN_MODE.PAUSED ?
+          RUN_MODE.RUNNING : RUN_MODE.PAUSED)
       }}
-      disabled={props.machineState === STATE.IDLE}>
-      {props.machineState === STATE.PAUSED ?
+      disabled={props.runMode === RUN_MODE.IDLE}>
+      {props.runMode === RUN_MODE.PAUSED ?
       <FontAwesomeIcon icon={faPlay}/> :
       <FontAwesomeIcon icon={faPause}/>}
     </button>
@@ -109,7 +109,7 @@ const ControlButtons = (props: DisplayProps) => {
     </button>
     <button className="pushButton" title="Save State"
       onClick={() => props.handleFileSave()}
-      disabled={props.machineState === STATE.IDLE || props.machineState === STATE.NEED_BOOT}
+      disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
     >
       <FontAwesomeIcon icon={faSave}/>
     </button>

@@ -1,13 +1,15 @@
 import React from "react";
 import "./debugpanel.css"
 import { handleGetDebugDump } from "../main2worker";
+import State6502Controls from "./state6502controls";
 
-class DebugDumpPanel extends React.Component<object, object>
+class DebugInfoPanel extends React.Component<object, object>
 {
   render() {
     return (
       <div className="roundRectBorder">
         <p className="defaultFont panelTitle bgColor">Debug Info</p>
+        <State6502Controls/>
         <div className="debugPanel"
           style={{
             width: '330px', // Set the width to your desired value
@@ -21,4 +23,4 @@ class DebugDumpPanel extends React.Component<object, object>
   }
 }
 
-export default DebugDumpPanel;
+export default DebugInfoPanel;

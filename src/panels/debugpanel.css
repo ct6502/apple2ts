@@ -1,8 +1,8 @@
 .address {
   font-family: monospace;
-  font-size: 10pt;
-  width: 4em;
-  padding: 3px;
+  font-size: 8pt;
+  width: 3em;
+  padding: 2px;
   align-self: center;
   text-align: right;
   margin-left: 3px;
@@ -94,6 +94,11 @@
   padding: 10px;
   margin: 7px;
   position: relative;
+}
+
+.biggerFont {
+  font-size: 10pt;
+  padding-top: 1px;
 }
 
 .panelTitle {

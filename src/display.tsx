@@ -1,10 +1,10 @@
 // Chris Torrence, 2022
-import { setDisplay, handleGetState, passSetCPUState,
+import { setDisplay, handleGetRunMode, passSetCPUState,
   passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename, handleCanGoBackward, handleCanGoForward } from "./main2worker"
-import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
+import { RUN_MODE, getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
@@ -134,7 +134,7 @@ class DisplayApple2 extends React.Component<object,
     if (saveState.emulator?.mockingboardMode !== undefined) {
       this.handleMockingboardMode(saveState.emulator.mockingboardMode)
     }
-    passSetCPUState(STATE.RUNNING)
+    passSetCPUState(RUN_MODE.RUNNING)
   }
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,7 +238,7 @@ class DisplayApple2 extends React.Component<object,
 
   render() {
     const props: DisplayProps = {
-      machineState: handleGetState(),
+      runMode: handleGetRunMode(),
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
       hiddenCanvas: this.hiddenCanvas,
