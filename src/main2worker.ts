@@ -29,8 +29,12 @@ const doPostMessage = (msg: MSG_MAIN, payload: any) => {
   worker.postMessage({msg, payload});
 }
 
-export const passSetCPUState = (state: RUN_MODE) => {
-  doPostMessage(MSG_MAIN.STATE, state)
+export const passSetRunMode = (runMode: RUN_MODE) => {
+  doPostMessage(MSG_MAIN.RUN_MODE, runMode)
+}
+
+export const passSetState6502 = (state: STATE6502) => {
+  doPostMessage(MSG_MAIN.STATE6502, state)
 }
 
 export const passBreakpoints = (breakpoints: Breakpoints) => {

@@ -1,5 +1,5 @@
 // Chris Torrence, 2022
-import { setDisplay, handleGetRunMode, passSetCPUState,
+import { setDisplay, handleGetRunMode, passSetRunMode,
   passSetNormalSpeed, handleGetTextPage,
   passSetDebug, handleGetButton,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
@@ -134,7 +134,7 @@ class DisplayApple2 extends React.Component<object,
     if (saveState.emulator?.mockingboardMode !== undefined) {
       this.handleMockingboardMode(saveState.emulator.mockingboardMode)
     }
-    passSetCPUState(RUN_MODE.RUNNING)
+    passSetRunMode(RUN_MODE.RUNNING)
   }
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {

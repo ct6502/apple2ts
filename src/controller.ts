@@ -1,6 +1,6 @@
 import { doPlayDriveSound } from "./devices/diskinterface"
 import { DRIVE, RUN_MODE } from "./emulator/utility/utility"
-import { passSetCPUState, passSetDisassembleAddress } from "./main2worker"
+import { passSetRunMode, passSetDisassembleAddress } from "./main2worker"
 
 export const handleSetCPUState = (state: RUN_MODE) => {
   // This is a hack to force the browser to start playing sound after a user gesture.
@@ -12,5 +12,5 @@ export const handleSetCPUState = (state: RUN_MODE) => {
   } else {
     passSetDisassembleAddress(RUN_MODE.RUNNING)
   }
-  passSetCPUState(state)
+  passSetRunMode(state)
 }

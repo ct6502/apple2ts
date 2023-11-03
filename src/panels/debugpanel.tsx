@@ -11,8 +11,8 @@ class DebugPanel extends React.Component<object, object>
       <div className="flexRow">
         <DisassemblyPanel/>
         <span className="flexColumn">
-          <TimeTravelPanel/>
           <DebugInfoPanel/>
+          <TimeTravelPanel/>
         </span>
       </div>
     )

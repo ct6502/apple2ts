@@ -1,7 +1,7 @@
-import { doSetCPUState,
+import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502 } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -64,8 +64,11 @@ export const passTxCommData = (data: Uint8Array) => {
 
 self.onmessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_MAIN) {
-    case MSG_MAIN.STATE:
-      doSetCPUState(e.data.payload)
+    case MSG_MAIN.RUN_MODE:
+      doSetRunMode(e.data.payload)
+      break
+    case MSG_MAIN.STATE6502:
+      doSetState6502(e.data.payload as STATE6502)
       break
     case MSG_MAIN.DEBUG:
 //      doSetDebug(e.data.payload)

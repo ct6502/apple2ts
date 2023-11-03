@@ -1,6 +1,6 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, specialJumpTable } from "./memory"
-import { doSetCPUState } from "./motherboard"
+import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { RUN_MODE } from "./utility/utility"
 
@@ -112,7 +112,7 @@ export const processInstruction = (step = false) => {
     const breakpoint = breakpoints.get(PC1)
     if (breakpoint && !breakpoint.disabled && !breakpointSkipOnce) {
       if (breakpoint.once) breakpoints.delete(PC1)
-      doSetCPUState(RUN_MODE.PAUSED)
+      doSetRunMode(RUN_MODE.PAUSED)
       return -1
     }
   }
@@ -150,7 +150,7 @@ export const processInstruction = (step = false) => {
   }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
-    doSetCPUState(RUN_MODE.PAUSED)
+    doSetRunMode(RUN_MODE.PAUSED)
     return -1
   }
   return cycles

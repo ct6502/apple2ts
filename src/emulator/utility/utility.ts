@@ -22,7 +22,8 @@ export enum MSG_WORKER {
 }
 
 export enum MSG_MAIN {
-  STATE,
+  RUN_MODE,
+  STATE6502,
   DEBUG,
   DISASSEMBLE_ADDR,
   BREAKPOINTS,

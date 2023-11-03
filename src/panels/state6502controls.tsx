@@ -1,9 +1,11 @@
 import React, { KeyboardEvent } from "react";
 import "./debugpanel.css"
-import { handleGetState6502, passSetDisassembleAddress } from "../main2worker";
+import { handleGetRunMode, handleGetState6502, passSetState6502 } from "../main2worker";
+import { RUN_MODE, toHex } from "../emulator/utility/utility";
 
 class State6502Controls extends React.Component<object, { PC: string; }>
 {
+  previousRunMode = RUN_MODE.IDLE
   constructor(props: object) {
     super(props);
     this.state = {
@@ -20,13 +22,22 @@ class State6502Controls extends React.Component<object, { PC: string; }>
     if (e.key === 'Enter') {
       e.preventDefault()
       const addr = parseInt(this.state.PC || '0', 16)
-      passSetDisassembleAddress(addr)
-      this.setState({PC: addr.toString(16).toUpperCase()})
+      const s6502 = handleGetState6502()
+      s6502.PC = addr
+      passSetState6502(s6502)
+//      passSetDisassembleAddress(addr)
     }
   }
   render() {
-    const s6502 = handleGetState6502()
-    console.log(s6502.PC)
+    const runMode = handleGetRunMode()
+    let PC = this.state.PC
+    if (this.previousRunMode !== runMode) {
+      this.previousRunMode = runMode
+      if (runMode === RUN_MODE.PAUSED) {
+        const s6502 = handleGetState6502()
+        PC = toHex(s6502.PC, 4)
+      }
+    }
     // PStatus: number,
     // PC: number,
     // Accum: number,
@@ -41,7 +52,8 @@ class State6502Controls extends React.Component<object, { PC: string; }>
         <input className="address"
           type="text"
           placeholder=""
-          value={this.state.PC}
+          disabled={runMode !== RUN_MODE.PAUSED}
+          value={PC}
           onChange={this.handleDisassembleAddrChange}
           onKeyDown={this.handleDisassembleAddrKeyDown}
         />

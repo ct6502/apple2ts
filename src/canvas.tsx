@@ -1,6 +1,6 @@
 import React, { useEffect, KeyboardEvent } from 'react';
 import "./canvas.css"
-import { passSetCPUState, passKeypress,
+import { passSetRunMode, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   updateDisplay, 
   passGoBackInTime,
@@ -56,12 +56,12 @@ const Apple2Canvas = (props: DisplayProps) => {
   const metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
-    b: () => passSetCPUState(RUN_MODE.NEED_BOOT),
+    b: () => passSetRunMode(RUN_MODE.NEED_BOOT),
     c: () => props.handleCopyToClipboard(),
     f: () => props.handleSpeedChange(!props.speedCheck),
     o: () => props.handleFileOpen(),
-    p: () => passSetCPUState(props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
-    r: () => passSetCPUState(RUN_MODE.NEED_RESET),
+    p: () => passSetRunMode(props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
+    r: () => passSetRunMode(RUN_MODE.NEED_RESET),
     s: () => props.handleFileSave()
   }
 
@@ -114,7 +114,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     // If we're paused, allow <space> to resume
     if (props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
-      passSetCPUState(RUN_MODE.RUNNING)
+      passSetRunMode(RUN_MODE.RUNNING)
       keyHandled = true
     }
     if (keyHandled) {

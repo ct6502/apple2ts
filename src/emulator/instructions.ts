@@ -14,7 +14,7 @@ export const setY = (value: number) => {
 
 export const setCycleCount = (cycles: number) => { s6502.cycleCount = cycles }
 
-export const set6502State = (restore6502: STATE6502) => {
+export const setState6502 = (restore6502: STATE6502) => {
   // Ensure that any properties that aren't in restore6502 get reset.
   reset6502()
   // This should only copy properties that currently exist in restore6502.
