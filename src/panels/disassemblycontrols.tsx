@@ -50,7 +50,7 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
     const isJSR = handleGetNextInstruction() === 'JSR'
     return (
       <span className="flexRow">
-        <input className="address"
+        <input className="hexField"
           type="text"
           placeholder=""
           value={this.state.address}

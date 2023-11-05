@@ -1,4 +1,4 @@
-.address {
+.hexField {
   font-family: monospace;
   font-size: 8pt;
   width: 3em;
@@ -11,9 +11,18 @@
   border-width: 1px;
 }
 
-.address:focus {
+.hexField:focus {
   outline: none;
   border: 1px solid blue;
+}
+
+.smallField {
+  width: 2em;
+}
+
+.debugCheckbox {
+  margin: 0;
+  transform: scale(0.75)
 }
 
 .cropBottom {
@@ -99,6 +108,7 @@
 .biggerFont {
   font-size: 10pt;
   padding-top: 1px;
+  text-align: center;
 }
 
 .panelTitle {

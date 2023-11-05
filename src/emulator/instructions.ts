@@ -66,7 +66,7 @@ export const getProcessorStatus = () => {
 }
 
 export const get6502StateString = () => {
-  return `PC= ${toHex(s6502.PC)}  ${getProcessorStatus()}`  
+  return `${toHex(s6502.PC)} ${getProcessorStatus()} NMI=${s6502.flagNMI ? '1' : '0'} IRQ=${toHex(s6502.flagIRQ)}`  
 }
 
 const stackDump = new Array<string>(256).fill('')
@@ -135,7 +135,7 @@ const BCD = () => (isDecimal() ? 1 : 0)
 const setDecimal = (set = true) => s6502.PStatus = set ? s6502.PStatus | 8 :
   s6502.PStatus & 0b11110111
 
-export const isBreak = () => { return ((s6502.PStatus & 0x10) !== 0); }
+// export const isBreak = () => { return ((s6502.PStatus & 0x10) !== 0); }
 const setBreak = (set = true) => s6502.PStatus = set ? s6502.PStatus | 0x10 :
   s6502.PStatus & 0b11101111
 

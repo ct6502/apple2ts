@@ -145,8 +145,11 @@ export const processInstruction = (step = false) => {
     setCycleCount(s6502.cycleCount + cycles)
   }
   if (s6502.flagIRQ) {
-    cycles = doInterruptRequest()
-    setCycleCount(s6502.cycleCount + cycles)
+    const intcycles = doInterruptRequest()
+    if (intcycles > 0) {
+      setCycleCount(s6502.cycleCount + intcycles)
+      cycles = intcycles
+    }
   }
   if (runToRTS && code.pcode === 0x60) {
     runToRTS = false
