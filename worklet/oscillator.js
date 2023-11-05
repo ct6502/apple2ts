@@ -1,14 +1,14 @@
 // Algorithm from Kent Dickey (KFest discord, 7/27/2023):
-// Keep track of the speaker clicks, let's say you do it in cycles.
-// Let's assume you need to create 44.1KHz samples. You remember the cycle
+// Keep track of the speaker clicks in cycles.
+// Assume you need to create 44.1KHz samples. Remember the cycle
 // time of the last sample you've sent to be played (start at 0). Now time
 // has passed and you need to generate N more samples. Convert the time of
 // the speaker clicks in samples, using 1.020484M cycles per 44100 samples
-// (so if the speaker clicked at cycle offset 201, that would be sample
-// 8.68. You need to remember if the speaker was high or low, so let's
-// assume it was high. Let's assume you have 5 speaker clicks:
-// sample 8.1, 8.68, 8.8, and 30.5. Then the audio samples will be:
-// [0..7]=HIGH; [8]=(.1+(8.8-8.68))HIGH, [9...29]=LOW, [30]=0.5HIGH, [31...N]=HIGH.
+// (so if the speaker clicked at cycle offset 95, that would be sample
+// 4.1. You need to remember if the speaker was high or low, so let's assume it
+// was high. Now assume you have 5 speaker clicks at cycles [95, 108, 112, 243],
+// equal to samples [4.1, 4.67, 4.84, 10.5]. Then the audio samples will be:
+// [0..4]=HIGH, [4]=(0.1+(4.84-4.67))HIGH, [5...9]=LOW, [10]=0.5HIGH, [11...]=HIGH.
 // You calculate the contribution of the time the speaker is high to be the
 // multiplier of the high time. Any samples where the speaker didn't toggle
 // just repeats the speaker low/high position. 
