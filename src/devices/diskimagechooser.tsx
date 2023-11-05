@@ -3,7 +3,7 @@ import { Button } from "@mui/material"
 import { passSetRunMode, handleSetDiskData, updateDisplay } from "../main2worker";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { resetAllDiskDrives } from "./diskinterface";
-import disks from "./img/disks.png"
+import floppyDisks from "./img/disks.png"
 import DiskImageDialog from "./diskimagedialog";
 
 export const DiskImageChooser = () => {
@@ -42,7 +42,7 @@ export const DiskImageChooser = () => {
     <div className="diskImageMargins">
       <Button className="imgButton" variant="contained"
         onClick={handleClickOpen}>
-        <img className="multiDisk" src={disks} alt="disks" height="57px"/>
+        <img className="multiDisk" src={floppyDisks} alt="disks" height="65px"/>
       </Button>
       <DiskImageDialog
         onSelect={handleSelect}
