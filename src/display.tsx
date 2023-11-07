@@ -33,7 +33,7 @@ class DisplayApple2 extends React.Component<object,
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
   hiddenCanvas = React.createRef<HTMLCanvasElement>()
-  hiddenFileOpen: HTMLInputElement | null = null
+  hiddenFileOpen = React.createRef<HTMLInputElement>();
 
   constructor(props: object) {
     super(props);
@@ -151,10 +151,10 @@ class DisplayApple2 extends React.Component<object,
   };
 
   handleFileOpen = () => {
-    if (this.hiddenFileOpen) {
+    if (this.hiddenFileOpen.current) {
       // Hack - clear out old file so we can pick the same file again
-      this.hiddenFileOpen.value = "";
-      this.hiddenFileOpen.click()
+      this.hiddenFileOpen.current.value = "";
+      this.hiddenFileOpen.current.click()
     }
   }
 
@@ -294,7 +294,7 @@ class DisplayApple2 extends React.Component<object,
         <input
           type="file"
           accept=".a2ts"
-          ref={input => this.hiddenFileOpen = input}
+          ref={this.hiddenFileOpen}
           onChange={this.handleRestoreState}
           style={{display: 'none'}}
         />

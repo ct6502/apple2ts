@@ -115,11 +115,11 @@ export const resetAllDiskDrives = () => {
 class DiskInterface extends React.Component<object, object> {
   render() {
     return (
-      <span className="drives">
+      <span className="driveRow">
         <DiskImageChooser/>
-          <DiskDrive drive={0}/>
-          <DiskDrive drive={1}/>
-          <DiskDrive drive={2}/>
+        <DiskDrive drive={0}/>
+        <DiskDrive drive={1}/>
+        <DiskDrive drive={2}/>
       </span>
     );
   }

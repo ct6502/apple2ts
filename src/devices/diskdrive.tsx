@@ -28,7 +28,7 @@ const resetDrive = (drive: number) => {
 
 class DiskDrive extends React.Component<{drive: number},
   { displayBinaryDialog: boolean }> {
-  hiddenFileInput: HTMLInputElement | null = null
+  hiddenFileInput = React.createRef<HTMLInputElement>();
   binaryBuffer: Uint8Array = new Uint8Array()
 
   constructor(props: {drive: number}) {
@@ -95,7 +95,7 @@ class DiskDrive extends React.Component<{drive: number},
     let status = ['S7D1', 'S6D1', 'S6D2'][this.props.drive]
     status += dprops.status
     return (
-      <span className="drive">
+      <span className="driveClass">
         <img className="disk2"
           src={img1} alt={filename}
           title={filename}
@@ -106,16 +106,16 @@ class DiskDrive extends React.Component<{drive: number},
               }
               resetDrive(this.props.drive)
             }
-            if (this.hiddenFileInput) {
+            if (this.hiddenFileInput.current) {
               // Hack - clear out old file so we can pick the same file again
-              this.hiddenFileInput.value = "";
-              this.hiddenFileInput.click()
+              this.hiddenFileInput.current.value = "";
+              this.hiddenFileInput.current.click()
             }
           }} />
         <input
           type="file"
           accept=".hdv,.2mg,.dsk,.woz,.po,.do,.bin"
-          ref={input => this.hiddenFileInput = input}
+          ref={this.hiddenFileInput}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target?.files?.length) {
               this.readDisk(e.target.files[0], this.props.drive)

@@ -27,7 +27,7 @@ export const popKey = () => {
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
     if (keyBuffer.length === 0) {
-      doSaveTimeSlice()
+      doSaveTimeSlice(true)
     }
   }
 }

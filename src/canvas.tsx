@@ -41,7 +41,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const getSizes = () => {
     width = window.innerWidth - 20;
-    height = window.innerHeight - 160;
+    height = window.innerHeight - 250;
     // shrink either width or height to preserve aspect ratio
     if (width / screenRatio > height) {
       width = height * screenRatio

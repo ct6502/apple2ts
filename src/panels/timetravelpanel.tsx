@@ -4,10 +4,20 @@ import { handleGetMaxState,
   handleGetTimeTravelThumbnails,
   handleGetTempStateIndex, 
   passTimeTravelIndex} from "../main2worker";
+import { toHex } from "../emulator/utility/utility";
+const clock = 1020488
 
 class TimeTravelPanel extends React.Component<object, object>
 {
   stateThumbRef = React.createRef<HTMLDivElement>()
+  prevThumbnails = ''
+
+  convertTime(cycleCount: number) {
+    const t = cycleCount / clock
+    const min = Math.floor(t / 60)
+    const sec = ("0" + (t - 60 * min).toFixed(2)).slice(-5)
+    return `${("00" + min.toFixed()).slice(-3)}:${sec}`
+  }
 
   getTimeTravelThumbnails = () => {
     const maxState = handleGetMaxState()
@@ -15,22 +25,26 @@ class TimeTravelPanel extends React.Component<object, object>
     const thumbnails = handleGetTimeTravelThumbnails()
     let result = ''
     for (let i = 0; i < thumbnails.length; i++) {
-      result += `${thumbnails[i].s6502.cycleCount}\n`
+      const time = this.convertTime(thumbnails[i].s6502.cycleCount)
+      result += `t=${time} c=${thumbnails[i].s6502.cycleCount} PC=${toHex(thumbnails[i].s6502.PC)}\n`
     }
-    setTimeout(() => {
-      const lineToScrollTo = document.getElementById('tempStateIndex')
-      if (lineToScrollTo && this.stateThumbRef && this.stateThumbRef.current) {
-        // Calculate the scroll position to make the paragraph visible
-        const containerRect = this.stateThumbRef.current.getBoundingClientRect()
-        const targetRect = lineToScrollTo.getBoundingClientRect()
-        const isTargetAboveViewport = targetRect.top < containerRect.top;
-        const isTargetBelowViewport = targetRect.bottom > containerRect.bottom;
-        if (isTargetAboveViewport || isTargetBelowViewport) {
-          const scrollTop = targetRect.top - containerRect.top + this.stateThumbRef.current.scrollTop
-          this.stateThumbRef.current.scrollTop = scrollTop
+    if (result !== this.prevThumbnails) {
+      setTimeout(() => {
+        const lineToScrollTo = document.getElementById('tempStateIndex')
+        if (lineToScrollTo && this.stateThumbRef && this.stateThumbRef.current) {
+          // Calculate the scroll position to make the paragraph visible
+          const containerRect = this.stateThumbRef.current.getBoundingClientRect()
+          const targetRect = lineToScrollTo.getBoundingClientRect()
+          const isTargetAboveViewport = targetRect.top < containerRect.top;
+          const isTargetBelowViewport = targetRect.bottom > containerRect.bottom;
+          if (isTargetAboveViewport || isTargetBelowViewport) {
+            const scrollTop = targetRect.top - containerRect.top + this.stateThumbRef.current.scrollTop
+            this.stateThumbRef.current.scrollTop = scrollTop
+          }
         }
-      }
-    }, 50)
+      }, 50)
+    }
+    this.prevThumbnails = result
     return result
   }
 

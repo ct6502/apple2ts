@@ -262,10 +262,19 @@ const getTimeTravelThumbnails = () => {
   return result
 }
 
-export const doSaveTimeSlice = () => {
-  // Set a flag and save our slice at the end of the next 6502 display cycle.
-  // Otherwise we risk saving in the middle of a keystroke.
-  saveTimeSlice = true
+let timeout: NodeJS.Timeout | null = null
+
+// Set a flag and save our slice at the end of the next 6502 display cycle.
+// Otherwise we risk saving in the middle of a keystroke.
+export const doSaveTimeSlice = (collapseEvents = false) => {
+  if (timeout) {
+    clearTimeout(timeout)
+  }
+  if (collapseEvents) {
+    timeout = setTimeout(() => {saveTimeSlice = true; timeout = null}, 100)
+  } else {
+    saveTimeSlice = true
+  }
 }
 
 export const doStepInto = () => {

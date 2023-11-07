@@ -1,7 +1,6 @@
-.drives {
+.driveRow {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
 }
 
 .diskLabel {
@@ -54,7 +53,7 @@
   margin-right: 10px;
 }
 
-.drive {
+.driveClass {
   display: flex;
   flex-direction: column;
 }
