@@ -471,8 +471,8 @@ function initcanvas(canvas: HTMLCanvasElement)
   reset();
   clearcustomfonts();
 
-  console.log("canvas: ", _canvas);
-  console.log("ctx: ", _ctx);
+  // console.log("canvas: ", _canvas);
+  // console.log("ctx: ", _ctx);
 
   return true;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, KeyboardEvent } from 'react';
+import React, { KeyboardEvent } from 'react';
 import "./canvas.css"
 import { passSetRunMode, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
@@ -15,19 +15,24 @@ import { checkGamepad } from './devices/gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
-let startupTextTimeout = 0
 
 let showMouse = true
 // eslint-disable-next-line react-refresh/only-export-components
 export const setShowMouse = (set = true) => {
   showMouse = set
 }
+type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
 
-const Apple2Canvas = (props: DisplayProps) => {
-  let keyHandled = false
-  const myText = React.createRef<HTMLTextAreaElement>()
 
-  const pasteHandler = (e: ClipboardEvent) => {
+class Apple2Canvas extends React.Component<DisplayProps> {
+  keyHandled = false
+  myText = React.createRef<HTMLTextAreaElement>()
+  hiddenCanvas = React.createRef<HTMLCanvasElement>()
+  myContext: CanvasRenderingContext2D | null = null
+  hiddenContext: CanvasRenderingContext2D | null = null
+  startupTextTimeout = 0
+
+  pasteHandler = (e: ClipboardEvent) => {
     if (e.clipboardData) {
       let data = e.clipboardData.getData("text");
       if (data !== "") {
@@ -39,7 +44,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const getSizes = () => {
+  getSizes = () => {
     width = window.innerWidth - 20;
     height = window.innerHeight - 250;
     // shrink either width or height to preserve aspect ratio
@@ -53,71 +58,69 @@ const Apple2Canvas = (props: DisplayProps) => {
     return [width, height]
   }
 
-  const metaKeyHandlers: { [key: string]: () => void } = {
+  metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
     b: () => passSetRunMode(RUN_MODE.NEED_BOOT),
-    c: () => props.handleCopyToClipboard(),
-    f: () => props.handleSpeedChange(!props.speedCheck),
-    o: () => props.handleFileOpen(),
-    p: () => passSetRunMode(props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
+    c: () => this.props.handleCopyToClipboard(),
+    f: () => this.props.handleSpeedChange(!this.props.speedCheck),
+    o: () => this.props.handleFileOpen(),
+    p: () => passSetRunMode(this.props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
     r: () => passSetRunMode(RUN_MODE.NEED_RESET),
-    s: () => props.handleFileSave()
+    s: () => this.props.handleFileSave()
   }
 
-  const handleMetaKey = (key: string) => {
-    if (key in metaKeyHandlers) {
-      metaKeyHandlers[key]()
+  handleMetaKey = (key: string) => {
+    if (key in this.metaKeyHandlers) {
+      this.metaKeyHandlers[key]()
       return true
     }
     return false
   }
 
-  const arrowKeys: { [key: string]: ARROW } = {
+  arrowKeys: { [key: string]: ARROW } = {
     ArrowLeft: ARROW.LEFT,
     ArrowRight: ARROW.RIGHT,
     ArrowUp: ARROW.UP,
     ArrowDown: ARROW.DOWN,
   };
 
-  type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
-
-  const isOpenAppleDown = (e: keyEvent) => {
+  isOpenAppleDown = (e: keyEvent) => {
     return e.code === 'ShiftLeft'
   }
 
-  const isOpenAppleUp = (e: keyEvent) => {
+  isOpenAppleUp = (e: keyEvent) => {
     return e.code === 'ShiftLeft'
   }
 
-  const isClosedAppleDown = (e: keyEvent) => {
+  isClosedAppleDown = (e: keyEvent) => {
     return e.code === 'ShiftRight'
   }
 
-  const isClosedAppleUp = (e: keyEvent) => {
+  isClosedAppleUp = (e: keyEvent) => {
     return e.code === 'ShiftRight'
   }
 
-  const isMac = navigator.platform.startsWith('Mac')
+  isMac = navigator.platform.startsWith('Mac')
 
-  const handleKeyDown = (e: keyEvent) => {
-    if (isOpenAppleDown(e)) {
+  handleKeyDown = (e: keyEvent) => {
+    if (this.isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
     }
-    if (isClosedAppleDown(e)) {
+    if (this.isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
     }
     // TODO: What modifier key should be used on Windows? Can't use Ctrl
     // because that interferes with Apple II control keys like Ctrl+S
-    if (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')) {
-      keyHandled = handleMetaKey(e.key)
+    if (this.isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')) {
+      this.keyHandled = this.handleMetaKey(e.key)
     }
     // If we're paused, allow <space> to resume
-    if (props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
+    if (this.props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
       passSetRunMode(RUN_MODE.RUNNING)
-      keyHandled = true
+      this.keyHandled = true
     }
-    if (keyHandled) {
+    if (this.keyHandled) {
       passAppleCommandKeyRelease(true)
       passAppleCommandKeyRelease(false)
       e.preventDefault()
@@ -125,14 +128,14 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    if (e.key in arrowKeys && props.useArrowKeysAsJoystick) {
-      handleArrowKey(arrowKeys[e.key], false)
+    if (e.key in this.arrowKeys && this.props.useArrowKeysAsJoystick) {
+      handleArrowKey(this.arrowKeys[e.key], false)
       e.preventDefault()
       e.stopPropagation()
       return
     }
 
-    const key = convertAppleKey(e, props.uppercase);
+    const key = convertAppleKey(e, this.props.uppercase);
     if (key > 0) {
       passKeypress(String.fromCharCode(key))
       e.preventDefault()
@@ -143,155 +146,143 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
-  const handleKeyUp = (e: keyEvent) => {
-    if (isOpenAppleUp(e)) {
+  handleKeyUp = (e: keyEvent) => {
+    if (this.isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
-    } else if (isClosedAppleUp(e)) {
+    } else if (this.isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
-    } else if (e.key in arrowKeys) {
-      handleArrowKey(arrowKeys[e.key], true)
+    } else if (e.key in this.arrowKeys) {
+      handleArrowKey(this.arrowKeys[e.key], true)
     }
-    if (keyHandled) {
-      keyHandled = false
+    if (this.keyHandled) {
+      this.keyHandled = false
       e.preventDefault()
       e.stopPropagation()
     }
   }
 
-  // To prevent flicker, wait until font is downloaded before rendering startup text.
-  if (startupTextTimeout === 0) {
-    const setStartTextAfterFontLoad = () => {
-      if (document.fonts.check("12px PrintChar21")) {
-        setStartTextPage()
-        clearInterval(startupTextTimeout)
-        startupTextTimeout = -1
-      }
+  scaleMouseEvent = (event: MouseEvent): MouseEventSimple => {
+    // Scale mouse to go 0.0 -> 1.0 between inner canvas borders
+    // where the apple screen is rendered
+    const scale = (xx: number, ww: number) => {
+      const offset = 50
+      if (xx < offset)
+        return 0.0
+      else if (xx > (ww - offset))
+        return 1.0
+      xx = (xx-offset) / (ww-(2*offset))
+      return Math.min(Math.max(xx, -1), 1)
     }
-    startupTextTimeout = window.setInterval(setStartTextAfterFontLoad, 50);
+    let x = 0
+    let y = 0
+    if (this.props.myCanvas.current) {
+      const rect = this.props.myCanvas.current.getBoundingClientRect()
+      x = scale(event.clientX - rect.left, rect.width)
+      y = scale(event.clientY - rect.top, rect.height)
+    }
+    return {x: x, y: y, buttons: -1}
   }
 
-  useEffect(() => {
-    let context: CanvasRenderingContext2D | null
-    let hiddenContext: CanvasRenderingContext2D | null
-    let animationFrameId = 0
-    const scaleMouseEvent = (event: MouseEvent): MouseEventSimple => {
-      // Scale mouse to go 0.0 -> 1.0 between inner canvas borders
-      // where the apple screen is rendered
-      const scale = (xx: number, ww: number) => {
-        const offset = 50
-        if (xx < offset)
-          return 0.0
-        else if (xx > (ww - offset))
-          return 1.0
-        xx = (xx-offset) / (ww-(2*offset))
-        return Math.min(Math.max(xx, -1), 1)
-      }
-      let x = 0
-      let y = 0
-      if (props.myCanvas.current) {
-        const rect = props.myCanvas.current.getBoundingClientRect()
-        x = scale(event.clientX - rect.left, rect.width)
-        y = scale(event.clientY - rect.top, rect.height)
-      }
-      return {x: x, y: y, buttons: -1}
-    }
+  handleMouseMove = (event: MouseEvent) => {
+    passMouseEvent(this.scaleMouseEvent(event))
+  }
 
-    const handleMouseMove = (event: MouseEvent) => {
-      passMouseEvent(scaleMouseEvent(event))
-    }
+  handleMouseDown = (event: MouseEvent) => {
+    const evt = this.scaleMouseEvent(event)
+    evt.buttons = event.button === 0 ? 0x10 : 0x11
 
-    const handleMouseDown = (event: MouseEvent) => {
-      const evt = scaleMouseEvent(event)
-      evt.buttons = event.button === 0 ? 0x10 : 0x11
+    passMouseEvent(evt)
+  }
 
-      passMouseEvent(evt)
-    }
+  handleMouseUp = (event: MouseEvent) => {
+    const evt = this.scaleMouseEvent(event)
+    evt.buttons = event.button === 0 ? 0x00 : 0x01
 
-    const handleMouseUp = (event: MouseEvent) => {
-      const evt = scaleMouseEvent(event)
-      evt.buttons = event.button === 0 ? 0x00 : 0x01
+    passMouseEvent(evt)
+  }
 
-      passMouseEvent(evt)
-    }
-
-    if (props.myCanvas.current) {
-      context = props.myCanvas.current.getContext('2d')
-      props.myCanvas.current.addEventListener('mousemove', handleMouseMove)
-      props.myCanvas.current.addEventListener('mousedown', handleMouseDown)
-      props.myCanvas.current.addEventListener('mouseup', handleMouseUp)
-    }
-    if (props.hiddenCanvas.current) {
-      hiddenContext = props.hiddenCanvas.current.getContext('2d')
-    }
-    const handleResize = () => {
+  handleResize = () => {
+    if (this.props.myCanvas.current) {
+      const context = this.props.myCanvas.current.getContext('2d')
       if (context) {
-        [width, height] = getSizes()
+        [width, height] = this.getSizes()
         context.canvas.width = width;
         context.canvas.height = height;
         updateDisplay()
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const paste = (e: any) => {pasteHandler(e as ClipboardEvent)}
+  }
+
+  renderCanvas = () => {
+    if (this.myContext && this.hiddenContext) {
+      processDisplay(this.myContext, this.hiddenContext, this.props.colorMode, width, height)
+    }
+    window.requestAnimationFrame(this.renderCanvas)
+  }
+
+  componentDidMount() {
+    if (this.props.myCanvas.current) {
+      this.myContext = this.props.myCanvas.current.getContext('2d')
+      this.props.myCanvas.current.addEventListener('mousemove', this.handleMouseMove)
+      this.props.myCanvas.current.addEventListener('mousedown', this.handleMouseDown)
+      this.props.myCanvas.current.addEventListener('mouseup', this.handleMouseUp)
+    }
+    if (this.hiddenCanvas.current) {
+      this.hiddenContext = this.hiddenCanvas.current.getContext('2d')
+    }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const paste = (e: any) => {this.pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
-    window.addEventListener("resize", handleResize)
-    updateDisplay()
-
-    // Check for new gamepads on a regular basis
-//    const gamepadID = window.setInterval(() => {checkGamepad(x, y, props.useArrowKeysAsJoystick)}, 34)
-    const gamepadID = window.setInterval(() => {checkGamepad()}, 34)
-    const renderCanvas = () => {
-      if (context && hiddenContext) {
-        processDisplay(context, hiddenContext, props.colorMode, width, height)
+    window.addEventListener("resize", this.handleResize)
+    window.setInterval(() => {checkGamepad()}, 34)
+    // To prevent flicker, wait until font is downloaded before rendering startup text.
+    const setStartTextAfterFontLoad = () => {
+      if (document.fonts.check("12px PrintChar21")) {
+        // Also need to do an initial resize after everything is wired up.
+        this.handleResize()
+        setStartTextPage()
+        clearInterval(this.startupTextTimeout)
+        this.startupTextTimeout = -1
       }
-      animationFrameId = window.requestAnimationFrame(renderCanvas)
     }
-    renderCanvas()
+    this.startupTextTimeout = window.setTimeout(setStartTextAfterFontLoad, 50);
+    this.renderCanvas()
+  }
 
-    // Return a cleanup function when component unmounts
-    return () => {
-      window.removeEventListener("paste", paste)
-      window.cancelAnimationFrame(animationFrameId)
-      window.clearInterval(gamepadID)
-//      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
-      props.myCanvas.current?.removeEventListener('mousemove', handleMouseMove)
-      props.myCanvas.current?.removeEventListener('mousedown', handleMouseDown)
-      props.myCanvas.current?.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [props.myCanvas, props.hiddenCanvas, props.colorMode]);
+  render() {
+    [width, height] = this.getSizes()
 
-  [width, height] = getSizes()
+    // Make keyboard events work on touch devices by using a hidden textarea.
+    const isTouchDevice = "ontouchstart" in document.documentElement
+    const txt = isTouchDevice ?
+        <textarea className="hiddenTextarea" hidden={false} ref={this.myText}
+          onKeyDown={this.handleKeyDown}
+          onKeyUp={this.handleKeyUp}
+        /> : <span></span>
 
-  // Make keyboard events work on touch devices by using a hidden textarea.
-  const isTouchDevice = "ontouchstart" in document.documentElement
-  const txt = isTouchDevice ?
-      <textarea className="hiddenTextarea" hidden={false} ref={myText}
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}
-      /> : <span></span>
-
-  return <span className="canvasText">
-    <canvas ref={props.myCanvas}
-      className="mainCanvas"
-      style={{cursor: showMouse ? "auto" : "none"}}
-      width={width} height={height}
-      tabIndex={0}
-      onKeyDown={isTouchDevice ? ()=>{null} : handleKeyDown}
-      onKeyUp={isTouchDevice ? ()=>{null} : handleKeyUp}
-      onMouseEnter={() => {
-        myText.current?.focus()
-      }}
-      onMouseDown={() => {
-        myText.current?.focus()
-      }}
-    />
-    {/* Use hidden canvas/context so image rescaling works in iOS < 15.
-        See graphics.ts drawImage() */}
-    <canvas ref={props.hiddenCanvas}
-      hidden={true}
-      width={560} height={192} />
-    {txt}
+    return <span className="canvasText">
+      <canvas ref={this.props.myCanvas}
+        className="mainCanvas"
+        style={{cursor: showMouse ? "auto" : "none"}}
+        width={width} height={height}
+        tabIndex={0}
+        onKeyDown={isTouchDevice ? ()=>{null} : this.handleKeyDown}
+        onKeyUp={isTouchDevice ? ()=>{null} : this.handleKeyUp}
+        onMouseEnter={() => {
+          this.myText.current?.focus()
+        }}
+        onMouseDown={() => {
+          this.myText.current?.focus()
+        }}
+      />
+      {/* Use hidden canvas/context so image rescaling works in iOS < 15.
+          See graphics.ts drawImage() */}
+      <canvas ref={this.hiddenCanvas}
+        hidden={true}
+        width={560} height={192} />
+      {txt}
     </span>
-};
+  }
+}
 
 export default Apple2Canvas;

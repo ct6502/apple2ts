@@ -190,6 +190,8 @@ export const getMockingboardName = (index: number) => {
   return names[index]
 }
 
+export const getMockingboardMode = () => {return modeSave}
+
 export const changeMockingboardMode = (mode: number) => {
   modeSave = mode
   if (!chipMerge) return

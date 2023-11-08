@@ -9,6 +9,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG, svgLowercase, svgUppercase } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
+import { audioEnable, isAudioEnabled } from "../devices/speaker";
+import { changeMockingboardMode, getMockingboardMode } from "../devices/mockingboard_audio";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
@@ -36,8 +38,8 @@ const ConfigButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={"Toggle Sound"}
       style={{display: typeof AudioContext !== 'undefined' ? '' : 'none'}}
-      onClick={() => {props.handleAudioChange(!props.audioEnable)}}>
-      <FontAwesomeIcon icon={props.audioEnable ? faVolumeHigh : faVolumeXmark}/>
+      onClick={() => {audioEnable(!isAudioEnabled())}}>
+      <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark}/>
     </button>
     <button className="pushButton"
       title={props.uppercase ? "Uppercase" : "Lowercase"}
@@ -45,7 +47,7 @@ const ConfigButtons = (props: DisplayProps) => {
       {props.uppercase ? svgUppercase : svgLowercase}
     </button>
 
-    <MockingboardWaveform mode={props.mockingboardMode} change={props.handleMockingboardMode}/>
+    <MockingboardWaveform mode={getMockingboardMode()} change={changeMockingboardMode}/>
 
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}

@@ -100,7 +100,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     <Dialog onClose={handleClose} open={open}>
       <div className="flexRowSpaceBetween wrap">
       <svg height="35" width="150">{imagewriter2}</svg>
-        <div>
+        <div className="flexRow">
         <button className="pushButton"
           style={{color: `${buttonColor}`}}
           title="Save Stored Data"

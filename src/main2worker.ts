@@ -251,8 +251,12 @@ export const handleGetNextInstruction = () => {
   return machineState.nextInstruction
 }
 
-export const handleGetButton = (left: boolean) => {
-  return left ? machineState.button0 : machineState.button1
+export const handleGetLeftButton = () => {
+  return machineState.button0
+}
+
+export const handleGetRightButton = () => {
+  return machineState.button1
 }
 
 export const handleCanGoBackward = () => {

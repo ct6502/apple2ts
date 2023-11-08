@@ -13,7 +13,7 @@ const ControlPanel = (props: DisplayProps) => {
       <ConfigButtons {...props}/>
       <FullScreenButton {...props}/>
       </span>
-      <KeyboardButtons {...props}/>
+      <KeyboardButtons/>
     </span>
   )
 }

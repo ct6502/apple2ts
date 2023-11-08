@@ -1,9 +1,9 @@
 // Chris Torrence, 2022
 import { setDisplay, handleGetRunMode, passSetRunMode,
   passSetNormalSpeed, handleGetTextPage,
-  passSetDebug, handleGetButton,
+  passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, handleCanGoBackward, handleCanGoForward } from "./main2worker"
+  handleGetFilename } from "./main2worker"
 import { RUN_MODE, getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -12,18 +12,16 @@ import React from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugPanel from "./panels/debugpanel"
 import { preloadAssets } from "./devices/assets"
-import { changeMockingboardMode } from "./devices/mockingboard_audio"
-import { audioEnable } from "./devices/speaker"
+import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
 import ImageWriter from "./devices/imagewriter"
+import { audioEnable, isAudioEnabled } from "./devices/speaker"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<object,
   { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
-    mockingboardMode: number;
     useArrowKeysAsJoystick: boolean;
-    audioEnable: boolean;
     colorMode: COLOR_MODE;
     doDebug: boolean;
     breakpoint: string;
@@ -32,7 +30,6 @@ class DisplayApple2 extends React.Component<object,
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
-  hiddenCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen = React.createRef<HTMLInputElement>();
 
   constructor(props: object) {
@@ -42,8 +39,6 @@ class DisplayApple2 extends React.Component<object,
       currentSpeed: 1.02,
       speedCheck: true,
       uppercase: true,
-      mockingboardMode: 0,
-      audioEnable: true,
       useArrowKeysAsJoystick: true,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
@@ -96,11 +91,6 @@ class DisplayApple2 extends React.Component<object,
     this.setState({ colorMode: mode });
   };
 
-  handleAudioChange = (enable: boolean) => {
-    audioEnable(enable)
-    this.setState({ audioEnable: enable })
-  };
-
   handleDebugChange = (enable: boolean) => {
     passSetDebug(enable)
     this.setState({ doDebug: enable });
@@ -108,11 +98,6 @@ class DisplayApple2 extends React.Component<object,
 
   handleUpperCaseChange = (enable: boolean) => {
     this.setState({ uppercase: enable });
-  };
-
-  handleMockingboardMode = (mode: number) => {
-    changeMockingboardMode(mode)
-    this.setState({ mockingboardMode: mode })
   };
 
   handleUseArrowKeyJoystick = (enable: boolean) => {
@@ -129,10 +114,10 @@ class DisplayApple2 extends React.Component<object,
       this.handleUpperCaseChange(saveState.emulator.uppercase)
     }
     if (saveState.emulator?.audioEnable !== undefined) {
-      this.handleAudioChange(saveState.emulator.audioEnable)
+      audioEnable(saveState.emulator.audioEnable)
     }
     if (saveState.emulator?.mockingboardMode !== undefined) {
-      this.handleMockingboardMode(saveState.emulator.mockingboardMode)
+      changeMockingboardMode(saveState.emulator.mockingboardMode)
     }
     passSetRunMode(RUN_MODE.RUNNING)
   }
@@ -167,8 +152,8 @@ class DisplayApple2 extends React.Component<object,
       help: this.state.helptext.split('\n')[0],
       colorMode: this.state.colorMode,
       uppercase: this.state.uppercase,
-      audioEnable: this.state.audioEnable,
-      mockingboardMode: this.state.mockingboardMode,
+      audioEnable: isAudioEnabled(),
+      mockingboardMode: getMockingboardMode(),
     }
     const state = JSON.stringify(saveState, null, 2)
     const blob = new Blob([state], {type: "text/plain"});
@@ -241,29 +226,19 @@ class DisplayApple2 extends React.Component<object,
       runMode: handleGetRunMode(),
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
-      hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
-      canGoBackward: handleCanGoBackward(),
-      canGoForward: handleCanGoForward(),
       uppercase: this.state.uppercase,
-      mockingboardMode: this.state.mockingboardMode,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
-      audioEnable: this.state.audioEnable,
       doDebug: this.state.doDebug,
       handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
-      handleAudioChange: this.handleAudioChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
-      handleMockingboardMode: this.handleMockingboardMode,
       handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
-      updateDisplay: this.updateDisplay,
-      button0: handleGetButton(true),
-      button1: handleGetButton(false),
     }
     const width = props.myCanvas.current?.width
     const height = window.innerHeight - 30

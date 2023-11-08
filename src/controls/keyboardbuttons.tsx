@@ -1,4 +1,4 @@
-import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passSetGamepads } from "../main2worker"
+import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passSetGamepads } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -39,7 +39,7 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
   passSetGamepads(gamePads)
 }
 
-const KeyboardButtons = (props: DisplayProps) => {
+const KeyboardButtons = () => {
   const arrowKeys = [
     {name: 'Left', icon: faArrowLeft},
     {name: 'Right', icon: faArrowRight},
@@ -47,14 +47,14 @@ const KeyboardButtons = (props: DisplayProps) => {
     {name: 'Down', icon: faArrowDown},
   ]
   return <span className="flexRow">
-    <button className={`pushButton keyButton ${props.button0 ? 'isButtonActive' : ''}`} title="Open Apple"
+    <button className={`pushButton keyButton ${handleGetLeftButton() ? 'isButtonActive' : ''}`} title="Open Apple"
       onTouchStart={() => passAppleCommandKeyPress(true)}
       onTouchEnd={() => passAppleCommandKeyRelease(true)}
       onMouseDown={() => passAppleCommandKeyPress(true)}
       onMouseUp={() => passAppleCommandKeyRelease(true)}>
       {appleOutline}
     </button>
-    <button className={`pushButton keyButton ${props.button1 ? 'isButtonActive' : ''}`} title="Closed Apple"
+    <button className={`pushButton keyButton ${handleGetRightButton() ? 'isButtonActive' : ''}`} title="Closed Apple"
       onTouchStart={() => passAppleCommandKeyPress(false)}
       onTouchEnd={() => passAppleCommandKeyRelease(false)}
       onMouseDown={() => passAppleCommandKeyPress(false)}
