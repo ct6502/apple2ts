@@ -130,11 +130,68 @@ const processSmartPortAccess = () => {
             // Store number of SmartPort devices in the status buffer.
             memSet(bufferAddr, 1)
             setCarry(false)
+          } else if (unitNumber === 1) {
+            // Status byte
+            // Bit   Function
+            //  7    1 = block device; 0 = character device
+            //  6    1 = write allowed
+            //  5    1 = read allowed
+            //  4    1 = device on line or disk in drive
+            //  3    1 = format allowed
+            //  2    1 = media write-protected (block devices only)
+            //  1    Reserved; must = 0
+            //  0    1 = device currently open (character devices only)
+            const dd = getHardDriveData()
+            const dataLen = dd.length
+            const nblocks = dataLen / 512
+            memSet(bufferAddr, 0xF0)
+            memSet(bufferAddr+1, nblocks & 0xff)
+            memSet(bufferAddr+2, nblocks >>> 8)
+            memSet(bufferAddr+3, 0x00)
+            setX(4)
+            setY(0)
+            setCarry(false)
           } else {
             console.error(`SmartPort status for unitNumber ${unitNumber} not implemented`)
+            setX(0)
+            setY(0)
             setCarry()
           }
           break
+
+        case 3: // return DIB
+          const dd = getHardDriveData()
+          const dataLen = dd.length
+          const nblocks = dataLen / 512
+          // claim we are a 3.5" drive if 1600 or less blocks
+          const deviceType = nblocks > 1600 ? 0x02 : 0x01  // 1 = 3.5 drive 2 = hard disk
+          const subType    = deviceType == 0x02 ? 0x20 : 0x40 // 0x40 = Apple 3.5 drive 0x20 = fixed HD
+          // status byte as above
+          memSet(bufferAddr+0, 0xF0)
+          // then block size for 3 bytes
+          memSet(bufferAddr+1, nblocks & 0xff)
+          memSet(bufferAddr+2, nblocks >>> 8)
+          memSet(bufferAddr+3, 0x00)
+          // id string
+          const a2ts = "Apple2ts SP"
+          memSet(bufferAddr+4, a2ts.length)
+          let i=0
+          for (;i<a2ts.length;i++)
+            memSet(bufferAddr+5+i, a2ts.charCodeAt(i));
+          for (;i<16;i++)
+            memSet(bufferAddr+5+i, a2ts.charCodeAt(8)); // backfill with space
+          // device type
+          memSet(bufferAddr+21, deviceType)
+          // device subtype
+          memSet(bufferAddr+22, subType)
+          // fw version
+          memSet(bufferAddr+23, 0x01)
+          memSet(bufferAddr+24, 0x00)
+          setX(25)
+          setY(0)
+          setCarry(false)
+          break;
+
         default:
           console.error(`SmartPort statusCode ${statusCode} not implemented`)
           setCarry()
