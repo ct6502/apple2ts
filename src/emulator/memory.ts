@@ -1,9 +1,10 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { s6502 } from "./instructions"
 import { romBase64 } from "./roms/rom_2e"
+import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
-import { inVBL } from "./motherboard";
+import { isDebugging, inVBL } from "./motherboard";
 import { toHex } from "./utility/utility";
 
 // 0x00000: main memory
@@ -258,7 +259,8 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
 
 export const memoryReset = () => {
   memory.fill(0xFF, 0, 0x1FFFF)
-  const rom64 = romBase64.replace(/\n/g, "")
+  const whichROM = isDebugging ? edmBase64 : romBase64
+  const rom64 = whichROM.replace(/\n/g, "")
   const rom = new Uint8Array(
     Buffer.from(rom64, "base64")
   )
