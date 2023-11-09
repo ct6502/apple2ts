@@ -200,6 +200,7 @@ type MockingboardSound = {
 }
 
 type Breakpoint = {
+  code: string,
   disabled: boolean,
   hidden: boolean,
   once: boolean,

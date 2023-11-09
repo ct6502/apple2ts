@@ -80,17 +80,18 @@
 }
 
 .breakpointStyle {
-  cursor: pointer;
   font-size: 7pt;
   color: #d2331f;
+  padding-right: 5px;
+}
+
+.breakpointPos {
   position: absolute;
   left: 6px;
 }
 
 .fakePoint {
   opacity: 50%;
-  display: none;
-  pointer-events: none;
 }
 
 .stateLine {
@@ -120,4 +121,17 @@
   padding-bottom: 0;
   padding-left: 5px;
   padding-right: 5px;
+}
+
+.tightButton {
+  border: 1px;
+  border-style: solid;
+  border-radius: 3px;
+  margin-left: 5px;
+  margin-top: 14px;
+  margin-right: 3px;
+  padding-left: 1px;
+  padding-top: 1px;
+  width: 18px;
+  height: 18px
 }

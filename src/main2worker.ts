@@ -220,7 +220,9 @@ export const handleGetTextPage = () => {
 }
 
 export const setStartTextPage = () => {
-  machineState.textPage = startupTextPage
+  if (machineState.textPage.length <= 1) {
+    machineState.textPage = startupTextPage
+  }
 }
 
 export const handleGetLores = () => {

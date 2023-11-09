@@ -26,7 +26,7 @@ export const setStepOut = () => {
   const addr = getLastJSR()
   if (addr < 0) return
   if (breakpoints.get(addr)) return
-  breakpoints.set(addr, {disabled: false, hidden: true, once: true})
+  breakpoints.set(addr, {code: `${addr}`, disabled: false, hidden: true, once: true})
 }
 
 export const doSetBreakpoints = (bp: Breakpoints) => {

@@ -1,32 +1,24 @@
 import React, { KeyboardEvent } from "react";
 import { handleGetDisassembly,
   handleGetState6502,
-  passBreakpoints,
   passSetDisassembleAddress } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { toHex } from "../emulator/utility/utility";
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
+import { getLineOfDisassembly } from "./debugpanelutilities";
 
-class Disassembly extends React.Component<object,
-  { breakpoints: Breakpoints;
-  }> {
+const nlines = 40
+
+class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBreakpoints: (breakpoints: Breakpoints) => void;}, object> {
   lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels
   enableScrollEvent = true
-  nlines = 40  // should this be an argument?
   timeout = 0
   newScrollAddress = 0
   codeRef = React.createRef<HTMLDivElement>()
   breakpointRef = React.createRef<HTMLDivElement>()
   fakePointRef = React.createRef<SVGSVGElement>()
-
-  constructor(props: object) {
-    super(props);
-    this.state = {
-      breakpoints: new Map(),
-    };
-  }
 
   computeLineHeight = () => {
     if (this.codeRef && this.codeRef.current) {
@@ -49,7 +41,6 @@ class Disassembly extends React.Component<object,
       const dv = this.codeRef.current.innerText.split('\n')
       const line = dv[topLineIndex]
       this.newScrollAddress = parseInt(line.slice(0, line.indexOf(':')), 16)
-//      disassemblyRef.current.scrollTop = 1000
       if (this.timeout) clearTimeout(this.timeout)
       if (this.breakpointRef.current) this.breakpointRef.current.style.display = 'none'
       this.timeout = window.setTimeout(() => {
@@ -100,24 +91,29 @@ class Disassembly extends React.Component<object,
       if (clickX <= 20) {
         const clickY = event.clientY - divRect.top - 2
         const line = Math.floor(clickY / this.lineHeight)
-        if (line < 0 || line >= this.nlines) return
-        const addrStr = handleGetDisassembly().split('\n')[line]
-        const addr = parseInt(addrStr.slice(0, addrStr.indexOf(':')), 16)
-        const newBreakpoint: Breakpoint = {disabled: false, hidden: false, once: false}
-        const breakpoints: Breakpoints = new Map(this.state.breakpoints);
+        if (line < 0 || line >= nlines) return
+        const code = handleGetDisassembly().split('\n')[line]
+        const addr = parseInt(code.slice(0, code.indexOf(':')), 16)
+        const newBreakpoint: Breakpoint = {code: code, disabled: false, hidden: false, once: false}
+        const breakpoints: Breakpoints = new Map(this.props.breakpoints);
         breakpoints.set(addr, newBreakpoint)
-        this.setState({breakpoints})
-        passBreakpoints(breakpoints)
+        this.props.setBreakpoints(breakpoints)
       }
     }
   }
 
   handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: Breakpoints = new Map(this.state.breakpoints);
-    breakpoints.delete(addr)
-    this.setState({breakpoints})
-    passBreakpoints(breakpoints)
+    const breakpoints: Breakpoints = new Map(this.props.breakpoints)
+    const bp = breakpoints.get(addr)
+    if (bp) {
+      if (bp.disabled) {
+        bp.disabled = false
+      } else {
+        breakpoints.delete(addr)
+      }
+      this.props.setBreakpoints(breakpoints)
+    }
     if (this.fakePointRef.current) this.fakePointRef.current.style.display = 'none'
   }
 
@@ -129,7 +125,7 @@ class Disassembly extends React.Component<object,
       if (clickX >= 1 && clickX <= 20) {
         const clickY = event.clientY - divRect.top - 2
         const line = Math.floor(clickY / this.lineHeight)
-        if (line >= 0 && line < this.nlines) {
+        if (line >= 0 && line < nlines) {
           this.codeRef.current.style.cursor = 'pointer'
           this.fakePointRef.current.style.display = 'initial'
           this.fakePointRef.current.style.top = `${2 + line * this.lineHeight}px`
@@ -153,23 +149,6 @@ class Disassembly extends React.Component<object,
   //   return parseInt(last.slice(0, last.indexOf(':')), 16)
   // }
 
-  getLineOfDisassembly = (line: number) => {
-    const disArray = handleGetDisassembly().split('\n')
-    if (disArray.length <= 1) {
-      return -1
-    }
-    const firstLine = parseInt(disArray[0].slice(0, disArray[0].indexOf(':')), 16)
-    if (line < firstLine) return -1
-    const last = disArray[disArray.length - 2]
-    const lastLine = parseInt(last.slice(0, last.indexOf(':')), 16)
-    if (line > lastLine) return -1
-    for (let i = 0; i <= disArray.length - 2; i++) {
-      const addr = parseInt(disArray[i].slice(0, disArray[i].indexOf(':')), 16)
-      if (addr === line) return i
-    }
-    return -1
-  }
-
   constructDisassembly = () => {
     const disassembly = handleGetDisassembly()
     if (disassembly.length <= 1) {
@@ -181,7 +160,7 @@ class Disassembly extends React.Component<object,
     for (i = 0; i < addrTop; i++) disassemblyValue += `${toHex(i, 4)}:\n`
     const scrollPos = i
     disassemblyValue += disassembly
-    for (i = addrTop + this.nlines + 2; i <= 65535; i++) disassemblyValue += `${toHex(i, 4)}:\n`
+    for (i = addrTop + nlines + 2; i <= 65535; i++) disassemblyValue += `${toHex(i, 4)}:\n`
     // We need to give React enough time to update the text contents
     // before the new scroll position is set. 100ms seems sufficient, 
     // 50ms causes jumping back to an intermediate scroll position.
@@ -190,6 +169,7 @@ class Disassembly extends React.Component<object,
         this.enableScrollEvent = false
         if (this.lineHeight === 0) this.computeLineHeight()
         this.codeRef.current.scrollTop = scrollPos * this.lineHeight + 2
+        // For some reason the breakpoint icons are not visible unless we re-set the display style.
         if (this.breakpointRef.current) this.breakpointRef.current.style.display = 'block'
       }
     }, 100)
@@ -198,25 +178,25 @@ class Disassembly extends React.Component<object,
 
   getBreakpointDiv = () => {
     if (handleGetDisassembly().length <= 1) return <></>
-    const pc = this.getLineOfDisassembly(handleGetState6502().PC) * this.lineHeight
+    const pc = getLineOfDisassembly(handleGetState6502().PC) * this.lineHeight
     const programCounterBar = (pc >= 0) ?
       <div className="programCounter" style={{top: `${pc}px`}}></div> : <></>
     return <div ref={this.breakpointRef} 
         style={{
         position: "relative",
         width: '0px',
-        height: `${this.nlines * 10 - 2}pt`,
+        height: `${nlines * 10 - 2}pt`,
       }}>
       <FontAwesomeIcon icon={iconBreakpoint} ref={this.fakePointRef}
-        className="breakpointStyle fakePoint"/>
-      {Array.from(this.state.breakpoints).map(([key, breakpoint]) => (
-        (this.getLineOfDisassembly(key) >= 0) ?
+        className="breakpointStyle breakpointPos fakePoint" style={{pointerEvents: 'none'}}/>
+      {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
+        (getLineOfDisassembly(key) >= 0) ?
           <FontAwesomeIcon icon={iconBreakpoint}
-            className={'breakpointStyle' + (breakpoint.disabled ? ' fakePoint' : '')}
+            className={'breakpointStyle breakpointPos' + (breakpoint.disabled ? ' fakePoint' : '')}
             key={key} data-key={key}
             onClick={this.handleBreakpointClick}
             style={{
-              top: `${2 + this.getLineOfDisassembly(key) * this.lineHeight}px`,
+              top: `${2 + getLineOfDisassembly(key) * this.lineHeight}px`,
               }}/> :
           <span key={key}></span>
         )
@@ -237,8 +217,8 @@ class Disassembly extends React.Component<object,
           onMouseLeave={this.handleCodeMouseLeave}
           onClick={this.handleCodeClick}
           style={{
-            width: '200px', // Set the width to your desired value
-            height: `${this.nlines * 10 - 2}pt`, // Set the height to your desired value
+            width: '200px',
+            height: `${nlines * 10 - 2}pt`,
             overflow: 'auto',
             paddingLeft: "15pt",
           }} >
@@ -249,4 +229,4 @@ class Disassembly extends React.Component<object,
   }
 }
 
-export default Disassembly;
+export default DisassemblyView;
