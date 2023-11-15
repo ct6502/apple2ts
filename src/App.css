@@ -51,6 +51,12 @@ body {
   justify-content: space-between;
 }
 
+.flex-column-space-between {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .wrap {
   flex-wrap: wrap;
 }
@@ -117,6 +123,18 @@ body {
 .keyButton {
   border-width: 1px;
   border-style: outset;
+}
+
+.text-button {
+  border-width: 1px;
+  border-color: white;
+  border-style: outset;
+  width: 3em;
+  height: 1em;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  color: white;
+  cursor: pointer;
 }
 
 .textKey {

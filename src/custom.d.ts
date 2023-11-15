@@ -200,10 +200,12 @@ type MockingboardSound = {
 }
 
 type Breakpoint = {
-  code: string,
+  address: number,
   disabled: boolean,
   hidden: boolean,
   once: boolean,
+  expression: string,
+  hitcount: number,
 }
 
 type Breakpoints = Map<number, Breakpoint>

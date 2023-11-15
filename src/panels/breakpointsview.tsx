@@ -2,15 +2,35 @@ import React from "react";
 import { passSetDisassembleAddress } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faXmark,
-  faCircle as iconBreakpoint,
+  faPencil as iconBreakpointEdit,
+  faXmark as iconBreakpointDelete,
+  faCircleNotch as iconBreakpointDisabled,
+  faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
+import BreakpointEdit from "./breakpointedit";
+import { Breakpoint } from "../emulator/utility/breakpoint";
+import { toHex } from "../emulator/utility/utility";
 
 class BreakpointsView extends React.Component<
-{ breakpoints: Breakpoints; setBreakpoints: (breakpoints: Breakpoints) => void}, object> {
+  {breakpoints: Breakpoints;
+  setBreakpoints: (breakpoints: Breakpoints) => void},
+  {showBreakpointEdit: boolean}>
+{
   lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels
   nlines = 12  // should this be an argument?
+  breakpointEditAddress = 0
+  breakpointEditValue = new Breakpoint()
+  dialogPositionX = 1050
+  dialogPositionY = 650
+
+  constructor(props: { breakpoints: Breakpoints;
+    setBreakpoints: (breakpoints: Breakpoints) => void}) {
+    super(props);
+    this.state = {
+      showBreakpointEdit: false,
+    };
+  }
 
   handleAddressClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
@@ -21,7 +41,7 @@ class BreakpointsView extends React.Component<
     }
   }
 
-  handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
+  handleBreakpointClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
     const breakpoints: Breakpoints = new Map(this.props.breakpoints)
     const bp = breakpoints.get(addr)
@@ -31,15 +51,53 @@ class BreakpointsView extends React.Component<
     }
   }
 
+  handleBreakpointDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
+    const breakpoints: Breakpoints = new Map(this.props.breakpoints)
+    if (breakpoints.delete(addr)) {
+      this.props.setBreakpoints(breakpoints)
+    }
+  }
+
   removeAllBreakpoints = () => {
     this.props.setBreakpoints(new Map())
+  }
+
+  handleBreakpointEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
+    const breakpoints: Breakpoints = new Map(this.props.breakpoints)
+    const bp = breakpoints.get(addr)
+    if (bp) {
+      // Save the original address. If it gets changed then
+      // we'll need to remove the old one.
+      this.breakpointEditAddress = addr
+      this.breakpointEditValue = {...bp}
+      this.setState({showBreakpointEdit: true})
+    }
+  }
+
+  saveBreakpoint = () => {
+    const breakpoints: Breakpoints = new Map(this.props.breakpoints)
+    breakpoints.delete(this.breakpointEditAddress)
+    breakpoints.set(this.breakpointEditValue.address, this.breakpointEditValue)
+    this.props.setBreakpoints(breakpoints)
+    this.setState({showBreakpointEdit: false})
+  }
+
+  cancelEdit = () => {
+    this.setState({showBreakpointEdit: false})
+  }
+
+  setDialogPosition = (x: number, y: number) => {
+    this.dialogPositionX = x
+    this.dialogPositionY = y
   }
 
   render() {
     return (
       <div className="flexColumn">
         <div className="flexRowSpaceBetween">
-          <div className="biggerFont"
+          <div className="bigger-font"
             style={{paddingTop: "15px",
             paddingBottom: "3px",
             paddingLeft: "5px",
@@ -48,7 +106,7 @@ class BreakpointsView extends React.Component<
             title="Remove all breakpoints"
             onClick={this.removeAllBreakpoints}
             disabled={false}>
-          <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.7em' }}/>
+          <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.7em' }}/>
           </button>
         </div>
         <div className="debugPanel thinBorder"
@@ -59,17 +117,36 @@ class BreakpointsView extends React.Component<
             paddingLeft: "5pt",
             cursor: "pointer"
           }}>
-        {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
-          <div key={key}>
-            <FontAwesomeIcon icon={iconBreakpoint}
-                className={'breakpointStyle' + (breakpoint.disabled ? ' fakePoint' : '')}
-                key={key} data-key={key}
-                onClick={this.handleBreakpointClick}/>
-            <span data-key={key} onClick={this.handleAddressClick}>{breakpoint.code}</span>
-          </div>
-          )
-        )}
+          {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
+            <div key={key}>
+              <button className="breakpoint-button"
+                data-key={key}
+                onClick={(e) => {this.handleBreakpointClick(e)}}>
+                <FontAwesomeIcon className="breakpoint-style"
+                  style={{paddingRight: "0"}}
+                  icon={breakpoint.disabled ? iconBreakpointDisabled : iconBreakpointEnabled}/>
+              </button>
+              <button className="breakpoint-button"
+                data-key={key}
+                onClick={(e) => {this.handleBreakpointEdit(e)}}
+                disabled={true}>
+                <FontAwesomeIcon icon={iconBreakpointEdit}/>
+              </button>
+              <button className="breakpoint-button"
+                data-key={key}
+                onClick={(e) => {this.handleBreakpointDelete(e)}}>
+                <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '1.3em' }}/>
+              </button>
+              <span data-key={key} onClick={this.handleAddressClick}>{toHex(breakpoint.address, 4)}</span>
+            </div>
+            )
+          )}
         </div>
+        {this.state.showBreakpointEdit && <BreakpointEdit breakpoint={this.breakpointEditValue} saveBreakpoint={this.saveBreakpoint}
+          cancelDialog={this.cancelEdit}
+          dialogPositionX={this.dialogPositionX}
+          dialogPositionY={this.dialogPositionY}
+          setDialogPosition={this.setDialogPosition}/>}
       </div>
     )
   }

@@ -63,7 +63,7 @@ class TimeTravelPanel extends React.Component<object, object>
           className="stateLine"
           onClick={() => this.selectStateLine(index)}>
           {line}
-          {index === iTempState ? <div className="highlightLine"></div> : <></>}
+          {(index === iTempState) && <div className="highlightLine"></div>}
         </div>
         ))}
       </>

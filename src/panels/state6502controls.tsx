@@ -41,7 +41,7 @@ class State6502Controls extends React.Component<object, object>
     const strVal = value.toString(16).toUpperCase()
     return (
       <div className="flexRow">
-        <div className="biggerFont">{name}</div>
+        <div className="bigger-font">{name}</div>
         <input type="text"
           className={name === 'PC' ? "hexField" : "hexField smallField"}
           disabled={runMode !== RUN_MODE.PAUSED}
@@ -55,7 +55,7 @@ class State6502Controls extends React.Component<object, object>
   createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
     const checked = (value & (1 << bitField)) !== 0
     return <div className="flexColumn">
-      <div className="biggerFont">{name}</div>
+      <div className="bigger-font">{name}</div>
       <input type="checkbox" id={name}
         className="debugCheckbox"
         checked={checked}

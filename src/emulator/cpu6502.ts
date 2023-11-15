@@ -2,6 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pc
 import { memGet, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
+import { Breakpoint } from "./utility/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -26,7 +27,11 @@ export const setStepOut = () => {
   const addr = getLastJSR()
   if (addr < 0) return
   if (breakpoints.get(addr)) return
-  breakpoints.set(addr, {code: `${addr}`, disabled: false, hidden: true, once: true})
+  const bp = new Breakpoint()
+  bp.address = addr
+  bp.once = true
+  bp.hidden = true
+  breakpoints.set(addr, bp)
 }
 
 export const doSetBreakpoints = (bp: Breakpoints) => {

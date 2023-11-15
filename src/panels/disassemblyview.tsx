@@ -8,8 +8,10 @@ import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
+import { Breakpoint } from "../emulator/utility/breakpoint";
 
 const nlines = 40
+const bpOffset = 3
 
 class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBreakpoints: (breakpoints: Breakpoints) => void;}, object> {
   lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels
@@ -94,9 +96,10 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
         if (line < 0 || line >= nlines) return
         const code = handleGetDisassembly().split('\n')[line]
         const addr = parseInt(code.slice(0, code.indexOf(':')), 16)
-        const newBreakpoint: Breakpoint = {code: code, disabled: false, hidden: false, once: false}
+        const bp: Breakpoint = new Breakpoint()
+        bp.address = addr
         const breakpoints: Breakpoints = new Map(this.props.breakpoints);
-        breakpoints.set(addr, newBreakpoint)
+        breakpoints.set(addr, bp)
         this.props.setBreakpoints(breakpoints)
       }
     }
@@ -128,7 +131,7 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
         if (line >= 0 && line < nlines) {
           this.codeRef.current.style.cursor = 'pointer'
           this.fakePointRef.current.style.display = 'initial'
-          this.fakePointRef.current.style.top = `${2 + line * this.lineHeight}px`
+          this.fakePointRef.current.style.top = `${bpOffset + line * this.lineHeight}px`
           return
         }
       }
@@ -179,8 +182,8 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
   getBreakpointDiv = () => {
     if (handleGetDisassembly().length <= 1) return <></>
     const pc = getLineOfDisassembly(handleGetState6502().PC) * this.lineHeight
-    const programCounterBar = (pc >= 0) ?
-      <div className="programCounter" style={{top: `${pc}px`}}></div> : <></>
+    const programCounterBar = (pc >= 0) &&
+      <div className="programCounter" style={{top: `${pc}px`}}></div>
     return <div ref={this.breakpointRef} 
         style={{
         position: "relative",
@@ -188,15 +191,16 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
         height: `${nlines * 10 - 2}pt`,
       }}>
       <FontAwesomeIcon icon={iconBreakpoint} ref={this.fakePointRef}
-        className="breakpointStyle breakpointPos fakePoint" style={{pointerEvents: 'none'}}/>
+        className="breakpoint-style breakpointPos fakePoint"
+        style={{pointerEvents: 'none', display: 'none'}}/>
       {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
         (getLineOfDisassembly(key) >= 0) ?
           <FontAwesomeIcon icon={iconBreakpoint}
-            className={'breakpointStyle breakpointPos' + (breakpoint.disabled ? ' fakePoint' : '')}
+            className={'breakpoint-style breakpointPos' + (breakpoint.disabled ? ' fakePoint' : '')}
             key={key} data-key={key}
             onClick={this.handleBreakpointClick}
             style={{
-              top: `${2 + getLineOfDisassembly(key) * this.lineHeight}px`,
+              top: `${bpOffset + getLineOfDisassembly(key) * this.lineHeight}px`,
               }}/> :
           <span key={key}></span>
         )
