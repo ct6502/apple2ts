@@ -198,14 +198,3 @@ type MockingboardSound = {
   chip: number,
   params: number[]
 }
-
-type Breakpoint = {
-  address: number,
-  disabled: boolean,
-  hidden: boolean,
-  once: boolean,
-  expression: string,
-  hitcount: number,
-}
-
-type Breakpoints = Map<number, Breakpoint>

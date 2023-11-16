@@ -7,6 +7,7 @@ import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveCommData } from "./devices/imagewriter"
 import DisplayApple2 from "./display"
+import { Breakpoints } from "./panels/breakpoint"
 
 let worker: Worker | null = null
 

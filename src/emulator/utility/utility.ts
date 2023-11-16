@@ -240,33 +240,3 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
 
   return (crc ^ (-1)) >>> 0;
 };
-
-export const convertBreakpointExpression = (expression: string) => {
-  let expr = expression.toUpperCase()
-  // Convert Apple II #$12 to 0x12
-  expr = expr.replace(/#\$/g, "0x")
-  // #12 is just a decimal-based integer, so delete the #
-  expr = expr.replace(/#/g, "")
-  // Assume any other $1234 is a memory address, so get the value
-  expr = expr.replace(/\$([0-9A-F]+)/g, "memGet(0x$1)")
-  return expr
-}
-
-export const validBreakpointExpression = (expression: string) => {
-  // Make these all negative so boolean expressions (e.g. A == 0 && X == 1)
-  // won't accidently short circuit and look like valid expressions.
-  const A = -1, X = -2, Y = -3, S = -4, P = -5
-  const memGet = (addr: number) => {return -addr}
-  try {
-    expression = convertBreakpointExpression(expression)
-    console.log(expression)
-    const type = typeof eval(expression)
-    // This is a hack to avoid TypeScript errors about undefined variables
-    // for the A, X, Y, S, P, and memGet functions
-    if (type === 'bigint') return (A + X + Y + S + P + memGet(1)).toString()
-    const goodExpression = typeof eval(expression) === 'boolean'
-    return goodExpression ? '' : "Expression must evaluate to true or false"
-  } catch (e) {
-    return "Syntax error in expression"
-  }
-}

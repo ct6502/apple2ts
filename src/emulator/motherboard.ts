@@ -283,7 +283,7 @@ export const doStepInto = () => {
     doBoot()
     cpuRunMode = RUN_MODE.PAUSED
   }
-  processInstruction(true)
+  processInstruction()
   doSetRunMode(RUN_MODE.PAUSED)
 }
 
@@ -295,7 +295,7 @@ export const doStepOver = () => {
   }
   if (memGet(s6502.PC) === 0x20) {
     // If we're at a JSR then briefly step in, then step out.
-    processInstruction(true)
+    processInstruction()
     doStepOut()
   } else {
     // Otherwise just do a single step.

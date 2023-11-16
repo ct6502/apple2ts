@@ -5,11 +5,12 @@ import {
   faPencil as iconBreakpointEdit,
   faXmark as iconBreakpointDelete,
   faCircleNotch as iconBreakpointDisabled,
+  faCircleInfo as iconBreakpointExtra,
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
 import BreakpointEdit from "./breakpointedit";
-import { Breakpoint } from "../emulator/utility/breakpoint";
+import { Breakpoint, Breakpoints } from "./breakpoint";
 import { toHex } from "../emulator/utility/utility";
 
 class BreakpointsView extends React.Component<
@@ -93,6 +94,16 @@ class BreakpointsView extends React.Component<
     this.dialogPositionY = y
   }
 
+  getBreakpointIcon = (bp: Breakpoint) => {
+    if (bp.disabled) {
+      return iconBreakpointDisabled
+    }
+    if (bp.expression || bp.hitcount > 1) {
+      return iconBreakpointExtra
+    }
+    return iconBreakpointEnabled
+  }
+
   render() {
     return (
       <div className="flexColumn">
@@ -124,12 +135,12 @@ class BreakpointsView extends React.Component<
                 onClick={(e) => {this.handleBreakpointClick(e)}}>
                 <FontAwesomeIcon className="breakpoint-style"
                   style={{paddingRight: "0"}}
-                  icon={breakpoint.disabled ? iconBreakpointDisabled : iconBreakpointEnabled}/>
+                  icon={this.getBreakpointIcon(breakpoint)}/>
               </button>
               <button className="breakpoint-button"
                 data-key={key}
                 onClick={(e) => {this.handleBreakpointEdit(e)}}
-                disabled={true}>
+                disabled={false}>
                 <FontAwesomeIcon icon={iconBreakpointEdit}/>
               </button>
               <button className="breakpoint-button"

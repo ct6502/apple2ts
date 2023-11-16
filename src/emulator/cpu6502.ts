@@ -2,7 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pc
 import { memGet, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { Breakpoint } from "./utility/breakpoint"
+import { Breakpoint, Breakpoints, convertBreakpointExpression } from "../panels/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -105,21 +105,48 @@ const processCycleCountCallbacks = () => {
   }
 }
 
-export const processInstruction = (step = false) => {
+const evaluateBreakpointExpression = (expression: string) => {
+  const A = s6502.Accum
+  const X = s6502.XReg
+  const Y = s6502.YReg
+  const S = s6502.StackPtr
+  const P = s6502.PStatus
+  try {
+    return eval(expression)
+  } catch (e) {
+    // This is a hack to return false but also mark the variables as "used"
+    return (A + X + Y + S + P) === -1
+  }
+}
+
+const hitBreakpoint = () => {
+  if (breakpoints.size === 0 || breakpointSkipOnce) return false
+  const breakpoint = breakpoints.get(s6502.PC)
+  if (!breakpoint || breakpoint.disabled) return false
+  if (breakpoint.expression) {
+    const expression = convertBreakpointExpression(breakpoint.expression)
+    const doBP = evaluateBreakpointExpression(expression)
+    if (!doBP) return false
+  }
+  if (breakpoint.hitcount > 1) {
+    breakpoint.nhits++
+    if (breakpoint.nhits < breakpoint.hitcount) return false
+    breakpoint.nhits = 0
+  }
+  if (breakpoint.once) breakpoints.delete(s6502.PC)
+  return true
+}
+
+export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
   const instr = memGet(s6502.PC)
   const vLo = memGet(s6502.PC + 1)
   const vHi = memGet(s6502.PC + 2)
   const code =  pcodes[instr]
-  // TODO: Why is the !step here?
-  if (breakpoints.size > 0 && !step) {
-    const breakpoint = breakpoints.get(PC1)
-    if (breakpoint && !breakpoint.disabled && !breakpointSkipOnce) {
-      if (breakpoint.once) breakpoints.delete(PC1)
-      doSetRunMode(RUN_MODE.PAUSED)
-      return -1
-    }
+  if (hitBreakpoint()) {
+    doSetRunMode(RUN_MODE.PAUSED)
+    return -1
   }
   breakpointSkipOnce = false
   const fn = specialJumpTable.get(PC1)

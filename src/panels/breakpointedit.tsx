@@ -3,9 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXmark as faBreakpointDelete,
 } from "@fortawesome/free-solid-svg-icons";
-import { Breakpoint } from "../emulator/utility/breakpoint";
+import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
 import EditField from "./editfield";
-import { validBreakpointExpression } from "../emulator/utility/utility";
 
 class BreakpointEdit extends React.Component<
   {breakpoint: Breakpoint,
@@ -53,7 +52,7 @@ class BreakpointEdit extends React.Component<
     expression = expression.toUpperCase()
     if (this.props.breakpoint) {
       this.props.breakpoint.expression = expression
-      const badExpression = validBreakpointExpression(expression)
+      const badExpression = checkBreakpointExpression(expression)
       this.setState({expression, badExpression})
     }
   }

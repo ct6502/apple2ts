@@ -8,7 +8,7 @@ import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
-import { Breakpoint } from "../emulator/utility/breakpoint";
+import { Breakpoint, Breakpoints } from "./breakpoint";
 
 const nlines = 40
 const bpOffset = 3

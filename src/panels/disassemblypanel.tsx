@@ -3,6 +3,7 @@ import DisassemblyControls from "./disassemblycontrols";
 import DisassemblyView from "./disassemblyview";
 import BreakpointsView from "./breakpointsview";
 import { passBreakpoints } from "../main2worker";
+import { Breakpoints } from "./breakpoint";
 
 class DisassemblyPanel extends React.Component<object,
   { breakpoints: Breakpoints;
