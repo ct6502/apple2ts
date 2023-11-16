@@ -201,89 +201,95 @@ const getHiresGreen = (hgrPage: Uint8Array) => {
   return hgrColors
 }
 
-const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
-  const noDelayMode = handleGetNoDelayMode()
-  const nlines = hgrPage.length / 40
-  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
-  for (let j = 0; j < nlines; j++) {
-    const line = hgrPage.slice(j*40, j*40 + 40)
-    const joffset = j * 560
-    const joffsetMax = (j + 1) * 560 - 1
-    let isEven = 1
-    let skip = false
-    let previousWhite = false
-    for (let i = 0; i < 40; i++) {
-      const ioffset = joffset + i * 14
-      const byte1 = line[i]
-      const byte2bit0 = (i < 39) ? (line[i + 1] & 1) : 0
-      const highBit = (byte1 & 0x80 && !noDelayMode) ? 1 : 0
-      const nextHighBit = (i < 39) ? (line[i + 1] & 0x80 && !noDelayMode) : 0
-      for (let b = 0; b <= 6; b++) {
-        if (skip) {
-          skip = false
-          continue
-        }
-        const bit1 = byte1 & (1 << b)
-        const bit2 = (b < 6) ? (byte1 & (1 << (b + 1))) : byte2bit0
-        if (bit1) {
-          let istart = ioffset + 2 * b + highBit
-          // How many pixels do we fill in
-          let imax = istart + 3
-          // If we're already doing white, first pixel is also white.
-          // Otherwise, white starts with one pixel of the current bit's color
-          // GREEN=1, VIOLET=2, ORANGE=5, BLUE=6
-          let color1 = previousWhite ? WHITE : (1 + 4 * highBit + isEven)
-          let color2 = color1
-          if (bit2) {
-            color2 = WHITE
-            if (colorMode === COLOR_MODE.NOFRINGE && !previousWhite) color1 = BLACK
-            // Fill in a couple extra pixels
-            imax += 2
-            previousWhite = true
-            // Handle interactions between adjacent bytes (ALCB p. 208)
-            if (b === 5) {
-              if (!highBit && nextHighBit) {
-                imax--
-                hgrColors[imax + 1] = 9 - isEven
-                hgrColors[imax + 2] = 9 - isEven
-              } else if (highBit && !nextHighBit) {
-                imax--
-                color2 = 13 - isEven
-                hgrColors[istart++] = color1
-                hgrColors[istart++] = color1
-              }
-            }
-          } else {
-            previousWhite = false
-            // Handle interactions between adjacent bytes (ALCB p. 208)
-            if (b === 6) {
-              if (!highBit && nextHighBit) {
-                imax -= 2
-                hgrColors[imax + 1] = isEven + 8
-                hgrColors[imax + 2] = isEven + 8
-                hgrColors[imax + 3] = isEven + 8
-              } else if (highBit && !nextHighBit) {
-                color1 = isEven + 12
-                color2 = color1
-                imax--
-              }
+const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE, noDelayMode: boolean) => {
+  const nbytes = line.length
+  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK);
+  let isEven = 1
+  let skip = false
+  let previousWhite = false
+  for (let i = 0; i < nbytes; i++) {
+    const ioffset = i * 14
+    const byte1 = line[i]
+    const byte2bit0 = (i < (nbytes - 1)) ? (line[i + 1] & 1) : 0
+    const highBit = (byte1 & 0x80 && !noDelayMode) ? 1 : 0
+    const nextHighBit = (i < (nbytes - 1)) ? (line[i + 1] & 0x80 && !noDelayMode) : 0
+    for (let b = 0; b <= 6; b++) {
+      if (skip) {
+        skip = false
+        continue
+      }
+      const bit1 = byte1 & (1 << b)
+      const bit2 = (b < 6) ? (byte1 & (1 << (b + 1))) : byte2bit0
+      if (bit1) {
+        let istart = ioffset + 2 * b + highBit
+        // How many pixels do we fill in
+        let imax = istart + 3
+        // If we're already doing white, first pixel is also white.
+        // Otherwise, white starts with one pixel of the current bit's color
+        // GREEN=1, VIOLET=2, ORANGE=5, BLUE=6
+        let color1 = previousWhite ? WHITE : (1 + 4 * highBit + isEven)
+        let color2 = color1
+        if (bit2) {
+          color2 = WHITE
+          if (colorMode === COLOR_MODE.NOFRINGE && !previousWhite) color1 = BLACK
+          // Fill in a couple extra pixels
+          imax += 2
+          previousWhite = true
+          // Handle interactions between adjacent bytes (ALCB p. 208)
+          if (b === 5) {
+            if (!highBit && nextHighBit) {
+              imax--
+              hgrColors1[imax + 1] = 9 - isEven
+              hgrColors1[imax + 2] = 9 - isEven
+            } else if (highBit && !nextHighBit) {
+              imax--
+              color2 = 13 - isEven
+              hgrColors1[istart++] = color1
+              hgrColors1[istart++] = color1
             }
           }
-          hgrColors[istart] = color1
-          // Don't leak onto the next line
-          if (imax > joffsetMax) imax = joffsetMax
-          for (let ix = istart + 1; ix <= imax; ix++) {
-            hgrColors[ix] = color2
-          }
-          // We just processed 2 bits (4 pixels on the 560-pixel line)
-          skip = true
         } else {
-          // We only processed 1 bit, so flip our isEven flag
-          isEven = 1 - isEven
           previousWhite = false
+          // Handle interactions between adjacent bytes (ALCB p. 208)
+          if (b === 6) {
+            if (!highBit && nextHighBit) {
+              imax -= 2
+              hgrColors1[imax + 1] = isEven + 8
+              hgrColors1[imax + 2] = isEven + 8
+              hgrColors1[imax + 3] = isEven + 8
+            } else if (highBit && !nextHighBit) {
+              color1 = isEven + 12
+              color2 = color1
+              imax--
+            }
+          }
         }
+        hgrColors1[istart] = color1
+        // Don't leak onto the next line
+        imax = Math.min(imax, hgrColors1.length - 1)
+        for (let ix = istart + 1; ix <= imax; ix++) {
+          hgrColors1[ix] = color2
+        }
+        // We just processed 2 bits (4 pixels on the 560-pixel line)
+        skip = true
+      } else {
+        // We only processed 1 bit, so flip our isEven flag
+        isEven = 1 - isEven
+        previousWhite = false
       }
     }
+  }
+  return hgrColors1
+}
+
+const getHiresColors = (hgrPage: Uint8Array, nlines: number,
+  colorMode: COLOR_MODE, noDelayMode: boolean) => {
+  const nbytes = hgrPage.length / nlines
+  const hgrColors = new Uint8Array(14 * nlines * nbytes).fill(BLACK)
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
+    const hgrColors1 = getHiresSingleLine(line, colorMode, noDelayMode)
+    hgrColors.set(hgrColors1, hgrColors1.length * j)
   }
   return hgrColors
 }
@@ -345,13 +351,14 @@ const processHiRes = (ctx: CanvasRenderingContext2D,
   const nlines = mixedMode ? 160 : 192
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
+  const noDelayMode = handleGetNoDelayMode()
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, colorMode) : getHiresGreen(hgrPage))
-  const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
+    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode) : getHiresGreen(hgrPage))
+  const hgrRGBA = new Uint8ClampedArray(4 * hgrColors.length).fill(255);
   const colors = doubleRes ?
     [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode] :
     [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen, hgrWhiteScreen][colorMode]
-  for (let i = 0; i < 560 * nlines; i++) {
+  for (let i = 0; i < hgrColors.length; i++) {
     hgrRGBA[4 * i] = colors[hgrColors[i]][0]
     hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
     hgrRGBA[4 * i + 2] = colors[hgrColors[i]][2]
