@@ -29,7 +29,7 @@ interface PCodeInstr {
     name: string
     pcode: number,
     mode: MODE
-    PC: number
+    bytes: number
     execute: PCodeFunc
 }
 

@@ -73,7 +73,7 @@ const wolfsetup = () => {
 }
 
 const rumble = () => {
-  if (memGet(0xC01A) < 0x80 && memGet(0xC01D) < 0x80) {
+  if (memGet(0xC01A, false) < 0x80 && memGet(0xC01D, false) < 0x80) {
     passRumble({startDelay: 0, duration: 200, weakMagnitude: 1, strongMagnitude: 0})
   }
 }

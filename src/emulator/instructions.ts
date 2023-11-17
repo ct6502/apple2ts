@@ -28,7 +28,7 @@ export const reset6502 = () => {
   s6502.YReg = 0
   s6502.PStatus = 0b00100100  // bit 2 (Interrupt) + bit 5 (unused)
   s6502.StackPtr = 0xFF
-  setPC(memGet(0xFFFD) * 256 + memGet(0xFFFC))
+  setPC(memGet(0xFFFD, false) * 256 + memGet(0xFFFC, false))
   s6502.flagIRQ = 0
   s6502.flagNMI = false
 }
@@ -169,9 +169,9 @@ const pageBoundary = (addr1: number, addr2: number) => (((addr1 >> 8) !== (addr2
 
 export const pcodes = new Array<PCodeInstr>(256)
 
-const PCODE = (name: string, mode: ADDR_MODE, pcode: number, PC: number, code: PCodeFunc) => {
+const PCODE = (name: string, mode: ADDR_MODE, pcode: number, bytes: number, code: PCodeFunc) => {
   console.assert(!pcodes[pcode], "Duplicate instruction: " + name + " mode=" + mode)
-  pcodes[pcode] = {name: name, pcode: pcode, mode: mode, PC: PC, execute: code}
+  pcodes[pcode] = {name: name, pcode: pcode, mode: mode, bytes: bytes, execute: code}
 }
 
 const doIndirectYinstruction = (vZP: number,

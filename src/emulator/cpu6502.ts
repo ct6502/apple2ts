@@ -40,9 +40,9 @@ export const doSetBreakpoints = (bp: Breakpoints) => {
   breakpoints = bp
 }
 
-export const isMemoryAccessBreakpoint = (addr: number, set: boolean) => {
+export const isWatchpoint = (addr: number, set: boolean) => {
   const bp = breakpoints.get(addr)
-  if (!bp || bp.disabled) return false
+  if (!bp || !bp.watchpoint || bp.disabled) return false
   return set ? bp.memset : bp.memget
 }
 
@@ -156,9 +156,11 @@ export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
   const instr = memGet(s6502.PC)
-  const vLo = memGet(s6502.PC + 1)
-  const vHi = memGet(s6502.PC + 2)
   const code =  pcodes[instr]
+  // Make sure we only get these instruction bytes if necessary,
+  // so we don't accidently trigger a watchpoint.
+  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1) : 0
+  const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2) : 0
   if (hitBreakpoint()) {
     doSetRunMode(RUN_MODE.PAUSED)
     return -1
@@ -181,7 +183,7 @@ export const processInstruction = () => {
   //   posTrail = (posTrail + 1) % instrTrail.length
   //   console.log(out)
   // }
-  incrementPC(code.PC)
+  incrementPC(code.bytes)
   setCycleCount(s6502.cycleCount + cycles)
   processCycleCountCallbacks()
   // NMI has higher priority, and is edge sensitive

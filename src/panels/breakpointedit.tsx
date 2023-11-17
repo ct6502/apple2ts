@@ -164,14 +164,14 @@ class BreakpointEdit extends React.Component<
                   className="check-radio-box shift-down"
                   checked={this.props.breakpoint.memset}
                   onChange={(e) => {this.handleMemsetChange(e)}}/>
-                <label className="white-title flush-left">Memory Write</label>
+                <label htmlFor="memset" className="white-title flush-left">Memory Write</label>
               </div>
               <div className="flex-row">
                 <input type="checkbox" id="memget" value="memget"
                   className="check-radio-box shift-down"
                   checked={this.props.breakpoint.memget}
                   onChange={(e) => {this.handleMemgetChange(e)}}/>
-                <label className="white-title flush-left">Memory Read</label>
+                <label htmlFor="memget" className="white-title flush-left">Memory Read</label>
               </div>
           </div> : 
           <div>

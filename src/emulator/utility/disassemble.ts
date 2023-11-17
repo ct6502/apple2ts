@@ -15,7 +15,7 @@ const getInstructionString = (addr: number, code: PCodeInstr,
   let hex = `${toHex(code.pcode)}`
   let sLo = ''
   let sHi = ''
-  switch (code.PC) {
+  switch (code.bytes) {
     case 1: hex += '      '; break
     case 2: sLo = toHex(vLo); hex += ` ${sLo}   `; break
     case 3: sLo = toHex(vLo); sHi = toHex(vHi); hex += ` ${sLo} ${sHi}`; break
@@ -51,7 +51,7 @@ export const getDisassembly = (start: number) => {
     const vLo = memGetRaw(addr + 1)
     const vHi = memGetRaw(addr + 2)
     r += getInstructionString(addr, code, vLo, vHi) + '\n'
-    addr += code.PC
+    addr += code.bytes
   }
   return r
 }
@@ -62,7 +62,7 @@ export const verifyAddressWithinDisassembly = (start: number, check: number) => 
   for (let i=0; i < nlines; i++) {
     if (addr === check) return true
     const instr = memGetRaw(addr)
-    addr += pcodes[instr].PC
+    addr += pcodes[instr].bytes
     if (addr > 0xFFFF) break
   }
   return false

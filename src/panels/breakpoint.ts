@@ -59,6 +59,21 @@ export const convertBreakpointExpression = (expression: string) => {
   return expr
 }
 
+const verifyMemGets = (expression: string) => {
+  // Create a regular expression that matches memGet(*) where * is any number
+  const regex = /memGet\(0x([0-9A-F]+)\)/g;
+  // Find all matches in the expression
+  const matches = [...expression.matchAll(regex)];
+  // Iterate over the matches and check if the number is less than 65536
+  for (const match of matches) {
+    const number = parseInt(match[1], 16);
+    if (number > 65535) {
+      return false
+    }
+  }
+  return true
+}
+
 export const checkBreakpointExpression = (expression: string) => {
   // Make these all negative so boolean expressions (e.g. A == 0 && X == 1)
   // won't accidently short circuit and look like valid expressions.
@@ -66,6 +81,9 @@ export const checkBreakpointExpression = (expression: string) => {
   const memGet = (addr: number) => {return -addr}
   try {
     expression = convertBreakpointExpression(expression)
+    if (!verifyMemGets(expression)) {
+      return "Memory address out of range"
+    }
     const type = typeof eval(expression)
     // This is a hack to avoid TypeScript errors about undefined variables
     // for the A, X, Y, S, P, and memGet functions

@@ -166,7 +166,7 @@ const getHexCodesForInstruction = (match: number, value: number) => {
   newInstructions.push(match);
   if (value >= 0) {
     newInstructions.push(value % 256)
-    if (pcode.PC === 3) {
+    if (pcode.bytes === 3) {
       newInstructions.push(Math.trunc(value / 256))
     }
   }
@@ -252,7 +252,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
           throw new Error(`Unknown instruction: ${codeLine.instr} mode=${mode} pass=${pass}`);
         }
         newInstructions = getHexCodesForInstruction(match, value)
-        pc += pcodes[match].PC
+        pc += pcodes[match].bytes
       }
     }
 
