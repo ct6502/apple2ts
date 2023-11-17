@@ -46,7 +46,7 @@ const KeyboardButtons = () => {
     {name: 'Up', icon: faArrowUp},
     {name: 'Down', icon: faArrowDown},
   ]
-  return <span className="flexRow">
+  return <span className="flex-row">
     <button className={`pushButton keyButton ${handleGetLeftButton() ? 'isButtonActive' : ''}`} title="Open Apple"
       onTouchStart={() => passAppleCommandKeyPress(true)}
       onTouchEnd={() => passAppleCommandKeyRelease(true)}

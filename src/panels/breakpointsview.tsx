@@ -4,14 +4,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPencil as iconBreakpointEdit,
   faXmark as iconBreakpointDelete,
-  faCircleNotch as iconBreakpointDisabled,
-  faCircleInfo as iconBreakpointExtra,
-  faCircle as iconBreakpointEnabled,
+  faPlus as iconBreakpointAdd,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
 import BreakpointEdit from "./breakpointedit";
-import { Breakpoint, Breakpoints } from "./breakpoint";
-import { toHex } from "../emulator/utility/utility";
+import { Breakpoint, Breakpoints, getBreakpointIcon, getBreakpointString, getBreakpointStyle } from "./breakpoint";
 
 class BreakpointsView extends React.Component<
   {breakpoints: Breakpoints;
@@ -60,6 +57,12 @@ class BreakpointsView extends React.Component<
     }
   }
 
+  addBreakpoint = () => {
+    this.breakpointEditAddress = -1
+    this.breakpointEditValue = new Breakpoint
+  this.setState({showBreakpointEdit: true})
+  }
+
   removeAllBreakpoints = () => {
     this.props.setBreakpoints(new Map())
   }
@@ -94,31 +97,29 @@ class BreakpointsView extends React.Component<
     this.dialogPositionY = y
   }
 
-  getBreakpointIcon = (bp: Breakpoint) => {
-    if (bp.disabled) {
-      return iconBreakpointDisabled
-    }
-    if (bp.expression || bp.hitcount > 1) {
-      return iconBreakpointExtra
-    }
-    return iconBreakpointEnabled
-  }
-
   render() {
     return (
-      <div className="flexColumn">
-        <div className="flexRowSpaceBetween">
+      <div className="flex-column">
+        <div className="flex-row-space-between">
           <div className="bigger-font"
             style={{paddingTop: "15px",
             paddingBottom: "3px",
             paddingLeft: "5px",
             }}>Breakpoints</div>
-          <button className="pushButton tightButton"
-            title="Remove all breakpoints"
-            onClick={this.removeAllBreakpoints}
-            disabled={false}>
-          <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.7em' }}/>
-          </button>
+          <div className="flex-row">
+            <button className="pushButton tightButton"
+              title="Add new breakpoint"
+              onClick={this.addBreakpoint}
+              disabled={false}>
+            <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: '0.7em' }}/>
+            </button>
+            <button className="pushButton tightButton"
+              title="Remove all breakpoints"
+              onClick={this.removeAllBreakpoints}
+              disabled={false}>
+            <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.8em' }}/>
+            </button>
+          </div>
         </div>
         <div className="debugPanel thinBorder"
           style={{
@@ -130,25 +131,25 @@ class BreakpointsView extends React.Component<
           }}>
           {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
             <div key={key}>
-              <button className="breakpoint-button"
+              <button className="breakpoint-pushbutton"
                 data-key={key}
                 onClick={(e) => {this.handleBreakpointClick(e)}}>
-                <FontAwesomeIcon className="breakpoint-style"
+                <FontAwesomeIcon className={getBreakpointStyle(breakpoint)}
                   style={{paddingRight: "0"}}
-                  icon={this.getBreakpointIcon(breakpoint)}/>
+                  icon={getBreakpointIcon(breakpoint)}/>
               </button>
-              <button className="breakpoint-button"
+              <button className="breakpoint-pushbutton"
                 data-key={key}
                 onClick={(e) => {this.handleBreakpointEdit(e)}}
                 disabled={false}>
                 <FontAwesomeIcon icon={iconBreakpointEdit}/>
               </button>
-              <button className="breakpoint-button"
+              <button className="breakpoint-pushbutton"
                 data-key={key}
                 onClick={(e) => {this.handleBreakpointDelete(e)}}>
                 <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '1.3em' }}/>
               </button>
-              <span data-key={key} onClick={this.handleAddressClick}>{toHex(breakpoint.address, 4)}</span>
+              <span data-key={key} onClick={this.handleAddressClick}>{getBreakpointString(breakpoint)}</span>
             </div>
             )
           )}

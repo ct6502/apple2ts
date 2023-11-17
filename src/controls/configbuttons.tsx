@@ -19,7 +19,7 @@ const ConfigButtons = (props: DisplayProps) => {
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
   
-  return <span className="flexRow">
+  return <span className="flex-row">
     <button className="pushButton"
       title={props.speedCheck ? "1 MHz" : "Fast Speed"}
       onClick={() => props.handleSpeedChange(!props.speedCheck)}>

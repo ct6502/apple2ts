@@ -6,6 +6,7 @@ import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
 import { isDebugging, inVBL } from "./motherboard";
 import { toHex } from "./utility/utility";
+import { isMemoryAccessBreakpoint, setWatchpointBreak } from "./cpu6502";
 
 // 0x00000: main memory
 // 0x10000: aux memory 
@@ -343,6 +344,9 @@ export const debugSlot = (slot: number, addr: number, oldvalue: number, value = 
 }
 
 export const memGet = (addr: number): number => {
+  if (isMemoryAccessBreakpoint(addr, false)) {
+    setWatchpointBreak()
+  }
   const page = addr >>> 8
   // debugSlot(4, addr)
   if (page === 0xC0) {
@@ -395,6 +399,9 @@ export const memSet = (addr: number, value: number) => {
     // This will prevent us from setting slot ROM or motherboard ROM
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value
+  }
+  if (isMemoryAccessBreakpoint(addr, true)) {
+    setWatchpointBreak()
   }
 }
 

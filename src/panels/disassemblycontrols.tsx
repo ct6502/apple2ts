@@ -49,7 +49,7 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
     const runMode = handleGetRunMode()
     const isJSR = handleGetNextInstruction() === 'JSR'
     return (
-      <span className="flexRow">
+      <span className="flex-row">
         <input className="hexField"
           type="text"
           placeholder=""

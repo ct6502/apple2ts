@@ -246,10 +246,10 @@ class DisplayApple2 extends React.Component<object,
     if (paperWidth < 300) paperWidth = 300
     return (
       <div>
-        <span className="flexRow">
-          <span className="flexColumn">
+        <span className="flex-row">
+          <span className="flex-column">
             <Apple2Canvas {...props}/>
-            <div className="flexRowSpaceBetween wrap" style={{width: width, display: width ? '' : 'none'}}>
+            <div className="flex-row-space-between wrap" style={{width: width, display: width ? '' : 'none'}}>
                 <ControlPanel {...props}/>
                 <DiskInterface />
                 <ImageWriter />

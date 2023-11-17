@@ -8,7 +8,7 @@ import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
-import { Breakpoint, Breakpoints } from "./breakpoint";
+import { Breakpoint, Breakpoints, getBreakpointIcon, getBreakpointStyle } from "./breakpoint";
 
 const nlines = 40
 const bpOffset = 3
@@ -191,12 +191,12 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
         height: `${nlines * 10 - 2}pt`,
       }}>
       <FontAwesomeIcon icon={iconBreakpoint} ref={this.fakePointRef}
-        className="breakpoint-style breakpointPos fakePoint"
+        className="breakpoint-style breakpoint-position fakePoint"
         style={{pointerEvents: 'none', display: 'none'}}/>
       {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
         (getLineOfDisassembly(key) >= 0) ?
-          <FontAwesomeIcon icon={iconBreakpoint}
-            className={'breakpoint-style breakpointPos' + (breakpoint.disabled ? ' fakePoint' : '')}
+          <FontAwesomeIcon icon={getBreakpointIcon(breakpoint)}
+            className={'breakpoint-position ' + getBreakpointStyle(breakpoint)}
             key={key} data-key={key}
             onClick={this.handleBreakpointClick}
             style={{
@@ -211,7 +211,7 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
 
   render() {
     return (
-      <div className="flexRow thinBorder">
+      <div className="flex-row thinBorder">
         {this.getBreakpointDiv()}
         <div className="debugPanel"
           ref={this.codeRef}

@@ -85,10 +85,14 @@
   padding-right: 5px;
 }
 
-.breakpoint-button {
+.watch-point {
+  color: #0433FF;
+}
+
+.breakpoint-pushbutton {
   font-size: 7pt;
   padding-left: 0;
-  padding-right: 5px;
+  padding-right: 8px;
   margin-top: 0px;
   transform: translate(0, 1px);
   border-width: 0;
@@ -101,7 +105,7 @@
   user-select: none;
 }
 
-.breakpointPos {
+.breakpoint-position {
   position: absolute;
   left: 6px;
 }
@@ -140,9 +144,8 @@
 }
 
 .tightButton {
-  border: 1px;
-  border-style: solid;
-  border-radius: 3px;
+  border: 0px;
+  border-style: none;
   margin-left: 5px;
   margin-top: 14px;
   margin-right: 3px;
@@ -165,7 +168,7 @@
   align-items: center;
 }
 
-.breakpoint-edit {
+.breakpoint-edit-dialog {
   background-color: #333;
   border-radius: 5px;
   border-color: #000;
@@ -174,13 +177,14 @@
   box-shadow: 5px 5px 5px 0px rgba(0, 0, 0, 0.5);
   opacity: 100%;
   width: 450px;
-  height: 160px;
+  height: 190px;
   position: absolute;
   z-index: 9999;
 }
 
 .white-title {
   font-size: 10pt;
+  line-height: 18pt;
   padding-top: 3px;
   padding-bottom: 3px;
   padding-left: 10px;
@@ -202,8 +206,8 @@
   border-width: 1px;
   border-style: solid;
   outline: none;
-  margin-top: 0px;
-  margin-bottom: 7px;
+  margin-top: 4px;
+  margin-bottom: 0px;
   margin-right: 5px;
   height: 14pt;
 }
@@ -226,4 +230,17 @@
   font-size: 8pt;
   font-weight: 600;
   color: #FF4013;
+}
+
+.check-radio-box {
+  margin-left: 10px;
+  margin-top: 0;
+}
+
+.shift-down {
+  margin-top: 3px;
+}
+
+.flush-left {
+  padding-left: 2px;
 }

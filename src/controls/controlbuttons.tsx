@@ -12,7 +12,7 @@ import { handleSetCPUState } from "../controller";
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ControlButtons = (props: DisplayProps) => {  
-  return <span className="flexRow">
+  return <span className="flex-row">
     <button className="pushButton"
       title="Boot"
       onClick={() => { handleSetCPUState(RUN_MODE.NEED_BOOT) }}>

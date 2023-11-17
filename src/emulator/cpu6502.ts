@@ -8,6 +8,7 @@ import { RUN_MODE } from "./utility/utility"
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
 let breakpointSkipOnce = false
+let doWatchpointBreak = false
 // let doDebugZeroPage = false
 // const instrTrail = new Array<string>(1000)
 // let posTrail = 0
@@ -37,6 +38,12 @@ export const setStepOut = () => {
 export const doSetBreakpoints = (bp: Breakpoints) => {
   // This will automatically erase any "hit once" breakpoints, which is okay.
   breakpoints = bp
+}
+
+export const isMemoryAccessBreakpoint = (addr: number, set: boolean) => {
+  const bp = breakpoints.get(addr)
+  if (!bp || bp.disabled) return false
+  return set ? bp.memset : bp.memget
 }
 
 // let memZP = new Uint8Array(256).fill(0)
@@ -119,10 +126,18 @@ const evaluateBreakpointExpression = (expression: string) => {
   }
 }
 
+export const setWatchpointBreak = () => {
+  doWatchpointBreak = true
+}
+
 const hitBreakpoint = () => {
+  if (doWatchpointBreak) {
+    doWatchpointBreak = false
+    return true
+  }
   if (breakpoints.size === 0 || breakpointSkipOnce) return false
   const breakpoint = breakpoints.get(s6502.PC)
-  if (!breakpoint || breakpoint.disabled) return false
+  if (!breakpoint || breakpoint.disabled || breakpoint.watchpoint) return false
   if (breakpoint.expression) {
     const expression = convertBreakpointExpression(breakpoint.expression)
     const doBP = evaluateBreakpointExpression(expression)

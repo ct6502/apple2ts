@@ -40,7 +40,7 @@ class State6502Controls extends React.Component<object, object>
   createTextField = (name: string, key: KEYS, value: number, runMode: RUN_MODE) => {
     const strVal = value.toString(16).toUpperCase()
     return (
-      <div className="flexRow">
+      <div className="flex-row">
         <div className="bigger-font">{name}</div>
         <input type="text"
           className={name === 'PC' ? "hexField" : "hexField smallField"}
@@ -54,7 +54,7 @@ class State6502Controls extends React.Component<object, object>
 
   createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
     const checked = (value & (1 << bitField)) !== 0
-    return <div className="flexColumn">
+    return <div className="flex-column">
       <div className="bigger-font">{name}</div>
       <input type="checkbox" id={name}
         className="debugCheckbox"
@@ -69,8 +69,8 @@ class State6502Controls extends React.Component<object, object>
     const runMode = handleGetRunMode()
     const s6502 = handleGetState6502()
     return (
-      <div className="flexColumn">
-        <div className="flexRowSpaceBetween">
+      <div className="flex-column">
+        <div className="flex-row-space-between">
           {this.createTextField('PC', 'PC', s6502.PC, runMode)}
           {this.createTextField('A', 'Accum', s6502.Accum, runMode)}
           {this.createTextField('X', 'XReg', s6502.XReg, runMode)}
@@ -78,8 +78,8 @@ class State6502Controls extends React.Component<object, object>
           {this.createTextField('S', 'StackPtr', s6502.StackPtr, runMode)}
           {this.createTextField('IRQ', 'flagIRQ', s6502.flagIRQ, runMode)}
         </div>
-        <div className="flexRowSpaceBetween">
-          <div className="flexRow">
+        <div className="flex-row-space-between">
+          <div className="flex-row">
             {this.createCheckbox('N', 7, s6502.PStatus, runMode)}
             {this.createCheckbox('V', 6, s6502.PStatus, runMode)}
             {this.createCheckbox('B', 4, s6502.PStatus, runMode)}
@@ -88,7 +88,7 @@ class State6502Controls extends React.Component<object, object>
             {this.createCheckbox('Z', 1, s6502.PStatus, runMode)}
             {this.createCheckbox('C', 0, s6502.PStatus, runMode)}
           </div>
-          <div className="flexRow">
+          <div className="flex-row">
             {this.createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
           </div>
         </div>

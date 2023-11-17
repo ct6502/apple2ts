@@ -27,13 +27,13 @@ body {
   font-family: PrintChar21;
 }
 
-.flexRow {
+.flex-row {
   display: flex;
   flex-direction: row;
   user-select: none;
 }
 
-.flexColumn {
+.flex-column {
   display: flex;
   flex-direction: column;
   /* width: 1240px; */
@@ -45,7 +45,7 @@ body {
   margin-left: 10px;
 }
 
-.flexRowSpaceBetween {
+.flex-row-space-between {
   display: flex;
   flex-direction: row;
   justify-content: space-between;

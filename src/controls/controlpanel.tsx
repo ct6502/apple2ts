@@ -6,8 +6,8 @@ import KeyboardButtons from "./keyboardbuttons";
 
 const ControlPanel = (props: DisplayProps) => {
   return (
-    <span className="flexColumn">
-      <span className="flexRow wrap">
+    <span className="flex-column">
+      <span className="flex-row wrap">
       <ControlButtons {...props}/>
       <DebugButtons {...props}/>
       <ConfigButtons {...props}/>

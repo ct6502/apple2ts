@@ -15,7 +15,7 @@ import { handleSetCPUState } from "../controller";
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const DebugButtons = (props: DisplayProps) => {  
-  return <span className="flexRow">
+  return <span className="flex-row">
     <button className="pushButton"
       title={props.runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
       onClick={() => {

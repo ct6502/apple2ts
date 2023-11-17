@@ -1,11 +1,51 @@
+import {
+  faCircleHalfStroke as iconBreakpointExtra,
+  faCircle as iconBreakpointEnabled,
+} from "@fortawesome/free-solid-svg-icons";
+import {faCircle as iconBreakpointDisabled} from "@fortawesome/free-regular-svg-icons";
+import { toHex } from "../emulator/utility/utility"
+
 interface IBreakpoint {
   address: number
+  watchpoint: boolean
   disabled: boolean
   hidden: boolean
   once: boolean
+  memget: boolean
+  memset: boolean
   expression: string
   hitcount: number
   nhits: number
+}
+
+export const getBreakpointIcon = (bp: Breakpoint) => {
+  if (bp.disabled) {
+    return iconBreakpointDisabled
+  }
+  if (bp.expression || bp.hitcount > 1) {
+    return iconBreakpointExtra
+  }
+  return iconBreakpointEnabled
+}
+
+export const getBreakpointStyle = (bp: Breakpoint) => {
+  return "breakpoint-style" + (bp.watchpoint ? " watch-point" : "")
+}
+
+export const getBreakpointString = (bp: Breakpoint) => {
+  let result = toHex(bp.address, 4)
+  if (bp.watchpoint) {
+    if (bp.memset) result += ' write'
+    if (bp.memget) result += ' read'
+  } else {
+    if (bp.hitcount > 1) {
+      result += ` hit=${bp.hitcount}`
+    }
+    if (bp.expression) {
+      result += ` (${bp.expression.replace(/ /g, '')})`
+    }
+  }
+  return result
 }
 
 export const convertBreakpointExpression = (expression: string) => {
@@ -39,18 +79,24 @@ export const checkBreakpointExpression = (expression: string) => {
 
 export class Breakpoint implements IBreakpoint {
   address: number;
+  watchpoint: boolean;
   disabled: boolean;
   hidden: boolean;
   once: boolean;
+  memget: boolean;
+  memset: boolean;
   expression: string;
   hitcount: number;
   nhits: number;
 
   constructor() {
     this.address = 0
+    this.watchpoint = false
     this.disabled = false
     this.hidden = false
     this.once = false
+    this.memget = false
+    this.memset = true
     this.expression = ''
     this.hitcount = 0
     this.nhits = 0

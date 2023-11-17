@@ -8,9 +8,9 @@ class DebugPanel extends React.Component<object, object>
 {
   render() {
     return (
-      <div className="flexRow">
+      <div className="flex-row">
         <DisassemblyPanel/>
-        <span className="flexColumn">
+        <span className="flex-column">
           <DebugInfoPanel/>
           <TimeTravelPanel/>
         </span>
