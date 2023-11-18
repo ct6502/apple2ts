@@ -1,7 +1,7 @@
 import { pcodes } from "../instructions";
 import { toHex, isBranchInstruction, ADDR_MODE } from "./utility";
 
-const doOutput = false
+let doOutput = false
 
 type CodeLine = {
   label: string,
@@ -19,13 +19,13 @@ type LabelOperand = {
 const splitOperand = (operand: string) => {
   const idx = operand.split(',')
   const s = idx[0].split(/([+-])/)
-  const codeLine: LabelOperand = {
+  const labelOperand: LabelOperand = {
     label: s[0] ? s[0] : '',
     operation: s[1] ? s[1] : '',
     value: s[2] ? parseInt(s[2].replace('#','').replace('$','0x')) : 0,
     idx: idx[1] ? idx[1] : ''
   }
-  return codeLine
+  return labelOperand
 }
 
 const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] => {
@@ -173,8 +173,10 @@ const getHexCodesForInstruction = (match: number, value: number) => {
   return newInstructions
 }
 
-const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<number> => {
-  let pc = start
+let orgStart = 0
+
+const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
+  let pc = orgStart
   const instructions: Array<number> = [];
   let prevLabel = ''
   code.forEach(line => {
@@ -192,6 +194,13 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
     }
 
     if (codeLine.instr === 'ORG') {
+      if (pass === 1) {
+        const [mode, value] = parseNumberOptionalAddressMode(codeLine.operand)
+        if (mode === ADDR_MODE.ABS) {
+          orgStart = value
+          pc = value
+        }
+      }
       if (doOutput && pass === 2) console.log(output)
       return
     }
@@ -249,7 +258,7 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
 
         const match = pcodes.findIndex(pc => pc && pc.name === codeLine.instr && pc.mode === mode)
         if (match < 0) {
-          throw new Error(`Unknown instruction: ${codeLine.instr} mode=${mode} pass=${pass}`);
+          throw new Error(`Unknown instruction: "${line}" mode=${mode} pass=${pass}`);
         }
         newInstructions = getHexCodesForInstruction(match, value)
         pc += pcodes[match].bytes
@@ -272,11 +281,14 @@ const parseOnce = (start: number, code: Array<string>, pass: 1 | 2): Array<numbe
   return instructions
 }
 
-export const parseAssembly = (start: number, code: Array<string>): Array<number> => {
+export const parseAssembly = (start: number, code: Array<string>,
+  verbose = false): Array<number> => {
   labels = {}
+  doOutput = verbose
   try {
-    parseOnce(start, code, 1)
-    const instructions = parseOnce(start, code, 2)
+    orgStart = start
+    parseOnce(code, 1)
+    const instructions = parseOnce(code, 2)
     return instructions
   } catch (error) {
     console.error(error)
