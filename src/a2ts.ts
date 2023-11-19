@@ -1,4 +1,4 @@
-import { parseAssembly } from './src/emulator/utility/assembler';
+import { parseAssembly } from './emulator/utility/assembler';
 import * as fs from 'fs';
 
 const err = "Usage: a2ts [-v|--verbose] inputfile outputfile"

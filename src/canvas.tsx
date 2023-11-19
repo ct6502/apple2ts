@@ -242,10 +242,13 @@ class Apple2Canvas extends React.Component<DisplayProps> {
         this.handleResize()
         setStartTextPage()
         clearInterval(this.startupTextTimeout)
+        // Never start the interval again.
         this.startupTextTimeout = -1
       }
     }
-    this.startupTextTimeout = window.setTimeout(setStartTextAfterFontLoad, 50);
+    if (this.startupTextTimeout === 0) {
+      this.startupTextTimeout = window.setInterval(setStartTextAfterFontLoad, 25);
+    }
     this.renderCanvas()
   }
 
