@@ -120,7 +120,7 @@ class BreakpointEdit extends React.Component<
   render() {
     return <div className="modal-overlay"
       onMouseMove={(e) => this.handleMouseMove(e)}>
-      <div className="breakpoint-edit-dialog flex-column"
+      <div className="floating-dialog flex-column"
         ref={this.dialogRef}
         style={{left: `${this.props.dialogPositionX}px`, top: `${this.props.dialogPositionY}px`}}
         >
@@ -152,7 +152,7 @@ class BreakpointEdit extends React.Component<
               onChange={(e) => {this.handleBreakAtChange(e)}}/>
             <label htmlFor="MemoryAccess" className="white-title flush-left">Memory Access</label>
           </div>
-          <EditField name="Address"
+          <EditField name="Address: "
             value={this.state.address}
             setValue={this.handleAddressChange}
             placeholder="F800"
@@ -175,12 +175,12 @@ class BreakpointEdit extends React.Component<
               </div>
           </div> : 
           <div>
-              <EditField name="Expression"
+              <EditField name="Expression: "
                 value={this.state.expression}
                 setValue={this.handleExpressionChange}
                 warning={this.state.badExpression}
                 placeholder="Break when expression evaluates to true"/>
-              <EditField name="Hit&nbsp;count"
+              <EditField name="Hit&nbsp;count: "
                 value={this.state.hitcount}
                 setValue={this.handleHitCountChange}
                 placeholder="1"
