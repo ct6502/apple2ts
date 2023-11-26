@@ -155,7 +155,7 @@ const processHiRes = (ctx: CanvasRenderingContext2D,
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode) : getHiresGreen(hgrPage))
+    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false) : getHiresGreen(hgrPage, nlines))
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes)
   drawImage(ctx, hiddenContext, hgrRGBA, width, height)
 };
@@ -175,6 +175,10 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
   //   0x70, 0x1C, 0x78, 0x08, 0x73, 0x08, 0x7F, 0x0F,
   //   0x7E, 0x0F, 0x70, 0x0C, 0x50, 0x08, 0x70, 0x09,
   //   0x70, 0x09, 0x78, 0x09, 0x7C, 0x09, 0x7E, 0x0B]
-  // drawHiresTile(ctx, new Uint8Array(tile), COLOR_MODE.COLOR, 16, 100, 100, 10)
+  // const tile = [0x80, 0x0A, 0xCC, 0x83, 0xE6, 0x83, 0xE2, 0x81,
+  //   0xAB, 0x8F, 0xFF, 0x8F, 0xFE, 0x87, 0xC2, 0x86,
+  //   0xC6, 0xE2, 0xCC, 0xC3, 0xC0, 0xC7, 0xE0, 0xCF,
+  //   0xF0, 0xCC, 0xB0, 0xCC, 0xB0, 0xCC, 0x98, 0x98]
+  // drawHiresTile(ctx, new Uint8Array(tile), colorMode, 16, 100, 100, 10)
 }
 

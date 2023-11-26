@@ -35,7 +35,7 @@ class DisplayApple2 extends React.Component<object,
   constructor(props: object) {
     super(props);
     this.state = {
-      doDebug: true,
+      doDebug: false,
       currentSpeed: 1.02,
       speedCheck: true,
       uppercase: true,

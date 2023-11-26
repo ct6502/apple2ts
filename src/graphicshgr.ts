@@ -4,32 +4,41 @@ import { hgrAmberScreen, hgrGreenScreen, hgrRGBcolors, hgrWhiteScreen, loresAmbe
 const BLACK = 0
 const WHITE = 3
 
-export const getHiresGreen = (hgrPage: Uint8Array) => {
-  const nlines = hgrPage.length / 40
-  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
-  for (let j = 0; j < nlines; j++) {
-    const line = hgrPage.slice(j*40, j*40 + 40)
-    const joffset = j * 560
-    let bitSet = 0
-    let prevHighBit = 1
-    for (let i = 0; i < 40; i++) {
-      const ioffset = joffset + i * 14
-      const byte1 = line[i]
-      const highBit = (byte1 & 128) ? 1 : 0
-      for (let b = 0; b <= 6; b++) {
-        const ioff1 = ioffset + 2 * b + highBit
-        if (b === 0 && bitSet && highBit && !prevHighBit) hgrColors[ioff1 - 1] = 1
-        bitSet = (byte1 & (1 << b)) ? 1 : 0
-        hgrColors[ioff1] = bitSet
-        hgrColors[ioff1 + 1] = bitSet
-      }
-      prevHighBit = highBit
+const getHiresGreenSingleLine = (line: Uint8Array) => {
+  const nbytes = line.length
+  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK);
+  let bitSet = 0
+  let prevHighBit = 1
+  for (let i = 0; i < nbytes; i++) {
+    const ioffset = i * 14
+    const byte1 = line[i]
+    const highBit = (byte1 & 128) ? 1 : 0
+    for (let b = 0; b <= 6; b++) {
+      const ioff1 = ioffset + 2 * b + highBit
+      if (b === 0 && bitSet && highBit && !prevHighBit) hgrColors1[ioff1 - 1] = 1
+      bitSet = (byte1 & (1 << b)) ? 1 : 0
+      hgrColors1[ioff1] = bitSet
+      hgrColors1[ioff1 + 1] = bitSet
     }
+    prevHighBit = highBit
+  }
+  return hgrColors1
+}
+
+export const getHiresGreen = (hgrPage: Uint8Array, nlines: number) => {
+  const nbytes = hgrPage.length / nlines
+  const hgrColors = new Uint8Array(14 * nbytes * nlines).fill(BLACK);
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
+    getHiresGreenSingleLine(line)
+    const hgrColors1 = getHiresGreenSingleLine(line)
+    hgrColors.set(hgrColors1, hgrColors1.length * j)
   }
   return hgrColors
 }
 
-const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE, noDelayMode: boolean) => {
+const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE,
+  noDelayMode: boolean, extendEdge: boolean) => {
   const nbytes = line.length
   const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK);
   let isEven = 1
@@ -38,9 +47,10 @@ const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE, noDelayMode
   for (let i = 0; i < nbytes; i++) {
     const ioffset = i * 14
     const byte1 = line[i]
-    const byte2bit0 = (i < (nbytes - 1)) ? (line[i + 1] & 1) : 0
     const highBit = (byte1 & 0x80 && !noDelayMode) ? 1 : 0
-    const nextHighBit = (i < (nbytes - 1)) ? (line[i + 1] & 0x80 && !noDelayMode) : 0
+    const nextByte = (i < (nbytes - 1)) ? line[i + 1] : (extendEdge ? byte1 : 0)
+    const byte2bit0 = nextByte & 1
+    const nextHighBit = nextByte & 0x80 && !noDelayMode
     for (let b = 0; b <= 6; b++) {
       if (skip) {
         skip = false
@@ -111,12 +121,12 @@ const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE, noDelayMode
 }
 
 export const getHiresColors = (hgrPage: Uint8Array, nlines: number,
-  colorMode: COLOR_MODE, noDelayMode: boolean) => {
+  colorMode: COLOR_MODE, noDelayMode: boolean, extendEdge: boolean) => {
   const nbytes = hgrPage.length / nlines
   const hgrColors = new Uint8Array(14 * nlines * nbytes).fill(BLACK)
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
-    const hgrColors1 = getHiresSingleLine(line, colorMode, noDelayMode)
+    const hgrColors1 = getHiresSingleLine(line, colorMode, noDelayMode, extendEdge)
     hgrColors.set(hgrColors1, hgrColors1.length * j)
   }
   return hgrColors
@@ -144,8 +154,9 @@ const drawHiresImage = async (ctx: CanvasRenderingContext2D,
   // Use hidden canvas/context so image rescaling works in iOS < 15
   if (!hiddenContext) {
     const hiddenCanvas = document.createElement('canvas')
-    hiddenCanvas.width = 560
-    hiddenCanvas.height = nlines
+    // If we ever have more than a 2x2 tile grid we will need to increase this.
+    hiddenCanvas.width = 56
+    hiddenCanvas.height = 32
     hiddenContext = hiddenCanvas.getContext('2d')
   }
   if (hiddenContext) {
@@ -160,7 +171,8 @@ export const drawHiresTile = (ctx: CanvasRenderingContext2D,
   xpos: number, ypos: number, scale: number) => {
   if (pixels.length === 0) return;
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
-  const hgrColors = isColor ? getHiresColors(pixels, nlines, colorMode, false) : getHiresGreen(pixels)
+  const hgrColors = isColor ? getHiresColors(pixels, nlines, colorMode, false, true) :
+    getHiresGreen(pixels, nlines)
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, false)
   drawHiresImage(ctx, hgrRGBA, nlines, xpos, ypos, scale)
-};
+}

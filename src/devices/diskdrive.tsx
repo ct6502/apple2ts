@@ -28,8 +28,9 @@ const resetDrive = (drive: number) => {
 
 class DiskDrive extends React.Component<{drive: number},
   { displayBinaryDialog: boolean }> {
-  hiddenFileInput = React.createRef<HTMLInputElement>();
+  hiddenFileInput = React.createRef<HTMLInputElement>()
   binaryBuffer: Uint8Array = new Uint8Array()
+  isTouchDevice = "ontouchstart" in document.documentElement
 
   constructor(props: {drive: number}) {
     super(props);
@@ -114,7 +115,7 @@ class DiskDrive extends React.Component<{drive: number},
           }} />
         <input
           type="file"
-          accept=".hdv,.2mg,.dsk,.woz,.po,.do,.bin"
+          accept={this.isTouchDevice ? "" : ".hdv,.2mg,.dsk,.woz,.po,.do,.bin"}
           ref={this.hiddenFileInput}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target?.files?.length) {
