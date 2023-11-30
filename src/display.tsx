@@ -179,6 +179,46 @@ class DisplayApple2 extends React.Component<object,
     handleGetSaveState(this.doSaveStateCallback)
   }
 
+  trimData = (data: Uint8ClampedArray, width: number, height: number) => {
+    let left = width
+    let right = 0
+    let top = height
+    let bottom = 0
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3]
+        if (alpha === 255) {
+          if (x < left) left = x
+          if (x > right) right = x
+          if (y < top) top = y
+          if (y > bottom) bottom = y
+        }
+      }
+    }
+    return {left, right, top, bottom}
+  }
+
+  trimCanvas = (handleBlob: (blob: Blob) => void) => {
+    const canvas = this.myCanvas.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData?.data
+    if (!data) return
+    const {left, right, top, bottom} = this.trimData(data, canvas.width, canvas.height)
+    const trimmedCanvas = document.createElement('canvas')
+    trimmedCanvas.width = right - left
+    trimmedCanvas.height = bottom - top
+    const trimmedCtx = trimmedCanvas.getContext('2d')
+    trimmedCtx?.drawImage(canvas, left, top, right - left, bottom - top,
+      0, 0, right - left, bottom - top)
+    trimmedCanvas.toBlob((trimmedBlob) => {
+      if (trimmedBlob) {
+        handleBlob(trimmedBlob)
+      }
+    })
+  }
+
   /**
    * For text mode, copy all of the screen text.
    * For graphics mode, do a bitmap copy of the canvas.
@@ -205,14 +245,8 @@ class DisplayApple2 extends React.Component<object,
       navigator.clipboard.writeText(output);
     } else {
       try {
-        this.myCanvas.current?.toBlob((blob) => {
-          if (blob) {
-            navigator.clipboard.write([
-              new ClipboardItem({
-                'image/png': blob,
-              })
-            ])
-          }
+        this.trimCanvas((blob) => {
+          navigator.clipboard.write([new ClipboardItem({'image/png': blob,})])
         })
       }
       catch (error) {
