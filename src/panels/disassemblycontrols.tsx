@@ -23,6 +23,8 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
   tooltipStepOverShow = true
   tooltipStepIntoShow = true
   tooltipStepOutShow = true
+  // The tooltip "show's" get reset when the instruction changes to/from JSR.
+  wasJSR = true
 
   constructor(props: object) {
     super(props);
@@ -48,6 +50,13 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
   render() {
     const runMode = handleGetRunMode()
     const isJSR = handleGetNextInstruction() === 'JSR'
+    // If the instruction changes to/from JSR, reset the tooltips,
+    // on the assumption that the user won't remember what the buttons mean.
+    if (isJSR !== this.wasJSR) {
+      this.tooltipStepOverShow = true
+      this.tooltipStepIntoShow = true
+      this.wasJSR = isJSR
+    }
     return (
       <span className="flex-row">
         <input className="hexField"

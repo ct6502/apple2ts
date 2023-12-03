@@ -26,6 +26,7 @@ export interface Printer {
   formfeed(): void;
 
   incomingData: Uint8Array;
+  hasData(): boolean;
   reprint(): void;
 }
 
@@ -61,6 +62,8 @@ export const ImageWriterII : Printer = {
   },
 
   incomingData: new Uint8Array(0),
+
+  hasData: function () { return this.incomingData.length > 0 },
 
   reprint: function () {
     _dbg = true

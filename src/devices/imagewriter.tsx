@@ -1,5 +1,4 @@
 import React from "react"
-import { Button } from "@mui/material"
 import iwiion from "./img/iwiion.png"
 import iwiioff from "./img/iwiioff.png"
 import PrinterDialog from "./printerdialog"
@@ -55,10 +54,11 @@ class ImageWriter extends React.Component {
 
     return (
       <span className="driveClass">
-        <Button className="imgButton" variant="contained"
-          onClick={this.handleClickOpen}>
-          <img className="iwii" src={img1} alt="iwii" height="57px"/>
-        </Button>
+        <img className="multi-disk"
+          src={img1} alt="iwii"
+          title="ImageWriter II"
+          height="57px"
+          onClick={this.handleClickOpen} />
         <PrinterDialog
           open={this.state.open}
           onClose={() => {this.setState({open: false})}}

@@ -1,5 +1,4 @@
 import React from "react"
-import { Button } from "@mui/material"
 import { passSetRunMode, handleSetDiskData, updateDisplay } from "../main2worker";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { resetAllDiskDrives } from "./diskinterface";
@@ -40,15 +39,17 @@ export const DiskImageChooser = () => {
 
   return (
     <div className="diskImageMargins">
-      <Button className="imgButton" variant="contained"
-        onClick={handleClickOpen}>
-        <img className="multiDisk" src={floppyDisks} alt="disks" height="65px"/>
-      </Button>
-      <DiskImageDialog
-        onSelect={handleSelect}
-        open={open}
-        onClose={() => setOpen(false)}
-      />
+      <img className="multi-disk"
+        src={floppyDisks} alt="disks"
+        title="Choose disk image"
+        height="65px"
+        onClick={handleClickOpen} />
+      {open &&
+        <DiskImageDialog
+          onSelect={handleSelect}
+          onClose={() => setOpen(false)}
+        />
+      }
     </div>
   )
 }
