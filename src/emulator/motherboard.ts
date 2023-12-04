@@ -15,6 +15,7 @@ import { handleGameSetup } from "./games/game_mappings"
 import { clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
 import { enableSerialCard } from "./devices/serial"
 import { enableMouseCard } from "./devices/mouse"
+import { enablePassportCard } from "./devices/passport/passport"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
@@ -139,7 +140,8 @@ const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   enableSerialCard()
-  enableMouseCard(true, 2)
+  enablePassportCard(true, 2)
+  enableMouseCard(false, 2)
   enableMockingboard(true, 4)
   enableMockingboard(true, 5)
   enableDiskDrive()
