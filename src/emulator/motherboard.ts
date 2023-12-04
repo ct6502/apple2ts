@@ -15,7 +15,7 @@ import { handleGameSetup } from "./games/game_mappings"
 import { clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
 import { enableSerialCard } from "./devices/serial"
 import { enableMouseCard } from "./devices/mouse"
-import { enablePassportCard } from "./devices/passport/passport"
+import { enablePassportCard, resetPassport } from "./devices/passport/passport"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
@@ -151,6 +151,7 @@ const resetMachine = () => {
   resetDrive()
   setButtonState()
   resetMouse()
+  resetPassport()
   resetMockingboard(4)
   resetMockingboard(5)
 }

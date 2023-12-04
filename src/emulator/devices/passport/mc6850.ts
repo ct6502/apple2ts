@@ -103,7 +103,7 @@ export class MC6850
 
   get status(): number
   {
-    const result = this.status;
+    const result = this._status;
 
     // clear irq on status read
     if (this._status & STATUS.IRQ)

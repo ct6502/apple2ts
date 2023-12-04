@@ -13,6 +13,14 @@ const CONTROL =
   SPECIAL        : (0x01 << 0), // CR1 - Reset, CR2 - Write CR1, CR3 - Prescale / 8 (NA)
 };
 
+const STATUS =
+{
+  TIMER1_IRQ : (0x01 << 0), // (NA)
+  TIMER2_IRQ : (0x01 << 1),
+  TIMER3_IRQ : (0x01 << 2),
+  ANY_IRQ    : (0x01 << 7)
+};
+
 enum MODE
 {                             // Note: Gate rules ignored
   CONTINUOUS0       = (0<<3), // Write to latches or Reset causes init
@@ -38,6 +46,11 @@ class PTMTimer
     if ((this._control & CONTROL.INTERNAL_CLOCK) == 0)
       return false;
 
+    // we reached limit and haven't been reset
+    if (this._count === 0xFFFF)
+      return false;
+
+    // go ahead and decrement
     this._count -= count;
     if (this._count < 0)
     {
@@ -111,13 +124,89 @@ export class MC6840
   _timer: Array<PTMTimer>; 
   _status: number;
   _slot: number;
+  _statusRead: boolean;
+  _msb: number;
+  _lsb: number;
 
-  update(cycles: number): void
+  status(): number
+  {
+    // set this value if read during an interrupt
+    this._statusRead = (this._status) ? true : false;
+    return this._status;
+  }
+
+  timerControl(idx: number, value: number): void
+  {
+    // IDX 0 = CR1/CR3 depending on bit 0 of timer CR2 
+    // IDX 1 = CR2 always 
+    
+    // timer2 holds "write to control reg 1" flag
+    if (idx === 0)
+      idx = (this._timer[1].control & CONTROL.SPECIAL) ? 0 : 2;
+
+    this._timer[idx].control = value;
+  }
+
+  timerLSBw(idx: number, value: number): void
+  {
+    let inreset = this._timer[0].control & CONTROL.SPECIAL;
+
+    const latch = this._msb*256 + value;
+    this._timer[idx].latch = latch;
+
+    if (inreset)
+      this._timer[idx].reload();
+
+    // writing counter clears int
+    // XXX - check if there are other prereqs
+    this.irq(idx, false);
+  }
+
+  timerLSBr(idx: number): number
+  {
+    // there is only 1 lsb buffer register
+    return this._lsb;
+  }
+
+  timerMSBw(idx: number, value: number): void
+  {
+    // there is only 1 msb buffer register
+    this._msb = value;
+  }
+
+  timerMSBr(idx: number): number
   {
     // timer0 holds reset flag
     let inreset = this._timer[0].control & CONTROL.SPECIAL;
 
-    if (!inreset)
+    const count = (inreset) ? this._timer[idx].latch : this._timer[idx].count;
+    this._lsb = count & 0xff;
+
+    // reading counter after reading status clears int
+    if (this._statusRead)
+    {
+      this._statusRead = false;
+      this.irq(idx, false);
+    }
+    return (count >> 8) & 0xff;
+  }
+
+  update(cycles: number): void
+  {
+    // timer1 holds reset flag
+    let inreset = this._timer[0].control & CONTROL.SPECIAL;
+
+    if (inreset)
+    {
+      // clear IRQs if we are in reset, and are asserting an irq
+      if (this._status)
+      {
+        this.irq(0,false);
+        this.irq(1,false);
+        this.irq(2,false);
+      }
+    }
+    else
     {
       for(let i=0;i<3;i++)
       {
@@ -125,6 +214,7 @@ export class MC6840
 
         if (zeroed)
         {
+          //console.log("timer[" + i + "] zeroed");
           let control = this._timer[i].control;
           if (control & CONTROL.IRQ_ENABLE)
             this.irq(i, true);
@@ -151,18 +241,44 @@ export class MC6840
   {
     // this is a chip reset
     this._timer.forEach( (f) => {f.reset()} );
+    this._status = 0;
+    this.irq(0, false)
+    this.irq(1, false)
+    this.irq(2, false)
+    // chip starts in reset state
+    this._timer[0].control = CONTROL.SPECIAL;
   }
 
   irq(which: number, tf: boolean): void
   {
-    interruptRequest(this._slot, tf)
+    const bits = (0x01 << which) | STATUS.ANY_IRQ;
+
+    if (tf)
+      this._status |= bits;
+    else
+      this._status &= ~bits;
+
+    if (this._status)
+    {
+      this._status |= STATUS.ANY_IRQ;
+      interruptRequest(this._slot, true)
+      //console.log("IRQ["+which+"]: true")
+    }
+    else
+    {
+      this._status &= ~STATUS.ANY_IRQ;
+      interruptRequest(this._slot, false)
+      //console.log("IRQ["+which+"]: false")
+    }
   }
 
   constructor(slot:number)
   {
     this._slot = slot;
     this._status = 0;
+    this._statusRead = false;
     this._timer = [new PTMTimer(), new PTMTimer(), new PTMTimer()];
+    this._msb = this._lsb = 0;
     this.reset()
   }
 };

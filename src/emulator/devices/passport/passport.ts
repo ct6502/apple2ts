@@ -77,40 +77,108 @@ const handleMIDIIO = (addr: number, val = -1): number => {
     case REG.ACIADATA:
         if(val >= 0)
         {
+          console.log("Write ACIAData: " + val.toString(16))
           acia.data = val
         }
         else
         {
           result = acia.data
+          console.log("Read ACIAData: " + result.toString(16))
         }
         break
 
     case REG.ACIASTATCTRL:
         if(val >= 0)
         {
+          console.log("Write ACIAControl: " + val.toString(16))
           acia.control = val
         }
         else
         {
           result = acia.status
+          //console.log("Read ACIAControl: " + result.toString(16))
         }
         break;
 
     case REG.TCONTROL1:
+      // reading this register does nothing
+      if (val >= 0)
+      {
+        //console.log("Write Timer Control1: " + val.toString(16))
+        timer.timerControl(0, val)
+      }
+      else
+      {
+        console.log("Read Timer Control1: error")
+        result = 0x00
+      }
       break;
     case REG.TCONTROL2:
+      // reading this register gives status
+      if (val >= 0)
+      {
+        //console.log("Write Timer Control2: " + val.toString(16))
+        timer.timerControl(1, val)
+      }
+      else
+      {
+        result = timer.status()
+        //console.log("Read Timer Control2: " + result.toString(16))
+      }
       break;
     case REG.T1MSB:
+      if (val >= 0)
+      {
+        //console.log("Write Timer1 MSB: " + val.toString(16))
+        timer.timerMSBw(0, val)
+      }
+      else
+        result = timer.timerMSBr(0)
       break;
     case REG.T1LSB:
+      if (val >= 0)
+      {
+        //console.log("Write Timer1 LSB: " + val.toString(16))
+        timer.timerLSBw(0, val)
+      }
+      else
+        result = timer.timerLSBr(0)
       break;
     case REG.T2MSB:
+      if (val >= 0)
+      {
+        //console.log("Write Timer2 MSB: " + val.toString(16))
+        timer.timerMSBw(1, val)
+      }
+      else
+        result = timer.timerMSBr(1)
       break;
     case REG.T2LSB:
+      if (val >= 0)
+      {
+        //console.log("Write Timer2 LSB: " + val.toString(16))
+        timer.timerLSBw(1, val)
+      }
+      else
+        result = timer.timerLSBr(1)
       break;
     case REG.T3MSB:
+      if (val >= 0)
+      {
+        //console.log("Write Timer3 MSB: " + val.toString(16))
+        timer.timerMSBw(2, val)
+      }
+      else
+        result = timer.timerMSBr(2)
       break;
     case REG.T3LSB:
+      if (val >= 0)
+      {
+        //console.log("Write Timer3 LSB: " + val.toString(16))
+        timer.timerLSBw(2, val)
+      }
+      else
+        result = timer.timerLSBr(2)
       break;
 
     case REG.DRUMSET:
