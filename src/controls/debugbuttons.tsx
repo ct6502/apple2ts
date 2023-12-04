@@ -11,8 +11,6 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
-// import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
-// import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const DebugButtons = (props: DisplayProps) => {  
   return <span className="flex-row">

@@ -3,21 +3,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWaveSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import ListItemButton from "@mui/material/ListItemButton";
-import Menu from "@mui/material/Menu";
-import { getMockingboardName } from "./mockingboard_audio";
+import { changeMockingboardMode, getMockingboardMode, getMockingboardName } from "./mockingboard_audio";
 
-export const MockingboardWaveform = (props: {mode: number, change: (mode: number) => void}) => {
-  const [anchorButton, setAnchorButton] = React.useState<null | HTMLElement>(null);
-  const mockOpen = Boolean(anchorButton);
-  const handleMockClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorButton(event.currentTarget);
-  };
+export const MockingboardWaveform = () => {
+  const [mockOpen, setMockOpen] = React.useState<boolean>(false)
+  const [position, setPosition] = React.useState<{x: number, y: number}>({x: 0, y: 0})
+
+  const handleMockClick = (event: React.MouseEvent) => {
+    setPosition({x: event.clientX, y: event.clientY})
+    setMockOpen(true);
+  }
+
   const handleMockClose = (index = -1) => {
-    setAnchorButton(null);
-    if (index >= 0) props.change(index)
-  };
-  const squareWave = <FontAwesomeIcon icon={faWaveSquare}/>
+    setMockOpen(false);
+    if (index >= 0) changeMockingboardMode(index)
+  }
 
   return (
     <span>
@@ -25,25 +25,27 @@ export const MockingboardWaveform = (props: {mode: number, change: (mode: number
         id="basic-button"
         className="pushButton"
         title="Mockingboard wave form"
-        aria-controls={mockOpen ? 'basic-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={mockOpen ? 'true' : undefined}
         onClick={handleMockClick}
       >
-        {squareWave}
+        <FontAwesomeIcon icon={faWaveSquare}/>
       </button>
-      <Menu
-        id="basic-menu"
-        anchorEl={anchorButton}
-        open={mockOpen}
-        onClose={() => handleMockClose()}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}>
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-        <ListItemButton key={i} onClick={() => handleMockClose(i)} selected={i === props.mode}>
-          {i === props.mode ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}</ListItemButton>))}
-      </Menu>
+      {mockOpen &&
+        <div className="modal-overlay"
+          style={{backgroundColor: 'rgba(0, 0, 0, 0)'}}
+          onClick={() => handleMockClose()}>
+          <div className="floating-dialog flex-column"
+            style={{backgroundColor: 'white', left: position.x, top: position.y}}>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div style={{padding: '5px', cursor: 'pointer'}}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                key={i} onClick={() => handleMockClose(i)}>
+                {i === getMockingboardMode() ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}
+              </div>))}
+          </div>
+        </div>
+      }
+
     </span>
   )
 }

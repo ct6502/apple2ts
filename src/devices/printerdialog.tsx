@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from "react"
-import { Dialog, DialogContent } from "@mui/material"
 import { Printer } from "./iwii"
 import { imagewriter2 } from "./img/imagewriter2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -52,7 +51,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
   
   return <canvas ref={canvasRef} {...rest}
           className="printerCanvas"
-          style={{width:'100%', height:'100%'}}
+          style={{width:'600px', height:'700px'}}
           hidden={false}
           width={width} height={height} />
 }
@@ -96,49 +95,63 @@ const PrinterDialog = (props: PrinterDialogProps) => {
 
   const buttonColor = "#404040"
 
-  return (
-    <Dialog onClose={handleClose} open={open}>
-      <div className="flex-row-space-between wrap">
-      <svg height="35" width="150">{imagewriter2}</svg>
-        <div className="flex-row">
-        <button className="pushButton"
-          style={{color: `${buttonColor}`}}
-          title="Save Stored Data"
-          onClick={handleSaveData}>
-          <FontAwesomeIcon icon={faSave}/>
-        </button>
-        <button className="pushButton"
-          style={{color: `${buttonColor}`}}
-          title="Reprint from Stored Data"
-          onClick={handleReprint}>
-          <FontAwesomeIcon icon={faFolderOpen}/>
-        </button>
-        <button className="pushButton"
-          style={{color: `${buttonColor}`}}
-          title="Send to Printer"
-          onClick={handlePrint}>
-          <FontAwesomeIcon icon={faPrint}/>
-        </button>
-        <button className="pushButton"
-          style={{color: `${buttonColor}`}}
-          title="Tear off Page and Reset"
-          onClick={handleClear}>
-          <FontAwesomeIcon icon={faTrash}/>
-        </button>
-        <button className="pushButton"
-          style={{color: `${buttonColor}`}}
-          title="Close Dialog"
-          onClick={handleClose}>
-          <FontAwesomeIcon icon={faXmark}/>
-        </button>
-        </div>
-      </div>
 
-        <DialogContent>
+{/* <Dialog onClose={handleClose} open={open}> */}
+  if (!open) return (<></>)
+
+  const hasPrinterData = props.printer.hasData()
+
+  return (
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="floating-dialog flex-column"
+        onClick={(e) => e.stopPropagation()}
+        style={{left: "5%", top: "5%", backgroundColor: "white"}}>
+        <div className="flex-column">
+          <div className="flex-row-space-between wrap">
+            <svg height="35" width="150">{imagewriter2}</svg>
+            <div className="flex-row">
+              <button className="pushButton"
+                disabled={!hasPrinterData}
+                style={{color: `${buttonColor}`}}
+                title="Save Stored Data"
+                onClick={handleSaveData}>
+                <FontAwesomeIcon icon={faSave}/>
+              </button>
+              <button className="pushButton"
+                disabled={!hasPrinterData}
+                style={{color: `${buttonColor}`}}
+                title="Reprint from Stored Data"
+                onClick={handleReprint}>
+                <FontAwesomeIcon icon={faFolderOpen}/>
+              </button>
+              <button className="pushButton"
+                disabled={!hasPrinterData}
+                style={{color: `${buttonColor}`}}
+                title="Send to Printer"
+                onClick={handlePrint}>
+                <FontAwesomeIcon icon={faPrint}/>
+              </button>
+              <button className="pushButton"
+                disabled={!hasPrinterData}
+                style={{color: `${buttonColor}`}}
+                title="Tear off Page and Reset"
+                onClick={handleClear}>
+                <FontAwesomeIcon icon={faTrash}/>
+              </button>
+              <button className="pushButton"
+                style={{color: `${buttonColor}`}}
+                title="Close Dialog"
+                onClick={handleClose}>
+                <FontAwesomeIcon icon={faXmark}/>
+              </button>
+            </div>
+          </div>
+
         <CopyCanvas srcCanvas={props.canvas} />
-        </DialogContent>
-    </Dialog>
-  );
+    </div>
+    </div>
+    </div>
+  )
 }
 
 export default PrinterDialog

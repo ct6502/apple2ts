@@ -111,11 +111,6 @@ body {
   cursor: default;
 }
 
-/* .pushMuiButton {
-  font-size: 1.75rem;
-  vertical-align: text-bottom;
-} */
-
 .isButtonActive {
   background-color: #898677;
 }
@@ -181,7 +176,6 @@ body {
   border-style: solid;
   box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.5);
   opacity: 100%;
-  width: 450px;
   position: absolute;
   z-index: 9999;
 }

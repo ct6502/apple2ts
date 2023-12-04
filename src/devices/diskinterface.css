@@ -71,37 +71,8 @@
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
-.multiDisk {
+.multi-disk {
   margin-right: 10px;
   filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
-}
-
-
-.MuiDialog-paper {
-  margin: 0 !important;
-  padding-left: 10px;
-  padding-right: 10px;
-  border-radius: 10px !important;
-}
-
-.MuiDialogTitle-root {
-  padding: 5px !important;
-}
-
-.MuiImageListItem-root {
-  margin-bottom: 0px;
   cursor: pointer;
-}
-
-.MuiImageListItemBar-root {
-  background: rgba(0, 0, 0, 0.65) !important;
-}
-
-.MuiImageListItemBar-titleWrap {
-  padding: 4px !important;
-}
-
-.MuiImageListItemBar-title {
-  font-size: small !important;
-  margin-top: 20;
 }

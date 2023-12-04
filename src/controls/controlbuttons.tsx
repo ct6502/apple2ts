@@ -8,8 +8,6 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
-// import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
-// import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ControlButtons = (props: DisplayProps) => {  
   return <span className="flex-row">
