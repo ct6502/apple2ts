@@ -127,6 +127,7 @@ export class MC6840
   _statusRead: boolean;
   _msb: number;
   _lsb: number;
+  _div8: number;
 
   status(): number
   {
@@ -195,6 +196,7 @@ export class MC6840
   {
     // timer1 holds reset flag
     let inreset = this._timer[0].control & CONTROL.SPECIAL;
+    this._div8 += cycles;
 
     if (inreset)
     {
@@ -208,9 +210,30 @@ export class MC6840
     }
     else
     {
+      let zeroed = false;
+
       for(let i=0;i<3;i++)
       {
-        let zeroed = this._timer[i].decrement(cycles);
+        let dec = cycles;
+
+        if (i==2)
+        {
+          // the special bit in timer3 is divide by 8
+          if (this._timer[2].control & CONTROL.SPECIAL)
+          {
+            if (this._div8 > 8)
+            {
+              // do it this way in case div8 is turned on/off.
+              // will miss some counts but sould catch up OK.
+              dec = 1;
+              this._div8 %= 8;
+            }
+            else
+              dec = 0;
+          }
+        }
+
+        zeroed = this._timer[i].decrement(dec);
 
         if (zeroed)
         {
@@ -279,6 +302,7 @@ export class MC6840
     this._statusRead = false;
     this._timer = [new PTMTimer(), new PTMTimer(), new PTMTimer()];
     this._msb = this._lsb = 0;
+    this._div8 = 0;
     this.reset()
   }
 };
