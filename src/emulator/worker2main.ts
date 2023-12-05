@@ -9,6 +9,7 @@ import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility/utility";
 import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
 import { receiveCommData } from "./devices/serial";
+import { receiveMidiData } from "./devices/passport/passport";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -60,6 +61,10 @@ export const passMockingboard = (sound: MockingboardSound) => {
 
 export const passTxCommData = (data: Uint8Array) => {
   doPostMessage(MSG_WORKER.COMM_DATA, data)
+}
+
+export const passTxMidiData = (data: Uint8Array) => {
+  doPostMessage(MSG_WORKER.MIDI_DATA, data)
 }
 
 // We do this weird check so we can safely run this code from the node.js
@@ -141,6 +146,9 @@ if (typeof self !== 'undefined') {
       }
       case MSG_MAIN.COMM_DATA:
         receiveCommData(e.data.payload)
+        break
+      case MSG_MAIN.MIDI_DATA:
+        receiveMidiData(e.data.payload)
         break
       default:
         console.error(`worker2main: unhandled msg: ${e.data.msg}`)

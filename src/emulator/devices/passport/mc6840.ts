@@ -82,8 +82,8 @@ class PTMTimer
 
     switch( this._control & CONTROL.COUNTER_MODE )
     {
-      case MODE.CONTINUOUS1:
-      case MODE.SINGLE_SHOT1:
+      case MODE.CONTINUOUS0:
+      case MODE.SINGLE_SHOT0:
         // reload counter with latch
         this.reload();
         break;

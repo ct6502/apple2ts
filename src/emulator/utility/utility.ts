@@ -19,6 +19,7 @@ export enum MSG_WORKER {
   SHOW_MOUSE,
   MBOARD_SOUND,
   COMM_DATA,
+  MIDI_DATA,
 }
 
 export enum MSG_MAIN {
@@ -44,6 +45,7 @@ export enum MSG_MAIN {
   GAMEPAD,
   SET_BINARY_BLOCK,
   COMM_DATA,
+  MIDI_DATA,
 }
 
 export enum COLOR_MODE {

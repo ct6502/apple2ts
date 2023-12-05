@@ -1,6 +1,6 @@
 // Passport MIDI Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
-//import { passTxMidiData } from "../worker2main"
+import { passTxMidiData } from "../../worker2main"
 import { MC6850 } from "./mc6850"
 import { MC6840 } from "./mc6840"
 import { registerCycleCountCallback } from "../../cpu6502"
@@ -26,17 +26,13 @@ export const receiveMidiData = (data: Uint8Array): void => {
   acia.buffer(data)
 }
 
-const sendMidiData = (data: Uint8Array): void => {
-  // dummy until we can expose passTxMidiData
-}
-
 export const enablePassportCard = (enable = true, aslot = 2) => {
   if (!enable)
     return
 
   slot = aslot
   timer = new MC6840(slot)
-  acia  = new MC6850(slot, sendMidiData)
+  acia  = new MC6850(slot, passTxMidiData)
 
   // passport midi cards have no ROM
   setSlotIOCallback(slot, handleMIDIIO)
@@ -77,20 +73,20 @@ const handleMIDIIO = (addr: number, val = -1): number => {
     case REG.ACIADATA:
         if(val >= 0)
         {
-          console.log("Write ACIAData: " + val.toString(16))
+          //console.log("Write ACIAData: " + val.toString(16))
           acia.data = val
         }
         else
         {
           result = acia.data
-          console.log("Read ACIAData: " + result.toString(16))
+          //console.log("Read ACIAData: " + result.toString(16))
         }
         break
 
     case REG.ACIASTATCTRL:
         if(val >= 0)
         {
-          console.log("Write ACIAControl: " + val.toString(16))
+          //console.log("Write ACIAControl: " + val.toString(16))
           acia.control = val
         }
         else
