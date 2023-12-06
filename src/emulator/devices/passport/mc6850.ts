@@ -31,18 +31,25 @@ export class MC6850
   _control: number
   _status: number
   _slot: number
-  _receiveBuffer: Uint8Array
-  _receivePos: number
+  _receiveBuffer: number[]
   _externalSend: (data: Uint8Array) => void
 
   buffer(data: Uint8Array): void
   {
-    const tmpbuffer = new Uint8Array(this._receiveBuffer.length + data.length)
-    // new data first
-    tmpbuffer.set(data)
-    tmpbuffer.set(this._receiveBuffer, data.length)
-    this._receiveBuffer = tmpbuffer
-    this._receivePos += data.length
+    // XXX - fixme
+    return;
+
+    for(let i=0;i<data.length;i++)
+      this._receiveBuffer.push(data[i]);
+
+    const shifts = this._receiveBuffer.length - 16; 
+    
+    // if we are longer than desired length, shift out the earlier entries
+    if(shifts > 0)
+    {
+      for(let i=0;i<shifts;i++)
+        this._receiveBuffer.shift()
+    }
 
     this._status |= STATUS.RX_FULL
     if (this._control & CONTROL.RX_INT_ENABLE) 
@@ -66,13 +73,11 @@ export class MC6850
   {
     let result = 0
     // check if we have any data
-    if (this._receivePos > -1)
-    {
-      result = this._receiveBuffer[this._receivePos--]
-    }
+    if (this._receiveBuffer.length)
+      result = this._receiveBuffer.shift();
 
     // check if we have more data
-    if (this._receivePos > -1)
+    if (this._receiveBuffer.length)
     {
       // if we have more data, ring the IRQ bell again
       this._status |= STATUS.RX_FULL
@@ -130,8 +135,7 @@ export class MC6850
     // set these permanently: TX empty, /DCD and /CTS
     this._status = (STATUS.TX_EMPTY);
     this.irq(false);
-    this._receiveBuffer = new Uint8Array();
-    this._receivePos = -1
+    this._receiveBuffer = [];
   }
 
   constructor(slot: number, externalSend: (data: Uint8Array) => void)
@@ -140,8 +144,7 @@ export class MC6850
     this._externalSend = externalSend;
     this._control = 0x00;
     this._status = 0x00;
-    this._receiveBuffer = new Uint8Array();
-    this._receivePos = -1
+    this._receiveBuffer = [];
     this.reset();
   }
 }

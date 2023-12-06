@@ -23,7 +23,9 @@ const cycleCountCallback = (slot: number) => {
 }
 
 export const receiveMidiData = (data: Uint8Array): void => {
-  acia.buffer(data)
+  // messages can come in before we are initialized
+  if (acia)
+    acia.buffer(data)
 }
 
 export const enablePassportCard = (enable = true, aslot = 2) => {
