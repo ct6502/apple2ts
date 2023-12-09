@@ -1,10 +1,11 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faXmark as faBreakpointDelete,
+  faXmark as iconBreakpointDelete,
 } from "@fortawesome/free-solid-svg-icons";
 import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
 import EditField from "./editfield";
+import PullDownMenu from "./pulldownmenu";
 
 class BreakpointEdit extends React.Component<
   {breakpoint: Breakpoint,
@@ -25,6 +26,7 @@ class BreakpointEdit extends React.Component<
   offsetX = 0
   offsetY = 0
   dragging = false
+  softSwitches = ['C000', 'C010', 'C020', 'C030', 'C050', 'C060', 'C070', 'C080', 'C090', 'C0A0', 'C0B0', 'C0C0', 'C0D0', 'C0E0', 'C0F0']
 
   constructor(props: { breakpoint: Breakpoint,
     saveBreakpoint: () => void,
@@ -45,7 +47,7 @@ class BreakpointEdit extends React.Component<
   }
 
   handleAddressChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
     if (this.props.breakpoint) {
       this.props.breakpoint.address = parseInt(value || '0', 16)
       this.setState({address: value})
@@ -122,18 +124,19 @@ class BreakpointEdit extends React.Component<
       onMouseMove={(e) => this.handleMouseMove(e)}>
       <div className="floating-dialog flex-column"
         ref={this.dialogRef}
-        style={{left: `${this.props.dialogPositionX}px`, top: `${this.props.dialogPositionY}px`}}
+        style={{left: `${this.props.dialogPositionX}px`, top: `${this.props.dialogPositionY}px`,
+          width: "450px", height: "auto"}}
         >
         <div className="flex-column">
           <div className="flex-row-space-between"
             onMouseDown={(e) => this.handleMouseDown(e)}
             onMouseMove={(e) => this.handleMouseMove(e)}
             onMouseUp={this.handleMouseUp}>
-            <div className="white-title">Edit Breakpoint</div>
+            <div className="white-title">Edit Breakpoint/Watchpoint</div>
             <div onClick={this.props.cancelDialog}>
-              <FontAwesomeIcon icon={faBreakpointDelete}
+              <FontAwesomeIcon icon={iconBreakpointDelete}
                 className='breakpoint-pushbutton'
-                style={{color: "white"}}/>
+                style={{color: "white", fontSize: "12pt", marginTop: "4pt"}}/>
             </div>
           </div>
           <div className="horiz-rule"></div>
@@ -145,18 +148,22 @@ class BreakpointEdit extends React.Component<
               className="check-radio-box"
               checked={!this.props.breakpoint.watchpoint}
               onChange={(e) => {this.handleBreakAtChange(e)}}/>
-            <label htmlFor="Address" className="white-title flush-left">Program Counter</label>
+            <label htmlFor="Address" className="white-title flush-left">Breakpoint</label>
             <input type="radio" id="MemoryAccess" name="breakAt" value="memoryAccess"
               className="check-radio-box"
               checked={this.props.breakpoint.watchpoint}
               onChange={(e) => {this.handleBreakAtChange(e)}}/>
-            <label htmlFor="MemoryAccess" className="white-title flush-left">Memory Access</label>
+            <label htmlFor="MemoryAccess" className="white-title flush-left">Memory Watchpoint</label>
           </div>
-          <EditField name="Address: "
-            value={this.state.address}
-            setValue={this.handleAddressChange}
-            placeholder="F800"
-            width="5em"/>
+          <div className="flex-row">
+            <EditField name="Address: "
+              value={this.state.address}
+              setValue={this.handleAddressChange}
+              placeholder="F800"
+              width="5em"/>
+            {this.props.breakpoint.watchpoint &&
+              <PullDownMenu values={this.softSwitches} setValue={this.handleAddressChange}/>}
+          </div>
           {this.state.watchpoint ?
             <div className="flex-column">
               <div className="flex-row">

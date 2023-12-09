@@ -213,7 +213,7 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
     return (
       <div className="flex-row thinBorder">
         {this.getBreakpointDiv()}
-        <div className="debugPanel"
+        <div className="debug-panel small-mono-text"
           ref={this.codeRef}
           onScroll={this.handleCodeScroll}
           onKeyDown={this.handleCodeKeyDown}
