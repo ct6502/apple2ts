@@ -104,7 +104,11 @@ export const receiveMidiData = (data: Uint8Array) => {
     // Program and Pressure commands only have 2 bytes, rest have 3
     if (msg[0] < 192 || msg[0] > 223)
       msg.push( buffer.shift() );
-    //console.log("MIDI Send: " + msg);
+    //let txt = "[" + msg[0].toString(16);
+    //for(let i=1;i<msg.length;i++)
+    //  txt += (" " + msg[i].toString(16));
+    //txt += "]";
+    //console.log(txt);
     device.send(msg); 
   }
 }
