@@ -1,17 +1,24 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
-import { cycleCount, s6502 } from "./instructions"
+import { s6502 } from "./instructions"
 import { romBase64 } from "./roms/rom_2e"
+import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
-import { handleGameSetup } from "./game_mappings";
-import { inVBL } from "./motherboard";
+import { handleGameSetup } from "./games/game_mappings";
+import { isDebugging, inVBL } from "./motherboard";
+import { toHex } from "./utility/utility";
+import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 
-// 00000: main memory
-// 10000: aux memory 
-// 20000...23FFF: ROM
-// 24000...246FF: Slots 1-7
+// 0x00000: main memory
+// 0x10000: aux memory 
+// 0x20000...23FFF: ROM (including page $C0 soft switches)
+// 0x24000...246FF: Peripheral card ROM $C100-$C7FF
+// 0x24700...27EFF: Slots 1-7 (8*256 byte $C800-$CFFF range for each card)
+// 0x27F00...??F00: RAMWorks expanded memory
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-export let memory = (new Uint8Array(600 * 256)).fill(0)
+const RAMWorksSize = (1024-64) // in K 256, 512, 1024, 4096, 8192
+const RAMWorksMaxBank = RAMWorksSize / 64
+export const memory = (new Uint8Array(0x27F00 + RAMWorksMaxBank*0x10000)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -19,17 +26,22 @@ export let memory = (new Uint8Array(600 * 256)).fill(0)
 const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 
-const ROMindexMinusC0 = 0x200 - 0xC0
-const SLOTindexMinusC1 = 0x240 - 0xC1
 const AUXindex = 0x100
-const ROMstartMinusC000 = 256 * ROMindexMinusC0
-const SLOTstartMinusC100 = 256 * SLOTindexMinusC1
+const ROMindex = 0x200
+const SLOTindex = 0x240
+const SLOTC8index = 0x247
+const RAMWorksIndex = 0x27F
+const ROMstart = 256 * ROMindex
+const SLOTstart = 256 * SLOTindex
+const SLOTC8start = 256 * SLOTC8index
 const AUXstart = 256 * AUXindex
+let   C800Slot = 0
+let   RAMWorksBankIndex = 0
 
 const updateMainAuxMemoryTable = () => {
-  const offsetAuxRead = SWITCHES.RAMRD.isSet ? AUXindex : 0
-  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? AUXindex : 0
-  const offsetPage2 = SWITCHES.PAGE2.isSet ? AUXindex : 0
+  const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
+  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex: AUXindex) : 0
+  const offsetPage2 = SWITCHES.PAGE2.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
   const offsetTextPageRead = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxRead
   const offsetTextPageWrite = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxWrite
   const offsetHgrPageRead = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
@@ -49,7 +61,7 @@ const updateMainAuxMemoryTable = () => {
 }
 
 const updateReadBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
+  const offsetZP = SWITCHES.ALTZP.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
   addressGetTable[0] = offsetZP;
   addressGetTable[1] = 1 + offsetZP;
   addressSetTable[0] = offsetZP;
@@ -67,15 +79,19 @@ const updateReadBankSwitchedRamTable = () => {
   } else {
     // ROM ($D000...$FFFF) is in 0x210...0x23F
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressGetTable[i] = ROMindexMinusC0 + i;
+      addressGetTable[i] = ROMindex + i - 0xC0;
     }
   }
 }
 
 const updateWriteBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? AUXindex : 0
+  const offsetZP = SWITCHES.ALTZP.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
   const writeRAM = SWITCHES.WRITEBSR1.isSet || SWITCHES.WRITEBSR2.isSet ||
     SWITCHES.RDWRBSR1.isSet || SWITCHES.RDWRBSR2.isSet
+  // Start out with Slot ROM and regular ROM as not writeable
+  for (let i = 0xC0; i <= 0xFF; i++) {
+    addressSetTable[i] = -1;
+  }
   if (writeRAM) {
     for (let i = 0xD0; i <= 0xFF; i++) {
       addressSetTable[i] = i + offsetZP;
@@ -86,11 +102,6 @@ const updateWriteBankSwitchedRamTable = () => {
         addressSetTable[i] = i - 0x10 + offsetZP;
       }
     }
-  } else {
-    // ROM is not writeable
-    for (let i = 0xC0; i <= 0xFF; i++) {
-      addressSetTable[i] = -1;
-    }
   }
 }
 
@@ -100,17 +111,80 @@ const slotIsActive = (slot: number) => {
   return (slot !== 3) ? true : SWITCHES.SLOTC3ROM.isSet
 }
 
+// Below description modified from AppleWin source
+//
+// INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
+// . Set:   On access to $C3XX with SLOTC3ROM reset
+//			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
+//			   an access is made to $CFFF or until the MMU detects a system reset."
+// . Reset: On access to $CFFF or an MMU reset
+//
+// - Acts like a card in slot 3, except it doesn't require CFFF to activate like
+//   a slot.
+//
+// INTCXROM   INTC8ROM   $C800-CFFF
+//    0           0         slot   
+//    0           1       internal 
+//    1           0       internal 
+//    1           1       internal 
+
+const slotC8IsActive = () => {
+  if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) return false
+  // Will happen for one cycle after $CFFF in slot ROM,
+  // or if $CFFF was accessed outside of slot ROM space.
+  if (C800Slot <= 0) return false
+  return true
+}
+
+const manageC800 = (slot: number) => {
+
+  if (slot < 8) {
+    if (SWITCHES.INTCXROM.isSet)
+      return
+
+    // This combination forces INTC8ROM on
+    if (slot === 3 && !SWITCHES.SLOTC3ROM.isSet) {
+      if (!SWITCHES.INTC8ROM.isSet) {
+        SWITCHES.INTC8ROM.isSet = true
+        C800Slot = -1
+        updateAddressTables()
+      }
+    }
+    if (C800Slot === 0) {
+      // If C800Slot is zero, then set it to first card accessed
+      C800Slot = slot
+      updateAddressTables();
+    }
+  } else {
+    // if slot > 7 then it was an access to $CFFF
+    // accessing $CFFF resets everything WRT C8
+    SWITCHES.INTC8ROM.isSet = false
+    C800Slot = 0
+    updateAddressTables()
+  }
+}
+
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x200...0x20F
-  addressGetTable[0xC0] = ROMindexMinusC0
+  addressGetTable[0xC0] = ROMindex - 0xC0
   for (let slot = 1; slot <= 7; slot++) {
     const page = 0xC0 + slot
-    addressGetTable[page] = page +
-      (slotIsActive(slot) ? SLOTindexMinusC1 : ROMindexMinusC0)
+    addressGetTable[page] = slot +
+      (slotIsActive(slot) ? (SLOTindex - 1) : ROMindex)
   }
-  // TODO: Currently, $C800-$CFFF is not being filled in for cards.
-  for (let i = 0xC8; i <= 0xCF; i++) {
-    addressGetTable[i] = ROMindexMinusC0 + i;
+
+  // Fill in $C800-CFFF for cards
+  if (slotC8IsActive()) {
+    const slotC8 = SLOTC8index + 8 * (C800Slot - 1)
+    for (let i = 0; i <= 7; i++) {
+      const page = 0xC8 + i
+      addressGetTable[page] = slotC8 + i;
+    }
+  }
+  else {
+    for (let i = 0xC8; i <= 0xCF; i++) {
+      addressGetTable[i] = ROMindex + i - 0xC0;
+    }
   }
 }
 
@@ -135,16 +209,18 @@ const slotIOCallbackTable = new Array<AddressCallback>(8)
 // Value = -1 indicates that this was a read/get operation
 const checkSlotIO = (addr: number, value = -1) => {
   const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
-  if (addr >= 0xC100 && !slotIsActive(slot)) {
-    return
+  if (addr >= 0xC100) {
+    manageC800(slot)
+    if (!slotIsActive(slot))
+      return
   }
   const fn = slotIOCallbackTable[slot]
   if (fn !== undefined) {
     const result = fn(addr, value)
     if (result >= 0) {
       // Set value in either slot memory or $C000 softswitch memory
-      const offset = (addr >= 0xC100) ? SLOTstartMinusC100 : ROMstartMinusC000
-      memory[addr + offset] = result
+      const offset = (addr >= 0xC100) ? (SLOTstart - 0x100) : ROMstart
+      memory[addr - 0xC000 + offset] = result
     }
   }
 }
@@ -164,11 +240,19 @@ export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
  *
  * @param slot - The slot number 1-7.
  * @param driver - The ROM code for the driver.
+ *                 Range 0x00-0xff is the slot Cx00 space driver
+ *                 Anything above is considered C800 space to be activated for this card.
  * @param jump - (optional) If the program counter equals this address, then `fn` will be called.
  * @param fn - (optional) The function to jump to.
  */
-export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
-  memory.set(driver, SLOTstartMinusC100 + 0xC000 + slot * 0x100)
+export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {null}) => {
+  memory.set(driver.slice(0, 0x100), SLOTstart + (slot - 1) * 0x100)
+  if (driver.length > 0x100) {
+    // only allow up to 2k for C8 range
+    const end = (driver.length > 0x900) ? 0x900 : driver.length;
+    const addr = SLOTC8start + (slot - 1) * 0x800
+    memory.set(driver.slice(0x100,end), addr)
+  }
   if (jump) {
     specialJumpTable.set(jump, fn)
   }
@@ -176,11 +260,14 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
 
 export const memoryReset = () => {
   memory.fill(0xFF, 0, 0x1FFFF)
-  const rom64 = romBase64.replace(/\n/g, "")
+  const whichROM = isDebugging ? edmBase64 : romBase64
+  const rom64 = whichROM.replace(/\n/g, "")
   const rom = new Uint8Array(
     Buffer.from(rom64, "base64")
   )
-  memory.set(rom, ROMstartMinusC000 + 0xC000)
+  memory.set(rom, ROMstart)
+  C800Slot = 0
+  RAMWorksBankIndex = 0
   updateAddressTables()
 }
 
@@ -227,41 +314,70 @@ const memGetSoftSwitch = (addr: number): number => {
   if (addr >= 0xC090) {
     checkSlotIO(addr)
   } else {
-    checkSoftSwitches(addr, false, cycleCount)
+    checkSoftSwitches(addr, false, s6502.cycleCount)
   }
   if (addr >= 0xC050) {
     updateAddressTables()
   }
-  return memory[ROMstartMinusC000 + addr]
+  return memory[ROMstart + addr - 0xC000]
 }
 
-export const debugSlot = (slot: number, addr: number, value = -1) => {
+export const memGetSlotROM = (slot: number, addr: number) => {
+  const offset = SLOTstart + (slot - 1) * 0x100 + (addr & 0xFF)
+  return memory[offset]
+}
+
+export const memSetSlotROM = (slot: number, addr: number, value: number) => {
+  if (value >= 0) {
+    const offset = SLOTstart + (slot - 1) * 0x100 + (addr & 0xFF)
+    memory[offset] = value & 0xFF
+  }
+}
+
+export const debugSlot = (slot: number, addr: number, oldvalue: number, value = -1) => {
   if (!slotIsActive(slot)) return
   if (((addr - 0xC080) >> 4) === slot || ((addr >> 8) - 0xC0) === slot) {
-    let s = `$${s6502.PC.toString(16)}: $${addr.toString(16)}`
+    let s = `$${s6502.PC.toString(16)}: $${addr.toString(16)} (${oldvalue})`
     if (value >= 0) s += ` = $${value.toString(16)}`
     console.log(s)
   }
 }
 
-export const memGet = (addr: number): number => {
+export const memGet = (addr: number, checkWatchpoints = true): number => {
+  if (checkWatchpoints && isWatchpoint(addr, false)) {
+    setWatchpointBreak()
+  }
   const page = addr >>> 8
   // debugSlot(4, addr)
   if (page === 0xC0) {
     return memGetSoftSwitch(addr)
   }
-  if (page >= 0xC1 && page <= 0xCF) {
+  if (page >= 0xC1 && page <= 0xC7) {
     checkSlotIO(addr)
+  } else if (addr === 0xCFFF) {
+    manageC800(0xFF);
   }
   const shifted = addressGetTable[page]
   return memory[shifted + (addr & 255)]
 }
 
+export const memGetRaw = (addr: number): number => {
+  const page = addr >>> 8
+  const shifted = addressGetTable[page]
+  return memory[shifted + (addr & 255)]
+}
+
 const memSetSoftSwitch = (addr: number, value: number) => {
-  if (addr >= 0xC090) {
+  // these are write-only soft switches that don't work like the others, since
+  // we need the full byte of data being written
+  if (addr === 0xC071 || addr === 0xC073) {
+    if (value > RAMWorksMaxBank)
+      return // do nothing
+    RAMWorksBankIndex = value ? (((value-1)*(0x100)) + RAMWorksIndex) : 0 
+  } else if (addr >= 0xC090) {
     checkSlotIO(addr, value)
   } else {
-    checkSoftSwitches(addr, true, cycleCount)
+    checkSoftSwitches(addr, true, s6502.cycleCount)
   }
   if (addr <= 0xC00F || addr >= 0xC050) {
     updateAddressTables()
@@ -274,21 +390,27 @@ export const memSet = (addr: number, value: number) => {
   if (page === 0xC0) {
     memSetSoftSwitch(addr, value)
   } else {
-    if (page >= 0xC1 && page <= 0xCF) {
+    if (page >= 0xC1 && page <= 0xC7) {
       checkSlotIO(addr, value)
+    } else if (addr === 0xCFFF) {
+      manageC800(0xFF);
     }
     const shifted = addressSetTable[page]
+    // This will prevent us from setting slot ROM or motherboard ROM
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value
+  }
+  if (isWatchpoint(addr, true)) {
+    setWatchpointBreak()
   }
 }
 
 export const memGetC000 = (addr: number) => {
-  return memory[ROMstartMinusC000 + addr]
+  return memory[ROMstart + addr - 0xC000]
 }
 
 export const memSetC000 = (addr: number, value: number, repeat = 1) => {
-  const start = ROMstartMinusC000 + addr
+  const start = ROMstart + addr - 0xC000
   memory.fill(value, start, start + repeat)
 }
 
@@ -334,7 +456,7 @@ export const getTextPage = (getLores = false) => {
     const textPage = new Uint8Array(40 * (jend - jstart))
     for (let j = jstart; j < jend; j++) {
       const joffset = 40 * (j - jstart)
-      let start = pageOffset + offset[j]
+      const start = pageOffset + offset[j]
       textPage.set(memory.slice(start, start + 40), joffset)
     }
     return textPage
@@ -389,7 +511,22 @@ export const setMemoryBlock = (addr: number, data: Uint8Array) => {
 
 export const matchMemory = (addr: number, data: number[]) => {
   for (let i = 0; i < data.length; i++) {
-   if (memGet(addr + i) !== data[i]) return false
+   if (memGet(addr + i, false) !== data[i]) return false
   }
   return true
+}
+
+export const getZeroPage = () => {
+  const status = ['']
+  const offset = addressGetTable[0]
+  const mem = memory.slice(offset, offset + 256)
+  status[0] = '     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F'
+  for (let j = 0; j < 16; j++) {
+    let s = toHex(16 * j) + ":"
+    for (let i = 0; i < 16; i++) {
+      s += " " + toHex(mem[j * 16 + i])
+    }
+    status[j + 1] = s
+  }
+  return status.join('\n')
 }

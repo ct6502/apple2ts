@@ -1,4 +1,4 @@
-import { addToBuffer } from "../keyboard";
+import { addToBuffer } from "../devices/keyboard";
 import { memSet } from "../memory"
 
 const helptext = `SNOGGLE
@@ -6,10 +6,10 @@ Jun Wada and Ken Iba
 Star Craft (Brøderbund) 1981
 
 KEYBOARD
-A    up
-Z    down
-N , ←     left
-M . →     right
+A      up
+Z      down
+N ← ,  left
+M → .  right
 `
 
 const gamepad = (button: number) => {

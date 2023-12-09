@@ -1,5 +1,5 @@
-import { setLeftButtonDown, setRightButtonDown } from "../joystick"
-import { addToBuffer, addToBufferDebounce } from "../keyboard"
+import { setLeftButtonDown, setRightButtonDown } from "../devices/joystick"
+import { addToBuffer, addToBufferDebounce } from "../devices/keyboard"
 import { getTextPageAsString, memGet, memSet } from "../memory"
 import { passRumble } from "../worker2main"
 
@@ -38,7 +38,8 @@ const gamepad = (button: number) => {
     case 3: addToBufferDebounce('U'); break  // Use chest contents
     case 4: addToBufferDebounce('\r'); break
     case 5: addToBufferDebounce('T'); break
-    case 9: const str = getTextPageAsString();
+    case 9: {
+      const str = getTextPageAsString();
       if (str.includes("'N'")) {
         addToBuffer('N');
       } else if (str.includes("'S'")) {
@@ -49,6 +50,7 @@ const gamepad = (button: number) => {
         addToBuffer('N');
       }
       break  // 9 Start?
+    }
     case 10: setLeftButtonDown(); break  // 10 Left thumb button
     case -1: break
     default: break
@@ -71,7 +73,7 @@ const wolfsetup = () => {
 }
 
 const rumble = () => {
-  if (memGet(0xC01A) < 0x80 && memGet(0xC01D) < 0x80) {
+  if (memGet(0xC01A, false) < 0x80 && memGet(0xC01D, false) < 0x80) {
     passRumble({startDelay: 0, duration: 200, weakMagnitude: 1, strongMagnitude: 0})
   }
 }

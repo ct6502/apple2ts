@@ -1,75 +1,11 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires } from "./main2worker"
-import { getPrintableChar, COLOR_MODE } from "./emulator/utility"
+  handleGetLores, handleGetHires, handleGetNoDelayMode } from "./main2worker"
+import { getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
+import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
+import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 const xmargin = 0.075
 const ymargin = 0.075
 let frameCount = 0
-
-const TEXT_GREEN = '#39FF14'
-const green = [0x39, 0xFF, 0x14]
-const TEXT_AMBER = '#FFA500'
-const amber = [0xFF, 0xA5, 0x0]
-
-const loresHex: string[] = [
-  "#000000", //black
-  "#DD0033", //red
-  "#000099", //dk blue
-  "#DD22DD", //purple
-  "#007722", //dk green
-  "#555555", //gray
-  "#2222FF", //med blue
-  "#66AAFF", //lt blue
-  "#885500", //brown
-  "#FF6600", //orange
-  "#AAAAAA", //grey
-  "#FF9988", //pink
-  "#11DD00", //lt green
-  "#FFFF00", //yellow
-  "#4AFDC5", //aqua
-  "#FFFFFF"] //white
-
-const hgrRGBcolors = [
-  [0, 0, 0],       // black1
-  [1, 255, 1],     // green
-  [255, 1, 255],   // violet
-  [255, 255, 255], // white1
-  [0, 0, 0],       // black2
-  [255, 150, 1],   // orange
-  [1, 150, 255],   // blue
-  [255, 255, 255], // white2
-  [254, 251, 82],  // yellow (extended green)
-  [183, 184, 249], // light blue (extended violet)
-  [255, 255, 255],
-  [0, 0, 0],
-  [148, 106, 33],  // brown (extended orange)
-  [9, 29, 162],    // dark blue (extended blue)
-]
-
-const loresColors: number[][] = loresHex.map(hex => {
-  const red = parseInt(hex.substring(1, 3), 16);
-  const green = parseInt(hex.substring(3, 5), 16);
-  const blue = parseInt(hex.substring(5, 7), 16);
-  return [red, green, blue];
-});
-
-const translateDHGR = [0, 1, 8, 9, 4, 5, 12, 13, 2, 3, 10, 11, 6, 7, 14, 15]
-
-const loresGreen: number[][] = loresColors.map(c => {
-  return [0, (c[0] + c[1] + c[2]) / 3, 0]
-})
-
-const loresAmber: number[][] = loresColors.map(c => {
-  const c1 = (c[0] + c[1] + c[2]) / 3
-  return [c1, c1 * (0xA5 / 255), 0]
-})
-
-const hgrGreenScreen = [
-  [0, 0, 0], green, green, green, [0, 0, 0], green, green, green
-]
-
-const hgrAmberScreen = [
-  [0, 0, 0], amber, amber, amber, [0, 0, 0], amber, amber, amber
-]
 
 const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   width: number, height: number) => {
@@ -87,7 +23,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
-  let colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER][colorMode]
+  const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -97,7 +33,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
       if (isAltCharSet) {
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
       }
-      let v1 = getPrintableChar(value, isAltCharSet)
+      const v1 = getPrintableChar(value, isAltCharSet)
       const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
       if (doInverse) {
@@ -128,7 +64,7 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
   const nchars = doubleRes ? 80 : 40
   const bottom = mixedMode ? 20 : 24
   const cwidth = doubleRes ? 7 : 14
-  const colors = [loresColors, loresColors, loresGreen, loresAmber][colorMode]
+  const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
   for (let y = 0; y < bottom; y++) {
@@ -159,122 +95,6 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
 };
 
 const BLACK = 0
-const WHITE = 3
-// const GREEN = 1
-// const VIOLET = 2
-// const ORANGE = 5
-// const BLUE = 6
-
-const getHiresGreen = (hgrPage: Uint8Array) => {
-  const nlines = hgrPage.length / 40
-  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
-  for (let j = 0; j < nlines; j++) {
-    const line = hgrPage.slice(j*40, j*40 + 40)
-    const joffset = j * 560
-    let bitSet = 0
-    let prevHighBit = 1
-    for (let i = 0; i < 40; i++) {
-      const ioffset = joffset + i * 14
-      const byte1 = line[i]
-      const highBit = (byte1 & 128) ? 1 : 0
-      for (let b = 0; b <= 6; b++) {
-        const ioff1 = ioffset + 2 * b + highBit
-        if (b === 0 && bitSet && highBit && !prevHighBit) hgrColors[ioff1 - 1] = 1
-        bitSet = (byte1 & (1 << b)) ? 1 : 0
-        hgrColors[ioff1] = bitSet
-        hgrColors[ioff1 + 1] = bitSet
-      }
-      prevHighBit = highBit
-    }
-  }
-  return hgrColors
-}
-
-const getHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
-  const nlines = hgrPage.length / 40
-  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
-  for (let j = 0; j < nlines; j++) {
-    const line = hgrPage.slice(j*40, j*40 + 40)
-    const joffset = j * 560
-    const joffsetMax = (j + 1) * 560 - 1
-    let isEven = 1
-    let skip = false
-    let previousWhite = false
-    for (let i = 0; i < 40; i++) {
-      const ioffset = joffset + i * 14
-      const byte1 = line[i]
-      const byte2bit0 = (i < 39) ? (line[i + 1] & 1) : 0
-      const highBit = (byte1 & 128) ? 1 : 0
-      const nextHighBit = (i < 39) ? (line[i + 1] & 0x80) : 0
-      for (let b = 0; b <= 6; b++) {
-        if (skip) {
-          skip = false
-          continue
-        }
-        const bit1 = byte1 & (1 << b)
-        const bit2 = (b < 6) ? (byte1 & (1 << (b + 1))) : byte2bit0
-        if (bit1) {
-          let istart = ioffset + 2 * b + highBit
-          // How many pixels do we fill in
-          let imax = istart + 3
-          // If we're already doing white, first pixel is also white.
-          // Otherwise, white starts with one pixel of the current bit's color
-          // GREEN=1, VIOLET=2, ORANGE=5, BLUE=6
-          let color1 = previousWhite ? WHITE : (1 + 4 * highBit + isEven)
-          let color2 = color1
-          if (bit2) {
-            color2 = WHITE
-            if (colorMode === COLOR_MODE.NOFRINGE && !previousWhite) color1 = BLACK
-            // Fill in a couple extra pixels
-            imax += 2
-            previousWhite = true
-            // Handle interactions between adjacent bytes (ALCB p. 208)
-            if (b === 5) {
-              if (!highBit && nextHighBit) {
-                imax--
-                hgrColors[imax + 1] = 9 - isEven
-                hgrColors[imax + 2] = 9 - isEven
-              } else if (highBit && !nextHighBit) {
-                imax--
-                color2 = 13 - isEven
-                hgrColors[istart++] = color1
-                hgrColors[istart++] = color1
-              }
-            }
-          } else {
-            previousWhite = false
-            // Handle interactions between adjacent bytes (ALCB p. 208)
-            if (b === 6) {
-              if (!highBit && nextHighBit) {
-                imax -= 2
-                hgrColors[imax + 1] = isEven + 8
-                hgrColors[imax + 2] = isEven + 8
-                hgrColors[imax + 3] = isEven + 8
-              } else if (highBit && !nextHighBit) {
-                color1 = isEven + 12
-                color2 = color1
-                imax--
-              }
-            }
-          }
-          hgrColors[istart] = color1
-          // Don't leak onto the next line
-          if (imax > joffsetMax) imax = joffsetMax
-          for (let ix = istart + 1; ix <= imax; ix++) {
-            hgrColors[ix] = color2
-          }
-          // We just processed 2 bits (4 pixels on the 560-pixel line)
-          skip = true
-        } else {
-          // We only processed 1 bit, so flip our isEven flag
-          isEven = 1 - isEven
-          previousWhite = false
-        }
-      }
-    }
-  }
-  return hgrColors
-}
 
 const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   const nlines = hgrPage.length / 80
@@ -333,17 +153,10 @@ const processHiRes = (ctx: CanvasRenderingContext2D,
   const nlines = mixedMode ? 160 : 192
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
+  const noDelayMode = handleGetNoDelayMode()
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, colorMode) : getHiresGreen(hgrPage))
-  const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
-  const colors = doubleRes ?
-    [loresColors, loresColors, loresGreen, loresAmber][colorMode] :
-    [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen][colorMode]
-  for (let i = 0; i < 560 * nlines; i++) {
-    hgrRGBA[4 * i] = colors[hgrColors[i]][0]
-    hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
-    hgrRGBA[4 * i + 2] = colors[hgrColors[i]][2]
-  }
+    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false) : getHiresGreen(hgrPage, nlines))
+  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes)
   drawImage(ctx, hiddenContext, hgrRGBA, width, height)
 };
 
@@ -353,10 +166,19 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
   frameCount++
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#000000";
-  ctx.fillRect(xmargin * width, ymargin * height - 1,
-    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 3);
+  ctx.fillRect(xmargin * width, ymargin * height - 2,
+    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 4);
   processTextPage(ctx, colorMode, width, height)
   processLoRes(ctx, hiddenContext, colorMode, width, height)
   processHiRes(ctx, hiddenContext, colorMode, width, height)
+  // const tile = [0, 0x84, 0x1C, 0x90, 0x38, 0x94, 0x78, 0x91,
+  //   0x70, 0x1C, 0x78, 0x08, 0x73, 0x08, 0x7F, 0x0F,
+  //   0x7E, 0x0F, 0x70, 0x0C, 0x50, 0x08, 0x70, 0x09,
+  //   0x70, 0x09, 0x78, 0x09, 0x7C, 0x09, 0x7E, 0x0B]
+  // const tile = [0x80, 0x0A, 0xCC, 0x83, 0xE6, 0x83, 0xE2, 0x81,
+  //   0xAB, 0x8F, 0xFF, 0x8F, 0xFE, 0x87, 0xC2, 0x86,
+  //   0xC6, 0xE2, 0xCC, 0xC3, 0xC0, 0xC7, 0xE0, 0xCF,
+  //   0xF0, 0xCC, 0xB0, 0xCC, 0xB0, 0xCC, 0x98, 0x98]
+  // drawHiresTile(ctx, new Uint8Array(tile), colorMode, 16, 100, 100, 10)
 }
 

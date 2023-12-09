@@ -1,18 +1,16 @@
-.App {
-  text-align: center;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-.new-line {
-  white-space: pre-line;
-}
-
 body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background-color: #BFBB98;
   margin: 10px;
+}
+
+.bgColor {
+  background-color: #BFBB98;
 }
 
 @font-face {
@@ -29,92 +27,41 @@ body {
   font-family: PrintChar21;
 }
 
-.statusPanel {
-  display: inline-block;
-  width: 370px;
-  margin: 20px;
-  vertical-align: top;
-}
-
-.topRow {
+.flex-row {
   display: flex;
   flex-direction: row;
   user-select: none;
 }
 
-.apple2 {
+.flex-column {
   display: flex;
   flex-direction: column;
-    /* width: 1240px; */
+  /* width: 1240px; */
 }
 
-.sideContent {
+.sidePanels {
   display: flex;
   flex-direction: column;
   margin-left: 10px;
 }
 
-.canvasText {
-  display: grid;
-  padding-bottom: 0px;
-}
-
-canvas {
-  grid-column: 1;
-  grid-row: 1;
-  border-radius: 20px;
-  border-color: #000;
-  background-color: black;
-  background-image: url(./img/crt.jpg);
-  background-size: 100% 100%;
-  outline: none;
-}
-
-textarea {
-  grid-column: 1;
-  grid-row: 1;
-  opacity: 0;
-}
-
-.controlBar {
+.flex-row-space-between {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
   justify-content: space-between;
 }
 
-.leftStatus {
-  margin-left: 5px;
-  margin-top: 10px;
-}
-
-.helpPanel {
+.flex-column-space-between {
   display: flex;
-  font-family: monospace;
-  font-size: medium;
-  overflow: auto;
-  background-color: lightgray;
-  background-image: url(./img/paper.jpg);
-  background-size: cover;
-  margin-top: 5px;
-  margin-left: 15px;
-  margin-right: 15px;
-  opacity: 80%;
-  box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.5),
-    inset -1px 0px 1px 1px #BFBB98;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.helptext {
-  margin-left: 40px;
-  margin-top: 5px;
-  white-space: pre-wrap;
+.wrap {
+  flex-wrap: wrap;
 }
 
-.small {
-  font-size: small;
-}
-
-select {
+/* select {
   font-size: medium;
   border-radius: 4px;
   padding: 2px;
@@ -130,25 +77,12 @@ select {
   color: black;
   background-color: inherit;
   border: 0.75px solid black !important;
-}
-
-.imgButton {
-  padding-left: 0px !important;
-  padding-right: 0px !important;
-  padding-top: 0px !important;
-  padding-bottom: 0px !important;
-  margin-top: 3px !important;
-  background-color: inherit !important;
-  border: none;
-  outline: none;
-  box-shadow: none !important;
-}
-
-.multiDisk {
-  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
-}
+} */
 
 .pushButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-width: 0;
   border-color: #a4a08A;
   background: none;
@@ -160,19 +94,24 @@ select {
   width: 30px;
   height: 30px;
   border-radius: 7px;
-  margin: 2px;
-  margin-top: 4px;
+  margin: 0px;
+  margin-top: 2px;
   cursor: pointer;
   font-weight: 900;
   user-select: none;
 }
 
-.pushMuiButton {
-  font-size: 1.75rem;
-  vertical-align: text-bottom;
+.pushButton:active {
+  background-color: #898677;
 }
 
-.isActive {
+.pushButton:disabled {
+  border: 0;
+  opacity: 30%;
+  cursor: default;
+}
+
+.isButtonActive {
   background-color: #898677;
 }
 
@@ -181,176 +120,62 @@ select {
   border-style: outset;
 }
 
+.text-button {
+  border-width: 1px;
+  border-color: white;
+  border-style: outset;
+  width: 3em;
+  height: 1em;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  color: white;
+  cursor: pointer;
+}
+
 .textKey {
   font-size: medium;
   letter-spacing: -0.05em;
   font-weight: 600;
   position: relative;
-  top: -0.15em;
-  left: -0.02em;
+  top: -0.0em;
+  left: -0.00em;
 }
 
-.innerSquare {
-  transform: scaleY(0.80) translateY(-0.1em);
-}
-
-.colorMode0 {
-  color: white;
-  opacity: 0.75;
-}
-
-.colorMode1 {
-  color: white;
-  opacity: 0.75;
-}
-
-.colorMode2 {
-  color: #39FF14;
-  opacity: 0.5;
-}
-
-.colorMode3 {
-  color: #FFA500;
-  opacity: 0.5;
-}
-
-.cropBottom {
-  clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 0% 50%);
-}
-
-.cropTop {
-  clip-path: polygon(0% 50%, 50% 75%, 100% 50%, 100% 100%, 0% 100%);
-}
-
-.cropApple {
-  clip-path: polygon(0% 0%, 100% 0%, 100% 35%, 80% 47%, 75% 58%, 80% 70%, 100% 80%, 100% 100%, 0% 100%);
-}
-
-.small {
-  font-size: 0.5em;
-}
-
-.largeButton {
-  font-size: 1.5em;
-}
-
-.icon {
-  vertical-align: top;
-}
-
-button:active {
-  background-color: #898677;
-}
-button:disabled {
-  border: 0;
-  background-color: #cccccc;
-  color: #DDDDDD;
-  cursor: default;
-}
-
-.drives {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-}
-
-.DiskImageChooser {
-  margin-top: 3px;
-  margin-right: 10px;
-}
-
-.drive {
-  display: flex;
-  flex-direction: column;
-}
-
-.disk2 {
-  width: 80px;
-  height: 50px;
-  border: 1px solid #000;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-left: 0px;
-  margin-right: 9px;
-  margin-top: 6px;
-  -webkit-touch-callout: none;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+.defaultFont {
+  font-size: 8pt;
 }
 
 .statusItem {
   width: 100px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
-  font-size: 7.5pt;
   margin-left: 0;
   margin-right: 0.5em;
   white-space: nowrap;
   user-select: none;
 }
 
-.diskLabel {
-  /* background-color: black; */
-  position: relative;
-  color: white;
-  border-radius: 3px;
-  width: 70px;
-  pointer-events: none;
-  height: 1.5em;
-  top: -38px;
-  margin-top: -1.2em;
-  padding-left: 0px;
-  padding-top: 0px;
-  line-height: 16px;
-  margin-left: 6px;
-  text-align: left;
-  font-size: 7pt;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.diskStatus {
-  width: 82px;
-  /* transform: translate(0, -12px); */
-  height: 1.5em;
-  font-size: 7.5pt;
-  margin-left: 0;
-  margin-right: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
-  user-select: none;
-}
-
-.MuiDialog-paper {
-  margin: 0 !important;
-  padding-left: 10px;
-  padding-right: 10px;
-  border-radius: 10px !important;
-}
-
-.MuiDialogTitle-root {
-  padding: 5px !important;
-}
-
-.MuiImageListItem-root {
-  margin-bottom: 0px;
-  cursor: pointer;
-}
-
-.MuiImageListItemBar-root {
-  background: rgba(0, 0, 0, 0.65) !important;
-}
-
-.MuiImageListItemBar-titleWrap {
-  padding: 4px !important;
-}
-
-.MuiImageListItemBar-title {
-  font-size: small !important;
-  margin-top: 20;
-}
-
-.MuiIconButton-root {
-  cursor: help !important;
+.floating-dialog {
+  background-color: #333;
+  border-radius: 10px;
+  border-color: #ccc;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.5);
+  opacity: 100%;
+  position: absolute;
+  z-index: 9999;
 }

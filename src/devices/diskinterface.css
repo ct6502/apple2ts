@@ -1,0 +1,78 @@
+.driveRow {
+  display: flex;
+  flex-direction: row;
+}
+
+.diskLabel {
+  /* background-color: black; */
+  position: relative;
+  color: white;
+  border-radius: 3px;
+  width: 70px;
+  pointer-events: none;
+  height: 1.5em;
+  top: -38px;
+  margin-top: -1.2em;
+  padding-left: 0px;
+  padding-top: 0px;
+  line-height: 16px;
+  margin-left: 6px;
+  text-align: left;
+  font-size: 7pt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.diskStatus {
+  width: 82px;
+  /* transform: translate(0, -12px); */
+  height: 1.5em;
+  margin-left: 0;
+  margin-right: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  user-select: none;
+}
+
+.imgButton {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  margin-top: 3px !important;
+  background-color: inherit !important;
+  border: none;
+  outline: none;
+  box-shadow: none !important;
+}
+
+.diskImageMargins {
+  margin-top: 3px;
+  margin-right: 10px;
+}
+
+.driveClass {
+  display: flex;
+  flex-direction: column;
+}
+
+.disk2 {
+  width: 80px;
+  height: 50px;
+  border: 1px solid #000;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 0px;
+  margin-right: 9px;
+  margin-top: 6px;
+  -webkit-touch-callout: none;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.multi-disk {
+  margin-right: 10px;
+  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
+  cursor: pointer;
+}

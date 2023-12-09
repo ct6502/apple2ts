@@ -2,7 +2,8 @@
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
   "editor.codeActionsOnSave": {
-    "source.fixAll": true
+    "source.fixAll": false
   },
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true
 }

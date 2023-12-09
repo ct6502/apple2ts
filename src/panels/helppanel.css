@@ -1,0 +1,21 @@
+.helpPaper {
+  display: flex;
+  font-family: monospace;
+  font-size: medium;
+  overflow: auto;
+  background-color: lightgray;
+  background-image: url(./img/paper.jpg);
+  background-size: cover;
+  margin-top: 5px;
+  margin-left: 15px;
+  margin-right: 15px;
+  opacity: 80%;
+  box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.5),
+    inset -1px 0px 1px 1px #BFBB98;
+}
+
+.helpText {
+  margin-left: 40px;
+  margin-top: 5px;
+  white-space: pre-wrap;
+}

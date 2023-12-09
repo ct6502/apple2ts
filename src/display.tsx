@@ -1,20 +1,23 @@
 // Chris Torrence, 2022
-import { setUpdateDisplay, handleGetState, passSetCPUState,
-  passSetBreakpoint, passSetNormalSpeed, handleGetTextPage,
-  passSetDebug, handleGetButton,
+import { setDisplay, handleGetRunMode, passSetRunMode,
+  passSetNormalSpeed, handleGetTextPage,
+  passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename, passStepInto, passStepOver, passStepOut, handleCanGoBackward, handleCanGoForward } from "./main2worker"
-import { STATE, getPrintableChar, COLOR_MODE } from "./emulator/utility"
+  handleGetFilename } from "./main2worker"
+import { RUN_MODE, getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
-import ControlPanel from "./controlpanel"
-import DiskInterface from "./diskinterface"
+import ControlPanel from "./controls/controlpanel"
+import DiskInterface from "./devices/diskinterface"
 import React from 'react';
-import HelpPanel from "./helppanel"
-import DebugPanel from "./debugpanel"
-import { preloadAssets } from "./assets"
+import HelpPanel from "./panels/helppanel"
+import DebugPanel from "./panels/debugpanel"
+import { preloadAssets } from "./devices/assets"
+import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
+import ImageWriter from "./devices/imagewriter"
+import { audioEnable, isAudioEnabled } from "./devices/speaker"
 // import Test from "./components/test";
 
-class DisplayApple2 extends React.Component<{},
+class DisplayApple2 extends React.Component<object,
   { currentSpeed: number;
     speedCheck: boolean;
     uppercase: boolean;
@@ -27,10 +30,9 @@ class DisplayApple2 extends React.Component<{},
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
-  hiddenCanvas = React.createRef<HTMLCanvasElement>()
-  hiddenFileOpen: HTMLInputElement | null = null
+  hiddenFileOpen = React.createRef<HTMLInputElement>();
 
-  constructor(props: any) {
+  constructor(props: object) {
     super(props);
     this.state = {
       doDebug: false,
@@ -57,9 +59,11 @@ class DisplayApple2 extends React.Component<{},
   }
 
   componentDidMount() {
-    setUpdateDisplay(this.updateDisplay)
+    setDisplay(this)
     if ("launchQueue" in window) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const queue: any = window.launchQueue
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       queue.setConsumer(async (launchParams: any) => {
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
@@ -78,44 +82,44 @@ class DisplayApple2 extends React.Component<{},
 //    window.removeEventListener("resize", handleResize)
   }
 
-  handleSpeedChange = () => {
-    passSetNormalSpeed(!this.state.speedCheck)
-    this.setState({ speedCheck: !this.state.speedCheck });
+  handleSpeedChange = (enable: boolean) => {
+    passSetNormalSpeed(enable)
+    this.setState({ speedCheck: enable });
   };
 
-  handleColorChange = () => {
-    const mode = (this.state.colorMode + 1) % 4
+  handleColorChange = (mode: COLOR_MODE) => {
     this.setState({ colorMode: mode });
   };
 
-  handleDebugChange = () => {
-    passSetDebug(!this.state.doDebug)
-    this.setState({ doDebug: !this.state.doDebug });
+  handleDebugChange = (enable: boolean) => {
+    passSetDebug(enable)
+    this.setState({ doDebug: enable });
   };
 
-  handleBreakpoint = (breakpoint: string) => {
-    passSetBreakpoint(parseInt(breakpoint ? breakpoint : '0', 16))
-    this.setState({ breakpoint: breakpoint });
+  handleUpperCaseChange = (enable: boolean) => {
+    this.setState({ uppercase: enable });
   };
 
-  handleUpperCaseChange = () => {
-    this.setState({ uppercase: !this.state.uppercase });
-  };
-
-  handleUseArrowKeyJoystick = () => {
-    this.setState({ useArrowKeysAsJoystick: !this.state.useArrowKeysAsJoystick });
+  handleUseArrowKeyJoystick = (enable: boolean) => {
+    this.setState({ useArrowKeysAsJoystick: enable });
   };
 
   restoreSaveStateFunc = (fileContents: string) => {
     const saveState: EmulatorSaveState = JSON.parse(fileContents)
     passRestoreSaveState(saveState)
     if (saveState.emulator?.colorMode !== undefined) {
-      this.setState({colorMode: saveState.emulator.colorMode})
+      this.handleColorChange(saveState.emulator.colorMode)
     }
     if (saveState.emulator?.uppercase !== undefined) {
-      this.setState({uppercase: saveState.emulator.uppercase})
+      this.handleUpperCaseChange(saveState.emulator.uppercase)
     }
-    passSetCPUState(STATE.RUNNING)
+    if (saveState.emulator?.audioEnable !== undefined) {
+      audioEnable(saveState.emulator.audioEnable)
+    }
+    if (saveState.emulator?.mockingboardMode !== undefined) {
+      changeMockingboardMode(saveState.emulator.mockingboardMode)
+    }
+    passSetRunMode(RUN_MODE.RUNNING)
   }
 
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,10 +136,10 @@ class DisplayApple2 extends React.Component<{},
   };
 
   handleFileOpen = () => {
-    if (this.hiddenFileOpen) {
+    if (this.hiddenFileOpen.current) {
       // Hack - clear out old file so we can pick the same file again
-      this.hiddenFileOpen.value = "";
-      this.hiddenFileOpen.click()
+      this.hiddenFileOpen.current.value = "";
+      this.hiddenFileOpen.current.click()
     }
   }
 
@@ -143,11 +147,13 @@ class DisplayApple2 extends React.Component<{},
     const d = new Date()
     let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
     saveState.emulator = {
-      name: `Apple2TS Emulator (git ${process.env.REACT_APP_GIT_SHA})`,
+      name: `Apple2TS Emulator`,
       date: datetime,
       help: this.state.helptext.split('\n')[0],
       colorMode: this.state.colorMode,
       uppercase: this.state.uppercase,
+      audioEnable: isAudioEnabled(),
+      mockingboardMode: getMockingboardMode(),
     }
     const state = JSON.stringify(saveState, null, 2)
     const blob = new Blob([state], {type: "text/plain"});
@@ -173,6 +179,46 @@ class DisplayApple2 extends React.Component<{},
     handleGetSaveState(this.doSaveStateCallback)
   }
 
+  trimData = (data: Uint8ClampedArray, width: number, height: number) => {
+    let left = width
+    let right = 0
+    let top = height
+    let bottom = 0
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3]
+        if (alpha === 255) {
+          if (x < left) left = x
+          if (x > right) right = x
+          if (y < top) top = y
+          if (y > bottom) bottom = y
+        }
+      }
+    }
+    return {left, right, top, bottom}
+  }
+
+  trimCanvas = (handleBlob: (blob: Blob) => void) => {
+    const canvas = this.myCanvas.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData?.data
+    if (!data) return
+    const {left, right, top, bottom} = this.trimData(data, canvas.width, canvas.height)
+    const trimmedCanvas = document.createElement('canvas')
+    trimmedCanvas.width = right - left
+    trimmedCanvas.height = bottom - top
+    const trimmedCtx = trimmedCanvas.getContext('2d')
+    trimmedCtx?.drawImage(canvas, left, top, right - left, bottom - top,
+      0, 0, right - left, bottom - top)
+    trimmedCanvas.toBlob((trimmedBlob) => {
+      if (trimmedBlob) {
+        handleBlob(trimmedBlob)
+      }
+    })
+  }
+
   /**
    * For text mode, copy all of the screen text.
    * For graphics mode, do a bitmap copy of the canvas.
@@ -186,8 +232,8 @@ class DisplayApple2 extends React.Component<{},
       for (let j = 0; j < 24; j++) {
         let line = ''
         for (let i = 0; i < nchars; i++) {
-          let value = textPage[j * nchars + i]
-          let v1 = getPrintableChar(value, isAltCharSet)
+          const value = textPage[j * nchars + i]
+          const v1 = getPrintableChar(value, isAltCharSet)
           if (v1 >= 32 && v1 !== 127) {
             const c = String.fromCharCode(v1);
             line += c
@@ -199,14 +245,8 @@ class DisplayApple2 extends React.Component<{},
       navigator.clipboard.writeText(output);
     } else {
       try {
-        this.myCanvas.current?.toBlob((blob) => {
-          if (blob) {
-            navigator.clipboard.write([
-              new ClipboardItem({
-                'image/png': blob,
-              })
-            ])
-          }
+        this.trimCanvas((blob) => {
+          navigator.clipboard.write([new ClipboardItem({'image/png': blob,})])
         })
       }
       catch (error) {
@@ -217,67 +257,54 @@ class DisplayApple2 extends React.Component<{},
 
   render() {
     const props: DisplayProps = {
-      machineState: handleGetState(),
+      runMode: handleGetRunMode(),
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
-      hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
-      handleSpeedChange: this.handleSpeedChange,
-      canGoBackward: handleCanGoBackward(),
-      canGoForward: handleCanGoForward(),
       uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
+      doDebug: this.state.doDebug,
+      handleDebugChange: this.handleDebugChange,
+      handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
       handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
-      updateDisplay: this.updateDisplay,
-      button0: handleGetButton(true),
-      button1: handleGetButton(false),
-    }
-    const debugProps: DebugProps = {
-      doDebug: this.state.doDebug,
-      breakpoint: this.state.breakpoint,
-      handleDebugChange: this.handleDebugChange,
-      handleBreakpoint: this.handleBreakpoint,
-      handleStepInto: passStepInto,
-      handleStepOver: passStepOver,
-      handleStepOut: passStepOut,
     }
     const width = props.myCanvas.current?.width
     const height = window.innerHeight - 30
-    let paperWidth = window.innerWidth - (width ? width : 600) - 50
+    let paperWidth = window.innerWidth - (width ? width : 600) - 70
     if (paperWidth < 300) paperWidth = 300
     return (
       <div>
-        <span className="topRow">
-          <span className="apple2">
+        <span className="flex-row">
+          <span className="flex-column">
             <Apple2Canvas {...props}/>
-            <div className="controlBar" style={{width: width, display: width ? '' : 'none'}}>
+            <div className="flex-row-space-between wrap" style={{width: width, display: width ? '' : 'none'}}>
                 <ControlPanel {...props}/>
-                <DiskInterface
-                  speedCheck={this.state.speedCheck}
-                />
+                <DiskInterface />
+                <ImageWriter />
             </div>
-            <span className="statusItem">
+            <span className="defaultFont statusItem">
               <span>{props.speed} MHz</span>
               <br/>
-              <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence (git {process.env.REACT_APP_GIT_SHA}) <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+              <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
+                <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
             </span>
           </span>
-          <span className="sideContent">
-            <HelpPanel helptext={this.state.helptext}
-              height={height ? height : 400} width={paperWidth} />
-            <DebugPanel {...debugProps}/>
+          <span className="sidePanels">
+            {props.doDebug ? <DebugPanel/> :
+              <HelpPanel helptext={this.state.helptext}
+                height={height ? height : 400} width={paperWidth} />}
           </span>
         </span>
         <input
           type="file"
           accept=".a2ts"
-          ref={input => this.hiddenFileOpen = input}
+          ref={this.hiddenFileOpen}
           onChange={this.handleRestoreState}
           style={{display: 'none'}}
         />

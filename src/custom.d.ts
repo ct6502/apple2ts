@@ -29,17 +29,20 @@ interface PCodeInstr {
     name: string
     pcode: number,
     mode: MODE
-    PC: number
+    bytes: number
     execute: PCodeFunc
 }
 
 type STATE6502 = {
+  cycleCount: number,
   PStatus: number,
   PC: number,
   Accum: number,
   XReg: number,
   YReg: number,
-  StackPtr: number
+  StackPtr: number,
+  flagIRQ: number,
+  flagNMI: boolean
 }
 
 type Apple2SaveState = {
@@ -49,50 +52,43 @@ type Apple2SaveState = {
 }
 
 type DisplayProps = {
-  machineState: STATE,
+  runMode: RUN_MODE,
   speed: number,
   myCanvas: React.RefObject<HTMLCanvasElement>,
-  hiddenCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
-  handleSpeedChange: () => void,
-  canGoBackward: boolean,
-  canGoForward: boolean,
   uppercase: boolean,
   useArrowKeysAsJoystick: boolean,
   colorMode: COLOR_MODE,
+  doDebug: boolean,
+  handleDebugChange: (enable: boolean) => void,
+  handleSpeedChange: (enable: boolean) => void,
   handleColorChange: (mode: COLOR_MODE) => void,
   handleCopyToClipboard: () => void,
-  handleUpperCaseChange: () => void,
-  handleUseArrowKeyJoystick: () => void,
+  handleUpperCaseChange: (enable: boolean) => void,
+  handleUseArrowKeyJoystick: (enable: boolean) => void,
   handleFileOpen: () => void,
   handleFileSave: () => void,
-  updateDisplay: (speed?: number, helptext?: string) => void,
-  button0: boolean,
-  button1: boolean,
-}
-
-type DebugProps = {
-  doDebug: boolean,
-  breakpoint: string,
-  handleDebugChange: () => void,
-  handleBreakpoint: (bp: string) => void,
-  handleStepInto: () => void,
-  handleStepOver: () => void,
-  handleStepOut: () => void,
 }
 
 type MachineState = {
-  state: STATE,
+  runMode: number,
+  s6502: STATE6502,
   speed: number,
   altChar: boolean,
+  noDelayMode: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,
   hires: Uint8Array,
-  zeroPageStack: string,
+  debugDump: string,
+  disassembly: string,
+  nextInstruction: string,
   button0: boolean,
   button1: boolean,
   canGoBackward: boolean,
-  canGoForward: boolean
+  canGoForward: boolean,
+  maxState: number,
+  iTempState: number,
+  timeTravelThumbnails: Array<TimeTravelThumbnail>
 }
 
 type DriveState = {
@@ -127,10 +123,24 @@ type DriveSaveState = {
   driveData: string[]
 }
 
+type DisplaySaveState = {
+  name: string,
+  date: string,
+  help: string,
+  colorMode: number,
+  uppercase: boolean,
+  audioEnable: boolean,
+  mockingboardMode: number
+}
+
 type EmulatorSaveState = {
-  emulator: any,
+  emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState
+}
+
+type TimeTravelThumbnail = {
+  s6502: STATE6502
 }
 
 type SetMemoryBlock = {
@@ -141,7 +151,8 @@ type SetMemoryBlock = {
 
 type AudioDevice = {
   context: AudioContext,
-  element: HTMLAudioElement
+  element: HTMLAudioElement,
+  timeout: number
 }
 
 type EmuGamepad = {
@@ -173,10 +184,17 @@ type GameLibraryItem = {
   gamepad: null | ((button: number, dualJoysticks: boolean, isJoystick2: boolean) => void),
   rumble: null | (() => void),
   setup: null | (() => void),
-  helptext: string}
+  helptext: string
+}
 
 type GamePadMapping = (button: number, dualJoysticks: boolean, isJoystick2: boolean) => void
 
 interface AddressCallback {
   (addr: number, value: number): number;
+}
+
+type MockingboardSound = {
+  slot: number,
+  chip: number,
+  params: number[]
 }

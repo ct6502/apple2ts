@@ -1,8 +1,8 @@
 import { memGetC000, memSetC000 } from "./memory"
-import { popKey } from "./keyboard"
+import { popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
-import { resetJoystick, checkJoystickValues } from "./joystick"
-import { toHex } from "./utility"
+import { resetJoystick, checkJoystickValues } from "./devices/joystick"
+import { toHex } from "./utility/utility"
 import { s6502 } from "./instructions"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
@@ -62,6 +62,7 @@ export const SWITCHES = {
   RAMRD: NewSwitch(0xC002, 0xC013, true),
   RAMWRT: NewSwitch(0xC004, 0xC014, true),
   INTCXROM: NewSwitch(0xC006, 0xC015, true),
+  INTC8ROM: NewSwitch(0, 0),  // Unreadable soft switch; add here so it is saved/restored
   ALTZP: NewSwitch(0xC008, 0xC016, true),
   SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true),
   COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
@@ -105,7 +106,7 @@ export const SWITCHES = {
     resetJoystick(cycleCount)
     memSetC000(0xC070, rand())
   }),
-  BANKSEL: NewSwitch(0xC073, 0),  // Applied Engineering RAMWorks (ignored)
+  //BANKSEL: NewSwitch(0xC073, 0),  // Applied Engineering RAMWorks (ignored)
   LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay (ignored)
   READBSR2: NewSwitch(0xC080, 0),
   WRITEBSR2: NewSwitch(0xC081, 0),

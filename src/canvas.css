@@ -1,0 +1,21 @@
+.canvasText {
+  display: grid;
+  padding-bottom: 0px;
+}
+
+.mainCanvas {
+  grid-column: 1;
+  grid-row: 1;
+  border-radius: 20px;
+  border-color: #000;
+  background-color: black;
+  background-image: url(./img/crt.jpg);
+  background-size: 100% 100%;
+  outline: none;
+}
+
+.hiddenTextarea {
+  grid-column: 1;
+  grid-row: 1;
+  opacity: 0;
+}

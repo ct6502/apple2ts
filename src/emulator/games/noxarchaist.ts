@@ -1,4 +1,4 @@
-import { addToBuffer, addToBufferDebounce } from "../keyboard"
+import { addToBuffer, addToBufferDebounce } from "../devices/keyboard"
 
 const gamepad = (button: number) => {
   switch (button) {
@@ -28,8 +28,8 @@ const joystick = (axes: number[], isKeyboardJoystick: boolean) => {
   // If we're only using arrow keys as a joystick, just quietly return,
   // as Nox already uses arrows for movement and we don't want to double move.
   if (isKeyboardJoystick) return axes
-  let key1 = (axes[0] < -threshold) ? '\x08' : (axes[0] > threshold) ? '\x15' : ''
-  let key2 = (axes[1] < -threshold) ? '\x0B' : (axes[1] > threshold) ? '\x0A' : ''
+  const key1 = (axes[0] < -threshold) ? '\x08' : (axes[0] > threshold) ? '\x15' : ''
+  const key2 = (axes[1] < -threshold) ? '\x0B' : (axes[1] > threshold) ? '\x0A' : ''
   // Combine W/E and N/S to allow diagonal moves
   let key = key1 + key2
   if (!key) {

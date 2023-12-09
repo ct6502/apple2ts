@@ -4,12 +4,12 @@ import { passRumble } from "../worker2main"
 let memB6 = 14
 let memB7 = 14
 const karatekaRumble = () => {
-  let newValue = memGet(0xB6)
+  let newValue = memGet(0xB6, false)
   if (memB6 < 40 && newValue < memB6) {
     passRumble({startDelay: 220, duration: 300, weakMagnitude: 1, strongMagnitude: 0})
   }
   memB6 = newValue
-  newValue = memGet(0xB7)
+  newValue = memGet(0xB7, false)
   if (memB7 < 40 && newValue < memB7) {
     passRumble({startDelay: 220, duration: 300, weakMagnitude: 0, strongMagnitude: 1})
   }
