@@ -197,6 +197,7 @@ const rom = new Uint8Array([
 let slot = 1
 let command = 0x00 // should be 0x02 but hack to force reset
 let control = 0x00
+let status = 0x00
 
 export const enableSerialCard = (enable = true, aslot = 1) => {
   if (!enable)
@@ -214,16 +215,23 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
   setSlotIOCallback(slot, handleSerialIO)
 }
 
-let receiveBuffer = new Uint8Array(0)
-let receivePos = -1
+let receiveBuffer = []
+const receiveLength = 16; // arbitrarily chosen
 
 export const receiveCommData = (data: Uint8Array) => {
-  const tmpbuffer = new Uint8Array(receiveBuffer.length + data.length)
-  // new data first
-  tmpbuffer.set(data)
-  tmpbuffer.set(receiveBuffer, data.length)
-  receiveBuffer = tmpbuffer
-  receivePos += data.length
+  for(let i=0;i<data.length;i++)
+  {
+    receiveBuffer.push(data)
+
+    // if we have exceeded buffer size, shift first byte out
+    if(receiveBuffer.length > receiveLength)
+    {
+      receiveBuffer.shift()
+      // set overflow
+    }
+  }
+
+  // set interrupt flags
 }
 
 const sendCommChar = (data: number) => {
@@ -271,6 +279,7 @@ const handleSerialIO = (addr: number, val = -1): number => {
             return 0
         }
         break
+
     case REG.STATUS:
         if(val >= 0)
         {

@@ -7,33 +7,18 @@ import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } fr
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
-<<<<<<< HEAD
-  updateAddressTables, setMemoryBlock } from "./memory"
-import { setButtonState, handleGamepads } from "./joystick"
-import { parseAssembly } from "./assembler";
-import { code } from "./assemblycode"
-import { handleGameSetup } from "./game_mappings"
-import { doSetDebug, doSetRunToRTS, processInstruction } from "./cpu6502"
-import { enableClockCard } from "./clock"
-import { enableMouseCard } from "./mouse"
-import { enableSerialCard } from "./serial"
-import { enableMockingboard } from "./mockingboard"
-import { resetMouse, onMouseVBL } from "./mouse"
-import { enableDiskDrive } from "./diskdata"
-=======
   updateAddressTables, setMemoryBlock, getZeroPage } from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
 import { handleGameSetup } from "./games/game_mappings"
 import { clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
-import { enableSerialCard } from "./devices/serial"
+import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
 import { getDisassembly, getInstruction, verifyAddressWithinDisassembly } from "./utility/disassemble"
->>>>>>> main
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -164,6 +149,7 @@ const resetMachine = () => {
   resetDrive()
   setButtonState()
   resetMouse()
+  resetSerial()
   resetMockingboard(4)
   resetMockingboard(5)
 }
