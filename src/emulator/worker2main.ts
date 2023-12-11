@@ -8,7 +8,7 @@ import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility/utility";
 import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
-import { receiveCommData } from "./devices/serial";
+import { receiveCommData } from "./devices/superserial/serial";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
