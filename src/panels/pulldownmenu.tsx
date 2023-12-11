@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown as iconPulldown,
 } from "@fortawesome/free-solid-svg-icons";
-import { getSoftSwitchDescriptions } from "../emulator/softswitches"
 import { toHex } from "../emulator/utility/utility";
 
 interface PullDownProps {
@@ -32,7 +31,6 @@ class PullDownMenu extends React.Component<PullDownProps, {open: boolean, positi
   }
 
   render() {
-    const SoftSwitchDescriptions = getSoftSwitchDescriptions()
     return <div ref={this.dialogRef}
       onClick={this.handleToggleDialog}>
       <FontAwesomeIcon icon={iconPulldown}
@@ -43,7 +41,7 @@ class PullDownMenu extends React.Component<PullDownProps, {open: boolean, positi
           style={{margin: '0', padding: '5px',
             overflow: 'auto',
             height: `${window.innerHeight / 2}px`}}>
-          {SoftSwitchDescriptions.map((description, addr) => (
+          {this.props.values.map((description, addr) => (
             <div style={{cursor: 'pointer'}}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor =  '#aaa'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}

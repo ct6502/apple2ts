@@ -131,14 +131,15 @@ export const getSoftSwitchDescriptions = () => {
     for (const key in SWITCHES) {
       const sswitch = SWITCHES[key as keyof typeof SWITCHES]
       const isSwitch = sswitch.onAddr > 0
+      const writeOnly = sswitch.writeOnly ? " (write)" : ""
       if (sswitch.offAddr > 0) {
-        SoftSwitchDescriptions[sswitch.offAddr] = key + (isSwitch ? " off" : "")
+        SoftSwitchDescriptions[sswitch.offAddr] = key + (isSwitch ? " off" : "") + writeOnly
       }
       if (sswitch.onAddr > 0) {
-          SoftSwitchDescriptions[sswitch.onAddr] = key + " on"
+          SoftSwitchDescriptions[sswitch.onAddr] = key + " on" + writeOnly
       }
       if (sswitch.isSetAddr > 0) {
-        SoftSwitchDescriptions[sswitch.isSetAddr] = key + " status"
+        SoftSwitchDescriptions[sswitch.isSetAddr] = key + " status" + writeOnly
       }
     }
   }

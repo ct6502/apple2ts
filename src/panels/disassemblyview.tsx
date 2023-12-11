@@ -11,7 +11,7 @@ import { getLineOfDisassembly } from "./debugpanelutilities";
 import { Breakpoint, Breakpoints, getBreakpointIcon, getBreakpointStyle } from "./breakpoint";
 
 const nlines = 40
-const bpOffset = 3
+const bpOffset = 2
 
 class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBreakpoints: (breakpoints: Breakpoints) => void;}, object> {
   lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels
@@ -42,7 +42,9 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
       const topLineIndex = Math.round(this.codeRef.current.scrollTop / this.lineHeight)
       const dv = this.codeRef.current.innerText.split('\n')
       const line = dv[topLineIndex]
-      this.newScrollAddress = parseInt(line.slice(0, line.indexOf(':')), 16)
+      const newScrollAddress = parseInt(line.slice(0, line.indexOf(':')), 16)
+      if (newScrollAddress === this.newScrollAddress) return
+      this.newScrollAddress = newScrollAddress
       if (this.timeout) clearTimeout(this.timeout)
       if (this.breakpointRef.current) this.breakpointRef.current.style.display = 'none'
       this.timeout = window.setTimeout(() => {
@@ -225,6 +227,8 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
             height: `${nlines * 10 - 2}pt`,
             overflow: 'auto',
             paddingLeft: "15pt",
+            outline: "none",
+            marginTop: "0pt",
           }} >
           {this.constructDisassembly()}
         </div>

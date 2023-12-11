@@ -6,6 +6,7 @@ import {
 import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
 import EditField from "./editfield";
 import PullDownMenu from "./pulldownmenu";
+import { getSoftSwitchDescriptions } from "../emulator/softswitches"
 
 class BreakpointEdit extends React.Component<
   {breakpoint: Breakpoint,
@@ -19,6 +20,7 @@ class BreakpointEdit extends React.Component<
     expression: string,
     hitcount: string,
     badExpression: string,
+    value: string,
     memget: boolean,
     memset: boolean}>
 {
@@ -26,7 +28,6 @@ class BreakpointEdit extends React.Component<
   offsetX = 0
   offsetY = 0
   dragging = false
-  softSwitches = ['C000', 'C010', 'C020', 'C030', 'C050', 'C060', 'C070', 'C080', 'C090', 'C0A0', 'C0B0', 'C0C0', 'C0D0', 'C0E0', 'C0F0']
 
   constructor(props: { breakpoint: Breakpoint,
     saveBreakpoint: () => void,
@@ -41,6 +42,7 @@ class BreakpointEdit extends React.Component<
       expression: this.props.breakpoint.expression,
       hitcount: Math.max(this.props.breakpoint.hitcount, 1).toString(),
       badExpression: '',
+      value: '',
       memget: this.props.breakpoint.memget,
       memset: this.props.breakpoint.memset,
     }
@@ -49,7 +51,20 @@ class BreakpointEdit extends React.Component<
   handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
     if (this.props.breakpoint) {
-      this.props.breakpoint.address = parseInt(value || '0', 16)
+      const address = parseInt(value || '0', 16)
+      if (address >= 0xC000 && address <= 0xC0FF) {
+        this.props.breakpoint.memget = true
+        this.props.breakpoint.memset = true
+        const switches = getSoftSwitchDescriptions()
+        if (switches[address]) {
+          if (switches[address].includes("status")) {
+            this.props.breakpoint.memset = false
+          } else if (switches[address].includes("write")) {
+            this.props.breakpoint.memget = false
+          }
+        }
+      }
+      this.props.breakpoint.address = address
       this.setState({address: value})
     }
   }
@@ -62,6 +77,14 @@ class BreakpointEdit extends React.Component<
       this.props.breakpoint.expression = expression
       const badExpression = checkBreakpointExpression(expression)
       this.setState({expression, badExpression})
+    }
+  }
+
+  handleHexValueChange = (value: string) => {
+    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 2).toUpperCase()
+    if (this.props.breakpoint) {
+      this.props.breakpoint.value = parseInt(value, 16)
+      this.setState({value})
     }
   }
 
@@ -106,6 +129,7 @@ class BreakpointEdit extends React.Component<
 
   handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.props.breakpoint.watchpoint = e.target.value === "memoryAccess"
+    this.handleExpressionChange(this.props.breakpoint.expression)
     this.setState({watchpoint: this.props.breakpoint.watchpoint})
   }
 
@@ -132,7 +156,7 @@ class BreakpointEdit extends React.Component<
             onMouseDown={(e) => this.handleMouseDown(e)}
             onMouseMove={(e) => this.handleMouseMove(e)}
             onMouseUp={this.handleMouseUp}>
-            <div className="white-title">Edit Breakpoint/Watchpoint</div>
+            <div className="white-title">Edit Breakpoint or Watchpoint</div>
             <div onClick={this.props.cancelDialog}>
               <FontAwesomeIcon icon={iconBreakpointDelete}
                 className='breakpoint-pushbutton'
@@ -162,24 +186,29 @@ class BreakpointEdit extends React.Component<
               placeholder="F800"
               width="5em"/>
             {this.props.breakpoint.watchpoint &&
-              <PullDownMenu values={this.softSwitches} setValue={this.handleAddressChange}/>}
+              <div>
+                <div className="flex-row">
+                  <PullDownMenu values={getSoftSwitchDescriptions()} setValue={this.handleAddressChange}/>
+                  <input type="checkbox" id="memget" value="memget"
+                    className="check-radio-box shift-down"
+                    checked={this.props.breakpoint.memget}
+                    onChange={(e) => {this.handleMemgetChange(e)}}/>
+                  <label htmlFor="memget" className="white-title flush-left">Read</label>
+                  <input type="checkbox" id="memset" value="memset"
+                    className="check-radio-box shift-down"
+                    checked={this.props.breakpoint.memset}
+                    onChange={(e) => {this.handleMemsetChange(e)}}/>
+                  <label htmlFor="memset" className="white-title flush-left">Write</label>
+                </div>
+              </div>}
           </div>
           {this.state.watchpoint ?
-            <div className="flex-column">
-              <div className="flex-row">
-                <input type="checkbox" id="memset" value="memset"
-                  className="check-radio-box shift-down"
-                  checked={this.props.breakpoint.memset}
-                  onChange={(e) => {this.handleMemsetChange(e)}}/>
-                <label htmlFor="memset" className="white-title flush-left">Memory Write</label>
-              </div>
-              <div className="flex-row">
-                <input type="checkbox" id="memget" value="memget"
-                  className="check-radio-box shift-down"
-                  checked={this.props.breakpoint.memget}
-                  onChange={(e) => {this.handleMemgetChange(e)}}/>
-                <label htmlFor="memget" className="white-title flush-left">Memory Read</label>
-              </div>
+          <div>
+            <EditField name="With hex value:"
+              value={this.state.value}
+              setValue={this.handleHexValueChange}
+              placeholder="any"
+              width="5em"/>
           </div> : 
           <div>
               <EditField name="Expression: "
