@@ -40,9 +40,10 @@ export const doSetBreakpoints = (bp: Breakpoints) => {
   breakpoints = bp
 }
 
-export const isWatchpoint = (addr: number, set: boolean) => {
+export const isWatchpoint = (addr: number, value: number, set: boolean) => {
   const bp = breakpoints.get(addr)
   if (!bp || !bp.watchpoint || bp.disabled) return false
+  if (bp.value >= 0 && bp.value !== value) return false
   return set ? bp.memset : bp.memget
 }
 

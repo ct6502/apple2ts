@@ -71,7 +71,7 @@ class TimeTravelPanel extends React.Component<object, object>
     return (
       <div className="roundRectBorder">
         <p className="defaultFont panelTitle bgColor">Time Travel</p>
-        <div ref={this.stateThumbRef} className="debugPanel"
+        <div ref={this.stateThumbRef} className="debug-panel small-mono-text"
           style={{
             width: '330px', // Set the width to your desired value
             height: `150pt`, // Set the height to your desired value

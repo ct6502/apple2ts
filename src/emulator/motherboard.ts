@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, get6502StateString, getStackString } from "./instructions"
-import { RUN_MODE } from "./utility/utility"
+import { RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
@@ -26,7 +26,7 @@ let startTime = 0
 let prevTime = 0
 let normalSpeed = true
 let speed = 0
-export let isDebugging = false
+export let isDebugging = TEST_DEBUG
 let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0

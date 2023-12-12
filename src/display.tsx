@@ -4,7 +4,7 @@ import { setDisplay, handleGetRunMode, passSetRunMode,
   passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename } from "./main2worker"
-import { RUN_MODE, getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
+import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
@@ -35,7 +35,7 @@ class DisplayApple2 extends React.Component<object,
   constructor(props: object) {
     super(props);
     this.state = {
-      doDebug: false,
+      doDebug: TEST_DEBUG,
       currentSpeed: 1.02,
       speedCheck: true,
       uppercase: true,

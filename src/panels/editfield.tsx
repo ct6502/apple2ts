@@ -19,7 +19,7 @@ class EditField extends React.Component<EditFieldProps, object>
     this.props.setValue(e.target.value)
   }
   render() {
-    return <div className="flex-row" style={{position: "relative"}}>
+    return <div className="flex-row" style={{marginTop: '2px', position: "relative"}}>
       <div className="white-title">{this.props.name}</div>
       <input type="text"
         className="dark-mode-edit"

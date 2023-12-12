@@ -77,6 +77,7 @@ const verifyMemGets = (expression: string) => {
 export const checkBreakpointExpression = (expression: string) => {
   // Make these all negative so boolean expressions (e.g. A == 0 && X == 1)
   // won't accidently short circuit and look like valid expressions.
+  if (expression.trim() === '') return ''
   const A = -1, X = -2, Y = -3, S = -4, P = -5
   const memGet = (addr: number) => {return -addr}
   try {
@@ -104,6 +105,7 @@ export class Breakpoint implements IBreakpoint {
   memget: boolean;
   memset: boolean;
   expression: string;
+  value: number;
   hitcount: number;
   nhits: number;
 
@@ -116,6 +118,7 @@ export class Breakpoint implements IBreakpoint {
     this.memget = false
     this.memset = true
     this.expression = ''
+    this.value = -1
     this.hitcount = 0
     this.nhits = 0
   }
