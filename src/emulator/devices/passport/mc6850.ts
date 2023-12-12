@@ -1,7 +1,18 @@
 // Passport MIDI Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 // Motorola 6850 ACIA 
 
-import { interruptRequest } from "../../cpu6502"
+export interface MC6850Ext
+{
+  // external call to send async data
+  sendData(data: Uint8Array): void;
+
+  // external call to interrupt interface
+  interrupt(onoff: boolean): void;
+
+  // external call to configuration state changes
+  // not needed - always in midi mode
+  //configChange(config: ConfigChange): void;
+};
 
 // 6850 regs
 const STATUS = {
@@ -30,25 +41,25 @@ export class MC6850
 {
   _control: number
   _status: number
-  _slot: number
+  _lastRead: number
   _receiveBuffer: number[]
-  _externalSend: (data: Uint8Array) => void
+  _extFuncs: MC6850Ext
 
   buffer(data: Uint8Array): void
   {
-    // XXX - fixme
-    return;
-
     for(let i=0;i<data.length;i++)
       this._receiveBuffer.push(data[i]);
 
-    const shifts = this._receiveBuffer.length - 16; 
+    // size of internal buffer of 16 is arbitrary
+    let shifts = this._receiveBuffer.length - 16; 
+    shifts = (shifts < 0) ? 0 : shifts;
     
     // if we are longer than desired length, shift out the earlier entries
-    if(shifts > 0)
+    for(let i=0;i<shifts;i++)
     {
-      for(let i=0;i<shifts;i++)
-        this._receiveBuffer.shift()
+      this._receiveBuffer.shift();
+      // set overrun
+      this._status |= STATUS.OVRN;
     }
 
     this._status |= STATUS.RX_FULL
@@ -61,7 +72,7 @@ export class MC6850
   set data(data: number)
   {
     const sendBuffer = new Uint8Array(1).fill(data);
-    this._externalSend(sendBuffer);
+    this._extFuncs.sendData(sendBuffer);
     
     if ((this._control & (CONTROL.TX_INT_ENABLE | CONTROL.NRTS)) === CONTROL.TX_INT_ENABLE)
     {
@@ -71,10 +82,12 @@ export class MC6850
 
   get data(): number
   {
-    let result = 0
     // check if we have any data
     if (this._receiveBuffer.length)
-      result = this._receiveBuffer.shift();
+      this._lastRead = this._receiveBuffer.shift()!;
+
+    // clear errors on read
+    this._status &= ~(STATUS.FE|STATUS.OVRN|STATUS.PE);
 
     // check if we have more data
     if (this._receiveBuffer.length)
@@ -93,7 +106,7 @@ export class MC6850
       this.irq(false);
     }
 
-    return result;
+    return this._lastRead;
   }
 
   set control(val: number)
@@ -126,7 +139,7 @@ export class MC6850
     else
       this._status &= ~STATUS.IRQ;
 
-    interruptRequest(this._slot, set);
+    this._extFuncs.interrupt(set);
   }
 
   reset(): void
@@ -138,10 +151,10 @@ export class MC6850
     this._receiveBuffer = [];
   }
 
-  constructor(slot: number, externalSend: (data: Uint8Array) => void)
+  constructor(externalFuncs: MC6850Ext)
   {
-    this._slot = slot;
-    this._externalSend = externalSend;
+    this._extFuncs = externalFuncs;
+    this._lastRead = 0x00;
     this._control = 0x00;
     this._status = 0x00;
     this._receiveBuffer = [];

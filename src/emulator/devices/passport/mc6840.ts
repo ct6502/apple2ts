@@ -1,8 +1,6 @@
 // Passport MIDI Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 // Motorola 6840 programmable timer
 
-import { interruptRequest } from "../../cpu6502"
-
 const CONTROL =
 {
   OUTPUT_ENABLE  : (0x01 << 7), // (NA)
@@ -123,11 +121,11 @@ export class MC6840
 {
   _timer: Array<PTMTimer>; 
   _status: number;
-  _slot: number;
   _statusRead: boolean;
   _msb: number;
   _lsb: number;
   _div8: number;
+  _interrupt: (tf:boolean) => void;
 
   status(): number
   {
@@ -284,20 +282,20 @@ export class MC6840
     if (this._status)
     {
       this._status |= STATUS.ANY_IRQ;
-      interruptRequest(this._slot, true)
+      this._interrupt(true)
       //console.log("IRQ["+which+"]: true")
     }
     else
     {
       this._status &= ~STATUS.ANY_IRQ;
-      interruptRequest(this._slot, false)
+      this._interrupt(false)
       //console.log("IRQ["+which+"]: false")
     }
   }
 
-  constructor(slot:number)
+  constructor(interrupt: (tf:boolean) => void)
   {
-    this._slot = slot;
+    this._interrupt = interrupt;
     this._status = 0;
     this._statusRead = false;
     this._timer = [new PTMTimer(), new PTMTimer(), new PTMTimer()];

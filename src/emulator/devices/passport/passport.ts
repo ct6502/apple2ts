@@ -1,11 +1,13 @@
 // Passport MIDI Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
 import { passTxMidiData } from "../../worker2main"
-import { MC6850 } from "./mc6850"
+import { MC6850, MC6850Ext } from "./mc6850"
 import { MC6840 } from "./mc6840"
 import { registerCycleCountCallback } from "../../cpu6502"
 import { s6502 } from "../../instructions"
 import { setSlotIOCallback } from "../../memory"
+import { interruptRequest } from "../../cpu6502"
+
 
 let slot = 2
 let timer: MC6840
@@ -22,6 +24,10 @@ const cycleCountCallback = (slot: number) => {
   prevCycleCount = s6502.cycleCount
 }
 
+const interrupt = (onoff: boolean): void => {
+  interruptRequest(slot, onoff)
+}
+
 export const receiveMidiData = (data: Uint8Array): void => {
   // messages can come in before we are initialized
   if (acia)
@@ -33,8 +39,12 @@ export const enablePassportCard = (enable = true, aslot = 2) => {
     return
 
   slot = aslot
-  timer = new MC6840(slot)
-  acia  = new MC6850(slot, passTxMidiData)
+  timer = new MC6840(interrupt)
+  const ext: MC6850Ext = {
+    sendData: passTxMidiData,
+    interrupt: interrupt,
+  }
+  acia  = new MC6850(ext)
 
   // passport midi cards have no ROM
   setSlotIOCallback(slot, handleMIDIIO)
