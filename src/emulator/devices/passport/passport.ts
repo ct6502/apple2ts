@@ -1,5 +1,8 @@
 // Passport MIDI Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
+//
 // Passport and clones (Yamaha) are a combination of a Motorola 6850 ACIA and a 6840 Timer chip.
+// They contain no ROM and therefore *could* live in slot 3, but most midi software expects 
+// to find them in slot 2 unfortunately.
 
 import { passTxMidiData } from "../../worker2main"
 import { MC6850, MC6850Ext } from "./mc6850"
