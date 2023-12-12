@@ -324,20 +324,20 @@ export class SY6551
   configChange(newconf: ConfigChange)
   {
     let send = false;
-    if (newconf.baud != this._lastChange?.baud)
+    if (newconf.baud != this._lastConfig.baud)
       send = true;
-    if (newconf.bits != this._lastChange?.bits)
+    if (newconf.bits != this._lastConfig.bits)
       send = true;
-    if (newconf.stop != this._lastChange?.stop)
+    if (newconf.stop != this._lastConfig.stop)
       send = true;
-    if (newconf.parity != this._lastChange?.parity)
+    if (newconf.parity != this._lastConfig.parity)
       send = true;
 
     if (send)
     {
       // note that not all params may be valid, ie: baud could be zero
-      this._lastChange = newconf;
-      this._extFuncs.configChange(this._lastChange);
+      this._lastConfig = newconf;
+      this._extFuncs.configChange(this._lastConfig);
     }
   }
 
