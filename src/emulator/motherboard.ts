@@ -13,7 +13,7 @@ import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
 import { handleGameSetup } from "./games/game_mappings"
 import { clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
-import { enableSerialCard } from "./devices/serial"
+import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
@@ -149,6 +149,7 @@ const resetMachine = () => {
   resetDrive()
   setButtonState()
   resetMouse()
+  resetSerial()
   resetMockingboard(4)
   resetMockingboard(5)
 }

@@ -1,7 +1,9 @@
 // Super Serial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
-import { passTxCommData } from "../worker2main"
-import { setSlotDriver, setSlotIOCallback } from "../memory"
+import { interruptRequest } from "../../cpu6502";
+import { passTxCommData } from "../../worker2main"
+import { setSlotDriver, setSlotIOCallback } from "../../memory"
+import { SY6551, SY6551Ext, ConfigChange } from "./sy6551"
 
 //  Apple II Super Serial Card ROM - 341-0065-A.bin
 const rom = new Uint8Array([
@@ -195,14 +197,39 @@ const rom = new Uint8Array([
 ])
 
 let slot = 1
-let command = 0x00 // should be 0x02 but hack to force reset
-let control = 0x00
+let acia: SY6551
+
+const interrupt = (onoff: boolean): void => {
+  interruptRequest(slot, onoff)
+}
+
+const configChange = (config: ConfigChange): void => {
+  // do nothing here yet
+  console.log("ConfigChange: ", config)
+}
+
+export const receiveCommData = (data: Uint8Array) => {
+  // data can come in before we are initialized
+  if (acia)
+    acia.buffer(data)
+}
+
+export const resetSerial = () => {
+  if (acia)
+    acia.reset()
+}
 
 export const enableSerialCard = (enable = true, aslot = 1) => {
   if (!enable)
     return
 
   slot = aslot
+  const ext: SY6551Ext = {
+    sendData: passTxCommData,
+    interrupt: interrupt,
+    configChange: configChange
+  }
+  acia = new SY6551(ext)
 
   // remap rom to be 256 byte section first, then 2k area
   const driver = new Uint8Array(rom.length + 256)
@@ -212,23 +239,6 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
 
   setSlotDriver(slot, driver);
   setSlotIOCallback(slot, handleSerialIO)
-}
-
-let receiveBuffer = new Uint8Array(0)
-let receivePos = -1
-
-export const receiveCommData = (data: Uint8Array) => {
-  const tmpbuffer = new Uint8Array(receiveBuffer.length + data.length)
-  // new data first
-  tmpbuffer.set(data)
-  tmpbuffer.set(receiveBuffer, data.length)
-  receiveBuffer = tmpbuffer
-  receivePos += data.length
-}
-
-const sendCommChar = (data: number) => {
-  const sendBuffer = new Uint8Array(1).fill(data)
-  passTxCommData(sendBuffer)
 }
 
 const handleSerialIO = (addr: number, val = -1): number => {
@@ -261,56 +271,32 @@ const handleSerialIO = (addr: number, val = -1): number => {
         // Bit:  7  6 5   4 3   2  1          0
         return 0x28
     case REG.IOREG:
-        if (val >= 0) {
-          sendCommChar(val);
-        } else {
-          if (receivePos >= 0)
-            return receiveBuffer[receivePos--]
-          else
-            // error
-            return 0
-        }
+        if (val >= 0)
+          acia.data = val
+        else
+          return acia.data
         break
+
     case REG.STATUS:
         if(val >= 0)
-        {
-          // a write resets the 6551
-          console.log('SSC RESET')
-          command = 0x02
-          control = 0x00
-        }
+          acia.status = val
         else
-        {
-          // ignore all status and errors except recv/send registers.
-          // bit 4 = transmit reg empty
-          // bit 3 = receive reg ful
-          let stat = 0x10
-          stat |= (receivePos >= 0) ? 0x08 : 0  
-          return stat
-        }
+          return acia.status
         break
 
     case REG.COMMAND:
         if(val >= 0)
-        {
-          // ignored
-          console.log('SSC COMMAND: 0x' + val.toString(16) )
-          command = val
-          break
-        }
+          acia.command = val  
         else
-          return command
+          return acia.command
+        break;
 
     case REG.CONTROL:
         if(val >= 0)
-        {
-          // ignored
-          console.log('SSC CONTROL: 0x' + val.toString(16) )
-          control = val
-          break
-        }
+          acia.control = val
         else
-          return control
+          return acia.control
+        break;
 
     default:
         console.log('SSC unknown softswitch', (addr&0xf).toString(16))
