@@ -1,5 +1,7 @@
 import { KeyboardEvent } from "react"
 
+export const TEST_DEBUG = false
+
 export enum RUN_MODE {
   IDLE = 0,
   RUNNING = -1,

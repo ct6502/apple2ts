@@ -10,7 +10,7 @@ class DebugInfoPanel extends React.Component<object, object>
       <div className="roundRectBorder">
         <p className="defaultFont panelTitle bgColor">Debug Info</p>
         <State6502Controls/>
-        <div className="debugPanel"
+        <div className="debug-panel small-mono-text"
           style={{
             width: '330px', // Set the width to your desired value
             height: `350pt`, // Set the height to your desired value

@@ -38,14 +38,17 @@
   vertical-align: top;
 }
 
-.debugPanel {
-  outline: none;
-  cursor: text;
-  user-select: text;
+.small-mono-text {
   white-space: pre;
   font-family: monospace;
   font-size: 8pt;
   line-height: 10pt;
+}
+
+.debugPanel {
+  outline: none;
+  cursor: text;
+  user-select: text;
   margin-top: 1px;
   margin-bottom: 1px;
   padding-top: 2px;
@@ -57,6 +60,7 @@
   border-color: gray;
   border-style: solid;
   margin: 0;
+  outline: none;
 }
 
 .programCounter {
@@ -182,7 +186,10 @@
   margin-top: 4px;
   margin-bottom: 0px;
   margin-right: 5px;
-  height: 14pt;
+  border-radius: 0;
+  padding-left: 4px;
+  padding-bottom: 2px;
+  height: 18px;
 }
 
 .warning-div {

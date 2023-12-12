@@ -7,7 +7,7 @@ import { s6502 } from "./instructions"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
-type softSwitch = {
+type SoftSwitch = {
   offAddr: number
   onAddr: number
   isSetAddr: number
@@ -16,25 +16,27 @@ type softSwitch = {
   setFunc: tSetFunc
 }
 
-const sswitch: Array<softSwitch> = []
+const sswitchArray: Array<SoftSwitch> = []
 
-const NewSwitch = (offAddr: number, isSetAddr: number,
+const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
   writeOnly = false,
-  setFunc: tSetFunc = null): softSwitch => {
-  const result: softSwitch = {
+  setFunc: tSetFunc = null): SoftSwitch => {
+  const result: SoftSwitch = {
     offAddr: offAddr,
-    onAddr: offAddr + 1,
+    onAddr: onAddr,
     isSetAddr: isSetAddr,
     writeOnly: writeOnly,
     isSet: false,
     setFunc: setFunc,
   }
   if (offAddr >= 0xC000) {
-    sswitch[offAddr - 0xC000] = result
-    sswitch[offAddr + 1 - 0xC000] = result
+    sswitchArray[offAddr - 0xC000] = result
+  }
+  if (onAddr >= 0xC000) {
+      sswitchArray[onAddr - 0xC000] = result
   } 
   if (isSetAddr >= 0xC000) {
-    sswitch[isSetAddr - 0xC000] = result
+    sswitchArray[isSetAddr - 0xC000] = result
   } 
   return result
 }
@@ -58,67 +60,91 @@ export const handleBankedRAM = (addr: number) => {
 }
 
 export const SWITCHES = {
-  STORE80: NewSwitch(0xC000, 0xC018, true),
-  RAMRD: NewSwitch(0xC002, 0xC013, true),
-  RAMWRT: NewSwitch(0xC004, 0xC014, true),
-  INTCXROM: NewSwitch(0xC006, 0xC015, true),
-  INTC8ROM: NewSwitch(0, 0),  // Unreadable soft switch; add here so it is saved/restored
-  ALTZP: NewSwitch(0xC008, 0xC016, true),
-  SLOTC3ROM: NewSwitch(0xC00A, 0xC017, true),
-  COLUMN80: NewSwitch(0xC00C, 0xC01F, true),
-  ALTCHARSET: NewSwitch(0xC00E, 0xC01E, true),
-  KBRDSTROBE: NewSwitch(0, 0xC010, false, () => {
+  STORE80: NewSwitch(0xC000, 0xC001, 0xC018, true),
+  RAMRD: NewSwitch(0xC002, 0xC003, 0xC013, true),
+  RAMWRT: NewSwitch(0xC004, 0xC005, 0xC014, true),
+  INTCXROM: NewSwitch(0xC006, 0xC007, 0xC015, true),
+  INTC8ROM: NewSwitch(0, 0, 0),  // Unreadable soft switch; add here so it is saved/restored
+  ALTZP: NewSwitch(0xC008, 0xC009, 0xC016, true),
+  SLOTC3ROM: NewSwitch(0xC00A, 0xC00B, 0xC017, true),
+  COLUMN80: NewSwitch(0xC00C, 0xC00D, 0xC01F, true),
+  ALTCHARSET: NewSwitch(0xC00E, 0xC00F, 0xC01E, true),
+  KBRDSTROBE: NewSwitch(0, 0, 0xC010, false, () => {
     const keyvalue = memGetC000(0xC000) & 0b01111111
     memSetC000(0xC000, keyvalue, 32)
   }),
-  BSRBANK2: NewSwitch(0, 0xC011),    // status location, not a switch
-  BSRREADRAM: NewSwitch(0, 0xC012),  // status location, not a switch
-  CASSOUT: NewSwitch(0xC020, 0),  // random value filled in checkSoftSwitches
-  SPEAKER: NewSwitch(0xC030, 0, false, (addr, cycleCount) => {
+  BSRBANK2: NewSwitch(0, 0, 0xC011),    // status location, not a switch
+  BSRREADRAM: NewSwitch(0, 0, 0xC012),  // status location, not a switch
+  CASSOUT: NewSwitch(0xC020, 0, 0),  // random value filled in checkSoftSwitches
+  SPEAKER: NewSwitch(0xC030, 0, 0, false, (addr, cycleCount) => {
     memSetC000(0xC030, rand())
     passClickSpeaker(cycleCount)
   }),
-  GCSTROBE: NewSwitch(0xC040, 0),    // strobe output to game connector
-  EMUBYTE: NewSwitch(0, 0xC04F, false, () => {memSetC000(0xC04F, 0xCD)}),
-  TEXT: NewSwitch(0xC050, 0xC01A),
-  MIXED: NewSwitch(0xC052, 0xC01B),
-  PAGE2: NewSwitch(0xC054, 0xC01C),
-  HIRES: NewSwitch(0xC056, 0xC01D),
-  AN0: NewSwitch(0xC058, 0),  // random value filled in checkSoftSwitches
-  AN1: NewSwitch(0xC05A, 0),  // random value filled in checkSoftSwitches
-  AN2: NewSwitch(0xC05C, 0),  // random value filled in checkSoftSwitches
-  AN3: NewSwitch(0xC05E, 0),  // random value filled in checkSoftSwitches
-  CASSIN1: NewSwitch(0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
-  PB0: NewSwitch(0, 0xC061),  // status location, not a switch
-  PB1: NewSwitch(0, 0xC062),  // status location, not a switch
-  PB2: NewSwitch(0, 0xC063),  // status location, not a switch
-  JOYSTICK12: NewSwitch(0xC064, 0, false, (addr, cycleCount) => {
-    checkJoystickValues(cycleCount)
-  }),
-  JOYSTICK34: NewSwitch(0xC066, 0, false, (addr, cycleCount) => {
-    checkJoystickValues(cycleCount)
-  }),
-  CASSIN2: NewSwitch(0, 0xC068, false, () => {memSetC000(0xC068, rand())}),
-  FASTCHIP_LOCK: NewSwitch(0xC06A, 0),   // used by Total Replay
-  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0), // used by Total Replay
-  FASTCHIP_SPEED: NewSwitch(0xC06D, 0),  // used by Total Replay
-  JOYSTICKRESET: NewSwitch(0xC070, 0, false, (addr, cycleCount) => {
+  GCSTROBE: NewSwitch(0xC040, 0, 0),    // strobe output to game connector
+  EMUBYTE: NewSwitch(0, 0, 0xC04F, false, () => {memSetC000(0xC04F, 0xCD)}),
+  TEXT: NewSwitch(0xC050, 0xC051, 0xC01A),
+  MIXED: NewSwitch(0xC052, 0xC053, 0xC01B),
+  PAGE2: NewSwitch(0xC054, 0xC055, 0xC01C),
+  HIRES: NewSwitch(0xC056, 0xC057, 0xC01D),
+  AN0: NewSwitch(0xC058, 0xC059, 0),  // random value filled in checkSoftSwitches
+  AN1: NewSwitch(0xC05A, 0xC05B, 0),  // random value filled in checkSoftSwitches
+  AN2: NewSwitch(0xC05C, 0xC05D, 0),  // random value filled in checkSoftSwitches
+  AN3: NewSwitch(0xC05E, 0xC05F, 0),  // random value filled in checkSoftSwitches
+  CASSIN1: NewSwitch(0, 0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
+  PB0: NewSwitch(0, 0, 0xC061),  // status location, not a switch
+  PB1: NewSwitch(0, 0, 0xC062),  // status location, not a switch
+  PB2: NewSwitch(0, 0, 0xC063),  // status location, not a switch
+  JOYSTICK0: NewSwitch(0, 0, 0xC064, false,
+    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+  JOYSTICK1: NewSwitch(0, 0, 0xC065, false,
+      (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+  JOYSTICK2: NewSwitch(0, 0, 0xC066, false,
+    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+  JOYSTICK3: NewSwitch(0, 0, 0xC067, false,
+    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+  CASSIN2: NewSwitch(0, 0, 0xC068, false, () => {memSetC000(0xC068, rand())}),
+  FASTCHIP_LOCK: NewSwitch(0xC06A, 0, 0),   // used by Total Replay
+  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0, 0), // used by Total Replay
+  FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0),  // used by Total Replay
+  JOYSTICKRESET: NewSwitch(0, 0, 0xC070, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
     memSetC000(0xC070, rand())
   }),
-  //BANKSEL: NewSwitch(0xC073, 0),  // Applied Engineering RAMWorks (ignored)
-  LASER128EX: NewSwitch(0xC074, 0),  // used by Total Replay (ignored)
-  READBSR2: NewSwitch(0xC080, 0),
-  WRITEBSR2: NewSwitch(0xC081, 0),
-  OFFBSR2: NewSwitch(0xC082, 0),
-  RDWRBSR2: NewSwitch(0xC083, 0),
-  READBSR1: NewSwitch(0xC088, 0),
-  WRITEBSR1: NewSwitch(0xC089, 0),
-  OFFBSR1: NewSwitch(0xC08A, 0),
-  RDWRBSR1: NewSwitch(0xC08B, 0),
+  //BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RAMWorks (ignored)
+  LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
+  READBSR2: NewSwitch(0xC080, 0, 0),
+  WRITEBSR2: NewSwitch(0xC081, 0, 0),
+  OFFBSR2: NewSwitch(0xC082, 0, 0),
+  RDWRBSR2: NewSwitch(0xC083, 0, 0),
+  READBSR1: NewSwitch(0xC088, 0, 0),
+  WRITEBSR1: NewSwitch(0xC089, 0, 0),
+  OFFBSR1: NewSwitch(0xC08A, 0, 0),
+  RDWRBSR1: NewSwitch(0xC08B, 0, 0),
 }
 
 SWITCHES.TEXT.isSet = true
+
+const SoftSwitchDescriptions: Array<string> = []
+
+export const getSoftSwitchDescriptions = () => {
+  if (SoftSwitchDescriptions.length === 0) {
+    for (const key in SWITCHES) {
+      const sswitch = SWITCHES[key as keyof typeof SWITCHES]
+      const isSwitch = sswitch.onAddr > 0
+      const writeOnly = sswitch.writeOnly ? " (write)" : ""
+      if (sswitch.offAddr > 0) {
+        SoftSwitchDescriptions[sswitch.offAddr] = key + (isSwitch ? " off" : "") + writeOnly
+      }
+      if (sswitch.onAddr > 0) {
+          SoftSwitchDescriptions[sswitch.onAddr] = key + " on" + writeOnly
+      }
+      if (sswitch.isSetAddr > 0) {
+        SoftSwitchDescriptions[sswitch.isSetAddr] = key + " status" + writeOnly
+      }
+    }
+  }
+  return SoftSwitchDescriptions
+}
 
 const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
 
@@ -140,7 +166,7 @@ export const checkSoftSwitches = (addr: number,
     popKey()
     return
   }
-  const sswitch1 = sswitch[addr - 0xC000]
+  const sswitch1 = sswitchArray[addr - 0xC000]
   if (!sswitch1) {
     console.error("Unknown softswitch " + toHex(addr))
     memSetC000(addr, rand())

@@ -344,21 +344,24 @@ export const debugSlot = (slot: number, addr: number, oldvalue: number, value = 
 }
 
 export const memGet = (addr: number, checkWatchpoints = true): number => {
-  if (checkWatchpoints && isWatchpoint(addr, false)) {
-    setWatchpointBreak()
-  }
+  let value = 0
   const page = addr >>> 8
   // debugSlot(4, addr)
   if (page === 0xC0) {
-    return memGetSoftSwitch(addr)
+    value = memGetSoftSwitch(addr)
+  } else {
+    if (page >= 0xC1 && page <= 0xC7) {
+      checkSlotIO(addr)
+    } else if (addr === 0xCFFF) {
+      manageC800(0xFF);
+    }
+    const shifted = addressGetTable[page]
+    value = memory[shifted + (addr & 255)]
   }
-  if (page >= 0xC1 && page <= 0xC7) {
-    checkSlotIO(addr)
-  } else if (addr === 0xCFFF) {
-    manageC800(0xFF);
+  if (checkWatchpoints && isWatchpoint(addr, value, false)) {
+    setWatchpointBreak()
   }
-  const shifted = addressGetTable[page]
-  return memory[shifted + (addr & 255)]
+  return value
 }
 
 export const memGetRaw = (addr: number): number => {
@@ -400,7 +403,7 @@ export const memSet = (addr: number, value: number) => {
     if (shifted < 0) return
     memory[shifted + (addr & 255)] = value
   }
-  if (isWatchpoint(addr, true)) {
+  if (isWatchpoint(addr, value, true)) {
     setWatchpointBreak()
   }
 }
