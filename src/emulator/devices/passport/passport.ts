@@ -1,4 +1,5 @@
 // Passport MIDI Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
+// Passport and clones (Yamaha) are a combination of a Motorola 6850 ACIA and a 6840 Timer chip.
 
 import { passTxMidiData } from "../../worker2main"
 import { MC6850, MC6850Ext } from "./mc6850"
@@ -7,7 +8,6 @@ import { registerCycleCountCallback } from "../../cpu6502"
 import { s6502 } from "../../instructions"
 import { setSlotIOCallback } from "../../memory"
 import { interruptRequest } from "../../cpu6502"
-
 
 let slot = 2
 let timer: MC6840
