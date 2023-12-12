@@ -3,7 +3,7 @@
 import { interruptRequest } from "../../cpu6502";
 import { passTxCommData } from "../../worker2main"
 import { setSlotDriver, setSlotIOCallback } from "../../memory"
-import { MOS6551, MOS6551Ext, ConfigChange } from "./mos6551"
+import { SY6551, SY6551Ext, ConfigChange } from "./sy6551"
 
 //  Apple II Super Serial Card ROM - 341-0065-A.bin
 const rom = new Uint8Array([
@@ -197,7 +197,7 @@ const rom = new Uint8Array([
 ])
 
 let slot = 1
-let acia: MOS6551
+let acia: SY6551
 
 const interrupt = (onoff: boolean): void => {
   interruptRequest(slot, onoff)
@@ -224,12 +224,12 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
     return
 
   slot = aslot
-  const ext: MOS6551Ext = {
+  const ext: SY6551Ext = {
     sendData: passTxCommData,
     interrupt: interrupt,
     configChange: configChange
   }
-  acia = new MOS6551(ext)
+  acia = new SY6551(ext)
 
   // remap rom to be 256 byte section first, then 2k area
   const driver = new Uint8Array(rom.length + 256)

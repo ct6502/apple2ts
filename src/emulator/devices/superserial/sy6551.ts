@@ -1,5 +1,7 @@
 // SuperSerial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
-// MOS 6551 ACIA (without 65c51's transmit interrupt bug)
+// Synertek 6551 ACIA
+// The superserial firmware seems configured for synertek 6551, as it requires
+// command register to be zeroed on init rather than containing 0x02 like MOS/WD.
 
 export type ConfigChange =
 {
@@ -9,7 +11,7 @@ export type ConfigChange =
   parity: string;
 };
 
-export interface MOS6551Ext
+export interface SY6551Ext
 {
   // external call to send async data
   sendData(data: Uint8Array): void;
@@ -35,7 +37,7 @@ const STATUS = {            // Description     IRQ on Change  Cleared on Read
 };
 
 const CONTROL = {
-    BAUD_RATE:   (0x07 << 0), // clock divisor for baud rate
+    BAUD_RATE:   (0x0F << 0), // clock divisor for baud rate
     INT_CLOCK:   (0x01 << 4), // internal or external clock  
     WORD_LENGTH: (0x03 << 5), // 8,7,6,5
     STOP_BITS:   (0x01 << 7), // 0 - 1, 1 = 2 or 1.5
@@ -45,21 +47,21 @@ const CONTROL = {
 const COMMAND = {
     DTR_ENABLE:    (0x01 << 0), // clear /DTR and enable receiver
     RX_INT_DIS:    (0x01 << 1), // RX interrupt disable (0=enable)
-    RTS_TX_INT_EN: (0x03 << 2), // /RTS TX interrupt enable
     TX_INT_EN:     (0x01 << 2), // TX interrupt enable
+    RTS_TX_INT_EN: (0x03 << 2), // /RTS TX interrupt enable
     RX_ECHO:       (0x01 << 4), // echo mode for receiver
     PARITY_EN:     (0x01 << 5), // enable parity  (not changed on reset)
     PARITY_CNF:    (0x03 << 6), // parity config  (not changed on reset)
-    HW_RESET:      (0x20),      // value at reset
+    HW_RESET:      (0x00),      // synertek zeroes
+    HW_RESET_MOS:  (0x02),      // MOS value at reset
 };
 
 enum PARITY
 {
-  DISABLED = (0<<5),  // none
-  ODD      = (1<<5),  // odd
-  EVEN     = (3<<5),  // even
-  MARK     = (5<<5),  // mark party, check disabled
-  SPACE    = (7<<5),  // space party, check disabled
+  ODD      = (0<<6),  // odd
+  EVEN     = (1<<6),  // even
+  MARK     = (2<<6),  // mark party, check disabled
+  SPACE    = (3<<6),  // space party, check disabled
 };
 
 enum WORD_LENGTH
@@ -90,14 +92,15 @@ enum BAUD_RATE
   B19200
 };
 
-export class MOS6551
+export class SY6551
 {
   _control: number
   _status: number
   _command: number
   _lastRead: number
+  _lastConfig: ConfigChange
   _receiveBuffer: number[]
-  _extFuncs: MOS6551Ext
+  _extFuncs: SY6551Ext
 
   buffer(data: Uint8Array): void
   {
@@ -166,7 +169,7 @@ export class MOS6551
   {
     // need to report this as it changes config
     this._control = val;
-    this._extFuncs.configChange(this.buildConfigChange());
+    this.configChange(this.buildConfigChange());
   }
 
   get control(): number
@@ -176,8 +179,9 @@ export class MOS6551
 
   set command(val: number)
   {
-    // we could send a state change here for parity but we ignore it for now
+    // send a state change here for parity
     this._command = val;
+    this.configChange(this.buildConfigChange());
   }
 
   get command(): number
@@ -294,43 +298,65 @@ export class MOS6551
     else
       change.stop = 1;
 
-    switch(this._command & (COMMAND.PARITY_EN|COMMAND.PARITY_CNF))
+    change.parity = 'none';
+    if(this._command & COMMAND.PARITY_EN)
     {
-      case PARITY.DISABLED:
-        change.parity = 'none'; 
-        break;
-      case PARITY.ODD:
-        change.parity = 'odd'; 
-        break;
-      case PARITY.EVEN:
-        change.parity = 'even'; 
-        break;
-      case PARITY.MARK:
-        change.parity = 'mark'; 
-        break;
-      case PARITY.SPACE:
-        change.parity = 'space'; 
-        break;
+      switch(this._command & COMMAND.PARITY_CNF)
+      {
+        case PARITY.ODD:
+          change.parity = 'odd'; 
+          break;
+        case PARITY.EVEN:
+          change.parity = 'even'; 
+          break;
+        case PARITY.MARK:
+          change.parity = 'mark'; 
+          break;
+        case PARITY.SPACE:
+          change.parity = 'space'; 
+          break;
+      }
     }
 
     return change;
+  }
+
+  configChange(newconf: ConfigChange)
+  {
+    let send = false;
+    if (newconf.baud != this._lastChange?.baud)
+      send = true;
+    if (newconf.bits != this._lastChange?.bits)
+      send = true;
+    if (newconf.stop != this._lastChange?.stop)
+      send = true;
+    if (newconf.parity != this._lastChange?.parity)
+      send = true;
+
+    if (send)
+    {
+      // note that not all params may be valid, ie: baud could be zero
+      this._lastChange = newconf;
+      this._extFuncs.configChange(this._lastChange);
+    }
   }
 
   reset(): void
   {
     this._control = CONTROL.HW_RESET;
     this._command = COMMAND.HW_RESET;
-    this._status  = STATUS.HW_RESET;
+    this._status = STATUS.HW_RESET;
     this.irq(false);
     this._receiveBuffer = [];
   }
 
-  constructor(extFuncs: MOS6551Ext)
+  constructor(extFuncs: SY6551Ext)
   {
     this._extFuncs = extFuncs;
     this._control = CONTROL.HW_RESET;
     this._command = COMMAND.HW_RESET;
     this._status  = STATUS.HW_RESET;
+    this._lastConfig = this.buildConfigChange();
     this._lastRead = 0;
     this._receiveBuffer = [];
     this.reset();
