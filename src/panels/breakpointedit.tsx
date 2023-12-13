@@ -209,12 +209,15 @@ class BreakpointEdit extends React.Component<
               setValue={this.handleHexValueChange}
               placeholder="any"
               width="5em"/>
-          </div> : 
+            <div style={{height: "32px"}}/>
+          </div>
+           : 
           <div>
               <EditField name="Expression: "
                 value={this.state.expression}
                 setValue={this.handleExpressionChange}
                 warning={this.state.badExpression}
+                help="Example: ($2000 == #$C0) && (A > #$80)"
                 placeholder="Break when expression evaluates to true"/>
               <EditField name="Hit&nbsp;count: "
                 value={this.state.hitcount}
