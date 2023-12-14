@@ -76,11 +76,11 @@ const BinaryFileDialog = (props:
             <div></div>
             <div className="flex-row">
               <button className="pushButton text-button"
-                onMouseUp={handleLoadBinary}>
+                onClick={handleLoadBinary}>
                 <span className="bigger-font">OK</span>
               </button>
               <button className="pushButton text-button"
-                onMouseUp={handleCancel}>
+                onClick={handleCancel}>
                 <span className="bigger-font">Cancel</span>
               </button>
             </div>

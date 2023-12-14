@@ -231,11 +231,11 @@ class BreakpointEdit extends React.Component<
           <div></div>
           <div className="flex-row">
             <button className="pushButton text-button"
-              onMouseUp={this.props.saveBreakpoint}>
+              onClick={this.props.saveBreakpoint}>
               <span className="bigger-font">OK</span>
             </button>
             <button className="pushButton text-button"
-              onMouseUp={this.props.cancelDialog}>
+              onClick={this.props.cancelDialog}>
               <span className="bigger-font">Cancel</span>
             </button>
           </div>
