@@ -10,7 +10,7 @@ const connect = () => {
       (err) => console.log('requestMIDIAccess fails', err));
   }
   else
-    console.log("WEBMidi Not supported"); 
+    console.log("WebMidi Not supported"); 
 }
 
 const midiReady = (midi) => {
@@ -19,52 +19,69 @@ const midiReady = (midi) => {
   initDevices(midi);
 }
 
-let inIdx  = -1;
-let outIdx = -1;
-let midiIn = [];
-let midiOut = [];
+let midiInIndex  = -1;
+let midiOutIndex = -1;
+export let midiInDevices = [];
+export let midiOutDevices = [];
+
+export const setMidiOutDevice = (dev) => {
+  for(let i=0;i<midiOutDevices.length;i++) {
+    if (midiOutDevices[i] === dev) {
+      midiOutIndex = i;
+      console.log("Selecting MidiOut Device: " + midiOutDevices[i].name);
+      break;
+    }
+  }
+}
+
+export const getMidiOutDevice = (): any => {
+    return midiOutDevices[midiOutIndex];
+}
 
 const initDevices = (midi) => {
   // Reset.
-  midiIn = [];
-  midiOut = [];
+  midiInDevices = [];
+  midiOutDevices = [];
   
-  // MIDI devices that send you data.
   const inputs = midi.inputs.values();
   for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-    console.log("Midi In: " + input.value.name);
-    midiIn.push(input.value);
+    //console.log("Midi In: " + input.value.name);
+    midiInDevices.push(input.value);
   }
-  console.log("---------");
 
-  if (midiIn.length)
+  if (midiInDevices.length)
   {
     // pick last one
-    inIdx = midiIn.length-1;
-    const device = midiIn[inIdx];
-    console.log("Using MidiIn Device: " + device.name);
+    if (midiInIndex != midiInDevices.length-1)
+    {
+      midiInIndex = midiInDevices.length-1;
+      const device = midiInDevices[midiInIndex];
+      console.log("Selecting MidiInDevice: " + device.name);
+    }
   }
   else
-    inIdx = -1;
+    midiInIndex = -1;
   
   // MIDI devices that you send data to.
   const outputs = midi.outputs.values();
   for (let output = outputs.next(); output && !output.done; output = outputs.next()) {
-    console.log("Midi Out: " + output.value.name);
-    midiOut.push(output.value);
+    //console.log("Midi Out: " + output.value.name);
+    midiOutDevices.push(output.value);
   }
-  console.log("---------");
 
-  if (midiOut.length)
+  if (midiOutDevices.length)
   {
     // pick last one
-    outIdx = midiOut.length-1;
-    const device = midiOut[outIdx];
-    console.log("Using MidiOut Device: " + device.name);
+    if (midiOutIndex != midiOutDevices.length-1)
+    {
+      midiOutIndex = midiOutDevices.length-1;
+      const device = midiOutDevices[midiOutIndex];
+      console.log("Selecting MidiOutDevice: " + device.name);
+    }
   }
   
   // Start listening to MIDI messages.
-  for (const input of midiIn) {
+  for (const input of midiInDevices) {
     input.addEventListener('midimessage', midiMessageReceived);
   }
 }
@@ -75,13 +92,14 @@ const midiMessageReceived = (event) => {
   passRxMidiData(data);
 }
 
+// execute on load
 connect();
 
 let once = true;
 let buffer = [];
 
 export const receiveMidiData = (data: Uint8Array) => {
-  if (outIdx === -1) {
+  if (midiOutIndex === -1) {
     // connection failure?
     if (once) {
       console.log("No MIDI interface.");
@@ -93,7 +111,7 @@ export const receiveMidiData = (data: Uint8Array) => {
   for(let i=0;i<data.length;i++)
     buffer.push(data[i]);
 
-  const device = midiOut[outIdx];
+  const device = midiOutDevices[midiOutIndex];
 
   // have to send complete messages
   while (buffer.length >= 3)
@@ -104,11 +122,11 @@ export const receiveMidiData = (data: Uint8Array) => {
     // Program and Pressure commands only have 2 bytes, rest have 3
     if (msg[0] < 192 || msg[0] > 223)
       msg.push( buffer.shift() );
-    //let txt = "[" + msg[0].toString(16);
-    //for(let i=1;i<msg.length;i++)
-    //  txt += (" " + msg[i].toString(16));
-    //txt += "]";
-    //console.log(txt);
+    let txt = "[" + msg[0].toString(16);
+    for(let i=1;i<msg.length;i++)
+      txt += (" " + msg[i].toString(16));
+    txt += "]";
+    console.log(txt);
     device.send(msg); 
   }
 }
