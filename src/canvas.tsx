@@ -33,20 +33,21 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   startupTextTimeout = 0
 
   pasteHandler = (e: ClipboardEvent) => {
-    if (e.clipboardData) {
-      let data = e.clipboardData.getData("text");
+    const canvas = document.getElementById('apple2canvas')
+    if (document.activeElement === canvas && e.clipboardData) {
+      let data = e.clipboardData.getData("text")
       if (data !== "") {
         data = data.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
         data = data.replaceAll('\n','\r')  // LFs to CRs
         passPasteText(data)
       }
-      e.preventDefault();
+      e.preventDefault()
     }
   };
 
   getSizes = () => {
     width = window.innerWidth - 20;
-    height = window.innerHeight - 250;
+    height = window.innerHeight - 275;
     // shrink either width or height to preserve aspect ratio
     if (width / screenRatio > height) {
       width = height * screenRatio
@@ -265,6 +266,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
 
     return <span className="canvasText">
       <canvas ref={this.props.myCanvas}
+        id="apple2canvas"
         className="mainCanvas"
         style={{cursor: showMouse ? "auto" : "none"}}
         width={width} height={height}

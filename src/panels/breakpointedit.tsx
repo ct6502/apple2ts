@@ -209,12 +209,15 @@ class BreakpointEdit extends React.Component<
               setValue={this.handleHexValueChange}
               placeholder="any"
               width="5em"/>
-          </div> : 
+            <div style={{height: "32px"}}/>
+          </div>
+           : 
           <div>
               <EditField name="Expression: "
                 value={this.state.expression}
                 setValue={this.handleExpressionChange}
                 warning={this.state.badExpression}
+                help="Example: ($2000 == #$C0) && (A > #$80)"
                 placeholder="Break when expression evaluates to true"/>
               <EditField name="Hit&nbsp;count: "
                 value={this.state.hitcount}
@@ -228,11 +231,11 @@ class BreakpointEdit extends React.Component<
           <div></div>
           <div className="flex-row">
             <button className="pushButton text-button"
-              onMouseUp={this.props.saveBreakpoint}>
+              onClick={this.props.saveBreakpoint}>
               <span className="bigger-font">OK</span>
             </button>
             <button className="pushButton text-button"
-              onMouseUp={this.props.cancelDialog}>
+              onClick={this.props.cancelDialog}>
               <span className="bigger-font">Cancel</span>
             </button>
           </div>

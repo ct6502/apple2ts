@@ -14,7 +14,6 @@ import {faCircle as iconBreakpointDisabled} from "@fortawesome/free-regular-svg-
 import { getLineOfDisassembly } from "./debugpanelutilities";
 import BreakpointEdit from "./breakpointedit";
 import { Breakpoint, Breakpoints, getBreakpointString, getBreakpointStyle } from "./breakpoint";
-import { TEST_DEBUG } from "../emulator/utility/utility";
 
 class BreakpointsView extends React.Component<
   {breakpoints: Breakpoints;
@@ -31,7 +30,7 @@ class BreakpointsView extends React.Component<
     setBreakpoints: (breakpoints: Breakpoints) => void}) {
     super(props);
     this.state = {
-      showBreakpointEdit: TEST_DEBUG,
+      showBreakpointEdit: false,
     };
   }
 

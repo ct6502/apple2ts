@@ -274,9 +274,9 @@ class DisplayApple2 extends React.Component<object,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
     }
-    const width = props.myCanvas.current?.width
+    const width = props.myCanvas.current?.width || 600
     const height = window.innerHeight - 30
-    let paperWidth = window.innerWidth - (width ? width : 600) - 70
+    let paperWidth = window.innerWidth - width - 70
     if (paperWidth < 300) paperWidth = 300
     return (
       <div>
