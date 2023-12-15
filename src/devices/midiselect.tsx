@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMusic,
 } from "@fortawesome/free-solid-svg-icons";
-import { midiOutDevices, getMidiOutDevice, setMidiOutDevice } from "./midiinterface";
+import { midiOutDevices, getMidiOutIndex, setMidiOutIndex } from "./midiinterface";
 
 export const MidiDeviceSelect = () => {
   const [midiOpen, setMidiOpen] = React.useState<boolean>(false)
@@ -14,9 +14,9 @@ export const MidiDeviceSelect = () => {
     setMidiOpen(true);
   }
 
-  const handleMidiClose = (dev = null) => {
+  const handleMidiClose = (index = -1) => {
     setMidiOpen(false);
-    if (dev) setMidiOutDevice(dev)
+    //if (dev) setMidiOutDevice(dev)
   }
 
   return (
@@ -35,12 +35,12 @@ export const MidiDeviceSelect = () => {
           onClick={() => handleMidiClose()}>
           <div className="floating-dialog flex-column"
             style={{backgroundColor: 'white', left: position.x, top: position.y}}>
-            {midiOutDevices.map((dev) => (
+            {[...midiOutDevices.keys()].map((i) => (
               <div style={{padding: '5px', cursor: 'pointer'}}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-                key={dev} onClick={() => handleMidiClose(dev)}>
-                {dev === getMidiOutDevice() ? '\u2714\u2009' : '\u2003'}{dev.name}
+                key={i} onClick={() => handleMidiClose(i)}>
+                {i === getMidiOutIndex() ? '\u2714\u2009' : '\u2003'}{midiOutDevices[i].name}
               </div>))}
           </div>
         </div>

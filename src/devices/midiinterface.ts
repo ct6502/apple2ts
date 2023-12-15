@@ -24,45 +24,36 @@ let midiOutIndex = -1;
 export let midiInDevices = [];
 export let midiOutDevices = [];
 
-export const setMidiOutDevice = (dev) => {
-  for(let i=0;i<midiOutDevices.length;i++) {
-    if (midiOutDevices[i] === dev) {
-      midiOutIndex = i;
-      console.log("Selecting MidiOut Device: " + midiOutDevices[i].name);
-      break;
-    }
+export const getMidiOutIndex = (): number => {
+  return midiOutIndex;
+}
+
+export const setMidiOutIndex = (index) => {
+  if (midiOutIndex != index)
+  {
+    midiOutIndex = index;
+    console.log("Selecting MidiOut Device: " + midiOutDevices[midiOutIndex].name);
   }
 }
 
-export const getMidiOutDevice = (): any => {
-    return midiOutDevices[midiOutIndex];
+export const getMidiInIndex = (): number => {
+  return midiInIndex;
+}
+
+export const setMidiInIndex = (index) => {
+  if (midiInIndex != index)
+  {
+    midiInIndex = index;
+    console.log("Selecting MidiIn Device: " + midiInDevices[midiInIndex].name);
+    //device.addEventListener('midimessage', midiMessageReceived);
+  }
 }
 
 const initDevices = (midi) => {
   // Reset.
   midiInDevices = [];
   midiOutDevices = [];
-  
-  const inputs = midi.inputs.values();
-  for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-    //console.log("Midi In: " + input.value.name);
-    midiInDevices.push(input.value);
-  }
 
-  if (midiInDevices.length)
-  {
-    // pick last one
-    if (midiInIndex != midiInDevices.length-1)
-    {
-      midiInIndex = midiInDevices.length-1;
-      const device = midiInDevices[midiInIndex];
-      console.log("Selecting MidiInDevice: " + device.name);
-    }
-  }
-  else
-    midiInIndex = -1;
-  
-  // MIDI devices that you send data to.
   const outputs = midi.outputs.values();
   for (let output = outputs.next(); output && !output.done; output = outputs.next()) {
     //console.log("Midi Out: " + output.value.name);
@@ -80,15 +71,35 @@ const initDevices = (midi) => {
     }
   }
   
-  // Start listening to MIDI messages.
-  for (const input of midiInDevices) {
-    input.addEventListener('midimessage', midiMessageReceived);
+  const inputs = midi.inputs.values();
+  for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+    //console.log("Midi In: " + input.value.name);
+    midiInDevices.push(input.value);
   }
+
+  // don't listen on midi-through if we are sending on midi-through
+  if (midiInDevices.length > 1)
+  {
+    // pick last one
+    if (midiInIndex != midiInDevices.length-1)
+    {
+      midiInIndex = midiInDevices.length-1;
+      const device = midiInDevices[midiInIndex];
+      //device.addEventListener('midimessage', midiMessageReceived);
+      //console.log("Selecting MidiInDevice: " + device.name);
+    }
+  }
+  else
+    midiInIndex = -1;
 }
 
 const midiMessageReceived = (event) => {
   const data = new Uint8Array(event.data);
-  //console.log("MIDI Receive: " + event.data);
+  let txt = "Recv: [" + data[0].toString(16);
+  for(let i=1;i<data.length;i++)
+    txt += (" " + data[i].toString(16));
+  txt += "]";
+  console.log(txt);
   passRxMidiData(data);
 }
 
@@ -113,20 +124,68 @@ export const receiveMidiData = (data: Uint8Array) => {
 
   const device = midiOutDevices[midiOutIndex];
 
-  // have to send complete messages
-  while (buffer.length >= 3)
+  // Must parse the message as WebMIDI only accepts complete messages.
+  while (buffer.length)
   {
+    let needBytes = 0;
+    switch(buffer[0] & 0xF0)
+    {
+      case 0x80:
+      case 0x90:
+      case 0xA0:
+      case 0xB0:
+      case 0xE0:
+        needBytes = 3;
+        break;
+      
+      case 0xC0:
+      case 0xD0:
+        needBytes = 2;
+        break;
+
+      case 0xF0:
+        switch(buffer[0])
+        {
+          case 0xF0:  // SYSEX messages aren't parsed correctly ATM
+          case 0xF7:
+            buffer.shift();
+            needBytes = 0;
+            break;
+          case 0xF1:
+          case 0xF3:
+            needBytes = 2;
+            break;
+          case 0xF2:
+            needBytes = 3;
+            break;
+          default:
+            needBytes = 1;
+            break;
+        }
+        break;
+
+      default:
+        // we are out of alignment
+        buffer.shift();
+        needBytes = 0
+        break;
+    }
+
+    if (needBytes === 0)
+      continue;
+
+    if (buffer.length < needBytes)
+      break;
+
     let msg = [];
-    msg.push( buffer.shift() );
-    msg.push( buffer.shift() );
-    // Program and Pressure commands only have 2 bytes, rest have 3
-    if (msg[0] < 192 || msg[0] > 223)
+    while( needBytes-- )
       msg.push( buffer.shift() );
-    let txt = "[" + msg[0].toString(16);
-    for(let i=1;i<msg.length;i++)
-      txt += (" " + msg[i].toString(16));
-    txt += "]";
-    console.log(txt);
+
+    //let txt = "Send: [" + msg[0].toString(16);
+    //for(let i=1;i<msg.length;i++)
+    //  txt += (" " + msg[i].toString(16));
+    //txt += "]";
+    //console.log(txt);
     device.send(msg); 
   }
 }
