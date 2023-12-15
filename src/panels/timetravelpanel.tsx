@@ -70,7 +70,7 @@ class TimeTravelPanel extends React.Component<object, object>
     }
     return (
       <div className="roundRectBorder">
-        <p className="defaultFont panelTitle bgColor">Time Travel</p>
+        <p className="defaultFont panelTitle bgColor">Time Travel Snapshots</p>
         <div ref={this.stateThumbRef} className="debug-panel small-mono-text"
           style={{
             width: '330px', // Set the width to your desired value

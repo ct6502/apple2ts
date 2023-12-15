@@ -1,7 +1,7 @@
 import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502 } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -95,7 +95,7 @@ if (typeof self !== 'undefined') {
       case MSG_MAIN.SPEED:
         doSetNormalSpeed(e.data.payload)
         break
-      case MSG_MAIN.TIME_TRAVEL:
+      case MSG_MAIN.TIME_TRAVEL_STEP:
         if (e.data.payload === "FORWARD") {
             doGoForwardInTime()
         } else {
@@ -104,6 +104,9 @@ if (typeof self !== 'undefined') {
         break
       case MSG_MAIN.TIME_TRAVEL_INDEX:
         doGotoTimeTravelIndex(e.data.payload)
+        break
+      case MSG_MAIN.TIME_TRAVEL_SNAPSHOT:
+        doTakeSnapshot()
         break
         case MSG_MAIN.RESTORE_STATE:
         doRestoreSaveState(e.data.payload as EmulatorSaveState)
@@ -125,6 +128,9 @@ if (typeof self !== 'undefined') {
         break
       case MSG_MAIN.GET_SAVE_STATE:
         passSaveState(doGetSaveState(true))
+        break
+      case MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS:
+        passSaveState(doGetSaveStateWithSnapshots())
         break
       case MSG_MAIN.DRIVE_PROPS: {
         const props = e.data.payload as DriveProps

@@ -125,10 +125,10 @@ class DisplayApple2 extends React.Component<object,
   handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       const fileread = new FileReader()
-      const saveStateReader = this.restoreSaveStateFunc
+      const restoreStateReader = this.restoreSaveStateFunc
       fileread.onload = function(e) {
         if (e.target) {
-          saveStateReader(e.target.result as string)
+          restoreStateReader(e.target.result as string)
         }
       };
       fileread.readAsText(e.target.files[0]);
@@ -175,8 +175,8 @@ class DisplayApple2 extends React.Component<object,
     document.body.removeChild(link);
   }
 
-  handleFileSave = () => {
-    handleGetSaveState(this.doSaveStateCallback)
+  handleFileSave = (withSnapshots: boolean) => {
+    handleGetSaveState(this.doSaveStateCallback, withSnapshots)
   }
 
   trimData = (data: Uint8ClampedArray, width: number, height: number) => {

@@ -69,15 +69,19 @@ export const passSetNormalSpeed = (normal: boolean) => {
 }
 
 export const passGoForwardInTime = () => {
-  doPostMessage(MSG_MAIN.TIME_TRAVEL, "FORWARD")
+  doPostMessage(MSG_MAIN.TIME_TRAVEL_STEP, "FORWARD")
 }
 
 export const passGoBackInTime = () => {
-  doPostMessage(MSG_MAIN.TIME_TRAVEL, "BACKWARD")
+  doPostMessage(MSG_MAIN.TIME_TRAVEL_STEP, "BACKWARD")
 }
 
 export const passTimeTravelIndex = (index: number) => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL_INDEX, index)
+}
+
+export const passTimeTravelSnapshot = () => {
+  doPostMessage(MSG_MAIN.TIME_TRAVEL_SNAPSHOT, true)
 }
 
 export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
@@ -282,9 +286,10 @@ export const handleGetTimeTravelThumbnails = () => {
   return machineState.timeTravelThumbnails
 }
 
-export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void) => {
+export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void,
+  withSnapshots: boolean) => {
   saveStateCallback = callback
-  doPostMessage(MSG_MAIN.GET_SAVE_STATE, true)
+  doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)
 }
 
 const initDriveProps = (drive: number): DriveProps => {

@@ -1,6 +1,6 @@
 import { handleKeyMapping } from "../games/game_mappings"
 import { memGetC000, memSetC000 } from "../memory"
-import { doSaveTimeSlice } from "../motherboard"
+import { doTakeSnapshot } from "../motherboard"
 
 const keyPress = (key: number) => {
   memSetC000(0xC000, key | 0b10000000, 32)
@@ -27,7 +27,7 @@ export const popKey = () => {
     keyPress(key)
     keyBuffer = keyBuffer.slice(1)
     if (keyBuffer.length === 0) {
-      doSaveTimeSlice(true)
+      doTakeSnapshot(true)
     }
   }
 }

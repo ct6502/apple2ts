@@ -1,18 +1,21 @@
 import { RUN_MODE } from "../emulator/utility/utility";
 import { passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward } from "../main2worker"
+  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBug,
   faBugSlash,
+  faCamera,
   faFastBackward,
   faFastForward,
   faPause,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
+import multiSave from '../img/multiSave.svg';
 import { handleSetCPUState } from "../controller";
 
-const DebugButtons = (props: DisplayProps) => {  
+const DebugButtons = (props: DisplayProps) => {
+  const notStarted = props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT;
   return <span className="flex-row">
     <button className="pushButton"
       title={props.runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
@@ -26,16 +29,28 @@ const DebugButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faPause}/>}
     </button>
     <button className="pushButton"
-      title={"Go back in time"}
+      title={"Go Back in Time"}
       onClick={passGoBackInTime}
-      disabled={!handleCanGoBackward()}>
+      disabled={notStarted || !handleCanGoBackward()}>
       <FontAwesomeIcon icon={faFastBackward}/>
     </button>
     <button className="pushButton"
-      title={"Go forward in time"}
+      title={"Take a Snapshot"}
+      onClick={passTimeTravelSnapshot}
+      disabled={notStarted}>
+      <FontAwesomeIcon icon={faCamera}/>
+    </button>
+    <button className="pushButton"
+      title={"Go Forward in Time"}
       onClick={passGoForwardInTime}
-      disabled={!handleCanGoForward()}>
+      disabled={notStarted || !handleCanGoForward()}>
       <FontAwesomeIcon icon={faFastForward}/>
+    </button>
+    <button className="pushButton"
+      title={"Save State with Snapshots"}
+      onClick={() => props.handleFileSave(true)}
+      disabled={notStarted}>
+      <img src={multiSave} alt="Save Snapshots" width={23} height={23}/>
     </button>
     <button className="pushButton" title="Toggle Debug"
       onClick={() => props.handleDebugChange(!props.doDebug)}>
