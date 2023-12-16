@@ -9,6 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG, svgLowercase, svgUppercase } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
+import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -47,6 +48,7 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>
 
     <MockingboardWaveform/>
+    <MidiDeviceSelect/>
 
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}

@@ -6,6 +6,7 @@ import { doRumble } from "./devices/gamepad"
 import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveCommData } from "./devices/imagewriter"
+import { receiveMidiData } from "./devices/midiinterface"
 import DisplayApple2 from "./display"
 import { Breakpoints } from "./panels/breakpoint"
 
@@ -121,6 +122,10 @@ export const passRxCommData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.COMM_DATA, data)
 }
 
+export const passRxMidiData = (data: Uint8Array) => {
+  doPostMessage(MSG_MAIN.MIDI_DATA, data)
+}
+
 let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
@@ -204,6 +209,11 @@ const doOnMessage = (e: MessageEvent) => {
     case MSG_WORKER.COMM_DATA: {
       const commdata = e.data.payload as Uint8Array
       receiveCommData(commdata)
+      break
+    }
+    case MSG_WORKER.MIDI_DATA: {
+      const mididata = e.data.payload as Uint8Array
+      receiveMidiData(mididata)
       break
     }
     default:
