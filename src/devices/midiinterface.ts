@@ -1,4 +1,4 @@
-import { passRxMidiData } from "../main2worker"
+//import { passRxMidiData } from "../main2worker"
 
 const connect = () => {
   if (navigator.requestMIDIAccess)
@@ -13,22 +13,25 @@ const connect = () => {
     console.log("WebMidi Not supported"); 
 }
 
-const midiReady = (midi) => {
+let midiAccess: MIDIAccess;
+
+const midiReady = (midi: MIDIAccess) => {
   // Also react to device changes.
-  midi.addEventListener('statechange', (event) => initDevices(event.target));
-  initDevices(midi);
+  midiAccess = midi;
+  midi.addEventListener('statechange', (event) => initDevices());
+  initDevices();
 }
 
 let midiInIndex  = -1;
 let midiOutIndex = -1;
-export let midiInDevices = [];
-export let midiOutDevices = [];
+export let midiInDevices: MIDIInput[];
+export let midiOutDevices: MIDIOutput[];
 
 export const getMidiOutIndex = (): number => {
   return midiOutIndex;
 }
 
-export const setMidiOutIndex = (index) => {
+export const setMidiOutIndex = (index: number) => {
   if (midiOutIndex != index)
   {
     midiOutIndex = index;
@@ -40,7 +43,7 @@ export const getMidiInIndex = (): number => {
   return midiInIndex;
 }
 
-export const setMidiInIndex = (index) => {
+export const setMidiInIndex = (index: number) => {
   if (midiInIndex != index)
   {
     midiInIndex = index;
@@ -49,7 +52,13 @@ export const setMidiInIndex = (index) => {
   }
 }
 
-const initDevices = (midi) => {
+const initDevices = () => {
+
+  const midi: MIDIAccess = midiAccess;
+
+  if (!midi)
+    return;
+
   // Reset.
   midiInDevices = [];
   midiOutDevices = [];
@@ -84,7 +93,7 @@ const initDevices = (midi) => {
     if (midiInIndex != midiInDevices.length-1)
     {
       midiInIndex = midiInDevices.length-1;
-      const device = midiInDevices[midiInIndex];
+      //const device = midiInDevices[midiInIndex];
       //device.addEventListener('midimessage', midiMessageReceived);
       //console.log("Selecting MidiInDevice: " + device.name);
     }
@@ -93,21 +102,21 @@ const initDevices = (midi) => {
     midiInIndex = -1;
 }
 
-const midiMessageReceived = (event) => {
-  const data = new Uint8Array(event.data);
-  let txt = "Recv: [" + data[0].toString(16);
-  for(let i=1;i<data.length;i++)
-    txt += (" " + data[i].toString(16));
-  txt += "]";
-  console.log(txt);
-  passRxMidiData(data);
-}
+//const midiMessageReceived = (event: MIDIMessageEvent) => {
+//  const data = new Uint8Array(event.data);
+//  let txt = "Recv: [" + data[0].toString(16);
+//  for(let i=1;i<data.length;i++)
+//    txt += (" " + data[i].toString(16));
+//  txt += "]";
+//  console.log(txt);
+//  passRxMidiData(data);
+//}
 
 // execute on load
 connect();
 
 let once = true;
-let buffer = [];
+let buffer: number[];
 
 export const receiveMidiData = (data: Uint8Array) => {
   if (midiOutIndex === -1) {
@@ -177,9 +186,9 @@ export const receiveMidiData = (data: Uint8Array) => {
     if (buffer.length < needBytes)
       break;
 
-    let msg = [];
+    let msg: number[] = [];
     while( needBytes-- )
-      msg.push( buffer.shift() );
+      msg.push( buffer.shift()! );
 
     //let txt = "Send: [" + msg[0].toString(16);
     //for(let i=1;i<msg.length;i++)

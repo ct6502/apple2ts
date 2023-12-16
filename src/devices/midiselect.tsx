@@ -16,7 +16,7 @@ export const MidiDeviceSelect = () => {
 
   const handleMidiClose = (index = -1) => {
     setMidiOpen(false);
-    //if (dev) setMidiOutDevice(dev)
+    if (index >= 0) setMidiOutIndex(index);
   }
 
   return (
