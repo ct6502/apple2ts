@@ -32,7 +32,7 @@ let refreshTime = 16.6881 // 17030 / 1020.488
 let timeDelta = 0
 let cpuRunMode = RUN_MODE.IDLE
 let iRefresh = 0
-let saveTimeSlice = false
+let takeSnapshot = false
 let iTempState = 0
 const maxState = 60
 const saveStates: Array<EmulatorSaveState> = []
@@ -94,7 +94,18 @@ const setApple2State = (newState: Apple2SaveState) => {
 export const doGetSaveState = (full = false): EmulatorSaveState => {
   const state = { emulator: null,
     state6502: getApple2State(),
-    driveState: getDriveSaveState(full)
+    driveState: getDriveSaveState(full),
+    snapshots: null
+  }
+  return state
+//  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
+}
+
+export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
+  const state = { emulator: null,
+    state6502: getApple2State(),
+    driveState: getDriveSaveState(true),
+    snapshots: saveStates
   }
   return state
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
@@ -113,6 +124,11 @@ export const doRestoreSaveState = (sState: EmulatorSaveState) => {
   setApple2State(sState.state6502)
   restoreDriveSaveState(sState.driveState)
   disassemblyAddr = s6502.PC
+  if (sState.snapshots) {
+    saveStates.length = 0
+    saveStates.push(...sState.snapshots)
+    iTempState = saveStates.length
+  }
   updateExternalMachineState()
 }
 
@@ -214,7 +230,7 @@ const getGoForwardIndex = () => {
   return newTmp
 }
 
-const doSaveState = () => {
+const doSnapshot = () => {
   if (saveStates.length === maxState) {
     saveStates.shift()
   }
@@ -231,7 +247,7 @@ export const doGoBackInTime = () => {
     // if this is the first time we're called, make sure our current
     // state is up to date
     if (iTempState === saveStates.length) {
-      doSaveState()
+      doSnapshot()
       newTmp = Math.max(iTempState - 2, 0)
     }
     iTempState = newTmp
@@ -270,14 +286,14 @@ let timeout: NodeJS.Timeout | null = null
 
 // Set a flag and save our slice at the end of the next 6502 display cycle.
 // Otherwise we risk saving in the middle of a keystroke.
-export const doSaveTimeSlice = (collapseEvents = false) => {
+export const doTakeSnapshot = (collapseEvents = false) => {
   if (timeout) {
     clearTimeout(timeout)
   }
   if (collapseEvents) {
-    timeout = setTimeout(() => {saveTimeSlice = true; timeout = null}, 100)
+    timeout = setTimeout(() => {takeSnapshot = true; timeout = null}, 100)
   } else {
-    saveTimeSlice = true
+    takeSnapshot = true
   }
 }
 
@@ -342,7 +358,7 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   resetRefreshCounter()
   if (speed === 0) {
     speed = 1
-    doSaveTimeSlice()
+    doTakeSnapshot()
     doAdvance6502Timer()
   }
 }
@@ -445,10 +461,10 @@ const doAdvance6502 = () => {
     handleGamepads()
     updateExternalMachineState()
   }
-  if (saveTimeSlice) {
-    saveTimeSlice = false
+  if (takeSnapshot) {
+    takeSnapshot = false
 //    console.log("iSaveState " + iSaveState)
-    doSaveState()
+    doSnapshot()
   }
 }
 

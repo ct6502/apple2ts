@@ -68,7 +68,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     o: () => this.props.handleFileOpen(),
     p: () => passSetRunMode(this.props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
     r: () => passSetRunMode(RUN_MODE.NEED_RESET),
-    s: () => this.props.handleFileSave()
+    s: () => this.props.handleFileSave(false)
   }
 
   handleMetaKey = (key: string) => {

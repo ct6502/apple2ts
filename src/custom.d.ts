@@ -67,7 +67,7 @@ type DisplayProps = {
   handleUpperCaseChange: (enable: boolean) => void,
   handleUseArrowKeyJoystick: (enable: boolean) => void,
   handleFileOpen: () => void,
-  handleFileSave: () => void,
+  handleFileSave: (withSnapshots: boolean) => void,
 }
 
 type MachineState = {
@@ -136,7 +136,8 @@ type DisplaySaveState = {
 type EmulatorSaveState = {
   emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
-  driveState: DriveSaveState
+  driveState: DriveSaveState,
+  snapshots: Array<EmulatorSaveState> | null
 }
 
 type TimeTravelThumbnail = {
