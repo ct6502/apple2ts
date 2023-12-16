@@ -47,8 +47,8 @@ const ConfigButtons = (props: DisplayProps) => {
       {props.uppercase ? svgUppercase : svgLowercase}
     </button>
 
-    <MidiDeviceSelect/>
     <MockingboardWaveform/>
+    <MidiDeviceSelect/>
 
     {/* <button className="pushButton"
       title={"Keyboard Joystick"}

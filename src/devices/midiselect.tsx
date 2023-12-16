@@ -1,8 +1,9 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faMusic,
-} from "@fortawesome/free-solid-svg-icons";
+// PictogrammersMaterialMidiport downloaded from: 
+// https://www.iconarchive.com/show/material-icons-by-pictogrammers/midi-port-icon.html
+// Apache License
+import PictogrammersMaterialMidiport from "./img/PictogrammersMaterialMidiport.svg";
 import { midiOutDevices, getMidiOutIndex, setMidiOutIndex } from "./midiinterface";
 
 export const MidiDeviceSelect = () => {
@@ -27,7 +28,7 @@ export const MidiDeviceSelect = () => {
         title="Midi Device Select"
         onClick={handleMidiClick}
       >
-        <FontAwesomeIcon icon={faMusic}/>
+        <img src={PictogrammersMaterialMidiport} alt="MidiOut" width={30} height={30}/>
       </button>
       {midiOpen &&
         <div className="modal-overlay"
