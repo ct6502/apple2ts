@@ -1,5 +1,4 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // PictogrammersMaterialMidiport downloaded from: 
 // https://www.iconarchive.com/show/material-icons-by-pictogrammers/midi-port-icon.html
 // Apache License
