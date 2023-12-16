@@ -116,7 +116,7 @@ const initDevices = () => {
 connect();
 
 let once = true;
-let buffer: number[];
+let buffer: number[] = [];
 
 export const receiveMidiData = (data: Uint8Array) => {
   if (midiOutIndex === -1) {
