@@ -157,9 +157,8 @@ const configureMachine = () => {
   didConfiguration = true
   enableSerialCard()
   enablePassportCard(true, 2)
-  enableMouseCard(false, 2)
   enableMockingboard(true, 4)
-  enableMockingboard(true, 5)
+  enableMouseCard(true, 5)
   enableDiskDrive()
 }
 
@@ -170,7 +169,6 @@ const resetMachine = () => {
   resetPassport()
   resetSerial()
   resetMockingboard(4)
-  resetMockingboard(5)
 }
 
 const doBoot = () => {
