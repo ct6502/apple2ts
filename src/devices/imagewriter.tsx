@@ -11,7 +11,7 @@ const registerSetPrinting = (fn: () => void) => {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const receiveCommData = (data: Uint8Array) => {
+export const receivePrinterData = (data: Uint8Array) => {
   if (doSetPrinting) doSetPrinting()
   ImageWriterII.write(data)
 }

@@ -6,11 +6,13 @@ import {
   faWalking,
   faTruckFast,
   faDisplay,
+  faBolt,
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG, svgLowercase, svgUppercase } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
+import { requestSerialPort } from "../devices/serialhub";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
@@ -45,6 +47,11 @@ const ConfigButtons = (props: DisplayProps) => {
       title={props.uppercase ? "Uppercase" : "Lowercase"}
       onClick={() => props.handleUpperCaseChange(!props.uppercase)}>
       {props.uppercase ? svgUppercase : svgLowercase}
+    </button>
+    <button className="pushButton"
+      title={"Select Serial Port"}
+      onClick={() => {requestSerialPort()}}>
+      <FontAwesomeIcon icon={faBolt}/>
     </button>
 
     <MockingboardWaveform/>
