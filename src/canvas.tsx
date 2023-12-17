@@ -253,6 +253,14 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     this.renderCanvas()
   }
 
+  setFocus = () => {
+    if (this.myText.current) {
+      this.myText.current.focus()
+    } else if (this.props.myCanvas.current) {
+      this.props.myCanvas.current.focus()
+    }
+  }
+
   render() {
     [width, height] = this.getSizes()
 
@@ -273,12 +281,8 @@ class Apple2Canvas extends React.Component<DisplayProps> {
         tabIndex={0}
         onKeyDown={isTouchDevice ? ()=>{null} : this.handleKeyDown}
         onKeyUp={isTouchDevice ? ()=>{null} : this.handleKeyUp}
-        onMouseEnter={() => {
-          this.myText.current?.focus()
-        }}
-        onMouseDown={() => {
-          this.myText.current?.focus()
-        }}
+        onMouseEnter={this.setFocus}
+        onMouseDown={this.setFocus}
       />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
