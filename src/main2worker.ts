@@ -126,6 +126,10 @@ export const passRxMidiData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.MIDI_DATA, data)
 }
 
+const passThumbnailImage = (thumbnail: string) => {
+  doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
+}
+
 let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
@@ -142,7 +146,6 @@ let machineState: MachineState = {
   button1: false,
   canGoBackward: true,
   canGoForward: true,
-  maxState: 0,
   iTempState: 0,
   timeTravelThumbnails: new Array<TimeTravelThumbnail>
 }
@@ -216,6 +219,16 @@ const doOnMessage = (e: MessageEvent) => {
       receiveMidiData(mididata)
       break
     }
+    case MSG_WORKER.REQUEST_THUMBNAIL: {
+      display.trimCanvas((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          passThumbnailImage(reader.result as string)
+        }        
+        reader.readAsDataURL(blob)
+      }, true)
+      break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -282,10 +295,6 @@ export const handleCanGoBackward = () => {
 
 export const handleCanGoForward = () => {
   return machineState.canGoForward
-}
-
-export const handleGetMaxState = () => {
-  return machineState.maxState
 }
 
 export const handleGetTempStateIndex = () => {

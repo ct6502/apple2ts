@@ -3,7 +3,7 @@ import { setDisplay, handleGetRunMode, passSetRunMode,
   passSetNormalSpeed, handleGetTextPage,
   passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename } from "./main2worker"
+  handleGetFilename} from "./main2worker"
 import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -198,7 +198,7 @@ class DisplayApple2 extends React.Component<object,
     return {left, right, top, bottom}
   }
 
-  trimCanvas = (handleBlob: (blob: Blob) => void) => {
+  trimCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
     const canvas = this.myCanvas.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -206,13 +206,21 @@ class DisplayApple2 extends React.Component<object,
     const data = imageData?.data
     if (!data) return
     const {left, right, top, bottom} = this.trimData(data, canvas.width, canvas.height)
-    const trimmedCanvas = document.createElement('canvas')
-    trimmedCanvas.width = right - left
-    trimmedCanvas.height = bottom - top
-    const trimmedCtx = trimmedCanvas.getContext('2d')
+    const trimmed = document.createElement('canvas')
+    if (thumbnail) {
+      trimmed.height = 128
+      trimmed.width = trimmed.height * 1.333333
+    } else {
+      trimmed.width = right - left
+      trimmed.height = bottom - top
+    }
+    // The willReadFrequently is a performance optimization hint that does
+    // the rendering in software rather than hardware. This is better because
+    // we're just reading back pixels from the canvas.
+    const trimmedCtx = trimmed.getContext('2d', {willReadFrequently: true})
     trimmedCtx?.drawImage(canvas, left, top, right - left, bottom - top,
-      0, 0, right - left, bottom - top)
-    trimmedCanvas.toBlob((trimmedBlob) => {
+      0, 0, trimmed.width, trimmed.height)
+    trimmed.toBlob((trimmedBlob) => {
       if (trimmedBlob) {
         handleBlob(trimmedBlob)
       }

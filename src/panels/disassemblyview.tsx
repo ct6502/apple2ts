@@ -212,16 +212,19 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
   }
 
   render() {
+    // Need to set tabIndex={-1} on the div to get onKeyDown to work.
+    // Could change to tabIndex={0} to make the div part of the tab order.
     return (
       <div className="flex-row thinBorder">
         {this.getBreakpointDiv()}
-        <div className="debug-panel small-mono-text"
+        <div className="debug-panel"
           ref={this.codeRef}
           onScroll={this.handleCodeScroll}
           onKeyDown={this.handleCodeKeyDown}
           onMouseMove={this.handleCodeMouseMove}
           onMouseLeave={this.handleCodeMouseLeave}
           onClick={this.handleCodeClick}
+          tabIndex={-1}
           style={{
             width: '200px',
             height: `${nlines * 10 - 2}pt`,

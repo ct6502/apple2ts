@@ -86,7 +86,6 @@ type MachineState = {
   button1: boolean,
   canGoBackward: boolean,
   canGoForward: boolean,
-  maxState: number,
   iTempState: number,
   timeTravelThumbnails: Array<TimeTravelThumbnail>
 }
@@ -137,11 +136,13 @@ type EmulatorSaveState = {
   emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
+  thumbnail: string,
   snapshots: Array<EmulatorSaveState> | null
 }
 
 type TimeTravelThumbnail = {
-  s6502: STATE6502
+  s6502: STATE6502,
+  thumbnail: string
 }
 
 type SetMemoryBlock = {

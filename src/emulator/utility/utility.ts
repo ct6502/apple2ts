@@ -1,6 +1,7 @@
 import { KeyboardEvent } from "react"
 
 export const TEST_DEBUG = false
+export const MAX_SNAPSHOTS = 60
 
 export enum RUN_MODE {
   IDLE = 0,
@@ -22,6 +23,7 @@ export enum MSG_WORKER {
   MBOARD_SOUND,
   COMM_DATA,
   MIDI_DATA,
+  REQUEST_THUMBNAIL,
 }
 
 export enum MSG_MAIN {
@@ -37,6 +39,7 @@ export enum MSG_MAIN {
   TIME_TRAVEL_STEP,
   TIME_TRAVEL_INDEX,
   TIME_TRAVEL_SNAPSHOT,
+  THUMBNAIL_IMAGE,
   RESTORE_STATE,
   KEYPRESS,
   MOUSEEVENT,

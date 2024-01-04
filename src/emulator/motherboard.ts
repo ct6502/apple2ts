@@ -1,8 +1,8 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
-import { passMachineState } from "./worker2main"
+import { passMachineState, passRequestThumbnail } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, get6502StateString, getStackString } from "./instructions"
-import { RUN_MODE, TEST_DEBUG } from "./utility/utility"
+import { MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
@@ -34,7 +34,6 @@ let cpuRunMode = RUN_MODE.IDLE
 let iRefresh = 0
 let takeSnapshot = false
 let iTempState = 0
-const maxState = 60
 const saveStates: Array<EmulatorSaveState> = []
 export let inVBL = false
 
@@ -87,14 +86,11 @@ const setApple2State = (newState: Apple2SaveState) => {
   handleGameSetup(true)
 }
 
-// export const doRequestSaveState = () => {
-//   passSaveState(doGetSaveState())
-// }
-
 export const doGetSaveState = (full = false): EmulatorSaveState => {
   const state = { emulator: null,
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
+    thumbnail: '',
     snapshots: null
   }
   return state
@@ -105,6 +101,7 @@ export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
   const state = { emulator: null,
     state6502: getApple2State(),
     driveState: getDriveSaveState(true),
+    thumbnail: '',
     snapshots: saveStates
   }
   return state
@@ -124,11 +121,11 @@ export const doRestoreSaveState = (sState: EmulatorSaveState) => {
   setApple2State(sState.state6502)
   restoreDriveSaveState(sState.driveState)
   disassemblyAddr = s6502.PC
+  saveStates.length = 0
   if (sState.snapshots) {
-    saveStates.length = 0
     saveStates.push(...sState.snapshots)
-    iTempState = saveStates.length
   }
+  iTempState = saveStates.length
   updateExternalMachineState()
 }
 
@@ -229,12 +226,13 @@ const getGoForwardIndex = () => {
 }
 
 const doSnapshot = () => {
-  if (saveStates.length === maxState) {
+  if (saveStates.length === MAX_SNAPSHOTS) {
     saveStates.shift()
   }
   saveStates.push(doGetSaveState())
   // This is at the current "time" and is just past our recently-saved state.
   iTempState = saveStates.length
+  passRequestThumbnail(saveStates[saveStates.length - 1].state6502.s6502.PC)
 }
 
 export const doGoBackInTime = () => {
@@ -275,9 +273,15 @@ export const doGotoTimeTravelIndex = (index: number) => {
 const getTimeTravelThumbnails = () => {
   const result: Array<TimeTravelThumbnail> = []
   for (let i = 0; i < saveStates.length; i++) {
-    result[i] = {s6502: saveStates[i].state6502.s6502}
+    result[i] = {s6502: saveStates[i].state6502.s6502, thumbnail: saveStates[i].thumbnail}
   }
   return result
+}
+
+export const doSetThumbnailImage = (thumbnail: string) => {
+  if (saveStates.length > 0) {
+    saveStates[saveStates.length - 1].thumbnail = thumbnail
+  }
 }
 
 let timeout: NodeJS.Timeout | null = null
@@ -356,7 +360,6 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   resetRefreshCounter()
   if (speed === 0) {
     speed = 1
-    doTakeSnapshot()
     doAdvance6502Timer()
   }
 }
@@ -416,7 +419,6 @@ const updateExternalMachineState = () => {
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,
     canGoForward: getGoForwardIndex() >= 0,
-    maxState: maxState,
     iTempState: iTempState,
     timeTravelThumbnails: getTimeTravelThumbnails(),
   }
