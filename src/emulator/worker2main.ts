@@ -120,7 +120,7 @@ if (typeof self !== 'undefined') {
         doSetThumbnailImage(e.data.payload as string)
         break
       case MSG_MAIN.RESTORE_STATE:
-        doRestoreSaveState(e.data.payload as EmulatorSaveState)
+        doRestoreSaveState(e.data.payload as EmulatorSaveState, true)
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload)

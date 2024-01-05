@@ -116,16 +116,20 @@ export const doSetState6502 = (newState: STATE6502) => {
   updateExternalMachineState()
 }
 
-export const doRestoreSaveState = (sState: EmulatorSaveState) => {
+export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = false) => {
   doReset()
   setApple2State(sState.state6502)
   restoreDriveSaveState(sState.driveState)
   disassemblyAddr = s6502.PC
-  saveStates.length = 0
-  if (sState.snapshots) {
-    saveStates.push(...sState.snapshots)
+  if (eraseSnapshots) {
+    saveStates.length = 0
+    iTempState = 0
   }
-  iTempState = saveStates.length
+  if (sState.snapshots) {
+    saveStates.length = 0
+    saveStates.push(...sState.snapshots)
+    iTempState = saveStates.length
+  }
   updateExternalMachineState()
 }
 
