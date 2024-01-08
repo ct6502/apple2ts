@@ -23,6 +23,7 @@ class DisplayApple2 extends React.Component<object,
     uppercase: boolean;
     useArrowKeysAsJoystick: boolean;
     colorMode: COLOR_MODE;
+    ctrlKeyMode: number;
     doDebug: boolean;
     breakpoint: string;
     helptext: string;
@@ -35,6 +36,7 @@ class DisplayApple2 extends React.Component<object,
   constructor(props: object) {
     super(props);
     this.state = {
+      ctrlKeyMode: 0,
       doDebug: TEST_DEBUG,
       currentSpeed: 1.02,
       speedCheck: true,
@@ -89,6 +91,10 @@ class DisplayApple2 extends React.Component<object,
 
   handleColorChange = (mode: COLOR_MODE) => {
     this.setState({ colorMode: mode });
+  };
+
+  handleCtrlDown = (ctrlKeyMode: number) => {
+    this.setState({ ctrlKeyMode });
   };
 
   handleDebugChange = (enable: boolean) => {
@@ -273,6 +279,8 @@ class DisplayApple2 extends React.Component<object,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
       doDebug: this.state.doDebug,
+      ctrlKeyMode: this.state.ctrlKeyMode,
+      handleCtrlDown: this.handleCtrlDown,
       handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,

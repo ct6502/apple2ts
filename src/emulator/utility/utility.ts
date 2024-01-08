@@ -144,14 +144,14 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
+export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean, ctrlKeyMode: number) => {
   let key = 0
   if (e.key.length === 1) {
     if (e.metaKey || e.altKey) {
       return 0
     }
     key = e.key.charCodeAt(0)
-    if (e.ctrlKey) {
+    if (e.ctrlKey || ctrlKeyMode > 0) {
       if (key >= 0x40 && key <= 0x7E) {
         key &= 0b00011111
       } else {

@@ -39,46 +39,54 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
   passSetGamepads(gamePads)
 }
 
-const KeyboardButtons = () => {
+const KeyboardButtons = (props: DisplayProps) => {
   const arrowKeys = [
     {name: 'Left', icon: faArrowLeft},
     {name: 'Right', icon: faArrowRight},
     {name: 'Up', icon: faArrowUp},
     {name: 'Down', icon: faArrowDown},
   ]
+  const isTouchDevice = "ontouchstart" in document.documentElement
   return <span className="flex-row">
-    <button className={`pushButton keyButton ${handleGetLeftButton() ? 'isButtonActive' : ''}`} title="Open Apple"
+    <button className={`pushButton key-button ${handleGetLeftButton() ? 'button-active' : ''}`}
+      title="Open Apple"
       onTouchStart={() => passAppleCommandKeyPress(true)}
       onTouchEnd={() => passAppleCommandKeyRelease(true)}
-      onMouseDown={() => passAppleCommandKeyPress(true)}
-      onMouseUp={() => passAppleCommandKeyRelease(true)}>
+      onMouseDown={() => {if (!isTouchDevice) passAppleCommandKeyPress(true)}}
+      onMouseUp={() => {if (!isTouchDevice) passAppleCommandKeyRelease(true)}}>
       {appleOutline}
     </button>
-    <button className={`pushButton keyButton ${handleGetRightButton() ? 'isButtonActive' : ''}`} title="Closed Apple"
+    <button className={`pushButton key-button ${handleGetRightButton() ? 'button-active' : ''}`} title="Closed Apple"
       onTouchStart={() => passAppleCommandKeyPress(false)}
       onTouchEnd={() => passAppleCommandKeyRelease(false)}
-      onMouseDown={() => passAppleCommandKeyPress(false)}
-      onMouseUp={() => passAppleCommandKeyRelease(false)}>
+      onMouseDown={() => {if (!isTouchDevice) passAppleCommandKeyPress(false)}}
+      onMouseUp={() => {if (!isTouchDevice) passAppleCommandKeyRelease(false)}}>
       {appleSolid}
     </button>
      {arrowKeys.map((key, i) => (
-        <button className="pushButton keyButton" title={key.name}
+        <button className="pushButton key-button" title={key.name}
           key={key.name}
           onTouchStart={() => handleArrowKey(i, false)}
           onTouchEnd={() => handleArrowKey(i, true)}
-          onMouseDown={() => handleArrowKey(i, false)}
-          onMouseUp={() => handleArrowKey(i, true)}
+          onMouseDown={() => {if (!isTouchDevice) handleArrowKey(i, false)}}
+          onMouseUp={() => {if (!isTouchDevice) handleArrowKey(i, true)}}
         >
           <FontAwesomeIcon icon={key.icon}/>
         </button>
      ))}
-    <button className="pushButton keyButton" title="Escape"
-      onMouseDown={() => passKeypress(String.fromCharCode(27))}>
-      <span className="textKey">esc</span>
+    <button
+      className={`pushButton key-button ${(['', 'button-active', 'button-locked'])[props.ctrlKeyMode]}`}
+      title="Control"
+      onMouseDown={() => props.handleCtrlDown((props.ctrlKeyMode + 1) % 3)}>
+      <span className="text-key">ctrl</span>
     </button>
-    <button className="pushButton keyButton" title="Tab"
+    <button className="pushButton key-button" title="Escape"
+      onMouseDown={() => passKeypress(String.fromCharCode(27))}>
+      <span className="text-key">esc</span>
+    </button>
+    <button className="pushButton key-button" title="Tab"
       onMouseDown={() => passKeypress(String.fromCharCode(9))}>
-      <span className="textKey">tab</span>
+      <span className="text-key">tab</span>
     </button>
   </span>
 }

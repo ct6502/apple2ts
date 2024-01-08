@@ -60,6 +60,8 @@ type DisplayProps = {
   useArrowKeysAsJoystick: boolean,
   colorMode: COLOR_MODE,
   doDebug: boolean,
+  ctrlKeyMode: number,
+  handleCtrlDown: (ctrlKeyMode: number) => void,
   handleDebugChange: (enable: boolean) => void,
   handleSpeedChange: (enable: boolean) => void,
   handleColorChange: (mode: COLOR_MODE) => void,

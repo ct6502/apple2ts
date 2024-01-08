@@ -136,7 +136,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       return
     }
 
-    const key = convertAppleKey(e, this.props.uppercase);
+    const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
     if (key > 0) {
       passKeypress(String.fromCharCode(key))
       e.preventDefault()
@@ -145,7 +145,10 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
       //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
-  };
+    if (this.props.ctrlKeyMode == 1) {
+      this.props.handleCtrlDown(0)
+    }
+};
 
   handleKeyUp = (e: keyEvent) => {
     if (this.isOpenAppleUp(e)) {
