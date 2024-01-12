@@ -45,7 +45,6 @@
   background-color: inherit !important;
   border: none;
   outline: none;
-  box-shadow: none !important;
 }
 
 .diskImageMargins {
@@ -68,11 +67,9 @@
   margin-right: 9px;
   margin-top: 6px;
   -webkit-touch-callout: none;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .multi-disk {
   margin-right: 10px;
-  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
   cursor: pointer;
 }

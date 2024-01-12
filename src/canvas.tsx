@@ -62,12 +62,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
-    b: () => passSetRunMode(RUN_MODE.NEED_BOOT),
-    c: () => this.props.handleCopyToClipboard(),
-    f: () => this.props.handleSpeedChange(!this.props.speedCheck),
     o: () => this.props.handleFileOpen(),
-    p: () => passSetRunMode(this.props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
-    r: () => passSetRunMode(RUN_MODE.NEED_RESET),
     s: () => this.props.handleFileSave(false)
   }
 
@@ -86,23 +81,23 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     ArrowDown: ARROW.DOWN,
   };
 
+  isMac = navigator.platform.startsWith('Mac')
+
   isOpenAppleDown = (e: keyEvent) => {
-    return e.code === 'ShiftLeft'
+    return e.code === 'AltLeft'
   }
 
   isOpenAppleUp = (e: keyEvent) => {
-    return e.code === 'ShiftLeft'
+    return e.code === 'AltLeft'
   }
 
   isClosedAppleDown = (e: keyEvent) => {
-    return e.code === 'ShiftRight'
+    return e.code ==='AltRight'
   }
 
   isClosedAppleUp = (e: keyEvent) => {
-    return e.code === 'ShiftRight'
+    return e.code === 'AltRight'
   }
-
-  isMac = navigator.platform.startsWith('Mac')
 
   handleKeyDown = (e: keyEvent) => {
     if (this.isOpenAppleDown(e)) {
@@ -113,7 +108,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     }
     // TODO: What modifier key should be used on Windows? Can't use Ctrl
     // because that interferes with Apple II control keys like Ctrl+S
-    if (this.isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')) {
+    if (!e.shiftKey && (this.isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt'))) {
       this.keyHandled = this.handleMetaKey(e.key)
     }
     // If we're paused, allow <space> to resume
@@ -136,17 +131,24 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       return
     }
 
+    if (e.altKey && e.key !== 'Alt') {
+      console.log("here")
+    }
     const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
     if (key > 0) {
+      const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
       passKeypress(String.fromCharCode(key))
       e.preventDefault()
       e.stopPropagation()
-    } else {
-      // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
-      //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
     if (this.props.ctrlKeyMode == 1) {
       this.props.handleCtrlDown(0)
+    }
+    if (this.props.openAppleKeyMode == 1) {
+      this.props.handleOpenAppleDown(0)
+    }
+    if (this.props.closedAppleKeyMode == 1) {
+      this.props.handleClosedAppleDown(0)
     }
 };
 
@@ -234,8 +236,8 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     if (this.hiddenCanvas.current) {
       this.hiddenContext = this.hiddenCanvas.current.getContext('2d')
     }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const paste = (e: any) => {this.pasteHandler(e as ClipboardEvent)}
+    window.addEventListener("copy", () => {this.props.handleCopyToClipboard()})
+    const paste = (e: object) => {this.pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
     window.addEventListener("resize", this.handleResize)
     window.setInterval(() => {checkGamepad()}, 34)

@@ -136,6 +136,40 @@ body {
   left: 3px;
 }
 
+.joystick-button {
+  background: linear-gradient(to bottom, #a02a06, #911005);
+  border: 1px solid #f04d3e;
+  color: white;
+  width: 30px;
+  height: 30px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-bottom: 2px;
+  padding-top: 2px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin-left: 4px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  margin-top: 6px;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0px 6px 0px rgba(81, 2, 2, 0.8);
+  transform: translateY(-2px);
+  transition: all 0.1s ease-in-out;
+}
+
+.joystick-active {
+  box-shadow: 0px 2px 0px rgba(81, 2, 2, 0.8);
+  transform: translateY(3px);
+}
+
+.joystick-button:active {
+  box-shadow: 0px 2px 0px rgba(81, 2, 2, 0.8);
+  transform: translateY(3px);
+}
+
 .text-button {
   border-width: 1px;
   border-color: white;

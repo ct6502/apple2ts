@@ -102,10 +102,20 @@ export const passPasteText = (text: string) => {
 }
 
 export const passAppleCommandKeyPress = (left: boolean) => {
+  if (left) {
+    machineState.button0 = true
+  } else {
+    machineState.button1 = true
+  }
   doPostMessage(MSG_MAIN.APPLE_PRESS, left)
 }
 
 export const passAppleCommandKeyRelease = (left: boolean) => {
+  if (left) {
+    machineState.button0 = false
+  } else {
+    machineState.button1 = false
+  }
   doPostMessage(MSG_MAIN.APPLE_RELEASE, left)
 }
 

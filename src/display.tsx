@@ -3,7 +3,9 @@ import { setDisplay, handleGetRunMode, passSetRunMode,
   passSetNormalSpeed, handleGetTextPage,
   passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename} from "./main2worker"
+  handleGetFilename,
+  passAppleCommandKeyPress,
+  passAppleCommandKeyRelease} from "./main2worker"
 import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -24,6 +26,8 @@ class DisplayApple2 extends React.Component<object,
     useArrowKeysAsJoystick: boolean;
     colorMode: COLOR_MODE;
     ctrlKeyMode: number;
+    openAppleKeyMode: number;
+    closedAppleKeyMode: number;
     doDebug: boolean;
     breakpoint: string;
     helptext: string;
@@ -37,6 +41,8 @@ class DisplayApple2 extends React.Component<object,
     super(props);
     this.state = {
       ctrlKeyMode: 0,
+      openAppleKeyMode: 0,
+      closedAppleKeyMode: 0,
       doDebug: TEST_DEBUG,
       currentSpeed: 1.02,
       speedCheck: true,
@@ -95,6 +101,26 @@ class DisplayApple2 extends React.Component<object,
 
   handleCtrlDown = (ctrlKeyMode: number) => {
     this.setState({ ctrlKeyMode });
+  };
+
+  handleOpenAppleDown = (openAppleKeyMode: number) => {
+    // If we're going from 0 to nonzero, send the Open Apple keypress
+    if (this.state.openAppleKeyMode === 0 && openAppleKeyMode > 0) {
+      passAppleCommandKeyPress(true)
+    } else if (this.state.openAppleKeyMode > 0 && openAppleKeyMode === 0) {
+      window.setTimeout(() => passAppleCommandKeyRelease(true), 100)
+    }
+    this.setState({ openAppleKeyMode });
+  };
+
+  handleClosedAppleDown = (closedAppleKeyMode: number) => {
+    // If we're going from 0 to nonzero, send the Closed Apple keypress
+    if (this.state.closedAppleKeyMode === 0 && closedAppleKeyMode > 0) {
+      passAppleCommandKeyPress(false)
+    } else if (this.state.closedAppleKeyMode > 0 && closedAppleKeyMode === 0) {
+      window.setTimeout(() => passAppleCommandKeyRelease(false), 100)
+    }
+    this.setState({ closedAppleKeyMode });
   };
 
   handleDebugChange = (enable: boolean) => {
@@ -280,7 +306,11 @@ class DisplayApple2 extends React.Component<object,
       colorMode: this.state.colorMode,
       doDebug: this.state.doDebug,
       ctrlKeyMode: this.state.ctrlKeyMode,
+      openAppleKeyMode: this.state.openAppleKeyMode,
+      closedAppleKeyMode: this.state.closedAppleKeyMode,
       handleCtrlDown: this.handleCtrlDown,
+      handleOpenAppleDown: this.handleOpenAppleDown,
+      handleClosedAppleDown: this.handleClosedAppleDown,
       handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
