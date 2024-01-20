@@ -55,6 +55,7 @@ type DisplayProps = {
   runMode: RUN_MODE,
   speed: number,
   myCanvas: React.RefObject<HTMLCanvasElement>,
+  hiddenCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
   uppercase: boolean,
   useArrowKeysAsJoystick: boolean,

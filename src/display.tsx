@@ -35,6 +35,7 @@ class DisplayApple2 extends React.Component<object,
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
+  hiddenCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen = React.createRef<HTMLInputElement>();
 
   constructor(props: object) {
@@ -82,6 +83,12 @@ class DisplayApple2 extends React.Component<object,
     }
     preloadAssets()
     passSetNormalSpeed(true)
+//    window.addEventListener('beforeunload', (event) => {
+      // Cancel the event as stated by the standard.
+//      event.preventDefault();
+      // Chrome requires returnValue to be set.
+//      event.returnValue = '';
+//    });
   //    window.addEventListener("resize", handleResize)
   }
 
@@ -211,51 +218,24 @@ class DisplayApple2 extends React.Component<object,
     handleGetSaveState(this.doSaveStateCallback, withSnapshots)
   }
 
-  trimData = (data: Uint8ClampedArray, width: number, height: number) => {
-    let left = width
-    let right = 0
-    let top = height
-    let bottom = 0
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const alpha = data[(y * width + x) * 4 + 3]
-        if (alpha === 255) {
-          if (x < left) left = x
-          if (x > right) right = x
-          if (y < top) top = y
-          if (y > bottom) bottom = y
-        }
-      }
-    }
-    return {left, right, top, bottom}
-  }
-
-  trimCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
-    const canvas = this.myCanvas.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height)
-    const data = imageData?.data
-    if (!data) return
-    const {left, right, top, bottom} = this.trimData(data, canvas.width, canvas.height)
-    const trimmed = document.createElement('canvas')
+  copyCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
+    if (!this.hiddenCanvas?.current) return
+    let copyCanvas = this.hiddenCanvas?.current
     if (thumbnail) {
-      trimmed.height = 128
-      trimmed.width = trimmed.height * 1.333333
-    } else {
-      trimmed.width = right - left
-      trimmed.height = bottom - top
+      copyCanvas = document.createElement('canvas')
+      copyCanvas.height = 128
+      copyCanvas.width = copyCanvas.height * 1.333333
+      // The willReadFrequently is a performance optimization hint that does
+      // the rendering in software rather than hardware. This is better because
+      // we're just reading back pixels from the canvas.
+      const ctx = copyCanvas.getContext('2d', {willReadFrequently: true})
+      if (!ctx) return
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.hiddenCanvas.current, 0, 0, 560, 384,
+        0, 0, copyCanvas.width, copyCanvas.height)
     }
-    // The willReadFrequently is a performance optimization hint that does
-    // the rendering in software rather than hardware. This is better because
-    // we're just reading back pixels from the canvas.
-    const trimmedCtx = trimmed.getContext('2d', {willReadFrequently: true})
-    trimmedCtx?.drawImage(canvas, left, top, right - left, bottom - top,
-      0, 0, trimmed.width, trimmed.height)
-    trimmed.toBlob((trimmedBlob) => {
-      if (trimmedBlob) {
-        handleBlob(trimmedBlob)
-      }
+    copyCanvas.toBlob((blob) => {
+      if (blob) handleBlob(blob)
     })
   }
 
@@ -285,7 +265,7 @@ class DisplayApple2 extends React.Component<object,
       navigator.clipboard.writeText(output);
     } else {
       try {
-        this.trimCanvas((blob) => {
+        this.copyCanvas((blob) => {
           navigator.clipboard.write([new ClipboardItem({'image/png': blob,})])
         })
       }
@@ -300,6 +280,7 @@ class DisplayApple2 extends React.Component<object,
       runMode: handleGetRunMode(),
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
+      hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
       uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,

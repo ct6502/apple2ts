@@ -27,7 +27,6 @@ type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasEleme
 class Apple2Canvas extends React.Component<DisplayProps> {
   keyHandled = false
   myText = React.createRef<HTMLTextAreaElement>()
-  hiddenCanvas = React.createRef<HTMLCanvasElement>()
   myContext: CanvasRenderingContext2D | null = null
   hiddenContext: CanvasRenderingContext2D | null = null
   startupTextTimeout = 0
@@ -233,8 +232,8 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       this.props.myCanvas.current.addEventListener('mousedown', this.handleMouseDown)
       this.props.myCanvas.current.addEventListener('mouseup', this.handleMouseUp)
     }
-    if (this.hiddenCanvas.current) {
-      this.hiddenContext = this.hiddenCanvas.current.getContext('2d')
+    if (this.props.hiddenCanvas.current) {
+      this.hiddenContext = this.props.hiddenCanvas.current.getContext('2d')
     }
     window.addEventListener("copy", () => {this.props.handleCopyToClipboard()})
     const paste = (e: object) => {this.pasteHandler(e as ClipboardEvent)}
@@ -291,9 +290,9 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
-      <canvas ref={this.hiddenCanvas}
+      <canvas ref={this.props.hiddenCanvas}
         hidden={true}
-        width={560} height={192} />
+        width={560} height={384} />
       {txt}
     </span>
   }

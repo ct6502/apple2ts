@@ -230,7 +230,7 @@ const doOnMessage = (e: MessageEvent) => {
       break
     }
     case MSG_WORKER.REQUEST_THUMBNAIL: {
-      display.trimCanvas((blob) => {
+      display.copyCanvas((blob) => {
         const reader = new FileReader();
         reader.onloadend = function() {
           passThumbnailImage(reader.result as string)

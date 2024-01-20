@@ -145,20 +145,16 @@ export const convertColorsToRGBA = (hgrColors: Uint8Array, colorMode: COLOR_MODE
   return hgrRGBA
 }
 
-let hiddenContext: CanvasRenderingContext2D | null = null
-
 const drawHiresImage = async (ctx: CanvasRenderingContext2D,
   hgrRGBA: Uint8ClampedArray, nlines: number, xpos: number, ypos: number, scale: number) => {
   const npixels = hgrRGBA.length / (4 * nlines)
   const imageData = new ImageData(hgrRGBA, npixels, nlines);
-  // Use hidden canvas/context so image rescaling works in iOS < 15
-  if (!hiddenContext) {
-    const hiddenCanvas = document.createElement('canvas')
-    // If we ever have more than a 2x2 tile grid we will need to increase this.
-    hiddenCanvas.width = 56
-    hiddenCanvas.height = 32
-    hiddenContext = hiddenCanvas.getContext('2d')
-  }
+  // Use hidden canvas/context so we can change the canvas size and not
+  // mess up our actual canvas.
+  const hiddenCanvas = document.createElement('canvas')
+  hiddenCanvas.width = npixels
+  hiddenCanvas.height = nlines
+  const hiddenContext = hiddenCanvas.getContext('2d')
   if (hiddenContext) {
     hiddenContext.putImageData(imageData, 0, 0)
     ctx.drawImage(hiddenContext.canvas, 0, 0, npixels, nlines,
