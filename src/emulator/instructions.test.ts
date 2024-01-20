@@ -250,10 +250,10 @@ test('JMP ($3000,X)', () => runAssemblyTest(jmpIndexedAbsIndirect.split('\n'), 0
 test('DEC', () => runAssemblyTest([' LDA #$99', ' DEC'], 0x98, N))
 test('INC', () => runAssemblyTest([' LDA #$99', ' INC'], 0x9A, N))
 
-test('BIT #$F0', () => runAssemblyTest([' LDA #$0F', ' BIT #$F0'], 0x0F, Z | V | N))
-test('BIT #$80', () => runAssemblyTest([' LDA #$0F', ' BIT #$80'], 0x0F, Z | N))
-test('BIT #$70', () => runAssemblyTest([' LDA #$0F', ' BIT #$70'], 0x0F, Z | V))
-test('BIT #$FF', () => runAssemblyTest([' LDA #$0F', ' BIT #$FF'], 0x0F, V | N))
+test('BIT #$F0', () => runAssemblyTest([' LDA #$0F', ' BIT #$F0'], 0x0F, Z))
+test('BIT #$80', () => runAssemblyTest([' LDA #$0F', ' BIT #$80'], 0x0F, Z))
+test('BIT #$70', () => runAssemblyTest([' LDA #$0F', ' BIT #$70'], 0x0F, Z))
+test('BIT #$FF', () => runAssemblyTest([' LDA #$0F', ' BIT #$FF'], 0x0F, 0))
 const bitZP_X =
 ` LDY #$F0
   STY $14
