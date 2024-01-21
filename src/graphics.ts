@@ -7,16 +7,29 @@ const xmargin = 0.075
 const ymargin = 0.075
 let frameCount = 0
 
-const processTextPage = (hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE) => {
+// We will draw the text on both the on-screen canvas and the hidden canvas.
+// This is wasteful, but we need to get text on the hidden canvas
+// for mixed text/graphics mode, yet the text looks siginificantly better
+// if it's drawn directly onto the on-screen canvas.
+const processTextPage = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE, width: number, height: number) => {
   const textPage = handleGetTextPage()
-  if (textPage.length === 0) return
+  if (textPage.length === 0) return false
   const doubleRes = textPage.length === 320 || textPage.length === 1920
   const mixedMode = textPage.length === 160 || textPage.length === 320
   const nchars = doubleRes ? 80 : 40
+  // On-screen canvas
+  const cwidth = width * (1 - 2 * xmargin) / nchars
+  const cheight = height * (1 - 2 * ymargin) / 24
+  const xmarginPx = xmargin * width
+  const ymarginPx = ymargin * height
+  ctx.font = `${cheight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
+  // Idealized canvas
   const hiddenWidth = 560 / nchars
   const hiddenHeight = 384 / 24
   hiddenContext.font = `${hiddenHeight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
+  // full text page will be more than 80 char x 4 lines
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
@@ -24,7 +37,8 @@ const processTextPage = (hiddenContext: CanvasRenderingContext2D,
   const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
 
   for (let j = jstart; j < 24; j++) {
-    const yoffset = (j + 1) * hiddenHeight - 3
+    const yoffset = ymarginPx + (j + 1)*cheight - 3
+    const yoffsetHidden = (j + 1) * hiddenHeight - 3
     const joffset = (j - jstart) * nchars
     textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)
@@ -33,9 +47,12 @@ const processTextPage = (hiddenContext: CanvasRenderingContext2D,
       }
       const v1 = getPrintableChar(value, isAltCharSet)
       const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
+      ctx.fillStyle = colorFill
       hiddenContext.fillStyle = colorFill
       if (doInverse) {
         // Inverse characters
+        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight);
+        ctx.fillStyle = "#000000";
         hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight);
         hiddenContext.fillStyle = "#000000";
       } else if (value < 128 && !isAltCharSet) {
@@ -44,9 +61,11 @@ const processTextPage = (hiddenContext: CanvasRenderingContext2D,
           hiddenContext.fillStyle = "#000000";
         }
       }
-      hiddenContext.fillText(v, i * hiddenWidth, yoffset)
+      ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
+      hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
     });
   }
+  return !mixedMode
 };
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
@@ -174,18 +193,38 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext.imageSmoothingEnabled = false;
   hiddenContext.fillStyle = "#000000";
   hiddenContext.fillRect(0, 0, 560, 384)
-  processTextPage(hiddenContext, colorMode)
-  processLoRes(hiddenContext, colorMode)
-  processHiRes(hiddenContext, colorMode)
-  drawImage(ctx, hiddenContext, width, height)
-  // const tile = [0, 0x84, 0x1C, 0x90, 0x38, 0x94, 0x78, 0x91,
-  //   0x70, 0x1C, 0x78, 0x08, 0x73, 0x08, 0x7F, 0x0F,
-  //   0x7E, 0x0F, 0x70, 0x0C, 0x50, 0x08, 0x70, 0x09,
-  //   0x70, 0x09, 0x78, 0x09, 0x7C, 0x09, 0x7E, 0x0B]
-  // const tile = [0x80, 0x0A, 0xCC, 0x83, 0xE6, 0x83, 0xE2, 0x81,
+  // If we are only doing text output, we will draw directly onto our canvas,
+  // and do not need to use the hidden canvas with drawImage.
+  const textOnly = processTextPage(ctx, hiddenContext, colorMode, width, height)
+  if (!textOnly) {
+    // Otherwise, do graphics drawing, and then copy from our hidden canvas
+    // over to our main canvas.
+    processLoRes(hiddenContext, colorMode)
+    processHiRes(hiddenContext, colorMode)
+    drawImage(ctx, hiddenContext, width, height)
+  }
+  // const tile = [0xAC, 0x80, 
+  //   0xA7, 0x80,
+  //   0, 0xE7,
+  //   0, 0xF3,
+  //   0xE0, 0,
+  //   0xF0, 0,
+  //   0, 0,
+  //   0x2C, 0,
+  //   0x27, 0,
+  //   0, 0x67,
+  //   0, 0x73,
+  //   0x60, 0x80,
+  //   0x70, 0x80,
+  //   0, 0, 0, 0, 0, 0]
+    // const tile = [0, 0x84, 0x1C, 0x90, 0x38, 0x94, 0x78, 0x91,
+    //   0x70, 0x1C, 0x78, 0x08, 0x73, 0x08, 0x7F, 0x0F,
+    //   0x7E, 0x0F, 0x70, 0x0C, 0x50, 0x08, 0x70, 0x09,
+    //   0x70, 0x09, 0x78, 0x09, 0x7C, 0x09, 0x7E, 0x0B]
+    // const tile = [0x80, 0x0A, 0xCC, 0x83, 0xE6, 0x83, 0xE2, 0x81,
   //   0xAB, 0x8F, 0xFF, 0x8F, 0xFE, 0x87, 0xC2, 0x86,
   //   0xC6, 0xE2, 0xCC, 0xC3, 0xC0, 0xC7, 0xE0, 0xCF,
   //   0xF0, 0xCC, 0xB0, 0xCC, 0xB0, 0xCC, 0x98, 0x98]
-  // drawHiresTile(ctx, new Uint8Array(tile), colorMode, 16, 100, 100, 10)
+//  drawHiresTile(ctx, new Uint8Array(tile), colorMode, 16, 100, 100, 10)
 }
 
