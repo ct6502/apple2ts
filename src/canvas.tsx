@@ -61,8 +61,9 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
+    c: () => this.props.handleCopyToClipboard(),
     o: () => this.props.handleFileOpen(),
-    s: () => this.props.handleFileSave(false)
+    s: () => this.props.handleFileSave(false),
   }
 
   handleMetaKey = (key: string) => {
@@ -109,6 +110,9 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     // because that interferes with Apple II control keys like Ctrl+S
     if (!e.shiftKey && (this.isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt'))) {
       this.keyHandled = this.handleMetaKey(e.key)
+      // TODO: This allows Cmd+V to paste text, but breaks OpenApple+V.
+      // How to handle both?
+      if (e.key === 'v') return;
     }
     // If we're paused, allow <space> to resume
     if (this.props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
@@ -130,9 +134,6 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       return
     }
 
-    if (e.altKey && e.key !== 'Alt') {
-      console.log("here")
-    }
     const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
     if (key > 0) {
       const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
