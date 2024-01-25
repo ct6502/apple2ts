@@ -7,7 +7,8 @@ import { passSetRunMode, passKeypress,
   passGoForwardInTime,
   setStartTextPage,
   passMouseEvent,
-  passPasteText} from "./main2worker"
+  passPasteText,
+  handleGetShowMouse} from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { handleArrowKey } from './controls/keyboardbuttons';
@@ -16,11 +17,6 @@ const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
 
-let showMouse = true
-// eslint-disable-next-line react-refresh/only-export-components
-export const setShowMouse = (set = true) => {
-  showMouse = set
-}
 type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
 
 
@@ -281,7 +277,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       <canvas ref={this.props.myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{cursor: showMouse ? "auto" : "none"}}
+        style={{cursor: handleGetShowMouse() ? "auto" : "none"}}
         width={width} height={height}
         tabIndex={0}
         onKeyDown={isTouchDevice ? ()=>{null} : this.handleKeyDown}

@@ -3,7 +3,6 @@ import { doPlayDriveSound } from "./devices/diskinterface"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
-import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveCommData } from "./devices/imagewriter"
 import { receiveMidiData } from "./devices/midiinterface"
@@ -210,8 +209,7 @@ const doOnMessage = (e: MessageEvent) => {
       break
     }
     case MSG_WORKER.SHOW_MOUSE: {
-      const set = e.data.payload as boolean
-      setShowMouse(set)
+      showMouse = e.data.payload as boolean
       break
     }
     case MSG_WORKER.MBOARD_SOUND: {
@@ -243,6 +241,12 @@ const doOnMessage = (e: MessageEvent) => {
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
     }
+}
+
+let showMouse = true
+
+export const handleGetShowMouse = () => {
+  return showMouse
 }
 
 export const handleGetRunMode = () => {
