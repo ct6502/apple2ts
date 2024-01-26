@@ -18,8 +18,7 @@ import { receiveCommData } from "./devices/superserial/serial";
 declare const self: DedicatedWorkerGlobalScope;
 export {};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const doPostMessage = (msg: MSG_WORKER, payload: any) => {
+const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
   self.postMessage({msg, payload});
 }
 

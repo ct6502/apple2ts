@@ -15,7 +15,6 @@ import DiskInterface from "./devices/diskinterface"
 import React from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugPanel from "./panels/debugpanel"
-import { preloadAssets } from "./devices/assets"
 import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
 import ImageWriter from "./devices/imagewriter"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
@@ -72,10 +71,8 @@ class DisplayApple2 extends React.Component<object,
   componentDidMount() {
     setDisplay(this)
     if ("launchQueue" in window) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const queue: any = window.launchQueue
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      queue.setConsumer(async (launchParams: any) => {
+      const queue: LaunchQueue = window.launchQueue as LaunchQueue
+      queue.setConsumer(async (launchParams: LaunchParams) => {
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
           const fileContents = await (await files[0].getFile()).text()
@@ -83,7 +80,10 @@ class DisplayApple2 extends React.Component<object,
         }
       });
     }
-    preloadAssets()
+    // TODO: It's unclear whether I need to actually do this preloadAssets() call
+    // or whether just having the assets within that file is good enough
+    // for the preloading.
+    // preloadAssets()
     passSetNormalSpeed(true)
 //    window.addEventListener('beforeunload', (event) => {
       // Cancel the event as stated by the standard.

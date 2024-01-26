@@ -18,13 +18,11 @@ let height = 600
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
 
-
 class Apple2Canvas extends React.Component<DisplayProps> {
   keyHandled = false
   myText = React.createRef<HTMLTextAreaElement>()
   myContext: CanvasRenderingContext2D | null = null
   hiddenContext: CanvasRenderingContext2D | null = null
-  startupTextTimeout = 0
 
   pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById('apple2canvas')
@@ -243,14 +241,11 @@ class Apple2Canvas extends React.Component<DisplayProps> {
         // Also need to do an initial resize after everything is wired up.
         this.handleResize()
         setStartTextPage()
-        clearInterval(this.startupTextTimeout)
-        // Never start the interval again.
-        this.startupTextTimeout = -1
+      } else {
+        window.setTimeout(setStartTextAfterFontLoad, 25);
       }
     }
-    if (this.startupTextTimeout === 0) {
-      this.startupTextTimeout = window.setInterval(setStartTextAfterFontLoad, 25);
-    }
+    window.setTimeout(setStartTextAfterFontLoad, 25);
     this.renderCanvas()
   }
 

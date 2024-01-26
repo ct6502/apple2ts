@@ -21,8 +21,7 @@ export const setDisplay = (displayIn: DisplayApple2) => {
   display = displayIn
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const doPostMessage = (msg: MSG_MAIN, payload: any) => {
+const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
   if (!worker) {
     worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
     worker.onmessage = doOnMessage
@@ -262,7 +261,7 @@ export const handleGetTextPage = () => {
 }
 
 export const setStartTextPage = () => {
-  if (machineState.textPage.length <= 1) {
+  if (machineState.textPage.length === 1) {
     machineState.textPage = startupTextPage
   }
 }

@@ -21,6 +21,8 @@ declare module "*.hdv" {
   export = value;
 }
 
+type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
@@ -207,4 +209,13 @@ type MockingboardSound = {
   slot: number,
   chip: number,
   params: number[]
+}
+
+// This LaunchParams and LaunchQueue are part of the Web App Launch Handler API.
+// Needed to add my own types to avoid using "any".
+type LaunchParams = {
+  files: FileSystemFileHandle[]
+}
+type LaunchQueue = {
+  setConsumer: (consumer: (launchParams: LaunchParams) => Promise<void>) => void
 }
