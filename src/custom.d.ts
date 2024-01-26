@@ -64,6 +64,7 @@ type DisplayProps = {
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
+  handleArrowKey: (key: ARROW, release: boolean) => void,
   handleCtrlDown: (ctrlKeyMode: number) => void,
   handleOpenAppleDown: (ctrlKeyMode: number) => void,
   handleClosedAppleDown: (ctrlKeyMode: number) => void,

@@ -1,4 +1,4 @@
-import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passSetGamepads } from "../main2worker"
+import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -7,37 +7,6 @@ import {
   faArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { appleOutline, appleSolid } from "../img/icons";
-import { ARROW } from "../emulator/utility/utility";
-
-const arrowGamePad = [0, 0]
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const handleArrowKey = (key: ARROW, release: boolean) => {
-
-  if (!release) {
-    let code = 0
-    switch (key) {
-      case ARROW.LEFT: code = 8; arrowGamePad[0] = -1; break
-      case ARROW.RIGHT: code = 21; arrowGamePad[0] = 1; break
-      case ARROW.UP: code = 11; arrowGamePad[1] = -1; break
-      case ARROW.DOWN: code = 10; arrowGamePad[1] = 1; break
-    }
-    passKeypress(String.fromCharCode(code))
-  } else {
-    switch (key) {
-      case ARROW.LEFT: // fall thru
-      case ARROW.RIGHT: arrowGamePad[0] = 0; break
-      case ARROW.UP: // fall thru
-      case ARROW.DOWN: arrowGamePad[1] = 0; break
-    }
-  }
-
-  const gamePads: EmuGamepad[] = [{
-      axes: [arrowGamePad[0], arrowGamePad[1], 0, 0],
-      buttons: []
-  }]
-  passSetGamepads(gamePads)
-}
 
 const KeyboardButtons = (props: DisplayProps) => {
   const arrowKeys = [
@@ -66,10 +35,10 @@ const KeyboardButtons = (props: DisplayProps) => {
      {arrowKeys.map((key, i) => (
         <button className="pushButton key-button" title={key.name}
           key={key.name}
-          onTouchStart={() => handleArrowKey(i, false)}
-          onTouchEnd={() => handleArrowKey(i, true)}
-          onMouseDown={() => {if (!isTouchDevice) handleArrowKey(i, false)}}
-          onMouseUp={() => {if (!isTouchDevice) handleArrowKey(i, true)}}
+          onTouchStart={() => props.handleArrowKey(i, false)}
+          onTouchEnd={() => props.handleArrowKey(i, true)}
+          onMouseDown={() => {if (!isTouchDevice) props.handleArrowKey(i, false)}}
+          onMouseUp={() => {if (!isTouchDevice) props.handleArrowKey(i, true)}}
         >
           <FontAwesomeIcon icon={key.icon}/>
         </button>

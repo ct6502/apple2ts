@@ -11,7 +11,6 @@ import { passSetRunMode, passKeypress,
   handleGetShowMouse} from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
-import { handleArrowKey } from './controls/keyboardbuttons';
 import { checkGamepad } from './devices/gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
@@ -41,6 +40,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   };
 
   getSizes = () => {
+    // return [2 * 560, 2 * 384]
     width = window.innerWidth - 20;
     height = window.innerHeight - 275;
     // shrink either width or height to preserve aspect ratio
@@ -124,7 +124,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     }
 
     if (e.key in this.arrowKeys && this.props.useArrowKeysAsJoystick) {
-      handleArrowKey(this.arrowKeys[e.key], false)
+      this.props.handleArrowKey(this.arrowKeys[e.key], false)
       e.preventDefault()
       e.stopPropagation()
       return
@@ -154,7 +154,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     } else if (this.isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     } else if (e.key in this.arrowKeys) {
-      handleArrowKey(this.arrowKeys[e.key], true)
+      this.props.handleArrowKey(this.arrowKeys[e.key], true)
     }
     if (this.keyHandled) {
       this.keyHandled = false

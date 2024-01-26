@@ -5,8 +5,10 @@ import { setDisplay, handleGetRunMode, passSetRunMode,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename,
   passAppleCommandKeyPress,
-  passAppleCommandKeyRelease} from "./main2worker"
-import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG } from "./emulator/utility/utility"
+  passAppleCommandKeyRelease,
+  passSetGamepads,
+  passKeypress} from "./main2worker"
+import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG, ARROW } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
@@ -109,6 +111,34 @@ class DisplayApple2 extends React.Component<object,
   handleCtrlDown = (ctrlKeyMode: number) => {
     this.setState({ ctrlKeyMode });
   };
+
+  arrowGamePad = [0, 0]
+
+  handleArrowKey = (key: ARROW, release: boolean) => {
+    if (!release) {
+      let code = 0
+      switch (key) {
+        case ARROW.LEFT: code = 8; this.arrowGamePad[0] = -1; break
+        case ARROW.RIGHT: code = 21; this.arrowGamePad[0] = 1; break
+        case ARROW.UP: code = 11; this.arrowGamePad[1] = -1; break
+        case ARROW.DOWN: code = 10; this.arrowGamePad[1] = 1; break
+      }
+      passKeypress(String.fromCharCode(code))
+    } else {
+      switch (key) {
+        case ARROW.LEFT: // fall thru
+        case ARROW.RIGHT: this.arrowGamePad[0] = 0; break
+        case ARROW.UP: // fall thru
+        case ARROW.DOWN: this.arrowGamePad[1] = 0; break
+      }
+    }
+
+    const gamePads: EmuGamepad[] = [{
+        axes: [this.arrowGamePad[0], this.arrowGamePad[1], 0, 0],
+        buttons: []
+    }]
+    passSetGamepads(gamePads)
+  }
 
   handleOpenAppleDown = (openAppleKeyMode: number) => {
     // If we're going from 0 to nonzero, send the Open Apple keypress
@@ -289,6 +319,7 @@ class DisplayApple2 extends React.Component<object,
       ctrlKeyMode: this.state.ctrlKeyMode,
       openAppleKeyMode: this.state.openAppleKeyMode,
       closedAppleKeyMode: this.state.closedAppleKeyMode,
+      handleArrowKey: this.handleArrowKey,
       handleCtrlDown: this.handleCtrlDown,
       handleOpenAppleDown: this.handleOpenAppleDown,
       handleClosedAppleDown: this.handleClosedAppleDown,

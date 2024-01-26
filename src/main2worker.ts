@@ -1,13 +1,13 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility/utility"
-import { doPlayDriveSound } from "./devices/diskinterface"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { playMockingboard } from "./devices/mockingboard_audio"
-import { receiveCommData } from "./devices/imagewriter"
 import { receiveMidiData } from "./devices/midiinterface"
 import DisplayApple2 from "./display"
 import { Breakpoints } from "./panels/breakpoint"
+import { doPlayDriveSound } from "./devices/drivesounds"
+import { receiveCommData } from "./devices/iwii"
 
 let worker: Worker | null = null
 
