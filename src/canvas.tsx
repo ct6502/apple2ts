@@ -7,30 +7,22 @@ import { passSetRunMode, passKeypress,
   passGoForwardInTime,
   setStartTextPage,
   passMouseEvent,
-  passPasteText} from "./main2worker"
+  passPasteText,
+  handleGetShowMouse} from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
-import { handleArrowKey } from './controls/keyboardbuttons';
 import { checkGamepad } from './devices/gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
 
-let showMouse = true
-// eslint-disable-next-line react-refresh/only-export-components
-export const setShowMouse = (set = true) => {
-  showMouse = set
-}
 type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
-
 
 class Apple2Canvas extends React.Component<DisplayProps> {
   keyHandled = false
   myText = React.createRef<HTMLTextAreaElement>()
-  hiddenCanvas = React.createRef<HTMLCanvasElement>()
   myContext: CanvasRenderingContext2D | null = null
   hiddenContext: CanvasRenderingContext2D | null = null
-  startupTextTimeout = 0
 
   pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById('apple2canvas')
@@ -46,6 +38,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   };
 
   getSizes = () => {
+    // return [2 * 560, 2 * 384]
     width = window.innerWidth - 20;
     height = window.innerHeight - 275;
     // shrink either width or height to preserve aspect ratio
@@ -62,13 +55,9 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
-    b: () => passSetRunMode(RUN_MODE.NEED_BOOT),
     c: () => this.props.handleCopyToClipboard(),
-    f: () => this.props.handleSpeedChange(!this.props.speedCheck),
     o: () => this.props.handleFileOpen(),
-    p: () => passSetRunMode(this.props.runMode === RUN_MODE.PAUSED ? RUN_MODE.RUNNING : RUN_MODE.PAUSED),
-    r: () => passSetRunMode(RUN_MODE.NEED_RESET),
-    s: () => this.props.handleFileSave(false)
+    s: () => this.props.handleFileSave(false),
   }
 
   handleMetaKey = (key: string) => {
@@ -86,23 +75,23 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     ArrowDown: ARROW.DOWN,
   };
 
+  isMac = navigator.platform.startsWith('Mac')
+
   isOpenAppleDown = (e: keyEvent) => {
-    return e.code === 'ShiftLeft'
+    return e.code === 'AltLeft'
   }
 
   isOpenAppleUp = (e: keyEvent) => {
-    return e.code === 'ShiftLeft'
+    return e.code === 'AltLeft'
   }
 
   isClosedAppleDown = (e: keyEvent) => {
-    return e.code === 'ShiftRight'
+    return e.code ==='AltRight'
   }
 
   isClosedAppleUp = (e: keyEvent) => {
-    return e.code === 'ShiftRight'
+    return e.code === 'AltRight'
   }
-
-  isMac = navigator.platform.startsWith('Mac')
 
   handleKeyDown = (e: keyEvent) => {
     if (this.isOpenAppleDown(e)) {
@@ -113,8 +102,11 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     }
     // TODO: What modifier key should be used on Windows? Can't use Ctrl
     // because that interferes with Apple II control keys like Ctrl+S
-    if (this.isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')) {
+    if (!e.shiftKey && (this.isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt'))) {
       this.keyHandled = this.handleMetaKey(e.key)
+      // TODO: This allows Cmd+V to paste text, but breaks OpenApple+V.
+      // How to handle both?
+      if (e.key === 'v') return;
     }
     // If we're paused, allow <space> to resume
     if (this.props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
@@ -130,22 +122,29 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     }
 
     if (e.key in this.arrowKeys && this.props.useArrowKeysAsJoystick) {
-      handleArrowKey(this.arrowKeys[e.key], false)
+      this.props.handleArrowKey(this.arrowKeys[e.key], false)
       e.preventDefault()
       e.stopPropagation()
       return
     }
 
-    const key = convertAppleKey(e, this.props.uppercase);
+    const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
     if (key > 0) {
+      const key = convertAppleKey(e, this.props.uppercase, this.props.ctrlKeyMode);
       passKeypress(String.fromCharCode(key))
       e.preventDefault()
       e.stopPropagation()
-    } else {
-      // console.log("key=" + e.key + " code=" + e.code + " ctrl=" +
-      //   e.ctrlKey + " shift=" + e.shiftKey + " meta=" + e.metaKey);
     }
-  };
+    if (this.props.ctrlKeyMode == 1) {
+      this.props.handleCtrlDown(0)
+    }
+    if (this.props.openAppleKeyMode == 1) {
+      this.props.handleOpenAppleDown(0)
+    }
+    if (this.props.closedAppleKeyMode == 1) {
+      this.props.handleClosedAppleDown(0)
+    }
+};
 
   handleKeyUp = (e: keyEvent) => {
     if (this.isOpenAppleUp(e)) {
@@ -153,7 +152,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     } else if (this.isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     } else if (e.key in this.arrowKeys) {
-      handleArrowKey(this.arrowKeys[e.key], true)
+      this.props.handleArrowKey(this.arrowKeys[e.key], true)
     }
     if (this.keyHandled) {
       this.keyHandled = false
@@ -228,11 +227,11 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       this.props.myCanvas.current.addEventListener('mousedown', this.handleMouseDown)
       this.props.myCanvas.current.addEventListener('mouseup', this.handleMouseUp)
     }
-    if (this.hiddenCanvas.current) {
-      this.hiddenContext = this.hiddenCanvas.current.getContext('2d')
+    if (this.props.hiddenCanvas.current) {
+      this.hiddenContext = this.props.hiddenCanvas.current.getContext('2d')
     }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const paste = (e: any) => {this.pasteHandler(e as ClipboardEvent)}
+    window.addEventListener("copy", () => {this.props.handleCopyToClipboard()})
+    const paste = (e: object) => {this.pasteHandler(e as ClipboardEvent)}
     window.addEventListener("paste", paste)
     window.addEventListener("resize", this.handleResize)
     window.setInterval(() => {checkGamepad()}, 34)
@@ -242,14 +241,11 @@ class Apple2Canvas extends React.Component<DisplayProps> {
         // Also need to do an initial resize after everything is wired up.
         this.handleResize()
         setStartTextPage()
-        clearInterval(this.startupTextTimeout)
-        // Never start the interval again.
-        this.startupTextTimeout = -1
+      } else {
+        window.setTimeout(setStartTextAfterFontLoad, 25);
       }
     }
-    if (this.startupTextTimeout === 0) {
-      this.startupTextTimeout = window.setInterval(setStartTextAfterFontLoad, 25);
-    }
+    window.setTimeout(setStartTextAfterFontLoad, 25);
     this.renderCanvas()
   }
 
@@ -276,7 +272,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       <canvas ref={this.props.myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{cursor: showMouse ? "auto" : "none"}}
+        style={{cursor: handleGetShowMouse() ? "auto" : "none"}}
         width={width} height={height}
         tabIndex={0}
         onKeyDown={isTouchDevice ? ()=>{null} : this.handleKeyDown}
@@ -286,9 +282,9 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
-      <canvas ref={this.hiddenCanvas}
+      <canvas ref={this.props.hiddenCanvas}
         hidden={true}
-        width={560} height={192} />
+        width={560} height={384} />
       {txt}
     </span>
   }

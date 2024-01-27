@@ -2,19 +2,9 @@ import React from "react"
 import iwiion from "./img/iwiion.png"
 import iwiioff from "./img/iwiioff.png"
 import PrinterDialog from "./printerdialog"
-import { ImageWriterII } from "./iwii"
+import { ImageWriterII, registerSetPrinting } from "./iwii"
 
-let doSetPrinting: () => void
 
-const registerSetPrinting = (fn: () => void) => {
-  doSetPrinting = fn
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const receiveCommData = (data: Uint8Array) => {
-  if (doSetPrinting) doSetPrinting()
-  ImageWriterII.write(data)
-}
 
 class ImageWriter extends React.Component {
   canvas: HTMLCanvasElement

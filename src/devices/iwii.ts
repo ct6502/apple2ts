@@ -1,5 +1,15 @@
 
 // ImageWriter II Driver for Apple2TS - Copyright 2023 Michael Morrison <codebythepound@gmail.com>
+let doSetPrinting: () => void
+
+export const registerSetPrinting = (fn: () => void) => {
+  doSetPrinting = fn
+}
+
+export const receiveCommData = (data: Uint8Array) => {
+  if (doSetPrinting) doSetPrinting()
+  ImageWriterII.write(data)
+}
 
 import { Font,
          DraftFont,

@@ -1,6 +1,7 @@
 import { KeyboardEvent } from "react"
 
 export const TEST_DEBUG = false
+export const MAX_SNAPSHOTS = 60
 
 export enum RUN_MODE {
   IDLE = 0,
@@ -22,6 +23,7 @@ export enum MSG_WORKER {
   MBOARD_SOUND,
   COMM_DATA,
   MIDI_DATA,
+  REQUEST_THUMBNAIL,
 }
 
 export enum MSG_MAIN {
@@ -37,6 +39,7 @@ export enum MSG_MAIN {
   TIME_TRAVEL_STEP,
   TIME_TRAVEL_INDEX,
   TIME_TRAVEL_SNAPSHOT,
+  THUMBNAIL_IMAGE,
   RESTORE_STATE,
   KEYPRESS,
   MOUSEEVENT,
@@ -141,21 +144,21 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
+export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean, ctrlKeyMode: number) => {
   let key = 0
+  if (e.altKey && e.key !== "Alt") {
+    e.key = String.fromCharCode(e.keyCode)
+  }
   if (e.key.length === 1) {
-    if (e.metaKey || e.altKey) {
-      return 0
-    }
     key = e.key.charCodeAt(0)
-    if (e.ctrlKey) {
+    if (e.ctrlKey || ctrlKeyMode > 0) {
       if (key >= 0x40 && key <= 0x7E) {
         key &= 0b00011111
       } else {
         return 0
       }
     } else if (uppercase) {
-      key = e.key.toUpperCase().charCodeAt(0)
+      key = String.fromCharCode(key).toUpperCase().charCodeAt(0)
     }
   } else {
     const keymap: { [key: string]: number } = {

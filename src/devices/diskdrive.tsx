@@ -40,8 +40,7 @@ class DiskDrive extends React.Component<{drive: number},
   }
 
   // https://medium.com/@650egor/simple-drag-and-drop-file-upload-in-react-2cb409d88929
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleDrop = (e: any) => {this.dropHandler(e as DragEvent)}
+  handleDrop = (e: DragEvent) => {this.dropHandler(e)}
   handleDrag = (e: DragEvent) => 
     {e.preventDefault(); e.stopPropagation()}
 

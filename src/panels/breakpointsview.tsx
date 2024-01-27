@@ -135,7 +135,7 @@ class BreakpointsView extends React.Component<
             </button>
           </div>
         </div>
-        <div className="debug-panel small-mono-text thinBorder"
+        <div className="debug-panel thinBorder"
           style={{
             width: '213px',
             height: `${this.nlines * 10 - 2}pt`,

@@ -1,4 +1,4 @@
-.helpPaper {
+.help-paper {
   display: flex;
   font-family: monospace;
   font-size: medium;
@@ -14,8 +14,8 @@
     inset -1px 0px 1px 1px #BFBB98;
 }
 
-.helpText {
-  margin-left: 40px;
+.help-text {
+  margin-left: 60px;
   margin-top: 5px;
   white-space: pre-wrap;
 }

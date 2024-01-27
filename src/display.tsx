@@ -3,15 +3,18 @@ import { setDisplay, handleGetRunMode, passSetRunMode,
   passSetNormalSpeed, handleGetTextPage,
   passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename } from "./main2worker"
-import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG } from "./emulator/utility/utility"
+  handleGetFilename,
+  passAppleCommandKeyPress,
+  passAppleCommandKeyRelease,
+  passSetGamepads,
+  passKeypress} from "./main2worker"
+import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG, ARROW } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
 import React from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugPanel from "./panels/debugpanel"
-import { preloadAssets } from "./devices/assets"
 import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
 import ImageWriter from "./devices/imagewriter"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
@@ -23,6 +26,9 @@ class DisplayApple2 extends React.Component<object,
     uppercase: boolean;
     useArrowKeysAsJoystick: boolean;
     colorMode: COLOR_MODE;
+    ctrlKeyMode: number;
+    openAppleKeyMode: number;
+    closedAppleKeyMode: number;
     doDebug: boolean;
     breakpoint: string;
     helptext: string;
@@ -30,11 +36,15 @@ class DisplayApple2 extends React.Component<object,
   timerID = 0
   refreshTime = 16.6881
   myCanvas = React.createRef<HTMLCanvasElement>()
+  hiddenCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen = React.createRef<HTMLInputElement>();
 
   constructor(props: object) {
     super(props);
     this.state = {
+      ctrlKeyMode: 0,
+      openAppleKeyMode: 0,
+      closedAppleKeyMode: 0,
       doDebug: TEST_DEBUG,
       currentSpeed: 1.02,
       speedCheck: true,
@@ -61,10 +71,8 @@ class DisplayApple2 extends React.Component<object,
   componentDidMount() {
     setDisplay(this)
     if ("launchQueue" in window) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const queue: any = window.launchQueue
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      queue.setConsumer(async (launchParams: any) => {
+      const queue: LaunchQueue = window.launchQueue as LaunchQueue
+      queue.setConsumer(async (launchParams: LaunchParams) => {
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
           const fileContents = await (await files[0].getFile()).text()
@@ -72,8 +80,17 @@ class DisplayApple2 extends React.Component<object,
         }
       });
     }
-    preloadAssets()
+    // TODO: It's unclear whether I need to actually do this preloadAssets() call
+    // or whether just having the assets within that file is good enough
+    // for the preloading.
+    // preloadAssets()
     passSetNormalSpeed(true)
+//    window.addEventListener('beforeunload', (event) => {
+      // Cancel the event as stated by the standard.
+//      event.preventDefault();
+      // Chrome requires returnValue to be set.
+//      event.returnValue = '';
+//    });
   //    window.addEventListener("resize", handleResize)
   }
 
@@ -89,6 +106,58 @@ class DisplayApple2 extends React.Component<object,
 
   handleColorChange = (mode: COLOR_MODE) => {
     this.setState({ colorMode: mode });
+  };
+
+  handleCtrlDown = (ctrlKeyMode: number) => {
+    this.setState({ ctrlKeyMode });
+  };
+
+  arrowGamePad = [0, 0]
+
+  handleArrowKey = (key: ARROW, release: boolean) => {
+    if (!release) {
+      let code = 0
+      switch (key) {
+        case ARROW.LEFT: code = 8; this.arrowGamePad[0] = -1; break
+        case ARROW.RIGHT: code = 21; this.arrowGamePad[0] = 1; break
+        case ARROW.UP: code = 11; this.arrowGamePad[1] = -1; break
+        case ARROW.DOWN: code = 10; this.arrowGamePad[1] = 1; break
+      }
+      passKeypress(String.fromCharCode(code))
+    } else {
+      switch (key) {
+        case ARROW.LEFT: // fall thru
+        case ARROW.RIGHT: this.arrowGamePad[0] = 0; break
+        case ARROW.UP: // fall thru
+        case ARROW.DOWN: this.arrowGamePad[1] = 0; break
+      }
+    }
+
+    const gamePads: EmuGamepad[] = [{
+        axes: [this.arrowGamePad[0], this.arrowGamePad[1], 0, 0],
+        buttons: []
+    }]
+    passSetGamepads(gamePads)
+  }
+
+  handleOpenAppleDown = (openAppleKeyMode: number) => {
+    // If we're going from 0 to nonzero, send the Open Apple keypress
+    if (this.state.openAppleKeyMode === 0 && openAppleKeyMode > 0) {
+      passAppleCommandKeyPress(true)
+    } else if (this.state.openAppleKeyMode > 0 && openAppleKeyMode === 0) {
+      window.setTimeout(() => passAppleCommandKeyRelease(true), 100)
+    }
+    this.setState({ openAppleKeyMode });
+  };
+
+  handleClosedAppleDown = (closedAppleKeyMode: number) => {
+    // If we're going from 0 to nonzero, send the Closed Apple keypress
+    if (this.state.closedAppleKeyMode === 0 && closedAppleKeyMode > 0) {
+      passAppleCommandKeyPress(false)
+    } else if (this.state.closedAppleKeyMode > 0 && closedAppleKeyMode === 0) {
+      window.setTimeout(() => passAppleCommandKeyRelease(false), 100)
+    }
+    this.setState({ closedAppleKeyMode });
   };
 
   handleDebugChange = (enable: boolean) => {
@@ -179,43 +248,24 @@ class DisplayApple2 extends React.Component<object,
     handleGetSaveState(this.doSaveStateCallback, withSnapshots)
   }
 
-  trimData = (data: Uint8ClampedArray, width: number, height: number) => {
-    let left = width
-    let right = 0
-    let top = height
-    let bottom = 0
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const alpha = data[(y * width + x) * 4 + 3]
-        if (alpha === 255) {
-          if (x < left) left = x
-          if (x > right) right = x
-          if (y < top) top = y
-          if (y > bottom) bottom = y
-        }
-      }
+  copyCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
+    if (!this.hiddenCanvas?.current) return
+    let copyCanvas = this.hiddenCanvas?.current
+    if (thumbnail) {
+      copyCanvas = document.createElement('canvas')
+      copyCanvas.height = 128
+      copyCanvas.width = copyCanvas.height * 1.333333
+      // The willReadFrequently is a performance optimization hint that does
+      // the rendering in software rather than hardware. This is better because
+      // we're just reading back pixels from the canvas.
+      const ctx = copyCanvas.getContext('2d', {willReadFrequently: true})
+      if (!ctx) return
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.hiddenCanvas.current, 0, 0, 560, 384,
+        0, 0, copyCanvas.width, copyCanvas.height)
     }
-    return {left, right, top, bottom}
-  }
-
-  trimCanvas = (handleBlob: (blob: Blob) => void) => {
-    const canvas = this.myCanvas.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height)
-    const data = imageData?.data
-    if (!data) return
-    const {left, right, top, bottom} = this.trimData(data, canvas.width, canvas.height)
-    const trimmedCanvas = document.createElement('canvas')
-    trimmedCanvas.width = right - left
-    trimmedCanvas.height = bottom - top
-    const trimmedCtx = trimmedCanvas.getContext('2d')
-    trimmedCtx?.drawImage(canvas, left, top, right - left, bottom - top,
-      0, 0, right - left, bottom - top)
-    trimmedCanvas.toBlob((trimmedBlob) => {
-      if (trimmedBlob) {
-        handleBlob(trimmedBlob)
-      }
+    copyCanvas.toBlob((blob) => {
+      if (blob) handleBlob(blob)
     })
   }
 
@@ -245,7 +295,7 @@ class DisplayApple2 extends React.Component<object,
       navigator.clipboard.writeText(output);
     } else {
       try {
-        this.trimCanvas((blob) => {
+        this.copyCanvas((blob) => {
           navigator.clipboard.write([new ClipboardItem({'image/png': blob,})])
         })
       }
@@ -260,11 +310,19 @@ class DisplayApple2 extends React.Component<object,
       runMode: handleGetRunMode(),
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
+      hiddenCanvas: this.hiddenCanvas,
       speedCheck: this.state.speedCheck,
       uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
       doDebug: this.state.doDebug,
+      ctrlKeyMode: this.state.ctrlKeyMode,
+      openAppleKeyMode: this.state.openAppleKeyMode,
+      closedAppleKeyMode: this.state.closedAppleKeyMode,
+      handleArrowKey: this.handleArrowKey,
+      handleCtrlDown: this.handleCtrlDown,
+      handleOpenAppleDown: this.handleOpenAppleDown,
+      handleClosedAppleDown: this.handleClosedAppleDown,
       handleDebugChange: this.handleDebugChange,
       handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,

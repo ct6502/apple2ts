@@ -1,7 +1,6 @@
 import React from "react"
 import { passSetRunMode, handleSetDiskData, updateDisplay } from "../main2worker";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
-import { resetAllDiskDrives } from "./diskinterface";
 import floppyDisks from "./img/disks.png"
 import DiskImageDialog from "./diskimagedialog";
 
@@ -12,6 +11,12 @@ export const DiskImageChooser = () => {
     setOpen(true)
   };
 
+  const resetAllDiskDrives = () => {
+    handleSetDiskData(0, new Uint8Array(), "")
+    handleSetDiskData(1, new Uint8Array(), "")
+    handleSetDiskData(2, new Uint8Array(), "")
+  }
+  
   const setDiskImage = async (disk: diskImage) => {
     const res = await fetch("/disks/" + disk.file)
     const data = await res.arrayBuffer()

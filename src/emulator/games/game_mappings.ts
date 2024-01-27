@@ -1,10 +1,9 @@
 import { matchMemory } from "../memory"
-import { setGamepad0, setGamepad1,
-  setGamepad2,
-  setGamepad3,
+import { setGamepad0, setGamepad1, setGamepad2, setGamepad3,
   setLeftButtonDown, setPushButton2, setRightButtonDown } from "../devices/joystick"
 import { passHelptext } from "../worker2main"
 import { aztec } from "./aztec"
+import { drol } from "./drol"
 import { firebug } from "./firebug"
 import { karateka } from "./karateka"
 import { noxarchaist } from "./noxarchaist"
@@ -23,6 +22,7 @@ export const AddGameLibraryItem = (item: GameLibraryItem | GameLibraryItem[]) =>
 }
 
 AddGameLibraryItem(aztec)
+AddGameLibraryItem(drol)
 AddGameLibraryItem(firebug)
 AddGameLibraryItem(karateka)
 AddGameLibraryItem(noxarchaist)

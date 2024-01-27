@@ -1,7 +1,7 @@
 import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -18,8 +18,7 @@ import { receiveCommData } from "./devices/superserial/serial";
 declare const self: DedicatedWorkerGlobalScope;
 export {};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const doPostMessage = (msg: MSG_WORKER, payload: any) => {
+const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
   self.postMessage({msg, payload});
 }
 
@@ -67,6 +66,10 @@ export const passTxMidiData = (data: Uint8Array) => {
   doPostMessage(MSG_WORKER.MIDI_DATA, data)
 }
 
+export const passRequestThumbnail = (PC: number) => {
+  doPostMessage(MSG_WORKER.REQUEST_THUMBNAIL, PC)
+}
+
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
 if (typeof self !== 'undefined') {
@@ -79,7 +82,6 @@ if (typeof self !== 'undefined') {
         doSetState6502(e.data.payload as STATE6502)
         break
       case MSG_MAIN.DEBUG:
-  //      doSetDebug(e.data.payload)
         doSetIsDebugging(e.data.payload)
         break
       case MSG_MAIN.DISASSEMBLE_ADDR:
@@ -113,8 +115,11 @@ if (typeof self !== 'undefined') {
       case MSG_MAIN.TIME_TRAVEL_SNAPSHOT:
         doTakeSnapshot()
         break
-        case MSG_MAIN.RESTORE_STATE:
-        doRestoreSaveState(e.data.payload as EmulatorSaveState)
+      case MSG_MAIN.THUMBNAIL_IMAGE:
+        doSetThumbnailImage(e.data.payload as string)
+        break
+      case MSG_MAIN.RESTORE_STATE:
+        doRestoreSaveState(e.data.payload as EmulatorSaveState, true)
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload)

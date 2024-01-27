@@ -1,14 +1,13 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility/utility"
-import { doPlayDriveSound } from "./devices/diskinterface"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
-import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./devices/mockingboard_audio"
-import { receiveCommData } from "./devices/imagewriter"
 import { receiveMidiData } from "./devices/midiinterface"
 import DisplayApple2 from "./display"
 import { Breakpoints } from "./panels/breakpoint"
+import { doPlayDriveSound } from "./devices/drivesounds"
+import { receiveCommData } from "./devices/iwii"
 
 let worker: Worker | null = null
 
@@ -22,8 +21,7 @@ export const setDisplay = (displayIn: DisplayApple2) => {
   display = displayIn
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const doPostMessage = (msg: MSG_MAIN, payload: any) => {
+const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
   if (!worker) {
     worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
     worker.onmessage = doOnMessage
@@ -102,10 +100,20 @@ export const passPasteText = (text: string) => {
 }
 
 export const passAppleCommandKeyPress = (left: boolean) => {
+  if (left) {
+    machineState.button0 = true
+  } else {
+    machineState.button1 = true
+  }
   doPostMessage(MSG_MAIN.APPLE_PRESS, left)
 }
 
 export const passAppleCommandKeyRelease = (left: boolean) => {
+  if (left) {
+    machineState.button0 = false
+  } else {
+    machineState.button1 = false
+  }
   doPostMessage(MSG_MAIN.APPLE_RELEASE, left)
 }
 
@@ -126,6 +134,10 @@ export const passRxMidiData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.MIDI_DATA, data)
 }
 
+const passThumbnailImage = (thumbnail: string) => {
+  doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
+}
+
 let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
@@ -142,7 +154,6 @@ let machineState: MachineState = {
   button1: false,
   canGoBackward: true,
   canGoForward: true,
-  maxState: 0,
   iTempState: 0,
   timeTravelThumbnails: new Array<TimeTravelThumbnail>
 }
@@ -197,8 +208,7 @@ const doOnMessage = (e: MessageEvent) => {
       break
     }
     case MSG_WORKER.SHOW_MOUSE: {
-      const set = e.data.payload as boolean
-      setShowMouse(set)
+      showMouse = e.data.payload as boolean
       break
     }
     case MSG_WORKER.MBOARD_SOUND: {
@@ -216,10 +226,26 @@ const doOnMessage = (e: MessageEvent) => {
       receiveMidiData(mididata)
       break
     }
+    case MSG_WORKER.REQUEST_THUMBNAIL: {
+      display.copyCanvas((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          passThumbnailImage(reader.result as string)
+        }        
+        reader.readAsDataURL(blob)
+      }, true)
+      break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
     }
+}
+
+let showMouse = true
+
+export const handleGetShowMouse = () => {
+  return showMouse
 }
 
 export const handleGetRunMode = () => {
@@ -235,7 +261,7 @@ export const handleGetTextPage = () => {
 }
 
 export const setStartTextPage = () => {
-  if (machineState.textPage.length <= 1) {
+  if (machineState.textPage.length === 1) {
     machineState.textPage = startupTextPage
   }
 }
@@ -282,10 +308,6 @@ export const handleCanGoBackward = () => {
 
 export const handleCanGoForward = () => {
   return machineState.canGoForward
-}
-
-export const handleGetMaxState = () => {
-  return machineState.maxState
 }
 
 export const handleGetTempStateIndex = () => {

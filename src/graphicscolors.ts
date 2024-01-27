@@ -66,11 +66,17 @@ export const hgrRGBcolors = [
   [0, 0, 0],       // black2
   [255, 150, 1],   // orange
   [1, 150, 255],   // blue
-  [255, 255, 255], // white2
-  [254, 251, 82],  // yellow (extended green)
-  [183, 184, 249], // light blue (extended violet)
-  [255, 255, 255],
-  [0, 0, 0],
-  [148, 106, 33],  // brown (extended orange)
-  [9, 29, 162],    // dark blue (extended blue)
+  [255, 255, 255], // 7, white2
+  loresColors[7],  // 8, extend violet = lores light blue
+  loresColors[13], // 9, extend green = yellow/light brown
+  loresColors[2],  // 10, cut off blue = lores dark blue
+  loresColors[8],  // 11, cut off orange = lores dark brown
+  loresColors[11], // 12, cut off white = lores light magenta
+  loresColors[14], // 13, cut off white = lores light blue-green
+  [150, 255, 150], // 14, bright green
+  [150, 150, 255], // 15, bright violet
+  [127, 1, 127],   // 16, dark violet
+  [1, 127, 1],     // 17, dark green
+  [1, 75, 127],    // 18, dark blue
+  [127, 75, 1],    // 19, dark orange
 ]

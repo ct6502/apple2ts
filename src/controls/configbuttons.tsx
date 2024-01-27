@@ -11,6 +11,7 @@ import { getColorModeSVG, svgLowercase, svgUppercase } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
+import { ReactNode } from "react";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
@@ -30,7 +31,7 @@ const ConfigButtons = (props: DisplayProps) => {
       onClick={() => props.handleColorChange((props.colorMode + 1) % 5)}>
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
-          {getColorModeSVG(props.colorMode)}
+          {getColorModeSVG(props.colorMode) as ReactNode}
         </svg>
         <FontAwesomeIcon icon={faDisplay}/>
       </span>

@@ -21,6 +21,8 @@ declare module "*.hdv" {
   export = value;
 }
 
+type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
@@ -55,11 +57,19 @@ type DisplayProps = {
   runMode: RUN_MODE,
   speed: number,
   myCanvas: React.RefObject<HTMLCanvasElement>,
+  hiddenCanvas: React.RefObject<HTMLCanvasElement>,
   speedCheck: boolean,
   uppercase: boolean,
   useArrowKeysAsJoystick: boolean,
   colorMode: COLOR_MODE,
   doDebug: boolean,
+  ctrlKeyMode: number,
+  openAppleKeyMode: number,
+  closedAppleKeyMode: number,
+  handleArrowKey: (key: ARROW, release: boolean) => void,
+  handleCtrlDown: (ctrlKeyMode: number) => void,
+  handleOpenAppleDown: (ctrlKeyMode: number) => void,
+  handleClosedAppleDown: (ctrlKeyMode: number) => void,
   handleDebugChange: (enable: boolean) => void,
   handleSpeedChange: (enable: boolean) => void,
   handleColorChange: (mode: COLOR_MODE) => void,
@@ -86,7 +96,6 @@ type MachineState = {
   button1: boolean,
   canGoBackward: boolean,
   canGoForward: boolean,
-  maxState: number,
   iTempState: number,
   timeTravelThumbnails: Array<TimeTravelThumbnail>
 }
@@ -137,11 +146,13 @@ type EmulatorSaveState = {
   emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
+  thumbnail: string,
   snapshots: Array<EmulatorSaveState> | null
 }
 
 type TimeTravelThumbnail = {
-  s6502: STATE6502
+  s6502: STATE6502,
+  thumbnail: string
 }
 
 type SetMemoryBlock = {
@@ -198,4 +209,13 @@ type MockingboardSound = {
   slot: number,
   chip: number,
   params: number[]
+}
+
+// This LaunchParams and LaunchQueue are part of the Web App Launch Handler API.
+// Needed to add my own types to avoid using "any".
+type LaunchParams = {
+  files: FileSystemFileHandle[]
+}
+type LaunchQueue = {
+  setConsumer: (consumer: (launchParams: LaunchParams) => Promise<void>) => void
 }

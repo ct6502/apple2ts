@@ -1,57 +1,62 @@
-let text=
-['Welcome to Apple2TS',
-'',
-'TypeScript Apple IIe Emulator',
-'',
-'(c) 2023 Chris Torrence',
-'',
-'Click the floppy disks to',
-'choose a disk, or click on a',
-'drive to load your own.',
-'',
-'Press the Power button to start.',
-'',
-]
+let startupText = `Welcome to Apple2TS
+
+TypeScript Apple IIe Emulator
+(c) 2023 Chris Torrence
+
+Click the floppy disks to
+choose a disk, or click on a
+drive to load your own.
+
+Press the Power button to start.
+`
 
 const isMac = navigator.platform.startsWith('Mac')
 const key = isMac ? `⌘` : 'Alt+'
 const isTouchDevice = "ontouchstart" in document.documentElement
 
-export let extraHelpText = ''
-if (!isTouchDevice) {
-  extraHelpText = `Apple2TS Emulator
-Chris Torrence
+export let extraHelpText = startupText
 
-Keyboard Shortcuts
- 
-${key}B Boot
-${key}R Reset
-${key}C Copy Screen
-${key}V Paste Text 
-${key}P Pause
-${key}F Speed
-${key}O Open State 
-${key}S Save State 
+if (isTouchDevice) {
+
+  startupText += `\n\nTo show keyboard, touch screen.
+To send special keys, touch the
+arrows, esc, or tab buttons.
+To send Ctrl or Open Apple keys,
+touch button to enable it, then
+touch screen to show keyboard.
+Touch twice to lock it on.`
+
+  extraHelpText += `\nMobile platforms:
+Tap the screen to show the keyboard.
+Press the arrow keys, esc, or tab buttons to send those keys to the emulator.
+To send a control character, press the ctrl button once. Then tap the screen to show the keyboard and press the desired key. The ctrl button will automatically be released.
+To send multiple control characters, press the ctrl button twice to lock it on (indicated by a green dot). Then tap the screen to show the keyboard and press the desired keys. Press the ctrl button again to release it.
+The open apple and closed apple keys behave the same as the ctrl key.`
+
+} else {
+
+  const keyboardShortcutText =
+`${key}C Copy Screen     ${key}O Open State
+${key}V Paste Text      ${key}S Save State
 ${key}← Go Back in Time
-${key}→ Forward in Time`
+${key}→ Forward in Time
 
-  let tmp = `Keyboard Shortcuts
-
-${key}B Boot    ${key}C Copy Screen
-${key}R Reset   ${key}V Paste Text 
-${key}P Pause   ${key}O Open State 
-${key}F Speed   ${key}S Save State 
-${key}← Go Back in Time
-${key}→ Forward in Time`
+Open Apple:   press Left Alt/Option
+Closed Apple: press Right Alt/Option`
+  
   // Replace Unicode ⌘ with my fake MouseText character
+  let tmp = extraHelpText + `\n` + keyboardShortcutText
   tmp = tmp.replaceAll(`⌘`, '\xC3').replaceAll('←', '\xC8').replaceAll('→', '\xD5')
-  text = text.concat(tmp.split('\n'))
+  startupText = tmp
+
+  extraHelpText += `\n` + keyboardShortcutText
 }
 
 const textPage = new Array<string>(24).fill('')
-const n = text.length
+const startupTextSplit = startupText.split('\n')
+const n = startupTextSplit.length
 for (let j = 0; j < n; j++) {
-  textPage[j + 12 - Math.floor(n/2)] = text[j]
+  textPage[j + 12 - Math.floor(n/2)] = startupTextSplit[j]
 }
 textPage[0] = '*'.repeat(40)
 textPage[23] = '*'.repeat(40)

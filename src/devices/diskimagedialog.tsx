@@ -29,10 +29,10 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="floating-dialog flex-column"
-        style={{left: "10%", top: "5%"}}>
+        style={{left: "5%", top: "2%"}}>
         <div style={{ display: 'grid',
           margin: '10px',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px', width: width }}>
+          gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', width: width }}>
           {diskImages.map((disk) => (
             <div key={disk.file} 
               onClick={() => handleListItemClick(disk)}

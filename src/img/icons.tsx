@@ -30,17 +30,8 @@ export const svgLowercase = <svg className="svg-inline--fa" width="30" height="3
 export const svgUppercase = <svg className="svg-inline--fa" width="30" height="30"><svg id="Layer_1" viewBox="0 0 22.5 22.5"><rect x="1.25" y="1.25" width="20" height="20" rx="1" ry="1" style={{fill: 'none', stroke: 'black', strokeWidth: '2.5px', strokeLinecap: 'round', strokeMiterlimit: 10}}/><path d="m18.07,18.05h-2.99l-1.19-3.09h-5.44l-1.12,3.09h-2.91l5.3-13.6h2.9l5.45,13.6Zm-5.06-5.38l-1.87-5.05-1.84,5.05h3.71Z"/></svg></svg>
 
 export const getColorModeSVG = (colorMode: COLOR_MODE) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let svgRect: any
+  let svgRect: React.SVGProps<SVGSVGElement>
   switch (colorMode) {
-    case COLOR_MODE.COLOR:
-      svgRect = <svg>
-        <rect width={5} height={14} fill="#00ff00"/>
-        <rect width={5} height={14} x={5} fill="#ff00ff"/>
-        <rect width={5} height={14} x={10} fill="#007fff"/>
-        <rect width={5} height={14} x={15} fill="#ff7f00"/>
-      </svg>
-      break
     case COLOR_MODE.NOFRINGE:
       svgRect = <rect width={20} height={14} fill="#ffffff"/>
       break
@@ -57,6 +48,12 @@ export const getColorModeSVG = (colorMode: COLOR_MODE) => {
       </svg>
       break;
     default:
+      svgRect = <svg>
+        <rect width={5} height={14} fill="#00ff00"/>
+        <rect width={5} height={14} x={5} fill="#ff00ff"/>
+        <rect width={5} height={14} x={10} fill="#007fff"/>
+        <rect width={5} height={14} x={15} fill="#ff7f00"/>
+      </svg>
       break;
   }
   return svgRect

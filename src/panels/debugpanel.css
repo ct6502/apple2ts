@@ -45,7 +45,7 @@
   line-height: 10pt;
 }
 
-.debugPanel {
+.debug-panel {
   outline: none;
   cursor: text;
   user-select: text;
@@ -53,6 +53,10 @@
   margin-bottom: 1px;
   padding-top: 2px;
   padding-bottom: 2px;
+  white-space: pre;
+  font-family: monospace;
+  font-size: 8pt;
+  line-height: 10pt;
 }
 
 .thinBorder {
@@ -73,10 +77,10 @@
   pointer-events: none;
 }
 
-.highlightLine {
+.highlight-line {
   background-color: black;
   opacity: 30%;
-  width: 200px;
+  width: 95%;
   height: 14px;
   left: 2px;
   margin-top: -14px;

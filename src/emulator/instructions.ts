@@ -308,7 +308,7 @@ const doBit = (value: number) => {
 }
 PCODE('BIT', ADDR_MODE.ZP_REL, 0x24, 2, (vZP) => {doBit(memGet(vZP)); return 3})
 PCODE('BIT', ADDR_MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(memGet(address(vLo, vHi))); return 4})
-PCODE('BIT', ADDR_MODE.IMM, 0x89, 2, (value) => {doBit(value); return 2})
+PCODE('BIT', ADDR_MODE.IMM, 0x89, 2, (value) => {setZero((s6502.Accum & value) === 0); return 2})
 PCODE('BIT', ADDR_MODE.ZP_X, 0x34, 2, (vZP) => {doBit(memGet(oneByteAdd(vZP, s6502.XReg))); return 4})
 PCODE('BIT', ADDR_MODE.ABS_X, 0x3C, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
   doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))})
