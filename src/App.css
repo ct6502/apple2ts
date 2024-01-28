@@ -99,6 +99,7 @@ body {
   cursor: pointer;
   font-weight: 900;
   user-select: none;
+  outline: none;
 }
 
 .pushButton:active {

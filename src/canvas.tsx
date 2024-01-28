@@ -9,7 +9,7 @@ import { passSetRunMode, passKeypress,
   passMouseEvent,
   passPasteText,
   handleGetShowMouse} from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, TEST_GRAPHICS } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { checkGamepad } from './devices/gamepad';
 const screenRatio = 1.33  // (20 * 40) / (24 * 24)
@@ -38,7 +38,9 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   };
 
   getSizes = () => {
-    // return [2 * 560, 2 * 384]
+    if (TEST_GRAPHICS) {
+      return [2 * 560, 2 * 384]
+    }
     width = window.innerWidth - 20;
     height = window.innerHeight - 275;
     // shrink either width or height to preserve aspect ratio

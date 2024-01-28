@@ -75,8 +75,8 @@ export const hgrRGBcolors = [
   loresColors[14], // 13, cut off white = lores light blue-green
   [150, 255, 150], // 14, bright green
   [150, 150, 255], // 15, bright violet
-  [127, 1, 127],   // 16, dark violet
-  [1, 127, 1],     // 17, dark green
-  [1, 75, 127],    // 18, dark blue
-  [127, 75, 1],    // 19, dark orange
+  [1, 127, 1],     // 16, dark green
+  [127, 1, 127],   // 17, dark violet
+  [127, 75, 1],    // 18, dark orange
+  [1, 75, 127],    // 19, dark blue
 ]

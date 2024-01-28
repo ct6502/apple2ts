@@ -237,7 +237,7 @@ const doSnapshot = () => {
   // This is at the current "time" and is just past our recently-saved state.
   iTempState = saveStates.length
   passRequestThumbnail(saveStates[saveStates.length - 1].state6502.s6502.PC)
-  handleGameSetup(true)
+  handleGameSetup(false)
 }
 
 export const doGoBackInTime = () => {

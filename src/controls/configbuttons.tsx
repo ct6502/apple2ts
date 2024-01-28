@@ -28,7 +28,13 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>
     <button className="pushButton"
       title={colorToName(props.colorMode)}
-      onClick={() => props.handleColorChange((props.colorMode + 1) % 5)}>
+      onClick={(e) => {
+        if (e.shiftKey) {
+          props.handleColorChange((props.colorMode + 4) % 5)
+        } else {
+          props.handleColorChange((props.colorMode + 1) % 5)
+        }
+        }}>
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
           {getColorModeSVG(props.colorMode) as ReactNode}
