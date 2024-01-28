@@ -12,7 +12,7 @@ import { passSetRunMode, passKeypress,
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, TEST_GRAPHICS } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { checkGamepad } from './devices/gamepad';
-const screenRatio = 1.33  // (20 * 40) / (24 * 24)
+const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
 
@@ -39,7 +39,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
 
   getSizes = () => {
     if (TEST_GRAPHICS) {
-      return [2 * 560, 2 * 384]
+      return [659, 452]  // This will give an actual size of 560 x 384
     }
     width = window.innerWidth - 20;
     height = window.innerHeight - 275;

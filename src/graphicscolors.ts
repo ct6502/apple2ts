@@ -36,7 +36,7 @@ export const loresAmber: number[][] = loresColors.map(c => {
 
 export const loresWhite: number[][] = loresColors.map(c => {
   const c1 = (c[0] + c[1] + c[2]) / 3
-  return [c1, c1 * (0xF0 / 255), 0]
+  return [c1, c1, c1]
 })
 
 export const TEXT_GREEN = '#39FF14'

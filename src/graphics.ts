@@ -176,8 +176,8 @@ const drawImage = (ctx: CanvasRenderingContext2D,
   width: number, height: number) => {
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
-  const imgHeight = height * (1 - 2 * ymargin)
-  const imgWidth = width - 2 * xmarginPx
+  const imgHeight = Math.floor(height * (1 - 2 * ymargin))
+  const imgWidth = Math.floor(width * (1 - 2 * xmargin))
   ctx.drawImage(hiddenContext.canvas, 0, 0, 560, 384,
     xmarginPx, ymarginPx, imgWidth, imgHeight)
 }
@@ -186,7 +186,7 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE,
   width: number, height: number) => {
   frameCount++
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = true;
   ctx.fillStyle = "#000000";
   ctx.fillRect(xmargin * width, ymargin * height - 2,
     width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 4)
@@ -232,7 +232,8 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
-    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 100, 350, 10)
+    ctx.imageSmoothingEnabled = false;
+    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 4)
   }
 }
 
