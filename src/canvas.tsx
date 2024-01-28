@@ -42,7 +42,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       return [659, 452]  // This will give an actual size of 560 x 384
     }
     width = window.innerWidth - 20;
-    height = window.innerHeight - 275;
+    height = window.innerHeight - 200;
     // shrink either width or height to preserve aspect ratio
     if (width / screenRatio > height) {
       width = height * screenRatio
