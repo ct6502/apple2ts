@@ -1,5 +1,5 @@
 import { doSetRunMode,
-  doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
+  doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
@@ -100,7 +100,7 @@ if (typeof self !== 'undefined') {
         doStepOut()
         break
       case MSG_MAIN.SPEED:
-        doSetNormalSpeed(e.data.payload)
+        doSetSpeedMode(e.data.payload as number)
         break
       case MSG_MAIN.TIME_TRAVEL_STEP:
         if (e.data.payload === "FORWARD") {

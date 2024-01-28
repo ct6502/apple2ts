@@ -58,7 +58,6 @@ type DisplayProps = {
   speed: number,
   myCanvas: React.RefObject<HTMLCanvasElement>,
   hiddenCanvas: React.RefObject<HTMLCanvasElement>,
-  speedCheck: boolean,
   uppercase: boolean,
   useArrowKeysAsJoystick: boolean,
   colorMode: COLOR_MODE,
@@ -71,7 +70,6 @@ type DisplayProps = {
   handleOpenAppleDown: (ctrlKeyMode: number) => void,
   handleClosedAppleDown: (ctrlKeyMode: number) => void,
   handleDebugChange: (enable: boolean) => void,
-  handleSpeedChange: (enable: boolean) => void,
   handleColorChange: (mode: COLOR_MODE) => void,
   handleCopyToClipboard: () => void,
   handleUpperCaseChange: (enable: boolean) => void,
@@ -83,7 +81,8 @@ type DisplayProps = {
 type MachineState = {
   runMode: number,
   s6502: STATE6502,
-  speed: number,
+  cpuSpeed: number,
+  speedMode: number,
   altChar: boolean,
   noDelayMode: boolean,
   textPage: Uint8Array,
@@ -139,7 +138,8 @@ type DisplaySaveState = {
   colorMode: number,
   uppercase: boolean,
   audioEnable: boolean,
-  mockingboardMode: number
+  mockingboardMode: number,
+  speedMode: number,
 }
 
 type EmulatorSaveState = {

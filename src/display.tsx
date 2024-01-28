@@ -1,13 +1,16 @@
 // Chris Torrence, 2022
-import { setDisplay, handleGetRunMode, passSetRunMode,
-  passSetNormalSpeed, handleGetTextPage,
+import {
+  setDisplay, handleGetRunMode, passSetRunMode,
+  passSetSpeedMode, handleGetTextPage,
   passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   passSetGamepads,
-  passKeypress} from "./main2worker"
+  passKeypress,
+  handleSetDiskData
+} from "./main2worker"
 import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG, ARROW } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -21,8 +24,8 @@ import { audioEnable, isAudioEnabled } from "./devices/speaker"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<object,
-  { currentSpeed: number;
-    speedCheck: boolean;
+  {
+    currentSpeed: number;
     uppercase: boolean;
     useArrowKeysAsJoystick: boolean;
     colorMode: COLOR_MODE;
@@ -47,7 +50,6 @@ class DisplayApple2 extends React.Component<object,
       closedAppleKeyMode: 0,
       doDebug: TEST_DEBUG,
       currentSpeed: 1.02,
-      speedCheck: true,
       uppercase: true,
       useArrowKeysAsJoystick: true,
       colorMode: COLOR_MODE.COLOR,
@@ -58,14 +60,74 @@ class DisplayApple2 extends React.Component<object,
 
   updateDisplay = (speed = 0, helptext = '') => {
     if (helptext) {
-      this.setState( {helptext} )
+      this.setState({ helptext })
     } else {
-      this.setState( {currentSpeed: (speed ? speed : this.state.currentSpeed)} )
+      this.setState({ currentSpeed: (speed ? speed : this.state.currentSpeed) })
     }
   }
 
   updatehelptext = (helptext: string) => {
-    this.setState( {helptext} )
+    this.setState({ helptext })
+  }
+
+  // isBool = (params: URLSearchParams, value: string, optional = '') => {
+  //   try {
+  //     const param = params.get(value)
+  //     if (param) {
+  //       value = param.toLowerCase()
+  //       if (optional.length > 0) {
+  //         if (value === optional.toLowerCase()) return true
+  //       }
+  //       return value === 'true' || value === '1'
+  //     }
+  //   } finally {
+  //     // do nothing
+  //   }
+  //   return false
+  // }
+
+  handleInputParams = () => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('speed')?.toLowerCase() === 'fast') {
+      passSetSpeedMode(1)
+    }
+    if (params.get('sound')?.toLowerCase() === 'off') {
+      audioEnable(false)
+    }
+    const colorMode = params.get('color')
+    if (colorMode) {
+      const colors = ['color', 'nofringe', 'green', 'amber', 'white']
+      const mode = colors.indexOf(colorMode)
+      if (mode >= 0) this.handleColorChange(mode as COLOR_MODE)
+    }
+  }
+
+  handleFragment = async () => {
+    const fragment = window.location.hash
+    if (fragment.length < 2) return
+    const url = fragment.substring(1)
+    // Download the file from the fragment URL
+    const response = await fetch(url)
+    if (!response.ok) {
+      console.error(`HTTP error: status ${response.status}`)
+      return
+    }
+    const blob = await response.blob()
+    const buffer = await new Response(blob).arrayBuffer()
+    let urlObj: URL
+    try {
+      urlObj = new URL(url)
+    } catch (e) {
+      console.error(`Invalid URL: ${url}`)
+      return
+    }
+    let name = url
+    const hasSlash = urlObj.pathname.lastIndexOf('/')
+    if (hasSlash >= 0) {
+      name = urlObj.pathname.substring(hasSlash + 1)
+    }
+    handleSetDiskData(0, new Uint8Array(buffer), name)
+    passSetRunMode(RUN_MODE.NEED_BOOT)
   }
 
   componentDidMount() {
@@ -84,25 +146,22 @@ class DisplayApple2 extends React.Component<object,
     // or whether just having the assets within that file is good enough
     // for the preloading.
     // preloadAssets()
-    passSetNormalSpeed(true)
-//    window.addEventListener('beforeunload', (event) => {
-      // Cancel the event as stated by the standard.
-//      event.preventDefault();
-      // Chrome requires returnValue to be set.
-//      event.returnValue = '';
-//    });
-  //    window.addEventListener("resize", handleResize)
+    passSetSpeedMode(0)
+    this.handleInputParams()
+    this.handleFragment()
+    //    window.addEventListener('beforeunload', (event) => {
+    // Cancel the event as stated by the standard.
+    //      event.preventDefault();
+    // Chrome requires returnValue to be set.
+    //      event.returnValue = '';
+    //    });
+    //    window.addEventListener("resize", handleResize)
   }
 
   componentWillUnmount() {
     if (this.timerID) clearInterval(this.timerID);
-//    window.removeEventListener("resize", handleResize)
+    //    window.removeEventListener("resize", handleResize)
   }
-
-  handleSpeedChange = (enable: boolean) => {
-    passSetNormalSpeed(enable)
-    this.setState({ speedCheck: enable });
-  };
 
   handleColorChange = (mode: COLOR_MODE) => {
     this.setState({ colorMode: mode });
@@ -134,8 +193,8 @@ class DisplayApple2 extends React.Component<object,
     }
 
     const gamePads: EmuGamepad[] = [{
-        axes: [this.arrowGamePad[0], this.arrowGamePad[1], 0, 0],
-        buttons: []
+      axes: [this.arrowGamePad[0], this.arrowGamePad[1], 0, 0],
+      buttons: []
     }]
     passSetGamepads(gamePads)
   }
@@ -195,7 +254,7 @@ class DisplayApple2 extends React.Component<object,
     if (e.target?.files?.length) {
       const fileread = new FileReader()
       const restoreStateReader = this.restoreSaveStateFunc
-      fileread.onload = function(e) {
+      fileread.onload = function (e) {
         if (e.target) {
           restoreStateReader(e.target.result as string)
         }
@@ -214,18 +273,18 @@ class DisplayApple2 extends React.Component<object,
 
   doSaveStateCallback = (saveState: EmulatorSaveState) => {
     const d = new Date()
-    let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
-    saveState.emulator = {
-      name: `Apple2TS Emulator`,
-      date: datetime,
-      help: this.state.helptext.split('\n')[0],
-      colorMode: this.state.colorMode,
-      uppercase: this.state.uppercase,
-      audioEnable: isAudioEnabled(),
-      mockingboardMode: getMockingboardMode(),
+    let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString()
+    if (saveState.emulator) {
+      saveState.emulator.name = `Apple2TS Emulator`
+      saveState.emulator.date = datetime
+      saveState.emulator.help = this.state.helptext.split('\n')[0]
+      saveState.emulator.colorMode = this.state.colorMode
+      saveState.emulator.uppercase = this.state.uppercase
+      saveState.emulator.audioEnable = isAudioEnabled()
+      saveState.emulator.mockingboardMode = getMockingboardMode()
     }
     const state = JSON.stringify(saveState, null, 2)
-    const blob = new Blob([state], {type: "text/plain"});
+    const blob = new Blob([state], { type: "text/plain" });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
@@ -236,7 +295,7 @@ class DisplayApple2 extends React.Component<object,
         name = "apple2ts"
       }
     }
-    datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
+    datetime = datetime.replaceAll('-', '').replaceAll(':', '').split('.')[0]
     link.setAttribute('download', `${name}${datetime}.a2ts`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
@@ -258,7 +317,7 @@ class DisplayApple2 extends React.Component<object,
       // The willReadFrequently is a performance optimization hint that does
       // the rendering in software rather than hardware. This is better because
       // we're just reading back pixels from the canvas.
-      const ctx = copyCanvas.getContext('2d', {willReadFrequently: true})
+      const ctx = copyCanvas.getContext('2d', { willReadFrequently: true })
       if (!ctx) return
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(this.hiddenCanvas.current, 0, 0, 560, 384,
@@ -296,7 +355,7 @@ class DisplayApple2 extends React.Component<object,
     } else {
       try {
         this.copyCanvas((blob) => {
-          navigator.clipboard.write([new ClipboardItem({'image/png': blob,})])
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob, })])
         })
       }
       catch (error) {
@@ -311,7 +370,6 @@ class DisplayApple2 extends React.Component<object,
       speed: this.state.currentSpeed,
       myCanvas: this.myCanvas,
       hiddenCanvas: this.hiddenCanvas,
-      speedCheck: this.state.speedCheck,
       uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
@@ -324,7 +382,6 @@ class DisplayApple2 extends React.Component<object,
       handleOpenAppleDown: this.handleOpenAppleDown,
       handleClosedAppleDown: this.handleClosedAppleDown,
       handleDebugChange: this.handleDebugChange,
-      handleSpeedChange: this.handleSpeedChange,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
@@ -340,21 +397,21 @@ class DisplayApple2 extends React.Component<object,
       <div>
         <span className="flex-row">
           <span className="flex-column">
-            <Apple2Canvas {...props}/>
-            <div className="flex-row-space-between wrap" style={{width: width, display: width ? '' : 'none'}}>
-                <ControlPanel {...props}/>
-                <DiskInterface />
-                <ImageWriter />
+            <Apple2Canvas {...props} />
+            <div className="flex-row-space-between wrap" style={{ width: width, display: width ? '' : 'none' }}>
+              <ControlPanel {...props} />
+              <DiskInterface />
+              <ImageWriter />
             </div>
             <span className="defaultFont statusItem">
               <span>{props.speed} MHz</span>
-              <br/>
+              <br />
               <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
                 <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
             </span>
           </span>
           <span className="sidePanels">
-            {props.doDebug ? <DebugPanel/> :
+            {props.doDebug ? <DebugPanel /> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}
           </span>
@@ -364,7 +421,7 @@ class DisplayApple2 extends React.Component<object,
           accept=".a2ts"
           ref={this.hiddenFileOpen}
           onChange={this.handleRestoreState}
-          style={{display: 'none'}}
+          style={{ display: 'none' }}
         />
       </div>
     );

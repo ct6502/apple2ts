@@ -250,3 +250,7 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
 
   return (crc ^ (-1)) >>> 0;
 };
+
+export const lockedKeyStyle = (mode: number) => {
+  return `pushButton key-button ${(['', 'button-active', 'button-locked'])[mode]}`
+}

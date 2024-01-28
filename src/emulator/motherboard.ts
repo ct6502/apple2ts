@@ -24,8 +24,8 @@ import { getDisassembly, getInstruction, verifyAddressWithinDisassembly } from "
 // let timerID: any | number = 0
 let startTime = 0
 let prevTime = 0
-let normalSpeed = true
-let speed = 0
+let speedMode = 0
+let cpuSpeed = 0
 export let isDebugging = TEST_DEBUG
 let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
@@ -86,8 +86,22 @@ const setApple2State = (newState: Apple2SaveState) => {
   handleGameSetup(true)
 }
 
+const getDisplaySaveState = () => {
+  const state: DisplaySaveState = {
+    name: '',
+    date: '',
+    help: '',
+    colorMode: 0,
+    uppercase: false,
+    audioEnable: false,
+    mockingboardMode: 0,
+    speedMode: speedMode,
+  }
+  return state
+}
+
 export const doGetSaveState = (full = false): EmulatorSaveState => {
-  const state = { emulator: null,
+  const state = { emulator: getDisplaySaveState(),
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
     thumbnail: '',
@@ -98,12 +112,8 @@ export const doGetSaveState = (full = false): EmulatorSaveState => {
 }
 
 export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
-  const state = { emulator: null,
-    state6502: getApple2State(),
-    driveState: getDriveSaveState(true),
-    thumbnail: '',
-    snapshots: saveStates
-  }
+  const state = doGetSaveState(true)
+  state.snapshots = saveStates
   return state
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
 }
@@ -121,6 +131,9 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
   setApple2State(sState.state6502)
   restoreDriveSaveState(sState.driveState)
   disassemblyAddr = s6502.PC
+  if (sState.emulator?.speedMode !== undefined) {
+    speedMode = sState.emulator?.speedMode
+  }
   if (eraseSnapshots) {
     saveStates.length = 0
     iTempState = 0
@@ -197,9 +210,9 @@ const doReset = () => {
   resetMachine()
 }
 
-export const doSetNormalSpeed = (normal: boolean) => {
-  normalSpeed = normal
-  refreshTime = normalSpeed ? 16.6881 : 0
+export const doSetSpeedMode = (speedModeIn: number) => {
+  speedMode = speedModeIn
+  refreshTime = (speedMode > 0) ? 0 : 16.6881
   resetRefreshCounter()
 }
 
@@ -363,8 +376,8 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   }
   updateExternalMachineState()
   resetRefreshCounter()
-  if (speed === 0) {
-    speed = 1
+  if (cpuSpeed === 0) {
+    cpuSpeed = 1
     doAdvance6502Timer()
   }
 }
@@ -411,7 +424,8 @@ const updateExternalMachineState = () => {
   const state: MachineState = {
     runMode: cpuRunMode,
     s6502: s6502,
-    speed: speed,
+    cpuSpeed: cpuSpeed,
+    speedMode: speedMode,
     altChar: SWITCHES.ALTCHARSET.isSet,
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
     textPage: getTextPage(),
@@ -461,7 +475,7 @@ const doAdvance6502 = () => {
     }
   }
   iRefresh++
-  speed = Math.round((iRefresh * 1703) / (performance.now() - startTime)) / 100
+  cpuSpeed = Math.round((iRefresh * 1703) / (performance.now() - startTime)) / 100
   if (iRefresh % 2) {
     handleGamepads()
     updateExternalMachineState()

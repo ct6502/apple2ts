@@ -63,8 +63,8 @@ export const passSetDisassembleAddress = (addr: number) => {
   }
 }
 
-export const passSetNormalSpeed = (normal: boolean) => {
-  doPostMessage(MSG_MAIN.SPEED, normal)
+export const passSetSpeedMode = (mode: number) => {
+  doPostMessage(MSG_MAIN.SPEED, mode)
 }
 
 export const passGoForwardInTime = () => {
@@ -141,7 +141,8 @@ const passThumbnailImage = (thumbnail: string) => {
 let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
-  speed: 0,
+  cpuSpeed: 0,
+  speedMode: 0,
   altChar: true,
   noDelayMode: false,
   textPage: new Uint8Array(1).fill(32),
@@ -162,7 +163,8 @@ const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_WORKER) {
     case MSG_WORKER.MACHINE_STATE: {
       const newState = e.data.payload as MachineState
-      const cpuStateChanged = machineState.speed !== newState.speed ||
+      const cpuStateChanged = machineState.cpuSpeed !== newState.cpuSpeed ||
+        machineState.cpuSpeed !== newState.cpuSpeed ||
         machineState.runMode !== newState.runMode ||
         machineState.debugDump !== newState.debugDump ||
         machineState.disassembly !== newState.disassembly ||
@@ -175,7 +177,7 @@ const doOnMessage = (e: MessageEvent) => {
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
       machineState = newState
-      if (cpuStateChanged) updateDisplay(machineState.speed)
+      if (cpuStateChanged) updateDisplay(machineState.cpuSpeed)
       break
     }
     case MSG_WORKER.SAVE_STATE: {
@@ -250,6 +252,10 @@ export const handleGetShowMouse = () => {
 
 export const handleGetRunMode = () => {
   return machineState.runMode
+}
+
+export const handleGetSpeedMode = () => {
+  return machineState.speedMode
 }
 
 export const handleGetState6502 = () => {
