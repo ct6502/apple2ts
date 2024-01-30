@@ -88,6 +88,9 @@ class DisplayApple2 extends React.Component<object,
 
   handleInputParams = () => {
     const params = new URLSearchParams(window.location.search)
+    if (params.get('capslock')?.toLowerCase() === 'off') {
+      this.handleUpperCaseChange(false)
+    }
     if (params.get('speed')?.toLowerCase() === 'fast') {
       passSetSpeedMode(1)
     }
@@ -107,27 +110,26 @@ class DisplayApple2 extends React.Component<object,
     if (fragment.length < 2) return
     const url = fragment.substring(1)
     // Download the file from the fragment URL
-    const response = await fetch(url)
-    if (!response.ok) {
-      console.error(`HTTP error: status ${response.status}`)
-      return
-    }
-    const blob = await response.blob()
-    const buffer = await new Response(blob).arrayBuffer()
-    let urlObj: URL
     try {
-      urlObj = new URL(url)
+      const proxy = ''
+      const response = await fetch(proxy + url)
+      if (!response.ok) {
+        console.error(`HTTP error: status ${response.status}`)
+        return
+      }
+      const blob = await response.blob()
+      const buffer = await new Response(blob).arrayBuffer()
+      const urlObj = new URL(url)
+      let name = url
+      const hasSlash = urlObj.pathname.lastIndexOf('/')
+      if (hasSlash >= 0) {
+        name = urlObj.pathname.substring(hasSlash + 1)
+      }
+      handleSetDiskData(0, new Uint8Array(buffer), name)
+      passSetRunMode(RUN_MODE.NEED_BOOT)
     } catch (e) {
-      console.error(`Invalid URL: ${url}`)
-      return
+      console.error(`Error fetching URL: ${url}`)
     }
-    let name = url
-    const hasSlash = urlObj.pathname.lastIndexOf('/')
-    if (hasSlash >= 0) {
-      name = urlObj.pathname.substring(hasSlash + 1)
-    }
-    handleSetDiskData(0, new Uint8Array(buffer), name)
-    passSetRunMode(RUN_MODE.NEED_BOOT)
   }
 
   componentDidMount() {
