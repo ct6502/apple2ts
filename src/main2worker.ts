@@ -96,6 +96,8 @@ export const passMouseEvent = (event: MouseEventSimple) => {
 }
 
 export const passPasteText = (text: string) => {
+  text = text.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
+  text = text.replaceAll('\n','\r')  // LFs to CRs
   doPostMessage(MSG_MAIN.PASTE_TEXT, text)
 }
 

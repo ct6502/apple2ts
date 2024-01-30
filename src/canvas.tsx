@@ -1,14 +1,16 @@
 import React, { KeyboardEvent } from 'react';
 import "./canvas.css"
-import { passSetRunMode, passKeypress,
+import {
+  passSetRunMode, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
-  updateDisplay, 
+  updateDisplay,
   passGoBackInTime,
   passGoForwardInTime,
   setStartTextPage,
   passMouseEvent,
   passPasteText,
-  handleGetShowMouse} from "./main2worker"
+  handleGetShowMouse
+} from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, TEST_GRAPHICS } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { checkGamepad } from './devices/gamepad';
@@ -16,7 +18,7 @@ const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
 
-type keyEvent = KeyboardEvent<HTMLTextAreaElement>|KeyboardEvent<HTMLCanvasElement>
+type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
 class Apple2Canvas extends React.Component<DisplayProps> {
   keyHandled = false
@@ -27,10 +29,8 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById('apple2canvas')
     if (document.activeElement === canvas && e.clipboardData) {
-      let data = e.clipboardData.getData("text")
+      const data = e.clipboardData.getData("text")
       if (data !== "") {
-        data = data.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
-        data = data.replaceAll('\n','\r')  // LFs to CRs
         passPasteText(data)
       }
       e.preventDefault()
@@ -88,7 +88,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   }
 
   isClosedAppleDown = (e: keyEvent) => {
-    return e.code ==='AltRight'
+    return e.code === 'AltRight'
   }
 
   isClosedAppleUp = (e: keyEvent) => {
@@ -146,7 +146,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     if (this.props.closedAppleKeyMode == 1) {
       this.props.handleClosedAppleDown(0)
     }
-};
+  };
 
   handleKeyUp = (e: keyEvent) => {
     if (this.isOpenAppleUp(e)) {
@@ -172,7 +172,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
         return 0.0
       else if (xx > (ww - offset))
         return 1.0
-      xx = (xx-offset) / (ww-(2*offset))
+      xx = (xx - offset) / (ww - (2 * offset))
       return Math.min(Math.max(xx, -1), 1)
     }
     let x = 0
@@ -182,7 +182,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       x = scale(event.clientX - rect.left, rect.width)
       y = scale(event.clientY - rect.top, rect.height)
     }
-    return {x: x, y: y, buttons: -1}
+    return { x: x, y: y, buttons: -1 }
   }
 
   handleMouseMove = (event: MouseEvent) => {
@@ -232,11 +232,11 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     if (this.props.hiddenCanvas.current) {
       this.hiddenContext = this.props.hiddenCanvas.current.getContext('2d')
     }
-    window.addEventListener("copy", () => {this.props.handleCopyToClipboard()})
-    const paste = (e: object) => {this.pasteHandler(e as ClipboardEvent)}
+    window.addEventListener("copy", () => { this.props.handleCopyToClipboard() })
+    const paste = (e: object) => { this.pasteHandler(e as ClipboardEvent) }
     window.addEventListener("paste", paste)
     window.addEventListener("resize", this.handleResize)
-    window.setInterval(() => {checkGamepad()}, 34)
+    window.setInterval(() => { checkGamepad() }, 34)
     // To prevent flicker, wait until font is downloaded before rendering startup text.
     const setStartTextAfterFontLoad = () => {
       if (document.fonts.check("12px PrintChar21")) {
@@ -265,20 +265,20 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     // Make keyboard events work on touch devices by using a hidden textarea.
     const isTouchDevice = "ontouchstart" in document.documentElement
     const txt = isTouchDevice ?
-        <textarea className="hiddenTextarea" hidden={false} ref={this.myText}
-          onKeyDown={this.handleKeyDown}
-          onKeyUp={this.handleKeyUp}
-        /> : <span></span>
+      <textarea className="hiddenTextarea" hidden={false} ref={this.myText}
+        onKeyDown={this.handleKeyDown}
+        onKeyUp={this.handleKeyUp}
+      /> : <span></span>
 
     return <span className="canvasText">
       <canvas ref={this.props.myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{cursor: handleGetShowMouse() ? "auto" : "none"}}
+        style={{ cursor: handleGetShowMouse() ? "auto" : "none" }}
         width={width} height={height}
         tabIndex={0}
-        onKeyDown={isTouchDevice ? ()=>{null} : this.handleKeyDown}
-        onKeyUp={isTouchDevice ? ()=>{null} : this.handleKeyUp}
+        onKeyDown={isTouchDevice ? () => { null } : this.handleKeyDown}
+        onKeyUp={isTouchDevice ? () => { null } : this.handleKeyUp}
         onMouseEnter={this.setFocus}
         onMouseDown={this.setFocus}
       />

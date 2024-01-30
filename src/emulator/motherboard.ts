@@ -20,6 +20,7 @@ import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
 import { getDisassembly, getInstruction, verifyAddressWithinDisassembly } from "./utility/disassemble"
+import { sendPastedText } from "./devices/keyboard"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -382,6 +383,20 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   }
 }
 
+const doAutoboot = (fn: () => void) => {
+  if (cpuRunMode === RUN_MODE.IDLE) {
+    doSetRunMode(RUN_MODE.NEED_BOOT)
+    // Wait a bit for the cpu to boot and then do reset.
+    setTimeout(() => {
+      doSetRunMode(RUN_MODE.NEED_RESET)
+      // After giving the reset some time, load the binary block.
+      setTimeout(() => { fn() }, 200)
+    }, 200)
+  } else {
+    fn()
+  }
+}
+
 export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) => {
   const loadBlock = () => {
     setMemoryBlock(addr, data)
@@ -389,19 +404,14 @@ export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) =
       setPC(addr)
     }
   }
-  if (cpuRunMode === RUN_MODE.IDLE) {
-    doSetRunMode(RUN_MODE.NEED_BOOT)
-    // Wait a bit for the cpu to boot and then do reset.
-    setTimeout(() => {
-      doSetRunMode(RUN_MODE.NEED_RESET)
-      // After giving the reset some time, load the binary block.
-      setTimeout(() => {
-        loadBlock()
-      }, 200)
-    }, 200)
-  } else {
-    loadBlock()
+  doAutoboot(loadBlock)
+}
+
+export const doSetPastedText = (text: string) => {
+  const doPaste = () => {
+    sendPastedText(text)
   }
+  doAutoboot(doPaste)
 }
 
 const getDebugDump = () => {

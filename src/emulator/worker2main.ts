@@ -1,7 +1,7 @@
 import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -128,6 +128,7 @@ if (typeof self !== 'undefined') {
         MouseCardEvent(e.data.payload)
         break
       case MSG_MAIN.PASTE_TEXT:
+        doSetPastedText(e.data.payload as string)
         sendPastedText(e.data.payload)
         break
       case MSG_MAIN.APPLE_PRESS:
