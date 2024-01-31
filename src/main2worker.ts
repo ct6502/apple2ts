@@ -8,6 +8,7 @@ import DisplayApple2 from "./display"
 import { Breakpoints } from "./panels/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { receiveCommData } from "./devices/iwii"
+import { iconData, iconKey, iconName } from "./img/icons"
 
 let worker: Worker | null = null
 
@@ -362,31 +363,41 @@ export const handleGetDriveProps = (drive: number) => {
   return driveProps[drive]
 }
 
-// async function fetchData(url: string): Promise<Uint8Array> {
-//   let result: Uint8Array
-//   try {
-//     const response = await fetch(url, {mode:'cors'});
-//     const buffer = await response.arrayBuffer();
-//     const uint8Array = new Uint8Array(buffer);
-//     result = uint8Array;
-//   } catch (error) {
-//     console.error('Error:', error);
-//     result = new Uint8Array()
-//   }
-//   return result
-// }
+export const handleSetDiskFromURL = async (url: string) => {
+  // Download the file from the fragment URL
+  try {
+    // Ask CT6502 for why we need to use this favicon header
+    const favicon: { [key: string]: string } = {};
+    favicon[iconKey()] = iconData()
+    const response = await fetch(iconName() + url, { headers: favicon })
+    if (!response.ok) {
+      console.error(`HTTP error: status ${response.status}`)
+      return
+    }
+    const blob = await response.blob()
+    const buffer = await new Response(blob).arrayBuffer()
+    const urlObj = new URL(url)
+    let name = url
+    const hasSlash = urlObj.pathname.lastIndexOf('/')
+    if (hasSlash >= 0) {
+      name = urlObj.pathname.substring(hasSlash + 1)
+    }
+    const props = driveProps[0]
+    props.drive = 0
+    props.filename = name
+    props.diskData = new Uint8Array(buffer)
+    doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
+    passSetRunMode(RUN_MODE.NEED_BOOT)
+  } catch (e) {
+    console.error(`Error fetching URL: ${url}`)
+  }
+}
 
 export const handleSetDiskData = (drive: number,
   data: Uint8Array, filename: string) => {
   const props = driveProps[drive]
   props.drive = drive
   props.filename = filename
-  // const url = 'https://archive.org/download/TotalReplay/Total%20Replay%20v5.0-beta.3.hdv'
-  // fetchData(url)
-  // .then(data => {
-  //   props.diskData = data
-  //   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
-  // })
   props.diskData = data
   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }

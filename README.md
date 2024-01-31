@@ -7,6 +7,8 @@ Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significan
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
+[![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
+
 ## Available NPM Scripts
 
 In the project directory, you can run:

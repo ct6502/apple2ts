@@ -9,7 +9,7 @@ import {
   passAppleCommandKeyRelease,
   passSetGamepads,
   passKeypress,
-  handleSetDiskData
+  handleSetDiskFromURL
 } from "./main2worker"
 import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG, ARROW } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
@@ -70,22 +70,6 @@ class DisplayApple2 extends React.Component<object,
     this.setState({ helptext })
   }
 
-  // isBool = (params: URLSearchParams, value: string, optional = '') => {
-  //   try {
-  //     const param = params.get(value)
-  //     if (param) {
-  //       value = param.toLowerCase()
-  //       if (optional.length > 0) {
-  //         if (value === optional.toLowerCase()) return true
-  //       }
-  //       return value === 'true' || value === '1'
-  //     }
-  //   } finally {
-  //     // do nothing
-  //   }
-  //   return false
-  // }
-
   handleInputParams = () => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('capslock')?.toLowerCase() === 'off') {
@@ -105,31 +89,15 @@ class DisplayApple2 extends React.Component<object,
     }
   }
 
+  // Examples:
+  // https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.3-en_800k.2mg
+  // https://apple2ts.com/#https://archive.org/download/TotalReplay/Total%20Replay%20v5.0.1.hdv
+  // https://apple2ts.com/#https://archive.org/download/wozaday_Davids_Midnight_Magic/00playable.woz
   handleFragment = async () => {
     const fragment = window.location.hash
     if (fragment.length < 2) return
     const url = fragment.substring(1)
-    // Download the file from the fragment URL
-    try {
-      const proxy = ''
-      const response = await fetch(proxy + url)
-      if (!response.ok) {
-        console.error(`HTTP error: status ${response.status}`)
-        return
-      }
-      const blob = await response.blob()
-      const buffer = await new Response(blob).arrayBuffer()
-      const urlObj = new URL(url)
-      let name = url
-      const hasSlash = urlObj.pathname.lastIndexOf('/')
-      if (hasSlash >= 0) {
-        name = urlObj.pathname.substring(hasSlash + 1)
-      }
-      handleSetDiskData(0, new Uint8Array(buffer), name)
-      passSetRunMode(RUN_MODE.NEED_BOOT)
-    } catch (e) {
-      console.error(`Error fetching URL: ${url}`)
-    }
+    handleSetDiskFromURL(url)
   }
 
   componentDidMount() {

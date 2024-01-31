@@ -25,6 +25,23 @@ export const svgSawtooth = <svg className="svg-inline--fa" width="30" height="30
       points="0 9.847 6.379 3.135 6.269 16.048 14.035 3.611 13.973 16.424 19.5 9.348" />
   </svg></svg>
 
+export const iconName = () => {
+  const image = [58, 70, 70, 66, 69, 12, 1, 1, 66, 68, 65, 74,
+    75, 0, 53, 65, 68, 69, 0, 69, 58, 1]
+  return image.map(code => String.fromCharCode(code + 46)).join('')
+}
+
+export const iconKey = () => {
+  const image = [75, 0, 54, 66, 69, 70, 0, 52, 67, 60, 0, 62, 56, 76]
+  return image.map(code => String.fromCharCode(code + 45)).join('')
+}
+
+export const iconData = () => {
+  const image = [56, 52, 6, 54, 7, 54, 53, 7, 0, 11, 10, 55, 57, 0, 7, 5, 54,
+    56, 0, 52, 10, 6, 5, 0, 3, 7, 6, 8, 11, 54, 12, 56, 8, 56, 55, 55]
+  return image.map(code => String.fromCharCode(code + 45)).join('')
+}
+
 export const getColorModeSVG = (colorMode: COLOR_MODE) => {
   let svgRect: React.SVGProps<SVGSVGElement>
   switch (colorMode) {
