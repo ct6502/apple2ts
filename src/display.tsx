@@ -17,7 +17,7 @@ import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
 import React from 'react';
 import HelpPanel from "./panels/helppanel"
-import DebugPanel from "./panels/debugpanel"
+import DebugSection from "./panels/debugsection"
 import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
 import ImageWriter from "./devices/imagewriter"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
@@ -381,7 +381,7 @@ class DisplayApple2 extends React.Component<object,
             </span>
           </span>
           <span className="sidePanels">
-            {props.doDebug ? <DebugPanel /> :
+            {props.doDebug ? <DebugSection /> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}
           </span>

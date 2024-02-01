@@ -1,22 +1,22 @@
 import React from "react";
-import "./debugpanel.css"
+import "./debugsection.css"
 import DisassemblyPanel from "./disassemblypanel";
-import DebugInfoPanel from "./debuginfopanel";
 import TimeTravelPanel from "./timetravelpanel";
+import MachinePane from "./machinepane";
 
-class DebugPanel extends React.Component<object, object>
+class DebugSection extends React.Component<object, object>
 {
   render() {
     return (
       <div className="flex-row">
-        <DisassemblyPanel/>
+        <DisassemblyPanel />
         <span className="flex-column">
-          <DebugInfoPanel/>
-          <TimeTravelPanel/>
+          <MachinePane />
+          <TimeTravelPanel />
         </span>
       </div>
     )
   }
 }
 
-export default DebugPanel;
+export default DebugSection;

@@ -1,9 +1,10 @@
 import React from "react";
-import "./debugpanel.css"
-import { handleGetTimeTravelThumbnails,
-  handleGetTempStateIndex, 
+import {
+  handleGetTimeTravelThumbnails,
+  handleGetTempStateIndex,
   passTimeTravelIndex,
-  passSetRunMode} from "../main2worker";
+  passSetRunMode
+} from "../main2worker";
 import { RUN_MODE, toHex } from "../emulator/utility/utility";
 const clock = 1020488
 
@@ -25,7 +26,7 @@ class TimeTravelPanel extends React.Component<object, object>
     const thumbnails = handleGetTimeTravelThumbnails()
     let thumbnailText = ''
     const thumbImage = (iTempState >= 0 && iTempState < thumbnails.length) ?
-      <img src={`${thumbnails[iTempState].thumbnail}`}/> : <></>
+      <img src={`${thumbnails[iTempState].thumbnail}`} /> : <></>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = this.convertTime(thumbnails[i].s6502.cycleCount)
       thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`
@@ -48,7 +49,7 @@ class TimeTravelPanel extends React.Component<object, object>
       }, 50)
     }
     this.prevThumbnails = thumbnailText
-    return {iTempState, thumbnailStrings: thumbnailText.split('\n'), thumbImage}
+    return { iTempState, thumbnailStrings: thumbnailText.split('\n'), thumbImage }
   }
 
   selectStateLine = (index: number) => {
@@ -75,7 +76,7 @@ class TimeTravelPanel extends React.Component<object, object>
 
   render() {
     let timeTravelThumbnails = <></>
-    const {iTempState, thumbnailStrings, thumbImage} = this.getTimeTravelThumbnails()
+    const { iTempState, thumbnailStrings, thumbImage } = this.getTimeTravelThumbnails()
     if (thumbnailStrings.length > 1) {
       timeTravelThumbnails = <>{thumbnailStrings.map((line, index) => (
         <div key={index}
@@ -85,7 +86,7 @@ class TimeTravelPanel extends React.Component<object, object>
           {line}
           {(index === iTempState) && <div className="highlight-line"></div>}
         </div>
-        ))}
+      ))}
       </>
     }
     // Need to set tabIndex={-1} on the div to get onKeyDown to work.

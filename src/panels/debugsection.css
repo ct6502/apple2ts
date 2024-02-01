@@ -228,3 +228,20 @@
 .flush-left {
   padding-left: 2px;
 }
+
+.tab-button {
+  background-color: #aba98f;
+  border: 1px solid #000;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  margin-left: 0px;
+  margin-right: 0px;
+  color: #555;
+  width: 120px;
+}
+
+.tab-active {
+  background: none;
+  border-bottom: none;
+  color: #000;
+}

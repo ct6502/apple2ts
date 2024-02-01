@@ -1,5 +1,4 @@
 import React from "react";
-import "./debugpanel.css"
 import { handleGetRunMode, handleGetState6502, passSetState6502 } from "../main2worker";
 import { RUN_MODE } from "../emulator/utility/utility";
 
@@ -31,8 +30,8 @@ class State6502Controls extends React.Component<object, object>
     if (e.target.id === 'NMI') {
       s6502.flagNMI = newvalue
     } else {
-    s6502.PStatus = newvalue ? s6502.PStatus | (1 << bitField) :
-      s6502.PStatus & ~(1 << bitField)
+      s6502.PStatus = newvalue ? s6502.PStatus | (1 << bitField) :
+        s6502.PStatus & ~(1 << bitField)
     }
     passSetState6502(s6502)
   }
@@ -48,7 +47,7 @@ class State6502Controls extends React.Component<object, object>
           value={strVal}
           onChange={(e) => this.handleTextFieldChange(e, key)}
         />
-    </div>
+      </div>
     )
   }
 
@@ -69,7 +68,7 @@ class State6502Controls extends React.Component<object, object>
     const runMode = handleGetRunMode()
     const s6502 = handleGetState6502()
     return (
-      <div className="flex-column">
+      <div className="flex-column" style={{ marginTop: "10px" }}>
         <div className="flex-row-space-between">
           {this.createTextField('PC', 'PC', s6502.PC, runMode)}
           {this.createTextField('A', 'Accum', s6502.Accum, runMode)}

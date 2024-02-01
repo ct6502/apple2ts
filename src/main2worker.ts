@@ -152,6 +152,7 @@ let machineState: MachineState = {
   lores: new Uint8Array(),
   hires: new Uint8Array(),
   debugDump: '',
+  memoryDump: new Uint8Array(),
   disassembly: '',
   nextInstruction: '',
   button0: false,
@@ -293,6 +294,10 @@ export const handleGetAltCharSet = () => {
 
 export const handleGetDebugDump = () => {
   return machineState.debugDump
+}
+
+export const handleGetMemoryDump = () => {
+  return machineState.memoryDump
 }
 
 export const handleGetDisassembly = () => {

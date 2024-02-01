@@ -89,6 +89,7 @@ type MachineState = {
   lores: Uint8Array,
   hires: Uint8Array,
   debugDump: string,
+  memoryDump: Uint8Array,
   disassembly: string,
   nextInstruction: string,
   button0: boolean,

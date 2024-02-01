@@ -425,6 +425,13 @@ const getDebugDump = () => {
   return status.join('\n')
 }
 
+const getMemoryDump = () => {
+  if (isDebugging && cpuRunMode === RUN_MODE.PAUSED) {
+    return memory
+  }
+  return new Uint8Array()
+}
+
 const doGetDisassembly = () => {
   if (cpuRunMode === RUN_MODE.RUNNING) return ''
   return getDisassembly(disassemblyAddr >= 0 ? disassemblyAddr : s6502.PC)
@@ -442,6 +449,7 @@ const updateExternalMachineState = () => {
     lores: getTextPage(true),
     hires: getHires(),
     debugDump: getDebugDump(),
+    memoryDump: getMemoryDump(),
     disassembly: doGetDisassembly(),
     nextInstruction: getInstruction(s6502.PC),
     button0: SWITCHES.PB0.isSet,
