@@ -19,7 +19,7 @@ const getFormattedMemory = (memory: Uint8Array) => {
 
 const getMemory = () => {
   const memory = handleGetMemoryDump()
-  if (memory.length < 1) return 'Memory not available'
+  if (memory.length < 1) return '\n\n\n      *** Pause emulator to view memory ***'
   return getFormattedMemory(memory)
 }
 

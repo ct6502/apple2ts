@@ -146,6 +146,7 @@ let machineState: MachineState = {
   s6502: default6502State(),
   cpuSpeed: 0,
   speedMode: 0,
+  isDebugging: false,
   altChar: true,
   noDelayMode: false,
   textPage: new Uint8Array(1).fill(32),
@@ -170,6 +171,8 @@ const doOnMessage = (e: MessageEvent) => {
       const cpuStateChanged = machineState.cpuSpeed !== newState.cpuSpeed ||
         machineState.cpuSpeed !== newState.cpuSpeed ||
         machineState.runMode !== newState.runMode ||
+        machineState.speedMode !== newState.speedMode ||
+        machineState.isDebugging !== newState.isDebugging ||
         machineState.debugDump !== newState.debugDump ||
         machineState.disassembly !== newState.disassembly ||
         machineState.nextInstruction !== newState.nextInstruction ||
@@ -260,6 +263,10 @@ export const handleGetRunMode = () => {
 
 export const handleGetSpeedMode = () => {
   return machineState.speedMode
+}
+
+export const handleGetIsDebugging = () => {
+  return machineState.isDebugging
 }
 
 export const handleGetState6502 = () => {

@@ -1,6 +1,8 @@
 import { RUN_MODE } from "../emulator/utility/utility";
-import { passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot } from "../main2worker"
+import {
+  passGoBackInTime, passGoForwardInTime,
+  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, passSetDebug
+} from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBug,
@@ -25,36 +27,36 @@ const DebugButtons = (props: DisplayProps) => {
       }}
       disabled={props.runMode === RUN_MODE.IDLE}>
       {props.runMode === RUN_MODE.PAUSED ?
-      <FontAwesomeIcon icon={faPlay}/> :
-      <FontAwesomeIcon icon={faPause}/>}
+        <FontAwesomeIcon icon={faPlay} /> :
+        <FontAwesomeIcon icon={faPause} />}
     </button>
     <button className="pushButton"
       title={"Go Back in Time"}
       onClick={passGoBackInTime}
       disabled={notStarted || !handleCanGoBackward()}>
-      <FontAwesomeIcon icon={faFastBackward}/>
+      <FontAwesomeIcon icon={faFastBackward} />
     </button>
     <button className="pushButton"
       title={"Take a Snapshot"}
       onClick={passTimeTravelSnapshot}
       disabled={notStarted}>
-      <FontAwesomeIcon icon={faCamera}/>
+      <FontAwesomeIcon icon={faCamera} />
     </button>
     <button className="pushButton"
       title={"Go Forward in Time"}
       onClick={passGoForwardInTime}
       disabled={notStarted || !handleCanGoForward()}>
-      <FontAwesomeIcon icon={faFastForward}/>
+      <FontAwesomeIcon icon={faFastForward} />
     </button>
     <button className="pushButton"
       title={"Save State with Snapshots"}
       onClick={() => props.handleFileSave(true)}
       disabled={notStarted}>
-      <img src={multiSave} alt="Save Snapshots" width={23} height={23}/>
+      <img src={multiSave} alt="Save Snapshots" width={23} height={23} />
     </button>
     <button className="pushButton" title="Toggle Debug"
-      onClick={() => props.handleDebugChange(!props.doDebug)}>
-      <FontAwesomeIcon icon={props.doDebug ? faBug : faBugSlash}/>
+      onClick={() => passSetDebug(!handleGetIsDebugging())}>
+      <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
     </button>
   </span>
 }

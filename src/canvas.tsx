@@ -9,12 +9,11 @@ import {
   setStartTextPage,
   passMouseEvent,
   passPasteText,
-  handleGetShowMouse
+  handleGetShowMouse,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, TEST_GRAPHICS } from "./emulator/utility/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
 import { processDisplay } from './graphics';
 import { checkGamepad } from './devices/gamepad';
-const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
 let width = 800
 let height = 600
 
@@ -36,23 +35,6 @@ class Apple2Canvas extends React.Component<DisplayProps> {
       e.preventDefault()
     }
   };
-
-  getSizes = () => {
-    if (TEST_GRAPHICS) {
-      return [659, 452]  // This will give an actual size of 560 x 384
-    }
-    width = window.innerWidth - 20;
-    height = window.innerHeight - 200;
-    // shrink either width or height to preserve aspect ratio
-    if (width / screenRatio > height) {
-      width = height * screenRatio
-    } else {
-      height = width / screenRatio
-    }
-    width = Math.floor(width)
-    height = Math.floor(height)
-    return [width, height]
-  }
 
   metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
@@ -205,13 +187,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
 
   handleResize = () => {
     if (this.props.myCanvas.current) {
-      const context = this.props.myCanvas.current.getContext('2d')
-      if (context) {
-        [width, height] = this.getSizes()
-        context.canvas.width = width;
-        context.canvas.height = height;
-        updateDisplay()
-      }
+      updateDisplay()
     }
   }
 
@@ -260,7 +236,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
   }
 
   render() {
-    [width, height] = this.getSizes()
+    [width, height] = this.props.canvasSize
 
     // Make keyboard events work on touch devices by using a hidden textarea.
     const isTouchDevice = "ontouchstart" in document.documentElement

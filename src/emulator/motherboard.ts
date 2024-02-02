@@ -219,6 +219,7 @@ export const doSetSpeedMode = (speedModeIn: number) => {
 
 export const doSetIsDebugging = (enable: boolean) => {
   isDebugging = enable
+  updateExternalMachineState()
 }
 
 export const doSetDisassembleAddress = (addr: number) => {
@@ -443,6 +444,7 @@ const updateExternalMachineState = () => {
     s6502: s6502,
     cpuSpeed: cpuSpeed,
     speedMode: speedMode,
+    isDebugging: isDebugging,
     altChar: SWITCHES.ALTCHARSET.isSet,
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
     textPage: getTextPage(),

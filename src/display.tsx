@@ -2,16 +2,17 @@
 import {
   setDisplay, handleGetRunMode, passSetRunMode,
   passSetSpeedMode, handleGetTextPage,
-  passSetDebug,
   passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
   handleGetFilename,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   passSetGamepads,
   passKeypress,
-  handleSetDiskFromURL
+  handleSetDiskFromURL,
+  handleGetIsDebugging,
+  passSetDebug
 } from "./main2worker"
-import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG, ARROW } from "./emulator/utility/utility"
+import { RUN_MODE, getPrintableChar, COLOR_MODE, ARROW, TEST_GRAPHICS } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
@@ -32,12 +33,12 @@ class DisplayApple2 extends React.Component<object,
     ctrlKeyMode: number;
     openAppleKeyMode: number;
     closedAppleKeyMode: number;
-    doDebug: boolean;
     breakpoint: string;
     helptext: string;
   }> {
   timerID = 0
   refreshTime = 16.6881
+  screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   myCanvas = React.createRef<HTMLCanvasElement>()
   hiddenCanvas = React.createRef<HTMLCanvasElement>()
   hiddenFileOpen = React.createRef<HTMLInputElement>();
@@ -48,7 +49,6 @@ class DisplayApple2 extends React.Component<object,
       ctrlKeyMode: 0,
       openAppleKeyMode: 0,
       closedAppleKeyMode: 0,
-      doDebug: TEST_DEBUG,
       currentSpeed: 1.02,
       uppercase: true,
       useArrowKeysAsJoystick: true,
@@ -74,6 +74,9 @@ class DisplayApple2 extends React.Component<object,
     const params = new URLSearchParams(window.location.search)
     if (params.get('capslock')?.toLowerCase() === 'off') {
       this.handleUpperCaseChange(false)
+    }
+    if (params.get('debug')?.toLowerCase() === 'on') {
+      passSetDebug(true)
     }
     if (params.get('speed')?.toLowerCase() === 'fast') {
       passSetSpeedMode(1)
@@ -187,11 +190,6 @@ class DisplayApple2 extends React.Component<object,
       window.setTimeout(() => passAppleCommandKeyRelease(false), 100)
     }
     this.setState({ closedAppleKeyMode });
-  };
-
-  handleDebugChange = (enable: boolean) => {
-    passSetDebug(enable)
-    this.setState({ doDebug: enable });
   };
 
   handleUpperCaseChange = (enable: boolean) => {
@@ -334,6 +332,23 @@ class DisplayApple2 extends React.Component<object,
     }
   }
 
+  geCanvasSize = () => {
+    if (TEST_GRAPHICS) {
+      return [659, 452]  // This will give an actual size of 560 x 384
+    }
+    let width = window.innerWidth - 20;
+    let height = window.innerHeight - (handleGetIsDebugging() ? 350 : 200);
+    // shrink either width or height to preserve aspect ratio
+    if (width / this.screenRatio > height) {
+      width = height * this.screenRatio
+    } else {
+      height = width / this.screenRatio
+    }
+    width = Math.floor(width)
+    height = Math.floor(height)
+    return [width, height]
+  }
+
   render() {
     const props: DisplayProps = {
       runMode: handleGetRunMode(),
@@ -343,15 +358,14 @@ class DisplayApple2 extends React.Component<object,
       uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
       colorMode: this.state.colorMode,
-      doDebug: this.state.doDebug,
       ctrlKeyMode: this.state.ctrlKeyMode,
       openAppleKeyMode: this.state.openAppleKeyMode,
       closedAppleKeyMode: this.state.closedAppleKeyMode,
+      canvasSize: this.geCanvasSize(),
       handleArrowKey: this.handleArrowKey,
       handleCtrlDown: this.handleCtrlDown,
       handleOpenAppleDown: this.handleOpenAppleDown,
       handleClosedAppleDown: this.handleClosedAppleDown,
-      handleDebugChange: this.handleDebugChange,
       handleColorChange: this.handleColorChange,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
@@ -359,7 +373,7 @@ class DisplayApple2 extends React.Component<object,
       handleFileOpen: this.handleFileOpen,
       handleFileSave: this.handleFileSave,
     }
-    const width = props.myCanvas.current?.width || 600
+    const width = props.canvasSize[0]
     const height = window.innerHeight - 30
     let paperWidth = window.innerWidth - width - 70
     if (paperWidth < 300) paperWidth = 300
@@ -381,7 +395,7 @@ class DisplayApple2 extends React.Component<object,
             </span>
           </span>
           <span className="sidePanels">
-            {props.doDebug ? <DebugSection /> :
+            {handleGetIsDebugging() ? <DebugSection /> :
               <HelpPanel helptext={this.state.helptext}
                 height={height ? height : 400} width={paperWidth} />}
           </span>
