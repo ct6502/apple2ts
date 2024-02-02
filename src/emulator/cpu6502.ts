@@ -156,12 +156,13 @@ const hitBreakpoint = () => {
 export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
-  const instr = memGet(s6502.PC)
+  // Do not trigger watchpoints. Those should only trigger on true read/writes.
+  const instr = memGet(s6502.PC, false)
   const code =  pcodes[instr]
-  // Make sure we only get these instruction bytes if necessary,
-  // so we don't accidently trigger a watchpoint.
-  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1) : 0
-  const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2) : 0
+  // Make sure we only get these instruction bytes if necessary.
+  // Do not trigger watchpoints. Those should only trigger on true read/writes.
+  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : 0
+  const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
   if (hitBreakpoint()) {
     doSetRunMode(RUN_MODE.PAUSED)
     return -1
