@@ -7,34 +7,43 @@ import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
 import EditField from "./editfield";
 import PullDownMenu from "./pulldownmenu";
 import { getSoftSwitchDescriptions } from "../emulator/softswitches"
+import Droplist from "./droplist";
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
 
 class BreakpointEdit extends React.Component<
-  {breakpoint: Breakpoint,
-  saveBreakpoint: () => void,
-  cancelDialog: () => void,
-  dialogPositionX: number,
-  dialogPositionY: number,
-  setDialogPosition: (x: number, y: number) => void},
-  { watchpoint: boolean,
+  {
+    breakpoint: Breakpoint,
+    saveBreakpoint: () => void,
+    cancelDialog: () => void,
+    dialogPositionX: number,
+    dialogPositionY: number,
+    setDialogPosition: (x: number, y: number) => void
+  },
+  {
+    watchpoint: boolean,
     address: string,
     expression: string,
     hitcount: string,
     badExpression: string,
     value: string,
     memget: boolean,
-    memset: boolean}>
+    memset: boolean,
+    memoryBank: string
+  }>
 {
   dialogRef = React.createRef<HTMLDivElement>();
   offsetX = 0
   offsetY = 0
   dragging = false
 
-  constructor(props: { breakpoint: Breakpoint,
+  constructor(props: {
+    breakpoint: Breakpoint,
     saveBreakpoint: () => void,
     cancelDialog: () => void,
     dialogPositionX: number,
     dialogPositionY: number,
-    setDialogPosition: (x: number, y: number) => void}) {
+    setDialogPosition: (x: number, y: number) => void
+  }) {
     super(props);
     this.state = {
       watchpoint: this.props.breakpoint.watchpoint,
@@ -45,6 +54,7 @@ class BreakpointEdit extends React.Component<
       value: '',
       memget: this.props.breakpoint.memget,
       memset: this.props.breakpoint.memset,
+      memoryBank: MEMORY_BANKS[this.props.breakpoint.memoryBank].name
     }
   }
 
@@ -65,7 +75,7 @@ class BreakpointEdit extends React.Component<
         }
       }
       this.props.breakpoint.address = address
-      this.setState({address: value})
+      this.setState({ address: value })
     }
   }
 
@@ -76,7 +86,7 @@ class BreakpointEdit extends React.Component<
     if (this.props.breakpoint) {
       this.props.breakpoint.expression = expression
       const badExpression = checkBreakpointExpression(expression)
-      this.setState({expression, badExpression})
+      this.setState({ expression, badExpression })
     }
   }
 
@@ -84,7 +94,7 @@ class BreakpointEdit extends React.Component<
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 2).toUpperCase()
     if (this.props.breakpoint) {
       this.props.breakpoint.value = parseInt(value, 16)
-      this.setState({value})
+      this.setState({ value })
     }
   }
 
@@ -95,7 +105,7 @@ class BreakpointEdit extends React.Component<
     }
     if (this.props.breakpoint) {
       this.props.breakpoint.hitcount = parseInt(value || '1')
-      this.setState({hitcount: value})
+      this.setState({ hitcount: value })
     }
   }
 
@@ -130,17 +140,37 @@ class BreakpointEdit extends React.Component<
   handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.props.breakpoint.watchpoint = e.target.value === "memoryAccess"
     this.handleExpressionChange(this.props.breakpoint.expression)
-    this.setState({watchpoint: this.props.breakpoint.watchpoint})
+    this.setState({ watchpoint: this.props.breakpoint.watchpoint })
   }
 
   handleMemgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.props.breakpoint.memget = e.target.checked
-    this.setState({memget: this.props.breakpoint.memget})
+    this.setState({ memget: this.props.breakpoint.memget })
   }
 
   handleMemsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.props.breakpoint.memset = e.target.checked
-    this.setState({memset: this.props.breakpoint.memset})
+    this.setState({ memset: this.props.breakpoint.memset })
+  }
+
+  handleMemoryBankChange = (value: string) => {
+    for (const key of MemoryBankKeys) {
+      const bank = MEMORY_BANKS[key];
+      if (bank.name === value) {
+        this.props.breakpoint.memoryBank = key
+        this.setState({ memoryBank: value })
+        return false
+      }
+    }
+  }
+
+  isBankDisabledForAddress = (address: number, value: string) => {
+    for (const bank of Object.values(MEMORY_BANKS)) {
+      if (bank.name === value && address >= bank.min && address <= bank.max) {
+        return false
+      }
+    }
+    return true
   }
 
   render() {
@@ -148,9 +178,11 @@ class BreakpointEdit extends React.Component<
       onMouseMove={(e) => this.handleMouseMove(e)}>
       <div className="floating-dialog flex-column"
         ref={this.dialogRef}
-        style={{left: `${this.props.dialogPositionX}px`, top: `${this.props.dialogPositionY}px`,
-          width: "450px", height: "auto"}}
-        >
+        style={{
+          left: `${this.props.dialogPositionX}px`, top: `${this.props.dialogPositionY}px`,
+          width: "450px", height: "auto"
+        }}
+      >
         <div className="flex-column">
           <div className="flex-row-space-between"
             onMouseDown={(e) => this.handleMouseDown(e)}
@@ -160,7 +192,7 @@ class BreakpointEdit extends React.Component<
             <div onClick={this.props.cancelDialog}>
               <FontAwesomeIcon icon={iconBreakpointDelete}
                 className='breakpoint-pushbutton'
-                style={{color: "white", fontSize: "12pt", marginTop: "4pt"}}/>
+                style={{ color: "white", fontSize: "12pt", marginTop: "4pt" }} />
             </div>
           </div>
           <div className="horiz-rule"></div>
@@ -171,12 +203,12 @@ class BreakpointEdit extends React.Component<
             <input type="radio" id="Address" name="breakAt" value="address"
               className="check-radio-box"
               checked={!this.props.breakpoint.watchpoint}
-              onChange={(e) => {this.handleBreakAtChange(e)}}/>
+              onChange={(e) => { this.handleBreakAtChange(e) }} />
             <label htmlFor="Address" className="white-title flush-left">Breakpoint</label>
             <input type="radio" id="MemoryAccess" name="breakAt" value="memoryAccess"
               className="check-radio-box"
               checked={this.props.breakpoint.watchpoint}
-              onChange={(e) => {this.handleBreakAtChange(e)}}/>
+              onChange={(e) => { this.handleBreakAtChange(e) }} />
             <label htmlFor="MemoryAccess" className="white-title flush-left">Memory Watchpoint</label>
           </div>
           <div className="flex-row">
@@ -184,48 +216,54 @@ class BreakpointEdit extends React.Component<
               value={this.state.address}
               setValue={this.handleAddressChange}
               placeholder="F800"
-              width="5em"/>
+              width="5em" />
             {this.props.breakpoint.watchpoint &&
               <div>
                 <div className="flex-row">
-                  <PullDownMenu values={getSoftSwitchDescriptions()} setValue={this.handleAddressChange}/>
+                  <PullDownMenu values={getSoftSwitchDescriptions()} setValue={this.handleAddressChange} />
                   <input type="checkbox" id="memget" value="memget"
                     className="check-radio-box shift-down"
                     checked={this.props.breakpoint.memget}
-                    onChange={(e) => {this.handleMemgetChange(e)}}/>
+                    onChange={(e) => { this.handleMemgetChange(e) }} />
                   <label htmlFor="memget" className="white-title flush-left">Read</label>
                   <input type="checkbox" id="memset" value="memset"
                     className="check-radio-box shift-down"
                     checked={this.props.breakpoint.memset}
-                    onChange={(e) => {this.handleMemsetChange(e)}}/>
+                    onChange={(e) => { this.handleMemsetChange(e) }} />
                   <label htmlFor="memset" className="white-title flush-left">Write</label>
                 </div>
               </div>}
           </div>
           {this.state.watchpoint ?
-          <div>
-            <EditField name="With hex value:"
-              value={this.state.value}
-              setValue={this.handleHexValueChange}
-              placeholder="any"
-              width="5em"/>
-            <div style={{height: "32px"}}/>
-          </div>
-           : 
-          <div>
+            <div>
+              <EditField name="With hex value:"
+                value={this.state.value}
+                setValue={this.handleHexValueChange}
+                placeholder="any"
+                width="5em" />
+              <div style={{ height: "32px" }} />
+            </div>
+            :
+            <div>
               <EditField name="Expression: "
                 value={this.state.expression}
                 setValue={this.handleExpressionChange}
                 warning={this.state.badExpression}
                 help="Example: ($2000 == #$C0) && (A > #$80)"
-                placeholder="Break when expression evaluates to true"/>
-              <EditField name="Hit&nbsp;count: "
+                placeholder="Break when expression evaluates to true" />
+              <EditField name="Hit&nbsp;Count: "
                 value={this.state.hitcount}
                 setValue={this.handleHitCountChange}
                 placeholder="1"
-                width="5em"/>
+                width="5em" />
             </div>
           }
+          <Droplist name="Memory&nbsp;Bank: "
+            value={this.state.memoryBank}
+            values={MemoryBankNames}
+            setValue={this.handleMemoryBankChange}
+            address={parseInt(this.state.address || '0', 16)}
+            isDisabled={this.isBankDisabledForAddress} />
         </div>
         <div className="flex-row-space-between">
           <div></div>

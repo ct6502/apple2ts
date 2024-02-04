@@ -62,7 +62,7 @@ class DisassemblyControls extends React.Component<object, { address: string; }>
       <span className="flex-row">
         <input className="hexField"
           type="text"
-          placeholder=""
+          placeholder="FFFF"
           value={this.state.address}
           onChange={this.handleDisassembleAddrChange}
           onKeyDown={this.handleDisassembleAddrKeyDown}

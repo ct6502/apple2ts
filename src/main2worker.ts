@@ -5,7 +5,7 @@ import { doRumble } from "./devices/gamepad"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveMidiData } from "./devices/midiinterface"
 import DisplayApple2 from "./display"
-import { Breakpoints } from "./panels/breakpoint"
+import { BreakpointMap } from "./panels/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { receiveCommData } from "./devices/iwii"
 import { iconData, iconKey, iconName } from "./img/icons"
@@ -38,7 +38,7 @@ export const passSetState6502 = (state: STATE6502) => {
   doPostMessage(MSG_MAIN.STATE6502, state)
 }
 
-export const passBreakpoints = (breakpoints: Breakpoints) => {
+export const passBreakpoints = (breakpoints: BreakpointMap) => {
   doPostMessage(MSG_MAIN.BREAKPOINTS, breakpoints)
 }
 

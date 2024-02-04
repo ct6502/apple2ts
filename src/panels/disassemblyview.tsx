@@ -1,19 +1,21 @@
 import React, { KeyboardEvent } from "react";
-import { handleGetDisassembly,
+import {
+  handleGetDisassembly,
   handleGetState6502,
-  passSetDisassembleAddress } from "../main2worker";
+  passSetDisassembleAddress
+} from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { toHex } from "../emulator/utility/utility";
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
-import { Breakpoint, Breakpoints, getBreakpointIcon, getBreakpointStyle } from "./breakpoint";
+import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "./breakpoint";
 
 const nlines = 40
 const bpOffset = 2
 
-class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBreakpoints: (breakpoints: Breakpoints) => void;}, object> {
+class DisassemblyView extends React.Component<{ breakpoints: BreakpointMap; setBreakpoints: (breakpoints: BreakpointMap) => void; }, object> {
   lineHeight = 0 // 13.3333 // 10 * (96 / 72) pixels
   enableScrollEvent = true
   timeout = 0
@@ -24,8 +26,8 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
 
   computeLineHeight = () => {
     if (this.codeRef && this.codeRef.current) {
-//      const nlines = handleGetDisassembly().split('\n').length
-  //    this.lineHeight = (disassemblyRef.current.clientHeight - 4) / nlines
+      //      const nlines = handleGetDisassembly().split('\n').length
+      //    this.lineHeight = (disassemblyRef.current.clientHeight - 4) / nlines
       const n = this.codeRef.current.innerText.split('\n').length - 1
       if (n === 0) return
       this.lineHeight = (this.codeRef.current.scrollHeight - 4) / n
@@ -100,7 +102,7 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
         const addr = parseInt(code.slice(0, code.indexOf(':')), 16)
         const bp: Breakpoint = new Breakpoint()
         bp.address = addr
-        const breakpoints: Breakpoints = new Map(this.props.breakpoints);
+        const breakpoints: BreakpointMap = new Map(this.props.breakpoints);
         breakpoints.set(addr, bp)
         this.props.setBreakpoints(breakpoints)
       }
@@ -109,7 +111,7 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
 
   handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: Breakpoints = new Map(this.props.breakpoints)
+    const breakpoints: BreakpointMap = new Map(this.props.breakpoints)
     const bp = breakpoints.get(addr)
     if (bp) {
       if (bp.disabled) {
@@ -185,16 +187,16 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
     if (handleGetDisassembly().length <= 1) return <></>
     const pc = getLineOfDisassembly(handleGetState6502().PC) * this.lineHeight
     const programCounterBar = (pc >= 0) &&
-      <div className="programCounter" style={{top: `${pc}px`}}></div>
-    return <div ref={this.breakpointRef} 
-        style={{
+      <div className="programCounter" style={{ top: `${pc}px` }}></div>
+    return <div ref={this.breakpointRef}
+      style={{
         position: "relative",
         width: '0px',
         height: `${nlines * 10 - 2}pt`,
       }}>
       <FontAwesomeIcon icon={iconBreakpoint} ref={this.fakePointRef}
         className="breakpoint-style breakpoint-position fakePoint"
-        style={{pointerEvents: 'none', display: 'none'}}/>
+        style={{ pointerEvents: 'none', display: 'none' }} />
       {Array.from(this.props.breakpoints).map(([key, breakpoint]) => (
         (getLineOfDisassembly(key) >= 0) ?
           <FontAwesomeIcon icon={getBreakpointIcon(breakpoint)}
@@ -203,9 +205,9 @@ class DisassemblyView extends React.Component<{ breakpoints: Breakpoints; setBre
             onClick={this.handleBreakpointClick}
             style={{
               top: `${bpOffset + getLineOfDisassembly(key) * this.lineHeight}px`,
-              }}/> :
+            }} /> :
           <span key={key}></span>
-        )
+      )
       )}
       {programCounterBar}
     </div>

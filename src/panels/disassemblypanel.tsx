@@ -3,17 +3,18 @@ import DisassemblyControls from "./disassemblycontrols";
 import DisassemblyView from "./disassemblyview";
 import BreakpointsView from "./breakpointsview";
 import { passBreakpoints } from "../main2worker";
-import { Breakpoints } from "./breakpoint";
+import { BreakpointMap } from "./breakpoint";
 
 class DisassemblyPanel extends React.Component<object,
-  { breakpoints: Breakpoints;
-    setBreakpoints: (breakpoints: Breakpoints) => void;
+  {
+    breakpoints: BreakpointMap;
+    setBreakpoints: (breakpoints: BreakpointMap) => void;
   }> {
   constructor(props: object) {
     super(props);
     this.state = {
       breakpoints: new Map(),
-      setBreakpoints: (breakpoints: Breakpoints) => {
+      setBreakpoints: (breakpoints: BreakpointMap) => {
         this.setState({ breakpoints })
         passBreakpoints(breakpoints)
       },
@@ -24,9 +25,9 @@ class DisassemblyPanel extends React.Component<object,
     return (
       <div className="roundRectBorder">
         <p className="defaultFont panelTitle bgColor">Disassembly</p>
-        <DisassemblyControls/>
-        <DisassemblyView {...this.state}/>
-        <BreakpointsView {...this.state}/>
+        <DisassemblyControls />
+        <DisassemblyView {...this.state} />
+        <BreakpointsView {...this.state} />
       </div>
     )
   }

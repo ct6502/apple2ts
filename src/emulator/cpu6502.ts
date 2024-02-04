@@ -1,8 +1,8 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
-import { memGet, specialJumpTable } from "./memory"
+import { MEMORY_BANKS, memGet, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { Breakpoint, Breakpoints, convertBreakpointExpression } from "../panels/breakpoint"
+import { Breakpoint, BreakpointMap, convertBreakpointExpression } from "../panels/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -12,7 +12,7 @@ let doWatchpointBreak = false
 // let doDebugZeroPage = false
 // const instrTrail = new Array<string>(1000)
 // let posTrail = 0
-let breakpoints: Breakpoints = new Map()
+let breakpoints: BreakpointMap = new Map()
 let runToRTS = false
 
 export const doSetBreakpointSkipOnce = () => {
@@ -35,7 +35,7 @@ export const setStepOut = () => {
   breakpoints.set(addr, bp)
 }
 
-export const doSetBreakpoints = (bp: Breakpoints) => {
+export const doSetBreakpoints = (bp: BreakpointMap) => {
   // This will automatically erase any "hit once" breakpoints, which is okay.
   breakpoints = bp
 }
@@ -131,7 +131,8 @@ export const setWatchpointBreak = () => {
   doWatchpointBreak = true
 }
 
-const hitBreakpoint = () => {
+// This is only exported for breakpoint testing
+export const hitBreakpoint = () => {
   if (doWatchpointBreak) {
     doWatchpointBreak = false
     return true
@@ -148,6 +149,10 @@ const hitBreakpoint = () => {
     breakpoint.nhits++
     if (breakpoint.nhits < breakpoint.hitcount) return false
     breakpoint.nhits = 0
+  }
+  if (breakpoint.memoryBank) {
+    const bank = MEMORY_BANKS[breakpoint.memoryBank]
+    if (s6502.PC < bank.min || s6502.PC > bank.max) return false
   }
   if (breakpoint.once) breakpoints.delete(s6502.PC)
   return true

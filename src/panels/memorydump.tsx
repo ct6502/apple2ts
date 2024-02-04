@@ -49,7 +49,7 @@ const MemoryDump = () => {
       <span className="flex-row">
         <input className="hexField"
           type="text"
-          placeholder=""
+          placeholder="FFFF"
           value={address}
           onChange={handleAddressChange}
           onKeyDown={handleAddressKeyDown}

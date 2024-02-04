@@ -108,6 +108,7 @@ export class Breakpoint implements IBreakpoint {
   value: number;
   hitcount: number;
   nhits: number;
+  memoryBank: string;
 
   constructor() {
     this.address = 0
@@ -121,7 +122,8 @@ export class Breakpoint implements IBreakpoint {
     this.value = -1
     this.hitcount = 0
     this.nhits = 0
+    this.memoryBank = ''
   }
 }
 
-export type Breakpoints = Map<number, Breakpoint>
+export type BreakpointMap = Map<number, Breakpoint>

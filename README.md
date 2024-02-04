@@ -58,6 +58,11 @@ In launch.json, add a launch configuration:
 
 ```
 
+## Jest Test Debugging in VS Code
+
+In VS Code, add breakpoints to the test code. Then open up `package.json`, hover over
+the "test" script, and select 'Debug Script'.
+
 ## Localhost Certificates
 
 Gamepads will only work with a secure (https) context.

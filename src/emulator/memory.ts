@@ -18,7 +18,8 @@ import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
 const RAMWorksSize = (1024-64) // in K 256, 512, 1024, 4096, 8192
 const RAMWorksMaxBank = RAMWorksSize / 64
-export const memory = (new Uint8Array(0x27F00 + RAMWorksMaxBank*0x10000)).fill(0)
+const BaseMachineMemory = 0x27F00
+export const memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -533,3 +534,22 @@ export const getZeroPage = () => {
   }
   return status.join('\n')
 }
+
+export const getBaseMemory = () => {
+  return memory.slice(0, BaseMachineMemory)
+}
+
+export const MEMORY_BANKS: MemoryBanks = {}
+
+MEMORY_BANKS[""] = {name: "Any", min: 0, max: 0xFFFF, enabled: () => {return true}}
+MEMORY_BANKS["MAIN"] = {name: "Main RAM", min: 0, max: 0xFFFF, enabled: () => {return true}}
+MEMORY_BANKS["AUX"] = {name: "Auxiliary RAM", min: 0x0000, max: 0xFFFF, enabled: () => {return SWITCHES.RAMWRT.isSet || SWITCHES.RAMRD.isSet}}
+MEMORY_BANKS["ROM"] = {name: "ROM", min: 0xE000, max: 0xFFFF, enabled: () => {return true}}
+MEMORY_BANKS["D000-1"] = {name: "D000 Bank 1", min: 0xD000, max: 0xDFFF, enabled: () => {return true}}
+MEMORY_BANKS["D000-2"] = {name: "D000 Bank 2", min: 0xD000, max: 0xDFFF, enabled: () => {return true}}
+MEMORY_BANKS["ROM_INTERNAL"] = {name: "Cxxx Internal ROM", min: 0xC100, max: 0xCFFF, enabled: () => {return true}}
+MEMORY_BANKS["ROM_PERIPHERAL"] = {name: "Peripheral Card ROM", min: 0xC100, max: 0xCFFF, enabled: () => {return true}}
+
+
+export const MemoryBankKeys = Object.keys(MEMORY_BANKS);
+export const MemoryBankNames: string[] = Object.values(MEMORY_BANKS).map(bank => bank.name);

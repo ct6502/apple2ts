@@ -7,7 +7,7 @@ import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } fr
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
-  updateAddressTables, setMemoryBlock, getZeroPage } from "./memory"
+  updateAddressTables, setMemoryBlock, getZeroPage, getBaseMemory } from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
@@ -428,7 +428,7 @@ const getDebugDump = () => {
 
 const getMemoryDump = () => {
   if (isDebugging && cpuRunMode === RUN_MODE.PAUSED) {
-    return memory
+    return getBaseMemory()
   }
   return new Uint8Array()
 }

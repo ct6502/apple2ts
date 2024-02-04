@@ -38,6 +38,11 @@
   vertical-align: top;
 }
 
+.mono-text {
+  white-space: pre;
+  font-family: monospace;
+}
+
 .small-mono-text {
   white-space: pre;
   font-family: monospace;
@@ -182,7 +187,6 @@
 .dark-mode-edit {
   background-color: #222;
   color: white;
-  font-family: monospace;
   border-color: #aaa;
   border-width: 1px;
   border-style: solid;

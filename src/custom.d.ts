@@ -220,3 +220,14 @@ type LaunchParams = {
 type LaunchQueue = {
   setConsumer: (consumer: (launchParams: LaunchParams) => Promise<void>) => void
 }
+
+interface MemoryBank {
+  name: string;
+  min: number;
+  max: number;
+  enabled: () => boolean;
+}
+
+interface MemoryBanks {
+  [key: string]: MemoryBank;
+}
