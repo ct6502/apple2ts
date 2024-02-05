@@ -219,29 +219,27 @@ class BreakpointEdit extends React.Component<
               width="5em" />
             {this.props.breakpoint.watchpoint &&
               <div>
-                <div className="flex-row">
-                  <PullDownMenu values={getSoftSwitchDescriptions()} setValue={this.handleAddressChange} />
-                  <input type="checkbox" id="memget" value="memget"
-                    className="check-radio-box shift-down"
-                    checked={this.props.breakpoint.memget}
-                    onChange={(e) => { this.handleMemgetChange(e) }} />
-                  <label htmlFor="memget" className="white-title flush-left">Read</label>
-                  <input type="checkbox" id="memset" value="memset"
-                    className="check-radio-box shift-down"
-                    checked={this.props.breakpoint.memset}
-                    onChange={(e) => { this.handleMemsetChange(e) }} />
-                  <label htmlFor="memset" className="white-title flush-left">Write</label>
-                </div>
+                <PullDownMenu values={getSoftSwitchDescriptions()} setValue={this.handleAddressChange} />
               </div>}
           </div>
           {this.state.watchpoint ?
             <div>
+              <div style={{ height: "8px" }} />
+              <input type="checkbox" id="memget" value="memget"
+                className="check-radio-box shift-down"
+                checked={this.props.breakpoint.memget}
+                onChange={(e) => { this.handleMemgetChange(e) }} />
+              <label htmlFor="memget" className="white-title flush-left">Read</label>
+              <input type="checkbox" id="memset" value="memset"
+                className="check-radio-box shift-down"
+                checked={this.props.breakpoint.memset}
+                onChange={(e) => { this.handleMemsetChange(e) }} />
+              <label htmlFor="memset" className="white-title flush-left">Write</label>
               <EditField name="With hex value:"
                 value={this.state.value}
                 setValue={this.handleHexValueChange}
                 placeholder="any"
                 width="5em" />
-              <div style={{ height: "32px" }} />
             </div>
             :
             <div>
@@ -265,7 +263,7 @@ class BreakpointEdit extends React.Component<
             address={parseInt(this.state.address || '0', 16)}
             isDisabled={this.isBankDisabledForAddress} />
         </div>
-        <div className="flex-row-space-between">
+        <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
           <div></div>
           <div className="flex-row">
             <button className="pushButton text-button"
