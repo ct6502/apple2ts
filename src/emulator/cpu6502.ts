@@ -40,10 +40,18 @@ export const doSetBreakpoints = (bp: BreakpointMap) => {
   breakpoints = bp
 }
 
+const checkMemoryBank = (bankKey: string, address: number) => {
+  const bank = MEMORY_BANKS[bankKey]
+  if (address < bank.min || address > bank.max) return false
+  if (!bank.enabled(address)) return false
+  return true
+}
+
 export const isWatchpoint = (addr: number, value: number, set: boolean) => {
   const bp = breakpoints.get(addr)
   if (!bp || !bp.watchpoint || bp.disabled) return false
   if (bp.value >= 0 && bp.value !== value) return false
+  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, addr)) return false
   return set ? bp.memset : bp.memget
 }
 
@@ -138,23 +146,20 @@ export const hitBreakpoint = () => {
     return true
   }
   if (breakpoints.size === 0 || breakpointSkipOnce) return false
-  const breakpoint = breakpoints.get(s6502.PC)
-  if (!breakpoint || breakpoint.disabled || breakpoint.watchpoint) return false
-  if (breakpoint.expression) {
-    const expression = convertBreakpointExpression(breakpoint.expression)
+  const bp = breakpoints.get(s6502.PC)
+  if (!bp || bp.disabled || bp.watchpoint) return false
+  if (bp.expression) {
+    const expression = convertBreakpointExpression(bp.expression)
     const doBP = evaluateBreakpointExpression(expression)
     if (!doBP) return false
   }
-  if (breakpoint.hitcount > 1) {
-    breakpoint.nhits++
-    if (breakpoint.nhits < breakpoint.hitcount) return false
-    breakpoint.nhits = 0
+  if (bp.hitcount > 1) {
+    bp.nhits++
+    if (bp.nhits < bp.hitcount) return false
+    bp.nhits = 0
   }
-  if (breakpoint.memoryBank) {
-    const bank = MEMORY_BANKS[breakpoint.memoryBank]
-    if (s6502.PC < bank.min || s6502.PC > bank.max) return false
-  }
-  if (breakpoint.once) breakpoints.delete(s6502.PC)
+  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, bp.address)) return false
+  if (bp.once) breakpoints.delete(s6502.PC)
   return true
 }
 

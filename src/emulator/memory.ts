@@ -114,7 +114,7 @@ const slotIsActive = (slot: number) => {
 
 // Below description modified from AppleWin source
 //
-// INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
+// INTC8ROM: Unreadable soft switch (Sather, UTAIIe:5-28)
 // . Set:   On access to $C3XX with SLOTC3ROM reset
 //			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
 //			   an access is made to $CFFF or until the MMU detects a system reset."
@@ -539,17 +539,68 @@ export const getBaseMemory = () => {
   return memory.slice(0, BaseMachineMemory)
 }
 
+// Each memory bank object has a human-readable name, a min/max address range
+// where the bank is valid, and a function to determine if the bank is enabled.
 export const MEMORY_BANKS: MemoryBanks = {}
 
+// Should never be invoked but we need it for the droplist in the Edit Breakpoint dialog.
 MEMORY_BANKS[""] = {name: "Any", min: 0, max: 0xFFFF, enabled: () => {return true}}
-MEMORY_BANKS["MAIN"] = {name: "Main RAM", min: 0, max: 0xFFFF, enabled: () => {return true}}
-MEMORY_BANKS["AUX"] = {name: "Auxiliary RAM", min: 0x0000, max: 0xFFFF, enabled: () => {return SWITCHES.RAMWRT.isSet || SWITCHES.RAMRD.isSet}}
-MEMORY_BANKS["ROM"] = {name: "ROM", min: 0xE000, max: 0xFFFF, enabled: () => {return true}}
-MEMORY_BANKS["D000-1"] = {name: "D000 Bank 1", min: 0xD000, max: 0xDFFF, enabled: () => {return true}}
-MEMORY_BANKS["D000-2"] = {name: "D000 Bank 2", min: 0xD000, max: 0xDFFF, enabled: () => {return true}}
-MEMORY_BANKS["ROM_INTERNAL"] = {name: "Cxxx Internal ROM", min: 0xC100, max: 0xCFFF, enabled: () => {return true}}
-MEMORY_BANKS["ROM_PERIPHERAL"] = {name: "Peripheral Card ROM", min: 0xC100, max: 0xCFFF, enabled: () => {return true}}
 
+MEMORY_BANKS["MAIN"] = {name: "Main RAM ($0 - $FFFF)", min: 0, max: 0xFFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xD000) {
+      // We are not using our AUX card and we are using bank-switched RAM
+      return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
+    } else if (addr >= 0x200) {
+      // Just look at our regular Main/Aux switch
+      return !SWITCHES.RAMRD.isSet
+    }
+    // For $0-$1FF, look at the AUX ALTZP switch
+    return !SWITCHES.ALTZP.isSet}
+}
+
+MEMORY_BANKS["AUX"] = {name: "Auxiliary RAM ($0 - $FFFF)", min: 0x0000, max: 0xFFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xD000) {
+      // We are using our AUX card and we are also using bank-switched RAM
+      return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
+    } else if (addr >= 0x200) {
+      // Just look at our regular Main/Aux switch
+      return SWITCHES.RAMRD.isSet
+    }
+    // For $0-$1FF, look at the AUX ALTZP switch
+    return SWITCHES.ALTZP.isSet}
+}
+
+MEMORY_BANKS["ROM"] = {name: "ROM ($D000 - $FFFF)", min: 0xD000, max: 0xFFFF,
+  enabled: () => {return !SWITCHES.BSRREADRAM.isSet}}
+
+MEMORY_BANKS["DXXXBANK1"] = {name: "D000 Bank 1 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => { return SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }}
+
+MEMORY_BANKS["DXXXBANK2"] = {name: "D000 Bank 2 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => {return SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}}
+
+MEMORY_BANKS["CXXXROM"] = {name: "Internal ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xC300 && addr <= 0xC3FF) {
+      return SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet
+    } else if (addr >= 0xC800) {
+      return SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet
+    }
+    return SWITCHES.INTCXROM.isSet}
+}
+
+MEMORY_BANKS["CXXXCARD"] = {name: "Peripheral Card ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xC300 && addr <= 0xC3FF) {
+      return SWITCHES.INTCXROM.isSet ? false : SWITCHES.SLOTC3ROM.isSet
+    } else if (addr >= 0xC800) {
+      // Both switches need to be off for addresses $C800-$CFFF to come from cards
+      return !SWITCHES.INTCXROM.isSet && !SWITCHES.INTC8ROM.isSet
+    }
+    return !SWITCHES.INTCXROM.isSet}
+}
 
 export const MemoryBankKeys = Object.keys(MEMORY_BANKS);
 export const MemoryBankNames: string[] = Object.values(MEMORY_BANKS).map(bank => bank.name);

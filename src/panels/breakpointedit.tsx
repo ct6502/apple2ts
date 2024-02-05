@@ -249,7 +249,7 @@ class BreakpointEdit extends React.Component<
                 value={this.state.expression}
                 setValue={this.handleExpressionChange}
                 warning={this.state.badExpression}
-                help="Example: ($2000 == #$C0) && (A > #$80)"
+                help="Example: (A > #$80) && ($2000 == #$C0)"
                 placeholder="Break when expression evaluates to true" />
               <EditField name="Hit&nbsp;Count: "
                 value={this.state.hitcount}

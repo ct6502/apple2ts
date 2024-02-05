@@ -225,7 +225,7 @@ interface MemoryBank {
   name: string;
   min: number;
   max: number;
-  enabled: () => boolean;
+  enabled: (addr = 0) => boolean;
 }
 
 interface MemoryBanks {
