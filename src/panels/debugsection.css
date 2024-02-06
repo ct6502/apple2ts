@@ -1,17 +1,20 @@
-.hexField {
+.hex-field {
   font-family: monospace;
-  font-size: 8pt;
+  font-size: 10pt;
   width: 3em;
-  padding: 2px;
+  padding: 3px;
+  padding-right: 5px;
   align-self: center;
   text-align: right;
   margin-left: 3px;
   margin-right: 3px;
+  margin-top: 2px;
   border-radius: 3px;
   border-width: 1px;
+  border-color: #767676;
 }
 
-.hexField:focus {
+.hex-field:focus {
   outline: none;
   border: 1px solid blue;
 }
@@ -141,7 +144,8 @@
 
 .bigger-font {
   font-size: 10pt;
-  padding-top: 1px;
+  line-height: 10pt;
+  padding-top: 7px;
   text-align: center;
 }
 
@@ -190,11 +194,25 @@
   border-color: #aaa;
   border-width: 1px;
   border-style: solid;
+  border-radius: 3px;
   outline: none;
   margin-top: 4px;
   margin-bottom: 0px;
   margin-right: 5px;
-  border-radius: 0;
+  padding-left: 4px;
+  padding-bottom: 2px;
+  height: 18px;
+}
+
+.light-mode-edit {
+  border-color: #767676;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 3px;
+  outline: none;
+  margin-top: 3px;
+  margin-bottom: 0px;
+  margin-right: 5px;
   padding-left: 4px;
   padding-bottom: 2px;
   height: 18px;

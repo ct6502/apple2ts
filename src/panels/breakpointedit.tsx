@@ -7,7 +7,7 @@ import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
 import EditField from "./editfield";
 import PullDownMenu from "./pulldownmenu";
 import { getSoftSwitchDescriptions } from "../emulator/softswitches"
-import Droplist from "./droplist";
+import { Droplist } from "./droplist";
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
 
 class BreakpointEdit extends React.Component<
@@ -257,6 +257,7 @@ class BreakpointEdit extends React.Component<
             </div>
           }
           <Droplist name="Memory&nbsp;Bank: "
+            className="dark-mode-edit"
             value={this.state.memoryBank}
             values={MemoryBankNames}
             setValue={this.handleMemoryBankChange}

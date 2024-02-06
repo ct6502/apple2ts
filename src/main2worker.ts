@@ -154,6 +154,7 @@ let machineState: MachineState = {
   hires: new Uint8Array(),
   debugDump: '',
   memoryDump: new Uint8Array(),
+  addressGetTable: [],
   disassembly: '',
   nextInstruction: '',
   button0: false,
@@ -305,6 +306,10 @@ export const handleGetDebugDump = () => {
 
 export const handleGetMemoryDump = () => {
   return machineState.memoryDump
+}
+
+export const handleGetAddressGetTable = () => {
+  return machineState.addressGetTable
 }
 
 export const handleGetDisassembly = () => {

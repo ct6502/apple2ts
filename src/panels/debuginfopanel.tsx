@@ -8,7 +8,8 @@ const DebugInfoPanel = () => {
       <div className="debug-panel"
         style={{
           width: '370px', // Set the width to your desired value
-          height: '350pt', // Set the height to your desired value
+          height: '473px', // Set the height to your desired value
+          marginTop: '7px',
           overflow: 'auto',
         }}>
         {handleGetDebugDump()}

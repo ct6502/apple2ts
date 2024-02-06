@@ -100,7 +100,7 @@ class TimeTravelPanel extends React.Component<object, object>
             tabIndex={-1}
             style={{
               width: '15em',
-              height: `150pt`,
+              height: `138pt`,
               overflow: 'auto',
               cursor: 'pointer',
               userSelect: 'none',

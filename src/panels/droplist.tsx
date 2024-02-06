@@ -2,6 +2,7 @@ import React from "react";
 
 interface DroplistProps {
   name: string;
+  className: string;
   value: string;
   values: string[];
   setValue: (v: string) => void;
@@ -9,24 +10,20 @@ interface DroplistProps {
   isDisabled: (address: number, value: string) => boolean;
 }
 
-class Droplist extends React.Component<DroplistProps, object>
-{
-  handleValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    this.props.setValue(e.target.value)
+export const Droplist = (props: DroplistProps) => {
+  const handleValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    props.setValue(e.target.value)
   }
-  render() {
-    return <div className="flex-row" style={{ marginTop: '2px', position: "relative" }}>
-      <div className="white-title">{this.props.name}</div>
-      <select value={this.props.value}
-        className="dark-mode-edit"
-        style={{ height: "24px" }}
-        onChange={this.handleValueChange}>
-        {this.props.values.map((value, i) => (
-          <option key={i} value={value} disabled={this.props.isDisabled(this.props.address, value)}>{value}</option>))
-        }
-      </select>
-    </div>
-  }
-}
 
-export default Droplist
+  return <div className="flex-row">
+    {props.name && <div className="white-title">{props.name}</div>}
+    <select value={props.value}
+      className={props.className}
+      style={{ height: "24px" }}
+      onChange={handleValueChange}>
+      {props.values.map((value, i) => (
+        <option key={i} value={value} disabled={props.isDisabled(props.address, value)}>{value}</option>))
+      }
+    </select>
+  </div>
+}

@@ -42,7 +42,7 @@ class State6502Controls extends React.Component<object, object>
       <div className="flex-row">
         <div className="bigger-font">{name}</div>
         <input type="text"
-          className={name === 'PC' ? "hexField" : "hexField smallField"}
+          className={name === 'PC' ? "hex-field" : "hex-field smallField"}
           disabled={runMode !== RUN_MODE.PAUSED}
           value={strVal}
           onChange={(e) => this.handleTextFieldChange(e, key)}

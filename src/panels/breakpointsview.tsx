@@ -144,7 +144,7 @@ class BreakpointsView extends React.Component<
         <div className="debug-panel thinBorder"
           style={{
             width: '213px',
-            height: `${this.nlines * 10 - 2}pt`,
+            height: `${this.nlines * 11 - 2}pt`,
             overflow: 'auto',
             paddingLeft: "5pt",
             cursor: "pointer"

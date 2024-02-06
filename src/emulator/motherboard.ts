@@ -1,13 +1,13 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail } from "./worker2main"
-import { s6502, setState6502, reset6502, setCycleCount, setPC, get6502StateString, getStackString } from "./instructions"
+import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString } from "./instructions"
 import { MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
-  updateAddressTables, setMemoryBlock, getZeroPage, getBaseMemory } from "./memory"
+  updateAddressTables, setMemoryBlock, getZeroPage, getBaseMemory, addressGetTable } from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
@@ -417,7 +417,7 @@ export const doSetPastedText = (text: string) => {
 
 const getDebugDump = () => {
   if (!isDebugging) return ''
-  const status = [get6502StateString()]
+  const status = []
   status.push(getZeroPage())
   const stackString = getStackString()
   for (let i = 0; i < Math.min(20, stackString.length); i++) {
@@ -452,6 +452,7 @@ const updateExternalMachineState = () => {
     hires: getHires(),
     debugDump: getDebugDump(),
     memoryDump: getMemoryDump(),
+    addressGetTable: addressGetTable,
     disassembly: doGetDisassembly(),
     nextInstruction: getInstruction(s6502.PC),
     button0: SWITCHES.PB0.isSet,

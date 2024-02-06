@@ -24,7 +24,7 @@ export const memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x1000
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
 // Include one extra slot, to avoid needing memory checks for > 65535.
-const addressGetTable = (new Array<number>(257)).fill(0)
+export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 
 const AUXindex = 0x100
@@ -260,7 +260,7 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
 }
 
 export const memoryReset = () => {
-  memory.fill(0xFF, 0, 0x1FFFF)
+  memory.fill(0xFF, 0, 0x20000)
   const whichROM = isDebugging ? edmBase64 : romBase64
   const rom64 = whichROM.replace(/\n/g, "")
   const rom = new Uint8Array(
