@@ -25,8 +25,8 @@ class TimeTravelPanel extends React.Component<object, object>
     const iTempState = handleGetTempStateIndex()
     const thumbnails = handleGetTimeTravelThumbnails()
     let thumbnailText = ''
-    const thumbImage = (iTempState >= 0 && iTempState < thumbnails.length) ?
-      <img src={`${thumbnails[iTempState].thumbnail}`} /> : <></>
+    const thumbImage = (iTempState >= 0 && thumbnails.length > 0) ?
+      <img src={`${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}`} /> : <></>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = this.convertTime(thumbnails[i].s6502.cycleCount)
       thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`

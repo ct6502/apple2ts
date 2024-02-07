@@ -116,7 +116,7 @@ test('memory banks address range', () => {
   const bp = new Breakpoint()
   bp.address = 0xF800
   setPC(bp.address)
-  bp.memoryBank = "DXXXBANK1"
+  bp.memoryBank = "MAIN-DXXX-1"
   bpMap.set(bp.address, bp)
   memSet(0xC08B, 1)  // enable banked RAM, DXXX bank 1
   expect(hitBreakpoint()).toEqual(false)
@@ -203,7 +203,7 @@ test('memory banks AUX', () => {
   expect(hitBreakpoint()).toEqual(false)
   memSet(0xC08B, 1)  // enable RAM $D000-$FFFF
   expect(hitBreakpoint()).toEqual(true)
-
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
 test('memory banks ROM', () => {
@@ -235,12 +235,12 @@ test('memory banks ROM', () => {
   expect(hitBreakpoint()).toEqual(false)
 })
 
-test('memory banks DXXXBANK1', () => {
+test('memory banks MAIN-DXXX-1', () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
   setPC(bp.address)
-  bp.memoryBank = "DXXXBANK1"
+  bp.memoryBank = "MAIN-DXXX-1"
   bpMap.set(bp.address, bp)
   memSet(0xC08A, 1)  // enable ROM, not banked RAM
   expect(hitBreakpoint()).toEqual(false)
@@ -250,14 +250,19 @@ test('memory banks DXXXBANK1', () => {
   expect(hitBreakpoint()).toEqual(true)
   memSet(0xC083, 1)  // enable bank 2
   expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC08B, 1)  // enable R/W banked RAM, DXXX bank 1
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(true)
 })
 
-test('memory banks DXXXBANK2', () => {
+test('memory banks MAIN-DXXX-2', () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
   setPC(bp.address)
-  bp.memoryBank = "DXXXBANK2"
+  bp.memoryBank = "MAIN-DXXX-2"
   bpMap.set(bp.address, bp)
   memSet(0xC082, 1)  // enable ROM, not banked RAM
   expect(hitBreakpoint()).toEqual(false)
@@ -267,13 +272,66 @@ test('memory banks DXXXBANK2', () => {
   expect(hitBreakpoint()).toEqual(true)
   memSet(0xC08B, 1)  // enable bank 2
   expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC083, 1)  // enable R/W banked RAM, DXXX bank 2
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(true)
+})
+
+test('memory banks AUX-DXXX-1', () => {
+  bpMap.clear()
+  const bp = new Breakpoint()
+  bp.address = 0xD000
+  setPC(bp.address)
+  bp.memoryBank = "AUX-DXXX-1"
+  bpMap.set(bp.address, bp)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  memSet(0xC08A, 1)  // enable ROM, not banked RAM
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC08B, 1)  // enable R/W banked RAM, DXXX bank 1
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC088, 1)  // enable R banked RAM, DXXX bank 1
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC083, 1)  // enable bank 2
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC08B, 1)  // enable R/W banked RAM, DXXX bank 1
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+})
+
+test('memory banks AUX-DXXX-2', () => {
+  bpMap.clear()
+  const bp = new Breakpoint()
+  bp.address = 0xD000
+  setPC(bp.address)
+  bp.memoryBank = "AUX-DXXX-2"
+  bpMap.set(bp.address, bp)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  memSet(0xC082, 1)  // enable ROM, not banked RAM
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC083, 1)  // enable R/W banked RAM, DXXX bank 2
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC080, 1)  // enable R banked RAM, DXXX bank 2
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC08B, 1)  // enable bank 2
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC083, 1)  // enable R/W banked RAM, DXXX bank 2
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
 test('memory banks Internal $CXXX ROM', () => {
   const bp = new Breakpoint()
   bp.address = 0xC100
   setPC(bp.address)
-  bp.memoryBank = "CXXXROM"
+  bp.memoryBank = "CXXX-ROM"
   bpMap.clear()
   bpMap.set(bp.address, bp)
   memSet(0xC007, 1)  // enable Internal $CXXX ROM
@@ -317,7 +375,7 @@ test('memory banks Peripheral card ROM', () => {
   const bp = new Breakpoint()
   bp.address = 0xC100
   setPC(bp.address)
-  bp.memoryBank = "CXXXCARD"
+  bp.memoryBank = "CXXX-CARD"
   bpMap.clear()
   bpMap.set(bp.address, bp)
   memSet(0xC007, 1)  // enable Internal $CXXX ROM
@@ -452,13 +510,13 @@ test('watchpoints memory bank ROM', () => {
   expect(hitBreakpoint()).toEqual(false)
 })
 
-test('watchpoints memory bank DXXXBANK1', () => {
+test('watchpoints memory bank MAIN-DXXX-1', () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD800
   bp.watchpoint = true
   bp.memget = true
-  bp.memoryBank = "DXXXBANK1"
+  bp.memoryBank = "MAIN-DXXX-1"
   bpMap.set(bp.address, bp)
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
@@ -484,16 +542,24 @@ test('watchpoints memory bank DXXXBANK1', () => {
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)   // should not be able to write
   expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
 })
 
 
-test('watchpoints memory bank DXXXBANK2', () => {
+test('watchpoints memory bank MAIN-DXXX-2', () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD800
   bp.watchpoint = true
   bp.memget = true
-  bp.memoryBank = "DXXXBANK2"
+  bp.memoryBank = "MAIN-DXXX-2"
   bpMap.set(bp.address, bp)
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
@@ -519,6 +585,103 @@ test('watchpoints memory bank DXXXBANK2', () => {
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)   // should not be able to write
   expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+})
+
+test('watchpoints memory bank AUX-DXXX-1', () => {
+  bpMap.clear()
+  const bp = new Breakpoint()
+  bp.address = 0xD800
+  bp.watchpoint = true
+  bp.memget = true
+  bp.memoryBank = "AUX-DXXX-1"
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  bpMap.set(bp.address, bp)
+  // no memGet has happened yet, so shouldn't hit watchpoint
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC082, 1)  // enable ROM
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(bp.address, 0x01)
+  expect(hitBreakpoint()).toEqual(true)
+
+  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(bp.address, 0x01)
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC088, 1)  // enable read only RAM, bank 1
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(bp.address, 0x01)   // should not be able to write
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+})
+
+
+test('watchpoints memory bank AUX-DXXX-2', () => {
+  bpMap.clear()
+  const bp = new Breakpoint()
+  bp.address = 0xD800
+  bp.watchpoint = true
+  bp.memget = true
+  bp.memoryBank = "AUX-DXXX-2"
+  bpMap.set(bp.address, bp)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  // no memGet has happened yet, so shouldn't hit watchpoint
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC082, 1)  // enable ROM
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(bp.address, 0x01)
+  expect(hitBreakpoint()).toEqual(true)
+
+  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(bp.address, 0x01)
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC080, 1)  // enable read only RAM, bank 2
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(bp.address, 0x01)   // should not be able to write
+  expect(hitBreakpoint()).toEqual(false)
+
+  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(false)
+  memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(true)
+  memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
 test('memory banks Internal $CXXX ROM', () => {
@@ -527,7 +690,7 @@ test('memory banks Internal $CXXX ROM', () => {
   bp.address = 0xC2FF
   bp.watchpoint = true
   bp.memget = true
-  bp.memoryBank = "CXXXROM"
+  bp.memoryBank = "CXXX-ROM"
   bpMap.set(bp.address, bp)
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
@@ -561,7 +724,7 @@ test('memory banks Peripheral card ROM', () => {
   bp.address = 0xC2FF
   bp.watchpoint = true
   bp.memget = true
-  bp.memoryBank = "CXXXCARD"
+  bp.memoryBank = "CXXX-CARD"
   bpMap.set(bp.address, bp)
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)

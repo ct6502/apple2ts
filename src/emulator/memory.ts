@@ -575,13 +575,19 @@ MEMORY_BANKS["AUX"] = {name: "Auxiliary RAM ($0 - $FFFF)", min: 0x0000, max: 0xF
 MEMORY_BANKS["ROM"] = {name: "ROM ($D000 - $FFFF)", min: 0xD000, max: 0xFFFF,
   enabled: () => {return !SWITCHES.BSRREADRAM.isSet}}
 
-MEMORY_BANKS["DXXXBANK1"] = {name: "D000 Bank 1 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
-  enabled: () => { return SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }}
+MEMORY_BANKS["MAIN-DXXX-1"] = {name: "Main D000 Bank 1 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => { return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }}
 
-MEMORY_BANKS["DXXXBANK2"] = {name: "D000 Bank 2 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
-  enabled: () => {return SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}}
+MEMORY_BANKS["MAIN-DXXX-2"] = {name: "Main D000 Bank 2 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => {return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}}
 
-MEMORY_BANKS["CXXXROM"] = {name: "Internal ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
+MEMORY_BANKS["AUX-DXXX-1"] = {name: "Aux D000 Bank 1 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => { return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }}
+
+MEMORY_BANKS["AUX-DXXX-2"] = {name: "Aux D000 Bank 2 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => {return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}}
+
+MEMORY_BANKS["CXXX-ROM"] = {name: "Internal ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
   enabled: (addr = 0) => {
     if (addr >= 0xC300 && addr <= 0xC3FF) {
       return SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet
@@ -591,7 +597,7 @@ MEMORY_BANKS["CXXXROM"] = {name: "Internal ROM ($C100 - $CFFF)", min: 0xC100, ma
     return SWITCHES.INTCXROM.isSet}
 }
 
-MEMORY_BANKS["CXXXCARD"] = {name: "Peripheral Card ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
+MEMORY_BANKS["CXXX-CARD"] = {name: "Peripheral Card ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
   enabled: (addr = 0) => {
     if (addr >= 0xC300 && addr <= 0xC3FF) {
       return SWITCHES.INTCXROM.isSet ? false : SWITCHES.SLOTC3ROM.isSet

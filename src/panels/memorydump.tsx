@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toHex } from "../emulator/utility/utility"
 import { handleGetAddressGetTable, handleGetMemoryDump } from "../main2worker"
 import React from "react"
@@ -13,7 +13,7 @@ enum MEMORY_RANGE {
 }
 
 const MemoryDump = () => {
-  const memoryDumpRef = React.createRef<HTMLDivElement>()
+  const memoryDumpRef = useRef(null)
   let addrOffset = 0
   let nlines = 256 * 16
   const [address, setAddress] = useState('')
@@ -75,9 +75,10 @@ const MemoryDump = () => {
   const scrollToAddress = (addr: number) => {
     if (memoryDumpRef.current) {
       addr = 16 * Math.floor(addr / 16) - addrOffset
-      const height = memoryDumpRef.current.scrollHeight
+      const div: HTMLDivElement = memoryDumpRef.current
+      const height = div.scrollHeight
       const pos = height * (addr / (nlines * 16))
-      memoryDumpRef.current.scrollTop = pos
+      div.scrollTop = pos
     }
   }
 
@@ -93,6 +94,17 @@ const MemoryDump = () => {
   const handleSetMemoryRange = (value: string) => {
     setAddress('')
     setMemoryRange(value)
+    const height = memoryDumpRef.current ?
+      (memoryDumpRef.current as HTMLDivElement).scrollHeight : 0
+    // If we switch from one memory layout to another with a different
+    // number of lines, then reset the scroll bar.
+    setTimeout(() => {
+      if (memoryDumpRef.current) {
+        const div: HTMLDivElement = memoryDumpRef.current
+        const newHeight = div.scrollHeight
+        if (height !== newHeight) div.scrollTop = 0
+      }
+    }, 100)
   }
 
   return (
