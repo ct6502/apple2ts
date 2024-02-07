@@ -39,7 +39,7 @@ class State6502Controls extends React.Component<object, object>
   createTextField = (name: string, key: KEYS, value: number, runMode: RUN_MODE) => {
     const strVal = value.toString(16).toUpperCase()
     return (
-      <div className="flex-row">
+      <div className="flex-row" style={{ alignItems: "center" }}>
         <div className="bigger-font">{name}</div>
         <input type="text"
           className={name === 'PC' ? "hex-field" : "hex-field smallField"}
@@ -68,7 +68,7 @@ class State6502Controls extends React.Component<object, object>
     const runMode = handleGetRunMode()
     const s6502 = handleGetState6502()
     return (
-      <div className="flex-column" style={{ marginTop: "10px" }}>
+      <div className="flex-column" style={{ gap: "5px" }}>
         <div className="flex-row-space-between">
           {this.createTextField('PC', 'PC', s6502.PC, runMode)}
           {this.createTextField('A', 'Accum', s6502.Accum, runMode)}
