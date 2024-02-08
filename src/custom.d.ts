@@ -73,8 +73,15 @@ type DisplayProps = {
   handleCopyToClipboard: () => void,
   handleUpperCaseChange: (enable: boolean) => void,
   handleUseArrowKeyJoystick: (enable: boolean) => void,
-  handleFileOpen: () => void,
+  setShowFileOpenDialog: (show: boolean, drive: number) => void,
   handleFileSave: (withSnapshots: boolean) => void,
+}
+
+type SaveStateProps = {
+  showFileOpenDialog: {show: boolean, drive: number},
+  handleColorChange: (mode: COLOR_MODE) => void,
+  handleUpperCaseChange: (enable: boolean) => void,
+  setShowFileOpenDialog: (show: boolean, drive: number) => void,
 }
 
 type MachineState = {

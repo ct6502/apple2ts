@@ -40,7 +40,7 @@ class Apple2Canvas extends React.Component<DisplayProps> {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
     c: () => this.props.handleCopyToClipboard(),
-    o: () => this.props.handleFileOpen(),
+    o: () => this.props.setShowFileOpenDialog(true, 0),
     s: () => this.props.handleFileSave(false),
   }
 

@@ -1,8 +1,8 @@
 // Chris Torrence, 2022
 import {
-  setDisplay, handleGetRunMode, passSetRunMode,
+  setDisplay, handleGetRunMode,
   passSetSpeedMode, handleGetTextPage,
-  passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
+  handleGetSaveState, handleGetAltCharSet,
   handleGetFilename,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
@@ -12,16 +12,18 @@ import {
   handleGetIsDebugging,
   passSetDebug
 } from "./main2worker"
-import { RUN_MODE, getPrintableChar, COLOR_MODE, ARROW, TEST_GRAPHICS } from "./emulator/utility/utility"
+import { getPrintableChar, COLOR_MODE, ARROW, TEST_GRAPHICS } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
 import React from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
-import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
+import { getMockingboardMode } from "./devices/mockingboard_audio"
 import ImageWriter from "./devices/imagewriter"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
+import FileInput from "./fileinput"
+import { restoreSaveState } from "./restoresavestate"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<object,
@@ -35,6 +37,7 @@ class DisplayApple2 extends React.Component<object,
     closedAppleKeyMode: number;
     breakpoint: string;
     helptext: string;
+    showFileOpenDialog: { show: boolean, drive: number };
   }> {
   timerID = 0
   refreshTime = 16.6881
@@ -55,6 +58,7 @@ class DisplayApple2 extends React.Component<object,
       colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
       helptext: '',
+      showFileOpenDialog: { show: false, drive: 0 }
     };
   }
 
@@ -111,7 +115,9 @@ class DisplayApple2 extends React.Component<object,
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
           const fileContents = await (await files[0].getFile()).text()
-          this.restoreSaveStateFunc(fileContents)
+          restoreSaveState(fileContents,
+            this.handleColorChange,
+            this.handleUpperCaseChange)
         }
       });
     }
@@ -200,43 +206,8 @@ class DisplayApple2 extends React.Component<object,
     this.setState({ useArrowKeysAsJoystick: enable });
   };
 
-  restoreSaveStateFunc = (fileContents: string) => {
-    const saveState: EmulatorSaveState = JSON.parse(fileContents)
-    passRestoreSaveState(saveState)
-    if (saveState.emulator?.colorMode !== undefined) {
-      this.handleColorChange(saveState.emulator.colorMode)
-    }
-    if (saveState.emulator?.uppercase !== undefined) {
-      this.handleUpperCaseChange(saveState.emulator.uppercase)
-    }
-    if (saveState.emulator?.audioEnable !== undefined) {
-      audioEnable(saveState.emulator.audioEnable)
-    }
-    if (saveState.emulator?.mockingboardMode !== undefined) {
-      changeMockingboardMode(saveState.emulator.mockingboardMode)
-    }
-    passSetRunMode(RUN_MODE.RUNNING)
-  }
-
-  handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target?.files?.length) {
-      const fileread = new FileReader()
-      const restoreStateReader = this.restoreSaveStateFunc
-      fileread.onload = function (e) {
-        if (e.target) {
-          restoreStateReader(e.target.result as string)
-        }
-      };
-      fileread.readAsText(e.target.files[0]);
-    }
-  };
-
-  handleFileOpen = () => {
-    if (this.hiddenFileOpen.current) {
-      // Hack - clear out old file so we can pick the same file again
-      this.hiddenFileOpen.current.value = "";
-      this.hiddenFileOpen.current.click()
-    }
+  setShowFileOpenDialog = (show: boolean, drive: number) => {
+    this.setState({ showFileOpenDialog: { show, drive } })
   }
 
   doSaveStateCallback = (saveState: EmulatorSaveState) => {
@@ -370,8 +341,14 @@ class DisplayApple2 extends React.Component<object,
       handleCopyToClipboard: this.handleCopyToClipboard,
       handleUpperCaseChange: this.handleUpperCaseChange,
       handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
-      handleFileOpen: this.handleFileOpen,
+      setShowFileOpenDialog: this.setShowFileOpenDialog,
       handleFileSave: this.handleFileSave,
+    }
+    const saveStateProps: SaveStateProps = {
+      showFileOpenDialog: this.state.showFileOpenDialog,
+      handleColorChange: this.handleColorChange,
+      handleUpperCaseChange: this.handleUpperCaseChange,
+      setShowFileOpenDialog: this.setShowFileOpenDialog,
     }
     const width = props.canvasSize[0]
     const height = window.innerHeight - 30
@@ -384,7 +361,7 @@ class DisplayApple2 extends React.Component<object,
             <Apple2Canvas {...props} />
             <div className="flex-row-space-between wrap" style={{ width: width, display: width ? '' : 'none' }}>
               <ControlPanel {...props} />
-              <DiskInterface />
+              <DiskInterface setShowFileOpenDialog={this.setShowFileOpenDialog} />
               <ImageWriter />
             </div>
             <span className="defaultFont statusItem">
@@ -400,13 +377,7 @@ class DisplayApple2 extends React.Component<object,
                 height={height ? height : 400} width={paperWidth} />}
           </span>
         </span>
-        <input
-          type="file"
-          accept=".a2ts"
-          ref={this.hiddenFileOpen}
-          onChange={this.handleRestoreState}
-          style={{ display: 'none' }}
-        />
+        <FileInput {...saveStateProps} />
       </div>
     );
   }
