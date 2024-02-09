@@ -18,6 +18,7 @@ let acia: MC6850
 
 let prevCycleCount = 0
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const cycleCountCallback = (slot: number) => {
   if (prevCycleCount)
   {

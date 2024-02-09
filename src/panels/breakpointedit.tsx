@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXmark as iconBreakpointDelete,
@@ -10,161 +10,137 @@ import { getSoftSwitchDescriptions } from "../emulator/softswitches"
 import { Droplist } from "./droplist";
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
 
-class BreakpointEdit extends React.Component<
-  {
-    breakpoint: Breakpoint,
-    saveBreakpoint: () => void,
-    cancelDialog: () => void,
-    dialogPositionX: number,
-    dialogPositionY: number,
-    setDialogPosition: (x: number, y: number) => void
-  },
-  {
-    watchpoint: boolean,
-    address: string,
-    expression: string,
-    hitcount: string,
-    badExpression: string,
-    value: string,
-    memget: boolean,
-    memset: boolean,
-    memoryBank: string
-  }>
-{
-  dialogRef = React.createRef<HTMLDivElement>();
-  offsetX = 0
-  offsetY = 0
-  dragging = false
+const BreakpointEdit = (props: {
+  breakpoint: Breakpoint,
+  saveBreakpoint: () => void,
+  cancelDialog: () => void,
+  dialogPositionX: number,
+  dialogPositionY: number,
+  setDialogPosition: (x: number, y: number) => void
+}) => {
+  const dialogRef = useRef(null)
 
-  constructor(props: {
-    breakpoint: Breakpoint,
-    saveBreakpoint: () => void,
-    cancelDialog: () => void,
-    dialogPositionX: number,
-    dialogPositionY: number,
-    setDialogPosition: (x: number, y: number) => void
-  }) {
-    super(props);
-    this.state = {
-      watchpoint: this.props.breakpoint.watchpoint,
-      address: this.props.breakpoint.address.toString(16).toUpperCase(),
-      expression: this.props.breakpoint.expression,
-      hitcount: Math.max(this.props.breakpoint.hitcount, 1).toString(),
-      badExpression: '',
-      value: '',
-      memget: this.props.breakpoint.memget,
-      memset: this.props.breakpoint.memset,
-      memoryBank: MEMORY_BANKS[this.props.breakpoint.memoryBank].name
-    }
-  }
+  // const [state, setState] = useState({
+  //   watchpoint: props.breakpoint.watchpoint,
+  //   address: props.breakpoint.address.toString(16).toUpperCase(),
+  //   expression: props.breakpoint.expression,
+  //   hitcount: Math.max(props.breakpoint.hitcount, 1).toString(),
+  //   hexvalue: '',
+  //   memget: props.breakpoint.memget,
+  //   memset: props.breakpoint.memset,
+  //   memoryBank: MEMORY_BANKS[props.breakpoint.memoryBank].name,
+  // })
+  const [badExpression, setBadExpression] = useState('')
+  const [triggerUpdate, setTriggerUpdate] = useState(false)
+  const [offset, setOffset] = useState([0, 0])
+  const [dragging, setDragging] = useState(false)
 
-  handleAddressChange = (value: string) => {
+  const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
-    if (this.props.breakpoint) {
+    if (props.breakpoint) {
       const address = parseInt(value || '0', 16)
       if (address >= 0xC000 && address <= 0xC0FF) {
-        this.props.breakpoint.memget = true
-        this.props.breakpoint.memset = true
+        props.breakpoint.memget = true
+        props.breakpoint.memset = true
         const switches = getSoftSwitchDescriptions()
         if (switches[address]) {
           if (switches[address].includes("status")) {
-            this.props.breakpoint.memset = false
+            props.breakpoint.memset = false
           } else if (switches[address].includes("write")) {
-            this.props.breakpoint.memget = false
+            props.breakpoint.memget = false
           }
         }
       }
-      this.props.breakpoint.address = address
-      this.setState({ address: value })
+      props.breakpoint.address = address
+      setTriggerUpdate(!triggerUpdate)
     }
   }
 
-  handleExpressionChange = (value: string) => {
+  const handleExpressionChange = (value: string) => {
     let expression = value.replace("===", "==")
     expression = expression.replace(/[^#$0-9 abcdefxysp|&()=<>+\-*/]/gi, '')
     expression = expression.toUpperCase()
-    if (this.props.breakpoint) {
-      this.props.breakpoint.expression = expression
+    if (props.breakpoint) {
+      props.breakpoint.expression = expression
       const badExpression = checkBreakpointExpression(expression)
-      this.setState({ expression, badExpression })
+      setBadExpression(badExpression)
+      setTriggerUpdate(!triggerUpdate)
     }
   }
 
-  handleHexValueChange = (value: string) => {
+  const handleHexValueChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 2).toUpperCase()
-    if (this.props.breakpoint) {
-      this.props.breakpoint.value = parseInt(value, 16)
-      this.setState({ value })
+    if (props.breakpoint) {
+      props.breakpoint.hexvalue = parseInt(value ? value : '-1', 16)
+      setTriggerUpdate(!triggerUpdate)
     }
   }
 
-  handleHitCountChange = (value: string) => {
+  const handleHitCountChange = (value: string) => {
     value = value.replace(/[^0-9]/gi, '')
     if (value.trim() !== '') {
       value = Math.max(parseInt(value), 1).toString()
     }
-    if (this.props.breakpoint) {
-      this.props.breakpoint.hitcount = parseInt(value || '1')
-      this.setState({ hitcount: value })
+    if (props.breakpoint) {
+      props.breakpoint.hitcount = parseInt(value || '1')
+      setTriggerUpdate(!triggerUpdate)
     }
   }
 
-  handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    this.dragging = true
-    const dialog = this.dialogRef.current;
-    if (dialog) {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (dialogRef.current) {
+      setDragging(true)
+      const div = dialogRef.current as HTMLDivElement
       // Offset of the mouse down event within the dialog title bar.
       // This way we drag the window from where the user clicked.
-      this.offsetX = e.clientX - dialog.offsetLeft
-      this.offsetY = e.clientY - dialog.offsetTop
+      setOffset([e.clientX - div.offsetLeft, e.clientY - div.offsetTop])
     }
   }
 
-  handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (this.dragging) {
-      const dialog = this.dialogRef.current;
-      if (dialog) {
-        const left = e.clientX - this.offsetX;
-        const top = e.clientY - this.offsetY;
-        this.props.setDialogPosition(left, top)
-        dialog.style.left = `${left}px`;
-        dialog.style.top = `${top}px`;
-      }
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (dragging && dialogRef.current) {
+      const div = dialogRef.current as HTMLDivElement
+      const left = e.clientX - offset[0];
+      const top = e.clientY - offset[1];
+      props.setDialogPosition(left, top)
+      div.style.left = `${left}px`;
+      div.style.top = `${top}px`;
     }
   }
 
-  handleMouseUp = () => {
-    this.dragging = false
+  const handleMouseUp = () => {
+    setDragging(false)
   }
 
-  handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.props.breakpoint.watchpoint = e.target.value === "memoryAccess"
-    this.handleExpressionChange(this.props.breakpoint.expression)
-    this.setState({ watchpoint: this.props.breakpoint.watchpoint })
+  const handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    props.breakpoint.watchpoint = e.target.value === "memoryAccess"
+    handleExpressionChange(props.breakpoint.expression)
+    setTriggerUpdate(!triggerUpdate)
   }
 
-  handleMemgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.props.breakpoint.memget = e.target.checked
-    this.setState({ memget: this.props.breakpoint.memget })
+  const handleMemgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    props.breakpoint.memget = e.target.checked
+    setTriggerUpdate(!triggerUpdate)
   }
 
-  handleMemsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.props.breakpoint.memset = e.target.checked
-    this.setState({ memset: this.props.breakpoint.memset })
+  const handleMemsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    props.breakpoint.memset = e.target.checked
+    setTriggerUpdate(!triggerUpdate)
   }
 
-  handleMemoryBankChange = (value: string) => {
+  const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
       const bank = MEMORY_BANKS[key];
       if (bank.name === value) {
-        this.props.breakpoint.memoryBank = key
-        this.setState({ memoryBank: value })
+        props.breakpoint.memoryBank = key
+        setTriggerUpdate(!triggerUpdate)
+        // bail early since we found a match
         return false
       }
     }
   }
 
-  isBankDisabledForAddress = (address: number, value: string) => {
+  const isBankDisabledForAddress = (address: number, value: string) => {
     for (const bank of Object.values(MEMORY_BANKS)) {
       if (bank.name === value && address >= bank.min && address <= bank.max) {
         return false
@@ -173,23 +149,27 @@ class BreakpointEdit extends React.Component<
     return true
   }
 
-  render() {
-    return <div className="modal-overlay"
-      onMouseMove={(e) => this.handleMouseMove(e)}>
+  const v = props.breakpoint.hexvalue
+  const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ''
+
+  return (
+    <div className="modal-overlay"
+      onMouseMove={(e) => handleMouseMove(e)}
+      onMouseUp={handleMouseUp}>
       <div className="floating-dialog flex-column"
-        ref={this.dialogRef}
+        ref={dialogRef}
         style={{
-          left: `${this.props.dialogPositionX}px`, top: `${this.props.dialogPositionY}px`,
+          left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
           width: "450px", height: "auto"
         }}
       >
         <div className="flex-column">
           <div className="flex-row-space-between"
-            onMouseDown={(e) => this.handleMouseDown(e)}
-            onMouseMove={(e) => this.handleMouseMove(e)}
-            onMouseUp={this.handleMouseUp}>
+            onMouseDown={(e) => handleMouseDown(e)}
+            onMouseMove={(e) => handleMouseMove(e)}
+            onMouseUp={handleMouseUp}>
             <div className="white-title">Edit Breakpoint or Watchpoint</div>
-            <div onClick={this.props.cancelDialog}>
+            <div onClick={props.cancelDialog}>
               <FontAwesomeIcon icon={iconBreakpointDelete}
                 className='breakpoint-pushbutton'
                 style={{ color: "white", fontSize: "12pt", marginTop: "4pt" }} />
@@ -202,84 +182,84 @@ class BreakpointEdit extends React.Component<
             <div className="white-title">Break at: </div>
             <input type="radio" id="Address" name="breakAt" value="address"
               className="check-radio-box"
-              checked={!this.props.breakpoint.watchpoint}
-              onChange={(e) => { this.handleBreakAtChange(e) }} />
+              checked={!props.breakpoint.watchpoint}
+              onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="Address" className="white-title flush-left">Breakpoint</label>
             <input type="radio" id="MemoryAccess" name="breakAt" value="memoryAccess"
               className="check-radio-box"
-              checked={this.props.breakpoint.watchpoint}
-              onChange={(e) => { this.handleBreakAtChange(e) }} />
+              checked={props.breakpoint.watchpoint}
+              onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="MemoryAccess" className="white-title flush-left">Memory Watchpoint</label>
           </div>
           <div className="flex-row">
             <EditField name="Address: "
-              value={this.state.address}
-              setValue={this.handleAddressChange}
+              value={props.breakpoint.address.toString(16).toUpperCase()}
+              setValue={handleAddressChange}
               placeholder="F800"
               width="5em" />
-            {this.props.breakpoint.watchpoint &&
+            {props.breakpoint.watchpoint &&
               <div>
-                <PullDownMenu values={getSoftSwitchDescriptions()} setValue={this.handleAddressChange} />
+                <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
               </div>}
           </div>
-          {this.state.watchpoint ?
+          {props.breakpoint.watchpoint ?
             <div>
               <div style={{ height: "8px" }} />
               <input type="checkbox" id="memget" value="memget"
                 className="check-radio-box shift-down"
-                checked={this.props.breakpoint.memget}
-                onChange={(e) => { this.handleMemgetChange(e) }} />
+                checked={props.breakpoint.memget}
+                onChange={(e) => { handleMemgetChange(e) }} />
               <label htmlFor="memget" className="white-title flush-left">Read</label>
               <input type="checkbox" id="memset" value="memset"
                 className="check-radio-box shift-down"
-                checked={this.props.breakpoint.memset}
-                onChange={(e) => { this.handleMemsetChange(e) }} />
+                checked={props.breakpoint.memset}
+                onChange={(e) => { handleMemsetChange(e) }} />
               <label htmlFor="memset" className="white-title flush-left">Write</label>
               <EditField name="With hex value:"
-                value={this.state.value}
-                setValue={this.handleHexValueChange}
+                value={hexvalue}
+                setValue={handleHexValueChange}
                 placeholder="any"
                 width="5em" />
             </div>
             :
             <div>
               <EditField name="Expression: "
-                value={this.state.expression}
-                setValue={this.handleExpressionChange}
-                warning={this.state.badExpression}
+                value={props.breakpoint.expression}
+                setValue={handleExpressionChange}
+                warning={badExpression}
                 help="Example: (A > #$80) && ($2000 == #$C0)"
                 placeholder="Break when expression evaluates to true" />
               <EditField name="Hit&nbsp;Count: "
-                value={this.state.hitcount}
-                setValue={this.handleHitCountChange}
+                value={props.breakpoint.hitcount.toString()}
+                setValue={handleHitCountChange}
                 placeholder="1"
                 width="5em" />
             </div>
           }
           <Droplist name="Memory&nbsp;Bank: "
             className="dark-mode-edit"
-            value={this.state.memoryBank}
+            value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
             values={MemoryBankNames}
-            setValue={this.handleMemoryBankChange}
-            address={parseInt(this.state.address || '0', 16)}
-            isDisabled={this.isBankDisabledForAddress} />
+            setValue={handleMemoryBankChange}
+            address={props.breakpoint.address}
+            isDisabled={isBankDisabledForAddress} />
         </div>
         <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
           <div></div>
           <div className="flex-row">
             <button className="pushButton text-button"
-              onClick={this.props.saveBreakpoint}>
+              onClick={props.saveBreakpoint}>
               <span className="bigger-font">OK</span>
             </button>
             <button className="pushButton text-button"
-              onClick={this.props.cancelDialog}>
+              onClick={props.cancelDialog}>
               <span className="bigger-font">Cancel</span>
             </button>
           </div>
         </div>
       </div>
     </div>
-  }
+  )
 }
 
 export default BreakpointEdit;

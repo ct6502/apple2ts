@@ -7,10 +7,10 @@ import { midiOutDevices, getMidiOutIndex, setMidiOutIndex } from "./midiinterfac
 
 export const MidiDeviceSelect = () => {
   const [midiOpen, setMidiOpen] = React.useState<boolean>(false)
-  const [position, setPosition] = React.useState<{x: number, y: number}>({x: 0, y: 0})
+  const [position, setPosition] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
   const handleMidiClick = (event: React.MouseEvent) => {
-    setPosition({x: event.clientX, y: event.clientY})
+    setPosition({ x: event.clientX, y: event.clientY })
     setMidiOpen(true);
   }
 
@@ -18,6 +18,8 @@ export const MidiDeviceSelect = () => {
     setMidiOpen(false);
     if (index >= 0) setMidiOutIndex(index);
   }
+
+  if (!navigator.requestMIDIAccess) return <></>
 
   return (
     <span>
@@ -27,16 +29,16 @@ export const MidiDeviceSelect = () => {
         title="Midi Device Select"
         onClick={handleMidiClick}
       >
-        <img src={PictogrammersMaterialMidiport} alt="MidiOut" width={30} height={30}/>
+        <img src={PictogrammersMaterialMidiport} alt="MidiOut" width={30} height={30} />
       </button>
-      {midiOpen &&
+      {midiOpen && midiOutDevices && midiOutDevices.length > 0 &&
         <div className="modal-overlay"
-          style={{backgroundColor: 'rgba(0, 0, 0, 0)'}}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
           onClick={() => handleMidiClose()}>
           <div className="floating-dialog flex-column"
-            style={{backgroundColor: 'white', left: position.x, top: position.y}}>
+            style={{ backgroundColor: 'white', left: position.x, top: position.y }}>
             {[...midiOutDevices.keys()].map((i) => (
-              <div style={{padding: '5px', cursor: 'pointer'}}
+              <div style={{ padding: '5px', cursor: 'pointer' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
                 key={i} onClick={() => handleMidiClose(i)}>

@@ -105,7 +105,7 @@ export class Breakpoint implements IBreakpoint {
   memget: boolean;
   memset: boolean;
   expression: string;
-  value: number;
+  hexvalue: number;
   hitcount: number;
   nhits: number;
   memoryBank: string;
@@ -119,7 +119,7 @@ export class Breakpoint implements IBreakpoint {
     this.memget = false
     this.memset = true
     this.expression = ''
-    this.value = -1
+    this.hexvalue = -1
     this.hitcount = 0
     this.nhits = 0
     this.memoryBank = ''

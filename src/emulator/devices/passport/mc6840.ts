@@ -29,7 +29,7 @@ enum MODE
   FREQUENCY_CMP1    = (5<<3), // (NA)
   SINGLE_SHOT1      = (6<<3), // Reset causes init
   PULSE_WIDTH_CMP1  = (7<<3), // (NA)
-};
+}
 
 class PTMTimer
 {
@@ -115,7 +115,7 @@ class PTMTimer
     this._count = 0xFFFF;
     this._control = 0;  
   }
-};
+}
 
 export class MC6840
 {
@@ -148,7 +148,7 @@ export class MC6840
 
   timerLSBw(idx: number, value: number): void
   {
-    let inreset = this._timer[0].control & CONTROL.SPECIAL;
+    const inreset = this._timer[0].control & CONTROL.SPECIAL;
 
     const latch = this._msb*256 + value;
     this._timer[idx].latch = latch;
@@ -161,6 +161,7 @@ export class MC6840
     this.irq(idx, false);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   timerLSBr(idx: number): number
   {
     // there is only 1 lsb buffer register
@@ -176,7 +177,7 @@ export class MC6840
   timerMSBr(idx: number): number
   {
     // timer0 holds reset flag
-    let inreset = this._timer[0].control & CONTROL.SPECIAL;
+    const inreset = this._timer[0].control & CONTROL.SPECIAL;
 
     const count = (inreset) ? this._timer[idx].latch : this._timer[idx].count;
     this._lsb = count & 0xff;
@@ -193,7 +194,7 @@ export class MC6840
   update(cycles: number): void
   {
     // timer1 holds reset flag
-    let inreset = this._timer[0].control & CONTROL.SPECIAL;
+    const inreset = this._timer[0].control & CONTROL.SPECIAL;
     this._div8 += cycles;
 
     if (inreset)
@@ -236,7 +237,7 @@ export class MC6840
         if (zeroed)
         {
           //console.log("timer[" + i + "] zeroed");
-          let control = this._timer[i].control;
+          const control = this._timer[i].control;
           if (control & CONTROL.IRQ_ENABLE)
             this.irq(i, true);
 
@@ -303,5 +304,5 @@ export class MC6840
     this._div8 = 0;
     this.reset()
   }
-};
+}
 

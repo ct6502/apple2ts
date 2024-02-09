@@ -50,7 +50,7 @@ const checkMemoryBank = (bankKey: string, address: number) => {
 export const isWatchpoint = (addr: number, value: number, set: boolean) => {
   const bp = breakpointMap.get(addr)
   if (!bp || !bp.watchpoint || bp.disabled) return false
-  if (bp.value >= 0 && bp.value !== value) return false
+  if (bp.hexvalue >= 0 && bp.hexvalue !== value) return false
   if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, addr)) return false
   return set ? bp.memset : bp.memget
 }
