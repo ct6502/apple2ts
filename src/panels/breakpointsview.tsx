@@ -114,13 +114,13 @@ const BreakpointsView = (props: {
             paddingLeft: "5px",
           }}>Breakpoints</div>
         <div className="flex-row">
-          <button className="pushButton tightButton"
+          <button className="push-button tightButton"
             title="Add new breakpoint"
             onClick={addBreakpoint}
             disabled={false}>
             <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: '0.7em' }} />
           </button>
-          <button className="pushButton tightButton"
+          <button className="push-button tightButton"
             title="Remove all breakpoints"
             onClick={removeAllBreakpoints}
             disabled={false}>

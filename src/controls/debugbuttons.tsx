@@ -19,7 +19,7 @@ import { handleSetCPUState } from "../controller";
 const DebugButtons = (props: DisplayProps) => {
   const notStarted = props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT;
   return <span className="flex-row">
-    <button className="pushButton"
+    <button className="push-button"
       title={props.runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
       onClick={() => {
         handleSetCPUState(props.runMode === RUN_MODE.PAUSED ?
@@ -30,31 +30,31 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title={"Go Back in Time"}
       onClick={passGoBackInTime}
       disabled={notStarted || !handleCanGoBackward()}>
       <FontAwesomeIcon icon={faFastBackward} />
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title={"Take a Snapshot"}
       onClick={passTimeTravelSnapshot}
       disabled={notStarted}>
       <FontAwesomeIcon icon={faCamera} />
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title={"Go Forward in Time"}
       onClick={passGoForwardInTime}
       disabled={notStarted || !handleCanGoForward()}>
       <FontAwesomeIcon icon={faFastForward} />
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title={"Save State with Snapshots"}
       onClick={() => props.handleFileSave(true)}
       disabled={notStarted}>
       <img src={multiSave} alt="Save Snapshots" width={23} height={23} />
     </button>
-    <button className="pushButton" title="Toggle Debug"
+    <button className="push-button" title="Toggle Debug"
       onClick={() => passSetDebug(!handleGetIsDebugging())}>
       <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
     </button>

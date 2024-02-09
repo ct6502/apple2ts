@@ -23,12 +23,12 @@ const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
 
   return <span className="flex-row">
-    <button className="pushButton"
+    <button className="push-button"
       title={speedMode ? "Fast" : "1 MHz"}
       onClick={() => passSetSpeedMode(speedMode ? 0 : 1)}>
       <FontAwesomeIcon icon={speedMode ? faTruckFast : faWalking} />
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title={colorToName(props.colorMode)}
       onClick={(e) => {
         if (e.shiftKey) {
@@ -44,7 +44,7 @@ const ConfigButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faDisplay} />
       </span>
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title={"Toggle Sound"}
       style={{ display: typeof AudioContext !== 'undefined' ? '' : 'none' }}
       onClick={() => { audioEnable(!isAudioEnabled()) }}>
@@ -59,7 +59,7 @@ const ConfigButtons = (props: DisplayProps) => {
     <MockingboardWaveform />
     <MidiDeviceSelect />
 
-    {/* <button className="pushButton"
+    {/* <button className="push-button"
       title={"Keyboard Joystick"}
       onClick={() => props.handleUseArrowKeyJoystick(props.useArrowKeysAsJoystick)}>
       {useArrowKeysAsJoystick}

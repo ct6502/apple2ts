@@ -7,11 +7,11 @@ type RequestFullScreen_Type = {
   call: (context: HTMLCanvasElement) => void
 }
 
-const FullScreenButton = (props: DisplayProps) => {  
+const FullScreenButton = (props: DisplayProps) => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   return (
-    <button className="pushButton" title="Full Screen"
-      style={{display: isTouchDevice ? 'none' : ''}}
+    <button className="push-button" title="Full Screen"
+      style={{ display: isTouchDevice ? 'none' : '' }}
       onClick={() => {
         const context = props.myCanvas.current
         if (context) {
@@ -30,8 +30,8 @@ const FullScreenButton = (props: DisplayProps) => {
           }
         }
       }
-        }>
-      <FontAwesomeIcon icon={faExpand}/>
+      }>
+      <FontAwesomeIcon icon={faExpand} />
     </button>
   )
 }

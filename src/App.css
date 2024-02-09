@@ -9,6 +9,12 @@ body {
   margin: 10px;
 }
 
+input:focus {
+  outline-style: solid;
+  outline-width: 1px;
+  outline-color: inherit;
+}
+
 .bgColor {
   background-color: #BFBB98;
 }
@@ -79,7 +85,7 @@ body {
   border: 0.75px solid black !important;
 } */
 
-.pushButton {
+.push-button {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -102,11 +108,17 @@ body {
   outline: none;
 }
 
-.pushButton:active {
+.push-button:focus {
+  outline-width: 1px;
+  outline-style: solid;
+  outline-color: inherit;
+}
+
+.push-button:active {
   background-color: #898677;
 }
 
-.pushButton:disabled {
+.push-button:disabled {
   border: 0;
   opacity: 30%;
   cursor: default;

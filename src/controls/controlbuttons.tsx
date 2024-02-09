@@ -11,29 +11,29 @@ import { handleSetCPUState } from "../controller";
 
 const ControlButtons = (props: DisplayProps) => {
   return <span className="flex-row">
-    <button className="pushButton"
+    <button className="push-button"
       title="Boot"
       onClick={() => { handleSetCPUState(RUN_MODE.NEED_BOOT) }}>
       <FontAwesomeIcon icon={faPowerOff} />
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title="Reset"
       onClick={() => { handleSetCPUState(RUN_MODE.NEED_RESET) }}
       disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
     >
       <FontAwesomeIcon icon={faArrowRotateRight} />
     </button>
-    <button className="pushButton" title="Restore State"
+    <button className="push-button" title="Restore State"
       onClick={() => props.setShowFileOpenDialog(true, 0)}>
       <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: '0.9em' }} />
     </button>
-    <button className="pushButton" title="Save State"
+    <button className="push-button" title="Save State"
       onClick={() => props.handleFileSave(false)}
       disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
     >
       <FontAwesomeIcon icon={faSave} />
     </button>
-    <button className="pushButton" title="Copy Screen"
+    <button className="push-button" title="Copy Screen"
       onClick={() => props.handleCopyToClipboard()}>
       <FontAwesomeIcon icon={faClipboard} />
     </button>

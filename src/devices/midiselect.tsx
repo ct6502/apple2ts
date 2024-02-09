@@ -25,7 +25,7 @@ export const MidiDeviceSelect = () => {
     <span>
       <button
         id="basic-button"
-        className="pushButton"
+        className="push-button"
         title="Midi Device Select"
         onClick={handleMidiClick}
       >

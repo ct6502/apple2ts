@@ -60,7 +60,7 @@ const DisassemblyControls = () => {
         onChange={handleDisassembleAddrChange}
         onKeyDown={handleDisassembleAddrKeyDown}
       />
-      <button className="pushButton"
+      <button className="push-button"
         title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
         onClick={() => {
           handleSetCPUState(runMode === RUN_MODE.PAUSED ?
@@ -71,19 +71,19 @@ const DisassemblyControls = () => {
           <FontAwesomeIcon icon={faPlay} /> :
           <FontAwesomeIcon icon={faPause} />}
       </button>
-      <button className="pushButton"
+      <button className="push-button"
         title={tooltipOverShow ? (isJSR ? "Step Over" : " Step") : ""}
         onClick={() => { setTooltipOverShow(false); passStepOver() }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <img src={isJSR ? bpStepOver : bpStepStmt} alt="Step Over" width={23} height={23} />
       </button>
-      <button className="pushButton"
+      <button className="push-button"
         title={tooltipIntoShow ? "Step Into" : ""}
         onClick={() => { setTooltipIntoShow(false); passStepInto() }}
         disabled={runMode !== RUN_MODE.PAUSED || !isJSR}>
         <img src={bpStepInto} alt="Step Into" width={23} height={23} />
       </button>
-      <button className="pushButton"
+      <button className="push-button"
         title={tooltipOutShow ? "Step Out" : ""}
         onClick={() => { setTooltipOutShow(false); passStepOut() }}
         disabled={runMode !== RUN_MODE.PAUSED}>

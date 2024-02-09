@@ -120,7 +120,7 @@ export class Breakpoint implements IBreakpoint {
     this.memset = true
     this.expression = ''
     this.hexvalue = -1
-    this.hitcount = 0
+    this.hitcount = 1
     this.nhits = 0
     this.memoryBank = ''
   }

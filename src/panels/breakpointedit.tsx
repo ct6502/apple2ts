@@ -20,16 +20,6 @@ const BreakpointEdit = (props: {
 }) => {
   const dialogRef = useRef(null)
 
-  // const [state, setState] = useState({
-  //   watchpoint: props.breakpoint.watchpoint,
-  //   address: props.breakpoint.address.toString(16).toUpperCase(),
-  //   expression: props.breakpoint.expression,
-  //   hitcount: Math.max(props.breakpoint.hitcount, 1).toString(),
-  //   hexvalue: '',
-  //   memget: props.breakpoint.memget,
-  //   memset: props.breakpoint.memset,
-  //   memoryBank: MEMORY_BANKS[props.breakpoint.memoryBank].name,
-  // })
   const [badExpression, setBadExpression] = useState('')
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [offset, setOffset] = useState([0, 0])
@@ -154,6 +144,10 @@ const BreakpointEdit = (props: {
 
   return (
     <div className="modal-overlay"
+      tabIndex={0} // Make the div focusable
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') props.cancelDialog()
+      }}
       onMouseMove={(e) => handleMouseMove(e)}
       onMouseUp={handleMouseUp}>
       <div className="floating-dialog flex-column"
@@ -180,7 +174,9 @@ const BreakpointEdit = (props: {
         <div className="flex-column">
           <div className="flex-row">
             <div className="white-title">Break at: </div>
-            <input type="radio" id="Address" name="breakAt" value="address"
+            <input type="radio"
+              id="Address"
+              name="breakAt" value="address"
               className="check-radio-box"
               checked={!props.breakpoint.watchpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
@@ -193,6 +189,7 @@ const BreakpointEdit = (props: {
           </div>
           <div className="flex-row">
             <EditField name="Address: "
+              initialFocus={true}
               value={props.breakpoint.address.toString(16).toUpperCase()}
               setValue={handleAddressChange}
               placeholder="F800"
@@ -247,11 +244,11 @@ const BreakpointEdit = (props: {
         <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
           <div></div>
           <div className="flex-row">
-            <button className="pushButton text-button"
+            <button className="push-button text-button"
               onClick={props.saveBreakpoint}>
               <span className="bigger-font">OK</span>
             </button>
-            <button className="pushButton text-button"
+            <button className="push-button text-button"
               onClick={props.cancelDialog}>
               <span className="bigger-font">Cancel</span>
             </button>

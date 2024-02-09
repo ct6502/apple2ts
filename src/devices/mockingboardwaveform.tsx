@@ -24,7 +24,7 @@ export const MockingboardWaveform = () => {
     <span>
       <button
         id="basic-button"
-        className="pushButton"
+        className="push-button"
         title="Mockingboard wave form"
         onClick={handleMockClick}
       >

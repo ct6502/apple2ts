@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWarning
@@ -12,16 +12,25 @@ interface EditFieldProps {
   width?: string;
   help?: string;
   warning?: string;
+  initialFocus?: boolean;
 }
 
 const EditField = (props: EditFieldProps) => {
+  const inputRef = useRef(null);
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     props.setValue(e.target.value)
   }
+  useEffect(() => {
+    if (props.initialFocus && inputRef.current) {
+      const input = inputRef.current as HTMLInputElement
+      input.focus();
+    }
+  }, [props.initialFocus]);
   return (
     <div className="flex-row" style={{ marginTop: '2px', position: "relative" }}>
       <div className="white-title">{props.name}</div>
       <input type="text"
+        ref={inputRef}
         className="dark-mode-edit mono-text"
         placeholder={props.placeholder}
         value={props.value}

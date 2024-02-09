@@ -33,7 +33,7 @@ const KeyboardButtons = (props: DisplayProps) => {
   }
   return <span>{isTouchDevice && <span className="flex-row">
     {arrowKeys.map((key, i) => (
-      <button className="pushButton key-button" title={key.name}
+      <button className="push-button key-button" title={key.name}
         key={key.name}
         onTouchStart={() => props.handleArrowKey(i, false)}
         onTouchEnd={() => props.handleArrowKey(i, true)}
@@ -43,11 +43,11 @@ const KeyboardButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={key.icon} />
       </button>
     ))}
-    <button className="pushButton key-button" title="Escape"
+    <button className="push-button key-button" title="Escape"
       onMouseDown={() => passKeypress(String.fromCharCode(27))}>
       <span className="text-key">esc</span>
     </button>
-    <button className="pushButton key-button" title="Tab"
+    <button className="push-button key-button" title="Tab"
       onMouseDown={() => passKeypress(String.fromCharCode(9))}>
       <span className="text-key">tab</span>
     </button>
