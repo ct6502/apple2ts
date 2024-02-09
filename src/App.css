@@ -183,6 +183,10 @@ body {
   cursor: pointer;
 }
 
+.text-button:focus {
+  outline: auto;
+}
+
 .text-key {
   font-size: medium;
   letter-spacing: -0.03em;

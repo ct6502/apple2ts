@@ -19,7 +19,7 @@ test('validBreakpointExpression', () => {
 })
 
 // Test all Breakpoint properties
-const bpMap: BreakpointMap = new Map()
+const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
 
 // ************ Breakpoints ************

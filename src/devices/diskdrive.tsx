@@ -1,4 +1,3 @@
-import React from "react"
 import { crc32, uint32toBytes } from "../emulator/utility/utility"
 import { handleGetDriveProps, handleSetDiskData } from "../main2worker"
 import { imageList } from "./assets"
@@ -25,43 +24,41 @@ const resetDrive = (drive: number) => {
   handleSetDiskData(drive, new Uint8Array(), "")
 }
 
-class DiskDrive extends React.Component<{
+const DiskDrive = (props: {
   drive: number,
   setShowFileOpenDialog: (show: boolean, drive: number) => void
-}, object> {
+}) => {
 
-  render() {
-    const dprops = handleGetDriveProps(this.props.drive)
-    let img1: string
-    if (dprops.hardDrive) {
-      img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
-    } else {
-      img1 = (dprops.filename.length > 0) ?
-        (dprops.motorRunning ? imageList.disk2on : imageList.disk2off) :
-        (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
-    }
-    const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
-    let status = ['S7D1', 'S6D1', 'S6D2'][this.props.drive]
-    status += dprops.status
-    return (
-      <span className="driveClass">
-        <img className="disk2"
-          src={img1} alt={filename}
-          title={filename}
-          onClick={() => {
-            if (dprops.filename.length > 0) {
-              if (dprops.diskHasChanges) {
-                downloadDisk(dprops.diskData, filename)
-              }
-              resetDrive(this.props.drive)
-            }
-            this.props.setShowFileOpenDialog(true, this.props.drive)
-          }} />
-        <span className={"diskLabel"}>{dprops.filename}</span>
-        <span className={"defaultFont diskStatus"}>{status}</span>
-      </span>
-    )
+  const dprops = handleGetDriveProps(props.drive)
+  let img1: string
+  if (dprops.hardDrive) {
+    img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
+  } else {
+    img1 = (dprops.filename.length > 0) ?
+      (dprops.motorRunning ? imageList.disk2on : imageList.disk2off) :
+      (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
   }
+  const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
+  let status = ['S7D1', 'S6D1', 'S6D2'][props.drive]
+  status += dprops.status
+  return (
+    <span className="driveClass">
+      <img className="disk2"
+        src={img1} alt={filename}
+        title={filename}
+        onClick={() => {
+          if (dprops.filename.length > 0) {
+            if (dprops.diskHasChanges) {
+              downloadDisk(dprops.diskData, filename)
+            }
+            resetDrive(props.drive)
+          }
+          props.setShowFileOpenDialog(true, props.drive)
+        }} />
+      <span className={"diskLabel"}>{dprops.filename}</span>
+      <span className={"defaultFont diskStatus"}>{status}</span>
+    </span>
+  )
 }
 
 export default DiskDrive;

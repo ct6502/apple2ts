@@ -4,11 +4,8 @@ import { RUN_MODE } from "../emulator/utility/utility";
 
 type KEYS = 'PC' | 'Accum' | 'XReg' | 'YReg' | 'StackPtr' | 'flagIRQ'
 
-class State6502Controls extends React.Component<object, object>
-{
-  previousRunMode = RUN_MODE.IDLE
-
-  handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>, key: KEYS) => {
+const State6502Controls = () => {
+  const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>, key: KEYS) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase()
     const nv = newvalue.slice(key === 'PC' ? -4 : -2)
     const intValue = parseInt(nv || '0', 16)
@@ -24,7 +21,7 @@ class State6502Controls extends React.Component<object, object>
     passSetState6502(s6502)
   }
 
-  handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>, bitField: number) => {
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>, bitField: number) => {
     const newvalue = e.target.checked
     const s6502 = handleGetState6502()
     if (e.target.id === 'NMI') {
@@ -36,7 +33,7 @@ class State6502Controls extends React.Component<object, object>
     passSetState6502(s6502)
   }
 
-  createTextField = (name: string, key: KEYS, value: number, runMode: RUN_MODE) => {
+  const createTextField = (name: string, key: KEYS, value: number, runMode: RUN_MODE) => {
     const strVal = value.toString(16).toUpperCase()
     return (
       <div className="flex-row" style={{ alignItems: "center" }}>
@@ -45,13 +42,13 @@ class State6502Controls extends React.Component<object, object>
           className={name === 'PC' ? "hex-field" : "hex-field smallField"}
           disabled={runMode !== RUN_MODE.PAUSED}
           value={strVal}
-          onChange={(e) => this.handleTextFieldChange(e, key)}
+          onChange={(e) => handleTextFieldChange(e, key)}
         />
       </div>
     )
   }
 
-  createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
+  const createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
     const checked = (value & (1 << bitField)) !== 0
     return <div className="flex-column">
       <div className="bigger-font">{name}</div>
@@ -59,41 +56,39 @@ class State6502Controls extends React.Component<object, object>
         className="debugCheckbox"
         checked={checked}
         disabled={runMode !== RUN_MODE.PAUSED}
-        onChange={(e) => this.handleCheckboxChange(e, bitField)}
+        onChange={(e) => handleCheckboxChange(e, bitField)}
       />
     </div>
   }
 
-  render() {
-    const runMode = handleGetRunMode()
-    const s6502 = handleGetState6502()
-    return (
-      <div className="flex-column" style={{ gap: "5px" }}>
-        <div className="flex-row-space-between">
-          {this.createTextField('PC', 'PC', s6502.PC, runMode)}
-          {this.createTextField('A', 'Accum', s6502.Accum, runMode)}
-          {this.createTextField('X', 'XReg', s6502.XReg, runMode)}
-          {this.createTextField('Y', 'YReg', s6502.YReg, runMode)}
-          {this.createTextField('S', 'StackPtr', s6502.StackPtr, runMode)}
-          {this.createTextField('IRQ', 'flagIRQ', s6502.flagIRQ, runMode)}
+  const runMode = handleGetRunMode()
+  const s6502 = handleGetState6502()
+  return (
+    <div className="flex-column" style={{ gap: "5px" }}>
+      <div className="flex-row-space-between">
+        {createTextField('PC', 'PC', s6502.PC, runMode)}
+        {createTextField('A', 'Accum', s6502.Accum, runMode)}
+        {createTextField('X', 'XReg', s6502.XReg, runMode)}
+        {createTextField('Y', 'YReg', s6502.YReg, runMode)}
+        {createTextField('S', 'StackPtr', s6502.StackPtr, runMode)}
+        {createTextField('IRQ', 'flagIRQ', s6502.flagIRQ, runMode)}
+      </div>
+      <div className="flex-row-space-between">
+        <div className="flex-row">
+          {createCheckbox('N', 7, s6502.PStatus, runMode)}
+          {createCheckbox('V', 6, s6502.PStatus, runMode)}
+          {createCheckbox('B', 4, s6502.PStatus, runMode)}
+          {createCheckbox('D', 3, s6502.PStatus, runMode)}
+          {createCheckbox('I', 2, s6502.PStatus, runMode)}
+          {createCheckbox('Z', 1, s6502.PStatus, runMode)}
+          {createCheckbox('C', 0, s6502.PStatus, runMode)}
         </div>
-        <div className="flex-row-space-between">
-          <div className="flex-row">
-            {this.createCheckbox('N', 7, s6502.PStatus, runMode)}
-            {this.createCheckbox('V', 6, s6502.PStatus, runMode)}
-            {this.createCheckbox('B', 4, s6502.PStatus, runMode)}
-            {this.createCheckbox('D', 3, s6502.PStatus, runMode)}
-            {this.createCheckbox('I', 2, s6502.PStatus, runMode)}
-            {this.createCheckbox('Z', 1, s6502.PStatus, runMode)}
-            {this.createCheckbox('C', 0, s6502.PStatus, runMode)}
-          </div>
-          <div className="flex-row">
-            {this.createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
-          </div>
+        <div className="flex-row">
+          {createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
       </div>
-    )
-  }
+    </div>
+  )
 }
 
 export default State6502Controls;

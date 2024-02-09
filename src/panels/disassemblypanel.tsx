@@ -1,36 +1,30 @@
-import React from "react";
+import { useState } from "react";
 import DisassemblyControls from "./disassemblycontrols";
 import DisassemblyView from "./disassemblyview";
 import BreakpointsView from "./breakpointsview";
 import { passBreakpoints } from "../main2worker";
 import { BreakpointMap } from "./breakpoint";
 
-class DisassemblyPanel extends React.Component<object,
-  {
-    breakpoints: BreakpointMap;
-    setBreakpoints: (breakpoints: BreakpointMap) => void;
-  }> {
-  constructor(props: object) {
-    super(props);
-    this.state = {
-      breakpoints: new Map(),
-      setBreakpoints: (breakpoints: BreakpointMap) => {
-        this.setState({ breakpoints })
-        passBreakpoints(breakpoints)
-      },
-    };
+const DisassemblyPanel = () => {
+  // TODO: This is unfortunate that we need to maintain our own copy
+  // of the breakpoints.  It would be better to have the emulator hold them,
+  // but if we pass the breakpoints to the emulator, they don't get
+  // back here fast enough to update the GUI. 
+  const [breakpoints, setBreakpoints] = useState(new BreakpointMap())
+
+  const doSetBreakpoints = (breakpoints: BreakpointMap) => {
+    setBreakpoints(breakpoints)
+    passBreakpoints(breakpoints)
   }
 
-  render() {
-    return (
-      <div className="roundRectBorder">
-        <p className="defaultFont panelTitle bgColor">Disassembly</p>
-        <DisassemblyControls />
-        <DisassemblyView {...this.state} />
-        <BreakpointsView {...this.state} />
-      </div>
-    )
-  }
+  return (
+    <div className="roundRectBorder">
+      <p className="defaultFont panelTitle bgColor">Disassembly</p>
+      <DisassemblyControls />
+      <DisassemblyView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />
+      <BreakpointsView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />
+    </div>
+  )
 }
 
 export default DisassemblyPanel

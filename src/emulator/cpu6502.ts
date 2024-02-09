@@ -12,7 +12,7 @@ let doWatchpointBreak = false
 // let doDebugZeroPage = false
 // const instrTrail = new Array<string>(1000)
 // let posTrail = 0
-let breakpoints: BreakpointMap = new Map()
+let breakpointMap: BreakpointMap = new BreakpointMap()
 let runToRTS = false
 
 export const doSetBreakpointSkipOnce = () => {
@@ -21,23 +21,23 @@ export const doSetBreakpointSkipOnce = () => {
 
 export const setStepOut = () => {
   // If we have a new Step Out, remove any old "hit once" breakpoints
-  const bpTmp = new Map(breakpoints)
+  const bpTmp = new BreakpointMap(breakpointMap)
   bpTmp.forEach((bp, key) => {
-    if (bp.once) breakpoints.delete(key)
+    if (bp.once) breakpointMap.delete(key)
   });
   const addr = getLastJSR()
   if (addr < 0) return
-  if (breakpoints.get(addr)) return
+  if (breakpointMap.get(addr)) return
   const bp = new Breakpoint()
   bp.address = addr
   bp.once = true
   bp.hidden = true
-  breakpoints.set(addr, bp)
+  breakpointMap.set(addr, bp)
 }
 
 export const doSetBreakpoints = (bp: BreakpointMap) => {
   // This will automatically erase any "hit once" breakpoints, which is okay.
-  breakpoints = bp
+  breakpointMap = bp
 }
 
 const checkMemoryBank = (bankKey: string, address: number) => {
@@ -48,7 +48,7 @@ const checkMemoryBank = (bankKey: string, address: number) => {
 }
 
 export const isWatchpoint = (addr: number, value: number, set: boolean) => {
-  const bp = breakpoints.get(addr)
+  const bp = breakpointMap.get(addr)
   if (!bp || !bp.watchpoint || bp.disabled) return false
   if (bp.value >= 0 && bp.value !== value) return false
   if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, addr)) return false
@@ -145,8 +145,8 @@ export const hitBreakpoint = () => {
     doWatchpointBreak = false
     return true
   }
-  if (breakpoints.size === 0 || breakpointSkipOnce) return false
-  const bp = breakpoints.get(s6502.PC)
+  if (breakpointMap.size === 0 || breakpointSkipOnce) return false
+  const bp = breakpointMap.get(s6502.PC)
   if (!bp || bp.disabled || bp.watchpoint) return false
   if (bp.expression) {
     const expression = convertBreakpointExpression(bp.expression)
@@ -159,7 +159,7 @@ export const hitBreakpoint = () => {
     bp.nhits = 0
   }
   if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, bp.address)) return false
-  if (bp.once) breakpoints.delete(s6502.PC)
+  if (bp.once) breakpointMap.delete(s6502.PC)
   return true
 }
 

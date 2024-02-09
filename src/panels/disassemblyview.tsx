@@ -102,7 +102,7 @@ class DisassemblyView extends React.Component<{ breakpoints: BreakpointMap; setB
         const addr = parseInt(code.slice(0, code.indexOf(':')), 16)
         const bp: Breakpoint = new Breakpoint()
         bp.address = addr
-        const breakpoints: BreakpointMap = new Map(this.props.breakpoints);
+        const breakpoints: BreakpointMap = new BreakpointMap(this.props.breakpoints);
         breakpoints.set(addr, bp)
         this.props.setBreakpoints(breakpoints)
       }
@@ -111,7 +111,7 @@ class DisassemblyView extends React.Component<{ breakpoints: BreakpointMap; setB
 
   handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: BreakpointMap = new Map(this.props.breakpoints)
+    const breakpoints: BreakpointMap = new BreakpointMap(this.props.breakpoints)
     const bp = breakpoints.get(addr)
     if (bp) {
       if (bp.disabled) {

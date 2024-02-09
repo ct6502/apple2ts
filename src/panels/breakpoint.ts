@@ -126,4 +126,20 @@ export class Breakpoint implements IBreakpoint {
   }
 }
 
-export type BreakpointMap = Map<number, Breakpoint>
+export class BreakpointMap extends Map<number, Breakpoint> {
+  set(key: number, value: Breakpoint): this {
+    // Your custom logic here
+    // For example, you might want to sort the keys each time you set a new entry:
+    const entries = [...this.entries()];
+    entries.push([key, value]);
+    entries.sort()
+    super.clear();
+    for (const [k, v] of entries) {
+      super.set(k, v);
+    }
+
+    return this;
+  }
+}
+
+// export type BreakpointMap = Map<number, Breakpoint>

@@ -162,7 +162,7 @@ let machineState: MachineState = {
   canGoBackward: true,
   canGoForward: true,
   iTempState: 0,
-  timeTravelThumbnails: new Array<TimeTravelThumbnail>
+  timeTravelThumbnails: new Array<TimeTravelThumbnail>,
 }
 
 const doOnMessage = (e: MessageEvent) => {
