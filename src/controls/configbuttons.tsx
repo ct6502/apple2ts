@@ -17,12 +17,12 @@ import { handleGetCapsLock, handleGetColorMode, handleGetSpeedMode, passCapsLock
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
 const ConfigButtons = () => {
-  // const useArrowKeysAsJoystick = props.useArrowKeysAsJoystick ?
-  //   <VideogameAssetIcon className="pushMuiButton" /> :
-  //   <VideogameAssetOffIcon className="pushMuiButton" />
   const speedMode = handleGetSpeedMode()
   const colorMode = handleGetColorMode()
   const capsLock = handleGetCapsLock()
+  // const useArrowKeysAsJoystick = handleGetArrowKeysAsJoystick() ?
+  //   <VideogameAssetIcon className="pushMuiButton" /> :
+  //   <VideogameAssetOffIcon className="pushMuiButton" />
 
   return <span className="flex-row">
     <button className="push-button"
@@ -65,7 +65,7 @@ const ConfigButtons = () => {
 
     {/* <button className="push-button"
       title={"Keyboard Joystick"}
-      onClick={() => props.handleUseArrowKeyJoystick(props.useArrowKeysAsJoystick)}>
+      onClick={() => passArrowKeysAsJoystick(handleGetArrowKeysAsJoystick())}>
       {useArrowKeysAsJoystick}
     </button> */}
   </span>

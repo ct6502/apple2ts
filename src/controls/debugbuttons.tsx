@@ -1,7 +1,7 @@
 import { RUN_MODE } from "../emulator/utility/utility";
 import {
   passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, passSetDebug
+  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, passSetDebug, handleGetRunMode
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -15,18 +15,20 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import multiSave from '../img/multiSave.svg';
 import { handleSetCPUState } from "../controller";
+import { handleFileSave } from "../fileoutput";
 
-const DebugButtons = (props: DisplayProps) => {
-  const notStarted = props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT;
+const DebugButtons = () => {
+  const runMode = handleGetRunMode()
+  const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT;
   return <span className="flex-row">
     <button className="push-button"
-      title={props.runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
+      title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
       onClick={() => {
-        handleSetCPUState(props.runMode === RUN_MODE.PAUSED ?
+        handleSetCPUState(runMode === RUN_MODE.PAUSED ?
           RUN_MODE.RUNNING : RUN_MODE.PAUSED)
       }}
-      disabled={props.runMode === RUN_MODE.IDLE}>
-      {props.runMode === RUN_MODE.PAUSED ?
+      disabled={runMode === RUN_MODE.IDLE}>
+      {runMode === RUN_MODE.PAUSED ?
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
@@ -50,7 +52,7 @@ const DebugButtons = (props: DisplayProps) => {
     </button>
     <button className="push-button"
       title={"Save State with Snapshots"}
-      onClick={() => props.handleFileSave(true)}
+      onClick={() => handleFileSave(true)}
       disabled={notStarted}>
       <img src={multiSave} alt="Save Snapshots" width={23} height={23} />
     </button>

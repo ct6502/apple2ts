@@ -9,8 +9,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
 import { handleCopyToClipboard } from "../copycanvas";
+import { handleGetRunMode } from "../main2worker";
+import { handleFileSave } from "../fileoutput";
 
 const ControlButtons = (props: DisplayProps) => {
+  const runMode = handleGetRunMode()
   return <span className="flex-row">
     <button className="push-button"
       title="Boot"
@@ -20,7 +23,7 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="push-button"
       title="Reset"
       onClick={() => { handleSetCPUState(RUN_MODE.NEED_RESET) }}
-      disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
+      disabled={runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT}
     >
       <FontAwesomeIcon icon={faArrowRotateRight} />
     </button>
@@ -29,8 +32,8 @@ const ControlButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: '0.9em' }} />
     </button>
     <button className="push-button" title="Save State"
-      onClick={() => props.handleFileSave(false)}
-      disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
+      onClick={() => handleFileSave(false)}
+      disabled={runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT}
     >
       <FontAwesomeIcon icon={faSave} />
     </button>

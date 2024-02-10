@@ -54,20 +54,14 @@ type Apple2SaveState = {
 }
 
 type DisplayProps = {
-  runMode: RUN_MODE,
   speed: number,
-  useArrowKeysAsJoystick: boolean,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
-  canvasSize: number[],
-  handleArrowKey: (key: ARROW, release: boolean) => void,
-  handleCtrlDown: (ctrlKeyMode: number) => void,
-  handleOpenAppleDown: (ctrlKeyMode: number) => void,
-  handleClosedAppleDown: (ctrlKeyMode: number) => void,
-  handleUseArrowKeyJoystick: (enable: boolean) => void,
+  handleCtrlDown: (mode: number) => void,
+  handleOpenAppleDown: (mode: number) => void,
+  handleClosedAppleDown: (mode: number) => void,
   setShowFileOpenDialog: (show: boolean, drive: number) => void,
-  handleFileSave: (withSnapshots: boolean) => void,
 }
 
 type SaveStateProps = {
@@ -136,7 +130,6 @@ type DriveSaveState = {
 type DisplaySaveState = {
   name: string,
   date: string,
-  help: string,
   colorMode: number,
   capsLock: boolean,
   audioEnable: boolean,

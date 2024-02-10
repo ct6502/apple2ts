@@ -91,7 +91,6 @@ const getDisplaySaveState = () => {
   const state: DisplaySaveState = {
     name: '',
     date: '',
-    help: '',
     colorMode: 0,
     capsLock: false,
     audioEnable: false,

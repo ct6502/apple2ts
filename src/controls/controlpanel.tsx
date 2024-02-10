@@ -9,7 +9,7 @@ const ControlPanel = (props: DisplayProps) => {
     <span className="flex-column">
       <span className="flex-row wrap">
         <ControlButtons {...props} />
-        <DebugButtons {...props} />
+        <DebugButtons />
         <FullScreenButton />
       </span>
       <ConfigButtons />

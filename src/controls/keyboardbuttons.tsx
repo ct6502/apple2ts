@@ -8,6 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { appleOutline, appleSolid } from "../img/icons";
 import { lockedKeyStyle } from "../emulator/utility/utility";
+import { handleArrowKey } from "../devices/gamepad";
 
 const KeyboardButtons = (props: DisplayProps) => {
   const arrowKeys = [
@@ -35,10 +36,10 @@ const KeyboardButtons = (props: DisplayProps) => {
     {arrowKeys.map((key, i) => (
       <button className="push-button key-button" title={key.name}
         key={key.name}
-        onTouchStart={() => props.handleArrowKey(i, false)}
-        onTouchEnd={() => props.handleArrowKey(i, true)}
-        onMouseDown={() => { if (!isTouchDevice) props.handleArrowKey(i, false) }}
-        onMouseUp={() => { if (!isTouchDevice) props.handleArrowKey(i, true) }}
+        onTouchStart={() => handleArrowKey(i, false)}
+        onTouchEnd={() => handleArrowKey(i, true)}
+        onMouseDown={() => { if (!isTouchDevice) handleArrowKey(i, false) }}
+        onMouseUp={() => { if (!isTouchDevice) handleArrowKey(i, true) }}
       >
         <FontAwesomeIcon icon={key.icon} />
       </button>

@@ -11,11 +11,13 @@ import {
   passPasteText,
   handleGetShowMouse,
   handleGetCapsLock,
+  handleGetRunMode,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
-import { ProcessDisplay } from './graphics';
-import { checkGamepad } from './devices/gamepad';
+import { ProcessDisplay, getCanvasSize } from './graphics';
+import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
+import { handleFileSave } from './fileoutput';
 
 let width = 800
 let height = 600
@@ -45,7 +47,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     ArrowRight: () => passGoForwardInTime(),
     c: () => handleCopyToClipboard(),
     o: () => props.setShowFileOpenDialog(true, 0),
-    s: () => props.handleFileSave(false),
+    s: () => handleFileSave(false),
   }
 
   const handleMetaKey = (key: string) => {
@@ -97,7 +99,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (e.key === 'v') return;
     }
     // If we're paused, allow <space> to resume
-    if (props.runMode === RUN_MODE.PAUSED && e.key === ' ') {
+    if (handleGetRunMode() === RUN_MODE.PAUSED && e.key === ' ') {
       passSetRunMode(RUN_MODE.RUNNING)
       setKeyHandled(true)
     }
@@ -109,8 +111,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    if (e.key in arrowKeys && props.useArrowKeysAsJoystick) {
-      props.handleArrowKey(arrowKeys[e.key], false)
+    if (e.key in arrowKeys) {  // && handleGetArrowKeysAsJoystick()) {
+      handleArrowKey(arrowKeys[e.key], false)
       e.preventDefault()
       e.stopPropagation()
       return
@@ -141,7 +143,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     } else if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     } else if (e.key in arrowKeys) {
-      props.handleArrowKey(arrowKeys[e.key], true)
+      handleArrowKey(arrowKeys[e.key], true)
     }
     if (keyHandled) {
       setKeyHandled(false)
@@ -243,7 +245,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  [width, height] = props.canvasSize
+  [width, height] = getCanvasSize()
 
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isTouchDevice = "ontouchstart" in document.documentElement
