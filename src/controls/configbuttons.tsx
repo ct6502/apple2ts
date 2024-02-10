@@ -12,34 +12,38 @@ import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
 import { ReactNode } from "react";
-import { handleGetSpeedMode, passSetSpeedMode } from "../main2worker";
+import { handleGetCapsLock, handleGetColorMode, handleGetSpeedMode, passCapsLock, passColorMode, passSetSpeedMode, updateDisplay } from "../main2worker";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
-const ConfigButtons = (props: DisplayProps) => {
+const ConfigButtons = () => {
   // const useArrowKeysAsJoystick = props.useArrowKeysAsJoystick ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
   const speedMode = handleGetSpeedMode()
+  const colorMode = handleGetColorMode()
+  const capsLock = handleGetCapsLock()
 
   return <span className="flex-row">
     <button className="push-button"
       title={speedMode ? "Fast" : "1 MHz"}
-      onClick={() => passSetSpeedMode(speedMode ? 0 : 1)}>
+      onClick={() => { passSetSpeedMode(speedMode ? 0 : 1); updateDisplay() }}>
       <FontAwesomeIcon icon={speedMode ? faTruckFast : faWalking} />
     </button>
     <button className="push-button"
-      title={colorToName(props.colorMode)}
+      title={colorToName(colorMode)}
       onClick={(e) => {
         if (e.shiftKey) {
-          props.handleColorChange((props.colorMode + 4) % 5)
+          passColorMode((colorMode + 4) % 5)
         } else {
-          props.handleColorChange((props.colorMode + 1) % 5)
+          passColorMode((colorMode + 1) % 5)
         }
+        // Force an update, since our colorMode isn't a state variable.
+        updateDisplay()
       }}>
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
-          {getColorModeSVG(props.colorMode) as ReactNode}
+          {getColorModeSVG(colorMode) as ReactNode}
         </svg>
         <FontAwesomeIcon icon={faDisplay} />
       </span>
@@ -47,12 +51,12 @@ const ConfigButtons = (props: DisplayProps) => {
     <button className="push-button"
       title={"Toggle Sound"}
       style={{ display: typeof AudioContext !== 'undefined' ? '' : 'none' }}
-      onClick={() => { audioEnable(!isAudioEnabled()) }}>
+      onClick={() => { audioEnable(!isAudioEnabled()); updateDisplay() }}>
       <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
     </button>
-    <button className={lockedKeyStyle(props.uppercase ? 2 : 0)}
+    <button className={lockedKeyStyle(capsLock ? 2 : 0)}
       title="Caps Lock"
-      onClick={() => props.handleUpperCaseChange(!props.uppercase)}>
+      onClick={() => { passCapsLock(!capsLock); updateDisplay() }}>
       <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
     </button>
 

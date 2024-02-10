@@ -1,5 +1,5 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires, handleGetNoDelayMode } from "./main2worker"
+  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode } from "./main2worker"
 import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS } from "./emulator/utility/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
@@ -182,8 +182,8 @@ const drawImage = (ctx: CanvasRenderingContext2D,
     xmarginPx, ymarginPx, imgWidth, imgHeight)
 }
 
-export const processDisplay = (ctx: CanvasRenderingContext2D,
-  hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE,
+export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
   ctx.imageSmoothingEnabled = true;
@@ -193,6 +193,7 @@ export const processDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext.imageSmoothingEnabled = false;
   hiddenContext.fillStyle = "#000000";
   hiddenContext.fillRect(0, 0, 560, 384)
+  const colorMode = handleGetColorMode()
   // If we are only doing text output, we will draw directly onto our canvas,
   // and do not need to use the hidden canvas with drawImage.
   const textOnly = processTextPage(ctx, hiddenContext, colorMode, width, height)

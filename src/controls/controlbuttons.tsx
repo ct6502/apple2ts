@@ -8,6 +8,7 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
+import { handleCopyToClipboard } from "../copycanvas";
 
 const ControlButtons = (props: DisplayProps) => {
   return <span className="flex-row">
@@ -34,7 +35,7 @@ const ControlButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faSave} />
     </button>
     <button className="push-button" title="Copy Screen"
-      onClick={() => props.handleCopyToClipboard()}>
+      onClick={() => handleCopyToClipboard()}>
       <FontAwesomeIcon icon={faClipboard} />
     </button>
   </span>

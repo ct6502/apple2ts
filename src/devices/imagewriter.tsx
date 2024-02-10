@@ -1,63 +1,46 @@
-import React from "react"
+import { useEffect, useState } from "react"
 import iwiion from "./img/iwiion.png"
 import iwiioff from "./img/iwiioff.png"
 import PrinterDialog from "./printerdialog"
 import { ImageWriterII, registerSetPrinting } from "./iwii"
 
+const ImageWriter = () => {
+  const [open, setOpen] = useState(false)
+  const [printingTimeout, setPrintingTimeout] = useState(0)
+  const [canvas] = useState(document.createElement("canvas"))
 
+  useEffect(() => {
+    ImageWriterII.startup(canvas)
+  }, [canvas]);
 
-class ImageWriter extends React.Component {
-  canvas: HTMLCanvasElement
-  state = {
-    open: false,
-    printingTimeout: 0,
-  }
-
-  constructor(props: object)
-  {
-    super(props)
-    this.canvas =  document.createElement("canvas");
-  }
-
-  setPrinting = () => {
-    if (this.state.printingTimeout !== 0) {
-      clearTimeout(this.state.printingTimeout);
+  const setPrinting = () => {
+    if (printingTimeout !== 0) {
+      clearTimeout(printingTimeout);
     }
     const timeout = window.setTimeout(() => {
-      this.setState({printingTimeout: 0})
+      setPrintingTimeout(0)
     }, 1000)
-    this.setState({printingTimeout: timeout})
+    setPrintingTimeout(timeout)
   }
 
-  handleClickOpen = () =>
-  {
-     this.setState({ open: true })
-  }
+  registerSetPrinting(setPrinting)
+  const img1 = printingTimeout ? iwiion : iwiioff
 
-  componentDidMount = () => {
-    ImageWriterII.startup(this.canvas)
-    registerSetPrinting(this.setPrinting)
-  }
-
-  render() {
-    const img1 = this.state.printingTimeout ? iwiion : iwiioff
-
-    return (
-      <span className="driveClass">
-        <img className="multi-disk"
-          src={img1} alt="iwii"
-          title="ImageWriter II"
-          height="57px"
-          onClick={this.handleClickOpen} />
-        <PrinterDialog
-          open={this.state.open}
-          onClose={() => {this.setState({open: false})}}
-          canvas={this.canvas} 
-          printer={ImageWriterII}
-        />
-      </span>
-    )
-  }
+  return (
+    <span className="driveClass">
+      <img className="multi-disk"
+        src={img1} alt="iwii"
+        title="ImageWriter II"
+        height="57px"
+        onClick={() => { setOpen(true) }} />
+      <PrinterDialog
+        open={open}
+        onClose={() => { setOpen(false) }}
+        canvas={canvas}
+        printer={ImageWriterII}
+      />
+    </span>
+  )
 }
 
-export default ImageWriter;
+export default ImageWriter

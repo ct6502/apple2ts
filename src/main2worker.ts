@@ -1,4 +1,4 @@
-import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility/utility"
+import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE } from "./emulator/utility/utility"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
@@ -9,6 +9,7 @@ import { BreakpointMap } from "./panels/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { receiveCommData } from "./devices/iwii"
 import { iconData, iconKey, iconName } from "./img/icons"
+import { copyCanvas } from "./copycanvas"
 
 let worker: Worker | null = null
 
@@ -66,6 +67,21 @@ export const passSetDisassembleAddress = (addr: number) => {
 
 export const passSetSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
+  machineState.speedMode = mode
+}
+
+export const passColorMode = (mode: COLOR_MODE) => {
+  // Currently the emulator doesn't care about color mode.
+  // Just set it directly on our machine state for later retrieval.
+  // Somewhat roundabout but it keeps all the properties in one place.
+  machineState.colorMode = mode
+}
+
+export const passCapsLock = (lock: boolean) => {
+  // Currently the emulator doesn't care about color mode.
+  // Just set it directly on our machine state for later retrieval.
+  // Somewhat roundabout but it keeps all the properties in one place.
+  machineState.capsLock = lock
 }
 
 export const passGoForwardInTime = () => {
@@ -149,6 +165,8 @@ let machineState: MachineState = {
   isDebugging: false,
   altChar: true,
   noDelayMode: false,
+  colorMode: COLOR_MODE.COLOR,
+  capsLock: true,
   textPage: new Uint8Array(1).fill(32),
   lores: new Uint8Array(),
   hires: new Uint8Array(),
@@ -184,6 +202,10 @@ const doOnMessage = (e: MessageEvent) => {
       if (machineState.runMode !== newState.runMode) {
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
+      // This is a hack because the main thread owns these properties.
+      // Force them back to their actual values.
+      newState.colorMode = machineState.colorMode
+      newState.capsLock = machineState.capsLock
       machineState = newState
       if (cpuStateChanged) updateDisplay(machineState.cpuSpeed)
       break
@@ -237,7 +259,7 @@ const doOnMessage = (e: MessageEvent) => {
       break
     }
     case MSG_WORKER.REQUEST_THUMBNAIL: {
-      display.copyCanvas((blob) => {
+      copyCanvas((blob) => {
         const reader = new FileReader();
         reader.onloadend = function() {
           passThumbnailImage(reader.result as string)
@@ -342,6 +364,14 @@ export const handleGetTempStateIndex = () => {
 
 export const handleGetTimeTravelThumbnails = () => {
   return machineState.timeTravelThumbnails
+}
+
+export const handleGetColorMode = () => {
+  return machineState.colorMode
+}
+
+export const handleGetCapsLock = () => {
+  return machineState.capsLock
 }
 
 export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void,

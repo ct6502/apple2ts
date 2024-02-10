@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString } from "./instructions"
-import { MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
+import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES } from "./softswitches";
@@ -93,7 +93,7 @@ const getDisplaySaveState = () => {
     date: '',
     help: '',
     colorMode: 0,
-    uppercase: false,
+    capsLock: false,
     audioEnable: false,
     mockingboardMode: 0,
     speedMode: speedMode,
@@ -447,6 +447,8 @@ const updateExternalMachineState = () => {
     isDebugging: isDebugging,
     altChar: SWITCHES.ALTCHARSET.isSet,
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
+    colorMode: COLOR_MODE.COLOR,  // ignored by main thread
+    capsLock: true,  // ignored by main thread
     textPage: getTextPage(),
     lores: getTextPage(true),
     hires: getHires(),

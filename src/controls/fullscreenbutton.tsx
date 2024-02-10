@@ -7,13 +7,14 @@ type RequestFullScreen_Type = {
   call: (context: HTMLCanvasElement) => void
 }
 
-const FullScreenButton = (props: DisplayProps) => {
+const FullScreenButton = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   return (
     <button className="push-button" title="Full Screen"
       style={{ display: isTouchDevice ? 'none' : '' }}
       onClick={() => {
-        const context = props.myCanvas.current
+        const canvas = document.getElementById('apple2canvas') as HTMLCanvasElement
+        const context = canvas.getContext('2d')
         if (context) {
           let requestFullScreen: RequestFullScreen_Type | null = null
           if ('webkitRequestFullscreen' in context) {
@@ -26,7 +27,7 @@ const FullScreenButton = (props: DisplayProps) => {
             requestFullScreen = context.requestFullscreen as RequestFullScreen_Type
           }
           if (requestFullScreen) {
-            requestFullScreen.call(context);
+            requestFullScreen.call(canvas);
           }
         }
       }

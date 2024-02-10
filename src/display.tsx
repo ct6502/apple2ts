@@ -10,7 +10,11 @@ import {
   passKeypress,
   handleSetDiskFromURL,
   handleGetIsDebugging,
-  passSetDebug
+  passSetDebug,
+  handleGetColorMode,
+  passColorMode,
+  passCapsLock,
+  handleGetCapsLock
 } from "./main2worker"
 import { getPrintableChar, COLOR_MODE, ARROW, TEST_GRAPHICS } from "./emulator/utility/utility"
 import Apple2Canvas from "./canvas"
@@ -23,15 +27,13 @@ import { getMockingboardMode } from "./devices/mockingboard_audio"
 import ImageWriter from "./devices/imagewriter"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import FileInput from "./fileinput"
-import { restoreSaveState } from "./restoresavestate"
+import { RestoreSaveState } from "./restoresavestate"
 // import Test from "./components/test";
 
 class DisplayApple2 extends React.Component<object,
   {
     currentSpeed: number;
-    uppercase: boolean;
     useArrowKeysAsJoystick: boolean;
-    colorMode: COLOR_MODE;
     ctrlKeyMode: number;
     openAppleKeyMode: number;
     closedAppleKeyMode: number;
@@ -53,9 +55,7 @@ class DisplayApple2 extends React.Component<object,
       openAppleKeyMode: 0,
       closedAppleKeyMode: 0,
       currentSpeed: 1.02,
-      uppercase: true,
       useArrowKeysAsJoystick: true,
-      colorMode: COLOR_MODE.COLOR,
       breakpoint: '',
       helptext: '',
       showFileOpenDialog: { show: false, drive: 0 }
@@ -77,7 +77,7 @@ class DisplayApple2 extends React.Component<object,
   handleInputParams = () => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('capslock')?.toLowerCase() === 'off') {
-      this.handleUpperCaseChange(false)
+      passCapsLock(false)
     }
     if (params.get('debug')?.toLowerCase() === 'on') {
       passSetDebug(true)
@@ -92,7 +92,7 @@ class DisplayApple2 extends React.Component<object,
     if (colorMode) {
       const colors = ['color', 'nofringe', 'green', 'amber', 'white']
       const mode = colors.indexOf(colorMode)
-      if (mode >= 0) this.handleColorChange(mode as COLOR_MODE)
+      if (mode >= 0) passColorMode(mode as COLOR_MODE)
     }
   }
 
@@ -115,9 +115,7 @@ class DisplayApple2 extends React.Component<object,
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
           const fileContents = await (await files[0].getFile()).text()
-          restoreSaveState(fileContents,
-            this.handleColorChange,
-            this.handleUpperCaseChange)
+          RestoreSaveState(fileContents)
         }
       });
     }
@@ -141,10 +139,6 @@ class DisplayApple2 extends React.Component<object,
     if (this.timerID) clearInterval(this.timerID);
     //    window.removeEventListener("resize", handleResize)
   }
-
-  handleColorChange = (mode: COLOR_MODE) => {
-    this.setState({ colorMode: mode });
-  };
 
   handleCtrlDown = (ctrlKeyMode: number) => {
     this.setState({ ctrlKeyMode });
@@ -198,10 +192,6 @@ class DisplayApple2 extends React.Component<object,
     this.setState({ closedAppleKeyMode });
   };
 
-  handleUpperCaseChange = (enable: boolean) => {
-    this.setState({ uppercase: enable });
-  };
-
   handleUseArrowKeyJoystick = (enable: boolean) => {
     this.setState({ useArrowKeysAsJoystick: enable });
   };
@@ -217,8 +207,8 @@ class DisplayApple2 extends React.Component<object,
       saveState.emulator.name = `Apple2TS Emulator`
       saveState.emulator.date = datetime
       saveState.emulator.help = this.state.helptext.split('\n')[0]
-      saveState.emulator.colorMode = this.state.colorMode
-      saveState.emulator.uppercase = this.state.uppercase
+      saveState.emulator.colorMode = handleGetColorMode()
+      saveState.emulator.capsLock = handleGetCapsLock()
       saveState.emulator.audioEnable = isAudioEnabled()
       saveState.emulator.mockingboardMode = getMockingboardMode()
     }
@@ -324,11 +314,7 @@ class DisplayApple2 extends React.Component<object,
     const props: DisplayProps = {
       runMode: handleGetRunMode(),
       speed: this.state.currentSpeed,
-      myCanvas: this.myCanvas,
-      hiddenCanvas: this.hiddenCanvas,
-      uppercase: this.state.uppercase,
       useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
-      colorMode: this.state.colorMode,
       ctrlKeyMode: this.state.ctrlKeyMode,
       openAppleKeyMode: this.state.openAppleKeyMode,
       closedAppleKeyMode: this.state.closedAppleKeyMode,
@@ -337,17 +323,12 @@ class DisplayApple2 extends React.Component<object,
       handleCtrlDown: this.handleCtrlDown,
       handleOpenAppleDown: this.handleOpenAppleDown,
       handleClosedAppleDown: this.handleClosedAppleDown,
-      handleColorChange: this.handleColorChange,
-      handleCopyToClipboard: this.handleCopyToClipboard,
-      handleUpperCaseChange: this.handleUpperCaseChange,
       handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
       setShowFileOpenDialog: this.setShowFileOpenDialog,
       handleFileSave: this.handleFileSave,
     }
     const saveStateProps: SaveStateProps = {
       showFileOpenDialog: this.state.showFileOpenDialog,
-      handleColorChange: this.handleColorChange,
-      handleUpperCaseChange: this.handleUpperCaseChange,
       setShowFileOpenDialog: this.setShowFileOpenDialog,
     }
     const width = props.canvasSize[0]

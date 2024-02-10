@@ -1,18 +1,19 @@
 import { changeMockingboardMode } from "./devices/mockingboard_audio"
 import { audioEnable } from "./devices/speaker"
-import { COLOR_MODE, RUN_MODE } from "./emulator/utility/utility"
-import { passRestoreSaveState, passSetRunMode } from "./main2worker"
+import { RUN_MODE } from "./emulator/utility/utility"
+import { passCapsLock, passColorMode, passRestoreSaveState, passSetRunMode } from "./main2worker"
 
-export const restoreSaveState = (fileContents: string,
-  handleColorChange: (mode: COLOR_MODE) => void,
-  handleUpperCaseChange: (enable: boolean) => void) => {
+export const RestoreSaveState = (fileContents: string) => {
   const saveState: EmulatorSaveState = JSON.parse(fileContents)
   passRestoreSaveState(saveState)
   if (saveState.emulator?.colorMode !== undefined) {
-    handleColorChange(saveState.emulator.colorMode)
+    passColorMode(saveState.emulator.colorMode)
   }
-  if (saveState.emulator?.uppercase !== undefined) {
-    handleUpperCaseChange(saveState.emulator.uppercase)
+  if (saveState.emulator && ('uppercase' in saveState.emulator)) {
+    passCapsLock(saveState.emulator['uppercase'] as boolean)
+  }
+  if (saveState.emulator?.capsLock !== undefined) {
+    passCapsLock(saveState.emulator.capsLock)
   }
   if (saveState.emulator?.audioEnable !== undefined) {
     audioEnable(saveState.emulator.audioEnable)

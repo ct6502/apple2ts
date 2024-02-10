@@ -56,11 +56,7 @@ type Apple2SaveState = {
 type DisplayProps = {
   runMode: RUN_MODE,
   speed: number,
-  myCanvas: React.RefObject<HTMLCanvasElement>,
-  hiddenCanvas: React.RefObject<HTMLCanvasElement>,
-  uppercase: boolean,
   useArrowKeysAsJoystick: boolean,
-  colorMode: COLOR_MODE,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
@@ -69,9 +65,6 @@ type DisplayProps = {
   handleCtrlDown: (ctrlKeyMode: number) => void,
   handleOpenAppleDown: (ctrlKeyMode: number) => void,
   handleClosedAppleDown: (ctrlKeyMode: number) => void,
-  handleColorChange: (mode: COLOR_MODE) => void,
-  handleCopyToClipboard: () => void,
-  handleUpperCaseChange: (enable: boolean) => void,
   handleUseArrowKeyJoystick: (enable: boolean) => void,
   setShowFileOpenDialog: (show: boolean, drive: number) => void,
   handleFileSave: (withSnapshots: boolean) => void,
@@ -79,8 +72,6 @@ type DisplayProps = {
 
 type SaveStateProps = {
   showFileOpenDialog: {show: boolean, drive: number},
-  handleColorChange: (mode: COLOR_MODE) => void,
-  handleUpperCaseChange: (enable: boolean) => void,
   setShowFileOpenDialog: (show: boolean, drive: number) => void,
 }
 
@@ -92,6 +83,8 @@ type MachineState = {
   isDebugging: boolean,
   altChar: boolean,
   noDelayMode: boolean,
+  colorMode: COLOR_MODE,
+  capsLock: boolean,
   textPage: Uint8Array,
   lores: Uint8Array,
   hires: Uint8Array,
@@ -145,7 +138,7 @@ type DisplaySaveState = {
   date: string,
   help: string,
   colorMode: number,
-  uppercase: boolean,
+  capsLock: boolean,
   audioEnable: boolean,
   mockingboardMode: number,
   speedMode: number,

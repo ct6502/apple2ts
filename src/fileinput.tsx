@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FILE_SUFFIXES } from "./emulator/utility/utility";
 import { handleSetDiskData, passPasteText } from "./main2worker";
 import BinaryFileDialog from "./devices/binaryfiledialog";
-import { restoreSaveState } from "./restoresavestate";
+import { RestoreSaveState } from "./restoresavestate";
 
 const FileInput = (props: SaveStateProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
@@ -13,11 +13,10 @@ const FileInput = (props: SaveStateProps) => {
     const fname = file.name.toLowerCase()
     if (fname.endsWith('a2ts')) {
       const fileread = new FileReader()
-      const restoreStateReader = restoreSaveState
+      const restoreStateReader = RestoreSaveState
       fileread.onload = function (ev) {
         if (ev.target) {
-          restoreStateReader(ev.target.result as string,
-            props.handleColorChange, props.handleUpperCaseChange)
+          restoreStateReader(ev.target.result as string)
         }
       };
       fileread.readAsText(file)
