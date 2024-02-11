@@ -26,6 +26,7 @@ const resetDrive = (drive: number) => {
 
 const DiskDrive = (props: {
   drive: number,
+  renderCount: number,
   setShowFileOpenDialog: (show: boolean, drive: number) => void
 }) => {
 
@@ -52,8 +53,9 @@ const DiskDrive = (props: {
               downloadDisk(dprops.diskData, filename)
             }
             resetDrive(props.drive)
+          } else {
+            props.setShowFileOpenDialog(true, props.drive)
           }
-          props.setShowFileOpenDialog(true, props.drive)
         }} />
       <span className={"diskLabel"}>{dprops.filename}</span>
       <span className={"defaultFont diskStatus"}>{status}</span>

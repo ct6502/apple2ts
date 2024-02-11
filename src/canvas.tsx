@@ -3,7 +3,6 @@ import "./canvas.css"
 import {
   passSetRunMode, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
-  updateDisplay,
   passGoBackInTime,
   passGoForwardInTime,
   setStartTextPage,
@@ -154,7 +153,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleResize = () => {
     if (myCanvas.current) {
-      updateDisplay()
+      props.updateDisplay()
     }
   }
 

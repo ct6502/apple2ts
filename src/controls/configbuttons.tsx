@@ -12,11 +12,11 @@ import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
 import { ReactNode } from "react";
-import { handleGetCapsLock, handleGetColorMode, handleGetSpeedMode, passCapsLock, passColorMode, passSetSpeedMode, updateDisplay } from "../main2worker";
+import { handleGetCapsLock, handleGetColorMode, handleGetSpeedMode, passCapsLock, passColorMode, passSetSpeedMode } from "../main2worker";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 
-const ConfigButtons = () => {
+const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
   const colorMode = handleGetColorMode()
   const capsLock = handleGetCapsLock()
@@ -27,7 +27,7 @@ const ConfigButtons = () => {
   return <span className="flex-row">
     <button className="push-button"
       title={speedMode ? "Fast" : "1 MHz"}
-      onClick={() => { passSetSpeedMode(speedMode ? 0 : 1); updateDisplay() }}>
+      onClick={() => { passSetSpeedMode(speedMode ? 0 : 1); props.updateDisplay() }}>
       <FontAwesomeIcon icon={speedMode ? faTruckFast : faWalking} />
     </button>
     <button className="push-button"
@@ -39,7 +39,7 @@ const ConfigButtons = () => {
           passColorMode((colorMode + 1) % 5)
         }
         // Force an update, since our colorMode isn't a state variable.
-        updateDisplay()
+        props.updateDisplay()
       }}>
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
@@ -51,12 +51,12 @@ const ConfigButtons = () => {
     <button className="push-button"
       title={"Toggle Sound"}
       style={{ display: typeof AudioContext !== 'undefined' ? '' : 'none' }}
-      onClick={() => { audioEnable(!isAudioEnabled()); updateDisplay() }}>
+      onClick={() => { audioEnable(!isAudioEnabled()); props.updateDisplay() }}>
       <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
     </button>
     <button className={lockedKeyStyle(capsLock ? 2 : 0)}
       title="Caps Lock"
-      onClick={() => { passCapsLock(!capsLock); updateDisplay() }}>
+      onClick={() => { passCapsLock(!capsLock); props.updateDisplay() }}>
       <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
     </button>
 

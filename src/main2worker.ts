@@ -4,7 +4,6 @@ import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveMidiData } from "./devices/midiinterface"
-import DisplayApple2 from "./display"
 import { BreakpointMap } from "./panels/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { receiveCommData } from "./devices/iwii"
@@ -15,20 +14,16 @@ let worker: Worker | null = null
 
 let saveStateCallback: (saveState: EmulatorSaveState) => void
 
-let display: DisplayApple2
-export const updateDisplay = (speed?: number, helptext?: string) => {
-  display.updateDisplay(speed, helptext)
-}
-export const setDisplay = (displayIn: DisplayApple2) => {
-  display = displayIn
+export const setMain2Worker = (workerIn: Worker) => {
+  worker = workerIn
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
-  if (!worker) {
-    worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
-    worker.onmessage = doOnMessage
-  }
-  worker.postMessage({msg, payload});
+  // if (!worker) {
+  //   worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
+  //   worker.onmessage = doOnMessage
+  // }
+  if (worker) worker.postMessage({msg, payload});
 }
 
 export const passSetRunMode = (runMode: RUN_MODE) => {
@@ -183,7 +178,7 @@ let machineState: MachineState = {
   timeTravelThumbnails: new Array<TimeTravelThumbnail>,
 }
 
-const doOnMessage = (e: MessageEvent) => {
+export const doOnMessage = (e: MessageEvent) => {
   switch (e.data.msg as MSG_WORKER) {
     case MSG_WORKER.MACHINE_STATE: {
       const newState = e.data.payload as MachineState
@@ -207,7 +202,7 @@ const doOnMessage = (e: MessageEvent) => {
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
       machineState = newState
-      if (cpuStateChanged) updateDisplay(machineState.cpuSpeed)
+      if (cpuStateChanged) return {speed: machineState.cpuSpeed, helptext: ''}
       break
     }
     case MSG_WORKER.SAVE_STATE: {
@@ -221,7 +216,7 @@ const doOnMessage = (e: MessageEvent) => {
     case MSG_WORKER.DRIVE_PROPS: {
       const props = e.data.payload as DriveProps
       driveProps[props.drive] = props
-      updateDisplay()
+      return {speed: machineState.cpuSpeed, helptext: ''}
       break
     }
     case MSG_WORKER.DRIVE_SOUND: {
@@ -236,7 +231,7 @@ const doOnMessage = (e: MessageEvent) => {
     }
     case MSG_WORKER.HELP_TEXT: {
       const helptext = e.data.payload as string
-      updateDisplay(0, helptext)
+      return {speed: 0, helptext: helptext}
       break
     }
     case MSG_WORKER.SHOW_MOUSE: {
@@ -271,7 +266,8 @@ const doOnMessage = (e: MessageEvent) => {
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
-    }
+  }
+  return {speed: 0, helptext: ''}
 }
 
 let showMouse = true

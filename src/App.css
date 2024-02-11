@@ -108,6 +108,10 @@ input:focus {
   outline: none;
 }
 
+.push-button:hover {
+  cursor: pointer;
+}
+
 .push-button:focus {
   outline-width: 1px;
   outline-style: solid;

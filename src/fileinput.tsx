@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { FILE_SUFFIXES } from "./emulator/utility/utility";
-import { handleSetDiskData, passPasteText } from "./main2worker";
+import { FILE_SUFFIXES, RUN_MODE } from "./emulator/utility/utility";
+import { handleGetRunMode, handleSetDiskData, passPasteText, passSetRunMode } from "./main2worker";
 import BinaryFileDialog from "./devices/binaryfiledialog";
 import { RestoreSaveState } from "./restoresavestate";
+import { isHardDriveImage } from "./emulator/devices/decodedisk";
 
-const FileInput = (props: SaveStateProps) => {
+const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
   const [binaryBuffer, setBinaryBuffer] = useState(new Uint8Array())
   const hiddenFileOpen = useRef(null);
@@ -29,32 +30,27 @@ const FileInput = (props: SaveStateProps) => {
         if (buffer.byteLength > 0) {
           setDisplayBinaryDialog(true)
         }
-        return
       } else if (fname.endsWith('.bas')) {
         const decoder = new TextDecoder('utf-8');
         const text = decoder.decode(buffer);
         if (text !== "") {
           passPasteText(text + '\nRUN\n')
         }
-        return
+      } else {
+        drive = isHardDriveImage(fname) ? 0 : 1
+        handleSetDiskData(drive, new Uint8Array(buffer), file.name)
+        if (handleGetRunMode() === RUN_MODE.IDLE) {
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+        } else {
+          props.updateDisplay()
+        }
       }
-      handleSetDiskData(drive, new Uint8Array(buffer), file.name)
     }
   }
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       readFile(e.target.files[0], props.showFileOpenDialog.drive)
-    }
-  }
-
-  if (props.showFileOpenDialog.show) {
-    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.drive), 0)
-    if (hiddenFileOpen.current) {
-      const fileInput = hiddenFileOpen.current as HTMLInputElement
-      // Hack - clear out old file so we can pick the same file again
-      fileInput.value = "";
-      fileInput.click()
     }
   }
 
@@ -81,6 +77,19 @@ const FileInput = (props: SaveStateProps) => {
   })
 
   const isTouchDevice = "ontouchstart" in document.documentElement
+
+  // This is how we actually display the file selection dialog.
+  if (props.showFileOpenDialog.show) {
+    // Now that we're in here, turn off our property.
+    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.drive), 0)
+    if (hiddenFileOpen.current) {
+      const fileInput = hiddenFileOpen.current as HTMLInputElement
+      // Hack - clear out old file so we can pick the same file again
+      fileInput.value = "";
+      // Display the dialog.
+      fileInput.click()
+    }
+  }
 
   return (
     <>

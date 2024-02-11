@@ -55,17 +55,15 @@ type Apple2SaveState = {
 
 type DisplayProps = {
   speed: number,
+  renderCount: number,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
+  showFileOpenDialog: {show: boolean, drive: number},
+  updateDisplay: (speed = 0, helptext = '') => void,
   handleCtrlDown: (mode: number) => void,
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,
-  setShowFileOpenDialog: (show: boolean, drive: number) => void,
-}
-
-type SaveStateProps = {
-  showFileOpenDialog: {show: boolean, drive: number},
   setShowFileOpenDialog: (show: boolean, drive: number) => void,
 }
 

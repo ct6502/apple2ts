@@ -2,17 +2,16 @@ import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
 
-interface DiskInterfaceProps {
-  setShowFileOpenDialog: (show: boolean, drive: number) => void
-}
-
-const DiskInterface = (props: DiskInterfaceProps) => {
+const DiskInterface = (props: DisplayProps) => {
   return (
     <span className="driveRow">
-      <DiskImageChooser />
-      <DiskDrive drive={0} setShowFileOpenDialog={props.setShowFileOpenDialog} />
-      <DiskDrive drive={1} setShowFileOpenDialog={props.setShowFileOpenDialog} />
-      <DiskDrive drive={2} setShowFileOpenDialog={props.setShowFileOpenDialog} />
+      <DiskImageChooser {...props} />
+      <DiskDrive drive={0} renderCount={props.renderCount}
+        setShowFileOpenDialog={props.setShowFileOpenDialog} />
+      <DiskDrive drive={1} renderCount={props.renderCount}
+        setShowFileOpenDialog={props.setShowFileOpenDialog} />
+      <DiskDrive drive={2} renderCount={props.renderCount}
+        setShowFileOpenDialog={props.setShowFileOpenDialog} />
     </span>
   )
 }

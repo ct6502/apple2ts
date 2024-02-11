@@ -1,10 +1,10 @@
 import React from "react"
-import { passSetRunMode, handleSetDiskData, updateDisplay } from "../main2worker";
+import { passSetRunMode, handleSetDiskData } from "../main2worker";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import floppyDisks from "./img/disks.png"
 import DiskImageDialog from "./diskimagedialog";
 
-export const DiskImageChooser = () => {
+export const DiskImageChooser = (props: DisplayProps) => {
   const [open, setOpen] = React.useState(false)
 
   const handleClickOpen = () => {
@@ -16,7 +16,7 @@ export const DiskImageChooser = () => {
     handleSetDiskData(1, new Uint8Array(), "")
     handleSetDiskData(2, new Uint8Array(), "")
   }
-  
+
   const setDiskImage = async (disk: diskImage) => {
     const res = await fetch("/disks/" + disk.file)
     const data = await res.arrayBuffer()
@@ -33,7 +33,7 @@ export const DiskImageChooser = () => {
         helptext = ' '
       }
     }
-    updateDisplay(0, helptext)
+    props.updateDisplay(0, helptext)
     passSetRunMode(RUN_MODE.NEED_BOOT)
   }
 
