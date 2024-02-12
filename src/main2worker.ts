@@ -62,6 +62,7 @@ export const passSetDisassembleAddress = (addr: number) => {
 
 export const passSetSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
+  // Force the state right away, so the UI can update.
   machineState.speedMode = mode
 }
 
@@ -178,22 +179,10 @@ let machineState: MachineState = {
   timeTravelThumbnails: new Array<TimeTravelThumbnail>,
 }
 
-export const doOnMessage = (e: MessageEvent) => {
+export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
   switch (e.data.msg as MSG_WORKER) {
     case MSG_WORKER.MACHINE_STATE: {
       const newState = e.data.payload as MachineState
-      const cpuStateChanged = machineState.cpuSpeed !== newState.cpuSpeed ||
-        machineState.cpuSpeed !== newState.cpuSpeed ||
-        machineState.runMode !== newState.runMode ||
-        machineState.speedMode !== newState.speedMode ||
-        machineState.isDebugging !== newState.isDebugging ||
-        machineState.debugDump !== newState.debugDump ||
-        machineState.disassembly !== newState.disassembly ||
-        machineState.nextInstruction !== newState.nextInstruction ||
-        machineState.button0 !== newState.button0 ||
-        machineState.button1 !== newState.button1 ||
-        machineState.canGoBackward !== newState.canGoBackward ||
-        machineState.canGoForward !== newState.canGoForward
       if (machineState.runMode !== newState.runMode) {
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
@@ -202,8 +191,7 @@ export const doOnMessage = (e: MessageEvent) => {
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
       machineState = newState
-      if (cpuStateChanged) return {speed: machineState.cpuSpeed, helptext: ''}
-      break
+      return {speed: machineState.cpuSpeed, helptext: ''}
     }
     case MSG_WORKER.SAVE_STATE: {
       const saveState = e.data.payload as EmulatorSaveState
@@ -267,7 +255,7 @@ export const doOnMessage = (e: MessageEvent) => {
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
   }
-  return {speed: 0, helptext: ''}
+  return null
 }
 
 let showMouse = true

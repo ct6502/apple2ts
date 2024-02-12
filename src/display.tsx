@@ -10,7 +10,7 @@ import {
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
-import React, { useEffect } from 'react';
+import { useState } from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
 import ImageWriter from "./devices/imagewriter"
@@ -20,14 +20,15 @@ import { getCanvasSize } from "./graphics"
 import { handleFragment, handleInputParams } from "./inputparams"
 
 const DisplayApple2 = () => {
-  const [renderCount, setRenderCount] = React.useState(0)
-  const [currentSpeed, setCurrentSpeed] = React.useState(1.02)
-  const [ctrlKeyMode, setCtrlKeyMode] = React.useState(0)
-  const [openAppleKeyMode, setOpenAppleKeyMode] = React.useState(0)
-  const [closedAppleKeyMode, setClosedAppleKeyMode] = React.useState(0)
-  const [helptext, setHelptext] = React.useState('')
-  const [showFileOpenDialog, setShowFileOpenDialog] = React.useState({ show: false, drive: 0 })
-  const [worker, setWorker] = React.useState<Worker | null>(null)
+  const [myInit, setMyInit] = useState(false)
+  const [renderCount, setRenderCount] = useState(0)
+  const [currentSpeed, setCurrentSpeed] = useState(1.02)
+  const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
+  const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
+  const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
+  const [helptext, setHelptext] = useState('')
+  const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, drive: 0 })
+  const [worker, setWorker] = useState<Worker | null>(null)
 
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -39,24 +40,28 @@ const DisplayApple2 = () => {
     setMain2Worker(newWorker)
     newWorker.onmessage = (e: MessageEvent) => {
       const result = doOnMessage(e)
-      if (result.speed || result.helptext) {
+      if (result) {
         updateDisplay(result.speed, result.helptext)
       }
     }
   }
 
-  const updateDisplay = (speed = 0, helptext = '') => {
-    if (helptext) {
-      setHelptext(helptext)
-    } else if (speed) {
-      setCurrentSpeed(speed ? speed : currentSpeed)
-    } else {
-      setRenderCount(renderCount + 1)
+  const updateDisplay = (speed = 0, newhelptext = '') => {
+    if (newhelptext) {
+      setHelptext(newhelptext)
+    } else if (speed && speed !== currentSpeed) {
+      setCurrentSpeed(speed)
     }
+    // ***** This is critical to make this update be a function.
+    // That way React is forced to pass in the actual previous value,
+    // rather than a cached value (thru a closure).
+    // If you do setRenderCount(renderCount + 1), renderCount will always be
+    // zero and NOTHING will update.
+    setRenderCount(prevRenderCount => prevRenderCount + 1);
   }
 
-  useEffect(() => {
-    //    setDisplay(updateDisplay)
+  if (!myInit) {
+    setMyInit(true)
     if ("launchQueue" in window) {
       const queue: LaunchQueue = window.launchQueue as LaunchQueue
       queue.setConsumer(async (launchParams: LaunchParams) => {
@@ -81,7 +86,7 @@ const DisplayApple2 = () => {
     //      event.returnValue = '';
     //    });
     //    window.addEventListener("resize", handleResize)
-  }, [])
+  }
 
   const handleCtrlDown = (ctrlKeyMode: number) => {
     setCtrlKeyMode(ctrlKeyMode)
@@ -121,11 +126,11 @@ const DisplayApple2 = () => {
     ctrlKeyMode: ctrlKeyMode,
     openAppleKeyMode: openAppleKeyMode,
     closedAppleKeyMode: closedAppleKeyMode,
+    showFileOpenDialog: showFileOpenDialog,
     updateDisplay: updateDisplay,
     handleCtrlDown: handleCtrlDown,
     handleOpenAppleDown: handleOpenAppleDown,
     handleClosedAppleDown: handleClosedAppleDown,
-    showFileOpenDialog: showFileOpenDialog,
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 

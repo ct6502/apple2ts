@@ -42,6 +42,7 @@ const DisassemblyView = (props:
     }
     if (codeRef.current) {
       if (lineHeight === 0) computeLineHeight()
+      if (lineHeight === 0) return
       const div = codeRef.current as HTMLDivElement
       const topLineIndex = Math.round(div.scrollTop / lineHeight)
       const dv = div.innerText.split('\n')
