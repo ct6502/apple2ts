@@ -442,6 +442,7 @@ const updateExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     cpuSpeed: cpuSpeed,
+    memSize: 0,
     speedMode: speedMode,
     isDebugging: isDebugging,
     altChar: SWITCHES.ALTCHARSET.isSet,

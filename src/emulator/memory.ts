@@ -17,9 +17,10 @@ import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
 const RAMWorksSize = (1024-64) // in K 256, 512, 1024, 4096, 8192
-const RAMWorksMaxBank = RAMWorksSize / 64
+// Start out with RAMWorks turned off by default.
+let RAMWorksMaxBank = 0
 const BaseMachineMemory = 0x27F00
-export const memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
+export let memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -38,6 +39,26 @@ const SLOTC8start = 256 * SLOTC8index
 const AUXstart = 256 * AUXindex
 let   C800Slot = 0
 let   RAMWorksBankIndex = 0
+
+export const doSetRAMWorks = (set: boolean) => {
+  if (set) {
+    // nothing to do?
+    if (RAMWorksMaxBank > 0) return
+    RAMWorksMaxBank = RAMWorksSize / 64
+    // Reallocate memory and copy the old memory
+    const memtemp = memory.slice(0, BaseMachineMemory)
+    memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
+    memory.set(memtemp)
+    memory.fill(0, BaseMachineMemory, BaseMachineMemory + RAMWorksMaxBank*0x10000)
+  } else {
+    // nothing to do?
+    if (RAMWorksMaxBank === 0) return
+    RAMWorksMaxBank = 0
+    RAMWorksBankIndex = 0
+    // Get rid of the RAMWorks memory.
+    memory = memory.slice(0, BaseMachineMemory)
+  }
+}
 
 const updateMainAuxMemoryTable = () => {
   const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0

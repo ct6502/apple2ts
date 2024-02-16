@@ -55,6 +55,7 @@ export enum MSG_MAIN {
   SET_BINARY_BLOCK,
   COMM_DATA,
   MIDI_DATA,
+  RAMWORKS,
 }
 
 export enum COLOR_MODE {

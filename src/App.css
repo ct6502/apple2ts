@@ -37,6 +37,7 @@ input:focus {
   display: flex;
   flex-direction: row;
   user-select: none;
+  align-items: center;
 }
 
 .flex-column {

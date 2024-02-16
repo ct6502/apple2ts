@@ -10,6 +10,7 @@ import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
 import { receiveMidiData } from "./devices/passport/passport";
 import { receiveCommData } from "./devices/superserial/serial";
+import { doSetRAMWorks } from "./memory";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -161,6 +162,9 @@ if (typeof self !== 'undefined') {
         break
       case MSG_MAIN.MIDI_DATA:
         receiveMidiData(e.data.payload)
+        break
+      case MSG_MAIN.RAMWORKS:
+        doSetRAMWorks(e.data.payload as boolean)
         break
       default:
         console.error(`worker2main: unhandled msg: ${e.data.msg}`)

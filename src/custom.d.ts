@@ -30,7 +30,7 @@ interface PCodeFunc {
 interface PCodeInstr {
     name: string
     pcode: number,
-    mode: MODE
+    mode: number
     bytes: number
     execute: PCodeFunc
 }
@@ -71,6 +71,7 @@ type MachineState = {
   runMode: number,
   s6502: STATE6502,
   cpuSpeed: number,
+  memSize: number
   speedMode: number,
   isDebugging: boolean,
   altChar: boolean,

@@ -153,10 +153,17 @@ const passThumbnailImage = (thumbnail: string) => {
   doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
 }
 
+export const passSetRAMWorks = (set: boolean) => {
+  doPostMessage(MSG_MAIN.RAMWORKS, set)
+  // This should probably come from the emulator, but for now we'll just set it here.
+  machineState.memSize = set ? 1080 : 128
+}
+
 let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   cpuSpeed: 0,
+  memSize: 128,
   speedMode: 0,
   isDebugging: false,
   altChar: true,
@@ -190,6 +197,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // Force them back to their actual values.
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
+      newState.memSize = machineState.memSize
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: ''}
     }
@@ -362,6 +370,10 @@ export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => v
   withSnapshots: boolean) => {
   saveStateCallback = callback
   doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)
+}
+
+export const handleGetMemSize = () => {
+  return machineState.memSize
 }
 
 const initDriveProps = (drive: number): DriveProps => {

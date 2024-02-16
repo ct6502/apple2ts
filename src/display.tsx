@@ -5,7 +5,8 @@ import {
   passAppleCommandKeyRelease,
   handleGetIsDebugging,
   doOnMessage,
-  setMain2Worker
+  setMain2Worker,
+  handleGetMemSize
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -140,7 +141,7 @@ const DisplayApple2 = () => {
   if (paperWidth < 300) paperWidth = 300
   return (
     <div>
-      <span className="flex-row">
+      <span className="flex-row" style={{ alignItems: "inherit" }}>
         <span className="flex-column">
           <Apple2Canvas {...props} />
           <div className="flex-row-space-between wrap"
@@ -150,7 +151,7 @@ const DisplayApple2 = () => {
             <ImageWriter />
           </div>
           <span className="defaultFont statusItem">
-            <span>{props.speed} MHz</span>
+            <span>{props.speed} MHz, {handleGetMemSize()} KB</span>
             <br />
             <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
               <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>

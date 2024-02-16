@@ -1,4 +1,4 @@
-import { memGet, memSet, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
+import { doSetRAMWorks, memGet, memSet, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
 
 type ExpectValue = (i: number) => void
 
@@ -212,7 +212,8 @@ test('testC800', () => {
 
 test('test RAMWorks', () => {
   memoryReset()
-
+  doSetRAMWorks(true)
+  
   // check regular zp
   memSet(0x00C0, 0xDE)
   expect(memGet(0x00C0)).toEqual(0xDE)
