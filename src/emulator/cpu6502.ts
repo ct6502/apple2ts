@@ -140,14 +140,17 @@ export const setWatchpointBreak = () => {
 }
 
 // This is only exported for breakpoint testing
-export const hitBreakpoint = () => {
+export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
   if (doWatchpointBreak) {
     doWatchpointBreak = false
     return true
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return false
-  const bp = breakpointMap.get(s6502.PC)
+  const bp = breakpointMap.get(s6502.PC) || breakpointMap.get(instr | 0x10000)
   if (!bp || bp.disabled || bp.watchpoint) return false
+  if (bp.instruction && bp.hexvalue >= 0) {
+    if (bp.hexvalue !== hexvalue) return false
+  }
   if (bp.expression) {
     const expression = convertBreakpointExpression(bp.expression)
     const doBP = evaluateBreakpointExpression(expression)
@@ -158,7 +161,9 @@ export const hitBreakpoint = () => {
     if (bp.nhits < bp.hitcount) return false
     bp.nhits = 0
   }
-  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, bp.address)) return false
+  // Be sure to use the current program counter when checking memory bank,
+  // so that it works for both regular breakpoints and instruction breakpoints.
+  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, s6502.PC)) return false
   if (bp.once) breakpointMap.delete(s6502.PC)
   return true
 }
@@ -173,7 +178,7 @@ export const processInstruction = () => {
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
   const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : 0
   const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
-  if (hitBreakpoint()) {
+  if (hitBreakpoint(instr, (vHi << 8) + vLo)) {
     doSetRunMode(RUN_MODE.PAUSED)
     return -1
   }

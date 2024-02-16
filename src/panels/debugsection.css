@@ -100,6 +100,10 @@
   color: #0433FF;
 }
 
+.break-instruction {
+  color: black;
+}
+
 .breakpoint-pushbutton {
   font-size: 7pt;
   padding-left: 0;

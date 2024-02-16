@@ -3,7 +3,8 @@ import {
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons";
 import {faCircle as iconBreakpointDisabled} from "@fortawesome/free-regular-svg-icons";
-import { toHex } from "../emulator/utility/utility"
+import { TEST_DEBUG, toHex } from "../emulator/utility/utility"
+import { opCodes } from "./opcodes";
 
 interface IBreakpoint {
   address: number
@@ -29,11 +30,19 @@ export const getBreakpointIcon = (bp: Breakpoint) => {
 }
 
 export const getBreakpointStyle = (bp: Breakpoint) => {
-  return "breakpoint-style" + (bp.watchpoint ? " watch-point" : "")
+  return "breakpoint-style" + (bp.watchpoint ? " watch-point" : "") +
+    (bp.instruction ? " break-instruction" : "")
 }
 
 export const getBreakpointString = (bp: Breakpoint) => {
-  let result = toHex(bp.address, 4)
+  let result = ''
+  if (bp.instruction) {
+    result = opCodes[bp.address & 0xFF].name
+//    const result = getInstructionName(bp.address)
+//    result = toHex(bp.address & 0xFF, 2)
+  } else {
+    result = toHex(bp.address, 4)
+  }
   if (bp.watchpoint) {
     if (bp.memset) result += ' write'
     if (bp.memget) result += ' read'
@@ -99,6 +108,7 @@ export const checkBreakpointExpression = (expression: string) => {
 export class Breakpoint implements IBreakpoint {
   address: number;
   watchpoint: boolean;
+  instruction: boolean;
   disabled: boolean;
   hidden: boolean;
   once: boolean;
@@ -113,6 +123,7 @@ export class Breakpoint implements IBreakpoint {
   constructor() {
     this.address = 0
     this.watchpoint = false
+    this.instruction = TEST_DEBUG ? true : false
     this.disabled = false
     this.hidden = false
     this.once = false
@@ -132,7 +143,7 @@ export class BreakpointMap extends Map<number, Breakpoint> {
     // For example, you might want to sort the keys each time you set a new entry:
     const entries = [...this.entries()];
     entries.push([key, value]);
-    entries.sort()
+    entries.sort((a, b) => a[0] - b[0])
     super.clear();
     for (const [k, v] of entries) {
       super.set(k, v);

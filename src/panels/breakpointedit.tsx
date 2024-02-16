@@ -3,12 +3,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXmark as iconBreakpointDelete,
 } from "@fortawesome/free-solid-svg-icons";
-import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
-import EditField from "./editfield";
-import PullDownMenu from "./pulldownmenu";
-import { getSoftSwitchDescriptions } from "../emulator/softswitches"
-import { Droplist } from "./droplist";
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
+import { Breakpoint } from "./breakpoint";
+import BPEdit_Breakpoint from "./bpedit_breakpoint";
+import BPEdit_Watchpoint from "./bpedit_watchpoint";
+import BPEdit_Instruction from "./bpedit_instruction";
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
@@ -19,63 +17,9 @@ const BreakpointEdit = (props: {
   setDialogPosition: (x: number, y: number) => void
 }) => {
   const dialogRef = useRef(null)
-
-  const [badExpression, setBadExpression] = useState('')
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
-
-  const handleAddressChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
-    if (props.breakpoint) {
-      const address = parseInt(value || '0', 16)
-      if (address >= 0xC000 && address <= 0xC0FF) {
-        props.breakpoint.memget = true
-        props.breakpoint.memset = true
-        const switches = getSoftSwitchDescriptions()
-        if (switches[address]) {
-          if (switches[address].includes("status")) {
-            props.breakpoint.memset = false
-          } else if (switches[address].includes("write")) {
-            props.breakpoint.memget = false
-          }
-        }
-      }
-      props.breakpoint.address = address
-      setTriggerUpdate(!triggerUpdate)
-    }
-  }
-
-  const handleExpressionChange = (value: string) => {
-    let expression = value.replace("===", "==")
-    expression = expression.replace(/[^#$0-9 abcdefxysp|&()=<>+\-*/]/gi, '')
-    expression = expression.toUpperCase()
-    if (props.breakpoint) {
-      props.breakpoint.expression = expression
-      const badExpression = checkBreakpointExpression(expression)
-      setBadExpression(badExpression)
-      setTriggerUpdate(!triggerUpdate)
-    }
-  }
-
-  const handleHexValueChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 2).toUpperCase()
-    if (props.breakpoint) {
-      props.breakpoint.hexvalue = parseInt(value ? value : '-1', 16)
-      setTriggerUpdate(!triggerUpdate)
-    }
-  }
-
-  const handleHitCountChange = (value: string) => {
-    value = value.replace(/[^0-9]/gi, '')
-    if (value.trim() !== '') {
-      value = Math.max(parseInt(value), 1).toString()
-    }
-    if (props.breakpoint) {
-      props.breakpoint.hitcount = parseInt(value || '1')
-      setTriggerUpdate(!triggerUpdate)
-    }
-  }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dialogRef.current) {
@@ -103,44 +47,16 @@ const BreakpointEdit = (props: {
   }
 
   const handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.watchpoint = e.target.value === "memoryAccess"
-    handleExpressionChange(props.breakpoint.expression)
-    setTriggerUpdate(!triggerUpdate)
-  }
-
-  const handleMemgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.memget = e.target.checked
-    setTriggerUpdate(!triggerUpdate)
-  }
-
-  const handleMemsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.memset = e.target.checked
-    setTriggerUpdate(!triggerUpdate)
-  }
-
-  const handleMemoryBankChange = (value: string) => {
-    for (const key of MemoryBankKeys) {
-      const bank = MEMORY_BANKS[key];
-      if (bank.name === value) {
-        props.breakpoint.memoryBank = key
-        setTriggerUpdate(!triggerUpdate)
-        // bail early since we found a match
-        return false
-      }
+    props.breakpoint.watchpoint = e.target.value === "watchpoint"
+    props.breakpoint.instruction = e.target.value === "instruction"
+    if (props.breakpoint) {
+      props.breakpoint.address = props.breakpoint.instruction ? 0 :
+        props.breakpoint.address & 0xFFFF
     }
+    setTriggerUpdate(!triggerUpdate)
   }
 
-  const isBankDisabledForAddress = (address: number, value: string) => {
-    for (const bank of Object.values(MEMORY_BANKS)) {
-      if (bank.name === value && address >= bank.min && address <= bank.max) {
-        return false
-      }
-    }
-    return true
-  }
-
-  const v = props.breakpoint.hexvalue
-  const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ''
+  const isBreakpoint = !props.breakpoint.watchpoint && !props.breakpoint.instruction
 
   return (
     <div className="modal-overlay"
@@ -154,7 +70,7 @@ const BreakpointEdit = (props: {
         ref={dialogRef}
         style={{
           left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
-          width: "450px", height: "auto"
+          width: "500px", height: "auto"
         }}
       >
         <div className="flex-column">
@@ -178,80 +94,37 @@ const BreakpointEdit = (props: {
               id="Address"
               name="breakAt" value="address"
               className="check-radio-box"
-              checked={!props.breakpoint.watchpoint}
+              checked={!(props.breakpoint.watchpoint || props.breakpoint.instruction)}
               onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="Address" className="white-title flush-left">Breakpoint</label>
-            <input type="radio" id="MemoryAccess" name="breakAt" value="memoryAccess"
+            <input type="radio" id="Watchpoint" name="watch" value="watchpoint"
               className="check-radio-box"
               checked={props.breakpoint.watchpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="MemoryAccess" className="white-title flush-left">Memory Watchpoint</label>
+            <label htmlFor="Watchpoint" className="white-title flush-left">Watchpoint</label>
+            <input type="radio" id="Instruction" name="instruction" value="instruction"
+              className="check-radio-box"
+              checked={props.breakpoint.instruction}
+              onChange={(e) => { handleBreakAtChange(e) }} />
+            <label htmlFor="Instruction" className="white-title flush-left">Instruction</label>
           </div>
-          <div className="flex-row">
-            <EditField name="Address: "
-              initialFocus={true}
-              value={props.breakpoint.address.toString(16).toUpperCase()}
-              setValue={handleAddressChange}
-              placeholder="F800"
-              width="5em" />
-            {props.breakpoint.watchpoint &&
-              <div>
-                <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
-              </div>}
-          </div>
-          {props.breakpoint.watchpoint ?
-            <div>
-              <div style={{ height: "8px" }} />
-              <input type="checkbox" id="memget" value="memget"
-                className="check-radio-box shift-down"
-                checked={props.breakpoint.memget}
-                onChange={(e) => { handleMemgetChange(e) }} />
-              <label htmlFor="memget" className="white-title flush-left">Read</label>
-              <input type="checkbox" id="memset" value="memset"
-                className="check-radio-box shift-down"
-                checked={props.breakpoint.memset}
-                onChange={(e) => { handleMemsetChange(e) }} />
-              <label htmlFor="memset" className="white-title flush-left">Write</label>
-              <EditField name="With hex value:"
-                value={hexvalue}
-                setValue={handleHexValueChange}
-                placeholder="any"
-                width="5em" />
+
+          {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} />}
+          {props.breakpoint.watchpoint && <BPEdit_Watchpoint breakpoint={props.breakpoint} />}
+          {props.breakpoint.instruction && <BPEdit_Instruction breakpoint={props.breakpoint} />}
+
+          <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
+            <div></div>
+            <div className="flex-row">
+              <button className="push-button text-button"
+                onClick={props.saveBreakpoint}>
+                <span className="bigger-font">OK</span>
+              </button>
+              <button className="push-button text-button"
+                onClick={props.cancelDialog}>
+                <span className="bigger-font">Cancel</span>
+              </button>
             </div>
-            :
-            <div>
-              <EditField name="Expression: "
-                value={props.breakpoint.expression}
-                setValue={handleExpressionChange}
-                warning={badExpression}
-                help="Example: (A > #$80) && ($2000 == #$C0)"
-                placeholder="Break when expression evaluates to true" />
-              <EditField name="Hit&nbsp;Count: "
-                value={props.breakpoint.hitcount.toString()}
-                setValue={handleHitCountChange}
-                placeholder="1"
-                width="5em" />
-            </div>
-          }
-          <Droplist name="Memory&nbsp;Bank: "
-            className="dark-mode-edit"
-            value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
-            values={MemoryBankNames}
-            setValue={handleMemoryBankChange}
-            address={props.breakpoint.address}
-            isDisabled={isBankDisabledForAddress} />
-        </div>
-        <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
-          <div></div>
-          <div className="flex-row">
-            <button className="push-button text-button"
-              onClick={props.saveBreakpoint}>
-              <span className="bigger-font">OK</span>
-            </button>
-            <button className="push-button text-button"
-              onClick={props.cancelDialog}>
-              <span className="bigger-font">Cancel</span>
-            </button>
           </div>
         </div>
       </div>

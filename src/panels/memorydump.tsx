@@ -122,7 +122,7 @@ const MemoryDump = () => {
           value={memoryRange}
           values={Object.values(MEMORY_RANGE)}
           setValue={handleSetMemoryRange}
-          address={0}
+          userdata={0}
           isDisabled={() => false} />
       </span>
       <div className="debug-panel"
