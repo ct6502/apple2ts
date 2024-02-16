@@ -46,9 +46,15 @@ const enableContext = (enable: boolean) => {
 const startOscillator = async () => {
   audioContext = new AudioContext({latencyHint: 0, sampleRate: 44100})
   registerAudioContext(enableContext)
-  await audioContext.audioWorklet.addModule('worklet/oscillator.js')
-  speaker = new AudioWorkletNode(audioContext, 'oscillator')
-  speaker.connect(audioContext.destination)
+  try {
+    await audioContext.audioWorklet.addModule('worklet/oscillator.js')
+    speaker = new AudioWorkletNode(audioContext, 'oscillator')
+    speaker.connect(audioContext.destination)
+  } catch (error) {
+    console.error("audioWorklet not available - must run on https")
+    isAudioButtonEnabled = false
+    emulatorSoundEnabled = false
+  }
 }
 
 const getAudioContext = () => {

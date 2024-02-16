@@ -243,8 +243,8 @@ export const getCanvasSize = () => {
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
-  let width = window.innerWidth - 20;
-  let height = window.innerHeight - (handleGetIsDebugging() ? 350 : 200);
+  let width = window.outerWidth - 20;
+  let height = window.outerHeight - (handleGetIsDebugging() ? 350 : 200);
   // shrink either width or height to preserve aspect ratio
   if (width / screenRatio > height) {
     width = height * screenRatio

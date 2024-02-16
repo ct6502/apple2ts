@@ -58,6 +58,16 @@ In launch.json, add a launch configuration:
 
 ```
 
+## Android Chrome Debugging
+
+Using Android Studio, create a new device (like a phone), start the device.
+
+Start the emulator with `npm run host` to make the application available to the network. You must do this - you cannot run on `localhost:6502` or `10.0.2.2:6502` on Android (it's some conflict with vite and chrome).
+
+Navigate to the provided URL - it will be something like `10.0.0.xxx:6502`.
+
+On your Desktop Chrome, go to `chrome://inspect/#devices` and then choose the appropriate "Remote Target".
+
 ## Jest Test Debugging in VS Code
 
 In VS Code, add breakpoints to the test code. Then open up `package.json`, hover over
