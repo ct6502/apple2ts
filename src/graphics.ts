@@ -239,12 +239,16 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
 }
 
 export const getCanvasSize = () => {
+  const isTouchDevice = "ontouchstart" in document.documentElement
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
-  let width = window.outerWidth - 20;
-  let height = window.outerHeight - (handleGetIsDebugging() ? 350 : 200);
+  let width = window.outerWidth - 20
+  let height = window.outerHeight - 300
+  if (!isTouchDevice && handleGetIsDebugging()) {
+    width /= 2
+  }
   // shrink either width or height to preserve aspect ratio
   if (width / screenRatio > height) {
     width = height * screenRatio
