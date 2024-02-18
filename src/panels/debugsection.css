@@ -70,14 +70,13 @@
   outline: none;
 }
 
-.programCounter {
-  background-color: black;
-  opacity: 30%;
-  width: 200px;
-  height: 14px;
-  position: absolute;
-  left: 2px;
+.program-counter {
+  background-color: gray;
+  opacity: 100%;
   pointer-events: none;
+  margin-left: -3px;
+  padding-left: 3px;
+  margin-right: 10px;
 }
 
 .highlight-line {
@@ -123,9 +122,10 @@
 .breakpoint-position {
   position: absolute;
   left: 6px;
+  margin-top: 1px;
 }
 
-.fakePoint {
+.fake-point {
   opacity: 50%;
 }
 

@@ -41,7 +41,7 @@ export const getDisassembly = (start: number) => {
   let addr = start
   if (addr > (0xFFFF - nlines)) addr = 0xFFFF - nlines
   let r = ''
-  for (let i=0; i < 2 * nlines; i++) {
+  for (let i=0; i < nlines; i++) {
     if (addr > 0xFFFF) {
       r += '\n'
       continue
