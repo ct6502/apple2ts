@@ -24,12 +24,13 @@ const resetDrive = (drive: number) => {
   handleSetDiskData(drive, new Uint8Array(), "")
 }
 
-const DiskDrive = (props: {
+type DiskDriveProps = {
   drive: number,
   renderCount: number,
   setShowFileOpenDialog: (show: boolean, drive: number) => void
-}) => {
+}
 
+const DiskDrive = (props: DiskDriveProps) => {
   const dprops = handleGetDriveProps(props.drive)
   let img1: string
   if (dprops.hardDrive) {

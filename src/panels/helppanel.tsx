@@ -1,7 +1,13 @@
 import "./helppanel.css"
 import { defaultHelpText } from "./startuptextpage";
 
-const HelpPanel = (props: { helptext: string, height: number, width: number }) => {
+type HelpPanelProps = {
+  helptext: string,
+  height: number,
+  width: number
+}
+
+const HelpPanel = (props: HelpPanelProps) => {
   return (
     <span>
       <div className="help-paper" style={{ height: props.height - 30, width: props.width }}>

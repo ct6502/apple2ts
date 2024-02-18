@@ -15,8 +15,12 @@ import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from
 const nlines = 40
 const bpOffset = 0
 
-const DisassemblyView = (props:
-  { breakpoints: BreakpointMap; setBreakpoints: (breakpoints: BreakpointMap) => void; }) => {
+type DisassemblyViewProps = {
+  breakpoints: BreakpointMap;
+  setBreakpoints: (breakpoints: BreakpointMap) => void;
+}
+
+const DisassemblyView = (props: DisassemblyViewProps) => {
   const [lineHeight, setLineHeight] = React.useState(0)
   const [newScrollAddress, setNewScrollAddress] = React.useState(0)
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
@@ -164,7 +168,7 @@ const DisassemblyView = (props:
   // }
 
   const borderStyle = (opcode: string) => {
-    if ((["JMP", "RTS"]).includes(opcode)) return "solid 1px #444444"
+    if ((["JMP", "RTS"]).includes(opcode)) return "solid 1px #000"
     //    if ((["JSR"]).includes(opcode)) return "dashed 1px #444444"
     return "none"
   }
