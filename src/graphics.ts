@@ -1,5 +1,5 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, handleGetIsDebugging } from "./main2worker"
+  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, handleGetIsDebugging, passSetSoftSwitches } from "./main2worker"
 import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS } from "./emulator/utility/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
@@ -171,6 +171,21 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   hiddenContext.putImageData(imageData, 0, 0)
 };
 
+let doOverride = false
+let doPage2 = false
+const border = 2
+
+export const overrideHires = (override: boolean, page2: boolean) => {
+  doOverride = override
+  doPage2 = page2
+  if (override) {
+    //                  TEXT off, MIXED off, PAGE2 off, HIRES on, COLUMN80 off
+    passSetSoftSwitches([0xC050, 0xC052, page2 ? 0xC055 : 0xC054, 0xC057, 0xC00C])
+  } else {
+    passSetSoftSwitches(null)
+  }
+}
+
 const drawImage = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
@@ -180,6 +195,16 @@ const drawImage = (ctx: CanvasRenderingContext2D,
   const imgWidth = Math.floor(width * (1 - 2 * xmargin))
   ctx.drawImage(hiddenContext.canvas, 0, 0, 560, 384,
     xmarginPx, ymarginPx, imgWidth, imgHeight)
+  if (doOverride) {
+    ctx.fillStyle = "#000000A0"
+    ctx.fillRect(xmarginPx, imgHeight + ymarginPx - 30, 25, 30)
+    ctx.strokeStyle = "#FF0000"
+    ctx.lineWidth = 2
+    ctx.strokeRect(xmarginPx - border, ymarginPx - border, imgWidth + 2 * border, imgHeight + 2 * border)
+    ctx.fillStyle = "#FF0000"
+    ctx.fillText(`${doPage2 ? '2' : '1'}`, xmarginPx + 3, imgHeight + ymarginPx - 5)
+
+  }
 }
 
 export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
@@ -188,8 +213,8 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   frameCount++
   ctx.imageSmoothingEnabled = true;
   ctx.fillStyle = "#000000";
-  ctx.fillRect(xmargin * width, ymargin * height - 2,
-    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 4)
+  ctx.fillRect(xmargin * width - 2 * border, ymargin * height - 2 - 2 * border,
+    width * (1 - 2 * xmargin) + 2 + 4 * border, height * (1 - 2 * ymargin) + 4 + 4 * border)
   hiddenContext.imageSmoothingEnabled = false;
   hiddenContext.fillStyle = "#000000";
   hiddenContext.fillRect(0, 0, 560, 384)

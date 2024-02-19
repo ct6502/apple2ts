@@ -1,8 +1,9 @@
 import { useRef, useState } from "react"
-import { toHex } from "../emulator/utility/utility"
-import { handleGetAddressGetTable, handleGetMemoryDump } from "../main2worker"
+import { RUN_MODE, toHex } from "../emulator/utility/utility"
+import { handleGetAddressGetTable, handleGetMemoryDump, handleGetRunMode } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
+import { overrideHires } from "../graphics"
 
 enum MEMORY_RANGE {
   CURRENT = "Current memory",
@@ -94,6 +95,17 @@ const MemoryDump = () => {
   const handleSetMemoryRange = (value: string) => {
     setAddress('')
     setMemoryRange(value)
+    switch (value) {
+      case MEMORY_RANGE.HGR1:
+        overrideHires(true, false)
+        break
+      case MEMORY_RANGE.HGR2:
+        overrideHires(true, true)
+        break
+      default:
+        overrideHires(false, false)
+        break
+    }
     const height = memoryDumpRef.current ?
       (memoryDumpRef.current as HTMLDivElement).scrollHeight : 0
     // If we switch from one memory layout to another with a different
@@ -107,9 +119,13 @@ const MemoryDump = () => {
     }, 100)
   }
 
+  const runMode = handleGetRunMode()
+  const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
+
   return (
     <div className="flex-column">
-      <span className="flex-row">
+      <span className="flex-row"
+        style={{ pointerEvents: (ready ? 'auto' : 'none'), opacity: (ready ? 1 : 0.5) }}>
         <input className="hex-field"
           type="text"
           placeholder="FFFF"

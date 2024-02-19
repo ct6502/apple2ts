@@ -56,6 +56,7 @@ export enum MSG_MAIN {
   COMM_DATA,
   MIDI_DATA,
   RAMWORKS,
+  SOFTSWITCHES,
 }
 
 export enum COLOR_MODE {

@@ -1,7 +1,7 @@
 import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -165,6 +165,9 @@ if (typeof self !== 'undefined') {
         break
       case MSG_MAIN.RAMWORKS:
         doSetRAMWorks(e.data.payload as boolean)
+        break
+      case MSG_MAIN.SOFTSWITCHES:
+        forceSoftSwitches(e.data.payload)
         break
       default:
         console.error(`worker2main: unhandled msg: ${e.data.msg}`)

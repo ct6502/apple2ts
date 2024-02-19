@@ -181,7 +181,14 @@ export const checkSoftSwitches = (addr: number,
   }
   if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
     if (!sswitch1.writeOnly || calledFromMemSet) {
-      sswitch1.isSet = (addr === sswitch1.onAddr)
+      // If we have overridden this switch, don't actually set the real
+      // switch value - instead just change our cached value so it gets restored
+      // to its new state when the Memory Dump panel is changed to a non-HGR bank.
+      if (overriddenSwitches[sswitch1.offAddr - 0xC000] !== undefined) {
+        overriddenSwitches[sswitch1.offAddr - 0xC000] = (addr === sswitch1.onAddr)
+      } else {
+        sswitch1.isSet = (addr === sswitch1.onAddr)
+      }
     }
     if (sswitch1.isSetAddr) {
       memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? 0x8D : 0x0D)
@@ -191,4 +198,35 @@ export const checkSoftSwitches = (addr: number,
   } else if (addr === sswitch1.isSetAddr) {
     memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
   }
+}
+
+// An array of the original state of the soft switches, indexed by offAddress - 0xC000.
+// This is needed for the Memory Dump panel, when displaying HGR page 1/2.
+// These switches will get set back to their original values (and the array will be cleared)
+// when the Memory Dump panel is set to a non-HGR memory bank.
+const overriddenSwitches: Array<boolean> = []
+
+export const overrideSoftSwitch = (addr: number) => {
+  const sswitch1 = sswitchArray[addr - 0xC000]
+  if (!sswitch1) {
+    console.error("overrideSoftSwitch: Unknown softswitch " + toHex(addr))
+    return
+  }
+  // If we have already cached this switch, don't override it again.
+  // Otherwise we will never get back to our original state.
+  // That can happen in the Memory Dump panel if the user chooses HGR page 1,
+  // then HGR page 2.
+  if (overriddenSwitches[sswitch1.offAddr - 0xC000] === undefined) {
+    overriddenSwitches[sswitch1.offAddr - 0xC000] = sswitch1.isSet
+  }
+  sswitch1.isSet = (addr === sswitch1.onAddr)
+}
+
+export const restoreSoftSwitches = () => {
+  overriddenSwitches.forEach((isSet, index) => {
+    if (isSet !== undefined) {
+      sswitchArray[index].isSet = isSet
+    }
+  })
+  overriddenSwitches.length = 0
 }

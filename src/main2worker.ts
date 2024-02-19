@@ -19,10 +19,6 @@ export const setMain2Worker = (workerIn: Worker) => {
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
-  // if (!worker) {
-  //   worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
-  //   worker.onmessage = doOnMessage
-  // }
   if (worker) worker.postMessage({msg, payload});
 }
 
@@ -157,6 +153,10 @@ export const passSetRAMWorks = (set: boolean) => {
   doPostMessage(MSG_MAIN.RAMWORKS, set)
   // This should probably come from the emulator, but for now we'll just set it here.
   machineState.memSize = set ? 1080 : 128
+}
+
+export const passSetSoftSwitches = (addresses: Array<number> | null) => {
+  doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
 
 let machineState: MachineState = {

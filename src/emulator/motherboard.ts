@@ -5,7 +5,7 @@ import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString } 
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
-import { SWITCHES } from "./softswitches";
+import { SWITCHES, overrideSoftSwitch, restoreSoftSwitches } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, getZeroPage, getBaseMemory, addressGetTable } from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
@@ -465,6 +465,18 @@ const updateExternalMachineState = () => {
     timeTravelThumbnails: getTimeTravelThumbnails(),
   }
   passMachineState(state)
+}
+
+
+export const forceSoftSwitches = (addresses: Array<number> | null) => {
+  if (addresses) {
+    for (let i = 0; i < addresses.length; i++) {
+      overrideSoftSwitch(addresses[i])
+    }
+  } else {
+    restoreSoftSwitches()
+  }
+  updateExternalMachineState()
 }
 
 const doAdvance6502 = () => {
