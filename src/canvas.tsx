@@ -41,12 +41,22 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   };
 
+  const syntheticPaste = () => {
+    const canvas = document.getElementById('apple2canvas')
+    if (document.activeElement === canvas) {
+      navigator.clipboard
+        .readText()
+        .then((data) => passPasteText(data));
+    }
+  };
+
   const metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
     c: () => handleCopyToClipboard(),
     o: () => props.setShowFileOpenDialog(true, 0),
     s: () => handleFileSave(false),
+    v: () => syntheticPaste(),
   }
 
   const handleMetaKey = (key: string) => {
@@ -109,6 +119,11 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
+  const isMetaSequence = (e: keyEvent): boolean => {
+    // ctrl + "meta" but not shift
+    return (!e.shiftKey && e.ctrlKey && (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')));
+  }
+
   const handleKeyDown = (e: keyEvent) => {
     if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
@@ -118,11 +133,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     // TODO: What modifier key should be used on Windows? Can't use Ctrl
     // because that interferes with Apple II control keys like Ctrl+S
-    if (!e.shiftKey && (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt'))) {
+    //if (!e.shiftKey && (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt'))) {
+    if (isMetaSequence(e)) {
       setKeyHandled(handleMetaKey(e.key))
       // TODO: This allows Cmd+V to paste text, but breaks OpenApple+V.
       // How to handle both?
-      if (e.key === 'v') return;
+      //if (e.key === 'v') return;
     }
     // If we're paused, allow <space> to resume
     if (handleGetRunMode() === RUN_MODE.PAUSED && e.key === ' ') {
