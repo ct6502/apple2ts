@@ -13,7 +13,7 @@ Press the Power button to start.
 `
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? `⌘` : 'Alt+'
+const key = isMac ? `Ctrl+⌘` : 'Ctrl+Alt+'
 const isTouchDevice = "ontouchstart" in document.documentElement
 
 export let defaultHelpText = emulatorStartText
@@ -38,8 +38,10 @@ The open apple and closed apple keys behave the same as the ctrl key.`
 } else {
 
   const keyboardShortcutText =
-`${key}C Copy Screen     ${key}O Open State
-${key}V Paste Text      ${key}S Save State
+`${key}C Copy Screen
+${key}V Paste Text
+${key}O Open State
+${key}S Save State
 ${key}← Go Back in Time
 ${key}→ Forward in Time
 
