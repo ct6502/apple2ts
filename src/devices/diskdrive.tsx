@@ -45,7 +45,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   status += dprops.status
   return (
     <span className="driveClass">
-      <img className="disk2"
+      <img className="disk-image"
         src={img1} alt={filename}
         title={filename}
         onClick={() => {
@@ -59,7 +59,7 @@ const DiskDrive = (props: DiskDriveProps) => {
           }
         }} />
       <span className={"diskLabel"}>{dprops.filename}</span>
-      <span className={"defaultFont diskStatus"}>{status}</span>
+      <span className={"default-font diskStatus"}>{status}</span>
     </span>
   )
 }

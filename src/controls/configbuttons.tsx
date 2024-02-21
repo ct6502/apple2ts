@@ -6,8 +6,10 @@ import {
   faWalking,
   faTruckFast,
   faDisplay,
+  faMicrochip,
+  faCircleHalfStroke,
 } from "@fortawesome/free-solid-svg-icons";
-import { getColorModeSVG, ramWorksIcon } from "../img/icons";
+import { getColorModeSVG } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
@@ -70,15 +72,22 @@ const ConfigButtons = (props: DisplayProps) => {
       style={{ display: typeof AudioContext !== 'undefined' ? '' : 'none' }}
       onClick={() => { passSetRAMWorks(!usingRAMWorks); props.updateDisplay() }}>
       <div style={{ position: 'relative', marginTop: '4px' }}>
-        {ramWorksIcon}
+        <FontAwesomeIcon icon={faMicrochip}
+          style={{ position: 'absolute', top: '-14px', left: '-7px', fontSize: "12pt" }} />
         <span style={{
           position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-45%, -65%)',
+          transform: 'translate(-45%, 20%)',
           fontSize: '6pt',
         }}>
           {usingRAMWorks ? "1024" : "AUX"}
         </span>
       </div>
+    </button>
+
+    <button className="push-button"
+      title="Dark Mode"
+      onClick={() => { props.setDarkMode(!props.darkMode) }}>
+      <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
 
     {/* <button className="push-button"

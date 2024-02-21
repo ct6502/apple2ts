@@ -17,7 +17,7 @@ const KeyboardButtons = (props: DisplayProps) => {
     { name: 'Up', icon: faArrowUp },
     { name: 'Down', icon: faArrowDown },
   ]
-  const isTouchDevice = "ontouchstart" in document.documentElement
+  const isTouchDevice = true//"ontouchstart" in document.documentElement
   const tryButtonPressRelease = (doTouch: boolean, key: string, press: boolean) => {
     if (doTouch !== isTouchDevice) return
     // If one of our Apple keys is locked, ignore the button press.
@@ -61,11 +61,11 @@ const KeyboardButtons = (props: DisplayProps) => {
     <button className={lockedKeyStyle(props.openAppleKeyMode)}
       title="Open Apple"
       onMouseDown={() => props.handleOpenAppleDown((props.openAppleKeyMode + 1) % 3)}>
-      {appleOutline}
+      <svg width="20" height="20" className="fill-color">{appleOutline}</svg>
     </button>
     <button className={lockedKeyStyle(props.closedAppleKeyMode)} title="Closed Apple"
       onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
-      {appleSolid}
+      <svg width="20" height="20" className="fill-color">{appleSolid}</svg>
     </button>
   </span>
   }

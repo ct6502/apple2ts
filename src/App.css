@@ -1,3 +1,8 @@
+:root {
+  --background-color: #E3DAC8;
+  --text-color: black;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,7 +10,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #BFBB98;
+  background-color: var(--background-color);
   margin: 10px;
 }
 
@@ -13,10 +18,6 @@ input:focus {
   outline-style: solid;
   outline-width: 1px;
   outline-color: inherit;
-}
-
-.bgColor {
-  background-color: #BFBB98;
 }
 
 @font-face {
@@ -68,24 +69,6 @@ input:focus {
   flex-wrap: wrap;
 }
 
-/* select {
-  font-size: medium;
-  border-radius: 4px;
-  padding: 2px;
-  outline-width: 0;
-  border-width: 0px;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  color: black;
-  background-color: inherit;
-  border: 0.75px solid black !important;
-} */
-
 .push-button {
   display: flex;
   justify-content: center;
@@ -95,7 +78,7 @@ input:focus {
   background: none;
   appearance: none;
   -webkit-appearance: none;
-  color: black;
+  color: var(--text-color);
   font-size: 23px;
   padding: 0px 0px;
   width: 30px;
@@ -130,6 +113,7 @@ input:focus {
 }
 
 .key-button {
+  color: var(--text-color);
   border-width: 1px;
   border-style: outset;
 }
@@ -211,10 +195,17 @@ input:focus {
   position: relative;
   top: 0;
   left: 0;
+  color: var(--text-color);
 }
 
-.defaultFont {
+.fill-color {
+  fill: var(--text-color);
+}
+
+.default-font {
   font-size: 8pt;
+  color: var(--text-color);
+  fill: var(--text-color);
 }
 
 .statusItem {

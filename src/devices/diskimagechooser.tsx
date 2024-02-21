@@ -1,7 +1,7 @@
 import React from "react"
 import { passSetRunMode, handleSetDiskData } from "../main2worker";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
-import floppyDisks from "./img/disks.png"
+import floppyDisks from "./img/diskicons.png"
 import DiskImageDialog from "./diskimagedialog";
 
 export const DiskImageChooser = (props: DisplayProps) => {
@@ -43,11 +43,10 @@ export const DiskImageChooser = (props: DisplayProps) => {
   };
 
   return (
-    <div className="diskImageMargins">
-      <img className="multi-disk"
+    <div className="diskImageMarginsx">
+      <img className="disk-image"
         src={floppyDisks} alt="disks"
         title="Choose disk image"
-        height="65px"
         onClick={handleClickOpen} />
       {open &&
         <DiskImageDialog

@@ -186,7 +186,7 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
   const getChromacodedLine = (line: string) => {
     const hexcodes = line.slice(0, 16)
     const opcode = line.slice(16, 19)
-    return <span style={{ borderBottom: borderStyle(opcode) }}>{hexcodes}<span style={{ color: "#cc3333" }}>{opcode}</span>{getOperand(line.slice(19))}</span>
+    return <span style={{ borderBottom: borderStyle(opcode) }}>{hexcodes}<span style={{ color: "#000" }}>{opcode}</span>{getOperand(line.slice(19))}</span>
   }
 
   const getDisassemblyDiv = () => {

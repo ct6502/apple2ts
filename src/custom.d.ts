@@ -60,6 +60,8 @@ type DisplayProps = {
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
   showFileOpenDialog: {show: boolean, drive: number},
+  darkMode: boolean,
+  setDarkMode: (darkMode: boolean) => void,
   updateDisplay: (speed = 0, helptext = '') => void,
   handleCtrlDown: (mode: number) => void,
   handleOpenAppleDown: (mode: number) => void,

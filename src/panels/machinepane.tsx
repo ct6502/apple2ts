@@ -7,7 +7,7 @@ const MachinePane = () => {
   const buttonStyle = (tab: string) => "tab-button" + ((selectedTab === tab) ? " tab-active" : "")
   return (
     <div className="roundRectBorder" style={{ marginTop: "17px", borderTopLeftRadius: "0" }}>
-      <div className="defaultFont panelTitle bgColor"
+      <div className="panel-title"
         style={{ top: "-19px", left: "1em", paddingLeft: "0", paddingRight: "0" }}>
         <button className={buttonStyle('debuginfo')}
           onClick={() => setSelectedTab('debuginfo')}>Debug Info</button>

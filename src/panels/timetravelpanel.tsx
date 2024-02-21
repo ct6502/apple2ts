@@ -87,7 +87,7 @@ const TimeTravelPanel = () => {
   // Could change to tabIndex={0} to make the div part of the tab order.
   return (
     <div className="roundRectBorder">
-      <p className="defaultFont panelTitle bgColor">Time Travel Snapshots</p>
+      <p className="default-font panel-title">Time Travel Snapshots</p>
       <div className="flex-row">
         <div ref={stateThumbRef} className="thinBorder debug-panel"
           onKeyDown={(e) => handleKeyDown(e)}

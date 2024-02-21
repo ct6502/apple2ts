@@ -19,9 +19,11 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./restoresavestate"
 import { getCanvasSize } from "./graphics"
 import { handleFragment, handleInputParams } from "./inputparams"
+import { COLORS } from "./emulator/utility/utility";
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
@@ -59,6 +61,10 @@ const DisplayApple2 = () => {
     // If you do setRenderCount(renderCount + 1), renderCount will always be
     // zero and NOTHING will update.
     setRenderCount(prevRenderCount => prevRenderCount + 1);
+  }
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
   }
 
   if (!myInit) {
@@ -118,6 +124,7 @@ const DisplayApple2 = () => {
   }
 
   const handleShowFileOpenDialog = (show: boolean, drive: number) => {
+    if (show) toggleDarkMode()
     setShowFileOpenDialog({ show, drive })
   }
 
@@ -128,11 +135,21 @@ const DisplayApple2 = () => {
     openAppleKeyMode: openAppleKeyMode,
     closedAppleKeyMode: closedAppleKeyMode,
     showFileOpenDialog: showFileOpenDialog,
+    darkMode: darkMode,
+    setDarkMode: toggleDarkMode,
     updateDisplay: updateDisplay,
     handleCtrlDown: handleCtrlDown,
     handleOpenAppleDown: handleOpenAppleDown,
     handleClosedAppleDown: handleClosedAppleDown,
     setShowFileOpenDialog: handleShowFileOpenDialog,
+  }
+
+  if (darkMode) {
+    document.body.style.setProperty('--background-color', COLORS.DARK.BG)
+    document.body.style.setProperty('--text-color', COLORS.DARK.TEXT)
+  } else {
+    document.body.style.setProperty('--background-color', COLORS.LIGHT.BG)
+    document.body.style.setProperty('--text-color', COLORS.LIGHT.TEXT)
   }
 
   const width = getCanvasSize()[0]
@@ -150,7 +167,7 @@ const DisplayApple2 = () => {
             <DiskInterface {...props} />
             <ImageWriter />
           </div>
-          <span className="defaultFont statusItem">
+          <span className="default-font statusItem">
             <span>{props.speed} MHz, {handleGetMemSize()} KB</span>
             <br />
             <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;

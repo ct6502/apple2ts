@@ -7,7 +7,9 @@
   grid-column: 1;
   grid-row: 1;
   border-radius: 20px;
-  border-color: #000;
+  border-color: #583927;
+  border-width: 2px;
+  border-style: solid;
   background-color: black;
   background-image: url(./img/crt.jpg);
   background-size: 100% 100%;

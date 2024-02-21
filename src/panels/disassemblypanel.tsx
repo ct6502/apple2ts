@@ -19,7 +19,7 @@ const DisassemblyPanel = () => {
 
   return (
     <div className="roundRectBorder">
-      <p className="defaultFont panelTitle bgColor">Disassembly</p>
+      <p className="default-font panel-title">Disassembly</p>
       <DisassemblyControls />
       <DisassemblyView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />
       <BreakpointsView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />

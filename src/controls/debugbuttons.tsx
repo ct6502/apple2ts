@@ -10,10 +10,10 @@ import {
   faCamera,
   faFastBackward,
   faFastForward,
+  faLayerGroup,
   faPause,
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
-import multiSave from '../img/multiSave.svg';
 import { handleSetCPUState } from "../controller";
 import { handleFileSave } from "../fileoutput";
 
@@ -54,7 +54,7 @@ const DebugButtons = () => {
       title={"Save State with Snapshots"}
       onClick={() => handleFileSave(true)}
       disabled={notStarted}>
-      <img src={multiSave} alt="Save Snapshots" width={23} height={23} />
+      <FontAwesomeIcon icon={faLayerGroup} />
     </button>
     <button className="push-button" title="Toggle Debug"
       onClick={() => passSetDebug(!handleGetIsDebugging())}>

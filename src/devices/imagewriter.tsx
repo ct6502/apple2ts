@@ -28,7 +28,8 @@ const ImageWriter = () => {
 
   return (
     <span className="driveClass">
-      <img className="multi-disk"
+      <img className="disk-image"
+        style={{ borderWidth: 0 }}
         src={img1} alt="iwii"
         title="ImageWriter II"
         height="57px"

@@ -46,6 +46,7 @@
   font-family: monospace;
   font-size: 8pt;
   line-height: 10pt;
+  color: var(--text-color);
 }
 
 .debug-panel {
@@ -60,6 +61,7 @@
   font-family: monospace;
   font-size: 8pt;
   line-height: 10pt;
+  color: var(--text-color);
 }
 
 .thinBorder {
@@ -139,15 +141,17 @@
   padding: 10px;
   margin: 7px;
   position: relative;
+  border-color: var(--text-color);
 }
 
 .bigger-font {
   font-size: 10pt;
   line-height: 10pt;
   text-align: center;
+  color: var(--text-color);
 }
 
-.panelTitle {
+.panel-title {
   position: absolute;
   font-size: 10pt;
   top: -1.7em;
@@ -156,6 +160,7 @@
   padding-bottom: 0;
   padding-left: 5px;
   padding-right: 5px;
+  background-color: var(--background-color);
 }
 
 .tightButton {
@@ -256,10 +261,11 @@
   margin-right: 0px;
   color: #555;
   width: 120px;
+  color: var(--text-color);
 }
 
 .tab-active {
   background: none;
   border-bottom: none;
-  color: #000;
+  color: var(--text-color);
 }

@@ -1,9 +1,6 @@
-import React from "react";
-// PictogrammersMaterialMidiport downloaded from: 
-// https://www.iconarchive.com/show/material-icons-by-pictogrammers/midi-port-icon.html
-// Apache License
-import PictogrammersMaterialMidiport from "./img/PictogrammersMaterialMidiport.svg";
-import { midiOutDevices, getMidiOutIndex, setMidiOutIndex } from "./midiinterface";
+import React from "react"
+import { midiOutDevices, getMidiOutIndex, setMidiOutIndex } from "./midiinterface"
+import { midiport } from "./img/midiport"
 
 export const MidiDeviceSelect = () => {
   const [midiOpen, setMidiOpen] = React.useState<boolean>(false)
@@ -19,7 +16,7 @@ export const MidiDeviceSelect = () => {
     if (index >= 0) setMidiOutIndex(index);
   }
 
-  if (!navigator.requestMIDIAccess) return <></>
+  //  if (!navigator.requestMIDIAccess) return <></>
 
   return (
     <span>
@@ -29,7 +26,7 @@ export const MidiDeviceSelect = () => {
         title="Midi Device Select"
         onClick={handleMidiClick}
       >
-        <img src={PictogrammersMaterialMidiport} alt="MidiOut" width={30} height={30} />
+        <svg width="30" height="30" className="fill-color">{midiport}</svg>
       </button>
       {midiOpen && midiOutDevices && midiOutDevices.length > 0 &&
         <div className="modal-overlay"
