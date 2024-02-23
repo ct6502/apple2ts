@@ -23,7 +23,7 @@ import { COLORS } from "./emulator/utility/utility";
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
-  const [darkMode, setDarkMode] = useState(true)
+  const [darkMode, setDarkMode] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
