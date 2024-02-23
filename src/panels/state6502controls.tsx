@@ -37,7 +37,7 @@ const State6502Controls = () => {
     const strVal = value.toString(16).toUpperCase()
     return (
       <div className="flex-row" style={{ alignItems: "center" }}>
-        <div className="bigger-font">{name}</div>
+        <div className="centered-title">{name}</div>
         <input type="text"
           className={name === 'PC' ? "hex-field" : "hex-field smallField"}
           disabled={runMode !== RUN_MODE.PAUSED}
@@ -51,7 +51,7 @@ const State6502Controls = () => {
   const createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
     const checked = (value & (1 << bitField)) !== 0
     return <div className="flex-column">
-      <div className="bigger-font">{name}</div>
+      <div className="centered-title">{name}</div>
       <input type="checkbox" id={name}
         className="debugCheckbox"
         checked={checked}

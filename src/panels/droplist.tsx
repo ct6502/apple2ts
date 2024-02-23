@@ -33,7 +33,7 @@ export const Droplist = (props: DroplistProps) => {
   }
 
   return <div className="flex-row">
-    {props.name && <div className="white-title">{props.name}</div>}
+    {props.name && <div className="dialog-title">{props.name}</div>}
     <select value={props.value}
       ref={selectRef}
       className={props.className}

@@ -52,7 +52,7 @@ const BinaryFileDialog = (props:
         style={{ left: "15%", top: "25%" }}>
         <div className="flex-column">
           <div className="flex-row-space-between">
-            <div className="white-title">Load Binary File</div>
+            <div className="dialog-title">Load Binary File</div>
             <div onClick={handleCancel}>
               <FontAwesomeIcon icon={faBreakpointDelete}
                 className='breakpoint-pushbutton'
@@ -77,18 +77,18 @@ const BinaryFileDialog = (props:
               setRunCode(event.target.checked)
             }} />
           <label htmlFor="memset"
-            className="white-title flush-left">Run code after loading</label>
+            className="dialog-title flush-left">Run code after loading</label>
         </div>
         <div className="flex-row-space-between">
           <div></div>
           <div className="flex-row">
             <button className="push-button text-button"
               onClick={handleLoadBinary}>
-              <span className="bigger-font">OK</span>
+              <span className="centered-title">OK</span>
             </button>
             <button className="push-button text-button"
               onClick={handleCancel}>
-              <span className="bigger-font">Cancel</span>
+              <span className="centered-title">Cancel</span>
             </button>
           </div>
         </div>

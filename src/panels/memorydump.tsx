@@ -134,7 +134,7 @@ const MemoryDump = () => {
           onKeyDown={handleAddressKeyDown}
         />
         <Droplist name=" "
-          className="light-mode-edit"
+          className="droplist-edit"
           value={memoryRange}
           values={Object.values(MEMORY_RANGE)}
           setValue={handleSetMemoryRange}
@@ -151,8 +151,8 @@ const MemoryDump = () => {
       </div>
       <div className="debug-panel"
         style={{
-          width: '370px', // Set the width to your desired value
-          height: `495px`, // Set the height to your desired value
+          width: '370px',
+          height: `485px`,
           overflow: 'auto',
         }}
         ref={memoryDumpRef}

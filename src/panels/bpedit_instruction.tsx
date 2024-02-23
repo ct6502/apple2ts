@@ -168,7 +168,7 @@ const BPEdit_Instruction = (props: {
           <PullDownMenu open={true} values={popup} setValue={handleInstructionFromPopup} />
         }
         <Droplist name="Address&nbsp;Mode: "
-          className="dark-mode-edit"
+          className="edit-field"
           value={addressMode}
           values={addressModes}
           setValue={handleAddressModeChange}
@@ -182,9 +182,9 @@ const BPEdit_Instruction = (props: {
           placeholder="any"
           width="5em" />
       </div>
-      <div className="white-title">{getInstructionBreakpointString()}</div>
+      <div className="dialog-title">{getInstructionBreakpointString()}</div>
       <Droplist name="Memory&nbsp;Bank: "
-        className="dark-mode-edit"
+        className="edit-field"
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}
         setValue={handleMemoryBankChange}

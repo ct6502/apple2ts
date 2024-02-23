@@ -4,11 +4,10 @@ import MemoryDump from "./memorydump";
 
 const MachinePane = () => {
   const [selectedTab, setSelectedTab] = useState('debuginfo')
-  const buttonStyle = (tab: string) => "tab-button" + ((selectedTab === tab) ? " tab-active" : "")
+  const buttonStyle = (tab: string) => "bigger-font tab-button" + ((selectedTab === tab) ? " tab-active" : "")
   return (
-    <div className="roundRectBorder" style={{ marginTop: "17px", borderTopLeftRadius: "0" }}>
-      <div className="panel-title"
-        style={{ top: "-19px", left: "1em", paddingLeft: "0", paddingRight: "0" }}>
+    <div className="round-rect-border">
+      <div className="bigger-font flex-row-gap">
         <button className={buttonStyle('debuginfo')}
           onClick={() => setSelectedTab('debuginfo')}>Debug Info</button>
         <button className={buttonStyle('memorydump')}

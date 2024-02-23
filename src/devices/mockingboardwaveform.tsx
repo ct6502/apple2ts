@@ -35,7 +35,7 @@ export const MockingboardWaveform = () => {
           style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
           onClick={() => handleMockClose()}>
           <div className="floating-dialog flex-column"
-            style={{ backgroundColor: 'white', left: position.x, top: position.y }}>
+            style={{ left: position.x, top: position.y }}>
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div style={{ padding: '5px', cursor: 'pointer' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}

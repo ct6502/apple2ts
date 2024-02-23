@@ -11,7 +11,10 @@
   margin-top: 2px;
   border-radius: 3px;
   border-width: 1px;
-  border-color: #767676;
+  border-style: solid;
+  border-color: var(--text-color);
+  background-color: var(--input-background);
+  color: var(--text-color);
 }
 
 .smallField {
@@ -62,6 +65,10 @@
   font-size: 8pt;
   line-height: 10pt;
   color: var(--text-color);
+}
+
+.tall-panel {
+  height: '490px',
 }
 
 .thinBorder {
@@ -135,54 +142,31 @@
   margin: 0;
 }
 
-.roundRectBorder {
+.round-rect-border {
   border: 1px solid #000;
   border-radius: 10px;
   padding: 10px;
-  margin: 7px;
-  position: relative;
+  margin: 0;
   border-color: var(--text-color);
+  background-color: var(--panel-background);
 }
 
-.bigger-font {
-  font-size: 10pt;
-  line-height: 10pt;
-  text-align: center;
-  color: var(--text-color);
-}
-
-.panel-title {
-  position: absolute;
-  font-size: 10pt;
-  top: -1.7em;
-  left: 15px;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 5px;
-  padding-right: 5px;
-  background-color: var(--background-color);
-}
-
-.tightButton {
-  border: 0px;
-  border-style: none;
+.tight-button {
   margin-left: 5px;
-  margin-top: 14px;
+  margin-top: 0px;
   margin-right: 3px;
-  padding-left: 1px;
-  padding-top: 1px;
-  width: 18px;
-  height: 18px
+  width: 16px;
+  height: 16px
 }
 
-.white-title {
+.dialog-title {
   font-size: 10pt;
   line-height: 18pt;
   padding-top: 3px;
   padding-bottom: 3px;
   padding-left: 10px;
   padding-right: 10px;
-  color: white;
+  color: var(--text-color);
 }
 
 .horiz-rule {
@@ -191,10 +175,10 @@
   margin-bottom: 5px;
 }
 
-.dark-mode-edit {
-  background-color: #222;
-  color: white;
-  border-color: #aaa;
+.edit-field {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  border-color: #808080;
   border-width: 1px;
   border-style: solid;
   border-radius: 3px;
@@ -206,7 +190,7 @@
   height: 18px;
 }
 
-.light-mode-edit {
+.droplist-edit {
   border-color: #767676;
   border-width: 1px;
   border-style: solid;
@@ -253,19 +237,26 @@
 }
 
 .tab-button {
-  background-color: #aba98f;
-  border: 1px solid #000;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  margin-left: 0px;
-  margin-right: 0px;
-  color: #555;
+  background-color: var(--panel-background);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--text-color);
+  border-radius: 5px;
   width: 120px;
   color: var(--text-color);
 }
 
 .tab-active {
-  background: none;
-  border-bottom: none;
+  background-color: var(--button-active);
   color: var(--text-color);
+}
+
+.disassembly-opcode {
+  color: var(--opcode);
+}
+
+.disassembly-separator {
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-bottom-color: var(--text-color);
 }

@@ -168,9 +168,9 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
   // }
 
   const borderStyle = (opcode: string) => {
-    if ((["JMP", "RTS"]).includes(opcode)) return "solid 1px #000"
+    if ((["JMP", "RTS"]).includes(opcode)) return "disassembly-separator"
     //    if ((["JSR"]).includes(opcode)) return "dashed 1px #444444"
-    return "none"
+    return ""
   }
 
   const getOperand = (operand: string) => {
@@ -186,7 +186,9 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
   const getChromacodedLine = (line: string) => {
     const hexcodes = line.slice(0, 16)
     const opcode = line.slice(16, 19)
-    return <span style={{ borderBottom: borderStyle(opcode) }}>{hexcodes}<span style={{ color: "#000" }}>{opcode}</span>{getOperand(line.slice(19))}</span>
+    return <span className={borderStyle(opcode)}>{hexcodes}
+      <span className="disassembly-opcode">{opcode}</span>
+      {getOperand(line.slice(19))}</span>
   }
 
   const getDisassemblyDiv = () => {
@@ -195,7 +197,7 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
       style={{
         position: "relative",
         width: '200px',
-        top: "-2px",
+        top: "0px",
         height: `${nlines * 10 - 2}pt`,
       }}>
     </div>
@@ -221,7 +223,7 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
       style={{
         position: "relative",
         width: '200px',
-        top: "-2px",
+        top: "0px",
         height: `${nlines * 10 - 2}pt`,
         paddingLeft: "15pt",
       }}

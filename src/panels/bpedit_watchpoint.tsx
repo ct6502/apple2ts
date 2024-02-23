@@ -96,12 +96,12 @@ const BPEdit_Watchpoint = (props: {
           className="check-radio-box shift-down"
           checked={props.breakpoint.memget}
           onChange={(e) => { handleMemgetChange(e) }} />
-        <label htmlFor="memget" className="white-title flush-left">Read</label>
+        <label htmlFor="memget" className="dialog-title flush-left">Read</label>
         <input type="checkbox" id="memset" value="memset"
           className="check-radio-box shift-down"
           checked={props.breakpoint.memset}
           onChange={(e) => { handleMemsetChange(e) }} />
-        <label htmlFor="memset" className="white-title flush-left">Write</label>
+        <label htmlFor="memset" className="dialog-title flush-left">Write</label>
       </div>
       <div>
         <EditField name="With hex value:"
@@ -111,7 +111,7 @@ const BPEdit_Watchpoint = (props: {
           width="5em" />
       </div>
       <Droplist name="Memory&nbsp;Bank: "
-        className="dark-mode-edit"
+        className="edit-field"
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}
         setValue={handleMemoryBankChange}

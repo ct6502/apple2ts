@@ -28,10 +28,10 @@ const EditField = (props: EditFieldProps) => {
   }, [props.initialFocus]);
   return (
     <div className="flex-row" style={{ marginTop: '2px', position: "relative" }}>
-      <div className="white-title">{props.name}</div>
+      <div className="dialog-title">{props.name}</div>
       <input type="text"
         ref={inputRef}
-        className="dark-mode-edit mono-text"
+        className="edit-field mono-text"
         placeholder={props.placeholder}
         value={props.value}
         style={{ width: props.width || "100%" }}

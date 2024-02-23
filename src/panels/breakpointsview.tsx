@@ -20,7 +20,6 @@ const BreakpointsView = (props: {
   breakpoints: BreakpointMap;
   setBreakpoints: (breakpoints: BreakpointMap) => void
 }) => {
-  const nlines = 12  // should this be an argument?
   const x = window.innerWidth / 2 - 200
   const y = window.innerHeight / 2 - 200
   const [dialogPosition, setDialogPosition] = useState([x, y])
@@ -105,69 +104,67 @@ const BreakpointsView = (props: {
   }
 
   return (
-    <div className="flex-column">
-      <div className="flex-row-space-between">
-        <div className="bigger-font"
-          style={{
-            paddingTop: "15px",
-            paddingBottom: "3px",
-            paddingLeft: "5px",
-          }}>Breakpoints</div>
-        <div className="flex-row">
-          <button className="push-button tightButton"
-            title="Add new breakpoint"
-            onClick={addBreakpoint}
-            disabled={false}>
-            <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: '0.7em' }} />
-          </button>
-          <button className="push-button tightButton"
-            title="Remove all breakpoints"
-            onClick={removeAllBreakpoints}
-            disabled={false}>
-            <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.8em' }} />
-          </button>
-        </div>
-      </div>
-      <div className="debug-panel thinBorder"
-        style={{
-          width: '213px',
-          height: `${nlines * 11 - 2}pt`,
-          overflow: 'auto',
-          paddingLeft: "5pt",
-          cursor: "pointer"
-        }}>
-        {Array.from(props.breakpoints).map(([key, breakpoint]) => (
-          <div key={key}>
-            <button className="breakpoint-pushbutton"
-              data-key={key}
-              onClick={(e) => { handleBreakpointClick(e) }}>
-              <FontAwesomeIcon className={getBreakpointStyle(breakpoint)}
-                style={{ paddingRight: "0" }}
-                icon={getBreakpointIcon(breakpoint)} />
-            </button>
-            <button className="breakpoint-pushbutton"
-              data-key={key}
-              onClick={(e) => { handleBreakpointEdit(e) }}
+    <div className="round-rect-border">
+      <div className="bigger-font">Breakpoints</div>
+      <div className="flex-column">
+        <div className="flex-row-space-between">
+          &nbsp;
+          <div className="flex-row">
+            <button className="push-button tight-button"
+              title="Add new breakpoint"
+              onClick={addBreakpoint}
               disabled={false}>
-              <FontAwesomeIcon icon={iconBreakpointEdit} />
+              <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: '0.7em' }} />
             </button>
-            <button className="breakpoint-pushbutton"
-              data-key={key}
-              onClick={(e) => { handleBreakpointDelete(e) }}>
-              <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '1.3em' }} />
+            <button className="push-button tight-button"
+              title="Remove all breakpoints"
+              onClick={removeAllBreakpoints}
+              disabled={false}>
+              <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.8em' }} />
             </button>
-            <span data-key={key} onClick={handleAddressClick}>{getBreakpointString(breakpoint)}</span>
           </div>
-        )
-        )}
+        </div>
+        <div className="debug-panel thinBorder"
+          style={{
+            width: '228px',
+            height: '120pt',
+            overflow: 'auto',
+            paddingLeft: "5pt",
+            cursor: "pointer"
+          }}>
+          {Array.from(props.breakpoints).map(([key, breakpoint]) => (
+            <div key={key}>
+              <button className="breakpoint-pushbutton"
+                data-key={key}
+                onClick={(e) => { handleBreakpointClick(e) }}>
+                <FontAwesomeIcon className={getBreakpointStyle(breakpoint)}
+                  style={{ paddingRight: "0" }}
+                  icon={getBreakpointIcon(breakpoint)} />
+              </button>
+              <button className="breakpoint-pushbutton"
+                data-key={key}
+                onClick={(e) => { handleBreakpointEdit(e) }}
+                disabled={false}>
+                <FontAwesomeIcon icon={iconBreakpointEdit} />
+              </button>
+              <button className="breakpoint-pushbutton"
+                data-key={key}
+                onClick={(e) => { handleBreakpointDelete(e) }}>
+                <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '1.3em' }} />
+              </button>
+              <span data-key={key} onClick={handleAddressClick}>{getBreakpointString(breakpoint)}</span>
+            </div>
+          )
+          )}
+        </div>
+        {showBreakpointEdit &&
+          <BreakpointEdit breakpoint={breakpointEditValue}
+            saveBreakpoint={saveBreakpoint}
+            cancelDialog={cancelEdit}
+            dialogPositionX={dialogPosition[0]}
+            dialogPositionY={dialogPosition[1]}
+            setDialogPosition={doSetDialogPosition} />}
       </div>
-      {showBreakpointEdit &&
-        <BreakpointEdit breakpoint={breakpointEditValue}
-          saveBreakpoint={saveBreakpoint}
-          cancelDialog={cancelEdit}
-          dialogPositionX={dialogPosition[0]}
-          dialogPositionY={dialogPosition[1]}
-          setDialogPosition={doSetDialogPosition} />}
     </div>
   )
 }

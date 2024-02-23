@@ -7,11 +7,19 @@ export const FILE_SUFFIXES = ".a2ts,.hdv,.2mg,.dsk,.woz,.po,.do,.bin"
 export const COLORS = {
   LIGHT: {
     TEXT: '#000000',
-    BG: '#E3DAC8'
+    BG: '#BFBB98',
+    PANEL: '#d3cfa9',
+    ACTIVE: '#898677',
+    INPUT: '#eee',
+    OPCODE: '#000000',
   },
   DARK: {
-    TEXT: '#CCCCCC',
-    BG: '#1F1F1F'
+    TEXT: '#DDD',
+    BG: '#181818',
+    PANEL: '#222',
+    ACTIVE: '#555',
+    INPUT: '#444',
+    OPCODE: '#dcdcaf',
   }
 }
 

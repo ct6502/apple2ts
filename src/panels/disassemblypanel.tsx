@@ -18,10 +18,12 @@ const DisassemblyPanel = () => {
   }
 
   return (
-    <div className="roundRectBorder">
-      <p className="default-font panel-title">Disassembly</p>
-      <DisassemblyControls />
-      <DisassemblyView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />
+    <div className="flex-column-gap">
+      <div className="round-rect-border tall-panel">
+        <div className="bigger-font">Disassembly</div>
+        <DisassemblyControls />
+        <DisassemblyView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />
+      </div>
       <BreakpointsView breakpoints={breakpoints} setBreakpoints={doSetBreakpoints} />
     </div>
   )

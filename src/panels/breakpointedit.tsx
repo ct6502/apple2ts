@@ -78,7 +78,7 @@ const BreakpointEdit = (props: {
             onMouseDown={(e) => handleMouseDown(e)}
             onMouseMove={(e) => handleMouseMove(e)}
             onMouseUp={handleMouseUp}>
-            <div className="white-title">Edit Breakpoint or Watchpoint</div>
+            <div className="dialog-title">Edit Breakpoint or Watchpoint</div>
             <div onClick={props.cancelDialog}>
               <FontAwesomeIcon icon={iconBreakpointDelete}
                 className='breakpoint-pushbutton'
@@ -89,24 +89,24 @@ const BreakpointEdit = (props: {
         </div>
         <div className="flex-column">
           <div className="flex-row">
-            <div className="white-title">Break at: </div>
+            <div className="dialog-title">Break at: </div>
             <input type="radio"
               id="Address"
               name="breakAt" value="address"
               className="check-radio-box"
               checked={!(props.breakpoint.watchpoint || props.breakpoint.instruction)}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Address" className="white-title flush-left">Breakpoint</label>
+            <label htmlFor="Address" className="dialog-title flush-left">Breakpoint</label>
             <input type="radio" id="Watchpoint" name="watch" value="watchpoint"
               className="check-radio-box"
               checked={props.breakpoint.watchpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Watchpoint" className="white-title flush-left">Watchpoint</label>
+            <label htmlFor="Watchpoint" className="dialog-title flush-left">Watchpoint</label>
             <input type="radio" id="Instruction" name="instruction" value="instruction"
               className="check-radio-box"
               checked={props.breakpoint.instruction}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Instruction" className="white-title flush-left">Instruction</label>
+            <label htmlFor="Instruction" className="dialog-title flush-left">Instruction</label>
           </div>
 
           {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} />}
@@ -118,11 +118,11 @@ const BreakpointEdit = (props: {
             <div className="flex-row">
               <button className="push-button text-button"
                 onClick={props.saveBreakpoint}>
-                <span className="bigger-font">OK</span>
+                <span className="centered-title">OK</span>
               </button>
               <button className="push-button text-button"
                 onClick={props.cancelDialog}>
-                <span className="bigger-font">Cancel</span>
+                <span className="centered-title">Cancel</span>
               </button>
             </div>
           </div>

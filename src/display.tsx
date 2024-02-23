@@ -23,7 +23,7 @@ import { COLORS } from "./emulator/utility/utility";
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
@@ -144,13 +144,16 @@ const DisplayApple2 = () => {
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 
+  let colors = COLORS.LIGHT
   if (darkMode) {
-    document.body.style.setProperty('--background-color', COLORS.DARK.BG)
-    document.body.style.setProperty('--text-color', COLORS.DARK.TEXT)
-  } else {
-    document.body.style.setProperty('--background-color', COLORS.LIGHT.BG)
-    document.body.style.setProperty('--text-color', COLORS.LIGHT.TEXT)
+    colors = COLORS.DARK
   }
+  document.body.style.setProperty('--background-color', colors.BG)
+  document.body.style.setProperty('--text-color', colors.TEXT)
+  document.body.style.setProperty('--panel-background', colors.PANEL)
+  document.body.style.setProperty('--button-active', colors.ACTIVE)
+  document.body.style.setProperty('--input-background', colors.INPUT)
+  document.body.style.setProperty('--opcode', colors.OPCODE)
 
   const width = getCanvasSize()[0]
   const height = window.innerHeight - 30
@@ -174,7 +177,7 @@ const DisplayApple2 = () => {
               <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
           </span>
         </span>
-        <span className="sidePanels">
+        <span className="flex-column" style={{ marginLeft: "10px" }}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel helptext={helptext}
               height={height ? height : 400} width={paperWidth} />}

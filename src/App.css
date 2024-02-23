@@ -1,6 +1,10 @@
 :root {
-  --background-color: #E3DAC8;
+  --background-color: #BFBB98;
+  --panel-background: #BFBB98;
   --text-color: black;
+  --button-active: #898677;
+  --input-background: #eee;
+  --opcode: black;
 }
 
 body {
@@ -37,20 +41,23 @@ input:focus {
 .flex-row {
   display: flex;
   flex-direction: row;
-  user-select: none;
-  align-items: center;
+}
+
+.flex-row-gap {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
 }
 
 .flex-column {
   display: flex;
   flex-direction: column;
-  /* width: 1240px; */
 }
 
-.sidePanels {
+.flex-column-gap {
   display: flex;
   flex-direction: column;
-  margin-left: 10px;
+  gap: 10px;
 }
 
 .flex-row-space-between {
@@ -103,7 +110,7 @@ input:focus {
 }
 
 .push-button:active {
-  background-color: #898677;
+  background-color: var(--button-active);
 }
 
 .push-button:disabled {
@@ -115,15 +122,16 @@ input:focus {
 .key-button {
   color: var(--text-color);
   border-width: 1px;
-  border-style: outset;
+  border-style: solid;
+  border-color: var(--text-color);
 }
 
 .button-active {
-  background-color: #898677;
+  background-color: var(--button-active);
 }
 
 .button-locked {
-  background-color: #898677;
+  background-color: var(--button-active);
   position: relative;
 }
 
@@ -208,6 +216,20 @@ input:focus {
   fill: var(--text-color);
 }
 
+.bigger-font {
+  font-size: 10pt;
+  margin-bottom: 0.25em;
+  color: var(--text-color);
+  fill: var(--text-color);
+}
+
+.centered-title {
+  font-size: 10pt;
+  line-height: 10pt;
+  text-align: center;
+  color: var(--text-color);
+}
+
 .statusItem {
   width: 100px;
   /* transform: translate(0, -12px); */
@@ -232,9 +254,9 @@ input:focus {
 }
 
 .floating-dialog {
-  background-color: #333;
+  background-color: var(--panel-background);
   border-radius: 10px;
-  border-color: #ccc;
+  border-color: var(--text-color);
   border-width: 1px;
   border-style: solid;
   box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.5);

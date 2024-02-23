@@ -105,7 +105,7 @@ const BPEdit_Breakpoint = (props: {
           width="5em" />
       </div>
       <Droplist name="Memory&nbsp;Bank: "
-        className="dark-mode-edit"
+        className="edit-field"
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}
         setValue={handleMemoryBankChange}

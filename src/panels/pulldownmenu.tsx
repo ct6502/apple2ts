@@ -44,7 +44,7 @@ const PullDownMenu = (props: PullDownProps) => {
         className='breakpoint-pushbutton'
         style={{ color: "white", fontSize: "12pt", marginTop: "4pt" }} />
       {open &&
-        <div className="floating-dialog flex-column dark-mode-edit small-mono-text"
+        <div className="floating-dialog flex-column edit-field small-mono-text"
           style={{
             margin: '0', padding: '5px',
             overflow: 'auto',

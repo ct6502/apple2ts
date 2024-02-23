@@ -5,9 +5,9 @@ import MachinePane from "./machinepane";
 
 const DebugSection = () => {
   return (
-    <div className="flex-row">
+    <div className="flex-row-gap">
       <DisassemblyPanel />
-      <span className="flex-column">
+      <span className="flex-column-gap">
         <MachinePane />
         <TimeTravelPanel />
       </span>
