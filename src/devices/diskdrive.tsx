@@ -1,6 +1,6 @@
 import { crc32, uint32toBytes } from "../emulator/utility/utility"
-import { handleGetDriveProps, handleSetDiskData } from "../main2worker"
 import { imageList } from "./assets"
+import { handleSetDiskData, handleGetDriveProps } from "./driveprops"
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.

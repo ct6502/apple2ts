@@ -1,6 +1,7 @@
+import { handleGetFilename } from "./devices/driveprops"
 import { getMockingboardMode } from "./devices/mockingboard_audio"
 import { isAudioEnabled } from "./devices/speaker"
-import { handleGetColorMode, handleGetCapsLock, handleGetFilename, handleGetSaveState } from "./main2worker"
+import { handleGetColorMode, handleGetCapsLock, handleGetSaveState } from "./main2worker"
 
 const doSaveStateCallback = (saveState: EmulatorSaveState) => {
   const d = new Date()

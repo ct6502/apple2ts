@@ -7,8 +7,8 @@ import { receiveMidiData } from "./devices/midiinterface"
 import { BreakpointMap } from "./panels/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { receiveCommData } from "./devices/iwii"
-import { iconData, iconKey, iconName } from "./img/icons"
 import { copyCanvas } from "./copycanvas"
+import { doSetDriveProps } from "./devices/driveprops"
 
 let worker: Worker | null = null
 
@@ -159,6 +159,10 @@ export const passSetSoftSwitches = (addresses: Array<number> | null) => {
   doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
 
+export const passSetDriveProps = (props: DriveProps) => {
+  doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
+}
+
 let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
@@ -210,8 +214,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       clickSpeaker(e.data.payload as number)
       break
     case MSG_WORKER.DRIVE_PROPS: {
-      const props = e.data.payload as DriveProps
-      driveProps[props.drive] = props
+      doSetDriveProps(e.data.payload as DriveProps)
       return {speed: machineState.cpuSpeed, helptext: ''}
       break
     }
@@ -374,73 +377,4 @@ export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => v
 
 export const handleGetMemSize = () => {
   return machineState.memSize
-}
-
-const initDriveProps = (drive: number): DriveProps => {
-  return {
-    hardDrive: false,
-    drive: drive,
-    filename: "",
-    status: "",
-    diskHasChanges: false,
-    motorRunning: false,
-    diskData: new Uint8Array()
-  }
-}
-const driveProps: DriveProps[] = [initDriveProps(0), initDriveProps(1), initDriveProps(2)];
-driveProps[0].hardDrive = true
-
-export const handleGetFilename = (drive: number) => {
-  let f = driveProps[drive].filename
-  if (f !== "") {
-    const i = f.lastIndexOf('.')
-    if (i > 0) {
-      f = f.substring(0, i)
-    }
-    return f
-  }
-  return null
-}
-
-export const handleGetDriveProps = (drive: number) => {
-  return driveProps[drive]
-}
-
-export const handleSetDiskFromURL = async (url: string) => {
-  // Download the file from the fragment URL
-  try {
-    // Ask CT6502 for why we need to use this favicon header
-    const favicon: { [key: string]: string } = {};
-    favicon[iconKey()] = iconData()
-    const response = await fetch(iconName() + url, { headers: favicon })
-    if (!response.ok) {
-      console.error(`HTTP error: status ${response.status}`)
-      return
-    }
-    const blob = await response.blob()
-    const buffer = await new Response(blob).arrayBuffer()
-    const urlObj = new URL(url)
-    let name = url
-    const hasSlash = urlObj.pathname.lastIndexOf('/')
-    if (hasSlash >= 0) {
-      name = urlObj.pathname.substring(hasSlash + 1)
-    }
-    const props = driveProps[0]
-    props.drive = 0
-    props.filename = name
-    props.diskData = new Uint8Array(buffer)
-    doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
-    passSetRunMode(RUN_MODE.NEED_BOOT)
-  } catch (e) {
-    console.error(`Error fetching URL: ${url}`)
-  }
-}
-
-export const handleSetDiskData = (drive: number,
-  data: Uint8Array, filename: string) => {
-  const props = driveProps[drive]
-  props.drive = drive
-  props.filename = filename
-  props.diskData = data
-  doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }

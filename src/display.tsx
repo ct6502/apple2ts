@@ -49,7 +49,7 @@ const DisplayApple2 = () => {
     }
   }
 
-  const updateDisplay = (speed = 0, newhelptext = '') => {
+  const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = '') => {
     if (newhelptext) {
       setHelptext(newhelptext)
     } else if (speed && speed !== currentSpeed) {
@@ -85,7 +85,7 @@ const DisplayApple2 = () => {
     // preloadAssets()
     passSetSpeedMode(0)
     handleInputParams()
-    handleFragment()
+    handleFragment(updateDisplay)
     //    window.addEventListener('beforeunload', (event) => {
     // Cancel the event as stated by the standard.
     //      event.preventDefault();

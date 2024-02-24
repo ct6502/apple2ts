@@ -8,7 +8,7 @@ export const COLORS = {
   LIGHT: {
     TEXT: '#000000',
     BG: '#BFBB98',
-    PANEL: '#d3cfa9',
+    PANEL: '#C9C5A0',
     ACTIVE: '#898677',
     INPUT: '#eee',
     OPCODE: '#000000',

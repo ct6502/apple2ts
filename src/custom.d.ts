@@ -53,6 +53,8 @@ type Apple2SaveState = {
   memory: string
 }
 
+type UpdateDisplay = (speed = 0, helptext = '') => void
+
 type DisplayProps = {
   speed: number,
   renderCount: number,
@@ -62,7 +64,7 @@ type DisplayProps = {
   showFileOpenDialog: {show: boolean, drive: number},
   darkMode: boolean,
   setDarkMode: (darkMode: boolean) => void,
-  updateDisplay: (speed = 0, helptext = '') => void,
+  updateDisplay: UpdateDisplay,
   handleCtrlDown: (mode: number) => void,
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,

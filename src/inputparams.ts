@@ -1,6 +1,7 @@
+import { handleSetDiskFromURL } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE } from "./emulator/utility/utility"
-import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode, handleSetDiskFromURL } from "./main2worker"
+import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode } from "./main2worker"
 
 export const handleInputParams = () => {
   const params = new URLSearchParams(window.location.search)
@@ -28,9 +29,9 @@ export const handleInputParams = () => {
 // https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.3-en_800k.2mg
 // https://apple2ts.com/#https://archive.org/download/TotalReplay/Total%20Replay%20v5.0.1.hdv
 // https://apple2ts.com/#https://archive.org/download/wozaday_Davids_Midnight_Magic/00playable.woz
-export const handleFragment = async () => {
+export const handleFragment = async (updateDisplay: UpdateDisplay) => {
   const fragment = window.location.hash
   if (fragment.length < 2) return
   const url = fragment.substring(1)
-  handleSetDiskFromURL(url)
+  handleSetDiskFromURL(url, updateDisplay)
 }
