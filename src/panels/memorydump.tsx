@@ -134,7 +134,6 @@ const MemoryDump = () => {
           onKeyDown={handleAddressKeyDown}
         />
         <Droplist name=" "
-          className="droplist-edit"
           value={memoryRange}
           values={Object.values(MEMORY_RANGE)}
           setValue={handleSetMemoryRange}

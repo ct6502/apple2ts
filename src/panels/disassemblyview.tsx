@@ -219,7 +219,7 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
     }
     const pc1 = handleGetState6502().PC
     return <div ref={disassemblyRef}
-      className="small-mono-text"
+      className="mono-text"
       style={{
         position: "relative",
         width: '200px',

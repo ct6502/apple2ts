@@ -1,13 +1,12 @@
 import React, { useEffect, useRef } from "react";
 
 interface DroplistProps {
-  name: string;
-  className: string;
+  name?: string;
   value: string;
   values: string[];
   setValue: (v: string) => void;
-  userdata: number;
-  isDisabled: (value: string, userdata: number) => boolean;
+  userdata?: number;
+  isDisabled?: (value: string, userdata: number) => boolean;
 }
 
 export const Droplist = (props: DroplistProps) => {
@@ -36,12 +35,12 @@ export const Droplist = (props: DroplistProps) => {
     {props.name && <div className="dialog-title">{props.name}</div>}
     <select value={props.value}
       ref={selectRef}
-      className={props.className}
+      className="droplist-edit"
       style={{ height: "24px" }}
       onChange={handleValueChange}>
       {props.values.map((value, i) => (
         <option key={i} value={value}
-          disabled={props.isDisabled(value, props.userdata)}>{value}
+          disabled={props.isDisabled && props.isDisabled(value, props.userdata || 0)}>{value}
         </option>))
       }
     </select>

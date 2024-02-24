@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faXmark as iconBreakpointDelete,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { Breakpoint } from "./breakpoint";
 import BPEdit_Breakpoint from "./bpedit_breakpoint";
@@ -79,11 +79,10 @@ const BreakpointEdit = (props: {
             onMouseMove={(e) => handleMouseMove(e)}
             onMouseUp={handleMouseUp}>
             <div className="dialog-title">Edit Breakpoint or Watchpoint</div>
-            <div onClick={props.cancelDialog}>
-              <FontAwesomeIcon icon={iconBreakpointDelete}
-                className='breakpoint-pushbutton'
-                style={{ color: "white", fontSize: "12pt", marginTop: "4pt" }} />
-            </div>
+            <button className="push-button"
+              onClick={props.cancelDialog}>
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.8em' }} />
+            </button>
           </div>
           <div className="horiz-rule"></div>
         </div>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { passSetBinaryBlock } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faXmark as faBreakpointDelete,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import EditField from "../panels/editfield";
 
@@ -53,11 +53,10 @@ const BinaryFileDialog = (props:
         <div className="flex-column">
           <div className="flex-row-space-between">
             <div className="dialog-title">Load Binary File</div>
-            <div onClick={handleCancel}>
-              <FontAwesomeIcon icon={faBreakpointDelete}
-                className='breakpoint-pushbutton'
-                style={{ color: "white" }} />
-            </div>
+            <button className="push-button"
+              onClick={handleCancel}>
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.8em' }} />
+            </button>
           </div>
           <div className="horiz-rule"></div>
         </div>

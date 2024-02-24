@@ -5,7 +5,6 @@
   padding: 3px;
   padding-right: 5px;
   align-self: center;
-  text-align: right;
   margin-left: 3px;
   margin-right: 3px;
   margin-top: 2px;
@@ -26,25 +25,7 @@
   transform: scale(0.75)
 }
 
-.cropBottom {
-  clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 0% 50%);
-}
-
-.cropTop {
-  clip-path: polygon(0% 50%, 50% 75%, 100% 50%, 100% 100%, 0% 100%);
-}
-
-.smallButton {
-  font-size: 0.5em;
-  vertical-align: top;
-}
-
 .mono-text {
-  white-space: pre;
-  font-family: monospace;
-}
-
-.small-mono-text {
   white-space: pre;
   font-family: monospace;
   font-size: 8pt;
@@ -175,21 +156,6 @@
   margin-bottom: 5px;
 }
 
-.edit-field {
-  background-color: var(--background-color);
-  color: var(--text-color);
-  border-color: #808080;
-  border-width: 1px;
-  border-style: solid;
-  border-radius: 3px;
-  margin-top: 4px;
-  margin-bottom: 0px;
-  margin-right: 5px;
-  padding-left: 4px;
-  padding-bottom: 2px;
-  height: 18px;
-}
-
 .droplist-edit {
   border-color: #767676;
   border-width: 1px;
@@ -200,7 +166,15 @@
   margin-right: 5px;
   padding-left: 4px;
   padding-bottom: 2px;
-  height: 18px;
+  background-color: var(--input-background);
+  color: var(--text-color);
+}
+
+.droplist-option {
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: var(--input-background);
+  color: var(--text-color);
 }
 
 .warning-div {
@@ -221,6 +195,11 @@
   font-size: 8pt;
   font-weight: 600;
   color: #FF4013;
+}
+
+.warning-text-help {
+  font-size: 8pt;
+  color: var(--text-color);
 }
 
 .check-radio-box {

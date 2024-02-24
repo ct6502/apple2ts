@@ -41,10 +41,10 @@ const PullDownMenu = (props: PullDownProps) => {
     <div ref={dialogRef}
       onClick={handleToggleDialog}>
       <FontAwesomeIcon icon={iconPulldown}
-        className='breakpoint-pushbutton'
-        style={{ color: "white", fontSize: "12pt", marginTop: "4pt" }} />
+        className='default-font'
+        style={{ fontSize: "1em", verticalAlign: "-0.5em !important" }} />
       {open &&
-        <div className="floating-dialog flex-column edit-field small-mono-text"
+        <div className="floating-dialog flex-column droplist-edit mono-text"
           style={{
             margin: '0', padding: '5px',
             overflow: 'auto',

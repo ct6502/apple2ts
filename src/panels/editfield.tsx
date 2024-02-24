@@ -31,7 +31,7 @@ const EditField = (props: EditFieldProps) => {
       <div className="dialog-title">{props.name}</div>
       <input type="text"
         ref={inputRef}
-        className="edit-field mono-text"
+        className="hex-field"
         placeholder={props.placeholder}
         value={props.value}
         style={{ width: props.width || "100%" }}
@@ -45,7 +45,7 @@ const EditField = (props: EditFieldProps) => {
         </div>}
       {(props.help && !props.warning) &&
         <div className="warning-div flex-row">
-          <div className="warning-text" style={{ color: "#ccc" }}>{props.help}</div>
+          <div className="warning-text-help">{props.help}</div>
         </div>}
     </div>
   )

@@ -34,12 +34,12 @@ export const MockingboardWaveform = () => {
         <div className="modal-overlay"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
           onClick={() => handleMockClose()}>
-          <div className="floating-dialog flex-column"
+          <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div style={{ padding: '5px', cursor: 'pointer' }}
+              <div className="droplist-option" style={{ padding: '5px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
                 key={i} onClick={() => handleMockClose(i)}>
                 {i === getMockingboardMode() ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}
               </div>))}

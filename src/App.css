@@ -188,7 +188,6 @@ input:focus {
   height: 1em;
   margin-right: 10px;
   margin-bottom: 10px;
-  color: white;
   cursor: pointer;
 }
 
@@ -227,7 +226,9 @@ input:focus {
   font-size: 10pt;
   line-height: 10pt;
   text-align: center;
+  margin: 5px;
   color: var(--text-color);
+  cursor: pointer;
 }
 
 .statusItem {
