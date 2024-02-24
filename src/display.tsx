@@ -154,19 +154,32 @@ const DisplayApple2 = () => {
   document.body.style.setProperty('--input-background', colors.INPUT)
   document.body.style.setProperty('--opcode', colors.OPCODE)
 
+  const isTouchDevice = "ontouchstart" in document.documentElement
   const canvasWidth = getCanvasSize()[0]
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const paperHeight = height - 20
-  const narrow = width < height
+  const narrow = isTouchDevice || (width < height)
+  const isLandscape = isTouchDevice && (width > height)
   // For narrow we don't need to take into account the canvas width.
   let paperWidth = narrow ? (width) : (width - canvasWidth - 70)
   paperWidth = Math.min(Math.max(paperWidth, 300), canvasWidth - 20)
+  if (isTouchDevice) {
+    document.body.style.marginLeft = "2px"
+    document.body.style.marginRight = "2px"
+    document.body.style.marginTop = isLandscape ? "10px" : "2px"
+  }
+  const status = <div className="default-font statusItem">
+    <span>{props.speed} MHz, {handleGetMemSize()} KB</span>
+    <br />
+    <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
+      <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+  </div>
 
   return (
     <div>
       <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
-        <span className="flex-column">
+        <div className={isLandscape ? "flex-row" : "flex-column"}>
           <Apple2Canvas {...props} />
           <div className="flex-row-space-between wrap"
             style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' }}>
@@ -174,17 +187,13 @@ const DisplayApple2 = () => {
             <DiskInterface {...props} />
             <ImageWriter />
           </div>
-          <span className="default-font statusItem">
-            <span>{props.speed} MHz, {handleGetMemSize()} KB</span>
-            <br />
-            <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
-              <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
-          </span>
-        </span>
+          {!isLandscape && status}
+        </div>
+        {isLandscape && status}
         {narrow && <div className="divider"></div>}
         <span className="flex-column">
           {handleGetIsDebugging() ? <DebugSection /> :
-            <HelpPanel narrow={narrow} helptext={helptext}
+            <HelpPanel darkMode={darkMode} narrow={narrow} helptext={helptext}
               height={paperHeight} width={paperWidth} />}
         </span>
       </span>

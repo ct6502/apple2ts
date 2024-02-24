@@ -44,7 +44,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   let status = ['S7D1', 'S6D1', 'S6D2'][props.drive]
   status += dprops.status
   return (
-    <span className="driveClass">
+    <span className="flex-column">
       <img className="disk-image"
         src={img1} alt={filename}
         title={filename}

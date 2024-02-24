@@ -202,8 +202,8 @@ const drawImage = (ctx: CanvasRenderingContext2D,
     ctx.lineWidth = 2
     ctx.strokeRect(xmarginPx - border, ymarginPx - border, imgWidth + 2 * border, imgHeight + 2 * border)
     ctx.fillStyle = "#FF0000"
-    ctx.fillText(`${doPage2 ? '2' : '1'}`, xmarginPx + 3, imgHeight + ymarginPx - 5)
-
+    ctx.textAlign = "center"
+    ctx.fillText(`${'HGR Page ' + (doPage2 ? '2' : '1')}`, width / 2, height - 2)
   }
 }
 
@@ -211,10 +211,9 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
-  ctx.imageSmoothingEnabled = true;
-  ctx.fillStyle = "#000000";
-  ctx.fillRect(xmargin * width - 2 * border, ymargin * height - 2 - 2 * border,
-    width * (1 - 2 * xmargin) + 2 + 4 * border, height * (1 - 2 * ymargin) + 4 + 4 * border)
+  ctx.imageSmoothingEnabled = true
+  // Clear all our drawing and let the background show through again.
+  ctx.clearRect(0, 0, width, height)
   hiddenContext.imageSmoothingEnabled = false;
   hiddenContext.fillStyle = "#000000";
   hiddenContext.fillRect(0, 0, 560, 384)
@@ -269,9 +268,10 @@ export const getCanvasSize = () => {
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
-  let width = (window.innerWidth ? window.innerWidth : window.outerWidth) - 20
+  let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  height -= 200
+  height -= isTouchDevice ? 40 : 200
+  width -= isTouchDevice ? 8 : 20
   if (!isTouchDevice && handleGetIsDebugging()) {
     width /= 2
   }

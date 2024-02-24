@@ -43,7 +43,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
   };
 
   return (
-    <div className="diskImageMarginsx">
+    <div style={{ userSelect: "none" }}>
       <img className="disk-image"
         src={floppyDisks} alt="disks"
         title="Choose disk image"

@@ -19,19 +19,27 @@
   bottom: 0;
   width: 40px;
   background: repeating-radial-gradient(circle,
-      #00000055 0% 20%,
+      var(--background-color) 0% 20%,
       transparent 20% 100%);
   background-size: 100% 40px;
   mix-blend-mode: multiply;
 }
 
 .help-text {
+  white-space: pre-wrap;
   margin-left: 40px;
   margin-top: 0px;
   margin-bottom: 0px;
-  white-space: pre-wrap;
   padding-top: 10px;
   padding-bottom: 10px;
   padding-left: 20px;
   border-left: 1px solid #d8e6e1;
+  color: var(--text-color);
+}
+
+.help-text-dark {
+  white-space: pre-wrap;
+  margin: 10px;
+  padding: 5px;
+  color: #00FF00;
 }
