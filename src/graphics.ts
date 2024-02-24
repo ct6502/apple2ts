@@ -269,8 +269,9 @@ export const getCanvasSize = () => {
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
-  let width = window.outerWidth - 20
-  let height = window.outerHeight - 300
+  let width = (window.innerWidth ? window.innerWidth : window.outerWidth) - 20
+  let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
+  height -= 200
   if (!isTouchDevice && handleGetIsDebugging()) {
     width /= 2
   }

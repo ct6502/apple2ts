@@ -124,7 +124,6 @@ const DisplayApple2 = () => {
   }
 
   const handleShowFileOpenDialog = (show: boolean, drive: number) => {
-    if (show) toggleDarkMode()
     setShowFileOpenDialog({ show, drive })
   }
 
@@ -155,17 +154,22 @@ const DisplayApple2 = () => {
   document.body.style.setProperty('--input-background', colors.INPUT)
   document.body.style.setProperty('--opcode', colors.OPCODE)
 
-  const width = getCanvasSize()[0]
-  const height = window.innerHeight - 30
-  let paperWidth = window.innerWidth - width - 70
-  if (paperWidth < 300) paperWidth = 300
+  const canvasWidth = getCanvasSize()[0]
+  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
+  const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
+  const paperHeight = height - 20
+  const narrow = width < height
+  // For narrow we don't need to take into account the canvas width.
+  let paperWidth = narrow ? (width) : (width - canvasWidth - 70)
+  paperWidth = Math.min(Math.max(paperWidth, 300), canvasWidth - 20)
+
   return (
     <div>
-      <span className="flex-row" style={{ alignItems: "inherit" }}>
+      <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
         <span className="flex-column">
           <Apple2Canvas {...props} />
           <div className="flex-row-space-between wrap"
-            style={{ width: width, display: width ? '' : 'none' }}>
+            style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
             <ImageWriter />
@@ -177,10 +181,11 @@ const DisplayApple2 = () => {
               <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
           </span>
         </span>
-        <span className="flex-column" style={{ marginLeft: "10px" }}>
+        {narrow && <div className="divider"></div>}
+        <span className="flex-column">
           {handleGetIsDebugging() ? <DebugSection /> :
-            <HelpPanel helptext={helptext}
-              height={height ? height : 400} width={paperWidth} />}
+            <HelpPanel narrow={narrow} helptext={helptext}
+              height={paperHeight} width={paperWidth} />}
         </span>
       </span>
       <FileInput {...props} />

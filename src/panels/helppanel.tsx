@@ -2,6 +2,7 @@ import "./helppanel.css"
 import { defaultHelpText } from "./startuptextpage";
 
 type HelpPanelProps = {
+  narrow: boolean,
   helptext: string,
   height: number,
   width: number
@@ -9,11 +10,17 @@ type HelpPanelProps = {
 
 const HelpPanel = (props: HelpPanelProps) => {
   return (
-    <span>
-      <div className="help-paper" style={{ height: props.height - 30, width: props.width }}>
+    <div style={{
+      boxSizing: 'content-box',
+      margin: "0",
+      padding: "0",
+      height: (props.narrow ? 'auto' : (props.height - 30)), width: props.width,
+      overflow: (props.narrow ? 'none' : 'auto')
+    }}>
+      <div className="help-paper">
         <pre className="help-text">{props.helptext.length > 1 ? props.helptext : defaultHelpText}</pre>
       </div>
-    </span>
+    </div>
   )
 }
 

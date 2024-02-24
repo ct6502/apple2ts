@@ -264,3 +264,9 @@ input:focus {
   position: absolute;
   z-index: 9999;
 }
+
+.divider {
+  border-top: 1px solid var(--text-color);
+  margin-top: 20px;
+  margin-bottom: 10px;
+}

@@ -20,8 +20,8 @@ const BreakpointsView = (props: {
   breakpoints: BreakpointMap;
   setBreakpoints: (breakpoints: BreakpointMap) => void
 }) => {
-  const x = window.innerWidth / 2 - 200
-  const y = window.innerHeight / 2 - 200
+  const x = window.outerWidth / 2 - 200
+  const y = window.outerHeight / 2 - 200
   const [dialogPosition, setDialogPosition] = useState([x, y])
   const [breakpointEditAddress, setBreakpointEditAddress] = useState(0)
   const [breakpointEditValue, setBreakpointEditValue] = useState(new Breakpoint())

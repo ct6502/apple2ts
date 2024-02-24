@@ -58,7 +58,7 @@ const DiskDrive = (props: DiskDriveProps) => {
             props.setShowFileOpenDialog(true, props.drive)
           }
         }} />
-      <span className={"diskLabel"}>{dprops.filename}</span>
+      <span className={"disk-label"}>{dprops.filename}</span>
       <span className={"default-font diskStatus"}>{status}</span>
     </span>
   )

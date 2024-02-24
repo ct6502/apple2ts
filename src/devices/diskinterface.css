@@ -3,7 +3,7 @@
   flex-direction: row;
 }
 
-.diskLabel {
+.disk-label {
   /* background-color: black; */
   position: relative;
   color: white;
@@ -11,12 +11,12 @@
   width: 70px;
   pointer-events: none;
   height: 1.5em;
-  top: -38px;
+  top: -41px;
   margin-top: -1.2em;
   padding-left: 0px;
   padding-top: 0px;
   line-height: 16px;
-  margin-left: 6px;
+  margin-left: 7px;
   text-align: left;
   font-size: 7pt;
   white-space: nowrap;
