@@ -104,7 +104,7 @@ const BreakpointsView = (props: {
   }
 
   return (
-    <div className="round-rect-border">
+    <div className="round-rect-border short-panel">
       <div className="bigger-font">Breakpoints</div>
       <div className="flex-column">
         <div className="flex-row-space-between">

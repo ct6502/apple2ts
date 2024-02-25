@@ -275,3 +275,8 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
 export const lockedKeyStyle = (mode: number) => {
   return `push-button key-button ${(['', 'button-active', 'button-locked'])[mode]}`
 }
+
+export const hiresLineToAddress = (pageOffset: number, line: number) => {
+  return pageOffset + 40 * Math.trunc(line / 64) +
+    1024 * (line % 8) + 128 * (Math.trunc(line / 8) & 7)
+}

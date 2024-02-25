@@ -3,7 +3,7 @@ import State6502Controls from "./state6502controls";
 
 const DebugInfoPanel = () => {
   return (
-    <div className="flex-column tall-panel">
+    <div className="flex-column">
       <State6502Controls />
       <div className="debug-panel"
         style={{

@@ -13,7 +13,7 @@ import {
   handleGetRunMode,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
-import { ProcessDisplay, getCanvasSize } from './graphics';
+import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord } from './graphics';
 import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
 import { handleFileSave } from './fileoutput';
@@ -26,6 +26,8 @@ type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasEle
 const Apple2Canvas = (props: DisplayProps) => {
   const [myInit, setMyInit] = useState(false)
   const [keyHandled, setKeyHandled] = useState(false)
+  const [magnifier, setMagnifier] = useState(false)
+  const [info, setInfo] = useState({ x: 0, y: 0, text: new Array<string>() })
   const myText = useRef(null)
   const myCanvas = useRef(null)
   const hiddenCanvas = useRef(null)
@@ -212,25 +214,14 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const scaleMouseEvent = (event: MouseEvent): MouseEventSimple => {
-    // Scale mouse to go 0.0 -> 1.0 between inner canvas borders
-    // where the apple screen is rendered
-    const scale = (xx: number, ww: number) => {
-      const offset = 50
-      if (xx < offset)
-        return 0.0
-      else if (xx > (ww - offset))
-        return 1.0
-      xx = (xx - offset) / (ww - (2 * offset))
-      return Math.min(Math.max(xx, -1), 1)
-    }
     let x = 0
     let y = 0
     if (myCanvas.current) {
-      const rect = (myCanvas.current as HTMLCanvasElement).getBoundingClientRect()
-      x = scale(event.clientX - rect.left, rect.width)
-      y = scale(event.clientY - rect.top, rect.height)
+      [x, y] = canvasCoordToNormScreenCoord(myCanvas.current, event.clientX, event.clientY)
+      x = Math.min(Math.max(x, 0), 1)
+      y = Math.min(Math.max(y, 0), 1)
     }
-    return { x: x, y: y, buttons: -1 }
+    return { x, y, buttons: -1 }
   }
 
   const handleMouseDown = (event: MouseEvent) => {
@@ -246,7 +237,50 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleMouseMove = (event: MouseEvent) => {
-    passMouseEvent(scaleMouseEvent(event))
+    const scaled = scaleMouseEvent(event)
+    let showMagnifier = false
+    if (handleGetOverrideHires()) {
+      if (myCanvas.current) {
+        let [x, y] = canvasCoordToNormScreenCoord(myCanvas.current, event.clientX, event.clientY)
+        x = Math.floor(x * 280)
+        y = Math.floor(y * 192)
+        if (x >= 0 && x < 280 && y >= 0 && y < 192) {
+          showMagnifier = true
+          x = Math.max(2, Math.min(x, 280 - 9))
+          y = Math.max(2, Math.min(y, 191 - 2))
+          const pixels = getOverrideHiresPixels(x, y)
+          if (pixels) {
+            setInfo({ x: event.clientX, y: event.clientY, text: pixels })
+          }
+        }
+      }
+    }
+    setMagnifier(showMagnifier)
+    passMouseEvent(scaled)
+  }
+
+  // const drawByte = (byte: number) => {
+  //   const high = (byte & 0x80)
+  //   for (let b = 0; b < 7; b++) {
+  //     (byte & (1 << b)) ? 
+  //   }
+  // } 
+
+  const formatInfoBox = () => {
+    if (!myCanvas.current) return <></>
+    const result = info.text.map((line, i) => {
+      return <div key={i}>{line}{` \u2588`}</div>
+    })
+    const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, 2, 5)
+    const [xmin, ymin] = screenCoordToCanvasCoord(myCanvas.current, 0, 0)
+    const [xmax, ymax] = screenCoordToCanvasCoord(myCanvas.current, 280 - 14, 192 - 5)
+    const x = Math.min(Math.max(info.x - dx / 2, xmin), xmax)
+    const y = Math.min(Math.max(info.y - dy / 2, ymin), ymax)
+    return <div className="magnifier flex-row"
+      style={{ left: `${x}px`, top: `${y}px` }}>
+      <div className="magnifier-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
+      <div className="magnifier-text">{result}</div>
+    </div>
   }
 
   // We should probably be using a useEffect here, but when I tried that,
@@ -306,7 +340,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{ cursor: handleGetShowMouse() ? "auto" : "none" }}
+        style={{ cursor: handleGetShowMouse() ? "crosshair" : "none" }}
         width={width} height={height}
         tabIndex={0}
         onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
@@ -321,6 +355,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         hidden={true}
         width={560} height={384} />
       {txt}
+      {magnifier && formatInfoBox()}
     </span>
   )
 }

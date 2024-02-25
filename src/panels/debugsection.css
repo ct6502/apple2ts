@@ -49,7 +49,11 @@
 }
 
 .tall-panel {
-  height: '490px',
+  height: 595px;
+}
+
+.short-panel {
+  height: 205px;
 }
 
 .thinBorder {

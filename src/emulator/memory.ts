@@ -5,7 +5,7 @@ import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
 import { isDebugging, inVBL } from "./motherboard";
-import { toHex } from "./utility/utility";
+import { hiresLineToAddress, toHex } from "./utility/utility";
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 
 // 0x00000: main memory
@@ -503,8 +503,7 @@ export const getHires = () => {
     const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
     const hgrPage = new Uint8Array(80 * nlines)
     for (let j = 0; j < nlines; j++) {
-      const addr = pageOffset + 40 * Math.trunc(j / 64) +
-        1024 * (j % 8) + 128 * (Math.trunc(j / 8) & 7)
+      const addr = hiresLineToAddress(pageOffset, j)
       for (let i = 0; i < 40; i++) {
         hgrPage[j * 80 + 2 * i + 1] = memory[addr + i]
         hgrPage[j * 80 + 2 * i] = memory[AUXstart + addr + i]

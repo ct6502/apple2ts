@@ -1,11 +1,49 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, handleGetIsDebugging, passSetSoftSwitches } from "./main2worker"
-import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS } from "./emulator/utility/utility"
+import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "./emulator/utility/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 const xmargin = 0.075
 const ymargin = 0.075
 let frameCount = 0
+
+// Convert canvas coordinates (absolute to the entire browser window)
+// to normalized HGR screen coordinates.
+export const canvasCoordToNormScreenCoord = (current: HTMLCanvasElement, x: number, y: number) => {
+  const rect = current.getBoundingClientRect()
+  // The -4 subtracts out the border on all 4 sides of the canvas.
+  const xmarginPx = xmargin * (rect.width - 4)
+  const ymarginPx = ymargin * (rect.height - 4)
+  x = (x - rect.left - xmarginPx - 2) / (rect.width - 2 * xmarginPx - 4)
+  y = (y - rect.top - ymarginPx - 2) / (rect.height - 2 * ymarginPx - 4)
+  return [x, y]
+}
+
+// Convert HGR pixel screen coordinates to canvas coordinates (absolute to
+// the entire browser window).
+export const screenCoordToCanvasCoord = (current: HTMLCanvasElement, x: number, y: number) => {
+  const rect = current.getBoundingClientRect()
+  // The -4 subtracts out the border on all 4 sides of the canvas.
+  const xmarginPx = xmargin * (rect.width - 4)
+  const ymarginPx = ymargin * (rect.height - 4)
+  x = x * (rect.width - 2 * xmarginPx - 4) / 280 + xmarginPx + 2 + rect.left
+  y = y * (rect.height - 2 * ymarginPx - 4) / 192 + ymarginPx + 2 + rect.top
+  return [x, y]
+}
+
+// Convert a "delta" in HGR screen bytes to a delta in canvas pixels.
+// dx is in HGR bytes, with 7 pixels per byte.
+// dy is in HGR lines.
+export const screenBytesToCanvasPixels = (current: HTMLCanvasElement, dx: number, dy: number) => {
+  const rect = current.getBoundingClientRect()
+  // The -4 subtracts out the border on all 4 sides of the canvas.
+  const xmarginPx = xmargin * (rect.width - 4)
+  const ymarginPx = ymargin * (rect.height - 4)
+  // 7 pixels per byte
+  const x = dx * 7 * (rect.width - 2 * xmarginPx - 4) / 280
+  const y = dy * (rect.height - 2 * ymarginPx - 4) / 192
+  return [x, y]
+}
 
 // We will draw the text on both the on-screen canvas and the hidden canvas.
 // This is wasteful, but we need to get text on the hidden canvas
@@ -186,6 +224,29 @@ export const overrideHires = (override: boolean, page2: boolean) => {
   }
 }
 
+export const handleGetOverrideHires = () => doOverride
+
+export const getOverrideHiresPixels = (x: number, y: number) => {
+  if (!doOverride) return null
+  // Assume this is 40 x 192
+  const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
+  if (hgrPage.length !== (40 * 192)) return null;
+  const result: string[] = new Array(5).fill('')
+  for (let j = y - 2; j <= (y + 2); j++) {
+    if (j >= 0 && j < 192) {
+      const byte1 = Math.floor(x / 7)
+      const value1 = hgrPage[j * 40 + byte1]
+      const byte2 = Math.floor(x / 7) + 1
+      const value2 = hgrPage[j * 40 + byte2]
+      const addr = byte1 + hiresLineToAddress(doPage2 ? 0x4000 : 0x2000, j)
+      result[j - y + 2] = `${toHex(addr)}: ${toHex(value1)} ${toHex(value2)}`
+    }
+  }
+  return result
+}
+
+
+
 const drawImage = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
@@ -196,8 +257,6 @@ const drawImage = (ctx: CanvasRenderingContext2D,
   ctx.drawImage(hiddenContext.canvas, 0, 0, 560, 384,
     xmarginPx, ymarginPx, imgWidth, imgHeight)
   if (doOverride) {
-    ctx.fillStyle = "#000000A0"
-    ctx.fillRect(xmarginPx, imgHeight + ymarginPx - 30, 25, 30)
     ctx.strokeStyle = "#FF0000"
     ctx.lineWidth = 2
     ctx.strokeRect(xmarginPx - border, ymarginPx - border, imgWidth + 2 * border, imgHeight + 2 * border)

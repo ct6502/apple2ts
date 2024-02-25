@@ -6,7 +6,7 @@ const MachinePane = () => {
   const [selectedTab, setSelectedTab] = useState('debuginfo')
   const buttonStyle = (tab: string) => "bigger-font tab-button" + ((selectedTab === tab) ? " tab-active" : "")
   return (
-    <div className="round-rect-border">
+    <div className="round-rect-border tall-panel">
       <div className="bigger-font flex-row-gap">
         <button className={buttonStyle('debuginfo')}
           onClick={() => setSelectedTab('debuginfo')}>Debug Info</button>

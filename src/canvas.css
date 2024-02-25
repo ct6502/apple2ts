@@ -21,3 +21,24 @@
   grid-row: 1;
   opacity: 0;
 }
+
+.magnifier {
+  position: absolute;
+  user-select: none;
+  pointer-events: none;
+}
+
+.magnifier-box {
+  border: 1px solid red;
+}
+
+.magnifier-text {
+  background-color: var(--input-background);
+  color: var(--text-color);
+  user-select: none;
+  pointer-events: none;
+  font-family: monospace;
+  padding: 5px;
+  border-radius: 10px;
+  margin-left: 15px;
+}
