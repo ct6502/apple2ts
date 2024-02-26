@@ -38,7 +38,11 @@
   user-select: none;
   pointer-events: none;
   font-family: monospace;
-  padding: 5px;
+  font-size: 10pt;
+  line-height: 11pt;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 2px;
   border-radius: 10px;
   margin-left: 15px;
 }

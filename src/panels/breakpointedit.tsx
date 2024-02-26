@@ -78,7 +78,7 @@ const BreakpointEdit = (props: {
             onMouseDown={(e) => handleMouseDown(e)}
             onMouseMove={(e) => handleMouseMove(e)}
             onMouseUp={handleMouseUp}>
-            <div className="dialog-title">Edit Breakpoint or Watchpoint</div>
+            <div className="dialog-title">Edit Breakpoint</div>
             <button className="push-button"
               onClick={props.cancelDialog}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.8em' }} />

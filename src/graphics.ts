@@ -317,7 +317,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
     ctx.imageSmoothingEnabled = false;
-    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 4)
+    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8)
   }
 }
 

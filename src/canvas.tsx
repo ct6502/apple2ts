@@ -12,11 +12,12 @@ import {
   handleGetCapsLock,
   handleGetRunMode,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple } from "./emulator/utility/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE } from "./emulator/utility/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord } from './graphics';
 import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
 import { handleFileSave } from './fileoutput';
+import { drawHiresTile } from './graphicshgr';
 
 let width = 800
 let height = 600
@@ -31,6 +32,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const myText = useRef(null)
   const myCanvas = useRef(null)
   const hiddenCanvas = useRef(null)
+  const infoCanvas = useRef(null)
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById('apple2canvas')
@@ -266,20 +268,42 @@ const Apple2Canvas = (props: DisplayProps) => {
   //   }
   // } 
 
+  const drawBytes = () => {
+    if (infoCanvas.current) {
+      const canvas = infoCanvas.current as HTMLCanvasElement
+      const context = canvas.getContext('2d')
+      if (context) {
+        context.fillStyle = 'black'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+        const tile = new Uint8Array(10)
+        for (let i = 0; i < 5; i++) {
+          tile[2 * i] = parseInt(info.text[i].slice(6, 8), 16)
+          tile[2 * i + 1] = parseInt(info.text[i].slice(9, 11), 16)
+        }
+        context.imageSmoothingEnabled = false;
+        drawHiresTile(context, new Uint8Array(tile), COLOR_MODE.NOFRINGE, 5, 0, 0, 11)
+      }
+    }
+  }
+
   const formatInfoBox = () => {
     if (!myCanvas.current) return <></>
     const result = info.text.map((line, i) => {
-      return <div key={i}>{line}{` \u2588`}</div>
+      return <div key={i}>{line}</div>
     })
     const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, 2, 5)
     const [xmin, ymin] = screenCoordToCanvasCoord(myCanvas.current, 0, 0)
     const [xmax, ymax] = screenCoordToCanvasCoord(myCanvas.current, 280 - 14, 192 - 5)
     const x = Math.min(Math.max(info.x - dx / 2, xmin), xmax)
     const y = Math.min(Math.max(info.y - dy / 2, ymin), ymax)
+    setTimeout(() => drawBytes(), 50)
     return <div className="magnifier flex-row"
       style={{ left: `${x}px`, top: `${y}px` }}>
       <div className="magnifier-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
       <div className="magnifier-text">{result}</div>
+      <canvas ref={infoCanvas}
+        style={{ border: "2px solid red" }}
+        width={"154pt"} height={"55pt"} />
     </div>
   }
 
