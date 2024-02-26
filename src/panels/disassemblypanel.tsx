@@ -3,7 +3,7 @@ import DisassemblyControls from "./disassemblycontrols";
 import DisassemblyView from "./disassemblyview";
 import BreakpointsView from "./breakpointsview";
 import { passBreakpoints } from "../main2worker";
-import { BreakpointMap } from "./breakpoint";
+import { BreakpointMap } from "../emulator/utility/breakpoint";
 
 const DisassemblyPanel = () => {
   // TODO: This is unfortunate that we need to maintain our own copy

@@ -13,7 +13,7 @@ import {
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons";
 import { getLineOfDisassembly } from "./debugpanelutilities";
 import BreakpointEdit from "./breakpointedit";
-import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "./breakpoint";
+import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "../emulator/utility/breakpoint";
 import { TEST_DEBUG } from "../emulator/utility/utility";
 
 const BreakpointsView = (props: {

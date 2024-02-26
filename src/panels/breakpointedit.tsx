@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-import { Breakpoint } from "./breakpoint";
+import { Breakpoint } from "../emulator/utility/breakpoint";
 import BPEdit_Breakpoint from "./bpedit_breakpoint";
 import BPEdit_Watchpoint from "./bpedit_watchpoint";
 import BPEdit_Instruction from "./bpedit_instruction";

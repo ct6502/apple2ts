@@ -10,7 +10,7 @@ import { RUN_MODE, toHex } from "../emulator/utility/utility";
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
-import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "./breakpoint";
+import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../emulator/utility/breakpoint";
 
 const nlines = 40
 const bpOffset = 0

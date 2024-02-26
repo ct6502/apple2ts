@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown as iconPulldown,
@@ -14,13 +14,25 @@ const PullDownMenu = (props: PullDownProps) => {
   const dialogRef = useRef(null)
   const [open, setOpen] = useState(props.open || false)
   const [selectedItem, setSelectedItem] = useState(0);
+  const [pos, setPos] = useState([0, 0])
 
-  const handleToggleDialog = () => {
-    setOpen(!open)
+  const handleOpenDialog = (doOpen: boolean) => {
+    setOpen(doOpen)
+    if (doOpen) setPos([0, 0])
   }
 
+  useEffect(() => {
+    if (pos[0] === 0) {
+      if (dialogRef.current) {
+        const div = dialogRef.current as HTMLDivElement
+        const rect = div.getBoundingClientRect()
+        setPos([rect.left + window.scrollX, rect.top + window.scrollY])
+      }
+    }
+  }, [pos])
+
   const handleChooseItem = (value: number) => {
-    setOpen(false)
+    handleOpenDialog(false)
     props.setValue(value.toString(16))
   }
 
@@ -37,34 +49,47 @@ const PullDownMenu = (props: PullDownProps) => {
     }
   }
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (e.currentTarget === e.target) {
+      handleOpenDialog(false)
+    }
+  }
+
   return (
     <div ref={dialogRef}
-      onClick={handleToggleDialog}>
+      style={{ cursor: 'pointer' }}
+      onClick={() => handleOpenDialog(!open)}>
       <FontAwesomeIcon icon={iconPulldown}
         className='default-font'
-        style={{ fontSize: "1em", verticalAlign: "-0.5em !important" }} />
-      {open &&
-        <div className="floating-dialog flex-column droplist-edit mono-text"
-          style={{
-            margin: '0', padding: '5px',
-            overflow: 'auto',
-            height: `${Math.min(props.values.length, 25) * 10}pt`
-          }}
-          onKeyDown={onKeyDown}>
-          {props.values.map((description, index) => (
-            <div style={{
-              cursor: 'pointer',
+        style={{ fontSize: "1em" }} />
+      {open && pos[0] > 0 &&
+        <div className="modal-overlay"
+          style={{ backgroundColor: "inherit" }}
+          tabIndex={0} // Make the div focusable
+          onMouseDown={(e) => handleMouseDown(e)}>
+          <div className="floating-dialog flex-column droplist-edit mono-text"
+            style={{
+              left: `${pos[0]}px`, top: `${pos[1] + 20}px`,
+              margin: '0', padding: '5px',
+              overflow: 'auto',
+              height: `${Math.min(props.values.length, 25) * 10}pt`
             }}
-              id={`item-${index}`}
-              tabIndex={0} // Make the div focusable
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#aaa'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
-              key={index}
-              onClick={() => handleChooseItem(index)}
-            >
-              {`${description}`}
-            </div>))
-          }
+            onKeyDown={onKeyDown}>
+            {props.values.map((description, index) => (
+              <div style={{
+                cursor: 'pointer',
+              }}
+                id={`item-${index}`}
+                tabIndex={0} // Make the div focusable
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#aaa'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
+                key={index}
+                onClick={() => handleChooseItem(index)}
+              >
+                {`${description}`}
+              </div>))
+            }
+          </div>
         </div>
       }
     </div>

@@ -2,7 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pc
 import { MEMORY_BANKS, memGet, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { Breakpoint, BreakpointMap, convertBreakpointExpression } from "../panels/breakpoint"
+import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, BreakpointMap, convertBreakpointExpression } from "./utility/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -146,10 +146,18 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
     return true
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return false
-  const bp = breakpointMap.get(s6502.PC) || breakpointMap.get(instr | 0x10000)
+  const bp = breakpointMap.get(s6502.PC) ||
+    breakpointMap.get(instr | BRK_INSTR) ||
+    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL))
   if (!bp || bp.disabled || bp.watchpoint) return false
-  if (bp.instruction && bp.hexvalue >= 0) {
-    if (bp.hexvalue !== hexvalue) return false
+  if (bp.instruction) {
+    // See if we need to have a matching value, but watch out for our special
+    // BRK_ILLEGAL, which will break on any illegal opcode regardless of value.
+    if (bp.address === BRK_ILLEGAL) {
+      if (pcodes[instr].name !== '???') return false
+    } else if (hexvalue >= 0 && bp.hexvalue >= 0) {
+      if (bp.hexvalue !== hexvalue) return false
+    }
   }
   if (bp.expression) {
     const expression = convertBreakpointExpression(bp.expression)
@@ -176,7 +184,7 @@ export const processInstruction = () => {
   const code =  pcodes[instr]
   // Make sure we only get these instruction bytes if necessary.
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
-  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : 0
+  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
   const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
   if (hitBreakpoint(instr, (vHi << 8) + vLo)) {
     doSetRunMode(RUN_MODE.PAUSED)

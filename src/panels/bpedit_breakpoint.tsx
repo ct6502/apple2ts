@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Breakpoint, checkBreakpointExpression } from "./breakpoint";
+import { Breakpoint, checkBreakpointExpression } from "../emulator/utility/breakpoint";
 import EditField from "./editfield";
-import PullDownMenu from "./pulldownmenu";
 import { getSoftSwitchDescriptions } from "../emulator/softswitches"
 import { Droplist } from "./droplist";
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
@@ -86,10 +85,6 @@ const BPEdit_Breakpoint = (props: {
           setValue={handleAddressChange}
           placeholder="F800"
           width="5em" />
-        {props.breakpoint.watchpoint &&
-          <div>
-            <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
-          </div>}
       </div>
       <div>
         <EditField name="Expression: "

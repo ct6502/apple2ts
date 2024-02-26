@@ -3,21 +3,11 @@ import {
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons";
 import {faCircle as iconBreakpointDisabled} from "@fortawesome/free-regular-svg-icons";
-import { TEST_DEBUG, toHex } from "../emulator/utility/utility"
-import { opCodes } from "./opcodes";
+import { ADDR_MODE, toHex } from "./utility"
+import { opCodes } from "../../panels/opcodes";
 
-interface IBreakpoint {
-  address: number
-  watchpoint: boolean
-  disabled: boolean
-  hidden: boolean
-  once: boolean
-  memget: boolean
-  memset: boolean
-  expression: string
-  hitcount: number
-  nhits: number
-}
+export const BRK_INSTR = 0x10000
+export const BRK_ILLEGAL = 0x10100
 
 export const getBreakpointIcon = (bp: Breakpoint) => {
   if (bp.disabled) {
@@ -37,9 +27,27 @@ export const getBreakpointStyle = (bp: Breakpoint) => {
 export const getBreakpointString = (bp: Breakpoint) => {
   let result = ''
   if (bp.instruction) {
-    result = opCodes[bp.address & 0xFF].name
-//    const result = getInstructionName(bp.address)
-//    result = toHex(bp.address & 0xFF, 2)
+    const opcode = opCodes[bp.address & 0xFF]
+    result = (bp.address === BRK_ILLEGAL) ? 'Any illegal' : opcode.name
+    const value4 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 4) : 'zzzz'
+    const value2 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 2) : 'zz'
+    switch (opcode.mode) {
+      case ADDR_MODE.IMPLIED: break
+      case ADDR_MODE.IMM: result += ' #$' + value2; break
+      case ADDR_MODE.ZP_REL: result += ' $' + value2; break
+      case ADDR_MODE.ZP_X: result += ' $' + value2 + ',X'; break
+      case ADDR_MODE.ZP_Y: result += ' $' + value2 + ',Y'; break
+      case ADDR_MODE.ABS: result += ' $' + value4; break
+      case ADDR_MODE.ABS_X: result += ' $' + value4 + ',X'; break
+      case ADDR_MODE.ABS_Y: result += ' $' + value4 + ',Y'; break
+      case ADDR_MODE.IND_X:
+        result += ' ($' + (opcode.name === 'JMP' ? value4 : value2) + ',X)'
+        break
+      case ADDR_MODE.IND_Y: result += ' ($' + value2 + '),Y'; break
+      case ADDR_MODE.IND:
+        result += ' ($' + (opcode.name === 'JMP' ? value4 : value2) + ')'
+        break
+    }
   } else {
     result = toHex(bp.address, 4)
   }
@@ -105,7 +113,7 @@ export const checkBreakpointExpression = (expression: string) => {
   }
 }
 
-export class Breakpoint implements IBreakpoint {
+export class Breakpoint {
   address: number;
   watchpoint: boolean;
   instruction: boolean;
@@ -123,7 +131,7 @@ export class Breakpoint implements IBreakpoint {
   constructor() {
     this.address = 0
     this.watchpoint = false
-    this.instruction = TEST_DEBUG ? true : false
+    this.instruction = false
     this.disabled = false
     this.hidden = false
     this.once = false
@@ -141,15 +149,15 @@ export class BreakpointMap extends Map<number, Breakpoint> {
   set(key: number, value: Breakpoint): this {
     // Your custom logic here
     // For example, you might want to sort the keys each time you set a new entry:
-    const entries = [...this.entries()];
-    entries.push([key, value]);
+    const entries = [...this.entries()]
+    entries.push([key, value])
     entries.sort((a, b) => a[0] - b[0])
-    super.clear();
+    super.clear()
     for (const [k, v] of entries) {
-      super.set(k, v);
+      super.set(k, v)
     }
 
-    return this;
+    return this
   }
 }
 

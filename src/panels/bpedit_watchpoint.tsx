@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Breakpoint } from "./breakpoint";
+import { Breakpoint } from "../emulator/utility/breakpoint";
 import EditField from "./editfield";
 import PullDownMenu from "./pulldownmenu";
 import { getSoftSwitchDescriptions } from "../emulator/softswitches"
@@ -78,17 +78,14 @@ const BPEdit_Watchpoint = (props: {
   return (
     <div>
 
-      <div className="flex-row">
+      <div className="flex-row" style={{ alignItems: 'baseline' }}>
         <EditField name="Address: "
           initialFocus={true}
           value={props.breakpoint.address.toString(16).toUpperCase()}
           setValue={handleAddressChange}
           placeholder="F800"
           width="5em" />
-        {props.breakpoint.watchpoint &&
-          <div>
-            <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
-          </div>}
+        <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
       </div>
       <div>
         <div style={{ height: "8px" }} />
