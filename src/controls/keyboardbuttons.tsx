@@ -17,7 +17,7 @@ const KeyboardButtons = (props: DisplayProps) => {
     { name: 'Up', icon: faArrowUp },
     { name: 'Down', icon: faArrowDown },
   ]
-  const isTouchDevice = true//"ontouchstart" in document.documentElement
+  const isTouchDevice = "ontouchstart" in document.documentElement
   const tryButtonPressRelease = (doTouch: boolean, key: string, press: boolean) => {
     if (doTouch !== isTouchDevice) return
     // If one of our Apple keys is locked, ignore the button press.

@@ -59,16 +59,16 @@ export const passData = () => {
   }
 }
 
-// const isTotalReplay = (filename: string) => {
-//   return filename.replace(/ /g, '').toLowerCase().includes('totalreplay')
-// }
+const isTotalReplay = (filename: string) => {
+  return filename.replace(/ /g, '').toLowerCase().includes('totalreplay')
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
   const data = ['', '', '']
-  // if (full && isTotalReplay(driveState[0].filename)) {
-  //   return {currentDrive: 0, driveState: [], driveData: []}
-  // }
+  if (isTotalReplay(driveState[0].filename)) {
+    return {currentDrive: 0, driveState: [], driveData: []}
+  }
   for (let i=0; i < 3; i++) {
     data[i] = Buffer.from(driveData[i]).toString("base64")
   }
