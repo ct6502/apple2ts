@@ -1,6 +1,6 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, handleGetIsDebugging, passSetSoftSwitches } from "./main2worker"
-import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "./emulator/utility/utility"
+import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress } from "./emulator/utility/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 const xmargin = 0.075
@@ -197,7 +197,8 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false) : getHiresGreen(hgrPage, nlines))
+    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true) :
+    getHiresGreen(hgrPage, nlines))
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes)
   const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
   for (let j = 0; j < nlines; j++) {
@@ -231,15 +232,15 @@ export const getOverrideHiresPixels = (x: number, y: number) => {
   // Assume this is 40 x 192
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length !== (40 * 192)) return null;
-  const result: string[] = new Array(5).fill('')
-  for (let j = y - 2; j <= (y + 2); j++) {
+  const result: number[][] = new Array(8).fill([0, 0, 0])
+  for (let j = y - 3; j <= (y + 4); j++) {
     if (j >= 0 && j < 192) {
       const byte1 = Math.floor(x / 7)
       const value1 = hgrPage[j * 40 + byte1]
       const byte2 = Math.floor(x / 7) + 1
       const value2 = hgrPage[j * 40 + byte2]
       const addr = byte1 + hiresLineToAddress(doPage2 ? 0x4000 : 0x2000, j)
-      result[j - y + 2] = `${toHex(addr)}: ${toHex(value1)} ${toHex(value2)}`
+      result[j - y + 3] = [addr, value1, value2]
     }
   }
   return result
@@ -317,7 +318,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
     ctx.imageSmoothingEnabled = false;
-    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8)
+    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8, true)
   }
 }
 

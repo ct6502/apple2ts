@@ -12,7 +12,7 @@ import {
   handleGetCapsLock,
   handleGetRunMode,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE } from "./emulator/utility/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "./emulator/utility/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord } from './graphics';
 import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
@@ -28,11 +28,12 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [myInit, setMyInit] = useState(false)
   const [keyHandled, setKeyHandled] = useState(false)
   const [magnifier, setMagnifier] = useState(false)
-  const [info, setInfo] = useState({ x: 0, y: 0, text: new Array<string>() })
+  const [info, setInfo] = useState({ x: 0, y: 0, pixels: new Array(8).fill([0, 0, 0]) })
   const myText = useRef(null)
   const myCanvas = useRef(null)
   const hiddenCanvas = useRef(null)
   const infoCanvas = useRef(null)
+  const nlines = 8
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById('apple2canvas')
@@ -248,11 +249,11 @@ const Apple2Canvas = (props: DisplayProps) => {
         y = Math.floor(y * 192)
         if (x >= 0 && x < 280 && y >= 0 && y < 192) {
           showMagnifier = true
-          x = Math.max(2, Math.min(x, 280 - 9))
-          y = Math.max(2, Math.min(y, 191 - 2))
+          x = Math.max(4, Math.min(x, 280 - 9)) - 4
+          y = Math.max(3, Math.min(y, 191 - 4))
           const pixels = getOverrideHiresPixels(x, y)
           if (pixels) {
-            setInfo({ x: event.clientX, y: event.clientY, text: pixels })
+            setInfo({ x: event.clientX, y: event.clientY, pixels: pixels })
           }
         }
       }
@@ -275,25 +276,42 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (context) {
         context.fillStyle = 'black'
         context.fillRect(0, 0, canvas.width, canvas.height)
-        const tile = new Uint8Array(10)
-        for (let i = 0; i < 5; i++) {
-          tile[2 * i] = parseInt(info.text[i].slice(6, 8), 16)
-          tile[2 * i + 1] = parseInt(info.text[i].slice(9, 11), 16)
+        const tile = new Uint8Array(2 * nlines)
+        for (let i = 0; i < nlines; i++) {
+          tile[2 * i] = info.pixels[i][1]
+          tile[2 * i + 1] = info.pixels[i][2]
         }
-        context.imageSmoothingEnabled = false;
-        drawHiresTile(context, new Uint8Array(tile), COLOR_MODE.NOFRINGE, 5, 0, 0, 11)
+        context.imageSmoothingEnabled = false
+        const addr = info.pixels[0][0]
+        const isEven = addr % 2 === 0
+        drawHiresTile(context, tile, COLOR_MODE.NOFRINGE,
+          nlines, 0, 0, 11, isEven)
+        // Draw 13 vertical lines
+        for (let i = 1; i <= 13; i++) {
+          const x = Math.round((canvas.width / 14) * i + 0.5) - 0.5;
+          context.moveTo(x, 0);
+          context.lineTo(x, canvas.height);
+        }
+        // Draw horizontal lines
+        for (let i = 1; i <= nlines - 1; i++) {
+          const y = Math.round((canvas.height / nlines) * i + 0.5) - 0.5;
+          context.moveTo(0, y);
+          context.lineTo(canvas.width, y);
+        }
+        context.strokeStyle = '#888';
+        context.stroke();
       }
     }
   }
 
   const formatInfoBox = () => {
     if (!myCanvas.current) return <></>
-    const result = info.text.map((line, i) => {
-      return <div key={i}>{line}</div>
+    const result = info.pixels.map((line: Array<number>, i) => {
+      return <div key={i}>{`${toHex(line[0])}: ${toHex(line[1], 2)} ${toHex(line[2], 2)}`}</div>
     })
-    const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, 2, 5)
+    const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, 2, nlines)
     const [xmin, ymin] = screenCoordToCanvasCoord(myCanvas.current, 0, 0)
-    const [xmax, ymax] = screenCoordToCanvasCoord(myCanvas.current, 280 - 14, 192 - 5)
+    const [xmax, ymax] = screenCoordToCanvasCoord(myCanvas.current, 280 - 14, 192 - nlines)
     const x = Math.min(Math.max(info.x - dx / 2, xmin), xmax)
     const y = Math.min(Math.max(info.y - dy / 2, ymin), ymax)
     setTimeout(() => drawBytes(), 50)
@@ -303,7 +321,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       <div className="magnifier-text">{result}</div>
       <canvas ref={infoCanvas}
         style={{ border: "2px solid red" }}
-        width={"154pt"} height={"55pt"} />
+        width={"154pt"} height={`${11 * nlines}pt`} />
     </div>
   }
 
@@ -364,7 +382,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{ cursor: handleGetShowMouse() ? "crosshair" : "none" }}
+        style={{ cursor: handleGetShowMouse() ? (magnifier ? "none" : "crosshair") : "none" }}
         width={width} height={height}
         tabIndex={0}
         onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
