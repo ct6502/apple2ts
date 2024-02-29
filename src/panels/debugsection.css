@@ -243,3 +243,40 @@
   border-bottom-width: 1px;
   border-bottom-color: var(--text-color);
 }
+
+table {
+  border-collapse: collapse;
+  overflow: auto;
+  height: 100%;
+  margin-top: 7px;
+}
+
+thead th {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  background-color: var(--panel-background);
+  transform: translateY(-2px);
+  padding-left: 0px;
+  padding-right: 1ch;
+}
+
+thead th::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--text-color);
+}
+
+td {
+  padding-left: 0px;
+  padding-right: 1ch;
+}
+
+.memtable-addr {
+  position: sticky;
+  left: 0;
+  background-color: var(--panel-background);
+}

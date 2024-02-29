@@ -1,16 +1,17 @@
 import { useRef, useState } from "react"
-import { RUN_MODE, toHex } from "../emulator/utility/utility"
+import { RUN_MODE, hiresLineToAddress, toHex } from "../emulator/utility/utility"
 import { handleGetAddressGetTable, handleGetMemoryDump, handleGetRunMode } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
 import { overrideHires } from "../graphics"
+import MemoryTable from "./memorytable"
 
 enum MEMORY_RANGE {
   CURRENT = "Current memory",
   MAIN = "Main RAM",
   AUX = "Auxiliary RAM",
-  HGR1 = "HGR page 1 (memory order)",
-  HGR2 = "HGR page 2 (memory order)",
+  HGR1 = "HGR page 1 (screen order)",
+  HGR2 = "HGR page 2 (screen order)",
 }
 
 const MemoryDump = () => {
@@ -40,6 +41,31 @@ const MemoryDump = () => {
     return status.join('\n')
   }
 
+  const getHiresMemory = (memory: Uint8Array, offset: number) => {
+    const status = ['']
+    let i = 0
+    for (let l = 0; l < 192; l++) {
+      const addr = hiresLineToAddress(offset, l)
+      const mem = memory.slice(addr, addr + 40)
+      let s = toHex(addr, 4) + ":"
+      for (let b = 0; b < 16; b++) {
+        s += " " + toHex(mem[b])
+      }
+      s += "\n     "
+      for (let b = 16; b < 32; b++) {
+        s += " " + toHex(mem[b])
+      }
+      s += "\n     "
+      for (let b = 32; b < 40; b++) {
+        s += " " + toHex(mem[b])
+      }
+      status[i] = s
+      i++
+    }
+    nlines = i
+    return status.join('\n')
+  }
+
   const getMemory = () => {
     const memory = handleGetMemoryDump()
     if (memory.length < 1) return '\n\n\n      *** Pause emulator to view memory ***'
@@ -57,12 +83,10 @@ const MemoryDump = () => {
         lookup = Array.from({ length: 256 }, (_, i) => 0x10000 + 256 * i)
         break
       case MEMORY_RANGE.HGR1:
-        lookup = Array.from({ length: 32 }, (_, i) => 0x2000 + 256 * i)
-        addrOffset = 0x2000
+        return getHiresMemory(memory, 0x2000)
         break
       case MEMORY_RANGE.HGR2:
-        lookup = Array.from({ length: 32 }, (_, i) => 0x4000 + 256 * i)
-        addrOffset = 0x4000
+        return getHiresMemory(memory, 0x4000)
         break
     }
     return getFormattedMemory(memory, lookup, addrOffset)
@@ -121,6 +145,7 @@ const MemoryDump = () => {
 
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
+  const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
 
   return (
     <div className="flex-column">
@@ -140,14 +165,16 @@ const MemoryDump = () => {
           userdata={0}
           isDisabled={() => false} />
       </span>
-      <div className="debug-panel"
-        style={{
-          fontWeight: "900",
-          borderBottom: "1px solid #444",
-          marginBottom: "0", paddingLeft: "3px", marginTop: "7px", paddingBottom: 0
-        }}>
-        {'      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F'}
-      </div>
+      {!isHGR &&
+        <div className="debug-panel"
+          style={{
+            fontWeight: "900",
+            borderBottom: "1px solid #444",
+            marginBottom: "0", marginTop: "7px", paddingBottom: 0
+          }}>
+          {'      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'}
+        </div>
+      }
       <div className="debug-panel"
         style={{
           width: '370px',
@@ -156,7 +183,7 @@ const MemoryDump = () => {
         }}
         ref={memoryDumpRef}
       >
-        {getMemory()}
+        {isHGR ? <MemoryTable memory={handleGetMemoryDump()} offset={0x2000} /> : getMemory()}
       </div>
     </div>
   )

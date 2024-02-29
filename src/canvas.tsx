@@ -262,13 +262,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     passMouseEvent(scaled)
   }
 
-  // const drawByte = (byte: number) => {
-  //   const high = (byte & 0x80)
-  //   for (let b = 0; b < 7; b++) {
-  //     (byte & (1 << b)) ? 
-  //   }
-  // } 
-
   const drawBytes = () => {
     if (infoCanvas.current) {
       const canvas = infoCanvas.current as HTMLCanvasElement
@@ -312,15 +305,15 @@ const Apple2Canvas = (props: DisplayProps) => {
     const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, 2, nlines)
     const [xmin, ymin] = screenCoordToCanvasCoord(myCanvas.current, 0, 0)
     const [xmax, ymax] = screenCoordToCanvasCoord(myCanvas.current, 280 - 14, 192 - nlines)
-    const x = Math.min(Math.max(info.x - dx / 2, xmin), xmax)
-    const y = Math.min(Math.max(info.y - dy / 2, ymin), ymax)
+    const x = Math.min(Math.max(info.x - dx / 2, xmin), xmax) - 2.5
+    const y = Math.min(Math.max(info.y - dy / 2, ymin), ymax) - 2.5
     setTimeout(() => drawBytes(), 50)
     return <div className="magnifier flex-row"
       style={{ left: `${x}px`, top: `${y}px` }}>
       <div className="magnifier-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
       <div className="magnifier-text">{result}</div>
       <canvas ref={infoCanvas}
-        style={{ border: "2px solid red" }}
+        style={{ zIndex: "9999", border: "2px solid red" }}
         width={"154pt"} height={`${11 * nlines}pt`} />
     </div>
   }

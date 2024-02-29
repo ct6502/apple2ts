@@ -80,6 +80,59 @@ export const getHiresGreen = (hgrPage: Uint8Array, nlines: number) => {
   return hgrColors
 }
 
+const filterHiresSingleLine = (line: Uint8Array) => {
+  const bits = new Uint8Array(line.length)
+  for (let i = 0; i < line.length; i++) {
+    bits[i] = (line[i] === WHITE) ? 1 : 0
+  }
+  // Key: W = white, - = black, ? = non-white color
+  // Turn runs of 3 colors (in between white) to black
+  // W???W  =>  W---W
+  for (let i = 0; i < line.length - 4; i++) {
+    if (bits[i] && !bits[i + 1] && !bits[i + 2] && !bits[i + 3] && bits[i + 4]) {
+      bits[i + 1] = 1
+      bits[i + 2] = 1
+      bits[i + 3] = 1
+      line[i + 1] = 0
+      line[i + 2] = 0
+      line[i + 3] = 0
+      i += 3
+    }
+  }
+  // Turn runs of 2 colors (in between white) to black
+  // W??W  =>  W--W
+  for (let i = 0; i < line.length - 3; i++) {
+    if (bits[i] && !bits[i + 1] && !bits[i + 2] && bits[i + 3]) {
+      bits[i + 1] = 1
+      bits[i + 2] = 1
+      line[i + 1] = 0
+      line[i + 2] = 0
+      i += 2
+    }
+  }
+  // Turn a trailing fringe color to white
+  // WW?  =>  WWW
+  for (let i = 0; i < line.length - 3; i++) {
+    if (bits[i] && bits[i + 1] &&
+        (line[i + 2] !== BLACK && line[i + 2] !== WHITE) && line[i + 3] === 0) {
+      bits[i + 2] = 1
+      line[i + 2] = WHITE
+      i += 3
+    }
+  }
+  // Turn small runs of 2 colors (in between black) to white
+  // -??-  =>  -WW-
+  // for (let i = 0; i < line.length - 3; i++) {
+  //   if (!line[i] && line[i + 1] && line[i + 2] && !line[i + 3]) {
+  //     bits[i + 1] = 1
+  //     bits[i + 2] = 1
+  //     line[i + 1] = WHITE
+  //     line[i + 2] = WHITE
+  //     i += 2
+  //   }
+  // }
+}
+
 const getHiresLineNoFringe = (line: Uint8Array,
   noDelayMode: boolean, extendEdge: boolean, isEven: boolean) => {
   const nbytes = line.length
@@ -364,6 +417,7 @@ export const getHiresColors = (hgrPage: Uint8Array, nlines: number,
     let hgrColors1: Uint8Array = new Uint8Array()
     if (colorMode === COLOR_MODE.NOFRINGE) {
       hgrColors1 = getHiresLineNoFringe(line, noDelayMode, extendEdge, isEven)
+      filterHiresSingleLine(hgrColors1)
     } else {
       hgrColors1 = getHiresSingleLine(line, colorMode, noDelayMode, extendEdge)
     }
