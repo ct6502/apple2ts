@@ -49,9 +49,15 @@ const Apple2Canvas = (props: DisplayProps) => {
   const syntheticPaste = () => {
     const canvas = document.getElementById('apple2canvas')
     if (document.activeElement === canvas) {
-      navigator.clipboard
-        .readText()
-        .then((data) => passPasteText(data));
+      // Errors can sometimes occur during debugging, if the canvas loses
+      // focus. Just ignore.
+      try {
+        navigator.clipboard
+          .readText()
+          .then((data) => passPasteText(data))
+      } catch (e) {
+        // do nothing
+      }
     }
   };
 
@@ -130,6 +136,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyDown = (e: keyEvent) => {
+    let keyHandledLocal = false
     if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
     }
@@ -140,7 +147,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     // because that interferes with Apple II control keys like Ctrl+S
     //if (!e.shiftKey && (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt'))) {
     if (isMetaSequence(e)) {
-      setKeyHandled(handleMetaKey(e.key))
+      keyHandledLocal = handleMetaKey(e.key)
       // TODO: This allows Cmd+V to paste text, but breaks OpenApple+V.
       // How to handle both?
       //if (e.key === 'v') return;
@@ -148,9 +155,10 @@ const Apple2Canvas = (props: DisplayProps) => {
     // If we're paused, allow <space> to resume
     if (handleGetRunMode() === RUN_MODE.PAUSED && e.key === ' ') {
       passSetRunMode(RUN_MODE.RUNNING)
-      setKeyHandled(true)
+      keyHandledLocal = true
     }
-    if (keyHandled) {
+    if (keyHandledLocal) {
+      setKeyHandled(true)
       passAppleCommandKeyRelease(true)
       passAppleCommandKeyRelease(false)
       e.preventDefault()
@@ -182,7 +190,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (props.closedAppleKeyMode == 1) {
       props.handleClosedAppleDown(0)
     }
-  };
+  }
 
   const handleKeyUp = (e: keyEvent) => {
     if (isOpenAppleUp(e)) {
@@ -249,6 +257,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         y = Math.floor(y * 192)
         if (x >= 0 && x < 280 && y >= 0 && y < 192) {
           showMagnifier = true
+          // Make sure the magnifier doesn't go off the edge of the screen.
+          // Also shift it to the left so it falls more naturally on an
+          // HGR screen byte boundary.
           x = Math.max(4, Math.min(x, 280 - 9)) - 4
           y = Math.max(3, Math.min(y, 191 - 4))
           const pixels = getOverrideHiresPixels(x, y)
@@ -297,7 +308,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const formatInfoBox = () => {
+  const formatMagnifier = () => {
     if (!myCanvas.current) return <></>
     const result = info.pixels.map((line: Array<number>, i) => {
       return <div key={i}>{`${toHex(line[0])}: ${toHex(line[1], 2)} ${toHex(line[2], 2)}`}</div>
@@ -390,7 +401,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         hidden={true}
         width={560} height={384} />
       {txt}
-      {magnifier && formatInfoBox()}
+      {magnifier && formatMagnifier()}
     </span>
   )
 }

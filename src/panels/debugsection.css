@@ -249,6 +249,7 @@ table {
   overflow: auto;
   height: 100%;
   margin-top: 7px;
+  user-select: none;
 }
 
 thead th {
@@ -257,8 +258,8 @@ thead th {
   top: 0;
   background-color: var(--panel-background);
   transform: translateY(-2px);
-  padding-left: 0px;
-  padding-right: 1ch;
+  padding-left: 0.5ch;
+  padding-right: 0.5ch;
 }
 
 thead th::after {
@@ -271,12 +272,16 @@ thead th::after {
 }
 
 td {
-  padding-left: 0px;
-  padding-right: 1ch;
+  padding-left: 0.5ch;
+  padding-right: 0.5ch;
 }
 
 .memtable-addr {
   position: sticky;
   left: 0;
   background-color: var(--panel-background);
+}
+
+.selected {
+  background-color: yellow;
 }

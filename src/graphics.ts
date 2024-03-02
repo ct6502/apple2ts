@@ -246,8 +246,6 @@ export const getOverrideHiresPixels = (x: number, y: number) => {
   return result
 }
 
-
-
 const drawImage = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
@@ -263,6 +261,8 @@ const drawImage = (ctx: CanvasRenderingContext2D,
     ctx.strokeRect(xmarginPx - border, ymarginPx - border, imgWidth + 2 * border, imgHeight + 2 * border)
     ctx.fillStyle = "#FF0000"
     ctx.textAlign = "center"
+    const cheight = height * (1 - 2 * ymargin) / 24
+    ctx.font = `${cheight}px "PrintChar21"`
     ctx.fillText(`${'HGR Page ' + (doPage2 ? '2' : '1')}`, width / 2, height - 2)
   }
 }

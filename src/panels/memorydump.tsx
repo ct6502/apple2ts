@@ -146,6 +146,7 @@ const MemoryDump = () => {
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
+  const offset = (memoryRange === MEMORY_RANGE.HGR1) ? 0x2000 : 0x4000
 
   return (
     <div className="flex-column">
@@ -183,7 +184,7 @@ const MemoryDump = () => {
         }}
         ref={memoryDumpRef}
       >
-        {isHGR ? <MemoryTable memory={handleGetMemoryDump()} offset={0x2000} /> : getMemory()}
+        {isHGR ? <MemoryTable memory={handleGetMemoryDump()} offset={offset} /> : getMemory()}
       </div>
     </div>
   )

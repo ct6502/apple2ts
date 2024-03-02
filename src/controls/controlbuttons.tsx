@@ -4,12 +4,13 @@ import {
   faArrowRotateRight,
   faClipboard,
   faFolderOpen,
+  faPaste,
   faPowerOff,
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
 import { handleCopyToClipboard } from "../copycanvas";
-import { handleGetRunMode } from "../main2worker";
+import { handleGetRunMode, passPasteText } from "../main2worker";
 import { handleFileSave } from "../fileoutput";
 
 const ControlButtons = (props: DisplayProps) => {
@@ -40,6 +41,12 @@ const ControlButtons = (props: DisplayProps) => {
     <button className="push-button" title="Copy Screen"
       onClick={() => handleCopyToClipboard()}>
       <FontAwesomeIcon icon={faClipboard} />
+    </button>
+    <button className="push-button" title="Paste Text"
+      onClick={() => {
+        navigator.clipboard.readText().then((data) => passPasteText(data))
+      }}>
+      <FontAwesomeIcon icon={faPaste} />
     </button>
   </span>
 }

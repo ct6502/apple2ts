@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { hiresLineToAddress, toHex } from "../emulator/utility/utility"
 
 const getHiresMemory = (memory: Uint8Array, offset: number) => {
@@ -20,10 +21,72 @@ type MemoryTableProps = {
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [startCell, setStartCell] = useState([-1, -1])
   if (props.memory.length < 1) return '\n\n\n      *** Pause emulator to view memory ***'
   const rows = getHiresMemory(props.memory, props.offset)
+
+  const getCellIndices = (cell: HTMLTableCellElement) => {
+    const row = cell.parentNode
+    if (!row || !row.parentNode) return [-1, -1]
+    const rowIndex = Array.from(row.parentNode.children).indexOf(row as Element)
+    const cellIndex = Array.from(row.children).indexOf(cell)
+    if (rowIndex <= 0 || cellIndex <= 0) return [-1, -1]
+    return [rowIndex, cellIndex];
+  }
+
+  const clearSelection = (cell: HTMLTableCellElement) => {
+    const row = cell.parentNode
+    if (!row || !row.parentNode) return
+    const table = row.parentNode as HTMLTableElement
+    for (let i = 0; i < table.rows.length; i++) {
+      for (let j = 0; j < table.rows[i].cells.length; j++) {
+        table.rows[i].cells[j].classList.remove('selected')
+      }
+    }
+  }
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    setIsSelecting(true)
+    const cell = e.target as HTMLTableCellElement
+    if (e.shiftKey && startCell[0] > 0) {
+      drawToEndCell(cell)
+      return
+    }
+    const indices = getCellIndices(cell)
+    if (indices[0] < 0) return
+    clearSelection(cell)
+    setStartCell(indices)
+  }
+
+  const drawToEndCell = (cell: HTMLTableCellElement) => {
+    const endCell = getCellIndices(cell)
+    if (endCell[0] < 0) return
+    const row = cell.parentNode
+    if (!row || !row.parentNode) return
+    const table = row.parentNode as HTMLTableElement
+    clearSelection(cell)
+    for (let i = Math.min(startCell[0], endCell[0]); i <= Math.max(startCell[0], endCell[0]); i++) {
+      for (let j = Math.min(startCell[1], endCell[1]); j <= Math.max(startCell[1], endCell[1]); j++) {
+        table.rows[i].cells[j].classList.add('selected')
+      }
+    }
+  }
+
+  const onMouseOver = (e: React.MouseEvent) => {
+    if (!isSelecting) return
+    const cell = e.target as HTMLTableCellElement
+    drawToEndCell(cell)
+  }
+
+  const onMouseUp = () => {
+    setIsSelecting(false)
+  }
+
   return (
-    <table>
+    <table onMouseDown={onMouseDown}
+      onMouseOver={onMouseOver}
+      onMouseUp={onMouseUp}>
       <thead>
         <tr>
           <th style={{ position: "sticky", top: "0", left: "0", zIndex: "2" }}></th>

@@ -23,8 +23,8 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
   };
 
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const width = isTouchDevice ? 368 : 600
-  //  const percentEachRow = 100 / Math.ceil(diskImages.length / 3)
+  const width = isTouchDevice ?
+    (0.85 * (window.innerWidth ? window.innerWidth : window.outerWidth)) : 600
 
   return (
     <div className="modal-overlay" onClick={onClose}>
