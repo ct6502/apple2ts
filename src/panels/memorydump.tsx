@@ -179,12 +179,12 @@ const MemoryDump = () => {
       <div className="debug-panel"
         style={{
           width: '370px',
-          height: `485px`,
-          overflow: 'auto',
+          height: `485px`
         }}
         ref={memoryDumpRef}
       >
-        {isHGR ? <MemoryTable memory={handleGetMemoryDump()} offset={offset} /> : getMemory()}
+        {isHGR ? <MemoryTable memory={handleGetMemoryDump()} offset={offset} /> :
+          <div style={{ width: '100%', height: '100%', overflow: 'auto' }}>{getMemory()}</div>}
       </div>
     </div>
   )

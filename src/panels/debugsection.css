@@ -245,9 +245,11 @@
 }
 
 table {
+  display: block;
   border-collapse: collapse;
   overflow: auto;
   height: 100%;
+  width: 100%;
   margin-top: 7px;
   user-select: none;
 }
@@ -283,5 +285,5 @@ td {
 }
 
 .selected {
-  background-color: yellow;
+  background-color: #FF0000CC;
 }

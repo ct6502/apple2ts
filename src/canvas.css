@@ -22,17 +22,17 @@
   opacity: 0;
 }
 
-.magnifier {
+.hgr-view {
   position: absolute;
   user-select: none;
   pointer-events: none;
 }
 
-.magnifier-box {
+.hgr-view-box {
   border: 2px solid red;
 }
 
-.magnifier-text {
+.hgr-view-text {
   z-index: 9999;
   background-color: var(--input-background);
   color: var(--text-color);

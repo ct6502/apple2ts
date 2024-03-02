@@ -233,14 +233,12 @@ export const getOverrideHiresPixels = (x: number, y: number) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length !== (40 * 192)) return null;
   const result: number[][] = new Array(8).fill([0, 0, 0])
-  for (let j = y - 3; j <= (y + 4); j++) {
+  for (let j = y; j < (y + 8); j++) {
     if (j >= 0 && j < 192) {
-      const byte1 = Math.floor(x / 7)
-      const value1 = hgrPage[j * 40 + byte1]
-      const byte2 = Math.floor(x / 7) + 1
-      const value2 = hgrPage[j * 40 + byte2]
-      const addr = byte1 + hiresLineToAddress(doPage2 ? 0x4000 : 0x2000, j)
-      result[j - y + 3] = [addr, value1, value2]
+      const value1 = hgrPage[j * 40 + x]
+      const value2 = hgrPage[j * 40 + x + 1]
+      const addr = x + hiresLineToAddress(doPage2 ? 0x4000 : 0x2000, j)
+      result[j - y] = [addr, value1, value2]
     }
   }
   return result

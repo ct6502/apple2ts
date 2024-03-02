@@ -18,6 +18,7 @@ import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
 import { handleFileSave } from './fileoutput';
 import { drawHiresTile } from './graphicshgr';
+import { useGlobalContext } from './globalcontext';
 
 let width = 800
 let height = 600
@@ -25,10 +26,13 @@ let height = 600
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
 const Apple2Canvas = (props: DisplayProps) => {
+  const { hgrview, setHgrview: setHgrview } = useGlobalContext()
   const [myInit, setMyInit] = useState(false)
   const [keyHandled, setKeyHandled] = useState(false)
-  const [magnifier, setMagnifier] = useState(false)
-  const [info, setInfo] = useState({ x: 0, y: 0, pixels: new Array(8).fill([0, 0, 0]) })
+  const [showhgrview, setShowhgrview] = useState(false)
+  const [hgrviewLocal, setHgrviewLocal] = useState([-1, -1])
+  const hgrviewRef = useRef([-1, -1]);
+  const lockHgrViewRef = useRef(false);
   const myText = useRef(null)
   const myCanvas = useRef(null)
   const hiddenCanvas = useRef(null)
@@ -48,16 +52,12 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const syntheticPaste = () => {
     const canvas = document.getElementById('apple2canvas')
-    if (document.activeElement === canvas) {
+    if (document.activeElement === canvas && document.hasFocus()) {
       // Errors can sometimes occur during debugging, if the canvas loses
-      // focus. Just ignore.
-      try {
-        navigator.clipboard
-          .readText()
-          .then((data) => passPasteText(data))
-      } catch (e) {
-        // do nothing
-      }
+      // focus. I tried using a try/catch but it didn't help. Just ignore.
+      navigator.clipboard
+        .readText()
+        .then((data) => passPasteText(data))
     }
   };
 
@@ -239,6 +239,13 @@ const Apple2Canvas = (props: DisplayProps) => {
     const evt = scaleMouseEvent(event)
     evt.buttons = event.button === 0 ? 0x10 : 0x11
     passMouseEvent(evt)
+    if (handleGetOverrideHires()) {
+      if (lockHgrViewRef.current) {
+        lockHgrViewRef.current = false
+      }
+      handleNewHgrViewCoord(event.clientX, event.clientY)
+      setHgrview(hgrviewRef.current)
+    }
   }
 
   const handleMouseUp = (event: MouseEvent) => {
@@ -247,33 +254,47 @@ const Apple2Canvas = (props: DisplayProps) => {
     passMouseEvent(evt)
   }
 
-  const handleMouseMove = (event: MouseEvent) => {
-    const scaled = scaleMouseEvent(event)
-    let showMagnifier = false
+  const handleNewHgrViewCoord = (clientX: number, clientY: number) => {
+    let showView = false
     if (handleGetOverrideHires()) {
       if (myCanvas.current) {
-        let [x, y] = canvasCoordToNormScreenCoord(myCanvas.current, event.clientX, event.clientY)
+        showView = true
+        let [x, y] = canvasCoordToNormScreenCoord(myCanvas.current, clientX, clientY)
         x = Math.floor(x * 280)
         y = Math.floor(y * 192)
         if (x >= 0 && x < 280 && y >= 0 && y < 192) {
-          showMagnifier = true
-          // Make sure the magnifier doesn't go off the edge of the screen.
+          // Make sure the showhgrview doesn't go off the edge of the screen.
           // Also shift it to the left so it falls more naturally on an
           // HGR screen byte boundary.
-          x = Math.max(4, Math.min(x, 280 - 9)) - 4
-          y = Math.max(3, Math.min(y, 191 - 4))
-          const pixels = getOverrideHiresPixels(x, y)
-          if (pixels) {
-            setInfo({ x: event.clientX, y: event.clientY, pixels: pixels })
+          x = Math.min(Math.max(Math.floor(x / 7), 0), 38) // Math.max(4, Math.min(x, 280 - 9)) - 4
+          y = Math.max(3, Math.min(y, 191 - 4)) - 3
+          if (!lockHgrViewRef.current) {
+            setHgrviewLocal([x, y])
+            hgrviewRef.current = [x, y]
           }
         }
       }
     }
-    setMagnifier(showMagnifier)
+    setShowhgrview(showView)
+  }
+
+  const handleMouseMove = (event: MouseEvent) => {
+    const scaled = scaleMouseEvent(event)
+    handleNewHgrViewCoord(event.clientX, event.clientY)
     passMouseEvent(scaled)
   }
 
-  const drawBytes = () => {
+  const handleDoubleClick = () => {
+    if (handleGetOverrideHires() && myCanvas.current) {
+      lockHgrViewRef.current = true
+      const canvas = myCanvas.current as HTMLCanvasElement
+      // We won't get another refresh since we're locking the hgr viewbox,
+      // so manually reset our cursor.
+      canvas.style.cursor = "crosshair"
+    }
+  }
+
+  const drawBytes = (pixels: number[][]) => {
     if (infoCanvas.current) {
       const canvas = infoCanvas.current as HTMLCanvasElement
       const context = canvas.getContext('2d')
@@ -282,11 +303,11 @@ const Apple2Canvas = (props: DisplayProps) => {
         context.fillRect(0, 0, canvas.width, canvas.height)
         const tile = new Uint8Array(2 * nlines)
         for (let i = 0; i < nlines; i++) {
-          tile[2 * i] = info.pixels[i][1]
-          tile[2 * i + 1] = info.pixels[i][2]
+          tile[2 * i] = pixels[i][1]
+          tile[2 * i + 1] = pixels[i][2]
         }
         context.imageSmoothingEnabled = false
-        const addr = info.pixels[0][0]
+        const addr = pixels[0][0]
         const isEven = addr % 2 === 0
         drawHiresTile(context, tile, COLOR_MODE.NOFRINGE,
           nlines, 0, 0, 11, isEven)
@@ -308,21 +329,24 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const formatMagnifier = () => {
-    if (!myCanvas.current) return <></>
-    const result = info.pixels.map((line: Array<number>, i) => {
+  const formatHgrView = () => {
+    if (!myCanvas.current || hgrviewLocal[0] < 0) return <></>
+    const pixels = getOverrideHiresPixels(hgrviewLocal[0], hgrviewLocal[1])
+    if (!pixels) return <></>
+    const result = pixels.map((line: Array<number>, i) => {
       return <div key={i}>{`${toHex(line[0])}: ${toHex(line[1], 2)} ${toHex(line[2], 2)}`}</div>
     })
     const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, 2, nlines)
-    const [xmin, ymin] = screenCoordToCanvasCoord(myCanvas.current, 0, 0)
-    const [xmax, ymax] = screenCoordToCanvasCoord(myCanvas.current, 280 - 14, 192 - nlines)
-    const x = Math.min(Math.max(info.x - dx / 2, xmin), xmax) - 2.5
-    const y = Math.min(Math.max(info.y - dy / 2, ymin), ymax) - 2.5
-    setTimeout(() => drawBytes(), 50)
-    return <div className="magnifier flex-row"
+    const col = 7 * hgrviewLocal[0]
+    const row = hgrviewLocal[1]
+    let [x, y] = screenCoordToCanvasCoord(myCanvas.current, col, row)
+    x -= 2
+    y -= 2
+    setTimeout(() => drawBytes(pixels), 50)
+    return <div className="hgr-view flex-row"
       style={{ left: `${x}px`, top: `${y}px` }}>
-      <div className="magnifier-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
-      <div className="magnifier-text">{result}</div>
+      <div className="hgr-view-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
+      <div className="hgr-view-text">{result}</div>
       <canvas ref={infoCanvas}
         style={{ zIndex: "9999", border: "2px solid red" }}
         width={"154pt"} height={`${11 * nlines}pt`} />
@@ -341,6 +365,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         canvas.addEventListener('mousemove', handleMouseMove)
         canvas.addEventListener('mousedown', handleMouseDown)
         canvas.addEventListener('mouseup', handleMouseUp)
+        canvas.addEventListener('dblclick', handleDoubleClick)
         window.addEventListener("copy", () => { handleCopyToClipboard() })
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         window.addEventListener("paste", paste)
@@ -381,12 +406,25 @@ const Apple2Canvas = (props: DisplayProps) => {
         onKeyUp={handleKeyUp}
       /> : <span></span>)
 
+  if (handleGetOverrideHires()) {
+    if (hgrview[0] !== -1 && (myCanvas.current !== document.activeElement) &&
+      (hgrview[0] !== hgrviewLocal[0] || hgrview[1] !== hgrviewLocal[1])) {
+      setHgrviewLocal(hgrview)
+      hgrviewRef.current = hgrview
+      setShowhgrview(true)
+    }
+  }
+
+  const hgrView = showhgrview && formatHgrView()
+  const cursor = handleGetShowMouse() ?
+    ((showhgrview && !lockHgrViewRef.current) ? "none" : "crosshair") : "none"
+
   return (
     <span className="canvasText">
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{ cursor: handleGetShowMouse() ? (magnifier ? "none" : "crosshair") : "none" }}
+        style={{ cursor: cursor }}
         width={width} height={height}
         tabIndex={0}
         onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
@@ -401,7 +439,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         hidden={true}
         width={560} height={384} />
       {txt}
-      {magnifier && formatMagnifier()}
+      {hgrView}
     </span>
   )
 }
