@@ -1,36 +1,38 @@
 import { hiresLineToAddress, toHex } from "../emulator/utility/utility"
 import { useGlobalContext } from "../globalcontext"
 
-const getHiresMemory = (memory: Uint8Array, offset: number) => {
-  const rows = []
-  for (let l = 0; l < 192; l++) {
-    const addr = hiresLineToAddress(offset, l)
-    const mem = memory.slice(addr, addr + 40)
-    const cells = [toHex(addr, 4) + ':']
-    for (let b = 0; b < 40; b++) {
-      cells.push(toHex(mem[b]))
-    }
-    rows.push(cells)
-  }
-  return rows
-}
-
 type MemoryTableProps = {
   memory: Uint8Array
+  isHGR: boolean
   offset: number
+  scrollRow: number
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
-  const { hgrview: hgrview, setHgrview: setHgrview } = useGlobalContext()
-  // const [isSelecting, setIsSelecting] = useState(false)
-  // const [startCell, setStartCell] = useState([-1, -1])
-  if (props.memory.length < 1) return '\n\n\n      *** Pause emulator to view memory ***'
-  const rows = getHiresMemory(props.memory, props.offset)
+  const { hgrview: hgrview, setHgrview: setHgrview, setUpdateHgr: setUpdateHgr } = useGlobalContext()
+  if (props.memory.length <= 1) return '\n\n\n      *** Pause emulator to view memory ***'
+
+  const convertMemoryToArray = (memory: Uint8Array, isHGR: boolean, offset: number) => {
+    const rows = []
+    const nrows = isHGR ? 192 : 4096
+    const ncols = isHGR ? 40 : 16
+    for (let l = 0; l < nrows; l++) {
+      const addr = isHGR ? hiresLineToAddress(offset, l) : 16 * l
+      const mem = memory.slice(addr, addr + ncols)
+      const cells = [toHex(addr, 4) + ':']
+      for (let b = 0; b < ncols; b++) {
+        cells.push(toHex(mem[b]))
+      }
+      rows.push(cells)
+    }
+    return rows
+  }
 
   const getMemoryOffset = (cell: HTMLTableCellElement): [number, number] => {
     const row = cell.parentNode
     if (!row || !row.parentNode) return [-1, -1]
     const table = cell.parentNode?.parentNode as HTMLTableElement
+    if (!table || !table.rows) return [-1, -1]
     const nrows = table.rows.length
     const ncols = table.rows[0].cells.length
     // The header row doesn't count as a real row, so just find the row index.
@@ -64,7 +66,10 @@ const MemoryTable = (props: MemoryTableProps) => {
     const cell = e.target as HTMLTableCellElement
     const offset = getMemoryOffset(cell)
     if (offset[0] < 0) return
-    setHgrview(offset)
+    if (props.isHGR) {
+      setHgrview(offset)
+      setUpdateHgr(true)
+    }
   }
 
   const onMouseOver = (e: React.MouseEvent) => {
@@ -73,6 +78,8 @@ const MemoryTable = (props: MemoryTableProps) => {
     }
   }
 
+  // This scrolling code is used with the HGR mode, where we want to scroll
+  // both vertically and horizontally to keep the 2 x 8 selection box in view.
   const scrollIntoView = (table: HTMLTableElement) => {
     const cell1 = table.rows[hgrview[1] + 1].cells[hgrview[0] + 1]
     const cell2 = table.rows[hgrview[1] + 8].cells[hgrview[0] + 2]
@@ -91,7 +98,7 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   // Make sure we keep our selection up to date, especially if it was changed
   // by clicking on the canvas.
-  if (hgrview[0] >= 0) {
+  if (props.isHGR && hgrview[0] >= 0) {
     setTimeout(() => {
       const table = document.querySelector('table') as HTMLTableElement
       if (!table) return
@@ -101,13 +108,32 @@ const MemoryTable = (props: MemoryTableProps) => {
     }, 10)
   }
 
+  const width = props.isHGR ? 40 : 16
+  const rows = convertMemoryToArray(props.memory, props.isHGR, props.offset)
+
+  // This scrolling code is used by the higher-level MemoryDump component to
+  // scroll to a specific row when the address field is changed.
+  if (props.scrollRow >= 0) {
+    const table = document.querySelector('table') as HTMLTableElement
+    const row = table.rows[props.scrollRow + 1]
+    row.scrollIntoView({ block: "center", inline: "center" })
+    row.style.animation = 'highlight-anim 2s 0.25s'
+    // Tried to also highlight the address column, but it does strange things
+    // in HGR mode where it draws some of the columns on top of each other...
+    //    row.cells[0].style.animation = 'highlight-anim 2s 0.25s'
+    setTimeout(() => {
+      row.style.animation = ''
+      // row.cells[0].style.animation = ''
+    }, 2250)
+  }
+
   return (
     <table onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>
         <tr>
           <th style={{ position: "sticky", top: "0", left: "0", zIndex: "2" }}></th>
-          {Array.from({ length: 40 }, (_, i) => <th className="memtable-hex" key={i}>{toHex(i, 2)}</th>)}
+          {Array.from({ length: width }, (_, i) => <th className="memtable-hex" key={i}>{toHex(i, 2)}</th>)}
         </tr>
       </thead>
       <tbody>

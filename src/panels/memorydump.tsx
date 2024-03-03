@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { RUN_MODE, hiresLineToAddress, toHex } from "../emulator/utility/utility"
+import { RUN_MODE, hiresAddressToLine } from "../emulator/utility/utility"
 import { handleGetAddressGetTable, handleGetMemoryDump, handleGetRunMode } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
@@ -16,80 +16,32 @@ enum MEMORY_RANGE {
 
 const MemoryDump = () => {
   const memoryDumpRef = useRef(null)
-  let addrOffset = 0
-  let nlines = 256 * 16
   const [address, setAddress] = useState('')
   const [memoryRange, setMemoryRange] = useState(`${MEMORY_RANGE.CURRENT}`)
+  const [scrollRow, setScrollRow] = useState(-1)
 
-  const getFormattedMemory = (memory: Uint8Array, lookup: number[], offset: number) => {
-    const status = ['']
-    let i = 0
-    let addr = offset
-    for (let l = 0; l < lookup.length; l++) {
-      const mem = memory.slice(lookup[l], lookup[l] + 256)
-      for (let j = 0; j < 16; j++) {
-        let s = toHex(addr, 4) + ":"
-        for (let b = 0; b < 16; b++) {
-          s += " " + toHex(mem[j * 16 + b])
-        }
-        status[i] = s
-        i++
-        addr += 16
-      }
-    }
-    nlines = i
-    return status.join('\n')
-  }
-
-  const getHiresMemory = (memory: Uint8Array, offset: number) => {
-    const status = ['']
-    let i = 0
-    for (let l = 0; l < 192; l++) {
-      const addr = hiresLineToAddress(offset, l)
-      const mem = memory.slice(addr, addr + 40)
-      let s = toHex(addr, 4) + ":"
-      for (let b = 0; b < 16; b++) {
-        s += " " + toHex(mem[b])
-      }
-      s += "\n     "
-      for (let b = 16; b < 32; b++) {
-        s += " " + toHex(mem[b])
-      }
-      s += "\n     "
-      for (let b = 32; b < 40; b++) {
-        s += " " + toHex(mem[b])
-      }
-      status[i] = s
-      i++
-    }
-    nlines = i
-    return status.join('\n')
-  }
-
-  const getMemory = () => {
+  const getMemoryRange = () => {
     const memory = handleGetMemoryDump()
-    if (memory.length < 1) return '\n\n\n      *** Pause emulator to view memory ***'
-    const addressGetTable = handleGetAddressGetTable()
-    let lookup: number[] = []
-    addrOffset = 0
+    if (memory.length < 1) return new Uint8Array()
     switch (memoryRange) {
       case MEMORY_RANGE.CURRENT:
-        lookup = addressGetTable.slice(0, 256)
-        break
-      case MEMORY_RANGE.MAIN:
-        lookup = Array.from({ length: 256 }, (_, i) => 256 * i)
-        break
+        {
+          const addressGetTable = handleGetAddressGetTable()
+          const lookup = addressGetTable.slice(0, 256)
+          const result = memory.slice(0, 0x10000)
+          for (let i = 0; i < lookup.length; i++) {
+            if (lookup[i] !== (i * 256)) {
+              result.set(memory.slice(lookup[i], lookup[i] + 256), i * 256)
+            }
+          }
+          return result
+        }
       case MEMORY_RANGE.AUX:
-        lookup = Array.from({ length: 256 }, (_, i) => 0x10000 + 256 * i)
-        break
-      case MEMORY_RANGE.HGR1:
-        return getHiresMemory(memory, 0x2000)
-        break
-      case MEMORY_RANGE.HGR2:
-        return getHiresMemory(memory, 0x4000)
-        break
+        return memory.slice(0x10000, 0x20000)
+      default:
+        return memory
     }
-    return getFormattedMemory(memory, lookup, addrOffset)
+
   }
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,22 +49,19 @@ const MemoryDump = () => {
     setAddress(newvalue)
   }
 
-  const scrollToAddress = (addr: number) => {
-    if (memoryDumpRef.current) {
-      addr = 16 * Math.floor(addr / 16) - addrOffset
-      const div: HTMLDivElement = memoryDumpRef.current
-      const height = div.scrollHeight
-      const pos = height * (addr / (nlines * 16))
-      div.scrollTop = pos
-    }
-  }
-
   const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
       const addr = parseInt(address || '0', 16)
       setAddress(addr.toString(16).toUpperCase())
-      scrollToAddress(addr)
+      let scrollRow = Math.floor(addr / 16)
+      if (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2) {
+        scrollRow = hiresAddressToLine(addr)
+      }
+      setScrollRow(scrollRow)
+      // Turn off our new scroll position after a brief moment. Otherwise the
+      // memorytable will just keep returning to the same scroll position.
+      setTimeout(() => { setScrollRow(-1) }, 100)
     }
   }
 
@@ -130,23 +79,13 @@ const MemoryDump = () => {
         overrideHires(false, false)
         break
     }
-    const height = memoryDumpRef.current ?
-      (memoryDumpRef.current as HTMLDivElement).scrollHeight : 0
-    // If we switch from one memory layout to another with a different
-    // number of lines, then reset the scroll bar.
-    setTimeout(() => {
-      if (memoryDumpRef.current) {
-        const div: HTMLDivElement = memoryDumpRef.current
-        const newHeight = div.scrollHeight
-        if (height !== newHeight) div.scrollTop = 0
-      }
-    }, 100)
   }
 
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
-  const offset = (memoryRange === MEMORY_RANGE.HGR1) ? 0x2000 : 0x4000
+  const offset = isHGR ? (memoryRange === MEMORY_RANGE.HGR1 ? 0x2000 : 0x4000) : 0
+  const memory = getMemoryRange()
 
   return (
     <div className="flex-column">
@@ -166,16 +105,6 @@ const MemoryDump = () => {
           userdata={0}
           isDisabled={() => false} />
       </span>
-      {!isHGR &&
-        <div className="debug-panel"
-          style={{
-            fontWeight: "900",
-            borderBottom: "1px solid #444",
-            marginBottom: "0", marginTop: "7px", paddingBottom: 0
-          }}>
-          {'      00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'}
-        </div>
-      }
       <div className="debug-panel"
         style={{
           width: '370px',
@@ -183,8 +112,7 @@ const MemoryDump = () => {
         }}
         ref={memoryDumpRef}
       >
-        {isHGR ? <MemoryTable memory={handleGetMemoryDump()} offset={offset} /> :
-          <div style={{ width: '100%', height: '100%', overflow: 'auto' }}>{getMemory()}</div>}
+        <MemoryTable memory={memory} isHGR={isHGR} offset={offset} scrollRow={scrollRow} />
       </div>
     </div>
   )

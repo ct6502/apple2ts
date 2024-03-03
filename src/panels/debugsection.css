@@ -287,3 +287,17 @@ td {
 .selected {
   background-color: #FF0000CC;
 }
+
+@keyframes highlight-anim {
+  0% {
+    background-color: initial;
+  }
+
+  50% {
+    background-color: yellow;
+  }
+
+  100% {
+    background-color: initial;
+  }
+}

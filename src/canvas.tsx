@@ -26,7 +26,8 @@ let height = 600
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
 const Apple2Canvas = (props: DisplayProps) => {
-  const { hgrview, setHgrview: setHgrview } = useGlobalContext()
+  const { updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
+    hgrview, setHgrview: setHgrview } = useGlobalContext()
   const [myInit, setMyInit] = useState(false)
   const [keyHandled, setKeyHandled] = useState(false)
   const [showhgrview, setShowhgrview] = useState(false)
@@ -240,9 +241,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     evt.buttons = event.button === 0 ? 0x10 : 0x11
     passMouseEvent(evt)
     if (handleGetOverrideHires()) {
-      if (lockHgrViewRef.current) {
-        lockHgrViewRef.current = false
-      }
+      lockHgrViewRef.current = !lockHgrViewRef.current
       handleNewHgrViewCoord(event.clientX, event.clientY)
       setHgrview(hgrviewRef.current)
     }
@@ -282,16 +281,6 @@ const Apple2Canvas = (props: DisplayProps) => {
     const scaled = scaleMouseEvent(event)
     handleNewHgrViewCoord(event.clientX, event.clientY)
     passMouseEvent(scaled)
-  }
-
-  const handleDoubleClick = () => {
-    if (handleGetOverrideHires() && myCanvas.current) {
-      lockHgrViewRef.current = true
-      const canvas = myCanvas.current as HTMLCanvasElement
-      // We won't get another refresh since we're locking the hgr viewbox,
-      // so manually reset our cursor.
-      canvas.style.cursor = "crosshair"
-    }
   }
 
   const drawBytes = (pixels: number[][]) => {
@@ -365,7 +354,6 @@ const Apple2Canvas = (props: DisplayProps) => {
         canvas.addEventListener('mousemove', handleMouseMove)
         canvas.addEventListener('mousedown', handleMouseDown)
         canvas.addEventListener('mouseup', handleMouseUp)
-        canvas.addEventListener('dblclick', handleDoubleClick)
         window.addEventListener("copy", () => { handleCopyToClipboard() })
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         window.addEventListener("paste", paste)
@@ -406,16 +394,15 @@ const Apple2Canvas = (props: DisplayProps) => {
         onKeyUp={handleKeyUp}
       /> : <span></span>)
 
-  if (handleGetOverrideHires()) {
-    if (hgrview[0] !== -1 && (myCanvas.current !== document.activeElement) &&
-      (hgrview[0] !== hgrviewLocal[0] || hgrview[1] !== hgrviewLocal[1])) {
+  if (handleGetOverrideHires() && updateHgr) {
+    setTimeout(() => { setUpdateHgr(false) }, 0)
+    if (hgrview[0] !== -1 && hgrview[0] !== hgrviewLocal[0] && hgrview[1] !== hgrviewLocal[1]) {
       setHgrviewLocal(hgrview)
       hgrviewRef.current = hgrview
       setShowhgrview(true)
     }
   }
 
-  const hgrView = showhgrview && formatHgrView()
   const cursor = handleGetShowMouse() ?
     ((showhgrview && !lockHgrViewRef.current) ? "none" : "crosshair") : "none"
 
@@ -439,7 +426,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         hidden={true}
         width={560} height={384} />
       {txt}
-      {hgrView}
+      {showhgrview && formatHgrView()}
     </span>
   )
 }

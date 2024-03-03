@@ -280,3 +280,23 @@ export const hiresLineToAddress = (pageOffset: number, line: number) => {
   return pageOffset + 40 * Math.trunc(line / 64) +
     1024 * (line % 8) + 128 * (Math.trunc(line / 8) & 7)
 }
+
+export const hiresAddressToLine = (addr: number) => {
+  const base = addr & 0x1FFF
+  // This give 0, 1, or 2 for the 3 different regions of the screen.
+  // (The Math.min clips the extra 8 screen holes at the end of the 3rd line)
+  const groupOf3 = Math.trunc((Math.min(base & 0x7F, 0x77)) / 40)
+  // This gives the smaller chunks of 8 lines each within the groups of 8.
+  const chunkOf8 = Math.trunc((base & 0x3FF) / 128)
+  // This gives the individual lines within each chunk of 8, which oddly
+  // enough have the largest address spacing of 0x400 between each line.
+  const individualLine = Math.trunc(base / 1024)
+  const result = 64 * groupOf3 + 8 * chunkOf8 + individualLine
+  return result
+}
+
+// for (let i = 0; i < 192; i++) {
+//   const addr = hiresLineToAddress(0x2000, i)
+//   const line = hiresAddressToLine(addr + 1)
+//   if (i !== line) console.log("ERROR")
+// }
