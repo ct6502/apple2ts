@@ -1,8 +1,10 @@
 import React, { KeyboardEvent, useRef } from "react";
 import {
+  handleGetBreakpoints,
   handleGetDisassembly,
   handleGetRunMode,
   handleGetState6502,
+  passBreakpoints,
   passSetDisassembleAddress
 } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -11,16 +13,13 @@ import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
 import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../emulator/utility/breakpoint";
+import { useGlobalContext } from "../globalcontext";
 
 const nlines = 40
 const bpOffset = 0
 
-type DisassemblyViewProps = {
-  breakpoints: BreakpointMap;
-  setBreakpoints: (breakpoints: BreakpointMap) => void;
-}
-
-const DisassemblyView = (props: DisassemblyViewProps) => {
+const DisassemblyView = () => {
+  const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const [lineHeight, setLineHeight] = React.useState(0)
   const [newScrollAddress, setNewScrollAddress] = React.useState(0)
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,18 +94,19 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
       if (line < 0 || line >= nlines) return
       const code = handleGetDisassembly().split('\n')[line]
       const addr = parseInt(code.slice(0, code.indexOf(':')), 16)
-      const bp: Breakpoint = new Breakpoint()
+      const bp = new Breakpoint()
       bp.address = addr
-      const breakpoints: BreakpointMap = new BreakpointMap(props.breakpoints);
+      const breakpoints = new BreakpointMap(handleGetBreakpoints())
       breakpoints.set(addr, bp)
-      props.setBreakpoints(breakpoints)
+      passBreakpoints(breakpoints)
+      setUpdateBreakpoint(updateBreakpoint + 1)
     }
   }
 
   const handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
     event.stopPropagation()
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: BreakpointMap = new BreakpointMap(props.breakpoints)
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
     const bp = breakpoints.get(addr)
     if (bp) {
       if (bp.disabled) {
@@ -114,7 +114,8 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
       } else {
         breakpoints.delete(addr)
       }
-      props.setBreakpoints(breakpoints)
+      passBreakpoints(breakpoints)
+      setUpdateBreakpoint(updateBreakpoint + 1)
     }
     if (fakePointRef.current) {
       (fakePointRef.current as HTMLDivElement).style.display = 'none'
@@ -175,20 +176,32 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
 
   const getOperand = (operand: string) => {
     const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
-    return (ops.length === 3) ? <span>{ops[0]}
-      <span style={{ color: "#3d5aff", cursor: "pointer" }}
-        onClick={() => {
-          passSetDisassembleAddress(parseInt(ops[1].slice(1), 16))
-        }}>{ops[1]}</span>
-      {ops[2]}</span> : <span>{ops[0]}     </span>
+    let title = ""
+    if (operand.includes(",X")) {
+      title = "X=" + toHex(handleGetState6502().XReg, 2)
+    } else if (operand.includes(",Y")) {
+      title = "Y=" + toHex(handleGetState6502().YReg, 2)
+    } else if (operand.startsWith("#$")) {
+      const value = parseInt(operand.slice(2), 16)
+      title = value.toString() + ' = ' + (value | 256).toString(2).slice(1)
+    }
+    if (ops.length === 3) {
+      return <span>{ops[0]}
+        <span style={{ color: "#3d5aff", cursor: "pointer" }}
+          onClick={() => {
+            passSetDisassembleAddress(parseInt(ops[1].slice(1), 16))
+          }}>{ops[1]}</span>
+        <span title={title}>{ops[2]}</span></span>
+    }
+    return <span title={title}>{(ops[0] + '        ').slice(0, 8)}</span>
   }
 
   const getChromacodedLine = (line: string) => {
     const hexcodes = line.slice(0, 16)
     const opcode = line.slice(16, 19)
     return <span className={borderStyle(opcode)}>{hexcodes}
-      <span className="disassembly-opcode">{opcode}</span>
-      {getOperand(line.slice(19))}</span>
+      <span className="disassembly-opcode">{opcode} </span>
+      {getOperand(line.slice(20))}</span>
   }
 
   const getDisassemblyDiv = () => {
@@ -211,8 +224,9 @@ const DisassemblyView = (props: DisassemblyViewProps) => {
     }, 0)
     // Put the breakpoints into an easier to digest array format.
     const bp: Array<Breakpoint> = []
+    const breakpoints = handleGetBreakpoints()
     for (let i = 0; i < nlines; i++) {
-      const bp1 = props.breakpoints.get(getAddress(disArray[i]))
+      const bp1 = breakpoints.get(getAddress(disArray[i]))
       if (bp1) {
         bp[i] = bp1
       }

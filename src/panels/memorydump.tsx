@@ -1,10 +1,14 @@
 import { useRef, useState } from "react"
 import { RUN_MODE, hiresAddressToLine } from "../emulator/utility/utility"
-import { handleGetAddressGetTable, handleGetMemoryDump, handleGetRunMode } from "../main2worker"
+import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passBreakpoints } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
 import { overrideHires } from "../graphics"
 import MemoryTable from "./memorytable"
+import { faCrosshairs } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { Breakpoint, BreakpointMap } from "../emulator/utility/breakpoint"
+import { useGlobalContext } from "../globalcontext"
 
 enum MEMORY_RANGE {
   CURRENT = "Current memory",
@@ -15,10 +19,12 @@ enum MEMORY_RANGE {
 }
 
 const MemoryDump = () => {
+  const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const memoryDumpRef = useRef(null)
   const [address, setAddress] = useState('')
   const [memoryRange, setMemoryRange] = useState(`${MEMORY_RANGE.CURRENT}`)
   const [scrollRow, setScrollRow] = useState(-1)
+  const [pickWatchpoint, setPickWatchpoint] = useState(false)
 
   const getMemoryRange = () => {
     const memory = handleGetMemoryDump()
@@ -81,6 +87,17 @@ const MemoryDump = () => {
     }
   }
 
+  const doPickWatchpoint = (addr: number) => {
+    setPickWatchpoint(false)
+    const bp = new Breakpoint()
+    bp.address = addr
+    bp.watchpoint = true
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
+    breakpoints.set(addr, bp)
+    passBreakpoints(breakpoints)
+    setUpdateBreakpoint(updateBreakpoint + 1)
+  }
+
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
@@ -90,7 +107,10 @@ const MemoryDump = () => {
   return (
     <div className="flex-column">
       <span className="flex-row"
-        style={{ pointerEvents: (ready ? 'auto' : 'none'), opacity: (ready ? 1 : 0.5) }}>
+        style={{
+          alignItems: "center",
+          pointerEvents: (ready ? 'auto' : 'none'), opacity: (ready ? 1 : 0.5)
+        }}>
         <input className="hex-field"
           type="text"
           placeholder="FFFF"
@@ -104,6 +124,12 @@ const MemoryDump = () => {
           setValue={handleSetMemoryRange}
           userdata={0}
           isDisabled={() => false} />
+        <button className={"push-button" + (pickWatchpoint ? ' button-active' : '')}
+          title="Set Watchpoint"
+          disabled={memory.length < 1}
+          onClick={() => setPickWatchpoint(!pickWatchpoint)}>
+          <FontAwesomeIcon icon={faCrosshairs} />
+        </button>
       </span>
       <div className="debug-panel"
         style={{
@@ -112,7 +138,10 @@ const MemoryDump = () => {
         }}
         ref={memoryDumpRef}
       >
-        <MemoryTable memory={memory} isHGR={isHGR} offset={offset} scrollRow={scrollRow} />
+        <MemoryTable memory={memory} isHGR={isHGR}
+          offset={offset} scrollRow={scrollRow}
+          pickWatchpoint={pickWatchpoint}
+          doPickWatchpoint={doPickWatchpoint} />
       </div>
     </div>
   )

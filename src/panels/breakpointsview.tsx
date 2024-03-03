@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { passSetDisassembleAddress } from "../main2worker";
+import { handleGetBreakpoints, passBreakpoints, passSetDisassembleAddress } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPencil as iconBreakpointEdit,
@@ -15,11 +15,10 @@ import { getLineOfDisassembly } from "./debugpanelutilities";
 import BreakpointEdit from "./breakpointedit";
 import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "../emulator/utility/breakpoint";
 import { TEST_DEBUG } from "../emulator/utility/utility";
+import { useGlobalContext } from "../globalcontext";
 
-const BreakpointsView = (props: {
-  breakpoints: BreakpointMap;
-  setBreakpoints: (breakpoints: BreakpointMap) => void
-}) => {
+const BreakpointsView = () => {
+  const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const x = window.outerWidth / 2 - 200
   const y = window.outerHeight / 2 - 200
   const [dialogPosition, setDialogPosition] = useState([x, y])
@@ -38,19 +37,21 @@ const BreakpointsView = (props: {
 
   const handleBreakpointClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: BreakpointMap = new BreakpointMap(props.breakpoints)
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
     const bp = breakpoints.get(addr)
     if (bp) {
       bp.disabled = !bp.disabled
-      props.setBreakpoints(breakpoints)
+      passBreakpoints(breakpoints)
+      setUpdateBreakpoint(updateBreakpoint + 1)
     }
   }
 
   const handleBreakpointDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: BreakpointMap = new BreakpointMap(props.breakpoints)
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
     if (breakpoints.delete(addr)) {
-      props.setBreakpoints(breakpoints)
+      passBreakpoints(breakpoints)
+      setUpdateBreakpoint(updateBreakpoint + 1)
     }
   }
 
@@ -61,12 +62,13 @@ const BreakpointsView = (props: {
   }
 
   const removeAllBreakpoints = () => {
-    props.setBreakpoints(new BreakpointMap())
+    passBreakpoints(new BreakpointMap())
+    setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
   const handleBreakpointEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
     const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
-    const breakpoints: BreakpointMap = new BreakpointMap(props.breakpoints)
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
     const bp = breakpoints.get(addr)
     if (bp) {
       // Save the original address. If it gets changed then
@@ -78,10 +80,10 @@ const BreakpointsView = (props: {
   }
 
   const saveBreakpoint = () => {
-    const breakpoints: BreakpointMap = new BreakpointMap(props.breakpoints)
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
     breakpoints.delete(breakpointEditAddress)
     breakpoints.set(breakpointEditValue.address, breakpointEditValue)
-    props.setBreakpoints(breakpoints)
+    passBreakpoints(breakpoints)
     setShowBreakpointEdit(false)
   }
 
@@ -102,6 +104,8 @@ const BreakpointsView = (props: {
     }
     return iconBreakpointEnabled
   }
+
+  const breakpoints = handleGetBreakpoints()
 
   return (
     <div className="round-rect-border short-panel">
@@ -132,30 +136,29 @@ const BreakpointsView = (props: {
             paddingLeft: "5pt",
             cursor: "pointer"
           }}>
-          {Array.from(props.breakpoints).map(([key, breakpoint]) => (
-            <div key={key}>
+          {Array.from(breakpoints.values() as Breakpoint[]).map((bp: Breakpoint) => (
+            <div key={bp.address}>
               <button className="breakpoint-pushbutton"
-                data-key={key}
+                data-key={bp.address}
                 onClick={(e) => { handleBreakpointClick(e) }}>
-                <FontAwesomeIcon className={getBreakpointStyle(breakpoint)}
+                <FontAwesomeIcon className={getBreakpointStyle(bp)}
                   style={{ paddingRight: "0" }}
-                  icon={getBreakpointIcon(breakpoint)} />
+                  icon={getBreakpointIcon(bp)} />
               </button>
               <button className="breakpoint-pushbutton"
-                data-key={key}
+                data-key={bp.address}
                 onClick={(e) => { handleBreakpointEdit(e) }}
                 disabled={false}>
                 <FontAwesomeIcon icon={iconBreakpointEdit} />
               </button>
               <button className="breakpoint-pushbutton"
-                data-key={key}
+                data-key={bp.address}
                 onClick={(e) => { handleBreakpointDelete(e) }}>
                 <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '1.3em' }} />
               </button>
-              <span data-key={key} onClick={handleAddressClick}>{getBreakpointString(breakpoint)}</span>
+              <span data-key={bp.address} onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
             </div>
-          )
-          )}
+          ))}
         </div>
         {showBreakpointEdit &&
           <BreakpointEdit breakpoint={breakpointEditValue}

@@ -32,6 +32,8 @@ export const passSetState6502 = (state: STATE6502) => {
 
 export const passBreakpoints = (breakpoints: BreakpointMap) => {
   doPostMessage(MSG_MAIN.BREAKPOINTS, breakpoints)
+  // Force the state right away, so the UI can update.
+  machineState.breakpoints = breakpoints
 }
 
 export const passStepInto = () => {
@@ -70,7 +72,7 @@ export const passColorMode = (mode: COLOR_MODE) => {
 }
 
 export const passCapsLock = (lock: boolean) => {
-  // Currently the emulator doesn't care about color mode.
+  // Currently the emulator doesn't care about caps lock.
   // Just set it directly on our machine state for later retrieval.
   // Somewhat roundabout but it keeps all the properties in one place.
   machineState.capsLock = lock
@@ -164,30 +166,31 @@ export const passSetDriveProps = (props: DriveProps) => {
 }
 
 let machineState: MachineState = {
-  runMode: RUN_MODE.IDLE,
-  s6502: default6502State(),
-  cpuSpeed: 0,
-  memSize: 128,
-  speedMode: 0,
-  isDebugging: false,
-  altChar: true,
-  noDelayMode: false,
-  colorMode: COLOR_MODE.COLOR,
-  capsLock: true,
-  textPage: new Uint8Array(1).fill(32),
-  lores: new Uint8Array(),
-  hires: new Uint8Array(),
-  debugDump: '',
-  memoryDump: new Uint8Array(),
   addressGetTable: [],
-  disassembly: '',
-  nextInstruction: '',
+  altChar: true,
+  breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
   canGoBackward: true,
   canGoForward: true,
+  capsLock: true,
+  colorMode: COLOR_MODE.COLOR,
+  cpuSpeed: 0,
+  debugDump: '',
+  disassembly: '',
+  hires: new Uint8Array(),
   iTempState: 0,
-  timeTravelThumbnails: new Array<TimeTravelThumbnail>,
+  isDebugging: false,
+  lores: new Uint8Array(),
+  memSize: 128,
+  memoryDump: new Uint8Array(),
+  nextInstruction: '',
+  noDelayMode: false,
+  runMode: RUN_MODE.IDLE,
+  s6502: default6502State(),
+  speedMode: 0,
+  textPage: new Uint8Array(1).fill(32),
+  timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -277,6 +280,10 @@ export const handleGetShowMouse = () => {
 
 export const handleGetRunMode = () => {
   return machineState.runMode
+}
+
+export const handleGetBreakpoints = () => {
+  return machineState.breakpoints
 }
 
 export const handleGetSpeedMode = () => {

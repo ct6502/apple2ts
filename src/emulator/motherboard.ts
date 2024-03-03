@@ -12,7 +12,7 @@ import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
 import { handleGameSetup } from "./games/game_mappings"
-import { clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
@@ -439,29 +439,30 @@ const doGetDisassembly = () => {
 
 const updateExternalMachineState = () => {
   const state: MachineState = {
-    runMode: cpuRunMode,
-    s6502: s6502,
-    cpuSpeed: cpuSpeed,
-    memSize: 0,
-    speedMode: speedMode,
-    isDebugging: isDebugging,
-    altChar: SWITCHES.ALTCHARSET.isSet,
-    noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
-    colorMode: COLOR_MODE.COLOR,  // ignored by main thread
-    capsLock: true,  // ignored by main thread
-    textPage: getTextPage(),
-    lores: getTextPage(true),
-    hires: getHires(),
-    debugDump: getDebugDump(),
-    memoryDump: getMemoryDump(),
     addressGetTable: addressGetTable,
-    disassembly: doGetDisassembly(),
-    nextInstruction: getInstruction(s6502.PC),
+    altChar: SWITCHES.ALTCHARSET.isSet,
+    breakpoints: breakpointMap,
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,
     canGoForward: getGoForwardIndex() >= 0,
+    capsLock: true,  // ignored by main thread
+    colorMode: COLOR_MODE.COLOR,  // ignored by main thread
+    cpuSpeed: cpuSpeed,
+    debugDump: getDebugDump(),
+    disassembly: doGetDisassembly(),
+    hires: getHires(),
     iTempState: iTempState,
+    isDebugging: isDebugging,
+    lores: getTextPage(true),
+    memSize: 0,
+    memoryDump: getMemoryDump(),
+    nextInstruction: getInstruction(s6502.PC),
+    noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
+    runMode: cpuRunMode,
+    s6502: s6502,
+    speedMode: speedMode,
+    textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
   }
   passMachineState(state)

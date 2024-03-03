@@ -1,3 +1,4 @@
+import { useRef } from "react"
 import { hiresLineToAddress, toHex } from "../emulator/utility/utility"
 import { useGlobalContext } from "../globalcontext"
 
@@ -6,10 +7,14 @@ type MemoryTableProps = {
   isHGR: boolean
   offset: number
   scrollRow: number
+  pickWatchpoint: boolean
+  doPickWatchpoint: (addr: number) => void
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
   const { hgrview: hgrview, setHgrview: setHgrview, setUpdateHgr: setUpdateHgr } = useGlobalContext()
+  const hgrviewLocal = useRef([-1, -1])
+
   if (props.memory.length <= 1) return '\n\n\n      *** Pause emulator to view memory ***'
 
   const convertMemoryToArray = (memory: Uint8Array, isHGR: boolean, offset: number) => {
@@ -66,6 +71,18 @@ const MemoryTable = (props: MemoryTableProps) => {
     const cell = e.target as HTMLTableCellElement
     const offset = getMemoryOffset(cell)
     if (offset[0] < 0) return
+    if (props.pickWatchpoint) {
+      let addr: number
+      addr = props.isHGR ?
+        hiresLineToAddress(props.offset, offset[1]) + offset[0] :
+        addr = 16 * offset[1] + offset[0] + props.offset
+      props.doPickWatchpoint(addr)
+      cell.style.animation = 'highlight-fast 1s'
+      setTimeout(() => {
+        cell.style.animation = ''
+      }, 2250)
+      return
+    }
     if (props.isHGR) {
       setHgrview(offset)
       setUpdateHgr(true)
@@ -98,7 +115,11 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   // Make sure we keep our selection up to date, especially if it was changed
   // by clicking on the canvas.
-  if (props.isHGR && hgrview[0] >= 0) {
+  if (props.isHGR && hgrview[0] >= 0 &&
+    hgrviewLocal.current[0] !== hgrview[0] &&
+    hgrviewLocal.current[1] !== hgrview[1]) {
+    hgrviewLocal.current[0] = hgrview[0]
+    hgrviewLocal.current[1] = hgrview[1]
     setTimeout(() => {
       const table = document.querySelector('table') as HTMLTableElement
       if (!table) return
@@ -128,7 +149,8 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   return (
-    <table onMouseDown={onMouseDown}
+    <table style={{ cursor: props.pickWatchpoint ? 'crosshair' : 'default' }}
+      onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>
         <tr>

@@ -67,7 +67,6 @@
 .program-counter {
   background-color: gray;
   opacity: 100%;
-  pointer-events: none;
   margin-left: -3px;
   padding-left: 3px;
   margin-right: 10px;
@@ -294,7 +293,21 @@ td {
   }
 
   50% {
-    background-color: yellow;
+    background-color: var(--highlight);
+  }
+
+  100% {
+    background-color: initial;
+  }
+}
+
+@keyframes highlight-fast {
+  0% {
+    background-color: var(--highlight);
+  }
+
+  50% {
+    background-color: var(--highlight);
   }
 
   100% {
