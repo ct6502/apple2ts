@@ -235,6 +235,23 @@
 
 .disassembly-opcode {
   color: var(--opcode);
+  font-weight: bold;
+}
+
+.disassembly-link {
+  color: #3d5aff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.disassembly-immediate {
+  color: var(--immediate);
+  font-weight: bold;
+}
+
+.disassembly-address {
+  color: var(--address);
+  font-weight: bold;
 }
 
 .disassembly-separator {

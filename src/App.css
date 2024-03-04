@@ -6,6 +6,8 @@
   --input-background: #eee;
   --opcode: black;
   --highlight: yellow;
+  --address: darkgreen;
+  --immediate: #646400;
 }
 
 body {

@@ -153,6 +153,8 @@ const DisplayApple2 = () => {
   document.body.style.setProperty('--button-active', colors.ACTIVE)
   document.body.style.setProperty('--input-background', colors.INPUT)
   document.body.style.setProperty('--opcode', colors.OPCODE)
+  document.body.style.setProperty('--address', colors.ADDRESS)
+  document.body.style.setProperty('--immediate', colors.IMMEDIATE)
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const canvasWidth = getCanvasSize()[0]

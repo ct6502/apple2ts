@@ -12,6 +12,8 @@ export const COLORS = {
     ACTIVE: '#898677',
     INPUT: '#eee',
     OPCODE: '#000000',
+    ADDRESS: '#006400',
+    IMMEDIATE: '#646400',
   },
   DARK: {
     TEXT: '#DDD',
@@ -20,6 +22,8 @@ export const COLORS = {
     ACTIVE: '#555',
     INPUT: '#444',
     OPCODE: '#dcdcaf',
+    ADDRESS: '#00C000',
+    IMMEDIATE: '#80FF00',
   }
 }
 

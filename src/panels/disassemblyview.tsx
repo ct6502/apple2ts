@@ -2,6 +2,7 @@ import React, { KeyboardEvent, useRef } from "react";
 import {
   handleGetBreakpoints,
   handleGetDisassembly,
+  handleGetMemoryDump,
   handleGetRunMode,
   handleGetState6502,
   passBreakpoints,
@@ -170,30 +171,72 @@ const DisassemblyView = () => {
 
   const borderStyle = (opcode: string) => {
     if ((["JMP", "RTS"]).includes(opcode)) return "disassembly-separator"
-    //    if ((["JSR"]).includes(opcode)) return "dashed 1px #444444"
     return ""
   }
 
-  const getOperand = (operand: string) => {
-    const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
-    let title = ""
-    if (operand.includes(",X")) {
-      title = "X=" + toHex(handleGetState6502().XReg, 2)
+  const getOperandTooltip = (operand: string, addr: number) => {
+    const memory = (addr >= 0) ? handleGetMemoryDump() : new Uint8Array()
+    if (memory.length <= 1) return ''
+    let title = ''
+    if (operand.includes(",X)")) {
+      const xreg = handleGetState6502().XReg
+      const addrInd = memory[addr + xreg] + 256 * memory[addr + xreg + 1]
+      title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(addr + xreg)}) => address = $${toHex(addrInd)}  value = ${toHex(memory[addrInd])}`
+    } else if (operand.includes("),Y")) {
+      const yreg = handleGetState6502().YReg
+      const addrInd = memory[addr] + 256 * memory[addr + 1]
+      const addrNew = addrInd + yreg
+      title = `address $${toHex(addrInd)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
+    } else if (operand.includes(",X")) {
+      const xreg = handleGetState6502().XReg
+      const addrNew = addr + xreg
+      title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
     } else if (operand.includes(",Y")) {
-      title = "Y=" + toHex(handleGetState6502().YReg, 2)
-    } else if (operand.startsWith("#$")) {
+      const yreg = handleGetState6502().YReg
+      const addrNew = addr + yreg
+      title = `address $${toHex(addr)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
+    } else if (operand.includes(")")) {
+      if (memory.length > 1) {
+        const addrInd = memory[addr] + 256 * memory[addr + 1]
+        title = `address = $${toHex(addrInd)}  value = ${toHex(memory[addrInd])}`
+      }
+    } else if (operand.includes("$")) {
+      if (memory.length > 1) {
+        title = 'value = $' + toHex(memory[addr])
+      }
+    }
+    return title
+  }
+
+  const getOperand = (opcode: string, operand: string) => {
+    const indirect = operand.includes(")")
+    if (["BPL", "BMI", "BVC", "BVS", "BCC",
+      "BCS", "BNE", "BEQ", "JSR", "JMP"].includes(opcode) && !indirect) {
+      const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
+      if (ops.length === 3) {
+        return <span>{ops[0]}
+          <span className="disassembly-link"
+            onClick={() => {
+              passSetDisassembleAddress(parseInt(ops[1].slice(1), 16))
+            }}>{ops[1]}</span>
+          <span>{ops[2]}</span></span>
+      }
+    }
+    let className = ""
+    let title = ""
+    if (operand.startsWith("#$")) {
       const value = parseInt(operand.slice(2), 16)
-      title = value.toString() + ' = ' + (value | 256).toString(2).slice(1)
+      title += value.toString() + ' = ' + (value | 256).toString(2).slice(1)
+      className = "disassembly-immediate"
+    } else {
+      const match = operand.match(/\$([0-9A-Fa-f]{2,4})/)
+      const addr = match ? parseInt(match[1], 16) : -1
+      if (addr >= 0) {
+        className = "disassembly-address"
+        title += getOperandTooltip(operand, addr)
+      }
     }
-    if (ops.length === 3) {
-      return <span>{ops[0]}
-        <span style={{ color: "#3d5aff", cursor: "pointer" }}
-          onClick={() => {
-            passSetDisassembleAddress(parseInt(ops[1].slice(1), 16))
-          }}>{ops[1]}</span>
-        <span title={title}>{ops[2]}</span></span>
-    }
-    return <span title={title}>{(ops[0] + '        ').slice(0, 8)}</span>
+    return <span title={title} className={className}>{(operand + '         ').slice(0, 9)}</span>
   }
 
   const getChromacodedLine = (line: string) => {
@@ -201,7 +244,7 @@ const DisassemblyView = () => {
     const opcode = line.slice(16, 19)
     return <span className={borderStyle(opcode)}>{hexcodes}
       <span className="disassembly-opcode">{opcode} </span>
-      {getOperand(line.slice(20))}</span>
+      {getOperand(opcode, line.slice(20))}</span>
   }
 
   const getDisassemblyDiv = () => {
