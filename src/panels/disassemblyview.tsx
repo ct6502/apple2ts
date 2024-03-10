@@ -180,17 +180,21 @@ const DisassemblyView = () => {
     let title = ''
     if (operand.includes(",X)")) {
       const xreg = handleGetState6502().XReg
-      const addrInd = memory[addr + xreg] + 256 * memory[addr + xreg + 1]
-      title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(addr + xreg)}) => address = $${toHex(addrInd)}  value = ${toHex(memory[addrInd])}`
+      // pre-indexing: add X to the address before finding the actual address
+      const preIndex = addr + xreg
+      const addrInd = memory[preIndex] + 256 * memory[preIndex + 1]
+      title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(preIndex)}) => address = $${toHex(addrInd)}  value = ${toHex(memory[addrInd])}`
     } else if (operand.includes("),Y")) {
       const yreg = handleGetState6502().YReg
+      // post-indexing: find the address from memory and then add Y
       const addrInd = memory[addr] + 256 * memory[addr + 1]
       const addrNew = addrInd + yreg
       title = `address $${toHex(addrInd)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
     } else if (operand.includes(",X")) {
       const xreg = handleGetState6502().XReg
       const addrNew = addr + xreg
-      title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
+      const value = memory[addrNew]
+      title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = ${toHex(value)}`
     } else if (operand.includes(",Y")) {
       const yreg = handleGetState6502().YReg
       const addrNew = addr + yreg
@@ -208,19 +212,34 @@ const DisassemblyView = () => {
     return title
   }
 
-  const getOperand = (opcode: string, operand: string) => {
-    const indirect = operand.includes(")")
-    if (["BPL", "BMI", "BVC", "BVS", "BCC",
-      "BCS", "BNE", "BEQ", "JSR", "JMP"].includes(opcode) && !indirect) {
-      const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
-      if (ops.length === 3) {
-        return <span>{ops[0]}
-          <span className="disassembly-link"
-            onClick={() => {
-              passSetDisassembleAddress(parseInt(ops[1].slice(1), 16))
-            }}>{ops[1]}</span>
-          <span>{ops[2]}</span></span>
+  const getJumpLink = (operand: string) => {
+    const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
+    let addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
+    if (ops.length === 3 && addr >= 0) {
+      if (ops[2].includes(')')) {
+        const memory = handleGetMemoryDump()
+        if (memory.length > 1) {
+          // pre-indexing: add X to the address before finding the JMP address
+          if (ops[2].includes(',X')) addr += handleGetState6502().XReg
+          addr = memory[addr] + 256 * memory[addr + 1]
+        }
       }
+      return <span>{ops[0]}
+        <span className="disassembly-link"
+          title={`$${toHex(addr)}`}
+          onClick={() => {
+            passSetDisassembleAddress(addr)
+          }}>{ops[1]}</span>
+        <span>{ops[2]}</span></span>
+    }
+    return null
+  }
+
+  const getOperand = (opcode: string, operand: string) => {
+    if (["BPL", "BMI", "BVC", "BVS", "BCC",
+      "BCS", "BNE", "BEQ", "JSR", "JMP"].includes(opcode)) {
+      const result = getJumpLink(operand)
+      if (result) return result
     }
     let className = ""
     let title = ""

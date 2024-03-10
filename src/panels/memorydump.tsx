@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { RUN_MODE, hiresAddressToLine } from "../emulator/utility/utility"
-import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passBreakpoints } from "../main2worker"
+import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passBreakpoints, passSetMemory } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
 import { overrideHires } from "../graphics"
@@ -98,11 +98,34 @@ const MemoryDump = () => {
     setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
+  const doSetMemory = (addr: number, value: number) => {
+    switch (memoryRange) {
+      case MEMORY_RANGE.CURRENT:
+        {
+          const page = addr >>> 8
+          const addressGetTable = handleGetAddressGetTable()
+          const shifted = addressGetTable[page]
+          addr = shifted + (addr & 255)
+        }
+        break
+      case MEMORY_RANGE.AUX:
+        addr += 0x10000
+        break
+      default:
+        // Address should work unchanged for MAIN and HGR1/HGR2
+        break
+    }
+    passSetMemory(addr, value)
+    // Trigger a UI refresh
+    setUpdateBreakpoint(updateBreakpoint + 1)
+  }
+
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
   const offset = isHGR ? (memoryRange === MEMORY_RANGE.HGR1 ? 0x2000 : 0x4000) : 0
   const memory = getMemoryRange()
+  const addressGetTable = memoryRange === MEMORY_RANGE.CURRENT ? handleGetAddressGetTable() : null
 
   return (
     <div className="flex-column">
@@ -139,9 +162,11 @@ const MemoryDump = () => {
         ref={memoryDumpRef}
       >
         <MemoryTable memory={memory} isHGR={isHGR}
+          addressGetTable={addressGetTable}
           offset={offset} scrollRow={scrollRow}
           pickWatchpoint={pickWatchpoint}
-          doPickWatchpoint={doPickWatchpoint} />
+          doPickWatchpoint={doPickWatchpoint}
+          doSetMemory={doSetMemory} />
       </div>
     </div>
   )

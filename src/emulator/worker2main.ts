@@ -10,7 +10,7 @@ import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
 import { receiveMidiData } from "./devices/passport/passport";
 import { receiveCommData } from "./devices/superserial/serial";
-import { doSetRAMWorks } from "./memory";
+import { doSetRAMWorks, memory } from "./memory";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -155,6 +155,11 @@ if (typeof self !== 'undefined') {
       case MSG_MAIN.SET_BINARY_BLOCK: {
         const memBlock = e.data.payload as SetMemoryBlock
         doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
+        break
+      }
+      case MSG_MAIN.SET_MEMORY: {
+        const setmem = e.data.payload
+        memory[setmem.address] = setmem.value
         break
       }
       case MSG_MAIN.COMM_DATA:

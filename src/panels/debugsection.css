@@ -247,11 +247,13 @@
 .disassembly-immediate {
   color: var(--immediate);
   font-weight: bold;
+  cursor: default;
 }
 
 .disassembly-address {
   color: var(--address);
   font-weight: bold;
+  cursor: default;
 }
 
 .disassembly-separator {
@@ -292,12 +294,17 @@ thead th::after {
 td {
   padding-left: 0.5ch;
   padding-right: 0.5ch;
+  text-align: left;
 }
 
 .memtable-addr {
   position: sticky;
   left: 0;
   background-color: var(--panel-background);
+}
+
+.memtable-readonly {
+  background-color: var(--button-active);
 }
 
 .selected {

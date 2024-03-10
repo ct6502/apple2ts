@@ -139,6 +139,10 @@ export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boole
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
 }
 
+export const passSetMemory = (address: number, value: number) => {
+  doPostMessage(MSG_MAIN.SET_MEMORY, {address, value})
+}
+
 export const passRxCommData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.COMM_DATA, data)
 }

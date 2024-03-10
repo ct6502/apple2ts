@@ -10,8 +10,8 @@ export const code = `
          LDA   ($04),Y
          LDA   ($04)
          JMP   $1234
-         JMP   ($1234)
-         JMP   ($1234,X)
+         JMP   ($0003)
+         JMP   ($0003,X)
          STA   $C0
          RTS
 `

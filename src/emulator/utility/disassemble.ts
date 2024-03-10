@@ -20,7 +20,7 @@ const getInstructionString = (addr: number, code: PCodeInstr,
     case 2: sLo = toHex(vLo); hex += ` ${sLo}   `; break
     case 3: sLo = toHex(vLo); sHi = toHex(vHi); hex += ` ${sLo} ${sHi}`; break
   }
-  const vRel = isBranchInstruction(code.name) ? toHex(decodeBranch(addr, vLo)) : sLo
+  const vRel = isBranchInstruction(code.name) ? toHex(decodeBranch(addr, vLo), 4) : sLo
   switch (code.mode) {
     case ADDR_MODE.IMPLIED: break  // BRK
     case ADDR_MODE.IMM: value = ` #$${sLo}`; break      // LDA #$01

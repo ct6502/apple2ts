@@ -4,11 +4,13 @@ import { useGlobalContext } from "../globalcontext"
 
 type MemoryTableProps = {
   memory: Uint8Array
+  addressGetTable: number[] | null
   isHGR: boolean
   offset: number
   scrollRow: number
   pickWatchpoint: boolean
   doPickWatchpoint: (addr: number) => void
+  doSetMemory: (address: number, value: number) => void
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
@@ -47,7 +49,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     const rawCol = Array.from(row.children).indexOf(cell) - 1
     const cellIndex = Math.min(rawCol, ncols - 3)
     if (rowIndex < 0 || cellIndex < 0) return [-1, -1]
-    return [cellIndex, rowIndex];
+    return [cellIndex, rowIndex]
   }
 
   const clearSelection = (table: HTMLTableElement) => {
@@ -81,6 +83,8 @@ const MemoryTable = (props: MemoryTableProps) => {
       setTimeout(() => {
         cell.style.animation = ''
       }, 2250)
+      // If we were picking a watchpoint, do not go into edit mode.
+      e.preventDefault()
       return
     }
     if (props.isHGR) {
@@ -97,7 +101,7 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   // This scrolling code is used with the HGR mode, where we want to scroll
   // both vertically and horizontally to keep the 2 x 8 selection box in view.
-  const scrollIntoView = (table: HTMLTableElement) => {
+  const scrollHgrIntoView = (table: HTMLTableElement) => {
     const cell1 = table.rows[hgrview[1] + 1].cells[hgrview[0] + 1]
     const cell2 = table.rows[hgrview[1] + 8].cells[hgrview[0] + 2]
     if (cell1 && cell2) {
@@ -113,6 +117,84 @@ const MemoryTable = (props: MemoryTableProps) => {
     }
   }
 
+  const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
+    const nextCell = table.rows[row].cells[col]
+    nextCell?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+    nextCell?.focus()
+  }
+
+  const handleKeyDown = (col: number, row: number, e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Use arrow keys to move from cell to cell
+    if (e.key.startsWith('Arrow')) {
+      e.preventDefault()
+      const cell = e.currentTarget
+      const table = cell.parentNode?.parentNode as HTMLTableElement
+      const nrows = table.rows.length
+      const ncols = table.rows[0].cells.length
+      if (e.key === 'ArrowUp') {
+        if (row < 1) return
+        row--
+      } else if (e.key === 'ArrowDown') {
+        if (row >= (nrows - 1)) return
+        row++
+      } else if (e.key === 'ArrowLeft') {
+        if (col < 1) return
+        col--
+      } else if (e.key === 'ArrowRight') {
+        if (col >= (ncols - 1)) return
+        col++
+      }
+      setNewFocus(table, col, row)
+    }
+  }
+
+  // When table cell comes into focus, select the text in it.
+  const handleFocus = (cell: HTMLTableCellElement) => {
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(cell);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  const handleInput = (col: number, row: number, cell: HTMLTableCellElement) => {
+    const newText = cell.textContent
+    if (!newText) return
+    const newvalue = newText.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 2)
+    cell.textContent = newvalue
+    if (newvalue.length === 1) {
+      // If we needed to replace the contents (e.g. to make uppercase),
+      // the cursor will unfortunately be placed at the beginning of the cell.
+      // To fix this, force the cursor to the end.
+      const range = document.createRange()
+      range.selectNodeContents(cell)
+      range.collapse(false) // false means collapse to the end
+      const selection = window.getSelection()
+      if (selection) {
+        selection.removeAllRanges()
+        selection.addRange(range)
+      }
+    } else if (newvalue.length === 2) {
+      // We're done editing. Set the new memory value and advance to next cell.
+      const addr = width * row + col - 1 + props.offset
+      const value = parseInt(newvalue, 16)
+      props.doSetMemory(addr, value)
+      props.memory[addr] = value
+      cell.textContent = newvalue
+      // Advance the selection to the next cell
+      const table = cell.parentNode?.parentNode as HTMLTableElement
+      const nrows = table.rows.length
+      const ncols = table.rows[0].cells.length
+      if (col < (ncols - 1)) {
+        col++
+      } else if (row < (nrows - 1)) {
+        row++
+        col = 1
+      }
+      setNewFocus(table, col, row)
+    }
+  }
+
   // Make sure we keep our selection up to date, especially if it was changed
   // by clicking on the canvas.
   if (props.isHGR && hgrview[0] >= 0 &&
@@ -125,12 +207,17 @@ const MemoryTable = (props: MemoryTableProps) => {
       if (!table) return
       clearSelection(table)
       setSelection(hgrview, table)
-      scrollIntoView(table)
+      scrollHgrIntoView(table)
     }, 10)
   }
 
   const width = props.isHGR ? 40 : 16
   const rows = convertMemoryToArray(props.memory, props.isHGR, props.offset)
+  const isEditable = (col: number, row: number) => {
+    if (col === 0) return false
+    if (!props.addressGetTable) return true
+    return props.addressGetTable[Math.floor(row / 16)] < 0x20000
+  }
 
   // This scrolling code is used by the higher-level MemoryDump component to
   // scroll to a specific row when the address field is changed.
@@ -159,10 +246,16 @@ const MemoryTable = (props: MemoryTableProps) => {
         </tr>
       </thead>
       <tbody>
-        {rows.map((row, i) => (
-          <tr key={i}>
-            {row.map((cell, j) => (
-              <td key={j} className={(j === 0) ? 'memtable-addr' : ''}>
+        {rows.map((row, j) => (
+          <tr key={j}>
+            {row.map((cell, i) => (
+              <td key={i}
+                contentEditable={isEditable(i, j)}
+                suppressContentEditableWarning={true}
+                onKeyDown={(e) => handleKeyDown(i, j, e)}
+                onInput={(e) => handleInput(i, j, e.currentTarget)}
+                onFocus={(e) => handleFocus(e.currentTarget)}
+                className={(i === 0) ? 'memtable-addr' : (isEditable(i, j) ? '' : 'memtable-readonly')}>
                 {cell}
               </td>
             ))}
