@@ -7,10 +7,11 @@ import { changeMockingboardMode, getMockingboardMode, getMockingboardName } from
 
 export const MockingboardWaveform = () => {
   const [mockOpen, setMockOpen] = React.useState<boolean>(false)
-  const [position, setPosition] = React.useState<{x: number, y: number}>({x: 0, y: 0})
+  const [position, setPosition] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
   const handleMockClick = (event: React.MouseEvent) => {
-    setPosition({x: event.clientX, y: event.clientY})
+    const y = Math.min(event.clientY, window.innerHeight - 200)
+    setPosition({ x: event.clientX, y: y })
     setMockOpen(true);
   }
 
@@ -23,22 +24,22 @@ export const MockingboardWaveform = () => {
     <span>
       <button
         id="basic-button"
-        className="pushButton"
+        className="push-button"
         title="Mockingboard wave form"
         onClick={handleMockClick}
       >
-        <FontAwesomeIcon icon={faWaveSquare}/>
+        <FontAwesomeIcon icon={faWaveSquare} />
       </button>
       {mockOpen &&
         <div className="modal-overlay"
-          style={{backgroundColor: 'rgba(0, 0, 0, 0)'}}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
           onClick={() => handleMockClose()}>
-          <div className="floating-dialog flex-column"
-            style={{backgroundColor: 'white', left: position.x, top: position.y}}>
+          <div className="floating-dialog flex-column droplist-option"
+            style={{ left: position.x, top: position.y }}>
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div style={{padding: '5px', cursor: 'pointer'}}
+              <div className="droplist-option" style={{ padding: '5px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
                 key={i} onClick={() => handleMockClose(i)}>
                 {i === getMockingboardMode() ? '\u2714\u2009' : '\u2003'}{getMockingboardName(i)}
               </div>))}

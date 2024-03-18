@@ -21,6 +21,8 @@ declare module "*.hdv" {
   export = value;
 }
 
+type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
@@ -28,7 +30,7 @@ interface PCodeFunc {
 interface PCodeInstr {
     name: string
     pcode: number,
-    mode: MODE
+    mode: number
     bytes: number
     execute: PCodeFunc
 }
@@ -51,43 +53,49 @@ type Apple2SaveState = {
   memory: string
 }
 
+type UpdateDisplay = (speed = 0, helptext = '') => void
+
 type DisplayProps = {
-  runMode: RUN_MODE,
   speed: number,
-  myCanvas: React.RefObject<HTMLCanvasElement>,
-  speedCheck: boolean,
-  uppercase: boolean,
-  useArrowKeysAsJoystick: boolean,
-  colorMode: COLOR_MODE,
-  doDebug: boolean,
-  handleDebugChange: (enable: boolean) => void,
-  handleSpeedChange: (enable: boolean) => void,
-  handleColorChange: (mode: COLOR_MODE) => void,
-  handleCopyToClipboard: () => void,
-  handleUpperCaseChange: (enable: boolean) => void,
-  handleUseArrowKeyJoystick: (enable: boolean) => void,
-  handleFileOpen: () => void,
-  handleFileSave: (withSnapshots: boolean) => void,
+  renderCount: number,
+  ctrlKeyMode: number,
+  openAppleKeyMode: number,
+  closedAppleKeyMode: number,
+  showFileOpenDialog: {show: boolean, drive: number},
+  darkMode: boolean,
+  setDarkMode: (darkMode: boolean) => void,
+  updateDisplay: UpdateDisplay,
+  handleCtrlDown: (mode: number) => void,
+  handleOpenAppleDown: (mode: number) => void,
+  handleClosedAppleDown: (mode: number) => void,
+  setShowFileOpenDialog: (show: boolean, drive: number) => void,
 }
 
 type MachineState = {
-  runMode: number,
-  s6502: STATE6502,
-  speed: number,
+  addressGetTable: number[],
   altChar: boolean,
-  noDelayMode: boolean,
-  textPage: Uint8Array,
-  lores: Uint8Array,
-  hires: Uint8Array,
-  debugDump: string,
-  disassembly: string,
-  nextInstruction: string,
+  breakpoints: BreakpointMap,
   button0: boolean,
   button1: boolean,
   canGoBackward: boolean,
   canGoForward: boolean,
-  maxState: number,
+  capsLock: boolean,
+  colorMode: COLOR_MODE,
+  cpuSpeed: number,
+  debugDump: string,
+  disassembly: string,
+  hires: Uint8Array,
   iTempState: number,
+  isDebugging: boolean,
+  lores: Uint8Array,
+  memSize: number,
+  memoryDump: Uint8Array,
+  nextInstruction: string,
+  noDelayMode: boolean,
+  runMode: number,
+  s6502: STATE6502,
+  speedMode: number,
+  textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>
 }
 
@@ -126,22 +134,24 @@ type DriveSaveState = {
 type DisplaySaveState = {
   name: string,
   date: string,
-  help: string,
   colorMode: number,
-  uppercase: boolean,
+  capsLock: boolean,
   audioEnable: boolean,
-  mockingboardMode: number
+  mockingboardMode: number,
+  speedMode: number,
 }
 
 type EmulatorSaveState = {
   emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
+  thumbnail: string,
   snapshots: Array<EmulatorSaveState> | null
 }
 
 type TimeTravelThumbnail = {
-  s6502: STATE6502
+  s6502: STATE6502,
+  thumbnail: string
 }
 
 type SetMemoryBlock = {
@@ -198,4 +208,24 @@ type MockingboardSound = {
   slot: number,
   chip: number,
   params: number[]
+}
+
+// This LaunchParams and LaunchQueue are part of the Web App Launch Handler API.
+// Needed to add my own types to avoid using "any".
+type LaunchParams = {
+  files: FileSystemFileHandle[]
+}
+type LaunchQueue = {
+  setConsumer: (consumer: (launchParams: LaunchParams) => Promise<void>) => void
+}
+
+interface MemoryBank {
+  name: string;
+  min: number;
+  max: number;
+  enabled: (addr = 0) => boolean;
+}
+
+interface MemoryBanks {
+  [key: string]: MemoryBank;
 }

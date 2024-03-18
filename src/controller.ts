@@ -1,4 +1,4 @@
-import { doPlayDriveSound } from "./devices/diskinterface"
+import { doPlayDriveSound } from "./devices/drivesounds"
 import { DRIVE, RUN_MODE } from "./emulator/utility/utility"
 import { passSetRunMode, passSetDisassembleAddress } from "./main2worker"
 

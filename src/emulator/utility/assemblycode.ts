@@ -1,5 +1,23 @@
 export const code = `
          ORG   $300
+         LDA   #$FE
+         LDA   $01
+         LDA   $A0,X
+         LDA   $1234
+         LDA   $1234,X
+         LDA   $1234,Y
+         LDA   ($04,X)
+         LDA   ($04),Y
+         LDA   ($04)
+         JMP   $1234
+         JMP   ($0003)
+         JMP   ($0003,X)
+         STA   $C0
+         RTS
+`
+
+export const codeOrig = `
+         ORG   $300
 FREQ     EQU   $350
 PLSWIDTH EQU   $352
 

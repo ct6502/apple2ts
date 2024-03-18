@@ -1,7 +1,7 @@
 import { doSetRunMode,
-  doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
+  doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches } from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -10,6 +10,7 @@ import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
 import { receiveMidiData } from "./devices/passport/passport";
 import { receiveCommData } from "./devices/superserial/serial";
+import { doSetRAMWorks, memory } from "./memory";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -18,8 +19,7 @@ import { receiveCommData } from "./devices/superserial/serial";
 declare const self: DedicatedWorkerGlobalScope;
 export {};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const doPostMessage = (msg: MSG_WORKER, payload: any) => {
+const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
   self.postMessage({msg, payload});
 }
 
@@ -67,6 +67,10 @@ export const passTxMidiData = (data: Uint8Array) => {
   doPostMessage(MSG_WORKER.MIDI_DATA, data)
 }
 
+export const passRequestThumbnail = (PC: number) => {
+  doPostMessage(MSG_WORKER.REQUEST_THUMBNAIL, PC)
+}
+
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
 if (typeof self !== 'undefined') {
@@ -79,7 +83,6 @@ if (typeof self !== 'undefined') {
         doSetState6502(e.data.payload as STATE6502)
         break
       case MSG_MAIN.DEBUG:
-  //      doSetDebug(e.data.payload)
         doSetIsDebugging(e.data.payload)
         break
       case MSG_MAIN.DISASSEMBLE_ADDR:
@@ -98,7 +101,7 @@ if (typeof self !== 'undefined') {
         doStepOut()
         break
       case MSG_MAIN.SPEED:
-        doSetNormalSpeed(e.data.payload)
+        doSetSpeedMode(e.data.payload as number)
         break
       case MSG_MAIN.TIME_TRAVEL_STEP:
         if (e.data.payload === "FORWARD") {
@@ -113,8 +116,11 @@ if (typeof self !== 'undefined') {
       case MSG_MAIN.TIME_TRAVEL_SNAPSHOT:
         doTakeSnapshot()
         break
-        case MSG_MAIN.RESTORE_STATE:
-        doRestoreSaveState(e.data.payload as EmulatorSaveState)
+      case MSG_MAIN.THUMBNAIL_IMAGE:
+        doSetThumbnailImage(e.data.payload as string)
+        break
+      case MSG_MAIN.RESTORE_STATE:
+        doRestoreSaveState(e.data.payload as EmulatorSaveState, true)
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload)
@@ -123,6 +129,7 @@ if (typeof self !== 'undefined') {
         MouseCardEvent(e.data.payload)
         break
       case MSG_MAIN.PASTE_TEXT:
+        doSetPastedText(e.data.payload as string)
         sendPastedText(e.data.payload)
         break
       case MSG_MAIN.APPLE_PRESS:
@@ -150,11 +157,22 @@ if (typeof self !== 'undefined') {
         doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
         break
       }
+      case MSG_MAIN.SET_MEMORY: {
+        const setmem = e.data.payload
+        memory[setmem.address] = setmem.value
+        break
+      }
       case MSG_MAIN.COMM_DATA:
         receiveCommData(e.data.payload)
         break
       case MSG_MAIN.MIDI_DATA:
         receiveMidiData(e.data.payload)
+        break
+      case MSG_MAIN.RAMWORKS:
+        doSetRAMWorks(e.data.payload as boolean)
+        break
+      case MSG_MAIN.SOFTSWITCHES:
+        forceSoftSwitches(e.data.payload)
         break
       default:
         console.error(`worker2main: unhandled msg: ${e.data.msg}`)

@@ -5,7 +5,7 @@ import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
 import { isDebugging, inVBL } from "./motherboard";
-import { toHex } from "./utility/utility";
+import { hiresLineToAddress, toHex } from "./utility/utility";
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 
 // 0x00000: main memory
@@ -17,13 +17,15 @@ import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
 const RAMWorksSize = (1024-64) // in K 256, 512, 1024, 4096, 8192
-const RAMWorksMaxBank = RAMWorksSize / 64
-export const memory = (new Uint8Array(0x27F00 + RAMWorksMaxBank*0x10000)).fill(0)
+// Start out with RAMWorks turned off by default.
+let RAMWorksMaxBank = 0
+const BaseMachineMemory = 0x27F00
+export let memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
 // Include one extra slot, to avoid needing memory checks for > 65535.
-const addressGetTable = (new Array<number>(257)).fill(0)
+export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 
 const AUXindex = 0x100
@@ -37,6 +39,26 @@ const SLOTC8start = 256 * SLOTC8index
 const AUXstart = 256 * AUXindex
 let   C800Slot = 0
 let   RAMWorksBankIndex = 0
+
+export const doSetRAMWorks = (set: boolean) => {
+  if (set) {
+    // nothing to do?
+    if (RAMWorksMaxBank > 0) return
+    RAMWorksMaxBank = RAMWorksSize / 64
+    // Reallocate memory and copy the old memory
+    const memtemp = memory.slice(0, BaseMachineMemory)
+    memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
+    memory.set(memtemp)
+    memory.fill(0, BaseMachineMemory, BaseMachineMemory + RAMWorksMaxBank*0x10000)
+  } else {
+    // nothing to do?
+    if (RAMWorksMaxBank === 0) return
+    RAMWorksMaxBank = 0
+    RAMWorksBankIndex = 0
+    // Get rid of the RAMWorks memory.
+    memory = memory.slice(0, BaseMachineMemory)
+  }
+}
 
 const updateMainAuxMemoryTable = () => {
   const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
@@ -113,7 +135,7 @@ const slotIsActive = (slot: number) => {
 
 // Below description modified from AppleWin source
 //
-// INTC8ROM: Unreadable soft switch (UTAIIe:5-28)
+// INTC8ROM: Unreadable soft switch (Sather, UTAIIe:5-28)
 // . Set:   On access to $C3XX with SLOTC3ROM reset
 //			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
 //			   an access is made to $CFFF or until the MMU detects a system reset."
@@ -259,7 +281,7 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
 }
 
 export const memoryReset = () => {
-  memory.fill(0xFF, 0, 0x1FFFF)
+  memory.fill(0xFF, 0, 0x20000)
   const whichROM = isDebugging ? edmBase64 : romBase64
   const rom64 = whichROM.replace(/\n/g, "")
   const rom = new Uint8Array(
@@ -481,8 +503,7 @@ export const getHires = () => {
     const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
     const hgrPage = new Uint8Array(80 * nlines)
     for (let j = 0; j < nlines; j++) {
-      const addr = pageOffset + 40 * Math.trunc(j / 64) +
-        1024 * (j % 8) + 128 * (Math.trunc(j / 8) & 7)
+      const addr = hiresLineToAddress(pageOffset, j)
       for (let i = 0; i < 40; i++) {
         hgrPage[j * 80 + 2 * i + 1] = memory[addr + i]
         hgrPage[j * 80 + 2 * i] = memory[AUXstart + addr + i]
@@ -533,3 +554,79 @@ export const getZeroPage = () => {
   }
   return status.join('\n')
 }
+
+export const getBaseMemory = () => {
+  return memory.slice(0, BaseMachineMemory)
+}
+
+// Each memory bank object has a human-readable name, a min/max address range
+// where the bank is valid, and a function to determine if the bank is enabled.
+export const MEMORY_BANKS: MemoryBanks = {}
+
+// Should never be invoked but we need it for the droplist in the Edit Breakpoint dialog.
+MEMORY_BANKS[""] = {name: "Any", min: 0, max: 0xFFFF, enabled: () => {return true}}
+
+MEMORY_BANKS["MAIN"] = {name: "Main RAM ($0 - $FFFF)", min: 0, max: 0xFFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xD000) {
+      // We are not using our AUX card and we are using bank-switched RAM
+      return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
+    } else if (addr >= 0x200) {
+      // Just look at our regular Main/Aux switch
+      return !SWITCHES.RAMRD.isSet
+    }
+    // For $0-$1FF, look at the AUX ALTZP switch
+    return !SWITCHES.ALTZP.isSet}
+}
+
+MEMORY_BANKS["AUX"] = {name: "Auxiliary RAM ($0 - $FFFF)", min: 0x0000, max: 0xFFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xD000) {
+      // We are using our AUX card and we are also using bank-switched RAM
+      return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
+    } else if (addr >= 0x200) {
+      // Just look at our regular Main/Aux switch
+      return SWITCHES.RAMRD.isSet
+    }
+    // For $0-$1FF, look at the AUX ALTZP switch
+    return SWITCHES.ALTZP.isSet}
+}
+
+MEMORY_BANKS["ROM"] = {name: "ROM ($D000 - $FFFF)", min: 0xD000, max: 0xFFFF,
+  enabled: () => {return !SWITCHES.BSRREADRAM.isSet}}
+
+MEMORY_BANKS["MAIN-DXXX-1"] = {name: "Main D000 Bank 1 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => { return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }}
+
+MEMORY_BANKS["MAIN-DXXX-2"] = {name: "Main D000 Bank 2 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => {return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}}
+
+MEMORY_BANKS["AUX-DXXX-1"] = {name: "Aux D000 Bank 1 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => { return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }}
+
+MEMORY_BANKS["AUX-DXXX-2"] = {name: "Aux D000 Bank 2 ($D000 - $DFFF)", min: 0xD000, max: 0xDFFF,
+  enabled: () => {return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}}
+
+MEMORY_BANKS["CXXX-ROM"] = {name: "Internal ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xC300 && addr <= 0xC3FF) {
+      return SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet
+    } else if (addr >= 0xC800) {
+      return SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet
+    }
+    return SWITCHES.INTCXROM.isSet}
+}
+
+MEMORY_BANKS["CXXX-CARD"] = {name: "Peripheral Card ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF,
+  enabled: (addr = 0) => {
+    if (addr >= 0xC300 && addr <= 0xC3FF) {
+      return SWITCHES.INTCXROM.isSet ? false : SWITCHES.SLOTC3ROM.isSet
+    } else if (addr >= 0xC800) {
+      // Both switches need to be off for addresses $C800-$CFFF to come from cards
+      return !SWITCHES.INTCXROM.isSet && !SWITCHES.INTC8ROM.isSet
+    }
+    return !SWITCHES.INTCXROM.isSet}
+}
+
+export const MemoryBankKeys = Object.keys(MEMORY_BANKS);
+export const MemoryBankNames: string[] = Object.values(MEMORY_BANKS).map(bank => bank.name);

@@ -1,88 +1,116 @@
-import React from "react";
-import "./debugpanel.css"
-import { handleGetMaxState,
+import React, { useRef } from "react";
+import {
   handleGetTimeTravelThumbnails,
-  handleGetTempStateIndex, 
-  passTimeTravelIndex} from "../main2worker";
-import { toHex } from "../emulator/utility/utility";
+  handleGetTempStateIndex,
+  passTimeTravelIndex,
+  passSetRunMode
+} from "../main2worker";
+import { RUN_MODE, toHex } from "../emulator/utility/utility";
 const clock = 1020488
 
-class TimeTravelPanel extends React.Component<object, object>
-{
-  stateThumbRef = React.createRef<HTMLDivElement>()
-  prevThumbnails = ''
+const TimeTravelPanel = () => {
+  const stateThumbRef = useRef(null)
 
-  convertTime(cycleCount: number) {
+  const convertTime = (cycleCount: number) => {
     const t = cycleCount / clock
     const min = Math.floor(t / 60)
     const sec = ("0" + (t - 60 * min).toFixed(2)).slice(-5)
     return `${("00" + min.toFixed()).slice(-3)}:${sec}`
   }
 
-  getTimeTravelThumbnails = () => {
-    const maxState = handleGetMaxState()
-    if (maxState < 1) return ''
+  const getTimeTravelThumbnails = () => {
+    const iTempState = handleGetTempStateIndex()
     const thumbnails = handleGetTimeTravelThumbnails()
-    let result = ''
+    let thumbnailText = ''
+    const thumbImage = (iTempState >= 0 && thumbnails.length > 0) ?
+      <img src={`${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}`} /> : <></>
     for (let i = 0; i < thumbnails.length; i++) {
-      const time = this.convertTime(thumbnails[i].s6502.cycleCount)
-      result += `t=${time} c=${thumbnails[i].s6502.cycleCount} PC=${toHex(thumbnails[i].s6502.PC)}\n`
+      const time = convertTime(thumbnails[i].s6502.cycleCount)
+      thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`
     }
-    if (result !== this.prevThumbnails) {
-      setTimeout(() => {
-        const lineToScrollTo = document.getElementById('tempStateIndex')
-        if (lineToScrollTo && this.stateThumbRef && this.stateThumbRef.current) {
-          // Calculate the scroll position to make the paragraph visible
-          const containerRect = this.stateThumbRef.current.getBoundingClientRect()
-          const targetRect = lineToScrollTo.getBoundingClientRect()
-          const isTargetAboveViewport = targetRect.top < containerRect.top;
-          const isTargetBelowViewport = targetRect.bottom > containerRect.bottom;
-          if (isTargetAboveViewport || isTargetBelowViewport) {
-            const scrollTop = targetRect.top - containerRect.top + this.stateThumbRef.current.scrollTop
-            this.stateThumbRef.current.scrollTop = scrollTop
-          }
+    // Make sure our new snapshot is visible in the scroll range
+    setTimeout(() => {
+      const lineToScrollTo = document.getElementById('tempStateIndex')
+      if (lineToScrollTo && stateThumbRef && stateThumbRef.current) {
+        const div: HTMLDivElement = stateThumbRef.current
+        // Calculate the scroll position to make the paragraph visible
+        const containerRect = div.getBoundingClientRect()
+        const targetRect = lineToScrollTo.getBoundingClientRect()
+        const isTargetAboveViewport = targetRect.top < containerRect.top;
+        const isTargetBelowViewport = targetRect.bottom > containerRect.bottom;
+        if (isTargetAboveViewport || isTargetBelowViewport) {
+          const scrollTop = targetRect.top - containerRect.top + div.scrollTop
+          div.scrollTop = scrollTop
         }
-      }, 50)
-    }
-    this.prevThumbnails = result
-    return result
+      }
+    }, 50)
+    return { iTempState, thumbnailStrings: thumbnailText.split('\n'), thumbImage }
   }
 
-  selectStateLine = (index: number) => {
+  const selectStateLine = (index: number) => {
     passTimeTravelIndex(index)
   }
 
-  render() {
-    const iTempState = handleGetTempStateIndex()
-    let timeTravelThumbnails = <></>
-    const thumb = this.getTimeTravelThumbnails().split('\n')
-    if (thumb.length > 1) {
-      timeTravelThumbnails = <>{thumb.map((line, index) => (
-        <div key={index}
-          id={index === iTempState ? "tempStateIndex" : ""}
-          className="stateLine"
-          onClick={() => this.selectStateLine(index)}>
-          {line}
-          {(index === iTempState) && <div className="highlightLine"></div>}
-        </div>
-        ))}
-      </>
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault()  // suppress normal scroll events
+      const iTempState = handleGetTempStateIndex()
+      const thumbnails = handleGetTimeTravelThumbnails()
+      let index = iTempState
+      const delta = e.metaKey ? 100 : (e.ctrlKey ? 10 : 1)
+      index = (e.key === 'ArrowUp') ? index - delta : index + delta
+      index = Math.max(0, Math.min(thumbnails.length - 1, index))
+      if (index !== iTempState) {
+        passTimeTravelIndex(index)
+      }
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      passSetRunMode(RUN_MODE.RUNNING)
     }
-    return (
-      <div className="roundRectBorder">
-        <p className="defaultFont panelTitle bgColor">Time Travel Snapshots</p>
-        <div ref={this.stateThumbRef} className="debug-panel small-mono-text"
+  }
+
+  let timeTravelThumbnails = <></>
+  const { iTempState, thumbnailStrings, thumbImage } = getTimeTravelThumbnails()
+  if (thumbnailStrings.length > 1) {
+    timeTravelThumbnails = <>{thumbnailStrings.map((line, index) => (
+      <div key={index}
+        id={index === iTempState ? "tempStateIndex" : ""}
+        className="stateLine"
+        onClick={() => selectStateLine(index)}>
+        {line}
+        {(index === iTempState) && <div className="highlight-line"></div>}
+      </div>
+    ))}
+    </>
+  }
+  // Need to set tabIndex={-1} on the div to get onKeyDown to work.
+  // Could change to tabIndex={0} to make the div part of the tab order.
+  return (
+    <div className="round-rect-border short-panel">
+      <div className="bigger-font">Time Travel Snapshots</div>
+      <div className="flex-row">
+        <div ref={stateThumbRef} className="thinBorder debug-panel"
+          onKeyDown={(e) => handleKeyDown(e)}
+          tabIndex={-1}
           style={{
-            width: '330px', // Set the width to your desired value
-            height: `150pt`, // Set the height to your desired value
+            width: '15em',
+            height: `130pt`,
             overflow: 'auto',
             cursor: 'pointer',
+            userSelect: 'none',
           }}>
           {timeTravelThumbnails}
         </div>
+        <div
+          style={{
+            marginTop: '30px',
+            marginLeft: '5px',
+          }}>
+          {thumbImage}
+        </div>
       </div>
-    )
-  }
+    </div>
+  )
 }
 
-export default TimeTravelPanel;
+export default TimeTravelPanel

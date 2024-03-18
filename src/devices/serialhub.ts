@@ -1,4 +1,4 @@
-import { receivePrinterData } from "./imagewriter"
+import { receivePrinterData } from "./iwii"
 import { passRxCommData } from "../main2worker"
 
 let wsSupported = ("serial" in navigator);

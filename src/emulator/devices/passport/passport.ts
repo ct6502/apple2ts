@@ -18,6 +18,7 @@ let acia: MC6850
 
 let prevCycleCount = 0
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const cycleCountCallback = (slot: number) => {
   if (prevCycleCount)
   {
@@ -79,12 +80,15 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       T3LSB:        0x07, 
       ACIASTATCTRL: 0x08,
       ACIADATA:     0x09,
-      DRUMSET:      0x0e,
-      DRUMCLEAR:    0x0f,
+      SDMIDICTRL:   0x0C, // SD MIDI ][+ Card uses these registers in addition to 08,09
+      SDMIDIDATA:   0x0D, //             to access ACIA.  Confirmed by Ian Kim.
+      DRUMSET:      0x0E,
+      DRUMCLEAR:    0x0F,
   }
 
   let result = -1
   switch (addr & 0x0f) {
+    case REG.SDMIDIDATA:
     case REG.ACIADATA:
         if(val >= 0)
         {
@@ -98,6 +102,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
         }
         break
 
+    case REG.SDMIDICTRL:
     case REG.ACIASTATCTRL:
         if(val >= 0)
         {
@@ -120,7 +125,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
       {
-        console.log("Read Timer Control1: error")
+        //console.log("Read Timer Control1: error")
         result = 0x00
       }
       break;

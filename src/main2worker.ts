@@ -1,34 +1,25 @@
-import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State } from "./emulator/utility/utility"
-import { doPlayDriveSound } from "./devices/diskinterface"
+import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE } from "./emulator/utility/utility"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
-import { setShowMouse } from "./canvas"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveCommData } from "./devices/serialhub"
 import { receiveMidiData } from "./devices/midiinterface"
-import DisplayApple2 from "./display"
-import { Breakpoints } from "./panels/breakpoint"
+import { BreakpointMap } from "./emulator/utility/breakpoint"
+import { doPlayDriveSound } from "./devices/drivesounds"
+import { copyCanvas } from "./copycanvas"
+import { doSetDriveProps } from "./devices/driveprops"
 
 let worker: Worker | null = null
 
 let saveStateCallback: (saveState: EmulatorSaveState) => void
 
-let display: DisplayApple2
-export const updateDisplay = (speed?: number, helptext?: string) => {
-  display.updateDisplay(speed, helptext)
-}
-export const setDisplay = (displayIn: DisplayApple2) => {
-  display = displayIn
+export const setMain2Worker = (workerIn: Worker) => {
+  worker = workerIn
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const doPostMessage = (msg: MSG_MAIN, payload: any) => {
-  if (!worker) {
-    worker = new Worker(new URL('./emulator/worker2main', import.meta.url), {type:"module"})
-    worker.onmessage = doOnMessage
-  }
-  worker.postMessage({msg, payload});
+const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
+  if (worker) worker.postMessage({msg, payload});
 }
 
 export const passSetRunMode = (runMode: RUN_MODE) => {
@@ -39,8 +30,10 @@ export const passSetState6502 = (state: STATE6502) => {
   doPostMessage(MSG_MAIN.STATE6502, state)
 }
 
-export const passBreakpoints = (breakpoints: Breakpoints) => {
+export const passBreakpoints = (breakpoints: BreakpointMap) => {
   doPostMessage(MSG_MAIN.BREAKPOINTS, breakpoints)
+  // Force the state right away, so the UI can update.
+  machineState.breakpoints = breakpoints
 }
 
 export const passStepInto = () => {
@@ -65,8 +58,24 @@ export const passSetDisassembleAddress = (addr: number) => {
   }
 }
 
-export const passSetNormalSpeed = (normal: boolean) => {
-  doPostMessage(MSG_MAIN.SPEED, normal)
+export const passSetSpeedMode = (mode: number) => {
+  doPostMessage(MSG_MAIN.SPEED, mode)
+  // Force the state right away, so the UI can update.
+  machineState.speedMode = mode
+}
+
+export const passColorMode = (mode: COLOR_MODE) => {
+  // Currently the emulator doesn't care about color mode.
+  // Just set it directly on our machine state for later retrieval.
+  // Somewhat roundabout but it keeps all the properties in one place.
+  machineState.colorMode = mode
+}
+
+export const passCapsLock = (lock: boolean) => {
+  // Currently the emulator doesn't care about caps lock.
+  // Just set it directly on our machine state for later retrieval.
+  // Somewhat roundabout but it keeps all the properties in one place.
+  machineState.capsLock = lock
 }
 
 export const passGoForwardInTime = () => {
@@ -98,14 +107,26 @@ export const passMouseEvent = (event: MouseEventSimple) => {
 }
 
 export const passPasteText = (text: string) => {
+  text = text.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
+  text = text.replaceAll('\n','\r')  // LFs to CRs
   doPostMessage(MSG_MAIN.PASTE_TEXT, text)
 }
 
 export const passAppleCommandKeyPress = (left: boolean) => {
+  if (left) {
+    machineState.button0 = true
+  } else {
+    machineState.button1 = true
+  }
   doPostMessage(MSG_MAIN.APPLE_PRESS, left)
 }
 
 export const passAppleCommandKeyRelease = (left: boolean) => {
+  if (left) {
+    machineState.button0 = false
+  } else {
+    machineState.button1 = false
+  }
   doPostMessage(MSG_MAIN.APPLE_RELEASE, left)
 }
 
@@ -118,6 +139,10 @@ export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boole
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
 }
 
+export const passSetMemory = (address: number, value: number) => {
+  doPostMessage(MSG_MAIN.SET_MEMORY, {address, value})
+}
+
 export const passRxCommData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.COMM_DATA, data)
 }
@@ -126,46 +151,66 @@ export const passRxMidiData = (data: Uint8Array) => {
   doPostMessage(MSG_MAIN.MIDI_DATA, data)
 }
 
+const passThumbnailImage = (thumbnail: string) => {
+  doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
+}
+
+export const passSetRAMWorks = (set: boolean) => {
+  doPostMessage(MSG_MAIN.RAMWORKS, set)
+  // This should probably come from the emulator, but for now we'll just set it here.
+  machineState.memSize = set ? 1080 : 128
+}
+
+export const passSetSoftSwitches = (addresses: Array<number> | null) => {
+  doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
+}
+
+export const passSetDriveProps = (props: DriveProps) => {
+  doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
+}
+
 let machineState: MachineState = {
-  runMode: RUN_MODE.IDLE,
-  s6502: default6502State(),
-  speed: 0,
+  addressGetTable: [],
   altChar: true,
-  noDelayMode: false,
-  textPage: new Uint8Array(1).fill(32),
-  lores: new Uint8Array(),
-  hires: new Uint8Array(),
-  debugDump: '',
-  disassembly: '',
-  nextInstruction: '',
+  breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
   canGoBackward: true,
   canGoForward: true,
-  maxState: 0,
+  capsLock: true,
+  colorMode: COLOR_MODE.COLOR,
+  cpuSpeed: 0,
+  debugDump: '',
+  disassembly: '',
+  hires: new Uint8Array(),
   iTempState: 0,
-  timeTravelThumbnails: new Array<TimeTravelThumbnail>
+  isDebugging: false,
+  lores: new Uint8Array(),
+  memSize: 128,
+  memoryDump: new Uint8Array(),
+  nextInstruction: '',
+  noDelayMode: false,
+  runMode: RUN_MODE.IDLE,
+  s6502: default6502State(),
+  speedMode: 0,
+  textPage: new Uint8Array(1).fill(32),
+  timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
 }
 
-const doOnMessage = (e: MessageEvent) => {
+export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
   switch (e.data.msg as MSG_WORKER) {
     case MSG_WORKER.MACHINE_STATE: {
       const newState = e.data.payload as MachineState
-      const cpuStateChanged = machineState.speed !== newState.speed ||
-        machineState.runMode !== newState.runMode ||
-        machineState.debugDump !== newState.debugDump ||
-        machineState.disassembly !== newState.disassembly ||
-        machineState.nextInstruction !== newState.nextInstruction ||
-        machineState.button0 !== newState.button0 ||
-        machineState.button1 !== newState.button1 ||
-        machineState.canGoBackward !== newState.canGoBackward ||
-        machineState.canGoForward !== newState.canGoForward
       if (machineState.runMode !== newState.runMode) {
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
+      // This is a hack because the main thread owns these properties.
+      // Force them back to their actual values.
+      newState.colorMode = machineState.colorMode
+      newState.capsLock = machineState.capsLock
+      newState.memSize = machineState.memSize
       machineState = newState
-      if (cpuStateChanged) updateDisplay(machineState.speed)
-      break
+      return {speed: machineState.cpuSpeed, helptext: ''}
     }
     case MSG_WORKER.SAVE_STATE: {
       const saveState = e.data.payload as EmulatorSaveState
@@ -176,9 +221,8 @@ const doOnMessage = (e: MessageEvent) => {
       clickSpeaker(e.data.payload as number)
       break
     case MSG_WORKER.DRIVE_PROPS: {
-      const props = e.data.payload as DriveProps
-      driveProps[props.drive] = props
-      updateDisplay()
+      doSetDriveProps(e.data.payload as DriveProps)
+      return {speed: machineState.cpuSpeed, helptext: ''}
       break
     }
     case MSG_WORKER.DRIVE_SOUND: {
@@ -193,12 +237,11 @@ const doOnMessage = (e: MessageEvent) => {
     }
     case MSG_WORKER.HELP_TEXT: {
       const helptext = e.data.payload as string
-      updateDisplay(0, helptext)
+      return {speed: 0, helptext: helptext}
       break
     }
     case MSG_WORKER.SHOW_MOUSE: {
-      const set = e.data.payload as boolean
-      setShowMouse(set)
+      showMouse = e.data.payload as boolean
       break
     }
     case MSG_WORKER.MBOARD_SOUND: {
@@ -216,14 +259,43 @@ const doOnMessage = (e: MessageEvent) => {
       receiveMidiData(mididata)
       break
     }
+    case MSG_WORKER.REQUEST_THUMBNAIL: {
+      copyCanvas((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          passThumbnailImage(reader.result as string)
+        }        
+        reader.readAsDataURL(blob)
+      }, true)
+      break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
-    }
+  }
+  return null
+}
+
+let showMouse = true
+
+export const handleGetShowMouse = () => {
+  return showMouse
 }
 
 export const handleGetRunMode = () => {
   return machineState.runMode
+}
+
+export const handleGetBreakpoints = () => {
+  return machineState.breakpoints
+}
+
+export const handleGetSpeedMode = () => {
+  return machineState.speedMode
+}
+
+export const handleGetIsDebugging = () => {
+  return machineState.isDebugging
 }
 
 export const handleGetState6502 = () => {
@@ -235,7 +307,7 @@ export const handleGetTextPage = () => {
 }
 
 export const setStartTextPage = () => {
-  if (machineState.textPage.length <= 1) {
+  if (machineState.textPage.length === 1) {
     machineState.textPage = startupTextPage
   }
 }
@@ -258,6 +330,14 @@ export const handleGetAltCharSet = () => {
 
 export const handleGetDebugDump = () => {
   return machineState.debugDump
+}
+
+export const handleGetMemoryDump = () => {
+  return machineState.memoryDump
+}
+
+export const handleGetAddressGetTable = () => {
+  return machineState.addressGetTable
 }
 
 export const handleGetDisassembly = () => {
@@ -284,10 +364,6 @@ export const handleCanGoForward = () => {
   return machineState.canGoForward
 }
 
-export const handleGetMaxState = () => {
-  return machineState.maxState
-}
-
 export const handleGetTempStateIndex = () => {
   return machineState.iTempState
 }
@@ -296,67 +372,20 @@ export const handleGetTimeTravelThumbnails = () => {
   return machineState.timeTravelThumbnails
 }
 
+export const handleGetColorMode = () => {
+  return machineState.colorMode
+}
+
+export const handleGetCapsLock = () => {
+  return machineState.capsLock
+}
+
 export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void,
   withSnapshots: boolean) => {
   saveStateCallback = callback
   doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)
 }
 
-const initDriveProps = (drive: number): DriveProps => {
-  return {
-    hardDrive: false,
-    drive: drive,
-    filename: "",
-    status: "",
-    diskHasChanges: false,
-    motorRunning: false,
-    diskData: new Uint8Array()
-  }
-}
-const driveProps: DriveProps[] = [initDriveProps(0), initDriveProps(1), initDriveProps(2)];
-driveProps[0].hardDrive = true
-
-export const handleGetFilename = (drive: number) => {
-  let f = driveProps[drive].filename
-  if (f !== "") {
-    const i = f.lastIndexOf('.')
-    if (i > 0) {
-      f = f.substring(0, i)
-    }
-    return f
-  }
-  return null
-}
-
-export const handleGetDriveProps = (drive: number) => {
-  return driveProps[drive]
-}
-
-// async function fetchData(url: string): Promise<Uint8Array> {
-//   let result: Uint8Array
-//   try {
-//     const response = await fetch(url, {mode:'cors'});
-//     const buffer = await response.arrayBuffer();
-//     const uint8Array = new Uint8Array(buffer);
-//     result = uint8Array;
-//   } catch (error) {
-//     console.error('Error:', error);
-//     result = new Uint8Array()
-//   }
-//   return result
-// }
-
-export const handleSetDiskData = (drive: number,
-  data: Uint8Array, filename: string) => {
-  const props = driveProps[drive]
-  props.drive = drive
-  props.filename = filename
-  // const url = 'https://archive.org/download/TotalReplay/Total%20Replay%20v5.0-beta.3.hdv'
-  // fetchData(url)
-  // .then(data => {
-  //   props.diskData = data
-  //   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
-  // })
-  props.diskData = data
-  doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
+export const handleGetMemSize = () => {
+  return machineState.memSize
 }

@@ -1,13 +1,27 @@
 import "./helppanel.css"
-import { extraHelpText } from "./startuptextpage";
+import { defaultHelpText } from "./startuptextpage";
 
-const HelpPanel = (props: {helptext: string, height: number, width: number}) => {
+type HelpPanelProps = {
+  darkMode: boolean,
+  narrow: boolean,
+  helptext: string,
+  height: number,
+  width: number
+}
+
+const HelpPanel = (props: HelpPanelProps) => {
   return (
-    <span>
-      <div className="helpPaper" style={{height: props.height - 30, width: props.width}}>
-        <pre className="helpText">{props.helptext.length > 1 ? props.helptext : extraHelpText}</pre>
+    <div style={{
+      boxSizing: 'content-box',
+      margin: "0",
+      padding: "0",
+      height: (props.narrow ? 'auto' : (props.height - 30)), width: props.width,
+      overflow: (props.narrow ? 'none' : 'auto')
+    }}>
+      <div className={props.darkMode ? "" : "help-paper"}>
+        <pre className={props.darkMode ? "help-text-dark" : "help-text"}>{props.helptext.length > 1 ? props.helptext : defaultHelpText}</pre>
       </div>
-    </span>
+    </div>
   )
 }
 

@@ -75,14 +75,14 @@ Cx1f    db <UNDOCUMENTED
 ; 
 ; Bit 7 6 5 4 3 2 1 0
 ;     | | | | | | | |
-;     | | | | | | | \---  Previously, button 1 was up (0) or down (1)
-;     | | | | | | \-----  Movement interrupt
-;     | | | | | \-------  Button 0/1 interrupt
-;     | | | | \---------  VBL interrupt
-;     | | | \-----------  Currently, button 1 is up (0) or down (1)
-;     | | \-------------  X/Y moved since last READMOUSE
-;     | \---------------  Previously, button 0 was up (0) or down (1)
-;     \-----------------  Currently, button 0 is up (0) or down (1)
+;     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
+;     | | | | | | +-----  Movement interrupt
+;     | | | | | +-------  Button 0/1 interrupt
+;     | | | | +---------  VBL interrupt
+;     | | | +-----------  Currently, button 1 is up (0) or down (1)
+;     | | +-------------  X/Y moved since last READMOUSE
+;     | +---------------  Previously, button 0 was up (0) or down (1)
+;     +-----------------  Currently, button 0 is up (0) or down (1)
 ; 
 ; (Button 1 is not physically present on the mouse, and is probably only
 ; supported for an ADB mouse on the IIgs.)
@@ -92,14 +92,14 @@ Cx1f    db <UNDOCUMENTED
 ; 
 ; Bit 7 6 5 4 3 2 1 0
 ;     | | | | | | | |
-;     | | | | | | | \---  Mouse off (0) or on (1)
-;     | | | | | | \-----  Interrupt if mouse is moved
-;     | | | | | \-------  Interrupt if button is pressed
-;     | | | | \---------  Interrupt on VBL
-;     | | | \-----------  Reserved
-;     | | \-------------  Reserved
-;     | \---------------  Reserved
-;     \-----------------  Reserved
+;     | | | | | | | +---  Mouse off (0) or on (1)
+;     | | | | | | +-----  Interrupt if mouse is moved
+;     | | | | | +-------  Interrupt if button is pressed
+;     | | | | +---------  Interrupt on VBL
+;     | | | +-----------  Reserved
+;     | | +-------------  Reserved
+;     | +---------------  Reserved
+;     +-----------------  Reserved
 ; 
 
 SLOWX   EQU $0478-$c0 ; + Cs        Low byte of absolute X position
@@ -354,14 +354,14 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
 // 
 // Bit 7 6 5 4 3 2 1 0
 //     | | | | | | | |
-//     | | | | | | | \---  Previously, button 1 was up (0) or down (1)
-//     | | | | | | \-----  Movement interrupt
-//     | | | | | \-------  Button 0/1 interrupt
-//     | | | | \---------  VBL interrupt
-//     | | | \-----------  Currently, button 1 is up (0) or down (1)
-//     | | \-------------  X/Y moved since last READMOUSE
-//     | \---------------  Previously, button 0 was up (0) or down (1)
-//     \-----------------  Currently, button 0 is up (0) or down (1)
+//     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
+//     | | | | | | +-----  Movement interrupt
+//     | | | | | +-------  Button 0/1 interrupt
+//     | | | | +---------  VBL interrupt
+//     | | | +-----------  Currently, button 1 is up (0) or down (1)
+//     | | +-------------  X/Y moved since last READMOUSE
+//     | +---------------  Previously, button 0 was up (0) or down (1)
+//     +-----------------  Currently, button 0 is up (0) or down (1)
 // 
 // (Button 1 is not physically present on the mouse, and is probably only
 // supported for an ADB mouse on the IIgs.)
@@ -371,14 +371,14 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
 // 
 // Bit 7 6 5 4 3 2 1 0
 //     | | | | | | | |
-//     | | | | | | | \---  Mouse off (0) or on (1)
-//     | | | | | | \-----  Interrupt if mouse is moved
-//     | | | | | \-------  Interrupt if button is pressed
-//     | | | | \---------  Interrupt on VBL
-//     | | | \-----------  Reserved
-//     | | \-------------  Reserved
-//     | \---------------  Reserved
-//     \-----------------  Reserved
+//     | | | | | | | +---  Mouse off (0) or on (1)
+//     | | | | | | +-----  Interrupt if mouse is moved
+//     | | | | | +-------  Interrupt if button is pressed
+//     | | | | +---------  Interrupt on VBL
+//     | | | +-----------  Reserved
+//     | | +-------------  Reserved
+//     | +---------------  Reserved
+//     +-----------------  Reserved
 // 
 
 // LOWX   EQU $c080 ; + s0        Low byte of absolute X position
@@ -418,10 +418,10 @@ export const onMouseVBL = () => {
 
   // Bit 3 2 1 0
   //     | | | |
-  //     | | | \---  Mouse off (0) or on (1)
-  //     | | \-----  Interrupt if mouse is moved
-  //     | \-------  Interrupt if button is pressed
-  //     \---------  Interrupt on VBL
+  //     | | | +---  Mouse off (0) or on (1)
+  //     | | +-----  Interrupt if mouse is moved
+  //     | +-------  Interrupt if button is pressed
+  //     +---------  Interrupt on VBL
   if( mode & 0x01 )
   {
     let doint = false
@@ -463,14 +463,14 @@ export const MouseCardEvent = (event: MouseEventSimple) => {
     {
       // Bit 7 6 5 4 3 2 1 0
       //     | | | | | | | |
-      //     | | | | | | | \---  Previously, button 1 was up (0) or down (1)
-      //     | | | | | | \-----  Movement interrupt
-      //     | | | | | \-------  Button 0/1 interrupt
-      //     | | | | \---------  VBL interrupt
-      //     | | | \-----------  Currently, button 1 is up (0) or down (1)
-      //     | | \-------------  X/Y moved since last READMOUSE
-      //     | \---------------  Previously, button 0 was up (0) or down (1)
-      //     \-----------------  Currently, button 0 is up (0) or down (1)
+      //     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
+      //     | | | | | | +-----  Movement interrupt
+      //     | | | | | +-------  Button 0/1 interrupt
+      //     | | | | +---------  VBL interrupt
+      //     | | | +-----------  Currently, button 1 is up (0) or down (1)
+      //     | | +-------------  X/Y moved since last READMOUSE
+      //     | +---------------  Previously, button 0 was up (0) or down (1)
+      //     +-----------------  Currently, button 0 is up (0) or down (1)
       // 
       switch(event.buttons)
       {
@@ -731,14 +731,14 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
               //console.log('cmd.read')
               // Bit 7 6 5 4 3 2 1 0
               //     | | | | | | | |
-              //     | | | | | | | \---  Previously, button 1 was up (0) or down (1)
-              //     | | | | | | \-----  Movement interrupt
-              //     | | | | | \-------  Button 0/1 interrupt
-              //     | | | | \---------  VBL interrupt
-              //     | | | \-----------  Currently, button 1 is up (0) or down (1)
-              //     | | \-------------  X/Y moved since last READMOUSE
-              //     | \---------------  Previously, button 0 was up (0) or down (1)
-              //     \-----------------  Currently, button 0 is up (0) or down (1)
+              //     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
+              //     | | | | | | +-----  Movement interrupt
+              //     | | | | | +-------  Button 0/1 interrupt
+              //     | | | | +---------  VBL interrupt
+              //     | | | +-----------  Currently, button 1 is up (0) or down (1)
+              //     | | +-------------  X/Y moved since last READMOUSE
+              //     | +---------------  Previously, button 0 was up (0) or down (1)
+              //     +-----------------  Currently, button 0 is up (0) or down (1)
               // clear ints & previous
               //let changed = ((bstatus&0x80) !== (lastbstatus&0x80))?true:false
               istatus = 0x00

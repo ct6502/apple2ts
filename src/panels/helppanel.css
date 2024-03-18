@@ -1,21 +1,45 @@
-.helpPaper {
-  display: flex;
-  font-family: monospace;
-  font-size: medium;
-  overflow: auto;
-  background-color: lightgray;
-  background-image: url(./img/paper.jpg);
-  background-size: cover;
-  margin-top: 5px;
-  margin-left: 15px;
-  margin-right: 15px;
-  opacity: 80%;
-  box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.5),
-    inset -1px 0px 1px 1px #BFBB98;
+.help-paper {
+  position: relative;
+  background-color: #f0f0f0;
+  background-image:
+    repeating-linear-gradient(to bottom,
+      #f0f0f0 0px,
+      #f0f0f0 40px,
+      #d8e6e1 40px,
+      #d8e6e1 80px);
+  background-repeat: repeat-y;
+  background-position: 40px 0;
 }
 
-.helpText {
-  margin-left: 40px;
-  margin-top: 5px;
+.help-paper::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0px;
+  bottom: 0;
+  width: 40px;
+  background: repeating-radial-gradient(circle,
+      var(--background-color) 0% 20%,
+      transparent 20% 100%);
+  background-size: 100% 40px;
+  mix-blend-mode: multiply;
+}
+
+.help-text {
   white-space: pre-wrap;
+  margin-left: 40px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 20px;
+  border-left: 1px solid #d8e6e1;
+  color: var(--text-color);
+}
+
+.help-text-dark {
+  white-space: pre-wrap;
+  margin: 10px;
+  padding: 5px;
+  color: #00FF00;
 }

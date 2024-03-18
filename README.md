@@ -2,7 +2,7 @@
 
 Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significant contributions from Michael Morrison (codebythepound&lt;at&gt;gmail&lt;dot&gt;com).
 
-![node.js CI](https://github.com/chris-torrence/apple2ts/actions/workflows/node.js.yml/badge.svg)
+![node.js CI](https://github.com/ct6502/apple2ts/actions/workflows/main-build-deploy.yml/badge.svg)
 ![build/deploy](https://github.com/chris-torrence/apple2ts/actions/workflows/pages/pages-build-deployment/badge.svg)
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
@@ -58,6 +58,21 @@ In launch.json, add a launch configuration:
 
 ```
 
+## Android Chrome Debugging
+
+Using Android Studio, create a new device (like a phone), start the device.
+
+Start the emulator with `npm run host` to make the application available to the network. You must do this - you cannot run on `localhost:6502` or `10.0.2.2:6502` on Android (it's some conflict with vite and chrome).
+
+Navigate to the provided URL - it will be something like `10.0.0.xxx:6502`.
+
+On your Desktop Chrome, go to `chrome://inspect/#devices` and then choose the appropriate "Remote Target".
+
+## Jest Test Debugging in VS Code
+
+In VS Code, add breakpoints to the test code. Then open up `package.json`, hover over
+the "test" script, and select 'Debug Script'.
+
 ## Localhost Certificates
 
 Gamepads will only work with a secure (https) context.
@@ -96,3 +111,7 @@ Don't forget to append the trailing back quote ` at the end of the file.
 ![Apple II Emulator - Main Loop](images/Apple%20II%20Emulator%20-%20Main%20Loop.png)
 
 ![Process Instruction](images/Process%20Instruction.png)
+
+## Additional Info and Sponsors
+
+[![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)

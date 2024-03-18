@@ -1,24 +1,73 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires, handleGetNoDelayMode } from "./main2worker"
-import { getPrintableChar, COLOR_MODE } from "./emulator/utility/utility"
-import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
+  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, handleGetIsDebugging, passSetSoftSwitches } from "./main2worker"
+import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress } from "./emulator/utility/utility"
+import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 const xmargin = 0.075
 const ymargin = 0.075
 let frameCount = 0
 
-const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
-  width: number, height: number) => {
+// Convert canvas coordinates (absolute to the entire browser window)
+// to normalized HGR screen coordinates.
+export const canvasCoordToNormScreenCoord = (current: HTMLCanvasElement, x: number, y: number) => {
+  const rect = current.getBoundingClientRect()
+  // The -4 subtracts out the border on all 4 sides of the canvas.
+  const xmarginPx = xmargin * (rect.width - 4)
+  const ymarginPx = ymargin * (rect.height - 4)
+  x = (x - rect.left - xmarginPx - 2) / (rect.width - 2 * xmarginPx - 4)
+  y = (y - rect.top - ymarginPx - 2) / (rect.height - 2 * ymarginPx - 4)
+  return [x, y]
+}
+
+// Convert HGR pixel screen coordinates to canvas coordinates (absolute to
+// the entire browser window).
+export const screenCoordToCanvasCoord = (current: HTMLCanvasElement, x: number, y: number) => {
+  const rect = current.getBoundingClientRect()
+  // The -4 subtracts out the border on all 4 sides of the canvas.
+  const xmarginPx = xmargin * (rect.width - 4)
+  const ymarginPx = ymargin * (rect.height - 4)
+  x = x * (rect.width - 2 * xmarginPx - 4) / 280 + xmarginPx + 2 + rect.left
+  y = y * (rect.height - 2 * ymarginPx - 4) / 192 + ymarginPx + 2 + rect.top
+  return [x, y]
+}
+
+// Convert a "delta" in HGR screen bytes to a delta in canvas pixels.
+// dx is in HGR bytes, with 7 pixels per byte.
+// dy is in HGR lines.
+export const screenBytesToCanvasPixels = (current: HTMLCanvasElement, dx: number, dy: number) => {
+  const rect = current.getBoundingClientRect()
+  // The -4 subtracts out the border on all 4 sides of the canvas.
+  const xmarginPx = xmargin * (rect.width - 4)
+  const ymarginPx = ymargin * (rect.height - 4)
+  // 7 pixels per byte
+  const x = dx * 7 * (rect.width - 2 * xmarginPx - 4) / 280
+  const y = dy * (rect.height - 2 * ymarginPx - 4) / 192
+  return [x, y]
+}
+
+// We will draw the text on both the on-screen canvas and the hidden canvas.
+// This is wasteful, but we need to get text on the hidden canvas
+// for mixed text/graphics mode, yet the text looks siginificantly better
+// if it's drawn directly onto the on-screen canvas.
+const processTextPage = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE, width: number, height: number) => {
   const textPage = handleGetTextPage()
-  if (textPage.length === 0) return
+  if (textPage.length === 0) return false
   const doubleRes = textPage.length === 320 || textPage.length === 1920
   const mixedMode = textPage.length === 160 || textPage.length === 320
   const nchars = doubleRes ? 80 : 40
+  // On-screen canvas
   const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
   const xmarginPx = xmargin * width
   const ymarginPx = ymargin * height
   ctx.font = `${cheight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
+  // Idealized canvas
+  const hiddenWidth = 560 / nchars
+  const hiddenHeight = 384 / 24
+  hiddenContext.font = `${hiddenHeight}px ${nchars === 80 ? "PRNumber3" : "PrintChar21"}`
+  // full text page will be more than 80 char x 4 lines
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
@@ -27,6 +76,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
+    const yoffsetHidden = (j + 1) * hiddenHeight - 3
     const joffset = (j - jstart) * nchars
     textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)
@@ -36,26 +86,30 @@ const processTextPage = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE,
       const v1 = getPrintableChar(value, isAltCharSet)
       const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
+      hiddenContext.fillStyle = colorFill
       if (doInverse) {
         // Inverse characters
         ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight);
         ctx.fillStyle = "#000000";
+        hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight);
+        hiddenContext.fillStyle = "#000000";
       } else if (value < 128 && !isAltCharSet) {
         if (doFlashCycle) {
-          ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, cwidth, cheight);
-          ctx.fillStyle = "#000000";
+          hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, hiddenWidth, hiddenHeight);
+          hiddenContext.fillStyle = "#000000";
         }
       }
       ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
+      hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
     });
   }
+  return !mixedMode
 };
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
-const processLoRes = (ctx: CanvasRenderingContext2D,
-  hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE, width: number, height: number) => {
+const processLoRes = (hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE) => {
   const textPage = handleGetLores()
   if (textPage.length === 0) return;
   const doubleRes = textPage.length === 1600 || textPage.length === 1920
@@ -91,7 +145,14 @@ const processLoRes = (ctx: CanvasRenderingContext2D,
       }
     });
   }
-  drawImage(ctx, hiddenContext, hgrRGBA, width, height)
+  const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
+  for (let j = 0; j < nlines; j++) {
+    const slice = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))
+    hgrDataStretched.set(slice, 4 * 560 * 2 * j)
+    hgrDataStretched.set(slice, 4 * 560 * 2 * j + 4 * 560)
+  }
+  const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
+  hiddenContext.putImageData(imageData, 0, 0)
 };
 
 const BLACK = 0
@@ -126,27 +187,8 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   return hgrColors
 }
 
-const drawImage = async (ctx: CanvasRenderingContext2D,
-  hiddenContext: CanvasRenderingContext2D,
-  hgrRGBA: Uint8ClampedArray, width: number, height: number) => {
-  const xmarginPx = xmargin * width
-  const ymarginPx = ymargin * height
-  const nlines = hgrRGBA.length / (4 * 560)
-  const imageData = new ImageData(hgrRGBA, 560, nlines);
-  const imgHeight = height * (1 - 2 * ymargin) / 192 * nlines
-  const imgWidth = width - 2 * xmarginPx
-  // Use hidden canvas/context so image rescaling works in iOS < 15
-  hiddenContext.putImageData(imageData, 0, 0)
-  ctx.drawImage(hiddenContext.canvas, 0, 0, 560, nlines,
-    xmarginPx, ymarginPx, imgWidth, imgHeight);
-// New way, using createImageBitmap, available in iOS 15+
-//  ctx.drawImage(await createImageBitmap(imageData), 0, 0, 560, nlines,
-//    xmarginPx, ymarginPx, imgWidth, imgHeight);
-}
-
-const processHiRes = (ctx: CanvasRenderingContext2D,
-  hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE, width: number, height: number) => {
+const processHiRes = (hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length === 0) return;
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
@@ -155,30 +197,149 @@ const processHiRes = (ctx: CanvasRenderingContext2D,
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false) : getHiresGreen(hgrPage, nlines))
+    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true) :
+    getHiresGreen(hgrPage, nlines))
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes)
-  drawImage(ctx, hiddenContext, hgrRGBA, width, height)
+  const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
+  for (let j = 0; j < nlines; j++) {
+    const slice = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))
+    hgrDataStretched.set(slice, 4 * 560 * 2 * j)
+    hgrDataStretched.set(slice, 4 * 560 * 2 * j + 4 * 560)
+  }
+  const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
+  hiddenContext.putImageData(imageData, 0, 0)
 };
 
-export const processDisplay = (ctx: CanvasRenderingContext2D,
-  hiddenContext: CanvasRenderingContext2D, colorMode: COLOR_MODE,
-  width: number, height: number) => {
-  frameCount++
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "#000000";
-  ctx.fillRect(xmargin * width, ymargin * height - 2,
-    width * (1 - 2 * xmargin) + 2, height * (1 - 2 * ymargin) + 4);
-  processTextPage(ctx, colorMode, width, height)
-  processLoRes(ctx, hiddenContext, colorMode, width, height)
-  processHiRes(ctx, hiddenContext, colorMode, width, height)
-  // const tile = [0, 0x84, 0x1C, 0x90, 0x38, 0x94, 0x78, 0x91,
-  //   0x70, 0x1C, 0x78, 0x08, 0x73, 0x08, 0x7F, 0x0F,
-  //   0x7E, 0x0F, 0x70, 0x0C, 0x50, 0x08, 0x70, 0x09,
-  //   0x70, 0x09, 0x78, 0x09, 0x7C, 0x09, 0x7E, 0x0B]
-  // const tile = [0x80, 0x0A, 0xCC, 0x83, 0xE6, 0x83, 0xE2, 0x81,
-  //   0xAB, 0x8F, 0xFF, 0x8F, 0xFE, 0x87, 0xC2, 0x86,
-  //   0xC6, 0xE2, 0xCC, 0xC3, 0xC0, 0xC7, 0xE0, 0xCF,
-  //   0xF0, 0xCC, 0xB0, 0xCC, 0xB0, 0xCC, 0x98, 0x98]
-  // drawHiresTile(ctx, new Uint8Array(tile), colorMode, 16, 100, 100, 10)
+let doOverride = false
+let doPage2 = false
+const border = 2
+
+export const overrideHires = (override: boolean, page2: boolean) => {
+  doOverride = override
+  doPage2 = page2
+  if (override) {
+    //                  TEXT off, MIXED off, PAGE2 off, HIRES on, COLUMN80 off
+    passSetSoftSwitches([0xC050, 0xC052, page2 ? 0xC055 : 0xC054, 0xC057, 0xC00C])
+  } else {
+    passSetSoftSwitches(null)
+  }
 }
 
+export const handleGetOverrideHires = () => doOverride
+
+export const getOverrideHiresPixels = (x: number, y: number) => {
+  if (!doOverride) return null
+  // Assume this is 40 x 192
+  const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
+  if (hgrPage.length !== (40 * 192)) return null;
+  const result: number[][] = new Array(8).fill([0, 0, 0])
+  for (let j = y; j < (y + 8); j++) {
+    if (j >= 0 && j < 192) {
+      const value1 = hgrPage[j * 40 + x]
+      const value2 = hgrPage[j * 40 + x + 1]
+      const addr = x + hiresLineToAddress(doPage2 ? 0x4000 : 0x2000, j)
+      result[j - y] = [addr, value1, value2]
+    }
+  }
+  return result
+}
+
+const drawImage = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  width: number, height: number) => {
+  const xmarginPx = xmargin * width
+  const ymarginPx = ymargin * height
+  const imgHeight = Math.floor(height * (1 - 2 * ymargin))
+  const imgWidth = Math.floor(width * (1 - 2 * xmargin))
+  ctx.drawImage(hiddenContext.canvas, 0, 0, 560, 384,
+    xmarginPx, ymarginPx, imgWidth, imgHeight)
+  if (doOverride) {
+    ctx.strokeStyle = "#FF0000"
+    ctx.lineWidth = 2
+    ctx.strokeRect(xmarginPx - border, ymarginPx - border, imgWidth + 2 * border, imgHeight + 2 * border)
+    ctx.fillStyle = "#FF0000"
+    ctx.textAlign = "center"
+    const cheight = height * (1 - 2 * ymargin) / 24
+    ctx.font = `${cheight}px "PrintChar21"`
+    ctx.fillText(`${'HGR Page ' + (doPage2 ? '2' : '1')}`, width / 2, height - 2)
+  }
+}
+
+export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  width: number, height: number) => {
+  frameCount++
+  ctx.imageSmoothingEnabled = true
+  // Clear all our drawing and let the background show through again.
+  ctx.clearRect(0, 0, width, height)
+  hiddenContext.imageSmoothingEnabled = false;
+  hiddenContext.fillStyle = "#000000";
+  hiddenContext.fillRect(0, 0, 560, 384)
+  const colorMode = handleGetColorMode()
+  // If we are only doing text output, we will draw directly onto our canvas,
+  // and do not need to use the hidden canvas with drawImage.
+  const textOnly = processTextPage(ctx, hiddenContext, colorMode, width, height)
+  if (!textOnly) {
+    // Otherwise, do graphics drawing, and then copy from our hidden canvas
+    // over to our main canvas.
+    processLoRes(hiddenContext, colorMode)
+    processHiRes(hiddenContext, colorMode)
+    drawImage(ctx, hiddenContext, width, height)
+  }
+  if (TEST_GRAPHICS) {
+    const tile = [
+      0x7F, 0x0, 0x40, 0x80, 0x15, 0x40, 0x80,  // 1
+      0x02, 0x87, 0x40, 0x80, 0x00, 0x40, 0x80,
+      0x03, 0x0E, 0x40, 0x80, 0x00, 0x40, 0x80,
+      0x81, 0x8E, 0xC0, 0x00, 0x2A, 0xC0, 0x00,  // 2
+      0x82, 0x1B, 0xC0, 0x00, 0x00, 0xC0, 0x00,
+      0x83, 0x9B, 0xC0, 0x00, 0x00, 0xC0, 0x00,
+      0x05, 0x36, 0xC0, 0x01, 0x95, 0xC0, 0x01,  // 3
+      0x0A, 0xB6, 0xC0, 0x01, 0x00, 0xC0, 0x01,
+      0x0F, 0x00, 0xC0, 0x01, 0x00, 0xC0, 0x01,
+      0x85, 0x7F, 0xE0, 0x00, 0xAA, 0xE0, 0x00,  // 4
+      0x8A, 0x00, 0xE0, 0x00, 0x00, 0xE0, 0x00,
+      0x8F, 0x00, 0xE0, 0x02, 0x00, 0xE0, 0x02,
+      0x07, 0x00, 0xA0, 0x01, 0x3E, 0xA0, 0x01,  // 5
+      0x07, 0x00, 0xA0, 0x01, 0x00, 0xA0, 0x01,
+      0x07, 0x00, 0xA0, 0x01, 0x00, 0xA0, 0x01,
+      0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
+      0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
+      0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
+      0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
+      0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
+      0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
+      0, 0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0,
+      0, 0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0,
+      0, 0x8E, 0xDD, 0xBB, 0xF7, 0x80, 0,
+      0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
+      0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
+      0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
+    ctx.imageSmoothingEnabled = false;
+    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8, true)
+  }
+}
+
+export const getCanvasSize = () => {
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
+  if (TEST_GRAPHICS) {
+    return [659, 452]  // This will give an actual size of 560 x 384
+  }
+  let width = window.innerWidth ? window.innerWidth : window.outerWidth
+  let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
+  height -= isTouchDevice ? 40 : 200
+  width -= isTouchDevice ? 8 : 20
+  if (!isTouchDevice && handleGetIsDebugging()) {
+    width /= 2
+  }
+  // shrink either width or height to preserve aspect ratio
+  if (width / screenRatio > height) {
+    width = height * screenRatio
+  } else {
+    height = width / screenRatio
+  }
+  width = Math.floor(width)
+  height = Math.floor(height)
+  return [width, height]
+}

@@ -1,6 +1,31 @@
 import { KeyboardEvent } from "react"
 
 export const TEST_DEBUG = false
+export const TEST_GRAPHICS = false
+export const MAX_SNAPSHOTS = 60
+export const FILE_SUFFIXES = ".a2ts,.hdv,.2mg,.dsk,.woz,.po,.do,.bin"
+export const COLORS = {
+  LIGHT: {
+    TEXT: '#000000',
+    BG: '#BFBB98',
+    PANEL: '#C9C5A0',
+    ACTIVE: '#898677',
+    INPUT: '#eee',
+    OPCODE: '#000000',
+    ADDRESS: '#006400',
+    IMMEDIATE: '#646400',
+  },
+  DARK: {
+    TEXT: '#DDD',
+    BG: '#181818',
+    PANEL: '#222',
+    ACTIVE: '#555',
+    INPUT: '#444',
+    OPCODE: '#dcdcaf',
+    ADDRESS: '#00C000',
+    IMMEDIATE: '#80FF00',
+  }
+}
 
 export enum RUN_MODE {
   IDLE = 0,
@@ -22,6 +47,7 @@ export enum MSG_WORKER {
   MBOARD_SOUND,
   COMM_DATA,
   MIDI_DATA,
+  REQUEST_THUMBNAIL,
 }
 
 export enum MSG_MAIN {
@@ -37,6 +63,7 @@ export enum MSG_MAIN {
   TIME_TRAVEL_STEP,
   TIME_TRAVEL_INDEX,
   TIME_TRAVEL_SNAPSHOT,
+  THUMBNAIL_IMAGE,
   RESTORE_STATE,
   KEYPRESS,
   MOUSEEVENT,
@@ -48,8 +75,11 @@ export enum MSG_MAIN {
   DRIVE_PROPS,
   GAMEPAD,
   SET_BINARY_BLOCK,
+  SET_MEMORY,
   COMM_DATA,
   MIDI_DATA,
+  RAMWORKS,
+  SOFTSWITCHES,
 }
 
 export enum COLOR_MODE {
@@ -141,21 +171,21 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-export const convertAppleKey = (e: KeyboardEvent, uppercase=false) => {
+export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean, ctrlKeyMode: number) => {
   let key = 0
+  if (e.altKey && e.key !== "Alt") {
+    e.key = String.fromCharCode(e.keyCode)
+  }
   if (e.key.length === 1) {
-    if (e.metaKey || e.altKey) {
-      return 0
-    }
     key = e.key.charCodeAt(0)
-    if (e.ctrlKey) {
+    if (e.ctrlKey || ctrlKeyMode > 0) {
       if (key >= 0x40 && key <= 0x7E) {
         key &= 0b00011111
       } else {
         return 0
       }
     } else if (uppercase) {
-      key = e.key.toUpperCase().charCodeAt(0)
+      key = String.fromCharCode(key).toUpperCase().charCodeAt(0)
     }
   } else {
     const keymap: { [key: string]: number } = {
@@ -246,3 +276,32 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
 
   return (crc ^ (-1)) >>> 0;
 };
+
+export const lockedKeyStyle = (mode: number) => {
+  return `push-button key-button ${(['', 'button-active', 'button-locked'])[mode]}`
+}
+
+export const hiresLineToAddress = (pageOffset: number, line: number) => {
+  return pageOffset + 40 * Math.trunc(line / 64) +
+    1024 * (line % 8) + 128 * (Math.trunc(line / 8) & 7)
+}
+
+export const hiresAddressToLine = (addr: number) => {
+  const base = addr & 0x1FFF
+  // This give 0, 1, or 2 for the 3 different regions of the screen.
+  // (The Math.min clips the extra 8 screen holes at the end of the 3rd line)
+  const groupOf3 = Math.trunc((Math.min(base & 0x7F, 0x77)) / 40)
+  // This gives the smaller chunks of 8 lines each within the groups of 8.
+  const chunkOf8 = Math.trunc((base & 0x3FF) / 128)
+  // This gives the individual lines within each chunk of 8, which oddly
+  // enough have the largest address spacing of 0x400 between each line.
+  const individualLine = Math.trunc(base / 1024)
+  const result = 64 * groupOf3 + 8 * chunkOf8 + individualLine
+  return result
+}
+
+// for (let i = 0; i < 192; i++) {
+//   const addr = hiresLineToAddress(0x2000, i)
+//   const line = hiresAddressToLine(addr + 1)
+//   if (i !== line) console.log("ERROR")
+// }

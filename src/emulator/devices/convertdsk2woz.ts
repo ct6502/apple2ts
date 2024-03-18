@@ -169,10 +169,12 @@ const serialise_track = (src: Uint8Array, track_number: number, is_prodos: boole
 }
 
 export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
-  if (dskData.length !== 35 * 16 * 256) {
+  const ntracks = dskData.length / (16 * 256)
+  // Normal dsk files have 35 tracks, but the woz format will support up to 40.
+  if (ntracks < 34 || ntracks > 40) {
     return new Uint8Array()
   }
-  const woz = new Uint8Array(512*3 + 512*35*13).fill(0)
+  const woz = new Uint8Array(1536 + ntracks * 13 * 512).fill(0)
   woz.set(toASCII("WOZ2\xFF\n\r\n"), 0)
   woz.set(toASCII("INFO"), 12)
   woz[16] = 60    // Chunk size
@@ -194,21 +196,21 @@ export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
   woz.fill(0xFF, 88, 88 + 160)  // Fill the TMAP with empty tracks
   // Now fill in the quarter tracks around each whole track
   let offset = 0;
-  for (let c = 0; c < 35; c++) {
+  for (let c = 0; c < ntracks; c++) {
     offset = 88 + (c << 2)
     if (c > 0) woz[offset - 1] = c
     woz[offset] = woz[offset + 1] = c
   }
   woz.set(toASCII("TRKS"), 248)
-  woz.set(uint32toBytes(1280 + 35*13*512), 252)
-  for (let c = 0; c < 35; c++) {
+  woz.set(uint32toBytes(1280 + ntracks * 13 * 512), 252)
+  for (let c = 0; c < ntracks; c++) {
     offset = 256 + (c << 3);
     woz.set(uint16toBytes(3 + c*13), offset)  // start block
     woz[offset + 2] = 13   // block count
     woz.set(uint32toBytes(50304), offset + 4)  // start block
     const trackInput = dskData.slice(c * 16 * 256, (c + 1) * 16 * 256)
     const trackData = serialise_track(trackInput, c, isPO)
-    offset = 512 * (3 + 13 * c)
+    offset = 1536 + c * 13 * 512
     woz.set(trackData, offset)
   }
   return woz
