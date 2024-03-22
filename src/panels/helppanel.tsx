@@ -15,7 +15,8 @@ const HelpPanel = (props: HelpPanelProps) => {
       boxSizing: 'content-box',
       margin: "0",
       padding: "0",
-      height: (props.narrow ? 'auto' : (props.height - 30)), width: props.width
+      height: (props.narrow ? 'auto' : (props.height - 30)), width: props.width,
+      overflow: (props.narrow ? 'visible' : 'auto'),
     }}>
       <div className={props.darkMode ? "" : "help-paper"}>
         <pre className={"help-text " + (props.darkMode ? "help-text-dark" : "help-text-light")}>{props.helptext.length > 1 ? props.helptext : defaultHelpText}</pre>
