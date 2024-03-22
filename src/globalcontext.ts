@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-export type GlobalContent = {
+type GlobalProps = {
   updateHgr: boolean
   setUpdateHgr:(updateHgr: boolean) => void
   hgrview: number[]
@@ -7,7 +7,7 @@ export type GlobalContent = {
   updateBreakpoint: number
   setUpdateBreakpoint:(updateBreakpoint: number) => void
 }
-export const GlobalContext = createContext<GlobalContent>({
+export const GlobalContext = createContext<GlobalProps>({
   updateHgr: false,
   setUpdateHgr: () => {},
   hgrview: [-1, -1],

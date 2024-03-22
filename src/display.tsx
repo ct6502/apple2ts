@@ -6,7 +6,9 @@ import {
   handleGetIsDebugging,
   doOnMessage,
   setMain2Worker,
-  handleGetMemSize
+  handleGetMemSize,
+  passHelpText,
+  handleGetHelpText
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -16,7 +18,7 @@ import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
 import ImageWriter from "./devices/imagewriter"
 import FileInput from "./fileinput"
-import { RestoreSaveState } from "./restoresavestate"
+import { RestoreSaveState } from "./savestate"
 import { getCanvasSize } from "./graphics"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { COLORS } from "./emulator/utility/utility";
@@ -29,7 +31,6 @@ const DisplayApple2 = () => {
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
   const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
-  const [helptext, setHelptext] = useState('')
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, drive: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
 
@@ -50,8 +51,8 @@ const DisplayApple2 = () => {
   }
 
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = '') => {
-    if (newhelptext) {
-      setHelptext(newhelptext)
+    if (newhelptext && newhelptext.length > 1) {
+      passHelpText(newhelptext)
     } else if (speed && speed !== currentSpeed) {
       setCurrentSpeed(speed)
     }
@@ -195,7 +196,8 @@ const DisplayApple2 = () => {
         {narrow && <div className="divider"></div>}
         <span className="flex-column">
           {handleGetIsDebugging() ? <DebugSection /> :
-            <HelpPanel darkMode={darkMode} narrow={narrow} helptext={helptext}
+            <HelpPanel darkMode={darkMode} narrow={narrow}
+              helptext={handleGetHelpText()}
               height={paperHeight} width={paperWidth} />}
         </span>
       </span>

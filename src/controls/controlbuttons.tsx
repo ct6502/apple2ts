@@ -11,7 +11,7 @@ import {
 import { handleSetCPUState } from "../controller";
 import { handleCopyToClipboard } from "../copycanvas";
 import { handleGetRunMode, passPasteText } from "../main2worker";
-import { handleFileSave } from "../fileoutput";
+import { handleFileSave } from "../savestate";
 
 const ControlButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()

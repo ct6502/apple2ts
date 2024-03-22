@@ -59,18 +59,14 @@ export const passData = () => {
   }
 }
 
-const isTotalReplay = (filename: string) => {
-  return filename.replace(/ /g, '').toLowerCase().includes('totalreplay')
-}
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
   const data = ['', '', '']
-  if (isTotalReplay(driveState[0].filename)) {
-    return {currentDrive: 0, driveState: [], driveData: []}
-  }
   for (let i=0; i < 3; i++) {
-    data[i] = Buffer.from(driveData[i]).toString("base64")
+    // Always save small disk images (< 32Mb), or if a full save was requested
+    if (full || driveData[i].length < 32000000) {
+      data[i] = Buffer.from(driveData[i]).toString("base64")
+    }
   }
   const result = { currentDrive: currentDrive,
     driveState: [initDriveState(0), initDriveState(1), initDriveState(2)],

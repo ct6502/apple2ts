@@ -15,7 +15,7 @@ import {
   faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
-import { handleFileSave } from "../fileoutput";
+import { handleFileSave } from "../savestate";
 
 const DebugButtons = () => {
   const runMode = handleGetRunMode()

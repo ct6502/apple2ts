@@ -96,11 +96,12 @@ const getDisplaySaveState = () => {
     audioEnable: false,
     mockingboardMode: 0,
     speedMode: speedMode,
+    helptext: '',
   }
   return state
 }
 
-export const doGetSaveState = (full = false): EmulatorSaveState => {
+export const doGetSaveState = (full: boolean): EmulatorSaveState => {
   const state = { emulator: getDisplaySaveState(),
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
@@ -247,7 +248,7 @@ const doSnapshot = () => {
   if (saveStates.length === MAX_SNAPSHOTS) {
     saveStates.shift()
   }
-  saveStates.push(doGetSaveState())
+  saveStates.push(doGetSaveState(false))
   // This is at the current "time" and is just past our recently-saved state.
   iTempState = saveStates.length
   passRequestThumbnail(saveStates[saveStates.length - 1].state6502.s6502.PC)
@@ -451,6 +452,7 @@ const updateExternalMachineState = () => {
     cpuSpeed: cpuSpeed,
     debugDump: getDebugDump(),
     disassembly: doGetDisassembly(),
+    helpText: '',  // ignored by main thread
     hires: getHires(),
     iTempState: iTempState,
     isDebugging: isDebugging,
