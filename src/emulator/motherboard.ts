@@ -5,7 +5,7 @@ import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString } 
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
-import { SWITCHES, overrideSoftSwitch, restoreSoftSwitches } from "./softswitches";
+import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, restoreSoftSwitches } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, getZeroPage, getBaseMemory, addressGetTable } from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
@@ -200,11 +200,7 @@ const doBoot = () => {
 
 const doReset = () => {
   clearInterrupts()
-  for (const key in SWITCHES) {
-    const keyTyped = key as keyof typeof SWITCHES
-    SWITCHES[keyTyped].isSet = false
-  }
-  SWITCHES.TEXT.isSet = true
+  resetSoftSwitches()
   // Reset banked RAM
   memGet(0xC082)
   reset6502()

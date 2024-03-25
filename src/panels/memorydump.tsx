@@ -5,7 +5,7 @@ import React from "react"
 import { Droplist } from "./droplist"
 import { overrideHires } from "../graphics"
 import MemoryTable from "./memorytable"
-import { faCrosshairs } from "@fortawesome/free-solid-svg-icons"
+import { faCrosshairs, faSave } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Breakpoint, BreakpointMap } from "../emulator/utility/breakpoint"
 import { useGlobalContext } from "../globalcontext"
@@ -44,6 +44,10 @@ const MemoryDump = () => {
         }
       case MEMORY_RANGE.AUX:
         return memory.slice(0x10000, 0x20000)
+      case MEMORY_RANGE.HGR1:
+        return memory.slice(0x2000, 0x4000)
+      case MEMORY_RANGE.HGR2:
+        return memory.slice(0x4000, 0x6000)
       default:
         return memory
     }
@@ -120,6 +124,18 @@ const MemoryDump = () => {
     setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
+  const saveMemory = () => {
+    const blob = new Blob([getMemoryRange()]);
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', "memory.dat");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const runMode = handleGetRunMode()
   const ready = runMode === RUN_MODE.RUNNING || runMode === RUN_MODE.PAUSED
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
@@ -148,10 +164,16 @@ const MemoryDump = () => {
           userdata={0}
           isDisabled={() => false} />
         <button className={"push-button" + (pickWatchpoint ? ' button-active' : '')}
-          title="Set Watchpoint"
+          title="Pick Watchpoint"
           disabled={memory.length < 1}
           onClick={() => setPickWatchpoint(!pickWatchpoint)}>
           <FontAwesomeIcon icon={faCrosshairs} />
+        </button>
+        <button className="push-button"
+          title="Save Memory"
+          disabled={memory.length < 1}
+          onClick={() => saveMemory()}>
+          <FontAwesomeIcon icon={faSave} />
         </button>
       </span>
       <div className="debug-panel"
