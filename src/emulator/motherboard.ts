@@ -5,7 +5,7 @@ import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString } 
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
-import { SWITCHES, overrideSoftSwitch, restoreSoftSwitches } from "./softswitches";
+import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, restoreSoftSwitches } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, getZeroPage, getBaseMemory, addressGetTable } from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
@@ -96,11 +96,12 @@ const getDisplaySaveState = () => {
     audioEnable: false,
     mockingboardMode: 0,
     speedMode: speedMode,
+    helptext: '',
   }
   return state
 }
 
-export const doGetSaveState = (full = false): EmulatorSaveState => {
+export const doGetSaveState = (full: boolean): EmulatorSaveState => {
   const state = { emulator: getDisplaySaveState(),
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
@@ -199,11 +200,7 @@ const doBoot = () => {
 
 const doReset = () => {
   clearInterrupts()
-  for (const key in SWITCHES) {
-    const keyTyped = key as keyof typeof SWITCHES
-    SWITCHES[keyTyped].isSet = false
-  }
-  SWITCHES.TEXT.isSet = true
+  resetSoftSwitches()
   // Reset banked RAM
   memGet(0xC082)
   reset6502()
@@ -247,7 +244,7 @@ const doSnapshot = () => {
   if (saveStates.length === MAX_SNAPSHOTS) {
     saveStates.shift()
   }
-  saveStates.push(doGetSaveState())
+  saveStates.push(doGetSaveState(false))
   // This is at the current "time" and is just past our recently-saved state.
   iTempState = saveStates.length
   passRequestThumbnail(saveStates[saveStates.length - 1].state6502.s6502.PC)
@@ -451,6 +448,7 @@ const updateExternalMachineState = () => {
     cpuSpeed: cpuSpeed,
     debugDump: getDebugDump(),
     disassembly: doGetDisassembly(),
+    helpText: '',  // ignored by main thread
     hires: getHires(),
     iTempState: iTempState,
     isDebugging: isDebugging,

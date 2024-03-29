@@ -84,6 +84,7 @@ type MachineState = {
   cpuSpeed: number,
   debugDump: string,
   disassembly: string,
+  helpText: string,
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,
@@ -139,6 +140,7 @@ type DisplaySaveState = {
   audioEnable: boolean,
   mockingboardMode: number,
   speedMode: number,
+  helptext: string,
 }
 
 type EmulatorSaveState = {

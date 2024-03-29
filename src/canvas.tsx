@@ -16,9 +16,9 @@ import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex }
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord } from './graphics';
 import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
-import { handleFileSave } from './fileoutput';
 import { drawHiresTile } from './graphicshgr';
 import { useGlobalContext } from './globalcontext';
+import { handleFileSave } from './savestate';
 
 let width = 800
 let height = 600
@@ -396,6 +396,8 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   if (handleGetOverrideHires() && updateHgr) {
     setTimeout(() => { setUpdateHgr(false) }, 0)
+    // See if our view box position has changed, perhaps because the user
+    // clicked on an HGR memory location in the memory dump panel.
     if (hgrview[0] !== -1 && hgrview[0] !== hgrviewLocal[0] && hgrview[1] !== hgrviewLocal[1]) {
       setHgrviewLocal(hgrview)
       hgrviewRef.current = hgrview

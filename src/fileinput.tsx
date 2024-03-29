@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FILE_SUFFIXES, RUN_MODE } from "./emulator/utility/utility";
 import { handleGetRunMode, passPasteText, passSetRunMode } from "./main2worker";
 import BinaryFileDialog from "./devices/binaryfiledialog";
-import { RestoreSaveState } from "./restoresavestate";
+import { RestoreSaveState } from "./savestate";
 import { isHardDriveImage } from "./emulator/devices/decodedisk";
 import { handleSetDiskData } from "./devices/driveprops";
 

@@ -10,9 +10,12 @@ const App = () => {
   return (
     <GlobalContext.Provider
       value={{
-        updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
-        hgrview: hgrview, setHgrview: setHgrview,
-        updateBreakpoint: updateBreakpoint, setUpdateBreakpoint: setUpdateBreakpoint,
+        updateHgr: updateHgr,
+        setUpdateHgr: setUpdateHgr,
+        hgrview: hgrview,
+        setHgrview: setHgrview,
+        updateBreakpoint: updateBreakpoint,
+        setUpdateBreakpoint: setUpdateBreakpoint,
       }}>
       <DisplayApple2 />
     </GlobalContext.Provider>

@@ -1,6 +1,6 @@
 import React from "react";
 import { handleGetRunMode, handleGetState6502, passSetState6502 } from "../main2worker";
-import { RUN_MODE } from "../emulator/utility/utility";
+import { RUN_MODE, toHex } from "../emulator/utility/utility";
 
 type KEYS = 'PC' | 'Accum' | 'XReg' | 'YReg' | 'StackPtr' | 'flagIRQ'
 
@@ -34,7 +34,7 @@ const State6502Controls = () => {
   }
 
   const createTextField = (name: string, key: KEYS, value: number, runMode: RUN_MODE) => {
-    const strVal = value.toString(16).toUpperCase()
+    const strVal = toHex(value)
     return (
       <div className="flex-row" style={{ alignItems: "center" }}>
         <div className="centered-title">{name}</div>

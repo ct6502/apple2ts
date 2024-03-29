@@ -1,12 +1,17 @@
 export const extraHelpText = `
 
-Disk images can be hdv, 2mg, dsk, woz, po, do, bin, bas
+Disk images: hdv, 2mg, dsk, woz, po, do, bin, bas
 
 Optional URL Parameters:
-  capslock=off
-  color=color|nofringe|green|amber|white
-  debug=on
-  sound=off
-  speed=fast
-  #urltodiskimage
+
+capslock=off
+color=color|nofringe|green|amber|white
+debug=on
+sound=off
+speed=fast
+#urltodiskimage
+
+Examples:
+https://apple2ts.com/?debug=on#Replay
+https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.3-en_800k.2mg
 `

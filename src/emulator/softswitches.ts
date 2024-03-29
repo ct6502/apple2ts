@@ -33,7 +33,7 @@ const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
     sswitchArray[offAddr - 0xC000] = result
   }
   if (onAddr >= 0xC000) {
-      sswitchArray[onAddr - 0xC000] = result
+    sswitchArray[onAddr - 0xC000] = result
   } 
   if (isSetAddr >= 0xC000) {
     sswitchArray[isSetAddr - 0xC000] = result
@@ -197,6 +197,25 @@ export const checkSoftSwitches = (addr: number,
     if (addr >= 0xC020) memSetC000(addr, rand())
   } else if (addr === sswitch1.isSetAddr) {
     memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
+  }
+}
+
+export const resetSoftSwitches = () => {
+  for (const key in SWITCHES) {
+    const keyTyped = key as keyof typeof SWITCHES
+    // If we have overridden this switch, don't actually set the real
+    // switch value - instead just change our cached value so it gets restored
+    // to its new state when the Memory Dump panel is changed to a non-HGR bank.
+    if (overriddenSwitches[SWITCHES[keyTyped].offAddr - 0xC000] !== undefined) {
+      overriddenSwitches[SWITCHES[keyTyped].offAddr - 0xC000] = false
+    } else {
+      SWITCHES[keyTyped].isSet = false
+    }
+  }
+  if (overriddenSwitches[SWITCHES.TEXT.offAddr - 0xC000] !== undefined) {
+    overriddenSwitches[SWITCHES.TEXT.offAddr - 0xC000] = true
+  } else {
+    SWITCHES.TEXT.isSet = true
   }
 }
 

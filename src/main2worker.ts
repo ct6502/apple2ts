@@ -72,10 +72,13 @@ export const passColorMode = (mode: COLOR_MODE) => {
 }
 
 export const passCapsLock = (lock: boolean) => {
-  // Currently the emulator doesn't care about caps lock.
-  // Just set it directly on our machine state for later retrieval.
-  // Somewhat roundabout but it keeps all the properties in one place.
+  // See comment under passColorMode
   machineState.capsLock = lock
+}
+
+export const passHelpText = (helptext: string) => {
+  // See comment under passColorMode
+  machineState.helpText = helptext
 }
 
 export const passGoForwardInTime = () => {
@@ -182,6 +185,7 @@ let machineState: MachineState = {
   cpuSpeed: 0,
   debugDump: '',
   disassembly: '',
+  helpText: '',
   hires: new Uint8Array(),
   iTempState: 0,
   isDebugging: false,
@@ -209,8 +213,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
       newState.memSize = machineState.memSize
+      newState.helpText = machineState.helpText
       machineState = newState
-      return {speed: machineState.cpuSpeed, helptext: ''}
+      return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
     case MSG_WORKER.SAVE_STATE: {
       const saveState = e.data.payload as EmulatorSaveState
@@ -388,4 +393,8 @@ export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => v
 
 export const handleGetMemSize = () => {
   return machineState.memSize
+}
+
+export const handleGetHelpText = () => {
+  return machineState.helpText
 }

@@ -19,14 +19,15 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   if (props.memory.length <= 1) return '\n\n\n      *** Pause emulator to view memory ***'
 
-  const convertMemoryToArray = (memory: Uint8Array, isHGR: boolean, offset: number) => {
+  const convertMemoryToArray = () => {
     const rows = []
-    const nrows = isHGR ? 192 : 4096
-    const ncols = isHGR ? 40 : 16
+    const nrows = props.isHGR ? 192 : 4096
+    const ncols = props.isHGR ? 40 : 16
     for (let l = 0; l < nrows; l++) {
-      const addr = isHGR ? hiresLineToAddress(offset, l) : 16 * l
-      const mem = memory.slice(addr, addr + ncols)
-      const cells = [toHex(addr, 4) + ':']
+      const addr = props.isHGR ?
+        (hiresLineToAddress(props.offset, l) - props.offset) : 16 * l
+      const mem = props.memory.slice(addr, addr + ncols)
+      const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ':']
       for (let b = 0; b < ncols; b++) {
         cells.push(toHex(mem[b]))
       }
@@ -74,10 +75,9 @@ const MemoryTable = (props: MemoryTableProps) => {
     const offset = getMemoryOffset(cell)
     if (offset[0] < 0) return
     if (props.pickWatchpoint) {
-      let addr: number
-      addr = props.isHGR ?
-        hiresLineToAddress(props.offset, offset[1]) + offset[0] :
-        addr = 16 * offset[1] + offset[0] + props.offset
+      const addr = props.isHGR ?
+        (hiresLineToAddress(props.offset, offset[1]) + offset[0]) :
+        (16 * offset[1] + offset[0] + props.offset)
       props.doPickWatchpoint(addr)
       cell.style.animation = 'highlight-fast 1s'
       setTimeout(() => {
@@ -212,7 +212,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const width = props.isHGR ? 40 : 16
-  const rows = convertMemoryToArray(props.memory, props.isHGR, props.offset)
+  const rows = convertMemoryToArray()
   const isEditable = (col: number, row: number) => {
     if (col === 0) return false
     if (!props.addressGetTable) return true
