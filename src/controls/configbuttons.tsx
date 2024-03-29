@@ -6,7 +6,6 @@ import {
   faWalking,
   faTruckFast,
   faDisplay,
-  faBolt,
   faMicrochip,
   faCircleHalfStroke,
 } from "@fortawesome/free-solid-svg-icons";
@@ -15,6 +14,7 @@ import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
 import { requestSerialPort } from "../devices/serialhub";
+import { serialport } from "../devices/img/db9";
 import { ReactNode } from "react";
 import { handleGetCapsLock, handleGetColorMode, handleGetMemSize, handleGetSpeedMode, passCapsLock, passColorMode, passSetRAMWorks, passSetSpeedMode } from "../main2worker";
 
@@ -68,7 +68,7 @@ const ConfigButtons = (props: DisplayProps) => {
     <button className="pushButton"
       title={"Select Serial Port"}
       onClick={() => {requestSerialPort()}}>
-      <FontAwesomeIcon icon={faBolt}/>
+      <svg width="30" height="30" className="fill-color">{serialport}</svg>
     </button>
 
     <MockingboardWaveform />
