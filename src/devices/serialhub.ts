@@ -7,7 +7,29 @@ let writer: WritableStreamDefaultWriter = null;
 let reader: ReadableStreamDefaultReader = null;
 let port: SerialPort = null;
 
-export const requestSerialPort = () => {
+export const getSerialName = (i: number) : string => {
+  return (i == 0) ? "Builtin ImageWriter" : "External Port";
+}
+
+export const changeSerialMode = (i: number) => {
+  if (!wsSupported)
+  {
+    useWebSerial = false;
+  }
+  else
+  {
+    if (i>0)
+      requestSerialPort();
+    else
+      setUseWebSerial(false);
+  }
+}
+
+export const getSerialMode = () : number => {
+  return useWebSerial ? 1 : 0;
+}
+
+const requestSerialPort = () => {
   if (!wsSupported)
     return;
   

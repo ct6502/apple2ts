@@ -13,8 +13,7 @@ import { getColorModeSVG } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
-import { requestSerialPort } from "../devices/serialhub";
-import { serialport } from "../devices/img/db9";
+import { SerialPortSelect } from "../devices/serialselect";
 import { ReactNode } from "react";
 import { handleGetCapsLock, handleGetColorMode, handleGetMemSize, handleGetSpeedMode, passCapsLock, passColorMode, passSetRAMWorks, passSetSpeedMode } from "../main2worker";
 
@@ -65,13 +64,9 @@ const ConfigButtons = (props: DisplayProps) => {
       onClick={() => { passCapsLock(!capsLock); props.updateDisplay() }}>
       <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
     </button>
-    <button className="pushButton"
-      title={"Select Serial Port"}
-      onClick={() => {requestSerialPort()}}>
-      <svg width="30" height="30" className="fill-color">{serialport}</svg>
-    </button>
 
     <MockingboardWaveform />
+    <SerialPortSelect />
     <MidiDeviceSelect />
 
     <button className="push-button"
