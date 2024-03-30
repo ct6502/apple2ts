@@ -8,13 +8,13 @@ let reader: ReadableStreamDefaultReader = null;
 let port: SerialPort = null;
 
 export const getSerialName = (i: number) : string => {
-  return (i == 0) ? "Builtin ImageWriter" : "External Port";
+  return (i == 0) ? "Builtin ImageWriter" : (port == null) ? "Select External Port" : "External Port";
 }
 
 export const changeSerialMode = (i: number) => {
   if (!wsSupported)
   {
-    useWebSerial = false;
+    setUseWebSerial(false);
   }
   else
   {
@@ -61,6 +61,9 @@ export const setUseWebSerial = (tf: boolean) => {
       .catch((err) => {
         console.log("Port Open error:", err);
       });
+  }
+  else {
+    port = null;
   }
 }
 
