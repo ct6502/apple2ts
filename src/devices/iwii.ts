@@ -6,7 +6,7 @@ export const registerSetPrinting = (fn: () => void) => {
   doSetPrinting = fn
 }
 
-export const receiveCommData = (data: Uint8Array) => {
+export const receivePrinterData = (data: Uint8Array) => {
   if (doSetPrinting) doSetPrinting()
   ImageWriterII.write(data)
 }

@@ -13,6 +13,7 @@ import { getColorModeSVG } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
+import { SerialPortSelect } from "../devices/serialselect";
 import { ReactNode } from "react";
 import { handleGetCapsLock, handleGetColorMode, handleGetMemSize, handleGetSpeedMode, passCapsLock, passColorMode, passSetRAMWorks, passSetSpeedMode } from "../main2worker";
 
@@ -65,6 +66,7 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>
 
     <MockingboardWaveform />
+    <SerialPortSelect />
     <MidiDeviceSelect />
 
     <button className="push-button"
