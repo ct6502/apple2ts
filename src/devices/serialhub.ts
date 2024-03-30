@@ -3,9 +3,9 @@ import { passRxCommData } from "../main2worker"
 
 let wsSupported = ("serial" in navigator);
 let useWebSerial = false;
-let writer: WritableStreamDefaultWriter = null;
-let reader: ReadableStreamDefaultReader = null;
-let port: SerialPort = null;
+let writer: WritableStreamDefaultWriter | null = null;
+let reader: ReadableStreamDefaultReader | null = null;
+let port: SerialPort | null = null;
 
 export const getSerialName = (i: number) : string => {
   return (i == 0) ? "Builtin ImageWriter" : (port == null) ? "Select External Port" : "External Port";
@@ -47,15 +47,15 @@ const requestSerialPort = () => {
 }
 
 export const setUseWebSerial = (tf: boolean) => {
-  useWebSerial = tf && port;
+  useWebSerial = tf && (port != null);
 
   if (useWebSerial) {
     // Wait for the serial port to open.
-    port.open({ bufferSize: 1024, baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'hardware' })
+    port?.open({ bufferSize: 1024, baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'hardware' })
       .then(() => {
         console.log("Port Open Success")
-        writer = port.writable.getWriter();
-        reader = port.readable.getReader();
+        writer = port?.writable ? port.writable.getWriter() : null;
+        reader = port?.readable ? port.readable.getReader() : null;
         queueRead();
       })
       .catch((err) => {
@@ -68,14 +68,13 @@ export const setUseWebSerial = (tf: boolean) => {
 }
 
 const queueRead = () => {
-  if (!reader)
+  if (reader == null)
     return;
 
-  reader.read().then(({done, value}) => {
+  reader?.read().then(({done, value}) => {
     // stream closed
     if (done === true)
     {
-      reader.close();
       return;
     }
 
@@ -94,25 +93,10 @@ export const receiveCommData = (data: Uint8Array) => {
 }
 
 const receiveWebSerial2 = async (data: Uint8Array) => {
-  if (!writer)
+  if (writer == null)
     return;
 
-  await writer.ready;
-  await writer.write(data);
-}
-
-const receiveWebSerial = (data: Uint8Array) => {
-  if (!port)
-    return;
-
-  const writer = port.writable.getWriter();
-  writer.ready
-    .then(() => writer.write(data))
-    .then(() => {
-      writer.releaseLock();
-    })
-    .catch((err) => {
-      console.log("Stream error:", err);
-    });
+  await writer?.ready;
+  await writer?.write(data);
 }
 
