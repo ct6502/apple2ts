@@ -38,7 +38,8 @@ const FileInput = (props: DisplayProps) => {
           passPasteText(text + '\nRUN\n')
         }
       } else {
-        drive = isHardDriveImage(fname) ? 0 : 1
+        // Force hard drive images to be in "0" (slot 7 drive 1 actually)
+        drive = isHardDriveImage(fname) ? 0 : drive
         handleSetDiskData(drive, new Uint8Array(buffer), file.name)
         if (handleGetRunMode() === RUN_MODE.IDLE) {
           passSetRunMode(RUN_MODE.NEED_BOOT)
