@@ -75,6 +75,7 @@ export const passRequestThumbnail = (PC: number) => {
 // command line where self will be undefined.
 if (typeof self !== 'undefined') {
   self.onmessage = (e: MessageEvent) => {
+    if (!('msg' in e.data)) return
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:
         doSetRunMode(e.data.payload)
@@ -175,7 +176,7 @@ if (typeof self !== 'undefined') {
         forceSoftSwitches(e.data.payload)
         break
       default:
-        console.error(`worker2main: unhandled msg: ${e.data.msg}`)
+        console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)
         break
     }
   }

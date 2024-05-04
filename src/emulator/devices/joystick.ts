@@ -104,9 +104,7 @@ export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
 
-const convertGamepadAxes = (axes: number[]) => {
-  let xstick = axes[0]
-  let ystick = axes[1]
+const scaleAxes = (xstick: number, ystick: number) => {
   if (nearZero(xstick)) xstick = 0
   if (nearZero(ystick)) ystick = 0
   const dist = Math.sqrt(xstick * xstick + ystick * ystick)
@@ -119,6 +117,12 @@ const convertGamepadAxes = (axes: number[]) => {
   return [xstick, ystick]
 }
 
+const convertGamepadAxes = (axes: number[]) => {
+  const [xstick1, ystick1] = scaleAxes(axes[0], axes[1])
+  const [xstick2, ystick2] = (axes.length >= 6) ? scaleAxes(axes[2], axes[5]) : [0, 0]
+  return [xstick1, ystick1, xstick2, ystick2]
+}
+
 const handleGamepad = (gp: number) => {
   const axes = gameMapping.joystick ?
     gameMapping.joystick(gamePads[gp].axes, isKeyboardJoystick) : gamePads[gp].axes
@@ -128,6 +132,8 @@ const handleGamepad = (gp: number) => {
     paddle1timeout = stick[1]
     leftButtonDown = false
     rightButtonDown = false
+    paddle2timeout = stick[2]
+    paddle3timeout = stick[3]
   } else {
     paddle2timeout = stick[0]
     paddle3timeout = stick[1]

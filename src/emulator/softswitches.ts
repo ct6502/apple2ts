@@ -69,7 +69,7 @@ export const SWITCHES = {
   SLOTC3ROM: NewSwitch(0xC00A, 0xC00B, 0xC017, true),
   COLUMN80: NewSwitch(0xC00C, 0xC00D, 0xC01F, true),
   ALTCHARSET: NewSwitch(0xC00E, 0xC00F, 0xC01E, true),
-  KBRDSTROBE: NewSwitch(0, 0, 0xC010, false, () => {
+  KBRDSTROBE: NewSwitch(0xC010, 0, 0, false, () => {
     const keyvalue = memGetC000(0xC000) & 0b01111111
     memSetC000(0xC000, keyvalue, 32)
   }),

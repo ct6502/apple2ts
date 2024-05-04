@@ -68,6 +68,10 @@ Navigate to the provided URL - it will be something like `10.0.0.xxx:6502`.
 
 On your Desktop Chrome, go to `chrome://inspect/#devices` and then choose the appropriate "Remote Target".
 
+## iOS Debugging
+
+<https://developer.apple.com/documentation/safari-developer-tools/inspecting-ios>
+
 ## Jest Test Debugging in VS Code
 
 In VS Code, add breakpoints to the test code. Then open up `package.json`, hover over

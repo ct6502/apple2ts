@@ -48,7 +48,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     const rowIndex = Math.min(rawRow, nrows - 8)
     // However, for the column, subtract 1 to get rid of the address column.
     const rawCol = Array.from(row.children).indexOf(cell) - 1
-    const cellIndex = Math.min(rawCol, ncols - 3)
+    const cellIndex = Math.min(rawCol, ncols - 2)
     if (rowIndex < 0 || cellIndex < 0) return [-1, -1]
     return [cellIndex, rowIndex]
   }
