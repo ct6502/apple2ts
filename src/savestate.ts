@@ -6,7 +6,7 @@ import { handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetSave
 
 const useSaveStateCallback = (saveState: EmulatorSaveState) => {
   const d = new Date()
-  let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString()
+  const datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString()
   if (saveState.emulator) {
     saveState.emulator.name = `Apple2TS Emulator`
     saveState.emulator.date = datetime
@@ -28,8 +28,7 @@ const useSaveStateCallback = (saveState: EmulatorSaveState) => {
       name = "apple2ts"
     }
   }
-  datetime = datetime.replaceAll('-', '').replaceAll(':', '').split('.')[0]
-  link.setAttribute('download', `${name}${datetime}.a2ts`);
+  link.setAttribute('download', `${name}.a2ts`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();

@@ -1,6 +1,7 @@
 import { memGet } from "../memory"
 import { passRumble } from "../worker2main"
 
+// $B6 is character's health, $B7 is opponent's health
 let memB6 = 14
 let memB7 = 14
 const karatekaRumble = () => {

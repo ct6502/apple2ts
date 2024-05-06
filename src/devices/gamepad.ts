@@ -22,13 +22,20 @@ export const checkGamepad = () => {
   }
 }
 
+let withinRumble = false
+
 export const doRumble = (params: GamePadActuatorEffect) => {
   const gamepads = getGamepads()
   if (!gamepads || gamepads.length < 1) return
+  if (withinRumble) return
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gp = gamepads[0] as any
-  if (gp && 'vibrationActuator' in gp) {
-    gp.vibrationActuator.playEffect("dual-rumble", params);
+  if (gp && 'vibrationActuator' in gp && gp.vibrationActuator) {
+    gp.vibrationActuator.playEffect("dual-rumble", params)
+    withinRumble = true
+    setTimeout(() => {
+      withinRumble = false
+    , params.duration})
   }
 }
 

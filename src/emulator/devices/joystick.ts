@@ -118,8 +118,10 @@ const scaleAxes = (xstick: number, ystick: number) => {
 }
 
 const convertGamepadAxes = (axes: number[]) => {
+  console.log(`axes: ${axes.length} ${axes[0]} ${axes[1]} ${axes[2]} ${axes[3]}`)
   const [xstick1, ystick1] = scaleAxes(axes[0], axes[1])
-  const [xstick2, ystick2] = (axes.length >= 6) ? scaleAxes(axes[2], axes[5]) : [0, 0]
+  const joy2y = (axes.length >= 6) ? axes[5] : axes[3]
+  const [xstick2, ystick2] = (axes.length >= 4) ? scaleAxes(axes[2], joy2y) : [0, 0]
   return [xstick1, ystick1, xstick2, ystick2]
 }
 
