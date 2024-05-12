@@ -5,8 +5,7 @@ import { diskImages } from "./diskimages";
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
-// emulator. But all of the helper functions were getting too large,
-// so now it's all contained here.
+// emulator. But the helper functions were getting too large, so now it's here.
 
 const initDriveProps = (drive: number): DriveProps => {
   return {
@@ -36,7 +35,15 @@ export const handleGetFilename = (drive: number) => {
 }
 
 export const doSetDriveProps = (props: DriveProps) => {
-  driveProps[props.drive] = props
+  // For efficiency we only pass the disk data if it has changed.
+  // If our disk is the same but it hasn't changed, keep the existing data.
+  if (props.diskData.length === 0) {
+    const tmp = driveProps[props.drive].diskData
+    driveProps[props.drive] = props
+    driveProps[props.drive].diskData = tmp
+  } else {
+    driveProps[props.drive] = props
+  }
 }
 
 export const handleGetDriveProps = (drive: number) => {
@@ -45,11 +52,9 @@ export const handleGetDriveProps = (drive: number) => {
 
 export const handleSetDiskData = (drive: number,
   data: Uint8Array, filename: string) => {
-  const props = driveProps[drive]
-  props.drive = drive
-  props.filename = filename
-  props.diskData = data
-  passSetDriveProps(props)
+  driveProps[drive].filename = filename
+  driveProps[drive].diskData = data
+  passSetDriveProps(driveProps[drive])
 }
 
 const findMatchingDiskImage = (url: string) => {

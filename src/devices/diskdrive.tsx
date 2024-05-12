@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { crc32, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps } from "./driveprops"
@@ -32,6 +33,35 @@ type DiskDriveProps = {
 
 const DiskDrive = (props: DiskDriveProps) => {
   const dprops = handleGetDriveProps(props.drive)
+
+  const [menuOpen, setMenuOpen] = useState<boolean>(false)
+  const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
+
+  const menuNames = ['Download Disk', 'Download and Eject Disk', 'Eject Disk']
+
+  const handleMenuClick = (event: React.MouseEvent) => {
+    if (dprops.filename.length > 0) {
+      const y = Math.min(event.clientY, window.innerHeight - 200)
+      setPosition({ x: event.clientX, y: y })
+      setMenuOpen(true)
+    } else {
+      props.setShowFileOpenDialog(true, props.drive)
+    }
+  }
+
+  const handleMenuClose = (index = -1) => {
+    setMenuOpen(false)
+    if (index === 0 || index === 1) {
+      if (dprops.diskData.length > 0) {
+        downloadDisk(dprops.diskData, filename)
+        dprops.diskHasChanges = false
+      }
+    }
+    if (index === 1 || index === 2) {
+      resetDrive(props.drive)
+    }
+  }
+
   let img1: string
   if (dprops.hardDrive) {
     img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
@@ -47,19 +77,28 @@ const DiskDrive = (props: DiskDriveProps) => {
     <span className="flex-column">
       <img className="disk-image"
         src={img1} alt={filename}
-        title={filename}
-        onClick={() => {
-          if (dprops.filename.length > 0) {
-            if (dprops.diskHasChanges) {
-              downloadDisk(dprops.diskData, filename)
-            }
-            resetDrive(props.drive)
-          } else {
-            props.setShowFileOpenDialog(true, props.drive)
-          }
-        }} />
-      <span className={"disk-label"}>{dprops.filename}</span>
-      <span className={"default-font diskStatus"}>{status}</span>
+        title={filename + (dprops.diskHasChanges ? ' (modified)' : '')}
+        onClick={handleMenuClick} />
+      <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
+        {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
+      <span className={"default-font disk-status"}>{status}</span>
+      {menuOpen &&
+        <div className="modal-overlay"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
+          onClick={() => handleMenuClose()}>
+          <div className="floating-dialog flex-column droplist-option"
+            style={{ left: position.x, top: position.y }}>
+            {[0, 1, 2].map((i) => (
+              <div className="droplist-option"
+                style={{ padding: '5px', paddingLeft: '10px', paddingRight: '10px' }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
+                key={i} onClick={() => handleMenuClose(i)}>
+                {menuNames[i]}
+              </div>))}
+          </div>
+        </div>
+      }
     </span>
   )
 }

@@ -3,10 +3,10 @@
   position: relative;
   color: white;
   border-radius: 3px;
-  width: 70px;
+  width: 75px;
   pointer-events: none;
   height: 1.5em;
-  top: -41px;
+  top: -42px;
   margin-top: -1.2em;
   padding-left: 0px;
   padding-top: 0px;
@@ -20,11 +20,15 @@
   user-select: none;
 }
 
-.diskStatus {
-  width: 82px;
+.disk-label-unsaved {
+  color: red;
+}
+
+.disk-status {
+  width: 88px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
-  margin-left: 0;
+  margin-left: 2px;
   margin-right: 0;
   white-space: nowrap;
   overflow: hidden;
