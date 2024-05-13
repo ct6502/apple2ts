@@ -14,6 +14,7 @@ export const COLORS = {
     OPCODE: '#000000',
     ADDRESS: '#006400',
     IMMEDIATE: '#646400',
+    HIGHLIGHT: '#FFFF00',
   },
   DARK: {
     TEXT: '#DDD',
@@ -24,6 +25,7 @@ export const COLORS = {
     OPCODE: '#dcdcaf',
     ADDRESS: '#00C000',
     IMMEDIATE: '#80FF00',
+    HIGHLIGHT: '#966C23',
   }
 }
 

@@ -395,6 +395,9 @@ export const memGetRaw = (addr: number): number => {
 const memSetSoftSwitch = (addr: number, value: number) => {
   // these are write-only soft switches that don't work like the others, since
   // we need the full byte of data being written
+  if (addr === 0xC071 || addr === 0xC075 || addr === 0xC077) {
+    console.log(`${addr} = ${value}`)
+  }
   if (addr === 0xC071 || addr === 0xC073) {
     if (value > RAMWorksMaxBank)
       return // do nothing

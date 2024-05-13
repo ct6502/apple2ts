@@ -52,8 +52,8 @@ export const getBreakpointString = (bp: Breakpoint) => {
     result = toHex(bp.address, 4)
   }
   if (bp.watchpoint) {
-    if (bp.memset) result += ' write'
     if (bp.memget) result += ' read'
+    if (bp.memset) result += ' write'
   } else {
     if (bp.hitcount > 1) {
       result += ` hit=${bp.hitcount}`

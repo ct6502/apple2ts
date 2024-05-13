@@ -220,9 +220,12 @@ input:focus {
 
 .bigger-font {
   font-size: 10pt;
-  margin-bottom: 0.25em;
   color: var(--text-color);
   fill: var(--text-color);
+}
+
+.column-gap {
+  margin-bottom: 0.25em;
 }
 
 .centered-title {

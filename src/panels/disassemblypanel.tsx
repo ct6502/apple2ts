@@ -7,7 +7,7 @@ const DisassemblyPanel = () => {
   return (
     <div className="flex-column-gap">
       <div className="round-rect-border tall-panel">
-        <div className="bigger-font">Disassembly</div>
+        <div className="bigger-font column-gap">Disassembly</div>
         <DisassemblyControls />
         <DisassemblyView />
       </div>

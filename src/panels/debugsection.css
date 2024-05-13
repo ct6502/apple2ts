@@ -307,6 +307,10 @@ td {
   background-color: var(--button-active);
 }
 
+.memtable-highlight {
+  background-color: var(--highlight);
+}
+
 .selected {
   background-color: #FF0000CC;
 }

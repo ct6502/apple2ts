@@ -7,10 +7,12 @@ type MemoryTableProps = {
   addressGetTable: number[] | null
   isHGR: boolean
   offset: number
+  highlight: number[]
   scrollRow: number
   pickWatchpoint: boolean
   doPickWatchpoint: (addr: number) => void
   doSetMemory: (address: number, value: number) => void
+  doGetVisibleRows: (gvr: () => { top: number, bottom: number }) => void
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
@@ -116,6 +118,31 @@ const MemoryTable = (props: MemoryTableProps) => {
       }
     }
   }
+
+  const getVisibleRows = () => {
+    const table = document.querySelector('table') as HTMLTableElement
+    let topVisibleRowIndex = -1
+    let bottomVisibleRowIndex = -1
+
+    for (let i = 0; i < table.rows.length; i++) {
+      const rect = table.rows[i].getBoundingClientRect()
+      // Check if the row is within the viewport
+      if (rect.top < window.innerHeight && rect.bottom >= 0) {
+        // If it's the first visible row we've found, set it as the top
+        if (topVisibleRowIndex === -1) {
+          topVisibleRowIndex = i;
+        }
+        // Keep updating the bottom visible row index as we go
+        bottomVisibleRowIndex = i;
+      } else if (topVisibleRowIndex !== -1) {
+        // We've found the last visible row
+        break
+      }
+    }
+    return { top: topVisibleRowIndex, bottom: bottomVisibleRowIndex }
+  }
+
+  props.doGetVisibleRows(getVisibleRows)
 
   const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
     const nextCell = table.rows[row].cells[col]
@@ -225,7 +252,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     const table = document.querySelector('table') as HTMLTableElement
     const row = table.rows[props.scrollRow + 1]
     row.scrollIntoView({ block: "center", inline: "center" })
-    row.style.animation = 'highlight-anim 2s 0.25s'
+    row.style.animation = 'highlight-anim 1s 0.1s'
     // Tried to also highlight the address column, but it does strange things
     // in HGR mode where it draws some of the columns on top of each other...
     //    row.cells[0].style.animation = 'highlight-anim 2s 0.25s'
@@ -233,6 +260,12 @@ const MemoryTable = (props: MemoryTableProps) => {
       row.style.animation = ''
       // row.cells[0].style.animation = ''
     }, 2250)
+  }
+
+  const cellClass = (col: number, row: number) => {
+    if (col === 0) return 'memtable-addr'
+    const highlight = (props.highlight.includes(row * width + col - 1)) ? ' memtable-highlight' : ''
+    return (isEditable(col, row) ? '' : 'memtable-readonly') + highlight
   }
 
   return (
@@ -255,7 +288,7 @@ const MemoryTable = (props: MemoryTableProps) => {
                 onKeyDown={(e) => handleKeyDown(i, j, e)}
                 onInput={(e) => handleInput(i, j, e.currentTarget)}
                 onFocus={(e) => handleFocus(e.currentTarget)}
-                className={(i === 0) ? 'memtable-addr' : (isEditable(i, j) ? '' : 'memtable-readonly')}>
+                className={cellClass(i, j)}>
                 {cell}
               </td>
             ))}

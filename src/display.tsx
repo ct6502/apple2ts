@@ -156,6 +156,7 @@ const DisplayApple2 = () => {
   document.body.style.setProperty('--opcode', colors.OPCODE)
   document.body.style.setProperty('--address', colors.ADDRESS)
   document.body.style.setProperty('--immediate', colors.IMMEDIATE)
+  document.body.style.setProperty('--highlight', colors.HIGHLIGHT)
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const canvasWidth = getCanvasSize()[0]
