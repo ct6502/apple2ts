@@ -212,64 +212,93 @@ test('testC800', () => {
 
 test('test RAMWorks', () => {
   memoryReset()
-  doSetRAMWorks(1024)
+  doSetRAMWorks(4096)
   
   // check regular zp
   memSet(0x00C0, 0xDE)
   expect(memGet(0x00C0)).toEqual(0xDE)
  
-  // altzp
+  // altzp, default memory fill is 0xFF
   memSet(0xC009,0)
-  expect(memGet(0x00C0)).not.toEqual(0xDE)
-  memSet(0x00C0, 0x01)
-  expect(memGet(0x00C0)).toEqual(0x01)
+  expect(memGet(0x00C0)).toEqual(0xFF)
+  memSet(0x00C0, 0xCD)
+  expect(memGet(0x00C0)).toEqual(0xCD)
+
   // ramworks bank 0 is alt
   memSet(0xC073,0x00)
-  expect(memGet(0x00C0)).toEqual(0x01)
+  expect(memGet(0x00C0)).toEqual(0xCD)
 
-  // switch to ramworks bank 1
-  memSet(0xC073, 0x01)
-  expect(memGet(0x00C0)).not.toEqual(0x01)
-  memSet(0x00C0, 0x02)
-  expect(memGet(0x00C0)).toEqual(0x02)
+  // switch to all ramworks banks
+  let maxBank = (4096 - 64) / 64
+  for (let bank = 1; bank <= maxBank; bank++) {
+    memSet(0xC073, bank)
+    expect(memGet(0x00C0)).toEqual(0)
+    memSet(0x00C0, bank)
+    expect(memGet(0x00C0)).toEqual(bank)
+  }
 
   // switch off altzp
   memSet(0xC008,0)
-  expect(memGet(0x00C0)).not.toEqual(0x02)
   expect(memGet(0x00C0)).toEqual(0xDE)
 
   // switch to ramworks bank 2
   memSet(0xC073, 0x02)
   // since altzp is still off
   expect(memGet(0x00C0)).toEqual(0xDE)
-  // altzp on
+
+  // altzp on, make sure it remembered to be in bank 2
   memSet(0xC009,0)
-  expect(memGet(0x00C0)).not.toEqual(0xDE)
-  memSet(0x00C0, 0x03)
-  expect(memGet(0x00C0)).toEqual(0x03)
-
-  memSet(0xC073,0x00)
-  memSet(0x00C0, 0x00)
-  memSet(0xC073,0x01)
-  memSet(0x00C0, 0x01)
-  memSet(0xC073,0x02)
-  memSet(0x00C0, 0x02)
-  memSet(0xC073,0x03)
-  memSet(0x00C0, 0x03)
-
-  memSet(0xC073,0x00)
-  expect(memGet(0x00C0)).toEqual(0x00)
-  memSet(0xC073,0x01)
-  expect(memGet(0x00C0)).toEqual(0x01)
-  memSet(0xC073,0x02)
   expect(memGet(0x00C0)).toEqual(0x02)
-  memSet(0xC073,0x03)
-  expect(memGet(0x00C0)).toEqual(0x03)
+
+  // Now make sure it remembered all of the values in the different banks
+  for (let bank = 1; bank <= maxBank; bank++) {
+    memSet(0xC073, bank)
+    expect(memGet(0x00C0)).toEqual(bank)
+  }
 
   // switch off altzp
-  memSet(0xC008,0)
+  memSet(0xC008, 0)
   expect(memGet(0x00C0)).toEqual(0xDE)
 
-  memSet(0xC009,0)
-  expect(memGet(0x00C0)).toEqual(0x03)
+  // altzp on, make sure it remembered to be in maxBank
+  memSet(0xC009, 0)
+  expect(memGet(0x00C0)).toEqual(maxBank)
+
+  // Now crank up the memory and make sure it copied correctly
+  doSetRAMWorks(8192)
+
+  // Did it remember that we were in maxBank?
+  expect(memGet(0x00C0)).toEqual(maxBank)
+
+  // Make sure it copied all of the indices
+  for (let bank = 1; bank <= maxBank; bank++) {
+    memSet(0xC073, bank)
+    expect(memGet(0x00C0)).toEqual(bank)
+  }
+
+    // Test the upper 4096
+  const oldMaxBank = maxBank
+  maxBank = (8192 - 64) / 64
+  for (let bank = oldMaxBank + 1; bank <= maxBank; bank++) {
+    memSet(0xC073, bank)
+    expect(memGet(0x00C0)).toEqual(0)
+    memSet(0x00C0, bank)
+    expect(memGet(0x00C0)).toEqual(bank)
+  }
+
+  for (let bank = 1; bank <= maxBank; bank++) {
+    memSet(0xC073, bank)
+    expect(memGet(0x00C0)).toEqual(bank)
+  }
+
+  // Now kill all the memory. This should reset the bank index to 0
+  // and remove all of the Ramworks memory.
+  doSetRAMWorks(64)
+  expect(memGet(0x00C0)).toEqual(0xCD)
+  for (let bank = 1; bank <= maxBank; bank++) {
+    // This should be a nop, and should just leave the bank index in AUX mem.
+    memSet(0xC073, bank)
+    expect(memGet(0x00C0)).toEqual(0xCD)
+  }
+
 })

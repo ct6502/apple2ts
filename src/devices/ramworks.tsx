@@ -23,8 +23,8 @@ export const RamworksSelect = (props: { updateDisplay: UpdateDisplay }) => {
     }
   }
 
-  const names = ["64 KB (AUX)", "512 KB", "1024 KB", "4 MB", "8 MB", "16 MB"]
-  const memory = [64, 512, 1024, 4096, 8192, 16384]
+  const names = ["64 KB (AUX)", "512 KB", "1024 KB", "4 MB", "8 MB"]
+  const memory = [64, 512, 1024, 4096, 8192]
   const extraMemSize = handleGetMemSize()
 
 
@@ -44,7 +44,7 @@ export const RamworksSelect = (props: { updateDisplay: UpdateDisplay }) => {
           onClick={() => handleClose()}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <div className="droplist-option" style={{ padding: '5px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}

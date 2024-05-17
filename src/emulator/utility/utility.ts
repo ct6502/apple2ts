@@ -2,7 +2,7 @@ import { KeyboardEvent } from "react"
 
 export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
-export const MAX_SNAPSHOTS = 60
+export const MAX_SNAPSHOTS = 30
 export const FILE_SUFFIXES = ".a2ts,.hdv,.2mg,.dsk,.woz,.po,.do,.bin"
 export const COLORS = {
   LIGHT: {

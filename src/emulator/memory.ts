@@ -44,7 +44,7 @@ let   RAMWorksBankIndex = 0
 
 export const doSetRAMWorks = (size: number) => {
   // Clamp to 64K...16M and make sure it is a multiple of 64K
-  size = Math.max(64, Math.min(16384, size))
+  size = Math.max(64, Math.min(8192, size))
   size = Math.floor(size / 64) * 64
   const oldMaxBank = RAMWorksMaxBank
   // We subtract 1 because the 0th bank is in AUX memory
@@ -54,8 +54,10 @@ export const doSetRAMWorks = (size: number) => {
   if (oldMaxBank === RAMWorksMaxBank) return
 
   // If our current bank index is out of range, just reset it
-  if (RAMWorksBankIndex > RAMWorksMaxBank) {
+  const maxBankIndex = ((RAMWorksMaxBank - 1) * 0x100 + RAMWorksIndex)
+  if (RAMWorksBankIndex > maxBankIndex) {
     RAMWorksBankIndex = 0
+    updateAddressTables()
   }
 
   // Reallocate memory and copy the old memory
