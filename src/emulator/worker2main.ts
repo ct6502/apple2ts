@@ -170,7 +170,7 @@ if (typeof self !== 'undefined') {
         receiveMidiData(e.data.payload)
         break
       case MSG_MAIN.RAMWORKS:
-        doSetRAMWorks(e.data.payload as boolean)
+        doSetRAMWorks(e.data.payload as number)
         break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)

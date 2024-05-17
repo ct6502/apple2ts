@@ -453,7 +453,7 @@ const updateExternalMachineState = () => {
     iTempState: iTempState,
     isDebugging: isDebugging,
     lores: getTextPage(true),
-    memSize: 0,
+    extraRamSize: 0,  // ignored by main thread
     memoryDump: getMemoryDump(),
     nextInstruction: getInstruction(s6502.PC),
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,

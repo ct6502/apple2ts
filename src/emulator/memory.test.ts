@@ -212,7 +212,7 @@ test('testC800', () => {
 
 test('test RAMWorks', () => {
   memoryReset()
-  doSetRAMWorks(true)
+  doSetRAMWorks(1024)
   
   // check regular zp
   memSet(0x00C0, 0xDE)

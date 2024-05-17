@@ -16,9 +16,11 @@ import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 // 0x27F00...??F00: RAMWorks expanded memory
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
-const RAMWorksSize = (1024-64) // in K 256, 512, 1024, 4096, 8192
+
 // Start out with RAMWorks turned off by default.
+// This is the maximum bank index. Each index represents 64K.
 let RAMWorksMaxBank = 0
+
 const BaseMachineMemory = 0x27F00
 export let memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
 
@@ -40,23 +42,31 @@ const AUXstart = 256 * AUXindex
 let   C800Slot = 0
 let   RAMWorksBankIndex = 0
 
-export const doSetRAMWorks = (set: boolean) => {
-  if (set) {
-    // nothing to do?
-    if (RAMWorksMaxBank > 0) return
-    RAMWorksMaxBank = RAMWorksSize / 64
-    // Reallocate memory and copy the old memory
-    const memtemp = memory.slice(0, BaseMachineMemory)
-    memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
-    memory.set(memtemp)
-    memory.fill(0, BaseMachineMemory, BaseMachineMemory + RAMWorksMaxBank*0x10000)
-  } else {
-    // nothing to do?
-    if (RAMWorksMaxBank === 0) return
-    RAMWorksMaxBank = 0
+export const doSetRAMWorks = (size: number) => {
+  // Clamp to 64K...16M and make sure it is a multiple of 64K
+  size = Math.max(64, Math.min(16384, size))
+  size = Math.floor(size / 64) * 64
+  const oldMaxBank = RAMWorksMaxBank
+  // We subtract 1 because the 0th bank is in AUX memory
+  RAMWorksMaxBank = size / 64 - 1
+
+  // Nothing to do?
+  if (oldMaxBank === RAMWorksMaxBank) return
+
+  // If our current bank index is out of range, just reset it
+  if (RAMWorksBankIndex > RAMWorksMaxBank) {
     RAMWorksBankIndex = 0
-    // Get rid of the RAMWorks memory.
-    memory = memory.slice(0, BaseMachineMemory)
+  }
+
+  // Reallocate memory and copy the old memory
+  if (RAMWorksMaxBank < oldMaxBank) {
+    // We are shrinking memory, just keep the first part
+    memory = memory.slice(0, BaseMachineMemory + RAMWorksMaxBank * 0x10000)
+  } else {
+    // We are expanding memory, copy the old memory
+    const memtemp = memory
+    memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank * 0x10000)).fill(0)
+    memory.set(memtemp)
   }
 }
 
@@ -395,13 +405,11 @@ export const memGetRaw = (addr: number): number => {
 const memSetSoftSwitch = (addr: number, value: number) => {
   // these are write-only soft switches that don't work like the others, since
   // we need the full byte of data being written
-  if (addr === 0xC071 || addr === 0xC075 || addr === 0xC077) {
-    console.log(`${addr} = ${value}`)
-  }
   if (addr === 0xC071 || addr === 0xC073) {
-    if (value > RAMWorksMaxBank)
-      return // do nothing
-    RAMWorksBankIndex = value ? (((value-1)*(0x100)) + RAMWorksIndex) : 0 
+    // Out of range bank index?
+    if (value > RAMWorksMaxBank) return
+    // We subtract 1 because the 0th bank is in AUX memory
+    RAMWorksBankIndex = value ? ((value - 1) * 0x100 + RAMWorksIndex) : 0 
   } else if (addr >= 0xC090) {
     checkSlotIO(addr, value)
   } else {

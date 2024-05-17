@@ -89,7 +89,7 @@ type MachineState = {
   iTempState: number,
   isDebugging: boolean,
   lores: Uint8Array,
-  memSize: number,
+  extraRamSize: number,
   memoryDump: Uint8Array,
   nextInstruction: string,
   noDelayMode: boolean,

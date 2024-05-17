@@ -173,8 +173,10 @@ const DisplayApple2 = () => {
     document.body.style.marginRight = "2px"
     document.body.style.marginTop = isLandscape ? "10px" : "2px"
   }
+  const mem = handleGetMemSize() + 64
+  const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font statusItem">
-    <span>{props.speed} MHz, {handleGetMemSize()} KB</span>
+    <span>{props.speed} MHz, {memSize}</span>
     <br />
     <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
       <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>

@@ -6,7 +6,6 @@ import {
   faWalking,
   faTruckFast,
   faDisplay,
-  faMicrochip,
   faCircleHalfStroke,
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG } from "../img/icons";
@@ -15,7 +14,11 @@ import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
 import { SerialPortSelect } from "../devices/serialselect";
 import { ReactNode } from "react";
-import { handleGetCapsLock, handleGetColorMode, handleGetMemSize, handleGetSpeedMode, passCapsLock, passColorMode, passSetRAMWorks, passSetSpeedMode } from "../main2worker";
+import {
+  handleGetCapsLock, handleGetColorMode, handleGetSpeedMode,
+  passCapsLock, passColorMode, passSetSpeedMode
+} from "../main2worker";
+import { RamworksSelect } from "../devices/ramworks";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -24,7 +27,6 @@ const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
   const colorMode = handleGetColorMode()
   const capsLock = handleGetCapsLock()
-  const usingRAMWorks = handleGetMemSize() > 128
   // const useArrowKeysAsJoystick = handleGetArrowKeysAsJoystick() ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
@@ -68,23 +70,7 @@ const ConfigButtons = (props: DisplayProps) => {
     <MockingboardWaveform />
     <SerialPortSelect />
     <MidiDeviceSelect />
-
-    <button className="push-button"
-      title={"Enable RAMWorks"}
-      style={{ display: typeof AudioContext !== 'undefined' ? '' : 'none' }}
-      onClick={() => { passSetRAMWorks(!usingRAMWorks); props.updateDisplay() }}>
-      <div style={{ position: 'relative', marginTop: '4px' }}>
-        <FontAwesomeIcon icon={faMicrochip}
-          style={{ position: 'absolute', top: '-14px', left: '-7px', fontSize: "12pt" }} />
-        <span style={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-45%, 20%)',
-          fontSize: '6pt',
-        }}>
-          {usingRAMWorks ? "1024" : "AUX"}
-        </span>
-      </div>
-    </button>
+    <RamworksSelect updateDisplay={props.updateDisplay} />
 
     <button className="push-button"
       title="Dark Mode"

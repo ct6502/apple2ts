@@ -158,10 +158,10 @@ const passThumbnailImage = (thumbnail: string) => {
   doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
 }
 
-export const passSetRAMWorks = (set: boolean) => {
-  doPostMessage(MSG_MAIN.RAMWORKS, set)
+export const passSetRAMWorks = (size: number) => {
+  doPostMessage(MSG_MAIN.RAMWORKS, size)
   // This should probably come from the emulator, but for now we'll just set it here.
-  machineState.memSize = set ? 1080 : 128
+  machineState.extraRamSize = size
 }
 
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
@@ -190,7 +190,7 @@ let machineState: MachineState = {
   iTempState: 0,
   isDebugging: false,
   lores: new Uint8Array(),
-  memSize: 128,
+  extraRamSize: 64,
   memoryDump: new Uint8Array(),
   nextInstruction: '',
   noDelayMode: false,
@@ -212,7 +212,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // Force them back to their actual values.
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
-      newState.memSize = machineState.memSize
+      newState.extraRamSize = machineState.extraRamSize
       newState.helpText = machineState.helpText
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
@@ -392,7 +392,7 @@ export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => v
 }
 
 export const handleGetMemSize = () => {
-  return machineState.memSize
+  return machineState.extraRamSize
 }
 
 export const handleGetHelpText = () => {
