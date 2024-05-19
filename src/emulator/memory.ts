@@ -5,24 +5,36 @@ import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
 import { isDebugging, inVBL } from "./motherboard";
-import { hiresLineToAddress, toHex } from "./utility/utility";
+import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "./utility/utility";
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 
 // 0x00000: main memory
-// 0x10000: aux memory 
-// 0x20000...23FFF: ROM (including page $C0 soft switches)
-// 0x24000...246FF: Peripheral card ROM $C100-$C7FF
-// 0x24700...27EFF: Slots 1-7 (8*256 byte $C800-$CFFF range for each card)
-// 0x27F00...??F00: RAMWorks expanded memory
+// 0x10000...13FFF: ROM (including page $C0 soft switches)
+// 0x14000...146FF: Peripheral card ROM $C100-$C7FF
+// 0x14700...17EFF: Slots 1-7 (8*256 byte $C800-$CFFF range for each card)
+// 0x17F00...: AUX/RamWorks memory (AUX is RamWorks bank 0)
 // Bank1 of $D000-$DFFF is stored at 0x*D000-0x*DFFF (* 0 for main, 1 for aux)
 // Bank2 of $D000-$DFFF is stored at 0x*C000-0x*CFFF (* 0 for main, 1 for aux)
 
-// Start out with RAMWorks turned off by default.
-// This is the maximum bank index. Each index represents 64K.
-let RAMWorksMaxBank = 0
+const SLOTindex = 0x140
+const SLOTC8index = 0x147
+const SLOTstart = 256 * SLOTindex
+const SLOTC8start = 256 * SLOTC8index
+let   C800Slot = 0
 
-const BaseMachineMemory = 0x27F00
-export let memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)).fill(0)
+// Start out with only 64K of AUX memory.
+// This is the maximum bank number. Each index represents 64K.
+export let RamWorksMaxBank = 0
+const BaseMachineMemory = RamWorksMemoryStart
+export let memory = (new Uint8Array(BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000)).fill(0)
+
+const RamWorksBankGet = () => {
+  return memGetC000(0xC073)
+}
+
+const RamWorksBankSet = (bank: number) => {
+  memSetC000(0xC073, bank)
+}
 
 // Mappings from real Apple II address to memory array above.
 // 256 pages of memory, from $00xx to $FFxx.
@@ -30,52 +42,39 @@ export let memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank*0x10000)
 export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
 
-const AUXindex = 0x100
-const ROMindex = 0x200
-const SLOTindex = 0x240
-const SLOTC8index = 0x247
-const RAMWorksIndex = 0x27F
-const ROMstart = 256 * ROMindex
-const SLOTstart = 256 * SLOTindex
-const SLOTC8start = 256 * SLOTC8index
-const AUXstart = 256 * AUXindex
-let   C800Slot = 0
-let   RAMWorksBankIndex = 0
-
-export const doSetRAMWorks = (size: number) => {
+export const doSetRamWorks = (size: number) => {
   // Clamp to 64K...16M and make sure it is a multiple of 64K
   size = Math.max(64, Math.min(8192, size))
-  size = Math.floor(size / 64) * 64
-  const oldMaxBank = RAMWorksMaxBank
-  // We subtract 1 because the 0th bank is in AUX memory
-  RAMWorksMaxBank = size / 64 - 1
+  const oldMaxBank = RamWorksMaxBank
+  // For 64K this will be zero
+  RamWorksMaxBank = Math.floor(size / 64) - 1
 
   // Nothing to do?
-  if (oldMaxBank === RAMWorksMaxBank) return
+  if (RamWorksMaxBank === oldMaxBank) return
 
   // If our current bank index is out of range, just reset it
-  const maxBankIndex = ((RAMWorksMaxBank - 1) * 0x100 + RAMWorksIndex)
-  if (RAMWorksBankIndex > maxBankIndex) {
-    RAMWorksBankIndex = 0
+  if (RamWorksBankGet() > RamWorksMaxBank) {
+    RamWorksBankSet(0)
     updateAddressTables()
   }
 
   // Reallocate memory and copy the old memory
-  if (RAMWorksMaxBank < oldMaxBank) {
+  const newMemSize = BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000
+  if (RamWorksMaxBank < oldMaxBank) {
     // We are shrinking memory, just keep the first part
-    memory = memory.slice(0, BaseMachineMemory + RAMWorksMaxBank * 0x10000)
+    memory = memory.slice(0, newMemSize)
   } else {
     // We are expanding memory, copy the old memory
     const memtemp = memory
-    memory = (new Uint8Array(BaseMachineMemory + RAMWorksMaxBank * 0x10000)).fill(0)
+    memory = (new Uint8Array(newMemSize)).fill(0xFF)
     memory.set(memtemp)
   }
 }
 
 const updateMainAuxMemoryTable = () => {
-  const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
-  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex: AUXindex) : 0
-  const offsetPage2 = SWITCHES.PAGE2.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
+  const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetPage2 = SWITCHES.PAGE2.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   const offsetTextPageRead = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxRead
   const offsetTextPageWrite = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxWrite
   const offsetHgrPageRead = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
@@ -95,7 +94,10 @@ const updateMainAuxMemoryTable = () => {
 }
 
 const updateReadBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
+  // if (SWITCHES.ALTZP.isSet) {  // DEBUG
+  //   console.log(`RamWorksPage: ${toHex(RamWorksPage)}, RamWorksBankGet(): ${RamWorksBankGet()}`)
+  // }
+  const offsetZP = SWITCHES.ALTZP.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   addressGetTable[0] = offsetZP;
   addressGetTable[1] = 1 + offsetZP;
   addressSetTable[0] = offsetZP;
@@ -111,15 +113,15 @@ const updateReadBankSwitchedRamTable = () => {
       }
     }
   } else {
-    // ROM ($D000...$FFFF) is in 0x210...0x23F
+    // ROM ($D000...$FFFF)
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressGetTable[i] = ROMindex + i - 0xC0;
+      addressGetTable[i] = ROMpage + i - 0xC0;
     }
   }
 }
 
 const updateWriteBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? (RAMWorksBankIndex ? RAMWorksBankIndex : AUXindex) : 0
+  const offsetZP = SWITCHES.ALTZP.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   const writeRAM = SWITCHES.WRITEBSR1.isSet || SWITCHES.WRITEBSR2.isSet ||
     SWITCHES.RDWRBSR1.isSet || SWITCHES.RDWRBSR2.isSet
   // Start out with Slot ROM and regular ROM as not writeable
@@ -200,11 +202,11 @@ const manageC800 = (slot: number) => {
 
 const updateSlotRomTable = () => {
   // ROM ($C000...$CFFF) is in 0x200...0x20F
-  addressGetTable[0xC0] = ROMindex - 0xC0
+  addressGetTable[0xC0] = ROMpage - 0xC0
   for (let slot = 1; slot <= 7; slot++) {
     const page = 0xC0 + slot
     addressGetTable[page] = slot +
-      (slotIsActive(slot) ? (SLOTindex - 1) : ROMindex)
+      (slotIsActive(slot) ? (SLOTindex - 1) : ROMpage)
   }
 
   // Fill in $C800-CFFF for cards
@@ -217,7 +219,7 @@ const updateSlotRomTable = () => {
   }
   else {
     for (let i = 0xC8; i <= 0xCF; i++) {
-      addressGetTable[i] = ROMindex + i - 0xC0;
+      addressGetTable[i] = ROMpage + i - 0xC0;
     }
   }
 }
@@ -253,7 +255,7 @@ const checkSlotIO = (addr: number, value = -1) => {
     const result = fn(addr, value)
     if (result >= 0) {
       // Set value in either slot memory or $C000 softswitch memory
-      const offset = (addr >= 0xC100) ? (SLOTstart - 0x100) : ROMstart
+      const offset = (addr >= 0xC100) ? (SLOTstart - 0x100) : ROMmemoryStart
       memory[addr - 0xC000 + offset] = result
     }
   }
@@ -293,22 +295,25 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
 }
 
 export const memoryReset = () => {
-  memory.fill(0xFF, 0, 0x20000)
+  // Reset memory but skip over the ROM and peripheral card areas
+  memory.fill(0xFF, 0, 0x10000)
+  // Everything past here is RamWorks memory
+  memory.fill(0xFF, BaseMachineMemory)
   const whichROM = isDebugging ? edmBase64 : romBase64
   const rom64 = whichROM.replace(/\n/g, "")
   const rom = new Uint8Array(
     Buffer.from(rom64, "base64")
   )
-  memory.set(rom, ROMstart)
+  memory.set(rom, ROMmemoryStart)
   C800Slot = 0
-  RAMWorksBankIndex = 0
+  RamWorksBankSet(0)
   updateAddressTables()
 }
 
 // Fill all pages of either main or aux memory with 0, 1, 2,...
 export const memorySetForTests = (aux = false) => {
   memoryReset()
-  const offset = aux ? AUXstart : 0
+  const offset = aux ? RamWorksMemoryStart : 0
   for (let i=0; i <= 0xFF; i++) {
     memory.fill(i, i * 256 + offset, (i + 1) * 256 + offset)
   }
@@ -353,7 +358,7 @@ const memGetSoftSwitch = (addr: number): number => {
   if (addr >= 0xC050) {
     updateAddressTables()
   }
-  return memory[ROMstart + addr - 0xC000]
+  return memory[ROMmemoryStart + addr - 0xC000]
 }
 
 export const memGetSlotROM = (slot: number, addr: number) => {
@@ -409,9 +414,9 @@ const memSetSoftSwitch = (addr: number, value: number) => {
   // we need the full byte of data being written
   if (addr === 0xC071 || addr === 0xC073) {
     // Out of range bank index?
-    if (value > RAMWorksMaxBank) return
-    // We subtract 1 because the 0th bank is in AUX memory
-    RAMWorksBankIndex = value ? ((value - 1) * 0x100 + RAMWorksIndex) : 0 
+    if (value > RamWorksMaxBank) return
+    // The 0th bank is also AUX memory
+    RamWorksBankSet(value)
   } else if (addr >= 0xC090) {
     checkSlotIO(addr, value)
   } else {
@@ -444,11 +449,11 @@ export const memSet = (addr: number, value: number) => {
 }
 
 export const memGetC000 = (addr: number) => {
-  return memory[ROMstart + addr - 0xC000]
+  return memory[ROMmemoryStart + addr - 0xC000]
 }
 
 export const memSetC000 = (addr: number, value: number, repeat = 1) => {
-  const start = ROMstart + addr - 0xC000
+  const start = ROMmemoryStart + addr - 0xC000
   memory.fill(value, start, start + repeat)
 }
 
@@ -485,7 +490,7 @@ export const getTextPage = (getLores = false) => {
       const joffset = 80 * (j - jstart)
       for (let i = 0; i < 40; i++) {
         textPage[joffset + 2 * i + 1] = memory[pageOffset + offset[j] + i]
-        textPage[joffset + 2 * i] = memory[AUXstart + pageOffset + offset[j] + i]
+        textPage[joffset + 2 * i] = memory[RamWorksMemoryStart + pageOffset + offset[j] + i]
       }
     }
     return textPage
@@ -519,7 +524,7 @@ export const getHires = () => {
       const addr = hiresLineToAddress(pageOffset, j)
       for (let i = 0; i < 40; i++) {
         hgrPage[j * 80 + 2 * i + 1] = memory[addr + i]
-        hgrPage[j * 80 + 2 * i] = memory[AUXstart + addr + i]
+        hgrPage[j * 80 + 2 * i] = memory[RamWorksMemoryStart + addr + i]
       }
     }
     return hgrPage
@@ -568,8 +573,8 @@ export const getZeroPage = () => {
   return status.join('\n')
 }
 
-export const getBaseMemory = () => {
-  return memory.slice(0, BaseMachineMemory)
+export const getBasePlusAuxMemory = () => {
+  return memory.slice(0, RamWorksMemoryStart + 0x10000)
 }
 
 // Each memory bank object has a human-readable name, a min/max address range

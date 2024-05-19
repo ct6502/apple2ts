@@ -1,4 +1,4 @@
-import { toHex } from "./utility/utility"
+import { ROMmemoryStart, toHex } from "./utility/utility"
 import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cpu6502";
 import { memory, updateAddressTables } from "./memory";
 import { reset6502, doBranch, s6502, setPC, setInterruptDisabled } from "./instructions";
@@ -39,6 +39,7 @@ export const runAssemblyTest = (instr: string[], accumExpect: number, pstat: num
   s6502.flagIRQ = irq
   s6502.flagNMI = nmi
   enableMockingboard(true, 4)
+//  resetMockingboard(4, true)
   updateAddressTables()
   setInterruptDisabled(false)
   if (instr.length === 1) {
@@ -354,8 +355,8 @@ const brk =
 `;
 test('BRK',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFE] = 0x04
-  memory[0x23FFF] = 0x20
+  memory[ROMmemoryStart + 0x3FFE] = 0x04
+  memory[ROMmemoryStart + 0x3FFF] = 0x20
   // Interrupt flag should be set.
   runAssemblyTest(brk.split("\n"), B | 0x20, I | B)
 })
@@ -372,8 +373,8 @@ done NOP
 `;
 test('BRK with RTI',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFE] = 0x07
-  memory[0x23FFF] = 0x20
+  memory[ROMmemoryStart + 0x3FFE] = 0x07
+  memory[ROMmemoryStart + 0x3FFF] = 0x20
   // Interrupt flag should be clear.
   runAssemblyTest(brk_rti.split("\n"), 0x33, 0)
 })
@@ -388,8 +389,8 @@ done NOP
 `;
 test('IRQ masked',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFE] = 0x06
-  memory[0x23FFF] = 0x20
+  memory[ROMmemoryStart + 0x3FFE] = 0x06
+  memory[ROMmemoryStart + 0x3FFF] = 0x20
   // This should interrupt right after our first instruction
   interruptRequest()
   runAssemblyTest(irqmasked.split("\n"), 0x33, I)
@@ -405,8 +406,8 @@ done NOP
 `;
 test('IRQ enabled',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFE] = 0x06
-  memory[0x23FFF] = 0x20
+  memory[ROMmemoryStart + 0x3FFE] = 0x06
+  memory[ROMmemoryStart + 0x3FFF] = 0x20
   // This should interrupt right after our first instruction
   interruptRequest()
   runAssemblyTest(irqenabled.split("\n"), 0x22, I)
@@ -423,8 +424,8 @@ done NOP
 `;
 test('IRQ with RTI',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFE] = 0x06
-  memory[0x23FFF] = 0x20
+  memory[ROMmemoryStart + 0x3FFE] = 0x06
+  memory[ROMmemoryStart + 0x3FFF] = 0x20
   // This should interrupt right after our first instruction
   interruptRequest()
   runAssemblyTest(irq_rti.split("\n"), 0x33, 0)
@@ -441,8 +442,8 @@ done NOP
 `;
 test('NMI',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFA] = 0x06
-  memory[0x23FFB] = 0x20
+  memory[ROMmemoryStart + 0x3FFA] = 0x06
+  memory[ROMmemoryStart + 0x3FFB] = 0x20
   // This should interrupt right after our first instruction
   nonMaskableInterrupt()
   runAssemblyTest(nmi.split("\n"), 0x22, I | C)
@@ -460,8 +461,8 @@ done NOP
 `;
 test('NMI with RTI',   () => {
   // Force our fake ROM's BRK/IRQ vector to point to our handler
-  memory[0x23FFA] = 0x06
-  memory[0x23FFB] = 0x20
+  memory[ROMmemoryStart + 0x3FFA] = 0x06
+  memory[ROMmemoryStart + 0x3FFB] = 0x20
   // This should interrupt right after our first instruction
   nonMaskableInterrupt()
   runAssemblyTest(nmi_rti.split("\n"), 0x34, 0)

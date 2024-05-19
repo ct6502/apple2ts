@@ -72,7 +72,7 @@ export const getColorModeSVG = (colorMode: COLOR_MODE) => {
   return svgRect
 }
 
-export const ramWorksIcon = <svg id="Layer_1" viewBox="0 0 500.75 401" width="27" height="20">
+export const RamWorksIcon = <svg id="Layer_1" viewBox="0 0 500.75 401" width="27" height="20">
   <rect x="23" y="93" width="464.68" height="210" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="87.42" y1="87" x2="87.42" y2="23" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="198.92" y1="87" x2="198.92" y2="23" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="310.92" y1="87" x2="310.92" y2="23" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="423.92" y1="87" x2="423.92" y2="23" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="87.17" y1="369" x2="87.17" y2="305" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="198.67" y1="369" x2="198.67" y2="305" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="310.67" y1="369" x2="310.67" y2="305" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /><line x1="423.67" y1="369" x2="423.67" y2="305" fill="none" stroke="#000" style={{ strokeWidth: "46" }} /></svg>
 
 export const bpStepOver = <svg version="1.0" id="Layer_1" x="0px" y="0px"

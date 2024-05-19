@@ -4,19 +4,20 @@ import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import { RUN_MODE } from "./emulator/utility/utility"
 import { handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetSaveState, passCapsLock, passColorMode, passHelpText, passRestoreSaveState, passSetRunMode } from "./main2worker"
 
-const useSaveStateCallback = (saveState: EmulatorSaveState) => {
+const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const d = new Date()
   const datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString()
-  if (saveState.emulator) {
-    saveState.emulator.name = `Apple2TS Emulator`
-    saveState.emulator.date = datetime
-    saveState.emulator.colorMode = handleGetColorMode()
-    saveState.emulator.capsLock = handleGetCapsLock()
-    saveState.emulator.audioEnable = isAudioEnabled()
-    saveState.emulator.mockingboardMode = getMockingboardMode()
-    saveState.emulator.helptext = handleGetHelpText()
+  if (sState.emulator) {
+    sState.emulator.name = `Apple2TS Emulator`
+    sState.emulator.date = datetime
+    sState.emulator.version = 1.0
+    sState.emulator.colorMode = handleGetColorMode()
+    sState.emulator.capsLock = handleGetCapsLock()
+    sState.emulator.audioEnable = isAudioEnabled()
+    sState.emulator.mockingboardMode = getMockingboardMode()
+    sState.emulator.helptext = handleGetHelpText()
   }
-  const state = JSON.stringify(saveState, null, 2)
+  const state = JSON.stringify(sState, null, 2)
   const blob = new Blob([state], { type: "text/plain" });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
@@ -40,25 +41,26 @@ export const handleFileSave = (withSnapshots: boolean) => {
 }
 
 export const RestoreSaveState = (fileContents: string) => {
-  const saveState: EmulatorSaveState = JSON.parse(fileContents)
-  passRestoreSaveState(saveState)
-  if (saveState.emulator?.colorMode !== undefined) {
-    passColorMode(saveState.emulator.colorMode)
+  const sState: EmulatorSaveState = JSON.parse(fileContents)
+  passRestoreSaveState(sState)
+  if (sState.emulator?.colorMode !== undefined) {
+    passColorMode(sState.emulator.colorMode)
   }
-  if (saveState.emulator && ('uppercase' in saveState.emulator)) {
-    passCapsLock(saveState.emulator['uppercase'] as boolean)
+  // In an old version, property was renamed from uppercase to capsLock
+  if (sState.emulator && ('uppercase' in sState.emulator)) {
+    passCapsLock(sState.emulator['uppercase'] as boolean)
   }
-  if (saveState.emulator?.capsLock !== undefined) {
-    passCapsLock(saveState.emulator.capsLock)
+  if (sState.emulator?.capsLock !== undefined) {
+    passCapsLock(sState.emulator.capsLock)
   }
-  if (saveState.emulator?.audioEnable !== undefined) {
-    audioEnable(saveState.emulator.audioEnable)
+  if (sState.emulator?.audioEnable !== undefined) {
+    audioEnable(sState.emulator.audioEnable)
   }
-  if (saveState.emulator?.mockingboardMode !== undefined) {
-    changeMockingboardMode(saveState.emulator.mockingboardMode)
+  if (sState.emulator?.mockingboardMode !== undefined) {
+    changeMockingboardMode(sState.emulator.mockingboardMode)
   }
-  if (saveState.emulator?.helptext !== undefined) {
-    passHelpText(saveState.emulator.helptext)
+  if (sState.emulator?.helptext !== undefined) {
+    passHelpText(sState.emulator.helptext)
   }
   passSetRunMode(RUN_MODE.RUNNING)
 }

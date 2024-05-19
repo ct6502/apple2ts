@@ -1,5 +1,23 @@
 export const code = `
          ORG   $300
+         LDA   #$00
+         STA   $C073   ; set bank index to 0
+         STA   $C009   ; turn on AUXZP
+         STA   $C08B   ; turn on RDWRBSR1
+         LDA   #$CD
+         STA   $00C0   ; write zero page memory location
+         STA   $FFC0   ; write banked RAM
+         LDA   $00C0   ; load zero page memory location
+         TAX
+         LDA   $FFC0   ; read banked RAM
+         TAY
+         STA   $C008   ; turn off banked RAM
+         STA   $C08A   ; OFFBSR1 = turn off RDWRBSR1
+         BRK
+`
+
+export const codeTest = `
+         ORG   $300
          LDA   #$FE
          LDA   $01
          LDA   $A0,X

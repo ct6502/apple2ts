@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { RUN_MODE, hiresAddressToLine } from "../emulator/utility/utility"
+import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine } from "../emulator/utility/utility"
 import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passBreakpoints, passSetMemory } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
@@ -55,13 +55,13 @@ const MemoryDump = () => {
           return result
         }
       case MEMORY_RANGE.AUX:
-        return memory.slice(0x10000, 0x20000)
+        return memory.slice(RamWorksMemoryStart, RamWorksMemoryStart + 0x10000)
       case MEMORY_RANGE.HGR1:
         return memory.slice(0x2000, 0x4000)
       case MEMORY_RANGE.HGR2:
         return memory.slice(0x4000, 0x6000)
-      default:
-        return memory
+      default:  // MAIN
+        return memory.slice(0, 0x10000)
     }
 
   }
@@ -187,20 +187,6 @@ const MemoryDump = () => {
     const newmatchIndex = (matchIndex + 1) % matches.length
     setMatchIndex(newmatchIndex)
     doSetScrollRow(addrToRow(matches[newmatchIndex]))
-    // const visible = getVisibleRows()
-    // const topAddr = rowToAddress(visible.top)
-    // const bottomAddr = rowToAddress(visible.bottom)
-    // // Find the first match just beyond the visible bottom
-    // for (let i = 0; i < matches.length; i++) {
-    //   if (matches[i] > bottomAddr) {
-    //     doSetScrollRow(addrToRow(matches[i]))
-    //     return
-    //   }
-    // }
-    // // Wrap around to the first match
-    // if (matches[0] < topAddr) {
-    //   doSetScrollRow(addrToRow(matches[0]))
-    // }
   }
 
   const previousMatch = () => {
@@ -208,20 +194,6 @@ const MemoryDump = () => {
     const newmatchIndex = (matchIndex + matches.length - 1) % matches.length
     setMatchIndex(newmatchIndex)
     doSetScrollRow(addrToRow(matches[newmatchIndex]))
-    // const visible = getVisibleRows()
-    // const topAddr = rowToAddress(visible.top)
-    // const bottomAddr = rowToAddress(visible.bottom)
-    // // Find the first match just above the visible top
-    // for (let i = matches.length - 1; i >= 0; i--) {
-    //   if (matches[i] < topAddr) {
-    //     doSetScrollRow(addrToRow(matches[i]))
-    //     return
-    //   }
-    // }
-    // // Wrap around to the last match
-    // if (matches[matches.length - 1] > bottomAddr) {
-    //   doSetScrollRow(addrToRow(matches[matches.length - 1]))
-    // }
   }
 
   // let getVisibleRows = (): { top: number, bottom: number } => {
@@ -271,7 +243,7 @@ const MemoryDump = () => {
         }
         break
       case MEMORY_RANGE.AUX:
-        addr += 0x10000
+        addr += RamWorksMemoryStart
         break
       default:
         // Address should work unchanged for MAIN and HGR1/HGR2

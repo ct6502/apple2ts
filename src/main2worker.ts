@@ -12,7 +12,7 @@ import { doSetDriveProps } from "./devices/driveprops"
 
 let worker: Worker | null = null
 
-let saveStateCallback: (saveState: EmulatorSaveState) => void
+let saveStateCallback: (sState: EmulatorSaveState) => void
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
@@ -97,8 +97,8 @@ export const passTimeTravelSnapshot = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL_SNAPSHOT, true)
 }
 
-export const passRestoreSaveState = (saveState: EmulatorSaveState) => {
-  doPostMessage(MSG_MAIN.RESTORE_STATE, saveState)
+export const passRestoreSaveState = (sState: EmulatorSaveState) => {
+  doPostMessage(MSG_MAIN.RESTORE_STATE, sState)
 }
 
 export const passKeypress = (text: string) => {
@@ -158,9 +158,9 @@ const passThumbnailImage = (thumbnail: string) => {
   doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
 }
 
-export const passSetRAMWorks = (size: number) => {
-  doPostMessage(MSG_MAIN.RAMWORKS, size)
-  // This should probably come from the emulator, but for now we'll just set it here.
+export const passSetRamWorks = (size: number) => {
+  doPostMessage(MSG_MAIN.RamWorks, size)
+  // This will also come from the emulator, but set it here so the UI updates.
   machineState.extraRamSize = size
 }
 
@@ -212,14 +212,13 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // Force them back to their actual values.
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
-      newState.extraRamSize = machineState.extraRamSize
       newState.helpText = machineState.helpText
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
     case MSG_WORKER.SAVE_STATE: {
-      const saveState = e.data.payload as EmulatorSaveState
-      saveStateCallback(saveState)
+      const sState = e.data.payload as EmulatorSaveState
+      saveStateCallback(sState)
       break
     }
     case MSG_WORKER.CLICK:
@@ -385,7 +384,7 @@ export const handleGetCapsLock = () => {
   return machineState.capsLock
 }
 
-export const handleGetSaveState = (callback: (saveState: EmulatorSaveState) => void,
+export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,
   withSnapshots: boolean) => {
   saveStateCallback = callback
   doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)

@@ -49,6 +49,7 @@ type STATE6502 = {
 
 type Apple2SaveState = {
   s6502: STATE6502,
+  extraRamSize: number,
   softSwitches: {[name: string]: boolean},
   memory: string
 }
@@ -135,6 +136,7 @@ type DriveSaveState = {
 type DisplaySaveState = {
   name: string,
   date: string,
+  version: number,
   colorMode: number,
   capsLock: boolean,
   audioEnable: boolean,

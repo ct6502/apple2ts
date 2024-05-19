@@ -1,4 +1,7 @@
-import { doSetRAMWorks, memGet, memSet, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
+import { doSetRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
+import { getApple2State, setApple2State } from "./motherboard";
+import { RamWorksMemoryStart } from "./utility/utility";
+import { setIsTesting } from "./worker2main";
 
 type ExpectValue = (i: number) => void
 
@@ -210,9 +213,9 @@ test('testC800', () => {
   expect(memGet(0xC800)).not.toEqual(0x02)
 })
 
-test('test RAMWorks', () => {
+test('test RamWorks', () => {
   memoryReset()
-  doSetRAMWorks(4096)
+  doSetRamWorks(4096)
   
   // check regular zp
   memSet(0x00C0, 0xDE)
@@ -223,25 +226,27 @@ test('test RAMWorks', () => {
   expect(memGet(0x00C0)).toEqual(0xFF)
   memSet(0x00C0, 0xCD)
   expect(memGet(0x00C0)).toEqual(0xCD)
+  expect(memory[RamWorksMemoryStart + 0x00C0]).toEqual(0xCD)
 
-  // ramworks bank 0 is alt
+  // RamWorks bank 0 is alt
   memSet(0xC073,0x00)
   expect(memGet(0x00C0)).toEqual(0xCD)
 
-  // switch to all ramworks banks
-  let maxBank = (4096 - 64) / 64
+  // switch to all RamWorks banks
+  let maxBank = 4096 / 64 - 1
   for (let bank = 1; bank <= maxBank; bank++) {
     memSet(0xC073, bank)
-    expect(memGet(0x00C0)).toEqual(0)
+    expect(memGet(0x00C0)).toEqual(0xFF)
     memSet(0x00C0, bank)
     expect(memGet(0x00C0)).toEqual(bank)
+    expect(memory[RamWorksMemoryStart + bank * 0x10000 + 0x00C0]).toEqual(bank)
   }
 
   // switch off altzp
   memSet(0xC008,0)
   expect(memGet(0x00C0)).toEqual(0xDE)
 
-  // switch to ramworks bank 2
+  // switch to RamWorks bank 2
   memSet(0xC073, 0x02)
   // since altzp is still off
   expect(memGet(0x00C0)).toEqual(0xDE)
@@ -265,7 +270,7 @@ test('test RAMWorks', () => {
   expect(memGet(0x00C0)).toEqual(maxBank)
 
   // Now crank up the memory and make sure it copied correctly
-  doSetRAMWorks(8192)
+  doSetRamWorks(8192)
 
   // Did it remember that we were in maxBank?
   expect(memGet(0x00C0)).toEqual(maxBank)
@@ -278,10 +283,10 @@ test('test RAMWorks', () => {
 
     // Test the upper 4096
   const oldMaxBank = maxBank
-  maxBank = (8192 - 64) / 64
+  maxBank = 8192 / 64 - 1
   for (let bank = oldMaxBank + 1; bank <= maxBank; bank++) {
     memSet(0xC073, bank)
-    expect(memGet(0x00C0)).toEqual(0)
+    expect(memGet(0x00C0)).toEqual(0xFF)
     memSet(0x00C0, bank)
     expect(memGet(0x00C0)).toEqual(bank)
   }
@@ -289,11 +294,12 @@ test('test RAMWorks', () => {
   for (let bank = 1; bank <= maxBank; bank++) {
     memSet(0xC073, bank)
     expect(memGet(0x00C0)).toEqual(bank)
+    expect(memory[RamWorksMemoryStart + bank * 0x10000 + 0x00C0]).toEqual(bank)
   }
 
   // Now kill all the memory. This should reset the bank index to 0
-  // and remove all of the Ramworks memory.
-  doSetRAMWorks(64)
+  // and remove all of the RamWorks memory.
+  doSetRamWorks(64)
   expect(memGet(0x00C0)).toEqual(0xCD)
   for (let bank = 1; bank <= maxBank; bank++) {
     // This should be a nop, and should just leave the bank index in AUX mem.
@@ -301,4 +307,21 @@ test('test RAMWorks', () => {
     expect(memGet(0x00C0)).toEqual(0xCD)
   }
 
+  memSet(0xC008,0)
+})
+
+test('test RamWorks Save/Restore', () => {
+  setIsTesting()
+  memoryReset()
+  doSetRamWorks(4096)
+  memSet(0x00C0, 99)
+  memSet(0xC073, 5)
+  memSet(0xC009, 0)
+  memSet(0x00C0, 5)
+  expect(memGet(0x00C0)).toEqual(5)
+  const sState = getApple2State()
+  memoryReset()
+  expect(memGet(0x00C0)).toEqual(0xFF)
+  setApple2State(sState, 1.0)
+  expect(memGet(0x00C0)).toEqual(5)
 })

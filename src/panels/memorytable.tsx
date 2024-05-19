@@ -243,7 +243,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   const isEditable = (col: number, row: number) => {
     if (col === 0) return false
     if (!props.addressGetTable) return true
-    return props.addressGetTable[Math.floor(row / 16)] < 0x20000
+    return props.addressGetTable[Math.floor(row / 16)] < 0x10000
   }
 
   // This scrolling code is used by the higher-level MemoryDump component to

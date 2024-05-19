@@ -110,7 +110,7 @@ export const SWITCHES = {
     resetJoystick(cycleCount)
     memSetC000(0xC070, rand())
   }),
-  //BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RAMWorks (ignored)
+  BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
   READBSR2: NewSwitch(0xC080, 0, 0),
   WRITEBSR2: NewSwitch(0xC081, 0, 0),
