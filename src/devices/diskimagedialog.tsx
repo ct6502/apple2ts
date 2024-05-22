@@ -22,9 +22,14 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
     onSelect(value);
   };
 
-  const isTouchDevice = "ontouchstart" in document.documentElement
-  const width = isTouchDevice ?
-    (0.85 * (window.innerWidth ? window.innerWidth : window.outerWidth)) : 600
+  // Find a decent dialog width, such that it takes up most of the height.
+  // If we're in landscape mode on a short screen (like a phone),
+  // switch to a horizontal grid and take up most of the width.
+  let width = window.innerWidth ? window.innerWidth : window.outerWidth
+  const height = window.innerHeight ? window.innerHeight : window.outerHeight
+  const isLandscape = (height < 500) && (width > height)
+  const columns = isLandscape ? '1fr 1fr 1fr 1fr 1fr' : '1fr 1fr 1fr'
+  width = isLandscape ? Math.min(width, 1.6 * height) : Math.min(0.83 * width, 0.55 * height)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -33,7 +38,9 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
         <div style={{
           display: 'grid',
           margin: '10px',
-          gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', width: width
+          gridTemplateColumns: columns,
+          gap: '10px',
+          width: width
         }}>
           {diskImages.map((disk) => (
             <div key={disk.file}

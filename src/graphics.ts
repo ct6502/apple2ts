@@ -3,8 +3,9 @@ import { handleGetAltCharSet, handleGetTextPage,
 import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress } from "./emulator/utility/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-const xmargin = 0.075
-const ymargin = 0.075
+const isTouchDevice = "ontouchstart" in document.documentElement
+const xmargin = isTouchDevice ? 0.01 : 0.075
+const ymargin = isTouchDevice ? 0.01 : 0.075
 let frameCount = 0
 
 // Convert canvas coordinates (absolute to the entire browser window)
@@ -329,7 +330,7 @@ export const getCanvasSize = () => {
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
   height -= isTouchDevice ? 40 : 200
-  width -= isTouchDevice ? 8 : 20
+  width -= isTouchDevice ? 0 : 40
   if (!isTouchDevice && handleGetIsDebugging()) {
     width /= 2
   }

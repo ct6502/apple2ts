@@ -17,46 +17,41 @@ import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from
 import { useGlobalContext } from "../globalcontext";
 
 const nlines = 40
-const bpOffset = 0
+let currentScrollAddress = -1
 
 const DisassemblyView = () => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
-  const [lineHeight, setLineHeight] = React.useState(0)
-  const [newScrollAddress, setNewScrollAddress] = React.useState(0)
-  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null)
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null)
   const scrollableRef = useRef(null)
+  const scrollToRef = useRef(null)
   const disassemblyRef = useRef(null)
   const fakePointRef = useRef(null)
 
-  const computeLineHeight = () => {
-    if (scrollableRef && scrollableRef.current) {
-      const div = scrollableRef.current as HTMLDivElement
-      const n = (div.textContent || '').split('\n').length - 1
-      if (n === 0) return
-      setLineHeight((div.scrollHeight - 4) / n)
-    }
-  }
-
   const handleCodeScroll = () => {
+    // Delay setting the new disassembly address to compress scroll events,
+    // since they can come in fast.
     // Clear the previous timeout
     if (timeoutIdRef.current !== null) {
       clearTimeout(timeoutIdRef.current);
     }
     timeoutIdRef.current = setTimeout(() => {
-      computeLineHeight()
-      if (lineHeight === 0) return
-      if (!scrollableRef.current) return
-      // const newAddr = findTopChild()
-      // if (newAddr < 0) return
-      const div = scrollableRef.current as HTMLDivElement
-      const topLineIndex = Math.round(div.scrollTop / lineHeight)
-      const dv = (div.textContent || '').split('\n')
-      const line = dv[topLineIndex]
-      const newAddr = parseInt(line.slice(0, line.indexOf(':')), 16)
-      if (newAddr === newScrollAddress) return
-      setNewScrollAddress(newAddr)
-      passSetDisassembleAddress(newAddr)
-    }, 50); // 200 ms delay
+      if (disassemblyRef.current) {
+        const div = disassemblyRef.current as HTMLDivElement
+        const rect = div.getBoundingClientRect()
+        // Find the line div at the top of our disassembly view
+        const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
+        if (topElement && topElement.textContent) {
+          const addr = parseInt(topElement.textContent.slice(0, 4), 16)
+          // Are we already there?
+          if (addr === currentScrollAddress) {
+            return
+          }
+          currentScrollAddress = addr
+          passSetDisassembleAddress(addr)
+        }
+      }
+    }, 50)
   }
 
   const handleCodeKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -84,24 +79,31 @@ const DisassemblyView = () => {
     return parseInt(disassembly.slice(0, disassembly.indexOf(':')), 16)
   }
 
-  const handleCodeClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!disassemblyRef.current) return
-    computeLineHeight()
-    const divRect = (disassemblyRef.current as HTMLDivElement).getBoundingClientRect()
-    const clickX = event.clientX - divRect.left
-    if (clickX <= 20) {
-      const clickY = event.clientY - divRect.top - 2
-      const line = Math.floor(clickY / lineHeight)
-      if (line < 0 || line >= nlines) return
-      const code = handleGetDisassembly().split('\n')[line]
-      const addr = parseInt(code.slice(0, code.indexOf(':')), 16)
-      const bp = new Breakpoint()
-      bp.address = addr
-      const breakpoints = new BreakpointMap(handleGetBreakpoints())
-      breakpoints.set(addr, bp)
-      passBreakpoints(breakpoints)
-      setUpdateBreakpoint(updateBreakpoint + 1)
+  const getAddressAtMouse = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!disassemblyRef.current) return [-1, -1]
+    const div = disassemblyRef.current as HTMLDivElement
+    const divRect = div.getBoundingClientRect()
+    const clickedDiv = document.elementFromPoint(event.clientX + 30, event.clientY + 2) as HTMLDivElement
+    if (clickedDiv && clickedDiv.textContent) {
+      const myRect = clickedDiv.getBoundingClientRect()
+      const mouseX = event.clientX - myRect.left
+      if (mouseX <= 20) {
+        const addr = parseInt(clickedDiv.textContent.slice(0, 4), 16)
+        return [addr, (myRect.top + myRect.bottom) / 2 - divRect.top]
+      }
     }
+    return [-1, -1]
+  }
+
+  const handleCodeClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const [addr] = getAddressAtMouse(event)
+    if (addr < 0 || isNaN(addr)) return
+    const bp = new Breakpoint()
+    bp.address = addr
+    const breakpoints = new BreakpointMap(handleGetBreakpoints())
+    breakpoints.set(addr, bp)
+    passBreakpoints(breakpoints)
+    setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
   const handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
@@ -124,22 +126,15 @@ const DisassemblyView = () => {
   }
 
   const handleCodeMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (disassemblyRef.current && fakePointRef.current) {
-      const div = disassemblyRef.current as HTMLDivElement
-      const fakePoint = fakePointRef.current as HTMLDivElement
-      if (lineHeight === 0) computeLineHeight()
-      const divRect = event.currentTarget.getBoundingClientRect()
-      const clickX = event.clientX - divRect.left
-      if (clickX >= 1 && clickX <= 20) {
-        const clickY = event.clientY - divRect.top - 2
-        const line = Math.floor(clickY / lineHeight)
-        if (line >= 0 && line < nlines) {
-          div.style.cursor = 'pointer'
-          fakePoint.style.display = 'initial'
-          fakePoint.style.top = `${bpOffset + line * lineHeight}px`
-          return
-        }
-      }
+    if (!disassemblyRef.current || !fakePointRef.current) return -1
+    const [addr, mouseY] = getAddressAtMouse(event)
+    const div = disassemblyRef.current as HTMLDivElement
+    const fakePoint = fakePointRef.current as HTMLDivElement
+    if (addr >= 0) {
+      div.style.cursor = 'pointer'
+      fakePoint.style.display = 'initial'
+      fakePoint.style.top = `${mouseY - 5}px`
+    } else {
       div.style.cursor = 'text'
       fakePoint.style.display = 'none'
     }
@@ -150,14 +145,6 @@ const DisassemblyView = () => {
       const fakePoint = fakePointRef.current as HTMLDivElement
       fakePoint.style.display = 'none'
     }
-  }
-
-  const getScrollableContents = () => {
-    let result = '' //'\n\n\nPause to view disassembly'
-    if (handleGetRunMode() === RUN_MODE.PAUSED) {
-      for (let i = 0; i <= 65535; i++) result += `${toHex(i, 4)}:\n`
-    }
-    return result
   }
 
   const getAddress = (line: string) => {
@@ -267,7 +254,11 @@ const DisassemblyView = () => {
   }
 
   const getDisassemblyDiv = () => {
-    const disArray = handleGetDisassembly().split('\n')
+    //   let result = '' //'\n\n\nPause to view disassembly'
+    if (handleGetRunMode() !== RUN_MODE.PAUSED) {
+      return <div style={{ marginTop: '30px' }}>Pause to view disassembly</div>
+    }
+    const disArray = handleGetDisassembly().split('\n').slice(0, nlines)
     if (disArray.length <= 1) return <div
       style={{
         position: "relative",
@@ -276,14 +267,18 @@ const DisassemblyView = () => {
         height: `${nlines * 10 - 2}pt`,
       }}>
     </div>
-    const scrollPos = getAddress(disArray[0])
-    window.setTimeout(() => {
-      if (scrollableRef.current) {
-        const div = scrollableRef.current as HTMLDivElement
-        computeLineHeight()
-        div.scrollTop = scrollPos * lineHeight + 2
+    if (scrollTimeout.current !== null) {
+      clearTimeout(scrollTimeout.current);
+    }
+    scrollTimeout.current = setTimeout(() => {
+      if (disassemblyRef.current) {
+        if (scrollToRef.current) {
+          const line = scrollToRef.current as HTMLDivElement
+          line.scrollIntoView();
+          console.log('getDisassemblyDiv: ' + line.textContent)
+        }
       }
-    }, 0)
+    }, 10)
     // Put the breakpoints into an easier to digest array format.
     const bp: Array<Breakpoint> = []
     const breakpoints = handleGetBreakpoints()
@@ -294,26 +289,18 @@ const DisassemblyView = () => {
       }
     }
     const pc1 = handleGetState6502().PC
-    return <div ref={disassemblyRef}
-      className="mono-text"
-      style={{
-        position: "relative",
-        width: '200px',
-        top: "0px",
-        height: `${nlines * 10 - 2}pt`,
-        paddingLeft: "15pt",
-      }}
-      tabIndex={0} // Makes the div focusable for keydown events
-      onKeyDown={handleCodeKeyDown}
-      onMouseMove={handleCodeMouseMove}
-      onMouseLeave={handleCodeMouseLeave}
-      onClick={handleCodeClick}
-    >
-      <FontAwesomeIcon icon={iconBreakpoint} ref={fakePointRef}
-        className="breakpoint-style breakpoint-position fake-point"
-        style={{ pointerEvents: 'none', display: 'none' }} />
+    const lineTop = getAddress(disArray[0])
+    const lineBottom = getAddress(disArray[nlines - 1])
+    const topHalf = Array.from({ length: lineTop }, (_, i) => i);
+    const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1);
+
+    return <div ref={scrollableRef}>
+      {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
       {disArray.map((line, index) => (
-        <div key={index} className={getAddress(line) === pc1 ? "program-counter" : ""}>
+        <div key={index}
+          ref={index === 0 ? scrollToRef : null}
+          style={{ position: 'relative' }}
+          className={getAddress(line) === pc1 ? "program-counter" : ""}>
           {(bp[index] &&
             <FontAwesomeIcon icon={getBreakpointIcon(bp[index])}
               className={'breakpoint-position ' + getBreakpointStyle(bp[index])}
@@ -322,23 +309,32 @@ const DisassemblyView = () => {
           {getChromacodedLine(line)}
         </div>
       ))}
+      {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+      <FontAwesomeIcon icon={iconBreakpoint} ref={fakePointRef}
+        className="breakpoint-style fake-point"
+        style={{ pointerEvents: 'none', display: 'none' }} />
     </div>
   }
 
   return (
-    <div className="flex-row thinBorder">
-      {getDisassemblyDiv()}
-      <div className="debug-panel"
-        ref={scrollableRef}
-        onScroll={handleCodeScroll}
+    <div className="flex-row thinBorder" style={{ position: 'relative' }}>
+      <div ref={disassemblyRef}
+        className="mono-text"
         style={{
-          width: '15px',
-          height: `${nlines * 10 - 2}pt`,
           overflow: 'auto',
-          paddingLeft: "0pt",
-          marginTop: "0pt",
-        }} >
-        {getScrollableContents()}
+          width: '200px',
+          top: "0px",
+          height: `${nlines * 10 - 2}pt`,
+          paddingLeft: "15pt",
+          paddingRight: "11pt",
+        }}
+        tabIndex={0} // Makes the div focusable for keydown events
+        onScroll={handleCodeScroll}
+        onKeyDown={handleCodeKeyDown}
+        onMouseMove={handleCodeMouseMove}
+        onMouseLeave={handleCodeMouseLeave}
+        onClick={handleCodeClick}>
+        {getDisassemblyDiv()}
       </div>
     </div>
   )

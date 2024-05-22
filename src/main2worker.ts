@@ -1,4 +1,4 @@
-import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE } from "./emulator/utility/utility"
+import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE, TEST_DEBUG } from "./emulator/utility/utility"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
@@ -188,7 +188,7 @@ let machineState: MachineState = {
   helpText: '',
   hires: new Uint8Array(),
   iTempState: 0,
-  isDebugging: false,
+  isDebugging: TEST_DEBUG,
   lores: new Uint8Array(),
   extraRamSize: 64,
   memoryDump: new Uint8Array(),

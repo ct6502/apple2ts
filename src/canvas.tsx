@@ -19,6 +19,8 @@ import { handleCopyToClipboard } from './copycanvas';
 import { drawHiresTile } from './graphicshgr';
 import { useGlobalContext } from './globalcontext';
 import { handleFileSave } from './savestate';
+import bgImage from './img/crt.jpg';
+
 
 let width = 800
 let height = 600
@@ -408,12 +410,19 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = handleGetShowMouse() ?
     ((showhgrview && !lockHgrViewRef.current) ? "none" : "crosshair") : "none"
 
+  const backgroundImage = isTouchDevice ? '' : `url(${bgImage})`
+
   return (
     <span className="canvasText">
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="mainCanvas"
-        style={{ cursor: cursor }}
+        style={{
+          cursor: cursor,
+          borderRadius: isTouchDevice ? '0' : '20px',
+          borderWidth: isTouchDevice ? '0' : '2px',
+          backgroundImage: `${backgroundImage}`
+        }}
         width={width} height={height}
         tabIndex={0}
         onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
