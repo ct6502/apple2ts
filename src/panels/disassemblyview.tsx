@@ -86,8 +86,8 @@ const DisassemblyView = () => {
     const clickedDiv = document.elementFromPoint(event.clientX + 30, event.clientY + 2) as HTMLDivElement
     if (clickedDiv && clickedDiv.textContent) {
       const myRect = clickedDiv.getBoundingClientRect()
-      const mouseX = event.clientX - myRect.left
-      if (mouseX <= 20) {
+      const mouseX = event.clientX - divRect.left
+      if (mouseX <= 18) {
         const addr = parseInt(clickedDiv.textContent.slice(0, 4), 16)
         return [addr, (myRect.top + myRect.bottom) / 2 - divRect.top]
       }
