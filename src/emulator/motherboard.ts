@@ -257,6 +257,15 @@ export const doSetIsDebugging = (enable: boolean) => {
   updateExternalMachineState()
 }
 
+export const doSetMemory = (addr: number, value: number) => {
+  memory[addr] = value
+  // If we have set an HGR memory location (for example) be sure to
+  // pass our updated date to the main thread.
+  if (isDebugging) {
+    updateExternalMachineState()
+  }
+}
+
 export const doSetDisassembleAddress = (addr: number) => {
   disassemblyAddr = addr
   updateExternalMachineState()

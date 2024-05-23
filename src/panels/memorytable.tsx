@@ -186,7 +186,9 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const handleInput = (col: number, row: number, cell: HTMLTableCellElement) => {
     const newText = cell.textContent
-    if (!newText) return
+    if (!newText) {
+      return
+    }
     const newvalue = newText.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 2)
     cell.textContent = newvalue
     if (newvalue.length === 1) {
@@ -224,9 +226,9 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   // Make sure we keep our selection up to date, especially if it was changed
   // by clicking on the canvas.
-  if (props.isHGR && hgrview[0] >= 0 &&
-    hgrviewLocal.current[0] !== hgrview[0] &&
-    hgrviewLocal.current[1] !== hgrview[1]) {
+  if (props.isHGR && (hgrview[0] >= 0) &&
+    (hgrviewLocal.current[0] !== hgrview[0] ||
+      hgrviewLocal.current[1] !== hgrview[1])) {
     hgrviewLocal.current[0] = hgrview[0]
     hgrviewLocal.current[1] = hgrview[1]
     setTimeout(() => {

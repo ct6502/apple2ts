@@ -400,7 +400,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     setTimeout(() => { setUpdateHgr(false) }, 0)
     // See if our view box position has changed, perhaps because the user
     // clicked on an HGR memory location in the memory dump panel.
-    if (hgrview[0] !== -1 && hgrview[0] !== hgrviewLocal[0] && hgrview[1] !== hgrviewLocal[1]) {
+    if (hgrview[0] !== -1 && (hgrview[0] !== hgrviewLocal[0] || hgrview[1] !== hgrviewLocal[1])) {
       setHgrviewLocal(hgrview)
       hgrviewRef.current = hgrview
       setShowhgrview(true)
