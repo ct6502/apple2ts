@@ -275,7 +275,6 @@ const DisassemblyView = () => {
         if (scrollToRef.current) {
           const line = scrollToRef.current as HTMLDivElement
           line.scrollIntoView();
-          console.log('getDisassemblyDiv: ' + line.textContent)
         }
       }
     }, 10)

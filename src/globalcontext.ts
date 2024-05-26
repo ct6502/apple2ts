@@ -2,16 +2,16 @@ import { createContext, useContext } from "react"
 type GlobalProps = {
   updateHgr: boolean
   setUpdateHgr:(updateHgr: boolean) => void
-  hgrview: number[]
-  setHgrview:(offset: number[]) => void
+  hgrMagnifier: number[]
+  setHgrMagnifier:(offset: number[]) => void
   updateBreakpoint: number
   setUpdateBreakpoint:(updateBreakpoint: number) => void
 }
 export const GlobalContext = createContext<GlobalProps>({
   updateHgr: false,
   setUpdateHgr: () => {},
-  hgrview: [-1, -1],
-  setHgrview: () => {},
+  hgrMagnifier: [-1, -1],
+  setHgrMagnifier: () => {},
   updateBreakpoint: 0,
   setUpdateBreakpoint: () => {},
 })

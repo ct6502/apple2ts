@@ -1,6 +1,7 @@
 import { useRef } from "react"
 import { hiresLineToAddress, toHex } from "../emulator/utility/utility"
 import { useGlobalContext } from "../globalcontext"
+import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../graphics"
 
 type MemoryTableProps = {
   memory: Uint8Array
@@ -16,8 +17,10 @@ type MemoryTableProps = {
 }
 
 const MemoryTable = (props: MemoryTableProps) => {
-  const { hgrview: hgrview, setHgrview: setHgrview, setUpdateHgr: setUpdateHgr } = useGlobalContext()
-  const hgrviewLocal = useRef([-1, -1])
+  const { hgrMagnifier: hgrMagnifier, setHgrMagnifier: setHgrMagnifier,
+    setUpdateHgr: setUpdateHgr } = useGlobalContext()
+  const hgrMagnifierLocal = useRef([-1, -1])
+  const cellValue = useRef('')
 
   if (props.memory.length <= 1) return '\n\n\n      *** Pause emulator to view memory ***'
 
@@ -40,19 +43,25 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const getMemoryOffset = (cell: HTMLTableCellElement): [number, number] => {
     const row = cell.parentNode
-    if (!row || !row.parentNode) return [-1, -1]
     const table = cell.parentNode?.parentNode as HTMLTableElement
-    if (!table || !table.rows) return [-1, -1]
-    const nrows = table.rows.length
-    const ncols = table.rows[0].cells.length
-    // The header row doesn't count as a real row, so just find the row index.
-    const rawRow = Array.from(row.parentNode.children).indexOf(row as Element)
-    const rowIndex = Math.min(rawRow, nrows - 8)
-    // However, for the column, subtract 1 to get rid of the address column.
-    const rawCol = Array.from(row.children).indexOf(cell) - 1
-    const cellIndex = Math.min(rawCol, ncols - 2)
-    if (rowIndex < 0 || cellIndex < 0) return [-1, -1]
-    return [cellIndex, rowIndex]
+    if (table && table.rows && row && row.parentNode) {
+      const nrows = table.rows.length
+      const ncols = table.rows[0].cells.length
+      // The header row doesn't count as a real row, so just find the row index.
+      const rawRow = Array.from(row.parentNode.children).indexOf(row as Element)
+      let rowIndex = Math.min(rawRow, nrows - 8)
+      // However, for the column, subtract 1 to get rid of the address column.
+      const rawCol = Array.from(row.children).indexOf(cell) - 1
+      let cellIndex = Math.min(rawCol, ncols - 2)
+      if (props.isHGR) {
+        cellIndex = Math.min(cellIndex, 40 - nColsHgrMagnifier)
+        rowIndex = Math.min(rowIndex, nrows - nRowsHgrMagnifier)
+      }
+      if (rowIndex >= 0 && cellIndex >= 0) {
+        return [cellIndex, rowIndex]
+      }
+    }
+    return [-1, -1]
   }
 
   const clearSelection = (table: HTMLTableElement) => {
@@ -64,8 +73,8 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const setSelection = (offset: number[], table: HTMLTableElement) => {
-    for (let j = offset[1] + 1; j <= offset[1] + 8; j++) {
-      for (let i = offset[0] + 1; i < offset[0] + 3; i++) {
+    for (let j = offset[1] + 1; j <= offset[1] + nRowsHgrMagnifier; j++) {
+      for (let i = offset[0] + 1; i <= offset[0] + nColsHgrMagnifier; i++) {
         const cell = table?.rows[j]?.cells[i]
         cell?.classList.add('selected')
       }
@@ -90,7 +99,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       return
     }
     if (props.isHGR) {
-      setHgrview(offset)
+      setHgrMagnifier(offset)
       setUpdateHgr(true)
     }
   }
@@ -102,10 +111,10 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   // This scrolling code is used with the HGR mode, where we want to scroll
-  // both vertically and horizontally to keep the 2 x 8 selection box in view.
+  // both vertically and horizontally to keep the HGR selection box in view.
   const scrollHgrIntoView = (table: HTMLTableElement) => {
-    const cell1 = table.rows[hgrview[1] + 1].cells[hgrview[0] + 1]
-    const cell2 = table.rows[hgrview[1] + 8].cells[hgrview[0] + 2]
+    const cell1 = table.rows[hgrMagnifier[1] + 1].cells[hgrMagnifier[0] + 1]
+    const cell2 = table.rows[hgrMagnifier[1] + nRowsHgrMagnifier].cells[hgrMagnifier[0] + 2]
     if (cell1 && cell2) {
       const r1 = cell1.getBoundingClientRect()
       const r2 = cell2.getBoundingClientRect()
@@ -152,12 +161,13 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const handleKeyDown = (col: number, row: number, e: React.KeyboardEvent<HTMLDivElement>) => {
     // Use arrow keys to move from cell to cell
+    const cell = e.currentTarget
+    const table = cell.parentNode?.parentNode as HTMLTableElement
+    const nrows = table.rows.length
+    const ncols = table.rows[0].cells.length
     if (e.key.startsWith('Arrow')) {
       e.preventDefault()
-      const cell = e.currentTarget
-      const table = cell.parentNode?.parentNode as HTMLTableElement
-      const nrows = table.rows.length
-      const ncols = table.rows[0].cells.length
+      cellValue.current = ''
       if (e.key === 'ArrowUp') {
         if (row < 1) return
         row--
@@ -172,16 +182,49 @@ const MemoryTable = (props: MemoryTableProps) => {
         col++
       }
       setNewFocus(table, col, row)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      const cell = e.currentTarget
+      // On an Escape, restore the original value
+      if (cell && cellValue.current) {
+        cell.textContent = cellValue.current
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const cell = e.currentTarget as HTMLTableCellElement
+      if (cell && cell.textContent?.trim() === '') {
+        // TODO: Check spreadsheet programs to see if advance to next cell on 'Enter'
+        cellValue.current = '00'
+        setNewValue(col, row, cell, '00')
+      }
+      if (col < (ncols - 1)) {
+        col++
+        setNewFocus(table, col, row)
+      }
     }
   }
 
   // When table cell comes into focus, select the text in it.
   const handleFocus = (cell: HTMLTableCellElement) => {
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(cell);
-    sel?.removeAllRanges();
-    sel?.addRange(range);
+    const range = document.createRange()
+    const sel = window.getSelection()
+    range.selectNodeContents(cell)
+    // Remember current value in case user hits Escape
+    if (cell && cell.textContent) {
+      cellValue.current = cell.textContent
+    }
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+  }
+
+  const setNewValue = (col: number, row: number, cell: HTMLTableCellElement, newvalue: string) => {
+    const addr = (props.isHGR ?
+      hiresLineToAddress(props.offset, row) : (16 * row + props.offset)) + col - 1
+    const value = parseInt(newvalue, 16)
+    props.doSetMemory(addr, value)
+    props.memory[addr] = value
+    cell.textContent = newvalue
+    cellValue.current = ''
   }
 
   const handleInput = (col: number, row: number, cell: HTMLTableCellElement) => {
@@ -205,11 +248,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       }
     } else if (newvalue.length === 2) {
       // We're done editing. Set the new memory value and advance to next cell.
-      const addr = width * row + col - 1 + props.offset
-      const value = parseInt(newvalue, 16)
-      props.doSetMemory(addr, value)
-      props.memory[addr] = value
-      cell.textContent = newvalue
+      setNewValue(col, row, cell, newvalue)
       // Advance the selection to the next cell
       const table = cell.parentNode?.parentNode as HTMLTableElement
       const nrows = table.rows.length
@@ -226,17 +265,24 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   // Make sure we keep our selection up to date, especially if it was changed
   // by clicking on the canvas.
-  if (props.isHGR && (hgrview[0] >= 0) &&
-    (hgrviewLocal.current[0] !== hgrview[0] ||
-      hgrviewLocal.current[1] !== hgrview[1])) {
-    hgrviewLocal.current[0] = hgrview[0]
-    hgrviewLocal.current[1] = hgrview[1]
+  if (props.isHGR) {
+    if ((hgrMagnifier[0] >= 0) &&
+      (hgrMagnifierLocal.current[0] !== hgrMagnifier[0] ||
+        hgrMagnifierLocal.current[1] !== hgrMagnifier[1])) {
+      hgrMagnifierLocal.current[0] = hgrMagnifier[0]
+      hgrMagnifierLocal.current[1] = hgrMagnifier[1]
+      setTimeout(() => {
+        const table = document.querySelector('table') as HTMLTableElement
+        if (!table) return
+        clearSelection(table)
+        setSelection(hgrMagnifier, table)
+        scrollHgrIntoView(table)
+      }, 10)
+    }
+  } else {
     setTimeout(() => {
       const table = document.querySelector('table') as HTMLTableElement
-      if (!table) return
       clearSelection(table)
-      setSelection(hgrview, table)
-      scrollHgrIntoView(table)
     }, 10)
   }
 
