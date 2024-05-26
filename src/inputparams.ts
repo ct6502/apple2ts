@@ -1,7 +1,7 @@
 import { handleSetDiskFromURL } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE } from "./emulator/utility/utility"
-import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode } from "./main2worker"
+import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode, passSetRamWorks, passDarkMode } from "./main2worker"
 
 export const handleInputParams = () => {
   const params = new URLSearchParams(window.location.search)
@@ -22,6 +22,17 @@ export const handleInputParams = () => {
     const colors = ['color', 'nofringe', 'green', 'amber', 'white']
     const mode = colors.indexOf(colorMode)
     if (mode >= 0) passColorMode(mode as COLOR_MODE)
+  }
+  const ramDisk = params.get('ramdisk')
+  if (ramDisk) {
+    const sizes = ['64', '512', '1024', '4096', '8192']
+    const index = sizes.indexOf(ramDisk)
+    if (index >= 0) {
+      passSetRamWorks(parseInt(sizes[index]))
+    }
+  }
+  if (params.get('theme')?.toLowerCase() === 'dark') {
+    passDarkMode(true)
   }
 }
 

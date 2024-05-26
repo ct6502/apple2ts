@@ -15,8 +15,8 @@ import { audioEnable, isAudioEnabled } from "../devices/speaker";
 import { SerialPortSelect } from "../devices/serialselect";
 import { ReactNode } from "react";
 import {
-  handleGetCapsLock, handleGetColorMode, handleGetSpeedMode,
-  passCapsLock, passColorMode, passSetSpeedMode
+  handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetSpeedMode,
+  passCapsLock, passColorMode, passDarkMode, passSetSpeedMode
 } from "../main2worker";
 import { RamWorksSelect } from "../devices/ramworks";
 
@@ -74,7 +74,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       title="Dark Mode"
-      onClick={() => { props.setDarkMode(!props.darkMode) }}>
+      onClick={() => { passDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
       <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
 

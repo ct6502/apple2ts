@@ -172,7 +172,8 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
   restoreDriveSaveState(sState.driveState)
   disassemblyAddr = s6502.PC
   if (sState.emulator?.speedMode !== undefined) {
-    speedMode = sState.emulator?.speedMode
+    console.log(`doRestoreSaveState speed = ${sState.emulator.speedMode}`)
+    doSetSpeedMode(sState.emulator.speedMode)
   }
   if (eraseSnapshots) {
     saveStates.length = 0
@@ -247,6 +248,7 @@ const doReset = () => {
 }
 
 export const doSetSpeedMode = (speedModeIn: number) => {
+  console.log(`doSetSpeedMode = ${speedModeIn}`)
   speedMode = speedModeIn
   refreshTime = (speedMode > 0) ? 0 : 16.6881
   resetRefreshCounter()
@@ -492,6 +494,7 @@ const updateExternalMachineState = () => {
     canGoBackward: getGoBackwardIndex() >= 0,
     canGoForward: getGoForwardIndex() >= 0,
     capsLock: true,  // ignored by main thread
+    darkMode: false,  // ignored by main thread
     colorMode: COLOR_MODE.COLOR,  // ignored by main thread
     cpuSpeed: cpuSpeed,
     debugDump: getDebugDump(),

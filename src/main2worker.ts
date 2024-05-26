@@ -76,6 +76,11 @@ export const passCapsLock = (lock: boolean) => {
   machineState.capsLock = lock
 }
 
+export const passDarkMode = (mode: boolean) => {
+  // See comment under passColorMode
+  machineState.darkMode = mode
+}
+
 export const passHelpText = (helptext: string) => {
   // See comment under passColorMode
   machineState.helpText = helptext
@@ -181,6 +186,7 @@ let machineState: MachineState = {
   canGoBackward: true,
   canGoForward: true,
   capsLock: true,
+  darkMode: false,
   colorMode: COLOR_MODE.COLOR,
   cpuSpeed: 0,
   debugDump: '',
@@ -212,6 +218,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // Force them back to their actual values.
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
+      newState.darkMode = machineState.darkMode
       newState.helpText = machineState.helpText
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
@@ -382,6 +389,10 @@ export const handleGetColorMode = () => {
 
 export const handleGetCapsLock = () => {
   return machineState.capsLock
+}
+
+export const handleGetDarkMode = () => {
+  return machineState.darkMode
 }
 
 export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,
