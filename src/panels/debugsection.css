@@ -265,7 +265,7 @@
   border-bottom-color: var(--text-color);
 }
 
-table {
+.memtable {
   display: block;
   border-collapse: collapse;
   overflow: auto;
@@ -275,7 +275,7 @@ table {
   user-select: none;
 }
 
-thead th {
+.memtable thead th {
   position: sticky;
   z-index: 1;
   top: 0;
@@ -285,7 +285,7 @@ thead th {
   padding-right: 0.5ch;
 }
 
-thead th::after {
+.memtable thead th::after {
   content: "";
   position: absolute;
   left: 0;
@@ -294,7 +294,7 @@ thead th::after {
   border-bottom: 1px solid var(--text-color);
 }
 
-td {
+.memtable td {
   padding-left: 0.5ch;
   padding-right: 0.5ch;
   text-align: left;
@@ -344,4 +344,23 @@ td {
   100% {
     background-color: initial;
   }
+}
+
+.memory-map {
+  border-collapse: collapse;
+}
+
+.memory-map td {
+  padding: 7px;
+  border-width: 0.5px;
+  border-style: solid;
+  border-color: --var(text-color);
+}
+
+.mem-aux {
+  background-color: palevioletred;
+}
+
+.mem-rom {
+  background-color: gray;
 }

@@ -1,5 +1,5 @@
 import { toHex, ADDR_MODE, default6502State } from "./utility/utility"
-import { memGet, memSet, memory } from "./memory"
+import { getDataBlock, memGet, memSet, memory } from "./memory"
 // var startTime = performance.now()
 
 export const s6502: STATE6502 = default6502State()
@@ -72,7 +72,7 @@ export const get6502StateString = () => {
 const stackDump = new Array<string>(256).fill('')
 
 export const getStackString = () => {
-  const stackvalues = memory.slice(256, 512)
+  const stackvalues = getDataBlock(0x100).slice(0, 256)
   const result = new Array<string>()
   for (let i = 0xFF; i > s6502.StackPtr; i--) {
     let value = "$" + toHex(stackvalues[i])

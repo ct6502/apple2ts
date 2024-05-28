@@ -1,7 +1,7 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { s6502 } from "./instructions"
 import { romBase64 } from "./roms/rom_2e"
-import { edmBase64 } from "./roms/edm_2e"
+// import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
 import { isDebugging, inVBL } from "./motherboard";
@@ -20,7 +20,6 @@ const SLOTindex = 0x140
 const SLOTC8index = 0x147
 const SLOTstart = 256 * SLOTindex
 const SLOTC8start = 256 * SLOTC8index
-let   C800Slot = 0
 
 // Start out with only 64K of AUX memory.
 // This is the maximum bank number. Each index represents 64K.
@@ -28,7 +27,15 @@ export let RamWorksMaxBank = 0
 const BaseMachineMemory = RamWorksMemoryStart
 export let memory = (new Uint8Array(BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000)).fill(0)
 
-const RamWorksBankGet = () => {
+export const C800SlotGet = () => {
+  return memGetC000(0xC02A)
+}
+
+const C800SlotSet = (slot: number) => {
+  memSetC000(0xC02A, slot)
+}
+
+export const RamWorksBankGet = () => {
   return memGetC000(0xC073)
 }
 
@@ -168,7 +175,7 @@ const slotC8IsActive = () => {
   if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) return false
   // Will happen for one cycle after $CFFF in slot ROM,
   // or if $CFFF was accessed outside of slot ROM space.
-  if (C800Slot <= 0) return false
+  if (C800SlotGet() === 0 || C800SlotGet() === 255) return false
   return true
 }
 
@@ -182,20 +189,20 @@ const manageC800 = (slot: number) => {
     if (slot === 3 && !SWITCHES.SLOTC3ROM.isSet) {
       if (!SWITCHES.INTC8ROM.isSet) {
         SWITCHES.INTC8ROM.isSet = true
-        C800Slot = -1
+        C800SlotSet(255)
         updateAddressTables()
       }
     }
-    if (C800Slot === 0) {
+    if (C800SlotGet() === 0) {
       // If C800Slot is zero, then set it to first card accessed
-      C800Slot = slot
+      C800SlotSet(slot)
       updateAddressTables();
     }
   } else {
     // if slot > 7 then it was an access to $CFFF
     // accessing $CFFF resets everything WRT C8
     SWITCHES.INTC8ROM.isSet = false
-    C800Slot = 0
+    C800SlotSet(0)
     updateAddressTables()
   }
 }
@@ -211,7 +218,7 @@ const updateSlotRomTable = () => {
 
   // Fill in $C800-CFFF for cards
   if (slotC8IsActive()) {
-    const slotC8 = SLOTC8index + 8 * (C800Slot - 1)
+    const slotC8 = SLOTC8index + 8 * (C800SlotGet() - 1)
     for (let i = 0; i <= 7; i++) {
       const page = 0xC8 + i
       addressGetTable[page] = slotC8 + i;
@@ -299,13 +306,17 @@ export const memoryReset = () => {
   memory.fill(0xFF, 0, 0x10000)
   // Everything past here is RamWorks memory
   memory.fill(0xFF, BaseMachineMemory)
-  const whichROM = isDebugging ? edmBase64 : romBase64
+  // For now, comment out the use of the Extended Debugging Monitor
+  // It's unclear what the benefit is, especially since we have a separate
+  // TypeScript debugger. And there is a risk that some programs might
+  // behave differently with the EDM.
+  const whichROM = isDebugging ? romBase64 : romBase64 // isDebugging ? edmBase64 : romBase64
   const rom64 = whichROM.replace(/\n/g, "")
   const rom = new Uint8Array(
     Buffer.from(rom64, "base64")
   )
   memory.set(rom, ROMmemoryStart)
-  C800Slot = 0
+  C800SlotSet(0)
   RamWorksBankSet(0)
   updateAddressTables()
 }

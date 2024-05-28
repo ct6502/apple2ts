@@ -7,10 +7,12 @@ import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } fr
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, restoreSoftSwitches } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
-  updateAddressTables, setMemoryBlock, getZeroPage, addressGetTable, 
+  updateAddressTables, setMemoryBlock, addressGetTable, 
   getBasePlusAuxMemory,
   doSetRamWorks,
-  RamWorksMaxBank} from "./memory"
+  RamWorksMaxBank,
+  C800SlotGet,
+  RamWorksBankGet} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
@@ -51,13 +53,17 @@ const endVBL = (): void => {
   inVBL = false
 }
 
-export const getApple2State = (): Apple2SaveState => {
-  // Make a copy
-  const save6502 = JSON.parse(JSON.stringify(s6502))
+const getSoftSwitches = () => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
   }
+  return softSwitches
+}
+
+export const getApple2State = (): Apple2SaveState => {
+  // Make a copy
+  const save6502 = JSON.parse(JSON.stringify(s6502))
   // Find the largest page of RamWorks memory that has some non-0xFF data.
   let memkeep = RamWorksMemoryStart
   for (let i = RamWorksMemoryStart; i < memory.length; i++) {
@@ -79,7 +85,7 @@ export const getApple2State = (): Apple2SaveState => {
   return {
     s6502: save6502,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
-    softSwitches: softSwitches,
+    softSwitches: getSoftSwitches(),
     memory: membuffer.toString("base64"),
   }
 }
@@ -464,7 +470,7 @@ export const doSetPastedText = (text: string) => {
 const getDebugDump = () => {
   if (!isDebugging) return ''
   const status = []
-  status.push(getZeroPage())
+  // status.push(getZeroPage())
   const stackString = getStackString()
   for (let i = 0; i < Math.min(20, stackString.length); i++) {
     status.push(stackString[i])
@@ -505,6 +511,9 @@ const updateExternalMachineState = () => {
     isDebugging: isDebugging,
     lores: getTextPage(true),
     extraRamSize: 64 * (RamWorksMaxBank + 1),
+    softSwitches: getSoftSwitches(),
+    c800Slot: C800SlotGet(),
+    ramWorksBank: RamWorksBankGet(),
     memoryDump: getMemoryDump(),
     nextInstruction: getInstruction(s6502.PC),
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,

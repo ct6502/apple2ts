@@ -1,18 +1,15 @@
 export const code = `
          ORG   $300
          LDA   #$00
-         STA   $C073   ; set bank index to 0
+         STA   $C006   ; INTCXROMOFF
+         STA   $CFFF   ; activate expansion ROM
+         LDA   $C600
          STA   $C009   ; turn on AUXZP
-         STA   $C08B   ; turn on RDWRBSR1
-         LDA   #$CD
-         STA   $00C0   ; write zero page memory location
-         STA   $FFC0   ; write banked RAM
-         LDA   $00C0   ; load zero page memory location
-         TAX
-         LDA   $FFC0   ; read banked RAM
-         TAY
-         STA   $C008   ; turn off banked RAM
-         STA   $C08A   ; OFFBSR1 = turn off RDWRBSR1
+         STA   $C083   ; turn on RDWRBSR2
+         STA   $C005   ; turn on RAMWRT
+         STA   $C001   ; turn on STORE80
+LOOP     NOP
+         JMP   LOOP
          BRK
 `
 

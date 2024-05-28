@@ -317,7 +317,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   return (
-    <table style={{ cursor: props.pickWatchpoint ? 'crosshair' : 'default' }}
+    <table className="memtable" style={{ cursor: props.pickWatchpoint ? 'crosshair' : 'default' }}
       onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>

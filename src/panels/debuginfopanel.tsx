@@ -1,4 +1,5 @@
 import { handleGetDebugDump } from "../main2worker";
+import MemoryMap from "./memorymap";
 import State6502Controls from "./state6502controls";
 
 const DebugInfoPanel = () => {
@@ -11,7 +12,10 @@ const DebugInfoPanel = () => {
           marginTop: '7px',
           overflow: 'auto',
         }}>
-        {handleGetDebugDump()}
+        <div className="flex-row-space-between">
+          <div>{handleGetDebugDump()}</div>
+          <MemoryMap />
+        </div>
       </div>
     </div>
   )
