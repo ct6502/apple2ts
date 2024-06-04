@@ -189,7 +189,7 @@ let machineState: MachineState = {
   darkMode: false,
   colorMode: COLOR_MODE.COLOR,
   cpuSpeed: 0,
-  debugDump: '',
+  stackString: '',
   disassembly: '',
   helpText: '',
   hires: new Uint8Array(),
@@ -342,8 +342,8 @@ export const handleGetAltCharSet = () => {
   return machineState.altChar
 }
 
-export const handleGetDebugDump = () => {
-  return machineState.debugDump
+export const handleGetStackString = () => {
+  return machineState.stackString
 }
 
 export const handleGetSoftSwitches = () => {

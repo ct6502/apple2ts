@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail } from "./worker2main"
-import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString } from "./instructions"
+import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump } from "./instructions"
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "./utility/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
@@ -129,7 +129,9 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
 }
 
 const getDisplaySaveState = () => {
-  const state: DisplaySaveState = {
+  // These will actually get filled in by the main thread,
+  // but we need to have them here to return the correct type.
+  const displayState: DisplaySaveState = {
     name: '',
     date: '',
     version: 0.0,
@@ -137,10 +139,14 @@ const getDisplaySaveState = () => {
     capsLock: false,
     audioEnable: false,
     mockingboardMode: 0,
-    speedMode: speedMode,
+    speedMode: 0,
     helptext: '',
+    isDebugging: false,
+    runMode: RUN_MODE.IDLE,
+    breakpoints: breakpointMap,
+    stackDump: getStackDump()
   }
-  return state
+  return displayState
 }
 
 export const doGetSaveState = (full: boolean): EmulatorSaveState => {
@@ -175,12 +181,11 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
   // but this gives us a number to key off of.
   const version = sState.emulator?.version ? sState.emulator.version : 0.9
   setApple2State(sState.state6502, version)
+  if (sState.emulator?.stackDump) {
+    setStackDump(sState.emulator.stackDump)
+  }
   restoreDriveSaveState(sState.driveState)
   disassemblyAddr = s6502.PC
-  if (sState.emulator?.speedMode !== undefined) {
-    console.log(`doRestoreSaveState speed = ${sState.emulator.speedMode}`)
-    doSetSpeedMode(sState.emulator.speedMode)
-  }
   if (eraseSnapshots) {
     saveStates.length = 0
     iTempState = 0
@@ -254,7 +259,6 @@ const doReset = () => {
 }
 
 export const doSetSpeedMode = (speedModeIn: number) => {
-  console.log(`doSetSpeedMode = ${speedModeIn}`)
   speedMode = speedModeIn
   refreshTime = (speedMode > 0) ? 0 : 16.6881
   resetRefreshCounter()
@@ -467,17 +471,6 @@ export const doSetPastedText = (text: string) => {
   doAutoboot(doPaste)
 }
 
-const getDebugDump = () => {
-  if (!isDebugging) return ''
-  const status = []
-  // status.push(getZeroPage())
-  const stackString = getStackString()
-  for (let i = 0; i < Math.min(20, stackString.length); i++) {
-    status.push(stackString[i])
-  }
-  return status.join('\n')
-}
-
 const getMemoryDump = () => {
   if (isDebugging && cpuRunMode === RUN_MODE.PAUSED) {
     return getBasePlusAuxMemory()
@@ -488,6 +481,10 @@ const getMemoryDump = () => {
 const doGetDisassembly = () => {
   if (cpuRunMode === RUN_MODE.RUNNING) return ''
   return getDisassembly(disassemblyAddr >= 0 ? disassemblyAddr : s6502.PC)
+}
+
+const doGetStackString = () => {
+  return (isDebugging && cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ''
 }
 
 const updateExternalMachineState = () => {
@@ -503,7 +500,7 @@ const updateExternalMachineState = () => {
     darkMode: false,  // ignored by main thread
     colorMode: COLOR_MODE.COLOR,  // ignored by main thread
     cpuSpeed: cpuSpeed,
-    debugDump: getDebugDump(),
+    stackString: doGetStackString(),
     disassembly: doGetDisassembly(),
     helpText: '',  // ignored by main thread
     hires: getHires(),

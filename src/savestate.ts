@@ -1,22 +1,32 @@
 import { handleGetFilename } from "./devices/driveprops"
 import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
+import { BreakpointMap } from "./emulator/utility/breakpoint"
 import { RUN_MODE } from "./emulator/utility/utility"
-import { handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetSaveState, passCapsLock, passColorMode, passHelpText, passRestoreSaveState, passSetRunMode } from "./main2worker"
+import { handleGetBreakpoints, handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, handleGetSpeedMode, passBreakpoints, passCapsLock, passColorMode, passHelpText, passRestoreSaveState, passSetDebug, passSetRunMode, passSetSpeedMode } from "./main2worker"
 
 const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const d = new Date()
   const datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString()
-  if (sState.emulator) {
-    sState.emulator.name = `Apple2TS Emulator`
-    sState.emulator.date = datetime
-    sState.emulator.version = 1.0
-    sState.emulator.colorMode = handleGetColorMode()
-    sState.emulator.capsLock = handleGetCapsLock()
-    sState.emulator.audioEnable = isAudioEnabled()
-    sState.emulator.mockingboardMode = getMockingboardMode()
-    sState.emulator.helptext = handleGetHelpText()
+  const breakpoints = handleGetBreakpoints()
+  const serializedBreakpoints = JSON.stringify(Array.from(breakpoints.entries()))
+  const stackDump = sState.emulator.stackDump
+  const displayState: DisplaySaveState = {
+    name: 'Apple2TS Emulator',
+    date: datetime,
+    version: 1.0,
+    colorMode: handleGetColorMode(),
+    capsLock: handleGetCapsLock(),
+    audioEnable: isAudioEnabled(),
+    mockingboardMode: getMockingboardMode(),
+    speedMode: handleGetSpeedMode(),
+    helptext: handleGetHelpText(),
+    isDebugging: handleGetIsDebugging(),
+    runMode: handleGetRunMode(),
+    breakpoints: serializedBreakpoints,
+    stackDump: stackDump
   }
+  sState.emulator = displayState
   const state = JSON.stringify(sState, null, 2)
   const blob = new Blob([state], { type: "text/plain" });
   const link = document.createElement('a');
@@ -43,24 +53,36 @@ export const handleFileSave = (withSnapshots: boolean) => {
 export const RestoreSaveState = (fileContents: string) => {
   const sState: EmulatorSaveState = JSON.parse(fileContents)
   passRestoreSaveState(sState)
-  if (sState.emulator?.colorMode !== undefined) {
-    passColorMode(sState.emulator.colorMode)
+  const displayState = sState.emulator
+  if (displayState?.colorMode !== undefined) {
+    passColorMode(displayState.colorMode)
   }
   // In an old version, property was renamed from uppercase to capsLock
-  if (sState.emulator && ('uppercase' in sState.emulator)) {
-    passCapsLock(sState.emulator['uppercase'] as boolean)
+  if (displayState && ('uppercase' in displayState)) {
+    passCapsLock(displayState['uppercase'] as boolean)
   }
-  if (sState.emulator?.capsLock !== undefined) {
-    passCapsLock(sState.emulator.capsLock)
+  if (displayState?.capsLock !== undefined) {
+    passCapsLock(displayState.capsLock)
   }
-  if (sState.emulator?.audioEnable !== undefined) {
-    audioEnable(sState.emulator.audioEnable)
+  if (displayState?.audioEnable !== undefined) {
+    audioEnable(displayState.audioEnable)
   }
-  if (sState.emulator?.mockingboardMode !== undefined) {
-    changeMockingboardMode(sState.emulator.mockingboardMode)
+  if (displayState?.mockingboardMode !== undefined) {
+    changeMockingboardMode(displayState.mockingboardMode)
   }
-  if (sState.emulator?.helptext !== undefined) {
-    passHelpText(sState.emulator.helptext)
+  if (displayState?.helptext !== undefined) {
+    passHelpText(displayState.helptext)
   }
-  passSetRunMode(RUN_MODE.RUNNING)
+  if (displayState?.speedMode !== undefined) {
+    passSetSpeedMode(displayState.speedMode)
+  }
+  if (displayState?.isDebugging !== undefined) {
+    passSetDebug(displayState.isDebugging)
+  }
+  const runMode = displayState?.runMode ? (displayState.runMode as RUN_MODE) : RUN_MODE.RUNNING
+  passSetRunMode(runMode)
+  if (displayState?.breakpoints) {
+    const deserializedBreakpoints = new BreakpointMap(JSON.parse(displayState.breakpoints))
+    passBreakpoints(deserializedBreakpoints)
+  }
 }

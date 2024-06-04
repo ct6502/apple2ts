@@ -82,7 +82,7 @@ type MachineState = {
   darkMode: boolean,
   colorMode: COLOR_MODE,
   cpuSpeed: number,
-  debugDump: string,
+  stackString: string,
   disassembly: string,
   helpText: string,
   hires: Uint8Array,
@@ -145,10 +145,14 @@ type DisplaySaveState = {
   mockingboardMode: number,
   speedMode: number,
   helptext: string,
+  isDebugging: boolean,
+  runMode: RUN_MODE,
+  breakpoints: BreakpointMap,
+  stackDump: Array<string>,
 }
 
 type EmulatorSaveState = {
-  emulator: DisplaySaveState | null,
+  emulator: DisplaySaveState,
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
   thumbnail: string,

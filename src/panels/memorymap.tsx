@@ -1,4 +1,4 @@
-// import { handleGetDebugDump } from "../main2worker";
+// import { handleGetStackString } from "../main2worker";
 
 import { handleGetC800Slot, handleGetSoftSwitches } from "../main2worker"
 
