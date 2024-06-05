@@ -5,7 +5,11 @@ import React from "react"
 import { Droplist } from "./droplist"
 import { overrideHires } from "../graphics"
 import MemoryTable from "./memorytable"
-import { faCrosshairs, faSave, faArrowUp, faArrowDown } from "@fortawesome/free-solid-svg-icons"
+import {
+  faCrosshairs, faSave,
+  faA,
+  faArrowUp, faArrowDown
+} from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Breakpoint, BreakpointMap } from "../emulator/utility/breakpoint"
 import { useGlobalContext } from "../globalcontext"
@@ -30,6 +34,7 @@ const MemoryDump = () => {
   const [matches, setMatches] = useState(new Array(0))
   const [highlight, setHighlight] = useState(new Array(0))
   const [matchIndex, setMatchIndex] = useState(0)
+  const [highAscii, setHighAscii] = useState(false)
 
   const doSetScrollRow = (row: number) => {
     setScrollRow(row)
@@ -307,6 +312,12 @@ const MemoryDump = () => {
           onClick={() => saveMemory()}>
           <FontAwesomeIcon icon={faSave} />
         </button>
+        <button className={"push-button" + (highAscii ? ' button-active' : '')}
+          title="High Bit ASCII"
+          disabled={memory.length < 1}
+          onClick={() => setHighAscii(!highAscii)}>
+          <FontAwesomeIcon style={{ width: "16px" }} icon={faA} />
+        </button>
       </span>
       <span className="flex-row"
         style={{
@@ -345,13 +356,14 @@ const MemoryDump = () => {
       </span>
       <div className="debug-panel"
         style={{
-          width: '370px',
+          width: '475px',
           height: `485px`
         }}
         ref={memoryDumpRef}
       >
         <MemoryTable memory={memory} isHGR={isHGR}
           addressGetTable={addressGetTable}
+          highAscii={highAscii}
           offset={offset} scrollRow={scrollRow}
           highlight={highlight}
           pickWatchpoint={pickWatchpoint}

@@ -1,5 +1,6 @@
 import React, { KeyboardEvent, useRef } from "react";
 import {
+  handleGetAddressGetTable,
   handleGetBreakpoints,
   handleGetDisassembly,
   handleGetMemoryDump,
@@ -161,40 +162,55 @@ const DisassemblyView = () => {
     return ""
   }
 
+  const getShiftedMemoryValue = (addr: number) => {
+    if (addr >= 0) {
+      const memory = handleGetMemoryDump()
+      if (memory.length > 1) {
+        const addressGetTable = handleGetAddressGetTable()
+        const page = addr >>> 8
+        const shifted = addressGetTable[page]
+        addr = shifted + (addr & 255)
+        if (addr < memory.length) {
+          return memory[addr]
+        }
+      }
+    }
+    return -1
+  }
+
   const getOperandTooltip = (operand: string, addr: number) => {
-    const memory = (addr >= 0) ? handleGetMemoryDump() : new Uint8Array()
-    if (memory.length <= 1) return ''
     let title = ''
     if (operand.includes(",X)")) {
       const xreg = handleGetState6502().XReg
       // pre-indexing: add X to the address before finding the actual address
       const preIndex = addr + xreg
-      const addrInd = memory[preIndex] + 256 * memory[preIndex + 1]
-      title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(preIndex)}) => address = $${toHex(addrInd)}  value = ${toHex(memory[addrInd])}`
+      const addrInd = getShiftedMemoryValue(preIndex) + 256 * getShiftedMemoryValue(preIndex + 1)
+      const value = getShiftedMemoryValue(addrInd)
+      title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(preIndex)}) => address = $${toHex(addrInd)}  value = $${toHex(value)}`
     } else if (operand.includes("),Y")) {
       const yreg = handleGetState6502().YReg
       // post-indexing: find the address from memory and then add Y
-      const addrInd = memory[addr] + 256 * memory[addr + 1]
+      const addrInd = getShiftedMemoryValue(addr) + 256 * getShiftedMemoryValue(addr + 1)
       const addrNew = addrInd + yreg
-      title = `address $${toHex(addrInd)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
+      const value = getShiftedMemoryValue(addrNew)
+      title = `address $${toHex(addrInd)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
     } else if (operand.includes(",X")) {
       const xreg = handleGetState6502().XReg
       const addrNew = addr + xreg
-      const value = memory[addrNew]
-      title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = ${toHex(value)}`
+      const value = getShiftedMemoryValue(addrNew)
+      title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
     } else if (operand.includes(",Y")) {
       const yreg = handleGetState6502().YReg
       const addrNew = addr + yreg
-      title = `address $${toHex(addr)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = ${toHex(memory[addrNew])}`
+      const value = getShiftedMemoryValue(addrNew)
+      title = `address $${toHex(addr)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
     } else if (operand.includes(")")) {
-      if (memory.length > 1) {
-        const addrInd = memory[addr] + 256 * memory[addr + 1]
-        title = `address = $${toHex(addrInd)}  value = ${toHex(memory[addrInd])}`
-      }
+      const addrInd = getShiftedMemoryValue(addr) + 256 * getShiftedMemoryValue(addr + 1)
+      const value = getShiftedMemoryValue(addrInd)
+      title = `address = $${toHex(addrInd)}  value = $${toHex(value)}`
     } else if (operand.includes("$")) {
-      if (memory.length > 1) {
-        title = 'value = $' + toHex(memory[addr])
-      }
+      const value = getShiftedMemoryValue(addr)
+      title = `value = $${toHex(value)}`
     }
     return title
   }
@@ -254,7 +270,6 @@ const DisassemblyView = () => {
   }
 
   const getDisassemblyDiv = () => {
-    //   let result = '' //'\n\n\nPause to view disassembly'
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
       return <div style={{ marginTop: '30px' }}>Pause to view disassembly</div>
     }

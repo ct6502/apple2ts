@@ -67,8 +67,8 @@
 .program-counter {
   background-color: gray;
   opacity: 100%;
-  margin-left: -3px;
-  padding-left: 3px;
+  margin-left: 0px;
+  padding-left: 0px;
   margin-right: 10px;
 }
 

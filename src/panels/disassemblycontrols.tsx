@@ -1,6 +1,7 @@
 import { KeyboardEvent, useState } from "react";
 import {
   handleGetRunMode,
+  handleGetState6502,
   passSetDisassembleAddress, passStepInto, passStepOut, passStepOver
 } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -34,6 +35,12 @@ const DisassemblyControls = () => {
       passSetDisassembleAddress(addr)
       setAddress(addr.toString(16).toUpperCase())
     }
+  }
+
+  const goToCurrentPC = () => {
+    const pc = handleGetState6502().PC
+    passSetDisassembleAddress(pc)
+    setAddress(pc.toString(16).toUpperCase())
   }
 
   const runMode = handleGetRunMode()
@@ -75,6 +82,12 @@ const DisassemblyControls = () => {
         onClick={() => { setTooltipOutShow(false); passStepOut() }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>
+      </button>
+      <button className="push-button"
+        title="Go to Current PC"
+        onClick={goToCurrentPC}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="bigger-font">PC</div>
       </button>
     </span>
   )

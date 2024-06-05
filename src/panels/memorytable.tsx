@@ -8,6 +8,7 @@ type MemoryTableProps = {
   addressGetTable: number[] | null
   isHGR: boolean
   offset: number
+  highAscii: boolean
   highlight: number[]
   scrollRow: number
   pickWatchpoint: boolean
@@ -24,6 +25,11 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   if (props.memory.length <= 1) return '\n\n\n      *** Pause emulator to view memory ***'
 
+  const convertByteToAscii = (byte: number) => {
+    if (props.highAscii) byte &= 0x7F
+    if (byte < 32 || byte > 126) return '·' // Non-printable
+    return String.fromCharCode(byte)
+  }
   const convertMemoryToArray = () => {
     const rows = []
     const nrows = props.isHGR ? 192 : 4096
@@ -33,9 +39,12 @@ const MemoryTable = (props: MemoryTableProps) => {
         (hiresLineToAddress(props.offset, l) - props.offset) : 16 * l
       const mem = props.memory.slice(addr, addr + ncols)
       const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ':']
+      let ascii = ''
       for (let b = 0; b < ncols; b++) {
         cells.push(toHex(mem[b]))
+        ascii += convertByteToAscii(mem[b])
       }
+      cells.push(ascii)
       rows.push(cells)
     }
     return rows
@@ -52,7 +61,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       let rowIndex = Math.min(rawRow, nrows - 8)
       // However, for the column, subtract 1 to get rid of the address column.
       const rawCol = Array.from(row.children).indexOf(cell) - 1
-      let cellIndex = Math.min(rawCol, ncols - 2)
+      let cellIndex = Math.min(rawCol, ncols - 3)
       if (props.isHGR) {
         cellIndex = Math.min(cellIndex, 40 - nColsHgrMagnifier)
         rowIndex = Math.min(rowIndex, nrows - nRowsHgrMagnifier)
@@ -178,7 +187,7 @@ const MemoryTable = (props: MemoryTableProps) => {
         if (col < 1) return
         col--
       } else if (e.key === 'ArrowRight') {
-        if (col >= (ncols - 1)) return
+        if (col >= (ncols - 2)) return
         col++
       }
       setNewFocus(table, col, row)
@@ -197,7 +206,7 @@ const MemoryTable = (props: MemoryTableProps) => {
         cellValue.current = '00'
         setNewValue(col, row, cell, '00')
       }
-      if (col < (ncols - 1)) {
+      if (col < (ncols - 2)) {
         col++
         setNewFocus(table, col, row)
       }
@@ -253,7 +262,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       const table = cell.parentNode?.parentNode as HTMLTableElement
       const nrows = table.rows.length
       const ncols = table.rows[0].cells.length
-      if (col < (ncols - 1)) {
+      if (col < (ncols - 2)) {
         col++
       } else if (row < (nrows - 1)) {
         row++
@@ -289,9 +298,10 @@ const MemoryTable = (props: MemoryTableProps) => {
   const width = props.isHGR ? 40 : 16
   const rows = convertMemoryToArray()
   const isEditable = (col: number, row: number) => {
-    if (col === 0) return false
+    if (col === 0 || col === 17) return false
     if (!props.addressGetTable) return true
-    return props.addressGetTable[Math.floor(row / 16)] < 0x10000
+    const index = props.addressGetTable[Math.floor(row / 16)]
+    return (index < 0x10000) || (index >= 0x17F00)
   }
 
   // This scrolling code is used by the higher-level MemoryDump component to
@@ -312,6 +322,7 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const cellClass = (col: number, row: number) => {
     if (col === 0) return 'memtable-addr'
+    if (col === 17) return ''
     const highlight = (props.highlight.includes(row * width + col - 1)) ? ' memtable-highlight' : ''
     return (isEditable(col, row) ? '' : 'memtable-readonly') + highlight
   }
