@@ -29,7 +29,7 @@ Cx00	php	        ; BASIC entry (handled in JS)  This will only work for mouse
 Cx01	sei         ; Clock bytes required as above.
 Cx02	plp
 Cx03	rts
-Cx04	db $58      ; Clock
+Cx04	db $00      ; $58 = Clock, disabled because it breaks A2osX https://github.com/ct6502/apple2ts/issues/67
 Cx05	db $38      ; Pascal ID Byte
 Cx06	db $70      ; Clock
 Cx07	db $18      ; Pascal ID Byte
