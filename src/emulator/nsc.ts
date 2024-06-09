@@ -67,14 +67,14 @@ class NoSlotClock {
         shiftBCD(hundredths);
     }
 
-    access(off: number) {
+    access(off: number) : void {
         // only want offset, not page
         off &= 0xff;
         if (off & A2) {
             this.patternIdx = 0;
         } else {
-            const bit = off & A0;
-            this.pattern[this.patternIdx++] = bit;
+            const abit = off & A0;
+            this.pattern[this.patternIdx++] = abit;
             if (this.patternIdx === 64) {
                 if (this.patternMatch()) {
                     this.calcBits();
@@ -84,10 +84,10 @@ class NoSlotClock {
         }
     }
 
-    read(addr: number) {
+    read(addr: number): number {
         addr &= 0xff;
         if (this.bits.length > 0) {
-            const bit = this.bits.pop();
+            const bit = this.bits.pop()!;
             return bit;
         } else {
             this.access(addr);
