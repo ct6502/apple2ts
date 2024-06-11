@@ -224,6 +224,13 @@ input:focus {
   fill: var(--text-color);
 }
 
+.bigger-monospace {
+  font-family: monospace;
+  font-size: 10pt;
+  color: var(--text-color);
+  fill: var(--text-color);
+}
+
 .column-gap {
   margin-bottom: 0.25em;
 }
@@ -281,4 +288,8 @@ input:focus {
 .disabled {
   opacity: 50%;
   pointer-events: none;
+}
+
+.noselect {
+  user-select: none;
 }

@@ -271,7 +271,7 @@ const DisassemblyView = () => {
 
   const getDisassemblyDiv = () => {
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
-      return <div style={{ marginTop: '30px' }}>Pause to view disassembly</div>
+      return <div className="noselect" style={{ marginTop: '30px' }}>Pause to view disassembly</div>
     }
     const disArray = handleGetDisassembly().split('\n').slice(0, nlines)
     if (disArray.length <= 1) return <div

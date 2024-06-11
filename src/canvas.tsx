@@ -360,9 +360,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         canvas.addEventListener('mousemove', handleMouseMove)
         canvas.addEventListener('mousedown', handleMouseDown)
         canvas.addEventListener('mouseup', handleMouseUp)
-        window.addEventListener("copy", () => { handleCopyToClipboard() })
+        canvas.addEventListener("copy", () => { handleCopyToClipboard() })
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
-        window.addEventListener("paste", paste)
+        canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
         window.setInterval(() => { checkGamepad() }, 34)
         RenderCanvas()

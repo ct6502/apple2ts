@@ -73,7 +73,7 @@ const State6502Controls = () => {
         {createTextField('S', 'StackPtr', s6502.StackPtr, runMode)}
         {createTextField('IRQ', 'flagIRQ', s6502.flagIRQ, runMode)}
       </div>
-      <div className="flex-row-space-between">
+      <div className="flex-row-space-between" style={{ alignItems: 'center' }}>
         <div className="flex-row">
           {createCheckbox('N', 7, s6502.PStatus, runMode)}
           {createCheckbox('V', 6, s6502.PStatus, runMode)}
@@ -82,9 +82,12 @@ const State6502Controls = () => {
           {createCheckbox('I', 2, s6502.PStatus, runMode)}
           {createCheckbox('Z', 1, s6502.PStatus, runMode)}
           {createCheckbox('C', 0, s6502.PStatus, runMode)}
+          {createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
         <div className="flex-row">
-          {createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
+          <span className="bigger-font noselect">Cycle count:</span>
+          <span className="bigger-monospace"
+            style={{ marginLeft: '1em', marginRight: '1em' }}> {s6502.cycleCount}</span>
         </div>
       </div>
     </div>
