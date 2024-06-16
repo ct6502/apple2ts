@@ -19,26 +19,22 @@ class NoSlotClock {
   constructor() {
   }
   
-  private patternMatch = () => {
-    for (let idx = 0; idx < 8; idx++) {
-      let byte = 0
-      for (let jdx = 0; jdx < 8; jdx++) {
-        byte >>= 1
-        byte |= this.pattern.shift() ? 0x80 : 0x00
-      }
-      if (byte !== PATTERN[idx]) {
-        return false
-      }
-    }
-    return true
+  private reset = () => {
+    this.patternIdx = 0
+  }
+
+  private checkPattern = (bit: bit) => {
+    const byte = PATTERN[Math.floor(this.patternIdx / 8)]
+    const wantbit = (byte >> (this.patternIdx % 8)) & 0x01
+    return bit === wantbit
   }
   
   private calcBits = () => {
     const shift = (val: number) => {
-      for (let idx = 0; idx < 4; idx++) {
-        this.bits.push(val & 0x08 ? 0x01 : 0x00)
-        val <<= 1
-      }
+      this.bits.push(val & 0x08 ? 1 : 0)
+      this.bits.push(val & 0x04 ? 1 : 0)
+      this.bits.push(val & 0x02 ? 1 : 0)
+      this.bits.push(val & 0x01 ? 1 : 0)
     }
     const shiftBCD = (val: number) => {
       shift(Math.floor(val / 10))
@@ -67,36 +63,38 @@ class NoSlotClock {
     shiftBCD(hundredths)
   }
   
-  access = (addr: number) => {
-    // only want offset, not page
-    addr &= 0xFF
+  private access = (addr: number) => {
+    // bit A2 high = NSC read cycle, A2 low = write cycle
     if (addr & A2) {
-      this.patternIdx = 0
+      // Any "read" will reset the pattern matching
+      this.reset()
     } else {
-      const abit = addr & A0
-      this.pattern[this.patternIdx++] = abit
-      if (this.patternIdx === 64) {
-        if (this.patternMatch()) {
+      // See if our bit matches the appropriate bit in the 64-bit pattern
+      if (this.checkPattern((addr & A0) as bit)) {
+        this.patternIdx++
+        // If we successfully matched all 64 bits, calculate the time
+        if (this.patternIdx === 64) {
           this.calcBits()
         }
-        this.patternIdx = 0
+      } else {
+        this.reset()
       }
     }
   }
   
   read = (addr: number) => {
-    addr &= 0xFF
+    let value = -1
     if (this.bits.length > 0) {
-      const bit = this.bits.pop()
-      return (bit !== undefined) ? bit : -1
+      // Only return a value if we have an NSC read cycle (A2 high)
+      if (addr & A2) {
+        value = this.bits.pop() as bit
+      }
+    } else {
+      this.access(addr)
     }
-    this.access(addr)
-    return -1
+    return value
   }
-  
-  reset = () => {
-    this.patternIdx = 0
-  }
+
 }
 
 export const noSlotClock = new NoSlotClock()

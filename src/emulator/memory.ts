@@ -320,7 +320,6 @@ export const memoryReset = () => {
   C800SlotSet(0)
   RamWorksBankSet(0)
   updateAddressTables()
-  noSlotClock.reset()
 }
 
 // Fill all pages of either main or aux memory with 0, 1, 2,...
@@ -405,7 +404,7 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
     value = -1
     if (page >= 0xC1 && page <= 0xC7) {
       if (page == 0xC3 && !SWITCHES.SLOTC3ROM.isSet) {
-        // NSC answers in slot C3 memory to be compatible with standard prodos driver and A2osX
+        // NSC answers in slot C3 memory to be compatible with standard ProDOS driver and A2osX
         value = noSlotClock.read(addr)
       }
       checkSlotIO(addr)
@@ -454,10 +453,6 @@ export const memSet = (addr: number, value: number) => {
     memSetSoftSwitch(addr, value)
   } else {
     if (page >= 0xC1 && page <= 0xC7) {
-      if (page == 0xC3 && !SWITCHES.SLOTC3ROM.isSet) {
-        // NSC answers in slot C3 memory to be compatible with standard prodos driver and A2osX
-        noSlotClock.access(addr)
-      }
       checkSlotIO(addr, value)
     } else if (addr === 0xCFFF) {
       manageC800(0xFF);
