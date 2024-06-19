@@ -7,6 +7,7 @@ import { drol } from "./drol"
 import { firebug } from "./firebug"
 import { karateka } from "./karateka"
 import { noxarchaist } from "./noxarchaist"
+import { robotron } from "./robotron"
 import { snoggle } from "./snoggle"
 import { wizardry } from "./wizardry"
 import { wolfenstein } from "./wolfenstein"
@@ -26,6 +27,7 @@ AddGameLibraryItem(drol)
 AddGameLibraryItem(firebug)
 AddGameLibraryItem(karateka)
 AddGameLibraryItem(noxarchaist)
+AddGameLibraryItem(robotron)
 AddGameLibraryItem(snoggle)
 AddGameLibraryItem(wizardry)
 AddGameLibraryItem(wolfenstein)

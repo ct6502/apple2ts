@@ -1,5 +1,5 @@
 import { toHex, ADDR_MODE, default6502State } from "./utility/utility"
-import { memGet, memSet, memory } from "./memory"
+import { getDataBlock, memGet, memSet } from "./memory"
 // var startTime = performance.now()
 
 export const s6502: STATE6502 = default6502State()
@@ -65,14 +65,18 @@ export const getProcessorStatus = () => {
   )
 }
 
-export const get6502StateString = () => {
-  return `${toHex(s6502.PC)} ${getProcessorStatus()} NMI=${s6502.flagNMI ? '1' : '0'} IRQ=${toHex(s6502.flagIRQ)}`  
-}
-
 const stackDump = new Array<string>(256).fill('')
 
+export const getStackDump = () => {
+  return stackDump.slice(0, 256)
+}
+
+export const setStackDump = (dump: Array<string>) => {
+  stackDump.splice(0, dump.length, ...dump)
+}
+
 export const getStackString = () => {
-  const stackvalues = memory.slice(256, 512)
+  const stackvalues = getDataBlock(0x100).slice(0, 256)
   const result = new Array<string>()
   for (let i = 0xFF; i > s6502.StackPtr; i--) {
     let value = "$" + toHex(stackvalues[i])
@@ -88,11 +92,11 @@ export const getStackString = () => {
     value = (value + "   ").substring(0, 6)
     result.push(toHex(0x100 + i, 4) + ": " + value + cmd)
   }
-  return result
+  return result.join('\n')
 }
 
 export const getLastJSR = () => {
-  const stackvalues = memory.slice(256, 512)
+  const stackvalues = getDataBlock(0x100).slice(0, 256)
   for (let i = s6502.StackPtr - 2; i <= 0xFF; i++) {
     const vHi = stackvalues[i]
     if ((stackDump[i].startsWith("JSR")) && (i - 1) > s6502.StackPtr && stackDump[i-1] === "JSR") {

@@ -10,7 +10,7 @@ const connect = () => {
       (err) => console.log('requestMIDIAccess fails', err));
   }
   else
-    console.log("WebMidi Not supported"); 
+    console.log("WebMidi not supported"); 
 }
 
 let midiAccess: MIDIAccess;
@@ -18,7 +18,7 @@ let midiAccess: MIDIAccess;
 const midiReady = (midi: MIDIAccess) => {
   // Also react to device changes.
   midiAccess = midi;
-  midi.addEventListener('statechange', (event) => initDevices());
+  midi.addEventListener('statechange', () => initDevices());
   initDevices();
 }
 
@@ -117,7 +117,7 @@ connect();
 
 let u5midi = true;
 let once = true;
-let buffer: number[] = [];
+const buffer: number[] = [];
 
 //+-----------------+-----------------+-----------------+-----------------+-----------------+-----------------+----------------+ 
 //| Patch           | Part 1          | Part 2          | Part 3          |Part 4           | Part 5          | Part 6         | 
@@ -567,7 +567,7 @@ export const receiveMidiData = (data: Uint8Array) => {
     if (buffer.length < needBytes)
       break;
 
-    let msg: number[] = [];
+    const msg: number[] = [];
     while( needBytes-- )
       msg.push( buffer.shift()! );
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWarning
@@ -12,35 +12,43 @@ interface EditFieldProps {
   width?: string;
   help?: string;
   warning?: string;
+  initialFocus?: boolean;
 }
 
-class EditField extends React.Component<EditFieldProps, object>
-{
-  handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.props.setValue(e.target.value)
+const EditField = (props: EditFieldProps) => {
+  const inputRef = useRef(null);
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    props.setValue(e.target.value)
   }
-  render() {
-    return <div className="flex-row" style={{marginTop: '2px', position: "relative"}}>
-      <div className="white-title">{this.props.name}</div>
+  useEffect(() => {
+    if (props.initialFocus && inputRef.current) {
+      const input = inputRef.current as HTMLInputElement
+      input.focus();
+    }
+  }, [props.initialFocus]);
+  return (
+    <div className="flex-row" style={{ marginTop: '2px', position: "relative" }}>
+      <div className="dialog-title">{props.name}</div>
       <input type="text"
-        className="dark-mode-edit"
-        placeholder={this.props.placeholder}
-        value={this.props.value}
-        style={{width: this.props.width || "100%"}}
-        onChange={(e) => this.handleValueChange(e)}/>
-      {this.props.warning &&
+        ref={inputRef}
+        className="hex-field"
+        placeholder={props.placeholder}
+        value={props.value}
+        style={{ width: props.width || "100%" }}
+        onChange={(e) => handleValueChange(e)} />
+      {props.warning &&
         <div className="warning-div flex-row">
-        <FontAwesomeIcon icon={faWarning}
-          className="warning-icon"
-          title={this.props.warning}/>
-        <div className="warning-text">{this.props.warning}</div>
+          <FontAwesomeIcon icon={faWarning}
+            className="warning-icon"
+            title={props.warning} />
+          <div className="warning-text">{props.warning}</div>
         </div>}
-      {(this.props.help && !this.props.warning) &&
+      {(props.help && !props.warning) &&
         <div className="warning-div flex-row">
-        <div className="warning-text" style={{color: "#ccc"}}>{this.props.help}</div>
+          <div className="warning-text-help">{props.help}</div>
         </div>}
     </div>
-  }
+  )
 }
 
 export default EditField

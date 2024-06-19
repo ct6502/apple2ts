@@ -159,7 +159,7 @@ const processSmartPortAccess = () => {
           }
           break
 
-        case 3: // return DIB
+        case 3: { // return DIB
           const dd = getHardDriveData()
           const dataLen = dd.length
           const nblocks = dataLen / 512
@@ -191,6 +191,7 @@ const processSmartPortAccess = () => {
           setY(0)
           setCarry(false)
           break;
+        }
 
         default:
           console.error(`SmartPort statusCode ${statusCode} not implemented`)

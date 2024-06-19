@@ -1,4 +1,6 @@
-let startupText = `Welcome to Apple2TS
+import { extraHelpText } from "./extrahelptext"
+
+let emulatorStartText = `Welcome to Apple2TS
 
 TypeScript Apple IIe Emulator
 (c) 2023 Chris Torrence
@@ -11,14 +13,14 @@ Press the Power button to start.
 `
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? `⌘` : 'Alt+'
+const key = isMac ? `Ctrl+⌘` : 'Ctrl+Alt+'
 const isTouchDevice = "ontouchstart" in document.documentElement
 
-export let extraHelpText = startupText
+export let defaultHelpText = emulatorStartText
 
 if (isTouchDevice) {
 
-  startupText += `\n\nTo show keyboard, touch screen.
+  emulatorStartText += `\n\nTo show keyboard, touch screen.
 To send special keys, touch the
 arrows, esc, or tab buttons.
 To send Ctrl or Open Apple keys,
@@ -26,7 +28,7 @@ touch button to enable it, then
 touch screen to show keyboard.
 Touch twice to lock it on.`
 
-  extraHelpText += `\nMobile platforms:
+  defaultHelpText += `\nMobile platforms:
 Tap the screen to show the keyboard.
 Press the arrow keys, esc, or tab buttons to send those keys to the emulator.
 To send a control character, press the ctrl button once. Then tap the screen to show the keyboard and press the desired key. The ctrl button will automatically be released.
@@ -36,8 +38,10 @@ The open apple and closed apple keys behave the same as the ctrl key.`
 } else {
 
   const keyboardShortcutText =
-`${key}C Copy Screen     ${key}O Open State
-${key}V Paste Text      ${key}S Save State
+`${key}C Copy Screen
+${key}V Paste Text
+${key}O Open State
+${key}S Save State
 ${key}← Go Back in Time
 ${key}→ Forward in Time
 
@@ -45,15 +49,17 @@ Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option`
   
   // Replace Unicode ⌘ with my fake MouseText character
-  let tmp = extraHelpText + `\n` + keyboardShortcutText
+  let tmp = defaultHelpText + `\n` + keyboardShortcutText
   tmp = tmp.replaceAll(`⌘`, '\xC3').replaceAll('←', '\xC8').replaceAll('→', '\xD5')
-  startupText = tmp
+  emulatorStartText = tmp
 
-  extraHelpText += `\n` + keyboardShortcutText
+  defaultHelpText += `\n` + keyboardShortcutText
 }
 
+defaultHelpText += extraHelpText
+
 const textPage = new Array<string>(24).fill('')
-const startupTextSplit = startupText.split('\n')
+const startupTextSplit = emulatorStartText.split('\n')
 const n = startupTextSplit.length
 for (let j = 0; j < n; j++) {
   textPage[j + 12 - Math.floor(n/2)] = startupTextSplit[j]

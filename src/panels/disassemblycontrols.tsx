@@ -1,12 +1,9 @@
-import { KeyboardEvent } from "react";
-import "./debugpanel.css"
-import { handleGetNextInstruction,
+import { KeyboardEvent, useState } from "react";
+import {
   handleGetRunMode,
-  passSetDisassembleAddress, passStepInto, passStepOut, passStepOver } from "../main2worker";
-import bpStepOver from './img/bpStepOver.svg';
-import bpStepInto from './img/bpStepInto.svg';
-import bpStepOut from './img/bpStepOut.svg';
-import bpStepStmt from './img/bpStepStmt.svg';
+  handleGetState6502,
+  passSetDisassembleAddress, passStepInto, passStepOut, passStepOver
+} from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPause,
@@ -15,89 +12,85 @@ import {
 import React from "react";
 import { RUN_MODE } from "../emulator/utility/utility";
 import { handleSetCPUState } from "../controller";
+import { bpStepInto, bpStepOut, bpStepOver } from "../img/icons";
 
-class DisassemblyControls extends React.Component<object, { address: string; }>
-{
+const DisassemblyControls = () => {
   // The tooltips obscure the first line of disassembly.
   // Only show them until each button has been clicked once.
-  tooltipStepOverShow = true
-  tooltipStepIntoShow = true
-  tooltipStepOutShow = true
+  const [tooltipOverShow, setTooltipOverShow] = useState(true)
+  const [tooltipIntoShow, setTooltipIntoShow] = useState(true)
+  const [tooltipOutShow, setTooltipOutShow] = useState(true)
   // The tooltip "show's" get reset when the instruction changes to/from JSR.
-  wasJSR = true
+  const [address, setAddress] = useState('')
 
-  constructor(props: object) {
-    super(props);
-    this.state = {
-      address: '',
-    };
-  }
-
-  handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 4)
-    this.setState({address: newvalue});
+    setAddress(newvalue)
   }
 
-  handleDisassembleAddrKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleDisassembleAddrKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      const addr = parseInt(this.state.address || '0', 16)
+      const addr = parseInt(address || '0', 16)
       passSetDisassembleAddress(addr)
-      this.setState({address: addr.toString(16).toUpperCase()})
+      setAddress(addr.toString(16).toUpperCase())
     }
   }
 
-  render() {
-    const runMode = handleGetRunMode()
-    const isJSR = handleGetNextInstruction() === 'JSR'
-    // If the instruction changes to/from JSR, reset the tooltips,
-    // on the assumption that the user won't remember what the buttons mean.
-    if (isJSR !== this.wasJSR) {
-      this.tooltipStepOverShow = true
-      this.tooltipStepIntoShow = true
-      this.wasJSR = isJSR
-    }
-    return (
-      <span className="flex-row">
-        <input className="hexField"
-          type="text"
-          placeholder=""
-          value={this.state.address}
-          onChange={this.handleDisassembleAddrChange}
-          onKeyDown={this.handleDisassembleAddrKeyDown}
-        />
-        <button className="pushButton"
-          title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
-          onClick={() => {
-            handleSetCPUState(runMode === RUN_MODE.PAUSED ?
-              RUN_MODE.RUNNING : RUN_MODE.PAUSED)
-          }}
-          disabled={runMode === RUN_MODE.IDLE}>
-          {runMode === RUN_MODE.PAUSED ?
-          <FontAwesomeIcon icon={faPlay}/> :
-          <FontAwesomeIcon icon={faPause}/>}
-        </button>
-        <button className="pushButton"
-          title={this.tooltipStepOverShow ? (isJSR ? "Step Over" : " Step") : ""}
-          onClick={() => {this.tooltipStepOverShow = false; passStepOver()}}
-          disabled={runMode !== RUN_MODE.PAUSED}>
-          <img src={isJSR ? bpStepOver : bpStepStmt} alt="Step Over" width={23} height={23}/>
-        </button>
-        <button className="pushButton"
-          title={this.tooltipStepIntoShow ? "Step Into" : ""}
-          onClick={() => {this.tooltipStepIntoShow = false; passStepInto()}}
-          disabled={runMode !== RUN_MODE.PAUSED || !isJSR}>
-          <img src={bpStepInto} alt="Step Into" width={23} height={23}/>
-        </button>
-        <button className="pushButton"
-          title={this.tooltipStepOutShow ? "Step Out" : ""}
-          onClick={() => {this.tooltipStepOutShow = false; passStepOut()}}
-          disabled={runMode !== RUN_MODE.PAUSED}>
-          <img src={bpStepOut} alt="Step Out" width={23} height={23}/>
-        </button>
-      </span>
-    )
+  const goToCurrentPC = () => {
+    const pc = handleGetState6502().PC
+    passSetDisassembleAddress(pc)
+    setAddress(pc.toString(16).toUpperCase())
   }
+
+  const runMode = handleGetRunMode()
+
+  return (
+    <span className="flex-row" style={{ marginBottom: "5px" }}>
+      <input className="hex-field"
+        type="text"
+        placeholder="FFFF"
+        value={address}
+        onChange={handleDisassembleAddrChange}
+        onKeyDown={handleDisassembleAddrKeyDown}
+      />
+      <button className="push-button"
+        title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
+        onClick={() => {
+          handleSetCPUState(runMode === RUN_MODE.PAUSED ?
+            RUN_MODE.RUNNING : RUN_MODE.PAUSED)
+        }}
+        disabled={runMode === RUN_MODE.IDLE}>
+        {runMode === RUN_MODE.PAUSED ?
+          <FontAwesomeIcon icon={faPlay} /> :
+          <FontAwesomeIcon icon={faPause} />}
+      </button>
+      <button className="push-button"
+        title={tooltipOverShow ? "Step Over" : ""}
+        onClick={() => { setTooltipOverShow(false); passStepOver() }}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <svg width="23" height="23" className="fill-color">{bpStepOver}</svg>
+      </button>
+      <button className="push-button"
+        title={tooltipIntoShow ? "Step Into" : ""}
+        onClick={() => { setTooltipIntoShow(false); passStepInto() }}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <svg width="23" height="23" className="fill-color">{bpStepInto}</svg>
+      </button>
+      <button className="push-button"
+        title={tooltipOutShow ? "Step Out" : ""}
+        onClick={() => { setTooltipOutShow(false); passStepOut() }}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>
+      </button>
+      <button className="push-button"
+        title="Go to Current PC"
+        onClick={goToCurrentPC}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="bigger-font">PC</div>
+      </button>
+    </span>
+  )
 }
 
 export default DisassemblyControls;

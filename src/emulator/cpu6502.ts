@@ -1,8 +1,8 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
-import { memGet, specialJumpTable } from "./memory"
+import { MEMORY_BANKS, memGet, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { Breakpoint, Breakpoints, convertBreakpointExpression } from "../panels/breakpoint"
+import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, BreakpointMap, convertBreakpointExpression } from "./utility/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -12,7 +12,7 @@ let doWatchpointBreak = false
 // let doDebugZeroPage = false
 // const instrTrail = new Array<string>(1000)
 // let posTrail = 0
-let breakpoints: Breakpoints = new Map()
+export let breakpointMap: BreakpointMap = new BreakpointMap()
 let runToRTS = false
 
 export const doSetBreakpointSkipOnce = () => {
@@ -21,29 +21,37 @@ export const doSetBreakpointSkipOnce = () => {
 
 export const setStepOut = () => {
   // If we have a new Step Out, remove any old "hit once" breakpoints
-  const bpTmp = new Map(breakpoints)
+  const bpTmp = new BreakpointMap(breakpointMap)
   bpTmp.forEach((bp, key) => {
-    if (bp.once) breakpoints.delete(key)
+    if (bp.once) breakpointMap.delete(key)
   });
   const addr = getLastJSR()
   if (addr < 0) return
-  if (breakpoints.get(addr)) return
+  if (breakpointMap.get(addr)) return
   const bp = new Breakpoint()
   bp.address = addr
   bp.once = true
   bp.hidden = true
-  breakpoints.set(addr, bp)
+  breakpointMap.set(addr, bp)
 }
 
-export const doSetBreakpoints = (bp: Breakpoints) => {
+export const doSetBreakpoints = (bp: BreakpointMap) => {
   // This will automatically erase any "hit once" breakpoints, which is okay.
-  breakpoints = bp
+  breakpointMap = bp
+}
+
+const checkMemoryBank = (bankKey: string, address: number) => {
+  const bank = MEMORY_BANKS[bankKey]
+  if (address < bank.min || address > bank.max) return false
+  if (!bank.enabled(address)) return false
+  return true
 }
 
 export const isWatchpoint = (addr: number, value: number, set: boolean) => {
-  const bp = breakpoints.get(addr)
+  const bp = breakpointMap.get(addr)
   if (!bp || !bp.watchpoint || bp.disabled) return false
-  if (bp.value >= 0 && bp.value !== value) return false
+  if (bp.hexvalue >= 0 && bp.hexvalue !== value) return false
+  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, addr)) return false
   return set ? bp.memset : bp.memget
 }
 
@@ -131,38 +139,54 @@ export const setWatchpointBreak = () => {
   doWatchpointBreak = true
 }
 
-const hitBreakpoint = () => {
+// This is only exported for breakpoint testing
+export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
   if (doWatchpointBreak) {
     doWatchpointBreak = false
     return true
   }
-  if (breakpoints.size === 0 || breakpointSkipOnce) return false
-  const breakpoint = breakpoints.get(s6502.PC)
-  if (!breakpoint || breakpoint.disabled || breakpoint.watchpoint) return false
-  if (breakpoint.expression) {
-    const expression = convertBreakpointExpression(breakpoint.expression)
+  if (breakpointMap.size === 0 || breakpointSkipOnce) return false
+  const bp = breakpointMap.get(s6502.PC) ||
+    breakpointMap.get(instr | BRK_INSTR) ||
+    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL))
+  if (!bp || bp.disabled || bp.watchpoint) return false
+  if (bp.instruction) {
+    // See if we need to have a matching value, but watch out for our special
+    // BRK_ILLEGAL, which will break on any illegal opcode regardless of value.
+    if (bp.address === BRK_ILLEGAL) {
+      if (pcodes[instr].name !== '???') return false
+    } else if (hexvalue >= 0 && bp.hexvalue >= 0) {
+      if (bp.hexvalue !== hexvalue) return false
+    }
+  }
+  if (bp.expression) {
+    const expression = convertBreakpointExpression(bp.expression)
     const doBP = evaluateBreakpointExpression(expression)
     if (!doBP) return false
   }
-  if (breakpoint.hitcount > 1) {
-    breakpoint.nhits++
-    if (breakpoint.nhits < breakpoint.hitcount) return false
-    breakpoint.nhits = 0
+  if (bp.hitcount > 1) {
+    bp.nhits++
+    if (bp.nhits < bp.hitcount) return false
+    bp.nhits = 0
   }
-  if (breakpoint.once) breakpoints.delete(s6502.PC)
+  // Be sure to use the current program counter when checking memory bank,
+  // so that it works for both regular breakpoints and instruction breakpoints.
+  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, s6502.PC)) return false
+  if (bp.once) breakpointMap.delete(s6502.PC)
   return true
 }
 
 export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
-  const instr = memGet(s6502.PC)
+  // Do not trigger watchpoints. Those should only trigger on true read/writes.
+  const instr = memGet(s6502.PC, false)
   const code =  pcodes[instr]
-  // Make sure we only get these instruction bytes if necessary,
-  // so we don't accidently trigger a watchpoint.
-  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1) : 0
-  const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2) : 0
-  if (hitBreakpoint()) {
+  // Make sure we only get these instruction bytes if necessary.
+  // Do not trigger watchpoints. Those should only trigger on true read/writes.
+  const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
+  const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
+  if (hitBreakpoint(instr, (vHi << 8) + vLo)) {
     doSetRunMode(RUN_MODE.PAUSED)
     return -1
   }

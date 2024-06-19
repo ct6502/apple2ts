@@ -36,7 +36,7 @@ export const loresAmber: number[][] = loresColors.map(c => {
 
 export const loresWhite: number[][] = loresColors.map(c => {
   const c1 = (c[0] + c[1] + c[2]) / 3
-  return [c1, c1 * (0xF0 / 255), 0]
+  return [c1, c1, c1]
 })
 
 export const TEXT_GREEN = '#39FF14'
@@ -75,8 +75,8 @@ export const hgrRGBcolors = [
   loresColors[14], // 13, cut off white = lores light blue-green
   [150, 255, 150], // 14, bright green
   [150, 150, 255], // 15, bright violet
-  [127, 1, 127],   // 16, dark violet
-  [1, 127, 1],     // 17, dark green
-  [1, 75, 127],    // 18, dark blue
-  [127, 75, 1],    // 19, dark orange
+  [1, 127, 1],     // 16, dark green
+  [127, 1, 127],   // 17, dark violet
+  [127, 75, 1],    // 18, dark orange
+  [1, 75, 127],    // 19, dark blue
 ]

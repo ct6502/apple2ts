@@ -4,38 +4,49 @@ import {
   faArrowRotateRight,
   faClipboard,
   faFolderOpen,
+  faPaste,
   faPowerOff,
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
+import { handleCopyToClipboard } from "../copycanvas";
+import { handleGetRunMode, passPasteText } from "../main2worker";
+import { handleFileSave } from "../savestate";
 
-const ControlButtons = (props: DisplayProps) => {  
+const ControlButtons = (props: DisplayProps) => {
+  const runMode = handleGetRunMode()
   return <span className="flex-row">
-    <button className="pushButton"
+    <button className="push-button"
       title="Boot"
       onClick={() => { handleSetCPUState(RUN_MODE.NEED_BOOT) }}>
-      <FontAwesomeIcon icon={faPowerOff}/>
+      <FontAwesomeIcon icon={faPowerOff} />
     </button>
-    <button className="pushButton"
+    <button className="push-button"
       title="Reset"
       onClick={() => { handleSetCPUState(RUN_MODE.NEED_RESET) }}
-      disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
-      >
-      <FontAwesomeIcon icon={faArrowRotateRight}/>
-    </button>
-    <button className="pushButton" title="Restore State"
-      onClick={() => props.handleFileOpen()}>
-      <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: '0.9em' }}/>
-    </button>
-    <button className="pushButton" title="Save State"
-      onClick={() => props.handleFileSave(false)}
-      disabled={props.runMode === RUN_MODE.IDLE || props.runMode === RUN_MODE.NEED_BOOT}
+      disabled={runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT}
     >
-      <FontAwesomeIcon icon={faSave}/>
+      <FontAwesomeIcon icon={faArrowRotateRight} />
     </button>
-    <button className="pushButton" title="Copy Screen"
-      onClick={() => props.handleCopyToClipboard()}>
-      <FontAwesomeIcon icon={faClipboard}/>
+    <button className="push-button" title="Restore State"
+      onClick={() => props.setShowFileOpenDialog(true, 0)}>
+      <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: '0.9em' }} />
+    </button>
+    <button className="push-button" title="Save State"
+      onClick={() => handleFileSave(false)}
+      disabled={runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT}
+    >
+      <FontAwesomeIcon icon={faSave} />
+    </button>
+    <button className="push-button" title="Copy Screen"
+      onClick={() => handleCopyToClipboard()}>
+      <FontAwesomeIcon icon={faClipboard} />
+    </button>
+    <button className="push-button" title="Paste Text"
+      onClick={() => {
+        navigator.clipboard.readText().then((data) => passPasteText(data))
+      }}>
+      <FontAwesomeIcon icon={faPaste} />
     </button>
   </span>
 }

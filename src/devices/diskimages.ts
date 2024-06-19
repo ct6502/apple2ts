@@ -8,8 +8,9 @@ export const diskImages: Array<diskImage> = [
   {file: 'Olympic Decathlon.woz', url: 'https://archive.org/details/microsoft-olympic-decathlon-a2-ph/'},
   {file: 'One on One.po', url: 'https://archive.org/details/electronic-arts-one-on-one-a2-ph/'},
   {file: 'Pitch Dark.hdv', url: 'https://archive.org/details/PitchDark'},
-  {file: 'ProDOS 2.4.2.po', url: 'https://prodos8.com/'},
-  {file: 'Total Replay v5.0.hdv', url: 'https://archive.org/details/TotalReplay'},
+  {file: 'ProDOS 2.4.3.po', url: 'https://prodos8.com/'},
+  {file: 'Robotron4Joy.po', url: 'https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/'},
+  {file: 'Total Replay v5.1.hdv', url: 'https://archive.org/details/TotalReplay'},
   {file: 'Ultima IV.hdv', url: 'https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar'},
   {file: 'Ultima V.hdv', url: 'https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny'},
   {file: 'Wizard Replay v1.0.hdv', url: 'https://archive.org/details/WizardReplay'}

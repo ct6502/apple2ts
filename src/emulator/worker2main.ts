@@ -1,7 +1,8 @@
 import { doSetRunMode,
-  doGetSaveState, doRestoreSaveState, doSetNormalSpeed,
+  doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage } from "./motherboard";
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
+  doSetMemory} from "./motherboard";
 import { doSetDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -10,6 +11,7 @@ import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
 import { receiveMidiData } from "./devices/passport/passport";
 import { receiveCommData } from "./devices/superserial/serial";
+import { doSetRamWorks } from "./memory";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -18,8 +20,13 @@ import { receiveCommData } from "./devices/superserial/serial";
 declare const self: DedicatedWorkerGlobalScope;
 export {};
 
+let isTesting = false
+export const setIsTesting = () => {
+  isTesting = true
+}
+
 const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
-  self.postMessage({msg, payload});
+  if (!isTesting) self.postMessage({msg, payload});
 }
 
 export const passMachineState = (state: MachineState) => {
@@ -38,8 +45,8 @@ export const passDriveSound = (sound: DRIVE) => {
   doPostMessage(MSG_WORKER.DRIVE_SOUND, sound)
 }
 
-const passSaveState = (saveState: EmulatorSaveState) => {
-  doPostMessage(MSG_WORKER.SAVE_STATE, saveState)
+const passSaveState = (sState: EmulatorSaveState) => {
+  doPostMessage(MSG_WORKER.SAVE_STATE, sState)
 }
 
 export const passRumble = (params: GamePadActuatorEffect) => {
@@ -74,6 +81,7 @@ export const passRequestThumbnail = (PC: number) => {
 // command line where self will be undefined.
 if (typeof self !== 'undefined') {
   self.onmessage = (e: MessageEvent) => {
+    if (!('msg' in e.data)) return
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:
         doSetRunMode(e.data.payload)
@@ -100,7 +108,7 @@ if (typeof self !== 'undefined') {
         doStepOut()
         break
       case MSG_MAIN.SPEED:
-        doSetNormalSpeed(e.data.payload)
+        doSetSpeedMode(e.data.payload as number)
         break
       case MSG_MAIN.TIME_TRAVEL_STEP:
         if (e.data.payload === "FORWARD") {
@@ -128,6 +136,7 @@ if (typeof self !== 'undefined') {
         MouseCardEvent(e.data.payload)
         break
       case MSG_MAIN.PASTE_TEXT:
+        doSetPastedText(e.data.payload as string)
         sendPastedText(e.data.payload)
         break
       case MSG_MAIN.APPLE_PRESS:
@@ -155,14 +164,25 @@ if (typeof self !== 'undefined') {
         doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
         break
       }
+      case MSG_MAIN.SET_MEMORY: {
+        const setmem = e.data.payload
+        doSetMemory(setmem.address, setmem.value)
+        break
+      }
       case MSG_MAIN.COMM_DATA:
         receiveCommData(e.data.payload)
         break
       case MSG_MAIN.MIDI_DATA:
         receiveMidiData(e.data.payload)
         break
+      case MSG_MAIN.RamWorks:
+        doSetRamWorks(e.data.payload as number)
+        break
+      case MSG_MAIN.SOFTSWITCHES:
+        forceSoftSwitches(e.data.payload)
+        break
       default:
-        console.error(`worker2main: unhandled msg: ${e.data.msg}`)
+        console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)
         break
     }
   }

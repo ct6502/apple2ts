@@ -250,12 +250,13 @@ export const playMockingboard = (sound: MockingboardSound) => {
       nodes[sound.slot][chip].noise[c % 3].frequency.value = freq
       nodes[sound.slot][chip].noise[c % 3].Q.value = Q
     }
-    const levelParam = params[8 + (c % 3)] & 0x1F
     const isEnabled = !(params[7] & (1 << c))
-    const envFreq = computeEnvFreq(params[11], params[12])
+    const levelParam = params[8 + (c % 3)] & 15
+    const envelopeEnable = params[8 + (c % 3)] & 16
 //    if (isEnabled) console.log(`${chip} ${(255 - params[7]).toString(2)} ${c} ${envFreq}`)
-    if (isEnabled && (levelParam === 16)) {
+    if (isEnabled && envelopeEnable) {
       nodes[sound.slot][chip].gains[c].gain.value = 0
+      const envFreq = computeEnvFreq(params[11], params[12])
       if (envFreq > 0) {
         if (!nodes[sound.slot][chip].envelope) {
           nodes[sound.slot][chip].envelope = constructEnvelopeBuffer(mboardContext,

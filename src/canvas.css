@@ -6,10 +6,9 @@
 .mainCanvas {
   grid-column: 1;
   grid-row: 1;
-  border-radius: 20px;
-  border-color: #000;
+  border-color: #583927;
+  border-style: solid;
   background-color: black;
-  background-image: url(./img/crt.jpg);
   background-size: 100% 100%;
   outline: none;
 }
@@ -18,4 +17,30 @@
   grid-column: 1;
   grid-row: 1;
   opacity: 0;
+}
+
+.hgr-view {
+  position: absolute;
+  user-select: none;
+  pointer-events: none;
+}
+
+.hgr-view-box {
+  border: 2px solid red;
+}
+
+.hgr-view-text {
+  z-index: 9999;
+  background-color: var(--input-background);
+  color: var(--text-color);
+  user-select: none;
+  pointer-events: none;
+  font-family: monospace;
+  font-size: 10pt;
+  line-height: 11pt;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 2px;
+  border-radius: 10px;
+  margin-left: 15px;
 }

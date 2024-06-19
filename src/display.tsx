@@ -1,82 +1,78 @@
 // Chris Torrence, 2022
-import { setDisplay, handleGetRunMode, passSetRunMode,
-  passSetNormalSpeed, handleGetTextPage,
-  passSetDebug,
-  passRestoreSaveState, handleGetSaveState, handleGetAltCharSet,
-  handleGetFilename,
+import {
+  passSetSpeedMode,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
-  passSetGamepads,
-  passKeypress} from "./main2worker"
-import { RUN_MODE, getPrintableChar, COLOR_MODE, TEST_DEBUG, ARROW } from "./emulator/utility/utility"
+  handleGetIsDebugging,
+  doOnMessage,
+  setMain2Worker,
+  handleGetMemSize,
+  passHelpText,
+  handleGetHelpText,
+  handleGetDarkMode,
+} from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
-import React from 'react';
+import { useState } from 'react';
 import HelpPanel from "./panels/helppanel"
-import DebugPanel from "./panels/debugpanel"
-import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
+import DebugSection from "./panels/debugsection"
 import ImageWriter from "./devices/imagewriter"
-import { audioEnable, isAudioEnabled } from "./devices/speaker"
-// import Test from "./components/test";
+import FileInput from "./fileinput"
+import { RestoreSaveState } from "./savestate"
+import { getCanvasSize } from "./graphics"
+import { handleFragment, handleInputParams } from "./inputparams"
+import { COLORS } from "./emulator/utility/utility";
 
-class DisplayApple2 extends React.Component<object,
-  { currentSpeed: number;
-    speedCheck: boolean;
-    uppercase: boolean;
-    useArrowKeysAsJoystick: boolean;
-    colorMode: COLOR_MODE;
-    ctrlKeyMode: number;
-    openAppleKeyMode: number;
-    closedAppleKeyMode: number;
-    doDebug: boolean;
-    breakpoint: string;
-    helptext: string;
-  }> {
-  timerID = 0
-  refreshTime = 16.6881
-  myCanvas = React.createRef<HTMLCanvasElement>()
-  hiddenCanvas = React.createRef<HTMLCanvasElement>()
-  hiddenFileOpen = React.createRef<HTMLInputElement>();
+const DisplayApple2 = () => {
+  const [myInit, setMyInit] = useState(false)
+  const [renderCount, setRenderCount] = useState(0)
+  const [currentSpeed, setCurrentSpeed] = useState(1.02)
+  const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
+  const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
+  const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
+  const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, drive: 0 })
+  const [worker, setWorker] = useState<Worker | null>(null)
 
-  constructor(props: object) {
-    super(props);
-    this.state = {
-      ctrlKeyMode: 0,
-      openAppleKeyMode: 0,
-      closedAppleKeyMode: 0,
-      doDebug: TEST_DEBUG,
-      currentSpeed: 1.02,
-      speedCheck: true,
-      uppercase: true,
-      useArrowKeysAsJoystick: true,
-      colorMode: COLOR_MODE.COLOR,
-      breakpoint: '',
-      helptext: '',
-    };
-  }
-
-  updateDisplay = (speed = 0, helptext = '') => {
-    if (helptext) {
-      this.setState( {helptext} )
-    } else {
-      this.setState( {currentSpeed: (speed ? speed : this.state.currentSpeed)} )
+  // We need to create our worker here so it has access to our properties
+  // such as cpu speed and help text. Otherwise, if the emulator changed
+  // those, we would have no way of setting them here and re-rendering.
+  if (!worker) {
+    const newWorker = new Worker(new URL('./emulator/worker2main', import.meta.url),
+      { type: "module" })
+    setWorker(newWorker)
+    setMain2Worker(newWorker)
+    newWorker.onmessage = (e: MessageEvent) => {
+      const result = doOnMessage(e)
+      if (result) {
+        updateDisplay(result.speed, result.helptext)
+      }
     }
   }
 
-  updatehelptext = (helptext: string) => {
-    this.setState( {helptext} )
+  const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = '') => {
+    if (newhelptext && newhelptext.length > 1) {
+      passHelpText(newhelptext)
+    } else if (speed && speed !== currentSpeed) {
+      setCurrentSpeed(speed)
+    }
+    // ***** This is critical to make this update be a function.
+    // That way React is forced to pass in the actual previous value,
+    // rather than a cached value (thru a closure).
+    // If you do setRenderCount(renderCount + 1), renderCount will always be
+    // zero and NOTHING will update.
+    setRenderCount(prevRenderCount => prevRenderCount + 1);
   }
 
-  componentDidMount() {
-    setDisplay(this)
+  if (!myInit) {
+    setMyInit(true)
     if ("launchQueue" in window) {
       const queue: LaunchQueue = window.launchQueue as LaunchQueue
       queue.setConsumer(async (launchParams: LaunchParams) => {
         const files: FileSystemFileHandle[] = launchParams.files
         if (files && files.length) {
           const fileContents = await (await files[0].getFile()).text()
-          this.restoreSaveStateFunc(fileContents)
+          RestoreSaveState(fileContents)
         }
       });
     }
@@ -84,291 +80,127 @@ class DisplayApple2 extends React.Component<object,
     // or whether just having the assets within that file is good enough
     // for the preloading.
     // preloadAssets()
-    passSetNormalSpeed(true)
-//    window.addEventListener('beforeunload', (event) => {
-      // Cancel the event as stated by the standard.
-//      event.preventDefault();
-      // Chrome requires returnValue to be set.
-//      event.returnValue = '';
-//    });
-  //    window.addEventListener("resize", handleResize)
+    passSetSpeedMode(0)
+    handleInputParams()
+    handleFragment(updateDisplay)
+    //    window.addEventListener('beforeunload', (event) => {
+    // Cancel the event as stated by the standard.
+    //      event.preventDefault();
+    // Chrome requires returnValue to be set.
+    //      event.returnValue = '';
+    //    });
+    //    window.addEventListener("resize", handleResize)
   }
 
-  componentWillUnmount() {
-    if (this.timerID) clearInterval(this.timerID);
-//    window.removeEventListener("resize", handleResize)
+  const handleCtrlDown = (ctrlKeyMode: number) => {
+    setCtrlKeyMode(ctrlKeyMode)
   }
 
-  handleSpeedChange = (enable: boolean) => {
-    passSetNormalSpeed(enable)
-    this.setState({ speedCheck: enable });
-  };
-
-  handleColorChange = (mode: COLOR_MODE) => {
-    this.setState({ colorMode: mode });
-  };
-
-  handleCtrlDown = (ctrlKeyMode: number) => {
-    this.setState({ ctrlKeyMode });
-  };
-
-  arrowGamePad = [0, 0]
-
-  handleArrowKey = (key: ARROW, release: boolean) => {
-    if (!release) {
-      let code = 0
-      switch (key) {
-        case ARROW.LEFT: code = 8; this.arrowGamePad[0] = -1; break
-        case ARROW.RIGHT: code = 21; this.arrowGamePad[0] = 1; break
-        case ARROW.UP: code = 11; this.arrowGamePad[1] = -1; break
-        case ARROW.DOWN: code = 10; this.arrowGamePad[1] = 1; break
-      }
-      passKeypress(String.fromCharCode(code))
-    } else {
-      switch (key) {
-        case ARROW.LEFT: // fall thru
-        case ARROW.RIGHT: this.arrowGamePad[0] = 0; break
-        case ARROW.UP: // fall thru
-        case ARROW.DOWN: this.arrowGamePad[1] = 0; break
-      }
-    }
-
-    const gamePads: EmuGamepad[] = [{
-        axes: [this.arrowGamePad[0], this.arrowGamePad[1], 0, 0],
-        buttons: []
-    }]
-    passSetGamepads(gamePads)
-  }
-
-  handleOpenAppleDown = (openAppleKeyMode: number) => {
+  const handleOpenAppleDown = (newMode: number) => {
     // If we're going from 0 to nonzero, send the Open Apple keypress
-    if (this.state.openAppleKeyMode === 0 && openAppleKeyMode > 0) {
+    if (openAppleKeyMode === 0 && newMode > 0) {
       passAppleCommandKeyPress(true)
-    } else if (this.state.openAppleKeyMode > 0 && openAppleKeyMode === 0) {
+    } else if (openAppleKeyMode > 0 && newMode === 0) {
+      // Hack: I guess a timeout of 100 ms is enough time for the
+      // emulator to finish processing the keypress.
       window.setTimeout(() => passAppleCommandKeyRelease(true), 100)
     }
-    this.setState({ openAppleKeyMode });
-  };
+    setOpenAppleKeyMode(newMode)
+  }
 
-  handleClosedAppleDown = (closedAppleKeyMode: number) => {
+  const handleClosedAppleDown = (newMode: number) => {
     // If we're going from 0 to nonzero, send the Closed Apple keypress
-    if (this.state.closedAppleKeyMode === 0 && closedAppleKeyMode > 0) {
+    if (closedAppleKeyMode === 0 && newMode > 0) {
       passAppleCommandKeyPress(false)
-    } else if (this.state.closedAppleKeyMode > 0 && closedAppleKeyMode === 0) {
+    } else if (closedAppleKeyMode > 0 && newMode === 0) {
+      // Hack: I guess a timeout of 100 ms is enough time for the
+      // emulator to finish processing the keypress.
       window.setTimeout(() => passAppleCommandKeyRelease(false), 100)
     }
-    this.setState({ closedAppleKeyMode });
-  };
-
-  handleDebugChange = (enable: boolean) => {
-    passSetDebug(enable)
-    this.setState({ doDebug: enable });
-  };
-
-  handleUpperCaseChange = (enable: boolean) => {
-    this.setState({ uppercase: enable });
-  };
-
-  handleUseArrowKeyJoystick = (enable: boolean) => {
-    this.setState({ useArrowKeysAsJoystick: enable });
-  };
-
-  restoreSaveStateFunc = (fileContents: string) => {
-    const saveState: EmulatorSaveState = JSON.parse(fileContents)
-    passRestoreSaveState(saveState)
-    if (saveState.emulator?.colorMode !== undefined) {
-      this.handleColorChange(saveState.emulator.colorMode)
-    }
-    if (saveState.emulator?.uppercase !== undefined) {
-      this.handleUpperCaseChange(saveState.emulator.uppercase)
-    }
-    if (saveState.emulator?.audioEnable !== undefined) {
-      audioEnable(saveState.emulator.audioEnable)
-    }
-    if (saveState.emulator?.mockingboardMode !== undefined) {
-      changeMockingboardMode(saveState.emulator.mockingboardMode)
-    }
-    passSetRunMode(RUN_MODE.RUNNING)
+    setClosedAppleKeyMode(newMode)
   }
 
-  handleRestoreState = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target?.files?.length) {
-      const fileread = new FileReader()
-      const restoreStateReader = this.restoreSaveStateFunc
-      fileread.onload = function(e) {
-        if (e.target) {
-          restoreStateReader(e.target.result as string)
-        }
-      };
-      fileread.readAsText(e.target.files[0]);
-    }
-  };
-
-  handleFileOpen = () => {
-    if (this.hiddenFileOpen.current) {
-      // Hack - clear out old file so we can pick the same file again
-      this.hiddenFileOpen.current.value = "";
-      this.hiddenFileOpen.current.click()
-    }
+  const handleShowFileOpenDialog = (show: boolean, drive: number) => {
+    setShowFileOpenDialog({ show, drive })
   }
 
-  doSaveStateCallback = (saveState: EmulatorSaveState) => {
-    const d = new Date()
-    let datetime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000 )).toISOString()
-    saveState.emulator = {
-      name: `Apple2TS Emulator`,
-      date: datetime,
-      help: this.state.helptext.split('\n')[0],
-      colorMode: this.state.colorMode,
-      uppercase: this.state.uppercase,
-      audioEnable: isAudioEnabled(),
-      mockingboardMode: getMockingboardMode(),
-    }
-    const state = JSON.stringify(saveState, null, 2)
-    const blob = new Blob([state], {type: "text/plain"});
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    let name = handleGetFilename(0)
-    if (!name) {
-      name = handleGetFilename(1)
-      if (!name) {
-        name = "apple2ts"
-      }
-    }
-    datetime = datetime.replaceAll('-','').replaceAll(':','').split('.')[0]
-    link.setAttribute('download', `${name}${datetime}.a2ts`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const props: DisplayProps = {
+    speed: currentSpeed,
+    renderCount: renderCount,
+    ctrlKeyMode: ctrlKeyMode,
+    openAppleKeyMode: openAppleKeyMode,
+    closedAppleKeyMode: closedAppleKeyMode,
+    showFileOpenDialog: showFileOpenDialog,
+    updateDisplay: updateDisplay,
+    handleCtrlDown: handleCtrlDown,
+    handleOpenAppleDown: handleOpenAppleDown,
+    handleClosedAppleDown: handleClosedAppleDown,
+    setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 
-  handleFileSave = (withSnapshots: boolean) => {
-    handleGetSaveState(this.doSaveStateCallback, withSnapshots)
+  let colors = COLORS.LIGHT
+  if (handleGetDarkMode()) {
+    colors = COLORS.DARK
   }
+  document.body.style.setProperty('--background-color', colors.BG)
+  document.body.style.setProperty('--text-color', colors.TEXT)
+  document.body.style.setProperty('--panel-background', colors.PANEL)
+  document.body.style.setProperty('--button-active', colors.ACTIVE)
+  document.body.style.setProperty('--input-background', colors.INPUT)
+  document.body.style.setProperty('--opcode', colors.OPCODE)
+  document.body.style.setProperty('--address', colors.ADDRESS)
+  document.body.style.setProperty('--immediate', colors.IMMEDIATE)
+  document.body.style.setProperty('--highlight', colors.HIGHLIGHT)
 
-  copyCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
-    if (!this.hiddenCanvas?.current) return
-    let copyCanvas = this.hiddenCanvas?.current
-    if (thumbnail) {
-      copyCanvas = document.createElement('canvas')
-      copyCanvas.height = 128
-      copyCanvas.width = copyCanvas.height * 1.333333
-      // The willReadFrequently is a performance optimization hint that does
-      // the rendering in software rather than hardware. This is better because
-      // we're just reading back pixels from the canvas.
-      const ctx = copyCanvas.getContext('2d', {willReadFrequently: true})
-      if (!ctx) return
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(this.hiddenCanvas.current, 0, 0, 560, 384,
-        0, 0, copyCanvas.width, copyCanvas.height)
-    }
-    copyCanvas.toBlob((blob) => {
-      if (blob) handleBlob(blob)
-    })
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const canvasWidth = getCanvasSize()[0]
+  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
+  const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
+  const paperHeight = height - 20
+  const narrow = isTouchDevice || (width < height)
+  const isLandscape = isTouchDevice && (width > height)
+  // For narrow we don't need to take into account the canvas width.
+  let paperWidth = narrow ? (width) : (width - canvasWidth - 70)
+  paperWidth = Math.min(Math.max(paperWidth, 300), canvasWidth)
+  if (isTouchDevice) {
+    document.body.style.marginLeft = "0"
+    document.body.style.marginRight = "0"
+    document.body.style.marginTop = isLandscape ? "10px" : "0"
   }
+  const mem = handleGetMemSize() + 64
+  const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
+  const status = <div className="default-font statusItem">
+    <span>{props.speed} MHz, {memSize}</span>
+    <br />
+    <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
+      <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+  </div>
 
-  /**
-   * For text mode, copy all of the screen text.
-   * For graphics mode, do a bitmap copy of the canvas.
-   */
-  handleCopyToClipboard = () => {
-    const textPage = handleGetTextPage()
-    if (textPage.length === 960 || textPage.length === 1920) {
-      const nchars = textPage.length / 24
-      const isAltCharSet = handleGetAltCharSet()
-      let output = ''
-      for (let j = 0; j < 24; j++) {
-        let line = ''
-        for (let i = 0; i < nchars; i++) {
-          const value = textPage[j * nchars + i]
-          const v1 = getPrintableChar(value, isAltCharSet)
-          if (v1 >= 32 && v1 !== 127) {
-            const c = String.fromCharCode(v1);
-            line += c
-          }
-        }
-        line = line.trim()
-        output += line + '\n'
-      }
-      navigator.clipboard.writeText(output);
-    } else {
-      try {
-        this.copyCanvas((blob) => {
-          navigator.clipboard.write([new ClipboardItem({'image/png': blob,})])
-        })
-      }
-      catch (error) {
-        console.error(error);
-      }
-    }
-  }
-
-  render() {
-    const props: DisplayProps = {
-      runMode: handleGetRunMode(),
-      speed: this.state.currentSpeed,
-      myCanvas: this.myCanvas,
-      hiddenCanvas: this.hiddenCanvas,
-      speedCheck: this.state.speedCheck,
-      uppercase: this.state.uppercase,
-      useArrowKeysAsJoystick: this.state.useArrowKeysAsJoystick,
-      colorMode: this.state.colorMode,
-      doDebug: this.state.doDebug,
-      ctrlKeyMode: this.state.ctrlKeyMode,
-      openAppleKeyMode: this.state.openAppleKeyMode,
-      closedAppleKeyMode: this.state.closedAppleKeyMode,
-      handleArrowKey: this.handleArrowKey,
-      handleCtrlDown: this.handleCtrlDown,
-      handleOpenAppleDown: this.handleOpenAppleDown,
-      handleClosedAppleDown: this.handleClosedAppleDown,
-      handleDebugChange: this.handleDebugChange,
-      handleSpeedChange: this.handleSpeedChange,
-      handleColorChange: this.handleColorChange,
-      handleCopyToClipboard: this.handleCopyToClipboard,
-      handleUpperCaseChange: this.handleUpperCaseChange,
-      handleUseArrowKeyJoystick: this.handleUseArrowKeyJoystick,
-      handleFileOpen: this.handleFileOpen,
-      handleFileSave: this.handleFileSave,
-    }
-    const width = props.myCanvas.current?.width || 600
-    const height = window.innerHeight - 30
-    let paperWidth = window.innerWidth - width - 70
-    if (paperWidth < 300) paperWidth = 300
-    return (
-      <div>
-        <span className="flex-row">
-          <span className="flex-column">
-            <Apple2Canvas {...props}/>
-            <div className="flex-row-space-between wrap" style={{width: width, display: width ? '' : 'none'}}>
-                <ControlPanel {...props}/>
-                <DiskInterface />
-                <ImageWriter />
-            </div>
-            <span className="defaultFont statusItem">
-              <span>{props.speed} MHz</span>
-              <br/>
-              <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
-                <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
-            </span>
-          </span>
-          <span className="sidePanels">
-            {props.doDebug ? <DebugPanel/> :
-              <HelpPanel helptext={this.state.helptext}
-                height={height ? height : 400} width={paperWidth} />}
-          </span>
+  return (
+    <div>
+      <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
+        <div className={isLandscape ? "flex-row" : "flex-column"}>
+          <Apple2Canvas {...props} />
+          <div className="flex-row-space-between wrap"
+            style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' }}>
+            <ControlPanel {...props} />
+            <DiskInterface {...props} />
+            <ImageWriter />
+          </div>
+          {!isLandscape && status}
+        </div>
+        {isLandscape && status}
+        {narrow && <div className="divider"></div>}
+        <span className="flex-column">
+          {handleGetIsDebugging() ? <DebugSection /> :
+            <HelpPanel narrow={narrow}
+              helptext={handleGetHelpText()}
+              height={paperHeight} width={paperWidth} />}
         </span>
-        <input
-          type="file"
-          accept=".a2ts"
-          ref={this.hiddenFileOpen}
-          onChange={this.handleRestoreState}
-          style={{display: 'none'}}
-        />
-      </div>
-    );
-  }
+      </span>
+      <FileInput {...props} />
+    </div>
+  )
 }
 
 export default DisplayApple2;

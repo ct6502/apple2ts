@@ -1,5 +1,6 @@
 import { runAssemblyTest } from "../instructions.test"
 import { memory } from "../memory"
+import { ROMmemoryStart } from "../utility/utility"
 import { disablePassRegisters } from "./mockingboard"
 
 test("temp", () => {})
@@ -190,10 +191,10 @@ for (let chip = 0; chip <= 1; chip++) {
   for (let timer = 0; timer <= 1; timer++) {
     test(`interrupt-${chip}-T${timer + 1}`, () => {
       // Force our fake ROM's NMI and IRQ vectors to point to our handler
-      memory[0x23FFA] = 0x03
-      memory[0x23FFB] = 0x20
-      memory[0x23FFE] = 0x03
-      memory[0x23FFF] = 0x20
+      memory[ROMmemoryStart + 0x3FFA] = 0x03
+      memory[ROMmemoryStart + 0x3FFB] = 0x20
+      memory[ROMmemoryStart + 0x3FFE] = 0x03
+      memory[ROMmemoryStart + 0x3FFF] = 0x20
 //      doSetDebug()
       runAssemblyTest(interrupt(chip, timer), 0x0A, C)
     })

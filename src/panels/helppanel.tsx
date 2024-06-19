@@ -1,13 +1,27 @@
+import { handleGetDarkMode } from "../main2worker";
 import "./helppanel.css"
-import { extraHelpText } from "./startuptextpage";
+import { defaultHelpText } from "./startuptextpage";
 
-const HelpPanel = (props: {helptext: string, height: number, width: number}) => {
+type HelpPanelProps = {
+  narrow: boolean,
+  helptext: string,
+  height: number,
+  width: number
+}
+
+const HelpPanel = (props: HelpPanelProps) => {
   return (
-    <span>
-      <div className="help-paper" style={{height: props.height - 30, width: props.width}}>
-        <pre className="help-text">{props.helptext.length > 1 ? props.helptext : extraHelpText}</pre>
+    <div style={{
+      boxSizing: 'content-box',
+      margin: "0",
+      padding: "0",
+      height: (props.narrow ? 'auto' : (props.height - 30)), width: props.width,
+      overflow: (props.narrow ? 'visible' : 'auto'),
+    }}>
+      <div className={handleGetDarkMode() ? "" : "help-paper"}>
+        <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}>{props.helptext.length > 1 ? props.helptext : defaultHelpText}</pre>
       </div>
-    </span>
+    </div>
   )
 }
 

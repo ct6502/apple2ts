@@ -1,3 +1,15 @@
+:root {
+  --background-color: #BFBB98;
+  --panel-background: #C9C5A0;
+  --text-color: black;
+  --button-active: #898677;
+  --input-background: #eee;
+  --opcode: black;
+  --highlight: yellow;
+  --address: darkgreen;
+  --immediate: #646400;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,12 +17,14 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #BFBB98;
+  background-color: var(--background-color);
   margin: 10px;
 }
 
-.bgColor {
-  background-color: #BFBB98;
+input:focus {
+  outline-style: solid;
+  outline-width: 1px;
+  outline-color: inherit;
 }
 
 @font-face {
@@ -30,19 +44,23 @@ body {
 .flex-row {
   display: flex;
   flex-direction: row;
-  user-select: none;
+}
+
+.flex-row-gap {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
 }
 
 .flex-column {
   display: flex;
   flex-direction: column;
-  /* width: 1240px; */
 }
 
-.sidePanels {
+.flex-column-gap {
   display: flex;
   flex-direction: column;
-  margin-left: 10px;
+  gap: 10px;
 }
 
 .flex-row-space-between {
@@ -61,25 +79,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* select {
-  font-size: medium;
-  border-radius: 4px;
-  padding: 2px;
-  outline-width: 0;
-  border-width: 0px;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  color: black;
-  background-color: inherit;
-  border: 0.75px solid black !important;
-} */
-
-.pushButton {
+.push-button {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -88,7 +88,7 @@ body {
   background: none;
   appearance: none;
   -webkit-appearance: none;
-  color: black;
+  color: var(--text-color);
   font-size: 23px;
   padding: 0px 0px;
   width: 30px;
@@ -99,29 +99,42 @@ body {
   cursor: pointer;
   font-weight: 900;
   user-select: none;
+  outline: none;
 }
 
-.pushButton:active {
-  background-color: #898677;
+.push-button:hover {
+  cursor: pointer;
 }
 
-.pushButton:disabled {
+.push-button:focus {
+  outline-width: 1px;
+  outline-style: solid;
+  outline-color: inherit;
+}
+
+.push-button:active {
+  background-color: var(--button-active);
+}
+
+.push-button:disabled {
   border: 0;
   opacity: 30%;
   cursor: default;
 }
 
 .key-button {
+  color: var(--text-color);
   border-width: 1px;
-  border-style: outset;
+  border-style: solid;
+  border-color: var(--text-color);
 }
 
 .button-active {
-  background-color: #898677;
+  background-color: var(--button-active);
 }
 
 .button-locked {
-  background-color: #898677;
+  background-color: var(--button-active);
   position: relative;
 }
 
@@ -178,8 +191,11 @@ body {
   height: 1em;
   margin-right: 10px;
   margin-bottom: 10px;
-  color: white;
   cursor: pointer;
+}
+
+.text-button:focus {
+  outline: auto;
 }
 
 .text-key {
@@ -189,10 +205,43 @@ body {
   position: relative;
   top: 0;
   left: 0;
+  color: var(--text-color);
 }
 
-.defaultFont {
+.fill-color {
+  fill: var(--text-color);
+}
+
+.default-font {
   font-size: 8pt;
+  color: var(--text-color);
+  fill: var(--text-color);
+}
+
+.bigger-font {
+  font-size: 10pt;
+  color: var(--text-color);
+  fill: var(--text-color);
+}
+
+.bigger-monospace {
+  font-family: monospace;
+  font-size: 10pt;
+  color: var(--text-color);
+  fill: var(--text-color);
+}
+
+.column-gap {
+  margin-bottom: 0.25em;
+}
+
+.centered-title {
+  font-size: 10pt;
+  line-height: 10pt;
+  text-align: center;
+  margin: 5px;
+  color: var(--text-color);
+  cursor: pointer;
 }
 
 .statusItem {
@@ -219,13 +268,28 @@ body {
 }
 
 .floating-dialog {
-  background-color: #333;
+  background-color: var(--panel-background);
   border-radius: 10px;
-  border-color: #ccc;
+  border-color: var(--text-color);
   border-width: 1px;
   border-style: solid;
   box-shadow: 10px 10px 15px rgba(0, 0, 0, 0.5);
   opacity: 100%;
   position: absolute;
   z-index: 9999;
+}
+
+.divider {
+  border-top: 1px solid var(--text-color);
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.disabled {
+  opacity: 50%;
+  pointer-events: none;
+}
+
+.noselect {
+  user-select: none;
 }

@@ -1,19 +1,23 @@
-import React from "react"
 import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
 
-class DiskInterface extends React.Component<object, object> {
-  render() {
-    return (
-      <span className="driveRow">
-        <DiskImageChooser/>
-        <DiskDrive drive={0}/>
-        <DiskDrive drive={1}/>
-        <DiskDrive drive={2}/>
+const DiskInterface = (props: DisplayProps) => {
+  return (
+    <div className="flex-row wrap">
+      <span className="flex-row">
+        <DiskImageChooser {...props} />
+        <DiskDrive drive={0} renderCount={props.renderCount}
+          setShowFileOpenDialog={props.setShowFileOpenDialog} />
       </span>
-    );
-  }
+      <span className="flex-row">
+        <DiskDrive drive={1} renderCount={props.renderCount}
+          setShowFileOpenDialog={props.setShowFileOpenDialog} />
+        <DiskDrive drive={2} renderCount={props.renderCount}
+          setShowFileOpenDialog={props.setShowFileOpenDialog} />
+      </span>
+    </div>
+  )
 }
 
-export default DiskInterface;
+export default DiskInterface

@@ -2,14 +2,16 @@ import { useState } from "react";
 import { passSetBinaryBlock } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faXmark as faBreakpointDelete,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import EditField from "../panels/editfield";
 
 const BinaryFileDialog = (props:
-  {displayDialog: boolean,
+  {
+    displayDialog: boolean,
     displayClose: () => void,
-    binaryBuffer: Uint8Array}) => {
+    binaryBuffer: Uint8Array
+  }) => {
   const [runCode, setRunCode] = useState(false);
   const [runAddress, setRunAddress] = useState(() => {
     const savedRunAddress = localStorage.getItem('binaryRunAddress')
@@ -41,51 +43,55 @@ const BinaryFileDialog = (props:
   if (!props.displayDialog) return (<></>)
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay"
+      tabIndex={0} // Make the div focusable
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') handleCancel()
+      }}>
       <div className="floating-dialog flex-column"
-        style={{left: "15%", top: "25%"}}>
+        style={{ left: "15%", top: "25%" }}>
         <div className="flex-column">
           <div className="flex-row-space-between">
-            <div className="white-title">Load Binary File</div>
-            <div onClick={handleCancel}>
-              <FontAwesomeIcon icon={faBreakpointDelete}
-                className='breakpoint-pushbutton'
-                style={{color: "white"}}/>
-            </div>
+            <div className="dialog-title">Load Binary File</div>
+            <button className="push-button"
+              onClick={handleCancel}>
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.8em' }} />
+            </button>
           </div>
           <div className="horiz-rule"></div>
         </div>
         <div className="flex-column">
-            <EditField name="Load into memory at address $"
-                value={runAddress}
-                setValue={handleSetRunAddress}
-                placeholder="07FD"
-                width="5em"/>
-          </div>
+          <EditField name="Load into memory at address $"
+            initialFocus={true}
+            value={runAddress}
+            setValue={handleSetRunAddress}
+            placeholder="07FD"
+            width="5em" />
+        </div>
+        <div className="flex-row">
+          <input type="checkbox" id="memset" value="memset"
+            className="check-radio-box shift-down"
+            checked={runCode}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setRunCode(event.target.checked)
+            }} />
+          <label htmlFor="memset"
+            className="dialog-title flush-left">Run code after loading</label>
+        </div>
+        <div className="flex-row-space-between">
+          <div></div>
           <div className="flex-row">
-            <input type="checkbox" id="memset" value="memset"
-              className="check-radio-box shift-down"
-              checked={runCode}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                setRunCode(event.target.checked)
-              }}/>
-            <label htmlFor="memset"
-              className="white-title flush-left">Run code after loading</label>
-          </div>
-          <div className="flex-row-space-between">
-            <div></div>
-            <div className="flex-row">
-              <button className="pushButton text-button"
-                onClick={handleLoadBinary}>
-                <span className="bigger-font">OK</span>
-              </button>
-              <button className="pushButton text-button"
-                onClick={handleCancel}>
-                <span className="bigger-font">Cancel</span>
-              </button>
-            </div>
+            <button className="push-button text-button"
+              onClick={handleLoadBinary}>
+              <span className="centered-title">OK</span>
+            </button>
+            <button className="push-button text-button"
+              onClick={handleCancel}>
+              <span className="centered-title">Cancel</span>
+            </button>
           </div>
         </div>
+      </div>
     </div>
   )
 }

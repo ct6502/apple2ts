@@ -30,7 +30,7 @@ interface PCodeFunc {
 interface PCodeInstr {
     name: string
     pcode: number,
-    mode: MODE
+    mode: number
     bytes: number
     execute: PCodeFunc
 }
@@ -49,54 +49,57 @@ type STATE6502 = {
 
 type Apple2SaveState = {
   s6502: STATE6502,
+  extraRamSize: number,
   softSwitches: {[name: string]: boolean},
   memory: string
 }
 
+type UpdateDisplay = (speed = 0, helptext = '') => void
+
 type DisplayProps = {
-  runMode: RUN_MODE,
   speed: number,
-  myCanvas: React.RefObject<HTMLCanvasElement>,
-  hiddenCanvas: React.RefObject<HTMLCanvasElement>,
-  speedCheck: boolean,
-  uppercase: boolean,
-  useArrowKeysAsJoystick: boolean,
-  colorMode: COLOR_MODE,
-  doDebug: boolean,
+  renderCount: number,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
-  handleArrowKey: (key: ARROW, release: boolean) => void,
-  handleCtrlDown: (ctrlKeyMode: number) => void,
-  handleOpenAppleDown: (ctrlKeyMode: number) => void,
-  handleClosedAppleDown: (ctrlKeyMode: number) => void,
-  handleDebugChange: (enable: boolean) => void,
-  handleSpeedChange: (enable: boolean) => void,
-  handleColorChange: (mode: COLOR_MODE) => void,
-  handleCopyToClipboard: () => void,
-  handleUpperCaseChange: (enable: boolean) => void,
-  handleUseArrowKeyJoystick: (enable: boolean) => void,
-  handleFileOpen: () => void,
-  handleFileSave: (withSnapshots: boolean) => void,
+  showFileOpenDialog: {show: boolean, drive: number},
+  updateDisplay: UpdateDisplay,
+  handleCtrlDown: (mode: number) => void,
+  handleOpenAppleDown: (mode: number) => void,
+  handleClosedAppleDown: (mode: number) => void,
+  setShowFileOpenDialog: (show: boolean, drive: number) => void,
 }
 
 type MachineState = {
-  runMode: number,
-  s6502: STATE6502,
-  speed: number,
+  addressGetTable: number[],
   altChar: boolean,
-  noDelayMode: boolean,
-  textPage: Uint8Array,
-  lores: Uint8Array,
-  hires: Uint8Array,
-  debugDump: string,
-  disassembly: string,
-  nextInstruction: string,
+  breakpoints: BreakpointMap,
   button0: boolean,
   button1: boolean,
   canGoBackward: boolean,
   canGoForward: boolean,
+  capsLock: boolean,
+  darkMode: boolean,
+  colorMode: COLOR_MODE,
+  cpuSpeed: number,
+  stackString: string,
+  disassembly: string,
+  helpText: string,
+  hires: Uint8Array,
   iTempState: number,
+  isDebugging: boolean,
+  lores: Uint8Array,
+  extraRamSize: number,
+  softSwitches: {[name: string]: boolean},
+  c800Slot: number,
+  ramWorksBank: number,
+  memoryDump: Uint8Array,
+  nextInstruction: string,
+  noDelayMode: boolean,
+  runMode: number,
+  s6502: STATE6502,
+  speedMode: number,
+  textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>
 }
 
@@ -135,15 +138,21 @@ type DriveSaveState = {
 type DisplaySaveState = {
   name: string,
   date: string,
-  help: string,
+  version: number,
   colorMode: number,
-  uppercase: boolean,
+  capsLock: boolean,
   audioEnable: boolean,
-  mockingboardMode: number
+  mockingboardMode: number,
+  speedMode: number,
+  helptext: string,
+  isDebugging: boolean,
+  runMode: RUN_MODE,
+  breakpoints: BreakpointMap,
+  stackDump: Array<string>,
 }
 
 type EmulatorSaveState = {
-  emulator: DisplaySaveState | null,
+  emulator: DisplaySaveState,
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
   thumbnail: string,
@@ -218,4 +227,15 @@ type LaunchParams = {
 }
 type LaunchQueue = {
   setConsumer: (consumer: (launchParams: LaunchParams) => Promise<void>) => void
+}
+
+interface MemoryBank {
+  name: string;
+  min: number;
+  max: number;
+  enabled: (addr = 0) => boolean;
+}
+
+interface MemoryBanks {
+  [key: string]: MemoryBank;
 }
