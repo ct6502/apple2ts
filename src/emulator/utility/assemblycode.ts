@@ -1,16 +1,19 @@
 export const code = `
          ORG   $300
-         LDA   #$00
-         STA   $C006   ; INTCXROMOFF
-         STA   $CFFF   ; activate expansion ROM
-         LDA   $C600
-         STA   $C009   ; turn on AUXZP
-         STA   $C083   ; turn on RDWRBSR2
-         STA   $C005   ; turn on RAMWRT
-         STA   $C001   ; turn on STORE80
-LOOP     NOP
-         JMP   LOOP
-         BRK
+PTR      EQU   $06
+ENTRY    LDA   #$04
+         STA   PTR+1
+         LDY   #$00
+         STY   PTR
+START    LDA   #$A0
+LOOP     STA   (PTR),Y
+         INY
+         BNE   LOOP
+NXT      INC   PTR+1
+         LDA   PTR+1
+         CMP   #$08
+         BCC   START
+exit     RTS
 `
 
 export const codeTest = `

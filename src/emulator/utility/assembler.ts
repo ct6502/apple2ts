@@ -82,6 +82,11 @@ const getOperandModeValue =
     let mode = ADDR_MODE.IMPLIED
     let value = -1
     if (operand.match(/^[#]?[$0-9()]+/)) {
+      // See if we can replace any labels with their values
+      Object.entries(labels).forEach(([key, labelvalue]) => {
+        // This regular expression finds all occurrences of the key as a whole word
+        operand = operand.replace(new RegExp(`\\b${key}\\b`, 'g'), '$' + toHex(labelvalue))
+      })
       return parseNumberOptionalAddressMode(operand)
     }
     const labelOperand = splitOperand(operand)
