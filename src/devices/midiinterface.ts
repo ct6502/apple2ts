@@ -115,6 +115,14 @@ const initDevices = () => {
 // execute on load
 connect();
 
+//
+// This Ultima 5 MIDI work is based on the article and presentation by "Cloudschatze": 
+// https://forum.vcfed.org/index.php?threads/how-you-could-have-been-playing-ultima-v-in-1988.61980/
+// His setup used a Roland U-110.  I took the instrument, range, volume and pan mappings from the MID file he
+// provided and converted the instruments to General MIDI and the custom code and mappings below.  The instruments
+// could perhaps use some tuning, but it already sounds pretty good, and better than the original single
+// instrument sounds.
+//
 let u5midi = true;
 let once = true;
 const buffer: number[] = [];
@@ -213,7 +221,8 @@ const OutputToBalance = [
   127
 ];
 
-// Parts below are from U110 mapping taken from the .MID produced by 
+//
+// Parts below are from U110 mapping taken from the .MID as described above.
 //
 const UG = {
   ReceiveChannel: 0,
