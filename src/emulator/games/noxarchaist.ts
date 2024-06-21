@@ -45,8 +45,9 @@ const joystick = (axes: number[], isKeyboardJoystick: boolean) => {
 }
 
 const helptext = 
-`Nox Archaist, Mark Lemmert, 6502 Workshop, 2021
-_______________________________________________
+`Nox Archaist, Mark Lemmert
+6502 Workshop, 2021
+_____________________________________________
 Arrows (Left thumb)  movement
 A (A button)         attack
 C (B button)         cast spell
