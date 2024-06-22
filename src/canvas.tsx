@@ -11,6 +11,7 @@ import {
   handleGetShowMouse,
   handleGetCapsLock,
   handleGetRunMode,
+  handleGetCout,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "./emulator/utility/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier } from './graphics';
@@ -176,9 +177,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
 
     const capsLock = handleGetCapsLock()
-    const key = convertAppleKey(e, capsLock, props.ctrlKeyMode);
+    const key = convertAppleKey(e, capsLock, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
-      const key = convertAppleKey(e, capsLock, props.ctrlKeyMode);
       passKeypress(String.fromCharCode(key))
       e.preventDefault()
       e.stopPropagation()

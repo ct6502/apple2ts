@@ -182,7 +182,8 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean, ctrlKeyMode: number) => {
+export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
+  ctrlKeyMode: number, cout: number) => {
   let key = 0
   if (e.altKey && e.key !== "Alt") {
     e.key = String.fromCharCode(e.keyCode)
@@ -203,16 +204,24 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean, ctrlKeyMod
       Enter: 13,
       ArrowRight: 21,
       ArrowLeft: 8,
-      Backspace: 8,
+      Backspace: 0x7F,  // Apple II Delete (rubout) key
       ArrowUp: 11,
       ArrowDown: 10,
       Escape: 27,
       Tab: 9,
       Shift: -1,
       Control: -1
-    };
-    if (e.key === "Backspace" && e.shiftKey) {
-      key = 0x7F
+    }
+    // The default behavior for the "delete" key on the Apple II is to send
+    // a rubout. This is expected by Appleworks, A2osX, and A2DeskTop.
+    // However, if we are using the default COUT routine then send a backspace
+    // character instead of rubout. This will work better in Applesoft BASIC.
+    // Since there may be cases where this is wrong, if the shift key is down
+    // then still send the rubout character.
+    // If this is still a problem, we may need to add a settings option,
+    // but I'm hoping to avoid that.
+    if (e.key === "Backspace" && cout === 0xFD1B && !e.shiftKey) {
+      key = 8
     } else if (e.key in keymap) {
       key = keymap[e.key]
     }

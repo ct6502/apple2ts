@@ -183,29 +183,30 @@ let machineState: MachineState = {
   breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
+  c800Slot: 255,
   canGoBackward: true,
   canGoForward: true,
   capsLock: true,
-  darkMode: false,
   colorMode: COLOR_MODE.COLOR,
+  cout: 0,
   cpuSpeed: 0,
-  stackString: '',
+  darkMode: false,
   disassembly: '',
+  extraRamSize: 64,
   helpText: '',
   hires: new Uint8Array(),
-  iTempState: 0,
   isDebugging: TEST_DEBUG,
+  iTempState: 0,
   lores: new Uint8Array(),
-  extraRamSize: 64,
-  softSwitches: {},
-  c800Slot: 255,
-  ramWorksBank: 0,
   memoryDump: new Uint8Array(),
   nextInstruction: '',
   noDelayMode: false,
+  ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   speedMode: 0,
+  softSwitches: {},
+  stackString: '',
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
 }
@@ -302,6 +303,10 @@ export const handleGetRunMode = () => {
 
 export const handleGetBreakpoints = () => {
   return machineState.breakpoints
+}
+
+export const handleGetCout = () => {
+  return machineState.cout
 }
 
 export const handleGetSpeedMode = () => {
