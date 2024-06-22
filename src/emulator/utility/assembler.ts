@@ -66,7 +66,7 @@ const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] =>
         case '-': value -= valueOperand.value
           break;
         default:
-          throw new Error("Unknown operation in operand: " + operand);
+          console.error("Unknown operation in operand: " + operand);
       }
       value = (value % 65536 + 65536) % 65536
     }
@@ -86,7 +86,7 @@ const getOperandModeValue =
       Object.entries(labels).forEach(([key, labelvalue]) => {
         // This regular expression finds all occurrences of the key as a whole word
         operand = operand.replace(new RegExp(`\\b${key}\\b`, 'g'), '$' + toHex(labelvalue))
-      })
+      })      
       return parseNumberOptionalAddressMode(operand)
     }
     const labelOperand = splitOperand(operand)
@@ -106,7 +106,7 @@ const getOperandModeValue =
           value = value & 0xff
         }
       } else if (pass === 2) {
-        throw new Error("Missing label: " + labelOperand.label);
+        console.error("Missing label: " + labelOperand.label);
       }
       if (labelOperand.operation && labelOperand.value) {
         switch (labelOperand.operation) {
@@ -115,7 +115,7 @@ const getOperandModeValue =
           case '-': value -= labelOperand.value
             break;
           default:
-            throw new Error("Unknown operation in operand: " + operand);
+            console.error("Unknown operation in operand: " + operand);
         }
         value = (value % 65536 + 65536) % 65536
       }
@@ -149,13 +149,13 @@ const splitLine = (line: string, prevLabel: string) => {
 
 const handleLabel = (parts: CodeLine, pc: number) => {
   if (parts.label in labels) {
-    throw new Error("Redefined label: " + parts.label)
+    console.error("Redefined label: " + parts.label)
   }
   if (parts.instr === 'EQU') {
     //const [mode, value] = parseNumberOptionalAddressMode(parts.operand)
     const [mode, value] = getOperandModeValue(pc, parts.instr, parts.operand, 2)
     if (mode !== ADDR_MODE.ABS && mode !== ADDR_MODE.ZP_REL) {
-      throw new Error("Illegal EQU value: " + parts.operand)
+      console.error("Illegal EQU value: " + parts.operand)
     }
     // console.log(`LABEL=${parts.label} VALUE=${value.toString(16)}`)
     labels[parts.label] = value
@@ -163,6 +163,48 @@ const handleLabel = (parts: CodeLine, pc: number) => {
     // console.log(`LABEL=${parts.label} PC=${pc.toString(16)}`)
     labels[parts.label] = pc
   }
+}
+
+const handlePseudoOps = (codeLine: CodeLine) => {
+  const newInstructions: Array<number> = []
+  switch (codeLine.instr) {
+    // ASC is merlin syntax, and so is '' vs ""
+    case 'ASC':  // fall through
+    case 'DA': {
+      let operand = codeLine.operand
+      let hb = 0x00
+      if (operand.startsWith('"') && operand.endsWith('"')) {
+        hb = 0x80
+      } else if (operand.startsWith('\'') && operand.endsWith('\'')) {
+        hb = 0x00
+      } else {
+        console.error("Invalid string: " + operand);
+      }
+
+      operand = operand.substring(1, operand.length-1)
+      for(let i=0;i<operand.length;i++) {
+        newInstructions.push(operand.charCodeAt(i) | hb)
+      }
+      newInstructions.push(0x00)
+      break
+    }
+    case 'HEX': {
+      const hexString = codeLine.operand.replace(/,/g, '')
+      const hexNumbers = hexString.match(/.{1,2}/g) || []
+      hexNumbers.forEach((h) => {
+        const val = parseInt(h, 16)
+        if (isNaN(val)) {
+          console.error(`Invalid HEX value: ${h} in ${codeLine.operand}`)
+        }
+        newInstructions.push(val)
+      })
+      break
+    }
+    default:
+      console.error("Unknown pseudo ops: " + codeLine.instr)
+      break
+  }
+  return newInstructions
 }
 
 const getHexCodesForInstruction = (match: number, value: number) => {
@@ -223,26 +265,15 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
     let value: number
 
     // Check psdudo-ops first
-    // ASC is merlin syntax, and so is '' vs ""
-    if (codeLine.instr === 'ASC' || codeLine.instr === 'DA') {
-      let operand = codeLine.operand
-      let hb = 0x00
-      if (operand.startsWith('"') && operand.endsWith('"')) {
-        hb = 0x80
-      } else if (operand.startsWith('\'') && operand.endsWith('\'')) {
-        hb = 0x00
-      } else {
-        throw new Error("Invalid string: " + operand);
-      }
-
-      operand = operand.substring(1, operand.length-1)
-      for(let i=0;i<operand.length;i++) {
-        newInstructions.push(operand.charCodeAt(i) | hb)
-      }
-      newInstructions.push(0x00)
-      pc += (operand.length + 1)
+    const pseudoOps = ['ASC', 'DA', 'HEX']
+    if (pseudoOps.includes(codeLine.instr)) {
+      newInstructions = handlePseudoOps(codeLine)
+      pc += newInstructions.length
     } else {
       [mode, value] = getOperandModeValue(pc, codeLine.instr, codeLine.operand, pass)
+      if (pass === 2 && isNaN(value)) {
+        console.error(`Unknown/illegal value: ${line}`)
+      }
 
       if (codeLine.instr === 'DB') {
         newInstructions.push(value & 0xff)
@@ -258,12 +289,12 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
         }
       } else {
         if (pass === 2 && isBranchInstruction(codeLine.instr) && (value < 0 || value > 255)) {
-          throw new Error(`Branch instruction out of range: ${line} value: ${value} pass: ${pass}`);
+          console.error(`Branch instruction out of range: ${line} value: ${value} pass: ${pass}`);
         }
 
         const match = pcodes.findIndex(pc => pc && pc.name === codeLine.instr && pc.mode === mode)
         if (match < 0) {
-          throw new Error(`Unknown instruction: "${line}" mode=${mode} pass=${pass}`);
+          console.error(`Unknown instruction: "${line}" mode=${mode} pass=${pass}`);
         }
         newInstructions = getHexCodesForInstruction(match, value)
         pc += pcodes[match].bytes

@@ -69,9 +69,42 @@ test('parseAssembly define storage', () => {
   expect(parseAssembly(addr, [" DS 4"])).toEqual([0x00, 0x00, 0x00, 0x00])
 })
 
-test('parseAssembly define ASCii string', () => {
+test('parseAssembly define ASCII string', () => {
   expect(parseAssembly(addr, [" ASC \"ABCDEF\""])).toEqual([0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0x00])
   expect(parseAssembly(addr, ["STR DA \"ABCDEF\""])).toEqual([0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0x00])
   expect(parseAssembly(addr, [" ASC 'ABCDEF'"])).toEqual([0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x00])
   expect(parseAssembly(addr, ["STR DA 'ABCDEF'"])).toEqual([0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x00])
+})
+
+test('parseAssembly Indirect label', () => {
+  expect(parseAssembly(addr, [' STA (LOC,X)', 'LOC EQU $12'])).toEqual([0x81, 0x12])
+  expect(parseAssembly(addr, [' STA (LOC),Y', 'LOC EQU $12'])).toEqual([0x91, 0x12])
+})
+
+test('parseAssembly HEX', () => {
+  expect(parseAssembly(addr, [' HEX 01020304CD'])).toEqual([0x01, 0x02, 0x03, 0x04, 0xCD])
+  expect(parseAssembly(addr, ['FOO HEX 01020304CD'])).toEqual([0x01, 0x02, 0x03, 0x04, 0xCD])
+  expect(parseAssembly(addr, [' HEX 01,02,03,04,CD'])).toEqual([0x01, 0x02, 0x03, 0x04, 0xCD])
+  expect(parseAssembly(addr, ['FOO HEX 01,02,03,04,CD'])).toEqual([0x01, 0x02, 0x03, 0x04, 0xCD])
+})
+
+const ALp49 = `
+      ORG $300
+COUT  EQU $FDED
+START LDX #$00
+LOOP  LDA DATA,X
+      JSR COUT
+      INX
+      CPX #$05
+      BCC LOOP
+      LDA #$8D
+      JSR COUT
+EXIT  RTS
+DATA  HEX C1D0D0CCC5
+`
+test('parseAssembly ALp49', () => {
+  const want = [0xA2, 0x00, 0xBD, 0x13, 0x03, 0x20, 0xED,
+    0xFD, 0xE8, 0xE0, 0x05, 0x90, 0xF5, 0xA9, 0x8D, 0x20,
+    0xED, 0xFD, 0x60, 0xC1, 0xD0, 0xD0, 0xCC, 0xC5]
+  expect(parseAssembly(addr, ALp49.split('\n'))).toEqual(want)
 })
