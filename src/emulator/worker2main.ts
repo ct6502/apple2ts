@@ -57,6 +57,10 @@ export const passHelptext = (helptext: string) => {
   doPostMessage(MSG_WORKER.HELP_TEXT, helptext)
 }
 
+export const passEnhancedMidi = (param: number) => {
+  doPostMessage(MSG_WORKER.ENHANCED_MIDI, param)
+}
+
 export const passShowMouse = (state: boolean) => {
   doPostMessage(MSG_WORKER.SHOW_MOUSE, state)
 }

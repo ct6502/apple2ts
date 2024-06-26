@@ -9,6 +9,7 @@ import { karateka } from "./karateka"
 import { noxarchaist } from "./noxarchaist"
 import { robotron } from "./robotron"
 import { snoggle } from "./snoggle"
+import { ultima5 } from "./ultima5"
 import { wizardry } from "./wizardry"
 import { wolfenstein } from "./wolfenstein"
 
@@ -29,6 +30,7 @@ AddGameLibraryItem(karateka)
 AddGameLibraryItem(noxarchaist)
 AddGameLibraryItem(robotron)
 AddGameLibraryItem(snoggle)
+AddGameLibraryItem(ultima5)
 AddGameLibraryItem(wizardry)
 AddGameLibraryItem(wolfenstein)
 
@@ -94,5 +96,8 @@ export const handleGameSetup = (reset = false) => {
       return
     }   
   }
-  if (reset) passHelptext(' ')
+  if (reset) { 
+    passHelptext(' ')
+    passEnhancedMidi(0)
+  }
 }

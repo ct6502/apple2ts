@@ -123,7 +123,14 @@ connect();
 // could perhaps use some tuning, but it already sounds pretty good, and better than the original single
 // instrument sounds.
 //
-let u5midi = true;
+let u5midi = false;
+
+// Currently, argument is only 0x0 or 0x1.  Could be used for other things later depending on the title.
+export const setEnhancedMidi = (arg: number) => {
+  u5midi = arg&0x1 ? true : false;
+  console.log("enhanced: ", u5midi);
+}
+
 let once = true;
 const buffer: number[] = [];
 
