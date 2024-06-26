@@ -420,10 +420,6 @@ const setupGMPatch = (which: number) => {
       }
     }
 
-    // XXX hack
-    //if (gmi === 116)
-    //  continue;
-
     if (gmi === 128)
     {
       console.log("Instrument (" + TM + " " + TN + ") not found!");
@@ -447,6 +443,7 @@ const setupGMPatch = (which: number) => {
     const pan = OutputToBalance[patch[i][UG.ProgramOutput]];
 
     // send change balance
+    // balance didn't always work, use PAN instead
     //arr = [0xb0+i, 0x08, pan];
     //console.log(arr);
     //device.send( arr );
