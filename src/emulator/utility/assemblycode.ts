@@ -1,33 +1,21 @@
 export const code = `
          ORG   $300
-         LDA   #$00
-         STA   $C006   ; INTCXROMOFF
-         STA   $CFFF   ; activate expansion ROM
-         LDA   $C600
-         STA   $C009   ; turn on AUXZP
-         STA   $C083   ; turn on RDWRBSR2
-         STA   $C005   ; turn on RAMWRT
-         STA   $C001   ; turn on STORE80
-LOOP     NOP
-         JMP   LOOP
-         BRK
-`
-
-export const codeTest = `
-         ORG   $300
          LDA   #$FE
-         LDA   $01
-         LDA   $A0,X
-         LDA   $1234
-         LDA   $1234,X
-         LDA   $1234,Y
-         LDA   ($04,X)
-         LDA   ($04),Y
-         LDA   ($04)
-         JMP   $1234
-         JMP   ($0003)
-         JMP   ($0003,X)
-         STA   $C0
+         LDA   LOC1
+         LDA   LOC1,X
+         LDA   LOC3
+         LDA   LOC3,X
+         LDA   LOC3,Y
+         LDA   (LOC1,X)
+         LDA   (LOC1),Y
+         LDA   (LOC1)
+         JMP   LOC3
+         JMP   (LOC2)
+         JMP   (LOC2,X)
+         STA   LOC1
+LOC1     EQU   $04
+LOC2     EQU   $0003
+LOC3     EQU   $1234
          RTS
 `
 

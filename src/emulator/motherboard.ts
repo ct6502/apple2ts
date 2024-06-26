@@ -497,26 +497,27 @@ const updateExternalMachineState = () => {
     canGoBackward: getGoBackwardIndex() >= 0,
     canGoForward: getGoForwardIndex() >= 0,
     capsLock: true,  // ignored by main thread
-    darkMode: false,  // ignored by main thread
+    c800Slot: C800SlotGet(),
     colorMode: COLOR_MODE.COLOR,  // ignored by main thread
+    cout: memGet(0x0039) << 8 | memGet(0x0038),
     cpuSpeed: cpuSpeed,
-    stackString: doGetStackString(),
+    darkMode: false,  // ignored by main thread
     disassembly: doGetDisassembly(),
+    extraRamSize: 64 * (RamWorksMaxBank + 1),
     helpText: '',  // ignored by main thread
     hires: getHires(),
     iTempState: iTempState,
     isDebugging: isDebugging,
     lores: getTextPage(true),
-    extraRamSize: 64 * (RamWorksMaxBank + 1),
-    softSwitches: getSoftSwitches(),
-    c800Slot: C800SlotGet(),
-    ramWorksBank: RamWorksBankGet(),
     memoryDump: getMemoryDump(),
     nextInstruction: getInstruction(s6502.PC),
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
+    ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,
     s6502: s6502,
+    softSwitches: getSoftSwitches(),
     speedMode: speedMode,
+    stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
   }
