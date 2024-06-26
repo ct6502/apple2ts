@@ -1,7 +1,7 @@
 import { matchMemory } from "../memory"
 import { setGamepad0, setGamepad1, setGamepad2, setGamepad3,
   setLeftButtonDown, setPushButton2, setRightButtonDown } from "../devices/joystick"
-import { passHelptext } from "../worker2main"
+import { passHelptext,passEnhancedMidi } from "../worker2main"
 import { aztec } from "./aztec"
 import { drol } from "./drol"
 import { firebug } from "./firebug"
