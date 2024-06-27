@@ -385,4 +385,6 @@ export const checkEnhancedMidi = (msg: number[], device: MIDIOutput) : boolean =
 
   //console.log(msgs.map(function (x) {return x.toString(16);}).toString());
   device.send(msgs);
+
+  return true;
 }

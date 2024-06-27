@@ -128,6 +128,7 @@ const parseAndSendMsg = (msg: number[]) => {
   device.send(msg);
 }
 
+let once = false;
 let buffer: number[] = [];
 
 export const receiveMidiData = (data: Uint8Array) => {
