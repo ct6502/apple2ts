@@ -4,7 +4,7 @@ import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveCommData } from "./devices/serialhub"
-import { receiveMidiData } from "./devices/midiinterface"
+import { receiveMidiData,setEnhancedMidi } from "./devices/midiinterface"
 import { BreakpointMap } from "./emulator/utility/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { copyCanvas } from "./copycanvas"
@@ -272,6 +272,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.MIDI_DATA: {
       const mididata = e.data.payload as Uint8Array
       receiveMidiData(mididata)
+      break
+    }
+    case MSG_WORKER.ENHANCED_MIDI: {
+      const midiarg = e.data.payload as number
+      setEnhancedMidi(midiarg)
       break
     }
     case MSG_WORKER.REQUEST_THUMBNAIL: {

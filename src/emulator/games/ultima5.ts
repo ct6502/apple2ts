@@ -1,4 +1,10 @@
 
+import { passEnhancedMidi } from "../worker2main"
+
+const setup = () => {
+  passEnhancedMidi(0x1)
+}
+
 const helptext = 
 `Ultima V: Warriors of Destiny
 by Lord British
@@ -45,6 +51,6 @@ export const ultima5: GameLibraryItem = {
   gamepad: null,
   joystick: null,
   rumble: null,
-  setup: null,
+  setup: setup,
   helptext: helptext}
 
