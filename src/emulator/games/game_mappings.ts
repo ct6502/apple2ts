@@ -90,9 +90,6 @@ export const getGameMapping = () => {
 
 export const handleGameSetup = (reset = false) => {
   for (const game of gameLibrary) {
-    if (game.address === 0x300 && game.data[0] === 0x78) {
-      console.log('ultima5')
-    }
     if (matchMemory(game.address, game.data)) {
       passHelptext(game.helptext ? game.helptext : ' ')
       if (game.setup) game.setup()
