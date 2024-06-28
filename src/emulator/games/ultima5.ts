@@ -42,6 +42,12 @@ ESC       abort command, exit combat
 Ctrl+S    toggle sound
 Ctrl+T    toggle speed
 Ctrl+V    set music volume 0-9
+---
+For MIDI Support:
+1) Launch a WebMIDI supported player (such as https://signal.vercel.app/) in a separate tab, and leave it running.  Make sure its WebMIDI support is enabled.
+2) In U5, Go to Activate Music -> Change Music Configuration, add Passport to slot 2, and hit enter. 
+3) In the Midi Information screen, select Channel 1 (default), 16 voices, and then enter the numbers 1-15 for "Midi Number" in each song (where Ultima Theme is '1' and Rule Britannia is '15'). Then hit enter on each song to test.
+
 `
 
 export const ultima5: GameLibraryItem = {
