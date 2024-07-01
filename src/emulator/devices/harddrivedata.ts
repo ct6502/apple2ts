@@ -1,5 +1,5 @@
 import { parseAssembly } from "../utility/assembler"
-import { setX, setY, setCarry, s6502 } from "../instructions"
+import { setX, setY, setCarry, s6502, setAccumulator } from "../instructions"
 import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "../memory"
 import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
 import { toHex } from "../utility/utility"
@@ -104,10 +104,115 @@ export const enableHardDrive = (enable = true) => {
   setSlotDriver(slot, code, addr + 3, processSmartPortAccess)
 }
 
+
+const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => {
+  if (unitNumber === 0) {
+    // Store number of SmartPort devices in the status buffer.
+    memSet(bufferAddr, 2)
+  } else if (unitNumber <= 2) {
+    // Status byte
+    // Bit   Function
+    //  7    1 = block device; 0 = character device
+    //  6    1 = write allowed
+    //  5    1 = read allowed
+    //  4    1 = device on line or disk in drive
+    //  3    1 = format allowed
+    //  2    1 = media write-protected (block devices only)
+    //  1    Reserved; must = 0
+    //  0    1 = device currently open (character devices only)
+    memSet(bufferAddr, 0xF0)
+    // We assume that the unit number is the same as the drive number.
+    const dd = getHardDriveData(unitNumber)
+    const dataLen = dd.length
+    const nblocks = dataLen / 512
+    memSet(bufferAddr + 1, nblocks & 0xFF)
+    memSet(bufferAddr + 2, nblocks >>> 8)
+    memSet(bufferAddr + 3, 0x00)
+    // We transferred 4 bytes
+    setX(4)
+    setY(0)
+  } else {
+    setAccumulator(0x28)  // bad drive/unit number
+    setX(0)
+    setY(0)
+    setCarry()
+  }
+}
+
+
+const handleSmartPortDeviceInformationBlock = (unitNumber: number, bufferAddr: number) => {
+  // We assume that the unit number is the same as the drive number.
+  const dd = getHardDriveData(unitNumber)
+  const dataLen = dd.length
+  const nblocks = dataLen / 512
+  // claim we are a 3.5" drive if 1600 or less blocks
+  const deviceType = nblocks > 1600 ? 0x02 : 0x01  // 1 = 3.5 drive 2 = hard disk
+  const subType    = deviceType == 0x02 ? 0x20 : 0x40 // 0x40 = Apple 3.5 drive 0x20 = fixed HD
+  // status byte as above
+  memSet(bufferAddr, 0xF0)
+  // then block size for 3 bytes
+  memSet(bufferAddr + 1, nblocks & 0xFF)
+  memSet(bufferAddr + 2, nblocks >>> 8)
+  memSet(bufferAddr + 3, 0x00)
+  // id string
+  const a2ts = "Apple2TS SP"
+  memSet(bufferAddr + 4, a2ts.length)
+  let i=0
+  for (;i < a2ts.length; i++) {
+    memSet(bufferAddr + 5 + i, a2ts.charCodeAt(i))
+  }
+  for (;i < 16; i++) {
+    memSet(bufferAddr + 5 + i, a2ts.charCodeAt(8)); // backfill with space
+  }
+  // device type
+  memSet(bufferAddr + 21, deviceType)
+  // device subtype
+  memSet(bufferAddr + 22, subType)
+  // fw version
+  memSet(bufferAddr + 23, 0x01)
+  memSet(bufferAddr + 24, 0x00)
+  // We transferred 25 bytes
+  setX(25)
+  setY(0)
+}
+
+
+const handleSmartPortStatus = (spParamList: number, unitNumber: number, bufferAddr: number) => {
+  if (memGet(spParamList) !== 3) {
+    console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
+    setAccumulator(4)  // bad parameter count
+    setCarry()
+    return
+  }
+  const statusCode = memGet(spParamList + 4)
+  switch (statusCode) {
+    case 0:  // return device status
+      handleSmartPortDeviceStatus(unitNumber, bufferAddr)
+      break
+    case 1: // illegal
+    case 2: // illegal
+      setAccumulator(0x21)
+      setCarry()
+      break
+    case 3:  // return Device Information Block (DIB)
+    case 4:  // same as case 3
+      handleSmartPortDeviceInformationBlock(unitNumber, bufferAddr)
+      break
+    default:
+      console.error(`SmartPort statusCode ${statusCode} not implemented`)
+      break
+  }
+}
+
+
 const processSmartPortAccess = () => {
-  const ds = getHardDriveState()
-  if (!ds.hardDrive) return
-  const dd = getHardDriveData()
+  // Assume success. We will set failure if needed.
+  setAccumulator(0)
+  setCarry(false)
+  // A SmartPort call is coded as a JSR to the SmartPort entry point,
+  // followed by the 1-byte command number, followed by the
+  // 2-byte command parameter-list pointer.
+  // Retrieve these values by looking at the JSR address on the stack.
   const S = 0x100 + s6502.StackPtr
   const callAddr = memGet(S + 1) + 256 * memGet(S + 2)
   const spCommand = memGet(callAddr + 1)
@@ -115,89 +220,11 @@ const processSmartPortAccess = () => {
   // These parameters are needed for status (0), read (1), and write (2)
   const unitNumber = memGet(spParamList + 1)
   const bufferAddr = memGet(spParamList + 2) + 256 * memGet(spParamList + 3)
+  // console.log(`processSmartPortAccess cmd=${spCommand} unit=${unitNumber}`)
 
   switch (spCommand) {
     case 0: {
-      if (memGet(spParamList) !== 0x03) {
-        console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
-        setCarry()
-        return
-      }
-      const statusCode = memGet(spParamList + 4)
-      switch (statusCode) {
-        case 0:
-          if (unitNumber === 0) {
-            // Store number of SmartPort devices in the status buffer.
-            memSet(bufferAddr, 1)
-            setCarry(false)
-          } else if (unitNumber === 1) {
-            // Status byte
-            // Bit   Function
-            //  7    1 = block device; 0 = character device
-            //  6    1 = write allowed
-            //  5    1 = read allowed
-            //  4    1 = device on line or disk in drive
-            //  3    1 = format allowed
-            //  2    1 = media write-protected (block devices only)
-            //  1    Reserved; must = 0
-            //  0    1 = device currently open (character devices only)
-            const dd = getHardDriveData()
-            const dataLen = dd.length
-            const nblocks = dataLen / 512
-            memSet(bufferAddr, 0xF0)
-            memSet(bufferAddr+1, nblocks & 0xff)
-            memSet(bufferAddr+2, nblocks >>> 8)
-            memSet(bufferAddr+3, 0x00)
-            setX(4)
-            setY(0)
-            setCarry(false)
-          } else {
-            console.error(`SmartPort status for unitNumber ${unitNumber} not implemented`)
-            setX(0)
-            setY(0)
-            setCarry()
-          }
-          break
-
-        case 3: { // return DIB
-          const dd = getHardDriveData()
-          const dataLen = dd.length
-          const nblocks = dataLen / 512
-          // claim we are a 3.5" drive if 1600 or less blocks
-          const deviceType = nblocks > 1600 ? 0x02 : 0x01  // 1 = 3.5 drive 2 = hard disk
-          const subType    = deviceType == 0x02 ? 0x20 : 0x40 // 0x40 = Apple 3.5 drive 0x20 = fixed HD
-          // status byte as above
-          memSet(bufferAddr+0, 0xF0)
-          // then block size for 3 bytes
-          memSet(bufferAddr+1, nblocks & 0xff)
-          memSet(bufferAddr+2, nblocks >>> 8)
-          memSet(bufferAddr+3, 0x00)
-          // id string
-          const a2ts = "Apple2ts SP"
-          memSet(bufferAddr+4, a2ts.length)
-          let i=0
-          for (;i<a2ts.length;i++)
-            memSet(bufferAddr+5+i, a2ts.charCodeAt(i));
-          for (;i<16;i++)
-            memSet(bufferAddr+5+i, a2ts.charCodeAt(8)); // backfill with space
-          // device type
-          memSet(bufferAddr+21, deviceType)
-          // device subtype
-          memSet(bufferAddr+22, subType)
-          // fw version
-          memSet(bufferAddr+23, 0x01)
-          memSet(bufferAddr+24, 0x00)
-          setX(25)
-          setY(0)
-          setCarry(false)
-          break;
-        }
-
-        default:
-          console.error(`SmartPort statusCode ${statusCode} not implemented`)
-          setCarry()
-          break
-      }
+      handleSmartPortStatus(spParamList, unitNumber, bufferAddr)
       return
     }
     case 1: {
@@ -209,6 +236,7 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
+      const dd = getHardDriveData(unitNumber)
       const dataRead = dd.slice(blockStart, blockStart + 512)
       setMemoryBlock(bufferAddr, dataRead)
       break
@@ -219,7 +247,7 @@ const processSmartPortAccess = () => {
       setCarry()
       return
   }
-  setCarry(false)
+  const ds = getHardDriveState(unitNumber)
   ds.motorRunning = true
   if (!timerID) {
     timerID = setTimeout(() => {
@@ -231,18 +259,24 @@ const processSmartPortAccess = () => {
   passData()
 }
 
+
 const processHardDriveBlockAccess = () => {
-  const ds = getHardDriveState()
+  // Assume success. We will set failure if needed.
+  setAccumulator(0)
+  setCarry(false)
+  const firmwareCommandNumber = memGet(0x42)
+  const driveNumber = Math.max(Math.min(memGet(0x43) >> 6, 2), 0)
+  const ds = getHardDriveState(driveNumber)
   if (!ds.hardDrive) return
-  const dd = getHardDriveData()
+  const dd = getHardDriveData(driveNumber)
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   const bufferAddr = memGet(0x44) + 256 * memGet(0x45)
   const dataLen = dd.length
   ds.status = ` ${toHex(block, 4)} ${toHex(bufferAddr, 4)}`
-//  console.log(`cmd=${memGet(0x42)} ${ds.status}`)
+//  console.log(`cmd=${firmwareCommandNumber} ${ds.status}`)
 
-  switch (memGet(0x42)) {
+  switch (firmwareCommandNumber) {
     case 0: {
       // Status test: 300: A2 AB A0 CD 8D 06 C0 A9 00 85 42 A9 70 85 43 20 EA C7 00
       if (ds.filename.length === 0 || dataLen === 0) {

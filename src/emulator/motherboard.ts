@@ -3,7 +3,7 @@ import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump } from "./instructions"
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "./utility/utility"
-import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive } from "./devices/drivestate"
+import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, restoreSoftSwitches } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
@@ -26,6 +26,7 @@ import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
 import { getDisassembly, getInstruction, verifyAddressWithinDisassembly } from "./utility/disassemble"
 import { sendPastedText } from "./devices/keyboard"
+import { enableHardDrive } from "./devices/harddrivedata"
 
 // let timerID: any | number = 0
 let startTime = 0
@@ -226,6 +227,7 @@ const configureMachine = () => {
   enableMockingboard(true, 4)
   enableMouseCard(true, 5)
   enableDiskDrive()
+  enableHardDrive()
 }
 
 const resetMachine = () => {
@@ -247,6 +249,14 @@ const doBoot = () => {
   }
 //  testTiming()
   doReset()
+  // This is a hack. If we don't currently have a hard drive image on boot,
+  // temporarily disable the hard drive and then re-enable it later.
+  // This allows the floppy disk to boot instead.
+  const ds = getHardDriveState(1)
+  if (ds.filename === '') {
+    enableHardDrive(false)
+    setTimeout(() => { enableHardDrive() }, 200)
+  }
 }
 
 const doReset = () => {
@@ -545,7 +555,7 @@ const doAdvance6502 = () => {
     return;
   }
   if (cpuRunMode === RUN_MODE.NEED_BOOT) {
-    doBoot();
+    doBoot()
     doSetRunMode(RUN_MODE.RUNNING)
   } else if (cpuRunMode === RUN_MODE.NEED_RESET) {
     doReset();

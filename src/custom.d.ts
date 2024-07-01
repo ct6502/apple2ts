@@ -62,12 +62,12 @@ type DisplayProps = {
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
-  showFileOpenDialog: {show: boolean, drive: number},
+  showFileOpenDialog: {show: boolean, index: number},
   updateDisplay: UpdateDisplay,
   handleCtrlDown: (mode: number) => void,
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,
-  setShowFileOpenDialog: (show: boolean, drive: number) => void,
+  setShowFileOpenDialog: (show: boolean, index: number) => void,
 }
 
 type MachineState = {
@@ -105,7 +105,9 @@ type MachineState = {
 }
 
 type DriveState = {
+  index: number,
   hardDrive: boolean,
+  drive: number,
   status: string,
   filename: string,
   diskHasChanges: boolean,
@@ -121,6 +123,7 @@ type DriveState = {
 }
 
 type DriveProps = {
+  index: number,
   hardDrive: boolean,
   drive: number,
   filename: string,

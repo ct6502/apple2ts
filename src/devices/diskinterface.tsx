@@ -7,13 +7,15 @@ const DiskInterface = (props: DisplayProps) => {
     <div className="flex-row wrap">
       <span className="flex-row">
         <DiskImageChooser {...props} />
-        <DiskDrive drive={0} renderCount={props.renderCount}
+        <DiskDrive index={0} renderCount={props.renderCount}
+          setShowFileOpenDialog={props.setShowFileOpenDialog} />
+        <DiskDrive index={1} renderCount={props.renderCount}
           setShowFileOpenDialog={props.setShowFileOpenDialog} />
       </span>
       <span className="flex-row">
-        <DiskDrive drive={1} renderCount={props.renderCount}
+        <DiskDrive index={2} renderCount={props.renderCount}
           setShowFileOpenDialog={props.setShowFileOpenDialog} />
-        <DiskDrive drive={2} renderCount={props.renderCount}
+        <DiskDrive index={3} renderCount={props.renderCount}
           setShowFileOpenDialog={props.setShowFileOpenDialog} />
       </span>
     </div>

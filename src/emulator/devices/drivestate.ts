@@ -2,12 +2,13 @@ import { Buffer } from "buffer"
 import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData, isHardDriveImage } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
-import { enableHardDrive } from "./harddrivedata"
 import { DRIVE } from "../utility/utility"
 
-const initDriveState = (drive: number): DriveState => {
+const initDriveState = (index: number, drive: number, hardDrive: boolean): DriveState => {
   return {
-    hardDrive: drive === 0,
+    index: index,
+    hardDrive: hardDrive,
+    drive: drive,
     status: "",
     filename: "",
     diskHasChanges: false,
@@ -17,16 +18,28 @@ const initDriveState = (drive: number): DriveState => {
     prevHalfTrack: 0,
     writeMode: false,
     currentPhase: 0,
-    trackStart: drive > 0 ? Array<number>(80) : Array<number>(),
-    trackNbits: drive > 0 ? Array<number>(80) : Array<number>(),
+    trackStart: !hardDrive ? Array<number>(80) : Array<number>(),
+    trackNbits: !hardDrive ? Array<number>(80) : Array<number>(),
     trackLocation: 0,
   }
 }
 
-const driveState: DriveState[] = [initDriveState(0), initDriveState(1), initDriveState(2)]
-const driveData: Array<Uint8Array> = [new Uint8Array(), new Uint8Array(), new Uint8Array()]
+const initializeDriveState = () => {
+  driveState[0] = initDriveState(0, 1, true)
+  driveState[1] = initDriveState(1, 2, true)
+  driveState[2] = initDriveState(2, 1, false)
+  driveState[3] = initDriveState(3, 2, false)
+  for (let i = 0; i < driveState.length; i++) {
+    driveData[i] = new Uint8Array()
+  }
+}
 
-let currentDrive = 1
+const driveState: DriveState[] = []
+const driveData: Array<Uint8Array> = []
+
+initializeDriveState()
+
+let currentDrive = 2
 
 export const setCurrentDrive = (drive: number) => {currentDrive = drive}
 
@@ -34,8 +47,8 @@ export const getCurrentDriveState = () => driveState[currentDrive]
 
 export const getCurrentDriveData = () => driveData[currentDrive]
 
-export const getHardDriveState = () => driveState[0]
-export const getHardDriveData = () => driveData[0]
+export const getHardDriveState = (drive: number) => driveState[(drive == 2) ? 1 : 0]
+export const getHardDriveData = (drive: number) => driveData[(drive == 2) ? 1 : 0]
 
 export const getFilename = () => {
   for (let i = 0; i < driveState.length; i++) {
@@ -47,8 +60,9 @@ export const getFilename = () => {
 export const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
     const dprops: DriveProps = {
+      index: i,
       hardDrive: driveState[i].hardDrive,
-      drive: i,
+      drive: driveState[i].drive,
       filename: driveState[i].filename,
       status: driveState[i].status,
       motorRunning: driveState[i].motorRunning,
@@ -62,16 +76,17 @@ export const passData = () => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
   const data = ['', '', '']
-  for (let i=0; i < 3; i++) {
+  for (let i=0; i < driveState.length; i++) {
     // Always save small disk images (< 32Mb), or if a full save was requested
     if (full || driveData[i].length < 32000000) {
       data[i] = Buffer.from(driveData[i]).toString("base64")
     }
   }
   const result = { currentDrive: currentDrive,
-    driveState: [initDriveState(0), initDriveState(1), initDriveState(2)],
+    driveState: [initDriveState(0, 1, true), initDriveState(1, 2, true),
+      initDriveState(2, 1, false), initDriveState(3, 2, false)],
     driveData: data }
-  for (let i=0; i < 3; i++) {
+  for (let i=0; i < driveState.length; i++) {
     result.driveState[i] = { ...driveState[i] }
   }
   return result
@@ -80,18 +95,20 @@ export const getDriveSaveState = (full: boolean): DriveSaveState => {
 export const restoreDriveSaveState = (newState: DriveSaveState) => {
   passDriveSound(DRIVE.MOTOR_OFF)
   currentDrive = newState.currentDrive
-  for (let i=0; i < 3; i++) {
-    driveState[i] = initDriveState(i)
-    driveData[i] = new Uint8Array()
+  // If this is an old save state, we may need to adjust the current drive.
+  if (newState.driveState.length === 3 && currentDrive > 0) {
+    currentDrive++
   }
+  initializeDriveState()
+  let dindex = 0;
   for (let i=0; i < newState.driveState.length; i++) {
-    driveState[i] = { ...newState.driveState[i] }
+    driveState[dindex] = { ...newState.driveState[i] }
     if (newState.driveData[i] !== '') {
-      driveData[i] = new Uint8Array(Buffer.from(newState.driveData[i], 'base64'))
+      driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], 'base64'))
     }
-  }
-  if (driveState[0].hardDrive) {
-    enableHardDrive(driveState[0].filename !== '')
+    // See if we had a second hard drive in our save state or not.
+    if (newState.driveState.length === 3 && i === 0) dindex = 1
+    dindex++
   }
   passData()
 }
@@ -108,25 +125,27 @@ export const doPauseDrive = (resume = false) => {
 }
 
 export const doSetDriveProps = (props: DriveProps) => {
-  let drive = props.drive
+  let index = 0
+  let drive = 1
   // See if the "wrong" disk image was put into a drive. If so, swap the drive.
+  let isHardDrive = props.hardDrive
   if (props.filename !== '') {
     if (isHardDriveImage(props.filename)) {
-      drive = 0
-      driveState[0].hardDrive = true
+      isHardDrive = true
+      index = (props.drive <= 1) ? 0 : 1
+      drive = index + 1
     } else {
-      if (drive === 0) drive = 1
+      isHardDrive = false
+      index = (props.drive <= 1) ? 2 : 3
+      drive = index - 1
     }
   }
-  driveState[drive] = initDriveState(drive)
-  driveState[drive].filename = props.filename
-  driveState[drive].motorRunning = props.motorRunning
-  driveData[drive] = decodeDiskData(driveState[drive], props.diskData)
-  if (driveData[drive].length === 0) {
-    driveState[drive].filename = ''
-  }
-  if (driveState[drive].hardDrive) {
-    enableHardDrive(driveState[drive].filename !== '')
+  driveState[index] = initDriveState(index, drive, isHardDrive)
+  driveState[index].filename = props.filename
+  driveState[index].motorRunning = props.motorRunning
+  driveData[index] = decodeDiskData(driveState[index], props.diskData)
+  if (driveData[index].length === 0) {
+    driveState[index].filename = ''
   }
   passData()
 }

@@ -4,6 +4,10 @@ import { getDataBlock, memGet, memSet } from "./memory"
 
 export const s6502: STATE6502 = default6502State()
 
+export const setAccumulator = (value: number) => {
+  s6502.Accum = value
+}
+
 export const setX = (value: number) => {
   s6502.XReg = value
 }

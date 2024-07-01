@@ -7,9 +7,10 @@ import { diskImages } from "./diskimages";
 // since they just maintain the state that needs to be passed to/from the
 // emulator. But the helper functions were getting too large, so now it's here.
 
-const initDriveProps = (drive: number): DriveProps => {
+const initDriveProps = (index: number, drive: number, hardDrive: boolean): DriveProps => {
   return {
-    hardDrive: false,
+    index: index,
+    hardDrive: hardDrive,
     drive: drive,
     filename: "",
     status: "",
@@ -19,11 +20,11 @@ const initDriveProps = (drive: number): DriveProps => {
   }
 }
 
-const driveProps: DriveProps[] = [initDriveProps(0), initDriveProps(1), initDriveProps(2)];
-driveProps[0].hardDrive = true
+const driveProps: DriveProps[] = [initDriveProps(0, 1, true), initDriveProps(1, 2, true),
+  initDriveProps(2, 1, false), initDriveProps(3, 2, false)];
 
-export const handleGetFilename = (drive: number) => {
-  let f = driveProps[drive].filename
+export const handleGetFilename = (index: number) => {
+  let f = driveProps[index].filename
   if (f !== "") {
     const i = f.lastIndexOf('.')
     if (i > 0) {
@@ -35,26 +36,26 @@ export const handleGetFilename = (drive: number) => {
 }
 
 export const doSetDriveProps = (props: DriveProps) => {
-  // For efficiency we only pass the disk data if it has changed.
+  // For efficiency we only receive disk data if it has changed.
   // If our disk is the same but it hasn't changed, keep the existing data.
   if (props.diskData.length === 0) {
-    const tmp = driveProps[props.drive].diskData
-    driveProps[props.drive] = props
-    driveProps[props.drive].diskData = tmp
+    const tmp = driveProps[props.index].diskData
+    driveProps[props.index] = props
+    driveProps[props.index].diskData = tmp
   } else {
-    driveProps[props.drive] = props
+    driveProps[props.index] = props
   }
 }
 
-export const handleGetDriveProps = (drive: number) => {
-  return driveProps[drive]
+export const handleGetDriveProps = (index: number) => {
+  return driveProps[index]
 }
 
-export const handleSetDiskData = (drive: number,
+export const handleSetDiskData = (index: number,
   data: Uint8Array, filename: string) => {
-  driveProps[drive].filename = filename
-  driveProps[drive].diskData = data
-  passSetDriveProps(driveProps[drive])
+  driveProps[index].filename = filename
+  driveProps[index].diskData = data
+  passSetDriveProps(driveProps[index])
 }
 
 const findMatchingDiskImage = (url: string) => {
@@ -106,6 +107,7 @@ const resetAllDiskDrives = () => {
   handleSetDiskData(0, new Uint8Array(), "")
   handleSetDiskData(1, new Uint8Array(), "")
   handleSetDiskData(2, new Uint8Array(), "")
+  handleSetDiskData(3, new Uint8Array(), "")
 }
 
 export const handleSetDiskFromFile = async (disk: diskImage,

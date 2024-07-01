@@ -11,7 +11,7 @@ const FileInput = (props: DisplayProps) => {
   const [binaryBuffer, setBinaryBuffer] = useState(new Uint8Array())
   const hiddenFileOpen = useRef(null);
 
-  const readFile = async (file: File, drive: number) => {
+  const readFile = async (file: File, index: number) => {
     const fname = file.name.toLowerCase()
     if (fname.endsWith('a2ts')) {
       const fileread = new FileReader()
@@ -38,9 +38,13 @@ const FileInput = (props: DisplayProps) => {
           passPasteText(text + '\nRUN\n')
         }
       } else {
-        // Force hard drive images to be in "0" (slot 7 drive 1 actually)
-        drive = isHardDriveImage(fname) ? 0 : drive
-        handleSetDiskData(drive, new Uint8Array(buffer), file.name)
+        // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
+        if (isHardDriveImage(fname)) {
+          if (index > 1) index = 0
+        } else {
+          if (index < 2) index = 2
+        }
+        handleSetDiskData(index, new Uint8Array(buffer), file.name)
         if (handleGetRunMode() === RUN_MODE.IDLE) {
           passSetRunMode(RUN_MODE.NEED_BOOT)
         } else {
@@ -52,7 +56,7 @@ const FileInput = (props: DisplayProps) => {
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
-      readFile(e.target.files[0], props.showFileOpenDialog.drive)
+      readFile(e.target.files[0], props.showFileOpenDialog.index)
     }
   }
 
@@ -83,7 +87,7 @@ const FileInput = (props: DisplayProps) => {
   // This is how we actually display the file selection dialog.
   if (props.showFileOpenDialog.show) {
     // Now that we're in here, turn off our property.
-    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.drive), 0)
+    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current as HTMLInputElement
       // Hack - clear out old file so we can pick the same file again

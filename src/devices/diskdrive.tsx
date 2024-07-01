@@ -20,24 +20,25 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
   document.body.removeChild(link);
 }
 
-const resetDrive = (drive: number) => {
-  //  const dprops = handleGetDriveProps(drive)
-  handleSetDiskData(drive, new Uint8Array(), "")
+const resetDrive = (index: number) => {
+  //  const dprops = handleGetDriveProps(index)
+  handleSetDiskData(index, new Uint8Array(), "")
 }
 
 type DiskDriveProps = {
-  drive: number,
+  index: number,
   renderCount: number,
-  setShowFileOpenDialog: (show: boolean, drive: number) => void
+  setShowFileOpenDialog: (show: boolean, index: number) => void
 }
 
 const DiskDrive = (props: DiskDriveProps) => {
-  const dprops = handleGetDriveProps(props.drive)
+  const dprops = handleGetDriveProps(props.index)
 
   const [menuOpen, setMenuOpen] = useState<boolean>(false)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
   const menuNames = ['Download Disk', 'Download and Eject Disk', 'Eject Disk']
+  const menuChoices = [0, 1, 2]
 
   const handleMenuClick = (event: React.MouseEvent) => {
     if (dprops.filename.length > 0) {
@@ -45,20 +46,20 @@ const DiskDrive = (props: DiskDriveProps) => {
       setPosition({ x: event.clientX, y: y })
       setMenuOpen(true)
     } else {
-      props.setShowFileOpenDialog(true, props.drive)
+      props.setShowFileOpenDialog(true, props.index)
     }
   }
 
-  const handleMenuClose = (index = -1) => {
+  const handleMenuClose = (menuChoice = -1) => {
     setMenuOpen(false)
-    if (index === 0 || index === 1) {
+    if (menuChoice === 0 || menuChoice === 1) {
       if (dprops.diskData.length > 0) {
         downloadDisk(dprops.diskData, filename)
         dprops.diskHasChanges = false
       }
     }
-    if (index === 1 || index === 2) {
-      resetDrive(props.drive)
+    if (menuChoice === 1 || menuChoice === 2) {
+      resetDrive(props.index)
     }
   }
 
@@ -71,7 +72,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
   }
   const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
-  let status = ['S7D1', 'S6D1', 'S6D2'][props.drive]
+  let status = ['S7D1', 'S7D2', 'S6D1', 'S6D2'][props.index]
   status += dprops.status
   return (
     <span className="flex-column">
@@ -88,7 +89,7 @@ const DiskDrive = (props: DiskDriveProps) => {
           onClick={() => handleMenuClose()}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
-            {[0, 1, 2].map((i) => (
+            {menuChoices.map((i) => (
               <div className="droplist-option"
                 style={{ padding: '5px', paddingLeft: '10px', paddingRight: '10px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}

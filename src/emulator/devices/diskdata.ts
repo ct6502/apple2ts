@@ -220,6 +220,11 @@ export const handleDriveSoftSwitches: AddressCallback =
       SWITCH.DATA_LATCH = false
       if (ds.motorRunning && !ds.writeMode) {
         result = getNextByte(ds, dd)
+        // if (s6502.cycleCount > 28333000) {
+        //   console.log(`delta=${delta} getNextByte=${toHex(result)}`)
+        // }
+        // Reset the Disk II Logic State Sequencer clock
+        prevCycleCount = s6502.cycleCount
       }
       break
     case SWITCH.MOTOR_ON:
@@ -234,7 +239,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       break
     case SWITCH.DRIVE1: // fall thru
     case SWITCH.DRIVE2: {
-      const currentDrive = (addr === SWITCH.DRIVE1) ? 1 : 2
+      const currentDrive = (addr === SWITCH.DRIVE1) ? 2 : 3
       const dsOld = getCurrentDriveState()
       setCurrentDrive(currentDrive)
       ds = getCurrentDriveState()

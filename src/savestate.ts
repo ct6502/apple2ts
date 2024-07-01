@@ -32,11 +32,12 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  let name = handleGetFilename(0)
-  if (!name) {
-    name = handleGetFilename(1)
-    if (!name) {
-      name = "apple2ts"
+  let name = "apple2ts"
+  for (let i = 0; i < 4; i++) {
+    const n = handleGetFilename(i)
+    if (n) {
+      name = n
+      break
     }
   }
   link.setAttribute('download', `${name}.a2ts`);
