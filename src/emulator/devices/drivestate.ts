@@ -124,9 +124,9 @@ export const doPauseDrive = (resume = false) => {
   passData()
 }
 
-export const doSetDriveProps = (props: DriveProps) => {
-  let index = 0
-  let drive = 1
+export const doSetEmuDriveProps = (props: DriveProps) => {
+  let index = props.index
+  let drive = props.drive
   // See if the "wrong" disk image was put into a drive. If so, swap the drive.
   let isHardDrive = props.hardDrive
   if (props.filename !== '') {

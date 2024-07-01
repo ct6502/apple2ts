@@ -35,7 +35,7 @@ export const handleGetFilename = (index: number) => {
   return null
 }
 
-export const doSetDriveProps = (props: DriveProps) => {
+export const doSetUIDriveProps = (props: DriveProps) => {
   // For efficiency we only receive disk data if it has changed.
   // If our disk is the same but it hasn't changed, keep the existing data.
   if (props.diskData.length === 0) {
