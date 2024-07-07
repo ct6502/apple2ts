@@ -127,11 +127,12 @@ const evaluateBreakpointExpression = (expression: string) => {
   const Y = s6502.YReg
   const S = s6502.StackPtr
   const P = s6502.PStatus
+  const I = s6502.flagIRQ
   try {
     return eval(expression)
   } catch (e) {
     // This is a hack to return false but also mark the variables as "used"
-    return (A + X + Y + S + P) === -1
+    return (A + X + Y + S + P + I) === -1
   }
 }
 
@@ -147,6 +148,7 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return false
   const bp = breakpointMap.get(s6502.PC) ||
+    breakpointMap.get(-1) ||
     breakpointMap.get(instr | BRK_INSTR) ||
     (instr >= 0 && breakpointMap.get(BRK_ILLEGAL))
   if (!bp || bp.disabled || bp.watchpoint) return false

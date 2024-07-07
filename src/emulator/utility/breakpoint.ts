@@ -49,7 +49,7 @@ export const getBreakpointString = (bp: Breakpoint) => {
         break
     }
   } else {
-    result = toHex(bp.address, 4)
+    result = (bp.address >= 0) ? toHex(bp.address, 4) : 'Any'
   }
   if (bp.watchpoint) {
     if (bp.memget) result += ' read'
@@ -95,7 +95,7 @@ export const checkBreakpointExpression = (expression: string) => {
   // Make these all negative so boolean expressions (e.g. A == 0 && X == 1)
   // won't accidently short circuit and look like valid expressions.
   if (expression.trim() === '') return ''
-  const A = -1, X = -2, Y = -3, S = -4, P = -5
+  const A = -1, X = -2, Y = -3, S = -4, P = -5, I = -6
   const memGet = (addr: number) => {return -addr}
   try {
     expression = convertBreakpointExpression(expression)
@@ -104,8 +104,8 @@ export const checkBreakpointExpression = (expression: string) => {
     }
     const type = typeof eval(expression)
     // This is a hack to avoid TypeScript errors about undefined variables
-    // for the A, X, Y, S, P, and memGet functions
-    if (type === 'bigint') return (A + X + Y + S + P + memGet(1)).toString()
+    // for the A, X, Y, S, P, I, and memGet functions
+    if (type === 'bigint') return (A + X + Y + S + P + I + memGet(1)).toString()
     const goodExpression = typeof eval(expression) === 'boolean'
     return goodExpression ? '' : "Expression must evaluate to true or false"
   } catch (e) {
@@ -129,7 +129,7 @@ export class Breakpoint {
   memoryBank: string;
 
   constructor() {
-    this.address = 0
+    this.address = -1  // any address (useful for expressions)
     this.watchpoint = false
     this.instruction = false
     this.disabled = false

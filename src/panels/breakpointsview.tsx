@@ -80,7 +80,9 @@ const BreakpointsView = () => {
 
   const saveBreakpoint = () => {
     const breakpoints = new BreakpointMap(handleGetBreakpoints())
-    breakpoints.delete(breakpointEditAddress)
+    if (breakpointEditAddress >= 0) {
+      breakpoints.delete(breakpointEditAddress)
+    }
     breakpoints.set(breakpointEditValue.address, breakpointEditValue)
     passBreakpoints(breakpoints)
     setShowBreakpointEdit(false)

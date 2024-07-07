@@ -14,7 +14,7 @@ const BPEdit_Breakpoint = (props: {
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
     if (props.breakpoint) {
-      const address = parseInt(value || '0', 16)
+      const address = parseInt(value || '-1', 16)
       if (address >= 0xC000 && address <= 0xC0FF) {
         props.breakpoint.memget = true
         props.breakpoint.memset = true
@@ -34,7 +34,7 @@ const BPEdit_Breakpoint = (props: {
 
   const handleExpressionChange = (value: string) => {
     let expression = value.replace("===", "==")
-    expression = expression.replace(/[^#$0-9 abcdefxysp|&()=<>+\-*/]/gi, '')
+    expression = expression.replace(/[^#$0-9 abcdefixysp|&()=<>+\-*/]/gi, '')
     expression = expression.toUpperCase()
     if (props.breakpoint) {
       props.breakpoint.expression = expression
@@ -76,14 +76,18 @@ const BPEdit_Breakpoint = (props: {
     return true
   }
 
+  const addrLabel = (addr: number) => {
+    return (addr >= 0) ? addr.toString(16).toUpperCase() : ''
+  }
+
   return (
     <div>
       <div className="flex-row">
         <EditField name="Address: "
           initialFocus={true}
-          value={props.breakpoint.address.toString(16).toUpperCase()}
+          value={addrLabel(props.breakpoint.address)}
           setValue={handleAddressChange}
-          placeholder="F800"
+          placeholder="Any"
           width="5em" />
       </div>
       <div>

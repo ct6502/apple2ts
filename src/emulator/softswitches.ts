@@ -134,18 +134,19 @@ export const getSoftSwitchDescriptions = () => {
       const writeOnly = sswitch.writeOnly ? " (write)" : ""
       if (sswitch.offAddr > 0) {
         const addr = toHex(sswitch.offAddr) + ' ' + key
-        SoftSwitchDescriptions[sswitch.offAddr] = addr + (isSwitch ? " off" : "") + writeOnly
+        SoftSwitchDescriptions[sswitch.offAddr] = addr + (isSwitch ? "-OFF" : "") + writeOnly
       }
       if (sswitch.onAddr > 0) {
         const addr = toHex(sswitch.onAddr) + ' ' + key
-          SoftSwitchDescriptions[sswitch.onAddr] = addr + " on" + writeOnly
+          SoftSwitchDescriptions[sswitch.onAddr] = addr + "-ON" + writeOnly
       }
       if (sswitch.isSetAddr > 0) {
         const addr = toHex(sswitch.isSetAddr) + ' ' + key
-        SoftSwitchDescriptions[sswitch.isSetAddr] = addr + " status" + writeOnly
+        SoftSwitchDescriptions[sswitch.isSetAddr] = addr + "-STATUS" + writeOnly
       }
     }
   }
+  SoftSwitchDescriptions[0xC000] = 'C000 KBRD/80STORE-OFF'
   return SoftSwitchDescriptions
 }
 
