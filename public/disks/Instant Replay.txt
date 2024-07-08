@@ -1,0 +1,99 @@
+8bit-Slicks
+Acey Deucey
+Anchorman
+Advance to Boardwalk
+Autobahn
+Battle Chess
+Black Belt
+Bop'n Wrestle
+California Games
+Card Sharks
+Championship Baseball
+Championship Basketball
+Sierra Championship Boxing
+Championship Wrestling
+Checkers
+Chuck Yeager's Flight Sim
+Computer Foosball
+Dive Bomber
+Draw Poker
+F-15 Strike Eagle
+Family Feud
+Fight Night
+Flight Simulator II
+Formula 1 Racer
+Fox & Geese
+Fuji Crowded Speedway
+GFL Championship Football
+Go
+Go Four It
+Hardball
+Hi-Res Football
+Hi-Res Soccer
+International Gran Prix
+International Hockey
+Jump Pit
+Karate Champ
+Kono
+Magnet Madness
+Micro Golf
+MicroChess
+Million Perfect Letters
+Million Perfect Tiles
+Mix Matcher
+Mu Torere
+Nimwit
+Nine Men's Morris
+Odin
+One on One
+Pay Day
+Pensate
+Pitstop II
+Place Ball
+Pool
+Press Your Luck
+Reversi
+Rock & Scroll
+Seega
+Shuffleboard
+Silent Service
+Ski Crazed
+Solo Flight
+Speedway Classic
+Street Sports Baseball
+Street Sports Basketball
+Street Sports Football
+Street Sports Soccer
+Stunt Car Racer
+Sudoku
+Summer Games
+Summer Games II
+Super Huey
+Superstar Ice Hockey
+Super Password
+Tag Team Wrestling
+Test Drive
+The American Challenge
+The Dam Busters
+The Games: Summer Edition
+The Games: Winter Edition
+The Sporting News Baseball
+Tomahawk
+Track & Field
+Ultracheckers
+Wari
+Winter Games
+World Games
+Wipeout
+World Karate Championship
+Zig Zag Flag Shag
+
+MIT License
+
+Copyright (c) 2018-2021 4am
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: 
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

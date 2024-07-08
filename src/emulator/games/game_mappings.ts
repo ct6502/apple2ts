@@ -7,6 +7,7 @@ import { drol } from "./drol"
 import { firebug } from "./firebug"
 import { karateka } from "./karateka"
 import { noxarchaist } from "./noxarchaist"
+import { one_on_one } from "./one_on_one"
 import { robotron } from "./robotron"
 import { snoggle } from "./snoggle"
 import { ultima5 } from "./ultima5"
@@ -28,6 +29,7 @@ AddGameLibraryItem(drol)
 AddGameLibraryItem(firebug)
 AddGameLibraryItem(karateka)
 AddGameLibraryItem(noxarchaist)
+AddGameLibraryItem(one_on_one)
 AddGameLibraryItem(robotron)
 AddGameLibraryItem(snoggle)
 AddGameLibraryItem(ultima5)
