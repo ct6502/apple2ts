@@ -10,6 +10,7 @@ type HelpPanelProps = {
 }
 
 const HelpPanel = (props: HelpPanelProps) => {
+  const helpText = props.helptext.length > 1 ? props.helptext : defaultHelpText
   return (
     <div style={{
       boxSizing: 'content-box',
@@ -19,7 +20,7 @@ const HelpPanel = (props: HelpPanelProps) => {
       overflow: (props.narrow ? 'visible' : 'auto'),
     }}>
       <div className={handleGetDarkMode() ? "" : "help-paper"}>
-        <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}>{props.helptext.length > 1 ? props.helptext : defaultHelpText}</pre>
+        <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}>{helpText}</pre>
       </div>
     </div>
   )

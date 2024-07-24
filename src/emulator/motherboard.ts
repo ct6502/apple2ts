@@ -249,6 +249,7 @@ const doBoot = () => {
   }
 //  testTiming()
   doReset()
+  handleGameSetup(true)
   // This is a hack. If we don't currently have a hard drive image on boot,
   // temporarily disable the hard drive and then re-enable it later.
   // This allows the floppy disk to boot instead.
