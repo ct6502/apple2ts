@@ -6,21 +6,17 @@ const MemoryMap = () => {
   const switches = handleGetSoftSwitches()
   if (Object.keys(switches).length <= 1) return (<div></div>)
   const altZP = switches.ALTZP
-  const bank2 = switches.BSRBANK2
-  const bsrRead = switches.BSRREADRAM
-  const bsrWrite = switches.WRITEBSR1 || switches.WRITEBSR2 ||
-    switches.RDWRBSR1 || switches.RDWRBSR2
   let bankSwitchedRam = 'ROM'
   let bankD000 = 'ROM'
   let classBSR = 'mem-rom'
-  if (bsrRead || bsrWrite) {
+  if (switches.BSRREADRAM || switches.BSR_WRITE) {
     classBSR = altZP ? 'mem-aux' : ''
-    if (bsrRead && bsrWrite) {
+    if (switches.BSRREADRAM && switches.BSR_WRITE) {
       bankSwitchedRam = 'R/W RAM'
     } else {
-      bankSwitchedRam = bsrRead ? 'Read RAM' : 'Read ROM\nWrite RAM'
+      bankSwitchedRam = switches.BSRREADRAM ? 'Read RAM' : 'Read ROM\nWrite RAM'
     }
-    bankD000 = bankSwitchedRam + '\nBank ' + (bank2 ? '2' : '1')
+    bankD000 = bankSwitchedRam + '\nBank ' + (switches.BSRBANK2 ? '2' : '1')
   }
   const auxRead = switches.RAMRD
   const auxWrite = switches.RAMWRT

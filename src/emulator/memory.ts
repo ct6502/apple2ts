@@ -130,8 +130,7 @@ const updateReadBankSwitchedRamTable = () => {
 
 const updateWriteBankSwitchedRamTable = () => {
   const offsetZP = SWITCHES.ALTZP.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const writeRAM = SWITCHES.WRITEBSR1.isSet || SWITCHES.WRITEBSR2.isSet ||
-    SWITCHES.RDWRBSR1.isSet || SWITCHES.RDWRBSR2.isSet
+  const writeRAM = SWITCHES.BSR_WRITE.isSet
   // Start out with Slot ROM and regular ROM as not writeable
   for (let i = 0xC0; i <= 0xFF; i++) {
     addressSetTable[i] = -1;
@@ -173,16 +172,20 @@ const slotIsActive = (slot: number) => {
 //    1           1       internal 
 
 const slotC8IsActive = () => {
-  if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) return false
+  if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) {
+    return false
+  }
   // Will happen for one cycle after $CFFF in slot ROM,
   // or if $CFFF was accessed outside of slot ROM space.
-  if (C800SlotGet() === 0 || C800SlotGet() === 255) return false
+  if (C800SlotGet() === 0 || C800SlotGet() === 255) {
+    return false
+  }
   return true
 }
 
 const manageC800 = (slot: number) => {
 
-  if (slot < 8) {
+  if (slot <= 7) {
     if (SWITCHES.INTCXROM.isSet)
       return
 
@@ -200,8 +203,8 @@ const manageC800 = (slot: number) => {
       updateAddressTables();
     }
   } else {
-    // if slot > 7 then it was an access to $CFFF
-    // accessing $CFFF resets everything WRT C8
+    // If slot > 7 then it was an access to $CFFF.
+    // Accessing $CFFF resets INTC8ROM to peripheral ROM.
     SWITCHES.INTC8ROM.isSet = false
     C800SlotSet(0)
     updateAddressTables()

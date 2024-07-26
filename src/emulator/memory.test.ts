@@ -325,3 +325,125 @@ test('test RamWorks Save/Restore', () => {
   setApple2State(sState, 1.0)
   expect(memGet(0x00C0)).toEqual(5)
 })
+
+const LOC1 = 0xD17B   // $53 in Apple II/plus/e/enhanced
+const LOC2 = 0xFE1F		// $60 in Apple II/plus/e/enhanced
+
+const setupBSR = () => {
+  memGet(0xC089)  // enable R/W RAM, bank 1
+  memGet(0xC089)  // enable R/W RAM, bank 1
+  memSet(LOC1, 0x11)
+  memSet(LOC2, 0x33)
+  memGet(0xC083)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
+  memSet(LOC1, 0x22)
+  memGet(0xC082)  // enable ROM
+}
+
+test('test Bank-Switched-Ram READ ONLY', () => {
+  for (let bank = 1; bank <= 2; bank++) {
+    setupBSR()
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    const bankAddr = bank === 1 ? 0xC088 : 0xC080
+    const value = bank === 1 ? 0x11 : 0x22
+    memGet(bankAddr)  // enable Read RAM, bank 1
+    expect(memGet(LOC1)).toEqual(value)
+    expect(memGet(LOC2)).toEqual(0x33)
+    // Should not be able to write at all
+    memGet(bankAddr)  // enable Read RAM, bank 1
+    memSet(LOC1, 0x99)
+    expect(memGet(LOC1)).toEqual(value)
+    expect(memGet(LOC2)).toEqual(0x33)
+  }
+})
+
+test('test Bank-Switched-Ram WRITE ONLY', () => {
+  for (let bank = 1; bank <= 2; bank++) {
+    setupBSR()
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    const bankAddr = bank === 1 ? 0xC089 : 0xC081
+    const value = bank === 1 ? 0x11 : 0x22
+    memGet(bankAddr)  // enable pre-write
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    // Should not be able to write yet
+    memSet(LOC1, 0x99)
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    memGet(bankAddr)  // enable write
+    memSet(LOC1, value + 1)
+    memSet(LOC2, 0x34)
+    // We still can't read
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    const bankRead = bank === 1 ? 0xC088 : 0xC080
+    memGet(bankRead)  // enable Read RAM, bank 1
+    expect(memGet(LOC1)).toEqual(value + 1)
+    expect(memGet(LOC2)).toEqual(0x34)
+  }
+})
+
+test('test Bank-Switched-Ram READ/WRITE', () => {
+  for (let bank = 1; bank <= 2; bank++) {
+    setupBSR()
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    const bankAddr = bank === 1 ? 0xC08B : 0xC083
+    const value = bank === 1 ? 0x11 : 0x22
+    memGet(bankAddr)  // enable pre-write
+    expect(memGet(LOC1)).toEqual(value)
+    // Should not be able to write yet
+    memSet(LOC1, 0x99)
+    expect(memGet(LOC1)).toEqual(value)
+    memGet(bankAddr)  // enable write
+    memSet(LOC1, value + 2)
+    memSet(LOC2, 0x34)
+    // Should be able to read it right away
+    expect(memGet(LOC1)).toEqual(value + 2)
+    expect(memGet(LOC2)).toEqual(0x34)
+    // A write to $C083/$C08B should reset the PRE-WRITE,
+    // but should still be able to write and read...
+    memSet(bankAddr, 1)
+    memSet(LOC1, value + 3)
+    memSet(LOC2, 0x35)
+    expect(memGet(LOC1)).toEqual(value + 3)
+    expect(memGet(LOC2)).toEqual(0x35)
+  }
+})
+
+test('test Bank-Switched-Ram PRE-WRITE disable', () => {
+  for (let bank = 1; bank <= 2; bank++) {
+    setupBSR()
+    expect(memGet(LOC1)).toEqual(0x53)
+    expect(memGet(LOC2)).toEqual(0x60)
+    const bankAddr = bank === 1 ? 0xC08B : 0xC083
+    const value = bank === 1 ? 0x11 : 0x22
+    memGet(bankAddr)  // enable pre-write
+    expect(memGet(LOC1)).toEqual(value)
+    // Should not be able to write yet
+    memSet(LOC1, 0x99)
+    expect(memGet(LOC1)).toEqual(value)
+
+    // A write to $C083/$C08B should reset the PRE-WRITE to zero.
+    memSet(bankAddr, 1)
+
+    // Should not be able to write
+    memSet(LOC1, 0x99)
+    expect(memGet(LOC1)).toEqual(value)
+
+    memGet(bankAddr)  // enable pre-write
+
+    // Should STILL not be able to write
+    memSet(LOC1, 0x99)
+    expect(memGet(LOC1)).toEqual(value)
+
+    // Finally, should be able to write!
+    memGet(bankAddr)
+    memSet(LOC1, value + 1)
+    memSet(LOC2, 0x34)
+    expect(memGet(LOC1)).toEqual(value + 1)
+    expect(memGet(LOC2)).toEqual(0x34)
+  }
+})

@@ -97,11 +97,21 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
     const keyTyped = key as keyof typeof SWITCHES
+    // Our switches have changed slightly over time, so ignore errors.
+    // We will fix up any changed softswitches below.
     try {
-      SWITCHES[keyTyped].isSet = softSwitches[key]    
+      SWITCHES[keyTyped].isSet = softSwitches[key]
     } catch (error) {
       null
     }
+  }
+  // If we have an old save file, we need to set the BSR_WRITE switch
+  // based upon the old bank-switched RAM switches.
+  if ('WRITEBSR1' in softSwitches) {
+    // We didn't have prewrite before, so just make sure it's off.
+    SWITCHES.BSR_PREWRITE.isSet = false
+    SWITCHES.BSR_WRITE.isSet = softSwitches.WRITEBSR1 || softSwitches.WRITEBSR2 ||
+      softSwitches.RDWRBSR1 || softSwitches.RDWRBSR2
   }
   const newmemory = new Uint8Array(Buffer.from(newState.memory, "base64"))
   if (version < 1) {

@@ -3,7 +3,7 @@ import { extraHelpText } from "./extrahelptext"
 let emulatorStartText = `Welcome to Apple2TS
 
 TypeScript Apple IIe Emulator
-(c) 2023 Chris Torrence
+(c) 2024 Chris Torrence
 
 Click the floppy disks to
 choose a disk, or click on a

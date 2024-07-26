@@ -114,16 +114,16 @@ test('watchpoints memory bank ROM', () => {
   bpMap.set(bp.address, bp)
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
-  memSet(0xC082, 1)  // enable ROM
+  memGet(0xC082)  // enable ROM
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
-  memSet(0xC08A, 1)  // enable ROM
+  memGet(0xC08A)  // enable ROM
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
 })
@@ -139,29 +139,31 @@ test('watchpoints memory bank MAIN-DXXX-1', () => {
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC082, 1)  // enable ROM
+  memGet(0xC082)  // enable ROM
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(true)
 
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC088, 1)  // enable read only RAM, bank 1
+  memGet(0xC088)  // enable read only RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)   // should not be able to write
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
@@ -182,29 +184,31 @@ test('watchpoints memory bank MAIN-DXXX-2', () => {
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC082, 1)  // enable ROM
+  memGet(0xC082)  // enable ROM
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(true)
 
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC080, 1)  // enable read only RAM, bank 2
+  memGet(0xC080)  // enable read only RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)   // should not be able to write
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memSet(0xC009, 1)  // enable Aux memory $0-$1FF, $D000-$FFFF
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
@@ -225,29 +229,30 @@ test('watchpoints memory bank AUX-DXXX-1', () => {
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC082, 1)  // enable ROM
+  memGet(0xC082)  // enable ROM
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(true)
 
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC088, 1)  // enable read only RAM, bank 1
+  memGet(0xC088)  // enable read only RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)   // should not be able to write
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
@@ -269,29 +274,30 @@ test('watchpoints memory bank AUX-DXXX-2', () => {
   // no memGet has happened yet, so shouldn't hit watchpoint
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC082, 1)  // enable ROM
+  memGet(0xC082)  // enable ROM
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(true)
 
-  memSet(0xC08B, 1)  // enable R/W RAM, bank 1
+  memGet(0xC08B)  // enable R/W RAM, bank 1
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)
   memSet(bp.address, 0x01)
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC080, 1)  // enable read only RAM, bank 2
+  memGet(0xC080)  // enable read only RAM, bank 2
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(true)
   memSet(bp.address, 0x01)   // should not be able to write
   expect(hitBreakpoint()).toEqual(false)
 
-  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  memGet(0xC083)  // enable R/W RAM, bank 2
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
   memGet(bp.address, true)
   expect(hitBreakpoint()).toEqual(false)

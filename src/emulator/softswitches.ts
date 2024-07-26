@@ -43,17 +43,37 @@ const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
 
 const rand = () => Math.floor(256 * Math.random())
 
-export const handleBankedRAM = (addr: number) => {
+// let prevCount = 0
+
+// Understanding the Apple IIe, Jim Sather, p. 5-23
+// Writing to high RAM is enabled when the HRAMWRT' soft switch is reset.
+// The controlling MPU program must set the PRE-WRITE soft switch before it
+// can reset HRAMWRT'. PRE-WRITE is set by odd read access in the $C08Xrange.
+// It is reset by even read access or any write access in the $C08X range.
+// HRAMWRT' is reset by odd read access in the $C08X range when PRE-WRITE is set.
+// It is set by even access in the $C08X range. Any other type of access
+// causes HRAMWRT' to hold its current state.
+export const handleBankedRAM = (addr: number, calledFromMemSet: boolean) => {
   // Only keep bits 0, 1, 3 of the 0xC08* number
   addr &= 0b1011
-  SWITCHES.READBSR2.isSet = addr === 0
-  SWITCHES.WRITEBSR2.isSet = addr === 1
-  SWITCHES.OFFBSR2.isSet = addr === 2
-  SWITCHES.RDWRBSR2.isSet = addr === 3
-  SWITCHES.READBSR1.isSet = addr === 8
-  SWITCHES.WRITEBSR1.isSet = addr === 9
-  SWITCHES.OFFBSR1.isSet = addr === 0x0A
-  SWITCHES.RDWRBSR1.isSet = addr === 0x0B
+  // These addresses need to be read twice in succession to activate write.
+  if (calledFromMemSet) {
+    SWITCHES.BSR_PREWRITE.isSet = false
+  } else {
+    if (addr & 1) {
+      if (SWITCHES.BSR_PREWRITE.isSet) {
+        // PRE-WRITE is already set, so now we can enable write.
+        SWITCHES.BSR_WRITE.isSet = true
+      } else {
+        // Set PRE-WRITE
+        SWITCHES.BSR_PREWRITE.isSet = true
+      }
+    } else {
+      // Reset PRE-WRITE and HRAMWRT by even read access or any write access in the $C08X range.
+      SWITCHES.BSR_PREWRITE.isSet = false
+      SWITCHES.BSR_WRITE.isSet = false
+    }
+  }
   // Set soft switches for reading the bank-switched RAM status
   SWITCHES.BSRBANK2.isSet = (addr <= 3)
   SWITCHES.BSRREADRAM.isSet = [0, 3, 8, 0x0B].includes(addr)
@@ -112,14 +132,11 @@ export const SWITCHES = {
   }),
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
-  READBSR2: NewSwitch(0xC080, 0, 0),
-  WRITEBSR2: NewSwitch(0xC081, 0, 0),
-  OFFBSR2: NewSwitch(0xC082, 0, 0),
-  RDWRBSR2: NewSwitch(0xC083, 0, 0),
-  READBSR1: NewSwitch(0xC088, 0, 0),
-  WRITEBSR1: NewSwitch(0xC089, 0, 0),
-  OFFBSR1: NewSwitch(0xC08A, 0, 0),
-  RDWRBSR1: NewSwitch(0xC08B, 0, 0),
+  // 0xC080...0xC08F are banked RAM soft switches and are handled manually
+  // We don't need entries here, except for our special BSR_PREWRITE and BSR_WRITE.
+  // We will put these in 0xC080 and 0xC088 so they get saved and restored.
+  BSR_PREWRITE: NewSwitch(0xC080, 0, 0),
+  BSR_WRITE: NewSwitch(0xC088, 0, 0),
 }
 
 SWITCHES.TEXT.isSet = true
@@ -162,8 +179,7 @@ export const checkSoftSwitches = (addr: number,
   // and need to call our special function.
   if (addr >= 0xC080 && addr <= 0xC08F) {
     // $C084...87 --> $C080...83, $C08C...8F --> $C088...8B
-    addr -= addr & 4
-    handleBankedRAM(addr)
+    handleBankedRAM(addr & ~4, calledFromMemSet)
     return
   }
   if (addr === 0xC000 && !calledFromMemSet) {
