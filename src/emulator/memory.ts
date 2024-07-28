@@ -28,6 +28,10 @@ export let RamWorksMaxBank = 0
 const BaseMachineMemory = RamWorksMemoryStart
 export let memory = (new Uint8Array(BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000)).fill(0)
 
+// Fake status flag indicating which slot has access to $C800-$CFFF.
+//   0: No slot selected but INTC8ROM is off
+// 1-7: Slot number for peripheral ROM
+// 255: No slot: INTC8ROM was forced on by SLOTC3ROM switch and access to $C3xx
 export const C800SlotGet = () => {
   return memGetC000(0xC02A)
 }
@@ -154,42 +158,46 @@ const slotIsActive = (slot: number) => {
   return (slot !== 3) ? true : SWITCHES.SLOTC3ROM.isSet
 }
 
-// Below description modified from AppleWin source
-//
-// INTC8ROM: Unreadable soft switch (Sather, UTAIIe:5-28)
-// . Set:   On access to $C3XX with SLOTC3ROM reset
+// Understanding the Apple IIe, Jim Sather, p. 5-28
+// INTC8ROM: Unreadable soft switch
+//   Set:   On access to $C3XX with SLOTC3ROM reset
 //			- "From this point, $C800-$CFFF will stay assigned to motherboard ROM until
 //			   an access is made to $CFFF or until the MMU detects a system reset."
-// . Reset: On access to $CFFF or an MMU reset
+//   Reset: On access to $CFFF or an MMU reset
 //
-// - Acts like a card in slot 3, except it doesn't require CFFF to activate like
-//   a slot.
+// This is like a fake peripheral card in slot 3 (the 80-column card),
+// where the internal $C800-$CFFF ROM is the fake card's peripheral ROM.
 //
 // INTCXROM   INTC8ROM   $C800-CFFF
 //    0           0         slot   
 //    0           1       internal 
 //    1           0       internal 
 //    1           1       internal 
-
-const slotC8IsActive = () => {
+//
+const internalC8ROMIsActive = () => {
   if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) {
-    return false
+    return true
   }
+  // CT, I disabled this because it broke the a2audit test,
+  // and I couldn't find a reference for this "one cycle".
+  // If it is true that this should happen for one cycle after $CFFF,
+  // then we need to add some kind of counter to turn it off.
   // Will happen for one cycle after $CFFF in slot ROM,
   // or if $CFFF was accessed outside of slot ROM space.
-  if (C800SlotGet() === 0 || C800SlotGet() === 255) {
-    return false
-  }
-  return true
+  // if (C800SlotGet() === 0 || C800SlotGet() === 255) {
+  //   return true
+  // }
+  // $C800-$CFFF Slot ROM is active
+  return false
 }
 
 const manageC800 = (slot: number) => {
 
   if (slot <= 7) {
-    if (SWITCHES.INTCXROM.isSet)
+    if (SWITCHES.INTCXROM.isSet) {
       return
-
-    // This combination forces INTC8ROM on
+    }
+    // This combination forces INTC8ROM on.
     if (slot === 3 && !SWITCHES.SLOTC3ROM.isSet) {
       if (!SWITCHES.INTC8ROM.isSet) {
         SWITCHES.INTC8ROM.isSet = true
@@ -204,7 +212,7 @@ const manageC800 = (slot: number) => {
     }
   } else {
     // If slot > 7 then it was an access to $CFFF.
-    // Accessing $CFFF resets INTC8ROM to peripheral ROM.
+    // Accessing $CFFF resets our fake INTC8ROM to peripheral ROM.
     SWITCHES.INTC8ROM.isSet = false
     C800SlotSet(0)
     updateAddressTables()
@@ -212,7 +220,7 @@ const manageC800 = (slot: number) => {
 }
 
 const updateSlotRomTable = () => {
-  // ROM ($C000...$CFFF) is in 0x200...0x20F
+  // ROM ($C000...$CFFF) is in 0x100...0x10F
   addressGetTable[0xC0] = ROMpage - 0xC0
   for (let slot = 1; slot <= 7; slot++) {
     const page = 0xC0 + slot
@@ -221,16 +229,15 @@ const updateSlotRomTable = () => {
   }
 
   // Fill in $C800-CFFF for cards
-  if (slotC8IsActive()) {
+  if (internalC8ROMIsActive()) {
+    for (let i = 0xC8; i <= 0xCF; i++) {
+      addressGetTable[i] = ROMpage + i - 0xC0;
+    }
+  } else {
     const slotC8 = SLOTC8index + 8 * (C800SlotGet() - 1)
     for (let i = 0; i <= 7; i++) {
       const page = 0xC8 + i
       addressGetTable[page] = slotC8 + i;
-    }
-  }
-  else {
-    for (let i = 0xC8; i <= 0xCF; i++) {
-      addressGetTable[i] = ROMpage + i - 0xC0;
     }
   }
 }

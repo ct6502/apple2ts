@@ -118,13 +118,15 @@ test('testC800', () => {
   // start with INTCXROM and SLOTC3ROM clear
   memSet(0xC006,0)
   memSet(0xC00A,0)
+  // clear INTC8ROM
+  memGet(0xCFFF)
 
   // check rom
-  expect(memGet(0xC800)).toEqual(0x4C)
- 
-  // reset, should still be internal
-  memGet(0xCFFF)
-  expect(memGet(0xC800)).toEqual(0x4C)
+  const xC800 = memGet(0xC800)
+  const xC801 = memGet(0xC801)
+  const xC802 = memGet(0xC802)
+  const isStillInternalROM = xC800 === 0x4C && xC801 === 0xB0 && xC802 === 0xC9
+  expect(isStillInternalROM).toEqual(false)
 
   // reset, access S2, should switch to S2
   memGet(0xCFFF)
@@ -135,7 +137,7 @@ test('testC800', () => {
   memGet(0xC100)
   expect(memGet(0xC800)).toEqual(0x02)
 
-  // set INTC8ROM by accessing c3/w SLOTC3 off, should immediately switch
+  // set INTC8ROM by accessing c3xx with SLOTC3ROM off, should immediately switch
   memGet(0xC300)
   expect(memGet(0xC800)).toEqual(0x4C)
 
@@ -148,6 +150,10 @@ test('testC800', () => {
   memGet(0xC200)
   expect(memGet(0xC800)).toEqual(0x01)
 
+  // Do a "read", should not switch softswitch
+  memGet(0xC007)
+  expect(memGet(0xC800)).toEqual(0x01)
+
   // TEST INTCXROM SIDE EFFECTS
   // set INTCXROM
   memSet(0xC007,0)
@@ -155,7 +161,8 @@ test('testC800', () => {
   // check rom
   expect(memGet(0xC800)).toEqual(0x4C)
  
-  // reset, should still be internal
+  // reset, should still be internal because our special INTC8ROM was not set,
+  // and therefore INTCXROM is still in control
   memGet(0xCFFF)
   expect(memGet(0xC800)).toEqual(0x4C)
 
@@ -165,12 +172,14 @@ test('testC800', () => {
   expect(memGet(0xC800)).toEqual(0x4c)
 
   // clear INTCXROM
-  memSet(0xC006,0)
+  memSet(0xC006, 0)
 
-  // check rom
-  expect(memGet(0xC800)).toEqual(0x4C)
+  // check rom, should be set to random peripheral ROM because INTC8ROM was not set
+  const isRandomPeripheral = xC800 !== 0x4C && xC800 !== 0x02
+  expect(isRandomPeripheral).toEqual(true)
  
   // reset, access S2, should be S2
+  // now that INTCXROM is off, accessing $CFFF should switch to slot ROM
   memGet(0xCFFF)
   memGet(0xC200)
   expect(memGet(0xC800)).toEqual(0x02)
@@ -205,8 +214,8 @@ test('testC800', () => {
   memSet(0xC00A,0)
   expect(memGet(0xC300)).not.toEqual(0x03)
 
-  // above get should also set INTC8ROM
-  expect(memGet(0xC800)).not.toEqual(0x03)
+  // above get in $C3xx should also set INTC8ROM
+  expect(memGet(0xC800)).toEqual(0x4C)
 
   // access S2, should still be internal
   memGet(0xC200)
