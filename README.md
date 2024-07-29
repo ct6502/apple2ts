@@ -11,22 +11,31 @@ This project was originally create using [Create React App](https://github.com/f
 
 In the project directory, you can run:
 
-### `npm install`
+`npm install`
 
-### `npm start`
+`npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:6502](http://localhost:6502) to view it in your browser.
+Runs the app in the development mode. This should automatically open your browser to [http://localhost:6502](http://localhost:6502).
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The page will reload when you make changes. You may also see any lint errors in the console.
 
-### `npm test`
+### Testing
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Runs all of the jest unit tests:
 
-### `npm run build`
+`npm test`
+
+Run a single test:
+
+`npm test memory.test.ts`
+
+Run in watch mode:
+
+`npm test -- --watch`
+
+### Building the Package
+
+`npm run build`
 
 Builds the app for production to the `build` folder.\
 It correctly bundles React in production mode and optimizes the build for the best performance.
@@ -35,6 +44,20 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+## Upgrade Packages
+
+<https://www.hostingadvice.com/how-to/update-npm-packages/>
+
+### Install npm-check-updates package
+
+`npm install -g npm-check-updates`
+
+`npm outdated`
+
+`ncu --upgrade`
+
+`npm install`
 
 ## VS Code Chrome Debugging
 
