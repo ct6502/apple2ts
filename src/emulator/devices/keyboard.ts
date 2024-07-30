@@ -3,7 +3,18 @@ import { memGetC000, memSetC000 } from "../memory"
 import { doTakeSnapshot } from "../motherboard"
 
 const keyPress = (key: number) => {
+  // Sather 2-13, all addresses from $C000-$C01F contain the ASCII key code
+  // in the low 7 bits, and the high bit is set to 1 to indicate a key press.
+  // $C000-$C00F will maintain that high bit.
+  // $C010-$C01F will override that high bit with their own status flag
+  // whenever they are read but there's no harm in setting it now.
   memSetC000(0xC000, key | 0b10000000, 32)
+}
+
+export const clearKeyStrobe = () => {
+  // See comment in keyPress above.
+  const keyvalue = memGetC000(0xC000) & 0b01111111
+  memSetC000(0xC000, keyvalue, 32)
 }
 
 // Make sure that key presses get processed in a timely manner,

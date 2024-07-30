@@ -40,7 +40,7 @@ test('readAuxMemEmpty', () => {
   memorySetForTests()
   // AUX read enable
   memSet(0xC003, 1)
-  expect(memGet(0xC013)).toEqual(0x8d);
+  expect(memGet(0xC013)).toEqual(0x80);
   doTestMemory(0, 0x02, 0xBF, () => 0xFF)
   // Pages 0 and 1 should still be from MAIN
   doTestMemory(0, 0, 0x01, expectIndex)
@@ -49,7 +49,7 @@ test('readAuxMemEmpty', () => {
   doTestMemory(0, 0x02, 0xBF, () => 0xFF)
   // MAIN read enable
   memSet(0xC002, 1)
-  expect(memGet(0xC013)).toEqual(0x0d);
+  expect(memGet(0xC013)).toEqual(0);
   // First value in each page of main should have that index
   doTestMemory(0, 0x02, 0xBF, expectIndex)
 })
@@ -88,7 +88,7 @@ test('readWriteAuxMem', () => {
   memoryReset()
   // AUX write enable
   memSet(0xC005, 1)
-  expect(memGet(0xC014)).toEqual(0x8d);
+  expect(memGet(0xC014)).toEqual(0x80);
   doWriteIndexToMemory(0, 0, 0xBF)
   // Should still be reading from MAIN
   doTestMemory(0, 0x02, 0xBF, () => 0xFF)
@@ -97,7 +97,7 @@ test('readWriteAuxMem', () => {
   doTestMemory(0, 0x02, 0xBF, expectIndex)
   // MAIN write enable, and write some values
   memSet(0xC004, 1)
-  expect(memGet(0xC014)).toEqual(0x0d)
+  expect(memGet(0xC014)).toEqual(0)
   doWriteValueToMemory(0, 0, 0xBF, 0xA0)
   // Should still be reading from AUX
   doTestMemory(0, 0x02, 0xBF, expectIndex)

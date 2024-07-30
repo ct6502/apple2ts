@@ -1,5 +1,11 @@
 export const code = `
          ORG   $300
+AGAIN    LDA   $C000
+         BPL   AGAIN
+         LDA   $C010
+         JSR   $FCA8
+         LDA   $C019
+         BRK
          LDA   #$FE
          LDA   LOC1
          LDA   LOC1,X

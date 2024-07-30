@@ -42,16 +42,15 @@ let iRefresh = 0
 let takeSnapshot = false
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
-export let inVBL = false
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
-  inVBL = true
+  SWITCHES.VBL.isSet = true
   onMouseVBL()
 }
 
 const endVBL = (): void => {
-  inVBL = false
+  SWITCHES.VBL.isSet = false
 }
 
 const getSoftSwitches = () => {
@@ -578,7 +577,8 @@ const doAdvance6502 = () => {
     if (cycles < 0) break
     cycleTotal += cycles;
     if (cycleTotal >= 12480) {
-      if (inVBL === false) {
+      // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
+      if (!SWITCHES.VBL.isSet) {
         startVBL()
       }
     }

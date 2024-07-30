@@ -1,5 +1,5 @@
 import { memGetC000, memSetC000 } from "./memory"
-import { popKey } from "./devices/keyboard"
+import { clearKeyStrobe, popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./devices/joystick"
 import { toHex } from "./utility/utility"
@@ -89,12 +89,10 @@ export const SWITCHES = {
   SLOTC3ROM: NewSwitch(0xC00A, 0xC00B, 0xC017, true),
   COLUMN80: NewSwitch(0xC00C, 0xC00D, 0xC01F, true),
   ALTCHARSET: NewSwitch(0xC00E, 0xC00F, 0xC01E, true),
-  KBRDSTROBE: NewSwitch(0xC010, 0, 0, false, () => {
-    const keyvalue = memGetC000(0xC000) & 0b01111111
-    memSetC000(0xC000, keyvalue, 32)
-  }),
+  KBRDSTROBE: NewSwitch(0xC010, 0, 0, false),  // we will clear the keystrobe in checkSoftSwitches
   BSRBANK2: NewSwitch(0, 0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0, 0xC012),  // status location, not a switch
+  VBL: NewSwitch(0, 0, 0xC019),  // vertical blanking status location, not a switch
   CASSOUT: NewSwitch(0xC020, 0, 0),  // random value filled in checkSoftSwitches
   SPEAKER: NewSwitch(0xC030, 0, 0, false, (addr, cycleCount) => {
     memSetC000(0xC030, rand())
@@ -182,15 +180,20 @@ export const checkSoftSwitches = (addr: number,
     handleBankedRAM(addr & ~4, calledFromMemSet)
     return
   }
-  if (addr === 0xC000 && !calledFromMemSet) {
-    popKey()
-    return
-  }
   const sswitch1 = sswitchArray[addr - 0xC000]
   if (!sswitch1) {
     console.error("Unknown softswitch " + toHex(addr))
     memSetC000(addr, rand())
     return
+  }
+  // All addresses from $C000-C00F will read the keyboard and keystrobe
+  if (addr <= 0xC00F) {
+    if (!calledFromMemSet) {
+      popKey()
+    }
+  } else if (addr === 0xC010 || (addr <= 0xC01F && calledFromMemSet)) {
+    // R/W to $C010 or any write to $C011-$C01F will clear the keyboard strobe
+    clearKeyStrobe()
   }
   if (sswitch1.setFunc) {
     sswitch1.setFunc(addr, cycleCount)
@@ -208,12 +211,14 @@ export const checkSoftSwitches = (addr: number,
       }
     }
     if (sswitch1.isSetAddr) {
-      memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? 0x8D : 0x0D)
+      const value = memGetC000(sswitch1.isSetAddr)
+      memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
     }
     // Many games expect random "noise" from these soft switches.
     if (addr >= 0xC020) memSetC000(addr, rand())
   } else if (addr === sswitch1.isSetAddr) {
-    memSetC000(addr, sswitch1.isSet ? 0x8D : 0x0D)
+    const value = memGetC000(addr)
+    memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
   }
 }
 

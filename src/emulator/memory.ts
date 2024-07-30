@@ -4,7 +4,7 @@ import { romBase64 } from "./roms/rom_2e"
 // import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
 import { handleGameSetup } from "./games/game_mappings";
-import { isDebugging, inVBL } from "./motherboard";
+import { isDebugging } from "./motherboard";
 import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "./utility/utility";
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 import { noSlotClock } from "./nsc"
@@ -367,11 +367,6 @@ export const readWriteAuxMem = (addr: number, write = false) => {
 }
 
 const memGetSoftSwitch = (addr: number): number => {
-  // $C019 Vertical blanking status (0 = vertical blanking, 1 = beam on)
-  if (addr === 0xC019) {
-    // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
-    return inVBL ? 0x0D : 0x8D
-  }
   if (addr >= 0xC090) {
     checkSlotIO(addr)
   } else {
