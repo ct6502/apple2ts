@@ -7,20 +7,22 @@ import { disk2driver } from "../roms/slot_disk2_cx00"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
 
-const SWITCH = {
-  MOTOR_OFF: 8,
-  MOTOR_ON: 9,
-  DRIVE1: 0xA,
-  DRIVE2: 0xB,
-  DATA_LATCH_OFF: 0xC,
-  DATA_LATCH_ON: 0xD,
-  WRITE_OFF: 0xE,
-  WRITE_ON: 0xF,
-  MOTOR_RUNNING: false,
-  DATA_LATCH: false,
+enum SWITCH {
+  MOTOR_OFF = 8,        // $C088
+  MOTOR_ON = 9,         // $C089
+  DRIVE1 = 0xA,         // $C08A
+  DRIVE2 = 0xB,         // $C08B
+  LATCH_OFF = 0xC, // $C08C
+  LATCH_ON = 0xD,  // $C08D
+  WRITE_OFF = 0xE,      // $C08E
+  WRITE_ON = 0xF        // $C08F
 }
+
+let MOTOR_RUNNING = false
+let DATA_LATCH = false
+
 export const doResetDiskDrive = (driveState: DriveState) => {
-  SWITCH.MOTOR_RUNNING = false
+  MOTOR_RUNNING = false
   doMotorTimeout(driveState)
   driveState.halftrack = 68
   driveState.prevHalfTrack = 68
@@ -149,7 +151,7 @@ const doWriteByte = (ds: DriveState, dd: Uint8Array, delta: number) => {
 
 const doMotorTimeout = (ds: DriveState) => {
   motorOffTimeout = 0
-  if (!SWITCH.MOTOR_RUNNING) {
+  if (!MOTOR_RUNNING) {
     ds.motorRunning = false
   }
   passData()
@@ -215,25 +217,34 @@ export const handleDriveSoftSwitches: AddressCallback =
   //   console.log(`write ${ds.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
   // }
   addr = addr & 0xF
+
+  // According to Sather, Understanding the Apple IIe, p. 9-13,
+  // any even address $C08*,X will load data from the data register.
+  // So we will do that here and carry on with our regular operations below.
+  // This fixes a bug with the Mr. Do woz file, which uses $C088,X to read data.
+  if ((addr & 1) === 0) {
+    if (ds.motorRunning && !ds.writeMode) {
+      result = getNextByte(ds, dd)
+      // if (s6502.cycleCount > 28333000) {
+      //   console.log(`delta=${delta} getNextByte=${toHex(result)}`)
+      // }
+      // Reset the Disk II Logic State Sequencer clock
+      prevCycleCount = s6502.cycleCount
+    }
+  }
+
   switch (addr) {
-    case SWITCH.DATA_LATCH_OFF:  // SHIFT/READ
-      SWITCH.DATA_LATCH = false
-      if (ds.motorRunning && !ds.writeMode) {
-        result = getNextByte(ds, dd)
-        // if (s6502.cycleCount > 28333000) {
-        //   console.log(`delta=${delta} getNextByte=${toHex(result)}`)
-        // }
-        // Reset the Disk II Logic State Sequencer clock
-        prevCycleCount = s6502.cycleCount
-      }
+    case SWITCH.LATCH_OFF:  // SHIFT/READ
+      DATA_LATCH = false
+      // We've already done our read up above.
       break
     case SWITCH.MOTOR_ON:
-      SWITCH.MOTOR_RUNNING = true
+      MOTOR_RUNNING = true
       startMotor(ds)
       dumpData(ds)
       break
     case SWITCH.MOTOR_OFF:
-      SWITCH.MOTOR_RUNNING = false
+      MOTOR_RUNNING = false
       stopMotor(ds)
       dumpData(ds)
       break
@@ -257,7 +268,7 @@ export const handleDriveSoftSwitches: AddressCallback =
         prevCycleCount = s6502.cycleCount
       }
       ds.writeMode = false
-      if (SWITCH.DATA_LATCH) {
+      if (DATA_LATCH) {
         result = ds.isWriteProtected ? 0xFF : 0
       }
       dumpData(ds)
@@ -270,8 +281,8 @@ export const handleDriveSoftSwitches: AddressCallback =
         dataRegister = value
       }
       break
-    case SWITCH.DATA_LATCH_ON:  // LOAD/READ, Q6HIGH
-      SWITCH.DATA_LATCH = true
+    case SWITCH.LATCH_ON:  // LOAD/READ, Q6HIGH
+      DATA_LATCH = true
       if (ds.motorRunning) {
         if (ds.writeMode) {
           doWriteByte(ds, dd, delta)
