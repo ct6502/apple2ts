@@ -145,6 +145,7 @@ const getDisplaySaveState = () => {
     name: '',
     date: '',
     version: 0.0,
+    arrowKeysAsJoystick: false,
     colorMode: 0,
     capsLock: false,
     audioEnable: false,
@@ -511,6 +512,7 @@ const updateExternalMachineState = () => {
   const state: MachineState = {
     addressGetTable: addressGetTable,
     altChar: SWITCHES.ALTCHARSET.isSet,
+    arrowKeysAsJoystick: false,  // ignored by main thread
     breakpoints: breakpointMap,
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,

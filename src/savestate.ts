@@ -3,7 +3,7 @@ import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingbo
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import { BreakpointMap } from "./emulator/utility/breakpoint"
 import { RUN_MODE } from "./emulator/utility/utility"
-import { handleGetBreakpoints, handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, handleGetSpeedMode, passBreakpoints, passCapsLock, passColorMode, passHelpText, passRestoreSaveState, passSetDebug, passSetRunMode, passSetSpeedMode } from "./main2worker"
+import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, handleGetSpeedMode, passArrowKeysAsJoystick, passBreakpoints, passCapsLock, passColorMode, passHelpText, passRestoreSaveState, passSetDebug, passSetRunMode, passSetSpeedMode } from "./main2worker"
 
 const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const d = new Date()
@@ -15,6 +15,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
     name: 'Apple2TS Emulator',
     date: datetime,
     version: 1.0,
+    arrowKeysAsJoystick: handleGetArrowKeysAsJoystick(),
     colorMode: handleGetColorMode(),
     capsLock: handleGetCapsLock(),
     audioEnable: isAudioEnabled(),
@@ -61,6 +62,9 @@ export const RestoreSaveState = (fileContents: string) => {
   // In an old version, property was renamed from uppercase to capsLock
   if (displayState && ('uppercase' in displayState)) {
     passCapsLock(displayState['uppercase'] as boolean)
+  }
+  if (displayState?.arrowKeysAsJoystick !== undefined) {
+    passArrowKeysAsJoystick(displayState.arrowKeysAsJoystick)
   }
   if (displayState?.capsLock !== undefined) {
     passCapsLock(displayState.capsLock)

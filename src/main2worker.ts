@@ -82,6 +82,11 @@ export const passDarkMode = (mode: boolean) => {
   machineState.darkMode = mode
 }
 
+export const passArrowKeysAsJoystick = (joystick: boolean) => {
+  // See comment under passColorMode
+  machineState.arrowKeysAsJoystick = joystick
+}
+
 export const passHelpText = (helptext: string) => {
   // See comment under passColorMode
   machineState.helpText = helptext
@@ -181,6 +186,7 @@ export const passSetDriveProps = (props: DriveProps) => {
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
+  arrowKeysAsJoystick: false,
   breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
@@ -221,6 +227,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       }
       // This is a hack because the main thread owns these properties.
       // Force them back to their actual values.
+      newState.arrowKeysAsJoystick = machineState.arrowKeysAsJoystick
       newState.colorMode = machineState.colorMode
       newState.capsLock = machineState.capsLock
       newState.darkMode = machineState.darkMode
@@ -419,6 +426,10 @@ export const handleGetCapsLock = () => {
 
 export const handleGetDarkMode = () => {
   return machineState.darkMode
+}
+
+export const handleGetArrowKeysAsJoystick = () => {
+  return machineState.arrowKeysAsJoystick
 }
 
 export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,

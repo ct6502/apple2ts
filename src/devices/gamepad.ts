@@ -1,5 +1,42 @@
 import { ARROW } from "../emulator/utility/utility"
-import { passKeypress, passSetGamepads } from "../main2worker"
+import { handleGetArrowKeysAsJoystick, passKeypress, passSetGamepads } from "../main2worker"
+
+// Keep these outside so we can have both X and Y axes set at the same time.
+const arrowGamePad = [0, 0]
+
+const convertArrowGamepadToValue = (index: number) => {
+  const indexToValue = [0, 0.25, 0.5, 0.75, 1, 0]
+  if (index < 0) {
+    return -indexToValue[-index]
+  } else {
+    return indexToValue[index]
+  }
+}
+
+const checkArrowKeyGamepadValues = () => {
+  const gamePad: EmuGamepad[] = [{
+    axes: [convertArrowGamepadToValue(arrowGamePad[0]),
+      convertArrowGamepadToValue(arrowGamePad[1]), 0, 0],
+    buttons: []
+  }]
+  passSetGamepads(gamePad)
+  if (arrowGamePad[0] < 0 && arrowGamePad[0] > -4) {
+    arrowGamePad[0]--
+  } else if (arrowGamePad[0] > 0 && arrowGamePad[0] < 4) {
+    arrowGamePad[0]++
+  }
+  if (arrowGamePad[1] < 0 && arrowGamePad[1] > -4) {
+    arrowGamePad[1]--
+  } else if (arrowGamePad[1] > 0 && arrowGamePad[1] < 4) {
+    arrowGamePad[1]++
+  }
+  if (Math.abs(arrowGamePad[0]) === 5) {
+    arrowGamePad[0] = 0
+  }
+  if (Math.abs(arrowGamePad[1]) === 5) {
+    arrowGamePad[1] = 0
+  }
+}
 
 const getGamepads = () => {
   const gamepads = navigator.getGamepads().filter((gp) => (gp !== null))
@@ -7,6 +44,10 @@ const getGamepads = () => {
 }
 
 export const checkGamepad = () => {
+  if (handleGetArrowKeysAsJoystick() && arrowGamePad[0] !== 0 || arrowGamePad[1] !== 0) {
+    checkArrowKeyGamepadValues()
+    return
+  }
   const gamepads = getGamepads()
   if (!gamepads || gamepads.length < 1) return
   const gamePad: EmuGamepad[] = []
@@ -39,31 +80,57 @@ export const doRumble = (params: GamePadActuatorEffect) => {
   }
 }
 
-// Keep these outside so we can have both X and Y axes set at the same time.
-const arrowGamePad = [0, 0]
 
 export const handleArrowKey = (key: ARROW, release: boolean) => {
   if (!release) {
     let code = 0
     switch (key) {
-      case ARROW.LEFT: code = 8; arrowGamePad[0] = -1; break
-      case ARROW.RIGHT: code = 21; arrowGamePad[0] = 1; break
-      case ARROW.UP: code = 11; arrowGamePad[1] = -1; break
-      case ARROW.DOWN: code = 10; arrowGamePad[1] = 1; break
+      case ARROW.LEFT:
+        code = 8
+        if (arrowGamePad[0] === 0) {
+          arrowGamePad[0] = -1
+        } else if (arrowGamePad[0] < -4) {
+          arrowGamePad[0] = -4
+        }
+        break
+      case ARROW.RIGHT:
+        code = 21
+        if (arrowGamePad[0] === 0) {
+          arrowGamePad[0] = 1
+        } else if (arrowGamePad[0] > 4) {
+          arrowGamePad[0] = 4
+        }
+        break
+      case ARROW.UP:
+        code = 11
+        if (arrowGamePad[1] === 0) {
+          arrowGamePad[1] = -1
+        } else if (arrowGamePad[1] < -4) {
+          arrowGamePad[1] = -4
+        }
+        break
+      case ARROW.DOWN:
+        code = 10
+        if (arrowGamePad[1] === 0) {
+          arrowGamePad[1] = 1
+        } else if (arrowGamePad[1] > 4) {
+          arrowGamePad[1] = 4
+        }
+        break
     }
-    passKeypress(String.fromCharCode(code))
+    if (!handleGetArrowKeysAsJoystick()) {
+      passKeypress(String.fromCharCode(code))
+    }
   } else {
     switch (key) {
-      case ARROW.LEFT: // fall thru
-      case ARROW.RIGHT: arrowGamePad[0] = 0; break
-      case ARROW.UP: // fall thru
-      case ARROW.DOWN: arrowGamePad[1] = 0; break
+      case ARROW.LEFT:  // fall through
+      case ARROW.RIGHT:
+        arrowGamePad[0] = 5
+        break
+      case ARROW.UP:  // fall through
+      case ARROW.DOWN:
+        arrowGamePad[1] = 5
+        break
     }
   }
-
-  const gamePads: EmuGamepad[] = [{
-    axes: [arrowGamePad[0], arrowGamePad[1], 0, 0],
-    buttons: []
-  }]
-  passSetGamepads(gamePads)
 }

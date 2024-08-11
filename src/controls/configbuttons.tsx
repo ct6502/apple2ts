@@ -7,6 +7,8 @@ import {
   faTruckFast,
   faDisplay,
   faCircleHalfStroke,
+  faGamepad,
+  faUpDownLeftRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
@@ -15,7 +17,9 @@ import { audioEnable, isAudioEnabled } from "../devices/speaker";
 import { SerialPortSelect } from "../devices/serialselect";
 import { ReactNode } from "react";
 import {
+  handleGetArrowKeysAsJoystick,
   handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetSpeedMode,
+  passArrowKeysAsJoystick,
   passCapsLock, passColorMode, passDarkMode, passSetSpeedMode
 } from "../main2worker";
 import { RamWorksSelect } from "../devices/ramworks";
@@ -27,6 +31,7 @@ const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
   const colorMode = handleGetColorMode()
   const capsLock = handleGetCapsLock()
+  const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
   // const useArrowKeysAsJoystick = handleGetArrowKeysAsJoystick() ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
@@ -66,6 +71,11 @@ const ConfigButtons = (props: DisplayProps) => {
       onClick={() => { passCapsLock(!capsLock); props.updateDisplay() }}>
       <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
     </button>
+    <button className="push-button"
+      title={arrowKeysAsJoystick ? "Joystick Arrow Keys" : "Regular Arrow Keys"}
+      onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
+      <FontAwesomeIcon icon={arrowKeysAsJoystick ? faGamepad : faUpDownLeftRight} />
+    </button>
 
     <MockingboardWaveform />
     <SerialPortSelect />
@@ -78,11 +88,6 @@ const ConfigButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
 
-    {/* <button className="push-button"
-      title={"Keyboard Joystick"}
-      onClick={() => passArrowKeysAsJoystick(handleGetArrowKeysAsJoystick())}>
-      {useArrowKeysAsJoystick}
-    </button> */}
   </span>
 }
 

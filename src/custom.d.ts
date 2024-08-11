@@ -73,6 +73,7 @@ type DisplayProps = {
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
+  arrowKeysAsJoystick: boolean,
   breakpoints: BreakpointMap,
   button0: boolean,
   button1: boolean,
@@ -143,6 +144,7 @@ type DisplaySaveState = {
   name: string,
   date: string,
   version: number,
+  arrowKeysAsJoystick: boolean,
   colorMode: number,
   capsLock: boolean,
   audioEnable: boolean,
