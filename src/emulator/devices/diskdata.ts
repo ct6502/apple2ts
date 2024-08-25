@@ -62,6 +62,28 @@ const moveHead = (ds: DriveState, offset: number) => {
   }
 }
 
+let randPos = 0
+// should be roughly 30% 1's according to article.
+const randBits = [0,1,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1]
+const randBit = () => {
+  randPos++
+  return randBits[randPos&0x1f]
+}
+
+// Algorithm for "weak bits" comes from here: https://applesaucefdc.com/woz/reference2/
+let headWindow = 0
+const weakBitWindow = (bit) => {
+  headWindow <<= 1
+  headWindow |= bit
+  headWindow &= 0x0f
+  if (headWindow != 0x00) {
+    bit = (headWindow & 0x02) >> 1
+  } else {
+    bit = randBit()
+  }
+  return bit;
+}
+
 const pickbit = [128, 64, 32, 16, 8, 4, 2, 1]
 const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
   0b11110111, 0b11111011, 0b11111101, 0b11111110]
@@ -74,9 +96,10 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
     const byte = dd[fileOffset]
     const b = ds.trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
+    bit = weakBitWindow(bit);
   } else {
-    // TODO: Freak out like a MC3470 and return random bits
-    bit = 1
+    // Freak out like a MC3470 and return random bits
+    bit = randBit()
   }
   ds.trackLocation++
   return bit
