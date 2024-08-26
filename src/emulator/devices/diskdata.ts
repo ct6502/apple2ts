@@ -62,6 +62,32 @@ const moveHead = (ds: DriveState, offset: number) => {
   }
 }
 
+let randPos = 0
+// should be roughly 30% 1's according to article.
+const randBits = [0,1,1,0,1,0,0,0,1,0,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1]
+const randBit = () => {
+  randPos++
+  return randBits[randPos&0x1f]
+}
+
+// Algorithm for "weak bits" comes from https://applesaucefdc.com/woz/reference2/
+// with a modification to actually return the current bit rather than the
+// previous bit. With the original algorithm, disks that expect the fake bits
+// (like Print Shop Companion) would boot properly, but the MECC Computer Inspector
+// would fail on its disk drive check, presumably because it was never getting
+// that last bit. Now, we still check for weak bits and return a random bit,
+// otherwise we just return the passed in bit.
+let headWindow = 0
+const weakBitWindow = (bit: number) => {
+  headWindow <<= 1
+  headWindow |= bit
+  headWindow &= 0x0F
+  if (headWindow === 0x00) {
+    return randBit()
+  }
+  return bit;
+}
+
 const pickbit = [128, 64, 32, 16, 8, 4, 2, 1]
 const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
   0b11110111, 0b11111011, 0b11111101, 0b11111110]
@@ -74,18 +100,22 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
     const byte = dd[fileOffset]
     const b = ds.trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
+    bit = weakBitWindow(bit);
   } else {
-    // TODO: Freak out like a MC3470 and return random bits
-    bit = 1
+    // Freak out like a MC3470 and return random bits
+    bit = randBit()
   }
   ds.trackLocation++
   return bit
 }
 
 let dataRegister = 0
+const randByte = () => Math.floor(256 * Math.random())
 
 const getNextByte = (ds: DriveState, dd: Uint8Array) => {
-  if (dd.length === 0) return 0
+  // If no disk then return random noise from the drive.
+  // Some programs (like anti-m) use this to check if no disk is inserted.
+  if (dd.length === 0) return randByte()
   let result = 0
   if (dataRegister === 0) {
     while (getNextBit(ds, dd) === 0) {null}
