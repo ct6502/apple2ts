@@ -70,16 +70,20 @@ const randBit = () => {
   return randBits[randPos&0x1f]
 }
 
-// Algorithm for "weak bits" comes from here: https://applesaucefdc.com/woz/reference2/
+// Algorithm for "weak bits" comes from https://applesaucefdc.com/woz/reference2/
+// with a modification to actually return the current bit rather than the
+// previous bit. With the original algorithm, disks that expect the fake bits
+// (like Print Shop Companion) would boot properly, but the MECC Computer Inspector
+// would fail on its disk drive check, presumably because it was never getting
+// that last bit. Now, we still check for weak bits and return a random bit,
+// otherwise we just return the passed in bit.
 let headWindow = 0
-const weakBitWindow = (bit) => {
+const weakBitWindow = (bit: number) => {
   headWindow <<= 1
   headWindow |= bit
-  headWindow &= 0x0f
-  if (headWindow != 0x00) {
-    bit = (headWindow & 0x02) >> 1
-  } else {
-    bit = randBit()
+  headWindow &= 0x0F
+  if (headWindow === 0x00) {
+    return randBit()
   }
   return bit;
 }
@@ -106,9 +110,12 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
 }
 
 let dataRegister = 0
+const randByte = () => Math.floor(256 * Math.random())
 
 const getNextByte = (ds: DriveState, dd: Uint8Array) => {
-  if (dd.length === 0) return 0
+  // If no disk then return random noise from the drive.
+  // Some programs (like anti-m) use this to check if no disk is inserted.
+  if (dd.length === 0) return randByte()
   let result = 0
   if (dataRegister === 0) {
     while (getNextBit(ds, dd) === 0) {null}
