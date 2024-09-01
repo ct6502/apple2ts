@@ -14,6 +14,7 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     diskHasChanges: false,
     motorRunning: false,
     isWriteProtected: false,
+    isSynchronized: false,
     halftrack: 0,
     prevHalfTrack: 0,
     writeMode: false,
@@ -67,6 +68,7 @@ export const passData = () => {
       status: driveState[i].status,
       motorRunning: driveState[i].motorRunning,
       diskHasChanges: driveState[i].diskHasChanges,
+      isWriteProtected: driveState[i].isWriteProtected,
       diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array()
     }
     passDriveProps(dprops)
@@ -124,7 +126,8 @@ export const doPauseDrive = (resume = false) => {
   passData()
 }
 
-export const doSetEmuDriveProps = (props: DriveProps) => {
+// Send in a new disk image to be loaded into the emulator.
+export const doSetEmuDriveNewData = (props: DriveProps) => {
   let index = props.index
   let drive = props.drive
   // See if the "wrong" disk image was put into a drive. If so, swap the drive.
@@ -149,3 +152,14 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   }
   passData()
 }
+
+// Set properties on the current disk, without changing the data.
+// This could be things like the filename, motor running, or write protect.
+export const doSetEmuDriveProps = (props: DriveProps) => {
+  const index = props.index
+  driveState[index].filename = props.filename
+  driveState[index].motorRunning = props.motorRunning
+  driveState[index].isWriteProtected = props.isWriteProtected
+  passData()
+}
+

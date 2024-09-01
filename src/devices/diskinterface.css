@@ -25,7 +25,7 @@
 }
 
 .disk-status {
-  width: 88px;
+  width: 70px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
   margin-left: 2px;
@@ -34,6 +34,14 @@
   overflow: hidden;
   text-overflow: clip;
   user-select: none;
+}
+
+.disk-write-protected {
+  position: relative;
+  color: black;
+  height: 0.75em;
+  margin-left: 4px;
+  cursor: pointer;
 }
 
 .imgButton {

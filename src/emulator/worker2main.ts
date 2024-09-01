@@ -3,7 +3,7 @@ import { doSetRunMode,
   doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
   doSetMemory} from "./motherboard";
-import { doSetEmuDriveProps } from "./devices/drivestate"
+import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility/utility";
@@ -158,6 +158,11 @@ if (typeof self !== 'undefined') {
       case MSG_MAIN.DRIVE_PROPS: {
         const props = e.data.payload as DriveProps
         doSetEmuDriveProps(props)
+        break
+      }
+      case MSG_MAIN.DRIVE_NEW_DATA: {
+        const props = e.data.payload as DriveProps
+        doSetEmuDriveNewData(props)
         break
       }
       case MSG_MAIN.GAMEPAD:

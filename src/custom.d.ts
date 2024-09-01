@@ -114,6 +114,7 @@ type DriveState = {
   diskHasChanges: boolean,
   motorRunning: boolean,
   isWriteProtected: boolean,
+  isSynchronized: boolean,
   halftrack: number,
   prevHalfTrack: number,
   writeMode: boolean,
@@ -131,6 +132,7 @@ type DriveProps = {
   status: string,
   motorRunning: boolean,
   diskHasChanges: boolean,
+  isWriteProtected: boolean,
   diskData: Uint8Array
 }
 

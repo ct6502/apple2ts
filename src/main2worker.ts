@@ -179,6 +179,10 @@ export const passSetSoftSwitches = (addresses: Array<number> | null) => {
   doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
 
+export const passSetDriveNewData = (props: DriveProps) => {
+  doPostMessage(MSG_MAIN.DRIVE_NEW_DATA, props)
+}
+
 export const passSetDriveProps = (props: DriveProps) => {
   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }

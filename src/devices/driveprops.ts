@@ -1,6 +1,6 @@
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { iconKey, iconData, iconName } from "../img/icons";
-import { passSetDriveProps, passSetRunMode } from "../main2worker";
+import { passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
 import { diskImages } from "./diskimages";
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -15,6 +15,7 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     filename: "",
     status: "",
     diskHasChanges: false,
+    isWriteProtected: false,
     motorRunning: false,
     diskData: new Uint8Array()
   }
@@ -55,6 +56,11 @@ export const handleSetDiskData = (index: number,
   data: Uint8Array, filename: string) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
+  passSetDriveNewData(driveProps[index])
+}
+
+export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
+  driveProps[index].isWriteProtected = isWriteProtected
   passSetDriveProps(driveProps[index])
 }
 

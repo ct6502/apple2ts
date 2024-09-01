@@ -273,7 +273,7 @@ const processHardDriveBlockAccess = () => {
   const blockStart = 512 * block
   const bufferAddr = memGet(0x44) + 256 * memGet(0x45)
   const dataLen = dd.length
-  ds.status = ` ${toHex(block, 4)} ${toHex(bufferAddr, 4)}`
+  ds.status = ` ${toHex(block, 4)}`
 //  console.log(`cmd=${firmwareCommandNumber} ${ds.status}`)
 
   switch (firmwareCommandNumber) {
@@ -303,6 +303,10 @@ const processHardDriveBlockAccess = () => {
       if (blockStart + 512 > dataLen) {
         setCarry()
         return
+      }
+      if (ds.isWriteProtected) {
+        setCarry()
+        return  
       }
       const dataWrite = getDataBlock(bufferAddr)
       dd.set(dataWrite, blockStart)

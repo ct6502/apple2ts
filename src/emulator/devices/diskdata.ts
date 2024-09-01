@@ -39,7 +39,7 @@ export const doPauseDiskDrive = (resume = false) => {
   }
 }
 
-const moveHead = (ds: DriveState, offset: number) => {
+const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   if (ds.trackStart[ds.halftrack] > 0) {
     ds.prevHalfTrack = ds.halftrack
   }
@@ -50,15 +50,18 @@ const moveHead = (ds: DriveState, offset: number) => {
   } else {
     passDriveSound(DRIVE.TRACK_SEEK)
   }
-  ds.status = ` Track ${ds.halftrack / 2}`
+  ds.status = ` Trk ${ds.halftrack / 2}`
   passData()
   // Adjust new track location based on arm position relative to old track loc.
+  // This is needed for disks that rely on cross-track synchronization.
   if (ds.trackStart[ds.halftrack] > 0 && ds.prevHalfTrack !== ds.halftrack) {
     // const oldloc = dState.trackLocation
-    ds.trackLocation = Math.floor(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
-    if (ds.trackLocation > 3) {
-      ds.trackLocation -= 4
-    }
+    // console.log(`moveHead: ${ds.prevHalfTrack}->${ds.halftrack} cycles=${cycles} PC=${toHex(s6502.PC)} loc=${ds.trackLocation} ${ds.trackNbits[ds.prevHalfTrack]} ${ds.trackNbits[ds.halftrack]}`)
+    ds.trackLocation += Math.floor(cycles / 4)
+    // ds.trackLocation = Math.floor(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
+    // if (ds.trackLocation > 3) {
+    //   ds.trackLocation -= 4
+    // }
   }
 }
 
@@ -117,11 +120,17 @@ const getNextByte = (ds: DriveState, dd: Uint8Array) => {
   // Some programs (like anti-m) use this to check if no disk is inserted.
   if (dd.length === 0) return randByte()
   let result = 0
-  if (dataRegister === 0) {
+  // By default we read 7 bits all at once, followed later by the 8th bit.
+  // This should work fine for "normal" disks. However, some disks
+  // (like Print Shop Companion) have synchronized tracks that require
+  // returning bits one at a time.
+  if (!ds.isSynchronized && dataRegister === 0) {
     while (getNextBit(ds, dd) === 0) {null}
     // This will become the high bit on the next read
     dataRegister = 0x40
     // Read the next 6 bits, all except the last one.
+    // If we try to read all 8 bits here, it's much slower than
+    // reading the last bit separately. Not sure why.
     for (let i = 5; i >= 0; i--) {
       dataRegister |= getNextBit(ds, dd) << i
     }
@@ -240,12 +249,6 @@ export const handleDriveSoftSwitches: AddressCallback =
   if (ds.hardDrive) return 0
   let result = 0
   const delta = s6502.cycleCount - prevCycleCount
-  // if (doDebugDrive && value !== 0x96) {
-  //   const dc = (delta < 100) ? `  deltaCycles=${delta}` : ''
-  //   const wb = (dataRegister > 0) ? `  writeByte=$${toHex(dataRegister)}` : ''
-  //   const v = (value > 0) ? `  value=$${toHex(value)}` : ''
-  //   console.log(`write ${ds.writeMode}  addr=$${toHex(addr)}${dc}${wb}${v}`)
-  // }
   addr = addr & 0xF
 
   // According to Sather, Understanding the Apple IIe, p. 9-13,
@@ -333,11 +336,11 @@ export const handleDriveSoftSwitches: AddressCallback =
       // Make sure our current phase motor has been turned off.
       if (!STEPPER_MOTORS[ds.currentPhase]) {
         if (ds.motorRunning && ascend) {
-          moveHead(ds, 1)
+          moveHead(ds, 1, delta)
           ds.currentPhase = (ds.currentPhase + 1) % 4
 
         } else if (ds.motorRunning && descend) {
-          moveHead(ds, -1)
+          moveHead(ds, -1, delta)
           ds.currentPhase = (ds.currentPhase + 3) % 4
         }
       }
@@ -351,6 +354,13 @@ export const handleDriveSoftSwitches: AddressCallback =
       dumpData(ds)
       break
     }
+  }
+
+  if (doDebugDrive && value !== 0x96 && delta < 100) {
+    const dc = (delta < 100) ? ` cycles=${delta}` : ''
+    const wb = (result > 0) ? ` result=$${toHex(result)}` : ''
+    const v = (value > 0) ? ` value=$${toHex(value)}` : ''
+    console.log(`addr=$${toHex(addr & 0xF)}${v}${dc}${wb}${ds.writeMode ? ' write' : ''}`)
   }
 
   return result

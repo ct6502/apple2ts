@@ -1,7 +1,12 @@
 import { useState } from "react"
 import { crc32, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected } from "./driveprops"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import {
+  faLock,
+  faLockOpen,
+} from "@fortawesome/free-solid-svg-icons";
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -82,7 +87,13 @@ const DiskDrive = (props: DiskDriveProps) => {
         onClick={handleMenuClick} />
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
-      <span className={"default-font disk-status"}>{status}</span>
+      <span className="flex-row">
+        <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
+          onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
+        </FontAwesomeIcon>
+        <span className={"default-font disk-status"}>{status}</span>
+      </span>
+
       {menuOpen &&
         <div className="modal-overlay"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}

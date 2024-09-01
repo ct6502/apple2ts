@@ -6,6 +6,7 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const isWoz2 = woz2.find((value, i) => value !== diskData[i]) === undefined
   if (!isWoz2) return false
   driveState.isWriteProtected = diskData[22] === 1
+  driveState.isSynchronized = diskData[23] === 1
   const crc = diskData.slice(8, 12)
   const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + crc[3] * (2 ** 24)
   const actualCRC = crc32(diskData, 12)
@@ -18,7 +19,7 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
     if (tmap_index < 255) {
       const tmap_offset = 256 + 8 * tmap_index
       const trk = diskData.slice(tmap_offset, tmap_offset + 8)
-      driveState.trackStart[htrack] = 512*(trk[0] + (trk[1] << 8))
+      driveState.trackStart[htrack] = 512 * ((trk[1] << 8) + trk[0])
       // const nBlocks = trk[2] + (trk[3] << 8)
       driveState.trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
     } else {
