@@ -28,8 +28,6 @@
   width: 70px;
   /* transform: translate(0, -12px); */
   height: 1.5em;
-  margin-left: 2px;
-  margin-right: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
@@ -40,7 +38,6 @@
   position: relative;
   color: black;
   height: 0.75em;
-  margin-left: 4px;
   cursor: pointer;
 }
 

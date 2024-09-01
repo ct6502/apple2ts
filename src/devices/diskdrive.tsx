@@ -88,7 +88,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
       <span className="flex-row">
-        <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
+        <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
           onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
         </FontAwesomeIcon>
         <span className={"default-font disk-status"}>{status}</span>
