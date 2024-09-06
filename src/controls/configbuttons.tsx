@@ -5,6 +5,7 @@ import {
   faVolumeXmark,
   faWalking,
   faTruckFast,
+  faRocket,
   faDisplay,
   faCircleHalfStroke,
   faGamepad,
@@ -19,28 +20,32 @@ import { ReactNode } from "react";
 import {
   handleGetArrowKeysAsJoystick,
   handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetSpeedMode,
+  handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
-  passCapsLock, passColorMode, passDarkMode, passSetSpeedMode
+  passCapsLock, passColorMode, passDarkMode, passSetSpeedMode,
+  passUseOpenAppleKey
 } from "../main2worker";
 import { RamWorksSelect } from "../devices/ramworks";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
+const isTouchDevice = "ontouchstart" in document.documentElement
 
 const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
   const colorMode = handleGetColorMode()
   const capsLock = handleGetCapsLock()
   const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
+  const useOpenAppleKey = handleUseOpenAppleKey()
   // const useArrowKeysAsJoystick = handleGetArrowKeysAsJoystick() ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
 
   return <span className="flex-row">
     <button className="push-button"
-      title={speedMode ? "Fast" : "1 MHz"}
-      onClick={() => { passSetSpeedMode(speedMode ? 0 : 1); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={speedMode ? faTruckFast : faWalking} />
+      title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
+      onClick={() => { passSetSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
+      <FontAwesomeIcon icon={([faWalking, faTruckFast, faRocket])[speedMode]} />
     </button>
     <button className="push-button"
       title={colorToName(colorMode)}
@@ -71,11 +76,20 @@ const ConfigButtons = (props: DisplayProps) => {
       onClick={() => { passCapsLock(!capsLock); props.updateDisplay() }}>
       <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
     </button>
-    <button className="push-button"
-      title={arrowKeysAsJoystick ? "Joystick Arrow Keys" : "Regular Arrow Keys"}
-      onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={arrowKeysAsJoystick ? faGamepad : faUpDownLeftRight} />
-    </button>
+    {!isTouchDevice &&
+      <button className={lockedKeyStyle(useOpenAppleKey ? 1 : 0)}
+        title={useOpenAppleKey ? "Use ⌘ as Open Apple Key" : "Use ⌘ as Command Key"}
+        onClick={() => { passUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
+        <span>⌘</span>
+      </button>
+    }
+    {!isTouchDevice &&
+      <button className="push-button"
+        title={arrowKeysAsJoystick ? "Joystick Arrow Keys" : "Regular Arrow Keys"}
+        onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
+        <FontAwesomeIcon icon={arrowKeysAsJoystick ? faGamepad : faUpDownLeftRight} />
+      </button>
+    }
 
     <MockingboardWaveform />
     <SerialPortSelect />

@@ -12,6 +12,8 @@ import {
   handleGetCapsLock,
   handleGetRunMode,
   handleGetCout,
+  passSetSpeedMode,
+  handleUseOpenAppleKey,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "./emulator/utility/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier } from './graphics';
@@ -71,6 +73,9 @@ const Apple2Canvas = (props: DisplayProps) => {
     o: () => props.setShowFileOpenDialog(true, 0),
     s: () => handleFileSave(false),
     v: () => syntheticPaste(),
+    1: () => passSetSpeedMode(0),
+    2: () => passSetSpeedMode(1),
+    3: () => passSetSpeedMode(2),
   }
 
   const handleMetaKey = (key: string) => {
@@ -91,19 +96,23 @@ const Apple2Canvas = (props: DisplayProps) => {
   const isMac = navigator.platform.startsWith('Mac')
 
   const isOpenAppleDown = (e: keyEvent) => {
-    return e.code === 'AltLeft'
+    const useOpenAppleKey = handleUseOpenAppleKey()
+    return e.code === 'AltLeft' || (useOpenAppleKey && e.code === 'MetaLeft')
   }
 
   const isOpenAppleUp = (e: keyEvent) => {
-    return e.code === 'AltLeft'
+    const useOpenAppleKey = handleUseOpenAppleKey()
+    return e.code === 'AltLeft' || (useOpenAppleKey && e.code === 'MetaLeft')
   }
 
   const isClosedAppleDown = (e: keyEvent) => {
-    return e.code === 'AltRight'
+    const useOpenAppleKey = handleUseOpenAppleKey()
+    return e.code === 'AltRight' || (useOpenAppleKey && e.code === 'MetaRight')
   }
 
   const isClosedAppleUp = (e: keyEvent) => {
-    return e.code === 'AltRight'
+    const useOpenAppleKey = handleUseOpenAppleKey()
+    return e.code === 'AltRight' || (useOpenAppleKey && e.code === 'MetaRight')
   }
 
   // This is needed for Android, which does not send keydown/up events.
@@ -134,8 +143,20 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const isMetaSequence = (e: keyEvent): boolean => {
+    const useOpenAppleKey = handleUseOpenAppleKey()
+    if (isMac) {
+      if (useOpenAppleKey) {
+        return false
+      }
+      return e.metaKey && e.key !== 'Meta'
+    }
+    // ASCII does not allow Ctrl+numbers, so just allow those as metasequence keys.
+    // For example, Ctrl+3 to change to warp speed.
+    if (e.key >= '0' && e.key <= '9') {
+      return (e.ctrlKey)
+    }
     // ctrl + "meta" but not shift
-    return (!e.shiftKey && e.ctrlKey && (isMac ? (e.metaKey && e.key !== 'Meta') : (e.altKey && e.key !== 'Alt')));
+    return (!e.shiftKey && e.ctrlKey && (e.altKey && e.key !== 'Alt'))
   }
 
   const handleKeyDown = (e: keyEvent) => {
@@ -223,6 +244,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         ProcessDisplay(ctx, hiddenCtx, width, height)
       }
     }
+    // Changing this refresh interval to be less often has no effect on the "fast" speed.
     window.requestAnimationFrame(RenderCanvas)
   }
 

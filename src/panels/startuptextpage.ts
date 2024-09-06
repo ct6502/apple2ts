@@ -1,7 +1,6 @@
 import { extraHelpText } from "./extrahelptext"
 
 let emulatorStartText = `Welcome to Apple2TS
-
 TypeScript Apple IIe Emulator
 (c) 2024 Chris Torrence
 
@@ -13,7 +12,7 @@ Press the Power button to start.
 `
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? `Ctrl+⌘` : 'Ctrl+Alt+'
+const key = isMac ? `⌘` : 'Ctrl+Alt+'
 const isTouchDevice = "ontouchstart" in document.documentElement
 
 export let defaultHelpText = emulatorStartText
@@ -44,6 +43,9 @@ ${key}O Open State
 ${key}S Save State
 ${key}← Go Back in Time
 ${key}→ Forward in Time
+${key}1 Normal Speed (1 MHz)
+${key}2 Fast Speed (~4 MHz) 
+${key}3 Ludicrous/Warp Speed
 
 Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option`

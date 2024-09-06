@@ -87,6 +87,11 @@ export const passArrowKeysAsJoystick = (joystick: boolean) => {
   machineState.arrowKeysAsJoystick = joystick
 }
 
+export const passUseOpenAppleKey = (openApple: boolean) => {
+  // See comment under passColorMode
+  machineState.useOpenAppleKey = openApple
+}
+
 export const passHelpText = (helptext: string) => {
   // See comment under passColorMode
   machineState.helpText = helptext
@@ -220,6 +225,7 @@ let machineState: MachineState = {
   stackString: '',
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
+  useOpenAppleKey: false,
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -236,6 +242,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.capsLock = machineState.capsLock
       newState.darkMode = machineState.darkMode
       newState.helpText = machineState.helpText
+      newState.useOpenAppleKey = machineState.useOpenAppleKey
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
@@ -434,6 +441,10 @@ export const handleGetDarkMode = () => {
 
 export const handleGetArrowKeysAsJoystick = () => {
   return machineState.arrowKeysAsJoystick
+}
+
+export const handleUseOpenAppleKey = () => {
+  return machineState.useOpenAppleKey
 }
 
 export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,

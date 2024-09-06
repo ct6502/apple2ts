@@ -53,7 +53,8 @@ const DisplayApple2 = () => {
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = '') => {
     if (newhelptext && newhelptext.length > 1) {
       passHelpText(newhelptext)
-    } else if (speed && speed !== currentSpeed) {
+    }
+    if (speed && speed !== currentSpeed) {
       setCurrentSpeed(speed)
     }
     // ***** This is critical to make this update be a function.

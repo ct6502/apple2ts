@@ -11,13 +11,22 @@ export const handleInputParams = () => {
   if (params.get('debug')?.toLowerCase() === 'on') {
     passSetDebug(true)
   }
-  if (params.get('speed')?.toLowerCase() === 'fast') {
-    passSetSpeedMode(1)
+  const speed = params.get('speed')?.toLowerCase()
+  if (speed) {
+    switch (speed) {
+      case 'fast':
+        passSetSpeedMode(1)
+        break
+      case 'ludicrous':
+      case 'warp':
+          passSetSpeedMode(2)
+        break
+    }
   }
   if (params.get('sound')?.toLowerCase() === 'off') {
     audioEnable(false)
   }
-  const colorMode = params.get('color')
+  const colorMode = params.get('color')?.toLowerCase()
   if (colorMode) {
     const colors = ['color', 'nofringe', 'green', 'amber', 'white']
     const mode = colors.indexOf(colorMode)

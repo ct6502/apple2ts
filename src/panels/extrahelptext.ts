@@ -8,7 +8,7 @@ capslock=off
 color=color|nofringe|green|amber|white
 debug=on
 sound=off
-speed=fast
+speed=fast|warp
 theme=dark
 ramdisk=64|512|1024|4096|8192
 #urltodiskimage

@@ -36,6 +36,7 @@ let cpuSpeed = 0
 export let isDebugging = TEST_DEBUG
 let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
+let cpuCyclesPerRefresh = 17030
 let timeDelta = 0
 let cpuRunMode = RUN_MODE.IDLE
 let iRefresh = 0
@@ -279,9 +280,34 @@ const doReset = () => {
   resetMachine()
 }
 
+// The theoretical maximum speed is about 66 MHz if we completely disable
+// the 6502 cpu and just do screen refreshes.
+// If we enable the 6502, and just play with the cpuCyclesPerRefresh,
+// then for the Choplifter demo screen the results look something like:
+//  17030:     5.5 MHz
+//  17030 * 2: 9.2 MHz
+//  17030 * 3: 12.9 MHz
+//  17030 * 4: 15.4 MHz
+//  17030 * 5: 17.4 MHz
+//  17030 * 10: 23.8 MHz
+//  17030 * 20: 29.1 MHz
+//
+// If we also change the GUI iRefresh interval (see down below) to 10,
+// then we get:
+//  17030:     17.5 MHz
+//  17030 * 2: 24.4 MHz
+//  17030 * 3: 27.3 MHz
+//  17030 * 4: 29.2 MHz
+//  17030 * 5: 30.8 MHz
+//  17030 * 10: 33.2 MHz
+//
+// Note that making the cyclesPerRefresh too large can cause games to be
+// less responsive to keyboard input, since we're checking the keyboard
+// less often.
 export const doSetSpeedMode = (speedModeIn: number) => {
   speedMode = speedModeIn
-  refreshTime = (speedMode > 0) ? 0 : 16.6881
+  refreshTime = ([16.6881, 16.6881, 1])[speedMode]
+  cpuCyclesPerRefresh = ([17030, 17030 * 4, 17030 * 4])[speedMode]
   resetRefreshCounter()
 }
 
@@ -542,6 +568,7 @@ const updateExternalMachineState = () => {
     stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
+    useOpenAppleKey: false,  // ignored by main thread
   }
   passMachineState(state)
 }
@@ -578,33 +605,47 @@ const doAdvance6502 = () => {
     const cycles = processInstruction();
     if (cycles < 0) break
     cycleTotal += cycles;
-    if (cycleTotal >= 12480) {
+    if ((cycleTotal % 17030) >= 12480) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {
         startVBL()
       }
     }
-    if (cycleTotal >= 17030) {
+    if (cycleTotal >= cpuCyclesPerRefresh) {
       endVBL()
       break;
     }
   }
   iRefresh++
-  cpuSpeed = Math.round((iRefresh * 1703) / (performance.now() - startTime)) / 100
+  const speedInCyclesPerMS = (iRefresh * cpuCyclesPerRefresh) / (performance.now() - startTime)
+  // The / 10 gets rid of the ones digit, which turns into the thousandths digit.
+  cpuSpeed = (speedInCyclesPerMS < 10000) ? Math.round(speedInCyclesPerMS / 10) / 100 :
+    Math.round(speedInCyclesPerMS / 100) / 10
+  // Lengthening this refresh interval has very little impact on the speed.
   if (iRefresh % 2) {
     handleGamepads()
     updateExternalMachineState()
   }
   if (takeSnapshot) {
     takeSnapshot = false
-//    console.log("iSaveState " + iSaveState)
     doSnapshot()
   }
 }
 
+// To speed up the emulator in fast mode, we can change this refresh interval.
+// This makes the GUI less responsive since we are starving the main thread.
+// The results look something like:
+//  iRefresh + 1:     5.5 MHz
+//  iRefresh + 2:     7.9 MHz
+//  iRefresh + 3:     9.6 MHz
+//  iRefresh + 4:     11.3 MHz
+//  iRefresh + 5:     12.6 MHz
+//  iRefresh + 10:    18.0 MHz
+//  iRefresh + 20:    23.2 MHz
+//
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  const iRefreshFinish = (iRefresh + 1)
+  const iRefreshFinish = iRefresh + ([1, 5, 10])[speedMode]
   while (cpuRunMode === RUN_MODE.RUNNING && iRefresh !== iRefreshFinish) {
     doAdvance6502()
   }

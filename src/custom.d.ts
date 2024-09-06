@@ -102,7 +102,8 @@ type MachineState = {
   speedMode: number,
   stackString: string,
   textPage: Uint8Array,
-  timeTravelThumbnails: Array<TimeTravelThumbnail>
+  timeTravelThumbnails: Array<TimeTravelThumbnail>,
+  useOpenAppleKey: boolean,
 }
 
 type DriveState = {
