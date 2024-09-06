@@ -143,20 +143,22 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const isMetaSequence = (e: keyEvent): boolean => {
-    const useOpenAppleKey = handleUseOpenAppleKey()
-    if (isMac) {
-      if (useOpenAppleKey) {
-        return false
-      }
-      return e.metaKey && e.key !== 'Meta'
+    if (e.shiftKey) {
+      return false
     }
     // ASCII does not allow Ctrl+numbers, so just allow those as metasequence keys.
     // For example, Ctrl+3 to change to warp speed.
-    if (e.key >= '0' && e.key <= '9') {
-      return (e.ctrlKey)
+    if (e.key >= '0' && e.key <= '9' && e.ctrlKey) {
+      return true
     }
-    // ctrl + "meta" but not shift
-    return (!e.shiftKey && e.ctrlKey && (e.altKey && e.key !== 'Alt'))
+    if (handleUseOpenAppleKey()) {
+      return false
+    }
+    if (isMac) {
+      return e.metaKey && e.key !== 'Meta'
+    } else {
+      return e.altKey && e.key !== 'Alt'
+    }
   }
 
   const handleKeyDown = (e: keyEvent) => {

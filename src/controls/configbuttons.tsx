@@ -30,6 +30,7 @@ import { RamWorksSelect } from "../devices/ramworks";
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 const isTouchDevice = "ontouchstart" in document.documentElement
+const isMac = navigator.platform.startsWith('Mac')
 
 const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
@@ -37,6 +38,7 @@ const ConfigButtons = (props: DisplayProps) => {
   const capsLock = handleGetCapsLock()
   const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
   const useOpenAppleKey = handleUseOpenAppleKey()
+  const modKey = isMac ? "⌘" : "Alt"
   // const useArrowKeysAsJoystick = handleGetArrowKeysAsJoystick() ?
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
@@ -78,9 +80,9 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>
     {!isTouchDevice &&
       <button className={lockedKeyStyle(useOpenAppleKey ? 1 : 0)}
-        title={useOpenAppleKey ? "Use ⌘ as Open Apple Key" : "Use ⌘ as Command Key"}
+        title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
         onClick={() => { passUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
-        <span>⌘</span>
+        <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>
       </button>
     }
     {!isTouchDevice &&

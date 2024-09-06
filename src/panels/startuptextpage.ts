@@ -12,7 +12,8 @@ Press the Power button to start.
 `
 
 const isMac = navigator.platform.startsWith('Mac')
-const key = isMac ? `⌘` : 'Ctrl+Alt+'
+const keyMod = isMac ? `⌘` : 'Alt+'
+const arrowMod = isMac ? '⌘' : 'Ctrl+'
 const isTouchDevice = "ontouchstart" in document.documentElement
 
 export let defaultHelpText = emulatorStartText
@@ -37,15 +38,15 @@ The open apple and closed apple keys behave the same as the ctrl key.`
 } else {
 
   const keyboardShortcutText =
-`${key}C Copy Screen
-${key}V Paste Text
-${key}O Open State
-${key}S Save State
-${key}← Go Back in Time
-${key}→ Forward in Time
-${key}1 Normal Speed (1 MHz)
-${key}2 Fast Speed (~4 MHz) 
-${key}3 Ludicrous/Warp Speed
+`${keyMod}C Copy Screen
+${keyMod}V Paste Text
+${keyMod}O Open State
+${keyMod}S Save State
+${keyMod}← Go Back in Time
+${keyMod}→ Forward in Time
+${arrowMod}1 Normal Speed (1 MHz)
+${arrowMod}2 Fast Speed (~4 MHz) 
+${arrowMod}3 Ludicrous/Warp Speed
 
 Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option`
