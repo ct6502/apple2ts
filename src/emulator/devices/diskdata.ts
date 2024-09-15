@@ -42,9 +42,7 @@ export const doPauseDiskDrive = (resume = false) => {
 }
 
 const moveHead = (ds: DriveState, offset: number, cycles: number) => {
-  if (ds.trackStart[ds.halftrack] > 0) {
-    ds.prevHalfTrack = ds.halftrack
-  }
+  ds.prevHalfTrack = ds.halftrack
   ds.halftrack += offset
   if (ds.halftrack < 0 || ds.halftrack > 68) {
     passDriveSound(DRIVE.TRACK_END)
@@ -56,16 +54,11 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   passData()
   // Adjust new track location based on arm position relative to old track loc.
   // This is needed for disks that rely on cross-track synchronization.
-  if (ds.trackStart[ds.halftrack] > 0 && ds.prevHalfTrack !== ds.halftrack) {
-    // const oldloc = dState.trackLocation
-    // console.log(`moveHead: ${ds.prevHalfTrack}->${ds.halftrack} cycles=${cycles} PC=${toHex(s6502.PC)} loc=${ds.trackLocation} ${ds.trackNbits[ds.prevHalfTrack]} ${ds.trackNbits[ds.halftrack]}`)
-    ds.trackLocation += Math.floor(cycles / 4)
-    cycleRemainder = cycles % 4
-    // ds.trackLocation = Math.floor(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
-    // if (ds.trackLocation > 3) {
-    //   ds.trackLocation -= 4
-    // }
-  }
+  // const oldloc = dState.trackLocation
+  // console.log(`moveHead: ${ds.prevHalfTrack}->${ds.halftrack} cycles=${cycles} PC=${toHex(s6502.PC)} loc=${ds.trackLocation} ${ds.trackNbits[ds.prevHalfTrack]} ${ds.trackNbits[ds.halftrack]}`)
+  ds.trackLocation += Math.floor(cycles / 4) % ds.trackNbits[ds.prevHalfTrack]
+  cycleRemainder = cycles % 4
+  ds.trackLocation = Math.round(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
 }
 
 let randPos = 0
