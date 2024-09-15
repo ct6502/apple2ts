@@ -1,4 +1,23 @@
 export const code = `
+        ORG   $300
+        LDX   #$60
+        CMP   $C089,X  ; turn on the motor
+        LDA   $C08E,X  ; enable read
+READ1   LDA   $C08C,X  ; read a byte
+        BPL   READ1     ; wait for the byte to be ready (high bit set)
+        CMP   #$D5
+        BNE   READ1
+READ2   LDA   $C08C,X  ; read a byte
+        BPL   READ2     ; wait for the byte to be ready (high bit set)
+READ3   LDA   $C08C,X  ; read a byte
+        BPL   READ3     ; wait for the byte to be ready (high bit set)
+        CMP   $C088,X  ; turn off the motor        
+        RTS
+`
+
+// Test a bunch of different addressing modes to see what they look like
+// when you hover over them in the debug view.
+export const codeAddressing = `
          ORG   $300
 AGAIN    LDA   $C000
          BPL   AGAIN

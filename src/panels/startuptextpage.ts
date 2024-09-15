@@ -38,10 +38,8 @@ The open apple and closed apple keys behave the same as the ctrl key.`
 } else {
 
   const keyboardShortcutText =
-`${keyMod}C Copy Screen
-${keyMod}V Paste Text
-${keyMod}O Open State
-${keyMod}S Save State
+`${keyMod}C Copy Screen   ${keyMod}O Open State
+${keyMod}V Paste Text    ${keyMod}S Save State
 ${keyMod}← Go Back in Time
 ${keyMod}→ Forward in Time
 ${arrowMod}1 Normal Speed (1 MHz)

@@ -6,6 +6,8 @@ import { setSlotDriver, setSlotIOCallback } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
+let dataRegister = 0
+let cycleRemainder = 0
 
 enum SWITCH {
   MOTOR_OFF = 8,        // $C088
@@ -58,6 +60,7 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
     // const oldloc = dState.trackLocation
     // console.log(`moveHead: ${ds.prevHalfTrack}->${ds.halftrack} cycles=${cycles} PC=${toHex(s6502.PC)} loc=${ds.trackLocation} ${ds.trackNbits[ds.prevHalfTrack]} ${ds.trackNbits[ds.halftrack]}`)
     ds.trackLocation += Math.floor(cycles / 4)
+    cycleRemainder = cycles % 4
     // ds.trackLocation = Math.floor(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
     // if (ds.trackLocation > 3) {
     //   ds.trackLocation -= 4
@@ -112,10 +115,10 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
   return bit
 }
 
-let dataRegister = 0
 const randByte = () => Math.floor(256 * Math.random())
 
-const getNextByte = (ds: DriveState, dd: Uint8Array) => {
+const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
+  // const tracklocSave = ds.trackLocation
   // If no disk then return random noise from the drive.
   // Some programs (like anti-m) use this to check if no disk is inserted.
   if (dd.length === 0) return randByte()
@@ -136,10 +139,23 @@ const getNextByte = (ds: DriveState, dd: Uint8Array) => {
     }
   } else {
     // Read the last bit.
-    const bit = getNextBit(ds, dd)
-    dataRegister = (dataRegister << 1) | bit
+    const nread = Math.max(Math.floor((cycles + cycleRemainder) / 4), 1)
+    cycleRemainder = cycles
+    for (let i = 0; i < nread; i++) {
+      const bit = getNextBit(ds, dd)
+      dataRegister = (dataRegister << 1) | bit
+      cycleRemainder -= 4
+      if (dataRegister & 128 || cycleRemainder < 4) break
+    }
+    if (cycleRemainder < 0) {
+      cycleRemainder = 0
+    }
+    dataRegister &= 0xFF
   }
   result = dataRegister
+  // if (s6502.PC >= 0x9E45 && s6502.PC <= 0x9E5F) {
+  //   console.log(`  getNextByte: ${cycles} cycles PC=${toHex(s6502.PC, 4)} loc=${tracklocSave} dataRegister=${toHex(dataRegister)}`)
+  // }
   if (dataRegister > 127) {
     dataRegister = 0
   }
@@ -165,24 +181,24 @@ const doWriteBit = (ds: DriveState, dd: Uint8Array, bit: 0 | 1) => {
   ds.trackLocation++
 }
 
-const doWriteByte = (ds: DriveState, dd: Uint8Array, delta: number) => {
+const doWriteByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // Sanity check to make sure we aren't on an empty track. Is this correct?
   if (dd.length === 0 || ds.trackStart[ds.halftrack] === 0) {
     return
   }
   if (dataRegister > 0) {
-    if (delta >= 16) {
+    if (cycles >= 16) {
       for (let i = 7; i >= 0; i--) {
         doWriteBit(ds, dd, dataRegister & 2**i ? 1 : 0)      
       }
     }
-    if (delta >= 36) {
+    if (cycles >= 36) {
       doWriteBit(ds, dd, 0)
     }
-    if (delta >= 40) {
+    if (cycles >= 40) {
       doWriteBit(ds, dd, 0)
     }
-    debugCache.push(delta >= 40 ? 2 : delta >= 36 ? 1 : dataRegister)
+    debugCache.push(cycles >= 40 ? 2 : cycles >= 36 ? 1 : dataRegister)
     ds.diskHasChanges = true
     dataRegister = 0
   }
@@ -248,28 +264,18 @@ export const handleDriveSoftSwitches: AddressCallback =
   const dd = getCurrentDriveData()
   if (ds.hardDrive) return 0
   let result = 0
-  const delta = s6502.cycleCount - prevCycleCount
+  const cycles = s6502.cycleCount - prevCycleCount
   addr = addr & 0xF
-
-  // According to Sather, Understanding the Apple IIe, p. 9-13,
-  // any even address $C08*,X will load data from the data register.
-  // So we will do that here and carry on with our regular operations below.
-  // This fixes a bug with the Mr. Do woz file, which uses $C088,X to read data.
-  if ((addr & 1) === 0) {
-    if (ds.motorRunning && !ds.writeMode) {
-      result = getNextByte(ds, dd)
-      // if (s6502.cycleCount > 28333000) {
-      //   console.log(`delta=${delta} getNextByte=${toHex(result)}`)
-      // }
-      // Reset the Disk II Logic State Sequencer clock
-      prevCycleCount = s6502.cycleCount
-    }
-  }
 
   switch (addr) {
     case SWITCH.LATCH_OFF:  // SHIFT/READ
       DATA_LATCH = false
-      // We've already done our read up above.
+      // See additional comment about read in the MOTOR_OFF case below.
+      if (ds.motorRunning && !ds.writeMode) {
+        result = getNextByte(ds, dd, cycles)
+        // Reset the Disk II Logic State Sequencer clock
+        prevCycleCount = s6502.cycleCount
+      }
       break
     case SWITCH.MOTOR_ON:
       MOTOR_RUNNING = true
@@ -277,6 +283,20 @@ export const handleDriveSoftSwitches: AddressCallback =
       dumpData(ds)
       break
     case SWITCH.MOTOR_OFF:
+      // According to Sather, Understanding the Apple IIe, p. 9-13,
+      // any even address $C08*,X will load data from the data register.
+      // Apparently Mr Do.woz relies on this behavior and reads from $C088,X,
+      // which is technically the "motor off" switch.
+      // I tried doing a read for every even address but that broke Hard Hat Mack.woz,
+      // presumably because there was an unexpected read happening and the
+      // data was getting thrown away. So instead, we will only do the "extra"
+      // read for $C088,X address.
+      // This way both Mr. Do and Hard Hat Mack work.
+      if (ds.motorRunning && !ds.writeMode) {
+        result = getNextByte(ds, dd, cycles)
+        // Reset the Disk II Logic State Sequencer clock
+        prevCycleCount = s6502.cycleCount
+      }
       MOTOR_RUNNING = false
       stopMotor(ds)
       dumpData(ds)
@@ -296,7 +316,7 @@ export const handleDriveSoftSwitches: AddressCallback =
     }
     case SWITCH.WRITE_OFF:  // READ, Q7LOW
       if (ds.motorRunning && ds.writeMode) {
-        doWriteByte(ds, dd, delta)
+        doWriteByte(ds, dd, cycles)
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = s6502.cycleCount
       }
@@ -318,7 +338,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       DATA_LATCH = true
       if (ds.motorRunning) {
         if (ds.writeMode) {
-          doWriteByte(ds, dd, delta)
+          doWriteByte(ds, dd, cycles)
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
         }
@@ -336,11 +356,11 @@ export const handleDriveSoftSwitches: AddressCallback =
       // Make sure our current phase motor has been turned off.
       if (!STEPPER_MOTORS[ds.currentPhase]) {
         if (ds.motorRunning && ascend) {
-          moveHead(ds, 1, delta)
+          moveHead(ds, 1, cycles)
           ds.currentPhase = (ds.currentPhase + 1) % 4
 
         } else if (ds.motorRunning && descend) {
-          moveHead(ds, -1, delta)
+          moveHead(ds, -1, cycles)
           ds.currentPhase = (ds.currentPhase + 3) % 4
         }
       }
@@ -354,13 +374,6 @@ export const handleDriveSoftSwitches: AddressCallback =
       dumpData(ds)
       break
     }
-  }
-
-  if (doDebugDrive && value !== 0x96 && delta < 100) {
-    const dc = (delta < 100) ? ` cycles=${delta}` : ''
-    const wb = (result > 0) ? ` result=$${toHex(result)}` : ''
-    const v = (value > 0) ? ` value=$${toHex(value)}` : ''
-    console.log(`addr=$${toHex(addr & 0xF)}${v}${dc}${wb}${ds.writeMode ? ' write' : ''}`)
   }
 
   return result
