@@ -25,10 +25,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    # clean install
     - run: npm ci
     - run: npm run build
     - run: npm test
+    # set the correct git username/email for authentication
     - run: git config --global user.email $MY_EMAIL
     - run: git config --global user.name "$MY_NAME"
+    # authenticate with GitHub so we can do subsequent git operations
     - run: git remote set-url origin https://$MY_USERNAME:${{ secrets.GH_SECRET }}@github.com/ct6502/apple2ts.git
+    # push the build (within the dist directory) to the gh-pages branch
     - run: npm run deploy

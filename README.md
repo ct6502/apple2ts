@@ -7,17 +7,33 @@ Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significan
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
-## Available NPM Scripts
+## Development
 
-In the project directory, you can run:
+Be sure to install `node.js` and `npm` on your system using either `nvm` (the Node version manager) or the Node installer. Either one should work fine.
+
+In the project directory, run:
 
 `npm install`
 
+To run the app in development mode:
+
 `npm start`
 
-Runs the app in the development mode. This should automatically open your browser to [http://localhost:6502](http://localhost:6502).
+This should automatically open your browser to [http://localhost:6502](http://localhost:6502).
 
 The page will reload when you make changes. You may also see any lint errors in the console.
+
+### Emulator Settings
+
+You can append parameters to the URL (to control say the emulator speed or the starting disk image) by using the following syntax:
+
+`npm start --urlparam=<parameters>`
+
+For example:
+
+`npm start --urlparam=speed=fast#Replay`
+
+This will start the emulator in fast mode and load the Total Replay disk image.
 
 ### Testing
 
@@ -38,12 +54,15 @@ Run in watch mode:
 `npm run build`
 
 Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+It correctly bundles React in production mode and optimizes the build for best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+The build is minified and the filenames include hash values. These hashes force the browser to reload when the file content changes, ensure that the filenames are unique, and also verify the integrity of the file.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+**Note**: This project uses Github Pages to host the emulator. You should not need to build the package, except to confirm that the build will work correctly when changes are committed.
+
+### Deployment
+
+When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. The `main-build-deploy.yml` workflow should fire off two Github Actions. The first will build and test the code, while the second (using `npm run deploy`) will deploy the build to Github Pages.
 
 ## Upgrade Packages
 
@@ -61,25 +80,11 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 ## VS Code Chrome Debugging
 
-Stop all running Chrome instances and then:
+The `launch.json` file contains the debug configurations and should not need to be modified.
 
-`/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222`
+To debug the emulator, open the Run/Debug panel and click the "Launch Chrome" play button. Or simply press the `F5` key.
 
-Use `npm start` to start the running instance.
-
-In launch.json, add a launch configuration:
-
-```json
-    {
-      "name": "Attach to Chrome",
-      "port": 9222,
-      "request": "attach",
-      "type": "chrome",
-      "url": "http://localhost:6502",
-      "webRoot": "${workspaceFolder}"
-    },
-
-```
+Any debug output or console.log messages should appear in the Debug Console. You should also be able to set breakpoints in the code, examine variable values, and execute simple JavaScript statements in the Debug Console.
 
 ## Android Chrome Debugging
 
@@ -109,9 +114,8 @@ and [install it on your system](https://flaviocopes.com/macos-install-ssl-local/
 
 ## Apple II ROMs
 
-This repository doesn't contain any Apple II ROMs. However, these are fairly easy to find on the web.
 To make a ROM image, save the raw binary data from the C000-FFFF ROM in a single file.
-Then convert the file to a Base64 encoding. On the Mac, I used the following command:
+Then convert the file to a Base64 encoding. On the Mac, you can use the following command:
 
 ```sh
     openssl base64 -in rom_2e.bin -out rom_2e.base64.ts

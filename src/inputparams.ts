@@ -51,7 +51,17 @@ export const handleInputParams = () => {
 // https://apple2ts.com/#https://archive.org/download/wozaday_Davids_Midnight_Magic/00playable.woz
 export const handleFragment = async (updateDisplay: UpdateDisplay) => {
   const fragment = window.location.hash
-  if (fragment.length < 2) return
-  const url = fragment.substring(1)
-  handleSetDiskFromURL(url, updateDisplay)
+  // If you start npm locally with 'npm start --xyz=blahblah', then npm
+  // will automatically create an environment variable "npm_config_xyz".
+  // So here we check for a --urlparam command line argument and load it if it exists.
+  // For example, npm start --urlparam=speed=fast#Replay
+  if (process.env.npm_config_urlparam) {
+    if (window.location.search === '') {
+      window.location.href = window.location.pathname + '?' + process.env.npm_config_urlparam
+    }
+  }
+  if (fragment.length >= 2) {
+    const url = fragment.substring(1)
+    handleSetDiskFromURL(url, updateDisplay)
+  }
 }
