@@ -8,6 +8,8 @@ import { disk2driver } from "../roms/slot_disk2_cx00"
 let motorOffTimeout: NodeJS.Timeout | number = 0
 let dataRegister = 0
 let cycleRemainder = 0
+let motorOnTime = 0
+const doDebugDrive = false
 
 enum SWITCH {
   MOTOR_OFF = 8,        // $C088
@@ -41,7 +43,7 @@ export const doPauseDiskDrive = (resume = false) => {
   }
 }
 
-const moveHead = (ds: DriveState, offset: number, cycles: number) => {
+const moveHead = (ds: DriveState, offset: number) => {
   ds.prevHalfTrack = ds.halftrack
   ds.halftrack += offset
   if (ds.halftrack < 0 || ds.halftrack > 68) {
@@ -56,8 +58,8 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   // This is needed for disks that rely on cross-track synchronization.
   // const oldloc = dState.trackLocation
   // console.log(`moveHead: ${ds.prevHalfTrack}->${ds.halftrack} cycles=${cycles} PC=${toHex(s6502.PC)} loc=${ds.trackLocation} ${ds.trackNbits[ds.prevHalfTrack]} ${ds.trackNbits[ds.halftrack]}`)
-  ds.trackLocation += Math.floor(cycles / 4) % ds.trackNbits[ds.prevHalfTrack]
-  cycleRemainder = cycles % 4
+  // ds.trackLocation += Math.floor(cycles / 4) % ds.trackNbits[ds.prevHalfTrack]
+  // cycleRemainder = cycles % 4
   ds.trackLocation = Math.round(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
 }
 
@@ -117,28 +119,38 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   if (dd.length === 0) return randByte()
   let result = 0
   // By default we read 7 bits all at once, followed later by the 8th bit.
-  // This should work fine for "normal" disks. However, some disks
-  // (like Print Shop Companion) have synchronized tracks that require
-  // returning bits one at a time.
-  if (!ds.isSynchronized && dataRegister === 0) {
-    while (getNextBit(ds, dd) === 0) {null}
-    // This will become the high bit on the next read
-    dataRegister = 0x40
-    // Read the next 6 bits, all except the last one.
-    // If we try to read all 8 bits here, it's much slower than
-    // reading the last bit separately. Not sure why.
-    for (let i = 5; i >= 0; i--) {
-      dataRegister |= getNextBit(ds, dd) << i
-    }
-  } else {
-    // Read the last bit.
-    const nread = Math.max(Math.floor((cycles + cycleRemainder) / 4), 1)
-    cycleRemainder = cycles
-    for (let i = 0; i < nread; i++) {
+  // This works fine for "normal" disks and is about 30% faster.
+  // However, some disks (like Print Shop Companion) have synchronized tracks
+  // that require returning bits sequentially.
+  ds.isSynchronized = true
+  if (!ds.isSynchronized) {
+    if (dataRegister === 0) {
+      // Ignore zero bits while waiting for a new most-significant bit.
+      while (getNextBit(ds, dd) === 0) {null}
+      // This will become the high bit on the next read
+      dataRegister = 0x40
+      // Read the next 6 bits, all except the last one.
+      // If we try to read all 8 bits here, it's much slower than
+      // reading the last bit separately. Not sure why.
+      for (let i = 5; i >= 0; i--) {
+        dataRegister |= getNextBit(ds, dd) << i
+      }
+    } else {
+      // Read the last bit.
       const bit = getNextBit(ds, dd)
       dataRegister = (dataRegister << 1) | bit
+    }
+  } else {
+    // Read individual bits and combine them.
+    const nread = Math.max(Math.floor((cycles + cycleRemainder) / 4), 1)
+    cycleRemainder = cycles + cycleRemainder
+    for (let i = 0; i < nread; i++) {
+      const bit = getNextBit(ds, dd)
+      if (dataRegister > 0 || bit) {
+        dataRegister = (dataRegister << 1) | bit
+      }
       cycleRemainder -= 4
-      if (dataRegister & 128 || cycleRemainder < 4) break
+      if ((cycleRemainder < 100 && dataRegister & 128) || cycleRemainder < 4) break
     }
     if (cycleRemainder < 0) {
       cycleRemainder = 0
@@ -202,6 +214,11 @@ const doMotorTimeout = (ds: DriveState) => {
   if (!MOTOR_RUNNING) {
     ds.motorRunning = false
   }
+  if (doDebugDrive) {
+    const diff = Date.now() - motorOnTime
+    if (diff > 10 && diff < 10000000) console.log(`Motor on time: ${diff}ms`)
+    motorOnTime = Date.now()
+  }
   passData()
   passDriveSound(DRIVE.MOTOR_OFF)
 }
@@ -210,6 +227,9 @@ const startMotor = (ds: DriveState) => {
   if (motorOffTimeout) {
     clearTimeout(motorOffTimeout)
     motorOffTimeout = 0
+  } else {
+    if (doDebugDrive) motorOnTime = Date.now()
+    cycleRemainder = 0
   }
   ds.motorRunning = true
   passData()
@@ -223,7 +243,6 @@ const stopMotor = (ds: DriveState) => {
 }
 
 let debugCache:number[] = []
-const doDebugDrive = false
 
 const dumpData = (ds: DriveState) => {
   // if (dataRegister !== 0) {
@@ -349,11 +368,11 @@ export const handleDriveSoftSwitches: AddressCallback =
       // Make sure our current phase motor has been turned off.
       if (!STEPPER_MOTORS[ds.currentPhase]) {
         if (ds.motorRunning && ascend) {
-          moveHead(ds, 1, cycles)
+          moveHead(ds, 1)
           ds.currentPhase = (ds.currentPhase + 1) % 4
 
         } else if (ds.motorRunning && descend) {
-          moveHead(ds, -1, cycles)
+          moveHead(ds, -1)
           ds.currentPhase = (ds.currentPhase + 3) % 4
         }
       }
