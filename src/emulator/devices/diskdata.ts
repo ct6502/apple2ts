@@ -56,11 +56,10 @@ const moveHead = (ds: DriveState, offset: number) => {
   passData()
   // Adjust new track location based on arm position relative to old track loc.
   // This is needed for disks that rely on cross-track synchronization.
-  // const oldloc = dState.trackLocation
-  // console.log(`moveHead: ${ds.prevHalfTrack}->${ds.halftrack} cycles=${cycles} PC=${toHex(s6502.PC)} loc=${ds.trackLocation} ${ds.trackNbits[ds.prevHalfTrack]} ${ds.trackNbits[ds.halftrack]}`)
-  // ds.trackLocation += Math.floor(cycles / 4) % ds.trackNbits[ds.prevHalfTrack]
-  // cycleRemainder = cycles % 4
-  ds.trackLocation = Math.round(ds.trackLocation * (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
+  // Note: We do not need to advance the track location here, we will do that
+  // within getNextByte using the cycle count difference.
+  ds.trackLocation = Math.round(ds.trackLocation *
+    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
 }
 
 let randPos = 0
@@ -122,7 +121,6 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // This works fine for "normal" disks and is about 30% faster.
   // However, some disks (like Print Shop Companion) have synchronized tracks
   // that require returning bits sequentially.
-  ds.isSynchronized = true
   if (!ds.isSynchronized) {
     if (dataRegister === 0) {
       // Ignore zero bits while waiting for a new most-significant bit.
