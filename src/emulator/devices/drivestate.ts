@@ -22,6 +22,7 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     trackStart: !hardDrive ? Array<number>(80) : Array<number>(),
     trackNbits: !hardDrive ? Array<number>(80) : Array<number>(),
     trackLocation: 0,
+    maxHalftrack: 0,
   }
 }
 

@@ -123,6 +123,7 @@ type DriveState = {
   trackStart: Array<number>,
   trackNbits: Array<number>,
   trackLocation: number,
+  maxHalftrack: number,
 }
 
 type DriveProps = {

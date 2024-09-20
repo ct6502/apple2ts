@@ -22,6 +22,7 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
       driveState.trackStart[htrack] = 512 * ((trk[1] << 8) + trk[0])
       // const nBlocks = trk[2] + (trk[3] << 8)
       driveState.trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
+      driveState.maxHalftrack = htrack
     } else {
       driveState.trackStart[htrack] = 0
       driveState.trackNbits[htrack] = 51200
@@ -44,6 +45,7 @@ const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
       const trk = diskData.slice(driveState.trackStart[htrack] + 6646,
         driveState.trackStart[htrack] + 6656)
       driveState.trackNbits[htrack] = trk[2] + (trk[3] << 8)
+      driveState.maxHalftrack = htrack
     } else {
       driveState.trackStart[htrack] = 0
       driveState.trackNbits[htrack] = 51200

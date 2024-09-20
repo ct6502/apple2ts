@@ -28,8 +28,8 @@ let DATA_LATCH = false
 export const doResetDiskDrive = (driveState: DriveState) => {
   MOTOR_RUNNING = false
   doMotorTimeout(driveState)
-  driveState.halftrack = 68
-  driveState.prevHalfTrack = 68
+  driveState.halftrack = driveState.maxHalftrack
+  driveState.prevHalfTrack = driveState.maxHalftrack
 }
 
 export const doPauseDiskDrive = (resume = false) => {
@@ -46,9 +46,9 @@ export const doPauseDiskDrive = (resume = false) => {
 const moveHead = (ds: DriveState, offset: number) => {
   ds.prevHalfTrack = ds.halftrack
   ds.halftrack += offset
-  if (ds.halftrack < 0 || ds.halftrack > 68) {
+  if (ds.halftrack < 0 || ds.halftrack > ds.maxHalftrack) {
     passDriveSound(DRIVE.TRACK_END)
-    ds.halftrack = (ds.halftrack < 0) ? 0 : (ds.halftrack > 68 ? 68 : ds.halftrack)
+    ds.halftrack = Math.max(0, Math.min(ds.halftrack, ds.maxHalftrack))
   } else {
     passDriveSound(DRIVE.TRACK_SEEK)
   }
@@ -58,8 +58,8 @@ const moveHead = (ds: DriveState, offset: number) => {
   // This is needed for disks that rely on cross-track synchronization.
   // Note: We do not need to advance the track location here, we will do that
   // within getNextByte using the cycle count difference.
-  ds.trackLocation = Math.round(ds.trackLocation *
-    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack]))
+  ds.trackLocation = Math.floor(ds.trackLocation *
+    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack])) - 1
 }
 
 let randPos = 0
@@ -140,21 +140,29 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
     }
   } else {
     // Read individual bits and combine them.
-    const nread = Math.max(Math.floor((cycles + cycleRemainder) / 4), 1)
-    cycleRemainder = cycles + cycleRemainder
-    for (let i = 0; i < nread; i++) {
+    cycleRemainder += cycles
+    // This is a hack to allow Balance of Power to boot.
+    if (cycleRemainder > 100000 && ds.halftrack === 70) {
+      ds.trackLocation -= 800
+    }
+    while (cycleRemainder >= 4) {
       const bit = getNextBit(ds, dd)
       if (dataRegister > 0 || bit) {
         dataRegister = (dataRegister << 1) | bit
       }
       cycleRemainder -= 4
-      if ((cycleRemainder < 100 && dataRegister & 128) || cycleRemainder < 4) break
+      // Changing this cycleRemainder cutoff to less than 6 will break
+      // loading certain disks like Balance of Power.
+      if (dataRegister & 128 && cycleRemainder <= 6) break
     }
     if (cycleRemainder < 0) {
       cycleRemainder = 0
     }
     dataRegister &= 0xFF
   }
+  // if (ds.halftrack === 70 && dataRegister > 127) {
+  //   console.log(toHex(dataRegister))
+  // }
   result = dataRegister
   // if (s6502.PC >= 0x9E45 && s6502.PC <= 0x9E5F) {
   //   console.log(`  getNextByte: ${cycles} cycles PC=${toHex(s6502.PC, 4)} loc=${tracklocSave} dataRegister=${toHex(dataRegister)}`)
