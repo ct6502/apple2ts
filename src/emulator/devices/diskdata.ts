@@ -43,7 +43,7 @@ export const doPauseDiskDrive = (resume = false) => {
   }
 }
 
-const moveHead = (ds: DriveState, offset: number) => {
+const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   ds.prevHalfTrack = ds.halftrack
   ds.halftrack += offset
   if (ds.halftrack < 0 || ds.halftrack > ds.maxHalftrack) {
@@ -54,12 +54,22 @@ const moveHead = (ds: DriveState, offset: number) => {
   }
   ds.status = ` Trk ${ds.halftrack / 2}`
   passData()
-  // Adjust new track location based on arm position relative to old track loc.
-  // This is needed for disks that rely on cross-track synchronization.
-  // Note: We do not need to advance the track location here, we will do that
-  // within getNextByte using the cycle count difference.
+  // First adjust the current track location using the cycle count difference.
+  // We need to do this before using the Applesauce formula below.
+  cycleRemainder += cycles
+  ds.trackLocation += Math.floor(cycleRemainder / 4)
+  cycleRemainder = cycleRemainder % 4
+  // The Applesauce formula: Adjust new track location based on arm position
+  // relative to old track loc. This is needed for disks that rely on
+  // cross-track synchronization such as Balance of Power.
+  // The +7 is taken from a related AppleWin issue:
+  // https://github.com/AppleWin/AppleWin/issues/1022
+  // Balance of Power still loads without the +7, but the critical
+  // 13-byte sequence $F2...$FE ends up near the end of the 256 "test" bytes.
+  // Adding +7 moves the sequence to the middle of the 256 bytes, which seems
+  // safer and will hopefully help with similar copy protected disks.
   ds.trackLocation = Math.floor(ds.trackLocation *
-    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack])) - 1
+    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack])) + 7
 }
 
 let randPos = 0
@@ -141,10 +151,6 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   } else {
     // Read individual bits and combine them.
     cycleRemainder += cycles
-    // This is a hack to allow Balance of Power to boot.
-    if (cycleRemainder > 100000 && ds.halftrack === 70) {
-      ds.trackLocation -= 800
-    }
     while (cycleRemainder >= 4) {
       const bit = getNextBit(ds, dd)
       if (dataRegister > 0 || bit) {
@@ -163,10 +169,10 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // if (ds.halftrack === 70 && dataRegister > 127) {
   //   console.log(toHex(dataRegister))
   // }
-  result = dataRegister
   // if (s6502.PC >= 0x9E45 && s6502.PC <= 0x9E5F) {
   //   console.log(`  getNextByte: ${cycles} cycles PC=${toHex(s6502.PC, 4)} loc=${tracklocSave} dataRegister=${toHex(dataRegister)}`)
   // }
+  result = dataRegister
   if (dataRegister > 127) {
     dataRegister = 0
   }
@@ -374,12 +380,15 @@ export const handleDriveSoftSwitches: AddressCallback =
       // Make sure our current phase motor has been turned off.
       if (!STEPPER_MOTORS[ds.currentPhase]) {
         if (ds.motorRunning && ascend) {
-          moveHead(ds, 1)
+          moveHead(ds, 1, cycles)
           ds.currentPhase = (ds.currentPhase + 1) % 4
-
+          // Reset the Disk II Logic State Sequencer clock
+          prevCycleCount = s6502.cycleCount
         } else if (ds.motorRunning && descend) {
-          moveHead(ds, -1)
+          moveHead(ds, -1, cycles)
           ds.currentPhase = (ds.currentPhase + 3) % 4
+          // Reset the Disk II Logic State Sequencer clock
+          prevCycleCount = s6502.cycleCount
         }
       }
       // if (doDebugDrive) {
