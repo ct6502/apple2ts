@@ -76,7 +76,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       (dprops.motorRunning ? imageList.disk2on : imageList.disk2off) :
       (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
   }
-  const filename = (dprops.filename.length > 0) ? dprops.filename : "(empty)"
+  const filename = (dprops.filename.length > 0) ? dprops.filename : ""
   let status = ['S7D1', 'S7D2', 'S6D1', 'S6D2'][props.index]
   status += dprops.status
   return (

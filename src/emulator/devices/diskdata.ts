@@ -292,21 +292,12 @@ export const handleDriveSoftSwitches: AddressCallback =
   addr = addr & 0xF
 
   switch (addr) {
-    case SWITCH.LATCH_OFF:  // SHIFT/READ
-      DATA_LATCH = false
-      // See additional comment about read in the MOTOR_OFF case below.
-      if (ds.motorRunning && !ds.writeMode) {
-        result = getNextByte(ds, dd, cycles)
-        // Reset the Disk II Logic State Sequencer clock
-        prevCycleCount = s6502.cycleCount
-      }
-      break
-    case SWITCH.MOTOR_ON:
+    case SWITCH.MOTOR_ON:  // $C089,X
       MOTOR_RUNNING = true
       startMotor(ds)
       dumpData(ds)
       break
-    case SWITCH.MOTOR_OFF:
+    case SWITCH.MOTOR_OFF:  // $C088,X
       // According to Sather, Understanding the Apple IIe, p. 9-13,
       // any even address $C08*,X will load data from the data register.
       // Apparently Mr Do.woz relies on this behavior and reads from $C088,X,
@@ -325,8 +316,9 @@ export const handleDriveSoftSwitches: AddressCallback =
       stopMotor(ds)
       dumpData(ds)
       break
-    case SWITCH.DRIVE1: // fall thru
-    case SWITCH.DRIVE2: {
+    case SWITCH.DRIVE1: // $C08A,X: fall thru
+    case SWITCH.DRIVE2: // $C08B,X
+      {
       const currentDrive = (addr === SWITCH.DRIVE1) ? 2 : 3
       const dsOld = getCurrentDriveState()
       setCurrentDrive(currentDrive)
@@ -338,7 +330,37 @@ export const handleDriveSoftSwitches: AddressCallback =
       }
       break
     }
-    case SWITCH.WRITE_OFF:  // READ, Q7LOW
+    case SWITCH.LATCH_OFF:  // $C08C,X: SHIFT/READ
+      DATA_LATCH = false
+      // See additional comment about read in the MOTOR_OFF case below.
+      if (ds.motorRunning && !ds.writeMode) {
+        result = getNextByte(ds, dd, cycles)
+        // Reset the Disk II Logic State Sequencer clock
+        prevCycleCount = s6502.cycleCount
+      }
+      break
+    case SWITCH.LATCH_ON:  // $C08D,X: LOAD/READ, Q6HIGH
+      DATA_LATCH = true
+      if (ds.motorRunning) {
+        if (ds.writeMode) {
+          doWriteByte(ds, dd, cycles)
+          // Reset the Disk II Logic State Sequencer clock
+          prevCycleCount = s6502.cycleCount
+          // } else {
+          // Attempt to fix Wings of Fury by resetting the data latch. Does not work.
+          // dataRegister = 0
+          // cycleRemainder += cycles
+          // ds.trackLocation += Math.floor(cycleRemainder / 4)
+          // cycleRemainder = cycleRemainder % 4
+          // // Reset the Disk II Logic State Sequencer clock
+          // prevCycleCount = s6502.cycleCount
+        }
+        if (value >= 0) {
+          dataRegister = value
+        }
+      }
+      break
+    case SWITCH.WRITE_OFF:  // $C08E,X: READ, Q7LOW
       if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, cycles)
         // Reset the Disk II Logic State Sequencer clock
@@ -350,7 +372,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       }
       dumpData(ds)
       break
-    case SWITCH.WRITE_ON:  // WRITE, Q7HIGH
+    case SWITCH.WRITE_ON:  // $C08F,X: WRITE, Q7HIGH
       ds.writeMode = true
       // Reset the Disk II Logic State Sequencer clock
       prevCycleCount = s6502.cycleCount
@@ -358,20 +380,7 @@ export const handleDriveSoftSwitches: AddressCallback =
         dataRegister = value
       }
       break
-    case SWITCH.LATCH_ON:  // LOAD/READ, Q6HIGH
-      DATA_LATCH = true
-      if (ds.motorRunning) {
-        if (ds.writeMode) {
-          doWriteByte(ds, dd, cycles)
-          // Reset the Disk II Logic State Sequencer clock
-          prevCycleCount = s6502.cycleCount
-        }
-        if (value >= 0) {
-          dataRegister = value
-        }
-      }
-      break
-    default: {
+    default: {  // $C080,X - $C087,X: Stepper motors
       if (addr < 0 || addr > 7) break
       // One of the stepper motors has been turned on or off
       STEPPER_MOTORS[Math.floor(addr / 2)] = addr % 2
