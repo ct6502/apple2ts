@@ -346,14 +346,16 @@ export const handleDriveSoftSwitches: AddressCallback =
           doWriteByte(ds, dd, cycles)
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
-          // } else {
-          // Attempt to fix Wings of Fury by resetting the data latch. Does not work.
-          // dataRegister = 0
-          // cycleRemainder += cycles
-          // ds.trackLocation += Math.floor(cycleRemainder / 4)
-          // cycleRemainder = cycleRemainder % 4
-          // // Reset the Disk II Logic State Sequencer clock
-          // prevCycleCount = s6502.cycleCount
+        } else {
+          // The E7 protection scheme reads $C08D,X in the middle of reading data.
+          // This will reset the sequencer and clear the data latch.
+          // This is used by Wings of Fury on track 0.
+          dataRegister = 0
+          cycleRemainder += cycles
+          ds.trackLocation += Math.floor(cycleRemainder / 4)
+          cycleRemainder = cycleRemainder % 4
+          // Reset the Disk II Logic State Sequencer clock
+          prevCycleCount = s6502.cycleCount
         }
         if (value >= 0) {
           dataRegister = value
