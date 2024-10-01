@@ -62,7 +62,11 @@ const BreakpointEdit = (props: {
     <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
-        if (event.key === 'Escape') props.cancelDialog()
+        if (event.key === 'Escape') {
+          props.cancelDialog()
+        } else if (event.key === 'Enter') {
+          props.saveBreakpoint()
+        }
       }}
       onMouseMove={(e) => handleMouseMove(e)}
       onMouseUp={handleMouseUp}>

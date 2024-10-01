@@ -74,7 +74,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   // full text page will be more than 80 char x 4 lines
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
-  const doFlashCycle = (Math.trunc(frameCount / 24) % 2) === 0
+  const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
   const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
 
@@ -87,20 +87,22 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       if (isAltCharSet) {
         doInverse = (value <= 63) || (value >= 96 && value <= 127)
       }
-      const v1 = getPrintableChar(value, isAltCharSet)
-      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
+      const v = getPrintableChar(value, isAltCharSet)
+//      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
       hiddenContext.fillStyle = colorFill
       if (doInverse) {
         // Inverse characters
-        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight);
-        ctx.fillStyle = "#000000";
-        hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight);
-        hiddenContext.fillStyle = "#000000";
+        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
+        ctx.fillStyle = "#000000"
+        hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight)
+        hiddenContext.fillStyle = "#000000"
       } else if (value < 128 && !isAltCharSet) {
         if (doFlashCycle) {
-          hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, hiddenWidth, hiddenHeight);
-          hiddenContext.fillStyle = "#000000";
+          ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
+          ctx.fillStyle = "#000000"
+          hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, hiddenWidth, hiddenHeight)
+          hiddenContext.fillStyle = "#000000"
         }
       }
       ctx.fillText(v, xmarginPx + i*cwidth, yoffset)

@@ -37,11 +37,8 @@ export const handleCopyToClipboard = () => {
       let line = ''
       for (let i = 0; i < nchars; i++) {
         const value = textPage[j * nchars + i]
-        const v1 = getPrintableChar(value, isAltCharSet)
-        if (v1 >= 32 && v1 !== 127) {
-          const c = String.fromCharCode(v1);
-          line += c
-        }
+        const c = getPrintableChar(value, isAltCharSet)
+        line += c
       }
       line = line.trim()
       output += line + '\n'

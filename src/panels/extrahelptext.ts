@@ -15,5 +15,5 @@ ramdisk=64|512|1024|4096|8192
 
 Examples:
 https://apple2ts.com/?debug=on#Replay
-https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.3-en_800k.2mg
+https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg
 `

@@ -233,22 +233,32 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
 
 export const getPrintableChar = (value: number, isAltCharSet: boolean) => {
   let v1 = value
-  if (isAltCharSet) {
-    if ((v1 >= 0 && v1 <= 31) || (v1 >= 64 && v1 <= 95)) {
-      v1 += 64
-    } else if (v1 >= 128 && v1 <= 159) {
-      v1 -= 64
-    } else if (v1 >= 160) {
-      v1 -= 128
-    }
-  } else {
-    // Shift Ctrl chars and second ASCII's into correct ASCII range
-    if ((v1 >= 0 && v1 <= 0x1f) || (v1 >= 0x60 && v1 <= 0x9f)) {
-      v1 += 64
-    }
+  if (v1 >= 0 && v1 <= 31) {
+    // Shift Ctrl chars into ASCII A-Z range
+    // They will be displayed as inverse
+    v1 += 64
+  } else if (v1 >= 160) {
+    // Standard ASCII, just strip the high bit
     v1 &= 0b01111111
+  } else if (isAltCharSet) {
+    if (v1 >= 64 && v1 <= 95) {
+      // Shift Mousetext chars into extended ASCII range
+      // These are flashing chars in the normal char set.
+      v1 += 64
+    } else if (v1 >= 128) {
+      // 128...159 will be displayed as ASCII 64...95 (uppercase)
+      v1 -= 64
+    }
+    // 32...63 and 96...127 are unchanged and will be displayed as normal
+  } else {
+    // 32...95 are unchanged and will be displayed as normal
+    // 96...127 will be displayed as flashing
+    // 128...159 will be displayed as normal uppercase
+    if (v1 >= 96) {
+      v1 -= 64
+    }
   }
-  return v1
+  return String.fromCodePoint(v1 === 0x83 ? 0xEBE7 : (v1 >= 127 ? (0xE000 + v1) : v1))
 }
 
 let zpPrev = new Uint8Array(1)
