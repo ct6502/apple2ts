@@ -46,7 +46,7 @@ test('hitInstruction Illegal Opcodes', () => {
   bp.address = BRK_ILLEGAL
   bpMap.set(bp.address, bp)
   for (let i = 0; i < 256; i++) {
-    if (opCodes[i].name === '???') {
+    if (!opCodes[i]) {
       expect(hitBreakpoint(i, 0)).toEqual(true)
     } else {
       expect(hitBreakpoint(i, 0)).toEqual(false)
@@ -66,7 +66,7 @@ test('hitInstruction with hexvalue', () => {
     // but they should all hit it if the hexvalue matches.
     expect(hitBreakpoint(i, 0xCD)).toEqual(true)
     // Implied mode instructions have length 1 byte
-    if (opCodes[i].bytes === 1) {
+    if (opCodes[i] && opCodes[i].bytes === 1) {
       // cpu6502 will pass in -1 for implied mode hex values  
       expect(hitBreakpoint(i, -1)).toEqual(true)
     } else {

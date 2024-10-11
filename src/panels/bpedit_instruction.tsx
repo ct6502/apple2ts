@@ -28,7 +28,7 @@ const BPEdit_Instruction = (props: {
   const [instruction, setInstruction] = useState('')
   const [popup, setPopup] = useState<string[]>([])
   const [addressMode, setAddressMode] = useState('')
-  const [illegalOpcode, setIllegalOpcode] = useState(false)
+  const [illegalOpcode, setIllegalOpcode] = useState(props.breakpoint.address === BRK_ILLEGAL)
 
   const resetPopup = () => {
     setPopup(opCodeNames)

@@ -1,22 +1,7 @@
 import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
 import { setPC, setX } from "../instructions";
 import { memGet, memSet } from "../memory";
-import { Breakpoint, BreakpointMap, checkBreakpointExpression } from "./breakpoint";
-
-// Test Breakpoint expression evaluation
-const testBP = (expression: string) => {
-  return checkBreakpointExpression(expression)
-}
-
-test('validBreakpointExpression', () => {
-  expect(testBP("A == 0x20")).toEqual('')
-  expect(testBP("A ==")).toEqual('Syntax error in expression')
-  expect(testBP("2 + 2")).toEqual('Expression must evaluate to true or false')
-  expect(testBP("A == #$2F")).toEqual('')
-  expect(testBP("A == X && X == Y && Y == P && P == S")).toEqual('')
-  expect(testBP("$2F == 1")).toEqual('')
-  expect(testBP("$1234 == 1")).toEqual('')
-})
+import { Breakpoint, BreakpointMap } from "./breakpoint";
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
@@ -58,7 +43,9 @@ test('hitBreakpoint', () => {
   expect(hitBreakpoint()).toEqual(true)
   bp.hitcount = 0
   expect(hitBreakpoint()).toEqual(true)
-  bp.expression = "X == 0x20"
+  bp.expression1.register = 'X'
+  bp.expression1.operator = '=='
+  bp.expression1.value = 0x20
   expect(hitBreakpoint()).toEqual(false)
   setX(0x20)
   expect(hitBreakpoint()).toEqual(true)
@@ -69,13 +56,17 @@ test('hitBreakpoint', () => {
   // memSet(0x20, 0x20)
   // expect(memGet(0x20)).toEqual(0x20)
   // expect(hitBreakpoint()).toEqual(true)
-  bp.expression = "A == 0x99 && X == 0x20"
+  bp.expression1.register = "A"
+  bp.expression1.operator = "=="
+  bp.expression1.value = 0x99
+  bp.expressionOperator = "&&"
+  bp.expression2.register = "X"
+  bp.expression2.operator = "=="
+  bp.expression2.value = 0x20
   expect(hitBreakpoint()).toEqual(false)
-  bp.expression = "A == 0x99 || X == #$20"
+  bp.expressionOperator = "||"
   expect(hitBreakpoint()).toEqual(true)
-  bp.expression = "bad expression"
-  expect(hitBreakpoint()).toEqual(false)
-  bp.expression = ''
+  bp.expression1.register = ''
   expect(hitBreakpoint()).toEqual(true)
 })
 

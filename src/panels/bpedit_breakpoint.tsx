@@ -1,47 +1,39 @@
 import { useState } from "react";
-import { Breakpoint, checkBreakpointExpression } from "../emulator/utility/breakpoint";
+import { Breakpoint } from "../emulator/utility/breakpoint";
 import EditField from "./editfield";
-import { getSoftSwitchDescriptions } from "../emulator/softswitches"
 import { Droplist } from "./droplist";
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
+import { toHex } from "../emulator/utility/utility";
+import ExpressionControl from "./expressioncontrol";
 
 const BPEdit_Breakpoint = (props: {
   breakpoint: Breakpoint,
 }) => {
-  const [badExpression, setBadExpression] = useState('')
   const [triggerUpdate, setTriggerUpdate] = useState(false)
+  const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
+    toHex(props.breakpoint.address) : '')
 
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
-    if (props.breakpoint) {
-      const address = parseInt(value || '-1', 16)
-      if (address >= 0xC000 && address <= 0xC0FF) {
-        props.breakpoint.memget = true
-        props.breakpoint.memset = true
-        const switches = getSoftSwitchDescriptions()
-        if (switches[address]) {
-          if (switches[address].includes("status")) {
-            props.breakpoint.memset = false
-          } else if (switches[address].includes("write")) {
-            props.breakpoint.memget = false
-          }
-        }
-      }
-      props.breakpoint.address = address
-      setTriggerUpdate(!triggerUpdate)
-    }
+    setBpAddress(value)
+    const address = parseInt(value || '-1', 16)
+    props.breakpoint.address = address
+    setTriggerUpdate(!triggerUpdate)
   }
 
-  const handleExpressionChange = (value: string) => {
-    let expression = value.replace("===", "==")
-    expression = expression.replace(/[^#$0-9 abcdefixysp|&()=<>+\-*/]/gi, '')
-    expression = expression.toUpperCase()
-    if (props.breakpoint) {
-      props.breakpoint.expression = expression
-      const badExpression = checkBreakpointExpression(expression)
-      setBadExpression(badExpression)
-      setTriggerUpdate(!triggerUpdate)
-    }
+  const handleExpressionChange1 = (expr: BreakpointExpression) => {
+    props.breakpoint.expression1 = expr
+    setTriggerUpdate(!triggerUpdate)
+  }
+
+  const handleExpressionChange2 = (expr: BreakpointExpression) => {
+    props.breakpoint.expression2 = expr
+    setTriggerUpdate(!triggerUpdate)
+  }
+
+  const handleExpressionOperatorChange = (value: ExpressionOperator) => {
+    props.breakpoint.expressionOperator = value
+    setTriggerUpdate(!triggerUpdate)
   }
 
   const handleHitCountChange = (value: string) => {
@@ -49,10 +41,8 @@ const BPEdit_Breakpoint = (props: {
     if (value.trim() !== '') {
       value = Math.max(parseInt(value), 1).toString()
     }
-    if (props.breakpoint) {
-      props.breakpoint.hitcount = parseInt(value || '1')
-      setTriggerUpdate(!triggerUpdate)
-    }
+    props.breakpoint.hitcount = parseInt(value || '1')
+    setTriggerUpdate(!triggerUpdate)
   }
 
   const handleMemoryBankChange = (value: string) => {
@@ -76,33 +66,39 @@ const BPEdit_Breakpoint = (props: {
     return true
   }
 
-  const addrLabel = (addr: number) => {
-    return (addr >= 0) ? addr.toString(16).toUpperCase() : ''
-  }
 
   return (
     <div>
       <div className="flex-row">
         <EditField name="Address: "
           initialFocus={true}
-          value={addrLabel(props.breakpoint.address)}
+          value={bpAddress}
           setValue={handleAddressChange}
           placeholder="Any"
           width="5em" />
       </div>
       <div>
-        <EditField name="Expression: "
-          value={props.breakpoint.expression}
-          setValue={handleExpressionChange}
-          warning={badExpression}
-          help="Example: (A > #$80) && ($2000 == #$C0)"
-          placeholder="Break when expression evaluates to true" />
-        <EditField name="Hit&nbsp;Count: "
-          value={props.breakpoint.hitcount.toString()}
-          setValue={handleHitCountChange}
-          placeholder="1"
-          width="5em" />
+        <span className="dialog-title">Expression:</span>
+        <ExpressionControl expr={props.breakpoint.expression1}
+          setExpr={handleExpressionChange1} />
+        <span style={{ marginLeft: "1em", marginRight: "1em" }}>
+          <Droplist
+            monospace={true}
+            disabled={props.breakpoint.expression1.register === ''}
+            value={props.breakpoint.expressionOperator}
+            values={['', '&&', '||']}
+            setValue={(v: string) => handleExpressionOperatorChange(v as ExpressionOperator)} />
+        </span>
+        <ExpressionControl expr={props.breakpoint.expression2}
+          setExpr={handleExpressionChange2}
+          disabled={props.breakpoint.expression1.register === '' || props.breakpoint.expressionOperator === ''}
+        />
       </div>
+      <EditField name="Hit&nbsp;Count: "
+        value={props.breakpoint.hitcount.toString()}
+        setValue={handleHitCountChange}
+        placeholder="1"
+        width="5em" />
       <Droplist name="Memory&nbsp;Bank: "
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}

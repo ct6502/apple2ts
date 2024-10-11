@@ -83,6 +83,12 @@ const BreakpointsView = () => {
     if (breakpointEditAddress >= 0) {
       breakpoints.delete(breakpointEditAddress)
     }
+    // Sanity check for watchpoints - make sure we have a valid address,
+    // otherwise our watchpoint address will say "Any", which is confusing
+    // since it won't actually break.
+    if (breakpointEditValue.watchpoint) {
+      breakpointEditValue.address = Math.max(0, breakpointEditValue.address)
+    }
     breakpoints.set(breakpointEditValue.address, breakpointEditValue)
     passBreakpoints(breakpoints)
     setShowBreakpointEdit(false)
@@ -100,7 +106,7 @@ const BreakpointsView = () => {
     if (bp.disabled) {
       return iconBreakpointDisabled
     }
-    if (bp.expression || bp.hitcount > 1) {
+    if (bp.expression1.register !== '' || bp.hitcount > 1) {
       return iconBreakpointExtra
     }
     return iconBreakpointEnabled

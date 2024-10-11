@@ -51,7 +51,7 @@ const BreakpointEdit = (props: {
     props.breakpoint.instruction = e.target.value === "instruction"
     if (props.breakpoint) {
       props.breakpoint.address = props.breakpoint.instruction ? 0 :
-        props.breakpoint.address & 0xFFFF
+        props.breakpoint.address
     }
     setTriggerUpdate(!triggerUpdate)
   }
@@ -74,7 +74,7 @@ const BreakpointEdit = (props: {
         ref={dialogRef}
         style={{
           left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
-          width: "500px", height: "auto"
+          width: "525px", height: "auto"
         }}
       >
         <div className="flex-column">

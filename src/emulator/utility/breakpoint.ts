@@ -13,7 +13,7 @@ export const getBreakpointIcon = (bp: Breakpoint) => {
   if (bp.disabled) {
     return iconBreakpointDisabled
   }
-  if (bp.expression || bp.hitcount > 1) {
+  if (bp.expression1.register !== '' || bp.hitcount > 1) {
     return iconBreakpointExtra
   }
   return iconBreakpointEnabled
@@ -58,8 +58,8 @@ export const getBreakpointString = (bp: Breakpoint) => {
     if (bp.hitcount > 1) {
       result += ` hit=${bp.hitcount}`
     }
-    if (bp.expression) {
-      result += ` (${bp.expression.replace(/ /g, '')})`
+    if (bp.expression1.register !== '') {
+      result += ` (expression)`
     }
   }
   return result
@@ -76,42 +76,6 @@ export const convertBreakpointExpression = (expression: string) => {
   return expr
 }
 
-const verifyMemGets = (expression: string) => {
-  // Create a regular expression that matches memGet(*) where * is any number
-  const regex = /memGet\(0x([0-9A-F]+)\)/g;
-  // Find all matches in the expression
-  const matches = [...expression.matchAll(regex)];
-  // Iterate over the matches and check if the number is less than 65536
-  for (const match of matches) {
-    const number = parseInt(match[1], 16);
-    if (number > 65535) {
-      return false
-    }
-  }
-  return true
-}
-
-export const checkBreakpointExpression = (expression: string) => {
-  // Make these all negative so boolean expressions (e.g. A == 0 && X == 1)
-  // won't accidently short circuit and look like valid expressions.
-  if (expression.trim() === '') return ''
-  const A = -1, X = -2, Y = -3, S = -4, P = -5, I = -6
-  const memGet = (addr: number) => {return -addr}
-  try {
-    expression = convertBreakpointExpression(expression)
-    if (!verifyMemGets(expression)) {
-      return "Memory address out of range"
-    }
-    const type = typeof eval(expression)
-    // This is a hack to avoid TypeScript errors about undefined variables
-    // for the A, X, Y, S, P, I, and memGet functions
-    if (type === 'bigint') return (A + X + Y + S + P + I + memGet(1)).toString()
-    const goodExpression = typeof eval(expression) === 'boolean'
-    return goodExpression ? '' : "Expression must evaluate to true or false"
-  } catch (e) {
-    return "Syntax error in expression"
-  }
-}
 
 export class Breakpoint {
   address: number;
@@ -122,7 +86,9 @@ export class Breakpoint {
   once: boolean;
   memget: boolean;
   memset: boolean;
-  expression: string;
+  expression1: BreakpointExpression;
+  expression2: BreakpointExpression;
+  expressionOperator: '' | '&&' | '||';
   hexvalue: number;
   hitcount: number;
   nhits: number;
@@ -137,7 +103,9 @@ export class Breakpoint {
     this.once = false
     this.memget = false
     this.memset = true
-    this.expression = ''
+    this.expression1 = { register: '', address: 0x300, operator: '==', value: 0x80 }
+    this.expression2 = { register: '', address: 0x300, operator: '==', value: 0x80 }
+    this.expressionOperator = ''
     this.hexvalue = -1
     this.hitcount = 1
     this.nhits = 0

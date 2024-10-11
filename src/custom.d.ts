@@ -249,3 +249,14 @@ interface MemoryBank {
 interface MemoryBanks {
   [key: string]: MemoryBank;
 }
+
+type ExpressionOperator = "" | "&&" | "||"
+type RegisterValues = "" | "$" | "A" | "X" | "Y" | "S" | "P"
+type OperatorValues = "==" | "!=" | ">" | ">=" | "<" | "<="
+
+type BreakpointExpression = {
+  register: RegisterValues,
+  address: number,
+  operator: OperatorValues,
+  value: number
+}

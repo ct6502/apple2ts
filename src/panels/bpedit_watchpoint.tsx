@@ -5,14 +5,18 @@ import PullDownMenu from "./pulldownmenu";
 import { getSoftSwitchDescriptions } from "../emulator/softswitches"
 import { Droplist } from "./droplist";
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../emulator/memory";
+import { toHex } from "../emulator/utility/utility";
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
 }) => {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
+  const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
+    toHex(props.breakpoint.address) : '')
 
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
+    setBpAddress(value)
     if (props.breakpoint) {
       const address = parseInt(value || '0', 16)
       if (address >= 0xC000 && address <= 0xC0FF) {
@@ -77,11 +81,10 @@ const BPEdit_Watchpoint = (props: {
 
   return (
     <div>
-
       <div className="flex-row" style={{ alignItems: 'baseline' }}>
         <EditField name="Address: "
           initialFocus={true}
-          value={props.breakpoint.address.toString(16).toUpperCase()}
+          value={bpAddress}
           setValue={handleAddressChange}
           placeholder="F800"
           width="5em" />

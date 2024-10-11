@@ -42,17 +42,17 @@ PCODE('ASL', ADDR_MODE.ABS_X, 0x1E, 3)
 PCODE('BCC', ADDR_MODE.ZP_REL, 0x90, 2)
 PCODE('BCS', ADDR_MODE.ZP_REL, 0xB0, 2)
 PCODE('BEQ', ADDR_MODE.ZP_REL, 0xF0, 2)
+PCODE('BIT', ADDR_MODE.ZP_REL, 0x24, 2)
+PCODE('BIT', ADDR_MODE.ABS, 0x2C, 3)
+PCODE('BIT', ADDR_MODE.IMM, 0x89, 2)
+PCODE('BIT', ADDR_MODE.ZP_X, 0x34, 2)
+PCODE('BIT', ADDR_MODE.ABS_X, 0x3C, 3)
 PCODE('BMI', ADDR_MODE.ZP_REL, 0x30, 2)
 PCODE('BNE', ADDR_MODE.ZP_REL, 0xD0, 2)
 PCODE('BPL', ADDR_MODE.ZP_REL, 0x10, 2)
 PCODE('BVC', ADDR_MODE.ZP_REL, 0x50, 2)
 PCODE('BVS', ADDR_MODE.ZP_REL, 0x70, 2)
 PCODE('BRA', ADDR_MODE.ZP_REL, 0x80, 2)
-PCODE('BIT', ADDR_MODE.ZP_REL, 0x24, 2)
-PCODE('BIT', ADDR_MODE.ABS, 0x2C, 3)
-PCODE('BIT', ADDR_MODE.IMM, 0x89, 2)
-PCODE('BIT', ADDR_MODE.ZP_X, 0x34, 2)
-PCODE('BIT', ADDR_MODE.ABS_X, 0x3C, 3)
 PCODE('BRK', ADDR_MODE.IMPLIED, 0x00, 1)
 PCODE('CLC', ADDR_MODE.IMPLIED, 0x18, 1)
 PCODE('CLD', ADDR_MODE.IMPLIED, 0xD8, 1)
@@ -195,29 +195,4 @@ PCODE('TRB', ADDR_MODE.ABS, 0x1C, 3)
 PCODE('TSB', ADDR_MODE.ZP_REL, 0x04, 2)
 PCODE('TSB', ADDR_MODE.ABS, 0x0C, 3)
 
-const twoByteNops = [0x02, 0x22, 0x42, 0x62, 0x82, 0xC2, 0xE2]
-const nopUndoc = '???'
-twoByteNops.forEach(instr => {
-  PCODE(nopUndoc, ADDR_MODE.IMPLIED, instr, 2)
-});
-for (let i = 0; i <= 15; i++) {
-  PCODE(nopUndoc, ADDR_MODE.IMPLIED, 3 + 16 * i, 1)
-  PCODE(nopUndoc, ADDR_MODE.IMPLIED, 7 + 16 * i, 1)
-  PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xB + 16 * i, 1)
-  PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xF + 16 * i, 1)
-}
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0x44, 2)
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0x54, 2)
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xD4, 2)
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xF4, 2)
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0x5C, 2)
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xDC, 2)
-PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xFC, 2)
-// Fill the rest of the 65c02 with BRK instructions. This avoids needing
-// to do a check in processInstruction, and also breaks on a bad op code.
-for (let i = 0; i < 256; i++) {
-  if (!opCodes[i]) {
-    console.log("ERROR: OPCODE " + i.toString(16) + " should be implemented")
-  }
-}
 export const opCodeNames = Object.keys(opTable)

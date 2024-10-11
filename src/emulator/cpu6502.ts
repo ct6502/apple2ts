@@ -1,8 +1,8 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
-import { MEMORY_BANKS, memGet, specialJumpTable } from "./memory"
+import { MEMORY_BANKS, memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, BreakpointMap, convertBreakpointExpression } from "./utility/breakpoint"
+import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, BreakpointMap } from "./utility/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -121,19 +121,36 @@ const processCycleCountCallbacks = () => {
   }
 }
 
-const evaluateBreakpointExpression = (expression: string) => {
-  const A = s6502.Accum
-  const X = s6502.XReg
-  const Y = s6502.YReg
-  const S = s6502.StackPtr
-  const P = s6502.PStatus
-  const I = s6502.flagIRQ
-  try {
-    return eval(expression)
-  } catch (e) {
-    // This is a hack to return false but also mark the variables as "used"
-    return (A + X + Y + S + P + I) === -1
+const checkBreakpointSingleExpression = (expr: BreakpointExpression) => {
+  let val = 0
+  switch (expr.register) {
+    case '$': val = memGetRaw(expr.address); break
+    case 'A': val = s6502.Accum; break
+    case 'X': val = s6502.XReg; break
+    case 'Y': val = s6502.YReg; break
+    case 'S': val = s6502.StackPtr; break
+    case 'P': val = s6502.PStatus; break
+    // case 'I': return s6502.flagIRQ
   }
+  switch (expr.operator) {
+    case '==': return val === expr.value
+    case '!=': return val !== expr.value
+    case '<': return val < expr.value
+    case '<=': return val <= expr.value
+    case '>': return val > expr.value
+    case '>=': return val >= expr.value
+  }
+}
+
+export const checkBreakpointExpression = (bp: Breakpoint) => {
+  const passes1 = checkBreakpointSingleExpression(bp.expression1)
+  // Short circuit second expression if we can
+  if (bp.expressionOperator === '') return passes1
+  if (bp.expressionOperator === '&&' && !passes1) return false
+  if (bp.expressionOperator === '||' && passes1) return true
+  // Otherwise, whether we pass depends upon the second expression
+  const passes2 = checkBreakpointSingleExpression(bp.expression2)
+  return passes2
 }
 
 export const setWatchpointBreak = () => {
@@ -161,9 +178,8 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
       if (bp.hexvalue !== hexvalue) return false
     }
   }
-  if (bp.expression) {
-    const expression = convertBreakpointExpression(bp.expression)
-    const doBP = evaluateBreakpointExpression(expression)
+  if (bp.expression1.register !== '') {
+    const doBP = checkBreakpointExpression(bp)
     if (!doBP) return false
   }
   if (bp.hitcount > 1) {
