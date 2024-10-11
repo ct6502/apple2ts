@@ -87,7 +87,24 @@ export const RestoreSaveState = (fileContents: string) => {
   const runMode = displayState?.runMode ? (displayState.runMode as RUN_MODE) : RUN_MODE.RUNNING
   passSetRunMode(runMode)
   if (displayState?.breakpoints) {
-    const deserializedBreakpoints = new BreakpointMap(JSON.parse(displayState.breakpoints))
+    const breakpoints = JSON.parse(displayState.breakpoints)
+    const deserializedBreakpoints = new BreakpointMap()
+    for (const [addr, bp] of breakpoints) {
+      bp.address = parseInt(addr)
+      // Watch out for old breakpoints that don't have an expression1 or expression2
+      // If we did have an old expression, just throw away the breakpoint...
+      // That's better than trying to convert it or remove the expression.
+      if (!bp.expression) {
+        // If we had old breakpoints without an expression, just
+        // fill in new empty expression1 and expression2.
+        if (!bp.expression1) {
+          bp.expression1 = { register: '', address: 0, operator: '', value: 0 }
+          bp.expression2 = { register: '', address: 0, operator: '', value: 0 }
+          bp.expressionOperator = ''
+        }
+        deserializedBreakpoints.set(bp.address, bp)
+      }
+    }
     passBreakpoints(deserializedBreakpoints)
   }
 }
