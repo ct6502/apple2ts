@@ -84,6 +84,11 @@ const DisplayApple2 = () => {
     passSetSpeedMode(0)
     handleInputParams()
     handleFragment(updateDisplay)
+    window.addEventListener('wheel', (event) => {
+      if (document.body.scrollHeight <= window.innerHeight) {
+        event.preventDefault()
+      }
+    })
     //    window.addEventListener('beforeunload', (event) => {
     // Cancel the event as stated by the standard.
     //      event.preventDefault();

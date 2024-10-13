@@ -7,7 +7,8 @@ import { ADDR_MODE, toHex } from "./utility"
 import { opCodes } from "../../panels/opcodes";
 
 export const BRK_INSTR = 0x10000
-export const BRK_ILLEGAL = 0x10100
+export const BRK_ILLEGAL_65C02 = 0x10100
+export const BRK_ILLEGAL_6502 = 0x10200
 
 export const getBreakpointIcon = (bp: Breakpoint) => {
   if (bp.disabled) {
@@ -28,7 +29,13 @@ export const getBreakpointString = (bp: Breakpoint) => {
   let result = ''
   if (bp.instruction) {
     const opcode = opCodes[bp.address & 0xFF]
-    result = (bp.address === BRK_ILLEGAL) ? 'Any illegal' : opcode.name
+    if (bp.address === BRK_ILLEGAL_65C02) {
+      result = 'Any illegal 65C02'
+    } else if (bp.address === BRK_ILLEGAL_6502) {
+      result = 'Any illegal 6502'
+    } else {
+      result = opcode.name
+    }
     const value4 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 4) : 'zzzz'
     const value2 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 2) : 'zz'
     switch (opcode.mode) {

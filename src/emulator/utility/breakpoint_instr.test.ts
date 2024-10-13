@@ -1,6 +1,6 @@
 import { opCodes } from "../../panels/opcodes";
 import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
-import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, BreakpointMap } from "./breakpoint";
+import { BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "./breakpoint";
 
 
 const bpMap: BreakpointMap = new BreakpointMap()
@@ -43,7 +43,7 @@ test('hitInstruction Illegal Opcodes', () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.instruction = true
-  bp.address = BRK_ILLEGAL
+  bp.address = BRK_ILLEGAL_65C02
   bpMap.set(bp.address, bp)
   for (let i = 0; i < 256; i++) {
     if (!opCodes[i]) {

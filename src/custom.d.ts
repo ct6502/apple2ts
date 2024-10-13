@@ -29,10 +29,11 @@ interface PCodeFunc {
 
 interface PCodeInstr {
     name: string
-    pcode: number,
+    pcode: number
     mode: number
     bytes: number
     execute: PCodeFunc
+    is6502: boolean
 }
 
 type STATE6502 = {

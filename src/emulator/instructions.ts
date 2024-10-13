@@ -177,10 +177,14 @@ const pageBoundary = (addr1: number, addr2: number) => (((addr1 >> 8) !== (addr2
 
 export const pcodes = new Array<PCodeInstr>(256)
 
-const PCODE = (name: string, mode: ADDR_MODE, pcode: number, bytes: number, code: PCodeFunc) => {
+const PCODE = (name: string, mode: ADDR_MODE, pcode: number,
+  bytes: number, code: PCodeFunc, is65C02 = false) => {
   console.assert(!pcodes[pcode], "Duplicate instruction: " + name + " mode=" + mode)
-  pcodes[pcode] = {name: name, pcode: pcode, mode: mode, bytes: bytes, execute: code}
+  pcodes[pcode] = {name: name, pcode: pcode, mode: mode,
+    bytes: bytes, execute: code, is6502: !is65C02}
 }
+
+const is65C02 = true
 
 const doIndirectYinstruction = (vZP: number,
   doInstruction: (addr: number) => void,
@@ -265,7 +269,7 @@ PCODE('ADC', ADDR_MODE.IND_X, 0x61, 2, (vOffset) =>
   {const vZP = oneByteAdd(vOffset, s6502.XReg);
   doADC(address(memGet(vZP), memGet(vZP + 1))); return 6 + BCD()})
 PCODE('ADC', ADDR_MODE.IND_Y, 0x71, 2, (vZP) => doIndirectYinstruction(vZP, doADC, true))
-PCODE('ADC', ADDR_MODE.IND, 0x72, 2, (vZP) => doIndirectInstruction(vZP, doADC, true))
+PCODE('ADC', ADDR_MODE.IND, 0x72, 2, (vZP) => doIndirectInstruction(vZP, doADC, true), is65C02)
 
 const doAND = (addr: number) => {
   s6502.Accum &= memGet(addr)
@@ -281,7 +285,7 @@ PCODE('AND', ADDR_MODE.ABS_Y, 0x39, 3, (vLo, vHi) => {const addr = twoByteAdd(vL
 PCODE('AND', ADDR_MODE.IND_X, 0x21, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
   doAND(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('AND', ADDR_MODE.IND_Y, 0x31, 2, (vZP) => doIndirectYinstruction(vZP, doAND, false))
-PCODE('AND', ADDR_MODE.IND, 0x32, 2, (vZP) => doIndirectInstruction(vZP, doAND, false))
+PCODE('AND', ADDR_MODE.IND, 0x32, 2, (vZP) => doIndirectInstruction(vZP, doAND, false), is65C02)
 
 const doASL = (addr: number) => {
   let v = memGet(addr)
@@ -307,7 +311,7 @@ PCODE('BNE', ADDR_MODE.ZP_REL, 0xD0, 2, (value) => doBranch(!isZero(), value))
 PCODE('BPL', ADDR_MODE.ZP_REL, 0x10, 2, (value) => doBranch(!isNegative(), value))
 PCODE('BVC', ADDR_MODE.ZP_REL, 0x50, 2, (value) => doBranch(!isOverflow(), value))
 PCODE('BVS', ADDR_MODE.ZP_REL, 0x70, 2, (value) => doBranch(isOverflow(), value))
-PCODE('BRA', ADDR_MODE.ZP_REL, 0x80, 2, (value) => doBranch(true, value))
+PCODE('BRA', ADDR_MODE.ZP_REL, 0x80, 2, (value) => doBranch(true, value), is65C02)
 
 const doBit = (value: number) => {
   setZero((s6502.Accum & value) === 0);
@@ -316,10 +320,13 @@ const doBit = (value: number) => {
 }
 PCODE('BIT', ADDR_MODE.ZP_REL, 0x24, 2, (vZP) => {doBit(memGet(vZP)); return 3})
 PCODE('BIT', ADDR_MODE.ABS, 0x2C, 3, (vLo, vHi) => {doBit(memGet(address(vLo, vHi))); return 4})
-PCODE('BIT', ADDR_MODE.IMM, 0x89, 2, (value) => {setZero((s6502.Accum & value) === 0); return 2})
-PCODE('BIT', ADDR_MODE.ZP_X, 0x34, 2, (vZP) => {doBit(memGet(oneByteAdd(vZP, s6502.XReg))); return 4})
-PCODE('BIT', ADDR_MODE.ABS_X, 0x3C, 3, (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
-  doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))})
+PCODE('BIT', ADDR_MODE.IMM, 0x89, 2,
+  (value) => {setZero((s6502.Accum & value) === 0); return 2}, is65C02)
+PCODE('BIT', ADDR_MODE.ZP_X, 0x34, 2,
+  (vZP) => {doBit(memGet(oneByteAdd(vZP, s6502.XReg))); return 4}, is65C02)
+PCODE('BIT', ADDR_MODE.ABS_X, 0x3C, 3,
+  (vLo, vHi) => {const addr = twoByteAdd(vLo, vHi, s6502.XReg);
+  doBit(memGet(addr)); return 4 + pageBoundary(addr, address(vLo, vHi))}, is65C02)
 
 const doInterrupt = (name: string, addr: number, pcOffset = 0) => {
   // I don't think the real Apple IIe switches back to main ROM $C300
@@ -385,7 +392,7 @@ PCODE('CMP', ADDR_MODE.ABS_Y, 0xD9, 3, (vLo, vHi) => {const addr = twoByteAdd(vL
 PCODE('CMP', ADDR_MODE.IND_X, 0xC1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
   doCMP(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('CMP', ADDR_MODE.IND_Y, 0xD1, 2, (vZP) => doIndirectYinstruction(vZP, doCMP, false))
-PCODE('CMP', ADDR_MODE.IND, 0xD2, 2, (vZP) => doIndirectInstruction(vZP, doCMP, false))
+PCODE('CMP', ADDR_MODE.IND, 0xD2, 2, (vZP) => doIndirectInstruction(vZP, doCMP, false), is65C02)
 
 const doCPX = (addr: number) => {
   const value = memGet(addr)
@@ -413,7 +420,7 @@ const doDEC = (addr: number) => {
   checkStatus(v)
 }
 PCODE('DEC', ADDR_MODE.IMPLIED, 0x3A, 1, () => {s6502.Accum = oneByteAdd(s6502.Accum, -1);
-  checkStatus(s6502.Accum); return 2})
+  checkStatus(s6502.Accum); return 2}, is65C02)
 PCODE('DEC', ADDR_MODE.ZP_REL, 0xC6, 2, (vZP) => {doDEC(vZP); return 5})
 PCODE('DEC', ADDR_MODE.ZP_X, 0xD6, 2, (vZP) => {doDEC(oneByteAdd(vZP, s6502.XReg)); return 6})
 PCODE('DEC', ADDR_MODE.ABS, 0xCE, 3, (vLo, vHi) => {doDEC(address(vLo, vHi)); return 6})
@@ -443,7 +450,7 @@ PCODE('EOR', ADDR_MODE.ABS_Y, 0x59, 3, (vLo, vHi) => {const addr = twoByteAdd(vL
 PCODE('EOR', ADDR_MODE.IND_X, 0x41, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
   doEOR(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('EOR', ADDR_MODE.IND_Y, 0x51, 2, (vZP) => doIndirectYinstruction(vZP, doEOR, false))
-PCODE('EOR', ADDR_MODE.IND, 0x52, 2, (vZP) => doIndirectInstruction(vZP, doEOR, false))
+PCODE('EOR', ADDR_MODE.IND, 0x52, 2, (vZP) => doIndirectInstruction(vZP, doEOR, false), is65C02)
 
 const doINC = (addr: number) => {
   const v = oneByteAdd(memGet(addr), 1)
@@ -451,7 +458,7 @@ const doINC = (addr: number) => {
   checkStatus(v)
 }
 PCODE('INC', ADDR_MODE.IMPLIED, 0x1A, 1, () => {s6502.Accum = oneByteAdd(s6502.Accum, 1);
-  checkStatus(s6502.Accum); return 2})
+  checkStatus(s6502.Accum); return 2}, is65C02)
 PCODE('INC', ADDR_MODE.ZP_REL, 0xE6, 2, (vZP) => {doINC(vZP); return 5})
 PCODE('INC', ADDR_MODE.ZP_X, 0xF6, 2, (vZP) => {doINC(oneByteAdd(vZP, s6502.XReg)); return 6})
 PCODE('INC', ADDR_MODE.ABS, 0xEE, 3, (vLo, vHi) => {doINC(address(vLo, vHi)); return 6})
@@ -470,8 +477,10 @@ PCODE('JMP', ADDR_MODE.ABS, 0x4C, 3, (vLo, vHi) => {setPC(twoByteAdd(vLo, vHi, -
 // 65c02 - this fixes the 6502 indirect JMP bug across page boundaries
 PCODE('JMP', ADDR_MODE.IND, 0x6C, 3, (vLo, vHi) => {const a = address(vLo, vHi);
   vLo = memGet(a); vHi = memGet((a + 1) % 65536); setPC(twoByteAdd(vLo, vHi, -3)); return 6})
-PCODE('JMP', ADDR_MODE.IND_X, 0x7C, 3, (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, s6502.XReg);
-  vLo = memGet(a); vHi = memGet((a + 1) % 65536); setPC(twoByteAdd(vLo, vHi, -3)); return 6})
+PCODE('JMP', ADDR_MODE.IND_X, 0x7C, 3,
+  (vLo, vHi) => {const a = twoByteAdd(vLo, vHi, s6502.XReg);
+  vLo = memGet(a); vHi = memGet((a + 1) % 65536);
+  setPC(twoByteAdd(vLo, vHi, -3)); return 6}, is65C02)
 
 PCODE('JSR', ADDR_MODE.ABS, 0x20, 3, (vLo, vHi) => {
   // Push the (address - 1) of the next instruction
@@ -495,7 +504,7 @@ PCODE('LDA', ADDR_MODE.ABS_Y, 0xB9, 3, (vLo, vHi) => {const addr = twoByteAdd(vL
 PCODE('LDA', ADDR_MODE.IND_X, 0xA1, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
   doLDA(address(memGet(vZP), memGet((vZP + 1) % 256))); return 6})
 PCODE('LDA', ADDR_MODE.IND_Y, 0xB1, 2, (vZP) => doIndirectYinstruction(vZP, doLDA, false))
-PCODE('LDA', ADDR_MODE.IND, 0xB2, 2, (vZP) => doIndirectInstruction(vZP, doLDA, false))
+PCODE('LDA', ADDR_MODE.IND, 0xB2, 2, (vZP) => doIndirectInstruction(vZP, doLDA, false), is65C02)
 
 const doLDX = (addr: number) => {
   s6502.XReg = memGet(addr)
@@ -552,16 +561,18 @@ PCODE('ORA', ADDR_MODE.ABS_Y, 0x19, 3, (vLo, vHi) => {const addr = twoByteAdd(vL
 PCODE('ORA', ADDR_MODE.IND_X, 0x01, 2, (vOffset) => {const vZP = oneByteAdd(vOffset, s6502.XReg);
   doORA(address(memGet(vZP), memGet(vZP + 1))); return 6})
 PCODE('ORA', ADDR_MODE.IND_Y, 0x11, 2, (vZP) => doIndirectYinstruction(vZP, doORA, false))
-PCODE('ORA', ADDR_MODE.IND, 0x12, 2, (vZP) => doIndirectInstruction(vZP, doORA, false))
+PCODE('ORA', ADDR_MODE.IND, 0x12, 2, (vZP) => doIndirectInstruction(vZP, doORA, false), is65C02)
 
 PCODE('PHA', ADDR_MODE.IMPLIED, 0x48, 1, () => {pushStack("PHA", s6502.Accum); return 3})
 PCODE('PHP', ADDR_MODE.IMPLIED, 0x08, 1, () => {pushStack("PHP", s6502.PStatus | 0x10); return 3})
-PCODE('PHX', ADDR_MODE.IMPLIED, 0xDA, 1, () => {pushStack("PHX", s6502.XReg); return 3})
-PCODE('PHY', ADDR_MODE.IMPLIED, 0x5A, 1, () => {pushStack("PHY", s6502.YReg); return 3})
+PCODE('PHX', ADDR_MODE.IMPLIED, 0xDA, 1, () => {pushStack("PHX", s6502.XReg); return 3}, is65C02)
+PCODE('PHY', ADDR_MODE.IMPLIED, 0x5A, 1, () => {pushStack("PHY", s6502.YReg); return 3}, is65C02)
 PCODE('PLA', ADDR_MODE.IMPLIED, 0x68, 1, () => {s6502.Accum = popStack(); checkStatus(s6502.Accum); return 4})
 PCODE('PLP', ADDR_MODE.IMPLIED, 0x28, 1, () => {setPStatus(popStack()); return 4})
-PCODE('PLX', ADDR_MODE.IMPLIED, 0xFA, 1, () => {s6502.XReg = popStack(); checkStatus(s6502.XReg); return 4})
-PCODE('PLY', ADDR_MODE.IMPLIED, 0x7A, 1, () => {s6502.YReg = popStack(); checkStatus(s6502.YReg); return 4})
+PCODE('PLX', ADDR_MODE.IMPLIED, 0xFA, 1,
+  () => {s6502.XReg = popStack(); checkStatus(s6502.XReg); return 4}, is65C02)
+PCODE('PLY', ADDR_MODE.IMPLIED, 0x7A, 1,
+  () => {s6502.YReg = popStack(); checkStatus(s6502.YReg); return 4}, is65C02)
 
 const doROL = (addr: number) => {
   let v = memGet(addr)
@@ -662,7 +673,7 @@ PCODE('SBC', ADDR_MODE.IND_X, 0xE1, 2, (vOffset) =>
 PCODE('SBC', ADDR_MODE.IND_Y, 0xF1, 2, (vZP) =>
   doIndirectYinstruction(vZP, doSBC, true))
 PCODE('SBC', ADDR_MODE.IND, 0xF2, 2, (vZP) =>
-  doIndirectInstruction(vZP, doSBC, true))
+  doIndirectInstruction(vZP, doSBC, true), is65C02)
 
 PCODE('SEC', ADDR_MODE.IMPLIED, 0x38, 1, () => {setCarry(); return 2})
 PCODE('SED', ADDR_MODE.IMPLIED, 0xF8, 1, () => {setDecimal(); return 2})
@@ -691,7 +702,7 @@ const doSTA = (addr: number) => {
 }
 // STA ($FF),Y take 6 cycles, doesn't depend upon page boundary
 PCODE('STA', ADDR_MODE.IND_Y, 0x91, 2, (vZP) => {doIndirectYinstruction(vZP, doSTA, false); return 6})
-PCODE('STA', ADDR_MODE.IND, 0x92, 2, (vZP) => doIndirectInstruction(vZP, doSTA, false))
+PCODE('STA', ADDR_MODE.IND, 0x92, 2, (vZP) => doIndirectInstruction(vZP, doSTA, false), is65C02)
 
 PCODE('STX', ADDR_MODE.ZP_REL, 0x86, 2, (vZP) => {memSet(vZP, s6502.XReg); return 3})
 PCODE('STX', ADDR_MODE.ZP_Y, 0x96, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.YReg), s6502.XReg); return 4})
@@ -701,14 +712,16 @@ PCODE('STY', ADDR_MODE.ZP_REL, 0x84, 2, (vZP) => {memSet(vZP, s6502.YReg); retur
 PCODE('STY', ADDR_MODE.ZP_X, 0x94, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), s6502.YReg); return 4})
 PCODE('STY', ADDR_MODE.ABS, 0x8C, 3, (vLo, vHi) => {memSet(address(vLo, vHi), s6502.YReg); return 4})
 
-PCODE('STZ', ADDR_MODE.ZP_REL, 0x64, 2, (vZP) => {memSet(vZP, 0); return 3})
-PCODE('STZ', ADDR_MODE.ZP_X, 0x74, 2, (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), 0); return 4})
-PCODE('STZ', ADDR_MODE.ABS, 0x9C, 3, (vLo, vHi) => {memSet(address(vLo, vHi), 0); return 4})
+PCODE('STZ', ADDR_MODE.ZP_REL, 0x64, 2, (vZP) => {memSet(vZP, 0); return 3}, is65C02)
+PCODE('STZ', ADDR_MODE.ZP_X, 0x74, 2,
+  (vZP) => {memSet(oneByteAdd(vZP, s6502.XReg), 0); return 4}, is65C02)
+PCODE('STZ', ADDR_MODE.ABS, 0x9C, 3,
+  (vLo, vHi) => {memSet(address(vLo, vHi), 0); return 4}, is65C02)
 PCODE('STZ', ADDR_MODE.ABS_X, 0x9E, 3, (vLo, vHi) => {
   const addr = twoByteAdd(vLo, vHi, s6502.XReg)
   memGet(addr)  // extra strobe of the address (Sather IIe p. 4-27)
   memSet(addr, 0)
-  return 5})
+  return 5}, is65C02)
 
 PCODE('TAX', ADDR_MODE.IMPLIED, 0xAA, 1, () => {s6502.XReg = s6502.Accum; checkStatus(s6502.XReg); return 2})
 PCODE('TAY', ADDR_MODE.IMPLIED, 0xA8, 1, () => {s6502.YReg = s6502.Accum; checkStatus(s6502.YReg); return 2})
@@ -723,8 +736,8 @@ const doTRB = (addr: number) => {
   memSet(addr, value & ~s6502.Accum)
 }
 
-PCODE('TRB', ADDR_MODE.ZP_REL, 0x14, 2, (vZP) => { doTRB(vZP); return 5})
-PCODE('TRB', ADDR_MODE.ABS,    0x1C, 3, (vLo, vHi) => {doTRB(address(vLo, vHi)); return 6})
+PCODE('TRB', ADDR_MODE.ZP_REL, 0x14, 2, (vZP) => { doTRB(vZP); return 5}, is65C02)
+PCODE('TRB', ADDR_MODE.ABS,    0x1C, 3, (vLo, vHi) => {doTRB(address(vLo, vHi)); return 6}, is65C02)
 
 const doTSB = (addr: number) => {
   const value = memGet(addr)
@@ -732,8 +745,8 @@ const doTSB = (addr: number) => {
   memSet(addr, value | s6502.Accum)
 }
 
-PCODE('TSB', ADDR_MODE.ZP_REL, 0x04, 2, (vZP) => {doTSB(vZP); return 5})
-PCODE('TSB', ADDR_MODE.ABS,    0x0C, 3, (vLo, vHi) => {doTSB(address(vLo, vHi)); return 6})
+PCODE('TSB', ADDR_MODE.ZP_REL, 0x04, 2, (vZP) => {doTSB(vZP); return 5}, is65C02)
+PCODE('TSB', ADDR_MODE.ABS,    0x0C, 3, (vLo, vHi) => {doTSB(address(vLo, vHi)); return 6}, is65C02)
 
 // Undocumented 65c02 NOP's
 // http://www.6502.org/tutorials/65c02opcodes.html
@@ -759,26 +772,38 @@ const twoByteNops = [0x02, 0x22, 0x42, 0x62, 0x82, 0xC2, 0xE2]
 const nopUndoc = '???'
 twoByteNops.forEach(instr => {
   PCODE(nopUndoc, ADDR_MODE.IMPLIED, instr, 2, () => {return 2})
+  pcodes[instr].is6502 = false
 });
 for (let i = 0; i <= 15; i++) {
   PCODE(nopUndoc, ADDR_MODE.IMPLIED, 3 + 16 * i, 1, () => {return 1})
+  pcodes[3 + 16 * i].is6502 = false
   PCODE(nopUndoc, ADDR_MODE.IMPLIED, 7 + 16 * i, 1, () => {return 1})
+  pcodes[7 + 16 * i].is6502 = false
   PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xB + 16 * i, 1, () => {return 1})  
+  pcodes[0xB + 16 * i].is6502 = false
   PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xF + 16 * i, 1, () => {return 1})  
+  pcodes[0xF + 16 * i].is6502 = false
 }
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0x44, 2, () => {return 3})
+pcodes[0x44].is6502 = false
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0x54, 2, () => {return 4})
+pcodes[0x54].is6502 = false
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xD4, 2, () => {return 4})
+pcodes[0xD4].is6502 = false
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xF4, 2, () => {return 4})
+pcodes[0xF4].is6502 = false
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0x5C, 3, () => {return 8})
+pcodes[0x5C].is6502 = false
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xDC, 3, () => {return 4})
+pcodes[0xDC].is6502 = false
 PCODE(nopUndoc, ADDR_MODE.IMPLIED, 0xFC, 3, () => {return 4})
+pcodes[0xFC].is6502 = false
 
 // Fill the rest of the 65c02 with BRK instructions. This avoids needing
 // to do a check in processInstruction, and also breaks on a bad op code.
 for (let i = 0; i < 256; i++) {
   if (!pcodes[i]) {
-    console.log("ERROR: OPCODE " + i.toString(16) + " should be implemented")
+    console.error("ERROR: OPCODE " + i.toString(16) + " should be implemented")
     PCODE('BRK', ADDR_MODE.IMPLIED, i, 1, doBrk)
   }
 }

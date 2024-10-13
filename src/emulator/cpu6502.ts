@@ -2,7 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pc
 import { MEMORY_BANKS, memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, BreakpointMap } from "./utility/breakpoint"
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "./utility/breakpoint"
 import { RUN_MODE } from "./utility/utility"
 
 // let prevMemory = Buffer.from(mainMem)
@@ -167,13 +167,16 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
   const bp = breakpointMap.get(s6502.PC) ||
     breakpointMap.get(-1) ||
     breakpointMap.get(instr | BRK_INSTR) ||
-    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL))
+    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL_65C02)) ||
+    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL_6502))
   if (!bp || bp.disabled || bp.watchpoint) return false
   if (bp.instruction) {
     // See if we need to have a matching value, but watch out for our special
     // BRK_ILLEGAL, which will break on any illegal opcode regardless of value.
-    if (bp.address === BRK_ILLEGAL) {
+    if (bp.address === BRK_ILLEGAL_65C02) {
       if (pcodes[instr].name !== '???') return false
+    } else if (bp.address === BRK_ILLEGAL_6502) {
+      if (pcodes[instr].is6502) return false
     } else if (hexvalue >= 0 && bp.hexvalue >= 0) {
       if (bp.hexvalue !== hexvalue) return false
     }

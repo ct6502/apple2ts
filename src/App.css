@@ -10,6 +10,13 @@
   --immediate: #646400;
 }
 
+html,
+body,
+#root {
+  /* Prevent scrollbars from appearing */
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

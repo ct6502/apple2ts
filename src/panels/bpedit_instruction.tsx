@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BRK_ILLEGAL, BRK_INSTR, Breakpoint, getBreakpointString } from "../emulator/utility/breakpoint";
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, getBreakpointString } from "../emulator/utility/breakpoint";
 import EditField from "./editfield";
 import PullDownMenu from "./pulldownmenu";
 import { Droplist } from "./droplist";
@@ -22,13 +22,15 @@ const addressModes = [
 
 const BPEdit_Instruction = (props: {
   breakpoint: Breakpoint,
+  setAllowWheel: (allow: boolean) => void
 }) => {
   const [myInit, setMyInit] = useState(false)
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [instruction, setInstruction] = useState('')
   const [popup, setPopup] = useState<string[]>([])
   const [addressMode, setAddressMode] = useState('')
-  const [illegalOpcode, setIllegalOpcode] = useState(props.breakpoint.address === BRK_ILLEGAL)
+  const [illegal65C02, setIllegal65C02] = useState(props.breakpoint.address === BRK_ILLEGAL_65C02)
+  const [illegal6502, setIllegal6502] = useState(props.breakpoint.address === BRK_ILLEGAL_6502)
 
   const resetPopup = () => {
     setPopup(opCodeNames)
@@ -148,9 +150,15 @@ const BPEdit_Instruction = (props: {
     }
   }
 
-  const handleIllegalOpcodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIllegalOpcode(e.target.checked)
-    props.breakpoint.address = e.target.checked ? BRK_ILLEGAL : 0
+  const handleIllegal65C02Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIllegal65C02(e.target.checked)
+    props.breakpoint.address = e.target.checked ? BRK_ILLEGAL_65C02 : 0
+    setTriggerUpdate(!triggerUpdate)
+  }
+
+  const handleIllegal6502Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIllegal6502(e.target.checked)
+    props.breakpoint.address = e.target.checked ? BRK_ILLEGAL_6502 : 0
     setTriggerUpdate(!triggerUpdate)
   }
 
@@ -172,7 +180,7 @@ const BPEdit_Instruction = (props: {
 
   return (
     <div>
-      <div className={"flex-row" + (illegalOpcode ? " disabled" : "")}
+      <div className={"flex-row" + ((illegal65C02 || illegal6502) ? " disabled" : "")}
         style={{ alignItems: 'baseline' }}>
         <EditField name="Opcode:"
           initialFocus={true}
@@ -181,7 +189,8 @@ const BPEdit_Instruction = (props: {
           placeholder="LDA"
           width="5em" />
         <PullDownMenu values={popup}
-          setValue={handleInstructionFromPopup} />
+          setValue={handleInstructionFromPopup}
+          setAllowWheel={props.setAllowWheel} />
         <Droplist name="Mode:"
           value={addressMode}
           values={addressModes}
@@ -196,11 +205,18 @@ const BPEdit_Instruction = (props: {
       </div>
       <div>
         <div style={{ height: "8px" }} />
-        <input type="checkbox" id="memget" value="memget"
+        <input type="checkbox" id="65C02" value="65C02"
           className="check-radio-box shift-down"
-          checked={props.breakpoint.address === BRK_ILLEGAL}
-          onChange={(e) => { handleIllegalOpcodeChange(e) }} />
-        <label htmlFor="memget" className="dialog-title flush-left">Any illegal 65c02 opcode</label>
+          checked={props.breakpoint.address === BRK_ILLEGAL_65C02}
+          onChange={(e) => { handleIllegal65C02Change(e) }} />
+        <label htmlFor="65C02" className="dialog-title flush-left">Any illegal 65c02 opcode</label>
+      </div>
+      <div>
+        <input type="checkbox" id="6502" value="6502"
+          className="check-radio-box shift-down"
+          checked={props.breakpoint.address === BRK_ILLEGAL_6502}
+          onChange={(e) => { handleIllegal6502Change(e) }} />
+        <label htmlFor="6502" className="dialog-title flush-left">Any illegal 6502 opcode</label>
       </div>
       <div className="dialog-title">{getInstructionBreakpointString()}</div>
       <Droplist name="Memory&nbsp;Bank: "
