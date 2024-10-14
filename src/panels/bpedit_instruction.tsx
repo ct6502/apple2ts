@@ -22,7 +22,6 @@ const addressModes = [
 
 const BPEdit_Instruction = (props: {
   breakpoint: Breakpoint,
-  setAllowWheel: (allow: boolean) => void
 }) => {
   const [myInit, setMyInit] = useState(false)
   const [triggerUpdate, setTriggerUpdate] = useState(false)
@@ -189,8 +188,7 @@ const BPEdit_Instruction = (props: {
           placeholder="LDA"
           width="5em" />
         <PullDownMenu values={popup}
-          setValue={handleInstructionFromPopup}
-          setAllowWheel={props.setAllowWheel} />
+          setValue={handleInstructionFromPopup} />
         <Droplist name="Mode:"
           value={addressMode}
           values={addressModes}

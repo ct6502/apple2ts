@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faXmark,
@@ -20,24 +20,6 @@ const BreakpointEdit = (props: {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
-  const [allowWheel, setAllowWheel] = useState(false)
-
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (!allowWheel) {
-        e.preventDefault()
-      }
-    }
-    const dialog = dialogRef.current;
-    if (dialog) {
-      dialog.addEventListener('wheel', handleWheel, { passive: false });
-    }
-    return () => {
-      if (dialog) {
-        dialog.removeEventListener('wheel', handleWheel);
-      }
-    }
-  }, [allowWheel])
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dialogRef.current) {
@@ -132,9 +114,9 @@ const BreakpointEdit = (props: {
 
           {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} />}
           {props.breakpoint.watchpoint && <BPEdit_Watchpoint
-            breakpoint={props.breakpoint} setAllowWheel={setAllowWheel} />}
+            breakpoint={props.breakpoint} />}
           {props.breakpoint.instruction && <BPEdit_Instruction
-            breakpoint={props.breakpoint} setAllowWheel={setAllowWheel} />}
+            breakpoint={props.breakpoint} />}
 
           <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
             <div></div>

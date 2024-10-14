@@ -9,7 +9,6 @@ import { toHex } from "../emulator/utility/utility";
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
-  setAllowWheel: (allow: boolean) => void
 }) => {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
@@ -89,8 +88,7 @@ const BPEdit_Watchpoint = (props: {
           setValue={handleAddressChange}
           placeholder="F800"
           width="5em" />
-        <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange}
-          setAllowWheel={props.setAllowWheel} />
+        <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
       </div>
       <div>
         <div style={{ height: "8px" }} />

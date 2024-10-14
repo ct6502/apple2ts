@@ -8,7 +8,6 @@ interface PullDownProps {
   values: Array<string>;
   setValue: (v: string) => void;
   open?: boolean;
-  setAllowWheel: (allow: boolean) => void
 }
 
 const PullDownMenu = (props: PullDownProps) => {
@@ -24,33 +23,11 @@ const PullDownMenu = (props: PullDownProps) => {
   }
 
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      const pd = pulldownRef.current
-      if (pd) {
-        // If we try to scroll past the bottom or the top, don't let the scroll
-        // propagate to the parent. Otherwise the entire page will scroll.
-        const allowWheel = (e.deltaY >= 0) ?
-          ((pd.scrollTop + pd.offsetHeight) < pd.scrollHeight) : (pd.scrollTop > 0)
-        props.setAllowWheel(allowWheel)
-      }
-    }
-
-    const pulldown = pulldownRef.current;
-    if (pulldown) {
-      pulldown.addEventListener('wheel', handleWheel, { passive: false });
-    }
-
     if (pos[0] === 0) {
       if (dialogRef.current) {
         const div = dialogRef.current as HTMLDivElement
         const rect = div.getBoundingClientRect()
         setPos([rect.left + window.scrollX, rect.top + window.scrollY])
-      }
-    }
-
-    return () => {
-      if (pulldown) {
-        pulldown.removeEventListener('wheel', handleWheel);
       }
     }
   }, [pos])
@@ -99,7 +76,6 @@ const PullDownMenu = (props: PullDownProps) => {
               overflow: 'auto',
               height: `${Math.min(props.values.length, 25) * 10}pt`
             }}
-            // onWheel={handleWheel}
             onKeyDown={onKeyDown}>
             {props.values.map((description, index) => (
               <div style={{
