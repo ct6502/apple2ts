@@ -336,7 +336,7 @@ export const getCanvasSize = () => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  height -= isTouchDevice ? 40 : 200
+  height -= isTouchDevice ? 40 : 300
   width -= isTouchDevice ? 0 : 40
   if (!isTouchDevice && handleGetIsDebugging()) {
     width /= 2
