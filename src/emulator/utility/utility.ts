@@ -91,7 +91,8 @@ export enum MSG_MAIN {
   SET_MEMORY,
   COMM_DATA,
   MIDI_DATA,
-  RamWorks,
+  RAMWORKS,
+  MACHINE_NAME,
   SOFTSWITCHES,
 }
 

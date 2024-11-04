@@ -12,7 +12,8 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   doSetRamWorks,
   RamWorksMaxBank,
   C800SlotGet,
-  RamWorksBankGet} from "./memory"
+  RamWorksBankGet,
+  doSetRom} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { parseAssembly } from "./utility/assembler";
 import { code } from "./utility/assemblycode"
@@ -28,7 +29,6 @@ import { getDisassembly, getInstruction, verifyAddressWithinDisassembly } from "
 import { sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 
-// let timerID: any | number = 0
 let startTime = 0
 let prevTime = 0
 let speedMode = 0
@@ -39,10 +39,12 @@ let refreshTime = 16.6881 // 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let timeDelta = 0
 let cpuRunMode = RUN_MODE.IDLE
+let machineName: MACHINE_NAME = "APPLE2EE"
 let iRefresh = 0
 let takeSnapshot = false
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
+let gameSetupTimerID: NodeJS.Timeout | number = 0
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
@@ -86,6 +88,7 @@ export const getApple2State = (): Apple2SaveState => {
   return {
     s6502: save6502,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
+    machineName: machineName,
     softSwitches: getSoftSwitches(),
     memory: membuffer.toString("base64"),
   }
@@ -135,7 +138,11 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
     // the RamWorks is mostly filled with 0xFF's.
     memory.set(newmemory)
   }
+  // Machine name might not be in older save states, so use a default in that case.
+  machineName = newState.machineName || "APPLE2EE"
+  doSetMachineName(machineName, false)
   updateAddressTables()
+  // Force the help text to be reset if necessary.
   handleGameSetup(true)
 }
 
@@ -253,6 +260,7 @@ const resetMachine = () => {
 const doBoot = () => {
   setCycleCount(0)
   memoryReset()
+  doSetRom(machineName)
   configureMachine()
   if (code.length > 0) {
     const pcode = parseAssembly(0x300, code.split("\n"));
@@ -260,6 +268,7 @@ const doBoot = () => {
   }
 //  testTiming()
   doReset()
+  // Force the help text to be reset if necessary.
   handleGameSetup(true)
   // This is a hack. If we don't currently have a hard drive image on boot,
   // temporarily disable the hard drive and then re-enable it later.
@@ -331,6 +340,14 @@ export const doSetDisassembleAddress = (addr: number) => {
   if (addr === RUN_MODE.PAUSED) disassemblyAddr = s6502.PC
 }
 
+export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
+  if (machineName !== name) {
+    machineName = name
+    doSetRom(machineName)
+    if (reset) doReset()
+  }
+}
+
 const getGoBackwardIndex = () => {
   const newTmp = iTempState - 1
   if (newTmp < 0 || !saveStates[newTmp]) {
@@ -355,7 +372,6 @@ const doSnapshot = () => {
   // This is at the current "time" and is just past our recently-saved state.
   iTempState = saveStates.length
   passRequestThumbnail(saveStates[saveStates.length - 1].state6502.s6502.PC)
-  handleGameSetup(false)
 }
 
 export const doGoBackInTime = () => {
@@ -468,6 +484,10 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   configureMachine()
   cpuRunMode = cpuRunModeIn
   if (cpuRunMode === RUN_MODE.PAUSED) {
+    if (gameSetupTimerID) {
+      clearInterval(gameSetupTimerID)
+      gameSetupTimerID = 0
+    }
     doPauseDrive()
     if (!verifyAddressWithinDisassembly(disassemblyAddr, s6502.PC)) {
       disassemblyAddr = s6502.PC
@@ -478,6 +498,9 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
     // If we go back in time and then resume running, remove all future states.
     while (saveStates.length > 0 && iTempState < (saveStates.length - 1)) saveStates.pop()
     iTempState = saveStates.length
+    if (!gameSetupTimerID) {
+      gameSetupTimerID = setInterval(handleGameSetup, 1000)
+    }  
   }
   updateExternalMachineState()
   resetRefreshCounter()
@@ -557,6 +580,7 @@ const updateExternalMachineState = () => {
     iTempState: iTempState,
     isDebugging: isDebugging,
     lores: getTextPage(true),
+    machineName: machineName,
     memoryDump: getMemoryDump(),
     nextInstruction: getInstruction(s6502.PC),
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,

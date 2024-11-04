@@ -1,10 +1,10 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches";
 import { s6502 } from "./instructions"
-import { romBase64 } from "./roms/rom_2e"
+import { romBase64 as romBase64e } from "./roms/rom_2e"
+import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 // import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer";
-import { handleGameSetup } from "./games/game_mappings";
-import { isDebugging } from "./motherboard";
+// import { isDebugging } from "./motherboard";
 import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "./utility/utility";
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
 import { noSlotClock } from "./nsc"
@@ -53,6 +53,28 @@ const RamWorksBankSet = (bank: number) => {
 // Include one extra slot, to avoid needing memory checks for > 65535.
 export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
+
+export const doSetRom = (machineName: MACHINE_NAME) => {
+  let romStr = ""
+  switch (machineName) {
+    case "APPLE2EU":
+      romStr = romBase64u
+      break
+    case "APPLE2EE":
+      romStr = romBase64e
+      break
+  }
+  // For now, comment out the use of the Extended Debugging Monitor
+  // It's unclear what the benefit is, especially since we have a separate
+  // TypeScript debugger. And there is a risk that some programs might
+  // behave differently with the EDM.
+  // if (isDebugging) romStr = edmBase64
+  const rom64 = romStr.replace(/\n/g, "")
+  const rom = new Uint8Array(
+    Buffer.from(rom64, "base64")
+  )
+  memory.set(rom, ROMmemoryStart)
+}
 
 export const doSetRamWorks = (size: number) => {
   // Clamp to 64K...16M and make sure it is a multiple of 64K
@@ -317,16 +339,6 @@ export const memoryReset = () => {
   memory.fill(0xFF, 0, 0x10000)
   // Everything past here is RamWorks memory
   memory.fill(0xFF, BaseMachineMemory)
-  // For now, comment out the use of the Extended Debugging Monitor
-  // It's unclear what the benefit is, especially since we have a separate
-  // TypeScript debugger. And there is a risk that some programs might
-  // behave differently with the EDM.
-  const whichROM = isDebugging ? romBase64 : romBase64 // isDebugging ? edmBase64 : romBase64
-  const rom64 = whichROM.replace(/\n/g, "")
-  const rom = new Uint8Array(
-    Buffer.from(rom64, "base64")
-  )
-  memory.set(rom, ROMmemoryStart)
   C800SlotSet(0)
   RamWorksBankSet(0)
   updateAddressTables()
@@ -335,6 +347,7 @@ export const memoryReset = () => {
 // Fill all pages of either main or aux memory with 0, 1, 2,...
 export const memorySetForTests = (aux = false) => {
   memoryReset()
+  doSetRom("APPLE2EE")
   const offset = aux ? RamWorksMemoryStart : 0
   for (let i=0; i <= 0xFF; i++) {
     memory.fill(i, i * 256 + offset, (i + 1) * 256 + offset)
@@ -572,7 +585,6 @@ export const getDataBlock = (addr: number) => {
 export const setMemoryBlock = (addr: number, data: Uint8Array) => {
   const offset = addressSetTable[addr >>> 8] + (addr & 255)
   memory.set(data, offset)
-  handleGameSetup()
 }
 
 export const matchMemory = (addr: number, data: number[]) => {

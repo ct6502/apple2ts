@@ -175,9 +175,17 @@ const passThumbnailImage = (thumbnail: string) => {
 }
 
 export const passSetRamWorks = (size: number) => {
-  doPostMessage(MSG_MAIN.RamWorks, size)
-  // This will also come from the emulator, but set it here so the UI updates.
+  doPostMessage(MSG_MAIN.RAMWORKS, size)
+  // This will also come from the emulator, but set it here so the UI updates
+  // if the emulator hasn't been booted yet.
   machineState.extraRamSize = size
+}
+
+export const passSetMachineName = (name: MACHINE_NAME) => {
+  doPostMessage(MSG_MAIN.MACHINE_NAME, name)
+  // This will also come from the emulator, but set it here so the UI updates
+  // if the emulator hasn't been booted yet.
+  machineState.machineName = name
 }
 
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
@@ -214,6 +222,7 @@ let machineState: MachineState = {
   isDebugging: TEST_DEBUG,
   iTempState: 0,
   lores: new Uint8Array(),
+  machineName: "APPLE2EE",
   memoryDump: new Uint8Array(),
   nextInstruction: '',
   noDelayMode: false,
@@ -460,3 +469,8 @@ export const handleGetMemSize = () => {
 export const handleGetHelpText = () => {
   return machineState.helpText
 }
+
+export const handleGetMachineName = () => {
+  return machineState.machineName
+}
+

@@ -25,7 +25,7 @@ import {
   passCapsLock, passColorMode, passDarkMode, passSetSpeedMode,
   passUseOpenAppleKey
 } from "../main2worker";
-import { RamWorksSelect } from "../devices/ramworks";
+import { MachineConfig } from "../devices/machineconfig";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -96,7 +96,7 @@ const ConfigButtons = (props: DisplayProps) => {
     <MockingboardWaveform />
     <SerialPortSelect />
     <MidiDeviceSelect />
-    <RamWorksSelect updateDisplay={props.updateDisplay} />
+    <MachineConfig updateDisplay={props.updateDisplay} />
 
     <button className="push-button"
       title="Dark Mode"

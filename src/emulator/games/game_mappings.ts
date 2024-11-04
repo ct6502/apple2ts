@@ -5,6 +5,7 @@ import { passHelptext,passEnhancedMidi } from "../worker2main"
 import { aztec } from "./aztec"
 import { drol } from "./drol"
 import { firebug } from "./firebug"
+import { injuredengine } from "./injuredengine"
 import { karateka } from "./karateka"
 import { noxarchaist } from "./noxarchaist"
 import { one_on_one } from "./one_on_one"
@@ -28,6 +29,7 @@ export const AddGameLibraryItem = (item: GameLibraryItem | GameLibraryItem[]) =>
 AddGameLibraryItem(aztec)
 AddGameLibraryItem(drol)
 AddGameLibraryItem(firebug)
+AddGameLibraryItem(injuredengine)
 AddGameLibraryItem(karateka)
 AddGameLibraryItem(noxarchaist)
 AddGameLibraryItem(one_on_one)

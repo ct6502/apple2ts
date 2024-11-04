@@ -196,6 +196,7 @@
 }
 
 .droplist-option {
+  font-size: 10pt;
   border-radius: 10px;
   cursor: pointer;
   background-color: var(--input-background);

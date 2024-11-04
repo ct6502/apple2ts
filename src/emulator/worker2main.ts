@@ -2,7 +2,8 @@ import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
-  doSetMemory} from "./motherboard";
+  doSetMemory,
+  doSetMachineName} from "./motherboard";
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -184,8 +185,11 @@ if (typeof self !== 'undefined') {
       case MSG_MAIN.MIDI_DATA:
         receiveMidiData(e.data.payload)
         break
-      case MSG_MAIN.RamWorks:
+      case MSG_MAIN.RAMWORKS:
         doSetRamWorks(e.data.payload as number)
+        break
+      case MSG_MAIN.MACHINE_NAME:
+        doSetMachineName(e.data.payload as MACHINE_NAME)
         break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)

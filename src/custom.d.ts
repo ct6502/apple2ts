@@ -51,6 +51,7 @@ type STATE6502 = {
 type Apple2SaveState = {
   s6502: STATE6502,
   extraRamSize: number,
+  machineName: MACHINE_NAME,
   softSwitches: {[name: string]: boolean},
   memory: string
 }
@@ -70,6 +71,8 @@ type DisplayProps = {
   handleClosedAppleDown: (mode: number) => void,
   setShowFileOpenDialog: (show: boolean, index: number) => void,
 }
+
+type MACHINE_NAME = "APPLE2EU" | "APPLE2EE"
 
 type MachineState = {
   addressGetTable: number[],
@@ -93,6 +96,7 @@ type MachineState = {
   iTempState: number,
   isDebugging: boolean,
   lores: Uint8Array,
+  machineName: MACHINE_NAME,
   memoryDump: Uint8Array,
   nextInstruction: string,
   noDelayMode: boolean,
