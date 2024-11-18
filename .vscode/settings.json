@@ -4,6 +4,6 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "never"
   },
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "typescript.tsserver.experimental.enableProjectDiagnostics": true
 }
