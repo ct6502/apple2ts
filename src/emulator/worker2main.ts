@@ -5,7 +5,7 @@ import { doSetRunMode,
   doSetMemory,
   doSetMachineName} from "./motherboard";
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { sendPastedText, sendTextToEmulator } from "./devices/keyboard"
+import { sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER } from "./utility/utility";
 import { doSetBreakpoints } from "./cpu6502";
@@ -142,7 +142,7 @@ if (typeof self !== 'undefined') {
         break
       case MSG_MAIN.PASTE_TEXT:
         doSetPastedText(e.data.payload as string)
-        sendPastedText(e.data.payload)
+//        sendPastedText(e.data.payload)
         break
       case MSG_MAIN.APPLE_PRESS:
         pressAppleCommandKey(true, e.data.payload)

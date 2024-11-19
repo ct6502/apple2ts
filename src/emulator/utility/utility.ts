@@ -3,7 +3,7 @@ import { KeyboardEvent } from "react"
 export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
-export const FILE_SUFFIXES = ".a2ts,.hdv,.2mg,.dsk,.woz,.po,.do,.bin"
+export const FILE_SUFFIXES = ".a2ts,.hdv,.2mg,.dsk,.woz,.po,.do,.bin,.bas"
 
 // Put memory offset constants here so we can use them in the worker and main thread.
 // We used to have these in the memory.ts file, but when we imported that into

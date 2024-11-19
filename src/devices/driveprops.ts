@@ -1,6 +1,7 @@
+import { isHardDriveImage } from "../emulator/devices/decodedisk";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { iconKey, iconData, iconName } from "../img/icons";
-import { passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
+import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
 import { diskImages } from "./diskimages";
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -75,6 +76,32 @@ const findMatchingDiskImage = (url: string) => {
   return null
 }
 
+export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer, filename: string, address = 0x300) => {
+  const fname = filename.toLowerCase()
+  if (fname.endsWith('.bin')) {
+    passSetBinaryBlock(address, new Uint8Array(buffer), true)
+  } else if (fname.endsWith('.bas')) {
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(buffer);
+    if (text !== "") {
+      passPasteText(text + '\nRUN\n')
+    }
+  } else {
+    // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
+    if (isHardDriveImage(fname)) {
+      if (index > 1) index = 0
+    } else {
+      if (index < 2) index = 2
+    }
+    handleSetDiskData(index, new Uint8Array(buffer), filename)
+    if (handleGetRunMode() === RUN_MODE.IDLE) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+    } else {
+//      props.updateDisplay()
+    }
+  }
+}
+
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay: UpdateDisplay) => {
   if (!url.startsWith("http")) {
@@ -102,8 +129,7 @@ export const handleSetDiskFromURL = async (url: string,
     if (hasSlash >= 0) {
       name = urlObj.pathname.substring(hasSlash + 1)
     }
-    handleSetDiskData(0, new Uint8Array(buffer), name)
-    passSetRunMode(RUN_MODE.NEED_BOOT)
+    handleSetDiskOrFileFromBuffer(0, buffer, name)
   } catch (e) {
     console.error(`Error fetching URL: ${url}`)
   }

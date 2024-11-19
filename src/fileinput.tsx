@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { FILE_SUFFIXES, RUN_MODE } from "./emulator/utility/utility";
-import { handleGetRunMode, passPasteText, passSetRunMode } from "./main2worker";
+import { FILE_SUFFIXES } from "./emulator/utility/utility";
 import BinaryFileDialog from "./devices/binaryfiledialog";
 import { RestoreSaveState } from "./savestate";
-import { isHardDriveImage } from "./emulator/devices/decodedisk";
-import { handleSetDiskData } from "./devices/driveprops";
+import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops";
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
@@ -25,31 +23,13 @@ const FileInput = (props: DisplayProps) => {
     } else {
       const buffer = await file.arrayBuffer();
       if (fname.endsWith('.bin')) {
-        // throw up dialog, ask for address
-        // put into memory
+        // Display dialog, ask for address for where to put into memory
         setBinaryBuffer(new Uint8Array(buffer))
         if (buffer.byteLength > 0) {
           setDisplayBinaryDialog(true)
         }
-      } else if (fname.endsWith('.bas')) {
-        const decoder = new TextDecoder('utf-8');
-        const text = decoder.decode(buffer);
-        if (text !== "") {
-          passPasteText(text + '\nRUN\n')
-        }
       } else {
-        // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
-        if (isHardDriveImage(fname)) {
-          if (index > 1) index = 0
-        } else {
-          if (index < 2) index = 2
-        }
-        handleSetDiskData(index, new Uint8Array(buffer), file.name)
-        if (handleGetRunMode() === RUN_MODE.IDLE) {
-          passSetRunMode(RUN_MODE.NEED_BOOT)
-        } else {
-          props.updateDisplay()
-        }
+        handleSetDiskOrFileFromBuffer(index, buffer, file.name)
       }
     }
   }

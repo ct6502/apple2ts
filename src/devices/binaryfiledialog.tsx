@@ -15,7 +15,7 @@ const BinaryFileDialog = (props:
   const [runCode, setRunCode] = useState(false);
   const [runAddress, setRunAddress] = useState(() => {
     const savedRunAddress = localStorage.getItem('binaryRunAddress')
-    return savedRunAddress ? savedRunAddress : '07FD'
+    return savedRunAddress ? savedRunAddress : '0300'
   });
 
   const handleSetRunAddress = (value: string) => {
@@ -65,7 +65,7 @@ const BinaryFileDialog = (props:
             initialFocus={true}
             value={runAddress}
             setValue={handleSetRunAddress}
-            placeholder="07FD"
+            placeholder="0300"
             width="5em" />
         </div>
         <div className="flex-row">
