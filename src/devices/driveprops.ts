@@ -76,15 +76,24 @@ const findMatchingDiskImage = (url: string) => {
   return null
 }
 
-export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer, filename: string, address = 0x300) => {
+let binaryRunAddress = 0x300
+export const setDefaultBinaryAddress = (address: number) => {
+  binaryRunAddress = address
+}
+
+export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer, filename: string, address = -1) => {
   const fname = filename.toLowerCase()
   if (fname.endsWith('.bin')) {
-    passSetBinaryBlock(address, new Uint8Array(buffer), true)
-  } else if (fname.endsWith('.bas')) {
+    passSetBinaryBlock(address >= 0 ? address : binaryRunAddress, new Uint8Array(buffer), true)
+  } else if (fname.endsWith('.bas') || fname.endsWith('.a')) {
     const decoder = new TextDecoder('utf-8');
-    const text = decoder.decode(buffer);
-    if (text !== "") {
-      passPasteText(text + '\nRUN\n')
+    const basic = decoder.decode(buffer);
+    if (basic !== "") {
+      let cmd = '\n'
+      if (/^[0-9]/.test(basic)) {
+        cmd = '\n\nRUN\n'
+      }  
+      passPasteText(basic + cmd)
     }
   } else {
     // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)

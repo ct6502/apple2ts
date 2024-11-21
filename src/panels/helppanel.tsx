@@ -20,7 +20,9 @@ const HelpPanel = (props: HelpPanelProps) => {
       overflow: (props.narrow ? 'visible' : 'auto'),
     }}>
       <div className={handleGetDarkMode() ? "" : "help-paper"}>
-        <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}>{helpText}</pre>
+        <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}
+          dangerouslySetInnerHTML={{ __html: helpText }}>
+        </pre>
       </div>
     </div>
   )

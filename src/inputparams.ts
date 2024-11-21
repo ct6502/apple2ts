@@ -1,7 +1,7 @@
-import { handleSetDiskFromURL } from "./devices/driveprops"
+import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE } from "./emulator/utility/utility"
-import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode, passSetRamWorks, passDarkMode } from "./main2worker"
+import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText } from "./main2worker"
 
 export const handleInputParams = () => {
   const params = new URLSearchParams(window.location.search)
@@ -42,6 +42,18 @@ export const handleInputParams = () => {
   }
   if (params.get('theme')?.toLowerCase() === 'dark') {
     passDarkMode(true)
+  }
+  const address = params.get('address')
+  if (address) {
+    setDefaultBinaryAddress(parseInt(address, 16))
+  }
+  const basic = params.get('basic')
+  if (basic) {
+    let cmd = '\n'
+    if (/^[0-9]/.test(basic)) {
+      cmd = '\n\nRUN\n'
+    }
+    passPasteText(basic + cmd)
   }
 }
 
