@@ -90,7 +90,7 @@ export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer
     const basic = decoder.decode(buffer);
     if (basic !== "") {
       let cmd = '\n'
-      if (/^[0-9]/.test(basic)) {
+      if (/^[0-9]/.test(basic.trim())) {
         cmd = '\n\nRUN\n'
       }  
       passPasteText(basic + cmd)

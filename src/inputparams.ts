@@ -50,7 +50,7 @@ export const handleInputParams = () => {
   const basic = params.get('basic')
   if (basic) {
     let cmd = '\n'
-    if (/^[0-9]/.test(basic)) {
+    if (/^[0-9]/.test(basic.trim())) {
       cmd = '\n\nRUN\n'
     }
     passPasteText(basic + cmd)
