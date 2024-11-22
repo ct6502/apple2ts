@@ -49,10 +49,9 @@ export const handleInputParams = () => {
   }
   const basic = params.get('basic')
   if (basic) {
-    let cmd = '\n'
-    if (/^[0-9]/.test(basic.trim())) {
-      cmd = '\n\nRUN\n'
-    }
+    const trimmed = basic.trim()
+    const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
+    const cmd = hasLineNumbers ? '\nRUN\n' : '\n'
     passPasteText(basic + cmd)
   }
 }

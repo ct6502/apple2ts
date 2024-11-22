@@ -21,7 +21,7 @@ export const clearKeyStrobe = () => {
 // even if $C010 (the keyboard strobe) isn't being called properly.
 // This was a problem for certain games such as Firebug or Wolfenstein,
 // which only clear the $C010 strobe if it is a valid game key.
-// 1500 ms was heuristically chosen, as that's about how long it takes
+// 1900 ms was heuristically chosen, as that's about how long it takes
 // Applesoft BASIC to process a huge line of code.
 // TODO: We could use two buffers - one for keypress (with a short delay)
 // and another for pasted text, with a longer delay to give Applesoft BASIC
@@ -32,7 +32,7 @@ let tPrevPop = 1000000000
 export const popKey = () => {
   // See note above about this time cutoff before dropping buffer text.
   const t = performance.now()
-  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 1500)) {
+  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 1900)) {
     tPrevPop = t
     const key = keyBuffer.charCodeAt(0)
     keyPress(key)
