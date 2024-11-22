@@ -4,14 +4,17 @@ import { COLOR_MODE } from "./emulator/utility/utility"
 import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText } from "./main2worker"
 
 export const handleInputParams = () => {
-  const params = new URLSearchParams(window.location.search)
-  if (params.get('capslock')?.toLowerCase() === 'off') {
+  // Most parameters are case insensitive. The only exception is the BASIC
+  // parameter, where we want to preserve the case of the program.
+  const params = new URLSearchParams(window.location.search.toLowerCase())
+  const porig = new URLSearchParams(window.location.search)
+  if (params.get('capslock') === 'off') {
     passCapsLock(false)
   }
-  if (params.get('debug')?.toLowerCase() === 'on') {
+  if (params.get('debug') === 'on') {
     passSetDebug(true)
   }
-  const speed = params.get('speed')?.toLowerCase()
+  const speed = params.get('speed')
   if (speed) {
     switch (speed) {
       case 'fast':
@@ -23,10 +26,10 @@ export const handleInputParams = () => {
         break
     }
   }
-  if (params.get('sound')?.toLowerCase() === 'off') {
+  if (params.get('sound') === 'off') {
     audioEnable(false)
   }
-  const colorMode = params.get('color')?.toLowerCase()
+  const colorMode = params.get('color')
   if (colorMode) {
     const colors = ['color', 'nofringe', 'green', 'amber', 'white']
     const mode = colors.indexOf(colorMode)
@@ -40,18 +43,21 @@ export const handleInputParams = () => {
       passSetRamWorks(parseInt(sizes[index]))
     }
   }
-  if (params.get('theme')?.toLowerCase() === 'dark') {
+  if (params.get('theme') === 'dark') {
     passDarkMode(true)
   }
   const address = params.get('address')
   if (address) {
     setDefaultBinaryAddress(parseInt(address, 16))
   }
-  const basic = params.get('basic')
+  const run = params.get('run')
+  const doRun = !(run === '0' || run === 'false')
+  // Use the original case of the BASIC program.
+  const basic = porig.get('basic') || porig.get('BASIC')
   if (basic) {
     const trimmed = basic.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-    const cmd = hasLineNumbers ? '\nRUN\n' : '\n'
+    const cmd = (hasLineNumbers && doRun) ? '\nRUN\n' : '\n'
     passPasteText(basic + cmd)
   }
 }

@@ -8,6 +8,7 @@ basic=<a href="https://www.urlencoder.org" target="_blank" rel="noopener norefer
 capslock=off
 color=color|nofringe|green|amber|white
 debug=on
+run=false (do not run BASIC program)
 sound=off
 speed=fast|warp
 theme=dark
