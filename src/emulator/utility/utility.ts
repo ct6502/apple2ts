@@ -262,17 +262,17 @@ export const getPrintableChar = (value: number, isAltCharSet: boolean) => {
   return String.fromCodePoint(v1 === 0x83 ? 0xEBE7 : (v1 >= 127 ? (0xE000 + v1) : v1))
 }
 
-let zpPrev = new Uint8Array(1)
+const zpPrev = new Uint8Array(256).fill(0)
+
 export const debugZeroPage = (zp: Uint8Array) => {
-  if (zpPrev.length === 1) zpPrev = zp
   let diff = ""
   for (let i = 0; i < 256; i++) {
     if (zp[i] !== zpPrev[i]) {
       diff += " " + toHex(i) + ":" + toHex(zpPrev[i]) + ">" + toHex(zp[i])
+      zpPrev[i] = zp[i]
     }
   }
   if (diff !== "") console.log(diff)
-  zpPrev = zp
 }
 
 export const toASCII = (s: string) => s.split('').map(char => char.charCodeAt(0))

@@ -15,8 +15,8 @@ if (process.argv.length >= reqargs) {
     const outputFile = process.argv[reqargs - 1];
     const fileContent = fs.readFileSync(inputFile, 'utf-8');
     const result = parseAssembly(0, fileContent.split('\n'), verbose);
-    const buffer = Buffer.from(result);
-    fs.writeFileSync(outputFile, buffer);
+    const uintArray = new Uint8Array(result);
+    fs.writeFileSync(outputFile, uintArray);
     process.exit(0)
   }
 }

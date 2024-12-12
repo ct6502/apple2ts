@@ -64,6 +64,8 @@ The build is minified and the filenames include hash values. These hashes force 
 
 When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. The `main-build-deploy.yml` workflow should fire off two Github Actions. The first will build and test the code, while the second (using `npm run deploy`) will deploy the build to Github Pages.
 
+For the Github Actions, the secrets.GH_SECRET needs to be set to your current Personal Access Token. This needs to be regenerated each year. To do this, go under your main profile, choose Developer Settings -> Personal access tokens -> Fine-grained tokens, choose "gp-pages deploy". Choose an expiration date for one year in the future. Copy the new PAT and save it somewhere safe. Once you have the new Github PAT, you can set it on the repo. Under [Settings](https://github.com/ct6502/apple2ts/settings), choose "Secrets and variables" -> "Actions", then click Edit on the GH_SECRET.
+
 ## Upgrade Packages
 
 <https://www.hostingadvice.com/how-to/update-npm-packages/>
