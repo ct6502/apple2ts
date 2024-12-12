@@ -24,9 +24,10 @@ const DisassemblyView = () => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null)
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null)
-  const scrollableRef = useRef(null)
-  const scrollToRef = useRef(null)
-  const disassemblyRef = useRef(null)
+  const scrollToRef = useRef<HTMLDivElement>(null)
+  const disassemblyRef = useRef<HTMLDivElement>(null)
+  // We cannot assign an actual type to this ref since it is both an
+  // HTMLDivElement and an SVGSVGElement
   const fakePointRef = useRef(null)
 
   const handleCodeScroll = () => {
@@ -38,7 +39,7 @@ const DisassemblyView = () => {
     }
     timeoutIdRef.current = setTimeout(() => {
       if (disassemblyRef.current) {
-        const div = disassemblyRef.current as HTMLDivElement
+        const div = disassemblyRef.current
         const rect = div.getBoundingClientRect()
         // Find the line div at the top of our disassembly view
         const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
@@ -129,7 +130,7 @@ const DisassemblyView = () => {
   const handleCodeMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!disassemblyRef.current || !fakePointRef.current) return -1
     const [addr, mouseY] = getAddressAtMouse(event)
-    const div = disassemblyRef.current as HTMLDivElement
+    const div = disassemblyRef.current
     const fakePoint = fakePointRef.current as HTMLDivElement
     if (addr >= 0) {
       div.style.cursor = 'pointer'
@@ -288,7 +289,7 @@ const DisassemblyView = () => {
     scrollTimeout.current = setTimeout(() => {
       if (disassemblyRef.current) {
         if (scrollToRef.current) {
-          const line = scrollToRef.current as HTMLDivElement
+          const line = scrollToRef.current
           line.scrollIntoView();
         }
       }
@@ -308,7 +309,7 @@ const DisassemblyView = () => {
     const topHalf = Array.from({ length: lineTop }, (_, i) => i);
     const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1);
 
-    return <div ref={scrollableRef}>
+    return <div>
       {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
       {disArray.map((line, index) => (
         <div key={index}

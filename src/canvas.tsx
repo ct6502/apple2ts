@@ -23,6 +23,7 @@ import { drawHiresTile } from './graphicshgr';
 import { useGlobalContext } from './globalcontext';
 import { handleFileSave } from './savestate';
 import bgImage from './img/crt.jpg';
+import { handleSetCPUState } from './controller';
 
 
 let width = 800
@@ -39,10 +40,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [hgrMagnifierLocal, setHgrMagnifierLocal] = useState([-1, -1])
   const hgrMagnifierRef = useRef([-1, -1]);
   const lockHgrMagnifierRef = useRef(false);
-  const myText = useRef(null)
-  const myCanvas = useRef(null)
-  const hiddenCanvas = useRef(null)
-  const infoCanvas = useRef(null)
+  const myText = useRef<HTMLTextAreaElement>(null)
+  const myCanvas = useRef<HTMLCanvasElement>(null)
+  const hiddenCanvas = useRef<HTMLCanvasElement>(null)
+  const infoCanvas = useRef<HTMLCanvasElement>(null)
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById('apple2canvas')
@@ -69,8 +70,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   const metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
+    b: () => handleSetCPUState(RUN_MODE.NEED_BOOT),
     c: () => handleCopyToClipboard(),
     o: () => props.setShowFileOpenDialog(true, 0),
+    r: () => handleSetCPUState(RUN_MODE.NEED_RESET),
     s: () => handleFileSave(false),
     v: () => syntheticPaste(),
     1: () => passSetSpeedMode(0),
@@ -410,10 +413,17 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  [width, height] = getCanvasSize()
+  const isTouchDevice = "ontouchstart" in document.documentElement;
+  const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current;
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen;
+
+  // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
+  //   myCanvas.current.requestFullscreen()
+  // }
+
+  [width, height] = getCanvasSize(noBackgroundImage)
 
   // Make keyboard events work on touch devices by using a hidden textarea.
-  const isTouchDevice = "ontouchstart" in document.documentElement
   const isAndroidDevice = /Android/i.test(navigator.userAgent);
   const txt = isAndroidDevice ?
     <textarea className="hiddenTextarea" hidden={false} ref={myText}
@@ -438,7 +448,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = handleGetShowMouse() ?
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "crosshair") : "none"
 
-  const backgroundImage = isTouchDevice ? '' : `url(${bgImage})`
+  const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
 
   return (
     <span className="canvasText">
@@ -447,8 +457,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         className="mainCanvas"
         style={{
           cursor: cursor,
-          borderRadius: isTouchDevice ? '0' : '20px',
-          borderWidth: isTouchDevice ? '0' : '2px',
+          borderRadius: noBackgroundImage ? '0' : '20px',
+          borderWidth: noBackgroundImage ? '0' : '2px',
           backgroundImage: `${backgroundImage}`
         }}
         width={width} height={height}

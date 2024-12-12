@@ -4,9 +4,8 @@ let emulatorStartText = `Welcome to Apple2TS
 TypeScript Apple IIe Emulator
 (c) 2024 Chris Torrence
 
-Click the floppy disks to
-choose a disk, or click on a
-drive to load your own.
+Click on the sample disks, or
+click on a drive to load your own.
 
 Press the Power button to start.
 `
@@ -38,7 +37,8 @@ The open apple and closed apple keys behave the same as the ctrl key.`
 } else {
 
   const keyboardShortcutText =
-`${keyMod}C Copy Screen   ${keyMod}O Open State
+`${keyMod}B Boot          ${keyMod}R Reset    
+${keyMod}C Copy Screen   ${keyMod}O Open State
 ${keyMod}V Paste Text    ${keyMod}S Save State
 ${keyMod}← Go Back in Time
 ${keyMod}→ Forward in Time

@@ -7,7 +7,7 @@ import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops";
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
   const [binaryBuffer, setBinaryBuffer] = useState(new Uint8Array())
-  const hiddenFileOpen = useRef(null);
+  const hiddenFileOpen = useRef<HTMLInputElement>(null);
 
   const readFile = async (file: File, index: number) => {
     const fname = file.name.toLowerCase()
@@ -69,7 +69,7 @@ const FileInput = (props: DisplayProps) => {
     // Now that we're in here, turn off our property.
     setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
     if (hiddenFileOpen.current) {
-      const fileInput = hiddenFileOpen.current as HTMLInputElement
+      const fileInput = hiddenFileOpen.current
       // Hack - clear out old file so we can pick the same file again
       fileInput.value = "";
       // Display the dialog.

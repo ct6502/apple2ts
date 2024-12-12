@@ -17,7 +17,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { srcCanvas, ...rest } = props
-  const canvasRef = useRef(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   // these dimensions represent a max dpi page
   const width = 1360
   const height = 1584
@@ -27,7 +27,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
 
     const render = () => {
       if (canvasRef.current) {
-        const destCanvas: HTMLCanvasElement = canvasRef.current
+        const destCanvas = canvasRef.current
         const destContext: CanvasRenderingContext2D | null = destCanvas.getContext('2d')
         // copy internal canvas over the other one
         if (destContext) {
