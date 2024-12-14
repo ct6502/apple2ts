@@ -13,31 +13,6 @@ export const RamWorksPage = 0x17F
 export const ROMmemoryStart = 256 * ROMpage
 export const RamWorksMemoryStart = 256 * RamWorksPage
 
-export const COLORS = {
-  LIGHT: {
-    TEXT: '#000000',
-    BG: '#BFBB98',
-    PANEL: '#C9C5A0',
-    ACTIVE: '#898677',
-    INPUT: '#eee',
-    OPCODE: '#000000',
-    ADDRESS: '#006400',
-    IMMEDIATE: '#646400',
-    HIGHLIGHT: '#FFFF00',
-  },
-  DARK: {
-    TEXT: '#DDD',
-    BG: '#181818',
-    PANEL: '#222',
-    ACTIVE: '#555',
-    INPUT: '#444',
-    OPCODE: '#dcdcaf',
-    ADDRESS: '#00C000',
-    IMMEDIATE: '#80FF00',
-    HIGHLIGHT: '#966C23',
-  }
-}
-
 export enum RUN_MODE {
   IDLE = 0,
   RUNNING = -1,

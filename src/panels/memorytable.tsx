@@ -99,7 +99,7 @@ const MemoryTable = (props: MemoryTableProps) => {
         (hiresLineToAddress(props.offset, offset[1]) + offset[0]) :
         (16 * offset[1] + offset[0] + props.offset)
       props.doPickWatchpoint(addr)
-      cell.style.animation = 'highlight-fast 1s'
+      applyHighlightAnimation(cell)
       setTimeout(() => {
         cell.style.animation = ''
       }, 2250)
@@ -304,16 +304,22 @@ const MemoryTable = (props: MemoryTableProps) => {
     return (index < 0x10000) || (index >= 0x17F00)
   }
 
+  const applyHighlightAnimation = (element: HTMLElement) => {
+    const isDarkMode = document.body.classList.contains('dark-mode')
+    const animationName = isDarkMode ? 'highlight-anim-dark' : 'highlight-anim'
+    element.style.animation = `${animationName} 1s 0.1s`
+  };
+  
   // This scrolling code is used by the higher-level MemoryDump component to
   // scroll to a specific row when the address field is changed.
   if (props.scrollRow >= 0) {
     const table = document.querySelector('table') as HTMLTableElement
     const row = table.rows[props.scrollRow + 1]
     row.scrollIntoView({ block: "center", inline: "center" })
-    row.style.animation = 'highlight-anim 1s 0.1s'
+    applyHighlightAnimation(row)
     // Tried to also highlight the address column, but it does strange things
     // in HGR mode where it draws some of the columns on top of each other...
-    //    row.cells[0].style.animation = 'highlight-anim 2s 0.25s'
+    //    applyHighlightAnimation(row.cells[0])
     setTimeout(() => {
       row.style.animation = ''
       // row.cells[0].style.animation = ''

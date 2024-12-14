@@ -17,10 +17,20 @@
   box-sizing: border-box;
 }
 
+body.dark-mode .hex-field {
+  background-color: var(--input-background-dark);
+  border-color: var(--text-color-dark);
+  color: var(--text-color-dark);
+}
+
 .hex-field:disabled {
   background-color: var(--background-color);
   color: #888;
   border-color: #888;
+}
+
+body.dark-mode .hex-field:disabled {
+  background-color: var(--background-color-dark);
 }
 
 .smallField {
@@ -40,6 +50,10 @@
   color: var(--text-color);
 }
 
+body.dark-mode .mono-text {
+  color: var(--text-color-dark);
+}
+
 .debug-panel {
   outline: none;
   cursor: text;
@@ -53,6 +67,10 @@
   font-size: 8pt;
   line-height: 10pt;
   color: var(--text-color);
+}
+
+body.dark-mode .debug-panel {
+  color: var(--text-color-dark);
 }
 
 .tall-panel {
@@ -145,6 +163,11 @@
   background-color: var(--panel-background);
 }
 
+body.dark-mode .round-rect-border {
+  background-color: var(--panel-background-dark);
+  border-color: var(--text-color-dark);
+}
+
 .tight-button {
   margin-left: 5px;
   margin-top: 0px;
@@ -161,6 +184,10 @@
   padding-left: 10px;
   padding-right: 5px;
   color: var(--text-color);
+}
+
+body.dark-mode .dialog-title {
+  color: var(--text-color-dark);
 }
 
 .horiz-rule {
@@ -185,6 +212,11 @@
   color: var(--text-color);
 }
 
+body.dark-mode .droplist-edit {
+  background-color: var(--input-background-dark);
+  color: var(--text-color-dark);
+}
+
 .use-monospace {
   font-family: monospace;
 }
@@ -195,12 +227,21 @@
   border-color: #888;
 }
 
+body.dark-mode .droplist-edit:disabled {
+  background-color: var(--background-color-dark);
+}
+
 .droplist-option {
   font-size: 10pt;
   border-radius: 10px;
   cursor: pointer;
   background-color: var(--input-background);
   color: var(--text-color);
+}
+
+body.dark-mode .droplist-option {
+  background-color: var(--input-background-dark);
+  color: var(--text-color-dark);
 }
 
 .warning-div {
@@ -228,6 +269,10 @@
   color: var(--text-color);
 }
 
+body.dark-mode .warning-text-help {
+  color: var(--text-color-dark);
+}
+
 .check-radio-box {
   margin-left: 10px;
   margin-top: 0;
@@ -252,14 +297,29 @@
   color: var(--text-color);
 }
 
+body.dark-mode .tab-button {
+  background-color: var(--panel-background-dark);
+  border-color: var(--text-color-dark);
+  color: var(--text-color-dark);
+}
+
 .tab-active {
   background-color: var(--button-active);
   color: var(--text-color);
 }
 
+body.dark-mode .tab-active {
+  background-color: var(--button-active-dark);
+  color: var(--text-color-dark);
+}
+
 .disassembly-opcode {
   color: var(--opcode);
   font-weight: bold;
+}
+
+body.dark-mode .disassembly-opcode {
+  color: var(--opcode-dark);
 }
 
 .disassembly-link {
@@ -274,16 +334,29 @@
   cursor: default;
 }
 
+body.dark-mode .disassembly-immediate {
+  color: var(--immediate-dark);
+}
+
 .disassembly-address {
   color: var(--address);
   font-weight: bold;
   cursor: default;
 }
 
+body.dark-mode .disassembly-address {
+  color: var(--address-dark);
+}
+
+
 .disassembly-separator {
   border-bottom-style: solid;
   border-bottom-width: 1px;
   border-bottom-color: var(--text-color);
+}
+
+body.dark-mode .disassembly-separator {
+  border-bottom-color: var(--text-color-dark);
 }
 
 .memtable {
@@ -297,13 +370,17 @@
 }
 
 .memtable thead th {
+  background-color: var(--panel-background);
   position: sticky;
   z-index: 1;
   top: 0;
-  background-color: var(--panel-background);
   transform: translateY(-2px);
   padding-left: 0.5ch;
   padding-right: 0.5ch;
+}
+
+body.dark-mode .memtable thead th {
+  background-color: var(--panel-background-dark);
 }
 
 .memtable thead th::after {
@@ -315,6 +392,10 @@
   border-bottom: 1px solid var(--text-color);
 }
 
+body.dark-mode .memtable thead th::after {
+  border-bottom: 1px solid var(--text-color-dark);
+}
+
 .memtable td {
   padding-left: 0.5ch;
   padding-right: 0.5ch;
@@ -322,17 +403,29 @@
 }
 
 .memtable-addr {
+  background-color: var(--panel-background);
   position: sticky;
   left: 0;
-  background-color: var(--panel-background);
+}
+
+body.dark-mode .memtable-addr {
+  background-color: var(--panel-background-dark);
 }
 
 .memtable-readonly {
   background-color: var(--button-active);
 }
 
+body.dark-mode .memtable-readonly {
+  background-color: var(--button-active-dark);
+}
+
 .memtable-highlight {
   background-color: var(--highlight);
+}
+
+body.dark-mode .memtable-highlight {
+  background-color: var(--highlight-dark);
 }
 
 .selected {
@@ -341,27 +434,23 @@
 
 @keyframes highlight-anim {
   0% {
-    background-color: initial;
+    background-color: var(--highlight);
   }
-
   50% {
     background-color: var(--highlight);
   }
-
   100% {
     background-color: initial;
   }
 }
 
-@keyframes highlight-fast {
+@keyframes highlight-anim-dark {
   0% {
-    background-color: var(--highlight);
+    background-color: var(--highlight-dark);
   }
-
   50% {
-    background-color: var(--highlight);
+    background-color: var(--highlight-dark);
   }
-
   100% {
     background-color: initial;
   }
@@ -375,7 +464,11 @@
   padding: 7px;
   border-width: 0.5px;
   border-style: solid;
-  border-color: --var(text-color);
+  border-color: var(--text-color);
+}
+
+body.dark-mode .memory-map td {
+  border-color: var(--text-color-dark);
 }
 
 .mem-aux {

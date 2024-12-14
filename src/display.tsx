@@ -22,7 +22,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { getCanvasSize } from "./graphics"
 import { handleFragment, handleInputParams } from "./inputparams"
-import { COLORS } from "./emulator/utility/utility";
+import { updateFromLocalStorage } from "./localstorage";
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -82,6 +82,7 @@ const DisplayApple2 = () => {
     // for the preloading.
     // preloadAssets()
     passSetSpeedMode(0)
+    updateFromLocalStorage()
     handleInputParams()
     handleFragment(updateDisplay)
     //    window.addEventListener('beforeunload', (event) => {
@@ -139,19 +140,11 @@ const DisplayApple2 = () => {
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 
-  let colors = COLORS.LIGHT
   if (handleGetDarkMode()) {
-    colors = COLORS.DARK
+    document.body.classList.add('dark-mode')
+  } else {
+    document.body.classList.remove('dark-mode')
   }
-  document.body.style.setProperty('--background-color', colors.BG)
-  document.body.style.setProperty('--text-color', colors.TEXT)
-  document.body.style.setProperty('--panel-background', colors.PANEL)
-  document.body.style.setProperty('--button-active', colors.ACTIVE)
-  document.body.style.setProperty('--input-background', colors.INPUT)
-  document.body.style.setProperty('--opcode', colors.OPCODE)
-  document.body.style.setProperty('--address', colors.ADDRESS)
-  document.body.style.setProperty('--immediate', colors.IMMEDIATE)
-  document.body.style.setProperty('--highlight', colors.HIGHLIGHT)
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const canvasWidth = getCanvasSize()[0]

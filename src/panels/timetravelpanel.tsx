@@ -22,8 +22,9 @@ const TimeTravelPanel = () => {
     const iTempState = handleGetTempStateIndex()
     const thumbnails = handleGetTimeTravelThumbnails()
     let thumbnailText = ''
-    const thumbImage = (iTempState >= 0 && thumbnails.length > 0) ?
-      <img src={`${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}`} /> : <></>
+    const thumbImg = (iTempState >= 0 && thumbnails.length > 0) ?
+      `${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}` : ''
+    const thumbImage = (thumbImg != '') ? <img src={thumbImg} /> : <></>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = convertTime(thumbnails[i].s6502.cycleCount)
       thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`

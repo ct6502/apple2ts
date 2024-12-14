@@ -1,3 +1,6 @@
+/* All of these help-paper styles are only used in light mode.
+   In dark mode the help-paper isn't shown, so no need to worry about colors. */
+
 .help-paper {
   position: relative;
   background-color: #f0f0f0;

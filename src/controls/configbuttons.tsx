@@ -22,10 +22,11 @@ import {
   handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetSpeedMode,
   handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
-  passCapsLock, passColorMode, passDarkMode, passSetSpeedMode,
+  passCapsLock, passColorMode, passSetSpeedMode,
   passUseOpenAppleKey
 } from "../main2worker";
 import { MachineConfig } from "../devices/machineconfig";
+import { setLocalStorageDarkMode } from "../localstorage";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -100,7 +101,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       title="Dark Mode"
-      onClick={() => { passDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
+      onClick={() => { setLocalStorageDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
       <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
 

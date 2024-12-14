@@ -1,13 +1,23 @@
 :root {
   --background-color: #BFBB98;
+  --background-color-dark: #181818;
   --panel-background: #C9C5A0;
+  --panel-background-dark: #222;
   --text-color: black;
+  --text-color-dark: #ddd;
   --button-active: #898677;
+  --button-active-dark: #555;
   --input-background: #eee;
+  --input-background-dark: #444;
   --opcode: black;
+  --opcode-dark: #dcdcaf;
   --highlight: yellow;
+  --highlight-dark: #966C23;
   --address: darkgreen;
-  --immediate: #646400;
+  --address-dark: #00C000;
+  --immediate-dark: #C0FF00;
+  --link-color: blue;
+  --link-color-dark: lightblue;
 }
 
 html,
@@ -26,6 +36,21 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
   margin: 10px;
+}
+
+body.dark-mode {
+  background-color: var(--background-color-dark);
+}
+
+a:link,
+a:visited {
+  color: var(--link-color);
+  text-decoration: underline;
+}
+
+body.dark-mode a:link,
+body.dark-mode a:visited {
+  color: var(--link-color-dark);
 }
 
 input:focus {
@@ -109,6 +134,10 @@ input:focus {
   outline: none;
 }
 
+body.dark-mode .push-button {
+  color: var(--text-color-dark);
+}
+
 .push-button:hover {
   cursor: pointer;
 }
@@ -121,6 +150,10 @@ input:focus {
 
 .push-button:active {
   background-color: var(--button-active);
+}
+
+body.dark-mode .push-button:active {
+  background-color: var(--button-active-dark);
 }
 
 .push-button:disabled {
@@ -136,13 +169,26 @@ input:focus {
   border-color: var(--text-color);
 }
 
+body.dark-mode .key-button {
+  color: var(--text-color-dark);
+  border-color: var(--text-color-dark);
+}
+
 .button-active {
   background-color: var(--button-active);
+}
+
+body.dark-mode .button-active {
+  background-color: var(--button-active-dark);
 }
 
 .button-locked {
   background-color: var(--button-active);
   position: relative;
+}
+
+body.dark-mode .button-locked {
+  background-color: var(--button-active-dark);
 }
 
 .button-locked::after {
@@ -215,8 +261,16 @@ input:focus {
   color: var(--text-color);
 }
 
+body.dark-mode .text-key {
+  color: var(--text-color-dark);
+}
+
 .fill-color {
   fill: var(--text-color);
+}
+
+body.dark-mode .fill-color {
+  fill: var(--text-color-dark);
 }
 
 .default-font {
@@ -225,10 +279,20 @@ input:focus {
   fill: var(--text-color);
 }
 
+body.dark-mode .default-font {
+  color: var(--text-color-dark);
+  fill: var(--text-color-dark);
+}
+
 .bigger-font {
   font-size: 10pt;
   color: var(--text-color);
   fill: var(--text-color);
+}
+
+body.dark-mode .bigger-font {
+  color: var(--text-color-dark);
+  fill: var(--text-color-dark);
 }
 
 .bigger-monospace {
@@ -236,6 +300,11 @@ input:focus {
   font-size: 10pt;
   color: var(--text-color);
   fill: var(--text-color);
+}
+
+body.dark-mode .bigger-monospace {
+  color: var(--text-color-dark);
+  fill: var(--text-color-dark);
 }
 
 .column-gap {
@@ -249,6 +318,10 @@ input:focus {
   margin: 5px;
   color: var(--text-color);
   cursor: pointer;
+}
+
+body.dark-mode .centered-title {
+  color: var(--text-color-dark);
 }
 
 .statusItem {
@@ -286,10 +359,19 @@ input:focus {
   z-index: 9999;
 }
 
+body.dark-mode .floating-dialog {
+  background-color: var(--panel-background-dark);
+  border-color: var(--text-color-dark);
+}
+
 .divider {
   border-top: 1px solid var(--text-color);
   margin-top: 20px;
   margin-bottom: 10px;
+}
+
+body.dark-mode .divider {
+  border-top: 1px solid var(--text-color-dark);
 }
 
 .disabled {

@@ -11,13 +11,12 @@ This project was originally create using [Create React App](https://github.com/f
 
 Be sure to install `node.js` and `npm` on your system using either `nvm` (the Node version manager) or the Node installer. Either one should work fine.
 
-In the project directory, run:
+In the project directory, to run the app in development mode:
 
-`npm install`
-
-To run the app in development mode:
-
-`npm start`
+```
+npm install
+npm start
+```
 
 This should automatically open your browser to [http://localhost:6502](http://localhost:6502).
 
@@ -51,12 +50,17 @@ Run in watch mode:
 
 ### Building the Package
 
-`npm run build`
+To builds the app for production:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for best performance.
+```sh
+npm install
+npm run build
+```
 
-The build is minified and the filenames include hash values. These hashes force the browser to reload when the file content changes, ensure that the filenames are unique, and also verify the integrity of the file.
+This will create the build in the `dist` folder.
+It correctly bundles React in production mode and optimizes the build for best performance. The build is minified and the filenames include hash values. These hashes force the browser to reload when the file content changes, ensure that the filenames are unique, and also verify the integrity of the file.
+
+There should be no errors generated. If you see errors, be sure to check that your version of node and npm are up to date. If there are still errors, contact the author.
 
 **Note**: This project uses Github Pages to host the emulator. You should not need to build the package, except to confirm that the build will work correctly when changes are committed.
 
@@ -72,13 +76,12 @@ For the Github Actions, the secrets.GH_SECRET needs to be set to your current Pe
 
 ### Install npm-check-updates package
 
-`npm install -g npm-check-updates`
-
-`npm outdated`
-
-`ncu --upgrade`
-
-`npm install`
+```sh
+npm install -g npm-check-updates
+npm outdated
+ncu --upgrade
+npm install
+```
 
 ## VS Code Chrome Debugging
 
@@ -120,13 +123,13 @@ To make a ROM image, save the raw binary data from the C000-FFFF ROM in a single
 Then convert the file to a Base64 encoding. On the Mac, you can use the following command:
 
 ```sh
-    openssl base64 -in rom_2e.bin -out rom_2e.base64.ts
+openssl base64 -in rom_2e.bin -out rom_2e.base64.ts
 ```
 
 Finally, edit the `.ts` file, and change the file to be an exported string variable by prepending:
 
 ```ts
-    export const rom=`
+export const rom=`
 ```
 
 Don't forget to append the trailing back quote ` at the end of the file.

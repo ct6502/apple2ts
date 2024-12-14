@@ -44,3 +44,8 @@
   border-radius: 10px;
   margin-left: 15px;
 }
+
+body.dark-mode .hgr-view-text {
+  background-color: var(--input-background-dark);
+  color: var(--text-color-dark);
+}
