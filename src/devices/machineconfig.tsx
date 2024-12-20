@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
-import { handleGetMachineName, handleGetMemSize, passSetMachineName, passSetRamWorks } from "../main2worker";
+import { handleGetMachineName, handleGetMemSize } from "../main2worker";
+import { setPreferenceMachineName, setPreferenceRamWorks } from "../localstorage";
 
 export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const [droplistOpen, setDroplistOpen] = React.useState<boolean>(false)
@@ -15,10 +16,10 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
     setDroplistOpen(true);
   }
 
-  const handleClose = (index = -1) => {
+  const handleRamWorksClose = (index: number) => {
     setDroplistOpen(false);
     if (index >= 0) {
-      passSetRamWorks(sizes[index])
+      setPreferenceRamWorks(sizes[index])
       props.updateDisplay()
     }
   }
@@ -28,8 +29,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const handleRomClose = (index = -1) => {
     setDroplistOpen(false);
     if (index >= 0) {
-      passSetMachineName(machineNames[index])
-      passSetRamWorks(sizes[index])
+      setPreferenceMachineName(machineNames[index])
       props.updateDisplay()
     }
   }
@@ -53,7 +53,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       {droplistOpen &&
         <div className="modal-overlay"
           style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
-          onClick={() => handleClose()}>
+          onClick={() => handleRamWorksClose(-1)}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
             {[0, 1].map((i) => (
@@ -68,7 +68,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
               <div className="droplist-option" style={{ padding: '5px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
-                key={i} onClick={() => handleClose(i)}>
+                key={i} onClick={() => handleRamWorksClose(i)}>
                 {(extraMemSize === sizes[i]) ? '\u2714\u2009' : '\u2003'}{names[i]}
               </div>))}
           </div>

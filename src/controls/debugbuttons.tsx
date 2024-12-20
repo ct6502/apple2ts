@@ -1,7 +1,7 @@
 import { RUN_MODE } from "../emulator/utility/utility";
 import {
   passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, passSetDebug, handleGetRunMode
+  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { handleSetCPUState } from "../controller";
 import { handleFileSave } from "../savestate";
+import { setPreferenceDebugMode } from "../localstorage";
 
 const DebugButtons = () => {
   const runMode = handleGetRunMode()
@@ -57,7 +58,7 @@ const DebugButtons = () => {
       <FontAwesomeIcon icon={faLayerGroup} />
     </button>
     <button className="push-button" title="Toggle Debug"
-      onClick={() => passSetDebug(!handleGetIsDebugging())}>
+      onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
       <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
     </button>
   </span>

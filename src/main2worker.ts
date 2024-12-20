@@ -59,7 +59,7 @@ export const passSetDisassembleAddress = (addr: number) => {
   }
 }
 
-export const passSetSpeedMode = (mode: number) => {
+export const passSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
   // Force the state right away, so the UI can update.
   machineState.speedMode = mode
@@ -355,13 +355,8 @@ export const handleGetState6502 = () => {
 }
 
 export const handleGetTextPage = () => {
-  return machineState.textPage
-}
-
-export const setStartTextPage = () => {
-  if (machineState.textPage.length === 1) {
-    machineState.textPage = startupTextPage
-  }
+  // Always return the intial start page if we're idle
+  return(machineState.runMode === RUN_MODE.IDLE) ? startupTextPage : machineState.textPage
 }
 
 export const handleGetLores = () => {

@@ -1,6 +1,6 @@
 // Chris Torrence, 2022
 import {
-  passSetSpeedMode,
+  passSpeedMode,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   handleGetIsDebugging,
@@ -22,7 +22,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { getCanvasSize } from "./graphics"
 import { handleFragment, handleInputParams } from "./inputparams"
-import { updateFromLocalStorage } from "./localstorage";
+import { loadPreferences } from "./localstorage";
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -77,12 +77,12 @@ const DisplayApple2 = () => {
         }
       });
     }
-    // TODO: It's unclear whether I need to actually do this preloadAssets() call
+    // TODO: It's unclear whether we need to do this preloadAssets() call
     // or whether just having the assets within that file is good enough
     // for the preloading.
     // preloadAssets()
-    passSetSpeedMode(0)
-    updateFromLocalStorage()
+    passSpeedMode(0)
+    loadPreferences()
     handleInputParams()
     handleFragment(updateDisplay)
     //    window.addEventListener('beforeunload', (event) => {

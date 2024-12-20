@@ -1,7 +1,7 @@
 import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE } from "./emulator/utility/utility"
-import { passCapsLock, passSetDebug, passSetSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText } from "./main2worker"
+import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText } from "./main2worker"
 
 export const handleInputParams = () => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -18,11 +18,11 @@ export const handleInputParams = () => {
   if (speed) {
     switch (speed) {
       case 'fast':
-        passSetSpeedMode(1)
+        passSpeedMode(1)
         break
       case 'ludicrous':
       case 'warp':
-          passSetSpeedMode(2)
+          passSpeedMode(2)
         break
     }
   }

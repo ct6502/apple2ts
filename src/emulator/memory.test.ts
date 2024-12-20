@@ -1,4 +1,4 @@
-import { doSetRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
+import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
 import { getApple2State, setApple2State } from "./motherboard";
 import { RamWorksMemoryStart } from "./utility/utility";
 import { setIsTesting } from "./worker2main";
@@ -224,7 +224,7 @@ test('testC800', () => {
 
 test('test RamWorks', () => {
   memoryReset()
-  doSetRamWorks(4096)
+  setRamWorks(4096)
   
   // check regular zp
   memSet(0x00C0, 0xDE)
@@ -279,7 +279,7 @@ test('test RamWorks', () => {
   expect(memGet(0x00C0)).toEqual(maxBank)
 
   // Now crank up the memory and make sure it copied correctly
-  doSetRamWorks(8192)
+  setRamWorks(8192)
 
   // Did it remember that we were in maxBank?
   expect(memGet(0x00C0)).toEqual(maxBank)
@@ -308,7 +308,7 @@ test('test RamWorks', () => {
 
   // Now kill all the memory. This should reset the bank index to 0
   // and remove all of the RamWorks memory.
-  doSetRamWorks(64)
+  setRamWorks(64)
   expect(memGet(0x00C0)).toEqual(0xCD)
   for (let bank = 1; bank <= maxBank; bank++) {
     // This should be a nop, and should just leave the bank index in AUX mem.
@@ -322,7 +322,7 @@ test('test RamWorks', () => {
 test('test RamWorks Save/Restore', () => {
   setIsTesting()
   memoryReset()
-  doSetRamWorks(4096)
+  setRamWorks(4096)
   memSet(0x00C0, 99)
   memSet(0xC073, 5)
   memSet(0xC009, 0)

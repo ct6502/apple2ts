@@ -194,7 +194,7 @@ export const getMockingboardMode = () => {
   return modeSave
 }
 
-export const changeMockingboardMode = (mode: number) => {
+export const changeMockingboardMode = (mode = 0) => {
   modeSave = mode
   if (!chipMerge) return
   nodes.forEach(nodes1 => {

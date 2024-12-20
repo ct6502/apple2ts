@@ -10,6 +10,7 @@ import {
   faCircleHalfStroke,
   faGamepad,
   faUpDownLeftRight,
+  faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { getColorModeSVG } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
@@ -22,11 +23,10 @@ import {
   handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetSpeedMode,
   handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
-  passCapsLock, passColorMode, passSetSpeedMode,
   passUseOpenAppleKey
 } from "../main2worker";
 import { MachineConfig } from "../devices/machineconfig";
-import { setLocalStorageDarkMode } from "../localstorage";
+import { resetPreferences, setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -47,16 +47,16 @@ const ConfigButtons = (props: DisplayProps) => {
   return <span className="flex-row">
     <button className="push-button"
       title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
-      onClick={() => { passSetSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
+      onClick={() => { setPreferenceSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
       <FontAwesomeIcon icon={([faWalking, faTruckFast, faRocket])[speedMode]} />
     </button>
     <button className="push-button"
       title={colorToName(colorMode)}
       onClick={(e) => {
         if (e.shiftKey) {
-          passColorMode((colorMode + 4) % 5)
+          setPreferenceColorMode((colorMode + 4) % 5)
         } else {
-          passColorMode((colorMode + 1) % 5)
+          setPreferenceColorMode((colorMode + 1) % 5)
         }
         // Force an update, since our colorMode isn't a state variable.
         props.updateDisplay()
@@ -76,7 +76,7 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>
     <button className={lockedKeyStyle(capsLock ? 2 : 0)}
       title="Caps Lock"
-      onClick={() => { passCapsLock(!capsLock); props.updateDisplay() }}>
+      onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
       <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
     </button>
     {!isTouchDevice &&
@@ -101,8 +101,14 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       title="Dark Mode"
-      onClick={() => { setLocalStorageDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
+      onClick={() => { setPreferenceDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
       <FontAwesomeIcon icon={faCircleHalfStroke} />
+    </button>
+
+    <button className="push-button"
+      title="Reset All Settings"
+      onClick={() => { resetPreferences(); props.updateDisplay() }}>
+      <FontAwesomeIcon icon={faSync} />
     </button>
 
   </span>

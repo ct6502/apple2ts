@@ -5,14 +5,12 @@ import {
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   passGoBackInTime,
   passGoForwardInTime,
-  setStartTextPage,
   passMouseEvent,
   passPasteText,
   handleGetShowMouse,
   handleGetCapsLock,
   handleGetRunMode,
   handleGetCout,
-  passSetSpeedMode,
   handleUseOpenAppleKey,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "./emulator/utility/utility"
@@ -24,6 +22,7 @@ import { useGlobalContext } from './globalcontext';
 import { handleFileSave } from './savestate';
 import bgImage from './img/crt.jpg';
 import { handleSetCPUState } from './controller';
+import { setPreferenceSpeedMode } from './localstorage';
 
 
 let width = 800
@@ -76,9 +75,9 @@ const Apple2Canvas = (props: DisplayProps) => {
     r: () => handleSetCPUState(RUN_MODE.NEED_RESET),
     s: () => handleFileSave(false),
     v: () => syntheticPaste(),
-    1: () => passSetSpeedMode(0),
-    2: () => passSetSpeedMode(1),
-    3: () => passSetSpeedMode(2),
+    1: () => setPreferenceSpeedMode(0),
+    2: () => setPreferenceSpeedMode(1),
+    3: () => setPreferenceSpeedMode(2),
   }
 
   const handleMetaKey = (key: string) => {
@@ -393,7 +392,6 @@ const Apple2Canvas = (props: DisplayProps) => {
         window.addEventListener("resize", handleResize)
         window.setInterval(() => { checkGamepad() }, 34)
         RenderCanvas()
-        window.setTimeout(() => setStartTextPage(), 25);
       } else {
         // This doesn't ever seem to get hit. I guess just doing the 
         // setTimeout below (even with a timeout of 0) is enough to

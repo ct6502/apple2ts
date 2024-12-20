@@ -9,7 +9,7 @@ import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, restoreSoftSwitches } 
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable, 
   getBasePlusAuxMemory,
-  doSetRamWorks,
+  setRamWorks,
   RamWorksMaxBank,
   C800SlotGet,
   RamWorksBankGet,
@@ -128,12 +128,12 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
     const ramWorks = (newmemory.length - 0x27F00) / 1024
     if (ramWorks > 0) {
       // If there's more data, it's the new RamWorks memory.
-      doSetRamWorks(ramWorks + 64)  // the 64 is existing AUX memory
+      setRamWorks(ramWorks + 64)  // the 64 is existing AUX memory
       memory.set(newmemory.slice(0x27F00), RamWorksMemoryStart + 0x10000)
     }
   } else {
     // Adjust our current RamWorks memory to match the restored state.
-    doSetRamWorks(newState.extraRamSize)
+    setRamWorks(newState.extraRamSize)
     // Note that our restored memory might be much smaller in size if
     // the RamWorks is mostly filled with 0xFF's.
     memory.set(newmemory)
@@ -345,7 +345,13 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
     machineName = name
     doSetRom(machineName)
     if (reset) doReset()
+    updateExternalMachineState()
   }
+}
+
+export const doSetRamWorks = (size: number) => {
+  setRamWorks(size)
+  updateExternalMachineState()
 }
 
 const getGoBackwardIndex = () => {

@@ -1,9 +1,13 @@
 import { handleGetFilename } from "./devices/driveprops"
-import { changeMockingboardMode, getMockingboardMode } from "./devices/mockingboard_audio"
+import { getMockingboardMode } from "./devices/mockingboard_audio"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import { BreakpointMap } from "./emulator/utility/breakpoint"
 import { RUN_MODE } from "./emulator/utility/utility"
-import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock, handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, handleGetSpeedMode, passArrowKeysAsJoystick, passBreakpoints, passCapsLock, passColorMode, passHelpText, passRestoreSaveState, passSetDebug, passSetRunMode, passSetSpeedMode } from "./main2worker"
+import { setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
+import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock,
+  handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode,
+  handleGetSaveState, handleGetSpeedMode, passArrowKeysAsJoystick,
+  passBreakpoints, passHelpText, passRestoreSaveState, passSetRunMode } from "./main2worker"
 
 const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const d = new Date()
@@ -57,32 +61,32 @@ export const RestoreSaveState = (fileContents: string) => {
   passRestoreSaveState(sState)
   const displayState = sState.emulator
   if (displayState?.colorMode !== undefined) {
-    passColorMode(displayState.colorMode)
+    setPreferenceColorMode(displayState.colorMode)
   }
   // In an old version, property was renamed from uppercase to capsLock
   if (displayState && ('uppercase' in displayState)) {
-    passCapsLock(displayState['uppercase'] as boolean)
+    setPreferenceCapsLock(displayState['uppercase'] as boolean)
   }
   if (displayState?.arrowKeysAsJoystick !== undefined) {
     passArrowKeysAsJoystick(displayState.arrowKeysAsJoystick)
   }
   if (displayState?.capsLock !== undefined) {
-    passCapsLock(displayState.capsLock)
+    setPreferenceCapsLock(displayState.capsLock)
   }
   if (displayState?.audioEnable !== undefined) {
     audioEnable(displayState.audioEnable)
   }
   if (displayState?.mockingboardMode !== undefined) {
-    changeMockingboardMode(displayState.mockingboardMode)
+    setPreferenceMockingboardMode(displayState.mockingboardMode)
   }
   if (displayState?.helptext !== undefined) {
     passHelpText(displayState.helptext)
   }
   if (displayState?.speedMode !== undefined) {
-    passSetSpeedMode(displayState.speedMode)
+    setPreferenceSpeedMode(displayState.speedMode)
   }
   if (displayState?.isDebugging !== undefined) {
-    passSetDebug(displayState.isDebugging)
+    setPreferenceDebugMode(displayState.isDebugging)
   }
   const runMode = displayState?.runMode ? (displayState.runMode as RUN_MODE) : RUN_MODE.RUNNING
   passSetRunMode(runMode)

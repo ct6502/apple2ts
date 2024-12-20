@@ -3,7 +3,8 @@ import { doSetRunMode,
   doGoBackInTime, doGoForwardInTime,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
   doSetMemory,
-  doSetMachineName} from "./motherboard";
+  doSetMachineName,
+  doSetRamWorks} from "./motherboard";
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -12,7 +13,6 @@ import { doSetBreakpoints } from "./cpu6502";
 import { MouseCardEvent } from "./devices/mouse";
 import { receiveMidiData } from "./devices/passport/passport";
 import { receiveCommData } from "./devices/superserial/serial";
-import { doSetRamWorks } from "./memory";
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.

@@ -73,10 +73,24 @@ export const doSetRom = (machineName: MACHINE_NAME) => {
   const rom = new Uint8Array(
     Buffer.from(rom64, "base64")
   )
+  // Hack: The IIe enhanced checks 3 bytes in each slot to determine if there
+  // is a disk drive. If memory locations $Cx01, $Cx03, and $Cx05 contain
+  // the values $20, $00, $03 then it's a disk drive (hard drive or floppy).
+  // The IIe unenhanced checks 4 bytes. The last byte checked is at $C707 and
+  // is expected to be $3C. However, the value will only be $3C for a
+  // floppy drive. A SmartPort hard drive will have the value $00.
+  // The result is that on an unenhanced IIe, the SmartPort hard drive will
+  // be skipped and the machine will always try to boot slot 6.
+  // To work around this, hack the monitor ROM to only check the first
+  // 3 bytes. This will allow the SmartPort hard drive to be booted.
+  if (machineName === "APPLE2EU") {
+    // Change LDA #$07 to LDA #$05
+    rom[0xFABB - 0xC000] = 0x05
+  }
   memory.set(rom, ROMmemoryStart)
 }
 
-export const doSetRamWorks = (size: number) => {
+export const setRamWorks = (size: number) => {
   // Clamp to 64K...16M and make sure it is a multiple of 64K
   size = Math.max(64, Math.min(8192, size))
   const oldMaxBank = RamWorksMaxBank

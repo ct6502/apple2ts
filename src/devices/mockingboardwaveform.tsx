@@ -3,7 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWaveSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import { changeMockingboardMode, getMockingboardMode, getMockingboardName } from "./mockingboard_audio";
+import { getMockingboardMode, getMockingboardName } from "./mockingboard_audio";
+import { setPreferenceMockingboardMode } from "../localstorage";
 
 export const MockingboardWaveform = () => {
   const [mockOpen, setMockOpen] = React.useState<boolean>(false)
@@ -17,7 +18,7 @@ export const MockingboardWaveform = () => {
 
   const handleMockClose = (index = -1) => {
     setMockOpen(false);
-    if (index >= 0) changeMockingboardMode(index)
+    if (index >= 0) setPreferenceMockingboardMode(index)
   }
 
   return (
