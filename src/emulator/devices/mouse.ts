@@ -279,8 +279,8 @@ export const resetMouse = () => {
   mousey = 0
   clampxmin = 0
   clampymin = 0
-  clampxmax = 0x3ff
-  clampymax = 0x3ff
+  clampxmax = 0x3FF
+  clampymax = 0x3FF
   setMode(0x00)
   bstatus = 0x00
   istatus = 0x00
@@ -300,8 +300,8 @@ let mousex = 0
 let mousey = 0
 let clampxmin = 0
 let clampymin = 0
-let clampxmax = 0x3ff
-let clampymax = 0x3ff
+let clampxmax = 0x3FF
+let clampymax = 0x3FF
 let clampidx = 0
 let mode = 0x00
 let bstatus = 0x00
@@ -410,7 +410,7 @@ const setMode = (value: number) => {
 
 export const onMouseVBL = () => {
   // make sure previous int was ACK'd
-  if(servestatus)
+  if (servestatus)
   {
     //console.log('int missed servestatus 0x'+servestatus.toString(16))
     //return
@@ -422,32 +422,32 @@ export const onMouseVBL = () => {
   //     | | +-----  Interrupt if mouse is moved
   //     | +-------  Interrupt if button is pressed
   //     +---------  Interrupt on VBL
-  if( mode & 0x01 )
+  if (mode & 0x01)
   {
     let doint = false
 
     // mark vbl if enabled
-    if(mode & 0x08)
+    if (mode & 0x08)
     {
       servestatus |= 0x08
       doint = true
     }
 
     // mark button int if enabled
-    if(mode & istatus & 0x04)
+    if (mode & istatus & 0x04)
     {
       servestatus |= 0x04
       doint = true
     }
 
     // mark movement int if enabled
-    if(mode & istatus & 0x02)
+    if (mode & istatus & 0x02)
     {
       servestatus |= 0x02
       doint = true
     }
 
-    if(doint)
+    if (doint)
     {
       //console.log('INT 0x'+servestatus.toString(16))
       interruptRequest(slot, true)
@@ -457,9 +457,9 @@ export const onMouseVBL = () => {
 
 export const MouseCardEvent = (event: MouseEventSimple) => {
 
-  if(mode & 0x01)
+  if (mode & 0x01)
   {
-    if(event.buttons>=0)
+    if (event.buttons >= 0)
     {
       // Bit 7 6 5 4 3 2 1 0
       //     | | | | | | | |
@@ -472,7 +472,7 @@ export const MouseCardEvent = (event: MouseEventSimple) => {
       //     | +---------------  Previously, button 0 was up (0) or down (1)
       //     +-----------------  Currently, button 0 is up (0) or down (1)
       // 
-      switch(event.buttons)
+      switch (event.buttons)
       {
         case 0x00:  // button 0 up
           bstatus &= ~0x80
@@ -488,18 +488,18 @@ export const MouseCardEvent = (event: MouseEventSimple) => {
           break
       }
       // mark button int, only on btn down
-      istatus |= (bstatus&0x80) ? 0x04 : 0x00
+      istatus |= (bstatus & 0x80) ? 0x04 : 0x00
     }
     else {
-      if(event.x>=0 && event.x<=1.0)
+      if (event.x >= 0 && event.x <= 1.0)
       {
-        mousex = Math.round( (clampxmax-clampxmin) * event.x + clampxmin )
+        mousex = Math.round( (clampxmax - clampxmin) * event.x + clampxmin )
         // mark movement int
         istatus |= 0x02
       }
-      if(event.y>=0 && event.y<=1.0)
+      if (event.y >= 0 && event.y <= 1.0)
       {
-        mousey = Math.round( (clampymax-clampymin) * event.y + clampymin )
+        mousey = Math.round( (clampymax - clampymin) * event.y + clampymin )
         // mark movement int
         istatus |= 0x02
       }
@@ -540,15 +540,16 @@ const basicRead = () => {
     memSet(CSWL, 0x03)
     const changed = ((bstatus&0x80) !== (lastbstatus&0x80))?true:false
     let button = 0
-    if (bstatus&0x80) {
+    if (bstatus & 0x80) {
       button = changed ? 2 : 1
     } else {
       button = changed ? 3 : 4
     }
     // if keyboard was hit, mouse button value should be negative
     const kb = memGet(0xC000)
-    if (kb & 0x80)
+    if (kb & 0x80) {
       button = -button
+    }
     lastbstatus = bstatus
     basicString = mousex.toString() + "," + mousey.toString() + "," + button.toString()
     //console.log("Mouse String: " + basicString)
@@ -559,8 +560,7 @@ const basicRead = () => {
     basicPos = 0
     memSet(CSWH, CSWHSave) 
     memSet(CSWL, CSWLSave)
-  }
-  else {
+  } else {
     s6502.Accum = basicString.charCodeAt(basicPos) | 0x80
     basicPos++
   }
@@ -618,45 +618,45 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
     POS:    8,    //               set positions
   }
 
-  switch (addr & 0x0f) {
+  switch (addr & 0x0F) {
     case REG.LOWX:
         if (isRead === false) {
-          tmpmousex = (tmpmousex & 0xff00) | value
-          tmpmousex &= 0xffff
+          tmpmousex = (tmpmousex & 0xFF00) | value
+          tmpmousex &= 0xFFFF
           //console.log('lowx', tmpmousex)
         }
         else {
-          return mousex & 0xff
+          return mousex & 0xFF
         }
       break
     case REG.HIGHX:
         if (isRead === false) {
-          tmpmousex = (((value<<8) | (tmpmousex & 0x00ff)))
-          tmpmousex &= 0xffff
+          tmpmousex = (((value << 8) | (tmpmousex & 0x00FF)))
+          tmpmousex &= 0xFFFF
           //console.log('highx', tmpmousex)
         }
         else {
-          return (mousex >> 8) & 0xff
+          return (mousex >> 8) & 0xFF
         }
       break
     case REG.LOWY:
         if (isRead === false) {
-          tmpmousey = (tmpmousey & 0xff00) | value
-          tmpmousey &= 0xffff
+          tmpmousey = (tmpmousey & 0xFF00) | value
+          tmpmousey &= 0xFFFF
           //console.log('lowy', tmpmousey)
         }
         else {
-          return mousey & 0xff
+          return mousey & 0xFF
         }
       break
     case REG.HIGHY:
         if (isRead === false) {
-          tmpmousey = (((value<<8) | (tmpmousey & 0x00ff)))
-          tmpmousey &= 0xffff
+          tmpmousey = (((value << 8) | (tmpmousey & 0x00FF)))
+          tmpmousey &= 0xFFFF
           //console.log('highy', tmpmousey)
         }
         else {
-          return (mousey >> 8) & 0xff
+          return (mousey >> 8) & 0xFF
         }
       break
     case REG.STATUS:
@@ -674,7 +674,7 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
 
     case REG.CLAMP:
         if (isRead === false) {
-          clampidx = 0x4e - value
+          clampidx = 0x4E - value
         }
         else {
           // returned In this order: minXH, minYH, minXL, minYL
@@ -682,21 +682,21 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
           switch (clampidx)
           {
             case 0:
-              return (clampxmin>>8)&0xff
+              return (clampxmin>>8) & 0xFF
             case 1:
-              return (clampymin>>8)&0xff
+              return (clampymin>>8) & 0xFF
             case 2:
-              return clampxmin&0xff
+              return clampxmin & 0xFF
             case 3:
-              return clampymin&0xff
+              return clampymin & 0xFF
             case 4:
-              return (clampxmax>>8)&0xff
+              return (clampxmax >> 8) & 0xFF
             case 5:
-              return (clampymax>>8)&0xff
+              return (clampymax >> 8) & 0xFF
             case 6:
-              return clampxmax&0xff
+              return clampxmax & 0xFF
             case 7:
-              return clampymax&0xff
+              return clampymax & 0xFF
             default:
               console.log("AppleMouse: invalid clamp index: " + clampidx)
               return 0
@@ -722,8 +722,8 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
               lastmousey = 0
               clampxmin = 0
               clampymin = 0
-              clampxmax = 0x3ff
-              clampymax = 0x3ff
+              clampxmax = 0x3FF
+              clampymax = 0x3FF
               bstatus = 0x00
               istatus = 0x00
               break
@@ -746,14 +746,14 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
               bstatus |= ((lastbstatus >> 1) & 0x40)
               bstatus |= ((lastbstatus >> 4) & 0x01)
               lastbstatus = bstatus
-              if(lastmousex !== mousex || lastmousey !== mousey)
+              if (lastmousex !== mousex || lastmousey !== mousey)
               {
                 bstatus |= 0x20
-                //changed = true
+                lastmousex = mousex
+                lastmousey = mousey
+                  //changed = true
               }
-              lastmousex = mousex
-              lastmousey = mousey
-              //if(changed)
+              //if (changed)
               //{
                 //console.log("XYB: ", mousex, " ", mousey, " ", bstatus.toString(16))
               //}
@@ -768,7 +768,7 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
             case CMD.SERVE:      //               check/serve mouse int
               // set int flags
               //console.log('cmd.serve')
-              bstatus &= ~0x0e
+              bstatus &= ~0x0E
               bstatus |= servestatus
               servestatus = 0x00
               // deassert
