@@ -103,6 +103,15 @@ export const loadPreferences = () => {
     }
   }
 
+  const speedMode = localStorage.getItem('speedMode')
+  if (speedMode) {
+    try {
+      passSpeedMode(JSON.parse(speedMode))
+    } catch (e) {
+      localStorage.removeItem('speedMode')
+    }
+  }
+
   const debugMode = localStorage.getItem('debugMode')
   if (debugMode) {
     try {
@@ -136,15 +145,6 @@ export const loadPreferences = () => {
       passSetRamWorks(JSON.parse(ramWorks))
     } catch (e) {
       localStorage.removeItem('ramWorks')
-    }
-  }
-
-  const speedMode = localStorage.getItem('speedMode')
-  if (speedMode) {
-    try {
-      passSpeedMode(JSON.parse(speedMode))
-    } catch (e) {
-      localStorage.removeItem('speedMode')
     }
   }
 }

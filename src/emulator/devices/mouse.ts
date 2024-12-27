@@ -43,22 +43,21 @@ Cx0e	db <PASCAL  ; read
 Cx0f	db <PASCAL  ; write
 Cx10	db <PASCAL  ; status
 Cx11	db $00      ; Pascal optional routines follow
-
-Cx12    db <SETMOUSE
-Cx13    db <SERVEMOUSE
-Cx14    db <READMOUSE
-Cx15    db <CLEARMOUSE
-Cx16    db <POSMOUSE
-Cx17    db <CLAMPMOUSE
-Cx18    db <HOMEMOUSE
-Cx19    db <INITMOUSE
-Cx1a    db <GETCLAMP
-Cx1b    db <UNDOCUMENTED      ; applemouse has methods here
-Cx1c    db <TIMEDATA
-Cx1d    db <UNDOCUMENTED      ; not sure if some will call them 
-Cx1e    db <UNDOCUMENTED
-Cx1f    db <UNDOCUMENTED
-
+;
+Cx12    db <SETMOUSE          ; $39
+Cx13    db <SERVEMOUSE        ; $47
+Cx14    db <READMOUSE         ; $C7
+Cx15    db <CLEARMOUSE        ; $D7
+Cx16    db <POSMOUSE          ; $BB
+Cx17    db <CLAMPMOUSE        ; $A3
+Cx18    db <HOMEMOUSE         ; $DF
+Cx19    db <INITMOUSE         ; $E6
+Cx1a    db <GETCLAMP          ; $26
+Cx1b    db <UNDOCUMENTED      ; $22 applemouse has methods here
+Cx1c    db <TIMEDATA          ; $24
+Cx1d    db <UNDOCUMENTED      ; $22 not sure if some will call them 
+Cx1e    db <UNDOCUMENTED      ; $22
+Cx1f    db <UNDOCUMENTED      ; $22
 ;
 ; All methods (except SERVEMOUSE) entered with X = Cn, Y = n0
 ;
@@ -86,7 +85,6 @@ Cx1f    db <UNDOCUMENTED
 ; 
 ; (Button 1 is not physically present on the mouse, and is probably only
 ; supported for an ADB mouse on the IIgs.)
-; 
 ; 
 ; The mode byte is defined as follows.
 ; 
@@ -134,16 +132,16 @@ UNDOC  EQU $9    ;               calling an undocumented entry
 PASCAL
     ldx #$03        ; return error for pascal
 
-UNDOCUMENTED
+UNDOCUMENTED        ; $Cn22
     sec
     rts
                     ; Technote #2
-TIMEDATA            ; A bit 0: 1 - 50hz, 0 = 60hz VBL
+TIMEDATA            ; $Cn24, A bit 0: 1 - 50hz, 0 = 60hz VBL
     clc
     rts
                     ; Technote #7
                     ; Return 8 clamping bytes one at a time to $578
-GETCLAMP
+GETCLAMP            ; $Cn26
     lda $478        ; index byte, starting at $4E according to technote
     sta CLAMP,y     ; indicates which byte in the order we want
     lda #GCLAMP
@@ -153,7 +151,7 @@ GETCLAMP
     clc             ; In this order: minXH, minYH, minXL, minYL
     rts             ;                maxXH, maxYH, maxXL, maxYL
 
-SETMOUSE 
+SETMOUSE            ; $C039
     cmp #$10
     bcs return      ; invalid
     sta MODE,y      ; set mode
@@ -162,7 +160,7 @@ SETMOUSE
 return 
     rts
 
-SERVEMOUSE 
+SERVEMOUSE          ; $Cn47
     ldy $06
     lda #$60
     sta $06
@@ -212,7 +210,7 @@ copyout
     sta SHIGHY,x
     rts
 
-CLAMPMOUSE 
+CLAMPMOUSE          ; $CnA3
     and #$1
     sta STEMPA,x
     phx
@@ -230,7 +228,7 @@ cmcont
     sta CMD,y
     rts
 
-POSMOUSE 
+POSMOUSE            ; $CnBB
     phx
     lda <pmcont-1
     pha
@@ -241,7 +239,7 @@ pmcont
     sta CMD,y
     rts
 
-READMOUSE 
+READMOUSE           ; $CnC7
     lda #READ
     sta CMD,y
 
@@ -251,37 +249,57 @@ READMOUSE
     clc
     bra copyout
 
-CLEARMOUSE 
+CLEARMOUSE          ; $CnD7
     lda #CLEAR
     sta CMD,y
     clc
     bra copyout
 
-HOMEMOUSE 
+HOMEMOUSE           ; $CnDF
     lda #HOME
     sta CMD,y
     clc
     rts
 
-INITMOUSE 
+INITMOUSE           ; $CnE6
     lda #INIT
     sta CMD,y
-
     lda MODE,y
     sta SMODE,x
-    bra READMOUSE
+    bra READMOUSE   ; Ends at $CnF2
 
     ; should leave about 13 bytes
 `
+
+// See comments in the firmware code for the bit values for
+// the interrupt status byte and mode byte.
+enum MODE {
+  MOUSE_OFF  = 0, // Mouse off
+  MOUSE_ON   = 1, // Mouse on
+  IRQ_MOVED  = 2, // Interrupt if mouse is moved
+  IRQ_BUTTON = 4, // Interrupt if button is pressed
+  IRQ_VBL    = 8, // Interrupt on VBL
+}
+
+enum IRQ_STATUS {
+  BUTTON1_PREV = 0x01,    // Previously, button 1 was up (0) or down (1)
+  MOVED_IRQ    = 0x02,    // Movement interrupt
+  BUTTON_IRQ   = 0x04,    // Button 0/1 interrupt
+  VBL_IRQ      = 0x08,    // VBL interrupt
+  BUTTON1_CURR = 0x10,    // Currently, button 1 is up (0) or down (1)
+  MOVED_CURR   = 0x20,    // X/Y moved since last READMOUSE
+  BUTTON0_PREV = 0x40,    // Previously, button 0 was up (0) or down (1)
+  BUTTON0_CURR = 0x80     // Currently, button 0 is up (0) or down (1)
+}
 
 export const resetMouse = () => {
   mousex = 0
   mousey = 0
   clampxmin = 0
   clampymin = 0
-  clampxmax = 0x3FF
-  clampymax = 0x3FF
-  setMode(0x00)
+  clampxmax = 1023
+  clampymax = 1023
+  setMode(MODE.MOUSE_OFF)
   bstatus = 0x00
   istatus = 0x00
   lastbstatus = 0x00
@@ -300,8 +318,8 @@ let mousex = 0
 let mousey = 0
 let clampxmin = 0
 let clampymin = 0
-let clampxmax = 0x3FF
-let clampymax = 0x3FF
+let clampxmax = 1023
+let clampymax = 1023
 let clampidx = 0
 let mode = 0x00
 let bstatus = 0x00
@@ -328,7 +346,7 @@ const slotROM = () => {
   const pcode = parseAssembly(0x0, mouseDriver.split("\n"))
   driver.set(pcode, 0)
   // d6 at FB is required for a mouse driver
-  driver[0xFB] = 0xd6
+  driver[0xFB] = 0xD6
   // I think this is a ROM version value, or a marker for first page of ROM
   driver[0xFF] = 0x01
   return driver
@@ -341,71 +359,19 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
   slot = aslot
 
   //console.log('AppleMouse compatible in slot', slot)
-  const basicAddr = 0xc000 + slot * 0x100
-  const clockReadAddr = 0xc000 + slot * 0x100 + 0x08
+  const basicAddr = 0xC000 + slot * 0x100
+  const clockReadAddr = 0xC000 + slot * 0x100 + 0x08
   setSlotDriver(slot, slotROM(), basicAddr, handleBasic)
   setSlotDriver(slot, slotROM(), clockReadAddr, handleClockRead)
-  setSlotIOCallback(slot, handleMouse)
+  setSlotIOCallback(slot, handleAppleMouse)
 
   resetMouse()
 }
 
-// The interrupt status byte is defined as follows:
-// 
-// Bit 7 6 5 4 3 2 1 0
-//     | | | | | | | |
-//     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
-//     | | | | | | +-----  Movement interrupt
-//     | | | | | +-------  Button 0/1 interrupt
-//     | | | | +---------  VBL interrupt
-//     | | | +-----------  Currently, button 1 is up (0) or down (1)
-//     | | +-------------  X/Y moved since last READMOUSE
-//     | +---------------  Previously, button 0 was up (0) or down (1)
-//     +-----------------  Currently, button 0 is up (0) or down (1)
-// 
-// (Button 1 is not physically present on the mouse, and is probably only
-// supported for an ADB mouse on the IIgs.)
-// 
-// 
-// The mode byte is defined as follows.
-// 
-// Bit 7 6 5 4 3 2 1 0
-//     | | | | | | | |
-//     | | | | | | | +---  Mouse off (0) or on (1)
-//     | | | | | | +-----  Interrupt if mouse is moved
-//     | | | | | +-------  Interrupt if button is pressed
-//     | | | | +---------  Interrupt on VBL
-//     | | | +-----------  Reserved
-//     | | +-------------  Reserved
-//     | +---------------  Reserved
-//     +-----------------  Reserved
-// 
-
-// LOWX   EQU $c080 ; + s0        Low byte of absolute X position
-// HIGHX  EQU $c081 ; + s0        High byte of absolute X position
-// LOWY   EQU $c082 ; + s0        Low byte of absolute Y position
-// HIGHY  EQU $c083 ; + s0        High byte of absolute Y position
-// BUTTON EQU $c084 ; + s0        Button 0/1 interrupt status byte
-// MODE   EQU $c085 ; + s0        Mode // byte
-// CLAMP  EQU $c086 ; + s0        Mode // byte
-// 
-// CMD    EQU $c08a ; + slot        Command reg
-// INIT   EQU $0    ;               initialize
-// READ   EQU $1    ;               read mouse and update regs, clear ints
-// CLEAR  EQU $2    ;               clear mouse and update regs, clear ints
-// CLAMP  EQU $3    ;               set mouse clamping
-// SERVE  EQU $4    ;               check/serve mouse int
-// HOME   EQU $5    ;               set to clamping window upper left
-// CLAMPX EQU $6    ;               clamp x values to x -> y
-// CLAMPY EQU $7    ;               clamp y values to x -> y
-// POS    EQU $8    ;               set positions
-
 const setMode = (value: number) => {
   mode = value
-  if (value)
-    passShowMouse(false)
-  else
-    passShowMouse(true)
+  // If Apple mouse is turned on, hide the browser mouse cursor
+  passShowMouse(value ? false  : true)
 }
 
 export const onMouseVBL = () => {
@@ -422,28 +388,28 @@ export const onMouseVBL = () => {
   //     | | +-----  Interrupt if mouse is moved
   //     | +-------  Interrupt if button is pressed
   //     +---------  Interrupt on VBL
-  if (mode & 0x01)
+  if (mode & MODE.MOUSE_ON)
   {
     let doint = false
 
     // mark vbl if enabled
-    if (mode & 0x08)
+    if (mode & MODE.IRQ_VBL)
     {
-      servestatus |= 0x08
+      servestatus |= MODE.IRQ_VBL
       doint = true
     }
 
     // mark button int if enabled
-    if (mode & istatus & 0x04)
+    if (mode & istatus & MODE.IRQ_BUTTON)
     {
-      servestatus |= 0x04
+      servestatus |= MODE.IRQ_BUTTON
       doint = true
     }
 
     // mark movement int if enabled
-    if (mode & istatus & 0x02)
+    if (mode & istatus & MODE.IRQ_MOVED)
     {
-      servestatus |= 0x02
+      servestatus |= MODE.IRQ_MOVED
       doint = true
     }
 
@@ -455,53 +421,46 @@ export const onMouseVBL = () => {
   }
 }
 
+// Receives system mouse event messages from the UI thread
+// and converts them to Apple II mouse card values.
 export const MouseCardEvent = (event: MouseEventSimple) => {
 
-  if (mode & 0x01)
+  if (mode & MODE.MOUSE_ON)
   {
     if (event.buttons >= 0)
     {
-      // Bit 7 6 5 4 3 2 1 0
-      //     | | | | | | | |
-      //     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
-      //     | | | | | | +-----  Movement interrupt
-      //     | | | | | +-------  Button 0/1 interrupt
-      //     | | | | +---------  VBL interrupt
-      //     | | | +-----------  Currently, button 1 is up (0) or down (1)
-      //     | | +-------------  X/Y moved since last READMOUSE
-      //     | +---------------  Previously, button 0 was up (0) or down (1)
-      //     +-----------------  Currently, button 0 is up (0) or down (1)
-      // 
+      // See comments in the firmware code for the bit values for
+      // the interrupt status byte and mode byte.
       switch (event.buttons)
       {
         case 0x00:  // button 0 up
-          bstatus &= ~0x80
+          bstatus &= ~IRQ_STATUS.BUTTON0_CURR
           break
         case 0x10:  // button 0 down
-          bstatus |= 0x80
+          bstatus |= IRQ_STATUS.BUTTON0_CURR
           break
         case 0x01:  // button 1 up
-          bstatus &= ~0x10
+          bstatus &= ~IRQ_STATUS.BUTTON1_CURR
           break
         case 0x11:  // button 1 down
-          bstatus |= 0x10
+          bstatus |= IRQ_STATUS.BUTTON1_CURR
           break
       }
       // mark button int, only on btn down
-      istatus |= (bstatus & 0x80) ? 0x04 : 0x00
+      istatus |= (bstatus & IRQ_STATUS.BUTTON0_CURR) ? MODE.IRQ_BUTTON : 0x00
     }
     else {
       if (event.x >= 0 && event.x <= 1.0)
       {
-        mousex = Math.round( (clampxmax - clampxmin) * event.x + clampxmin )
+        mousex = Math.round((clampxmax - clampxmin) * event.x + clampxmin)
         // mark movement int
-        istatus |= 0x02
+        istatus |= MODE.IRQ_MOVED
       }
       if (event.y >= 0 && event.y <= 1.0)
       {
-        mousey = Math.round( (clampymax - clampymin) * event.y + clampymin )
+        mousey = Math.round((clampymax - clampymin) * event.y + clampymin)
         // mark movement int
-        istatus |= 0x02
+        istatus |= MODE.IRQ_MOVED
       }
     }
     //console.log("XYB: ", mousex, " ", mousey, " ", bstatus.toString(16))
@@ -538,9 +497,9 @@ const basicRead = () => {
     CSWLSave = memGet(CSWL)
     memSet(CSWH, SLH) 
     memSet(CSWL, 0x03)
-    const changed = ((bstatus&0x80) !== (lastbstatus&0x80))?true:false
+    const changed = (bstatus & IRQ_STATUS.BUTTON0_CURR) !== (lastbstatus & IRQ_STATUS.BUTTON0_CURR)
     let button = 0
-    if (bstatus & 0x80) {
+    if (bstatus & IRQ_STATUS.BUTTON0_CURR) {
       button = changed ? 2 : 1
     } else {
       button = changed ? 3 : 4
@@ -574,19 +533,19 @@ const basicWrite = () => {
     case 0x80:
       console.log("mouse off")
       // turn off mouse
-      setMode(0)
+      setMode(MODE.MOUSE_OFF)
       break
     case 0x81:
       console.log("mouse on")
       // turn on mouse
-      setMode(1)
+      setMode(MODE.MOUSE_ON)
       break
     default:
       break
   }
 }
 
-const handleMouse: AddressCallback = (addr:number, value: number): number => {
+const handleAppleMouse: AddressCallback = (addr:number, value: number): number => {
 
   // We don't care about memgets to our card firmware, only to our card I/O
   if (addr >= 0xC100) return -1
@@ -603,7 +562,7 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
       MODE:     0x06,
       CLAMP:    0x07,
       CLOCKMAGIC: 0x08,
-      COMMAND:  0x0a,
+      COMMAND:  0x0A,
   }
 
   const CMD = {
@@ -619,90 +578,79 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
   }
 
   switch (addr & 0x0F) {
+
     case REG.LOWX:
-        if (isRead === false) {
-          tmpmousex = (tmpmousex & 0xFF00) | value
-          tmpmousex &= 0xFFFF
-          //console.log('lowx', tmpmousex)
-        }
-        else {
-          return mousex & 0xFF
-        }
+      if (isRead) {
+        return mousex & 0xFF
+      }
+      tmpmousex = (tmpmousex & 0xFF00) | value
+      tmpmousex &= 0xFFFF
       break
+
     case REG.HIGHX:
-        if (isRead === false) {
-          tmpmousex = (((value << 8) | (tmpmousex & 0x00FF)))
-          tmpmousex &= 0xFFFF
-          //console.log('highx', tmpmousex)
-        }
-        else {
-          return (mousex >> 8) & 0xFF
-        }
+      if (isRead) {
+        return (mousex >> 8) & 0xFF
+      }
+      tmpmousex = (((value << 8) | (tmpmousex & 0x00FF)))
+      tmpmousex &= 0xFFFF
       break
+
     case REG.LOWY:
-        if (isRead === false) {
-          tmpmousey = (tmpmousey & 0xFF00) | value
-          tmpmousey &= 0xFFFF
-          //console.log('lowy', tmpmousey)
-        }
-        else {
-          return mousey & 0xFF
-        }
+      if (isRead) {
+        return mousey & 0xFF
+      }
+      tmpmousey = (tmpmousey & 0xFF00) | value
+      tmpmousey &= 0xFFFF
       break
+
     case REG.HIGHY:
-        if (isRead === false) {
-          tmpmousey = (((value << 8) | (tmpmousey & 0x00FF)))
-          tmpmousey &= 0xFFFF
-          //console.log('highy', tmpmousey)
-        }
-        else {
-          return (mousey >> 8) & 0xFF
-        }
+      if (isRead) {
+        return (mousey >> 8) & 0xFF
+      }
+      tmpmousey = (((value << 8) | (tmpmousey & 0x00FF)))
+      tmpmousey &= 0xFFFF
       break
+
     case REG.STATUS:
       return bstatus
 
     case REG.MODE:
-        if (isRead === false) {
-          setMode(value)
-          console.log('Mouse mode: 0x', mode.toString(16))
-        }
-        else {
-          return mode
-        }
-        break
+      if (isRead) {
+        return mode
+      }
+      setMode(value)
+      console.log('Mouse mode: 0x', mode.toString(16))
+      break
 
     case REG.CLAMP:
-        if (isRead === false) {
-          clampidx = 0x4E - value
+      if (isRead) {
+        // returned In this order: minXH, minYH, minXL, minYL
+        //                         maxXH, maxYH, maxXL, maxYL
+        switch (clampidx)
+        {
+          case 0:
+            return (clampxmin>>8) & 0xFF
+          case 1:
+            return (clampymin>>8) & 0xFF
+          case 2:
+            return clampxmin & 0xFF
+          case 3:
+            return clampymin & 0xFF
+          case 4:
+            return (clampxmax >> 8) & 0xFF
+          case 5:
+            return (clampymax >> 8) & 0xFF
+          case 6:
+            return clampxmax & 0xFF
+          case 7:
+            return clampymax & 0xFF
+          default:
+            console.log("AppleMouse: invalid clamp index: " + clampidx)
+            return 0
         }
-        else {
-          // returned In this order: minXH, minYH, minXL, minYL
-          //                         maxXH, maxYH, maxXL, maxYL
-          switch (clampidx)
-          {
-            case 0:
-              return (clampxmin>>8) & 0xFF
-            case 1:
-              return (clampymin>>8) & 0xFF
-            case 2:
-              return clampxmin & 0xFF
-            case 3:
-              return clampymin & 0xFF
-            case 4:
-              return (clampxmax >> 8) & 0xFF
-            case 5:
-              return (clampymax >> 8) & 0xFF
-            case 6:
-              return clampxmax & 0xFF
-            case 7:
-              return clampymax & 0xFF
-            default:
-              console.log("AppleMouse: invalid clamp index: " + clampidx)
-              return 0
-          }
-        }
-        break
+      }
+      clampidx = 0x4E - value
+      break
         
     case REG.CLOCK:
     case REG.CLOCKMAGIC:
@@ -710,99 +658,90 @@ const handleMouse: AddressCallback = (addr:number, value: number): number => {
       return 0
 
     case REG.COMMAND:
-        if (isRead === false) {
-          command = value
-          switch(value)
+      if (isRead) {
+        return command
+      }
+      command = value
+      switch (value)
+      {
+        case CMD.INIT:       // initialize
+          console.log('cmd.init')
+          mousex = 0
+          mousey = 0
+          lastmousex = 0
+          lastmousey = 0
+          clampxmin = 0
+          clampymin = 0
+          clampxmax = 1023
+          clampymax = 1023
+          bstatus = 0x00
+          istatus = 0x00
+          break
+        case CMD.READ:       // read mouse and update regs, clear ints
+          //console.log('cmd.read')
+          // See comments in the firmware code for the bit values for
+          // the interrupt status byte and mode byte.
+          // clear ints & previous
+          //let changed = (bstatus & IRQ_STATUS.BUTTON0_CURR) !== (lastbstatus & IRQ_STATUS.BUTTON0_CURR)
+          istatus = 0x00
+          bstatus &= ~0x6F
+          bstatus |= (lastbstatus >> 1) & IRQ_STATUS.BUTTON0_PREV
+          bstatus |= (lastbstatus >> 4) & IRQ_STATUS.BUTTON1_PREV
+          lastbstatus = bstatus
+          if (lastmousex !== mousex || lastmousey !== mousey)
           {
-            case CMD.INIT:       //               initialize
-              console.log('cmd.init')
-              mousex = 0
-              mousey = 0
-              lastmousex = 0
-              lastmousey = 0
-              clampxmin = 0
-              clampymin = 0
-              clampxmax = 0x3FF
-              clampymax = 0x3FF
-              bstatus = 0x00
-              istatus = 0x00
-              break
-            case CMD.READ:       //               read mouse and update regs, clear ints
-              //console.log('cmd.read')
-              // Bit 7 6 5 4 3 2 1 0
-              //     | | | | | | | |
-              //     | | | | | | | +---  Previously, button 1 was up (0) or down (1)
-              //     | | | | | | +-----  Movement interrupt
-              //     | | | | | +-------  Button 0/1 interrupt
-              //     | | | | +---------  VBL interrupt
-              //     | | | +-----------  Currently, button 1 is up (0) or down (1)
-              //     | | +-------------  X/Y moved since last READMOUSE
-              //     | +---------------  Previously, button 0 was up (0) or down (1)
-              //     +-----------------  Currently, button 0 is up (0) or down (1)
-              // clear ints & previous
-              //let changed = ((bstatus&0x80) !== (lastbstatus&0x80))?true:false
-              istatus = 0x00
-              bstatus &= ~0x6f
-              bstatus |= ((lastbstatus >> 1) & 0x40)
-              bstatus |= ((lastbstatus >> 4) & 0x01)
-              lastbstatus = bstatus
-              if (lastmousex !== mousex || lastmousey !== mousey)
-              {
-                bstatus |= 0x20
-                lastmousex = mousex
-                lastmousey = mousey
-                  //changed = true
-              }
-              //if (changed)
-              //{
-                //console.log("XYB: ", mousex, " ", mousey, " ", bstatus.toString(16))
-              //}
-              break
-            case CMD.CLEAR:      //               clear mouse and update regs, clear ints
-              console.log('cmd.clear')
-              mousex = 0
-              mousey = 0
-              lastmousex = 0
-              lastmousey = 0
-              break
-            case CMD.SERVE:      //               check/serve mouse int
-              // set int flags
-              //console.log('cmd.serve')
-              bstatus &= ~0x0E
-              bstatus |= servestatus
-              servestatus = 0x00
-              // deassert
-              interruptRequest(slot, false)
-              break
-            case CMD.HOME:       //               set to clamping window upper left
-              console.log('cmd.home')
-              mousex = clampxmin
-              mousey = clampymin
-              break
-            case CMD.CLAMPX:     //               clamp x values to x -> y
-              console.log('cmd.clampx')
-              clampxmin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
-              clampxmax = tmpmousey
-              console.log(clampxmin + " -> " + clampxmax)
-              break
-            case CMD.CLAMPY:     //               clamp y values to x -> y
-              console.log('cmd.clampy')
-              clampymin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
-              clampymax = tmpmousey
-              console.log(clampymin + " -> " + clampymax)
-              break
-            case CMD.GCLAMP:     //
-              console.log('cmd.getclamp')
-              break
-            case CMD.POS:        //               set positions
-              console.log('cmd.pos')
-              mousex = tmpmousex
-              mousey = tmpmousey
-              break
+            bstatus |= IRQ_STATUS.MOVED_CURR
+            lastmousex = mousex
+            lastmousey = mousey
+              //changed = true
           }
-        }
-        else
-          return command
+          //if (changed)
+          //{
+            //console.log("XYB: ", mousex, " ", mousey, " ", bstatus.toString(16))
+          //}
+          break
+        case CMD.CLEAR:      // clear mouse and update regs, clear ints
+          console.log('cmd.clear')
+          mousex = 0
+          mousey = 0
+          lastmousex = 0
+          lastmousey = 0
+          break
+        case CMD.SERVE:      // check/serve mouse int
+          // set int flags
+          //console.log('cmd.serve')
+          bstatus &= ~(IRQ_STATUS.MOVED_IRQ | IRQ_STATUS.BUTTON_IRQ | IRQ_STATUS.VBL_IRQ)
+          bstatus |= servestatus
+          servestatus = 0x00
+          // deassert
+          interruptRequest(slot, false)
+          break
+        case CMD.HOME:       // set to clamping window upper left
+          console.log('cmd.home')
+          mousex = clampxmin
+          mousey = clampymin
+          break
+        case CMD.CLAMPX:     // clamp x values to x -> y
+          console.log('cmd.clampx')
+          clampxmin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
+          clampxmax = tmpmousey
+          console.log(clampxmin + " -> " + clampxmax)
+          break
+        case CMD.CLAMPY:     // clamp y values to x -> y
+          console.log('cmd.clampy')
+          clampymin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
+          clampymax = tmpmousey
+          console.log(clampymin + " -> " + clampymax)
+          break
+        case CMD.GCLAMP:     //
+          console.log('cmd.getclamp')
+          break
+        case CMD.POS:        // set positions
+          console.log('cmd.pos')
+          mousex = tmpmousex
+          mousey = tmpmousey
+          break
+      }
       break
 
     default:
