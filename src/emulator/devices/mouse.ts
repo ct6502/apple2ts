@@ -2,7 +2,7 @@
 // Now combined Mouse/Clock driver
 
 import { parseAssembly } from "../utility/assembler"
-import { setSlotDriver, setSlotIOCallback, memGet, memSet } from "../memory"
+import { setSlotDriver, setSlotIOCallback, memGet, memSet, memSetC000, memGetC000 } from "../memory"
 import { MouseEventSimple } from "../utility/utility"
 import { interruptRequest } from "../cpu6502"
 import { s6502 } from "../instructions"
@@ -60,15 +60,6 @@ Cx1e    db <UNDOCUMENTED      ; $22
 Cx1f    db <UNDOCUMENTED      ; $22
 ;
 ; All methods (except SERVEMOUSE) entered with X = Cn, Y = n0
-;
-; $0478 + slot        Low byte of absolute X position
-; $04F8 + slot        Low byte of absolute Y position
-; $0578 + slot        High byte of absolute X position
-; $05F8 + slot        High byte of absolute Y position
-; $0678 + slot        Reserved and used by the firmware
-; $06F8 + slot        Reserved and used by the firmware
-; $0778 + slot        Button 0/1 interrupt status byte
-; $07F8 + slot        Mode byte
 ; 
 ; The interrupt status byte is defined as follows:
 ; 
@@ -109,15 +100,15 @@ STEMPB  EQU $06F8-$c0 ; + Cs        Reserved and used by the firmware
 SBUTTON EQU $0778-$c0 ; + Cs        Button 0/1 interrupt status byte
 SMODE   EQU $07F8-$c0 ; + Cs        Mode byte
 
-LOWX   EQU $c081 ; + s0        Low byte of absolute X position
-HIGHX  EQU $c082 ; + s0        High byte of absolute X position
-LOWY   EQU $c083 ; + s0        Low byte of absolute Y position
-HIGHY  EQU $c084 ; + s0        High byte of absolute Y position
-BUTTON EQU $c085 ; + s0        Button 0/1 interrupt status byte
-MODE   EQU $c086 ; + s0        Mode byte
-CLAMP  EQU $c087 ; + s0        clamp value
+LOWX   EQU $C081 ; + $s0        Low byte of absolute X position
+HIGHX  EQU $C082 ; + $s0        High byte of absolute X position
+LOWY   EQU $C083 ; + $s0        Low byte of absolute Y position
+HIGHY  EQU $C084 ; + $s0        High byte of absolute Y position
+BUTTON EQU $C085 ; + $s0        Button 0/1 interrupt status byte
+MODE   EQU $C086 ; + $s0        Mode byte
+CLAMP  EQU $C087 ; + $s0        Clamp value
 
-CMD    EQU $c08a ; + slot        Command reg
+CMD    EQU $C08A ; + $s0         Command reg
 INIT   EQU $0    ;               initialize
 READ   EQU $1    ;               read mouse and update regs, clear ints
 CLEAR  EQU $2    ;               clear mouse and update regs, clear ints
@@ -215,7 +206,7 @@ CLAMPMOUSE          ; $CnA3
     sta STEMPA,x
     phx
     phx
-    ldx #$c0      ; note load from screen hole 0, not slot
+    ldx #$c0        ; note load from screen hole 0, not slot
 
     lda <cmcont-1
     pha
@@ -223,7 +214,7 @@ CLAMPMOUSE          ; $CnA3
 
 cmcont 
     plx
-    lda #CLAMPX  ; a = 1 for Y
+    lda #CLAMPX     ; A = 1 for Y
     ora STEMPA,x
     sta CMD,y
     rts
@@ -271,6 +262,16 @@ INITMOUSE           ; $CnE6
     ; should leave about 13 bytes
 `
 
+// We will store our state in the peripheral card I/O locations.
+// That way we can save/restore the mouse state successfully.
+let ADDR_MODE    = 0xC086    // + s0       Mode byte
+let ADDR_CLAMPX1 = 0xC089    // + s0
+let ADDR_CLAMPX2 = 0xC08B    // + s0
+let ADDR_CLAMPX3 = 0xC08C    // + s0
+let ADDR_CLAMPY1 = 0xC08D    // + s0
+let ADDR_CLAMPY2 = 0xC08E    // + s0
+let ADDR_CLAMPY3 = 0xC08F    // + s0
+
 // See comments in the firmware code for the bit values for
 // the interrupt status byte and mode byte.
 enum MODE {
@@ -292,47 +293,92 @@ enum IRQ_STATUS {
   BUTTON0_CURR = 0x80     // Currently, button 0 is up (0) or down (1)
 }
 
+// We don't have enough room in the peripheral card I/O locations
+// to store 8 bytes of X/Y clamping values (min low/high, max low/high).
+// So instead, since the clamping limit is 0-1023 (10 bits), we will
+// store the X clamping values in 3 bytes, with the upper 2 bits of the
+// min value stored in the high nibble of the second byte, and the upper
+// 2 bits of the max value stored in the low nibble of the second byte.
+// Same thing for the Y clamping values.
+const setClampValuesToAddr = (min: number, max: number,
+  addr1: number, addr2: number, addr3: number) => {
+
+  // Split min into two 8-bit values
+  const minLow = min & 0xFF // Lower 8 bits
+  const minHigh = (min >> 8) & 0x03 // Upper 2 bits
+
+  // Split max into two 8-bit values
+  const maxLow = max & 0xFF // Lower 8 bits
+  const maxHigh = (max >> 8) & 0x03 // Upper 2 bits
+
+  memSetC000(addr1, minLow)
+  memSetC000(addr2, (minHigh << 4) | maxHigh)
+  memSetC000(addr3, maxLow)
+}
+
+const getClampValuesFromAddr = (addr1: number, addr2: number, addr3: number) => {
+  const minLow = memGetC000(addr1)
+  const mixed = memGetC000(addr2)
+  const maxLow = memGetC000(addr3)
+  const minHigh = (mixed >> 4) & 0x03
+  const maxHigh = mixed & 0x03
+  return [minLow | (minHigh << 8), maxLow | (maxHigh << 8)]
+}
+
+const getClampX = () => {
+  return getClampValuesFromAddr(ADDR_CLAMPX1, ADDR_CLAMPX2, ADDR_CLAMPX3)
+}
+
+const getClampY = () => {
+  return getClampValuesFromAddr(ADDR_CLAMPY1, ADDR_CLAMPY2, ADDR_CLAMPY3)
+}
+
+const setClampX = (min: number, max: number) => {
+  setClampValuesToAddr(min, max, ADDR_CLAMPX1, ADDR_CLAMPX2, ADDR_CLAMPX3)
+}
+
+const setClampY = (min: number, max: number) => {
+  setClampValuesToAddr(min, max, ADDR_CLAMPY1, ADDR_CLAMPY2, ADDR_CLAMPY3)
+}
+
+const setMode = (value: number) => {
+  memSetC000(ADDR_MODE, value)
+  // console.log('Mouse mode set to', memGetC000(ADDR_MODE))
+  // If Apple mouse is turned on, hide the browser mouse cursor
+  passShowMouse(value ? false  : true)
+}
+
 export const resetMouse = () => {
   mousex = 0
   mousey = 0
-  clampxmin = 0
-  clampymin = 0
-  clampxmax = 1023
-  clampymax = 1023
+  setClampX(0, 1023)
+  setClampY(0, 1023)
   setMode(MODE.MOUSE_OFF)
   bstatus = 0x00
   istatus = 0x00
   lastbstatus = 0x00
   lastmousex = 0
   lastmousey = 0
-
   tmpmousex = 0
   tmpmousey = 0
-
   servestatus = 0
-
   clampidx = 0
 }
 
+// Technically these should probably be saved in the save/restore state,
+// perhaps in the peripheral card I/O locations, but everything seems to
+// work fine if these are reset on a restore state.
 let mousex = 0
 let mousey = 0
-let clampxmin = 0
-let clampymin = 0
-let clampxmax = 1023
-let clampymax = 1023
 let clampidx = 0
-let mode = 0x00
 let bstatus = 0x00
 let istatus = 0x00
 let lastbstatus = 0x00
 let lastmousex = 0
 let lastmousey = 0
-
 let tmpmousex = 0
 let tmpmousey = 0
-
 let servestatus = 0
-
 let command = 0
 
 let slot = 5
@@ -365,13 +411,23 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
   setSlotDriver(slot, slotROM(), clockReadAddr, handleClockRead)
   setSlotIOCallback(slot, handleAppleMouse)
 
-  resetMouse()
-}
+  ADDR_MODE = 0xC080 + (ADDR_MODE & 0x0F) + slot * 0x10
+  ADDR_CLAMPX1 = 0xC080 + (ADDR_CLAMPX1 & 0x0F) + slot * 0x10
+  ADDR_CLAMPX2 = 0xC080 + (ADDR_CLAMPX2 & 0x0F) + slot * 0x10
+  ADDR_CLAMPX3 = 0xC080 + (ADDR_CLAMPX3 & 0x0F) + slot * 0x10
+  ADDR_CLAMPY1 = 0xC080 + (ADDR_CLAMPY1 & 0x0F) + slot * 0x10
+  ADDR_CLAMPY2 = 0xC080 + (ADDR_CLAMPY2 & 0x0F) + slot * 0x10
+  ADDR_CLAMPY3 = 0xC080 + (ADDR_CLAMPY3 & 0x0F) + slot * 0x10
 
-const setMode = (value: number) => {
-  mode = value
-  // If Apple mouse is turned on, hide the browser mouse cursor
-  passShowMouse(value ? false  : true)
+  const [clampxmin, clampxmax] = getClampX()
+  if (clampxmin === 0 && clampxmax === 0) {
+    setClampX(0, 1023)
+    setClampY(0, 1023)
+  }
+  const mode = memGetC000(ADDR_MODE)
+  if (mode !== 0) {
+    passShowMouse(false)
+  }
 }
 
 export const onMouseVBL = () => {
@@ -388,6 +444,8 @@ export const onMouseVBL = () => {
   //     | | +-----  Interrupt if mouse is moved
   //     | +-------  Interrupt if button is pressed
   //     +---------  Interrupt on VBL
+  const mode = memGetC000(ADDR_MODE)
+
   if (mode & MODE.MOUSE_ON)
   {
     let doint = false
@@ -425,6 +483,8 @@ export const onMouseVBL = () => {
 // and converts them to Apple II mouse card values.
 export const MouseCardEvent = (event: MouseEventSimple) => {
 
+  const mode = memGetC000(ADDR_MODE)
+
   if (mode & MODE.MOUSE_ON)
   {
     if (event.buttons >= 0)
@@ -452,12 +512,14 @@ export const MouseCardEvent = (event: MouseEventSimple) => {
     else {
       if (event.x >= 0 && event.x <= 1.0)
       {
+        const [clampxmin, clampxmax] = getClampX()
         mousex = Math.round((clampxmax - clampxmin) * event.x + clampxmin)
         // mark movement int
         istatus |= MODE.IRQ_MOVED
       }
       if (event.y >= 0 && event.y <= 1.0)
       {
+        const [clampymin, clampymax] = getClampY()
         mousey = Math.round((clampymax - clampymin) * event.y + clampymin)
         // mark movement int
         istatus |= MODE.IRQ_MOVED
@@ -616,22 +678,23 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
 
     case REG.MODE:
       if (isRead) {
-        return mode
+        return memGetC000(ADDR_MODE)
       }
       setMode(value)
-      console.log('Mouse mode: 0x', mode.toString(16))
       break
 
     case REG.CLAMP:
       if (isRead) {
         // returned In this order: minXH, minYH, minXL, minYL
         //                         maxXH, maxYH, maxXL, maxYL
+        const [clampxmin, clampxmax] = getClampX()
+        const [clampymin, clampymax] = getClampY()
         switch (clampidx)
         {
           case 0:
-            return (clampxmin>>8) & 0xFF
+            return (clampxmin >> 8) & 0xFF
           case 1:
-            return (clampymin>>8) & 0xFF
+            return (clampymin >> 8) & 0xFF
           case 2:
             return clampxmin & 0xFF
           case 3:
@@ -670,10 +733,8 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
           mousey = 0
           lastmousex = 0
           lastmousey = 0
-          clampxmin = 0
-          clampymin = 0
-          clampxmax = 1023
-          clampymax = 1023
+          setClampX(0, 1023)
+          setClampY(0, 1023)
           bstatus = 0x00
           istatus = 0x00
           break
@@ -717,27 +778,34 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
           interruptRequest(slot, false)
           break
         case CMD.HOME:       // set to clamping window upper left
-          console.log('cmd.home')
-          mousex = clampxmin
-          mousey = clampymin
+          {
+            const [clampxmin] = getClampX();
+            const [clampymin] = getClampY();
+            mousex = clampxmin
+            mousey = clampymin
+          }
           break
         case CMD.CLAMPX:     // clamp x values to x -> y
-          console.log('cmd.clampx')
-          clampxmin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
-          clampxmax = tmpmousey
-          console.log(clampxmin + " -> " + clampxmax)
+          {
+            const clampxmin = (tmpmousex > 32767) ? tmpmousex - 65536 : tmpmousex
+            const clampxmax = tmpmousey
+            setClampX(clampxmin, clampxmax)
+            console.log(clampxmin + " -> " + clampxmax)
+          }
           break
         case CMD.CLAMPY:     // clamp y values to x -> y
-          console.log('cmd.clampy')
-          clampymin = tmpmousex > 32767 ? tmpmousex - 65536 : tmpmousex
-          clampymax = tmpmousey
-          console.log(clampymin + " -> " + clampymax)
+          {
+            const clampymin = (tmpmousex > 32767) ? tmpmousex - 65536 : tmpmousex
+            const clampymax = tmpmousey
+            setClampY(clampymin, clampymax)
+            console.log(clampymin + " -> " + clampymax)
+          }
           break
         case CMD.GCLAMP:     //
           console.log('cmd.getclamp')
           break
         case CMD.POS:        // set positions
-          console.log('cmd.pos')
+          // console.log('cmd.pos')
           mousex = tmpmousex
           mousey = tmpmousey
           break
@@ -749,5 +817,5 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
         break
   }
 
-  return 0
+  return value
 }
