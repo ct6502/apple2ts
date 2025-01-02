@@ -4,7 +4,8 @@ import { doSetRunMode,
   doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
   doSetMemory,
   doSetMachineName,
-  doSetRamWorks} from "./motherboard";
+  doSetRamWorks,
+  doSetCycleCount} from "./motherboard";
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -174,6 +175,9 @@ if (typeof self !== 'undefined') {
         doSetBinaryBlock(memBlock.address, memBlock.data, memBlock.run)
         break
       }
+      case MSG_MAIN.SET_CYCLECOUNT:
+        doSetCycleCount(e.data.payload as number)
+        break
       case MSG_MAIN.SET_MEMORY: {
         const setmem = e.data.payload
         doSetMemory(setmem.address, setmem.value)

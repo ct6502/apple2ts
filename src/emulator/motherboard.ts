@@ -194,6 +194,11 @@ export const doSetState6502 = (newState: STATE6502) => {
   updateExternalMachineState()
 }
 
+export const doSetCycleCount = (count: number) => {
+  setCycleCount(count)
+  updateExternalMachineState()
+}
+
 export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = false) => {
   doReset()
   // There was never a version 0.9 (it was before the version was saved),

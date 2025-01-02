@@ -1,6 +1,8 @@
 import React from "react";
-import { handleGetRunMode, handleGetState6502, passSetState6502 } from "../main2worker";
+import { handleGetRunMode, handleGetState6502, passSetCycleCount, passSetState6502 } from "../main2worker";
 import { RUN_MODE, toHex } from "../emulator/utility/utility";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faSync } from "@fortawesome/free-solid-svg-icons";
 
 type KEYS = 'PC' | 'Accum' | 'XReg' | 'YReg' | 'StackPtr' | 'flagIRQ'
 
@@ -73,7 +75,7 @@ const State6502Controls = () => {
         {createTextField('S', 'StackPtr', s6502.StackPtr, runMode)}
         {createTextField('IRQ', 'flagIRQ', s6502.flagIRQ, runMode)}
       </div>
-      <div className="flex-row-space-between" style={{ alignItems: 'center' }}>
+      <div className="flex-row" style={{ alignItems: 'center' }}>
         <div className="flex-row">
           {createCheckbox('N', 7, s6502.PStatus, runMode)}
           {createCheckbox('V', 6, s6502.PStatus, runMode)}
@@ -84,10 +86,15 @@ const State6502Controls = () => {
           {createCheckbox('C', 0, s6502.PStatus, runMode)}
           {createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
-        <div className="flex-row">
-          <span className="bigger-font noselect">Cycle count:</span>
+        <div className="flex-row" style={{ marginLeft: '2em' }}>
+          <span className="bigger-font noselect">Cycles:</span>
           <span className="bigger-monospace"
-            style={{ marginLeft: '1em', marginRight: '1em' }}> {s6502.cycleCount}</span>
+            style={{ marginLeft: '2pt', marginRight: '2pt', marginTop: '1pt' }}> {s6502.cycleCount}</span>
+          <button className="push-button tight-button"
+            title="Reset cycle count"
+            onClick={() => { passSetCycleCount(0); s6502.cycleCount = 0 }}>
+            <FontAwesomeIcon icon={faSync} style={{ fontSize: '0.7em' }}/>
+          </button>
         </div>
       </div>
     </div>

@@ -17,8 +17,8 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@fortawesome/free-regular-svg-icons": "^6.7.1",
-    "@fortawesome/free-solid-svg-icons": "^6.7.1",
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "buffer": "^6.0.3",
     "react": "^19.0.0",
@@ -27,14 +27,14 @@
   "devDependencies": {
     "@types/audioworklet": "^0.0.65",
     "@types/jest": "^29.5.14",
-    "@types/react": "^19.0.1",
+    "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@types/react-fontawesome": "^1.6.8",
     "@types/w3c-web-serial": "^1.0.7",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
     "@vitejs/plugin-react-swc": "^3.7.2",
-    "eslint": "^9.16.0",
+    "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "gh-pages": "^6.2.0",
@@ -42,7 +42,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.6"
   },
   "browserslist": {
     "production": [

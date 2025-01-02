@@ -169,11 +169,13 @@ body.dark-mode .round-rect-border {
 }
 
 .tight-button {
+  border-radius: 3px;
   margin-left: 5px;
   margin-top: 0px;
   margin-right: 3px;
   width: 16px;
-  height: 16px
+  height: 16px;
+  outline: none;
 }
 
 .dialog-title {

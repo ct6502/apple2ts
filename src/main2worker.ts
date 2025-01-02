@@ -158,6 +158,10 @@ export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boole
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
 }
 
+export const passSetCycleCount = (count: number) => {
+  doPostMessage(MSG_MAIN.SET_CYCLECOUNT, count)
+}
+
 export const passSetMemory = (address: number, value: number) => {
   doPostMessage(MSG_MAIN.SET_MEMORY, {address, value})
 }
