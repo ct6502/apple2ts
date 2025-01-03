@@ -117,6 +117,34 @@ To enable https when running from localhost, you need to [generate a
 certificate](https://flaviocopes.com/react-how-to-configure-https-localhost/)
 and [install it on your system](https://flaviocopes.com/macos-install-ssl-local/).
 
+## Update CHANGELOG
+
+Install the [Github Changelog Generator](https://github.com/github-changelog-generator/github-changelog-generator) by running:
+
+```sh
+gem install github_changelog_generator
+```
+
+You may need to update to Ruby v3.x to install this gem.
+
+Go through the commits, and add any missing tags. For a given commit sha (say `1befdec`), checkout the commit, force the date to be the commit date, and then add the tag:
+
+```sh
+git checkout 1befdec
+GIT_COMMITTER_DATE="$(git show --format=%aD | head -1)"
+git tag -a v2.6 -m"v2.6"
+git push origin --tags
+git checkout main
+```
+
+If you don't already have one, [generate a Github token](https://github.com/settings/tokens/new?description=GitHub%20Changelog%20Generator%20token) to run the Changelog Generator script with authentication. You only need "repo" scope for private repositories.
+
+Now run the script:
+
+```sh
+github_changelog_generator --token xxxxx -u ct6502 -p apple2ts
+```
+
 ## Apple II ROMs
 
 To make a ROM image, save the raw binary data from the C000-FFFF ROM in a single file.
