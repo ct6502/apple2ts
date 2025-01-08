@@ -158,16 +158,21 @@ export const handleSetDiskFromFile = async (disk: diskImage,
   handleSetDiskData(0, new Uint8Array(data), disk.file)
   passSetRunMode(RUN_MODE.NEED_BOOT)
   const helpFile = replaceSuffix(disk.file, 'txt')
-  const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
-  let helptext = ' '
-  if (help.ok) {
-    helptext = await help.text()
-    // Hack: when running on localhost, if the file is missing it just
-    // returns the index.html. So just return an empty string instead.
-    if (helptext.startsWith('<!DOCTYPE html>')) {
-      helptext = ' '
-    }
-    updateDisplay(0, helptext)
+  try {
+    const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
+    let helptext = '<Default>'
+    if (help.ok) {
+      helptext = await help.text()
+      // Hack: when running on localhost, if the file is missing it just
+      // returns the index.html. So just return an empty string instead.
+      if (helptext.startsWith('<!DOCTYPE html>')) {
+        helptext = '<Default>'
+      }
+      updateDisplay(0, helptext)
+    }      
+  } catch (error) {
+    // If we don't have a help text file, just revert to the default text.
+    updateDisplay(0, '<Default>')
   }
 }
 

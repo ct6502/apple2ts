@@ -10,7 +10,7 @@ type HelpPanelProps = {
 }
 
 const HelpPanel = (props: HelpPanelProps) => {
-  const helpText = props.helptext.length > 1 ? props.helptext : defaultHelpText
+  const helpText = (props.helptext.length > 1 && props.helptext !== '<Default>') ? props.helptext : defaultHelpText
   return (
     <div style={{
       boxSizing: 'content-box',
