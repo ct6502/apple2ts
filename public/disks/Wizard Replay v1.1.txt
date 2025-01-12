@@ -1,6 +1,6 @@
 Wizard Replay is a frontend for exploring and playing classic RPG games on an 8-bit Apple II. Some notable features:
 
-* 8 different scenarios, including Proving Grounds 3.1
+* 8 different scenarios, including <a href="https://zimlab.com/wizardry/" target="_blank">Proving Grounds 3.1</a>, courtesy Eric Labelle
 * Menu-driven UI for launching all games
 * All games run directly from ProDOS (no swapping floppies!)
 * Integrated WizPlus for character editing
