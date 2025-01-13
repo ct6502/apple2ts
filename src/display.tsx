@@ -176,7 +176,7 @@ const DisplayApple2 = () => {
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <Apple2Canvas {...props} />
           <div className="flex-row-space-between wrap"
-            style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' }}>
+            style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' , paddingLeft: '2px' }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
             <ImageWriter />

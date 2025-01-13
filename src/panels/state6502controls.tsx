@@ -39,9 +39,10 @@ const State6502Controls = () => {
     const strVal = toHex(value)
     return (
       <div className="flex-row" style={{ alignItems: "center" }}>
-        <div className="centered-title">{name}</div>
+        <div className="bigger-font" style={{margin: "2px"}}>{name}</div>
         <input type="text"
           className={name === 'PC' ? "hex-field" : "hex-field smallField"}
+          style={{marginRight: "7px"}}
           disabled={runMode !== RUN_MODE.PAUSED}
           value={strVal}
           onChange={(e) => handleTextFieldChange(e, key)}
@@ -66,8 +67,8 @@ const State6502Controls = () => {
   const runMode = handleGetRunMode()
   const s6502 = handleGetState6502()
   return (
-    <div className="flex-column" style={{ gap: "5px" }}>
-      <div className="flex-row-space-between">
+    <div className="flex-column" style={{ gap: "2px" }}>
+      <div className="flex-row">
         {createTextField('PC', 'PC', s6502.PC, runMode)}
         {createTextField('A', 'Accum', s6502.Accum, runMode)}
         {createTextField('X', 'XReg', s6502.XReg, runMode)}

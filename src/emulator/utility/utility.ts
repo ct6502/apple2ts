@@ -314,3 +314,44 @@ export const hiresAddressToLine = (addr: number) => {
 //   const line = hiresAddressToLine(addr + 1)
 //   if (i !== line) console.log("ERROR")
 // }
+
+
+const fetchAndProcessSymbolFile = async (url: string): Promise<Map<number, string>> => {
+  const response = await fetch(url)
+  const text = await response.text()
+  const lines = text.split('\n')
+  const symbolMap = new Map<number, string>()
+
+  lines.forEach(line => {
+    const trimmedLine = line.trim()
+    // Skip empty lines or lines that start with a semicolon after trimming
+    if (trimmedLine === '' || trimmedLine.startsWith(';')) {
+      return
+    }
+    // Split the line into address and symbol
+    const parts = trimmedLine.split(/\s+/)
+    if (parts.length >= 2) {
+      const address = parseInt(parts[0], 16)
+      const symbol = parts[1]
+      symbolMap.set(address, symbol)
+    }
+  });
+
+  return symbolMap;
+}
+
+let symbolTable = new Map<number, string>()
+let fetchingTable = false
+
+export const getDefaultSymbolTable = () => {
+  if (symbolTable.size === 0 && !fetchingTable) {
+    fetchingTable = true
+    const url = '/symbol_tables/apple2eu.sym'
+    fetchAndProcessSymbolFile(url).then(symbolMap => {
+      symbolTable = symbolMap
+    }).catch(error => {
+      console.error('Error fetching or processing the symbol file:', error);
+    })
+  }
+  return symbolTable
+}

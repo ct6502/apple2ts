@@ -10,7 +10,7 @@ import {
   passSetDisassembleAddress
 } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { RUN_MODE, toHex } from "../emulator/utility/utility";
+import { getDefaultSymbolTable, RUN_MODE, toHex } from "../emulator/utility/utility";
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
@@ -228,6 +228,10 @@ const DisassemblyView = () => {
           addr = memory[addr] + 256 * memory[addr + 1]
         }
       }
+      const symbolTable = getDefaultSymbolTable()
+      if (symbolTable.has(addr)) {
+        ops[1] = symbolTable.get(addr) || ops[1]
+      }
       return <span>{ops[0]}
         <span className="disassembly-link"
           title={`$${toHex(addr)}`}
@@ -252,11 +256,15 @@ const DisassemblyView = () => {
       title += value.toString() + ' = ' + (value | 256).toString(2).slice(1)
       className = "disassembly-immediate"
     } else {
-      const match = operand.match(/\$([0-9A-Fa-f]{2,4})/)
-      const addr = match ? parseInt(match[1], 16) : -1
+      const ops = operand.split(/(\$[0-9A-Fa-f]{2,4})/)
+      const addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
       if (addr >= 0) {
         className = "disassembly-address"
         title += getOperandTooltip(operand, addr)
+        const symbolTable = getDefaultSymbolTable()
+        if (symbolTable.has(addr)) {
+          operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || '')
+        }
       }
     }
     return <span title={title} className={className}>{(operand + '         ').slice(0, 9)}</span>

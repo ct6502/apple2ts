@@ -1,3 +1,4 @@
+import React from "react";
 import { handleGetDarkMode } from "../main2worker";
 import "./helppanel.css"
 import { defaultHelpText } from "./startuptextpage";
@@ -9,7 +10,10 @@ type HelpPanelProps = {
   width: number
 }
 
-const HelpPanel = (props: HelpPanelProps) => {
+// Use the React.memo() function to optimize the HelpPanel component.
+// It was re-rendering on every machine state update, which was ridiculous.
+// Now it only re-renders when the help text changes.
+const HelpPanel = React.memo((props: HelpPanelProps) => {
   const helpText = (props.helptext.length > 1 && props.helptext !== '<Default>') ? props.helptext : defaultHelpText
   return (
     <div style={{
@@ -26,6 +30,8 @@ const HelpPanel = (props: HelpPanelProps) => {
       </div>
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  return prevProps.helptext === nextProps.helptext;
+})
 
 export default HelpPanel;
