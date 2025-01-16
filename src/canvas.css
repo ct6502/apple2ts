@@ -11,6 +11,7 @@
   background-color: black;
   background-size: 100% 100%;
   outline: none;
+  z-index: 0;
 }
 
 .hiddenTextarea {
@@ -48,4 +49,22 @@
 body.dark-mode .hgr-view-text {
   background-color: var(--input-background-dark);
   color: var(--text-color-dark);
+}
+
+.scanlines::after {
+  display: block;
+  pointer-events: none;
+  content: "";
+  position: absolute;
+  left: var(--scanlines-div-left);
+  top: var(--scanlines-div-top);
+  width: var(--scanlines-div-width);
+  height: var(--scanlines-div-height);
+  background: linear-gradient(
+      to bottom,
+      transparent 50%,
+      rgba(0, 0, 0, 0.3) 51%
+  );
+  background-size: 100% 4px;
+  z-index: 1;
 }

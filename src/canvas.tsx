@@ -14,7 +14,7 @@ import {
   handleUseOpenAppleKey,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "./emulator/utility/utility"
-import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier } from './graphics';
+import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from './graphics';
 import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
 import { drawHiresTile } from './graphicshgr';
@@ -391,6 +391,18 @@ const Apple2Canvas = (props: DisplayProps) => {
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
         window.setInterval(() => { checkGamepad() }, 34)
+
+        new ResizeObserver(entries => {
+          for (let entry of entries) {
+            const width = entry.target.offsetWidth;
+            const height = entry.target.offsetHeight;
+            document.body.style.setProperty("--scanlines-div-left", (entry.target.offsetLeft + width * xmargin) + "px");
+            document.body.style.setProperty("--scanlines-div-top", (entry.target.offsetTop + height * ymargin) + "px");
+            document.body.style.setProperty("--scanlines-div-width", (width - 2 * width * xmargin) + "px");
+            document.body.style.setProperty("--scanlines-div-height", (height - 2 * height * ymargin)+ "px");
+          }
+        }).observe(canvas);
+
         RenderCanvas()
       } else {
         // This doesn't ever seem to get hit. I guess just doing the 
@@ -449,7 +461,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
 
   return (
-    <span className="canvasText">
+    <span className="canvasText scanlines">
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="mainCanvas"

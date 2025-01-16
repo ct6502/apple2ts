@@ -4,12 +4,12 @@ import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress } from 
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 const isTouchDevice = "ontouchstart" in document.documentElement
-const xmargin = isTouchDevice ? 0.01 : 0.075
-const ymargin = isTouchDevice ? 0.01 : 0.075
 let frameCount = 0
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
+export const xmargin = isTouchDevice ? 0.01 : 0.075
+export const ymargin = isTouchDevice ? 0.01 : 0.075
 
 // Convert canvas coordinates (absolute to the entire browser window)
 // to normalized HGR screen coordinates.
