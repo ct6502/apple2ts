@@ -316,9 +316,14 @@ export const hiresAddressToLine = (addr: number) => {
 // }
 
 
-const fetchAndProcessSymbolFile = async (url: string): Promise<Map<number, string>> => {
-  const response = await fetch(url)
-  const text = await response.text()
+let machineSymbolTable = new Map<number, string>()
+let machineName_cached = ''
+let fetchingTable = false
+let userSymbolTable = new Map<number, string>()
+let combinedSymbolTable = new Map<number, string>()
+
+
+const processSymbolData = (text: string) => {
   const lines = text.split('\n')
   const symbolMap = new Map<number, string>()
 
@@ -337,21 +342,65 @@ const fetchAndProcessSymbolFile = async (url: string): Promise<Map<number, strin
     }
   });
 
-  return symbolMap;
+  return symbolMap
 }
 
-let symbolTable = new Map<number, string>()
-let fetchingTable = false
+const fetchAndProcessSymbolFile = async (url: string): Promise<Map<number, string>> => {
+  const response = await fetch(url)
+  const text = await response.text()
+  return processSymbolData(text)
+}
 
-export const getDefaultSymbolTable = () => {
-  if (symbolTable.size === 0 && !fetchingTable) {
+const loadAndProcessSymbolFile = async (file: File) => {
+  const fileread = new FileReader()
+  fileread.onload = function (ev) {
+    if (ev.target) {
+      const result = processSymbolData(ev.target.result as string)
+      if (result.size === 0) {
+        console.error('No symbols found in file');
+      }
+      userSymbolTable = result
+    } else {
+      console.error('File read error');
+    }
+  }
+  fileread.onerror = function () {
+    console.error('File read error');
+  }
+  fileread.readAsText(file)
+}
+
+
+export const loadUserSymbolTable = (file: File) => {
+  userSymbolTable = new Map<number, string>()
+  combinedSymbolTable = new Map<number, string>()
+  loadAndProcessSymbolFile(file)
+}
+// KNOWN GOOD POINT
+
+
+export const getSymbolTables = (machineName: string) => {
+
+  if (machineName_cached !== machineName) {
+    machineSymbolTable = new Map<number, string>()
+    machineName_cached = machineName
+  }
+
+  if (machineSymbolTable.size === 0 && !fetchingTable) {
     fetchingTable = true
-    const url = '/symbol_tables/apple2eu.sym'
+    const url = '/symbol_tables/' + machineName.toLowerCase() + '.sym'
     fetchAndProcessSymbolFile(url).then(symbolMap => {
-      symbolTable = symbolMap
+      machineSymbolTable = symbolMap
+      combinedSymbolTable = new Map<number, string>()
+      fetchingTable = false
     }).catch(error => {
       console.error('Error fetching or processing the symbol file:', error);
     })
   }
-  return symbolTable
+
+  if (combinedSymbolTable.size === 0) {
+    combinedSymbolTable = new Map([...machineSymbolTable, ...userSymbolTable])
+  }
+
+  return combinedSymbolTable
 }

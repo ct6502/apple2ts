@@ -480,3 +480,23 @@ body.dark-mode .memory-map td {
 .mem-rom {
   background-color: gray;
 }
+
+.icon-container {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+}
+
+.icon-text {
+  font-size: 0.35em;
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 2px;
+  color: var(--text-color-dark);
+}
+
+body.dark-mode .icon-text {
+  color: var(--text-color);
+}

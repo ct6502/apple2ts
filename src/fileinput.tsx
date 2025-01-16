@@ -13,10 +13,9 @@ const FileInput = (props: DisplayProps) => {
     const fname = file.name.toLowerCase()
     if (fname.endsWith('a2ts')) {
       const fileread = new FileReader()
-      const restoreStateReader = RestoreSaveState
       fileread.onload = function (ev) {
         if (ev.target) {
-          restoreStateReader(ev.target.result as string)
+          RestoreSaveState(ev.target.result as string)
         }
       };
       fileread.readAsText(file)

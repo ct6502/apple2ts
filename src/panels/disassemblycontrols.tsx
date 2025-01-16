@@ -1,4 +1,4 @@
-import { KeyboardEvent, useState } from "react";
+import { KeyboardEvent, useRef, useState } from "react";
 import {
   handleGetRunMode,
   handleGetState6502,
@@ -8,9 +8,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPause,
   faPlay,
+  faFolderOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
-import { RUN_MODE } from "../emulator/utility/utility";
+import { loadUserSymbolTable, RUN_MODE } from "../emulator/utility/utility";
 import { handleSetCPUState } from "../controller";
 import { bpStepInto, bpStepOut, bpStepOver } from "../img/icons";
 
@@ -22,6 +23,8 @@ const DisassemblyControls = () => {
   const [tooltipOutShow, setTooltipOutShow] = useState(true)
   // The tooltip "show's" get reset when the instruction changes to/from JSR.
   const [address, setAddress] = useState('')
+  const [showFileOpenDialog, setShowFileOpenDialog] = useState(false)
+  const hiddenFileOpen = useRef<HTMLInputElement>(null);
 
   const handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 4)
@@ -43,7 +46,28 @@ const DisassemblyControls = () => {
     setAddress(pc.toString(16).toUpperCase())
   }
 
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target?.files?.length) {
+      loadUserSymbolTable(e.target.files[0])
+//      readFile(e.target.files[0], props.showFileOpenDialog.index)
+    }
+  }
+
   const runMode = handleGetRunMode()
+  const isTouchDevice = "ontouchstart" in document.documentElement
+
+  // This is how we actually display the file selection dialog.
+  if (showFileOpenDialog) {
+    // Now that we're in here, turn off our property.
+    setTimeout(() => setShowFileOpenDialog(false), 0)
+    if (hiddenFileOpen.current) {
+      const fileInput = hiddenFileOpen.current
+      // Hack - clear out old file so we can pick the same file again
+      fileInput.value = "";
+      // Display the dialog.
+      fileInput.click()
+    }
+  }
 
   return (
     <span className="flex-row" style={{ marginBottom: "5px" }}>
@@ -89,6 +113,21 @@ const DisassemblyControls = () => {
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="bigger-font">PC</div>
       </button>
+      <button className="push-button"
+        title="Load Symbol Table"
+        onClick={() => setShowFileOpenDialog(true)}>
+        <div className="icon-container">
+          <FontAwesomeIcon icon={faFolderOpen} />
+          <span className="icon-text">SYM</span>
+        </div>
+      </button>
+      <input
+        type="file"
+        accept={isTouchDevice ? "" : ".sym"}
+        ref={hiddenFileOpen}
+        onChange={handleFileSelected}
+        style={{ display: 'none' }}
+      />
     </span>
   )
 }

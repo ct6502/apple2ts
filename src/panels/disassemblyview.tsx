@@ -3,6 +3,7 @@ import {
   handleGetAddressGetTable,
   handleGetBreakpoints,
   handleGetDisassembly,
+  handleGetMachineName,
   handleGetMemoryDump,
   handleGetRunMode,
   handleGetState6502,
@@ -10,7 +11,7 @@ import {
   passSetDisassembleAddress
 } from "../main2worker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getDefaultSymbolTable, RUN_MODE, toHex } from "../emulator/utility/utility";
+import { getSymbolTables, RUN_MODE, toHex } from "../emulator/utility/utility";
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons";
@@ -228,7 +229,7 @@ const DisassemblyView = () => {
           addr = memory[addr] + 256 * memory[addr + 1]
         }
       }
-      const symbolTable = getDefaultSymbolTable()
+      const symbolTable = getSymbolTables(handleGetMachineName())
       if (symbolTable.has(addr)) {
         ops[1] = symbolTable.get(addr) || ops[1]
       }
@@ -261,7 +262,7 @@ const DisassemblyView = () => {
       if (addr >= 0) {
         className = "disassembly-address"
         title += getOperandTooltip(operand, addr)
-        const symbolTable = getDefaultSymbolTable()
+        const symbolTable = getSymbolTables(handleGetMachineName())
         if (symbolTable.has(addr)) {
           operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || '')
         }
