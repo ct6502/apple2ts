@@ -1,5 +1,7 @@
 .canvasText {
   display: grid;
+  text-align: center;
+  vertical-align: middle;
   padding-bottom: 0px;
 }
 
@@ -52,14 +54,14 @@ body.dark-mode .hgr-view-text {
 }
 
 .scanlines::after {
-  display: block;
+  display: var(--scanlines-display, none);
   pointer-events: none;
   content: "";
   position: absolute;
-  left: var(--scanlines-div-left);
-  top: var(--scanlines-div-top);
-  width: var(--scanlines-div-width);
-  height: var(--scanlines-div-height);
+  left: var(--scanlines-left);
+  top: var(--scanlines-top);
+  width: var(--scanlines-width);
+  height: var(--scanlines-height);
   background: linear-gradient(
       to bottom,
       transparent 50%,

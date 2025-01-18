@@ -7,6 +7,7 @@ address=1234 (hex load address for binary files)
 basic=<a href="https://www.urlencoder.org" target="_blank" rel="noopener noreferrer">urlencoded BASIC program</a>
 capslock=off
 color=color|nofringe|green|amber|white
+scanlines=on
 debug=on
 run=false (do not run BASIC program)
 sound=off

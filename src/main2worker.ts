@@ -72,6 +72,10 @@ export const passColorMode = (mode: COLOR_MODE) => {
   machineState.colorMode = mode
 }
 
+export const passShowScanlines = (mode: boolean) => {
+  machineState.showScanlines = mode
+}
+
 export const passCapsLock = (lock: boolean) => {
   // See comment under passColorMode
   machineState.capsLock = lock
@@ -216,6 +220,7 @@ let machineState: MachineState = {
   canGoForward: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
+  showScanlines: false,
   cout: 0,
   cpuSpeed: 0,
   darkMode: false,
@@ -252,6 +257,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // Force them back to their actual values.
       newState.arrowKeysAsJoystick = machineState.arrowKeysAsJoystick
       newState.colorMode = machineState.colorMode
+      newState.showScanlines = machineState.showScanlines
       newState.capsLock = machineState.capsLock
       newState.darkMode = machineState.darkMode
       newState.helpText = machineState.helpText
@@ -437,6 +443,10 @@ export const handleGetTimeTravelThumbnails = () => {
 
 export const handleGetColorMode = () => {
   return machineState.colorMode
+}
+
+export const handleGetShowScanlines = () => {
+  return machineState.showScanlines
 }
 
 export const handleGetCapsLock = () => {

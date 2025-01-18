@@ -3,10 +3,10 @@ import { getMockingboardMode } from "./devices/mockingboard_audio"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import { BreakpointMap } from "./emulator/utility/breakpoint"
 import { RUN_MODE } from "./emulator/utility/utility"
-import { setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
+import { setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceShowScanlines, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock,
   handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode,
-  handleGetSaveState, handleGetSpeedMode, passArrowKeysAsJoystick,
+  handleGetSaveState, handleGetShowScanlines, handleGetSpeedMode, passArrowKeysAsJoystick,
   passBreakpoints, passHelpText, passRestoreSaveState, passSetRunMode } from "./main2worker"
 
 const useSaveStateCallback = (sState: EmulatorSaveState) => {
@@ -21,6 +21,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
     version: 1.0,
     arrowKeysAsJoystick: handleGetArrowKeysAsJoystick(),
     colorMode: handleGetColorMode(),
+    showScanlines: handleGetShowScanlines(),
     capsLock: handleGetCapsLock(),
     audioEnable: isAudioEnabled(),
     mockingboardMode: getMockingboardMode(),
@@ -62,6 +63,9 @@ export const RestoreSaveState = (fileContents: string) => {
   const displayState = sState.emulator
   if (displayState?.colorMode !== undefined) {
     setPreferenceColorMode(displayState.colorMode)
+  }
+  if (displayState?.showScanlines !== undefined) {
+    setPreferenceShowScanlines(displayState.showScanlines)
   }
   // In an old version, property was renamed from uppercase to capsLock
   if (displayState && ('uppercase' in displayState)) {

@@ -1,7 +1,7 @@
 import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE } from "./emulator/utility/utility"
-import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText } from "./main2worker"
+import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText, passShowScanlines } from "./main2worker"
 
 export const handleInputParams = () => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -35,6 +35,11 @@ export const handleInputParams = () => {
     const mode = colors.indexOf(colorMode)
     if (mode >= 0) passColorMode(mode as COLOR_MODE)
   }
+
+  if (params.get('scanlines')) {
+    passShowScanlines(true)
+  }
+
   const ramDisk = params.get('ramdisk')
   if (ramDisk) {
     const sizes = ['64', '512', '1024', '4096', '8192']

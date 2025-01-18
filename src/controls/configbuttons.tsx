@@ -10,9 +10,9 @@ import {
   faCircleHalfStroke,
   faGamepad,
   faUpDownLeftRight,
-  faSync,
+  faSync
 } from "@fortawesome/free-solid-svg-icons";
-import { getColorModeSVG } from "../img/icons";
+import { getColorModeSVG, getShowScanlinesSVG } from "../img/icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
 import { audioEnable, isAudioEnabled } from "../devices/speaker";
@@ -20,13 +20,13 @@ import { SerialPortSelect } from "../devices/serialselect";
 import { ReactNode } from "react";
 import {
   handleGetArrowKeysAsJoystick,
-  handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetSpeedMode,
+  handleGetCapsLock, handleGetColorMode, handleGetDarkMode, handleGetShowScanlines, handleGetSpeedMode,
   handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
   passUseOpenAppleKey
 } from "../main2worker";
 import { MachineConfig } from "../devices/machineconfig";
-import { resetPreferences, setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage";
+import { resetPreferences, setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDarkMode, setPreferenceShowScanlines, setPreferenceSpeedMode } from "../localstorage";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -36,6 +36,7 @@ const isMac = navigator.platform.startsWith('Mac')
 const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
   const colorMode = handleGetColorMode()
+  const showScanlines = handleGetShowScanlines()
   const capsLock = handleGetCapsLock()
   const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
   const useOpenAppleKey = handleUseOpenAppleKey()
@@ -64,6 +65,20 @@ const ConfigButtons = (props: DisplayProps) => {
       <span className="fa-layers fa-fw">
         <svg width="20" height="19">
           {getColorModeSVG(colorMode) as ReactNode}
+        </svg>
+        <FontAwesomeIcon icon={faDisplay} />
+      </span>
+    </button>
+    <button className="push-button"
+      title={"Toggle Scanlines"}
+      onClick={(e) => {
+        document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block");
+        setPreferenceShowScanlines(!showScanlines)
+        props.updateDisplay()
+      }}>
+      <span className="fa-layers fa-fw">
+        <svg width="20" height="19">
+          {getShowScanlinesSVG(showScanlines) as ReactNode}
         </svg>
         <FontAwesomeIcon icon={faDisplay} />
       </span>

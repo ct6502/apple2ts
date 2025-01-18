@@ -155,6 +155,7 @@ const getDisplaySaveState = () => {
     version: 0.0,
     arrowKeysAsJoystick: false,
     colorMode: 0,
+    showScanlines: false,
     capsLock: false,
     audioEnable: false,
     mockingboardMode: 0,
@@ -581,6 +582,7 @@ const updateExternalMachineState = () => {
     capsLock: true,  // ignored by main thread
     c800Slot: C800SlotGet(),
     colorMode: COLOR_MODE.COLOR,  // ignored by main thread
+    showScanlines: false,
     cout: memGet(0x0039) << 8 | memGet(0x0038),
     cpuSpeed: cpuSpeed,
     darkMode: false,  // ignored by main thread
