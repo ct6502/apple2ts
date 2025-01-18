@@ -73,7 +73,10 @@ const findMatchingDiskImage = (url: string) => {
       return diskImages[i]
     }
   }
-  return null
+  // If we don't find a disk image in our pre-defined list, just assume
+  // that they've given an exact filename in our public folder,
+  // including the file suffix.
+  return {file: url, url: ''} as diskImage
 }
 
 let binaryRunAddress = 0x300
@@ -114,10 +117,8 @@ export const handleSetDiskFromURL = async (url: string,
   updateDisplay: UpdateDisplay) => {
   if (!url.startsWith("http")) {
     const match = findMatchingDiskImage(url)
-    if (match) {
-      handleSetDiskFromFile(match, updateDisplay)
-      return
-    }
+    handleSetDiskFromFile(match, updateDisplay)
+    return
   }
   // Download the file from the fragment URL
   try {
@@ -152,8 +153,13 @@ const resetAllDiskDrives = () => {
 
 export const handleSetDiskFromFile = async (disk: diskImage,
   updateDisplay: UpdateDisplay) => {
-  const res = await fetch("/disks/" + disk.file)
-  const data = await res.arrayBuffer()
+  let data: ArrayBuffer
+  try {
+    const res = await fetch("/disks/" + disk.file)
+    data = await res.arrayBuffer()
+  } catch (error) {
+   return
+  }
   resetAllDiskDrives()
   handleSetDiskData(0, new Uint8Array(data), disk.file)
   passSetRunMode(RUN_MODE.NEED_BOOT)
