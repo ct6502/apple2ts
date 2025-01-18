@@ -395,10 +395,11 @@ const Apple2Canvas = (props: DisplayProps) => {
 
         new ResizeObserver(entries => {
           for (let entry of entries) {
-            const width = entry.target.offsetWidth;
-            const height = entry.target.offsetHeight;
-            document.body.style.setProperty("--scanlines-left", (entry.target.offsetLeft + width * xmargin) + "px");
-            document.body.style.setProperty("--scanlines-top", (entry.target.offsetTop + height * ymargin) + "px");
+            const canvas = entry.target as HTMLCanvasElement;
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px");
+            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px");
             document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px");
             document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px");
           }
