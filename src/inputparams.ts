@@ -35,11 +35,9 @@ export const handleInputParams = () => {
     const mode = colors.indexOf(colorMode)
     if (mode >= 0) passColorMode(mode as COLOR_MODE)
   }
-
-  if (params.get('scanlines')) {
+  if (params.get('scanlines') === 'on') {
     passShowScanlines(true)
   }
-
   const ramDisk = params.get('ramdisk')
   if (ramDisk) {
     const sizes = ['64', '512', '1024', '4096', '8192']

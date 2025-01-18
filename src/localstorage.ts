@@ -103,6 +103,15 @@ export const loadPreferences = () => {
     }
   }
 
+  const showScanlines = localStorage.getItem('showScanlines')
+  if (showScanlines) {
+    try {
+      passShowScanlines(JSON.parse(showScanlines))
+    } catch (e) {
+      localStorage.removeItem('showScanlines')
+    }
+  }
+
   const darkMode = localStorage.getItem('darkMode')
   if (darkMode) {
     try {
