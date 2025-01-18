@@ -62,14 +62,6 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
           onClick={() => handleColorModeClose(-1)}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
-            {[0].map((i) => (
-              <div className="droplist-option" style={{ padding: '5px' }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
-                key={i} onClick={() => handleShowScanlinesClose(i)}>
-                {(showScanlines) ? '\u2714\u2009' : '\u2003'}{"Show Scanlines"}
-              </div>))}
-            <div style={{ borderTop: '1px solid #aaa', margin: '5px 0' }}></div>
             {[0, 1, 2, 3, 4].map((i) => (
               <div className="droplist-option" style={{ padding: '5px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
@@ -77,11 +69,18 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
                 key={i} onClick={() => handleColorModeClose(i)}>
                 {(colorMode === i) ? '\u2714\u2009' : '\u2003'}{colorToName(i)}
               </div>))}
+            <div style={{ borderTop: '1px solid #aaa', margin: '5px 0' }}></div>
+            {[0].map((i) => (
+              <div className="droplist-option" style={{ padding: '5px' }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
+                key={i} onClick={() => handleShowScanlinesClose(i)}>
+                {(showScanlines) ? '\u2714\u2009' : '\u2003'}{"CRT Scanlines"}
+              </div>))}
           </div>
 
         </div>
       }
-
     </span>
   )
 }
