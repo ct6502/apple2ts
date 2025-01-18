@@ -161,7 +161,7 @@ export const getSoftSwitchDescriptions = () => {
       }
     }
   }
-  SoftSwitchDescriptions[0xC000] = 'C000 KBRD/80STORE-OFF'
+  SoftSwitchDescriptions[0xC000] = 'C000 KBRD/STORE80-OFF'
   return SoftSwitchDescriptions
 }
 

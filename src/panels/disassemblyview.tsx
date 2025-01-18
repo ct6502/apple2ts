@@ -31,6 +31,8 @@ const DisassemblyView = () => {
   // HTMLDivElement and an SVGSVGElement
   const fakePointRef = useRef(null)
 
+  const symbolTable = getSymbolTables(handleGetMachineName())
+
   const handleCodeScroll = () => {
     // Delay setting the new disassembly address to compress scroll events,
     // since they can come in fast.
@@ -229,7 +231,6 @@ const DisassemblyView = () => {
           addr = memory[addr] + 256 * memory[addr + 1]
         }
       }
-      const symbolTable = getSymbolTables(handleGetMachineName())
       if (symbolTable.has(addr)) {
         ops[1] = symbolTable.get(addr) || ops[1]
       }
@@ -262,7 +263,6 @@ const DisassemblyView = () => {
       if (addr >= 0) {
         className = "disassembly-address"
         title += getOperandTooltip(operand, addr)
-        const symbolTable = getSymbolTables(handleGetMachineName())
         if (symbolTable.has(addr)) {
           operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || '')
         }
@@ -272,8 +272,11 @@ const DisassemblyView = () => {
   }
 
   const getChromacodedLine = (line: string) => {
-    const hexcodes = line.slice(0, 16)
     const opcode = line.slice(16, 19)
+    const addr = parseInt(line.slice(0, 4), 16)
+    const symbol = symbolTable.get(addr) || ''
+    let hexcodes = line.slice(0, 16) + '       '
+    hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + ' '
     return <span className={borderStyle(opcode)}>{hexcodes}
       <span className="disassembly-opcode">{opcode} </span>
       {getOperand(opcode, line.slice(20))}</span>
@@ -346,7 +349,7 @@ const DisassemblyView = () => {
         className="mono-text"
         style={{
           overflow: 'auto',
-          width: '200px',
+          width: '220px',
           top: "0px",
           height: `${nlines * 10 - 2}pt`,
           paddingLeft: "15pt",
