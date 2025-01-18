@@ -45,7 +45,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
       <button
         id="basic-button"
         className="push-button"
-        title="Machine Configuration"
+        title="Display Settings"
         onClick={handleClick}
       >
         <span className="fa-layers fa-fw">
@@ -62,7 +62,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
           onClick={() => handleColorModeClose(-1)}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
-            {[0, 1, 2, 3, 4].map((i) => (
+            {Object.values(COLOR_MODE).filter(value=>typeof value==="number").map((i) => (
               <div className="droplist-option" style={{ padding: '5px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
