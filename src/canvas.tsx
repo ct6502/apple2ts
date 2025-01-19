@@ -12,9 +12,10 @@ import {
   handleGetRunMode,
   handleGetCout,
   handleUseOpenAppleKey,
+  handleGetShowScanlines,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "./emulator/utility/utility"
-import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier } from './graphics';
+import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from './graphics';
 import { checkGamepad, handleArrowKey } from './devices/gamepad';
 import { handleCopyToClipboard } from './copycanvas';
 import { drawHiresTile } from './graphicshgr';
@@ -391,6 +392,20 @@ const Apple2Canvas = (props: DisplayProps) => {
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
         window.setInterval(() => { checkGamepad() }, 34)
+
+        new ResizeObserver(entries => {
+          for (let entry of entries) {
+            const canvas = entry.target as HTMLCanvasElement;
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px");
+            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px");
+            document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px");
+            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px");
+          }
+        }).observe(canvas);
+        document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none");
+
         RenderCanvas()
       } else {
         // This doesn't ever seem to get hit. I guess just doing the 
@@ -412,7 +427,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement;
-  const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current;
+  const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement;
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen;
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
@@ -450,22 +465,24 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   return (
     <span className="canvasText">
-      <canvas ref={myCanvas}
-        id="apple2canvas"
-        className="mainCanvas"
-        style={{
-          cursor: cursor,
-          borderRadius: noBackgroundImage ? '0' : '20px',
-          borderWidth: noBackgroundImage ? '0' : '2px',
-          backgroundImage: `${backgroundImage}`
-        }}
-        width={width} height={height}
-        tabIndex={0}
-        onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
-        onKeyUp={isTouchDevice ? () => { null } : handleKeyUp}
-        onMouseEnter={setFocus}
-        onMouseDown={setFocus}
-      />
+      <div className="scanlines">
+        <canvas ref={myCanvas}
+          id="apple2canvas"
+          className="mainCanvas"
+          style={{
+            cursor: cursor,
+            borderRadius: noBackgroundImage ? '0' : '20px',
+            borderWidth: noBackgroundImage ? '0' : '2px',
+            backgroundImage: `${backgroundImage}`
+          }}
+          width={width} height={height}
+          tabIndex={0}
+          onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
+          onKeyUp={isTouchDevice ? () => { null } : handleKeyUp}
+          onMouseEnter={setFocus}
+          onMouseDown={setFocus}
+        />
+      </div>
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
       <canvas ref={hiddenCanvas}

@@ -1,6 +1,6 @@
 import { changeMockingboardMode } from "./devices/mockingboard_audio";
 import { COLOR_MODE } from "./emulator/utility/utility";
-import { passCapsLock, passColorMode, passDarkMode, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker";
+import { passCapsLock, passColorMode, passShowScanlines, passDarkMode, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker";
 
 
 export const setPreferenceCapsLock = (mode = true) => {
@@ -19,6 +19,15 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
     localStorage.setItem('colorMode', JSON.stringify(mode))
   }
   passColorMode(mode);
+}
+
+export const setPreferenceShowScanlines = (mode = true) => {
+  if (mode) {
+    localStorage.setItem('showScanlines', JSON.stringify(mode))
+  } else {
+    localStorage.removeItem('showScanlines')
+  }
+  passShowScanlines(mode);
 }
 
 export const setPreferenceDarkMode = (mode = false) => {
@@ -94,6 +103,15 @@ export const loadPreferences = () => {
     }
   }
 
+  const showScanlines = localStorage.getItem('showScanlines')
+  if (showScanlines) {
+    try {
+      passShowScanlines(JSON.parse(showScanlines))
+    } catch (e) {
+      localStorage.removeItem('showScanlines')
+    }
+  }
+
   const darkMode = localStorage.getItem('darkMode')
   if (darkMode) {
     try {
@@ -153,6 +171,7 @@ export const resetPreferences = () => {
   setPreferenceSpeedMode()
   setPreferenceCapsLock()
   setPreferenceColorMode()
+  setPreferenceShowScanlines()
   setPreferenceDarkMode()
   setPreferenceMockingboardMode()
   setPreferenceMachineName()

@@ -13,7 +13,9 @@ const FullScreenButton = () => {
         const context = canvas.getContext('2d')
         if (context) {
           try {
-            canvas.requestFullscreen()
+            canvas?.parentElement?.requestFullscreen()
+            canvas.width = window.outerWidth;
+            canvas.height = window.outerHeight;
           } catch (e) {
             // do nothing
           }
