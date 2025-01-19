@@ -1,0 +1,40 @@
+Welcome to Applesoft BASIC!
+
+Applesoft BASIC programs consist of lines of code, each starting with a line number. The line numbers determine the order of execution. Here are some basic elements of Applesoft BASIC syntax:
+
+Line Numbers: Each line of code starts with a unique line number.
+Variables: Variables can be numeric or string. Numeric variables are used for numbers, and string variables (with a dollar sign $) are used for text.
+Commands: Commands perform actions, such as printing text or performing calculations. Commands can be lowercase or uppercase.
+
+Here are some BASIC statements:
+
+PRINT: Displays text or numbers on the screen.
+INPUT: Prompts the user to enter data.
+GOTO: Jumps to a specified line number.
+IF...THEN: Executes a command if a condition is true.
+FOR...TO...NEXT: Creates a loop that repeats a block of code.
+GOSUB...RETURN: Calls a subroutine and returns to the main program.
+REM: Adds a comment to the code.
+
+Sample program:
+10 PRINT "Welcome to Applesoft BASIC!"
+20 INPUT "What is your name? "; N$
+30 PRINT "Hello, "; N$; "!"
+40 PRINT "Let's do some math."
+50 INPUT "Enter a number: "; A
+60 INPUT "Enter another number: "; B
+70 C = A + B
+80 PRINT "The sum of "; A; " and "; B; " is "; C
+90 IF C > 10 THEN PRINT "That's a big number!"
+100 FOR I = 1 TO 5
+110 PRINT "This is line "; I
+120 NEXT I
+130 PRINT "Goodbye!"
+140 END
+
+Some useful commands at the BASIC prompt:
+]-copy2plus     run Copy2Plus
+]save myprog    save a BASIC program
+]load myprog    load from disk
+]run myprog     run from disk
+]list
