@@ -83,8 +83,8 @@ const DisplayApple2 = () => {
     // preloadAssets()
     passSpeedMode(0)
     loadPreferences()
-    handleInputParams()
-    handleFragment(updateDisplay)
+    const hasBasicProgram = handleInputParams()
+    handleFragment(updateDisplay, hasBasicProgram)
     //    window.addEventListener('beforeunload', (event) => {
     // Cancel the event as stated by the standard.
     //      event.preventDefault();
