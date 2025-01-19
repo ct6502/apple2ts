@@ -1,5 +1,23 @@
 # Changelog
 
+## [v2.7](https://github.com/ct6502/apple2ts/tree/v2.7) (2025-01-19)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.6...v2.7)
+
+**Implemented enhancements:**
+
+- For BASIC programs have a blank ProDOS disk automatically loaded so you can save to disk [\#94](https://github.com/ct6502/apple2ts/issues/94)
+- Add symbol labels to the actual addresses in the disassembly view [\#93](https://github.com/ct6502/apple2ts/issues/93)
+- Add support for user-defined symbol tables for the disassembly view [\#92](https://github.com/ct6502/apple2ts/issues/92)
+- Change the "Color" button to be a droplist instead of just cycling through the options [\#90](https://github.com/ct6502/apple2ts/issues/90)
+- Add support for scanlines, similar to an old-school CRT [\#89](https://github.com/ct6502/apple2ts/issues/89)
+- Upgrade Wizard Replay to v1.1 [\#88](https://github.com/ct6502/apple2ts/issues/88)
+- Add a CHANGELOG detailing changes and versions [\#87](https://github.com/ct6502/apple2ts/issues/87)
+
+**Merged pull requests:**
+
+- Support for CRT scanlines [\#95](https://github.com/ct6502/apple2ts/pull/95) ([boredsenseless](https://github.com/boredsenseless))
+
 ## [v2.6](https://github.com/ct6502/apple2ts/tree/v2.6) (2025-01-02)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.5...v2.6)
