@@ -439,10 +439,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isAndroidDevice = /Android/i.test(navigator.userAgent);
   const txt = isAndroidDevice ?
-    <textarea className="hiddenTextarea" hidden={false} ref={myText}
+    <textarea className="hidden-textarea" hidden={false} ref={myText}
       onInput={handleOnInput} /> :
     (isTouchDevice ?
-      <textarea className="hiddenTextarea" hidden={false} ref={myText}
+      <textarea className="hidden-textarea" hidden={false} ref={myText}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       /> : <span></span>)
@@ -464,25 +464,23 @@ const Apple2Canvas = (props: DisplayProps) => {
   const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
 
   return (
-    <span className="canvasText">
-      <div className="scanlines">
-        <canvas ref={myCanvas}
-          id="apple2canvas"
-          className="mainCanvas"
-          style={{
-            cursor: cursor,
-            borderRadius: noBackgroundImage ? '0' : '20px',
-            borderWidth: noBackgroundImage ? '0' : '2px',
-            backgroundImage: `${backgroundImage}`
-          }}
-          width={width} height={height}
-          tabIndex={0}
-          onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
-          onKeyUp={isTouchDevice ? () => { null } : handleKeyUp}
-          onMouseEnter={setFocus}
-          onMouseDown={setFocus}
-        />
-      </div>
+    <span className="canvas-text scanline-gradient">
+      <canvas ref={myCanvas}
+        id="apple2canvas"
+        className="main-canvas"
+        style={{
+          cursor: cursor,
+          borderRadius: noBackgroundImage ? '0' : '20px',
+          borderWidth: noBackgroundImage ? '0' : '2px',
+          backgroundImage: `${backgroundImage}`
+        }}
+        width={width} height={height}
+        tabIndex={0}
+        onKeyDown={isTouchDevice ? () => { null } : handleKeyDown}
+        onKeyUp={isTouchDevice ? () => { null } : handleKeyUp}
+        onMouseEnter={setFocus}
+        onMouseDown={setFocus}
+      />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
       <canvas ref={hiddenCanvas}
