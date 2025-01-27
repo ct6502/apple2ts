@@ -60,6 +60,12 @@ export const getColorModeSVG = (colorMode: COLOR_MODE) => {
         <rect width={10} height={14} x={10} fill="#F0F0F0" />
       </svg>
       break;
+    case COLOR_MODE.INVERSEBLACKANDWHITE:
+      svgRect = <svg>
+        <rect width={10} height={14} fill="#F0F0F0" />
+        <rect width={10} height={14} x={10} fill="#000000" />
+      </svg>
+      break;
     default:
       svgRect = <svg>
         <rect width={5} height={14} fill="#00ff00" />
