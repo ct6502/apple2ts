@@ -19,6 +19,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
     <div style={{ userSelect: "none" }}>
       <img className="disk-image"
         src={floppyDisks} alt="disks"
+        id="tour-disk-images"
         title="Choose disk image"
         onClick={handleClickOpen} />
       {open &&

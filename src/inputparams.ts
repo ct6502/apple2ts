@@ -1,6 +1,7 @@
 import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE } from "./emulator/utility/utility"
+import { useGlobalContext } from "./globalcontext"
 import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText, passShowScanlines } from "./main2worker"
 
 export const handleInputParams = () => {
@@ -8,6 +9,7 @@ export const handleInputParams = () => {
   // parameter, where we want to preserve the case of the program.
   const params = new URLSearchParams(window.location.search.toLowerCase())
   const porig = new URLSearchParams(window.location.search)
+  const { setRunTour } = useGlobalContext()
 
   if (params.get('capslock') === 'off') {
     passCapsLock(false)
@@ -44,6 +46,7 @@ export const handleInputParams = () => {
   if (params.get('scanlines') === 'on') {
     passShowScanlines(true)
   }
+
   const ramDisk = params.get('ramdisk')
   if (ramDisk) {
     const sizes = ['64', '512', '1024', '4096', '8192']
@@ -60,6 +63,11 @@ export const handleInputParams = () => {
   const address = params.get('address')
   if (address) {
     setDefaultBinaryAddress(parseInt(address, 16))
+  }
+
+  const tour = params.get('tour')
+  if (tour) {
+    setRunTour(tour)
   }
 
   const run = params.get('run')

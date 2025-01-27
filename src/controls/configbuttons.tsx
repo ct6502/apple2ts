@@ -9,7 +9,8 @@ import {
   faCircleHalfStroke,
   faGamepad,
   faUpDownLeftRight,
-  faSync
+  faSync,
+  faGlobe,
 } from "@fortawesome/free-solid-svg-icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
 import { MidiDeviceSelect } from "../devices/midiselect";
@@ -25,6 +26,7 @@ import {
 import { MachineConfig } from "../devices/machineconfig";
 import { resetPreferences, setPreferenceCapsLock, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage";
 import { DisplayConfig } from "../devices/displayconfig";
+import { useGlobalContext } from "../globalcontext";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -32,6 +34,7 @@ const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith('Mac')
 
 const ConfigButtons = (props: DisplayProps) => {
+  const { setRunTour } = useGlobalContext()
   const speedMode = handleGetSpeedMode()
   const capsLock = handleGetCapsLock()
   const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
@@ -41,7 +44,8 @@ const ConfigButtons = (props: DisplayProps) => {
   //   <VideogameAssetIcon className="pushMuiButton" /> :
   //   <VideogameAssetOffIcon className="pushMuiButton" />
 
-  return <span className="flex-row">
+  return <div className="flex-row">
+    <div className="flex-row" id="tour-configbuttons">
     <button className="push-button"
       title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
       onClick={() => { setPreferenceSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
@@ -56,6 +60,7 @@ const ConfigButtons = (props: DisplayProps) => {
       onClick={() => { audioEnable(!isAudioEnabled()); props.updateDisplay() }}>
       <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
     </button>
+    </div>
 
     <button className={lockedKeyStyle(capsLock ? 2 : 0)}
       title="Caps Lock"
@@ -99,7 +104,13 @@ const ConfigButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faSync} />
     </button>
 
-  </span>
+    <button className="push-button"
+      title="Start Tour"
+      id="tour-start"
+      onClick={() => { setRunTour('main') }}>
+      <FontAwesomeIcon icon={faGlobe} />
+    </button>
+  </div>
 }
 
 export default ConfigButtons;

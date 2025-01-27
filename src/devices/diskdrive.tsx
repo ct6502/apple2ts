@@ -83,6 +83,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     <span className="flex-column">
       <img className="disk-image"
         src={img1} alt={filename}
+        id={dprops.index === 0 ? "tour-floppy-disks" : ""}
         title={filename + (dprops.diskHasChanges ? ' (modified)' : '')}
         onClick={handleMenuClick} />
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>

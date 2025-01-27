@@ -22,17 +22,7 @@ const DebugButtons = () => {
   const runMode = handleGetRunMode()
   const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT;
   return <span className="flex-row">
-    <button className="push-button"
-      title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
-      onClick={() => {
-        handleSetCPUState(runMode === RUN_MODE.PAUSED ?
-          RUN_MODE.RUNNING : RUN_MODE.PAUSED)
-      }}
-      disabled={runMode === RUN_MODE.IDLE}>
-      {runMode === RUN_MODE.PAUSED ?
-        <FontAwesomeIcon icon={faPlay} /> :
-        <FontAwesomeIcon icon={faPause} />}
-    </button>
+    <div className="flex-row" id="tour-snapshot">
     <button className="push-button"
       title={"Go Back in Time"}
       onClick={passGoBackInTime}
@@ -57,7 +47,20 @@ const DebugButtons = () => {
       disabled={notStarted}>
       <FontAwesomeIcon icon={faLayerGroup} />
     </button>
-    <button className="push-button" title="Toggle Debug"
+    </div>
+    <button className="push-button" id="tour-pause-button"
+      title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
+      onClick={() => {
+        handleSetCPUState(runMode === RUN_MODE.PAUSED ?
+          RUN_MODE.RUNNING : RUN_MODE.PAUSED)
+      }}
+      disabled={runMode === RUN_MODE.IDLE}>
+      {runMode === RUN_MODE.PAUSED ?
+        <FontAwesomeIcon icon={faPlay} /> :
+        <FontAwesomeIcon icon={faPause} />}
+    </button>
+    <button className="push-button" id="tour-debug-button"
+      title="Toggle Debug"
       onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
       <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
     </button>
