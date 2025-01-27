@@ -150,12 +150,11 @@ const DisplayApple2 = () => {
   const canvasWidth = getCanvasSize()[0]
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
-  const paperHeight = height - 20
   const narrow = isTouchDevice || (width < height)
   const isLandscape = isTouchDevice && (width > height)
   // For narrow we don't need to take into account the canvas width.
   let paperWidth = narrow ? (width) : (width - canvasWidth - 70)
-  paperWidth = Math.min(Math.max(paperWidth, 300), canvasWidth)
+  paperWidth = Math.min(Math.max(paperWidth, 100), canvasWidth)
   if (isTouchDevice) {
     document.body.style.marginLeft = "0"
     document.body.style.marginRight = "0"
@@ -163,7 +162,7 @@ const DisplayApple2 = () => {
   }
   const mem = handleGetMemSize() + 64
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
-  const status = <div className="default-font statusItem">
+  const status = <div className="default-font footer-item">
     <span>{props.speed} MHz, {memSize}</span>
     <br />
     <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
@@ -189,7 +188,7 @@ const DisplayApple2 = () => {
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
               helptext={handleGetHelpText()}
-              height={paperHeight} width={paperWidth} />}
+              width={paperWidth} />}
         </span>
       </span>
       <FileInput {...props} />
