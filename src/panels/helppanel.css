@@ -1,6 +1,15 @@
 /* All of these help-paper styles are only used in light mode.
    In dark mode the help-paper isn't shown, so no need to worry about colors. */
 
+.help-parent {
+  box-sizing: content-box;
+  margin: 0;
+  padding: 0;
+  height: auto;
+  width: auto;
+  max-width: 600px;
+}
+
 .help-paper {
   position: relative;
   background-color: #f0f0f0;
@@ -32,6 +41,7 @@
   overflow: auto;
   overflow-wrap: break-word;
   white-space: pre-wrap;
+  margin-right: 10px;
 }
 
 .help-text-light {

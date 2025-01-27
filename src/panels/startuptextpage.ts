@@ -1,21 +1,18 @@
-import { extraHelpText } from "./extrahelptext"
-
 let emulatorStartText = `Welcome to Apple2TS
+
 TypeScript Apple IIe Emulator
+
 (c) 2024 Chris Torrence
 
-Click on the sample disks, or
-click on a drive to load your own.
 
-Press the Power button to start.
+Click on the Start Tour globe
+button to begin a guided tour.
 `
 
-const isMac = navigator.platform.startsWith('Mac')
-const keyMod = isMac ? `Cmd+` : 'Alt+'
-const arrowMod = isMac ? 'Cmd+' : 'Ctrl+'
+// const isMac = navigator.platform.startsWith('Mac')
+// const keyMod = isMac ? `Cmd+` : 'Alt+'
+// const arrowMod = isMac ? 'Cmd+' : 'Ctrl+'
 const isTouchDevice = "ontouchstart" in document.documentElement
-
-export let defaultHelpText = emulatorStartText
 
 if (isTouchDevice) {
 
@@ -27,37 +24,7 @@ touch button to enable it, then
 touch screen to show keyboard.
 Touch twice to lock it on.`
 
-  defaultHelpText += `\nMobile platforms:
-Tap the screen to show the keyboard.
-Press the arrow keys, esc, or tab buttons to send those keys to the emulator.
-To send a control character, press the ctrl button once. Then tap the screen to show the keyboard and press the desired key. The ctrl button will automatically be released.
-To send multiple control characters, press the ctrl button twice to lock it on (indicated by a green dot). Then tap the screen to show the keyboard and press the desired keys. Press the ctrl button again to release it.
-The open apple and closed apple keys behave the same as the ctrl key.`
-
-} else {
-
-  const keyboardShortcutText =
-`${keyMod}B Boot          ${keyMod}R Reset    
-${keyMod}C Copy Screen   ${keyMod}O Open State
-${keyMod}V Paste Text    ${keyMod}S Save State
-${keyMod}Left  Go Back in Time
-${keyMod}Right Forward in Time
-${arrowMod}1 Normal Speed (1 MHz)
-${arrowMod}2 Fast Speed (~4 MHz) 
-${arrowMod}3 Ludicrous/Warp Speed
-
-Open Apple:   press Left Alt/Option
-Closed Apple: press Right Alt/Option`
-  
-  // Replace Unicode ⌘ with my fake MouseText character
-  let tmp = defaultHelpText + `\n` + keyboardShortcutText
-  tmp = tmp.replaceAll(`⌘`, '\xC3').replaceAll('←', '\xC8').replaceAll('→', '\xD5')
-  emulatorStartText = tmp
-
-  defaultHelpText += `\n` + keyboardShortcutText
 }
-
-defaultHelpText += extraHelpText
 
 const textPage = new Array<string>(24).fill('')
 const startupTextSplit = emulatorStartText.split('\n')

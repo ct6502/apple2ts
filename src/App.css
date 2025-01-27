@@ -20,9 +20,7 @@
   --link-color-dark: lightblue;
 }
 
-html,
-body,
-#root {
+body.no-scroll {
   /* Prevent scrollbars from appearing */
   overflow: hidden;
 }
@@ -324,10 +322,9 @@ body.dark-mode .centered-title {
   color: var(--text-color-dark);
 }
 
-.statusItem {
+.footer-item {
   width: 100px;
   /* transform: translate(0, -12px); */
-  height: 1.5em;
   margin-left: 0;
   margin-right: 0.5em;
   white-space: nowrap;
