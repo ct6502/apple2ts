@@ -4,14 +4,8 @@ export const tourMain: Step[] = [
   {
     target: 'body',
     placement: 'center',
-    content: (<div style={{textAlign: "left"}}>Welcome to the Apple2TS emulator!
-      To learn more, press the Next button.<p/>
-      Or try one of the other tours:
-      <ul style={{ marginTop: '6px' }}>
-      <li><a href="/?tour=settings">Emulator Settings</a></li>
-      <li><a href="/?tour=debug">Debugging Assembly Code</a></li>
-      </ul>
-    </div>)
+    content: 'Welcome to the Apple2TS emulator! ' +
+      'To learn more, press the Next button.'
   },
   {
     target: '#tour-boot-button',
@@ -36,12 +30,8 @@ export const tourMain: Step[] = [
   {
     target: 'body',
     placement: 'center',
-    content: (<div style={{textAlign: "left"}}>You have reached the end.<p/>
-      Try one of the other tours:<p/>
-      <ul>
-      <li><a href="/?tour=settings">Emulator Settings</a></li>
-      <li><a href="/?tour=debug">Debugging Assembly Code</a></li>
-      </ul>
-      or press Finish to start using the emulator.</div>),
+    content: 'You have reached the end of the tour. Click on the globe ' +
+      'tour button to try one of the other tours, ' +
+      'or press Finish to start using the emulator.',
   },
 ]

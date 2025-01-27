@@ -7,8 +7,8 @@ let writer: WritableStreamDefaultWriter | null = null;
 let reader: ReadableStreamDefaultReader | null = null;
 let port: SerialPort | null = null;
 
-export const getSerialName = (i: number) : string => {
-  return (i == 0) ? "Builtin ImageWriter" : (port == null) ? "Select External Port" : "External Port";
+export const getSerialNames = () : string[] => {
+  return ["Builtin ImageWriter", (port == null) ? "Select External Port" : "External Port"]
 }
 
 export const changeSerialMode = (i: number) => {

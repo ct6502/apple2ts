@@ -185,10 +185,7 @@ const constructEnvelopeBuffer = (context: AudioContext, chip: number, freq: numb
 // let hornTable: PeriodicWave
 let modeSave = 0
 
-export const getMockingboardName = (index: number) => {
-  const names = ["Square","Sawtooth","Organ","12 String Guitar","Phoneme Ee","Wurlitzer"]
-  return names[index]
-}
+export const MockingboardNames = ["Square","Sawtooth","Organ","12 String Guitar","Phoneme Ee","Wurlitzer"]
 
 export const getMockingboardMode = () => {
   return modeSave

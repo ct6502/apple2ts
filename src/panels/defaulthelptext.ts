@@ -5,7 +5,7 @@ export let defaultHelpText = `Welcome to Apple2TS
 TypeScript Apple IIe Emulator
 (c) 2024 Chris Torrence
 
-Click on the Start Tour <a href="/?tour=on">${tourSVG}</a> button to begin a guided tour of the emulator.
+Click on the Start Tour <a href="/?tour=main">${tourSVG}</a> button to begin a guided tour of the emulator.
 `
 
 const isMac = navigator.platform.startsWith('Mac')
@@ -59,7 +59,7 @@ scanlines=on
 sound=off
 speed=fast|warp
 theme=dark
-tour=on
+tour=main|debug|settings
 #urltodiskimage
 
 <b>Examples</b>

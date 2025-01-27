@@ -4,14 +4,9 @@ export const tourSettings: Step[] = [
   {
     target: 'body',
     placement: 'center',
-    content: (<div style={{textAlign: "left"}}>The Apple2TS emulator has a full set of controls.
-      To learn more, press the Next button.<p/>
-      Or try one of the other tours:
-      <ul>
-      <li><a href="/?tour=main">Main Tour</a></li>
-      <li><a href="/?tour=debug">Debugging Assembly Code</a></li>
-      </ul>
-    </div>)
+    content: 'Apple2TS has a full set of controls ' +
+      'for both the emulator and the Apple II. ' +
+      'To learn more, press the Next button.'
   },
   {
     target: '#tour-maincontrols',
@@ -42,12 +37,8 @@ export const tourSettings: Step[] = [
   {
     target: 'body',
     placement: 'center',
-    content: (<div style={{textAlign: "left"}}>You have reached the end.<p/>
-      Try one of the other tours:<p/>
-      <ul>
-      <li><a href="/?tour=main">Main</a></li>
-      <li><a href="/?tour=debug">Debugging Assembly Code</a></li>
-      </ul>
-      or press Finish to start using the emulator.</div>),
+    content: 'You have reached the end of the tour. Click on the globe ' +
+      'tour button to try one of the other tours, ' +
+      'or press Finish to start using the emulator.',
   },
 ]
