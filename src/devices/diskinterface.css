@@ -34,6 +34,19 @@
   user-select: none;
 }
 
+body.dark-mode .disk-one-drive {
+  color: var(--text-color-dark);
+}
+
+.disk-one-drive {
+  position: relative;
+  color: var(--text-color);
+  height: 0.75em;
+  padding-left: 0.125em;
+  padding-top: 0.0625em;
+  cursor: pointer;
+}
+
 .disk-write-protected {
   position: relative;
   color: var(--text-color);

@@ -60,6 +60,10 @@ export const handleSetDiskData = (index: number,
   passSetDriveNewData(driveProps[index])
 }
 
+export const handleOpenOneDrivePicker = (index: number) => {
+  //
+}
+
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
   driveProps[index].isWriteProtected = isWriteProtected
   passSetDriveProps(driveProps[index])

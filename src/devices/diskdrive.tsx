@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { crc32, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleOpenOneDrivePicker } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
   faLockOpen,
+  faCloud
 } from "@fortawesome/free-solid-svg-icons";
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
@@ -88,6 +89,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
       <span className="flex-row">
+        <FontAwesomeIcon icon={faCloud} className="disk-one-drive fa-fw" title="OneDrive" onClick={() => {handleOpenOneDrivePicker(props.index)}}>
+        </FontAwesomeIcon>
         <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
           onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
         </FontAwesomeIcon>
