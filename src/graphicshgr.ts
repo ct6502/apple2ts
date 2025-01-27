@@ -39,10 +39,10 @@ CALL-151
 3210: A7 80 00 27
 */
 
-const getHiresGreenSingleLine = (line: Uint8Array) => {
+const getHiresGreenSingleLine = (line: Uint8Array, fillColor: number) => {
   const nbytes = line.length
   // Here we scale up from 7 regular pixels to 14 fine pixels
-  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK);
+  const hgrColors1 = new Uint8Array(14 * nbytes).fill(fillColor);
   let bitSet = 0
   let prevHighBit = 1
   for (let i = 0; i < nbytes; i++) {
@@ -68,13 +68,13 @@ const getHiresGreenSingleLine = (line: Uint8Array) => {
   return hgrColors1
 }
 
-export const getHiresGreen = (hgrPage: Uint8Array, nlines: number) => {
+export const getHiresGreen = (hgrPage: Uint8Array, nlines: number, fillColor: number) => {
   const nbytes = hgrPage.length / nlines
-  const hgrColors = new Uint8Array(14 * nbytes * nlines).fill(BLACK);
+  const hgrColors = new Uint8Array(14 * nbytes * nlines).fill(fillColor);
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
-    getHiresGreenSingleLine(line)
-    const hgrColors1 = getHiresGreenSingleLine(line)
+    getHiresGreenSingleLine(line, fillColor)
+    const hgrColors1 = getHiresGreenSingleLine(line, fillColor)
     hgrColors.set(hgrColors1, hgrColors1.length * j)
   }
   return hgrColors
@@ -408,10 +408,16 @@ const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE,
 // }
 
 
-export const getHiresColors = (hgrPage: Uint8Array, nlines: number,
-  colorMode: COLOR_MODE, noDelayMode: boolean, extendEdge: boolean, isEven: boolean) => {
+export const getHiresColors = (
+  hgrPage: Uint8Array,
+  nlines: number,
+  colorMode: COLOR_MODE,
+  noDelayMode: boolean,
+  extendEdge: boolean,
+  isEven: boolean,
+  fillColor: number) => {
   const nbytes = hgrPage.length / nlines
-  const hgrColors = new Uint8Array(14 * nlines * nbytes).fill(BLACK)
+  const hgrColors = new Uint8Array(14 * nlines * nbytes).fill(fillColor)
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
     let hgrColors1: Uint8Array = new Uint8Array()
@@ -429,12 +435,13 @@ export const getHiresColors = (hgrPage: Uint8Array, nlines: number,
 export const convertColorsToRGBA = (hgrColors: Uint8Array, colorMode: COLOR_MODE, doubleRes: boolean) => {
   const hgrRGBA = new Uint8ClampedArray(4 * hgrColors.length).fill(255);
   const colors = doubleRes ?
-    [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode] :
-    [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen, hgrWhiteScreen][colorMode]
+    [loresColors, loresColors, loresGreen, loresAmber, loresWhite, loresWhite][colorMode] :
+    [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen, hgrWhiteScreen, hgrWhiteScreen][colorMode]
   for (let i = 0; i < hgrColors.length; i++) {
-    hgrRGBA[4 * i] = colors[hgrColors[i]][0]
-    hgrRGBA[4 * i + 1] = colors[hgrColors[i]][1]
-    hgrRGBA[4 * i + 2] = colors[hgrColors[i]][2]
+    const colorBit = colorMode == COLOR_MODE.INVERSEBLACKANDWHITE ? hgrColors[i] == 0 ? 1 : 0 : hgrColors[i]
+    hgrRGBA[4 * i] = colors[colorBit][0]
+    hgrRGBA[4 * i + 1] = colors[colorBit][1]
+    hgrRGBA[4 * i + 2] = colors[colorBit][2]
   }
   return hgrRGBA
 }
@@ -461,8 +468,9 @@ export const drawHiresTile = (ctx: CanvasRenderingContext2D,
   xpos: number, ypos: number, scale: number, isEven: boolean) => {
   if (pixels.length === 0) return;
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
-  const hgrColors = isColor ? getHiresColors(pixels, nlines, colorMode, false, true, isEven) :
-    getHiresGreen(pixels, nlines)
+  const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
+  const hgrColors = isColor ? getHiresColors(pixels, nlines, colorMode, false, true, isEven, fillColor) :
+    getHiresGreen(pixels, nlines, fillColor)
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, false)
   drawHiresImage(ctx, hgrRGBA, nlines, xpos, ypos, scale)
 }

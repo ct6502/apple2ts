@@ -76,7 +76,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
-  const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE][colorMode]
+  const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -91,7 +91,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
 //      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
       hiddenContext.fillStyle = colorFill
-      if (doInverse) {
+      if (doInverse || colorMode == COLOR_MODE.INVERSEBLACKANDWHITE) {
         // Inverse characters
         ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
         ctx.fillStyle = "#000000"
@@ -162,6 +162,7 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
 };
 
 const BLACK = 0
+const WHITE = 3
 
 const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   const nlines = hgrPage.length / 80
@@ -202,9 +203,10 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
+  const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true) :
-    getHiresGreen(hgrPage, nlines))
+    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true, fillColor) :
+    getHiresGreen(hgrPage, nlines, fillColor))
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes)
   const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
   for (let j = 0; j < nlines; j++) {
