@@ -2,7 +2,6 @@ import { isHardDriveImage } from "../emulator/devices/decodedisk";
 import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { iconKey, iconData, iconName } from "../img/icons";
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
-import { showOneDriveFilePicker } from "../emulator/utility/onedrivepicker";
 import { diskImages } from "./diskimages";
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -59,10 +58,6 @@ export const handleSetDiskData = (index: number,
   driveProps[index].filename = filename
   driveProps[index].diskData = data
   passSetDriveNewData(driveProps[index])
-}
-
-export const handleShowOneDriveFilePicker = (index: number) => {
-  showOneDriveFilePicker();
 }
 
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
