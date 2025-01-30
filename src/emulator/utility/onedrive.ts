@@ -1,28 +1,52 @@
-import { FILE_SUFFIXES } from "../../emulator/utility/utility";
+import { FILE_SUFFIXES } from "./utility";
 
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
+let accessToken: string;
 
-export const showOneDriveFilePicker = async () => {
-  launchOneDrivePicker().then(result => {
-    if (result) {
-        for (const file of result.value) {
-            const name = file.name
-            const url = file["@content.downloadUrl"]
-            console.log({ name: name, url: url })
+export const pickOneDriveFile = async () => {
+  const result = await launchOneDrivePicker()
+  if (result) {
+    accessToken = result.accessToken
 
-            fetch(url)
-                .then(response => {
-                    return response.blob()
-                }).then(blob => {
-                    const url = URL.createObjectURL(blob);
-                    (<HTMLImageElement>document.getElementById("preview")).src = url
-                })
-        }
+    for (const file of result.value) {
+        const name = file.name
+        const url = file["@content.downloadUrl"]
+        console.log({ name: name, url: url })
+
+        return url
+
+        // fetch(url)
+        //     .then(response => {
+        //         return response.blob()
+        //     }).then(blob => {
+        //         // const url = URL.createObjectURL(blob);
+        //         // (<HTMLImageElement>document.getElementById("preview")).src = url
+        //     })
     }
-  }).catch(reason => {
-      console.error(reason)
-  })
+  }
 }
+
+// export function pickOneDriveFile() {
+//   return new Promise<[string, string]>((resolve, reject) => {
+//     launchOneDrivePicker()
+//       .then(result => {
+//         if (result) {
+//           accessToken = result.accessToken
+      
+//           for (const file of result.value) {
+//               const name = file.name
+//               const url = file["@content.downloadUrl"]
+
+//               console.log({ name: name, url: url })
+//               return url
+//           }
+//         }
+//       })
+//       .catch(error => {
+//         console.log(error)
+//       })
+//   })
+// }
 
 function launchOneDrivePicker() {
   return new Promise<OneDriveResult | null>((resolve, reject) => {
@@ -46,11 +70,13 @@ function launchOneDrivePicker() {
 }
 
 interface OneDriveResult {
-  value: OneDriveFile[]
+  value: DriveItem[]
   webUrl: string | null
+  accessToken: string
+  apiEndpoint: string
 }
 
-interface OneDriveFile {
+interface DriveItem {
   "@content.downloadUrl": string
   "thumbnails@odata.context": string
   id: string

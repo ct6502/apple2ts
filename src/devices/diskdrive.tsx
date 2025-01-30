@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { crc32, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleShowOneDriveFilePicker } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import { pickOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
@@ -67,6 +68,21 @@ const DiskDrive = (props: DiskDriveProps) => {
     if (menuChoice === 1 || menuChoice === 2) {
       resetDrive(props.index)
     }
+  }
+
+  const handleShowOneDriveFilePicker = async (index: number) => {
+    const url = await pickOneDriveFile()
+    
+    const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`HTTP error: status ${response.status}`)
+        return
+      }
+      const blob = await response.blob()
+      const buffer = await new Response(blob).arrayBuffer()
+
+      handleSetDiskOrFileFromBuffer(index, buffer, "aztec.dsk")
+      resetDrive(index)
   }
 
   let img1: string
