@@ -141,7 +141,10 @@ type DriveProps = {
   motorRunning: boolean,
   diskHasChanges: boolean,
   isWriteProtected: boolean,
-  diskData: Uint8Array
+  diskData: Uint8Array,
+  lastWritten: number,
+  cloudSyncInterval: number,
+  cloudLastSynced: number
 }
 
 type DriveSaveState = {

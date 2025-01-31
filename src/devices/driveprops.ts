@@ -18,7 +18,10 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     diskHasChanges: false,
     isWriteProtected: false,
     motorRunning: false,
-    diskData: new Uint8Array()
+    diskData: new Uint8Array(),
+    lastWritten: -1,
+    cloudSyncInterval: -1,
+    cloudLastSynced: -1
   }
 }
 

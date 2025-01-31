@@ -70,7 +70,10 @@ export const passData = () => {
       motorRunning: driveState[i].motorRunning,
       diskHasChanges: driveState[i].diskHasChanges,
       isWriteProtected: driveState[i].isWriteProtected,
-      diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array()
+      diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
+      lastWritten: -1,
+      cloudSyncInterval: -1,
+      cloudLastSynced: -1
     }
     passDriveProps(dprops)
   }

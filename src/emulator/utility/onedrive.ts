@@ -1,54 +1,26 @@
-import { FILE_SUFFIXES } from "./utility";
-
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
-let accessToken: string;
+// let accessToken: string;
 
-export const pickOneDriveFile = async () => {
-  const result = await launchOneDrivePicker()
+export const pickOneDriveFile = async (filter: string): Promise<[string, string]> => {
+  let name = ""
+  let url = ""
+
+  const result = await launchOneDrivePicker(filter)
   if (result) {
-    accessToken = result.accessToken
+    // accessToken = result.accessToken
 
     for (const file of result.value) {
-        const name = file.name
-        const url = file["@content.downloadUrl"]
-        console.log({ name: name, url: url })
-
-        return url
-
-        // fetch(url)
-        //     .then(response => {
-        //         return response.blob()
-        //     }).then(blob => {
-        //         // const url = URL.createObjectURL(blob);
-        //         // (<HTMLImageElement>document.getElementById("preview")).src = url
-        //     })
+      name = file.name
+      url = file["@content.downloadUrl"]
+      console.log({ name: name, url: url })
+      break
     }
   }
+
+  return [name, url]
 }
 
-// export function pickOneDriveFile() {
-//   return new Promise<[string, string]>((resolve, reject) => {
-//     launchOneDrivePicker()
-//       .then(result => {
-//         if (result) {
-//           accessToken = result.accessToken
-      
-//           for (const file of result.value) {
-//               const name = file.name
-//               const url = file["@content.downloadUrl"]
-
-//               console.log({ name: name, url: url })
-//               return url
-//           }
-//         }
-//       })
-//       .catch(error => {
-//         console.log(error)
-//       })
-//   })
-// }
-
-function launchOneDrivePicker() {
+function launchOneDrivePicker(filter: string) {
   return new Promise<OneDriveResult | null>((resolve, reject) => {
       var odOptions: OneDriveOpenOptions = {
           clientId: applicationId,
@@ -56,7 +28,7 @@ function launchOneDrivePicker() {
           multiSelect: false,
           openInNewWindow: true,
           advanced: {
-              filter: FILE_SUFFIXES,
+              filter: filter,
               endpointHint: "api.onedrive.com",
               isConsumerAccount: true
           },

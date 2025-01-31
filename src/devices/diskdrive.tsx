@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { crc32, uint32toBytes } from "../emulator/utility/utility"
+import { crc32, FILE_SUFFIXES, FLOPPY_DISK_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { pickOneDriveFile } from "../emulator/utility/onedrive"
@@ -70,10 +70,12 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
-  const handleShowOneDriveFilePicker = async (index: number) => {
-    const url = await pickOneDriveFile()
-    
-    const response = await fetch(url);
+  const handleCloudButtonClick = async (index: number) => {
+    const filter = index >= 2 ? FLOPPY_DISK_SUFFIXES : FILE_SUFFIXES
+    const [name, url] = await pickOneDriveFile(filter)
+
+    if (name != "" && url != "") {
+      const response = await fetch(url);
       if (!response.ok) {
         console.error(`HTTP error: status ${response.status}`)
         return
@@ -81,8 +83,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       const blob = await response.blob()
       const buffer = await new Response(blob).arrayBuffer()
 
-      handleSetDiskOrFileFromBuffer(index, buffer, "aztec.dsk")
-      resetDrive(index)
+      handleSetDiskOrFileFromBuffer(index, buffer, name)
+    }
   }
 
   let img1: string
@@ -106,7 +108,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
       <span className="flex-row">
-        <FontAwesomeIcon icon={faCloud} className="disk-onedrive fa-fw" title="OneDrive" onClick={() => {handleShowOneDriveFilePicker(props.index)}}>
+        <FontAwesomeIcon icon={faCloud} className="disk-cloud fa-fw" title="OneDrive" onClick={() => {handleCloudButtonClick(props.index)}}>
         </FontAwesomeIcon>
         <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
           onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
