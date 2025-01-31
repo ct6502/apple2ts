@@ -1,3 +1,5 @@
+import { Buffer } from "buffer"
+
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
 export enum ONEDRIVE_SYNC_STATUS {
@@ -12,10 +14,11 @@ type OneDriveProps = {
   syncStatus: ONEDRIVE_SYNC_STATUS
   fileName: string
   downloadUrl: string
+  uploadUrl: string
   lastSyncTime: number
 }
 
-// var accessToken: string;
+var accessToken: string;
 var activeDrives: OneDriveProps[] = [];
 
 export const resetOneDriveProps = (index: number) => {
@@ -23,6 +26,7 @@ export const resetOneDriveProps = (index: number) => {
     syncStatus: ONEDRIVE_SYNC_STATUS.INACTIVE,
     fileName: "",
     downloadUrl: "",
+    uploadUrl: "",
     lastSyncTime: -1
   }
 }
@@ -35,16 +39,47 @@ export const getOneDriveProps = (index: number): OneDriveProps => {
   return activeDrives[index]
 }
 
+export const updateOneDriveFile = async (index: number, diskData: Uint8Array) => {
+  var oneDriveProps = activeDrives[index]
+  const json = JSON.stringify(
+    {
+      name: oneDriveProps.fileName,
+      file: new Buffer(diskData).toString("base64")
+    })
+
+  console.log(json)
+
+  fetch(oneDriveProps.uploadUrl, {
+    method: 'PUT',
+    headers: {
+        'Content-Type': 'application/text',
+        'Authorization': `Bearer ${accessToken}`
+    },
+    // body: json
+    body: new Buffer(diskData).toString("base64")
+  })
+  .then(response => {
+    response.json()
+  })
+  .then(data => {
+    console.log(data)
+  })
+  .catch(error => {
+    console.error('Error:', error)
+  });
+}
+
 export const pickOneDriveFile = async (index: number, filter: string): Promise<boolean> => {
   const result = await launchOneDrivePicker(filter)
   if (result) {
-    // accessToken = result.accessToken
+    accessToken = result.accessToken
 
     for (const file of result.value) {
       activeDrives[index] = {
         syncStatus: ONEDRIVE_SYNC_STATUS.ACTIVE,
         fileName: file.name,
         downloadUrl: file["@content.downloadUrl"],
+        uploadUrl: `${result.apiEndpoint}me/drive/items/${file.id}/content`,
         lastSyncTime: Date.now()
       }
       return true
@@ -84,7 +119,6 @@ interface OneDriveResult {
 
 interface DriveItem {
   "@content.downloadUrl": string
-  "thumbnails@odata.context": string
   id: string
   name: string
   size: number
