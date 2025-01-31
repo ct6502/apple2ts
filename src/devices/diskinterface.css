@@ -49,20 +49,31 @@ body.dark-mode .disk-cloud {
   padding-top: 0.25em;
 }
 
-.disk-cloud {
+.disk-onedrive {
   position: relative;
-  color: var(--text-color);
   height: 0.75em;
   cursor: pointer;
   padding-top: 1.75em;
 }
 
-.disk-cloud-clean {
+.disk-onedrive-inactive {
+  color: var(--text-color);
+}
+
+.disk-onedrive-active {
   color: #0364B8;
 }
 
-.disk-cloud-dirty {
-  color: yellow;
+.disk-onedrive-pending {
+  color: gray;
+}
+
+.disk-onedrive-inprogress {
+  color: orange;
+}
+
+.disk-onedrive-failed {
+  color: red;
 }
 
 body.dark-mode .disk-write-protected {

@@ -70,6 +70,7 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   }
   driveState.filename = replaceSuffix(driveState.filename, 'woz')
   driveState.diskHasChanges = true
+  driveState.lastWriteTime = Date.now()
   return newData
 }
 
@@ -93,6 +94,7 @@ const decode2MG = (driveState: DriveState, diskData: Uint8Array): Uint8Array => 
   }
   driveState.filename = replaceSuffix(driveState.filename, 'hdv')
   driveState.diskHasChanges = true
+  driveState.lastWriteTime = Date.now()
   return diskData.slice(offset, offset + nbytes)
 }
 

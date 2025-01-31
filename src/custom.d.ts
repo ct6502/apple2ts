@@ -130,7 +130,7 @@ type DriveState = {
   trackNbits: Array<number>,
   trackLocation: number,
   maxHalftrack: number,
-  cloudDownloadUrl: string
+  lastWriteTime: number
 }
 
 type DriveProps = {
@@ -143,9 +143,7 @@ type DriveProps = {
   diskHasChanges: boolean,
   isWriteProtected: boolean,
   diskData: Uint8Array,
-  cloudDownloadUrl: string,
-  cloudSyncInterval: number,
-  cloudLastSynced: number
+  lastWriteTime: number
 }
 
 type DriveSaveState = {
