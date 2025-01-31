@@ -23,7 +23,7 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     trackNbits: !hardDrive ? Array<number>(80) : Array<number>(),
     trackLocation: 0,
     maxHalftrack: 0,
-    cloudDownloadUrl: ""
+    lastWriteTime: -1
   }
 }
 
@@ -72,9 +72,7 @@ export const passData = () => {
       diskHasChanges: driveState[i].diskHasChanges,
       isWriteProtected: driveState[i].isWriteProtected,
       diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
-      cloudDownloadUrl: driveState[i].cloudDownloadUrl,
-      cloudSyncInterval: -1,
-      cloudLastSynced: -1
+      lastWriteTime: driveState[i].lastWriteTime
     }
     passDriveProps(dprops)
   }
@@ -165,7 +163,7 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].filename = props.filename
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
-  driveState[index].cloudDownloadUrl = props.cloudDownloadUrl
+  driveState[index].lastWriteTime = props.lastWriteTime
   passData()
 }
 

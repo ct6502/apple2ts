@@ -1,15 +1,15 @@
 import { useState } from "react"
 import { crc32, FILE_SUFFIXES, FLOPPY_DISK_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, handleSetCloudDownloadUrl } from "./driveprops"
-import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
-import { pickOneDriveFile } from "../emulator/utility/onedrive"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import { resetOneDriveProps, getOneDriveProps, ONEDRIVE_SYNC_STATUS, pickOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
   faLockOpen,
   faCloud
 } from "@fortawesome/free-solid-svg-icons";
+import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -31,6 +31,17 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
 const resetDrive = (index: number) => {
   //  const dprops = handleGetDriveProps(index)
   handleSetDiskData(index, new Uint8Array(), "")
+  resetOneDriveProps(index)
+}
+
+const getOneDriveSyncStatus = (dprops: DriveProps) => {
+  var oneDriveProps = getOneDriveProps(dprops.index)
+
+  if (oneDriveProps.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveProps.lastSyncTime) {
+    oneDriveProps.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
+  }
+
+  return oneDriveProps.syncStatus
 }
 
 type DiskDriveProps = {
@@ -73,10 +84,10 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const handleCloudButtonClick = async (index: number) => {
     const filter = index >= 2 ? FLOPPY_DISK_SUFFIXES : FILE_SUFFIXES
-    const [name, url] = await pickOneDriveFile(filter)
-
-    if (name != "" && url != "") {
-      const response = await fetch(url);
+    
+    if (await pickOneDriveFile(index, filter)) {
+      const oneDriveProps = getOneDriveProps(index)
+      const response = await fetch(oneDriveProps.downloadUrl);
       if (!response.ok) {
         console.error(`HTTP error: status ${response.status}`)
         return
@@ -84,8 +95,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       const blob = await response.blob()
       const buffer = await new Response(blob).arrayBuffer()
 
-      handleSetDiskOrFileFromBuffer(index, buffer, name)
-      handleSetCloudDownloadUrl(index, url)
+      handleSetDiskOrFileFromBuffer(index, buffer, oneDriveProps.fileName)
       doSetEmuDriveProps(dprops)
     }
   }
@@ -114,7 +124,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         <span className="flex-column">
           <FontAwesomeIcon
             icon={faCloud}
-            className={"disk-cloud fa-fw " + (dprops.cloudDownloadUrl != "" ? "disk-cloud-clean" : "")}
+            className={"fa-fw disk-onedrive disk-onedrive-" + (ONEDRIVE_SYNC_STATUS[getOneDriveSyncStatus(dprops)].toLocaleLowerCase())}
             title="OneDrive"
             onClick={() => {handleCloudButtonClick(props.index)}}>
           </FontAwesomeIcon>

@@ -1,23 +1,57 @@
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
-// let accessToken: string;
 
-export const pickOneDriveFile = async (filter: string): Promise<[string, string]> => {
-  let name = ""
-  let url = ""
+export enum ONEDRIVE_SYNC_STATUS {
+  INACTIVE,
+  ACTIVE,
+  PENDING,
+  INPROGRESS,
+  FAILED
+}
 
+type OneDriveProps = {
+  syncStatus: ONEDRIVE_SYNC_STATUS
+  fileName: string
+  downloadUrl: string
+  lastSyncTime: number
+}
+
+// var accessToken: string;
+var activeDrives: OneDriveProps[] = [];
+
+export const resetOneDriveProps = (index: number) => {
+  activeDrives[index] = {
+    syncStatus: ONEDRIVE_SYNC_STATUS.INACTIVE,
+    fileName: "",
+    downloadUrl: "",
+    lastSyncTime: -1
+  }
+}
+
+export const getOneDriveProps = (index: number): OneDriveProps => {
+  if (index > activeDrives.length - 1) {
+    resetOneDriveProps(index)
+  }
+
+  return activeDrives[index]
+}
+
+export const pickOneDriveFile = async (index: number, filter: string): Promise<boolean> => {
   const result = await launchOneDrivePicker(filter)
   if (result) {
     // accessToken = result.accessToken
 
     for (const file of result.value) {
-      name = file.name
-      url = file["@content.downloadUrl"]
-      console.log({ name: name, url: url })
-      break
+      activeDrives[index] = {
+        syncStatus: ONEDRIVE_SYNC_STATUS.ACTIVE,
+        fileName: file.name,
+        downloadUrl: file["@content.downloadUrl"],
+        lastSyncTime: Date.now()
+      }
+      return true
     }
   }
 
-  return [name, url]
+  return false
 }
 
 function launchOneDrivePicker(filter: string) {
