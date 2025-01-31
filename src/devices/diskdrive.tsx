@@ -2,7 +2,7 @@ import { useState } from "react"
 import { crc32, FILE_SUFFIXES, FLOPPY_DISK_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
-import { resetOneDriveProps, getOneDriveProps, ONEDRIVE_SYNC_STATUS, pickOneDriveFile } from "../emulator/utility/onedrive"
+import { resetOneDriveProps, getOneDriveProps, ONEDRIVE_SYNC_STATUS, pickOneDriveFile, updateOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
@@ -39,6 +39,8 @@ const getOneDriveSyncStatus = (dprops: DriveProps) => {
 
   if (oneDriveProps.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveProps.lastSyncTime) {
     oneDriveProps.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
+    // $TEMP
+    updateOneDriveFile(dprops.index, dprops.diskData)
   }
 
   return oneDriveProps.syncStatus
