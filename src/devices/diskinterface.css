@@ -32,27 +32,11 @@
   overflow: hidden;
   text-overflow: clip;
   user-select: none;
+  padding-left: 1em;
 }
 
 body.dark-mode .disk-cloud {
   color: var(--text-color-dark);
-}
-
-.disk-cloud {
-  position: relative;
-  color: var(--text-color);
-  height: 0.75em;
-  padding-left: 0.125em;
-  padding-top: 0.0625em;
-  cursor: pointer;
-}
-
-.disk-cloud-clean {
-  color: green;
-}
-
-.disk-cloud-dirty {
-  color: yellow;
 }
 
 .disk-write-protected {
@@ -60,6 +44,25 @@ body.dark-mode .disk-cloud {
   color: var(--text-color);
   height: 0.75em;
   cursor: pointer;
+  padding-left: 0.025em;
+  padding-right: 0.5em;
+  padding-top: 0.25em;
+}
+
+.disk-cloud {
+  position: relative;
+  color: var(--text-color);
+  height: 0.75em;
+  cursor: pointer;
+  padding-top: 1.75em;
+}
+
+.disk-cloud-clean {
+  color: #0364B8;
+}
+
+.disk-cloud-dirty {
+  color: yellow;
 }
 
 body.dark-mode .disk-write-protected {
@@ -94,4 +97,8 @@ body.dark-mode .disk-write-protected {
 
 body.dark-mode .disk-image {
   border-color: var(--text-color-dark);
+}
+
+#tour-disk-images {
+  margin-right: 1.5em;
 }

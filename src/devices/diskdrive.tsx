@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { crc32, FILE_SUFFIXES, FLOPPY_DISK_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, handleSetCloudDownloadUrl } from "./driveprops"
+import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 import { pickOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -84,6 +85,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       const buffer = await new Response(blob).arrayBuffer()
 
       handleSetDiskOrFileFromBuffer(index, buffer, name)
+      handleSetCloudDownloadUrl(index, url)
+      doSetEmuDriveProps(dprops)
     }
   }
 
@@ -100,19 +103,29 @@ const DiskDrive = (props: DiskDriveProps) => {
   status += dprops.status
   return (
     <span className="flex-column">
-      <img className="disk-image"
-        src={img1} alt={filename}
-        id={dprops.index === 0 ? "tour-floppy-disks" : ""}
-        title={filename + (dprops.diskHasChanges ? ' (modified)' : '')}
-        onClick={handleMenuClick} />
+      <span className="flex-row">
+        <span className="flex-column">
+          <img className="disk-image"
+            src={img1} alt={filename}
+            id={dprops.index === 0 ? "tour-floppy-disks" : ""}
+            title={filename + (dprops.diskHasChanges ? ' (modified)' : '')}
+            onClick={handleMenuClick} />
+        </span>
+        <span className="flex-column">
+          <FontAwesomeIcon
+            icon={faCloud}
+            className={"disk-cloud fa-fw " + (dprops.cloudDownloadUrl != "" ? "disk-cloud-clean" : "")}
+            title="OneDrive"
+            onClick={() => {handleCloudButtonClick(props.index)}}>
+          </FontAwesomeIcon>
+          <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
+            onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
+          </FontAwesomeIcon>
+        </span>
+      </span>
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
       <span className="flex-row">
-        <FontAwesomeIcon icon={faCloud} className="disk-cloud fa-fw" title="OneDrive" onClick={() => {handleCloudButtonClick(props.index)}}>
-        </FontAwesomeIcon>
-        <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
-          onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
-        </FontAwesomeIcon>
         <span className={"default-font disk-status"}>{status}</span>
       </span>
 

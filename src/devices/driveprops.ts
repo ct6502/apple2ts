@@ -19,7 +19,7 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     isWriteProtected: false,
     motorRunning: false,
     diskData: new Uint8Array(),
-    lastWritten: -1,
+    cloudDownloadUrl: "",
     cloudSyncInterval: -1,
     cloudLastSynced: -1
   }
@@ -60,11 +60,17 @@ export const handleSetDiskData = (index: number,
   data: Uint8Array, filename: string) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
+  driveProps[index].cloudDownloadUrl = ""
   passSetDriveNewData(driveProps[index])
 }
 
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
   driveProps[index].isWriteProtected = isWriteProtected
+  passSetDriveProps(driveProps[index])
+}
+
+export const handleSetCloudDownloadUrl = (index: number, url: string) => {
+  driveProps[index].cloudDownloadUrl = url
   passSetDriveProps(driveProps[index])
 }
 
@@ -185,3 +191,5 @@ export const handleSetDiskFromFile = async (disk: diskImage,
   }
 }
 
+export function handleSetCloudUrl(url: string) {
+}
