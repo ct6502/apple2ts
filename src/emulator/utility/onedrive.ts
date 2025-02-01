@@ -1,4 +1,5 @@
 import { Buffer } from "buffer"
+import { escape } from "querystring"
 
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
@@ -39,25 +40,17 @@ export const getOneDriveProps = (index: number): OneDriveProps => {
   return activeDrives[index]
 }
 
-export const updateOneDriveFile = async (index: number, diskData: Uint8Array) => {
-  var oneDriveProps = activeDrives[index]
-  const json = JSON.stringify(
-    {
-      name: oneDriveProps.fileName,
-      file: new Buffer(diskData).toString("base64")
-    })
-
-  console.log(json)
-
-  fetch(oneDriveProps.uploadUrl, {
+export const updateOneDriveFile = async (index: number, blob: Blob) => {
+  fetch(activeDrives[index].uploadUrl, {
     method: 'PUT',
+    mode: 'cors',
     headers: {
-        'Content-Type': 'application/text',
-        'Authorization': `Bearer ${accessToken}`
+        'Content-Type': 'application/octet-stream',
+        'Authorization': `bearer ${accessToken}`
     },
-    // body: json
-    body: new Buffer(diskData).toString("base64")
-  })
+    duplex: 'half',
+    body: blob.stream()
+  } as RequestInit)
   .then(response => {
     response.json()
   })
@@ -74,12 +67,14 @@ export const pickOneDriveFile = async (index: number, filter: string): Promise<b
   if (result) {
     accessToken = result.accessToken
 
+    console.log(`accessToken=${accessToken}`)
+
     for (const file of result.value) {
       activeDrives[index] = {
         syncStatus: ONEDRIVE_SYNC_STATUS.ACTIVE,
         fileName: file.name,
         downloadUrl: file["@content.downloadUrl"],
-        uploadUrl: `${result.apiEndpoint}me/drive/items/${file.id}/content`,
+        uploadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`,
         lastSyncTime: Date.now()
       }
       return true

@@ -11,13 +11,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 
-const downloadDisk = (diskData: Uint8Array, filename: string) => {
+export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
   if (filename.toLowerCase().endsWith('.woz')) {
     const crc = crc32(diskData, 12)
     diskData.set(uint32toBytes(crc), 8)
   }
-  const blob = new Blob([diskData]);
+  return new Blob([diskData]);
+}
+
+const downloadDisk = (diskData: Uint8Array, filename: string) => {
+  const blob = getBlobFromDiskData(diskData, filename)
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
@@ -40,7 +44,7 @@ const getOneDriveSyncStatus = (dprops: DriveProps) => {
   if (oneDriveProps.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveProps.lastSyncTime) {
     oneDriveProps.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
     // $TEMP
-    updateOneDriveFile(dprops.index, dprops.diskData)
+    updateOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveProps.fileName))
   }
 
   return oneDriveProps.syncStatus
