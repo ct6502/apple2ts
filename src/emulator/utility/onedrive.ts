@@ -1,6 +1,3 @@
-import { Buffer } from "buffer"
-import { escape } from "querystring"
-
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
 export enum ONEDRIVE_SYNC_STATUS {
@@ -21,6 +18,18 @@ type OneDriveProps = {
 
 var accessToken: string;
 var activeDrives: OneDriveProps[] = [];
+
+export const getOneDriveSyncStatus = (dprops: DriveProps) => {
+  var oneDriveProps = getOneDriveProps(dprops.index)
+
+  if (oneDriveProps.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveProps.lastSyncTime) {
+    oneDriveProps.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
+    // $TEMP
+    // saveOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveProps.fileName))
+  }
+
+  return oneDriveProps.syncStatus
+}
 
 export const resetOneDriveProps = (index: number) => {
   activeDrives[index] = {
@@ -62,12 +71,10 @@ export const updateOneDriveFile = async (index: number, blob: Blob) => {
   });
 }
 
-export const pickOneDriveFile = async (index: number, filter: string): Promise<boolean> => {
-  const result = await launchOneDrivePicker(filter)
+export const openOneDriveFile = async (index: number, filter: string): Promise<boolean> => {
+  const result = await launchOneDrivePicker("files", filter)
   if (result) {
     accessToken = result.accessToken
-
-    console.log(`accessToken=${accessToken}`)
 
     for (const file of result.value) {
       activeDrives[index] = {
@@ -80,19 +87,35 @@ export const pickOneDriveFile = async (index: number, filter: string): Promise<b
       return true
     }
   }
+  
+  // handle failure
 
   return false
 }
 
-function launchOneDrivePicker(filter: string) {
+export const saveOneDriveFile = async(index: number, fileName: string): Promise<boolean> => {
+  const result = await launchOneDrivePicker("folders")
+  if (result) {
+    accessToken = result.accessToken
+
+    // result.id
+  }
+  
+  // handle failure
+
+  return false
+}
+
+function launchOneDrivePicker(view: string, filter?: string) {
   return new Promise<OneDriveResult | null>((resolve, reject) => {
       var odOptions: OneDriveOpenOptions = {
           clientId: applicationId,
           action: "share",
           multiSelect: false,
           openInNewWindow: true,
+          viewType: view,
           advanced: {
-              filter: filter,
+              filter: filter ?? "",
               endpointHint: "api.onedrive.com",
               isConsumerAccount: true
           },
@@ -138,9 +161,11 @@ interface OneDriveOpenOptions {
   clientId: string
   action: "download" | "share" | "query"
   multiSelect: boolean
+  fileName?: string
   openInNewWindow: boolean
+  viewType: string // "files" | "folders" | "all"
   advanced: {
-      filter: string
+      filter?: string
       endpointHint?: string
       isConsumerAccount?: boolean
       redirectUri?: string
@@ -152,6 +177,7 @@ interface OneDriveOpenOptions {
 
 interface OneDrive {
   open(options: OneDriveOpenOptions): any
+  save(options: OneDriveOpenOptions): any
 }
 
 declare var OneDrive: OneDrive
