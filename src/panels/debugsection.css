@@ -37,7 +37,7 @@ body.dark-mode .hex-field:disabled {
   width: 2em;
 }
 
-.debugCheckbox {
+.debug-checkbox {
   margin: 0;
   transform: scale(0.75)
 }
@@ -62,11 +62,6 @@ body.dark-mode .mono-text {
   margin-bottom: 1px;
   padding-top: 2px;
   padding-bottom: 2px;
-  white-space: pre;
-  font-family: monospace;
-  font-size: 8pt;
-  line-height: 10pt;
-  color: var(--text-color);
 }
 
 body.dark-mode .debug-panel {
@@ -77,11 +72,15 @@ body.dark-mode .debug-panel {
   height: 595px;
 }
 
+.wide-panel {
+  width: 260px;
+}
+
 .short-panel {
   height: 205px;
 }
 
-.thinBorder {
+.thin-border {
   border-width: 0.5px;
   border-color: gray;
   border-style: solid;
@@ -157,8 +156,8 @@ body.dark-mode .debug-panel {
 .round-rect-border {
   border: 1px solid #000;
   border-radius: 10px;
-  padding: 10px;
-  margin: 0;
+  padding: 7px;
+  margin: 2px;
   border-color: var(--text-color);
   background-color: var(--panel-background);
 }
@@ -365,8 +364,9 @@ body.dark-mode .disassembly-separator {
   display: block;
   border-collapse: collapse;
   overflow: auto;
-  height: 100%;
+  overflow-x: hidden;
   width: 100%;
+  height: 100%;
   margin-top: 7px;
   user-select: none;
 }
@@ -463,7 +463,10 @@ body.dark-mode .memtable-highlight {
 }
 
 .memory-map td {
-  padding: 7px;
+  padding-left: 6px;
+  padding-right: 6px;
+  padding-top: 2px;
+  padding-bottom: 2px;
   border-width: 0.5px;
   border-style: solid;
   border-color: var(--text-color);

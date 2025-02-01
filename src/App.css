@@ -79,7 +79,7 @@ input:focus {
 .flex-row-gap {
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 7px;
 }
 
 .flex-column {
@@ -90,7 +90,7 @@ input:focus {
 .flex-column-gap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .flex-row-space-between {
@@ -196,8 +196,8 @@ body.dark-mode .button-locked {
   background-color: #aaff00;
   border-radius: 50%;
   position: absolute;
-  top: 3px;
-  left: 3px;
+  top: 2px;
+  left: 2px;
 }
 
 .joystick-button {

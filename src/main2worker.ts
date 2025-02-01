@@ -211,7 +211,7 @@ export const passSetDriveProps = (props: DriveProps) => {
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
-  arrowKeysAsJoystick: false,
+  arrowKeysAsJoystick: true,
   breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,

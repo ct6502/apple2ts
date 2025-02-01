@@ -14,7 +14,7 @@ import {
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
 import ImageWriter from "./devices/imagewriter"
@@ -33,6 +33,7 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
+  const righthandSectionRef = useRef<HTMLDivElement>(null);
 
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -174,7 +175,7 @@ const DisplayApple2 = () => {
       <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <Apple2Canvas {...props} />
-          <div className="flex-row-space-between wrap"
+          <div className="flex-row-gap wrap"
             style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' , paddingLeft: '2px' }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
@@ -184,7 +185,7 @@ const DisplayApple2 = () => {
         </div>
         {isLandscape && status}
         {narrow && <div className="divider"></div>}
-        <span className="flex-column">
+        <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
               helptext={handleGetHelpText()}

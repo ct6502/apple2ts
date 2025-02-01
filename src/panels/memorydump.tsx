@@ -281,7 +281,7 @@ const MemoryDump = () => {
   const addressGetTable = memoryRange === MEMORY_RANGE.CURRENT ? handleGetAddressGetTable() : null
 
   return (
-    <div className="flex-column">
+    <div className="flex-column round-rect-border" id="tour-debug-memorydump">
       <span className="flex-row"
         style={{
           alignItems: "center",
@@ -325,20 +325,20 @@ const MemoryDump = () => {
           pointerEvents: (ready ? 'auto' : 'none'), opacity: (ready ? 1 : 0.5)
         }}>
         <input className="hex-field"
-          style={{ width: '20%' }}
-          type="text"
-          placeholder="Search ASCII"
-          value={ascii}
-          onChange={handleSearchAscii}
-        />
-        <input className="hex-field"
-          style={{ width: '20%' }}
+          style={{ width: '8em' }}
           type="text"
           placeholder="Search Hex"
           value={hexsearch}
           onChange={handleSearchHex}
         />
-        <span className="bigger-font" style={{ marginLeft: "5pt", width: "15%" }}>
+        <input className="hex-field"
+          style={{ width: '8em' }}
+          type="text"
+          placeholder="Search ASCII"
+          value={ascii}
+          onChange={handleSearchAscii}
+        />
+        <span className="bigger-font" style={{ marginLeft: "5pt", width: "7em" }}>
           {matches.length > 0 ? `${matchIndex + 1} of ${matches.length}` : "no match"}
         </span>
         <button className="push-button"
@@ -354,10 +354,9 @@ const MemoryDump = () => {
           <FontAwesomeIcon icon={faArrowDown} />
         </button>
       </span>
-      <div className="debug-panel"
+      <div className="debug-panel mono-text"
         style={{
-          width: '475px',
-          height: `485px`
+          height: '485px'
         }}
         ref={memoryDumpRef}
       >

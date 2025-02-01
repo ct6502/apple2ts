@@ -267,3 +267,6 @@ type BreakpointExpression = {
   operator: OperatorValues,
   value: number
 }
+
+type StepCallbackFunction = (data: CallBackProps, setTourIndex: (index: number) => void) => boolean
+

@@ -1,5 +1,12 @@
 import { Step } from 'react-joyride'
 
+const isTouchDevice = "ontouchstart" in document.documentElement
+const isMac = navigator.platform.startsWith('Mac')
+const modKey = isMac ? "⌘" : "Alt"
+const altArrowKeys = <div>The next key determines whether the {modKey} key is
+  used for keyboard shortcuts or the Apple II Open Apple key.<p/>
+  The final key determines whether the arrow keys can be used as the Apple II joystick.</div>
+
 export const tourSettings: Step[] = [
   {
     target: 'body',
@@ -11,7 +18,7 @@ export const tourSettings: Step[] = [
   {
     target: '#tour-maincontrols',
     content: 'Here, you can boot and reset the Apple II, restore and save the state, ' +
-      'copy the screen, or paste text into the emulatior.',
+      'copy the screen, or paste text into the emulator.',
   },
   {
     target: '#tour-snapshot',
@@ -33,6 +40,17 @@ export const tourSettings: Step[] = [
     target: '#tour-configbuttons',
     content: 'The bottom row of buttons controls the state of the Apple II, ' +
       'starting with the emulator speed, the screen color, and muting the sound.',
+  },
+  {
+    target: '#tour-keyboardbuttons',
+    content: (<div style={{textAlign: "left"}}>If the caps lock key is turned on,
+    then all typed characters are UPPERCASE.<p/>
+    {isTouchDevice ? '' : altArrowKeys}</div>),
+  },
+  {
+    target: '#tour-clearcookies',
+    content: 'Apple2TS automatically saves the current emulator settings as ' +
+      'browser cookies. Press this button to reset these settings and delete the cookies.',
   },
   {
     target: 'body',

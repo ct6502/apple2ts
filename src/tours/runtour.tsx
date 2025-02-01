@@ -12,12 +12,12 @@ const RunTour = () => {
     tourIndex: tourIndex, setTourIndex: setTourIndex } = useGlobalContext()
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const stepCallbackFunction = data.step.data
+    const stepCallbackFunction = data.step.data as StepCallbackFunction
     if (stepCallbackFunction) {
-      stepCallbackFunction(data, setTourIndex)
-      return
+      const completed = stepCallbackFunction(data, setTourIndex)
+      if (completed) return
     }
-    // console.log(`handleJoyrideCallback action=${data.action} type=${data.type} index=${data.index} ti=${tourIndex}`)
+    console.log(`handleJoyrideCallback action=${data.action} type=${data.type} index=${data.index} ti=${tourIndex}`)
     if (data.type === EVENTS.STEP_AFTER) {
       // Update state to advance the tour
       setTourIndex(data.index + (data.action === ACTIONS.PREV ? -1 : 1))
@@ -84,6 +84,11 @@ const RunTour = () => {
 
   return (
     <span>
+    {(tour.length > 0) &&
+      <div className="modal-overlay"
+        style={{backgroundColor: "inherit"}}
+        tabIndex={0} // Make the div focusable
+      >
       <Joyride
         callback={handleJoyrideCallback}
         steps={tour}
@@ -95,14 +100,19 @@ const RunTour = () => {
         spotlightClicks={true}
         stepIndex={tourIndex}
         styles={{
+          tooltipContent: {
+            textAlign: "left",
+          },
           options: {
             zIndex: 10000,
           },
         }}
       />
+      </div>
+      }
       <DropdownButton 
         currentIndex = {-1}
-        itemNames = {['Main', 'Settings', 'Debug']}
+        itemNames = {['Guided Tour: Main', 'Guided Tour: Settings', 'Guided Tour: Debug']}
         closeCallback = {selectGuidedTour}
         icon = {<FontAwesomeIcon icon={faGlobe}/>}
         tooltip = "Guided Tour"

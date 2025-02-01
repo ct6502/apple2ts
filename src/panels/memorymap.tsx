@@ -40,7 +40,16 @@ const MemoryMap = () => {
 
   return (
     <div>
-      <table className="memory-map">
+      <div className="bigger-font" style={{ marginBottom: '6px' }}>Memory Map</div>
+      <table className="memory-map mono-text">
+        <tbody>
+          <tr><td>Main</td>
+            <td className="mem-rom">ROM</td>
+            <td className="mem-aux">Aux</td></tr>
+        </tbody>
+      </table>
+      <br/>
+      <table className="memory-map mono-text">
         <tbody>
           <tr>
             <td>$0000</td><td className={altZP ? "mem-aux" : ""}>Zero Page</td>
@@ -78,14 +87,6 @@ const MemoryMap = () => {
           <tr>
             <td>$E000<br /><br />$FFFF</td><td className={classBSR}>{bankSwitchedRam}</td>
           </tr>
-        </tbody>
-      </table>
-      <div style={{ paddingTop: "20px" }}>Key:</div>
-      <table className="memory-map">
-        <tbody>
-          <tr><td> Main </td>
-            <td className="mem-rom"> ROM </td>
-            <td className="mem-aux"> Aux </td></tr>
         </tbody>
       </table>
 

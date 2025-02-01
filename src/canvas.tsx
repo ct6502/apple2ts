@@ -195,7 +195,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    if (e.key in arrowKeys) {  // && handleGetArrowKeysAsJoystick()) {
+    if (e.key in arrowKeys) {
       handleArrowKey(arrowKeys[e.key], false)
       e.preventDefault()
       e.stopPropagation()

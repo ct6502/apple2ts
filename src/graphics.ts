@@ -340,8 +340,8 @@ export const getCanvasSize = (noBackgroundImage = false) => {
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
   height -= noBackgroundImage ? 40 : 300
   width -= noBackgroundImage ? 0 : 40
-  if (!noBackgroundImage && handleGetIsDebugging()) {
-    width /= 2
+  if (!noBackgroundImage) {
+    width = Math.max(400, width - (handleGetIsDebugging() ? 900 : 400))
   }
   // shrink either width or height to preserve aspect ratio
   if (width / screenRatio > height) {

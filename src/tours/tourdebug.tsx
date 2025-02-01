@@ -1,12 +1,42 @@
-import { ACTIONS, CallBackProps, Step } from 'react-joyride'
+import { CallBackProps, Step } from 'react-joyride'
+import { handleGetIsDebugging, handleGetRunMode, passSetDebug, passSetRunMode } from '../main2worker'
+import { RUN_MODE } from '../emulator/utility/utility'
 
-const callbackInDebugMode = (data: CallBackProps, setTourIndex: (index: number) => {}) => {
-  console.log(data)
-  if (data.action === ACTIONS.NEXT || data.action === ACTIONS.PREV) {
-    // Update state to advance the tour
-    setTourIndex(data.index + (data.action === ACTIONS.PREV ? -1 : 1))
+let neededToBoot = false
+let didBoot = false
+
+const callbackInDebugMode: StepCallbackFunction = (data: CallBackProps, setTourIndex: (index: number) => void) => {
+  const runMode = handleGetRunMode()
+  neededToBoot = runMode === RUN_MODE.IDLE
+  didBoot = false
+  if (!handleGetIsDebugging()) {
+    passSetDebug(true)
   }
+  // Continue processing tour commands
+  return false
+}
 
+
+const callbackPauseEmulator: StepCallbackFunction = (data: CallBackProps, setTourIndex: (index: number) => void) => {
+  if (neededToBoot && !didBoot) {
+    didBoot = true
+    passSetRunMode(RUN_MODE.NEED_BOOT)
+  }
+  // Continue processing tour commands
+  return false
+}
+
+const callbackDebugControls: StepCallbackFunction = (data: CallBackProps, setTourIndex: (index: number) => void) => {
+  const runMode = handleGetRunMode()
+  if (runMode !== RUN_MODE.PAUSED) {
+    if (didBoot) {
+      didBoot = false
+      passSetRunMode(RUN_MODE.NEED_RESET)
+    }
+    setTimeout(() => {passSetRunMode(RUN_MODE.PAUSED)}, 250)
+  }
+  // Continue processing tour commands
+  return false
 }
 
 export const tourDebug: Step[] = [
@@ -19,8 +49,46 @@ export const tourDebug: Step[] = [
   },
   {
     target: '#tour-debug-button',
-    content: 'If you are not already in debug mode, press the bug button now to switch to that mode.',
+    content: 'This button can be used to switch between Debug and Regular mode. ' +
+      'We are now in Debug mode.',
     data: callbackInDebugMode
+  },
+  {
+    target: '#tour-debug-pause',
+    content: 'Press this button to pause or resume execution of the emulator.',
+    data: callbackPauseEmulator
+  },
+  {
+    target: '#tour-debug-controls',
+    content: 'Now that we have paused, we can step through the disassembled ' +
+      'code using the Step Over, Into, and Out buttons. We can also quickly jump ' +
+      'to the current address of the Program Counter (PC).',
+    data: callbackDebugControls
+  },
+  {
+    target: '#tour-debug-disassembly',
+    content: 'Here we see the disassembled code, with the hex addresses, ' +
+      'the three-letter instruction, and any values or addresses. ' +
+      'If you move your mouse over a green value, a tooltip will appear with the ' +
+      'current value. Clicking on a blue address will scroll to that location. ' +
+      'You can also click in the left gutter to add or remove breakpoints.',
+    placement: 'left'
+  },
+  {
+    target: '#tour-debug-info',
+    content: 'In the middle we have the Stack Dump and a Memory Map. ' +
+      'The Memory Map updates in real time and shows you which memory banks are ' +
+      ' currently active.',
+    placement: 'left'
+  },
+  {
+    target: '#tour-debug-memorydump',
+    content: 'The last section displays the Apple II memory. ' +
+      'You can use the droplist to examine different portions of memory. ' +
+      'If you switch to one of the HGR pages, you will get a magnified view of the ' +
+      'hires screen, tied to the memory locations. You can also search for hex values ' +
+      ' or ASCII strings, and save the memory to a file.',
+    placement: 'left'
   },
   {
     target: 'body',

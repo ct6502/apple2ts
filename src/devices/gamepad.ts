@@ -44,12 +44,14 @@ const getGamepads = () => {
 }
 
 export const checkGamepad = () => {
-  if (handleGetArrowKeysAsJoystick() && arrowGamePad[0] !== 0 || arrowGamePad[1] !== 0) {
-    checkArrowKeyGamepadValues()
+  const gamepads = getGamepads()
+  // If we don't have a gamepad, see if we're using our arrow keys as a joystick
+  if (!gamepads || gamepads.length < 1) {
+    if (handleGetArrowKeysAsJoystick() && arrowGamePad[0] !== 0 || arrowGamePad[1] !== 0) {
+      checkArrowKeyGamepadValues()
+    }  
     return
   }
-  const gamepads = getGamepads()
-  if (!gamepads || gamepads.length < 1) return
   const gamePad: EmuGamepad[] = []
   for (let i = 0; i < gamepads.length; i++) {
     const axes = gamepads[i]?.axes
@@ -80,47 +82,47 @@ export const doRumble = (params: GamePadActuatorEffect) => {
   }
 }
 
-
 export const handleArrowKey = (key: ARROW, release: boolean) => {
+  console.log('left/right arrow: ' + arrowGamePad[0])
   if (!release) {
     let code = 0
-    switch (key) {
-      case ARROW.LEFT:
-        code = 8
-        if (arrowGamePad[0] === 0) {
-          arrowGamePad[0] = -1
-        } else if (arrowGamePad[0] < -4) {
-          arrowGamePad[0] = -4
-        }
-        break
-      case ARROW.RIGHT:
-        code = 21
-        if (arrowGamePad[0] === 0) {
-          arrowGamePad[0] = 1
-        } else if (arrowGamePad[0] > 4) {
-          arrowGamePad[0] = 4
-        }
-        break
-      case ARROW.UP:
-        code = 11
-        if (arrowGamePad[1] === 0) {
-          arrowGamePad[1] = -1
-        } else if (arrowGamePad[1] < -4) {
-          arrowGamePad[1] = -4
-        }
-        break
-      case ARROW.DOWN:
-        code = 10
-        if (arrowGamePad[1] === 0) {
-          arrowGamePad[1] = 1
-        } else if (arrowGamePad[1] > 4) {
-          arrowGamePad[1] = 4
-        }
-        break
+    if (handleGetArrowKeysAsJoystick()) {
+      switch (key) {
+        case ARROW.LEFT:
+          code = 8
+          if (arrowGamePad[0] === 0) {
+            arrowGamePad[0] = -1
+          } else if (arrowGamePad[0] < -4) {
+            arrowGamePad[0] = -4
+          }
+          break
+        case ARROW.RIGHT:
+          code = 21
+          if (arrowGamePad[0] === 0) {
+            arrowGamePad[0] = 1
+          } else if (arrowGamePad[0] > 4) {
+            arrowGamePad[0] = 4
+          }
+          break
+        case ARROW.UP:
+          code = 11
+          if (arrowGamePad[1] === 0) {
+            arrowGamePad[1] = -1
+          } else if (arrowGamePad[1] < -4) {
+            arrowGamePad[1] = -4
+          }
+          break
+        case ARROW.DOWN:
+          code = 10
+          if (arrowGamePad[1] === 0) {
+            arrowGamePad[1] = 1
+          } else if (arrowGamePad[1] > 4) {
+            arrowGamePad[1] = 4
+          }
+          break
+      }
     }
-    if (!handleGetArrowKeysAsJoystick()) {
-      passKeypress(String.fromCharCode(code))
-    }
+    passKeypress(String.fromCharCode(code))
   } else {
     switch (key) {
       case ARROW.LEFT:  // fall through
