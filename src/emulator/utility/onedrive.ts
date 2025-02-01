@@ -8,7 +8,7 @@ export enum ONEDRIVE_SYNC_STATUS {
   FAILED
 }
 
-type OneDriveProps = {
+type OneDriveData = {
   syncStatus: ONEDRIVE_SYNC_STATUS
   fileName: string
   downloadUrl: string
@@ -17,22 +17,22 @@ type OneDriveProps = {
 }
 
 var accessToken: string;
-var activeDrives: OneDriveProps[] = [];
+var oneDriveDataList: OneDriveData[] = [];
 
 export const getOneDriveSyncStatus = (dprops: DriveProps) => {
-  var oneDriveProps = getOneDriveProps(dprops.index)
+  var oneDriveData = getOneDriveData(dprops.index)
 
-  if (oneDriveProps.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveProps.lastSyncTime) {
-    oneDriveProps.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
+  if (oneDriveData.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveData.lastSyncTime) {
+    oneDriveData.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
     // $TEMP
-    // saveOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveProps.fileName))
+    // saveOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveData.fileName))
   }
 
-  return oneDriveProps.syncStatus
+  return oneDriveData.syncStatus
 }
 
-export const resetOneDriveProps = (index: number) => {
-  activeDrives[index] = {
+export const resetOneDriveData = (index: number) => {
+  oneDriveDataList[index] = {
     syncStatus: ONEDRIVE_SYNC_STATUS.INACTIVE,
     fileName: "",
     downloadUrl: "",
@@ -41,16 +41,23 @@ export const resetOneDriveProps = (index: number) => {
   }
 }
 
-export const getOneDriveProps = (index: number): OneDriveProps => {
-  if (index > activeDrives.length - 1) {
-    resetOneDriveProps(index)
+export const getOneDriveData = (index: number): OneDriveData => {
+  if (index > oneDriveDataList.length - 1) {
+    resetOneDriveData(index)
   }
-
-  return activeDrives[index]
+  return oneDriveDataList[index]
 }
 
-export const updateOneDriveFile = async (index: number, blob: Blob) => {
-  fetch(activeDrives[index].uploadUrl, {
+export const uploadOneDriveFile = async (index: number, blob: Blob, create: boolean = false) => {
+  var oneDriveData = oneDriveDataList[index]
+
+  if (create) {
+    var uploadUrl = ""
+
+    oneDriveData.uploadUrl = uploadUrl
+  }
+
+  fetch(oneDriveData.uploadUrl, {
     method: 'PUT',
     mode: 'cors',
     headers: {
@@ -77,7 +84,7 @@ export const openOneDriveFile = async (index: number, filter: string): Promise<b
     accessToken = result.accessToken
 
     for (const file of result.value) {
-      activeDrives[index] = {
+      oneDriveDataList[index] = {
         syncStatus: ONEDRIVE_SYNC_STATUS.ACTIVE,
         fileName: file.name,
         downloadUrl: file["@content.downloadUrl"],
@@ -108,23 +115,23 @@ export const saveOneDriveFile = async(index: number, fileName: string): Promise<
 
 function launchOneDrivePicker(view: string, filter?: string) {
   return new Promise<OneDriveResult | null>((resolve, reject) => {
-      var odOptions: OneDriveOpenOptions = {
-          clientId: applicationId,
-          action: "share",
-          multiSelect: false,
-          openInNewWindow: true,
-          viewType: view,
-          advanced: {
-              filter: filter ?? "",
-              endpointHint: "api.onedrive.com",
-              isConsumerAccount: true
-          },
-          success: function (files) { resolve(files) },
-          cancel: function () { resolve(null) },
-          error: function (e) { reject(e) }
-      }
+    var odOptions: OneDriveOpenOptions = {
+        clientId: applicationId,
+        action: "share",
+        multiSelect: false,
+        openInNewWindow: true,
+        viewType: view,
+        advanced: {
+            filter: filter ?? "",
+            endpointHint: "api.onedrive.com",
+            isConsumerAccount: true
+        },
+        success: function (files) { resolve(files) },
+        cancel: function () { resolve(null) },
+        error: function (e) { reject(e) }
+    }
 
-      OneDrive.open(odOptions)
+    OneDrive.open(odOptions)
   })
 }
 

@@ -2,7 +2,7 @@ import { handleGetFilename } from "./devices/driveprops"
 import { getMockingboardMode } from "./devices/mockingboard_audio"
 import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import { BreakpointMap } from "./emulator/utility/breakpoint"
-import { RUN_MODE } from "./emulator/utility/utility"
+import { MAX_DRIVES, RUN_MODE } from "./emulator/utility/utility"
 import { setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceShowScanlines, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock,
   handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode,
@@ -39,7 +39,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
   let name = "apple2ts"
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < MAX_DRIVES; i++) {
     const n = handleGetFilename(i)
     if (n) {
       name = n
