@@ -2,12 +2,14 @@ import { useState } from "react"
 import { crc32, FILE_SUFFIXES, FLOPPY_DISK_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
-import { resetOneDriveProps, getOneDriveProps, ONEDRIVE_SYNC_STATUS, pickOneDriveFile, updateOneDriveFile } from "../emulator/utility/onedrive"
+import { ONEDRIVE_SYNC_STATUS, getOneDriveSyncStatus, resetOneDriveProps, getOneDriveProps, openOneDriveFile, saveOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
   faLockOpen,
-  faCloud
+  faCloud,
+  faCloudArrowDown,
+  faCloudArrowUp
 } from "@fortawesome/free-solid-svg-icons";
 import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 
@@ -18,6 +20,35 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
     diskData.set(uint32toBytes(crc), 8)
   }
   return new Blob([diskData]);
+}
+
+const getOneDriveSyncStatusMessage = (dprops: DriveProps) => {
+  switch (getOneDriveSyncStatus(dprops)) {
+    case ONEDRIVE_SYNC_STATUS.INACTIVE:
+      return dprops.diskData.length > 0 ? "Save Disk to OneDrive" : "Load Disk from OneDrive"
+
+    case ONEDRIVE_SYNC_STATUS.ACTIVE:
+      return "OneDrive Sync Active"
+      
+    case ONEDRIVE_SYNC_STATUS.PENDING:
+      return "OneDrive Sync Pending"
+      
+    case ONEDRIVE_SYNC_STATUS.INPROGRESS:
+      return "OneDrive Sync In Progress"
+      
+    case ONEDRIVE_SYNC_STATUS.FAILED:
+      return "OneDrive Sync Failed"
+  }
+}
+
+const getOneDriveSyncIcon = (dprops: DriveProps) => {
+  switch (getOneDriveSyncStatus(dprops)) {
+    case ONEDRIVE_SYNC_STATUS.INACTIVE:
+      return dprops.diskData.length > 0 ? faCloudArrowUp : faCloudArrowDown
+
+    default:
+      return faCloud
+  }
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
@@ -33,21 +64,8 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
 }
 
 const resetDrive = (index: number) => {
-  //  const dprops = handleGetDriveProps(index)
   handleSetDiskData(index, new Uint8Array(), "")
   resetOneDriveProps(index)
-}
-
-const getOneDriveSyncStatus = (dprops: DriveProps) => {
-  var oneDriveProps = getOneDriveProps(dprops.index)
-
-  if (oneDriveProps.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveProps.lastSyncTime) {
-    oneDriveProps.syncStatus = ONEDRIVE_SYNC_STATUS.PENDING
-    // $TEMP
-    updateOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveProps.fileName))
-  }
-
-  return oneDriveProps.syncStatus
 }
 
 type DiskDriveProps = {
@@ -88,21 +106,33 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
-  const handleCloudButtonClick = async (index: number) => {
-    const filter = index >= 2 ? FLOPPY_DISK_SUFFIXES : FILE_SUFFIXES
-    
-    if (await pickOneDriveFile(index, filter)) {
-      const oneDriveProps = getOneDriveProps(index)
-      const response = await fetch(oneDriveProps.downloadUrl);
-      if (!response.ok) {
-        console.error(`HTTP error: status ${response.status}`)
-        return
-      }
-      const blob = await response.blob()
-      const buffer = await new Response(blob).arrayBuffer()
+  const handleCloudButtonClick = async (dprops: DriveProps) => {
+    if (getOneDriveProps(dprops.index).syncStatus == ONEDRIVE_SYNC_STATUS.INACTIVE) {
+      if (dprops.diskData.length > 0) {
+        if (await saveOneDriveFile(dprops.index, dprops.filename)) {
+          // $TODO
+        } else {
+          // $TODO
+        }
+      } else {
+        const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : FILE_SUFFIXES
 
-      handleSetDiskOrFileFromBuffer(index, buffer, oneDriveProps.fileName)
-      doSetEmuDriveProps(dprops)
+        if (await openOneDriveFile(dprops.index, filter)) {
+          const oneDriveProps = getOneDriveProps(dprops.index)
+          const response = await fetch(oneDriveProps.downloadUrl);
+          if (!response.ok) {
+            console.error(`HTTP error: status ${response.status}`)
+            return
+          }
+          const blob = await response.blob()
+          const buffer = await new Response(blob).arrayBuffer()
+
+          handleSetDiskOrFileFromBuffer(dprops.index, buffer, oneDriveProps.fileName)
+          doSetEmuDriveProps(dprops)
+        }
+      }
+    } else {
+      // $TODO
     }
   }
 
@@ -129,10 +159,10 @@ const DiskDrive = (props: DiskDriveProps) => {
         </span>
         <span className="flex-column">
           <FontAwesomeIcon
-            icon={faCloud}
+            icon={getOneDriveSyncIcon(dprops)}
             className={"fa-fw disk-onedrive disk-onedrive-" + (ONEDRIVE_SYNC_STATUS[getOneDriveSyncStatus(dprops)].toLocaleLowerCase())}
-            title="OneDrive"
-            onClick={() => {handleCloudButtonClick(props.index)}}>
+            title={getOneDriveSyncStatusMessage(dprops)}
+            onClick={() => {handleCloudButtonClick(dprops)}}>
           </FontAwesomeIcon>
           <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
             onClick={() => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }}>
