@@ -1,8 +1,8 @@
 import { useState } from "react"
-import { crc32, FILE_SUFFIXES, FLOPPY_DISK_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
+import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
-import { ONEDRIVE_SYNC_STATUS, getOneDriveSyncStatus, resetOneDriveProps, getOneDriveProps, openOneDriveFile, saveOneDriveFile } from "../emulator/utility/onedrive"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
+import { ONEDRIVE_SYNC_STATUS, getOneDriveSyncStatus, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
@@ -11,7 +11,7 @@ import {
   faCloudArrowDown,
   faCloudArrowUp
 } from "@fortawesome/free-solid-svg-icons";
-import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
+import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -65,7 +65,7 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
 
 const resetDrive = (index: number) => {
   handleSetDiskData(index, new Uint8Array(), "")
-  resetOneDriveProps(index)
+  resetOneDriveData(index)
 }
 
 type DiskDriveProps = {
@@ -107,7 +107,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const handleCloudButtonClick = async (dprops: DriveProps) => {
-    if (getOneDriveProps(dprops.index).syncStatus == ONEDRIVE_SYNC_STATUS.INACTIVE) {
+    if (getOneDriveData(dprops.index).syncStatus == ONEDRIVE_SYNC_STATUS.INACTIVE) {
       if (dprops.diskData.length > 0) {
         if (await saveOneDriveFile(dprops.index, dprops.filename)) {
           // $TODO
@@ -115,20 +115,30 @@ const DiskDrive = (props: DiskDriveProps) => {
           // $TODO
         }
       } else {
-        const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : FILE_SUFFIXES
+        const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
 
         if (await openOneDriveFile(dprops.index, filter)) {
-          const oneDriveProps = getOneDriveProps(dprops.index)
-          const response = await fetch(oneDriveProps.downloadUrl);
+          const oneDriveData = getOneDriveData(dprops.index)
+          const response = await fetch(oneDriveData.downloadUrl);
+
           if (!response.ok) {
             console.error(`HTTP error: status ${response.status}`)
             return
           }
+
           const blob = await response.blob()
           const buffer = await new Response(blob).arrayBuffer()
 
-          handleSetDiskOrFileFromBuffer(dprops.index, buffer, oneDriveProps.fileName)
-          doSetEmuDriveProps(dprops)
+          handleSetDiskOrFileFromBuffer(dprops.index, buffer, oneDriveData.fileName)
+          doSetEmuDriveNewData(dprops, true)
+
+          const newFileName = getDriveFileNameByIndex(dprops.index)
+
+          if (newFileName != oneDriveData.fileName) {
+            oneDriveData.fileName = '_' + newFileName
+            dprops.filename = oneDriveData.fileName
+            doSetEmuDriveProps(dprops)
+          }
         }
       }
     } else {
