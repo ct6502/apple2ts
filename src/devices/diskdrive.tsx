@@ -59,10 +59,9 @@ const getOneDriveSyncStatus = (dprops: DriveProps) => {
       if (dprops.lastWriteTime > oneDriveData.lastSyncTime) {
         setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.PENDING)
       }
-      break;
+      break
 
     case ONEDRIVE_SYNC_STATUS.PENDING:
-    case ONEDRIVE_SYNC_STATUS.FAILED:
       if ((Date.now() - oneDriveData.lastSyncTime > 30000)) {
         setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
         uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveData.fileName))
@@ -72,7 +71,11 @@ const getOneDriveSyncStatus = (dprops: DriveProps) => {
             doSetUIDriveProps(dprops)
           })
       }
-      break;
+      break
+
+    case ONEDRIVE_SYNC_STATUS.FAILED:
+      // $TODO
+      break
   }
 
   return oneDriveData.syncStatus

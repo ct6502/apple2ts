@@ -1,5 +1,7 @@
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
+const MAX_ONEODRIVE_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
+
 export enum ONEDRIVE_SYNC_STATUS {
   INACTIVE,
   ACTIVE,
@@ -44,11 +46,37 @@ export const getOneDriveData = (index: number): OneDriveData => {
 }
 
 export const uploadOneDriveFile = async (index: number, blob: Blob) => {
+  setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
+
   if (oneDriveDataList[index].uploadUrl == "") {
     oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${oneDriveDataList[index].folderId}:/${oneDriveDataList[index].fileName}:/content`
+  } else if (blob.size > MAX_ONEODRIVE_UPLOAD_BYTES) {
+    fetch(oneDriveDataList[index].uploadUrl.replace('/content', ''), {
+      method: 'DELETE',
+      mode: 'cors',
+      headers: {
+          'Authorization': `bearer ${accessToken}`
+      }
+    } as RequestInit)
+      .then(async response => {
+        if (response.ok) {
+          setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.PENDING)
+          oneDriveDataList[index].uploadUrl = ""
+          // uploadOneDriveFile(index, blob)
+        } else {
+          setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
+          console.log(response.status)
+        }
+      })
+      .catch(error => {
+        setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
+        console.error(error)
+      })
+      .finally(() => {
+        oneDriveDataList[index].lastSyncTime = Date.now()
+      })
+    return
   }
-
-  setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
 
   fetch(oneDriveDataList[index].uploadUrl, {
     method: 'PUT',
@@ -60,25 +88,24 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
     duplex: 'half',
     body: blob.stream()
   } as RequestInit)
-  .then(async response => {
-    if (response.ok) {
-      const json = await response.json();
-      oneDriveDataList[index].downloadUrl = json["@content.downloadUrl"]
-      oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${json["id"]}/content`
-      setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.ACTIVE)
-    } else {
+    .then(async response => {
+      if (response.ok) {
+        const json = await response.json();
+        oneDriveDataList[index].downloadUrl = json["@content.downloadUrl"]
+        oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${json["id"]}/content`
+        setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.ACTIVE)
+      } else {
+        setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
+        console.log(response.status)
+      }
+    })
+    .catch(error => {
       setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
-      console.log(response.status)
-      return Promise.reject("server")
-    }
-  })
-  .catch(error => {
-    setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
-    console.error(error)
-  })
-  .finally(() => {
-    oneDriveDataList[index].lastSyncTime = Date.now()
-  })
+      console.error(error)
+    })
+    .finally(() => {
+      oneDriveDataList[index].lastSyncTime = Date.now()
+    })
 }
 
 export const openOneDriveFile = async (index: number, filter: string): Promise<boolean> => {
