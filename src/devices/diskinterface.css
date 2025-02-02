@@ -65,15 +65,31 @@ body.dark-mode .disk-cloud {
 }
 
 .disk-onedrive-pending {
-  color: gray;
+  color: dimgray;
 }
 
 .disk-onedrive-inprogress {
-  color: orange;
+  color: dimgray;
+  animation: oneDriveSyncTransition 0.75s infinite alternate linear;
 }
 
 .disk-onedrive-failed {
   color: red;
+}
+
+@keyframes oneDriveSyncTransition {
+  0% {
+    color: #28A8EA;
+  }
+  33% {
+    color: #1490DF;
+  }
+  66% {
+    color: #0078D4;
+  }
+  100% {
+    color: #0364B8;
+  }
 }
 
 body.dark-mode .disk-write-protected {
