@@ -1,7 +1,3 @@
-import { getBlobFromDiskData } from "../../devices/diskdrive"
-import { doSetUIDriveProps } from "../../devices/driveprops"
-import { doSetEmuDriveProps } from "../devices/drivestate"
-
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
 export enum ONEDRIVE_SYNC_STATUS {
@@ -24,30 +20,6 @@ type OneDriveData = {
 var accessToken: string;
 var apiEndpoint: string;
 var oneDriveDataList: OneDriveData[] = [];
-
-export const getOneDriveSyncStatus = (dprops: DriveProps) => {
-  const oneDriveData = getOneDriveData(dprops.index)
-
-  switch (oneDriveData.syncStatus) {
-    case ONEDRIVE_SYNC_STATUS.ACTIVE:
-      if (dprops.lastWriteTime > oneDriveData.lastSyncTime) {
-        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.PENDING)
-      }
-      break;
-
-    case ONEDRIVE_SYNC_STATUS.PENDING:
-      if ((Date.now() - oneDriveData.lastSyncTime > 5000)) {
-        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
-        uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveData.fileName))
-        dprops.diskHasChanges = false
-        doSetEmuDriveProps(dprops)
-        doSetUIDriveProps(dprops)
-      }
-      break;
-  }
-
-  return oneDriveData.syncStatus
-}
 
 export const setOneDriveSyncStatus = (index: number, syncStatus: ONEDRIVE_SYNC_STATUS) => {
   oneDriveDataList[index].syncStatus = syncStatus
@@ -72,15 +44,13 @@ export const getOneDriveData = (index: number): OneDriveData => {
 }
 
 export const uploadOneDriveFile = async (index: number, blob: Blob) => {
-  var uploadUrl = ""
-
   if (oneDriveDataList[index].uploadUrl == "") {
-    uploadUrl = `${apiEndpoint}drive/items/${oneDriveDataList[index].folderId}:/${oneDriveDataList[index].fileName}:/content`
+    oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${oneDriveDataList[index].folderId}:/${oneDriveDataList[index].fileName}:/content`
   }
 
   setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
 
-  fetch(uploadUrl, {
+  fetch(oneDriveDataList[index].uploadUrl, {
     method: 'PUT',
     mode: 'cors',
     headers: {
@@ -95,16 +65,19 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
       const json = await response.json();
       oneDriveDataList[index].downloadUrl = json["@content.downloadUrl"]
       oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${json["id"]}/content`
-      oneDriveDataList[index].lastSyncTime = Date.now()
       setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.ACTIVE)
     } else {
-      console.log(response.status)
       setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
+      console.log(response.status)
       return Promise.reject("server")
     }
   })
   .catch(error => {
+    setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
     console.error(error)
+  })
+  .finally(() => {
+    oneDriveDataList[index].lastSyncTime = Date.now()
   })
 }
 

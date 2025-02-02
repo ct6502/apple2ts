@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
-import { ONEDRIVE_SYNC_STATUS, getOneDriveSyncStatus, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile, setOneDriveSyncStatus, uploadOneDriveFile } from "../emulator/utility/onedrive"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
+import { ONEDRIVE_SYNC_STATUS, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile, setOneDriveSyncStatus, uploadOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
@@ -11,7 +11,7 @@ import {
   faCloudArrowDown,
   faCloudArrowUp
 } from "@fortawesome/free-solid-svg-icons";
-import { doSetEmuDriveNewData, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -49,6 +49,33 @@ const getOneDriveSyncIcon = (dprops: DriveProps) => {
     default:
       return faCloud
   }
+}
+
+const getOneDriveSyncStatus = (dprops: DriveProps) => {
+  const oneDriveData = getOneDriveData(dprops.index)
+
+  switch (oneDriveData.syncStatus) {
+    case ONEDRIVE_SYNC_STATUS.ACTIVE:
+      if (dprops.lastWriteTime > oneDriveData.lastSyncTime) {
+        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.PENDING)
+      }
+      break;
+
+    case ONEDRIVE_SYNC_STATUS.PENDING:
+    case ONEDRIVE_SYNC_STATUS.FAILED:
+      if ((Date.now() - oneDriveData.lastSyncTime > 30000)) {
+        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
+        uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveData.fileName))
+          .then(() => {
+            dprops.diskHasChanges = false
+            doSetEmuDriveProps(dprops)
+            doSetUIDriveProps(dprops)
+          })
+      }
+      break;
+  }
+
+  return oneDriveData.syncStatus
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {

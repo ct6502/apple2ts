@@ -74,7 +74,7 @@ body.dark-mode .disk-cloud {
 }
 
 .disk-onedrive-failed {
-  color: red;
+  color: darkred;
 }
 
 @keyframes oneDriveSyncTransition {
