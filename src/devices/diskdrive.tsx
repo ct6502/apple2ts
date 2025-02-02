@@ -151,28 +151,29 @@ const DiskDrive = (props: DiskDriveProps) => {
           setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
 
           var oneDriveData = getOneDriveData(dprops.index)
+
+          console.log(`fetch: DELETE ${oneDriveData.downloadUrl}`)
           const response = await fetch(oneDriveData.downloadUrl);
 
-          if (!response.ok) {
+          if (response.ok) {
+            const blob = await response.blob()
+            const buffer = await new Response(blob).arrayBuffer()
+  
+            handleSetDiskOrFileFromBuffer(dprops.index, buffer, oneDriveData.fileName)
+            doSetEmuDriveNewData(dprops, true)
+  
+            const newFileName = getDriveFileNameByIndex(dprops.index)
+            if (newFileName != oneDriveData.fileName) {
+              oneDriveData = getOneDriveData(dprops.index)
+              oneDriveData.fileName = `apple2ts.${newFileName}`
+              oneDriveData.uploadUrl = ""
+            }
+            
+            setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.ACTIVE)
+          } else {
             console.error(`HTTP error: status ${response.status}`)
             setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.FAILED)
-            return
           }
-
-          const blob = await response.blob()
-          const buffer = await new Response(blob).arrayBuffer()
-
-          handleSetDiskOrFileFromBuffer(dprops.index, buffer, oneDriveData.fileName)
-          doSetEmuDriveNewData(dprops, true)
-
-          const newFileName = getDriveFileNameByIndex(dprops.index)
-          if (newFileName != oneDriveData.fileName) {
-            oneDriveData = getOneDriveData(dprops.index)
-            oneDriveData.fileName = `apple2ts.${newFileName}`
-            oneDriveData.uploadUrl = ""
-          }
-          
-          setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.ACTIVE)
         }
       }
     } else {

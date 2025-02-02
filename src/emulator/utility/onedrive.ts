@@ -1,6 +1,7 @@
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
 const MAX_ONEODRIVE_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
+export const DEFAULT_ONEDRIVE_SYNC_INTERVAL = 1 * 60 * 1000
 
 export enum ONEDRIVE_SYNC_STATUS {
   INACTIVE,
@@ -17,6 +18,7 @@ type OneDriveData = {
   downloadUrl: string
   uploadUrl: string
   lastSyncTime: number
+  syncInterval: number
 }
 
 var accessToken: string;
@@ -24,6 +26,7 @@ var apiEndpoint: string;
 var oneDriveDataList: OneDriveData[] = [];
 
 export const setOneDriveSyncStatus = (index: number, syncStatus: ONEDRIVE_SYNC_STATUS) => {
+  console.log(`OneDrive sync status: ${ONEDRIVE_SYNC_STATUS[oneDriveDataList[index].syncStatus]} -> ${ONEDRIVE_SYNC_STATUS[syncStatus]}`)
   oneDriveDataList[index].syncStatus = syncStatus
 }
 
@@ -34,7 +37,8 @@ export const resetOneDriveData = (index: number) => {
     fileName: "",
     downloadUrl: "",
     uploadUrl: "",
-    lastSyncTime: -1
+    lastSyncTime: -1,
+    syncInterval: DEFAULT_ONEDRIVE_SYNC_INTERVAL
   }
 }
 
@@ -51,7 +55,10 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
   if (oneDriveDataList[index].uploadUrl == "") {
     oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${oneDriveDataList[index].folderId}:/${oneDriveDataList[index].fileName}:/content`
   } else if (blob.size > MAX_ONEODRIVE_UPLOAD_BYTES) {
-    fetch(oneDriveDataList[index].uploadUrl.replace('/content', ''), {
+    const uploadUrl = oneDriveDataList[index].uploadUrl.replace('/content', '')
+
+    console.log(`fetch: DELETE ${uploadUrl}`)
+    fetch(uploadUrl, {
       method: 'DELETE',
       mode: 'cors',
       headers: {
@@ -59,18 +66,18 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
       }
     } as RequestInit)
       .then(async response => {
+        console.log(`fetch response: ${response.status} (${response.statusText})`)
         if (response.ok) {
           setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.PENDING)
           oneDriveDataList[index].uploadUrl = ""
-          // uploadOneDriveFile(index, blob)
         } else {
           setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
           console.log(response.status)
         }
       })
       .catch(error => {
-        setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
         console.error(error)
+        setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
       })
       .finally(() => {
         oneDriveDataList[index].lastSyncTime = Date.now()
@@ -78,7 +85,10 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
     return
   }
 
-  fetch(oneDriveDataList[index].uploadUrl, {
+  const uploadUrl = oneDriveDataList[index].uploadUrl
+  console.log(`fetch: PUT ${uploadUrl}`)
+
+  fetch(uploadUrl, {
     method: 'PUT',
     mode: 'cors',
     headers: {
@@ -89,6 +99,7 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
     body: blob.stream()
   } as RequestInit)
     .then(async response => {
+      console.log(`fetch response: ${response.status} (${response.statusText})`)
       if (response.ok) {
         const json = await response.json();
         oneDriveDataList[index].downloadUrl = json["@content.downloadUrl"]
@@ -100,8 +111,8 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
       }
     })
     .catch(error => {
-      setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
       console.error(error)
+      setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.FAILED)
     })
     .finally(() => {
       oneDriveDataList[index].lastSyncTime = Date.now()
@@ -122,7 +133,8 @@ export const openOneDriveFile = async (index: number, filter: string): Promise<b
         fileName: file.name,
         downloadUrl: file["@content.downloadUrl"],
         uploadUrl: `${apiEndpoint}drive/items/${file.id}/content`,
-        lastSyncTime: Date.now()
+        lastSyncTime: Date.now(),
+        syncInterval: DEFAULT_ONEDRIVE_SYNC_INTERVAL
       }
       return true
     }
@@ -145,7 +157,8 @@ export const saveOneDriveFile = async(index: number, fileName: string): Promise<
         fileName: fileName,
         downloadUrl: "",
         uploadUrl: "",
-        lastSyncTime: Date.now()
+        lastSyncTime: Date.now(),
+        syncInterval: DEFAULT_ONEDRIVE_SYNC_INTERVAL
       }
       return true
     }
