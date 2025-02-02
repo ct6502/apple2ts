@@ -344,7 +344,8 @@ const DisassemblyView = () => {
   }
 
   return (
-    <div className="flex-row thinBorder" style={{ position: 'relative' }}>
+    <div className="flex-row thin-border" id="tour-debug-disassembly"
+      style={{ position: 'relative' }}>
       <div ref={disassemblyRef}
         className="mono-text"
         style={{

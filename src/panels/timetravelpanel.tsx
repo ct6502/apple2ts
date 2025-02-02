@@ -24,7 +24,8 @@ const TimeTravelPanel = () => {
     let thumbnailText = ''
     const thumbImg = (iTempState >= 0 && thumbnails.length > 0) ?
       `${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}` : ''
-    const thumbImage = (thumbImg != '') ? <img src={thumbImg} /> : <></>
+    // The 170px is the width of the thumbnail images.
+    const thumbImage = (thumbImg != '') ? <img src={thumbImg} /> : <div style={{width: "170px"}}></div>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = convertTime(thumbnails[i].s6502.cycleCount)
       thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`
@@ -72,6 +73,7 @@ const TimeTravelPanel = () => {
 
   let timeTravelThumbnails = <></>
   const { iTempState, thumbnailStrings, thumbImage } = getTimeTravelThumbnails()
+
   if (thumbnailStrings.length > 1) {
     timeTravelThumbnails = <>{thumbnailStrings.map((line, index) => (
       <div key={index}
@@ -84,13 +86,14 @@ const TimeTravelPanel = () => {
     ))}
     </>
   }
+
   // Need to set tabIndex={-1} on the div to get onKeyDown to work.
   // Could change to tabIndex={0} to make the div part of the tab order.
   return (
     <div className="round-rect-border short-panel">
       <div className="bigger-font column-gap">Time Travel Snapshots</div>
       <div className="flex-row">
-        <div ref={stateThumbRef} className="thinBorder debug-panel"
+        <div ref={stateThumbRef} className="thin-border debug-panel mono-text"
           onKeyDown={(e) => handleKeyDown(e)}
           tabIndex={-1}
           style={{

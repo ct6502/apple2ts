@@ -38,8 +38,6 @@ const KeyboardButtons = (props: DisplayProps) => {
         key={key.name}
         onTouchStart={() => handleArrowKey(i, false)}
         onTouchEnd={() => handleArrowKey(i, true)}
-        onMouseDown={() => { if (!isTouchDevice) handleArrowKey(i, false) }}
-        onMouseUp={() => { if (!isTouchDevice) handleArrowKey(i, true) }}
       >
         <FontAwesomeIcon icon={key.icon} />
       </button>
@@ -61,11 +59,11 @@ const KeyboardButtons = (props: DisplayProps) => {
     <button className={lockedKeyStyle(props.openAppleKeyMode)}
       title="Open Apple"
       onMouseDown={() => props.handleOpenAppleDown((props.openAppleKeyMode + 1) % 3)}>
-      <svg width="20" height="20" className="fill-color">{appleOutline}</svg>
+      <svg width="25" height="25" className="fill-color">{appleOutline}</svg>
     </button>
     <button className={lockedKeyStyle(props.closedAppleKeyMode)} title="Closed Apple"
       onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
-      <svg width="20" height="20" className="fill-color">{appleSolid}</svg>
+      <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
     </button>
   </span>
   }

@@ -138,7 +138,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const getVisibleRows = () => {
-    const table = document.querySelector('table') as HTMLTableElement
+    const table = document.querySelector('#memory-table') as HTMLTableElement;
     let topVisibleRowIndex = -1
     let bottomVisibleRowIndex = -1
 
@@ -281,7 +281,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       hgrMagnifierLocal.current[0] = hgrMagnifier[0]
       hgrMagnifierLocal.current[1] = hgrMagnifier[1]
       setTimeout(() => {
-        const table = document.querySelector('table') as HTMLTableElement
+        const table = document.querySelector('#memory-table') as HTMLTableElement;
         if (!table) return
         clearSelection(table)
         setSelection(hgrMagnifier, table)
@@ -290,7 +290,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     }
   } else {
     setTimeout(() => {
-      const table = document.querySelector('table') as HTMLTableElement
+      const table = document.querySelector('#memory-table') as HTMLTableElement;
       clearSelection(table)
     }, 10)
   }
@@ -313,17 +313,19 @@ const MemoryTable = (props: MemoryTableProps) => {
   // This scrolling code is used by the higher-level MemoryDump component to
   // scroll to a specific row when the address field is changed.
   if (props.scrollRow >= 0) {
-    const table = document.querySelector('table') as HTMLTableElement
+    const table = document.querySelector('#memory-table') as HTMLTableElement;
     const row = table.rows[props.scrollRow + 1]
-    row.scrollIntoView({ block: "center", inline: "center" })
-    applyHighlightAnimation(row)
-    // Tried to also highlight the address column, but it does strange things
-    // in HGR mode where it draws some of the columns on top of each other...
-    //    applyHighlightAnimation(row.cells[0])
-    setTimeout(() => {
-      row.style.animation = ''
-      // row.cells[0].style.animation = ''
-    }, 2250)
+    if (row) {
+      row.scrollIntoView({ block: "center", inline: "center" })
+      applyHighlightAnimation(row)
+      // Tried to also highlight the address column, but it does strange things
+      // in HGR mode where it draws some of the columns on top of each other...
+      //    applyHighlightAnimation(row.cells[0])
+      setTimeout(() => {
+        row.style.animation = ''
+        // row.cells[0].style.animation = ''
+      }, 2250)
+    }
   }
 
   const cellClass = (col: number, row: number) => {
@@ -334,7 +336,8 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   return (
-    <table className="memtable" style={{ cursor: props.pickWatchpoint ? 'crosshair' : 'default' }}
+    <table className="memtable" id="memory-table"
+      style={{ cursor: props.pickWatchpoint ? 'crosshair' : 'default' }}
       onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>

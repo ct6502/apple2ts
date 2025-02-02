@@ -78,7 +78,7 @@ const DisassemblyControls = () => {
         onChange={handleDisassembleAddrChange}
         onKeyDown={handleDisassembleAddrKeyDown}
       />
-      <button className="push-button"
+      <button className="push-button" id="tour-debug-pause"
         title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
         onClick={() => {
           handleSetCPUState(runMode === RUN_MODE.PAUSED ?
@@ -89,6 +89,7 @@ const DisassemblyControls = () => {
           <FontAwesomeIcon icon={faPlay} /> :
           <FontAwesomeIcon icon={faPause} />}
       </button>
+      <div className="flex-row" id="tour-debug-controls">
       <button className="push-button"
         title={tooltipOverShow ? "Step Over" : ""}
         onClick={() => { setTooltipOverShow(false); passStepOver() }}
@@ -113,6 +114,7 @@ const DisassemblyControls = () => {
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="bigger-font">PC</div>
       </button>
+      </div>
       <button className="push-button"
         title="Load Symbol Table"
         onClick={() => setShowFileOpenDialog(true)}>

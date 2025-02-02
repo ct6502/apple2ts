@@ -115,7 +115,7 @@ const BreakpointsView = () => {
   const breakpoints = handleGetBreakpoints()
 
   return (
-    <div className="round-rect-border short-panel">
+    <div className="round-rect-border short-panel wide-panel">
       <div className="bigger-font column-gap">Breakpoints</div>
       <div className="flex-column">
         <div className="flex-row-space-between">
@@ -135,7 +135,7 @@ const BreakpointsView = () => {
             </button>
           </div>
         </div>
-        <div className="debug-panel thinBorder"
+        <div className="debug-panel mono-text thin-border"
           style={{
             width: '228px',
             height: '120pt',

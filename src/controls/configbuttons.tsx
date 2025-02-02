@@ -7,8 +7,8 @@ import {
   faTruckFast,
   faRocket,
   faCircleHalfStroke,
-  faGamepad,
   faUpDownLeftRight,
+  faSlash,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { MockingboardWaveform } from "../devices/mockingboardwaveform";
@@ -26,6 +26,7 @@ import { MachineConfig } from "../devices/machineconfig";
 import { resetPreferences, setPreferenceCapsLock, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage";
 import { DisplayConfig } from "../devices/displayconfig";
 import RunTour from "../tours/runtour";
+import { appleOutline } from "../img/icons";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -38,9 +39,6 @@ const ConfigButtons = (props: DisplayProps) => {
   const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
   const useOpenAppleKey = handleUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
-  // const useArrowKeysAsJoystick = handleGetArrowKeysAsJoystick() ?
-  //   <VideogameAssetIcon className="pushMuiButton" /> :
-  //   <VideogameAssetOffIcon className="pushMuiButton" />
 
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
@@ -60,27 +58,32 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>
     </div>
 
-    <button className={lockedKeyStyle(capsLock ? 2 : 0)}
-      title="Caps Lock"
-      onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
-      <span className="text-key" style={{ fontSize: "9pt" }}>caps</span>
-    </button>
-
-    {!isTouchDevice &&
-      <button className={lockedKeyStyle(useOpenAppleKey ? 1 : 0)}
-        title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
-        onClick={() => { passUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
-        <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>
+    <div className="flex-row" id="tour-keyboardbuttons">
+      <button className={lockedKeyStyle(capsLock ? 2 : 0)}
+        title={`Caps Lock (${capsLock ? 'on' : 'off'})`}
+        onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
+        <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? 'A' : 'a'}</span>
       </button>
-    }
 
-    {!isTouchDevice &&
-      <button className="push-button"
-        title={arrowKeysAsJoystick ? "Joystick Arrow Keys" : "Regular Arrow Keys"}
-        onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
-        <FontAwesomeIcon icon={arrowKeysAsJoystick ? faGamepad : faUpDownLeftRight} />
-      </button>
-    }
+      {!isTouchDevice &&
+        <button className="push-button"
+          title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
+          onClick={() => { passUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
+            {useOpenAppleKey ?
+            <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
+            <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
+        </button>
+      }
+
+      {!isTouchDevice &&
+        <button className="push-button" style={{position: "relative"}}
+          title={`Use Arrow Keys as Joystick (${arrowKeysAsJoystick ? 'on' : 'off'})`}
+          onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
+          <FontAwesomeIcon icon={faUpDownLeftRight} style={arrowKeysAsJoystick ? {} : {transform: "translateX(50%)"}} />
+          {!arrowKeysAsJoystick && <FontAwesomeIcon style={{transform: "translateX(-50%)", width: "80%"}} icon={faSlash} />}
+        </button>
+      }
+    </div>
 
     <MockingboardWaveform />
 
@@ -96,7 +99,7 @@ const ConfigButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faCircleHalfStroke} />
     </button>
 
-    <button className="push-button"
+    <button className="push-button" id="tour-clearcookies"
       title="Reset All Settings"
       onClick={() => { resetPreferences(); props.updateDisplay() }}>
       <FontAwesomeIcon icon={faSync} />
