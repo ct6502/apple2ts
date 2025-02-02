@@ -119,7 +119,7 @@ const RunTour = () => {
       }
       <DropdownButton 
         currentIndex = {-1}
-        itemNames = {['Guided Tour: Main', 'Guided Tour: Settings', 'Guided Tour: Debug', 'OneDrive']}
+        itemNames = {['Guided Tour: Main', 'Guided Tour: Settings', 'Guided Tour: Debug', 'Guided Tour: OneDrive']}
         closeCallback = {selectGuidedTour}
         icon = {<FontAwesomeIcon icon={faGlobe}/>}
         tooltip = "Guided Tour"
