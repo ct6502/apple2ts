@@ -1,4 +1,6 @@
-// import { getBlobFromDiskData } from "../../devices/diskdrive"
+import { getBlobFromDiskData } from "../../devices/diskdrive"
+import { doSetUIDriveProps } from "../../devices/driveprops"
+import { doSetEmuDriveProps } from "../devices/drivestate"
 
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
@@ -26,10 +28,22 @@ var oneDriveDataList: OneDriveData[] = [];
 export const getOneDriveSyncStatus = (dprops: DriveProps) => {
   const oneDriveData = getOneDriveData(dprops.index)
 
-  if (oneDriveData.syncStatus == ONEDRIVE_SYNC_STATUS.ACTIVE && dprops.lastWriteTime > oneDriveData.lastSyncTime) {
-    setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.PENDING)
-    // $TEMP
-    //uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveData.fileName))
+  switch (oneDriveData.syncStatus) {
+    case ONEDRIVE_SYNC_STATUS.ACTIVE:
+      if (dprops.lastWriteTime > oneDriveData.lastSyncTime) {
+        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.PENDING)
+      }
+      break;
+
+    case ONEDRIVE_SYNC_STATUS.PENDING:
+      if ((Date.now() - oneDriveData.lastSyncTime > 5000)) {
+        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
+        uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, oneDriveData.fileName))
+        dprops.diskHasChanges = false
+        doSetEmuDriveProps(dprops)
+        doSetUIDriveProps(dprops)
+      }
+      break;
   }
 
   return oneDriveData.syncStatus
@@ -81,6 +95,7 @@ export const uploadOneDriveFile = async (index: number, blob: Blob) => {
       const json = await response.json();
       oneDriveDataList[index].downloadUrl = json["@content.downloadUrl"]
       oneDriveDataList[index].uploadUrl = `${apiEndpoint}drive/items/${json["id"]}/content`
+      oneDriveDataList[index].lastSyncTime = Date.now()
       setOneDriveSyncStatus(index, ONEDRIVE_SYNC_STATUS.ACTIVE)
     } else {
       console.log(response.status)

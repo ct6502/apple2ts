@@ -174,6 +174,7 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].filename = props.filename
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
+  driveState[index].diskHasChanges = props.diskHasChanges
   passData()
 }
 

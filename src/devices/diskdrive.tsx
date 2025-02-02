@@ -161,6 +161,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
   let status = ['S7D1', 'S7D2', 'S6D1', 'S6D2'][props.index]
   status += dprops.status
+
   return (
     <span className="flex-column">
       <span className="flex-row">
