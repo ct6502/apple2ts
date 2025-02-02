@@ -60,6 +60,10 @@ export const getFilename = () => {
   return ""
 }
 
+export const getDriveLastWriteTimeByIndex = (index: number) => {
+  return driveState[index].lastWriteTime
+}
+
 export const getDriveFileNameByIndex = (index: number) => {
   return driveState[index].filename
 }
@@ -170,7 +174,6 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].filename = props.filename
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
-  driveState[index].lastWriteTime = props.lastWriteTime
   passData()
 }
 

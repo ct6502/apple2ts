@@ -28,7 +28,7 @@ const getOneDriveSyncStatusMessage = (dprops: DriveProps) => {
       return dprops.diskData.length > 0 ? "Save Disk to OneDrive" : "Load Disk from OneDrive"
 
     case ONEDRIVE_SYNC_STATUS.ACTIVE:
-      return "OneDrive Sync Active"
+      return "OneDrive Sync Up-to-date"
       
     case ONEDRIVE_SYNC_STATUS.PENDING:
       return "OneDrive Sync Pending"
