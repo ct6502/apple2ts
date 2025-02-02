@@ -1,5 +1,5 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, handleGetIsDebugging, passSetSoftSwitches } from "./main2worker"
+  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, passSetSoftSwitches } from "./main2worker"
 import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress } from "./emulator/utility/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
@@ -330,8 +330,10 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   }
 }
 
-export const getCanvasSize = (noBackgroundImage = false) => {
-  noBackgroundImage = noBackgroundImage || "ontouchstart" in document.documentElement
+export const getCanvasSize = (righthandSectionRef: HTMLDivElement | null) => {
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const isCanvasFullScreen = document.fullscreenElement !== null
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
@@ -341,7 +343,9 @@ export const getCanvasSize = (noBackgroundImage = false) => {
   height -= noBackgroundImage ? 40 : 300
   width -= noBackgroundImage ? 0 : 40
   if (!noBackgroundImage) {
-    width = Math.max(400, width - (handleGetIsDebugging() ? 900 : 400))
+    if (righthandSectionRef) {
+      width = Math.max(400, width - righthandSectionRef.offsetWidth)
+    }
   }
   // shrink either width or height to preserve aspect ratio
   if (width / screenRatio > height) {

@@ -280,8 +280,10 @@ const MemoryDump = () => {
   const memAscii = decoder.decode(memory.map((value) => (value & 0x7F)))
   const addressGetTable = memoryRange === MEMORY_RANGE.CURRENT ? handleGetAddressGetTable() : null
 
+  // The marginTop: auto makes the memory dump panel drift to the bottom of its parent.
   return (
-    <div className="flex-column round-rect-border" id="tour-debug-memorydump">
+    <div className="flex-column round-rect-border" id="tour-debug-memorydump"
+      style={{marginTop: "auto"}}>
       <span className="flex-row"
         style={{
           alignItems: "center",
@@ -356,7 +358,8 @@ const MemoryDump = () => {
       </span>
       <div className="debug-panel mono-text"
         style={{
-          height: '485px'
+          height: '265px',
+          width: '380px'
         }}
         ref={memoryDumpRef}
       >

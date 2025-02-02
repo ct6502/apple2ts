@@ -283,6 +283,8 @@ body.dark-mode .default-font {
 }
 
 .bigger-font {
+  cursor: default;
+  user-select: none;
   font-size: 10pt;
   color: var(--text-color);
   fill: var(--text-color);
@@ -377,5 +379,6 @@ body.dark-mode .divider {
 }
 
 .noselect {
+  cursor: default;
   user-select: none;
 }

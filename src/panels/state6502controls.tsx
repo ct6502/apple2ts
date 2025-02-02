@@ -54,7 +54,8 @@ const State6502Controls = () => {
   const createCheckbox = (name: string, bitField: number, value: number, runMode: RUN_MODE) => {
     const checked = (value & (1 << bitField)) !== 0
     return <div className="flex-column">
-      <div className="centered-title" style={{marginTop: "0", marginBottom: "0"}}>{name}</div>
+      <div className="bigger-font"
+        style={{marginLeft: "5px", marginRight: "5px", marginTop: "0", marginBottom: "0"}}>{name}</div>
       <input type="checkbox" id={name}
         className="debug-checkbox"
         checked={checked}
@@ -67,7 +68,7 @@ const State6502Controls = () => {
   const runMode = handleGetRunMode()
   const s6502 = handleGetState6502()
   return (
-    <div className="flex-row round-rect-border">
+    <div className="flex-row round-rect-border wrap">
       <div className="flex-row">
         {createTextField('PC', 'PC', s6502.PC, runMode)}
         {createTextField('A', 'Accum', s6502.Accum, runMode)}
@@ -88,7 +89,7 @@ const State6502Controls = () => {
           {createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
         <div className="flex-row" style={{ marginLeft: '1em' }}>
-          <span className="bigger-font noselect">Cycles:</span>
+          <span className="bigger-font">Cycles:</span>
           <span className="bigger-monospace"
             style={{ marginLeft: '2pt', marginRight: '2pt', marginTop: '1pt' }}> {s6502.cycleCount}</span>
           <button className="push-button tight-button"

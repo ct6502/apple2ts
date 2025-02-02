@@ -9,7 +9,8 @@ import {
   handleGetMemSize,
   passHelpText,
   handleGetHelpText,
-  handleGetDarkMode
+  handleGetDarkMode,
+  passSetRunMode
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -20,9 +21,9 @@ import DebugSection from "./panels/debugsection"
 import ImageWriter from "./devices/imagewriter"
 import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
-import { getCanvasSize } from "./graphics"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage";
+import { RUN_MODE, TEST_DEBUG } from "./emulator/utility/utility";
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -93,6 +94,11 @@ const DisplayApple2 = () => {
     //      event.returnValue = '';
     //    });
     //    window.addEventListener("resize", handleResize)
+    if (TEST_DEBUG) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+      setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
+      setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1000)
+    }
   }
 
   const handleCtrlDown = (ctrlKeyMode: number) => {
@@ -130,6 +136,7 @@ const DisplayApple2 = () => {
   const props: DisplayProps = {
     speed: currentSpeed,
     renderCount: renderCount,
+    righthandSectionRef: righthandSectionRef.current,
     ctrlKeyMode: ctrlKeyMode,
     openAppleKeyMode: openAppleKeyMode,
     closedAppleKeyMode: closedAppleKeyMode,
@@ -148,14 +155,10 @@ const DisplayApple2 = () => {
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const canvasWidth = getCanvasSize()[0]
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const narrow = isTouchDevice || (width < height)
   const isLandscape = isTouchDevice && (width > height)
-  // For narrow we don't need to take into account the canvas width.
-  let paperWidth = narrow ? (width) : (width - canvasWidth - 70)
-  paperWidth = Math.min(Math.max(paperWidth, 100), canvasWidth)
   if (isTouchDevice) {
     document.body.style.marginLeft = "0"
     document.body.style.marginRight = "0"
@@ -176,7 +179,7 @@ const DisplayApple2 = () => {
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <Apple2Canvas {...props} />
           <div className="flex-row-gap wrap"
-            style={{ width: canvasWidth, display: canvasWidth ? '' : 'none' , paddingLeft: '2px' }}>
+            style={{ paddingLeft: '2px' }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
             <ImageWriter />
@@ -188,8 +191,7 @@ const DisplayApple2 = () => {
         <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
-              helptext={handleGetHelpText()}
-              width={paperWidth} />}
+              helptext={handleGetHelpText()} />}
         </span>
       </span>
       <FileInput {...props} />

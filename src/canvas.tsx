@@ -406,6 +406,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
         window.setInterval(() => { checkGamepad() }, 34)
+        handleResize()
 
         new ResizeObserver(entries => {
           for (let entry of entries) {
@@ -448,7 +449,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   //   myCanvas.current.requestFullscreen()
   // }
 
-  [width, height] = getCanvasSize(noBackgroundImage)
+  [width, height] = getCanvasSize(props.righthandSectionRef)
 
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isAndroidDevice = /Android/i.test(navigator.userAgent);

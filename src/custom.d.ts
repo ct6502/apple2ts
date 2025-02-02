@@ -61,6 +61,7 @@ type UpdateDisplay = (speed = 0, helptext = '') => void
 type DisplayProps = {
   speed: number,
   renderCount: number,
+  righthandSectionRef: HTMLDivElement | null,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,

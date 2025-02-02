@@ -117,23 +117,20 @@ const BreakpointsView = () => {
   return (
     <div className="round-rect-border short-panel wide-panel">
       <div className="bigger-font column-gap">Breakpoints</div>
-      <div className="flex-column">
-        <div className="flex-row-space-between">
-          &nbsp;
-          <div className="flex-row">
-            <button className="push-button tight-button"
-              title="Add new breakpoint"
-              onClick={addBreakpoint}
-              disabled={false}>
-              <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: '0.7em' }} />
-            </button>
-            <button className="push-button tight-button"
-              title="Remove all breakpoints"
-              onClick={removeAllBreakpoints}
-              disabled={false}>
-              <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.8em' }} />
-            </button>
-          </div>
+      <div className="flex-column-gap">
+        <div className="flex-row">
+          <button className="push-button tight-button"
+            title="Add new breakpoint"
+            onClick={addBreakpoint}
+            disabled={false}>
+            <FontAwesomeIcon icon={iconBreakpointAdd} style={{ fontSize: '0.7em' }} />
+          </button>
+          <button className="push-button tight-button"
+            title="Remove all breakpoints"
+            onClick={removeAllBreakpoints}
+            disabled={false}>
+            <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '0.8em' }} />
+          </button>
         </div>
         <div className="debug-panel mono-text thin-border"
           style={{
@@ -163,7 +160,7 @@ const BreakpointsView = () => {
                 onClick={(e) => { handleBreakpointDelete(e) }}>
                 <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: '1.3em' }} />
               </button>
-              <span data-key={bp.address} onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
+              <span className="noselect" data-key={bp.address} onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
             </div>
           ))}
         </div>

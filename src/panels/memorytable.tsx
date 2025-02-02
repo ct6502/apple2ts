@@ -30,6 +30,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     if (byte < 32 || byte > 126) return '·' // Non-printable
     return String.fromCharCode(byte)
   }
+
   const convertMemoryToArray = () => {
     const rows = []
     const nrows = props.isHGR ? 192 : 4096
@@ -44,7 +45,9 @@ const MemoryTable = (props: MemoryTableProps) => {
         cells.push(toHex(mem[b]))
         ascii += convertByteToAscii(mem[b])
       }
-      cells.push(ascii)
+      if (!props.isHGR) {
+        cells.push(ascii)
+      }
       rows.push(cells)
     }
     return rows

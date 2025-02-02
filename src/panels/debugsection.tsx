@@ -2,9 +2,10 @@ import "./debugsection.css"
 import DisassemblyPanel from "./disassemblypanel";
 import TimeTravelPanel from "./timetravelpanel";
 import State6502Controls from "./state6502controls";
-import DebugInfoPanel from "./debuginfopanel";
 import MemoryDump from "./memorydump";
 import BreakpointsView from "./breakpointsview";
+import MemoryMap from "./memorymap";
+import StackDump from "./stackdump";
 
 const DebugSection = () => {
   return (
@@ -12,8 +13,13 @@ const DebugSection = () => {
       <State6502Controls />
       <div className="flex-row-gap">
         <DisassemblyPanel />
-        <DebugInfoPanel />
-        <MemoryDump />
+        <div className="flex-column-gap">
+          <div className="flex-row-gap round-rect-border"  id="tour-debug-info">
+            <StackDump />
+            <MemoryMap />
+          </div>
+          <MemoryDump />
+        </div>
       </div>
       <div className="flex-row-gap">
         <BreakpointsView />

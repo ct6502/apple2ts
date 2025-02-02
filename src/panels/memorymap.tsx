@@ -41,14 +41,7 @@ const MemoryMap = () => {
   return (
     <div>
       <div className="bigger-font" style={{ marginBottom: '6px' }}>Memory Map</div>
-      <table className="memory-map mono-text">
-        <tbody>
-          <tr><td>Main</td>
-            <td className="mem-rom">ROM</td>
-            <td className="mem-aux">Aux</td></tr>
-        </tbody>
-      </table>
-      <br/>
+      <div className="flex-row-gap">
       <table className="memory-map mono-text">
         <tbody>
           <tr>
@@ -73,7 +66,7 @@ const MemoryMap = () => {
             <td>$4000</td><td className={isAux ? "mem-aux" : ""}></td>
           </tr>
           <tr>
-            <td>$C100<br />$C7FF</td><td className={internalCxRom ? "mem-rom" : ""}>{internalCxRom ? "Internal ROM" : "Peripheral"}</td>
+            <td>$C100-$C7FF</td><td className={internalCxRom ? "mem-rom" : ""}>{internalCxRom ? "Internal ROM" : "Peripheral"}</td>
           </tr>
           <tr>
             <td>$C300</td><td className={internalC3Rom ? "mem-rom" : ""}>{internalC3Rom ? "Internal ROM" : "Peripheral ROM"}</td>
@@ -85,11 +78,18 @@ const MemoryMap = () => {
             <td>$D000</td><td className={classBSR}>{bankD000}</td>
           </tr>
           <tr>
-            <td>$E000<br /><br />$FFFF</td><td className={classBSR}>{bankSwitchedRam}</td>
+            <td>$E000-$FFFF</td><td className={classBSR}>{bankSwitchedRam}</td>
           </tr>
         </tbody>
       </table>
-
+      <table className="memory-map mono-text" style={{height: '2em', marginBottom: '6px'}}>
+        <tbody>
+          <tr><td>Main</td></tr>
+          <tr><td className="mem-rom">ROM</td></tr>
+          <tr><td className="mem-aux">Aux</td></tr>
+        </tbody>
+      </table>
+      </div>
     </div>
   )
 }
