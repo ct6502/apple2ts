@@ -1,4 +1,4 @@
-import { getBlobFromDiskData } from "../../devices/diskdrive"
+// import { getBlobFromDiskData } from "../../devices/diskdrive"
 
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 

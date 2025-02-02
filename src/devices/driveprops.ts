@@ -19,8 +19,7 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     diskHasChanges: false,
     isWriteProtected: false,
     motorRunning: false,
-    diskData: new Uint8Array(),
-    lastWriteTime: -1
+    diskData: new Uint8Array()
   }
 }
 
@@ -59,7 +58,6 @@ export const handleSetDiskData = (index: number,
   data: Uint8Array, filename: string) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
-  driveProps[index].lastWriteTime = -1
   passSetDriveNewData(driveProps[index])
 }
 
