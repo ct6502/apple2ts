@@ -9,13 +9,13 @@ export const tourOneDrive: Step[] = [
   },
   {
     target: '#tour-onedrive-cloudicon',
-    content: 'To load a disk image from from the cloud, click the OneDrive icon ' +
+    content: 'To load a disk image from the cloud, click the OneDrive icon ' +
       'and select a supported disk image file. ' +
       'The disk image will be downloaded directly to the emulated disk drive.',
   },
   {
     target: '#tour-onedrive-cloudicon',
-    content: 'Changes made to the disk will be synchronized automatically ' +
+    content: 'Changes made to the disk will be automatically synchronized ' +
       'to your OneDrive account every five minutes (this interval is configurable). ' +
       'You can also sync the disk image at any time by select "Sync Now" from the menu.',
   },
