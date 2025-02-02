@@ -1,8 +1,8 @@
 import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
-import { ONEDRIVE_SYNC_STATUS, getOneDriveSyncStatus, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile } from "../emulator/utility/onedrive"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import { ONEDRIVE_SYNC_STATUS, getOneDriveSyncStatus, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile, setOneDriveSyncStatus, uploadOneDriveFile } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
@@ -11,7 +11,7 @@ import {
   faCloudArrowDown,
   faCloudArrowUp
 } from "@fortawesome/free-solid-svg-icons";
-import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { doSetEmuDriveNewData, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -110,7 +110,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     if (getOneDriveData(dprops.index).syncStatus == ONEDRIVE_SYNC_STATUS.INACTIVE) {
       if (dprops.diskData.length > 0) {
         if (await saveOneDriveFile(dprops.index, dprops.filename)) {
-          // $TODO
+          uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, getOneDriveData(dprops.index).fileName))
         } else {
           // $TODO
         }
@@ -118,11 +118,14 @@ const DiskDrive = (props: DiskDriveProps) => {
         const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
 
         if (await openOneDriveFile(dprops.index, filter)) {
-          const oneDriveData = getOneDriveData(dprops.index)
+          setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
+
+          var oneDriveData = getOneDriveData(dprops.index)
           const response = await fetch(oneDriveData.downloadUrl);
 
           if (!response.ok) {
             console.error(`HTTP error: status ${response.status}`)
+            setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.FAILED)
             return
           }
 
@@ -133,12 +136,13 @@ const DiskDrive = (props: DiskDriveProps) => {
           doSetEmuDriveNewData(dprops, true)
 
           const newFileName = getDriveFileNameByIndex(dprops.index)
-
           if (newFileName != oneDriveData.fileName) {
-            oneDriveData.fileName = '_' + newFileName
-            dprops.filename = oneDriveData.fileName
-            doSetEmuDriveProps(dprops)
+            oneDriveData = getOneDriveData(dprops.index)
+            oneDriveData.fileName = `apple2ts.${newFileName}`
+            oneDriveData.uploadUrl = ""
           }
+          
+          setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.ACTIVE)
         }
       }
     } else {
