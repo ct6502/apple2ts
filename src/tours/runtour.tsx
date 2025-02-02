@@ -6,6 +6,7 @@ import { tourDebug } from './tourdebug'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGlobe } from '@fortawesome/free-solid-svg-icons'
 import { DropdownButton } from '../controls/dropdownbutton'
+import { tourOneDrive } from './touronedrive'
 
 const RunTour = () => {
   const { runTour: runTour, setRunTour: setRunTour,
@@ -51,6 +52,9 @@ const RunTour = () => {
     case 'settings':
       tour = tourSettings
       break
+    case 'onedrive':
+      tour = tourOneDrive
+      break
     default:
       break
   }
@@ -66,6 +70,9 @@ const RunTour = () => {
         break
       case 2:
         tourName = 'debug'
+        break
+      case 3:
+        tourName = 'onedrive'
         break
       default:
         break
@@ -102,7 +109,7 @@ const RunTour = () => {
       />
       <DropdownButton 
         currentIndex = {-1}
-        itemNames = {['Main', 'Settings', 'Debug']}
+        itemNames = {['Main', 'Settings', 'Debug', 'OneDrive']}
         closeCallback = {selectGuidedTour}
         icon = {<FontAwesomeIcon icon={faGlobe}/>}
         tooltip = "Guided Tour"

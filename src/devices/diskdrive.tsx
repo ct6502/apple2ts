@@ -228,11 +228,11 @@ const DiskDrive = (props: DiskDriveProps) => {
         <span className="flex-column">
           <img className="disk-image"
             src={img1} alt={filename}
-            id={dprops.index === 0 ? "tour-floppy-disks" : ""}
+            id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={filename + (dprops.diskHasChanges ? ' (modified)' : '')}
             onClick={handleMenuClick} />
         </span>
-        <span className="flex-column">
+        <span className="flex-column" id="tour-onedrive-cloudicon">
           <FontAwesomeIcon
             icon={getOneDriveSyncIcon(dprops)}
             className={"fa-fw disk-onedrive disk-onedrive-" + (ONEDRIVE_SYNC_STATUS[getOneDriveSyncStatus(dprops)].toLocaleLowerCase())}
