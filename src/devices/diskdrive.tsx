@@ -2,7 +2,7 @@ import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
-import { ONEDRIVE_SYNC_STATUS, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile, setOneDriveSyncStatus, uploadOneDriveFile, getOneDriveSyncInterval, setOneDriveSyncInterval } from "../emulator/utility/onedrive"
+import { ONEDRIVE_SYNC_STATUS, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile, setOneDriveSyncStatus, uploadOneDriveFile, getOneDriveSyncInterval, setOneDriveSyncInterval, isOneDriveSyncPaused } from "../emulator/utility/onedrive"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faLock,
@@ -31,7 +31,7 @@ const getOneDriveSyncStatusMessage = (dprops: DriveProps) => {
       return "OneDrive Sync Up-to-date"
       
     case ONEDRIVE_SYNC_STATUS.PENDING:
-      return "OneDrive Sync Pending"
+      return isOneDriveSyncPaused(dprops.index) ? "OneDrive Sync Paused" : "OneDrive Sync Pending"
       
     case ONEDRIVE_SYNC_STATUS.INPROGRESS:
       return "OneDrive Sync In Progress"
@@ -41,10 +41,24 @@ const getOneDriveSyncStatusMessage = (dprops: DriveProps) => {
   }
 }
 
+const getOneDriveSyncClassName = (dprops: DriveProps) => {
+  const syncStatus = getOneDriveSyncStatus(dprops)
+
+  if (isOneDriveSyncPaused(dprops.index) && syncStatus != ONEDRIVE_SYNC_STATUS.INACTIVE && syncStatus != ONEDRIVE_SYNC_STATUS.INPROGRESS) {
+    return "disk-onedrive-paused"
+  } else {
+    return `disk-onedrive-${ONEDRIVE_SYNC_STATUS[syncStatus].toLowerCase()}`
+  }
+}
+
 const getOneDriveSyncIcon = (dprops: DriveProps) => {
   switch (getOneDriveSyncStatus(dprops)) {
     case ONEDRIVE_SYNC_STATUS.INACTIVE:
       return dprops.diskData.length > 0 ? faCloudArrowUp : faCloudArrowDown
+
+    case ONEDRIVE_SYNC_STATUS.PENDING:
+    case ONEDRIVE_SYNC_STATUS.INPROGRESS:
+      return faCloudArrowUp
 
     default:
       return faCloud
@@ -65,10 +79,6 @@ const getOneDriveSyncStatus = (dprops: DriveProps) => {
       if ((Date.now() - oneDriveData.lastSyncTime > oneDriveData.syncInterval)) {
         syncOneDriveNow(dprops)
       }
-      break
-
-    case ONEDRIVE_SYNC_STATUS.FAILED:
-      // $TODO
       break
   }
 
@@ -235,7 +245,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         <span className="flex-column" id="tour-onedrive-cloudicon">
           <FontAwesomeIcon
             icon={getOneDriveSyncIcon(dprops)}
-            className={"fa-fw disk-onedrive disk-onedrive-" + (ONEDRIVE_SYNC_STATUS[getOneDriveSyncStatus(dprops)].toLocaleLowerCase())}
+            className={"fa-fw disk-onedrive " + getOneDriveSyncClassName(dprops)}
             title={getOneDriveSyncStatusMessage(dprops)}
             onClick={handleCloudButtonClick}>
           </FontAwesomeIcon>

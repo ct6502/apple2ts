@@ -65,7 +65,7 @@ body.dark-mode .disk-cloud {
 }
 
 .disk-onedrive-pending {
-  color: dimgray;
+  color: #28A8EA;
 }
 
 .disk-onedrive-inprogress {
@@ -75,6 +75,10 @@ body.dark-mode .disk-cloud {
 
 .disk-onedrive-failed {
   color: darkred;
+}
+
+.disk-onedrive-paused {
+  color: dimgray;
 }
 
 @keyframes oneDriveSyncTransition {

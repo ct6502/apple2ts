@@ -1,3 +1,5 @@
+import { debugPort } from "process"
+
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 
 const MAX_ONEODRIVE_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
@@ -40,6 +42,10 @@ export const resetOneDriveData = (index: number) => {
     lastSyncTime: -1,
     syncInterval: DEFAULT_ONEDRIVE_SYNC_INTERVAL
   }
+}
+
+export const isOneDriveSyncPaused = (index: number) => {
+  return oneDriveDataList[index].syncInterval == Number.MAX_VALUE
 }
 
 export const getOneDriveSyncInterval = (index: number) => {
