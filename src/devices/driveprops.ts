@@ -1,5 +1,4 @@
 import { isHardDriveImage } from "../emulator/devices/decodedisk";
-import { resetOneDriveData } from "../emulator/utility/onedrive";
 import { MAX_DRIVES, RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { iconKey, iconData, iconName } from "../img/icons";
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
@@ -149,7 +148,6 @@ export const handleSetDiskFromURL = async (url: string,
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
     handleSetDiskData(i, new Uint8Array(), "")
-    resetOneDriveData(i)
   }
 }
 

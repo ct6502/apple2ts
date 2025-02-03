@@ -1,17 +1,12 @@
 import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
-import { ONEDRIVE_SYNC_STATUS, resetOneDriveData, getOneDriveData, openOneDriveFile, saveOneDriveFile, setOneDriveSyncStatus, uploadOneDriveFile, getOneDriveSyncInterval, setOneDriveSyncInterval, isOneDriveSyncPaused } from "../emulator/utility/onedrive"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import {
-  faLock,
-  faLockOpen,
-  faCloud,
-  faCloudArrowDown,
-  faCloudArrowUp
-} from "@fortawesome/free-solid-svg-icons";
-import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { faLock, faLockOpen, IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import { doSetEmuDriveNewData, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
+import { CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -20,79 +15,6 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
     diskData.set(uint32toBytes(crc), 8)
   }
   return new Blob([diskData]);
-}
-
-const getOneDriveSyncStatusMessage = (dprops: DriveProps) => {
-  switch (getOneDriveSyncStatus(dprops)) {
-    case ONEDRIVE_SYNC_STATUS.INACTIVE:
-      return dprops.diskData.length > 0 ? "Save Disk to OneDrive" : "Load Disk from OneDrive"
-
-    case ONEDRIVE_SYNC_STATUS.ACTIVE:
-      return "OneDrive Sync Up-to-date"
-      
-    case ONEDRIVE_SYNC_STATUS.PENDING:
-      return isOneDriveSyncPaused(dprops.index) ? "OneDrive Sync Paused" : "OneDrive Sync Pending"
-      
-    case ONEDRIVE_SYNC_STATUS.INPROGRESS:
-      return "OneDrive Sync In Progress"
-      
-    case ONEDRIVE_SYNC_STATUS.FAILED:
-      return "OneDrive Sync Failed"
-  }
-}
-
-const getOneDriveSyncClassName = (dprops: DriveProps) => {
-  const syncStatus = getOneDriveSyncStatus(dprops)
-
-  if (isOneDriveSyncPaused(dprops.index) && syncStatus != ONEDRIVE_SYNC_STATUS.INACTIVE && syncStatus != ONEDRIVE_SYNC_STATUS.INPROGRESS) {
-    return "disk-onedrive-paused"
-  } else {
-    return `disk-onedrive-${ONEDRIVE_SYNC_STATUS[syncStatus].toLowerCase()}`
-  }
-}
-
-const getOneDriveSyncIcon = (dprops: DriveProps) => {
-  switch (getOneDriveSyncStatus(dprops)) {
-    case ONEDRIVE_SYNC_STATUS.INACTIVE:
-      return dprops.diskData.length > 0 ? faCloudArrowUp : faCloudArrowDown
-
-    case ONEDRIVE_SYNC_STATUS.PENDING:
-    case ONEDRIVE_SYNC_STATUS.INPROGRESS:
-      return faCloudArrowUp
-
-    default:
-      return faCloud
-  }
-}
-
-const getOneDriveSyncStatus = (dprops: DriveProps) => {
-  const oneDriveData = getOneDriveData(dprops.index)
-
-  switch (oneDriveData.syncStatus) {
-    case ONEDRIVE_SYNC_STATUS.ACTIVE:
-      if (dprops.lastWriteTime > oneDriveData.lastSyncTime) {
-        setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.PENDING)
-      }
-      break
-
-    case ONEDRIVE_SYNC_STATUS.PENDING:
-      if ((Date.now() - oneDriveData.lastSyncTime > oneDriveData.syncInterval)) {
-        syncOneDriveNow(dprops)
-      }
-      break
-  }
-
-  return oneDriveData.syncStatus
-}
-
-const syncOneDriveNow = (dprops: DriveProps) => {
-  setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
-  uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, getOneDriveData(dprops.index).fileName))
-    .then(() => {
-      dprops.diskHasChanges = false
-      doSetEmuDriveProps(dprops)
-      doSetUIDriveProps(dprops)
-    })
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
@@ -107,11 +29,6 @@ const downloadDisk = (diskData: Uint8Array, filename: string) => {
   document.body.removeChild(link);
 }
 
-const resetDrive = (index: number) => {
-  handleSetDiskData(index, new Uint8Array(), "")
-  resetOneDriveData(index)
-}
-
 type DiskDriveProps = {
   index: number,
   renderCount: number,
@@ -124,18 +41,25 @@ const DiskDrive = (props: DiskDriveProps) => {
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
+  const [cloudDrive, setCloudDrive] = useState<OneDriveCloudDrive>(new OneDriveCloudDrive())
+
   const menuNames = [
     ['Download Disk', 'Download and Eject Disk', 'Eject Disk'],
     ['Sync Every Minute', 'Sync Every 5 Minutes', 'Sync Every 15 Minutes', 'Pause Syncing', '-', 'Sync Now']]
   const menuChoices = [
     [0, 1, 2],
     [60000, 300000, 900000, Number.MAX_VALUE, 0, Number.MIN_VALUE]]
+  
+  const resetDrive = (index: number) => {
+    handleSetDiskData(index, new Uint8Array(), "")
+    setCloudDrive(new OneDriveCloudDrive())
+  }
 
   const getMenuCheck = (interval: number) => {
     if (menuOpen == 0) {
       return ''
     } else if (menuOpen == 1) {
-      return interval == getOneDriveSyncInterval(dprops.index) ? '\u2714\u2009' : '\u2003'
+      return interval == cloudDrive?.getSyncInterval() ? '\u2714\u2009' : '\u2003'
     }
   }
 
@@ -165,51 +89,48 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else if (menuNumber == 1) {
       if (menuChoice >= 0) {
         if (menuChoice == Number.MIN_VALUE) {
-          syncOneDriveNow(dprops)
+          cloudDrive?.syncDrive(dprops)
         } else {
-          setOneDriveSyncInterval(dprops.index, menuChoice)
+          cloudDrive?.setSyncInterval(menuChoice)
         }
       }
     }
   }
 
   const handleCloudButtonClick = async (event: React.MouseEvent) => {
-    if (getOneDriveData(dprops.index).syncStatus == ONEDRIVE_SYNC_STATUS.INACTIVE) {
+    if (cloudDrive?.getSyncStatus(dprops) == CloudDriveSyncStatus.Inactive) {
       if (dprops.diskData.length > 0) {
-        if (await saveOneDriveFile(dprops.index, dprops.filename)) {
-          uploadOneDriveFile(dprops.index, getBlobFromDiskData(dprops.diskData, getOneDriveData(dprops.index).fileName))
+        if (await cloudDrive.saveFile(dprops.filename)) {
+          cloudDrive?.uploadFile(getBlobFromDiskData(dprops.diskData, dprops.filename))
         } else {
           console.error(`OneDrive upload failed: ${dprops.filename}`)
         }
       } else {
         const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
 
-        if (await openOneDriveFile(dprops.index, filter)) {
-          setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.INPROGRESS)
+        if (await cloudDrive.downloadFile(filter)) {
+          cloudDrive.setSyncStatus(CloudDriveSyncStatus.InProgress)
 
-          var oneDriveData = getOneDriveData(dprops.index)
-
-          console.log(`fetch: DELETE ${oneDriveData.downloadUrl}`)
-          const response = await fetch(oneDriveData.downloadUrl);
+          console.log(`fetch: DELETE ${cloudDrive.downloadUrl}`)
+          const response = await fetch(cloudDrive.downloadUrl);
 
           if (response.ok) {
             const blob = await response.blob()
             const buffer = await new Response(blob).arrayBuffer()
   
-            handleSetDiskOrFileFromBuffer(dprops.index, buffer, oneDriveData.fileName)
+            handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudDrive.fileName)
             doSetEmuDriveNewData(dprops, true)
   
             const newFileName = getDriveFileNameByIndex(dprops.index)
-            if (newFileName != oneDriveData.fileName) {
-              oneDriveData = getOneDriveData(dprops.index)
-              oneDriveData.fileName = `apple2ts.${newFileName}`
-              oneDriveData.uploadUrl = ""
+            if (newFileName != cloudDrive.fileName) {
+              cloudDrive.fileName = `apple2ts.${newFileName}`
+              cloudDrive.uploadUrl = ""
             }
             
-            setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.ACTIVE)
+            cloudDrive.setSyncStatus(CloudDriveSyncStatus.Active)
           } else {
             console.error(`HTTP error: status ${response.status}`)
-            setOneDriveSyncStatus(dprops.index, ONEDRIVE_SYNC_STATUS.FAILED)
+            cloudDrive.setSyncStatus(CloudDriveSyncStatus.Failed)
           }
         }
       }
@@ -244,9 +165,9 @@ const DiskDrive = (props: DiskDriveProps) => {
         </span>
         <span className="flex-column" id="tour-onedrive-cloudicon">
           <FontAwesomeIcon
-            icon={getOneDriveSyncIcon(dprops)}
-            className={"fa-fw disk-onedrive " + getOneDriveSyncClassName(dprops)}
-            title={getOneDriveSyncStatusMessage(dprops)}
+            icon={cloudDrive?.getSyncIcon(dprops) as IconDefinition}
+            className={"fa-fw disk-onedrive " + cloudDrive?.getStatusClassName(dprops)}
+            title={cloudDrive?.getStatusMessage(dprops)}
             onClick={handleCloudButtonClick}>
           </FontAwesomeIcon>
           <FontAwesomeIcon icon={dprops.isWriteProtected ? faLock : faLockOpen} className="disk-write-protected fa-fw" title={dprops.isWriteProtected ? "Write Protected" : "Write Enabled"}
