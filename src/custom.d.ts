@@ -131,6 +131,7 @@ type DriveState = {
   trackNbits: Array<number>,
   trackLocation: number,
   maxHalftrack: number,
+  lastWriteTime: number
 }
 
 type DriveProps = {
@@ -142,7 +143,8 @@ type DriveProps = {
   motorRunning: boolean,
   diskHasChanges: boolean,
   isWriteProtected: boolean,
-  diskData: Uint8Array
+  diskData: Uint8Array,
+  lastWriteTime: number
 }
 
 type DriveSaveState = {

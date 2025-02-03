@@ -311,6 +311,7 @@ const processHardDriveBlockAccess = () => {
       const dataWrite = getDataBlock(bufferAddr)
       dd.set(dataWrite, blockStart)
       ds.diskHasChanges = true
+      ds.lastWriteTime = Date.now()
       break
     }
     case 3:

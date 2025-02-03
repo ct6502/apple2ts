@@ -217,6 +217,7 @@ const doWriteByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
     }
     debugCache.push(cycles >= 40 ? 2 : cycles >= 36 ? 1 : dataRegister)
     ds.diskHasChanges = true
+    ds.lastWriteTime = Date.now()
     dataRegister = 0
   }
 }
@@ -365,6 +366,7 @@ export const handleDriveSoftSwitches: AddressCallback =
     case SWITCH.WRITE_OFF:  // $C08E,X: READ, Q7LOW
       if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, cycles)
+        ds.lastWriteTime = Date.now()
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = s6502.cycleCount
       }

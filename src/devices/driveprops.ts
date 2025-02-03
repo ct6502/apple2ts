@@ -1,5 +1,5 @@
 import { isHardDriveImage } from "../emulator/devices/decodedisk";
-import { RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
+import { MAX_DRIVES, RUN_MODE, replaceSuffix } from "../emulator/utility/utility";
 import { iconKey, iconData, iconName } from "../img/icons";
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
 import { diskImages } from "./diskimages";
@@ -18,7 +18,8 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     diskHasChanges: false,
     isWriteProtected: false,
     motorRunning: false,
-    diskData: new Uint8Array()
+    diskData: new Uint8Array(),
+    lastWriteTime: -1
   }
 }
 
@@ -145,10 +146,9 @@ export const handleSetDiskFromURL = async (url: string,
 }
 
 const resetAllDiskDrives = () => {
-  handleSetDiskData(0, new Uint8Array(), "")
-  handleSetDiskData(1, new Uint8Array(), "")
-  handleSetDiskData(2, new Uint8Array(), "")
-  handleSetDiskData(3, new Uint8Array(), "")
+  for (let i=0; i < MAX_DRIVES; i++) {
+    handleSetDiskData(i, new Uint8Array(), "")
+  }
 }
 
 export const handleSetDiskFromFile = async (disk: diskImage,
@@ -182,3 +182,5 @@ export const handleSetDiskFromFile = async (disk: diskImage,
   }
 }
 
+export function handleSetCloudUrl(url: string) {
+}

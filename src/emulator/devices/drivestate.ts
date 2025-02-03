@@ -23,6 +23,7 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     trackNbits: !hardDrive ? Array<number>(80) : Array<number>(),
     trackLocation: 0,
     maxHalftrack: 0,
+    lastWriteTime: -1
   }
 }
 
@@ -59,6 +60,14 @@ export const getFilename = () => {
   return ""
 }
 
+export const getDriveLastWriteTimeByIndex = (index: number) => {
+  return driveState[index].lastWriteTime
+}
+
+export const getDriveFileNameByIndex = (index: number) => {
+  return driveState[index].filename
+}
+
 export const passData = () => {
   for (let i = 0; i < driveState.length; i++) {
     const dprops: DriveProps = {
@@ -70,7 +79,8 @@ export const passData = () => {
       motorRunning: driveState[i].motorRunning,
       diskHasChanges: driveState[i].diskHasChanges,
       isWriteProtected: driveState[i].isWriteProtected,
-      diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array()
+      diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
+      lastWriteTime: driveState[i].lastWriteTime
     }
     passDriveProps(dprops)
   }
@@ -128,20 +138,23 @@ export const doPauseDrive = (resume = false) => {
 }
 
 // Send in a new disk image to be loaded into the emulator.
-export const doSetEmuDriveNewData = (props: DriveProps) => {
+export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = false) => {
   let index = props.index
   let drive = props.drive
+  
   // See if the "wrong" disk image was put into a drive. If so, swap the drive.
   let isHardDrive = props.hardDrive
-  if (props.filename !== '') {
-    if (isHardDriveImage(props.filename)) {
-      isHardDrive = true
-      index = (props.drive <= 1) ? 0 : 1
-      drive = index + 1
-    } else {
-      isHardDrive = false
-      index = (props.drive <= 1) ? 2 : 3
-      drive = index - 1
+  if (!forceIndex) {
+    if (props.filename !== '') {
+      if (isHardDriveImage(props.filename)) {
+        isHardDrive = true
+        index = (props.drive <= 1) ? 0 : 1
+        drive = index + 1
+      } else {
+        isHardDrive = false
+        index = (props.drive <= 1) ? 2 : 3
+        drive = index - 1
+      }
     }
   }
   driveState[index] = initDriveState(index, drive, isHardDrive)
@@ -161,6 +174,7 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].filename = props.filename
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
+  driveState[index].diskHasChanges = props.diskHasChanges
   passData()
 }
 
