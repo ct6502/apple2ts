@@ -161,7 +161,7 @@ export class OneDriveCloudDrive implements CloudDrive {
           this.setSyncStatus(CloudDriveSyncStatus.Failed)
         })
         .finally(() => {
-          this.lastSyncTime = Date.now()
+          this.lastSyncTime += 3 * 1000
         })
         return
     }
