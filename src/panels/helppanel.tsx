@@ -12,7 +12,7 @@ type HelpPanelProps = {
 // It was re-rendering on every machine state update, which was ridiculous.
 // Now it only re-renders when the help text changes.
 const HelpPanel = React.memo((props: HelpPanelProps) => {
-  const height = window.innerHeight ? window.innerHeight - 200 : (window.outerHeight - 200)
+  const height = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== '<Default>') ? props.helptext : defaultHelpText
   return (
     <div className="help-parent"

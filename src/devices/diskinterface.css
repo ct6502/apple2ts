@@ -129,7 +129,3 @@ body.dark-mode .disk-write-protected {
 body.dark-mode .disk-image {
   border-color: var(--text-color-dark);
 }
-
-#tour-disk-images {
-  margin-right: 1.5em;
-}

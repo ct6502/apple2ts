@@ -187,16 +187,16 @@ const DiskDrive = (props: DiskDriveProps) => {
           onClick={() => handleMenuClose()}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
-            {menuChoices[menuOpen].map((i, j) => (
-              <div>
-              {menuNames[menuOpen][j] == '-'
+            {menuChoices[menuOpen].map((itemValue, index) => (
+              <div key={index}>
+              {menuNames[menuOpen][index] == '-'
               ? <div style={{ borderTop: '1px solid #aaa', margin: '5px 0' }}></div>
               : <div className="droplist-option"
                 style={{ padding: '5px', paddingLeft: '10px', paddingRight: '10px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
-                key={i} onClick={() => handleMenuClose(i)}>
-                {getMenuCheck(i)}{menuNames[menuOpen][j]}</div>}
+                key={itemValue} onClick={() => handleMenuClose(itemValue)}>
+                {getMenuCheck(itemValue)}{menuNames[menuOpen][index]}</div>}
               </div>
               ))}
           </div>

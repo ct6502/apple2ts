@@ -87,6 +87,10 @@ export const passRequestThumbnail = (PC: number) => {
 // command line where self will be undefined.
 if (typeof self !== 'undefined') {
   self.onmessage = (e: MessageEvent) => {
+    if (!e.data || typeof e.data !== 'object') {
+      // console.error(`worker2main: invalid message: ${JSON.stringify(e.data)}`)
+      return
+    }
     if (!('msg' in e.data)) return
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:

@@ -65,7 +65,11 @@ const FileInput = (props: DisplayProps) => {
 
   // This is how we actually display the file selection dialog.
   if (props.showFileOpenDialog.show) {
-    // Now that we're in here, turn off our property.
+    // Now that we're in here, turn off our property. Send a message to our
+    // parent to turn off the dialog, but also manually turn it off here
+    // because occasionally the message doesn't get through fast enough
+    // and the file dialog pops up again right away.
+    props.showFileOpenDialog.show = false
     setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current
