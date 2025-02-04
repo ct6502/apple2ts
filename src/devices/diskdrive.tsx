@@ -184,7 +184,9 @@ const DiskDrive = (props: DiskDriveProps) => {
           <img className="disk-image"
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
-            title={filename + (dprops.diskHasChanges ? ' (modified)' : '')}
+            title={cloudDrive.lastSyncTime > 0
+              ? `Last synced: ${new Date(cloudDrive.lastSyncTime).toLocaleString()}`
+              : (filename + (dprops.diskHasChanges ? ' (modified)' : ''))}
             onClick={handleMenuClick} />
             <FontAwesomeIcon
               icon={faRotate}
