@@ -1,5 +1,3 @@
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons"
-
 export enum CloudDriveSyncStatus {
   Inactive,
   Active,
@@ -9,26 +7,15 @@ export enum CloudDriveSyncStatus {
 }
 
 export interface CloudDrive {
+  providerName: string
   syncStatus: CloudDriveSyncStatus
   syncInterval: number
   lastSyncTime: number
-  fileName: string
-  downloadUrl: string
-  uploadUrl: string
 
-  getSyncStatus(dprops: DriveProps): CloudDriveSyncStatus
-  setSyncStatus(status: CloudDriveSyncStatus): void
-  isSyncPaused(): boolean
+  getFileName(): string
+  setFileName(fileName: string): void
 
-  getSyncInterval(): number
-  setSyncInterval(interval: number): void
-
-  getStatusMessage(dprops: DriveProps): string
-  getStatusClassName(dprops: DriveProps): string
-  getSyncIcon(dprops: DriveProps): IconDefinition
-
-  downloadFile(filter: string): Promise<boolean>
-  uploadFile(blob: Blob): Promise<void>
-  syncDrive(dprops: DriveProps): void
-  saveFile(filename: string): Promise<boolean>
+  download(filter: string): Promise<Blob|undefined>
+  upload(fileName: string, blob: Blob): Promise<boolean>
+  sync(blob: Blob): Promise<void>
 }

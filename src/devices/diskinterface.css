@@ -39,7 +39,7 @@ body.dark-mode .disk-cloud {
   color: var(--text-color-dark);
 }
 
-.disk-onedrive {
+.disk-clouddrive {
   position: absolute;
   text-align: center;
   margin-left: 24px;
@@ -48,22 +48,22 @@ body.dark-mode .disk-cloud {
   pointer-events: none;
 }
 
-.disk-onedrive-inactive {
+.disk-clouddrive-inactive {
   display: none;
   color: var(--text-color);
 }
 
-.disk-onedrive-active {
+.disk-clouddrive-active {
   display: none;
   color: #0364B8;
 }
 
-.disk-onedrive-pending {
+.disk-clouddrive-pending {
   display: none;
   color: #28A8EA;
 }
 
-.disk-onedrive-inprogress {
+.disk-clouddrive-inprogress {
   color: #0364B8;
   animation: rotate .5s linear 3;
   -webkit-animation: rotate 2s linear infinite;
@@ -78,27 +78,12 @@ body.dark-mode .disk-cloud {
   }
 }
 
-.disk-onedrive-failed {
+.disk-clouddrive-failed {
   color: darkred;
 }
 
-.disk-onedrive-paused {
+.disk-clouddrive-paused {
   color: dimgray;
-}
-
-@keyframes oneDriveSyncTransition {
-  0% {
-    color: #28A8EA;
-  }
-  33% {
-    color: #1490DF;
-  }
-  66% {
-    color: #0078D4;
-  }
-  100% {
-    color: #0364B8;
-  }
 }
 
 .imgButton {
