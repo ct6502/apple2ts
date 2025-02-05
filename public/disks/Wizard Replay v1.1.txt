@@ -6,6 +6,8 @@ Wizard Replay is a frontend for exploring and playing classic RPG games on an 8-
 * Integrated WizPlus for character editing
 * Integrated scenario backup and restore
 
+<iframe style="border: 0; width: 100%; height: 42px;" src="https://bandcamp.com/EmbeddedPlayer/album=19513538/size=small/bgcol=ffffff/linkcol=0687f5/track=2659357743/transparent=true/" seamless><a href="https://winifredphillips.bandcamp.com/album/wizardry-proving-grounds-of-the-mad-overlord-original-game-soundtrack">Wizardry: Proving Grounds of the Mad Overlord (Original Game Soundtrack) by Winifred Phillips</a></iframe>
+
 MIT License
 
 Copyright (c) 2024 4am
