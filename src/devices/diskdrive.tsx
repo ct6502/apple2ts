@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faRotate } from "@fortawesome/free-solid-svg-icons";
-import { doSetEmuDriveNewData, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
+import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
-import { CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -41,11 +41,26 @@ const DiskDrive = (props: DiskDriveProps) => {
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
-  const [cloudDrive, setCloudDrive] = useState<OneDriveCloudDrive>(new OneDriveCloudDrive())
+  const [cloudDrive, setCloudDrive] = useState<CloudDrive>()
 
   const menuNames = [
-    ['Write Protect Disk', '-', 'Download Disk', 'Download and Eject Disk', 'Eject Disk', '-', 'Save Disk to OneDrive'],
-    ['Write Protect Disk', '-', 'Eject Disk', '-', 'Sync Every Minute', 'Sync Every 5 Minutes', 'Sync Every 15 Minutes', 'Pause Syncing', '-', 'Sync Now'],
+    ['Write Protect Disk',
+      '-',
+      'Download Disk',
+      'Download and Eject Disk',
+      'Eject Disk',
+      '-',
+      'Save Disk to OneDrive'],
+    ['Write Protect Disk',
+      '-',
+      'Eject Disk',
+      '-',
+      'Sync Every Minute',
+      'Sync Every 5 Minutes',
+      'Sync Every 15 Minutes',
+      'Pause Syncing',
+      '-',
+      'Sync Now'],
     ['Load Disk from Local Drive', 'Load Disk from OneDrive']]
   const menuChoices = [
     [3, -1, 0, 1, 2, -1, 4],
@@ -54,43 +69,111 @@ const DiskDrive = (props: DiskDriveProps) => {
   
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "")
-    setCloudDrive(new OneDriveCloudDrive())
+    setCloudDrive(undefined)
   }
 
-  const pickCloudDriveFile = async () => {
-    const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
-
-    if (await cloudDrive.downloadFile(filter)) {
-      cloudDrive.setSyncStatus(CloudDriveSyncStatus.InProgress)
-
-      const response = await fetch(cloudDrive.downloadUrl);
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const buffer = await new Response(blob).arrayBuffer()
-
-        handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudDrive.fileName)
-        doSetEmuDriveNewData(dprops, true)
-
-        const newFileName = getDriveFileNameByIndex(dprops.index)
-        if (newFileName != cloudDrive.fileName) {
-          cloudDrive.fileName = `apple2ts.${newFileName}`
-          cloudDrive.uploadUrl = ""
-        }
+  const getCloudDriveStatusMessage = () => {
+    if (!cloudDrive) return ""
+    
+    switch (getCloudDriveSyncStatus()) {
+      case CloudDriveSyncStatus.Inactive:
+        return dprops.diskData.length > 0 ? `Save Disk to ${cloudDrive.providerName}` : `Load Disk from ${cloudDrive.providerName}`
+  
+      case CloudDriveSyncStatus.Active:
+        return `${cloudDrive.providerName} Sync Up-to-date`
         
-        cloudDrive.setSyncStatus(CloudDriveSyncStatus.Active)
-      } else {
-        console.error(`HTTP error: status ${response.status}`)
-        cloudDrive.setSyncStatus(CloudDriveSyncStatus.Failed)
-      }
+      case CloudDriveSyncStatus.Pending:
+        return isCloudDriveSyncPaused() ? `${cloudDrive.providerName} Sync Paused` : `${cloudDrive.providerName} Sync Pending`
+        
+      case CloudDriveSyncStatus.InProgress:
+        return `${cloudDrive.providerName} Sync In Progress`
+        
+      case CloudDriveSyncStatus.Failed:
+        return `${cloudDrive.providerName} Sync Failed`
     }
   }
 
-  const pickCloudDriveFolder = async () => {
-    if (await cloudDrive.saveFile(dprops.filename)) {
-      cloudDrive?.uploadFile(getBlobFromDiskData(dprops.diskData, dprops.filename))
+  const getCloudDriveStatusClassName = () => {
+    if (!cloudDrive) return "disk-clouddrive-inactive"
+
+    const syncStatus = getCloudDriveSyncStatus()
+
+    if (isCloudDriveSyncPaused() && syncStatus != CloudDriveSyncStatus.Inactive && syncStatus != CloudDriveSyncStatus.InProgress) {
+      return "disk-clouddrive-paused"
     } else {
-      console.error(`OneDrive upload failed: ${dprops.filename}`)
+      return `disk-clouddrive-${CloudDriveSyncStatus[syncStatus].toLowerCase()}`
+    }
+  }
+
+  const getDiskDriveLabel = () => {
+    return (cloudDrive && cloudDrive.lastSyncTime > 0)
+      ? `Last synced: ${new Date(cloudDrive.lastSyncTime).toLocaleString()}`
+      : (filename + (dprops.diskHasChanges ? ' (modified)' : ''))
+  }
+
+  const getCloudDriveSyncStatus = (): CloudDriveSyncStatus => {
+    if (!cloudDrive) return CloudDriveSyncStatus.Inactive
+
+    switch (cloudDrive?.syncStatus) {
+      case CloudDriveSyncStatus.Active:
+        if (dprops.lastWriteTime > cloudDrive?.lastSyncTime) {
+          cloudDrive.syncStatus = CloudDriveSyncStatus.Pending
+        }
+        break
+
+      case CloudDriveSyncStatus.Pending:
+        if ((Date.now() - cloudDrive.lastSyncTime > cloudDrive.syncInterval)) {
+          updateCloudDrive()
+        }
+        break
+    }
+
+    return cloudDrive.syncStatus
+  }
+
+  const isCloudDriveSyncPaused = () => {
+    return cloudDrive?.syncInterval == Number.MAX_VALUE
+  }
+
+  const loadDiskFromCloud = async (newCloudDrive: CloudDrive) => {
+    const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
+    const blob = await newCloudDrive.download(filter)
+
+    if (blob) {
+      const buffer = await new Response(blob).arrayBuffer()
+
+      handleSetDiskOrFileFromBuffer(dprops.index, buffer, newCloudDrive.getFileName())
+      doSetEmuDriveNewData(dprops, true)
+
+      const newFileName = getDriveFileNameByIndex(dprops.index)
+      if (newFileName != newCloudDrive.getFileName()) {
+        newCloudDrive.setFileName(`apple2ts.${newFileName}`)
+      }
+
+      setCloudDrive(newCloudDrive)
+    }
+  }
+
+  const saveDiskToCloud = async (newCloudDrive: CloudDrive) => {
+    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+    if (blob && await newCloudDrive?.upload(dprops.filename, blob)) {
+        dprops.diskHasChanges = false
+        doSetEmuDriveProps(dprops)
+        doSetUIDriveProps(dprops)
+
+        setCloudDrive(newCloudDrive)
+    }
+    // else {
+    //   console.error(`Cloud drive upload failed: ${dprops.filename}`)
+    // }
+  }
+
+  const updateCloudDrive = async () => {
+    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+    if (blob && cloudDrive?.sync(blob)) {
+      dprops.diskHasChanges = false
+      doSetEmuDriveProps(dprops)
+      doSetUIDriveProps(dprops)
     }
   }
 
@@ -103,7 +186,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       if (menuChoice == 3) {
         checked = dprops.isWriteProtected
       } else {
-        checked = menuChoice == cloudDrive?.getSyncInterval()
+        checked = menuChoice == cloudDrive?.syncInterval
       }
     }
 
@@ -114,7 +197,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const y = Math.min(event.clientY, window.innerHeight - 200)
     setPosition({ x: event.clientX, y: y })
 
-    if (cloudDrive.syncStatus == CloudDriveSyncStatus.Inactive) {
+    if (!cloudDrive || getCloudDriveSyncStatus() == CloudDriveSyncStatus.Inactive) {
       if (dprops.filename.length > 0) {
         setMenuOpen(0)
       } else {
@@ -141,7 +224,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       if (menuChoice == 3) {
         handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
       } else if (menuChoice == 4) {
-        pickCloudDriveFolder()
+        saveDiskToCloud(new OneDriveCloudDrive())
       }
     } else if (menuNumber == 1) {
       if (menuChoice == 2) {
@@ -151,16 +234,18 @@ const DiskDrive = (props: DiskDriveProps) => {
           handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
         }
         else if (menuChoice == Number.MIN_VALUE) {
-          cloudDrive?.syncDrive(dprops)
+          updateCloudDrive()
         } else {
-          cloudDrive?.setSyncInterval(menuChoice)
+          if (cloudDrive) {
+            cloudDrive.syncInterval = menuChoice
+          }
         }
       }
     } else if (menuNumber == 2) {
       if (menuChoice == 0) {
         props.setShowFileOpenDialog(true, props.index)
       } else if (menuChoice == 1) {
-        pickCloudDriveFile()
+        loadDiskFromCloud(new OneDriveCloudDrive())
       }
     }
   }
@@ -184,14 +269,12 @@ const DiskDrive = (props: DiskDriveProps) => {
           <img className="disk-image"
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
-            title={cloudDrive.lastSyncTime > 0
-              ? `Last synced: ${new Date(cloudDrive.lastSyncTime).toLocaleString()}`
-              : (filename + (dprops.diskHasChanges ? ' (modified)' : ''))}
+            title={getDiskDriveLabel()}
             onClick={handleMenuClick} />
             <FontAwesomeIcon
               icon={faRotate}
-              className={"fa-fw disk-onedrive " + cloudDrive?.getStatusClassName(dprops)}
-              title={cloudDrive?.getStatusMessage(dprops)}>
+              className={"fa-fw disk-clouddrive " + getCloudDriveStatusClassName()}
+              title={getCloudDriveStatusMessage()}>
             </FontAwesomeIcon>
         </span>
       </span>
