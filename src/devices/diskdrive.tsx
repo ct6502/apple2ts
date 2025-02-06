@@ -137,10 +137,12 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const loadDiskFromCloud = async (newCloudDrive: CloudDrive) => {
     const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
-    const buffer = await newCloudDrive.download(filter)
+    const blob = await newCloudDrive.download(filter)
 
-    if (buffer && buffer.length > 0) {
-      handleSetDiskOrFileFromBuffer(dprops.index, await new Response(buffer).arrayBuffer(), newCloudDrive.getFileName())
+    if (blob) {
+      const buffer = await new Response(blob).arrayBuffer()
+
+      handleSetDiskOrFileFromBuffer(dprops.index, buffer, newCloudDrive.getFileName())
       doSetEmuDriveNewData(dprops, true)
 
       const newFileName = getDriveFileNameByIndex(dprops.index)
@@ -153,7 +155,8 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const saveDiskToCloud = async (newCloudDrive: CloudDrive) => {
-    if (await newCloudDrive?.upload(dprops.filename, dprops.diskData)) {
+    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+    if (await newCloudDrive?.upload(dprops.filename, blob)) {
         dprops.diskHasChanges = false
         doSetEmuDriveProps(dprops)
         doSetUIDriveProps(dprops)
@@ -166,7 +169,8 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const updateCloudDrive = async () => {
-    if (cloudDrive?.sync(dprops.diskData)) {
+    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+    if (cloudDrive?.sync(blob)) {
       dprops.diskHasChanges = false
       doSetEmuDriveProps(dprops)
       doSetUIDriveProps(dprops)

@@ -29,7 +29,7 @@ export class OneDriveCloudDrive implements CloudDrive {
     this.fileName = fileName
   }
 
-  async download(filter: string): Promise<Uint8Array|undefined> {
+  async download(filter: string): Promise<Blob|undefined> {
     const result = await launchPicker("files", filter)
     if (result) {
       this.accessToken = result.accessToken
@@ -49,7 +49,7 @@ export class OneDriveCloudDrive implements CloudDrive {
         const response = await fetch(downloadUrl);
         if (response.ok) {
           this.syncStatus = CloudDriveSyncStatus.Active
-          return await response.bytes()
+          return await response.blob()
         } else {
           console.log(`HTTP ${response.status}: ${response.statusText}`)
         }
@@ -59,7 +59,7 @@ export class OneDriveCloudDrive implements CloudDrive {
     return undefined
   }
 
-  async upload(filename: string, buffer: Uint8Array): Promise<boolean> {
+  async upload(filename: string, blob: Blob): Promise<boolean> {
     const result = await launchPicker("folders")
 
     if (result) {
@@ -73,7 +73,7 @@ export class OneDriveCloudDrive implements CloudDrive {
           this.lastSyncTime = Date.now()
           this.syncInterval = DEFAULT_SYNC_INTERVAL
 
-          this.uploadBuffer(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, buffer)
+          this.uploadBlob(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, blob)
       }
       return true
     }
@@ -81,11 +81,11 @@ export class OneDriveCloudDrive implements CloudDrive {
     return false
   }
 
-  async sync(buffer: Uint8Array) {
+  async sync(blob: Blob) {
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
     if (this.isFileRenamed || !this.fileId) {
-      this.uploadBuffer(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, buffer)
+      this.uploadBlob(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, blob)
     } else {
       const sessionUrl = `${this.apiEndpoint}drive/items/${this.fileId}/createUploadSession`
 
@@ -108,7 +108,7 @@ export class OneDriveCloudDrive implements CloudDrive {
         .then(async response => {
           const json = await response.json();
           if (response.ok) {
-            this.uploadBuffer(json["uploadUrl"], buffer)
+            this.uploadBlob(json["uploadUrl"], blob)
           } else {
             this.syncStatus = CloudDriveSyncStatus.Failed
             console.log(`response.status: ${JSON.stringify(json)}`)
@@ -124,9 +124,9 @@ export class OneDriveCloudDrive implements CloudDrive {
     }
   }
 
-  async uploadBuffer(uploadUrl: string, buffer: Uint8Array): Promise<void> {
+  async uploadBlob(uploadUrl: string, blob: Blob): Promise<void> {
     var offset = 0
-    var chunkSize = Math.min(buffer.length - offset, MAX_UPLOAD_BYTES)
+    var chunkSize = Math.min(blob.size - offset, MAX_UPLOAD_BYTES)
 
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
@@ -137,18 +137,18 @@ export class OneDriveCloudDrive implements CloudDrive {
         mode: 'cors',
         headers: {
           'Authorization': `bearer ${this.accessToken}`,
-          'Content-Length': `${buffer.length}`,
-          'Content-Range': `bytes ${offset}-${offset+chunkSize-1}/${buffer.length}`
+          'Content-Length': `${blob.size}`,
+          'Content-Range': `bytes ${offset}-${offset+chunkSize-1}/${blob.size}`
         },
         duplex: 'half',
-        body: buffer.slice(offset, offset + chunkSize)
+        body: blob.slice(offset, offset + chunkSize)
       } as RequestInit)
         .then(async response => {
           console.log(`fetch response: ${response.status} (${response.statusText})`)
 
           if (response.ok) {
             offset += chunkSize
-            chunkSize = Math.min(buffer.length - offset, MAX_UPLOAD_BYTES)
+            chunkSize = Math.min(blob.size - offset, MAX_UPLOAD_BYTES)
 
             if (chunkSize <= 0) {
               const json = await response.json();
