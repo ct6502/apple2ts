@@ -71,21 +71,21 @@ export class OneDriveCloudDrive implements CloudDrive {
           this.lastSyncTime = Date.now()
           this.syncInterval = DEFAULT_SYNC_INTERVAL
 
-          this.sync(blob)
+          return await this.sync(blob)
       }
-      return true
     }
 
     return false
   }
 
-  async sync(blob: Blob) {
+  async sync(blob: Blob): Promise<boolean> {
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
     const sessionUrl = `${this.apiEndpoint}drive/items/${this.itemId}:/${this.fileName}:/createUploadSession`
+    var success = false
 
     console.log(`fetch: POST ${sessionUrl}`)
-    fetch(sessionUrl, {
+    await fetch(sessionUrl, {
       method: 'POST',
       mode: 'cors',
       headers: {
@@ -103,7 +103,7 @@ export class OneDriveCloudDrive implements CloudDrive {
       .then(async response => {
         const json = await response.json();
         if (response.ok) {
-          this.uploadBlob(json["uploadUrl"], blob)
+          success = await this.uploadBlob(json["uploadUrl"], blob)
         } else {
           this.syncStatus = CloudDriveSyncStatus.Failed
           console.log(`response.status: ${JSON.stringify(json)}`)
@@ -116,12 +116,15 @@ export class OneDriveCloudDrive implements CloudDrive {
     .finally(() => {
       this.lastSyncTime = Date.now()
     })
+
+    return success
   }
 
-  async uploadBlob(uploadUrl: string, blob: Blob): Promise<void> {
+  async uploadBlob(uploadUrl: string, blob: Blob): Promise<boolean> {
     const buffer = await new Response(blob).arrayBuffer();
     var offset = 0
     var chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
+    var success = false
 
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
@@ -147,7 +150,9 @@ export class OneDriveCloudDrive implements CloudDrive {
 
             if (chunkSize <= 0) {
               this.syncStatus = CloudDriveSyncStatus.Active
+              this.lastSyncTime = Date.now()
               this.isFileRenamed = false
+              success = true
             }
           } else {
             this.syncStatus = CloudDriveSyncStatus.Failed
@@ -159,9 +164,11 @@ export class OneDriveCloudDrive implements CloudDrive {
           this.syncStatus = CloudDriveSyncStatus.Failed
         })
         .finally(() => {
+          this.lastSyncTime = Date.now()
         })
     }
-    this.lastSyncTime = Date.now()
+
+    return success
   }
 }
 

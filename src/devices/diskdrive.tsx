@@ -163,14 +163,11 @@ const DiskDrive = (props: DiskDriveProps) => {
 
         setCloudDrive(newCloudDrive)
     }
-    // else {
-    //   console.error(`Cloud drive upload failed: ${dprops.filename}`)
-    // }
   }
 
   const updateCloudDrive = async () => {
     const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
-    if (cloudDrive?.sync(blob)) {
+    if (await cloudDrive?.sync(blob)) {
       dprops.diskHasChanges = false
       doSetEmuDriveProps(dprops)
       doSetUIDriveProps(dprops)
