@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
 import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
@@ -149,28 +149,25 @@ const DiskDrive = (props: DiskDriveProps) => {
       if (newFileName != newCloudDrive.getFileName()) {
         newCloudDrive.setFileName(`apple2ts.${newFileName}`)
       }
-
+5
       setCloudDrive(newCloudDrive)
     }
   }
 
   const saveDiskToCloud = async (newCloudDrive: CloudDrive) => {
     const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
-    if (blob && await newCloudDrive?.upload(dprops.filename, blob)) {
+    if (await newCloudDrive?.upload(dprops.filename, blob)) {
         dprops.diskHasChanges = false
         doSetEmuDriveProps(dprops)
         doSetUIDriveProps(dprops)
 
         setCloudDrive(newCloudDrive)
     }
-    // else {
-    //   console.error(`Cloud drive upload failed: ${dprops.filename}`)
-    // }
   }
 
   const updateCloudDrive = async () => {
     const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
-    if (blob && cloudDrive?.sync(blob)) {
+    if (await cloudDrive?.sync(blob)) {
       dprops.diskHasChanges = false
       doSetEmuDriveProps(dprops)
       doSetUIDriveProps(dprops)

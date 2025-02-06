@@ -17,5 +17,5 @@ export interface CloudDrive {
 
   download(filter: string): Promise<Blob|undefined>
   upload(fileName: string, blob: Blob): Promise<boolean>
-  sync(blob: Blob): Promise<void>
+  sync(blob: Blob): Promise<boolean>
 }

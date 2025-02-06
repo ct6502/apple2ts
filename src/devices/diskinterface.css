@@ -79,7 +79,7 @@ body.dark-mode .disk-cloud {
 }
 
 .disk-clouddrive-failed {
-  color: darkred;
+  color: red;
 }
 
 .disk-clouddrive-paused {
