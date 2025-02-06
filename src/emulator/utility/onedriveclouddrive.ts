@@ -12,8 +12,7 @@ export class OneDriveCloudDrive implements CloudDrive {
   lastSyncTime = -1
 
   accessToken: string = ""
-  fileId: string = ""
-  folderId: string = ""
+  itemId: string = ""
   apiEndpoint: string = ""
   fileName: string = ""
   isFileRenamed: boolean = false
@@ -39,8 +38,7 @@ export class OneDriveCloudDrive implements CloudDrive {
         this.syncStatus = CloudDriveSyncStatus.Active
         this.syncInterval = DEFAULT_SYNC_INTERVAL
         this.lastSyncTime = Date.now()
-        this.fileId = file.id
-        this.folderId = file.parentReference.id
+        this.itemId = file.parentReference.id
         this.fileName = file.name
         this.syncStatus = CloudDriveSyncStatus.InProgress
 
@@ -68,12 +66,12 @@ export class OneDriveCloudDrive implements CloudDrive {
 
       for (const file of result.value) {
           this.syncStatus = CloudDriveSyncStatus.Active
-          this.folderId = file.id
+          this.itemId = file.id
           this.fileName = filename
           this.lastSyncTime = Date.now()
           this.syncInterval = DEFAULT_SYNC_INTERVAL
 
-          this.uploadBlob(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, blob)
+          this.sync(blob)
       }
       return true
     }
@@ -84,49 +82,46 @@ export class OneDriveCloudDrive implements CloudDrive {
   async sync(blob: Blob) {
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
-    if (this.isFileRenamed || !this.fileId) {
-      this.uploadBlob(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, blob)
-    } else {
-      const sessionUrl = `${this.apiEndpoint}drive/items/${this.fileId}/createUploadSession`
+    const sessionUrl = `${this.apiEndpoint}drive/items/${this.itemId}:/${this.fileName}:/createUploadSession`
 
-      console.log(`fetch: POST ${sessionUrl}`)
-      fetch(sessionUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-            'Authorization': `bearer ${this.accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(
-          {
-            "item":
-              {
-                "@microsoft.graph.conflictBehavior": "replace"
-              }
-          })
-      } as RequestInit)
-        .then(async response => {
-          const json = await response.json();
-          if (response.ok) {
-            this.uploadBlob(json["uploadUrl"], blob)
-          } else {
-            this.syncStatus = CloudDriveSyncStatus.Failed
-            console.log(`response.status: ${JSON.stringify(json)}`)
-          }
-      })
-      .catch(error => {
-        console.error(error)
-        this.syncStatus = CloudDriveSyncStatus.Failed
-      })
-      .finally(() => {
-        this.lastSyncTime = Date.now()
-      })
-    }
+    console.log(`fetch: POST ${sessionUrl}`)
+    fetch(sessionUrl, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+          'Authorization': `bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(
+        {
+          "item":
+            {
+              "@microsoft.graph.conflictBehavior": "replace"
+            }
+        })
+    } as RequestInit)
+      .then(async response => {
+        const json = await response.json();
+        if (response.ok) {
+          this.uploadBlob(json["uploadUrl"], blob)
+        } else {
+          this.syncStatus = CloudDriveSyncStatus.Failed
+          console.log(`response.status: ${JSON.stringify(json)}`)
+        }
+    })
+    .catch(error => {
+      console.error(error)
+      this.syncStatus = CloudDriveSyncStatus.Failed
+    })
+    .finally(() => {
+      this.lastSyncTime = Date.now()
+    })
   }
 
   async uploadBlob(uploadUrl: string, blob: Blob): Promise<void> {
+    const buffer = await new Response(blob).arrayBuffer();
     var offset = 0
-    var chunkSize = Math.min(blob.size - offset, MAX_UPLOAD_BYTES)
+    var chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
 
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
@@ -137,23 +132,21 @@ export class OneDriveCloudDrive implements CloudDrive {
         mode: 'cors',
         headers: {
           'Authorization': `bearer ${this.accessToken}`,
-          'Content-Length': `${blob.size}`,
-          'Content-Range': `bytes ${offset}-${offset+chunkSize-1}/${blob.size}`
+          'Content-Length': `${chunkSize}`,
+          'Content-Range': `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
         },
         duplex: 'half',
-        body: blob.slice(offset, offset + chunkSize)
+        body: buffer.slice(offset, offset + chunkSize)
       } as RequestInit)
         .then(async response => {
           console.log(`fetch response: ${response.status} (${response.statusText})`)
 
           if (response.ok) {
             offset += chunkSize
-            chunkSize = Math.min(blob.size - offset, MAX_UPLOAD_BYTES)
+            chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
 
             if (chunkSize <= 0) {
-              const json = await response.json();
               this.syncStatus = CloudDriveSyncStatus.Active
-              this.fileId = json["id"]
               this.isFileRenamed = false
             }
           } else {
