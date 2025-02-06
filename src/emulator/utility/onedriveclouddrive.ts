@@ -84,7 +84,7 @@ export class OneDriveCloudDrive implements CloudDrive {
   async sync(buffer: Uint8Array) {
     this.syncStatus = CloudDriveSyncStatus.InProgress
 
-    if (this.isFileRenamed || !this.fileId) { // || blob.size < MAX_UPLOAD_BYTES) {
+    if (this.isFileRenamed || !this.fileId) {
       this.uploadBuffer(`${this.apiEndpoint}drive/items/${this.folderId}:/${this.fileName}:/content`, buffer)
     } else {
       const sessionUrl = `${this.apiEndpoint}drive/items/${this.fileId}/createUploadSession`
