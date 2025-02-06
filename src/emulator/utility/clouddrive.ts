@@ -15,7 +15,7 @@ export interface CloudDrive {
   getFileName(): string
   setFileName(fileName: string): void
 
-  download(filter: string): Promise<Blob|undefined>
-  upload(fileName: string, blob: Blob): Promise<boolean>
-  sync(blob: Blob): Promise<void>
+  download(filter: string): Promise<Uint8Array|undefined>
+  upload(fileName: string, buffer: Uint8Array): Promise<boolean>
+  sync(buffer: Uint8Array): Promise<void>
 }

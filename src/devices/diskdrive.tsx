@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer, doSetUIDriveProps } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
 import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
@@ -137,26 +137,23 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const loadDiskFromCloud = async (newCloudDrive: CloudDrive) => {
     const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
-    const blob = await newCloudDrive.download(filter)
+    const buffer = await newCloudDrive.download(filter)
 
-    if (blob) {
-      const buffer = await new Response(blob).arrayBuffer()
-
-      handleSetDiskOrFileFromBuffer(dprops.index, buffer, newCloudDrive.getFileName())
+    if (buffer && buffer.length > 0) {
+      handleSetDiskOrFileFromBuffer(dprops.index, await new Response(buffer).arrayBuffer(), newCloudDrive.getFileName())
       doSetEmuDriveNewData(dprops, true)
 
       const newFileName = getDriveFileNameByIndex(dprops.index)
       if (newFileName != newCloudDrive.getFileName()) {
         newCloudDrive.setFileName(`apple2ts.${newFileName}`)
       }
-
+5
       setCloudDrive(newCloudDrive)
     }
   }
 
   const saveDiskToCloud = async (newCloudDrive: CloudDrive) => {
-    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
-    if (blob && await newCloudDrive?.upload(dprops.filename, blob)) {
+    if (await newCloudDrive?.upload(dprops.filename, dprops.diskData)) {
         dprops.diskHasChanges = false
         doSetEmuDriveProps(dprops)
         doSetUIDriveProps(dprops)
@@ -169,8 +166,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const updateCloudDrive = async () => {
-    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
-    if (blob && cloudDrive?.sync(blob)) {
+    if (cloudDrive?.sync(dprops.diskData)) {
       dprops.diskHasChanges = false
       doSetEmuDriveProps(dprops)
       doSetUIDriveProps(dprops)
