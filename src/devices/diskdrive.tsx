@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
+import { crc32, FILE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -7,6 +7,7 @@ import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } fro
 import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
+import { GoogleDrive } from "../emulator/utility/googledrive"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -50,7 +51,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       'Download and Eject Disk',
       'Eject Disk',
       '-',
-      'Save Disk to OneDrive'],
+      'Save Disk to OneDrive',
+      'Save Disk to Google Drive'],
     ['Write Protect Disk',
       '-',
       'Eject Disk',
@@ -61,11 +63,14 @@ const DiskDrive = (props: DiskDriveProps) => {
       'Pause Syncing',
       '-',
       'Sync Now'],
-    ['Load Disk from Local Drive', 'Load Disk from OneDrive']]
+    ['Load Disk from Local Drive',
+      '-',
+      'Load Disk from OneDrive',
+      'Load Disk from Google Drive']]
   const menuChoices = [
-    [3, -1, 0, 1, 2, -1, 4],
+    [3, -1, 0, 1, 2, -1, 4, 5],
     [3, -1, 2, -1, 60000, 300000, 900000, Number.MAX_VALUE, -1, Number.MIN_VALUE],
-    [0, 1]]
+    [0, -1, 1, 2]]
   
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "")
@@ -77,13 +82,15 @@ const DiskDrive = (props: DiskDriveProps) => {
     
     switch (getCloudDriveSyncStatus()) {
       case CloudDriveSyncStatus.Inactive:
-        return dprops.diskData.length > 0 ? `Save Disk to ${cloudDrive.providerName}` : `Load Disk from ${cloudDrive.providerName}`
+        return dprops.diskData.length > 0 ? `Save Disk to ${cloudDrive.providerName}` :
+          `Load Disk from ${cloudDrive.providerName}`
   
       case CloudDriveSyncStatus.Active:
         return `${cloudDrive.providerName} Sync Up-to-date`
         
       case CloudDriveSyncStatus.Pending:
-        return isCloudDriveSyncPaused() ? `${cloudDrive.providerName} Sync Paused` : `${cloudDrive.providerName} Sync Pending`
+        return isCloudDriveSyncPaused() ? `${cloudDrive.providerName} Sync Paused` :
+          `${cloudDrive.providerName} Sync Pending`
         
       case CloudDriveSyncStatus.InProgress:
         return `${cloudDrive.providerName} Sync In Progress`
@@ -136,8 +143,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const loadDiskFromCloud = async (newCloudDrive: CloudDrive) => {
-    const filter = dprops.index >= 2 ? FLOPPY_DISK_SUFFIXES : HARD_DRIVE_SUFFIXES
-    const blob = await newCloudDrive.download(filter)
+    const blob = await newCloudDrive.download(FILE_SUFFIXES)
 
     if (blob) {
       const buffer = await new Response(blob).arrayBuffer()
@@ -160,7 +166,6 @@ const DiskDrive = (props: DiskDriveProps) => {
         dprops.diskHasChanges = false
         doSetEmuDriveProps(dprops)
         doSetUIDriveProps(dprops)
-
         setCloudDrive(newCloudDrive)
     }
   }
@@ -209,20 +214,30 @@ const DiskDrive = (props: DiskDriveProps) => {
     const menuNumber = menuOpen
     setMenuOpen(-1)
     if (menuNumber == 0) {
-      if (menuChoice === 0 || menuChoice === 1) {
-        if (dprops.diskData.length > 0) {
-          downloadDisk(dprops.diskData, filename)
-          dprops.diskHasChanges = false
+      switch (menuChoice) {
+        case 0:  // fall through
+        case 1:
+          if (dprops.diskData.length > 0) {
+            downloadDisk(dprops.diskData, filename)
+            dprops.diskHasChanges = false
+          }
+          if (menuChoice === 1) {
+            resetDrive(props.index)
+          }
+          break
+        case 2:
+          resetDrive(props.index)
+          break
+        case 3:
+          handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
+          break
+        case 4:
+          saveDiskToCloud(new OneDriveCloudDrive())
+          break
+        case 5:
+          saveDiskToCloud(new GoogleDrive())
+          break
         }
-      }
-      if (menuChoice === 1 || menuChoice === 2) {
-        resetDrive(props.index)
-      }
-      if (menuChoice == 3) {
-        handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
-      } else if (menuChoice == 4) {
-        saveDiskToCloud(new OneDriveCloudDrive())
-      }
     } else if (menuNumber == 1) {
       if (menuChoice == 2) {
         resetDrive(props.index)
@@ -239,10 +254,16 @@ const DiskDrive = (props: DiskDriveProps) => {
         }
       }
     } else if (menuNumber == 2) {
-      if (menuChoice == 0) {
-        props.setShowFileOpenDialog(true, props.index)
-      } else if (menuChoice == 1) {
-        loadDiskFromCloud(new OneDriveCloudDrive())
+      switch (menuChoice) {
+        case 0:
+          props.setShowFileOpenDialog(true, props.index)
+          break
+        case 1:
+          loadDiskFromCloud(new OneDriveCloudDrive())
+          break
+        case 2:
+          loadDiskFromCloud(new GoogleDrive())
+          break
       }
     }
   }
