@@ -1,13 +1,13 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { crc32, FILE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
 import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
 import { GoogleDrive } from "../emulator/utility/googledrive"
+import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -77,70 +77,57 @@ const DiskDrive = (props: DiskDriveProps) => {
     setCloudDrive(undefined)
   }
 
-  const getCloudDriveStatusMessage = () => {
-    if (!cloudDrive) return ""
-    
-    switch (getCloudDriveSyncStatus()) {
-      case CloudDriveSyncStatus.Inactive:
-        return dprops.diskData.length > 0 ? `Save Disk to ${cloudDrive.providerName}` :
-          `Load Disk from ${cloudDrive.providerName}`
-  
-      case CloudDriveSyncStatus.Active:
-        return `${cloudDrive.providerName} Sync Up-to-date`
-        
-      case CloudDriveSyncStatus.Pending:
-        return isCloudDriveSyncPaused() ? `${cloudDrive.providerName} Sync Paused` :
-          `${cloudDrive.providerName} Sync Pending`
-        
-      case CloudDriveSyncStatus.InProgress:
-        return `${cloudDrive.providerName} Sync In Progress`
-        
-      case CloudDriveSyncStatus.Failed:
-        return `${cloudDrive.providerName} Sync Failed`
-    }
-  }
+  useEffect(() => {
+    if (!cloudDrive) return
 
-  const getCloudDriveStatusClassName = () => {
+    const timer = setInterval(() => {
+      if (cloudDrive.syncStatus == CloudDriveSyncStatus.Active && dprops.diskHasChanges) {
+        cloudDrive.syncStatus = CloudDriveSyncStatus.Pending
+      }
+
+      if (cloudDrive.syncStatus == CloudDriveSyncStatus.Pending) {
+          if ((Date.now() - cloudDrive.lastSyncTime > cloudDrive.syncInterval)) {
+            updateCloudDrive()
+          }
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+}, [cloudDrive?.syncStatus, dprops.diskHasChanges, cloudDrive?.lastSyncTime, cloudDrive?.syncInterval]);
+
+  const cloudDriveStatusClassName = useMemo(() => {
     if (!cloudDrive) return "disk-clouddrive-inactive"
 
-    const syncStatus = getCloudDriveSyncStatus()
+    const syncStatus = cloudDrive?.syncStatus
 
-    if (isCloudDriveSyncPaused() && syncStatus != CloudDriveSyncStatus.Inactive && syncStatus != CloudDriveSyncStatus.InProgress) {
+    if (cloudDrive?.syncInterval == Number.MAX_VALUE
+      && syncStatus != CloudDriveSyncStatus.Inactive
+      && syncStatus != CloudDriveSyncStatus.InProgress) {
       return "disk-clouddrive-paused"
     } else {
       return `disk-clouddrive-${CloudDriveSyncStatus[syncStatus].toLowerCase()}`
     }
-  }
+  }, [cloudDrive?.syncStatus, cloudDrive?.syncInterval])
 
-  const getDiskDriveLabel = () => {
-    return (cloudDrive && cloudDrive.lastSyncTime > 0)
-      ? `Last synced: ${new Date(cloudDrive.lastSyncTime).toLocaleString()}`
-      : (filename + (dprops.diskHasChanges ? ' (modified)' : ''))
-  }
+  const diskDriveLabel = useMemo(() => {
+    var label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))
 
-  const getCloudDriveSyncStatus = (): CloudDriveSyncStatus => {
-    if (!cloudDrive) return CloudDriveSyncStatus.Inactive
-
-    switch (cloudDrive?.syncStatus) {
-      case CloudDriveSyncStatus.Active:
-        if (dprops.lastWriteTime > cloudDrive?.lastSyncTime) {
-          cloudDrive.syncStatus = CloudDriveSyncStatus.Pending
-        }
-        break
-
-      case CloudDriveSyncStatus.Pending:
-        if ((Date.now() - cloudDrive.lastSyncTime > cloudDrive.syncInterval)) {
-          updateCloudDrive()
-        }
-        break
+    if (cloudDrive && cloudDrive.lastSyncTime > 0) {
+      label += `\nSynced ${new Date(cloudDrive.lastSyncTime).toLocaleString()}`
     }
 
-    return cloudDrive.syncStatus
-  }
+    return label
+  }, [cloudDrive?.lastSyncTime, dprops.diskHasChanges])
 
-  const isCloudDriveSyncPaused = () => {
-    return cloudDrive?.syncInterval == Number.MAX_VALUE
-  }
+  const driveFileName = useMemo(() => {
+    if (dprops.filename == '') {
+      setCloudDrive(undefined)
+    }
+    
+    if (cloudDrive && dprops.filename != cloudDrive.getFileName()) {
+      cloudDrive?.setFileName(`apple2ts.${dprops.filename}`)
+    }
+    return dprops.filename
+  }, [dprops.filename]) 
 
   const loadDiskFromCloud = async (newCloudDrive: CloudDrive) => {
     const blob = await newCloudDrive.download(FILE_SUFFIXES)
@@ -149,30 +136,21 @@ const DiskDrive = (props: DiskDriveProps) => {
       const buffer = await new Response(blob).arrayBuffer()
 
       handleSetDiskOrFileFromBuffer(dprops.index, buffer, newCloudDrive.getFileName())
-      doSetEmuDriveNewData(dprops, true)
-
-      const newFileName = getDriveFileNameByIndex(dprops.index)
-      if (newFileName != newCloudDrive.getFileName()) {
-        newCloudDrive.setFileName(`apple2ts.${newFileName}`)
-      }
-5
       setCloudDrive(newCloudDrive)
     }
   }
 
   const saveDiskToCloud = async (newCloudDrive: CloudDrive) => {
-    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
     if (await newCloudDrive?.upload(dprops.filename, blob)) {
-        dprops.diskHasChanges = false
-        doSetEmuDriveProps(dprops)
-        doSetUIDriveProps(dprops)
         setCloudDrive(newCloudDrive)
+        updateCloudDrive(newCloudDrive)
     }
   }
 
-  const updateCloudDrive = async () => {
-    const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
-    if (await cloudDrive?.sync(blob)) {
+  const updateCloudDrive = async (newCloudDrive: CloudDrive|undefined = cloudDrive) => {
+    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
+    if (await newCloudDrive?.sync(blob)) {
       dprops.diskHasChanges = false
       doSetEmuDriveProps(dprops)
       doSetUIDriveProps(dprops)
@@ -199,7 +177,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const y = Math.min(event.clientY, window.innerHeight - 200)
     setPosition({ x: event.clientX, y: y })
 
-    if (!cloudDrive || getCloudDriveSyncStatus() == CloudDriveSyncStatus.Inactive) {
+    if (!cloudDrive || cloudDrive.syncStatus == CloudDriveSyncStatus.Inactive) {
       if (dprops.filename.length > 0) {
         setMenuOpen(0)
       } else {
@@ -287,12 +265,11 @@ const DiskDrive = (props: DiskDriveProps) => {
           <img className="disk-image"
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
-            title={getDiskDriveLabel()}
+            title={diskDriveLabel}
             onClick={handleMenuClick} />
             <FontAwesomeIcon
               icon={faRotate}
-              className={"fa-fw disk-clouddrive " + getCloudDriveStatusClassName()}
-              title={getCloudDriveStatusMessage()}>
+              className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>
             </FontAwesomeIcon>
         </span>
       </span>
