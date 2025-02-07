@@ -114,6 +114,10 @@ const DiskDrive = (props: DiskDriveProps) => {
   }, [cloudDrive?.lastSyncTime, dprops.diskHasChanges])
 
   const driveFileName = useMemo(() => {
+    if (dprops.filename == '') {
+      setCloudDrive(undefined)
+    }
+    
     if (cloudDrive && dprops.filename != cloudDrive.getFileName()) {
       cloudDrive?.setFileName(`apple2ts.${dprops.filename}`)
     }
