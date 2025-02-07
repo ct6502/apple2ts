@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { crc32, FLOPPY_DISK_SUFFIXES, HARD_DRIVE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
-import { doSetEmuDriveNewData, doSetEmuDriveProps, getDriveFileNameByIndex } from "../emulator/devices/drivestate"
+import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -72,25 +72,22 @@ const DiskDrive = (props: DiskDriveProps) => {
     setCloudDrive(undefined)
   }
 
-  const cloudSyncStatus = useMemo(() => {
-    if (!cloudDrive) return CloudDriveSyncStatus.Inactive
+  useEffect(() => {
+    if (!cloudDrive) return
 
-    switch (cloudDrive?.syncStatus) {
-      case CloudDriveSyncStatus.Active:
-        if (dprops.lastWriteTime > cloudDrive?.lastSyncTime) {
-          cloudDrive.syncStatus = CloudDriveSyncStatus.Pending
-        }
-        break
+    const timer = setInterval(() => {
+      if (cloudDrive.syncStatus == CloudDriveSyncStatus.Active && dprops.diskHasChanges) {
+        cloudDrive.syncStatus = CloudDriveSyncStatus.Pending
+      }
 
-      case CloudDriveSyncStatus.Pending:
-        if ((Date.now() - cloudDrive.lastSyncTime > cloudDrive.syncInterval)) {
-          updateCloudDrive()
-        }
-        break
-    }
-
-    return cloudDrive.syncStatus
-  }, [cloudDrive?.syncStatus, dprops.lastWriteTime, cloudDrive?.lastSyncTime, cloudDrive?.syncInterval])
+      if (cloudDrive.syncStatus == CloudDriveSyncStatus.Pending) {
+          if ((Date.now() - cloudDrive.lastSyncTime > cloudDrive.syncInterval)) {
+            updateCloudDrive()
+          }
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+}, [cloudDrive?.syncStatus, dprops.diskHasChanges, cloudDrive?.lastSyncTime, cloudDrive?.syncInterval]);
 
   const cloudDriveStatusClassName = useMemo(() => {
     if (!cloudDrive) return "disk-clouddrive-inactive"
@@ -104,7 +101,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else {
       return `disk-clouddrive-${CloudDriveSyncStatus[syncStatus].toLowerCase()}`
     }
-  }, [cloudSyncStatus, cloudDrive?.syncInterval])
+  }, [cloudDrive?.syncStatus, cloudDrive?.syncInterval])
 
   const diskDriveLabel = useMemo(() => {
     var label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))
@@ -172,7 +169,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const y = Math.min(event.clientY, window.innerHeight - 200)
     setPosition({ x: event.clientX, y: y })
 
-    if (!cloudDrive || cloudSyncStatus == CloudDriveSyncStatus.Inactive) {
+    if (!cloudDrive || cloudDrive.syncStatus == CloudDriveSyncStatus.Inactive) {
       if (dprops.filename.length > 0) {
         setMenuOpen(0)
       } else {
