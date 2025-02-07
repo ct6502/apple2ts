@@ -71,7 +71,6 @@ export class OneDriveCloudDrive implements CloudDrive {
           this.lastSyncTime = Date.now()
           this.syncInterval = DEFAULT_SYNC_INTERVAL
 
-          // return await this.sync(blob)
           return true
       }
     }
