@@ -12,7 +12,7 @@ export class GoogleDrive implements CloudDrive {
   gisInited = false
   pickerInited = false
   tokenClient: any
-  private resolvePicker: ((result: GoogleDriveResult | null) => void) | null = null;
+  private resolvePicker: ((result: GoogleDriveResult | null) => void) | null = null
 
   syncStatus = CloudDriveSyncStatus.Inactive
   syncInterval = DEFAULT_SYNC_INTERVAL
@@ -21,8 +21,6 @@ export class GoogleDrive implements CloudDrive {
   apiEndpoint: string = ""
   fileId: string = ""
   parentID: string = ""
-  downloadUrl: string = ""
-  uploadUrl: string = ""
   fileName: string = ""
 
   getFileName(): string {
@@ -31,7 +29,6 @@ export class GoogleDrive implements CloudDrive {
 
   setFileName(fileName: string): void {
     this.fileName = fileName
-    this.uploadUrl = ""
   }
 
   // Create and render a Google Picker object for selecting from Drive.
@@ -50,12 +47,12 @@ export class GoogleDrive implements CloudDrive {
         googleView = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
           .setSelectFolderEnabled(true)
           .setIncludeFolders(true)
-          .setMimeTypes('application/vnd.google-apps.folder');
+          .setMimeTypes('application/vnd.google-apps.folder')
       }
       const picker = new google.picker.PickerBuilder()
         .addView(googleView)
         // .enableFeature(google.picker.Feature.NAV_HIDDEN)  // hide the nav bar at the top
-        // .enableFeature(google.picker.Feature.MINE_ONLY)   // only show user's drive files
+        .enableFeature(google.picker.Feature.MINE_ONLY)   // only show user's drive files
         .setOAuthToken(g_accessToken)
         .setDeveloperKey('AIzaSyAPlfA031A8MyXrDd-o9xaHjEmEUkW64R4')
         .setCallback(this.pickerCallback)
@@ -76,7 +73,7 @@ export class GoogleDrive implements CloudDrive {
     if (!this.gisInited) {
       this.tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: '831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com',
-        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly',
+        scope: 'https://www.googleapis.com/auth/drive',
         callback: () => {}, // defined later
       })
       this.gisInited = true
@@ -94,16 +91,16 @@ export class GoogleDrive implements CloudDrive {
     if (g_accessToken === "") {
       // Prompt the user to select a Google Account and ask for consent to share their data
       // when establishing a new session.
-      this.tokenClient.requestAccessToken({prompt: ''})
+      this.tokenClient.requestAccessToken({prompt: 'consent'})
     } else {
       // Skip display of account chooser and consent dialog for an existing session.
       showPicker(view, filter)
     }
   }
 
-  // A simple callback implementation.
+  // Once a file/folder gets picked, it calls back here.
   pickerCallback = (data: any) => {
-    console.log(`data = ${JSON.stringify(data, null, 2)}`)
+    // console.log(`data = ${JSON.stringify(data, null, 2)}`)
     if (data["action"] === "picked") {
       const doc = data["docs"][0]
       if (this.resolvePicker) {
@@ -112,12 +109,12 @@ export class GoogleDrive implements CloudDrive {
           parentID: doc[google.picker.Document.PARENT_ID],
           fileName: doc[google.picker.Document.NAME],
         })
-        this.resolvePicker = null;
+        this.resolvePicker = null
       }
     } else if (data["action"] === "cancel") {
       if (this.resolvePicker) {
-        this.resolvePicker(null);
-        this.resolvePicker = null;
+        this.resolvePicker(null)
+        this.resolvePicker = null
       }
     }
   }
@@ -134,43 +131,40 @@ export class GoogleDrive implements CloudDrive {
   }
 
   async download(filter: string): Promise<Blob|undefined> {
+    this.syncStatus = CloudDriveSyncStatus.InProgress
     const result = await this.launchPicker("file", filter)
     if (result) {
-      this.syncStatus = CloudDriveSyncStatus.Active
-      this.syncInterval = DEFAULT_SYNC_INTERVAL
+      this.syncStatus = CloudDriveSyncStatus.InProgress
       this.lastSyncTime = Date.now()
       this.fileId = result.fileId
       this.parentID = result.parentID
       this.fileName = result.fileName
-      //   this.downloadUrl = file["@content.downloadUrl"]
-      //   this.uploadUrl = `${this.apiEndpoint}drive/items/${file.id}/content`
 
-      this.syncStatus = CloudDriveSyncStatus.InProgress
-
-      const url = `https://www.googleapis.com/drive/v3/files/${this.fileId}?alt=media`;
+      const url = `https://www.googleapis.com/drive/v3/files/${this.fileId}?alt=media`
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${g_accessToken}`
         }
       })
       if (response.ok) {
+        console.log(`File download success: ${this.fileName}`)
         this.syncStatus = CloudDriveSyncStatus.Active
         return await response.blob()
       } else {
+        console.error(`Error downloading ${this.fileName}: ${response.statusText}`)
         this.syncStatus = CloudDriveSyncStatus.Failed
-        console.log(`HTTP ${response.status}: ${response.statusText}`)
+        return undefined
       }
     }
     return undefined
   }
 
   async upload(filename: string, blob: Blob): Promise<boolean> {
+    this.syncStatus = CloudDriveSyncStatus.InProgress
     const result = await this.launchPicker("folder")
 
     if (result) {
-      console.log(`result = ${JSON.stringify(result, null, 2)}`)
-      this.syncStatus = CloudDriveSyncStatus.Active
-      this.syncInterval = DEFAULT_SYNC_INTERVAL
+      this.syncStatus = CloudDriveSyncStatus.InProgress
       this.lastSyncTime = Date.now()
       this.parentID = result.fileId
       this.fileName = result.fileName
@@ -180,36 +174,68 @@ export class GoogleDrive implements CloudDrive {
           name: filename,
           parents: [this.parentID],
         }
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', blob);
+        const form = new FormData()
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
+        form.append('file', blob)
 
         const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
           method: 'POST',
           headers: new Headers({ 'Authorization': 'Bearer ' + g_accessToken }),
           body: form,
-        });
+        })
 
         if (response.ok) {
-          console.log('File uploaded successfully');
-          return true;
+          console.log(`File upload success: ${this.fileName}`)
+          // Make sure to get our new Google Drive fileId so we can sync later.
+          const responseData = await response.json();
+          this.fileId = responseData.id;
+          this.syncStatus = CloudDriveSyncStatus.Active
+          return true
         } else {
-          console.error('Error uploading file:', response.statusText);
-          return false;
+          console.error(`Error uploading ${this.fileName}: ${response.statusText}`)
+          this.syncStatus = CloudDriveSyncStatus.Failed
+          return false
         }
       } catch (error) {
-        console.error('Error uploading file:', error);
-        return false;
+        console.error(`Error uploading ${this.fileName}: ${error}`)
+        this.syncStatus = CloudDriveSyncStatus.Failed
+        return false
       }
     }
     return false
   }
 
   async sync(blob: Blob): Promise<boolean> {
-    // TBD
-    return true
-  }
+    this.syncStatus = CloudDriveSyncStatus.InProgress
+    this.lastSyncTime = Date.now()
 
+    try {
+      // // To update the file, we just need to send the blob using PATCH with no metadata.
+      const form = new FormData()
+      form.append('file', blob)
+      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${this.fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: new Headers({ 'Authorization': 'Bearer ' + g_accessToken }),
+        body: blob,
+      })
+
+      if (response.ok) {
+        console.log(`File sync success: ${this.fileName}`)
+        this.syncStatus = CloudDriveSyncStatus.Active
+        return true
+      } else {
+        console.error('Error syncing file:', response.statusText)
+        this.syncStatus = CloudDriveSyncStatus.Failed
+        return false
+      }
+    } catch (error) {
+      console.error('Error syncing file:', error)
+      this.syncStatus = CloudDriveSyncStatus.Failed
+      return false
+    }
+
+    return false
+  }
 }
 
 
@@ -218,37 +244,3 @@ interface GoogleDriveResult {
   parentID: string,
   fileName: string
 }
-
-// interface OneDriveParent {
-//   id: string
-// }
-
-// interface DriveItem {
-//   "@content.downloadUrl": string
-//   id: string
-//   name: string
-//   size: number
-//   thumbnails: Thumbnails[]
-//   webUrl: string
-//   parentReference: OneDriveParent
-// }
-
-// interface Thumbnails {
-//   id: string
-//   large: Thumbnail
-//   medium: Thumbnail
-//   small: Thumbnail
-// }
-
-// interface Thumbnail {
-//   height: number
-//   width: number
-//   url: string
-// }
-
-// interface OneDrive {
-//   open(options: OneDriveOpenOptions): any
-//   save(options: OneDriveOpenOptions): any
-// }
-
-// declare var OneDrive: OneDrive
