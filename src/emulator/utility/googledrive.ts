@@ -73,7 +73,7 @@ export class GoogleDrive implements CloudDrive {
     if (!this.gisInited) {
       this.tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: '831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com',
-        scope: 'https://www.googleapis.com/auth/drive',
+        scope: 'https://www.googleapis.com/auth/drive.file',
         callback: () => {}, // defined later
       })
       this.gisInited = true
