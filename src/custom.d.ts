@@ -113,6 +113,24 @@ type MachineState = {
   useOpenAppleKey: boolean,
 }
 
+type CloudData = {
+  providerName: string,
+  syncStatus: number,
+  syncInterval: number,
+  lastSyncTime: number,
+  fileName: string,
+  accessToken: string,
+  itemId: string,
+  apiEndpoint: string,
+  parentID: string
+}
+
+type CloudProvider = {
+  download(filter: string): Promise<[Blob, CloudData] | null>,
+  upload(fileName: string, blob: Blob): Promise<CloudData | null>,
+  sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
+}
+
 type DriveState = {
   index: number,
   hardDrive: boolean,
@@ -131,7 +149,8 @@ type DriveState = {
   trackNbits: Array<number>,
   trackLocation: number,
   maxHalftrack: number,
-  lastWriteTime: number
+  lastWriteTime: number,
+  cloudData: CloudData | null
 }
 
 type DriveProps = {
@@ -144,7 +163,8 @@ type DriveProps = {
   diskHasChanges: boolean,
   isWriteProtected: boolean,
   diskData: Uint8Array,
-  lastWriteTime: number
+  lastWriteTime: number,
+  cloudData: CloudData | null
 }
 
 type DriveSaveState = {

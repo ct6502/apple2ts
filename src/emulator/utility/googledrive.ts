@@ -1,35 +1,16 @@
-import { CloudDrive, CloudDriveSyncStatus } from "./clouddrive"
+import { CloudDriveSyncStatus } from "./clouddrive"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
 export const DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000
 
-// Make this global so we don't have to keep re-selecting our Google Drive account
+// Make these global so we don't have to keep re-selecting our Google Drive account
 let g_accessToken: string = ""
+let g_pickerInited = false
 
-
-export class GoogleDrive implements CloudDrive {
-  providerName = "GoogleDrive"
+export class GoogleDrive implements CloudProvider {
   gisInited = false
-  pickerInited = false
   tokenClient: any
   private resolvePicker: ((result: GoogleDriveResult | null) => void) | null = null
-
-  syncStatus = CloudDriveSyncStatus.Inactive
-  syncInterval = DEFAULT_SYNC_INTERVAL
-  lastSyncTime = -1
-
-  apiEndpoint: string = ""
-  fileId: string = ""
-  parentID: string = ""
-  fileName: string = ""
-
-  getFileName(): string {
-    return this.fileName
-  }
-
-  setFileName(fileName: string): void {
-    this.fileName = fileName
-  }
 
   // Create and render a Google Picker object for selecting from Drive.
   createPicker = (view: string, filter?: string) => {
@@ -62,9 +43,9 @@ export class GoogleDrive implements CloudDrive {
       picker.setVisible(true)
     }
 
-    if (!this.pickerInited) {
+    if (!g_pickerInited) {
       gapi.load('picker', () => {
-        this.pickerInited = true
+        g_pickerInited = true
       } )
       gapi.load('client:auth2', () => {
       } )
@@ -130,49 +111,60 @@ export class GoogleDrive implements CloudDrive {
     })
   }
 
-  async download(filter: string): Promise<Blob|undefined> {
-    this.syncStatus = CloudDriveSyncStatus.InProgress
+  async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await this.launchPicker("file", filter)
     if (result) {
-      this.syncStatus = CloudDriveSyncStatus.InProgress
-      this.lastSyncTime = Date.now()
-      this.fileId = result.fileId
-      this.parentID = result.parentID
-      this.fileName = result.fileName
+      const cloudData: CloudData = {
+        providerName: "GoogleDrive",
+        syncStatus: CloudDriveSyncStatus.InProgress,
+        syncInterval: DEFAULT_SYNC_INTERVAL,
+        lastSyncTime: Date.now(),
+        fileName: result.fileName,
+        accessToken: "",
+        itemId: result.fileId,
+        apiEndpoint: "",
+        parentID: result.parentID,
+      }
 
-      const url = `https://www.googleapis.com/drive/v3/files/${this.fileId}?alt=media`
+      const url = `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${g_accessToken}`
         }
       })
       if (response.ok) {
-        console.log(`File download success: ${this.fileName}`)
-        this.syncStatus = CloudDriveSyncStatus.Active
-        return await response.blob()
+        console.log(`File download success: ${result.fileName}`)
+        cloudData.syncStatus = CloudDriveSyncStatus.Active
+        const blob = await response.blob()
+        return [blob, cloudData]
       } else {
-        console.error(`Error downloading ${this.fileName}: ${response.statusText}`)
-        this.syncStatus = CloudDriveSyncStatus.Failed
-        return undefined
+        console.error(`Error downloading ${result.fileName}: ${response.statusText}`)
+        return null
       }
     }
-    return undefined
+    return null
   }
 
-  async upload(filename: string, blob: Blob): Promise<boolean> {
-    this.syncStatus = CloudDriveSyncStatus.InProgress
+  async upload(filename: string, blob: Blob): Promise<CloudData | null> {
     const result = await this.launchPicker("folder")
 
     if (result) {
-      this.syncStatus = CloudDriveSyncStatus.InProgress
-      this.lastSyncTime = Date.now()
-      this.parentID = result.fileId
-      this.fileName = result.fileName
+      const cloudData: CloudData = {
+        providerName: "GoogleDrive",
+        syncStatus: CloudDriveSyncStatus.InProgress,
+        syncInterval: DEFAULT_SYNC_INTERVAL,
+        lastSyncTime: Date.now(),
+        fileName: filename,
+        accessToken: "",
+        itemId: "",
+        apiEndpoint: "",
+        parentID: result.fileId,
+      }
 
       try {
         const metadata = {
           name: filename,
-          parents: [this.parentID],
+          parents: [cloudData.parentID],
         }
         const form = new FormData()
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
@@ -185,52 +177,52 @@ export class GoogleDrive implements CloudDrive {
         })
 
         if (response.ok) {
-          console.log(`File upload success: ${this.fileName}`)
+          console.log(`File upload success: ${filename}`)
           // Make sure to get our new Google Drive fileId so we can sync later.
           const responseData = await response.json();
-          this.fileId = responseData.id;
-          this.syncStatus = CloudDriveSyncStatus.Active
-          return true
+          cloudData.itemId = responseData.id;
+          cloudData.syncStatus = CloudDriveSyncStatus.Active
+          return cloudData
         } else {
-          console.error(`Error uploading ${this.fileName}: ${response.statusText}`)
-          this.syncStatus = CloudDriveSyncStatus.Failed
-          return false
+          console.error(`Error uploading ${filename}: ${response.statusText}`)
+          cloudData.syncStatus = CloudDriveSyncStatus.Failed
+          return null
         }
       } catch (error) {
-        console.error(`Error uploading ${this.fileName}: ${error}`)
-        this.syncStatus = CloudDriveSyncStatus.Failed
-        return false
+        console.error(`Error uploading ${filename}: ${error}`)
+        cloudData.syncStatus = CloudDriveSyncStatus.Failed
+        return null
       }
     }
-    return false
+    return null
   }
 
-  async sync(blob: Blob): Promise<boolean> {
-    this.syncStatus = CloudDriveSyncStatus.InProgress
-    this.lastSyncTime = Date.now()
+  async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
+    cloudData.syncStatus = CloudDriveSyncStatus.InProgress
+    cloudData.lastSyncTime = Date.now()
 
     try {
       // // To update the file, we just need to send the blob using PATCH with no metadata.
       const form = new FormData()
       form.append('file', blob)
-      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${this.fileId}?uploadType=media`, {
+      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${cloudData.itemId}?uploadType=media`, {
         method: 'PATCH',
         headers: new Headers({ 'Authorization': 'Bearer ' + g_accessToken }),
         body: blob,
       })
 
       if (response.ok) {
-        console.log(`File sync success: ${this.fileName}`)
-        this.syncStatus = CloudDriveSyncStatus.Active
+        console.log(`File sync success: ${cloudData.fileName}`)
+        cloudData.syncStatus = CloudDriveSyncStatus.Active
         return true
       } else {
         console.error('Error syncing file:', response.statusText)
-        this.syncStatus = CloudDriveSyncStatus.Failed
+        cloudData.syncStatus = CloudDriveSyncStatus.Failed
         return false
       }
     } catch (error) {
       console.error('Error syncing file:', error)
-      this.syncStatus = CloudDriveSyncStatus.Failed
+      cloudData.syncStatus = CloudDriveSyncStatus.Failed
       return false
     }
 

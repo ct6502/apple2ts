@@ -28,7 +28,7 @@ const FileInput = (props: DisplayProps) => {
           setDisplayBinaryDialog(true)
         }
       } else {
-        handleSetDiskOrFileFromBuffer(index, buffer, file.name)
+        handleSetDiskOrFileFromBuffer(index, buffer, file.name, null)
       }
     }
   }

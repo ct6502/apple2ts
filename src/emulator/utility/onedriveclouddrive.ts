@@ -1,87 +1,69 @@
-import { CloudDrive, CloudDriveSyncStatus } from "./clouddrive";
+import { CloudDriveSyncStatus } from "./clouddrive"
 
 export const DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
+// const applicationId = "5e3e8e67-67b3-4fd1-8f31-4b4ca52966cd"
 
-export class OneDriveCloudDrive implements CloudDrive {
-  providerName = "OneDrive"
-  syncStatus = CloudDriveSyncStatus.Inactive
-  syncInterval = DEFAULT_SYNC_INTERVAL
-  lastSyncTime = -1
+export class OneDriveCloudDrive implements CloudProvider {
 
-  accessToken: string = ""
-  itemId: string = ""
-  apiEndpoint: string = ""
-  fileName: string = ""
-  isFileRenamed: boolean = false
-
-  getFileName(): string {
-    return this.fileName
-  }
-
-  setFileName(fileName: string): void {
-    if (this.fileName != fileName) {
-      this.isFileRenamed = true
-    }
-    this.fileName = fileName
-  }
-
-  async download(filter: string): Promise<Blob|undefined> {
+  async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await launchPicker("files", filter)
-    if (result) {
-      this.accessToken = result.accessToken
-      this.apiEndpoint = result.apiEndpoint
+    const file = result?.value[0]
+    if (file) {
+      const cloudData: CloudData = {
+        providerName: "OneDrive",
+        syncStatus: CloudDriveSyncStatus.InProgress,
+        syncInterval: DEFAULT_SYNC_INTERVAL,
+        lastSyncTime: Date.now(),
+        fileName: file.name,
+        accessToken: result.accessToken,
+        itemId: file.parentReference.id,
+        apiEndpoint: result.apiEndpoint,
+        parentID: "",
+      }
 
-      for (const file of result.value) {
-        this.syncStatus = CloudDriveSyncStatus.Active
-        this.syncInterval = DEFAULT_SYNC_INTERVAL
-        this.lastSyncTime = Date.now()
-        this.itemId = file.parentReference.id
-        this.fileName = file.name
-        this.syncStatus = CloudDriveSyncStatus.InProgress
-
-        const downloadUrl = file["@content.downloadUrl"]
-        console.log(`HTTP GET: ${downloadUrl}`)
-        const response = await fetch(downloadUrl);
-        if (response.ok) {
-          this.syncStatus = CloudDriveSyncStatus.Active
-          return await response.blob()
-        } else {
-          console.log(`HTTP ${response.status}: ${response.statusText}`)
-        }
+      const downloadUrl = file["@content.downloadUrl"]
+      console.log(`HTTP GET: ${downloadUrl}`)
+      const response = await fetch(downloadUrl);
+      if (response.ok) {
+        cloudData.syncStatus = CloudDriveSyncStatus.Active
+        const blob = await response.blob()
+        return [blob, cloudData]
+      } else {
+        console.log(`HTTP ${response.status}: ${response.statusText}`)
       }
     }
 
-    return undefined
+    return null
   }
 
-  async upload(filename: string, blob: Blob): Promise<boolean> {
+  async upload(filename: string, blob: Blob): Promise<CloudData | null> {
     const result = await launchPicker("folders")
-
-    if (result) {
-      this.accessToken = result.accessToken
-      this.apiEndpoint = result.apiEndpoint
-
-      for (const file of result.value) {
-          this.syncStatus = CloudDriveSyncStatus.Active
-          this.itemId = file.id
-          this.fileName = filename
-          this.lastSyncTime = Date.now()
-          this.syncInterval = DEFAULT_SYNC_INTERVAL
-
-          return true
+    const file = result?.value[0]
+    if (file) {
+      const cloudData: CloudData = {
+        providerName: "OneDrive",
+        syncStatus: CloudDriveSyncStatus.Active,
+        syncInterval: DEFAULT_SYNC_INTERVAL,
+        lastSyncTime: Date.now(),
+        fileName: filename,
+        accessToken: result.accessToken,
+        itemId: file.id,
+        apiEndpoint: result.apiEndpoint,
+        parentID: "",
       }
+      this.sync(blob, cloudData)
+      return cloudData
     }
-
-    return false
+    return null
   }
 
-  async sync(blob: Blob): Promise<boolean> {
-    this.syncStatus = CloudDriveSyncStatus.InProgress
+  async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
+    cloudData.syncStatus = CloudDriveSyncStatus.InProgress
 
-    const sessionUrl = `${this.apiEndpoint}drive/items/${this.itemId}:/${this.fileName}:/createUploadSession`
+    const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.itemId}:/${cloudData.fileName}:/createUploadSession`
     var success = false
 
     console.log(`fetch: POST ${sessionUrl}`)
@@ -89,7 +71,7 @@ export class OneDriveCloudDrive implements CloudDrive {
       method: 'POST',
       mode: 'cors',
       headers: {
-          'Authorization': `bearer ${this.accessToken}`,
+          'Authorization': `bearer ${cloudData.accessToken}`,
           'Content-Type': 'application/json'
       },
       body: JSON.stringify(
@@ -103,38 +85,38 @@ export class OneDriveCloudDrive implements CloudDrive {
       .then(async response => {
         const json = await response.json();
         if (response.ok) {
-          success = await this.uploadBlob(json["uploadUrl"], blob)
+          success = await this.uploadBlob(json["uploadUrl"], blob, cloudData)
         } else {
-          this.syncStatus = CloudDriveSyncStatus.Failed
+          cloudData.syncStatus = CloudDriveSyncStatus.Failed
           console.log(`response.status: ${JSON.stringify(json)}`)
         }
     })
     .catch(error => {
       console.error(error)
-      this.syncStatus = CloudDriveSyncStatus.Failed
+      cloudData.syncStatus = CloudDriveSyncStatus.Failed
     })
     .finally(() => {
-      this.lastSyncTime = Date.now()
+      cloudData.lastSyncTime = Date.now()
     })
 
     return success
   }
 
-  async uploadBlob(uploadUrl: string, blob: Blob): Promise<boolean> {
+  async uploadBlob(uploadUrl: string, blob: Blob, cloudData: CloudData): Promise<boolean> {
     const buffer = await new Response(blob).arrayBuffer();
     var offset = 0
     var chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
     var success = false
 
-    this.syncStatus = CloudDriveSyncStatus.InProgress
+    cloudData.syncStatus = CloudDriveSyncStatus.InProgress
 
-    while (this.syncStatus == CloudDriveSyncStatus.InProgress) {
+    while (cloudData.syncStatus == CloudDriveSyncStatus.InProgress) {
       console.log(`fetch: PUT ${uploadUrl}`)
       await fetch(uploadUrl, {
         method: 'PUT',
         mode: 'cors',
         headers: {
-          'Authorization': `bearer ${this.accessToken}`,
+          'Authorization': `bearer ${cloudData.accessToken}`,
           'Content-Length': `${chunkSize}`,
           'Content-Range': `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
         },
@@ -149,22 +131,20 @@ export class OneDriveCloudDrive implements CloudDrive {
             chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
 
             if (chunkSize <= 0) {
-              this.syncStatus = CloudDriveSyncStatus.Active
-              this.lastSyncTime = Date.now()
-              this.isFileRenamed = false
+              cloudData.syncStatus = CloudDriveSyncStatus.Active
               success = true
             }
           } else {
-            this.syncStatus = CloudDriveSyncStatus.Failed
+            cloudData.syncStatus = CloudDriveSyncStatus.Failed
             console.log(`response.status: ${await response.text()}`)
           }
         })
         .catch(error => {
           console.error(error)
-          this.syncStatus = CloudDriveSyncStatus.Failed
+          cloudData.syncStatus = CloudDriveSyncStatus.Failed
         })
         .finally(() => {
-          this.lastSyncTime = Date.now()
+          cloudData.lastSyncTime = Date.now()
         })
     }
 
