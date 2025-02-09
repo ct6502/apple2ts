@@ -85,6 +85,7 @@ input:focus {
 .flex-column {
   display: flex;
   flex-direction: column;
+  border: red solid 3px;
 }
 
 .flex-column-gap {

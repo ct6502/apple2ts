@@ -178,7 +178,7 @@ const DisplayApple2 = () => {
       <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <div id="apple2e" className="flex-row">
-            <div className="flex-column" style={{flexGrow: 1}}>
+            <div className="flex-column" style={{width: "100%"}}>
               <Apple2Canvas {...props} />
             </div>
             <div className="flex-column">
@@ -194,11 +194,11 @@ const DisplayApple2 = () => {
         </div>
         {isLandscape && status}
         {narrow && <div className="divider"></div>}
-        <span className="flex-column" ref={righthandSectionRef}>
+        {/* <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
               helptext={handleGetHelpText()} />}
-        </span>
+        </span> */}
       </span>
       <FileInput {...props} />
     </div>
