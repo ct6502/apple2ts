@@ -1,5 +1,6 @@
 :root {
-  --background-color: #BFBB98;
+  /* --background-color: #BFBB98; */
+  --background-color: #ffffff;
   --background-color-dark: #181818;
   --panel-background: #C9C5A0;
   --panel-background-dark: #222;
@@ -77,9 +78,9 @@ input:focus {
 }
 
 .flex-row-gap {
-  display: flex;
+  /* display: flex;
   flex-direction: row;
-  gap: 7px;
+  gap: 7px; */
 }
 
 .flex-column {
@@ -88,25 +89,25 @@ input:focus {
 }
 
 .flex-column-gap {
-  display: flex;
+  /* display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 7px; */
 }
 
 .flex-row-space-between {
-  display: flex;
+  /* display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-between; */
 }
 
 .flex-column-space-between {
-  display: flex;
+  /* display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-between; */
 }
 
 .wrap {
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 .push-button {
@@ -381,4 +382,10 @@ body.dark-mode .divider {
 .noselect {
   cursor: default;
   user-select: none;
+}
+
+.apple2e {
+  width: 100%;
+  height: auto;
+  border: red solid 3px;
 }

@@ -3,6 +3,13 @@
   text-align: center;
   vertical-align: middle;
   padding-bottom: 0px;
+
+  position: absolute;
+  margin-left: 140px;
+  margin-top: 112px;
+  pointer-events: none;
+
+  z-index: -1;
 }
 
 .main-canvas {
