@@ -3,11 +3,12 @@ import { crc32, FILE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility
 import { imageList } from "./assets"
 import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { CloudDrive, CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
 import { GoogleDrive } from "../emulator/utility/googledrive"
 import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
+import { driveMenuItems } from "./diskdrive_menu"
+import { CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -37,123 +38,107 @@ type DiskDriveProps = {
 }
 
 const DiskDrive = (props: DiskDriveProps) => {
-  const dprops = handleGetDriveProps(props.index)
+  const dprops = handleGetDriveProps(props.index) as DriveProps
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
-
-  const [cloudDrive, setCloudDrive] = useState<CloudDrive>()
-
-  const menuNames = [
-    ['Write Protect Disk',
-      '-',
-      'Download Disk',
-      'Download and Eject Disk',
-      'Eject Disk',
-      '-',
-      'Save Disk to OneDrive',
-      'Save Disk to Google Drive'],
-    ['Write Protect Disk',
-      '-',
-      'Eject Disk',
-      '-',
-      'Sync Every Minute',
-      'Sync Every 5 Minutes',
-      'Sync Every 15 Minutes',
-      'Pause Syncing',
-      '-',
-      'Sync Now'],
-    ['Load Disk from Local Drive',
-      '-',
-      'Load Disk from OneDrive',
-      'Load Disk from Google Drive']]
-  const menuChoices = [
-    [3, -1, 0, 1, 2, -1, 4, 5],
-    [3, -1, 2, -1, 60000, 300000, 900000, Number.MAX_VALUE, -1, Number.MIN_VALUE],
-    [0, -1, 1, 2]]
   
   const resetDrive = (index: number) => {
-    handleSetDiskData(index, new Uint8Array(), "")
-    setCloudDrive(undefined)
+    handleSetDiskData(index, new Uint8Array(), "", null)
+    // setCloudDrive(undefined)
   }
 
   useEffect(() => {
-    if (!cloudDrive) return
+    if (!dprops.cloudData) return
 
     const timer = setInterval(() => {
-      if (cloudDrive.syncStatus == CloudDriveSyncStatus.Active && dprops.diskHasChanges) {
-        cloudDrive.syncStatus = CloudDriveSyncStatus.Pending
+      if (dprops.cloudData?.syncStatus == CloudDriveSyncStatus.Active && dprops.diskHasChanges) {
+        dprops.cloudData.syncStatus = CloudDriveSyncStatus.Pending
       }
 
-      if (cloudDrive.syncStatus == CloudDriveSyncStatus.Pending) {
-          if ((Date.now() - cloudDrive.lastSyncTime > cloudDrive.syncInterval)) {
-            updateCloudDrive()
+      if (dprops.cloudData?.syncStatus == CloudDriveSyncStatus.Pending) {
+        if ((Date.now() - dprops.cloudData.lastSyncTime > dprops.cloudData.syncInterval)) {
+          switch (dprops.cloudData.providerName) {
+            case "OneDrive":
+              updateCloudDrive(new OneDriveCloudDrive())
+              break
+            case "GoogleDrive":
+              updateCloudDrive(new GoogleDrive())
+              break
+            default:
+              console.error("Unknown cloud provider")
           }
+        }
       }
     }, 1000);
     return () => clearInterval(timer);
-}, [cloudDrive?.syncStatus, dprops.diskHasChanges, cloudDrive?.lastSyncTime, cloudDrive?.syncInterval]);
+}, [dprops.cloudData?.syncStatus, dprops.diskHasChanges, dprops.cloudData?.lastSyncTime, dprops.cloudData?.syncInterval]);
 
   const cloudDriveStatusClassName = useMemo(() => {
-    if (!cloudDrive) return "disk-clouddrive-inactive"
+    if (!dprops.cloudData) return "disk-clouddrive-inactive"
 
-    const syncStatus = cloudDrive?.syncStatus
+    const syncStatus = dprops.cloudData?.syncStatus
 
-    if (cloudDrive?.syncInterval == Number.MAX_VALUE
+    if (dprops.cloudData?.syncInterval == Number.MAX_VALUE
       && syncStatus != CloudDriveSyncStatus.Inactive
       && syncStatus != CloudDriveSyncStatus.InProgress) {
       return "disk-clouddrive-paused"
     } else {
       return `disk-clouddrive-${CloudDriveSyncStatus[syncStatus].toLowerCase()}`
     }
-  }, [cloudDrive?.syncStatus, cloudDrive?.syncInterval])
+  }, [dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
 
   const diskDriveLabel = useMemo(() => {
     var label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))
 
-    if (cloudDrive && cloudDrive.lastSyncTime > 0) {
-      label += `\nSynced ${new Date(cloudDrive.lastSyncTime).toLocaleString()}`
+    if (dprops.cloudData && dprops.cloudData.lastSyncTime > 0) {
+      label += `\nSynced ${new Date(dprops.cloudData.lastSyncTime).toLocaleString()}`
     }
 
     return label
-  }, [cloudDrive?.lastSyncTime, dprops.diskHasChanges])
+  }, [dprops.cloudData?.lastSyncTime, dprops.diskHasChanges])
 
   const driveFileName = useMemo(() => {
     if (dprops.filename == '') {
-      setCloudDrive(undefined)
     }
     
-    if (cloudDrive && dprops.filename != cloudDrive.getFileName()) {
-      cloudDrive?.setFileName(`apple2ts.${dprops.filename}`)
+    if (dprops.cloudData) {
+      if (dprops.filename != dprops.cloudData.fileName) {
+        dprops.cloudData.fileName = `apple2ts.${dprops.filename}`
+      }
     }
     return dprops.filename
   }, [dprops.filename]) 
 
-  const loadDiskFromCloud = async (newCloudDrive: CloudDrive) => {
-    const blob = await newCloudDrive.download(FILE_SUFFIXES)
+  const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
+    const result = await newCloudDrive.download(FILE_SUFFIXES)
 
-    if (blob) {
+    if (result) {
+      const [blob, cloudData] = result
       const buffer = await new Response(blob).arrayBuffer()
-
-      handleSetDiskOrFileFromBuffer(dprops.index, buffer, newCloudDrive.getFileName())
-      setCloudDrive(newCloudDrive)
+      handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudData.fileName, cloudData)
     }
   }
 
-  const saveDiskToCloud = async (newCloudDrive: CloudDrive) => {
+  const saveDiskToCloud = async (cloudProvider: CloudProvider) => {
     const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
-    if (await newCloudDrive?.upload(dprops.filename, blob)) {
-        setCloudDrive(newCloudDrive)
-        updateCloudDrive(newCloudDrive)
-    }
-  }
-
-  const updateCloudDrive = async (newCloudDrive: CloudDrive|undefined = cloudDrive) => {
-    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
-    if (await newCloudDrive?.sync(blob)) {
+    dprops.cloudData = await cloudProvider.upload(dprops.filename, blob)
+    if (dprops.cloudData) {
       dprops.diskHasChanges = false
       doSetEmuDriveProps(dprops)
       doSetUIDriveProps(dprops)
+    }
+  }
+
+  const updateCloudDrive = async (cloudProvider: CloudProvider) => {
+    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
+    if (dprops.cloudData) {
+      const success = await cloudProvider.sync(blob, dprops.cloudData)
+      if (success) {
+        dprops.diskHasChanges = false
+        doSetEmuDriveProps(dprops)
+        doSetUIDriveProps(dprops)
+      }
     }
   }
 
@@ -166,7 +151,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       if (menuChoice == 3) {
         checked = dprops.isWriteProtected
       } else {
-        checked = menuChoice == cloudDrive?.syncInterval
+        checked = menuChoice == dprops.cloudData?.syncInterval
       }
     }
 
@@ -177,7 +162,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const y = Math.min(event.clientY, window.innerHeight - 200)
     setPosition({ x: event.clientX, y: y })
 
-    if (!cloudDrive || cloudDrive.syncStatus == CloudDriveSyncStatus.Inactive) {
+    if (!dprops.cloudData || dprops.cloudData.syncStatus == CloudDriveSyncStatus.Inactive) {
       if (dprops.filename.length > 0) {
         setMenuOpen(0)
       } else {
@@ -224,10 +209,19 @@ const DiskDrive = (props: DiskDriveProps) => {
           handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
         }
         else if (menuChoice == Number.MIN_VALUE) {
-          updateCloudDrive()
+          switch (dprops.cloudData?.providerName) {
+            case "OneDrive":
+              updateCloudDrive(new OneDriveCloudDrive())
+              break
+            case "GoogleDrive":
+              updateCloudDrive(new GoogleDrive())
+              break
+            default:
+              console.error("Unknown cloud provider")
+          }
         } else {
-          if (cloudDrive) {
-            cloudDrive.syncInterval = menuChoice
+          if (dprops.cloudData) {
+            dprops.cloudData.syncInterval = menuChoice
           }
         }
       }
@@ -285,16 +279,18 @@ const DiskDrive = (props: DiskDriveProps) => {
           onClick={() => handleMenuClose()}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
-            {menuChoices[menuOpen].map((itemValue, index) => (
+            {driveMenuItems[menuOpen].map((menuItem, index) => (
               <div key={index}>
-              {menuNames[menuOpen][index] == '-'
+              {menuItem.label == '-'
               ? <div style={{ borderTop: '1px solid #aaa', margin: '5px 0' }}></div>
               : <div className="droplist-option"
                 style={{ padding: '5px', paddingLeft: '10px', paddingRight: '10px' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
-                key={itemValue} onClick={() => handleMenuClose(itemValue)}>
-                {getMenuCheck(itemValue)}{menuNames[menuOpen][index]}</div>}
+                key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
+                {getMenuCheck(menuItem.index || -1)}
+                {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{width: "24px"}} />}
+                {menuItem.label}</div>}
               </div>
               ))}
           </div>
