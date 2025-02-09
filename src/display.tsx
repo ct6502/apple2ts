@@ -179,14 +179,10 @@ const DisplayApple2 = () => {
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <div id="apple2e" className="flex-row">
             <div className="flex-column" style={{flexGrow: 1}}>
-              <img src="/src/img/apple2e.png" className="apple2e"></img>
               <Apple2Canvas {...props} />
             </div>
-            {/* <div className="flex-column">
+            <div className="flex-column">
               <DiskInterface {...props} />
-            </div> */}
-            <div className="flex-column" style={{border: "green solid 3px"}}>
-              foo
             </div>
           </div>
           <div className="flex-row-gap wrap"

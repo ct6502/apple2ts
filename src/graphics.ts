@@ -331,7 +331,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
 }
 
 export const getCanvasSize = (righthandSectionRef: HTMLDivElement | null) => {
-  const apple2e = document.getElementsByClassName("apple2e")[0] as HTMLElement
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen
@@ -339,19 +338,15 @@ export const getCanvasSize = (righthandSectionRef: HTMLDivElement | null) => {
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
-  // let width = window.innerWidth ? window.innerWidth : window.outerWidth
-  // let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  let width = apple2e?.clientWidth ?? 0
-  let height = apple2e?.clientHeight ?? 0
-  height *= 0.71
+  let width = window.innerWidth ? window.innerWidth : window.outerWidth
+  let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
   height -= noBackgroundImage ? 40 : 300
   width -= noBackgroundImage ? 0 : 40
   if (!noBackgroundImage) {
     if (righthandSectionRef) {
-      // width = Math.max(400, width - righthandSectionRef.offsetWidth)
+      width = Math.max(400, width - righthandSectionRef.offsetWidth)
     }
   }
-
   // shrink either width or height to preserve aspect ratio
   if (width / screenRatio > height) {
     width = height * screenRatio

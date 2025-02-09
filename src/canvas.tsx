@@ -21,7 +21,7 @@ import { handleCopyToClipboard } from './copycanvas';
 import { drawHiresTile } from './graphicshgr';
 import { useGlobalContext } from './globalcontext';
 import { handleFileSave } from './savestate';
-// import bgImage from './img/apple2e_bg.png';
+import bgImage from './img/crt.jpg';
 import { handleSetCPUState } from './controller';
 import { setPreferenceSpeedMode } from './localstorage';
 
@@ -476,7 +476,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = handleGetShowMouse() ?
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "crosshair") : "none"
 
-  // const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
+  const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
 
   return (
     <span className="canvas-text scanline-gradient">
@@ -487,7 +487,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           cursor: cursor,
           borderRadius: noBackgroundImage ? '0' : '20px',
           borderWidth: noBackgroundImage ? '0' : '2px',
-          // backgroundImage: `${backgroundImage}`
+          backgroundImage: `${backgroundImage}`
         }}
         width={width} height={height}
         tabIndex={0}

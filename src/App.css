@@ -1,6 +1,5 @@
 :root {
-  /* --background-color: #BFBB98; */
-  --background-color: #ffffff;
+  --background-color: #BFBB98;
   --background-color-dark: #181818;
   --panel-background: #C9C5A0;
   --panel-background-dark: #222;
@@ -382,10 +381,4 @@ body.dark-mode .divider {
 .noselect {
   cursor: default;
   user-select: none;
-}
-
-.apple2e {
-  width: 100%;
-  height: auto;
-  border: red solid 3px;
 }
