@@ -178,12 +178,14 @@ const DisplayApple2 = () => {
       <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <div id="apple2e" className="flex-row">
-            <div className="flex-column" style={{width: "100%"}}>
-              <Apple2Canvas {...props} />
-            </div>
             <div className="flex-column">
+              <img src="/src/img/apple2e.png" className="apple2e"></img>
+              <img src="/src/img/apple2e-fg.png" className="apple2e-fg"></img>
+            </div>
+            <div className="flex-column" style={{marginRight:"-30%"}}>
               <DiskInterface {...props} />
             </div>
+            <Apple2Canvas {...props} />
           </div>
           <div className="flex-row-gap wrap"
             style={{ paddingLeft: '2px' }}>

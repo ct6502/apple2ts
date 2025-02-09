@@ -255,7 +255,8 @@ const DiskDrive = (props: DiskDriveProps) => {
   return (
     // <span className="flex-column">
     <span>
-      <span className="flex-row">
+      {/* <span className="flex-row"> */}
+      <span>
         {/* <span className="flex-column"> */}
           <img className="disk-image"
             src={img1} alt={filename}
@@ -267,11 +268,11 @@ const DiskDrive = (props: DiskDriveProps) => {
               className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>
             </FontAwesomeIcon>
         </span>
-      <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
+      {/* <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
       <span className="flex-row">
         <span className={"default-font disk-status"}>{status}</span>
-      </span>
+      </span> */}
 
       {menuOpen >= 0 &&
         <div className="modal-overlay"

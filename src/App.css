@@ -1,5 +1,5 @@
 :root {
-  --background-color: #BFBB98;
+  --background-color: #000000;
   --background-color-dark: #181818;
   --panel-background: #C9C5A0;
   --panel-background-dark: #222;
@@ -67,6 +67,21 @@ input:focus {
   src: url(./fonts/PRNumber3.woff2);
 }
 
+.apple2e {
+  width: 100%;
+  height: auto;
+  /* border: red solid 3px; */
+}
+
+.apple2e-fg {
+  width: 12.955%;
+  /* height: 10%; */
+  z-index: 99;
+  margin-top: -29.4%;
+  margin-left: 86.95%;
+  pointer-events: none;
+}
+
 .loadFontEarly {
   font-family: PrintChar21;
 }
@@ -85,7 +100,8 @@ input:focus {
 .flex-column {
   display: flex;
   flex-direction: column;
-  border: red solid 3px;
+  /* align-items: flex-start; */
+  /* border: red solid 3px; */
 }
 
 .flex-column-gap {

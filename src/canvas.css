@@ -4,13 +4,20 @@
   vertical-align: middle;
   padding-bottom: 0px;
   width: 100%;
+
+  position: absolute;
+  margin-left: 16.5%;
+  margin-top: 7.5%;
+
+  z-index: -1;
+  /* border: solid green 3px; */
 }
 
 .main-canvas {
-  grid-column: 1;
-  grid-row: 1;
-  border-color: #583927;
-  border-style: solid;
+  /* grid-column: 1; */
+  /* grid-row: 1; */
+  /* border-color: #583927;
+  border-style: solid; */
   background-color: black;
   background-size: 100% 100%;
   outline: none;
