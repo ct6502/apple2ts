@@ -1,13 +1,15 @@
 .canvas-text {
-  display: grid;
+  /* display: grid;
   text-align: center;
   vertical-align: middle;
-  padding-bottom: 0px;
-  width: 100%;
+  padding-bottom: 0px; */
+  /* width: 100%; */
+  /* width: 46%;
+  height: 28%; */
 
   position: absolute;
-  margin-left: 16.5%;
-  margin-top: 7.5%;
+  margin-left: 19.25%;
+  margin-top: 8.55%;
 
   z-index: -1;
   /* border: solid green 3px; */

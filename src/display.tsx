@@ -179,16 +179,16 @@ const DisplayApple2 = () => {
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <div id="apple2e" className="flex-row">
             <div className="flex-column">
+            <Apple2Canvas {...props} />
               <img src="/src/img/apple2e.png" className="apple2e"></img>
-              <img src="/src/img/apple2e-fg.png" className="apple2e-fg"></img>
+              {/* <img src="/src/img/apple2e-fg.png" className="apple2e-fg"></img> */}
             </div>
-            <div className="flex-column" style={{marginRight:"-30%"}}>
+          </div>
+          <div className="flex-column">
               <DiskInterface {...props} />
             </div>
-            <Apple2Canvas {...props} />
-          </div>
           <div className="flex-row-gap wrap"
-            style={{ paddingLeft: '2px' }}>
+            style={{ paddingLeft: '2px', backgroundColor: "#ffffff" }}>
             <ControlPanel {...props} />
             <ImageWriter />
           </div>
@@ -196,11 +196,11 @@ const DisplayApple2 = () => {
         </div>
         {isLandscape && status}
         {narrow && <div className="divider"></div>}
-        {/* <span className="flex-column" ref={righthandSectionRef}>
+        <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
               helptext={handleGetHelpText()} />}
-        </span> */}
+        </span>
       </span>
       <FileInput {...props} />
     </div>

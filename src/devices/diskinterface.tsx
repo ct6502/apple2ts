@@ -1,14 +1,17 @@
 import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faFloppyDisk } from "@fortawesome/free-solid-svg-icons"
 
 const DiskInterface = (props: DisplayProps) => {
   return (
     // <div className="flex-row wrap">
     <div className="diskInterface">
-      {/* <span className="flex-row">
+      <FontAwesomeIcon id="diskFlyoutButton" icon={faFloppyDisk}></FontAwesomeIcon>
+      <span className="flex-row">
         <DiskImageChooser {...props} />
-      </span> */}
+      </span>
       {/* <span className="flex-row"> */}
         <DiskDrive index={2} renderCount={props.renderCount}
           setShowFileOpenDialog={props.setShowFileOpenDialog} />

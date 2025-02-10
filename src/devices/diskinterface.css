@@ -1,7 +1,15 @@
 .diskInterface {
-  width: 50%;
-  margin-top: 130px;
-  margin-left: -22.5%;
+  /* display: none; */
+  position: absolute;
+  background-color: #6B6156;
+  padding: 10px;
+  border-radius: 10px;
+  border-color: #000000;
+  border-width: 1px;
+  top: 10px;
+  right: 10px;
+  width: 18%;
+  z-index: 2;
 }
 
 .disk-label {
@@ -122,4 +130,16 @@ body.dark-mode .disk-cloud {
 
 body.dark-mode .disk-image {
   border-color: var(--text-color-dark);
+}
+
+#diskFlyoutButton {
+  width: 40px;
+  height: 40px;
+  margin-left: -60px;
+  margin-top: -10px;
+  padding: 6px;
+  padding-right: 18px;
+  background-color: red;
+  border-radius: 5px;
+  z-index: -1;
 }

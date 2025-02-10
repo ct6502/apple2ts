@@ -69,7 +69,10 @@ input:focus {
 
 .apple2e {
   width: 100%;
-  height: auto;
+  height: 100%;
+  /* min-width: 1000px;
+  min-height: 1000px; */
+  /* margin-top: -41.5%; */
   /* border: red solid 3px; */
 }
 
@@ -87,8 +90,8 @@ input:focus {
 }
 
 .flex-row {
-  display: flex;
-  flex-direction: row;
+  /* display: flex;
+  flex-direction: row; */
 }
 
 .flex-row-gap {
@@ -98,8 +101,8 @@ input:focus {
 }
 
 .flex-column {
-  display: flex;
-  flex-direction: column;
+  /* display: flex;
+  flex-direction: column; */
   /* align-items: flex-start; */
   /* border: red solid 3px; */
 }

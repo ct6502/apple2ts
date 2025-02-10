@@ -15,10 +15,10 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
   const height = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== '<Default>') ? props.helptext : defaultHelpText
   return (
-    <div className="help-parent"
-      style={{width: props.narrow ? "" : 500, height:
+    <div className="help-parent">
+      {/* style={{width: props.narrow ? "" : 500, height:
         props.narrow ? "" : height,
-        overflow: (props.narrow ? 'visible' : 'auto')}}>
+        overflow: (props.narrow ? 'visible' : 'auto')}}> */}
       <div className={handleGetDarkMode() ? "" : "help-paper"}>
         <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}
           dangerouslySetInnerHTML={{ __html: helpText }}>
