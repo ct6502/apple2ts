@@ -124,6 +124,14 @@ export enum DRIVE {
   TRACK_SEEK,
 }
 
+export enum CLOUD_SYNC {
+  INACTIVE,
+  ACTIVE,
+  PENDING,
+  INPROGRESS,
+  FAILED
+}
+
 export enum ADDR_MODE {
   IMPLIED,  // BRK
   IMM,      // LDA #$01

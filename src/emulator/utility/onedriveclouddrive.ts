@@ -1,4 +1,4 @@
-import { CloudDriveSyncStatus } from "./clouddrive"
+import { CLOUD_SYNC } from "./utility"
 
 export const DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000
 
@@ -14,7 +14,7 @@ export class OneDriveCloudDrive implements CloudProvider {
     if (file) {
       const cloudData: CloudData = {
         providerName: "OneDrive",
-        syncStatus: CloudDriveSyncStatus.InProgress,
+        syncStatus: CLOUD_SYNC.INPROGRESS,
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: file.name,
@@ -28,7 +28,7 @@ export class OneDriveCloudDrive implements CloudProvider {
       console.log(`HTTP GET: ${downloadUrl}`)
       const response = await fetch(downloadUrl);
       if (response.ok) {
-        cloudData.syncStatus = CloudDriveSyncStatus.Active
+        cloudData.syncStatus = CLOUD_SYNC.ACTIVE
         const blob = await response.blob()
         return [blob, cloudData]
       } else {
@@ -41,11 +41,11 @@ export class OneDriveCloudDrive implements CloudProvider {
 
   async upload(filename: string, blob: Blob): Promise<CloudData | null> {
     const result = await launchPicker("folders")
-    const file = result?.value[0]
+    const file = result?.value && result.value[0]
     if (file) {
       const cloudData: CloudData = {
         providerName: "OneDrive",
-        syncStatus: CloudDriveSyncStatus.Active,
+        syncStatus: CLOUD_SYNC.ACTIVE,
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: filename,
@@ -56,12 +56,14 @@ export class OneDriveCloudDrive implements CloudProvider {
       }
       this.sync(blob, cloudData)
       return cloudData
+    } else {
+      console.error(`result message: ${result?.message} errorCode: ${result?.errorCode}`)
     }
     return null
   }
 
   async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
-    cloudData.syncStatus = CloudDriveSyncStatus.InProgress
+    cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
     const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.itemId}:/${cloudData.fileName}:/createUploadSession`
     var success = false
@@ -87,13 +89,13 @@ export class OneDriveCloudDrive implements CloudProvider {
         if (response.ok) {
           success = await this.uploadBlob(json["uploadUrl"], blob, cloudData)
         } else {
-          cloudData.syncStatus = CloudDriveSyncStatus.Failed
+          cloudData.syncStatus = CLOUD_SYNC.FAILED
           console.log(`response.status: ${JSON.stringify(json)}`)
         }
     })
     .catch(error => {
       console.error(error)
-      cloudData.syncStatus = CloudDriveSyncStatus.Failed
+      cloudData.syncStatus = CLOUD_SYNC.FAILED
     })
     .finally(() => {
       cloudData.lastSyncTime = Date.now()
@@ -108,9 +110,9 @@ export class OneDriveCloudDrive implements CloudProvider {
     var chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
     var success = false
 
-    cloudData.syncStatus = CloudDriveSyncStatus.InProgress
+    cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
-    while (cloudData.syncStatus == CloudDriveSyncStatus.InProgress) {
+    while (cloudData.syncStatus == CLOUD_SYNC.INPROGRESS) {
       console.log(`fetch: PUT ${uploadUrl}`)
       await fetch(uploadUrl, {
         method: 'PUT',
@@ -131,17 +133,17 @@ export class OneDriveCloudDrive implements CloudProvider {
             chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
 
             if (chunkSize <= 0) {
-              cloudData.syncStatus = CloudDriveSyncStatus.Active
+              cloudData.syncStatus = CLOUD_SYNC.ACTIVE
               success = true
             }
           } else {
-            cloudData.syncStatus = CloudDriveSyncStatus.Failed
-            console.log(`response.status: ${await response.text()}`)
+            cloudData.syncStatus = CLOUD_SYNC.FAILED
+            console.error(`response.status: ${await response.text()}`)
           }
         })
         .catch(error => {
           console.error(error)
-          cloudData.syncStatus = CloudDriveSyncStatus.Failed
+          cloudData.syncStatus = CLOUD_SYNC.FAILED
         })
         .finally(() => {
           cloudData.lastSyncTime = Date.now()
@@ -179,6 +181,8 @@ interface OneDriveResult {
   webUrl: string | null
   accessToken: string
   apiEndpoint: string
+  errorCode?: string
+  message?: number
 }
 
 interface OneDriveParent {

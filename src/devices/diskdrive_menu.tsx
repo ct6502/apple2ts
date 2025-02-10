@@ -73,11 +73,6 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 300000
     },
     {
-      label: "Sync Every 15 Minutes",
-      icon: faClock,
-      index: 900000
-    },
-    {
       label: "Pause Syncing",
       icon: faPause,
       index: Number.MAX_VALUE

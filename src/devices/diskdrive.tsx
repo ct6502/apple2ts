@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react"
-import { crc32, FILE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
+import { CLOUD_SYNC, crc32, FILE_SUFFIXES, uint32toBytes } from "../emulator/utility/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps, handleSetDiskWriteProtected, doSetUIDriveProps, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import { handleSetDiskData, handleGetDriveProps,
+  handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "../emulator/utility/onedriveclouddrive"
 import { GoogleDrive } from "../emulator/utility/googledrive"
-import { doSetEmuDriveProps } from "../emulator/devices/drivestate"
 import { driveMenuItems } from "./diskdrive_menu"
-import { CloudDriveSyncStatus } from "../emulator/utility/clouddrive"
+import { passSetDriveProps } from "../main2worker"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -52,11 +52,11 @@ const DiskDrive = (props: DiskDriveProps) => {
     if (!dprops.cloudData) return
 
     const timer = setInterval(() => {
-      if (dprops.cloudData?.syncStatus == CloudDriveSyncStatus.Active && dprops.diskHasChanges) {
-        dprops.cloudData.syncStatus = CloudDriveSyncStatus.Pending
+      if (dprops.cloudData?.syncStatus == CLOUD_SYNC.ACTIVE && dprops.diskHasChanges) {
+        dprops.cloudData.syncStatus = CLOUD_SYNC.PENDING
       }
 
-      if (dprops.cloudData?.syncStatus == CloudDriveSyncStatus.Pending) {
+      if (dprops.cloudData?.syncStatus == CLOUD_SYNC.PENDING) {
         if ((Date.now() - dprops.cloudData.lastSyncTime > dprops.cloudData.syncInterval)) {
           switch (dprops.cloudData.providerName) {
             case "OneDrive":
@@ -80,11 +80,11 @@ const DiskDrive = (props: DiskDriveProps) => {
     const syncStatus = dprops.cloudData?.syncStatus
 
     if (dprops.cloudData?.syncInterval == Number.MAX_VALUE
-      && syncStatus != CloudDriveSyncStatus.Inactive
-      && syncStatus != CloudDriveSyncStatus.InProgress) {
+      && syncStatus != CLOUD_SYNC.INACTIVE
+      && syncStatus != CLOUD_SYNC.INPROGRESS) {
       return "disk-clouddrive-paused"
     } else {
-      return `disk-clouddrive-${CloudDriveSyncStatus[syncStatus].toLowerCase()}`
+      return `disk-clouddrive-${CLOUD_SYNC[syncStatus].toLowerCase()}`
     }
   }, [dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
 
@@ -125,8 +125,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     dprops.cloudData = await cloudProvider.upload(dprops.filename, blob)
     if (dprops.cloudData) {
       dprops.diskHasChanges = false
-      doSetEmuDriveProps(dprops)
-      doSetUIDriveProps(dprops)
+      passSetDriveProps(dprops)
     }
   }
 
@@ -136,8 +135,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       const success = await cloudProvider.sync(blob, dprops.cloudData)
       if (success) {
         dprops.diskHasChanges = false
-        doSetEmuDriveProps(dprops)
-        doSetUIDriveProps(dprops)
+        passSetDriveProps(dprops)
       }
     }
   }
@@ -162,7 +160,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const y = Math.min(event.clientY, window.innerHeight - 200)
     setPosition({ x: event.clientX, y: y })
 
-    if (!dprops.cloudData || dprops.cloudData.syncStatus == CloudDriveSyncStatus.Inactive) {
+    if (!dprops.cloudData || dprops.cloudData.syncStatus == CLOUD_SYNC.INACTIVE) {
       if (dprops.filename.length > 0) {
         setMenuOpen(0)
       } else {

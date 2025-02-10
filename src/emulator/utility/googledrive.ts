@@ -1,7 +1,7 @@
-import { CloudDriveSyncStatus } from "./clouddrive"
+import { CLOUD_SYNC } from "./utility"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
-export const DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000
+export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
 // Make these global so we don't have to keep re-selecting our Google Drive account
 let g_accessToken: string = ""
@@ -116,7 +116,7 @@ export class GoogleDrive implements CloudProvider {
     if (result) {
       const cloudData: CloudData = {
         providerName: "GoogleDrive",
-        syncStatus: CloudDriveSyncStatus.InProgress,
+        syncStatus: CLOUD_SYNC.INPROGRESS,
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: result.fileName,
@@ -134,7 +134,7 @@ export class GoogleDrive implements CloudProvider {
       })
       if (response.ok) {
         console.log(`File download success: ${result.fileName}`)
-        cloudData.syncStatus = CloudDriveSyncStatus.Active
+        cloudData.syncStatus = CLOUD_SYNC.ACTIVE
         const blob = await response.blob()
         return [blob, cloudData]
       } else {
@@ -151,7 +151,7 @@ export class GoogleDrive implements CloudProvider {
     if (result) {
       const cloudData: CloudData = {
         providerName: "GoogleDrive",
-        syncStatus: CloudDriveSyncStatus.InProgress,
+        syncStatus: CLOUD_SYNC.INPROGRESS,
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: filename,
@@ -181,16 +181,16 @@ export class GoogleDrive implements CloudProvider {
           // Make sure to get our new Google Drive fileId so we can sync later.
           const responseData = await response.json();
           cloudData.itemId = responseData.id;
-          cloudData.syncStatus = CloudDriveSyncStatus.Active
+          cloudData.syncStatus = CLOUD_SYNC.ACTIVE
           return cloudData
         } else {
           console.error(`Error uploading ${filename}: ${response.statusText}`)
-          cloudData.syncStatus = CloudDriveSyncStatus.Failed
+          cloudData.syncStatus = CLOUD_SYNC.FAILED
           return null
         }
       } catch (error) {
         console.error(`Error uploading ${filename}: ${error}`)
-        cloudData.syncStatus = CloudDriveSyncStatus.Failed
+        cloudData.syncStatus = CLOUD_SYNC.FAILED
         return null
       }
     }
@@ -198,7 +198,7 @@ export class GoogleDrive implements CloudProvider {
   }
 
   async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
-    cloudData.syncStatus = CloudDriveSyncStatus.InProgress
+    cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
     cloudData.lastSyncTime = Date.now()
 
     try {
@@ -213,16 +213,16 @@ export class GoogleDrive implements CloudProvider {
 
       if (response.ok) {
         console.log(`File sync success: ${cloudData.fileName}`)
-        cloudData.syncStatus = CloudDriveSyncStatus.Active
+        cloudData.syncStatus = CLOUD_SYNC.ACTIVE
         return true
       } else {
         console.error('Error syncing file:', response.statusText)
-        cloudData.syncStatus = CloudDriveSyncStatus.Failed
+        cloudData.syncStatus = CLOUD_SYNC.FAILED
         return false
       }
     } catch (error) {
       console.error('Error syncing file:', error)
-      cloudData.syncStatus = CloudDriveSyncStatus.Failed
+      cloudData.syncStatus = CLOUD_SYNC.FAILED
       return false
     }
 
