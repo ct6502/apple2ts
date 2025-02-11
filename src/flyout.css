@@ -1,0 +1,44 @@
+.flyout-top-left {
+  position: absolute;
+  background-color: #aba7a2;
+  top: 0px;
+  padding-top: 4px;
+  padding-bottom: 2px;
+  padding-left: 2px;
+  padding-right: 7px;
+  height: auto;
+  left: 0.5cqw;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  border-color: #000000;
+  border-width: 1px;
+  width: 10%;
+  transition: top 0.3s ease;
+}
+
+.flyout-top-right {
+  position: absolute;
+  background-color: #aba7a2;
+  top: 0px;
+  padding-top: 4px;
+  padding-bottom: 2px;
+  padding-left: 2px;
+  padding-right: 7px;
+  height: auto;
+  right: 1cqw;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  border-color: #000000;
+  border-width: 1px;
+  width: 10%;
+  transition: top 0.3s ease;
+}
+
+.flyout-button {
+  color: #000000;
+  padding-top: 8px;
+  padding-bottom: 4px;
+  padding-left: 43%;
+  font-size: 2.5cqw;
+  cursor: pointer;
+}

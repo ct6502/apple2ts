@@ -256,9 +256,9 @@ const DiskDrive = (props: DiskDriveProps) => {
     // <span className="flex-column">
     <span>
       {/* <span className="flex-row"> */}
-      <span>
+      <span className="disk-image">
         {/* <span className="flex-column"> */}
-          <img className="disk-image"
+          <img
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={diskDriveLabel}

@@ -24,6 +24,23 @@ import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage";
 import { RUN_MODE, TEST_DEBUG } from "./emulator/utility/utility";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+export const isTouchDevice = () => {
+  return "ontouchstart" in document.documentElement
+}
+
+export const isScreenNarrow = () => {
+  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
+  const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
+  return isTouchDevice() || (width < height)
+}
+
+export const isLandscapeMode = () => {
+  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
+  const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
+  return isTouchDevice() && (width > height)
+}
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -154,12 +171,10 @@ const DisplayApple2 = () => {
     document.body.classList.remove('dark-mode')
   }
 
-  const isTouchDevice = "ontouchstart" in document.documentElement
-  const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
-  const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
-  const narrow = isTouchDevice || (width < height)
-  const isLandscape = isTouchDevice && (width > height)
-  if (isTouchDevice) {
+  const touchDevice = isTouchDevice()
+  const narrow = isScreenNarrow()
+  const isLandscape = isLandscapeMode()
+  if (touchDevice) {
     document.body.style.marginLeft = "0"
     document.body.style.marginRight = "0"
     document.body.style.marginTop = isLandscape ? "10px" : "0"
@@ -181,26 +196,25 @@ const DisplayApple2 = () => {
             <div className="flex-column">
             <Apple2Canvas {...props} />
               <img src="/src/img/apple2e.png" className="apple2e"></img>
-              {/* <img src="/src/img/apple2e-fg.png" className="apple2e-fg"></img> */}
             </div>
           </div>
           <div className="flex-column">
-              <DiskInterface {...props} />
-            </div>
-          <div className="flex-row-gap wrap"
-            style={{ paddingLeft: '2px', backgroundColor: "#ffffff" }}>
-            <ControlPanel {...props} />
-            <ImageWriter />
+            <DiskInterface {...props} />
           </div>
-          {!isLandscape && status}
+          <div className="flex-row-gap wrap controlPanel">
+            {/* style={{ paddingLeft: '2px', backgroundColor: "#ffffff" }}> */}
+            <ControlPanel {...props} />
+            {/* <ImageWriter /> */}
+          </div>
+          {/* {!isLandscape && status} */}
         </div>
-        {isLandscape && status}
-        {narrow && <div className="divider"></div>}
-        <span className="flex-column" ref={righthandSectionRef}>
+        {/* {isLandscape && status} */}
+        {/* {narrow && <div className="divider"></div>} */}
+        {/* <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
               helptext={handleGetHelpText()} />}
-        </span>
+        </span> */}
       </span>
       <FileInput {...props} />
     </div>

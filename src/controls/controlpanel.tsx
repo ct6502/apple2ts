@@ -1,20 +1,24 @@
+import { faWrench } from "@fortawesome/free-solid-svg-icons";
 import ConfigButtons from "./configbuttons";
 import ControlButtons from "./controlbuttons";
 import DebugButtons from "./debugbuttons";
 import FullScreenButton from "./fullscreenbutton";
 import KeyboardButtons from "./keyboardbuttons";
+import Flyout from "../flyout";
 
 const ControlPanel = (props: DisplayProps) => {
   return (
-    <span className="flex-column">
-      <span className="flex-row wrap" id="tour-controlbuttons">
-        <ControlButtons {...props} />
-        <DebugButtons />
-        <FullScreenButton />
+    <Flyout icon={faWrench} position="top-left">
+      <span className="flex-column">
+        <span className="flex-row wrap" id="tour-controlbuttons">
+          <ControlButtons {...props} />
+          <DebugButtons />
+          <FullScreenButton />
+        </span>
+        <ConfigButtons {...props} />
+        <KeyboardButtons {...props} />
       </span>
-      <ConfigButtons {...props} />
-      <KeyboardButtons {...props} />
-    </span>
+    </Flyout>
   )
 }
 

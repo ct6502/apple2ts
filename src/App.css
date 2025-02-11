@@ -33,7 +33,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
-  margin: 10px;
+  /* margin: 10px; */
+  padding: 0px;
 }
 
 body.dark-mode {
@@ -69,20 +70,11 @@ input:focus {
 
 .apple2e {
   width: 100%;
-  height: 100%;
+  /* height: 100%; */
   /* min-width: 1000px;
   min-height: 1000px; */
   /* margin-top: -41.5%; */
   /* border: red solid 3px; */
-}
-
-.apple2e-fg {
-  width: 12.955%;
-  /* height: 10%; */
-  z-index: 99;
-  margin-top: -29.4%;
-  margin-left: 86.95%;
-  pointer-events: none;
 }
 
 .loadFontEarly {
