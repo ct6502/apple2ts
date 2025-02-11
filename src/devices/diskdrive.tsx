@@ -38,14 +38,13 @@ type DiskDriveProps = {
 }
 
 const DiskDrive = (props: DiskDriveProps) => {
-  const dprops = handleGetDriveProps(props.index) as DriveProps
+  const dprops = handleGetDriveProps(props.index)
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
   
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null)
-    // setCloudDrive(undefined)
   }
 
   useEffect(() => {
@@ -72,7 +71,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }, 1000);
     return () => clearInterval(timer);
-}, [dprops.cloudData?.syncStatus, dprops.diskHasChanges, dprops.cloudData?.lastSyncTime, dprops.cloudData?.syncInterval]);
+}, [dprops]);
 
   const cloudDriveStatusClassName = useMemo(() => {
     if (!dprops.cloudData) return "disk-clouddrive-inactive"
