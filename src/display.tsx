@@ -191,19 +191,24 @@ const DisplayApple2 = () => {
   return (
     <div>
       {/* <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}> */}
-      <span className="flex-row-gap">
+      {/* <span className="flex-row-gap"> */}
+      <span>
         {/* <div className={isLandscape ? "flex-row" : "flex-column"}> */}
-        <div className="flex-column">
-          <div id="apple2e" className="flex-row">
-            <div className="flex-column">
+        {/* <div className="flex-column"> */}
+        <div>
+          {/* <div className="flex-row"> */}
+          <div>
+            {/* <div className="flex-column"> */}
+            <div className="canvas-container">
             <Apple2Canvas {...props} />
-              <img src="/src/img/apple2e.png" className="apple2e"></img>
+              {/* <img src="/src/img/apple2e.png" className="apple2e"></img> */}
             </div>
           </div>
           <div className="flex-column">
             <DiskInterface {...props} />
           </div>
-          <div className="flex-row-gap wrap">
+          {/* <div className="flex-row-gap wrap"> */}
+          <div>
             {/* style={{ paddingLeft: '2px', backgroundColor: "#ffffff" }}> */}
             <ControlPanel {...props} />
             {/* <ImageWriter /> */}

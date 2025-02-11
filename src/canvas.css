@@ -1,25 +1,20 @@
+
+
 .canvas-text {
-  /* display: grid;
-  text-align: center;
-  vertical-align: middle;
-  padding-bottom: 0px; */
-  /* width: 100%; */
-  /* width: 46%;
-  height: 28%; */
+  /* display: grid; */
+  /* position: fixed; */
+  /* text-align: center; */
+  /* vertical-align: middle; */
+}
 
-  position: absolute;
-  margin-left: 19.25%;
-  margin-top: 8.55%;
-
-  z-index: -1;
-  /* border: solid green 3px; */
+.canvas-container {
+  width: 100%;
 }
 
 .main-canvas {
   /* grid-column: 1; */
   /* grid-row: 1; */
-  /* border-color: #583927;
-  border-style: solid; */
+  border-style: solid;
   background-color: black;
   background-size: 100% 100%;
   outline: none;

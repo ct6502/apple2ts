@@ -1,34 +1,29 @@
-.flyout-top-left {
+.flyout {
   position: fixed;
-  background-color: #aba7a2;
-  top: -1000px;
+  background-color: #BFBB98;
   padding-top: 4px;
   padding-bottom: 2px;
   padding-left: 2px;
   padding-right: 7px;
-  height: auto;
-  left: 1%;
-  border-bottom-left-radius: 20px;
-  border-bottom-right-radius: 20px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
   border-color: #000000;
   border-width: 1px;
+  border-style: solid;
+  z-index: 99;
+}
+
+.flyout-top-left {
+  top: -1000px;
+  height: auto;
+  left: 1%;
   transition: top 0.3s ease;
 }
 
 .flyout-top-right {
-  position: fixed;
-  background-color: #aba7a2;
   top: -1000px;
-  padding-top: 4px;
-  padding-bottom: 2px;
-  padding-left: 2px;
-  padding-right: 7px;
   height: auto;
   right: 1%;
-  border-bottom-left-radius: 20px;
-  border-bottom-right-radius: 20px;
-  border-color: #000000;
-  border-width: 1px;
   transition: top 0.3s ease;
 }
 
@@ -36,7 +31,11 @@
   color: #000000;
   padding-top: 8px;
   padding-bottom: 4px;
-  padding-left: 43%;
+  padding-left: 2.5cqw;
+  padding-right: 0px;
+  margin-right: 0px;
   font-size: 2.5cqw;
   cursor: pointer;
+  margin: auto;
+  width: 50%;
 }

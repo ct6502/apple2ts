@@ -21,9 +21,11 @@ import { handleCopyToClipboard } from './copycanvas';
 import { drawHiresTile } from './graphicshgr';
 import { useGlobalContext } from './globalcontext';
 import { handleFileSave } from './savestate';
-// import bgImage from './img/crt.jpg';
+import bgImage from './img/crt.jpg';
+// import bgImage from './img/apple2e.png';
 import { handleSetCPUState } from './controller';
 import { setPreferenceSpeedMode } from './localstorage';
+import { isScreenNarrow } from './display';
 
 
 let width = 800
@@ -253,6 +255,26 @@ const Apple2Canvas = (props: DisplayProps) => {
       checkContentHeight()
       props.updateDisplay()
     }
+    canvasWasResized(document.getElementById('apple2canvas') as HTMLCanvasElement)
+    
+  }
+
+  const canvasWasResized = (canvas: HTMLCanvasElement) => {
+    const width = canvas.offsetWidth;
+    const height = canvas.offsetHeight;
+    
+    if (canvas && canvas.parentElement) {
+      if (!isCanvasFullScreen && canvas.offsetWidth < window.innerWidth) {
+        canvas.parentElement.style.marginLeft = `${(window.innerWidth-canvas.offsetWidth)/2}px`
+      } else {
+        canvas.parentElement.style.marginLeft = '0px'
+      }
+    }
+
+    document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px");
+    document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px");
+    document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px");
+    document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px");
   }
 
   const RenderCanvas = () => {
@@ -410,16 +432,10 @@ const Apple2Canvas = (props: DisplayProps) => {
 
         new ResizeObserver(entries => {
           for (let entry of entries) {
-            const canvas = entry.target as HTMLCanvasElement;
-            const width = canvas.offsetWidth;
-            const height = canvas.offsetHeight;
-            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px");
-            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px");
-            document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px");
-            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px");
+            canvasWasResized(entry.target as HTMLCanvasElement)
           }
-        }).observe(canvas);
-        document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none");
+        }).observe(canvas)
+        document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none")
 
         RenderCanvas()
       } else {
@@ -427,10 +443,10 @@ const Apple2Canvas = (props: DisplayProps) => {
         // setTimeout below (even with a timeout of 0) is enough to
         // let React get the "myCanvas" ref set properly.
         // But just leave it here as a backup.
-        window.setTimeout(() => initialize(), 0);
+        window.setTimeout(() => initialize(), 0)
       }
     }
-    window.setTimeout(() => initialize(), 0);
+    window.setTimeout(() => initialize(), 0)
   }
 
   const setFocus = () => {
@@ -476,7 +492,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = handleGetShowMouse() ?
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "crosshair") : "none"
 
-  // const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
+  const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
 
   return (
     <span className="canvas-text scanline-gradient">
@@ -487,7 +503,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           cursor: cursor,
           borderRadius: noBackgroundImage ? '0' : '20px',
           borderWidth: noBackgroundImage ? '0' : '2px',
-          // backgroundImage: `${backgroundImage}`
+          backgroundImage: `${backgroundImage}`
         }}
         width={width} height={height}
         tabIndex={0}

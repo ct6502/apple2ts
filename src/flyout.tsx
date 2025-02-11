@@ -11,13 +11,16 @@ const Flyout = (props: {
   children: any}) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(!isScreenNarrow());
   const className = `flyout-${props.position}`
+  const width = props.width ?? ''
 
   const handleResizeImmediate = (newIsFlyoutOpen: boolean) => {
     const panel = document.getElementsByClassName(className)[0] as HTMLElement
     if (newIsFlyoutOpen) {
       panel.style.top = '0px'
+      panel.style.opacity = '100%'
     } else {
       panel.style.top = `calc(-${panel.offsetHeight}px + 2.5cqw + 8px)`
+      panel.style.opacity = '75%'
     }
   }
 
@@ -41,19 +44,18 @@ const Flyout = (props: {
     }
   }
 
-  const width = props.width ?? ''
-
   return (
-    <div className={className} style={{width: width}}>
+    <div className={`flyout ${className}`} style={{width: width}}>
       {props.children}
-      <FontAwesomeIcon
-        className="flyout-button"
-        icon={getArrowIcon()}
-        onClick={() => {
-          handleResizeImmediate(!isFlyoutOpen)
-          setIsFlyoutOpen(!isFlyoutOpen)
-        }}
-      ></FontAwesomeIcon>
+      <div className="flyout-button">
+        <FontAwesomeIcon
+          icon={getArrowIcon()}
+          onClick={() => {
+            handleResizeImmediate(!isFlyoutOpen)
+            setIsFlyoutOpen(!isFlyoutOpen)
+          }}
+        ></FontAwesomeIcon>
+      </div>
     </div>
   )
 }

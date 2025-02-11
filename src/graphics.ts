@@ -340,18 +340,19 @@ export const getCanvasSize = (righthandSectionRef: HTMLDivElement | null) => {
   }
   // const apple2e = document.getElementsByClassName('apple2e')[0] as HTMLElement
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
-  let height = window.innerHeight ? window.innerHeight : window.outerHeight - 150
+  let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
 
-  if (!noBackgroundImage) {
-    width *= 0.5
-  }
-  // height -= noBackgroundImage ? 40 : 300
-  // width -= noBackgroundImage ? 0 : 40
   // if (!noBackgroundImage) {
-  //   if (righthandSectionRef) {
-  //     width = Math.max(400, width - righthandSectionRef.offsetWidth)
-  //   }
+  //   width *= 0.5
   // }
+
+  height -= noBackgroundImage ? 40 : 300
+  width -= noBackgroundImage ? 0 : 40
+  if (!noBackgroundImage) {
+    if (righthandSectionRef) {
+      width = Math.max(400, width - righthandSectionRef.offsetWidth)
+    }
+  }
 
   // shrink either width or height to preserve aspect ratio
   if (width / screenRatio > height) {
