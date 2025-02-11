@@ -40,7 +40,7 @@ const ConfigButtons = (props: DisplayProps) => {
   const useOpenAppleKey = handleUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
-  return <div className="flex-row">
+  return <div>
     <div className="flex-row" id="tour-configbuttons">
     <button className="push-button"
       title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
@@ -85,28 +85,29 @@ const ConfigButtons = (props: DisplayProps) => {
       }
     </div>
 
-    <MockingboardWaveform />
+    <span className="flex-row">
+      <MockingboardWaveform />
+      <SerialPortSelect />
+      <MidiDeviceSelect />
+    </span>
 
-    <SerialPortSelect />
+    <span className="flex-row">
+      <MachineConfig updateDisplay={props.updateDisplay} />
+      <button className="push-button"
+        title="Dark Mode"
+        onClick={() => { setPreferenceDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
+        <FontAwesomeIcon icon={faCircleHalfStroke} />
+      </button>
+    </span>
 
-    <MidiDeviceSelect />
-
-    <MachineConfig updateDisplay={props.updateDisplay} />
-
-    <button className="push-button"
-      title="Dark Mode"
-      onClick={() => { setPreferenceDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={faCircleHalfStroke} />
-    </button>
-
-    <button className="push-button" id="tour-clearcookies"
-      title="Reset All Settings"
-      onClick={() => { resetPreferences(); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={faSync} />
-    </button>
-
-    <RunTour/>
-
+    <span className="flex-row">
+      <button className="push-button" id="tour-clearcookies"
+        title="Reset All Settings"
+        onClick={() => { resetPreferences(); props.updateDisplay() }}>
+        <FontAwesomeIcon icon={faSync} />
+      </button>
+      <RunTour/>
+    </span>
   </div>
 }
 

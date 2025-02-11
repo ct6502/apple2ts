@@ -82,43 +82,46 @@ input:focus {
 }
 
 .flex-row {
-  /* display: flex;
-  flex-direction: row; */
+  display: flex;
+  flex-direction: row;
 }
 
 .flex-row-gap {
-  /* display: flex;
+  display: flex;
   flex-direction: row;
-  gap: 7px; */
+  gap: 7px;
 }
 
 .flex-column {
-  /* display: flex;
-  flex-direction: column; */
-  /* align-items: flex-start; */
-  /* border: red solid 3px; */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .flex-column-gap {
-  /* display: flex;
+  display: flex;
   flex-direction: column;
-  gap: 7px; */
+  gap: 7px;
 }
 
 .flex-row-space-between {
-  /* display: flex;
+  display: flex;
   flex-direction: row;
-  justify-content: space-between; */
+  justify-content: space-between;
 }
 
 .flex-column-space-between {
-  /* display: flex;
+  display: flex;
   flex-direction: column;
-  justify-content: space-between; */
+  justify-content: space-between;
 }
 
 .wrap {
-  /* flex-wrap: wrap; */
+  flex-wrap: wrap;
+}
+
+.no-wrap {
+  flex-wrap: nowrap;
 }
 
 .push-button {

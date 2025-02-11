@@ -253,11 +253,8 @@ const DiskDrive = (props: DiskDriveProps) => {
   status += dprops.status
 
   return (
-    // <span className="flex-column">
     <span>
-      {/* <span className="flex-row"> */}
       <span className="disk-image">
-        {/* <span className="flex-column"> */}
           <img
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}

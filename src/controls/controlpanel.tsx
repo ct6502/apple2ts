@@ -8,16 +8,18 @@ import Flyout from "../flyout";
 
 const ControlPanel = (props: DisplayProps) => {
   return (
-    <Flyout icon={faWrench} position="top-left">
-      <span className="flex-column">
-        <span className="flex-row wrap" id="tour-controlbuttons">
+    <Flyout icon={faWrench} width="auto" position="top-left">
+      <div style={{paddingLeft: '4px'}}>
+        <span id="tour-controlbuttons">
           <ControlButtons {...props} />
           <DebugButtons />
-          <FullScreenButton />
         </span>
         <ConfigButtons {...props} />
+        <span className="flex-row">
+          <FullScreenButton />
+        </span>
         <KeyboardButtons {...props} />
-      </span>
+      </div>
     </Flyout>
   )
 }

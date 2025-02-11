@@ -1,36 +1,34 @@
 .flyout-top-left {
-  position: absolute;
+  position: fixed;
   background-color: #aba7a2;
-  top: 0px;
+  top: -1000px;
   padding-top: 4px;
   padding-bottom: 2px;
   padding-left: 2px;
   padding-right: 7px;
   height: auto;
-  left: 0.5cqw;
+  left: 1%;
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
   border-color: #000000;
   border-width: 1px;
-  width: 10%;
   transition: top 0.3s ease;
 }
 
 .flyout-top-right {
-  position: absolute;
+  position: fixed;
   background-color: #aba7a2;
-  top: 0px;
+  top: -1000px;
   padding-top: 4px;
   padding-bottom: 2px;
   padding-left: 2px;
   padding-right: 7px;
   height: auto;
-  right: 1cqw;
+  right: 1%;
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
   border-color: #000000;
   border-width: 1px;
-  width: 10%;
   transition: top 0.3s ease;
 }
 
