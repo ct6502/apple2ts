@@ -1,5 +1,32 @@
 # Changelog
 
+## [v2.8](https://github.com/ct6502/apple2ts/tree/v2.8) (2025-02-11)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.7...v2.8)
+
+**Implemented enhancements:**
+
+- Add support for Google Drive to Cloud Drive [\#108](https://github.com/ct6502/apple2ts/issues/108)
+- Support for loading/saving disk images via cloud drive \(e.g., OneDrive\) [\#103](https://github.com/ct6502/apple2ts/issues/103)
+- Add Guided Tours to walk users thru different features [\#101](https://github.com/ct6502/apple2ts/issues/101)
+- Add "inverse black and white" color mode [\#91](https://github.com/ct6502/apple2ts/issues/91)
+
+**Fixed bugs:**
+
+- \# - url not working [\#102](https://github.com/ct6502/apple2ts/issues/102)
+- iOS 18.x.x: Keyboard does not come up [\#99](https://github.com/ct6502/apple2ts/issues/99)
+
+**Merged pull requests:**
+
+- Cloud drive updates - split CloudDrive object into CloudData and CloudProvider [\#111](https://github.com/ct6502/apple2ts/pull/111) ([ct6502](https://github.com/ct6502))
+- Add Google Drive to Cloud options. Fixes \#108 [\#110](https://github.com/ct6502/apple2ts/pull/110) ([ct6502](https://github.com/ct6502))
+- Boredsenseless/sync perf improvements [\#109](https://github.com/ct6502/apple2ts/pull/109) ([boredsenseless](https://github.com/boredsenseless))
+- Added OneDrive session support for better perf and stability [\#107](https://github.com/ct6502/apple2ts/pull/107) ([boredsenseless](https://github.com/boredsenseless))
+- Refactored cloud drive code to make it easier to add new providers [\#106](https://github.com/ct6502/apple2ts/pull/106) ([boredsenseless](https://github.com/boredsenseless))
+- Boredsenseless/drive icons removed [\#105](https://github.com/ct6502/apple2ts/pull/105) ([boredsenseless](https://github.com/boredsenseless))
+- Cloud drive disk image load/save and auto-sync \(powered by Microsoft OneDrive\) [\#104](https://github.com/ct6502/apple2ts/pull/104) ([boredsenseless](https://github.com/boredsenseless))
+- Added support for COLOR\_MODE.INVERSEBLACKANDWHITE [\#100](https://github.com/ct6502/apple2ts/pull/100) ([boredsenseless](https://github.com/boredsenseless))
+
 ## [v2.7](https://github.com/ct6502/apple2ts/tree/v2.7) (2025-01-19)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.6...v2.7)
