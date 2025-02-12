@@ -1,5 +1,5 @@
 import { MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility";
-import { iconKey, iconData, iconName } from "../img/icons";
+import { iconKey, iconData, iconName } from "../img/iconfunctions";
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
 import { diskImages } from "./diskimages";
 
@@ -142,7 +142,7 @@ export const handleSetDiskFromURL = async (url: string,
       name = urlObj.pathname.substring(hasSlash + 1)
     }
     handleSetDiskOrFileFromBuffer(0, buffer, name, null)
-  } catch (e) {
+  } catch {
     console.error(`Error fetching URL: ${url}`)
   }
 }
@@ -159,7 +159,7 @@ export const handleSetDiskFromFile = async (disk: diskImage,
   try {
     const res = await fetch("/disks/" + disk.file)
     data = await res.arrayBuffer()
-  } catch (error) {
+  } catch {
    return
   }
   resetAllDiskDrives()
@@ -178,11 +178,11 @@ export const handleSetDiskFromFile = async (disk: diskImage,
       }
       updateDisplay(0, helptext)
     }      
-  } catch (error) {
+  } catch {
     // If we don't have a help text file, just revert to the default text.
     updateDisplay(0, '<Default>')
   }
 }
 
-export function handleSetCloudUrl(url: string) {
-}
+// export function handleSetCloudUrl(url: string) {
+// }

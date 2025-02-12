@@ -26,7 +26,7 @@ import { MachineConfig } from "../devices/machineconfig";
 import { resetPreferences, setPreferenceCapsLock, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage";
 import { DisplayConfig } from "../devices/displayconfig";
 import RunTour from "../tours/runtour";
-import { appleOutline } from "../img/icons";
+import { appleOutline } from "../img/icon_appleoutline";
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';

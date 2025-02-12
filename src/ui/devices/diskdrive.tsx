@@ -10,7 +10,7 @@ import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
 import { passSetDriveProps } from "../main2worker"
 
-export const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
+const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
   if (filename.toLowerCase().endsWith('.woz')) {
     const crc = crc32(diskData, 12)
@@ -47,6 +47,17 @@ const DiskDrive = (props: DiskDriveProps) => {
     handleSetDiskData(index, new Uint8Array(), "", null)
   }
 
+  const updateCloudDrive = async (cloudProvider: CloudProvider) => {
+    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
+    if (dprops.cloudData) {
+      const success = await cloudProvider.sync(blob, dprops.cloudData)
+      if (success) {
+        dprops.diskHasChanges = false
+        passSetDriveProps(dprops)
+      }
+    }
+  }
+
   useEffect(() => {
     if (!dprops.cloudData) return
 
@@ -71,6 +82,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }, 1000);
     return () => clearInterval(timer);
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [dprops]);
 
   const cloudDriveStatusClassName = useMemo(() => {
@@ -85,21 +97,21 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else {
       return `disk-clouddrive-${CLOUD_SYNC[syncStatus].toLowerCase()}`
     }
-  }, [dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
+  }, [dprops.cloudData])
 
   const diskDriveLabel = useMemo(() => {
-    var label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))
+    let label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))
 
     if (dprops.cloudData && dprops.cloudData.lastSyncTime > 0) {
       label += `\nSynced ${new Date(dprops.cloudData.lastSyncTime).toLocaleString()}`
     }
 
     return label
-  }, [dprops.cloudData?.lastSyncTime, dprops.diskHasChanges])
+  }, [dprops.cloudData, dprops.diskHasChanges, dprops.filename])
 
   const driveFileName = useMemo(() => {
-    if (dprops.filename == '') {
-    }
+    // if (dprops.filename == '') {
+    // }
     
     if (dprops.cloudData) {
       if (dprops.filename != dprops.cloudData.fileName) {
@@ -107,7 +119,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }
     return dprops.filename
-  }, [dprops.filename]) 
+  }, [dprops.filename, dprops.cloudData]) 
 
   const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
     const result = await newCloudDrive.download(FILE_SUFFIXES)
@@ -128,19 +140,8 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
-  const updateCloudDrive = async (cloudProvider: CloudProvider) => {
-    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
-    if (dprops.cloudData) {
-      const success = await cloudProvider.sync(blob, dprops.cloudData)
-      if (success) {
-        dprops.diskHasChanges = false
-        passSetDriveProps(dprops)
-      }
-    }
-  }
-
   const getMenuCheck = (menuChoice: number) => {
-    var checked = false;
+    let checked = false;
 
     if (menuOpen == 0) {
       checked = menuChoice == 3 && dprops.isWriteProtected

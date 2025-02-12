@@ -90,7 +90,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   };
 
   useEffect(() => {
-    return () => { null }
+    return () => { }
   }, [state.canvasRef, props.canvas]);
 
   const buttonColor = "#404040"

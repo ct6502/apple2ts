@@ -66,7 +66,7 @@ export class OneDriveCloudDrive implements CloudProvider {
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
     const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.itemId}:/${cloudData.fileName}:/createUploadSession`
-    var success = false
+    let success = false
 
     console.log(`fetch: POST ${sessionUrl}`)
     await fetch(sessionUrl, {
@@ -106,9 +106,9 @@ export class OneDriveCloudDrive implements CloudProvider {
 
   async uploadBlob(uploadUrl: string, blob: Blob, cloudData: CloudData): Promise<boolean> {
     const buffer = await new Response(blob).arrayBuffer();
-    var offset = 0
-    var chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
-    var success = false
+    let offset = 0
+    let chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
+    let success = false
 
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
@@ -156,7 +156,7 @@ export class OneDriveCloudDrive implements CloudProvider {
 
 const launchPicker = async (view: string, filter?: string) => {
   return new Promise<OneDriveResult | null>((resolve, reject) => {
-    var odOptions: OneDriveOpenOptions = {
+    const odOptions: OneDriveOpenOptions = {
         clientId: applicationId,
         action: "share",
         multiSelect: false,
@@ -227,12 +227,12 @@ interface OneDriveOpenOptions {
   }
   success(result: OneDriveResult): void
   cancel(): void
-  error(e: any): void
+  error(e: string): void
 }
 
 interface OneDrive {
-  open(options: OneDriveOpenOptions): any
-  save(options: OneDriveOpenOptions): any
+  open(options: OneDriveOpenOptions): void
+  save(options: OneDriveOpenOptions): void
 }
 
-declare var OneDrive: OneDrive
+declare let OneDrive: OneDrive

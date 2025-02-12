@@ -1,7 +1,7 @@
 import { receivePrinterData } from "./iwii"
 import { passRxCommData } from "../main2worker"
 
-let wsSupported = ("serial" in navigator);
+const wsSupported = ("serial" in navigator);
 let useWebSerial = false;
 let writer: WritableStreamDefaultWriter | null = null;
 let reader: ReadableStreamDefaultReader | null = null;
@@ -84,7 +84,6 @@ const queueRead = () => {
   });
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const receiveCommData = (data: Uint8Array) => {
   if (useWebSerial)
     receiveWebSerial2(data);

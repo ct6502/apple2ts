@@ -42,7 +42,7 @@ export interface Printer {
 
 export const ImageWriterII : Printer = {
   startup: (canvas) => { return initcanvas(canvas) },
-  shutdown: () => {null},
+  shutdown: () => {},
   reset: function() {
     this.localReset();
     this.incomingData = new Uint8Array(0);
@@ -84,7 +84,7 @@ export const ImageWriterII : Printer = {
     _dbg = false
   },
 
-  load: function() {null},
+  load: function() {},
   save: function() {
     const blob = new Blob([this.incomingData]);
     const link = document.createElement('a');

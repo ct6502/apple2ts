@@ -13,7 +13,9 @@ import {
 import React from "react";
 import { loadUserSymbolTable, RUN_MODE } from "../../common/utility";
 import { handleSetCPUState } from "../controller";
-import { bpStepInto, bpStepOut, bpStepOver } from "../img/icons";
+import { bpStepInto } from "../img/icon_stepinto";
+import { bpStepOut } from "../img/icon_stepout";
+import { bpStepOver } from "../img/icon_stepover";
 
 const DisassemblyControls = () => {
   // The tooltips obscure the first line of disassembly.

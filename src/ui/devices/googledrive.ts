@@ -8,8 +8,12 @@ let g_accessToken: string = ""
 let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
-  gisInited = false
-  tokenClient: any
+  tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    callback: () => {}, // defined later
+  })
+
   private resolvePicker: ((result: GoogleDriveResult | null) => void) | null = null
 
   // Create and render a Google Picker object for selecting from Drive.
@@ -51,17 +55,8 @@ export class GoogleDrive implements CloudProvider {
       } )
     }
 
-    if (!this.gisInited) {
-      this.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: '831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com',
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: () => {}, // defined later
-      })
-      this.gisInited = true
-    }
-
     // Request an access token.
-    this.tokenClient.callback = async (response: any) => {
+    this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
       if (response.error !== undefined) {
         throw (response)
       }
@@ -80,15 +75,15 @@ export class GoogleDrive implements CloudProvider {
   }
 
   // Once a file/folder gets picked, it calls back here.
-  pickerCallback = (data: any) => {
+  pickerCallback = (data: google.picker.ResponseObject) => {
     // console.log(`data = ${JSON.stringify(data, null, 2)}`)
-    if (data["action"] === "picked") {
+    if (data["action"] === "picked" && data["docs"]) {
       const doc = data["docs"][0]
       if (this.resolvePicker) {
         this.resolvePicker({
           fileId: doc[google.picker.Document.ID],
-          parentID: doc[google.picker.Document.PARENT_ID],
-          fileName: doc[google.picker.Document.NAME],
+          parentID: doc[google.picker.Document.PARENT_ID] ?? "",
+          fileName: doc[google.picker.Document.NAME] ?? "",
         })
         this.resolvePicker = null
       }
@@ -101,7 +96,7 @@ export class GoogleDrive implements CloudProvider {
   }
 
   launchPicker = async (view: string, filter?: string) => {
-    return new Promise<GoogleDriveResult | null>(async (resolve, reject) => {
+    return new Promise<GoogleDriveResult | null>((resolve, reject) => {
       try {
         this.resolvePicker = resolve
         this.createPicker(view, filter)
@@ -230,6 +225,10 @@ export class GoogleDrive implements CloudProvider {
   }
 }
 
+interface GoogleTokenClient {
+  callback?: (response: google.accounts.oauth2.TokenResponse) => Promise<void>
+  requestAccessToken: (overrideConfig?: google.accounts.oauth2.OverridableTokenClientConfig) => void;
+}
 
 interface GoogleDriveResult {
   fileId: string,

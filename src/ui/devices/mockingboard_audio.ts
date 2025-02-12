@@ -229,11 +229,15 @@ export const playMockingboard = (sound: MockingboardSound) => {
     for (let c = 0; c <= 5; c++) {
       try {
         nodes[sound.slot][chip].envelope?.disconnect(nodes[sound.slot][chip].gains[c].gain)
-      } catch (error) { null }
+      } catch {
+        // do nothing
+      }
     }
     try {
       nodes[sound.slot][chip].envelope?.stop()
-    } catch (error) { null }
+    } catch {
+      // do nothing
+    }
     nodes[sound.slot][chip].envelope = null
   }
   for (let c = 0; c <= 5; c++) {

@@ -50,7 +50,7 @@ const startOscillator = async () => {
     await audioContext.audioWorklet.addModule('worklet/oscillator.js')
     speaker = new AudioWorkletNode(audioContext, 'oscillator')
     speaker.connect(audioContext.destination)
-  } catch (error) {
+  } catch {
     console.error("audioWorklet not available - must run on https")
     isAudioButtonEnabled = false
     emulatorSoundEnabled = false
@@ -74,7 +74,7 @@ export const clickSpeaker = (cycleCount: number) => {
     if (speaker) {
       speaker.port.postMessage(cycleCount)
     }
-  } catch (error) {
+  } catch {
     console.error("error")
   }
 };

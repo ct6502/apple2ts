@@ -78,7 +78,8 @@ export const doRumble = (params: GamePadActuatorEffect) => {
     withinRumble = true
     setTimeout(() => {
       withinRumble = false
-    , params.duration})
+    }
+    , params.duration)
   }
 }
 

@@ -5,9 +5,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons";
-import { getColorModeSVG, getShowScanlinesSVG } from "../img/icons";
 import { handleGetColorMode, handleGetShowScanlines } from "../main2worker";
 import { setPreferenceColorMode, setPreferenceShowScanlines } from "../localstorage";
+import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions";
 
 export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 

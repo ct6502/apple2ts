@@ -129,7 +129,7 @@ const parseAndSendMsg = (msg: number[]) => {
 }
 
 let once = false;
-let buffer: number[] = [];
+const buffer: number[] = [];
 
 export const receiveMidiData = (data: Uint8Array) => {
   if (midiOutIndex === -1) {

@@ -134,7 +134,9 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   if (!ds.isSynchronized) {
     if (dataRegister === 0) {
       // Ignore zero bits while waiting for a new most-significant bit.
-      while (getNextBit(ds, dd) === 0) {}
+      while (getNextBit(ds, dd) === 0) {
+        // do nothing
+      }
       // This will become the high bit on the next read
       dataRegister = 0x40
       // Read the next 6 bits, all except the last one.

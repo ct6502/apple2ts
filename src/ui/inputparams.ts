@@ -9,6 +9,7 @@ export const handleInputParams = () => {
   // parameter, where we want to preserve the case of the program.
   const params = new URLSearchParams(window.location.search.toLowerCase())
   const porig = new URLSearchParams(window.location.search)
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const { setRunTour } = useGlobalContext()
 
   if (params.get('capslock') === 'off') {

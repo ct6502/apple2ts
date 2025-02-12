@@ -6,9 +6,10 @@ import {
   faArrowDown,
   faArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { appleOutline, appleSolid } from "../img/icons";
 import { lockedKeyStyle } from "../../common/utility";
 import { handleArrowKey } from "../devices/gamepad";
+import { appleOutline } from "../img/icon_appleoutline";
+import { appleSolid } from "../img/icon_applesolid";
 
 const KeyboardButtons = (props: DisplayProps) => {
   const arrowKeys = [
