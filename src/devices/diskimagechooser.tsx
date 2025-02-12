@@ -16,7 +16,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
   }
 
   return (
-    <div style={{ userSelect: "none" }}>
+    <span style={{ userSelect: "none" }}>
       <img className="disk-image"
         src={floppyDisks} alt="disks"
         id="tour-disk-images"
@@ -28,6 +28,6 @@ export const DiskImageChooser = (props: DisplayProps) => {
           onClose={() => setOpen(false)}
         />
       }
-    </div>
+    </span>
   )
 }

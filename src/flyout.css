@@ -1,41 +1,63 @@
 .flyout {
   position: fixed;
-  background-color: #BFBB98;
-  padding-top: 4px;
-  padding-bottom: 2px;
+  background-color: #aba7a2;
   padding-left: 2px;
   padding-right: 7px;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
-  border-color: #000000;
-  border-width: 1px;
-  border-style: solid;
   z-index: 99;
 }
 
 .flyout-top-left {
   top: -1000px;
   height: auto;
-  left: 1%;
+  left: 0px;
   transition: top 0.3s ease;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-color: #000000;
+  border-width: 1px;
+  border-style: solid;
+  border-top-style: none;
+  padding-bottom: 2px;
 }
 
 .flyout-top-right {
   top: -1000px;
   height: auto;
-  right: 1%;
+  right: 0px;
   transition: top 0.3s ease;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-color: #000000;
+  border-width: 1px;
+  border-style: solid;
+  border-top-style: none;
+  padding-bottom: 2px;
+}
+
+.flyout-bottom-center {
+  bottom: -1000px;
+  height: auto;
+  left: 0px;
+  transition: bottom 0.3s ease;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-bottom-style: none;
+  transform: translate(50%);
+  padding-top: 0px;
 }
 
 .flyout-button {
   color: #000000;
   padding-top: 8px;
   padding-bottom: 4px;
-  padding-left: 2.5cqw;
+  padding-left: 8px;
   padding-right: 0px;
   margin-right: 0px;
-  font-size: 2.5cqw;
+  font-size: 24pt;
   cursor: pointer;
-  margin: auto;
-  width: 50%;
+  /* width: 100%; */
+  transform: translate(50%);
+  /* border: 3px solid red; */
 }

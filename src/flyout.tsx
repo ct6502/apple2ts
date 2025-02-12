@@ -13,13 +13,25 @@ const Flyout = (props: {
   const className = `flyout-${props.position}`
   const width = props.width ?? ''
 
+  const isTopPosition = () => {
+    return props.position.search('top') >= 0
+  }
+
   const handleResizeImmediate = (newIsFlyoutOpen: boolean) => {
     const panel = document.getElementsByClassName(className)[0] as HTMLElement
     if (newIsFlyoutOpen) {
-      panel.style.top = '0px'
+      if (isTopPosition()) {
+        panel.style.top = '0px'
+      } else {
+        panel.style.bottom = '0px'
+      }
       panel.style.opacity = '100%'
     } else {
-      panel.style.top = `calc(-${panel.offsetHeight}px + 2.5cqw + 8px)`
+      if (isTopPosition()) {
+        panel.style.top = `calc(-${panel.offsetHeight}px + 24pt + 20px)`
+      } else {
+        panel.style.bottom = `calc(-${panel.offsetHeight}px + 24pt + 20px)`
+      }
       panel.style.opacity = '75%'
     }
   }
@@ -38,7 +50,7 @@ const Flyout = (props: {
 
   const getArrowIcon = (): IconDefinition => {
     if (isFlyoutOpen) {
-      return props.position.search('top') >= 0 ? faCircleArrowUp : faCircleArrowDown
+      return isTopPosition() ? faCircleArrowUp : faCircleArrowDown
     } else {
       return props.icon
     }
@@ -46,7 +58,7 @@ const Flyout = (props: {
 
   return (
     <div className={`flyout ${className}`} style={{width: width}}>
-      {props.children}
+      {isTopPosition() ? props.children : ''}
       <div className="flyout-button">
         <FontAwesomeIcon
           icon={getArrowIcon()}
@@ -56,6 +68,7 @@ const Flyout = (props: {
           }}
         ></FontAwesomeIcon>
       </div>
+      {!isTopPosition() ? props.children : ''}
     </div>
   )
 }

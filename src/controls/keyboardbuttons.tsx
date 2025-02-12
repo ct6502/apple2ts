@@ -32,40 +32,46 @@ const KeyboardButtons = (props: DisplayProps) => {
       passAppleCommandKeyRelease(key === 'left')
     }
   }
-  return <span>{isTouchDevice && <span className="flex-row">
-    {arrowKeys.map((key, i) => (
-      <button className="push-button key-button" title={key.name}
-        key={key.name}
-        onTouchStart={() => handleArrowKey(i, false)}
-        onTouchEnd={() => handleArrowKey(i, true)}
-      >
-        <FontAwesomeIcon icon={key.icon} />
+  return <span>{isTouchDevice && <div>
+    <div className="flex-row">
+      {arrowKeys.map((key, i) => (
+        <button className="push-button key-button" title={key.name}
+          key={key.name}
+          onTouchStart={() => handleArrowKey(i, false)}
+          onTouchEnd={() => handleArrowKey(i, true)}
+        >
+          <FontAwesomeIcon icon={key.icon} />
+        </button>
+      ))}
+    </div>
+    <div className="flex-row">
+      <button className="push-button key-button" title="Escape"
+        onMouseDown={() => passKeypress(String.fromCharCode(27))}>
+        <span className="text-key">esc</span>
       </button>
-    ))}
-    <button className="push-button key-button" title="Escape"
-      onMouseDown={() => passKeypress(String.fromCharCode(27))}>
-      <span className="text-key">esc</span>
-    </button>
-    <button className="push-button key-button" title="Tab"
-      onMouseDown={() => passKeypress(String.fromCharCode(9))}>
-      <span className="text-key">tab</span>
-    </button>
-    <button
-      className={lockedKeyStyle(props.ctrlKeyMode)}
-      title="Control"
-      onMouseDown={() => props.handleCtrlDown((props.ctrlKeyMode + 1) % 3)}>
-      <span className="text-key">ctrl</span>
-    </button>
-    <button className={lockedKeyStyle(props.openAppleKeyMode)}
-      title="Open Apple"
-      onMouseDown={() => props.handleOpenAppleDown((props.openAppleKeyMode + 1) % 3)}>
-      <svg width="25" height="25" className="fill-color">{appleOutline}</svg>
-    </button>
-    <button className={lockedKeyStyle(props.closedAppleKeyMode)} title="Closed Apple"
-      onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
-      <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
-    </button>
-  </span>
+      <button className="push-button key-button" title="Tab"
+        onMouseDown={() => passKeypress(String.fromCharCode(9))}>
+        <span className="text-key">tab</span>
+      </button>
+      <button
+        className={lockedKeyStyle(props.ctrlKeyMode)}
+        title="Control"
+        onMouseDown={() => props.handleCtrlDown((props.ctrlKeyMode + 1) % 3)}>
+        <span className="text-key">ctrl</span>
+      </button>
+    </div>
+    <div className="flex-row">
+      <button className={lockedKeyStyle(props.openAppleKeyMode)}
+        title="Open Apple"
+        onMouseDown={() => props.handleOpenAppleDown((props.openAppleKeyMode + 1) % 3)}>
+        <svg width="25" height="25" className="fill-color">{appleOutline}</svg>
+      </button>
+      <button className={lockedKeyStyle(props.closedAppleKeyMode)} title="Closed Apple"
+        onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
+        <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
+      </button>
+    </div>
+  </div>
   }
     <button className={`joystick-button ${handleGetLeftButton() ? 'joystick-active' : ''}`}
       title="Button 1"

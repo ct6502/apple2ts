@@ -15,9 +15,7 @@ const ControlPanel = (props: DisplayProps) => {
           <DebugButtons />
         </span>
         <ConfigButtons {...props} />
-        <span className="flex-row">
-          <FullScreenButton />
-        </span>
+        <FullScreenButton />
         <KeyboardButtons {...props} />
       </div>
     </Flyout>

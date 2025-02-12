@@ -3,10 +3,14 @@ import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
 import Flyout from "../flyout"
 import { faFloppyDisk } from "@fortawesome/free-solid-svg-icons"
+import { isScreenNarrow } from "../display"
 
 const DiskInterface = (props: DisplayProps) => {
   return (
-    <Flyout icon={faFloppyDisk} width="10%" position="top-right">
+    <Flyout
+      icon={faFloppyDisk}
+      width={isScreenNarrow() ? '10%' : '50%'}
+      position={isScreenNarrow() ? 'top-right' : 'bottom-center'}>
       <DiskImageChooser {...props} />
       <DiskDrive
         index={2}

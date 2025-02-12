@@ -98,7 +98,7 @@ body.dark-mode .disk-cloud {
 }
 
 .disk-image {
-  width: 100%;
+  width: 19%;
   cursor: pointer;
   margin-left: 2px;
   margin-right: 2px;
@@ -107,12 +107,13 @@ body.dark-mode .disk-cloud {
 }
 
 .disk-image img {
-  width: 100%;
+  /* width: 100%; */
+  width: 19%;
   /* height: auto; */
-  border-width: 1px;
+  /* border-width: 1px;
   border-style: solid;
   border-color: var(--text-color);
-  border-radius: 5px;
+  border-radius: 5px; */
   padding: 0px;
 }
 
