@@ -2,7 +2,7 @@ import { setX, setY, setCarry, s6502, setAccumulator } from "../instructions"
 import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "../memory"
 import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
 import { toHex } from "../../common/utility"
-import { parseAssembly } from "../../common/assembler"
+import { parseAssembly } from ".././utility/assembler"
 
 let timerID: NodeJS.Timeout | number = 0
 

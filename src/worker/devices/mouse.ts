@@ -7,7 +7,7 @@ import { interruptRequest } from "../cpu6502"
 import { s6502 } from "../instructions"
 import { passShowMouse } from "../worker2main"
 import { handleClockRead } from "./clock"
-import { parseAssembly } from "../../common/assembler"
+import { parseAssembly } from ".././utility/assembler"
 
 //  To be recognized as a clock, need the following bytes:
 //  offset 0x00  = 0x08

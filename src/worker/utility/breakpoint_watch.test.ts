@@ -1,7 +1,7 @@
-import { doSetBreakpoints, hitBreakpoint } from "../worker/cpu6502";
-import { setPC } from "../worker/instructions";
-import { memGet, memSet } from "../worker/memory";
-import { Breakpoint, BreakpointMap } from "./breakpoint";
+import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
+import { setPC } from "../instructions";
+import { memGet, memSet } from "../memory";
+import { Breakpoint, BreakpointMap } from "../../common/breakpoint";
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)

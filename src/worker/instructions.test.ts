@@ -3,7 +3,7 @@ import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cp
 import { memory, updateAddressTables } from "./memory";
 import { reset6502, doBranch, s6502, setPC, setInterruptDisabled } from "./instructions";
 import { enableMockingboard } from "./devices/mockingboard";
-import { parseAssembly } from "../common/assembler";
+import { parseAssembly } from "./utility/assembler";
 
 test('doBranch', () => {
   setPC(0x2000)

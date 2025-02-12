@@ -1,11 +1,12 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
-import { passMachineState, passRequestThumbnail } from "./worker2main"
+import { passMachineState, passRequestThumbnail, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump } from "./instructions"
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "../common/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
-import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, restoreSoftSwitches } from "./softswitches";
+import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
+  restoreSoftSwitches, getSoftSwitchDescriptions } from "./softswitches";
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable, 
   getBasePlusAuxMemory,
@@ -25,9 +26,9 @@ import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
 import { sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
-import { parseAssembly } from "../common/assembler"
+import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
-import { verifyAddressWithinDisassembly, getDisassembly, getInstruction } from "../common/disassemble"
+import { verifyAddressWithinDisassembly, getDisassembly, getInstruction } from "./disassemble"
 
 let startTime = 0
 let prevTime = 0
@@ -329,6 +330,10 @@ export const doSetSpeedMode = (speedModeIn: number) => {
 export const doSetIsDebugging = (enable: boolean) => {
   isDebugging = enable
   updateExternalMachineState()
+  // We need to pass this just once to the UI thread, so it can display
+  // the list of soft switches in the breakpoint dialog. Crossing my fingers
+  // that this will _always_ get called before someone displays the dialog.
+  passSoftSwitchDescriptions(getSoftSwitchDescriptions())
 }
 
 export const doSetMemory = (addr: number, value: number) => {

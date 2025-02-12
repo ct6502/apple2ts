@@ -1,6 +1,6 @@
-import { doSetBreakpoints, hitBreakpoint } from "../worker/cpu6502";
-import { BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "./breakpoint";
-import { opCodes } from "./opcodes";
+import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
+import { BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "../../common/breakpoint";
+import { opCodes } from "../../common/opcodes";
 
 
 const bpMap: BreakpointMap = new BreakpointMap()

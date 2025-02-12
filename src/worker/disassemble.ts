@@ -1,6 +1,6 @@
 import { pcodes } from "../worker/instructions"
 import { memGetRaw } from "../worker/memory"
-import { toHex, isBranchInstruction, ADDR_MODE } from "./utility"
+import { toHex, isBranchInstruction, ADDR_MODE } from "../common/utility"
 
 const nlines = 40  // should this be an argument?
 

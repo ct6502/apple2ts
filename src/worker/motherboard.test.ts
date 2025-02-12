@@ -2,7 +2,7 @@ import { processInstruction } from "./cpu6502";
 import { memory, updateAddressTables } from "./memory";
 import { s6502, setPC } from "./instructions";
 import { TEST_DEBUG, TEST_GRAPHICS } from "../common/utility";
-import { parseAssembly } from "../common/assembler";
+import { parseAssembly } from "./utility/assembler";
 
 // Make sure we don't accidentally leave debug mode on.
 test('debugMode', () => {

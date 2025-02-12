@@ -83,6 +83,10 @@ export const passRequestThumbnail = (PC: number) => {
   doPostMessage(MSG_WORKER.REQUEST_THUMBNAIL, PC)
 }
 
+export const passSoftSwitchDescriptions = (desc: string[]) => {
+  doPostMessage(MSG_WORKER.SOFTSWITCH_DESCRIPTIONS, desc)
+}
+
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
 if (typeof self !== 'undefined') {

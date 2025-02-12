@@ -41,10 +41,68 @@ export const doSetBreakpoints = (bp: BreakpointMap) => {
   breakpointMap = bp
 }
 
+// These MEMORY_BANKS structures are defined within the common directory,
+// so they can be used by the UI and Worker threads. But we need to fill in
+// the actual function code here, since the values rely on the SWITCHES state.
+let b_filledInMembankFunctions = false
+
+const fillInMemoryBankFunctions = () => {
+  b_filledInMembankFunctions = true
+  MEMORY_BANKS["MAIN"].enabled = (addr = 0) => {
+    if (addr >= 0xD000) {
+      // We are not using our AUX card and we are using bank-switched RAM
+      return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
+    } else if (addr >= 0x200) {
+      // Just look at our regular Main/Aux switch
+      return !SWITCHES.RAMRD.isSet
+    }
+    // For $0-$1FF, look at the AUX ALTZP switch
+    return !SWITCHES.ALTZP.isSet
+  }
+  MEMORY_BANKS["AUX"].enabled = (addr = 0) => {
+    if (addr >= 0xD000) {
+      // We are using our AUX card and we are also using bank-switched RAM
+      return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet
+    } else if (addr >= 0x200) {
+      // Just look at our regular Main/Aux switch
+      return SWITCHES.RAMRD.isSet
+    }
+    // For $0-$1FF, look at the AUX ALTZP switch
+    return SWITCHES.ALTZP.isSet
+  }
+  MEMORY_BANKS["ROM"].enabled = () => {return !SWITCHES.BSRREADRAM.isSet}
+  MEMORY_BANKS["MAIN-DXXX-1"].enabled = () => { return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }
+  MEMORY_BANKS["MAIN-DXXX-2"].enabled = () => {return !SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}
+  MEMORY_BANKS["AUX-DXXX-1"].enabled = () => { return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && !SWITCHES.BSRBANK2.isSet }
+  MEMORY_BANKS["AUX-DXXX-2"].enabled = () => {return SWITCHES.ALTZP.isSet && SWITCHES.BSRREADRAM.isSet && SWITCHES.BSRBANK2.isSet}
+
+  MEMORY_BANKS["CXXX-ROM"].enabled = (addr = 0) => {
+    if (addr >= 0xC300 && addr <= 0xC3FF) {
+      return SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet
+    } else if (addr >= 0xC800) {
+      return SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet
+    }
+    return SWITCHES.INTCXROM.isSet
+  }
+
+  MEMORY_BANKS["CXXX-CARD"].enabled = (addr = 0) => {
+    if (addr >= 0xC300 && addr <= 0xC3FF) {
+      return SWITCHES.INTCXROM.isSet ? false : SWITCHES.SLOTC3ROM.isSet
+    } else if (addr >= 0xC800) {
+      // Both switches need to be off for addresses $C800-$CFFF to come from cards
+      return !SWITCHES.INTCXROM.isSet && !SWITCHES.INTC8ROM.isSet
+    }
+    return !SWITCHES.INTCXROM.isSet
+  }
+}
+
 const checkMemoryBank = (bankKey: string, address: number) => {
+  if (!b_filledInMembankFunctions) {
+    fillInMemoryBankFunctions()
+  }
   const bank = MEMORY_BANKS[bankKey]
   if (address < bank.min || address > bank.max) return false
-  if (!bank.enabled(address)) return false
+  if (bank.enabled && !bank?.enabled(address)) return false
   return true
 }
 

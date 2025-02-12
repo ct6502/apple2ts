@@ -1,5 +1,5 @@
-import { pcodes } from "../worker/instructions";
-import { toHex, isBranchInstruction, ADDR_MODE } from "./utility";
+import { pcodes } from "../instructions";
+import { toHex, isBranchInstruction, ADDR_MODE } from "../../common/utility";
 
 let doOutput = false
 

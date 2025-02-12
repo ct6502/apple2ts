@@ -4,8 +4,8 @@ import PullDownMenu from "./pulldownmenu";
 import { Droplist } from "./droplist";
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks";
 import { toHex } from "../../common/utility";
-import { getSoftSwitchDescriptions } from "../../common/softswitchdescriptions";
 import { Breakpoint } from "../../common/breakpoint";
+import { handleGetSoftSwitchDescriptions } from "../main2worker";
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
@@ -22,7 +22,7 @@ const BPEdit_Watchpoint = (props: {
       if (address >= 0xC000 && address <= 0xC0FF) {
         props.breakpoint.memget = true
         props.breakpoint.memset = true
-        const switches = getSoftSwitchDescriptions()
+        const switches = handleGetSoftSwitchDescriptions()
         if (switches[address]) {
           if (switches[address].includes("status")) {
             props.breakpoint.memset = false
@@ -88,7 +88,7 @@ const BPEdit_Watchpoint = (props: {
           setValue={handleAddressChange}
           placeholder="F800"
           width="5em" />
-        <PullDownMenu values={getSoftSwitchDescriptions()} setValue={handleAddressChange} />
+        <PullDownMenu values={handleGetSoftSwitchDescriptions()} setValue={handleAddressChange} />
       </div>
       <div>
         <div style={{ height: "8px" }} />

@@ -327,6 +327,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       }, true)
       break
     }
+    case MSG_WORKER.SOFTSWITCH_DESCRIPTIONS:
+      softSwitchDescriptions = e.data.payload as string[]
+      break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -334,7 +337,10 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
   return null
 }
 
+// Should probably store these state variables somewhere else, but it's
+// easy to just stash them here.
 let showMouse = true
+let softSwitchDescriptions = ['']
 
 export const handleGetShowMouse = () => {
   return showMouse
@@ -481,5 +487,9 @@ export const handleGetHelpText = () => {
 
 export const handleGetMachineName = () => {
   return machineState.machineName
+}
+
+export const handleGetSoftSwitchDescriptions = () => {
+  return softSwitchDescriptions
 }
 

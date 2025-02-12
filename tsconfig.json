@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": ".", // prevents this tsconfig from compiling any files
     "target": "es2020",
     "lib": [
       "dom",
@@ -24,9 +23,4 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "references": [
-    { "path": "./src/common" },
-    { "path": "./src/ui" },
-    { "path": "./src/worker" }
-  ]
 }

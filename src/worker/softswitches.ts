@@ -139,11 +139,13 @@ export const SWITCHES = {
 
 SWITCHES.TEXT.isSet = true
 
-
+// When debugging is enabled, don't print out these softswitches since they
+// occur so frequently...
 const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
 
 export const checkSoftSwitches = (addr: number,
   calledFromMemSet: boolean, cycleCount: number) => {
+    // Set this address to something (like 0) to enable debugging of softswitches.
   if (addr > 0xFFFFF && !skipDebugFlags.includes(addr)) {
     const s = memGetC000(addr) > 0x80 ? 1 : 0
     console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "write" : ""}`)
@@ -245,4 +247,33 @@ export const restoreSoftSwitches = () => {
     }
   })
   overriddenSwitches.length = 0
+}
+
+
+// Create an array of softswitch descriptions on the fly.
+// We only need to do this once.
+const SoftSwitchDescriptions: Array<string> = []
+
+export const getSoftSwitchDescriptions = () => {
+  if (SoftSwitchDescriptions.length === 0) {
+    for (const key in SWITCHES) {
+      const sswitch = SWITCHES[key as keyof typeof SWITCHES]
+      const isSwitch = sswitch.onAddr > 0
+      const writeOnly = sswitch.writeOnly ? " (write)" : ""
+      if (sswitch.offAddr > 0) {
+        const addr = toHex(sswitch.offAddr) + ' ' + key
+        SoftSwitchDescriptions[sswitch.offAddr] = addr + (isSwitch ? "-OFF" : "") + writeOnly
+      }
+      if (sswitch.onAddr > 0) {
+        const addr = toHex(sswitch.onAddr) + ' ' + key
+          SoftSwitchDescriptions[sswitch.onAddr] = addr + "-ON" + writeOnly
+      }
+      if (sswitch.isSetAddr > 0) {
+        const addr = toHex(sswitch.isSetAddr) + ' ' + key
+        SoftSwitchDescriptions[sswitch.isSetAddr] = addr + "-STATUS" + writeOnly
+      }
+    }
+  }
+  SoftSwitchDescriptions[0xC000] = 'C000 KBRD/STORE80-OFF'
+  return SoftSwitchDescriptions
 }
