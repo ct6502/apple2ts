@@ -251,8 +251,10 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   return (
     <span className="flex-column">
-      <span className="flex-row">
-        <span className="flex-column">
+      {/* <span className="flex-row"> */}
+      <span>
+        {/* <span className="flex-column"> */}
+        <span>
           <img className="disk-image"
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
@@ -266,7 +268,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       </span>
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
         {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
-      <span className="flex-row">
+      {/* <span className="flex-row"> */}
+      <span>
         <span className={"default-font disk-status"}>{status}</span>
       </span>
 

@@ -74,6 +74,7 @@ input:focus {
 .flex-row {
   display: flex;
   flex-direction: row;
+  border: 1px solid red;
 }
 
 .flex-row-gap {
@@ -85,6 +86,7 @@ input:focus {
 .flex-column {
   display: flex;
   flex-direction: column;
+  border: 1px solid blue;
 }
 
 .flex-column-gap {
