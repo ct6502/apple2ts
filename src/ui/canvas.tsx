@@ -165,6 +165,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyDown = (e: keyEvent) => {
+    alert('keyDown!')
     let keyHandledLocal = false
     if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
@@ -405,6 +406,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
+        window.addEventListener('fullscreenchange', () => { fullscreenChange() })
         window.setInterval(() => { checkGamepad() }, 34)
         handleResize()
 
@@ -441,9 +443,18 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
+  const fullscreenChange = () => {
+    if (document.fullscreenElement) {
+      console.log(`Fullscreen mode entered for ${document.fullscreenElement}`);
+    } else {
+      console.log('Exited fullscreen mode.');
+    }
+  }
+
   const isTouchDevice = "ontouchstart" in document.documentElement;
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement;
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen;
+  const fullscreenEnabled = document.fullscreenEnabled;
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
   //   myCanvas.current.requestFullscreen()
@@ -491,8 +502,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         }}
         width={width} height={height}
         tabIndex={0}
-        onKeyDown={isTouchDevice ? () => { } : handleKeyDown}
-        onKeyUp={isTouchDevice ? () => { } : handleKeyUp}
+        onKeyDown={isTouchDevice && !fullscreenEnabled ? () => { } : handleKeyDown}
+        onKeyUp={isTouchDevice && !fullscreenEnabled ? () => { } : handleKeyUp}
         onMouseEnter={setFocus}
         onMouseDown={setFocus}
       />
