@@ -27,7 +27,7 @@ const ImageWriter = () => {
   const img1 = printingTimeout ? iwiion : iwiioff
 
   return (
-    <span className="flex-column" style={{width:'16.66%'}}>
+    <span className="flex-column">
       <img className="disk-image"
         style={{ borderWidth: 0 }}
         src={img1} alt="iwii"

@@ -175,25 +175,29 @@ const DisplayApple2 = () => {
 
   return (
     <div>
-      <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>  
-        <span className="flex-column">
-          <div className="flex-row-gap wrap"
-            style={{ paddingLeft: '2px' }}>
-            <ControlPanel {...props} />
-          </div>
-        </span>
+      <span className={narrow ? "flex-column-gap" : "flex-row"} style={{ alignItems: "inherit" }}>
         {/* <div className={isLandscape ? "flex-row" : "flex-column"}> */}
         <div>
-          <Apple2Canvas {...props} />
-          <div className="flex-row">
-            <DiskInterface {...props} />
-            {/* <ImageWriter /> */}
+          <div className="flex-column">
+            <span className="flex-row">
+              <Apple2Canvas {...props} />
+            </span>
+            <span className="flex-row">
+            {/* <span className="flex-row wrap disk-interface"> */}
+                {/* <div className="flex-row-gap wrap" */}
+                {/* style={{ paddingLeft: '2px' }}> */}
+              <ControlPanel {...props} />
+            </span>
+            <span className="flex-row">
+              <DiskInterface {...props} />
+              <ImageWriter />
+            </span>
           </div>
           {!isLandscape && status}
         </div>
         {isLandscape && status}
         {narrow && <div className="divider"></div>}
-        <span className="flex-column" ref={righthandSectionRef}>
+        <span className="flex-column" ref={righthandSectionRef} style={{width: '100%'}}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}
               helptext={handleGetHelpText()} />}

@@ -16,7 +16,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
   }
 
   return (
-    <span className="flex-column" style={{userSelect: "none", width:'16.66%'}}>
+    <span className="flex-column" style={{userSelect: "none"}}>
       <img className="disk-image"
         src={floppyDisks} alt="disks"
         id="tour-disk-images"

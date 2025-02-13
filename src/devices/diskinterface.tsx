@@ -5,7 +5,7 @@ import { DiskImageChooser } from "./diskimagechooser"
 const DiskInterface = (props: DisplayProps) => {
   return (
     // <div className="flex-row wrap">
-    <span className="flex-row">
+    <span className="flex-row wrap">
       {/* <span className="flex-row"> */}
         <DiskImageChooser {...props} />
         <DiskDrive index={0} renderCount={props.renderCount}

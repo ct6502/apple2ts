@@ -7,7 +7,7 @@ const FullScreenButton = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   return (
     <button className="push-button" title="Full Screen"
-      style={{ display: isTouchDevice ? 'none' : '' }}
+      // style={{ display: isTouchDevice ? 'none' : '' }}
       onClick={() => {
         const canvas = document.getElementById('apple2canvas') as HTMLCanvasElement
         const context = canvas.getContext('2d')

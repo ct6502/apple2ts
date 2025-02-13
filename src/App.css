@@ -34,6 +34,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
   margin: 10px;
+  margin-right: 0px;
 }
 
 body.dark-mode {
@@ -74,7 +75,7 @@ input:focus {
 .flex-row {
   display: flex;
   flex-direction: row;
-  border: 1px solid red;
+  /* border: 1px solid red; */
 }
 
 .flex-row-gap {
@@ -86,7 +87,7 @@ input:focus {
 .flex-column {
   display: flex;
   flex-direction: column;
-  border: 1px solid blue;
+  /* border: 1px solid blue; */
 }
 
 .flex-column-gap {
