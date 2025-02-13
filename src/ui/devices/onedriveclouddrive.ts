@@ -1,6 +1,6 @@
 import { CLOUD_SYNC } from "../../common/utility"
 
-export const DEFAULT_SYNC_INTERVAL = 5 * 60 * 1000
+export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
@@ -169,7 +169,10 @@ const launchPicker = async (view: string, filter?: string) => {
         },
         success: function (files) { resolve(files) },
         cancel: function () { resolve(null) },
-        error: function (e) { reject(e) }
+        error: function (e) {
+          console.log(JSON.stringify(e))
+          reject(e)
+        }
     }
 
     OneDrive.open(odOptions)
