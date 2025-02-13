@@ -84,7 +84,6 @@ export const doRumble = (params: GamePadActuatorEffect) => {
 }
 
 export const handleArrowKey = (key: ARROW, release: boolean) => {
-  console.log('left/right arrow: ' + arrowGamePad[0])
   if (!release) {
     let code = 0
     if (handleGetArrowKeysAsJoystick()) {

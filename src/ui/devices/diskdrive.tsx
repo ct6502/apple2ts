@@ -83,7 +83,9 @@ const DiskDrive = (props: DiskDriveProps) => {
     }, 1000);
     return () => clearInterval(timer);
 // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [dprops]);
+}, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.lastSyncTime,
+    dprops.cloudData?.syncInterval, dprops.isWriteProtected, dprops.motorRunning,
+    dprops.diskHasChanges]);
 
   const cloudDriveStatusClassName = useMemo(() => {
     if (!dprops.cloudData) return "disk-clouddrive-inactive"
