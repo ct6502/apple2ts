@@ -14,6 +14,8 @@ const FullScreenButton = () => {
         const context = canvas.getContext('2d')
         if (context) {
           try {
+            var Element_Copy=Element;
+            var Element:any = Element_Copy;
             canvas?.parentElement?.requestFullscreen(Element.ALLOW_KEYBOARD_INPUT)
             canvas.width = window.outerWidth;
             canvas.height = window.outerHeight;
