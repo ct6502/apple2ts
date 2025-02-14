@@ -99,7 +99,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else {
       return `disk-clouddrive-${CLOUD_SYNC[syncStatus].toLowerCase()}`
     }
-  }, [dprops.cloudData])
+  }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
 
   const diskDriveLabel = useMemo(() => {
     let label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))

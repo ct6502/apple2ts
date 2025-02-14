@@ -9,7 +9,7 @@ const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 export class OneDriveCloudDrive implements CloudProvider {
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
-    const result = await launchPicker("files", filter)
+    const result = await launchPicker('share', 'files', filter)
     const file = result?.value[0]
     if (file) {
       const cloudData: CloudData = {
@@ -40,21 +40,20 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   async upload(filename: string, blob: Blob): Promise<CloudData | null> {
-    const result = await launchPicker("folders")
+    const result = await launchPicker('save', 'folders')
     const file = result?.value && result.value[0]
     if (file) {
       const cloudData: CloudData = {
         providerName: "OneDrive",
-        syncStatus: CLOUD_SYNC.ACTIVE,
+        syncStatus: CLOUD_SYNC.PENDING,
         syncInterval: DEFAULT_SYNC_INTERVAL,
-        lastSyncTime: Date.now(),
+        lastSyncTime: -1,
         fileName: filename,
         accessToken: result.accessToken,
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
       }
-      this.sync(blob, cloudData)
       return cloudData
     } else {
       console.error(`result message: ${result?.message} errorCode: ${result?.errorCode}`)
@@ -154,11 +153,11 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 }
 
-const launchPicker = async (view: string, filter?: string) => {
+const launchPicker = async (action: string, view: string, filter?: string) => {
   return new Promise<OneDriveResult | null>((resolve, reject) => {
     const odOptions: OneDriveOpenOptions = {
         clientId: applicationId,
-        action: "share",
+        action: action,
         multiSelect: false,
         openInNewWindow: true,
         viewType: view,
@@ -217,11 +216,11 @@ interface Thumbnail {
 
 interface OneDriveOpenOptions {
   clientId: string
-  action: "download" | "share" | "query"
+  action: string // 'download' | 'share' | 'query' | 'save'
   multiSelect: boolean
   fileName?: string
   openInNewWindow: boolean
-  viewType: string
+  viewType: string // 'files' | 'folders'
   advanced: {
       filter?: string
       endpointHint?: string

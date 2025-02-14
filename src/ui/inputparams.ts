@@ -39,7 +39,7 @@ export const handleInputParams = () => {
 
   const colorMode = params.get('color')
   if (colorMode) {
-    const colors = ['color', 'nofringe', 'green', 'amber', 'white']
+    const colors = ['color', 'nofringe', 'green', 'amber', 'white', 'inverse']
     const mode = colors.indexOf(colorMode)
     if (mode >= 0) passColorMode(mode as COLOR_MODE)
   }
