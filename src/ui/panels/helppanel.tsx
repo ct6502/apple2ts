@@ -30,4 +30,9 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
   return prevProps.helptext === nextProps.helptext;
 })
 
+// Avoid a lint error "Component definition is missing display name".
+// Presumably this is because this component is wrapped in a React.memo
+// so the displayName cannot be inferred from the TSX.
+HelpPanel.displayName = "HelpPanel";
+
 export default HelpPanel;

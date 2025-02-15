@@ -167,7 +167,7 @@ const DisplayApple2 = () => {
   const mem = handleGetMemSize() + 64
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item">
-    <span>{props.speed} MHz, {memSize}</span>
+    <span>{currentSpeed} MHz, {memSize}</span>
     <br />
     <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
       <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>

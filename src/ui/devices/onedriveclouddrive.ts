@@ -39,7 +39,7 @@ export class OneDriveCloudDrive implements CloudProvider {
     return null
   }
 
-  async upload(filename: string, blob: Blob): Promise<CloudData | null> {
+  async upload(filename: string): Promise<CloudData | null> {
     const result = await launchPicker('save', 'folders')
     const file = result?.value && result.value[0]
     if (file) {
@@ -47,7 +47,7 @@ export class OneDriveCloudDrive implements CloudProvider {
         providerName: "OneDrive",
         syncStatus: CLOUD_SYNC.PENDING,
         syncInterval: DEFAULT_SYNC_INTERVAL,
-        lastSyncTime: -1,
+        lastSyncTime: -1,  // force an immediate sync (which will actually upload the data)
         fileName: filename,
         accessToken: result.accessToken,
         itemId: file.id,

@@ -82,8 +82,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }, 1000);
     return () => clearInterval(timer);
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.lastSyncTime,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.lastSyncTime,
     dprops.cloudData?.syncInterval, dprops.isWriteProtected, dprops.motorRunning,
     dprops.diskHasChanges]);
 
@@ -99,6 +99,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else {
       return `disk-clouddrive-${CLOUD_SYNC[syncStatus].toLowerCase()}`
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
 
   const diskDriveLabel = useMemo(() => {
