@@ -21,13 +21,13 @@ const MemoryTable = (props: MemoryTableProps) => {
   const { hgrMagnifier: hgrMagnifier, setHgrMagnifier: setHgrMagnifier,
     setUpdateHgr: setUpdateHgr } = useGlobalContext()
   const hgrMagnifierLocal = useRef([-1, -1])
-  const cellValue = useRef('')
+  const cellValue = useRef("")
 
-  if (props.memory.length <= 1) return '\n\n\n      *** Pause emulator to view memory ***'
+  if (props.memory.length <= 1) return "\n\n\n      *** Pause emulator to view memory ***"
 
   const convertByteToAscii = (byte: number) => {
     if (props.highAscii) byte &= 0x7F
-    if (byte < 32 || byte > 126) return '·' // Non-printable
+    if (byte < 32 || byte > 126) return "·" // Non-printable
     return String.fromCharCode(byte)
   }
 
@@ -39,8 +39,8 @@ const MemoryTable = (props: MemoryTableProps) => {
       const addr = props.isHGR ?
         (hiresLineToAddress(props.offset, l) - props.offset) : 16 * l
       const mem = props.memory.slice(addr, addr + ncols)
-      const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ':']
-      let ascii = ''
+      const cells = [toHex(props.isHGR ? addr + props.offset : addr, 4) + ":"]
+      let ascii = ""
       for (let b = 0; b < ncols; b++) {
         cells.push(toHex(mem[b]))
         ascii += convertByteToAscii(mem[b])
@@ -79,7 +79,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   const clearSelection = (table: HTMLTableElement) => {
     for (let i = 0; i < table.rows.length; i++) {
       for (let j = 0; j < table.rows[i].cells.length; j++) {
-        table.rows[i].cells[j].classList.remove('selected')
+        table.rows[i].cells[j].classList.remove("selected")
       }
     }
   }
@@ -88,7 +88,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     for (let j = offset[1] + 1; j <= offset[1] + nRowsHgrMagnifier; j++) {
       for (let i = offset[0] + 1; i <= offset[0] + nColsHgrMagnifier; i++) {
         const cell = table?.rows[j]?.cells[i]
-        cell?.classList.add('selected')
+        cell?.classList.add("selected")
       }
     }
   }
@@ -104,7 +104,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       props.doPickWatchpoint(addr)
       applyHighlightAnimation(cell)
       setTimeout(() => {
-        cell.style.animation = ''
+        cell.style.animation = ""
       }, 2250)
       // If we were picking a watchpoint, do not go into edit mode.
       e.preventDefault()
@@ -141,7 +141,7 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const getVisibleRows = () => {
-    const table = document.querySelector('#memory-table') as HTMLTableElement;
+    const table = document.querySelector("#memory-table") as HTMLTableElement
     let topVisibleRowIndex = -1
     let bottomVisibleRowIndex = -1
 
@@ -151,10 +151,10 @@ const MemoryTable = (props: MemoryTableProps) => {
       if (rect.top < window.innerHeight && rect.bottom >= 0) {
         // If it's the first visible row we've found, set it as the top
         if (topVisibleRowIndex === -1) {
-          topVisibleRowIndex = i;
+          topVisibleRowIndex = i
         }
         // Keep updating the bottom visible row index as we go
-        bottomVisibleRowIndex = i;
+        bottomVisibleRowIndex = i
       } else if (topVisibleRowIndex !== -1) {
         // We've found the last visible row
         break
@@ -167,7 +167,7 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
     const nextCell = table.rows[row].cells[col]
-    nextCell?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' })
+    nextCell?.scrollIntoView({ behavior: "auto", block: "center", inline: "center" })
     nextCell?.focus()
   }
 
@@ -177,37 +177,37 @@ const MemoryTable = (props: MemoryTableProps) => {
     const table = cell.parentNode?.parentNode as HTMLTableElement
     const nrows = table.rows.length
     const ncols = table.rows[0].cells.length
-    if (e.key.startsWith('Arrow')) {
+    if (e.key.startsWith("Arrow")) {
       e.preventDefault()
-      cellValue.current = ''
-      if (e.key === 'ArrowUp') {
+      cellValue.current = ""
+      if (e.key === "ArrowUp") {
         if (row < 1) return
         row--
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowDown") {
         if (row >= (nrows - 1)) return
         row++
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === "ArrowLeft") {
         if (col < 1) return
         col--
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === "ArrowRight") {
         if (col >= (ncols - 2)) return
         col++
       }
       setNewFocus(table, col, row)
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       e.preventDefault()
       const cell = e.currentTarget
       // On an Escape, restore the original value
       if (cell && cellValue.current) {
         cell.textContent = cellValue.current
       }
-    } else if (e.key === 'Enter') {
+    } else if (e.key === "Enter") {
       e.preventDefault()
       const cell = e.currentTarget as HTMLTableCellElement
-      if (cell && cell.textContent?.trim() === '') {
+      if (cell && cell.textContent?.trim() === "") {
         // TODO: Check spreadsheet programs to see if advance to next cell on 'Enter'
-        cellValue.current = '00'
-        setNewValue(col, row, cell, '00')
+        cellValue.current = "00"
+        setNewValue(col, row, cell, "00")
       }
       if (col < (ncols - 2)) {
         col++
@@ -236,7 +236,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     props.doSetMemory(addr, value)
     props.memory[addr] = value
     cell.textContent = newvalue
-    cellValue.current = ''
+    cellValue.current = ""
   }
 
   const handleInput = (col: number, row: number, cell: HTMLTableCellElement) => {
@@ -244,7 +244,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     if (!newText) {
       return
     }
-    const newvalue = newText.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 2)
+    const newvalue = newText.replace(/[^0-9a-f]/gi, "").toUpperCase().substring(0, 2)
     cell.textContent = newvalue
     if (newvalue.length === 1) {
       // If we needed to replace the contents (e.g. to make uppercase),
@@ -284,7 +284,7 @@ const MemoryTable = (props: MemoryTableProps) => {
       hgrMagnifierLocal.current[0] = hgrMagnifier[0]
       hgrMagnifierLocal.current[1] = hgrMagnifier[1]
       setTimeout(() => {
-        const table = document.querySelector('#memory-table') as HTMLTableElement;
+        const table = document.querySelector("#memory-table") as HTMLTableElement
         if (!table) return
         clearSelection(table)
         setSelection(hgrMagnifier, table)
@@ -293,7 +293,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     }
   } else {
     setTimeout(() => {
-      const table = document.querySelector('#memory-table') as HTMLTableElement;
+      const table = document.querySelector("#memory-table") as HTMLTableElement
       clearSelection(table)
     }, 10)
   }
@@ -308,15 +308,15 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const applyHighlightAnimation = (element: HTMLElement) => {
-    const isDarkMode = document.body.classList.contains('dark-mode')
-    const animationName = isDarkMode ? 'highlight-anim-dark' : 'highlight-anim'
+    const isDarkMode = document.body.classList.contains("dark-mode")
+    const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
     element.style.animation = `${animationName} 1s 0.1s`
-  };
+  }
   
   // This scrolling code is used by the higher-level MemoryDump component to
   // scroll to a specific row when the address field is changed.
   if (props.scrollRow >= 0) {
-    const table = document.querySelector('#memory-table') as HTMLTableElement;
+    const table = document.querySelector("#memory-table") as HTMLTableElement
     const row = table.rows[props.scrollRow + 1]
     if (row) {
       row.scrollIntoView({ block: "center", inline: "center" })
@@ -325,22 +325,22 @@ const MemoryTable = (props: MemoryTableProps) => {
       // in HGR mode where it draws some of the columns on top of each other...
       //    applyHighlightAnimation(row.cells[0])
       setTimeout(() => {
-        row.style.animation = ''
+        row.style.animation = ""
         // row.cells[0].style.animation = ''
       }, 2250)
     }
   }
 
   const cellClass = (col: number, row: number) => {
-    if (col === 0) return 'memtable-addr'
-    if (col === 17) return ''
-    const highlight = (props.highlight.includes(row * width + col - 1)) ? ' memtable-highlight' : ''
-    return (isEditable(col, row) ? '' : 'memtable-readonly') + highlight
+    if (col === 0) return "memtable-addr"
+    if (col === 17) return ""
+    const highlight = (props.highlight.includes(row * width + col - 1)) ? " memtable-highlight" : ""
+    return (isEditable(col, row) ? "" : "memtable-readonly") + highlight
   }
 
   return (
     <table className="memtable" id="memory-table"
-      style={{ cursor: props.pickWatchpoint ? 'crosshair' : 'default' }}
+      style={{ cursor: props.pickWatchpoint ? "crosshair" : "default" }}
       onMouseDown={onMouseDown}
       onMouseOver={onMouseOver}>
       <thead>

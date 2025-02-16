@@ -4,7 +4,7 @@ import {PhonemeEe} from "./wavetables/PhonemeEe"
 import {TwelveStringGuitar1} from "./wavetables/TwelveStringGuitar1"
 import {Wurlitzer2} from "./wavetables/Wurlitzer2"
 
-const hasAudioContext = typeof AudioContext !== 'undefined'
+const hasAudioContext = typeof AudioContext !== "undefined"
 let mboardContext: AudioContext
 let stereoMerge: ChannelMergerNode
 let chipMerge: GainNode
@@ -29,19 +29,19 @@ const createNoise = (context: AudioContext, chip: number) => {
   // to each channel. Using a mono buffer will play thru both speakers.
   const buffer = new AudioBuffer({numberOfChannels: 2,
     length: bufferSize, sampleRate: context.sampleRate})
-  const output = buffer.getChannelData(chip);
+  const output = buffer.getChannelData(chip)
   const b = new Float32Array(7).fill(0)
   const c1 = [0.99886, 0.99332, 0.96900, 0.86650, 0.55000, -0.7616, 0.115926]
   const c2 = [0.0555179, 0.0750759, 0.1538520, 0.3104856, 0.5329522, -0.0168980, 0.5362]
   for (let i = 0; i < bufferSize; i++) {
-    const white = Math.random() * 2 - 1;
+    const white = Math.random() * 2 - 1
     let sum = 0
     for (let c = 0; c <= 5; c++) {
       b[c] = c1[c] * b[c] + white * c2[c]
       sum += b[c]
     }
-    output[i] = (sum + b[6] + white * c2[6]) / 1.5;
-    b[6] = white * c1[6];
+    output[i] = (sum + b[6] + white * c2[6]) / 1.5
+    b[6] = white * c1[6]
   }
   return new AudioBufferSourceNode(context, {buffer: buffer, loop: true})
 }
@@ -214,7 +214,7 @@ export const changeMockingboardMode = (mode = 0) => {
         chipMerge.gain.value = v
       }
     }      
-  });
+  })
 }
 
 export const playMockingboard = (sound: MockingboardSound) => {
@@ -272,7 +272,7 @@ export const playMockingboard = (sound: MockingboardSound) => {
     }
   }
 
-  if (mboardContext.state === 'suspended') {
-    mboardContext.resume();
+  if (mboardContext.state === "suspended") {
+    mboardContext.resume()
   }
 }

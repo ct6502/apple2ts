@@ -15,16 +15,16 @@ const constructAudio = (mp3track: string) => {
     timeout: 0
   }
   audioDevice.element.volume = 0.5
-  const node = audioDevice.context.createMediaElementSource(audioDevice.element);
-  node.connect(audioDevice.context.destination);
+  const node = audioDevice.context.createMediaElementSource(audioDevice.element)
+  node.connect(audioDevice.context.destination)
   return audioDevice
 }
 
 const playAudio = (audioDevice: AudioDevice, timeout: number) => {
-  if (isAudioEnabled() && audioDevice.context.state === 'suspended') {
-    audioDevice.context.resume();
+  if (isAudioEnabled() && audioDevice.context.state === "suspended") {
+    audioDevice.context.resume()
   }
-  const playPromise = audioDevice.element.play();
+  const playPromise = audioDevice.element.play()
   if (playPromise) {
     playPromise.then(() => {
       window.clearTimeout(audioDevice.timeout)

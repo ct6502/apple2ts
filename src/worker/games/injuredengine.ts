@@ -23,7 +23,7 @@ C         Close throttle`
 
 const setup = () => {
   // Injured Engine required an unenhanced Apple //e
-  doSetMachineName('APPLE2EU', false)
+  doSetMachineName("APPLE2EU", false)
 }
 
 export const injuredengine: GameLibraryItem = {

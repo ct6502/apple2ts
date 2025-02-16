@@ -1,24 +1,24 @@
-import React, { useState } from "react";
-import EditField from "./editfield";
-import PullDownMenu from "./pulldownmenu";
-import { Droplist } from "./droplist";
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks";
-import { toHex } from "../../common/utility";
-import { Breakpoint } from "../../common/breakpoint";
-import { handleGetSoftSwitchDescriptions } from "../main2worker";
+import React, { useState } from "react"
+import EditField from "./editfield"
+import PullDownMenu from "./pulldownmenu"
+import { Droplist } from "./droplist"
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
+import { toHex } from "../../common/utility"
+import { Breakpoint } from "../../common/breakpoint"
+import { handleGetSoftSwitchDescriptions } from "../main2worker"
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
 }) => {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
-    toHex(props.breakpoint.address) : '')
+    toHex(props.breakpoint.address) : "")
 
   const handleAddressChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
     setBpAddress(value)
     if (props.breakpoint) {
-      const address = parseInt(value || '0', 16)
+      const address = parseInt(value || "0", 16)
       if (address >= 0xC000 && address <= 0xC0FF) {
         props.breakpoint.memget = true
         props.breakpoint.memset = true
@@ -38,9 +38,9 @@ const BPEdit_Watchpoint = (props: {
 
   const handleHexValueChange = (value: string) => {
     const hexSize = props.breakpoint.instruction ? 4 : 2
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, hexSize).toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, hexSize).toUpperCase()
     if (props.breakpoint) {
-      props.breakpoint.hexvalue = parseInt(value ? value : '-1', 16)
+      props.breakpoint.hexvalue = parseInt(value ? value : "-1", 16)
       setTriggerUpdate(!triggerUpdate)
     }
   }
@@ -57,7 +57,7 @@ const BPEdit_Watchpoint = (props: {
 
   const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
-      const bank = MEMORY_BANKS[key];
+      const bank = MEMORY_BANKS[key]
       if (bank.name === value) {
         props.breakpoint.memoryBank = key
         setTriggerUpdate(!triggerUpdate)
@@ -77,11 +77,11 @@ const BPEdit_Watchpoint = (props: {
   }
 
   const v = props.breakpoint.hexvalue
-  const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ''
+  const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ""
 
   return (
     <div>
-      <div className="flex-row" style={{ alignItems: 'baseline' }}>
+      <div className="flex-row" style={{ alignItems: "baseline" }}>
         <EditField name="Address: "
           initialFocus={true}
           value={bpAddress}
@@ -120,4 +120,4 @@ const BPEdit_Watchpoint = (props: {
   )
 }
 
-export default BPEdit_Watchpoint;
+export default BPEdit_Watchpoint

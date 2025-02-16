@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, useRef } from "react";
+import React, { KeyboardEvent, useRef } from "react"
 import {
   handleGetAddressGetTable,
   handleGetBreakpoints,
@@ -9,14 +9,14 @@ import {
   handleGetState6502,
   passBreakpoints,
   passSetDisassembleAddress
-} from "../main2worker";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getSymbolTables, RUN_MODE, toHex } from "../../common/utility";
+} from "../main2worker"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { getSymbolTables, RUN_MODE, toHex } from "../../common/utility"
 import {
   faCircle as iconBreakpoint,
-} from "@fortawesome/free-solid-svg-icons";
-import { useGlobalContext } from "../globalcontext";
-import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint";
+} from "@fortawesome/free-solid-svg-icons"
+import { useGlobalContext } from "../globalcontext"
+import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
 
 const nlines = 40
 let currentScrollAddress = -1
@@ -38,7 +38,7 @@ const DisassemblyView = () => {
     // since they can come in fast.
     // Clear the previous timeout
     if (timeoutIdRef.current !== null) {
-      clearTimeout(timeoutIdRef.current);
+      clearTimeout(timeoutIdRef.current)
     }
     timeoutIdRef.current = setTimeout(() => {
       if (disassemblyRef.current) {
@@ -60,16 +60,16 @@ const DisassemblyView = () => {
   }
 
   const handleCodeKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault()  // suppress normal scroll events
       const currentAddr = getAddressAtTop()
-      let newAddress = currentAddr + ((e.key === 'ArrowDown') ? 1 : -1)
+      let newAddress = currentAddr + ((e.key === "ArrowDown") ? 1 : -1)
       if (e.metaKey) {
-        newAddress = (e.key === 'ArrowDown') ? 0xFFFF : 0
+        newAddress = (e.key === "ArrowDown") ? 0xFFFF : 0
       } else if (e.ctrlKey) {
         // Down array: Jump down to start of next page
         // Up arrow: Jump back to start of page (or previous page if at $XX00)
-        newAddress = (e.key === 'ArrowDown') ? ((currentAddr >> 8) + 1) << 8 :
+        newAddress = (e.key === "ArrowDown") ? ((currentAddr >> 8) + 1) << 8 :
           ((currentAddr - 1) >> 8) << 8
       }
       newAddress = Math.max(Math.min(newAddress, 0xFFFF), 0)
@@ -81,7 +81,7 @@ const DisassemblyView = () => {
 
   const getAddressAtTop = () => {
     const disassembly = handleGetDisassembly()
-    return parseInt(disassembly.slice(0, disassembly.indexOf(':')), 16)
+    return parseInt(disassembly.slice(0, disassembly.indexOf(":")), 16)
   }
 
   const getAddressAtMouse = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -113,7 +113,7 @@ const DisassemblyView = () => {
 
   const handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
     event.stopPropagation()
-    const addr = parseInt(event.currentTarget.getAttribute('data-key') || '-1')
+    const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     const breakpoints = new BreakpointMap(handleGetBreakpoints())
     const bp = breakpoints.get(addr)
     if (bp) {
@@ -126,7 +126,7 @@ const DisassemblyView = () => {
       setUpdateBreakpoint(updateBreakpoint + 1)
     }
     if (fakePointRef.current) {
-      (fakePointRef.current as HTMLDivElement).style.display = 'none'
+      (fakePointRef.current as HTMLDivElement).style.display = "none"
     }
   }
 
@@ -136,24 +136,24 @@ const DisassemblyView = () => {
     const div = disassemblyRef.current
     const fakePoint = fakePointRef.current as HTMLDivElement
     if (addr >= 0) {
-      div.style.cursor = 'pointer'
-      fakePoint.style.display = 'initial'
+      div.style.cursor = "pointer"
+      fakePoint.style.display = "initial"
       fakePoint.style.top = `${mouseY - 5}px`
     } else {
-      div.style.cursor = 'text'
-      fakePoint.style.display = 'none'
+      div.style.cursor = "text"
+      fakePoint.style.display = "none"
     }
   }
 
   const handleCodeMouseLeave = () => {
     if (fakePointRef.current) {
       const fakePoint = fakePointRef.current as HTMLDivElement
-      fakePoint.style.display = 'none'
+      fakePoint.style.display = "none"
     }
   }
 
   const getAddress = (line: string) => {
-    return parseInt(line.slice(0, line.indexOf(':')), 16)
+    return parseInt(line.slice(0, line.indexOf(":")), 16)
   }
 
   // const fWeight = (opcode: string) => {
@@ -183,7 +183,7 @@ const DisassemblyView = () => {
   }
 
   const getOperandTooltip = (operand: string, addr: number) => {
-    let title = ''
+    let title = ""
     if (operand.includes(",X)")) {
       const xreg = handleGetState6502().XReg
       // pre-indexing: add X to the address before finding the actual address
@@ -223,11 +223,11 @@ const DisassemblyView = () => {
     const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
     let addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
     if (ops.length === 3 && addr >= 0) {
-      if (ops[2].includes(')')) {
+      if (ops[2].includes(")")) {
         const memory = handleGetMemoryDump()
         if (memory.length > 1) {
           // pre-indexing: add X to the address before finding the JMP address
-          if (ops[2].includes(',X')) addr += handleGetState6502().XReg
+          if (ops[2].includes(",X")) addr += handleGetState6502().XReg
           addr = memory[addr] + 256 * memory[addr + 1]
         }
       }
@@ -255,7 +255,7 @@ const DisassemblyView = () => {
     let title = ""
     if (operand.startsWith("#$")) {
       const value = parseInt(operand.slice(2), 16)
-      title += value.toString() + ' = ' + (value | 256).toString(2).slice(1)
+      title += value.toString() + " = " + (value | 256).toString(2).slice(1)
       className = "disassembly-immediate"
     } else {
       const ops = operand.split(/(\$[0-9A-Fa-f]{2,4})/)
@@ -264,19 +264,19 @@ const DisassemblyView = () => {
         className = "disassembly-address"
         title += getOperandTooltip(operand, addr)
         if (symbolTable.has(addr)) {
-          operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || '')
+          operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || "")
         }
       }
     }
-    return <span title={title} className={className}>{(operand + '         ').slice(0, 9)}</span>
+    return <span title={title} className={className}>{(operand + "         ").slice(0, 9)}</span>
   }
 
   const getChromacodedLine = (line: string) => {
     const opcode = line.slice(16, 19)
     const addr = parseInt(line.slice(0, 4), 16)
-    const symbol = symbolTable.get(addr) || ''
-    let hexcodes = line.slice(0, 16) + '       '
-    hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + ' '
+    const symbol = symbolTable.get(addr) || ""
+    let hexcodes = line.slice(0, 16) + "       "
+    hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + " "
     return <span className={borderStyle(opcode)}>{hexcodes}
       <span className="disassembly-opcode">{opcode} </span>
       {getOperand(opcode, line.slice(20))}</span>
@@ -284,25 +284,25 @@ const DisassemblyView = () => {
 
   const getDisassemblyDiv = () => {
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
-      return <div className="noselect" style={{ marginTop: '30px' }}>Pause to view disassembly</div>
+      return <div className="noselect" style={{ marginTop: "30px" }}>Pause to view disassembly</div>
     }
-    const disArray = handleGetDisassembly().split('\n').slice(0, nlines)
+    const disArray = handleGetDisassembly().split("\n").slice(0, nlines)
     if (disArray.length <= 1) return <div
       style={{
         position: "relative",
-        width: '200px',
+        width: "200px",
         top: "0px",
         height: `${nlines * 10 - 2}pt`,
       }}>
     </div>
     if (scrollTimeout.current !== null) {
-      clearTimeout(scrollTimeout.current);
+      clearTimeout(scrollTimeout.current)
     }
     scrollTimeout.current = setTimeout(() => {
       if (disassemblyRef.current) {
         if (scrollToRef.current) {
           const line = scrollToRef.current
-          line.scrollIntoView();
+          line.scrollIntoView()
         }
       }
     }, 10)
@@ -318,19 +318,19 @@ const DisassemblyView = () => {
     const pc1 = handleGetState6502().PC
     const lineTop = getAddress(disArray[0])
     const lineBottom = getAddress(disArray[nlines - 1])
-    const topHalf = Array.from({ length: lineTop }, (_, i) => i);
-    const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1);
+    const topHalf = Array.from({ length: lineTop }, (_, i) => i)
+    const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1)
 
     return <div>
       {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
       {disArray.map((line, index) => (
         <div key={index}
           ref={index === 0 ? scrollToRef : null}
-          style={{ position: 'relative' }}
+          style={{ position: "relative" }}
           className={getAddress(line) === pc1 ? "program-counter" : ""}>
           {(bp[index] &&
             <FontAwesomeIcon icon={getBreakpointIcon(bp[index])}
-              className={'breakpoint-position ' + getBreakpointStyle(bp[index])}
+              className={"breakpoint-position " + getBreakpointStyle(bp[index])}
               data-key={bp[index].address}
               onClick={handleBreakpointClick} />)}
           {getChromacodedLine(line)}
@@ -339,18 +339,18 @@ const DisassemblyView = () => {
       {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
       <FontAwesomeIcon icon={iconBreakpoint} ref={fakePointRef}
         className="breakpoint-style fake-point"
-        style={{ pointerEvents: 'none', display: 'none' }} />
+        style={{ pointerEvents: "none", display: "none" }} />
     </div>
   }
 
   return (
     <div className="flex-row thin-border" id="tour-debug-disassembly"
-      style={{ position: 'relative' }}>
+      style={{ position: "relative" }}>
       <div ref={disassemblyRef}
         className="mono-text"
         style={{
-          overflow: 'auto',
-          width: '220px',
+          overflow: "auto",
+          width: "220px",
           top: "0px",
           height: `${nlines * 10 - 2}pt`,
           paddingLeft: "15pt",

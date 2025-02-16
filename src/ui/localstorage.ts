@@ -1,168 +1,168 @@
-import { changeMockingboardMode } from "./devices/mockingboard_audio";
-import { COLOR_MODE } from "../common/utility";
-import { passCapsLock, passColorMode, passShowScanlines, passDarkMode, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker";
+import { changeMockingboardMode } from "./devices/mockingboard_audio"
+import { COLOR_MODE } from "../common/utility"
+import { passCapsLock, passColorMode, passShowScanlines, passDarkMode, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker"
 
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
-    localStorage.removeItem('capsLock')
+    localStorage.removeItem("capsLock")
   } else {
-    localStorage.setItem('capsLock', JSON.stringify(mode))
+    localStorage.setItem("capsLock", JSON.stringify(mode))
   }
-  passCapsLock(mode);
+  passCapsLock(mode)
 }
 
 export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
   if (mode === COLOR_MODE.COLOR) {
-    localStorage.removeItem('colorMode')
+    localStorage.removeItem("colorMode")
   } else {
-    localStorage.setItem('colorMode', JSON.stringify(mode))
+    localStorage.setItem("colorMode", JSON.stringify(mode))
   }
-  passColorMode(mode);
+  passColorMode(mode)
 }
 
 export const setPreferenceShowScanlines = (mode = true) => {
   if (mode) {
-    localStorage.setItem('showScanlines', JSON.stringify(mode))
+    localStorage.setItem("showScanlines", JSON.stringify(mode))
   } else {
-    localStorage.removeItem('showScanlines')
+    localStorage.removeItem("showScanlines")
   }
-  passShowScanlines(mode);
+  passShowScanlines(mode)
 }
 
 export const setPreferenceDarkMode = (mode = false) => {
   if (mode === false) {
-    localStorage.removeItem('darkMode')
+    localStorage.removeItem("darkMode")
   } else {
-    localStorage.setItem('darkMode', JSON.stringify(mode))
+    localStorage.setItem("darkMode", JSON.stringify(mode))
   }
   passDarkMode(mode)
 }
 
 export const setPreferenceDebugMode = (mode = false) => {
   if (mode === false) {
-    localStorage.removeItem('debugMode')
+    localStorage.removeItem("debugMode")
   } else {
-    localStorage.setItem('debugMode', JSON.stringify(mode))
+    localStorage.setItem("debugMode", JSON.stringify(mode))
   }
   passSetDebug(mode)
 }
 
 export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
   if (name === "APPLE2EE") {
-    localStorage.removeItem('machineName')
+    localStorage.removeItem("machineName")
   } else {
-    localStorage.setItem('machineName', JSON.stringify(name))
+    localStorage.setItem("machineName", JSON.stringify(name))
   }
   passSetMachineName(name)
 }
 
 export const setPreferenceMockingboardMode = (mode = 0) => {
   if (mode === 0) {
-    localStorage.removeItem('mockingboardMode')
+    localStorage.removeItem("mockingboardMode")
   } else {
-    localStorage.setItem('mockingboardMode', JSON.stringify(mode))
+    localStorage.setItem("mockingboardMode", JSON.stringify(mode))
   }
   changeMockingboardMode(mode)
 }
 
 export const setPreferenceRamWorks = (size = 64) => {
   if (size === 64) {
-    localStorage.removeItem('ramWorks')
+    localStorage.removeItem("ramWorks")
   } else {
-    localStorage.setItem('ramWorks', JSON.stringify(size))
+    localStorage.setItem("ramWorks", JSON.stringify(size))
   }
   passSetRamWorks(size)
 }
 
 export const setPreferenceSpeedMode = (mode = 0) => {
   if (mode === 0) {
-    localStorage.removeItem('speedMode')
+    localStorage.removeItem("speedMode")
   } else {
-    localStorage.setItem('speedMode', JSON.stringify(mode))
+    localStorage.setItem("speedMode", JSON.stringify(mode))
   }
   passSpeedMode(mode)
 }
 
 export const loadPreferences = () => {
-  const capsLock = localStorage.getItem('capsLock')
+  const capsLock = localStorage.getItem("capsLock")
   if (capsLock) {
     try {
       passCapsLock(JSON.parse(capsLock))
     } catch {
-      localStorage.removeItem('capsLock')
+      localStorage.removeItem("capsLock")
     }
   }
 
-  const colorMode = localStorage.getItem('colorMode')
+  const colorMode = localStorage.getItem("colorMode")
   if (colorMode) {
     try {
       passColorMode(JSON.parse(colorMode))
     } catch {
-      localStorage.removeItem('colorMode')
+      localStorage.removeItem("colorMode")
     }
   }
 
-  const showScanlines = localStorage.getItem('showScanlines')
+  const showScanlines = localStorage.getItem("showScanlines")
   if (showScanlines) {
     try {
       passShowScanlines(JSON.parse(showScanlines))
     } catch {
-      localStorage.removeItem('showScanlines')
+      localStorage.removeItem("showScanlines")
     }
   }
 
-  const darkMode = localStorage.getItem('darkMode')
+  const darkMode = localStorage.getItem("darkMode")
   if (darkMode) {
     try {
       passDarkMode(JSON.parse(darkMode))
     } catch {
-      localStorage.removeItem('darkMode')
+      localStorage.removeItem("darkMode")
     }
   }
 
-  const speedMode = localStorage.getItem('speedMode')
+  const speedMode = localStorage.getItem("speedMode")
   if (speedMode) {
     try {
       passSpeedMode(JSON.parse(speedMode))
     } catch {
-      localStorage.removeItem('speedMode')
+      localStorage.removeItem("speedMode")
     }
   }
 
-  const debugMode = localStorage.getItem('debugMode')
+  const debugMode = localStorage.getItem("debugMode")
   if (debugMode) {
     try {
       passSetDebug(JSON.parse(debugMode))
     } catch {
-      localStorage.removeItem('debugMode')
+      localStorage.removeItem("debugMode")
     }
   }
 
-  const machineName = localStorage.getItem('machineName')
+  const machineName = localStorage.getItem("machineName")
   if (machineName) {
     try {
       passSetMachineName(JSON.parse(machineName))
     } catch {
-      localStorage.removeItem('machineName')
+      localStorage.removeItem("machineName")
     }
   }
 
-  const mockingboardMode = localStorage.getItem('mockingboardMode')
+  const mockingboardMode = localStorage.getItem("mockingboardMode")
   if (mockingboardMode) {
     try {
       changeMockingboardMode(JSON.parse(mockingboardMode))
     } catch {
-      localStorage.removeItem('mockingboardMode')
+      localStorage.removeItem("mockingboardMode")
     }
   }
 
-  const ramWorks = localStorage.getItem('ramWorks')
+  const ramWorks = localStorage.getItem("ramWorks")
   if (ramWorks) {
     try {
       passSetRamWorks(JSON.parse(ramWorks))
     } catch {
-      localStorage.removeItem('ramWorks')
+      localStorage.removeItem("ramWorks")
     }
   }
 }
@@ -178,6 +178,6 @@ export const resetPreferences = () => {
   setPreferenceRamWorks()
   setPreferenceDebugMode()
 
-  localStorage.removeItem('binaryRunAddress')
+  localStorage.removeItem("binaryRunAddress")
 }
 

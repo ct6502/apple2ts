@@ -73,7 +73,7 @@ export const doRumble = (params: GamePadActuatorEffect) => {
   if (withinRumble) return
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gp = gamepads[0] as any
-  if (gp && 'vibrationActuator' in gp && gp.vibrationActuator) {
+  if (gp && "vibrationActuator" in gp && gp.vibrationActuator) {
     gp.vibrationActuator.playEffect("dual-rumble", params)
     withinRumble = true
     setTimeout(() => {

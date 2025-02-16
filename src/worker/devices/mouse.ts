@@ -728,7 +728,7 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
       switch (value)
       {
         case CMD.INIT:       // initialize
-          console.log('cmd.init')
+          console.log("cmd.init")
           mousex = 0
           mousey = 0
           lastmousex = 0
@@ -762,7 +762,7 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
           //}
           break
         case CMD.CLEAR:      // clear mouse and update regs, clear ints
-          console.log('cmd.clear')
+          console.log("cmd.clear")
           mousex = 0
           mousey = 0
           lastmousex = 0
@@ -779,8 +779,8 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
           break
         case CMD.HOME:       // set to clamping window upper left
           {
-            const [clampxmin] = getClampX();
-            const [clampymin] = getClampY();
+            const [clampxmin] = getClampX()
+            const [clampymin] = getClampY()
             mousex = clampxmin
             mousey = clampymin
           }
@@ -802,7 +802,7 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
           }
           break
         case CMD.GCLAMP:     //
-          console.log('cmd.getclamp')
+          console.log("cmd.getclamp")
           break
         case CMD.POS:        // set positions
           // console.log('cmd.pos')
@@ -813,7 +813,7 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
       break
 
     default:
-        console.log('AppleMouse unknown IO addr', addr.toString(16))
+        console.log("AppleMouse unknown IO addr", addr.toString(16))
         break
   }
 

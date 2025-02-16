@@ -1,23 +1,23 @@
-declare module 'list-react-files'
+declare module "list-react-files"
 
 declare module "*.png" {
-   const value: string;
+   const value: string
    export = value;
 }
 declare module "*.mp3" {
-   const value: string;
+   const value: string
    export = value;
 }
 declare module "*.woz" {
-   const value: string;
+   const value: string
    export = value;
 }
 declare module "*.po" {
-  const value: string;
+  const value: string
   export = value;
 }
 declare module "*.hdv" {
-  const value: string;
+  const value: string
   export = value;
 }
 
@@ -56,7 +56,7 @@ type Apple2SaveState = {
   memory: string
 }
 
-type UpdateDisplay = (speed = 0, helptext = '') => void
+type UpdateDisplay = (speed = 0, helptext = "") => void
 
 type DisplayProps = {
   speed: number,

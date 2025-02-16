@@ -162,7 +162,7 @@ export const default6502State = (): STATE6502 => {
 }
 
 // A hack to determine if this is a relative instruction.
-export const isBranchInstruction = (instr: string) => instr.startsWith('B') && instr !== "BIT" && instr !== "BRK"
+export const isBranchInstruction = (instr: string) => instr.startsWith("B") && instr !== "BIT" && instr !== "BRK"
 
 // export const toBinary = (value: number, ndigits = 8) => {
 //   return ("0000000000000000" + value.toString(2)).slice(-ndigits)
@@ -220,7 +220,7 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
     }
   }
   return key
-};
+}
 
 export const getPrintableChar = (value: number, isAltCharSet: boolean) => {
   let v1 = value
@@ -265,26 +265,26 @@ export const debugZeroPage = (zp: Uint8Array) => {
   if (diff !== "") console.log(diff)
 }
 
-export const toASCII = (s: string) => s.split('').map(char => char.charCodeAt(0))
+export const toASCII = (s: string) => s.split("").map(char => char.charCodeAt(0))
 export const uint16toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF]
 export const uint32toBytes = (n: number) => [n & 0xFF, (n >>> 8) & 0xFF,
   (n >>> 16) & 0xFF, (n >>> 24) & 0xFF]
 
 export const replaceSuffix = (fname: string, suffix: string) => {
-  const i = fname.lastIndexOf('.') + 1
+  const i = fname.lastIndexOf(".") + 1
   return fname.substring(0, i) + suffix
 }
 
 const crcTable = new Uint32Array(256).fill(0)
 
 const makeCRCTable = () => {
-  let c;
+  let c
   for (let n =0; n < 256; n++) {
-    c = n;
+    c = n
     for (let k =0; k < 8; k++) {
-      c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+      c = ((c&1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1))
     }
-    crcTable[n] = c;
+    crcTable[n] = c
   }
 }
 
@@ -292,16 +292,16 @@ export const crc32 = (data: Uint8Array, offset = 0) => {
   if (crcTable[255] === 0) {
     makeCRCTable()
   }
-  let crc = 0 ^ (-1);
+  let crc = 0 ^ (-1)
   for (let i = offset; i < data.length; i++) {
-    crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xFF];
+    crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xFF]
   }
 
-  return (crc ^ (-1)) >>> 0;
-};
+  return (crc ^ (-1)) >>> 0
+}
 
 export const lockedKeyStyle = (mode: number) => {
-  return `push-button key-button ${(['', 'button-active', 'button-locked'])[mode]}`
+  return `push-button key-button ${(["", "button-active", "button-locked"])[mode]}`
 }
 
 export const hiresLineToAddress = (pageOffset: number, line: number) => {
@@ -331,20 +331,20 @@ export const hiresAddressToLine = (addr: number) => {
 
 
 let machineSymbolTable = new Map<number, string>()
-let machineName_cached = ''
+let machineName_cached = ""
 let fetchingTable = false
 let userSymbolTable = new Map<number, string>()
 let combinedSymbolTable = new Map<number, string>()
 
 
 const processSymbolData = (text: string) => {
-  const lines = text.split('\n')
+  const lines = text.split("\n")
   const symbolMap = new Map<number, string>()
 
   lines.forEach(line => {
     const trimmedLine = line.trim()
     // Skip empty lines or lines that start with a semicolon after trimming
-    if (trimmedLine === '' || trimmedLine.startsWith(';')) {
+    if (trimmedLine === "" || trimmedLine.startsWith(";")) {
       return
     }
     // Split the line into address and symbol
@@ -354,7 +354,7 @@ const processSymbolData = (text: string) => {
       const symbol = parts[1]
       symbolMap.set(address, symbol)
     }
-  });
+  })
 
   return symbolMap
 }
@@ -371,15 +371,15 @@ const loadAndProcessSymbolFile = async (file: File) => {
     if (ev.target) {
       const result = processSymbolData(ev.target.result as string)
       if (result.size === 0) {
-        console.error('No symbols found in file');
+        console.error("No symbols found in file")
       }
       userSymbolTable = result
     } else {
-      console.error('File read error');
+      console.error("File read error")
     }
   }
   fileread.onerror = function () {
-    console.error('File read error');
+    console.error("File read error")
   }
   fileread.readAsText(file)
 }
@@ -402,13 +402,13 @@ export const getSymbolTables = (machineName: string) => {
 
   if (machineSymbolTable.size === 0 && !fetchingTable) {
     fetchingTable = true
-    const url = '/symbol_tables/' + machineName.toLowerCase() + '.sym'
+    const url = "/symbol_tables/" + machineName.toLowerCase() + ".sym"
     fetchAndProcessSymbolFile(url).then(symbolMap => {
       machineSymbolTable = symbolMap
       combinedSymbolTable = new Map<number, string>()
       fetchingTable = false
     }).catch(error => {
-      console.error('Error fetching or processing the symbol file:', error);
+      console.error("Error fetching or processing the symbol file:", error)
     })
   }
 
@@ -421,5 +421,5 @@ export const getSymbolTables = (machineName: string) => {
 
 export const isHardDriveImage = (filename: string) => {
   const f = filename.toLowerCase()
-  return f.endsWith('.hdv') || f.endsWith('.po') || f.endsWith('.2mg')
+  return f.endsWith(".hdv") || f.endsWith(".po") || f.endsWith(".2mg")
 }

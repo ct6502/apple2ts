@@ -1,14 +1,14 @@
-import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
-import { setPC } from "../instructions";
-import { memGet, memSet } from "../memory";
-import { Breakpoint, BreakpointMap } from "../../common/breakpoint";
+import { doSetBreakpoints, hitBreakpoint } from "../cpu6502"
+import { setPC } from "../instructions"
+import { memGet, memSet } from "../memory"
+import { Breakpoint, BreakpointMap } from "../../common/breakpoint"
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
 
 // ************ Watchpoints - test all properties ************
 
-test('watchpoints', () => {
+test("watchpoints", () => {
   setPC(0x0)
   expect(hitBreakpoint()).toEqual(false)
   const bp = new Breakpoint()
@@ -36,7 +36,7 @@ test('watchpoints', () => {
 
 // ************ Watchpoints memory bank ************
 
-test('watchpoints memory bank', () => {
+test("watchpoints memory bank", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0x3000
@@ -58,7 +58,7 @@ test('watchpoints memory bank', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('watchpoints memory bank MAIN', () => {
+test("watchpoints memory bank MAIN", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0x3000
@@ -81,7 +81,7 @@ test('watchpoints memory bank MAIN', () => {
   expect(hitBreakpoint()).toEqual(false)
 })
 
-test('watchpoints memory bank AUX', () => {
+test("watchpoints memory bank AUX", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0x3000
@@ -104,7 +104,7 @@ test('watchpoints memory bank AUX', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('watchpoints memory bank ROM', () => {
+test("watchpoints memory bank ROM", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xFF00
@@ -128,7 +128,7 @@ test('watchpoints memory bank ROM', () => {
   expect(hitBreakpoint()).toEqual(false)
 })
 
-test('watchpoints memory bank MAIN-DXXX-1', () => {
+test("watchpoints memory bank MAIN-DXXX-1", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD800
@@ -173,7 +173,7 @@ test('watchpoints memory bank MAIN-DXXX-1', () => {
 })
 
 
-test('watchpoints memory bank MAIN-DXXX-2', () => {
+test("watchpoints memory bank MAIN-DXXX-2", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD800
@@ -217,7 +217,7 @@ test('watchpoints memory bank MAIN-DXXX-2', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('watchpoints memory bank AUX-DXXX-1', () => {
+test("watchpoints memory bank AUX-DXXX-1", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD800
@@ -262,7 +262,7 @@ test('watchpoints memory bank AUX-DXXX-1', () => {
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
-test('watchpoints memory bank AUX-DXXX-2', () => {
+test("watchpoints memory bank AUX-DXXX-2", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD800
@@ -307,7 +307,7 @@ test('watchpoints memory bank AUX-DXXX-2', () => {
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
-test('memory banks Internal $CXXX ROM', () => {
+test("memory banks Internal $CXXX ROM", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xC2FF
@@ -341,7 +341,7 @@ test('memory banks Internal $CXXX ROM', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('memory banks Peripheral card ROM', () => {
+test("memory banks Peripheral card ROM", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xC2FF

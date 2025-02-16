@@ -18,5 +18,5 @@ MEMORY_BANKS["AUX-DXXX-2"] = {name: "Aux D000 Bank 2 ($D000 - $DFFF)", min: 0xD0
 MEMORY_BANKS["CXXX-ROM"] = {name: "Internal ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF}
 MEMORY_BANKS["CXXX-CARD"] = {name: "Peripheral Card ROM ($C100 - $CFFF)", min: 0xC100, max: 0xCFFF}
 
-export const MemoryBankKeys = Object.keys(MEMORY_BANKS);
-export const MemoryBankNames: string[] = Object.values(MEMORY_BANKS).map(bank => bank.name);
+export const MemoryBankKeys = Object.keys(MEMORY_BANKS)
+export const MemoryBankNames: string[] = Object.values(MEMORY_BANKS).map(bank => bank.name)

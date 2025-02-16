@@ -1,5 +1,5 @@
-import DisassemblyControls from "./disassemblycontrols";
-import DisassemblyView from "./disassemblyview";
+import DisassemblyControls from "./disassemblycontrols"
+import DisassemblyView from "./disassemblyview"
 
 const DisassemblyPanel = () => {
 

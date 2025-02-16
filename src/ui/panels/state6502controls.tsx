@@ -1,24 +1,24 @@
-import React from "react";
-import { handleGetRunMode, handleGetState6502, passSetCycleCount, passSetState6502 } from "../main2worker";
-import { RUN_MODE, toHex } from "../../common/utility";
+import React from "react"
+import { handleGetRunMode, handleGetState6502, passSetCycleCount, passSetState6502 } from "../main2worker"
+import { RUN_MODE, toHex } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { faSync } from "@fortawesome/free-solid-svg-icons"
 
-type KEYS = 'PC' | 'Accum' | 'XReg' | 'YReg' | 'StackPtr' | 'flagIRQ'
+type KEYS = "PC" | "Accum" | "XReg" | "YReg" | "StackPtr" | "flagIRQ"
 
 const State6502Controls = () => {
   const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>, key: KEYS) => {
-    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase()
-    const nv = newvalue.slice(key === 'PC' ? -4 : -2)
-    const intValue = parseInt(nv || '0', 16)
+    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase()
+    const nv = newvalue.slice(key === "PC" ? -4 : -2)
+    const intValue = parseInt(nv || "0", 16)
     const s6502 = handleGetState6502()
     switch (key) {
-      case 'PC': s6502.PC = intValue; break
-      case 'Accum': s6502.Accum = intValue; break
-      case 'XReg': s6502.XReg = intValue; break
-      case 'YReg': s6502.YReg = intValue; break
-      case 'StackPtr': s6502.StackPtr = intValue; break
-      case 'flagIRQ': s6502.flagIRQ = intValue; break
+      case "PC": s6502.PC = intValue; break
+      case "Accum": s6502.Accum = intValue; break
+      case "XReg": s6502.XReg = intValue; break
+      case "YReg": s6502.YReg = intValue; break
+      case "StackPtr": s6502.StackPtr = intValue; break
+      case "flagIRQ": s6502.flagIRQ = intValue; break
     }
     passSetState6502(s6502)
   }
@@ -26,7 +26,7 @@ const State6502Controls = () => {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>, bitField: number) => {
     const newvalue = e.target.checked
     const s6502 = handleGetState6502()
-    if (e.target.id === 'NMI') {
+    if (e.target.id === "NMI") {
       s6502.flagNMI = newvalue
     } else {
       s6502.PStatus = newvalue ? s6502.PStatus | (1 << bitField) :
@@ -41,7 +41,7 @@ const State6502Controls = () => {
       <div className="flex-row" style={{ alignItems: "center" }}>
         <div className="bigger-font" style={{margin: "2px"}}>{name}</div>
         <input type="text"
-          className={name === 'PC' ? "hex-field" : "hex-field smallField"}
+          className={name === "PC" ? "hex-field" : "hex-field smallField"}
           style={{marginRight: "7px"}}
           disabled={runMode !== RUN_MODE.PAUSED}
           value={strVal}
@@ -70,32 +70,32 @@ const State6502Controls = () => {
   return (
     <div className="flex-row round-rect-border wrap">
       <div className="flex-row">
-        {createTextField('PC', 'PC', s6502.PC, runMode)}
-        {createTextField('A', 'Accum', s6502.Accum, runMode)}
-        {createTextField('X', 'XReg', s6502.XReg, runMode)}
-        {createTextField('Y', 'YReg', s6502.YReg, runMode)}
-        {createTextField('S', 'StackPtr', s6502.StackPtr, runMode)}
-        {createTextField('IRQ', 'flagIRQ', s6502.flagIRQ, runMode)}
+        {createTextField("PC", "PC", s6502.PC, runMode)}
+        {createTextField("A", "Accum", s6502.Accum, runMode)}
+        {createTextField("X", "XReg", s6502.XReg, runMode)}
+        {createTextField("Y", "YReg", s6502.YReg, runMode)}
+        {createTextField("S", "StackPtr", s6502.StackPtr, runMode)}
+        {createTextField("IRQ", "flagIRQ", s6502.flagIRQ, runMode)}
       </div>
-      <div className="flex-row" style={{ alignItems: 'center' }}>
+      <div className="flex-row" style={{ alignItems: "center" }}>
         <div className="flex-row">
-          {createCheckbox('N', 7, s6502.PStatus, runMode)}
-          {createCheckbox('V', 6, s6502.PStatus, runMode)}
-          {createCheckbox('B', 4, s6502.PStatus, runMode)}
-          {createCheckbox('D', 3, s6502.PStatus, runMode)}
-          {createCheckbox('I', 2, s6502.PStatus, runMode)}
-          {createCheckbox('Z', 1, s6502.PStatus, runMode)}
-          {createCheckbox('C', 0, s6502.PStatus, runMode)}
-          {createCheckbox('NMI', 0, s6502.flagNMI ? 1 : 0, runMode)}
+          {createCheckbox("N", 7, s6502.PStatus, runMode)}
+          {createCheckbox("V", 6, s6502.PStatus, runMode)}
+          {createCheckbox("B", 4, s6502.PStatus, runMode)}
+          {createCheckbox("D", 3, s6502.PStatus, runMode)}
+          {createCheckbox("I", 2, s6502.PStatus, runMode)}
+          {createCheckbox("Z", 1, s6502.PStatus, runMode)}
+          {createCheckbox("C", 0, s6502.PStatus, runMode)}
+          {createCheckbox("NMI", 0, s6502.flagNMI ? 1 : 0, runMode)}
         </div>
-        <div className="flex-row" style={{ marginLeft: '1em' }}>
+        <div className="flex-row" style={{ marginLeft: "1em" }}>
           <span className="bigger-font">Cycles:</span>
           <span className="bigger-monospace"
-            style={{ marginLeft: '2pt', marginRight: '2pt', marginTop: '1pt' }}> {s6502.cycleCount}</span>
+            style={{ marginLeft: "2pt", marginRight: "2pt", marginTop: "1pt" }}> {s6502.cycleCount}</span>
           <button className="push-button tight-button"
             title="Reset cycle count"
             onClick={() => { passSetCycleCount(0); s6502.cycleCount = 0 }}>
-            <FontAwesomeIcon icon={faSync} style={{ fontSize: '0.7em' }}/>
+            <FontAwesomeIcon icon={faSync} style={{ fontSize: "0.7em" }}/>
           </button>
         </div>
       </div>
@@ -103,4 +103,4 @@ const State6502Controls = () => {
   )
 }
 
-export default State6502Controls;
+export default State6502Controls

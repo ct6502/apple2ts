@@ -1,5 +1,5 @@
 import { passDriveSound } from "../worker2main"
-import { s6502 } from '../instructions'
+import { s6502 } from "../instructions"
 import { toHex, DRIVE } from "../../common/utility"
 import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
 import { setSlotDriver, setSlotIOCallback } from "../memory"
@@ -95,7 +95,7 @@ const weakBitWindow = (bit: number) => {
   if (headWindow === 0x00) {
     return randBit()
   }
-  return bit;
+  return bit
 }
 
 const pickbit = [128, 64, 32, 16, 8, 4, 2, 1]
@@ -110,7 +110,7 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
     const byte = dd[fileOffset]
     const b = ds.trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
-    bit = weakBitWindow(bit);
+    bit = weakBitWindow(bit)
   } else {
     // Freak out like a MC3470 and return random bits
     bit = randBit()
@@ -253,7 +253,7 @@ const startMotor = (ds: DriveState) => {
 
 const stopMotor = (ds: DriveState) => {
   if (motorOffTimeout === 0) {
-    motorOffTimeout = setTimeout(() => doMotorTimeout(ds), 1000);
+    motorOffTimeout = setTimeout(() => doMotorTimeout(ds), 1000)
   }
 }
 
@@ -266,15 +266,15 @@ const dumpData = (ds: DriveState) => {
   if (debugCache.length > 0 && ds.halftrack === 2 * 0x00) {
     if (doDebugDrive) {
       let output = `TRACK ${toHex(ds.halftrack/2)}: `
-      let out = ''
+      let out = ""
       debugCache.forEach(element => {
         switch (element) {
-          case 1: out = 'Ff'; break;
-          case 2: out = 'FF'; break;
-          default: out = element.toString(16); break;
+          case 1: out = "Ff"; break
+          case 2: out = "FF"; break
+          default: out = element.toString(16); break
         }
-        output += out + ' '
-      });
+        output += out + " "
+      })
       console.log(output)
     }
     debugCache = []

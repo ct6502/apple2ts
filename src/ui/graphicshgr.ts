@@ -1,5 +1,5 @@
-import { COLOR_MODE } from "../common/utility";
-import { hgrAmberScreen, hgrGreenScreen, hgrRGBcolors, hgrWhiteScreen, loresAmber, loresColors, loresGreen, loresWhite } from "./graphicscolors";
+import { COLOR_MODE } from "../common/utility"
+import { hgrAmberScreen, hgrGreenScreen, hgrRGBcolors, hgrWhiteScreen, loresAmber, loresColors, loresGreen, loresWhite } from "./graphicscolors"
 
 const BLACK = 0
 const WHITE = 3
@@ -42,7 +42,7 @@ CALL-151
 const getHiresGreenSingleLine = (line: Uint8Array, fillColor: number) => {
   const nbytes = line.length
   // Here we scale up from 7 regular pixels to 14 fine pixels
-  const hgrColors1 = new Uint8Array(14 * nbytes).fill(fillColor);
+  const hgrColors1 = new Uint8Array(14 * nbytes).fill(fillColor)
   let bitSet = 0
   let prevHighBit = 1
   for (let i = 0; i < nbytes; i++) {
@@ -70,7 +70,7 @@ const getHiresGreenSingleLine = (line: Uint8Array, fillColor: number) => {
 
 export const getHiresGreen = (hgrPage: Uint8Array, nlines: number, fillColor: number) => {
   const nbytes = hgrPage.length / nlines
-  const hgrColors = new Uint8Array(14 * nbytes * nlines).fill(fillColor);
+  const hgrColors = new Uint8Array(14 * nbytes * nlines).fill(fillColor)
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
     getHiresGreenSingleLine(line, fillColor)
@@ -136,7 +136,7 @@ const filterHiresSingleLine = (line: Uint8Array) => {
 const getHiresLineNoFringe = (line: Uint8Array,
   noDelayMode: boolean, extendEdge: boolean, isEven: boolean) => {
   const nbytes = line.length
-  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK);
+  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK)
   let skip = false
   let previousWhite = false
   const normalDelayMode = !noDelayMode
@@ -219,7 +219,7 @@ const getHiresLineNoFringe = (line: Uint8Array,
 const getHiresSingleLine = (line: Uint8Array, colorMode: COLOR_MODE,
   noDelayMode: boolean, extendEdge: boolean) => {
   const nbytes = line.length
-  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK);
+  const hgrColors1 = new Uint8Array(14 * nbytes).fill(BLACK)
   let skip = false
   let previousWhite = false
   const normalDelayMode = !noDelayMode
@@ -433,7 +433,7 @@ export const getHiresColors = (
 }
 
 export const convertColorsToRGBA = (hgrColors: Uint8Array, colorMode: COLOR_MODE, doubleRes: boolean) => {
-  const hgrRGBA = new Uint8ClampedArray(4 * hgrColors.length).fill(255);
+  const hgrRGBA = new Uint8ClampedArray(4 * hgrColors.length).fill(255)
   const colors = doubleRes ?
     [loresColors, loresColors, loresGreen, loresAmber, loresWhite, loresWhite][colorMode] :
     [hgrRGBcolors, hgrRGBcolors, hgrGreenScreen, hgrAmberScreen, hgrWhiteScreen, hgrWhiteScreen][colorMode]
@@ -449,24 +449,24 @@ export const convertColorsToRGBA = (hgrColors: Uint8Array, colorMode: COLOR_MODE
 const drawHiresImage = async (ctx: CanvasRenderingContext2D,
   hgrRGBA: Uint8ClampedArray, nlines: number, xpos: number, ypos: number, scale: number) => {
   const npixels = hgrRGBA.length / (4 * nlines)
-  const imageData = new ImageData(hgrRGBA, npixels, nlines);
+  const imageData = new ImageData(hgrRGBA, npixels, nlines)
   // Use hidden canvas/context so we can change the canvas size and not
   // mess up our actual canvas.
-  const hiddenCanvas = document.createElement('canvas')
+  const hiddenCanvas = document.createElement("canvas")
   hiddenCanvas.width = npixels
   hiddenCanvas.height = nlines
-  const hiddenContext = hiddenCanvas.getContext('2d')
+  const hiddenContext = hiddenCanvas.getContext("2d")
   if (hiddenContext) {
     hiddenContext.putImageData(imageData, 0, 0)
     ctx.drawImage(hiddenContext.canvas, 0, 0, npixels, nlines,
-      xpos, ypos, npixels * scale / 2, nlines * scale);
+      xpos, ypos, npixels * scale / 2, nlines * scale)
   }
 }
 
 export const drawHiresTile = (ctx: CanvasRenderingContext2D,
   pixels: Uint8Array, colorMode: COLOR_MODE, nlines: number,
   xpos: number, ypos: number, scale: number, isEven: boolean) => {
-  if (pixels.length === 0) return;
+  if (pixels.length === 0) return
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   const hgrColors = isColor ? getHiresColors(pixels, nlines, colorMode, false, true, isEven, fillColor) :

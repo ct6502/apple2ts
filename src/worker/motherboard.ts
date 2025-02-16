@@ -6,7 +6,7 @@ import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } 
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
-  restoreSoftSwitches, getSoftSwitchDescriptions } from "./softswitches";
+  restoreSoftSwitches, getSoftSwitchDescriptions } from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable, 
   getBasePlusAuxMemory,
@@ -111,7 +111,7 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
   }
   // If we have an old save file, we need to set the BSR_WRITE switch
   // based upon the old bank-switched RAM switches.
-  if ('WRITEBSR1' in softSwitches) {
+  if ("WRITEBSR1" in softSwitches) {
     // We didn't have prewrite before, so just make sure it's off.
     SWITCHES.BSR_PREWRITE.isSet = false
     SWITCHES.BSR_WRITE.isSet = softSwitches.WRITEBSR1 || softSwitches.WRITEBSR2 ||
@@ -151,8 +151,8 @@ const getDisplaySaveState = () => {
   // These will actually get filled in by the main thread,
   // but we need to have them here to return the correct type.
   const displayState: DisplaySaveState = {
-    name: '',
-    date: '',
+    name: "",
+    date: "",
     version: 0.0,
     arrowKeysAsJoystick: true,
     colorMode: 0,
@@ -161,7 +161,7 @@ const getDisplaySaveState = () => {
     audioEnable: false,
     mockingboardMode: 0,
     speedMode: 0,
-    helptext: '',
+    helptext: "",
     isDebugging: false,
     runMode: RUN_MODE.IDLE,
     breakpoints: breakpointMap,
@@ -174,7 +174,7 @@ export const doGetSaveState = (full: boolean): EmulatorSaveState => {
   const state = { emulator: getDisplaySaveState(),
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
-    thumbnail: '',
+    thumbnail: "",
     snapshots: null
   }
   return state
@@ -270,8 +270,8 @@ const doBoot = () => {
   doSetRom(machineName)
   configureMachine()
   if (code.length > 0) {
-    const pcode = parseAssembly(0x300, code.split("\n"));
-    memory.set(pcode, 0x300);
+    const pcode = parseAssembly(0x300, code.split("\n"))
+    memory.set(pcode, 0x300)
   }
 //  testTiming()
   doReset()
@@ -281,7 +281,7 @@ const doBoot = () => {
   // temporarily disable the hard drive and then re-enable it later.
   // This allows the floppy disk to boot instead.
   const ds = getHardDriveState(1)
-  if (ds.filename === '') {
+  if (ds.filename === "") {
     enableHardDrive(false)
     setTimeout(() => { enableHardDrive() }, 200)
   }
@@ -566,12 +566,12 @@ const getMemoryDump = () => {
 }
 
 const doGetDisassembly = () => {
-  if (cpuRunMode === RUN_MODE.RUNNING) return ''
+  if (cpuRunMode === RUN_MODE.RUNNING) return ""
   return getDisassembly(disassemblyAddr >= 0 ? disassemblyAddr : s6502.PC)
 }
 
 const doGetStackString = () => {
-  return (isDebugging && cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ''
+  return (isDebugging && cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ""
 }
 
 const updateExternalMachineState = () => {
@@ -593,7 +593,7 @@ const updateExternalMachineState = () => {
     darkMode: false,  // ignored by main thread
     disassembly: doGetDisassembly(),
     extraRamSize: 64 * (RamWorksMaxBank + 1),
-    helpText: '',  // ignored by main thread
+    helpText: "",  // ignored by main thread
     hires: getHires(),
     iTempState: iTempState,
     isDebugging: isDebugging,
@@ -633,20 +633,20 @@ const doAdvance6502 = () => {
   if (timeDelta < refreshTime) return
   prevTime = newTime
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
-    return;
+    return
   }
   if (cpuRunMode === RUN_MODE.NEED_BOOT) {
     doBoot()
     doSetRunMode(RUN_MODE.RUNNING)
   } else if (cpuRunMode === RUN_MODE.NEED_RESET) {
-    doReset();
+    doReset()
     doSetRunMode(RUN_MODE.RUNNING)
   }
   let cycleTotal = 0
   for (;;) {
-    const cycles = processInstruction();
+    const cycles = processInstruction()
     if (cycles < 0) break
-    cycleTotal += cycles;
+    cycleTotal += cycles
     if ((cycleTotal % 17030) >= 12480) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {
@@ -655,7 +655,7 @@ const doAdvance6502 = () => {
     }
     if (cycleTotal >= cpuCyclesPerRefresh) {
       endVBL()
-      break;
+      break
     }
   }
   iRefresh++

@@ -25,7 +25,7 @@ export const setStepOut = () => {
   const bpTmp = new BreakpointMap(breakpointMap)
   bpTmp.forEach((bp, key) => {
     if (bp.once) breakpointMap.delete(key)
-  });
+  })
   const addr = getLastJSR()
   if (addr < 0) return
   if (breakpointMap.get(addr)) return
@@ -183,30 +183,30 @@ const processCycleCountCallbacks = () => {
 const checkBreakpointSingleExpression = (expr: BreakpointExpression) => {
   let val = 0
   switch (expr.register) {
-    case '$': val = memGetRaw(expr.address); break
-    case 'A': val = s6502.Accum; break
-    case 'X': val = s6502.XReg; break
-    case 'Y': val = s6502.YReg; break
-    case 'S': val = s6502.StackPtr; break
-    case 'P': val = s6502.PStatus; break
+    case "$": val = memGetRaw(expr.address); break
+    case "A": val = s6502.Accum; break
+    case "X": val = s6502.XReg; break
+    case "Y": val = s6502.YReg; break
+    case "S": val = s6502.StackPtr; break
+    case "P": val = s6502.PStatus; break
     // case 'I': return s6502.flagIRQ
   }
   switch (expr.operator) {
-    case '==': return val === expr.value
-    case '!=': return val !== expr.value
-    case '<': return val < expr.value
-    case '<=': return val <= expr.value
-    case '>': return val > expr.value
-    case '>=': return val >= expr.value
+    case "==": return val === expr.value
+    case "!=": return val !== expr.value
+    case "<": return val < expr.value
+    case "<=": return val <= expr.value
+    case ">": return val > expr.value
+    case ">=": return val >= expr.value
   }
 }
 
 export const checkBreakpointExpression = (bp: Breakpoint) => {
   const passes1 = checkBreakpointSingleExpression(bp.expression1)
   // Short circuit second expression if we can
-  if (bp.expressionOperator === '') return passes1
-  if (bp.expressionOperator === '&&' && !passes1) return false
-  if (bp.expressionOperator === '||' && passes1) return true
+  if (bp.expressionOperator === "") return passes1
+  if (bp.expressionOperator === "&&" && !passes1) return false
+  if (bp.expressionOperator === "||" && passes1) return true
   // Otherwise, whether we pass depends upon the second expression
   const passes2 = checkBreakpointSingleExpression(bp.expression2)
   return passes2
@@ -233,14 +233,14 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
     // See if we need to have a matching value, but watch out for our special
     // BRK_ILLEGAL, which will break on any illegal opcode regardless of value.
     if (bp.address === BRK_ILLEGAL_65C02) {
-      if (pcodes[instr].name !== '???') return false
+      if (pcodes[instr].name !== "???") return false
     } else if (bp.address === BRK_ILLEGAL_6502) {
       if (pcodes[instr].is6502) return false
     } else if (hexvalue >= 0 && bp.hexvalue >= 0) {
       if (bp.hexvalue !== hexvalue) return false
     }
   }
-  if (bp.expression1.register !== '') {
+  if (bp.expression1.register !== "") {
     const doBP = checkBreakpointExpression(bp)
     if (!doBP) return false
   }

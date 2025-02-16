@@ -10,28 +10,28 @@ import {
   faUpDownLeftRight,
   faSlash,
   faSync,
-} from "@fortawesome/free-solid-svg-icons";
-import { MockingboardWaveform } from "../devices/mockingboardwaveform";
-import { MidiDeviceSelect } from "../devices/midiselect";
-import { audioEnable, isAudioEnabled } from "../devices/speaker";
-import { SerialPortSelect } from "../devices/serialselect";
+} from "@fortawesome/free-solid-svg-icons"
+import { MockingboardWaveform } from "../devices/mockingboardwaveform"
+import { MidiDeviceSelect } from "../devices/midiselect"
+import { audioEnable, isAudioEnabled } from "../devices/speaker"
+import { SerialPortSelect } from "../devices/serialselect"
 import {
   handleGetArrowKeysAsJoystick,
   handleGetCapsLock, handleGetDarkMode, handleGetSpeedMode,
   handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
   passUseOpenAppleKey
-} from "../main2worker";
-import { MachineConfig } from "../devices/machineconfig";
-import { resetPreferences, setPreferenceCapsLock, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage";
-import { DisplayConfig } from "../devices/displayconfig";
-import RunTour from "../tours/runtour";
-import { appleOutline } from "../img/icon_appleoutline";
+} from "../main2worker"
+import { MachineConfig } from "../devices/machineconfig"
+import { resetPreferences, setPreferenceCapsLock, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage"
+import { DisplayConfig } from "../devices/displayconfig"
+import RunTour from "../tours/runtour"
+import { appleOutline } from "../img/icon_appleoutline"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
 const isTouchDevice = "ontouchstart" in document.documentElement
-const isMac = navigator.platform.startsWith('Mac')
+const isMac = navigator.platform.startsWith("Mac")
 
 const ConfigButtons = (props: DisplayProps) => {
   const speedMode = handleGetSpeedMode()
@@ -52,7 +52,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       title={"Toggle Sound"}
-      style={{ display: typeof AudioContext !== 'undefined' ? '' : 'none' }}
+      style={{ display: typeof AudioContext !== "undefined" ? "" : "none" }}
       onClick={() => { audioEnable(!isAudioEnabled()); props.updateDisplay() }}>
       <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
     </button>
@@ -60,9 +60,9 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <div className="flex-row" id="tour-keyboardbuttons">
       <button className={lockedKeyStyle(capsLock ? 2 : 0)}
-        title={`Caps Lock (${capsLock ? 'on' : 'off'})`}
+        title={`Caps Lock (${capsLock ? "on" : "off"})`}
         onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
-        <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? 'A' : 'a'}</span>
+        <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? "A" : "a"}</span>
       </button>
 
       {!isTouchDevice &&
@@ -77,7 +77,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
       {!isTouchDevice &&
         <button className="push-button" style={{position: "relative"}}
-          title={`Use Arrow Keys as Joystick (${arrowKeysAsJoystick ? 'on' : 'off'})`}
+          title={`Use Arrow Keys as Joystick (${arrowKeysAsJoystick ? "on" : "off"})`}
           onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
           <FontAwesomeIcon icon={faUpDownLeftRight} style={arrowKeysAsJoystick ? {} : {transform: "translateX(50%)"}} />
           {!arrowKeysAsJoystick && <FontAwesomeIcon style={{transform: "translateX(-50%)", width: "80%"}} icon={faSlash} />}
@@ -110,4 +110,4 @@ const ConfigButtons = (props: DisplayProps) => {
   </div>
 }
 
-export default ConfigButtons;
+export default ConfigButtons

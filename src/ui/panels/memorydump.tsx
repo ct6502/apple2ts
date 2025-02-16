@@ -25,12 +25,12 @@ enum MEMORY_RANGE {
 const MemoryDump = () => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const memoryDumpRef = useRef(null)
-  const [address, setAddress] = useState('')
+  const [address, setAddress] = useState("")
   const [memoryRange, setMemoryRange] = useState(`${MEMORY_RANGE.CURRENT}`)
   const [scrollRow, setScrollRow] = useState(-1)
   const [pickWatchpoint, setPickWatchpoint] = useState(false)
-  const [ascii, setAscii] = useState('')
-  const [hexsearch, setHexsearch] = useState('')
+  const [ascii, setAscii] = useState("")
+  const [hexsearch, setHexsearch] = useState("")
   const [matches, setMatches] = useState(new Array(0))
   const [highlight, setHighlight] = useState(new Array(0))
   const [matchIndex, setMatchIndex] = useState(0)
@@ -72,7 +72,7 @@ const MemoryDump = () => {
   }
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 4)
+    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase().substring(0, 4)
     setAddress(newvalue)
   }
 
@@ -91,9 +91,9 @@ const MemoryDump = () => {
   // }
 
   const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault()
-      const addr = parseInt(address || '0', 16)
+      const addr = parseInt(address || "0", 16)
       setAddress(addr.toString(16).toUpperCase())
       const scrollRow = addrToRow(addr)
       doSetScrollRow(scrollRow)
@@ -110,7 +110,7 @@ const MemoryDump = () => {
       return
     }
     // Erase our Hex search box
-    setHexsearch('')
+    setHexsearch("")
     let pos = 0
     const newmatches = new Array(0)
     const newhighlight = new Array(0)
@@ -150,7 +150,7 @@ const MemoryDump = () => {
   }
 
   const handleSearchHex = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase()
+    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase()
     setHexsearch(newvalue)
     if (newvalue.length < 1) {
       setMatches(new Array(0))
@@ -166,7 +166,7 @@ const MemoryDump = () => {
       values[i] = parseInt(newvalue.slice(offset, offset + 2), 16)
     }
     // Erase our ASCII search box
-    setAscii('')
+    setAscii("")
     let pos = 0
     const newmatches = new Array(0)
     const newhighlight = new Array(0)
@@ -211,7 +211,7 @@ const MemoryDump = () => {
   }
 
   const handleSetMemoryRange = (value: string) => {
-    setAddress('')
+    setAddress("")
     setMemoryRange(value)
     switch (value) {
       case MEMORY_RANGE.HGR1:
@@ -260,15 +260,15 @@ const MemoryDump = () => {
   }
 
   const saveMemory = () => {
-    const blob = new Blob([getMemoryRange()]);
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', "memory.dat");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const blob = new Blob([getMemoryRange()])
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", "memory.dat")
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const runMode = handleGetRunMode()
@@ -287,7 +287,7 @@ const MemoryDump = () => {
       <span className="flex-row"
         style={{
           alignItems: "center",
-          pointerEvents: (ready ? 'auto' : 'none'), opacity: (ready ? 1 : 0.5)
+          pointerEvents: (ready ? "auto" : "none"), opacity: (ready ? 1 : 0.5)
         }}>
         <input className="hex-field"
           type="text"
@@ -302,7 +302,7 @@ const MemoryDump = () => {
           setValue={handleSetMemoryRange}
           userdata={0}
           isDisabled={() => false} />
-        <button className={"push-button" + (pickWatchpoint ? ' button-active' : '')}
+        <button className={"push-button" + (pickWatchpoint ? " button-active" : "")}
           title="Pick Watchpoint"
           disabled={memory.length < 1}
           onClick={() => setPickWatchpoint(!pickWatchpoint)}>
@@ -314,7 +314,7 @@ const MemoryDump = () => {
           onClick={() => saveMemory()}>
           <FontAwesomeIcon icon={faSave} />
         </button>
-        <button className={"push-button" + (highAscii ? ' button-active' : '')}
+        <button className={"push-button" + (highAscii ? " button-active" : "")}
           title="High Bit ASCII"
           disabled={memory.length < 1}
           onClick={() => setHighAscii(!highAscii)}>
@@ -324,17 +324,17 @@ const MemoryDump = () => {
       <span className="flex-row"
         style={{
           alignItems: "center",
-          pointerEvents: (ready ? 'auto' : 'none'), opacity: (ready ? 1 : 0.5)
+          pointerEvents: (ready ? "auto" : "none"), opacity: (ready ? 1 : 0.5)
         }}>
         <input className="hex-field"
-          style={{ width: '8em' }}
+          style={{ width: "8em" }}
           type="text"
           placeholder="Search Hex"
           value={hexsearch}
           onChange={handleSearchHex}
         />
         <input className="hex-field"
-          style={{ width: '8em' }}
+          style={{ width: "8em" }}
           type="text"
           placeholder="Search ASCII"
           value={ascii}
@@ -358,8 +358,8 @@ const MemoryDump = () => {
       </span>
       <div className="debug-panel mono-text"
         style={{
-          height: '265px',
-          width: '380px'
+          height: "265px",
+          width: "380px"
         }}
         ref={memoryDumpRef}
       >

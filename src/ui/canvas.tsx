@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useRef, useState } from 'react';
+import { FormEvent, KeyboardEvent, useRef, useState } from "react"
 import "./canvas.css"
 import {
   passSetRunMode, passKeypress,
@@ -15,15 +15,15 @@ import {
   handleGetShowScanlines,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "../common/utility"
-import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from './graphics';
-import { checkGamepad, handleArrowKey } from './devices/gamepad';
-import { handleCopyToClipboard } from './copycanvas';
-import { drawHiresTile } from './graphicshgr';
-import { useGlobalContext } from './globalcontext';
-import { handleFileSave } from './savestate';
-import bgImage from './img/crt.jpg';
-import { handleSetCPUState } from './controller';
-import { setPreferenceSpeedMode } from './localstorage';
+import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
+import { checkGamepad, handleArrowKey } from "./devices/gamepad"
+import { handleCopyToClipboard } from "./copycanvas"
+import { drawHiresTile } from "./graphicshgr"
+import { useGlobalContext } from "./globalcontext"
+import { handleFileSave } from "./savestate"
+import bgImage from "./img/crt.jpg"
+import { handleSetCPUState } from "./controller"
+import { setPreferenceSpeedMode } from "./localstorage"
 
 
 let width = 800
@@ -38,15 +38,15 @@ const Apple2Canvas = (props: DisplayProps) => {
   const [keyHandled, setKeyHandled] = useState(false)
   const [showHgrMagnifier, setshowHgrMagnifier] = useState(false)
   const [hgrMagnifierLocal, setHgrMagnifierLocal] = useState([-1, -1])
-  const hgrMagnifierRef = useRef([-1, -1]);
-  const lockHgrMagnifierRef = useRef(false);
+  const hgrMagnifierRef = useRef([-1, -1])
+  const lockHgrMagnifierRef = useRef(false)
   const myText = useRef<HTMLTextAreaElement>(null)
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
   const infoCanvas = useRef<HTMLCanvasElement>(null)
 
   const pasteHandler = (e: ClipboardEvent) => {
-    const canvas = document.getElementById('apple2canvas')
+    const canvas = document.getElementById("apple2canvas")
     if (document.activeElement === canvas && e.clipboardData) {
       const data = e.clipboardData.getData("text")
       if (data !== "") {
@@ -54,10 +54,10 @@ const Apple2Canvas = (props: DisplayProps) => {
       }
       e.preventDefault()
     }
-  };
+  }
 
   const syntheticPaste = () => {
-    const canvas = document.getElementById('apple2canvas')
+    const canvas = document.getElementById("apple2canvas")
     if (document.activeElement === canvas && document.hasFocus()) {
       // Errors can sometimes occur during debugging, if the canvas loses
       // focus. I tried using a try/catch but it didn't help. Just ignore.
@@ -65,7 +65,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         .readText()
         .then((data) => passPasteText(data))
     }
-  };
+  }
 
   const metaKeyHandlers: { [key: string]: () => void } = {
     ArrowLeft: () => passGoBackInTime(),
@@ -94,39 +94,39 @@ const Apple2Canvas = (props: DisplayProps) => {
     ArrowRight: ARROW.RIGHT,
     ArrowUp: ARROW.UP,
     ArrowDown: ARROW.DOWN,
-  };
+  }
 
-  const isMac = navigator.platform.startsWith('Mac')
+  const isMac = navigator.platform.startsWith("Mac")
 
   const isOpenAppleDown = (e: keyEvent) => {
     const useOpenAppleKey = handleUseOpenAppleKey()
-    return e.code === 'AltLeft' || (useOpenAppleKey && e.code === 'MetaLeft')
+    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft")
   }
 
   const isOpenAppleUp = (e: keyEvent) => {
     const useOpenAppleKey = handleUseOpenAppleKey()
-    return e.code === 'AltLeft' || (useOpenAppleKey && e.code === 'MetaLeft')
+    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft")
   }
 
   const isClosedAppleDown = (e: keyEvent) => {
     const useOpenAppleKey = handleUseOpenAppleKey()
-    return e.code === 'AltRight' || (useOpenAppleKey && e.code === 'MetaRight')
+    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight")
   }
 
   const isClosedAppleUp = (e: keyEvent) => {
     const useOpenAppleKey = handleUseOpenAppleKey()
-    return e.code === 'AltRight' || (useOpenAppleKey && e.code === 'MetaRight')
+    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight")
   }
 
   // This is needed for Android, which does not send keydown/up events.
   // https://bugs.chromium.org/p/chromium/issues/detail?id=118639
   // https://stackoverflow.com/questions/36753548/keycode-on-android-is-always-229
   const handleOnInput = (e: FormEvent) => {
-    if ('nativeEvent' in e) {
+    if ("nativeEvent" in e) {
       const ev = e.nativeEvent as InputEvent
       const event = {
-        key: '',
-        code: '',
+        key: "",
+        code: "",
         shiftKey: false,
         metaKey: false,
         altKey: false,
@@ -136,10 +136,10 @@ const Apple2Canvas = (props: DisplayProps) => {
       // Is this a normal character, or a special one?
       if (ev.data) {
         event.key = ev.data as string
-      } else if (ev.inputType === 'deleteContentBackward') {
-        event.key = 'Backspace'
-      } else if (ev.inputType === 'insertLineBreak') {
-        event.key = 'Enter'
+      } else if (ev.inputType === "deleteContentBackward") {
+        event.key = "Backspace"
+      } else if (ev.inputType === "insertLineBreak") {
+        event.key = "Enter"
       }
       handleKeyDown(event as keyEvent)
     }
@@ -151,16 +151,16 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
     // ASCII does not allow Ctrl+numbers, so just allow those as metasequence keys.
     // For example, Ctrl+3 to change to warp speed.
-    if (e.key >= '0' && e.key <= '9' && e.ctrlKey) {
+    if (e.key >= "0" && e.key <= "9" && e.ctrlKey) {
       return true
     }
     if (handleUseOpenAppleKey()) {
       return false
     }
     if (isMac) {
-      return e.metaKey && e.key !== 'Meta'
+      return e.metaKey && e.key !== "Meta"
     } else {
-      return e.altKey && e.key !== 'Alt'
+      return e.altKey && e.key !== "Alt"
     }
   }
 
@@ -182,7 +182,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       //if (e.key === 'v') return;
     }
     // If we're paused, allow <space> to resume
-    if (handleGetRunMode() === RUN_MODE.PAUSED && e.key === ' ') {
+    if (handleGetRunMode() === RUN_MODE.PAUSED && e.key === " ") {
       passSetRunMode(RUN_MODE.RUNNING)
       keyHandledLocal = true
     }
@@ -236,15 +236,15 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const checkContentHeight = () => {
-    const body = document.body;
-    const html = document.documentElement;
-    const contentHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-    const viewportHeight = window.innerHeight;
+    const body = document.body
+    const html = document.documentElement
+    const contentHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
+    const viewportHeight = window.innerHeight
 
     if (contentHeight <= viewportHeight) {
-      document.body.classList.add('no-scroll');
+      document.body.classList.add("no-scroll")
     } else {
-      document.body.classList.remove('no-scroll');
+      document.body.classList.remove("no-scroll")
     }
   }
 
@@ -257,8 +257,8 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const RenderCanvas = () => {
     if (myCanvas.current && hiddenCanvas.current) {
-      const ctx = (myCanvas.current as HTMLCanvasElement).getContext('2d')
-      const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext('2d')
+      const ctx = (myCanvas.current as HTMLCanvasElement).getContext("2d")
+      const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
       if (ctx && hiddenCtx) {
         ProcessDisplay(ctx, hiddenCtx, width, height)
       }
@@ -329,9 +329,9 @@ const Apple2Canvas = (props: DisplayProps) => {
   const drawBytes = (pixels: number[][]) => {
     if (infoCanvas.current) {
       const canvas = infoCanvas.current as HTMLCanvasElement
-      const context = canvas.getContext('2d')
+      const context = canvas.getContext("2d")
       if (context) {
-        context.fillStyle = 'black'
+        context.fillStyle = "black"
         context.fillRect(0, 0, canvas.width, canvas.height)
         const tile = new Uint8Array(nColsHgrMagnifier * nRowsHgrMagnifier)
         for (let j = 0; j < nRowsHgrMagnifier; j++) {
@@ -347,18 +347,18 @@ const Apple2Canvas = (props: DisplayProps) => {
         // Draw vertical lines
         const nPixels = 7 * nColsHgrMagnifier
         for (let i = 1; i < nPixels; i++) {
-          const x = Math.round((canvas.width / nPixels) * i + 0.5) - 0.5;
-          context.moveTo(x, 0);
-          context.lineTo(x, canvas.height);
+          const x = Math.round((canvas.width / nPixels) * i + 0.5) - 0.5
+          context.moveTo(x, 0)
+          context.lineTo(x, canvas.height)
         }
         // Draw horizontal lines
         for (let i = 1; i <= nRowsHgrMagnifier - 1; i++) {
-          const y = Math.round((canvas.height / nRowsHgrMagnifier) * i + 0.5) - 0.5;
-          context.moveTo(0, y);
-          context.lineTo(canvas.width, y);
+          const y = Math.round((canvas.height / nRowsHgrMagnifier) * i + 0.5) - 0.5
+          context.moveTo(0, y)
+          context.lineTo(canvas.width, y)
         }
-        context.strokeStyle = '#888';
-        context.stroke();
+        context.strokeStyle = "#888"
+        context.stroke()
       }
     }
   }
@@ -369,7 +369,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (!pixels) return <></>
     const pixelText = pixels.map((line: Array<number>, i) => {
       return <div key={i}>
-        {`${toHex(line[0])}: ${line.slice(1, nColsHgrMagnifier + 1).map((value) => toHex(value, 2)).join(' ')}`}
+        {`${toHex(line[0])}: ${line.slice(1, nColsHgrMagnifier + 1).map((value) => toHex(value, 2)).join(" ")}`}
       </div>
     })
     const [dx, dy] = screenBytesToCanvasPixels(myCanvas.current, nColsHgrMagnifier, nRowsHgrMagnifier)
@@ -398,9 +398,9 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (myCanvas.current) {
         setMyInit(true)
         const canvas = myCanvas.current as HTMLCanvasElement
-        canvas.addEventListener('mousemove', handleMouseMove)
-        canvas.addEventListener('mousedown', handleMouseDown)
-        canvas.addEventListener('mouseup', handleMouseUp)
+        canvas.addEventListener("mousemove", handleMouseMove)
+        canvas.addEventListener("mousedown", handleMouseDown)
+        canvas.addEventListener("mouseup", handleMouseUp)
         canvas.addEventListener("copy", () => { handleCopyToClipboard() })
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         canvas.addEventListener("paste", paste)
@@ -410,16 +410,16 @@ const Apple2Canvas = (props: DisplayProps) => {
 
         new ResizeObserver(entries => {
           for (const entry of entries) {
-            const canvas = entry.target as HTMLCanvasElement;
-            const width = canvas.offsetWidth;
-            const height = canvas.offsetHeight;
-            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px");
-            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px");
-            document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px");
-            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px");
+            const canvas = entry.target as HTMLCanvasElement
+            const width = canvas.offsetWidth
+            const height = canvas.offsetHeight
+            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px")
+            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px")
+            document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px")
+            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px")
           }
-        }).observe(canvas);
-        document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none");
+        }).observe(canvas)
+        document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none")
 
         RenderCanvas()
       } else {
@@ -427,10 +427,10 @@ const Apple2Canvas = (props: DisplayProps) => {
         // setTimeout below (even with a timeout of 0) is enough to
         // let React get the "myCanvas" ref set properly.
         // But just leave it here as a backup.
-        window.setTimeout(() => initialize(), 0);
+        window.setTimeout(() => initialize(), 0)
       }
     }
-    window.setTimeout(() => initialize(), 0);
+    window.setTimeout(() => initialize(), 0)
   }
 
   const setFocus = () => {
@@ -441,8 +441,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const isTouchDevice = "ontouchstart" in document.documentElement;
-  const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement;
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen;
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
@@ -452,7 +452,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   [width, height] = getCanvasSize(props.righthandSectionRef)
 
   // Make keyboard events work on touch devices by using a hidden textarea.
-  const isAndroidDevice = /Android/i.test(navigator.userAgent);
+  const isAndroidDevice = /Android/i.test(navigator.userAgent)
   const txt = isAndroidDevice ?
     <textarea className="hidden-textarea" hidden={false} ref={myText}
       onInput={handleOnInput} /> :
@@ -476,7 +476,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = handleGetShowMouse() ?
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "crosshair") : "none"
 
-  const backgroundImage = noBackgroundImage ? '' : `url(${bgImage})`
+  const backgroundImage = noBackgroundImage ? "" : `url(${bgImage})`
 
   return (
     <span className="canvas-text scanline-gradient">
@@ -485,8 +485,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         className="main-canvas"
         style={{
           cursor: cursor,
-          borderRadius: noBackgroundImage ? '0' : '20px',
-          borderWidth: noBackgroundImage ? '0' : '2px',
+          borderRadius: noBackgroundImage ? "0" : "20px",
+          borderWidth: noBackgroundImage ? "0" : "2px",
           backgroundImage: `${backgroundImage}`
         }}
         width={width} height={height}

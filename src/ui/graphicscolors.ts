@@ -17,11 +17,11 @@ const loresHex: string[] = [
   "#FFFFFF"] //white
 
 export const loresColors: number[][] = loresHex.map(hex => {
-  const red = parseInt(hex.substring(1, 3), 16);
-  const green = parseInt(hex.substring(3, 5), 16);
-  const blue = parseInt(hex.substring(5, 7), 16);
-  return [red, green, blue];
-});
+  const red = parseInt(hex.substring(1, 3), 16)
+  const green = parseInt(hex.substring(3, 5), 16)
+  const blue = parseInt(hex.substring(5, 7), 16)
+  return [red, green, blue]
+})
 
 export const translateDHGR = [0, 1, 8, 9, 4, 5, 12, 13, 2, 3, 10, 11, 6, 7, 14, 15]
 
@@ -39,9 +39,9 @@ export const loresWhite: number[][] = loresColors.map(c => {
   return [c1, c1, c1]
 })
 
-export const TEXT_GREEN = '#39FF14'
-export const TEXT_AMBER = '#FFA500'
-export const TEXT_WHITE = '#F0F0F0'
+export const TEXT_GREEN = "#39FF14"
+export const TEXT_AMBER = "#FFA500"
+export const TEXT_WHITE = "#F0F0F0"
 const green = [0x39, 0xFF, 0x14]
 const amber = [0xFF, 0xA5, 0x0]
 const white = [0xF0, 0xF0, 0xF0]

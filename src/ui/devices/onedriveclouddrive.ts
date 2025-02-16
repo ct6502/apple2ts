@@ -9,7 +9,7 @@ const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 export class OneDriveCloudDrive implements CloudProvider {
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
-    const result = await launchPicker('share', 'files', filter)
+    const result = await launchPicker("share", "files", filter)
     const file = result?.value[0]
     if (file) {
       const cloudData: CloudData = {
@@ -26,7 +26,7 @@ export class OneDriveCloudDrive implements CloudProvider {
 
       const downloadUrl = file["@content.downloadUrl"]
       console.log(`HTTP GET: ${downloadUrl}`)
-      const response = await fetch(downloadUrl);
+      const response = await fetch(downloadUrl)
       if (response.ok) {
         cloudData.syncStatus = CLOUD_SYNC.ACTIVE
         const blob = await response.blob()
@@ -40,7 +40,7 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   async upload(filename: string): Promise<CloudData | null> {
-    const result = await launchPicker('save', 'folders')
+    const result = await launchPicker("save", "folders")
     const file = result?.value && result.value[0]
     if (file) {
       const cloudData: CloudData = {
@@ -69,11 +69,11 @@ export class OneDriveCloudDrive implements CloudProvider {
 
     console.log(`fetch: POST ${sessionUrl}`)
     await fetch(sessionUrl, {
-      method: 'POST',
-      mode: 'cors',
+      method: "POST",
+      mode: "cors",
       headers: {
-          'Authorization': `bearer ${cloudData.accessToken}`,
-          'Content-Type': 'application/json'
+          "Authorization": `bearer ${cloudData.accessToken}`,
+          "Content-Type": "application/json"
       },
       body: JSON.stringify(
         {
@@ -84,7 +84,7 @@ export class OneDriveCloudDrive implements CloudProvider {
         })
     } as RequestInit)
       .then(async response => {
-        const json = await response.json();
+        const json = await response.json()
         if (response.ok) {
           success = await this.uploadBlob(json["uploadUrl"], blob, cloudData)
         } else {
@@ -104,7 +104,7 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   async uploadBlob(uploadUrl: string, blob: Blob, cloudData: CloudData): Promise<boolean> {
-    const buffer = await new Response(blob).arrayBuffer();
+    const buffer = await new Response(blob).arrayBuffer()
     let offset = 0
     let chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
     let success = false
@@ -114,14 +114,14 @@ export class OneDriveCloudDrive implements CloudProvider {
     while (cloudData.syncStatus == CLOUD_SYNC.INPROGRESS) {
       console.log(`fetch: PUT ${uploadUrl}`)
       await fetch(uploadUrl, {
-        method: 'PUT',
-        mode: 'cors',
+        method: "PUT",
+        mode: "cors",
         headers: {
-          'Authorization': `bearer ${cloudData.accessToken}`,
-          'Content-Length': `${chunkSize}`,
-          'Content-Range': `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
+          "Authorization": `bearer ${cloudData.accessToken}`,
+          "Content-Length": `${chunkSize}`,
+          "Content-Range": `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
         },
-        duplex: 'half',
+        duplex: "half",
         body: buffer.slice(offset, offset + chunkSize)
       } as RequestInit)
         .then(async response => {

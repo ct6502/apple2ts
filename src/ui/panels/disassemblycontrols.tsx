@@ -1,21 +1,21 @@
-import { KeyboardEvent, useRef, useState } from "react";
+import { KeyboardEvent, useRef, useState } from "react"
 import {
   handleGetRunMode,
   handleGetState6502,
   passSetDisassembleAddress, passStepInto, passStepOut, passStepOver
-} from "../main2worker";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+} from "../main2worker"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPause,
   faPlay,
   faFolderOpen,
-} from "@fortawesome/free-solid-svg-icons";
-import React from "react";
-import { loadUserSymbolTable, RUN_MODE } from "../../common/utility";
-import { handleSetCPUState } from "../controller";
-import { bpStepInto } from "../img/icon_stepinto";
-import { bpStepOut } from "../img/icon_stepout";
-import { bpStepOver } from "../img/icon_stepover";
+} from "@fortawesome/free-solid-svg-icons"
+import React from "react"
+import { loadUserSymbolTable, RUN_MODE } from "../../common/utility"
+import { handleSetCPUState } from "../controller"
+import { bpStepInto } from "../img/icon_stepinto"
+import { bpStepOut } from "../img/icon_stepout"
+import { bpStepOver } from "../img/icon_stepover"
 
 const DisassemblyControls = () => {
   // The tooltips obscure the first line of disassembly.
@@ -24,19 +24,19 @@ const DisassemblyControls = () => {
   const [tooltipIntoShow, setTooltipIntoShow] = useState(true)
   const [tooltipOutShow, setTooltipOutShow] = useState(true)
   // The tooltip "show's" get reset when the instruction changes to/from JSR.
-  const [address, setAddress] = useState('')
+  const [address, setAddress] = useState("")
   const [showFileOpenDialog, setShowFileOpenDialog] = useState(false)
-  const hiddenFileOpen = useRef<HTMLInputElement>(null);
+  const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, '').toUpperCase().substring(0, 4)
+    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase().substring(0, 4)
     setAddress(newvalue)
   }
 
   const handleDisassembleAddrKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault()
-      const addr = parseInt(address || '0', 16)
+      const addr = parseInt(address || "0", 16)
       passSetDisassembleAddress(addr)
       setAddress(addr.toString(16).toUpperCase())
     }
@@ -65,7 +65,7 @@ const DisassemblyControls = () => {
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current
       // Hack - clear out old file so we can pick the same file again
-      fileInput.value = "";
+      fileInput.value = ""
       // Display the dialog.
       fileInput.click()
     }
@@ -130,10 +130,10 @@ const DisassemblyControls = () => {
         accept={isTouchDevice ? "" : ".sym"}
         ref={hiddenFileOpen}
         onChange={handleFileSelected}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
     </span>
   )
 }
 
-export default DisassemblyControls;
+export default DisassemblyControls

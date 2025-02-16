@@ -35,16 +35,16 @@ export const DropdownButton = (props: DropdownProps) => {
       </button>
       {menuOpen &&
         <div className="modal-overlay"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
+          style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
           onClick={() => handleMenuClose()}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
             {props.itemNames.map((item, index) => (
-              <div className="droplist-option" style={{ padding: '5px', paddingRight: '10px' }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
+              <div className="droplist-option" style={{ padding: "5px", paddingRight: "10px" }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                 key={index} onClick={() => handleMenuClose(index)}>
-                {index === props.currentIndex ? '\u2714\u2009' : '\u2003'}{item}
+                {index === props.currentIndex ? "\u2714\u2009" : "\u2003"}{item}
               </div>))}
           </div>
         </div>

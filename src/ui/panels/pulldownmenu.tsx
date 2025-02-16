@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useRef, useState } from "react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faChevronDown as iconPulldown,
-} from "@fortawesome/free-solid-svg-icons";
+} from "@fortawesome/free-solid-svg-icons"
 
 interface PullDownProps {
   values: Array<string>;
@@ -38,14 +38,14 @@ const PullDownMenu = (props: PullDownProps) => {
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    let newIndex = selectedItem;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    let newIndex = selectedItem
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault()
       newIndex = (selectedItem + props.values.length +
-        ((e.key === 'ArrowDown') ? 1 : -1)) % props.values.length
+        ((e.key === "ArrowDown") ? 1 : -1)) % props.values.length
       setSelectedItem(newIndex)
       document.getElementById(`item-${newIndex}`)?.focus()
-    } else if (e.key === 'Enter' || e.key === ' ') {
+    } else if (e.key === "Enter" || e.key === " ") {
       handleChooseItem(newIndex)
     }
   }
@@ -58,7 +58,7 @@ const PullDownMenu = (props: PullDownProps) => {
 
   return (
     <div ref={dialogRef}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: "pointer" }}
       onClick={() => handleOpenDialog(!open)}>
       <FontAwesomeIcon icon={iconPulldown}
         className='default-font'
@@ -72,19 +72,19 @@ const PullDownMenu = (props: PullDownProps) => {
             ref={pulldownRef}
             style={{
               left: `${pos[0]}px`, top: `${pos[1] + 20}px`,
-              margin: '0', padding: '5px',
-              overflow: 'auto',
+              margin: "0", padding: "5px",
+              overflow: "auto",
               height: `${Math.min(props.values.length, 25) * 10}pt`
             }}
             onKeyDown={onKeyDown}>
             {props.values.map((description, index) => (
               <div style={{
-                cursor: 'pointer',
+                cursor: "pointer",
               }}
                 id={`item-${index}`}
                 tabIndex={0} // Make the div focusable
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#aaa'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#aaa"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                 key={index}
                 onClick={() => handleChooseItem(index)}
               >

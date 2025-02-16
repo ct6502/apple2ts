@@ -27,12 +27,12 @@ export const clearKeyStrobe = () => {
 // and another for pasted text, with a longer delay to give Applesoft BASIC
 // time to process
 
-let keyBuffer = ''
+let keyBuffer = ""
 let tPrevPop = 1000000000
 export const popKey = () => {
   // See note above about this time cutoff before dropping buffer text.
   const t = performance.now()
-  if (keyBuffer !== '' && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 1900)) {
+  if (keyBuffer !== "" && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 1900)) {
     tPrevPop = t
     const key = keyBuffer.charCodeAt(0)
     keyPress(key)
@@ -43,7 +43,7 @@ export const popKey = () => {
   }
 }
 
-let prevKey = ''
+let prevKey = ""
 
 export const addToBuffer = (text: string) => {
   // Avoid repeating keys in the buffer if the Apple isn't processing them.

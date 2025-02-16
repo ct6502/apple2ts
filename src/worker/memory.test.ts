@@ -1,7 +1,7 @@
-import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory";
-import { getApple2State, setApple2State } from "./motherboard";
-import { RamWorksMemoryStart } from "../common/utility";
-import { setIsTesting } from "./worker2main";
+import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory"
+import { getApple2State, setApple2State } from "./motherboard"
+import { RamWorksMemoryStart } from "../common/utility"
+import { setIsTesting } from "./worker2main"
 
 type ExpectValue = (i: number) => void
 
@@ -22,13 +22,13 @@ const doWriteValueToMemory = (offset: number, start: number, end: number, value:
 const doTestMemory = (offset: number, start: number, end: number, expectValue: ExpectValue) => {
   for (let i = start; i <= end; i++) {
     const addr = (i * 256 + offset)
-    expect(memGet(addr)).toEqual(expectValue(i));
+    expect(memGet(addr)).toEqual(expectValue(i))
   }
 }
 
 const expectIndex = (i: number = 0) => i
 
-test('readMainMemIndex', () => {
+test("readMainMemIndex", () => {
   memorySetForTests()
   doTestMemory(0, 0, 0xBF, expectIndex)
   doTestMemory(1, 0, 0xBF, expectIndex)
@@ -36,11 +36,11 @@ test('readMainMemIndex', () => {
   doTestMemory(0xFF, 0, 0xBF, expectIndex)
 })
 
-test('readAuxMemEmpty', () => {
+test("readAuxMemEmpty", () => {
   memorySetForTests()
   // AUX read enable
   memSet(0xC003, 1)
-  expect(memGet(0xC013)).toEqual(0x80);
+  expect(memGet(0xC013)).toEqual(0x80)
   doTestMemory(0, 0x02, 0xBF, () => 0xFF)
   // Pages 0 and 1 should still be from MAIN
   doTestMemory(0, 0, 0x01, expectIndex)
@@ -49,12 +49,12 @@ test('readAuxMemEmpty', () => {
   doTestMemory(0, 0x02, 0xBF, () => 0xFF)
   // MAIN read enable
   memSet(0xC002, 1)
-  expect(memGet(0xC013)).toEqual(0);
+  expect(memGet(0xC013)).toEqual(0)
   // First value in each page of main should have that index
   doTestMemory(0, 0x02, 0xBF, expectIndex)
 })
 
-test('readAuxMemIndex', () => {
+test("readAuxMemIndex", () => {
   // Put index in AUX; main should just be 0xFF's
   memorySetForTests(true)
   // AUX read enable
@@ -66,13 +66,13 @@ test('readAuxMemIndex', () => {
   memSet(0xC002, 1)
 })
 
-test('readMainMemEmpty', () => {
+test("readMainMemEmpty", () => {
   // Put index in AUX; main should just be 0xFF's
   memorySetForTests(true)
   doTestMemory(0, 0, 0xBF, () => 0xFF)
 })
 
-test('readWriteMainMem', () => {
+test("readWriteMainMem", () => {
   memoryReset()
   doWriteIndexToMemory(0, 0, 0xBF)
   doTestMemory(0, 0, 0xBF, expectIndex)
@@ -84,11 +84,11 @@ test('readWriteMainMem', () => {
   doTestMemory(0xFF, 0, 0xBF, expectIndex)
 })
 
-test('readWriteAuxMem', () => {
+test("readWriteAuxMem", () => {
   memoryReset()
   // AUX write enable
   memSet(0xC005, 1)
-  expect(memGet(0xC014)).toEqual(0x80);
+  expect(memGet(0xC014)).toEqual(0x80)
   doWriteIndexToMemory(0, 0, 0xBF)
   // Should still be reading from MAIN
   doTestMemory(0, 0x02, 0xBF, () => 0xFF)
@@ -106,7 +106,7 @@ test('readWriteAuxMem', () => {
   doTestMemory(0, 0x02, 0xBF, () => 0xA0)
 })
 
-test('testC800', () => {
+test("testC800", () => {
   memoryReset()
   const slot1 = new Uint8Array(2*1024).fill(1)
   const slot2 = new Uint8Array(2*1024).fill(2)
@@ -222,7 +222,7 @@ test('testC800', () => {
   expect(memGet(0xC800)).not.toEqual(0x02)
 })
 
-test('test RamWorks', () => {
+test("test RamWorks", () => {
   memoryReset()
   setRamWorks(4096)
   
@@ -319,7 +319,7 @@ test('test RamWorks', () => {
   memSet(0xC008,0)
 })
 
-test('test RamWorks Save/Restore', () => {
+test("test RamWorks Save/Restore", () => {
   setIsTesting()
   memoryReset()
   setRamWorks(4096)
@@ -349,7 +349,7 @@ const setupBSR = () => {
   memGet(0xC082)  // enable ROM
 }
 
-test('test Bank-Switched-Ram READ ONLY', () => {
+test("test Bank-Switched-Ram READ ONLY", () => {
   for (let bank = 1; bank <= 2; bank++) {
     setupBSR()
     expect(memGet(LOC1)).toEqual(0x53)
@@ -367,7 +367,7 @@ test('test Bank-Switched-Ram READ ONLY', () => {
   }
 })
 
-test('test Bank-Switched-Ram WRITE ONLY', () => {
+test("test Bank-Switched-Ram WRITE ONLY", () => {
   for (let bank = 1; bank <= 2; bank++) {
     setupBSR()
     expect(memGet(LOC1)).toEqual(0x53)
@@ -394,7 +394,7 @@ test('test Bank-Switched-Ram WRITE ONLY', () => {
   }
 })
 
-test('test Bank-Switched-Ram READ/WRITE', () => {
+test("test Bank-Switched-Ram READ/WRITE", () => {
   for (let bank = 1; bank <= 2; bank++) {
     setupBSR()
     expect(memGet(LOC1)).toEqual(0x53)
@@ -422,7 +422,7 @@ test('test Bank-Switched-Ram READ/WRITE', () => {
   }
 })
 
-test('test Bank-Switched-Ram PRE-WRITE disable', () => {
+test("test Bank-Switched-Ram PRE-WRITE disable", () => {
   for (let bank = 1; bank <= 2; bank++) {
     setupBSR()
     expect(memGet(LOC1)).toEqual(0x53)

@@ -1,5 +1,5 @@
-import { pcodes } from "../instructions";
-import { toHex, isBranchInstruction, ADDR_MODE } from "../../common/utility";
+import { pcodes } from "../instructions"
+import { toHex, isBranchInstruction, ADDR_MODE } from "../../common/utility"
 
 let doOutput = false
 
@@ -17,26 +17,26 @@ type LabelOperand = {
 }
 
 const splitOperand = (operand: string) => {
-  const idx = operand.split(',')
+  const idx = operand.split(",")
   const s = idx[0].split(/([+-])/)
   const labelOperand: LabelOperand = {
-    label: s[0] ? s[0] : '',
-    operation: s[1] ? s[1] : '',
-    value: s[2] ? parseInt(s[2].replace('#','').replace('$','0x')) : 0,
-    idx: idx[1] ? idx[1] : ''
+    label: s[0] ? s[0] : "",
+    operation: s[1] ? s[1] : "",
+    value: s[2] ? parseInt(s[2].replace("#","").replace("$","0x")) : 0,
+    idx: idx[1] ? idx[1] : ""
   }
   return labelOperand
 }
 
 const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] => {
-  let mode: ADDR_MODE = ADDR_MODE.IMPLIED;
+  let mode: ADDR_MODE = ADDR_MODE.IMPLIED
   let value = -1
 
   if (operand.length > 0) {
-    if (operand.startsWith('#')) {
+    if (operand.startsWith("#")) {
       mode = ADDR_MODE.IMM
       operand = operand.substring(1)
-    } else if (operand.startsWith('(')) {
+    } else if (operand.startsWith("(")) {
       if (operand.endsWith(",Y")) {
         mode = ADDR_MODE.IND_Y
       } else if (operand.endsWith(",X)")) {
@@ -53,7 +53,7 @@ const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] =>
       mode = (operand.length > 3) ? ADDR_MODE.ABS : ADDR_MODE.ZP_REL
     }
 
-    if (operand.startsWith('$')) {
+    if (operand.startsWith("$")) {
       operand = "0x" + operand.substring(1)
     }
     value = parseInt(operand)
@@ -61,12 +61,12 @@ const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] =>
     const valueOperand = splitOperand(operand)
     if (valueOperand.operation && valueOperand.value) {
       switch (valueOperand.operation) {
-        case '+': value += valueOperand.value
-          break;
-        case '-': value -= valueOperand.value
-          break;
+        case "+": value += valueOperand.value
+          break
+        case "-": value -= valueOperand.value
+          break
         default:
-          console.error("Unknown operation in operand: " + operand);
+          console.error("Unknown operation in operand: " + operand)
       }
       value = (value % 65536 + 65536) % 65536
     }
@@ -75,7 +75,7 @@ const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] =>
   return [mode, value]
 }
 
-let labels: { [key: string]: number } = {};
+let labels: { [key: string]: number } = {}
 
 const getOperandModeValue =
   (pc: number, instr: string, operand: string, pass: 1 | 2): [ADDR_MODE, number] => {
@@ -85,16 +85,16 @@ const getOperandModeValue =
       // See if we can replace any labels with their values
       Object.entries(labels).forEach(([key, labelvalue]) => {
         // This regular expression finds all occurrences of the key as a whole word
-        operand = operand.replace(new RegExp(`\\b${key}\\b`, 'g'), '$' + toHex(labelvalue))
+        operand = operand.replace(new RegExp(`\\b${key}\\b`, "g"), "$" + toHex(labelvalue))
       })      
       return parseNumberOptionalAddressMode(operand)
     }
     const labelOperand = splitOperand(operand)
     if (labelOperand.label) {
       // See if we have an immediate value, like #CONST, <CONST >CONST
-      const lb = labelOperand.label.startsWith('<')
-      const hb = labelOperand.label.startsWith('>')
-      const isImmediate = labelOperand.label.startsWith('#') || hb || lb
+      const lb = labelOperand.label.startsWith("<")
+      const hb = labelOperand.label.startsWith(">")
+      const isImmediate = labelOperand.label.startsWith("#") || hb || lb
       if (isImmediate) {
         labelOperand.label = labelOperand.label.substring(1)
       }
@@ -106,16 +106,16 @@ const getOperandModeValue =
           value = value & 0xff
         }
       } else if (pass === 2) {
-        console.error("Missing label: " + labelOperand.label);
+        console.error("Missing label: " + labelOperand.label)
       }
       if (labelOperand.operation && labelOperand.value) {
         switch (labelOperand.operation) {
-          case '+': value += labelOperand.value
-            break;
-          case '-': value -= labelOperand.value
-            break;
+          case "+": value += labelOperand.value
+            break
+          case "-": value -= labelOperand.value
+            break
           default:
-            console.error("Unknown operation in operand: " + operand);
+            console.error("Unknown operation in operand: " + operand)
         }
         value = (value % 65536 + 65536) % 65536
       }
@@ -128,8 +128,8 @@ const getOperandModeValue =
           mode = ADDR_MODE.IMM
         } else {
           mode = (value >= 0 && value <= 255) ? ADDR_MODE.ZP_REL : ADDR_MODE.ABS
-          mode = (labelOperand.idx === 'X') ? (mode === ADDR_MODE.ABS ? ADDR_MODE.ABS_X : ADDR_MODE.ZP_X) : mode
-          mode = (labelOperand.idx === 'Y') ? (mode === ADDR_MODE.ABS ? ADDR_MODE.ABS_Y : ADDR_MODE.ZP_Y) : mode
+          mode = (labelOperand.idx === "X") ? (mode === ADDR_MODE.ABS ? ADDR_MODE.ABS_X : ADDR_MODE.ZP_X) : mode
+          mode = (labelOperand.idx === "Y") ? (mode === ADDR_MODE.ABS ? ADDR_MODE.ABS_Y : ADDR_MODE.ZP_Y) : mode
         }
       }
     }
@@ -137,12 +137,12 @@ const getOperandModeValue =
 }
 
 const splitLine = (line: string, prevLabel: string) => {
-  line = line.replace(/\s+/g, ' ')
-  const s = line.split(' ')
+  line = line.replace(/\s+/g, " ")
+  const s = line.split(" ")
   const codeLine: CodeLine = {
     label: s[0] ? s[0] : prevLabel,
-    instr: s[1] ? s[1] : '',
-    operand: s[2] ? s[2] : ''
+    instr: s[1] ? s[1] : "",
+    operand: s[2] ? s[2] : ""
   }
   return codeLine
 }
@@ -151,7 +151,7 @@ const handleLabel = (parts: CodeLine, pc: number) => {
   if (parts.label in labels) {
     console.error("Redefined label: " + parts.label)
   }
-  if (parts.instr === 'EQU') {
+  if (parts.instr === "EQU") {
     //const [mode, value] = parseNumberOptionalAddressMode(parts.operand)
     const [mode, value] = getOperandModeValue(pc, parts.instr, parts.operand, 2)
     if (mode !== ADDR_MODE.ABS && mode !== ADDR_MODE.ZP_REL) {
@@ -169,16 +169,16 @@ const handlePseudoOps = (codeLine: CodeLine) => {
   const newInstructions: Array<number> = []
   switch (codeLine.instr) {
     // ASC is merlin syntax, and so is '' vs ""
-    case 'ASC':  // fall through
-    case 'DA': {
+    case "ASC":  // fall through
+    case "DA": {
       let operand = codeLine.operand
       let hb = 0x00
-      if (operand.startsWith('"') && operand.endsWith('"')) {
+      if (operand.startsWith("\"") && operand.endsWith("\"")) {
         hb = 0x80
-      } else if (operand.startsWith('\'') && operand.endsWith('\'')) {
+      } else if (operand.startsWith("'") && operand.endsWith("'")) {
         hb = 0x00
       } else {
-        console.error("Invalid string: " + operand);
+        console.error("Invalid string: " + operand)
       }
 
       operand = operand.substring(1, operand.length-1)
@@ -188,8 +188,8 @@ const handlePseudoOps = (codeLine: CodeLine) => {
       newInstructions.push(0x00)
       break
     }
-    case 'HEX': {
-      const hexString = codeLine.operand.replace(/,/g, '')
+    case "HEX": {
+      const hexString = codeLine.operand.replace(/,/g, "")
       const hexNumbers = hexString.match(/.{1,2}/g) || []
       hexNumbers.forEach((h) => {
         const val = parseInt(h, 16)
@@ -208,9 +208,9 @@ const handlePseudoOps = (codeLine: CodeLine) => {
 }
 
 const getHexCodesForInstruction = (match: number, value: number) => {
-  const newInstructions: Array<number> = [];
+  const newInstructions: Array<number> = []
   const pcode = pcodes[match]
-  newInstructions.push(match);
+  newInstructions.push(match)
   if (value >= 0) {
     newInstructions.push(value % 256)
     if (pcode.bytes === 3) {
@@ -224,15 +224,15 @@ let orgStart = 0
 
 const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
   let pc = orgStart
-  const instructions: Array<number> = [];
-  let prevLabel = ''
+  const instructions: Array<number> = []
+  let prevLabel = ""
   code.forEach(line => {
-    line = (line.split(';'))[0].trimEnd().toUpperCase()
+    line = (line.split(";"))[0].trimEnd().toUpperCase()
     if (!line) return
-    let output = (line + '                   ').slice(0, 30) + toHex(pc, 4) + "- "
+    let output = (line + "                   ").slice(0, 30) + toHex(pc, 4) + "- "
 
     const codeLine = splitLine(line, prevLabel)
-    prevLabel = ''
+    prevLabel = ""
 
     // Just a label by itself, just tack onto the beginning of next line.
     if (!codeLine.instr) {
@@ -240,7 +240,7 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
       return
     }
 
-    if (codeLine.instr === 'ORG') {
+    if (codeLine.instr === "ORG") {
       if (pass === 1) {
         const [mode, value] = parseNumberOptionalAddressMode(codeLine.operand)
         if (mode === ADDR_MODE.ABS) {
@@ -256,7 +256,7 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
       handleLabel(codeLine, pc)
     }
 
-    if (codeLine.instr === 'EQU') {
+    if (codeLine.instr === "EQU") {
       return
     }
 
@@ -265,7 +265,7 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
     let value: number
 
     // Check psdudo-ops first
-    const pseudoOps = ['ASC', 'DA', 'HEX']
+    const pseudoOps = ["ASC", "DA", "HEX"]
     if (pseudoOps.includes(codeLine.instr)) {
       newInstructions = handlePseudoOps(codeLine)
       pc += newInstructions.length
@@ -275,26 +275,26 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
         console.error(`Unknown/illegal value: ${line}`)
       }
 
-      if (codeLine.instr === 'DB') {
+      if (codeLine.instr === "DB") {
         newInstructions.push(value & 0xff)
         pc++
-      } else if (codeLine.instr === 'DW') {
+      } else if (codeLine.instr === "DW") {
         newInstructions.push(value & 0xff)
         newInstructions.push((value >> 8) & 0xff)
         pc+=2
-      } else if (codeLine.instr === 'DS') {
+      } else if (codeLine.instr === "DS") {
         for(let i=0;i<value;i++) {
           newInstructions.push(0x00)
           pc++
         }
       } else {
         if (pass === 2 && isBranchInstruction(codeLine.instr) && (value < 0 || value > 255)) {
-          console.error(`Branch instruction out of range: ${line} value: ${value} pass: ${pass}`);
+          console.error(`Branch instruction out of range: ${line} value: ${value} pass: ${pass}`)
         }
 
         const match = pcodes.findIndex(pc => pc && pc.name === codeLine.instr && pc.mode === mode)
         if (match < 0) {
-          console.error(`Unknown instruction: "${line}" mode=${mode} pass=${pass}`);
+          console.error(`Unknown instruction: "${line}" mode=${mode} pass=${pass}`)
         }
         newInstructions = getHexCodesForInstruction(match, value)
         pc += pcodes[match].bytes
@@ -302,15 +302,15 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
     }
 
     if (doOutput && pass === 2) {
-      newInstructions.forEach(i => {output += ` ${toHex(i)}`});
+      newInstructions.forEach(i => {output += ` ${toHex(i)}`})
       console.log(output)
     }
     instructions.push(...newInstructions)
-  });
+  })
 
   if (doOutput && pass === 2) {
     let output = ""
-    instructions.forEach(i => {output += ` ${toHex(i)}`});
+    instructions.forEach(i => {output += ` ${toHex(i)}`})
     console.log(output)
   }
 

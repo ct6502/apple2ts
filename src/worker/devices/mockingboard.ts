@@ -1,5 +1,5 @@
-import { interruptRequest, nonMaskableInterrupt, registerCycleCountCallback } from "../cpu6502";
-import { s6502 } from "../instructions";
+import { interruptRequest, nonMaskableInterrupt, registerCycleCountCallback } from "../cpu6502"
+import { s6502 } from "../instructions"
 import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "../memory"
 import { passMockingboard } from "../worker2main"
 
@@ -135,7 +135,7 @@ const getRegisters = (slot: number, chip: number) => {
 }
 
 const compareArrays = (a: number[], b: number[]) =>
-  a.length === b.length && a.every((x, i) => x === b[i]);
+  a.length === b.length && a.every((x, i) => x === b[i])
 
 const prev: MockingboardSound = {slot: -1, chip: -1, params: [-1]}
 
@@ -304,7 +304,7 @@ export const handleMockingboard: AddressCallback = (addr: number, value = -1) =>
       handleInterruptEnable(slot, chip, value)
       break
     default: // debugSlot(slot, addr, value)
-      break;
+      break
   }
   return -1
 }

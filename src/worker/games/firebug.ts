@@ -23,7 +23,7 @@ Button 1: pick up gas can
 export const firebug: GameLibraryItem = {
   address: 0x452A,
   data: [0xAD, 0x00, 0xC0],
-  keymap: {'\x08': 'A', '\x15': 'D', '\x0B': 'W', '\x0A': 'X', 'P': '\x0D', 'M': '\x20'},
+  keymap: {"\x08": "A", "\x15": "D", "\x0B": "W", "\x0A": "X", "P": "\x0D", "M": "\x20"},
   joystick: null,
   gamepad: null,
   rumble: null,

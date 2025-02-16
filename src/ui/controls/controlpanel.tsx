@@ -1,8 +1,8 @@
-import ConfigButtons from "./configbuttons";
-import ControlButtons from "./controlbuttons";
-import DebugButtons from "./debugbuttons";
-import FullScreenButton from "./fullscreenbutton";
-import KeyboardButtons from "./keyboardbuttons";
+import ConfigButtons from "./configbuttons"
+import ControlButtons from "./controlbuttons"
+import DebugButtons from "./debugbuttons"
+import FullScreenButton from "./fullscreenbutton"
+import KeyboardButtons from "./keyboardbuttons"
 
 const ControlPanel = (props: DisplayProps) => {
   return (
@@ -18,4 +18,4 @@ const ControlPanel = (props: DisplayProps) => {
   )
 }
 
-export default ControlPanel;
+export default ControlPanel

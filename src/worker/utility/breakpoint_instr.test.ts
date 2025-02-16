@@ -1,6 +1,6 @@
-import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
-import { BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "../../common/breakpoint";
-import { opCodes } from "../../common/opcodes";
+import { doSetBreakpoints, hitBreakpoint } from "../cpu6502"
+import { BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "../../common/breakpoint"
+import { opCodes } from "../../common/opcodes"
 
 
 const bpMap: BreakpointMap = new BreakpointMap()
@@ -8,7 +8,7 @@ doSetBreakpoints(bpMap)
 
 // ************ Instructions - test all properties ************
 
-test('hitInstruction BRK', () => {
+test("hitInstruction BRK", () => {
   // Simple test for BRK
   const opcode = 0
   const bp = new Breakpoint()
@@ -23,7 +23,7 @@ test('hitInstruction BRK', () => {
   }
 })
 
-test('hitInstruction All Opcodes', () => {
+test("hitInstruction All Opcodes", () => {
   // Now test all opcodes
   for (let i = 0; i < 256; i++) {
     bpMap.clear()
@@ -38,7 +38,7 @@ test('hitInstruction All Opcodes', () => {
   }
 })
 
-test('hitInstruction Illegal Opcodes', () => {
+test("hitInstruction Illegal Opcodes", () => {
   // Now test all illegal opcodes
   bpMap.clear()
   const bp = new Breakpoint()
@@ -54,7 +54,7 @@ test('hitInstruction Illegal Opcodes', () => {
   }
 })
 
-test('hitInstruction with hexvalue', () => {
+test("hitInstruction with hexvalue", () => {
   for (let i = 0; i < 256; i++) {
     bpMap.clear()
     const bp = new Breakpoint()

@@ -162,7 +162,7 @@ const handleSmartPortDeviceInformationBlock = (unitNumber: number, bufferAddr: n
     memSet(bufferAddr + 5 + i, a2ts.charCodeAt(i))
   }
   for (;i < 16; i++) {
-    memSet(bufferAddr + 5 + i, a2ts.charCodeAt(8)); // backfill with space
+    memSet(bufferAddr + 5 + i, a2ts.charCodeAt(8)) // backfill with space
   }
   // device type
   memSet(bufferAddr + 21, deviceType)
@@ -297,7 +297,7 @@ const processHardDriveBlockAccess = () => {
       }
       const dataRead = dd.slice(blockStart, blockStart + 512)
       setMemoryBlock(bufferAddr, dataRead)
-      break;
+      break
     }
     case 2: {
       if (blockStart + 512 > dataLen) {

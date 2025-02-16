@@ -5,22 +5,22 @@ import { doSetRunMode,
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
-  doSetCycleCount} from "./motherboard";
+  doSetCycleCount} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
-import { DRIVE, MSG_MAIN, MSG_WORKER } from "../common/utility";
-import { doSetBreakpoints } from "./cpu6502";
-import { MouseCardEvent } from "./devices/mouse";
-import { receiveMidiData } from "./devices/passport/passport";
-import { receiveCommData } from "./devices/superserial/serial";
+import { DRIVE, MSG_MAIN, MSG_WORKER } from "../common/utility"
+import { doSetBreakpoints } from "./cpu6502"
+import { MouseCardEvent } from "./devices/mouse"
+import { receiveMidiData } from "./devices/passport/passport"
+import { receiveCommData } from "./devices/superserial/serial"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
 
 // This fixes `self`'s type.
-declare const self: DedicatedWorkerGlobalScope;
-export {};
+declare const self: DedicatedWorkerGlobalScope
+export {}
 
 let isTesting = false
 export const setIsTesting = () => {
@@ -28,7 +28,7 @@ export const setIsTesting = () => {
 }
 
 const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
-  if (!isTesting) self.postMessage({msg, payload});
+  if (!isTesting) self.postMessage({msg, payload})
 }
 
 export const passMachineState = (state: MachineState) => {
@@ -89,13 +89,13 @@ export const passSoftSwitchDescriptions = (desc: string[]) => {
 
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
-if (typeof self !== 'undefined') {
+if (typeof self !== "undefined") {
   self.onmessage = (e: MessageEvent) => {
-    if (!e.data || typeof e.data !== 'object') {
+    if (!e.data || typeof e.data !== "object") {
       // console.error(`worker2main: invalid message: ${JSON.stringify(e.data)}`)
       return
     }
-    if (!('msg' in e.data)) return
+    if (!("msg" in e.data)) return
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:
         doSetRunMode(e.data.payload)

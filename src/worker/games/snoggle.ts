@@ -1,4 +1,4 @@
-import { addToBuffer } from "../devices/keyboard";
+import { addToBuffer } from "../devices/keyboard"
 import { memSet } from "../memory"
 
 const helptext = `SNOGGLE
@@ -15,18 +15,18 @@ M → .  right
 const gamepad = (button: number) => {
   switch (button) {
     case 1: memSet(0x6D, 255); break  // extra life
-    case 12: addToBuffer('A'); break  // 12 D-pad up
-    case 13: addToBuffer('Z'); break  // 13 D-pad down
-    case 14: addToBuffer('\x08'); break // 14 D-pad left
-    case 15: addToBuffer('\x15'); break // 15 D-pad right
-    default: break;
+    case 12: addToBuffer("A"); break  // 12 D-pad up
+    case 13: addToBuffer("Z"); break  // 13 D-pad down
+    case 14: addToBuffer("\x08"); break // 14 D-pad left
+    case 15: addToBuffer("\x15"); break // 15 D-pad right
+    default: break
   }
 }
 
 const threshold = 0.75
 const joystick = (axes: number[]) => {
-  const key = (axes[0] < -threshold) ? '\x08' : (axes[0] > threshold) ? '\x15' :
-    (axes[1] < -threshold) ? 'A' : (axes[1] > threshold) ? 'Z' : ''
+  const key = (axes[0] < -threshold) ? "\x08" : (axes[0] > threshold) ? "\x15" :
+    (axes[1] < -threshold) ? "A" : (axes[1] > threshold) ? "Z" : ""
   if (key) {
     addToBuffer(key)
   }
@@ -57,7 +57,7 @@ export const snoggle: GameLibraryItem[] = [
   {
     address: 0x1C7B,
     data: [0xAD, 0x00, 0xC0],
-    keymap: {'N': '\x08', 'M': '\x15', ',': '\x08', '.': '\x15'},
+    keymap: {"N": "\x08", "M": "\x15", ",": "\x08", ".": "\x15"},
     joystick: joystick,
     gamepad: gamepad,
     rumble: null,

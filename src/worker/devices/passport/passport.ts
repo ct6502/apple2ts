@@ -114,7 +114,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
           result = acia.status
           //console.log("Read ACIAControl: " + result.toString(16))
         }
-        break;
+        break
 
     case REG.TCONTROL1:
       // reading this register does nothing
@@ -128,7 +128,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
         //console.log("Read Timer Control1: error")
         result = 0x00
       }
-      break;
+      break
     case REG.TCONTROL2:
       // reading this register gives status
       if (val >= 0)
@@ -141,7 +141,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
         result = timer.status()
         //console.log("Read Timer Control2: " + result.toString(16))
       }
-      break;
+      break
     case REG.T1MSB:
       if (val >= 0)
       {
@@ -150,7 +150,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
         result = timer.timerMSBr(0)
-      break;
+      break
     case REG.T1LSB:
       if (val >= 0)
       {
@@ -159,7 +159,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
         result = timer.timerLSBr(0)
-      break;
+      break
     case REG.T2MSB:
       if (val >= 0)
       {
@@ -168,7 +168,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
         result = timer.timerMSBr(1)
-      break;
+      break
     case REG.T2LSB:
       if (val >= 0)
       {
@@ -177,7 +177,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
         result = timer.timerLSBr(1)
-      break;
+      break
     case REG.T3MSB:
       if (val >= 0)
       {
@@ -186,7 +186,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
         result = timer.timerMSBr(2)
-      break;
+      break
     case REG.T3LSB:
       if (val >= 0)
       {
@@ -195,15 +195,15 @@ const handleMIDIIO = (addr: number, val = -1): number => {
       }
       else
         result = timer.timerLSBr(2)
-      break;
+      break
 
     case REG.DRUMSET:
     case REG.DRUMCLEAR:
       // not implemented
-      break;
+      break
 
     default:
-        console.log('PASSPORT unknown IO', (addr&0xf).toString(16))
+        console.log("PASSPORT unknown IO", (addr&0xf).toString(16))
         break
     }
 

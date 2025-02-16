@@ -1,9 +1,9 @@
-import { RUN_MODE } from "../../common/utility";
+import { RUN_MODE } from "../../common/utility"
 import {
   passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode
 } from "../main2worker"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faBug,
   faBugSlash,
@@ -13,14 +13,14 @@ import {
   faLayerGroup,
   faPause,
   faPlay,
-} from "@fortawesome/free-solid-svg-icons";
-import { handleSetCPUState } from "../controller";
-import { handleFileSave } from "../savestate";
-import { setPreferenceDebugMode } from "../localstorage";
+} from "@fortawesome/free-solid-svg-icons"
+import { handleSetCPUState } from "../controller"
+import { handleFileSave } from "../savestate"
+import { setPreferenceDebugMode } from "../localstorage"
 
 const DebugButtons = () => {
   const runMode = handleGetRunMode()
-  const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT;
+  const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT
   return <span className="flex-row">
     <div className="flex-row" id="tour-snapshot">
     <button className="push-button"
@@ -67,4 +67,4 @@ const DebugButtons = () => {
   </span>
 }
 
-export default DebugButtons;
+export default DebugButtons

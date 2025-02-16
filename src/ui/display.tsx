@@ -15,15 +15,15 @@ import {
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
-import { useRef, useState } from 'react';
+import { useRef, useState } from "react"
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
 import ImageWriter from "./devices/imagewriter"
 import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
-import { loadPreferences } from "./localstorage";
-import { RUN_MODE, TEST_DEBUG } from "../common/utility";
+import { loadPreferences } from "./localstorage"
+import { RUN_MODE, TEST_DEBUG } from "../common/utility"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -34,13 +34,13 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
-  const righthandSectionRef = useRef<HTMLDivElement>(null);
+  const righthandSectionRef = useRef<HTMLDivElement>(null)
 
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
   // those, we would have no way of setting them here and re-rendering.
   if (!worker) {
-    const newWorker = new Worker(new URL('../worker/worker2main', import.meta.url),
+    const newWorker = new Worker(new URL("../worker/worker2main", import.meta.url),
       { type: "module" })
     setWorker(newWorker)
     setMain2Worker(newWorker)
@@ -52,7 +52,7 @@ const DisplayApple2 = () => {
     }
   }
 
-  const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = '') => {
+  const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = "") => {
     if (newhelptext && newhelptext.length > 1) {
       passHelpText(newhelptext)
     }
@@ -64,7 +64,7 @@ const DisplayApple2 = () => {
     // rather than a cached value (thru a closure).
     // If you do setRenderCount(renderCount + 1), renderCount will always be
     // zero and NOTHING will update.
-    setRenderCount(prevRenderCount => prevRenderCount + 1);
+    setRenderCount(prevRenderCount => prevRenderCount + 1)
   }
 
   if (!myInit) {
@@ -77,7 +77,7 @@ const DisplayApple2 = () => {
           const fileContents = await (await files[0].getFile()).text()
           RestoreSaveState(fileContents)
         }
-      });
+      })
     }
     // TODO: It's unclear whether we need to do this preloadAssets() call
     // or whether just having the assets within that file is good enough
@@ -149,9 +149,9 @@ const DisplayApple2 = () => {
   }
 
   if (handleGetDarkMode()) {
-    document.body.classList.add('dark-mode')
+    document.body.classList.add("dark-mode")
   } else {
-    document.body.classList.remove('dark-mode')
+    document.body.classList.remove("dark-mode")
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement
@@ -179,7 +179,7 @@ const DisplayApple2 = () => {
         <div className={isLandscape ? "flex-row" : "flex-column"}>
           <Apple2Canvas {...props} />
           <div className="flex-row-gap wrap"
-            style={{ paddingLeft: '2px' }}>
+            style={{ paddingLeft: "2px" }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
             <ImageWriter />
@@ -199,4 +199,4 @@ const DisplayApple2 = () => {
   )
 }
 
-export default DisplayApple2;
+export default DisplayApple2

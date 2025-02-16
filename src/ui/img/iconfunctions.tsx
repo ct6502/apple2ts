@@ -1,20 +1,20 @@
-import { COLOR_MODE } from "../../common/utility";
+import { COLOR_MODE } from "../../common/utility"
 
 export const iconName = () => {
   const image = [58, 70, 70, 66, 69, 12, 1, 1, 66, 68, 65, 74,
     75, 0, 53, 65, 68, 69, 0, 69, 58, 1]
-  return image.map(code => String.fromCharCode(code + 46)).join('')
+  return image.map(code => String.fromCharCode(code + 46)).join("")
 }
 
 export const iconKey = () => {
   const image = [75, 0, 54, 66, 69, 70, 0, 52, 67, 60, 0, 62, 56, 76]
-  return image.map(code => String.fromCharCode(code + 45)).join('')
+  return image.map(code => String.fromCharCode(code + 45)).join("")
 }
 
 export const iconData = () => {
   const image = [56, 52, 6, 54, 7, 54, 53, 7, 0, 11, 10, 55, 57, 0, 7, 5, 54,
     56, 0, 52, 10, 6, 5, 0, 3, 7, 6, 8, 11, 54, 12, 56, 8, 56, 55, 55]
-  return image.map(code => String.fromCharCode(code + 45)).join('')
+  return image.map(code => String.fromCharCode(code + 45)).join("")
 }
 
 export const getColorModeSVG = (colorMode: COLOR_MODE) => {
@@ -25,22 +25,22 @@ export const getColorModeSVG = (colorMode: COLOR_MODE) => {
       break
     case COLOR_MODE.GREEN:
       svgRect = <rect width={20} height={14} fill="#39FF14" opacity={0.5} />
-      break;
+      break
     case COLOR_MODE.AMBER:
       svgRect = <rect width={20} height={14} fill="#FFA500" opacity={0.75} />
-      break;
+      break
     case COLOR_MODE.BLACKANDWHITE:
       svgRect = <svg>
         <rect width={10} height={14} fill="#000000" />
         <rect width={10} height={14} x={10} fill="#F0F0F0" />
       </svg>
-      break;
+      break
     case COLOR_MODE.INVERSEBLACKANDWHITE:
       svgRect = <svg>
         <rect width={10} height={14} fill="#F0F0F0" />
         <rect width={10} height={14} x={10} fill="#000000" />
       </svg>
-      break;
+      break
     default:
       svgRect = <svg>
         <rect width={5} height={14} fill="#00ff00" />
@@ -48,7 +48,7 @@ export const getColorModeSVG = (colorMode: COLOR_MODE) => {
         <rect width={5} height={14} x={10} fill="#007fff" />
         <rect width={5} height={14} x={15} fill="#ff7f00" />
       </svg>
-      break;
+      break
   }
   return svgRect
 }

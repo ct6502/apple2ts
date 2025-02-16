@@ -6,7 +6,7 @@ export const MidiDeviceSelect = () => {
 
   //  if (!navigator.requestMIDIAccess) return <></>
   // Create an array of the names of the midiOutDevices
-  const midiOutDeviceNames = midiOutDevices ? midiOutDevices.map(device => (device.name || '')) : ['No MIDI Devices']
+  const midiOutDeviceNames = midiOutDevices ? midiOutDevices.map(device => (device.name || "")) : ["No MIDI Devices"]
 
   return (
     <DropdownButton 

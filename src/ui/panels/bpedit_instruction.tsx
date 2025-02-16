@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, getBreakpointString } from "../../common/breakpoint";
-import EditField from "./editfield";
-import PullDownMenu from "./pulldownmenu";
-import { Droplist } from "./droplist";
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks";
-import { opCodeNames, opCodes, opTable } from "../../common/opcodes";
+import { useState } from "react"
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, getBreakpointString } from "../../common/breakpoint"
+import EditField from "./editfield"
+import PullDownMenu from "./pulldownmenu"
+import { Droplist } from "./droplist"
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
+import { opCodeNames, opCodes, opTable } from "../../common/opcodes"
 
 const addressModes = [
-  'Implied',
-  'Immediate #$FF',
-  'Zero page/Relative',
-  'Zero page,X $FF,X',
-  'Zero page,Y $FF,Y',
-  'Absolute $1234',
-  'Abs,X $1234,X',
-  'Abs,Y $1234,Y',
-  'Indirect,X ($FF,X)',
-  'Indirect,Y ($FF),Y',
-  'Indirect ($FF)'
+  "Implied",
+  "Immediate #$FF",
+  "Zero page/Relative",
+  "Zero page,X $FF,X",
+  "Zero page,Y $FF,Y",
+  "Absolute $1234",
+  "Abs,X $1234,X",
+  "Abs,Y $1234,Y",
+  "Indirect,X ($FF,X)",
+  "Indirect,Y ($FF),Y",
+  "Indirect ($FF)"
 ]
 
 const BPEdit_Instruction = (props: {
@@ -25,9 +25,9 @@ const BPEdit_Instruction = (props: {
 }) => {
   const [myInit, setMyInit] = useState(false)
   const [triggerUpdate, setTriggerUpdate] = useState(false)
-  const [instruction, setInstruction] = useState('')
+  const [instruction, setInstruction] = useState("")
   const [popup, setPopup] = useState<string[]>([])
-  const [addressMode, setAddressMode] = useState('')
+  const [addressMode, setAddressMode] = useState("")
   const [illegal65C02, setIllegal65C02] = useState(props.breakpoint.address === BRK_ILLEGAL_65C02)
   const [illegal6502, setIllegal6502] = useState(props.breakpoint.address === BRK_ILLEGAL_6502)
 
@@ -46,7 +46,7 @@ const BPEdit_Instruction = (props: {
   }
 
   const handleInstructionChange = (value: string) => {
-    value = value.replace(/[^a-z]/gi, '').slice(0, 3).toUpperCase()
+    value = value.replace(/[^a-z]/gi, "").slice(0, 3).toUpperCase()
     const newPopup = []
     // Add all possible opcode matches to the popup list.
     if (value.length >= 0) {
@@ -59,7 +59,7 @@ const BPEdit_Instruction = (props: {
     // No matches? Clear the current address and do not accept the new value.
     if (newPopup.length === 0) {
       props.breakpoint.address = 0
-      setInstruction(value.length > 0 ? instruction : '')
+      setInstruction(value.length > 0 ? instruction : "")
       return
     }
     // Automatically fill in the instruction if only one match,
@@ -93,7 +93,7 @@ const BPEdit_Instruction = (props: {
   }
 
   const handleInstructionFromPopup = (v: string) => {
-    handleInstructionChange(popup[parseInt(v ? v : '0', 16)])
+    handleInstructionChange(popup[parseInt(v ? v : "0", 16)])
   }
 
   const checkHexvalue = () => {
@@ -129,11 +129,11 @@ const BPEdit_Instruction = (props: {
   }
 
   const getInstructionBreakpointString = () => {
-    let result = ''
+    let result = ""
     if (props.breakpoint.address >= BRK_INSTR) {
       result = getBreakpointString(props.breakpoint)
     }
-    return result ? result : '--'
+    return result ? result : "--"
   }
 
   const handleHexValueChange = (value: string) => {
@@ -142,9 +142,9 @@ const BPEdit_Instruction = (props: {
       const bytes = opCodes[props.breakpoint.address & 0xFF].bytes
       if (bytes < 3) hexSize = 2
     }
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, hexSize).toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, hexSize).toUpperCase()
     if (props.breakpoint) {
-      props.breakpoint.hexvalue = parseInt(value ? value : '-1', 16)
+      props.breakpoint.hexvalue = parseInt(value ? value : "-1", 16)
       setTriggerUpdate(!triggerUpdate)
     }
   }
@@ -163,7 +163,7 @@ const BPEdit_Instruction = (props: {
 
   const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
-      const bank = MEMORY_BANKS[key];
+      const bank = MEMORY_BANKS[key]
       if (bank.name === value) {
         props.breakpoint.memoryBank = key
         setTriggerUpdate(!triggerUpdate)
@@ -175,12 +175,12 @@ const BPEdit_Instruction = (props: {
 
   checkHexvalue()
   const v = props.breakpoint.hexvalue
-  const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ''
+  const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ""
 
   return (
     <div>
       <div className={"flex-row" + ((illegal65C02 || illegal6502) ? " disabled" : "")}
-        style={{ alignItems: 'baseline' }}>
+        style={{ alignItems: "baseline" }}>
         <EditField name="Opcode:"
           initialFocus={true}
           value={instruction}
@@ -227,4 +227,4 @@ const BPEdit_Instruction = (props: {
   )
 }
 
-export default BPEdit_Instruction;
+export default BPEdit_Instruction

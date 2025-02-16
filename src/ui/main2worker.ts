@@ -20,7 +20,7 @@ export const setMain2Worker = (workerIn: Worker) => {
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
-  if (worker) worker.postMessage({msg, payload});
+  if (worker) worker.postMessage({msg, payload})
 }
 
 export const passSetRunMode = (runMode: RUN_MODE) => {
@@ -130,8 +130,8 @@ export const passMouseEvent = (event: MouseEventSimple) => {
 }
 
 export const passPasteText = (text: string) => {
-  text = text.replaceAll(/[”“]/g,'"')  // fancy quotes with regular
-  text = text.replaceAll('\n','\r')  // LFs to CRs
+  text = text.replaceAll(/[”“]/g,"\"")  // fancy quotes with regular
+  text = text.replaceAll("\n","\r")  // LFs to CRs
   doPostMessage(MSG_MAIN.PASTE_TEXT, text)
 }
 
@@ -224,23 +224,23 @@ let machineState: MachineState = {
   cout: 0,
   cpuSpeed: 0,
   darkMode: false,
-  disassembly: '',
+  disassembly: "",
   extraRamSize: 64,
-  helpText: '',
+  helpText: "",
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   iTempState: 0,
   lores: new Uint8Array(),
   machineName: "APPLE2EE",
   memoryDump: new Uint8Array(),
-  nextInstruction: '',
+  nextInstruction: "",
   noDelayMode: false,
   ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   speedMode: 0,
   softSwitches: {},
-  stackString: '',
+  stackString: "",
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
   useOpenAppleKey: false,
@@ -275,7 +275,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     case MSG_WORKER.DRIVE_PROPS: {
       doSetUIDriveProps(e.data.payload as DriveProps)
-      return {speed: machineState.cpuSpeed, helptext: ''}
+      return {speed: machineState.cpuSpeed, helptext: ""}
       break
     }
     case MSG_WORKER.DRIVE_SOUND: {
@@ -319,7 +319,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     }
     case MSG_WORKER.REQUEST_THUMBNAIL: {
       copyCanvas((blob) => {
-        const reader = new FileReader();
+        const reader = new FileReader()
         reader.onloadend = function() {
           passThumbnailImage(reader.result as string)
         }        
@@ -340,7 +340,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
 // Should probably store these state variables somewhere else, but it's
 // easy to just stash them here.
 let showMouse = true
-let softSwitchDescriptions = ['']
+let softSwitchDescriptions = [""]
 
 export const handleGetShowMouse = () => {
   return showMouse

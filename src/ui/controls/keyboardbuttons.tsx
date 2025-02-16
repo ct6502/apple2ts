@@ -1,36 +1,36 @@
 import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
   faArrowLeft,
   faArrowDown,
   faArrowUp,
-} from "@fortawesome/free-solid-svg-icons";
-import { lockedKeyStyle } from "../../common/utility";
-import { handleArrowKey } from "../devices/gamepad";
-import { appleOutline } from "../img/icon_appleoutline";
-import { appleSolid } from "../img/icon_applesolid";
+} from "@fortawesome/free-solid-svg-icons"
+import { lockedKeyStyle } from "../../common/utility"
+import { handleArrowKey } from "../devices/gamepad"
+import { appleOutline } from "../img/icon_appleoutline"
+import { appleSolid } from "../img/icon_applesolid"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const arrowKeys = [
-    { name: 'Left', icon: faArrowLeft },
-    { name: 'Right', icon: faArrowRight },
-    { name: 'Up', icon: faArrowUp },
-    { name: 'Down', icon: faArrowDown },
+    { name: "Left", icon: faArrowLeft },
+    { name: "Right", icon: faArrowRight },
+    { name: "Up", icon: faArrowUp },
+    { name: "Down", icon: faArrowDown },
   ]
   const isTouchDevice = "ontouchstart" in document.documentElement
   const tryButtonPressRelease = (doTouch: boolean, key: string, press: boolean) => {
     if (doTouch !== isTouchDevice) return
     // If one of our Apple keys is locked, ignore the button press.
-    if (key === 'left') {
+    if (key === "left") {
       if (props.openAppleKeyMode > 0) return
     } else {
       if (props.closedAppleKeyMode > 0) return
     }
     if (press) {
-      passAppleCommandKeyPress(key === 'left')
+      passAppleCommandKeyPress(key === "left")
     } else {
-      passAppleCommandKeyRelease(key === 'left')
+      passAppleCommandKeyRelease(key === "left")
     }
   }
   return <span>{isTouchDevice && <span className="flex-row">
@@ -68,21 +68,21 @@ const KeyboardButtons = (props: DisplayProps) => {
     </button>
   </span>
   }
-    <button className={`joystick-button ${handleGetLeftButton() ? 'joystick-active' : ''}`}
+    <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
       title="Button 1"
-      onTouchStart={() => tryButtonPressRelease(true, 'left', true)}
-      onTouchEnd={() => tryButtonPressRelease(true, 'left', false)}
-      onMouseDown={() => tryButtonPressRelease(false, 'left', true)}
-      onMouseUp={() => tryButtonPressRelease(false, 'left', false)}>
+      onTouchStart={() => tryButtonPressRelease(true, "left", true)}
+      onTouchEnd={() => tryButtonPressRelease(true, "left", false)}
+      onMouseDown={() => tryButtonPressRelease(false, "left", true)}
+      onMouseUp={() => tryButtonPressRelease(false, "left", false)}>
     </button>
-    <button className={`joystick-button ${handleGetRightButton() ? 'joystick-active' : ''}`}
+    <button className={`joystick-button ${handleGetRightButton() ? "joystick-active" : ""}`}
       title="Button 2"
-      onTouchStart={() => tryButtonPressRelease(true, 'right', true)}
-      onTouchEnd={() => tryButtonPressRelease(true, 'right', false)}
-      onMouseDown={() => tryButtonPressRelease(false, 'right', true)}
-      onMouseUp={() => tryButtonPressRelease(false, 'right', false)}>
+      onTouchStart={() => tryButtonPressRelease(true, "right", true)}
+      onTouchEnd={() => tryButtonPressRelease(true, "right", false)}
+      onMouseDown={() => tryButtonPressRelease(false, "right", true)}
+      onMouseUp={() => tryButtonPressRelease(false, "right", false)}>
     </button>
   </span>
 }
 
-export default KeyboardButtons;
+export default KeyboardButtons

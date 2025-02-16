@@ -266,7 +266,7 @@ export const DraftFixedFontData = new Uint8Array([
 0x81,0x00,0x81,0x00,0x81,0x00,0x81,0x00,0x81,0x00,0x81,0x00,0x00,0x00,0x14,0x00,
 0x77,0x00,0x77,0x00,0x14,0x00,0x00,0x00,0x81,0x00,0x81,0x08,0x91,0x00,0x81,0x00,
 0xff,0x00,0x00,0x00,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-]);
+])
 
 //offset=52d0; width=8; height=8 bytes; file=imagewriterii.bin
 export const CorrespondenceFixedFontData = new Uint8Array([
@@ -348,7 +348,7 @@ export const CorrespondenceFixedFontData = new Uint8Array([
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0x08,0x1c,0x3e,0x7f,0x3e,0x1c,0x08,0x00,
 0x81,0x81,0x81,0x81,0x81,0x81,0x81,0x81,0x14,0x14,0x77,0x00,0x77,0x14,0x14,0x00,
 0x81,0x81,0x99,0x99,0x81,0x81,0xff,0x00,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-]);
+])
 
 export const CorrespondencePropTable = [
 {"width":18, "offset":0},
@@ -475,7 +475,7 @@ export const CorrespondencePropTable = [
 {"width":10, "offset":1477},
 {"width":13, "offset":1487},
 {"width":7, "offset":1500},
-];
+]
 
 //offset=5924; width=v; height=8 bytes; file=imagewriterii.bin
 export const CorrespondencePropFontData = new Uint8Array([
@@ -574,7 +574,7 @@ export const CorrespondencePropFontData = new Uint8Array([
 0x7f,0x00,0x00,0x00,0x00,0x00,0x41,0x41,0x41,0x36,0x00,0x08,0x00,0x00,0x00,0x02,
 0x00,0x01,0x01,0x01,0x00,0x02,0x02,0x02,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,
-]);
+])
 
 //offset=5f07; width=16; height=16 bytes; file=imagewriterii.bin
 // data is over/under interleaved
@@ -891,7 +891,7 @@ export const NLQFixedFontData = new Uint8Array([
 0x81,0x00,0x81,0x00,0x81,0x00,0xff,0x7f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0xff,0x7f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-]);
+])
 
 export const NLQPropTable = [
 {"width":18, "offset":0},
@@ -1018,7 +1018,7 @@ export const NLQPropTable = [
 {"width":10, "offset":1477},
 {"width":13, "offset":1487},
 {"width":7, "offset":1500},
-];
+]
 
 //offset=73fb; width=16; height=16 bytes; file=imagewriterii.bin
 // data is over/under interleaved
@@ -1212,7 +1212,7 @@ export const NLQPropFontData = new Uint8Array([
 0x00,0x01,0x01,0x00,0x01,0x00,0x01,0x00,0x00,0x01,0x02,0x00,0x02,0x00,0x02,0x00,
 0x00,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,
-]);
+])
 
 export interface Font {
   width: number;
@@ -1228,7 +1228,7 @@ export const DraftFont : Font = {
   height: 8,
   scale: 8/12,
   drawGlyph: function (code) {
-    const offset = code * this.width;
+    const offset = code * this.width
     for(let i=0;i<this.width;i++)
       fontGfx(this.data[offset+i])
   },
@@ -1241,7 +1241,7 @@ export const CspFont : Font = {
   height: 8,
   scale: 8/8,
   drawGlyph: function (code) {
-    const offset = code * this.width;
+    const offset = code * this.width
     for(let i=0;i<this.width;i++)
       fontGfx(this.data[offset+i])
   },
@@ -1254,8 +1254,8 @@ export const CspPropFont : Font = {
   height: 8,
   scale: 1,
   drawGlyph: function (code) {
-    const offset = this.table[code].offset;
-    const gwidth = this.table[code].width; 
+    const offset = this.table[code].offset
+    const gwidth = this.table[code].width 
     for(let i=0;i<gwidth;i++)
       fontGfx(this.data[offset+i])
   },
@@ -1269,10 +1269,10 @@ export const NLQFont : Font = {
   scale: 8/16,
   drawGlyph: function (code) {
     // data is over/under interleaved
-    const offset = code * this.width * 2;
+    const offset = code * this.width * 2
     for(let i=0;i<this.width;i++) {
       fontGfx16(this.data[offset+i*2+0],
-                this.data[offset+i*2+1]);
+                this.data[offset+i*2+1])
     }
   },
   data: NLQFixedFontData,
@@ -1285,11 +1285,11 @@ export const NLQPropFont : Font = {
   scale: 1,
   drawGlyph: function (code) {
     // data is over/under interleaved, so multiply from table
-    const offset = this.table[code].offset*2;
-    const gwidth = this.table[code].width; 
+    const offset = this.table[code].offset*2
+    const gwidth = this.table[code].width 
     for(let i=0;i<gwidth;i++) {
       fontGfx16(this.data[offset+i*2+0],
-                this.data[offset+i*2+1]);
+                this.data[offset+i*2+1])
     }
   },
   data: NLQPropFontData,

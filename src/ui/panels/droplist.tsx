@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react"
 
 interface DroplistProps {
   name?: string;
@@ -13,21 +13,21 @@ interface DroplistProps {
 }
 
 export const Droplist = (props: DroplistProps) => {
-  const selectRef = useRef<HTMLSelectElement>(null);
-  const spanRef = useRef<HTMLSpanElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null)
+  const spanRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (selectRef.current && spanRef.current) {
       let maxWidth = 45  // minimum width
       for (const option of selectRef.current.options) {
-        spanRef.current.textContent = option.textContent || ''
+        spanRef.current.textContent = option.textContent || ""
         const spanWidth = spanRef.current.getBoundingClientRect().width + 5
         maxWidth = Math.max(maxWidth, spanWidth)
       }
       // The narrow width should be enough for a single character
-      selectRef.current.style.width = `${props.narrow ? 40 : maxWidth}px`;
+      selectRef.current.style.width = `${props.narrow ? 40 : maxWidth}px`
     }
-  }, [props.values, props.narrow]);
+  }, [props.values, props.narrow])
 
   const handleValueChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     props.setValue(e.target.value)
@@ -50,10 +50,10 @@ export const Droplist = (props: DroplistProps) => {
     <span
       ref={spanRef}
       style={{
-        visibility: 'hidden',
-        whiteSpace: 'nowrap',
-        position: 'absolute',
-        fontSize: '1rem', // Adjust this to match the font size of the select element
+        visibility: "hidden",
+        whiteSpace: "nowrap",
+        position: "absolute",
+        fontSize: "1rem", // Adjust this to match the font size of the select element
       }}
     />
   </span>

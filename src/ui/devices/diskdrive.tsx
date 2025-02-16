@@ -12,23 +12,23 @@ import { passSetDriveProps } from "../main2worker"
 
 const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
-  if (filename.toLowerCase().endsWith('.woz')) {
+  if (filename.toLowerCase().endsWith(".woz")) {
     const crc = crc32(diskData, 12)
     diskData.set(uint32toBytes(crc), 8)
   }
-  return new Blob([diskData]);
+  return new Blob([diskData])
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
   const blob = getBlobFromDiskData(diskData, filename)
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const link = document.createElement("a")
+  const url = URL.createObjectURL(blob)
+  link.setAttribute("href", url)
+  link.setAttribute("download", filename)
+  link.style.visibility = "hidden"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 type DiskDriveProps = {
@@ -80,12 +80,12 @@ const DiskDrive = (props: DiskDriveProps) => {
           }
         }
       }
-    }, 1000);
-    return () => clearInterval(timer);
+    }, 1000)
+    return () => clearInterval(timer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.lastSyncTime,
     dprops.cloudData?.syncInterval, dprops.isWriteProtected, dprops.motorRunning,
-    dprops.diskHasChanges]);
+    dprops.diskHasChanges])
 
   const cloudDriveStatusClassName = useMemo(() => {
     if (!dprops.cloudData) return "disk-clouddrive-inactive"
@@ -103,7 +103,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
 
   const diskDriveLabel = useMemo(() => {
-    let label = (dprops.filename + (dprops.diskHasChanges ? ' (modified)' : ''))
+    let label = (dprops.filename + (dprops.diskHasChanges ? " (modified)" : ""))
 
     if (dprops.cloudData && dprops.cloudData.lastSyncTime > 0) {
       label += `\nSynced ${new Date(dprops.cloudData.lastSyncTime).toLocaleString()}`
@@ -144,7 +144,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const getMenuCheck = (menuChoice: number) => {
-    let checked = false;
+    let checked = false
 
     if (menuOpen == 0) {
       checked = menuChoice == 3 && dprops.isWriteProtected
@@ -156,7 +156,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }
 
-    return checked ? '\u2714\u2009' : '\u2003'
+    return checked ? "\u2714\u2009" : "\u2003"
   }
 
   const handleMenuClick = (event: React.MouseEvent) => {
@@ -250,7 +250,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
   }
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
-  let status = ['S7D1', 'S7D2', 'S6D1', 'S6D2'][props.index]
+  let status = ["S7D1", "S7D2", "S6D1", "S6D2"][props.index]
   status += dprops.status
 
   return (
@@ -269,25 +269,25 @@ const DiskDrive = (props: DiskDriveProps) => {
         </span>
       </span>
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
-        {dprops.diskHasChanges ? '*' : ''}{dprops.filename}</span>
+        {dprops.diskHasChanges ? "*" : ""}{dprops.filename}</span>
       <span className="flex-row">
         <span className={"default-font disk-status"}>{status}</span>
       </span>
 
       {menuOpen >= 0 &&
         <div className="modal-overlay"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
+          style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
           onClick={() => handleMenuClose()}>
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
             {driveMenuItems[menuOpen].map((menuItem, index) => (
               <div key={index}>
-              {menuItem.label == '-'
-              ? <div style={{ borderTop: '1px solid #aaa', margin: '5px 0' }}></div>
+              {menuItem.label == "-"
+              ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
               : <div className="droplist-option"
-                style={{ padding: '5px', paddingLeft: '10px', paddingRight: '10px' }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ccc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'inherit'}
+                style={{ padding: "5px", paddingLeft: "10px", paddingRight: "10px" }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                 key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
                 {getMenuCheck(menuItem.index || -1)}
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{width: "24px"}} />}
@@ -301,4 +301,4 @@ const DiskDrive = (props: DiskDriveProps) => {
   )
 }
 
-export default DiskDrive;
+export default DiskDrive

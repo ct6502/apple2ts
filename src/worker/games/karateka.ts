@@ -51,7 +51,7 @@ To run forward, start from a standing position. Then move the joystick to the up
 export const karateka: GameLibraryItem = {
   address: 0x6E6C,
   data: [0xAD, 0x00, 0xC0],
-  keymap: {'N': '\x08', 'M': '\x15', ',': '\x08', '.': '\x15'},
+  keymap: {"N": "\x08", "M": "\x15", ",": "\x08", ".": "\x15"},
   joystick: null,
   gamepad: null,
   rumble: karatekaRumble,

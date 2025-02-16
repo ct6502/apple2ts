@@ -1,10 +1,10 @@
 import {
   faCircleHalfStroke as iconBreakpointExtra,
   faCircle as iconBreakpointEnabled,
-} from "@fortawesome/free-solid-svg-icons";
-import {faCircle as iconBreakpointDisabled} from "@fortawesome/free-regular-svg-icons";
+} from "@fortawesome/free-solid-svg-icons"
+import {faCircle as iconBreakpointDisabled} from "@fortawesome/free-regular-svg-icons"
 import { ADDR_MODE, toHex } from "./utility"
-import { opCodes } from "./opcodes";
+import { opCodes } from "./opcodes"
 
 export const BRK_INSTR = 0x10000
 export const BRK_ILLEGAL_65C02 = 0x10100
@@ -14,7 +14,7 @@ export const getBreakpointIcon = (bp: Breakpoint) => {
   if (bp.disabled) {
     return iconBreakpointDisabled
   }
-  if (bp.expression1.register !== '' || bp.hitcount > 1) {
+  if (bp.expression1.register !== "" || bp.hitcount > 1) {
     return iconBreakpointExtra
   }
   return iconBreakpointEnabled
@@ -26,47 +26,47 @@ export const getBreakpointStyle = (bp: Breakpoint) => {
 }
 
 export const getBreakpointString = (bp: Breakpoint) => {
-  let result = ''
+  let result = ""
   if (bp.instruction) {
     const opcode = opCodes[bp.address & 0xFF]
     if (bp.address === BRK_ILLEGAL_65C02) {
-      result = 'Any illegal 65C02'
+      result = "Any illegal 65C02"
     } else if (bp.address === BRK_ILLEGAL_6502) {
-      result = 'Any illegal 6502'
+      result = "Any illegal 6502"
     } else {
       result = opcode.name
     }
-    const value4 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 4) : 'zzzz'
-    const value2 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 2) : 'zz'
+    const value4 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 4) : "zzzz"
+    const value2 = (bp.hexvalue >= 0) ? toHex(bp.hexvalue, 2) : "zz"
     switch (opcode.mode) {
       case ADDR_MODE.IMPLIED: break
-      case ADDR_MODE.IMM: result += ' #$' + value2; break
-      case ADDR_MODE.ZP_REL: result += ' $' + value2; break
-      case ADDR_MODE.ZP_X: result += ' $' + value2 + ',X'; break
-      case ADDR_MODE.ZP_Y: result += ' $' + value2 + ',Y'; break
-      case ADDR_MODE.ABS: result += ' $' + value4; break
-      case ADDR_MODE.ABS_X: result += ' $' + value4 + ',X'; break
-      case ADDR_MODE.ABS_Y: result += ' $' + value4 + ',Y'; break
+      case ADDR_MODE.IMM: result += " #$" + value2; break
+      case ADDR_MODE.ZP_REL: result += " $" + value2; break
+      case ADDR_MODE.ZP_X: result += " $" + value2 + ",X"; break
+      case ADDR_MODE.ZP_Y: result += " $" + value2 + ",Y"; break
+      case ADDR_MODE.ABS: result += " $" + value4; break
+      case ADDR_MODE.ABS_X: result += " $" + value4 + ",X"; break
+      case ADDR_MODE.ABS_Y: result += " $" + value4 + ",Y"; break
       case ADDR_MODE.IND_X:
-        result += ' ($' + (opcode.name === 'JMP' ? value4 : value2) + ',X)'
+        result += " ($" + (opcode.name === "JMP" ? value4 : value2) + ",X)"
         break
-      case ADDR_MODE.IND_Y: result += ' ($' + value2 + '),Y'; break
+      case ADDR_MODE.IND_Y: result += " ($" + value2 + "),Y"; break
       case ADDR_MODE.IND:
-        result += ' ($' + (opcode.name === 'JMP' ? value4 : value2) + ')'
+        result += " ($" + (opcode.name === "JMP" ? value4 : value2) + ")"
         break
     }
   } else {
-    result = (bp.address >= 0) ? toHex(bp.address, 4) : 'Any'
+    result = (bp.address >= 0) ? toHex(bp.address, 4) : "Any"
   }
   if (bp.watchpoint) {
-    if (bp.memget) result += ' read'
-    if (bp.memset) result += ' write'
+    if (bp.memget) result += " read"
+    if (bp.memset) result += " write"
   } else {
     if (bp.hitcount > 1) {
       result += ` hit=${bp.hitcount}`
     }
-    if (bp.expression1.register !== '') {
-      result += ` (expression)`
+    if (bp.expression1.register !== "") {
+      result += " (expression)"
     }
   }
   return result
@@ -85,21 +85,21 @@ export const convertBreakpointExpression = (expression: string) => {
 
 
 export class Breakpoint {
-  address: number;
-  watchpoint: boolean;
-  instruction: boolean;
-  disabled: boolean;
-  hidden: boolean;
-  once: boolean;
-  memget: boolean;
-  memset: boolean;
-  expression1: BreakpointExpression;
-  expression2: BreakpointExpression;
-  expressionOperator: '' | '&&' | '||';
-  hexvalue: number;
-  hitcount: number;
-  nhits: number;
-  memoryBank: string;
+  address: number
+  watchpoint: boolean
+  instruction: boolean
+  disabled: boolean
+  hidden: boolean
+  once: boolean
+  memget: boolean
+  memset: boolean
+  expression1: BreakpointExpression
+  expression2: BreakpointExpression
+  expressionOperator: "" | "&&" | "||"
+  hexvalue: number
+  hitcount: number
+  nhits: number
+  memoryBank: string
 
   constructor() {
     this.address = -1  // any address (useful for expressions)
@@ -110,13 +110,13 @@ export class Breakpoint {
     this.once = false
     this.memget = false
     this.memset = true
-    this.expression1 = { register: '', address: 0x300, operator: '==', value: 0x80 }
-    this.expression2 = { register: '', address: 0x300, operator: '==', value: 0x80 }
-    this.expressionOperator = ''
+    this.expression1 = { register: "", address: 0x300, operator: "==", value: 0x80 }
+    this.expression2 = { register: "", address: 0x300, operator: "==", value: 0x80 }
+    this.expressionOperator = ""
     this.hexvalue = -1
     this.hitcount = 1
     this.nhits = 0
-    this.memoryBank = ''
+    this.memoryBank = ""
   }
 }
 

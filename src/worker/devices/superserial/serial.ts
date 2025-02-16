@@ -1,6 +1,6 @@
 // Super Serial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
-import { interruptRequest } from "../../cpu6502";
+import { interruptRequest } from "../../cpu6502"
 import { passTxCommData } from "../../worker2main"
 import { setSlotDriver, setSlotIOCallback } from "../../memory"
 import { SY6551, SY6551Ext, ConfigChange } from "./sy6551"
@@ -237,7 +237,7 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
   driver.set(rom.slice(0x700, 0x800))
   driver.set(rom, 0x100)
 
-  setSlotDriver(slot, driver);
+  setSlotDriver(slot, driver)
   setSlotIOCallback(slot, handleSerialIO)
 }
 
@@ -289,17 +289,17 @@ const handleSerialIO = (addr: number, val = -1): number => {
           acia.command = val  
         else
           return acia.command
-        break;
+        break
 
     case REG.CONTROL:
         if(val >= 0)
           acia.control = val
         else
           return acia.control
-        break;
+        break
 
     default:
-        console.log('SSC unknown softswitch', (addr&0xf).toString(16))
+        console.log("SSC unknown softswitch", (addr&0xf).toString(16))
         break
     }
 

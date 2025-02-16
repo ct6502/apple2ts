@@ -10,11 +10,11 @@
 // could perhaps use some tuning, but it already sounds pretty good, and better than the original single
 // instrument sounds.
 //
-let u5midi = false;
+let u5midi = false
 
 // Currently, argument is only 0x0 or 0x1.  Could be used for other things later depending on the title.
 export const setEnhancedMidi = (arg: number) => {
-  u5midi = arg&0x1 ? true : false;
+  u5midi = arg&0x1 ? true : false
 }
 
 //+-----------------+-----------------+-----------------+-----------------+-----------------+-----------------+----------------+ 
@@ -95,7 +95,7 @@ const InstU110ToGM = [
   [6,17, 72],
   [6,25, 61],
   [6,35, 115]
-];
+]
 
 // The output assigns the instrument stereo positioning
 //
@@ -109,7 +109,7 @@ const OutputToPan = [
   63,
   94,
   127
-];
+]
 
 //
 // Parts below are from U110 mapping taken from the .MID as described above.
@@ -122,7 +122,7 @@ const UG = {
   KeyRangeHigh: 4,
   Level: 5,
   ProgramOutput: 6
-};
+}
 //
 const u110ToGM = [
 // Default patch 0
@@ -269,69 +269,69 @@ const u110ToGM = [
 [0, 0, 75, 72, 84, 25, 4],
 [5, 0, 1, 0, 127, 127, 6],
 ]
-];
+]
 
-let gmNoteLookup = new Array(0);
+let gmNoteLookup = new Array(0)
 
 const setupGMPatch = (which: number, device: MIDIOutput) => {
 
-  gmNoteLookup = new Array(128);
-  gmNoteLookup.fill(0);
+  gmNoteLookup = new Array(128)
+  gmNoteLookup.fill(0)
 
   if (which === 0)
-    return;
+    return
 
-  const patch = u110ToGM[which];
-  console.log("Patch: ", which, patch);
+  const patch = u110ToGM[which]
+  console.log("Patch: ", which, patch)
 
   for(let i=0;i<6;i++)
   {
     // If program output is > 5, channel is unused
     if (patch[i][UG.ProgramOutput] > 5)
-      continue;
+      continue
 
     // find GM instrument
-    let gmi = 128;
-    const TM = patch[i][UG.ToneMedia];
-    const TN = patch[i][UG.ToneNumber] + 1;
+    let gmi = 128
+    const TM = patch[i][UG.ToneMedia]
+    const TN = patch[i][UG.ToneNumber] + 1
     for(let z=0;z<InstU110ToGM.length;z++)
     {
       if (TM === InstU110ToGM[z][0] && TN === InstU110ToGM[z][1] )
       {
-        gmi = InstU110ToGM[z][2] - 1;
-        break;
+        gmi = InstU110ToGM[z][2] - 1
+        break
       }
     }
 
     if (gmi === 128)
     {
-      console.log("Instrument (" + TM + " " + TN + ") not found!");
-      gmi = 1; //default to piano?
+      console.log("Instrument (" + TM + " " + TN + ") not found!")
+      gmi = 1 //default to piano?
     }
 
-    console.log("Channel " + i + " inst: " + gmi + " Range: " + patch[i][UG.KeyRangeLow].toString(16) + "-" + patch[i][UG.KeyRangeHigh].toString(16));
+    console.log("Channel " + i + " inst: " + gmi + " Range: " + patch[i][UG.KeyRangeLow].toString(16) + "-" + patch[i][UG.KeyRangeHigh].toString(16))
 
     // send change program
-    let arr = [0xc0+i, gmi];
-    device.send( arr );
+    let arr = [0xc0+i, gmi]
+    device.send( arr )
     // send change volume
-    let vol = patch[i][UG.Level] * 2;   // volumes seem way too quiet
+    let vol = patch[i][UG.Level] * 2   // volumes seem way too quiet
     if (vol > 127)
-      vol = 127;
-    arr = [0xb0+i, 0x07, vol];
+      vol = 127
+    arr = [0xb0+i, 0x07, vol]
     // volumes still seemed too quiet, leave this out for now
     //device.send( arr );
 
-    const pan = OutputToPan[patch[i][UG.ProgramOutput]];
+    const pan = OutputToPan[patch[i][UG.ProgramOutput]]
 
     // balance didn't always work, use PAN instead
     // send change pan
-    arr = [0xb0+i, 0x0a, pan];
-    device.send( arr );
+    arr = [0xb0+i, 0x0a, pan]
+    device.send( arr )
 
     // set notes used in this patch
     for(let j=patch[i][UG.KeyRangeLow];j<=patch[i][UG.KeyRangeHigh];j++)
-      gmNoteLookup[j] |= (1<<i);
+      gmNoteLookup[j] |= (1<<i)
   }
 }
 
@@ -339,23 +339,23 @@ const setupGMPatch = (which: number, device: MIDIOutput) => {
 export const checkEnhancedMidi = (msg: number[], device: MIDIOutput) : boolean => {
 
   if (u5midi === false)
-    return false;
+    return false
 
-  let notes = 0;
-  const no = msg[0];
+  let notes = 0
+  const no = msg[0]
   // only check for channel 1 change and note on/off here
   switch(no)
   {
     case 0xC0:
-      setupGMPatch(msg[1], device);
-      return true;
+      setupGMPatch(msg[1], device)
+      return true
     case 0x80:
     case 0x90:
-      notes = gmNoteLookup[msg[1]];
-      break;
+      notes = gmNoteLookup[msg[1]]
+      break
   }
 
-  let msgs: number[] = [];
+  let msgs: number[] = []
   if (notes)
   {
     //let nn = "012345";
@@ -365,8 +365,8 @@ export const checkEnhancedMidi = (msg: number[], device: MIDIOutput) : boolean =
       if (notes & (1<<i))
       {
         //nx = nx + ( no==0x80?"X":"O" );
-        msg[0] = no+i;
-        msgs = msgs.concat(msg);
+        msg[0] = no+i
+        msgs = msgs.concat(msg)
       }
       else
       {
@@ -380,11 +380,11 @@ export const checkEnhancedMidi = (msg: number[], device: MIDIOutput) : boolean =
   else
   {
     //console.log( no==0x80?"X":"O" );
-    return false;
+    return false
   }
 
   //console.log(msgs.map(function (x) {return x.toString(16);}).toString());
-  device.send(msgs);
+  device.send(msgs)
 
-  return true;
+  return true
 }

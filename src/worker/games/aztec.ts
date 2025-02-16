@@ -23,36 +23,36 @@ import { getTextPageAsString } from "../memory"
 // <spacebar>: fire gun
 const gamepad = (button: number) => {
   switch (button) {
-    case 0: addToBufferDebounce('JL'); break  // jump
-    case 1: addToBufferDebounce('G', 200); break       // crawl
-    case 2: addToBuffer('M'); addToBufferDebounce('O'); break  // open/dig
-    case 3: addToBufferDebounce('L'); break  // look/lunge
-    case 4: addToBufferDebounce('F'); break  // LB
-    case 5: addToBuffer('P'); addToBufferDebounce('T'); break  // 5 RB
+    case 0: addToBufferDebounce("JL"); break  // jump
+    case 1: addToBufferDebounce("G", 200); break       // crawl
+    case 2: addToBuffer("M"); addToBufferDebounce("O"); break  // open/dig
+    case 3: addToBufferDebounce("L"); break  // look/lunge
+    case 4: addToBufferDebounce("F"); break  // LB
+    case 5: addToBuffer("P"); addToBufferDebounce("T"); break  // 5 RB
     case 6: break  // 6 LT
     case 7: break  // 7 RT
-    case 8: addToBufferDebounce('Z'); break  // 8 Select?
+    case 8: addToBufferDebounce("Z"); break  // 8 Select?
     case 9: {
-      const str = getTextPageAsString();
+      const str = getTextPageAsString()
       if (str.includes("'N'")) {
-        addToBuffer('N');
+        addToBuffer("N")
       } else if (str.includes("'S'")) {
-        addToBuffer('S');
+        addToBuffer("S")
       } else if (str.includes("NUMERIC KEY")) {
-        addToBuffer('1');
+        addToBuffer("1")
       } else {
-        addToBuffer('N');
+        addToBuffer("N")
       }
       break  // 9 Start?
     }
     case 10: break  // 10 Left thumb button
     case 11: break  // 11 Right thumb button
-    case 12: addToBufferDebounce('L'); break  // 12 D-pad U, climb
-    case 13: addToBufferDebounce('M'); break  // 13 D-pad D, stop/spin
-    case 14: addToBufferDebounce('A'); break // 14 D-pad L
-    case 15: addToBufferDebounce('D'); break // 15 D-pad R
+    case 12: addToBufferDebounce("L"); break  // 12 D-pad U, climb
+    case 13: addToBufferDebounce("M"); break  // 13 D-pad D, stop/spin
+    case 14: addToBufferDebounce("A"); break // 14 D-pad L
+    case 15: addToBufferDebounce("D"); break // 15 D-pad R
     case -1: return
-    default: break;
+    default: break
   }
   // leftdown = 0
   // rightdown = 0
@@ -67,11 +67,11 @@ const joystick = (axes: number[]) => {
     rightdown = 0
     if (leftdown === 0 || leftdown > 2) {
       leftdown = 0
-      addToBuffer('A')
+      addToBuffer("A")
     } else if (leftdown === 1 && buttonreleased) {
-      addToBufferDebounce('W')
+      addToBufferDebounce("W")
     } else if (leftdown === 2 && buttonreleased) {
-      addToBufferDebounce('R');
+      addToBufferDebounce("R")
     }
     leftdown++
     buttonreleased = false
@@ -81,21 +81,21 @@ const joystick = (axes: number[]) => {
     leftdown = 0
     if (rightdown === 0 || rightdown > 2) {
       rightdown = 0
-      addToBuffer('D')
+      addToBuffer("D")
     } else if (rightdown === 1 && buttonreleased) {
-      addToBufferDebounce('W');
+      addToBufferDebounce("W")
     } else if (rightdown === 2 && buttonreleased) {
-      addToBufferDebounce('R');
+      addToBufferDebounce("R")
     }
     rightdown++
     buttonreleased = false
     return axes
   }
   if (axes[1] < -threshold) {
-    addToBufferDebounce('C');
+    addToBufferDebounce("C")
     return axes
   } else if (axes[1] > threshold) {
-    addToBufferDebounce('S');
+    addToBufferDebounce("S")
     return axes
   }
   buttonreleased = true

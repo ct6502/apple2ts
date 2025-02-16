@@ -16,7 +16,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const serializedBreakpoints = JSON.stringify(Array.from(breakpoints.entries()))
   const stackDump = sState.emulator.stackDump
   const displayState: DisplaySaveState = {
-    name: 'Apple2TS Emulator',
+    name: "Apple2TS Emulator",
     date: datetime,
     version: 1.0,
     arrowKeysAsJoystick: handleGetArrowKeysAsJoystick(),
@@ -34,10 +34,10 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   }
   sState.emulator = displayState
   const state = JSON.stringify(sState, null, 2)
-  const blob = new Blob([state], { type: "text/plain" });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
+  const blob = new Blob([state], { type: "text/plain" })
+  const link = document.createElement("a")
+  const url = URL.createObjectURL(blob)
+  link.setAttribute("href", url)
   let name = "apple2ts"
   for (let i = 0; i < MAX_DRIVES; i++) {
     const n = handleGetFilename(i)
@@ -46,11 +46,11 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
       break
     }
   }
-  link.setAttribute('download', `${name}.a2ts`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  link.setAttribute("download", `${name}.a2ts`)
+  link.style.visibility = "hidden"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 export const handleFileSave = (withSnapshots: boolean) => {
@@ -68,8 +68,8 @@ export const RestoreSaveState = (fileContents: string) => {
     setPreferenceShowScanlines(displayState.showScanlines)
   }
   // In an old version, property was renamed from uppercase to capsLock
-  if (displayState && ('uppercase' in displayState)) {
-    setPreferenceCapsLock(displayState['uppercase'] as boolean)
+  if (displayState && ("uppercase" in displayState)) {
+    setPreferenceCapsLock(displayState["uppercase"] as boolean)
   }
   if (displayState?.arrowKeysAsJoystick !== undefined) {
     passArrowKeysAsJoystick(displayState.arrowKeysAsJoystick)
@@ -106,9 +106,9 @@ export const RestoreSaveState = (fileContents: string) => {
         // If we had old breakpoints without an expression, just
         // fill in new empty expression1 and expression2.
         if (!bp.expression1) {
-          bp.expression1 = { register: '', address: 0, operator: '', value: 0 }
-          bp.expression2 = { register: '', address: 0, operator: '', value: 0 }
-          bp.expressionOperator = ''
+          bp.expression1 = { register: "", address: 0, operator: "", value: 0 }
+          bp.expression2 = { register: "", address: 0, operator: "", value: 0 }
+          bp.expressionOperator = ""
         }
         deserializedBreakpoints.set(bp.address, bp)
       }

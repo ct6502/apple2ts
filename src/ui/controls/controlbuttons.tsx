@@ -7,11 +7,11 @@ import {
   faPaste,
   faPowerOff,
   faSave,
-} from "@fortawesome/free-solid-svg-icons";
-import { handleSetCPUState } from "../controller";
-import { handleCopyToClipboard } from "../copycanvas";
-import { handleGetRunMode, passPasteText } from "../main2worker";
-import { handleFileSave } from "../savestate";
+} from "@fortawesome/free-solid-svg-icons"
+import { handleSetCPUState } from "../controller"
+import { handleCopyToClipboard } from "../copycanvas"
+import { handleGetRunMode, passPasteText } from "../main2worker"
+import { handleFileSave } from "../savestate"
 
 const ControlButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
@@ -33,7 +33,7 @@ const ControlButtons = (props: DisplayProps) => {
     <span id="tour-saverestore" className="flex-row">
     <button className="push-button" title="Restore State"
       onClick={() => props.setShowFileOpenDialog(true, 0)}>
-      <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: '0.9em' }} />
+      <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: "0.9em" }} />
     </button>
     <button className="push-button" title="Save State"
       onClick={() => handleFileSave(false)}
@@ -54,4 +54,4 @@ const ControlButtons = (props: DisplayProps) => {
   </span>
 }
 
-export default ControlButtons;
+export default ControlButtons

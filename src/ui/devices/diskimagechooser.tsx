@@ -1,7 +1,7 @@
 import React from "react"
 import floppyDisks from "./img/diskicons.png"
-import DiskImageDialog from "./diskimagedialog";
-import { handleSetDiskFromFile } from "./driveprops";
+import DiskImageDialog from "./diskimagedialog"
+import { handleSetDiskFromFile } from "./driveprops"
 
 export const DiskImageChooser = (props: DisplayProps) => {
   const [open, setOpen] = React.useState(false)

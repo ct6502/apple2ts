@@ -29,9 +29,9 @@ export const emulatorSoundEnable = (enable: boolean) => {
 
 const changeAudioContexts = () => {
   if (isAudioButtonEnabled && emulatorSoundEnabled) {
-    audioContexts.forEach(fn => fn(true));
+    audioContexts.forEach(fn => fn(true))
   } else {
-    audioContexts.forEach(fn => fn(false));
+    audioContexts.forEach(fn => fn(false))
   }
 }
 
@@ -47,8 +47,8 @@ const startOscillator = async () => {
   audioContext = new AudioContext({latencyHint: 0, sampleRate: 44100})
   registerAudioContext(enableContext)
   try {
-    await audioContext.audioWorklet.addModule('worklet/oscillator.js')
-    speaker = new AudioWorkletNode(audioContext, 'oscillator')
+    await audioContext.audioWorklet.addModule("worklet/oscillator.js")
+    speaker = new AudioWorkletNode(audioContext, "oscillator")
     speaker.connect(audioContext.destination)
   } catch {
     console.error("audioWorklet not available - must run on https")
@@ -68,7 +68,7 @@ const getAudioContext = () => {
 export const clickSpeaker = (cycleCount: number) => {
   if (!(isAudioEnabled())) return
   if (getAudioContext().state !== "running") {
-    audioContext.resume();
+    audioContext.resume()
   }
   try {
     if (speaker) {
@@ -77,5 +77,5 @@ export const clickSpeaker = (cycleCount: number) => {
   } catch {
     console.error("error")
   }
-};
+}
 

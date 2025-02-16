@@ -11,12 +11,12 @@ const decodeBranch = (addr: number, vLo: number) => {
 
 const getInstructionString = (addr: number, code: PCodeInstr,
   vLo: number, vHi: number) => {
-  let value = ''
+  let value = ""
   let hex = `${toHex(code.pcode)}`
-  let sLo = ''
-  let sHi = ''
+  let sLo = ""
+  let sHi = ""
   switch (code.bytes) {
-    case 1: hex += '      '; break
+    case 1: hex += "      "; break
     case 2: sLo = toHex(vLo); hex += ` ${sLo}   `; break
     case 3: sLo = toHex(vLo); sHi = toHex(vHi); hex += ` ${sLo} ${sHi}`; break
   }
@@ -40,17 +40,17 @@ const getInstructionString = (addr: number, code: PCodeInstr,
 export const getDisassembly = (start: number) => {
   let addr = start
   if (addr > (0xFFFF - nlines)) addr = 0xFFFF - nlines
-  let r = ''
+  let r = ""
   for (let i=0; i < nlines; i++) {
     if (addr > 0xFFFF) {
-      r += '\n'
+      r += "\n"
       continue
     }
     const instr = memGetRaw(addr)
     const code =  pcodes[instr]
     const vLo = memGetRaw(addr + 1)
     const vHi = memGetRaw(addr + 2)
-    r += getInstructionString(addr, code, vLo, vHi) + '\n'
+    r += getInstructionString(addr, code, vLo, vHi) + "\n"
     addr += code.bytes
   }
   return r

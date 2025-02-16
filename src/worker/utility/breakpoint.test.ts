@@ -1,14 +1,14 @@
-import { doSetBreakpoints, hitBreakpoint } from "../cpu6502";
-import { setPC, setX } from "../instructions";
-import { memGet, memSet } from "../memory";
-import { Breakpoint, BreakpointMap } from "../../common/breakpoint";
+import { doSetBreakpoints, hitBreakpoint } from "../cpu6502"
+import { setPC, setX } from "../instructions"
+import { memGet, memSet } from "../memory"
+import { Breakpoint, BreakpointMap } from "../../common/breakpoint"
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
 
 // ************ Breakpoints - test all properties ************
 
-test('hitBreakpoint', () => {
+test("hitBreakpoint", () => {
   const address = 0x2000
   const bp = new Breakpoint()
   bp.address = address
@@ -43,8 +43,8 @@ test('hitBreakpoint', () => {
   expect(hitBreakpoint()).toEqual(true)
   bp.hitcount = 0
   expect(hitBreakpoint()).toEqual(true)
-  bp.expression1.register = 'X'
-  bp.expression1.operator = '=='
+  bp.expression1.register = "X"
+  bp.expression1.operator = "=="
   bp.expression1.value = 0x20
   expect(hitBreakpoint()).toEqual(false)
   setX(0x20)
@@ -66,14 +66,14 @@ test('hitBreakpoint', () => {
   expect(hitBreakpoint()).toEqual(false)
   bp.expressionOperator = "||"
   expect(hitBreakpoint()).toEqual(true)
-  bp.expression1.register = ''
+  bp.expression1.register = ""
   expect(hitBreakpoint()).toEqual(true)
 })
 
 
 // ************ Breakpoints memory bank ************
 
-test('memory banks address range', () => {
+test("memory banks address range", () => {
   const bp = new Breakpoint()
   bp.address = 0xF800
   setPC(bp.address)
@@ -93,7 +93,7 @@ test('memory banks address range', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('memory banks MAIN', () => {
+test("memory banks MAIN", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0x300
@@ -133,7 +133,7 @@ test('memory banks MAIN', () => {
   expect(hitBreakpoint()).toEqual(false)
 })
 
-test('memory banks AUX', () => {
+test("memory banks AUX", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0x300
@@ -167,7 +167,7 @@ test('memory banks AUX', () => {
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
-test('memory banks ROM', () => {
+test("memory banks ROM", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
@@ -196,7 +196,7 @@ test('memory banks ROM', () => {
   expect(hitBreakpoint()).toEqual(false)
 })
 
-test('memory banks MAIN-DXXX-1', () => {
+test("memory banks MAIN-DXXX-1", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
@@ -218,7 +218,7 @@ test('memory banks MAIN-DXXX-1', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('memory banks MAIN-DXXX-2', () => {
+test("memory banks MAIN-DXXX-2", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
@@ -240,7 +240,7 @@ test('memory banks MAIN-DXXX-2', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('memory banks AUX-DXXX-1', () => {
+test("memory banks AUX-DXXX-1", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
@@ -264,7 +264,7 @@ test('memory banks AUX-DXXX-1', () => {
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
-test('memory banks AUX-DXXX-2', () => {
+test("memory banks AUX-DXXX-2", () => {
   bpMap.clear()
   const bp = new Breakpoint()
   bp.address = 0xD000
@@ -288,7 +288,7 @@ test('memory banks AUX-DXXX-2', () => {
   memSet(0xC008, 1)  // enable Main memory $0-$1FF, $D000-$FFFF
 })
 
-test('memory banks Internal $CXXX ROM', () => {
+test("memory banks Internal $CXXX ROM", () => {
   const bp = new Breakpoint()
   bp.address = 0xC100
   setPC(bp.address)
@@ -332,7 +332,7 @@ test('memory banks Internal $CXXX ROM', () => {
   expect(hitBreakpoint()).toEqual(true)
 })
 
-test('memory banks Peripheral card ROM', () => {
+test("memory banks Peripheral card ROM", () => {
   const bp = new Breakpoint()
   bp.address = 0xC100
   setPC(bp.address)

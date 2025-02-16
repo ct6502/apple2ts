@@ -1,11 +1,11 @@
-import Joyride, { ACTIONS, CallBackProps, EVENTS, Step } from 'react-joyride'
-import { useGlobalContext } from '../globalcontext'
-import { tourMain } from './tourmain'
-import { tourSettings } from './toursettings'
-import { tourDebug } from './tourdebug'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGlobe } from '@fortawesome/free-solid-svg-icons'
-import { DropdownButton } from '../controls/dropdownbutton'
+import Joyride, { ACTIONS, CallBackProps, EVENTS, Step } from "react-joyride"
+import { useGlobalContext } from "../globalcontext"
+import { tourMain } from "./tourmain"
+import { tourSettings } from "./toursettings"
+import { tourDebug } from "./tourdebug"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faGlobe } from "@fortawesome/free-solid-svg-icons"
+import { DropdownButton } from "../controls/dropdownbutton"
 
 const RunTour = () => {
   const { runTour: runTour, setRunTour: setRunTour,
@@ -23,16 +23,16 @@ const RunTour = () => {
       setTourIndex(data.index + (data.action === ACTIONS.PREV ? -1 : 1))
     }  
     if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE) {
-      setRunTour('')
+      setRunTour("")
       setTourIndex(0)
       // If our URL contains the "tour" parameter, be sure to turn it off
       // and reload the page. Otherwise if the user saves that URL or
       // posts it, then the tour will run every time the page is loaded.
       const params = new URLSearchParams(window.location.search.toLowerCase())
-      if (params.get('tour')) {
+      if (params.get("tour")) {
         // Remove the 'tour' parameter      
         const url = new URL(window.location.href)
-        url.searchParams.delete('tour')
+        url.searchParams.delete("tour")
         // Reload the page with the updated URL
         window.location.href = url.toString()
       }
@@ -42,13 +42,13 @@ const RunTour = () => {
   let tour: Step[] = []
 
   switch (runTour.toLowerCase()) {
-    case 'main':
+    case "main":
       tour = tourMain
       break
-    case 'debug':
+    case "debug":
       tour = tourDebug
       break
-    case 'settings':
+    case "settings":
       tour = tourSettings
       break
     default:
@@ -56,16 +56,16 @@ const RunTour = () => {
   }
 
   const selectGuidedTour = (index: number) => {
-    let tourName = ''
+    let tourName = ""
     switch (index) {
       case 0:
-        tourName = 'main'
+        tourName = "main"
         break
       case 1:
-        tourName = 'settings'
+        tourName = "settings"
         break
       case 2:
-        tourName = 'debug'
+        tourName = "debug"
         break
       default:
         break
@@ -75,11 +75,11 @@ const RunTour = () => {
   }
 
   const locale = {
-    back: 'Back',
-    close: 'Close',
-    last: 'Finish',
-    next: 'Next',
-    skip: 'Close',
+    back: "Back",
+    close: "Close",
+    last: "Finish",
+    next: "Next",
+    skip: "Close",
   }
 
   return (
@@ -112,7 +112,7 @@ const RunTour = () => {
       }
       <DropdownButton 
         currentIndex = {-1}
-        itemNames = {['Guided Tour: Main', 'Guided Tour: Settings', 'Guided Tour: Debug']}
+        itemNames = {["Guided Tour: Main", "Guided Tour: Settings", "Guided Tour: Debug"]}
         closeCallback = {selectGuidedTour}
         icon = {<FontAwesomeIcon icon={faGlobe}/>}
         tooltip = "Guided Tour"

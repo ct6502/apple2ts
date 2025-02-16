@@ -1,5 +1,5 @@
 import { convertdsk2woz } from "./convertdsk2woz"
-import { crc32, MAX_DRIVES, replaceSuffix, isHardDriveImage } from "../../common/utility";
+import { crc32, MAX_DRIVES, replaceSuffix, isHardDriveImage } from "../../common/utility"
 
 const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
@@ -68,7 +68,7 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   if (newData.length === 0) {
     return new Uint8Array()
   }
-  driveState.filename = replaceSuffix(driveState.filename, 'woz')
+  driveState.filename = replaceSuffix(driveState.filename, "woz")
   driveState.diskHasChanges = true
   driveState.lastWriteTime = Date.now()
   return newData
@@ -82,9 +82,9 @@ const decode2MG = (driveState: DriveState, diskData: Uint8Array): Uint8Array => 
 //    const nblocks = int32(diskData.slice(0x14, 0x18))
   const offset = int32(diskData.slice(0x18, 0x1c))
   const nbytes = int32(diskData.slice(0x1c, 0x20))
-  let magic = ''
+  let magic = ""
   for (let i = 0; i < MAX_DRIVES; i++) magic += String.fromCharCode(diskData[i]) 
-  if (magic !== '2IMG') {
+  if (magic !== "2IMG") {
     console.error("Corrupt 2MG file.")
     return new Uint8Array()
   }
@@ -92,7 +92,7 @@ const decode2MG = (driveState: DriveState, diskData: Uint8Array): Uint8Array => 
     console.error("Only ProDOS 2MG files are supported.")
     return new Uint8Array()
   }
-  driveState.filename = replaceSuffix(driveState.filename, 'hdv')
+  driveState.filename = replaceSuffix(driveState.filename, "hdv")
   driveState.diskHasChanges = true
   driveState.lastWriteTime = Date.now()
   return diskData.slice(offset, offset + nbytes)
@@ -103,11 +103,11 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
   const fname = driveState.filename.toLowerCase()
   if (isHardDriveImage(fname)) {
     driveState.hardDrive = true
-    driveState.status = ''
-    if (fname.endsWith('.hdv') || fname.endsWith('.po')) {
+    driveState.status = ""
+    if (fname.endsWith(".hdv") || fname.endsWith(".po")) {
       return diskData
     }
-    if (fname.endsWith('.2mg')) {
+    if (fname.endsWith(".2mg")) {
       return decode2MG(driveState, diskData)
     }
   }
@@ -120,7 +120,7 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
   if (decodeWoz1(driveState, diskData)) {
     return diskData
   }
-  if (fname !== '') {
+  if (fname !== "") {
     console.error("Unknown disk format.")
   }
   return new Uint8Array()

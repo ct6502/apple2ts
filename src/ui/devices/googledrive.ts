@@ -9,8 +9,8 @@ let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
   tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: '831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/drive.file',
+    client_id: "831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com",
+    scope: "https://www.googleapis.com/auth/drive.file",
     callback: () => {}, // defined later
   })
 
@@ -20,38 +20,38 @@ export class GoogleDrive implements CloudProvider {
   createPicker = (view: string, filter?: string) => {
     const showPicker = (view: string, filter?: string) => {
       let googleView: google.picker.DocsView
-      if (view === 'file') {
+      if (view === "file") {
         googleView = new google.picker.DocsView(google.picker.ViewId.DOCS)
           .setIncludeFolders(true)
           .setMimeTypes("application/octet-stream")
         if (filter) {
-          const modifiedFilter = filter.replace(/,/g, '|')
+          const modifiedFilter = filter.replace(/,/g, "|")
           googleView.setQuery(modifiedFilter)
         }
       } else {
         googleView = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
           .setSelectFolderEnabled(true)
           .setIncludeFolders(true)
-          .setMimeTypes('application/vnd.google-apps.folder')
+          .setMimeTypes("application/vnd.google-apps.folder")
       }
       const picker = new google.picker.PickerBuilder()
         .addView(googleView)
         // .enableFeature(google.picker.Feature.NAV_HIDDEN)  // hide the nav bar at the top
         .enableFeature(google.picker.Feature.MINE_ONLY)   // only show user's drive files
         .setOAuthToken(g_accessToken)
-        .setDeveloperKey('AIzaSyAPlfA031A8MyXrDd-o9xaHjEmEUkW64R4')
+        .setDeveloperKey("AIzaSyAPlfA031A8MyXrDd-o9xaHjEmEUkW64R4")
         .setCallback(this.pickerCallback)
-        .setAppId('831415990117')
-        .setTitle(`Select a ${view === 'file' ? 'disk image' : 'folder'}`)
+        .setAppId("831415990117")
+        .setTitle(`Select a ${view === "file" ? "disk image" : "folder"}`)
         .build()
       picker.setVisible(true)
     }
 
     if (!g_pickerInited) {
-      gapi.load('picker', () => {
+      gapi.load("picker", () => {
         g_pickerInited = true
       } )
-      gapi.load('client:auth2', () => {
+      gapi.load("client:auth2", () => {
       } )
     }
 
@@ -67,7 +67,7 @@ export class GoogleDrive implements CloudProvider {
     if (g_accessToken === "") {
       // Prompt the user to select a Google Account and ask for consent to share their data
       // when establishing a new session.
-      this.tokenClient.requestAccessToken({prompt: 'consent'})
+      this.tokenClient.requestAccessToken({prompt: "consent"})
     } else {
       // Skip display of account chooser and consent dialog for an existing session.
       showPicker(view, filter)
@@ -124,7 +124,7 @@ export class GoogleDrive implements CloudProvider {
       const url = `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${g_accessToken}`
+          "Authorization": `Bearer ${g_accessToken}`
         }
       })
       if (response.ok) {
@@ -162,20 +162,20 @@ export class GoogleDrive implements CloudProvider {
           parents: [cloudData.parentID],
         }
         const form = new FormData()
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
-        form.append('file', blob)
+        form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }))
+        form.append("file", blob)
 
-        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST',
-          headers: new Headers({ 'Authorization': 'Bearer ' + g_accessToken }),
+        const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+          method: "POST",
+          headers: new Headers({ "Authorization": "Bearer " + g_accessToken }),
           body: form,
         })
 
         if (response.ok) {
           console.log(`File upload success: ${filename}`)
           // Make sure to get our new Google Drive fileId so we can sync later.
-          const responseData = await response.json();
-          cloudData.itemId = responseData.id;
+          const responseData = await response.json()
+          cloudData.itemId = responseData.id
           cloudData.syncStatus = CLOUD_SYNC.ACTIVE
           return cloudData
         } else {
@@ -199,10 +199,10 @@ export class GoogleDrive implements CloudProvider {
     try {
       // // To update the file, we just need to send the blob using PATCH with no metadata.
       const form = new FormData()
-      form.append('file', blob)
+      form.append("file", blob)
       const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${cloudData.itemId}?uploadType=media`, {
-        method: 'PATCH',
-        headers: new Headers({ 'Authorization': 'Bearer ' + g_accessToken }),
+        method: "PATCH",
+        headers: new Headers({ "Authorization": "Bearer " + g_accessToken }),
         body: blob,
       })
 
@@ -211,12 +211,12 @@ export class GoogleDrive implements CloudProvider {
         cloudData.syncStatus = CLOUD_SYNC.ACTIVE
         return true
       } else {
-        console.error('Error syncing file:', response.statusText)
+        console.error("Error syncing file:", response.statusText)
         cloudData.syncStatus = CLOUD_SYNC.FAILED
         return false
       }
     } catch (error) {
-      console.error('Error syncing file:', error)
+      console.error("Error syncing file:", error)
       cloudData.syncStatus = CLOUD_SYNC.FAILED
       return false
     }

@@ -1,27 +1,27 @@
-import { useEffect, useRef, useState } from "react";
-import { FILE_SUFFIXES } from "../common/utility";
-import BinaryFileDialog from "./devices/binaryfiledialog";
-import { RestoreSaveState } from "./savestate";
-import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops";
+import { useEffect, useRef, useState } from "react"
+import { FILE_SUFFIXES } from "../common/utility"
+import BinaryFileDialog from "./devices/binaryfiledialog"
+import { RestoreSaveState } from "./savestate"
+import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops"
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
   const [binaryBuffer, setBinaryBuffer] = useState(new Uint8Array())
-  const hiddenFileOpen = useRef<HTMLInputElement>(null);
+  const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const readFile = async (file: File, index: number) => {
     const fname = file.name.toLowerCase()
-    if (fname.endsWith('a2ts')) {
+    if (fname.endsWith("a2ts")) {
       const fileread = new FileReader()
       fileread.onload = function (ev) {
         if (ev.target) {
           RestoreSaveState(ev.target.result as string)
         }
-      };
+      }
       fileread.readAsText(file)
     } else {
-      const buffer = await file.arrayBuffer();
-      if (fname.endsWith('.bin')) {
+      const buffer = await file.arrayBuffer()
+      if (fname.endsWith(".bin")) {
         // Display dialog, ask for address for where to put into memory
         setBinaryBuffer(new Uint8Array(buffer))
         if (buffer.byteLength > 0) {
@@ -51,13 +51,13 @@ const FileInput = (props: DisplayProps) => {
   const handleDrag = (e: DragEvent) => { e.preventDefault(); e.stopPropagation() }
 
   useEffect(() => {
-    window.addEventListener('drop', handleDrop)
-    window.addEventListener('dragover', handleDrag)
+    window.addEventListener("drop", handleDrop)
+    window.addEventListener("dragover", handleDrag)
 
     // Clean up event listener on unmount
     return () => {
-      window.removeEventListener('drop', handleDrop)
-      window.removeEventListener('dragover', handleDrag)
+      window.removeEventListener("drop", handleDrop)
+      window.removeEventListener("dragover", handleDrag)
     }
   })
 
@@ -74,7 +74,7 @@ const FileInput = (props: DisplayProps) => {
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current
       // Hack - clear out old file so we can pick the same file again
-      fileInput.value = "";
+      fileInput.value = ""
       // Display the dialog.
       fileInput.click()
     }
@@ -87,7 +87,7 @@ const FileInput = (props: DisplayProps) => {
         accept={isTouchDevice ? "" : FILE_SUFFIXES}
         ref={hiddenFileOpen}
         onChange={handleFileSelected}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
       <BinaryFileDialog displayDialog={displayBinaryDialog}
         displayClose={() => setDisplayBinaryDialog(false)}
@@ -96,5 +96,5 @@ const FileInput = (props: DisplayProps) => {
   )
 }
 
-export default FileInput;
+export default FileInput
 

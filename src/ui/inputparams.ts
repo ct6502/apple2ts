@@ -12,74 +12,74 @@ export const handleInputParams = () => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { setRunTour } = useGlobalContext()
 
-  if (params.get('capslock') === 'off') {
+  if (params.get("capslock") === "off") {
     passCapsLock(false)
   }
 
-  if (params.get('debug') === 'on') {
+  if (params.get("debug") === "on") {
     passSetDebug(true)
   }
 
-  const speed = params.get('speed')
+  const speed = params.get("speed")
   if (speed) {
     switch (speed) {
-      case 'fast':
+      case "fast":
         passSpeedMode(1)
         break
-      case 'ludicrous':
-      case 'warp':
+      case "ludicrous":
+      case "warp":
           passSpeedMode(2)
         break
     }
   }
 
-  if (params.get('sound') === 'off') {
+  if (params.get("sound") === "off") {
     audioEnable(false)
   }
 
-  const colorMode = params.get('color')
+  const colorMode = params.get("color")
   if (colorMode) {
-    const colors = ['color', 'nofringe', 'green', 'amber', 'white', 'inverse']
+    const colors = ["color", "nofringe", "green", "amber", "white", "inverse"]
     const mode = colors.indexOf(colorMode)
     if (mode >= 0) passColorMode(mode as COLOR_MODE)
   }
 
-  if (params.get('scanlines') === 'on') {
+  if (params.get("scanlines") === "on") {
     passShowScanlines(true)
   }
 
-  const ramDisk = params.get('ramdisk')
+  const ramDisk = params.get("ramdisk")
   if (ramDisk) {
-    const sizes = ['64', '512', '1024', '4096', '8192']
+    const sizes = ["64", "512", "1024", "4096", "8192"]
     const index = sizes.indexOf(ramDisk)
     if (index >= 0) {
       passSetRamWorks(parseInt(sizes[index]))
     }
   }
 
-  if (params.get('theme') === 'dark') {
+  if (params.get("theme") === "dark") {
     passDarkMode(true)
   }
 
-  const address = params.get('address')
+  const address = params.get("address")
   if (address) {
     setDefaultBinaryAddress(parseInt(address, 16))
   }
 
-  const tour = params.get('tour')
+  const tour = params.get("tour")
   if (tour) {
     setRunTour(tour)
   }
 
-  const run = params.get('run')
-  const doRun = !(run === '0' || run === 'false')
+  const run = params.get("run")
+  const doRun = !(run === "0" || run === "false")
   // Use the original case of the BASIC program.
-  const basic = porig.get('basic') || porig.get('BASIC')
+  const basic = porig.get("basic") || porig.get("BASIC")
   const hasBasicProgram = basic !== null
   if (basic) {
     const trimmed = basic.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-    const cmd = (hasLineNumbers && doRun) ? '\nRUN\n' : '\n'
+    const cmd = (hasLineNumbers && doRun) ? "\nRUN\n" : "\n"
     // Wait a bit to give the emulator time to start and boot any disks.
     setTimeout(() => { passPasteText(basic + cmd) }, 1500)
   }
@@ -98,8 +98,8 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
   // So here we check for a --urlparam command line argument and load it if it exists.
   // For example, npm start --urlparam=speed=fast#Replay
   if (process.env.npm_config_urlparam) {
-    if (window.location.search === '') {
-      window.location.href = window.location.pathname + '?' + process.env.npm_config_urlparam
+    if (window.location.search === "") {
+      window.location.href = window.location.pathname + "?" + process.env.npm_config_urlparam
     }
   }
   if (fragment.length >= 2) {

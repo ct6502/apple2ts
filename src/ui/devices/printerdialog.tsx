@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useRef } from "react"
 import { Printer } from "./iwii"
-import { imagewriter2 } from "./img/imagewriter2";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { imagewriter2 } from "./img/imagewriter2"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faFolderOpen,
   faPrint,
   faSave,
   faTrash,
   faXmark
-} from "@fortawesome/free-solid-svg-icons";
+} from "@fortawesome/free-solid-svg-icons"
 export interface CopyCanvasProps {
   srcCanvas: HTMLCanvasElement
 }
@@ -28,7 +28,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
     const render = () => {
       if (canvasRef.current) {
         const destCanvas = canvasRef.current
-        const destContext: CanvasRenderingContext2D | null = destCanvas.getContext('2d')
+        const destContext: CanvasRenderingContext2D | null = destCanvas.getContext("2d")
         // copy internal canvas over the other one
         if (destContext) {
           //copy the data, scale if necessary
@@ -51,7 +51,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
 
   return <canvas ref={canvasRef} {...rest}
     className="printerCanvas"
-    style={{ width: '600px', height: '700px' }}
+    style={{ width: "600px", height: "700px" }}
     hidden={false}
     width={width} height={height} />
 }
@@ -64,34 +64,34 @@ export interface PrinterDialogProps {
 }
 
 const PrinterDialog = (props: PrinterDialogProps) => {
-  const { open, onClose } = props;
+  const { open, onClose } = props
   const [state] = useState({
     canvasRef: React.createRef<HTMLCanvasElement>()
   })
 
   const handleClose = () => {
     onClose()
-  };
+  }
 
   const handlePrint = () => {
     props.printer.print()
-  };
+  }
 
   const handleClear = () => {
     props.printer.reset()
-  };
+  }
 
   const handleSaveData = () => {
     props.printer.save()
-  };
+  }
 
   const handleReprint = () => {
     props.printer.reprint()
-  };
+  }
 
   useEffect(() => {
     return () => { }
-  }, [state.canvasRef, props.canvas]);
+  }, [state.canvasRef, props.canvas])
 
   const buttonColor = "#404040"
 

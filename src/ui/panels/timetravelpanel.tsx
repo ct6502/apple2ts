@@ -1,11 +1,11 @@
-import React, { useRef } from "react";
+import React, { useRef } from "react"
 import {
   handleGetTimeTravelThumbnails,
   handleGetTempStateIndex,
   passTimeTravelIndex,
   passSetRunMode
-} from "../main2worker";
-import { RUN_MODE, toHex } from "../../common/utility";
+} from "../main2worker"
+import { RUN_MODE, toHex } from "../../common/utility"
 const clock = 1020488
 
 const TimeTravelPanel = () => {
@@ -21,32 +21,32 @@ const TimeTravelPanel = () => {
   const getTimeTravelThumbnails = () => {
     const iTempState = handleGetTempStateIndex()
     const thumbnails = handleGetTimeTravelThumbnails()
-    let thumbnailText = ''
+    let thumbnailText = ""
     const thumbImg = (iTempState >= 0 && thumbnails.length > 0) ?
-      `${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}` : ''
+      `${thumbnails[Math.min(iTempState, thumbnails.length - 1)].thumbnail}` : ""
     // The 170px is the width of the thumbnail images.
-    const thumbImage = (thumbImg != '') ? <img src={thumbImg} /> : <div style={{width: "170px"}}></div>
+    const thumbImage = (thumbImg != "") ? <img src={thumbImg} /> : <div style={{width: "170px"}}></div>
     for (let i = 0; i < thumbnails.length; i++) {
       const time = convertTime(thumbnails[i].s6502.cycleCount)
       thumbnailText += `t=${time} PC=${toHex(thumbnails[i].s6502.PC)}\n`
     }
     // Make sure our new snapshot is visible in the scroll range
     setTimeout(() => {
-      const lineToScrollTo = document.getElementById('tempStateIndex')
+      const lineToScrollTo = document.getElementById("tempStateIndex")
       if (lineToScrollTo && stateThumbRef && stateThumbRef.current) {
         const div: HTMLDivElement = stateThumbRef.current
         // Calculate the scroll position to make the paragraph visible
         const containerRect = div.getBoundingClientRect()
         const targetRect = lineToScrollTo.getBoundingClientRect()
-        const isTargetAboveViewport = targetRect.top < containerRect.top;
-        const isTargetBelowViewport = targetRect.bottom > containerRect.bottom;
+        const isTargetAboveViewport = targetRect.top < containerRect.top
+        const isTargetBelowViewport = targetRect.bottom > containerRect.bottom
         if (isTargetAboveViewport || isTargetBelowViewport) {
           const scrollTop = targetRect.top - containerRect.top + div.scrollTop
           div.scrollTop = scrollTop
         }
       }
     }, 50)
-    return { iTempState, thumbnailStrings: thumbnailText.split('\n'), thumbImage }
+    return { iTempState, thumbnailStrings: thumbnailText.split("\n"), thumbImage }
   }
 
   const selectStateLine = (index: number) => {
@@ -54,18 +54,18 @@ const TimeTravelPanel = () => {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       e.preventDefault()  // suppress normal scroll events
       const iTempState = handleGetTempStateIndex()
       const thumbnails = handleGetTimeTravelThumbnails()
       let index = iTempState
       const delta = e.metaKey ? 100 : (e.ctrlKey ? 10 : 1)
-      index = (e.key === 'ArrowUp') ? index - delta : index + delta
+      index = (e.key === "ArrowUp") ? index - delta : index + delta
       index = Math.max(0, Math.min(thumbnails.length - 1, index))
       if (index !== iTempState) {
         passTimeTravelIndex(index)
       }
-    } else if (e.key === 'Enter' || e.key === ' ') {
+    } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault()
       passSetRunMode(RUN_MODE.RUNNING)
     }
@@ -97,18 +97,18 @@ const TimeTravelPanel = () => {
           onKeyDown={(e) => handleKeyDown(e)}
           tabIndex={-1}
           style={{
-            width: '15em',
-            height: `130pt`,
-            overflow: 'auto',
-            cursor: 'pointer',
-            userSelect: 'none',
+            width: "15em",
+            height: "130pt",
+            overflow: "auto",
+            cursor: "pointer",
+            userSelect: "none",
           }}>
           {timeTravelThumbnails}
         </div>
         <div
           style={{
-            marginTop: '30px',
-            marginLeft: '5px',
+            marginTop: "30px",
+            marginLeft: "5px",
           }}>
           {thumbImage}
         </div>

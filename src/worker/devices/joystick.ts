@@ -146,7 +146,7 @@ const handleGamepad = (gp: number) => {
       gamePadMapping(i, gamePads.length > 1, gp === 1)
       buttonPressed = true
     }
-  });
+  })
   // Special "no buttons down" call
   if (!buttonPressed) gamePadMapping(-1, gamePads.length > 1, gp === 1)
 

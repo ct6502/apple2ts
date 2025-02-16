@@ -16,7 +16,7 @@ const write_byte = (woz: Uint8Array, position: number, value: number) => {
   const byte_position = position >>> 3
   woz[byte_position] |= value >>> shift
   if (shift) woz[byte_position+1] |= value << (8 - shift)
-  return position + 8;
+  return position + 8
 }
 
 /**
@@ -27,9 +27,9 @@ const write_byte = (woz: Uint8Array, position: number, value: number) => {
   @returns The position immediately after the encoded byte.
 */
 const write_4_and_4 = (woz: Uint8Array, position: number, value: number) => {
-  position = write_byte(woz, position, (value >>> 1) | 0xAA);
-  position = write_byte(woz, position, value | 0xAA);
-  return position;
+  position = write_byte(woz, position, (value >>> 1) | 0xAA)
+  position = write_byte(woz, position, value | 0xAA)
+  return position
 }
 
 /**
@@ -39,7 +39,7 @@ const write_4_and_4 = (woz: Uint8Array, position: number, value: number) => {
   @returns The position immediately after the sync word.
 */
 const write_sync = (woz: Uint8Array, position: number) => {
-  position = write_byte(woz, position, 0xFF);
+  position = write_byte(woz, position, 0xFF)
   // Skip two bits, i.e. leave them as 0s
   return position + 2
 }
@@ -60,7 +60,7 @@ const encode_6_and_2 = (src: Uint8Array) => {
     0xDF, 0xE5, 0xE6, 0xE7, 0xE9, 0xEA, 0xEB, 0xEC,
     0xED, 0xEE, 0xEF, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6,
     0xF7, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF
-  ];
+  ]
 
   const dest = new Uint8Array(343)
 
@@ -68,35 +68,35 @@ const encode_6_and_2 = (src: Uint8Array) => {
   // and combined copies of the bottom two bits of the sector
   // contents; the 256 bytes afterwards are the remaining
   // six bits.
-  const bit_reverse = [0, 2, 1, 3];
+  const bit_reverse = [0, 2, 1, 3]
   for (let c = 0; c < 84; c++) {
     dest[c] =
       bit_reverse[src[c] & 3] |
       (bit_reverse[src[c + 86] & 3] << 2) |
-      (bit_reverse[src[c + 172] & 3] << 4);
+      (bit_reverse[src[c + 172] & 3] << 4)
   }
   dest[84] =
     (bit_reverse[src[84] & 3] << 0) |
-    (bit_reverse[src[170] & 3] << 2);
+    (bit_reverse[src[170] & 3] << 2)
   dest[85] =
       (bit_reverse[src[85] & 3] << 0) |
-      (bit_reverse[src[171] & 3] << 2);
+      (bit_reverse[src[171] & 3] << 2)
 
   for (let c = 0; c < 256; c++) {
-    dest[86 + c] = src[c] >>> 2;
+    dest[86 + c] = src[c] >>> 2
   }
 
   // Exclusive OR each byte with the one before it.
-  dest[342] = dest[341];
-  let location = 342;
+  dest[342] = dest[341]
+  let location = 342
   while(location > 1) {
-    location--;
-    dest[location] ^= dest[location - 1];
+    location--
+    dest[location] ^= dest[location - 1]
   }
 
   // Map six-bit values up to full bytes.
   for (let c = 0; c < 343; c++) {
-    dest[c] = six_and_two_mapping[dest[c]];
+    dest[c] = six_and_two_mapping[dest[c]]
   }
   return dest
 }
@@ -111,58 +111,58 @@ const encode_6_and_2 = (src: Uint8Array) => {
   @param is_prodos @c true if the DSK image is in Pro-DOS order; @c false if it is in DOS 3.3 order.
 */
 const serialise_track = (src: Uint8Array, track_number: number, is_prodos: boolean) => {
-  let track_position = 0;    // This is the track position **in bits**.
+  let track_position = 0    // This is the track position **in bits**.
   const dest = new Uint8Array(6646).fill(0)
 
   // Write gap 1.
   for (let c = 0; c < 16; c++) {
-      track_position = write_sync(dest, track_position);
+      track_position = write_sync(dest, track_position)
   }
 
   // Step through the sectors in physical order.
   for (let sector = 0; sector < 16; sector++) {
     // Prologue.
-    track_position = write_byte(dest, track_position, 0xD5);
-    track_position = write_byte(dest, track_position, 0xAA);
-    track_position = write_byte(dest, track_position, 0x96);
+    track_position = write_byte(dest, track_position, 0xD5)
+    track_position = write_byte(dest, track_position, 0xAA)
+    track_position = write_byte(dest, track_position, 0x96)
     // Volume, track, setor and checksum, all in 4-and-4 format.
-    track_position = write_4_and_4(dest, track_position, 254);
-    track_position = write_4_and_4(dest, track_position, track_number);
-    track_position = write_4_and_4(dest, track_position, sector);
-    track_position = write_4_and_4(dest, track_position, 254 ^ track_number ^ sector);
+    track_position = write_4_and_4(dest, track_position, 254)
+    track_position = write_4_and_4(dest, track_position, track_number)
+    track_position = write_4_and_4(dest, track_position, sector)
+    track_position = write_4_and_4(dest, track_position, 254 ^ track_number ^ sector)
     // Epilogue.
-    track_position = write_byte(dest, track_position, 0xDE);
-    track_position = write_byte(dest, track_position, 0xAA);
-    track_position = write_byte(dest, track_position, 0xEB);
+    track_position = write_byte(dest, track_position, 0xDE)
+    track_position = write_byte(dest, track_position, 0xAA)
+    track_position = write_byte(dest, track_position, 0xEB)
 
     // Write gap 2.
     for (let c = 0; c < 7; c++) {
-        track_position = write_sync(dest, track_position);
+        track_position = write_sync(dest, track_position)
     }
 
     // Write the sector body.
     // Prologue.
-    track_position = write_byte(dest, track_position, 0xD5);
-    track_position = write_byte(dest, track_position, 0xAA);
-    track_position = write_byte(dest, track_position, 0xAD);
+    track_position = write_byte(dest, track_position, 0xD5)
+    track_position = write_byte(dest, track_position, 0xAA)
+    track_position = write_byte(dest, track_position, 0xAD)
 
     // Map from this physical sector to a logical sector.
-    const ls = (sector === 15) ? 15 : ((sector * (is_prodos ? 8 : 7)) % 15);
+    const ls = (sector === 15) ? 15 : ((sector * (is_prodos ? 8 : 7)) % 15)
 
     // Sector contents.
-    const contents = encode_6_and_2(src.slice(ls * 256, ls * 256 + 256));
+    const contents = encode_6_and_2(src.slice(ls * 256, ls * 256 + 256))
     for (let c = 0; c < contents.length; c++) {
-      track_position = write_byte(dest, track_position, contents[c]);            
+      track_position = write_byte(dest, track_position, contents[c])            
     }
 
     // Epilogue.
-    track_position = write_byte(dest, track_position, 0xDE);
-    track_position = write_byte(dest, track_position, 0xAA);
-    track_position = write_byte(dest, track_position, 0xEB);
+    track_position = write_byte(dest, track_position, 0xDE)
+    track_position = write_byte(dest, track_position, 0xAA)
+    track_position = write_byte(dest, track_position, 0xEB)
 
     // Write gap 3.
     for (let c = 0; c < 16; c++) {
-      track_position = write_sync(dest, track_position);
+      track_position = write_sync(dest, track_position)
     }
   }
   return dest
@@ -195,7 +195,7 @@ export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
   woz[84] = 160    // Chunk size
   woz.fill(0xFF, 88, 88 + 160)  // Fill the TMAP with empty tracks
   // Now fill in the quarter tracks around each whole track
-  let offset = 0;
+  let offset = 0
   for (let c = 0; c < ntracks; c++) {
     offset = 88 + (c << 2)
     if (c > 0) woz[offset - 1] = c
@@ -204,7 +204,7 @@ export const convertdsk2woz = (dskData: Uint8Array, isPO: boolean) => {
   woz.set(toASCII("TRKS"), 248)
   woz.set(uint32toBytes(1280 + ntracks * 13 * 512), 252)
   for (let c = 0; c < ntracks; c++) {
-    offset = 256 + (c << 3);
+    offset = 256 + (c << 3)
     woz.set(uint16toBytes(3 + c*13), offset)  // start block
     woz[offset + 2] = 13   // block count
     woz.set(uint32toBytes(50304), offset + 4)  // start block

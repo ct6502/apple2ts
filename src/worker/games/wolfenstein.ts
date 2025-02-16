@@ -34,20 +34,20 @@ const gamepad = (button: number) => {
   switch (button) {
     case 0: setLeftButtonDown(); break   // aim
     case 1: setRightButtonDown(); break  // shoot
-    case 2: addToBufferDebounce(' '); break  // search/unlock
-    case 3: addToBufferDebounce('U'); break  // Use chest contents
-    case 4: addToBufferDebounce('\r'); break
-    case 5: addToBufferDebounce('T'); break
+    case 2: addToBufferDebounce(" "); break  // search/unlock
+    case 3: addToBufferDebounce("U"); break  // Use chest contents
+    case 4: addToBufferDebounce("\r"); break
+    case 5: addToBufferDebounce("T"); break
     case 9: {
-      const str = getTextPageAsString();
+      const str = getTextPageAsString()
       if (str.includes("'N'")) {
-        addToBuffer('N');
+        addToBuffer("N")
       } else if (str.includes("'S'")) {
-        addToBuffer('S');
+        addToBuffer("S")
       } else if (str.includes("NUMERIC KEY")) {
-        addToBuffer('1');
+        addToBuffer("1")
       } else {
-        addToBuffer('N');
+        addToBuffer("N")
       }
       break  // 9 Start?
     }

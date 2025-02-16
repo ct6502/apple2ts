@@ -50,7 +50,7 @@ export const defaultButtons: GamePadMapping = (button: number,
       case 13: setGamepad3(1); break    // D-pad D
       case 14: setGamepad2(-1); break   // D-pad L
       case 15: setGamepad2(1); break    // D-pad R
-      default: break;
+      default: break
     }
   } else {
     switch (button) {
@@ -60,7 +60,7 @@ export const defaultButtons: GamePadMapping = (button: number,
       case 13: setGamepad1(1); break    // D-pad D
       case 14: setGamepad0(-1); break   // D-pad L
       case 15: setGamepad0(1); break    // D-pad R
-      default: break;
+      default: break
     }
   }
 }
@@ -73,7 +73,7 @@ const defaultGame: GameLibraryItem = {
   joystick: (axes: number[]) => axes,
   rumble: null,
   setup: null,
-  helptext: ''
+  helptext: ""
 }
 
 export const handleKeyMapping = (key: string) => {
@@ -97,13 +97,13 @@ export const getGameMapping = () => {
 export const handleGameSetup = (reset = false) => {
   for (const game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
-      passHelptext(game.helptext ? game.helptext : ' ')
+      passHelptext(game.helptext ? game.helptext : " ")
       if (game.setup) game.setup()
       return
     }   
   }
   if (reset) { 
-    passHelptext(' ')
+    passHelptext(" ")
     passEnhancedMidi(0)
   }
 }

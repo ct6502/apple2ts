@@ -1,12 +1,12 @@
-import { SWITCHES, checkSoftSwitches } from "./softswitches";
+import { SWITCHES, checkSoftSwitches } from "./softswitches"
 import { s6502 } from "./instructions"
 import { romBase64 as romBase64e } from "./roms/rom_2e"
 import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 // import { edmBase64 } from "./roms/edm_2e"
-import { Buffer } from "buffer";
+import { Buffer } from "buffer"
 // import { isDebugging } from "./motherboard";
-import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "../common/utility";
-import { isWatchpoint, setWatchpointBreak } from "./cpu6502";
+import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "../common/utility"
+import { isWatchpoint, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
 
 // 0x00000: main memory
@@ -128,16 +128,16 @@ const updateMainAuxMemoryTable = () => {
   const offsetHgrPageRead = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
   const offsetHgrPageWrite = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxWrite
   for (let i = 2; i < 256; i++) {
-    addressGetTable[i] = i + offsetAuxRead;
-    addressSetTable[i] = i + offsetAuxWrite;
+    addressGetTable[i] = i + offsetAuxRead
+    addressSetTable[i] = i + offsetAuxWrite
   }
   for (let i = 4; i <= 7; i++) {
-    addressGetTable[i] = i + offsetTextPageRead;
-    addressSetTable[i] = i + offsetTextPageWrite;
+    addressGetTable[i] = i + offsetTextPageRead
+    addressSetTable[i] = i + offsetTextPageWrite
   }
   for (let i = 0x20; i <= 0x3F; i++) {
-    addressGetTable[i] = i + offsetHgrPageRead;
-    addressSetTable[i] = i + offsetHgrPageWrite;
+    addressGetTable[i] = i + offsetHgrPageRead
+    addressSetTable[i] = i + offsetHgrPageWrite
   }
 }
 
@@ -146,24 +146,24 @@ const updateReadBankSwitchedRamTable = () => {
   //   console.log(`RamWorksPage: ${toHex(RamWorksPage)}, RamWorksBankGet(): ${RamWorksBankGet()}`)
   // }
   const offsetZP = SWITCHES.ALTZP.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  addressGetTable[0] = offsetZP;
-  addressGetTable[1] = 1 + offsetZP;
-  addressSetTable[0] = offsetZP;
-  addressSetTable[1] = 1 + offsetZP;
+  addressGetTable[0] = offsetZP
+  addressGetTable[1] = 1 + offsetZP
+  addressSetTable[0] = offsetZP
+  addressSetTable[1] = 1 + offsetZP
   if (SWITCHES.BSRREADRAM.isSet) {
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressGetTable[i] = i + offsetZP;
+      addressGetTable[i] = i + offsetZP
     }
     if (!SWITCHES.BSRBANK2.isSet) {
       // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
       for (let i = 0xD0; i <= 0xDF; i++) {
-        addressGetTable[i] = i - 0x10 + offsetZP;
+        addressGetTable[i] = i - 0x10 + offsetZP
       }
     }
   } else {
     // ROM ($D000...$FFFF)
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressGetTable[i] = ROMpage + i - 0xC0;
+      addressGetTable[i] = ROMpage + i - 0xC0
     }
   }
 }
@@ -173,16 +173,16 @@ const updateWriteBankSwitchedRamTable = () => {
   const writeRAM = SWITCHES.BSR_WRITE.isSet
   // Start out with Slot ROM and regular ROM as not writeable
   for (let i = 0xC0; i <= 0xFF; i++) {
-    addressSetTable[i] = -1;
+    addressSetTable[i] = -1
   }
   if (writeRAM) {
     for (let i = 0xD0; i <= 0xFF; i++) {
-      addressSetTable[i] = i + offsetZP;
+      addressSetTable[i] = i + offsetZP
     }
     if (!SWITCHES.BSRBANK2.isSet) {
       // Bank1 of $D000-$DFFF is actually in 0xC0...0xCF
       for (let i = 0xD0; i <= 0xDF; i++) {
-        addressSetTable[i] = i - 0x10 + offsetZP;
+        addressSetTable[i] = i - 0x10 + offsetZP
       }
     }
   }
@@ -244,7 +244,7 @@ const manageC800 = (slot: number) => {
     if (C800SlotGet() === 0) {
       // If C800Slot is zero, then set it to first card accessed
       C800SlotSet(slot)
-      updateAddressTables();
+      updateAddressTables()
     }
   } else {
     // If slot > 7 then it was an access to $CFFF.
@@ -267,13 +267,13 @@ const updateSlotRomTable = () => {
   // Fill in $C800-CFFF for cards
   if (internalC8ROMIsActive()) {
     for (let i = 0xC8; i <= 0xCF; i++) {
-      addressGetTable[i] = ROMpage + i - 0xC0;
+      addressGetTable[i] = ROMpage + i - 0xC0
     }
   } else {
     const slotC8 = SLOTC8index + 8 * (C800SlotGet() - 1)
     for (let i = 0; i <= 7; i++) {
       const page = 0xC8 + i
-      addressGetTable[page] = slotC8 + i;
+      addressGetTable[page] = slotC8 + i
     }
   }
 }
@@ -285,13 +285,13 @@ export const updateAddressTables = () => {
   updateSlotRomTable()
   // Scale all of our mappings up by 256 to get to offsets in memory array.
   for (let i = 0; i < 256; i++) {
-    addressGetTable[i] = 256 * addressGetTable[i];
-    addressSetTable[i] = 256 * addressSetTable[i];
+    addressGetTable[i] = 256 * addressGetTable[i]
+    addressSetTable[i] = 256 * addressSetTable[i]
   }
 }
 
 // Used for jumping to custom TS functions when program counter hits an address.
-export const specialJumpTable = new Map<number, () => void>();
+export const specialJumpTable = new Map<number, () => void>()
 
 // Custom callbacks for mem get/set to $C090-$C0FF slot I/O and $C100-$C7FF.
 const slotIOCallbackTable = new Array<AddressCallback>(8)
@@ -322,7 +322,7 @@ const checkSlotIO = (addr: number, value = -1) => {
  * @param fn - A function to jump to when IO of this slot is accessed
  */
 export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
-  slotIOCallbackTable[slot] = fn;
+  slotIOCallbackTable[slot] = fn
 }
 
 /**
@@ -339,7 +339,7 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
   memory.set(driver.slice(0, 0x100), SLOTstart + (slot - 1) * 0x100)
   if (driver.length > 0x100) {
     // only allow up to 2k for C8 range
-    const end = (driver.length > 0x900) ? 0x900 : driver.length;
+    const end = (driver.length > 0x900) ? 0x900 : driver.length
     const addr = SLOTC8start + (slot - 1) * 0x800
     memory.set(driver.slice(0x100,end), addr)
   }
@@ -441,7 +441,7 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
       }
       checkSlotIO(addr)
     } else if (addr === 0xCFFF) {
-      manageC800(0xFF);
+      manageC800(0xFF)
     }
     if (value < 0) {
       const shifted = addressGetTable[page]
@@ -487,7 +487,7 @@ export const memSet = (addr: number, value: number) => {
     if (page >= 0xC1 && page <= 0xC7) {
       checkSlotIO(addr, value)
     } else if (addr === 0xCFFF) {
-      manageC800(0xFF);
+      manageC800(0xFF)
     }
     const shifted = addressSetTable[page]
     // This will prevent us from setting slot ROM or motherboard ROM
@@ -609,10 +609,10 @@ export const matchMemory = (addr: number, data: number[]) => {
 }
 
 export const getZeroPage = () => {
-  const status = ['']
+  const status = [""]
   const offset = addressGetTable[0]
   const mem = memory.slice(offset, offset + 256)
-  status[0] = '     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F'
+  status[0] = "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F"
   for (let j = 0; j < 16; j++) {
     let s = toHex(16 * j) + ":"
     for (let i = 0; i < 16; i++) {
@@ -620,7 +620,7 @@ export const getZeroPage = () => {
     }
     status[j + 1] = s
   }
-  return status.join('\n')
+  return status.join("\n")
 }
 
 export const getBasePlusAuxMemory = () => {

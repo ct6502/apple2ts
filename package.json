@@ -11,6 +11,7 @@
     "host": "vite --open --host",
     "build": "tsc && vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint-fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "jest"
   },
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "@stylistic/eslint-plugin-js": "^3.1.0",
     "@types/audioworklet": "^0.0.65",
     "@types/gapi.client.drive-v3": "^0.0.5",
     "@types/google.accounts": "^0.0.15",

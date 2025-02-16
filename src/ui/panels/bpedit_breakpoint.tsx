@@ -1,22 +1,22 @@
-import { useState } from "react";
-import { Breakpoint } from "../../common/breakpoint";
-import EditField from "./editfield";
-import { Droplist } from "./droplist";
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks";
-import { toHex } from "../../common/utility";
-import ExpressionControl from "./expressioncontrol";
+import { useState } from "react"
+import { Breakpoint } from "../../common/breakpoint"
+import EditField from "./editfield"
+import { Droplist } from "./droplist"
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
+import { toHex } from "../../common/utility"
+import ExpressionControl from "./expressioncontrol"
 
 const BPEdit_Breakpoint = (props: {
   breakpoint: Breakpoint,
 }) => {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
-    toHex(props.breakpoint.address) : '')
+    toHex(props.breakpoint.address) : "")
 
   const handleAddressChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
     setBpAddress(value)
-    const address = parseInt(value || '-1', 16)
+    const address = parseInt(value || "-1", 16)
     props.breakpoint.address = address
     setTriggerUpdate(!triggerUpdate)
   }
@@ -37,17 +37,17 @@ const BPEdit_Breakpoint = (props: {
   }
 
   const handleHitCountChange = (value: string) => {
-    value = value.replace(/[^0-9]/gi, '')
-    if (value.trim() !== '') {
+    value = value.replace(/[^0-9]/gi, "")
+    if (value.trim() !== "") {
       value = Math.max(parseInt(value), 1).toString()
     }
-    props.breakpoint.hitcount = parseInt(value || '1')
+    props.breakpoint.hitcount = parseInt(value || "1")
     setTriggerUpdate(!triggerUpdate)
   }
 
   const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
-      const bank = MEMORY_BANKS[key];
+      const bank = MEMORY_BANKS[key]
       if (bank.name === value) {
         props.breakpoint.memoryBank = key
         setTriggerUpdate(!triggerUpdate)
@@ -84,14 +84,14 @@ const BPEdit_Breakpoint = (props: {
         <span style={{ marginLeft: "1em", marginRight: "1em" }}>
           <Droplist
             monospace={true}
-            disabled={props.breakpoint.expression1.register === ''}
+            disabled={props.breakpoint.expression1.register === ""}
             value={props.breakpoint.expressionOperator}
-            values={['', '&&', '||']}
+            values={["", "&&", "||"]}
             setValue={(v: string) => handleExpressionOperatorChange(v as ExpressionOperator)} />
         </span>
         <ExpressionControl expr={props.breakpoint.expression2}
           setExpr={handleExpressionChange2}
-          disabled={props.breakpoint.expression1.register === '' || props.breakpoint.expressionOperator === ''}
+          disabled={props.breakpoint.expression1.register === "" || props.breakpoint.expressionOperator === ""}
         />
       </div>
       <EditField name="Hit&nbsp;Count: "
@@ -109,4 +109,4 @@ const BPEdit_Breakpoint = (props: {
   )
 }
 
-export default BPEdit_Breakpoint;
+export default BPEdit_Breakpoint

@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { useEffect, useRef } from "react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faWarning
-} from "@fortawesome/free-solid-svg-icons";
+} from "@fortawesome/free-solid-svg-icons"
 
 interface EditFieldProps {
   name?: string;
@@ -17,16 +17,16 @@ interface EditFieldProps {
 }
 
 const EditField = (props: EditFieldProps) => {
-  const inputRef = useRef(null);
+  const inputRef = useRef(null)
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     props.setValue(e.target.value)
   }
   useEffect(() => {
     if (props.initialFocus && inputRef.current) {
       const input = inputRef.current as HTMLInputElement
-      input.focus();
+      input.focus()
     }
-  }, [props.initialFocus]);
+  }, [props.initialFocus])
   const textfield = <span>
     <input type="text"
       disabled={props.disabled}
@@ -50,7 +50,7 @@ const EditField = (props: EditFieldProps) => {
   </span>
   return (
     props.name ?
-      <div className="flex-row" style={{ marginTop: '2px', position: "relative" }}>
+      <div className="flex-row" style={{ marginTop: "2px", position: "relative" }}>
         <div className="dialog-title">{props.name}</div>
         {textfield}
       </div> :

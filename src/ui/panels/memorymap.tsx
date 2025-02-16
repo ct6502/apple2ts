@@ -6,17 +6,17 @@ const MemoryMap = () => {
   const switches = handleGetSoftSwitches()
   if (Object.keys(switches).length <= 1) return (<div></div>)
   const altZP = switches.ALTZP
-  let bankSwitchedRam = 'ROM'
-  let bankD000 = 'ROM'
-  let classBSR = 'mem-rom'
+  let bankSwitchedRam = "ROM"
+  let bankD000 = "ROM"
+  let classBSR = "mem-rom"
   if (switches.BSRREADRAM || switches.BSR_WRITE) {
-    classBSR = altZP ? 'mem-aux' : ''
+    classBSR = altZP ? "mem-aux" : ""
     if (switches.BSRREADRAM && switches.BSR_WRITE) {
-      bankSwitchedRam = 'R/W RAM'
+      bankSwitchedRam = "R/W RAM"
     } else {
-      bankSwitchedRam = switches.BSRREADRAM ? 'Read RAM' : 'Read ROM\nWrite RAM'
+      bankSwitchedRam = switches.BSRREADRAM ? "Read RAM" : "Read ROM\nWrite RAM"
     }
-    bankD000 = bankSwitchedRam + '\nBank ' + (switches.BSRBANK2 ? '2' : '1')
+    bankD000 = bankSwitchedRam + "\nBank " + (switches.BSRBANK2 ? "2" : "1")
   }
   const auxRead = switches.RAMRD
   const auxWrite = switches.RAMWRT
@@ -36,11 +36,11 @@ const MemoryMap = () => {
   // 255 is our flag for internal C8ROM
   const c800Slot = internalCxRom ? 255 : handleGetC800Slot()
   const c800SlotText = (c800Slot < 255) ?
-    (c800Slot > 0 ? `Slot ${c800Slot}` : 'Peripheral') : "Internal ROM"
+    (c800Slot > 0 ? `Slot ${c800Slot}` : "Peripheral") : "Internal ROM"
 
   return (
     <div>
-      <div className="bigger-font" style={{ marginBottom: '6px' }}>Memory Map</div>
+      <div className="bigger-font" style={{ marginBottom: "6px" }}>Memory Map</div>
       <div className="flex-row-gap">
       <table className="memory-map mono-text">
         <tbody>
@@ -82,7 +82,7 @@ const MemoryMap = () => {
           </tr>
         </tbody>
       </table>
-      <table className="memory-map mono-text" style={{height: '2em', marginBottom: '6px'}}>
+      <table className="memory-map mono-text" style={{height: "2em", marginBottom: "6px"}}>
         <tbody>
           <tr><td>Main</td></tr>
           <tr><td className="mem-rom">ROM</td></tr>

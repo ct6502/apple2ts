@@ -1,11 +1,11 @@
 import "./debugsection.css"
-import DisassemblyPanel from "./disassemblypanel";
-import TimeTravelPanel from "./timetravelpanel";
-import State6502Controls from "./state6502controls";
-import MemoryDump from "./memorydump";
-import BreakpointsView from "./breakpointsview";
-import MemoryMap from "./memorymap";
-import StackDump from "./stackdump";
+import DisassemblyPanel from "./disassemblypanel"
+import TimeTravelPanel from "./timetravelpanel"
+import State6502Controls from "./state6502controls"
+import MemoryDump from "./memorydump"
+import BreakpointsView from "./breakpointsview"
+import MemoryMap from "./memorymap"
+import StackDump from "./stackdump"
 
 const DebugSection = () => {
   return (
@@ -29,4 +29,4 @@ const DebugSection = () => {
   )
 }
 
-export default DebugSection;
+export default DebugSection

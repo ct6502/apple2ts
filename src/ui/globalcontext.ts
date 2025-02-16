@@ -12,7 +12,7 @@ type GlobalProps = {
   setUpdateBreakpoint: (updateBreakpoint: number) => void
 }
 export const GlobalContext = createContext<GlobalProps>({
-  runTour: '',
+  runTour: "",
   setRunTour: () => {},
   tourIndex: 0,
   setTourIndex: () => {},

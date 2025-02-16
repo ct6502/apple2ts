@@ -34,7 +34,7 @@ const STATUS = {            // Description     IRQ on Change  Cleared on Read
     NDSR:     (0x01 << 6),  // /DSR             Y              N
     IRQ:      (0x01 << 7),  // interrupt        Y              Y
     HW_RESET: (0x10),       // value at hard reset
-};
+}
 
 const CONTROL = {
     BAUD_RATE:   (0x0F << 0), // clock divisor for baud rate
@@ -42,7 +42,7 @@ const CONTROL = {
     WORD_LENGTH: (0x03 << 5), // 8,7,6,5
     STOP_BITS:   (0x01 << 7), // 0 - 1, 1 = 2 or 1.5
     HW_RESET:    (0x00),      // value at hard reset
-};
+}
 
 const COMMAND = {
     DTR_ENABLE:    (0x01 << 0), // clear /DTR and enable receiver
@@ -54,7 +54,7 @@ const COMMAND = {
     PARITY_CNF:    (0x03 << 6), // parity config  (not changed on reset)
     HW_RESET:      (0x00),      // synertek zeroes
     HW_RESET_MOS:  (0x02),      // MOS value at reset
-};
+}
 
 enum PARITY
 {
@@ -105,36 +105,36 @@ export class SY6551
   buffer(data: Uint8Array): void
   {
     for(let i=0;i<data.length;i++)
-      this._receiveBuffer.push(data[i]);
+      this._receiveBuffer.push(data[i])
 
     // size of internal buffer of 16 is arbitrary
-    let shifts = this._receiveBuffer.length - 16; 
-    shifts = (shifts < 0) ? 0 : shifts;
+    let shifts = this._receiveBuffer.length - 16 
+    shifts = (shifts < 0) ? 0 : shifts
     
     // if we are longer than desired length, shift out the earlier entries
     for(let i=0;i<shifts;i++)
     {
-      this._receiveBuffer.shift();
+      this._receiveBuffer.shift()
       // set overrun
-      this._status |= STATUS.OVRN;
+      this._status |= STATUS.OVRN
     }
 
     this._status |= STATUS.RX_FULL
     if ((this._control & COMMAND.RX_INT_DIS) == 0) 
     {
-      this.irq(true);
+      this.irq(true)
     }
   }
 
   set data(data: number)
   {
-    const sendBuffer = new Uint8Array(1).fill(data);
-    this._extFuncs.sendData(sendBuffer);
+    const sendBuffer = new Uint8Array(1).fill(data)
+    this._extFuncs.sendData(sendBuffer)
     
     // leave TX_EMPTY set, and irq
     if (this._command & COMMAND.TX_INT_EN)
     {
-      this.irq(true);
+      this.irq(true)
     }
   }
 
@@ -142,10 +142,10 @@ export class SY6551
   {
     // check if we have any data
     if (this._receiveBuffer.length)
-      this._lastRead = this._receiveBuffer.shift()!;
+      this._lastRead = this._receiveBuffer.shift()!
 
     // clear these bits on read of data reg
-    this._status &= ~(STATUS.PE|STATUS.FE|STATUS.OVRN);
+    this._status &= ~(STATUS.PE|STATUS.FE|STATUS.OVRN)
 
     // check if we have more data
     if (this._receiveBuffer.length)
@@ -154,211 +154,211 @@ export class SY6551
       this._status |= STATUS.RX_FULL
       if ((this._control & COMMAND.RX_INT_DIS) == 0) 
       {
-        this.irq(true);
+        this.irq(true)
       }
     }
     else
     {
-      this._status &= ~STATUS.RX_FULL;
+      this._status &= ~STATUS.RX_FULL
     }
 
-    return this._lastRead;
+    return this._lastRead
   }
 
   set control(val: number)
   {
     // need to report this as it changes config
-    this._control = val;
-    this.configChange(this.buildConfigChange());
+    this._control = val
+    this.configChange(this.buildConfigChange())
   }
 
   get control(): number
   {
-    return this._control;
+    return this._control
   }
 
   set command(val: number)
   {
     // send a state change here for parity
-    this._command = val;
-    this.configChange(this.buildConfigChange());
+    this._command = val
+    this.configChange(this.buildConfigChange())
   }
 
   get command(): number
   {
-    return this._command;
+    return this._command
   }
 
   get status(): number
   {
-    const result = this._status;
+    const result = this._status
 
     // clear irq on status read
     if (this._status & STATUS.IRQ)
     {
-      this.irq(false);
+      this.irq(false)
     }
 
-    this._status &= ~STATUS.IRQ;
+    this._status &= ~STATUS.IRQ
 
-    return result;
+    return result
   }
 
   // writing status resets device
   set status(unused: number)
   {
-    this.reset();
+    this.reset()
   }
 
   irq(set: boolean): void
   {
     if (set)
-      this._status |= STATUS.IRQ;
+      this._status |= STATUS.IRQ
     else
-      this._status &= ~STATUS.IRQ;
+      this._status &= ~STATUS.IRQ
 
-    this._extFuncs.interrupt(set);
+    this._extFuncs.interrupt(set)
   }
 
   buildConfigChange(): ConfigChange
   {
-    const change = <ConfigChange>{};
+    const change = <ConfigChange>{}
 
     switch(this._control & CONTROL.BAUD_RATE)
     {
       case  BAUD_RATE.EXTERNAL_16X:
         // this is invalid
         change.baud = 0
-        break;
+        break
       case  BAUD_RATE.B50:
         change.baud = 50
-        break;
+        break
       case  BAUD_RATE.B75:
         change.baud = 75
-        break;
+        break
       case  BAUD_RATE.B109:
         change.baud = 109
-        break;
+        break
       case  BAUD_RATE.B134:
         change.baud = 134
-        break;
+        break
       case  BAUD_RATE.B150:
         change.baud = 150
-        break;
+        break
       case  BAUD_RATE.B300:
         change.baud = 300
-        break;
+        break
       case  BAUD_RATE.B600:
         change.baud = 600
-        break;
+        break
       case  BAUD_RATE.B1200:
         change.baud = 1200
-        break;
+        break
       case  BAUD_RATE.B1800:
         change.baud = 1800
-        break;
+        break
       case  BAUD_RATE.B2400:
         change.baud = 2400
-        break;
+        break
       case  BAUD_RATE.B3600:
         change.baud = 3600
-        break;
+        break
       case  BAUD_RATE.B4800:
         change.baud = 4800
-        break;
+        break
       case  BAUD_RATE.B7200:
         change.baud = 7200
-        break;
+        break
       case  BAUD_RATE.B9600:
         change.baud = 9600
-        break;
+        break
       case  BAUD_RATE.B19200:
         change.baud = 19200
-        break;
+        break
     }
 
     switch(this._control & CONTROL.WORD_LENGTH)
     {
       case WORD_LENGTH.W8:
-        change.bits = 8;
-        break;
+        change.bits = 8
+        break
       case WORD_LENGTH.W7:
-        change.bits = 7;
-        break;
+        change.bits = 7
+        break
       case WORD_LENGTH.W6:
-        change.bits = 6; 
-        break;
+        change.bits = 6 
+        break
       case WORD_LENGTH.W5:
-        change.bits = 5;
-        break;
+        change.bits = 5
+        break
     }
 
     if(this._control & CONTROL.STOP_BITS)
-      change.stop = 2;
+      change.stop = 2
     else
-      change.stop = 1;
+      change.stop = 1
 
-    change.parity = 'none';
+    change.parity = "none"
     if(this._command & COMMAND.PARITY_EN)
     {
       switch(this._command & COMMAND.PARITY_CNF)
       {
         case PARITY.ODD:
-          change.parity = 'odd'; 
-          break;
+          change.parity = "odd" 
+          break
         case PARITY.EVEN:
-          change.parity = 'even'; 
-          break;
+          change.parity = "even" 
+          break
         case PARITY.MARK:
-          change.parity = 'mark'; 
-          break;
+          change.parity = "mark" 
+          break
         case PARITY.SPACE:
-          change.parity = 'space'; 
-          break;
+          change.parity = "space" 
+          break
       }
     }
 
-    return change;
+    return change
   }
 
   configChange(newconf: ConfigChange)
   {
-    let send = false;
+    let send = false
     if (newconf.baud != this._lastConfig.baud)
-      send = true;
+      send = true
     if (newconf.bits != this._lastConfig.bits)
-      send = true;
+      send = true
     if (newconf.stop != this._lastConfig.stop)
-      send = true;
+      send = true
     if (newconf.parity != this._lastConfig.parity)
-      send = true;
+      send = true
 
     if (send)
     {
       // note that not all params may be valid, ie: baud could be zero
-      this._lastConfig = newconf;
-      this._extFuncs.configChange(this._lastConfig);
+      this._lastConfig = newconf
+      this._extFuncs.configChange(this._lastConfig)
     }
   }
 
   reset(): void
   {
-    this._control = CONTROL.HW_RESET;
-    this._command = COMMAND.HW_RESET;
-    this._status = STATUS.HW_RESET;
-    this.irq(false);
-    this._receiveBuffer = [];
+    this._control = CONTROL.HW_RESET
+    this._command = COMMAND.HW_RESET
+    this._status = STATUS.HW_RESET
+    this.irq(false)
+    this._receiveBuffer = []
   }
 
   constructor(extFuncs: SY6551Ext)
   {
-    this._extFuncs = extFuncs;
-    this._control = CONTROL.HW_RESET;
-    this._command = COMMAND.HW_RESET;
-    this._status  = STATUS.HW_RESET;
-    this._lastConfig = this.buildConfigChange();
-    this._lastRead = 0;
-    this._receiveBuffer = [];
-    this.reset();
+    this._extFuncs = extFuncs
+    this._control = CONTROL.HW_RESET
+    this._command = COMMAND.HW_RESET
+    this._status  = STATUS.HW_RESET
+    this._lastConfig = this.buildConfigChange()
+    this._lastRead = 0
+    this._receiveBuffer = []
+    this.reset()
   }
 };

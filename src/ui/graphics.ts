@@ -76,7 +76,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
-  const colorFill = ['#FFFFFF', '#FFFFFF', TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
+  const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -107,17 +107,17 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       }
       ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
       hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
-    });
+    })
   }
   return !mixedMode
-};
+}
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 
 const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const textPage = handleGetLores()
-  if (textPage.length === 0) return;
+  if (textPage.length === 0) return
   const doubleRes = textPage.length === 1600 || textPage.length === 1920
   const mixedMode = textPage.length === 800 || textPage.length === 1600
   const nlines = mixedMode ? 160 : 192
@@ -126,7 +126,7 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   const cwidth = doubleRes ? 7 : 14
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
-  const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255);
+  const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255)
   for (let y = 0; y < bottom; y++) {
     textPage.slice(y * nchars, (y + 1) * nchars).forEach((value, i) => {
       let upperBlock = value % 16
@@ -149,7 +149,7 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
           hgrRGBA[4 * i2 + 2] = c2[2]
         }
       }
-    });
+    })
   }
   const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
   for (let j = 0; j < nlines; j++) {
@@ -159,14 +159,14 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   }
   const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
   hiddenContext.putImageData(imageData, 0, 0)
-};
+}
 
 const BLACK = 0
 const WHITE = 3
 
 const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   const nlines = hgrPage.length / 80
-  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK);
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK)
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j*80, j*80 + 80)
@@ -197,7 +197,7 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
 const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
-  if (hgrPage.length === 0) return;
+  if (hgrPage.length === 0) return
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
@@ -216,7 +216,7 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   }
   const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
   hiddenContext.putImageData(imageData, 0, 0)
-};
+}
 
 let doOverride = false
 let doPage2 = false
@@ -239,7 +239,7 @@ export const getOverrideHiresPixels = (x: number, y: number) => {
   if (!doOverride) return null
   // Assume this is 40 x 192
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
-  if (hgrPage.length !== (40 * 192)) return null;
+  if (hgrPage.length !== (40 * 192)) return null
   const result: number[][] = new Array(nRowsHgrMagnifier)
   for (let j = y; j < (y + nRowsHgrMagnifier); j++) {
     result[j - y] = new Array(1 + nColsHgrMagnifier)
@@ -271,7 +271,7 @@ const drawImage = (ctx: CanvasRenderingContext2D,
     ctx.textAlign = "center"
     const cheight = height * (1 - 2 * ymargin) / 24
     ctx.font = `${cheight}px "PrintChar21"`
-    ctx.fillText(`${'HGR Page ' + (doPage2 ? '2' : '1')}`, width / 2, height - 2)
+    ctx.fillText(`${"HGR Page " + (doPage2 ? "2" : "1")}`, width / 2, height - 2)
   }
 }
 
@@ -282,8 +282,8 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   ctx.imageSmoothingEnabled = true
   // Clear all our drawing and let the background show through again.
   ctx.clearRect(0, 0, width, height)
-  hiddenContext.imageSmoothingEnabled = false;
-  hiddenContext.fillStyle = "#000000";
+  hiddenContext.imageSmoothingEnabled = false
+  hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
   const colorMode = handleGetColorMode()
   // If we are only doing text output, we will draw directly onto our canvas,
@@ -325,7 +325,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
       0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false
     drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8, true)
   }
 }

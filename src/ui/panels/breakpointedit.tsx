@@ -1,12 +1,12 @@
-import React, { useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { useRef, useState } from "react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faXmark,
-} from "@fortawesome/free-solid-svg-icons";
-import BPEdit_Breakpoint from "./bpedit_breakpoint";
-import BPEdit_Watchpoint from "./bpedit_watchpoint";
-import BPEdit_Instruction from "./bpedit_instruction";
-import { Breakpoint } from "../../common/breakpoint";
+} from "@fortawesome/free-solid-svg-icons"
+import BPEdit_Breakpoint from "./bpedit_breakpoint"
+import BPEdit_Watchpoint from "./bpedit_watchpoint"
+import BPEdit_Instruction from "./bpedit_instruction"
+import { Breakpoint } from "../../common/breakpoint"
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
@@ -34,11 +34,11 @@ const BreakpointEdit = (props: {
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dragging && dialogRef.current) {
       const div = dialogRef.current as HTMLDivElement
-      const left = e.clientX - offset[0];
-      const top = e.clientY - offset[1];
+      const left = e.clientX - offset[0]
+      const top = e.clientY - offset[1]
       props.setDialogPosition(left, top)
-      div.style.left = `${left}px`;
-      div.style.top = `${top}px`;
+      div.style.left = `${left}px`
+      div.style.top = `${top}px`
     }
   }
 
@@ -62,9 +62,9 @@ const BreakpointEdit = (props: {
     <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
-        if (event.key === 'Escape') {
+        if (event.key === "Escape") {
           props.cancelDialog()
-        } else if (event.key === 'Enter') {
+        } else if (event.key === "Enter") {
           props.saveBreakpoint()
         }
       }}
@@ -85,7 +85,7 @@ const BreakpointEdit = (props: {
             <div className="dialog-title">Edit Breakpoint</div>
             <button className="push-button"
               onClick={props.cancelDialog}>
-              <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.8em' }} />
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
             </button>
           </div>
           <div className="horiz-rule"></div>
@@ -137,4 +137,4 @@ const BreakpointEdit = (props: {
   )
 }
 
-export default BreakpointEdit;
+export default BreakpointEdit

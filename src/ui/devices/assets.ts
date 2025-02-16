@@ -1,12 +1,12 @@
-import disk2off from './img/disk2off.png'
-import disk2on from './img/disk2on.png'
-import disk2offEmpty from './img/disk2off-empty.png'
-import disk2onEmpty from './img/disk2on-empty.png'
-import hardDriveOff from './img/harddrive.png'
-import hardDriveOn from './img/harddriveOn.png'
-import mp3DriveMotor from './audio/driveMotor.mp3'
-import mp3TrackOffEnd from './audio/driveTrackOffEnd.mp3'
-import mp3TrackSeek from './audio/driveTrackSeekLong.mp3'
+import disk2off from "./img/disk2off.png"
+import disk2on from "./img/disk2on.png"
+import disk2offEmpty from "./img/disk2off-empty.png"
+import disk2onEmpty from "./img/disk2on-empty.png"
+import hardDriveOff from "./img/harddrive.png"
+import hardDriveOn from "./img/harddriveOn.png"
+import mp3DriveMotor from "./audio/driveMotor.mp3"
+import mp3TrackOffEnd from "./audio/driveTrackOffEnd.mp3"
+import mp3TrackSeek from "./audio/driveTrackSeekLong.mp3"
 
 export const imageList = {disk2off, disk2on, disk2offEmpty, disk2onEmpty,
   hardDriveOff, hardDriveOn}

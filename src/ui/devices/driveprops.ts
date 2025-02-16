@@ -1,7 +1,7 @@
-import { MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility";
-import { iconKey, iconData, iconName } from "../img/iconfunctions";
-import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker";
-import { diskImages } from "./diskimages";
+import { MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
+import { iconKey, iconData, iconName } from "../img/iconfunctions"
+import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
+import { diskImages } from "./diskimages"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -24,12 +24,12 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
 }
 
 const driveProps: DriveProps[] = [initDriveProps(0, 1, true), initDriveProps(1, 2, true),
-  initDriveProps(2, 1, false), initDriveProps(3, 2, false)];
+  initDriveProps(2, 1, false), initDriveProps(3, 2, false)]
 
 export const handleGetFilename = (index: number) => {
   let f = driveProps[index].filename
   if (f !== "") {
-    const i = f.lastIndexOf('.')
+    const i = f.lastIndexOf(".")
     if (i > 0) {
       f = f.substring(0, i)
     }
@@ -68,9 +68,9 @@ export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boo
 }
 
 const findMatchingDiskImage = (url: string) => {
-  const name = decodeURIComponent(url).replace(/[^A-Z]/gi, '').toUpperCase()
+  const name = decodeURIComponent(url).replace(/[^A-Z]/gi, "").toUpperCase()
   for (let i = 0; i < diskImages.length; i++) {
-    const diskname = diskImages[i].file.replace(/[^A-Z]/gi, '').toUpperCase()
+    const diskname = diskImages[i].file.replace(/[^A-Z]/gi, "").toUpperCase()
     if (diskname.includes(name)) {
       return diskImages[i]
     }
@@ -78,7 +78,7 @@ const findMatchingDiskImage = (url: string) => {
   // If we don't find a disk image in our pre-defined list, just assume
   // that they've given an exact filename in our public folder,
   // including the file suffix.
-  return {file: url, url: ''} as diskImage
+  return {file: url, url: ""} as diskImage
 }
 
 let binaryRunAddress = 0x300
@@ -89,15 +89,15 @@ export const setDefaultBinaryAddress = (address: number) => {
 export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer,
   filename: string, cloudData: CloudData | null) => {
   const fname = filename.toLowerCase()
-  if (fname.endsWith('.bin')) {
+  if (fname.endsWith(".bin")) {
     passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
-  } else if (fname.endsWith('.bas') || fname.endsWith('.a')) {
-    const decoder = new TextDecoder('utf-8');
-    const basic = decoder.decode(buffer);
+  } else if (fname.endsWith(".bas") || fname.endsWith(".a")) {
+    const decoder = new TextDecoder("utf-8")
+    const basic = decoder.decode(buffer)
     if (basic !== "") {
       const trimmed = basic.trim()
       const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-      const cmd = hasLineNumbers ? '\nRUN\n' : '\n'
+      const cmd = hasLineNumbers ? "\nRUN\n" : "\n"
       passPasteText(basic + cmd)
     }
   } else {
@@ -126,7 +126,7 @@ export const handleSetDiskFromURL = async (url: string,
   // Download the file from the fragment URL
   try {
     // Ask CT6502 for why we need to use this favicon header
-    const favicon: { [key: string]: string } = {};
+    const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
     const response = await fetch(iconName() + url, { headers: favicon })
     if (!response.ok) {
@@ -137,7 +137,7 @@ export const handleSetDiskFromURL = async (url: string,
     const buffer = await new Response(blob).arrayBuffer()
     const urlObj = new URL(url)
     let name = url
-    const hasSlash = urlObj.pathname.lastIndexOf('/')
+    const hasSlash = urlObj.pathname.lastIndexOf("/")
     if (hasSlash >= 0) {
       name = urlObj.pathname.substring(hasSlash + 1)
     }
@@ -165,22 +165,22 @@ export const handleSetDiskFromFile = async (disk: diskImage,
   resetAllDiskDrives()
   handleSetDiskData(0, new Uint8Array(data), disk.file, null)
   passSetRunMode(RUN_MODE.NEED_BOOT)
-  const helpFile = replaceSuffix(disk.file, 'txt')
+  const helpFile = replaceSuffix(disk.file, "txt")
   try {
     const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
-    let helptext = '<Default>'
+    let helptext = "<Default>"
     if (help.ok) {
       helptext = await help.text()
       // Hack: when running on localhost, if the file is missing it just
       // returns the index.html. So just return an empty string instead.
-      if (helptext.startsWith('<!DOCTYPE html>')) {
-        helptext = '<Default>'
+      if (helptext.startsWith("<!DOCTYPE html>")) {
+        helptext = "<Default>"
       }
       updateDisplay(0, helptext)
     }      
   } catch {
     // If we don't have a help text file, just revert to the default text.
-    updateDisplay(0, '<Default>')
+    updateDisplay(0, "<Default>")
   }
 }
 

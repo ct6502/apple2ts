@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { passSetBinaryBlock } from "../main2worker";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useState } from "react"
+import { passSetBinaryBlock } from "../main2worker"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faXmark,
-} from "@fortawesome/free-solid-svg-icons";
-import EditField from "../panels/editfield";
+} from "@fortawesome/free-solid-svg-icons"
+import EditField from "../panels/editfield"
 
 const BinaryFileDialog = (props:
   {
@@ -12,17 +12,17 @@ const BinaryFileDialog = (props:
     displayClose: () => void,
     binaryBuffer: Uint8Array
   }) => {
-  const [runCode, setRunCode] = useState(false);
+  const [runCode, setRunCode] = useState(false)
   const [runAddress, setRunAddress] = useState(() => {
-    const savedRunAddress = localStorage.getItem('binaryRunAddress')
-    return savedRunAddress ? savedRunAddress : '0300'
-  });
+    const savedRunAddress = localStorage.getItem("binaryRunAddress")
+    return savedRunAddress ? savedRunAddress : "0300"
+  })
 
   const handleSetRunAddress = (value: string) => {
     const newValue = value.toUpperCase()
     if (newValue.match(/^([A-F0-9]{0,4})$/)) {
       setRunAddress(newValue)
-      localStorage.setItem('binaryRunAddress', newValue)
+      localStorage.setItem("binaryRunAddress", newValue)
     } else {
       setRunAddress(runAddress)
     }
@@ -35,7 +35,7 @@ const BinaryFileDialog = (props:
   const handleLoadBinary = () => {
     props.displayClose()
     if (props.binaryBuffer.length > 0) {
-      const addr = parseInt('0x' + runAddress)
+      const addr = parseInt("0x" + runAddress)
       passSetBinaryBlock(addr, props.binaryBuffer, runCode)
     }
   }
@@ -46,7 +46,7 @@ const BinaryFileDialog = (props:
     <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
-        if (event.key === 'Escape') handleCancel()
+        if (event.key === "Escape") handleCancel()
       }}>
       <div className="floating-dialog flex-column"
         style={{ left: "15%", top: "25%" }}>
@@ -55,7 +55,7 @@ const BinaryFileDialog = (props:
             <div className="dialog-title">Load Binary File</div>
             <button className="push-button"
               onClick={handleCancel}>
-              <FontAwesomeIcon icon={faXmark} style={{ fontSize: '0.8em' }} />
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
             </button>
           </div>
           <div className="horiz-rule"></div>
@@ -96,4 +96,4 @@ const BinaryFileDialog = (props:
   )
 }
 
-export default BinaryFileDialog;
+export default BinaryFileDialog

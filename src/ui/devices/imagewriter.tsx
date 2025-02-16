@@ -11,11 +11,11 @@ const ImageWriter = () => {
 
   useEffect(() => {
     ImageWriterII.startup(canvas)
-  }, [canvas]);
+  }, [canvas])
 
   const setPrinting = () => {
     if (printingTimeout !== 0) {
-      clearTimeout(printingTimeout);
+      clearTimeout(printingTimeout)
     }
     const timeout = window.setTimeout(() => {
       setPrintingTimeout(0)

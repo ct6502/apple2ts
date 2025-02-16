@@ -26,18 +26,18 @@ Touch twice to lock it on.`
 
 }
 
-const textPage = new Array<string>(24).fill('')
-const startupTextSplit = emulatorStartText.split('\n')
+const textPage = new Array<string>(24).fill("")
+const startupTextSplit = emulatorStartText.split("\n")
 const n = startupTextSplit.length
 for (let j = 0; j < n; j++) {
   textPage[j + 12 - Math.floor(n/2)] = startupTextSplit[j]
 }
-textPage[0] = '*'.repeat(40)
-textPage[23] = '*'.repeat(40)
+textPage[0] = "*".repeat(40)
+textPage[23] = "*".repeat(40)
 for (let j = 1; j < 23; j++) {
   const len = (38 - textPage[j].length) / 2
-  const left = ' '.repeat(Math.floor(len))
-  const right = ' '.repeat(Math.ceil(len))
+  const left = " ".repeat(Math.floor(len))
+  const right = " ".repeat(Math.ceil(len))
   textPage[j] = `*${left}${textPage[j]}${right}*`
 }
 

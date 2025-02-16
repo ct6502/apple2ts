@@ -89,7 +89,7 @@ export const passData = () => {
 }
 
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
-  const data = ['', '', '']
+  const data = ["", "", ""]
   for (let i=0; i < driveState.length; i++) {
     // Always save small disk images (< 32Mb), or if a full save was requested
     if (full || driveData[i].length < 32000000) {
@@ -114,11 +114,11 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
     currentDrive++
   }
   initializeDriveState()
-  let dindex = 0;
+  let dindex = 0
   for (let i=0; i < newState.driveState.length; i++) {
     driveState[dindex] = { ...newState.driveState[i] }
-    if (newState.driveData[i] !== '') {
-      driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], 'base64'))
+    if (newState.driveData[i] !== "") {
+      driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
     }
     // See if we had a second hard drive in our save state or not.
     if (newState.driveState.length === 3 && i === 0) dindex = 1
@@ -146,7 +146,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   // See if the "wrong" disk image was put into a drive. If so, swap the drive.
   let isHardDrive = props.hardDrive
   if (!forceIndex) {
-    if (props.filename !== '') {
+    if (props.filename !== "") {
       if (isHardDriveImage(props.filename)) {
         isHardDrive = true
         index = (props.drive <= 1) ? 0 : 1
@@ -163,7 +163,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   driveState[index].motorRunning = props.motorRunning
   driveData[index] = decodeDiskData(driveState[index], props.diskData)
   if (driveData[index].length === 0) {
-    driveState[index].filename = ''
+    driveState[index].filename = ""
   }
   driveState[index].cloudData = props.cloudData
   passData()

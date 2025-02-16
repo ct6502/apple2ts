@@ -1,7 +1,7 @@
-import { Droplist } from "./droplist";
-import EditField from "./editfield";
-import { toHex } from "../../common/utility";
-import { useState } from "react";
+import { Droplist } from "./droplist"
+import EditField from "./editfield"
+import { toHex } from "../../common/utility"
+import { useState } from "react"
 
 interface ExpressionControlProps {
   expr: BreakpointExpression;
@@ -15,9 +15,9 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   const [bpValue, setBpValue] = useState(toHex(props.expr.value))
 
   const handleAddressChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 4).toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
     setBpAddress(value)
-    props.expr.address = parseInt(value || '-1', 16)
+    props.expr.address = parseInt(value || "-1", 16)
     props.setExpr(props.expr)
   }
 
@@ -33,17 +33,17 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   }
 
   const handleValueChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, '').slice(0, 2).toUpperCase()
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, 2).toUpperCase()
     setBpValue(value)
-    props.expr.value = parseInt(value || '-1', 16)
+    props.expr.value = parseInt(value || "-1", 16)
     props.setExpr(props.expr)
   }
 
-  const spaces = '\u00A0\u00A0\u00A0\u00A0'
+  const spaces = "\u00A0\u00A0\u00A0\u00A0"
   const registers = [`${spaces}(none)`, `$${spaces}Address`, `A${spaces}Accumulator`,
   `X${spaces}X Register`, `Y${spaces}Y Register`, `S${spaces}Stack Pointer`,
   `P${spaces}Processor Status`]
-  const regmap = ['', '$', 'A', 'X', 'Y', 'S', 'P']
+  const regmap = ["", "$", "A", "X", "Y", "S", "P"]
   const index = regmap.indexOf(props.expr.register)
 
   return <span>
@@ -55,7 +55,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
         handleRegisterChange(v.substring(0, 1).replace(/\s/g, "") as RegisterValues)}
       narrow={true} />
     {
-      (props.expr.register === '$') &&
+      (props.expr.register === "$") &&
       <EditField
         disabled={props.disabled || index === 0}
         value={bpAddress}
@@ -67,7 +67,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
       monospace={true}
       disabled={props.disabled || index === 0}
       value={props.expr.operator}
-      values={['==', '!=', '>', '>=', '<', '<=']}
+      values={["==", "!=", ">", ">=", "<", "<="]}
       setValue={(v: string) => handleOperatorChange(v as OperatorValues)} />
     <span className="dialog-title" style={{ padding: 0 }}>$</span>
     <EditField

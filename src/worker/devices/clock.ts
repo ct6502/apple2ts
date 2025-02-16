@@ -2,7 +2,7 @@
 
 import { setSlotDriver, memSet } from "../memory"
 
-const zeroPad = (num : number, places : number) => String(num).padStart(places, '0')
+const zeroPad = (num : number, places : number) => String(num).padStart(places, "0")
 
 // from prodos8 manual:
 // ProDOS recognizes a clock card if the following bytes are present in the Cn00 ROM:
@@ -22,7 +22,7 @@ const prodos8driver = () => {
   return driver
 }
 
-const code = prodos8driver();
+const code = prodos8driver()
 
 export const enableClockCard = (enable = true, slot = 2) => {
   if (!enable)
@@ -54,10 +54,10 @@ export const handleClockRead = () => {
   // would represent Thursday, July 14, 10:46 p.m. The year is looked up in a table in the clock driver.
 
   const date = new Date()
-  const output = zeroPad(date.getMonth() + 1, 2)  + ','
-               + zeroPad(date.getDay(), 2)    + ','
-               + zeroPad(date.getDate(), 2)   + ','
-               + zeroPad(date.getHours(), 2)  + ','
+  const output = zeroPad(date.getMonth() + 1, 2)  + ","
+               + zeroPad(date.getDay(), 2)    + ","
+               + zeroPad(date.getDate(), 2)   + ","
+               + zeroPad(date.getHours(), 2)  + ","
                + zeroPad(date.getMinutes(), 2)
 
   // write to 0x200 and convert to high ascii
