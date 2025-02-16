@@ -445,9 +445,9 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const fullscreenChange = () => {
     if (document.fullscreenElement) {
-      console.log(`Fullscreen mode entered for ${document.fullscreenElement}`);
-    } else {
-      console.log('Exited fullscreen mode.');
+      if (myText.current) {
+        myText.current.select()
+      }
     }
   }
 

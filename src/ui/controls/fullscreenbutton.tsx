@@ -14,13 +14,18 @@ const FullScreenButton = () => {
         const context = canvas.getContext('2d')
         if (context) {
           try {
-            var Element_Copy=Element;
-            var Element:any = Element_Copy;
-            canvas?.parentElement?.requestFullscreen(Element.ALLOW_KEYBOARD_INPUT)
+            var parentCopy=canvas.parentElement
+            var parent:any = parentCopy
+            var elementCopy=Element
+            var Element:any = elementCopy
+            var navigatorCopy=navigator
+            var navigator:any = navigatorCopy
+            parent.webkitRequestFullScreen()//Element.ALLOW_KEYBOARD_INPUT)
+            // navigator.keyboard.unlock();
             canvas.width = window.outerWidth;
             canvas.height = window.outerHeight;
-          } catch {
-            // do nothing
+          } catch(e) {
+            console.log(e)
           }
         }
       }
