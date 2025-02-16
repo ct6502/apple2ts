@@ -27,9 +27,56 @@ export default [
       "@stylistic/js/quotes": ["error", "double"],
       "@stylistic/js/semi": ["error", "never"],
     },
+    settings: {
+      react: {
+        version: "detect", // Automatically detect the React version
+      },
+    },
   },
   {
     // this needs to be outside of the curly braces above, so it acts as "global" ignores
     ignores: ["**/dist", "**/.eslintrc.cjs", "**/public"],
   },
+  // Custom rules for src/ui and src/worker, to prevent imports between them
+  {
+    files: ["src/ui/**"],
+    rules: {
+      "no-restricted-imports": [ "error",
+        {
+          patterns: [{
+            group: ["../worker/**"],
+            message: "'ui' code should not import 'worker' code"
+          }]
+        }
+      ]
+    }
+  },
+  {
+    files: ["src/worker/**"],
+    rules: {
+      "no-restricted-imports": [ "error",
+        {
+          patterns: [{
+            group: ["../ui/**"],
+            message: "'worker' code should not import 'ui' code"
+          }]
+        }
+      ]
+    }
+  },
+  // Custom rules for src/common, to prevent imports from src/ui or src/worker
+  // However, it is allowed for src/ui and src/worker to import from src/common
+  {
+    files: ["src/common/**"],
+    rules: {
+      "no-restricted-imports": [ "error",
+        {
+          patterns: [{
+            group: ["../ui/**", "../worker/**"],
+            message: "'common' code should not import 'ui' or 'worker' code"
+          }]
+        }
+      ]
+    }
+  }
 ]
