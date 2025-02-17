@@ -382,3 +382,42 @@ body.dark-mode .divider {
   cursor: default;
   user-select: none;
 }
+
+/* @media (display-mode: standalone) and (hover: none) and (min-width: 1024px) and (max-height: 1366px) { */
+@media all {
+  :root {
+    touch-action: pan-x pan-y;
+    height: 100%
+  }
+
+  html {
+    position: fixed;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    background-color: black;
+    margin: 0px;
+  }
+
+  .main-canvas {
+    margin: 0px;
+  }
+
+  .footer-item {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    color: white;
+  }
+
+  .default-font {
+    color: white;
+  }
+}

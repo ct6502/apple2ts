@@ -416,7 +416,7 @@ const Apple2Canvas = (props: DisplayProps) => {
             document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px")
             document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px")
             document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px")
-            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px")
+            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin) + "px")
           }
         }).observe(canvas)
         document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none")
@@ -454,10 +454,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isAndroidDevice = /Android/i.test(navigator.userAgent)
   const txt = isAndroidDevice ?
-    <textarea className="hidden-textarea" hidden={false} ref={myText}
+    <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={true}
       onInput={handleOnInput} /> :
     (isTouchDevice ?
-      <textarea className="hidden-textarea" hidden={false} ref={myText}
+      <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={true}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       /> : <span></span>)
