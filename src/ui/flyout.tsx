@@ -31,7 +31,7 @@ const Flyout = (props: {
       if (isTopPosition()) {
         panel.style.top = `calc(-${panel.offsetHeight}px + 18pt + 12px)`
       } else {
-        panel.style.bottom = `calc(-${panel.offsetHeight}px + 18pt + 8px)`
+        panel.style.bottom = `calc(-${panel.offsetHeight}px + 18pt + 20px)`
       }
       panel.style.opacity = '33%'
 

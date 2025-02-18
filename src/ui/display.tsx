@@ -23,7 +23,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { isProgressiveFullscreen, RUN_MODE, TEST_DEBUG } from "../common/utility"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -174,7 +174,7 @@ const DisplayApple2 = () => {
     <span>{currentSpeed} MHz, {memSize}</span>
     <br />
     <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
-      <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+      <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
   </div>
 
   return (
@@ -191,7 +191,7 @@ const DisplayApple2 = () => {
           {!isLandscape && status}
         </div>
         {isLandscape && status}
-        {narrow && <div className="divider"></div>}
+        {narrow && !isProgressiveFullscreen() && <div className="divider"></div>}
         <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}

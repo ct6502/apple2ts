@@ -395,10 +395,6 @@ body.dark-mode .divider {
     overflow: hidden;
   }
 
-  a {
-    display: none;
-  }
-
   body {
     height: 100%;
     overflow: hidden;
@@ -415,12 +411,12 @@ body.dark-mode .divider {
 
   .footer-item {
     position: absolute;
-    bottom: -32px;
+    bottom: -24px;
     right: 25%;
     color: white;
   }
 
-  #control-panel {
-    margin-bottom: 4px;
+  #reportIssue {
+    display: none;
   }
 }
