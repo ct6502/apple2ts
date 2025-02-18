@@ -26,13 +26,17 @@ const Flyout = (props: {
       } else {
         panel.style.bottom = '0px'
       }
+
+      panel.style.width = width
       panel.style.opacity = '100%'
     } else {
       if (isTopPosition()) {
-        panel.style.top = `calc(-${panel.offsetHeight}px + 18pt + 12px)`
+        panel.style.top = '0px'
       } else {
-        panel.style.bottom = `calc(-${panel.offsetHeight}px + 18pt + 20px)`
+        panel.style.bottom = '0px'
       }
+
+      panel.style.width = '80px'
       panel.style.opacity = '33%'
 
       const hiddenText = document.getElementsByClassName('hidden-textarea')[0] as HTMLElement
@@ -66,7 +70,7 @@ const Flyout = (props: {
 
   return (
     <div className={`flyout ${className}`} style={{ width: width }}>
-      {isTopPosition() ? props.children : ''}
+      {isFlyoutOpen && isTopPosition() ? props.children : ''}
       <div className="flyout-button" onClick={() => {
         handleResizeImmediate(!isFlyoutOpen)
         setIsFlyoutOpen(!isFlyoutOpen)
@@ -74,7 +78,7 @@ const Flyout = (props: {
         <FontAwesomeIcon icon={getArrowIcon()}
         ></FontAwesomeIcon>
       </div>
-      {!isTopPosition() ? props.children : ''}
+      {isFlyoutOpen && !isTopPosition() ? props.children : ''}
     </div>
   )
 }

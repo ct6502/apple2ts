@@ -413,10 +413,18 @@ const Apple2Canvas = (props: DisplayProps) => {
             const canvas = entry.target as HTMLCanvasElement
             const width = canvas.offsetWidth
             const height = canvas.offsetHeight
-            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px")
-            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px")
-            document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px")
-            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin) + "px")
+            const scanlinesLeft = canvas.offsetLeft + width * xmargin
+            const scanlinesTop = canvas.offsetTop + height * ymargin
+            const scanlinesWidth = width - 2 * width * xmargin
+            const scanlinesHeight = height - 2 * height * ymargin
+
+            document.body.style.setProperty('--scanlines-left', `${scanlinesLeft}px`)
+            document.body.style.setProperty('--scanlines-top', `${scanlinesTop}}px`)
+            document.body.style.setProperty('--scanlines-width', `${scanlinesWidth}px`)
+            document.body.style.setProperty('--scanlines-height', `${scanlinesHeight}px`)
+
+            // canvas.style.marginLeft = `${(window.innerWidth - scanlinesWidth) / 2}}px`
+            // canvas.style.marginTop = `${(window.innerHeight - scanlinesHeight) / 2}px`
           }
         }).observe(canvas)
         document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none")

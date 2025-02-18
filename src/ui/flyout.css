@@ -15,7 +15,10 @@
     top: -1000px;
     height: auto;
     left: 18px;
-    transition: top 0.3s ease;
+    transition: top 0.5s ease;
+    transition: bottom 0.5s ease;
+    transition: left 0.5s ease;
+    transition: right 0.5s ease;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     border-color: #000000;
@@ -23,6 +26,7 @@
     border-style: solid;
     border-top-style: none;
     padding-bottom: 2px;
+    z-index: 4;
   }
 
   .flyout-top-right {
@@ -37,6 +41,7 @@
     border-style: solid;
     border-top-style: none;
     padding-bottom: 2px;
+    z-index: 3;
   }
 
   .flyout-bottom-left {
@@ -50,12 +55,13 @@
     border-style: solid;
     border-bottom-style: none;
     padding-top: 0px;
+    z-index: 2;
   }
 
   .flyout-bottom-right {
     bottom: -1000px;
     height: auto;
-    right: 18px;
+    right: 8px;
     transition: bottom 0.3s ease;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
@@ -63,6 +69,7 @@
     border-style: solid;
     border-bottom-style: none;
     padding-top: 0px;
+    z-index: 1;
   }
 
   .flyout-button {
@@ -70,7 +77,7 @@
     color: #000000;
     padding-top: 2px;
     padding-bottom: 2px;
-    padding-left: 0px;
+    padding-left: 4px;
     padding-right: 0px;
     font-size: 18pt;
     cursor: pointer;
