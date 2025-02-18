@@ -10,7 +10,7 @@
   max-width: 600px;
 }
 
-@scope (.pwafs) {
+@scope (.theme-minimal) {
   .help-parent {}
 }
 

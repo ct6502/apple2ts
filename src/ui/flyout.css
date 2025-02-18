@@ -2,7 +2,7 @@
   display: none;
 }
 
-@scope (.pwafs) {
+@scope (.theme-minimal) {
   .flyout {
     position: fixed;
     background-color: #aba7a2;
@@ -12,13 +12,8 @@
   }
 
   .flyout-top-left {
-    top: -1000px;
     height: auto;
     left: 48px;
-    transition: top 0.5s ease;
-    transition: bottom 0.5s ease;
-    transition: left 0.5s ease;
-    transition: right 0.5s ease;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     border-color: #000000;
@@ -30,10 +25,8 @@
   }
 
   .flyout-top-right {
-    top: -1000px;
     height: auto;
     right: 48px;
-    transition: top 0.3s ease;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     border-color: #000000;
@@ -45,10 +38,8 @@
   }
 
   .flyout-bottom-left {
-    bottom: -1000px;
     height: auto;
     left: 48px;
-    transition: bottom 0.3s ease;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
     border-width: 1px;
@@ -59,10 +50,8 @@
   }
 
   .flyout-bottom-right {
-    bottom: -1000px;
     height: auto;
     right: 48px;
-    transition: bottom 0.3s ease;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
     border-width: 1px;

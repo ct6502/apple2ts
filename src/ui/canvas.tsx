@@ -13,8 +13,9 @@ import {
   handleGetCout,
   handleUseOpenAppleKey,
   handleGetShowScanlines,
+  handleGetTheme,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, isProgressiveFullscreen } from "../common/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
@@ -418,7 +419,7 @@ const Apple2Canvas = (props: DisplayProps) => {
             let scanlinesLeft = canvas.offsetLeft + width * xmargin
             let scanlinesTop = canvas.offsetTop + height * ymargin
 
-            if (isProgressiveFullscreen()) {
+            if (handleGetTheme() == UI_THEME.MINIMAL) {
               scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
               scanlinesTop = (window.innerHeight - scanlinesHeight) / 2
               canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
@@ -455,7 +456,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isProgressiveFullscreen();
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || handleGetTheme() == UI_THEME.MINIMAL;
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
   //   myCanvas.current.requestFullscreen()
@@ -466,10 +467,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isAndroidDevice = /Android/i.test(navigator.userAgent)
   const txt = isAndroidDevice ?
-    <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={isProgressiveFullscreen()}
+    <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={handleGetTheme() == UI_THEME.MINIMAL}
       onInput={handleOnInput} /> :
     (isTouchDevice ?
-      <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={isProgressiveFullscreen()}
+      <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={handleGetTheme() == UI_THEME.MINIMAL}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       /> : <span></span>)

@@ -1,9 +1,10 @@
 import React from "react"
-import { handleGetDarkMode } from "../main2worker"
+import { handleGetTheme } from "../main2worker"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
 import Flyout from "../flyout"
 import { faNoteSticky } from "@fortawesome/free-solid-svg-icons"
+import { UI_THEME } from "../../common/utility"
 
 type HelpPanelProps = {
   narrow: boolean,
@@ -16,16 +17,17 @@ type HelpPanelProps = {
 const HelpPanel = React.memo((props: HelpPanelProps) => {
   const height = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
+  const isDarkMode = handleGetTheme() == UI_THEME.DARK
   return (
-    <Flyout icon={faNoteSticky} minWidth={4096} position="top-right">
+    <Flyout icon={faNoteSticky} minWidth={2160} position="top-right">
       <div className="help-parent"
         style={{
           width: props.narrow ? "" : 500, height:
             props.narrow ? "" : height,
           overflow: (props.narrow ? "visible" : "auto")
         }}>
-        <div className={handleGetDarkMode() ? "" : "help-paper"}>
-          <pre className={"help-text " + (handleGetDarkMode() ? "help-text-dark" : "help-text-light")}
+        <div className={isDarkMode ? "" : "help-paper"}>
+          <pre className={"help-text " + (isDarkMode ? "help-text-dark" : "help-text-light")}
             dangerouslySetInnerHTML={{ __html: helpText }}>
           </pre>
         </div>

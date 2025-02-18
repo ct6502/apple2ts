@@ -9,7 +9,7 @@ import {
   handleGetMemSize,
   passHelpText,
   handleGetHelpText,
-  handleGetDarkMode,
+  handleGetTheme,
   passSetRunMode
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
@@ -23,7 +23,7 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { isProgressiveFullscreen, RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { handleSetTheme, RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -99,10 +99,6 @@ const DisplayApple2 = () => {
       setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
       setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1000)
     }
-
-    if (handleInputParamsResult.experiments.includes('pwafs')) {
-      document.documentElement.classList.add('pwafs')
-    }
   }
 
   const handleCtrlDown = (ctrlKeyMode: number) => {
@@ -152,11 +148,8 @@ const DisplayApple2 = () => {
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 
-  if (handleGetDarkMode()) {
-    document.body.classList.add("dark-mode")
-  } else {
-    document.body.classList.remove("dark-mode")
-  }
+  const theme = handleGetTheme()
+  handleSetTheme(theme)
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
@@ -191,7 +184,7 @@ const DisplayApple2 = () => {
           {!isLandscape && status}
         </div>
         {isLandscape && status}
-        {narrow && !isProgressiveFullscreen() && <div className="divider"></div>}
+        {narrow && theme != UI_THEME.MINIMAL && <div className="divider"></div>}
         <span className="flex-column" ref={righthandSectionRef}>
           {handleGetIsDebugging() ? <DebugSection /> :
             <HelpPanel narrow={narrow}

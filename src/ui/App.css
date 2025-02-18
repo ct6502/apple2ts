@@ -383,7 +383,7 @@ body.dark-mode .divider {
   user-select: none;
 }
 
-@scope (.pwafs) {
+@scope (.theme-minimal) {
   :root {
     touch-action: pan-x pan-y;
     height: 100%
@@ -412,10 +412,10 @@ body.dark-mode .divider {
   .footer-item {
     position: fixed;
     width: 100%;
-    bottom: 1.33%;
+    bottom: 1.5%;
     color: white;
     text-align: center;
-    font-size: max(0.66cqw, 6pt);
+    font-size: max(0.66cqw, 5pt);
   }
 
   #reportIssue {

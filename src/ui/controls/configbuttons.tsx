@@ -1,4 +1,4 @@
-import { lockedKeyStyle } from "../../common/utility"
+import { handleSetTheme, lockedKeyStyle, themeToName, UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
@@ -6,10 +6,10 @@ import {
   faWalking,
   faTruckFast,
   faRocket,
-  faCircleHalfStroke,
   faUpDownLeftRight,
   faSlash,
   faSync,
+  faPaintBrush,
 } from "@fortawesome/free-solid-svg-icons"
 import { MockingboardWaveform } from "../devices/mockingboardwaveform"
 import { MidiDeviceSelect } from "../devices/midiselect"
@@ -17,16 +17,17 @@ import { audioEnable, isAudioEnabled } from "../devices/speaker"
 import { SerialPortSelect } from "../devices/serialselect"
 import {
   handleGetArrowKeysAsJoystick,
-  handleGetCapsLock, handleGetDarkMode, handleGetSpeedMode,
+  handleGetCapsLock, handleGetTheme, handleGetSpeedMode,
   handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
   passUseOpenAppleKey
 } from "../main2worker"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceCapsLock, setPreferenceDarkMode, setPreferenceSpeedMode } from "../localstorage"
+import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme, setPreferenceSpeedMode } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
+import React from "react"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -40,22 +41,44 @@ const ConfigButtons = (props: DisplayProps) => {
   const useOpenAppleKey = handleUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
+  const theme = handleGetTheme()
+  const [droplistOpen, setDroplistOpen] = React.useState<boolean>(false)
+  const [position, setPosition] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 })
+
+  const handleClick = (event: React.MouseEvent) => {
+    const y = Math.min(event.clientY, window.innerHeight - 200)
+    setPosition({ x: event.clientX, y: y })
+    setDroplistOpen(true)
+  }
+
+  const handleThemeClose = (theme = -1) => {
+    setDroplistOpen(false)
+    if (theme >= 0) {
+      window.setTimeout(() => {
+        setPreferenceTheme(theme)
+        handleSetTheme(theme)
+        props.updateDisplay()
+        window.dispatchEvent(new Event("resize"))
+      }, 100)
+    }
+  }
+
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
-    <button className="push-button"
-      title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
-      onClick={() => { setPreferenceSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={([faWalking, faTruckFast, faRocket])[speedMode]} />
-    </button>
+      <button className="push-button"
+        title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
+        onClick={() => { setPreferenceSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
+        <FontAwesomeIcon icon={([faWalking, faTruckFast, faRocket])[speedMode]} />
+      </button>
 
-    <DisplayConfig updateDisplay={props.updateDisplay} />
+      <DisplayConfig updateDisplay={props.updateDisplay} />
 
-    <button className="push-button"
-      title={"Toggle Sound"}
-      style={{ display: typeof AudioContext !== "undefined" ? "" : "none" }}
-      onClick={() => { audioEnable(!isAudioEnabled()); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
-    </button>
+      <button className="push-button"
+        title={"Toggle Sound"}
+        style={{ display: typeof AudioContext !== "undefined" ? "" : "none" }}
+        onClick={() => { audioEnable(!isAudioEnabled()); props.updateDisplay() }}>
+        <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
+      </button>
     </div>
 
     <div className="flex-row" id="tour-keyboardbuttons">
@@ -69,18 +92,18 @@ const ConfigButtons = (props: DisplayProps) => {
         <button className="push-button"
           title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
           onClick={() => { passUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
-            {useOpenAppleKey ?
+          {useOpenAppleKey ?
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
         </button>
       }
 
       {!isTouchDevice &&
-        <button className="push-button" style={{position: "relative"}}
+        <button className="push-button" style={{ position: "relative" }}
           title={`Use Arrow Keys as Joystick (${arrowKeysAsJoystick ? "on" : "off"})`}
           onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
-          <FontAwesomeIcon icon={faUpDownLeftRight} style={arrowKeysAsJoystick ? {} : {transform: "translateX(50%)"}} />
-          {!arrowKeysAsJoystick && <FontAwesomeIcon style={{transform: "translateX(-50%)", width: "80%"}} icon={faSlash} />}
+          <FontAwesomeIcon icon={faUpDownLeftRight} style={arrowKeysAsJoystick ? {} : { transform: "translateX(50%)" }} />
+          {!arrowKeysAsJoystick && <FontAwesomeIcon style={{ transform: "translateX(-50%)", width: "80%" }} icon={faSlash} />}
         </button>
       }
     </div>
@@ -95,9 +118,27 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       title="Dark Mode"
-      onClick={() => { setPreferenceDarkMode(!handleGetDarkMode()); props.updateDisplay() }}>
-      <FontAwesomeIcon icon={faCircleHalfStroke} />
+      onClick={handleClick}>
+      <FontAwesomeIcon icon={faPaintBrush} />
     </button>
+
+    {droplistOpen &&
+      <div className="modal-overlay"
+        style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+        onClick={() => handleThemeClose(-1)}>
+        <div className="floating-dialog flex-column droplist-option"
+          style={{ left: position.x, top: position.y }}>
+          {Object.values(UI_THEME).filter(value => typeof value === "number").map((i) => (
+            <div className="droplist-option" style={{ padding: "5px" }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+              key={i} onClick={() => handleThemeClose(i)}>
+              {(theme === i) ? "\u2714\u2009" : "\u2003"}{themeToName(i)}
+            </div>))}
+        </div>
+
+      </div>
+    }
 
     <button className="push-button" id="tour-clearcookies"
       title="Reset All Settings"
@@ -105,7 +146,7 @@ const ConfigButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faSync} />
     </button>
 
-    <RunTour/>
+    <RunTour />
 
   </div>
 }

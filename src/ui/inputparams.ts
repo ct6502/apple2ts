@@ -1,8 +1,8 @@
 import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
-import { COLOR_MODE } from "../common/utility"
+import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText, passShowScanlines } from "./main2worker"
+import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passTheme, passPasteText, passShowScanlines } from "./main2worker"
 
 export type HandleInputParamsResult = {
   hasBasicProgram: boolean
@@ -67,8 +67,21 @@ export const handleInputParams = (): HandleInputParamsResult => {
     }
   }
 
-  if (params.get("theme") === "dark") {
-    passDarkMode(true)
+  const theme = params.get("theme")
+  if (theme) {
+    switch (theme.toLocaleLowerCase()) {
+      case 'classic':
+        passTheme(UI_THEME.CLASSIC)
+        break
+
+      case 'dark':
+        passTheme(UI_THEME.DARK)
+        break
+
+      case 'minimal':
+        passTheme(UI_THEME.MINIMAL)
+        break
+    }
   }
 
   const address = params.get("address")
@@ -85,9 +98,7 @@ export const handleInputParams = (): HandleInputParamsResult => {
   if (experiments) {
     experiments.split(',').forEach((experiment) => {
       switch (experiment) {
-        case 'pwafs':
-          result.experiments.push(experiment.toLowerCase())
-          break
+        // Experiments go here
       }
     });
   }
