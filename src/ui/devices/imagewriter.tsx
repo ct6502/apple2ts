@@ -29,7 +29,7 @@ const ImageWriter = () => {
   const img1 = printingTimeout ? iwiion : iwiioff
 
   return (
-    <Flyout icon={faPrint} width="auto" position="bottom-right">
+    <Flyout icon={faPrint} minWidth={1290} position="bottom-right">
       <span className="flex-column">
         <img className="disk-image"
           style={{ borderWidth: 0 }}

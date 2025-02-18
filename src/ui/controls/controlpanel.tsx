@@ -8,7 +8,7 @@ import KeyboardButtons from "./keyboardbuttons"
 
 const ControlPanel = (props: DisplayProps) => {
   return (
-    <Flyout icon={faWrench} width="auto" position="top-left">
+    <Flyout icon={faWrench} minWidth={1290} position="top-left">
       <span className="flex-column">
         <span className="flex-row wrap" id="tour-controlbuttons">
           <ControlButtons {...props} />

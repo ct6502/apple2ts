@@ -6,13 +6,12 @@ import { isProgressiveFullscreen } from "../common/utility"
 
 const Flyout = (props: {
   icon: IconDefinition,
-  width: string,
+  minWidth: number,
   position: string,
   children: any
 }) => {
-  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false);
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(props.minWidth < window.innerWidth);
   const className = `flyout-${props.position}`
-  const width = props.width ?? ''
 
   const isTopPosition = () => {
     return props.position.search('top') >= 0
@@ -27,7 +26,7 @@ const Flyout = (props: {
         panel.style.bottom = '0px'
       }
 
-      panel.style.width = width
+      panel.style.width = 'auto'
       panel.style.opacity = '100%'
     } else {
       if (isTopPosition()) {
@@ -69,8 +68,8 @@ const Flyout = (props: {
   }
 
   return (
-    <div className={`flyout ${className}`} style={{ width: width }}>
-      {isFlyoutOpen && isTopPosition() ? props.children : ''}
+    <div className={`flyout ${className}`}>
+      {isTopPosition() && (isFlyoutOpen || !isProgressiveFullscreen()) ? props.children : ''}
       <div className="flyout-button" onClick={() => {
         handleResizeImmediate(!isFlyoutOpen)
         setIsFlyoutOpen(!isFlyoutOpen)
@@ -78,7 +77,7 @@ const Flyout = (props: {
         <FontAwesomeIcon icon={getArrowIcon()}
         ></FontAwesomeIcon>
       </div>
-      {isFlyoutOpen && !isTopPosition() ? props.children : ''}
+      {!isTopPosition() && (isFlyoutOpen || !isProgressiveFullscreen()) ? props.children : ''}
     </div>
   )
 }

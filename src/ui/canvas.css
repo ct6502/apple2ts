@@ -70,12 +70,6 @@ body.dark-mode .hgr-view-text {
 }
 
 @scope (.pwafs) {
-  .canvas-text {
-    margin-top: 23px;
-    margin-left: -1px;
-    /* border: 1px solid red; */
-  }
-
   .hidden-textarea {
     pointer-events: none;
   }

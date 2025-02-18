@@ -14,7 +14,7 @@
   .flyout-top-left {
     top: -1000px;
     height: auto;
-    left: 18px;
+    left: 48px;
     transition: top 0.5s ease;
     transition: bottom 0.5s ease;
     transition: left 0.5s ease;
@@ -32,7 +32,7 @@
   .flyout-top-right {
     top: -1000px;
     height: auto;
-    right: 18px;
+    right: 48px;
     transition: top 0.3s ease;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
@@ -47,7 +47,7 @@
   .flyout-bottom-left {
     bottom: -1000px;
     height: auto;
-    left: 18px;
+    left: 48px;
     transition: bottom 0.3s ease;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
@@ -61,7 +61,7 @@
   .flyout-bottom-right {
     bottom: -1000px;
     height: auto;
-    right: 8px;
+    right: 48px;
     transition: bottom 0.3s ease;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;

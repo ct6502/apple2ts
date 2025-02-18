@@ -6,7 +6,7 @@ import { faFloppyDisk } from "@fortawesome/free-solid-svg-icons"
 
 const DiskInterface = (props: DisplayProps) => {
   return (
-    <Flyout icon={faFloppyDisk} width="auto" position="bottom-left">
+    <Flyout icon={faFloppyDisk} minWidth={1290} position="bottom-left">
       <div className="flex-row wrap">
         <span className="flex-row">
           <DiskImageChooser {...props} />

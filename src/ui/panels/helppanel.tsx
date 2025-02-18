@@ -17,7 +17,7 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
   const height = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
   return (
-    <Flyout icon={faNoteSticky} width="auto" position="top-right">
+    <Flyout icon={faNoteSticky} minWidth={4096} position="top-right">
       <div className="help-parent"
         style={{
           width: props.narrow ? "" : 500, height:

@@ -10,6 +10,10 @@
   max-width: 600px;
 }
 
+@scope (.pwafs) {
+  .help-parent {}
+}
+
 .help-paper {
   position: relative;
   background-color: #f0f0f0;
