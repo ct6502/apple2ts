@@ -423,3 +423,7 @@ export const isHardDriveImage = (filename: string) => {
   const f = filename.toLowerCase()
   return f.endsWith(".hdv") || f.endsWith(".po") || f.endsWith(".2mg")
 }
+
+export const isProgressiveFullscreen = () => {
+  return document.documentElement.classList.contains('pwafs');
+}

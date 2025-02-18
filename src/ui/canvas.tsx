@@ -14,7 +14,7 @@ import {
   handleUseOpenAppleKey,
   handleGetShowScanlines,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "../common/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, isProgressiveFullscreen } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
@@ -443,7 +443,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen;
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isProgressiveFullscreen();
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
   //   myCanvas.current.requestFullscreen()

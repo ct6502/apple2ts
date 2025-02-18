@@ -384,7 +384,7 @@ body.dark-mode .divider {
 }
 
 /* @media (display-mode: standalone) and (hover: none) and (min-width: 1024px) and (max-height: 1366px) { */
-@media all {
+@scope (.pwafs) {
   :root {
     touch-action: pan-x pan-y;
     height: 100%
