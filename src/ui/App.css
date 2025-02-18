@@ -383,7 +383,6 @@ body.dark-mode .divider {
   user-select: none;
 }
 
-/* @media (display-mode: standalone) and (hover: none) and (min-width: 1024px) and (max-height: 1366px) { */
 @scope (.pwafs) {
   :root {
     touch-action: pan-x pan-y;
@@ -394,6 +393,10 @@ body.dark-mode .divider {
     position: fixed;
     height: 100%;
     overflow: hidden;
+  }
+
+  a {
+    display: none;
   }
 
   body {
@@ -412,12 +415,12 @@ body.dark-mode .divider {
 
   .footer-item {
     position: absolute;
-    bottom: 24px;
-    left: 24px;
+    bottom: -32px;
+    right: 25%;
     color: white;
   }
 
-  .default-font {
-    color: white;
+  #control-panel {
+    margin-bottom: 4px;
   }
 }

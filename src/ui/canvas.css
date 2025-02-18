@@ -62,11 +62,21 @@ body.dark-mode .hgr-view-text {
   top: var(--scanlines-top);
   width: var(--scanlines-width);
   height: var(--scanlines-height);
-  background: linear-gradient(
-      to bottom,
+  background: linear-gradient(to bottom,
       transparent 50%,
-      rgba(0, 0, 0, 0.3) 51%
-  );
+      rgba(0, 0, 0, 0.3) 51%);
   background-size: 100% 4px;
   z-index: 1;
+}
+
+@scope (.pwafs) {
+  .canvas-text {
+    margin-top: 23px;
+    margin-left: -1px;
+    /* border: 1px solid red; */
+  }
+
+  .hidden-textarea {
+    pointer-events: none;
+  }
 }

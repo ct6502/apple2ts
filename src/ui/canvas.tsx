@@ -454,10 +454,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isAndroidDevice = /Android/i.test(navigator.userAgent)
   const txt = isAndroidDevice ?
-    <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={true}
+    <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={isProgressiveFullscreen()}
       onInput={handleOnInput} /> :
     (isTouchDevice ?
-      <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={true}
+      <textarea className="hidden-textarea" hidden={false} ref={myText} readOnly={isProgressiveFullscreen()}
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
       /> : <span></span>)

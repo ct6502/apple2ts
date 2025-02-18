@@ -3,6 +3,8 @@ import iwiion from "./img/iwiion.png"
 import iwiioff from "./img/iwiioff.png"
 import PrinterDialog from "./printerdialog"
 import { ImageWriterII, registerSetPrinting } from "./iwii"
+import Flyout from "../flyout"
+import { faPrint } from "@fortawesome/free-solid-svg-icons"
 
 const ImageWriter = () => {
   const [open, setOpen] = useState(false)
@@ -27,20 +29,22 @@ const ImageWriter = () => {
   const img1 = printingTimeout ? iwiion : iwiioff
 
   return (
-    <span className="flex-column">
-      <img className="disk-image"
-        style={{ borderWidth: 0 }}
-        src={img1} alt="iwii"
-        title="ImageWriter II"
-        height="57px"
-        onClick={() => { setOpen(true) }} />
-      <PrinterDialog
-        open={open}
-        onClose={() => { setOpen(false) }}
-        canvas={canvas}
-        printer={ImageWriterII}
-      />
-    </span>
+    <Flyout icon={faPrint} width="auto" position="bottom-right">
+      <span className="flex-column">
+        <img className="disk-image"
+          style={{ borderWidth: 0 }}
+          src={img1} alt="iwii"
+          title="ImageWriter II"
+          height="57px"
+          onClick={() => { setOpen(true) }} />
+        <PrinterDialog
+          open={open}
+          onClose={() => { setOpen(false) }}
+          canvas={canvas}
+          printer={ImageWriterII}
+        />
+      </span>
+    </Flyout>
   )
 }
 
