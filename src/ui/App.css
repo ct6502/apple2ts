@@ -412,10 +412,12 @@ body.dark-mode .divider {
   .footer-item {
     position: fixed;
     width: 100%;
-    bottom: 1.5%;
+    bottom: 1.25em;
     color: white;
     text-align: center;
     font-size: max(0.66cqw, 5pt);
+    -webkit-text-fill-color: black;
+    -webkit-text-stroke: 1px;
   }
 
   #reportIssue {

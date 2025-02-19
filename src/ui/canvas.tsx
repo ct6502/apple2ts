@@ -421,7 +421,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
             if (handleGetTheme() == UI_THEME.MINIMAL) {
               scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
-              scanlinesTop = (window.innerHeight - scanlinesHeight) / 2
+              scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 10
               canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
               canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
             }
