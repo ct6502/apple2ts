@@ -19,7 +19,7 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
   const isDarkMode = handleGetTheme() == UI_THEME.DARK
   return (
-    <Flyout icon={faNoteSticky} minWidth={2160} position="top-right">
+    <Flyout icon={faNoteSticky} position="top-right">
       <div className="help-parent"
         style={{
           width: props.narrow ? "" : 500, height:

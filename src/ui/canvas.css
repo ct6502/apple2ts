@@ -68,9 +68,3 @@ body.dark-mode .hgr-view-text {
   background-size: 100% 4px;
   z-index: 1;
 }
-
-@scope (.theme-minimal) {
-  .hidden-textarea {
-    pointer-events: none;
-  }
-}

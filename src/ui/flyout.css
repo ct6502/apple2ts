@@ -8,11 +8,11 @@
     background-color: #aba7a2;
     padding-left: 2px;
     padding-right: 7px;
-    z-index: 99;
   }
 
   .flyout-top-left {
     height: auto;
+    top: 0px;
     left: 48px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
@@ -26,7 +26,8 @@
 
   .flyout-top-right {
     height: auto;
-    right: 48px;
+    top: 0px;
+    right: 14px;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     border-color: #000000;
@@ -39,6 +40,7 @@
 
   .flyout-bottom-left {
     height: auto;
+    bottom: 0px;
     left: 48px;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
@@ -51,7 +53,8 @@
 
   .flyout-bottom-right {
     height: auto;
-    right: 48px;
+    bottom: 0px;
+    right: 14px;
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
     border-width: 1px;

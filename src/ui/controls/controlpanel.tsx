@@ -5,10 +5,17 @@ import ControlButtons from "./controlbuttons"
 import DebugButtons from "./debugbuttons"
 import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
+import { useState } from "react"
 
 const ControlPanel = (props: DisplayProps) => {
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
+
   return (
-    <Flyout icon={faWrench} minWidth={1290} position="top-left">
+    <Flyout
+      icon={faWrench}
+      isOpen={() => { return isFlyoutOpen }}
+      onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
+      position="top-left">
       <span className="flex-column">
         <span className="flex-row wrap" id="tour-controlbuttons">
           <ControlButtons {...props} />

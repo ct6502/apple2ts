@@ -53,13 +53,11 @@ const ConfigButtons = (props: DisplayProps) => {
 
   const handleThemeClose = (theme = -1) => {
     setDroplistOpen(false)
-    if (theme >= 0) {
-      window.setTimeout(() => {
+    if (theme >= 0 && theme != handleGetTheme()) {
+      if (window.confirm('Reload the emulator and apply this theme now?')) {
         setPreferenceTheme(theme)
-        handleSetTheme(theme)
-        props.updateDisplay()
-        window.dispatchEvent(new Event("resize"))
-      }, 100)
+        window.location.reload()
+      }
     }
   }
 

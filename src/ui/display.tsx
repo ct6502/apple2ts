@@ -18,7 +18,6 @@ import DiskInterface from "./devices/diskinterface"
 import { useRef, useState } from "react"
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
-import ImageWriter from "./devices/imagewriter"
 import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
@@ -179,16 +178,14 @@ const DisplayApple2 = () => {
             style={{ paddingLeft: "2px" }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
-            <ImageWriter />
           </div>
           {!isLandscape && status}
         </div>
         {isLandscape && status}
         {narrow && theme != UI_THEME.MINIMAL && <div className="divider"></div>}
         <span className="flex-column" ref={righthandSectionRef}>
-          {handleGetIsDebugging() ? <DebugSection /> :
-            <HelpPanel narrow={narrow}
-              helptext={handleGetHelpText()} />}
+          {(handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <DebugSection />}
+          {(!handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
         </span>
       </span>
       <FileInput {...props} />

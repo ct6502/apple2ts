@@ -1,3 +1,12 @@
+@scope (.theme-minimal) {
+  .debug-section {
+    max-width: 90cqw;
+    max-height: 90cqh;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+}
+
 .hex-field {
   font-family: monospace;
   font-size: 10pt;
@@ -432,9 +441,11 @@ body.dark-mode .memtable-highlight {
   0% {
     background-color: var(--highlight);
   }
+
   50% {
     background-color: var(--highlight);
   }
+
   100% {
     background-color: initial;
   }
@@ -444,9 +455,11 @@ body.dark-mode .memtable-highlight {
   0% {
     background-color: var(--highlight-dark);
   }
+
   50% {
     background-color: var(--highlight-dark);
   }
+
   100% {
     background-color: initial;
   }

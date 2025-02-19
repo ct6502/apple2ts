@@ -11,6 +11,15 @@
 }
 
 @scope (.theme-minimal) {
+  .help-parent {
+    max-width: 75cqw;
+    max-height: 75cqh;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+}
+
+@scope (.theme-minimal) {
   .help-parent {}
 }
 

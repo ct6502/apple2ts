@@ -1,7 +1,8 @@
-import { RUN_MODE } from "../../common/utility"
+import { RUN_MODE, UI_THEME } from "../../common/utility"
 import {
   passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode
+  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode,
+  handleGetTheme
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -23,30 +24,30 @@ const DebugButtons = () => {
   const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT
   return <span className="flex-row">
     <div className="flex-row" id="tour-snapshot">
-    <button className="push-button"
-      title={"Go Back in Time"}
-      onClick={passGoBackInTime}
-      disabled={notStarted || !handleCanGoBackward()}>
-      <FontAwesomeIcon icon={faFastBackward} />
-    </button>
-    <button className="push-button"
-      title={"Take a Snapshot"}
-      onClick={passTimeTravelSnapshot}
-      disabled={notStarted}>
-      <FontAwesomeIcon icon={faCamera} />
-    </button>
-    <button className="push-button"
-      title={"Go Forward in Time"}
-      onClick={passGoForwardInTime}
-      disabled={notStarted || !handleCanGoForward()}>
-      <FontAwesomeIcon icon={faFastForward} />
-    </button>
-    <button className="push-button"
-      title={"Save State with Snapshots"}
-      onClick={() => handleFileSave(true)}
-      disabled={notStarted}>
-      <FontAwesomeIcon icon={faLayerGroup} />
-    </button>
+      <button className="push-button"
+        title={"Go Back in Time"}
+        onClick={passGoBackInTime}
+        disabled={notStarted || !handleCanGoBackward()}>
+        <FontAwesomeIcon icon={faFastBackward} />
+      </button>
+      <button className="push-button"
+        title={"Take a Snapshot"}
+        onClick={passTimeTravelSnapshot}
+        disabled={notStarted}>
+        <FontAwesomeIcon icon={faCamera} />
+      </button>
+      <button className="push-button"
+        title={"Go Forward in Time"}
+        onClick={passGoForwardInTime}
+        disabled={notStarted || !handleCanGoForward()}>
+        <FontAwesomeIcon icon={faFastForward} />
+      </button>
+      <button className="push-button"
+        title={"Save State with Snapshots"}
+        onClick={() => handleFileSave(true)}
+        disabled={notStarted}>
+        <FontAwesomeIcon icon={faLayerGroup} />
+      </button>
     </div>
     <button className="push-button" id="tour-pause-button"
       title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
@@ -59,11 +60,12 @@ const DebugButtons = () => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    <button className="push-button" id="tour-debug-button"
-      title="Toggle Debug"
-      onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
-      <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
-    </button>
+    {handleGetTheme() != UI_THEME.MINIMAL &&
+      <button className="push-button" id="tour-debug-button"
+        title="Toggle Debug"
+        onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
+        <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
+      </button>}
   </span>
 }
 
