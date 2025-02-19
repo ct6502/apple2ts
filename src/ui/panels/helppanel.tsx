@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { handleGetTheme } from "../main2worker"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
@@ -15,21 +15,30 @@ type HelpPanelProps = {
 // It was re-rendering on every machine state update, which was ridiculous.
 // Now it only re-renders when the help text changes.
 const HelpPanel = React.memo((props: HelpPanelProps) => {
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const height = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
   const isDarkMode = handleGetTheme() == UI_THEME.DARK
+  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+
   return (
-    <Flyout icon={faNoteSticky} position="top-right">
-      <div className="help-parent"
-        style={{
-          width: props.narrow ? "" : 500, height:
-            props.narrow ? "" : height,
-          overflow: (props.narrow ? "visible" : "auto")
-        }}>
-        <div className={isDarkMode ? "" : "help-paper"}>
-          <pre className={"help-text " + (isDarkMode ? "help-text-dark" : "help-text-light")}
-            dangerouslySetInnerHTML={{ __html: helpText }}>
-          </pre>
+    <Flyout
+      icon={faNoteSticky}
+      isOpen={() => { return isFlyoutOpen }}
+      onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
+      position="top-right">
+      <div className="help-section">
+        <div className="help-parent"
+          style={{
+            width: props.narrow || isMinimalTheme ? "" : 500, height:
+              props.narrow || isMinimalTheme ? "" : height,
+            overflow: (props.narrow ? "visible" : "auto")
+          }}>
+          <div className={isDarkMode ? "" : "help-paper"}>
+            <pre className={"help-text " + (isDarkMode ? "help-text-dark" : "help-text-light")}
+              dangerouslySetInnerHTML={{ __html: helpText }}>
+            </pre>
+          </div>
         </div>
       </div>
     </Flyout>

@@ -1,12 +1,3 @@
-@scope (.theme-minimal) {
-  .debug-section {
-    max-width: 90cqw;
-    max-height: 90cqh;
-    overflow-x: auto;
-    overflow-y: auto;
-  }
-}
-
 .hex-field {
   font-family: monospace;
   font-size: 10pt;
@@ -511,4 +502,13 @@ body.dark-mode .memory-map td {
 
 body.dark-mode .icon-text {
   color: var(--text-color);
+}
+
+@scope (.theme-minimal) {
+  .debug-section {
+    max-width: 85cqw;
+    max-height: 75cqh;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
 }
