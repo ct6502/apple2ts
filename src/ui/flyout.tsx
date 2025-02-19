@@ -28,10 +28,14 @@ const Flyout = (props: {
     }
   }
 
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const isLeftPosition = props.position.indexOf('left') >= 0
+
   return (
     <div
       className={`flyout ${className}`}
       style={{
+        left: isMinimalTheme && isLeftPosition ? (!isFlyoutOpen || !isTouchDevice ? '14px' : '48px') : '',
         width: isMinimalTheme && !isFlyoutOpen ? '72px' : 'auto',
         opacity: isMinimalTheme && !isFlyoutOpen ? '33%' : '100%'
       }}>
