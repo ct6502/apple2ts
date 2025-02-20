@@ -119,6 +119,7 @@ export const loadPreferences = () => {
         passTheme(UI_THEME.DARK)
       }
     } catch {
+      localStorage.removeItem("darkMode")
     }
     localStorage.removeItem("darkMode")
   }

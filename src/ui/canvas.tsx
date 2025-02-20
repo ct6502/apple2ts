@@ -408,10 +408,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 10
 
       if (handleGetIsDebugging()) {
-        const debugSection = document.getElementsByClassName('flyout-bottom-right')[0] as HTMLElement
+        const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
         if (debugSection) {
-          console.log(`debugSection.offsetLeft=${debugSection.offsetLeft}`)
-          console.log(`scanlinesWidth=${scanlinesWidth}`)
           scanlinesLeft = Math.max(Math.min(scanlinesLeft, debugSection.offsetLeft - scanlinesWidth - 18), 0)
         }
       }
@@ -420,10 +418,10 @@ const Apple2Canvas = (props: DisplayProps) => {
       canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
     }
 
-    document.body.style.setProperty('--scanlines-left', `${scanlinesLeft}px`)
-    document.body.style.setProperty('--scanlines-top', `${scanlinesTop}px`)
-    document.body.style.setProperty('--scanlines-width', `${scanlinesWidth}px`)
-    document.body.style.setProperty('--scanlines-height', `${scanlinesHeight}px`)
+    document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
+    document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
+    document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
+    document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
 
     return canvas.style.marginLeft
   }

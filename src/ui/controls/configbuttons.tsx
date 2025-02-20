@@ -54,10 +54,12 @@ const ConfigButtons = (props: DisplayProps) => {
   const handleThemeClose = (theme = -1) => {
     setDroplistOpen(false)
     if (theme >= 0 && theme != handleGetTheme()) {
-      setPreferenceTheme(theme)
-      const url = new URL(window.location.href)
-      url.searchParams.delete('theme')
-      window.location.href = url.toString()
+      if (window.confirm("Reload the emulator and apply this theme now?")) {
+        setPreferenceTheme(theme)
+        const url = new URL(window.location.href)
+        url.searchParams.delete("theme")
+        window.location.href = url.toString()
+      }
     }
   }
 

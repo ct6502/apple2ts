@@ -19,7 +19,7 @@ const DebugSection = () => {
       position="bottom-right"
       isOpen={handleGetIsDebugging}
       onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}
-      buttonId={handleGetTheme() == UI_THEME.MINIMAL ? 'tour-debug-button' : ''}>
+      buttonId={handleGetTheme() == UI_THEME.MINIMAL ? "tour-debug-button" : ""}>
       <div className="flex-column-gap debug-section">
         <State6502Controls />
         <div className="flex-row-gap">

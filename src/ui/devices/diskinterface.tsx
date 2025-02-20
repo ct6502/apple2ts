@@ -18,7 +18,7 @@ const DiskInterface = (props: DisplayProps) => {
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="bottom-left">
-      <div className={`${isMinimalTheme ? 'flex-column' : 'flex-row'} wrap`}>
+      <div className={`${isMinimalTheme ? "flex-column" : "flex-row"} wrap`}>
         <span className="flex-row wrap">
           <DiskImageChooser {...props} />
           <DiskDrive index={0} renderCount={props.renderCount}

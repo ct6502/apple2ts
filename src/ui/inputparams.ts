@@ -17,7 +17,7 @@ export const handleInputParams = (): HandleInputParamsResult => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { setRunTour } = useGlobalContext()
 
-  let result: HandleInputParamsResult = {
+  const result: HandleInputParamsResult = {
     hasBasicProgram: false,
     experiments: []
   }
@@ -70,15 +70,15 @@ export const handleInputParams = (): HandleInputParamsResult => {
   const theme = params.get("theme")
   if (theme) {
     switch (theme.toLocaleLowerCase()) {
-      case 'classic':
+      case "classic":
         passTheme(UI_THEME.CLASSIC)
         break
 
-      case 'dark':
+      case "dark":
         passTheme(UI_THEME.DARK)
         break
 
-      case 'minimal':
+      case "minimal":
         passTheme(UI_THEME.MINIMAL)
         break
     }
@@ -94,13 +94,9 @@ export const handleInputParams = (): HandleInputParamsResult => {
     setRunTour(tour)
   }
 
-  const experiments = params.get('exp')
+  const experiments = params.get("exp")
   if (experiments) {
-    experiments.split(',').forEach((experiment) => {
-      switch (experiment) {
-        // Experiments go here
-      }
-    });
+    // Experiments go here
   }
 
   const run = params.get("run")

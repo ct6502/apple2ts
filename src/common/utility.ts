@@ -100,9 +100,9 @@ export enum UI_THEME {
 
 export const themeToName = (theme: UI_THEME) => {
   return [
-    'Classic',
-    'Dark',
-    'Minimal'][theme]
+    "Classic",
+    "Dark",
+    "Minimal"][theme]
 }
 
 export type MouseEventSimple = {
@@ -444,8 +444,8 @@ export const handleSetTheme = (theme: UI_THEME) => {
     document.body.classList.remove("dark-mode")
   }
   if (theme == UI_THEME.MINIMAL) {
-    document.documentElement.classList.add('theme-minimal')
+    document.documentElement.classList.add("theme-minimal")
   } else {
-    document.documentElement.classList.remove('theme-minimal')
+    document.documentElement.classList.remove("theme-minimal")
   }
 }
