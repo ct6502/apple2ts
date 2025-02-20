@@ -55,7 +55,9 @@ const ConfigButtons = (props: DisplayProps) => {
     setDroplistOpen(false)
     if (theme >= 0 && theme != handleGetTheme()) {
       setPreferenceTheme(theme)
-      window.location.reload()
+      const url = new URL(window.location.href)
+      url.searchParams.delete('theme')
+      window.location.href = url.toString()
     }
   }
 
