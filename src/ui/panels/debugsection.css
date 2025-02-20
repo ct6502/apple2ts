@@ -506,7 +506,7 @@ body.dark-mode .icon-text {
 
 @scope (.theme-minimal) {
   .debug-section {
-    max-width: 85cqw;
+    max-width: 50cqw;
     max-height: 75cqh;
     overflow-x: auto;
     overflow-y: auto;

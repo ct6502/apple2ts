@@ -1,4 +1,4 @@
-import { handleSetTheme, lockedKeyStyle, themeToName, UI_THEME } from "../../common/utility"
+import { lockedKeyStyle, themeToName, UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
@@ -9,7 +9,7 @@ import {
   faUpDownLeftRight,
   faSlash,
   faSync,
-  faPaintBrush,
+  faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { MockingboardWaveform } from "../devices/mockingboardwaveform"
 import { MidiDeviceSelect } from "../devices/midiselect"
@@ -54,10 +54,8 @@ const ConfigButtons = (props: DisplayProps) => {
   const handleThemeClose = (theme = -1) => {
     setDroplistOpen(false)
     if (theme >= 0 && theme != handleGetTheme()) {
-      if (window.confirm('Reload the emulator and apply this theme now?')) {
-        setPreferenceTheme(theme)
-        window.location.reload()
-      }
+      setPreferenceTheme(theme)
+      window.location.reload()
     }
   }
 
@@ -117,7 +115,7 @@ const ConfigButtons = (props: DisplayProps) => {
     <button className="push-button"
       title="Dark Mode"
       onClick={handleClick}>
-      <FontAwesomeIcon icon={faPaintBrush} />
+      <FontAwesomeIcon icon={faPalette} />
     </button>
 
     {droplistOpen &&
