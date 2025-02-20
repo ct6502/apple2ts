@@ -9,7 +9,7 @@ import {
   handleGetMemSize,
   passHelpText,
   handleGetHelpText,
-  handleGetDarkMode,
+  handleGetTheme,
   passSetRunMode
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
@@ -18,12 +18,11 @@ import DiskInterface from "./devices/diskinterface"
 import { useRef, useState } from "react"
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
-import ImageWriter from "./devices/imagewriter"
 import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { handleSetTheme, RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -35,6 +34,7 @@ const DisplayApple2 = () => {
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
   const righthandSectionRef = useRef<HTMLDivElement>(null)
+  const handleInputParamsResult = handleInputParams()
 
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -85,8 +85,7 @@ const DisplayApple2 = () => {
     // preloadAssets()
     passSpeedMode(0)
     loadPreferences()
-    const hasBasicProgram = handleInputParams()
-    handleFragment(updateDisplay, hasBasicProgram)
+    handleFragment(updateDisplay, handleInputParamsResult.hasBasicProgram)
     //    window.addEventListener('beforeunload', (event) => {
     // Cancel the event as stated by the standard.
     //      event.preventDefault();
@@ -148,11 +147,8 @@ const DisplayApple2 = () => {
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 
-  if (handleGetDarkMode()) {
-    document.body.classList.add("dark-mode")
-  } else {
-    document.body.classList.remove("dark-mode")
-  }
+  const theme = handleGetTheme()
+  handleSetTheme(theme)
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
@@ -170,7 +166,7 @@ const DisplayApple2 = () => {
     <span>{currentSpeed} MHz, {memSize}</span>
     <br />
     <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
-      <a href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+      <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
   </div>
 
   return (
@@ -182,16 +178,14 @@ const DisplayApple2 = () => {
             style={{ paddingLeft: "2px" }}>
             <ControlPanel {...props} />
             <DiskInterface {...props} />
-            <ImageWriter />
           </div>
           {!isLandscape && status}
         </div>
         {isLandscape && status}
-        {narrow && <div className="divider"></div>}
+        {narrow && theme != UI_THEME.MINIMAL && <div className="divider"></div>}
         <span className="flex-column" ref={righthandSectionRef}>
-          {handleGetIsDebugging() ? <DebugSection /> :
-            <HelpPanel narrow={narrow}
-              helptext={handleGetHelpText()} />}
+          {(handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <DebugSection />}
+          {(!handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
         </span>
       </span>
       <FileInput {...props} />

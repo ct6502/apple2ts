@@ -432,9 +432,11 @@ body.dark-mode .memtable-highlight {
   0% {
     background-color: var(--highlight);
   }
+
   50% {
     background-color: var(--highlight);
   }
+
   100% {
     background-color: initial;
   }
@@ -444,9 +446,11 @@ body.dark-mode .memtable-highlight {
   0% {
     background-color: var(--highlight-dark);
   }
+
   50% {
     background-color: var(--highlight-dark);
   }
+
   100% {
     background-color: initial;
   }
@@ -498,4 +502,13 @@ body.dark-mode .memory-map td {
 
 body.dark-mode .icon-text {
   color: var(--text-color);
+}
+
+@scope (.theme-minimal) {
+  .debug-section {
+    max-width: 50vw;
+    max-height: 75cqh;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
 }

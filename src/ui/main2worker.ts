@@ -1,4 +1,4 @@
-import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE, TEST_DEBUG } from "../common/utility"
+import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { startupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
@@ -81,9 +81,9 @@ export const passCapsLock = (lock: boolean) => {
   machineState.capsLock = lock
 }
 
-export const passDarkMode = (mode: boolean) => {
+export const passTheme = (theme: UI_THEME) => {
   // See comment under passColorMode
-  machineState.darkMode = mode
+  machineState.theme = theme
 }
 
 export const passArrowKeysAsJoystick = (joystick: boolean) => {
@@ -223,7 +223,7 @@ let machineState: MachineState = {
   showScanlines: false,
   cout: 0,
   cpuSpeed: 0,
-  darkMode: false,
+  theme: UI_THEME.CLASSIC,
   disassembly: "",
   extraRamSize: 64,
   helpText: "",
@@ -259,7 +259,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.colorMode = machineState.colorMode
       newState.showScanlines = machineState.showScanlines
       newState.capsLock = machineState.capsLock
-      newState.darkMode = machineState.darkMode
+      newState.theme = machineState.theme
       newState.helpText = machineState.helpText
       newState.useOpenAppleKey = machineState.useOpenAppleKey
       machineState = newState
@@ -459,8 +459,8 @@ export const handleGetCapsLock = () => {
   return machineState.capsLock
 }
 
-export const handleGetDarkMode = () => {
-  return machineState.darkMode
+export const handleGetTheme = () => {
+  return machineState.theme
 }
 
 export const handleGetArrowKeysAsJoystick = () => {

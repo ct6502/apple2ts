@@ -13,8 +13,10 @@ import {
   handleGetCout,
   handleUseOpenAppleKey,
   handleGetShowScanlines,
+  handleGetTheme,
+  handleGetIsDebugging,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "../common/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
@@ -389,6 +391,41 @@ const Apple2Canvas = (props: DisplayProps) => {
     </div>
   }
 
+  const handleCanvasResize = (canvas: HTMLCanvasElement) => {
+    if (!canvas) return
+
+    const width = canvas.offsetWidth
+    const height = canvas.offsetHeight
+
+    const scanlinesWidth = width - 2 * width * xmargin
+    const scanlinesHeight = height - 2 * height * ymargin
+
+    let scanlinesLeft = canvas.offsetLeft + width * xmargin
+    let scanlinesTop = canvas.offsetTop + height * ymargin
+
+    if (handleGetTheme() == UI_THEME.MINIMAL) {
+      scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
+      scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 10
+
+      if (handleGetIsDebugging()) {
+        const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
+        if (debugSection) {
+          scanlinesLeft = Math.max(Math.min(scanlinesLeft, debugSection.offsetLeft - scanlinesWidth - 18), 0)
+        }
+      }
+
+      canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
+      canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
+    }
+
+    document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
+    document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
+    document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
+    document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
+
+    return canvas.style.marginLeft
+  }
+
   // We should probably be using a useEffect here, but when I tried that,
   // I needed to add dependencies such as RenderCanvas, and useEffect was then
   // called multiple times. Using an initialization flag forces this to
@@ -410,13 +447,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
         new ResizeObserver(entries => {
           for (const entry of entries) {
-            const canvas = entry.target as HTMLCanvasElement
-            const width = canvas.offsetWidth
-            const height = canvas.offsetHeight
-            document.body.style.setProperty("--scanlines-left", (canvas.offsetLeft + width * xmargin) + "px")
-            document.body.style.setProperty("--scanlines-top", (canvas.offsetTop + height * ymargin) + "px")
-            document.body.style.setProperty("--scanlines-width", (width - 2 * width * xmargin) + "px")
-            document.body.style.setProperty("--scanlines-height", (height - 2 * height * ymargin)+ "px")
+            handleCanvasResize(entry.target as HTMLCanvasElement)
           }
         }).observe(canvas)
         document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none")
@@ -441,9 +472,10 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
+  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen;
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme;
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
   //   myCanvas.current.requestFullscreen()
@@ -487,7 +519,8 @@ const Apple2Canvas = (props: DisplayProps) => {
           cursor: cursor,
           borderRadius: noBackgroundImage ? "0" : "20px",
           borderWidth: noBackgroundImage ? "0" : "2px",
-          backgroundImage: `${backgroundImage}`
+          backgroundImage: `${backgroundImage}`,
+          marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement)
         }}
         width={width} height={height}
         tabIndex={0}

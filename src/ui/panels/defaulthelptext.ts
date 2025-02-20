@@ -58,7 +58,7 @@ run=false (do not run BASIC program)
 scanlines=on
 sound=off
 speed=fast|warp
-theme=dark
+theme=classic|dark|minimal
 tour=main|debug|settings
 #urltodiskimage
 

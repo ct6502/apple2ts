@@ -92,6 +92,19 @@ export enum ARROW {
   DOWN
 }
 
+export enum UI_THEME {
+  CLASSIC,
+  DARK,
+  MINIMAL
+}
+
+export const themeToName = (theme: UI_THEME) => {
+  return [
+    "Classic",
+    "Dark",
+    "Minimal"][theme]
+}
+
 export type MouseEventSimple = {
   x : number; // 0.0 -> 1.0
   y : number; // 0.0 -> 1.0
@@ -422,4 +435,17 @@ export const getSymbolTables = (machineName: string) => {
 export const isHardDriveImage = (filename: string) => {
   const f = filename.toLowerCase()
   return f.endsWith(".hdv") || f.endsWith(".po") || f.endsWith(".2mg")
+}
+
+export const handleSetTheme = (theme: UI_THEME) => {
+  if (theme == UI_THEME.DARK) {
+    document.body.classList.add("dark-mode")
+  } else {
+    document.body.classList.remove("dark-mode")
+  }
+  if (theme == UI_THEME.MINIMAL) {
+    document.documentElement.classList.add("theme-minimal")
+  } else {
+    document.documentElement.classList.remove("theme-minimal")
+  }
 }

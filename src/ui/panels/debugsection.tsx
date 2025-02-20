@@ -6,26 +6,38 @@ import MemoryDump from "./memorydump"
 import BreakpointsView from "./breakpointsview"
 import MemoryMap from "./memorymap"
 import StackDump from "./stackdump"
+import Flyout from "../flyout"
+import { faBug } from "@fortawesome/free-solid-svg-icons"
+import { handleGetIsDebugging, handleGetTheme } from "../main2worker"
+import { UI_THEME } from "../../common/utility"
+import { setPreferenceDebugMode } from "../localstorage"
 
 const DebugSection = () => {
   return (
-    <div className="flex-column-gap">
-      <State6502Controls />
-      <div className="flex-row-gap">
-        <DisassemblyPanel />
-        <div className="flex-column-gap">
-          <div className="flex-row-gap round-rect-border"  id="tour-debug-info">
-            <StackDump />
-            <MemoryMap />
+    <Flyout
+      icon={faBug}
+      position="bottom-right"
+      isOpen={handleGetIsDebugging}
+      onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}
+      buttonId={handleGetTheme() == UI_THEME.MINIMAL ? "tour-debug-button" : ""}>
+      <div className="flex-column-gap debug-section">
+        <State6502Controls />
+        <div className="flex-row-gap">
+          <DisassemblyPanel />
+          <div className="flex-column-gap">
+            <div className="flex-row-gap round-rect-border" id="tour-debug-info">
+              <StackDump />
+              <MemoryMap />
+            </div>
+            <MemoryDump />
           </div>
-          <MemoryDump />
+        </div>
+        <div className="flex-row-gap">
+          <BreakpointsView />
+          <TimeTravelPanel />
         </div>
       </div>
-      <div className="flex-row-gap">
-        <BreakpointsView />
-        <TimeTravelPanel />
-      </div>
-    </div>
+    </Flyout>
   )
 }
 

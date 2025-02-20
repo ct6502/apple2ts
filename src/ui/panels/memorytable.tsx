@@ -1,7 +1,8 @@
 import { useRef } from "react"
-import { hiresLineToAddress, toHex } from "../../common/utility"
+import { hiresLineToAddress, toHex, UI_THEME } from "../../common/utility"
 import { useGlobalContext } from "../globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../graphics"
+import { handleGetTheme } from "../main2worker"
 
 type MemoryTableProps = {
   memory: Uint8Array
@@ -308,11 +309,11 @@ const MemoryTable = (props: MemoryTableProps) => {
   }
 
   const applyHighlightAnimation = (element: HTMLElement) => {
-    const isDarkMode = document.body.classList.contains("dark-mode")
+    const isDarkMode = handleGetTheme() == UI_THEME.DARK
     const animationName = isDarkMode ? "highlight-anim-dark" : "highlight-anim"
     element.style.animation = `${animationName} 1s 0.1s`
   }
-  
+
   // This scrolling code is used by the higher-level MemoryDump component to
   // scroll to a specific row when the address field is changed.
   if (props.scrollRow >= 0) {

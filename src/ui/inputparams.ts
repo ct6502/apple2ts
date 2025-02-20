@@ -1,16 +1,26 @@
 import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
 import { audioEnable } from "./devices/speaker"
-import { COLOR_MODE } from "../common/utility"
+import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passDarkMode, passPasteText, passShowScanlines } from "./main2worker"
+import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passTheme, passPasteText, passShowScanlines } from "./main2worker"
 
-export const handleInputParams = () => {
+export type HandleInputParamsResult = {
+  hasBasicProgram: boolean
+  experiments: string[]
+}
+
+export const handleInputParams = (): HandleInputParamsResult => {
   // Most parameters are case insensitive. The only exception is the BASIC
   // parameter, where we want to preserve the case of the program.
   const params = new URLSearchParams(window.location.search.toLowerCase())
   const porig = new URLSearchParams(window.location.search)
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { setRunTour } = useGlobalContext()
+
+  const result: HandleInputParamsResult = {
+    hasBasicProgram: false,
+    experiments: []
+  }
 
   if (params.get("capslock") === "off") {
     passCapsLock(false)
@@ -57,8 +67,21 @@ export const handleInputParams = () => {
     }
   }
 
-  if (params.get("theme") === "dark") {
-    passDarkMode(true)
+  const theme = params.get("theme")
+  if (theme) {
+    switch (theme.toLocaleLowerCase()) {
+      case "classic":
+        passTheme(UI_THEME.CLASSIC)
+        break
+
+      case "dark":
+        passTheme(UI_THEME.DARK)
+        break
+
+      case "minimal":
+        passTheme(UI_THEME.MINIMAL)
+        break
+    }
   }
 
   const address = params.get("address")
@@ -71,11 +94,16 @@ export const handleInputParams = () => {
     setRunTour(tour)
   }
 
+  const experiments = params.get("exp")
+  if (experiments) {
+    // Experiments go here
+  }
+
   const run = params.get("run")
   const doRun = !(run === "0" || run === "false")
   // Use the original case of the BASIC program.
   const basic = porig.get("basic") || porig.get("BASIC")
-  const hasBasicProgram = basic !== null
+  result.hasBasicProgram = basic !== null
   if (basic) {
     const trimmed = basic.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
@@ -84,7 +112,7 @@ export const handleInputParams = () => {
     setTimeout(() => { passPasteText(basic + cmd) }, 1500)
   }
 
-  return hasBasicProgram
+  return result
 }
 
 // Examples:

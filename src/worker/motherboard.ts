@@ -2,7 +2,7 @@
 import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump } from "./instructions"
-import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "../common/utility"
+import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG, UI_THEME } from "../common/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
@@ -590,7 +590,7 @@ const updateExternalMachineState = () => {
     showScanlines: false,
     cout: memGet(0x0039) << 8 | memGet(0x0038),
     cpuSpeed: cpuSpeed,
-    darkMode: false,  // ignored by main thread
+    theme: UI_THEME.CLASSIC,  // ignored by main thread
     disassembly: doGetDisassembly(),
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     helpText: "",  // ignored by main thread

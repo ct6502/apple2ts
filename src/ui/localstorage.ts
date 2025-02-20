@@ -1,7 +1,6 @@
 import { changeMockingboardMode } from "./devices/mockingboard_audio"
-import { COLOR_MODE } from "../common/utility"
-import { passCapsLock, passColorMode, passShowScanlines, passDarkMode, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker"
-
+import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -30,13 +29,13 @@ export const setPreferenceShowScanlines = (mode = true) => {
   passShowScanlines(mode)
 }
 
-export const setPreferenceDarkMode = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("darkMode")
+export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
+  if (theme === UI_THEME.CLASSIC) {
+    localStorage.removeItem("theme")
   } else {
-    localStorage.setItem("darkMode", JSON.stringify(mode))
+    localStorage.setItem("theme", JSON.stringify(theme))
   }
-  passDarkMode(mode)
+  passTheme(theme)
 }
 
 export const setPreferenceDebugMode = (mode = false) => {
@@ -112,12 +111,25 @@ export const loadPreferences = () => {
     }
   }
 
+  // Keep for backwards-compatibility
   const darkMode = localStorage.getItem("darkMode")
   if (darkMode) {
     try {
-      passDarkMode(JSON.parse(darkMode))
+      if (JSON.parse(darkMode)) {
+        passTheme(UI_THEME.DARK)
+      }
     } catch {
       localStorage.removeItem("darkMode")
+    }
+    localStorage.removeItem("darkMode")
+  }
+
+  const theme = localStorage.getItem("theme")
+  if (theme) {
+    try {
+      passTheme(JSON.parse(theme))
+    } catch {
+      localStorage.removeItem("theme")
     }
   }
 
@@ -172,7 +184,7 @@ export const resetPreferences = () => {
   setPreferenceCapsLock()
   setPreferenceColorMode()
   setPreferenceShowScanlines()
-  setPreferenceDarkMode()
+  setPreferenceTheme()
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()

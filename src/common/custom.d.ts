@@ -90,7 +90,7 @@ type MachineState = {
   showScanlines: boolean,
   cout: number,
   cpuSpeed: number,
-  darkMode: boolean,
+  theme: UI_THEME,
   disassembly: string,
   extraRamSize: number,
   helpText: string,
