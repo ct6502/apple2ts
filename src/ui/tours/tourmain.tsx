@@ -29,7 +29,7 @@ export const tourMain: Step[] = [
   },
   {
     target: "#tour-theme-button",
-    content: "Click there to change the emulator UI theme."
+    content: "Click here to change the emulator UI theme."
   },
   {
     target: "body",
