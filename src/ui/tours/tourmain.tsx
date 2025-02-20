@@ -28,6 +28,10 @@ export const tourMain: Step[] = [
     content: "You can save and restore the complete state of the emulator using these buttons.",
   },
   {
+    target: "#tour-theme-button",
+    content: "Click there to change the emulator UI theme."
+  },
+  {
     target: "body",
     placement: "center",
     content: "You have reached the end of the tour. Click on the globe " +

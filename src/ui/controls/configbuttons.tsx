@@ -113,7 +113,8 @@ const ConfigButtons = (props: DisplayProps) => {
     <MachineConfig updateDisplay={props.updateDisplay} />
 
     <button className="push-button"
-      title="Dark Mode"
+      id="tour-theme-button"
+      title={`${themeToName(handleGetTheme())} Theme`}
       onClick={handleClick}>
       <FontAwesomeIcon icon={faPalette} />
     </button>

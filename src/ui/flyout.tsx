@@ -36,21 +36,14 @@ const Flyout = (props: {
       className={`flyout ${className}`}
       style={{
         left: isMinimalTheme && isLeftPosition ? (!isFlyoutOpen || !isTouchDevice ? '14px' : '48px') : '',
-        width: isMinimalTheme && !isFlyoutOpen ? '72px' : 'auto',
+        width: isMinimalTheme && !isFlyoutOpen ? 'max(8vw, 72px)' : 'auto',
         opacity: isMinimalTheme && !isFlyoutOpen ? '33%' : '100%'
       }}>
       {isTopPosition() && (isFlyoutOpen || handleGetTheme() != UI_THEME.MINIMAL) ? props.children : ''}
       <div
         id={props.buttonId ?? ''}
         className="flyout-button"
-        onClick={() => {
-          props.onClick && props.onClick()
-
-          // const hiddenText = document.getElementsByClassName('hidden-textarea')[0] as HTMLElement
-          // if (hiddenText) {
-          //   hiddenText.focus()
-          // }
-        }}>
+        onClick={() => { props.onClick && props.onClick() }}>
         <FontAwesomeIcon icon={getArrowIcon()}></FontAwesomeIcon>
       </div>
       {!isTopPosition() && (isFlyoutOpen || handleGetTheme() != UI_THEME.MINIMAL) ? props.children : ''}
