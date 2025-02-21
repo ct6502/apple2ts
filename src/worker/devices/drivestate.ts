@@ -82,7 +82,8 @@ export const passData = () => {
       isWriteProtected: driveState[i].isWriteProtected,
       diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
       lastWriteTime: driveState[i].lastWriteTime,
-      cloudData: driveState[i].cloudData
+      cloudData: driveState[i].cloudData,
+      writableFileHandle: driveState[i].writableFileHandle
     }
     passDriveProps(dprops)
   }
@@ -178,6 +179,7 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].isWriteProtected = props.isWriteProtected
   driveState[index].diskHasChanges = props.diskHasChanges
   driveState[index].cloudData = props.cloudData
+  driveState[index].writableFileHandle = props.writableFileHandle
   passData()
 }
 

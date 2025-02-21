@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { FILE_SUFFIXES } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
-import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops"
+import { handleGetDriveProps, handleSaveWritableFile, handleSetDiskOrFileFromBuffer, handleSetWritableFileHandle } from "./devices/driveprops"
+import { passSetDriveProps } from "./main2worker"
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
@@ -61,6 +62,36 @@ const FileInput = (props: DisplayProps) => {
     }
   })
 
+  const showReadWriteFilePicker = async () => {
+    const [writableFileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "Disk Images",
+          accept: {
+            "application/octet-stream": FILE_SUFFIXES.split(",").filter(x => { return x !== ".dsk" })
+          }
+        }
+      ],
+      excludeAcceptAllOption: true,
+      multiple: false,
+    })
+    if (writableFileHandle != null) {
+      const index = props.showFileOpenDialog.index
+
+      await readFile(await writableFileHandle.getFile(), index)
+      if (await handleSetWritableFileHandle(index, writableFileHandle)) {
+        const timer = setInterval(async (index: number) => {
+          let dprops = handleGetDriveProps(index)
+          if (dprops.diskHasChanges && await handleSaveWritableFile(index)) {
+            dprops.diskHasChanges = false
+            passSetDriveProps(dprops)
+          }
+        }, 5 * 1000, index)
+        return () => clearInterval(timer)
+      }
+    }
+  }
+
   const isTouchDevice = "ontouchstart" in document.documentElement
 
   // This is how we actually display the file selection dialog.
@@ -70,13 +101,18 @@ const FileInput = (props: DisplayProps) => {
     // because occasionally the message doesn't get through fast enough
     // and the file dialog pops up again right away.
     props.showFileOpenDialog.show = false
-    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
-    if (hiddenFileOpen.current) {
-      const fileInput = hiddenFileOpen.current
-      // Hack - clear out old file so we can pick the same file again
-      fileInput.value = ""
-      // Display the dialog.
-      fileInput.click()
+
+    if ("showOpenFilePicker" in self) {
+      showReadWriteFilePicker()
+    } else {
+      setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
+      if (hiddenFileOpen.current) {
+        const fileInput = hiddenFileOpen.current
+        // Hack - clear out old file so we can pick the same file again
+        fileInput.value = ""
+        // Display the dialog.
+        fileInput.click()
+      }
     }
   }
 

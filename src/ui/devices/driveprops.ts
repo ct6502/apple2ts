@@ -19,7 +19,8 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     motorRunning: false,
     diskData: new Uint8Array(),
     lastWriteTime: -1,
-    cloudData: null
+    cloudData: null,
+    writableFileHandle: null
   }
 }
 
@@ -182,6 +183,42 @@ export const handleSetDiskFromFile = async (disk: diskImage,
     // If we don't have a help text file, just revert to the default text.
     updateDisplay(0, "<Default>")
   }
+}
+
+export const handleSaveWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle|null = null) => {
+  let success = false
+
+  if (writableFileHandle === null) {
+    writableFileHandle = driveProps[index].writableFileHandle
+  }
+
+  if (writableFileHandle) {
+    try {
+      const writable = await writableFileHandle.createWritable()
+      await writable.write(driveProps[index].diskData)
+      await writable.close()
+      success = true
+    } catch (ex) {
+      console.log(`Error saving writable file: ${ex}`)
+    }
+  }
+
+  return success
+}
+
+export const handleSetWritableFileHandle = async (index: number, writableFileHandle: FileSystemFileHandle) => {
+  let success = false
+
+  // Force permission check by saving immediately
+  if (await handleSaveWritableFile(index, writableFileHandle)) {
+    driveProps[index].writableFileHandle = writableFileHandle
+    success = true
+  } else {
+    driveProps[index].writableFileHandle = null
+  }
+  passSetDriveProps(driveProps[index])
+
+  return success
 }
 
 // export function handleSetCloudUrl(url: string) {

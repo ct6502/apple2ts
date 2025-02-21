@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { CLOUD_SYNC, crc32, FILE_SUFFIXES, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
-import { handleSetDiskData, handleGetDriveProps,
-  handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer } from "./driveprops"
+import {
+  handleSetDiskData, handleGetDriveProps,
+  handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer
+} from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
@@ -42,7 +44,8 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
-  
+  const [diskFileHandle, setDiskFileHandle] = useState<FileSystemFileHandle>()
+
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null)
   }
@@ -82,10 +85,10 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }, 1000)
     return () => clearInterval(timer)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.lastSyncTime,
-    dprops.cloudData?.syncInterval, dprops.isWriteProtected, dprops.motorRunning,
-    dprops.diskHasChanges])
+  dprops.cloudData?.syncInterval, dprops.isWriteProtected, dprops.motorRunning,
+  dprops.diskHasChanges])
 
   const cloudDriveStatusClassName = useMemo(() => {
     if (!dprops.cloudData) return "disk-clouddrive-inactive"
@@ -99,7 +102,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else {
       return `disk-clouddrive-${CLOUD_SYNC[syncStatus].toLowerCase()}`
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dprops.cloudData, dprops.cloudData?.syncStatus, dprops.cloudData?.syncInterval])
 
   const diskDriveLabel = useMemo(() => {
@@ -115,14 +118,14 @@ const DiskDrive = (props: DiskDriveProps) => {
   const driveFileName = useMemo(() => {
     // if (dprops.filename == '') {
     // }
-    
+
     if (dprops.cloudData) {
       if (dprops.filename != dprops.cloudData.fileName) {
         dprops.cloudData.fileName = `apple2ts.${dprops.filename}`
       }
     }
     return dprops.filename
-  }, [dprops.filename, dprops.cloudData]) 
+  }, [dprops.filename, dprops.cloudData])
 
   const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
     const result = await newCloudDrive.download(FILE_SUFFIXES)
@@ -201,7 +204,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 5:
           saveDiskToCloud(new GoogleDrive())
           break
-        }
+      }
     } else if (menuNumber == 1) {
       if (menuChoice == 2) {
         resetDrive(props.index)
@@ -229,7 +232,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else if (menuNumber == 2) {
       switch (menuChoice) {
         case 0:
-          props.setShowFileOpenDialog(true, props.index)
+          setDiskFileHandle(props.setShowFileOpenDialog(true, props.index))
           break
         case 1:
           loadDiskFromCloud(new OneDriveCloudDrive())
@@ -262,10 +265,10 @@ const DiskDrive = (props: DiskDriveProps) => {
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={diskDriveLabel}
             onClick={handleMenuClick} />
-            <FontAwesomeIcon
-              icon={faRotate}
-              className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>
-            </FontAwesomeIcon>
+          <FontAwesomeIcon
+            icon={faRotate}
+            className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>
+          </FontAwesomeIcon>
         </span>
       </span>
       <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
@@ -282,18 +285,18 @@ const DiskDrive = (props: DiskDriveProps) => {
             style={{ left: position.x, top: position.y }}>
             {driveMenuItems[menuOpen].map((menuItem, index) => (
               <div key={index}>
-              {menuItem.label == "-"
-              ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
-              : <div className="droplist-option"
-                style={{ padding: "5px", paddingLeft: "10px", paddingRight: "10px" }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
-                {getMenuCheck(menuItem.index || -1)}
-                {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{width: "24px"}} />}
-                {menuItem.label}</div>}
+                {menuItem.label == "-"
+                  ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
+                  : <div className="droplist-option"
+                    style={{ padding: "5px", paddingLeft: "10px", paddingRight: "10px" }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+                    key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
+                    {getMenuCheck(menuItem.index || -1)}
+                    {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                    {menuItem.label}</div>}
               </div>
-              ))}
+            ))}
           </div>
         </div>
       }
