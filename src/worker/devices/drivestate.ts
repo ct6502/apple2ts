@@ -24,7 +24,8 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     trackLocation: 0,
     maxHalftrack: 0,
     lastWriteTime: -1,
-    cloudData: null
+    cloudData: null,
+    writableFileHandle: null
   }
 }
 

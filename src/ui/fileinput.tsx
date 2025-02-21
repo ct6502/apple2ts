@@ -68,7 +68,7 @@ const FileInput = (props: DisplayProps) => {
         {
           description: "Disk Images",
           accept: {
-            "application/octet-stream": FILE_SUFFIXES.split(",").filter(x => { return x !== ".dsk" })
+            "application/octet-stream": FILE_SUFFIXES.split(",") //.filter(x => { return x !== ".dsk" })
           }
         }
       ],

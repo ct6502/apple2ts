@@ -8,7 +8,8 @@
       "webworker"
     ],
     "types": [
-      "@types/wicg-file-system-access"
+      "@types/wicg-file-system-access",
+      "@types/jest"
     ],
     "allowJs": true,
     "skipLibCheck": true,

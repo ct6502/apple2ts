@@ -44,7 +44,6 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
-  const [diskFileHandle, setDiskFileHandle] = useState<FileSystemFileHandle>()
 
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null)
@@ -232,7 +231,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     } else if (menuNumber == 2) {
       switch (menuChoice) {
         case 0:
-          setDiskFileHandle(props.setShowFileOpenDialog(true, props.index))
+          props.setShowFileOpenDialog(true, props.index)
           break
         case 1:
           loadDiskFromCloud(new OneDriveCloudDrive())
