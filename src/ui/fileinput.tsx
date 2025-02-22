@@ -82,7 +82,7 @@ const FileInput = (props: DisplayProps) => {
       if (await handleSetWritableFileHandle(index, writableFileHandle)) {
         const timer = setInterval(async (index: number) => {
           let dprops = handleGetDriveProps(index)
-          if (dprops.diskHasChanges && await handleSaveWritableFile(index)) {
+          if (dprops.diskHasChanges && !dprops.motorRunning && await handleSaveWritableFile(index)) {
             dprops.diskHasChanges = false
             passSetDriveProps(dprops)
           }
