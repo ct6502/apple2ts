@@ -7,14 +7,14 @@ const MemoryMap = () => {
   if (Object.keys(switches).length <= 1) return (<div></div>)
   const altZP = switches.ALTZP
   let bankSwitchedRam = "ROM"
-  let bankD000 = "ROM"
+  let bankD000 = "ROM\n "
   let classBSR = "mem-rom"
   if (switches.BSRREADRAM || switches.BSR_WRITE) {
     classBSR = altZP ? "mem-aux" : ""
     if (switches.BSRREADRAM && switches.BSR_WRITE) {
       bankSwitchedRam = "R/W RAM"
     } else {
-      bankSwitchedRam = switches.BSRREADRAM ? "Read RAM" : "Read ROM\nWrite RAM"
+      bankSwitchedRam = switches.BSRREADRAM ? "Read RAM" : "Rd ROM/Wr RAM"
     }
     bankD000 = bankSwitchedRam + "\nBank " + (switches.BSRBANK2 ? "2" : "1")
   }

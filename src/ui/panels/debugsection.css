@@ -72,7 +72,7 @@ body.dark-mode .debug-panel {
 }
 
 .short-panel {
-  height: 205px;
+  height: 155px;
 }
 
 .thin-border {
@@ -463,8 +463,8 @@ body.dark-mode .memtable-highlight {
 .memory-map td {
   padding-left: 6px;
   padding-right: 6px;
-  padding-top: 2px;
-  padding-bottom: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
   border-width: 0.5px;
   border-style: solid;
   border-color: var(--text-color);
@@ -507,8 +507,9 @@ body.dark-mode .icon-text {
 @scope (.theme-minimal) {
   .debug-section {
     max-width: 50vw;
-    max-height: 75cqh;
+    max-height: 92cqh;
     overflow-x: auto;
     overflow-y: auto;
+    margin-bottom: 10px;
   }
 }

@@ -1,6 +1,6 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
-import { startupTextPage } from "./panels/startuptextpage"
+import { getStartupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { playMockingboard } from "./devices/mockingboard_audio"
 import { receiveCommData } from "./devices/serialhub"
@@ -51,6 +51,8 @@ export const passStepOut = () => {
 
 export const passSetDebug = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
+  // Force the state right away, so the UI can update.
+  machineState.isDebugging = doDebug
 }
 
 export const passSetDisassembleAddress = (addr: number) => {
@@ -372,7 +374,7 @@ export const handleGetState6502 = () => {
 
 export const handleGetTextPage = () => {
   // Always return the intial start page if we're idle
-  return(machineState.runMode === RUN_MODE.IDLE) ? startupTextPage : machineState.textPage
+  return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage() : machineState.textPage
 }
 
 export const handleGetLores = () => {

@@ -10,12 +10,12 @@ import {
   passHelpText,
   handleGetHelpText,
   handleGetTheme,
-  passSetRunMode
+  passSetRunMode,
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import DiskInterface from "./devices/diskinterface"
-import { useRef, useState } from "react"
+import { useState } from "react"
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
 import FileInput from "./fileinput"
@@ -33,7 +33,6 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
-  const righthandSectionRef = useRef<HTMLDivElement>(null)
   const handleInputParamsResult = handleInputParams()
 
   // We need to create our worker here so it has access to our properties
@@ -135,7 +134,6 @@ const DisplayApple2 = () => {
   const props: DisplayProps = {
     speed: currentSpeed,
     renderCount: renderCount,
-    righthandSectionRef: righthandSectionRef.current,
     ctrlKeyMode: ctrlKeyMode,
     openAppleKeyMode: openAppleKeyMode,
     closedAppleKeyMode: closedAppleKeyMode,
@@ -165,7 +163,7 @@ const DisplayApple2 = () => {
   const status = <div className="default-font footer-item">
     <span>{currentSpeed} MHz, {memSize}</span>
     <br />
-    <span>Apple2TS ©{new Date().getFullYear()} Chris Torrence&nbsp;
+    <span>Apple2TS ©{new Date().getFullYear()} CT6502&nbsp;
       <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
   </div>
 
@@ -183,8 +181,8 @@ const DisplayApple2 = () => {
         </div>
         {isLandscape && status}
         {narrow && theme != UI_THEME.MINIMAL && <div className="divider"></div>}
-        <span className="flex-column" ref={righthandSectionRef}>
-          {(handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <DebugSection />}
+        <span className="flex-column">
+          {(handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <DebugSection updateDisplay={updateDisplay}/>}
           {(!handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
         </span>
       </span>
