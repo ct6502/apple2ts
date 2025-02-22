@@ -195,30 +195,18 @@ export const handleSaveWritableFile = async (index: number, writableFileHandle: 
 
   if (writableFileHandle) {
     try {
+      const dprops = driveProps[index]
+      const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
       const writable = await writableFileHandle.createWritable()
-      const blob = getBlobFromDiskData(driveProps[index].diskData, driveProps[index].filename)
+
       await writable.write(blob)
       await writable.close()
+      
       success = true
     } catch (ex) {
       console.log(`Error saving writable file: ${ex}`)
     }
   }
-
-  return success
-}
-
-export const handleSetWritableFileHandle = async (index: number, writableFileHandle: FileSystemFileHandle) => {
-  let success = false
-
-  // Force permission check by saving immediately
-  if (await handleSaveWritableFile(index, writableFileHandle)) {
-    driveProps[index].writableFileHandle = writableFileHandle
-    success = true
-  } else {
-    driveProps[index].writableFileHandle = null
-  }
-  passSetDriveProps(driveProps[index])
 
   return success
 }
