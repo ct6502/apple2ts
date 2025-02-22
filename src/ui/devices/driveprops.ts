@@ -57,10 +57,11 @@ export const handleGetDriveProps = (index: number) => {
 }
 
 export const handleSetDiskData = (index: number,
-  data: Uint8Array, filename: string, cloudData: CloudData | null) => {
+  data: Uint8Array, filename: string, cloudData: CloudData | null, writableFileHandle: FileSystemFileHandle | null) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
   driveProps[index].cloudData = cloudData
+  driveProps[index].writableFileHandle = writableFileHandle
   passSetDriveNewData(driveProps[index])
 }
 
@@ -109,7 +110,7 @@ export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer
     } else {
       if (index < 2) index = 2
     }
-    handleSetDiskData(index, new Uint8Array(buffer), filename, cloudData)
+    handleSetDiskData(index, new Uint8Array(buffer), filename, cloudData, null)
     if (handleGetRunMode() === RUN_MODE.IDLE) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
@@ -151,7 +152,7 @@ export const handleSetDiskFromURL = async (url: string,
 
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
-    handleSetDiskData(i, new Uint8Array(), "", null)
+    handleSetDiskData(i, new Uint8Array(), "", null, null)
   }
 }
 
@@ -165,7 +166,7 @@ export const handleSetDiskFromFile = async (disk: diskImage,
    return
   }
   resetAllDiskDrives()
-  handleSetDiskData(0, new Uint8Array(data), disk.file, null)
+  handleSetDiskData(0, new Uint8Array(data), disk.file, null, null)
   passSetRunMode(RUN_MODE.NEED_BOOT)
   const helpFile = replaceSuffix(disk.file, "txt")
   try {

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, FILE_SUFFIXES, uint32toBytes } from "../../common/utility"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
-  handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer
+  handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
+  handleSaveWritableFile
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faRotate } from "@fortawesome/free-solid-svg-icons"
@@ -46,7 +47,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
   const resetDrive = (index: number) => {
-    handleSetDiskData(index, new Uint8Array(), "", null)
+    handleSetDiskData(index, new Uint8Array(), "", null, null)
   }
 
   const updateCloudDrive = async (cloudProvider: CloudProvider) => {
@@ -145,6 +146,60 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
+  const showReadWriteFilePicker = async (index: number) => {
+    let [writableFileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "Disk Images",
+          accept: {
+            "application/octet-stream": FILE_SUFFIXES.split(",")
+          }
+        }
+      ],
+      excludeAcceptAllOption: true,
+      multiple: false,
+    })
+
+    if (writableFileHandle == null) {
+      return
+    }
+
+    const file = await writableFileHandle.getFile()
+    const fileExtension = file.name.substring(file.name.lastIndexOf("."))
+
+    if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
+      const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
+      writableFileHandle = await window.showSaveFilePicker({
+        excludeAcceptAllOption: false,
+        suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
+        types: [
+          {
+            description: "Disk Image",
+            accept: { "application/octet": [newFileExtension] },
+          },
+        ]
+      })
+    }
+
+    handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null)
+
+    const dprops = handleGetDriveProps(index)
+    dprops.filename = writableFileHandle.name
+    dprops.writableFileHandle = writableFileHandle
+    passSetDriveProps(dprops)
+
+    const timer = setInterval(async (index: number) => {
+      let dprops = handleGetDriveProps(index)
+      if (dprops.diskHasChanges
+        && !dprops.motorRunning
+        && await handleSaveWritableFile(index)) {
+        dprops.diskHasChanges = false
+        passSetDriveProps(dprops)
+      }
+    }, 1000, index)
+    return () => clearInterval(timer)
+  }
+
   const getMenuCheck = (menuChoice: number) => {
     let checked = false
 
@@ -167,9 +222,17 @@ const DiskDrive = (props: DiskDriveProps) => {
 
     if (!dprops.cloudData || dprops.cloudData.syncStatus == CLOUD_SYNC.INACTIVE) {
       if (dprops.filename.length > 0) {
-        setMenuOpen(0)
+        if (dprops.writableFileHandle == null) {
+          setMenuOpen(0)
+        } else {
+          setMenuOpen(4)
+        }
       } else {
-        setMenuOpen(2)
+        if ("showOpenFilePicker" in self && "showSaveFilePicker" in self) {
+          setMenuOpen(3)
+        } else {
+          setMenuOpen(2)
+        }
       }
     } else {
       setMenuOpen(1)
@@ -179,7 +242,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const handleMenuClose = (menuChoice = -1) => {
     const menuNumber = menuOpen
     setMenuOpen(-1)
-    if (menuNumber == 0) {
+    if (menuNumber == 0 || menuNumber == 4) {
       switch (menuChoice) {
         case 0:  // fall through
         case 1:
@@ -228,7 +291,7 @@ const DiskDrive = (props: DiskDriveProps) => {
           }
         }
       }
-    } else if (menuNumber == 2) {
+    } else if (menuNumber == 2 || menuNumber == 3) {
       switch (menuChoice) {
         case 0:
           props.setShowFileOpenDialog(true, props.index)
@@ -238,6 +301,9 @@ const DiskDrive = (props: DiskDriveProps) => {
           break
         case 2:
           loadDiskFromCloud(new GoogleDrive())
+          break
+        case 3:
+          showReadWriteFilePicker(props.index)
           break
       }
     }

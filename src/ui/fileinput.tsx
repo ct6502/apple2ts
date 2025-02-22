@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES } from "../common/utility"
+import { FILE_SUFFIXES } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
-import { handleGetDriveProps, handleSaveWritableFile, handleSetDiskOrFileFromBuffer, handleSetWritableFileHandle } from "./devices/driveprops"
-import { passSetDriveProps } from "./main2worker"
+import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops"
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
@@ -62,62 +61,6 @@ const FileInput = (props: DisplayProps) => {
     }
   })
 
-  const showReadWriteFilePicker = async () => {
-    let [writableFileHandle] = await window.showOpenFilePicker({
-      types: [
-        {
-          description: "Disk Images",
-          accept: {
-            "application/octet-stream": FILE_SUFFIXES.split(",")
-          }
-        }
-      ],
-      excludeAcceptAllOption: true,
-      multiple: false,
-    })
-
-    if (writableFileHandle == null) {
-      return
-    }
-
-    const index = props.showFileOpenDialog.index
-    const file = await writableFileHandle.getFile()
-    const fileExtension = file.name.substring(file.name.lastIndexOf("."))
-
-    if (DISK_CONVERSION_SUFFIXES.has(fileExtension)
-      && window.confirm("Save disk image as .woz file?")) {
-      const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
-      writableFileHandle = await window.showSaveFilePicker({
-        excludeAcceptAllOption: false,
-        suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
-        types: [
-          {
-            description: "Disk Image",
-            accept: { "application/octet": [newFileExtension] },
-          },
-        ]
-      })
-    }
-
-    handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null)
-
-    const dprops = handleGetDriveProps(index)
-    dprops.filename = writableFileHandle.name
-    dprops.writableFileHandle = writableFileHandle
-    passSetDriveProps(dprops)
-
-    const timer = setInterval(async (index: number) => {
-      let dprops = handleGetDriveProps(index)
-      if (dprops.diskHasChanges
-        && !dprops.motorRunning
-        && await handleSaveWritableFile(index)) {
-        dprops.diskHasChanges = false
-        passSetDriveProps(dprops)
-      }
-    }, 5 * 1000, index)
-    return () => clearInterval(timer)
-  }
-
   const isTouchDevice = "ontouchstart" in document.documentElement
 
   // This is how we actually display the file selection dialog.
@@ -128,17 +71,13 @@ const FileInput = (props: DisplayProps) => {
     // and the file dialog pops up again right away.
     props.showFileOpenDialog.show = false
 
-    if ("showOpenFilePicker" in self) {
-      showReadWriteFilePicker()
-    } else {
-      setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
-      if (hiddenFileOpen.current) {
-        const fileInput = hiddenFileOpen.current
-        // Hack - clear out old file so we can pick the same file again
-        fileInput.value = ""
-        // Display the dialog.
-        fileInput.click()
-      }
+    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
+    if (hiddenFileOpen.current) {
+      const fileInput = hiddenFileOpen.current
+      // Hack - clear out old file so we can pick the same file again
+      fileInput.value = ""
+      // Display the dialog.
+      fileInput.click()
     }
   }
 
