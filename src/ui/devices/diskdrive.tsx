@@ -189,12 +189,13 @@ const DiskDrive = (props: DiskDriveProps) => {
     passSetDriveProps(dprops)
 
     const timer = setInterval(async (index: number) => {
-      let dprops = handleGetDriveProps(index)
+      const dprops = handleGetDriveProps(index)
       if (dprops.diskHasChanges
-        && !dprops.motorRunning
-        && await handleSaveWritableFile(index)) {
-        dprops.diskHasChanges = false
-        passSetDriveProps(dprops)
+        && !dprops.motorRunning) {
+        if (await handleSaveWritableFile(index)) {
+          dprops.diskHasChanges = false
+          passSetDriveProps(dprops)
+        }
       }
     }, 1000, index)
     return () => clearInterval(timer)

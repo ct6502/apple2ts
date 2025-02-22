@@ -45,8 +45,10 @@ export const doSetUIDriveProps = (props: DriveProps) => {
   // If our disk is the same but it hasn't changed, keep the existing data.
   if (props.diskData.length === 0) {
     const tmp = driveProps[props.index].diskData
+    const diskHasChanges = driveProps[props.index].diskHasChanges
     driveProps[props.index] = props
     driveProps[props.index].diskData = tmp
+    driveProps[props.index].diskHasChanges = diskHasChanges
   } else {
     driveProps[props.index] = props
   }
