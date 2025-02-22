@@ -3,7 +3,7 @@ const tourSVG = "<svg viewBox=\"0 0 512 512\" width=\"20\" height=\"20\" style=\
 
 export let defaultHelpText = `Welcome to Apple2TS
 TypeScript Apple IIe Emulator
-(c) 2024 Chris Torrence
+(c) ${new Date().getFullYear()} CT6502
 
 Click on the Start Tour <a href="/?tour=main">${tourSVG}</a> button to begin a guided tour of the emulator.
 `

@@ -2,7 +2,7 @@ let emulatorStartText = `Welcome to Apple2TS
 
 TypeScript Apple IIe Emulator
 
-(c) 2024 Chris Torrence
+(c) ${new Date().getFullYear()} CT6502
 
 
 Click on the Start Tour globe
@@ -41,10 +41,30 @@ for (let j = 1; j < 23; j++) {
   textPage[j] = `*${left}${textPage[j]}${right}*`
 }
 
-export const startupTextPage = new Uint8Array(40 * 24)
+let index = 0
+
+const startupTextPage = new Uint8Array(40 * 24)
 for (let j = 0; j < 24; j++) {
   for (let i = 0; i < 40; i++) {
     const c = textPage[j].charCodeAt(i)
     startupTextPage[40 * j + i] = (c + 128) % 256
   }
+}
+
+const idx = (i: number) => {
+  if (i < 40) return i
+  if (i <= 61) return (i - 39) * 40 + 39
+  if (i <= 103) return 23 * 40 + (103 - i)
+  return (126 - i) * 40
+}
+
+export const getStartupTextPage = () => {
+  if (index % 1 === 0) {
+    startupTextPage[idx(index)] = 170
+  }
+  index = (index + 0.5) % 126
+  if (index % 1 === 0) {
+    startupTextPage[idx(index)] = 160
+  }
+  return startupTextPage
 }

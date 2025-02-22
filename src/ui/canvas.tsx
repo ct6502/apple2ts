@@ -405,12 +405,12 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     if (handleGetTheme() == UI_THEME.MINIMAL) {
       scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
-      scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 10
+      scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 50
 
       if (handleGetIsDebugging()) {
         const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
         if (debugSection) {
-          scanlinesLeft = Math.max(Math.min(scanlinesLeft, debugSection.offsetLeft - scanlinesWidth - 18), 0)
+          scanlinesLeft = Math.max(Math.min(scanlinesLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
         }
       }
 
@@ -481,7 +481,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   //   myCanvas.current.requestFullscreen()
   // }
 
-  [width, height] = getCanvasSize(props.righthandSectionRef)
+  [width, height] = getCanvasSize()
 
   // Make keyboard events work on touch devices by using a hidden textarea.
   const isAndroidDevice = /Android/i.test(navigator.userAgent)

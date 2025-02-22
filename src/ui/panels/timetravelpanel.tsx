@@ -98,7 +98,7 @@ const TimeTravelPanel = () => {
           tabIndex={-1}
           style={{
             width: "15em",
-            height: "130pt",
+            height: "102pt",
             overflow: "auto",
             cursor: "pointer",
             userSelect: "none",
@@ -107,7 +107,7 @@ const TimeTravelPanel = () => {
         </div>
         <div
           style={{
-            marginTop: "30px",
+            marginTop: "5px",
             marginLeft: "5px",
           }}>
           {thumbImage}

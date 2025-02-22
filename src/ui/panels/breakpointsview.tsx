@@ -135,7 +135,7 @@ const BreakpointsView = () => {
         <div className="debug-panel mono-text thin-border"
           style={{
             width: "228px",
-            height: "120pt",
+            height: "83pt",
             overflow: "auto",
             paddingLeft: "5pt",
             cursor: "pointer"

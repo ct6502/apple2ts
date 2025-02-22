@@ -12,15 +12,18 @@ import { handleGetIsDebugging, handleGetTheme } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
 
-const DebugSection = () => {
+const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
   return (
     <Flyout
       icon={faBug}
       position="bottom-right"
       isOpen={handleGetIsDebugging}
-      onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}
+      onClick={() => {
+        setPreferenceDebugMode(!handleGetIsDebugging())
+        props.updateDisplay()
+      }}
       buttonId={handleGetTheme() == UI_THEME.MINIMAL ? "tour-debug-button" : ""}>
-      <div className="flex-column-gap debug-section">
+      <div className="flex-column-gap debug-section" id="debug-section">
         <State6502Controls />
         <div className="flex-row-gap">
           <DisassemblyPanel />

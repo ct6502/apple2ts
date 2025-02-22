@@ -1,6 +1,8 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, passSetSoftSwitches } from "./main2worker"
-import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress } from "../common/utility"
+  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, passSetSoftSwitches, 
+  handleGetTheme,
+  handleGetIsDebugging} from "./main2worker"
+import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME } from "../common/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 const isTouchDevice = "ontouchstart" in document.documentElement
@@ -330,7 +332,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   }
 }
 
-export const getCanvasSize = (righthandSectionRef: HTMLDivElement | null) => {
+export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen
@@ -340,11 +342,16 @@ export const getCanvasSize = (righthandSectionRef: HTMLDivElement | null) => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  height -= noBackgroundImage ? 40 : 300
-  width -= noBackgroundImage ? 0 : 40
-  if (!noBackgroundImage) {
-    if (righthandSectionRef) {
-      width = Math.max(400, width - righthandSectionRef.offsetWidth)
+  if (handleGetTheme() == UI_THEME.MINIMAL) {
+    height -= 45
+  } else {
+    height -= noBackgroundImage ? 40 : 300
+    width -= noBackgroundImage ? 0 : 40
+  }
+  if (!noBackgroundImage && handleGetIsDebugging()) {
+    const debugSection = document.getElementById("debug-section")
+    if (debugSection && debugSection.offsetWidth > 0) {
+      width = Math.max(400, width - debugSection.offsetWidth - 0)
     }
   }
   // shrink either width or height to preserve aspect ratio
