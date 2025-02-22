@@ -12,7 +12,7 @@ import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
 import { passSetDriveProps } from "../main2worker"
 
-const getBlobFromDiskData = (diskData: Uint8Array, filename: string) => {
+export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
   if (filename.toLowerCase().endsWith(".woz")) {
     const crc = crc32(diskData, 12)

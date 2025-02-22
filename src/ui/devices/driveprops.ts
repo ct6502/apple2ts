@@ -1,6 +1,7 @@
 import { MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
 import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
+import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -195,7 +196,8 @@ export const handleSaveWritableFile = async (index: number, writableFileHandle: 
   if (writableFileHandle) {
     try {
       const writable = await writableFileHandle.createWritable()
-      await writable.write(driveProps[index].diskData)
+      const blob = getBlobFromDiskData(driveProps[index].diskData, driveProps[index].filename)
+      await writable.write(blob)
       await writable.close()
       success = true
     } catch (ex) {
@@ -220,6 +222,3 @@ export const handleSetWritableFileHandle = async (index: number, writableFileHan
 
   return success
 }
-
-// export function handleSetCloudUrl(url: string) {
-// }
