@@ -1,4 +1,4 @@
-import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faDownload, faEject, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 type MenuItem = {
   label: string,
