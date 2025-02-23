@@ -108,13 +108,8 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
   ],
   [
     {
-      label: "Load Disk from Device (read-only)",
-      icon: faFolderOpen,
-      index: 0
-    },
-    {
       label: "Load Disk from Device (read/write)",
-      icon: faFloppyDisk,
+      icon: faFolderOpen,
       index: 3
     },
     {
@@ -128,31 +123,6 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
     {
       label: "Load Disk from Google Drive",
       icon: faCloud,
-      index: 2
-    }
-  ],
-  [
-    {
-      label: "Write Protect Disk",
-      icon: faLock,
-      index: 3
-    },
-    {
-      label: "-"
-    },
-    {
-      label: "Download Disk",
-      icon: faDownload,
-      index: 0
-    },
-    {
-      label: "Download and Eject Disk",
-      icon: faDownload,
-      index: 1
-    },
-    {
-      label: "Eject Disk",
-      icon: faEject,
       index: 2
     }
   ]

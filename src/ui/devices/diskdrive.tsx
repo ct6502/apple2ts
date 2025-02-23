@@ -141,6 +141,10 @@ const DiskDrive = (props: DiskDriveProps) => {
     const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
     dprops.cloudData = await cloudProvider.upload(dprops.filename, blob)
     if (dprops.cloudData) {
+      if (dprops.writableFileHandle) {
+        await handleSaveWritableFile(dprops.index)
+        dprops.writableFileHandle = null
+      }
       dprops.diskHasChanges = false
       passSetDriveProps(dprops)
     }
@@ -223,11 +227,7 @@ const DiskDrive = (props: DiskDriveProps) => {
 
     if (!dprops.cloudData || dprops.cloudData.syncStatus == CLOUD_SYNC.INACTIVE) {
       if (dprops.filename.length > 0) {
-        if (dprops.writableFileHandle == null) {
-          setMenuOpen(0)
-        } else {
-          setMenuOpen(4)
-        }
+        setMenuOpen(0)
       } else {
         if ("showOpenFilePicker" in self && "showSaveFilePicker" in self) {
           setMenuOpen(3)
