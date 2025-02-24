@@ -392,10 +392,20 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleCanvasResize = (canvas: HTMLCanvasElement) => {
-    if (!canvas) return
+    if (!canvas) return "0"
 
     const width = canvas.offsetWidth
     const height = canvas.offsetHeight
+
+    const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
+
+    if (isCanvasFullScreen) {
+      const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
+      canvas.style.marginLeft = `${marginLeft}px`
+      const marginTop = Math.max((window.innerHeight - height) / 2, 0)
+      canvas.style.marginTop = `${marginTop}px`
+      return canvas.style.marginLeft
+    }
 
     const scanlinesWidth = width - 2 * width * xmargin
     const scanlinesHeight = height - 2 * height * ymargin
@@ -416,6 +426,9 @@ const Apple2Canvas = (props: DisplayProps) => {
 
       canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
       canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
+    } else {
+      canvas.style.marginLeft = "0"
+      canvas.style.marginTop = "0"
     }
 
     document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
