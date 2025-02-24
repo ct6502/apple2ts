@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, uint32toBytes } from "../../common/utility"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, RUN_MODE, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
@@ -11,7 +11,7 @@ import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
-import { passSetDriveProps } from "../main2worker"
+import { passSetDriveProps, passSetRunMode } from "../main2worker"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -47,7 +47,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
   const resetDrive = (index: number) => {
-    handleSetDiskData(index, new Uint8Array(), "", null, null)
+    handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
   }
 
   const updateCloudDrive = async (cloudProvider: CloudProvider) => {
@@ -133,7 +133,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     if (result) {
       const [blob, cloudData] = result
       const buffer = await new Response(blob).arrayBuffer()
-      handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudData.fileName, cloudData)
+      handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudData.fileName, cloudData, null)
     }
   }
 
@@ -183,25 +183,31 @@ const DiskDrive = (props: DiskDriveProps) => {
           },
         ]
       })
+      handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+    } else {
+      handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
     }
-
-    handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null)
-
-    const dprops = handleGetDriveProps(index)
-    dprops.filename = writableFileHandle.name
-    dprops.writableFileHandle = writableFileHandle
-    passSetDriveProps(dprops)
 
     const timer = setInterval(async (index: number) => {
       const dprops = handleGetDriveProps(index)
-      if (dprops.diskHasChanges
-        && !dprops.motorRunning) {
+
+      if (true) {
+        const file = await writableFileHandle.getFile()
+        if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
+          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+          return
+        }
+      }
+
+      if (dprops.diskHasChanges && !dprops.motorRunning) {
         if (await handleSaveWritableFile(index)) {
           dprops.diskHasChanges = false
+          dprops.lastLocalWriteTime = Date.now()
           passSetDriveProps(dprops)
         }
       }
-    }, 1000, index)
+    }, 3 * 1000, index)
     return () => clearInterval(timer)
   }
 

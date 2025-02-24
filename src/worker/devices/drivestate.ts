@@ -23,9 +23,10 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     trackNbits: !hardDrive ? Array<number>(80) : Array<number>(),
     trackLocation: 0,
     maxHalftrack: 0,
-    lastWriteTime: -1,
+    lastLocalWriteTime: -1,
     cloudData: null,
-    writableFileHandle: null
+    writableFileHandle: null,
+    lastWriteTime: -1
   }
 }
 
@@ -83,6 +84,7 @@ export const passData = () => {
       isWriteProtected: driveState[i].isWriteProtected,
       diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
       lastWriteTime: driveState[i].lastWriteTime,
+      lastLocalWriteTime: driveState[i].lastLocalWriteTime,
       cloudData: driveState[i].cloudData,
       writableFileHandle: driveState[i].writableFileHandle
     }
@@ -168,6 +170,8 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
     driveState[index].filename = ""
   }
   driveState[index].cloudData = props.cloudData
+  driveState[index].writableFileHandle = props.writableFileHandle
+  driveState[index].lastLocalWriteTime = props.lastLocalWriteTime
   passData()
 }
 
@@ -179,6 +183,8 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
   driveState[index].diskHasChanges = props.diskHasChanges
+  driveState[index].lastWriteTime = props.lastWriteTime
+  driveState[index].lastLocalWriteTime = props.lastLocalWriteTime
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
   passData()

@@ -150,7 +150,8 @@ type DriveState = {
   maxHalftrack: number,
   lastWriteTime: number,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null
+  writableFileHandle: FileSystemFileHandle | null,
+  lastLocalWriteTime: number
 }
 
 type DriveProps = {
@@ -165,7 +166,8 @@ type DriveProps = {
   diskData: Uint8Array,
   lastWriteTime: number,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null
+  writableFileHandle: FileSystemFileHandle | null,
+  lastLocalWriteTime: number
 }
 
 type DriveSaveState = {

@@ -21,7 +21,8 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     diskData: new Uint8Array(),
     lastWriteTime: -1,
     cloudData: null,
-    writableFileHandle: null
+    writableFileHandle: null,
+    lastLocalWriteTime: -1
   }
 }
 
@@ -58,10 +59,16 @@ export const handleGetDriveProps = (index: number) => {
   return driveProps[index]
 }
 
-export const handleSetDiskData = (index: number,
-  data: Uint8Array, filename: string, cloudData: CloudData | null, writableFileHandle: FileSystemFileHandle | null) => {
+export const handleSetDiskData = (
+  index: number,
+  data: Uint8Array,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: FileSystemFileHandle | null,
+  lastLocalWriteTime: number) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
+  driveProps[index].lastLocalWriteTime = lastLocalWriteTime
   driveProps[index].cloudData = cloudData
   driveProps[index].writableFileHandle = writableFileHandle
   passSetDriveNewData(driveProps[index])
@@ -91,8 +98,12 @@ export const setDefaultBinaryAddress = (address: number) => {
   binaryRunAddress = address
 }
 
-export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer,
-  filename: string, cloudData: CloudData | null) => {
+export const handleSetDiskOrFileFromBuffer = (
+  index: number,
+  buffer: ArrayBuffer,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: FileSystemFileHandle | null) => {
   const fname = filename.toLowerCase()
   if (fname.endsWith(".bin")) {
     passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
@@ -112,7 +123,7 @@ export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer
     } else {
       if (index < 2) index = 2
     }
-    handleSetDiskData(index, new Uint8Array(buffer), filename, cloudData, null)
+    handleSetDiskData(index, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now())
     if (handleGetRunMode() === RUN_MODE.IDLE) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
@@ -146,7 +157,7 @@ export const handleSetDiskFromURL = async (url: string,
     if (hasSlash >= 0) {
       name = urlObj.pathname.substring(hasSlash + 1)
     }
-    handleSetDiskOrFileFromBuffer(0, buffer, name, null)
+    handleSetDiskOrFileFromBuffer(0, buffer, name, null, null)
   } catch {
     console.error(`Error fetching URL: ${url}`)
   }
@@ -154,7 +165,7 @@ export const handleSetDiskFromURL = async (url: string,
 
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
-    handleSetDiskData(i, new Uint8Array(), "", null, null)
+    handleSetDiskData(i, new Uint8Array(), "", null, null, -1)
   }
 }
 
@@ -168,7 +179,7 @@ export const handleSetDiskFromFile = async (disk: diskImage,
    return
   }
   resetAllDiskDrives()
-  handleSetDiskData(0, new Uint8Array(data), disk.file, null, null)
+  handleSetDiskData(0, new Uint8Array(data), disk.file, null, null, -1)
   passSetRunMode(RUN_MODE.NEED_BOOT)
   const helpFile = replaceSuffix(disk.file, "txt")
   try {
