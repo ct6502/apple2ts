@@ -11,7 +11,7 @@ import { faRotate } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
-import { passSetDriveProps, passSetRunMode } from "../main2worker"
+import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -191,7 +191,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const timer = setInterval(async (index: number) => {
       const dprops = handleGetDriveProps(index)
 
-      if (true) {
+      if (handleGetHotReload()) {
         const file = await writableFileHandle.getFile()
         if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
           handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)

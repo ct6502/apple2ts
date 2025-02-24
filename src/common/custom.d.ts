@@ -110,6 +110,7 @@ type MachineState = {
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   useOpenAppleKey: boolean,
+  hotReload: boolean
 }
 
 type CloudData = {
