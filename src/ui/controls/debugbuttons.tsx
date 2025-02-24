@@ -1,4 +1,4 @@
-import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { isFileSystemApiSupported, RUN_MODE, UI_THEME } from "../../common/utility"
 import {
   passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode,
@@ -69,14 +69,15 @@ const DebugButtons = (props: DisplayProps) => {
         onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
         <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
       </button>}
-    <button className="push-button"
-      title={handleGetHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
-      onClick={() => {
-        setPreferenceHotReload(!handleGetHotReload())
-        props.updateDisplay()
-      }}>
-      <FontAwesomeIcon icon={handleGetHotReload() ? faEye : faEyeSlash} />
-    </button>
+    {isFileSystemApiSupported() &&
+      <button className="push-button"
+        title={handleGetHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
+        onClick={() => {
+          setPreferenceHotReload(!handleGetHotReload())
+          props.updateDisplay()
+        }}>
+        <FontAwesomeIcon icon={handleGetHotReload() ? faEye : faEyeSlash} />
+      </button>}
   </span>
 }
 

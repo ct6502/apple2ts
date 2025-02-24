@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, RUN_MODE, uint32toBytes } from "../../common/utility"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
@@ -235,7 +235,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       if (dprops.filename.length > 0) {
         setMenuOpen(0)
       } else {
-        if ("showOpenFilePicker" in self && "showSaveFilePicker" in self) {
+        if (isFileSystemApiSupported()) {
           setMenuOpen(3)
         } else {
           setMenuOpen(2)

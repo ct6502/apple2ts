@@ -451,3 +451,7 @@ export const handleSetTheme = (theme: UI_THEME) => {
     document.documentElement.classList.remove("theme-minimal")
   }
 }
+
+export const isFileSystemApiSupported = () => {
+  return "showOpenFilePicker" in self && "showSaveFilePicker" in self
+}
