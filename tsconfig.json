@@ -8,8 +8,12 @@
       "webworker"
     ],
     "types": [
-      "@types/wicg-file-system-access",
-      "@types/jest"
+      "@types/gapi.client.drive-v3",
+      "@types/google.accounts",
+      "@types/google.picker",
+      "@types/jest",
+      "@types/w3c-web-serial",
+      "@types/wicg-file-system-access"
     ],
     "allowJs": true,
     "skipLibCheck": true,

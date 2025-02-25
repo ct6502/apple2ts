@@ -88,7 +88,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
   ],
   [
     {
-      label: "Load Disk from Device (read-only)",
+      label: "Load Disk from Device (Read-Only)",
       icon: faFolderOpen,
       index: 0
     },
@@ -108,7 +108,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
   ],
   [
     {
-      label: "Load Disk from Device (read/write)",
+      label: "Load Disk from Device (Read/Write)",
       icon: faFolderOpen,
       index: 3
     },

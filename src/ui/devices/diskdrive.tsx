@@ -151,12 +151,14 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const showReadWriteFilePicker = async (index: number) => {
+    const suffixes = FILE_SUFFIXES.split(",")
     let [writableFileHandle] = await window.showOpenFilePicker({
       types: [
         {
           description: "Disk Images",
           accept: {
-            "application/octet-stream": FILE_SUFFIXES.split(",")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            "application/octet-stream": suffixes
           }
         }
       ],
