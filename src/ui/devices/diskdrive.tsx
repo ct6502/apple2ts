@@ -170,6 +170,7 @@ const DiskDrive = (props: DiskDriveProps) => {
 
     const file = await writableFileHandle.getFile()
     const fileExtension = file.name.substring(file.name.lastIndexOf("."))
+    let newIndex = index
 
     if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
       const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
@@ -183,9 +184,9 @@ const DiskDrive = (props: DiskDriveProps) => {
           },
         ]
       })
-      handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+      newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
     } else {
-      handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
+      newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
     }
 
     const timer = setInterval(async (index: number) => {
@@ -207,7 +208,7 @@ const DiskDrive = (props: DiskDriveProps) => {
           passSetDriveProps(dprops)
         }
       }
-    }, 3 * 1000, index)
+    }, 3 * 1000, newIndex)
     return () => clearInterval(timer)
   }
 

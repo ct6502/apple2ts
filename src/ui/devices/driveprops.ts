@@ -105,6 +105,8 @@ export const handleSetDiskOrFileFromBuffer = (
   cloudData: CloudData | null,
   writableFileHandle: FileSystemFileHandle | null) => {
   const fname = filename.toLowerCase()
+  let newIndex = index
+
   if (fname.endsWith(".bin")) {
     passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
   } else if (fname.endsWith(".bas") || fname.endsWith(".a")) {
@@ -119,17 +121,19 @@ export const handleSetDiskOrFileFromBuffer = (
   } else {
     // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
     if (isHardDriveImage(fname)) {
-      if (index > 1) index = 0
+      if (index > 1) newIndex = 0
     } else {
-      if (index < 2) index = 2
+      if (index < 2) newIndex = 2
     }
-    handleSetDiskData(index, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now())
+    handleSetDiskData(newIndex, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now())
     if (handleGetRunMode() === RUN_MODE.IDLE) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
 //      props.updateDisplay()
     }
   }
+
+  return newIndex
 }
 
 export const handleSetDiskFromURL = async (url: string,
