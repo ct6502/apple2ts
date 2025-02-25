@@ -28,7 +28,7 @@ const FileInput = (props: DisplayProps) => {
           setDisplayBinaryDialog(true)
         }
       } else {
-        handleSetDiskOrFileFromBuffer(index, buffer, file.name, null)
+        handleSetDiskOrFileFromBuffer(index, buffer, file.name, null, null)
       }
     }
   }
@@ -70,6 +70,7 @@ const FileInput = (props: DisplayProps) => {
     // because occasionally the message doesn't get through fast enough
     // and the file dialog pops up again right away.
     props.showFileOpenDialog.show = false
+
     setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current

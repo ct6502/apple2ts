@@ -1,6 +1,6 @@
 import { changeMockingboardMode } from "./devices/mockingboard_audio"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
-import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode } from "./main2worker"
+import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload } from "./main2worker"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -81,6 +81,15 @@ export const setPreferenceSpeedMode = (mode = 0) => {
     localStorage.setItem("speedMode", JSON.stringify(mode))
   }
   passSpeedMode(mode)
+}
+
+export const setPreferenceHotReload = (mode = false) => {
+  if (mode === false) {
+    localStorage.removeItem("hotReload")
+  } else {
+    localStorage.setItem("hotReload", JSON.stringify(mode))
+  }
+  passHotReload(mode)
 }
 
 export const loadPreferences = () => {
@@ -177,6 +186,15 @@ export const loadPreferences = () => {
       localStorage.removeItem("ramWorks")
     }
   }
+
+  const hotReload = localStorage.getItem("hotReload")
+  if (hotReload) {
+    try {
+      passHotReload(JSON.parse(hotReload))
+    } catch {
+      localStorage.removeItem("hotReload")
+    }
+  }
 }
 
 export const resetPreferences = () => {
@@ -189,6 +207,7 @@ export const resetPreferences = () => {
   setPreferenceMachineName()
   setPreferenceRamWorks()
   setPreferenceDebugMode()
+  setPreferenceHotReload()
 
   localStorage.removeItem("binaryRunAddress")
 }

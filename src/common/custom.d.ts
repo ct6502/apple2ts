@@ -110,6 +110,7 @@ type MachineState = {
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   useOpenAppleKey: boolean,
+  hotReload: boolean
 }
 
 type CloudData = {
@@ -149,7 +150,9 @@ type DriveState = {
   trackLocation: number,
   maxHalftrack: number,
   lastWriteTime: number,
-  cloudData: CloudData | null
+  cloudData: CloudData | null,
+  writableFileHandle: FileSystemFileHandle | null,
+  lastLocalWriteTime: number
 }
 
 type DriveProps = {
@@ -163,7 +166,9 @@ type DriveProps = {
   isWriteProtected: boolean,
   diskData: Uint8Array,
   lastWriteTime: number,
-  cloudData: CloudData | null
+  cloudData: CloudData | null,
+  writableFileHandle: FileSystemFileHandle | null,
+  lastLocalWriteTime: number
 }
 
 type DriveSaveState = {

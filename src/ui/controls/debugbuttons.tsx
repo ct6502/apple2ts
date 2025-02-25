@@ -1,14 +1,17 @@
-import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { isFileSystemApiSupported, RUN_MODE, UI_THEME } from "../../common/utility"
 import {
   passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode,
-  handleGetTheme
+  handleGetTheme,
+  handleGetHotReload
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faBug,
   faBugSlash,
   faCamera,
+  faEye,
+  faEyeSlash,
   faFastBackward,
   faFastForward,
   faLayerGroup,
@@ -17,9 +20,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
-import { setPreferenceDebugMode } from "../localstorage"
+import { setPreferenceDebugMode, setPreferenceHotReload } from "../localstorage"
 
-const DebugButtons = () => {
+const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
   const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT
   return <span className="flex-row">
@@ -65,6 +68,15 @@ const DebugButtons = () => {
         title="Toggle Debug"
         onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
         <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
+      </button>}
+    {isFileSystemApiSupported() &&
+      <button className="push-button"
+        title={handleGetHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
+        onClick={() => {
+          setPreferenceHotReload(!handleGetHotReload())
+          props.updateDisplay()
+        }}>
+        <FontAwesomeIcon icon={handleGetHotReload() ? faEye : faEyeSlash} />
       </button>}
   </span>
 }
