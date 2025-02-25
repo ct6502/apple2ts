@@ -17,6 +17,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { useGlobalContext } from "../globalcontext"
 import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
+import ScrollBar from "../scrollbar"
 
 const nlines = 40
 let currentScrollAddress = -1
@@ -33,7 +34,7 @@ const DisassemblyView = () => {
 
   const symbolTable = getSymbolTables(handleGetMachineName())
 
-  const handleCodeScroll = () => {
+  const handleCodeScroll = (event: React.WheelEvent<HTMLDivElement>) => {
     // Delay setting the new disassembly address to compress scroll events,
     // since they can come in fast.
     // Clear the previous timeout
@@ -41,20 +42,11 @@ const DisassemblyView = () => {
       clearTimeout(timeoutIdRef.current)
     }
     timeoutIdRef.current = setTimeout(() => {
-      if (disassemblyRef.current) {
-        const div = disassemblyRef.current
-        const rect = div.getBoundingClientRect()
-        // Find the line div at the top of our disassembly view
-        const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
-        if (topElement && topElement.textContent) {
-          const addr = parseInt(topElement.textContent.slice(0, 4), 16)
-          // Are we already there?
-          if (addr === currentScrollAddress) {
-            return
-          }
-          currentScrollAddress = addr
-          passSetDisassembleAddress(addr)
-        }
+      const delta = (event.deltaY > 0) ? 0x100 : -0x100
+      const newAddr = Math.min(65535, Math.max(0, currentScrollAddress + delta))
+      if (newAddr !== currentScrollAddress) {
+        currentScrollAddress = newAddr
+        passSetDisassembleAddress(newAddr)
       }
     }, 50)
   }
@@ -316,13 +308,13 @@ const DisassemblyView = () => {
       }
     }
     const pc1 = handleGetState6502().PC
-    const lineTop = getAddress(disArray[0])
-    const lineBottom = getAddress(disArray[nlines - 1])
-    const topHalf = Array.from({ length: lineTop }, (_, i) => i)
-    const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1)
+    // const lineTop = getAddress(disArray[0])
+    // const lineBottom = getAddress(disArray[nlines - 1])
+    // const topHalf = Array.from({ length: lineTop }, (_, i) => i)
+    // const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1)
 
     return <div>
-      {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+      {/* {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))} */}
       {disArray.map((line, index) => (
         <div key={index}
           ref={index === 0 ? scrollToRef : null}
@@ -336,34 +328,42 @@ const DisassemblyView = () => {
           {getChromacodedLine(line)}
         </div>
       ))}
-      {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+      {/* {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))} */}
       <FontAwesomeIcon icon={iconBreakpoint} ref={fakePointRef}
         className="breakpoint-style fake-point"
         style={{ pointerEvents: "none", display: "none" }} />
     </div>
   }
 
+  const height = (nlines * 10 - 2) * 96 / 72
+
+  currentScrollAddress = getAddressAtTop()
   return (
     <div className="flex-row thin-border" id="tour-debug-disassembly"
       style={{ position: "relative" }}>
       <div ref={disassemblyRef}
         className="mono-text"
         style={{
-          overflow: "auto",
-          width: "220px",
+          width: "213px",
           top: "0px",
-          height: `${nlines * 10 - 2}pt`,
+          height: `${height}px`,
           paddingLeft: "15pt",
           paddingRight: "11pt",
         }}
         tabIndex={0} // Makes the div focusable for keydown events
-        onScroll={handleCodeScroll}
+        onWheel={handleCodeScroll}
         onKeyDown={handleCodeKeyDown}
         onMouseMove={handleCodeMouseMove}
         onMouseLeave={handleCodeMouseLeave}
         onClick={handleCodeClick}>
         {getDisassemblyDiv()}
       </div>
+      <ScrollBar
+        height={height}
+        lineAtTop={getAddressAtTop()}
+        nlines={nlines}
+        maxLines={65535}
+        setLineAtTop={passSetDisassembleAddress}/>
     </div>
   )
 }
