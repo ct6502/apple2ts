@@ -7,6 +7,7 @@ export const FLOPPY_DISK_SUFFIXES = ".a2ts,.dsk,.woz,.do,.bin,.a,.bas"
 export const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po"
 export const FILE_SUFFIXES = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const MAX_DRIVES = 4
+export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
 
 // Put memory offset constants here so we can use them in the worker and main thread.
 // We used to have these in the memory.ts file, but when we imported that into
@@ -448,4 +449,8 @@ export const handleSetTheme = (theme: UI_THEME) => {
   } else {
     document.documentElement.classList.remove("theme-minimal")
   }
+}
+
+export const isFileSystemApiSupported = () => {
+  return "showOpenFilePicker" in self && "showSaveFilePicker" in self
 }

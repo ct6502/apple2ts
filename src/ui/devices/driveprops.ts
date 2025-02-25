@@ -1,6 +1,7 @@
 import { MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
 import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
+import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -19,7 +20,9 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     motorRunning: false,
     diskData: new Uint8Array(),
     lastWriteTime: -1,
-    cloudData: null
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalWriteTime: -1
   }
 }
 
@@ -43,8 +46,10 @@ export const doSetUIDriveProps = (props: DriveProps) => {
   // If our disk is the same but it hasn't changed, keep the existing data.
   if (props.diskData.length === 0) {
     const tmp = driveProps[props.index].diskData
+    const diskHasChanges = driveProps[props.index].diskHasChanges
     driveProps[props.index] = props
     driveProps[props.index].diskData = tmp
+    driveProps[props.index].diskHasChanges = diskHasChanges
   } else {
     driveProps[props.index] = props
   }
@@ -54,11 +59,18 @@ export const handleGetDriveProps = (index: number) => {
   return driveProps[index]
 }
 
-export const handleSetDiskData = (index: number,
-  data: Uint8Array, filename: string, cloudData: CloudData | null) => {
+export const handleSetDiskData = (
+  index: number,
+  data: Uint8Array,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: FileSystemFileHandle | null,
+  lastLocalWriteTime: number) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
+  driveProps[index].lastLocalWriteTime = lastLocalWriteTime
   driveProps[index].cloudData = cloudData
+  driveProps[index].writableFileHandle = writableFileHandle
   passSetDriveNewData(driveProps[index])
 }
 
@@ -86,9 +98,15 @@ export const setDefaultBinaryAddress = (address: number) => {
   binaryRunAddress = address
 }
 
-export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer,
-  filename: string, cloudData: CloudData | null) => {
+export const handleSetDiskOrFileFromBuffer = (
+  index: number,
+  buffer: ArrayBuffer,
+  filename: string,
+  cloudData: CloudData | null,
+  writableFileHandle: FileSystemFileHandle | null) => {
   const fname = filename.toLowerCase()
+  let newIndex = index
+
   if (fname.endsWith(".bin")) {
     passSetBinaryBlock(binaryRunAddress, new Uint8Array(buffer), true)
   } else if (fname.endsWith(".bas") || fname.endsWith(".a")) {
@@ -103,17 +121,19 @@ export const handleSetDiskOrFileFromBuffer = (index: number, buffer: ArrayBuffer
   } else {
     // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
     if (isHardDriveImage(fname)) {
-      if (index > 1) index = 0
+      if (index > 1) newIndex = 0
     } else {
-      if (index < 2) index = 2
+      if (index < 2) newIndex = 2
     }
-    handleSetDiskData(index, new Uint8Array(buffer), filename, cloudData)
+    handleSetDiskData(newIndex, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now())
     if (handleGetRunMode() === RUN_MODE.IDLE) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
 //      props.updateDisplay()
     }
   }
+
+  return newIndex
 }
 
 export const handleSetDiskFromURL = async (url: string,
@@ -141,7 +161,7 @@ export const handleSetDiskFromURL = async (url: string,
     if (hasSlash >= 0) {
       name = urlObj.pathname.substring(hasSlash + 1)
     }
-    handleSetDiskOrFileFromBuffer(0, buffer, name, null)
+    handleSetDiskOrFileFromBuffer(0, buffer, name, null, null)
   } catch {
     console.error(`Error fetching URL: ${url}`)
   }
@@ -149,7 +169,7 @@ export const handleSetDiskFromURL = async (url: string,
 
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
-    handleSetDiskData(i, new Uint8Array(), "", null)
+    handleSetDiskData(i, new Uint8Array(), "", null, null, -1)
   }
 }
 
@@ -163,7 +183,7 @@ export const handleSetDiskFromFile = async (disk: diskImage,
    return
   }
   resetAllDiskDrives()
-  handleSetDiskData(0, new Uint8Array(data), disk.file, null)
+  handleSetDiskData(0, new Uint8Array(data), disk.file, null, null, -1)
   passSetRunMode(RUN_MODE.NEED_BOOT)
   const helpFile = replaceSuffix(disk.file, "txt")
   try {
@@ -184,5 +204,27 @@ export const handleSetDiskFromFile = async (disk: diskImage,
   }
 }
 
-// export function handleSetCloudUrl(url: string) {
-// }
+export const handleSaveWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle|null = null) => {
+  let success = false
+
+  if (writableFileHandle === null) {
+    writableFileHandle = driveProps[index].writableFileHandle
+  }
+
+  if (writableFileHandle) {
+    try {
+      const dprops = driveProps[index]
+      const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+      const writable = await writableFileHandle.createWritable()
+
+      await writable.write(blob)
+      await writable.close()
+      
+      success = true
+    } catch (ex) {
+      console.log(`Error saving writable file: ${ex}`)
+    }
+  }
+
+  return success
+}

@@ -103,6 +103,10 @@ export const passHelpText = (helptext: string) => {
   machineState.helpText = helptext
 }
 
+export const passHotReload = (mode: boolean) => {
+  machineState.hotReload = mode
+}
+
 export const passGoForwardInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL_STEP, "FORWARD")
 }
@@ -246,6 +250,7 @@ let machineState: MachineState = {
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
   useOpenAppleKey: false,
+  hotReload: false
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -264,6 +269,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.theme = machineState.theme
       newState.helpText = machineState.helpText
       newState.useOpenAppleKey = machineState.useOpenAppleKey
+      newState.hotReload = machineState.hotReload
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
@@ -493,5 +499,9 @@ export const handleGetMachineName = () => {
 
 export const handleGetSoftSwitchDescriptions = () => {
   return softSwitchDescriptions
+}
+
+export const handleGetHotReload = () => {
+  return machineState.hotReload
 }
 

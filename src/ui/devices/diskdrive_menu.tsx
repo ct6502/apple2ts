@@ -88,9 +88,29 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
   ],
   [
     {
-      label: "Load Disk from Local Computer",
+      label: "Load Disk from Device (Read-Only)",
       icon: faFolderOpen,
       index: 0
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Load Disk from OneDrive",
+      icon: faCloud,
+      index: 1
+    },
+    {
+      label: "Load Disk from Google Drive",
+      icon: faCloud,
+      index: 2
+    }
+  ],
+  [
+    {
+      label: "Load Disk from Device (Read/Write)",
+      icon: faFolderOpen,
+      index: 3
     },
     {
       label: "-"

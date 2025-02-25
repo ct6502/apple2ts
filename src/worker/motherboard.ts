@@ -610,7 +610,8 @@ const updateExternalMachineState = () => {
     stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
-    useOpenAppleKey: false,  // ignored by main thread
+    useOpenAppleKey: false,  // ignored by main thread,
+    hotReload: false
   }
   passMachineState(state)
 }
