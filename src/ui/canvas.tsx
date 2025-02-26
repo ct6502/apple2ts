@@ -397,38 +397,39 @@ const Apple2Canvas = (props: DisplayProps) => {
     const width = canvas.offsetWidth
     const height = canvas.offsetHeight
 
-    const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
-
-    if (isCanvasFullScreen) {
-      const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
-      canvas.style.marginLeft = `${marginLeft}px`
-      const marginTop = Math.max((window.innerHeight - height) / 2, 0)
-      canvas.style.marginTop = `${marginTop}px`
-      return canvas.style.marginLeft
-    }
-
     const scanlinesWidth = width - 2 * width * xmargin
     const scanlinesHeight = height - 2 * height * ymargin
 
     let scanlinesLeft = canvas.offsetLeft + width * xmargin
     let scanlinesTop = canvas.offsetTop + height * ymargin
 
-    if (handleGetTheme() == UI_THEME.MINIMAL) {
-      scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
-      scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 50
+    if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
+      if (handleGetTheme() == UI_THEME.MINIMAL) {
+        scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
+        scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 50
 
-      if (handleGetIsDebugging()) {
-        const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
-        if (debugSection) {
-          scanlinesLeft = Math.max(Math.min(scanlinesLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
+        if (handleGetIsDebugging()) {
+          const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
+          if (debugSection) {
+            scanlinesLeft = Math.max(Math.min(scanlinesLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
+          }
         }
-      }
 
-      canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
-      canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
+        canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
+        canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
+      } else {
+        canvas.style.marginLeft = "0"
+        canvas.style.marginTop = "0"
+      }
     } else {
-      canvas.style.marginLeft = "0"
-      canvas.style.marginTop = "0"
+      const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
+      const marginTop = Math.max((window.innerHeight - height) / 2, 0)
+
+      canvas.style.marginLeft = `${marginLeft}px`
+      canvas.style.marginTop = `${marginTop}px`
+
+      scanlinesLeft = marginLeft + width * xmargin
+      scanlinesTop = marginTop + height * ymargin
     }
 
     document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
