@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail, passSoftSwitchDescriptions } from "./worker2main"
-import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump } from "./instructions"
+import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump, get6502Instructions } from "./instructions"
 import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG, UI_THEME } from "../common/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
@@ -28,14 +28,12 @@ import { sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
-import { verifyAddressWithinDisassembly, getDisassembly, getInstruction } from "./disassemble"
 
 let startTime = 0
 let prevTime = 0
 let speedMode = 0
 let cpuSpeed = 0
 export let isDebugging = TEST_DEBUG
-let disassemblyAddr = -1
 let refreshTime = 16.6881 // 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let timeDelta = 0
@@ -189,9 +187,6 @@ export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
 }
 
 export const doSetState6502 = (newState: STATE6502) => {
-  if (newState.PC !== s6502.PC) {
-    disassemblyAddr = newState.PC
-  }
   setState6502(newState)
   updateExternalMachineState()
 }
@@ -211,7 +206,6 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
     setStackDump(sState.emulator.stackDump)
   }
   restoreDriveSaveState(sState.driveState)
-  disassemblyAddr = s6502.PC
   if (eraseSnapshots) {
     saveStates.length = 0
     iTempState = 0
@@ -253,6 +247,7 @@ const configureMachine = () => {
   enableMouseCard(true, 5)
   enableDiskDrive()
   enableHardDrive()
+  get6502Instructions()
 }
 
 const resetMachine = () => {
@@ -343,12 +338,6 @@ export const doSetMemory = (addr: number, value: number) => {
   if (isDebugging) {
     updateExternalMachineState()
   }
-}
-
-export const doSetDisassembleAddress = (addr: number) => {
-  disassemblyAddr = addr
-  updateExternalMachineState()
-  if (addr === RUN_MODE.PAUSED) disassemblyAddr = s6502.PC
 }
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
@@ -506,9 +495,6 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
       gameSetupTimerID = 0
     }
     doPauseDrive()
-    if (!verifyAddressWithinDisassembly(disassemblyAddr, s6502.PC)) {
-      disassemblyAddr = s6502.PC
-    }
   } else if (cpuRunMode === RUN_MODE.RUNNING) {
     doPauseDrive(true)
     doSetBreakpointSkipOnce()
@@ -565,11 +551,6 @@ const getMemoryDump = () => {
   return new Uint8Array()
 }
 
-const doGetDisassembly = () => {
-  if (cpuRunMode === RUN_MODE.RUNNING) return ""
-  return getDisassembly(disassemblyAddr >= 0 ? disassemblyAddr : s6502.PC)
-}
-
 const doGetStackString = () => {
   return (isDebugging && cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ""
 }
@@ -590,8 +571,8 @@ const updateExternalMachineState = () => {
     showScanlines: false,
     cout: memGet(0x0039) << 8 | memGet(0x0038),
     cpuSpeed: cpuSpeed,
+    disassemblyAddress: -1,  // ignored by main thread
     theme: UI_THEME.CLASSIC,  // ignored by main thread
-    disassembly: doGetDisassembly(),
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     helpText: "",  // ignored by main thread
     hires: getHires(),
@@ -600,7 +581,6 @@ const updateExternalMachineState = () => {
     lores: getTextPage(true),
     machineName: machineName,
     memoryDump: getMemoryDump(),
-    nextInstruction: getInstruction(s6502.PC),
     noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
     ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,

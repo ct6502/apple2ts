@@ -27,13 +27,16 @@ interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
 
-interface PCodeInstr {
+interface PCodeInstr1 {
     name: string
     pcode: number
     mode: number
     bytes: number
-    execute: PCodeFunc
     is6502: boolean
+}
+
+interface PCodeInstr extends PCodeInstr1 {
+    execute: PCodeFunc
 }
 
 type STATE6502 = {
@@ -89,8 +92,8 @@ type MachineState = {
   showScanlines: boolean,
   cout: number,
   cpuSpeed: number,
+  disassemblyAddress: number,
   theme: UI_THEME,
-  disassembly: string,
   extraRamSize: number,
   helpText: string,
   hires: Uint8Array,
@@ -99,7 +102,6 @@ type MachineState = {
   lores: Uint8Array,
   machineName: MACHINE_NAME,
   memoryDump: Uint8Array,
-  nextInstruction: string,
   noDelayMode: boolean,
   ramWorksBank: number,
   runMode: number,

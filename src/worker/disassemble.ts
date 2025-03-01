@@ -56,19 +56,14 @@ export const getDisassembly = (start: number) => {
   return r
 }
 
-export const verifyAddressWithinDisassembly = (start: number, check: number) => {
-  if (check < start || start < 0) return false
-  let addr = start
-  for (let i=0; i < nlines; i++) {
-    if (addr === check) return true
-    const instr = memGetRaw(addr)
-    addr += pcodes[instr].bytes
-    if (addr > 0xFFFF) break
-  }
-  return false
-}
-
-export const getInstruction = (addr: number) => {
-  const instr = memGetRaw(addr)
-  return pcodes[instr].name
-}
+// export const verifyAddressWithinDisassembly = (start: number, check: number) => {
+//   if (check < start || start < 0) return false
+//   let addr = start
+//   for (let i=0; i < nlines; i++) {
+//     if (addr === check) return true
+//     const instr = memGetRaw(addr)
+//     addr += pcodes[instr].bytes
+//     if (addr > 0xFFFF) break
+//   }
+//   return false
+// }

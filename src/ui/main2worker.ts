@@ -10,6 +10,7 @@ import { BreakpointMap } from "../common/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { copyCanvas } from "./copycanvas"
 import { doSetUIDriveProps } from "./devices/driveprops"
+import { set6502Instructions } from "./panels/debugpanelutilities"
 
 let worker: Worker | null = null
 
@@ -56,9 +57,8 @@ export const passSetDebug = (doDebug: boolean) => {
 }
 
 export const passSetDisassembleAddress = (addr: number) => {
-  if (addr >= -2 && addr <= 0xFFFF) {
-    doPostMessage(MSG_MAIN.DISASSEMBLE_ADDR, addr)
-  }
+  // Force the state right away, so the UI can update.
+  machineState.disassemblyAddress = addr
 }
 
 export const passSpeedMode = (mode: number) => {
@@ -229,8 +229,8 @@ let machineState: MachineState = {
   showScanlines: false,
   cout: 0,
   cpuSpeed: 0,
+  disassemblyAddress: 0,
   theme: UI_THEME.CLASSIC,
-  disassembly: "",
   extraRamSize: 64,
   helpText: "",
   hires: new Uint8Array(),
@@ -239,7 +239,6 @@ let machineState: MachineState = {
   lores: new Uint8Array(),
   machineName: "APPLE2EE",
   memoryDump: new Uint8Array(),
-  nextInstruction: "",
   noDelayMode: false,
   ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
@@ -270,6 +269,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.helpText = machineState.helpText
       newState.useOpenAppleKey = machineState.useOpenAppleKey
       newState.hotReload = machineState.hotReload
+      newState.disassemblyAddress = machineState.disassemblyAddress
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
@@ -338,6 +338,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.SOFTSWITCH_DESCRIPTIONS:
       softSwitchDescriptions = e.data.payload as string[]
       break
+    case MSG_WORKER.INSTRUCTIONS: {
+      const instructions = e.data.payload as Array<PCodeInstr1>
+      set6502Instructions(instructions)
+      break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -423,12 +428,8 @@ export const handleGetAddressGetTable = () => {
   return machineState.addressGetTable
 }
 
-export const handleGetDisassembly = () => {
-  return machineState.disassembly
-}
-
-export const handleGetNextInstruction = () => {
-  return machineState.nextInstruction
+export const handleGetDisassemblyAddress = () => {
+  return machineState.disassemblyAddress
 }
 
 export const handleGetLeftButton = () => {

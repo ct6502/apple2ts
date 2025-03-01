@@ -17,7 +17,7 @@ import { bpStepInto } from "../img/icon_stepinto"
 import { bpStepOut } from "../img/icon_stepout"
 import { bpStepOver } from "../img/icon_stepover"
 
-const DisassemblyControls = () => {
+const DisassemblyControls = (props: {refresh: () => void}) => {
   // The tooltips obscure the first line of disassembly.
   // Only show them until each button has been clicked once.
   const [tooltipOverShow, setTooltipOverShow] = useState(true)
@@ -28,6 +28,12 @@ const DisassemblyControls = () => {
   const [showFileOpenDialog, setShowFileOpenDialog] = useState(false)
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
+  const doUpdateAddress = (addr: number) => {
+    passSetDisassembleAddress(addr)
+    setAddress(addr.toString(16).toUpperCase())
+    props.refresh()
+  }
+
   const handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase().substring(0, 4)
     setAddress(newvalue)
@@ -37,15 +43,13 @@ const DisassemblyControls = () => {
     if (e.key === "Enter") {
       e.preventDefault()
       const addr = parseInt(address || "0", 16)
-      passSetDisassembleAddress(addr)
-      setAddress(addr.toString(16).toUpperCase())
+      doUpdateAddress(addr)
     }
   }
 
   const goToCurrentPC = () => {
     const pc = handleGetState6502().PC
-    passSetDisassembleAddress(pc)
-    setAddress(pc.toString(16).toUpperCase())
+    doUpdateAddress(pc)
   }
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {

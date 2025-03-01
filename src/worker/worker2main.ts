@@ -1,7 +1,7 @@
 import { doSetRunMode,
   doGetSaveState, doRestoreSaveState, doSetSpeedMode,
   doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetDisassembleAddress, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
@@ -87,6 +87,10 @@ export const passSoftSwitchDescriptions = (desc: string[]) => {
   doPostMessage(MSG_WORKER.SOFTSWITCH_DESCRIPTIONS, desc)
 }
 
+export const pass6502Instructions = (instructions: Array<PCodeInstr1>) => {
+  doPostMessage(MSG_WORKER.INSTRUCTIONS, instructions)
+}
+
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
 if (typeof self !== "undefined") {
@@ -105,9 +109,6 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.DEBUG:
         doSetIsDebugging(e.data.payload)
-        break
-      case MSG_MAIN.DISASSEMBLE_ADDR:
-        doSetDisassembleAddress(e.data.payload)
         break
       case MSG_MAIN.BREAKPOINTS:
         doSetBreakpoints(e.data.payload)

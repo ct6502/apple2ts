@@ -1,5 +1,6 @@
 import { toHex, ADDR_MODE, default6502State } from "../common/utility"
 import { getDataBlock, memGet, memSet } from "./memory"
+import { pass6502Instructions } from "./worker2main"
 // var startTime = performance.now()
 
 export const s6502: STATE6502 = default6502State()
@@ -806,4 +807,19 @@ for (let i = 0; i < 256; i++) {
     console.error("ERROR: OPCODE " + i.toString(16) + " should be implemented")
     PCODE("BRK", ADDR_MODE.IMPLIED, i, 1, doBrk)
   }
+}
+
+
+export const get6502Instructions = () => {
+  const result = new Array<PCodeInstr1>(256)
+  for (let i = 0; i < 256; i++) {
+    result[i] = {
+      name: pcodes[i].name,
+      mode: pcodes[i].mode,
+      pcode: pcodes[i].pcode,
+      bytes: pcodes[i].bytes,
+      is6502: pcodes[i].is6502
+    }
+  }
+  pass6502Instructions(result)
 }

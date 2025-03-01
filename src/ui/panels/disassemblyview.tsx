@@ -2,7 +2,6 @@ import React, { KeyboardEvent, useRef } from "react"
 import {
   handleGetAddressGetTable,
   handleGetBreakpoints,
-  handleGetDisassembly,
   handleGetMachineName,
   handleGetMemoryDump,
   handleGetRunMode,
@@ -17,11 +16,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { useGlobalContext } from "../globalcontext"
 import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
+import { getDisassembly } from "./debugpanelutilities"
 
 const nlines = 40
 let currentScrollAddress = -1
+let skipCodeScroll = false
 
-const DisassemblyView = () => {
+const DisassemblyView = (props: {refresh: () => void}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null)
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -36,7 +37,13 @@ const DisassemblyView = () => {
   const handleCodeScroll = () => {
     // Delay setting the new disassembly address to compress scroll events,
     // since they can come in fast.
+    // 50 ms seems to be the sweet spot - any longer and the update delay is annoying.
+    // Any shorter and it doesn't always settle down on the "correct" scroll position.
     // Clear the previous timeout
+    if (skipCodeScroll) {
+      skipCodeScroll = false
+      return
+    }
     if (timeoutIdRef.current !== null) {
       clearTimeout(timeoutIdRef.current)
     }
@@ -45,16 +52,25 @@ const DisassemblyView = () => {
         const div = disassemblyRef.current
         const rect = div.getBoundingClientRect()
         // Find the line div at the top of our disassembly view
-        const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
-        if (topElement && topElement.textContent) {
-          const addr = parseInt(topElement.textContent.slice(0, 4), 16)
-          // Are we already there?
-          if (addr === currentScrollAddress) {
-            return
-          }
-          currentScrollAddress = addr
-          passSetDisassembleAddress(addr)
+        let newAddress = -1
+        const bottomElement = document.elementFromPoint(rect.left + 30, rect.bottom - 5) as HTMLDivElement
+        if (bottomElement && bottomElement.textContent) {
+          const tmp = parseInt(bottomElement.textContent.slice(0, 4), 16)
+          if (tmp === 65535) newAddress = 65535
         }
+        if (newAddress < 0) {
+          const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
+          if (topElement && topElement.textContent) {
+            newAddress = parseInt(topElement.textContent.slice(0, 4), 16)
+          }
+        }
+        // Are we already there?
+        if (newAddress === currentScrollAddress) {
+          return
+        }
+        currentScrollAddress = newAddress
+        passSetDisassembleAddress(newAddress)
+        props.refresh()
       }
     }, 50)
   }
@@ -74,13 +90,15 @@ const DisassemblyView = () => {
       }
       newAddress = Math.max(Math.min(newAddress, 0xFFFF), 0)
       if (newAddress !== currentAddr) {
+        skipCodeScroll = true
         passSetDisassembleAddress(newAddress)
+        props.refresh()
       }
     }
   }
 
   const getAddressAtTop = () => {
-    const disassembly = handleGetDisassembly()
+    const disassembly = getDisassembly()
     return parseInt(disassembly.slice(0, disassembly.indexOf(":")), 16)
   }
 
@@ -238,7 +256,9 @@ const DisassemblyView = () => {
         <span className="disassembly-link"
           title={`$${toHex(addr)}`}
           onClick={() => {
+            skipCodeScroll = true
             passSetDisassembleAddress(addr)
+            props.refresh()
           }}>{ops[1]}</span>
         <span>{ops[2]}</span></span>
     }
@@ -286,7 +306,7 @@ const DisassemblyView = () => {
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
       return <div className="noselect" style={{ marginTop: "30px" }}>Pause to view disassembly</div>
     }
-    const disArray = handleGetDisassembly().split("\n").slice(0, nlines)
+    const disArray = getDisassembly().split("\n").slice(0, nlines)
     if (disArray.length <= 1) return <div
       style={{
         position: "relative",
@@ -318,8 +338,18 @@ const DisassemblyView = () => {
     const pc1 = handleGetState6502().PC
     const lineTop = getAddress(disArray[0])
     const lineBottom = getAddress(disArray[nlines - 1])
-    const topHalf = Array.from({ length: lineTop }, (_, i) => i)
-    const bottomHalf = Array.from({ length: 65535 - lineBottom }, (_, i) => i + lineBottom + 1)
+    const topHalf = Array.from({ length: Math.floor(lineTop / 10) }, (_, i) => (i * 10))
+    for (let i = topHalf[topHalf.length - 1] + 1; i < lineTop; i++) {
+      topHalf.push(i)
+    }
+    const bottomHalf = Array.from({ length: Math.floor((65535 - lineBottom) / 10) + 1 },
+      (_, i) => Math.min((i * 10) + lineBottom + 1, 65535))
+    for (let i = bottomHalf[bottomHalf.length - 1] + 1; i <= 65535; i++) {
+      bottomHalf.push(i)
+    }
+    // Create an array of 10 blank lines
+    // const blankLines = Array.from({ length: 10 }, (_, i) => (
+    //   <div key={`blank-${i}`}>&nbsp;</div>))
 
     return <div>
       {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
@@ -337,6 +367,7 @@ const DisassemblyView = () => {
         </div>
       ))}
       {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
+      {/* {blankLines} */}
       <FontAwesomeIcon icon={iconBreakpoint} ref={fakePointRef}
         className="breakpoint-style fake-point"
         style={{ pointerEvents: "none", display: "none" }} />
