@@ -21,6 +21,7 @@ export const getDisassemblyAddress = () => {
   return disassemblyAddress
 }
 export const setDisassemblyAddress = (addr: number) => {
+  // console.log("setDisassemblyAddress ", addr.toString(16))
   disassemblyAddress = addr
 }
 
@@ -65,6 +66,7 @@ const memGetRaw = (addr: number): number => {
 
 export const getDisassembly = () => {
   let addr = disassemblyAddress >= 0 ? disassemblyAddress : handleGetState6502().PC
+  // console.log("getDisassembly ", addr.toString(16))
   if (addr < 0 || addr > 0xFFFF) return ""
   addr = Math.min(addr, 0xFFFF - nlines + 1)
   let r = ""

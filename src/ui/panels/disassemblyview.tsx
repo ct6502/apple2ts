@@ -1,21 +1,19 @@
 import React, { KeyboardEvent, useRef } from "react"
 import {
-  handleGetAddressGetTable,
   handleGetBreakpoints,
-  handleGetMachineName,
-  handleGetMemoryDump,
   handleGetRunMode,
   handleGetState6502,
   passBreakpoints,
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { getSymbolTables, RUN_MODE, toHex } from "../../common/utility"
+import { RUN_MODE, toHex } from "../../common/utility"
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons"
 import { useGlobalContext } from "../globalcontext"
 import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
 import { getDisassembly, getVisibleLine, setDisassemblyAddress, setVisibleLine } from "./debugpanelutilities"
+import { getChromacodedLine } from "./disassemblyview_singleline"
 
 const nlines = 40
 let currentScrollAddress = -1
@@ -31,8 +29,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
   // We cannot assign an actual type to this ref since it is both an
   // HTMLDivElement and an SVGSVGElement
   const fakePointRef = useRef(null)
-
-  const symbolTable = getSymbolTables(handleGetMachineName())
 
   const handleCodeScroll = () => {
     // Delay setting the new disassembly address to compress scroll events,
@@ -65,9 +61,10 @@ const DisassemblyView = (props: DisassemblyProps) => {
           }
         }
         // Are we already there?
-        if (newAddress === currentScrollAddress) {
+        if (newAddress === currentScrollAddress || Number.isNaN(newAddress)) {
           return
         }
+        // console.log("handleCodeScroll ", newAddress.toString(16))
         currentScrollAddress = newAddress
         setDisassemblyAddress(newAddress)
         props.refresh()
@@ -179,127 +176,10 @@ const DisassemblyView = (props: DisassemblyProps) => {
   //   return ""
   // }
 
-  const borderStyle = (opcode: string) => {
-    if ((["JMP", "RTS"]).includes(opcode)) return "disassembly-separator"
-    return ""
-  }
-
-  const getShiftedMemoryValue = (addr: number) => {
-    if (addr >= 0) {
-      const memory = handleGetMemoryDump()
-      if (memory.length > 1) {
-        const addressGetTable = handleGetAddressGetTable()
-        const page = addr >>> 8
-        const shifted = addressGetTable[page]
-        addr = shifted + (addr & 255)
-        if (addr < memory.length) {
-          return memory[addr]
-        }
-      }
-    }
-    return -1
-  }
-
-  const getOperandTooltip = (operand: string, addr: number) => {
-    let title = ""
-    if (operand.includes(",X)")) {
-      const xreg = handleGetState6502().XReg
-      // pre-indexing: add X to the address before finding the actual address
-      const preIndex = addr + xreg
-      const addrInd = getShiftedMemoryValue(preIndex) + 256 * getShiftedMemoryValue(preIndex + 1)
-      const value = getShiftedMemoryValue(addrInd)
-      title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(preIndex)}) => address = $${toHex(addrInd)}  value = $${toHex(value)}`
-    } else if (operand.includes("),Y")) {
-      const yreg = handleGetState6502().YReg
-      // post-indexing: find the address from memory and then add Y
-      const addrInd = getShiftedMemoryValue(addr) + 256 * getShiftedMemoryValue(addr + 1)
-      const addrNew = addrInd + yreg
-      const value = getShiftedMemoryValue(addrNew)
-      title = `address $${toHex(addrInd)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
-    } else if (operand.includes(",X")) {
-      const xreg = handleGetState6502().XReg
-      const addrNew = addr + xreg
-      const value = getShiftedMemoryValue(addrNew)
-      title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
-    } else if (operand.includes(",Y")) {
-      const yreg = handleGetState6502().YReg
-      const addrNew = addr + yreg
-      const value = getShiftedMemoryValue(addrNew)
-      title = `address $${toHex(addr)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
-    } else if (operand.includes(")")) {
-      const addrInd = getShiftedMemoryValue(addr) + 256 * getShiftedMemoryValue(addr + 1)
-      const value = getShiftedMemoryValue(addrInd)
-      title = `address = $${toHex(addrInd)}  value = $${toHex(value)}`
-    } else if (operand.includes("$")) {
-      const value = getShiftedMemoryValue(addr)
-      title = `value = $${toHex(value)}`
-    }
-    return title
-  }
-
-  const getJumpLink = (operand: string) => {
-    const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
-    let addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
-    if (ops.length === 3 && addr >= 0) {
-      if (ops[2].includes(")")) {
-        const memory = handleGetMemoryDump()
-        if (memory.length > 1) {
-          // pre-indexing: add X to the address before finding the JMP address
-          if (ops[2].includes(",X")) addr += handleGetState6502().XReg
-          addr = memory[addr] + 256 * memory[addr + 1]
-        }
-      }
-      if (symbolTable.has(addr)) {
-        ops[1] = symbolTable.get(addr) || ops[1]
-      }
-      return <span>{ops[0]}
-        <span className="disassembly-link"
-          title={`$${toHex(addr)}`}
-          onClick={() => {
-            skipCodeScroll = true
-            setDisassemblyAddress(addr)
-            props.refresh()
-          }}>{ops[1]}</span>
-        <span>{ops[2]}</span></span>
-    }
-    return null
-  }
-
-  const getOperand = (opcode: string, operand: string) => {
-    if (["BPL", "BMI", "BVC", "BVS", "BCC",
-      "BCS", "BNE", "BEQ", "JSR", "JMP"].includes(opcode)) {
-      const result = getJumpLink(operand)
-      if (result) return result
-    }
-    let className = ""
-    let title = ""
-    if (operand.startsWith("#$")) {
-      const value = parseInt(operand.slice(2), 16)
-      title += value.toString() + " = " + (value | 256).toString(2).slice(1)
-      className = "disassembly-immediate"
-    } else {
-      const ops = operand.split(/(\$[0-9A-Fa-f]{2,4})/)
-      const addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
-      if (addr >= 0) {
-        className = "disassembly-address"
-        title += getOperandTooltip(operand, addr)
-        if (symbolTable.has(addr)) {
-          operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || "")
-        }
-      }
-    }
-    return <span title={title} className={className}>{(operand + "         ").slice(0, 9)}</span>
-  }
-
-  const getChromacodedLine = (line: string) => {
-    const opcode = line.slice(16, 19)
-    const addr = parseInt(line.slice(0, 4), 16)
-    const symbol = symbolTable.get(addr) || ""
-    let hexcodes = line.slice(0, 16) + "       "
-    hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + " "
-    return <span className={borderStyle(opcode)}>{hexcodes}
-      <span className="disassembly-opcode">{opcode} </span>
-      {getOperand(opcode, line.slice(20))}</span>
+  const onJumpClick = (addr: number) => {
+    skipCodeScroll = true
+    setDisassemblyAddress(addr)
+    props.refresh()
   }
 
   const getDisassemblyDiv = () => {
@@ -315,10 +195,10 @@ const DisassemblyView = (props: DisassemblyProps) => {
         height: `${nlines * 10 - 2}pt`,
       }}>
     </div>
+    let foundLine = false
     if (getVisibleLine() >= -1) {
       const visibleLine = getVisibleLine() === -1 ? handleGetState6502().PC : getVisibleLine()
       // console.log("visibleLine", visibleLine.toString(16))
-      let foundLine = false
       for (let i = 0; i < disArray.length; i++) {
         if (getAddress(disArray[i]) === visibleLine) {
           foundLine = true
@@ -335,14 +215,17 @@ const DisassemblyView = (props: DisassemblyProps) => {
     if (scrollTimeout.current !== null) {
       clearTimeout(scrollTimeout.current)
     }
-    scrollTimeout.current = setTimeout(() => {
-      if (disassemblyRef.current) {
-        if (scrollToRef.current) {
-          const line = scrollToRef.current
-          line.scrollIntoView()
+    if (!foundLine) {
+      scrollTimeout.current = setTimeout(() => {
+        if (disassemblyRef.current) {
+          if (scrollToRef.current) {
+            const line = scrollToRef.current
+            skipCodeScroll = true
+            line.scrollIntoView()
+          }
         }
-      }
-    }, 10)
+      }, 20)
+    }
     // Put the breakpoints into an easier to digest array format.
     const bp: Array<Breakpoint> = []
     const breakpoints = handleGetBreakpoints()
@@ -382,7 +265,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
               className={"breakpoint-position " + getBreakpointStyle(bp[index])}
               data-key={bp[index].address}
               onClick={handleBreakpointClick} />)}
-          {getChromacodedLine(line)}
+          {getChromacodedLine(line, onJumpClick)}
         </div>
       ))}
       {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
