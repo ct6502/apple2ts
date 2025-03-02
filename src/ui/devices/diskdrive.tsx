@@ -367,6 +367,7 @@ const DiskDrive = (props: DiskDriveProps) => {
                     key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
                     {getMenuCheck(menuItem.index || -1)}
                     {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                    {menuItem.svg && menuItem.svg}
                     {menuItem.label}</div>}
               </div>
             ))}

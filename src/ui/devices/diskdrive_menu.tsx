@@ -1,9 +1,12 @@
 import { faClock, faCloud, faDownload, faEject, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
+import { JSX } from "react"
+import { svgInternetArchive } from "../img/icon_internetarchive"
 
 type MenuItem = {
   label: string,
   icon?: IconDefinition,
   index?: number,
+  svg?: JSX.Element
 }
 
 export const driveMenuItems: Array<Array<MenuItem>> = [
@@ -96,6 +99,13 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "-"
     },
     {
+      label: "-"
+    },
+    {
+      label: "Load Disk from Internet Archive",
+      svg: svgInternetArchive
+    },
+    {
       label: "Load Disk from OneDrive",
       icon: faCloud,
       index: 1
@@ -111,6 +121,13 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "Load Disk from Device (Read/Write)",
       icon: faFolderOpen,
       index: 3
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Load Disk from Internet Archive",
+      svg: svgInternetArchive
     },
     {
       label: "-"
