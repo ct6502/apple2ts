@@ -99,14 +99,6 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "-"
     },
     {
-      label: "Load Disk from Internet Archive",
-      svg: svgInternetArchiveLogo,
-      index: 4
-    },
-    {
-      label: "-"
-    },
-    {
       label: "Load Disk from OneDrive",
       icon: faCloud,
       index: 1
