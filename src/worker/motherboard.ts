@@ -571,7 +571,6 @@ const updateExternalMachineState = () => {
     showScanlines: false,
     cout: memGet(0x0039) << 8 | memGet(0x0038),
     cpuSpeed: cpuSpeed,
-    disassemblyAddress: -1,  // ignored by main thread
     theme: UI_THEME.CLASSIC,  // ignored by main thread
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     helpText: "",  // ignored by main thread

@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { handleGetBreakpoints, passBreakpoints, passSetDisassembleAddress } from "../main2worker"
+import { handleGetBreakpoints, passBreakpoints } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPencil as iconBreakpointEdit,
@@ -11,7 +11,7 @@ import {
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons"
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons"
-import { getLineOfDisassembly } from "./debugpanelutilities"
+import { getLineOfDisassembly, setDisassemblyAddress } from "./debugpanelutilities"
 import BreakpointEdit from "./breakpointedit"
 import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "../../common/breakpoint"
 import { useGlobalContext } from "../globalcontext"
@@ -29,7 +29,7 @@ const BreakpointsView = () => {
     const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     if (addr >= 0) {
       if (getLineOfDisassembly(addr) < 0) {
-        passSetDisassembleAddress(addr)
+        setDisassemblyAddress(addr)
       }
     }
   }

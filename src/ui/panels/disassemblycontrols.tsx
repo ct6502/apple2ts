@@ -2,7 +2,7 @@ import { KeyboardEvent, useRef, useState } from "react"
 import {
   handleGetRunMode,
   handleGetState6502,
-  passSetDisassembleAddress, passStepInto, passStepOut, passStepOver
+  passStepInto, passStepOut, passStepOver
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -16,8 +16,9 @@ import { handleSetCPUState } from "../controller"
 import { bpStepInto } from "../img/icon_stepinto"
 import { bpStepOut } from "../img/icon_stepout"
 import { bpStepOver } from "../img/icon_stepover"
+import { setDisassemblyAddress, setVisibleLine } from "./debugpanelutilities"
 
-const DisassemblyControls = (props: {refresh: () => void}) => {
+const DisassemblyControls = (props: DisassemblyProps) => {
   // The tooltips obscure the first line of disassembly.
   // Only show them until each button has been clicked once.
   const [tooltipOverShow, setTooltipOverShow] = useState(true)
@@ -29,7 +30,7 @@ const DisassemblyControls = (props: {refresh: () => void}) => {
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const doUpdateAddress = (addr: number) => {
-    passSetDisassembleAddress(addr)
+    setDisassemblyAddress(addr)
     setAddress(addr.toString(16).toUpperCase())
     props.refresh()
   }
@@ -98,19 +99,31 @@ const DisassemblyControls = (props: {refresh: () => void}) => {
       <div className="flex-row" id="tour-debug-controls">
       <button className="push-button"
         title={tooltipOverShow ? "Step Over" : ""}
-        onClick={() => { setTooltipOverShow(false); passStepOver() }}
+        onClick={() => {
+          setTooltipOverShow(false)
+          passStepOver()
+          setVisibleLine(-1)
+        }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOver}</svg>
       </button>
       <button className="push-button"
         title={tooltipIntoShow ? "Step Into" : ""}
-        onClick={() => { setTooltipIntoShow(false); passStepInto() }}
+        onClick={() => {
+          setTooltipIntoShow(false)
+          passStepInto()
+          setVisibleLine(-1)
+        }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepInto}</svg>
       </button>
       <button className="push-button"
         title={tooltipOutShow ? "Step Out" : ""}
-        onClick={() => { setTooltipOutShow(false); passStepOut() }}
+        onClick={() => {
+          setTooltipOutShow(false)
+          passStepOut()
+          setVisibleLine(-1)
+        }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>
       </button>

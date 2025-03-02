@@ -1,5 +1,5 @@
 import { ADDR_MODE, isBranchInstruction, toHex } from "../../common/utility"
-import { handleGetAddressGetTable, handleGetDisassemblyAddress, handleGetMemoryDump } from "../main2worker"
+import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../main2worker"
 
 let instructions: Array<PCodeInstr1>
 export const set6502Instructions = (instr: Array<PCodeInstr1>) => {
@@ -7,6 +7,22 @@ export const set6502Instructions = (instr: Array<PCodeInstr1>) => {
 }
 
 const nlines = 40  // should this be an argument?
+
+let visibleLine = -2
+export const getVisibleLine = () => {
+  return visibleLine
+}
+export const setVisibleLine = (line: number) => {
+  visibleLine = line
+}
+
+let disassemblyAddress = -1
+export const getDisassemblyAddress = () => {
+  return disassemblyAddress
+}
+export const setDisassemblyAddress = (addr: number) => {
+  disassemblyAddress = addr
+}
 
 const decodeBranch = (addr: number, vLo: number) => {
   // The extra +2 is for the branch instruction itself
@@ -48,7 +64,7 @@ const memGetRaw = (addr: number): number => {
 }
 
 export const getDisassembly = () => {
-  let addr = handleGetDisassemblyAddress()
+  let addr = disassemblyAddress >= 0 ? disassemblyAddress : handleGetState6502().PC
   if (addr < 0 || addr > 0xFFFF) return ""
   addr = Math.min(addr, 0xFFFF - nlines + 1)
   let r = ""

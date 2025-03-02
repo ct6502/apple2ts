@@ -92,7 +92,6 @@ type MachineState = {
   showScanlines: boolean,
   cout: number,
   cpuSpeed: number,
-  disassemblyAddress: number,
   theme: UI_THEME,
   extraRamSize: number,
   helpText: string,
@@ -299,3 +298,7 @@ type BreakpointExpression = {
 
 type StepCallbackFunction = () => boolean
 
+type DisassemblyProps = {
+  update: number,
+  refresh: () => void,
+}
