@@ -56,11 +56,6 @@ export const passSetDebug = (doDebug: boolean) => {
   machineState.isDebugging = doDebug
 }
 
-export const passSetDisassembleAddress = (addr: number) => {
-  // Force the state right away, so the UI can update.
-  machineState.disassemblyAddress = addr
-}
-
 export const passSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
   // Force the state right away, so the UI can update.
@@ -229,7 +224,6 @@ let machineState: MachineState = {
   showScanlines: false,
   cout: 0,
   cpuSpeed: 0,
-  disassemblyAddress: 0,
   theme: UI_THEME.CLASSIC,
   extraRamSize: 64,
   helpText: "",
@@ -269,7 +263,6 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.helpText = machineState.helpText
       newState.useOpenAppleKey = machineState.useOpenAppleKey
       newState.hotReload = machineState.hotReload
-      newState.disassemblyAddress = machineState.disassemblyAddress
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
@@ -426,10 +419,6 @@ export const handleGetMemoryDump = () => {
 
 export const handleGetAddressGetTable = () => {
   return machineState.addressGetTable
-}
-
-export const handleGetDisassemblyAddress = () => {
-  return machineState.disassemblyAddress
 }
 
 export const handleGetLeftButton = () => {
