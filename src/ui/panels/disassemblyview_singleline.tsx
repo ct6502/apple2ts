@@ -3,8 +3,6 @@ import { getSymbolTables, toHex } from "../../common/utility"
 import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetState6502 } from "../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 
-const symbolTable = getSymbolTables(handleGetMachineName())
-
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
 //   return ""
@@ -83,6 +81,7 @@ const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number
         addr = memory[addr] + 256 * memory[addr + 1]
       }
     }
+    const symbolTable = getSymbolTables(handleGetMachineName())
     if (symbolTable.has(addr)) {
       ops[1] = symbolTable.get(addr) || ops[1]
     }
@@ -128,6 +127,7 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
     const addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
     if (addr >= 0) {
       className = "disassembly-address"
+      const symbolTable = getSymbolTables(handleGetMachineName())
       title += getOperandTooltip(operand, addr)
       if (symbolTable.has(addr)) {
         operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || "")
@@ -140,6 +140,7 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
 export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => void) => {
   const opcode = line.slice(16, 19)
   const addr = parseInt(line.slice(0, 4), 16)
+  const symbolTable = getSymbolTables(handleGetMachineName())
   const symbol = symbolTable.get(addr) || ""
   let hexcodes = line.slice(0, 16) + "       "
   hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + " "
