@@ -11,12 +11,12 @@ import {
   faFolderOpen,
 } from "@fortawesome/free-solid-svg-icons"
 import React from "react"
-import { loadUserSymbolTable, RUN_MODE } from "../../common/utility"
+import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../common/utility"
 import { handleSetCPUState } from "../controller"
 import { bpStepInto } from "../img/icon_stepinto"
 import { bpStepOut } from "../img/icon_stepout"
 import { bpStepOver } from "../img/icon_stepover"
-import { setDisassemblyAddress, setVisibleLine } from "./debugpanelutilities"
+import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 
 const DisassemblyControls = (props: DisassemblyProps) => {
   // The tooltips obscure the first line of disassembly.
@@ -102,7 +102,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipOverShow(false)
           passStepOver()
-          setVisibleLine(-1)
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOver}</svg>
@@ -112,7 +112,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipIntoShow(false)
           passStepInto()
-          setVisibleLine(-1)
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepInto}</svg>
@@ -122,7 +122,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           setTooltipOutShow(false)
           passStepOut()
-          setVisibleLine(-1)
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
         }}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>
@@ -131,7 +131,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         title="Go to Current PC"
         onClick={goToCurrentPC}
         disabled={runMode !== RUN_MODE.PAUSED}>
-        <div className="bigger-font">PC</div>
+        <div className="bigger-font" style={{cursor: "pointer"}}>PC</div>
       </button>
       </div>
       <button className="push-button"

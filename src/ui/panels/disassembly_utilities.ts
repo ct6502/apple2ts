@@ -1,4 +1,4 @@
-import { ADDR_MODE, isBranchInstruction, toHex } from "../../common/utility"
+import { ADDR_MODE, DISASSEMBLE_VISIBLE, isBranchInstruction, toHex } from "../../common/utility"
 import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../main2worker"
 
 let instructions: Array<PCodeInstr1>
@@ -8,12 +8,14 @@ export const set6502Instructions = (instr: Array<PCodeInstr1>) => {
 
 const nlines = 40  // should this be an argument?
 
-let visibleLine = -2
-export const getVisibleLine = () => {
-  return visibleLine
+let visibleMode: DISASSEMBLE_VISIBLE = DISASSEMBLE_VISIBLE.RESET
+
+export const getDisassemblyVisibleMode = () => {
+  return visibleMode
 }
-export const setVisibleLine = (line: number) => {
-  visibleLine = line
+
+export const setDisassemblyVisibleMode = (mode: DISASSEMBLE_VISIBLE) => {
+  visibleMode = mode
 }
 
 let disassemblyAddress = -1

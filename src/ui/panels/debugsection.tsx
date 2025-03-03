@@ -36,7 +36,7 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
           </div>
         </div>
         <div className="flex-row-gap">
-          <BreakpointsView />
+          <BreakpointsView updateDisplay={props.updateDisplay}/>
           <TimeTravelPanel />
         </div>
       </div>

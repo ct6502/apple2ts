@@ -147,6 +147,12 @@ export enum CLOUD_SYNC {
   FAILED
 }
 
+export enum DISASSEMBLE_VISIBLE {
+  RESET,
+  ADDRESS,
+  CURRENT_PC
+}
+
 export enum ADDR_MODE {
   IMPLIED,  // BRK
   IMM,      // LDA #$01
@@ -348,7 +354,6 @@ let machineSymbolTable = new Map<number, string>()
 let machineName_cached = ""
 let fetchingTable = false
 let userSymbolTable = new Map<number, string>()
-let combinedSymbolTable = new Map<number, string>()
 
 
 const processSymbolData = (text: string) => {
@@ -401,7 +406,6 @@ const loadAndProcessSymbolFile = async (file: File) => {
 
 export const loadUserSymbolTable = (file: File) => {
   userSymbolTable = new Map<number, string>()
-  combinedSymbolTable = new Map<number, string>()
   loadAndProcessSymbolFile(file)
 }
 // KNOWN GOOD POINT
@@ -419,18 +423,13 @@ export const getSymbolTables = (machineName: string) => {
     const url = "/symbol_tables/" + machineName.toLowerCase() + ".sym"
     fetchAndProcessSymbolFile(url).then(symbolMap => {
       machineSymbolTable = symbolMap
-      combinedSymbolTable = new Map<number, string>()
       fetchingTable = false
     }).catch(error => {
       console.error("Error fetching or processing the symbol file:", error)
     })
   }
 
-  if (combinedSymbolTable.size === 0) {
-    combinedSymbolTable = new Map([...machineSymbolTable, ...userSymbolTable])
-  }
-
-  return combinedSymbolTable
+  return [machineSymbolTable, userSymbolTable]
 }
 
 export const isHardDriveImage = (filename: string) => {
