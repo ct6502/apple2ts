@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { getSymbolTables, toHex } from "../../common/utility"
-import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetState6502 } from "../main2worker"
+import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetSoftSwitches, handleGetState6502 } from "../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 
 // const fWeight = (opcode: string) => {
@@ -66,7 +66,26 @@ const getOperandTooltip = (operand: string, addr: number) => {
   return title
 }
 
-// PCODE("BRA", ADDR_MODE.ZP_REL, 0x80, 2, (value) => doBranch(true, value), is65C02)
+
+const getSymbolForAddress = (addr: number) => {
+  const [machineSymbolTable, userSymbolTable] = getSymbolTables(handleGetMachineName())
+  // This is a bit of a hack - see if we are in the ROM range, and if we are,
+  // then see if our ROM is enabled or disabled.
+  if (addr >= 0xE000) {
+    const switches = handleGetSoftSwitches()
+    if (switches.BSRREADRAM || switches.BSR_WRITE) {
+      // ROM is disabled, just return the user symbol (if any)
+      return userSymbolTable ? userSymbolTable.get(addr) : null
+    }
+  }
+  // Return the user symbol (if any)
+  if (userSymbolTable && userSymbolTable.has(addr)) {
+    return userSymbolTable.get(addr)
+  }
+  // Return the machine symbol (or undefined)
+  return machineSymbolTable.get(addr)
+}
+
 
 const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number) => void) => {
   const ops = operand.split(/(\$[0-9A-Fa-f]{4})/)
@@ -81,10 +100,8 @@ const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number
         addr = memory[addr] + 256 * memory[addr + 1]
       }
     }
-    const symbolTable = getSymbolTables(handleGetMachineName())
-    if (symbolTable.has(addr)) {
-      ops[1] = symbolTable.get(addr) || ops[1]
-    }
+    ops[1] = getSymbolForAddress(addr) || ops[1]
+
     // Will we take the branch (at least given our current 6502 state)?
     let takebranch = null
     const yes = <FontAwesomeIcon icon={faCheck} style={{ color: "green", marginLeft: "17px" }} />
@@ -127,10 +144,10 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
     const addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
     if (addr >= 0) {
       className = "disassembly-address"
-      const symbolTable = getSymbolTables(handleGetMachineName())
       title += getOperandTooltip(operand, addr)
-      if (symbolTable.has(addr)) {
-        operand = ops[0] + (symbolTable.get(addr) || operand) + (ops[2] || "")
+      const symbol = getSymbolForAddress(addr)
+      if (symbol) {
+        operand = ops[0] + symbol + (ops[2] || "")
       }
     }
   }
@@ -140,8 +157,7 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
 export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => void) => {
   const opcode = line.slice(16, 19)
   const addr = parseInt(line.slice(0, 4), 16)
-  const symbolTable = getSymbolTables(handleGetMachineName())
-  const symbol = symbolTable.get(addr) || ""
+  const symbol = getSymbolForAddress(addr) || ""
   let hexcodes = line.slice(0, 16) + "       "
   hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + " "
   return <span className={borderStyle(opcode)}>{hexcodes}

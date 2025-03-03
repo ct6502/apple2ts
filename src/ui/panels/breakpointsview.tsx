@@ -11,12 +11,13 @@ import {
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons"
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons"
-import { getLineOfDisassembly, setDisassemblyAddress } from "./debugpanelutilities"
+import { getLineOfDisassembly, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import BreakpointEdit from "./breakpointedit"
 import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "../../common/breakpoint"
 import { useGlobalContext } from "../globalcontext"
+import { DISASSEMBLE_VISIBLE } from "../../common/utility"
 
-const BreakpointsView = () => {
+const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const x = window.outerWidth / 2 - 200
   const y = window.outerHeight / 2 - 200
@@ -30,6 +31,8 @@ const BreakpointsView = () => {
     if (addr >= 0) {
       if (getLineOfDisassembly(addr) < 0) {
         setDisassemblyAddress(addr)
+        setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.ADDRESS)
+        props.updateDisplay()
       }
     }
   }
@@ -138,7 +141,7 @@ const BreakpointsView = () => {
             height: "83pt",
             overflow: "auto",
             paddingLeft: "5pt",
-            cursor: "pointer"
+            cursor: "default"
           }}>
           {Array.from(breakpoints.values() as Breakpoint[]).map((bp: Breakpoint) => (
             <div key={bp.address}>
@@ -160,7 +163,7 @@ const BreakpointsView = () => {
                 onClick={(e) => { handleBreakpointDelete(e) }}>
                 <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: "1.3em" }} />
               </button>
-              <span className="noselect" data-key={bp.address} onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
+              <span style={{cursor: "pointer", userSelect: "none"}} data-key={bp.address} onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
             </div>
           ))}
         </div>

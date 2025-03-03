@@ -10,7 +10,7 @@ import { BreakpointMap } from "../common/breakpoint"
 import { doPlayDriveSound } from "./devices/drivesounds"
 import { copyCanvas } from "./copycanvas"
 import { doSetUIDriveProps } from "./devices/driveprops"
-import { set6502Instructions } from "./panels/debugpanelutilities"
+import { set6502Instructions } from "./panels/disassembly_utilities"
 
 let worker: Worker | null = null
 

@@ -6,13 +6,13 @@ import {
   passBreakpoints,
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { RUN_MODE, toHex } from "../../common/utility"
+import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../common/utility"
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons"
 import { useGlobalContext } from "../globalcontext"
 import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
-import { getDisassembly, getVisibleLine, setDisassemblyAddress, setVisibleLine } from "./debugpanelutilities"
+import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
 
 const nlines = 40
@@ -49,16 +49,9 @@ const DisassemblyView = (props: DisassemblyProps) => {
         const rect = div.getBoundingClientRect()
         // Find the line div at the top of our disassembly view
         let newAddress = -1
-        // const bottomElement = document.elementFromPoint(rect.left + 30, rect.bottom - 5) as HTMLDivElement
-        // if (bottomElement && bottomElement.textContent) {
-        //   const tmp = parseInt(bottomElement.textContent.slice(0, 4), 16)
-        //   if (tmp === 65535) newAddress = 65535
-        // }
-        if (newAddress < 0) {
-          const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
-          if (topElement && topElement.textContent) {
-            newAddress = parseInt(topElement.textContent.slice(0, 4), 16)
-          }
+        const topElement = document.elementFromPoint(rect.left + 30, rect.top + 5) as HTMLDivElement
+        if (topElement && topElement.textContent) {
+          newAddress = parseInt(topElement.textContent.slice(0, 4), 16)
         }
         // Are we already there?
         if (newAddress === currentScrollAddress || Number.isNaN(newAddress)) {
@@ -176,6 +169,8 @@ const DisassemblyView = (props: DisassemblyProps) => {
   //   return ""
   // }
 
+  // This function gets used in disassemblyview_singleline but we
+  // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
     skipCodeScroll = true
     setDisassemblyAddress(addr)
@@ -196,8 +191,9 @@ const DisassemblyView = (props: DisassemblyProps) => {
       }}>
     </div>
     let foundLine = false
-    if (getVisibleLine() >= -1) {
-      const visibleLine = getVisibleLine() === -1 ? handleGetState6502().PC : getVisibleLine()
+    if (getDisassemblyVisibleMode() !== DISASSEMBLE_VISIBLE.RESET) {
+      const visibleLine = (getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
+        handleGetState6502().PC : getDisassemblyAddress()
       // console.log("visibleLine", visibleLine.toString(16))
       for (let i = 0; i < disArray.length; i++) {
         if (getAddress(disArray[i]) === visibleLine) {
@@ -205,11 +201,11 @@ const DisassemblyView = (props: DisassemblyProps) => {
           break
         }
       }
-      if (foundLine) {
-        setVisibleLine(-2)
-      } else {
+      if (!foundLine) {
         setDisassemblyAddress(visibleLine)
         disArray = getDisassembly().split("\n").slice(0, nlines)
+      } else {
+        setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
       }
     }
     if (scrollTimeout.current !== null) {
