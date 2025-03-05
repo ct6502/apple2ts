@@ -12,6 +12,7 @@ import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
 import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
+import InternetArchivePopup from "../internetarchivedialog"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -45,6 +46,7 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  const [internetDialogDialogOpen, setInternetDialogDialogOpen] = useState<boolean>(false)
 
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
@@ -212,6 +214,10 @@ const DiskDrive = (props: DiskDriveProps) => {
     return () => clearInterval(timer)
   }
 
+  const showInternetArchivePicker = (index: number) => {
+    setInternetDialogDialogOpen(true)
+  }
+
   const getMenuCheck = (menuChoice: number) => {
     let checked = false
 
@@ -313,6 +319,9 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 3:
           showReadWriteFilePicker(props.index)
           break
+        case 4:
+          showInternetArchivePicker(props.index)
+          break
       }
     }
   }
@@ -374,6 +383,11 @@ const DiskDrive = (props: DiskDriveProps) => {
           </div>
         </div>
       }
+      
+      <InternetArchivePopup
+        open={internetDialogDialogOpen}
+        onClose={() => { setInternetDialogDialogOpen(false) }}>
+      </InternetArchivePopup>
     </span>
   )
 }
