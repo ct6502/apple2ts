@@ -6,11 +6,18 @@ export interface InternetArchiveDialogProps {
   onClose: () => void;
 }
 
+let results: string = ""
+
+const getResults = () => {
+  results = "No results found"
+}
+
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const { open, onClose } = props
 
   const handleClose = () => {
     onClose()
+    results = ""
   }
 
   {/* <Dialog onClose={handleClose} open={open}> */ }
@@ -24,11 +31,21 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           <svg className="iad-title">{svgInternetArchiveTitle}</svg>
         </div>
         <div className="iad-search">
-          <input className="iad-search-box" type="text" placeholder="Search"></input>
-          <input className="iad-search-button" type="button" value="GO"></input>
+          <input className="iad-search-box" type="text" placeholder="Search" onKeyUp={(event) => {
+            if (event.key === "Enter") {
+              const button = document.getElementsByClassName("iad-search-button")[0] as HTMLElement
+              button.click();
+            }
+          }}></input>
+          <input className="iad-search-button" type="button" value="GO" onClick={() => {
+            const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+            if (dialog) {
+              dialog.style.height = "75%"
+              getResults()
+            }
+          }}></input>
         </div>
-        <div className="iad-search-results">
-        </div>
+        {results && <div className="iad-search-results">${results}</div>}
       </div>
     </div>
   )

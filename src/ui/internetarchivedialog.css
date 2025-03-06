@@ -1,9 +1,8 @@
 .internet-archive-dialog {
   display: grid;
-  grid-template-rows: 50px 100px 1fr;
+  grid-template-rows: 48px 96px 1fr;
   width: 75%;
-  max-width: 800px;
-  height: 75%;
+  max-width: 600px;
   background-color: #ffffff;
   color: var(--text-color);
   z-index: 9999;
@@ -43,8 +42,8 @@
   align-items: center;
   padding-top: 4px;
   padding-bottom: 4px;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
   background-color: #d8d8d8;
 }
 
