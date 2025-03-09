@@ -15,7 +15,7 @@ const queryFormat = "https://archive.org/advancedsearch.php?" + [
   `rows=${queryMaxRows}`,
   "page=1",
   "output=json"
-  ].join("&");
+].join("&");
 
 function formatString(template: string, ...args: any[]): string {
   return template.replace(/{(\d+)}/g, (match, index) => {
@@ -36,8 +36,10 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       <div className="iad-result-title">
         {props.title}
       </div>
-      <div>
-        by {props.creator}
+      <div className="iad-result-creator">
+        {props.creator
+          ? `by ${props.creator}`
+          : ""}
       </div>
     </span>
   )
@@ -60,6 +62,8 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     if (event.key === "Enter") {
       const button = document.getElementsByClassName("iad-search-button")[0] as HTMLElement
       button.click();
+    } else if (event.key == "Escape") {
+      handleClose()
     }
   }
 
@@ -100,8 +104,16 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           <svg className="iad-title">{svgInternetArchiveTitle}</svg>
         </div>
         <div className="iad-search">
-          <input className="iad-search-box" type="text" placeholder="Search" spellCheck="false" autoFocus onKeyDown={handleSearchBoxKeyDown}/>
-          <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick}/>
+          <input
+            className="iad-search-box"
+            type="text"
+            placeholder="Search"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
+            autoFocus
+            onKeyDown={handleSearchBoxKeyDown} />
+          <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
         </div>
         {results.length > 0 &&
           <div className="iad-search-results">
