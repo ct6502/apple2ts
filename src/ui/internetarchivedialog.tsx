@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { svgInternetArchiveLogo, svgInternetArchiveTitle } from "./img/icon_internetarchive";
+import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive";
 import "./internetarchivedialog.css";
 
 const queryMaxRows = 100;
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
   "q=title:({0})+AND+collection:(softwarelibrary_apple)+AND+mediatype:(software)",
   "fl[]=identifier",
-  "fl[]=downloads",
   "fl[]=title",
   "fl[]=creator",
+  "fl[]=downloads",
+  "fl[]=week",
+  "fl[]=num_reviews",
   "sort[]=downloads+asc",
   "sort[]=stars+asc",
   "sort[]=",
@@ -23,15 +25,40 @@ function formatString(template: string, ...args: any[]): string {
   });
 }
 
+function formatNumber(num: number, precision = 1) {
+  if (num < 1000) {
+    return num
+  }
+
+  const map = [
+    { suffix: 'T', threshold: 1e12 },
+    { suffix: 'B', threshold: 1e9 },
+    { suffix: 'M', threshold: 1e6 },
+    { suffix: 'K', threshold: 1e3 },
+    { suffix: '', threshold: 1 },
+  ]
+
+  const found = map.find((x) => Math.abs(num) >= x.threshold)
+  if (found) {
+    const formatted = (num / found.threshold).toFixed(precision) + found.suffix
+    return formatted
+  }
+
+  return num
+}
+
 interface InternetDialogResultProps {
   identifier: string,
   title: string,
-  creator: string
+  creator: string,
+  downloads: number,
+  week: number,
+  num_reviews: number
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
   return (
-    <span className="iad-result-tile">
+    <div className="iad-result-tile">
       <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`}></img>
       <div className="iad-result-title">
         {props.title}
@@ -41,7 +68,27 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
           ? `by ${props.creator}`
           : ""}
       </div>
-    </span>
+      <div className="iad-stats-row">
+        <div className="iad-stats-icon">
+          <svg>{svgInternetArchiveSoftware}</svg>
+        </div>
+        <div className="iad-stats-icon">
+          <svg>{svgInternetArchiveViews}</svg>
+          <br/>
+          {formatNumber(props.downloads)}
+        </div>
+        <div className="iad-stats-icon">
+          <svg>{svgInternetArchiveFavorites}</svg>
+          <br/>
+          {props.week}
+        </div>
+        <div className="iad-stats-icon">
+          <svg>{svgInternetArchiveReviews}</svg>
+          <br/>
+          {props.num_reviews || 0}
+        </div>
+      </div>
+    </div>
   )
 }
 
