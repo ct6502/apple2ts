@@ -1,8 +1,21 @@
 import { useState } from "react";
 import { svgInternetArchiveLogo, svgInternetArchiveTitle } from "./img/icon_internetarchive";
-import "./internetarchivedialog.css"
+import "./internetarchivedialog.css";
 
-const queryFormat = "https://archive.org/advancedsearch.php?q=title:({0}*)+AND+collection:(softwarelibrary_apple)+AND+mediatype:(software)&fl[]=identifier&fl[]=downloads&fl[]=title&rows=100&page=1&output=json"
+const queryMaxRows = 100;
+const queryFormat = "https://archive.org/advancedsearch.php?" + [
+  "q=title:({0})+AND+collection:(softwarelibrary_apple)+AND+mediatype:(software)",
+  "fl[]=identifier",
+  "fl[]=downloads",
+  "fl[]=title",
+  "fl[]=creator",
+  "sort[]=downloads+asc",
+  "sort[]=stars+asc",
+  "sort[]=",
+  `rows=${queryMaxRows}`,
+  "page=1",
+  "output=json"
+  ].join("&");
 
 function formatString(template: string, ...args: any[]): string {
   return template.replace(/{(\d+)}/g, (match, index) => {
@@ -12,28 +25,22 @@ function formatString(template: string, ...args: any[]): string {
 
 interface InternetDialogResultProps {
   identifier: string,
-  title: string
+  title: string,
+  creator: string
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
-  const itemUrl = `https://archive.org/metadata/${props.identifier}`
-
-  fetch(itemUrl)
-    .then(async response => {
-      if (response.ok) {
-        const json = await response.json()
-        if (json) {
-          return (
-            <span className="iad-result-tile">
-              <img className="iad-result-image" src={`https://archive.org/services/img/${json.files[0].name}`}></img>
-              {props.title}
-            </span>
-          )
-        }
-      } else {
-        //
-      }
-    })
+  return (
+    <span className="iad-result-tile">
+      <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`}></img>
+      <div className="iad-result-title">
+        {props.title}
+      </div>
+      <div>
+        by {props.creator}
+      </div>
+    </span>
+  )
 }
 
 export interface InternetArchiveDialogProps {
@@ -42,12 +49,23 @@ export interface InternetArchiveDialogProps {
 }
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
-  const { open, onClose } = props
   const [results, setResults] = useState<InternetDialogResultProps[]>([]);
 
   const handleClose = () => {
-    onClose()
+    props.onClose()
     setResults([])
+  }
+
+  const handleSearchBoxKeyDown = (event: { key: string; }) => {
+    if (event.key === "Enter") {
+      const button = document.getElementsByClassName("iad-search-button")[0] as HTMLElement
+      button.click();
+    }
+  }
+
+  const handleSearchButtonClick = () => {
+    const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
+    getResults(searchBox.value)
   }
 
   const getResults = async (query: string) => {
@@ -72,8 +90,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     }
   }
 
-  {/* <Dialog onClose={handleClose} open={open}> */ }
-  if (!open) return (<></>)
+  if (!props.open) return (<></>)
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -83,18 +100,8 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           <svg className="iad-title">{svgInternetArchiveTitle}</svg>
         </div>
         <div className="iad-search">
-          <input className="iad-search-box" type="text" placeholder="Search" onChange={(event) => {
-            // if (event.key === "Enter") {
-            // const button = document.getElementsByClassName("iad-search-button")[0] as HTMLElement
-            // button.click();
-            // }
-            const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
-            getResults(searchBox.value)
-          }}></input>
-          {/* <input className="iad-search-button" type="button" value="GO" onClick={() => {
-            const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
-            getResults(searchBox.value)
-          }}></input> */}
+          <input className="iad-search-box" type="text" placeholder="Search" spellCheck="false" autoFocus onKeyDown={handleSearchBoxKeyDown}/>
+          <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick}/>
         </div>
         {results.length > 0 &&
           <div className="iad-search-results">

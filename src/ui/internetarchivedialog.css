@@ -1,11 +1,11 @@
 .internet-archive-dialog {
   display: grid;
-  grid-template-rows: 48px 96px 1fr;
+  grid-template-rows: 48px 128px 1fr;
   width: 75%;
   max-width: 800px;
   background-color: #ffffff;
   color: var(--text-color);
-  z-index: 9999;
+  z-index: 1;
   border-radius: 10px;
   border-color: #666666;
   border-style: solid;
@@ -53,16 +53,19 @@
 
 .iad-search-box {
   width: 100%;
-  height: 30px;
+  height: 24px;
   background-color: white;
   border-radius: 2rem;
   border-color: #cccccc;
   border-style: solid;
   margin-left: 12px;
   margin-right: 12px;
+  padding-top: 2px;
+  padding-bottom: 2px;
   padding-left: 12px;
   padding-right: 12px;
-  font-size: 12pt;
+  font-size: 14pt;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
 }
 
 .iad-search-box::placeholder {
@@ -80,34 +83,59 @@
   font-weight: bold;
   font-size: 10pt;
   padding: 4px;
-  margin-left: 18px;
+  /* margin-left: 18px; */
   margin-right: 8px;
   cursor: pointer;
 }
 
 .iad-search-results {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   grid-gap: 8px;
   overflow-x: auto;
   overflow-y: auto;
   padding-top: 8px;
+  padding-bottom: 8px;
   padding-left: 12px;
   padding-right: 12px;
   font-size: 12pt;
 }
 
 .iad-result-tile {
+  display: grid;
+  grid-template-rows: 1fr 1f 1fr;
   background-color: #ffffff;
   border: 1px #2c2c2c;
   border-radius: 4px;
   box-shadow: 1px 1px 2px 0;
   width: 100%;
-  height: auto;
+  /* width: 170px; */
+  /* height: auto; */
+  height: 280px;
+  /* height: 185px; */
+  font-family:
+    "Helvetica Neue",
+    Helvetica,
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  /* padding: 8px; */
+  cursor: pointer;
 }
 
 .iad-result-image {
-  height: 100%;
+  width: 92%;
+  height: auto;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.iad-result-title {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 ::-webkit-scrollbar {
