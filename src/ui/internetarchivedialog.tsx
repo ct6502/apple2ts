@@ -62,8 +62,6 @@ interface InternetDialogResultProps {
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
   const handleTileClick = () => {
     const detailsUrl = `https://archive.org/details/${props.identifier}?output=json`
-
-
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
 
@@ -102,11 +100,12 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
 
   const handleStatsClick = () => {
     window.open(`https://archive.org/details/${props.identifier}`, "_blank")
+    return false
   }
 
   return (
-    <div className="iad-result-tile" title="Press to load disk image" onClick={handleTileClick}>
-      <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`}></img>
+    <div className="iad-result-tile" title="Press to load disk image">
+      <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`} onClick={handleTileClick}></img>
       <div className="iad-result-title" title={props.title}>
         {props.title}
       </div>

@@ -116,7 +116,6 @@
     Arial,
     sans-serif;
   font-size: 14px;
-  cursor: pointer;
 }
 
 .iad-result-image {
@@ -129,6 +128,7 @@
   padding-left: 0px;
   padding-right: 0px;
   background-color: #f1f1f4;
+  cursor: pointer;
 }
 
 .iad-result-title {
@@ -157,6 +157,7 @@
 .iad-stats {
   margin-top: 8px;
   margin-bottom: 0px;
+  cursor: pointer;
 }
 
 .iad-stats-row {
