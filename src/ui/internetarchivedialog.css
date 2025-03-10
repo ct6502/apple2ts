@@ -103,6 +103,7 @@
 
 .iad-result-tile {
   display: grid;
+  grid-template-rows: max(128px) 24pt 14pt;
   background-color: #ffffff;
   border: 1px #dddddd solid;
   border-radius: 4px;
@@ -119,6 +120,7 @@
 }
 
 .iad-result-image {
+  align-self: center;
   display: block;
   width: 100%;
   height: auto;
@@ -132,10 +134,11 @@
 .iad-result-title {
   padding-left: 8px;
   padding-right: 8px;
+  font-size: 9pt;
   font-weight: bold;
-  /* white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; */
+  text-overflow: ellipsis;
+  line-clamp: 2;
 }
 
 .iad-result-tile:hover {
@@ -145,42 +148,39 @@
 .iad-result-creator {
   padding-left: 8px;
   padding-right: 8px;
+  font-size: 9pt;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .iad-stats {
-  margin-top: 18px;
-  margin-bottom: 2px;
+  margin-top: 8px;
+  margin-bottom: 0px;
 }
 
 .iad-stats-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: min-content;
   margin-top: 0px;
-  margin-bottom: 0px;
+  margin-bottom: -2px;
+  padding-left: 8px;
+  font-size: 8.5pt;
 }
 
 .iad-stats-row>* {
   display: flex;
   justify-content: center;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-.iad-stats-row>*:nth-child(1) {
-  justify-content: left;
-}
-
-.iad-stats-row>*:nth-child(4) {
-  justify-content: right;
 }
 
 .iad-stats-icon {
   width: 13px;
   height: 13px;
+}
+
+.iad-stats-icon-software {
+  width: "24px";
+  height: "24px";
 }
 
 ::-webkit-scrollbar {

@@ -343,7 +343,7 @@ body.dark-mode .centered-title {
   z-index: 9998;
   display: flex;
   justify-content: center;
-  align-items: center;;
+  align-items: center;
 }
 
 .floating-dialog {

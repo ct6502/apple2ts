@@ -117,20 +117,23 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       </div>
       <div className="iad-stats" title="Press to view details" onClick={handleStatsClick}>
         <div className="iad-stats-row">
-          <svg className="iad-stats-icon" style={{ gridRow: "span 1/2" }}>{svgInternetArchiveSoftware}</svg>
-          <svg className="iad-stats-icon" style={{ marginTop: "-1px", marginLeft: "4px" }}>{svgInternetArchiveViews}</svg>
-          <svg className="iad-stats-icon" style={{ marginTop: "-2px", marginLeft: "4px" }}>{svgInternetArchiveFavorites}</svg>
-          <svg className="iad-stats-icon" style={{ marginLeft: "10px" }}>{svgInternetArchiveReviews}</svg>
-        </div>
-        <div className="iad-stats-row">
-          <div></div>
+          <svg className="iad-stats-icon" style={{
+            gridRow: "1/3",
+            width: "24px",
+            height: "24px",
+            paddingLeft: "0px",
+            marginTop: "-2px"
+          }}>{svgInternetArchiveSoftware}</svg>
+          <svg className="iad-stats-icon" style={{ marginTop: "-1px", marginLeft: "11px" }}>{svgInternetArchiveViews}</svg>
+          <svg className="iad-stats-icon" style={{ marginTop: "-2px", marginLeft: "11px" }}>{svgInternetArchiveFavorites}</svg>
+          <svg className="iad-stats-icon" style={{ marginLeft: "14px" }}>{svgInternetArchiveReviews}</svg>
           <div>
             {formatNumber(props.downloads)}
           </div>
-          <div>
+          <div style={{ paddingLeft: "4px" }}>
             {formatNumber(props.month || 0)}
           </div>
-          <div>
+          <div style={{ marginRight: "-8px" }}>
             {formatNumber(props.num_reviews || 0)}
           </div>
         </div>
