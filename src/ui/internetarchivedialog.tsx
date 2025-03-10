@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive";
 import "./internetarchivedialog.css";
+import { handleSetDiskFromURL } from "./devices/driveprops";
+import { iconData, iconKey, iconName } from "./img/iconfunctions";
 
 const queryMaxRows = 100;
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
@@ -9,11 +11,10 @@ const queryFormat = "https://archive.org/advancedsearch.php?" + [
   "fl[]=title",
   "fl[]=creator",
   "fl[]=downloads",
-  "fl[]=week",
+  "fl[]=month",
   "fl[]=num_reviews",
-  "sort[]=downloads+asc",
-  "sort[]=stars+asc",
-  "sort[]=",
+  "sort[]=downloads+desc",
+  "sort[]=stars+desc",
   `rows=${queryMaxRows}`,
   "page=1",
   "output=json"
@@ -48,44 +49,90 @@ function formatNumber(num: number, precision = 1) {
 }
 
 interface InternetDialogResultProps {
+  closeParent: () => void,
+  driveIndex: number,
   identifier: string,
   title: string,
   creator: string,
   downloads: number,
-  week: number,
+  month: number,
   num_reviews: number
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
+  const handleTileClick = () => {
+    const detailsUrl = `https://archive.org/details/${props.identifier}?output=json`
+
+
+    const favicon: { [key: string]: string } = {}
+    favicon[iconKey()] = iconData()
+
+    document.body.style.cursor = "wait"
+    fetch(iconName() + detailsUrl, { headers: favicon })
+      .then(async response => {
+        if (response.ok) {
+          const json = await response.json()
+          if (json.metadata && json.metadata.emulator_ext && json.files) {
+            const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
+            let imageUrl = ""
+
+            Object.keys(json.files).forEach((file) => {
+              if (file.toLowerCase().endsWith(emulatorExt)) {
+                imageUrl = `https://archive.org/download/${props.identifier}${file}`
+              }
+            })
+
+            if (imageUrl != "") {
+              props.closeParent()
+              handleSetDiskFromURL(imageUrl, undefined, props.driveIndex)
+            } else {
+              // $TODO: add error handling
+            }
+          } else {
+            // $TODO: add error handling
+          }
+        } else {
+          // $TODO: add error handling
+        }
+      })
+      .finally(() => {
+        document.body.style.cursor = "default"
+      })
+  }
+
+  const handleStatsClick = () => {
+    window.open(`https://archive.org/details/${props.identifier}`, "_blank")
+  }
+
   return (
-    <div className="iad-result-tile">
+    <div className="iad-result-tile" title="Press to load disk image" onClick={handleTileClick}>
       <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`}></img>
-      <div className="iad-result-title">
+      <div className="iad-result-title" title={props.title}>
         {props.title}
       </div>
-      <div className="iad-result-creator">
+      <div className="iad-result-creator" title={props.creator}>
         {props.creator
           ? `by ${props.creator}`
           : ""}
       </div>
-      <div className="iad-stats-row">
-        <div className="iad-stats-icon">
-          <svg>{svgInternetArchiveSoftware}</svg>
+      <div className="iad-stats" title="Press to view details" onClick={handleStatsClick}>
+        <div className="iad-stats-row">
+          <svg className="iad-stats-icon" style={{ gridRow: "span 1/2" }}>{svgInternetArchiveSoftware}</svg>
+          <svg className="iad-stats-icon" style={{ marginTop: "-1px", marginLeft: "4px" }}>{svgInternetArchiveViews}</svg>
+          <svg className="iad-stats-icon" style={{ marginTop: "-2px", marginLeft: "4px" }}>{svgInternetArchiveFavorites}</svg>
+          <svg className="iad-stats-icon" style={{ marginLeft: "10px" }}>{svgInternetArchiveReviews}</svg>
         </div>
-        <div className="iad-stats-icon">
-          <svg>{svgInternetArchiveViews}</svg>
-          <br/>
-          {formatNumber(props.downloads)}
-        </div>
-        <div className="iad-stats-icon">
-          <svg>{svgInternetArchiveFavorites}</svg>
-          <br/>
-          {props.week}
-        </div>
-        <div className="iad-stats-icon">
-          <svg>{svgInternetArchiveReviews}</svg>
-          <br/>
-          {props.num_reviews || 0}
+        <div className="iad-stats-row">
+          <div></div>
+          <div>
+            {formatNumber(props.downloads)}
+          </div>
+          <div>
+            {formatNumber(props.month || 0)}
+          </div>
+          <div>
+            {formatNumber(props.num_reviews || 0)}
+          </div>
         </div>
       </div>
     </div>
@@ -93,6 +140,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
 }
 
 export interface InternetArchiveDialogProps {
+  driveIndex: number;
   open: boolean;
   onClose: () => void;
 }
@@ -123,6 +171,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     if (query.length >= 3) {
       const queryUrl = formatString(queryFormat, [query])
 
+      document.body.style.cursor = "wait"
       fetch(queryUrl)
         .then(async response => {
           if (response.ok) {
@@ -133,8 +182,11 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
               dialog.style.height = "75%"
             }
           } else {
-            //
+            // $TODO: add error handling
           }
+        })
+        .finally(() => {
+          document.body.style.cursor = "default"
         })
     } else {
       setResults([])
@@ -165,7 +217,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
         {results.length > 0 &&
           <div className="iad-search-results">
             {results.map((result, index) => (
-              <InternetArchiveResult key={index} {...result} />
+              <InternetArchiveResult key={index} {...result} closeParent={handleClose} driveIndex={props.driveIndex} />
             ))}
           </div>}
       </div>

@@ -383,8 +383,9 @@ const DiskDrive = (props: DiskDriveProps) => {
           </div>
         </div>
       }
-      
+
       <InternetArchivePopup
+        driveIndex={dprops.index}
         open={internetDialogDialogOpen}
         onClose={() => { setInternetDialogDialogOpen(false) }}>
       </InternetArchivePopup>
