@@ -1,4 +1,4 @@
-import { faClock, faCloud, faDownload, faEject, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
 
 type MenuItem = {
   label: string,
@@ -124,6 +124,52 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "Load Disk from Google Drive",
       icon: faCloud,
       index: 2
+    }
+  ],
+  [
+    {
+      label: "Write Protect Disk",
+      icon: faLock,
+      index: 3
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Save Disk to Device",
+      icon: faFloppyDisk,
+      index: 6
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Download Disk",
+      icon: faDownload,
+      index: 0
+    },
+    {
+      label: "Download and Eject Disk",
+      icon: faDownload,
+      index: 1
+    },
+    {
+      label: "Eject Disk",
+      icon: faEject,
+      index: 2
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Save Disk to OneDrive",
+      icon: faCloud,
+      index: 4
+    },
+    {
+      label: "Save Disk to Google Drive",
+      icon: faCloud,
+      index: 5
     }
   ]
 ]
