@@ -150,6 +150,56 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
+  const prepWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle) => {
+    const timer = setInterval(async (index: number) => {
+    const dprops = handleGetDriveProps(index)
+
+    if (handleGetHotReload()) {
+      const file = await writableFileHandle.getFile()
+      if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
+        handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+        passSetRunMode(RUN_MODE.NEED_BOOT)
+        return
+      }
+    }
+
+    if (dprops.diskHasChanges && !dprops.motorRunning) {
+      if (await handleSaveWritableFile(index)) {
+        dprops.diskHasChanges = false
+        dprops.lastLocalWriteTime = Date.now()
+        passSetDriveProps(dprops)
+      }
+    }
+    }, 3 * 1000, index)
+    return () => clearInterval(timer)
+  }
+
+  const showSaveFilePicker = async (index: number) => {
+    const fileName = dprops.filename
+    const fileExtension = fileName.substring(fileName.lastIndexOf("."))
+
+    let writableFileHandle = await window.showSaveFilePicker({
+      excludeAcceptAllOption: false,
+      suggestedName: fileName,
+      types: [
+        {
+          description: "Disk Image",
+          accept: { "application/octet": [fileExtension] as `.${string}`[] },
+        },
+      ]
+    })
+
+    if (writableFileHandle) {
+      dprops.diskHasChanges = true
+      dprops.filename = writableFileHandle.name
+      dprops.writableFileHandle = writableFileHandle
+      dprops.lastLocalWriteTime = -1
+      passSetDriveProps(dprops)
+
+      prepWritableFile(index, writableFileHandle)
+    }
+  }
+
   const showReadWriteFilePicker = async (index: number) => {
     let [writableFileHandle] = await window.showOpenFilePicker({
       types: [
@@ -189,27 +239,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
     }
 
-    const timer = setInterval(async (index: number) => {
-      const dprops = handleGetDriveProps(index)
-
-      if (handleGetHotReload()) {
-        const file = await writableFileHandle.getFile()
-        if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
-          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-          passSetRunMode(RUN_MODE.NEED_BOOT)
-          return
-        }
-      }
-
-      if (dprops.diskHasChanges && !dprops.motorRunning) {
-        if (await handleSaveWritableFile(index)) {
-          dprops.diskHasChanges = false
-          dprops.lastLocalWriteTime = Date.now()
-          passSetDriveProps(dprops)
-        }
-      }
-    }, 3 * 1000, newIndex)
-    return () => clearInterval(timer)
+    prepWritableFile(newIndex, writableFileHandle)
   }
 
   const getMenuCheck = (menuChoice: number) => {
@@ -229,21 +259,34 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const handleMenuClick = (event: React.MouseEvent) => {
-    const y = Math.min(event.clientY, window.innerHeight - 200)
-    setPosition({ x: event.clientX, y: y })
+    let menuIndex = -1
 
     if (!dprops.cloudData || dprops.cloudData.syncStatus == CLOUD_SYNC.INACTIVE) {
       if (dprops.filename.length > 0) {
-        setMenuOpen(0)
+        if (isFileSystemApiSupported() && !dprops.writableFileHandle) {
+          menuIndex = 4
+        } else {
+          menuIndex = 0
+        }
       } else {
         if (isFileSystemApiSupported()) {
-          setMenuOpen(3)
+          menuIndex = 3
         } else {
-          setMenuOpen(2)
+          menuIndex = 2
         }
       }
     } else {
-      setMenuOpen(1)
+      menuIndex = 1
+    }
+
+    if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
+      const menuHeight = driveMenuItems[menuIndex].length * 24
+      const y = Math.min(event.clientY, window.innerHeight - menuHeight)
+
+      setPosition({ x: event.clientX, y: y })
+      setMenuOpen(menuIndex)
+    } else {
+      // $TODO: Add error handling
     }
   }
 
@@ -274,6 +317,8 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 5:
           saveDiskToCloud(new GoogleDrive())
           break
+        case 6:
+          showSaveFilePicker(props.index)
       }
     } else if (menuNumber == 1) {
       if (menuChoice == 2) {
