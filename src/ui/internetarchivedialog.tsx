@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive";
-import "./internetarchivedialog.css";
-import { handleSetDiskFromURL } from "./devices/driveprops";
-import { iconData, iconKey, iconName } from "./img/iconfunctions";
+import { useState } from "react"
+import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive"
+import "./internetarchivedialog.css"
+import { handleSetDiskFromURL } from "./devices/driveprops"
+import { iconData, iconKey, iconName } from "./img/iconfunctions"
 
 const queryMaxRows = 100
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
@@ -48,9 +48,9 @@ const softwareCollections: SoftwareCollection[] = [
   }
 ]
 
-function formatString(template: string, ...args: any[]): string {
+function formatString(template: string, ...args: string[]): string {
   return template.replace(/{(\d+)}/g, (match, index) => {
-    return typeof args[index] !== 'undefined' ? args[index] : match
+    return typeof args[index] !== "undefined" ? args[index] : match
   })
 }
 
@@ -60,11 +60,11 @@ function formatNumber(num: number, precision = 1) {
   }
 
   const map = [
-    { suffix: 'T', threshold: 1e12 },
-    { suffix: 'B', threshold: 1e9 },
-    { suffix: 'M', threshold: 1e6 },
-    { suffix: 'K', threshold: 1e3 },
-    { suffix: '', threshold: 1 },
+    { suffix: "T", threshold: 1e12 },
+    { suffix: "B", threshold: 1e9 },
+    { suffix: "M", threshold: 1e6 },
+    { suffix: "K", threshold: 1e3 },
+    { suffix: "", threshold: 1 },
   ]
 
   const found = map.find((x) => Math.abs(num) >= x.threshold)
@@ -194,7 +194,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     }
   }
 
-  const handleCollectionClick = (collectionIndex: number) => (event: any) => {
+  const handleCollectionClick = (collectionIndex: number) => () => {
     getResults(query, softwareCollections[collectionIndex])
   }
 
@@ -240,7 +240,8 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           <div className="iad-search">
             <div className="iad-collections">
               {softwareCollections.map((softwareCollection, index) => (
-                <div className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
+                <div key={`divcollect-${index}`} 
+                  className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
                   <img key={`collection-${index}`} className="iad-collection-image" src={softwareCollection.imageUrl} onClick={handleCollectionClick(index)}></img>
                   <div className="iad-collection-title">{softwareCollection.title}</div>
                 </div>
