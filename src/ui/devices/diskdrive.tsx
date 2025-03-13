@@ -12,6 +12,7 @@ import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
 import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
+import InternetArchivePopup from "../internetarchivedialog"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -45,6 +46,7 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  const [internetDialogDialogOpen, setInternetDialogDialogOpen] = useState<boolean>(false)
 
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
@@ -178,7 +180,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const fileName = dprops.filename
     const fileExtension = fileName.substring(fileName.lastIndexOf("."))
 
-    let writableFileHandle = await window.showSaveFilePicker({
+    const writableFileHandle = await window.showSaveFilePicker({
       excludeAcceptAllOption: false,
       suggestedName: fileName,
       types: [
@@ -240,6 +242,10 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
 
     prepWritableFile(newIndex, writableFileHandle)
+  }
+
+  const showInternetArchivePicker = () => {
+    setInternetDialogDialogOpen(true)
   }
 
   const getMenuCheck = (menuChoice: number) => {
@@ -358,6 +364,9 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 3:
           showReadWriteFilePicker(props.index)
           break
+        case 4:
+          showInternetArchivePicker()
+          break
       }
     }
   }
@@ -412,12 +421,19 @@ const DiskDrive = (props: DiskDriveProps) => {
                     key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
                     {getMenuCheck(menuItem.index || -1)}
                     {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                    {menuItem.svg && menuItem.svg}
                     {menuItem.label}</div>}
               </div>
             ))}
           </div>
         </div>
       }
+
+      <InternetArchivePopup
+        driveIndex={dprops.index}
+        open={internetDialogDialogOpen}
+        onClose={() => { setInternetDialogDialogOpen(false) }}>
+      </InternetArchivePopup>
     </span>
   )
 }

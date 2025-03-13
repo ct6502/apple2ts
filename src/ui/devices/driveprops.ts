@@ -134,11 +134,12 @@ export const handleSetDiskOrFileFromBuffer = (
   }
 
   return newIndex
+
 }
 
 export const handleSetDiskFromURL = async (url: string,
-  updateDisplay: UpdateDisplay) => {
-  if (!url.startsWith("http")) {
+  updateDisplay?: UpdateDisplay, index = 0) => {
+  if (!url.startsWith("http") && updateDisplay) {
     const match = findMatchingDiskImage(url)
     handleSetDiskFromFile(match, updateDisplay)
     return
@@ -161,7 +162,7 @@ export const handleSetDiskFromURL = async (url: string,
     if (hasSlash >= 0) {
       name = urlObj.pathname.substring(hasSlash + 1)
     }
-    handleSetDiskOrFileFromBuffer(0, buffer, name, null, null)
+    handleSetDiskOrFileFromBuffer(index, buffer, name, null, null)
   } catch {
     console.error(`Error fetching URL: ${url}`)
   }
