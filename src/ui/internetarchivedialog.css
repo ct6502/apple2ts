@@ -1,8 +1,8 @@
 .internet-archive-dialog {
   display: grid;
-  grid-template-rows: 48px 200px 1fr;
+  grid-template-rows: 48px auto auto;
   width: 75%;
-  max-width: 800px;
+  max-width: 700px;
   background-color: #ffffff;
   color: var(--text-color);
   z-index: 1;
@@ -43,7 +43,7 @@
 
 .iad-search {
   display: grid;
-  grid-template-rows: auto-fit;
+  grid-template-rows: repeat(2, auto-fill);
   padding-top: 4px;
   padding-bottom: 4px;
   padding-left: 4px;
@@ -53,29 +53,67 @@
 
 .iad-collections {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  grid-auto-columns: min-content;
+  grid-template-rows: repeat(1, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  column-gap: 8px;
+  margin: 4px;
 }
 
-.iad-collection-item {
+.iad-collection-tile {
+  position: relative;
+}
+
+.iad-collection-tile:hover {
+  filter: drop-shadow(6px 6px 6px rgba(0, 0, 0, 0.5));
+}
+
+.iad-collection-tile-selected {
+  filter: drop-shadow(6px 6px 6px rgba(0, 0, 0, 0.5));
+}
+
+.iad-collection-image {
   width: 100%;
   height: auto;
+  max-height: 96px;
+  border-radius: 4px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+.iad-collection-title {
+  position: absolute;
+  top: 10%;
+  left: 0%;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 9pt;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px black;
+  pointer-events: none;
+}
+
+.iad-search-panel {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
 }
 
 .iad-search-box {
-  width: 80%;
+  flex: 1;
   height: 24px;
   background-color: white;
   border-radius: 2rem;
   border-color: #cccccc;
   border-style: solid;
-  margin-left: 12px;
-  margin-right: 12px;
+  margin-top: 4px;
+  margin-bottom: 4px;
   padding-top: 2px;
   padding-bottom: 2px;
   padding-left: 12px;
   padding-right: 12px;
-  font-size: 14pt;
+  font-size: 12pt;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
 }
 
@@ -86,6 +124,7 @@
 .iad-search-button {
   width: 64px;
   height: 30px;
+  margin-left: 8px;
   background-color: #000000;
   color: #ffffff;
   border-radius: 2rem;
@@ -103,8 +142,8 @@
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   grid-auto-rows: min-content;
   grid-gap: 8px;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-y: hidden;
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 12px;
@@ -134,6 +173,7 @@
   display: block;
   width: 100%;
   height: auto;
+  max-height: 96px;
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 0px;

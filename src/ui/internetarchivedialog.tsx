@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive";
 import "./internetarchivedialog.css";
 import { handleSetDiskFromURL } from "./devices/driveprops";
@@ -6,7 +6,7 @@ import { iconData, iconKey, iconName } from "./img/iconfunctions";
 
 const queryMaxRows = 100
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
-  "q=title:({0})+AND+collection:(softwarelibrary_apple)+AND+mediatype:(software)",
+  "q=title:({0})+AND+collection:({1})+AND+mediatype:(software)",
   "fl[]=identifier",
   "fl[]=title",
   "fl[]=creator",
@@ -21,29 +21,29 @@ const queryFormat = "https://archive.org/advancedsearch.php?" + [
 ].join("&")
 
 interface SoftwareCollection {
+  id: string,
   title: string,
-  collectionId: string,
   imageUrl: string
 }
 const softwareCollections: SoftwareCollection[] = [
   {
+    id: "softwarelibrary_apple",
     title: "The Software Library: Apple Computer",
-    collectionId: "softwarelibrary_apple",
     imageUrl: "http://ia601609.us.archive.org/12/items/softwarelibrary_apple/softwarelibrary_apple_itemimage.jpg"
   },
   {
+    id: "softwarelibrary_apple_games",
     title: "The Apple II Library: Games",
-    collectionId: "softwarelibrary_apple_games",
     imageUrl: "http://ia802200.us.archive.org/6/items/softwarelibrary_apple_games/softwarelibrary_apple_games_itemimage.jpg"
   },
   {
-    title: "Software Library: Apple Educational (WOZ Format)",
-    collectionId: "softwarelibrary_apple_woz_educational",
+    id: "softwarelibrary_apple_woz_educational",
+    title: "Software Library: Apple Educational",
     imageUrl: "http://ia801005.us.archive.org/31/items/softwarelibrary_apple_woz_educational/softwarelibrary_apple_woz_educational_itemimage.jpg"
   },
   {
+    id: "apple_ii_library_4am",
     title: "Apple II Library: The 4am Collection",
-    collectionId: "apple_ii_library_4am",
     imageUrl: "http://ia804508.us.archive.org/34/items/apple_ii_library_4am/apple_ii_library_4am_itemimage.jpg"
   }
 ]
@@ -177,6 +177,8 @@ export interface InternetArchiveDialogProps {
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
+  const [query, setQuery] = useState<string>("")
+  const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
 
   const handleClose = () => {
     props.onClose()
@@ -185,42 +187,44 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
 
   const handleSearchBoxKeyDown = (event: { key: string }) => {
     if (event.key === "Enter") {
-      const button = document.getElementsByClassName("iad-search-button")[0] as HTMLElement
-      button.click()
+      const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
+      getResults(searchBox.value, collection)
     } else if (event.key == "Escape") {
       handleClose()
     }
   }
 
-  const handleSearchButtonClick = () => {
-    const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
-    getResults(searchBox.value)
+  const handleCollectionClick = (collectionIndex: number) => (event: any) => {
+    getResults(query, softwareCollections[collectionIndex])
   }
 
-  const getResults = async (query: string) => {
-    if (query.length >= 3) {
-      const queryUrl = formatString(queryFormat, [query])
+  const handleSearchButtonClick = () => {
+    getResults(query, collection)
+  }
 
-      document.body.style.cursor = "wait"
-      fetch(queryUrl)
-        .then(async response => {
-          if (response.ok) {
-            const json = await response.json()
-            if (json) {
-              const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
-              setResults(json.response.docs)
-              dialog.style.height = "75%"
-            }
-          } else {
-            // $TODO: add error handling
+  const getResults = async (newQuery: string, newCollection: SoftwareCollection) => {
+    setQuery(newQuery)
+    setCollection(newCollection)
+
+    const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id)
+    document.body.style.cursor = "wait"
+    fetch(queryUrl)
+      .then(async response => {
+        if (response.ok) {
+          const json = await response.json()
+          if (json) {
+            const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+            setResults(json.response.docs)
+            dialog.style.height = "85%"
           }
-        })
-        .finally(() => {
-          document.body.style.cursor = "default"
-        })
-    } else {
-      setResults([])
-    }
+        } else {
+          // $TODO: add error handling
+          console.log(`response=${response.status}`)
+        }
+      })
+      .finally(() => {
+        document.body.style.cursor = "default"
+      })
   }
 
   if (!props.open) return (<></>)
@@ -232,31 +236,37 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           <svg fill="#ffffff" viewBox="0 0 55 55" className="iad-logo">{svgInternetArchiveLogo}</svg>
           <svg className="iad-title">{svgInternetArchiveTitle}</svg>
         </div>
-        <div className="iad-search">
-          <div>
-            <input
-              className="iad-search-box"
-              type="text"
-              placeholder="Search"
-              autoCorrect="off"
-              autoComplete="off"
-              spellCheck="false"
-              autoFocus
-              onKeyDown={handleSearchBoxKeyDown} />
-            <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
+        <div style={{overflowY: "auto"}}>
+          <div className="iad-search">
+            <div className="iad-collections">
+              {softwareCollections.map((softwareCollection, index) => (
+                <div className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
+                  <img key={`collection-${index}`} className="iad-collection-image" src={softwareCollection.imageUrl} onClick={handleCollectionClick(index)}></img>
+                  <div className="iad-collection-title">{softwareCollection.title}</div>
+                </div>
+              ))}
+            </div>
+            <div className="iad-search-panel">
+              <input
+                className="iad-search-box"
+                type="text"
+                placeholder="Search"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck="false"
+                autoFocus
+                onChange={(event) => {setQuery(event.target.value)}}
+                onKeyDown={handleSearchBoxKeyDown} />
+              <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
+            </div>
           </div>
-          <div className="iad-collections">
-            {softwareCollections.map((softwareCollection) => (
-              <img className="iad-collection-item" src={softwareCollection.imageUrl}></img>
-            ))}
-          </div>
+          {results.length > 0 &&
+            <div className="iad-search-results">
+              {results.map((result, index) => (
+                <InternetArchiveResult key={`result-${index}`} {...result} closeParent={handleClose} driveIndex={props.driveIndex} />
+              ))}
+            </div>}
         </div>
-        {results.length > 0 &&
-          <div className="iad-search-results">
-            {results.map((result, index) => (
-              <InternetArchiveResult key={index} {...result} closeParent={handleClose} driveIndex={props.driveIndex} />
-            ))}
-          </div>}
       </div>
     </div>
   )
