@@ -93,37 +93,39 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
 
-    document.body.style.cursor = "wait"
-    fetch(iconName() + detailsUrl, { headers: favicon })
-      .then(async response => {
-        if (response.ok) {
-          const json = await response.json()
-          if (json.metadata && json.metadata.emulator_ext && json.files) {
-            const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
-            let imageUrl = ""
+    window.setTimeout(() => {
+      document.body.style.cursor = "wait"
+      fetch(iconName() + detailsUrl, { headers: favicon })
+        .then(async response => {
+          if (response.ok) {
+            const json = await response.json()
+            if (json.metadata && json.metadata.emulator_ext && json.files) {
+              const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
+              let imageUrl = ""
 
-            Object.keys(json.files).forEach((file) => {
-              if (file.toLowerCase().endsWith(emulatorExt)) {
-                imageUrl = `https://archive.org/download/${props.identifier}${file}`
+              Object.keys(json.files).forEach((file) => {
+                if (file.toLowerCase().endsWith(emulatorExt)) {
+                  imageUrl = `https://archive.org/download/${props.identifier}${file}`
+                }
+              })
+
+              if (imageUrl != "") {
+                props.closeParent()
+                handleSetDiskFromURL(imageUrl, undefined, props.driveIndex)
+              } else {
+                // $TODO: add error handling
               }
-            })
-
-            if (imageUrl != "") {
-              props.closeParent()
-              handleSetDiskFromURL(imageUrl, undefined, props.driveIndex)
             } else {
               // $TODO: add error handling
             }
           } else {
             // $TODO: add error handling
           }
-        } else {
-          // $TODO: add error handling
-        }
-      })
-      .finally(() => {
-        document.body.style.cursor = "default"
-      })
+        })
+        .finally(() => {
+          document.body.style.cursor = "default"
+        })
+    })
   }
 
   const handleStatsClick = () => {
@@ -151,9 +153,9 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
             paddingLeft: "0px",
             marginTop: "-2px"
           }}>{svgInternetArchiveSoftware}</svg>
-          <svg className="iad-stats-icon" style={{ marginTop: "-1px", marginLeft: "11px" }}>{svgInternetArchiveViews}</svg>
-          <svg className="iad-stats-icon" style={{ marginTop: "-2px", marginLeft: "11px" }}>{svgInternetArchiveFavorites}</svg>
-          <svg className="iad-stats-icon" style={{ marginLeft: "14px" }}>{svgInternetArchiveReviews}</svg>
+          <svg className="iad-stats-icon" style={{ marginTop: "-2px", marginLeft: "12px" }}>{svgInternetArchiveViews}</svg>
+          <svg className="iad-stats-icon" style={{ marginTop: "-2px", marginLeft: "14px" }}>{svgInternetArchiveFavorites}</svg>
+          <svg className="iad-stats-icon" style={{ marginLeft: "16px" }}>{svgInternetArchiveReviews}</svg>
           <div>
             {formatNumber(props.downloads)}
           </div>
@@ -206,25 +208,27 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     setQuery(newQuery)
     setCollection(newCollection)
 
-    const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id)
-    document.body.style.cursor = "wait"
-    fetch(queryUrl)
-      .then(async response => {
-        if (response.ok) {
-          const json = await response.json()
-          if (json) {
-            const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
-            setResults(json.response.docs)
-            dialog.style.height = "85%"
+    window.setTimeout(() => {
+      const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id)
+      document.body.style.cursor = "wait"
+      fetch(queryUrl)
+        .then(async response => {
+          if (response.ok) {
+            const json = await response.json()
+            if (json) {
+              const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+              setResults(json.response.docs)
+              dialog.style.height = "85%"
+            }
+          } else {
+            // $TODO: add error handling
+            console.log(`response=${response.status}`)
           }
-        } else {
-          // $TODO: add error handling
-          console.log(`response=${response.status}`)
-        }
-      })
-      .finally(() => {
-        document.body.style.cursor = "default"
-      })
+        })
+        .finally(() => {
+          document.body.style.cursor = "default"
+        })
+    }, 100)
   }
 
   if (!props.open) return (<></>)
@@ -236,11 +240,11 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           <svg fill="#ffffff" viewBox="0 0 55 55" className="iad-logo">{svgInternetArchiveLogo}</svg>
           <svg className="iad-title">{svgInternetArchiveTitle}</svg>
         </div>
-        <div style={{overflowY: "auto"}}>
+        <div style={{ overflowY: "auto" }}>
           <div className="iad-search">
             <div className="iad-collections">
               {softwareCollections.map((softwareCollection, index) => (
-                <div key={`divcollect-${index}`} 
+                <div key={`divcollect-${index}`}
                   className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
                   <img key={`collection-${index}`} className="iad-collection-image" src={softwareCollection.imageUrl} onClick={handleCollectionClick(index)}></img>
                   <div className="iad-collection-title">{softwareCollection.title}</div>
@@ -256,7 +260,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 autoComplete="off"
                 spellCheck="false"
                 autoFocus
-                onChange={(event) => {setQuery(event.target.value)}}
+                onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
               <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
             </div>
