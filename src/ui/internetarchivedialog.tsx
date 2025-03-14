@@ -212,7 +212,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
 
     window.setTimeout(() => {
       const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id)
-      document.body.style.cursor = "wait"
+      setCursorBusy(true)
       fetch(queryUrl)
         .then(async response => {
           if (response.ok) {
@@ -228,7 +228,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           }
         })
         .finally(() => {
-          document.body.style.cursor = "default"
+          setCursorBusy(false)
         })
     }, 100)
   }
