@@ -3,7 +3,7 @@
   grid-template-rows: 48px auto auto;
   width: 75%;
   max-width: 700px;
-  background-color: #ffffff;
+  background-color: #d8d8d8;
   color: var(--text-color);
   z-index: 1;
   border-radius: 10px;
@@ -48,7 +48,7 @@
   padding-bottom: 4px;
   padding-left: 4px;
   padding-right: 4px;
-  background-color: #d8d8d8;
+  background-color: #666666;
 }
 
 .iad-collections {
@@ -64,11 +64,11 @@
 }
 
 .iad-collection-tile:hover {
-  filter: drop-shadow(6px 6px 6px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(3px 3px 3px #d8d8d8);
 }
 
 .iad-collection-tile-selected {
-  filter: drop-shadow(6px 6px 6px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(3px 3px 3px #d8d8d8);
 }
 
 .iad-collection-image {
@@ -107,8 +107,9 @@
   border-radius: 2rem;
   border-color: #cccccc;
   border-style: solid;
-  margin-top: 4px;
+  margin-top: 5px;
   margin-bottom: 4px;
+  margin-left: 4px;
   padding-top: 2px;
   padding-bottom: 2px;
   padding-left: 12px;
@@ -133,7 +134,7 @@
   font-weight: bold;
   font-size: 10pt;
   padding: 4px;
-  margin-right: 8px;
+  margin-right: 4px;
   cursor: pointer;
 }
 
@@ -215,7 +216,6 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 0px;
-  margin-bottom: -2px;
   padding-left: 8px;
   font-size: 8.5pt;
 }
@@ -231,8 +231,8 @@
 }
 
 .iad-stats-icon-software {
-  width: "24px";
-  height: "24px";
+  width: 24px;
+  height: 24px;
 }
 
 ::-webkit-scrollbar {
@@ -240,7 +240,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #e0e0e0;
+  background: #d8d8d8;
   border-radius: 10px;
 }
 
