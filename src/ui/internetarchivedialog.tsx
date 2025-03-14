@@ -16,7 +16,7 @@ const queryFormat = "https://archive.org/advancedsearch.php?" + [
   "sort[]=downloads+desc",
   "sort[]=stars+desc",
   `rows=${queryMaxRows}`,
-  "page=1",
+  "page={2}",
   "output=json"
 ].join("&")
 
@@ -180,6 +180,7 @@ export interface InternetArchiveDialogProps {
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
+  const [resultsCount, setResultsCount] = useState<number>(0)
   const [query, setQuery] = useState<string>("")
   const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
   const [cursorBusy, setCursorBusy] = useState(false)
@@ -211,7 +212,9 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     setCollection(newCollection)
 
     window.setTimeout(() => {
-      const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id)
+      const pageNumber = (resultsCount - results.length) / queryMaxRows
+      const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
+
       setCursorBusy(true)
       fetch(queryUrl)
         .then(async response => {
@@ -220,6 +223,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
             if (json) {
               const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
               setResults(json.response.docs)
+              setResultsCount(json.response.numFound)
               dialog.style.height = "85%"
             }
           } else {
@@ -267,7 +271,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 spellCheck="false"
                 autoFocus
                 style={{ cursor: cursorBusy ? "wait" : "text" }}
-                onChange={(event) => {setQuery(event.target.value)}}
+                onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
               <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
             </div>
