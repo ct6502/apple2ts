@@ -29,22 +29,22 @@ const softwareCollections: SoftwareCollection[] = [
   {
     id: "softwarelibrary_apple",
     title: "The Software Library: Apple Computer",
-    imageUrl: "http://ia601609.us.archive.org/12/items/softwarelibrary_apple/softwarelibrary_apple_itemimage.jpg"
+    imageUrl: "/collections/softwarelibrary_apple_itemimage.jpg"
   },
   {
     id: "softwarelibrary_apple_games",
     title: "The Apple II Library: Games",
-    imageUrl: "http://ia802200.us.archive.org/6/items/softwarelibrary_apple_games/softwarelibrary_apple_games_itemimage.jpg"
+    imageUrl: "/collections/softwarelibrary_apple_games_itemimage.jpg"
   },
   {
     id: "softwarelibrary_apple_woz_educational",
     title: "Software Library: Apple Educational",
-    imageUrl: "http://ia801005.us.archive.org/31/items/softwarelibrary_apple_woz_educational/softwarelibrary_apple_woz_educational_itemimage.jpg"
+    imageUrl: "/collections/softwarelibrary_apple_woz_educational_itemimage.jpg"
   },
   {
     id: "apple_ii_library_4am",
     title: "Apple II Library: The 4am Collection",
-    imageUrl: "http://ia804508.us.archive.org/34/items/apple_ii_library_4am/apple_ii_library_4am_itemimage.jpg"
+    imageUrl: "/collections/apple_ii_library_4am_itemimage.jpg"
   }
 ]
 
