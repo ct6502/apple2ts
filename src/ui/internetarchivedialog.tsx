@@ -88,6 +88,7 @@ interface InternetDialogResultProps {
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
+
   const handleTileClick = () => {
     const detailsUrl = `https://archive.org/details/${props.identifier}?output=json`
     const favicon: { [key: string]: string } = {}
@@ -181,6 +182,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
   const [query, setQuery] = useState<string>("")
   const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
+  const [cursorBusy, setCursorBusy] = useState(false)
 
   const handleClose = () => {
     props.onClose()
@@ -246,7 +248,11 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
               {softwareCollections.map((softwareCollection, index) => (
                 <div key={`divcollect-${index}`}
                   className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
-                  <img key={`collection-${index}`} className="iad-collection-image" src={softwareCollection.imageUrl} onClick={handleCollectionClick(index)}></img>
+                  <img key={`collection-${index}`}
+                    className="iad-collection-image"
+                    style={{ cursor: cursorBusy ? "wait" : "pointer" }}
+                    src={softwareCollection.imageUrl}
+                    onClick={handleCollectionClick(index)}></img>
                   <div className="iad-collection-title">{softwareCollection.title}</div>
                 </div>
               ))}
@@ -255,12 +261,13 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
               <input
                 className="iad-search-box"
                 type="text"
-                placeholder="Search"
+                placeholder="Type the name of a software title or click one of the categories above"
                 autoCorrect="off"
                 autoComplete="off"
                 spellCheck="false"
                 autoFocus
-                onChange={(event) => { setQuery(event.target.value) }}
+                style={{ cursor: cursorBusy ? "wait" : "text" }}
+                onChange={(event) => {setQuery(event.target.value)}}
                 onKeyDown={handleSearchBoxKeyDown} />
               <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
             </div>
