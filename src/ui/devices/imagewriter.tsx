@@ -31,7 +31,7 @@ const ImageWriter = () => {
       <img className="disk-image"
         style={{ borderWidth: 0 }}
         src={img1} alt="iwii"
-        title="ImageWriter II"
+        title="ImageWriter II (Slot 1)"
         height="57px"
         onClick={() => { setOpen(true) }} />
       <PrinterDialog

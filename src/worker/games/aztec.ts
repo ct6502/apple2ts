@@ -151,7 +151,7 @@ Start:  start the game
 `
 
 export const aztec: GameLibraryItem = {
-  address: 0x1DA3,
+  address: 0xC28B,
   data: [0xAD, 0x00, 0xC0],
   keymap: {},
   joystick: joystick,
