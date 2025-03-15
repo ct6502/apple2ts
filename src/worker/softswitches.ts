@@ -225,6 +225,10 @@ export const resetSoftSwitches = () => {
 const overriddenSwitches: Array<boolean> = []
 
 export const overrideSoftSwitch = (addr: number) => {
+  if (addr >= 0xC080 && addr <= 0xC08F) {
+    handleBankedRAM(addr & ~4, false)
+    return
+  }
   const sswitch1 = sswitchArray[addr - 0xC000]
   if (!sswitch1) {
     console.error("overrideSoftSwitch: Unknown softswitch " + toHex(addr))

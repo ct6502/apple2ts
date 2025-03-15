@@ -37,7 +37,7 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
           <div className="flex-column-gap">
             <div className="flex-row-gap round-rect-border" id="tour-debug-info">
               <StackDump />
-              <MemoryMap />
+              <MemoryMap updateDisplay={props.updateDisplay}/>
             </div>
             <MemoryDump />
           </div>

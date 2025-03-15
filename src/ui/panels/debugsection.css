@@ -484,6 +484,12 @@ body.dark-mode .memory-map td {
   background-color: gray;
 }
 
+.mem-switch {
+  border-right: none !important;
+  border-bottom: none !important;
+  border-top: none !important;
+}
+
 .icon-container {
   position: relative;
   display: inline-block;

@@ -604,6 +604,9 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
   } else {
     restoreSoftSwitches()
   }
+  if (addresses && (addresses[0] <= 0xC00F || addresses[0] >= 0xC050)) {
+    updateAddressTables()
+  }
   updateExternalMachineState()
 }
 
