@@ -214,6 +214,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
 
   const handleClose = () => {
     props.onClose()
+    setQuery("")
     setResults([])
   }
 
