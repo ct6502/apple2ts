@@ -92,6 +92,15 @@ export const setPreferenceHotReload = (mode = false) => {
   passHotReload(mode)
 }
 
+export const setPreferenceFirstRunMinimal = (mode = true) => {
+  if (mode === true) {
+    localStorage.removeItem("firstRunMinimal")
+  } else {
+    localStorage.setItem("firstRunMinimal", JSON.stringify(mode))
+  }
+  // UI-only setting, pass along not necessary
+}
+
 export const loadPreferences = () => {
   const capsLock = localStorage.getItem("capsLock")
   if (capsLock) {
@@ -210,5 +219,19 @@ export const resetPreferences = () => {
   setPreferenceHotReload()
 
   localStorage.removeItem("binaryRunAddress")
+}
+
+export const getPreferenceFirstRunMinimal = () => {
+  let value: boolean = true
+
+  const item = localStorage.getItem("firstRunMinimal")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch {
+    }
+  }
+
+  return value
 }
 

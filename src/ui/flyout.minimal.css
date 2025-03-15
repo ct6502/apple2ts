@@ -2,6 +2,21 @@
   display: none;
 }
 
+.flyout-button-highlight {
+  animation: fadeInOut 3s infinite;
+}
+
+@keyframes fadeInOut {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .flyout {
   position: fixed;
   background-color: #aba7a2;
