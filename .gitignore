@@ -3,6 +3,9 @@
 # dependencies
 /node_modules
 
+# autodownloaded for tests, but do not include for licensing restrictions
+src/worker/roms/6502_functional_test.bin
+
 # production
 /build
 /dist
