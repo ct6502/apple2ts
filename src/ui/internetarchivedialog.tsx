@@ -1,10 +1,10 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive"
 import "./internetarchivedialog.css"
 import { handleSetDiskFromURL } from "./devices/driveprops"
 import { iconData, iconKey, iconName } from "./img/iconfunctions"
 
-const queryMaxRows = 100
+const queryMaxRows = 25
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
   "q=title:({0})+AND+collection:({1})+AND+mediatype:(software)",
   "fl[]=identifier",
@@ -16,7 +16,7 @@ const queryFormat = "https://archive.org/advancedsearch.php?" + [
   "sort[]=downloads+desc",
   "sort[]=stars+desc",
   `rows=${queryMaxRows}`,
-  "page=1",
+  "page={2}",
   "output=json"
 ].join("&")
 
@@ -78,7 +78,9 @@ function formatNumber(num: number, precision = 1) {
 
 interface InternetDialogResultProps {
   closeParent: () => void,
+  setWaitCursor: () => void,
   driveIndex: number,
+  lastResult: boolean,
   identifier: string,
   title: string,
   creator: string,
@@ -88,45 +90,42 @@ interface InternetDialogResultProps {
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
-
   const handleTileClick = () => {
     const detailsUrl = `https://archive.org/details/${props.identifier}?output=json`
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
 
-    window.setTimeout(() => {
-      document.body.style.cursor = "wait"
-      fetch(iconName() + detailsUrl, { headers: favicon })
-        .then(async response => {
-          if (response.ok) {
-            const json = await response.json()
-            if (json.metadata && json.metadata.emulator_ext && json.files) {
-              const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
-              let imageUrl = ""
+    props.setWaitCursor()
+    fetch(iconName() + detailsUrl, { headers: favicon })
+      .then(async response => {
+        if (response.ok) {
+          const json = await response.json()
+          if (json.metadata && json.metadata.emulator_ext && json.files) {
+            const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
+            let imageUrl = ""
 
-              Object.keys(json.files).forEach((file) => {
-                if (file.toLowerCase().endsWith(emulatorExt)) {
-                  imageUrl = `https://archive.org/download/${props.identifier}${file}`
-                }
-              })
-
-              if (imageUrl != "") {
-                props.closeParent()
-                handleSetDiskFromURL(imageUrl, undefined, props.driveIndex)
-              } else {
-                // $TODO: add error handling
+            Object.keys(json.files).forEach((file) => {
+              if (file.toLowerCase().endsWith(emulatorExt)) {
+                imageUrl = `https://archive.org/download/${props.identifier}${file}`
               }
+            })
+
+            if (imageUrl != "") {
+              props.closeParent()
+              handleSetDiskFromURL(imageUrl, undefined, props.driveIndex)
             } else {
               // $TODO: add error handling
             }
           } else {
             // $TODO: add error handling
           }
-        })
-        .finally(() => {
-          document.body.style.cursor = "default"
-        })
-    })
+        } else {
+          // $TODO: add error handling
+        }
+      })
+      .finally(() => {
+        document.body.style.cursor = "default"
+      })
   }
 
   const handleStatsClick = () => {
@@ -135,7 +134,9 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
   }
 
   return (
-    <div className="iad-result-tile" title="Press to load disk image">
+    <div
+      className={`iad-result-tile ${props.lastResult ? "iad-result-last" : ""}`}
+      title="Press to load disk image">
       <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`} onClick={handleTileClick}></img>
       <div className="iad-result-title" title={props.title}>
         {props.title}
@@ -180,12 +181,40 @@ export interface InternetArchiveDialogProps {
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
+  const [resultsCount, setResultsCount] = useState<number>(0)
   const [query, setQuery] = useState<string>("")
   const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
   const [cursorBusy, setCursorBusy] = useState(false)
+  const [isIntersecting, setIsIntersecting] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting)
+      },
+      { rootMargin: "0px" }
+    )
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [isIntersecting, results])
+
+  useEffect(() => {
+    if (isIntersecting && ref.current) {
+      const lastElement = (ref.current as HTMLElement).getElementsByClassName("iad-result-last")[0]
+      if (lastElement) {
+        lastElement.classList.remove("iad-result-last")
+        getResults(query, collection, true)
+      }
+    }
+  }, [isIntersecting])
 
   const handleClose = () => {
     props.onClose()
+    setQuery("")
     setResults([])
   }
 
@@ -206,31 +235,38 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     getResults(query, collection)
   }
 
-  const getResults = async (newQuery: string, newCollection: SoftwareCollection) => {
-    setQuery(newQuery)
-    setCollection(newCollection)
+  const getResults = async (newQuery: string, newCollection: SoftwareCollection, pagedResults = false) => {
+    if (!pagedResults) {
+      setQuery(newQuery)
+      setCollection(newCollection)
+    }
 
-    window.setTimeout(() => {
-      const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id)
-      setCursorBusy(true)
-      fetch(queryUrl)
-        .then(async response => {
-          if (response.ok) {
-            const json = await response.json()
-            if (json) {
-              const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+    const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
+    const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
+
+    setCursorBusy(true)
+    fetch(queryUrl)
+      .then(async response => {
+        if (response.ok) {
+          const json = await response.json()
+          if (json) {
+            if (pagedResults) {
+              setResults(results.concat(json.response.docs))
+            } else {
               setResults(json.response.docs)
-              dialog.style.height = "85%"
+              setResultsCount(json.response.numFound)
             }
-          } else {
-            // $TODO: add error handling
-            console.log(`response=${response.status}`)
+
+            const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+            dialog.style.height = "85%"
           }
-        })
-        .finally(() => {
-          setCursorBusy(false)
-        })
-    }, 100)
+        } else {
+          // $TODO: add error handling
+        }
+      })
+      .finally(() => {
+        setCursorBusy(false)
+      })
   }
 
   if (!props.open) return (<></>)
@@ -267,7 +303,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 spellCheck="false"
                 autoFocus
                 style={{ cursor: cursorBusy ? "wait" : "text" }}
-                onChange={(event) => {setQuery(event.target.value)}}
+                onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
               <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
             </div>
@@ -275,7 +311,15 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           {results.length > 0 &&
             <div className="iad-search-results">
               {results.map((result, index) => (
-                <InternetArchiveResult key={`result-${index}`} {...result} closeParent={handleClose} driveIndex={props.driveIndex} />
+                <div key={`parent-result-${index}`} ref={resultsCount > results.length && index == results.length - 1 ? ref : null}>
+                  <InternetArchiveResult
+                    key={`result-${index}`}
+                    {...result}
+                    closeParent={handleClose}
+                    setWaitCursor={() => setCursorBusy(true)}
+                    driveIndex={props.driveIndex}
+                    lastResult={resultsCount > results.length && index == results.length - 1} />
+                </div>
               ))}
             </div>}
         </div>
