@@ -9,7 +9,20 @@
       "webRoot": "${workspaceFolder}/src",
       "sourceMapPathOverrides": {
         "webpack:///src/*": "${webRoot}/*"
-      },
+      }
+    },
+    {
+      "name": "Launch Firefox",
+      "type": "firefox",
+      "request": "launch",
+      "url": "http://localhost:6502",
+      "webRoot": "${workspaceFolder}/src",
+      "pathMappings": [
+        {
+          "url": "http://localhost:6502/src",
+          "path": "${workspaceFolder}/src"
+        }
+      ]
     },
     {
       "name": "Attach to Chrome",

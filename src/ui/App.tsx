@@ -2,6 +2,8 @@ import { useState } from "react"
 import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
+import { handleGetTheme } from "./main2worker"
+import { UI_THEME } from "../common/utility"
 
 const App = () => {
   const [updateHgr, setUpdateHgr] = useState(false)
@@ -9,6 +11,13 @@ const App = () => {
   const [updateBreakpoint, setUpdateBreakpoint] = useState(0)
   const [runTour, setRunTour] = useState("")
   const [tourIndex, setTourIndex] = useState(0)
+
+  window.setTimeout(() => {
+    if (handleGetTheme() == UI_THEME.MINIMAL) {
+      console.log(`handleGetTheme()=${handleGetTheme() == UI_THEME.MINIMAL}`)
+      import("./App.minimal.css")
+    }
+  }, 1)
 
   return (
     <GlobalContext.Provider

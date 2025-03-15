@@ -21,6 +21,11 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
   const isDarkMode = handleGetTheme() == UI_THEME.DARK
   const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
 
+  if (isMinimalTheme) {
+    console.log(`handleGetTheme()=${handleGetTheme() == UI_THEME.MINIMAL}`)
+    import("./helppanel.minimal.css")
+  }
+
   return (
     <Flyout
       icon={faNoteSticky}
