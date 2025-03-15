@@ -503,13 +503,3 @@ body.dark-mode .memory-map td {
 body.dark-mode .icon-text {
   color: var(--text-color);
 }
-
-@scope (.theme-minimal) {
-  .debug-section {
-    max-width: 50vw;
-    max-height: 92cqh;
-    overflow-x: auto;
-    overflow-y: auto;
-    margin-bottom: 10px;
-  }
-}

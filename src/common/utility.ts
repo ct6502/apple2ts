@@ -443,11 +443,6 @@ export const handleSetTheme = (theme: UI_THEME) => {
   } else {
     document.body.classList.remove("dark-mode")
   }
-  if (theme == UI_THEME.MINIMAL) {
-    document.documentElement.classList.add("theme-minimal")
-  } else {
-    document.documentElement.classList.remove("theme-minimal")
-  }
 }
 
 export const isFileSystemApiSupported = () => {

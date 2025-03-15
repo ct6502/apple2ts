@@ -17,6 +17,10 @@ const Flyout = (props: {
   const isFlyoutOpen = props.isOpen && props.isOpen()
   const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
 
+  if (isMinimalTheme) {
+    import("./flyout.minimal.css")
+  }
+
   const isTopPosition = () => {
     return props.position.search("top") >= 0
   }

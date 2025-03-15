@@ -13,6 +13,12 @@ import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
 
 const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
+  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+
+  if (isMinimalTheme) {
+    import("./debugsection.minimal.css")
+  }
+
   return (
     <Flyout
       icon={faBug}
@@ -22,7 +28,7 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
         setPreferenceDebugMode(!handleGetIsDebugging())
         props.updateDisplay()
       }}
-      buttonId={handleGetTheme() == UI_THEME.MINIMAL ? "tour-debug-button" : ""}>
+      buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
       <div className="flex-column-gap debug-section" id="debug-section">
         <State6502Controls />
         <div className="flex-row-gap">
