@@ -16,7 +16,6 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
   const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
 
   if (isMinimalTheme) {
-    console.log(`handleGetTheme()=${handleGetTheme() == UI_THEME.MINIMAL}`)
     import("./debugsection.minimal.css")
   }
 

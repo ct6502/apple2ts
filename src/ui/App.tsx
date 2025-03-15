@@ -14,7 +14,6 @@ const App = () => {
 
   window.setTimeout(() => {
     if (handleGetTheme() == UI_THEME.MINIMAL) {
-      console.log(`handleGetTheme()=${handleGetTheme() == UI_THEME.MINIMAL}`)
       import("./App.minimal.css")
     }
   }, 1)
