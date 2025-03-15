@@ -13,6 +13,7 @@ const ControlPanel = (props: DisplayProps) => {
   return (
     <Flyout
       icon={faWrench}
+      title="settings panel"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="top-left">

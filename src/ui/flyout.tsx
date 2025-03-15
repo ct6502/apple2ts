@@ -8,6 +8,7 @@ const Flyout = (props: {
   icon: IconDefinition,
   buttonId?: string,
   position: string,
+  title: string,
   isOpen: () => boolean | undefined,
   onClick: () => void | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,6 +49,7 @@ const Flyout = (props: {
       <div
         id={props.buttonId ?? ""}
         className="flyout-button"
+        title={!isTouchDevice ? `Click to ${isFlyoutOpen ? "hide" : "show"} the ${props.title}` : ""}
         onClick={() => {
           if (props.onClick) {
             props.onClick()

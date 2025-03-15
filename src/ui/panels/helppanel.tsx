@@ -28,6 +28,7 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
   return (
     <Flyout
       icon={faNoteSticky}
+      title="help panel"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="top-right">

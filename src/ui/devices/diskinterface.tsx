@@ -15,6 +15,7 @@ const DiskInterface = (props: DisplayProps) => {
   return (
     <Flyout
       icon={faFloppyDisk}
+      title="disk drive panel"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="bottom-left">
