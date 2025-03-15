@@ -8,6 +8,8 @@ const Flyout = (props: {
   icon: IconDefinition,
   buttonId?: string,
   position: string,
+  title: string,
+  hightlight?: boolean,
   isOpen: () => boolean | undefined,
   onClick: () => void | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +40,7 @@ const Flyout = (props: {
 
   return (
     <div
-      className={`flyout ${className}`}
+      className={`flyout ${className} ${props.hightlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
       style={{
         left: isMinimalTheme && isLeftPosition ? (!isFlyoutOpen || !isTouchDevice ? "14px" : "48px") : "",
         width: isMinimalTheme && !isFlyoutOpen ? "max(8vw, 72px)" : "auto",
@@ -48,6 +50,7 @@ const Flyout = (props: {
       <div
         id={props.buttonId ?? ""}
         className="flyout-button"
+        title={!isTouchDevice ? `Click to ${isFlyoutOpen ? "hide" : "show"} ${props.title}` : ""}
         onClick={() => {
           if (props.onClick) {
             props.onClick()

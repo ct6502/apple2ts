@@ -6,15 +6,27 @@ import DebugButtons from "./debugbuttons"
 import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
 import { useState } from "react"
+import { getPreferenceFirstRunMinimal, setPreferenceFirstRunMinimal } from "../localstorage"
 
 const ControlPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
+  const showHighlight = getPreferenceFirstRunMinimal()
+
+  const handleFlyoutClick = () => {
+    if (showHighlight) {
+      setPreferenceFirstRunMinimal(false)
+    }
+
+    setIsFlyoutOpen(!isFlyoutOpen)
+  }
 
   return (
     <Flyout
       icon={faWrench}
+      title="settings"
+      hightlight={showHighlight}
       isOpen={() => { return isFlyoutOpen }}
-      onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
+      onClick={handleFlyoutClick}
       position="top-left">
       <span className="flex-column">
         <span className="flex-row wrap" id="tour-controlbuttons">

@@ -23,6 +23,7 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
     <Flyout
       icon={faBug}
       position="bottom-right"
+      title="debug panel"
       isOpen={handleGetIsDebugging}
       onClick={() => {
         setPreferenceDebugMode(!handleGetIsDebugging())
