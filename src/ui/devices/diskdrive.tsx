@@ -286,14 +286,32 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
 
     if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
-      const menuHeight = driveMenuItems[menuIndex].length * 24
+      const [menuWidth, menuHeight] = estimatePopupDimensions(menuIndex)
+      const x = Math.min(event.clientX, window.innerWidth - menuWidth)
       const y = Math.min(event.clientY, window.innerHeight - menuHeight)
 
-      setPosition({ x: event.clientX, y: y })
+      setPosition({ x: x, y: y })
       setMenuOpen(menuIndex)
     } else {
       // $TODO: Add error handling
     }
+  }
+
+  const estimatePopupDimensions = (menuIndex: number) => {
+    let w = 0
+    let h = 0
+
+    driveMenuItems[menuIndex].forEach((menuItem) => {
+      if (menuItem.label == "-") {
+        w = Math.max(w, 9)
+        h += 16
+      } else {
+        w = Math.max(w, menuItem.label.length * 9)
+        h += 28
+      }
+    })
+
+    return [w, h]
   }
 
   const handleMenuClose = (menuChoice = -1) => {
