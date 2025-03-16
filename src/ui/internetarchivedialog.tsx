@@ -136,7 +136,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
   return (
     <div
       className={`iad-result-tile ${props.lastResult ? "iad-result-last" : ""}`}
-      title="Press to load disk image">
+      title="Click to load disk image">
       <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`} onClick={handleTileClick}></img>
       <div className="iad-result-title" title={props.title}>
         {props.title}
@@ -146,7 +146,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
           ? `by ${props.creator}`
           : ""}
       </div>
-      <div className="iad-stats" title="Press to view details" onClick={handleStatsClick}>
+      <div className="iad-stats" title="Click to view details" onClick={handleStatsClick}>
         <div className="iad-stats-row">
           <svg className="iad-stats-icon" style={{
             gridRow: "1/3",
