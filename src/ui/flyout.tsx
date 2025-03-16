@@ -4,12 +4,15 @@ import { faCircleArrowDown, faCircleArrowUp, IconDefinition } from "@fortawesome
 import { handleGetTheme } from "./main2worker"
 import { UI_THEME } from "../common/utility"
 
+const flyoutButtonWidth = "max( 8vw, 72px )"
+
 const Flyout = (props: {
   icon: IconDefinition,
   buttonId?: string,
   position: string,
   title: string,
   highlight?: boolean,
+  width?: string,
   isOpen: () => boolean | undefined,
   onClick: () => void | undefined,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,14 +39,21 @@ const Flyout = (props: {
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const isLeftPosition = props.position.indexOf("left") >= 0
+  let left = "auto"
+  if (isMinimalTheme) {
+    if (props.position.indexOf("left") >= 0) {
+      left = !isFlyoutOpen || !isTouchDevice ? "14px" : "48px"
+    } else if (props.position.indexOf("center") >= 0) {
+      left = `calc( ${window.outerWidth / 2}px - ${isFlyoutOpen ? props.width ?? "auto" : flyoutButtonWidth} / 2)`
+    }
+  }
 
   return (
     <div
       className={`flyout ${className} ${props.highlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
       style={{
-        left: isMinimalTheme && isLeftPosition ? (!isFlyoutOpen || !isTouchDevice ? "14px" : "48px") : "",
-        width: isMinimalTheme && !isFlyoutOpen ? "max(8vw, 72px)" : "auto",
+        left: left,
+        width: isMinimalTheme && !isFlyoutOpen ? flyoutButtonWidth : props.width,
         opacity: isMinimalTheme && !isFlyoutOpen ? "33%" : "100%"
       }}>
       {isTopPosition() && (isFlyoutOpen || handleGetTheme() != UI_THEME.MINIMAL) ? props.children : ""}

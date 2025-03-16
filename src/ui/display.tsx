@@ -23,6 +23,7 @@ import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
 import { handleSetTheme, RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
+import NewsPanel from "./panels/newspanel"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -148,6 +149,7 @@ const DisplayApple2 = () => {
   const theme = handleGetTheme()
   handleSetTheme(theme)
 
+  const isMinimalTheme = theme == UI_THEME.MINIMAL
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
@@ -180,12 +182,13 @@ const DisplayApple2 = () => {
           {!isLandscape && status}
         </div>
         {isLandscape && status}
-        {narrow && theme != UI_THEME.MINIMAL && <div className="divider"></div>}
+        {narrow && !isMinimalTheme && <div className="divider"></div>}
         <span className="flex-column">
-          {(handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <DebugSection updateDisplay={updateDisplay}/>}
-          {(!handleGetIsDebugging() || theme == UI_THEME.MINIMAL) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
+          {(handleGetIsDebugging() || isMinimalTheme) && <DebugSection updateDisplay={updateDisplay} />}
+          {(!handleGetIsDebugging() || isMinimalTheme) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
         </span>
       </span>
+      {isMinimalTheme && <NewsPanel />}
       <FileInput {...props} />
     </div>
   )
