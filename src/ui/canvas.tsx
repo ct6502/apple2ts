@@ -406,7 +406,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
       if (handleGetTheme() == UI_THEME.MINIMAL) {
         scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
-        scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 50
+        scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 10
 
         if (handleGetIsDebugging()) {
           const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
