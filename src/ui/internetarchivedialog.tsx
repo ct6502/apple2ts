@@ -210,6 +210,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
         getResults(query, collection, true)
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isIntersecting])
 
   const handleClose = () => {
