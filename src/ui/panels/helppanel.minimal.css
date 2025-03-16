@@ -9,7 +9,7 @@
   width: auto;
   height: auto;
   max-width: min(70vw, 600px);
-  max-height: 75vh;
+  max-height: 70vh;
   overflow-x: hidden !important;
   overflow-y: auto !important;
 }
