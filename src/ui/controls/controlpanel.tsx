@@ -24,7 +24,7 @@ const ControlPanel = (props: DisplayProps) => {
     <Flyout
       icon={faWrench}
       title="settings"
-      hightlight={showHighlight}
+      highlight={showHighlight}
       isOpen={() => { return isFlyoutOpen }}
       onClick={handleFlyoutClick}
       position="top-left">

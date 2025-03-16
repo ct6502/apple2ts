@@ -3,10 +3,11 @@
 }
 
 .flyout-button-highlight {
-  animation: fadeInOut 3s infinite;
+  animation: fadeInOut 3s 5;
 }
 
 @keyframes fadeInOut {
+
   0%,
   100% {
     opacity: 0.25;
