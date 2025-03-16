@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useMemo, useState } from "react"
 import { handleGetTheme } from "../main2worker"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
