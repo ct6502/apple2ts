@@ -11,7 +11,7 @@ const Flyout = (props: {
   buttonId?: string,
   position: string,
   title: string,
-  hightlight?: boolean,
+  highlight?: boolean,
   width?: string,
   isOpen: () => boolean | undefined,
   onClick: () => void | undefined,
@@ -50,7 +50,7 @@ const Flyout = (props: {
 
   return (
     <div
-      className={`flyout ${className} ${props.hightlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
+      className={`flyout ${className} ${props.highlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
       style={{
         left: left,
         width: isMinimalTheme && !isFlyoutOpen ? flyoutButtonWidth : props.width,
