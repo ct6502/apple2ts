@@ -7,6 +7,7 @@
 }
 
 @keyframes fadeInOut {
+
   0%,
   100% {
     opacity: 0.25;
@@ -28,6 +29,20 @@
   height: auto;
   top: 0px;
   left: 48px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-color: #000000;
+  border-width: 1px;
+  border-style: solid;
+  border-top-style: none;
+  padding-bottom: 0px;
+  z-index: 4;
+}
+
+.flyout-top-center {
+  height: auto;
+  top: 0px;
+  left: calc((100vw/2));
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
   border-color: #000000;
