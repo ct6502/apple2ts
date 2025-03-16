@@ -189,6 +189,7 @@ const checkBreakpointSingleExpression = (expr: BreakpointExpression) => {
     case "Y": val = s6502.YReg; break
     case "S": val = s6502.StackPtr; break
     case "P": val = s6502.PStatus; break
+    case "C": val = s6502.PC; break
     // case 'I': return s6502.flagIRQ
   }
   switch (expr.operator) {

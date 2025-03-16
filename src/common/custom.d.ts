@@ -286,7 +286,7 @@ interface MemoryBanks {
 }
 
 type ExpressionOperator = "" | "&&" | "||"
-type RegisterValues = "" | "$" | "A" | "X" | "Y" | "S" | "P"
+type RegisterValues = "" | "$" | "A" | "X" | "Y" | "S" | "P" | "C"
 type OperatorValues = "==" | "!=" | ">" | ">=" | "<" | "<="
 
 type BreakpointExpression = {

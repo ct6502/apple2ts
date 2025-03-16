@@ -228,8 +228,7 @@ export const getPreferenceFirstRunMinimal = () => {
   if (item) {
     try {
       value = JSON.parse(item)
-    } catch {
-    }
+    } catch { /* empty */ }
   }
 
   return value

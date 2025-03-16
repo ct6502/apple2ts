@@ -33,7 +33,8 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   }
 
   const handleValueChange = (value: string) => {
-    value = value.replace(/[^0-9a-f]/gi, "").slice(0, 2).toUpperCase()
+    const maxlen = props.expr.register === "C" ? 4 : 2
+    value = value.replace(/[^0-9a-f]/gi, "").slice(0, maxlen).toUpperCase()
     setBpValue(value)
     props.expr.value = parseInt(value || "-1", 16)
     props.setExpr(props.expr)
@@ -42,8 +43,8 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   const spaces = "\u00A0\u00A0\u00A0\u00A0"
   const registers = [`${spaces}(none)`, `$${spaces}Address`, `A${spaces}Accumulator`,
   `X${spaces}X Register`, `Y${spaces}Y Register`, `S${spaces}Stack Pointer`,
-  `P${spaces}Processor Status`]
-  const regmap = ["", "$", "A", "X", "Y", "S", "P"]
+  `P${spaces}Processor Status`, `C${spaces}Program Counter`]
+  const regmap = ["", "$", "A", "X", "Y", "S", "P", "C"]
   const index = regmap.indexOf(props.expr.register)
 
   return <span>
@@ -75,7 +76,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
       value={bpValue}
       setValue={handleValueChange}
       placeholder="FF"
-      width="2em" />
+      width="3em" />
   </span>
 }
 

@@ -72,16 +72,16 @@ export const getBreakpointString = (bp: Breakpoint) => {
   return result
 }
 
-export const convertBreakpointExpression = (expression: string) => {
-  let expr = expression.toUpperCase()
-  // Convert Apple II #$12 to 0x12
-  expr = expr.replace(/#\$/g, "0x")
-  // #12 is just a decimal-based integer, so delete the #
-  expr = expr.replace(/#/g, "")
-  // Assume any other $1234 is a memory address, so get the value
-  expr = expr.replace(/\$([0-9A-F]+)/g, "memGet(0x$1)")
-  return expr
-}
+// export const convertBreakpointExpression = (expression: string) => {
+//   let expr = expression.toUpperCase()
+//   // Convert Apple II #$12 to 0x12
+//   expr = expr.replace(/#\$/g, "0x")
+//   // #12 is just a decimal-based integer, so delete the #
+//   expr = expr.replace(/#/g, "")
+//   // Assume any other $1234 is a memory address, so get the value
+//   expr = expr.replace(/\$([0-9A-F]+)/g, "memGet(0x$1)")
+//   return expr
+// }
 
 
 export class Breakpoint {
