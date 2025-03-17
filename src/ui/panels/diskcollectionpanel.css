@@ -1,14 +1,14 @@
-.news-panel {
+.disk-collection-panel {
   display: grid;
   grid-template-rows: repeat(1fr);
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   row-gap: 0px;
   column-gap: 0px;
   margin: 0px;
   padding: 0px;
   width: 100%;
   height: auto;
-  max-height: 50vh;
+  max-height: 65vh;
   overflow-y: auto;
   padding-top: 6px;
   padding-bottom: 0px;
@@ -18,45 +18,41 @@
   overflow-y: auto;
 }
 
-.np-article {
+.dcp-item {
   display: flex;
   position: relative;
   height: auto;
-  vertical-align: middle;
-  margin-top: 4px;
-  margin-bottom: 4px;
   margin-left: 4px;
   margin-right: 4px;
-  align-items: center;
 }
 
-.np-article-title {
+.dcp-item-title {
   position: absolute;
   width: 50%;
-  top: 18px;
-  right: 12px;
+  top: 6%;
+  right: 6%;
   text-align: center;
   font-family: 'Courier New', Courier, monospace;
   font-size: 9pt;
   font-weight: bold;
-  line-height: 1;
+  line-height: 0.85;
   color: white;
   pointer-events: none;
 }
 
-.np-article-release {
+.dcp-item-release {
   position: absolute;
-  width: 33%;
-  top: 39px;
-  left: 14px;
+  width: 35%;
+  top: 20%;
+  left: 6%;
   text-align: center;
-  font-size: 6pt;
+  font-size: 7pt;
   font-weight: bold;
   line-height: 1;
   color: black;
 }
 
-.np-article-disk {
+.dcp-item-disk {
   width: 100%;
   height: auto;
   cursor: pointer;
@@ -64,15 +60,24 @@
   margin: 0px;
 }
 
-.np-article-image {
+.dcp-item-image-box {
+  display: inline-block;
   position: absolute;
-  width: 38%;
-  bottom: 12px;
-  right: 10px;
+  width: 100%;
+  height: 100%;
+  top: 34%;
   height: auto;
-  cursor: pointer;
   padding: 0px;
   margin: 0px;
-  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  vertical-align: middle;
+  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
+}
+
+.dcp-item-image {
+  width: 75%;
+  height: auto;
+  /* border-radius: 16px; */
   border: 1px solid black;
 }
