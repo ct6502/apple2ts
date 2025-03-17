@@ -30,6 +30,7 @@ const EditField = (props: EditFieldProps) => {
   const textfield = <span>
     <input type="text"
       disabled={props.disabled}
+      name={props.name ? props.name : "textfield"}
       ref={inputRef}
       className="hex-field"
       placeholder={props.placeholder}

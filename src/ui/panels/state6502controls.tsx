@@ -42,6 +42,7 @@ const State6502Controls = () => {
         <div className="bigger-font" style={{margin: "2px"}}>{name}</div>
         <input type="text"
           className={name === "PC" ? "hex-field" : "hex-field smallField"}
+          name={name}
           style={{marginRight: "7px"}}
           disabled={runMode !== RUN_MODE.PAUSED}
           value={strVal}

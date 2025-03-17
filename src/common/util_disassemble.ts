@@ -1,15 +1,11 @@
-import { pcodes } from "../worker/instructions"
-import { memGetRaw } from "../worker/memory"
-import { toHex, isBranchInstruction, ADDR_MODE } from "../common/utility"
-
-const nlines = 40  // should this be an argument?
+import { ADDR_MODE, isBranchInstruction, toHex } from "./utility"
 
 const decodeBranch = (addr: number, vLo: number) => {
   // The extra +2 is for the branch instruction itself
   return addr + 2 + (vLo > 127 ? vLo - 256 : vLo)
 }
 
-const getInstructionString = (addr: number, code: PCodeInstr,
+export const getInstructionString = (addr: number, code: PCodeInstr1,
   vLo: number, vHi: number) => {
   let value = ""
   let hex = `${toHex(code.pcode)}`
@@ -36,34 +32,3 @@ const getInstructionString = (addr: number, code: PCodeInstr,
   }
   return `${toHex(addr, 4)}: ${hex}  ${code.name}${value}`
 }
-
-export const getDisassembly = (start: number) => {
-  let addr = start
-  if (addr > (0xFFFF - nlines)) addr = 0xFFFF - nlines
-  let r = ""
-  for (let i=0; i < nlines; i++) {
-    if (addr > 0xFFFF) {
-      r += "\n"
-      continue
-    }
-    const instr = memGetRaw(addr)
-    const code =  pcodes[instr]
-    const vLo = memGetRaw(addr + 1)
-    const vHi = memGetRaw(addr + 2)
-    r += getInstructionString(addr, code, vLo, vHi) + "\n"
-    addr += code.bytes
-  }
-  return r
-}
-
-// export const verifyAddressWithinDisassembly = (start: number, check: number) => {
-//   if (check < start || start < 0) return false
-//   let addr = start
-//   for (let i=0; i < nlines; i++) {
-//     if (addr === check) return true
-//     const instr = memGetRaw(addr)
-//     addr += pcodes[instr].bytes
-//     if (addr > 0xFFFF) break
-//   }
-//   return false
-// }

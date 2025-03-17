@@ -95,17 +95,27 @@ const BreakpointEdit = (props: {
             <div className="dialog-title">Break at: </div>
             <input type="radio"
               id="Address"
-              name="breakAt" value="address"
+              name="breakAt"
+              value="address"
+              autoComplete="off"
               className="check-radio-box"
               checked={!(props.breakpoint.watchpoint || props.breakpoint.instruction)}
               onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="Address" className="dialog-title flush-left">Breakpoint</label>
-            <input type="radio" id="Watchpoint" name="watch" value="watchpoint"
+            <input type="radio"
+              id="Watchpoint"
+              name="watch"
+              value="watchpoint"
+              autoComplete="off"
               className="check-radio-box"
               checked={props.breakpoint.watchpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="Watchpoint" className="dialog-title flush-left">Watchpoint</label>
-            <input type="radio" id="Instruction" name="instruction" value="instruction"
+            <input type="radio"
+              id="Instruction"
+              name="instruction"
+              value="instruction"
+              autoComplete="off"
               className="check-radio-box"
               checked={props.breakpoint.instruction}
               onChange={(e) => { handleBreakAtChange(e) }} />
