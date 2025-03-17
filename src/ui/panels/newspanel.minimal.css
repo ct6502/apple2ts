@@ -21,9 +21,6 @@
 .np-article {
   display: flex;
   position: relative;
-  border-radius: 8px;
-  border: 1px solid black;
-  background-color: black;
   height: auto;
   vertical-align: middle;
   margin-top: 4px;
@@ -33,25 +30,49 @@
   align-items: center;
 }
 
-.np-article-release-date {
+.np-article-title {
   position: absolute;
-  width: 100%;
-  top: 85%;
-  left: 0%;
+  width: 50%;
+  top: 18px;
+  right: 12px;
   text-align: center;
-  font-size: 11pt;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9pt;
   font-weight: bold;
+  line-height: 1;
   color: white;
-  text-shadow: 2px 2px black;
   pointer-events: none;
 }
 
-.np-article-image {
+.np-article-release {
+  position: absolute;
+  width: 33%;
+  top: 39px;
+  left: 14px;
+  text-align: center;
+  font-size: 6pt;
+  font-weight: bold;
+  line-height: 1;
+  color: black;
+}
+
+.np-article-disk {
   width: 100%;
   height: auto;
   cursor: pointer;
   padding: 0px;
   margin: 0px;
-  border-radius: 6px;
+}
+
+.np-article-image {
+  position: absolute;
+  width: 38%;
+  bottom: 12px;
+  right: 10px;
+  height: auto;
+  cursor: pointer;
+  padding: 0px;
+  margin: 0px;
+  border-radius: 8px;
   border: 1px solid black;
 }

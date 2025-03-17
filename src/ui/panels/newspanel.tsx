@@ -69,9 +69,11 @@ const NewsPanel = () => {
       position="top-center">
       <div className="news-panel">
         {newsArticles.map((newsArticle, index) => (
-          <div key={`np-article-${index}`} className="np-article">
-            <div className="np-article-release-date">{dateFormatter.format(new Date(newsArticle.releaseDate))}</div>
-            <img className="np-article-image" src={newsArticle.imageUrl} title={newsArticle.title} onClick={handleArticlelick(index)} />
+          <div key={`np-article-${index}`} className="np-article"  onClick={handleArticlelick(index)}>
+            <div className="np-article-title">{newsArticle.title}</div>
+            <div className="np-article-release">{newsArticle.releaseDate}</div>
+            <img className="np-article-image" src={newsArticle.imageUrl} title={newsArticle.title}/>
+            <img className="np-article-disk" src="/floppy.png" />
           </div>
         ))}
       </div>
