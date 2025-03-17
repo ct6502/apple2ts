@@ -20,6 +20,7 @@
 
 .np-article {
   display: flex;
+  position: relative;
   border-radius: 8px;
   border: 1px solid black;
   background-color: black;
@@ -29,6 +30,20 @@
   margin-bottom: 4px;
   margin-left: 4px;
   margin-right: 4px;
+  align-items: center;
+}
+
+.np-article-release-date {
+  position: absolute;
+  width: 100%;
+  top: 85%;
+  left: 0%;
+  text-align: center;
+  font-size: 11pt;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px black;
+  pointer-events: none;
 }
 
 .np-article-image {
