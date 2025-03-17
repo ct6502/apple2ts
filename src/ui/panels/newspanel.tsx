@@ -54,7 +54,7 @@ const NewsPanel = () => {
       title="new releases"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
-      width="max( 28vw, 200px )"
+      width="max( 50vw, 200px )"
       position="top-center">
       <div className="news-panel">
         {newsArticles.map((newsArticle, index) => (
