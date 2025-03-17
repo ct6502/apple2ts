@@ -2,16 +2,16 @@
   display: grid;
   grid-template-rows: repeat(1fr);
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  row-gap: 8px;
-  column-gap: 8px;
-  margin: 0;
-  padding: 0;
+  row-gap: 0px;
+  column-gap: 0px;
+  margin: 0px;
+  padding: 0px;
   width: 100%;
   height: auto;
-  max-height: 65vh;
+  max-height: 50vh;
   overflow-y: auto;
-  padding-top: 8px;
-  padding-bottom: 4px;
+  padding-top: 6px;
+  padding-bottom: 0px;
   padding-left: 2px;
   padding-right: 0px;
   overflow-x: hidden;
@@ -25,6 +25,10 @@
   background-color: black;
   height: auto;
   vertical-align: middle;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  margin-left: 4px;
+  margin-right: 4px;
 }
 
 .np-article-image {
@@ -33,4 +37,6 @@
   cursor: pointer;
   padding: 0px;
   margin: 0px;
+  border-radius: 6px;
+  border: 1px solid black;
 }
