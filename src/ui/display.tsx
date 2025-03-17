@@ -23,7 +23,7 @@ import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
 import { handleSetTheme, RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
-import NewsPanel from "./panels/newspanel"
+import DiskCollectionPanel from "./panels/diskcollectionpanel"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -188,7 +188,7 @@ const DisplayApple2 = () => {
           {(!handleGetIsDebugging() || isMinimalTheme) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
         </span>
       </span>
-      {isMinimalTheme && <NewsPanel />}
+      {isMinimalTheme && <DiskCollectionPanel {...props} />}
       <FileInput {...props} />
     </div>
   )

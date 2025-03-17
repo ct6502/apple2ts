@@ -229,6 +229,7 @@ type EmuGamepad = {
 type diskImage = {
   file: string
   url: string
+  title: string
 };
 
 type GamePadActuatorEffect = {
@@ -301,4 +302,13 @@ type StepCallbackFunction = () => boolean
 type DisassemblyProps = {
   update: number,
   refresh: () => void,
+}
+
+type DiskCollectionItem = {
+  title: string,
+  lastUpdated?: Date,
+  imageUrl: string,
+  diskUrl?: string,
+  detailsUrl?: string,
+  diskImage?: diskImage
 }
