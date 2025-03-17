@@ -87,6 +87,7 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
     return <span style={{display: "inline-flex", userSelect: "none"}}>
       <input type="checkbox"
         className="debug-checkbox"
+        name={props.name}
         style={{margin: 0, marginRight: "2px"}}
         checked={props.checked}
         disabled={runMode !== RUN_MODE.PAUSED}

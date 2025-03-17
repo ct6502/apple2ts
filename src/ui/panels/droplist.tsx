@@ -36,6 +36,7 @@ export const Droplist = (props: DroplistProps) => {
   const spanselect = <span>
     <select value={props.value}
       ref={selectRef}
+      name={props.name ? props.name : "droplist"}
       className={"droplist-edit" + (props.monospace ? " use-monospace" : "")}
       style={{ height: "24px" }}
       disabled={props.disabled}

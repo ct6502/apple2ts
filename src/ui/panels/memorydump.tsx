@@ -290,6 +290,7 @@ const MemoryDump = () => {
           pointerEvents: (ready ? "auto" : "none"), opacity: (ready ? 1 : 0.5)
         }}>
         <input className="hex-field"
+          name="memoryAddr"
           type="text"
           placeholder="FFFF"
           value={address}
@@ -327,6 +328,7 @@ const MemoryDump = () => {
           pointerEvents: (ready ? "auto" : "none"), opacity: (ready ? 1 : 0.5)
         }}>
         <input className="hex-field"
+          name="searchHex"
           style={{ width: "8em" }}
           type="text"
           placeholder="Search Hex"
@@ -334,6 +336,7 @@ const MemoryDump = () => {
           onChange={handleSearchHex}
         />
         <input className="hex-field"
+          name="searchAscii"
           style={{ width: "8em" }}
           type="text"
           placeholder="Search ASCII"

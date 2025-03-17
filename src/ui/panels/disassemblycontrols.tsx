@@ -79,6 +79,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   return (
     <span className="flex-row" style={{ marginBottom: "5px" }}>
       <input className="hex-field"
+        name="disassembleAddr"
         type="text"
         placeholder="FFFF"
         value={address}
@@ -143,6 +144,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         </div>
       </button>
       <input
+        name="fileInput"
         type="file"
         accept={isTouchDevice ? "" : ".sym"}
         ref={hiddenFileOpen}

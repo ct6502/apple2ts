@@ -297,6 +297,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
             <div className="iad-search-panel">
               <input
                 className="iad-search-box"
+                name="search"
                 type="text"
                 placeholder="Type the name of a software title or click one of the categories above"
                 autoCorrect="off"
@@ -306,7 +307,11 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 style={{ cursor: cursorBusy ? "wait" : "text" }}
                 onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
-              <input className="iad-search-button" type="button" value="GO" onClick={handleSearchButtonClick} />
+              <input className="iad-search-button"
+                name="searchButton"
+                type="button"
+                value="GO"
+                onClick={handleSearchButtonClick} />
             </div>
           </div>
           {results.length > 0 &&

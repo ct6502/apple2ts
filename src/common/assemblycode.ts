@@ -1,6 +1,7 @@
 export const code = `
         ORG   $300
-        LDX   #$60
+        LDX   #$03
+        JMP   ($0300,X)
         CMP   $C089,X  ; turn on the motor
         LDA   $C08E,X  ; enable read
 READ1   LDA   $C08C,X  ; read a byte

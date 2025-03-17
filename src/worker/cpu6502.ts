@@ -1,10 +1,11 @@
-import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
+import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
 import { MEMORY_BANKS } from "../common/memorybanks"
+import { getInstructionString } from "../common/util_disassemble"
 
 // let prevMemory = Buffer.from(mainMem)
 // let DEBUG_ADDRESS = -1 // 0x9631
@@ -257,6 +258,15 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
   return true
 }
 
+let doInstructionTrail = false
+let instrTrailMax = 20000
+let instrTrailCount = 0
+export const setInstructionTrail = (enable: boolean, max = 0) => {
+  doInstructionTrail = enable
+  if (max > 0) instrTrailMax = max
+  instrTrailCount = 0
+}
+
 export const processInstruction = () => {
   let cycles = 0
   const PC1 = s6502.PC
@@ -276,19 +286,25 @@ export const processInstruction = () => {
   if (fn && !SWITCHES.INTCXROM.isSet) {
     fn()
   }
+
+  // *** EXECUTE A SINGLE INSTRUCTION ***
   cycles = code.execute(vLo, vHi)
-  // Do not output during the Apple II's WAIT subroutine
-  // if (doDebug < 1000 && (PC1 < 0xFCA8 || PC1 > 0xFCB3) && PC1 < 0xFF47) {
-  //   doDebug++
-  //   if (PC1 === 0xFFFFF) {
-  //     outputInstructionTrail()
-  //   }
-  //   const ins = getInstrString(code, vLo, vHi, PC1) + '            '
-  //   const out = `${s6502.cycleCount}  ${ins.slice(0, 22)}  ${getProcessorStatus()}`
+
+  if (doInstructionTrail && instrTrailCount < instrTrailMax) {
+    // Do not output during the Apple II's WAIT subroutine
+    if ((PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
+      const index = ("000000" + instrTrailCount.toString()).slice(-7)
+      const ins = getInstructionString(PC1, code, vLo, vHi) + "          "
+      const count = ("          " + s6502.cycleCount.toString()).slice(-10)
+      const out = `${index} ${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}`
+      if (instrTrailCount === 0) console.clear()
+      console.log(out)
+      instrTrailCount++
   //   instrTrail[posTrail] = out
   //   posTrail = (posTrail + 1) % instrTrail.length
-  //   console.log(out)
-  // }
+    }
+  }
+
   incrementPC(code.bytes)
   setCycleCount(s6502.cycleCount + cycles)
   processCycleCountCallbacks()

@@ -85,6 +85,7 @@ const FileInput = (props: DisplayProps) => {
     <>
       <input
         type="file"
+        name="fileInput"
         accept={isTouchDevice ? "" : FILE_SUFFIXES}
         ref={hiddenFileOpen}
         onChange={handleFileSelected}
