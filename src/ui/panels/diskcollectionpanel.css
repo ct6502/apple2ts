@@ -22,8 +22,10 @@
   display: flex;
   position: relative;
   height: auto;
-  margin-left: 4px;
-  margin-right: 4px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  margin-left: 8px;
+  margin-right: 8px;
 }
 
 .dcp-item-title-box {
@@ -102,6 +104,29 @@
 }
 
 .dcp-item-help-icon-bg {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  left: 18%;
+  bottom: 4px;
+  background-color: white;
+  z-index: 0;
+}
+
+.dcp-item-new {
+  position: absolute;
+  right: 4px;
+  bottom: 7px;
+}
+
+.dcp-item-new-icon {
+  position: relative;
+  top: 10px;
+  color: black;
+  z-index: 1;
+}
+
+.dcp-item-new-icon-bg {
   position: relative;
   width: 12px;
   height: 12px;
