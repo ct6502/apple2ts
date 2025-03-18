@@ -7,6 +7,7 @@
   margin: 0;
   padding: 0;
   width: auto;
+  width: auto;
   height: auto;
   max-width: min(70vw, 600px);
   max-height: 75vh;
