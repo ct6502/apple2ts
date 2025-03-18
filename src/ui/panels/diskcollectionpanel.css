@@ -8,7 +8,7 @@
   padding: 0px;
   width: 100%;
   height: auto;
-  max-height: 65vh;
+  max-height: 68vh;
   overflow-y: auto;
   padding-top: 6px;
   padding-bottom: 0px;
@@ -32,7 +32,7 @@
   position: absolute;
   width: 50%;
   height: 4.5cqh;
-  top: 3%;
+  top: 4%;
   right: 6%;
   font-size: 0.75em;
   font-weight: bold;
