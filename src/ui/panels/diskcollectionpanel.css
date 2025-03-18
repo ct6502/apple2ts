@@ -8,7 +8,7 @@
   padding: 0px;
   width: 100%;
   height: auto;
-  max-height: 68vh;
+  max-height: 66vh;
   overflow-y: auto;
   padding-top: 6px;
   padding-bottom: 0px;
@@ -151,8 +151,8 @@
   }
 }
 
-@media (min-height: 800px) {
+@media (min-height: 900px) {
   .disk-collection-panel {
-    max-height: 76vh;
+    max-height: 75vh;
   }
 }
