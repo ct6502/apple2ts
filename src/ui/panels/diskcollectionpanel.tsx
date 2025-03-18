@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faArchive } from "@fortawesome/free-solid-svg-icons"
+import { faArchive, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 // $TODO: Read this from a hosted JSON file
 const newReleases: DiskCollectionItem[] = [
@@ -12,26 +13,32 @@ const newReleases: DiskCollectionItem[] = [
     title: "Glider for Apple II",
     lastUpdated: new Date("3/16/2025"),
     imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png",
-    diskUrl: "https://colino.net/tmp/glider-en-beta-202503162.po"
+    diskUrl: "https://colino.net/tmp/glider-en-beta-202503162.po",
+    detailsUrl: "https://www.colino.net/wordpress/glider-for-apple-ii/"
   },
   {
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
     imageUrl: "https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png",
-    diskUrl: "https://archive.org/download/MillionPerfectTiles/Million.Perfect.Tiles.v1.1.po"
+    diskUrl: "https://archive.org/download/MillionPerfectTiles/Million.Perfect.Tiles.v1.1.po",
+    detailsUrl: "https://archive.org/details/MillionPerfectTiles"
   },
-  {
-    title: "Encounter Adventure",
-    lastUpdated: new Date("11/11/2024"),
-    imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
-    diskUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk"
-  },
-  {
-    title: "Undead Demo",
-    lastUpdated: new Date("9/10/2024"),
-    imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
-    diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip"
-  }
+  // $TODO: Figure out why the DSK fails to load
+  // {
+  //   title: "Encounter Adventure",
+  //   lastUpdated: new Date("11/11/2024"),
+  //   imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
+  //   diskUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk",
+  //   detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/"
+  // }
+  // $TODO: Add support for zipped disk images
+  // {
+  //   title: "Undead Demo",
+  //   lastUpdated: new Date("9/10/2024"),
+  //   imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
+  //   diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip",
+  //   detailsUrl: "https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central"
+  // }
 ]
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -69,6 +76,13 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       diskImage: diskImage
     })
   })
+
+  const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
+    const diskCollectionItem = diskCollectionItems[itemIndex]
+
+    event.stopPropagation();
+    window.open(diskCollectionItem.detailsUrl, "_blank"); return false;
+  }
 
   // Load new releases
   newReleases.forEach((diskImage) => {
@@ -109,6 +123,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
+            {diskCollectionItem.detailsUrl && <div className="dcp-item-help"
+              title={`Click to show details for "${diskCollectionItem.title}"`}
+              onClick={handleHelpClick(index)}>
+              <FontAwesomeIcon icon={faQuestionCircle} size="lg" className="dcp-item-help-icon" />
+              <div className="dcp-item-help-icon-bg">&nbsp;</div>
+            </div>}
           </div>
         ))}
       </div>

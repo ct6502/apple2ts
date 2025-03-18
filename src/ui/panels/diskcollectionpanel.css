@@ -87,6 +87,30 @@
   border: 2px solid white;
 }
 
+.dcp-item-help {
+  position: absolute;
+  cursor: help;
+  left: 4px;
+  bottom: 7px;
+}
+
+.dcp-item-help-icon {
+  position: relative;
+  top: 10px;
+  color: black;
+  z-index: 1;
+}
+
+.dcp-item-help-icon-bg {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  left: 18%;
+  bottom: 4px;
+  background-color: white;
+  z-index: 0;
+}
+
 @media (min-width: 1290px) {
   .disk-collection-panel {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
