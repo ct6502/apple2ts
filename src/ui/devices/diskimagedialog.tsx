@@ -23,7 +23,6 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
         style={{ left: "5%", top: "2%" }}>
         <div style={{
           display: "inline",
-          gap: "10px",
           width: width,
           overflowX: "hidden",
           overflowY: "auto",

@@ -1,13 +1,16 @@
 import { useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faArchive, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
+import { faArchive, faExclamationCircle, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
-// $TODO: Read this from a hosted JSON file
+// $TODO: Read this value from local storage
+const collectionLastChecked = new Date("1/1/2024")
+
+// $TODO: Read this disk collection data from a hosted JSON file
 const newReleases: DiskCollectionItem[] = [
   {
     title: "Glider for Apple II",
@@ -41,6 +44,7 @@ const newReleases: DiskCollectionItem[] = [
   // }
 ]
 
+const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
   month: 'numeric',
@@ -49,8 +53,8 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
   if (a.lastUpdated && b.lastUpdated) {
-    const aTime = a.lastUpdated.getTime()
-    const bTime = b.lastUpdated.getTime()
+    const aTime = a.lastUpdated
+    const bTime = b.lastUpdated
     if (aTime > bTime) return -1;
     if (aTime < bTime) return 1;
   }
@@ -70,7 +74,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   diskImages.forEach((diskImage) => {
     diskCollectionItems.push({
       title: diskImage.title,
-      lastUpdated: new Date(0),
+      lastUpdated: minDate,
       imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
       detailsUrl: diskImage.url,
       diskImage: diskImage
@@ -118,17 +122,23 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             <div className="dcp-item-title-box">
               <div className="dcp-item-title">{diskCollectionItem.title}</div>
             </div>
-            {diskCollectionItem.lastUpdated.getTime() > 0 && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
+            {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
             <div className="dcp-item-image-box">
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
-            {diskCollectionItem.detailsUrl && <div className="dcp-item-help"
-              title={`Click to show details for "${diskCollectionItem.title}"`}
-              onClick={handleHelpClick(index)}>
-              <FontAwesomeIcon icon={faQuestionCircle} size="lg" className="dcp-item-help-icon" />
-              <div className="dcp-item-help-icon-bg">&nbsp;</div>
-            </div>}
+            {diskCollectionItem.detailsUrl &&
+              <div className="dcp-item-help"
+                title={`Click to show details for "${diskCollectionItem.title}"`}
+                onClick={handleHelpClick(index)}>
+                <FontAwesomeIcon icon={faQuestionCircle} size="lg" className="dcp-item-help-icon" />
+                <div className="dcp-item-help-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.lastUpdated > collectionLastChecked &&
+              <div className="dcp-item-new" title="Disk is new to the collection">
+                <FontAwesomeIcon icon={faExclamationCircle} size="lg" className="dcp-item-new-icon" />
+                <div className="dcp-item-new-icon-bg">&nbsp;</div>
+              </div>}
           </div>
         ))}
       </div>
