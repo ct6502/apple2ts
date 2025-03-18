@@ -26,6 +26,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
         <DiskImageDialog
           onSelect={handleSelect}
           onClose={() => setOpen(false)}
+          displayProps={props}
         />
       }
     </div>

@@ -21,14 +21,14 @@ const DiskInterface = (props: DisplayProps) => {
       position="bottom-left">
       <div className={`${isMinimalTheme ? "flex-column" : "flex-row"} wrap`}>
         <span className="flex-row wrap">
-          <DiskImageChooser {...props} />
+          {!isMinimalTheme && <DiskImageChooser {...props} />}
           <DiskDrive key={0} index={0} renderCount={props.renderCount}
             setShowFileOpenDialog={props.setShowFileOpenDialog} />
           <DiskDrive key={1} index={1} renderCount={props.renderCount}
             setShowFileOpenDialog={props.setShowFileOpenDialog} />
+          {isMinimalTheme && <ImageWriter />}
         </span>
         <span className="flex-row wrap">
-          {isMinimalTheme && <ImageWriter />}
           <DiskDrive key={2} index={2} renderCount={props.renderCount}
             setShowFileOpenDialog={props.setShowFileOpenDialog} />
           <DiskDrive key={3} index={3} renderCount={props.renderCount}
