@@ -111,6 +111,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   return (
     <Flyout
       icon={faArchive}
+      buttonId="tour-disk-images"
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
