@@ -40,6 +40,21 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   day: 'numeric'
 });
 
+const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
+  if (a.lastUpdated && b.lastUpdated) {
+    const aTime = a.lastUpdated.getTime()
+    const bTime = b.lastUpdated.getTime()
+    if (aTime > bTime) return -1;
+    if (aTime < bTime) return 1;
+  }
+
+  if (a.title && b.title) {
+    return a.title.localeCompare(b.title)
+  }
+
+  return 0
+}
+
 const DiskCollectionPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const diskCollectionItems: DiskCollectionItem[] = []
@@ -48,6 +63,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   diskImages.forEach((diskImage) => {
     diskCollectionItems.push({
       title: diskImage.title,
+      lastUpdated: new Date(0),
       imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
       detailsUrl: diskImage.url,
       diskImage: diskImage
@@ -83,14 +99,14 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       width="max( 75vw, 200px )"
       position="top-center">
       <div className="disk-collection-panel">
-        {diskCollectionItems.map((diskCollectionItem, index) => (
-          <div key={`dcp-item-${index}`} className="dcp-item" onClick={handleItemClick(index)}>
+        {diskCollectionItems.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
+          <div key={`dcp-item-${index}`} className="dcp-item" title={`Click to insert disk "${diskCollectionItem.title}"`} onClick={handleItemClick(index)}>
             <div className="dcp-item-title-box">
               <div className="dcp-item-title">{diskCollectionItem.title}</div>
             </div>
-            {diskCollectionItem.lastUpdated && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
+            {diskCollectionItem.lastUpdated.getTime() > 0 && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
             <div className="dcp-item-image-box">
-              <img className="dcp-item-image" src={diskCollectionItem.imageUrl} title={diskCollectionItem.title} />
+              <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
           </div>

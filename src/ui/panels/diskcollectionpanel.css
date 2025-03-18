@@ -54,7 +54,7 @@
   top: 20%;
   left: 7%;
   text-align: center;
-  font-size: 0.33em;
+  font-size: 0.25em;
   color: black;
 }
 
@@ -70,7 +70,8 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  top: 37%;
+  left: -0.25%;
+  top: 36%;
   height: auto;
   padding: 0px;
   margin: 0px;
@@ -82,7 +83,8 @@
 .dcp-item-image {
   width: 80%;
   height: 10cqh;
-  border: 1px solid black;
+  border-radius: 8px;
+  border: 2px solid white;
 }
 
 @media (min-width: 1290px) {
@@ -96,7 +98,7 @@
   }
 
   .dcp-item-updated {
-    font-size: 0.75em;
+    font-size: 0.5em;
   }
 }
 
