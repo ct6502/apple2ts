@@ -1,7 +1,7 @@
 .disk-collection-panel {
   display: grid;
   grid-template-rows: repeat(1fr);
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   row-gap: 0px;
   column-gap: 0px;
   margin: 0px;
@@ -26,29 +26,35 @@
   margin-right: 4px;
 }
 
-.dcp-item-title {
+.dcp-item-title-box {
   position: absolute;
   width: 50%;
-  top: 6%;
+  height: 4.5cqh;
+  top: 4%;
   right: 6%;
-  text-align: center;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 9pt;
+  font-size: 0.75em;
   font-weight: bold;
   line-height: 0.85;
   color: white;
   pointer-events: none;
 }
 
-.dcp-item-release {
-  position: absolute;
-  width: 35%;
-  top: 20%;
-  left: 6%;
+.dcp-item-title {
+  display: grid;
+  align-items: center;
+  width: 100%;
+  height: 100%;
   text-align: center;
-  font-size: 7pt;
-  font-weight: bold;
-  line-height: 1;
+  vertical-align: middle;
+}
+
+.dcp-item-updated {
+  position: absolute;
+  width: 36%;
+  top: 20%;
+  left: 7%;
+  text-align: center;
+  font-size: 0.33em;
   color: black;
 }
 
@@ -61,23 +67,41 @@
 }
 
 .dcp-item-image-box {
-  display: inline-block;
   position: absolute;
   width: 100%;
   height: 100%;
-  top: 34%;
+  top: 37%;
   height: auto;
   padding: 0px;
   margin: 0px;
   cursor: pointer;
   text-align: center;
   vertical-align: middle;
-  filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.5));
 }
 
 .dcp-item-image {
-  width: 75%;
-  height: auto;
-  /* border-radius: 16px; */
+  width: 80%;
+  height: 10cqh;
   border: 1px solid black;
+}
+
+@media (min-width: 1290px) {
+  .disk-collection-panel {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  .dcp-item-title {
+    font-size: 1.25em;
+    line-height: 1.25;
+  }
+
+  .dcp-item-updated {
+    font-size: 0.75em;
+  }
+}
+
+@media (min-height: 1290px) {
+  .disk-collection-panel {
+    max-height: 76vh;
+  }
 }
