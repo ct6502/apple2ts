@@ -32,7 +32,7 @@
   position: absolute;
   width: 50%;
   height: 4.5cqh;
-  top: 4%;
+  top: 3%;
   right: 6%;
   font-size: 0.75em;
   font-weight: bold;
@@ -45,7 +45,7 @@
   display: grid;
   align-items: center;
   width: 100%;
-  height: 100%;
+  height: 3.5cqh;
   text-align: center;
   vertical-align: middle;
 }
@@ -70,21 +70,21 @@
 
 .dcp-item-image-box {
   position: absolute;
+  display: inline;
   width: 100%;
-  height: 100%;
-  left: -0.25%;
-  top: 36%;
   height: auto;
+  left: -0.25%;
+  top: 34%;
   padding: 0px;
   margin: 0px;
-  cursor: pointer;
   text-align: center;
-  vertical-align: middle;
+  cursor: pointer;
 }
 
 .dcp-item-image {
-  width: 80%;
-  height: 10cqh;
+  width: 75%;
+  height: auto;
+  bottom: 1%;
   border-radius: 8px;
   border: 2px solid white;
 }
@@ -138,7 +138,7 @@
 
 @media (min-width: 1290px) {
   .disk-collection-panel {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
   }
 
   .dcp-item-title {
@@ -151,7 +151,7 @@
   }
 }
 
-@media (min-height: 1290px) {
+@media (min-height: 800px) {
   .disk-collection-panel {
     max-height: 76vh;
   }
