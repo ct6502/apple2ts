@@ -1,24 +1,45 @@
 import { ROMmemoryStart, toHex } from "../common/utility"
 import { interruptRequest, nonMaskableInterrupt, processInstruction } from "./cpu6502"
 import { memory, updateAddressTables } from "./memory"
-import { reset6502, doBranch, s6502, setPC, setInterruptDisabled } from "./instructions"
+import { reset6502, doBranch, s6502, setPC, setInterruptDisabled, setCycleCount, incrementPC } from "./instructions"
 import { enableMockingboard } from "./devices/mockingboard"
 import { parseAssembly } from "./utility/assembler"
 
 test("doBranch", () => {
   setPC(0x2000)
-  doBranch(true, 0)
-  expect(s6502.PC).toEqual(0x2000)
-  doBranch(true, 1)
-  expect(s6502.PC).toEqual(0x2001)
-  doBranch(true, 127)
-  expect(s6502.PC).toEqual(0x2001 + 127)
-  doBranch(true, 255)
-  expect(s6502.PC).toEqual(0x2001 + 126)
-  doBranch(true, 128)
-  expect(s6502.PC).toEqual(0x1FFF)
-  doBranch(true, 1)
-  expect(s6502.PC).toEqual(0x2000)
+  expect(doBranch(false, 0)).toEqual(2)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2002)
+
+  setPC(0x2000)
+  expect(doBranch(true, 0)).toEqual(3)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2002)
+
+  setPC(0x2000)
+  expect(doBranch(true, 1)).toEqual(3)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2003)
+
+  setPC(0x2000)
+  expect(doBranch(true, 127)).toEqual(3)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2000 + 127 + 2)
+
+  setPC(0x2000)
+  expect(doBranch(true, 255)).toEqual(3)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2000 - 1 + 2)
+
+  setPC(0x2000)
+  expect(doBranch(true, 128)).toEqual(4)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2000 - 128 + 2)
+
+  setPC(0x10FD)
+  expect(doBranch(true, 1)).toEqual(4)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x1100)
 })
 
 /**
@@ -466,4 +487,26 @@ test("NMI with RTI",   () => {
   // This should interrupt right after our first instruction
   nonMaskableInterrupt()
   runAssemblyTest(nmi_rti.split("\n"), 0x34, 0)
+})
+
+test("CrossPageTest issue #134", () => {
+  const start = 0x10FB
+  reset6502()
+  const pcode = parseAssembly(start,
+    [ "     LDA #$00",  // 0x10FB
+      "     BEQ DONE",  // 0x10FD
+      "     RTS",       // 0x10FF
+      "DONE RTS"])      // 0x1100
+  updateAddressTables()
+  memory.set(pcode, start)
+  setPC(start)
+  expect(s6502.PC).toEqual(start)
+  setCycleCount(0)
+  const old_cycleCount = s6502.cycleCount
+  processInstruction()
+  expect(s6502.PC).toEqual(0x10FD)
+  expect(s6502.cycleCount - old_cycleCount).toEqual(2)
+  processInstruction()
+  expect(s6502.PC).toEqual(0x1100)
+  expect(s6502.cycleCount - old_cycleCount).toEqual(6)
 })

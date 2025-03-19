@@ -1,6 +1,6 @@
 import { processInstruction } from "./cpu6502"
 import { memory, updateAddressTables } from "./memory"
-import { reset6502, s6502, setPC } from "./instructions"
+import { reset6502, s6502, setCycleCount, setPC } from "./instructions"
 import fs from "fs"
 import https from "https"
 import path from "path"
@@ -50,6 +50,8 @@ const runKlaus6502Test = async () => {
   memory[0x9c7] = 0x0a
 
   setPC(start)
+  setCycleCount(0)
+
   let i = 0
   while (true) {
     const pc_state = s6502.PC
@@ -61,6 +63,8 @@ const runKlaus6502Test = async () => {
       break
     }
   }
+
+  // 96561029
 }
 
 test("Klaus 6502 testsuite", runKlaus6502Test, 20000)
