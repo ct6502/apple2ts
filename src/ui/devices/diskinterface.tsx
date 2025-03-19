@@ -2,7 +2,7 @@ import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
 import Flyout from "../flyout"
-import { faFloppyDisk } from "@fortawesome/free-solid-svg-icons"
+import { faHdd } from "@fortawesome/free-solid-svg-icons"
 import ImageWriter from "./imagewriter"
 import { useState } from "react"
 import { UI_THEME } from "../../common/utility"
@@ -18,8 +18,8 @@ const DiskInterface = (props: DisplayProps) => {
 
   return (
     <Flyout
-      icon={faFloppyDisk}
-      title="disk drives"
+      icon={faHdd}
+      title="disk drives and devices"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="bottom-left">

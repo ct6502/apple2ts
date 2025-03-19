@@ -1,7 +1,7 @@
 import { useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faArchive, faExclamationCircle, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
+import { faExclamationCircle, faFloppyDisk, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
@@ -110,7 +110,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   return (
     <Flyout
-      icon={faArchive}
+      icon={faFloppyDisk}
       buttonId="tour-disk-images"
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
