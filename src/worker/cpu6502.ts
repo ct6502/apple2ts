@@ -259,7 +259,7 @@ export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
 }
 
 let doInstructionTrail = false
-let instrTrailMax = 20000
+let instrTrailMax = 40000
 let instrTrailCount = 0
 export const setInstructionTrail = (enable: boolean, max = 0) => {
   doInstructionTrail = enable

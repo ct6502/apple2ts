@@ -41,7 +41,15 @@ const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
   return result
 }
 
-const rand = () => Math.floor(256 * Math.random())
+// Random number generator for bus noise on the cassette, speaker, and joystick
+// soft switches. On the Apple II, tests show that when graphics are on, the
+// random numbers tend to oscillate between 0 and 0xA0. When graphics are off,
+// the numbers range from 0 to 0xFF. However, issue #117
+// (https://github.com/ct6502/apple2ts/issues/117) involved a game that was
+// broken by the random numbers being too high. So we will limit the random
+// numbers to 0-0xB4 for now. This is still random enough for games like
+// Castle Wolfenstein (which rely on the cassette noise).
+const rand = () => Math.floor(0xB4 * Math.random())
 
 // let prevCount = 0
 
