@@ -34,6 +34,7 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
 
   useMemo(() => {
     setHelpTextCrc(newHelpTextCrc)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlyoutOpen])
 
   return (

@@ -161,20 +161,24 @@ const checkStatus = (value: number) => {
   setNegative(value >= 128)
 }
 
+const oneByteAdd = (value: number, offset: number) => (value + offset + 256) % 256
+const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
+const twoByteAdd = (vLo: number, vHi: number, offset: number) => (vHi*256 + vLo + offset + 65536) % 65536
+const pageBoundary = (addr1: number, addr2: number) => (((addr1 >> 8) !== (addr2 >> 8)) ? 1 : 0)
+
 // Return number of clock cycles taken
 export const doBranch = (takeBranch: boolean, offset: number) => {
   if (takeBranch) {
     const oldPC = s6502.PC
     incrementPC((offset > 127) ? (offset - 256) : offset)
-    return 3 + pageBoundary(oldPC, s6502.PC)
+    // If we cross a page boundary, add an extra cycle.
+    // Be sure to include the additional 2 bytes for the branch instruction.
+    // These 2 bytes are actually added to the program counter after
+    // the instruction is complete, but we still need to include them here.
+    return 3 + pageBoundary(oldPC, s6502.PC + 2)
   }
   return 2
 }
-
-const oneByteAdd = (value: number, offset: number) => (value + offset + 256) % 256
-const address = (vLo: number, vHi: number) => (vHi*256 + vLo)
-const twoByteAdd = (vLo: number, vHi: number, offset: number) => (vHi*256 + vLo + offset + 65536) % 65536
-const pageBoundary = (addr1: number, addr2: number) => (((addr1 >> 8) !== (addr2 >> 8)) ? 1 : 0)
 
 export const pcodes = new Array<PCodeInstr>(256)
 
