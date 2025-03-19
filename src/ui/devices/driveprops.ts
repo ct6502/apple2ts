@@ -1,8 +1,9 @@
-import { MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
+import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
 import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
+import * as fflate from 'fflate'
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -146,6 +147,9 @@ export const handleSetDiskFromURL = async (url: string,
   }
   // Download the file from the fragment URL
   try {
+    let name = ""
+    let buffer
+
     // Ask CT6502 for why we need to use this favicon header
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
@@ -154,15 +158,46 @@ export const handleSetDiskFromURL = async (url: string,
       console.error(`HTTP error: status ${response.status}`)
       return
     }
+
     const blob = await response.blob()
-    const buffer = await new Response(blob).arrayBuffer()
-    const urlObj = new URL(url)
-    let name = url
-    const hasSlash = urlObj.pathname.lastIndexOf("/")
-    if (hasSlash >= 0) {
-      name = urlObj.pathname.substring(hasSlash + 1)
+
+    if (url.toLowerCase().endsWith(".zip")) {
+      const unzipper = new fflate.Unzip();
+      unzipper.register(fflate.UnzipInflate);
+
+      unzipper.onfile = file => {
+        const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLocaleLowerCase()
+        if (FILE_SUFFIXES.includes(fileExtension)) {
+          file.ondata = (err, data, final) => {
+            // Ignore index files, etc.
+            if (data.length > 1024) {
+              name = file.name
+              buffer = data
+              return
+            }
+          }
+          file.start()
+          return
+        }
+      }
+      const zipBuffer = await new Response(blob).arrayBuffer()
+      unzipper.push(new Uint8Array(zipBuffer), true)
+    } else {
+      const urlObj = new URL(url)
+      name = url
+      const hasSlash = urlObj.pathname.lastIndexOf("/")
+      if (hasSlash >= 0) {
+        name = urlObj.pathname.substring(hasSlash + 1)
+      }
+
+      buffer = await new Response(blob).arrayBuffer()
     }
-    handleSetDiskOrFileFromBuffer(index, buffer, name, null, null)
+
+    if (buffer) {
+      handleSetDiskOrFileFromBuffer(index, buffer, name, null, null)
+    } else {
+      // $TODO: Add error handling
+    }
   } catch {
     console.error(`Error fetching URL: ${url}`)
   }
