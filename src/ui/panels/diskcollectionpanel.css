@@ -70,30 +70,26 @@
 
 .dcp-item-image-box {
   position: absolute;
-  display: inline;
-  width: 100%;
-  height: auto;
-  left: -0.25%;
-  top: 34%;
-  padding: 0px;
-  margin: 0px;
-  text-align: center;
+  width: 75%;
+  height: 50%;
+  left: 11%;
+  top: 37%;
   cursor: pointer;
 }
 
 .dcp-item-image {
-  width: 75%;
-  height: auto;
-  bottom: 1%;
+  object-fit: fill;
+  width: 100%;
+  height: 100%;
   border-radius: 8px;
-  border: 2px solid white;
+  border: 2px solid transparent;
 }
 
 .dcp-item-help {
   position: absolute;
   cursor: help;
   left: 4px;
-  bottom: 7px;
+  bottom: 4px;
 }
 
 .dcp-item-help-icon {
@@ -116,7 +112,7 @@
 .dcp-item-new {
   position: absolute;
   right: 4px;
-  bottom: 7px;
+  bottom: 4px;
 }
 
 .dcp-item-new-icon {
