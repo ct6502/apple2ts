@@ -172,10 +172,11 @@ export const doBranch = (takeBranch: boolean, offset: number) => {
     const oldPC = s6502.PC
     incrementPC((offset > 127) ? (offset - 256) : offset)
     // If we cross a page boundary, add an extra cycle.
-    // Be sure to include the additional 2 bytes for the branch instruction.
-    // These 2 bytes are actually added to the program counter after
-    // the instruction is complete, but we still need to include them here.
-    return 3 + pageBoundary(oldPC, s6502.PC + 2)
+    // The extra cycle is (possibly) needed after the branch is taken,
+    // so we need to add the 2 bytes for the branch instruction to both the
+    // old PC and the new PC before checking for a page boundary crossing.
+    // See https://github.com/ct6502/apple2ts/issues/134
+    return 3 + pageBoundary(oldPC + 2, s6502.PC + 2)
   }
   return 2
 }

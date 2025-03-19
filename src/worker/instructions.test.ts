@@ -36,10 +36,15 @@ test("doBranch", () => {
   incrementPC(2)
   expect(s6502.PC).toEqual(0x2000 - 128 + 2)
 
-  setPC(0x10FD)
+  setPC(0x1FFD)
   expect(doBranch(true, 1)).toEqual(4)
   incrementPC(2)
-  expect(s6502.PC).toEqual(0x1100)
+  expect(s6502.PC).toEqual(0x2000)
+
+  setPC(0x1FFE)
+  expect(doBranch(true, 1)).toEqual(3)
+  incrementPC(2)
+  expect(s6502.PC).toEqual(0x2001)
 })
 
 /**
@@ -489,8 +494,7 @@ test("NMI with RTI",   () => {
   runAssemblyTest(nmi_rti.split("\n"), 0x34, 0)
 })
 
-test("CrossPageTest issue #134", () => {
-  const start = 0x10FB
+const crossPageTest = (start: number, cyclesExpect: number) => {
   reset6502()
   const pcode = parseAssembly(start,
     [ "     LDA #$00",  // 0x10FB
@@ -504,9 +508,19 @@ test("CrossPageTest issue #134", () => {
   setCycleCount(0)
   const old_cycleCount = s6502.cycleCount
   processInstruction()
-  expect(s6502.PC).toEqual(0x10FD)
+  expect(s6502.PC).toEqual(start + 2)
   expect(s6502.cycleCount - old_cycleCount).toEqual(2)
   processInstruction()
-  expect(s6502.PC).toEqual(0x1100)
-  expect(s6502.cycleCount - old_cycleCount).toEqual(6)
+  expect(s6502.PC).toEqual(start + 5)
+  expect(s6502.cycleCount - old_cycleCount).toEqual(cyclesExpect)
+}
+
+test("CrossPageTest issue #134", () => {
+  // Crosses page boundary
+  crossPageTest(0x10FB, 6)
+  // Does not cross page boundary because the branch instruction is right
+  // at the end of the page.
+  crossPageTest(0x10FC, 5)
+  crossPageTest(0x10FD, 5)
+  crossPageTest(0x10FE, 5)
 })

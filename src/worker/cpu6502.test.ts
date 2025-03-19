@@ -23,6 +23,8 @@ const downloadFile = (url: string, dest: string): Promise<void> => {
   })
 }
 
+// See https://github.com/ct6502/apple2ts/issues/43
+// for the original version of this test.
 const runKlaus6502Test = async () => {
   const start = 0x400
   reset6502()
@@ -59,12 +61,15 @@ const runKlaus6502Test = async () => {
     i++
     if (pc_state == s6502.PC) {
       expect(memory[0x200]).toEqual(0xF0)
-      console.log(`i: ${i} cycles: ${s6502.cycleCount} PC: ${pc_state.toString(16)}`)
       break
     }
   }
 
-  // 96561029
+  // See https://github.com/ct6502/apple2ts/issues/134
+  // for details on these values
+  expect(s6502.PC).toEqual(0x3469)
+  expect(i).toEqual(30646057)
+  expect(s6502.cycleCount).toEqual(96561022)
 }
 
 test("Klaus 6502 testsuite", runKlaus6502Test, 20000)
