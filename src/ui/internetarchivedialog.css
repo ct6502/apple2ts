@@ -152,9 +152,23 @@
   font-size: 12pt;
 }
 
+.iad-result-bookmark {
+  position: relative;
+  height: 1.75em;
+  top: 21px;
+  right: 4px;
+  text-align: right;
+  cursor: pointer;
+}
+
+.iad-result-bookmark-icon {
+  height: 100%;
+  color: yellow;
+}
+
 .iad-result-tile {
   display: grid;
-  grid-template-rows: max(128px) 24pt 14pt;
+  grid-template-rows: 0px max(128px) 24pt 14pt;
   background-color: #ffffff;
   border: 1px #dddddd solid;
   border-radius: 4px;
