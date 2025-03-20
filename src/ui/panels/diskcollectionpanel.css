@@ -50,6 +50,7 @@
   vertical-align: middle;
   overflow: hidden;
   color: white;
+  cursor: default;
 }
 
 .dcp-item-title-link {
@@ -138,7 +139,7 @@
 .dcp-item-archive {
   position: absolute;
   right: 4%;
-  bottom: 3%;
+  bottom: 4%;
 }
 
 .dcp-item-archive-icon {
