@@ -310,5 +310,6 @@ type DiskCollectionItem = {
   imageUrl: string,
   diskUrl?: string,
   detailsUrl?: string,
-  diskImage?: diskImage
+  diskImage?: diskImage,
+  bookmarkId?: string
 }

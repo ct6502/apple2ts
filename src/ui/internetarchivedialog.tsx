@@ -148,28 +148,32 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
   }
 
   const handleStatsClick = () => {
-    window.open(`https://archive.org/details/${props.identifier}`, "_blank")
+    window.open(detailsUrl.toString(), "_blank")
     return false
   }
 
-  const handleBookmarkAddClicked = (title: string, screenshotUrl: URL) => async () => {
+  const handleBookmarkAddClicked = async () => {
     const newDiskImageUrl = await getDiskImageUrl()
 
     if (newDiskImageUrl) {
-      props.diskBookmarks.add(bookmarkId, {
-        title: title,
+      props.diskBookmarks.add({
+        id: bookmarkId,
+        title: props.title,
         screenshotUrl: screenshotUrl,
-        diskUrl: newDiskImageUrl
+        diskUrl: newDiskImageUrl,
+        detailsUrl: detailsUrl,
+        lastUpdated: new Date()
       })
       setBookmarked(true)
     }
   }
 
-  const handleBookmarkRemoveClicked = (bookmarkId: string) => () => {
+  const handleBookmarkRemoveClicked = () => {
     props.diskBookmarks.remove(bookmarkId)
     setBookmarked(false)
   }
 
+  const detailsUrl = new URL(`https://archive.org/details/${props.identifier}`)
   const screenshotUrl = new URL(`https://archive.org/services/img/${props.identifier}`)
   const bookmarkId = `ia-${props.identifier}`
 
@@ -183,7 +187,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       <div className="iad-result-bookmark">
         <FontAwesomeIcon
           className="iad-result-bookmark-icon"
-          onClick={bookmarked ? handleBookmarkRemoveClicked(bookmarkId) : handleBookmarkAddClicked(props.title, screenshotUrl)}
+          onClick={bookmarked ? handleBookmarkRemoveClicked : handleBookmarkAddClicked}
           title={`Click to ${bookmarked ? "remove" : "add"} disk bookmark`}
           icon={bookmarked ? faStarSolid : faStarOutline} />
       </div>

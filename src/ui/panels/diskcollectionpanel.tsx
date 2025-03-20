@@ -1,14 +1,12 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faExclamationCircle, faFloppyDisk, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
+import { faArchive, faClock, faFloppyDisk, faQuestionCircle, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-
-// $TODO: Read this value from local storage
-const collectionLastChecked = new Date("1/1/2024")
+import { DiskBookmarks } from "../../common/diskbookmarks"
 
 // $TODO: Read this disk collection data from a hosted JSON file
 const newReleases: DiskCollectionItem[] = [
@@ -68,33 +66,17 @@ const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): num
 
 const DiskCollectionPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-  const diskCollectionItems: DiskCollectionItem[] = []
-
-  // Load built-in disk images
-  diskImages.forEach((diskImage) => {
-    diskCollectionItems.push({
-      title: diskImage.title,
-      lastUpdated: minDate,
-      imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
-      detailsUrl: diskImage.url,
-      diskImage: diskImage
-    })
-  })
+  const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
+  const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
-    const diskCollectionItem = diskCollectionItems[itemIndex]
-
+    const diskCollectionItem = diskCollection[itemIndex]
     event.stopPropagation();
     window.open(diskCollectionItem.detailsUrl, "_blank"); return false;
   }
 
-  // Load new releases
-  newReleases.forEach((diskImage) => {
-    diskCollectionItems.push(diskImage)
-  })
-
   const handleItemClick = (itemIndex: number) => () => {
-    const diskCollectionItem = diskCollectionItems[itemIndex]
+    const diskCollectionItem = diskCollection[itemIndex]
 
     if (diskCollectionItem.diskImage) {
       handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
@@ -108,6 +90,57 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     setIsFlyoutOpen(false)
   }
 
+  const handleBookmarkClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
+    const diskCollectionItem = diskCollection[itemIndex]
+
+    if (diskCollectionItem.bookmarkId) {
+      diskBookmarks.remove(diskCollectionItem.bookmarkId)
+      setDiskBookmarks(new DiskBookmarks())
+      // diskCollection.splice(itemIndex, 1)
+      // setDiskCollection(diskCollection)
+    }
+
+    event.stopPropagation();
+  }
+
+  useEffect(() => {
+    setDiskBookmarks(new DiskBookmarks())
+  }, [isFlyoutOpen])
+
+  useEffect(() => {
+    const newDiskCollection: DiskCollectionItem[] = []
+
+    // Load built-in disk images
+    diskImages.forEach((diskImage) => {
+      newDiskCollection.push({
+        title: diskImage.title,
+        lastUpdated: minDate,
+        imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
+        detailsUrl: diskImage.url,
+        diskImage: diskImage
+      })
+    })
+
+    // Load favorites
+    for (const diskBookmark of diskBookmarks) {
+      newDiskCollection.push({
+        title: diskBookmark.title,
+        lastUpdated: new Date(diskBookmark.lastUpdated),
+        diskUrl: diskBookmark.diskUrl.toString(),
+        imageUrl: diskBookmark.screenshotUrl.toString(),
+        detailsUrl: diskBookmark.detailsUrl.toString(),
+        bookmarkId: diskBookmark.id
+      })
+    }
+
+    // Load new releases
+    newReleases.forEach((diskImage) => {
+      newDiskCollection.push(diskImage)
+    })
+
+    setDiskCollection(newDiskCollection)
+  }, [diskBookmarks])
+
   return (
     <Flyout
       icon={faFloppyDisk}
@@ -118,7 +151,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       width="max( 75vw, 200px )"
       position="top-center">
       <div className="disk-collection-panel">
-        {diskCollectionItems.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
+        {diskCollection.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
           <div key={`dcp-item-${index}`} className="dcp-item" title={`Click to insert disk "${diskCollectionItem.title}"`} onClick={handleItemClick(index)}>
             <div className="dcp-item-title-box">
               <div className="dcp-item-title">{diskCollectionItem.title}</div>
@@ -135,15 +168,25 @@ const DiskCollectionPanel = (props: DisplayProps) => {
                 <FontAwesomeIcon icon={faQuestionCircle} size="lg" className="dcp-item-help-icon" />
                 <div className="dcp-item-help-icon-bg">&nbsp;</div>
               </div>}
-            {diskCollectionItem.lastUpdated > collectionLastChecked &&
-              <div className="dcp-item-new" title="Disk is new to the collection">
-                <FontAwesomeIcon icon={faExclamationCircle} size="lg" className="dcp-item-new-icon" />
+            {!diskCollectionItem.bookmarkId && !diskCollectionItem.diskImage &&
+              <div className="dcp-item-new" title="Disk is a new release">
+                <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
                 <div className="dcp-item-new-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.bookmarkId &&
+              <div
+                className="dcp-item-bookmark" title="Click to remove bookmark" onClick={handleBookmarkClick(index)}>
+                <FontAwesomeIcon icon={faStar} size="lg" className="dcp-item-bookmark-icon" />
+              </div>}
+            {diskCollectionItem.diskImage &&
+              <div className="dcp-item-archive" title="Disk is part of the Apple2TS archive">
+                <FontAwesomeIcon icon={faArchive} size="lg" className="dcp-item-archive-icon" onClick={(event) => event.stopPropagation()} />
+                <div className="dcp-item-new-archive-bg">&nbsp;</div>
               </div>}
           </div>
         ))}
       </div>
-    </Flyout>
+    </Flyout >
   )
 }
 

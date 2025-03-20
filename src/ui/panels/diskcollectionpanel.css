@@ -45,9 +45,11 @@
   display: grid;
   align-items: center;
   width: 100%;
+  font-size: 0.825em;
   height: 3.5cqh;
   text-align: center;
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .dcp-item-updated {
@@ -92,13 +94,13 @@
 .dcp-item-help {
   position: absolute;
   cursor: help;
-  left: 4px;
+  left: 2px;
   bottom: 7px;
 }
 
 .dcp-item-help-icon {
   position: relative;
-  top: 10px;
+  top: 14px;
   color: black;
   z-index: 1;
 }
@@ -107,22 +109,22 @@
   position: relative;
   width: 12px;
   height: 12px;
-  left: 18%;
-  bottom: 4px;
+  left: 3px;
+  bottom: 0px;
   background-color: white;
   z-index: 0;
 }
 
 .dcp-item-new {
   position: absolute;
-  right: 4px;
-  bottom: 7px;
+  right: 2px;
+  bottom: 4px;
 }
 
 .dcp-item-new-icon {
   position: relative;
-  top: 10px;
-  color: black;
+  top: 11px;
+  color: green;
   z-index: 1;
 }
 
@@ -136,13 +138,39 @@
   z-index: 0;
 }
 
+.dcp-item-bookmark {
+  position: absolute;
+  right: 2px;
+  bottom: 8px;
+  cursor: pointer;
+}
+
+.dcp-item-bookmark-icon {
+  position: relative;
+  color: yellow;
+  z-index: 1;
+}
+
+.dcp-item-archive {
+  position: absolute;
+  right: 2px;
+  bottom: 0px;
+}
+
+.dcp-item-archive-icon {
+  position: relative;
+  top: 13px;
+  color: gray;
+  z-index: 1;
+}
+
 @media (min-width: 1290px) {
   .disk-collection-panel {
     grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
   }
 
   .dcp-item-title {
-    font-size: 1.25em;
+    font-size: 1.125em;
     line-height: 1.25;
   }
 
@@ -153,6 +181,6 @@
 
 @media (min-height: 900px) {
   .disk-collection-panel {
-    max-height: 75vh;
+    max-height: 79vh;
   }
 }

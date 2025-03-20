@@ -1,9 +1,12 @@
 const storageKeyPrefix = "dbm-"
 
 export type DiskBookmark = {
+  id: string,
   title: string,
   screenshotUrl: URL,
-  diskUrl: URL
+  diskUrl: URL,
+  detailsUrl: URL,
+  lastUpdated: Date
 }
 
 export class DiskBookmarks {
@@ -32,31 +35,22 @@ export class DiskBookmarks {
   }
 
   public contains(id: string): boolean {
-    let found = false
-
-   Array.from(this.bookmarks.keys()).forEach(key => {
-      if (key == id) {
-        found = true
-        return
-      }
-    })
-
-    return found
+    return this.bookmarks.has(id)
   }
 
-  public add(id: string, bookmark: DiskBookmark) {
+  public add(bookmark: DiskBookmark) {
     try {
-      localStorage.setItem(storageKeyPrefix + id, JSON.stringify(bookmark))
-      this.bookmarks.set(id, bookmark)
+      localStorage.setItem(storageKeyPrefix + bookmark.id, JSON.stringify(bookmark))
+      this.bookmarks.set(bookmark.id, bookmark)
     } catch (error) {
       console.warn(error)
     }
   }
 
-  public remove(id: string) {
+  public remove(bookmarkId: string) {
     try {
-      this.bookmarks.delete(id)
-      localStorage.removeItem(storageKeyPrefix + id)
+      this.bookmarks.delete(bookmarkId)
+      localStorage.removeItem(storageKeyPrefix + bookmarkId)
     } catch (error) {
       console.warn(error)
     }
