@@ -1,4 +1,5 @@
-import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
+import { DiskBookmarks } from "../../common/diskbookmarks"
+import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, getDiskImageUrlFromIdentifier, internetArchiveUrlProtocol, isHardDriveImage, replaceSuffix } from "../../common/utility"
 import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
@@ -145,6 +146,30 @@ export const handleSetDiskFromURL = async (url: string,
     handleSetDiskFromFile(match, updateDisplay)
     return
   }
+
+  // Resolve Internet Archive URL, if necessary
+  if (url.startsWith(internetArchiveUrlProtocol)) {
+    const identifier = url.substring(internetArchiveUrlProtocol.length)
+    const resolvedUrl = await getDiskImageUrlFromIdentifier(identifier)
+
+    if (resolvedUrl) {
+      url = resolvedUrl.toString()
+
+      const diskBookmarks = new DiskBookmarks()
+      const bookmark = diskBookmarks.get(identifier)
+      if (bookmark) {
+        diskBookmarks.set({
+          id: bookmark.id,
+          title: bookmark.title,
+          screenshotUrl: bookmark.screenshotUrl,
+          diskUrl: resolvedUrl,
+          detailsUrl: bookmark.detailsUrl,
+          lastUpdated: bookmark.lastUpdated
+        })
+      }
+    }
+  }
+
   // Download the file from the fragment URL
   try {
     let name = ""

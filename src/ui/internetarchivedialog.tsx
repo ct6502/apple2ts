@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react"
 import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive"
 import "./internetarchivedialog.css"
 import { handleSetDiskFromURL } from "./devices/driveprops"
-import { iconData, iconKey, iconName } from "./img/iconfunctions"
 import { DiskBookmarks } from "../common/diskbookmarks"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
+import { generateUrlFromInternetArchiveId } from "../common/utility"
 
 const queryMaxRows = 25
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
@@ -95,56 +95,11 @@ interface InternetDialogResultProps {
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
-
-  const getDiskImageUrl = async () => {
-    if (diskImageUrl) {
-      return diskImageUrl
-    }
-
-    let newDiskImageUrl: URL | undefined
-    const detailsUrl = `https://archive.org/details/${props.identifier}?output=json`
-    const favicon: { [key: string]: string } = {}
-    favicon[iconKey()] = iconData()
-
-    props.setWaitCursor(true)
-    await fetch(iconName() + detailsUrl, { headers: favicon })
-      .then(async response => {
-        if (response.ok) {
-          const json = await response.json()
-          if (json.metadata && json.metadata.emulator_ext && json.files) {
-            const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
-
-            Object.keys(json.files).forEach((file) => {
-              if (file.toLowerCase().endsWith(emulatorExt)) {
-                newDiskImageUrl = new URL(`https://archive.org/download/${props.identifier}${file}`)
-                return
-              }
-            })
-          } else {
-            // $TODO: add error handling
-          }
-        } else {
-          // $TODO: add error handling
-        }
-      })
-      .finally(() => {
-        props.setWaitCursor(false)
-      })
-
-    setDiskImageUrl(newDiskImageUrl)
-
-    return newDiskImageUrl
-  }
-
   const handleTileClick = async () => {
     props.setWaitCursor(true)
-    const newDiskImageUrl = await getDiskImageUrl()
-    if (newDiskImageUrl) {
-      props.closeParent()
-      handleSetDiskFromURL(newDiskImageUrl.toString(), undefined, props.driveIndex)
-    } else {
-      // $TODO: add error handling
-    }
+    props.closeParent()
+    handleSetDiskFromURL(generateUrlFromInternetArchiveId(props.identifier).toString(), undefined, props.driveIndex)
+    props.setWaitCursor(false)
   }
 
   const handleStatsClick = () => {
@@ -153,32 +108,26 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
   }
 
   const handleBookmarkAddClicked = async () => {
-    const newDiskImageUrl = await getDiskImageUrl()
-
-    if (newDiskImageUrl) {
-      props.diskBookmarks.add({
-        id: bookmarkId,
-        title: props.title,
-        screenshotUrl: screenshotUrl,
-        diskUrl: newDiskImageUrl,
-        detailsUrl: detailsUrl,
-        lastUpdated: new Date()
-      })
-      setBookmarked(true)
-    }
+    props.diskBookmarks.set({
+      id: props.identifier,
+      title: props.title,
+      screenshotUrl: screenshotUrl,
+      diskUrl: generateUrlFromInternetArchiveId(props.identifier),
+      detailsUrl: detailsUrl,
+      lastUpdated: new Date()
+    })
+    setBookmarked(true)
   }
 
   const handleBookmarkRemoveClicked = () => {
-    props.diskBookmarks.remove(bookmarkId)
+    props.diskBookmarks.remove(props.identifier)
     setBookmarked(false)
   }
 
   const detailsUrl = new URL(`https://archive.org/details/${props.identifier}`)
   const screenshotUrl = new URL(`https://archive.org/services/img/${props.identifier}`)
-  const bookmarkId = `ia-${props.identifier}`
 
-  const [bookmarked, setBookmarked] = useState<boolean>(props.diskBookmarks.contains(bookmarkId))
-  const [diskImageUrl, setDiskImageUrl] = useState<URL>()
+  const [bookmarked, setBookmarked] = useState<boolean>(props.diskBookmarks.contains(props.identifier))
 
   return (
     <div

@@ -38,7 +38,17 @@ export class DiskBookmarks {
     return this.bookmarks.has(id)
   }
 
-  public add(bookmark: DiskBookmark) {
+  public get(id: string): DiskBookmark | undefined {
+    for (const bookmark of this.bookmarks.values()) {
+      if (bookmark.id == id) {
+        return bookmark
+      }
+    }
+
+    return undefined
+  }
+
+  public set(bookmark: DiskBookmark) {
     try {
       localStorage.setItem(storageKeyPrefix + bookmark.id, JSON.stringify(bookmark))
       this.bookmarks.set(bookmark.id, bookmark)

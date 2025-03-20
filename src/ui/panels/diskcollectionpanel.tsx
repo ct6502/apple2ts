@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faArchive, faClock, faFloppyDisk, faQuestionCircle, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
@@ -94,8 +94,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     if (diskCollectionItem.bookmarkId) {
       diskBookmarks.remove(diskCollectionItem.bookmarkId)
       setDiskBookmarks(new DiskBookmarks())
-      // diskCollection.splice(itemIndex, 1)
-      // setDiskCollection(diskCollection)
     }
 
     event.stopPropagation();
@@ -124,7 +122,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       newDiskCollection.push({
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
-        diskUrl: diskBookmark.diskUrl.toString(),
+        diskUrl: diskBookmark.diskUrl?.toString(),
         imageUrl: diskBookmark.screenshotUrl.toString(),
         detailsUrl: diskBookmark.detailsUrl.toString(),
         bookmarkId: diskBookmark.id
@@ -155,7 +153,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <div
                 className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
                 title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
-                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(index) : () => {}}>{diskCollectionItem.title}</div>
+                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(index) : () => { }}>{diskCollectionItem.title}</div>
             </div>
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
             <div
