@@ -98,8 +98,8 @@
 
 .dcp-item-new {
   position: absolute;
-  left: 4%;
-  bottom: 6%;
+  left: 7px;
+  bottom: 10px;
 }
 
 .dcp-item-new-icon {
@@ -138,8 +138,8 @@
 
 .dcp-item-archive {
   position: absolute;
-  right: 4%;
-  bottom: 4%;
+  right: 6px;
+  bottom: 6px;
 }
 
 .dcp-item-archive-icon {

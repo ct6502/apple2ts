@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faCircleExclamation, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
@@ -165,7 +165,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             <img className="dcp-item-disk" src="/floppy.png" />
             {!diskCollectionItem.bookmarkId && !diskCollectionItem.diskImage &&
               <div className="dcp-item-new" title="Disk is a new release">
-                <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
+                <FontAwesomeIcon icon={faCircleExclamation} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
                 <div className="dcp-item-new-icon-bg">&nbsp;</div>
               </div>}
             {diskCollectionItem.bookmarkId &&
