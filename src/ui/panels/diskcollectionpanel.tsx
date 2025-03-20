@@ -152,20 +152,19 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         {diskCollection.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
           <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
-              <div className="dcp-item-title">{diskCollectionItem.title}</div>
+              <div
+                className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
+                title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
+                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(index) : () => {}}>{diskCollectionItem.title}</div>
             </div>
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
-            <div className="dcp-item-image-box" title={`Click to insert disk "${diskCollectionItem.title}"`} onClick={handleItemClick(index)}>
+            <div
+              className="dcp-item-image-box"
+              title={`Click to insert disk "${diskCollectionItem.title}"`}
+              onClick={handleItemClick(index)}>
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
-            {/* {diskCollectionItem.detailsUrl &&
-              <div className="dcp-item-help"
-                title={`Click to show details for "${diskCollectionItem.title}"`}
-                onClick={handleHelpClick(index)}>
-                <FontAwesomeIcon icon={faQuestionCircle} size="xl" className="dcp-item-help-icon" />
-                <div className="dcp-item-help-icon-bg">&nbsp;</div>
-              </div>} */}
             {!diskCollectionItem.bookmarkId && !diskCollectionItem.diskImage &&
               <div className="dcp-item-new" title="Disk is a new release">
                 <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />

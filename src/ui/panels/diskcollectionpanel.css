@@ -38,7 +38,6 @@
   font-weight: bold;
   line-height: 0.85;
   color: white;
-  cursor: pointer;
 }
 
 .dcp-item-title {
@@ -50,17 +49,19 @@
   text-align: center;
   vertical-align: middle;
   overflow: hidden;
+  color: white;
 }
 
-.dcp-item-title:hover {
+.dcp-item-title-link {
   text-decoration: underline;
+  cursor: pointer;
 }
 
 .dcp-item-updated {
   position: absolute;
   width: 36%;
   top: 18%;
-  left: 6%;
+  left: 5%;
   text-align: center;
   font-size: 0.25em;
   color: black;
@@ -94,30 +95,6 @@
   opacity: 100%;
 }
 
-.dcp-item-help {
-  position: absolute;
-  cursor: help;
-  left: 1px;
-  bottom: 5px;
-}
-
-.dcp-item-help-icon {
-  position: relative;
-  top: 14px;
-  color: black;
-  z-index: 1;
-}
-
-.dcp-item-help-icon-bg {
-  position: relative;
-  width: 12px;
-  height: 12px;
-  left: 3px;
-  bottom: 0px;
-  background-color: white;
-  z-index: 0;
-}
-
 .dcp-item-new {
   position: absolute;
   left: 4%;
@@ -127,7 +104,7 @@
 .dcp-item-new-icon {
   position: relative;
   top: 11px;
-  color: green;
+  color: gainsboro;
   z-index: 1;
 }
 
@@ -137,15 +114,15 @@
   height: 12px;
   left: 18%;
   bottom: 6px;
-  background-color: white;
+  background-color: black;
   z-index: 0;
 }
 
 .dcp-item-bookmark {
   position: absolute;
   right: 8px;
-  width: 21%;
-  height: 21%;
+  width: 20%;
+  height: 20%;
   bottom: 45%;
   cursor: pointer;
 }
