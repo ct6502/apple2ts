@@ -5,6 +5,7 @@
 
 # autodownloaded for tests, but do not include for licensing restrictions
 src/worker/roms/6502_functional_test.bin
+src/worker/roms/65C02_extended_opcodes_test.bin
 
 # production
 /build

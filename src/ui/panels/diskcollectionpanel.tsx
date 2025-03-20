@@ -32,14 +32,13 @@ const newReleases: DiskCollectionItem[] = [
   //   diskUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk",
   //   detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/"
   // }
-  // $TODO: Add support for zipped disk images
-  // {
-  //   title: "Undead Demo",
-  //   lastUpdated: new Date("9/10/2024"),
-  //   imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
-  //   diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip",
-  //   detailsUrl: "https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central"
-  // }
+  {
+    title: "Undead Demo",
+    lastUpdated: new Date("9/10/2024"),
+    imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
+    diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip",
+    detailsUrl: "https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central"
+  }
 ]
 
 const minDate = new Date(0)
@@ -80,13 +79,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     if (diskCollectionItem.diskImage) {
       handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
+    } else if (diskCollectionItem.diskUrl) {
+      handleSetDiskFromURL(diskCollectionItem.diskUrl)
     } else {
-      if (diskCollectionItem.diskUrl) {
-        handleSetDiskFromURL(diskCollectionItem.diskUrl)
-      } else {
-        // $TODO: Add error handling
-      }
+      // $TODO: Add error handling
     }
+
     setIsFlyoutOpen(false)
   }
 
