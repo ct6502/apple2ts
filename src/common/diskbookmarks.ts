@@ -1,6 +1,9 @@
+import { DISK_COLLECTION_ITEM_TYPE } from "../ui/panels/diskcollectionpanel"
+
 const storageKeyPrefix = "dbm-"
 
 export type DiskBookmark = {
+  type: DISK_COLLECTION_ITEM_TYPE,
   id: string,
   title: string,
   screenshotUrl: URL,

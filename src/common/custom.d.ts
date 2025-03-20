@@ -305,6 +305,7 @@ type DisassemblyProps = {
 }
 
 type DiskCollectionItem = {
+  type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
   lastUpdated: Date,
   imageUrl: string,

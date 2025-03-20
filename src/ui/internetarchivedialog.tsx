@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
 import { generateUrlFromInternetArchiveId } from "../common/utility"
+import { DISK_COLLECTION_ITEM_TYPE } from "./panels/diskcollectionpanel"
 
 const queryMaxRows = 25
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
@@ -109,6 +110,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
 
   const handleBookmarkAddClicked = async () => {
     props.diskBookmarks.set({
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
       id: props.identifier,
       title: props.title,
       screenshotUrl: screenshotUrl,
@@ -251,6 +253,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
 
     setCursorBusy(true)
+
     fetch(queryUrl)
       .then(async response => {
         if (response.ok) {

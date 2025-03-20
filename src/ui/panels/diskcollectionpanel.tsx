@@ -7,10 +7,18 @@ import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
+import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
+
+export enum DISK_COLLECTION_ITEM_TYPE {
+  A2TS_ARCHIVE,
+  INTERNET_ARCHIVE,
+  NEW_RELEASE
+}
 
 // $TODO: Read this disk collection data from a hosted JSON file
 const newReleases: DiskCollectionItem[] = [
   {
+    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
     title: "Glider for Apple II",
     lastUpdated: new Date("3/16/2025"),
     imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png",
@@ -18,6 +26,7 @@ const newReleases: DiskCollectionItem[] = [
     detailsUrl: "https://www.colino.net/wordpress/glider-for-apple-ii/"
   },
   {
+    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
     imageUrl: "https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png",
@@ -26,6 +35,7 @@ const newReleases: DiskCollectionItem[] = [
   },
   // $TODO: Figure out why the DSK fails to load
   // {
+  //   type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
   //   title: "Encounter Adventure",
   //   lastUpdated: new Date("11/11/2024"),
   //   imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
@@ -33,6 +43,7 @@ const newReleases: DiskCollectionItem[] = [
   //   detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/"
   // }
   {
+    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
     title: "Undead Demo",
     lastUpdated: new Date("9/10/2024"),
     imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
@@ -109,6 +120,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     // Load built-in disk images
     diskImages.forEach((diskImage) => {
       newDiskCollection.push({
+        type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
         title: diskImage.title,
         lastUpdated: minDate,
         imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
@@ -120,6 +132,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     // Load favorites
     for (const diskBookmark of diskBookmarks) {
       newDiskCollection.push({
+        type: diskBookmark.type,
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
         diskUrl: diskBookmark.diskUrl?.toString(),
@@ -163,20 +176,30 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
-            {!diskCollectionItem.bookmarkId && !diskCollectionItem.diskImage &&
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
               <div className="dcp-item-new" title="Disk is a new release">
                 <FontAwesomeIcon icon={faCircleExclamation} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
                 <div className="dcp-item-new-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
+              <div className="dcp-item-a2ts" title="Disk is part of the Apple2TS collection">
+                <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => event.stopPropagation()} />
+                <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
+              <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
+                {/* <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-ia-icon" onClick={(event) => event.stopPropagation()} /> */}
+                <svg
+                  className="dcp-item-ia-icon"
+                  onClick={(event) => event.stopPropagation()}
+                  fill="#ffffff"
+                  viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
+                <div className="dcp-item-ia-icon-bg">&nbsp;</div>
               </div>}
             {diskCollectionItem.bookmarkId &&
               <div
                 className="dcp-item-bookmark" title="Click to remove bookmark" onClick={handleBookmarkClick(index)}>
                 <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
-              </div>}
-            {diskCollectionItem.diskImage &&
-              <div className="dcp-item-archive" title="Disk is part of the Apple2TS archive">
-                <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-archive-icon" onClick={(event) => event.stopPropagation()} />
-                <div className="dcp-item-archive-icon-bg">&nbsp;</div>
               </div>}
           </div>
         ))}
