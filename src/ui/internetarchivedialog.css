@@ -154,7 +154,6 @@
 
 .iad-result-bookmark {
   position: relative;
-  height: 1.75em;
   top: 21px;
   right: 4px;
   text-align: right;
@@ -162,7 +161,6 @@
 }
 
 .iad-result-bookmark-icon {
-  height: 100%;
   color: yellow;
 }
 

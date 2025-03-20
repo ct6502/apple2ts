@@ -43,7 +43,7 @@ const newReleases: DiskCollectionItem[] = [
 
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
+  year: '2-digit',
   month: 'numeric',
   day: 'numeric'
 });
@@ -150,22 +150,22 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       position="top-center">
       <div className="disk-collection-panel">
         {diskCollection.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
-          <div key={`dcp-item-${index}`} className="dcp-item" title={`Click to insert disk "${diskCollectionItem.title}"`} onClick={handleItemClick(index)}>
+          <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
               <div className="dcp-item-title">{diskCollectionItem.title}</div>
             </div>
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
-            <div className="dcp-item-image-box">
+            <div className="dcp-item-image-box" title={`Click to insert disk "${diskCollectionItem.title}"`} onClick={handleItemClick(index)}>
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
-            {diskCollectionItem.detailsUrl &&
+            {/* {diskCollectionItem.detailsUrl &&
               <div className="dcp-item-help"
                 title={`Click to show details for "${diskCollectionItem.title}"`}
                 onClick={handleHelpClick(index)}>
-                <FontAwesomeIcon icon={faQuestionCircle} size="lg" className="dcp-item-help-icon" />
+                <FontAwesomeIcon icon={faQuestionCircle} size="xl" className="dcp-item-help-icon" />
                 <div className="dcp-item-help-icon-bg">&nbsp;</div>
-              </div>}
+              </div>} */}
             {!diskCollectionItem.bookmarkId && !diskCollectionItem.diskImage &&
               <div className="dcp-item-new" title="Disk is a new release">
                 <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
@@ -174,12 +174,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             {diskCollectionItem.bookmarkId &&
               <div
                 className="dcp-item-bookmark" title="Click to remove bookmark" onClick={handleBookmarkClick(index)}>
-                <FontAwesomeIcon icon={faStar} size="lg" className="dcp-item-bookmark-icon" />
+                <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
               </div>}
             {diskCollectionItem.diskImage &&
               <div className="dcp-item-archive" title="Disk is part of the Apple2TS archive">
-                <FontAwesomeIcon icon={faArchive} size="lg" className="dcp-item-archive-icon" onClick={(event) => event.stopPropagation()} />
-                <div className="dcp-item-new-archive-bg">&nbsp;</div>
+                <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-archive-icon" onClick={(event) => event.stopPropagation()} />
+                <div className="dcp-item-archive-icon-bg">&nbsp;</div>
               </div>}
           </div>
         ))}

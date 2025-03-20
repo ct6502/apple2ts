@@ -186,6 +186,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       title="Click to load disk image">
       <div className="iad-result-bookmark">
         <FontAwesomeIcon
+          size="2x"
           className="iad-result-bookmark-icon"
           onClick={bookmarked ? handleBookmarkRemoveClicked : handleBookmarkAddClicked}
           title={`Click to ${bookmarked ? "remove" : "add"} disk bookmark`}
