@@ -1,4 +1,4 @@
-import { CLOUD_SYNC } from "../../common/utility"
+import { CLOUD_SYNC, showGlobalProgressModal } from "../../common/utility"
 
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
@@ -24,8 +24,13 @@ export class OneDriveCloudDrive implements CloudProvider {
         parentID: "",
       }
 
+      showGlobalProgressModal(true)
+
       const downloadUrl = file["@content.downloadUrl"]
       const response = await fetch(downloadUrl)
+      .finally(() => {
+        showGlobalProgressModal(false)
+      })
       if (response.ok) {
         cloudData.syncStatus = CLOUD_SYNC.ACTIVE
         const blob = await response.blob()

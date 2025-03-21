@@ -1,4 +1,4 @@
-import { CLOUD_SYNC } from "../../common/utility"
+import { CLOUD_SYNC, showGlobalProgressModal } from "../../common/utility"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
@@ -120,12 +120,17 @@ export class GoogleDrive implements CloudProvider {
         apiEndpoint: "",
         parentID: result.parentID,
       }
+      
+      showGlobalProgressModal(true)
 
       const url = `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
       const response = await fetch(url, {
         headers: {
           "Authorization": `Bearer ${g_accessToken}`
         }
+      })
+      .finally(() => {
+        showGlobalProgressModal(false)
       })
       if (response.ok) {
         console.log(`File download success: ${result.fileName}`)
