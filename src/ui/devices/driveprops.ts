@@ -158,15 +158,8 @@ export const handleSetDiskFromURL = async (url: string,
       const diskBookmarks = new DiskBookmarks()
       const bookmark = diskBookmarks.get(identifier)
       if (bookmark) {
-        diskBookmarks.set({
-          type: bookmark.type,
-          id: bookmark.id,
-          title: bookmark.title,
-          screenshotUrl: bookmark.screenshotUrl,
-          diskUrl: resolvedUrl,
-          detailsUrl: bookmark.detailsUrl,
-          lastUpdated: bookmark.lastUpdated
-        })
+        bookmark.diskUrl = resolvedUrl
+        diskBookmarks.set(bookmark)
       }
     }
   }
