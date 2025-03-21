@@ -184,8 +184,8 @@ export const handleSetDiskFromURL = async (url: string,
     const blob = await response.blob()
 
     if (url.toLowerCase().endsWith(".zip")) {
-      const unzipper = new fflate.Unzip();
-      unzipper.register(fflate.UnzipInflate);
+      const unzipper = new fflate.Unzip()
+      unzipper.register(fflate.UnzipInflate)
 
       unzipper.onfile = file => {
         const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLocaleLowerCase()
