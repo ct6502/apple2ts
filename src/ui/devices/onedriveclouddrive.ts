@@ -1,4 +1,4 @@
-import { CLOUD_SYNC, showGlobalProgressModal } from "../../common/utility"
+import { CLOUD_SYNC } from "../../common/utility"
 
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
@@ -25,7 +25,6 @@ export class OneDriveCloudDrive implements CloudProvider {
       }
 
       const downloadUrl = file["@content.downloadUrl"]
-      console.log(`HTTP GET: ${downloadUrl}`)
       const response = await fetch(downloadUrl)
       if (response.ok) {
         cloudData.syncStatus = CLOUD_SYNC.ACTIVE
@@ -68,7 +67,6 @@ export class OneDriveCloudDrive implements CloudProvider {
     let success = false
 
     console.log(`fetch: POST ${sessionUrl}`)
-    showGlobalProgressModal(true)
     await fetch(sessionUrl, {
       method: "POST",
       mode: "cors",
@@ -98,7 +96,6 @@ export class OneDriveCloudDrive implements CloudProvider {
       cloudData.syncStatus = CLOUD_SYNC.FAILED
     })
     .finally(() => {
-      showGlobalProgressModal(false)
       cloudData.lastSyncTime = Date.now()
     })
 

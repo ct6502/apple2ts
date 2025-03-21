@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, uint32toBytes } from "../../common/utility"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, showGlobalProgressModal, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
@@ -130,6 +130,8 @@ const DiskDrive = (props: DiskDriveProps) => {
   }, [dprops.filename, dprops.cloudData])
 
   const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
+    showGlobalProgressModal(true)
+    
     const result = await newCloudDrive.download(FILE_SUFFIXES)
 
     if (result) {
@@ -137,6 +139,8 @@ const DiskDrive = (props: DiskDriveProps) => {
       const buffer = await new Response(blob).arrayBuffer()
       handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudData.fileName, cloudData, null)
     }
+
+    showGlobalProgressModal(false)
   }
 
   const saveDiskToCloud = async (cloudProvider: CloudProvider) => {
