@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, showGlobalProgressModal, uint32toBytes } from "../../common/utility"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
