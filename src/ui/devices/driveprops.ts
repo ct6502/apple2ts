@@ -1,4 +1,5 @@
-import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, isHardDriveImage, replaceSuffix } from "../../common/utility"
+import { DiskBookmarks } from "../../common/diskbookmarks"
+import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, getDiskImageUrlFromIdentifier, internetArchiveUrlProtocol, isHardDriveImage, replaceSuffix, showGlobalProgressModal } from "../../common/utility"
 import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
@@ -145,6 +146,24 @@ export const handleSetDiskFromURL = async (url: string,
     handleSetDiskFromFile(match, updateDisplay)
     return
   }
+
+  // Resolve Internet Archive URL, if necessary
+  if (url.startsWith(internetArchiveUrlProtocol)) {
+    const identifier = url.substring(internetArchiveUrlProtocol.length)
+    const resolvedUrl = await getDiskImageUrlFromIdentifier(identifier)
+
+    if (resolvedUrl) {
+      url = resolvedUrl.toString()
+
+      const diskBookmarks = new DiskBookmarks()
+      const bookmark = diskBookmarks.get(identifier)
+      if (bookmark) {
+        bookmark.diskUrl = resolvedUrl
+        diskBookmarks.set(bookmark)
+      }
+    }
+  }
+
   // Download the file from the fragment URL
   try {
     let name = ""
@@ -153,11 +172,14 @@ export const handleSetDiskFromURL = async (url: string,
     // Ask CT6502 for why we need to use this favicon header
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
+
+    showGlobalProgressModal(true)
     const response = await fetch(iconName() + url, { headers: favicon })
     if (!response.ok) {
       console.error(`HTTP error: status ${response.status}`)
       return
     }
+    showGlobalProgressModal(false)
 
     const blob = await response.blob()
 

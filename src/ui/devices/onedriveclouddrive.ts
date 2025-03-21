@@ -25,7 +25,6 @@ export class OneDriveCloudDrive implements CloudProvider {
       }
 
       const downloadUrl = file["@content.downloadUrl"]
-      console.log(`HTTP GET: ${downloadUrl}`)
       const response = await fetch(downloadUrl)
       if (response.ok) {
         cloudData.syncStatus = CLOUD_SYNC.ACTIVE

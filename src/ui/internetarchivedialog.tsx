@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react"
 import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive"
 import "./internetarchivedialog.css"
 import { handleSetDiskFromURL } from "./devices/driveprops"
-import { iconData, iconKey, iconName } from "./img/iconfunctions"
+import { DiskBookmarks } from "../common/diskbookmarks"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
+import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
+import { generateUrlFromInternetArchiveId, showGlobalProgressModal } from "../common/utility"
+import { DISK_COLLECTION_ITEM_TYPE } from "./panels/diskcollectionpanel"
 
 const queryMaxRows = 25
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
@@ -78,7 +83,7 @@ function formatNumber(num: number, precision = 1) {
 
 interface InternetDialogResultProps {
   closeParent: () => void,
-  setWaitCursor: () => void,
+  diskBookmarks: DiskBookmarks,
   driveIndex: number,
   lastResult: boolean,
   identifier: string,
@@ -90,54 +95,52 @@ interface InternetDialogResultProps {
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
-  const handleTileClick = () => {
-    const detailsUrl = `https://archive.org/details/${props.identifier}?output=json`
-    const favicon: { [key: string]: string } = {}
-    favicon[iconKey()] = iconData()
-
-    props.setWaitCursor()
-    fetch(iconName() + detailsUrl, { headers: favicon })
-      .then(async response => {
-        if (response.ok) {
-          const json = await response.json()
-          if (json.metadata && json.metadata.emulator_ext && json.files) {
-            const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
-            let imageUrl = ""
-
-            Object.keys(json.files).forEach((file) => {
-              if (file.toLowerCase().endsWith(emulatorExt)) {
-                imageUrl = `https://archive.org/download/${props.identifier}${file}`
-              }
-            })
-
-            if (imageUrl != "") {
-              props.closeParent()
-              handleSetDiskFromURL(imageUrl, undefined, props.driveIndex)
-            } else {
-              // $TODO: add error handling
-            }
-          } else {
-            // $TODO: add error handling
-          }
-        } else {
-          // $TODO: add error handling
-        }
-      })
-      .finally(() => {
-        document.body.style.cursor = "default"
-      })
+  const handleTileClick = async () => {
+    props.closeParent()
+    handleSetDiskFromURL(generateUrlFromInternetArchiveId(props.identifier).toString(), undefined, props.driveIndex)
   }
 
   const handleStatsClick = () => {
-    window.open(`https://archive.org/details/${props.identifier}`, "_blank")
+    window.open(detailsUrl.toString(), "_blank")
     return false
   }
+
+  const handleBookmarkAddClicked = async () => {
+    props.diskBookmarks.set({
+      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      id: props.identifier,
+      title: props.title,
+      screenshotUrl: screenshotUrl,
+      diskUrl: generateUrlFromInternetArchiveId(props.identifier),
+      detailsUrl: detailsUrl,
+      lastUpdated: new Date()
+    })
+    setBookmarked(true)
+  }
+
+  const handleBookmarkRemoveClicked = () => {
+    props.diskBookmarks.remove(props.identifier)
+    setBookmarked(false)
+  }
+
+  const detailsUrl = new URL(`https://archive.org/details/${props.identifier}`)
+  const screenshotUrl = new URL(`https://archive.org/services/img/${props.identifier}`)
+
+  const [bookmarked, setBookmarked] = useState<boolean>(props.diskBookmarks.contains(props.identifier))
 
   return (
     <div
       className={`iad-result-tile ${props.lastResult ? "iad-result-last" : ""}`}
       title="Click to load disk image">
-      <img className="iad-result-image" src={`https://archive.org/services/img/${props.identifier}`} onClick={handleTileClick}></img>
+      <div className="iad-result-bookmark">
+        <FontAwesomeIcon
+          size="2x"
+          className="iad-result-bookmark-icon"
+          onClick={bookmarked ? handleBookmarkRemoveClicked : handleBookmarkAddClicked}
+          title={`Click to ${bookmarked ? "remove" : "add"} disk bookmark`}
+          icon={bookmarked ? faStarSolid : faStarOutline} />
+      </div>
+      <img className="iad-result-image" src={screenshotUrl.toString()} onClick={handleTileClick}></img>
       <div className="iad-result-title" title={props.title}>
         {props.title}
       </div>
@@ -181,10 +184,10 @@ export interface InternetArchiveDialogProps {
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
+  const [diskBookmarks, setDiskbookmarks] = useState<DiskBookmarks>(new DiskBookmarks())
   const [resultsCount, setResultsCount] = useState<number>(0)
   const [query, setQuery] = useState<string>("")
   const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
-  const [cursorBusy, setCursorBusy] = useState(false)
   const [isIntersecting, setIsIntersecting] = useState(false)
   const ref = useRef(null)
 
@@ -210,7 +213,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
         getResults(query, collection, true)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isIntersecting])
 
   const handleClose = () => {
@@ -245,7 +248,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
 
-    setCursorBusy(true)
+    showGlobalProgressModal(true)
     fetch(queryUrl)
       .then(async response => {
         if (response.ok) {
@@ -254,6 +257,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
             if (pagedResults) {
               setResults(results.concat(json.response.docs))
             } else {
+              setDiskbookmarks(new DiskBookmarks())
               setResults(json.response.docs)
               setResultsCount(json.response.numFound)
             }
@@ -266,7 +270,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
         }
       })
       .finally(() => {
-        setCursorBusy(false)
+        showGlobalProgressModal(false)
       })
   }
 
@@ -287,7 +291,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                   className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
                   <img key={`collection-${index}`}
                     className="iad-collection-image"
-                    style={{ cursor: cursorBusy ? "wait" : "pointer" }}
                     src={softwareCollection.imageUrl}
                     onClick={handleCollectionClick(index)}></img>
                   <div className="iad-collection-title">{softwareCollection.title}</div>
@@ -304,7 +307,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 autoComplete="off"
                 spellCheck="false"
                 autoFocus
-                style={{ cursor: cursorBusy ? "wait" : "text" }}
                 onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
               <input className="iad-search-button"
@@ -317,12 +319,12 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
           {results.length > 0 &&
             <div className="iad-search-results">
               {results.map((result, index) => (
-                <div key={`parent-result-${index}`} ref={resultsCount > results.length && index == results.length - 1 ? ref : null}>
+                <div key={`parent-result-${result.identifier}`} ref={resultsCount > results.length && index == results.length - 1 ? ref : null}>
                   <InternetArchiveResult
-                    key={`result-${index}`}
+                    key={`result-${result.identifier}`}
                     {...result}
                     closeParent={handleClose}
-                    setWaitCursor={() => setCursorBusy(true)}
+                    diskBookmarks={diskBookmarks}
                     driveIndex={props.driveIndex}
                     lastResult={resultsCount > results.length && index == results.length - 1} />
                 </div>

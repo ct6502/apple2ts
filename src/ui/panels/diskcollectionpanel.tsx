@@ -1,18 +1,24 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faArchive, faExclamationCircle, faQuestionCircle } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { DiskBookmarks } from "../../common/diskbookmarks"
+import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 
-// $TODO: Read this value from local storage
-const collectionLastChecked = new Date("1/1/2024")
+export enum DISK_COLLECTION_ITEM_TYPE {
+  A2TS_ARCHIVE,
+  INTERNET_ARCHIVE,
+  NEW_RELEASE
+}
 
 // $TODO: Read this disk collection data from a hosted JSON file
 const newReleases: DiskCollectionItem[] = [
   {
+    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
     title: "Glider for Apple II",
     lastUpdated: new Date("3/16/2025"),
     imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png",
@@ -20,6 +26,7 @@ const newReleases: DiskCollectionItem[] = [
     detailsUrl: "https://www.colino.net/wordpress/glider-for-apple-ii/"
   },
   {
+    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
     imageUrl: "https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png",
@@ -28,6 +35,7 @@ const newReleases: DiskCollectionItem[] = [
   },
   // $TODO: Figure out why the DSK fails to load
   // {
+  //   type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
   //   title: "Encounter Adventure",
   //   lastUpdated: new Date("11/11/2024"),
   //   imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
@@ -35,6 +43,7 @@ const newReleases: DiskCollectionItem[] = [
   //   detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/"
   // }
   {
+    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
     title: "Undead Demo",
     lastUpdated: new Date("9/10/2024"),
     imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
@@ -45,7 +54,7 @@ const newReleases: DiskCollectionItem[] = [
 
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
+  year: '2-digit',
   month: 'numeric',
   day: 'numeric'
 });
@@ -67,33 +76,18 @@ const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): num
 
 const DiskCollectionPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-  const diskCollectionItems: DiskCollectionItem[] = []
-
-  // Load built-in disk images
-  diskImages.forEach((diskImage) => {
-    diskCollectionItems.push({
-      title: diskImage.title,
-      lastUpdated: minDate,
-      imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
-      detailsUrl: diskImage.url,
-      diskImage: diskImage
-    })
-  })
+  const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
+  const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
-    const diskCollectionItem = diskCollectionItems[itemIndex]
-
+    const diskCollectionItem = diskCollection[itemIndex]
     event.stopPropagation();
     window.open(diskCollectionItem.detailsUrl, "_blank"); return false;
   }
 
-  // Load new releases
-  newReleases.forEach((diskImage) => {
-    diskCollectionItems.push(diskImage)
-  })
-
   const handleItemClick = (itemIndex: number) => () => {
-    const diskCollectionItem = diskCollectionItems[itemIndex]
+    const diskCollectionItem = diskCollection[itemIndex]
+
     if (diskCollectionItem.diskImage) {
       handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
     } else if (diskCollectionItem.diskUrl) {
@@ -105,9 +99,60 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     setIsFlyoutOpen(false)
   }
 
+  const handleBookmarkClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
+    const diskCollectionItem = diskCollection[itemIndex]
+
+    if (diskCollectionItem.bookmarkId) {
+      diskBookmarks.remove(diskCollectionItem.bookmarkId)
+      setDiskBookmarks(new DiskBookmarks())
+    }
+
+    event.stopPropagation();
+  }
+
+  useEffect(() => {
+    setDiskBookmarks(new DiskBookmarks())
+  }, [isFlyoutOpen])
+
+  useEffect(() => {
+    const newDiskCollection: DiskCollectionItem[] = []
+
+    // Load built-in disk images
+    diskImages.forEach((diskImage) => {
+      newDiskCollection.push({
+        type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
+        title: diskImage.title,
+        lastUpdated: minDate,
+        imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
+        detailsUrl: diskImage.url,
+        diskImage: diskImage
+      })
+    })
+
+    // Load favorites
+    for (const diskBookmark of diskBookmarks) {
+      newDiskCollection.push({
+        type: diskBookmark.type,
+        title: diskBookmark.title,
+        lastUpdated: new Date(diskBookmark.lastUpdated),
+        diskUrl: diskBookmark.diskUrl?.toString(),
+        imageUrl: diskBookmark.screenshotUrl.toString(),
+        detailsUrl: diskBookmark.detailsUrl.toString(),
+        bookmarkId: diskBookmark.id
+      })
+    }
+
+    // Load new releases
+    newReleases.forEach((diskImage) => {
+      newDiskCollection.push(diskImage)
+    })
+
+    setDiskCollection(newDiskCollection)
+  }, [diskBookmarks])
+
   return (
     <Flyout
-      icon={faArchive}
+      icon={faFloppyDisk}
       buttonId="tour-disk-images"
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
@@ -115,32 +160,50 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       width="max( 75vw, 200px )"
       position="top-center">
       <div className="disk-collection-panel">
-        {diskCollectionItems.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
-          <div key={`dcp-item-${index}`} className="dcp-item" title={`Click to insert disk "${diskCollectionItem.title}"`} onClick={handleItemClick(index)}>
+        {diskCollection.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
+          <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
-              <div className="dcp-item-title">{diskCollectionItem.title}</div>
+              <div
+                className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
+                title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
+                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(index) : () => { }}>{diskCollectionItem.title}</div>
             </div>
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
-            <div className="dcp-item-image-box">
+            <div
+              className="dcp-item-image-box"
+              title={`Click to insert disk "${diskCollectionItem.title}"`}
+              onClick={handleItemClick(index)}>
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
-            {diskCollectionItem.detailsUrl &&
-              <div className="dcp-item-help"
-                title={`Click to show details for "${diskCollectionItem.title}"`}
-                onClick={handleHelpClick(index)}>
-                <FontAwesomeIcon icon={faQuestionCircle} size="lg" className="dcp-item-help-icon" />
-                <div className="dcp-item-help-icon-bg">&nbsp;</div>
-              </div>}
-            {diskCollectionItem.lastUpdated > collectionLastChecked &&
-              <div className="dcp-item-new" title="Disk is new to the collection">
-                <FontAwesomeIcon icon={faExclamationCircle} size="lg" className="dcp-item-new-icon" />
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
+              <div className="dcp-item-new" title="Disk is a new release">
+                <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
                 <div className="dcp-item-new-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
+              <div className="dcp-item-a2ts" title="Disk is part of the Apple2TS collection">
+                <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => event.stopPropagation()} />
+                <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
+              <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
+                <svg
+                  className="dcp-item-ia-icon"
+                  onClick={(event) => event.stopPropagation()}
+                  fill="#ffffff"
+                  viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
+                <div className="dcp-item-ia-icon-bg">&nbsp;</div>
+              </div>}
+            {diskCollectionItem.bookmarkId &&
+              <div
+                className="dcp-item-bookmark" title="Click to remove bookmark" onClick={handleBookmarkClick(index)}>
+                <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
               </div>}
           </div>
         ))}
       </div>
-    </Flyout>
+    </Flyout >
   )
 }
 
