@@ -4,23 +4,13 @@ import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passTheme, passPasteText, passShowScanlines } from "./main2worker"
 
-export type HandleInputParamsResult = {
-  hasBasicProgram: boolean
-  experiments: string[]
-}
-
-export const handleInputParams = (): HandleInputParamsResult => {
+export const handleInputParams = () => {
   // Most parameters are case insensitive. The only exception is the BASIC
   // parameter, where we want to preserve the case of the program.
   const params = new URLSearchParams(window.location.search.toLowerCase())
   const porig = new URLSearchParams(window.location.search)
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { setRunTour } = useGlobalContext()
-
-  const result: HandleInputParamsResult = {
-    hasBasicProgram: false,
-    experiments: []
-  }
 
   if (params.get("capslock") === "off") {
     passCapsLock(false)
@@ -94,16 +84,11 @@ export const handleInputParams = (): HandleInputParamsResult => {
     setRunTour(tour)
   }
 
-  const experiments = params.get("exp")
-  if (experiments) {
-    // Experiments go here
-  }
-
   const run = params.get("run")
   const doRun = !(run === "0" || run === "false")
   // Use the original case of the BASIC program.
   const basic = porig.get("basic") || porig.get("BASIC")
-  result.hasBasicProgram = basic !== null
+   const hasBasicProgram = basic !== null
   if (basic) {
     const trimmed = basic.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
@@ -112,7 +97,7 @@ export const handleInputParams = (): HandleInputParamsResult => {
     setTimeout(() => { passPasteText(basic + cmd) }, 1500)
   }
 
-  return result
+  return hasBasicProgram
 }
 
 // Examples:

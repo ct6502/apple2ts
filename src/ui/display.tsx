@@ -34,7 +34,6 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
-  const handleInputParamsResult = handleInputParams()
 
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -85,7 +84,8 @@ const DisplayApple2 = () => {
     // preloadAssets()
     passSpeedMode(0)
     loadPreferences()
-    handleFragment(updateDisplay, handleInputParamsResult.hasBasicProgram)
+    const hasBasicProgram = handleInputParams()
+    handleFragment(updateDisplay, hasBasicProgram)
     //    window.addEventListener('beforeunload', (event) => {
     // Cancel the event as stated by the standard.
     //      event.preventDefault();
