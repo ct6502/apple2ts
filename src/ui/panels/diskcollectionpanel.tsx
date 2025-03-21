@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faCircleExclamation, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
@@ -178,7 +178,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             <img className="dcp-item-disk" src="/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
               <div className="dcp-item-new" title="Disk is a new release">
-                <FontAwesomeIcon icon={faCircleExclamation} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
+                <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
                 <div className="dcp-item-new-icon-bg">&nbsp;</div>
               </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
@@ -188,7 +188,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
               <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
-                {/* <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-ia-icon" onClick={(event) => event.stopPropagation()} /> */}
                 <svg
                   className="dcp-item-ia-icon"
                   onClick={(event) => event.stopPropagation()}
