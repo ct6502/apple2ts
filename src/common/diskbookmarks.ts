@@ -33,7 +33,7 @@ export class DiskBookmarks {
 
   *[Symbol.iterator](): Generator<DiskBookmark> {
     for (const item of this.bookmarks.values()) {
-      yield item;
+      yield item
     }
   }
 

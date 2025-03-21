@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, showGlobalProgressModal, uint32toBytes } from "../../common/utility"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, uint32toBytes } from "../../common/utility"
 import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
@@ -130,17 +130,12 @@ const DiskDrive = (props: DiskDriveProps) => {
   }, [dprops.filename, dprops.cloudData])
 
   const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
-    showGlobalProgressModal(true)
-    
     const result = await newCloudDrive.download(FILE_SUFFIXES)
-
     if (result) {
       const [blob, cloudData] = result
       const buffer = await new Response(blob).arrayBuffer()
       handleSetDiskOrFileFromBuffer(dprops.index, buffer, cloudData.fileName, cloudData, null)
     }
-
-    showGlobalProgressModal(false)
   }
 
   const saveDiskToCloud = async (cloudProvider: CloudProvider) => {
@@ -158,24 +153,24 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const prepWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle) => {
     const timer = setInterval(async (index: number) => {
-    const dprops = handleGetDriveProps(index)
+      const dprops = handleGetDriveProps(index)
 
-    if (handleGetHotReload()) {
-      const file = await writableFileHandle.getFile()
-      if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
-        handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-        passSetRunMode(RUN_MODE.NEED_BOOT)
-        return
+      if (handleGetHotReload()) {
+        const file = await writableFileHandle.getFile()
+        if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
+          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+          return
+        }
       }
-    }
 
-    if (dprops.diskHasChanges && !dprops.motorRunning) {
-      if (await handleSaveWritableFile(index)) {
-        dprops.diskHasChanges = false
-        dprops.lastLocalWriteTime = Date.now()
-        passSetDriveProps(dprops)
+      if (dprops.diskHasChanges && !dprops.motorRunning) {
+        if (await handleSaveWritableFile(index)) {
+          dprops.diskHasChanges = false
+          dprops.lastLocalWriteTime = Date.now()
+          passSetDriveProps(dprops)
+        }
       }
-    }
     }, 3 * 1000, index)
     return () => clearInterval(timer)
   }

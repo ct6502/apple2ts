@@ -57,14 +57,14 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
   year: '2-digit',
   month: 'numeric',
   day: 'numeric'
-});
+})
 
 const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
   if (a.lastUpdated && b.lastUpdated) {
     const aTime = a.lastUpdated
     const bTime = b.lastUpdated
-    if (aTime > bTime) return -1;
-    if (aTime < bTime) return 1;
+    if (aTime > bTime) return -1
+    if (aTime < bTime) return 1
   }
 
   if (a.title && b.title) {
@@ -81,8 +81,9 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     const diskCollectionItem = diskCollection[itemIndex]
-    event.stopPropagation();
-    window.open(diskCollectionItem.detailsUrl, "_blank"); return false;
+    event.stopPropagation()
+    window.open(diskCollectionItem.detailsUrl, "_blank")
+    return false
   }
 
   const handleItemClick = (itemIndex: number) => () => {
@@ -107,7 +108,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       setDiskBookmarks(new DiskBookmarks())
     }
 
-    event.stopPropagation();
+    event.stopPropagation()
   }
 
   useEffect(() => {
