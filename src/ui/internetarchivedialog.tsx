@@ -6,7 +6,7 @@ import { DiskBookmarks } from "../common/diskbookmarks"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
-import { generateUrlFromInternetArchiveId } from "../common/utility"
+import { generateUrlFromInternetArchiveId, showGlobalProgressModal } from "../common/utility"
 import { DISK_COLLECTION_ITEM_TYPE } from "./panels/diskcollectionpanel"
 
 const queryMaxRows = 25
@@ -83,7 +83,6 @@ function formatNumber(num: number, precision = 1) {
 
 interface InternetDialogResultProps {
   closeParent: () => void,
-  setWaitCursor: (isBusy: boolean) => void,
   diskBookmarks: DiskBookmarks,
   driveIndex: number,
   lastResult: boolean,
@@ -97,10 +96,8 @@ interface InternetDialogResultProps {
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
   const handleTileClick = async () => {
-    props.setWaitCursor(true)
     props.closeParent()
     handleSetDiskFromURL(generateUrlFromInternetArchiveId(props.identifier).toString(), undefined, props.driveIndex)
-    props.setWaitCursor(false)
   }
 
   const handleStatsClick = () => {
@@ -191,7 +188,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
   const [resultsCount, setResultsCount] = useState<number>(0)
   const [query, setQuery] = useState<string>("")
   const [collection, setCollection] = useState<SoftwareCollection>(softwareCollections[0])
-  const [cursorBusy, setCursorBusy] = useState(false)
   const [isIntersecting, setIsIntersecting] = useState(false)
   const ref = useRef(null)
 
@@ -252,8 +248,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
 
-    setCursorBusy(true)
-
+    showGlobalProgressModal(true)
     fetch(queryUrl)
       .then(async response => {
         if (response.ok) {
@@ -275,7 +270,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
         }
       })
       .finally(() => {
-        setCursorBusy(false)
+        showGlobalProgressModal(false)
       })
   }
 
@@ -296,7 +291,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                   className={`iad-collection-tile ${softwareCollection == collection ? "iad-collection-tile-selected" : ""}`}>
                   <img key={`collection-${index}`}
                     className="iad-collection-image"
-                    style={{ cursor: cursorBusy ? "wait" : "pointer" }}
                     src={softwareCollection.imageUrl}
                     onClick={handleCollectionClick(index)}></img>
                   <div className="iad-collection-title">{softwareCollection.title}</div>
@@ -313,7 +307,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 autoComplete="off"
                 spellCheck="false"
                 autoFocus
-                style={{ cursor: cursorBusy ? "wait" : "text" }}
                 onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
               <input className="iad-search-button"
@@ -331,7 +324,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                     key={`result-${result.identifier}`}
                     {...result}
                     closeParent={handleClose}
-                    setWaitCursor={(isBusy: boolean) => setCursorBusy(isBusy)}
                     diskBookmarks={diskBookmarks}
                     driveIndex={props.driveIndex}
                     lastResult={resultsCount > results.length && index == results.length - 1} />

@@ -1,5 +1,5 @@
 import { DiskBookmarks } from "../../common/diskbookmarks"
-import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, getDiskImageUrlFromIdentifier, internetArchiveUrlProtocol, isHardDriveImage, replaceSuffix } from "../../common/utility"
+import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, getDiskImageUrlFromIdentifier, internetArchiveUrlProtocol, isHardDriveImage, replaceSuffix, showGlobalProgressModal } from "../../common/utility"
 import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
@@ -172,11 +172,14 @@ export const handleSetDiskFromURL = async (url: string,
     // Ask CT6502 for why we need to use this favicon header
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
+
+    showGlobalProgressModal(true)
     const response = await fetch(iconName() + url, { headers: favicon })
     if (!response.ok) {
       console.error(`HTTP error: status ${response.status}`)
       return
     }
+    showGlobalProgressModal(false)
 
     const blob = await response.blob()
 

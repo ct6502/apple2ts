@@ -462,6 +462,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
   const favicon: { [key: string]: string } = {}
   favicon[iconKey()] = iconData()
   
+  showGlobalProgressModal(true)
   await fetch(iconName() + detailsUrl, { headers: favicon })
     .then(async response => {
       if (response.ok) {
@@ -484,6 +485,13 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
         return undefined
       }
     })
+    .finally(() => {
+      showGlobalProgressModal(false)
+    })
 
   return newDiskImageUrl
+}
+
+export const showGlobalProgressModal = (show: boolean = true) => {
+  document.body.style.setProperty("--global-progress-visibility", show ? "visible" : "hidden")
 }
