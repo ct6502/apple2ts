@@ -120,7 +120,7 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
     handleSetDiskFromURL(url, updateDisplay)
   } else if (hasBasicProgram) {
     // If we had a BASIC program in the URL, and we didn't have a floppy,
-    // then boot our default blank ProDOS disk.`
+    // then boot our default blank ProDOS disk.
     handleSetDiskFromURL("blank.po", updateDisplay)
   }
 }
