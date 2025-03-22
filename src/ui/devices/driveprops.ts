@@ -5,6 +5,8 @@ import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewDat
 import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
 import * as fflate from 'fflate'
+import { OneDriveCloudDrive } from "./onedriveclouddrive"
+import { GoogleDrive } from "./googledrive"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -136,7 +138,56 @@ export const handleSetDiskOrFileFromBuffer = (
   }
 
   return newIndex
+}
 
+export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
+  let cloudProvider
+  switch (cloudData.providerName) {
+    case "GoogleDrive":
+      cloudProvider = new GoogleDrive
+      break
+
+    case "OneDrive":
+      cloudProvider = new OneDriveCloudDrive
+      break
+  }
+
+  if (cloudProvider) {
+    const baseUrl = new URL(window.location.href)
+    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=${cloudData.providerName}`
+    const authUrl = `${cloudProvider.authenticationUrl}${redirectUri}`
+
+    const popup = window.open(authUrl, "_blank")
+    popup?.addEventListener("DOMContentLoaded", () => {
+      window.setTimeout(async () => {
+        const accessToken = (window as any).accessToken
+
+        showGlobalProgressModal(true)
+        const response = await fetch(cloudData.downloadUrl, {
+          headers: {
+            "Authorization": `bearer ${accessToken}`,
+            "Content-Type": "application/octet"
+          },
+          redirect: "follow"
+        })
+          .finally(() => {
+            showGlobalProgressModal(false)
+          })
+
+        if (response.ok) {
+          // const body = await response.text()
+          // console.log(body)
+          const blob = await response.blob()
+          const buffer = await new Response(blob).arrayBuffer()
+                    
+          cloudData.accessToken = accessToken
+          handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
+        } else {
+          // $TODO: Add error handling
+        }
+      }, 100)
+    }, false)
+  }
 }
 
 export const handleSetDiskFromURL = async (url: string,
@@ -175,11 +226,14 @@ export const handleSetDiskFromURL = async (url: string,
 
     showGlobalProgressModal(true)
     const response = await fetch(iconName() + url, { headers: favicon })
+      .finally(() => {
+        showGlobalProgressModal(false)
+      })
+
     if (!response.ok) {
       console.error(`HTTP error: status ${response.status}`)
       return
     }
-    showGlobalProgressModal(false)
 
     const blob = await response.blob()
 

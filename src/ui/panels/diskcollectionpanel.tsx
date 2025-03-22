@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
-import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
+import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -92,6 +92,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     if (diskCollectionItem.diskImage) {
       handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
+    } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+        handleSetDiskFromCloudData(diskCollectionItem.cloudData)
     } else if (diskCollectionItem.diskUrl) {
       handleSetDiskFromURL(diskCollectionItem.diskUrl.toString())
     } else {
@@ -121,7 +123,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     // Load built-in disk images
     const baseUrl = new URL(window.location.href)
-    const baseUrlString = `${baseUrl.protocol}${baseUrl.hostname}:${baseUrl.port}`
+    const baseUrlString = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}`
     diskImages.forEach((diskImage) => {
       newDiskCollection.push({
         type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
@@ -141,7 +143,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         diskUrl: diskBookmark.diskUrl,
         imageUrl: diskBookmark.screenshotUrl,
         detailsUrl: diskBookmark.detailsUrl,
-        bookmarkId: diskBookmark.id
+        bookmarkId: diskBookmark.id,
+        cloudData: diskBookmark.cloudData
       })
     }
 

@@ -116,8 +116,20 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
     }
   }
   if (fragment.length >= 2) {
-    const url = fragment.substring(1)
-    handleSetDiskFromURL(url, updateDisplay)
+    const params = new URLSearchParams(window.location.search)
+    const cloudProvider = params.get("cloudProvider")
+    const regex: RegExp = /access_token=([^&]+)/
+    const matches = regex.exec(window.location.hash)
+    
+    if (cloudProvider && matches && matches.length > 0) {
+      // Handle access token in fragment for cloud drive providers
+      const opener = window.opener as OpenerWindow
+      opener.accessToken = matches[1]
+      window.close()
+    } else {
+      const url = fragment.substring(1)
+      handleSetDiskFromURL(url, updateDisplay)
+    }
   } else if (hasBasicProgram) {
     // If we had a BASIC program in the URL, and we didn't have a floppy,
     // then boot our default blank ProDOS disk.

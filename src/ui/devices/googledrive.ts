@@ -8,6 +8,9 @@ let g_accessToken: string = ""
 let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
+  // $TODO
+  authenticationUrl = new URL("http://todo")
+
   tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: "831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com",
     scope: "https://www.googleapis.com/auth/drive.file",
@@ -159,6 +162,7 @@ export class GoogleDrive implements CloudProvider {
         itemId: "",
         apiEndpoint: "",
         parentID: result.fileId,
+        downloadUrl: ""
       }
 
       try {

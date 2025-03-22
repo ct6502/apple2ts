@@ -4,9 +4,10 @@ export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
-// const applicationId = "5e3e8e67-67b3-4fd1-8f31-4b4ca52966cd"
+const readWriteScope = "onedrive.readwrite"
 
 export class OneDriveCloudDrive implements CloudProvider {
+  authenticationUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await launchPicker("share", "files", filter)
@@ -22,12 +23,12 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: file.parentReference.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
-        downloadUrl: file["@content.downloadUrl"]
+        downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`
       }
 
       showGlobalProgressModal(true)
 
-      const response = await fetch(cloudData.downloadUrl)
+      const response = await fetch(file["@content.downloadUrl"])
       .finally(() => {
         showGlobalProgressModal(false)
       })
@@ -57,6 +58,7 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
+        downloadUrl: ""
       }
       return cloudData
     } else {
@@ -71,7 +73,6 @@ export class OneDriveCloudDrive implements CloudProvider {
     const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.itemId}:/${cloudData.fileName}:/createUploadSession`
     let success = false
 
-    console.log(`fetch: POST ${sessionUrl}`)
     await fetch(sessionUrl, {
       method: "POST",
       mode: "cors",

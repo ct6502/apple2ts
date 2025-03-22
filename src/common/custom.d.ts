@@ -131,6 +131,7 @@ type CloudProvider = {
   download(filter: string): Promise<[Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
+  authenticationUrl: URL
 }
 
 type DriveState = {
@@ -313,5 +314,10 @@ type DiskCollectionItem = {
   diskUrl?: URL,
   detailsUrl?: URL,
   diskImage?: diskImage,
-  bookmarkId?: string
+  bookmarkId?: string,
+  cloudData?: CloudData
+}
+
+interface OpenerWindow {
+  accessToken: string
 }
