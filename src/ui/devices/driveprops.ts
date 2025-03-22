@@ -156,11 +156,13 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
     const baseUrl = new URL(window.location.href)
     const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=${cloudData.providerName}`
     const authUrl = `${cloudProvider.authenticationUrl}${redirectUri}`
-
-    const popup = window.open(authUrl, "_blank")
-    popup?.addEventListener("DOMContentLoaded", () => {
-      window.setTimeout(async () => {
-        const accessToken = (window as any).accessToken
+    
+    window.open(authUrl, "_blank")
+    const interval = window.setInterval(async () => {
+      const accessToken = (window as any).accessToken
+      if (accessToken) {
+        clearInterval(interval)
+        console.log(`accessToken=${accessToken}`)
 
         showGlobalProgressModal(true)
         const response = await fetch(cloudData.downloadUrl, {
@@ -182,11 +184,12 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
                     
           cloudData.accessToken = accessToken
           handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
+          interval
         } else {
           // $TODO: Add error handling
         }
-      }, 100)
-    }, false)
+      }
+    }, 500)
   }
 }
 
