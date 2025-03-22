@@ -6,9 +6,9 @@ export type DiskBookmark = {
   type: DISK_COLLECTION_ITEM_TYPE,
   id: string,
   title: string,
-  screenshotUrl: URL,
+  screenshotUrl?: URL,
   diskUrl: URL,
-  detailsUrl: URL,
+  detailsUrl?: URL,
   lastUpdated: Date
 }
 

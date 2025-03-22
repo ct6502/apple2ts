@@ -119,12 +119,12 @@ export class GoogleDrive implements CloudProvider {
         itemId: result.fileId,
         apiEndpoint: "",
         parentID: result.parentID,
+        downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
       }
       
       showGlobalProgressModal(true)
 
-      const url = `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
-      const response = await fetch(url, {
+      const response = await fetch(cloudData.downloadUrl, {
         headers: {
           "Authorization": `Bearer ${g_accessToken}`
         }

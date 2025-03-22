@@ -22,12 +22,12 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: file.parentReference.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
+        downloadUrl: file["@content.downloadUrl"]
       }
 
       showGlobalProgressModal(true)
 
-      const downloadUrl = file["@content.downloadUrl"]
-      const response = await fetch(downloadUrl)
+      const response = await fetch(cloudData.downloadUrl)
       .finally(() => {
         showGlobalProgressModal(false)
       })

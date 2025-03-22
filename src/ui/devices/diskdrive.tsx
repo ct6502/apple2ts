@@ -13,6 +13,8 @@ import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
 import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
 import InternetArchivePopup from "../internetarchivedialog"
+import { DiskBookmarks } from "../../common/diskbookmarks"
+import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -43,6 +45,7 @@ type DiskDriveProps = {
 
 const DiskDrive = (props: DiskDriveProps) => {
   const dprops = handleGetDriveProps(props.index)
+  const diskBookmarks = new DiskBookmarks()
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
@@ -349,8 +352,17 @@ const DiskDrive = (props: DiskDriveProps) => {
       } else if (menuChoice >= 0) {
         if (menuChoice == 3) {
           handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
-        }
-        else if (menuChoice == Number.MIN_VALUE) {
+        } else if (menuChoice == 7) {
+          if (dprops.cloudData) {
+            diskBookmarks.set({
+              type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
+              id: dprops.cloudData.itemId,
+              title: dprops.cloudData.fileName,
+              diskUrl: new URL(dprops.cloudData.downloadUrl),
+              lastUpdated: new Date(dprops.cloudData.lastSyncTime)
+            })
+          }
+        } else if (menuChoice == Number.MIN_VALUE) {
           switch (dprops.cloudData?.providerName) {
             case "OneDrive":
               updateCloudDrive(new OneDriveCloudDrive())

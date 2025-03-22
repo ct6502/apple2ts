@@ -123,7 +123,8 @@ type CloudData = {
   accessToken: string,
   itemId: string,
   apiEndpoint: string,
-  parentID: string
+  parentID: string,
+  downloadUrl: string
 }
 
 type CloudProvider = {
@@ -308,9 +309,9 @@ type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
   lastUpdated: Date,
-  imageUrl: string,
-  diskUrl?: string,
-  detailsUrl?: string,
+  imageUrl?: URL,
+  diskUrl?: URL,
+  detailsUrl?: URL,
   diskImage?: diskImage,
   bookmarkId?: string
 }

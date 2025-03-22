@@ -1,4 +1,4 @@
-import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faStar, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
 import { JSX } from "react"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 
@@ -10,6 +10,7 @@ type MenuItem = {
 }
 
 export const driveMenuItems: Array<Array<MenuItem>> = [
+  // menuNumber = 0
   [
     {
       label: "Write Protect Disk",
@@ -48,6 +49,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 5
     }
   ],
+  // menuNumber = 1
   [
     {
       label: "Write Protect Disk",
@@ -61,6 +63,14 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "Eject Disk",
       icon: faEject,
       index: 2
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Add to Disk Collection",
+      icon: faStar,
+      index: 7
     },
     {
       label: "-"
@@ -89,6 +99,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: Number.MIN_VALUE
     }
   ],
+  // menuNumber = 2
   [
     {
       label: "Load Disk from Device (Read-Only)",
@@ -117,6 +128,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 2
     }
   ],
+  // menuNumber = 3
   [
     {
       label: "Load Disk from Device (Read/Write)",
@@ -145,6 +157,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 2
     }
   ],
+  // menuNumber = 4
   [
     {
       label: "Write Protect Disk",
