@@ -20,7 +20,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         lastSyncTime: Date.now(),
         fileName: file.name,
         accessToken: result.accessToken,
-        itemId: file.parentReference.id,
+        parentId: file.parentReference.id,
+        itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
         downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`
@@ -55,7 +56,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         lastSyncTime: -1,  // force an immediate sync (which will actually upload the data)
         fileName: filename,
         accessToken: result.accessToken,
-        itemId: file.id,
+        parentId: file.id,
+        itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
         parentID: "",
         downloadUrl: ""
@@ -70,7 +72,7 @@ export class OneDriveCloudDrive implements CloudProvider {
   async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
-    const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.itemId}:/${cloudData.fileName}:/createUploadSession`
+    const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.parentId}:/${cloudData.fileName}:/createUploadSession`
     let success = false
 
     await fetch(sessionUrl, {
@@ -137,6 +139,13 @@ export class OneDriveCloudDrive implements CloudProvider {
             chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
 
             if (chunkSize <= 0) {
+              if (cloudData.itemId == "") {                    
+                const json = await response.json()
+                if (json) {
+                  cloudData.itemId = json.id
+                }
+              }
+
               cloudData.syncStatus = CLOUD_SYNC.ACTIVE
               success = true
             }

@@ -121,6 +121,7 @@ type CloudData = {
   lastSyncTime: number,
   fileName: string,
   accessToken: string,
+  parentId?: string,
   itemId: string,
   apiEndpoint: string,
   parentID: string,

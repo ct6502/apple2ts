@@ -68,14 +68,6 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "-"
     },
     {
-      label: "Add to Disk Collection",
-      icon: faStar,
-      index: 7
-    },
-    {
-      label: "-"
-    },
-    {
       label: "Sync Every Minute",
       icon: faClock,
       index: 60000
@@ -223,7 +215,57 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "-"
     },
     {
-      label: "Remove from Disk Collection",
+      label: "Add to Disk Collection",
+      icon: faStar,
+      index: 7
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Every Minute",
+      icon: faClock,
+      index: 60000
+    },
+    {
+      label: "Sync Every 5 Minutes",
+      icon: faClock,
+      index: 300000
+    },
+    {
+      label: "Pause Syncing",
+      icon: faPause,
+      index: Number.MAX_VALUE
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Now",
+      icon: faSync,
+      index: Number.MIN_VALUE
+    }
+  ],
+  // menuNumber = 6
+  [
+    {
+      label: "Write Protect Disk",
+      icon: faLock,
+      index: 3
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Eject Disk",
+      icon: faEject,
+      index: 2
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Remove Disk from Collection",
       icon: faStar,
       index: 8
     },
@@ -253,5 +295,5 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       icon: faSync,
       index: Number.MIN_VALUE
     }
-  ],
+  ]
 ]

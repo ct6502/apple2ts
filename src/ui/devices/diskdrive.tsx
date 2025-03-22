@@ -284,7 +284,11 @@ const DiskDrive = (props: DiskDriveProps) => {
         }
       }
     } else {
-      menuIndex = diskBookmarks.contains(dprops.cloudData.itemId) ? 5 : 1
+      if (dprops.cloudData.itemId != "") {
+        menuIndex = !diskBookmarks.contains(dprops.cloudData.itemId) ? 5 : 6
+      } else {
+        menuIndex = 1
+      }
     }
 
     if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
