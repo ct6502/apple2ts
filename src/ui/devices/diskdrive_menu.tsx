@@ -203,5 +203,55 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       icon: faCloud,
       index: 5
     }
-  ]
+  ],
+  // menuNumber = 5
+  [
+    {
+      label: "Write Protect Disk",
+      icon: faLock,
+      index: 3
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Eject Disk",
+      icon: faEject,
+      index: 2
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Remove from Disk Collection",
+      icon: faStar,
+      index: 8
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Every Minute",
+      icon: faClock,
+      index: 60000
+    },
+    {
+      label: "Sync Every 5 Minutes",
+      icon: faClock,
+      index: 300000
+    },
+    {
+      label: "Pause Syncing",
+      icon: faPause,
+      index: Number.MAX_VALUE
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Now",
+      icon: faSync,
+      index: Number.MIN_VALUE
+    }
+  ],
 ]

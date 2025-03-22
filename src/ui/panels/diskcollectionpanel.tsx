@@ -120,12 +120,14 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     const newDiskCollection: DiskCollectionItem[] = []
 
     // Load built-in disk images
+    const baseUrl = new URL(window.location.href)
+    const baseUrlString = `${baseUrl.protocol}${baseUrl.hostname}:${baseUrl.port}`
     diskImages.forEach((diskImage) => {
       newDiskCollection.push({
         type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
         title: diskImage.title,
         lastUpdated: minDate,
-        // imageUrl: new URL(`${"/disks/" + replaceSuffix(diskImage.file, "png")}`),
+        imageUrl: new URL(baseUrlString + "/disks/" + replaceSuffix(diskImage.file, "png")),
         diskImage: diskImage
       })
     })

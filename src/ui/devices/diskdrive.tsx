@@ -284,7 +284,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         }
       }
     } else {
-      menuIndex = 1
+      menuIndex = diskBookmarks.contains(dprops.cloudData.itemId) ? 5 : 1
     }
 
     if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
@@ -314,6 +314,16 @@ const DiskDrive = (props: DiskDriveProps) => {
     })
 
     return [w, h]
+  }
+
+  const getImageDataUrlFromCanvas = () => {
+    const hiddenCanvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement
+    
+    if (hiddenCanvas) {
+      return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
+    }
+
+    return undefined
   }
 
   const handleMenuClose = (menuChoice = -1) => {
@@ -346,7 +356,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 6:
           showSaveFilePicker(props.index)
       }
-    } else if (menuNumber == 1) {
+    } else if (menuNumber == 1 || menuNumber == 5) {
       if (menuChoice == 2) {
         resetDrive(props.index)
       } else if (menuChoice >= 0) {
@@ -358,9 +368,14 @@ const DiskDrive = (props: DiskDriveProps) => {
               type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
               id: dprops.cloudData.itemId,
               title: dprops.cloudData.fileName,
+              screenshotUrl: getImageDataUrlFromCanvas(),
               diskUrl: new URL(dprops.cloudData.downloadUrl),
               lastUpdated: new Date(dprops.cloudData.lastSyncTime)
             })
+          }
+        } else if (menuChoice == 8) {
+          if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
+            diskBookmarks.remove(dprops.cloudData.itemId)
           }
         } else if (menuChoice == Number.MIN_VALUE) {
           switch (dprops.cloudData?.providerName) {
