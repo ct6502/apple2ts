@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { replaceSuffix } from "../../common/utility"
@@ -93,7 +93,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     if (diskCollectionItem.diskImage) {
       handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
     } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-        handleSetDiskFromCloudData(diskCollectionItem.cloudData)
+      handleSetDiskFromCloudData(diskCollectionItem.cloudData)
     } else if (diskCollectionItem.diskUrl) {
       handleSetDiskFromURL(diskCollectionItem.diskUrl.toString())
     } else {
@@ -205,6 +205,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <div
                 className="dcp-item-bookmark" title="Click to remove from disk collection" onClick={handleBookmarkClick(index)}>
                 <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
+              </div>}
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
+              <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
+                <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => event.stopPropagation()} />
               </div>}
           </div>
         ))}

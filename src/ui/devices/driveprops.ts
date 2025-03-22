@@ -184,7 +184,6 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
                     
           cloudData.accessToken = accessToken
           handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
-          interval
         } else {
           // $TODO: Add error handling
         }
