@@ -4,8 +4,7 @@ import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
 import { handleGetTheme } from "./main2worker"
 import { UI_THEME } from "../common/utility"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faRotate } from "@fortawesome/free-solid-svg-icons"
+import runningGuy from "./img/runningGuy.gif"
 
 const App = () => {
   const [updateHgr, setUpdateHgr] = useState(false)
@@ -36,7 +35,7 @@ const App = () => {
       }}>
       <DisplayApple2 />
       <div className="global-progress-modal-overlay">
-        <FontAwesomeIcon icon={faRotate} className="global-progress-spinner"/>
+        <img src={runningGuy} alt="Loading..." className="global-progress-spinner2" />
       </div>
     </GlobalContext.Provider>
   )

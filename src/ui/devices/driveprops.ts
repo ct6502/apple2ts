@@ -4,7 +4,7 @@ import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
-import * as fflate from 'fflate'
+import * as fflate from "fflate"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -190,7 +190,7 @@ export const handleSetDiskFromURL = async (url: string,
       unzipper.onfile = file => {
         const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLocaleLowerCase()
         if (FILE_SUFFIXES.includes(fileExtension)) {
-          file.ondata = (err, data, final) => {
+          file.ondata = (_err, data) => {
             // Ignore index files, etc.
             if (data.length > 1024) {
               name = file.name
