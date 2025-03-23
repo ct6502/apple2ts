@@ -11,7 +11,7 @@ let g_accessToken: string
 
 export class OneDriveCloudDrive implements CloudProvider {
 
-  requestAccessToken(callback: (accessToken: string) => void) {
+  requestAuthToken(callback: (authToken: string) => void) {
     const baseUrl = new URL(window.location.href)
     const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=OneDrive`
 
@@ -21,7 +21,7 @@ export class OneDriveCloudDrive implements CloudProvider {
       if (accessToken) {
         clearInterval(interval)
         g_accessToken = accessToken
-        callback(accessToken)
+        callback(`bearer ${accessToken}`)
       }
     }, 500)
   }
@@ -39,7 +39,6 @@ export class OneDriveCloudDrive implements CloudProvider {
         parentId: file.parentReference.id,
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
-        parentID: "",
         downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`,
         detailsUrl: file.webUrl
       }
@@ -76,9 +75,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         parentId: file.id,
         itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
-        parentID: "",
         downloadUrl: "",
-        detailsUrl: file.webUrl
+        detailsUrl: ""
       }
       g_accessToken = result.accessToken
       return cloudData
@@ -161,8 +159,9 @@ export class OneDriveCloudDrive implements CloudProvider {
                 const json = await response.json()
                 if (json) {
                   cloudData.itemId = json.id
-                  cloudData.parentID = json.parentReference.id
+                  cloudData.parentId = json.parentReference.id
                   cloudData.downloadUrl = `${cloudData.apiEndpoint}drive/items/${json.id}/content`
+                  cloudData.detailsUrl = json.webUrl
                 }
               }
 

@@ -108,13 +108,13 @@ export class GoogleDrive implements CloudProvider {
     })
   }
 
-  requestAccessToken(callback: (accessToken: string) => void) {
+  requestAuthToken(callback: (authToken: string) => void) {
     this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
       if (response.error !== undefined) {
         throw (response)
       }
       g_accessToken = response.access_token
-      callback(response.access_token)
+      callback(`Bearer ${response.access_token}`)
     }
     this.tokenClient.requestAccessToken({prompt: "consent"})
   }
@@ -130,7 +130,7 @@ export class GoogleDrive implements CloudProvider {
         fileName: result.fileName,
         itemId: result.fileId,
         apiEndpoint: "",
-        parentID: result.parentID,
+        parentId: result.parentID,
         downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`,
         detailsUrl: result.webViewLink
       }
@@ -170,15 +170,15 @@ export class GoogleDrive implements CloudProvider {
         fileName: filename,
         itemId: "",
         apiEndpoint: "",
-        parentID: result.fileId,
-        downloadUrl: "",
+        parentId: result.fileId,
+        downloadUrl: "",  // Download URL is unknown until file is sucessfully uploaded
         detailsUrl: result.webViewLink
       }
 
       try {
         const metadata = {
           name: filename,
-          parents: [cloudData.parentID],
+          parents: [cloudData.parentId],
         }
         const form = new FormData()
         form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }))
@@ -194,6 +194,7 @@ export class GoogleDrive implements CloudProvider {
           console.log(`File upload success: ${filename}`)
           // Make sure to get our new Google Drive fileId so we can sync later.
           const responseData = await response.json()
+          cloudData.downloadUrl = `https://www.googleapis.com/drive/v3/files/${responseData.id}?alt=media`,
           cloudData.itemId = responseData.id
           cloudData.syncStatus = CLOUD_SYNC.ACTIVE
           return cloudData

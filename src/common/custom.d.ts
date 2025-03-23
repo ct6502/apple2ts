@@ -123,7 +123,6 @@ type CloudData = {
   parentId?: string,
   itemId: string,
   apiEndpoint: string,
-  parentID: string,
   downloadUrl: string,
   detailsUrl: string
 }
@@ -132,7 +131,7 @@ type CloudProvider = {
   download(filter: string): Promise<[Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
-  requestAccessToken(async callback: (accessToken: string) => void): void
+  requestAuthToken(async callback: (authToken: string) => void): void
 }
 
 type DriveState = {

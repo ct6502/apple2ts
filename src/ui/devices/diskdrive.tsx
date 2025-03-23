@@ -322,12 +322,7 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const getImageDataUrlFromCanvas = () => {
     const hiddenCanvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement
-    
-    if (hiddenCanvas) {
-      return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
-    }
-
-    return undefined
+    return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
   }
 
   const handleMenuClose = (menuChoice = -1) => {

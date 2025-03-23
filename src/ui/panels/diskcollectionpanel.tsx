@@ -4,6 +4,7 @@ import Flyout from "../flyout"
 import { faClock, faCloud, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
+import { newReleases } from "../devices/newreleases"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
@@ -15,43 +16,6 @@ export enum DISK_COLLECTION_ITEM_TYPE {
   NEW_RELEASE,
   CLOUD_DRIVE
 }
-
-// $TODO: Read this disk collection data from a hosted JSON file
-const newReleases: DiskCollectionItem[] = [
-  {
-    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    title: "Glider for Apple II",
-    lastUpdated: new Date("3/16/2025"),
-    imageUrl: new URL("https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png"),
-    diskUrl: new URL("https://colino.net/tmp/glider-en-beta-202503162.po"),
-    detailsUrl: new URL("https://www.colino.net/wordpress/glider-for-apple-ii/")
-  },
-  {
-    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    title: "Million Perfect Tiles",
-    lastUpdated: new Date("12/30/2024"),
-    imageUrl: new URL("https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png"),
-    diskUrl: new URL("https://archive.org/download/MillionPerfectTiles/Million.Perfect.Tiles.v1.1.po"),
-    detailsUrl: new URL("https://archive.org/details/MillionPerfectTiles")
-  },
-  // $TODO: Figure out why the DSK fails to load
-  // {
-  //   type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-  //   title: "Encounter Adventure",
-  //   lastUpdated: new Date("11/11/2024"),
-  //   imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg"),
-  //   diskUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk"),
-  //   detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/")
-  // }
-  {
-    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    title: "Undead Demo",
-    lastUpdated: new Date("9/10/2024"),
-    imageUrl: new URL("https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png"),
-    diskUrl: new URL("https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip"),
-    detailsUrl: new URL("https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central")
-  }
-]
 
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -150,8 +114,9 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     }
 
     // Load new releases
-    newReleases.forEach((diskImage) => {
-      newDiskCollection.push(diskImage)
+    newReleases.forEach((newRelease) => {
+      newRelease.type = DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE
+      newDiskCollection.push(newRelease)
     })
 
     setDiskCollection(newDiskCollection)

@@ -153,11 +153,11 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
   }
 
   if (cloudProvider) {
-    cloudProvider.requestAccessToken(async (accessToken: string) => {
+    cloudProvider.requestAuthToken(async (authToken: string) => {
       showGlobalProgressModal(true)
       const response = await fetch(cloudData.downloadUrl, {
         headers: {
-          "Authorization": `Bearer ${accessToken}`,
+          "Authorization": authToken,
           "Content-Type": "application/octet"
         },
         redirect: "follow"
@@ -169,6 +169,8 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
       if (response.ok) {
         const blob = await response.blob()
         const buffer = await new Response(blob).arrayBuffer()
+
+        cloudData.lastSyncTime = Date.now()
         handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
       } else {
         // $TODO: Add error handling
