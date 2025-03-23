@@ -124,7 +124,8 @@ type CloudData = {
   itemId: string,
   apiEndpoint: string,
   parentID: string,
-  downloadUrl: string
+  downloadUrl: string,
+  detailsUrl: string
 }
 
 type CloudProvider = {

@@ -40,7 +40,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
-        downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`
+        downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`,
+        detailsUrl: file.webUrl
       }
       g_accessToken = result.accessToken
 
@@ -76,7 +77,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
         parentID: "",
-        downloadUrl: ""
+        downloadUrl: "",
+        detailsUrl: file.webUrl
       }
       g_accessToken = result.accessToken
       return cloudData

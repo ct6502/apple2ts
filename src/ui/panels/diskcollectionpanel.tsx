@@ -130,6 +130,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         title: diskImage.title,
         lastUpdated: minDate,
         imageUrl: new URL(baseUrlString + "/disks/" + replaceSuffix(diskImage.file, "png")),
+        detailsUrl: diskImage.url ? new URL(diskImage.url) : undefined,
         diskImage: diskImage
       })
     })
@@ -142,7 +143,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         lastUpdated: new Date(diskBookmark.lastUpdated),
         diskUrl: diskBookmark.diskUrl,
         imageUrl: diskBookmark.screenshotUrl,
-        detailsUrl: diskBookmark.detailsUrl,
+        detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData
       })

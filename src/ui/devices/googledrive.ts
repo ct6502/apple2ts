@@ -85,6 +85,7 @@ export class GoogleDrive implements CloudProvider {
           fileId: doc[google.picker.Document.ID],
           parentID: doc[google.picker.Document.PARENT_ID] ?? "",
           fileName: doc[google.picker.Document.NAME] ?? "",
+          webViewLink: doc[google.picker.Document.URL] ?? ""
         })
         this.resolvePicker = null
       }
@@ -130,7 +131,8 @@ export class GoogleDrive implements CloudProvider {
         itemId: result.fileId,
         apiEndpoint: "",
         parentID: result.parentID,
-        downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
+        downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`,
+        detailsUrl: result.webViewLink
       }
       
       showGlobalProgressModal(true)
@@ -169,7 +171,8 @@ export class GoogleDrive implements CloudProvider {
         itemId: "",
         apiEndpoint: "",
         parentID: result.fileId,
-        downloadUrl: ""
+        downloadUrl: "",
+        detailsUrl: result.webViewLink
       }
 
       try {
@@ -249,5 +252,6 @@ interface GoogleTokenClient {
 interface GoogleDriveResult {
   fileId: string,
   parentID: string,
-  fileName: string
+  fileName: string,
+  webViewLink: string
 }
