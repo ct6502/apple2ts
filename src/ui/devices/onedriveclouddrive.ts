@@ -143,6 +143,8 @@ export class OneDriveCloudDrive implements CloudProvider {
                 const json = await response.json()
                 if (json) {
                   cloudData.itemId = json.id
+                  cloudData.parentID = json.parentReference.id
+                  cloudData.downloadUrl = `${cloudData.apiEndpoint}drive/items/${json.id}/content`
                 }
               }
 

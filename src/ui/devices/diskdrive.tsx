@@ -360,7 +360,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 6:
           showSaveFilePicker(props.index)
       }
-    } else if (menuNumber == 1 || menuNumber == 5) {
+    } else if (menuNumber == 1 || menuNumber == 5 || menuNumber == 6) {
       if (menuChoice == 2) {
         resetDrive(props.index)
       } else if (menuChoice >= 0) {

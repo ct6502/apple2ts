@@ -162,7 +162,6 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
       const accessToken = (window as any).accessToken
       if (accessToken) {
         clearInterval(interval)
-        console.log(`accessToken=${accessToken}`)
 
         showGlobalProgressModal(true)
         const response = await fetch(cloudData.downloadUrl, {
@@ -177,8 +176,6 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
           })
 
         if (response.ok) {
-          // const body = await response.text()
-          // console.log(body)
           const blob = await response.blob()
           const buffer = await new Response(blob).arrayBuffer()
                     
