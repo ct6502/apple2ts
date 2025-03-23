@@ -120,7 +120,6 @@ type CloudData = {
   syncInterval: number,
   lastSyncTime: number,
   fileName: string,
-  accessToken: string,
   parentId?: string,
   itemId: string,
   apiEndpoint: string,
@@ -132,7 +131,7 @@ type CloudProvider = {
   download(filter: string): Promise<[Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
-  authenticationUrl: URL
+  requestAccessToken(async callback: (accessToken: string) => void): void
 }
 
 type DriveState = {

@@ -5,9 +5,26 @@ export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 const readWriteScope = "onedrive.readwrite"
+const authUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
+
+let g_accessToken: string
 
 export class OneDriveCloudDrive implements CloudProvider {
-  authenticationUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
+
+  requestAccessToken(callback: (accessToken: string) => void) {
+    const baseUrl = new URL(window.location.href)
+    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=OneDrive`
+
+    window.open(`${authUrl}${redirectUri}`, "_blank")
+    const interval = window.setInterval(async () => {
+      const accessToken = (window as any).accessToken
+      if (accessToken) {
+        clearInterval(interval)
+        g_accessToken = accessToken
+        callback(accessToken)
+      }
+    }, 500)
+  }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await launchPicker("share", "files", filter)
@@ -19,13 +36,13 @@ export class OneDriveCloudDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: file.name,
-        accessToken: result.accessToken,
         parentId: file.parentReference.id,
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         parentID: "",
         downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`
       }
+      g_accessToken = result.accessToken
 
       showGlobalProgressModal(true)
 
@@ -55,13 +72,13 @@ export class OneDriveCloudDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: -1,  // force an immediate sync (which will actually upload the data)
         fileName: filename,
-        accessToken: result.accessToken,
         parentId: file.id,
         itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
         parentID: "",
         downloadUrl: ""
       }
+      g_accessToken = result.accessToken
       return cloudData
     } else {
       console.error(`result message: ${result?.message} errorCode: ${result?.errorCode}`)
@@ -79,7 +96,7 @@ export class OneDriveCloudDrive implements CloudProvider {
       method: "POST",
       mode: "cors",
       headers: {
-          "Authorization": `bearer ${cloudData.accessToken}`,
+          "Authorization": `bearer ${g_accessToken}`,
           "Content-Type": "application/json"
       },
       body: JSON.stringify(
@@ -96,7 +113,6 @@ export class OneDriveCloudDrive implements CloudProvider {
           success = await this.uploadBlob(json["uploadUrl"], blob, cloudData)
         } else {
           cloudData.syncStatus = CLOUD_SYNC.FAILED
-          console.log(`response.status: ${JSON.stringify(json)}`)
         }
     })
     .catch(error => {
@@ -124,7 +140,7 @@ export class OneDriveCloudDrive implements CloudProvider {
         method: "PUT",
         mode: "cors",
         headers: {
-          "Authorization": `bearer ${cloudData.accessToken}`,
+          "Authorization": `bearer ${g_accessToken}`,
           "Content-Length": `${chunkSize}`,
           "Content-Range": `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
         },

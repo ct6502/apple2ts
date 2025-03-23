@@ -368,10 +368,6 @@ const DiskDrive = (props: DiskDriveProps) => {
           handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
         } else if (menuChoice == 7) {
           if (dprops.cloudData) {
-            // Strip the access token to avoid persisting secrets to local storage
-            const cloudData = JSON.parse(JSON.stringify(dprops.cloudData)) as CloudData
-            cloudData.accessToken = ""
-
             diskBookmarks.set({
               type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
               id: dprops.cloudData.itemId,

@@ -153,39 +153,27 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
   }
 
   if (cloudProvider) {
-    const baseUrl = new URL(window.location.href)
-    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=${cloudData.providerName}`
-    const authUrl = `${cloudProvider.authenticationUrl}${redirectUri}`
-    
-    window.open(authUrl, "_blank")
-    const interval = window.setInterval(async () => {
-      const accessToken = (window as any).accessToken
-      if (accessToken) {
-        clearInterval(interval)
-
-        showGlobalProgressModal(true)
-        const response = await fetch(cloudData.downloadUrl, {
-          headers: {
-            "Authorization": `bearer ${accessToken}`,
-            "Content-Type": "application/octet"
-          },
-          redirect: "follow"
+    cloudProvider.requestAccessToken(async (accessToken: string) => {
+      showGlobalProgressModal(true)
+      const response = await fetch(cloudData.downloadUrl, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/octet"
+        },
+        redirect: "follow"
+      })
+        .finally(() => {
+          showGlobalProgressModal(false)
         })
-          .finally(() => {
-            showGlobalProgressModal(false)
-          })
 
-        if (response.ok) {
-          const blob = await response.blob()
-          const buffer = await new Response(blob).arrayBuffer()
-                    
-          cloudData.accessToken = accessToken
-          handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
-        } else {
-          // $TODO: Add error handling
-        }
+      if (response.ok) {
+        const blob = await response.blob()
+        const buffer = await new Response(blob).arrayBuffer()
+        handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
+      } else {
+        // $TODO: Add error handling
       }
-    }, 500)
+    })
   }
 }
 

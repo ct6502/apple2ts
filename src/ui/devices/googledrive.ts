@@ -8,9 +8,7 @@ let g_accessToken: string = ""
 let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
-  // $TODO
-  authenticationUrl = new URL("http://todo")
-
+  
   tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: "831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com",
     scope: "https://www.googleapis.com/auth/drive.file",
@@ -109,6 +107,17 @@ export class GoogleDrive implements CloudProvider {
     })
   }
 
+  requestAccessToken(callback: (accessToken: string) => void) {
+    this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+      if (response.error !== undefined) {
+        throw (response)
+      }
+      g_accessToken = response.access_token
+      callback(response.access_token)
+    }
+    this.tokenClient.requestAccessToken({prompt: "consent"})
+  }
+
   async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await this.launchPicker("file", filter)
     if (result) {
@@ -118,7 +127,6 @@ export class GoogleDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: result.fileName,
-        accessToken: "",
         itemId: result.fileId,
         apiEndpoint: "",
         parentID: result.parentID,
@@ -158,7 +166,6 @@ export class GoogleDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: filename,
-        accessToken: "",
         itemId: "",
         apiEndpoint: "",
         parentID: result.fileId,
