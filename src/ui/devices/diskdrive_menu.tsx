@@ -215,7 +215,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "-"
     },
     {
-      label: "Add to Disk Collection",
+      label: "Add Disk to Collection",
       icon: faStar,
       index: 7
     },
