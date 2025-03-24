@@ -1,4 +1,4 @@
-import React from "react"
+import { useState } from "react"
 import { ReactNode } from "react"
 import { COLOR_MODE, colorToName } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -15,7 +15,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const colorMode = handleGetColorMode()
   const showScanlines = handleGetShowScanlines()
 
-  const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])

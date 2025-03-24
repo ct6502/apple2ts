@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faClock, faCloud, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { newReleases } from "../devices/newreleases"
-import { replaceSuffix } from "../../common/utility"
+import { MAX_DRIVES, replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
+import PopupMenu from "../controls/popupmenu"
+import { DISK_DRIVE_LABELS } from "../devices/diskdrive"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -43,6 +45,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
+  const [popupItemIndex, setPopupItemIndex] = useState<number>(-1)
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     const diskCollectionItem = diskCollection[itemIndex]
@@ -51,7 +55,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     return false
   }
 
-  const handleItemClick = (itemIndex: number, driveIndex: number = 0) => () => {
+  const loadDisk = (driveIndex: number, itemIndex: number = popupItemIndex) => {
     const diskCollectionItem = diskCollection[itemIndex]
 
     if (diskCollectionItem.diskImage) {
@@ -65,6 +69,19 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     }
 
     setIsFlyoutOpen(false)
+  }
+
+  const handleItemClick = (itemIndex: number, driveIndex: number = 0) => () => {
+    loadDisk(driveIndex, itemIndex)
+  }
+
+  const handleItemRightClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
+    setPopupItemIndex(itemIndex)
+    setPopupLocation([event.clientX, event.clientY])
+
+    event.stopPropagation()
+    event.preventDefault()
+    return false
   }
 
   const handleBookmarkClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
@@ -143,8 +160,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
             <div
               className="dcp-item-image-box"
-              title={`Click to insert disk "${diskCollectionItem.title}"`}
-              onClick={handleItemClick(index)}>
+              title={`Click to load disk "${diskCollectionItem.title}"`}
+              onClick={handleItemClick(index, 0)}
+              onContextMenu={handleItemRightClick(index)}
+            >
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
@@ -179,6 +198,41 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           </div>
         ))}
       </div>
+      <PopupMenu
+        key={`drive-popup-${popupItemIndex}`}
+        location={popupLocation}
+        style={{
+          padding: "5px",
+          paddingLeft: "10px",
+          paddingRight: "10px"
+        }}
+        onClose={() => { setPopupLocation(undefined) }}
+        menuItems={[[
+          ...[0, 1].map((i) => (
+            {
+              label: `Load Disk into Drive ${DISK_DRIVE_LABELS[i]}`,
+              icon: faHardDrive,
+              isSelected: () => { return false },
+              onClick: () => {
+                setPopupLocation(undefined)
+                loadDisk(i)
+              }
+            }
+          )),
+          ...[{ label: "-" }],
+          ...[2, 3].map((i) => (
+            {
+              label: `Load Disk into Drive ${DISK_DRIVE_LABELS[i]}`,
+              icon: faFloppyDisk,
+              isSelected: () => { return false },
+              onClick: () => {
+                setPopupLocation(undefined)
+                loadDisk(i)
+              }
+            }
+          ))
+        ]]}
+      />
     </Flyout >
   )
 }

@@ -27,7 +27,7 @@ import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme, setPrefere
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
-import React from "react"
+import { useState } from "react"
 import PopupMenu from "./popupmenu"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
@@ -42,7 +42,7 @@ const ConfigButtons = (props: DisplayProps) => {
   const useOpenAppleKey = handleUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
-  const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])

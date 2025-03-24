@@ -18,6 +18,8 @@ import React from "react"
 import PopupMenu from "../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 
+export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
+
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
   if (filename.toLowerCase().endsWith(".woz")) {
@@ -51,7 +53,7 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   const [internetDialogDialogOpen, setInternetDialogDialogOpen] = useState<boolean>(false)
   const [menuOpen, setMenuOpen] = useState<number>(-1)
-  const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
@@ -287,7 +289,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
   }
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
-  let status = ["S7D1", "S7D2", "S6D1", "S6D2"][props.index]
+  let status = DISK_DRIVE_LABELS[props.index]
   status += dprops.status
 
   return (

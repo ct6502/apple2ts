@@ -1,4 +1,4 @@
-import React from "react"
+import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faGear,
@@ -8,7 +8,7 @@ import { setPreferenceMachineName, setPreferenceRamWorks } from "../localstorage
 import PopupMenu from "../controls/popupmenu"
 
 export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
-  const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
@@ -36,7 +36,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          ...[0, 1].map((i) => (
+          ...Array.from(Array(2).keys()).map((i) => (
             {
               label: roms[i],
               isSelected: () => { return machineName === machineNames[i] },
@@ -47,7 +47,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
             }
           )),
           ...[{ label: "-" }],
-          ...[0, 1, 2, 3, 4].map((i) => (
+          ...Array.from(Array(5).keys()).map((i) => (
             {
               label: names[i],
               isSelected: () => { return extraMemSize === sizes[i] },
