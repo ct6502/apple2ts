@@ -39,17 +39,23 @@ const PopupMenu = (props: PopupMenuProps) => {
         onClick={props.onClick(-1)}>
         <div className="floating-dialog flex-column droplist-option"
           style={getPopupLocationStyle()}>
-          {props.menuItems.map((menuItem) => (
+          {props.menuItems.map((menuItem, menuIndex) => (
             menuItem.label == "-"
-              ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
+              ? <div
+                  key={`popup-${menuIndex}-${menuItem.index}`}
+                  style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
+                </div>
               : <div
-                key={menuItem.index}
-                className="droplist-option" style={{ padding: "5px" }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                onClick={menuItem.onClick ? menuItem.onClick(menuItem.index || 0) : props.onClick(menuItem.index || 0)}>
-                {(menuItem.isItemSelected && menuItem.isItemSelected(menuItem.index || 0)) || menuItem.index === props.checkedIndex ? "\u2714\u2009" : "\u2003"}{menuItem.label}
-              </div>))}
+                  key={`popup-${menuIndex}-${menuItem.index}`}
+                  className="droplist-option" style={{ padding: "5px" }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+                  onClick={menuItem.onClick ? menuItem.onClick(menuItem.index || 0) : props.onClick(menuItem.index || 0)}>
+                  {(menuItem.isSelected && menuItem.isSelected(menuItem.index || 0)) || menuItem.index === props.checkedIndex
+                    ? "\u2714\u2009"
+                    : "\u2003"}{menuItem.label}
+                </div>
+            ))}
         </div>
       </div>
       : <div></div>

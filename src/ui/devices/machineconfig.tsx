@@ -56,7 +56,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
             {
               label: roms[i],
               index: i,
-              isItemSelected: (selectedIndex: number) => { return machineName === machineNames[selectedIndex] },
+              isSelected: (selectedIndex: number) => { return machineName === machineNames[selectedIndex] },
               onClick: handleRomClose
             }
           )),
@@ -65,10 +65,10 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
             {
               label: names[i],
               index: i,
-              isItemSelected: (selectedIndex: number) => { return extraMemSize === sizes[selectedIndex] },
+              isSelected: (selectedIndex: number) => { return extraMemSize === sizes[selectedIndex] },
               onClick: handleRamWorksClose
             }
-          )),
+          ))
         ]}
         onClick={handleRamWorksClose}
       />
