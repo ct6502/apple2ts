@@ -322,7 +322,7 @@ interface OpenerWindow {
   accessToken: string
 }
 
-type MenuItem = {
+type PopupMenuItem = {
   label: string,
   icon?: IconDefinition,
   svg?: JSX.Element,

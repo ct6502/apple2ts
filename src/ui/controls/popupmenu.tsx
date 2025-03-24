@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 type PopupMenuProps = {
   location: [number, number] | undefined
-  menuItems: Array<Array<MenuItem>>
+  menuItems: Array<Array<PopupMenuItem>>
   menuIndex?: number
   style?: any
   onClose: () => void

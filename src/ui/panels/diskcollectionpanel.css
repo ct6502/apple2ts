@@ -82,6 +82,8 @@
   height: 64%;
   top: 30%;
   cursor: pointer;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .dcp-item-image {

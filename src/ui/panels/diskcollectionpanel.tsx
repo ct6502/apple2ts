@@ -5,7 +5,7 @@ import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesom
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { newReleases } from "../devices/newreleases"
-import { MAX_DRIVES, replaceSuffix } from "../../common/utility"
+import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -47,6 +47,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const [popupItemIndex, setPopupItemIndex] = useState<number>(-1)
+  let longPressTimer: number
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     const diskCollectionItem = diskCollection[itemIndex]
@@ -78,10 +79,23 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const handleItemRightClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     setPopupItemIndex(itemIndex)
     setPopupLocation([event.clientX, event.clientY])
-
     event.stopPropagation()
     event.preventDefault()
     return false
+  }
+
+  const handleItemTouchStart = (itemIndex: number) => (event: React.TouchEvent<HTMLElement>) => {
+    longPressTimer = window.setTimeout(() => {
+      setPopupItemIndex(itemIndex)
+      setPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
+      event.stopPropagation()
+      event.preventDefault()
+      return false
+    }, 1000)
+  }
+
+  const handleItemTouchCancel = () => {
+    clearTimeout(longPressTimer)
   }
 
   const handleBookmarkClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
@@ -162,6 +176,9 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               className="dcp-item-image-box"
               title={`Click to load disk "${diskCollectionItem.title}"`}
               onClick={handleItemClick(index, 0)}
+              onTouchStart={handleItemTouchStart(index)}
+              onTouchEnd={handleItemTouchCancel}
+              onTouchCancel={handleItemTouchCancel}
               onContextMenu={handleItemRightClick(index)}
             >
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
