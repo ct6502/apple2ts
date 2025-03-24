@@ -2,7 +2,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 type PopupMenuProps = {
   location: [number, number] | undefined
-  menuItems: Array<MenuItem>
+  menuItems: Array<Array<MenuItem>>
+  menuIndex?: number
   style?: any
   isSelected?: (selectedIndex: number) => boolean
   onClick: (selectedIndex: number) => () => void
@@ -19,7 +20,7 @@ const PopupMenu = (props: PopupMenuProps) => {
     let w = 0
     let h = 0
 
-    props.menuItems.forEach((menuItem) => {
+    props.menuItems[props.menuIndex || 0].forEach((menuItem) => {
       if (menuItem.label == "-") {
         w = Math.max(w, 9)
         h += 16
@@ -43,8 +44,9 @@ const PopupMenu = (props: PopupMenuProps) => {
         onClick={props.onClick(-1)}>
         <div className="floating-dialog flex-column droplist-option"
           style={getPopupLocationStyle()}>
-          {props.menuItems.map((menuItem, menuIndex) => (
-            menuItem.label == "-"
+          {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
+            (menuItem.isVisible == undefined || menuItem.isVisible()) &&
+            (menuItem.label == "-"
               ? <div
                   key={`popup-${menuIndex}-${menuItem.index}`}
                   style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
@@ -62,7 +64,7 @@ const PopupMenu = (props: PopupMenuProps) => {
                     {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
                     {menuItem.svg && menuItem.svg}
                     {menuItem.label}
-                </div>
+                </div>)
             ))}
         </div>
       </div>

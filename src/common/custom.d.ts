@@ -327,6 +327,7 @@ type MenuItem = {
   icon?: IconDefinition,
   index?: number,
   svg?: JSX.Element,
-  isSelected?: (selectedIndex: number) => boolean
+  isVisible?: () => boolean,
+  isSelected?: (selectedIndex: number) => boolean,
   onClick?: (selectedIndex: number) => () => void
 }

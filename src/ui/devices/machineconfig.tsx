@@ -52,7 +52,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       <PopupMenu
         location={popupLocation}
         onClick={handleRamWorksClose}
-        menuItems={[
+        menuItems={[[
           ...[0, 1].map((i) => (
             {
               label: roms[i],
@@ -70,7 +70,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
               onClick: handleRamWorksClose
             }
           ))
-        ]}
+        ]]}
       />
 
     </span>

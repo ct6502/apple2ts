@@ -58,7 +58,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
       <PopupMenu
         location={popupLocation}
         onClick={handleColorModeClose}
-        menuItems={[
+        menuItems={[[
           ...Object.values(COLOR_MODE).filter(value=>typeof value==="number").map((i) => (
             {
               label: colorToName(i),
@@ -76,7 +76,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
               onClick: handleShowScanlinesClose
             }
           ))
-        ]}
+        ]]}
       />
     </span>
   )

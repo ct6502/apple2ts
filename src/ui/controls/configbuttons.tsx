@@ -122,14 +122,14 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <PopupMenu
       location={popupLocation}
-      isSelected={handleGetTheme()}
+      isSelected={(selectedIndex) => { return selectedIndex == handleGetTheme() } }
       onClick={handleThemeClose}
-      menuItems={Object.values(UI_THEME).filter(value => typeof value === "number").map((value, index) => {
+      menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, index) => {
         return {
           label: themeToName(index),
           index: index
-        }}
-      )}
+        }
+      })]}
     />
 
     <button className="push-button" id="tour-clearcookies"

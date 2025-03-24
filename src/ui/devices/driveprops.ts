@@ -180,7 +180,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 }
 
 export const handleSetDiskFromURL = async (url: string,
-  updateDisplay?: UpdateDisplay, index = 0) => {
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData) => {
   if (!url.startsWith("http") && updateDisplay) {
     const match = findMatchingDiskImage(url)
     handleSetDiskFromFile(match, updateDisplay)
@@ -259,7 +259,7 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (buffer) {
-      handleSetDiskOrFileFromBuffer(index, buffer, name, null, null)
+      handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
     } else {
       // $TODO: Add error handling
     }

@@ -7,16 +7,16 @@ import {
   handleSaveWritableFile
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faRotate } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { driveMenuItems } from "./diskdrive_menu"
 import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
 import InternetArchivePopup from "../internetarchivedialog"
 import { DiskBookmarks } from "../../common/diskbookmarks"
 import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
 import React from "react"
 import PopupMenu from "../controls/popupmenu"
+import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -255,9 +255,9 @@ const DiskDrive = (props: DiskDriveProps) => {
   const getMenuCheck = (menuChoice: number) => {
     let checked = false
 
-    if (menuOpen == 0 || menuOpen == 4) {
+    if (menuOpen == 0) {
       checked = menuChoice == 3 && dprops.isWriteProtected
-    } else if (menuOpen == 1 || menuOpen == 5 || menuOpen == 6) {
+    } else if (menuOpen == 1) {
       if (menuChoice == 3) {
         checked = dprops.isWriteProtected
       } else {
@@ -273,27 +273,15 @@ const DiskDrive = (props: DiskDriveProps) => {
 
     if (!dprops.cloudData || dprops.cloudData.syncStatus == CLOUD_SYNC.INACTIVE) {
       if (dprops.filename.length > 0) {
-        if (isFileSystemApiSupported() && !dprops.writableFileHandle) {
-          menuIndex = 4
-        } else {
-          menuIndex = 0
-        }
+        menuIndex = 0
       } else {
-        if (isFileSystemApiSupported()) {
-          menuIndex = 3
-        } else {
-          menuIndex = 2
-        }
+        menuIndex = 2
       }
     } else {
-      if (dprops.cloudData.itemId != "") {
-        menuIndex = !diskBookmarks.contains(dprops.cloudData.itemId) ? 5 : 6
-      } else {
-        menuIndex = 1
-      }
+      menuIndex = 1
     }
 
-    if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
+    if (menuIndex >= 0) {
       setMenuOpen(menuIndex)
       setPopupLocation([event.clientX, event.clientY])
     } else {
@@ -311,7 +299,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     setMenuOpen(-1)
     setPopupLocation(undefined)
 
-    if (menuNumber == 0 || menuNumber == 4) {
+    if (menuNumber == 0) {
       switch (menuChoice) {
         case 0:  // fall through
         case 1:
@@ -338,7 +326,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 6:
           showSaveFilePicker(props.index)
       }
-    } else if (menuNumber == 1 || menuNumber == 5 || menuNumber == 6) {
+    } else if (menuNumber == 1) {
       if (menuChoice == 2) {
         resetDrive(props.index)
       } else if (menuChoice >= 0) {
@@ -376,7 +364,7 @@ const DiskDrive = (props: DiskDriveProps) => {
           }
         }
       }
-    } else if (menuNumber == 2 || menuNumber == 3) {
+    } else if (menuNumber == 2) {
       switch (menuChoice) {
         case 0:
           props.setShowFileOpenDialog(true, props.index)
@@ -430,33 +418,8 @@ const DiskDrive = (props: DiskDriveProps) => {
         <span className={"default-font disk-status"}>{status}</span>
       </span>
 
-      {/* {menuOpen >= 0 &&
-        <div className="modal-overlay"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
-          onClick={() => handleMenuClose()}>
-          <div className="floating-dialog flex-column droplist-option"
-            style={{ left: position.x, top: position.y }}>
-            {driveMenuItems[menuOpen].map((menuItem, index) => (
-              <div key={index}>
-                {menuItem.label == "-"
-                  ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
-                  : <div className="droplist-option"
-                    
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                    key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
-                    {getMenuCheck(menuItem.index || -1)}
-                    
-                    {menuItem.label}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      } */}
-
       <PopupMenu
         location={popupLocation}
-        menuItems={driveMenuItems[menuOpen]}
         style={{
           padding: "5px",
           paddingLeft: "10px",
@@ -464,6 +427,156 @@ const DiskDrive = (props: DiskDriveProps) => {
         }}
         isSelected={getMenuCheck}
         onClick={handleMenuClose}
+        menuIndex={menuOpen}
+        menuItems={[
+           // menuNumber = 0
+          [
+            {
+              label: "Write Protect Disk",
+              icon: faLock,
+              index: 3
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Save Disk to Device",
+              icon: faFloppyDisk,
+              index: 6,
+              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle }
+            },
+            {
+              label: "-",
+              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle }
+            },
+            {
+              label: "Download Disk",
+              icon: faDownload,
+              index: 0
+            },
+            {
+              label: "Download and Eject Disk",
+              icon: faDownload,
+              index: 1
+            },
+            {
+              label: "Eject Disk",
+              icon: faEject,
+              index: 2
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Save Disk to OneDrive",
+              icon: faCloud,
+              index: 4
+            },
+            {
+              label: "Save Disk to Google Drive",
+              icon: faCloud,
+              index: 5
+            }
+          ],
+          // menuNumber = 1
+          [
+            {
+              label: "Write Protect Disk",
+              icon: faLock,
+              index: 3
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Eject Disk",
+              icon: faEject,
+              index: 2
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Add Disk to Collection",
+              icon: faStar,
+              index: 7,
+              isVisible: () => { return dprops.cloudData?.itemId != "" && !diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+            },
+            {
+              label: "-",
+              isVisible: () => { return dprops.cloudData?.itemId != "" && !diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+            },
+            {
+              label: "Remove Disk from Collection",
+              icon: faStar,
+              index: 8,
+              isVisible: () => { return diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+            },
+            {
+              label: "-",
+              isVisible: () => { return diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+            },
+            {
+              label: "Sync Every Minute",
+              icon: faClock,
+              index: 60000
+            },
+            {
+              label: "Sync Every 5 Minutes",
+              icon: faClock,
+              index: 300000
+            },
+            {
+              label: "Pause Syncing",
+              icon: faPause,
+              index: Number.MAX_VALUE
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Sync Now",
+              icon: faSync,
+              index: Number.MIN_VALUE
+            }
+          ],
+          // menuNumber = 2
+          [
+            {
+              label: "Load Disk from Device (Read-Only)",
+              icon: faFolderOpen,
+              index: 0,
+              isVisible: () => { return !isFileSystemApiSupported() }
+            },
+            {
+              label: "Load Disk from Device (Read/Write)",
+              icon: faFolderOpen,
+              index: 3,
+              isVisible: () => { return isFileSystemApiSupported() }
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Load Disk from Internet Archive",
+              svg: svgInternetArchiveLogo,
+              index: 4
+            },
+            {
+              label: "-"
+            },
+            {
+              label: "Load Disk from OneDrive",
+              icon: faCloud,
+              index: 1
+            },
+            {
+              label: "Load Disk from Google Drive",
+              icon: faCloud,
+              index: 2
+            }
+          ]
+        ]}
       />
 
       <InternetArchivePopup
