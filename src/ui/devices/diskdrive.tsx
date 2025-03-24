@@ -15,6 +15,8 @@ import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2w
 import InternetArchivePopup from "../internetarchivedialog"
 import { DiskBookmarks } from "../../common/diskbookmarks"
 import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
+import React from "react"
+import PopupMenu from "../controls/popupmenu"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -47,9 +49,9 @@ const DiskDrive = (props: DiskDriveProps) => {
   const dprops = handleGetDriveProps(props.index)
   const diskBookmarks = new DiskBookmarks()
 
-  const [menuOpen, setMenuOpen] = useState<number>(-1)
-  const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
   const [internetDialogDialogOpen, setInternetDialogDialogOpen] = useState<boolean>(false)
+  const [menuOpen, setMenuOpen] = useState<number>(-1)
+  const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
 
   const resetDrive = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
@@ -253,9 +255,9 @@ const DiskDrive = (props: DiskDriveProps) => {
   const getMenuCheck = (menuChoice: number) => {
     let checked = false
 
-    if (menuOpen == 0) {
+    if (menuOpen == 0 || menuOpen == 4) {
       checked = menuChoice == 3 && dprops.isWriteProtected
-    } else if (menuOpen == 1) {
+    } else if (menuOpen == 1 || menuOpen == 5 || menuOpen == 6) {
       if (menuChoice == 3) {
         checked = dprops.isWriteProtected
       } else {
@@ -263,7 +265,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       }
     }
 
-    return checked ? "\u2714\u2009" : "\u2003"
+    return checked
   }
 
   const handleMenuClick = (event: React.MouseEvent) => {
@@ -292,32 +294,11 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
 
     if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
-      const [menuWidth, menuHeight] = estimatePopupDimensions(menuIndex)
-      const x = Math.min(event.clientX, window.innerWidth - menuWidth)
-      const y = Math.min(event.clientY, window.innerHeight - menuHeight)
-
-      setPosition({ x: x, y: y })
       setMenuOpen(menuIndex)
+      setPopupLocation([event.clientX, event.clientY])
     } else {
-      // $TODO: Add error handling
+      setPopupLocation(undefined)
     }
-  }
-
-  const estimatePopupDimensions = (menuIndex: number) => {
-    let w = 0
-    let h = 0
-
-    driveMenuItems[menuIndex].forEach((menuItem) => {
-      if (menuItem.label == "-") {
-        w = Math.max(w, 9)
-        h += 16
-      } else {
-        w = Math.max(w, menuItem.label.length * 9)
-        h += 28
-      }
-    })
-
-    return [w, h]
   }
 
   const getImageDataUrlFromCanvas = () => {
@@ -325,9 +306,11 @@ const DiskDrive = (props: DiskDriveProps) => {
     return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
   }
 
-  const handleMenuClose = (menuChoice = -1) => {
+  const handleMenuClose = (menuChoice = -1) => () => {
     const menuNumber = menuOpen
     setMenuOpen(-1)
+    setPopupLocation(undefined)
+
     if (menuNumber == 0 || menuNumber == 4) {
       switch (menuChoice) {
         case 0:  // fall through
@@ -447,7 +430,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         <span className={"default-font disk-status"}>{status}</span>
       </span>
 
-      {menuOpen >= 0 &&
+      {/* {menuOpen >= 0 &&
         <div className="modal-overlay"
           style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
           onClick={() => handleMenuClose()}>
@@ -458,19 +441,30 @@ const DiskDrive = (props: DiskDriveProps) => {
                 {menuItem.label == "-"
                   ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
                   : <div className="droplist-option"
-                    style={{ padding: "5px", paddingLeft: "10px", paddingRight: "10px" }}
+                    
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                     key={menuItem.label} onClick={() => handleMenuClose(menuItem.index)}>
                     {getMenuCheck(menuItem.index || -1)}
-                    {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
-                    {menuItem.svg && menuItem.svg}
+                    
                     {menuItem.label}</div>}
               </div>
             ))}
           </div>
         </div>
-      }
+      } */}
+
+      <PopupMenu
+        location={popupLocation}
+        menuItems={driveMenuItems[menuOpen]}
+        style={{
+          padding: "5px",
+          paddingLeft: "10px",
+          paddingRight: "10px"
+        }}
+        isSelected={getMenuCheck}
+        onClick={handleMenuClose}
+      />
 
       <InternetArchivePopup
         driveIndex={dprops.index}

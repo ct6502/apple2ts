@@ -1,7 +1,10 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+
 type PopupMenuProps = {
   location: [number, number] | undefined
   menuItems: Array<MenuItem>
-  checkedIndex?: number
+  style?: any
+  isSelected?: (selectedIndex: number) => boolean
   onClick: (selectedIndex: number) => () => void
 }
 
@@ -28,7 +31,8 @@ const PopupMenu = (props: PopupMenuProps) => {
 
     return {
       left: Math.min(x, window.innerWidth - w),
-      top: Math.min(y, window.innerHeight - h)
+      top: Math.min(y, window.innerHeight - h),
+      ...props.style
     }
   }
 
@@ -51,9 +55,13 @@ const PopupMenu = (props: PopupMenuProps) => {
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                   onClick={menuItem.onClick ? menuItem.onClick(menuItem.index || 0) : props.onClick(menuItem.index || 0)}>
-                  {(menuItem.isSelected && menuItem.isSelected(menuItem.index || 0)) || menuItem.index === props.checkedIndex
+                  {(menuItem.isSelected && menuItem.isSelected(menuItem.index || 0))
+                    || (props.isSelected && props.isSelected(menuItem.index || 0))
                     ? "\u2714\u2009"
-                    : "\u2003"}{menuItem.label}
+                    : "\u2003"}
+                    {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                    {menuItem.svg && menuItem.svg}
+                    {menuItem.label}
                 </div>
             ))}
         </div>

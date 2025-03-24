@@ -14,6 +14,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
   const colorMode = handleGetColorMode()
   const showScanlines = handleGetShowScanlines()
+
   const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
@@ -56,6 +57,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
       <PopupMenu
         location={popupLocation}
+        onClick={handleColorModeClose}
         menuItems={[
           ...Object.values(COLOR_MODE).filter(value=>typeof value==="number").map((i) => (
             {
@@ -75,7 +77,6 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
             }
           ))
         ]}
-        onClick={handleColorModeClose}
       />
     </span>
   )
