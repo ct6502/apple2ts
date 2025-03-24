@@ -21,23 +21,6 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
-  const handleShowScanlinesClose = (index: number = -1) => () => {
-    setPopupLocation(undefined)
-    if (index == 0) {
-      document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
-      setPreferenceShowScanlines(!showScanlines)
-      props.updateDisplay()
-    }
-  }
-
-  const handleColorModeClose = (index: number) => () => {
-    setPopupLocation(undefined)
-    if (index >= 0) {
-      setPreferenceColorMode(index)
-      props.updateDisplay()
-    }
-  }
-
   return (
     <span>
       <button
@@ -57,23 +40,28 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
       <PopupMenu
         location={popupLocation}
-        onClick={handleColorModeClose}
+        onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          ...Object.values(COLOR_MODE).filter(value=>typeof value==="number").map((i) => (
+          ...Object.values(COLOR_MODE).filter(value => typeof value === "number").map((i) => (
             {
               label: colorToName(i),
-              index: i,
-              isSelected: (selectedIndex: number) => { return colorMode === selectedIndex },
-              onClick: handleColorModeClose
+              isSelected: () => { return i == colorMode },
+              onClick: () => {
+                setPreferenceColorMode(i)
+                props.updateDisplay()
+              }
             }
           )),
           ...[{ label: "-" }],
           ...[0].map((i) => (
             {
               label: "CRT Scanlines",
-              index: i,
               isSelected: () => { return showScanlines },
-              onClick: handleShowScanlinesClose
+              onClick: () => {
+                document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
+                setPreferenceShowScanlines(!showScanlines)
+                props.updateDisplay()
+              }
             }
           ))
         ]]}

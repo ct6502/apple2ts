@@ -325,9 +325,8 @@ interface OpenerWindow {
 type MenuItem = {
   label: string,
   icon?: IconDefinition,
-  index?: number,
   svg?: JSX.Element,
   isVisible?: () => boolean,
-  isSelected?: (selectedIndex: number) => boolean,
-  onClick?: (selectedIndex: number) => () => void
+  isSelected?: () => boolean,
+  onClick?: () => void
 }

@@ -14,24 +14,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
-  const handleRamWorksClose = (index: number) => () => {
-    setPopupLocation(undefined)
-    if (index >= 0) {
-      setPreferenceRamWorks(sizes[index])
-      props.updateDisplay()
-    }
-  }
-
   const machineNames: MACHINE_NAME[] = ["APPLE2EU", "APPLE2EE"]
-
-  const handleRomClose = (index = -1) => () => {
-    setPopupLocation(undefined)
-    if (index >= 0) {
-      setPreferenceMachineName(machineNames[index])
-      props.updateDisplay()
-    }
-  }
-
   const roms = ["Apple IIe (unenhanced)", "Apple IIe (enhanced)"]
   const names = ["64 KB (AUX)", "512 KB", "1024 KB", "4 MB", "8 MB"]
   const sizes = [64, 512, 1024, 4096, 8192]
@@ -51,23 +34,27 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
       <PopupMenu
         location={popupLocation}
-        onClick={handleRamWorksClose}
+        onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
           ...[0, 1].map((i) => (
             {
               label: roms[i],
-              index: i,
-              isSelected: (selectedIndex: number) => { return machineName === machineNames[selectedIndex] },
-              onClick: handleRomClose
+              isSelected: () => { return machineName === machineNames[i] },
+              onClick: () => {
+                setPreferenceMachineName(machineNames[i])
+                props.updateDisplay()
+              }
             }
           )),
           ...[{ label: "-" }],
           ...[0, 1, 2, 3, 4].map((i) => (
             {
               label: names[i],
-              index: i,
-              isSelected: (selectedIndex: number) => { return extraMemSize === sizes[selectedIndex] },
-              onClick: handleRamWorksClose
+              isSelected: () => { return extraMemSize === sizes[i] },
+              onClick: () => {
+                setPreferenceRamWorks(sizes[i])
+                props.updateDisplay()
+              }
             }
           ))
         ]]}

@@ -5,8 +5,7 @@ type PopupMenuProps = {
   menuItems: Array<Array<MenuItem>>
   menuIndex?: number
   style?: any
-  isSelected?: (selectedIndex: number) => boolean
-  onClick: (selectedIndex: number) => () => void
+  onClose: () => void
 }
 
 const PopupMenu = (props: PopupMenuProps) => {
@@ -41,31 +40,30 @@ const PopupMenu = (props: PopupMenuProps) => {
     props.location
       ? <div className="modal-overlay"
         style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
-        onClick={props.onClick(-1)}>
+        onClick={props.onClose}>
         <div className="floating-dialog flex-column droplist-option"
           style={getPopupLocationStyle()}>
           {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
             (menuItem.isVisible == undefined || menuItem.isVisible()) &&
             (menuItem.label == "-"
               ? <div
-                  key={`popup-${menuIndex}-${menuItem.index}`}
-                  style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
-                </div>
+                key={`popup-${menuIndex}-${menuIndex}`}
+                style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
+              </div>
               : <div
-                  key={`popup-${menuIndex}-${menuItem.index}`}
-                  className="droplist-option" style={{ padding: "5px" }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                  onClick={menuItem.onClick ? menuItem.onClick(menuItem.index || 0) : props.onClick(menuItem.index || 0)}>
-                  {(menuItem.isSelected && menuItem.isSelected(menuItem.index || 0))
-                    || (props.isSelected && props.isSelected(menuItem.index || 0))
-                    ? "\u2714\u2009"
-                    : "\u2003"}
-                    {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
-                    {menuItem.svg && menuItem.svg}
-                    {menuItem.label}
-                </div>)
-            ))}
+                key={`popup-${menuIndex}-${menuIndex}`}
+                className="droplist-option" style={{ padding: "5px" }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+                onClick={menuItem.onClick}>
+                {menuItem.isSelected != undefined && menuItem.isSelected()
+                  ? "\u2714\u2009"
+                  : "\u2003"}
+                {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                {menuItem.svg && menuItem.svg}
+                {menuItem.label}
+              </div>)
+          ))}
         </div>
       </div>
       : <div></div>

@@ -47,19 +47,6 @@ const ConfigButtons = (props: DisplayProps) => {
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
   }
-
-  const handleThemeClose = (theme = -1) => () => {
-    setPopupLocation(undefined)
-    if (theme >= 0 && theme != handleGetTheme()) {
-      if (window.confirm("Reload the emulator and apply this theme now?")) {
-        setPreferenceTheme(theme)
-        const url = new URL(window.location.href)
-        url.searchParams.delete("theme")
-        window.location.href = url.toString()
-      }
-    }
-  }
-
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
       <button className="push-button"
@@ -122,12 +109,21 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <PopupMenu
       location={popupLocation}
-      isSelected={(selectedIndex) => { return selectedIndex == handleGetTheme() } }
-      onClick={handleThemeClose}
-      menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, index) => {
+      onClose={() => { setPopupLocation(undefined) }}
+      menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, i) => {
         return {
-          label: themeToName(index),
-          index: index
+          label: themeToName(i),
+          isSelected: () => { return i == handleGetTheme() },
+          onClick: () => {
+            if (i >= 0 && i != handleGetTheme()) {
+              if (window.confirm("Reload the emulator and apply this theme now?")) {
+                setPreferenceTheme(i)
+                const url = new URL(window.location.href)
+                url.searchParams.delete("theme")
+                window.location.href = url.toString()
+              }
+            }
+          }
         }
       })]}
     />

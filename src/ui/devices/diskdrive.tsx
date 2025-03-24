@@ -252,22 +252,6 @@ const DiskDrive = (props: DiskDriveProps) => {
     setInternetDialogDialogOpen(true)
   }
 
-  const getMenuCheck = (menuChoice: number) => {
-    let checked = false
-
-    if (menuOpen == 0) {
-      checked = menuChoice == 3 && dprops.isWriteProtected
-    } else if (menuOpen == 1) {
-      if (menuChoice == 3) {
-        checked = dprops.isWriteProtected
-      } else {
-        checked = menuChoice == dprops.cloudData?.syncInterval
-      }
-    }
-
-    return checked
-  }
-
   const handleMenuClick = (event: React.MouseEvent) => {
     let menuIndex = -1
 
@@ -292,97 +276,6 @@ const DiskDrive = (props: DiskDriveProps) => {
   const getImageDataUrlFromCanvas = () => {
     const hiddenCanvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement
     return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
-  }
-
-  const handleMenuClose = (menuChoice = -1) => () => {
-    const menuNumber = menuOpen
-    setMenuOpen(-1)
-    setPopupLocation(undefined)
-
-    if (menuNumber == 0) {
-      switch (menuChoice) {
-        case 0:  // fall through
-        case 1:
-          if (dprops.diskData.length > 0) {
-            downloadDisk(dprops.diskData, filename)
-            dprops.diskHasChanges = false
-          }
-          if (menuChoice === 1) {
-            resetDrive(props.index)
-          }
-          break
-        case 2:
-          resetDrive(props.index)
-          break
-        case 3:
-          handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
-          break
-        case 4:
-          saveDiskToCloud(new OneDriveCloudDrive())
-          break
-        case 5:
-          saveDiskToCloud(new GoogleDrive())
-          break
-        case 6:
-          showSaveFilePicker(props.index)
-      }
-    } else if (menuNumber == 1) {
-      if (menuChoice == 2) {
-        resetDrive(props.index)
-      } else if (menuChoice >= 0) {
-        if (menuChoice == 3) {
-          handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
-        } else if (menuChoice == 7) {
-          if (dprops.cloudData) {
-            diskBookmarks.set({
-              type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
-              id: dprops.cloudData.itemId,
-              title: dprops.cloudData.fileName,
-              screenshotUrl: getImageDataUrlFromCanvas(),
-              lastUpdated: new Date(dprops.cloudData.lastSyncTime),
-              cloudData: dprops.cloudData
-            })
-          }
-        } else if (menuChoice == 8) {
-          if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
-            diskBookmarks.remove(dprops.cloudData.itemId)
-          }
-        } else if (menuChoice == Number.MIN_VALUE) {
-          switch (dprops.cloudData?.providerName) {
-            case "OneDrive":
-              updateCloudDrive(new OneDriveCloudDrive())
-              break
-            case "GoogleDrive":
-              updateCloudDrive(new GoogleDrive())
-              break
-            default:
-              console.error("Unknown cloud provider")
-          }
-        } else {
-          if (dprops.cloudData) {
-            dprops.cloudData.syncInterval = menuChoice
-          }
-        }
-      }
-    } else if (menuNumber == 2) {
-      switch (menuChoice) {
-        case 0:
-          props.setShowFileOpenDialog(true, props.index)
-          break
-        case 1:
-          loadDiskFromCloud(new OneDriveCloudDrive())
-          break
-        case 2:
-          loadDiskFromCloud(new GoogleDrive())
-          break
-        case 3:
-          showReadWriteFilePicker(props.index)
-          break
-        case 4:
-          showInternetArchivePicker()
-          break
-      }
-    }
   }
 
   let img1: string
@@ -425,16 +318,18 @@ const DiskDrive = (props: DiskDriveProps) => {
           paddingLeft: "10px",
           paddingRight: "10px"
         }}
-        isSelected={getMenuCheck}
-        onClick={handleMenuClose}
+        onClose={() => {
+          setMenuOpen(-1)
+          setPopupLocation(undefined)
+        }}
         menuIndex={menuOpen}
         menuItems={[
-           // menuNumber = 0
           [
             {
               label: "Write Protect Disk",
               icon: faLock,
-              index: 3
+              isSelected: () => { return dprops.isWriteProtected },
+              onClick: () => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }
             },
             {
               label: "-"
@@ -442,8 +337,8 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Save Disk to Device",
               icon: faFloppyDisk,
-              index: 6,
-              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle }
+              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
+              onClick: () => { showSaveFilePicker(props.index) }
             },
             {
               label: "-",
@@ -452,17 +347,30 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Download Disk",
               icon: faDownload,
-              index: 0
+              onClick: () => {
+                if (dprops.diskData.length > 0) {
+                  downloadDisk(dprops.diskData, filename)
+                  dprops.diskHasChanges = false
+                }
+              }
             },
             {
               label: "Download and Eject Disk",
               icon: faDownload,
-              index: 1
+              onClick: () => {
+                if (dprops.diskData.length > 0) {
+                  downloadDisk(dprops.diskData, filename)
+                  dprops.diskHasChanges = false
+                  resetDrive(props.index)
+                }
+              }
             },
             {
               label: "Eject Disk",
               icon: faEject,
-              index: 2
+              onClick: () => {
+                resetDrive(props.index)
+              }
             },
             {
               label: "-"
@@ -470,20 +378,20 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Save Disk to OneDrive",
               icon: faCloud,
-              index: 4
+              onClick: () => { saveDiskToCloud(new OneDriveCloudDrive()) }
             },
             {
               label: "Save Disk to Google Drive",
               icon: faCloud,
-              index: 5
+              onClick: () => { saveDiskToCloud(new GoogleDrive()) }
             }
           ],
-          // menuNumber = 1
           [
             {
               label: "Write Protect Disk",
               icon: faLock,
-              index: 3
+              isSelected: () => { return dprops.isWriteProtected },
+              onClick: () => { handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected) }
             },
             {
               label: "-"
@@ -491,7 +399,9 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Eject Disk",
               icon: faEject,
-              index: 2
+              onClick: () => {
+                resetDrive(props.index)
+              }
             },
             {
               label: "-"
@@ -499,8 +409,19 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Add Disk to Collection",
               icon: faStar,
-              index: 7,
-              isVisible: () => { return dprops.cloudData?.itemId != "" && !diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+              isVisible: () => { return dprops.cloudData?.itemId != "" && !diskBookmarks.contains(dprops.cloudData?.itemId || "") },
+              onClick: () => {
+                if (dprops.cloudData) {
+                  diskBookmarks.set({
+                    type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
+                    id: dprops.cloudData.itemId,
+                    title: dprops.cloudData.fileName,
+                    screenshotUrl: getImageDataUrlFromCanvas(),
+                    lastUpdated: new Date(dprops.cloudData.lastSyncTime),
+                    cloudData: dprops.cloudData
+                  })
+                }
+              }
             },
             {
               label: "-",
@@ -509,8 +430,12 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Remove Disk from Collection",
               icon: faStar,
-              index: 8,
-              isVisible: () => { return diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+              isVisible: () => { return diskBookmarks.contains(dprops.cloudData?.itemId || "") },
+              onClick: () => {
+                if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
+                  diskBookmarks.remove(dprops.cloudData.itemId)
+                }
+              }
             },
             {
               label: "-",
@@ -519,17 +444,32 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Sync Every Minute",
               icon: faClock,
-              index: 60000
+              isSelected: () => { return dprops.cloudData?.syncInterval == 60000 },
+              onClick: () => {
+                if (dprops.cloudData) {
+                  dprops.cloudData.syncInterval = 60000
+                }
+              }
             },
             {
               label: "Sync Every 5 Minutes",
               icon: faClock,
-              index: 300000
+              isSelected: () => { return dprops.cloudData?.syncInterval == 300000 },
+              onClick: () => {
+                if (dprops.cloudData) {
+                  dprops.cloudData.syncInterval = 300000
+                }
+              }
             },
             {
               label: "Pause Syncing",
               icon: faPause,
-              index: Number.MAX_VALUE
+              isSelected: () => { return dprops.cloudData?.syncInterval == Number.MAX_VALUE },
+              onClick: () => {
+                if (dprops.cloudData) {
+                  dprops.cloudData.syncInterval = Number.MAX_VALUE
+                }
+              }
             },
             {
               label: "-"
@@ -537,22 +477,35 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Sync Now",
               icon: faSync,
-              index: Number.MIN_VALUE
+              isSelected: () => { return dprops.cloudData?.syncInterval == Number.MIN_VALUE },
+              onClick: () => {
+                if (dprops.cloudData) {
+                  switch (dprops.cloudData?.providerName) {
+                    case "OneDrive":
+                      updateCloudDrive(new OneDriveCloudDrive())
+                      break
+                    case "GoogleDrive":
+                      updateCloudDrive(new GoogleDrive())
+                      break
+                    default:
+                      console.error("Unknown cloud provider")
+                  }
+                }
+              }
             }
           ],
-          // menuNumber = 2
           [
             {
               label: "Load Disk from Device (Read-Only)",
               icon: faFolderOpen,
-              index: 0,
-              isVisible: () => { return !isFileSystemApiSupported() }
+              isVisible: () => { return !isFileSystemApiSupported() },
+              onClick: () => { props.setShowFileOpenDialog(true, props.index) }
             },
             {
               label: "Load Disk from Device (Read/Write)",
               icon: faFolderOpen,
-              index: 3,
-              isVisible: () => { return isFileSystemApiSupported() }
+              isVisible: () => { return isFileSystemApiSupported() },
+              onClick: () => { showReadWriteFilePicker(props.index) }
             },
             {
               label: "-"
@@ -560,7 +513,9 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Load Disk from Internet Archive",
               svg: svgInternetArchiveLogo,
-              index: 4
+              onClick: () => {
+                showInternetArchivePicker()
+              }
             },
             {
               label: "-"
@@ -568,12 +523,12 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Load Disk from OneDrive",
               icon: faCloud,
-              index: 1
+              onClick: () => { loadDiskFromCloud(new OneDriveCloudDrive()) }
             },
             {
               label: "Load Disk from Google Drive",
               icon: faCloud,
-              index: 2
+              onClick: () => { loadDiskFromCloud(new GoogleDrive()) }
             }
           ]
         ]}
