@@ -140,7 +140,7 @@ export const handleSetDiskOrFileFromBuffer = (
   return newIndex
 }
 
-export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
+export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveIndex: number = 0) => {
   let cloudProvider
   switch (cloudData.providerName) {
     case "GoogleDrive":
@@ -171,7 +171,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
         const buffer = await new Response(blob).arrayBuffer()
 
         cloudData.lastSyncTime = Date.now()
-        handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
+        handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
       } else {
         // $TODO: Add error handling
       }
@@ -275,7 +275,7 @@ const resetAllDiskDrives = () => {
 }
 
 export const handleSetDiskFromFile = async (disk: diskImage,
-  updateDisplay: UpdateDisplay) => {
+  updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
   let data: ArrayBuffer
   try {
     const res = await fetch("/disks/" + disk.file)
@@ -284,7 +284,7 @@ export const handleSetDiskFromFile = async (disk: diskImage,
    return
   }
   resetAllDiskDrives()
-  handleSetDiskData(0, new Uint8Array(data), disk.file, null, null, -1)
+  handleSetDiskData(driveIndex, new Uint8Array(data), disk.file, null, null, -1)
   passSetRunMode(RUN_MODE.NEED_BOOT)
   const helpFile = replaceSuffix(disk.file, "txt")
   try {

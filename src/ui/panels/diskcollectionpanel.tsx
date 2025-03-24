@@ -51,15 +51,15 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     return false
   }
 
-  const handleItemClick = (itemIndex: number) => () => {
+  const handleItemClick = (itemIndex: number, driveIndex: number = 0) => () => {
     const diskCollectionItem = diskCollection[itemIndex]
 
     if (diskCollectionItem.diskImage) {
-      handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
+      handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay, driveIndex)
     } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-      handleSetDiskFromCloudData(diskCollectionItem.cloudData)
+      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
     } else if (diskCollectionItem.diskUrl) {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString())
+      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex)
     } else {
       // $TODO: Add error handling
     }
