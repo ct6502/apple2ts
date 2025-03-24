@@ -1,13 +1,5 @@
-import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faStar, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
-import { JSX } from "react"
+import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
-
-type MenuItem = {
-  label: string,
-  icon?: IconDefinition,
-  index?: number,
-  svg?: JSX.Element
-}
 
 export const driveMenuItems: Array<Array<MenuItem>> = [
   // menuNumber = 0

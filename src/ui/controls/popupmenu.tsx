@@ -1,8 +1,7 @@
 type PopupMenuProps = {
   location: [number, number] | undefined
-  options: number[]
+  menuItems: Array<MenuItem>
   checkedIndex?: number
-  getOptionLabel: (optionIndex: number) => string
   onClick: (selectedIndex: number) => () => void
 }
 
@@ -17,14 +16,12 @@ const PopupMenu = (props: PopupMenuProps) => {
     let w = 0
     let h = 0
 
-    props.options.forEach((optionIndex) => {
-      const optionLabel = props.getOptionLabel(optionIndex)
-
-      if (optionLabel == "-") {
+    props.menuItems.forEach((menuItem) => {
+      if (menuItem.label == "-") {
         w = Math.max(w, 9)
         h += 16
       } else {
-        w = Math.max(w, optionLabel.length * 9)
+        w = Math.max(w, menuItem.label.length * 9)
         h += 28
       }
     })
@@ -42,15 +39,17 @@ const PopupMenu = (props: PopupMenuProps) => {
         onClick={props.onClick(-1)}>
         <div className="floating-dialog flex-column droplist-option"
           style={getPopupLocationStyle()}>
-          {props.options.map((i) => (
-            <div
-              key={i}
-              className="droplist-option" style={{ padding: "5px" }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-              onClick={props.onClick(i)}>
-              {(i === props.checkedIndex) ? "\u2714\u2009" : "\u2003"}{props.getOptionLabel(i)}
-            </div>))}
+          {props.menuItems.map((menuItem) => (
+            menuItem.label == "-"
+              ? <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
+              : <div
+                key={menuItem.index}
+                className="droplist-option" style={{ padding: "5px" }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+                onClick={menuItem.onClick ? menuItem.onClick(menuItem.index || 0) : props.onClick(menuItem.index || 0)}>
+                {(menuItem.isItemSelected && menuItem.isItemSelected(menuItem.index || 0)) || menuItem.index === props.checkedIndex ? "\u2714\u2009" : "\u2003"}{menuItem.label}
+              </div>))}
         </div>
       </div>
       : <div></div>

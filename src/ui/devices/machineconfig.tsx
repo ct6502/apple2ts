@@ -5,19 +5,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { handleGetMachineName, handleGetMemSize } from "../main2worker"
 import { setPreferenceMachineName, setPreferenceRamWorks } from "../localstorage"
+import PopupMenu from "../controls/popupmenu"
 
 export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
-  const [droplistOpen, setDroplistOpen] = React.useState<boolean>(false)
-  const [position, setPosition] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  const [popupLocation, setPopupLocation] = React.useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
-    const y = Math.min(event.clientY, window.innerHeight - 200)
-    setPosition({ x: event.clientX, y: y })
-    setDroplistOpen(true)
+    setPopupLocation([event.clientX, event.clientY])
   }
 
-  const handleRamWorksClose = (index: number) => {
-    setDroplistOpen(false)
+  const handleRamWorksClose = (index: number) => () => {
+    setPopupLocation(undefined)
     if (index >= 0) {
       setPreferenceRamWorks(sizes[index])
       props.updateDisplay()
@@ -26,8 +24,8 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
   const machineNames: MACHINE_NAME[] = ["APPLE2EU", "APPLE2EE"]
 
-  const handleRomClose = (index = -1) => {
-    setDroplistOpen(false)
+  const handleRomClose = (index = -1) => () => {
+    setPopupLocation(undefined)
     if (index >= 0) {
       setPreferenceMachineName(machineNames[index])
       props.updateDisplay()
@@ -50,31 +48,30 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       >
         <FontAwesomeIcon icon={faGear} />
       </button>
-      {droplistOpen &&
-        <div className="modal-overlay"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
-          onClick={() => handleRamWorksClose(-1)}>
-          <div className="floating-dialog flex-column droplist-option"
-            style={{ left: position.x, top: position.y }}>
-            {[0, 1].map((i) => (
-              <div className="droplist-option" style={{ padding: "5px" }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                key={i} onClick={() => handleRomClose(i)}>
-                {(machineName === machineNames[i]) ? "\u2714\u2009" : "\u2003"}{roms[i]}
-              </div>))}
-            <div style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}></div>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div className="droplist-option" style={{ padding: "5px" }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                key={i} onClick={() => handleRamWorksClose(i)}>
-                {(extraMemSize === sizes[i]) ? "\u2714\u2009" : "\u2003"}{names[i]}
-              </div>))}
-          </div>
 
-        </div>
-      }
+      <PopupMenu
+        location={popupLocation}
+        menuItems={[
+          ...[0, 1].map((i) => (
+            {
+              label: roms[i],
+              index: i,
+              isItemSelected: (selectedIndex: number) => { return machineName === machineNames[selectedIndex] },
+              onClick: handleRomClose
+            }
+          )),
+          ...[{ label: "-" }],
+          ...[0, 1, 2, 3, 4].map((i) => (
+            {
+              label: names[i],
+              index: i,
+              isItemSelected: (selectedIndex: number) => { return extraMemSize === sizes[selectedIndex] },
+              onClick: handleRamWorksClose
+            }
+          )),
+        ]}
+        onClick={handleRamWorksClose}
+      />
 
     </span>
   )
