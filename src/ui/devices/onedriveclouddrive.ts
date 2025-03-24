@@ -4,9 +4,27 @@ export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
-// const applicationId = "5e3e8e67-67b3-4fd1-8f31-4b4ca52966cd"
+const readWriteScope = "onedrive.readwrite"
+const authUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
+
+let g_accessToken: string
 
 export class OneDriveCloudDrive implements CloudProvider {
+
+  requestAuthToken(callback: (authToken: string) => void) {
+    const baseUrl = new URL(window.location.href)
+    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=OneDrive`
+
+    window.open(`${authUrl}${redirectUri}`, "_blank")
+    const interval = window.setInterval(async () => {
+      const accessToken = (window as any).accessToken
+      if (accessToken) {
+        clearInterval(interval)
+        g_accessToken = accessToken
+        callback(`bearer ${accessToken}`)
+      }
+    }, 500)
+  }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await launchPicker("share", "files", filter)
@@ -18,16 +36,17 @@ export class OneDriveCloudDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: file.name,
-        accessToken: result.accessToken,
-        itemId: file.parentReference.id,
+        parentId: file.parentReference.id,
+        itemId: file.id,
         apiEndpoint: result.apiEndpoint,
-        parentID: "",
+        downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`,
+        detailsUrl: file.webUrl
       }
+      g_accessToken = result.accessToken
 
       showGlobalProgressModal(true)
 
-      const downloadUrl = file["@content.downloadUrl"]
-      const response = await fetch(downloadUrl)
+      const response = await fetch(file["@content.downloadUrl"])
       .finally(() => {
         showGlobalProgressModal(false)
       })
@@ -53,11 +72,13 @@ export class OneDriveCloudDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: -1,  // force an immediate sync (which will actually upload the data)
         fileName: filename,
-        accessToken: result.accessToken,
-        itemId: file.id,
+        parentId: file.id,
+        itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
-        parentID: "",
+        downloadUrl: "",
+        detailsUrl: ""
       }
+      g_accessToken = result.accessToken
       return cloudData
     } else {
       console.error(`result message: ${result?.message} errorCode: ${result?.errorCode}`)
@@ -68,15 +89,14 @@ export class OneDriveCloudDrive implements CloudProvider {
   async sync(blob: Blob, cloudData: CloudData): Promise<boolean> {
     cloudData.syncStatus = CLOUD_SYNC.INPROGRESS
 
-    const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.itemId}:/${cloudData.fileName}:/createUploadSession`
+    const sessionUrl = `${cloudData.apiEndpoint}drive/items/${cloudData.parentId}:/${cloudData.fileName}:/createUploadSession`
     let success = false
 
-    console.log(`fetch: POST ${sessionUrl}`)
     await fetch(sessionUrl, {
       method: "POST",
       mode: "cors",
       headers: {
-          "Authorization": `bearer ${cloudData.accessToken}`,
+          "Authorization": `bearer ${g_accessToken}`,
           "Content-Type": "application/json"
       },
       body: JSON.stringify(
@@ -93,7 +113,6 @@ export class OneDriveCloudDrive implements CloudProvider {
           success = await this.uploadBlob(json["uploadUrl"], blob, cloudData)
         } else {
           cloudData.syncStatus = CLOUD_SYNC.FAILED
-          console.log(`response.status: ${JSON.stringify(json)}`)
         }
     })
     .catch(error => {
@@ -121,7 +140,7 @@ export class OneDriveCloudDrive implements CloudProvider {
         method: "PUT",
         mode: "cors",
         headers: {
-          "Authorization": `bearer ${cloudData.accessToken}`,
+          "Authorization": `bearer ${g_accessToken}`,
           "Content-Length": `${chunkSize}`,
           "Content-Range": `bytes ${offset}-${offset+chunkSize-1}/${buffer.byteLength}`
         },
@@ -136,6 +155,16 @@ export class OneDriveCloudDrive implements CloudProvider {
             chunkSize = Math.min(buffer.byteLength - offset, MAX_UPLOAD_BYTES)
 
             if (chunkSize <= 0) {
+              if (cloudData.itemId == "") {                    
+                const json = await response.json()
+                if (json) {
+                  cloudData.itemId = json.id
+                  cloudData.parentId = json.parentReference.id
+                  cloudData.downloadUrl = `${cloudData.apiEndpoint}drive/items/${json.id}/content`
+                  cloudData.detailsUrl = json.webUrl
+                }
+              }
+
               cloudData.syncStatus = CLOUD_SYNC.ACTIVE
               success = true
             }

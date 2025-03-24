@@ -1,4 +1,4 @@
-import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faStar, faSync, IconDefinition } from "@fortawesome/free-solid-svg-icons"
 import { JSX } from "react"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 
@@ -10,6 +10,7 @@ type MenuItem = {
 }
 
 export const driveMenuItems: Array<Array<MenuItem>> = [
+  // menuNumber = 0
   [
     {
       label: "Write Protect Disk",
@@ -48,6 +49,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 5
     }
   ],
+  // menuNumber = 1
   [
     {
       label: "Write Protect Disk",
@@ -89,6 +91,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: Number.MIN_VALUE
     }
   ],
+  // menuNumber = 2
   [
     {
       label: "Load Disk from Device (Read-Only)",
@@ -117,6 +120,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 2
     }
   ],
+  // menuNumber = 3
   [
     {
       label: "Load Disk from Device (Read/Write)",
@@ -145,6 +149,7 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       index: 2
     }
   ],
+  // menuNumber = 4
   [
     {
       label: "Write Protect Disk",
@@ -189,6 +194,106 @@ export const driveMenuItems: Array<Array<MenuItem>> = [
       label: "Save Disk to Google Drive",
       icon: faCloud,
       index: 5
+    }
+  ],
+  // menuNumber = 5
+  [
+    {
+      label: "Write Protect Disk",
+      icon: faLock,
+      index: 3
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Eject Disk",
+      icon: faEject,
+      index: 2
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Add Disk to Collection",
+      icon: faStar,
+      index: 7
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Every Minute",
+      icon: faClock,
+      index: 60000
+    },
+    {
+      label: "Sync Every 5 Minutes",
+      icon: faClock,
+      index: 300000
+    },
+    {
+      label: "Pause Syncing",
+      icon: faPause,
+      index: Number.MAX_VALUE
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Now",
+      icon: faSync,
+      index: Number.MIN_VALUE
+    }
+  ],
+  // menuNumber = 6
+  [
+    {
+      label: "Write Protect Disk",
+      icon: faLock,
+      index: 3
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Eject Disk",
+      icon: faEject,
+      index: 2
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Remove Disk from Collection",
+      icon: faStar,
+      index: 8
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Every Minute",
+      icon: faClock,
+      index: 60000
+    },
+    {
+      label: "Sync Every 5 Minutes",
+      icon: faClock,
+      index: 300000
+    },
+    {
+      label: "Pause Syncing",
+      icon: faPause,
+      index: Number.MAX_VALUE
+    },
+    {
+      label: "-"
+    },
+    {
+      label: "Sync Now",
+      icon: faSync,
+      index: Number.MIN_VALUE
     }
   ]
 ]

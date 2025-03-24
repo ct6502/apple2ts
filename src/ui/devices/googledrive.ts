@@ -8,6 +8,7 @@ let g_accessToken: string = ""
 let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
+  
   tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: "831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com",
     scope: "https://www.googleapis.com/auth/drive.file",
@@ -84,6 +85,7 @@ export class GoogleDrive implements CloudProvider {
           fileId: doc[google.picker.Document.ID],
           parentID: doc[google.picker.Document.PARENT_ID] ?? "",
           fileName: doc[google.picker.Document.NAME] ?? "",
+          webViewLink: doc[google.picker.Document.URL] ?? ""
         })
         this.resolvePicker = null
       }
@@ -106,6 +108,17 @@ export class GoogleDrive implements CloudProvider {
     })
   }
 
+  requestAuthToken(callback: (authToken: string) => void) {
+    this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+      if (response.error !== undefined) {
+        throw (response)
+      }
+      g_accessToken = response.access_token
+      callback(`Bearer ${response.access_token}`)
+    }
+    this.tokenClient.requestAccessToken({prompt: "consent"})
+  }
+
   async download(filter: string): Promise<[Blob, CloudData]|null> {
     const result = await this.launchPicker("file", filter)
     if (result) {
@@ -115,16 +128,16 @@ export class GoogleDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: result.fileName,
-        accessToken: "",
         itemId: result.fileId,
         apiEndpoint: "",
-        parentID: result.parentID,
+        parentId: result.parentID,
+        downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`,
+        detailsUrl: result.webViewLink
       }
       
       showGlobalProgressModal(true)
 
-      const url = `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`
-      const response = await fetch(url, {
+      const response = await fetch(cloudData.downloadUrl, {
         headers: {
           "Authorization": `Bearer ${g_accessToken}`
         }
@@ -155,16 +168,17 @@ export class GoogleDrive implements CloudProvider {
         syncInterval: DEFAULT_SYNC_INTERVAL,
         lastSyncTime: Date.now(),
         fileName: filename,
-        accessToken: "",
         itemId: "",
         apiEndpoint: "",
-        parentID: result.fileId,
+        parentId: result.fileId,
+        downloadUrl: "",  // Download URL is unknown until file is sucessfully uploaded
+        detailsUrl: result.webViewLink
       }
 
       try {
         const metadata = {
           name: filename,
-          parents: [cloudData.parentID],
+          parents: [cloudData.parentId],
         }
         const form = new FormData()
         form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }))
@@ -180,6 +194,7 @@ export class GoogleDrive implements CloudProvider {
           console.log(`File upload success: ${filename}`)
           // Make sure to get our new Google Drive fileId so we can sync later.
           const responseData = await response.json()
+          cloudData.downloadUrl = `https://www.googleapis.com/drive/v3/files/${responseData.id}?alt=media`,
           cloudData.itemId = responseData.id
           cloudData.syncStatus = CLOUD_SYNC.ACTIVE
           return cloudData
@@ -238,5 +253,6 @@ interface GoogleTokenClient {
 interface GoogleDriveResult {
   fileId: string,
   parentID: string,
-  fileName: string
+  fileName: string,
+  webViewLink: string
 }

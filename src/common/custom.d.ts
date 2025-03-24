@@ -120,16 +120,18 @@ type CloudData = {
   syncInterval: number,
   lastSyncTime: number,
   fileName: string,
-  accessToken: string,
+  parentId?: string,
   itemId: string,
   apiEndpoint: string,
-  parentID: string
+  downloadUrl: string,
+  detailsUrl: string
 }
 
 type CloudProvider = {
   download(filter: string): Promise<[Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
+  requestAuthToken(async callback: (authToken: string) => void): void
 }
 
 type DriveState = {
@@ -308,9 +310,14 @@ type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
   lastUpdated: Date,
-  imageUrl: string,
-  diskUrl?: string,
-  detailsUrl?: string,
+  imageUrl?: URL,
+  diskUrl?: URL,
+  detailsUrl?: URL,
   diskImage?: diskImage,
-  bookmarkId?: string
+  bookmarkId?: string,
+  cloudData?: CloudData
+}
+
+interface OpenerWindow {
+  accessToken: string
 }

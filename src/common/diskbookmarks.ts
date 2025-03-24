@@ -7,9 +7,10 @@ export type DiskBookmark = {
   id: string,
   title: string,
   screenshotUrl: URL,
-  diskUrl: URL,
-  detailsUrl: URL,
-  lastUpdated: Date
+  diskUrl?: URL,
+  detailsUrl?: URL,
+  lastUpdated: Date,
+  cloudData?: CloudData
 }
 
 export class DiskBookmarks {

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faClock, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
-import { handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
+import { faClock, faCloud, faFloppyDisk, faStar } from "@fortawesome/free-solid-svg-icons"
+import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
+import { newReleases } from "../devices/newreleases"
 import { replaceSuffix } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
@@ -12,45 +13,9 @@ import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
   INTERNET_ARCHIVE,
-  NEW_RELEASE
+  NEW_RELEASE,
+  CLOUD_DRIVE
 }
-
-// $TODO: Read this disk collection data from a hosted JSON file
-const newReleases: DiskCollectionItem[] = [
-  {
-    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    title: "Glider for Apple II",
-    lastUpdated: new Date("3/16/2025"),
-    imageUrl: "https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png",
-    diskUrl: "https://colino.net/tmp/glider-en-beta-202503162.po",
-    detailsUrl: "https://www.colino.net/wordpress/glider-for-apple-ii/"
-  },
-  {
-    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    title: "Million Perfect Tiles",
-    lastUpdated: new Date("12/30/2024"),
-    imageUrl: "https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png",
-    diskUrl: "https://archive.org/download/MillionPerfectTiles/Million.Perfect.Tiles.v1.1.po",
-    detailsUrl: "https://archive.org/details/MillionPerfectTiles"
-  },
-  // $TODO: Figure out why the DSK fails to load
-  // {
-  //   type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-  //   title: "Encounter Adventure",
-  //   lastUpdated: new Date("11/11/2024"),
-  //   imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
-  //   diskUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk",
-  //   detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/"
-  // }
-  {
-    type: DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE,
-    title: "Undead Demo",
-    lastUpdated: new Date("9/10/2024"),
-    imageUrl: "https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png",
-    diskUrl: "https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip",
-    detailsUrl: "https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central"
-  }
-]
 
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -91,8 +56,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     if (diskCollectionItem.diskImage) {
       handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay)
+    } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+      handleSetDiskFromCloudData(diskCollectionItem.cloudData)
     } else if (diskCollectionItem.diskUrl) {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl)
+      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString())
     } else {
       // $TODO: Add error handling
     }
@@ -119,13 +86,15 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     const newDiskCollection: DiskCollectionItem[] = []
 
     // Load built-in disk images
+    const baseUrl = new URL(window.location.href)
+    const baseUrlString = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}`
     diskImages.forEach((diskImage) => {
       newDiskCollection.push({
         type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
         title: diskImage.title,
         lastUpdated: minDate,
-        imageUrl: `${"/disks/" + replaceSuffix(diskImage.file, "png")}`,
-        detailsUrl: diskImage.url,
+        imageUrl: new URL(baseUrlString + "/disks/" + replaceSuffix(diskImage.file, "png")),
+        detailsUrl: diskImage.url ? new URL(diskImage.url) : undefined,
         diskImage: diskImage
       })
     })
@@ -136,16 +105,18 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         type: diskBookmark.type,
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
-        diskUrl: diskBookmark.diskUrl?.toString(),
-        imageUrl: diskBookmark.screenshotUrl.toString(),
-        detailsUrl: diskBookmark.detailsUrl.toString(),
-        bookmarkId: diskBookmark.id
+        diskUrl: diskBookmark.diskUrl,
+        imageUrl: diskBookmark.screenshotUrl,
+        detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
+        bookmarkId: diskBookmark.id,
+        cloudData: diskBookmark.cloudData
       })
     }
 
     // Load new releases
-    newReleases.forEach((diskImage) => {
-      newDiskCollection.push(diskImage)
+    newReleases.forEach((newRelease) => {
+      newRelease.type = DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE
+      newDiskCollection.push(newRelease)
     })
 
     setDiskCollection(newDiskCollection)
@@ -174,7 +145,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               className="dcp-item-image-box"
               title={`Click to insert disk "${diskCollectionItem.title}"`}
               onClick={handleItemClick(index)}>
-              <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
+              <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
@@ -198,8 +169,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               </div>}
             {diskCollectionItem.bookmarkId &&
               <div
-                className="dcp-item-bookmark" title="Click to remove bookmark" onClick={handleBookmarkClick(index)}>
+                className="dcp-item-bookmark" title="Click to remove from disk collection" onClick={handleBookmarkClick(index)}>
                 <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
+              </div>}
+            {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
+              <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
+                <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => event.stopPropagation()} />
               </div>}
           </div>
         ))}

@@ -13,6 +13,8 @@ import { GoogleDrive } from "./googledrive"
 import { driveMenuItems } from "./diskdrive_menu"
 import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
 import InternetArchivePopup from "../internetarchivedialog"
+import { DiskBookmarks } from "../../common/diskbookmarks"
+import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -43,6 +45,7 @@ type DiskDriveProps = {
 
 const DiskDrive = (props: DiskDriveProps) => {
   const dprops = handleGetDriveProps(props.index)
+  const diskBookmarks = new DiskBookmarks()
 
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
@@ -281,7 +284,11 @@ const DiskDrive = (props: DiskDriveProps) => {
         }
       }
     } else {
-      menuIndex = 1
+      if (dprops.cloudData.itemId != "") {
+        menuIndex = !diskBookmarks.contains(dprops.cloudData.itemId) ? 5 : 6
+      } else {
+        menuIndex = 1
+      }
     }
 
     if (menuIndex >= 0 && menuIndex < driveMenuItems.length) {
@@ -311,6 +318,11 @@ const DiskDrive = (props: DiskDriveProps) => {
     })
 
     return [w, h]
+  }
+
+  const getImageDataUrlFromCanvas = () => {
+    const hiddenCanvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement
+    return new URL(hiddenCanvas.toDataURL("image/jpeg", 0.1))
   }
 
   const handleMenuClose = (menuChoice = -1) => {
@@ -343,14 +355,28 @@ const DiskDrive = (props: DiskDriveProps) => {
         case 6:
           showSaveFilePicker(props.index)
       }
-    } else if (menuNumber == 1) {
+    } else if (menuNumber == 1 || menuNumber == 5 || menuNumber == 6) {
       if (menuChoice == 2) {
         resetDrive(props.index)
       } else if (menuChoice >= 0) {
         if (menuChoice == 3) {
           handleSetDiskWriteProtected(dprops.index, !dprops.isWriteProtected)
-        }
-        else if (menuChoice == Number.MIN_VALUE) {
+        } else if (menuChoice == 7) {
+          if (dprops.cloudData) {
+            diskBookmarks.set({
+              type: DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE,
+              id: dprops.cloudData.itemId,
+              title: dprops.cloudData.fileName,
+              screenshotUrl: getImageDataUrlFromCanvas(),
+              lastUpdated: new Date(dprops.cloudData.lastSyncTime),
+              cloudData: dprops.cloudData
+            })
+          }
+        } else if (menuChoice == 8) {
+          if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
+            diskBookmarks.remove(dprops.cloudData.itemId)
+          }
+        } else if (menuChoice == Number.MIN_VALUE) {
           switch (dprops.cloudData?.providerName) {
             case "OneDrive":
               updateCloudDrive(new OneDriveCloudDrive())

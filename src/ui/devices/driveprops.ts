@@ -5,6 +5,8 @@ import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewDat
 import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
+import { OneDriveCloudDrive } from "./onedriveclouddrive"
+import { GoogleDrive } from "./googledrive"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -136,7 +138,45 @@ export const handleSetDiskOrFileFromBuffer = (
   }
 
   return newIndex
+}
 
+export const handleSetDiskFromCloudData = async (cloudData: CloudData) => {
+  let cloudProvider
+  switch (cloudData.providerName) {
+    case "GoogleDrive":
+      cloudProvider = new GoogleDrive
+      break
+
+    case "OneDrive":
+      cloudProvider = new OneDriveCloudDrive
+      break
+  }
+
+  if (cloudProvider) {
+    cloudProvider.requestAuthToken(async (authToken: string) => {
+      showGlobalProgressModal(true)
+      const response = await fetch(cloudData.downloadUrl, {
+        headers: {
+          "Authorization": authToken,
+          "Content-Type": "application/octet"
+        },
+        redirect: "follow"
+      })
+        .finally(() => {
+          showGlobalProgressModal(false)
+        })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const buffer = await new Response(blob).arrayBuffer()
+
+        cloudData.lastSyncTime = Date.now()
+        handleSetDiskOrFileFromBuffer(0, buffer, cloudData.fileName, cloudData, null)
+      } else {
+        // $TODO: Add error handling
+      }
+    })
+  }
 }
 
 export const handleSetDiskFromURL = async (url: string,
@@ -175,11 +215,14 @@ export const handleSetDiskFromURL = async (url: string,
 
     showGlobalProgressModal(true)
     const response = await fetch(iconName() + url, { headers: favicon })
+      .finally(() => {
+        showGlobalProgressModal(false)
+      })
+
     if (!response.ok) {
       console.error(`HTTP error: status ${response.status}`)
       return
     }
-    showGlobalProgressModal(false)
 
     const blob = await response.blob()
 
