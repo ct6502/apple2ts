@@ -5,12 +5,13 @@ import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesom
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { newReleases } from "../devices/newreleases"
-import { replaceSuffix } from "../../common/utility"
+import { replaceSuffix, UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import PopupMenu from "../controls/popupmenu"
 import { DISK_DRIVE_LABELS } from "../devices/diskdrive"
+import { handleGetTheme } from "../main2worker"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -160,7 +161,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
-      width="max( 75vw, 200px )"
+      width={`max( ${handleGetTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       position="top-center">
       <div className="disk-collection-panel">
         {diskCollection.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (

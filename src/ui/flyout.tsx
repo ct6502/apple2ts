@@ -44,7 +44,7 @@ const Flyout = (props: {
     if (props.position.indexOf("left") >= 0) {
       left = !isFlyoutOpen || !isTouchDevice ? "14px" : "48px"
     } else if (props.position.indexOf("center") >= 0) {
-      left = `calc( -0.625vw + ${window.outerWidth / 2}px - ${isFlyoutOpen ? props.width ?? "auto" : flyoutButtonWidth} / 2)`
+      left = `calc( ${isFlyoutOpen ? "-1.25vw" : "-0.625vw"} + ${window.outerWidth / 2}px - ${isFlyoutOpen ? props.width ?? "auto" : flyoutButtonWidth} / 2)`
     }
   }
 
