@@ -64,7 +64,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
     } else if (diskCollectionItem.diskUrl) {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex)
+      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex, diskCollectionItem.cloudData)
     } else {
       // $TODO: Add error handling
     }

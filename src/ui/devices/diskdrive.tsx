@@ -347,6 +347,42 @@ const DiskDrive = (props: DiskDriveProps) => {
               isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle }
             },
             {
+              label: "Add Disk to Collection",
+              icon: faStar,
+              isVisible: () => { return dprops.cloudData?.itemId != undefined && !diskBookmarks.contains(dprops.cloudData?.itemId || "") },
+              onClick: () => {
+                if (dprops.cloudData) {
+                  diskBookmarks.set({
+                    type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+                    id: dprops.cloudData.itemId,
+                    title: dprops.cloudData.fileName,
+                    screenshotUrl: getImageDataUrlFromCanvas(),
+                    lastUpdated: new Date(Date.now()),
+                    diskUrl: new URL(dprops.cloudData.downloadUrl),
+                    cloudData: dprops.cloudData
+                  })
+                }
+              }
+            },
+            {
+              label: "-",
+              isVisible: () => { return dprops.cloudData?.itemId != undefined && !diskBookmarks.contains(dprops.cloudData?.itemId || "") },
+            },
+            {
+              label: "Remove Disk from Collection",
+              icon: faStar,
+              isVisible: () => { return diskBookmarks.contains(dprops.cloudData?.itemId || "") },
+              onClick: () => {
+                if (dprops.cloudData && diskBookmarks.contains(dprops.cloudData.itemId)) {
+                  diskBookmarks.remove(dprops.cloudData.itemId)
+                }
+              }
+            },
+            {
+              label: "-",
+              isVisible: () => { return diskBookmarks.contains(dprops.cloudData?.itemId || "") }
+            },
+            {
               label: "Download Disk",
               icon: faDownload,
               onClick: () => {

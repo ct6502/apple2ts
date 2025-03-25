@@ -6,7 +6,7 @@ import { DiskBookmarks } from "../common/diskbookmarks"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
-import { generateUrlFromInternetArchiveId, showGlobalProgressModal } from "../common/utility"
+import { CLOUD_SYNC, generateUrlFromInternetArchiveId, showGlobalProgressModal } from "../common/utility"
 import { DISK_COLLECTION_ITEM_TYPE } from "./panels/diskcollectionpanel"
 
 const queryMaxRows = 25
@@ -96,8 +96,20 @@ interface InternetDialogResultProps {
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
   const handleTileClick = async () => {
+    const cloudData: CloudData = {
+      providerName: "InternetArchive",
+      syncStatus: CLOUD_SYNC.INACTIVE,
+      syncInterval: -1,
+      lastSyncTime: Number.MAX_VALUE,
+      fileName: "",
+      itemId: props.identifier,
+      apiEndpoint: "",
+      downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
+      detailsUrl: `https://archive.org/details/${props.identifier}`
+    }
+
     props.closeParent()
-    handleSetDiskFromURL(generateUrlFromInternetArchiveId(props.identifier).toString(), undefined, props.driveIndex)
+    handleSetDiskFromURL(cloudData.downloadUrl, undefined, props.driveIndex, cloudData)
   }
 
   const handleStatsClick = () => {
