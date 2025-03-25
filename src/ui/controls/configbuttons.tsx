@@ -27,7 +27,8 @@ import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme, setPrefere
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
-import React from "react"
+import { useState } from "react"
+import PopupMenu from "./popupmenu"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -41,28 +42,11 @@ const ConfigButtons = (props: DisplayProps) => {
   const useOpenAppleKey = handleUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
-  const theme = handleGetTheme()
-  const [droplistOpen, setDroplistOpen] = React.useState<boolean>(false)
-  const [position, setPosition] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
-    const y = Math.min(event.clientY, window.innerHeight - 200)
-    setPosition({ x: event.clientX, y: y })
-    setDroplistOpen(true)
+    setPopupLocation([event.clientX, event.clientY])
   }
-
-  const handleThemeClose = (theme = -1) => {
-    setDroplistOpen(false)
-    if (theme >= 0 && theme != handleGetTheme()) {
-      if (window.confirm("Reload the emulator and apply this theme now?")) {
-        setPreferenceTheme(theme)
-        const url = new URL(window.location.href)
-        url.searchParams.delete("theme")
-        window.location.href = url.toString()
-      }
-    }
-  }
-
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
       <button className="push-button"
@@ -123,23 +107,26 @@ const ConfigButtons = (props: DisplayProps) => {
       <FontAwesomeIcon icon={faPalette} />
     </button>
 
-    {droplistOpen &&
-      <div className="modal-overlay"
-        style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
-        onClick={() => handleThemeClose(-1)}>
-        <div className="floating-dialog flex-column droplist-option"
-          style={{ left: position.x, top: position.y }}>
-          {Object.values(UI_THEME).filter(value => typeof value === "number").map((i) => (
-            <div className="droplist-option" style={{ padding: "5px" }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-              key={i} onClick={() => handleThemeClose(i)}>
-              {(theme === i) ? "\u2714\u2009" : "\u2003"}{themeToName(i)}
-            </div>))}
-        </div>
-
-      </div>
-    }
+    <PopupMenu
+      location={popupLocation}
+      onClose={() => { setPopupLocation(undefined) }}
+      menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, i) => {
+        return {
+          label: themeToName(i),
+          isSelected: () => { return i == handleGetTheme() },
+          onClick: () => {
+            if (i >= 0 && i != handleGetTheme()) {
+              if (window.confirm("Reload the emulator and apply this theme now?")) {
+                setPreferenceTheme(i)
+                const url = new URL(window.location.href)
+                url.searchParams.delete("theme")
+                window.location.href = url.toString()
+              }
+            }
+          }
+        }
+      })]}
+    />
 
     <button className="push-button" id="tour-clearcookies"
       title="Reset All Settings"

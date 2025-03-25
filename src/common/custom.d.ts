@@ -321,3 +321,12 @@ type DiskCollectionItem = {
 interface OpenerWindow {
   accessToken: string
 }
+
+type PopupMenuItem = {
+  label: string,
+  icon?: IconDefinition,
+  svg?: JSX.Element,
+  isVisible?: () => boolean,
+  isSelected?: () => boolean,
+  onClick?: () => void
+}

@@ -1,4 +1,4 @@
-import React from "react"
+import { useState } from "react"
 
 type DropdownProps = {
   currentIndex: number,
@@ -9,8 +9,8 @@ type DropdownProps = {
 }
 
 export const DropdownButton = (props: DropdownProps) => {
-  const [menuOpen, setMenuOpen] = React.useState<boolean>(false)
-  const [position, setPosition] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 })
+  const [menuOpen, setMenuOpen] = useState<boolean>(false)
+  const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 })
 
   const handleMenuClick = (event: React.MouseEvent) => {
     const y = Math.min(event.clientY, window.innerHeight - 200)
