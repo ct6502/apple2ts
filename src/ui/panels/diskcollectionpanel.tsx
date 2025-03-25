@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
-import { handleSetDiskFromCloudData, handleSetDiskFromURL } from "../devices/driveprops"
+import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { newReleases } from "../devices/newreleases"
 import { UI_THEME } from "../../common/utility"
@@ -42,7 +42,7 @@ const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): num
   return 0
 }
 
-const DiskCollectionPanel = () => {
+const DiskCollectionPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
@@ -60,7 +60,9 @@ const DiskCollectionPanel = () => {
   const loadDisk = (driveIndex: number, itemIndex: number = popupItemIndex) => {
     const diskCollectionItem = diskCollection[itemIndex]
 
-    if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+    if (typeof diskCollectionItem.diskUrl === "string") {
+      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
+    } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
     } else if (diskCollectionItem.diskUrl) {
       handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex, diskCollectionItem.cloudData)
@@ -127,7 +129,7 @@ const DiskCollectionPanel = () => {
         type: diskBookmark.type,
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
-        diskUrl: diskBookmark.diskUrl,
+        diskUrl: diskBookmark.diskUrl ? diskBookmark.diskUrl : "",
         imageUrl: diskBookmark.screenshotUrl,
         detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
         bookmarkId: diskBookmark.id,

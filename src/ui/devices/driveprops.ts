@@ -288,19 +288,19 @@ const resetAllDiskDrives = () => {
   }
 }
 
-export const handleSetDiskFromFile = async (disk: diskImage,
+export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
   let data: ArrayBuffer
   try {
-    const res = await fetch("/disks/" + disk.file)
+    const res = await fetch("/disks/" + disk)
     data = await res.arrayBuffer()
   } catch {
    return
   }
   resetAllDiskDrives()
-  handleSetDiskData(driveIndex, new Uint8Array(data), disk.file, null, null, -1)
+  handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
   passSetRunMode(RUN_MODE.NEED_BOOT)
-  const helpFile = replaceSuffix(disk.file, "txt")
+  const helpFile = replaceSuffix(disk, "txt")
   try {
     const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
     let helptext = "<Default>"

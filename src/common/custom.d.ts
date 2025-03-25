@@ -228,12 +228,6 @@ type EmuGamepad = {
   buttons: Array<boolean>
 }
 
-type diskImage = {
-  file: string
-  url: string
-  title: string
-};
-
 type GamePadActuatorEffect = {
   startDelay: number,
   duration: number,
@@ -311,7 +305,7 @@ type DiskCollectionItem = {
   title: string,
   lastUpdated: Date,
   imageUrl?: URL,
-  diskUrl?: URL,
+  diskUrl: URL | string,
   detailsUrl?: URL,
   bookmarkId?: string,
   cloudData?: CloudData

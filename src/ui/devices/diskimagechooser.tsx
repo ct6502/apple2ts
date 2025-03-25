@@ -10,7 +10,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
     setOpen(true)
   }
 
-  const handleSelect = (disk: diskImage) => {
+  const handleSelect = (disk: string) => {
     setOpen(false)
     handleSetDiskFromFile(disk, props.updateDisplay)
   }

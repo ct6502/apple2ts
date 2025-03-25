@@ -1,14 +1,14 @@
 export const diskImages: DiskCollectionItem[] = [
   {
     "title": "Aztec",
-    diskUrl: new URL("/disks/Aztec.po", window.location.origin),
+    diskUrl: "Aztec.po",
     imageUrl: new URL("/disks/Aztec.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
   },
   {
     "title": "Eamon",
-    diskUrl: new URL("/disks/Eamon%201.po", window.location.origin),
+    diskUrl: "Eamon%201.po",
     imageUrl: new URL("/disks/Eamon%201.png", window.location.origin),
     detailsUrl: new URL("https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)"),
     type: undefined,
@@ -16,21 +16,21 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "MECC Inspector",
-    diskUrl: new URL("/disks/MECC-Inspector.woz", window.location.origin),
+    diskUrl: "MECC-Inspector.woz",
     imageUrl: new URL("/disks/MECC-Inspector.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
   },
   {
     "title": "MousePaint",
-    diskUrl: new URL("/disks/MousePaint.woz", window.location.origin),
+    diskUrl: "MousePaint.woz",
     imageUrl: new URL("/disks/MousePaint.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
   },
   {
     "title": "Nox Archaist Demo",
-    diskUrl: new URL("/disks/Nox%20Archaist%20Demo.hdv", window.location.origin),
+    diskUrl: "Nox%20Archaist%20Demo.hdv",
     imageUrl: new URL("/disks/Nox%20Archaist%20Demo.png", window.location.origin),
     detailsUrl: new URL("https://noxarchaist.com"),
     type: undefined,
@@ -38,7 +38,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Olympic Decathalon",
-    diskUrl: new URL("/disks/Olympic%20Decathlon.woz", window.location.origin),
+    diskUrl: "Olympic%20Decathlon.woz",
     imageUrl: new URL("/disks/Olympic%20Decathlon.png", window.location.origin),
     detailsUrl: new URL("https://archive.org/details/microsoft-olympic-decathlon-a2-ph/"),
     type: undefined,
@@ -46,14 +46,14 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Print Shop Color",
-    diskUrl: new URL("/disks/Print%20Shop%20Color.woz", window.location.origin),
+    diskUrl: "Print%20Shop%20Color.woz",
     imageUrl: new URL("/disks/Print%20Shop%20Color.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
   },
   {
     "title": "ProDOS 2.4.3",
-    diskUrl: new URL("/disks/ProDOS%202.4.3.po", window.location.origin),
+    diskUrl: "ProDOS%202.4.3.po",
     imageUrl: new URL("/disks/ProDOS%202.4.3.png", window.location.origin),
     detailsUrl: new URL("https://prodos8.com/"),
     type: undefined,
@@ -61,7 +61,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Robotron",
-    diskUrl: new URL("/disks/Robotron4Joy.po", window.location.origin),
+    diskUrl: "Robotron4Joy.po",
     imageUrl: new URL("/disks/Robotron4Joy.png", window.location.origin),
     detailsUrl: new URL("https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/"),
     type: undefined,
@@ -69,7 +69,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Total Replay v5.1",
-    diskUrl: new URL("/disks/Total%20Replay%20v5.1.hdv", window.location.origin),
+    diskUrl: "Total%20Replay%20v5.1.hdv",
     imageUrl: new URL("/disks/Total%20Replay%20v5.1.png", window.location.origin),
     detailsUrl: new URL("https://archive.org/details/TotalReplay"),
     type: undefined,
@@ -77,7 +77,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Instant Replay",
-    diskUrl: new URL("/disks/Instant%20Replay.hdv", window.location.origin),
+    diskUrl: "Instant%20Replay.hdv",
     imageUrl: new URL("/disks/Instant%20Replay.png", window.location.origin),
     detailsUrl: new URL("https://github.com/a2-4am/4sports"),
     type: undefined,
@@ -85,7 +85,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Pitch Dark",
-    diskUrl: new URL("/disks/Pitch%20Dark.hdv", window.location.origin),
+    diskUrl: "Pitch%20Dark.hdv",
     imageUrl: new URL("/disks/Pitch%20Dark.png", window.location.origin),
     detailsUrl: new URL("https://archive.org/details/PitchDark"),
     type: undefined,
@@ -93,7 +93,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Ultima IV",
-    diskUrl: new URL("/disks/Ultima%20IV.hdv", window.location.origin),
+    diskUrl: "Ultima%20IV.hdv",
     imageUrl: new URL("/disks/Ultima%20IV.png", window.location.origin),
     detailsUrl: new URL("https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar"),
     type: undefined,
@@ -101,7 +101,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Ultima V",
-    diskUrl: new URL("/disks/Ultima%20V.hdv", window.location.origin),
+    diskUrl: "Ultima%20V.hdv",
     imageUrl: new URL("/disks/Ultima%20V.png", window.location.origin),
     detailsUrl: new URL("https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny"),
     type: undefined,
@@ -109,7 +109,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     "title": "Wizardy Replay v1.1",
-    diskUrl: new URL("/disks/Wizard%20Replay%20v1.1.hdv", window.location.origin),
+    diskUrl: "Wizard%20Replay%20v1.1.hdv",
     imageUrl: new URL("/disks/Wizard%20Replay%20v1.1.png", window.location.origin),
     detailsUrl: new URL("https://archive.org/details/WizardReplay"),
     type: undefined,

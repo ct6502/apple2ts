@@ -188,7 +188,7 @@ const DisplayApple2 = () => {
           {(!handleGetIsDebugging() || isMinimalTheme) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
         </span>
       </span>
-      {isMinimalTheme && <DiskCollectionPanel/>}
+      {isMinimalTheme && <DiskCollectionPanel {...props} />}
       <FileInput {...props} />
     </div>
   )
