@@ -131,7 +131,7 @@ type CloudProvider = {
   download(filter: string): Promise<[Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
-  requestAuthToken(async callback: (authToken: string) => void): void
+  requestAuthToken(callback: (authToken: string) => void): void
 }
 
 type DriveState = {
@@ -313,7 +313,6 @@ type DiskCollectionItem = {
   imageUrl?: URL,
   diskUrl?: URL,
   detailsUrl?: URL,
-  diskImage?: diskImage,
   bookmarkId?: string,
   cloudData?: CloudData
 }

@@ -4,9 +4,11 @@ import { iconKey, iconData, iconName } from "../img/iconfunctions"
 import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
+import { newReleases } from "../devices/newreleases"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
+import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -86,15 +88,25 @@ export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boo
 const findMatchingDiskImage = (url: string) => {
   const name = decodeURIComponent(url).replace(/[^A-Z]/gi, "").toUpperCase()
   for (let i = 0; i < diskImages.length; i++) {
-    const diskname = diskImages[i].file.replace(/[^A-Z]/gi, "").toUpperCase()
+    const diskname = diskImages[i].title.replace(/[^A-Z]/gi, "").toUpperCase()
     if (diskname.includes(name)) {
       return diskImages[i]
     }
   }
+  for (let i = 0; i < newReleases.length; i++) {
+    const diskname = newReleases[i].title.replace(/[^A-Z]/gi, "").toUpperCase()
+    if (diskname.includes(name)) {
+      return newReleases[i]
+    }
+  }
   // If we don't find a disk image in our pre-defined list, just assume
-  // that they've given an exact filename in our public folder,
-  // including the file suffix.
-  return {file: url, url: ""} as diskImage
+  // that they've given an exact filename in our public folder.
+  return {
+    type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
+    title: "",
+    lastUpdated: new Date(0),
+    diskUrl: new URL(url),
+    } as DiskCollectionItem
 }
 
 let binaryRunAddress = 0x300
@@ -183,8 +195,10 @@ export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData) => {
   if (!url.startsWith("http") && updateDisplay) {
     const match = findMatchingDiskImage(url)
-    handleSetDiskFromFile(match, updateDisplay)
-    return
+    if ( !match.diskUrl ) {
+      return
+    }
+    url = match.diskUrl.toString()
   }
 
   // Resolve Internet Archive URL, if necessary

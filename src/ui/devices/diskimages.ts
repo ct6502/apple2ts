@@ -1,77 +1,118 @@
-export const diskImages: Array<diskImage> = [
-   {
-      "title": "Aztec",
-      "file": "Aztec.po",
-      "url": ""
-   },
-   {
-      "title": "Eamon",
-      "file": "Eamon 1.po",
-      "url": "https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)"
-   },
-   {
-      "title": "MECC Inspector",
-      "file": "MECC-Inspector.woz",
-      "url": ""
-   },
-   {
-      "title": "MousePaint",
-      "file": "MousePaint.woz",
-      "url": ""
-   },
-   {
-      "title": "Nox Archaist Demo",
-      "file": "Nox Archaist Demo.hdv",
-      "url": "https://noxarchaist.com"
-   },
-   {
-      "title": "Olympic Decathalon",
-      "file": "Olympic Decathlon.woz",
-      "url": "https://archive.org/details/microsoft-olympic-decathlon-a2-ph/"
-   },
-   {
-      "title": "Print Shop Color",
-      "file": "Print Shop Color.woz",
-      "url": ""
-   },
-   {
-      "title": "ProDOS 2.4.3",
-      "file": "ProDOS 2.4.3.po",
-      "url": "https://prodos8.com/"
-   },
-   {
-      "title": "Robotron",
-      "file": "Robotron4Joy.po",
-      "url": "https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/"
-   },
-   {
-      "title": "Total Replay v5.1",
-      "file": "Total Replay v5.1.hdv",
-      "url": "https://archive.org/details/TotalReplay"
-   },
-   {
-      "title": "Instant Replay",
-      "file": "Instant Replay.hdv",
-      "url": "https://github.com/a2-4am/4sports"
-   },
-   {
-      "title": "Pitch Dark",
-      "file": "Pitch Dark.hdv",
-      "url": "https://archive.org/details/PitchDark"
-   },
-   {
-      "title": "Ultima IV",
-      "file": "Ultima IV.hdv",
-      "url": "https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar"
-   },
-   {
-      "title": "Ultima V",
-      "file": "Ultima V.hdv",
-      "url": "https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny"
-   },
-   {
-      "title": "Wizardy Replay v1.1",
-      "file": "Wizard Replay v1.1.hdv",
-      "url": "https://archive.org/details/WizardReplay"
-   }
-]
+export const diskImages: DiskCollectionItem[] = [
+  {
+    "title": "Aztec",
+    diskUrl: new URL("/disks/Aztec.po", window.location.origin),
+    imageUrl: new URL("/disks/Aztec.png", window.location.origin),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Eamon",
+    diskUrl: new URL("/disks/Eamon%201.po", window.location.origin),
+    imageUrl: new URL("/disks/Eamon%201.png", window.location.origin),
+    detailsUrl: new URL("https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "MECC Inspector",
+    diskUrl: new URL("/disks/MECC-Inspector.woz", window.location.origin),
+    imageUrl: new URL("/disks/MECC-Inspector.png", window.location.origin),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "MousePaint",
+    diskUrl: new URL("/disks/MousePaint.woz", window.location.origin),
+    imageUrl: new URL("/disks/MousePaint.png", window.location.origin),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Nox Archaist Demo",
+    diskUrl: new URL("/disks/Nox%20Archaist%20Demo.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Nox%20Archaist%20Demo.png", window.location.origin),
+    detailsUrl: new URL("https://noxarchaist.com"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Olympic Decathalon",
+    diskUrl: new URL("/disks/Olympic%20Decathlon.woz", window.location.origin),
+    imageUrl: new URL("/disks/Olympic%20Decathlon.png", window.location.origin),
+    detailsUrl: new URL("https://archive.org/details/microsoft-olympic-decathlon-a2-ph/"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Print Shop Color",
+    diskUrl: new URL("/disks/Print%20Shop%20Color.woz", window.location.origin),
+    imageUrl: new URL("/disks/Print%20Shop%20Color.png", window.location.origin),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "ProDOS 2.4.3",
+    diskUrl: new URL("/disks/ProDOS%202.4.3.po", window.location.origin),
+    imageUrl: new URL("/disks/ProDOS%202.4.3.png", window.location.origin),
+    detailsUrl: new URL("https://prodos8.com/"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Robotron",
+    diskUrl: new URL("/disks/Robotron4Joy.po", window.location.origin),
+    imageUrl: new URL("/disks/Robotron4Joy.png", window.location.origin),
+    detailsUrl: new URL("https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Total Replay v5.1",
+    diskUrl: new URL("/disks/Total%20Replay%20v5.1.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Total%20Replay%20v5.1.png", window.location.origin),
+    detailsUrl: new URL("https://archive.org/details/TotalReplay"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Instant Replay",
+    diskUrl: new URL("/disks/Instant%20Replay.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Instant%20Replay.png", window.location.origin),
+    detailsUrl: new URL("https://github.com/a2-4am/4sports"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Pitch Dark",
+    diskUrl: new URL("/disks/Pitch%20Dark.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Pitch%20Dark.png", window.location.origin),
+    detailsUrl: new URL("https://archive.org/details/PitchDark"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Ultima IV",
+    diskUrl: new URL("/disks/Ultima%20IV.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Ultima%20IV.png", window.location.origin),
+    detailsUrl: new URL("https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Ultima V",
+    diskUrl: new URL("/disks/Ultima%20V.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Ultima%20V.png", window.location.origin),
+    detailsUrl: new URL("https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny"),
+    type: undefined,
+    lastUpdated: new Date(0),
+  },
+  {
+    "title": "Wizardy Replay v1.1",
+    diskUrl: new URL("/disks/Wizard%20Replay%20v1.1.hdv", window.location.origin),
+    imageUrl: new URL("/disks/Wizard%20Replay%20v1.1.png", window.location.origin),
+    detailsUrl: new URL("https://archive.org/details/WizardReplay"),
+    type: undefined,
+    lastUpdated: new Date(0),
+    }
+    ]

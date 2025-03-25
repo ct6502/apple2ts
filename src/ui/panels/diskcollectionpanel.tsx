@@ -2,10 +2,10 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
-import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/driveprops"
+import { handleSetDiskFromCloudData, handleSetDiskFromURL } from "../devices/driveprops"
 import { diskImages } from "../devices/diskimages"
 import { newReleases } from "../devices/newreleases"
-import { replaceSuffix, UI_THEME } from "../../common/utility"
+import { UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DiskBookmarks } from "../../common/diskbookmarks"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -21,10 +21,10 @@ export enum DISK_COLLECTION_ITEM_TYPE {
 }
 
 const minDate = new Date(0)
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  year: '2-digit',
-  month: 'numeric',
-  day: 'numeric'
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "2-digit",
+  month: "numeric",
+  day: "numeric"
 })
 
 const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
@@ -42,7 +42,7 @@ const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): num
   return 0
 }
 
-const DiskCollectionPanel = (props: DisplayProps) => {
+const DiskCollectionPanel = () => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
@@ -60,9 +60,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const loadDisk = (driveIndex: number, itemIndex: number = popupItemIndex) => {
     const diskCollectionItem = diskCollection[itemIndex]
 
-    if (diskCollectionItem.diskImage) {
-      handleSetDiskFromFile(diskCollectionItem.diskImage, props.updateDisplay, driveIndex)
-    } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+    if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
     } else if (diskCollectionItem.diskUrl) {
       handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex, diskCollectionItem.cloudData)
@@ -118,17 +116,9 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     const newDiskCollection: DiskCollectionItem[] = []
 
     // Load built-in disk images
-    const baseUrl = new URL(window.location.href)
-    const baseUrlString = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}`
     diskImages.forEach((diskImage) => {
-      newDiskCollection.push({
-        type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
-        title: diskImage.title,
-        lastUpdated: minDate,
-        imageUrl: new URL(baseUrlString + "/disks/" + replaceSuffix(diskImage.file, "png")),
-        detailsUrl: diskImage.url ? new URL(diskImage.url) : undefined,
-        diskImage: diskImage
-      })
+      diskImage.type = DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE
+      newDiskCollection.push(diskImage)
     })
 
     // Load favorites

@@ -1,4 +1,4 @@
-import DiskCollectionPanel from "../panels/diskcollectionpanel";
+import DiskCollectionPanel from "../panels/diskcollectionpanel"
 
 interface DiskImageDialogProps {
   onClose: () => void;
@@ -27,7 +27,7 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
           overflowX: "hidden",
           overflowY: "auto",
         }}>
-          <DiskCollectionPanel {...props.displayProps} />
+          <DiskCollectionPanel/>
         </div>
       </div>
     </div>
