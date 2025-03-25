@@ -125,7 +125,18 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       screenshotUrl: screenshotUrl,
       diskUrl: generateUrlFromInternetArchiveId(props.identifier),
       detailsUrl: detailsUrl,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
+      cloudData: {
+        providerName: "InternetArchive",
+        syncStatus: CLOUD_SYNC.INACTIVE,
+        syncInterval: -1,
+        lastSyncTime: Number.MAX_VALUE,
+        fileName: "",
+        itemId: props.identifier,
+        apiEndpoint: "",
+        downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
+        detailsUrl: `https://archive.org/details/${props.identifier}`
+      }
     })
     setBookmarked(true)
   }
