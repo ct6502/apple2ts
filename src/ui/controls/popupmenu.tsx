@@ -19,15 +19,16 @@ const PopupMenu = (props: PopupMenuProps) => {
     let w = 0
     let h = 0
 
-    props.menuItems[props.menuIndex || 0].forEach((menuItem) => {
+    props.menuItems[props.menuIndex || 0].filter(value => value.isVisible == undefined || value.isVisible()).map((menuItem) => {
       if (menuItem.label == "-") {
         w = Math.max(w, 9)
-        h += 16
+        h += 12
       } else {
         w = Math.max(w, menuItem.label.length * 9)
-        h += 28
+        h += 26
       }
     })
+    h += 22
 
     return {
       left: Math.min(x, window.innerWidth - w),
