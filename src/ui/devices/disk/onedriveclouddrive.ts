@@ -14,7 +14,8 @@ export class OneDriveCloudDrive implements CloudProvider {
 
   requestAuthToken(callback: (authToken: string) => void) {
     const baseUrl = new URL(window.location.href)
-    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}?cloudProvider=OneDrive`
+    const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
+    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
 
     window.open(`${authUrl}${redirectUri}`, "_blank")
     const interval = window.setInterval(async () => {
