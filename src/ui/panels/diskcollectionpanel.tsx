@@ -60,14 +60,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const loadDisk = (driveIndex: number, itemIndex: number = popupItemIndex) => {
     const diskCollectionItem = diskCollection[itemIndex]
 
-    if (typeof diskCollectionItem.diskUrl === "string") {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
-    } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+    if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
-    } else if (diskCollectionItem.diskUrl) {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex, diskCollectionItem.cloudData)
+    } else if (typeof diskCollectionItem.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
+      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
     } else {
-      // $TODO: Add error handling
+      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex, diskCollectionItem.cloudData)
     }
 
     setIsFlyoutOpen(false)
