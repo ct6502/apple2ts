@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import iwiion from "./img/iwiion.png"
-import iwiioff from "./img/iwiioff.png"
+import iwiion from "./iwiion.png"
+import iwiioff from "./iwiioff.png"
 import PrinterDialog from "./printerdialog"
 import { ImageWriterII, registerSetPrinting } from "./iwii"
 

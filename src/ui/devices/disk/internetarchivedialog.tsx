@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react"
-import { svgInternetArchiveFavorites, svgInternetArchiveLogo, svgInternetArchiveReviews, svgInternetArchiveSoftware, svgInternetArchiveTitle, svgInternetArchiveViews } from "./img/icon_internetarchive"
 import "./internetarchivedialog.css"
-import { handleSetDiskFromURL } from "./devices/driveprops"
-import { DiskBookmarks } from "../common/diskbookmarks"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { faStar as faStarSolid } from "@fortawesome/free-solid-svg-icons"
-import { CLOUD_SYNC, generateUrlFromInternetArchiveId, showGlobalProgressModal } from "../common/utility"
-import { DISK_COLLECTION_ITEM_TYPE } from "./panels/diskcollectionpanel"
+import { DiskBookmarks } from "./diskbookmarks"
+import { CLOUD_SYNC } from "../../../common/utility"
+import { svgInternetArchiveSoftware, svgInternetArchiveViews, svgInternetArchiveFavorites, svgInternetArchiveReviews, svgInternetArchiveLogo, svgInternetArchiveTitle } from "../../img/icon_internetarchive"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
+import { showGlobalProgressModal } from "../../ui_utilities"
+import { handleSetDiskFromURL } from "./driveprops"
+import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
 
 const queryMaxRows = 25
 const queryFormat = "https://archive.org/advancedsearch.php?" + [

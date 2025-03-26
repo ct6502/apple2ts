@@ -1,5 +1,5 @@
-import { receivePrinterData } from "./iwii"
-import { passRxCommData } from "../main2worker"
+import { passRxCommData } from "../../main2worker"
+import { receivePrinterData } from "../printer/iwii"
 
 const wsSupported = ("serial" in navigator)
 let useWebSerial = false

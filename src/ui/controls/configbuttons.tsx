@@ -11,10 +11,6 @@ import {
   faSync,
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
-import { MockingboardWaveform } from "../devices/mockingboardwaveform"
-import { MidiDeviceSelect } from "../devices/midiselect"
-import { audioEnable, isAudioEnabled } from "../devices/speaker"
-import { SerialPortSelect } from "../devices/serialselect"
 import {
   handleGetArrowKeysAsJoystick,
   handleGetCapsLock, handleGetTheme, handleGetSpeedMode,
@@ -29,6 +25,10 @@ import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
 import { useState } from "react"
 import PopupMenu from "./popupmenu"
+import { MidiDeviceSelect } from "../devices/audio/midiselect"
+import { MockingboardWaveform } from "../devices/audio/mockingboardwaveform"
+import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
+import { SerialPortSelect } from "../devices/serial/serialselect"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';

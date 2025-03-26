@@ -1,5 +1,5 @@
-import { doPlayDriveSound } from "./devices/drivesounds"
 import { DRIVE, RUN_MODE } from "../common/utility"
+import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { passSetRunMode } from "./main2worker"
 
 export const handleSetCPUState = (state: RUN_MODE) => {

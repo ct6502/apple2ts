@@ -1,4 +1,3 @@
-import { isFileSystemApiSupported, RUN_MODE, UI_THEME } from "../../common/utility"
 import {
   passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode,
@@ -21,6 +20,8 @@ import {
 import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
 import { setPreferenceDebugMode, setPreferenceHotReload } from "../localstorage"
+import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { isFileSystemApiSupported } from "../ui_utilities"
 
 const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()

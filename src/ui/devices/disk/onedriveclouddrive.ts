@@ -1,4 +1,5 @@
-import { CLOUD_SYNC, showGlobalProgressModal } from "../../common/utility"
+import { CLOUD_SYNC } from "../../../common/utility"
+import { showGlobalProgressModal } from "../../ui_utilities"
 
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
@@ -17,6 +18,7 @@ export class OneDriveCloudDrive implements CloudProvider {
 
     window.open(`${authUrl}${redirectUri}`, "_blank")
     const interval = window.setInterval(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const accessToken = (window as any).accessToken
       if (accessToken) {
         clearInterval(interval)

@@ -1,12 +1,12 @@
 import "./diskinterface.css"
 import DiskDrive from "./diskdrive"
 import { DiskImageChooser } from "./diskimagechooser"
-import Flyout from "../flyout"
 import { faHdd } from "@fortawesome/free-solid-svg-icons"
-import ImageWriter from "./imagewriter"
 import { useState } from "react"
-import { UI_THEME } from "../../common/utility"
-import { handleGetTheme } from "../main2worker"
+import { UI_THEME } from "../../../common/utility"
+import Flyout from "../../flyout"
+import { handleGetTheme } from "../../main2worker"
+import ImageWriter from "../printer/imagewriter"
 
 const DiskInterface = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(true)

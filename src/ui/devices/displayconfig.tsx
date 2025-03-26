@@ -53,7 +53,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
             }
           )),
           ...[{ label: "-" }],
-          ...[0].map((i) => (
+          ...[0].map(() => (
             {
               label: "CRT Scanlines",
               isSelected: () => { return showScanlines },

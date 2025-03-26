@@ -1,6 +1,6 @@
+import { DropdownButton } from "../../controls/dropdownbutton"
+import { midiport } from "./midiport"
 import { midiOutDevices, getMidiOutIndex, setMidiOutIndex } from "./midiinterface"
-import { midiport } from "./img/midiport"
-import { DropdownButton } from "../controls/dropdownbutton"
 
 export const MidiDeviceSelect = () => {
 

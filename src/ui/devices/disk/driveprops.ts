@@ -1,14 +1,16 @@
-import { DiskBookmarks } from "../../common/diskbookmarks"
-import { FILE_SUFFIXES, MAX_DRIVES, RUN_MODE, getDiskImageUrlFromIdentifier, internetArchiveUrlProtocol, isHardDriveImage, replaceSuffix, showGlobalProgressModal } from "../../common/utility"
-import { iconKey, iconData, iconName } from "../img/iconfunctions"
-import { handleGetRunMode, passPasteText, passSetBinaryBlock, passSetDriveNewData, passSetDriveProps, passSetRunMode } from "../main2worker"
 import { getBlobFromDiskData } from "./diskdrive"
 import { diskImages } from "./diskimages"
-import { newReleases } from "../devices/newreleases"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
+import { isHardDriveImage, RUN_MODE, FILE_SUFFIXES, MAX_DRIVES, replaceSuffix } from "../../../common/utility"
+import { iconKey, iconData, iconName } from "../../img/iconfunctions"
+import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
+import { showGlobalProgressModal } from "../../ui_utilities"
+import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
+import { newReleases } from "./newreleases"
+import { DiskBookmarks } from "./diskbookmarks"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the

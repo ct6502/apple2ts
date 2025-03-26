@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, isFileSystemApiSupported, RUN_MODE, uint32toBytes } from "../../common/utility"
-import { imageList } from "./assets"
 import {
   handleSetDiskData, handleGetDriveProps,
   handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
@@ -10,13 +8,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { handleGetHotReload, passSetDriveProps, passSetRunMode } from "../main2worker"
-import InternetArchivePopup from "../internetarchivedialog"
-import { DiskBookmarks } from "../../common/diskbookmarks"
-import { DISK_COLLECTION_ITEM_TYPE } from "../panels/diskcollectionpanel"
 import React from "react"
-import PopupMenu from "../controls/popupmenu"
-import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
+import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, RUN_MODE, uint32toBytes } from "../../../common/utility"
+import PopupMenu from "../../controls/popupmenu"
+import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
+import { passSetDriveProps, handleGetHotReload, passSetRunMode } from "../../main2worker"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
+import { isFileSystemApiSupported } from "../../ui_utilities"
+import { imageList } from "./assets"
+import InternetArchivePopup from "./internetarchivedialog"
+import { DiskBookmarks } from "./diskbookmarks"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
 

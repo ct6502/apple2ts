@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react"
 import { Printer } from "./iwii"
-import { imagewriter2 } from "./img/imagewriter2"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faFolderOpen,
@@ -9,6 +8,7 @@ import {
   faTrash,
   faXmark
 } from "@fortawesome/free-solid-svg-icons"
+import { imagewriter2 } from "./imagewriter2"
 export interface CopyCanvasProps {
   srcCanvas: HTMLCanvasElement
 }

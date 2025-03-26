@@ -4,6 +4,7 @@ type PopupMenuProps = {
   location: [number, number] | undefined
   menuItems: Array<Array<PopupMenuItem>>
   menuIndex?: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   style?: any
   onClose: () => void
 }

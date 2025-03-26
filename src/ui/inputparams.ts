@@ -1,8 +1,8 @@
-import { handleSetDiskFromURL, setDefaultBinaryAddress } from "./devices/driveprops"
-import { audioEnable } from "./devices/speaker"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passTheme, passPasteText, passShowScanlines } from "./main2worker"
+import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
+import { audioEnable } from "./devices/audio/speaker"
 
 export const handleInputParams = () => {
   // Most parameters are case insensitive. The only exception is the BASIC

@@ -1,6 +1,3 @@
-import { handleGetFilename } from "./devices/driveprops"
-import { getMockingboardMode } from "./devices/mockingboard_audio"
-import { audioEnable, isAudioEnabled } from "./devices/speaker"
 import { BreakpointMap } from "../common/breakpoint"
 import { MAX_DRIVES, RUN_MODE } from "../common/utility"
 import { setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceShowScanlines, setPreferenceSpeedMode } from "./localstorage"
@@ -8,6 +5,9 @@ import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock,
   handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode,
   handleGetSaveState, handleGetShowScanlines, handleGetSpeedMode, passArrowKeysAsJoystick,
   passBreakpoints, passHelpText, passRestoreSaveState, passSetRunMode } from "./main2worker"
+import { handleGetFilename } from "./devices/disk/driveprops"
+import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
+import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
 
 const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const d = new Date()

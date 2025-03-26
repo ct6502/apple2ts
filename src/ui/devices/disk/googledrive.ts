@@ -1,4 +1,5 @@
-import { CLOUD_SYNC, showGlobalProgressModal } from "../../common/utility"
+import { CLOUD_SYNC } from "../../../common/utility"
+import { showGlobalProgressModal } from "../../ui_utilities"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
@@ -194,7 +195,7 @@ export class GoogleDrive implements CloudProvider {
           console.log(`File upload success: ${filename}`)
           // Make sure to get our new Google Drive fileId so we can sync later.
           const responseData = await response.json()
-          cloudData.downloadUrl = `https://www.googleapis.com/drive/v3/files/${responseData.id}?alt=media`,
+          cloudData.downloadUrl = `https://www.googleapis.com/drive/v3/files/${responseData.id}?alt=media`
           cloudData.itemId = responseData.id
           cloudData.syncStatus = CLOUD_SYNC.ACTIVE
           return cloudData

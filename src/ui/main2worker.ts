@@ -1,16 +1,16 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
-import { clickSpeaker, emulatorSoundEnable } from "./devices/speaker"
 import { getStartupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
-import { playMockingboard } from "./devices/mockingboard_audio"
-import { receiveCommData } from "./devices/serialhub"
-import { receiveMidiData } from "./devices/midiinterface"
-import { setEnhancedMidi } from "./devices/enhancedmidi"
 import { BreakpointMap } from "../common/breakpoint"
-import { doPlayDriveSound } from "./devices/drivesounds"
 import { copyCanvas } from "./copycanvas"
-import { doSetUIDriveProps } from "./devices/driveprops"
 import { set6502Instructions } from "./panels/disassembly_utilities"
+import { doSetUIDriveProps } from "./devices/disk/driveprops"
+import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
+import { receiveMidiData } from "./devices/audio/midiinterface"
+import { playMockingboard } from "./devices/audio/mockingboard_audio"
+import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
+import { doPlayDriveSound } from "./devices/disk/drivesounds"
+import { receiveCommData } from "./devices/serial/serialhub"
 
 let worker: Worker | null = null
 

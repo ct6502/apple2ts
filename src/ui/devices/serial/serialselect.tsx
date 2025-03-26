@@ -1,5 +1,5 @@
-import { DropdownButton } from "../controls/dropdownbutton"
-import { serialport } from "./img/db9"
+import { DropdownButton } from "../../controls/dropdownbutton"
+import { serialport } from "./db9"
 import { changeSerialMode, getSerialMode, getSerialNames } from "./serialhub"
 
 export const SerialPortSelect = () => {

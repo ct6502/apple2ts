@@ -1,7 +1,7 @@
-import "./diskinterface.css"
-import { DRIVE } from "../../common/utility"
+import { DRIVE } from "../../../common/utility"
 import { mp3List } from "./assets"
-import {isAudioEnabled, registerAudioContext} from "./speaker"
+import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
+import "./diskinterface.css"
 
 let motorAudio: AudioDevice
 let trackSeekAudio: AudioDevice

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { FILE_SUFFIXES } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
-import { handleSetDiskOrFileFromBuffer } from "./devices/driveprops"
+import { handleSetDiskOrFileFromBuffer } from "./devices/disk/driveprops"
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)

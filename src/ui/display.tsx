@@ -14,7 +14,6 @@ import {
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
-import DiskInterface from "./devices/diskinterface"
 import { useState } from "react"
 import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
@@ -22,8 +21,10 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { handleSetTheme, RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
+import { RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 import DiskCollectionPanel from "./panels/diskcollectionpanel"
+import { handleSetTheme } from "./ui_utilities"
+import DiskInterface from "./devices/disk/diskinterface"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)

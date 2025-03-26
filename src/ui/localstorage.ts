@@ -1,5 +1,5 @@
-import { changeMockingboardMode } from "./devices/mockingboard_audio"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload } from "./main2worker"
 
 export const setPreferenceCapsLock = (mode = true) => {
