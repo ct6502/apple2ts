@@ -3,9 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
   faVolumeXmark,
-  faWalking,
-  faTruckFast,
-  faRocket,
   faUpDownLeftRight,
   faSlash,
   faSync,
@@ -13,13 +10,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import {
   handleGetArrowKeysAsJoystick,
-  handleGetCapsLock, handleGetTheme, handleGetSpeedMode,
+  handleGetCapsLock, handleGetTheme,
   handleUseOpenAppleKey,
   passArrowKeysAsJoystick,
   passUseOpenAppleKey
 } from "../main2worker"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme, setPreferenceSpeedMode } from "../localstorage"
+import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
@@ -29,6 +26,7 @@ import { MidiDeviceSelect } from "../devices/audio/midiselect"
 import { MockingboardWaveform } from "../devices/audio/mockingboardwaveform"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
+import { SpeedDropdown } from "./speeddropdown"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -36,7 +34,6 @@ const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 
 const ConfigButtons = (props: DisplayProps) => {
-  const speedMode = handleGetSpeedMode()
   const capsLock = handleGetCapsLock()
   const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
   const useOpenAppleKey = handleUseOpenAppleKey()
@@ -49,11 +46,8 @@ const ConfigButtons = (props: DisplayProps) => {
   }
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
-      <button className="push-button"
-        title={(["1 MHz", "Fast Speed", "Ludicrous Speed"])[speedMode]}
-        onClick={() => { setPreferenceSpeedMode((speedMode + 1) % 3); props.updateDisplay() }}>
-        <FontAwesomeIcon icon={([faWalking, faTruckFast, faRocket])[speedMode]} />
-      </button>
+
+      <SpeedDropdown updateDisplay={props.updateDisplay} />
 
       <DisplayConfig updateDisplay={props.updateDisplay} />
 

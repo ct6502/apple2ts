@@ -21,16 +21,18 @@ export const handleInputParams = () => {
   }
 
   const speed = params.get("speed")
-  if (speed) {
-    switch (speed) {
-      case "fast":
-        passSpeedMode(1)
-        break
-      case "ludicrous":
-      case "warp":
-          passSpeedMode(2)
-        break
-    }
+  const speedMap: { [key: string]: number } = {
+    snail: -2,
+    slow: -1,
+    normal: 0,
+    two: 1,
+    three: 2,
+    fast: 3,
+    warp: 4,
+    ludicrous: 4,
+  }
+  if (speed && speedMap[speed] !== undefined) {
+    passSpeedMode(speedMap[speed])
   }
 
   if (params.get("sound") === "off") {

@@ -34,9 +34,12 @@ ${keyMod}S Save State
 ${keyMod}V Paste Text
 ${keyMod}Left  Go Back in Time
 ${keyMod}Right Forward in Time
-${arrowMod}1 Normal Speed (1 MHz)
-${arrowMod}2 Fast Speed (~4 MHz) 
-${arrowMod}3 Ludicrous/Warp Speed
+${arrowMod}1 1 MHz (Normal Speed)
+${arrowMod}2 2 MHz
+${arrowMod}3 3 MHz
+${arrowMod}4 4 MHz (Fast) 
+${arrowMod}5 Ludicrous/Warp Speed
+${arrowMod}0 Snail Speed (0.1 MHz)
 
 Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option`
@@ -57,7 +60,7 @@ ramdisk=64|512|1024|4096|8192
 run=false (do not run BASIC program)
 scanlines=on
 sound=off
-speed=fast|warp
+speed=snail|slow|normal|two|three|fast|warp
 theme=classic|dark|minimal
 tour=main|debug|settings
 #urltodiskimage

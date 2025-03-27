@@ -3,6 +3,7 @@ import { useState } from "react"
 type DropdownProps = {
   currentIndex: number,
   itemNames: string[],
+  icons: React.ReactNode[],
   closeCallback: (index: number) => void,
   icon: React.ReactNode,
   tooltip: string
@@ -23,6 +24,8 @@ export const DropdownButton = (props: DropdownProps) => {
     if (index >= 0) props.closeCallback(index)
   }
 
+  const hasIcons = props.icons && props.icons.length > 0
+
   return (
     <span>
       <button
@@ -40,11 +43,14 @@ export const DropdownButton = (props: DropdownProps) => {
           <div className="floating-dialog flex-column droplist-option"
             style={{ left: position.x, top: position.y }}>
             {props.itemNames.map((item, index) => (
-              <div className="droplist-option" style={{ padding: "5px", paddingRight: "10px" }}
+              <div className="droplist-option"
+                style={{ padding: "5px", paddingRight: "10px" }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                 key={index} onClick={() => handleMenuClose(index)}>
-                {index === props.currentIndex ? "\u2714\u2009" : "\u2003"}{item}
+                <span className="dropdown-checkmark">{index === props.currentIndex ? "\u2714" : ""}</span>
+                {hasIcons && <span className="dropdown-icon">{props.icons[index]}</span>}
+                <span style={hasIcons ? {marginLeft: "30px"} : {}}>{item}</span>
               </div>))}
           </div>
         </div>

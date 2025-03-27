@@ -179,3 +179,5 @@ Don't forget to append the trailing back quote ` at the end of the file.
 ## Additional Info and Sponsors
 
 [![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
+
+[Turtle icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/turtle)

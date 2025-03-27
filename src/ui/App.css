@@ -404,3 +404,20 @@ body.dark-mode .divider {
   animation: rotate .5s linear 3;
   -webkit-animation: rotate 2s linear infinite;
 }
+
+.dropdown-checkmark {
+  font-size: 15pt;
+  line-height: 10pt;
+  width: 20px;
+  text-align: center;
+  display: inline-block;
+}
+
+.dropdown-icon {
+  height: 0;
+  width: 25px;
+  display: inline-block;
+  transform: scale(0.7) translateY(0px);
+  text-align: center;
+  position: absolute;
+}

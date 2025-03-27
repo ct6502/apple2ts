@@ -317,8 +317,10 @@ const doReset = () => {
 // less often.
 export const doSetSpeedMode = (speedModeIn: number) => {
   speedMode = speedModeIn
-  refreshTime = ([16.6881, 16.6881, 1])[speedMode]
-  cpuCyclesPerRefresh = ([17030, 17030 * 4, 17030 * 4])[speedMode]
+  // speedMode = -2 is slowest, but add 2 to it to make the arrays be zero based.
+  // speedMode = 0 is still 1 MHz, so no risk of backwards compatibility issues.
+  refreshTime = (speedMode === 4) ? 1 : 16.6881
+  cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 4])[speedMode + 2]
   resetRefreshCounter()
 }
 
@@ -670,7 +672,7 @@ const doAdvance6502 = () => {
 //
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  const iRefreshFinish = iRefresh + ([1, 5, 10])[speedMode]
+  const iRefreshFinish = iRefresh + ([1, 1, 1, 5, 5, 5, 10])[speedMode + 2]
   while (cpuRunMode === RUN_MODE.RUNNING && iRefresh !== iRefreshFinish) {
     doAdvance6502()
   }

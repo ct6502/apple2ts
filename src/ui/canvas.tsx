@@ -78,9 +78,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     r: () => handleSetCPUState(RUN_MODE.NEED_RESET),
     s: () => handleFileSave(false),
     v: () => syntheticPaste(),
+    0: () => setPreferenceSpeedMode(-2),
     1: () => setPreferenceSpeedMode(0),
     2: () => setPreferenceSpeedMode(1),
     3: () => setPreferenceSpeedMode(2),
+    4: () => setPreferenceSpeedMode(3),
+    5: () => setPreferenceSpeedMode(4),
   }
 
   const handleMetaKey = (key: string) => {
