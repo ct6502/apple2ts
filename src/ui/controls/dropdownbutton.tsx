@@ -3,7 +3,7 @@ import { useState } from "react"
 type DropdownProps = {
   currentIndex: number,
   itemNames: string[],
-  icons: React.ReactNode[],
+  icons?: React.ReactNode[],
   closeCallback: (index: number) => void,
   icon: React.ReactNode,
   tooltip: string
@@ -49,7 +49,7 @@ export const DropdownButton = (props: DropdownProps) => {
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
                 key={index} onClick={() => handleMenuClose(index)}>
                 <span className="dropdown-checkmark">{index === props.currentIndex ? "\u2714" : ""}</span>
-                {hasIcons && <span className="dropdown-icon">{props.icons[index]}</span>}
+                {hasIcons && <span className="dropdown-icon">{props.icons ? props.icons[index] : ""}</span>}
                 <span style={hasIcons ? {marginLeft: "30px"} : {}}>{item}</span>
               </div>))}
           </div>
