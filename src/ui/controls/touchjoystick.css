@@ -8,49 +8,69 @@
   pointer-events: none;
 }
 
-.tj-common {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 45%;
+.tj-base-image-left {
+  width: 100%;
   height: auto;
-  opacity: 15%;
+  transform: scaleX(-1);
 }
 
-.tj-left {
-  position: absolute;
-  left: -19.5%;
-}
-
-.tj-left-image {
+.tj-base-image-right {
   width: 100%;
   height: auto;
 }
 
-.tj-right {
+.tj-base {
   position: absolute;
-  right: -23%;
+  top: 50%;
+  width:33%;
+  height: auto;
+  transform: translateY(-50%);
+  opacity: 15%;
   pointer-events: all;
 }
 
-.tj-right-image {
-  width: 100%;
-  height: auto;
+.tj-base-left {
+  left: -14.5%;
+}
+
+.tj-base-right {
+  right: -14.5%;
 }
 
 .tj-stick {
-  position: relative;
-  /* position: absolute; */
-  top: 50%;
-  left: 50%;
-  /* bottom: -10%; */
-  width: 25%;
-  /* transform: rotate3d(0, 0, 1, 45deg); */
-  border: 3px solid red;
-  top: 0px;
+  position: absolute;
+  top: -1.5%;
+  width: 19.5%;
+  transform-origin: 24% 94%;
+}
+
+.tj-stick-left {
+  left: 54.5%;
+}
+
+.tj-stick-right {
+  right: 44.5%;
 }
 
 .tj-stick-image {
   width: 100%;
   height: auto;
+}
+
+.tj-buttons {
+  position: absolute;
+  top: 50%;
+  width: 33%;
+  height: auto;
+  transform: translateY(-50%);
+  opacity: 15%;
+  pointer-events: all;
+}
+
+.tj-buttons-left {
+  left: -17%;
+}
+
+.tj-buttons-right {
+  right: -17%;
 }

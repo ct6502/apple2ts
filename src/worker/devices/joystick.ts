@@ -65,6 +65,14 @@ export const pressAppleCommandKey = (isDown: boolean, left: boolean) => {
   setButtonState()
 }
 
+export const setPaddleValue = (paddle: number, value: number) => {
+  if (paddle < 0 || paddle > 3 || value < 0 || value > 0x80) {
+    return
+  }
+
+  memSetC000(0xC064 + paddle, value)
+}
+
 export const resetJoystick = (cycleCount: number) => {
   memSetC000(0xC064, 0x80)
   memSetC000(0xC065, 0x80)
