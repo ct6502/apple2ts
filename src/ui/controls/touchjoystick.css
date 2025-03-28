@@ -1,0 +1,56 @@
+.tj-container {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 997;
+  pointer-events: none;
+}
+
+.tj-common {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 45%;
+  height: auto;
+  opacity: 15%;
+}
+
+.tj-left {
+  position: absolute;
+  left: -19.5%;
+}
+
+.tj-left-image {
+  width: 100%;
+  height: auto;
+}
+
+.tj-right {
+  position: absolute;
+  right: -23%;
+  pointer-events: all;
+}
+
+.tj-right-image {
+  width: 100%;
+  height: auto;
+}
+
+.tj-stick {
+  position: relative;
+  /* position: absolute; */
+  top: 50%;
+  left: 50%;
+  /* bottom: -10%; */
+  width: 25%;
+  /* transform: rotate3d(0, 0, 1, 45deg); */
+  border: 3px solid red;
+  top: 0px;
+}
+
+.tj-stick-image {
+  width: 100%;
+  height: auto;
+}
