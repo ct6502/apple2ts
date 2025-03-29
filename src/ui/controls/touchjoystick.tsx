@@ -1,10 +1,11 @@
 import { setPaddleValue } from "../../worker/devices/joystick"
-import { passAppleCommandKeyPress } from "../main2worker"
+import { handleGetTouchJoyStickMode, passAppleCommandKeyPress } from "../main2worker"
 import "./touchjoystick.css"
 
 export const TouchJoystick = () => {
 
-  const isSouthpaw = false
+  const touchjoystickMode = handleGetTouchJoyStickMode()
+  const isSouthpaw = touchjoystickMode === "left"
 
   const scaleToRange = (value: number, inputStart: number, inputEnd: number, outputStart: number, outputEnd: number) => {
     const inputRange = inputEnd - inputStart;
@@ -16,11 +17,12 @@ export const TouchJoystick = () => {
     const currentTarget = event.currentTarget as HTMLElement
     const offsetX = Math.max(0, Math.min(event.nativeEvent.offsetX, currentTarget.offsetWidth))
     const offsetY = Math.max(0, Math.min(event.nativeEvent.offsetY, currentTarget.offsetHeight))
-    const localX = scaleToRange(offsetX,  0, currentTarget.offsetWidth, -1, 1)
+    const localX = scaleToRange(offsetX, 0, currentTarget.offsetWidth, -1, 1)
+    // const localX = scaleToRange(offsetX, 0, currentTarget.offsetWidth + currentTarget.offsetLeft, -1, 1)
     const localY = scaleToRange(offsetY, 0, currentTarget.offsetHeight, -1, 1)
 
     const radians = Math.atan2(localY, localX)
-    const degrees = ((radians * (180 / Math.PI) + 450) % 360) * (isSouthpaw ? -1 : 1)
+    const degrees = ((radians * (180 / Math.PI) + 450) % 360)
 
     const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
     joystick.style.transform = `rotate(${degrees}deg)`
@@ -60,34 +62,39 @@ export const TouchJoystick = () => {
   }
 
   return (
-    <div className="tj-container">
-      <div
-        className={`tj-base tj-base-${isSouthpaw ? "right" : "left"}`}
-        onPointerMove={handlePointerMove}
-        onPointerLeave={handleStickPointerLeave}
+    touchjoystickMode !== "off"
+      ? <div
+        className="tj-container"
+        draggable="false">
+        <div
+          className={`tj-base tj-base-${isSouthpaw ? "right" : "left"}`}
+          onPointerEnter={handlePointerMove}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={handleStickPointerLeave}
         >
-        <div>
-          <img
-            className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
-            draggable="false" src="/touchjoystick-base.png" />
+          <div>
+            <img
+              className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
+              src="/touchjoystick-base.png" />
+          </div>
+          <div
+            id="touchjoystick-stick"
+            className={`tj-stick tj-stick-${isSouthpaw ? "right" : "left"}`}
+          >
+            <img
+              className="tj-stick-image"
+              src="/touchjoystick-stick.png" />
+          </div>
         </div>
         <div
-            id="touchjoystick-stick"
-            className={`tj-stick tj-stick-${isSouthpaw ? "right" : "left"}`}>
+          className={`tj-buttons tj-buttons-${isSouthpaw ? "left" : "right"}`}
+          onTouchEnd={handleButtonsTouchEnd}>
           <img
-            className="tj-stick-image"
-            draggable="false"
-            src="/touchjoystick-stick.png" />
+            className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
+            src="/touchjoystick-base.png" />
         </div>
       </div>
-      <div
-        className={`tj-buttons tj-buttons-${isSouthpaw ? "left" : "right"}`}
-        onTouchEnd={handleButtonsTouchEnd}>
-        <img
-          className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
-          draggable="false" src="/touchjoystick-base.png" />
-      </div>
-    </div>
+      : <div></div>
   )
 }
 

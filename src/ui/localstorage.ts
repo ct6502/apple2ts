@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload } from "./main2worker"
+import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload, passTouchJoystickMode } from "./main2worker"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -99,6 +99,15 @@ export const setPreferenceFirstRunMinimal = (mode = true) => {
     localStorage.setItem("firstRunMinimal", JSON.stringify(mode))
   }
   // UI-only setting, pass along not necessary
+}
+
+export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
+  if (mode === "off") {
+    localStorage.removeItem("touchJoystickMode")
+  } else {
+    localStorage.setItem("touchJoystickMode", JSON.stringify(mode))
+  }
+  passTouchJoystickMode(mode)
 }
 
 export const loadPreferences = () => {
@@ -202,6 +211,15 @@ export const loadPreferences = () => {
       passHotReload(JSON.parse(hotReload))
     } catch {
       localStorage.removeItem("hotReload")
+    }
+  }
+
+  const touchJoystickMode = localStorage.getItem("touchJoystickMode")
+  if (touchJoystickMode !== "off") {
+    try {
+      passTouchJoystickMode(JSON.parse(touchJoystickMode || ""))
+    } catch {
+      localStorage.removeItem("touchJoystickMode")
     }
   }
 }

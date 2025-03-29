@@ -1,4 +1,4 @@
-import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
+import { handleGetLeftButton, handleGetRightButton, handleGetTouchJoyStickMode, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
@@ -10,8 +10,14 @@ import { lockedKeyStyle } from "../../common/utility"
 import { handleArrowKey } from "../devices/gamepad"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
+import { joystick } from "../img/icon_joystick"
+import PopupMenu from "./popupmenu"
+import { useState } from "react"
+import { setPreferenceTouchJoystickMode } from "../localstorage"
 
 const KeyboardButtons = (props: DisplayProps) => {
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
+
   const arrowKeys = [
     { name: "Left", icon: faArrowLeft },
     { name: "Right", icon: faArrowRight },
@@ -66,7 +72,12 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
       <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
     </button>
-  </span>
+    <button title="Touch Joystick"
+      className="push-button"
+      onMouseDown={(event: React.MouseEvent) => setPopupLocation([event.clientX, event.clientY])}>
+      <svg width="25" height="25" className="fill-color">{joystick}</svg>
+    </button>
+  </span >
   }
     <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
       title="Button 1"
@@ -82,7 +93,28 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => tryButtonPressRelease(false, "right", true)}
       onMouseUp={() => tryButtonPressRelease(false, "right", false)}>
     </button>
-  </span>
+    <PopupMenu
+      location={popupLocation}
+      onClose={() => { setPopupLocation(undefined) }}
+      menuItems={[[
+        {
+          label: "Touch Joystick Disabled",
+          isSelected: () => { return handleGetTouchJoyStickMode() === "off" },
+          onClick: () => { setPreferenceTouchJoystickMode("off"); props.updateDisplay() }
+        },
+        {
+          label: "Touch Joystick Enabled (Left-Handed)",
+          isSelected: () => { return handleGetTouchJoyStickMode() === "left" },
+          onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
+        },
+        {
+          label: "Touch Joystick Enabled (Right-Handed)",
+          isSelected: () => { return handleGetTouchJoyStickMode() === "right" },
+          onClick: () => { setPreferenceTouchJoystickMode("right"); props.updateDisplay() }
+        }
+      ]]}
+    />
+  </span >
 }
 
 export default KeyboardButtons

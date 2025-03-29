@@ -11,6 +11,7 @@ import {
   handleGetHelpText,
   handleGetTheme,
   passSetRunMode,
+  handleGetTouchJoyStickMode,
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"

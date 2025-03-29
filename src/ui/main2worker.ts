@@ -102,6 +102,10 @@ export const passHotReload = (mode: boolean) => {
   machineState.hotReload = mode
 }
 
+export const passTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE) => {
+  machineState.touchJoystickMode = mode
+}
+
 export const passGoForwardInTime = () => {
   doPostMessage(MSG_MAIN.TIME_TRAVEL_STEP, "FORWARD")
 }
@@ -243,7 +247,8 @@ let machineState: MachineState = {
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
   useOpenAppleKey: false,
-  hotReload: false
+  hotReload: false,
+  touchJoystickMode: "off"
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -263,6 +268,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       newState.helpText = machineState.helpText
       newState.useOpenAppleKey = machineState.useOpenAppleKey
       newState.hotReload = machineState.hotReload
+      newState.touchJoystickMode = machineState.touchJoystickMode
       machineState = newState
       return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
     }
@@ -493,5 +499,9 @@ export const handleGetSoftSwitchDescriptions = () => {
 
 export const handleGetHotReload = () => {
   return machineState.hotReload
+}
+
+export const handleGetTouchJoyStickMode = () => {
+  return machineState.touchJoystickMode
 }
 

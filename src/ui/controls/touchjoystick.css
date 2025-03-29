@@ -12,20 +12,24 @@
   width: 100%;
   height: auto;
   transform: scaleX(-1);
+  user-select: none;
+  pointer-events: none;
 }
 
 .tj-base-image-right {
   width: 100%;
   height: auto;
+  user-select: none;
+  pointer-events: none;
 }
 
 .tj-base {
   position: absolute;
   top: 50%;
-  width:33%;
+  width: 33%;
   height: auto;
   transform: translateY(-50%);
-  opacity: 15%;
+  opacity: 20%;
   pointer-events: all;
 }
 
@@ -63,7 +67,7 @@
   width: 33%;
   height: auto;
   transform: translateY(-50%);
-  opacity: 15%;
+  opacity: 20%;
   pointer-events: all;
 }
 
