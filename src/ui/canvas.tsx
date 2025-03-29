@@ -15,6 +15,7 @@ import {
   handleGetShowScanlines,
   handleGetTheme,
   handleGetIsDebugging,
+  passKeyRelease,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
@@ -210,7 +211,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     const capsLock = handleGetCapsLock()
     const key = convertAppleKey(e, capsLock, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
-      passKeypress(String.fromCharCode(key))
+      passKeypress(key)
       e.preventDefault()
       e.stopPropagation()
     }
@@ -232,6 +233,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       passAppleCommandKeyRelease(false)
     } else if (e.key in arrowKeys) {
       handleArrowKey(arrowKeys[e.key], true)
+    } else {
+      passKeyRelease()
     }
     if (keyHandled) {
       setKeyHandled(false)
