@@ -78,3 +78,49 @@
 .tj-buttons-right {
   right: -17%;
 }
+
+.tj-buttons-button0-left {
+  display: none;
+  position: absolute;
+  top: 18.5%;
+  right: 11.5%;
+  width: 13.5%;
+  height: auto;
+  transform: scaleX(-1);
+  user-select: none;
+  pointer-events: none;
+}
+
+.tj-buttons-button1-left {
+  display: none;
+  position: absolute;
+  top: 2%;
+  right: 31%;
+  width: 13%;
+  height: auto;
+  transform: scaleX(-1);
+  user-select: none;
+  pointer-events: none;
+}
+
+.tj-buttons-button0-right {
+  display: none;
+  position: absolute;
+  top: 18.5%;
+  left: 11.5%;
+  width: 13.5%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+.tj-buttons-button1-right {
+  display: none;
+  position: absolute;
+  top: 2%;
+  left: 31%;
+  width: 13%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
