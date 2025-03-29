@@ -107,7 +107,7 @@ const findMatchingDiskImage = (url: string) => {
     type: DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE,
     title: "",
     lastUpdated: new Date(0),
-    diskUrl: new URL(url),
+    diskUrl: url,
     } as DiskCollectionItem
 }
 
@@ -201,7 +201,12 @@ export const handleSetDiskFromURL = async (url: string,
       return
     }
     url = match.diskUrl.toString()
+    if (!URL.canParse(url)) {
+      handleSetDiskFromFile(url, updateDisplay, index)
+      return
+    }
   }
+
 
   // Resolve Internet Archive URL, if necessary
   if (url.startsWith(internetArchiveUrlProtocol)) {
