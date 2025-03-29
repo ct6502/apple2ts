@@ -59,6 +59,7 @@
 .tj-stick-image {
   width: 100%;
   height: auto;
+  user-select: none;
 }
 
 .tj-buttons {
@@ -69,6 +70,7 @@
   transform: translateY(-50%);
   opacity: 20%;
   pointer-events: all;
+  user-select: none;
 }
 
 .tj-buttons-left {

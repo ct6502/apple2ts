@@ -1,34 +1,68 @@
-import { setPaddleValue } from "../../worker/devices/joystick"
-import { handleGetTouchJoyStickMode, passAppleCommandKeyPress } from "../main2worker"
+import { useEffect, useState } from "react"
 import "./touchjoystick.css"
+import { handleGetTouchJoyStickMode } from "../main2worker"
+
+const getDefaultButtons = () => {
+  return JSON.parse(JSON.stringify([
+    {
+      pressed: false,
+      touched: false,
+      value: 0
+    },
+    {
+      pressed: false,
+      touched: false,
+      value: 0
+    }
+  ]))
+}
+
+class CustomGamepad implements Gamepad  {
+  axes: readonly number[]
+  buttons: readonly GamepadButton[]
+  connected: boolean
+  id: string
+  index: number
+  mapping: GamepadMappingType
+  timestamp: number
+  vibrationActuator: GamepadHapticActuator
+
+  constructor(buttons: GamepadButton[] = getDefaultButtons(), axes: number[] = [0, 0]) {
+    this.axes = JSON.parse(JSON.stringify(axes))
+    this.buttons = JSON.parse(JSON.stringify(buttons))
+    this.connected = false
+    this.id = ""
+    this.index = 0
+    this.mapping = "standard"
+    this.timestamp = Date.now()
+    this.vibrationActuator = {
+        playEffect: function (type: GamepadHapticEffectType, params?: GamepadEffectParameters): Promise<GamepadHapticsResult> {
+          return Promise.resolve("complete")
+        },
+        reset: function (): Promise<GamepadHapticsResult> {
+          return Promise.resolve("complete")
+        }
+      }
+  }
+}
 
 export const TouchJoystick = () => {
 
   const touchjoystickMode = handleGetTouchJoyStickMode()
   const isSouthpaw = touchjoystickMode === "left"
 
+  const [customGamepad, setCustomGamepad] = useState<CustomGamepad>(new CustomGamepad)
+
+  useEffect(() => {
+    navigator.getGamepads = function() {
+      return [customGamepad]
+    }
+  })
+
   const scaleToRange = (value: number, inputStart: number, inputEnd: number, outputStart: number, outputEnd: number) => {
-    const inputRange = inputEnd - inputStart;
-    const outputRange = outputEnd - outputStart;
-    return (value - inputStart) * outputRange / inputRange + outputStart;
-  }
-
-  const handlePointerMove = (event: React.PointerEvent) => {
-    const currentTarget = event.currentTarget as HTMLElement
-    const offsetX = Math.max(0, Math.min(event.nativeEvent.offsetX, currentTarget.offsetWidth))
-    const offsetY = Math.max(0, Math.min(event.nativeEvent.offsetY, currentTarget.offsetHeight))
-    const localX = scaleToRange(offsetX, 0, currentTarget.offsetWidth, -1, 1)
-    // const localX = scaleToRange(offsetX, 0, currentTarget.offsetWidth + currentTarget.offsetLeft, -1, 1)
-    const localY = scaleToRange(offsetY, 0, currentTarget.offsetHeight, -1, 1)
-
-    const radians = Math.atan2(localY, localX)
-    const degrees = ((radians * (180 / Math.PI) + 450) % 360)
-
-    const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
-    joystick.style.transform = `rotate(${degrees}deg)`
-
-    setPaddleValue(0, scaleToRange(localX, -1, 1, 0, 0x80))
-    setPaddleValue(1, scaleToRange(localY, -1, 1, 0, 0x80))
+    const inputRange = inputEnd - inputStart
+    const outputRange = outputEnd - outputStart
+    return (value - inputStart) * outputRange / inputRange + outputStart
   }
 
   const toggleButton = (buttonNumber: number, enabled: boolean) => {
@@ -38,53 +72,84 @@ export const TouchJoystick = () => {
     }
   }
 
+  const handlePointerEnter = (event: React.PointerEvent) => {
+    handlePointerMove(event)
+  }
+
+  const handlePointerMove = (event: React.PointerEvent) => {
+    const currentTarget = event.currentTarget as HTMLElement
+    const rect = currentTarget.getBoundingClientRect()
+    
+    const offsetX = Math.max(0, Math.min(event.clientX, rect.right))
+    const offsetY = Math.max(rect.left, Math.min(event.clientY - rect.top, rect.bottom - rect.left))
+
+    const axes = customGamepad.axes.slice()
+    axes[0] = scaleToRange(offsetX, 0, rect.width + rect.left, -1.5, 1.5)
+    axes[1] = scaleToRange(offsetY, 0, rect.height, -2, 2)
+console.log(`${offsetX},${offsetY}`)
+    setCustomGamepad(new CustomGamepad(customGamepad.buttons.slice(), axes))
+
+    const radians = Math.atan2(axes[1], axes[0])
+    const degrees = ((radians * (180 / Math.PI) + 450) % 360)
+    const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
+    joystick.style.transform = `rotate(${degrees}deg)`
+  }
+
   const handleStickPointerLeave = (event: React.PointerEvent) => {
     const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
     joystick.style.transform = "rotate(0deg)"
+
+    setCustomGamepad(new CustomGamepad)
   }
 
   const handleButtonsTouchStart = (event: React.TouchEvent) => {
     const currentTarget = event.currentTarget as HTMLElement
-    const touch = event.changedTouches[0]
-    const localX = (touch.clientX - currentTarget.offsetLeft) / event.currentTarget.clientWidth
-    const localY = (touch.clientY - currentTarget.offsetTop) / event.currentTarget.clientHeight
+    const buttons = getDefaultButtons()
 
-    if (isSouthpaw) {
-      if (localX >= 0.7479 && localX <= 0.8529 && localY >= -0.3060 && localY <= -0.1958) {
-        passAppleCommandKeyPress(true)
-        toggleButton(0, true)
-      } else if (localX >= 0.0558 && localX <= 0.6639 && localY >= -0.4904 && localY <= -0.3897) {
-        passAppleCommandKeyPress(false)
-        toggleButton(1, true)
+    for (let i=0; i<event.touches.length; i++) {
+      const touch = event.touches[i]
+      const unitX = (touch.clientX - currentTarget.offsetLeft) / currentTarget.clientWidth
+      const unitY = (touch.clientY - currentTarget.offsetTop) / currentTarget.clientHeight
+
+      if (isSouthpaw) {
+        if (unitX >= 0.7479 && unitX <= 0.8529 && unitY >= -0.3060 && unitY <= -0.1958) {
+          buttons[0].pressed = true
+          toggleButton(0, true)
+        }
+        if (unitX >= 0.0558 && unitX <= 0.6639 && unitY >= -0.4904 && unitY <= -0.3897) {
+          buttons[1].pressed = true
+          toggleButton(1, true)
+        }
       } else {
-        return false
-      }
-    } else {
-      if (localX >= 0.1170 && localX <= 0.2561 && localY >= -0.3179 && localY <= -0.1735) {
-        passAppleCommandKeyPress(true)
-        toggleButton(0, true)
-      } else if (localX >= 0.3086 && localX <= 0.4369 && localY >= -0.4807 && localY <= -0.3794) {
-        passAppleCommandKeyPress(false)
-        toggleButton(1, true)
-      } else {
-        return false
+        if (unitX >= 0.1170 && unitX <= 0.2561 && unitY >= -0.3179 && unitY <= -0.1735) {
+          buttons[0].pressed = true
+          toggleButton(0, true)
+        }
+        if (unitX >= 0.3086 && unitX <= 0.4369 && unitY >= -0.4807 && unitY <= -0.3794) {
+          buttons[1].pressed = true
+          toggleButton(1, true)
+        }
       }
     }
+
+    setCustomGamepad(new CustomGamepad(buttons, customGamepad.axes.slice()))
   }
 
   const handleButtonsTouchEnd = (event: React.TouchEvent) => {
     toggleButton(0, false)
     toggleButton(1, false)
+    setCustomGamepad(new CustomGamepad(getDefaultButtons(), customGamepad.axes.slice()))
   }
 
   return (
-    touchjoystickMode !== "off"
+    // touchjoystickMode !== "off"
+    true
       ? <div
         className="tj-container"
         draggable="false">
         <div
           className={`tj-base tj-base-${isSouthpaw ? "right" : "left"}`}
-          onPointerEnter={handlePointerMove}
+          onPointerEnter={handlePointerEnter}
           onPointerMove={handlePointerMove}
           onPointerLeave={handleStickPointerLeave}
         >
