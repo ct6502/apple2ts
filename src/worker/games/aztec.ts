@@ -150,9 +150,11 @@ Select: inventory
 Start:  start the game
 `
 
+// This 0x6103 is a somewhat random address that happens to contain the same
+// three bytes for both the standalone Aztec disk and the one in Total Replay.
 export const aztec: GameLibraryItem = {
-  address: 0xC28B,
-  data: [0xAD, 0x00, 0xC0],
+  address: 0x6103,
+  data: [0xAD, 0xC6, 0x09],
   keymap: {},
   joystick: joystick,
   gamepad: gamepad,
