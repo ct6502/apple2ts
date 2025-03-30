@@ -235,6 +235,7 @@ export const resetPreferences = () => {
   setPreferenceRamWorks()
   setPreferenceDebugMode()
   setPreferenceHotReload()
+  setPreferenceTouchJoystickMode()
 
   localStorage.removeItem("binaryRunAddress")
 }

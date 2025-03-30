@@ -1,4 +1,4 @@
-import { handleGetLeftButton, handleGetRightButton, handleGetTouchJoyStickMode, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
+import { handleGetLeftButton, handleGetRightButton, handleGetTheme, handleGetTouchJoyStickMode, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
@@ -6,7 +6,7 @@ import {
   faArrowDown,
   faArrowUp,
 } from "@fortawesome/free-solid-svg-icons"
-import { lockedKeyStyle } from "../../common/utility"
+import { lockedKeyStyle, UI_THEME } from "../../common/utility"
 import { handleArrowKey } from "../devices/gamepad"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
@@ -72,11 +72,12 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
       <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
     </button>
-    <button title="Touch Joystick"
-      className="push-button"
-      onMouseDown={(event: React.MouseEvent) => setPopupLocation([event.clientX, event.clientY])}>
-      <svg width="25" height="25" className="fill-color">{joystick}</svg>
-    </button>
+    { handleGetTheme() == UI_THEME.MINIMAL &&
+      <button title="Touch Joystick"
+        className="push-button"
+        onMouseDown={(event: React.MouseEvent) => setPopupLocation([event.clientX, event.clientY])}>
+        <svg width="25" height="25" className="fill-color">{joystick}</svg>
+      </button>}
   </span >
   }
     <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
