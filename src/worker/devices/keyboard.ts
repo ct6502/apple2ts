@@ -2,9 +2,10 @@ import { handleKeyMapping } from "../games/game_mappings"
 import { memGetC000, memSetC000 } from "../memory"
 import { doTakeSnapshot } from "../motherboard"
 
-const keyPress = (key: number) => {
-  // Sather 2-13, all addresses from $C000-$C01F contain the ASCII key code
-  // in the low 7 bits, and the high bit is set to 1 to indicate a key press.
+const apple2KeyPress = (key: number) => {
+  // Sather, Understanding the Apple IIe p2-16, all addresses from $C000-$C01F
+  // contain the ASCII key code in the low 7 bits, and the high bit is set
+  // to 1 to indicate a key press.
   // $C000-$C00F will maintain that high bit.
   // $C010-$C01F will override that high bit with their own status flag
   // whenever they are read but there's no harm in setting it now.
@@ -12,7 +13,14 @@ const keyPress = (key: number) => {
 }
 
 export const clearKeyStrobe = () => {
-  // See comment in keyPress above.
+  // Here, we only clear the high bit for $C00x, not $C01x (AKD, any-key-down).
+  // We will clear AKD when the key is released (below).
+  const keyvalue = memGetC000(0xC000) & 0b01111111
+  memSetC000(0xC000, keyvalue, 16)
+}
+
+export const apple2KeyRelease = () => {
+  // Here, the key has been released and we clear the AKD flag.
   const keyvalue = memGetC000(0xC000) & 0b01111111
   memSetC000(0xC000, keyvalue, 32)
 }
@@ -35,7 +43,7 @@ export const popKey = () => {
   if (keyBuffer !== "" && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 3800)) {
     tPrevPop = t
     const key = keyBuffer.charCodeAt(0)
-    keyPress(key)
+    apple2KeyPress(key)
     keyBuffer = keyBuffer.slice(1)
     if (keyBuffer.length === 0) {
       doTakeSnapshot(true)
@@ -66,11 +74,11 @@ export const addToBufferDebounce = (text: string, timeout = 300) => {
   addToBuffer(text)
 }
 
-export const sendTextToEmulator = (text: string) => {
-  if (text.length === 1) {
-    text = handleKeyMapping(text)
-  }
+export const sendTextToEmulator = (key: number) => {
+  let text = String.fromCharCode(key)
+  text = handleKeyMapping(text)
   addToBuffer(text)
+  popKey()
 }
 
 // TODO: Does this need its own buffer, so we can guarantee that chars

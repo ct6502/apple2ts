@@ -50,11 +50,11 @@ const KeyboardButtons = (props: DisplayProps) => {
       </button>
     ))}
     <button className="push-button key-button" title="Escape"
-      onMouseDown={() => passKeypress(String.fromCharCode(27))}>
+      onMouseDown={() => passKeypress(27)}>
       <span className="text-key">esc</span>
     </button>
     <button className="push-button key-button" title="Tab"
-      onMouseDown={() => passKeypress(String.fromCharCode(9))}>
+      onMouseDown={() => passKeypress(9)}>
       <span className="text-key">tab</span>
     </button>
     <button

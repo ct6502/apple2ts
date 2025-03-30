@@ -1,5 +1,5 @@
 import { ARROW } from "../../common/utility"
-import { handleGetArrowKeysAsJoystick, passKeypress, passSetGamepads } from "../main2worker"
+import { handleGetArrowKeysAsJoystick, passKeypress, passKeyRelease, passSetGamepads } from "../main2worker"
 
 // Keep these outside so we can have both X and Y axes set at the same time.
 const arrowGamePad = [0, 0]
@@ -122,7 +122,7 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
           break
       }
     }
-    passKeypress(String.fromCharCode(code))
+    passKeypress(code)
   } else {
     switch (key) {
       case ARROW.LEFT:  // fall through
@@ -134,5 +134,6 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
         arrowGamePad[1] = 5
         break
     }
+    passKeyRelease()
   }
 }

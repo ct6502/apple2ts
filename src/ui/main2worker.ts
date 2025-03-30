@@ -126,8 +126,14 @@ export const passRestoreSaveState = (sState: EmulatorSaveState) => {
   doPostMessage(MSG_MAIN.RESTORE_STATE, sState)
 }
 
-export const passKeypress = (text: string) => {
-  doPostMessage(MSG_MAIN.KEYPRESS, text)
+export const passKeypress = (key: number) => {
+  doPostMessage(MSG_MAIN.KEYPRESS, key)
+}
+
+export const passKeyRelease = () => {
+  setTimeout(() => {
+    // Delay the key release to give the emulator time to process the keypress
+    doPostMessage(MSG_MAIN.KEYRELEASE, true)}, 50)
 }
 
 export const passMouseEvent = (event: MouseEventSimple) => {
