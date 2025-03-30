@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { handleGetTouchJoyStickMode } from "../main2worker"
 
+let defaultGetGamePads: any
+
 const getDefaultButtons = () => {
   return JSON.parse(JSON.stringify([
     {
@@ -54,16 +56,21 @@ export const TouchJoystick = () => {
   const [customGamepad, setCustomGamepad] = useState<CustomGamepad>(new CustomGamepad)
 
   useEffect(() => {
-    navigator.getGamepads = function() {
-      return [customGamepad]
+    if (touchjoystickMode !== "off") {
+      defaultGetGamePads = navigator.getGamepads
+      navigator.getGamepads = function() {
+        return [customGamepad]
+      }
+    } else {
+      if (defaultGetGamePads !== undefined) {
+        navigator.getGamepads = defaultGetGamePads
+      }
     }
-  })
+  }, [touchjoystickMode, customGamepad])
 
-  const scaleToRange = (value: number, inputStart: number, inputEnd: number, outputStart: number, outputEnd: number) => {
-    const inputRange = inputEnd - inputStart
-    const outputRange = outputEnd - outputStart
-    return (value - inputStart) * outputRange / inputRange + outputStart
-  }
+  const scale = (value: number, yMin: number, yMax: number, xMin: number, xMax: number) => {
+    return ((value - yMin) / (yMax - yMin)) * (xMax - xMin) + xMin
+  };
 
   const toggleButton = (buttonNumber: number, enabled: boolean) => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
@@ -79,14 +86,19 @@ export const TouchJoystick = () => {
   const handlePointerMove = (event: React.PointerEvent) => {
     const currentTarget = event.currentTarget as HTMLElement
     const rect = currentTarget.getBoundingClientRect()
+
+    const buttonsLeft = isSouthpaw ? rect.left : 0
+    const buttonsRight = isSouthpaw ? window.outerWidth : rect.right
+    const buttonsTop = rect.top + rect.width * 0.12
+    const buttonsBottom = rect.top + rect.height - rect.width * 0.12
     
-    const offsetX = Math.max(0, Math.min(event.clientX, rect.right))
-    const offsetY = Math.max(rect.left, Math.min(event.clientY - rect.top, rect.bottom - rect.left))
+    const offsetX = event.clientX - currentTarget.clientLeft
+    const offsetY = event.clientY
 
     const axes = customGamepad.axes.slice()
-    axes[0] = scaleToRange(offsetX, 0, rect.width + rect.left, -1.5, 1.5)
-    axes[1] = scaleToRange(offsetY, 0, rect.height, -2, 2)
-console.log(`${offsetX},${offsetY}`)
+    axes[0] = scale(offsetX, buttonsLeft, buttonsRight, -1, 1)
+    axes[1] = scale(offsetY, buttonsTop, buttonsBottom, -1, 1)
+
     setCustomGamepad(new CustomGamepad(customGamepad.buttons.slice(), axes))
 
     const radians = Math.atan2(axes[1], axes[0])
@@ -142,8 +154,7 @@ console.log(`${offsetX},${offsetY}`)
   }
 
   return (
-    // touchjoystickMode !== "off"
-    true
+    touchjoystickMode !== "off"
       ? <div
         className="tj-container"
         draggable="false">
@@ -151,8 +162,7 @@ console.log(`${offsetX},${offsetY}`)
           className={`tj-base tj-base-${isSouthpaw ? "right" : "left"}`}
           onPointerEnter={handlePointerEnter}
           onPointerMove={handlePointerMove}
-          onPointerLeave={handleStickPointerLeave}
-        >
+          onPointerLeave={handleStickPointerLeave}>
           <div>
             <img
               className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
