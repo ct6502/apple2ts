@@ -11,6 +11,8 @@ type PopupMenuProps = {
 
 const PopupMenu = (props: PopupMenuProps) => {
 
+  const isTouchDevice = "ontouchstart" in document.documentElement
+
   const getPopupLocationStyle = () => {
     if (!props.location) {
       return {}
@@ -25,7 +27,7 @@ const PopupMenu = (props: PopupMenuProps) => {
         w = Math.max(w, 9)
         h += 12
       } else {
-        w = Math.max(w, menuItem.label.length * 9)
+        w = Math.max(w, menuItem.label.length * 10)
         h += 26
       }
     })
@@ -60,7 +62,7 @@ const PopupMenu = (props: PopupMenuProps) => {
                 onClick={menuItem.onClick}>
                 {menuItem.isSelected != undefined && menuItem.isSelected()
                   ? "\u2714\u2009"
-                  : "\u2003\u2007"}
+                  : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
                 {menuItem.svg && menuItem.svg}
                 {`${menuItem.label}\u2003`}
