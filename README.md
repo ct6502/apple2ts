@@ -110,6 +110,43 @@ On your Desktop Chrome, go to `chrome://inspect/#devices` and then choose the ap
 In VS Code, add breakpoints to the test code. Then open up `package.json`, hover over
 the "test" script, and select 'Debug Script'.
 
+## Testing
+
+### If you change disk drive code
+
+1. Press _Boot_ then _Reset_, type some characters, click on _File save_ button, verify `apple2ts.a2ts` is downloaded.
+1. Refresh browser, click on File open button, choose downloaded `apple2ts.at2s`, verify state is restored.
+1. Refresh browser, click on _Choose Disk Image_ (with all the thumbnails), click on `Total Replay`, verify it loads in hard drive 1.
+1. Click on _Choose Disk Image_, click on `MECC Inspector`, verify hard drive is now empty, `MECC` is in floppy drive 1, boots, and loads.
+1. Click on _Choose Disk Image_, click on `ProDOS`, verify floppy drive is now empty, `ProDOS` is in hard drive 1, boots, and loads.
+1. Left click on hard drive, choose _Save Disk to Device_, pick a new name like `Test.po`, press OK, verify that the disk label changes to the new name.
+1. Use down arrow to move down to `BASIC.SYSTEM`, press Enter/Return, verify that system goes to basic prompt.
+1. Type:
+    ```
+    10 PRINT "HELLO"
+    SAVE TEST
+    ```
+1. Confirm that the disk label briefly turns red with an asterisk. After a second or less, the label turns white again, with no asterisk.
+1. Refresh browser, click on hard drive 1, choose _Load Disk from Device (Read/Write)_, choose your `Test.po`. After disk boots, verify that your `TEST` file is at the bottom of the file list.
+
+### Cloud Testing
+
+11. Click on hard drive 1, choose either _Save Disk to OneDrive_ or _Google Drive_ (whichever is easier to test). Choose a folder on your cloud drive, verify that blue spinner spins and then stops.
+1. Refresh browser, click on hard drive 1, choose _Load Disk from OneDrive/GoogleDrive_, pick your `Test.po` disk. Verify that disk boots and loads.
+1. Using same steps as earlier, create a new BASIC program called `CLOUD`. Verify that the disk label turns red with an asterisk. After a minute or less, the label turns white again, with no asterisk.
+1. Refresh browser, click on hard drive 1, choose _Load Disk from OneDrive/GoogleDrive_, pick your `Test.po` disk. Verify that disk boots and loads, and the `CLOUD` file is at the bottom of the file list.
+1. Click on hard drive 1, select _Add Disk to Collection_.
+1. Refresh browser, click on _Choose Disk Image_, select the `Test.po` from the list of starred items, confirm authentication from the cloud server, then verify that the disk boots. 
+1. Click on _Choose Disk Image_, click on the "filled star" for `Test.po` to remove it from the list. The disk should immediately disappear from the list.
+
+### Internet Archive Testing
+
+18. Refresh browser, click on hard drive 1, choose _Load Disk from Internet Archive_, choose _Apple II Library: Games_, then choose one of the games by clicking on the thumbnail image. Verify that the game boots.
+1. Refresh browser, click on hard drive 1, choose _Load Disk from Internet Archive_, choose _Apple II Library: Games_, then on one of the disk images, click on the bottom portion (tooltip should say _Click to view details_). Verify the IA page for that game opens up in a new tab.
+1. Back in the emulator, in the Internet Archive dialog, click on the "unfilled star" for one of the games. Click somewhere else to dismiss dialog. Click on _Choose Disk Image_, verify that the game is at the top of the list. Select it and verify that the game boots.
+1. Click on _Choose Disk Image_, click on the "filled star" for the game to remove the game from the list. The game should immediately disappear from the list.
+
+
 ## Localhost Certificates
 
 Gamepads will only work with a secure (https) context.

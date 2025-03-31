@@ -26,20 +26,14 @@ The open apple and closed apple keys behave the same as the ctrl key.`
 
   defaultHelpText += `\n
 <b>Keyboard Shortcuts</b>
-${keyMod}B Boot
-${keyMod}C Copy Screen
-${keyMod}O Open State
-${keyMod}R Reset
-${keyMod}S Save State
-${keyMod}V Paste Text
-${keyMod}Left  Go Back in Time
-${keyMod}Right Forward in Time
-${arrowMod}1 1 MHz (Normal Speed)
-${arrowMod}2 2 MHz
-${arrowMod}3 3 MHz
-${arrowMod}4 4 MHz (Fast) 
-${arrowMod}5 Ludicrous/Warp Speed
-${arrowMod}0 Snail Speed (0.1 MHz)
+${keyMod}B Boot              ${arrowMod}1 1 MHz (Normal Speed)
+${keyMod}C Copy Screen       ${arrowMod}2 2 MHz
+${keyMod}O Open State        ${arrowMod}3 3 MHz
+${keyMod}R Reset             ${arrowMod}4 4 MHz (Fast)
+${keyMod}S Save State        ${arrowMod}5 Ludicrous/Warp Speed
+${keyMod}V Paste Text        ${arrowMod}0 Snail Speed (0.1 MHz)
+${keyMod}← Back in Time
+${keyMod}→ Forward in Time
 
 Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option`
