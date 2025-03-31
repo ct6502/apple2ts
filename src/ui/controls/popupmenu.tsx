@@ -65,7 +65,7 @@ const PopupMenu = (props: PopupMenuProps) => {
                   : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
                 {menuItem.svg && menuItem.svg}
-                {`${menuItem.label}\u2003`}
+                {`${menuItem.label}\u2004`}
               </div>)
           ))}
         </div>
