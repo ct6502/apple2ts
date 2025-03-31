@@ -63,7 +63,7 @@ const PopupMenu = (props: PopupMenuProps) => {
                   : "\u2003\u2007"}
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
                 {menuItem.svg && menuItem.svg}
-                {menuItem.label}
+                {`${menuItem.label}\u2003`}
               </div>)
           ))}
         </div>

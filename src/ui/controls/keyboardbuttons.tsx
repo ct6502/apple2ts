@@ -104,14 +104,14 @@ const KeyboardButtons = (props: DisplayProps) => {
           onClick: () => { setPreferenceTouchJoystickMode("off"); props.updateDisplay() }
         },
         {
-          label: "Enabled (Left-Handed)",
-          isSelected: () => { return handleGetTouchJoyStickMode() === "left" },
-          onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
-        },
-        {
-          label: "Enabled (Right-Handed)",
+          label: "Enabled: Right-Handed",
           isSelected: () => { return handleGetTouchJoyStickMode() === "right" },
           onClick: () => { setPreferenceTouchJoystickMode("right"); props.updateDisplay() }
+        },
+        {
+          label: "Enabled: Left-Handed",
+          isSelected: () => { return handleGetTouchJoyStickMode() === "left" },
+          onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
         },
         { label: "-" },
         {
@@ -120,7 +120,7 @@ const KeyboardButtons = (props: DisplayProps) => {
           onClick: () => { setPreferenceTouchJoystickSensitivity(1) }
         },
         {
-          label: "Sensitivity: Medium",
+          label: "Sensitivity: Normal",
           isSelected: () => { return handleGetTouchJoystickSensitivity() == 2 },
           onClick: () => { setPreferenceTouchJoystickSensitivity(2) }
         },
