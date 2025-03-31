@@ -33,7 +33,7 @@
 
 .tj-base {
   position: absolute;
-  top: 50%;
+  top: 50.5%;
   width: 33%;
   height: auto;
   transform: translateY(-50%);
@@ -72,7 +72,7 @@
 
 .tj-buttons {
   position: absolute;
-  top: 50%;
+  top: 50.5%;
   width: 33%;
   height: auto;
   transform: translateY(-50%);
