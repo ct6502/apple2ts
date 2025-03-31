@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import "./touchjoystick.css"
-import { handleGetTouchJoyStickMode } from "../main2worker"
+import { handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity } from "../main2worker"
 
 let defaultGetGamePads: any
 
@@ -54,6 +54,7 @@ export const TouchJoystick = () => {
   const isSouthpaw = touchjoystickMode === "left"
 
   const [customGamepad, setCustomGamepad] = useState<CustomGamepad>(new CustomGamepad)
+  const [eventCounter, setEventCounter] = useState<number>(0)
 
   useEffect(() => {
     if (touchjoystickMode !== "off") {
@@ -70,7 +71,7 @@ export const TouchJoystick = () => {
 
   const scale = (value: number, yMin: number, yMax: number, xMin: number, xMax: number) => {
     return ((value - yMin) / (yMax - yMin)) * (xMax - xMin) + xMin
-  };
+  }
 
   const toggleButton = (buttonNumber: number, enabled: boolean) => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
@@ -84,6 +85,12 @@ export const TouchJoystick = () => {
   }
 
   const handlePointerMove = (event: React.PointerEvent) => {
+    event.preventDefault()
+
+    setEventCounter(eventCounter + 1)
+    if (eventCounter % handleGetTouchJoystickSensitivity() != 0)
+      return
+
     const currentTarget = event.currentTarget as HTMLElement
     const rect = currentTarget.getBoundingClientRect()
 
@@ -160,6 +167,7 @@ export const TouchJoystick = () => {
         draggable="false">
         <div
           className={`tj-base tj-base-${isSouthpaw ? "right" : "left"}`}
+          onTouchMove={(event: React.TouchEvent) => event.preventDefault()}
           onPointerEnter={handlePointerEnter}
           onPointerMove={handlePointerMove}
           onPointerLeave={handleStickPointerLeave}>

@@ -593,7 +593,8 @@ const updateExternalMachineState = () => {
     timeTravelThumbnails: getTimeTravelThumbnails(),
     useOpenAppleKey: false,  // ignored by main thread,
     hotReload: false,
-    touchJoystickMode: "off"
+    touchJoystickMode: "off",
+    touchJoystickSensitivity: 2
   }
   passMachineState(state)
 }

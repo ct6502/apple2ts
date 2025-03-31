@@ -60,7 +60,7 @@ const PopupMenu = (props: PopupMenuProps) => {
                 onClick={menuItem.onClick}>
                 {menuItem.isSelected != undefined && menuItem.isSelected()
                   ? "\u2714\u2009"
-                  : "\u2003"}
+                  : "\u2003\u2007"}
                 {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
                 {menuItem.svg && menuItem.svg}
                 {menuItem.label}

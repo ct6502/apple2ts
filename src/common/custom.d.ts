@@ -114,7 +114,8 @@ type MachineState = {
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   useOpenAppleKey: boolean,
   hotReload: boolean,
-  touchJoystickMode: TOUCH_JOYSTICK_MODE
+  touchJoystickMode: TOUCH_JOYSTICK_MODE,
+  touchJoystickSensitivity: number
 }
 
 type CloudData = {

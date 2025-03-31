@@ -1,4 +1,4 @@
-import { handleGetLeftButton, handleGetRightButton, handleGetTheme, handleGetTouchJoyStickMode, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
+import { handleGetLeftButton, handleGetRightButton, handleGetTheme, handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
@@ -13,7 +13,7 @@ import { appleSolid } from "../img/icon_applesolid"
 import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
-import { setPreferenceTouchJoystickMode } from "../localstorage"
+import { setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -99,19 +99,35 @@ const KeyboardButtons = (props: DisplayProps) => {
       onClose={() => { setPopupLocation(undefined) }}
       menuItems={[[
         {
-          label: "Touch Joystick Disabled",
+          label: "Disabled",
           isSelected: () => { return handleGetTouchJoyStickMode() === "off" },
           onClick: () => { setPreferenceTouchJoystickMode("off"); props.updateDisplay() }
         },
         {
-          label: "Touch Joystick Enabled (Left-Handed)",
+          label: "Enabled (Left-Handed)",
           isSelected: () => { return handleGetTouchJoyStickMode() === "left" },
           onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
         },
         {
-          label: "Touch Joystick Enabled (Right-Handed)",
+          label: "Enabled (Right-Handed)",
           isSelected: () => { return handleGetTouchJoyStickMode() === "right" },
           onClick: () => { setPreferenceTouchJoystickMode("right"); props.updateDisplay() }
+        },
+        { label: "-" },
+        {
+          label: "Sensitivity: High",
+          isSelected: () => { return handleGetTouchJoystickSensitivity() == 1 },
+          onClick: () => { setPreferenceTouchJoystickSensitivity(1) }
+        },
+        {
+          label: "Sensitivity: Medium",
+          isSelected: () => { return handleGetTouchJoystickSensitivity() == 2 },
+          onClick: () => { setPreferenceTouchJoystickSensitivity(2) }
+        },
+        {
+          label: "Sensitivity: Low",
+          isSelected: () => { return handleGetTouchJoystickSensitivity() == 3 },
+          onClick: () => { setPreferenceTouchJoystickSensitivity(3) }
         }
       ]]}
     />
