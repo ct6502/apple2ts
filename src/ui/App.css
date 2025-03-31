@@ -34,7 +34,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
   margin: 10px;
-  user-select: none;
 }
 
 body.dark-mode {

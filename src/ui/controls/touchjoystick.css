@@ -8,6 +8,14 @@
   pointer-events: none;
 }
 
+.tj-container * {
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
 .tj-base-image-left {
   width: 100%;
   height: auto;
