@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity } from "../main2worker"
 
-let defaultGetGamePads: any
+let defaultGetGamePads: () => (Gamepad | null)[]
 
 const getDefaultButtons = () => {
   return JSON.parse(JSON.stringify([
@@ -38,7 +38,8 @@ class CustomGamepad implements Gamepad  {
     this.mapping = "standard"
     this.timestamp = Date.now()
     this.vibrationActuator = {
-        playEffect: function (type: GamepadHapticEffectType, params?: GamepadEffectParameters): Promise<GamepadHapticsResult> {
+        // playEffect: function (type: GamepadHapticEffectType, params?: GamepadEffectParameters): Promise<GamepadHapticsResult> {
+        playEffect: function (): Promise<GamepadHapticsResult> {
           return Promise.resolve("complete")
         },
         reset: function (): Promise<GamepadHapticsResult> {
@@ -114,6 +115,7 @@ export const TouchJoystick = () => {
     joystick.style.transform = `rotate(${degrees}deg)`
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleStickPointerLeave = (event: React.PointerEvent) => {
     const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
     joystick.style.transform = "rotate(0deg)"
@@ -154,6 +156,7 @@ export const TouchJoystick = () => {
     setCustomGamepad(new CustomGamepad(buttons, customGamepad.axes.slice()))
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleButtonsTouchEnd = (event: React.TouchEvent) => {
     toggleButton(0, false)
     toggleButton(1, false)
