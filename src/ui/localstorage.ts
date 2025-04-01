@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload } from "./main2worker"
+import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload, passTouchJoystickMode, passTouchJoystickSensitivity } from "./main2worker"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -99,6 +99,24 @@ export const setPreferenceFirstRunMinimal = (mode = true) => {
     localStorage.setItem("firstRunMinimal", JSON.stringify(mode))
   }
   // UI-only setting, pass along not necessary
+}
+
+export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
+  if (mode === "off") {
+    localStorage.removeItem("touchJoystickMode")
+  } else {
+    localStorage.setItem("touchJoystickMode", JSON.stringify(mode))
+  }
+  passTouchJoystickMode(mode)
+}
+
+export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) => {
+  if (sensitivity == 2) {
+    localStorage.removeItem("touchJoystickSensitivity")
+  } else {
+    localStorage.setItem("touchJoystickSensitivity", JSON.stringify(sensitivity))
+  }
+  passTouchJoystickSensitivity(sensitivity)
 }
 
 export const loadPreferences = () => {
@@ -204,6 +222,24 @@ export const loadPreferences = () => {
       localStorage.removeItem("hotReload")
     }
   }
+
+  const touchJoystickMode = localStorage.getItem("touchJoystickMode")
+  if (touchJoystickMode !== "off") {
+    try {
+      passTouchJoystickMode(JSON.parse(touchJoystickMode || ""))
+    } catch {
+      localStorage.removeItem("touchJoystickMode")
+    }
+  }
+
+  const touchJoystickSensitivity = localStorage.getItem("touchJoystickSensitivity")
+  if (touchJoystickSensitivity) {
+    try {
+      passTouchJoystickSensitivity(JSON.parse(touchJoystickSensitivity))
+    } catch {
+      localStorage.removeItem("touchJoystickSensitivity")
+    }
+  }
 }
 
 export const resetPreferences = () => {
@@ -217,6 +253,8 @@ export const resetPreferences = () => {
   setPreferenceRamWorks()
   setPreferenceDebugMode()
   setPreferenceHotReload()
+  setPreferenceTouchJoystickMode()
+  setPreferenceTouchJoystickSensitivity()
 
   localStorage.removeItem("binaryRunAddress")
 }

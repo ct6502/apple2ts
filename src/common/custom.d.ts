@@ -77,6 +77,8 @@ type DisplayProps = {
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE"
 
+type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
+
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
@@ -111,7 +113,9 @@ type MachineState = {
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   useOpenAppleKey: boolean,
-  hotReload: boolean
+  hotReload: boolean,
+  touchJoystickMode: TOUCH_JOYSTICK_MODE,
+  touchJoystickSensitivity: number
 }
 
 type CloudData = {

@@ -10,7 +10,7 @@ import {
   passHelpText,
   handleGetHelpText,
   handleGetTheme,
-  passSetRunMode,
+  passSetRunMode
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -25,6 +25,7 @@ import { RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
 import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
+import TouchJoystick from "./controls/touchjoystick"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -190,6 +191,7 @@ const DisplayApple2 = () => {
         </span>
       </span>
       {isMinimalTheme && <DiskCollectionPanel {...props} />}
+      {isMinimalTheme && <TouchJoystick />}
       <FileInput {...props} />
     </div>
   )
