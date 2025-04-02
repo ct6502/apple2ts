@@ -154,6 +154,9 @@ To enable https when running from localhost, you need to [generate a
 certificate](https://flaviocopes.com/react-how-to-configure-https-localhost/)
 and [install it on your system](https://flaviocopes.com/macos-install-ssl-local/).
 
+To enable https with vite, use the
+[@vitejs/plugin-basic-ssl](https://github.com/vitejs/vite-plugin-basic-ssl) plugin.
+
 ## Update CHANGELOG
 
 Install the [Github Changelog Generator](https://github.com/github-changelog-generator/github-changelog-generator) by running:
