@@ -178,7 +178,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           <div
             className={`dcp-tab ${i == activeTab ? "dcp-tab-active" : ""}`}
             title={tab.label}
-            onClick={() => {setActiveTab(i)}}>
+            onClick={(event) => {setActiveTab(i); event.stopPropagation() }}>
             <FontAwesomeIcon icon={tab.icon}/>
           </div>
         ))}
