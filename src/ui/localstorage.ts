@@ -101,6 +101,15 @@ export const setPreferenceFirstRunMinimal = (mode = true) => {
   // UI-only setting, pass along not necessary
 }
 
+export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
+  if (lastChecked == -1) {
+    localStorage.removeItem("newReleasesChecked")
+  } else {
+    localStorage.setItem("newReleasesChecked", JSON.stringify(lastChecked))
+  }
+  // UI-only setting, pass along not necessary
+}
+
 export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
   if (mode === "off") {
     localStorage.removeItem("touchJoystickMode")
@@ -272,3 +281,15 @@ export const getPreferenceFirstRunMinimal = () => {
   return value
 }
 
+export const getPreferenceNewReleasesChecked = () => {
+  let value: number = -1
+
+  const item = localStorage.getItem("newReleasesChecked")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch { /* empty */ }
+  }
+
+  return value
+}

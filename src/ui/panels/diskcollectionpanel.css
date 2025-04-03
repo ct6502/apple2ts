@@ -40,8 +40,28 @@
   cursor: pointer;
 }
 
+.dcp-tab:hover {
+  background-color: gray;
+}
+
 .dcp-tab-active {
   background-color: gray;
+}
+
+.dcp-tab-highlighted {
+  animation: tabFadeInOut 3s 5;
+}
+
+@keyframes tabFadeInOut {
+
+  0%,
+  100% {
+    background-color: #aba7a2;
+  }
+
+  50% {
+    background-color: gray;
+  }
 }
 
 .dcp-item {

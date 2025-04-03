@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faAsterisk, faClock, faCloud, faFloppyDisk, faH, faHardDrive, faHdd, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -12,6 +12,7 @@ import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL
 import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
+import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -49,8 +50,30 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const [popupItemIndex, setPopupItemIndex] = useState<number>(-1)
   const [activeTab, setActiveTab] = useState<number>(0)
+  const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
 
   let longPressTimer: number
+
+  const tabs = [
+    {
+      icon: faFloppyDisk,
+      label: "Show Apple2TS collection",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE),
+      isHighlighted: false
+    },
+    {
+      icon: faClock,
+      label: "Show new releases",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE),
+      isHighlighted: hasNewRelease
+    },
+    {
+      icon: faStar,
+      label: "Show favorites",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
+      isHighlighted: false
+    }
+  ]
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     const diskCollectionItem = diskCollection[itemIndex]
@@ -110,12 +133,24 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
   }
 
+  const handleTabClick = (tabIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
+    setHasNewRelease(false)
+    setPreferenceNewReleasesChecked(Date.now())
+
+    const element = event.target as HTMLElement
+    element.classList.remove("dcp-tab-highlighted")
+    setActiveTab(tabIndex)
+
+    event.stopPropagation()
+  }
+
   useEffect(() => {
     setDiskBookmarks(new DiskBookmarks())
   }, [isFlyoutOpen])
 
   useEffect(() => {
     const newDiskCollection: DiskCollectionItem[] = []
+    const newReleasesChecked = new Date(getPreferenceNewReleasesChecked())
 
     // Load built-in disk images
     diskImages.forEach((diskImage) => {
@@ -141,28 +176,14 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     newReleases.forEach((newRelease) => {
       newRelease.type = DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE
       newDiskCollection.push(newRelease)
+
+      if (newRelease.lastUpdated >= newReleasesChecked) {
+        setHasNewRelease(true)
+      }
     })
 
     setDiskCollection(newDiskCollection)
   }, [diskBookmarks])
-
-  const tabs = [
-    {
-      icon: faFloppyDisk,
-      label: "Show Apple2TS collection",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE)
-    },
-    {
-      icon: faClock,
-      label: "Show new releases",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE)
-    },
-    {
-      icon: faStar,
-      label: "Show favorites",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE)
-    }
-  ]
 
   return (
     <Flyout
@@ -172,14 +193,16 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       width={`max( ${handleGetTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
+      highlight={hasNewRelease}
       position="top-center">
       <div className="dcp-tab-row">
         {tabs.map((tab, i) => (
           <div
-            className={`dcp-tab ${i == activeTab ? "dcp-tab-active" : ""}`}
+            key={`tab-${i}`}
+            className={`dcp-tab ${i == activeTab ? " dcp-tab-active" : ""} ${tab.isHighlighted ? " dcp-tab-highlighted" : ""}`}
             title={tab.label}
-            onClick={(event) => {setActiveTab(i); event.stopPropagation() }}>
-            <FontAwesomeIcon icon={tab.icon}/>
+            onClick={handleTabClick(i)}>
+            <FontAwesomeIcon icon={tab.icon} size="lg"/>
           </div>
         ))}
       </div>
