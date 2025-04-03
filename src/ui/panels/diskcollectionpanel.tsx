@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faAsterisk, faClock, faCloud, faFloppyDisk, faH, faHardDrive, faHdd, faStar } from "@fortawesome/free-solid-svg-icons"
 import { UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -48,6 +48,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const [popupItemIndex, setPopupItemIndex] = useState<number>(-1)
+  const [activeTab, setActiveTab] = useState<number>(0)
+
   let longPressTimer: number
 
   const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
@@ -144,6 +146,24 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     setDiskCollection(newDiskCollection)
   }, [diskBookmarks])
 
+  const tabs = [
+    {
+      icon: faFloppyDisk,
+      label: "Show Apple2TS collection",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE)
+    },
+    {
+      icon: faClock,
+      label: "Show new releases",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE)
+    },
+    {
+      icon: faStar,
+      label: "Show favorites",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE)
+    }
+  ]
+
   return (
     <Flyout
       icon={faFloppyDisk}
@@ -153,8 +173,18 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       width={`max( ${handleGetTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       position="top-center">
+      <div className="dcp-tab-row">
+        {tabs.map((tab, i) => (
+          <div
+            className={`dcp-tab ${i == activeTab ? "dcp-tab-active" : ""}`}
+            title={tab.label}
+            onClick={() => {setActiveTab(i)}}>
+            <FontAwesomeIcon icon={tab.icon}/>
+          </div>
+        ))}
+      </div>
       <div className="disk-collection-panel">
-        {diskCollection.sort(sortByLastUpdatedAsc).map((diskCollectionItem, index) => (
+        {tabs[activeTab].disks.map((diskCollectionItem, index) => (
           <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
               <div
