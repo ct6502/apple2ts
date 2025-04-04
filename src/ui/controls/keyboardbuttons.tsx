@@ -39,6 +39,7 @@ const KeyboardButtons = (props: DisplayProps) => {
       passAppleCommandKeyRelease(key === "left")
     }
   }
+
   return <span>{isTouchDevice && <span className="flex-row">
     {arrowKeys.map((key, i) => (
       <button className="push-button key-button" title={key.name}
@@ -134,17 +135,15 @@ const KeyboardButtons = (props: DisplayProps) => {
           label: "Use Tilt Sensor as Joystick",
           isSelected: () => { return getPreferenceTiltSensorJoystick() },
           onClick: () => {
-            const turningOn = !getPreferenceTiltSensorJoystick()
+            let turningOn = !getPreferenceTiltSensorJoystick()
             if (turningOn) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              if (DeviceOrientationEvent && typeof((DeviceOrientationEvent as any).requestPermission) === "function") {
+              if (typeof((DeviceOrientationEvent as any).requestPermission) === "function") {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (DeviceOrientationEvent as any).requestPermission()
-                // if (permissionState === "granted") {
-                //   // Permission granted    
-                // } else {
-                //   // Permission denied
-                // }
+                const permissionState = (DeviceOrientationEvent as any).requestPermission()
+                if (permissionState === "denied") {
+                  turningOn = false
+                }
               }
             }
             setPreferenceTiltSensorJoystick(turningOn) }

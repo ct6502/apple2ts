@@ -97,6 +97,7 @@ export const TouchJoystick = () => {
 
   const toggleButton = (buttonNumber: number, enabled: boolean) => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
+    // Make the button look "pressed"
     if (button) {
       const tx = enabled ? (isSouthpaw ? -5 : 5) : 0
       button.style.transform = `translateX(${tx}px) scale(${enabled ? 0.95 : 1})`
@@ -135,6 +136,8 @@ export const TouchJoystick = () => {
     const stickScale = Math.min(Math.sqrt((axes[0] * axes[0] + axes[1] * axes[1]) / 2), 1)
     const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
     joystick.style.transform = `rotate(${degrees}deg) scaleY(${stickScale})`
+    // If our stick scaling is too small it starts to look tiny and stupid.
+    // So just hide it in that case.
     joystick.style.display = stickScale > 0.4 ? "block" : "none"
   }
 
@@ -155,11 +158,11 @@ export const TouchJoystick = () => {
     for (let i=0; i<event.touches.length; i++) {
       const touch = event.touches[i]
       const unitY = (currentTarget.offsetTop - touch.clientY) / currentTarget.clientHeight
+      // Allow anything halfway or below to be button 0, otherwise button 1
       if (unitY <= 0.5) {
         buttons[0].pressed = true
         toggleButton(0, true)
-      }
-      if (unitY > 0.5) {
+      } else {
         buttons[1].pressed = true
         toggleButton(1, true)
       }
