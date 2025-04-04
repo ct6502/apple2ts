@@ -48,7 +48,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
-  const [popupItemIndex, setPopupItemIndex] = useState<number>(-1)
+  const [popupItem, setPopupItem] = useState<DiskCollectionItem>()
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
 
@@ -75,42 +75,39 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     }
   ]
 
-  const handleHelpClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
-    const diskCollectionItem = diskCollection[itemIndex]
+  const handleHelpClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation()
     window.open(diskCollectionItem.detailsUrl, "_blank")
     return false
   }
 
-  const loadDisk = (driveIndex: number, itemIndex: number = popupItemIndex) => {
-    const diskCollectionItem = diskCollection[itemIndex]
-
-    if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+  const loadDisk = (driveIndex: number, diskCollectionItem: DiskCollectionItem | undefined = popupItem) => {
+    if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
-    } else if (typeof diskCollectionItem.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
+    } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
       handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
     } else {
-      handleSetDiskFromURL(diskCollectionItem.diskUrl.toString(), undefined, driveIndex, diskCollectionItem.cloudData)
+      handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData)
     }
 
     setIsFlyoutOpen(false)
   }
 
-  const handleItemClick = (itemIndex: number, driveIndex: number = 0) => () => {
-    loadDisk(driveIndex, itemIndex)
+  const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = 0) => () => {
+    loadDisk(driveIndex, diskCollectionItem)
   }
 
-  const handleItemRightClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
-    setPopupItemIndex(itemIndex)
+  const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+    setPopupItem(diskCollectionItem)
     setPopupLocation([event.clientX, event.clientY])
     event.stopPropagation()
     event.preventDefault()
     return false
   }
 
-  const handleItemTouchStart = (itemIndex: number) => (event: React.TouchEvent<HTMLElement>) => {
+  const handleItemTouchStart = (diskCollectionItem: DiskCollectionItem) => (event: React.TouchEvent<HTMLElement>) => {
     longPressTimer = window.setTimeout(() => {
-      setPopupItemIndex(itemIndex)
+      setPopupItem(diskCollectionItem)
       setPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
       event.stopPropagation()
       event.preventDefault()
@@ -122,9 +119,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     clearTimeout(longPressTimer)
   }
 
-  const handleBookmarkClick = (itemIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
-    const diskCollectionItem = diskCollection[itemIndex]
-
+  const handleBookmarkClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     if (diskCollectionItem.bookmarkId) {
       diskBookmarks.remove(diskCollectionItem.bookmarkId)
       setDiskBookmarks(new DiskBookmarks())
@@ -213,17 +208,17 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <div
                 className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
                 title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
-                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(index) : () => { }}>{diskCollectionItem.title}</div>
+                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(diskCollectionItem) : () => { }}>{diskCollectionItem.title}</div>
             </div>
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
             <div
               className="dcp-item-image-box"
               title={`Click to load disk "${diskCollectionItem.title}"`}
-              onClick={handleItemClick(index, 0)}
-              onTouchStart={handleItemTouchStart(index)}
+              onClick={handleItemClick(diskCollectionItem, 0)}
+              onTouchStart={handleItemTouchStart(diskCollectionItem)}
               onTouchEnd={handleItemTouchCancel}
               onTouchCancel={handleItemTouchCancel}
-              onContextMenu={handleItemRightClick(index)}
+              onContextMenu={handleItemRightClick(diskCollectionItem)}
             >
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
             </div>
@@ -249,7 +244,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               </div>}
             {diskCollectionItem.bookmarkId &&
               <div
-                className="dcp-item-bookmark" title="Click to remove from disk collection" onClick={handleBookmarkClick(index)}>
+                className="dcp-item-bookmark" title="Click to remove from disk collection" onClick={handleBookmarkClick(diskCollectionItem)}>
                 <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
               </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
@@ -260,7 +255,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         ))}
       </div>
       <PopupMenu
-        key={`drive-popup-${popupItemIndex}`}
+        key={`drive-popup-${popupItem?.title}`}
         location={popupLocation}
         style={{
           padding: "5px",
@@ -276,7 +271,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               isSelected: () => { return false },
               onClick: () => {
                 setPopupLocation(undefined)
-                loadDisk(i)
+                loadDisk(i, popupItem)
               }
             }
           )),
@@ -288,7 +283,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               isSelected: () => { return false },
               onClick: () => {
                 setPopupLocation(undefined)
-                loadDisk(i)
+                loadDisk(i, popupItem)
               }
             }
           ))
