@@ -422,7 +422,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         }
 
         canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
-        canvas.style.marginTop = `${scanlinesTop - height * ymargin}px`
+        canvas.style.marginTop = `${Math.max(scanlinesTop - height * ymargin - 160, 40)}px`
       } else {
         canvas.style.marginLeft = "0"
         canvas.style.marginTop = "0"

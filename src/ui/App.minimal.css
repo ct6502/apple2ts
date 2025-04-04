@@ -28,6 +28,7 @@ body {
   font-size: max(0.66cqw, 5pt);
   -webkit-text-fill-color: white;
   -webkit-text-stroke: 1px;
+  user-select: none;
 }
 
 #reportIssue {

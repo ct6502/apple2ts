@@ -343,7 +343,13 @@ export const getCanvasSize = () => {
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
   if (handleGetTheme() == UI_THEME.MINIMAL) {
-    height -= 45
+    const isTouchDevice = "ontouchstart" in document.documentElement
+    const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
+    if (isLandscape) {
+      height -= 150
+    } else {
+      height -= 45
+    }
   } else {
     height -= noBackgroundImage ? 40 : 300
     width -= noBackgroundImage ? 0 : 40

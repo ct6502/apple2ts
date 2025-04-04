@@ -23,6 +23,7 @@
   background-color: #aba7a2;
   padding-left: 2px;
   padding-right: 7px;
+  user-select: none;
 }
 
 .flyout-top-left {

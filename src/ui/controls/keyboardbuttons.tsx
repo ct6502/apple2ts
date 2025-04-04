@@ -13,7 +13,7 @@ import { appleSolid } from "../img/icon_applesolid"
 import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
-import { setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
+import { getPreferenceTiltSensorJoystick, setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -39,6 +39,7 @@ const KeyboardButtons = (props: DisplayProps) => {
       passAppleCommandKeyRelease(key === "left")
     }
   }
+
   return <span>{isTouchDevice && <span className="flex-row">
     {arrowKeys.map((key, i) => (
       <button className="push-button key-button" title={key.name}
@@ -128,7 +129,25 @@ const KeyboardButtons = (props: DisplayProps) => {
           label: "Sensitivity: Low",
           isSelected: () => { return handleGetTouchJoystickSensitivity() == 3 },
           onClick: () => { setPreferenceTouchJoystickSensitivity(3) }
-        }
+        },
+        { label: "-" },
+        {
+          label: "Use Tilt Sensor as Joystick",
+          isSelected: () => { return getPreferenceTiltSensorJoystick() },
+          onClick: () => {
+            let turningOn = !getPreferenceTiltSensorJoystick()
+            if (turningOn) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              if (typeof((DeviceOrientationEvent as any).requestPermission) === "function") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const permissionState = (DeviceOrientationEvent as any).requestPermission()
+                if (permissionState === "denied") {
+                  turningOn = false
+                }
+              }
+            }
+            setPreferenceTiltSensorJoystick(turningOn) }
+        },
       ]]}
     />
   </span >
