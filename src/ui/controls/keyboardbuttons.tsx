@@ -13,7 +13,7 @@ import { appleSolid } from "../img/icon_applesolid"
 import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
-import { setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
+import { getPreferenceTiltSensorJoystick, setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -128,7 +128,27 @@ const KeyboardButtons = (props: DisplayProps) => {
           label: "Sensitivity: Low",
           isSelected: () => { return handleGetTouchJoystickSensitivity() == 3 },
           onClick: () => { setPreferenceTouchJoystickSensitivity(3) }
-        }
+        },
+        { label: "-" },
+        {
+          label: "Use Tilt Sensor as Joystick",
+          isSelected: () => { return getPreferenceTiltSensorJoystick() },
+          onClick: () => {
+            const turningOn = !getPreferenceTiltSensorJoystick()
+            if (turningOn) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              if (DeviceOrientationEvent && typeof((DeviceOrientationEvent as any).requestPermission) === "function") {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (DeviceOrientationEvent as any).requestPermission()
+                // if (permissionState === "granted") {
+                //   // Permission granted    
+                // } else {
+                //   // Permission denied
+                // }
+              }
+            }
+            setPreferenceTiltSensorJoystick(turningOn) }
+        },
       ]]}
     />
   </span >

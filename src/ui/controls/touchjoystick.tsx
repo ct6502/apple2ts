@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity } from "../main2worker"
+import { getPreferenceTiltSensorJoystick } from "../localstorage"
 
 let defaultGetGamePads: () => (Gamepad | null)[]
 
@@ -57,6 +58,23 @@ export const TouchJoystick = () => {
   const [customGamepad, setCustomGamepad] = useState<CustomGamepad>(new CustomGamepad)
   const [eventCounter, setEventCounter] = useState<number>(0)
 
+  let oldBeta = 0
+  let oldGamma = 0
+  const deviceOrientationEvent = (event: DeviceOrientationEvent) => {
+    if (event.beta === null || event.gamma === null) return
+    const useTiltSensor = getPreferenceTiltSensorJoystick()
+    if (!useTiltSensor) return
+
+    if (Math.abs(oldBeta - event.beta) > 1 || Math.abs(oldGamma - event.gamma) > 1) {
+      const axes = customGamepad.axes.slice()
+      axes[0] = scale(event.gamma, -25, 25, -1, 1)
+      axes[1] = scale(event.beta, -25, 25, -1, 1)
+      setCustomGamepad(new CustomGamepad(customGamepad.buttons.slice(), axes))
+      oldBeta = event.beta
+      oldGamma = event.gamma
+    }
+  }
+
   useEffect(() => {
     if (touchjoystickMode !== "off") {
       defaultGetGamePads = navigator.getGamepads
@@ -68,6 +86,9 @@ export const TouchJoystick = () => {
         navigator.getGamepads = defaultGetGamePads
       }
     }
+    window.removeEventListener("deviceorientation", deviceOrientationEvent)
+    window.addEventListener("deviceorientation", deviceOrientationEvent)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [touchjoystickMode, customGamepad])
 
   const scale = (value: number, yMin: number, yMax: number, xMin: number, xMax: number) => {
@@ -77,7 +98,8 @@ export const TouchJoystick = () => {
   const toggleButton = (buttonNumber: number, enabled: boolean) => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
     if (button) {
-      button.style.display = enabled ? "inline" : "none"
+      const tx = enabled ? (isSouthpaw ? -5 : 5) : 0
+      button.style.transform = `translateX(${tx}px) scale(${enabled ? 0.95 : 1})`
     }
   }
 
@@ -106,21 +128,24 @@ export const TouchJoystick = () => {
     const axes = customGamepad.axes.slice()
     axes[0] = scale(offsetX, buttonsLeft, buttonsRight, -1, 1)
     axes[1] = scale(offsetY, buttonsTop, buttonsBottom, -1, 1)
-
     setCustomGamepad(new CustomGamepad(customGamepad.buttons.slice(), axes))
 
     const radians = Math.atan2(axes[1], axes[0])
     const degrees = ((radians * (180 / Math.PI) + 450) % 360)
+    const stickScale = Math.min(Math.sqrt((axes[0] * axes[0] + axes[1] * axes[1]) / 2), 1)
     const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
-    joystick.style.transform = `rotate(${degrees}deg)`
+    joystick.style.transform = `rotate(${degrees}deg) scaleY(${stickScale})`
+    joystick.style.display = stickScale > 0.4 ? "block" : "none"
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleStickPointerLeave = (event: React.PointerEvent) => {
     const joystick = document.getElementById("touchjoystick-stick") as HTMLElement
-    joystick.style.transform = "rotate(0deg)"
-
-    setCustomGamepad(new CustomGamepad)
+    joystick.style.display = "none"
+    const axes = customGamepad.axes.slice()
+    axes[0] = 0
+    axes[1] = 0
+    setCustomGamepad(new CustomGamepad(customGamepad.buttons.slice(), axes))
   }
 
   const handleButtonsTouchStart = (event: React.TouchEvent) => {
@@ -129,27 +154,14 @@ export const TouchJoystick = () => {
 
     for (let i=0; i<event.touches.length; i++) {
       const touch = event.touches[i]
-      const unitX = (touch.clientX - currentTarget.offsetLeft) / currentTarget.clientWidth
-      const unitY = (touch.clientY - currentTarget.offsetTop) / currentTarget.clientHeight
-
-      if (isSouthpaw) {
-        if (unitX >= 0.7479 && unitX <= 0.8529 && unitY >= -0.3060 && unitY <= -0.1958) {
-          buttons[0].pressed = true
-          toggleButton(0, true)
-        }
-        if (unitX >= 0.0558 && unitX <= 0.6639 && unitY >= -0.4904 && unitY <= -0.3897) {
-          buttons[1].pressed = true
-          toggleButton(1, true)
-        }
-      } else {
-        if (unitX >= 0.1170 && unitX <= 0.2561 && unitY >= -0.3179 && unitY <= -0.1735) {
-          buttons[0].pressed = true
-          toggleButton(0, true)
-        }
-        if (unitX >= 0.3086 && unitX <= 0.4369 && unitY >= -0.4807 && unitY <= -0.3794) {
-          buttons[1].pressed = true
-          toggleButton(1, true)
-        }
+      const unitY = (currentTarget.offsetTop - touch.clientY) / currentTarget.clientHeight
+      if (unitY <= 0.5) {
+        buttons[0].pressed = true
+        toggleButton(0, true)
+      }
+      if (unitY > 0.5) {
+        buttons[1].pressed = true
+        toggleButton(1, true)
       }
     }
 
@@ -163,13 +175,15 @@ export const TouchJoystick = () => {
     setCustomGamepad(new CustomGamepad(getDefaultButtons(), customGamepad.axes.slice()))
   }
 
+  const isLandscape = (window.innerWidth > window.innerHeight)
+
   return (
     touchjoystickMode !== "off"
       ? <div
         className="tj-container"
         draggable="false">
         <div
-          className={`tj-base tj-base-${isSouthpaw ? "right" : "left"}`}
+          className={`tj-base-position tj-base-${isSouthpaw ? "right" : "left"} ${isLandscape ? "" : "tj-base-portrait"}`}
           onTouchMove={(event: React.TouchEvent) => event.preventDefault()}
           onPointerEnter={handlePointerEnter}
           onPointerMove={handlePointerMove}
@@ -189,14 +203,18 @@ export const TouchJoystick = () => {
           </div>
         </div>
         <div
-          className={`tj-buttons tj-buttons-${isSouthpaw ? "left" : "right"}`}
+          className={`tj-base-position tj-buttons-${isSouthpaw ? "left" : "right"} ${isLandscape ? "" : "tj-base-portrait"}`}
           onTouchStart={handleButtonsTouchStart}
           onTouchEnd={handleButtonsTouchEnd}>
           <img
             className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
             src="/tj-base.png" />
-          <img id="tj-button0" className={`tj-buttons-button0-${isSouthpaw ? "left" : "right"}`} src="/tj-button0.png" />
-          <img id="tj-button1" className={`tj-buttons-button1-${isSouthpaw ? "left" : "right"}`} src="/tj-button1.png" />
+          <img id="tj-button0"
+            className={`tj-buttons-all tj-buttons-button0-${isSouthpaw ? "left" : "right"}`}
+            src="/tj-button0.png" />
+          <img id="tj-button1"
+            className={`tj-buttons-all tj-buttons-button1-${isSouthpaw ? "left" : "right"}`}
+            src="/tj-button1.png" />
         </div>
       </div>
       : <div></div>

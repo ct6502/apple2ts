@@ -101,6 +101,27 @@ export const setPreferenceFirstRunMinimal = (mode = true) => {
   // UI-only setting, pass along not necessary
 }
 
+export const setPreferenceTiltSensorJoystick = (mode: boolean) => {
+  if (!mode) {
+    localStorage.removeItem("tiltSensorJoystick")
+  } else {
+    localStorage.setItem("tiltSensorJoystick", "true")
+  }
+}
+
+export const getPreferenceTiltSensorJoystick = () => {
+  let value: boolean = false
+  try {
+    const item = localStorage.getItem("tiltSensorJoystick")
+    if (item === "true") {
+      value = true
+    }
+  } catch {
+    /* empty */
+  }
+  return value
+}
+
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   if (lastChecked == -1) {
     localStorage.removeItem("newReleasesChecked")

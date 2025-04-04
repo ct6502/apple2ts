@@ -191,7 +191,7 @@ const DisplayApple2 = () => {
         </span>
       </span>
       {isMinimalTheme && <DiskCollectionPanel {...props} />}
-      {isMinimalTheme && <TouchJoystick />}
+      {isMinimalTheme && isTouchDevice && <TouchJoystick />}
       <FileInput {...props} />
     </div>
   )
