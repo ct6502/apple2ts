@@ -1,5 +1,6 @@
 import { ARROW } from "../../common/utility"
 import { handleGetArrowKeysAsJoystick, passKeypress, passKeyRelease, passSetGamepads } from "../main2worker"
+import { CustomGamepad } from "./customgamepad"
 
 // Keep these outside so we can have both X and Y axes set at the same time.
 const arrowGamePad = [0, 0]
@@ -38,7 +39,28 @@ const checkArrowKeyGamepadValues = () => {
   }
 }
 
+let customGamepad: (CustomGamepad | null) = null
+
+export const setCustomGamepad = (buttons: boolean[] | null, axes: number[] | null) => {
+  if (!customGamepad) {
+    customGamepad = new CustomGamepad()
+  }
+  if (buttons) {
+    customGamepad.setButtons(buttons)
+  }
+  if (axes) {
+    customGamepad.setAxes(axes)
+  }
+}
+
+export const clearCustomGamepad = () => {
+  customGamepad = null
+}
+
 const getGamepads = () => {
+  if (customGamepad) {
+    return [customGamepad]
+  }
   const gamepads = navigator.getGamepads().filter((gp) => (gp !== null))
   return gamepads
 }
