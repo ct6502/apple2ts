@@ -1,5 +1,62 @@
 # Changelog
 
+## [v2.9](https://github.com/ct6502/apple2ts/tree/v2.9) (2025-04-06)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.8...v2.9)
+
+**Implemented enhancements:**
+
+- move UI properties into their own file instead of inside machineState [\#152](https://github.com/ct6502/apple2ts/issues/152)
+- Add more speed settings such as 2 MHz, 3Mhz, etc [\#146](https://github.com/ct6502/apple2ts/issues/146)
+- Add support for UI themes [\#118](https://github.com/ct6502/apple2ts/issues/118)
+- Refactor the code to isolate the emulator and UI code into their own folders [\#112](https://github.com/ct6502/apple2ts/issues/112)
+- Watch files on disk for changes, and then reload [\#46](https://github.com/ct6502/apple2ts/issues/46)
+- For test purpose, adding the Klaus Dormann's 6502 testsuite would be great [\#43](https://github.com/ct6502/apple2ts/issues/43)
+
+**Fixed bugs:**
+
+- Full Klaus Dormann Test including BRK / interrupt [\#138](https://github.com/ct6502/apple2ts/issues/138)
+- Problem with "basic=\[escaped basic program\]" URL parameter [\#136](https://github.com/ct6502/apple2ts/issues/136)
+- 6502 / 65c02 branch handling for cross page is not accurate [\#134](https://github.com/ct6502/apple2ts/issues/134)
+- Possible HGR issue? [\#131](https://github.com/ct6502/apple2ts/issues/131)
+- Minimal mode in Firefox does not appear correct - has tan borders and no buttons [\#126](https://github.com/ct6502/apple2ts/issues/126)
+
+**Closed issues:**
+
+- Edu-Ware Spelling Bee Games crashes Apple II on one game [\#117](https://github.com/ct6502/apple2ts/issues/117)
+- Card Emulation [\#115](https://github.com/ct6502/apple2ts/issues/115)
+
+**Merged pull requests:**
+
+- Change touch joystick image, revamp the math, add optional tilt menu … [\#151](https://github.com/ct6502/apple2ts/pull/151) ([ct6502](https://github.com/ct6502))
+- Updated disk collection code to use item rather than index [\#150](https://github.com/ct6502/apple2ts/pull/150) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Tabs for the disk collection panel [\#149](https://github.com/ct6502/apple2ts/pull/149) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Touch Joystick [\#148](https://github.com/ct6502/apple2ts/pull/148) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Handled case where port is default/null when generating OneDrive auth redirect URL [\#147](https://github.com/ct6502/apple2ts/pull/147) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Updated loadDisk\(\) to correctly handle all disk collection item URL types [\#145](https://github.com/ct6502/apple2ts/pull/145) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Bookmarks added via the Internet Archive panel were not recognized in the  [\#144](https://github.com/ct6502/apple2ts/pull/144) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: PopupMenu component and disk drive context menu [\#143](https://github.com/ct6502/apple2ts/pull/143) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Cloud disk bookmarks \(with dynamic screenshots!\) [\#142](https://github.com/ct6502/apple2ts/pull/142) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Progress modal not dismissed when loading disks from Google Drive [\#141](https://github.com/ct6502/apple2ts/pull/141) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Disk bookmarks [\#140](https://github.com/ct6502/apple2ts/pull/140) ([boredsenseless](https://github.com/boredsenseless))
+- Fix for bug 136 [\#139](https://github.com/ct6502/apple2ts/pull/139) ([boredsenseless](https://github.com/boredsenseless))
+- Support for zipped disk images [\#137](https://github.com/ct6502/apple2ts/pull/137) ([boredsenseless](https://github.com/boredsenseless))
+- Updated DiskInterface to only wrap on narrow screen in Minimal mode [\#135](https://github.com/ct6502/apple2ts/pull/135) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Consolidated disk image collection \(built-in disks and new releases\) [\#133](https://github.com/ct6502/apple2ts/pull/133) ([boredsenseless](https://github.com/boredsenseless))
+- Minimal theme flyout panel fixes [\#130](https://github.com/ct6502/apple2ts/pull/130) ([boredsenseless](https://github.com/boredsenseless))
+- Minor UI tweaks for drive menu and Minimal theme [\#129](https://github.com/ct6502/apple2ts/pull/129) ([boredsenseless](https://github.com/boredsenseless))
+- Minimal theme discoverability improvements [\#128](https://github.com/ct6502/apple2ts/pull/128) ([boredsenseless](https://github.com/boredsenseless))
+- Minimal theme now works for non-webkit browsers [\#127](https://github.com/ct6502/apple2ts/pull/127) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Added proper paging support to the Internet Archive search via infinite scrollbar [\#125](https://github.com/ct6502/apple2ts/pull/125) ([boredsenseless](https://github.com/boredsenseless))
+- Minor UI tweaks to the Internet Archive feature [\#124](https://github.com/ct6502/apple2ts/pull/124) ([boredsenseless](https://github.com/boredsenseless))
+- "Save Disk to Device" feature [\#122](https://github.com/ct6502/apple2ts/pull/122) ([boredsenseless](https://github.com/boredsenseless))
+- Fixed fullscreen scanlines positioning bug [\#121](https://github.com/ct6502/apple2ts/pull/121) ([boredsenseless](https://github.com/boredsenseless))
+- Read/write disk images and hot reload feature [\#120](https://github.com/ct6502/apple2ts/pull/120) ([boredsenseless](https://github.com/boredsenseless))
+- Added support for UI themes and created new "Minimal" theme [\#119](https://github.com/ct6502/apple2ts/pull/119) ([boredsenseless](https://github.com/boredsenseless))
+- Fixed first-time upload bug for OneDrive [\#116](https://github.com/ct6502/apple2ts/pull/116) ([boredsenseless](https://github.com/boredsenseless))
+- Tweak diskdrive useEffect to pay attention to more drive props so it … [\#114](https://github.com/ct6502/apple2ts/pull/114) ([ct6502](https://github.com/ct6502))
+- Reorganize code, split into UI, Common, Worker folders. Fixes \#112 [\#113](https://github.com/ct6502/apple2ts/pull/113) ([ct6502](https://github.com/ct6502))
+
 ## [v2.8](https://github.com/ct6502/apple2ts/tree/v2.8) (2025-02-11)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.7...v2.8)
