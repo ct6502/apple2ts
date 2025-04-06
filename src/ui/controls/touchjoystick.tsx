@@ -1,7 +1,7 @@
 import { useState } from "react"
 import "./touchjoystick.css"
 import { handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity } from "../main2worker"
-import { EMULATOR_PREFERENCE, getEmulatorPreference, getPreferenceTiltSensorJoystick } from "../localstorage"
+import { EMULATOR_PREFERENCE, getEmulatorPreference } from "../localstorage"
 import { clearCustomGamepad, setCustomGamepad } from "../devices/gamepad"
 
 
