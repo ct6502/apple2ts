@@ -133,7 +133,8 @@ type CloudData = {
   itemId: string,
   apiEndpoint: string,
   downloadUrl: string,
-  detailsUrl: string
+  detailsUrl: string,
+  fileSize: number
 }
 
 type CloudProvider = {
@@ -311,7 +312,8 @@ type DiskCollectionItem = {
   diskUrl: URL | string,
   detailsUrl?: URL,
   bookmarkId?: string,
-  cloudData?: CloudData
+  cloudData?: CloudData,
+  fileSize: number
 }
 
 interface OpenerWindow {

@@ -13,20 +13,24 @@ let g_accessToken: string
 export class OneDriveCloudDrive implements CloudProvider {
 
   requestAuthToken(callback: (authToken: string) => void) {
-    const baseUrl = new URL(window.location.href)
-    const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
-    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
+    if (!g_accessToken) {
+      const baseUrl = new URL(window.location.href)
+      const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
+      const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
 
-    window.open(`${authUrl}${redirectUri}`, "_blank")
-    const interval = window.setInterval(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const accessToken = (window as any).accessToken
-      if (accessToken) {
-        clearInterval(interval)
-        g_accessToken = accessToken
-        callback(`bearer ${accessToken}`)
-      }
-    }, 500)
+      window.open(`${authUrl}${redirectUri}`, "_blank")
+      const interval = window.setInterval(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const accessToken = (window as any).accessToken
+        if (accessToken) {
+          clearInterval(interval)
+          g_accessToken = accessToken
+          callback(`bearer ${accessToken}`)
+        }
+      }, 500)
+    } else {
+      callback(`bearer ${g_accessToken}`)
+    }
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
@@ -43,7 +47,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`,
-        detailsUrl: file.webUrl
+        detailsUrl: file.webUrl,
+        fileSize: file.size
       }
       g_accessToken = result.accessToken
 
@@ -79,7 +84,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
         downloadUrl: "",
-        detailsUrl: ""
+        detailsUrl: "",
+        fileSize: -1
       }
       g_accessToken = result.accessToken
       return cloudData

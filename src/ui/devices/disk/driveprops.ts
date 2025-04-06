@@ -74,6 +74,9 @@ export const handleSetDiskData = (
   cloudData: CloudData | null,
   writableFileHandle: FileSystemFileHandle | null,
   lastLocalWriteTime: number) => {
+  if (cloudData) {
+    cloudData.fileSize = data.length
+  }
   driveProps[index].filename = filename
   driveProps[index].diskData = data
   driveProps[index].lastLocalWriteTime = lastLocalWriteTime
@@ -207,11 +210,10 @@ export const handleSetDiskFromURL = async (url: string,
     }
   }
 
-
   // Resolve Internet Archive URL, if necessary
   if (url.startsWith(internetArchiveUrlProtocol)) {
     const identifier = url.substring(internetArchiveUrlProtocol.length)
-    const resolvedUrl = await getDiskImageUrlFromIdentifier(identifier)
+    const [resolvedUrl, fileSize] = await getDiskImageUrlFromIdentifier(identifier)
 
     if (resolvedUrl) {
       url = resolvedUrl.toString()
@@ -220,6 +222,9 @@ export const handleSetDiskFromURL = async (url: string,
       const bookmark = diskBookmarks.get(identifier)
       if (bookmark) {
         bookmark.diskUrl = resolvedUrl
+        if (bookmark.cloudData) {
+          bookmark.cloudData.fileSize = fileSize
+        }
         diskBookmarks.set(bookmark)
       }
     }

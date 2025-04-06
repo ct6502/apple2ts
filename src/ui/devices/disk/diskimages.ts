@@ -5,6 +5,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: new URL("/disks/Aztec.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 819200
   },
   {
     "title": "Eamon",
@@ -13,6 +14,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 819200
   },
   {
     "title": "MECC Inspector",
@@ -20,6 +22,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: new URL("/disks/MECC-Inspector.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234496
   },
   {
     "title": "MousePaint",
@@ -27,6 +30,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: new URL("/disks/MousePaint.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234496
   },
   {
     "title": "Nox Archaist Demo",
@@ -35,6 +39,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://noxarchaist.com"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 1474560
   },
   {
     "title": "Olympic Decathalon",
@@ -43,6 +48,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://archive.org/details/microsoft-olympic-decathlon-a2-ph/"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234496
   },
   {
     "title": "Print Shop Color",
@@ -50,6 +56,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: new URL("/disks/Print%20Shop%20Color.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234757
   },
   {
     "title": "ProDOS 2.4.3",
@@ -58,6 +65,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://prodos8.com/"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 143360
   },
   {
     "title": "Robotron",
@@ -66,6 +74,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 143360
   },
   {
     "title": "Total Replay v5.1",
@@ -74,6 +83,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://archive.org/details/TotalReplay"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
   },
   {
     "title": "Instant Replay",
@@ -82,6 +92,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://github.com/a2-4am/4sports"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
   },
   {
     "title": "Pitch Dark",
@@ -90,6 +101,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://archive.org/details/PitchDark"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
   },
   {
     "title": "Ultima IV",
@@ -98,6 +110,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 819200
   },
   {
     "title": "Ultima V",
@@ -106,6 +119,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 1474560
   },
   {
     "title": "Wizardy Replay v1.1",
@@ -114,5 +128,6 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: new URL("https://archive.org/details/WizardReplay"),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
     }
-    ]
+  ]

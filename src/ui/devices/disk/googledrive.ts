@@ -110,14 +110,18 @@ export class GoogleDrive implements CloudProvider {
   }
 
   requestAuthToken(callback: (authToken: string) => void) {
-    this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
-      if (response.error !== undefined) {
-        throw (response)
+    if (!g_accessToken) {
+      this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+        if (response.error !== undefined) {
+          throw (response)
+        }
+        g_accessToken = response.access_token
+        callback(`Bearer ${response.access_token}`)
       }
-      g_accessToken = response.access_token
-      callback(`Bearer ${response.access_token}`)
+      this.tokenClient.requestAccessToken({prompt: "consent"})
+    } else {
+      callback(`Bearer ${g_accessToken}`)
     }
-    this.tokenClient.requestAccessToken({prompt: "consent"})
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
@@ -133,7 +137,8 @@ export class GoogleDrive implements CloudProvider {
         apiEndpoint: "",
         parentId: result.parentID,
         downloadUrl: `https://www.googleapis.com/drive/v3/files/${result.fileId}?alt=media`,
-        detailsUrl: result.webViewLink
+        detailsUrl: result.webViewLink,
+        fileSize: -1
       }
       
       showGlobalProgressModal(true, `Downloading disk from ${cloudData.providerName}`)
@@ -173,7 +178,8 @@ export class GoogleDrive implements CloudProvider {
         apiEndpoint: "",
         parentId: result.fileId,
         downloadUrl: "",  // Download URL is unknown until file is sucessfully uploaded
-        detailsUrl: result.webViewLink
+        detailsUrl: result.webViewLink,
+        fileSize: -1
       }
 
       try {

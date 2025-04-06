@@ -67,6 +67,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       const success = await cloudProvider.sync(blob, dprops.cloudData)
       if (success) {
         dprops.diskHasChanges = false
+        dprops.cloudData.fileSize = blob.size
         passSetDriveProps(dprops)
       }
     }

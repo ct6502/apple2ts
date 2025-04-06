@@ -107,7 +107,8 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       itemId: props.identifier,
       apiEndpoint: "",
       downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
-      detailsUrl: `https://archive.org/details/${props.identifier}`
+      detailsUrl: `https://archive.org/details/${props.identifier}`,
+      fileSize: -1
     }
 
     props.closeParent()
@@ -137,7 +138,8 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
         itemId: props.identifier,
         apiEndpoint: "",
         downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
-        detailsUrl: `https://archive.org/details/${props.identifier}`
+        detailsUrl: `https://archive.org/details/${props.identifier}`,
+        fileSize: -1
       }
     })
     setBookmarked(true)

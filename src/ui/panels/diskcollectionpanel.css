@@ -23,7 +23,7 @@
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
   margin-left: -2px;
-  margin-right: -6px;
+  margin-right: -8px;
   padding: 12px;
   padding-bottom: 0px;
   border-bottom: 1px solid black;
@@ -38,6 +38,37 @@
   text-align: center;
   padding: 4px;
   cursor: pointer;
+}
+
+.dcp-export-row {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  margin-left: -2px;
+  margin-right: -8px;
+  padding: 12px;
+  padding-left: 14px;
+  padding-right: 14px;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  align-items: center;
+}
+
+.dcp-export-size {
+  font-size: 12pt;
+}
+
+.dcp-export-button {
+  font-size: 12pt;
+  color: black;
+  width: 100%;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+.dcp-export-button:hover {
+  background-color: gray;
 }
 
 .dcp-tab:hover {

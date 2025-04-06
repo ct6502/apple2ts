@@ -14,7 +14,7 @@ import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
 import { getTheme } from "../ui_settings"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
-import { showGlobalProgressModal } from "../ui_utilities"
+import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -79,7 +79,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     {
        icon: faDownload,
        label: "Export disks to .hdv",
-       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv")),
+       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv") || x.fileSize < 33553920),
        isHighlighted: false
      }
   ]
@@ -103,7 +103,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   }
 
   const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = 0) => () => {
-    loadDisk(driveIndex, diskCollectionItem)
+    if (activeTab == 3) {
+      toggleSelectedItem(diskCollectionItem)
+    } else {
+      loadDisk(driveIndex, diskCollectionItem)
+    }
   }
 
   const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
@@ -137,15 +141,34 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
   }
 
-  const handleSelectedClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+  const toggleSelectedItem = async (diskCollectionItem: DiskCollectionItem) => {
     if (selectedDisks.includes(diskCollectionItem)) {
       selectedDisks.splice(selectedDisks.findIndex(x => x === diskCollectionItem), 1)
     } else {
-      // showGlobalProgressModal(true, "Calculating disk size")
+      if (diskCollectionItem.cloudData && diskCollectionItem.cloudData.fileSize === -1) {
+        const [downloadUrl, fileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
+
+        if (downloadUrl) {
+          diskCollectionItem.cloudData.downloadUrl = downloadUrl?.toString()
+        }
+        diskCollectionItem.cloudData.fileSize = fileSize
+
+        if (diskCollectionItem.bookmarkId) {
+          const bookmark = diskBookmarks.get(diskCollectionItem.bookmarkId)
+          if (bookmark && bookmark.cloudData) {
+            bookmark.cloudData.downloadUrl = diskCollectionItem.cloudData.downloadUrl
+            bookmark.cloudData.fileSize = fileSize
+            diskBookmarks.set(bookmark)
+          }
+        }
+      }
       selectedDisks.push(diskCollectionItem)
     }
     setSelectedDisks(selectedDisks.slice())
-    
+  }
+
+  const handleSelectedClick = (diskCollectionItem: DiskCollectionItem) => async (event: React.MouseEvent<HTMLElement>) => {
+    toggleSelectedItem(diskCollectionItem)
     event.stopPropagation()
   }
 
@@ -158,6 +181,20 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     setActiveTab(tabIndex)
 
     event.stopPropagation()
+  }
+
+  const estimateHdvSize = () => {
+    let estimatedSize = 0
+
+    selectedDisks.forEach((selectedDisk) => {
+      if (selectedDisk.cloudData) {
+        estimatedSize += selectedDisk.cloudData.fileSize
+      } else if (selectedDisk.fileSize >= 0) {
+        estimatedSize += selectedDisk.fileSize
+      }
+    })
+
+    return estimatedSize < 1024 * 1024 ? `${(estimatedSize / 1024).toFixed(0)} KB` : `${(estimatedSize / (1024 * 1024)).toFixed(2)} MB`
   }
 
   useEffect(() => {
@@ -184,7 +221,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         imageUrl: diskBookmark.screenshotUrl,
         detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
         bookmarkId: diskBookmark.id,
-        cloudData: diskBookmark.cloudData
+        cloudData: diskBookmark.cloudData,
+        fileSize: diskBookmark.cloudData?.fileSize || -1
       })
     }
 
@@ -277,7 +315,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             {activeTab == 3 &&
               <div
                 className="dcp-item-select"
-                title="Click to remove from disk collection"
+                title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
                 onClick={handleSelectedClick(diskCollectionItem)}>
                 <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} className="dcp-item-select-icon"/>
                 {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
@@ -285,6 +323,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           </div>
         ))}
       </div>
+      {activeTab == 3 && selectedDisks.length > 0 &&
+        <div className="dcp-export-row">
+          <div className="dcp-export-size">Estimated .hdv size: <b>{estimateHdvSize()}</b></div>
+          <input className="dcp-export-button" type="button" value="Export"/>
+        </div>}
       <PopupMenu
         key={`drive-popup-${popupItem?.title}`}
         location={popupLocation}
