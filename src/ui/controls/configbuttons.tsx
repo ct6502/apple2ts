@@ -16,7 +16,7 @@ import {
   passUseOpenAppleKey
 } from "../main2worker"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme } from "../localstorage"
+import { EMULATOR_PREFERENCE, resetPreferences, setEmulatorPreference } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
@@ -62,7 +62,9 @@ const ConfigButtons = (props: DisplayProps) => {
     <div className="flex-row" id="tour-keyboardbuttons">
       <button className={lockedKeyStyle(capsLock ? 2 : 0)}
         title={`Caps Lock (${capsLock ? "on" : "off"})`}
-        onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
+        onClick={() => {
+          setEmulatorPreference(EMULATOR_PREFERENCE.CAPS_LOCK, !capsLock)
+          props.updateDisplay() }}>
         <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? "A" : "a"}</span>
       </button>
 
@@ -111,7 +113,7 @@ const ConfigButtons = (props: DisplayProps) => {
           onClick: () => {
             if (i >= 0 && i != handleGetTheme()) {
               if (window.confirm("Reload the emulator and apply this theme now?")) {
-                setPreferenceTheme(i)
+                setEmulatorPreference(EMULATOR_PREFERENCE.UI_THEME, i)
                 const url = new URL(window.location.href)
                 url.searchParams.delete("theme")
                 window.location.href = url.toString()

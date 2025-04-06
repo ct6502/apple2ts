@@ -1,6 +1,6 @@
 import { BreakpointMap } from "../common/breakpoint"
 import { MAX_DRIVES, RUN_MODE } from "../common/utility"
-import { setPreferenceCapsLock, setPreferenceColorMode, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceShowScanlines, setPreferenceSpeedMode } from "./localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "./localstorage"
 import { handleGetArrowKeysAsJoystick, handleGetBreakpoints, handleGetCapsLock,
   handleGetColorMode, handleGetHelpText, handleGetIsDebugging, handleGetRunMode,
   handleGetSaveState, handleGetShowScanlines, handleGetSpeedMode, passArrowKeysAsJoystick,
@@ -62,35 +62,35 @@ export const RestoreSaveState = (fileContents: string) => {
   passRestoreSaveState(sState)
   const displayState = sState.emulator
   if (displayState?.colorMode !== undefined) {
-    setPreferenceColorMode(displayState.colorMode)
+    setEmulatorPreference(EMULATOR_PREFERENCE.COLOR_MODE, displayState.colorMode)
   }
   if (displayState?.showScanlines !== undefined) {
-    setPreferenceShowScanlines(displayState.showScanlines)
+    setEmulatorPreference(EMULATOR_PREFERENCE.SHOW_SCANLINES, displayState.showScanlines)
   }
   // In an old version, property was renamed from uppercase to capsLock
   if (displayState && ("uppercase" in displayState)) {
-    setPreferenceCapsLock(displayState["uppercase"] as boolean)
+    setEmulatorPreference(EMULATOR_PREFERENCE.CAPS_LOCK, displayState["uppercase"] as boolean)
   }
   if (displayState?.arrowKeysAsJoystick !== undefined) {
     passArrowKeysAsJoystick(displayState.arrowKeysAsJoystick)
   }
   if (displayState?.capsLock !== undefined) {
-    setPreferenceCapsLock(displayState.capsLock)
+    setEmulatorPreference(EMULATOR_PREFERENCE.CAPS_LOCK, displayState.capsLock)
   }
   if (displayState?.audioEnable !== undefined) {
     audioEnable(displayState.audioEnable)
   }
   if (displayState?.mockingboardMode !== undefined) {
-    setPreferenceMockingboardMode(displayState.mockingboardMode)
+    setEmulatorPreference(EMULATOR_PREFERENCE.MOCKINGBOARD_MODE, displayState.mockingboardMode)
   }
   if (displayState?.helptext !== undefined) {
     passHelpText(displayState.helptext)
   }
   if (displayState?.speedMode !== undefined) {
-    setPreferenceSpeedMode(displayState.speedMode)
+    setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, displayState.speedMode)
   }
   if (displayState?.isDebugging !== undefined) {
-    setPreferenceDebugMode(displayState.isDebugging)
+    setEmulatorPreference(EMULATOR_PREFERENCE.DEBUG_MODE, displayState.isDebugging)
   }
   const runMode = displayState?.runMode ? (displayState.runMode as RUN_MODE) : RUN_MODE.RUNNING
   passSetRunMode(runMode)

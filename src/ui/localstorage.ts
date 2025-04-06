@@ -1,316 +1,176 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passCapsLock, passColorMode, passShowScanlines, passTheme, passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, passHotReload, passTouchJoystickMode, passTouchJoystickSensitivity } from "./main2worker"
+import { passMachineState } from "./main2worker"
 
-export const setPreferenceCapsLock = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("capsLock")
-  } else {
-    localStorage.setItem("capsLock", JSON.stringify(mode))
-  }
-  passCapsLock(mode)
+export enum EMULATOR_PREFERENCE {
+  CAPS_LOCK,
+  COLOR_MODE,
+  DARK_MODE,
+  DEBUG_MODE,
+  FIRST_RUN_MINIMAL,
+  HOT_RELOAD,
+  MACHINE_NAME,
+  MOCKINGBOARD_MODE,
+  NEW_RELEASES_CHECKED,
+  RAMWORKS,
+  SHOW_SCANLINES,
+  SPEED_MODE,
+  TILT_SENSOR_JOYSTICK,
+  TOUCH_JOYSTICK_MODE,
+  TOUCH_JOYSTICK_MODEL,
+  TOUCH_JOYSTICK_SENSITIVITY,
+  UI_THEME
 }
 
-export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
-  if (mode === COLOR_MODE.COLOR) {
-    localStorage.removeItem("colorMode")
-  } else {
-    localStorage.setItem("colorMode", JSON.stringify(mode))
-  }
-  passColorMode(mode)
+export type EmulatorPreference<T> = {
+  name: string,
+  defaultValue: T,
+  machineStateKey?: keyof MachineState,
+  callback?: (value: T) => void
 }
 
-export const setPreferenceShowScanlines = (mode = true) => {
-  if (mode) {
-    localStorage.setItem("showScanlines", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("showScanlines")
-  }
-  passShowScanlines(mode)
-}
+export const emulatorPreferences:Map<EMULATOR_PREFERENCE, EmulatorPreference<any>> = new Map([
+  [EMULATOR_PREFERENCE.CAPS_LOCK, {
+    name: "capsLock",
+    defaultValue: true,
+    machineStateKey: "capsLock"
+  }],
+  [EMULATOR_PREFERENCE.COLOR_MODE, {
+    name: "colorMode",
+    defaultValue: COLOR_MODE.COLOR,
+    machineStateKey: "colorMode"
+  }],
+  [EMULATOR_PREFERENCE.DARK_MODE, {
+    name: "darkMode",
+    defaultValue: UI_THEME.DARK
+  }],
+  [EMULATOR_PREFERENCE.DEBUG_MODE, {
+    name: "debugMode",
+    defaultValue: false,
+    machineStateKey: "isDebugging"
+  }],
+  [EMULATOR_PREFERENCE.FIRST_RUN_MINIMAL, {
+    name: "firstRunMinimal",
+    defaultValue: true
+  }],
+  [EMULATOR_PREFERENCE.HOT_RELOAD, {
+    name: "hotReload",
+    defaultValue: false,
+    machineStateKey: "hotReload"
+  }],
+  [EMULATOR_PREFERENCE.MACHINE_NAME, {
+    name: "machineName",
+    defaultValue: "APPLE2EE",
+    machineStateKey: "machineName"
+  }],
+  [EMULATOR_PREFERENCE.MOCKINGBOARD_MODE, {
+    name: "mockingboardMode",
+    defaultValue: 0,
+    callback: changeMockingboardMode
+  }],
+  [EMULATOR_PREFERENCE.NEW_RELEASES_CHECKED, {
+    name: "newReleasesChecked",
+    defaultValue: -1
+  }],
+  [EMULATOR_PREFERENCE.RAMWORKS, {
+    name: "ramWorks",
+    defaultValue: 64,
+    machineStateKey: "extraRamSize"
+  }],
+  [EMULATOR_PREFERENCE.SHOW_SCANLINES, {
+    name: "showScanlines",
+    defaultValue: false,
+    machineStateKey: "showScanlines"
+  }],
+  [EMULATOR_PREFERENCE.SPEED_MODE, {
+    name: "speedMode",
+    defaultValue: 0,
+    machineStateKey: "speedMode"
+  }],
+  [EMULATOR_PREFERENCE.TILT_SENSOR_JOYSTICK, {
+    name: "tiltSensorJoystick",
+    defaultValue: false
+  }],
+  [EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODE, {
+    name: "touchJoystickMode",
+    defaultValue: "off",
+    machineStateKey: "touchJoystickMode"
+  }],
+  [EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODEL, {
+    name: "touchJoystickModel",
+    defaultValue: 0
+  }],
+  [EMULATOR_PREFERENCE.TOUCH_JOYSTICK_SENSITIVITY, {
+    name: "touchJoystickSensitivity",
+    defaultValue: 2,
+    machineStateKey: "touchJoystickSensitivity"
+  }],
+  [EMULATOR_PREFERENCE.UI_THEME, {
+    name: "theme",
+    defaultValue: UI_THEME.CLASSIC,
+    machineStateKey: "theme"
+  }]
+])
 
-export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
-  if (theme === UI_THEME.CLASSIC) {
-    localStorage.removeItem("theme")
-  } else {
-    localStorage.setItem("theme", JSON.stringify(theme))
-  }
-  passTheme(theme)
-}
+export const getEmulatorPreference = <T>(id: EMULATOR_PREFERENCE): T => {
+  const preference = emulatorPreferences.get(id)
 
-export const setPreferenceDebugMode = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("debugMode")
-  } else {
-    localStorage.setItem("debugMode", JSON.stringify(mode))
-  }
-  passSetDebug(mode)
-}
+  if (preference) {
+    const value = localStorage.getItem(preference.name)
 
-export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
-  if (name === "APPLE2EE") {
-    localStorage.removeItem("machineName")
-  } else {
-    localStorage.setItem("machineName", JSON.stringify(name))
-  }
-  passSetMachineName(name)
-}
+    if (value) {
+      try {
+        const parsedValue = JSON.parse(value)
 
-export const setPreferenceMockingboardMode = (mode = 0) => {
-  if (mode === 0) {
-    localStorage.removeItem("mockingboardMode")
-  } else {
-    localStorage.setItem("mockingboardMode", JSON.stringify(mode))
-  }
-  changeMockingboardMode(mode)
-}
+        if (preference.machineStateKey) {
+          passMachineState(preference.machineStateKey, parsedValue)
+        }
 
-export const setPreferenceRamWorks = (size = 64) => {
-  if (size === 64) {
-    localStorage.removeItem("ramWorks")
-  } else {
-    localStorage.setItem("ramWorks", JSON.stringify(size))
-  }
-  passSetRamWorks(size)
-}
-
-export const setPreferenceSpeedMode = (mode = 0) => {
-  if (mode === 0) {
-    localStorage.removeItem("speedMode")
-  } else {
-    localStorage.setItem("speedMode", JSON.stringify(mode))
-  }
-  passSpeedMode(mode)
-}
-
-export const setPreferenceHotReload = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("hotReload")
-  } else {
-    localStorage.setItem("hotReload", JSON.stringify(mode))
-  }
-  passHotReload(mode)
-}
-
-export const setPreferenceFirstRunMinimal = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("firstRunMinimal")
-  } else {
-    localStorage.setItem("firstRunMinimal", JSON.stringify(mode))
-  }
-  // UI-only setting, pass along not necessary
-}
-
-export const setPreferenceTiltSensorJoystick = (mode: boolean) => {
-  if (!mode) {
-    localStorage.removeItem("tiltSensorJoystick")
-  } else {
-    localStorage.setItem("tiltSensorJoystick", "true")
-  }
-}
-
-export const getPreferenceTiltSensorJoystick = () => {
-  let value: boolean = false
-  try {
-    const item = localStorage.getItem("tiltSensorJoystick")
-    if (item === "true") {
-      value = true
+        return parsedValue
+      } catch {
+        localStorage.removeItem(preference.name)
+      }
     }
-  } catch {
-    /* empty */
+  } else {
+    console.error(`${id}: preference not recognized`)
   }
-  return value
+
+  return preference?.defaultValue
 }
 
-export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
-  if (lastChecked == -1) {
-    localStorage.removeItem("newReleasesChecked")
-  } else {
-    localStorage.setItem("newReleasesChecked", JSON.stringify(lastChecked))
-  }
-  // UI-only setting, pass along not necessary
-}
+export const setEmulatorPreference = <T>(id: EMULATOR_PREFERENCE, value: T | undefined = undefined) => {
+  const preference = emulatorPreferences.get(id)
 
-export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
-  if (mode === "off") {
-    localStorage.removeItem("touchJoystickMode")
-  } else {
-    localStorage.setItem("touchJoystickMode", JSON.stringify(mode))
-  }
-  passTouchJoystickMode(mode)
-}
+  if (preference) {
+    if (value == undefined || value === preference.defaultValue) {
+      localStorage.removeItem(preference.name)
+      value = preference.defaultValue
+    } else {
+      localStorage.setItem(preference.name, JSON.stringify(value))
+    }
 
-export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) => {
-  if (sensitivity == 2) {
-    localStorage.removeItem("touchJoystickSensitivity")
+    if (preference.machineStateKey) {
+      passMachineState(preference.machineStateKey, value)
+    }
+
+    if (preference.callback) {
+      preference.callback(value)
+    }
   } else {
-    localStorage.setItem("touchJoystickSensitivity", JSON.stringify(sensitivity))
+    console.error(`${id}: preference not recognized`)
   }
-  passTouchJoystickSensitivity(sensitivity)
 }
 
 export const loadPreferences = () => {
-  const capsLock = localStorage.getItem("capsLock")
-  if (capsLock) {
-    try {
-      passCapsLock(JSON.parse(capsLock))
-    } catch {
-      localStorage.removeItem("capsLock")
-    }
-  }
-
-  const colorMode = localStorage.getItem("colorMode")
-  if (colorMode) {
-    try {
-      passColorMode(JSON.parse(colorMode))
-    } catch {
-      localStorage.removeItem("colorMode")
-    }
-  }
-
-  const showScanlines = localStorage.getItem("showScanlines")
-  if (showScanlines) {
-    try {
-      passShowScanlines(JSON.parse(showScanlines))
-    } catch {
-      localStorage.removeItem("showScanlines")
-    }
-  }
-
-  // Keep for backwards-compatibility
-  const darkMode = localStorage.getItem("darkMode")
-  if (darkMode) {
-    try {
-      if (JSON.parse(darkMode)) {
-        passTheme(UI_THEME.DARK)
-      }
-    } catch {
-      localStorage.removeItem("darkMode")
-    }
-    localStorage.removeItem("darkMode")
-  }
-
-  const theme = localStorage.getItem("theme")
-  if (theme) {
-    try {
-      passTheme(JSON.parse(theme))
-    } catch {
-      localStorage.removeItem("theme")
-    }
-  }
-
-  const speedMode = localStorage.getItem("speedMode")
-  if (speedMode) {
-    try {
-      passSpeedMode(JSON.parse(speedMode))
-    } catch {
-      localStorage.removeItem("speedMode")
-    }
-  }
-
-  const debugMode = localStorage.getItem("debugMode")
-  if (debugMode) {
-    try {
-      passSetDebug(JSON.parse(debugMode))
-    } catch {
-      localStorage.removeItem("debugMode")
-    }
-  }
-
-  const machineName = localStorage.getItem("machineName")
-  if (machineName) {
-    try {
-      passSetMachineName(JSON.parse(machineName))
-    } catch {
-      localStorage.removeItem("machineName")
-    }
-  }
-
-  const mockingboardMode = localStorage.getItem("mockingboardMode")
-  if (mockingboardMode) {
-    try {
-      changeMockingboardMode(JSON.parse(mockingboardMode))
-    } catch {
-      localStorage.removeItem("mockingboardMode")
-    }
-  }
-
-  const ramWorks = localStorage.getItem("ramWorks")
-  if (ramWorks) {
-    try {
-      passSetRamWorks(JSON.parse(ramWorks))
-    } catch {
-      localStorage.removeItem("ramWorks")
-    }
-  }
-
-  const hotReload = localStorage.getItem("hotReload")
-  if (hotReload) {
-    try {
-      passHotReload(JSON.parse(hotReload))
-    } catch {
-      localStorage.removeItem("hotReload")
-    }
-  }
-
-  const touchJoystickMode = localStorage.getItem("touchJoystickMode")
-  if (touchJoystickMode !== "off") {
-    try {
-      passTouchJoystickMode(JSON.parse(touchJoystickMode || ""))
-    } catch {
-      localStorage.removeItem("touchJoystickMode")
-    }
-  }
-
-  const touchJoystickSensitivity = localStorage.getItem("touchJoystickSensitivity")
-  if (touchJoystickSensitivity) {
-    try {
-      passTouchJoystickSensitivity(JSON.parse(touchJoystickSensitivity))
-    } catch {
-      localStorage.removeItem("touchJoystickSensitivity")
-    }
-  }
+  emulatorPreferences.keys().forEach((id) => {
+    getEmulatorPreference(id)
+  })
 }
 
 export const resetPreferences = () => {
-  setPreferenceSpeedMode()
-  setPreferenceCapsLock()
-  setPreferenceColorMode()
-  setPreferenceShowScanlines()
-  setPreferenceTheme()
-  setPreferenceMockingboardMode()
-  setPreferenceMachineName()
-  setPreferenceRamWorks()
-  setPreferenceDebugMode()
-  setPreferenceHotReload()
-  setPreferenceTouchJoystickMode()
-  setPreferenceTouchJoystickSensitivity()
+  emulatorPreferences.keys().forEach((preferenceId) => {
+    setEmulatorPreference(preferenceId)
+  })
 
   localStorage.removeItem("binaryRunAddress")
-}
-
-export const getPreferenceFirstRunMinimal = () => {
-  let value: boolean = true
-
-  const item = localStorage.getItem("firstRunMinimal")
-  if (item) {
-    try {
-      value = JSON.parse(item)
-    } catch { /* empty */ }
-  }
-
-  return value
-}
-
-export const getPreferenceNewReleasesChecked = () => {
-  let value: number = -1
-
-  const item = localStorage.getItem("newReleasesChecked")
-  if (item) {
-    try {
-      value = JSON.parse(item)
-    } catch { /* empty */ }
-  }
-
-  return value
 }

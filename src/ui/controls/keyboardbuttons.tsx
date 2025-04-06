@@ -13,7 +13,7 @@ import { appleSolid } from "../img/icon_applesolid"
 import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
-import { getPreferenceTiltSensorJoystick, setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
+import { EMULATOR_PREFERENCE, getEmulatorPreference, setEmulatorPreference } from "../localstorage"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -40,7 +40,9 @@ const KeyboardButtons = (props: DisplayProps) => {
     }
   }
 
-  return <span>{isTouchDevice && <span className="flex-row">
+  // $TEMP
+  // return <span>{isTouchDevice && <span className="flex-row">
+  return <span>{<span className="flex-row">
     {arrowKeys.map((key, i) => (
       <button className="push-button key-button" title={key.name}
         key={key.name}
@@ -100,42 +102,53 @@ const KeyboardButtons = (props: DisplayProps) => {
       onClose={() => { setPopupLocation(undefined) }}
       menuItems={[[
         {
+          label: "TG Products Joystick",
+          isSelected: () => { return getEmulatorPreference<number>(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODEL) == 0},
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODEL, 0); props.updateDisplay() }
+        },
+        {
+          label: "Apple ATM2002 Joystick",
+          isSelected: () => { return getEmulatorPreference<number>(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODEL) == 1},
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODEL, 1); props.updateDisplay() }
+        },
+        { label: "-" },
+        {
           label: "Disabled",
           isSelected: () => { return handleGetTouchJoyStickMode() === "off" },
-          onClick: () => { setPreferenceTouchJoystickMode("off"); props.updateDisplay() }
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODE, "off"); props.updateDisplay() }
         },
         {
           label: "Enabled: Right-Handed",
           isSelected: () => { return handleGetTouchJoyStickMode() === "right" },
-          onClick: () => { setPreferenceTouchJoystickMode("right"); props.updateDisplay() }
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODE, "right"); props.updateDisplay() }
         },
         {
           label: "Enabled: Left-Handed",
           isSelected: () => { return handleGetTouchJoyStickMode() === "left" },
-          onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODE, "left"); props.updateDisplay() }
         },
         { label: "-" },
         {
           label: "Sensitivity: High",
           isSelected: () => { return handleGetTouchJoystickSensitivity() == 1 },
-          onClick: () => { setPreferenceTouchJoystickSensitivity(1) }
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_SENSITIVITY, 1) }
         },
         {
           label: "Sensitivity: Normal",
           isSelected: () => { return handleGetTouchJoystickSensitivity() == 2 },
-          onClick: () => { setPreferenceTouchJoystickSensitivity(2) }
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_SENSITIVITY, 2) }
         },
         {
           label: "Sensitivity: Low",
           isSelected: () => { return handleGetTouchJoystickSensitivity() == 3 },
-          onClick: () => { setPreferenceTouchJoystickSensitivity(3) }
+          onClick: () => { setEmulatorPreference(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_SENSITIVITY, 3) }
         },
         { label: "-" },
         {
           label: "Use Tilt Sensor as Joystick",
-          isSelected: () => { return getPreferenceTiltSensorJoystick() },
+          isSelected: () => { return getEmulatorPreference(EMULATOR_PREFERENCE.TILT_SENSOR_JOYSTICK) },
           onClick: () => {
-            let turningOn = !getPreferenceTiltSensorJoystick()
+            let turningOn = !getEmulatorPreference(EMULATOR_PREFERENCE.TILT_SENSOR_JOYSTICK)
             if (turningOn) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               if (typeof((DeviceOrientationEvent as any).requestPermission) === "function") {
@@ -146,7 +159,8 @@ const KeyboardButtons = (props: DisplayProps) => {
                 }
               }
             }
-            setPreferenceTiltSensorJoystick(turningOn) }
+            setEmulatorPreference(EMULATOR_PREFERENCE.TILT_SENSOR_JOYSTICK, turningOn)
+          }
         },
       ]]}
     />

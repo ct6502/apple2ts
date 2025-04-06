@@ -4,7 +4,7 @@ import {
   faGear,
 } from "@fortawesome/free-solid-svg-icons"
 import { handleGetMachineName, handleGetMemSize } from "../main2worker"
-import { setPreferenceMachineName, setPreferenceRamWorks } from "../localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "../localstorage"
 import PopupMenu from "../controls/popupmenu"
 
 export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
@@ -41,7 +41,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
               label: roms[i],
               isSelected: () => { return machineName === machineNames[i] },
               onClick: () => {
-                setPreferenceMachineName(machineNames[i])
+                setEmulatorPreference(EMULATOR_PREFERENCE.MACHINE_NAME, machineNames[i])
                 props.updateDisplay()
               }
             }
@@ -52,7 +52,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
               label: names[i],
               isSelected: () => { return extraMemSize === sizes[i] },
               onClick: () => {
-                setPreferenceRamWorks(sizes[i])
+                setEmulatorPreference(EMULATOR_PREFERENCE.RAMWORKS, sizes[i])
                 props.updateDisplay()
               }
             }

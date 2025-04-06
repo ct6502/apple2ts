@@ -26,7 +26,7 @@ import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import bgImage from "./img/crt.jpg"
 import { handleSetCPUState } from "./controller"
-import { setPreferenceSpeedMode } from "./localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "./localstorage"
 
 
 let width = 800
@@ -79,12 +79,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     r: () => handleSetCPUState(RUN_MODE.NEED_RESET),
     s: () => handleFileSave(false),
     v: () => syntheticPaste(),
-    0: () => setPreferenceSpeedMode(-2),
-    1: () => setPreferenceSpeedMode(0),
-    2: () => setPreferenceSpeedMode(1),
-    3: () => setPreferenceSpeedMode(2),
-    4: () => setPreferenceSpeedMode(3),
-    5: () => setPreferenceSpeedMode(4),
+    0: () => setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, -2),
+    1: () => setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, 0),
+    2: () => setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, 1),
+    3: () => setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, 2),
+    4: () => setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, 3),
+    5: () => setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, 4),
   }
 
   const handleMetaKey = (key: string) => {

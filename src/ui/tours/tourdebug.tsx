@@ -1,5 +1,5 @@
 import { Step } from "react-joyride"
-import { handleGetIsDebugging, handleGetRunMode, passSetDebug, passSetRunMode } from "../main2worker"
+import { handleGetIsDebugging, handleGetRunMode, passMachineState, passSetRunMode } from "../main2worker"
 import { RUN_MODE } from "../../common/utility"
 
 let neededToBoot = false
@@ -10,7 +10,7 @@ const callbackInDebugMode: StepCallbackFunction = () => {
   neededToBoot = runMode === RUN_MODE.IDLE
   didBoot = false
   if (!handleGetIsDebugging()) {
-    passSetDebug(true)
+    passMachineState("isDebugging", true)
   }
   // Continue processing tour commands
   return false

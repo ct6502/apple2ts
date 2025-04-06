@@ -50,37 +50,33 @@ export const passStepOut = () => {
   doPostMessage(MSG_MAIN.STEP_OUT, true)
 }
 
-export const passSetDebug = (doDebug: boolean) => {
-  doPostMessage(MSG_MAIN.DEBUG, doDebug)
-  // Force the state right away, so the UI can update.
-  machineState.isDebugging = doDebug
+export const passSetMachineName = (name: MACHINE_NAME) => {
+  doPostMessage(MSG_MAIN.MACHINE_NAME, name)
+  // This will also come from the emulator, but set it here so the UI updates
+  // if the emulator hasn't been booted yet.
+  machineState.machineName = name
 }
 
-export const passSpeedMode = (mode: number) => {
-  doPostMessage(MSG_MAIN.SPEED, mode)
-  // Force the state right away, so the UI can update.
-  machineState.speedMode = mode
-}
+export const passMachineState = <T>(key: keyof MachineState, value: T) => {
+  switch (key) {
+    case "isDebugging":
+      doPostMessage(MSG_MAIN.DEBUG, value as boolean)
+      break
 
-export const passColorMode = (mode: COLOR_MODE) => {
-  // Currently the emulator doesn't care about color mode.
-  // Just set it directly on our machine state for later retrieval.
-  // Somewhat roundabout but it keeps all the properties in one place.
-  machineState.colorMode = mode
-}
+    case "machineName":
+      doPostMessage(MSG_MAIN.MACHINE_NAME, value as MACHINE_NAME)
+      break
 
-export const passShowScanlines = (mode: boolean) => {
-  machineState.showScanlines = mode
-}
+    case "extraRamSize":
+      doPostMessage(MSG_MAIN.RAMWORKS, value as number)
+      break
 
-export const passCapsLock = (lock: boolean) => {
-  // See comment under passColorMode
-  machineState.capsLock = lock
-}
-
-export const passTheme = (theme: UI_THEME) => {
-  // See comment under passColorMode
-  machineState.theme = theme
+    case "speedMode":
+      doPostMessage(MSG_MAIN.SPEED, value as number)
+      break
+  }
+  
+  Reflect.set(machineState, key, value)
 }
 
 export const passArrowKeysAsJoystick = (joystick: boolean) => {
@@ -96,18 +92,6 @@ export const passUseOpenAppleKey = (openApple: boolean) => {
 export const passHelpText = (helptext: string) => {
   // See comment under passColorMode
   machineState.helpText = helptext
-}
-
-export const passHotReload = (mode: boolean) => {
-  machineState.hotReload = mode
-}
-
-export const passTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE) => {
-  machineState.touchJoystickMode = mode
-}
-
-export const passTouchJoystickSensitivity = (sensitivity: number) => {
-  machineState.touchJoystickSensitivity = sensitivity
 }
 
 export const passGoForwardInTime = () => {
@@ -195,20 +179,6 @@ export const passRxMidiData = (data: Uint8Array) => {
 
 const passThumbnailImage = (thumbnail: string) => {
   doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
-}
-
-export const passSetRamWorks = (size: number) => {
-  doPostMessage(MSG_MAIN.RAMWORKS, size)
-  // This will also come from the emulator, but set it here so the UI updates
-  // if the emulator hasn't been booted yet.
-  machineState.extraRamSize = size
-}
-
-export const passSetMachineName = (name: MACHINE_NAME) => {
-  doPostMessage(MSG_MAIN.MACHINE_NAME, name)
-  // This will also come from the emulator, but set it here so the UI updates
-  // if the emulator hasn't been booted yet.
-  machineState.machineName = name
 }
 
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {

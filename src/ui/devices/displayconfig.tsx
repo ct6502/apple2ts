@@ -6,7 +6,7 @@ import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons"
 import { handleGetColorMode, handleGetShowScanlines } from "../main2worker"
-import { setPreferenceColorMode, setPreferenceShowScanlines } from "../localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
 
@@ -47,7 +47,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
               label: colorToName(i),
               isSelected: () => { return i == colorMode },
               onClick: () => {
-                setPreferenceColorMode(i)
+                setEmulatorPreference(EMULATOR_PREFERENCE.COLOR_MODE, i)
                 props.updateDisplay()
               }
             }
@@ -59,7 +59,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
               isSelected: () => { return showScanlines },
               onClick: () => {
                 document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
-                setPreferenceShowScanlines(!showScanlines)
+                setEmulatorPreference(EMULATOR_PREFERENCE.SHOW_SCANLINES, !showScanlines)
                 props.updateDisplay()
               }
             }

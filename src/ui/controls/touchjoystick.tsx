@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity } from "../main2worker"
-import { getPreferenceTiltSensorJoystick } from "../localstorage"
+import { EMULATOR_PREFERENCE, getEmulatorPreference } from "../localstorage"
 
 let defaultGetGamePads: () => (Gamepad | null)[]
+
+const joystickModels = [
+  {
+    imagePath: "/public/touchjoystick/tg_products"
+  },
+  {
+    imagePath: "/public/touchjoystick/apple_atm2002"
+  }
+]
 
 const getDefaultButtons = () => {
   return JSON.parse(JSON.stringify([
@@ -53,6 +62,7 @@ class CustomGamepad implements Gamepad  {
 export const TouchJoystick = () => {
 
   const touchjoystickMode = handleGetTouchJoyStickMode()
+  const joystickModel = getEmulatorPreference<number>(EMULATOR_PREFERENCE.TOUCH_JOYSTICK_MODEL)
   const isSouthpaw = touchjoystickMode === "left"
 
   const [customGamepad, setCustomGamepad] = useState<CustomGamepad>(new CustomGamepad)
@@ -62,7 +72,7 @@ export const TouchJoystick = () => {
   let oldGamma = 0
   const deviceOrientationEvent = (event: DeviceOrientationEvent) => {
     if (event.beta === null || event.gamma === null) return
-    const useTiltSensor = getPreferenceTiltSensorJoystick()
+    const useTiltSensor = getEmulatorPreference(EMULATOR_PREFERENCE.TILT_SENSOR_JOYSTICK)
     if (!useTiltSensor) return
 
     if (Math.abs(oldBeta - event.beta) > 1 || Math.abs(oldGamma - event.gamma) > 1) {
@@ -194,7 +204,7 @@ export const TouchJoystick = () => {
           <div>
             <img
               className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
-              src="/tj-base.png" />
+              src={`${joystickModels[joystickModel].imagePath}/base.png`}/>
           </div>
           <div
             id="touchjoystick-stick"
@@ -202,7 +212,7 @@ export const TouchJoystick = () => {
           >
             <img
               className="tj-stick-image"
-              src="/tj-stick.png" />
+              src={`${joystickModels[joystickModel].imagePath}/stick.png`} />
           </div>
         </div>
         <div
@@ -211,13 +221,13 @@ export const TouchJoystick = () => {
           onTouchEnd={handleButtonsTouchEnd}>
           <img
             className={`tj-base-image-${isSouthpaw ? "left" : "right"}`}
-            src="/tj-base.png" />
+            src={`${joystickModels[joystickModel].imagePath}/base.png`} />
           <img id="tj-button0"
             className={`tj-buttons-all tj-buttons-button0-${isSouthpaw ? "left" : "right"}`}
-            src="/tj-button0.png" />
+            src={`${joystickModels[joystickModel].imagePath}/button0.png`} />
           <img id="tj-button1"
             className={`tj-buttons-all tj-buttons-button1-${isSouthpaw ? "left" : "right"}`}
-            src="/tj-button1.png" />
+            src={`${joystickModels[joystickModel].imagePath}/button1.png`} />
         </div>
       </div>
       : <div></div>

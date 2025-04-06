@@ -4,7 +4,7 @@ import {
 import { getMockingboardMode, MockingboardNames } from "./mockingboard_audio"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DropdownButton } from "../../controls/dropdownbutton"
-import { setPreferenceMockingboardMode } from "../../localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "../../localstorage"
 
 export const MockingboardWaveform = () => {
 
@@ -12,7 +12,7 @@ export const MockingboardWaveform = () => {
     <DropdownButton 
       currentIndex = {getMockingboardMode()}
       itemNames = {MockingboardNames}
-      closeCallback = {setPreferenceMockingboardMode}
+      closeCallback = {(index: number) => setEmulatorPreference(EMULATOR_PREFERENCE.MOCKINGBOARD_MODE, index)}
       icon = {<FontAwesomeIcon icon={faWaveSquare}/>}
       tooltip = "Mockingboard wave form"
     />

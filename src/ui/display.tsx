@@ -1,6 +1,5 @@
 // Chris Torrence, 2022
 import {
-  passSpeedMode,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   handleGetIsDebugging,
@@ -10,7 +9,8 @@ import {
   passHelpText,
   handleGetHelpText,
   handleGetTheme,
-  passSetRunMode
+  passSetRunMode,
+  passMachineState
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -84,7 +84,7 @@ const DisplayApple2 = () => {
     // or whether just having the assets within that file is good enough
     // for the preloading.
     // preloadAssets()
-    passSpeedMode(0)
+    passMachineState("speedMode", 0)
     loadPreferences()
     const hasBasicProgram = handleInputParams()
     handleFragment(updateDisplay, hasBasicProgram)
@@ -191,7 +191,9 @@ const DisplayApple2 = () => {
         </span>
       </span>
       {isMinimalTheme && <DiskCollectionPanel {...props} />}
-      {isMinimalTheme && isTouchDevice && <TouchJoystick />}
+      {/* $TEMP */}
+      {/* {isMinimalTheme && isTouchDevice && <TouchJoystick />} */}
+      {isMinimalTheme && <TouchJoystick />} 
       <FileInput {...props} />
     </div>
   )

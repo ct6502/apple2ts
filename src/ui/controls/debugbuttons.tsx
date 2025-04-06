@@ -19,7 +19,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
-import { setPreferenceDebugMode, setPreferenceHotReload } from "../localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "../localstorage"
 import { RUN_MODE, UI_THEME } from "../../common/utility"
 import { isFileSystemApiSupported } from "../ui_utilities"
 
@@ -67,14 +67,14 @@ const DebugButtons = (props: DisplayProps) => {
     {handleGetTheme() != UI_THEME.MINIMAL &&
       <button className="push-button" id="tour-debug-button"
         title="Toggle Debug"
-        onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
+        onClick={() => setEmulatorPreference(EMULATOR_PREFERENCE.DEBUG_MODE, !handleGetIsDebugging())}>
         <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
       </button>}
     {isFileSystemApiSupported() &&
       <button className="push-button"
         title={handleGetHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
         onClick={() => {
-          setPreferenceHotReload(!handleGetHotReload())
+          setEmulatorPreference(EMULATOR_PREFERENCE.HOT_RELOAD, !handleGetHotReload())
           props.updateDisplay()
         }}>
         <FontAwesomeIcon icon={handleGetHotReload() ? faEye : faEyeSlash} />

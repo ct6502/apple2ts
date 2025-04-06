@@ -6,15 +6,15 @@ import DebugButtons from "./debugbuttons"
 import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
 import { useState } from "react"
-import { getPreferenceFirstRunMinimal, setPreferenceFirstRunMinimal } from "../localstorage"
+import { EMULATOR_PREFERENCE, getEmulatorPreference, setEmulatorPreference } from "../localstorage"
 
 const ControlPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-  const showHighlight = getPreferenceFirstRunMinimal()
+  const showHighlight = getEmulatorPreference<boolean>(EMULATOR_PREFERENCE.FIRST_RUN_MINIMAL)
 
   const handleFlyoutClick = () => {
     if (showHighlight) {
-      setPreferenceFirstRunMinimal(false)
+      setEmulatorPreference(EMULATOR_PREFERENCE.FIRST_RUN_MINIMAL, false)
     }
 
     setIsFlyoutOpen(!isFlyoutOpen)

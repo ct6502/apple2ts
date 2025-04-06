@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passTheme, passPasteText, passShowScanlines } from "./main2worker"
+import { passPasteText, passMachineState } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 
@@ -13,11 +13,11 @@ export const handleInputParams = () => {
   const { setRunTour } = useGlobalContext()
 
   if (params.get("capslock") === "off") {
-    passCapsLock(false)
+    passMachineState("capsLock", false)
   }
 
   if (params.get("debug") === "on") {
-    passSetDebug(true)
+    passMachineState("isDebugging", true)
   }
 
   const speed = params.get("speed")
@@ -32,7 +32,7 @@ export const handleInputParams = () => {
     ludicrous: 4,
   }
   if (speed && speedMap[speed] !== undefined) {
-    passSpeedMode(speedMap[speed])
+    passMachineState("speedMode", speedMap[speed])
   }
 
   if (params.get("sound") === "off") {
@@ -43,11 +43,11 @@ export const handleInputParams = () => {
   if (colorMode) {
     const colors = ["color", "nofringe", "green", "amber", "white", "inverse"]
     const mode = colors.indexOf(colorMode)
-    if (mode >= 0) passColorMode(mode as COLOR_MODE)
+    if (mode >= 0) passMachineState("colorMode", mode as COLOR_MODE)
   }
 
   if (params.get("scanlines") === "on") {
-    passShowScanlines(true)
+    passMachineState("showScanlines", true)
   }
 
   const ramDisk = params.get("ramdisk")
@@ -55,7 +55,7 @@ export const handleInputParams = () => {
     const sizes = ["64", "512", "1024", "4096", "8192"]
     const index = sizes.indexOf(ramDisk)
     if (index >= 0) {
-      passSetRamWorks(parseInt(sizes[index]))
+      passMachineState("extraRamSize", parseInt(sizes[index]))
     }
   }
 
@@ -63,15 +63,15 @@ export const handleInputParams = () => {
   if (theme) {
     switch (theme.toLocaleLowerCase()) {
       case "classic":
-        passTheme(UI_THEME.CLASSIC)
+        passMachineState("theme", UI_THEME.CLASSIC)
         break
 
       case "dark":
-        passTheme(UI_THEME.DARK)
+        passMachineState("theme", UI_THEME.DARK)
         break
 
       case "minimal":
-        passTheme(UI_THEME.MINIMAL)
+        passMachineState("theme", UI_THEME.MINIMAL)
         break
     }
   }

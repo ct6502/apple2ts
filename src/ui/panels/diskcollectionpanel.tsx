@@ -12,7 +12,7 @@ import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL
 import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
-import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
+import { EMULATOR_PREFERENCE, getEmulatorPreference, setEmulatorPreference } from "../localstorage"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -130,7 +130,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   const handleTabClick = (tabIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     setHasNewRelease(false)
-    setPreferenceNewReleasesChecked(Date.now())
+    setEmulatorPreference(EMULATOR_PREFERENCE.NEW_RELEASES_CHECKED, Date.now())
 
     const element = event.target as HTMLElement
     element.classList.remove("dcp-tab-highlighted")
@@ -145,7 +145,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   useEffect(() => {
     const newDiskCollection: DiskCollectionItem[] = []
-    const newReleasesChecked = new Date(getPreferenceNewReleasesChecked())
+    const newReleasesChecked = new Date(getEmulatorPreference(EMULATOR_PREFERENCE.NEW_RELEASES_CHECKED))
 
     // Load built-in disk images
     diskImages.forEach((diskImage) => {

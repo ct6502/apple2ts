@@ -8,7 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DropdownButton } from "./dropdownbutton"
 import { handleGetSpeedMode } from "../main2worker"
-import { setPreferenceSpeedMode } from "../localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "../localstorage"
 import { snailIcon } from "../img/icon_snail"
 import { turtleIcon } from "../img/icon_turtle"
 
@@ -33,7 +33,7 @@ export const SpeedDropdown = (props: { updateDisplay: UpdateDisplay }) => {
     <DropdownButton 
       currentIndex = {speedMode + 2}
       itemNames = {speedNames}
-      closeCallback = {(index: number) => {setPreferenceSpeedMode(index - 2); props.updateDisplay()}}
+      closeCallback = {(index: number) => {setEmulatorPreference(EMULATOR_PREFERENCE.SPEED_MODE, index - 2); props.updateDisplay()}}
       icon ={icon}
       icons = {icons}
       tooltip = "Emulator Speed"

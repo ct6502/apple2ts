@@ -10,7 +10,7 @@ import Flyout from "../flyout"
 import { faBug } from "@fortawesome/free-solid-svg-icons"
 import { handleGetIsDebugging, handleGetTheme } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
-import { setPreferenceDebugMode } from "../localstorage"
+import { EMULATOR_PREFERENCE, setEmulatorPreference } from "../localstorage"
 
 const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
   const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
@@ -26,7 +26,7 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
       title="debug panel"
       isOpen={handleGetIsDebugging}
       onClick={() => {
-        setPreferenceDebugMode(!handleGetIsDebugging())
+        setEmulatorPreference(EMULATOR_PREFERENCE.DEBUG_MODE, !handleGetIsDebugging())
         props.updateDisplay()
       }}
       buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
