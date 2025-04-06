@@ -13,7 +13,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
   const favicon: { [key: string]: string } = {}
   favicon[iconKey()] = iconData()
   
-  showGlobalProgressModal(true)
+  showGlobalProgressModal(true, "Fetching disk metadata")
   await fetch(iconName() + detailsUrl, { headers: favicon })
     .then(async response => {
       if (response.ok) {

@@ -47,7 +47,7 @@ export class OneDriveCloudDrive implements CloudProvider {
       }
       g_accessToken = result.accessToken
 
-      showGlobalProgressModal(true)
+      showGlobalProgressModal(true, `Downloading disk from ${cloudData.providerName}`)
 
       const response = await fetch(file["@content.downloadUrl"])
       .finally(() => {

@@ -136,7 +136,7 @@ export class GoogleDrive implements CloudProvider {
         detailsUrl: result.webViewLink
       }
       
-      showGlobalProgressModal(true)
+      showGlobalProgressModal(true, `Downloading disk from ${cloudData.providerName}`)
 
       const response = await fetch(cloudData.downloadUrl, {
         headers: {

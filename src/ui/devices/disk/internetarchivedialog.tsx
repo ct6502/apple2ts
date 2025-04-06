@@ -273,7 +273,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
 
-    showGlobalProgressModal(true)
+    showGlobalProgressModal(true, "Fetching query results")
     fetch(queryUrl)
       .then(async response => {
         if (response.ok) {

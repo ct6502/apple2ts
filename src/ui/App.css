@@ -405,6 +405,16 @@ body.dark-mode .divider {
   -webkit-animation: rotate 2s linear infinite;
 }
 
+.global-progress-message {
+  position: absolute;
+  width: 100%;
+  bottom: 15%;
+  text-align: center;
+  color: white;
+  font-family: PrintChar21;
+  font-size: calc(0.75em + 0.75vw);
+}
+
 .dropdown-checkmark {
   font-size: 15pt;
   line-height: 10pt;

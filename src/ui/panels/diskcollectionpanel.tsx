@@ -14,6 +14,7 @@ import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
 import { getTheme } from "../ui_settings"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
+import { showGlobalProgressModal } from "../ui_utilities"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -140,6 +141,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     if (selectedDisks.includes(diskCollectionItem)) {
       selectedDisks.splice(selectedDisks.findIndex(x => x === diskCollectionItem), 1)
     } else {
+      // showGlobalProgressModal(true, "Calculating disk size")
       selectedDisks.push(diskCollectionItem)
     }
     setSelectedDisks(selectedDisks.slice())

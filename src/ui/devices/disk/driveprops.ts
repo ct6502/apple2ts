@@ -168,7 +168,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 
   if (cloudProvider) {
     cloudProvider.requestAuthToken(async (authToken: string) => {
-      showGlobalProgressModal(true)
+      showGlobalProgressModal(true, `Downloading disk from ${cloudProvider.providerName}`)
       const response = await fetch(cloudData.downloadUrl, {
         headers: {
           "Authorization": authToken,
@@ -234,7 +234,7 @@ export const handleSetDiskFromURL = async (url: string,
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
 
-    showGlobalProgressModal(true)
+    showGlobalProgressModal(true, "Downloading disk")
     const response = await fetch(iconName() + url, { headers: favicon })
       .finally(() => {
         showGlobalProgressModal(false)
