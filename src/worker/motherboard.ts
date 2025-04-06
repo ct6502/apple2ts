@@ -1,8 +1,8 @@
 // Chris Torrence, 2022
 import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail, passSoftSwitchDescriptions } from "./worker2main"
-import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, getStackDump, setStackDump, get6502Instructions } from "./instructions"
-import { COLOR_MODE, MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG, UI_THEME } from "../common/utility"
+import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, setStackDump, get6502Instructions, getStackDump } from "./instructions"
+import { MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "../common/utility"
 import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
@@ -89,6 +89,7 @@ export const getApple2State = (): Apple2SaveState => {
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     machineName: machineName,
     softSwitches: getSoftSwitches(),
+    stackDump: getStackDump(),
     memory: membuffer.toString("base64"),
   }
 }
@@ -137,6 +138,10 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
     // the RamWorks is mostly filled with 0xFF's.
     memory.set(newmemory)
   }
+  // This was added to Apple2SaveState later
+  if (newState.stackDump) {
+    setStackDump(newState.stackDump)
+  }
   // Machine name might not be in older save states, so use a default in that case.
   machineName = newState.machineName || "APPLE2EE"
   doSetMachineName(machineName, false)
@@ -145,31 +150,9 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
   handleGameSetup(true)
 }
 
-const getDisplaySaveState = () => {
-  // These will actually get filled in by the main thread,
-  // but we need to have them here to return the correct type.
-  const displayState: DisplaySaveState = {
-    name: "",
-    date: "",
-    version: 0.0,
-    arrowKeysAsJoystick: true,
-    colorMode: 0,
-    showScanlines: false,
-    capsLock: false,
-    audioEnable: false,
-    mockingboardMode: 0,
-    speedMode: 0,
-    helptext: "",
-    isDebugging: false,
-    runMode: RUN_MODE.IDLE,
-    breakpoints: breakpointMap,
-    stackDump: getStackDump()
-  }
-  return displayState
-}
-
 export const doGetSaveState = (full: boolean): EmulatorSaveState => {
-  const state = { emulator: getDisplaySaveState(),
+  const state = {
+    emulator: null,  // filled in by UI thread
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
     thumbnail: "",
@@ -202,9 +185,6 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
   // but this gives us a number to key off of.
   const version = sState.emulator?.version ? sState.emulator.version : 0.9
   setApple2State(sState.state6502, version)
-  if (sState.emulator?.stackDump) {
-    setStackDump(sState.emulator.stackDump)
-  }
   restoreDriveSaveState(sState.driveState)
   if (eraseSnapshots) {
     saveStates.length = 0
@@ -561,21 +541,15 @@ const updateExternalMachineState = () => {
   const state: MachineState = {
     addressGetTable: addressGetTable,
     altChar: SWITCHES.ALTCHARSET.isSet,
-    arrowKeysAsJoystick: true,  // ignored by main thread
     breakpoints: breakpointMap,
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
     canGoBackward: getGoBackwardIndex() >= 0,
     canGoForward: getGoForwardIndex() >= 0,
-    capsLock: true,  // ignored by main thread
     c800Slot: C800SlotGet(),
-    colorMode: COLOR_MODE.COLOR,  // ignored by main thread
-    showScanlines: false,
     cout: memGet(0x0039) << 8 | memGet(0x0038),
     cpuSpeed: cpuSpeed,
-    theme: UI_THEME.CLASSIC,  // ignored by main thread
     extraRamSize: 64 * (RamWorksMaxBank + 1),
-    helpText: "",  // ignored by main thread
     hires: getHires(),
     iTempState: iTempState,
     isDebugging: isDebugging,
@@ -591,10 +565,6 @@ const updateExternalMachineState = () => {
     stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
-    useOpenAppleKey: false,  // ignored by main thread,
-    hotReload: false,
-    touchJoystickMode: "off",
-    touchJoystickSensitivity: 2
   }
   passMachineState(state)
 }

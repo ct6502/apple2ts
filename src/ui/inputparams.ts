@@ -1,8 +1,9 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passCapsLock, passSetDebug, passSpeedMode, passColorMode, passSetRamWorks, passTheme, passPasteText, passShowScanlines } from "./main2worker"
+import { passSetDebug, passSpeedMode, passSetRamWorks, passPasteText } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
+import { setCapsLock, setColorMode, setShowScanlines, setTheme } from "./ui_settings"
 
 export const handleInputParams = () => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -13,7 +14,7 @@ export const handleInputParams = () => {
   const { setRunTour } = useGlobalContext()
 
   if (params.get("capslock") === "off") {
-    passCapsLock(false)
+    setCapsLock(false)
   }
 
   if (params.get("debug") === "on") {
@@ -43,11 +44,11 @@ export const handleInputParams = () => {
   if (colorMode) {
     const colors = ["color", "nofringe", "green", "amber", "white", "inverse"]
     const mode = colors.indexOf(colorMode)
-    if (mode >= 0) passColorMode(mode as COLOR_MODE)
+    if (mode >= 0) setColorMode(mode as COLOR_MODE)
   }
 
   if (params.get("scanlines") === "on") {
-    passShowScanlines(true)
+    setShowScanlines(true)
   }
 
   const ramDisk = params.get("ramdisk")
@@ -63,15 +64,15 @@ export const handleInputParams = () => {
   if (theme) {
     switch (theme.toLocaleLowerCase()) {
       case "classic":
-        passTheme(UI_THEME.CLASSIC)
+        setTheme(UI_THEME.CLASSIC)
         break
 
       case "dark":
-        passTheme(UI_THEME.DARK)
+        setTheme(UI_THEME.DARK)
         break
 
       case "minimal":
-        passTheme(UI_THEME.MINIMAL)
+        setTheme(UI_THEME.MINIMAL)
         break
     }
   }

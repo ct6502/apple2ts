@@ -8,12 +8,8 @@ import {
   passMouseEvent,
   passPasteText,
   handleGetShowMouse,
-  handleGetCapsLock,
   handleGetRunMode,
   handleGetCout,
-  handleUseOpenAppleKey,
-  handleGetShowScanlines,
-  handleGetTheme,
   handleGetIsDebugging,
   passKeyRelease,
 } from "./main2worker"
@@ -27,6 +23,7 @@ import { handleFileSave } from "./savestate"
 import bgImage from "./img/crt.jpg"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
+import { getUseOpenAppleKey, getCapsLock, getTheme, getShowScanlines } from "./ui_settings"
 
 
 let width = 800
@@ -105,22 +102,22 @@ const Apple2Canvas = (props: DisplayProps) => {
   const isMac = navigator.platform.startsWith("Mac")
 
   const isOpenAppleDown = (e: keyEvent) => {
-    const useOpenAppleKey = handleUseOpenAppleKey()
+    const useOpenAppleKey = getUseOpenAppleKey()
     return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft")
   }
 
   const isOpenAppleUp = (e: keyEvent) => {
-    const useOpenAppleKey = handleUseOpenAppleKey()
+    const useOpenAppleKey = getUseOpenAppleKey()
     return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft")
   }
 
   const isClosedAppleDown = (e: keyEvent) => {
-    const useOpenAppleKey = handleUseOpenAppleKey()
+    const useOpenAppleKey = getUseOpenAppleKey()
     return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight")
   }
 
   const isClosedAppleUp = (e: keyEvent) => {
-    const useOpenAppleKey = handleUseOpenAppleKey()
+    const useOpenAppleKey = getUseOpenAppleKey()
     return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight")
   }
 
@@ -160,7 +157,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (e.key >= "0" && e.key <= "9" && e.ctrlKey) {
       return true
     }
-    if (handleUseOpenAppleKey()) {
+    if (getUseOpenAppleKey()) {
       return false
     }
     if (isMac) {
@@ -208,7 +205,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    const capsLock = handleGetCapsLock()
+    const capsLock = getCapsLock()
     const key = convertAppleKey(e, capsLock, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
       passKeypress(key)
@@ -410,7 +407,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     let scanlinesTop = canvas.offsetTop + height * ymargin
 
     if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
-      if (handleGetTheme() == UI_THEME.MINIMAL) {
+      if (getTheme() == UI_THEME.MINIMAL) {
         scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
         scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 10
 
@@ -470,7 +467,7 @@ const Apple2Canvas = (props: DisplayProps) => {
             handleCanvasResize(entry.target as HTMLCanvasElement)
           }
         }).observe(canvas)
-        document.body.style.setProperty("--scanlines-display", handleGetShowScanlines() ? "block" : "none")
+        document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
 
         RenderCanvas()
       } else {
@@ -492,7 +489,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme;

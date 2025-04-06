@@ -2,9 +2,9 @@ import { useState } from "react"
 import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
-import { handleGetTheme } from "./main2worker"
 import { UI_THEME } from "../common/utility"
 import runningGuy from "./img/runningGuy.gif"
+import { getTheme } from "./ui_settings"
 
 const App = () => {
   const [updateHgr, setUpdateHgr] = useState(false)
@@ -14,7 +14,7 @@ const App = () => {
   const [tourIndex, setTourIndex] = useState(0)
 
   window.setTimeout(() => {
-    if (handleGetTheme() == UI_THEME.MINIMAL) {
+    if (getTheme() == UI_THEME.MINIMAL) {
       import("./App.minimal.css")
     }
   }, 1)

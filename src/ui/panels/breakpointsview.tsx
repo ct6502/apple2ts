@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { handleGetBreakpoints, passBreakpoints } from "../main2worker"
+import { handleGetBreakpoints, handleGetRunMode, passBreakpoints } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPencil as iconBreakpointEdit,
@@ -15,7 +15,7 @@ import { getLineOfDisassembly, setDisassemblyAddress, setDisassemblyVisibleMode 
 import BreakpointEdit from "./breakpointedit"
 import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "../../common/breakpoint"
 import { useGlobalContext } from "../globalcontext"
-import { DISASSEMBLE_VISIBLE } from "../../common/utility"
+import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../common/utility"
 
 const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
@@ -27,6 +27,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const [showBreakpointEdit, setShowBreakpointEdit] = useState(false)
 
   const handleAddressClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (handleGetRunMode() !== RUN_MODE.PAUSED) return
     const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     if (addr >= 0) {
       if (getLineOfDisassembly(addr) < 0) {
@@ -163,7 +164,9 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
                 onClick={(e) => { handleBreakpointDelete(e) }}>
                 <FontAwesomeIcon icon={iconBreakpointDelete} style={{ fontSize: "1.3em" }} />
               </button>
-              <span style={{cursor: "pointer", userSelect: "none"}} data-key={bp.address} onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
+              <span style={{cursor: handleGetRunMode() === RUN_MODE.PAUSED ? "pointer" : "default", userSelect: "none"}}
+                data-key={bp.address}
+                onClick={handleAddressClick}>{getBreakpointString(bp)}</span>
             </div>
           ))}
         </div>

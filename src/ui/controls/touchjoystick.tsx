@@ -1,8 +1,7 @@
 import { useState } from "react"
 import "./touchjoystick.css"
-import { handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity } from "../main2worker"
-import { getPreferenceTiltSensorJoystick } from "../localstorage"
 import { clearCustomGamepad, setCustomGamepad } from "../devices/gamepad"
+import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
 
 
 let oldBeta = 0
@@ -15,12 +14,12 @@ let tiltSensorLoaded = false
 
 export const TouchJoystick = () => {
 
-  const touchjoystickMode = handleGetTouchJoyStickMode()
+  const touchjoystickMode = getTouchJoyStickMode()
   const isSouthpaw = touchjoystickMode === "left"
   const [eventCounter, setEventCounter] = useState<number>(0)
 
   const doSetCustomGamepad = (buttons: boolean[] | null, axes: number[] | null) => {
-    if (handleGetTouchJoyStickMode() === "off") {
+    if (getTouchJoyStickMode() === "off") {
       clearCustomGamepad()
       return
     }
@@ -29,7 +28,7 @@ export const TouchJoystick = () => {
 
   const deviceOrientationEvent = (event: DeviceOrientationEvent) => {
     if (event.beta === null || event.gamma === null) return
-    const useTiltSensor = getPreferenceTiltSensorJoystick()
+    const useTiltSensor = getTiltSensorJoystick()
     if (!useTiltSensor) return
 
     if (Math.abs(oldBeta - event.beta) < 1 || Math.abs(oldGamma - event.gamma) < 1) {
@@ -74,7 +73,7 @@ export const TouchJoystick = () => {
     event.preventDefault()
 
     setEventCounter(eventCounter + 1)
-    if (eventCounter % handleGetTouchJoystickSensitivity() != 0)
+    if (eventCounter % getTouchJoystickSensitivity() != 0)
       return
 
     const currentTarget = event.currentTarget as HTMLElement

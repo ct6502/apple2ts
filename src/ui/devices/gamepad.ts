@@ -1,5 +1,6 @@
 import { ARROW } from "../../common/utility"
-import { handleGetArrowKeysAsJoystick, passKeypress, passKeyRelease, passSetGamepads } from "../main2worker"
+import { passKeypress, passKeyRelease, passSetGamepads } from "../main2worker"
+import { getArrowKeysAsJoystick } from "../ui_settings"
 import { CustomGamepad } from "./customgamepad"
 
 // Keep these outside so we can have both X and Y axes set at the same time.
@@ -69,7 +70,7 @@ export const checkGamepad = () => {
   const gamepads = getGamepads()
   // If we don't have a gamepad, see if we're using our arrow keys as a joystick
   if (!gamepads || gamepads.length < 1) {
-    if (handleGetArrowKeysAsJoystick() && arrowGamePad[0] !== 0 || arrowGamePad[1] !== 0) {
+    if (getArrowKeysAsJoystick() && arrowGamePad[0] !== 0 || arrowGamePad[1] !== 0) {
       checkArrowKeyGamepadValues()
     }  
     return
@@ -108,7 +109,7 @@ export const doRumble = (params: GamePadActuatorEffect) => {
 export const handleArrowKey = (key: ARROW, release: boolean) => {
   if (!release) {
     let code = 0
-    if (handleGetArrowKeysAsJoystick()) {
+    if (getArrowKeysAsJoystick()) {
       switch (key) {
         case ARROW.LEFT:
           code = 8

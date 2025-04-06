@@ -7,9 +7,6 @@ import {
   doOnMessage,
   setMain2Worker,
   handleGetMemSize,
-  passHelpText,
-  handleGetHelpText,
-  handleGetTheme,
   passSetRunMode
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
@@ -26,6 +23,7 @@ import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
+import { getHelpText, getTheme, setHelpText } from "./ui_settings"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -55,7 +53,7 @@ const DisplayApple2 = () => {
 
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = "") => {
     if (newhelptext && newhelptext.length > 1) {
-      passHelpText(newhelptext)
+      setHelpText(newhelptext)
     }
     if (speed && speed !== currentSpeed) {
       setCurrentSpeed(speed)
@@ -148,7 +146,7 @@ const DisplayApple2 = () => {
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
 
-  const theme = handleGetTheme()
+  const theme = getTheme()
   handleSetTheme(theme)
 
   const isMinimalTheme = theme == UI_THEME.MINIMAL
@@ -187,7 +185,7 @@ const DisplayApple2 = () => {
         {narrow && !isMinimalTheme && <div className="divider"></div>}
         <span className="flex-column">
           {(handleGetIsDebugging() || isMinimalTheme) && <DebugSection updateDisplay={updateDisplay} />}
-          {(!handleGetIsDebugging() || isMinimalTheme) && <HelpPanel narrow={narrow} helptext={handleGetHelpText()} />}
+          {(!handleGetIsDebugging() || isMinimalTheme) && <HelpPanel narrow={narrow} helptext={getHelpText()} />}
         </span>
       </span>
       {isMinimalTheme && <DiskCollectionPanel {...props} />}

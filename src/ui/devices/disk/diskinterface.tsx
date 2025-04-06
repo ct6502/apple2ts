@@ -5,13 +5,13 @@ import { faHdd } from "@fortawesome/free-solid-svg-icons"
 import { useState } from "react"
 import { UI_THEME } from "../../../common/utility"
 import Flyout from "../../flyout"
-import { handleGetTheme } from "../../main2worker"
 import ImageWriter from "../printer/imagewriter"
+import { getTheme } from "../../ui_settings"
 
 const DiskInterface = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(true)
 
-  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const isScreenNarrow = width < height

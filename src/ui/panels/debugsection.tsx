@@ -8,12 +8,13 @@ import MemoryMap from "./memorymap"
 import StackDump from "./stackdump"
 import Flyout from "../flyout"
 import { faBug } from "@fortawesome/free-solid-svg-icons"
-import { handleGetIsDebugging, handleGetTheme } from "../main2worker"
+import { handleGetIsDebugging } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
+import { getTheme } from "../ui_settings"
 
 const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
-  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
 
   if (isMinimalTheme) {
     import("./debugsection.minimal.css")

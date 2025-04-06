@@ -12,12 +12,13 @@ import React from "react"
 import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, RUN_MODE, uint32toBytes } from "../../../common/utility"
 import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
-import { passSetDriveProps, handleGetHotReload, passSetRunMode } from "../../main2worker"
+import { passSetDriveProps, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { imageList } from "./assets"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
+import { getHotReload } from "../../ui_settings"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
 
@@ -163,7 +164,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     const timer = setInterval(async (index: number) => {
       const dprops = handleGetDriveProps(index)
 
-      if (handleGetHotReload()) {
+      if (getHotReload()) {
         const file = await writableFileHandle.getFile()
         if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
           handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)

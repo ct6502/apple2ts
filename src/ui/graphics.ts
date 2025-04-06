@@ -1,10 +1,10 @@
 import { handleGetAltCharSet, handleGetTextPage,
-  handleGetLores, handleGetHires, handleGetNoDelayMode, handleGetColorMode, passSetSoftSwitches, 
-  handleGetTheme,
+  handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetIsDebugging} from "./main2worker"
 import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME } from "../common/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
+import { getColorMode, getTheme } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
 let frameCount = 0
 
@@ -287,7 +287,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
-  const colorMode = handleGetColorMode()
+  const colorMode = getColorMode()
   // If we are only doing text output, we will draw directly onto our canvas,
   // and do not need to use the hidden canvas with drawImage.
   const textOnly = processTextPage(ctx, hiddenContext, colorMode, width, height)
@@ -342,7 +342,7 @@ export const getCanvasSize = () => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  if (handleGetTheme() == UI_THEME.MINIMAL) {
+  if (getTheme() == UI_THEME.MINIMAL) {
     const isTouchDevice = "ontouchstart" in document.documentElement
     const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
     if (isLandscape) {

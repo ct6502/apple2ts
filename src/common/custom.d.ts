@@ -56,6 +56,7 @@ type Apple2SaveState = {
   extraRamSize: number,
   machineName: MACHINE_NAME,
   softSwitches: {[name: string]: boolean},
+  stackDump: Array<string>,
   memory: string
 }
 
@@ -82,21 +83,15 @@ type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
-  arrowKeysAsJoystick: boolean,
   breakpoints: BreakpointMap,
   button0: boolean,
   button1: boolean,
   c800Slot: number,
   canGoBackward: boolean,
   canGoForward: boolean,
-  capsLock: boolean,
-  colorMode: COLOR_MODE,
-  showScanlines: boolean,
   cout: number,
   cpuSpeed: number,
-  theme: UI_THEME,
   extraRamSize: number,
-  helpText: string,
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,
@@ -112,10 +107,20 @@ type MachineState = {
   stackString: string,
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
-  useOpenAppleKey: boolean,
+}
+
+type UIState = {
+  arrowKeysAsJoystick: boolean,
+  capsLock: boolean,
+  colorMode: COLOR_MODE,
+  helpText: string,
   hotReload: boolean,
+  showScanlines: boolean,
+  theme: UI_THEME,
+  tiltSensorJoystick: boolean,
   touchJoystickMode: TOUCH_JOYSTICK_MODE,
-  touchJoystickSensitivity: number
+  touchJoystickSensitivity: number,
+  useOpenAppleKey: boolean,
 }
 
 type CloudData = {
@@ -184,26 +189,20 @@ type DriveSaveState = {
   driveData: string[]
 }
 
-type DisplaySaveState = {
+type DisplaySaveState = UIState & {
   name: string,
   date: string,
   version: number,
-  arrowKeysAsJoystick: boolean,
-  colorMode: number,
-  showScanlines: boolean,
-  capsLock: boolean,
   audioEnable: boolean,
   mockingboardMode: number,
   speedMode: number,
-  helptext: string,
   isDebugging: boolean,
   runMode: RUN_MODE,
   breakpoints: BreakpointMap,
-  stackDump: Array<string>,
 }
 
 type EmulatorSaveState = {
-  emulator: DisplaySaveState,
+  emulator: DisplaySaveState | null,
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
   thumbnail: string,

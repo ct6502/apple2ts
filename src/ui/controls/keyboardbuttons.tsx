@@ -1,4 +1,5 @@
-import { handleGetLeftButton, handleGetRightButton, handleGetTheme, handleGetTouchJoyStickMode, handleGetTouchJoystickSensitivity, passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress } from "../main2worker"
+import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress,
+  passAppleCommandKeyRelease, passKeypress } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
@@ -13,7 +14,8 @@ import { appleSolid } from "../img/icon_applesolid"
 import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
-import { getPreferenceTiltSensorJoystick, setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
+import { setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
+import { getTheme, getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -73,7 +75,7 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
       <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
     </button>
-    { handleGetTheme() == UI_THEME.MINIMAL &&
+    { getTheme() == UI_THEME.MINIMAL &&
       <button title="Touch Joystick"
         className="push-button"
         onMouseDown={(event: React.MouseEvent) => setPopupLocation([event.clientX, event.clientY])}>
@@ -101,41 +103,41 @@ const KeyboardButtons = (props: DisplayProps) => {
       menuItems={[[
         {
           label: "Disabled",
-          isSelected: () => { return handleGetTouchJoyStickMode() === "off" },
+          isSelected: () => { return getTouchJoyStickMode() === "off" },
           onClick: () => { setPreferenceTouchJoystickMode("off"); props.updateDisplay() }
         },
         {
           label: "Enabled: Right-Handed",
-          isSelected: () => { return handleGetTouchJoyStickMode() === "right" },
+          isSelected: () => { return getTouchJoyStickMode() === "right" },
           onClick: () => { setPreferenceTouchJoystickMode("right"); props.updateDisplay() }
         },
         {
           label: "Enabled: Left-Handed",
-          isSelected: () => { return handleGetTouchJoyStickMode() === "left" },
+          isSelected: () => { return getTouchJoyStickMode() === "left" },
           onClick: () => { setPreferenceTouchJoystickMode("left"); props.updateDisplay() }
         },
         { label: "-" },
         {
           label: "Sensitivity: High",
-          isSelected: () => { return handleGetTouchJoystickSensitivity() == 1 },
+          isSelected: () => { return getTouchJoystickSensitivity() == 1 },
           onClick: () => { setPreferenceTouchJoystickSensitivity(1) }
         },
         {
           label: "Sensitivity: Normal",
-          isSelected: () => { return handleGetTouchJoystickSensitivity() == 2 },
+          isSelected: () => { return getTouchJoystickSensitivity() == 2 },
           onClick: () => { setPreferenceTouchJoystickSensitivity(2) }
         },
         {
           label: "Sensitivity: Low",
-          isSelected: () => { return handleGetTouchJoystickSensitivity() == 3 },
+          isSelected: () => { return getTouchJoystickSensitivity() == 3 },
           onClick: () => { setPreferenceTouchJoystickSensitivity(3) }
         },
         { label: "-" },
         {
           label: "Use Tilt Sensor as Joystick",
-          isSelected: () => { return getPreferenceTiltSensorJoystick() },
+          isSelected: () => { return getTiltSensorJoystick() },
           onClick: () => {
-            let turningOn = !getPreferenceTiltSensorJoystick()
+            let turningOn = !getTiltSensorJoystick()
             if (turningOn) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               if (typeof((DeviceOrientationEvent as any).requestPermission) === "function") {

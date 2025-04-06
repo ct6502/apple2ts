@@ -8,13 +8,6 @@ import {
   faSync,
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
-import {
-  handleGetArrowKeysAsJoystick,
-  handleGetCapsLock, handleGetTheme,
-  handleUseOpenAppleKey,
-  passArrowKeysAsJoystick,
-  passUseOpenAppleKey
-} from "../main2worker"
 import { MachineConfig } from "../devices/machineconfig"
 import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
@@ -27,6 +20,7 @@ import { MockingboardWaveform } from "../devices/audio/mockingboardwaveform"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
+import { getCapsLock, getArrowKeysAsJoystick, getUseOpenAppleKey, setUseOpenAppleKey, setArrowKeysAsJoystick, getTheme } from "../ui_settings"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -34,9 +28,9 @@ const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 
 const ConfigButtons = (props: DisplayProps) => {
-  const capsLock = handleGetCapsLock()
-  const arrowKeysAsJoystick = handleGetArrowKeysAsJoystick()
-  const useOpenAppleKey = handleUseOpenAppleKey()
+  const capsLock = getCapsLock()
+  const arrowKeysAsJoystick = getArrowKeysAsJoystick()
+  const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -69,7 +63,7 @@ const ConfigButtons = (props: DisplayProps) => {
       {!isTouchDevice &&
         <button className="push-button"
           title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
-          onClick={() => { passUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
+          onClick={() => { setUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
           {useOpenAppleKey ?
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
@@ -79,7 +73,7 @@ const ConfigButtons = (props: DisplayProps) => {
       {!isTouchDevice &&
         <button className="push-button" style={{ position: "relative" }}
           title={`Use Arrow Keys as Joystick (${arrowKeysAsJoystick ? "on" : "off"})`}
-          onClick={() => { passArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
+          onClick={() => { setArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
           <FontAwesomeIcon icon={faUpDownLeftRight} style={arrowKeysAsJoystick ? {} : { transform: "translateX(50%)" }} />
           {!arrowKeysAsJoystick && <FontAwesomeIcon style={{ transform: "translateX(-50%)", width: "80%" }} icon={faSlash} />}
         </button>
@@ -96,7 +90,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <button className="push-button"
       id="tour-theme-button"
-      title={`${themeToName(handleGetTheme())} Theme`}
+      title={`${themeToName(getTheme())} Theme`}
       onClick={handleClick}>
       <FontAwesomeIcon icon={faPalette} />
     </button>
@@ -107,9 +101,9 @@ const ConfigButtons = (props: DisplayProps) => {
       menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, i) => {
         return {
           label: themeToName(i),
-          isSelected: () => { return i == handleGetTheme() },
+          isSelected: () => { return i == getTheme() },
           onClick: () => {
-            if (i >= 0 && i != handleGetTheme()) {
+            if (i >= 0 && i != getTheme()) {
               if (window.confirm("Reload the emulator and apply this theme now?")) {
                 setPreferenceTheme(i)
                 const url = new URL(window.location.href)

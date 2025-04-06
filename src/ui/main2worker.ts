@@ -1,4 +1,5 @@
-import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN, MouseEventSimple, default6502State, COLOR_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
+import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
+  MouseEventSimple, default6502State, TEST_DEBUG } from "../common/utility"
 import { getStartupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -11,6 +12,7 @@ import { playMockingboard } from "./devices/audio/mockingboard_audio"
 import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
+import { getHelpText } from "./ui_settings"
 
 let worker: Worker | null = null
 
@@ -60,54 +62,6 @@ export const passSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
   // Force the state right away, so the UI can update.
   machineState.speedMode = mode
-}
-
-export const passColorMode = (mode: COLOR_MODE) => {
-  // Currently the emulator doesn't care about color mode.
-  // Just set it directly on our machine state for later retrieval.
-  // Somewhat roundabout but it keeps all the properties in one place.
-  machineState.colorMode = mode
-}
-
-export const passShowScanlines = (mode: boolean) => {
-  machineState.showScanlines = mode
-}
-
-export const passCapsLock = (lock: boolean) => {
-  // See comment under passColorMode
-  machineState.capsLock = lock
-}
-
-export const passTheme = (theme: UI_THEME) => {
-  // See comment under passColorMode
-  machineState.theme = theme
-}
-
-export const passArrowKeysAsJoystick = (joystick: boolean) => {
-  // See comment under passColorMode
-  machineState.arrowKeysAsJoystick = joystick
-}
-
-export const passUseOpenAppleKey = (openApple: boolean) => {
-  // See comment under passColorMode
-  machineState.useOpenAppleKey = openApple
-}
-
-export const passHelpText = (helptext: string) => {
-  // See comment under passColorMode
-  machineState.helpText = helptext
-}
-
-export const passHotReload = (mode: boolean) => {
-  machineState.hotReload = mode
-}
-
-export const passTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE) => {
-  machineState.touchJoystickMode = mode
-}
-
-export const passTouchJoystickSensitivity = (sensitivity: number) => {
-  machineState.touchJoystickSensitivity = sensitivity
 }
 
 export const passGoForwardInTime = () => {
@@ -226,21 +180,15 @@ export const passSetDriveProps = (props: DriveProps) => {
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
-  arrowKeysAsJoystick: true,
   breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
   c800Slot: 255,
   canGoBackward: true,
   canGoForward: true,
-  capsLock: true,
-  colorMode: COLOR_MODE.COLOR,
-  showScanlines: false,
   cout: 0,
   cpuSpeed: 0,
-  theme: UI_THEME.CLASSIC,
   extraRamSize: 64,
-  helpText: "",
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
   iTempState: 0,
@@ -256,10 +204,6 @@ let machineState: MachineState = {
   stackString: "",
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
-  useOpenAppleKey: false,
-  hotReload: false,
-  touchJoystickMode: "off",
-  touchJoystickSensitivity: 2
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -269,20 +213,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       if (machineState.runMode !== newState.runMode) {
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
-      // This is a hack because the main thread owns these properties.
-      // Force them back to their actual values.
-      newState.arrowKeysAsJoystick = machineState.arrowKeysAsJoystick
-      newState.colorMode = machineState.colorMode
-      newState.showScanlines = machineState.showScanlines
-      newState.capsLock = machineState.capsLock
-      newState.theme = machineState.theme
-      newState.helpText = machineState.helpText
-      newState.useOpenAppleKey = machineState.useOpenAppleKey
-      newState.hotReload = machineState.hotReload
-      newState.touchJoystickMode = machineState.touchJoystickMode
-      newState.touchJoystickSensitivity = machineState.touchJoystickSensitivity
       machineState = newState
-      return {speed: machineState.cpuSpeed, helptext: machineState.helpText}
+      const helpText = getHelpText()
+      return {speed: machineState.cpuSpeed, helptext: helpText}
     }
     case MSG_WORKER.SAVE_STATE: {
       const sState = e.data.payload as EmulatorSaveState
@@ -463,30 +396,6 @@ export const handleGetTimeTravelThumbnails = () => {
   return machineState.timeTravelThumbnails
 }
 
-export const handleGetColorMode = () => {
-  return machineState.colorMode
-}
-
-export const handleGetShowScanlines = () => {
-  return machineState.showScanlines
-}
-
-export const handleGetCapsLock = () => {
-  return machineState.capsLock
-}
-
-export const handleGetTheme = () => {
-  return machineState.theme
-}
-
-export const handleGetArrowKeysAsJoystick = () => {
-  return machineState.arrowKeysAsJoystick
-}
-
-export const handleUseOpenAppleKey = () => {
-  return machineState.useOpenAppleKey
-}
-
 export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,
   withSnapshots: boolean) => {
   saveStateCallback = callback
@@ -497,10 +406,6 @@ export const handleGetMemSize = () => {
   return machineState.extraRamSize
 }
 
-export const handleGetHelpText = () => {
-  return machineState.helpText
-}
-
 export const handleGetMachineName = () => {
   return machineState.machineName
 }
@@ -508,16 +413,3 @@ export const handleGetMachineName = () => {
 export const handleGetSoftSwitchDescriptions = () => {
   return softSwitchDescriptions
 }
-
-export const handleGetHotReload = () => {
-  return machineState.hotReload
-}
-
-export const handleGetTouchJoyStickMode = () => {
-  return machineState.touchJoystickMode
-}
-
-export const handleGetTouchJoystickSensitivity = () => {
-  return machineState.touchJoystickSensitivity
-}
-

@@ -5,15 +5,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons"
-import { handleGetColorMode, handleGetShowScanlines } from "../main2worker"
 import { setPreferenceColorMode, setPreferenceShowScanlines } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
+import { getColorMode, getShowScanlines } from "../ui_settings"
 
 export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
-  const colorMode = handleGetColorMode()
-  const showScanlines = handleGetShowScanlines()
+  const colorMode = getColorMode()
+  const showScanlines = getShowScanlines()
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 

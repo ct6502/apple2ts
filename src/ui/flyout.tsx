@@ -1,8 +1,8 @@
 import "./flyout.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCircleArrowDown, faCircleArrowUp, IconDefinition } from "@fortawesome/free-solid-svg-icons"
-import { handleGetTheme } from "./main2worker"
 import { UI_THEME } from "../common/utility"
+import { getTheme } from "./ui_settings"
 
 const flyoutButtonWidth = "max( 8vw, 72px )"
 
@@ -20,7 +20,7 @@ const Flyout = (props: {
 }) => {
   const className = `flyout-${props.position}`
   const isFlyoutOpen = props.isOpen && props.isOpen()
-  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
 
   if (isMinimalTheme) {
     import("./flyout.minimal.css")
@@ -56,7 +56,7 @@ const Flyout = (props: {
         width: isMinimalTheme && !isFlyoutOpen ? flyoutButtonWidth : props.width,
         opacity: isMinimalTheme && !isFlyoutOpen ? "33%" : "100%"
       }}>
-      {isTopPosition() && (isFlyoutOpen || handleGetTheme() != UI_THEME.MINIMAL) ? props.children : ""}
+      {isTopPosition() && (isFlyoutOpen || getTheme() != UI_THEME.MINIMAL) ? props.children : ""}
       <div
         id={props.buttonId ?? ""}
         className="flyout-button"
@@ -68,7 +68,7 @@ const Flyout = (props: {
         }}>
         <FontAwesomeIcon icon={getArrowIcon()}></FontAwesomeIcon>
       </div>
-      {!isTopPosition() && (isFlyoutOpen || handleGetTheme() != UI_THEME.MINIMAL) ? props.children : ""}
+      {!isTopPosition() && (isFlyoutOpen || getTheme() != UI_THEME.MINIMAL) ? props.children : ""}
     </div>
   )
 }

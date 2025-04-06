@@ -1,8 +1,6 @@
 import {
   passGoBackInTime, passGoForwardInTime,
   handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode,
-  handleGetTheme,
-  handleGetHotReload
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -22,6 +20,7 @@ import { handleFileSave } from "../savestate"
 import { setPreferenceDebugMode, setPreferenceHotReload } from "../localstorage"
 import { RUN_MODE, UI_THEME } from "../../common/utility"
 import { isFileSystemApiSupported } from "../ui_utilities"
+import { getTheme, getHotReload } from "../ui_settings"
 
 const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
@@ -64,7 +63,7 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {handleGetTheme() != UI_THEME.MINIMAL &&
+    {getTheme() != UI_THEME.MINIMAL &&
       <button className="push-button" id="tour-debug-button"
         title="Toggle Debug"
         onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
@@ -72,12 +71,12 @@ const DebugButtons = (props: DisplayProps) => {
       </button>}
     {isFileSystemApiSupported() &&
       <button className="push-button"
-        title={handleGetHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
+        title={getHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
         onClick={() => {
-          setPreferenceHotReload(!handleGetHotReload())
+          setPreferenceHotReload(!getHotReload())
           props.updateDisplay()
         }}>
-        <FontAwesomeIcon icon={handleGetHotReload() ? faEye : faEyeSlash} />
+        <FontAwesomeIcon icon={getHotReload() ? faEye : faEyeSlash} />
       </button>}
   </span>
 }

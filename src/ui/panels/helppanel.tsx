@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react"
-import { handleGetTheme } from "../main2worker"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
 import Flyout from "../flyout"
 import { faNoteSticky } from "@fortawesome/free-solid-svg-icons"
 import { crc32, UI_THEME } from "../../common/utility"
+import { getTheme } from "../ui_settings"
 
 type HelpPanelProps = {
   narrow: boolean,
@@ -22,8 +22,8 @@ const HelpPanel = React.memo((props: HelpPanelProps) => {
 
   const height = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
-  const isDarkMode = handleGetTheme() == UI_THEME.DARK
-  const isMinimalTheme = handleGetTheme() == UI_THEME.MINIMAL
+  const isDarkMode = getTheme() == UI_THEME.DARK
+  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
 
   if (isMinimalTheme) {
     import("./helppanel.minimal.css")
