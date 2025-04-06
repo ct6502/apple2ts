@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -13,6 +13,7 @@ import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
 import { getTheme } from "../ui_settings"
+import { faCircle } from "@fortawesome/free-regular-svg-icons"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -51,6 +52,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [popupItem, setPopupItem] = useState<DiskCollectionItem>()
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
+  const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
 
   let longPressTimer: number
 
@@ -72,7 +74,13 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       label: "Show favorites",
       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
       isHighlighted: false
-    }
+    },
+    {
+       icon: faDownload,
+       label: "Export disks to .hdv",
+       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv")),
+       isHighlighted: false
+     }
   ]
 
   const handleHelpClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
@@ -125,6 +133,17 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       setDiskBookmarks(new DiskBookmarks())
     }
 
+    event.stopPropagation()
+  }
+
+  const handleSelectedClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+    if (selectedDisks.includes(diskCollectionItem)) {
+      selectedDisks.splice(selectedDisks.findIndex(x => x === diskCollectionItem), 1)
+    } else {
+      selectedDisks.push(diskCollectionItem)
+    }
+    setSelectedDisks(selectedDisks.slice())
+    
     event.stopPropagation()
   }
 
@@ -242,14 +261,24 @@ const DiskCollectionPanel = (props: DisplayProps) => {
                   viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
                 <div className="dcp-item-ia-icon-bg">&nbsp;</div>
               </div>}
-            {diskCollectionItem.bookmarkId &&
-              <div
-                className="dcp-item-bookmark" title="Click to remove from disk collection" onClick={handleBookmarkClick(diskCollectionItem)}>
-                <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
-              </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
               <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
                 <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => event.stopPropagation()} />
+              </div>}
+              {activeTab == 2 && diskCollectionItem.bookmarkId &&
+              <div
+                className="dcp-item-bookmark"
+                title="Click to remove from disk collection"
+                onClick={handleBookmarkClick(diskCollectionItem)}>
+                <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
+              </div>}
+            {activeTab == 3 &&
+              <div
+                className="dcp-item-select"
+                title="Click to remove from disk collection"
+                onClick={handleSelectedClick(diskCollectionItem)}>
+                <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} className="dcp-item-select-icon"/>
+                {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
               </div>}
           </div>
         ))}
