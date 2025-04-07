@@ -1,7 +1,8 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
-  handleGetIsDebugging} from "./main2worker"
-import { getPrintableChar, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME } from "../common/utility"
+  handleGetIsDebugging,
+  handleGetMachineName} from "./main2worker"
+import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME } from "../common/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 import { getColorMode, getTheme } from "./ui_settings"
@@ -79,6 +80,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
   const isAltCharSet = handleGetAltCharSet()
   const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
+  const hasMouseText = handleGetMachineName() === "APPLE2EE"
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
@@ -87,9 +89,11 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
     textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)
       if (isAltCharSet) {
-        doInverse = (value <= 63) || (value >= 96 && value <= 127)
+        // Mouse text chars are in the range 64...95, so do not make inverse.
+        // If we do not have mouse text (IIe unenhanced) everything <= 127 is inverse.
+        doInverse = hasMouseText ? ((value <= 63) || (value >= 96 && value <= 127)) : (value <= 127)
       }
-      const v = getPrintableChar(value, isAltCharSet)
+      const v = convertTextPageValueToASCII(value, isAltCharSet, hasMouseText)
 //      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       ctx.fillStyle = colorFill
       hiddenContext.fillStyle = colorFill

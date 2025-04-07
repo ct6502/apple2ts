@@ -1,5 +1,5 @@
-import { getPrintableChar } from "../common/utility"
-import { handleGetAltCharSet, handleGetTextPage } from "./main2worker"
+import { convertTextPageValueToASCII } from "../common/utility"
+import { handleGetAltCharSet, handleGetMachineName, handleGetTextPage } from "./main2worker"
 
 export const copyCanvas = (handleBlob: (blob: Blob) => void, thumbnail = false) => {
   const canvas = document.getElementById("hiddenCanvas") as HTMLCanvasElement
@@ -33,11 +33,12 @@ export const handleCopyToClipboard = () => {
     const nchars = textPage.length / 24
     const isAltCharSet = handleGetAltCharSet()
     let output = ""
+      const hasMouseText = handleGetMachineName() === "APPLE2EE"
     for (let j = 0; j < 24; j++) {
       let line = ""
       for (let i = 0; i < nchars; i++) {
         const value = textPage[j * nchars + i]
-        const c = getPrintableChar(value, isAltCharSet)
+        const c = convertTextPageValueToASCII(value, isAltCharSet, hasMouseText)
         line += c
       }
       line = line.trim()

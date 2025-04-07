@@ -243,29 +243,33 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
   return key
 }
 
-export const getPrintableChar = (value: number, isAltCharSet: boolean) => {
+export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean, hasMouseText: boolean) => {
   let v1 = value
   if (v1 >= 0 && v1 <= 31) {
     // Shift Ctrl chars into ASCII A-Z range
     // They will be displayed as inverse
     v1 += 64
   } else if (v1 >= 160) {
-    // Standard ASCII, just strip the high bit
+    // Normal text, just strip the high bit to convert to standard ASCII range
     v1 &= 0b01111111
   } else if (isAltCharSet) {
-    if (v1 >= 64 && v1 <= 95) {
-      // Shift Mousetext chars into extended ASCII range
-      // These are flashing chars in the normal char set.
+    if (hasMouseText && v1 >= 64 && v1 <= 95) {
+      // Shift Mousetext chars into extended ASCII range.
+      // (These are flashing chars in the normal char set.)
       v1 += 64
     } else if (v1 >= 128) {
-      // 128...159 will be displayed as ASCII 64...95 (uppercase)
+      // 128...159 need to be shifted down to their ASCII display value.
       v1 -= 64
     }
-    // 32...63 and 96...127 are unchanged and will be displayed as normal
+    // 32...63 are unchanged and will be displayed as inverse.
+    // 96...127 are unchanged and will be displayed as inverse.
   } else {
-    // 32...95 are unchanged and will be displayed as normal
-    // 96...127 will be displayed as flashing
-    // 128...159 will be displayed as normal uppercase
+    // 32...95 are displayed as their actual ASCII values but will be either
+    // inverse (32-63) or flashing (64-95).
+    // 96...127 need to be shifted down to their ASCII display value and
+    // will be displayed as flashing.
+    // 128...159 also need to be shifted down to their ASCII display value
+    // but will be displayed as normal.
     if (v1 >= 96) {
       v1 -= 64
     }
