@@ -49,13 +49,16 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
-  const [popupLocation, setPopupLocation] = useState<[number, number]>()
+  const [drivePopupLocation, setDrivePopupLocation] = useState<[number, number]>()
+  const [selectPopupLocation, setSelectPopupLocation] = useState<[number, number]>()
   const [popupItem, setPopupItem] = useState<DiskCollectionItem>()
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
 
   let longPressTimer: number
+
+  const TAB_INDEX_SELECT = 3
 
   const tabs = [
     {
@@ -103,7 +106,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   }
 
   const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = 0) => () => {
-    if (activeTab == 3) {
+    if (activeTab == TAB_INDEX_SELECT) {
       toggleSelectedItem(diskCollectionItem)
     } else {
       loadDisk(driveIndex, diskCollectionItem)
@@ -111,8 +114,13 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   }
 
   const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
-    setPopupItem(diskCollectionItem)
-    setPopupLocation([event.clientX, event.clientY])
+    if (activeTab == TAB_INDEX_SELECT) {      
+      setSelectPopupLocation([event.clientX, event.clientY])
+    } else {
+      setPopupItem(diskCollectionItem)
+      setDrivePopupLocation([event.clientX, event.clientY])
+    }
+
     event.stopPropagation()
     event.preventDefault()
     return false
@@ -120,8 +128,13 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   const handleItemTouchStart = (diskCollectionItem: DiskCollectionItem) => (event: React.TouchEvent<HTMLElement>) => {
     longPressTimer = window.setTimeout(() => {
-      setPopupItem(diskCollectionItem)
-      setPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
+      if (activeTab == TAB_INDEX_SELECT) {
+        setSelectPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
+      } else {
+        setPopupItem(diskCollectionItem)
+        setDrivePopupLocation([event.touches[0].clientX, event.touches[0].clientY])
+      }
+
       event.stopPropagation()
       event.preventDefault()
       return false
@@ -141,8 +154,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
   }
 
-  const toggleSelectedItem = async (diskCollectionItem: DiskCollectionItem) => {
-    if (selectedDisks.includes(diskCollectionItem)) {
+  const toggleSelectedItem = async (diskCollectionItem: DiskCollectionItem, selectItem: boolean = false) => {
+    if (!selectItem && selectedDisks.includes(diskCollectionItem)) {
       selectedDisks.splice(selectedDisks.findIndex(x => x === diskCollectionItem), 1)
     } else {
       if (diskCollectionItem.cloudData && diskCollectionItem.cloudData.fileSize === -1) {
@@ -312,7 +325,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
                 onClick={handleBookmarkClick(diskCollectionItem)}>
                 <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
               </div>}
-            {activeTab == 3 &&
+            {activeTab == TAB_INDEX_SELECT &&
               <div
                 className="dcp-item-select"
                 title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
@@ -323,20 +336,20 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           </div>
         ))}
       </div>
-      {activeTab == 3 && selectedDisks.length > 0 &&
+      {activeTab == TAB_INDEX_SELECT && selectedDisks.length > 0 &&
         <div className="dcp-export-row">
           <div className="dcp-export-size">Estimated .hdv size: <b>{estimateHdvSize()}</b></div>
           <input className="dcp-export-button" type="button" value="Export"/>
         </div>}
       <PopupMenu
-        key={`drive-popup-${popupItem?.title}`}
-        location={popupLocation}
+        key="drive-popup"
+        location={drivePopupLocation}
         style={{
           padding: "5px",
           paddingLeft: "10px",
           paddingRight: "10px"
         }}
-        onClose={() => { setPopupLocation(undefined) }}
+        onClose={() => { setDrivePopupLocation(undefined) }}
         menuItems={[[
           ...[0, 1].map((i) => (
             {
@@ -344,7 +357,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               icon: faHardDrive,
               isSelected: () => { return false },
               onClick: () => {
-                setPopupLocation(undefined)
+                setDrivePopupLocation(undefined)
                 loadDisk(i, popupItem)
               }
             }
@@ -356,11 +369,39 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               icon: faFloppyDisk,
               isSelected: () => { return false },
               onClick: () => {
-                setPopupLocation(undefined)
+                setDrivePopupLocation(undefined)
                 loadDisk(i, popupItem)
               }
             }
           ))
+        ]]}
+      />
+      <PopupMenu
+        key="select-popup"
+        location={selectPopupLocation}
+        style={{
+          padding: "5px",
+          paddingLeft: "10px",
+          paddingRight: "10px"
+        }}
+        onClose={() => { setSelectPopupLocation(undefined) }}
+        menuItems={[[
+          {
+            label: "Select all disks",
+            icon: faCheckCircle,
+            onClick: () => {
+              tabs[TAB_INDEX_SELECT].disks.forEach((diskCollectionItem) => {
+                toggleSelectedItem(diskCollectionItem, true)
+              })
+            }
+          },
+          {
+            label: "Unselect all disks",
+            icon: faCircle,
+            onClick: () => {
+              setSelectedDisks([])
+            }
+          }
         ]]}
       />
     </Flyout >
