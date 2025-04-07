@@ -109,10 +109,16 @@ export const doRumble = (params: GamePadActuatorEffect) => {
 export const handleArrowKey = (key: ARROW, release: boolean) => {
   if (!release) {
     let code = 0
+    switch (key) {
+      case ARROW.LEFT: code = 8; break
+      case ARROW.RIGHT: code = 21; break
+      case ARROW.UP: code = 11; break
+      case ARROW.DOWN: code = 10; break
+    }
+    passKeypress(code)
     if (getArrowKeysAsJoystick()) {
       switch (key) {
         case ARROW.LEFT:
-          code = 8
           if (arrowGamePad[0] === 0) {
             arrowGamePad[0] = -1
           } else if (arrowGamePad[0] < -4) {
@@ -120,7 +126,6 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
           }
           break
         case ARROW.RIGHT:
-          code = 21
           if (arrowGamePad[0] === 0) {
             arrowGamePad[0] = 1
           } else if (arrowGamePad[0] > 4) {
@@ -128,7 +133,6 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
           }
           break
         case ARROW.UP:
-          code = 11
           if (arrowGamePad[1] === 0) {
             arrowGamePad[1] = -1
           } else if (arrowGamePad[1] < -4) {
@@ -136,7 +140,6 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
           }
           break
         case ARROW.DOWN:
-          code = 10
           if (arrowGamePad[1] === 0) {
             arrowGamePad[1] = 1
           } else if (arrowGamePad[1] > 4) {
@@ -145,7 +148,6 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
           break
       }
     }
-    passKeypress(code)
   } else {
     switch (key) {
       case ARROW.LEFT:  // fall through

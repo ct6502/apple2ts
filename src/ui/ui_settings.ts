@@ -1,12 +1,12 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 
 const uiState: UIState = {
-  arrowKeysAsJoystick: false,
-  capsLock: false,
+  arrowKeysAsJoystick: true,
+  capsLock: true,
   colorMode: COLOR_MODE.COLOR,
   helpText: "",
   hotReload: false,
-  showScanlines: false,
+  showScanlines: true,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
   touchJoystickMode: "off",
