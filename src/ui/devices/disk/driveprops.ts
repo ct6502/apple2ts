@@ -157,7 +157,10 @@ export const handleSetDiskOrFileFromBuffer = (
   return newIndex
 }
 
-export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveIndex: number = 0) => {
+export const handleSetDiskFromCloudData = async (
+  cloudData: CloudData,
+  driveIndex: number = 0,
+  callback?: (buffer: ArrayBuffer) => void) => {
   let cloudProvider
   switch (cloudData.providerName) {
     case "GoogleDrive":
@@ -171,7 +174,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 
   if (cloudProvider) {
     cloudProvider.requestAuthToken(async (authToken: string) => {
-      showGlobalProgressModal(true, `Downloading disk from ${cloudProvider.providerName}`)
+      showGlobalProgressModal(true, "Downloading disk")
       const response = await fetch(cloudData.downloadUrl, {
         headers: {
           "Authorization": authToken,
@@ -187,8 +190,12 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
         const blob = await response.blob()
         const buffer = await new Response(blob).arrayBuffer()
 
-        cloudData.lastSyncTime = Date.now()
-        handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+        if (callback) {
+          callback(buffer)
+        } else {
+          cloudData.lastSyncTime = Date.now()
+          handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+        }
       } else {
         // $TODO: Add error handling
       }
@@ -197,7 +204,8 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 }
 
 export const handleSetDiskFromURL = async (url: string,
-  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData) => {
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData,
+  callback?: (buffer: ArrayBuffer) => void) => {
   if (!url.startsWith("http") && updateDisplay) {
     const match = findMatchingDiskImage(url)
     if ( !match.diskUrl ) {
@@ -285,7 +293,11 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (buffer) {
-      handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+      if (callback) {
+        callback(buffer)
+      } else {
+        handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+      }
     } else {
       // $TODO: Add error handling
     }
@@ -301,7 +313,8 @@ const resetAllDiskDrives = () => {
 }
 
 export const handleSetDiskFromFile = async (disk: string,
-  updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
+  updateDisplay: UpdateDisplay, driveIndex: number = 0,
+  callback?: (buffer: ArrayBuffer) => void) => {
   let data: ArrayBuffer
   try {
     const res = await fetch("/disks/" + disk)
@@ -309,25 +322,30 @@ export const handleSetDiskFromFile = async (disk: string,
   } catch {
    return
   }
-  resetAllDiskDrives()
-  handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
-  passSetRunMode(RUN_MODE.NEED_BOOT)
-  const helpFile = replaceSuffix(disk, "txt")
-  try {
-    const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
-    let helptext = "<Default>"
-    if (help.ok) {
-      helptext = await help.text()
-      // Hack: when running on localhost, if the file is missing it just
-      // returns the index.html. So just return an empty string instead.
-      if (helptext.startsWith("<!DOCTYPE html>")) {
-        helptext = "<Default>"
-      }
-      updateDisplay(0, helptext)
-    }      
-  } catch {
-    // If we don't have a help text file, just revert to the default text.
-    updateDisplay(0, "<Default>")
+
+  if (callback) {
+    callback(data)
+  } else {
+    resetAllDiskDrives()
+    handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
+    passSetRunMode(RUN_MODE.NEED_BOOT)
+    const helpFile = replaceSuffix(disk, "txt")
+    try {
+      const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
+      let helptext = "<Default>"
+      if (help.ok) {
+        helptext = await help.text()
+        // Hack: when running on localhost, if the file is missing it just
+        // returns the index.html. So just return an empty string instead.
+        if (helptext.startsWith("<!DOCTYPE html>")) {
+          helptext = "<Default>"
+        }
+        updateDisplay(0, helptext)
+      }      
+    } catch {
+      // If we don't have a help text file, just revert to the default text.
+      updateDisplay(0, "<Default>")
+    }
   }
 }
 

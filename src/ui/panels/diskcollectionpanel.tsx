@@ -55,6 +55,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
+  const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
 
   let longPressTimer: number
 
@@ -93,16 +94,21 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     return false
   }
 
-  const loadDisk = (driveIndex: number, diskCollectionItem: DiskCollectionItem | undefined = popupItem) => {
+  const loadDisk = (
+    driveIndex: number,
+    diskCollectionItem: DiskCollectionItem | undefined = popupItem,
+    callback?: (buffer: ArrayBuffer) => void) => {
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
+      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
     } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
+      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex, callback)
     } else {
-      handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData)
+      handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData, callback)
     }
 
-    setIsFlyoutOpen(false)
+    if (!callback) {
+      setIsFlyoutOpen(false)
+    }
   }
 
   const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = 0) => () => {
@@ -196,6 +202,27 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
   }
 
+  const handleExportClick = () => {
+    const newExportQueue: DiskCollectionItem[] = []
+
+    selectedDisks.forEach((selectedDisk) => {
+      newExportQueue.push(selectedDisk)
+    })
+
+    setExportQueue(newExportQueue)
+  }
+
+  const processExportQueue = (buffer?: ArrayBuffer) => {
+    if (buffer) {
+      // $TODO
+      console.log(buffer.byteLength)
+
+      setExportQueue(exportQueue.slice(1))      
+    } else if (exportQueue.length > 0) {
+      loadDisk(0, exportQueue[0], processExportQueue)
+    }
+  }
+
   const estimateHdvSize = () => {
     let estimatedSize = 0
 
@@ -251,6 +278,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     setDiskCollection(newDiskCollection)
   }, [diskBookmarks])
+
+  useEffect(() => {
+    if (exportQueue.length > 0) {
+      processExportQueue()
+    }
+  }, [exportQueue])
 
   return (
     <Flyout
@@ -339,7 +372,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       {activeTab == TAB_INDEX_SELECT && selectedDisks.length > 0 &&
         <div className="dcp-export-row">
           <div className="dcp-export-size">Estimated .hdv size: <b>{estimateHdvSize()}</b></div>
-          <input className="dcp-export-button" type="button" value="Export"/>
+          <input className="dcp-export-button" type="button" onClick={handleExportClick} value="Export"/>
         </div>}
       <PopupMenu
         key="drive-popup"
