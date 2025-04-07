@@ -82,11 +82,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       isHighlighted: false
     },
     {
-       icon: faDownload,
-       label: "Export disks to .hdv",
-       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv") || x.fileSize < 33553920),
-       isHighlighted: false
-     }
+      icon: faDownload,
+      label: "Export disks to .hdv",
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv") || x.fileSize < 33553920),
+      isHighlighted: false
+    }
   ]
 
   const handleHelpClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
@@ -121,7 +121,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   }
 
   const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
-    if (activeTab == TAB_INDEX_SELECT) {      
+    if (activeTab == TAB_INDEX_SELECT) {
       setSelectPopupLocation([event.clientX, event.clientY])
     } else {
       setPopupItem(diskCollectionItem)
@@ -165,11 +165,16 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     if (!selectItem && selectedDisks.includes(diskCollectionItem)) {
       selectedDisks.splice(selectedDisks.findIndex(x => x === diskCollectionItem), 1)
     } else {
-      if (diskCollectionItem.cloudData && diskCollectionItem.cloudData.fileSize === -1) {
-        const [downloadUrl, fileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
+      if (diskCollectionItem.cloudData && (!diskCollectionItem.cloudData.fileSize || diskCollectionItem.cloudData.fileSize <= 0)) {
+        let fileSize = 0
 
-        if (downloadUrl) {
-          diskCollectionItem.cloudData.downloadUrl = downloadUrl?.toString()
+        if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
+          const [downloadUrl, newFileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
+
+          if (downloadUrl) {
+            diskCollectionItem.cloudData.downloadUrl = downloadUrl?.toString()
+            fileSize = newFileSize
+          }
         }
         diskCollectionItem.cloudData.fileSize = fileSize
 
@@ -218,7 +223,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       // $TODO
       console.log(buffer.byteLength)
 
-      setExportQueue(exportQueue.slice(1))      
+      setExportQueue(exportQueue.slice(1))
     } else if (exportQueue.length > 0) {
       showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(0, exportQueue[0], processExportQueue)
@@ -305,7 +310,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             className={`dcp-tab ${i == activeTab ? " dcp-tab-active" : ""} ${tab.isHighlighted ? " dcp-tab-highlighted" : ""}`}
             title={tab.label}
             onClick={handleTabClick(i)}>
-            <FontAwesomeIcon icon={tab.icon} size="lg"/>
+            <FontAwesomeIcon icon={tab.icon} size="lg" />
           </div>
         ))}
       </div>
@@ -354,7 +359,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
                 <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => event.stopPropagation()} />
               </div>}
-              {activeTab == 2 && diskCollectionItem.bookmarkId &&
+            {activeTab == 2 && diskCollectionItem.bookmarkId &&
               <div
                 className="dcp-item-bookmark"
                 title="Click to remove from disk collection"
@@ -366,7 +371,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
                 className="dcp-item-select"
                 title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
                 onClick={handleSelectedClick(diskCollectionItem)}>
-                <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} className="dcp-item-select-icon"/>
+                <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} className="dcp-item-select-icon" />
                 {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
               </div>}
           </div>
@@ -375,7 +380,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       {activeTab == TAB_INDEX_SELECT && selectedDisks.length > 0 &&
         <div className="dcp-export-row">
           <div className="dcp-export-size">Estimated .hdv size: <b>{estimateHdvSize()}</b></div>
-          <input className="dcp-export-button" type="button" onClick={handleExportClick} value="Export"/>
+          <input className="dcp-export-button" type="button" onClick={handleExportClick} value="Export" />
         </div>}
       <PopupMenu
         key="drive-popup"
