@@ -432,7 +432,9 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             icon: faCheckCircle,
             onClick: () => {
               tabs[TAB_INDEX_SELECT].disks.forEach((diskCollectionItem) => {
-                toggleSelectedItem(diskCollectionItem, true)
+                if (!selectedDisks.includes(diskCollectionItem)) {
+                  toggleSelectedItem(diskCollectionItem, true)
+                }
               })
             }
           },
