@@ -15,6 +15,7 @@ import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from
 import { getTheme } from "../ui_settings"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
+import { showGlobalProgressModal } from "../ui_utilities"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -219,6 +220,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
       setExportQueue(exportQueue.slice(1))      
     } else if (exportQueue.length > 0) {
+      showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(0, exportQueue[0], processExportQueue)
     }
   }
@@ -228,7 +230,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     selectedDisks.forEach((selectedDisk) => {
       if (selectedDisk.cloudData) {
-        estimatedSize += selectedDisk.cloudData.fileSize
+        estimatedSize += selectedDisk.cloudData.fileSize || 0
       } else if (selectedDisk.fileSize >= 0) {
         estimatedSize += selectedDisk.fileSize
       }
@@ -280,6 +282,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   }, [diskBookmarks])
 
   useEffect(() => {
+    showGlobalProgressModal(false)
     if (exportQueue.length > 0) {
       processExportQueue()
     }

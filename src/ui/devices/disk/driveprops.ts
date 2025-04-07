@@ -174,7 +174,10 @@ export const handleSetDiskFromCloudData = async (
 
   if (cloudProvider) {
     cloudProvider.requestAuthToken(async (authToken: string) => {
-      showGlobalProgressModal(true, "Downloading disk")
+      if (!callback) {
+        showGlobalProgressModal(true, "Downloading disk")
+      }
+
       const response = await fetch(cloudData.downloadUrl, {
         headers: {
           "Authorization": authToken,
@@ -183,7 +186,9 @@ export const handleSetDiskFromCloudData = async (
         redirect: "follow"
       })
         .finally(() => {
-          showGlobalProgressModal(false)
+          if (!callback) {
+            showGlobalProgressModal(false)
+          }
         })
 
       if (response.ok) {
@@ -247,10 +252,15 @@ export const handleSetDiskFromURL = async (url: string,
     const favicon: { [key: string]: string } = {}
     favicon[iconKey()] = iconData()
 
-    showGlobalProgressModal(true, "Downloading disk")
+    if (!callback) {
+      showGlobalProgressModal(true, "Downloading disk")
+    }
+
     const response = await fetch(iconName() + url, { headers: favicon })
       .finally(() => {
-        showGlobalProgressModal(false)
+        if (!callback) {
+          showGlobalProgressModal(false)
+        }
       })
 
     if (!response.ok) {

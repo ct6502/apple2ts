@@ -408,7 +408,7 @@ body.dark-mode .divider {
 .global-progress-message {
   position: absolute;
   width: 100%;
-  bottom: 20%;
+  bottom: 35%;
   text-align: center;
   color: white;
   font-family: PrintChar21;
