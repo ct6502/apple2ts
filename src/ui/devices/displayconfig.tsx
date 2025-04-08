@@ -30,7 +30,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
         onClick={handleClick}
       >
         <span className="fa-layers fa-fw">
-          <svg width="21" height="19" style={{verticalAlign: "top", marginLeft: "1px", marginTop: "2px"}}>
+          <svg width="23" height="19" style={{verticalAlign: "top", marginTop: "2px"}}>
             {getColorModeSVG(colorMode) as ReactNode}
             {getShowScanlinesSVG(showScanlines) as ReactNode}
           </svg>
