@@ -63,8 +63,8 @@ export const passEnhancedMidi = (param: number) => {
   doPostMessage(MSG_WORKER.ENHANCED_MIDI, param)
 }
 
-export const passShowMouse = (state: boolean) => {
-  doPostMessage(MSG_WORKER.SHOW_MOUSE, state)
+export const passShowAppleMouse = (state: boolean) => {
+  doPostMessage(MSG_WORKER.SHOW_APPLE_MOUSE, state)
 }
 
 export const passMockingboard = (sound: MockingboardSound) => {
