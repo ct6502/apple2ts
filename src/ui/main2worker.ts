@@ -245,8 +245,8 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       return {speed: 0, helptext: helptext}
       break
     }
-    case MSG_WORKER.SHOW_MOUSE: {
-      showMouse = e.data.payload as boolean
+    case MSG_WORKER.SHOW_APPLE_MOUSE: {
+      showAppleMouse = e.data.payload as boolean
       break
     }
     case MSG_WORKER.MBOARD_SOUND: {
@@ -296,11 +296,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
 
 // Should probably store these state variables somewhere else, but it's
 // easy to just stash them here.
-let showMouse = true
+let showAppleMouse = false
 let softSwitchDescriptions = [""]
 
-export const handleGetShowMouse = () => {
-  return showMouse
+export const handleGetShowAppleMouse = () => {
+  return showAppleMouse
 }
 
 export const handleGetRunMode = () => {

@@ -5,7 +5,7 @@ import { setSlotDriver, setSlotIOCallback, memGet, memSet, memSetC000, memGetC00
 import { MouseEventSimple } from "../../common/utility"
 import { interruptRequest } from "../cpu6502"
 import { s6502 } from "../instructions"
-import { passShowMouse } from "../worker2main"
+import { passShowAppleMouse } from "../worker2main"
 import { handleClockRead } from "./clock"
 import { parseAssembly } from ".././utility/assembler"
 
@@ -345,7 +345,7 @@ const setMode = (value: number) => {
   memSetC000(ADDR_MODE, value)
   // console.log('Mouse mode set to', memGetC000(ADDR_MODE))
   // If Apple mouse is turned on, hide the browser mouse cursor
-  passShowMouse(value ? false  : true)
+  passShowAppleMouse(value ? true  : false)
 }
 
 export const resetMouse = () => {
@@ -426,7 +426,7 @@ export const enableMouseCard = (enable = true, aslot = 5) => {
   }
   const mode = memGetC000(ADDR_MODE)
   if (mode !== 0) {
-    passShowMouse(false)
+    passShowAppleMouse(true)
   }
 }
 

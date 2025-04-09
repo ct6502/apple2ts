@@ -7,7 +7,7 @@ import {
   passGoForwardInTime,
   passMouseEvent,
   passPasteText,
-  handleGetShowMouse,
+  handleGetShowAppleMouse,
   handleGetRunMode,
   handleGetCout,
   handleGetIsDebugging,
@@ -28,6 +28,9 @@ import { getUseOpenAppleKey, getCapsLock, getTheme, getShowScanlines } from "./u
 
 let width = 800
 let height = 600
+// This is an indidental property, we don't want to make it a "useState"
+// because we don't want it to re-render the canvas each time it is toggled.
+let withinScreen = false
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
@@ -272,19 +275,21 @@ const Apple2Canvas = (props: DisplayProps) => {
     window.requestAnimationFrame(RenderCanvas)
   }
 
-  const scaleMouseEvent = (event: MouseEvent): MouseEventSimple => {
+  const scaleMouseEvent = (event: MouseEvent): MouseEventSimple | null => {
     let x = 0
     let y = 0
     if (myCanvas.current) {
       [x, y] = canvasCoordToNormScreenCoord(myCanvas.current, event.clientX, event.clientY)
-      x = Math.min(Math.max(x, 0), 1)
-      y = Math.min(Math.max(y, 0), 1)
+      if (x < 0 || x > 1 || y < 0 || y > 1) {
+        return null
+      }
     }
     return { x, y, buttons: -1 }
   }
 
   const handleMouseDown = (event: MouseEvent) => {
     const evt = scaleMouseEvent(event)
+    if (!evt) return
     evt.buttons = event.button === 0 ? 0x10 : 0x11
     passMouseEvent(evt)
     if (handleGetOverrideHires()) {
@@ -296,6 +301,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleMouseUp = (event: MouseEvent) => {
     const evt = scaleMouseEvent(event)
+    if (!evt) return
     evt.buttons = event.button === 0 ? 0x00 : 0x01
     passMouseEvent(evt)
   }
@@ -326,9 +332,14 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleMouseMove = (event: MouseEvent) => {
-    const scaled = scaleMouseEvent(event)
+    const evt = scaleMouseEvent(event)
+    if (!evt) {
+      withinScreen = false
+      return
+    }
+    withinScreen = true
     handleNewHgrMagnifierCoord(event.clientX, event.clientY)
-    passMouseEvent(scaled)
+    passMouseEvent(evt)
   }
 
   const drawBytes = (pixels: number[][]) => {
@@ -522,8 +533,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const cursor = handleGetShowMouse() ?
-    ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "crosshair") : "none"
+  const cursor = (handleGetShowAppleMouse() && withinScreen) ? "url('/dot.png'), none" :
+    ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
   const backgroundImage = noBackgroundImage ? "" : `url(${bgImage})`
 
