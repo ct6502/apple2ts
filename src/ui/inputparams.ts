@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSetDebug, passSpeedMode, passSetRamWorks, passPasteText } from "./main2worker"
+import { passSetDebug, passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502 } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme } from "./ui_settings"
@@ -89,15 +89,22 @@ export const handleInputParams = () => {
 
   const run = params.get("run")
   const doRun = !(run === "0" || run === "false")
-  // Use the original case of the BASIC program.
-  const basic = porig.get("basic") || porig.get("BASIC")
-   const hasBasicProgram = basic !== null
-  if (basic) {
-    const trimmed = basic.trim()
+
+  // Use the original case of the text string or BASIC program.
+  const text = porig.get("basic") || porig.get("BASIC") || porig.get("text") || porig.get("TEXT")
+  const hasBasicProgram = text !== null
+  if (text) {
+    const trimmed = text.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-    const cmd = (hasLineNumbers && doRun) ? "\nRUN\n" : "\n"
-    // Wait a bit to give the emulator time to start and boot any disks.
-    setTimeout(() => { passPasteText(basic + cmd) }, 1500)
+    const cmd = trimmed + ((hasLineNumbers && doRun) ? "\nRUN\n" : "\n")
+    const waitForBoot = setInterval(() => {
+      // Wait a bit to give the emulator time to start and boot any disks.
+      const cycleCount = handleGetState6502().cycleCount
+      if (cycleCount > 2000000) {
+        clearInterval(waitForBoot)
+        passPasteText(cmd)
+      }
+    }, 100)
   }
 
   return hasBasicProgram
