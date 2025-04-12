@@ -12,7 +12,7 @@ export const newReleases: DiskCollectionItem[] = [
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
     imageUrl: new URL("https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png"),
-    diskUrl: new URL("https://archive.org/download/MillionPerfectTiles/Million.Perfect.Tiles.v1.1.po"),
+    diskUrl: new URL("https://archive.org/download/MillionPerfectTiles/00playable.po"),
     detailsUrl: new URL("https://archive.org/details/MillionPerfectTiles")
   },
   // $TODO: Figure out why the DSK fails to load
@@ -31,5 +31,13 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: new URL("https://www.callapple.org/wp-content/uploads/2024/09/Undead_Demo.png"),
     diskUrl: new URL("https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip"),
     detailsUrl: new URL("https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central")
+  },
+  {
+    type: -1,
+    title: "Kontrabant",
+    lastUpdated: new Date("4/10/2025"),
+    imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg"),
+    diskUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/kontra_en.dsk"),
+    detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/")
   }
 ]
