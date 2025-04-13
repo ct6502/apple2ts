@@ -15,15 +15,14 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: new URL("https://archive.org/download/MillionPerfectTiles/00playable.po"),
     detailsUrl: new URL("https://archive.org/details/MillionPerfectTiles")
   },
-  // $TODO: Figure out why the DSK fails to load
-  // {
-  //   type: =1,
-  //   title: "Encounter Adventure",
-  //   lastUpdated: new Date("11/11/2024"),
-  //   imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg"),
-  //   diskUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk"),
-  //   detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/")
-  // }
+  {
+    type: -1,
+    title: "Encounter Adventure",
+    lastUpdated: new Date("11/11/2024"),
+    imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg"),
+    diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/encounter/encounteradventure.dsk"),
+    detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/")
+  },
   {
     type: -1,
     title: "Undead Demo",
@@ -37,7 +36,7 @@ export const newReleases: DiskCollectionItem[] = [
     title: "Kontrabant",
     lastUpdated: new Date("4/10/2025"),
     imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg"),
-    diskUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/kontra_en.dsk"),
+    diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/kontrabant/kontra_en.dsk"),
     detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/")
   }
 ]
