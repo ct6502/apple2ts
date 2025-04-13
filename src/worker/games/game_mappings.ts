@@ -14,7 +14,8 @@ import { robotron } from "./robotron"
 import { snoggle } from "./snoggle"
 import { ultima5 } from "./ultima5"
 import { wizardry } from "./wizardry"
-import { wolfenstein } from "./wolfenstein"
+import { wolfenstein, wolfenstein_splash } from "./wolfenstein"
+import { beyondwolf } from "./beyondwolf"
 
 const gameLibrary = new Array<GameLibraryItem>()
 
@@ -39,6 +40,9 @@ AddGameLibraryItem(snoggle)
 AddGameLibraryItem(ultima5)
 AddGameLibraryItem(wizardry)
 AddGameLibraryItem(wolfenstein)
+AddGameLibraryItem(wolfenstein_splash)
+AddGameLibraryItem(beyondwolf)
+
 
 export const defaultButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
