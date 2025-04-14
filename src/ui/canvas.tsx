@@ -406,52 +406,54 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleCanvasResize = (canvas: HTMLCanvasElement) => {
-    if (!canvas) return "0"
+    // Give React some time to deal resize events
+    window.setTimeout(() => {
+      const width = canvas.offsetWidth
+      const height = canvas.offsetHeight
 
-    const width = canvas.offsetWidth
-    const height = canvas.offsetHeight
+      const scanlinesWidth = width - 2 * width * xmargin
+      const scanlinesHeight = height - 2 * height * ymargin
 
-    const scanlinesWidth = width - 2 * width * xmargin
-    const scanlinesHeight = height - 2 * height * ymargin
+      let scanlinesLeft = canvas.offsetLeft + width * xmargin
+      let scanlinesTop = canvas.offsetTop + height * ymargin
 
-    let scanlinesLeft = canvas.offsetLeft + width * xmargin
-    let scanlinesTop = canvas.offsetTop + height * ymargin
+      if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
+        let marginLeft = canvas.offsetLeft + width * xmargin
+        let marginTop = canvas.offsetTop + height * ymargin
 
-    if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
-      if (getTheme() == UI_THEME.MINIMAL) {
-        scanlinesLeft = (window.innerWidth - scanlinesWidth) / 2
-        scanlinesTop = ((window.innerHeight - scanlinesHeight) / 2) - 32
+        if (getTheme() == UI_THEME.MINIMAL) {
+          marginLeft = (window.innerWidth - scanlinesWidth) / 2
+          marginTop = ((window.innerHeight - scanlinesHeight) / 2)
 
-        if (handleGetIsDebugging()) {
-          const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
-          if (debugSection) {
-            scanlinesLeft = Math.max(Math.min(scanlinesLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
+          if (handleGetIsDebugging()) {
+            const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
+            if (debugSection) {
+              marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
+            }
           }
+
+          canvas.style.marginLeft = `${marginLeft - width * xmargin}px`
+          canvas.style.marginTop = `${Math.max(marginTop - height * ymargin - 160, 32)}px`
+        } else {
+          canvas.style.marginLeft = "0px"
+          canvas.style.marginTop = "0px"
         }
-
-        canvas.style.marginLeft = `${scanlinesLeft - width * xmargin}px`
-        canvas.style.marginTop = `${Math.max(scanlinesTop - height * ymargin - 160, 40)}px`
       } else {
-        canvas.style.marginLeft = "0"
-        canvas.style.marginTop = "0"
+        const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
+        const marginTop = Math.max((window.innerHeight - height) / 2, 0)
+
+        canvas.style.marginLeft = `${marginLeft}px`
+        canvas.style.marginTop = `${marginTop}px`
+
+        scanlinesLeft = marginLeft + width * xmargin
+        scanlinesTop = marginTop + height * ymargin
       }
-    } else {
-      const marginLeft = Math.max((window.innerWidth - width) / 2, 0)
-      const marginTop = Math.max((window.innerHeight - height) / 2, 0)
 
-      canvas.style.marginLeft = `${marginLeft}px`
-      canvas.style.marginTop = `${marginTop}px`
-
-      scanlinesLeft = marginLeft + width * xmargin
-      scanlinesTop = marginTop + height * ymargin
-    }
-
-    document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
-    document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
-    document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
-    document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
-
-    return canvas.style.marginLeft
+      document.body.style.setProperty("--scanlines-left", `${scanlinesLeft}px`)
+      document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
+      document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
+      document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
+    }, 200)
   }
 
   // We should probably be using a useEffect here, but when I tried that,
