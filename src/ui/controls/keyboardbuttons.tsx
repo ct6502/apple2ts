@@ -1,5 +1,6 @@
 import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress,
-  passAppleCommandKeyRelease, passKeypress } from "../main2worker"
+  passAppleCommandKeyRelease, passKeypress, 
+  passKeyRelease} from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
@@ -53,11 +54,13 @@ const KeyboardButtons = (props: DisplayProps) => {
       </button>
     ))}
     <button className="push-button key-button" title="Escape"
-      onMouseDown={() => passKeypress(27)}>
+      onMouseDown={() => passKeypress(27)}
+      onMouseUp={() => passKeyRelease()}>
       <span className="text-key">esc</span>
     </button>
     <button className="push-button key-button" title="Tab"
-      onMouseDown={() => passKeypress(9)}>
+      onMouseDown={() => passKeypress(9)}
+      onMouseUp={() => passKeyRelease()}>
       <span className="text-key">tab</span>
     </button>
     <button

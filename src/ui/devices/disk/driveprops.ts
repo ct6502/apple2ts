@@ -11,6 +11,7 @@ import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
+import { parseGameList } from "./totalreplayutilities"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -350,7 +351,10 @@ export const handleSetDiskFromFile = async (disk: string,
         if (helptext.startsWith("<!DOCTYPE html>")) {
           helptext = "<Default>"
         }
-        updateDisplay(0, helptext)
+        if (helpFile.includes("Total%20Replay")) {
+        helptext = parseGameList(helptext)
+      }
+      updateDisplay(0, helptext)
       }      
     } catch {
       // If we don't have a help text file, just revert to the default text.

@@ -4,26 +4,31 @@ import { getTextPageAsString, memGet, memSet } from "../memory"
 import { passRumble } from "../worker2main"
 
 const helptext = 
-`Castle Wolfenstein
+`<b>Castle Wolfenstein</b>
 Silas Warner, Muse Software 1981
 
-KEYBOARD:
-QWE
-ASD    Movement (S = Stop)
-ZXC
+World War II is raging across Europe, and Castle Wolfenstein has been occupied by the Nazis and converted into their HQ. You have just been captured behind enemy lines and await interrogation and torture by the dreaded SS in the dungeons of Castle Wolfenstein. A dying cellmate bequeaths you your only hope - a gun and ten bullets.
 
-IOP
-KL;    Aim gun (L = Fire)
-,./
+Your Mission: Find the war plans and escape from Castle Wolfenstein ALIVE!
 
-Space: Search guards, unlock doors & chests
-T:  Throw grenade
-U:  Use contents of chest
-Return:  Inventory
+<a href="https://archive.org/details/muse-castle-wolfenstein-a2-ph/" target="_blank">Detailed instructions</a>
 
-JOYSTICK:
-Joystick:  Move or aim
-Left button (0):  Aim
+<b>KEYBOARD</b>
+<b>Q W E</b>
+<b>A S D</b>    Movement (<b>S</b> = Stop)
+<b>Z X C</b>
+
+<b>I O P</b>
+<b>K L ;</b>    Aim gun (<b>L</b> = Fire)
+<b>, . /</b>
+
+<b>Space</b>  Search guards, unlock doors & chests
+<b>T</b>      Throw grenade
+<b>U</b>      Use contents of chest
+<b>RETURN</b> Inventory
+
+<b>JOYSTICK</b>
+Left button (0):  Hold down and move joystick to aim, or press button to holster
 Right button (1): Shoot
 X button:  Search/unlock
 Y button:  Use chest contents
@@ -78,6 +83,16 @@ const rumble = () => {
   }
 }
 
+export const wolfenstein_splash: GameLibraryItem = {
+  address: 0x0C85,
+  data: [0xAD, 0x00, 0xC0],
+  keymap: {},
+  joystick: null,
+  gamepad: null,
+  rumble: null,
+  setup: null,
+  helptext: helptext}
+
 export const wolfenstein: GameLibraryItem = {
   address: 0x1289,
   data: [0xAD, 0x00, 0xC0],
@@ -87,4 +102,3 @@ export const wolfenstein: GameLibraryItem = {
   rumble: rumble,
   setup: wolfsetup,
   helptext: helptext}
-

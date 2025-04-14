@@ -13,20 +13,19 @@ export const newReleases: DiskCollectionItem[] = [
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
     imageUrl: new URL("https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png"),
-    diskUrl: new URL("https://archive.org/download/MillionPerfectTiles/Million.Perfect.Tiles.v1.1.po"),
+    diskUrl: new URL("https://archive.org/download/MillionPerfectTiles/00playable.po"),
     detailsUrl: new URL("https://archive.org/details/MillionPerfectTiles"),
     fileSize: 143360
   },
-  // $TODO: Figure out why the DSK fails to load
-  // {
-  //   type: =1,
-  //   title: "Encounter Adventure",
-  //   lastUpdated: new Date("11/11/2024"),
-  //   imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg"),
-  //   diskUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/encounteradventure.dsk"),
-  //   detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/"),
-  //   fileSize: 143360
-  // }
+  {
+    type: -1,
+    title: "Encounter Adventure",
+    lastUpdated: new Date("11/11/2024"),
+    imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg"),
+    diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/encounter/encounteradventure.dsk"),
+    detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/encounter/"),
+    fileSize: 143360
+  },
   {
     type: -1,
     title: "Undead Demo",
