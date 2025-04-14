@@ -406,6 +406,8 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleCanvasResize = (canvas: HTMLCanvasElement) => {
+    if (!canvas) return "0px"
+
     // Give React some time to deal resize events
     window.setTimeout(() => {
       const width = canvas.offsetWidth
@@ -454,6 +456,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
       document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
     }, 200)
+
+    return canvas.style.marginLeft
   }
 
   // We should probably be using a useEffect here, but when I tried that,
