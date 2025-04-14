@@ -34,5 +34,14 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: new URL("https://www.callapple.org/wp-content/uploads/2024/09/UNDEAD_DEMO.po_.zip"),
     detailsUrl: new URL("https://www.kickstarter.com/projects/8-bit-shack/undead-a-new-apple-role-player-game?utm_source=a2central"),
     fileSize: 819200
+  },
+  {
+  type: -1,
+  title: "Kontrabant",
+  lastUpdated: new Date("4/10/2025"),
+  imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg"),
+  diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/kontrabant/kontra_en.dsk"),
+  detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/"),
+  fileSize: 819200
   }
 ]
