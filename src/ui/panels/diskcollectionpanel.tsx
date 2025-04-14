@@ -112,7 +112,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     }
   }
 
-  const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = 0) => () => {
+  const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = -1) => () => {
     if (activeTab == TAB_INDEX_SELECT) {
       toggleSelectedItem(diskCollectionItem)
     } else {
@@ -226,7 +226,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       setExportQueue(exportQueue.slice(1))
     } else if (exportQueue.length > 0) {
       showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
-      loadDisk(0, exportQueue[0], processExportQueue)
+      loadDisk(-1, exportQueue[0], processExportQueue)
     }
   }
 
@@ -327,7 +327,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             <div
               className="dcp-item-image-box"
               title={`Click to load disk "${diskCollectionItem.title}"`}
-              onClick={handleItemClick(diskCollectionItem, 0)}
+              onClick={handleItemClick(diskCollectionItem)}
               onTouchStart={handleItemTouchStart(diskCollectionItem)}
               onTouchEnd={handleItemTouchCancel}
               onTouchCancel={handleItemTouchCancel}
