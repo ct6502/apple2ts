@@ -24,7 +24,7 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm-${{ github.run_id }}'
+        # cache: 'npm-${{ github.run_id }}'
     # clean install
     - run: npm ci
     - run: npm run build
