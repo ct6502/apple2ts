@@ -49,6 +49,8 @@ export const handleInputParams = () => {
 
   if (params.get("scanlines") === "on") {
     setShowScanlines(true)
+  } else if (params.get("scanlines") === "off") {
+    setShowScanlines(false)
   }
 
   const ramDisk = params.get("ramdisk")

@@ -51,7 +51,7 @@ color=color|nofringe|green|amber|white|inverse
 debug=on
 ramdisk=64|512|1024|4096|8192
 run=false (do not run BASIC program)
-scanlines=on
+scanlines=on|off
 sound=off
 speed=snail|slow|normal|two|three|fast|warp
 text=<a href="https://www.urlencoder.org" target="_blank" rel="noopener noreferrer">urlencoded</a> string or BASIC program to paste
