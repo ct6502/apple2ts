@@ -233,6 +233,7 @@ body.dark-mode .droplist-edit:disabled {
   cursor: pointer;
   background-color: var(--input-background);
   color: var(--text-color);
+  user-select: none;
 }
 
 body.dark-mode .droplist-option {
