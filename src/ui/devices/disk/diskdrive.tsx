@@ -57,7 +57,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
-  const resetDrive = (index: number) => {
+  const ejectDisk = (index: number) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
   }
 
@@ -402,7 +402,7 @@ const DiskDrive = (props: DiskDriveProps) => {
                 if (dprops.diskData.length > 0) {
                   downloadDisk(dprops.diskData, filename)
                   dprops.diskHasChanges = false
-                  resetDrive(props.index)
+                  ejectDisk(props.index)
                 }
               }
             },
@@ -410,7 +410,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               label: "Eject Disk",
               icon: faEject,
               onClick: () => {
-                resetDrive(props.index)
+                ejectDisk(props.index)
               }
             },
             {
@@ -441,7 +441,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               label: "Eject Disk",
               icon: faEject,
               onClick: () => {
-                resetDrive(props.index)
+                ejectDisk(props.index)
               }
             },
             {

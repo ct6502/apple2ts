@@ -131,9 +131,12 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
   passData()
 }
 
-export const resetDrive = () => {
-  doResetDiskDrive(driveState[1])
-  doResetDiskDrive(driveState[2])
+export const resetFloppyDrives = () => {
+  for (let i = 0; i < driveState.length; i++) {
+    if (!driveState[i].hardDrive) {
+        doResetDiskDrive(driveState[i])
+    }
+  }
   passData()
 }
 
