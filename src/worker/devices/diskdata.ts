@@ -349,7 +349,16 @@ export const handleDriveSoftSwitches: AddressCallback =
           doWriteByte(ds, dd, cycles)
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
+          // https://github.com/ct6502/apple2ts/issues/81
+          // Needed to move this into the ds.writeMode check.
+          // Stickybear Town Builder tries to load the write data latch when
+          // writeMode is not enabled. If this is allowed then the game freezes.
+          // To avoid this, only set dataRegister if we are in writeMode.
+          if (value >= 0) {
+            dataRegister = value
+          }
         } else {
+          // https://github.com/ct6502/apple2ts/issues/81
           // The E7 protection scheme reads $C08D,X in the middle of reading data.
           // This will reset the sequencer and clear the data latch.
           // This is used by Wings of Fury on track 0.
@@ -359,9 +368,11 @@ export const handleDriveSoftSwitches: AddressCallback =
           cycleRemainder = cycleRemainder % 4
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
-        }
-        if (value >= 0) {
-          dataRegister = value
+          if (value >= 0) {
+            console.log(`Illegal LOAD of write data latch during read: PC=${toHex(s6502.PC)} Value=${toHex(value)}`)
+          } else {
+            console.log(`Illegal READ of write data latch during read: PC=${toHex(s6502.PC)}`)
+          }
         }
       }
       break
