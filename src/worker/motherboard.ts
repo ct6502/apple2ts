@@ -3,7 +3,7 @@ import { Buffer } from "buffer"
 import { passMachineState, passRequestThumbnail, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, setStackDump, get6502Instructions, getStackDump } from "./instructions"
 import { MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "../common/utility"
-import { getDriveSaveState, restoreDriveSaveState, resetDrive, doPauseDrive, getHardDriveState } from "./devices/drivestate"
+import { getDriveSaveState, restoreDriveSaveState, resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
   restoreSoftSwitches, getSoftSwitchDescriptions } from "./softswitches"
@@ -231,7 +231,7 @@ const configureMachine = () => {
 }
 
 const resetMachine = () => {
-  resetDrive()
+  resetFloppyDrives()
   setButtonState()
   resetMouse()
   resetPassport()
@@ -260,6 +260,18 @@ const doBoot = () => {
     enableHardDrive(false)
     setTimeout(() => { enableHardDrive() }, 200)
   }
+}
+
+// The only reason we need this is for our floppy disk unit tests.
+// We cannot just call doSetRunMode(RUN_MODE.NEED_BOOT) since that relies
+// on asynchronous callbacks to keep the emulator running. Using async
+// within Jest causes the tests to just quietly return without running
+// anything afterwards.
+export const doBootForTests = () => {
+  doBoot()
+  doSetSpeedMode(4)
+  cpuSpeed = 1
+  doSetRunMode(RUN_MODE.RUNNING)
 }
 
 const doReset = () => {
@@ -489,6 +501,7 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   }
   updateExternalMachineState()
   resetRefreshCounter()
+  // Jump start the emulator if we have never executed anything.
   if (cpuSpeed === 0) {
     cpuSpeed = 1
     doAdvance6502Timer()
