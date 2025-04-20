@@ -5,3 +5,13 @@
   overflow-y: auto;
   margin-bottom: 10px;
 }
+
+.dbg-tab-row {
+  margin-left: -2px;
+  margin-right: -6px;
+  border-bottom: 1px solid black;
+}
+
+.dbg-tab {
+  border-bottom: none;
+}
