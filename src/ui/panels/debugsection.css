@@ -64,7 +64,7 @@ body.dark-mode .debug-panel {
 }
 
 .tall-panel {
-  height: 595px;
+  height: 550px;
 }
 
 .wide-panel {
@@ -509,4 +509,84 @@ body.dark-mode .memory-map td {
 
 body.dark-mode .icon-text {
   color: var(--text-color);
+}
+
+.dbg-panel {
+  width: 100%;
+  height: 88.5vh;
+}
+
+.debug-section {
+  width: 100%;
+  height: 100%;
+  padding-top: 8px;
+}
+
+.dbg-tab-row {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  padding: 12px;
+  padding-top: 4px;
+  padding-bottom: 0px;
+}
+
+.dbg-tab {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border: 1px solid black;
+  text-align: center;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.dbg-tab:hover {
+  background-color: gray;
+}
+
+.dbg-tab-active {
+  background-color: gray;
+}
+
+.dbg-expectin-panel {
+  display: grid;
+  grid-template-rows: 1fr 92px;
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+}
+
+.dbg-expectin-textarea {
+  width: calc(100% - 12px);
+  box-sizing: border-box;
+  resize: none;
+  padding: 8px;
+  font-family: PrintChar21;
+  font-size: 14px;
+  background-color: black;
+  color: white;
+  border: 1px solid black;
+  border-radius: 10px;
+  tab-size: 2;
+}
+
+.dbg-expectin-button-row {
+  margin-right: 12px;
+  text-align: right;
+}
+
+.dbg-expect-button {
+  width: 96px;
+  height: 32px;
+  margin-top: 6px;
+  font-size: 12pt;
+  color: black;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+.dbg-expect-button:hover {
+  background-color: gray;
 }
