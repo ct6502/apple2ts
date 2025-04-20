@@ -1,7 +1,7 @@
 export const newReleases: DiskCollectionItem[] = [
   {
     type: -1,
-    title: "Glider for Apple II",
+    title: "Glider for Apple\u00A0II",
     lastUpdated: new Date("3/16/2025"),
     imageUrl: new URL("https://www.colino.net/wordpress/wp-content/uploads/glider-splash.png"),
     diskUrl: new URL("https://colino.net/tmp/glider-en-beta-202503162.po"),
@@ -38,5 +38,13 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg"),
     diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/kontrabant/kontra_en.dsk"),
     detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/")
+  },
+  {
+    type: -1,
+    title: "Shufflepuck Cafe",
+    lastUpdated: new Date("4/19/2025"),
+    imageUrl: new URL("https://www.colino.net/wordpress/wp-content/uploads/floppy.png"),
+    diskUrl: new URL("https://www.colino.net/wordpress/wp-content/uploads/shufflepuck-beta-1-7d631661.po"),
+    detailsUrl: new URL("https://www.colino.net/wordpress/en/archives/2025/04/19/first-beta-release-of-shufflepuck-for-apple-ii/")
   }
 ]
