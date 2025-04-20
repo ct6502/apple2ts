@@ -52,6 +52,10 @@ test("BlazingPaddles", () => testDiskImage("BlazingPaddles.woz", 0xB4BD, 6000000
 test("Miner2049er", () => testDiskImage("Miner2049er.woz", 0x0CB0, 19900000))
 test("SammyLightfoot", () => testDiskImage("SammyLightfoot.woz", 0x785F, 11600000))
 
+// Works fine but cannot easily test because the hang happened after
+// choosing the "Build a Town" menu option. See issue #81 for details.
+// test("StickybearTown", () => testDiskImage("StickybearTown.woz", 0xFFFF, xxxxxxxx))
+
 // Does not boot
 // test("WingsOfFury", () => testDiskImage("WingsOfFuryA.woz", 0xFFFF, 6000000))
 
