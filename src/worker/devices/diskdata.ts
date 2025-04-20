@@ -62,14 +62,17 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   // The Applesauce formula: Adjust new track location based on arm position
   // relative to old track loc. This is needed for disks that rely on
   // cross-track synchronization such as Balance of Power.
-  // The +7 is taken from a related AppleWin issue:
+  // The +bitOffset is taken from a related AppleWin issue:
   // https://github.com/AppleWin/AppleWin/issues/1022
-  // Balance of Power still loads without the +7, but the critical
+  // Balance of Power still loads without the +bitOffset, but the critical
   // 13-byte sequence $F2...$FE ends up near the end of the 256 "test" bytes.
-  // Adding +7 moves the sequence to the middle of the 256 bytes, which seems
+  // Adding this offset moves the sequence to the middle of the 256 bytes, which seems
   // safer and will hopefully help with similar copy protected disks.
+  // Note: This used to be +7 (agreeing with AppleWin) but Miner 2049er
+  // didn't boot until I changed it to +9.
+  const bitOffset = 9
   ds.trackLocation = Math.floor(ds.trackLocation *
-    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack])) + 7
+    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack])) + bitOffset
 }
 
 let randPos = 0
