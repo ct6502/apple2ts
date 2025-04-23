@@ -728,7 +728,7 @@ const handleAppleMouse: AddressCallback = (addr:number, value: number): number =
       switch (value)
       {
         case CMD.INIT:       // initialize
-          console.log("cmd.init")
+          // console.log("cmd.init")
           mousex = 0
           mousey = 0
           lastmousex = 0
