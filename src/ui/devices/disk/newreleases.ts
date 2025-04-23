@@ -47,10 +47,10 @@ export const newReleases: DiskCollectionItem[] = [
   {
     type: -1,
     title: "Shufflepuck Cafe",
-    lastUpdated: new Date("4/19/2025"),
+    lastUpdated: new Date("4/23/2025"),
     imageUrl: new URL("https://www.colino.net/wordpress/wp-content/uploads/shufflepuck-cafe-bar.png"),
     diskUrl: new URL("https://github.com/colinleroy/a2tools/releases/latest/download/shufflepuck.po"),
-    detailsUrl: new URL("https://www.colino.net/wordpress/en/archives/2025/04/19/first-beta-release-of-shufflepuck-for-apple-ii/"),
+    detailsUrl: new URL("https://www.colino.net/wordpress/en/shufflepuck-cafe-for-apple-ii/"),
     fileSize: 143360
   }
 ]
