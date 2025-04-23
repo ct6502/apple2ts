@@ -1,16 +1,27 @@
 {
-  "exPectin": [
+  "commands": [
     {
-      "match": "]",
-      "puts": "10 PRINT \"HELLO\"\n"
+      "emulator": "boot"
     },
     {
-      "match": "]",
-      "puts": "20 GOTO 10\n"
-    },
-    {
-      "match": "]",
-      "puts": "RUN\n"
+      "expectin": [
+        {
+          "match": "Apple (//|][)",
+          "emulator": "reset"
+        },
+        {
+          "match": "]",
+          "send": "10 PRINT \"HELLO\"\r"
+        },
+        {
+          "match": "]",
+          "send": "20 GOTO 10\r"
+        },
+        {
+          "match": "]",
+          "send": "RUN\r"
+        }
+      ]
     }
   ]
 }
