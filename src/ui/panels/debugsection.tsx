@@ -12,32 +12,50 @@ import { handleGetIsDebugging } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
 import { getTheme } from "../ui_settings"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultExpectin from "./default_expectin.json"
+import { Expectin } from "../../common/expectin"
 
-const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
+const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
   const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
-  const [activeTab, setActiveTab] = useState<number>(0)
+  const [activeTab, setActiveTab] = useState<number>(1) // $TODO: Set to 0 before PR
   const [scriptRunning, setScriptRunning] = useState<boolean>(false)
+  const [expectinText, setExpectinText] = useState<string>(JSON.stringify(defaultExpectin, null, 2))
+  const [expectinError, setExpectinError] = useState<string>("")
 
   if (isMinimalTheme) {
     import("./debugsection.minimal.css")
   }
+
+  useEffect(() => {
+    try {
+      new Expectin(expectinText)
+      setExpectinError("")
+    } catch (error) {
+      setExpectinError(`${error}`)
+    }
+  }, [expectinText])
 
   const handleTabClick = (tabIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     setActiveTab(tabIndex)
     event.stopPropagation()
   }
 
+  const handleTextAreaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const elem = event.target as HTMLTextAreaElement
+    setExpectinText(elem.value)
+  }
+
   const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if(event.key === "Tab") {
-      const elem = event.target as HTMLTextAreaElement
+    const elem = event.target as HTMLTextAreaElement
+
+    if (event.key === "Tab") {
       let v = elem.value
       let s = elem.selectionStart
       let e = elem.selectionEnd
-      
+
       elem.value = v.substring(0, s) + "\t" + v.substring(e)
       elem.selectionStart = elem.selectionEnd = s + 1
 
@@ -47,6 +65,12 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
   }
 
   const handleExpectButtonClick = () => {
+    if (scriptRunning) {
+      // $TODO
+    } else {
+      // $TODO
+    }
+
     setScriptRunning(!scriptRunning)
   }
 
@@ -68,13 +92,13 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
             className={`dbg-tab ${activeTab == 0 ? " dbg-tab-active" : ""}`}
             title="Show debugging panel"
             onClick={handleTabClick(0)}>
-            <FontAwesomeIcon icon={faBug} size="lg"/>
+            <FontAwesomeIcon icon={faBug} size="lg" />
           </div>
           <div
             className={`dbg-tab ${activeTab == 1 ? " dbg-tab-active" : ""}`}
             title="Show Apple exPectin panel"
             onClick={handleTabClick(1)}>
-            <FontAwesomeIcon icon={faTerminal} size="lg"/>
+            <FontAwesomeIcon icon={faTerminal} size="lg" />
           </div>
         </div>
         {activeTab == 0 &&
@@ -85,13 +109,13 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
               <div className="flex-column-gap">
                 <div className="flex-row-gap round-rect-border" id="tour-debug-info">
                   <StackDump />
-                  <MemoryMap updateDisplay={props.updateDisplay}/>
+                  <MemoryMap updateDisplay={props.updateDisplay} />
                 </div>
                 <MemoryDump />
               </div>
             </div>
             <div className="flex-row-gap">
-              <BreakpointsView updateDisplay={props.updateDisplay}/>
+              <BreakpointsView updateDisplay={props.updateDisplay} />
               <TimeTravelPanel />
             </div>
           </div>}
@@ -102,11 +126,17 @@ const DebugSection = (props: {updateDisplay: UpdateDisplay}) => {
               autoComplete="off"
               autoCorrect="off"
               spellCheck="false"
-              onKeyDown={handleTextAreaKeyDown}>
-                {JSON.stringify(defaultExpectin, null, 2)}
-              </textarea>
+              readOnly={scriptRunning}
+              onChange={handleTextAreaChange}
+              onKeyDown={handleTextAreaKeyDown}
+              value={expectinText} />
             <div className="dbg-expectin-button-row">
-              <button className="dbg-expect-button" onClick={handleExpectButtonClick}>{scriptRunning ? "Stop" : "Run"}</button>
+              <div
+                style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
+                className="dbg-expectin-error">{expectinError}</div>
+              {expectinError === "" && <button
+                className="dbg-expect-button"
+                onClick={handleExpectButtonClick}>{scriptRunning ? "Stop" : "Run"}</button>}
             </div>
           </div>}
       </div>

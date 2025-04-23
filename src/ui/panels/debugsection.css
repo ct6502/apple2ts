@@ -562,7 +562,7 @@ body.dark-mode .icon-text {
   resize: none;
   padding: 8px;
   font-family: PrintChar21;
-  font-size: 14px;
+  font-size: 12px;
   background-color: black;
   color: white;
   border: 1px solid black;
@@ -571,8 +571,15 @@ body.dark-mode .icon-text {
 }
 
 .dbg-expectin-button-row {
+  display: grid;
+  grid-template-columns: 1fr 96px;
   margin-right: 12px;
-  text-align: right;
+}
+
+.dbg-expectin-error {
+  padding: 4px;
+  color: red;
+  font-size: 10pt;
 }
 
 .dbg-expect-button {

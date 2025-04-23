@@ -4,24 +4,43 @@
       "emulator": "boot"
     },
     {
-      "expectin": [
+      "expect": [
         {
           "match": "Apple (//|][)",
-          "emulator": "reset"
+          "commands": [
+            {
+              "emulator": "reset"
+            }
+          ]
         },
         {
           "match": "]",
-          "send": "10 PRINT \"HELLO\"\r"
+          "commands": [
+            {
+              "send": "10 PRINT \"HELLO\"\r"
+            }
+          ]
         },
         {
           "match": "]",
-          "send": "20 GOTO 10\r"
+          "commands": [
+            {
+              "send": "20 GOTO 10\r"
+            }
+          ]
         },
         {
           "match": "]",
-          "send": "RUN\r"
+          "commands": [
+            {
+              "send": "RUN\r"
+            }
+          ]
         }
       ]
+    },
+    {
+      "disconnect": {}
     }
   ]
 }
