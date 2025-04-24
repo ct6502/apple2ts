@@ -49,9 +49,13 @@ test("KingsQuest", () => testDiskImage("KingsQuestA.woz", 0x4F2E, 41000000))
 // See https://github.com/ct6502/apple2ts/issues/81
 test("BalanceOfPower", () => testDiskImage("BalanceOfPower.woz", 0x5928, 33900000))
 test("BlazingPaddles", () => testDiskImage("BlazingPaddles.woz", 0xB4BD, 6000000))
+test("Miner2049er", () => testDiskImage("Miner2049er.woz", 0x0CB0, 19900000))
 test("SammyLightfoot", () => testDiskImage("SammyLightfoot.woz", 0x785F, 11600000))
 
+// Works fine but cannot easily test because the hang happened after
+// choosing the "Build a Town" menu option. See issue #81 for details.
+// test("StickybearTown", () => testDiskImage("StickybearTown.woz", 0xFFFF, xxxxxxxx))
+
 // Does not boot
-// test("Miner2049er", () => testDiskImage("Miner2049er.woz", 0xFFFF, 6000000))
-// test("WingsOfFury", () => testDiskImage("WingsOfFury.woz", 0xFFFF, 6000000))
+// test("WingsOfFury", () => testDiskImage("WingsOfFuryA.woz", 0xFFFF, 6000000))
 
