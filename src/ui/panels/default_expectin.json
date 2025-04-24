@@ -6,7 +6,7 @@
     {
       "expect": [
         {
-          "match": "Apple (//|][)",
+          "match": "Apple (//e|][)",
           "commands": [
             {
               "emulator": "reset"
@@ -33,14 +33,19 @@
           "match": "]",
           "commands": [
             {
-              "send": "RUN\r"
+              "send": "LIST\r"
+            }
+          ]
+        },
+        {
+          "match": "]",
+          "commands": [
+            {
+              "disconnect": {}
             }
           ]
         }
       ]
-    },
-    {
-      "disconnect": {}
     }
   ]
 }

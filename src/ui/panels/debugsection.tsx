@@ -21,7 +21,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
   const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const [activeTab, setActiveTab] = useState<number>(1) // $TODO: Set to 0 before PR
-  const [scriptRunning, setScriptRunning] = useState<boolean>(false)
+  const [expectinObject, setExpectinObject] = useState<Expectin>()
   const [expectinText, setExpectinText] = useState<string>(JSON.stringify(defaultExpectin, null, 2))
   const [expectinError, setExpectinError] = useState<string>("")
 
@@ -64,14 +64,15 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     }
   }
 
-  const handleExpectButtonClick = () => {
-    if (scriptRunning) {
-      // $TODO
+  const handleExpectButtonClick = async () => {
+    if (expectinObject && expectinObject.IsRunning()) {
+      expectinObject.Cancel()
+      setExpectinObject(undefined)
     } else {
-      // $TODO
+      const expectin = new Expectin(expectinText)
+      expectin.Run()
+      setExpectinObject(expectin)
     }
-
-    setScriptRunning(!scriptRunning)
   }
 
   return (
@@ -126,17 +127,18 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
               autoComplete="off"
               autoCorrect="off"
               spellCheck="false"
-              readOnly={scriptRunning}
+              readOnly={expectinObject?.IsRunning()}
               onChange={handleTextAreaChange}
               onKeyDown={handleTextAreaKeyDown}
               value={expectinText} />
             <div className="dbg-expectin-button-row">
               <div
                 style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
+                title={expectinError}
                 className="dbg-expectin-error">{expectinError}</div>
               {expectinError === "" && <button
                 className="dbg-expect-button"
-                onClick={handleExpectButtonClick}>{scriptRunning ? "Stop" : "Run"}</button>}
+                onClick={handleExpectButtonClick}>{expectinObject?.IsRunning() ? "Stop" : "Run"}</button>}
             </div>
           </div>}
       </div>

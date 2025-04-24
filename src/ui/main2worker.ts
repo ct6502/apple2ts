@@ -13,6 +13,7 @@ import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
 import { getHelpText } from "./ui_settings"
+import { Buffer } from "buffer"
 
 let worker: Worker | null = null
 
@@ -330,6 +331,10 @@ export const handleGetState6502 = () => {
 export const handleGetTextPage = () => {
   // Always return the intial start page if we're idle
   return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage() : machineState.textPage
+}
+
+export const handleGetTextPageAsString = () => {
+  return Buffer.from(machineState.textPage.map((n) => (n &= 127))).toString()
 }
 
 export const handleGetLores = () => {

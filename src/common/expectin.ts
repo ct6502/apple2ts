@@ -1,12 +1,74 @@
+import { handleSetCPUState } from "../ui/controller"
+import { handleGetTextPageAsString, passPasteText } from "../ui/main2worker"
+import { RUN_MODE } from "./utility"
+
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class Expectin {
   json: ExpectinJSON
+  cancel: boolean
 
   constructor(jsonString: string) {
     this.json = Convert.toExpectinJSON(jsonString)
+    this.cancel = false
   }
 
-  private processCommands = () => {
-    //
+  public async Run() {
+    this.processCommands(this.json.commands)
+  }
+
+  public async Cancel() {
+    this.cancel = true
+  }
+
+  public IsRunning(): boolean {
+    return !this.cancel
+  }
+
+  private async processCommands(commands: ExpectinCommand[]) {
+    for (const command of commands) {
+      if (command.disconnect) {
+        this.cancel = true
+      } else if (command.emulator) {
+        switch (command.emulator) {
+          case "boot":
+            handleSetCPUState(RUN_MODE.NEED_BOOT)
+            break
+          case "reset":
+            handleSetCPUState(RUN_MODE.NEED_RESET)
+            break
+        }
+      } else if (command.expect) {
+        await command.expect.reduce(async (promise, expectCommand) => {
+          if (expectCommand.match) {
+            const escapedRegex = expectCommand.match.replace(/[\/\[\]]/g, '\\$&')
+            const regex = new RegExp(escapedRegex, "gims")
+            let prevText = handleGetTextPageAsString()
+
+            while (!this.cancel) {
+              const newText = handleGetTextPageAsString()
+              const i = prevText ? newText.indexOf(prevText) : -1
+              const deltaText = i >= 0 ? newText.substring(i + newText.length) : newText
+
+              if (!regex.test(deltaText)) {
+                console.log("wait")
+                await sleep(200)
+                prevText = deltaText
+              } else {
+                if (expectCommand.commands) {
+                  await this.processCommands(expectCommand.commands)
+                }
+                break
+              }
+            }
+          }
+        }, Promise.resolve())
+      } else if (command.send) {
+        passPasteText(command.send)
+      }
+    }
   }
 }
 
@@ -14,27 +76,32 @@ export class Expectin {
 // DO NOT MODIFY: The following code was auto-generated via https://app.quicktype.io
 // *********************************************************************************
 
+// To parse this data:
+//
+//   import { Convert, ExpectinJSON } from "./file";
+//
+//   const expectinJSON = Convert.toExpectinJSON(json);
+//
+// These functions will throw an error if the JSON doesn't
+// match the expected interface, even if the JSON is valid.
+
 export type ExpectinJSON = {
-    readonly commands: ExpectinJSONCommand[];
+    readonly commands: ExpectinCommand[];
 }
 
-export type ExpectinJSONCommand = {
+export type Expect = {
+    readonly match?:    string;
+    readonly commands?: ExpectinCommand[];
+}
+
+export type ExpectinCommand = {
     readonly emulator?:   string;
-    readonly expect?:     Expect[];
+    readonly expect?:   Expect[];
+    readonly send?:       string;
     readonly disconnect?: Disconnect;
 }
 
 export type Disconnect = {
-}
-
-export type Expect = {
-    readonly match:    string;
-    readonly commands: ExpectCommand[];
-}
-
-export type ExpectCommand = {
-    readonly emulator?: string;
-    readonly send?:     string;
 }
 
 // Converts JSON strings to/from your types
@@ -203,21 +270,21 @@ function r(name: string) {
 
 const typeMap: any = {
     "ExpectinJSON": o([
-        { json: "commands", js: "commands", typ: a(r("ExpectinJSONCommand")) },
+        { json: "commands", js: "commands", typ: u(undefined, a(r("ExpectinJSONCommand"))) },
     ], false),
     "ExpectinJSONCommand": o([
         { json: "emulator", js: "emulator", typ: u(undefined, "") },
         { json: "expect", js: "expect", typ: u(undefined, a(r("Expect"))) },
-        { json: "disconnect", js: "disconnect", typ: u(undefined, r("Disconnect")) },
-    ], false),
-    "Disconnect": o([
     ], false),
     "Expect": o([
-        { json: "match", js: "match", typ: "" },
-        { json: "commands", js: "commands", typ: a(r("ExpectCommand")) },
+        { json: "match", js: "match", typ: u(undefined, "") },
+        { json: "commands", js: "commands", typ: u(undefined, a(r("ExpectCommand"))) },
     ], false),
     "ExpectCommand": o([
         { json: "emulator", js: "emulator", typ: u(undefined, "") },
         { json: "send", js: "send", typ: u(undefined, "") },
+        { json: "disconnect", js: "disconnect", typ: u(undefined, r("Disconnect")) },
+    ], false),
+    "Disconnect": o([
     ], false),
 };
