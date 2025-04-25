@@ -15,7 +15,7 @@ import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from
 import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
 
-const nlines = 40
+const nlines = 37
 let currentScrollAddress = -1
 let skipCodeScroll = false
 //const lineNumbers: Array<number> = []

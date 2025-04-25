@@ -1,0 +1,64 @@
+{
+  "commands": [
+    {
+      "emulator": "boot"
+    },
+    {
+      "expect": [
+        {
+          "match": "Apple (//e|][)",
+          "commands": [
+            {
+              "emulator": "reset"
+            }
+          ]
+        },
+        {
+          "match": "]",
+          "commands": [
+            {
+              "send": "10 PRINT \"HELLO\"\r"
+            }
+          ]
+        },
+        {
+          "match": "]",
+          "commands": [
+            {
+              "send": "20 GOTO 10\r"
+            }
+          ]
+        },
+        {
+          "match": "]",
+          "commands": [
+            {
+              "send": "RUN\r"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sleep": 1000
+    },
+    {
+      "send": "\u0003"
+    },
+    {
+      "expect": [
+        {
+          "match": "BREAK IN \\d+",
+          "commands": [
+            {
+              "send": "\rREM DONE!\r"
+            },
+            {
+              "disconnect": {}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
