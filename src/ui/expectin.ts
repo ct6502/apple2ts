@@ -1,13 +1,13 @@
-import { handleSetCPUState } from "../ui/controller"
-import { handleGetTextPageAsString, passPasteText } from "../ui/main2worker"
-import { RUN_MODE } from "./utility"
+import { handleSetCPUState } from "./controller"
+import { handleGetTextPageAsString, passPasteText } from "./main2worker"
+import { RUN_MODE } from "../common/utility"
 
 function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function trim(str: string) {
-  return str.replace(/(^[\r\n\s\x7F]+)|([\r\n\s\x7F]+$)/gm, '')
+  return str.replace(/(^[\r\n\s\x7F]+)|([\r\n\s\x7F]+$)/gm, "")
 }
 
 export class Expectin {
@@ -49,7 +49,7 @@ export class Expectin {
       } else if (command.expect) {
         await command.expect.reduce(async (promise, expectCommand) => {
           if (expectCommand.match) {
-            const escapedRegex = expectCommand.match.replace(/[\/\[\]]/g, '\\$&')
+            const escapedRegex = expectCommand.match.replace(/[/[\]]/g, "\\$&")
             const regex = new RegExp(escapedRegex, "gims")
 
             while (!this.cancel) {
@@ -99,14 +99,11 @@ export type Expect = {
 }
 
 export type ExpectinCommand = {
-    readonly disconnect?: Disconnect
+    readonly disconnect?: object
     readonly emulator?:   string
     readonly expect?:   Expect[]
     readonly send?:       string
     readonly sleep?:    number
-}
-
-export type Disconnect = {
 }
 
 // Converts JSON strings to/from your types
@@ -121,13 +118,15 @@ export class Convert {
     }
 }
 
-function invalidValue(typ: any, val: any, key: any, parent: any = ''): never {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function invalidValue(typ: any, val: any, key: any, parent: any = ""): never {
     const prettyTyp = prettyTypeName(typ)
-    const parentText = parent ? ` on ${parent}` : ''
-    const keyText = key ? ` for key "${key}"` : ''
+    const parentText = parent ? ` on ${parent}` : ""
+    const keyText = key ? ` for key "${key}"` : ""
     throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function prettyTypeName(typ: any): string {
     if (Array.isArray(typ)) {
         if (typ.length === 2 && typ[0] === undefined) {
@@ -142,30 +141,38 @@ function prettyTypeName(typ: any): string {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function jsonToJSProps(typ: any): any {
     if (typ.jsonToJS === undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const map: any = {}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ })
         typ.jsonToJS = map
     }
     return typ.jsonToJS
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function jsToJSONProps(typ: any): any {
     if (typ.jsToJSON === undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const map: any = {}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ })
         typ.jsToJSON = map
     }
     return typ.jsToJSON
 }
 
-function transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function transform(val: any, typ: any, getProps: any, key: any = "", parent: any = ""): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function transformPrimitive(typ: string, val: any): any {
         if (typeof typ === typeof val) return val
         return invalidValue(typ, val, key, parent)
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function transformUnion(typs: any[], val: any): any {
         // val must validate against one typ in typs
         const l = typs.length
@@ -173,22 +180,27 @@ function transform(val: any, typ: any, getProps: any, key: any = '', parent: any
             const typ = typs[i]
             try {
                 return transform(val, typ, getProps)
-            } catch (_) {}
+            } catch {
+              // console.error(error)
+            }
         }
         return invalidValue(typs, val, key, parent)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function transformEnum(cases: string[], val: any): any {
         if (cases.indexOf(val) !== -1) return val
         return invalidValue(cases.map(a => { return l(a) }), val, key, parent)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function transformArray(typ: any, val: any): any {
         // val must be an array with no invalid elements
         if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent)
         return val.map(el => transform(el, typ, getProps))
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function transformDate(val: any): any {
         if (val === null) {
             return null
@@ -200,10 +212,12 @@ function transform(val: any, typ: any, getProps: any, key: any = '', parent: any
         return d
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function transformObject(props: { [k: string]: any }, additional: any, val: any): any {
         if (val === null || typeof val !== "object" || Array.isArray(val)) {
             return invalidValue(l(ref || "object"), val, key, parent)
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result: any = {}
         Object.getOwnPropertyNames(props).forEach(key => {
             const prop = props[key]
@@ -224,6 +238,7 @@ function transform(val: any, typ: any, getProps: any, key: any = '', parent: any
         return invalidValue(typ, val, key, parent)
     }
     if (typ === false) return invalidValue(typ, val, key, parent)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let ref: any = undefined
     while (typeof typ === "object" && typ.ref !== undefined) {
         ref = typ.ref
@@ -231,8 +246,11 @@ function transform(val: any, typ: any, getProps: any, key: any = '', parent: any
     }
     if (Array.isArray(typ)) return transformEnum(typ, val)
     if (typeof typ === "object") {
+        // eslint-disable-next-line no-prototype-builtins
         return typ.hasOwnProperty("unionMembers") ? transformUnion(typ.unionMembers, val)
+            // eslint-disable-next-line no-prototype-builtins
             : typ.hasOwnProperty("arrayItems")    ? transformArray(typ.arrayItems, val)
+            // eslint-disable-next-line no-prototype-builtins
             : typ.hasOwnProperty("props")         ? transformObject(getProps(typ), typ.additional, val)
             : invalidValue(typ, val, key, parent)
     }
@@ -241,26 +259,32 @@ function transform(val: any, typ: any, getProps: any, key: any = '', parent: any
     return transformPrimitive(typ, val)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cast<T>(val: any, typ: any): T {
     return transform(val, typ, jsonToJSProps)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function uncast<T>(val: T, typ: any): any {
     return transform(val, typ, jsToJSONProps)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function l(typ: any) {
     return { literal: typ }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function a(typ: any) {
     return { arrayItems: typ }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function u(...typs: any[]) {
     return { unionMembers: typs }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function o(props: any[], additional: any) {
     return { props, additional }
 }
@@ -269,6 +293,7 @@ function r(name: string) {
     return { ref: name }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const typeMap: any = {
     "ExpectinJSON": o([
         { json: "commands", js: "commands", typ: u(undefined, a(r("ExpectinJSONCommand"))) },

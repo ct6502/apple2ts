@@ -15,7 +15,7 @@ import { getTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultExpectin from "./default_expectin.json"
-import { Expectin } from "../../common/expectin"
+import { Expectin } from "../expectin"
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
@@ -52,9 +52,9 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     const elem = event.target as HTMLTextAreaElement
 
     if (event.key === "Tab") {
-      let v = elem.value
-      let s = elem.selectionStart
-      let e = elem.selectionEnd
+      const v = elem.value
+      const s = elem.selectionStart
+      const e = elem.selectionEnd
 
       elem.value = v.substring(0, s) + "\t" + v.substring(e)
       elem.selectionStart = elem.selectionEnd = s + 1
