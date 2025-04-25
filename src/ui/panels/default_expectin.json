@@ -36,10 +36,23 @@
               "send": "RUN\r"
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "sleep": 1000
+    },
+    {
+      "send": "\u0003"
+    },
+    {
+      "expect": [
         {
-          "match": "]",
+          "match": "BREAK IN \\d+",
           "commands": [
+            {
+              "send": "\rREM DONE!\r"
+            },
             {
               "disconnect": {}
             }
