@@ -6,6 +6,10 @@ function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function trim(str: string) {
+  return str.replace(/(^[\r\n\s\x7F]+)|([\r\n\s\x7F]+$)/gm, '');
+}
+
 export class Expectin {
   json: ExpectinJSON
   cancel: boolean
@@ -27,9 +31,10 @@ export class Expectin {
     return !this.cancel
   }
 
-  private async processCommands(commands: ExpectinCommand[]) {
+  private async processCommands(commands: ExpectinCommand[], prevText: string = "") {
     for (const command of commands) {
       if (command.disconnect) {
+        console.log("disconnect")
         this.cancel = true
       } else if (command.emulator) {
         switch (command.emulator) {
@@ -45,20 +50,30 @@ export class Expectin {
           if (expectCommand.match) {
             const escapedRegex = expectCommand.match.replace(/[\/\[\]]/g, '\\$&')
             const regex = new RegExp(escapedRegex, "gims")
-            let prevText = handleGetTextPageAsString()
 
             while (!this.cancel) {
-              const newText = handleGetTextPageAsString()
-              const i = prevText ? newText.indexOf(prevText) : -1
-              const deltaText = i >= 0 ? newText.substring(i + newText.length) : newText
+              let newText
+
+              do {
+                await sleep(100)
+                newText = trim(handleGetTextPageAsString())
+              } while (newText === prevText)
+
+              console.log(`prevText="${prevText}"`)
+              console.log(`newText="${newText}"`)
+              console.log(newText.charCodeAt(newText.length-1))
+
+              const i = newText.indexOf(prevText)
+              console.log(`i=${i}`)
+              const deltaText = i >= 0 ? newText.substring(i + prevText.length) : newText
+
+              console.log(`deltaText=${deltaText}`)
 
               if (!regex.test(deltaText)) {
-                console.log("wait")
-                await sleep(200)
-                prevText = deltaText
+                prevText = newText
               } else {
                 if (expectCommand.commands) {
-                  await this.processCommands(expectCommand.commands)
+                  prevText = await this.processCommands(expectCommand.commands, newText)
                 }
                 break
               }
@@ -66,9 +81,12 @@ export class Expectin {
           }
         }, Promise.resolve())
       } else if (command.send) {
+        console.log("SEND:"+command.send)
         passPasteText(command.send)
       }
     }
+
+    return prevText
   }
 }
 

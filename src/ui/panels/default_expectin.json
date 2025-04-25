@@ -33,7 +33,7 @@
           "match": "]",
           "commands": [
             {
-              "send": "LIST\r"
+              "send": "RUN\r"
             }
           ]
         },
