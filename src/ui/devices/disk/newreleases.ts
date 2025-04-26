@@ -36,13 +36,13 @@ export const newReleases: DiskCollectionItem[] = [
     fileSize: 819200
   },
   {
-  type: -1,
-  title: "Kontrabant",
-  lastUpdated: new Date("4/10/2025"),
-  imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg"),
-  diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/kontrabant/kontra_en.dsk"),
-  detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/"),
-  fileSize: 819200
+    type: -1,
+    title: "Kontrabant",
+    lastUpdated: new Date("4/10/2025"),
+    imageUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg"),
+    diskUrl: new URL("https://github.com/antoinevignau/source/raw/refs/heads/main/kontrabant/kontra_en.dsk"),
+    detailsUrl: new URL("https://www.brutaldeluxe.fr/products/apple2/kontrabant/"),
+    fileSize: 819200
   },
   {
     type: -1,
