@@ -56,8 +56,8 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
       const s = elem.selectionStart
       const e = elem.selectionEnd
 
-      elem.value = v.substring(0, s) + "\t" + v.substring(e)
-      elem.selectionStart = elem.selectionEnd = s + 1
+      elem.value = v.substring(0, s) + "  " + v.substring(e)
+      elem.selectionStart = elem.selectionEnd = s + 2
 
       event.preventDefault()
       return false
@@ -130,7 +130,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
               readOnly={expectinObject?.IsRunning()}
               onChange={handleTextAreaChange}
               onKeyDown={handleTextAreaKeyDown}
-              value={expectinText} />
+              defaultValue={expectinText} />
             <div className="dbg-expectin-button-row">
               <div
                 style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
