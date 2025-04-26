@@ -567,7 +567,6 @@ body.dark-mode .icon-text {
   color: white;
   border: 1px solid black;
   border-radius: 10px;
-  tab-size: 2;
 }
 
 .dbg-expectin-button-row {
