@@ -561,8 +561,8 @@ body.dark-mode .icon-text {
   box-sizing: border-box;
   resize: none;
   padding: 8px;
-  font-family: PrintChar21;
-  font-size: 12px;
+  font-family: monospace;
+  font-size: 10pt;
   background-color: black;
   color: white;
   border: 1px solid black;
