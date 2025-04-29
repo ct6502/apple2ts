@@ -21,7 +21,7 @@ import CodeMirrorEditor from "./editorview"
 const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
   const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
-  const [activeTab, setActiveTab] = useState<number>(1)
+  const [activeTab, setActiveTab] = useState<number>(0)
   const [expectinObject, setExpectinObject] = useState<Expectin>()
   const [expectinText, setExpectinText] = useState<string>(JSON.stringify(defaultExpectin, null, 2))
   const [expectinError, setExpectinError] = useState<string>("")
