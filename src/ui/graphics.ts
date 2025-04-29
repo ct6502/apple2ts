@@ -359,7 +359,7 @@ export const getCanvasSize = () => {
     width -= noBackgroundImage ? 0 : 40
   }
   if (!noBackgroundImage && handleGetIsDebugging()) {
-    const debugSection = document.getElementById("debug-section") || document.getElementsByClassName("dbg-expectin-panel")[0] as HTMLElement
+    const debugSection = document.getElementById("debug-section") as HTMLElement
     if (debugSection && debugSection.offsetWidth > 0) {
       width = Math.max(400, width - debugSection.offsetWidth - 0)
     }

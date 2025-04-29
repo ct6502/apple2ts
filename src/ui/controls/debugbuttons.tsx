@@ -66,7 +66,11 @@ const DebugButtons = (props: DisplayProps) => {
     {getTheme() != UI_THEME.MINIMAL &&
       <button className="push-button" id="tour-debug-button"
         title="Toggle Debug"
-        onClick={() => setPreferenceDebugMode(!handleGetIsDebugging())}>
+        onClick={() => {
+            setPreferenceDebugMode(!handleGetIsDebugging())
+            // Force a refresh to pick up the new canvas size
+            window.dispatchEvent(new Event("resize"))
+          }}>
         <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
       </button>}
     {isFileSystemApiSupported() &&
