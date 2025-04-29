@@ -44,27 +44,6 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     event.stopPropagation()
   }
 
-  // const handleTextAreaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-  //   const elem = event.target as HTMLTextAreaElement
-  //   setExpectinText(elem.value)
-  // }
-
-  // const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-  //   const elem = event.target as HTMLTextAreaElement
-
-  //   if (event.key === "Tab") {
-  //     const v = elem.value
-  //     const s = elem.selectionStart
-  //     const e = elem.selectionEnd
-
-  //     elem.value = v.substring(0, s) + "  " + v.substring(e)
-  //     elem.selectionStart = elem.selectionEnd = s + 2
-
-  //     event.preventDefault()
-  //     return false
-  //   }
-  // }
-
   const handleExpectButtonClick = async () => {
     if (expectinObject && expectinObject.IsRunning()) {
       expectinObject.Cancel()
