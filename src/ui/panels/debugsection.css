@@ -519,7 +519,7 @@ body.dark-mode .icon-text {
 .debug-section {
   width: 100%;
   height: 100%;
-  padding-top: 8px;
+  padding-top: 0px;
 }
 
 .dbg-tab-row {
@@ -532,47 +532,22 @@ body.dark-mode .icon-text {
 }
 
 .dbg-tab {
+  width: 120px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   border: 1px solid black;
   text-align: center;
   padding: 6px;
   cursor: pointer;
+  background-color: var(--background-color);
 }
 
 .dbg-tab:hover {
-  background-color: gray;
+  background-color: var(--button-active);
 }
 
 .dbg-tab-active {
-  background-color: gray;
-}
-
-.dbg-expectin-panel {
-  display: grid;
-  grid-template-rows: 1fr 92px;
-  width: 100%;
-  height: 100%;
-  padding: 8px;
-}
-
-.dbg-expectin-textarea {
-  width: calc(100% - 12px);
-  box-sizing: border-box;
-  resize: none;
-  padding: 8px;
-  font-family: monospace;
-  font-size: 10pt;
-  background-color: black;
-  color: white;
-  border: 1px solid black;
-  border-radius: 10px;
-}
-
-.dbg-expectin-button-row {
-  display: grid;
-  grid-template-columns: 1fr 96px;
-  margin-right: 12px;
+  background-color: var(--button-active);
 }
 
 .dbg-expectin-error {

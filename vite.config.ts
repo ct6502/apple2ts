@@ -20,7 +20,7 @@ export default defineConfig({
     port: 6502,
   },
   build: {
-    chunkSizeWarningLimit: 900
+    chunkSizeWarningLimit: 1500
   },
   define: {
     "process.env": process.env
