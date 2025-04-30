@@ -303,6 +303,7 @@ const typeMap: any = {
         { json: "expect", js: "expect", typ: u(undefined, a(r("Expect"))) },
         { json: "sleep", js: "sleep", typ: u(undefined, 0) },
         { json: "send", js: "send", typ: u(undefined, "") },
+        { json: "disconnect", js: "disconnect", typ: u(undefined, r("Disconnect")) },
     ], false),
     "Expect": o([
         { json: "match", js: "match", typ: u(undefined, "") },
@@ -310,6 +311,7 @@ const typeMap: any = {
     ], false),
     "ExpectCommand": o([
         { json: "emulator", js: "emulator", typ: u(undefined, "") },
+        { json: "sleep", js: "sleep", typ: u(undefined, 0) },
         { json: "send", js: "send", typ: u(undefined, "") },
         { json: "disconnect", js: "disconnect", typ: u(undefined, r("Disconnect")) },
     ], false),
