@@ -7,7 +7,7 @@ import BreakpointsView from "./breakpointsview"
 import MemoryMap from "./memorymap"
 import StackDump from "./stackdump"
 import Flyout from "../flyout"
-import { faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
+import { faBug, faPlay, faStop, faTerminal } from "@fortawesome/free-solid-svg-icons"
 import { handleGetIsDebugging } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
@@ -55,11 +55,15 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     }
   }
 
+  // Do not allow debug panel to be shown in minimal theme on small devices
+  if (getTheme() == UI_THEME.MINIMAL && window.innerWidth < 800) {
+    return <></>
+  }
+
   return (
     <Flyout
       icon={faBug}
       position="bottom-right"
-      width={`max( ${getTheme() == UI_THEME.MINIMAL ? "41.25vw" : "41.25vw"}, 685px )`}
       title="debug panel"
       isOpen={handleGetIsDebugging}
       onClick={() => {
@@ -67,7 +71,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
         props.updateDisplay()
       }}
       buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
-      <div className="dbg-panel" id="debug-section">
+      <div id="debug-section">
         <div className="flex-row">
           <div
             className={`dbg-tab ${activeTab == 0 ? " dbg-tab-active" : ""}`}
@@ -108,9 +112,15 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
                 style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
                 title={expectinError}
                 className="dbg-expectin-error">{expectinError}</div>
-              {expectinError === "" && <button
-                className="dbg-expect-button"
-                onClick={handleExpectButtonClick}>{expectinObject?.IsRunning() ? "Stop" : "Run"}</button>}
+              {expectinError === "" &&
+                <button
+                  className="dbg-expect-button"
+                  title={expectinObject?.IsRunning() ? "Stop Script" : "Run Script"}
+                  onClick={handleExpectButtonClick}>{expectinObject?.IsRunning() ?
+                    <FontAwesomeIcon icon={faStop} /> :
+                    <FontAwesomeIcon icon={faPlay} />
+                    }
+                </button>}
             </div>
           </div>}
       </div>
