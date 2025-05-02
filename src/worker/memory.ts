@@ -241,10 +241,16 @@ const manageC800 = (slot: number) => {
         updateAddressTables()
       }
     }
+
+    // If C800Slot is zero, then possibly set it to first card accessed
     if (C800SlotGet() === 0) {
-      // If C800Slot is zero, then set it to first card accessed
-      C800SlotSet(slot)
-      updateAddressTables()
+      // Only switch C8 space if slot has extended ROM
+      // In a real system, not all cards respond to /IOSTROBE
+      if (slotIOC8Space[slot])
+      {
+        C800SlotSet(slot)
+        updateAddressTables()
+      }
     }
   } else {
     // If slot > 7 then it was an access to $CFFF.
@@ -296,6 +302,9 @@ export const specialJumpTable = new Map<number, () => void>()
 // Custom callbacks for mem get/set to $C090-$C0FF slot I/O and $C100-$C7FF.
 const slotIOCallbackTable = new Array<AddressCallback>(8)
 
+// Determines whether slot has C800 space ROM or not
+const slotIOC8Space = new Uint8Array(8)
+
 // Value = -1 indicates that this was a read/get operation
 const checkSlotIO = (addr: number, value = -1) => {
   const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
@@ -342,6 +351,8 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
     const end = (driver.length > 0x900) ? 0x900 : driver.length
     const addr = SLOTC8start + (slot - 1) * 0x800
     memory.set(driver.slice(0x100,end), addr)
+    // mark this slotas having C8 space
+    slotIOC8Space[slot] = 0xff
   }
   if (jump) {
     specialJumpTable.set(jump, fn)
@@ -435,7 +446,7 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
   } else {
     value = -1
     if (page >= 0xC1 && page <= 0xC7) {
-      if (page == 0xC3 && !SWITCHES.SLOTC3ROM.isSet) {
+      if (page == 0xC3 && (SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet)) {
         // NSC answers in slot C3 memory to be compatible with standard ProDOS driver and A2osX
         value = noSlotClock.read(addr)
       }
