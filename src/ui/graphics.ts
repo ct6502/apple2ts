@@ -4,7 +4,7 @@ import { handleGetAltCharSet, handleGetTextPage,
   handleGetMachineName,
   handleGetSoftSwitches} from "./main2worker"
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME, toHex } from "../common/utility"
-import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
+import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 import { getColorMode, getTheme } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
@@ -65,7 +65,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const switches = handleGetSoftSwitches()
   // See Video-7 RGB-SL7 manual, section 7.1, p. 35
   // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
-  const isVideo7Text = !switches.AN3 && !switches.COLUMN80 && switches.STORE80
+  const isVideo7Text = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
   const doubleRes = !isVideo7Text && (textPage.length === 320 || textPage.length === 1920)
   const mixedMode = textPage.length === 160 || textPage.length === 320
   const nchars = doubleRes ? 80 : 40
@@ -124,18 +124,22 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
         // Text background color is in the low nibble.
         if ((color & 15) !== 0) {
           const c = colors[color & 15]
-          ctx.fillStyle = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+          const cs = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+          ctx.fillStyle = cs
           ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
+          hiddenContext.fillStyle = cs
+          hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, hiddenWidth, hiddenHeight)
         }
         // Text foreground color is in the high nibble.
         const c = colors[color >> 4]
-        ctx.fillStyle = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+        const cs = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+        ctx.fillStyle = cs
+        hiddenContext.fillStyle = cs
       }
       ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
       hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
     })
   }
-  return !mixedMode
 }
 
 const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
@@ -143,9 +147,9 @@ const translateLoresColor = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 1
 const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const textPage = handleGetLores()
-  if (textPage.length === 0) return
+  if (textPage.length === 0) return false
   const switches = handleGetSoftSwitches()
-  const isVideo7Text = !switches.AN3 && !switches.COLUMN80 && switches.STORE80
+  const isVideo7Text = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
   const doubleRes = !isVideo7Text && (textPage.length === 1600 || textPage.length === 1920)
   const mixedMode = textPage.length === 800 || textPage.length === 1600
   const nlines = mixedMode ? 160 : 192
@@ -188,6 +192,7 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   }
   const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
   hiddenContext.putImageData(imageData, 0, 0)
+  return true
 }
 
 const BLACK = 0
@@ -226,7 +231,7 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
 const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
-  if (hgrPage.length === 0) return
+  if (hgrPage.length === 0) return false
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
   const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
@@ -245,6 +250,7 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   }
   const imageData = new ImageData(hgrDataStretched, 560, 2 * nlines)
   hiddenContext.putImageData(imageData, 0, 0)
+  return true
 }
 
 let doOverride = false
@@ -315,48 +321,46 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
   const colorMode = getColorMode()
-  // If we are only doing text output, we will draw directly onto our canvas,
-  // and do not need to use the hidden canvas with drawImage.
-  const textOnly = processTextPage(ctx, hiddenContext, colorMode, width, height)
-  if (!textOnly) {
-    // Otherwise, do graphics drawing, and then copy from our hidden canvas
-    // over to our main canvas.
-    processLoRes(hiddenContext, colorMode)
-    processHiRes(hiddenContext, colorMode)
+  let didDraw = processLoRes(hiddenContext, colorMode)
+  didDraw = processHiRes(hiddenContext, colorMode) || didDraw
+  if (didDraw) {
     drawImage(ctx, hiddenContext, width, height)
   }
-  if (TEST_GRAPHICS) {
-    const tile = [
-      0x7F, 0x0, 0x40, 0x80, 0x15, 0x40, 0x80,  // 1
-      0x02, 0x87, 0x40, 0x80, 0x00, 0x40, 0x80,
-      0x03, 0x0E, 0x40, 0x80, 0x00, 0x40, 0x80,
-      0x81, 0x8E, 0xC0, 0x00, 0x2A, 0xC0, 0x00,  // 2
-      0x82, 0x1B, 0xC0, 0x00, 0x00, 0xC0, 0x00,
-      0x83, 0x9B, 0xC0, 0x00, 0x00, 0xC0, 0x00,
-      0x05, 0x36, 0xC0, 0x01, 0x95, 0xC0, 0x01,  // 3
-      0x0A, 0xB6, 0xC0, 0x01, 0x00, 0xC0, 0x01,
-      0x0F, 0x00, 0xC0, 0x01, 0x00, 0xC0, 0x01,
-      0x85, 0x7F, 0xE0, 0x00, 0xAA, 0xE0, 0x00,  // 4
-      0x8A, 0x00, 0xE0, 0x00, 0x00, 0xE0, 0x00,
-      0x8F, 0x00, 0xE0, 0x02, 0x00, 0xE0, 0x02,
-      0x07, 0x00, 0xA0, 0x01, 0x3E, 0xA0, 0x01,  // 5
-      0x07, 0x00, 0xA0, 0x01, 0x00, 0xA0, 0x01,
-      0x07, 0x00, 0xA0, 0x01, 0x00, 0xA0, 0x01,
-      0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
-      0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
-      0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
-      0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
-      0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
-      0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
-      0, 0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0,
-      0, 0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0,
-      0, 0x8E, 0xDD, 0xBB, 0xF7, 0x80, 0,
-      0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
-      0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
-      0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
-    ctx.imageSmoothingEnabled = false
-    drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8, true)
-  }
+  // The hidden canvas was causing overlay issues with the text page.
+  // So instead, draw the graphics first and then overlay the text chars.
+  processTextPage(ctx, hiddenContext, colorMode, width, height)
+  // if (TEST_GRAPHICS) {
+  //   const tile = [
+  //     0x7F, 0x0, 0x40, 0x80, 0x15, 0x40, 0x80,  // 1
+  //     0x02, 0x87, 0x40, 0x80, 0x00, 0x40, 0x80,
+  //     0x03, 0x0E, 0x40, 0x80, 0x00, 0x40, 0x80,
+  //     0x81, 0x8E, 0xC0, 0x00, 0x2A, 0xC0, 0x00,  // 2
+  //     0x82, 0x1B, 0xC0, 0x00, 0x00, 0xC0, 0x00,
+  //     0x83, 0x9B, 0xC0, 0x00, 0x00, 0xC0, 0x00,
+  //     0x05, 0x36, 0xC0, 0x01, 0x95, 0xC0, 0x01,  // 3
+  //     0x0A, 0xB6, 0xC0, 0x01, 0x00, 0xC0, 0x01,
+  //     0x0F, 0x00, 0xC0, 0x01, 0x00, 0xC0, 0x01,
+  //     0x85, 0x7F, 0xE0, 0x00, 0xAA, 0xE0, 0x00,  // 4
+  //     0x8A, 0x00, 0xE0, 0x00, 0x00, 0xE0, 0x00,
+  //     0x8F, 0x00, 0xE0, 0x02, 0x00, 0xE0, 0x02,
+  //     0x07, 0x00, 0xA0, 0x01, 0x3E, 0xA0, 0x01,  // 5
+  //     0x07, 0x00, 0xA0, 0x01, 0x00, 0xA0, 0x01,
+  //     0x07, 0x00, 0xA0, 0x01, 0x00, 0xA0, 0x01,
+  //     0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
+  //     0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
+  //     0xAC, 0x80, 0x00, 0x2C, 0, 0, 0,
+  //     0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
+  //     0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
+  //     0xA7, 0x80, 0x00, 0x27, 0, 0, 0,
+  //     0, 0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0,
+  //     0, 0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0,
+  //     0, 0x8E, 0xDD, 0xBB, 0xF7, 0x80, 0,
+  //     0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
+  //     0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0,
+  //     0xEE, 0xDD, 0xBB, 0xF7, 0x80, 0, 0]
+  //   ctx.imageSmoothingEnabled = false
+  //   drawHiresTile(ctx, new Uint8Array(tile), colorMode, 27, 50, 50, 8, true)
+  // }
 }
 
 export const getCanvasSize = () => {

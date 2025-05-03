@@ -569,7 +569,7 @@ const updateExternalMachineState = () => {
     lores: getTextPage(true),
     machineName: machineName,
     memoryDump: getMemoryDump(),
-    noDelayMode: !SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet,
+    noDelayMode: !SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet,
     ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,
     s6502: s6502,
