@@ -161,7 +161,7 @@ export const handleSetDiskOrFileFromBuffer = (
 export const handleSetDiskFromCloudData = async (
   cloudData: CloudData,
   driveIndex: number = 0,
-  callback?: (buffer: ArrayBuffer) => void) => {
+  callback?: (buffer: ArrayBuffer | null) => void) => {
   let cloudProvider
   switch (cloudData.providerName) {
     case "GoogleDrive":
@@ -203,7 +203,11 @@ export const handleSetDiskFromCloudData = async (
           handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
         }
       } else {
-        // $TODO: Add error handling
+        if (callback) {
+          callback(null)
+        } else {
+          // $TODO: Add error handling
+        }
       }
     })
   }
@@ -211,7 +215,7 @@ export const handleSetDiskFromCloudData = async (
 
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData,
-  callback?: (buffer: ArrayBuffer) => void) => {
+  callback?: (buffer: ArrayBuffer | null) => void) => {
   if (!url.startsWith("http") && updateDisplay) {
     const match = findMatchingDiskImage(url)
     if ( !match.diskUrl ) {
@@ -266,7 +270,11 @@ export const handleSetDiskFromURL = async (url: string,
 
     if (!response.ok) {
       console.error(`HTTP error: status ${response.status}`)
-      return
+      if (callback) {
+        callback(null)
+      } else {
+        return
+      }
     }
 
     const blob = await response.blob()
@@ -310,10 +318,17 @@ export const handleSetDiskFromURL = async (url: string,
         handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
       }
     } else {
-      // $TODO: Add error handling
+      if (callback) {
+        callback(null)
+      } else {
+        // $TODO: Add error handling
+      }
     }
   } catch {
     console.error(`Error fetching URL: ${url}`)
+    if (callback) {
+        callback(null)
+    }
   }
 }
 
@@ -325,13 +340,18 @@ const resetAllDiskDrives = () => {
 
 export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay, driveIndex: number = -1,
-  callback?: (buffer: ArrayBuffer) => void) => {
+  callback?: (buffer: ArrayBuffer | null) => void) => {
   let data: ArrayBuffer
   try {
     const res = await fetch("/disks/" + disk)
     data = await res.arrayBuffer()
   } catch {
-   return
+    if (callback) {
+      callback(null)
+    } else {
+      // $TODO: Add error handling
+    }
+    return
   }
 
   if (callback) {

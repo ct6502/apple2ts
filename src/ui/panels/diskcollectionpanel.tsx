@@ -57,6 +57,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
+  const [downloadedDisks, setDownloadedDisks] = useState<ArrayBuffer[]>([])
 
   let longPressTimer: number
 
@@ -98,7 +99,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const loadDisk = (
     driveIndex: number,
     diskCollectionItem: DiskCollectionItem | undefined = popupItem,
-    callback?: (buffer: ArrayBuffer) => void) => {
+    callback?: (buffer: ArrayBuffer | null) => void) => {
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
     } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
@@ -218,11 +219,15 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     setExportQueue(newExportQueue)
   }
 
-  const processExportQueue = (buffer?: ArrayBuffer) => {
-    if (buffer) {
-      // $TODO
-      console.log(buffer.byteLength)
-
+  const processExportQueue = (buffer?: ArrayBuffer | null) => {
+    if (buffer === null) {
+      showGlobalProgressModal(false)
+      setExportQueue([])
+      setDownloadedDisks([])
+      alert("An unexpected error occurred while downloading the disk. Export to .hdv has been aborted.")
+    } else if (buffer !== undefined) {
+      downloadedDisks.push(buffer)
+      setDownloadedDisks(downloadedDisks)
       setExportQueue(exportQueue.slice(1))
     } else if (exportQueue.length > 0) {
       showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
@@ -242,6 +247,32 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     })
 
     return estimatedSize < 1024 * 1024 ? `${(estimatedSize / 1024).toFixed(0)} KB` : `${(estimatedSize / (1024 * 1024)).toFixed(2)} MB`
+  }
+
+  const createHdv = () => {
+    const dosVolumes = {
+      560: 0,
+      640: 0,
+      800: 0,
+      1600: 0
+    }
+
+    // Calculate volume types and sizes
+    downloadedDisks.forEach((buffer) => {
+      if (buffer.byteLength <= 143360) {
+        dosVolumes[560]++
+      } else if (buffer.byteLength <= 819200) {
+        dosVolumes[800]++
+      } else if (buffer.byteLength <= 1474560) {
+        dosVolumes[1600]++
+      }
+    })
+
+    //
+    while (downloadedDisks.length > 0) {
+      const buffer = downloadedDisks.pop()
+      console.log(buffer?.byteLength)
+    }
   }
 
   useEffect(() => {
@@ -290,6 +321,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     showGlobalProgressModal(false)
     if (exportQueue.length > 0) {
       processExportQueue()
+    } else {
+      createHdv()
     }
   }, [exportQueue])
 
