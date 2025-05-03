@@ -13,6 +13,7 @@ import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
 import { getTheme } from "../ui_settings"
+import { handleInputParams } from "../inputparams"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -89,7 +90,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     } else {
       handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData)
     }
-
+    if (diskCollectionItem?.params) {
+      handleInputParams(diskCollectionItem.params)
+    }
+    setPopupLocation(undefined)
     setIsFlyoutOpen(false)
   }
 

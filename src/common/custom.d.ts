@@ -311,6 +311,7 @@ type DiskCollectionItem = {
   diskUrl: URL | string,
   detailsUrl?: URL,
   bookmarkId?: string,
+  params?: string,
   cloudData?: CloudData
 }
 
