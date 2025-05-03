@@ -115,7 +115,8 @@ export const SWITCHES = {
   AN0: NewSwitch(0xC058, 0xC059, 0),  // random value filled in checkSoftSwitches
   AN1: NewSwitch(0xC05A, 0xC05B, 0),  // random value filled in checkSoftSwitches
   AN2: NewSwitch(0xC05C, 0xC05D, 0),  // random value filled in checkSoftSwitches
-  AN3: NewSwitch(0xC05E, 0xC05F, 0),  // random value filled in checkSoftSwitches
+  // Watch out - the addresses are in reverse order - $C05E is AN3 "off" but double hires "on"
+  DHIRES: NewSwitch(0xC05F, 0xC05E, 0),  // random value filled in checkSoftSwitches
   CASSIN1: NewSwitch(0, 0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
   PB0: NewSwitch(0, 0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0, 0xC062),  // status location, not a switch

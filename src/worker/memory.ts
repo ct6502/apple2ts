@@ -536,7 +536,7 @@ export const getTextPage = (getLores = false) => {
       return new Uint8Array()
     }
     jend = SWITCHES.MIXED.isSet ? 20 : 24
-    is80column = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
+    is80column = SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet
   } else {
     if (!SWITCHES.TEXT.isSet && !SWITCHES.MIXED.isSet) {
       return new Uint8Array()
@@ -562,7 +562,7 @@ export const getTextPage = (getLores = false) => {
 
   // See Video-7 RGB-SL7 manual, section 7.1, p. 35
   // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
-  const isVideo7Text = !SWITCHES.AN3.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
+  const isVideo7Text = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
   if (isVideo7Text) {
     const textPage = new Uint8Array(80 * (jend - jstart))
     for (let j = jstart; j < jend; j++) {
@@ -596,7 +596,7 @@ export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }
-  const doubleRes = SWITCHES.COLUMN80.isSet && !SWITCHES.AN3.isSet
+  const doubleRes = SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet
   const nlines = SWITCHES.MIXED.isSet ? 160 : 192
   if (doubleRes) {
     // Only select second 80-column text page if STORE80 is also OFF

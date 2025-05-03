@@ -148,7 +148,7 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
           func={() => setSoftSwitches([switches.RAMRD ? 0xC002 : 0xC003])} />
         <CheckedBox name="Aux Write" checked={switches.RAMWRT}
           func={() => setSoftSwitches([switches.RAMWRT ? 0xC004 : 0xC005])} />
-        <CheckedBox name="80Store" checked={switches.STORE80}
+        <CheckedBox name="80 Store" checked={switches.STORE80}
           func={() => setSoftSwitches([switches.STORE80 ? 0xC000 : 0xC001])} />
         <CheckedBox name="Text" checked={switches.TEXT}
           func={() => setSoftSwitches([switches.TEXT ? 0xC050 : 0xC051])} />
@@ -160,6 +160,8 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
           func={() => setSoftSwitches([switches.PAGE2 ? 0xC054 : 0xC055])} />
         <CheckedBox name="80 Column" checked={switches.COLUMN80}
           func={() => setSoftSwitches([switches.COLUMN80 ? 0xC00C : 0xC00D])} />
+        <CheckedBox name="Dbl Hires" checked={switches.DHIRES}
+          func={() => setSoftSwitches([switches.DHIRES ? 0xC05F : 0xC05E])} />
         <CheckedBox name="Cxxx ROM" checked={switches.INTCXROM}
           func={() => setSoftSwitches([switches.INTCXROM ? 0xC006 : 0xC007])} />
         <CheckedBox name="C300 ROM" checked={switches.SLOTC3ROM}
