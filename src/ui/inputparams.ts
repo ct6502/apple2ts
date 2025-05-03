@@ -5,13 +5,14 @@ import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/dr
 import { audioEnable } from "./devices/audio/speaker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme } from "./ui_settings"
 
-export const handleInputParams = () => {
+export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
   // parameter, where we want to preserve the case of the program.
-  const params = new URLSearchParams(window.location.search.toLowerCase())
-  const porig = new URLSearchParams(window.location.search)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { setRunTour } = useGlobalContext()
+  if (paramString.length === 0) {
+    paramString = window.location.search
+  }
+  const params = new URLSearchParams(paramString.toLowerCase())
+  const porig = new URLSearchParams(paramString)
 
   if (params.get("capslock") === "off") {
     setCapsLock(false)
@@ -86,6 +87,8 @@ export const handleInputParams = () => {
 
   const tour = params.get("tour")
   if (tour) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { setRunTour } = useGlobalContext()
     setRunTour(tour)
   }
 

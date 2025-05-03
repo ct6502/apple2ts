@@ -1,8 +1,9 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetIsDebugging,
-  handleGetMachineName} from "./main2worker"
-import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME } from "../common/utility"
+  handleGetMachineName,
+  handleGetSoftSwitches} from "./main2worker"
+import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME, toHex } from "../common/utility"
 import { convertColorsToRGBA, drawHiresTile, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 import { getColorMode, getTheme } from "./ui_settings"
@@ -61,9 +62,14 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   colorMode: COLOR_MODE, width: number, height: number) => {
   const textPage = handleGetTextPage()
   if (textPage.length === 0) return false
-  const doubleRes = textPage.length === 320 || textPage.length === 1920
+  const switches = handleGetSoftSwitches()
+  // See Video-7 RGB-SL7 manual, section 7.1, p. 35
+  // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
+  const isVideo7Text = !switches.AN3 && !switches.COLUMN80 && switches.STORE80
+  const doubleRes = !isVideo7Text && (textPage.length === 320 || textPage.length === 1920)
   const mixedMode = textPage.length === 160 || textPage.length === 320
   const nchars = doubleRes ? 80 : 40
+  const nBytesPerLine = (textPage.length === 320 || textPage.length === 1920) ? 80 : 40
   // On-screen canvas
   const cwidth = width * (1 - 2 * xmargin) / nchars
   const cheight = height * (1 - 2 * ymargin) / 24
@@ -81,11 +87,12 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const isAltCharSet = handleGetAltCharSet()
   const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
   const hasMouseText = handleGetMachineName() === "APPLE2EE"
+  const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
     const yoffsetHidden = (j + 1) * hiddenHeight - 3
-    const joffset = (j - jstart) * nchars
+    const joffset = (j - jstart) * nBytesPerLine
     textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)
       if (isAltCharSet) {
@@ -111,6 +118,19 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
           hiddenContext.fillStyle = "#000000"
         }
       }
+      if (isVideo7Text) {
+        // Color information is in the second half of each line.
+        const color = textPage[joffset + 40 + i]
+        // Text background color is in the low nibble.
+        if ((color & 15) !== 0) {
+          const c = colors[color & 15]
+          ctx.fillStyle = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+          ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
+        }
+        // Text foreground color is in the high nibble.
+        const c = colors[color >> 4]
+        ctx.fillStyle = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+      }
       ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
       hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
     })
@@ -124,17 +144,20 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const textPage = handleGetLores()
   if (textPage.length === 0) return
-  const doubleRes = textPage.length === 1600 || textPage.length === 1920
+  const switches = handleGetSoftSwitches()
+  const isVideo7Text = !switches.AN3 && !switches.COLUMN80 && switches.STORE80
+  const doubleRes = !isVideo7Text && (textPage.length === 1600 || textPage.length === 1920)
   const mixedMode = textPage.length === 800 || textPage.length === 1600
   const nlines = mixedMode ? 160 : 192
   const nchars = doubleRes ? 80 : 40
+  const nBytesPerLine = (textPage.length === 1600 || textPage.length === 1920) ? 80 : 40
   const bottom = mixedMode ? 20 : 24
   const cwidth = doubleRes ? 7 : 14
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   const hgrRGBA = new Uint8ClampedArray(4 * 560 * nlines).fill(255)
   for (let y = 0; y < bottom; y++) {
-    textPage.slice(y * nchars, (y + 1) * nchars).forEach((value, i) => {
+    textPage.slice(y * nBytesPerLine, y * nBytesPerLine + nchars).forEach((value, i) => {
       let upperBlock = value % 16
       let lowerBlock = Math.trunc(value / 16)
       if (doubleRes && (i % 2 === 0)) {
@@ -359,7 +382,7 @@ export const getCanvasSize = () => {
     width -= noBackgroundImage ? 0 : 40
   }
   if (!noBackgroundImage && handleGetIsDebugging()) {
-    const debugSection = document.getElementById("debug-section") || document.getElementsByClassName("dbg-expectin-panel")[0] as HTMLElement
+    const debugSection = document.getElementById("debug-section") as HTMLElement
     if (debugSection && debugSection.offsetWidth > 0) {
       width = Math.max(400, width - debugSection.offsetWidth - 0)
     }

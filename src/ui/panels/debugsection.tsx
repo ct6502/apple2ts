@@ -7,7 +7,7 @@ import BreakpointsView from "./breakpointsview"
 import MemoryMap from "./memorymap"
 import StackDump from "./stackdump"
 import Flyout from "../flyout"
-import { faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
+import { faBug, faPlay, faStop, faTerminal } from "@fortawesome/free-solid-svg-icons"
 import { handleGetIsDebugging } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
@@ -16,6 +16,7 @@ import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultExpectin from "./default_expectin.json"
 import { Expectin } from "../expectin"
+import CodeMirrorEditor from "./editorview"
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
@@ -43,27 +44,6 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     event.stopPropagation()
   }
 
-  const handleTextAreaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const elem = event.target as HTMLTextAreaElement
-    setExpectinText(elem.value)
-  }
-
-  const handleTextAreaKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    const elem = event.target as HTMLTextAreaElement
-
-    if (event.key === "Tab") {
-      const v = elem.value
-      const s = elem.selectionStart
-      const e = elem.selectionEnd
-
-      elem.value = v.substring(0, s) + "  " + v.substring(e)
-      elem.selectionStart = elem.selectionEnd = s + 2
-
-      event.preventDefault()
-      return false
-    }
-  }
-
   const handleExpectButtonClick = async () => {
     if (expectinObject && expectinObject.IsRunning()) {
       expectinObject.Cancel()
@@ -75,11 +55,15 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     }
   }
 
+  // Do not allow debug panel to be shown in minimal theme on small devices
+  if (getTheme() == UI_THEME.MINIMAL && window.innerWidth < 800) {
+    return <></>
+  }
+
   return (
     <Flyout
       icon={faBug}
       position="bottom-right"
-      width={`max( ${getTheme() == UI_THEME.MINIMAL ? "41.25vw" : "41.25vw"}, 386px )`}
       title="debug panel"
       isOpen={handleGetIsDebugging}
       onClick={() => {
@@ -87,8 +71,8 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
         props.updateDisplay()
       }}
       buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
-      <div className="dbg-panel">
-        <div className="dbg-tab-row">
+      <div id="debug-section">
+        <div className="flex-row">
           <div
             className={`dbg-tab ${activeTab == 0 ? " dbg-tab-active" : ""}`}
             title="Show debugging panel"
@@ -103,7 +87,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
           </div>
         </div>
         {activeTab == 0 &&
-          <div className="flex-column-gap debug-section" id="debug-section">
+          <div className="flex-column-gap debug-section">
             <State6502Controls />
             <div className="flex-row-gap">
               <DisassemblyPanel />
@@ -121,24 +105,22 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
             </div>
           </div>}
         {activeTab == 1 &&
-          <div className="dbg-expectin-panel">
-            <textarea
-              className="dbg-expectin-textarea"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck="false"
-              readOnly={expectinObject?.IsRunning()}
-              onChange={handleTextAreaChange}
-              onKeyDown={handleTextAreaKeyDown}
-              defaultValue={expectinText} />
-            <div className="dbg-expectin-button-row">
+          <div className="flex-column-gap debug-section">
+            <CodeMirrorEditor value={expectinText} setValue={setExpectinText}/>
+            <div className="flex-row-gap">
               <div
                 style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
                 title={expectinError}
                 className="dbg-expectin-error">{expectinError}</div>
-              {expectinError === "" && <button
-                className="dbg-expect-button"
-                onClick={handleExpectButtonClick}>{expectinObject?.IsRunning() ? "Stop" : "Run"}</button>}
+              {expectinError === "" &&
+                <button
+                  className="dbg-expect-button"
+                  title={expectinObject?.IsRunning() ? "Stop Script" : "Run Script"}
+                  onClick={handleExpectButtonClick}>{expectinObject?.IsRunning() ?
+                    <FontAwesomeIcon icon={faStop} /> :
+                    <FontAwesomeIcon icon={faPlay} />
+                    }
+                </button>}
             </div>
           </div>}
       </div>

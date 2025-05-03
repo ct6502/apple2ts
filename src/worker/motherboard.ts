@@ -617,14 +617,15 @@ const doAdvance6502 = () => {
     const cycles = processInstruction()
     if (cycles < 0) break
     cycleTotal += cycles
-    if ((cycleTotal % 17030) >= 12480) {
+    if (cycleTotal < 4550) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {
         startVBL()
       }
+    } else {
+      endVBL()
     }
     if (cycleTotal >= cpuCyclesPerRefresh) {
-      endVBL()
       break
     }
   }

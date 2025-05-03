@@ -13,6 +13,7 @@ import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
 import { getTheme } from "../ui_settings"
+import { handleInputParams } from "../inputparams"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
@@ -107,7 +108,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     } else {
       handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData, callback)
     }
-
+    if (diskCollectionItem?.params) {
+      handleInputParams(diskCollectionItem.params)
+    }
+    setPopupLocation(undefined)
     if (!callback) {
       setIsFlyoutOpen(false)
     }

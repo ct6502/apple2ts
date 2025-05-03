@@ -69,7 +69,7 @@ const State6502Controls = () => {
   const runMode = handleGetRunMode()
   const s6502 = handleGetState6502()
   return (
-    <div className="flex-row round-rect-border wrap">
+    <div className="flex-row round-rect-border wrap" style={{ width: "665px" }}>
       <div className="flex-row">
         {createTextField("PC", "PC", s6502.PC, runMode)}
         {createTextField("A", "Accum", s6502.Accum, runMode)}
