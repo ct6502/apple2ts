@@ -46,5 +46,13 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: new URL("https://www.colino.net/wordpress/wp-content/uploads/shufflepuck-cafe-bar.png"),
     diskUrl: new URL("https://github.com/colinleroy/a2tools/releases/latest/download/shufflepuck.po"),
     detailsUrl: new URL("https://www.colino.net/wordpress/en/shufflepuck-cafe-for-apple-ii/")
+  },
+  {
+    type: -1,
+    title: "K2 Presentation",
+    lastUpdated: new Date("5/2/2025"),
+    imageUrl: new URL("https://github.com/rsheehan/K2/raw/refs/heads/main/images/intro.png"),
+    diskUrl: new URL("https://github.com/rsheehan/K2/raw/refs/heads/main/K2.po"),
+    detailsUrl: new URL("https://github.com/rsheehan/K2")
   }
 ]

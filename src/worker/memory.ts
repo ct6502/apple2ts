@@ -351,7 +351,7 @@ export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = (
     const end = (driver.length > 0x900) ? 0x900 : driver.length
     const addr = SLOTC8start + (slot - 1) * 0x800
     memory.set(driver.slice(0x100,end), addr)
-    // mark this slotas having C8 space
+    // mark this slot as having C8 space
     slotIOC8Space[slot] = 0xff
   }
   if (jump) {
@@ -544,6 +544,7 @@ export const getTextPage = (getLores = false) => {
     if (!SWITCHES.TEXT.isSet && SWITCHES.MIXED.isSet) jstart = 20
     is80column = SWITCHES.COLUMN80.isSet
   }
+
   if (is80column) {
     // Only select second 80-column text page if STORE80 is also OFF
     const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? TEXT_PAGE2 : TEXT_PAGE1
@@ -551,21 +552,40 @@ export const getTextPage = (getLores = false) => {
     for (let j = jstart; j < jend; j++) {
       const joffset = 80 * (j - jstart)
       for (let i = 0; i < 40; i++) {
+        // Interleave the characters, aux memory comes first for each pair.
         textPage[joffset + 2 * i + 1] = memory[pageOffset + offset[j] + i]
         textPage[joffset + 2 * i] = memory[RamWorksMemoryStart + pageOffset + offset[j] + i]
       }
     }
     return textPage
-  } else {
-    const pageOffset = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
-    const textPage = new Uint8Array(40 * (jend - jstart))
+  }
+
+  // See Video-7 RGB-SL7 manual, section 7.1, p. 35
+  // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
+  const isVideo7Text = !SWITCHES.AN3.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
+  if (isVideo7Text) {
+    const textPage = new Uint8Array(80 * (jend - jstart))
     for (let j = jstart; j < jend; j++) {
-      const joffset = 40 * (j - jstart)
-      const start = pageOffset + offset[j]
-      textPage.set(memory.slice(start, start + 40), joffset)
+      const joffset = 80 * (j - jstart)
+      // Put the actual character in the first half of the line,
+      // and the color information in the second half.
+      let memoffset = TEXT_PAGE1 + offset[j]
+      textPage.set(memory.slice(memoffset, memoffset + 40), joffset)
+      memoffset += RamWorksMemoryStart
+      textPage.set(memory.slice(memoffset, memoffset + 40), joffset + 40)
     }
     return textPage
   }
+
+  // Normal 40-column text page
+  const pageOffset = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
+  const textPage = new Uint8Array(40 * (jend - jstart))
+  for (let j = jstart; j < jend; j++) {
+    const joffset = 40 * (j - jstart)
+    const start = pageOffset + offset[j]
+    textPage.set(memory.slice(start, start + 40), joffset)
+  }
+  return textPage
 }
 
 export const getTextPageAsString = () => {
