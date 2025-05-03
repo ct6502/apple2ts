@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
-import { UI_THEME } from "../../common/utility"
+import { RUN_MODE, UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import PopupMenu from "../controls/popupmenu"
@@ -17,6 +17,7 @@ import { handleInputParams } from "../inputparams"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
+import { passSetRunMode } from "../main2worker"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -101,6 +102,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     driveIndex: number,
     diskCollectionItem: DiskCollectionItem | undefined = popupItem,
     callback?: (buffer: ArrayBuffer | null) => void) => {
+    // We want to restart the emulator when loading a disk from our Disk Collection
+    passSetRunMode(RUN_MODE.IDLE)
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
     } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
@@ -112,7 +115,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     if (diskCollectionItem?.params) {
       handleInputParams(diskCollectionItem.params)
     }
-    
+
     if (!callback) {
       setIsFlyoutOpen(false)
     }

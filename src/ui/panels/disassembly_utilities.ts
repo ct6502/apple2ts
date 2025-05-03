@@ -46,6 +46,10 @@ export const getDisassembly = () => {
       continue
     }
     const instr = memGetRaw(addr)
+    if (!instr) {
+      r += "\n"
+      continue
+    }
     const code =  instructions[instr]
     const vLo = memGetRaw((addr + 1) % 0x10000)
     const vHi = memGetRaw((addr + 2) % 0x10000)
