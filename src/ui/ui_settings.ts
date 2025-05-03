@@ -6,7 +6,7 @@ const uiState: UIState = {
   colorMode: COLOR_MODE.COLOR,
   helpText: "",
   hotReload: false,
-  showScanlines: true,
+  showScanlines: false,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
   touchJoystickMode: "off",
