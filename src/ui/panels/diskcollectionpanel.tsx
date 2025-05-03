@@ -108,10 +108,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     } else {
       handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData, callback)
     }
+
     if (diskCollectionItem?.params) {
       handleInputParams(diskCollectionItem.params)
     }
-    setPopupLocation(undefined)
+    
     if (!callback) {
       setIsFlyoutOpen(false)
     }
