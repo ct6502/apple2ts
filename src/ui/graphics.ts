@@ -89,6 +89,41 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const hasMouseText = handleGetMachineName() === "APPLE2EE"
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
+  // First draw all the background colors. That way our background rects
+  // don't obscure part of the text.
+  for (let j = jstart; j < 24; j++) {
+    const joffset = (j - jstart) * nBytesPerLine
+    textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
+      let doInverse = (value <= 63)
+      if (isAltCharSet) {
+        // Mouse text chars are in the range 64...95, so do not make inverse.
+        // If we do not have mouse text (IIe unenhanced) everything <= 127 is inverse.
+        doInverse = hasMouseText ? ((value <= 63) || (value >= 96 && value <= 127)) : (value <= 127)
+      }
+      let cfill: string | null = null
+      if (isVideo7Text) {
+        // Color information is in the second half of each line.
+        const color = textPage[joffset + 40 + i]
+        // Text background color is in the low nibble, unless inverse,
+        // in which case we use the high nibble.
+        const c = doInverse ? colors[color >> 4] : colors[color & 15]
+        cfill = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+      } else {
+        if (doInverse || colorMode == COLOR_MODE.INVERSEBLACKANDWHITE ||
+          (value < 128 && !isAltCharSet && doFlashCycle)) {
+          cfill = colorFill
+        }
+      }
+      if (cfill) {
+        ctx.fillStyle = cfill
+        hiddenContext.fillStyle = cfill
+        ctx.fillRect(xmarginPx + i * cwidth, ymarginPx + j * cheight, 1.08 * cwidth, 1.03 * cheight)
+        hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight)
+      }
+    })
+  }
+
+  // Now draw the text.
   for (let j = jstart; j < 24; j++) {
     const yoffset = ymarginPx + (j + 1)*cheight - 3
     const yoffsetHidden = (j + 1) * hiddenHeight - 3
@@ -102,40 +137,22 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       }
       const v = convertTextPageValueToASCII(value, isAltCharSet, hasMouseText)
 //      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
-      ctx.fillStyle = colorFill
-      hiddenContext.fillStyle = colorFill
-      if (doInverse || colorMode == COLOR_MODE.INVERSEBLACKANDWHITE) {
-        // Inverse characters
-        ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
-        ctx.fillStyle = "#000000"
-        hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight)
-        hiddenContext.fillStyle = "#000000"
-      } else if (value < 128 && !isAltCharSet) {
-        if (doFlashCycle) {
-          ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
-          ctx.fillStyle = "#000000"
-          hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, hiddenWidth, hiddenHeight)
-          hiddenContext.fillStyle = "#000000"
-        }
-      }
+      let cfill = colorFill
       if (isVideo7Text) {
         // Color information is in the second half of each line.
         const color = textPage[joffset + 40 + i]
-        // Text background color is in the low nibble.
-        if ((color & 15) !== 0) {
-          const c = colors[color & 15]
-          const cs = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
-          ctx.fillStyle = cs
-          ctx.fillRect(xmarginPx + i*cwidth, ymarginPx + j*cheight, 1.08*cwidth, 1.03*cheight)
-          hiddenContext.fillStyle = cs
-          hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, hiddenWidth, hiddenHeight)
+        // Text foreground color is in the high nibble, unless inverse,
+        // in which case we use the low nibble.
+        const c = doInverse ? colors[color & 15] : colors[color >> 4]
+        cfill = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
+      } else {
+        if (doInverse || colorMode == COLOR_MODE.INVERSEBLACKANDWHITE ||
+          (value < 128 && !isAltCharSet && doFlashCycle)) {
+          cfill = "#000000"
         }
-        // Text foreground color is in the high nibble.
-        const c = colors[color >> 4]
-        const cs = `#${toHex(c[0])}${toHex(c[1])}${toHex(c[2])}`
-        ctx.fillStyle = cs
-        hiddenContext.fillStyle = cs
       }
+      ctx.fillStyle = cfill
+      hiddenContext.fillStyle = cfill
       ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
       hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
     })
