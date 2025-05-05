@@ -22,6 +22,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: new URL("/disks/Apple IIe Diagnostic 2.1.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 143360
   },
   {
     title: "MECC Inspector",
