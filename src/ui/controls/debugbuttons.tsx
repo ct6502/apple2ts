@@ -1,11 +1,9 @@
 import {
   passGoBackInTime, passGoForwardInTime,
-  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetIsDebugging, handleGetRunMode,
+  handleCanGoBackward, handleCanGoForward, passTimeTravelSnapshot, handleGetRunMode,
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
-  faBug,
-  faBugSlash,
   faCamera,
   faEye,
   faEyeSlash,
@@ -17,10 +15,10 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
-import { setPreferenceDebugMode, setPreferenceHotReload } from "../localstorage"
-import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { setPreferenceHotReload } from "../localstorage"
+import { RUN_MODE } from "../../common/utility"
 import { isFileSystemApiSupported } from "../ui_utilities"
-import { getTheme, getHotReload } from "../ui_settings"
+import { getHotReload } from "../ui_settings"
 
 const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
@@ -63,16 +61,6 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {getTheme() != UI_THEME.MINIMAL &&
-      <button className="push-button" id="tour-debug-button"
-        title="Toggle Debug"
-        onClick={() => {
-            setPreferenceDebugMode(!handleGetIsDebugging())
-            // Force a refresh to pick up the new canvas size
-            window.dispatchEvent(new Event("resize"))
-          }}>
-        <FontAwesomeIcon icon={handleGetIsDebugging() ? faBug : faBugSlash} />
-      </button>}
     {isFileSystemApiSupported() &&
       <button className="push-button"
         title={getHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}

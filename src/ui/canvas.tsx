@@ -10,7 +10,6 @@ import {
   handleGetShowAppleMouse,
   handleGetRunMode,
   handleGetCout,
-  handleGetIsDebugging,
   passKeyRelease,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
@@ -427,11 +426,9 @@ const Apple2Canvas = (props: DisplayProps) => {
           marginLeft = (window.innerWidth - scanlinesWidth) / 2
           marginTop = ((window.innerHeight - scanlinesHeight) / 2)
 
-          if (handleGetIsDebugging()) {
-            const debugSection = document.getElementsByClassName("flyout-bottom-right")[0] as HTMLElement
-            if (debugSection) {
-              marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
-            }
+          const debugSection = document.getElementsByClassName("flyout-top-right")[0] as HTMLElement
+          if (debugSection && debugSection.offsetWidth > 200) {
+            marginLeft = Math.max(Math.min(marginLeft, (debugSection.offsetLeft - scanlinesWidth) / 2), 0)
           }
 
           canvas.style.marginLeft = `${marginLeft - width * xmargin}px`
