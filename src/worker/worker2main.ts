@@ -5,11 +5,12 @@ import { doSetRunMode,
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
-  doSetCycleCount} from "./motherboard"
+  doSetCycleCount,
+  doSetShowDebugTab} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyPress, apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
-import { DRIVE, MSG_MAIN, MSG_WORKER } from "../common/utility"
+import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
@@ -102,13 +103,16 @@ if (typeof self !== "undefined") {
     if (!("msg" in e.data)) return
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:
-        doSetRunMode(e.data.payload)
+        doSetRunMode(e.data.payload as RUN_MODE)
         break
       case MSG_MAIN.STATE6502:
         doSetState6502(e.data.payload as STATE6502)
         break
       case MSG_MAIN.DEBUG:
         doSetIsDebugging(e.data.payload)
+        break
+      case MSG_MAIN.SHOW_DEBUG_TAB:
+        doSetShowDebugTab(e.data.payload as boolean)
         break
       case MSG_MAIN.BREAKPOINTS:
         doSetBreakpoints(e.data.payload)

@@ -1,7 +1,7 @@
 import "./debugsection.css"
 import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
-import { handleGetIsDebugging, passSetDebug } from "../main2worker"
+import { handleGetIsDebugging, handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { UI_THEME } from "../../common/utility"
 import { setPreferenceDebugMode } from "../localstorage"
 import { getHelpText, getTheme } from "../ui_settings"
@@ -32,6 +32,11 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
   // Do not allow debug panels to be shown in minimal theme on small devices
   const isSmall = isMinimalTheme && window.innerWidth < 800
+
+  if (handleGetShowDebugTab()) {
+    setActiveTab(1)
+    passSetShowDebugTab(false)
+  }
 
   return (
     <Flyout

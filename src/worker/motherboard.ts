@@ -34,6 +34,7 @@ let prevTime = 0
 let speedMode = 0
 let cpuSpeed = 0
 export let isDebugging = TEST_DEBUG
+let showDebugTab = false
 let refreshTime = 16.6881 // 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let timeDelta = 0
@@ -176,6 +177,11 @@ export const doSetState6502 = (newState: STATE6502) => {
 
 export const doSetCycleCount = (count: number) => {
   setCycleCount(count)
+  updateExternalMachineState()
+}
+
+export const doSetShowDebugTab = (show: boolean) => {
+  showDebugTab = show
   updateExternalMachineState()
 }
 
@@ -482,6 +488,9 @@ const resetRefreshCounter = () => {
 
 export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
   configureMachine()
+  if (cpuRunMode === RUN_MODE.RUNNING && cpuRunModeIn === RUN_MODE.PAUSED) {
+    showDebugTab = true
+  }
   cpuRunMode = cpuRunModeIn
   if (cpuRunMode === RUN_MODE.PAUSED) {
     if (gameSetupTimerID) {
@@ -573,6 +582,7 @@ const updateExternalMachineState = () => {
     ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,
     s6502: s6502,
+    showDebugTab: showDebugTab,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
     stackString: doGetStackString(),
