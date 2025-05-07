@@ -201,7 +201,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
-      <div className="dcp-tab-row">
+      <div className="flex-row dcp-tab-row">
         {tabs.map((tab, i) => (
           <div
             key={`tab-${i}`}

@@ -18,9 +18,6 @@
 }
 
 .dcp-tab-row {
-  display: grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
   margin-left: -2px;
   margin-right: -6px;
   padding: 12px;
@@ -30,6 +27,7 @@
 }
 
 .dcp-tab {
+  width: 120px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   border-top: 1px solid black;
