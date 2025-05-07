@@ -102,6 +102,7 @@ type MachineState = {
   ramWorksBank: number,
   runMode: number,
   s6502: STATE6502,
+  showDebugTab: boolean,
   softSwitches: {[name: string]: boolean},
   speedMode: number,
   stackString: string,

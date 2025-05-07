@@ -3,7 +3,6 @@ import {
   passSpeedMode,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
-  handleGetIsDebugging,
   doOnMessage,
   setMain2Worker,
   handleGetMemSize,
@@ -12,7 +11,6 @@ import {
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import { useState } from "react"
-import HelpPanel from "./panels/helppanel"
 import DebugSection from "./panels/debugsection"
 import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
@@ -23,7 +21,7 @@ import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
-import { getHelpText, getTheme, setHelpText } from "./ui_settings"
+import { getTheme, setHelpText } from "./ui_settings"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -183,10 +181,7 @@ const DisplayApple2 = () => {
         </div>
         {isLandscape && status}
         {narrow && !isMinimalTheme && <div className="divider"></div>}
-        <span className="flex-column">
-          {(handleGetIsDebugging() || isMinimalTheme) && <DebugSection updateDisplay={updateDisplay} />}
-          {(!handleGetIsDebugging() || isMinimalTheme) && <HelpPanel narrow={narrow} helptext={getHelpText()} />}
-        </span>
+        <DebugSection updateDisplay={updateDisplay} />
       </span>
       {isMinimalTheme && <DiskCollectionPanel {...props} />}
       {isMinimalTheme && isTouchDevice && <TouchJoystick />}

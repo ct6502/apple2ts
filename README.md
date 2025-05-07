@@ -172,7 +172,7 @@ Go through the commits, and add any missing tags. For a given commit sha (say `1
 ```sh
 git checkout 1befdec
 GIT_COMMITTER_DATE="$(git show --format=%aD | head -1)"
-git tag -a v2.8 -m"v2.8"
+git tag -a v3.0 -m"v3.0"
 git push origin --tags
 git checkout main
 ```

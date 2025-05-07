@@ -59,6 +59,12 @@ export const passSetDebug = (doDebug: boolean) => {
   machineState.isDebugging = doDebug
 }
 
+export const passSetShowDebugTab = (show: boolean) => {
+  doPostMessage(MSG_MAIN.SHOW_DEBUG_TAB, show)
+  // Force the state right away, so the UI can update.
+  machineState.showDebugTab = show
+}
+
 export const passSpeedMode = (mode: number) => {
   doPostMessage(MSG_MAIN.SPEED, mode)
   // Force the state right away, so the UI can update.
@@ -200,6 +206,7 @@ let machineState: MachineState = {
   ramWorksBank: 0,
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
+  showDebugTab: false,
   speedMode: 0,
   softSwitches: {},
   stackString: "",
@@ -322,6 +329,10 @@ export const handleGetSpeedMode = () => {
 
 export const handleGetIsDebugging = () => {
   return machineState.isDebugging
+}
+
+export const handleGetShowDebugTab = () => {
+  return machineState.showDebugTab
 }
 
 export const handleGetState6502 = () => {

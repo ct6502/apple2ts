@@ -1,6 +1,5 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
-  handleGetIsDebugging,
   handleGetMachineName,
   handleGetSoftSwitches} from "./main2worker"
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME, toHex } from "../common/utility"
@@ -402,7 +401,7 @@ export const getCanvasSize = () => {
     height -= noBackgroundImage ? 40 : 300
     width -= noBackgroundImage ? 0 : 40
   }
-  if (!noBackgroundImage && handleGetIsDebugging()) {
+  if (!noBackgroundImage) {
     const debugSection = document.getElementById("debug-section") as HTMLElement
     if (debugSection && debugSection.offsetWidth > 0) {
       width = Math.max(400, width - debugSection.offsetWidth - 0)

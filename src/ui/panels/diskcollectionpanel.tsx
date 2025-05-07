@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
-import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { RUN_MODE, RUN_MODE, UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import PopupMenu from "../controls/popupmenu"
@@ -17,6 +17,7 @@ import { handleInputParams } from "../inputparams"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
+import { passSetRunMode } from "../main2worker"
 import { passSetRunMode } from "../main2worker"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
@@ -65,6 +66,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   const TAB_INDEX_SELECT = 3
 
+  if (getTheme() == UI_THEME.MINIMAL) {
+    import("./diskcollectionpanel.minimal.css")
+  }
+
   const tabs = [
     {
       icon: faFloppyDisk,
@@ -102,6 +107,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     driveIndex: number,
     diskCollectionItem: DiskCollectionItem | undefined = popupItem,
     callback?: (buffer: ArrayBuffer | null) => void) => {
+    // We want to restart the emulator when loading a disk from our Disk Collection
+    passSetRunMode(RUN_MODE.IDLE)
     // We want to restart the emulator when loading a disk from our Disk Collection
     passSetRunMode(RUN_MODE.IDLE)
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
@@ -343,8 +350,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
-      position="top-center">
-      <div className="dcp-tab-row">
+      position="bottom-right">
+      <div className="flex-row dcp-tab-row">
         {tabs.map((tab, i) => (
           <div
             key={`tab-${i}`}

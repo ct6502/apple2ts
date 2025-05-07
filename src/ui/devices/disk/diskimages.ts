@@ -38,8 +38,8 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: new URL("/disks/MousePaint.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),
-    fileSize: 234496,
-    params: "color=white"
+    params: "color=white",
+    fileSize: 234496
   },
   {
     title: "Nox Archaist Demo",

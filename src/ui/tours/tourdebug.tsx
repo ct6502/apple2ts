@@ -1,5 +1,5 @@
 import { Step } from "react-joyride"
-import { handleGetIsDebugging, handleGetRunMode, passSetDebug, passSetRunMode } from "../main2worker"
+import { handleGetRunMode, passSetDebug, passSetRunMode } from "../main2worker"
 import { RUN_MODE } from "../../common/utility"
 
 let neededToBoot = false
@@ -9,9 +9,7 @@ const callbackInDebugMode: StepCallbackFunction = () => {
   const runMode = handleGetRunMode()
   neededToBoot = runMode === RUN_MODE.IDLE
   didBoot = false
-  if (!handleGetIsDebugging()) {
-    passSetDebug(true)
-  }
+  passSetDebug(true)
   // Continue processing tour commands
   return false
 }
@@ -49,13 +47,12 @@ export const tourDebug: Step[] = [
   },
   {
     target: "#tour-debug-button",
-    content: "This button can be used to switch between Debug and Regular mode. " +
-      "We are now in Debug mode.",
+    content: "Click on the Bug icon on the Info tabs to view the Debug panel.",
     data: callbackInDebugMode
   },
   {
     target: "#tour-debug-pause",
-    content: "Press this button to pause or resume execution of the emulator.",
+    content: "Press the Pause button to pause or resume execution of the emulator.",
     data: callbackPauseEmulator
   },
   {
