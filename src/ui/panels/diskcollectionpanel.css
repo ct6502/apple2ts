@@ -1,14 +1,13 @@
 .disk-collection-panel {
   display: grid;
-  grid-template-rows: repeat(1fr);
-  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(175px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   row-gap: 0px;
   column-gap: 0px;
   margin: 0px;
   padding: 0px;
   width: 100%;
-  height: auto;
-  max-height: 62vh;
+  height: 65vh;
   overflow-y: auto;
   padding-top: 6px;
   padding-bottom: 0px;
@@ -25,6 +24,7 @@
   margin-left: -2px;
   margin-right: -6px;
   padding: 12px;
+  padding-top: 0px;
   padding-bottom: 0px;
   border-bottom: 1px solid black;
 }
@@ -36,7 +36,7 @@
   border-left: 1px solid black;
   border-right: 1px solid black;
   text-align: center;
-  padding: 4px;
+  padding: 6px;
   cursor: pointer;
 }
 
