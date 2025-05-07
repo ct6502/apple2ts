@@ -6,11 +6,9 @@
   box-sizing: content-box;
   margin: 0;
   padding: 0;
-  width: auto;
-  width: auto;
   height: auto;
-  max-width: min(70vw, 600px);
-  max-height: 75vh;
+  max-width: min(70vw, 687px);
+  max-height: 70vh;
   overflow-x: hidden !important;
   overflow-y: auto !important;
 }

@@ -1,0 +1,15 @@
+.disk-collection-panel {
+  height: 65vh;
+}
+
+.dcp-tab-row {
+  padding-top: 0px;
+}
+
+.dcp-tab:hover {
+  background-color: gray;
+}
+
+.dcp-tab-active {
+  background-color: gray;
+}

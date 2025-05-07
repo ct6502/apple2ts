@@ -56,6 +56,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   let longPressTimer: number
 
+  if (getTheme() == UI_THEME.MINIMAL) {
+    import("./diskcollectionpanel.minimal.css")
+  }
+
   const tabs = [
     {
       icon: faFloppyDisk,
@@ -196,15 +200,15 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
-      position="top-center">
-      <div className="dcp-tab-row">
+      position="bottom-right">
+      <div className="flex-row dcp-tab-row">
         {tabs.map((tab, i) => (
           <div
             key={`tab-${i}`}
             className={`dcp-tab ${i == activeTab ? " dcp-tab-active" : ""} ${tab.isHighlighted ? " dcp-tab-highlighted" : ""}`}
             title={tab.label}
             onClick={handleTabClick(i)}>
-            <FontAwesomeIcon icon={tab.icon} size="lg"/>
+            <FontAwesomeIcon icon={tab.icon} size="lg" />
           </div>
         ))}
       </div>
