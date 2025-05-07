@@ -6,10 +6,8 @@
   box-sizing: content-box;
   margin: 0;
   padding: 0;
-  width: auto;
-  width: auto;
   height: auto;
-  max-width: min(70vw, 600px);
+  max-width: unset;
   max-height: 75vh;
   overflow-x: hidden !important;
   overflow-y: auto !important;

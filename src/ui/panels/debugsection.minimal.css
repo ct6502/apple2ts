@@ -6,6 +6,9 @@
 }
 
 .dbg-tab-row {
+  padding: 12px;
+  padding-top: 8px;
+  padding-bottom: 0px;
   margin-left: -2px;
   margin-right: -6px;
   border-bottom: 1px solid black;
@@ -13,4 +16,13 @@
 
 .dbg-tab {
   border-bottom: none;
+  background-color: unset;
+}
+
+.dbg-tab:hover {
+  background-color: gray;
+}
+
+.dbg-tab-active {
+  background-color: gray;
 }

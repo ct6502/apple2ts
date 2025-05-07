@@ -1,4 +1,4 @@
-import React, {  } from "react"
+import React, { } from "react"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
 import { UI_THEME } from "../../common/utility"
@@ -14,7 +14,7 @@ type HelpPanelProps = {
 // It was re-rendering on every machine state update, which was ridiculous.
 // Now it only re-renders when the help text changes.
 const HelpTab = React.memo((props: HelpPanelProps) => {
-//  const [setHelpTextCrc] = useState(defaultHelpTextCrc)
+  //  const [setHelpTextCrc] = useState(defaultHelpTextCrc)
 
   const paperheight = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
@@ -25,7 +25,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
     import("./helppanel.minimal.css")
   }
 
-//  const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
+  //  const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
 
   // useMemo(() => {
   //   setHelpTextCrc(newHelpTextCrc)
@@ -40,7 +40,7 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return (
     <div className="help-parent"
       style={{
-        width: narrow || isMinimalTheme ? "" : 500, height:
+        width: narrow || isMinimalTheme ? "687px" : 500, height:
           narrow || isMinimalTheme ? "" : paperheight,
         overflow: (narrow ? "visible" : "auto")
       }}>

@@ -24,7 +24,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     setActiveTab(tabIndex)
     event.stopPropagation()
     // Force a refresh to pick up the new canvas size
-    setTimeout(() => {window.dispatchEvent(new Event("resize"))}, 20)
+    setTimeout(() => { window.dispatchEvent(new Event("resize")) }, 20)
     if (tabIndex == 1) {
       passSetDebug(true)
     }
@@ -50,31 +50,31 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
       }}
       buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
       <div id="debug-section">
-        {!isSmall && <div className="flex-row">
-            <div
-              className={`dbg-tab ${activeTab == 0 ? " dbg-tab-active" : ""}`}
-              title="Show help panel"
-              onClick={handleTabClick(0)}>
-              <FontAwesomeIcon icon={faHelp} size="lg" />
-            </div>
-            <div
-              className={`dbg-tab ${activeTab == 1 ? " dbg-tab-active" : ""}`}
-              title="Show debugging panel"
-               id="tour-debug-button"
-              onClick={handleTabClick(1)}>
-              <FontAwesomeIcon icon={faBug} size="lg" />
-            </div>
-            <div
-              className={`dbg-tab ${activeTab == 2 ? " dbg-tab-active" : ""}`}
-              title="Show Apple exPectin panel"
-              onClick={handleTabClick(2)}>
-              <FontAwesomeIcon icon={faTerminal} size="lg" />
-            </div>
+        {!isSmall && <div className="flex-row dbg-tab-row">
+          <div
+            className={`dbg-tab ${activeTab == 0 ? " dbg-tab-active" : ""}`}
+            title="Show help panel"
+            onClick={handleTabClick(0)}>
+            <FontAwesomeIcon icon={faHelp} size="lg" />
           </div>
+          <div
+            className={`dbg-tab ${activeTab == 1 ? " dbg-tab-active" : ""}`}
+            title="Show debugging panel"
+            id="tour-debug-button"
+            onClick={handleTabClick(1)}>
+            <FontAwesomeIcon icon={faBug} size="lg" />
+          </div>
+          <div
+            className={`dbg-tab ${activeTab == 2 ? " dbg-tab-active" : ""}`}
+            title="Show Apple exPectin panel"
+            onClick={handleTabClick(2)}>
+            <FontAwesomeIcon icon={faTerminal} size="lg" />
+          </div>
+        </div>
         }
         {(activeTab == 0 || isSmall) && <HelpTab helptext={getHelpText()} />}
-        {activeTab == 1 && !isSmall && <DebugTab updateDisplay={props.updateDisplay}/>}
-        {activeTab == 2 && !isSmall && <ExpectinTab/>}
+        {activeTab == 1 && !isSmall && <DebugTab updateDisplay={props.updateDisplay} />}
+        {activeTab == 2 && !isSmall && <ExpectinTab />}
       </div>
     </Flyout>
   )

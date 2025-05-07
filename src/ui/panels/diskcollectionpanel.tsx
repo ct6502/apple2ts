@@ -56,6 +56,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
   let longPressTimer: number
 
+  if (getTheme() == UI_THEME.MINIMAL) {
+    import("./diskcollectionpanel.minimal.css")
+  }
+
   const tabs = [
     {
       icon: faFloppyDisk,
