@@ -1,5 +1,35 @@
 # Changelog
 
+## [v3.0](https://github.com/ct6502/apple2ts/tree/v3.0) (2025-05-07)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.9...v3.0)
+
+**Implemented enhancements:**
+
+- Combine Help and Debug panels into tabs within the Debug section [\#167](https://github.com/ct6502/apple2ts/issues/167)
+- Add support for Video7 modes for text colors, to support K2 Presentation Program [\#165](https://github.com/ct6502/apple2ts/issues/165)
+- Allow URL parameter to auto-load a particular Total Replay game [\#153](https://github.com/ct6502/apple2ts/issues/153)
+
+**Fixed bugs:**
+
+- Suggestion on the update of the disk position when track changes [\#166](https://github.com/ct6502/apple2ts/issues/166)
+- Flickering on Shufflepuck [\#161](https://github.com/ct6502/apple2ts/issues/161)
+- Can not turn off scanlines from url [\#156](https://github.com/ct6502/apple2ts/issues/156)
+- Apple IIe unenhanced still has Mouse Text characters [\#98](https://github.com/ct6502/apple2ts/issues/98)
+- Color Mode button does not render correctly on certain platforms [\#96](https://github.com/ct6502/apple2ts/issues/96)
+
+**Merged pull requests:**
+
+- C8 and NSC fixes [\#164](https://github.com/ct6502/apple2ts/pull/164) ([code-bythepound](https://github.com/code-bythepound))
+- Set VBL at the start of doAdvance6502 instead of the end [\#163](https://github.com/ct6502/apple2ts/pull/163) ([colinleroy](https://github.com/colinleroy))
+- Add CodeMirror editor for use with JSON [\#162](https://github.com/ct6502/apple2ts/pull/162) ([ct6502](https://github.com/ct6502))
+- Fixed tab editing in the exPectin panel [\#160](https://github.com/ct6502/apple2ts/pull/160) ([boredsenseless](https://github.com/boredsenseless))
+- Feature: Apple exPectin [\#159](https://github.com/ct6502/apple2ts/pull/159) ([boredsenseless](https://github.com/boredsenseless))
+- Disable cache for PR builds, just like main [\#158](https://github.com/ct6502/apple2ts/pull/158) ([ct6502](https://github.com/ct6502))
+- Added "Shufflepuck Cafe" to new releases [\#157](https://github.com/ct6502/apple2ts/pull/157) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Scanlines not always positioned correctly [\#155](https://github.com/ct6502/apple2ts/pull/155) ([boredsenseless](https://github.com/boredsenseless))
+- Added Kontrabant and Encounter Adventure to new releases [\#154](https://github.com/ct6502/apple2ts/pull/154) ([boredsenseless](https://github.com/boredsenseless))
+
 ## [v2.9](https://github.com/ct6502/apple2ts/tree/v2.9) (2025-04-06)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.8...v2.9)
