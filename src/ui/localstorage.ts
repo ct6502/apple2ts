@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passSetDebug, passSetMachineName, passSetRamWorks, passSpeedMode, } from "./main2worker"
+import { passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick } from "./ui_settings"
 
 export const setPreferenceCapsLock = (mode = true) => {
@@ -21,7 +21,7 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
   setColorMode(mode)
 }
 
-export const setPreferenceShowScanlines = (mode = true) => {
+export const setPreferenceShowScanlines = (mode = false) => {
   if (mode) {
     localStorage.setItem("showScanlines", JSON.stringify(mode))
   } else {
@@ -45,7 +45,7 @@ export const setPreferenceDebugMode = (mode = false) => {
   } else {
     localStorage.setItem("debugMode", JSON.stringify(mode))
   }
-  passSetDebug(mode)
+  passSetShowDebugTab(mode)
 }
 
 export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
@@ -111,7 +111,7 @@ export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   // UI-only setting, pass along not necessary
 }
 
-export const setPreferenceTiltSensorJoystick = (mode: boolean) => {
+export const setPreferenceTiltSensorJoystick = (mode = false) => {
   if (!mode) {
     localStorage.removeItem("tiltSensorJoystick")
   } else {
@@ -200,7 +200,7 @@ export const loadPreferences = () => {
   const debugMode = localStorage.getItem("debugMode")
   if (debugMode) {
     try {
-      passSetDebug(JSON.parse(debugMode))
+      passSetShowDebugTab(JSON.parse(debugMode))
     } catch {
       localStorage.removeItem("debugMode")
     }
@@ -274,6 +274,8 @@ export const resetPreferences = () => {
   setPreferenceHotReload()
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
+  setPreferenceTiltSensorJoystick()
+  setPreferenceNewReleasesChecked()
 
   localStorage.removeItem("binaryRunAddress")
 }

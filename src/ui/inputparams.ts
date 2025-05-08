@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSetDebug, passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502 } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme } from "./ui_settings"
@@ -19,7 +19,7 @@ export const handleInputParams = (paramString = "") => {
   }
 
   if (params.get("debug") === "on") {
-    passSetDebug(true)
+    passSetShowDebugTab(true)
   }
 
   const speed = params.get("speed")

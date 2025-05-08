@@ -1,9 +1,8 @@
 import "./debugsection.css"
 import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
-import { handleGetIsDebugging, handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
+import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32, UI_THEME } from "../../common/utility"
-import { setPreferenceDebugMode } from "../localstorage"
 import { getHelpText, getTheme } from "../ui_settings"
 import { useMemo, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -30,11 +29,15 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
   const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
   const showHighlight = !isFlyoutOpen && newHelpTextCrc != helpTextCrc && newHelpTextCrc != defaultHelpTextCrc
 
+  const forceRefresh = () => {
+    // Force a refresh to pick up the new canvas size
+    setTimeout(() => { window.dispatchEvent(new Event("resize")) }, 100)
+  }
+
   const handleTabClick = (tabIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     setActiveTab(tabIndex)
     event.stopPropagation()
-    // Force a refresh to pick up the new canvas size
-    setTimeout(() => { window.dispatchEvent(new Event("resize")) }, 20)
+    forceRefresh()
     if (tabIndex == 1) {
       passSetDebug(true)
     }
@@ -44,11 +47,13 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
   const isSmall = isMinimalTheme && window.innerWidth < 800
 
   if (handleGetShowDebugTab()) {
+    setIsFlyoutOpen(true)
     setActiveTab(1)
     passSetShowDebugTab(false)
   }
 
   useMemo(() => {
+    forceRefresh()
     setHelpTextCrc(newHelpTextCrc)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlyoutOpen])
@@ -59,13 +64,11 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
       position="top-right"
       title="debug panel"
       highlight={showHighlight}
-      isOpen={handleGetIsDebugging}
+      isOpen={() => { return isFlyoutOpen }}
       onClick={() => {
         setIsFlyoutOpen(!isFlyoutOpen)
-        setPreferenceDebugMode(!handleGetIsDebugging())
         props.updateDisplay()
-      }}
-      buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
+      }}>
       <div id="debug-section">
         {!isSmall && <div className="flex-row dbg-tab-row">
           <div
