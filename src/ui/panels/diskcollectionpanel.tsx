@@ -106,8 +106,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     driveIndex: number,
     diskCollectionItem: DiskCollectionItem | undefined = popupItem,
     callback?: (buffer: ArrayBuffer | null) => void) => {
-    // We want to restart the emulator when loading a disk from our Disk Collection
-    passSetRunMode(RUN_MODE.IDLE)
+    if (driveIndex >= 0) {
+      // We want to restart the emulator when loading a disk from our Disk Collection
+      passSetRunMode(RUN_MODE.IDLE)
+    }
+
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
     } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
@@ -116,7 +119,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData, callback)
     }
 
-    if (diskCollectionItem?.params) {
+    if (diskCollectionItem?.params && !callback) {
       handleInputParams(diskCollectionItem.params)
     }
 
