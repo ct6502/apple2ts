@@ -248,6 +248,7 @@
 
 @media (min-width: 1290px) {
   .disk-collection-panel {
+    grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
     grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
   }
 
