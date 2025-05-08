@@ -33,7 +33,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     // Force a refresh to pick up the new canvas size
     setTimeout(() => { window.dispatchEvent(new Event("resize")) }, 100)
   }
-  
+
   const handleTabClick = (tabIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
     setActiveTab(tabIndex)
     event.stopPropagation()
@@ -64,12 +64,11 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
       position="top-right"
       title="debug panel"
       highlight={showHighlight}
-      isOpen={() => { return isFlyoutOpen}}
+      isOpen={() => { return isFlyoutOpen }}
       onClick={() => {
         setIsFlyoutOpen(!isFlyoutOpen)
         props.updateDisplay()
-      }}
-      buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
+      }}>
       <div id="debug-section">
         {!isSmall && <div className="flex-row dbg-tab-row">
           <div
