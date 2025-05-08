@@ -1,11 +1,19 @@
 import { Step } from "react-joyride"
+import { passSetDebug, passSetShowDebugTab } from "../main2worker"
 
 const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 const modKey = isMac ? "⌘" : "Alt"
 const altArrowKeys = <div>The next key determines whether the {modKey} key is
-  used for keyboard shortcuts or the Apple II Open Apple key.<p/>
+  used for keyboard shortcuts or the Apple II Open Apple key.<p />
   The final key determines whether the arrow keys can be used as the Apple II joystick.</div>
+
+const callbackInDebugMode: StepCallbackFunction = () => {
+  passSetDebug(true)
+  passSetShowDebugTab(true)
+  // Continue processing tour commands
+  return false
+}
 
 export const tourSettings: Step[] = [
   {
@@ -30,6 +38,7 @@ export const tourSettings: Step[] = [
     target: "#tour-pause-button",
     content: "You can pause the emulator at any time, freezing the 6502 processor. " +
       "This is useful for pausing the action in a game, or entering the debugger.",
+    data: callbackInDebugMode
   },
   {
     target: "#tour-debug-button",
@@ -43,9 +52,9 @@ export const tourSettings: Step[] = [
   },
   {
     target: "#tour-keyboardbuttons",
-    content: (<div style={{textAlign: "left"}}>If the caps lock key is turned on,
-    then all typed characters are UPPERCASE.<p/>
-    {isTouchDevice ? "" : altArrowKeys}</div>),
+    content: (<div style={{ textAlign: "left" }}>If the caps lock key is turned on,
+      then all typed characters are UPPERCASE.<p />
+      {isTouchDevice ? "" : altArrowKeys}</div>),
   },
   {
     target: "#tour-clearcookies",
