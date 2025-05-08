@@ -37,13 +37,13 @@ export const tourSettings: Step[] = [
   {
     target: "#tour-pause-button",
     content: "You can pause the emulator at any time, freezing the 6502 processor. " +
-      "This is useful for pausing the action in a game, or entering the debugger.",
-    data: callbackInDebugMode
+      "This is useful for pausing the action in a game, or entering the debugger."
   },
   {
     target: "#tour-debug-button",
     content: "Click on the bug to enter debug mode, where you can see the internal " +
       "state of the 6502 processor. Click again to go back to normal mode.",
+    data: callbackInDebugMode
   },
   {
     target: "#tour-configbuttons",
