@@ -3,7 +3,6 @@ import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
 import { handleGetIsDebugging, handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32, UI_THEME } from "../../common/utility"
-import { setPreferenceDebugMode } from "../localstorage"
 import { getHelpText, getTheme } from "../ui_settings"
 import { useMemo, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -62,7 +61,6 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
       isOpen={handleGetIsDebugging}
       onClick={() => {
         setIsFlyoutOpen(!isFlyoutOpen)
-        setPreferenceDebugMode(!handleGetIsDebugging())
         props.updateDisplay()
       }}
       buttonId={isMinimalTheme ? "tour-debug-button" : ""}>
