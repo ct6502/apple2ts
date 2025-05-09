@@ -64,8 +64,8 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const switches = handleGetSoftSwitches()
   // See Video-7 RGB-SL7 manual, section 7.1, p. 35
   // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
-  const isVideo7Text = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
-  const doubleRes = !isVideo7Text && (textPage.length === 320 || textPage.length === 1920)
+  const isVideo7 = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
+  const doubleRes = !isVideo7 && (textPage.length === 320 || textPage.length === 1920)
   const mixedMode = textPage.length === 160 || textPage.length === 320
   const nchars = doubleRes ? 80 : 40
   const nBytesPerLine = (textPage.length === 320 || textPage.length === 1920) ? 80 : 40
@@ -100,7 +100,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
         doInverse = hasMouseText ? ((value <= 63) || (value >= 96 && value <= 127)) : (value <= 127)
       }
       let cfill: string | null = null
-      if (isVideo7Text) {
+      if (isVideo7) {
         // Color information is in the second half of each line.
         const color = textPage[joffset + 40 + i]
         // Text background color is in the low nibble, unless inverse,
@@ -137,7 +137,7 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       const v = convertTextPageValueToASCII(value, isAltCharSet, hasMouseText)
 //      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       let cfill = colorFill
-      if (isVideo7Text) {
+      if (isVideo7) {
         // Color information is in the second half of each line.
         const color = textPage[joffset + 40 + i]
         // Text foreground color is in the high nibble, unless inverse,
@@ -165,8 +165,8 @@ const processLoRes = (hiddenContext: CanvasRenderingContext2D,
   const textPage = handleGetLores()
   if (textPage.length === 0) return false
   const switches = handleGetSoftSwitches()
-  const isVideo7Text = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
-  const doubleRes = !isVideo7Text && (textPage.length === 1600 || textPage.length === 1920)
+  const isVideo7 = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
+  const doubleRes = !isVideo7 && (textPage.length === 1600 || textPage.length === 1920)
   const mixedMode = textPage.length === 800 || textPage.length === 1600
   const nlines = mixedMode ? 160 : 192
   const nchars = doubleRes ? 80 : 40
@@ -244,20 +244,69 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   return hgrColors
 }
 
+// Video7 Foreground/Background hires mode, similar to the Video7 text mode.
+// The odd bytes (from main memory) contain the bit on/off flag for each of
+// the 280 pixels in a line. The even bytes (from aux mem) contain the color
+// info: if a pixel is "on" then the foreground color (high nibble) is used,
+// and if the pixel is "off" then the background color (low nibble) is used.
+// Note that there are 280 pixels but only 40 bytes of color data per line.
+const getVideo7HiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
+  const nlines = hgrPage.length / 80
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK)
+  const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j*80, j*80 + 80)
+    const bits = new Uint8Array(280).fill(0)
+    const joffset = j * 560
+    let b = 0
+    for (let i = 0; i < 279; i++) {
+      bits[i] = (line[2 * Math.floor(i / 7) + 1] >> b) & 1
+      b = (b + 1) % 7
+    }
+    if (isColor) {
+      for (let i = 0; i < 279; i++) {
+        const colorByte = line[2 * Math.floor(i / 7)]
+        const color = bits[i] ? (colorByte >> 4) : (colorByte & 15)
+        hgrColors[joffset + 2 * i] = color
+        hgrColors[joffset + 2 * i + 1] = color
+      }
+    } else {
+      for (let i = 0; i < 279; i++) {
+        if (bits[i]) {
+          hgrColors[joffset + 2 * i] = 15
+          hgrColors[joffset + 2 * i + 1] = 15
+        }
+      }
+    }
+  }
+  return hgrColors
+}
+
 const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   colorMode: COLOR_MODE) => {
   const hgrPage = handleGetHires()  // 40x160, 40x192, 80x160, 80x192
   if (hgrPage.length === 0) return false
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
-  const doubleRes = hgrPage.length === 12800 || hgrPage.length === 15360
+  const switches = handleGetSoftSwitches()
+  const isVideo7 = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
+  const doubleRes = !isVideo7 && (hgrPage.length === 12800 || hgrPage.length === 15360)
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
-  const hgrColors = doubleRes ? getDoubleHiresColors(hgrPage, colorMode) :
-    (isColor ? getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true, fillColor) :
-    getHiresGreen(hgrPage, nlines, fillColor))
-  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes)
+  let hgrColors: Uint8Array
+  if (switches.VIDEO7_MONO) {
+    hgrColors = getDoubleHiresColors(hgrPage, COLOR_MODE.BLACKANDWHITE)
+  } else if (isVideo7) {
+    hgrColors = getVideo7HiresColors(hgrPage, colorMode)
+  } else if (doubleRes) {
+    hgrColors = getDoubleHiresColors(hgrPage, colorMode)
+  } else if (isColor) {
+    hgrColors = getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true, fillColor)
+  } else {
+    hgrColors = getHiresGreen(hgrPage, nlines, fillColor)
+  }
+  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes || isVideo7)
   const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
   for (let j = 0; j < nlines; j++) {
     const slice = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))

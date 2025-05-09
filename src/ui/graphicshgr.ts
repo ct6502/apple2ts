@@ -73,7 +73,6 @@ export const getHiresGreen = (hgrPage: Uint8Array, nlines: number, fillColor: nu
   const hgrColors = new Uint8Array(14 * nbytes * nlines).fill(fillColor)
   for (let j = 0; j < nlines; j++) {
     const line = hgrPage.slice(j * nbytes, (j + 1) * nbytes)
-    getHiresGreenSingleLine(line, fillColor)
     const hgrColors1 = getHiresGreenSingleLine(line, fillColor)
     hgrColors.set(hgrColors1, hgrColors1.length * j)
   }
