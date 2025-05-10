@@ -289,15 +289,15 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const mixedMode = hgrPage.length === 6400 || hgrPage.length === 12800
   const nlines = mixedMode ? 160 : 192
   const switches = handleGetSoftSwitches()
-  const isVideo7 = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
-  const doubleRes = !isVideo7 && (hgrPage.length === 12800 || hgrPage.length === 15360)
+  const video7foreground = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
+  const doubleRes = switches.COLUMN80 && (hgrPage.length === 12800 || hgrPage.length === 15360)
   const isColor = colorMode === COLOR_MODE.COLOR || colorMode === COLOR_MODE.NOFRINGE
   const noDelayMode = handleGetNoDelayMode()
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   let hgrColors: Uint8Array
   if (switches.VIDEO7_MONO) {
     hgrColors = getDoubleHiresColors(hgrPage, COLOR_MODE.BLACKANDWHITE)
-  } else if (isVideo7) {
+  } else if (video7foreground) {
     hgrColors = getVideo7HiresColors(hgrPage, colorMode)
   } else if (doubleRes) {
     hgrColors = getDoubleHiresColors(hgrPage, colorMode)
@@ -306,7 +306,7 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   } else {
     hgrColors = getHiresGreen(hgrPage, nlines, fillColor)
   }
-  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes || isVideo7)
+  const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes || video7foreground)
   const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)
   for (let j = 0; j < nlines; j++) {
     const slice = hgrRGBA.slice(4 * 560 * j, 4 * 560 * (j + 1))

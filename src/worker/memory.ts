@@ -596,8 +596,10 @@ export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }
+  const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
+  const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
   const nlines = SWITCHES.MIXED.isSet ? 160 : 192
-  if (SWITCHES.DHIRES.isSet) {
+  if (doubleRes || SWITCHES.VIDEO7_MONO.isSet || video7foreground) {
     // Only select second 80-column text page if STORE80 is also OFF
     const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
     const hgrPage = new Uint8Array(80 * nlines)
