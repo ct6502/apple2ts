@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { handleGetBreakpoints, handleGetRunMode, passBreakpoints } from "../main2worker"
+import { handleGetBreakpoints, handleGetRunMode } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPencil as iconBreakpointEdit,
@@ -13,9 +13,10 @@ import {
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons"
 import { getLineOfDisassembly, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import BreakpointEdit from "./breakpointedit"
-import { Breakpoint, BreakpointMap, getBreakpointString, getBreakpointStyle } from "../../common/breakpoint"
+import { BreakpointMap, BreakpointNew, getBreakpointString, getBreakpointStyle } from "../../common/breakpoint"
 import { useGlobalContext } from "../globalcontext"
 import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../common/utility"
+import { setPreferenceBreakpoints } from "../localstorage"
 
 const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
@@ -23,7 +24,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const y = window.outerHeight / 2 - 200
   const [dialogPosition, setDialogPosition] = useState([x, y])
   const [breakpointEditAddress, setBreakpointEditAddress] = useState(0)
-  const [breakpointEditValue, setBreakpointEditValue] = useState(new Breakpoint())
+  const [breakpointEditValue, setBreakpointEditValue] = useState(BreakpointNew())
   const [showBreakpointEdit, setShowBreakpointEdit] = useState(false)
 
   const handleAddressClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -44,7 +45,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
     const bp = breakpoints.get(addr)
     if (bp) {
       bp.disabled = !bp.disabled
-      passBreakpoints(breakpoints)
+      setPreferenceBreakpoints(breakpoints)
       setUpdateBreakpoint(updateBreakpoint + 1)
     }
   }
@@ -53,19 +54,19 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
     const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
     const breakpoints = new BreakpointMap(handleGetBreakpoints())
     if (breakpoints.delete(addr)) {
-      passBreakpoints(breakpoints)
+      setPreferenceBreakpoints(breakpoints)
       setUpdateBreakpoint(updateBreakpoint + 1)
     }
   }
 
   const addBreakpoint = () => {
     setBreakpointEditAddress(-1)
-    setBreakpointEditValue(new Breakpoint())
+    setBreakpointEditValue(BreakpointNew())
     setShowBreakpointEdit(true)
   }
 
   const removeAllBreakpoints = () => {
-    passBreakpoints(new BreakpointMap())
+    setPreferenceBreakpoints(new BreakpointMap())
     setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
@@ -94,7 +95,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
       breakpointEditValue.address = Math.max(0, breakpointEditValue.address)
     }
     breakpoints.set(breakpointEditValue.address, breakpointEditValue)
-    passBreakpoints(breakpoints)
+    setPreferenceBreakpoints(breakpoints)
     setShowBreakpointEdit(false)
   }
 

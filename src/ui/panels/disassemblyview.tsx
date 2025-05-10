@@ -3,7 +3,6 @@ import {
   handleGetBreakpoints,
   handleGetRunMode,
   handleGetState6502,
-  passBreakpoints,
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../common/utility"
@@ -11,9 +10,10 @@ import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons"
 import { useGlobalContext } from "../globalcontext"
-import { Breakpoint, BreakpointMap, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
+import { BreakpointMap, BreakpointNew, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
 import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
+import { setPreferenceBreakpoints } from "../localstorage"
 
 const nlines = 37
 let currentScrollAddress = -1
@@ -111,11 +111,11 @@ const DisassemblyView = (props: DisassemblyProps) => {
   const handleCodeClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const [addr] = getAddressAtMouse(event)
     if (addr < 0 || isNaN(addr)) return
-    const bp = new Breakpoint()
+    const bp = BreakpointNew()
     bp.address = addr
     const breakpoints = new BreakpointMap(handleGetBreakpoints())
     breakpoints.set(addr, bp)
-    passBreakpoints(breakpoints)
+    setPreferenceBreakpoints(breakpoints)
     setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
@@ -130,7 +130,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
       } else {
         breakpoints.delete(addr)
       }
-      passBreakpoints(breakpoints)
+      setPreferenceBreakpoints(breakpoints)
       setUpdateBreakpoint(updateBreakpoint + 1)
     }
     if (fakePointRef.current) {

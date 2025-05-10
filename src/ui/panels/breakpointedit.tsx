@@ -6,7 +6,6 @@ import {
 import BPEdit_Breakpoint from "./bpedit_breakpoint"
 import BPEdit_Watchpoint from "./bpedit_watchpoint"
 import BPEdit_Instruction from "./bpedit_instruction"
-import { Breakpoint } from "../../common/breakpoint"
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,

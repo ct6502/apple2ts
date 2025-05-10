@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine } from "../../common/utility"
-import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passBreakpoints, passSetMemory } from "../main2worker"
+import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passSetMemory } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
 import { overrideHires } from "../graphics"
@@ -12,7 +12,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { useGlobalContext } from "../globalcontext"
-import { Breakpoint, BreakpointMap } from "../../common/breakpoint"
+import { BreakpointMap, BreakpointNew } from "../../common/breakpoint"
+import { setPreferenceBreakpoints } from "../localstorage"
 
 enum MEMORY_RANGE {
   CURRENT = "Current memory",
@@ -228,12 +229,12 @@ const MemoryDump = () => {
 
   const doPickWatchpoint = (addr: number) => {
     setPickWatchpoint(false)
-    const bp = new Breakpoint()
+    const bp = BreakpointNew()
     bp.address = addr
     bp.watchpoint = true
     const breakpoints = new BreakpointMap(handleGetBreakpoints())
     breakpoints.set(addr, bp)
-    passBreakpoints(breakpoints)
+    setPreferenceBreakpoints(breakpoints)
     setUpdateBreakpoint(updateBreakpoint + 1)
   }
 

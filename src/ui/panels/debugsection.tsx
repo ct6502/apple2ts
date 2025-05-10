@@ -10,6 +10,7 @@ import DebugTab from "./debugtab"
 import ExpectinTab from "./expectintab"
 import HelpTab from "./helptab"
 import { defaultHelpText } from "./defaulthelptext"
+import { setPreferenceDebugMode } from "../localstorage"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
@@ -39,6 +40,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     event.stopPropagation()
     forceRefresh()
     if (tabIndex == 1) {
+      setPreferenceDebugMode(true)
       passSetDebug(true)
     }
   }
