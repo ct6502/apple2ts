@@ -43,7 +43,10 @@ export const doPauseDiskDrive = (resume = false) => {
   }
 }
 
+let fullRevolutionCount = 0
+
 const moveHead = (ds: DriveState, offset: number, cycles: number) => {
+  fullRevolutionCount = 0
   ds.prevHalfTrack = ds.halftrack
   ds.halftrack += offset
   if (ds.halftrack < 0 || ds.halftrack > ds.maxHalftrack) {
@@ -103,7 +106,16 @@ const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
   0b11110111, 0b11111011, 0b11111101, 0b11111110]
 
 const getNextBit = (ds: DriveState, dd: Uint8Array) => {
+  const oldLocation = ds.trackLocation
   ds.trackLocation = ds.trackLocation % ds.trackNbits[ds.halftrack]
+  if (oldLocation !== ds.trackLocation) {
+    if (fullRevolutionCount >= 9) {
+      fullRevolutionCount = 0
+      ds.trackLocation += 4
+    } else {
+      fullRevolutionCount++
+    }
+  }
   let bit: number
   if (ds.trackStart[ds.halftrack] > 0) {
     const fileOffset = ds.trackStart[ds.halftrack] + (ds.trackLocation >> 3)
@@ -153,6 +165,9 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   } else {
     // Read individual bits and combine them.
     cycleRemainder += cycles
+    // if (cycles > 100) {
+    //     ds.trackLocation += 50
+    // }
     while (cycleRemainder >= 4) {
       const bit = getNextBit(ds, dd)
       if (dataRegister > 0 || bit) {

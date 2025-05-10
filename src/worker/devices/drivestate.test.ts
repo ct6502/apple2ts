@@ -60,5 +60,5 @@ test("SammyLightfoot", () => testDiskImage("SammyLightfoot.woz", 0x785F, 1160000
 
 // Does not boot
 // test("WingsOfFury", () => testDiskImage("WingsOfFuryA.woz", 0xFFFF, 6000000))
-// test("Glutton", () => testDiskImage("Glutton.woz", 0x4375, 33900000))
+test("Glutton", () => testDiskImage("Glutton.woz", 0x4375, 33900000, 34000000))
 
