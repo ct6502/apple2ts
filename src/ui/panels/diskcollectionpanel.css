@@ -1,7 +1,7 @@
 .disk-collection-panel {
   display: grid;
-  grid-template-rows: repeat(auto-fill, minmax(190px, 1fr));
-  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(175px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   row-gap: 0px;
   column-gap: 0px;
   margin: 0px;
@@ -72,10 +72,10 @@
 
 .dcp-item-title-box {
   position: absolute;
-  width: 80px;
+  width: 50%;
   height: 4.5cqh;
-  top: 6%;
-  left: 80px;
+  top: 4%;
+  right: 6%;
   font-size: 0.75em;
   font-weight: bold;
   line-height: 0.85;
@@ -112,8 +112,8 @@
 }
 
 .dcp-item-disk {
-  width: 179px;
-  height: 190px;
+  width: 100%;
+  height: auto;
   padding: 0px;
   margin: 0px;
 }
@@ -121,6 +121,7 @@
 .dcp-item-image-box {
   position: absolute;
   width: 96%;
+  height: 64%;
   top: 30%;
   cursor: pointer;
   -webkit-user-select: none;
@@ -129,8 +130,8 @@
 
 .dcp-item-image {
   object-fit: fill;
-  width: 173px;
-  height: 119px;
+  width: 100%;
+  height: 100%;
   border-radius: 4px;
   border: 3px solid white;
 }
@@ -246,7 +247,7 @@
 @media (min-width: 1290px) {
   .disk-collection-panel {
     grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
-    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
   }
 
   .dcp-item-title {
@@ -261,7 +262,7 @@
 
 @media (min-height: 900px) {
   .disk-collection-panel {
-    max-height: 85vh;
+    max-height: 70vh;
   }
 
   .dcp-item-new {

@@ -198,7 +198,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
-      width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "80vw"}, 348px )`}
+      width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
       <div className="flex-row dcp-tab-row">
