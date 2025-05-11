@@ -1,10 +1,11 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
-  MouseEventSimple, default6502State, TEST_DEBUG } from "../common/utility"
+  MouseEventSimple, default6502State, TEST_DEBUG, 
+  DISASSEMBLE_VISIBLE} from "../common/utility"
 import { getStartupTextPage } from "./panels/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
 import { copyCanvas } from "./copycanvas"
-import { set6502Instructions } from "./panels/disassembly_utilities"
+import { set6502Instructions, setDisassemblyVisibleMode } from "./panels/disassembly_utilities"
 import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData } from "./devices/audio/midiinterface"
@@ -219,6 +220,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.MACHINE_STATE: {
       const newState = e.data.payload as MachineState
       if (machineState.runMode !== newState.runMode) {
+        if (newState.runMode === RUN_MODE.PAUSED) {
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+        }
         emulatorSoundEnable(newState.runMode === RUN_MODE.RUNNING)
       }
       machineState = newState

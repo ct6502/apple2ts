@@ -91,6 +91,9 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onClick={() => {
           handleSetCPUState(runMode === RUN_MODE.PAUSED ?
             RUN_MODE.RUNNING : RUN_MODE.PAUSED)
+          if (runMode === RUN_MODE.RUNNING) {
+            setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+          }
         }}
         disabled={runMode === RUN_MODE.IDLE}>
         {runMode === RUN_MODE.PAUSED ?
