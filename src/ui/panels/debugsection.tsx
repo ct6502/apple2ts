@@ -42,6 +42,9 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     if (tabIndex == 1) {
       setPreferenceDebugMode(true)
       passSetDebug(true)
+    } else {
+      setPreferenceDebugMode(false)
+      passSetDebug(false)
     }
   }
 
