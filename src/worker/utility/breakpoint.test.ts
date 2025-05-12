@@ -1,7 +1,7 @@
 import { doSetBreakpoints, hitBreakpoint } from "../cpu6502"
 import { setPC, setX } from "../instructions"
 import { memGet, memSet } from "../memory"
-import { Breakpoint, BreakpointMap } from "../../common/breakpoint"
+import { BreakpointMap, BreakpointNew } from "../../common/breakpoint"
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
@@ -10,7 +10,7 @@ doSetBreakpoints(bpMap)
 
 test("hitBreakpoint", () => {
   const address = 0x2000
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = address
   bpMap.set(bp.address, bp)
   setPC(address)
@@ -19,7 +19,7 @@ test("hitBreakpoint", () => {
   setPC(address + 1)
   expect(hitBreakpoint()).toEqual(false)
   // Add a new breakpoint right after the first one
-  const bp1 = new Breakpoint()
+  const bp1 = BreakpointNew()
   bp1.address = address + 1
   bpMap.set(bp1.address, bp1)
   expect(hitBreakpoint()).toEqual(true)
@@ -74,7 +74,7 @@ test("hitBreakpoint", () => {
 // ************ Breakpoints memory bank ************
 
 test("memory banks address range", () => {
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xF800
   setPC(bp.address)
   bp.memoryBank = "MAIN-DXXX-1"
@@ -95,7 +95,7 @@ test("memory banks address range", () => {
 
 test("memory banks MAIN", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0x300
   setPC(bp.address)
   bp.memoryBank = "MAIN"
@@ -135,7 +135,7 @@ test("memory banks MAIN", () => {
 
 test("memory banks AUX", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0x300
   setPC(bp.address)
   bp.memoryBank = "AUX"
@@ -169,7 +169,7 @@ test("memory banks AUX", () => {
 
 test("memory banks ROM", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD000
   setPC(bp.address)
   bp.memoryBank = "ROM"
@@ -198,7 +198,7 @@ test("memory banks ROM", () => {
 
 test("memory banks MAIN-DXXX-1", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD000
   setPC(bp.address)
   bp.memoryBank = "MAIN-DXXX-1"
@@ -220,7 +220,7 @@ test("memory banks MAIN-DXXX-1", () => {
 
 test("memory banks MAIN-DXXX-2", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD000
   setPC(bp.address)
   bp.memoryBank = "MAIN-DXXX-2"
@@ -242,7 +242,7 @@ test("memory banks MAIN-DXXX-2", () => {
 
 test("memory banks AUX-DXXX-1", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD000
   setPC(bp.address)
   bp.memoryBank = "AUX-DXXX-1"
@@ -266,7 +266,7 @@ test("memory banks AUX-DXXX-1", () => {
 
 test("memory banks AUX-DXXX-2", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD000
   setPC(bp.address)
   bp.memoryBank = "AUX-DXXX-2"
@@ -289,7 +289,7 @@ test("memory banks AUX-DXXX-2", () => {
 })
 
 test("memory banks Internal $CXXX ROM", () => {
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xC100
   setPC(bp.address)
   bp.memoryBank = "CXXX-ROM"
@@ -333,7 +333,7 @@ test("memory banks Internal $CXXX ROM", () => {
 })
 
 test("memory banks Peripheral card ROM", () => {
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xC100
   setPC(bp.address)
   bp.memoryBank = "CXXX-CARD"

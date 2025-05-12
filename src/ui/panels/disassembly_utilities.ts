@@ -46,7 +46,7 @@ export const getDisassembly = () => {
       continue
     }
     const instr = memGetRaw(addr)
-    if (!instr) {
+    if (instr === null) {
       r += "\n"
       continue
     }

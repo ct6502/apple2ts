@@ -116,7 +116,7 @@ export const SWITCHES = {
   AN1: NewSwitch(0xC05A, 0xC05B, 0),  // random value filled in checkSoftSwitches
   AN2: NewSwitch(0xC05C, 0xC05D, 0),  // random value filled in checkSoftSwitches
   // Watch out - the addresses are in reverse order - $C05E is AN3 "off" but double hires "on"
-  DHIRES: NewSwitch(0xC05F, 0xC05E, 0),  // random value filled in checkSoftSwitches
+  DHIRES: NewSwitch(0xC05F, 0xC05E, 0),
   CASSIN1: NewSwitch(0, 0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
   PB0: NewSwitch(0, 0, 0xC061),  // status location, not a switch
   PB1: NewSwitch(0, 0, 0xC062),  // status location, not a switch
@@ -139,6 +139,8 @@ export const SWITCHES = {
   }),
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
+  VIDEO7_MONO: NewSwitch(0xC07A, 0xC07B, 0),  // Video7 fake softswitch
+  VIDEO7_MIXED: NewSwitch(0xC07C, 0xC07D, 0),  // Video7 fake softswitch
   // 0xC080...0xC08F are banked RAM soft switches and are handled manually
   // We don't need entries here, except for our special BSR_PREWRITE and BSR_WRITE.
   // We will put these in 0xC080 and 0xC088 so they get saved and restored.
@@ -148,9 +150,52 @@ export const SWITCHES = {
 
 SWITCHES.TEXT.isSet = true
 
+// For Video7 black-and-white mode, these switches must be set in this order
+const COL80_OFF = SWITCHES.COLUMN80.offAddr
+const COL80_ON = SWITCHES.COLUMN80.onAddr
+const AN3_OFF = SWITCHES.DHIRES.onAddr
+const AN3_ON = SWITCHES.DHIRES.offAddr
+const video7monocycle = [COL80_OFF, AN3_OFF, AN3_ON, AN3_OFF, AN3_ON, COL80_ON, AN3_OFF]
+const video7mixedcycle = [COL80_OFF, AN3_OFF, AN3_ON, COL80_ON, AN3_OFF, AN3_ON, AN3_OFF]
+let video7monoSoFar = []
+let video7mixedSoFar = []
+const checkVideo7cycle = (addr: number) => {
+  SWITCHES.VIDEO7_MONO.isSet = false
+  SWITCHES.VIDEO7_MIXED.isSet = false
+  if (!SWITCHES.HIRES.isSet) {
+    video7monoSoFar = []  // start over
+    video7mixedSoFar = []
+    return
+  }
+  let foundOne = false
+  if (video7monocycle[video7monoSoFar.length] === addr) {
+    foundOne = true
+    video7monoSoFar.push(addr)
+    if (video7monoSoFar.length === video7monocycle.length) {
+      // This is 560x192 monochrome.
+      SWITCHES.VIDEO7_MONO.isSet = true
+      video7monoSoFar = []
+    }
+  }
+  if (video7mixedcycle[video7mixedSoFar.length] === addr) {
+    foundOne = true
+    video7mixedSoFar.push(addr)
+    if (video7mixedSoFar.length === video7mixedcycle.length) {
+      // This is a mix of 560x192 monochrome and 140x192 color.
+      SWITCHES.VIDEO7_MIXED.isSet = true
+      video7mixedSoFar = []
+    }
+  }
+  // both cycles wrong, start over
+  if (!foundOne) {
+    video7monoSoFar = []
+    video7mixedSoFar = []
+  }
+}
+
 // When debugging is enabled, don't print out these softswitches since they
 // occur so frequently...
-const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC030, 0xC054, 0xC055, 0xC01F]
+const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC010, 0xC030, 0xC054, 0xC055, 0xC01F]
 
 export const checkSoftSwitches = (addr: number,
   calledFromMemSet: boolean, cycleCount: number) => {
@@ -184,6 +229,13 @@ export const checkSoftSwitches = (addr: number,
   if (sswitch1.setFunc) {
     sswitch1.setFunc(addr, cycleCount)
     return
+  }
+  // No need to also check video7mixedcycle since it includes the same switches
+  if (video7monocycle.includes(addr)) {
+    checkVideo7cycle(addr)
+  } else {
+    video7monoSoFar = []
+    video7mixedSoFar = []
   }
   if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
     if (!sswitch1.writeOnly || calledFromMemSet) {

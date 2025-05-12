@@ -4,7 +4,6 @@ import PullDownMenu from "./pulldownmenu"
 import { Droplist } from "./droplist"
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
 import { toHex } from "../../common/utility"
-import { Breakpoint } from "../../common/breakpoint"
 import { handleGetSoftSwitchDescriptions } from "../main2worker"
 
 const BPEdit_Watchpoint = (props: {

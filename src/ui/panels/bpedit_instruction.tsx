@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, getBreakpointString } from "../../common/breakpoint"
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, getBreakpointString } from "../../common/breakpoint"
 import EditField from "./editfield"
 import PullDownMenu from "./pulldownmenu"
 import { Droplist } from "./droplist"

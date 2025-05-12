@@ -298,6 +298,24 @@ type BreakpointExpression = {
   value: number
 }
 
+type Breakpoint = {
+  address: number,
+  watchpoint: boolean,
+  instruction: boolean,
+  disabled: boolean,
+  hidden: boolean,
+  once: boolean,
+  memget: boolean,
+  memset: boolean,
+  expression1: BreakpointExpression,
+  expression2: BreakpointExpression,
+  expressionOperator: "" | "&&" | "||",
+  hexvalue: number,
+  hitcount: number,
+  nhits: number,
+  memoryBank: string
+}
+
 type StepCallbackFunction = () => boolean
 
 type DisassemblyProps = {

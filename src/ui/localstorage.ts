@@ -1,6 +1,7 @@
+import { BreakpointMap } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick } from "./ui_settings"
 
 export const setPreferenceCapsLock = (mode = true) => {
@@ -37,6 +38,15 @@ export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
     localStorage.setItem("theme", JSON.stringify(theme))
   }
   setTheme(theme)
+}
+
+export const setPreferenceBreakpoints = (breakpoints: BreakpointMap) => {
+  if (breakpoints.size === 0) {
+    localStorage.removeItem("breakpoints")
+  } else {
+    localStorage.setItem("breakpoints", JSON.stringify([...breakpoints]))
+  }
+  passBreakpoints(breakpoints)
 }
 
 export const setPreferenceDebugMode = (mode = false) => {
@@ -139,6 +149,17 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
 }
 
 export const loadPreferences = () => {
+  const breakpoints = localStorage.getItem("breakpoints")
+  if (breakpoints) {
+    try {
+      const parsed = JSON.parse(breakpoints)
+      const breakpointMap = new BreakpointMap(parsed)
+      passBreakpoints(breakpointMap)
+    } catch {
+      localStorage.removeItem("breakpoints")
+    }
+  }
+  
   const capsLock = localStorage.getItem("capsLock")
   if (capsLock) {
     try {
@@ -276,7 +297,6 @@ export const resetPreferences = () => {
   setPreferenceTouchJoystickSensitivity()
   setPreferenceTiltSensorJoystick()
   setPreferenceNewReleasesChecked()
-
   localStorage.removeItem("binaryRunAddress")
 }
 

@@ -325,19 +325,13 @@ export const doSetSpeedMode = (speedModeIn: number) => {
 export const doSetIsDebugging = (enable: boolean) => {
   isDebugging = enable
   updateExternalMachineState()
-  // We need to pass this just once to the UI thread, so it can display
-  // the list of soft switches in the breakpoint dialog. Crossing my fingers
-  // that this will _always_ get called before someone displays the dialog.
-  passSoftSwitchDescriptions(getSoftSwitchDescriptions())
 }
 
 export const doSetMemory = (addr: number, value: number) => {
   memory[addr] = value
   // If we have set an HGR memory location (for example) be sure to
-  // pass our updated date to the main thread.
-  if (isDebugging) {
-    updateExternalMachineState()
-  }
+  // pass our updated data to the main thread.
+  updateExternalMachineState()
 }
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
@@ -549,15 +543,17 @@ export const doSetPastedText = (text: string) => {
 }
 
 const getMemoryDump = () => {
-  if (isDebugging && cpuRunMode === RUN_MODE.PAUSED) {
+  if (cpuRunMode === RUN_MODE.PAUSED) {
     return getBasePlusAuxMemory()
   }
   return new Uint8Array()
 }
 
 const doGetStackString = () => {
-  return (isDebugging && cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ""
+  return (cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ""
 }
+
+let didPassSoftSwitchDescriptions = false
 
 const updateExternalMachineState = () => {
   const state: MachineState = {
@@ -590,6 +586,14 @@ const updateExternalMachineState = () => {
     timeTravelThumbnails: getTimeTravelThumbnails(),
   }
   passMachineState(state)
+  // We need to pass this just once to the UI thread, so it can display
+  // the list of soft switches in the breakpoint dialog. Crossing my fingers
+  // that this will _always_ get called before someone displays the dialog.
+  if (!didPassSoftSwitchDescriptions) {
+    didPassSoftSwitchDescriptions = true
+    passSoftSwitchDescriptions(getSoftSwitchDescriptions())
+  }
+
 }
 
 

@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { Breakpoint } from "../../common/breakpoint"
 import EditField from "./editfield"
 import { Droplist } from "./droplist"
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"

@@ -2,7 +2,7 @@ import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorSta
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
 import { doSetRunMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
-import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, Breakpoint, BreakpointMap } from "../common/breakpoint"
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
 import { MEMORY_BANKS } from "../common/memorybanks"
 import { getInstructionString } from "../common/util_disassemble"
@@ -30,7 +30,7 @@ export const setStepOut = () => {
   const addr = getLastJSR()
   if (addr < 0) return
   if (breakpointMap.get(addr)) return
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = addr
   bp.once = true
   bp.hidden = true

@@ -84,46 +84,29 @@ export const getBreakpointString = (bp: Breakpoint) => {
 // }
 
 
-export class Breakpoint {
-  address: number
-  watchpoint: boolean
-  instruction: boolean
-  disabled: boolean
-  hidden: boolean
-  once: boolean
-  memget: boolean
-  memset: boolean
-  expression1: BreakpointExpression
-  expression2: BreakpointExpression
-  expressionOperator: "" | "&&" | "||"
-  hexvalue: number
-  hitcount: number
-  nhits: number
-  memoryBank: string
-
-  constructor() {
-    this.address = -1  // any address (useful for expressions)
-    this.watchpoint = false
-    this.instruction = false
-    this.disabled = false
-    this.hidden = false
-    this.once = false
-    this.memget = false
-    this.memset = true
-    this.expression1 = { register: "", address: 0x300, operator: "==", value: 0x80 }
-    this.expression2 = { register: "", address: 0x300, operator: "==", value: 0x80 }
-    this.expressionOperator = ""
-    this.hexvalue = -1
-    this.hitcount = 1
-    this.nhits = 0
-    this.memoryBank = ""
+export const BreakpointNew = (): Breakpoint => {
+  return {
+    address: -1,  // any address (useful for expressions)
+    watchpoint: false,
+    instruction: false,
+    disabled: false,
+    hidden: false,
+    once: false,
+    memget: false,
+    memset: true,
+    expression1: { register: "", address: 0x300, operator: "==", value: 0x80 },
+    expression2: { register: "", address: 0x300, operator: "==", value: 0x80 },
+    expressionOperator: "",
+    hexvalue: -1,
+    hitcount: 1,
+    nhits: 0,
+    memoryBank: ""
   }
 }
 
 export class BreakpointMap extends Map<number, Breakpoint> {
   set(key: number, value: Breakpoint): this {
-    // Your custom logic here
-    // For example, you might want to sort the keys each time you set a new entry:
+    // Sort the keys each time we add a new entry
     const entries = [...this.entries()]
     entries.push([key, value])
     entries.sort((a, b) => a[0] - b[0])

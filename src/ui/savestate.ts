@@ -1,10 +1,10 @@
 import { BreakpointMap } from "../common/breakpoint"
 import { MAX_DRIVES, RUN_MODE } from "../common/utility"
-import { setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
+import { setPreferenceBreakpoints, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
-import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, passRestoreSaveState, passSetRunMode, passBreakpoints } from "./main2worker"
+import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, passRestoreSaveState, passSetRunMode } from "./main2worker"
 import { 
   
   getUIState,
@@ -96,7 +96,7 @@ export const RestoreSaveState = (fileContents: string) => {
           deserializedBreakpoints.set(bp.address, bp)
         }
       }
-      passBreakpoints(deserializedBreakpoints)
+      setPreferenceBreakpoints(deserializedBreakpoints)
     }
   }
 }

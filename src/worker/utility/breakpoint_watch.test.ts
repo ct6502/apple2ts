@@ -1,7 +1,7 @@
 import { doSetBreakpoints, hitBreakpoint } from "../cpu6502"
 import { setPC } from "../instructions"
 import { memGet, memSet } from "../memory"
-import { Breakpoint, BreakpointMap } from "../../common/breakpoint"
+import { BreakpointMap, BreakpointNew } from "../../common/breakpoint"
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
@@ -11,7 +11,7 @@ doSetBreakpoints(bpMap)
 test("watchpoints", () => {
   setPC(0x0)
   expect(hitBreakpoint()).toEqual(false)
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0x3000
   bp.watchpoint = true
   bpMap.set(bp.address, bp)
@@ -38,7 +38,7 @@ test("watchpoints", () => {
 
 test("watchpoints memory bank", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0x3000
 
   // First test with "any" memory bank setting
@@ -60,7 +60,7 @@ test("watchpoints memory bank", () => {
 
 test("watchpoints memory bank MAIN", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0x3000
   bp.watchpoint = true
   bp.memget = true
@@ -83,7 +83,7 @@ test("watchpoints memory bank MAIN", () => {
 
 test("watchpoints memory bank AUX", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0x3000
   bp.watchpoint = true
   bp.memget = true
@@ -106,7 +106,7 @@ test("watchpoints memory bank AUX", () => {
 
 test("watchpoints memory bank ROM", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xFF00
   bp.watchpoint = true
   bp.memget = true
@@ -130,7 +130,7 @@ test("watchpoints memory bank ROM", () => {
 
 test("watchpoints memory bank MAIN-DXXX-1", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD800
   bp.watchpoint = true
   bp.memget = true
@@ -175,7 +175,7 @@ test("watchpoints memory bank MAIN-DXXX-1", () => {
 
 test("watchpoints memory bank MAIN-DXXX-2", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD800
   bp.watchpoint = true
   bp.memget = true
@@ -219,7 +219,7 @@ test("watchpoints memory bank MAIN-DXXX-2", () => {
 
 test("watchpoints memory bank AUX-DXXX-1", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD800
   bp.watchpoint = true
   bp.memget = true
@@ -264,7 +264,7 @@ test("watchpoints memory bank AUX-DXXX-1", () => {
 
 test("watchpoints memory bank AUX-DXXX-2", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xD800
   bp.watchpoint = true
   bp.memget = true
@@ -309,7 +309,7 @@ test("watchpoints memory bank AUX-DXXX-2", () => {
 
 test("memory banks Internal $CXXX ROM", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xC2FF
   bp.watchpoint = true
   bp.memget = true
@@ -343,7 +343,7 @@ test("memory banks Internal $CXXX ROM", () => {
 
 test("memory banks Peripheral card ROM", () => {
   bpMap.clear()
-  const bp = new Breakpoint()
+  const bp = BreakpointNew()
   bp.address = 0xC2FF
   bp.watchpoint = true
   bp.memget = true

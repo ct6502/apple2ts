@@ -151,7 +151,7 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
       }
     }
   }
-  return <span title={title} className={className}>{(operand + "         ").slice(0, 9)}</span>
+  return <span title={title} className={className}>{(operand + "         ").slice(0, 10)}</span>
 }
 
 export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => void) => {
