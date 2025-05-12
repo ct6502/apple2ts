@@ -6,6 +6,8 @@
   column-gap: 0px;
   margin: 0px;
   width: 100%;
+  height: auto;
+  max-height: 75vh;
   overflow-y: auto;
   padding-top: 6px;
   padding-bottom: 0px;
