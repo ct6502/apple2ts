@@ -244,6 +244,24 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   return hgrColors
 }
 
+// Apply the Video7 monochrome mode on top of the existing HGR colors.
+const applyVideo7MixedMode = (hgrPage: Uint8Array, hgrColors: Uint8Array) => {
+  const nlines = hgrPage.length / 80
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j*80, j*80 + 80)
+    const joffset = j * 560
+    for (let i = 0; i < 560; i++) {
+      const byte = line[Math.floor(i / 7)]
+      if (byte & 128) {
+        continue
+      }
+      const bit = (byte >> (i % 7)) & 1
+      hgrColors[joffset + i] = bit ? 15 : 0
+    }
+  }
+  return hgrColors
+}
+
 // Video7 Foreground/Background hires mode, similar to the Video7 text mode.
 // The odd bytes (from main memory) contain the bit on/off flag for each of
 // the 280 pixels in a line. The even bytes (from aux mem) contain the color
@@ -305,6 +323,11 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
     hgrColors = getHiresColors(hgrPage, nlines, colorMode, noDelayMode, false, true, fillColor)
   } else {
     hgrColors = getHiresGreen(hgrPage, nlines, fillColor)
+  }
+  if (switches.VIDEO7_MIXED) {
+    // We should have already done the double hires colors.
+    // Now apply the Video7 monochrome mode on top of the existing HGR colors.
+    hgrColors = applyVideo7MixedMode(hgrPage, hgrColors)
   }
   const hgrRGBA = convertColorsToRGBA(hgrColors, colorMode, doubleRes || video7foreground)
   const hgrDataStretched = new Uint8ClampedArray(4 * 560 * nlines * 2)

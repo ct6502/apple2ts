@@ -140,6 +140,7 @@ export const SWITCHES = {
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
   VIDEO7_MONO: NewSwitch(0xC07A, 0xC07B, 0),  // Video7 fake softswitch
+  VIDEO7_MIXED: NewSwitch(0xC07C, 0xC07D, 0),  // Video7 fake softswitch
   // 0xC080...0xC08F are banked RAM soft switches and are handled manually
   // We don't need entries here, except for our special BSR_PREWRITE and BSR_WRITE.
   // We will put these in 0xC080 and 0xC088 so they get saved and restored.
@@ -156,29 +157,39 @@ const AN3_OFF = SWITCHES.DHIRES.onAddr
 const AN3_ON = SWITCHES.DHIRES.offAddr
 const video7monocycle = [COL80_OFF, AN3_OFF, AN3_ON, AN3_OFF, AN3_ON, COL80_ON, AN3_OFF]
 const video7mixedcycle = [COL80_OFF, AN3_OFF, AN3_ON, COL80_ON, AN3_OFF, AN3_ON, AN3_OFF]
-let video7cycleSoFar = []
+let video7monoSoFar = []
+let video7mixedSoFar = []
 const checkVideo7cycle = (addr: number) => {
   SWITCHES.VIDEO7_MONO.isSet = false
+  SWITCHES.VIDEO7_MIXED.isSet = false
   if (!SWITCHES.HIRES.isSet) {
-    video7cycleSoFar = []  // start over
+    video7monoSoFar = []  // start over
+    video7mixedSoFar = []
     return
   }
-  if (video7monocycle[video7cycleSoFar.length] === addr) {
-    video7cycleSoFar.push(addr)
-    if (video7cycleSoFar.length === video7monocycle.length) {
+  let foundOne = false
+  if (video7monocycle[video7monoSoFar.length] === addr) {
+    foundOne = true
+    video7monoSoFar.push(addr)
+    if (video7monoSoFar.length === video7monocycle.length) {
+      // This is 560x192 monochrome.
       SWITCHES.VIDEO7_MONO.isSet = true
-      video7cycleSoFar = []
+      video7monoSoFar = []
     }
-  } else if (video7mixedcycle[video7cycleSoFar.length] === addr) {
-    video7cycleSoFar.push(addr)
-    if (video7cycleSoFar.length === video7mixedcycle.length) {
-      // TODO: This should technically be a mixed-mode switch,
-      // with a mix of 560x192 monochrome and 140x192 color.
-      SWITCHES.VIDEO7_MONO.isSet = true
-      video7cycleSoFar = []
+  }
+  if (video7mixedcycle[video7mixedSoFar.length] === addr) {
+    foundOne = true
+    video7mixedSoFar.push(addr)
+    if (video7mixedSoFar.length === video7mixedcycle.length) {
+      // This is a mix of 560x192 monochrome and 140x192 color.
+      SWITCHES.VIDEO7_MIXED.isSet = true
+      video7mixedSoFar = []
     }
-  } else {
-    video7cycleSoFar = []  // wrong cycle, start over
+  }
+  // both cycles wrong, start over
+  if (!foundOne) {
+    video7monoSoFar = []
+    video7mixedSoFar = []
   }
 }
 
@@ -219,10 +230,12 @@ export const checkSoftSwitches = (addr: number,
     sswitch1.setFunc(addr, cycleCount)
     return
   }
+  // No need to also check video7mixedcycle since it includes the same switches
   if (video7monocycle.includes(addr)) {
     checkVideo7cycle(addr)
   } else {
-    video7cycleSoFar = []
+    video7monoSoFar = []
+    video7mixedSoFar = []
   }
   if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
     if (!sswitch1.writeOnly || calledFromMemSet) {
