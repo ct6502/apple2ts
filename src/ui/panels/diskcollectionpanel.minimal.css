@@ -1,4 +1,5 @@
 .disk-collection-panel {
+  width: 100.4%;
   height: 65vh;
 }
 
@@ -12,4 +13,12 @@
 
 .dcp-tab-active {
   background-color: gray;
+}
+
+.dcp-export-row {
+  margin-right: -8px;
+}
+
+.dcp-export-row-empty {
+  height: 53px;
 }

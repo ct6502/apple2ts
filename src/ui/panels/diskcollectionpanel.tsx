@@ -441,6 +441,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           <div className="dcp-export-size">Estimated HDV size: <b><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</b></div>
           <button className="dcp-export-button" disabled={isExportButtonDisabled()} onClick={handleExportClick}>Export</button>
         </div>}
+      {activeTab != TAB_INDEX_SELECT &&
+        <div className="dcp-export-row-empty" />}
       <PopupMenu
         key="drive-popup"
         location={drivePopupLocation}

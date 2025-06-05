@@ -5,7 +5,7 @@
   row-gap: 0px;
   column-gap: 0px;
   margin: 0px;
-  width: 100%;
+  width: 99.8%;
   height: auto;
   max-height: 75vh;
   overflow-y: auto;
@@ -42,12 +42,15 @@
   display: grid;
   grid-template-columns: 1fr 100px;
   margin-left: -2px;
-  margin-right: -8px;
   padding: 12px;
   padding-left: 14px;
   padding-right: 14px;
   border-top: 1px solid black;
   align-items: center;
+}
+
+.dcp-export-row-empty {
+  height: 85px;
 }
 
 .dcp-export-size {
