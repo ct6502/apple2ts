@@ -26,6 +26,8 @@ export enum DISK_COLLECTION_ITEM_TYPE {
   CLOUD_DRIVE
 }
 
+const maxHdvBytes = 33554432
+
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "2-digit",
@@ -90,7 +92,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     },
     {
       icon: faDownload,
-      label: "Export disks to .hdv",
+      label: "Export disks to HDV",
       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv") || x.fileSize < 33553920),
       isHighlighted: false
     }
@@ -239,7 +241,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       showGlobalProgressModal(false)
       setExportQueue([])
       setDownloadedDisks([])
-      alert("An unexpected error occurred while downloading the disk. Export to .hdv has been aborted.")
+      alert("An unexpected error occurred while downloading the disk. Export to HDV has been aborted.")
     } else if (buffer !== undefined) {
       downloadedDisks.push(buffer)
       setDownloadedDisks(downloadedDisks)
@@ -248,6 +250,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(-1, exportQueue[0], processExportQueue)
     }
+  }
+
+  const formatBytes = (bytes: number) => {
+    return bytes < 1024 * 1024 ? `${parseFloat((bytes / 1024).toFixed(0))} KB` : `${parseFloat((bytes / (1024 * 1024)).toFixed(2))} MB`
   }
 
   const estimateHdvSize = () => {
@@ -261,7 +267,13 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       }
     })
 
-    return estimatedSize < 1024 * 1024 ? `${(estimatedSize / 1024).toFixed(0)} KB` : `${(estimatedSize / (1024 * 1024)).toFixed(2)} MB`
+    return estimatedSize
+  }
+
+  const isExportButtonDisabled = () => {
+    const hdvSize = estimateHdvSize()
+
+    return hdvSize <= 0 || hdvSize > maxHdvBytes
   }
 
   const createHdv = () => {
@@ -289,7 +301,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       console.log(buffer?.byteLength)
     }
   }
-
   useEffect(() => {
     setDiskBookmarks(new DiskBookmarks())
   }, [isFlyoutOpen])
@@ -425,10 +436,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           </div>
         ))}
       </div>
-      {activeTab == TAB_INDEX_SELECT && selectedDisks.length > 0 &&
+      {activeTab == TAB_INDEX_SELECT &&
         <div className="dcp-export-row">
-          <div className="dcp-export-size">Estimated .hdv size: <b>{estimateHdvSize()}</b></div>
-          <input className="dcp-export-button" type="button" onClick={handleExportClick} value="Export" />
+          <div className="dcp-export-size">Estimated HDV size: <b><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</b></div>
+          <button className="dcp-export-button" disabled={isExportButtonDisabled()} onClick={handleExportClick}>Export</button>
         </div>}
       <PopupMenu
         key="drive-popup"

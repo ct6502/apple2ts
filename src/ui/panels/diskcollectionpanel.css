@@ -54,6 +54,10 @@
   font-size: 12pt;
 }
 
+.dcp-export-size-exceeded {
+  color: red;
+}
+
 .dcp-export-button {
   font-size: 12pt;
   color: black;
@@ -66,6 +70,11 @@
 
 .dcp-export-button:hover {
   background-color: gray;
+}
+
+.dcp-export-button:disabled {
+  cursor: default;
+  pointer-events: none;
 }
 
 .dcp-tab:hover {
