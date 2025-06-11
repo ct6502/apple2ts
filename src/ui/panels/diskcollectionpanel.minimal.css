@@ -18,19 +18,3 @@
 .dcp-export-row {
   margin-right: -8px;
 }
-
-.dcp-export-row-empty {
-  height: 53px;
-}
-
-@media (min-resolution: 144dpi) {
-  .dcp-export-row-empty {
-    height: 53px;
-  }
-}
-
-@media (min-resolution: 288dpi) {
-  .dcp-export-row-empty {
-    height: 55px;
-  }
-}
