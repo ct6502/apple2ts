@@ -20,5 +20,17 @@
 }
 
 .dcp-export-row-empty {
-  height: 4.05cqh;
+  height: 53px;
+}
+
+@media (min-resolution: 144dpi) {
+  .dcp-export-row-empty {
+    height: 53px;
+  }
+}
+
+@media (min-resolution: 288dpi) {
+  .dcp-export-row-empty {
+    height: 55px;
+  }
 }
