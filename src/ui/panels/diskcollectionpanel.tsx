@@ -429,7 +429,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               <div
                 className="dcp-item-select"
                 title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
-                onClick={handleSelectedClick(diskCollectionItem)}>
+                onClick={handleSelectedClick(diskCollectionItem)}
+                onContextMenu={handleItemRightClick(diskCollectionItem)}>
                 <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} className="dcp-item-select-icon" />
                 {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
               </div>}
