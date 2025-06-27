@@ -93,7 +93,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     {
       icon: faDownload,
       label: "Export disks to HDV",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv") || x.fileSize < 33553920),
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => !x.diskUrl.toString().endsWith(".hdv") && x.fileSize < maxHdvBytes * 0.95),
       isHighlighted: false
     }
   ]
