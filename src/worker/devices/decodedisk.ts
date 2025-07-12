@@ -7,6 +7,10 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   if (!isWoz2) return false
   driveState.isWriteProtected = diskData[22] === 1
   driveState.isSynchronized = diskData[23] === 1
+  driveState.optimalTiming = (diskData[59] > 0) ? diskData[59] : 32
+  if (driveState.optimalTiming !== 32) {
+    console.log(`${driveState.filename} optimal timing = ${driveState.optimalTiming}`)
+  }
   const crc = diskData.slice(8, 12)
   const storedCRC = crc[0] + (crc[1] << 8) + (crc[2] << 16) + crc[3] * (2 ** 24)
   const actualCRC = crc32(diskData, 12)

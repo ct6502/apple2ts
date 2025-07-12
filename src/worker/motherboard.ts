@@ -245,7 +245,7 @@ const resetMachine = () => {
   resetMockingboard(4)
 }
 
-const doBoot = () => {
+export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
   doSetRom(machineName)
@@ -266,18 +266,6 @@ const doBoot = () => {
     enableHardDrive(false)
     setTimeout(() => { enableHardDrive() }, 200)
   }
-}
-
-// The only reason we need this is for our floppy disk unit tests.
-// We cannot just call doSetRunMode(RUN_MODE.NEED_BOOT) since that relies
-// on asynchronous callbacks to keep the emulator running. Using async
-// within Jest causes the tests to just quietly return without running
-// anything afterwards.
-export const doBootForTests = () => {
-  doBoot()
-  doSetSpeedMode(4)
-  cpuSpeed = 1
-  doSetRunMode(RUN_MODE.RUNNING)
 }
 
 const doReset = () => {
