@@ -14,7 +14,7 @@ export const MidiDeviceSelect = () => {
       itemNames = {midiOutDeviceNames}
       closeCallback = {setMidiOutIndex}
       icon = {<svg width="30" height="30" className="fill-color">{midiport}</svg>}
-      tooltip = "Serial Port Select"
+      tooltip = "MIDI Device Select"
     />
   )
 }
