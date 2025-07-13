@@ -3,9 +3,11 @@ import { KeyboardEvent } from "react"
 export const TEST_DEBUG = false
 export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
-export const FLOPPY_DISK_SUFFIXES = ".a2ts,.dsk,.woz,.do,.bin,.a,.bas"
-export const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po"
-export const FILE_SUFFIXES = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
+const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
+const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do"
+const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po"
+export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
+export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK}`
 export const MAX_DRIVES = 4
 export const DISK_CONVERSION_SUFFIXES = new Map<string, string>([[".dsk", ".woz"]])
 
