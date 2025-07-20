@@ -142,7 +142,7 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
       opener.accessToken = matches[1]
       window.close()
     } else {
-      const url = fragment.substring(1)
+      const url = decodeURI(fragment.substring(1))
       handleSetDiskFromURL(url, updateDisplay)
     }
   } else if (hasBasicProgram) {
