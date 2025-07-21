@@ -26,7 +26,8 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     lastLocalWriteTime: -1,
     cloudData: null,
     writableFileHandle: null,
-    lastWriteTime: -1
+    lastWriteTime: -1,
+    optimalTiming: 32,  // bits per 125 ns, so 32 = 4 µs
   }
 }
 

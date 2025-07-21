@@ -362,7 +362,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
-      <div className="flex-row dcp-tab-row">
+      <div className="flex-row dcp-tab-row"
+        onClick={(e) => {if (e.target === e.currentTarget) e.stopPropagation()}}>
         {tabs.map((tab, i) => (
           <div
             key={`tab-${i}`}
@@ -373,7 +374,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           </div>
         ))}
       </div>
-      <div className="disk-collection-panel">
+      <div className="disk-collection-panel"
+        onClick={(e) => {if (e.target === e.currentTarget) e.stopPropagation()}}>
         {tabs[activeTab].disks.map((diskCollectionItem, index) => (
           <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">

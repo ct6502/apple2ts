@@ -139,60 +139,40 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // Some programs (like anti-m) use this to check if no disk is inserted.
   if (dd.length === 0) return randByte()
   let result = 0
-  // By default we read 7 bits all at once, followed later by the 8th bit.
-  // This works fine for "normal" disks and is about 30% faster.
-  // However, some disks (like Print Shop Companion) have synchronized tracks
-  // that require returning bits sequentially.
-  if (!ds.isSynchronized) {
-    if (dataRegister === 0) {
-      // Ignore zero bits while waiting for a new most-significant bit.
-      while (getNextBit(ds, dd) === 0) {
-        // do nothing
+
+  // Read individual bits and combine them.
+  cycleRemainder += cycles
+
+  while (cycleRemainder >= ds.optimalTiming / 8) {
+    const bit = getNextBit(ds, dd)
+    if (!(dataRegister & 0x80 && !bit)) {
+      if (dataRegister & 0x80) {
+          dataRegister = 0
       }
-      // This will become the high bit on the next read
-      dataRegister = 0x40
-      // Read the next 6 bits, all except the last one.
-      // If we try to read all 8 bits here, it's much slower than
-      // reading the last bit separately. Not sure why.
-      for (let i = 5; i >= 0; i--) {
-        dataRegister |= getNextBit(ds, dd) << i
-      }
-    } else {
-      // Read the last bit.
-      const bit = getNextBit(ds, dd)
       dataRegister = (dataRegister << 1) | bit
     }
-  } else {
-    // Read individual bits and combine them.
-    cycleRemainder += cycles
-    // if (cycles > 100) {
-    //     ds.trackLocation += 50
-    // }
-    while (cycleRemainder >= 4) {
-      const bit = getNextBit(ds, dd)
-      if (dataRegister > 0 || bit) {
-        dataRegister = (dataRegister << 1) | bit
-      }
-      cycleRemainder -= 4
-      // Changing this cycleRemainder cutoff to less than 6 will break
-      // loading certain disks like Balance of Power.
-      if (dataRegister & 128 && cycleRemainder <= 6) break
-    }
-    if (cycleRemainder < 0) {
-      cycleRemainder = 0
-    }
-    dataRegister &= 0xFF
+    // optimalTiming / 8 might be a float if it's not equal to 32.
+    // For example, for Paul Whitehead Teaches Chess.woz, optimalTiming = 31.
+    // This is actually okay and seems to work fine.
+    cycleRemainder -= (ds.optimalTiming / 8)
+    // Changing this cycleRemainder cutoff to less than 6 will break
+    // loading certain disks like Balance of Power.
+    // 6 - will break Planetfall and Border Zone
+    // 8 - will work for all the test images in driverstate.test
+    if (dataRegister & 128 && cycleRemainder <= (ds.optimalTiming / 4)) break
   }
+  if (cycleRemainder < 0) {
+    cycleRemainder = 0
+  }
+  dataRegister &= 0xFF
+  result = dataRegister
+
   // if (ds.halftrack === 70 && dataRegister > 127) {
   //   console.log(toHex(dataRegister))
   // }
   // if (s6502.PC >= 0x9E45 && s6502.PC <= 0x9E5F) {
   //   console.log(`  getNextByte: ${cycles} cycles PC=${toHex(s6502.PC, 4)} loc=${tracklocSave} dataRegister=${toHex(dataRegister)}`)
   // }
-  result = dataRegister
-  if (dataRegister > 127) {
-    dataRegister = 0
-  }
   return result
 }
 
@@ -384,9 +364,9 @@ export const handleDriveSoftSwitches: AddressCallback =
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
           if (value >= 0) {
-            console.log(`Illegal LOAD of write data latch during read: PC=${toHex(s6502.PC)} Value=${toHex(value)}`)
+            console.log(`${ds.filename}: Illegal LOAD of write data latch during read: PC=${toHex(s6502.PC)} Value=${toHex(value)}`)
           } else {
-            console.log(`Illegal READ of write data latch during read: PC=${toHex(s6502.PC)}`)
+            console.log(`${ds.filename}: Illegal READ of write data latch during read: PC=${toHex(s6502.PC)}`)
           }
         }
       }

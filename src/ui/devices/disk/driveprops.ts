@@ -3,7 +3,7 @@ import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { isHardDriveImage, RUN_MODE, FILE_SUFFIXES, MAX_DRIVES, replaceSuffix } from "../../../common/utility"
+import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK, DISK_CONVERSION_SUFFIXES } from "../../../common/utility"
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
@@ -12,6 +12,7 @@ import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./int
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
+import { getHotReload } from "../../ui_settings"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -285,7 +286,7 @@ export const handleSetDiskFromURL = async (url: string,
 
       unzipper.onfile = file => {
         const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLocaleLowerCase()
-        if (FILE_SUFFIXES.includes(fileExtension)) {
+        if (FILE_SUFFIXES_DISK.includes(fileExtension)) {
           file.ondata = (_err, data) => {
             // Ignore index files, etc.
             if (data.length > 1024) {
@@ -331,6 +332,71 @@ export const handleSetDiskFromURL = async (url: string,
     }
   }
 }
+
+export const prepWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle) => {
+  const timer = setInterval(async (index: number) => {
+    const dprops = handleGetDriveProps(index)
+
+    if (getHotReload()) {
+      const file = await writableFileHandle.getFile()
+      if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
+        handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+        passSetRunMode(RUN_MODE.NEED_BOOT)
+        return
+      }
+    }
+
+    if (dprops.diskHasChanges && !dprops.motorRunning) {
+      if (await handleSaveWritableFile(index)) {
+        dprops.diskHasChanges = false
+        dprops.lastLocalWriteTime = Date.now()
+        passSetDriveProps(dprops)
+      }
+    }
+  }, 3 * 1000, index)
+  return () => clearInterval(timer)
+}
+
+
+export const showReadWriteFilePicker = async (index: number) => {
+  let [writableFileHandle] = await window.showOpenFilePicker({
+    types: [
+      {
+        description: "Disk Images",
+        accept: {
+          "application/octet-stream": FILE_SUFFIXES_DISK.split(",") as `.${string}`[]
+        }
+      }
+    ],
+    excludeAcceptAllOption: true,
+    multiple: false,
+  })
+
+  if (writableFileHandle == null) {
+    return
+  }
+
+  const file = await writableFileHandle.getFile()
+  const fileExtension = file.name.substring(file.name.lastIndexOf("."))
+  let newIndex = index
+
+  if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
+    const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
+    writableFileHandle = await window.showSaveFilePicker({
+      excludeAcceptAllOption: false,
+      suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
+      types: [
+        {
+          description: "Disk Image",
+          accept: { "application/octet": [newFileExtension] as `.${string}`[] },
+        },
+      ]
+    })
+  }
+  newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
+  prepWritableFile(newIndex, writableFileHandle)
+}
+
 
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {

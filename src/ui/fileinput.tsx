@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { FILE_SUFFIXES } from "../common/utility"
+import { FILE_SUFFIXES_ALL } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { handleSetDiskOrFileFromBuffer } from "./devices/disk/driveprops"
@@ -86,7 +86,7 @@ const FileInput = (props: DisplayProps) => {
       <input
         type="file"
         name="fileInput"
-        accept={isTouchDevice ? "" : FILE_SUFFIXES}
+        accept={isTouchDevice ? "" : FILE_SUFFIXES_ALL}
         ref={hiddenFileOpen}
         onChange={handleFileSelected}
         style={{ display: "none" }}

@@ -167,6 +167,7 @@ type DriveState = {
   cloudData: CloudData | null,
   writableFileHandle: FileSystemFileHandle | null,
   lastLocalWriteTime: number
+  optimalTiming: number,
 }
 
 type DriveProps = {

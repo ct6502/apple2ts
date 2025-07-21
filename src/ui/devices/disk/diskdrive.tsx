@@ -2,23 +2,24 @@ import { useEffect, useMemo, useState } from "react"
 import {
   handleSetDiskData, handleGetDriveProps,
   handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
-  handleSaveWritableFile
+  handleSaveWritableFile,
+  prepWritableFile,
+  showReadWriteFilePicker
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import React from "react"
-import { CLOUD_SYNC, crc32, DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES, RUN_MODE, uint32toBytes } from "../../../common/utility"
+import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../common/utility"
 import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
-import { passSetDriveProps, passSetRunMode } from "../../main2worker"
+import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { imageList } from "./assets"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
-import { getHotReload } from "../../ui_settings"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
 
@@ -140,7 +141,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   }, [dprops.filename, dprops.cloudData])
 
   const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
-    const result = await newCloudDrive.download(FILE_SUFFIXES)
+    const result = await newCloudDrive.download(FILE_SUFFIXES_DISK)
     if (result) {
       const [blob, cloudData] = result
       const buffer = await new Response(blob).arrayBuffer()
@@ -159,30 +160,6 @@ const DiskDrive = (props: DiskDriveProps) => {
       dprops.diskHasChanges = false
       passSetDriveProps(dprops)
     }
-  }
-
-  const prepWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle) => {
-    const timer = setInterval(async (index: number) => {
-      const dprops = handleGetDriveProps(index)
-
-      if (getHotReload()) {
-        const file = await writableFileHandle.getFile()
-        if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
-          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-          passSetRunMode(RUN_MODE.NEED_BOOT)
-          return
-        }
-      }
-
-      if (dprops.diskHasChanges && !dprops.motorRunning) {
-        if (await handleSaveWritableFile(index)) {
-          dprops.diskHasChanges = false
-          dprops.lastLocalWriteTime = Date.now()
-          passSetDriveProps(dprops)
-        }
-      }
-    }, 3 * 1000, index)
-    return () => clearInterval(timer)
   }
 
   const showSaveFilePicker = async (index: number) => {
@@ -209,48 +186,6 @@ const DiskDrive = (props: DiskDriveProps) => {
 
       prepWritableFile(index, writableFileHandle)
     }
-  }
-
-  const showReadWriteFilePicker = async (index: number) => {
-    let [writableFileHandle] = await window.showOpenFilePicker({
-      types: [
-        {
-          description: "Disk Images",
-          accept: {
-            "application/octet-stream": FILE_SUFFIXES.split(",") as `.${string}`[]
-          }
-        }
-      ],
-      excludeAcceptAllOption: true,
-      multiple: false,
-    })
-
-    if (writableFileHandle == null) {
-      return
-    }
-
-    const file = await writableFileHandle.getFile()
-    const fileExtension = file.name.substring(file.name.lastIndexOf("."))
-    let newIndex = index
-
-    if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
-      const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
-      writableFileHandle = await window.showSaveFilePicker({
-        excludeAcceptAllOption: false,
-        suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
-        types: [
-          {
-            description: "Disk Image",
-            accept: { "application/octet": [newFileExtension] as `.${string}`[] },
-          },
-        ]
-      })
-      newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-    } else {
-      newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
-    }
-
-    prepWritableFile(newIndex, writableFileHandle)
   }
 
   const showInternetArchivePicker = () => {
