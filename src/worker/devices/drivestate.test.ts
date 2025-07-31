@@ -75,4 +75,6 @@ test("PaulTeachesChess", () => testDiskImage("Paul Whitehead Teaches Chess.woz",
 // See if we reach the "choose keyboard/joystick" option, just to verify that we boot.
 test("StickybearTown", () => testDiskImage("StickybearTown.woz", 0x9F68, 27000000, 28000000))
 
+// See https://github.com/ct6502/apple2ts/issues/179
+test("Frogger", () => testDiskImage("Frogger.woz", 0x9C4E, 5900000, 6100000))
 

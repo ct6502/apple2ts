@@ -25,11 +25,29 @@ enum SWITCH {
 let MOTOR_RUNNING = false
 let DATA_LATCH = false
 
+const MAGNET_TO_POSITION = [
+// 0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010 1011 1100 1101 1110 1111
+     -1,   0,   2,   1,   4,  -1,   3,  -1,   6,   7,  -1,  -1,   5,  -1,  -1,  -1
+]
+
+const POSITION_TO_DIRECTION = [
+//   N  NE   E  SE   S  SW   W  NW
+//   0   1   2   3   4   5   6   7
+  [  0,  1,  2,  3,  0, -3, -2, -1 ], // 0 N
+  [ -1,  0,  1,  2,  3,  0, -3, -2 ], // 1 NE
+  [ -2, -1,  0,  1,  2,  3,  0, -3 ], // 2 E
+  [ -3, -2, -1,  0,  1,  2,  3,  0 ], // 3 SE
+  [  0, -3, -2, -1,  0,  1,  2,  3 ], // 4 S
+  [  3,  0, -3, -2, -1,  0,  1,  2 ], // 5 SW
+  [  2,  3,  0, -3, -2, -1,  0,  1 ], // 6 W
+  [  1,  2,  3,  0, -3, -2, -1,  0 ], // 7 NW
+]
+
 export const doResetDiskDrive = (driveState: DriveState) => {
   MOTOR_RUNNING = false
   doMotorTimeout(driveState)
-  driveState.halftrack = driveState.maxHalftrack
-  driveState.prevHalfTrack = driveState.maxHalftrack
+  driveState.quarterTrack = driveState.maxQuarterTrack
+  driveState.prevQuarterTrack = driveState.maxQuarterTrack
 }
 
 export const doPauseDiskDrive = (resume = false) => {
@@ -47,15 +65,15 @@ let fullRevolutionCount = 0
 
 const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   fullRevolutionCount = 0
-  ds.prevHalfTrack = ds.halftrack
-  ds.halftrack += offset
-  if (ds.halftrack < 0 || ds.halftrack > ds.maxHalftrack) {
+  ds.prevQuarterTrack = ds.quarterTrack
+  ds.quarterTrack += offset
+  if (ds.quarterTrack < 0 || ds.quarterTrack > ds.maxQuarterTrack) {
     passDriveSound(DRIVE.TRACK_END)
-    ds.halftrack = Math.max(0, Math.min(ds.halftrack, ds.maxHalftrack))
+    ds.quarterTrack = Math.max(0, Math.min(ds.quarterTrack, ds.maxQuarterTrack))
   } else {
     passDriveSound(DRIVE.TRACK_SEEK)
   }
-  ds.status = ` Trk ${ds.halftrack / 2}`
+  ds.status = ` Trk ${ds.quarterTrack / 4}`
   passData()
   // First adjust the current track location using the cycle count difference.
   // We need to do this before using the Applesauce formula below.
@@ -71,8 +89,10 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
   // which was to change the default empty track size from 51200 to 51024 bits.
   // This still allows Balance of Power and Miner 2049er to load, with no offset.
   // const bitOffset = -1
-  ds.trackLocation = Math.floor(ds.trackLocation *
-    (ds.trackNbits[ds.halftrack] / ds.trackNbits[ds.prevHalfTrack])) //+ bitOffset
+  if (ds.quarterTrack != ds.prevQuarterTrack) {
+      ds.trackLocation = Math.floor(ds.trackLocation *
+        (ds.trackNbits[ds.quarterTrack] / ds.trackNbits[ds.prevQuarterTrack])) //+ bitOffset
+  }
 }
 
 let randPos = 0
@@ -107,7 +127,8 @@ const clearbit = [0b01111111, 0b10111111, 0b11011111, 0b11101111,
 
 const getNextBit = (ds: DriveState, dd: Uint8Array) => {
   const oldLocation = ds.trackLocation
-  ds.trackLocation = ds.trackLocation % ds.trackNbits[ds.halftrack]
+  ds.trackLocation = ds.trackLocation % ds.trackNbits[ds.quarterTrack]
+  
   if (oldLocation !== ds.trackLocation) {
     if (fullRevolutionCount >= 9) {
       fullRevolutionCount = 0
@@ -117,8 +138,8 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
     }
   }
   let bit: number
-  if (ds.trackStart[ds.halftrack] > 0) {
-    const fileOffset = ds.trackStart[ds.halftrack] + (ds.trackLocation >> 3)
+  if (ds.trackStart[ds.quarterTrack] > 0) {
+    const fileOffset = ds.trackStart[ds.quarterTrack] + (ds.trackLocation >> 3)
     const byte = dd[fileOffset]
     const b = ds.trackLocation & 7
     bit = (byte & pickbit[b]) >> (7 - b)
@@ -167,7 +188,7 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   dataRegister &= 0xFF
   result = dataRegister
 
-  // if (ds.halftrack === 70 && dataRegister > 127) {
+  // if (ds.quarterTrack === 140 && dataRegister > 127) {
   //   console.log(toHex(dataRegister))
   // }
   // if (s6502.PC >= 0x9E45 && s6502.PC <= 0x9E5F) {
@@ -179,10 +200,10 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
 let prevCycleCount = 0
 
 const doWriteBit = (ds: DriveState, dd: Uint8Array, bit: 0 | 1) => {
-  ds.trackLocation = ds.trackLocation % ds.trackNbits[ds.halftrack]
+  ds.trackLocation = ds.trackLocation % ds.trackNbits[ds.quarterTrack]
   // TODO: What about writing to empty tracks?
-  if (ds.trackStart[ds.halftrack] > 0) {
-    const fileOffset = ds.trackStart[ds.halftrack] + (ds.trackLocation >> 3)
+  if (ds.trackStart[ds.quarterTrack] > 0) {
+    const fileOffset = ds.trackStart[ds.quarterTrack] + (ds.trackLocation >> 3)
     let byte = dd[fileOffset]
     const b = ds.trackLocation & 7
     if (bit) {
@@ -197,7 +218,7 @@ const doWriteBit = (ds: DriveState, dd: Uint8Array, bit: 0 | 1) => {
 
 const doWriteByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // Sanity check to make sure we aren't on an empty track. Is this correct?
-  if (dd.length === 0 || ds.trackStart[ds.halftrack] === 0) {
+  if (dd.length === 0 || ds.trackStart[ds.quarterTrack] === 0) {
     return
   }
   if (dataRegister > 0) {
@@ -258,9 +279,9 @@ const dumpData = (ds: DriveState) => {
   // if (dataRegister !== 0) {
   //   console.error(`addr=${toHex(addr)} writeByte= ${dataRegister}`)
   // }
-  if (debugCache.length > 0 && ds.halftrack === 2 * 0x00) {
+  if (debugCache.length > 0 && ds.quarterTrack === 4 * 0x00) {
     if (doDebugDrive) {
-      let output = `TRACK ${toHex(ds.halftrack/2)}: `
+      let output = `TRACK ${toHex(ds.quarterTrack/4)}: `
       let out = ""
       debugCache.forEach(element => {
         switch (element) {
@@ -275,8 +296,6 @@ const dumpData = (ds: DriveState) => {
     debugCache = []
   }
 }
-
-const STEPPER_MOTORS = [0, 0, 0, 0]
 
 export const handleDriveSoftSwitches: AddressCallback =
   (addr: number, value: number): number => {
@@ -394,30 +413,27 @@ export const handleDriveSoftSwitches: AddressCallback =
       break
     default: {  // $C080,X - $C087,X: Stepper motors
       if (addr < 0 || addr > 7) break
-      // One of the stepper motors has been turned on or off
-      STEPPER_MOTORS[Math.floor(addr / 2)] = addr % 2
-      const ascend = STEPPER_MOTORS[(ds.currentPhase + 1) % 4]
-      const descend = STEPPER_MOTORS[(ds.currentPhase + 3) % 4]
-      // Make sure our current phase motor has been turned off.
-      if (!STEPPER_MOTORS[ds.currentPhase]) {
-        if (ds.motorRunning && ascend) {
-          moveHead(ds, 1, cycles)
-          ds.currentPhase = (ds.currentPhase + 1) % 4
-          // Reset the Disk II Logic State Sequencer clock
-          prevCycleCount = s6502.cycleCount
-        } else if (ds.motorRunning && descend) {
-          moveHead(ds, -1, cycles)
-          ds.currentPhase = (ds.currentPhase + 3) % 4
-          // Reset the Disk II Logic State Sequencer clock
-          prevCycleCount = s6502.cycleCount
-        }
+      const phase = addr / 2
+      const phase_on = addr % 2
+      if (phase_on) {
+        ds.currentPhase |= 1 << phase
+      } else {
+        ds.currentPhase &= ~(1 << phase)
       }
+      const position = MAGNET_TO_POSITION[ds.currentPhase]
+      if (ds.motorRunning && position >= 0) {
+        const last_position = ds.quarterTrack & 7
+        const direction = POSITION_TO_DIRECTION[last_position][position]
+        moveHead(ds, direction, cycles)
+        prevCycleCount = s6502.cycleCount
+      }
+
       // if (doDebugDrive) {
       //   const phases = `${ps[0].isSet ? 1 : 0}${ps[1].isSet ? 1 : 0}` +
       //     `${ps[2].isSet ? 1 : 0}${ps[3].isSet ? 1 : 0}`
       //   console.log(`***** PC=${toHex(s6502.PC,4)}  addr=${toHex(addr,4)} ` +
       //     `phase ${a >> 1} ${a % 2 === 0 ? "off" : "on "}  ${phases}  ` +
-      //     `track=${dState.halftrack / 2}`)
+      //     `track=${dState.quarterTrack / 4}`)
       // }
       dumpData(ds)
       break
