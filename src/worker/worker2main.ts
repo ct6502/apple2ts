@@ -8,7 +8,7 @@ import { doSetRunMode,
   doSetCycleCount,
   doSetShowDebugTab} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { apple2KeyPress, apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
+import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBreakpoints } from "./cpu6502"
@@ -150,7 +150,6 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload as number)
-        apple2KeyPress(e.data.payload as number)
         break
       case MSG_MAIN.KEYRELEASE:
         apple2KeyRelease()
