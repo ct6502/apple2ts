@@ -54,8 +54,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
 
-  let longPressTimer: number
-
   if (getTheme() == UI_THEME.MINIMAL) {
     import("./diskcollectionpanel.minimal.css")
   }
