@@ -54,8 +54,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
 
-  let longPressTimer: number
-
   if (getTheme() == UI_THEME.MINIMAL) {
     import("./diskcollectionpanel.minimal.css")
   }
@@ -114,20 +112,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
     event.preventDefault()
     return false
-  }
-
-  const handleItemTouchStart = (diskCollectionItem: DiskCollectionItem) => (event: React.TouchEvent<HTMLElement>) => {
-    longPressTimer = window.setTimeout(() => {
-      setPopupItem(diskCollectionItem)
-      setPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
-      event.stopPropagation()
-      event.preventDefault()
-      return false
-    }, 1000)
-  }
-
-  const handleItemTouchCancel = () => {
-    clearTimeout(longPressTimer)
   }
 
   const handleBookmarkClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
@@ -202,7 +186,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       highlight={hasNewRelease}
       position="bottom-right">
       <div className="flex-row dcp-tab-row"
-        onClick={(e) => {if (e.target === e.currentTarget) e.stopPropagation()}}>
+        onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs.map((tab, i) => (
           <div
             key={`tab-${i}`}
@@ -214,7 +198,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         ))}
       </div>
       <div className="disk-collection-panel"
-        onClick={(e) => {if (e.target === e.currentTarget) e.stopPropagation()}}>
+        onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs[activeTab].disks.map((diskCollectionItem, index) => (
           <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
@@ -228,9 +212,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               className="dcp-item-image-box"
               title={`Click to load disk "${diskCollectionItem.title}"`}
               onClick={handleItemClick(diskCollectionItem, 0)}
-              onTouchStart={handleItemTouchStart(diskCollectionItem)}
-              onTouchEnd={handleItemTouchCancel}
-              onTouchCancel={handleItemTouchCancel}
               onContextMenu={handleItemRightClick(diskCollectionItem)}
             >
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
