@@ -108,6 +108,7 @@ const ConfigButtons = (props: DisplayProps) => {
                 setPreferenceTheme(i)
                 const url = new URL(window.location.href)
                 url.searchParams.delete("theme")
+                url.searchParams.set("cache", new Date().getTime().toString())
                 window.location.href = url.toString()
               }
             }

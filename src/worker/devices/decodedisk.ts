@@ -18,15 +18,15 @@ const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
     alert("CRC checksum error: " + driveState.filename)
     return false
   }
-  for (let htrack=0; htrack < 80; htrack++) {
-    const tmap_index = diskData[88 + htrack * 2]
+  for (let qtrtrack=0; qtrtrack < 160; qtrtrack++) {
+    const tmap_index = diskData[88 + qtrtrack]
     if (tmap_index < 255) {
       const tmap_offset = 256 + 8 * tmap_index
       const trk = diskData.slice(tmap_offset, tmap_offset + 8)
-      driveState.trackStart[htrack] = 512 * ((trk[1] << 8) + trk[0])
+      driveState.trackStart[qtrtrack] = 512 * ((trk[1] << 8) + trk[0])
       // const nBlocks = trk[2] + (trk[3] << 8)
-      driveState.trackNbits[htrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
-      driveState.maxHalftrack = htrack
+      driveState.trackNbits[qtrtrack] = trk[4] + (trk[5] << 8) + (trk[6] << 16) + trk[7] * (2 ** 24)
+      driveState.maxQuarterTrack = qtrtrack
     }
   }
   return true
@@ -39,14 +39,14 @@ const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
     return false
   }
   driveState.isWriteProtected = diskData[22] === 1
-  for (let htrack=0; htrack < 80; htrack++) {
-    const tmap_index = diskData[88 + htrack * 2]
+  for (let qtrtrack=0; qtrtrack < 160; qtrtrack++) {
+    const tmap_index = diskData[88 + qtrtrack]
     if (tmap_index < 255) {
-      driveState.trackStart[htrack] = 256 + tmap_index * 6656
-      const trk = diskData.slice(driveState.trackStart[htrack] + 6646,
-        driveState.trackStart[htrack] + 6656)
-      driveState.trackNbits[htrack] = trk[2] + (trk[3] << 8)
-      driveState.maxHalftrack = htrack
+      driveState.trackStart[qtrtrack] = 256 + tmap_index * 6656
+      const trk = diskData.slice(driveState.trackStart[qtrtrack] + 6646,
+        driveState.trackStart[qtrtrack] + 6656)
+      driveState.trackNbits[qtrtrack] = trk[2] + (trk[3] << 8)
+      driveState.maxQuarterTrack = qtrtrack
     }
   }
   return true

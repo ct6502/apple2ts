@@ -61,7 +61,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Print Shop Color",
-    diskUrl: "Print%20Shop%20Color.woz",
+    diskUrl: "Print%20Shop%20Color.po",
     imageUrl: new URL("/disks/Print%20Shop%20Color.png", window.location.origin),
     type: undefined,
     lastUpdated: new Date(0),

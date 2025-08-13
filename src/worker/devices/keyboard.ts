@@ -2,16 +2,6 @@ import { handleKeyMapping } from "../games/game_mappings"
 import { memGetC000, memSetC000 } from "../memory"
 import { doTakeSnapshot } from "../motherboard"
 
-export const apple2KeyPress = (key: number) => {
-  // Sather, Understanding the Apple IIe p2-16, all addresses from $C000-$C01F
-  // contain the ASCII key code in the low 7 bits, and the high bit is set
-  // to 1 to indicate a key press.
-  // $C000-$C00F will maintain that high bit.
-  // $C010-$C01F will override that high bit with their own status flag
-  // whenever they are read but there's no harm in setting it now.
-  memSetC000(0xC000, key | 0b10000000, 32)
-}
-
 const setKeyStrobe = (key: number) => {
   // Sather, Understanding the Apple IIe p2-16, all addresses from $C000-$C01F
   // contain the ASCII key code in the low 7 bits, and the high bit is set
@@ -48,6 +38,7 @@ export const apple2KeyRelease = () => {
 
 let keyBuffer = ""
 let tPrevPop = 1000000000
+let tPrevSnapshot = 0
 export const popKey = () => {
   // See note above about this time cutoff before dropping buffer text.
   const t = performance.now()
@@ -56,7 +47,10 @@ export const popKey = () => {
     const key = keyBuffer.charCodeAt(0)
     setKeyStrobe(key)
     keyBuffer = keyBuffer.slice(1)
-    if (keyBuffer.length === 0) {
+    // Take a time travel snapshot if buffer is empty and it's been at least 500 ms.
+    // We don't want to overload the snapshots.
+    if (keyBuffer.length === 0 && (t - tPrevSnapshot) > 500) {
+      tPrevSnapshot = t
       doTakeSnapshot(true)
     }
   }
@@ -89,7 +83,6 @@ export const sendTextToEmulator = (key: number) => {
   let text = String.fromCharCode(key)
   text = handleKeyMapping(text)
   addToBuffer(text)
-  popKey()
 }
 
 // TODO: Does this need its own buffer, so we can guarantee that chars
