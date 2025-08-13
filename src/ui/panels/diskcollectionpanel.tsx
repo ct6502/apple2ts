@@ -149,25 +149,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     return false
   }
 
-  const handleItemTouchStart = (diskCollectionItem: DiskCollectionItem) => (event: React.TouchEvent<HTMLElement>) => {
-    longPressTimer = window.setTimeout(() => {
-      if (activeTab == TAB_INDEX_SELECT) {
-        setSelectPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
-      } else {
-        setPopupItem(diskCollectionItem)
-        setDrivePopupLocation([event.touches[0].clientX, event.touches[0].clientY])
-      }
-
-      event.stopPropagation()
-      event.preventDefault()
-      return false
-    }, 1000)
-  }
-
-  const handleItemTouchCancel = () => {
-    clearTimeout(longPressTimer)
-  }
-
   const handleBookmarkClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     if (diskCollectionItem.bookmarkId) {
       diskBookmarks.remove(diskCollectionItem.bookmarkId)
@@ -299,6 +280,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       console.log(buffer?.byteLength)
     }
   }
+
   useEffect(() => {
     setDiskBookmarks(new DiskBookmarks())
   }, [isFlyoutOpen])
@@ -348,6 +330,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     } else {
       createHdv()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
 
   return (
