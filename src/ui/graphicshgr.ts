@@ -448,7 +448,7 @@ export const convertColorsToRGBA = (hgrColors: Uint8Array, colorMode: COLOR_MODE
 const drawHiresImage = async (ctx: CanvasRenderingContext2D,
   hgrRGBA: Uint8ClampedArray, nlines: number, xpos: number, ypos: number, scale: number) => {
   const npixels = hgrRGBA.length / (4 * nlines)
-  const imageData = new ImageData(hgrRGBA, npixels, nlines)
+  const imageData = new ImageData(hgrRGBA as ImageDataArray, npixels, nlines)
   // Use hidden canvas/context so we can change the canvas size and not
   // mess up our actual canvas.
   const hiddenCanvas = document.createElement("canvas")

@@ -86,7 +86,7 @@ export const ImageWriterII : Printer = {
 
   load: function() {},
   save: function() {
-    const blob = new Blob([this.incomingData])
+    const blob = new Blob([this.incomingData] as BlobPart[])
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
