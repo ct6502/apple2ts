@@ -139,6 +139,7 @@ export const SWITCHES = {
   }),
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
+  VIDEO7_160: NewSwitch(0xC078, 0xC079, 0),  // Video7 fake softswitch
   VIDEO7_MONO: NewSwitch(0xC07A, 0xC07B, 0),  // Video7 fake softswitch
   VIDEO7_MIXED: NewSwitch(0xC07C, 0xC07D, 0),  // Video7 fake softswitch
   // 0xC080...0xC08F are banked RAM soft switches and are handled manually
@@ -150,46 +151,49 @@ export const SWITCHES = {
 
 SWITCHES.TEXT.isSet = true
 
-// For Video7 black-and-white mode, these switches must be set in this order
-const COL80_OFF = SWITCHES.COLUMN80.offAddr
-const COL80_ON = SWITCHES.COLUMN80.onAddr
-const AN3_OFF = SWITCHES.DHIRES.onAddr
-const AN3_ON = SWITCHES.DHIRES.offAddr
-const video7monocycle = [COL80_OFF, AN3_OFF, AN3_ON, AN3_OFF, AN3_ON, COL80_ON, AN3_OFF]
-const video7mixedcycle = [COL80_OFF, AN3_OFF, AN3_ON, COL80_ON, AN3_OFF, AN3_ON, AN3_OFF]
-let video7monoSoFar = []
-let video7mixedSoFar = []
-const checkVideo7cycle = (addr: number) => {
-  SWITCHES.VIDEO7_MONO.isSet = false
-  SWITCHES.VIDEO7_MIXED.isSet = false
-  if (!SWITCHES.HIRES.isSet) {
-    video7monoSoFar = []  // start over
-    video7mixedSoFar = []
-    return
-  }
-  let foundOne = false
-  if (video7monocycle[video7monoSoFar.length] === addr) {
-    foundOne = true
-    video7monoSoFar.push(addr)
-    if (video7monoSoFar.length === video7monocycle.length) {
-      // This is 560x192 monochrome.
-      SWITCHES.VIDEO7_MONO.isSet = true
-      video7monoSoFar = []
+// Video7 procesing based on
+//   patent: https://patents.google.com/patent/US4631692 (AN3/80COL/clock)
+//   docs  : https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
+// Basic description: AN3 clocks the value of /80COL into two flipflops in series.
+//                    These two new "flag" registers form 4 new states for video modes.
+//                    Docs also indicate that 80Store needs to be set before starting.
+// AN3 starts ON
+let v7clock : boolean = true // starts set
+let v7flags : number = 0  // default according to docs is 3, but we aren't
+                          // always emulating the video7, so leave at zero
+// Use AN3 set/reset logic, not the DHIRES SSwitch
+const video7clock = (onoff: boolean) => {
+  // not sure if 80store is necessary
+  if (v7clock !== onoff && SWITCHES.STORE80.isSet) {
+    if (onoff) {
+      SWITCHES.VIDEO7_160.isSet = false
+      SWITCHES.VIDEO7_MONO.isSet = false
+      SWITCHES.VIDEO7_MIXED.isSet = false
+
+      // clock in the inverse value of COLUMN80
+      v7flags = (v7flags << 1) & 2
+      v7flags |= SWITCHES.COLUMN80.isSet ? 0 : 1
+
+      switch (v7flags) {
+        case 0: {
+          break
+        }
+        case 1: {
+          SWITCHES.VIDEO7_160.isSet = true
+          break
+        }
+        case 2: {
+          SWITCHES.VIDEO7_MIXED.isSet = true
+          break
+        }
+        case 3: {
+          SWITCHES.VIDEO7_MONO.isSet = true
+          break
+        }
+      }
     }
-  }
-  if (video7mixedcycle[video7mixedSoFar.length] === addr) {
-    foundOne = true
-    video7mixedSoFar.push(addr)
-    if (video7mixedSoFar.length === video7mixedcycle.length) {
-      // This is a mix of 560x192 monochrome and 140x192 color.
-      SWITCHES.VIDEO7_MIXED.isSet = true
-      video7mixedSoFar = []
-    }
-  }
-  // both cycles wrong, start over
-  if (!foundOne) {
-    video7monoSoFar = []
-    video7mixedSoFar = []
+
+    v7clock = onoff
   }
 }
 
@@ -230,13 +234,14 @@ export const checkSoftSwitches = (addr: number,
     sswitch1.setFunc(addr, cycleCount)
     return
   }
-  // No need to also check video7mixedcycle since it includes the same switches
-  if (video7monocycle.includes(addr)) {
-    checkVideo7cycle(addr)
-  } else {
-    video7monoSoFar = []
-    video7mixedSoFar = []
-  }
+
+  // Check AN3 toggle for Video7
+  // note reversed logic because we want AN3 state
+  if (addr === SWITCHES.DHIRES.offAddr)
+    video7clock(true)
+  else if (addr === SWITCHES.DHIRES.onAddr)
+    video7clock(false)
+
   if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
     if (!sswitch1.writeOnly || calledFromMemSet) {
       // If we have overridden this switch, don't actually set the real
