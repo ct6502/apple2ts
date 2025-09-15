@@ -23,6 +23,6 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500
   },
   define: {
-    "process.env": process.env
+    "process.env.npm_config_urlparam": JSON.stringify(process.env.npm_config_urlparam),
   }
 })

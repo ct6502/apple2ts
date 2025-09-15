@@ -313,6 +313,8 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (buffer) {
+      // If we are loading from a URL, reset all drives. Fixes issue#186
+      resetAllDiskDrives()
       if (callback) {
         callback(buffer)
       } else {

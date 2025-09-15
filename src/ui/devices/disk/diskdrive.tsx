@@ -29,7 +29,7 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blo
     const crc = crc32(diskData, 12)
     diskData.set(uint32toBytes(crc), 8)
   }
-  return new Blob([diskData])
+  return new Blob([diskData] as BlobPart[])
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {

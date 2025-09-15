@@ -244,6 +244,29 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   return hgrColors
 }
 
+const getVideo7H160Colors = (hgrPage: Uint8Array) => {
+  const nlines = hgrPage.length / 80
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK)
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j*80, j*80 + 80)
+    const joffset = j * 560
+    let start = 0
+    for (let i = 0; i < 160; i++) {
+      const off = i>>1
+      const shift = (i&1)?4:0	// apparently nybble swapped?
+      // since 560/160=3.5, draw alternating 4 & 3 pixel columns for now
+      const count = shift ? 3 : 4
+      const colorValue = (line[off] >> shift) & 0xF
+      const color = translateDHGR[colorValue]
+      for (let c = 0; c < count; c++) {
+        hgrColors[joffset + start] = color
+        start++
+      }
+    }
+  }
+  return hgrColors
+}
+
 // Apply the Video7 monochrome mode on top of the existing HGR colors.
 const applyVideo7MixedMode = (hgrPage: Uint8Array, hgrColors: Uint8Array) => {
   const nlines = hgrPage.length / 80
@@ -313,7 +336,9 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const noDelayMode = handleGetNoDelayMode()
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   let hgrColors: Uint8Array
-  if (switches.VIDEO7_MONO) {
+  if (switches.VIDEO7_160) {
+    hgrColors = getVideo7H160Colors(hgrPage)
+  } else if (switches.VIDEO7_MONO) {
     hgrColors = getDoubleHiresColors(hgrPage, COLOR_MODE.BLACKANDWHITE)
   } else if (video7foreground) {
     hgrColors = getVideo7HiresColors(hgrPage, colorMode)
