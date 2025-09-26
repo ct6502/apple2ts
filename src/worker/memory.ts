@@ -578,7 +578,7 @@ export const getTextPage = (getLores = false) => {
   }
 
   // Normal 40-column text page
-  const pageOffset = SWITCHES.PAGE2.isSet ? TEXT_PAGE2 : TEXT_PAGE1
+  const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? TEXT_PAGE2 : TEXT_PAGE1
   const textPage = new Uint8Array(40 * (jend - jstart))
   for (let j = jstart; j < jend; j++) {
     const joffset = 40 * (j - jstart)
