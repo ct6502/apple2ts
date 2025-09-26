@@ -214,6 +214,27 @@ export const handleSetDiskFromCloudData = async (
   }
 }
 
+const fetchWithCorsProxy = async (proxy: string, url: string) => {
+  try {
+    const response = await fetch("https://corsproxy.io/?" + url)
+    return response
+  } catch {
+    return null
+  }
+}
+
+const fetchWithCT6502Proxy = async (url: string) => {
+  // Ask CT6502 for why we need to use this favicon header
+  const favicon: { [key: string]: string } = {}
+  favicon[iconKey()] = iconData()
+  try {
+    const response = await fetch(iconName() + url, { headers: favicon })
+    return response
+  } catch {
+    return null
+  }
+}
+
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData,
   callback?: (buffer: ArrayBuffer | null) => void) => {
@@ -250,34 +271,34 @@ export const handleSetDiskFromURL = async (url: string,
   }
 
   // Download the file from the fragment URL
-  try {
-    let name = ""
-    let buffer
-
-    // Ask CT6502 for why we need to use this favicon header
-    const favicon: { [key: string]: string } = {}
-    favicon[iconKey()] = iconData()
+  let name = ""
+  let buffer
 
     if (!callback) {
-      showGlobalProgressModal(true, "Downloading disk")
+    showGlobalProgressModal(true, "Downloading disk")
     }
 
-    const response = await fetch(iconName() + url, { headers: favicon })
-      .finally(() => {
-        if (!callback) {
-          showGlobalProgressModal(false)
-        }
-      })
+  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
 
-    if (!response.ok) {
-      console.error(`HTTP error: status ${response.status}`)
+  if (!response || !response.ok) {
+    console.log("First CORS proxy failed, trying next proxy")
+    response = await fetchWithCT6502Proxy(url)
+    if (!response) {
+        if (!callback) {
+        showGlobalProgressModal(false)
+        }
+      console.error(`Error fetching URL: ${url}`)
       if (callback) {
         callback(null)
       } else {
         return
       }
     }
+  }
 
+  showGlobalProgressModal(false)
+
+  try {
     const blob = await response.blob()
 
     if (url.toLowerCase().endsWith(".zip")) {
