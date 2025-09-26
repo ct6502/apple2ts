@@ -274,9 +274,9 @@ export const handleSetDiskFromURL = async (url: string,
   let name = ""
   let buffer
 
-    if (!callback) {
+  if (!callback) {
     showGlobalProgressModal(true, "Downloading disk")
-    }
+  }
 
   let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
 
@@ -284,10 +284,12 @@ export const handleSetDiskFromURL = async (url: string,
     console.log("First CORS proxy failed, trying next proxy")
     response = await fetchWithCT6502Proxy(url)
     if (!response) {
-        if (!callback) {
+      if (!callback) {
         showGlobalProgressModal(false)
-        }
+      }
+      
       console.error(`Error fetching URL: ${url}`)
+      
       if (callback) {
         callback(null)
       } else {

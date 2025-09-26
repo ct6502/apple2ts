@@ -14,7 +14,10 @@ export const isFileSystemApiSupported = () => {
 
 export const showGlobalProgressModal = (show: boolean = true, message: string = "") => {
   const messageElement = document.getElementsByClassName("global-progress-message")[0] as HTMLElement
-  messageElement.innerText = show && message ? message : ""
+
+  if (messageElement) {
+    messageElement.innerText = show && message ? message : ""
+  }
 
   document.body.style.setProperty("--global-progress-visibility", show ? "visible" : "hidden")
 }
