@@ -57,5 +57,14 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: new URL("https://github.com/rsheehan/K2/raw/refs/heads/main/K2.po"),
     detailsUrl: new URL("https://github.com/rsheehan/K2"),
     params: "TEXT=%2BK2%20ABOUTK2"
-  }
+  },
+  {
+    type: -1,
+    title: "A2DeskTop",
+    lastUpdated: new Date("7/31/2025"),
+    imageUrl: new URL("https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/a2desktop.jpg"),
+    diskUrl: new URL("https://a2desktop.s3.amazonaws.com/A2DeskTop-1.5-alpha4-en_800k.2mg"),
+    detailsUrl: new URL("https://github.com/a2stuff/a2d"),
+    params: "color=white&speed=fast&scanlines=off"
+  },
 ]
