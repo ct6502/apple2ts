@@ -15,11 +15,46 @@
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
     <link rel="manifest" href="/manifest.json" />
-    <script type="text/javascript" src="/js/onedrive.js"></script>
+    
+    <!-- Preload all assets -->
+    <link rel="preload" href="/assets/crt.jpg" as="image" />
+    <link rel="preload" href="/assets/disk2off.png" as="image" />
+    <link rel="preload" href="/assets/disk2on.png" as="image" />
+    <link rel="preload" href="/assets/disk2off-empty.png" as="image" />
+    <link rel="preload" href="/assets/disk2on-empty.png" as="image" />
+    <link rel="preload" href="/assets/harddrive.png" as="image" />
+    <link rel="preload" href="/assets/harddriveOn.png" as="image" />
+    <link rel="preload" href="/assets/diskicons.png" as="image" />
+    <link rel="preload" href="/assets/runningGuy.gif" as="image" />
+    <link rel="preload" href="/assets/driveMotor.mp3" as="audio" />
+    <link rel="preload" href="/assets/driveTrackOffEnd.mp3" as="audio" />
+    <link rel="preload" href="/assets/driveTrackSeekLong.mp3" as="audio" />
+    
+    <!-- Asset Registry Script -->
+    <script>
+      window.assetRegistry = {
+        // Images
+        bgImage: "/assets/crt.jpg",
+        disk2off: "/assets/disk2off.png",
+        disk2on: "/assets/disk2on.png",
+        disk2offEmpty: "/assets/disk2off-empty.png",
+        disk2onEmpty: "/assets/disk2on-empty.png",
+        hardDriveOff: "/assets/harddrive.png",
+        hardDriveOn: "/assets/harddriveOn.png",
+        diskicons: "/assets/diskicons.png",
+        runningGuy: "/assets/runningGuy.gif",
+        // Audio
+        driveMotor: "/assets/driveMotor.mp3",
+        driveTrackOffEnd: "/assets/driveTrackOffEnd.mp3",
+        driveTrackSeekLong: "/assets/driveTrackSeekLong.mp3"
+      };
+    </script>
+    
+    <scrip type="text/javascript" src="/js/onedrive.js"></script>
     <script type="text/javascript" src="/js/google_api.js"></script>
     <script type="text/javascript" src="/js/google_client.js"></script>
     <title>Apple2TS</title>
-    <script type="module" crossorigin src="/assets/index-SQenCSQ_.js"></script>
+    <script type="module" crossorigin src="/assets/index-DnXfZRyj.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-BYSCc_B_.css">
   </head>
   <body>
