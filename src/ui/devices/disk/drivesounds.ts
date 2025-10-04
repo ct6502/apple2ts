@@ -1,5 +1,4 @@
 import { DRIVE } from "../../../common/utility"
-import { mp3List } from "./assets"
 import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
 import "./diskinterface.css"
 
@@ -37,7 +36,7 @@ const playAudio = (audioDevice: AudioDevice, timeout: number) => {
 
 const playTrackOffEnd = () => {
   if (!trackOffEndAudio) {
-    trackOffEndAudio = constructAudio(mp3List.mp3TrackOffEnd)
+    trackOffEndAudio = constructAudio(window.assetRegistry.driveTrackOffEnd)
     registerAudioContext((enable: boolean) => {
       // Just turn off audio if disabled, don't bother to turn it
       // back on because this sound is so short.
@@ -49,7 +48,7 @@ const playTrackOffEnd = () => {
 
 const playTrackSeek = () => {
   if (!trackSeekAudio) {
-    trackSeekAudio = constructAudio(mp3List.mp3TrackSeek)
+    trackSeekAudio = constructAudio(window.assetRegistry.driveTrackSeekLong)
     registerAudioContext((enable: boolean) => {
       // Just turn off audio if disabled, don't bother to turn it
       // back on because this sound is so short.
@@ -62,7 +61,7 @@ const playTrackSeek = () => {
 const playMotorOn = () => {
   motorIsRunning = true
   if (!motorAudio) {
-    motorAudio = constructAudio(mp3List.mp3DriveMotor)
+    motorAudio = constructAudio(window.assetRegistry.driveMotor)
     motorAudio.element.loop = true
     registerAudioContext((enable: boolean) => {
       if (enable && motorIsRunning && isAudioEnabled()) {

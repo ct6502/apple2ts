@@ -3,7 +3,6 @@ import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
 import { UI_THEME } from "../common/utility"
-import runningGuy from "./img/runningGuy.gif"
 import { getTheme } from "./ui_settings"
 
 const App = () => {
@@ -35,7 +34,7 @@ const App = () => {
       }}>
       <DisplayApple2 />
       <div className="global-progress-modal-overlay">
-        <img src={runningGuy} alt="Loading..." className="global-progress-spinner2" />
+        <img src={window.assetRegistry.runningGuy} alt="Loading..." className="global-progress-spinner2" />
       </div>
     </GlobalContext.Provider>
   )

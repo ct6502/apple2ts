@@ -17,7 +17,6 @@ import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
 import { isFileSystemApiSupported } from "../../ui_utilities"
-import { imageList } from "./assets"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
 
@@ -219,11 +218,11 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   let img1: string
   if (dprops.hardDrive) {
-    img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
+    img1 = dprops.motorRunning ? window.assetRegistry.hardDriveOn : window.assetRegistry.hardDriveOff
   } else {
     img1 = (dprops.filename.length > 0) ?
-      (dprops.motorRunning ? imageList.disk2on : imageList.disk2off) :
-      (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
+      (dprops.motorRunning ? window.assetRegistry.disk2on : window.assetRegistry.disk2off) :
+      (dprops.motorRunning ? window.assetRegistry.disk2onEmpty : window.assetRegistry.disk2offEmpty)
   }
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
   let status = DISK_DRIVE_LABELS[props.index]
