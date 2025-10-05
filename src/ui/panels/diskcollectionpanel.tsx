@@ -155,7 +155,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
         diskUrl: diskBookmark.diskUrl ? diskBookmark.diskUrl : "",
-        imageUrl: diskBookmark.screenshotUrl,
+        imageUrl: diskBookmark.screenshotUrl?.toString(),
         detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData
@@ -214,7 +214,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               onClick={handleItemClick(diskCollectionItem, 0)}
               onContextMenu={handleItemRightClick(diskCollectionItem)}
             >
-              <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
+              <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
             <img className="dcp-item-disk" src="/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&

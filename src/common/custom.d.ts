@@ -327,7 +327,7 @@ type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
   lastUpdated: Date,
-  imageUrl?: URL,
+  imageUrl?: string,
   diskUrl: URL | string,
   detailsUrl?: URL,
   bookmarkId?: string,
