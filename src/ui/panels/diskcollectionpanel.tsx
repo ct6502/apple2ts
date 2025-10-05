@@ -216,7 +216,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             >
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
-            <img className="dcp-item-disk" src="/floppy.png" />
+            <img className="dcp-item-disk" src="assets/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
               <div className="dcp-item-new" title="Disk is a new release">
                 <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
