@@ -8,6 +8,19 @@ on:
     branches: [ main ]
 
 jobs:
+  # Cleanup old workflow runs (keep only last 3)
+  cleanup:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 3
+
   build:
     env:
       MY_EMAIL: 5461379+ct6502@users.noreply.github.com
