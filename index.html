@@ -2,27 +2,48 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="/favicon.png" />
+    <link rel="icon" href="favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
       content="Apple II Emulator in TypeScript"
     />
-    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="apple-touch-icon" href="logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
-    <link rel="manifest" href="/manifest.json" />
-    <script type="text/javascript" src="/js/onedrive.js"></script>
-    <script type="text/javascript" src="/js/google_api.js"></script>
-    <script type="text/javascript" src="/js/google_client.js"></script>
+    <link rel="manifest" href="manifest.json" />
+    
+    <!-- Asset Registry Script -->
+    <script>
+      window.assetRegistry = {
+        // Images
+        bgImage: "assets/crt.jpg",
+        disk2off: "assets/disk2off.png",
+        disk2on: "assets/disk2on.png",
+        disk2offEmpty: "assets/disk2off-empty.png",
+        disk2onEmpty: "assets/disk2on-empty.png",
+        hardDriveOff: "assets/harddrive.png",
+        hardDriveOn: "assets/harddriveOn.png",
+        diskicons: "assets/diskicons.png",
+        runningGuy: "assets/runningGuy.gif",
+        // Audio
+        driveMotor: "assets/driveMotor.mp3",
+        driveTrackOffEnd: "assets/driveTrackOffEnd.mp3",
+        driveTrackSeekLong: "assets/driveTrackSeekLong.mp3"
+      };
+    </script>
+    
+    <script type="text/javascript" src="js/onedrive.js"></script>
+    <script type="text/javascript" src="js/google_api.js"></script>
+    <script type="text/javascript" src="js/google_client.js"></script>
     <title>Apple2TS</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <script type="module" src="/src/ui/index.jsx"></script>
+    <script type="module" src="src/ui/index.jsx"></script>
   </body>
 </html>

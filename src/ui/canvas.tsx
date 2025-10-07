@@ -19,7 +19,6 @@ import { handleCopyToClipboard } from "./copycanvas"
 import { drawHiresTile } from "./graphicshgr"
 import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
-import bgImage from "./img/crt.jpg"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
 import { getUseOpenAppleKey, getCapsLock, getTheme, getShowScanlines } from "./ui_settings"
@@ -539,7 +538,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = (handleGetShowAppleMouse() && withinScreen) ? "url('/dot.png'), none" :
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
-  const backgroundImage = noBackgroundImage ? "" : `url(${bgImage})`
+  const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
 
   return (
     <span className="canvas-text scanline-gradient">

@@ -1,4 +1,4 @@
-import floppyDisks from "./img/diskicons.png"
+const floppyDisks = window.assetRegistry.diskicons
 import DiskImageDialog from "./diskimagedialog"
 import { handleSetDiskFromFile } from "./driveprops"
 import { useState } from "react"

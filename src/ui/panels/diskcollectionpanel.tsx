@@ -113,10 +113,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
-    } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex, callback)
+    } else if (diskCollectionItem?.diskUrl && !diskCollectionItem.diskUrl.startsWith("http")) {
+      handleSetDiskFromFile(diskCollectionItem.diskUrl, props.updateDisplay, driveIndex, callback)
     } else {
-      handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData, callback)
+      handleSetDiskFromURL(diskCollectionItem?.diskUrl || "", undefined, driveIndex, diskCollectionItem?.cloudData, callback)
     }
 
     if (diskCollectionItem?.params && !callback) {
@@ -302,8 +302,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
         diskUrl: diskBookmark.diskUrl ? diskBookmark.diskUrl : "",
-        imageUrl: diskBookmark.screenshotUrl,
-        detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
+        imageUrl: diskBookmark.screenshotUrl?.toString(),
+        detailsUrl: diskBookmark.cloudData?.detailsUrl ? diskBookmark.cloudData.detailsUrl : diskBookmark.detailsUrl?.toString(),
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData,
         fileSize: diskBookmark.cloudData?.fileSize || -1
@@ -372,9 +372,9 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               onClick={handleItemClick(diskCollectionItem)}
               onContextMenu={handleItemRightClick(diskCollectionItem)}
             >
-              <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
+              <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
-            <img className="dcp-item-disk" src="/floppy.png" />
+            <img className="dcp-item-disk" src="assets/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
               <div className="dcp-item-new" title="Disk is a new release">
                 <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />

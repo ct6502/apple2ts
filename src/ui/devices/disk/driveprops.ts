@@ -243,7 +243,7 @@ export const handleSetDiskFromURL = async (url: string,
     if ( !match.diskUrl ) {
       return
     }
-    url = match.diskUrl.toString()
+    url = match.diskUrl
     if (!URL.canParse(url)) {
       handleSetDiskFromFile(url, updateDisplay, index)
       return
@@ -261,7 +261,7 @@ export const handleSetDiskFromURL = async (url: string,
       const diskBookmarks = new DiskBookmarks()
       const bookmark = diskBookmarks.get(identifier)
       if (bookmark) {
-        bookmark.diskUrl = resolvedUrl
+        bookmark.diskUrl = resolvedUrl.toString()
         if (bookmark.cloudData) {
           bookmark.cloudData.fileSize = fileSize
         }
@@ -435,7 +435,7 @@ export const handleSetDiskFromFile = async (disk: string,
   callback?: (buffer: ArrayBuffer | null) => void) => {
   let data: ArrayBuffer
   try {
-    const res = await fetch("/disks/" + disk)
+    const res = await fetch("disks/" + disk)
     data = await res.arrayBuffer()
   } catch {
     if (callback) {
@@ -469,7 +469,7 @@ export const handleSetDiskFromFile = async (disk: string,
 
     const helpFile = replaceSuffix(disk, "txt")
     try {
-      const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
+      const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
       let helptext = "<Default>"
       if (help.ok) {
         helptext = await help.text()
