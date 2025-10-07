@@ -125,7 +125,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       id: props.identifier,
       title: props.title,
       screenshotUrl: screenshotUrl,
-      diskUrl: generateUrlFromInternetArchiveId(props.identifier),
+      diskUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
       detailsUrl: detailsUrl,
       lastUpdated: new Date(),
       cloudData: {

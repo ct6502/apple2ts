@@ -328,8 +328,8 @@ type DiskCollectionItem = {
   title: string,
   lastUpdated: Date,
   imageUrl?: string,
-  diskUrl: URL | string,
-  detailsUrl?: URL,
+  diskUrl: string,
+  detailsUrl?: string,
   bookmarkId?: string,
   params?: string,
   cloudData?: CloudData

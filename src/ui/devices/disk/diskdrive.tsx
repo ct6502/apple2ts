@@ -294,7 +294,7 @@ const DiskDrive = (props: DiskDriveProps) => {
                     title: dprops.cloudData.fileName,
                     screenshotUrl: getImageDataUrlFromCanvas(),
                     lastUpdated: new Date(Date.now()),
-                    diskUrl: new URL(dprops.cloudData.downloadUrl),
+                    diskUrl: dprops.cloudData.downloadUrl,
                     cloudData: dprops.cloudData
                   })
                 }

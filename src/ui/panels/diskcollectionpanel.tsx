@@ -90,10 +90,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     passSetRunMode(RUN_MODE.IDLE)
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
-    } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
+    } else if (diskCollectionItem?.diskUrl && !diskCollectionItem.diskUrl.startsWith("http")) {
+      handleSetDiskFromFile(diskCollectionItem.diskUrl, props.updateDisplay, driveIndex)
     } else {
-      handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData)
+      handleSetDiskFromURL(diskCollectionItem?.diskUrl || "", undefined, driveIndex, diskCollectionItem?.cloudData)
     }
     if (diskCollectionItem?.params) {
       handleInputParams(diskCollectionItem.params)
@@ -156,7 +156,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         lastUpdated: new Date(diskBookmark.lastUpdated),
         diskUrl: diskBookmark.diskUrl ? diskBookmark.diskUrl : "",
         imageUrl: diskBookmark.screenshotUrl?.toString(),
-        detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
+        detailsUrl: diskBookmark.cloudData?.detailsUrl ? diskBookmark.cloudData.detailsUrl : diskBookmark.detailsUrl?.toString(),
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData
       })

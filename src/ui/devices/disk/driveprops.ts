@@ -223,7 +223,7 @@ export const handleSetDiskFromURL = async (url: string,
     if ( !match.diskUrl ) {
       return
     }
-    url = match.diskUrl.toString()
+    url = match.diskUrl
     if (!URL.canParse(url)) {
       handleSetDiskFromFile(url, updateDisplay, index)
       return
@@ -242,7 +242,7 @@ export const handleSetDiskFromURL = async (url: string,
       const diskBookmarks = new DiskBookmarks()
       const bookmark = diskBookmarks.get(identifier)
       if (bookmark) {
-        bookmark.diskUrl = resolvedUrl
+        bookmark.diskUrl = resolvedUrl.toString()
         diskBookmarks.set(bookmark)
       }
     }
