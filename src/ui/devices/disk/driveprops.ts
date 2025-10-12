@@ -236,9 +236,27 @@ const fetchWithCT6502Proxy = async (url: string) => {
 }
 
 export const handleSetDiskFromURL = async (url: string,
-  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData,
-  callback?: (buffer: ArrayBuffer | null) => void) => {
-  if (!url.startsWith("http") && updateDisplay) {
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void) => {
+  // Check if it's a local file (not http/https URL)
+  const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
+  
+  if (isLocalFile && updateDisplay) {
+    // If it's a file:// URL or absolute path, treat as direct file access
+    if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
+      // Handle direct file access for Electron
+      try {
+        const response = await fetch(url)
+        const buffer = await response.arrayBuffer()
+        resetAllDiskDrives()
+        handleSetDiskOrFileFromBuffer(index, buffer, url.split("/").pop() || url, cloudData || null, null)
+        return
+      } catch (error) {
+        console.error(`Error loading local file: ${url}`, error)
+        return
+      }
+    }
+    
+    // Otherwise, try to find matching disk image in collections
     const match = findMatchingDiskImage(url)
     if ( !match.diskUrl ) {
       return
