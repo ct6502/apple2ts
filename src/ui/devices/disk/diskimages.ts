@@ -116,8 +116,8 @@ export const diskImages: DiskCollectionItem[] = [
     lastUpdated: new Date(0),
   },
   {
-    title: "Wizardy Replay v1.1",
-    diskUrl: "Wizard%20Replay%20v1.1.hdv",
+    title: "Wizard Replay v1.1",
+    diskUrl: "https://archive.org/download/WizardReplay/Wizard%20Replay%20v1.1.hdv",
     imageUrl: "disks/Wizard%20Replay%20v1.1.png",
     detailsUrl: "https://archive.org/details/WizardReplay",
     type: undefined,

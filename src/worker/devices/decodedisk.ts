@@ -99,27 +99,29 @@ const decode2MG = (driveState: DriveState, diskData: Uint8Array): Uint8Array => 
 export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
-  if (isHardDriveImage(fname)) {
-    driveState.hardDrive = true
-    driveState.status = ""
-    if (fname.endsWith(".hdv") || fname.endsWith(".po")) {
+  if (diskData.length > 10000) {
+    if (isHardDriveImage(fname)) {
+      driveState.hardDrive = true
+      driveState.status = ""
+      if (fname.endsWith(".hdv") || fname.endsWith(".po")) {
+        return diskData
+      }
+      if (fname.endsWith(".2mg")) {
+        return decode2MG(driveState, diskData)
+      }
+    }
+    if (isDSK(driveState.filename)) {
+      diskData = decodeDSK(driveState, diskData)
+    }
+    if (decodeWoz2(driveState, diskData)) {
       return diskData
     }
-    if (fname.endsWith(".2mg")) {
-      return decode2MG(driveState, diskData)
+    if (decodeWoz1(driveState, diskData)) {
+      return diskData
     }
   }
-  if (isDSK(driveState.filename)) {
-    diskData = decodeDSK(driveState, diskData)
-  }
-  if (decodeWoz2(driveState, diskData)) {
-    return diskData
-  }
-  if (decodeWoz1(driveState, diskData)) {
-    return diskData
-  }
   if (fname !== "") {
-    console.error("Unknown disk format.")
+    console.error("Unknown disk format or unable to decode: " + driveState.filename)
   }
   return new Uint8Array()
 }
