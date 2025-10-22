@@ -2,7 +2,7 @@ import React, { } from "react"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
 import { UI_THEME } from "../../common/utility"
-import { getTheme } from "../ui_settings"
+import { getTheme, isMinimalTheme } from "../ui_settings"
 
 type HelpPanelProps = {
   helptext: string,
@@ -19,9 +19,8 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   const paperheight = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
   const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
   const isDarkMode = getTheme() == UI_THEME.DARK
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
 
-  if (isMinimalTheme) {
+  if (isMinimalTheme()) {
     import("./helppanel.minimal.css")
   }
 
@@ -40,8 +39,8 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return (
     <div className="help-parent"
       style={{
-        width: narrow || isMinimalTheme ? "687px" : 500, height:
-          narrow || isMinimalTheme ? "" : paperheight,
+        width: narrow || isMinimalTheme() ? "687px" : 500, height:
+          narrow || isMinimalTheme() ? "" : paperheight,
         overflow: (narrow ? "visible" : "auto")
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>

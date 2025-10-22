@@ -1,9 +1,9 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -13,6 +13,10 @@ export const handleInputParams = (paramString = "") => {
   }
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
+
+  if (params.get("appmode")) {
+    setAppMode(params.get("appmode") as string)
+  }
 
   if (params.get("capslock") === "off") {
     setCapsLock(false)
@@ -54,6 +58,15 @@ export const handleInputParams = (paramString = "") => {
     setShowScanlines(false)
   }
 
+  const machineName = params.get("machine")?.toUpperCase()
+  if (machineName) {
+    if (machineName === "APPLE2EU") {
+      passSetMachineName("APPLE2EU")
+    } else {
+      passSetMachineName("APPLE2EE")
+    }
+  }
+
   const ramDisk = params.get("ramdisk")
   if (ramDisk) {
     const sizes = ["64", "512", "1024", "4096", "8192"]
@@ -90,6 +103,11 @@ export const handleInputParams = (paramString = "") => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const { setRunTour } = useGlobalContext()
     setRunTour(tour)
+  }
+
+  const hotReload = params.get("hotreload")
+  if (hotReload) {
+    setHotReload(hotReload === "true")
   }
 
   const run = params.get("run")

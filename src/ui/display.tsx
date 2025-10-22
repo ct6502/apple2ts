@@ -16,12 +16,12 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
+import { RUN_MODE, TEST_DEBUG } from "../common/utility"
 import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
-import { getTheme, setHelpText } from "./ui_settings"
+import { getTheme, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -147,7 +147,6 @@ const DisplayApple2 = () => {
   const theme = getTheme()
   handleSetTheme(theme)
 
-  const isMinimalTheme = theme == UI_THEME.MINIMAL
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
@@ -175,16 +174,16 @@ const DisplayApple2 = () => {
           <div className="flex-row-gap wrap"
             style={{ paddingLeft: "2px" }}>
             <ControlPanel {...props} />
-            <DiskInterface {...props} />
+            {!isGameMode() && <DiskInterface {...props} />}
           </div>
-          {!isLandscape && status}
+          {!isLandscape && !isGameMode() && status}
         </div>
         {isLandscape && status}
-        {narrow && !isMinimalTheme && <div className="divider"></div>}
-        <DebugSection updateDisplay={updateDisplay} />
+        {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
+        {!isGameMode() && <DebugSection updateDisplay={updateDisplay} />}
       </span>
-      {isMinimalTheme && <DiskCollectionPanel {...props} />}
-      {isMinimalTheme && isTouchDevice && <TouchJoystick />}
+      {isMinimalTheme() && <DiskCollectionPanel {...props} />}
+      {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
       <FileInput {...props} />
     </div>
   )
