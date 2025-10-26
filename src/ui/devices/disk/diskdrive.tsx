@@ -160,7 +160,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
-  const showSaveFilePicker = async (index: number) => {
+  const showDiskSaveFilePicker = async (index: number) => {
     const fileName = dprops.filename
     const fileExtension = fileName.substring(fileName.lastIndexOf("."))
 
@@ -276,7 +276,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               label: "Save Disk to Device",
               icon: faFloppyDisk,
               isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
-              onClick: () => { showSaveFilePicker(props.index) }
+              onClick: () => { showDiskSaveFilePicker(props.index) }
             },
             {
               label: "-",
