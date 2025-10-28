@@ -178,7 +178,7 @@ const DisplayApple2 = () => {
           </div>
           {!isLandscape && !isGameMode() && status}
         </div>
-        {isLandscape && status}
+        {isLandscape && !isGameMode() && status}
         {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
         {!isGameMode() && <DebugSection updateDisplay={updateDisplay} />}
       </span>
