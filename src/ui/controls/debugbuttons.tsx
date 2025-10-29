@@ -61,7 +61,7 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {isFileSystemApiSupported() && !isGameMode() &&
+    {isFileSystemApiSupported() &&
       <button className="push-button"
         title={getHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
         onClick={() => {
