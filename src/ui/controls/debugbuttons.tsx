@@ -17,7 +17,7 @@ import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
 import { setPreferenceHotReload } from "../localstorage"
 import { RUN_MODE } from "../../common/utility"
-import { isFileSystemApiSupported } from "../ui_utilities"
+import { hasEnhancedFileAccess } from "../ui_utilities"
 import { getHotReload, isGameMode } from "../ui_settings"
 
 const DebugButtons = (props: DisplayProps) => {
@@ -61,7 +61,7 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {isFileSystemApiSupported() &&
+    {hasEnhancedFileAccess() &&
       <button className="push-button"
         title={getHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
         onClick={() => {
