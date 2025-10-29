@@ -1,6 +1,8 @@
-import { handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress,
-  passAppleCommandKeyRelease, passKeypress, 
-  passKeyRelease} from "../main2worker"
+import {
+  handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress,
+  passAppleCommandKeyRelease, passKeypress,
+  passKeyRelease
+} from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRight,
@@ -16,7 +18,7 @@ import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
 import { setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
-import { getTheme, getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
+import { getTheme, getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity, isMinimalTheme } from "../ui_settings"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -78,7 +80,7 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
       <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
     </button>
-    { getTheme() == UI_THEME.MINIMAL &&
+    {isMinimalTheme() &&
       <button title="Touch Joystick"
         className="push-button"
         onMouseDown={(event: React.MouseEvent) => setPopupLocation([event.clientX, event.clientY])}>
@@ -143,7 +145,7 @@ const KeyboardButtons = (props: DisplayProps) => {
             let turningOn = !getTiltSensorJoystick()
             if (turningOn) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              if (typeof((DeviceOrientationEvent as any).requestPermission) === "function") {
+              if (typeof ((DeviceOrientationEvent as any).requestPermission) === "function") {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const permissionState = (DeviceOrientationEvent as any).requestPermission()
                 if (permissionState === "denied") {
@@ -151,7 +153,8 @@ const KeyboardButtons = (props: DisplayProps) => {
                 }
               }
             }
-            setPreferenceTiltSensorJoystick(turningOn) }
+            setPreferenceTiltSensorJoystick(turningOn)
+          }
         },
       ]]}
     />
