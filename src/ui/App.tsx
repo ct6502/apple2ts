@@ -2,8 +2,7 @@ import { useState } from "react"
 import "./App.css"
 import DisplayApple2 from "./display"
 import { GlobalContext } from "./globalcontext"
-import { UI_THEME } from "../common/utility"
-import { getTheme } from "./ui_settings"
+import { isMinimalTheme } from "./ui_settings"
 
 const App = () => {
   const [updateHgr, setUpdateHgr] = useState(false)
@@ -13,7 +12,7 @@ const App = () => {
   const [tourIndex, setTourIndex] = useState(0)
 
   window.setTimeout(() => {
-    if (getTheme() == UI_THEME.MINIMAL) {
+    if (isMinimalTheme()) {
       import("./App.minimal.css")
     }
   }, 1)

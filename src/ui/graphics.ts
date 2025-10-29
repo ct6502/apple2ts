@@ -2,10 +2,10 @@ import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetMachineName,
   handleGetSoftSwitches} from "./main2worker"
-import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME, toHex } from "../common/utility"
+import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getTheme, isGameMode } from "./ui_settings"
+import { getColorMode, isGameMode, isMinimalTheme } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
 let frameCount = 0
 
@@ -486,7 +486,7 @@ export const getCanvasSize = () => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  if (getTheme() == UI_THEME.MINIMAL) {
+  if (isMinimalTheme()) {
     const isTouchDevice = "ontouchstart" in document.documentElement
     const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
     if (isLandscape) {

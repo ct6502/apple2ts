@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
-import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { RUN_MODE } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import PopupMenu from "../controls/popupmenu"
@@ -12,7 +12,7 @@ import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
-import { getTheme } from "../ui_settings"
+import { isMinimalTheme } from "../ui_settings"
 import { handleInputParams } from "../inputparams"
 import { passSetRunMode } from "../main2worker"
 
@@ -54,7 +54,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
 
-  if (getTheme() == UI_THEME.MINIMAL) {
+  if (isMinimalTheme()) {
     import("./diskcollectionpanel.minimal.css")
   }
 
@@ -182,7 +182,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
-      width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
+      width={`max( ${isMinimalTheme() ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
       <div className="flex-row dcp-tab-row"
