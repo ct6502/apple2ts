@@ -3,7 +3,7 @@ import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK, DISK_CONVERSION_SUFFIXES } from "../../../common/utility"
+import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK, DISK_CONVERSION_SUFFIXES, CLOUD_SYNC } from "../../../common/utility"
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
@@ -259,7 +259,7 @@ export const handleSetDiskFromURL = async (url: string,
         // Store the file path in cloudData so we can write back to it
         const electronCloudData: CloudData = {
           providerName: "Electron",
-          syncStatus: 0,
+          syncStatus: CLOUD_SYNC.ACTIVE,
           syncInterval: 3000,
           fileName: fileName,
           downloadUrl: filePath,
@@ -440,7 +440,7 @@ export const showReadWriteFilePicker = async (index: number) => {
     // Store the file path in cloudData so we can write back to it
     const electronCloudData: CloudData = {
       providerName: "Electron",
-      syncStatus: 0,
+      syncStatus: CLOUD_SYNC.ACTIVE,
       syncInterval: 3000,
       fileName: fileName,
       downloadUrl: filePath,

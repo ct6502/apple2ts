@@ -90,8 +90,18 @@ const DiskDrive = (props: DiskDriveProps) => {
             case "GoogleDrive":
               updateCloudDrive(new GoogleDrive())
               break
+            case "Electron":
+              // Handle Electron file saving
+              handleSaveWritableFile(dprops.index).then(success => {
+                if (success && dprops.cloudData) {
+                  dprops.diskHasChanges = false
+                  dprops.cloudData.lastSyncTime = Date.now()
+                  passSetDriveProps(dprops)
+                }
+              })
+              break
             default:
-              console.error("Unknown cloud provider")
+              console.error("Unknown cloud provider:", dprops.cloudData.providerName)
           }
         }
       }
@@ -178,7 +188,7 @@ const DiskDrive = (props: DiskDriveProps) => {
         // Create a CloudData object for Electron file operations
         const electronCloudData: CloudData = {
           providerName: "Electron",
-          syncStatus: 0,
+          syncStatus: CLOUD_SYNC.ACTIVE,
           syncInterval: 3000,
           fileName: result.filePath.split("/").pop() || result.filePath.split("\\").pop() || result.filePath,
           downloadUrl: result.filePath,
