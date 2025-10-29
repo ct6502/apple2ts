@@ -534,7 +534,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const cursor = (handleGetShowAppleMouse() && withinScreen) ? "url('/dot.png'), none" :
+  const cursor = (handleGetShowAppleMouse() && withinScreen) ? `url(${window.assetRegistry.dotCursor}), none` :
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
   const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
