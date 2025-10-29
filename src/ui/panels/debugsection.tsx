@@ -2,8 +2,8 @@ import "./debugsection.css"
 import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
-import { crc32, UI_THEME } from "../../common/utility"
-import { getHelpText, getTheme } from "../ui_settings"
+import { crc32 } from "../../common/utility"
+import { getHelpText, isMinimalTheme } from "../ui_settings"
 import { useMemo, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
@@ -16,12 +16,11 @@ const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
 
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const [activeTab, setActiveTab] = useState<number>(0)
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
 
-  if (isMinimalTheme) {
+  if (isMinimalTheme()) {
     import("./debugsection.minimal.css")
   }
 
@@ -49,7 +48,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   // Do not allow debug panels to be shown in minimal theme on small devices
-  const isSmall = isMinimalTheme && window.innerWidth < 800
+  const isSmall = isMinimalTheme() && window.innerWidth < 800
 
   if (handleGetShowDebugTab()) {
     setIsFlyoutOpen(true)

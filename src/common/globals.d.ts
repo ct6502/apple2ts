@@ -12,6 +12,7 @@ declare global {
       hardDriveOn: string;
       diskicons: string;
       runningGuy: string;
+      dotCursor: string;
       // Audio
       driveMotor: string;
       driveTrackOffEnd: string;

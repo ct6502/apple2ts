@@ -1,8 +1,7 @@
 import "./flyout.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCircleArrowDown, faCircleArrowUp, IconDefinition } from "@fortawesome/free-solid-svg-icons"
-import { UI_THEME } from "../common/utility"
-import { getTheme } from "./ui_settings"
+import { isMinimalTheme } from "./ui_settings"
 
 const flyoutButtonWidth = "max( 8vw, 72px )"
 
@@ -20,9 +19,8 @@ const Flyout = (props: {
 }) => {
   const className = `flyout-${props.position}`
   const isFlyoutOpen = props.isOpen && props.isOpen()
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
 
-  if (isMinimalTheme) {
+  if (isMinimalTheme()) {
     import("./flyout.minimal.css")
   }
 
@@ -40,7 +38,7 @@ const Flyout = (props: {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   let left = "auto"
-  if (isMinimalTheme) {
+  if (isMinimalTheme()) {
     if (props.position.indexOf("left") >= 0) {
       left = !isFlyoutOpen || !isTouchDevice ? "14px" : "48px"
     } else if (props.position.indexOf("center") >= 0) {
@@ -53,10 +51,10 @@ const Flyout = (props: {
       className={`flyout ${className} ${props.highlight && !isFlyoutOpen ? "flyout-button-highlight" : ""}`}
       style={{
         left: left,
-        width: isMinimalTheme && !isFlyoutOpen ? flyoutButtonWidth : props.width,
-        opacity: isMinimalTheme && !isFlyoutOpen ? "33%" : "100%"
+        width: isMinimalTheme() && !isFlyoutOpen ? flyoutButtonWidth : props.width,
+        opacity: isMinimalTheme() && !isFlyoutOpen ? "33%" : "100%"
       }}>
-      {isTopPosition() && (isFlyoutOpen || getTheme() != UI_THEME.MINIMAL) ? props.children : ""}
+      {isTopPosition() && (isFlyoutOpen || !isMinimalTheme()) ? props.children : ""}
       <div
         id={props.buttonId ?? ""}
         className="flyout-button"
@@ -68,7 +66,7 @@ const Flyout = (props: {
         }}>
         <FontAwesomeIcon icon={getArrowIcon()}></FontAwesomeIcon>
       </div>
-      {!isTopPosition() && (isFlyoutOpen || getTheme() != UI_THEME.MINIMAL) ? props.children : ""}
+      {!isTopPosition() && (isFlyoutOpen || !isMinimalTheme()) ? props.children : ""}
     </div>
   )
 }

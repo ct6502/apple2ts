@@ -3,7 +3,7 @@ import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK, DISK_CONVERSION_SUFFIXES } from "../../../common/utility"
+import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK, DISK_CONVERSION_SUFFIXES, CLOUD_SYNC } from "../../../common/utility"
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
@@ -17,6 +17,27 @@ import { getHotReload } from "../../ui_settings"
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
 // emulator. But the helper functions were getting too large, so now it's here.
+
+// Type guard for Electron's IPC API
+interface ElectronAPI {
+  readFile: (path: string) => Promise<Uint8Array>
+  writeFile: (path: string, data: Uint8Array) => Promise<void>
+  watchFile: (path: string, callback: () => void) => () => void
+  showOpenDialog: (options: object) => Promise<{ canceled: boolean; filePaths: string[] }>
+  showSaveDialog: (options: object) => Promise<{ canceled: boolean; filePath?: string }>
+  resolvePath: (relativePath: string) => Promise<string>
+}
+
+declare global {
+  interface Window {
+    electronAPI?: ElectronAPI
+  }
+}
+
+// Detect if running in Electron - check for exposed API
+export const isElectron = () => {
+  return typeof window !== "undefined" && typeof window.electronAPI !== "undefined"
+}
 
 const initDriveProps = (index: number, drive: number, hardDrive: boolean): DriveProps => {
   return {
@@ -241,14 +262,49 @@ export const handleSetDiskFromURL = async (url: string,
   const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
   
   if (isLocalFile && updateDisplay) {
-    // If it's a file:// URL or absolute path, treat as direct file access
-    if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
-      // Handle direct file access for Electron
+    // When running in Electron, try file system access first for any non-HTTP URL
+    if (isElectron() && window.electronAPI) {
       try {
+        // Use Electron IPC for file access - resolve the path first
+        let filePath = url.startsWith("file://") ? decodeURIComponent(url.slice(7)) : url
+        filePath = await window.electronAPI.resolvePath(filePath)
+        const fileName = filePath.split("/").pop() || filePath.split("\\").pop() || filePath
+        
+        const data = await window.electronAPI.readFile(filePath)
+        // Convert Uint8Array to ArrayBuffer
+        const buffer = data.buffer instanceof ArrayBuffer ? data.buffer : new Uint8Array(data).buffer
+        
+        resetAllDiskDrives()
+        // Store the file path in cloudData so we can write back to it
+        const electronCloudData: CloudData = {
+          providerName: "Electron",
+          syncStatus: CLOUD_SYNC.ACTIVE,
+          syncInterval: 3000,
+          fileName: fileName,
+          downloadUrl: filePath,
+          itemId: filePath,
+          apiEndpoint: "",
+          detailsUrl: "",
+          lastSyncTime: Date.now()
+        }
+        handleSetDiskOrFileFromBuffer(index, buffer, fileName, electronCloudData, null)
+        return
+      } catch (error) {
+        console.error(`Error loading file with Electron: ${url}`, error)
+        // Fall through to browser/URL loading logic
+      }
+    }
+    
+    // For browser or if Electron file loading failed, try other local file methods
+    if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
+      try {
+        // Fall back to fetch for browser (may fail for local files due to CORS)
         const response = await fetch(url)
         const buffer = await response.arrayBuffer()
+        const fileName = url.split("/").pop() || url
+        
         resetAllDiskDrives()
-        handleSetDiskOrFileFromBuffer(index, buffer, url.split("/").pop() || url, cloudData || null, null)
+        handleSetDiskOrFileFromBuffer(index, buffer, fileName, cloudData || null, null)
         return
       } catch (error) {
         console.error(`Error loading local file: ${url}`, error)
@@ -403,6 +459,46 @@ export const prepWritableFile = async (index: number, writableFileHandle: FileSy
 
 
 export const showReadWriteFilePicker = async (index: number) => {
+  // Use Electron dialog if available
+  if (isElectron() && window.electronAPI) {
+    const extensions = FILE_SUFFIXES_DISK.split(",").map(ext => ext.replace(".", ""))
+    const result = await window.electronAPI.showOpenDialog({
+      properties: ["openFile"],
+      filters: [
+        { name: "Disk Images", extensions: extensions }
+      ]
+    })
+
+    if (result.canceled || !result.filePaths.length) {
+      return
+    }
+
+    const filePath = result.filePaths[0]
+    const fileName = filePath.split("/").pop() || filePath.split("\\").pop() || filePath
+    
+    // Load the file using Electron's file system
+    const data = await window.electronAPI.readFile(filePath)
+    const buffer = data.buffer instanceof ArrayBuffer ? data.buffer : new Uint8Array(data).buffer
+    
+    // Store the file path in cloudData so we can write back to it
+    const electronCloudData: CloudData = {
+      providerName: "Electron",
+      syncStatus: CLOUD_SYNC.ACTIVE,
+      syncInterval: 3000,
+      fileName: fileName,
+      downloadUrl: filePath,
+      itemId: filePath,
+      apiEndpoint: "",
+      detailsUrl: "",
+      lastSyncTime: Date.now()
+    }
+    
+    resetAllDiskDrives()
+    handleSetDiskOrFileFromBuffer(index, buffer, fileName, electronCloudData, null)
+    return
+  }
+
+  // Fall back to browser File System Access API
   let [writableFileHandle] = await window.showOpenFilePicker({
     types: [
       {
@@ -515,9 +611,20 @@ export const handleSaveWritableFile = async (index: number, writableFileHandle: 
     writableFileHandle = driveProps[index].writableFileHandle
   }
 
-  if (writableFileHandle) {
+  const dprops = driveProps[index]
+
+  // Handle Electron file writes
+  if (dprops.cloudData?.providerName === "Electron" && isElectron() && window.electronAPI) {
     try {
-      const dprops = driveProps[index]
+      const filePath = dprops.cloudData.downloadUrl
+      await window.electronAPI.writeFile(filePath, dprops.diskData)
+      success = true
+    } catch (ex) {
+      console.log(`Error saving Electron file: ${ex}`)
+    }
+  } else if (writableFileHandle) {
+    // Handle browser FileSystemFileHandle writes
+    try {
       const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
       const writable = await writableFileHandle.createWritable()
 

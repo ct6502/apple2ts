@@ -21,7 +21,7 @@ import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getCapsLock, getTheme, getShowScanlines } from "./ui_settings"
+import { getUseOpenAppleKey, getCapsLock, getTheme, getShowScanlines, isMinimalTheme } from "./ui_settings"
 
 
 let width = 800
@@ -502,10 +502,9 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme;
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme();
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
   //   myCanvas.current.requestFullscreen()
@@ -535,7 +534,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const cursor = (handleGetShowAppleMouse() && withinScreen) ? "url('/dot.png'), none" :
+  const cursor = (handleGetShowAppleMouse() && withinScreen) ? `url(${window.assetRegistry.dotCursor}), none` :
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
   const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`

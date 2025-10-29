@@ -17,8 +17,8 @@ import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
 import { setPreferenceHotReload } from "../localstorage"
 import { RUN_MODE } from "../../common/utility"
-import { isFileSystemApiSupported } from "../ui_utilities"
-import { getHotReload } from "../ui_settings"
+import { hasEnhancedFileAccess } from "../ui_utilities"
+import { getHotReload, isGameMode } from "../ui_settings"
 
 const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
@@ -43,12 +43,12 @@ const DebugButtons = (props: DisplayProps) => {
         disabled={notStarted || !handleCanGoForward()}>
         <FontAwesomeIcon icon={faFastForward} />
       </button>
-      <button className="push-button"
+      {!isGameMode() && <button className="push-button"
         title={"Save State with Snapshots"}
         onClick={() => handleFileSave(true)}
         disabled={notStarted}>
         <FontAwesomeIcon icon={faLayerGroup} />
-      </button>
+      </button>}
     </div>
     <button className="push-button" id="tour-pause-button"
       title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
@@ -61,7 +61,7 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faPlay} /> :
         <FontAwesomeIcon icon={faPause} />}
     </button>
-    {isFileSystemApiSupported() &&
+    {hasEnhancedFileAccess() &&
       <button className="push-button"
         title={getHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
         onClick={() => {

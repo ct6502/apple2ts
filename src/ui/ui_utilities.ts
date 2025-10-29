@@ -9,7 +9,17 @@ export const handleSetTheme = (theme: UI_THEME) => {
 }
 
 export const isFileSystemApiSupported = () => {
-  return "showOpenFilePicker" in self && "showSaveFilePicker" in self
+  return "showOpenFilePicker" in window && "showSaveFilePicker" in window
+}
+
+// Check if we have enhanced file access (either Electron or File System Access API)
+export const hasEnhancedFileAccess = () => {
+  // Check for Electron API first
+  if (typeof window !== "undefined" && typeof window.electronAPI !== "undefined") {
+    return true
+  }
+  // Fall back to File System Access API
+  return isFileSystemApiSupported()
 }
 
 export const showGlobalProgressModal = (show: boolean = true, message: string = "") => {

@@ -5,7 +5,7 @@ import { handleGetAltCharSet, handleGetTextPage,
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getTheme } from "./ui_settings"
+import { getColorMode, getTheme, isGameMode } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
 let frameCount = 0
 
@@ -495,8 +495,14 @@ export const getCanvasSize = () => {
       height -= 45
     }
   } else {
-    height -= noBackgroundImage ? 40 : 300
-    width -= noBackgroundImage ? 0 : 40
+    if (isGameMode())
+    {
+      height -= 80
+      width -= 25
+    } else {
+      height -= noBackgroundImage ? 40 : 300
+      width -= noBackgroundImage ? 0 : 40
+    }
   }
   if (!noBackgroundImage) {
     const debugSection = document.getElementById("debug-section") as HTMLElement

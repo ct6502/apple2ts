@@ -1,6 +1,7 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 
 const uiState: UIState = {
+  appMode: "",
   arrowKeysAsJoystick: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
@@ -19,6 +20,7 @@ export const getUIState = () => {
 }
 
 export const setUIState = (state: UIState) => {
+  uiState.appMode = state?.appMode ?? ""
   uiState.arrowKeysAsJoystick = state?.arrowKeysAsJoystick ?? false
   uiState.capsLock = state?.capsLock ?? false
   uiState.colorMode = state?.colorMode ?? COLOR_MODE.COLOR
@@ -35,6 +37,10 @@ export const setUIState = (state: UIState) => {
 
 export const setArrowKeysAsJoystick = (joystick: boolean) => {
   uiState.arrowKeysAsJoystick = joystick
+}
+
+export const setAppMode = (mode: string) => {
+  uiState.appMode = mode
 }
 
 export const setCapsLock = (lock: boolean) => {
@@ -79,6 +85,10 @@ export const setUseOpenAppleKey = (openApple: boolean) => {
 
 //------------------------------------------------------
 
+export const isGameMode = () => {
+  return uiState.appMode === "game"
+}
+
 export const getArrowKeysAsJoystick = () => {
   return uiState.arrowKeysAsJoystick
 }
@@ -96,7 +106,7 @@ export const getHelpText = () => {
 }
 
 export const getHotReload = () => {
-  return uiState.hotReload
+  return uiState.hotReload || isGameMode()
 }
 
 export const getShowScanlines = () => {
@@ -109,6 +119,10 @@ export const getTouchJoyStickMode = () => {
 
 export const getTheme = () => {
   return uiState.theme
+}
+
+export const isMinimalTheme = () => {
+  return uiState.theme == UI_THEME.MINIMAL && !isGameMode
 }
 
 export const getTiltSensorJoystick = () => {
