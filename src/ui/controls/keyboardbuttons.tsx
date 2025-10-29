@@ -10,7 +10,7 @@ import {
   faArrowDown,
   faArrowUp,
 } from "@fortawesome/free-solid-svg-icons"
-import { lockedKeyStyle, UI_THEME } from "../../common/utility"
+import { lockedKeyStyle } from "../../common/utility"
 import { handleArrowKey } from "../devices/gamepad"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
@@ -18,7 +18,7 @@ import { joystick } from "../img/icon_joystick"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
 import { setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
-import { getTheme, getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity, isMinimalTheme } from "../ui_settings"
+import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity, isMinimalTheme } from "../ui_settings"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
