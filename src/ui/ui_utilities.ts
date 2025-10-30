@@ -12,16 +12,6 @@ export const isFileSystemApiSupported = () => {
   return "showOpenFilePicker" in window && "showSaveFilePicker" in window
 }
 
-// Check if we have enhanced file access (either Electron or File System Access API)
-export const hasEnhancedFileAccess = () => {
-  // Check for Electron API first
-  if (typeof window !== "undefined" && typeof window.electronAPI !== "undefined") {
-    return true
-  }
-  // Fall back to File System Access API
-  return isFileSystemApiSupported()
-}
-
 export const showGlobalProgressModal = (show: boolean = true) => {
   document.body.style.setProperty("--global-progress-visibility", show ? "visible" : "hidden")
 }
