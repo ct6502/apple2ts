@@ -4,8 +4,7 @@ import {
   handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
   handleSaveWritableFile,
   prepWritableFile,
-  showReadWriteFilePicker,
-  isElectron
+  showReadWriteFilePicker
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
@@ -17,9 +16,9 @@ import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
-import { hasEnhancedFileAccess } from "../../ui_utilities"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
+import { isFileSystemApiSupported } from "../../ui_utilities"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
 
@@ -90,16 +89,6 @@ const DiskDrive = (props: DiskDriveProps) => {
               break
             case "GoogleDrive":
               updateCloudDrive(new GoogleDrive())
-              break
-            case "Electron":
-              // Handle Electron file saving
-              handleSaveWritableFile(dprops.index).then(success => {
-                if (success && dprops.cloudData) {
-                  dprops.diskHasChanges = false
-                  dprops.cloudData.lastSyncTime = Date.now()
-                  passSetDriveProps(dprops)
-                }
-              })
               break
             default:
               console.error("Unknown cloud provider:", dprops.cloudData.providerName)
@@ -176,43 +165,6 @@ const DiskDrive = (props: DiskDriveProps) => {
     const fileName = dprops.filename
     const fileExtension = fileName.substring(fileName.lastIndexOf("."))
 
-    // Use Electron dialog if available
-    if (isElectron() && window.electronAPI) {
-      const result = await window.electronAPI.showSaveDialog({
-        defaultPath: fileName,
-        filters: [
-          { name: "Disk Images", extensions: [fileExtension.replace(".", "")] }
-        ]
-      })
-
-      if (!result.canceled && result.filePath) {
-        // Create a CloudData object for Electron file operations
-        const electronCloudData: CloudData = {
-          providerName: "Electron",
-          syncStatus: CLOUD_SYNC.ACTIVE,
-          syncInterval: 3000,
-          fileName: result.filePath.split("/").pop() || result.filePath.split("\\").pop() || result.filePath,
-          downloadUrl: result.filePath,
-          itemId: result.filePath,
-          apiEndpoint: "",
-          detailsUrl: "",
-          lastSyncTime: Date.now()
-        }
-
-        dprops.diskHasChanges = true
-        dprops.filename = electronCloudData.fileName
-        dprops.cloudData = electronCloudData
-        dprops.writableFileHandle = null // Not used for Electron
-        dprops.lastLocalWriteTime = -1
-        passSetDriveProps(dprops)
-
-        // Save the file immediately using Electron API
-        await window.electronAPI.writeFile(result.filePath, dprops.diskData)
-      }
-      return
-    }
-
-    // Fall back to browser File System Access API
     const writableFileHandle = await window.showSaveFilePicker({
       excludeAcceptAllOption: false,
       suggestedName: fileName,
@@ -324,12 +276,12 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Save Disk to Device",
               icon: faFloppyDisk,
-              isVisible: () => { return hasEnhancedFileAccess() && !dprops.writableFileHandle },
+              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
               onClick: () => { showDiskSaveFilePicker(props.index) }
             },
             {
               label: "-",
-              isVisible: () => { return hasEnhancedFileAccess() && !dprops.writableFileHandle }
+              isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle }
             },
             {
               label: "Add Disk to Collection",
@@ -521,13 +473,13 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Load Disk from Device",
               icon: faFolderOpen,
-              isVisible: () => { return !hasEnhancedFileAccess() },
+              isVisible: () => { return !isFileSystemApiSupported() },
               onClick: () => { props.setShowFileOpenDialog(true, props.index) }
             },
             {
               label: "Load Disk from Device (Read/Write)",
               icon: faFolderOpen,
-              isVisible: () => { return hasEnhancedFileAccess() },
+              isVisible: () => { return isFileSystemApiSupported() },
               onClick: () => { showReadWriteFilePicker(props.index) }
             },
             {

@@ -148,6 +148,31 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
   setTouchJoystickSensitivity(sensitivity)
 }
 
+export const getDiskImageFromLocalStorage = (url: string) => {
+  const diskImage = localStorage.getItem(url)
+  if (diskImage) {
+    const state = JSON.parse(diskImage)
+    const binary = atob(state.data)
+    const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+    return {index: state.index as number, data: data}
+  }
+  return null
+}
+
+export const setDiskImageToLocalStorage = (url: string, index: number, data: Uint8Array | null) => {
+  if (data) {
+    let binary = ""
+    for (let i = 0; i < data.length; i++) {
+      binary += String.fromCharCode(data[i])
+    }
+    const base64 = btoa(binary)
+    const state = JSON.stringify({index: index, data: base64}, null, 2)
+    localStorage.setItem(url, state)
+  } else {
+    localStorage.removeItem(url)
+  }
+}
+
 export const loadPreferences = () => {
   const breakpoints = localStorage.getItem("breakpoints")
   if (breakpoints) {
