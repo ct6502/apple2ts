@@ -227,7 +227,7 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
   timerId = setInterval(() => {
     const dprops = handleGetDriveProps(index)
     if (dprops.diskHasChanges && !dprops.motorRunning) {
-      setDiskImageToLocalStorage(url, index, dprops.diskData)      
+      setDiskImageToLocalStorage(index, dprops.diskData)      
       dprops.diskHasChanges = false
       dprops.lastLocalWriteTime = Date.now()
       passSetDriveProps(dprops)
@@ -244,7 +244,7 @@ export const handleSetDiskFromURL = async (url: string,
     if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
       try {
         // Fetch for browser (may fail for local files due to CORS)
-        const state = getDiskImageFromLocalStorage(url)
+        const state = getDiskImageFromLocalStorage()
         if (state) {
           resetAllDiskDrives()
           index = handleSetDiskOrFileFromBuffer(state.index, state.data.buffer, url, null, null)
@@ -254,7 +254,7 @@ export const handleSetDiskFromURL = async (url: string,
           const fileName = url.split("/").pop() || url        
           resetAllDiskDrives()
           index = handleSetDiskOrFileFromBuffer(index, buffer, fileName, cloudData || null, null)
-          setDiskImageToLocalStorage(url, index, new Uint8Array(buffer))
+          setDiskImageToLocalStorage(index, new Uint8Array(buffer))
         }
         diskImageLocalStorageSync(url, index)
         return

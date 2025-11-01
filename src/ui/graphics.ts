@@ -497,7 +497,7 @@ export const getCanvasSize = () => {
   } else {
     if (isGameMode())
     {
-      height -= 90
+      height -= 70
       width -= 25
     } else {
       height -= noBackgroundImage ? 40 : 300

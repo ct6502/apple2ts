@@ -148,32 +148,17 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
   setTouchJoystickSensitivity(sensitivity)
 }
 
-// Disk images are stored in localStorage with a key derived from the URL.
-// The derived key is the filename without extension, no file suffix,
-// removed version patterns ("_v1.2.3", " v1.2.3", "_1_2_3", etc),
-// removed underscores, dashes, spaces, converted to uppercase.
-// localStorage["URLKEY"] = drive index
-// localStorage["URLKEY-data"] = disk image data as base64 string
-// where URLKEY is the derived key.
-const convertDiskImageURLToKey = (url: string) => {
-  const filename = url.split("/").pop() || url
-  const withoutExtension = filename.replace(/\.[^.]*$/, "")
-  // Remove version patterns from the end
-  let urlkey = withoutExtension.replace(/[_\s]+v?\d+([._]\d+)*$/i, "")
-  urlkey = urlkey.replace(/[_-\s]+/g, "")
-  return urlkey.toUpperCase()
+const gameDataDrive = "GAME_DATA-DRIVE"
+const gameDataData = "GAME_DATA-DATA"
+
+export const hasDiskImageInLocalStorage = () => {
+  return localStorage.getItem(gameDataDrive) !== null
 }
 
-export const hasDiskImageInLocalStorage = (url: string) => {
-  url = convertDiskImageURLToKey(url)
-  return localStorage.getItem(url) !== null
-}
-
-export const getDiskImageFromLocalStorage = (url: string) => {
-  url = convertDiskImageURLToKey(url)
-  const driveIndex = localStorage.getItem(url)
+export const getDiskImageFromLocalStorage = () => {
+  const driveIndex = localStorage.getItem(gameDataDrive)
   if (driveIndex) {
-    const diskImage = localStorage.getItem(url + "-data")
+    const diskImage = localStorage.getItem(gameDataData)
     if (diskImage) {
       const binary = atob(diskImage)
       const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
@@ -183,19 +168,18 @@ export const getDiskImageFromLocalStorage = (url: string) => {
   return null
 }
 
-export const setDiskImageToLocalStorage = (url: string, index: number, data: Uint8Array | null) => {
-  url = convertDiskImageURLToKey(url)
+export const setDiskImageToLocalStorage = (index: number, data: Uint8Array | null) => {
   if (data) {
     let binary = ""
     for (let i = 0; i < data.length; i++) {
       binary += String.fromCharCode(data[i])
     }
     const diskImage = btoa(binary)
-    localStorage.setItem(url, index.toString())
-    localStorage.setItem(url + "-data", diskImage)
+    localStorage.setItem(gameDataDrive, index.toString())
+    localStorage.setItem(gameDataData, diskImage)
   } else {
-    localStorage.removeItem(url)
-    localStorage.removeItem(url + "-data")
+    localStorage.removeItem(gameDataDrive)
+    localStorage.removeItem(gameDataData)
   }
 }
 

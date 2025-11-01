@@ -13,6 +13,7 @@ import { handleCopyToClipboard } from "../copycanvas"
 import { handleGetRunMode, passPasteText } from "../main2worker"
 import { handleFileSave } from "../savestate"
 import { isGameMode } from "../ui_settings"
+import DriveStatus from "../devices/disk/drivestatus"
 
 const ControlButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
@@ -31,6 +32,7 @@ const ControlButtons = (props: DisplayProps) => {
     >
       <FontAwesomeIcon icon={faArrowRotateRight} />
     </button>
+    {isGameMode() && <DriveStatus/>}
     {!isGameMode() &&
       <span id="tour-saverestore" className="flex-row">
       <button className="push-button" title="Restore State"

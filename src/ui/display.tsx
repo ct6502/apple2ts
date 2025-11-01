@@ -22,7 +22,6 @@ import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
-import DriveStatus from "./devices/disk/drivestatus"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -185,7 +184,6 @@ const DisplayApple2 = () => {
       </span>
       {isMinimalTheme() && <DiskCollectionPanel {...props} />}
       {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
-      {isGameMode() && <DriveStatus/>}
       <FileInput {...props} />
     </div>
   )

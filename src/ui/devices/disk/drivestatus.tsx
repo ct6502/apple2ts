@@ -15,10 +15,10 @@ const DriveStatus = () => {
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const saveLocalStorageDiskImage = (url: string) => {
-    if (!hasDiskImageInLocalStorage(url)) {
+    if (!hasDiskImageInLocalStorage()) {
       return
     }
-    const state = getDiskImageFromLocalStorage(url)
+    const state = getDiskImageFromLocalStorage()
     if (!state) {
       return
     }
@@ -38,7 +38,7 @@ const DriveStatus = () => {
     if (dprops.filename) {
       // If we have a disk image already, confirm overwrite.
       const confirmResult = window.confirm(
-        `A disk image "${dprops.filename}" is already loaded. ` +
+        "A disk image is already loaded. " +
         "Importing a new disk image will replace the existing data. " +
         "Do you want to continue?")
       if (!confirmResult) {
@@ -66,14 +66,14 @@ const DriveStatus = () => {
       const file = e.target.files[0]
       const buffer = await file.arrayBuffer()
       // For now just handle hard drive images, so hardcode drive index = 0.
-      setDiskImageToLocalStorage(file.name, 0, new Uint8Array(buffer))
+      setDiskImageToLocalStorage(0, new Uint8Array(buffer))
       handleSetDiskFromURL("file://" + file.name)
       passSetRunMode(RUN_MODE.NEED_BOOT)
     }
   }
 
   const isTouchDevice = "ontouchstart" in document.documentElement
-  const hasDiskImage = hasDiskImageInLocalStorage(dprops.filename)
+  const hasDiskImage = hasDiskImageInLocalStorage()
 
   return (
     <span className="flex-row" style={{alignItems: "center"}}>
@@ -86,13 +86,13 @@ const DriveStatus = () => {
         onClick={() => saveLocalStorageDiskImage(dprops.filename)}>
         <FontAwesomeIcon icon={faDownload} />
       </button>
-      <span style={{ marginLeft: "8px" }}>
+      {/* <span style={{ marginLeft: "8px" }}>
         {hasDiskImage ?
           <span className={"bigger-font" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
             {dprops.diskHasChanges ? "*" : ""}{dprops.filename}</span> :
           <span className="bigger-font">No disk image</span>
         }
-      </span>
+      </span> */}
       <input
         name="fileInput"
         type="file"
