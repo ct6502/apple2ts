@@ -148,28 +148,54 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
   setTouchJoystickSensitivity(sensitivity)
 }
 
+// Disk images are stored in localStorage with a key derived from the URL.
+// The derived key is the filename without extension, no file suffix,
+// removed version patterns ("_v1.2.3", " v1.2.3", "_1_2_3", etc),
+// removed underscores, dashes, spaces, converted to uppercase.
+// localStorage["URLKEY"] = drive index
+// localStorage["URLKEY-data"] = disk image data as base64 string
+// where URLKEY is the derived key.
+const convertDiskImageURLToKey = (url: string) => {
+  const filename = url.split("/").pop() || url
+  const withoutExtension = filename.replace(/\.[^.]*$/, "")
+  // Remove version patterns from the end
+  let urlkey = withoutExtension.replace(/[_\s]+v?\d+([._]\d+)*$/i, "")
+  urlkey = urlkey.replace(/[_-\s]+/g, "")
+  return urlkey.toUpperCase()
+}
+
+export const hasDiskImageInLocalStorage = (url: string) => {
+  url = convertDiskImageURLToKey(url)
+  return localStorage.getItem(url) !== null
+}
+
 export const getDiskImageFromLocalStorage = (url: string) => {
-  const diskImage = localStorage.getItem(url)
-  if (diskImage) {
-    const state = JSON.parse(diskImage)
-    const binary = atob(state.data)
-    const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
-    return {index: state.index as number, data: data}
+  url = convertDiskImageURLToKey(url)
+  const driveIndex = localStorage.getItem(url)
+  if (driveIndex) {
+    const diskImage = localStorage.getItem(url + "-data")
+    if (diskImage) {
+      const binary = atob(diskImage)
+      const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+      return {index: parseInt(driveIndex), data: data}
+    }
   }
   return null
 }
 
 export const setDiskImageToLocalStorage = (url: string, index: number, data: Uint8Array | null) => {
+  url = convertDiskImageURLToKey(url)
   if (data) {
     let binary = ""
     for (let i = 0; i < data.length; i++) {
       binary += String.fromCharCode(data[i])
     }
-    const base64 = btoa(binary)
-    const state = JSON.stringify({index: index, data: base64}, null, 2)
-    localStorage.setItem(url, state)
+    const diskImage = btoa(binary)
+    localStorage.setItem(url, index.toString())
+    localStorage.setItem(url + "-data", diskImage)
   } else {
     localStorage.removeItem(url)
+    localStorage.removeItem(url + "-data")
   }
 }
 

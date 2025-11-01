@@ -240,7 +240,7 @@ export const handleSetDiskFromURL = async (url: string,
   // Check if it's a local file (not http/https URL)
   const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
   
-  if (isLocalFile && updateDisplay) {
+  if (isLocalFile) {
     if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
       try {
         // Fetch for browser (may fail for local files due to CORS)
@@ -270,7 +270,7 @@ export const handleSetDiskFromURL = async (url: string,
       return
     }
     url = match.diskUrl
-    if (!URL.canParse(url)) {
+    if (!URL.canParse(url) && updateDisplay) {
       handleSetDiskFromFile(url, updateDisplay, index)
       return
     }
