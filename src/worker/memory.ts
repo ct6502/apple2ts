@@ -28,6 +28,8 @@ export let RamWorksMaxBank = 0
 const BaseMachineMemory = RamWorksMemoryStart
 export let memory = (new Uint8Array(BaseMachineMemory + (RamWorksMaxBank + 1) * 0x10000)).fill(0)
 
+const slotHasCard = (new Uint8Array(8)).fill(0)
+
 // Fake status flag indicating which slot has access to $C800-$CFFF.
 //   0: No slot selected but INTC8ROM is off
 // 1-7: Slot number for peripheral ROM
@@ -331,6 +333,7 @@ const checkSlotIO = (addr: number, value = -1) => {
  * @param fn - A function to jump to when IO of this slot is accessed
  */
 export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
+  slotHasCard[slot] = 1
   slotIOCallbackTable[slot] = fn
 }
 
@@ -346,6 +349,7 @@ export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
  */
 export const setSlotDriver = (slot: number, driver: Uint8Array, jump = 0, fn = () => {}) => {
   memory.set(driver.slice(0, 0x100), SLOTstart + (slot - 1) * 0x100)
+  slotHasCard[slot] = driver.some(byte => byte !== 0) ? 1 : 0
   if (driver.length > 0x100) {
     // only allow up to 2k for C8 range
     const end = (driver.length > 0x900) ? 0x900 : driver.length
@@ -449,6 +453,11 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
       if (page == 0xC3 && (SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet)) {
         // NSC answers in slot C3 memory to be compatible with standard ProDOS driver and A2osX
         value = noSlotClock.read(addr)
+      } else {
+        // Empty slots return random bus noise.
+        if (slotIsActive(page - 0xC0) && !slotHasCard[page - 0xC0]) {
+          value = Math.floor(256 * Math.random())
+        }
       }
       checkSlotIO(addr)
     } else if (addr === 0xCFFF) {
