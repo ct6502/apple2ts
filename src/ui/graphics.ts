@@ -5,7 +5,7 @@ import { handleGetAltCharSet, handleGetTextPage,
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, isGameMode, isMinimalTheme } from "./ui_settings"
+import { getColorMode, getGhosting, isGameMode, isMinimalTheme } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
 let frameCount = 0
 
@@ -423,13 +423,29 @@ const drawImage = (ctx: CanvasRenderingContext2D,
   }
 }
 
+// For the ghosting effect
+let ghostFrame: ImageData | null = null
+
 export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
   ctx.imageSmoothingEnabled = true
-  // Clear all our drawing and let the background show through again.
-  ctx.clearRect(0, 0, width, height)
+  if (getGhosting()) {
+    // Make a copy of the current canvas contents.
+    const dx = xmargin * width
+    const dy = ymargin * height
+    ghostFrame = ctx.getImageData(dx, dy, width - 2 * dx, height - 2 * dy)
+    ctx.clearRect(0, 0, width, height)
+    // Draw the single previous frame with transparency
+    ctx.putImageData(ghostFrame, dx, dy)
+    const alpha = 0.3
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`
+    ctx.fillRect(dx, dy, width - 2 * dx, height - 2 * dy)
+  } else {
+    // Clear all our drawing and let the background show through again.
+    ctx.clearRect(0, 0, width, height)
+  }
   hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)

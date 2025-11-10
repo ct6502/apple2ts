@@ -2,7 +2,7 @@ import { BreakpointMap } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick } from "./ui_settings"
+import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting } from "./ui_settings"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -20,6 +20,15 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
     localStorage.setItem("colorMode", JSON.stringify(mode))
   }
   setColorMode(mode)
+}
+
+export const setPreferenceGhosting = (mode = false) => {
+  if (mode) {
+    localStorage.setItem("ghosting", JSON.stringify(mode))
+  } else {
+    localStorage.removeItem("ghosting")
+  }
+  setGhosting(mode)
 }
 
 export const setPreferenceShowScanlines = (mode = false) => {
@@ -210,6 +219,15 @@ export const loadPreferences = () => {
       setColorMode(JSON.parse(colorMode))
     } catch {
       localStorage.removeItem("colorMode")
+    }
+  }
+
+  const ghosting = localStorage.getItem("ghosting")
+  if (ghosting) {
+    try {
+      setGhosting(JSON.parse(ghosting))
+    } catch {
+      localStorage.removeItem("ghosting")
     }
   }
 
