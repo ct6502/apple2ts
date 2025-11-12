@@ -64,7 +64,7 @@ body.dark-mode .debug-panel {
 }
 
 .tall-panel {
-  height: 550px;
+  height: 590px;
 }
 
 .wide-panel {
@@ -513,6 +513,7 @@ body.dark-mode .icon-text {
 
 .debug-section {
   width: 100%;
+  margin-right: 30px;
   padding-top: 0px;
 }
 

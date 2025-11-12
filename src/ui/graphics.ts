@@ -523,7 +523,7 @@ export const getCanvasSize = () => {
   if (!noBackgroundImage) {
     const debugSection = document.getElementById("debug-section") as HTMLElement
     if (debugSection && debugSection.offsetWidth > 0) {
-      width = Math.max(400, width - debugSection.offsetWidth - 0)
+      width = Math.max(400, width - debugSection.offsetWidth + 40)
     }
   }
   // shrink either width or height to preserve aspect ratio
