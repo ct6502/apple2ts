@@ -1,4 +1,4 @@
-import { BreakpointMap } from "../common/breakpoint"
+import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
@@ -197,7 +197,15 @@ export const loadPreferences = () => {
   if (breakpoints) {
     try {
       const parsed = JSON.parse(breakpoints)
-      const breakpointMap = new BreakpointMap(parsed)
+      // Migrate old breakpoints to include additional fields
+      const migratedBreakpoints = parsed.map(([address, oldBreakpoint]: [number, unknown]) => {
+        // Start with a new breakpoint that has all current fields with defaults
+        const newBreakpoint = BreakpointNew()
+        // Copy over any fields that exist in the stored data
+        Object.assign(newBreakpoint, oldBreakpoint)
+        return [address, newBreakpoint]
+      })
+      const breakpointMap = new BreakpointMap(migratedBreakpoints)
       passBreakpoints(breakpointMap)
     } catch {
       localStorage.removeItem("breakpoints")

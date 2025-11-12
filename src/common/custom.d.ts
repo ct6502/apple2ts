@@ -300,6 +300,15 @@ type BreakpointExpression = {
   value: number
 }
 
+type BPActions = "" | "set" | "jump" | "print" | "snapshot"
+
+type BreakpointAction = {
+  action: BPActions,
+  register: RegisterValues,
+  address: number,
+  value: number
+}
+
 type Breakpoint = {
   address: number,
   watchpoint: boolean,
@@ -315,7 +324,10 @@ type Breakpoint = {
   hexvalue: number,
   hitcount: number,
   nhits: number,
-  memoryBank: string
+  memoryBank: string,
+  action1: BreakpointAction,
+  action2: BreakpointAction,
+  halt: boolean
 }
 
 type StepCallbackFunction = () => boolean
