@@ -35,7 +35,7 @@ const EditField = (props: EditFieldProps) => {
       className="hex-field"
       placeholder={props.placeholder}
       value={props.value}
-      style={{ width: props.width || "100%" }}
+      style={{ width: props.width || "100%", marginTop: "1px", marginBottom: "1px"}}
       onChange={(e) => handleValueChange(e)} />
     {props.warning &&
       <div className="warning-div flex-row">

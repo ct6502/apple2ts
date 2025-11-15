@@ -1,6 +1,6 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
-import { doSetRunMode } from "./motherboard"
+import { doSetRunMode, doTakeSnapshot } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
@@ -218,44 +218,105 @@ export const setWatchpointBreak = () => {
   doWatchpointBreak = true
 }
 
+const printBreakpointToConsole = (vLo: number, vHi: number, code: PCodeInstr | null) => {
+  const ins = getInstructionString(s6502.PC, {...code} as PCodeInstr1, vLo, vHi) + "          "
+  const count = ("          " + s6502.cycleCount.toString()).slice(-10)
+  const out = `${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}`
+  console.log(out)
+}
+
+export enum BREAKPOINT_RESULT {
+  NO_BREAK,
+  BREAK,
+  ACTION
+}
+
+const processBreakpointAction = (action: BreakpointAction,  vLo: number, vHi: number, code: PCodeInstr | null) => {
+  if (action.action === "") return false
+  const value = action.value & 0xFF
+  const address = action.address & 0xFFFF
+  switch (action.action) {
+    case "set":
+      switch (action.register) {
+        case "A": s6502.Accum = value; break
+        case "X": s6502.XReg = value; break
+        case "Y": s6502.YReg = value; break
+        case "S": s6502.StackPtr = value; break
+        case "P": s6502.PStatus = value; break
+        case "C": s6502.PC = action.value & 0xFFFF; break     }
+      break
+    case "jump":
+      s6502.PC = address
+      break
+    case "print":
+      printBreakpointToConsole(vLo, vHi, code)
+      break
+    case "snapshot":
+      // Signal the motherboard to do a snapshot at the next safe time
+      doTakeSnapshot()
+      break
+  }
+  return true
+}
+
+const processBreakpointActions = (bp: Breakpoint, vLo: number, vHi: number,
+  code: PCodeInstr | null): BREAKPOINT_RESULT => {
+  const didAction1 = processBreakpointAction(bp.action1, vLo, vHi, code)
+  const didAction2 = processBreakpointAction(bp.action2, vLo, vHi, code)
+  // If we had a breakpoint action, then see if the "halt" flag was set.
+  // Otherwise, if we had no actions, then always halt.
+  if (didAction1 || didAction2) {
+    return bp.halt ? BREAKPOINT_RESULT.BREAK : BREAKPOINT_RESULT.ACTION
+  }
+  return BREAKPOINT_RESULT.BREAK
+}
+
 // This is only exported for breakpoint testing
-export const hitBreakpoint = (instr = -1, hexvalue = -1) => {
+export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | null = null): BREAKPOINT_RESULT => {
   if (doWatchpointBreak) {
     doWatchpointBreak = false
-    return true
+    return BREAKPOINT_RESULT.BREAK
   }
-  if (breakpointMap.size === 0 || breakpointSkipOnce) return false
+  if (breakpointMap.size === 0 || breakpointSkipOnce) return BREAKPOINT_RESULT.NO_BREAK
   const bp = breakpointMap.get(s6502.PC) ||
     breakpointMap.get(-1) ||
     breakpointMap.get(instr | BRK_INSTR) ||
     (instr >= 0 && breakpointMap.get(BRK_ILLEGAL_65C02)) ||
     (instr >= 0 && breakpointMap.get(BRK_ILLEGAL_6502))
-  if (!bp || bp.disabled || bp.watchpoint) return false
+
+    if (!bp || bp.disabled || bp.watchpoint) return BREAKPOINT_RESULT.NO_BREAK
+
   if (bp.instruction) {
+    const hexvalue = (vHi << 8) + vLo
     // See if we need to have a matching value, but watch out for our special
     // BRK_ILLEGAL, which will break on any illegal opcode regardless of value.
     if (bp.address === BRK_ILLEGAL_65C02) {
-      if (pcodes[instr].name !== "???") return false
+      if (pcodes[instr].name !== "???") return BREAKPOINT_RESULT.NO_BREAK
     } else if (bp.address === BRK_ILLEGAL_6502) {
-      if (pcodes[instr].is6502) return false
+      if (pcodes[instr].is6502) return BREAKPOINT_RESULT.NO_BREAK
     } else if (hexvalue >= 0 && bp.hexvalue >= 0) {
-      if (bp.hexvalue !== hexvalue) return false
+      if (bp.hexvalue !== hexvalue) return BREAKPOINT_RESULT.NO_BREAK
     }
   }
+
   if (bp.expression1.register !== "") {
     const doBP = checkBreakpointExpression(bp)
-    if (!doBP) return false
+    if (!doBP) return BREAKPOINT_RESULT.NO_BREAK
   }
+
   if (bp.hitcount > 1) {
     bp.nhits++
-    if (bp.nhits < bp.hitcount) return false
+    if (bp.nhits < bp.hitcount) return BREAKPOINT_RESULT.NO_BREAK
     bp.nhits = 0
   }
+
   // Be sure to use the current program counter when checking memory bank,
   // so that it works for both regular breakpoints and instruction breakpoints.
-  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, s6502.PC)) return false
+  if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, s6502.PC)) {
+    return BREAKPOINT_RESULT.NO_BREAK
+  }
   if (bp.once) breakpointMap.delete(s6502.PC)
-  return true
+  return processBreakpointActions(bp, vLo, vHi, code)
 }
 
 let doInstructionTrail = false
@@ -277,10 +338,19 @@ export const processInstruction = () => {
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
   const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
   const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
-  if (hitBreakpoint(instr, (vHi << 8) + vLo)) {
+
+  const bpResult = hitBreakpoint(instr, vLo, vHi, code)
+  if (bpResult === BREAKPOINT_RESULT.BREAK) {
     doSetRunMode(RUN_MODE.PAUSED)
     return -1
+  } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
+    // If we had a breakpoint action that did not halt, we want to leave
+    // here but continue running. This will then call immediately back
+    // into processInstruction. We need to do this in case the action
+    // change the program counter or one of the values in memory.
+    return 0
   }
+
   breakpointSkipOnce = false
   const fn = specialJumpTable.get(PC1)
   if (fn && !SWITCHES.INTCXROM.isSet) {

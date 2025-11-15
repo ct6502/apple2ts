@@ -182,6 +182,13 @@ body.dark-mode .round-rect-border {
   color: var(--text-color);
 }
 
+.dialog-text {
+  font-size: 10pt;
+  padding-left: 10px;
+  padding-right: 5px;
+  color: var(--text-color);
+}
+
 body.dark-mode .dialog-title {
   color: var(--text-color-dark);
 }
