@@ -15,7 +15,7 @@ import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDi
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import { setPreferenceBreakpoints } from "../localstorage"
 
-const nlines = 37
+const nlines = 40
 let currentScrollAddress = -1
 let skipCodeScroll = false
 //const lineNumbers: Array<number> = []

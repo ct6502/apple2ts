@@ -85,6 +85,14 @@ export const getBreakpointString = (bp: Breakpoint) => {
 
 
 export const BreakpointNew = (): Breakpoint => {
+  const defaultExpression: BreakpointExpression =
+    { register: "", address: 0x300, operator: "==", value: 0x80 }
+  const defaultAction: BreakpointAction = {
+    action: "",
+    register: "A",
+    address: 0x300,
+    value: 0x00
+  }
   return {
     address: -1,  // any address (useful for expressions)
     watchpoint: false,
@@ -94,13 +102,16 @@ export const BreakpointNew = (): Breakpoint => {
     once: false,
     memget: false,
     memset: true,
-    expression1: { register: "", address: 0x300, operator: "==", value: 0x80 },
-    expression2: { register: "", address: 0x300, operator: "==", value: 0x80 },
+    expression1: {...defaultExpression},
+    expression2: {...defaultExpression},
     expressionOperator: "",
     hexvalue: -1,
     hitcount: 1,
     nhits: 0,
-    memoryBank: ""
+    memoryBank: "",
+    action1: {...defaultAction},
+    action2: {...defaultAction},
+    halt: false
   }
 }
 

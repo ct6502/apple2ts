@@ -64,7 +64,7 @@ body.dark-mode .debug-panel {
 }
 
 .tall-panel {
-  height: 550px;
+  height: 590px;
 }
 
 .wide-panel {
@@ -177,6 +177,13 @@ body.dark-mode .round-rect-border {
   line-height: 18pt;
   padding-top: 3px;
   padding-bottom: 3px;
+  padding-left: 10px;
+  padding-right: 5px;
+  color: var(--text-color);
+}
+
+.dialog-text {
+  font-size: 10pt;
   padding-left: 10px;
   padding-right: 5px;
   color: var(--text-color);
@@ -513,6 +520,7 @@ body.dark-mode .icon-text {
 
 .debug-section {
   width: 100%;
+  margin-right: 30px;
   padding-top: 0px;
 }
 

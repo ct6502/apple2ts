@@ -3,7 +3,7 @@ import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setCapsLock, setColorMode, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -24,6 +24,13 @@ export const handleInputParams = (paramString = "") => {
 
   if (params.get("debug") === "on") {
     passSetShowDebugTab(true)
+  }
+
+  const ghost = params.get("ghosting")
+  if (ghost === "on") {
+    setGhosting(true)
+  } else if (ghost === "off") {
+    setGhosting(false)
   }
 
   const speed = params.get("speed")
@@ -52,9 +59,10 @@ export const handleInputParams = (paramString = "") => {
     if (mode >= 0) setColorMode(mode as COLOR_MODE)
   }
 
-  if (params.get("scanlines") === "on") {
+  const scanlines = params.get("scanlines")
+  if (scanlines === "on") {
     setShowScanlines(true)
-  } else if (params.get("scanlines") === "off") {
+  } else if (scanlines === "off") {
     setShowScanlines(false)
   }
 

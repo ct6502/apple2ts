@@ -5,6 +5,7 @@ const uiState: UIState = {
   arrowKeysAsJoystick: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
+  ghosting: false,
   helpText: "",
   hotReload: false,
   showScanlines: false,
@@ -49,6 +50,10 @@ export const setCapsLock = (lock: boolean) => {
 
 export const setColorMode = (mode: COLOR_MODE) => {
   uiState.colorMode = mode
+}
+
+export const setGhosting = (mode: boolean) => {
+  uiState.ghosting = mode
 }
 
 export const setHelpText = (helptext: string) => {
@@ -99,6 +104,10 @@ export const getCapsLock = () => {
 
 export const getColorMode = () => {
   return uiState.colorMode
+}
+
+export const getGhosting = () => {
+  return uiState.ghosting
 }
 
 export const getHelpText = () => {

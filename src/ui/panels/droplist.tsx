@@ -38,7 +38,7 @@ export const Droplist = (props: DroplistProps) => {
       ref={selectRef}
       name={props.name ? props.name : "droplist"}
       className={"droplist-edit" + (props.monospace ? " use-monospace" : "")}
-      style={{ height: "24px" }}
+      style={{ paddingTop: "3px", paddingBottom: "3px" }}
       disabled={props.disabled}
       onChange={handleValueChange}>
       {props.values.map((value, i) => (
