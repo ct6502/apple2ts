@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setCapsLock, setColorMode, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
@@ -102,9 +102,30 @@ export const handleInputParams = (paramString = "") => {
   }
 
   const address = params.get("address")
+  let binaryRunAddress = 0x0300
   if (address) {
-    setDefaultBinaryAddress(parseInt(address, 16))
+    binaryRunAddress = parseInt(address, 16)
+    setDefaultBinaryAddress(binaryRunAddress)
   }
+
+  let hasBasicProgram = false
+
+  const binary64 = porig.get("binary")  // Use original case for base64
+  if (binary64) {
+    // Convert base64 string to Uint8Array
+    const binary = atob(binary64)
+    const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+    hasBasicProgram = true
+    const waitForBoot = setInterval(() => {
+      // Wait a bit to give the emulator time to start and boot any disks.
+      const cycleCount = handleGetState6502().cycleCount
+      if (cycleCount > 2000000) {
+        clearInterval(waitForBoot)
+        passSetBinaryBlock(binaryRunAddress, data, false)
+      }
+    }, 100)
+  }
+  
 
   const tour = params.get("tour")
   if (tour) {
@@ -123,7 +144,7 @@ export const handleInputParams = (paramString = "") => {
 
   // Use the original case of the text string or BASIC program.
   const text = porig.get("basic") || porig.get("BASIC") || porig.get("text") || porig.get("TEXT")
-  const hasBasicProgram = text !== null
+  hasBasicProgram = hasBasicProgram || (text !== null)
   if (text) {
     const trimmed = text.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
