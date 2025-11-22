@@ -4,6 +4,7 @@ import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, pass
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setCapsLock, setColorMode, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import * as pako from "pako"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -112,9 +113,14 @@ export const handleInputParams = (paramString = "") => {
 
   const binary64 = porig.get("binary")  // Use original case for base64
   if (binary64) {
+    const isGZIP = binary64.startsWith("GZIP")
+    const dataToDeflate = isGZIP ? binary64.substring(4) : binary64
     // Convert base64 string to Uint8Array
-    const binary = atob(decodeURIComponent(binary64))
-    const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+    const binary = atob(decodeURIComponent(dataToDeflate))
+    let data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+    if (isGZIP) {
+      data = pako.ungzip(data)
+    }
     hasBasicProgram = true
     const waitForBoot = setInterval(() => {
       // Wait a bit to give the emulator time to start and boot any disks.
