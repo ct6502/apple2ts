@@ -113,7 +113,7 @@ export const handleInputParams = (paramString = "") => {
   const binary64 = porig.get("binary")  // Use original case for base64
   if (binary64) {
     // Convert base64 string to Uint8Array
-    const binary = atob(binary64)
+    const binary = atob(decodeURIComponent(binary64))
     const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
     hasBasicProgram = true
     const waitForBoot = setInterval(() => {
