@@ -1,5 +1,44 @@
 # Changelog
 
+## [v3.1](https://github.com/ct6502/apple2ts/tree/v3.1) (2025-11-23)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.0...v3.1)
+
+**Implemented enhancements:**
+
+- Ghosting effect for green and amber screens [\#184](https://github.com/ct6502/apple2ts/issues/184)
+- Support for quarter track reading for Apple2TS [\#179](https://github.com/ct6502/apple2ts/issues/179)
+- Support Video7 Mixed DHGR + Monochrome mode [\#173](https://github.com/ct6502/apple2ts/issues/173)
+- Support Video7 560x192 Monochrome mode [\#172](https://github.com/ct6502/apple2ts/issues/172)
+- Add support for performing actions on breakpoint hit [\#58](https://github.com/ct6502/apple2ts/issues/58)
+- Consider having "sub" time travel save states in between the main time travel states [\#33](https://github.com/ct6502/apple2ts/issues/33)
+
+**Fixed bugs:**
+
+- Empty peripheral slots should have random bus noise [\#190](https://github.com/ct6502/apple2ts/issues/190)
+- Incorrect behavior on softswitch sequence [\#188](https://github.com/ct6502/apple2ts/issues/188)
+- Bug Report: Inconsistent Disk Loading in "Show new releases" Tab [\#186](https://github.com/ct6502/apple2ts/issues/186)
+- Software picker window behavior \(Android\) [\#181](https://github.com/ct6502/apple2ts/issues/181)
+- Fast Typing results in dropped characters by keyboard [\#177](https://github.com/ct6502/apple2ts/issues/177)
+
+**Closed issues:**
+
+- Possible workaround solution for Glutton [\#171](https://github.com/ct6502/apple2ts/issues/171)
+- Apple 2TS does not work on the sample WOZ images provided in applesauce [\#81](https://github.com/ct6502/apple2ts/issues/81)
+
+**Merged pull requests:**
+
+- Fixed Minimal theme issues when appMode=game [\#189](https://github.com/ct6502/apple2ts/pull/189) ([boredsenseless](https://github.com/boredsenseless))
+- Rework Video7 processing.  Add 160x mode [\#187](https://github.com/ct6502/apple2ts/pull/187) ([code-bythepound](https://github.com/code-bythepound))
+- Fix: Issue 181 - Software picker window behavior \(Android\) [\#183](https://github.com/ct6502/apple2ts/pull/183) ([boredsenseless](https://github.com/boredsenseless))
+- Fix for theme switching bug [\#182](https://github.com/ct6502/apple2ts/pull/182) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Some URL fragments fail to load disk image [\#178](https://github.com/ct6502/apple2ts/pull/178) ([boredsenseless](https://github.com/boredsenseless))
+- Fixed disk collection panel scrolling bug in Minimal theme [\#175](https://github.com/ct6502/apple2ts/pull/175) ([boredsenseless](https://github.com/boredsenseless))
+- Fix bug where debug panel always displays once clicked [\#174](https://github.com/ct6502/apple2ts/pull/174) ([boredsenseless](https://github.com/boredsenseless))
+- Fixed all remaining tours bugs in Minimal theme [\#170](https://github.com/ct6502/apple2ts/pull/170) ([boredsenseless](https://github.com/boredsenseless))
+- Fixed bug where info panel flyout was not displayed in Minimal theme [\#169](https://github.com/ct6502/apple2ts/pull/169) ([boredsenseless](https://github.com/boredsenseless))
+- Minor UI tweaks for consistency across Classic and Minimal themes [\#168](https://github.com/ct6502/apple2ts/pull/168) ([boredsenseless](https://github.com/boredsenseless))
+
 ## [v3.0](https://github.com/ct6502/apple2ts/tree/v3.0) (2025-05-07)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v2.9...v3.0)

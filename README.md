@@ -170,9 +170,9 @@ You may need to update to Ruby v3.x to install this gem.
 Go through the commits, and add any missing tags. For a given commit sha (say `1befdec`), checkout the commit, force the date to be the commit date, and then add the tag:
 
 ```sh
-git checkout 1befdec
+git checkout 1befdec  # skip this if you want changelog for most recent code
 GIT_COMMITTER_DATE="$(git show --format=%aD | head -1)"
-git tag -a v3.0 -m"v3.0"
+git tag -a v3.1 -m"v3.1"  # bump this each time, and change it here as well
 git push origin --tags
 git checkout main
 ```
