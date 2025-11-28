@@ -9,7 +9,7 @@ export const handleSetTheme = (theme: UI_THEME) => {
 }
 
 export const isFileSystemApiSupported = () => {
-  return "showOpenFilePicker" in self && "showSaveFilePicker" in self
+  return "showOpenFilePicker" in window && "showSaveFilePicker" in window
 }
 
 export const showGlobalProgressModal = (show: boolean = true) => {

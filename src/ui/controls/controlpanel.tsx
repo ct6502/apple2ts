@@ -7,6 +7,7 @@ import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
 import { useState } from "react"
 import { getPreferenceFirstRunMinimal, setPreferenceFirstRunMinimal } from "../localstorage"
+import { isGameMode } from "../ui_settings"
 
 const ControlPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
@@ -29,13 +30,15 @@ const ControlPanel = (props: DisplayProps) => {
       onClick={handleFlyoutClick}
       position="top-left">
       <span className="flex-column">
-        <span className="flex-row wrap" id="tour-controlbuttons">
+        <span className={isGameMode() ? "flex-row wrap" : ""}>
+        <span className={isGameMode() ? "flex-row" : "flex-row wrap"} id="tour-controlbuttons">
           <ControlButtons {...props} />
           <DebugButtons {...props} />
           <FullScreenButton />
         </span>
         <ConfigButtons {...props} />
         <KeyboardButtons {...props} />
+        </span>
       </span>
     </Flyout>
   )

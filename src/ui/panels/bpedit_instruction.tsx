@@ -5,6 +5,7 @@ import PullDownMenu from "./pulldownmenu"
 import { Droplist } from "./droplist"
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
 import { opCodeNames, opCodes, opTable } from "../../common/opcodes"
+import Breakpoint_Actions from "./breakpoint_actions"
 
 const addressModes = [
   "Implied",
@@ -223,6 +224,8 @@ const BPEdit_Instruction = (props: {
         setValue={handleMemoryBankChange}
         userdata={props.breakpoint.address}
         isDisabled={() => false} />
+
+      <Breakpoint_Actions breakpoint={props.breakpoint}/>
     </div>
   )
 }

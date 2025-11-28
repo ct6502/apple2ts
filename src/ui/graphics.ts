@@ -2,10 +2,10 @@ import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetMachineName,
   handleGetSoftSwitches} from "./main2worker"
-import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, UI_THEME, toHex } from "../common/utility"
+import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getTheme } from "./ui_settings"
+import { getColorMode, getGhosting, isGameMode, isMinimalTheme } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
 let frameCount = 0
 
@@ -244,6 +244,29 @@ const getDoubleHiresColors = (hgrPage: Uint8Array, colorMode: COLOR_MODE) => {
   return hgrColors
 }
 
+const getVideo7H160Colors = (hgrPage: Uint8Array) => {
+  const nlines = hgrPage.length / 80
+  const hgrColors = new Uint8Array(560 * nlines).fill(BLACK)
+  for (let j = 0; j < nlines; j++) {
+    const line = hgrPage.slice(j*80, j*80 + 80)
+    const joffset = j * 560
+    let start = 0
+    for (let i = 0; i < 160; i++) {
+      const off = i>>1
+      const shift = (i&1)?4:0	// apparently nybble swapped?
+      // since 560/160=3.5, draw alternating 4 & 3 pixel columns for now
+      const count = shift ? 3 : 4
+      const colorValue = (line[off] >> shift) & 0xF
+      const color = translateDHGR[colorValue]
+      for (let c = 0; c < count; c++) {
+        hgrColors[joffset + start] = color
+        start++
+      }
+    }
+  }
+  return hgrColors
+}
+
 // Apply the Video7 monochrome mode on top of the existing HGR colors.
 const applyVideo7MixedMode = (hgrPage: Uint8Array, hgrColors: Uint8Array) => {
   const nlines = hgrPage.length / 80
@@ -313,7 +336,9 @@ const processHiRes = (hiddenContext: CanvasRenderingContext2D,
   const noDelayMode = handleGetNoDelayMode()
   const fillColor = colorMode === COLOR_MODE.INVERSEBLACKANDWHITE ? WHITE : BLACK
   let hgrColors: Uint8Array
-  if (switches.VIDEO7_MONO) {
+  if (switches.VIDEO7_160) {
+    hgrColors = getVideo7H160Colors(hgrPage)
+  } else if (switches.VIDEO7_MONO) {
     hgrColors = getDoubleHiresColors(hgrPage, COLOR_MODE.BLACKANDWHITE)
   } else if (video7foreground) {
     hgrColors = getVideo7HiresColors(hgrPage, colorMode)
@@ -398,13 +423,29 @@ const drawImage = (ctx: CanvasRenderingContext2D,
   }
 }
 
+// For the ghosting effect
+let ghostFrame: ImageData | null = null
+
 export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
   ctx.imageSmoothingEnabled = true
-  // Clear all our drawing and let the background show through again.
-  ctx.clearRect(0, 0, width, height)
+  if (getGhosting()) {
+    // Make a copy of the current canvas contents.
+    const dx = xmargin * width
+    const dy = ymargin * height
+    ghostFrame = ctx.getImageData(dx, dy, width - 2 * dx, height - 2 * dy)
+    ctx.clearRect(0, 0, width, height)
+    // Draw the single previous frame with transparency
+    ctx.putImageData(ghostFrame, dx, dy)
+    const alpha = 0.3
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`
+    ctx.fillRect(dx, dy, width - 2 * dx, height - 2 * dy)
+  } else {
+    // Clear all our drawing and let the background show through again.
+    ctx.clearRect(0, 0, width, height)
+  }
   hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
@@ -461,7 +502,7 @@ export const getCanvasSize = () => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  if (getTheme() == UI_THEME.MINIMAL) {
+  if (isMinimalTheme()) {
     const isTouchDevice = "ontouchstart" in document.documentElement
     const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
     if (isLandscape) {
@@ -470,13 +511,19 @@ export const getCanvasSize = () => {
       height -= 45
     }
   } else {
-    height -= noBackgroundImage ? 40 : 300
-    width -= noBackgroundImage ? 0 : 40
+    if (isGameMode())
+    {
+      height -= 70
+      width -= 25
+    } else {
+      height -= noBackgroundImage ? 40 : 300
+      width -= noBackgroundImage ? 0 : 40
+    }
   }
   if (!noBackgroundImage) {
     const debugSection = document.getElementById("debug-section") as HTMLElement
     if (debugSection && debugSection.offsetWidth > 0) {
-      width = Math.max(400, width - debugSection.offsetWidth - 0)
+      width = Math.max(400, width - debugSection.offsetWidth + 40)
     }
   }
   // shrink either width or height to preserve aspect ratio

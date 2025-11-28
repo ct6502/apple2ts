@@ -6,14 +6,11 @@ import MemoryDump from "./memorydump"
 import BreakpointsView from "./breakpointsview"
 import MemoryMap from "./memorymap"
 import StackDump from "./stackdump"
-import { UI_THEME } from "../../common/utility"
-import { getTheme } from "../ui_settings"
+import { isMinimalTheme } from "../ui_settings"
 
 const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
 
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
-
-  if (isMinimalTheme) {
+  if (isMinimalTheme()) {
     import("./debugsection.minimal.css")
   }
 

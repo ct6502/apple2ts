@@ -5,15 +5,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons"
-import { setPreferenceColorMode, setPreferenceShowScanlines } from "../localstorage"
+import { setPreferenceColorMode, setPreferenceGhosting, setPreferenceShowScanlines } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
-import { getColorMode, getShowScanlines } from "../ui_settings"
+import { getColorMode, getGhosting, getShowScanlines } from "../ui_settings"
 
 export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
   const colorMode = getColorMode()
   const showScanlines = getShowScanlines()
+  const ghosting = getGhosting()
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
@@ -52,18 +53,24 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
               }
             }
           )),
-          ...[{ label: "-" }],
-          ...[0].map(() => (
-            {
-              label: "CRT Scanlines",
-              isSelected: () => { return showScanlines },
-              onClick: () => {
-                document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
-                setPreferenceShowScanlines(!showScanlines)
-                props.updateDisplay()
-              }
+          { label: "-" },
+          {
+            label: "CRT Scanlines",
+            isSelected: () => { return showScanlines },
+            onClick: () => {
+              document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
+              setPreferenceShowScanlines(!showScanlines)
+              props.updateDisplay()
             }
-          ))
+          },
+          {
+            label: "Phosphor Ghosting",
+            isSelected: () => { return ghosting },
+            onClick: () => {
+              setPreferenceGhosting(!ghosting)
+              props.updateDisplay()
+            }
+          },
         ]]}
       />
     </span>

@@ -16,10 +16,9 @@ import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
-import { isFileSystemApiSupported } from "../../ui_utilities"
-import { imageList } from "./assets"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
+import { isFileSystemApiSupported } from "../../ui_utilities"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
 
@@ -29,7 +28,7 @@ export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blo
     const crc = crc32(diskData, 12)
     diskData.set(uint32toBytes(crc), 8)
   }
-  return new Blob([diskData])
+  return new Blob([diskData] as BlobPart[])
 }
 
 const downloadDisk = (diskData: Uint8Array, filename: string) => {
@@ -91,7 +90,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               updateCloudDrive(new GoogleDrive())
               break
             default:
-              console.error("Unknown cloud provider")
+              console.error("Unknown cloud provider:", dprops.cloudData.providerName)
           }
         }
       }
@@ -161,7 +160,7 @@ const DiskDrive = (props: DiskDriveProps) => {
     }
   }
 
-  const showSaveFilePicker = async (index: number) => {
+  const showDiskSaveFilePicker = async (index: number) => {
     const fileName = dprops.filename
     const fileExtension = fileName.substring(fileName.lastIndexOf("."))
 
@@ -219,11 +218,11 @@ const DiskDrive = (props: DiskDriveProps) => {
 
   let img1: string
   if (dprops.hardDrive) {
-    img1 = dprops.motorRunning ? imageList.hardDriveOn : imageList.hardDriveOff
+    img1 = dprops.motorRunning ? window.assetRegistry.hardDriveOn : window.assetRegistry.hardDriveOff
   } else {
     img1 = (dprops.filename.length > 0) ?
-      (dprops.motorRunning ? imageList.disk2on : imageList.disk2off) :
-      (dprops.motorRunning ? imageList.disk2onEmpty : imageList.disk2offEmpty)
+      (dprops.motorRunning ? window.assetRegistry.disk2on : window.assetRegistry.disk2off) :
+      (dprops.motorRunning ? window.assetRegistry.disk2onEmpty : window.assetRegistry.disk2offEmpty)
   }
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
   let status = DISK_DRIVE_LABELS[props.index]
@@ -277,7 +276,7 @@ const DiskDrive = (props: DiskDriveProps) => {
               label: "Save Disk to Device",
               icon: faFloppyDisk,
               isVisible: () => { return isFileSystemApiSupported() && !dprops.writableFileHandle },
-              onClick: () => { showSaveFilePicker(props.index) }
+              onClick: () => { showDiskSaveFilePicker(props.index) }
             },
             {
               label: "-",
@@ -295,7 +294,7 @@ const DiskDrive = (props: DiskDriveProps) => {
                     title: dprops.cloudData.fileName,
                     screenshotUrl: getImageDataUrlFromCanvas(),
                     lastUpdated: new Date(Date.now()),
-                    diskUrl: new URL(dprops.cloudData.downloadUrl),
+                    diskUrl: dprops.cloudData.downloadUrl,
                     cloudData: dprops.cloudData
                   })
                 }
@@ -471,7 +470,7 @@ const DiskDrive = (props: DiskDriveProps) => {
           ],
           [
             {
-              label: "Load Disk from Device (Read-Only)",
+              label: "Load Disk from Device",
               icon: faFolderOpen,
               isVisible: () => { return !isFileSystemApiSupported() },
               onClick: () => { props.setShowFileOpenDialog(true, props.index) }

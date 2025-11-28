@@ -1,9 +1,10 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import * as pako from "pako"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -14,12 +15,23 @@ export const handleInputParams = (paramString = "") => {
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
 
+  if (params.get("appmode")) {
+    setAppMode(params.get("appmode") as string)
+  }
+
   if (params.get("capslock") === "off") {
     setCapsLock(false)
   }
 
   if (params.get("debug") === "on") {
     passSetShowDebugTab(true)
+  }
+
+  const ghost = params.get("ghosting")
+  if (ghost === "on") {
+    setGhosting(true)
+  } else if (ghost === "off") {
+    setGhosting(false)
   }
 
   const speed = params.get("speed")
@@ -48,10 +60,20 @@ export const handleInputParams = (paramString = "") => {
     if (mode >= 0) setColorMode(mode as COLOR_MODE)
   }
 
-  if (params.get("scanlines") === "on") {
+  const scanlines = params.get("scanlines")
+  if (scanlines === "on") {
     setShowScanlines(true)
-  } else if (params.get("scanlines") === "off") {
+  } else if (scanlines === "off") {
     setShowScanlines(false)
+  }
+
+  const machineName = params.get("machine")?.toUpperCase()
+  if (machineName) {
+    if (machineName === "APPLE2EU") {
+      passSetMachineName("APPLE2EU")
+    } else {
+      passSetMachineName("APPLE2EE")
+    }
   }
 
   const ramDisk = params.get("ramdisk")
@@ -81,9 +103,35 @@ export const handleInputParams = (paramString = "") => {
   }
 
   const address = params.get("address")
+  let binaryRunAddress = 0x0300
   if (address) {
-    setDefaultBinaryAddress(parseInt(address, 16))
+    binaryRunAddress = parseInt(address, 16)
+    setDefaultBinaryAddress(binaryRunAddress)
   }
+
+  let hasBasicProgram = false
+
+  const binary64 = porig.get("binary")  // Use original case for base64
+  if (binary64) {
+    const isGZIP = binary64.startsWith("GZIP")
+    const dataToDeflate = isGZIP ? binary64.substring(4) : binary64
+    // Convert base64 string to Uint8Array
+    const binary = atob(decodeURIComponent(dataToDeflate))
+    let data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+    if (isGZIP) {
+      data = pako.ungzip(data)
+    }
+    hasBasicProgram = true
+    const waitForBoot = setInterval(() => {
+      // Wait a bit to give the emulator time to start and boot any disks.
+      const cycleCount = handleGetState6502().cycleCount
+      if (cycleCount > 2000000) {
+        clearInterval(waitForBoot)
+        passSetBinaryBlock(binaryRunAddress, data, false)
+      }
+    }, 100)
+  }
+  
 
   const tour = params.get("tour")
   if (tour) {
@@ -92,12 +140,17 @@ export const handleInputParams = (paramString = "") => {
     setRunTour(tour)
   }
 
+  const hotReload = params.get("hotreload")
+  if (hotReload) {
+    setHotReload(hotReload === "true")
+  }
+
   const run = params.get("run")
   const doRun = !(run === "0" || run === "false")
 
   // Use the original case of the text string or BASIC program.
   const text = porig.get("basic") || porig.get("BASIC") || porig.get("text") || porig.get("TEXT")
-  const hasBasicProgram = text !== null
+  hasBasicProgram = hasBasicProgram || (text !== null)
   if (text) {
     const trimmed = text.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faClock, faCloud, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
-import { RUN_MODE, UI_THEME } from "../../common/utility"
+import { RUN_MODE } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import PopupMenu from "../controls/popupmenu"
@@ -12,7 +12,7 @@ import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
-import { getTheme } from "../ui_settings"
+import { isMinimalTheme } from "../ui_settings"
 import { handleInputParams } from "../inputparams"
 import { passSetRunMode } from "../main2worker"
 
@@ -54,9 +54,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [activeTab, setActiveTab] = useState<number>(0)
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
 
-  let longPressTimer: number
-
-  if (getTheme() == UI_THEME.MINIMAL) {
+  if (isMinimalTheme()) {
     import("./diskcollectionpanel.minimal.css")
   }
 
@@ -92,10 +90,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     passSetRunMode(RUN_MODE.IDLE)
     if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
       handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
-    } else if (typeof diskCollectionItem?.diskUrl === "string" && !URL.canParse(diskCollectionItem.diskUrl)) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl.toString(), props.updateDisplay, driveIndex)
+    } else if (diskCollectionItem?.diskUrl && !diskCollectionItem.diskUrl.startsWith("http")) {
+      handleSetDiskFromFile(diskCollectionItem.diskUrl, props.updateDisplay, driveIndex)
     } else {
-      handleSetDiskFromURL(diskCollectionItem?.diskUrl?.toString() || "", undefined, driveIndex, diskCollectionItem?.cloudData)
+      handleSetDiskFromURL(diskCollectionItem?.diskUrl || "", undefined, driveIndex, diskCollectionItem?.cloudData)
     }
     if (diskCollectionItem?.params) {
       handleInputParams(diskCollectionItem.params)
@@ -114,20 +112,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
     event.preventDefault()
     return false
-  }
-
-  const handleItemTouchStart = (diskCollectionItem: DiskCollectionItem) => (event: React.TouchEvent<HTMLElement>) => {
-    longPressTimer = window.setTimeout(() => {
-      setPopupItem(diskCollectionItem)
-      setPopupLocation([event.touches[0].clientX, event.touches[0].clientY])
-      event.stopPropagation()
-      event.preventDefault()
-      return false
-    }, 1000)
-  }
-
-  const handleItemTouchCancel = () => {
-    clearTimeout(longPressTimer)
   }
 
   const handleBookmarkClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
@@ -171,8 +155,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
         diskUrl: diskBookmark.diskUrl ? diskBookmark.diskUrl : "",
-        imageUrl: diskBookmark.screenshotUrl,
-        detailsUrl: diskBookmark.cloudData?.detailsUrl ? new URL(diskBookmark.cloudData?.detailsUrl) : diskBookmark.detailsUrl,
+        imageUrl: diskBookmark.screenshotUrl?.toString(),
+        detailsUrl: diskBookmark.cloudData?.detailsUrl ? diskBookmark.cloudData.detailsUrl : diskBookmark.detailsUrl?.toString(),
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData
       })
@@ -198,11 +182,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
-      width={`max( ${getTheme() == UI_THEME.MINIMAL ? "55vw" : "75vw"}, 348px )`}
+      width={`max( ${isMinimalTheme() ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
       <div className="flex-row dcp-tab-row"
-        onClick={(e) => {if (e.target === e.currentTarget) e.stopPropagation()}}>
+        onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs.map((tab, i) => (
           <div
             key={`tab-${i}`}
@@ -214,7 +198,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         ))}
       </div>
       <div className="disk-collection-panel"
-        onClick={(e) => {if (e.target === e.currentTarget) e.stopPropagation()}}>
+        onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs[activeTab].disks.map((diskCollectionItem, index) => (
           <div key={`dcp-item-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
@@ -228,14 +212,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
               className="dcp-item-image-box"
               title={`Click to load disk "${diskCollectionItem.title}"`}
               onClick={handleItemClick(diskCollectionItem, 0)}
-              onTouchStart={handleItemTouchStart(diskCollectionItem)}
-              onTouchEnd={handleItemTouchCancel}
-              onTouchCancel={handleItemTouchCancel}
               onContextMenu={handleItemRightClick(diskCollectionItem)}
             >
-              <img className="dcp-item-image" src={diskCollectionItem.imageUrl?.toString()} />
+              <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
             </div>
-            <img className="dcp-item-disk" src="/floppy.png" />
+            <img className="dcp-item-disk" src="assets/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
               <div className="dcp-item-new" title="Disk is a new release">
                 <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />

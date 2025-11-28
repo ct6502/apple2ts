@@ -13,6 +13,7 @@ import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
 import { getHotReload } from "../../ui_settings"
+import { getDiskImageFromLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -195,15 +196,81 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
   }
 }
 
+const fetchWithCorsProxy = async (proxy: string, url: string) => {
+  try {
+    const response = await fetch("https://corsproxy.io/?" + url)
+    return response
+  } catch {
+    return null
+  }
+}
+
+const fetchWithCT6502Proxy = async (url: string) => {
+  // Ask CT6502 for why we need to use this favicon header
+  const favicon: { [key: string]: string } = {}
+  favicon[iconKey()] = iconData()
+  try {
+    const response = await fetch(iconName() + url, { headers: favicon })
+    return response
+  } catch {
+    return null
+  }
+}
+
+let timerId: NodeJS.Timeout|null = null
+
+const diskImageLocalStorageSync = (url: string, index: number) => {
+  if (timerId !== null) {
+    clearInterval(timerId)
+    timerId = null
+  }
+  timerId = setInterval(() => {
+    const dprops = handleGetDriveProps(index)
+    if (dprops.diskHasChanges && !dprops.motorRunning) {
+      setDiskImageToLocalStorage(index, dprops.diskData)      
+      dprops.diskHasChanges = false
+      dprops.lastLocalWriteTime = Date.now()
+      passSetDriveProps(dprops)
+    }
+  }, 3 * 1000)
+}
+
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData) => {
-  if (!url.startsWith("http") && updateDisplay) {
+  // Check if it's a local file (not http/https URL)
+  const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
+  
+  if (isLocalFile) {
+    if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {
+      try {
+        // Fetch for browser (may fail for local files due to CORS)
+        const state = getDiskImageFromLocalStorage()
+        if (state) {
+          resetAllDiskDrives()
+          index = handleSetDiskOrFileFromBuffer(state.index, state.data.buffer, url, null, null)
+        } else {
+          const response = await fetch(url)
+          const buffer = await response.arrayBuffer()
+          const fileName = url.split("/").pop() || url        
+          resetAllDiskDrives()
+          index = handleSetDiskOrFileFromBuffer(index, buffer, fileName, cloudData || null, null)
+          setDiskImageToLocalStorage(index, new Uint8Array(buffer))
+        }
+        diskImageLocalStorageSync(url, index)
+        return
+      } catch (error) {
+        console.error(`Error loading local file: ${url}`, error)
+        return
+      }
+    }
+    
+    // Otherwise, try to find matching disk image in collections
     const match = findMatchingDiskImage(url)
     if ( !match.diskUrl ) {
       return
     }
-    url = match.diskUrl.toString()
-    if (!URL.canParse(url)) {
+    url = match.diskUrl
+    if (!URL.canParse(url) && updateDisplay) {
       handleSetDiskFromFile(url, updateDisplay, index)
       return
     }
@@ -221,32 +288,33 @@ export const handleSetDiskFromURL = async (url: string,
       const diskBookmarks = new DiskBookmarks()
       const bookmark = diskBookmarks.get(identifier)
       if (bookmark) {
-        bookmark.diskUrl = resolvedUrl
+        bookmark.diskUrl = resolvedUrl.toString()
         diskBookmarks.set(bookmark)
       }
     }
   }
 
   // Download the file from the fragment URL
-  try {
-    let name = ""
-    let buffer
+  let name = ""
+  let buffer
 
-    // Ask CT6502 for why we need to use this favicon header
-    const favicon: { [key: string]: string } = {}
-    favicon[iconKey()] = iconData()
+  showGlobalProgressModal(true)
 
-    showGlobalProgressModal(true)
-    const response = await fetch(iconName() + url, { headers: favicon })
-      .finally(() => {
-        showGlobalProgressModal(false)
-      })
+  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
 
-    if (!response.ok) {
-      console.error(`HTTP error: status ${response.status}`)
+  if (!response || !response.ok) {
+    console.log("First CORS proxy failed, trying next proxy")
+    response = await fetchWithCT6502Proxy(url)
+    if (!response) {
+      showGlobalProgressModal(false)
+      console.error(`Error fetching URL: ${url}`)
       return
     }
+  }
 
+  showGlobalProgressModal(false)
+
+  try {
     const blob = await response.blob()
 
     if (url.toLowerCase().endsWith(".zip")) {
@@ -282,6 +350,8 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (buffer) {
+      // If we are loading from a URL, reset all drives. Fixes issue#186
+      resetAllDiskDrives()
       handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
     } else {
       // $TODO: Add error handling
@@ -366,7 +436,7 @@ export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
   let data: ArrayBuffer
   try {
-    const res = await fetch("/disks/" + disk)
+    const res = await fetch("disks/" + disk)
     data = await res.arrayBuffer()
   } catch {
    return
@@ -376,7 +446,7 @@ export const handleSetDiskFromFile = async (disk: string,
   passSetRunMode(RUN_MODE.NEED_BOOT)
   const helpFile = replaceSuffix(disk, "txt")
   try {
-    const help = await fetch("/disks/" + helpFile, { credentials: "include", redirect: "error" })
+    const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
     let helptext = "<Default>"
     if (help.ok) {
       helptext = await help.text()
@@ -403,9 +473,11 @@ export const handleSaveWritableFile = async (index: number, writableFileHandle: 
     writableFileHandle = driveProps[index].writableFileHandle
   }
 
+  const dprops = driveProps[index]
+
   if (writableFileHandle) {
+    // Handle browser FileSystemFileHandle writes
     try {
-      const dprops = driveProps[index]
       const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
       const writable = await writableFileHandle.createWritable()
 

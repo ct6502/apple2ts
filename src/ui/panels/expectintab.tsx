@@ -1,7 +1,6 @@
 import "./debugsection.css"
 import { faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
-import { UI_THEME } from "../../common/utility"
-import { getTheme } from "../ui_settings"
+import { isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultExpectin from "./default_expectin.json"
@@ -10,12 +9,11 @@ import CodeMirrorEditor from "./editorview"
 
 const ExpectinTab = () => {
 
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const [expectinObject, setExpectinObject] = useState<Expectin>()
   const [expectinText, setExpectinText] = useState<string>(JSON.stringify(defaultExpectin, null, 2))
   const [expectinError, setExpectinError] = useState<string>("")
 
-  if (isMinimalTheme) {
+  if (isMinimalTheme()) {
     import("./debugsection.minimal.css")
   }
 

@@ -1,8 +1,8 @@
-import { BreakpointMap } from "../common/breakpoint"
+import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick } from "./ui_settings"
+import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting } from "./ui_settings"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -20,6 +20,15 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
     localStorage.setItem("colorMode", JSON.stringify(mode))
   }
   setColorMode(mode)
+}
+
+export const setPreferenceGhosting = (mode = false) => {
+  if (mode) {
+    localStorage.setItem("ghosting", JSON.stringify(mode))
+  } else {
+    localStorage.removeItem("ghosting")
+  }
+  setGhosting(mode)
 }
 
 export const setPreferenceShowScanlines = (mode = false) => {
@@ -148,12 +157,55 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
   setTouchJoystickSensitivity(sensitivity)
 }
 
+const gameDataDrive = "GAME_DATA-DRIVE"
+const gameDataData = "GAME_DATA-DATA"
+
+export const hasDiskImageInLocalStorage = () => {
+  return localStorage.getItem(gameDataDrive) !== null
+}
+
+export const getDiskImageFromLocalStorage = () => {
+  const driveIndex = localStorage.getItem(gameDataDrive)
+  if (driveIndex) {
+    const diskImage = localStorage.getItem(gameDataData)
+    if (diskImage) {
+      const binary = atob(diskImage)
+      const data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
+      return {index: parseInt(driveIndex), data: data}
+    }
+  }
+  return null
+}
+
+export const setDiskImageToLocalStorage = (index: number, data: Uint8Array | null) => {
+  if (data) {
+    let binary = ""
+    for (let i = 0; i < data.length; i++) {
+      binary += String.fromCharCode(data[i])
+    }
+    const diskImage = btoa(binary)
+    localStorage.setItem(gameDataDrive, index.toString())
+    localStorage.setItem(gameDataData, diskImage)
+  } else {
+    localStorage.removeItem(gameDataDrive)
+    localStorage.removeItem(gameDataData)
+  }
+}
+
 export const loadPreferences = () => {
   const breakpoints = localStorage.getItem("breakpoints")
   if (breakpoints) {
     try {
       const parsed = JSON.parse(breakpoints)
-      const breakpointMap = new BreakpointMap(parsed)
+      // Migrate old breakpoints to include additional fields
+      const migratedBreakpoints = parsed.map(([address, oldBreakpoint]: [number, unknown]) => {
+        // Start with a new breakpoint that has all current fields with defaults
+        const newBreakpoint = BreakpointNew()
+        // Copy over any fields that exist in the stored data
+        Object.assign(newBreakpoint, oldBreakpoint)
+        return [address, newBreakpoint]
+      })
+      const breakpointMap = new BreakpointMap(migratedBreakpoints)
       passBreakpoints(breakpointMap)
     } catch {
       localStorage.removeItem("breakpoints")
@@ -175,6 +227,15 @@ export const loadPreferences = () => {
       setColorMode(JSON.parse(colorMode))
     } catch {
       localStorage.removeItem("colorMode")
+    }
+  }
+
+  const ghosting = localStorage.getItem("ghosting")
+  if (ghosting) {
+    try {
+      setGhosting(JSON.parse(ghosting))
+    } catch {
+      localStorage.removeItem("ghosting")
     }
   }
 

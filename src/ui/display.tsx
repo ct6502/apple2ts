@@ -6,7 +6,9 @@ import {
   doOnMessage,
   setMain2Worker,
   handleGetMemSize,
-  passSetRunMode
+  passSetRunMode,
+  passSetBinaryBlock,
+  handleGetState6502
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -16,12 +18,12 @@ import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
 import { handleFragment, handleInputParams } from "./inputparams"
 import { loadPreferences } from "./localstorage"
-import { RUN_MODE, TEST_DEBUG, UI_THEME } from "../common/utility"
+import { RUN_MODE, TEST_DEBUG } from "../common/utility"
 import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
-import { getTheme, setHelpText } from "./ui_settings"
+import { getTheme, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -32,13 +34,13 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
-
+  
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
   // those, we would have no way of setting them here and re-rendering.
   if (!worker) {
     const newWorker = new Worker(new URL("../worker/worker2main", import.meta.url),
-      { type: "module" })
+    { type: "module" })
     setWorker(newWorker)
     setMain2Worker(newWorker)
     newWorker.onmessage = (e: MessageEvent) => {
@@ -48,7 +50,7 @@ const DisplayApple2 = () => {
       }
     }
   }
-
+  
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = "") => {
     if (newhelptext && newhelptext.length > 1) {
       setHelpText(newhelptext)
@@ -63,7 +65,7 @@ const DisplayApple2 = () => {
     // zero and NOTHING will update.
     setRenderCount(prevRenderCount => prevRenderCount + 1)
   }
-
+  
   if (!myInit) {
     setMyInit(true)
     if ("launchQueue" in window) {
@@ -91,17 +93,71 @@ const DisplayApple2 = () => {
     //      event.returnValue = '';
     //    });
     //    window.addEventListener("resize", handleResize)
+
+    // Listen for binary data from VS Code extension
+    window.addEventListener("message", function(event) {
+      // Verify the message is from a trusted source (VS Code webview or localhost for development)
+      const trustedOrigins = [
+        "vscode-webview://", // VS Code webview
+        "http://localhost",   // Local development
+        "https://localhost"   // Local development with HTTPS
+      ]
+      
+      const isTrusted = trustedOrigins.some(origin => 
+        event.origin.startsWith(origin) || 
+        event.origin === "null" // VS Code webview sometimes reports null origin
+      )
+      
+      if (!isTrusted) {
+        console.warn("Received message from untrusted origin:", event.origin)
+        return
+      }
+      console.log("Apple2TS received message from VS Code:", event.data)
+      
+      if (event.data.type === "loadBinary") {
+        try {
+          const { address, format, runProgram, data } = event.data as MessageLoadProgram
+          
+          console.log(`Loading binary at address 0x${address.toString(16)}, ${data.length} bytes, format: ${format}`)
+          
+          // Convert array back to Uint8Array
+          const binaryData = new Uint8Array(data)
+          
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+          setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
+
+          const waitForBoot = setInterval(() => {
+            // Wait a bit to give the emulator time to start and boot any disks.
+            const cycleCount = handleGetState6502().cycleCount
+            if (cycleCount > 2000000) {
+              clearInterval(waitForBoot)
+              if (format === "bin") {
+                passSetBinaryBlock(address, binaryData, runProgram)
+              }
+            }
+          }, 100)
+          
+        } catch (error) {
+          console.error("Error loading binary:", error)
+          // event.source.postMessage({
+          //   type: "error",
+          //   message: error.message
+          // }, event.origin)
+        }
+      }
+    })
+    
     if (TEST_DEBUG) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
       setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
       setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1000)
     }
   }
-
+  
   const handleCtrlDown = (ctrlKeyMode: number) => {
     setCtrlKeyMode(ctrlKeyMode)
   }
-
+  
   const handleOpenAppleDown = (newMode: number) => {
     // If we're going from 0 to nonzero, send the Open Apple keypress
     if (openAppleKeyMode === 0 && newMode > 0) {
@@ -113,7 +169,7 @@ const DisplayApple2 = () => {
     }
     setOpenAppleKeyMode(newMode)
   }
-
+  
   const handleClosedAppleDown = (newMode: number) => {
     // If we're going from 0 to nonzero, send the Closed Apple keypress
     if (closedAppleKeyMode === 0 && newMode > 0) {
@@ -125,11 +181,11 @@ const DisplayApple2 = () => {
     }
     setClosedAppleKeyMode(newMode)
   }
-
+  
   const handleShowFileOpenDialog = (show: boolean, index: number) => {
     setShowFileOpenDialog({ show, index })
   }
-
+  
   const props: DisplayProps = {
     speed: currentSpeed,
     renderCount: renderCount,
@@ -143,11 +199,10 @@ const DisplayApple2 = () => {
     handleClosedAppleDown: handleClosedAppleDown,
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
-
+  
   const theme = getTheme()
   handleSetTheme(theme)
-
-  const isMinimalTheme = theme == UI_THEME.MINIMAL
+  
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
@@ -161,31 +216,31 @@ const DisplayApple2 = () => {
   const mem = handleGetMemSize() + 64
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item">
-    <span>{currentSpeed} MHz, {memSize}</span>
-    <br />
-    <span>Apple2TS ©{new Date().getFullYear()} CT6502&nbsp;
-      <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+  <span>{currentSpeed} MHz, {memSize}</span>
+  <br />
+  <span>Apple2TS ©{new Date().getFullYear()} CT6502&nbsp;
+  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
   </div>
-
+  
   return (
     <div>
-      <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
-        <div className={isLandscape ? "flex-row" : "flex-column"}>
-          <Apple2Canvas {...props} />
-          <div className="flex-row-gap wrap"
-            style={{ paddingLeft: "2px" }}>
-            <ControlPanel {...props} />
-            <DiskInterface {...props} />
-          </div>
-          {!isLandscape && status}
-        </div>
-        {isLandscape && status}
-        {narrow && !isMinimalTheme && <div className="divider"></div>}
-        <DebugSection updateDisplay={updateDisplay} />
-      </span>
-      {isMinimalTheme && <DiskCollectionPanel {...props} />}
-      {isMinimalTheme && isTouchDevice && <TouchJoystick />}
-      <FileInput {...props} />
+    <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
+    <div className={isLandscape ? "flex-row" : "flex-column"}>
+    <Apple2Canvas {...props} />
+    <div className="flex-row-gap wrap"
+    style={{ paddingLeft: "2px" }}>
+    <ControlPanel {...props} />
+    {!isGameMode() && <DiskInterface {...props} />}
+    </div>
+    {!isLandscape && !isGameMode() && status}
+    </div>
+    {isLandscape && !isGameMode() && status}
+    {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
+    {!isGameMode() && <DebugSection updateDisplay={updateDisplay} />}
+    </span>
+    {isMinimalTheme() && <DiskCollectionPanel {...props} />}
+    {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
+    <FileInput {...props} />
     </div>
   )
 }

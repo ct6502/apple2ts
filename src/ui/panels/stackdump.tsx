@@ -5,7 +5,7 @@ const StackDump = () => {
     <div className="debug-panel">
       <div className="bigger-font" style={{ marginBottom: "6px" }}>Stack Dump</div>
       <div className="thin-border mono-text"
-        style={{ padding: "3px", overflow: "auto", width: "150px", height: "208px" }}>
+        style={{ padding: "3px", overflow: "auto", width: "150px", height: "250px" }}>
           {handleGetStackString()}</div>
     </div>
   )

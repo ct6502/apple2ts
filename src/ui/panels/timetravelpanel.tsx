@@ -3,7 +3,8 @@ import {
   handleGetTimeTravelThumbnails,
   handleGetTempStateIndex,
   passTimeTravelIndex,
-  passSetRunMode
+  passSetRunMode,
+  handleGetRunMode
 } from "../main2worker"
 import { RUN_MODE, toHex } from "../../common/utility"
 const clock = 1020488
@@ -72,7 +73,13 @@ const TimeTravelPanel = () => {
   }
 
   let timeTravelThumbnails = <></>
-  const { iTempState, thumbnailStrings, thumbImage } = getTimeTravelThumbnails()
+  let thumbImage = <div style={{width: "170px"}}></div>
+  let iTempState = -1
+  let thumbnailStrings: string[] = []
+
+  if (handleGetRunMode() !== RUN_MODE.RUNNING) {
+    ({ iTempState, thumbnailStrings, thumbImage } = getTimeTravelThumbnails())
+  }
 
   if (thumbnailStrings.length > 1) {
     timeTravelThumbnails = <>{thumbnailStrings.map((line, index) => (

@@ -168,11 +168,13 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   }
   driveState[index] = initDriveState(index, drive, isHardDrive)
   driveState[index].filename = props.filename
-  driveState[index].motorRunning = props.motorRunning
   driveData[index] = decodeDiskData(driveState[index], props.diskData)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
+    passData()
+    return
   }
+  driveState[index].motorRunning = props.motorRunning
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
   driveState[index].lastLocalWriteTime = props.lastLocalWriteTime

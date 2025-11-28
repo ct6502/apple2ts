@@ -46,9 +46,12 @@ defaultHelpText += `
 
 <b>Optional URL Parameters</b>
 address=1234 (hex load address for binary files)
+binary=base64-encoded string of machine code to load at address
 capslock=off
 color=color|nofringe|green|amber|white|inverse
 debug=on
+ghosting=on|off
+machine=apple2ee|apple2eu (enhanced or unenhanced)
 ramdisk=64|512|1024|4096|8192
 run=false (do not run BASIC program)
 scanlines=on|off

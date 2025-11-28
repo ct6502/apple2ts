@@ -12,17 +12,16 @@ import {
   handleGetCout,
   passKeyRelease,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
 import { drawHiresTile } from "./graphicshgr"
 import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
-import bgImage from "./img/crt.jpg"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getCapsLock, getTheme, getShowScanlines } from "./ui_settings"
+import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme } from "./ui_settings"
 
 
 let width = 800
@@ -422,7 +421,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         let marginLeft = canvas.offsetLeft + width * xmargin
         let marginTop = canvas.offsetTop + height * ymargin
 
-        if (getTheme() == UI_THEME.MINIMAL) {
+        if (isMinimalTheme()) {
           marginLeft = (window.innerWidth - scanlinesWidth) / 2
           marginTop = ((window.innerHeight - scanlinesHeight) / 2)
 
@@ -503,10 +502,9 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const isMinimalTheme = getTheme() == UI_THEME.MINIMAL
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement === myCanvas?.current?.parentElement
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme;
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme();
 
   // if (!isCanvasFullScreen && myCanvas && myCanvas.current) {
   //   myCanvas.current.requestFullscreen()
@@ -536,10 +534,10 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const cursor = (handleGetShowAppleMouse() && withinScreen) ? "url('/dot.png'), none" :
+  const cursor = (handleGetShowAppleMouse() && withinScreen) ? `url(${window.assetRegistry.dotCursor}), none` :
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
-  const backgroundImage = noBackgroundImage ? "" : `url(${bgImage})`
+  const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
 
   return (
     <span className="canvas-text scanline-gradient">

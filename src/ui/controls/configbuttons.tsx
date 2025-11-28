@@ -20,7 +20,7 @@ import { MockingboardWaveform } from "../devices/audio/mockingboardwaveform"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getCapsLock, getArrowKeysAsJoystick, getUseOpenAppleKey, setUseOpenAppleKey, setArrowKeysAsJoystick, getTheme } from "../ui_settings"
+import { getCapsLock, getArrowKeysAsJoystick, getUseOpenAppleKey, setUseOpenAppleKey, setArrowKeysAsJoystick, getTheme, isGameMode } from "../ui_settings"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -82,11 +82,11 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <MockingboardWaveform />
 
-    <SerialPortSelect />
+    {!isGameMode() && <SerialPortSelect />}
 
-    <MidiDeviceSelect />
+    {!isGameMode() && <MidiDeviceSelect />}
 
-    <MachineConfig updateDisplay={props.updateDisplay} />
+    {!isGameMode() && <MachineConfig updateDisplay={props.updateDisplay} />}
 
     <button className="push-button"
       id="tour-theme-button"
@@ -101,6 +101,7 @@ const ConfigButtons = (props: DisplayProps) => {
       menuItems={[Object.values(UI_THEME).filter(value => typeof value === "number").map((value, i) => {
         return {
           label: themeToName(i),
+          isVisible: () => {return (isGameMode() ? i != UI_THEME.MINIMAL : true)},
           isSelected: () => { return i == getTheme() },
           onClick: () => {
             if (i >= 0 && i != getTheme()) {
@@ -117,13 +118,13 @@ const ConfigButtons = (props: DisplayProps) => {
       })]}
     />
 
-    <button className="push-button" id="tour-clearcookies"
+    {!isGameMode() && <button className="push-button" id="tour-clearcookies"
       title="Reset All Settings"
       onClick={() => { resetPreferences(); props.updateDisplay() }}>
       <FontAwesomeIcon icon={faSync} />
-    </button>
+    </button>}
 
-    <RunTour />
+    {!isGameMode() && <RunTour />}
 
   </div>
 }

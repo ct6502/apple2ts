@@ -1,9 +1,11 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 
 const uiState: UIState = {
+  appMode: "",
   arrowKeysAsJoystick: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
+  ghosting: false,
   helpText: "",
   hotReload: false,
   showScanlines: false,
@@ -19,6 +21,7 @@ export const getUIState = () => {
 }
 
 export const setUIState = (state: UIState) => {
+  uiState.appMode = state?.appMode ?? ""
   uiState.arrowKeysAsJoystick = state?.arrowKeysAsJoystick ?? false
   uiState.capsLock = state?.capsLock ?? false
   uiState.colorMode = state?.colorMode ?? COLOR_MODE.COLOR
@@ -37,12 +40,20 @@ export const setArrowKeysAsJoystick = (joystick: boolean) => {
   uiState.arrowKeysAsJoystick = joystick
 }
 
+export const setAppMode = (mode: string) => {
+  uiState.appMode = mode
+}
+
 export const setCapsLock = (lock: boolean) => {
   uiState.capsLock = lock
 }
 
 export const setColorMode = (mode: COLOR_MODE) => {
   uiState.colorMode = mode
+}
+
+export const setGhosting = (mode: boolean) => {
+  uiState.ghosting = mode
 }
 
 export const setHelpText = (helptext: string) => {
@@ -79,6 +90,10 @@ export const setUseOpenAppleKey = (openApple: boolean) => {
 
 //------------------------------------------------------
 
+export const isGameMode = () => {
+  return uiState.appMode === "game"
+}
+
 export const getArrowKeysAsJoystick = () => {
   return uiState.arrowKeysAsJoystick
 }
@@ -91,12 +106,16 @@ export const getColorMode = () => {
   return uiState.colorMode
 }
 
+export const getGhosting = () => {
+  return uiState.ghosting
+}
+
 export const getHelpText = () => {
   return uiState.helpText
 }
 
 export const getHotReload = () => {
-  return uiState.hotReload
+  return uiState.hotReload || isGameMode()
 }
 
 export const getShowScanlines = () => {
@@ -109,6 +128,10 @@ export const getTouchJoyStickMode = () => {
 
 export const getTheme = () => {
   return uiState.theme
+}
+
+export const isMinimalTheme = () => {
+  return uiState.theme == UI_THEME.MINIMAL && !isGameMode()
 }
 
 export const getTiltSensorJoystick = () => {

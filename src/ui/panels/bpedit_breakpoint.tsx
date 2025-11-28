@@ -4,6 +4,7 @@ import { Droplist } from "./droplist"
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
 import { toHex } from "../../common/utility"
 import ExpressionControl from "./expressioncontrol"
+import Breakpoint_Actions from "./breakpoint_actions"
 
 const BPEdit_Breakpoint = (props: {
   breakpoint: Breakpoint,
@@ -65,7 +66,6 @@ const BPEdit_Breakpoint = (props: {
     return true
   }
 
-
   return (
     <div>
       <div className="flex-row">
@@ -76,7 +76,12 @@ const BPEdit_Breakpoint = (props: {
           placeholder="Any"
           width="5em" />
       </div>
-      <div>
+      <div style={{ marginTop: "16px" }}>
+        <EditField name="Hit&nbsp;Count: "
+          value={props.breakpoint.hitcount.toString()}
+          setValue={handleHitCountChange}
+          placeholder="1"
+          width="5em" />
         <span className="dialog-title">Expression:</span>
         <ExpressionControl expr={props.breakpoint.expression1}
           setExpr={handleExpressionChange1} />
@@ -93,17 +98,15 @@ const BPEdit_Breakpoint = (props: {
           disabled={props.breakpoint.expression1.register === "" || props.breakpoint.expressionOperator === ""}
         />
       </div>
-      <EditField name="Hit&nbsp;Count: "
-        value={props.breakpoint.hitcount.toString()}
-        setValue={handleHitCountChange}
-        placeholder="1"
-        width="5em" />
       <Droplist name="Memory&nbsp;Bank: "
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}
         values={MemoryBankNames}
         setValue={handleMemoryBankChange}
         userdata={props.breakpoint.address}
         isDisabled={isBankDisabledForAddress} />
+
+      <Breakpoint_Actions breakpoint={props.breakpoint}/>
+
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { Droplist } from "./droplist"
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
 import { toHex } from "../../common/utility"
 import { handleGetSoftSwitchDescriptions } from "../main2worker"
+import Breakpoint_Actions from "./breakpoint_actions"
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
@@ -115,6 +116,8 @@ const BPEdit_Watchpoint = (props: {
         setValue={handleMemoryBankChange}
         userdata={props.breakpoint.address}
         isDisabled={isBankDisabledForAddress} />
+
+      <Breakpoint_Actions breakpoint={props.breakpoint}/>
     </div>
   )
 }

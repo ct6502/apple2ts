@@ -111,9 +111,11 @@ type MachineState = {
 }
 
 type UIState = {
+  appMode: string,
   arrowKeysAsJoystick: boolean,
   capsLock: boolean,
   colorMode: COLOR_MODE,
+  ghosting: boolean,
   helpText: string,
   hotReload: boolean,
   showScanlines: boolean,
@@ -298,6 +300,15 @@ type BreakpointExpression = {
   value: number
 }
 
+type BPActions = "" | "set" | "jump" | "print" | "snapshot"
+
+type BreakpointAction = {
+  action: BPActions,
+  register: RegisterValues,
+  address: number,
+  value: number
+}
+
 type Breakpoint = {
   address: number,
   watchpoint: boolean,
@@ -313,7 +324,10 @@ type Breakpoint = {
   hexvalue: number,
   hitcount: number,
   nhits: number,
-  memoryBank: string
+  memoryBank: string,
+  action1: BreakpointAction,
+  action2: BreakpointAction,
+  halt: boolean
 }
 
 type StepCallbackFunction = () => boolean
@@ -327,9 +341,9 @@ type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
   lastUpdated: Date,
-  imageUrl?: URL,
-  diskUrl: URL | string,
-  detailsUrl?: URL,
+  imageUrl?: string,
+  diskUrl: string,
+  detailsUrl?: string,
   bookmarkId?: string,
   params?: string,
   cloudData?: CloudData
@@ -346,4 +360,11 @@ type PopupMenuItem = {
   isVisible?: () => boolean,
   isSelected?: () => boolean,
   onClick?: () => void
+}
+
+type MessageLoadProgram = {
+  address: number,
+  format: string,
+  runProgram: boolean,
+  data: Uint8Array,
 }

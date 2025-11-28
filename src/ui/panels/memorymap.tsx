@@ -162,6 +162,8 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
           func={() => setSoftSwitches([switches.COLUMN80 ? 0xC00C : 0xC00D])} />
         <CheckedBox name="Dbl Hires" checked={switches.DHIRES}
           func={() => setSoftSwitches([switches.DHIRES ? 0xC05F : 0xC05E])} />
+        <CheckedBox name="V7 160x" checked={switches.VIDEO7_160}
+          func={() => setSoftSwitches([switches.VIDEO7_160 ? 0xC078 : 0xC079])} />
         <CheckedBox name="V7 Mono" checked={switches.VIDEO7_MONO}
           func={() => setSoftSwitches([switches.VIDEO7_MONO ? 0xC07A : 0xC07B])} />
         <CheckedBox name="V7 Mixed" checked={switches.VIDEO7_MIXED}
