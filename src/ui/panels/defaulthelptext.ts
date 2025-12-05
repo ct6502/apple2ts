@@ -46,6 +46,7 @@ defaultHelpText += `
 
 <b>Optional URL Parameters</b>
 address=1234 (hex load address for binary files)
+binary=base64-encoded string of machine code to load at address
 capslock=off
 color=color|nofringe|green|amber|white|inverse
 debug=on

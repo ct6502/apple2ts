@@ -363,3 +363,10 @@ type PopupMenuItem = {
   isSelected?: () => boolean,
   onClick?: () => void
 }
+
+type MessageLoadProgram = {
+  address: number,
+  format: string,
+  runProgram: boolean,
+  data: Uint8Array,
+}

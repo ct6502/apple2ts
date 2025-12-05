@@ -10,7 +10,7 @@ const setKeyStrobe = (key: number) => {
   // $C010-$C01F will override that high bit with their own status flag
   // whenever they are read but there's no harm in setting it now.
   memSetC000(0xC000, key | 0b10000000, 16)
-  memSetC000(0xC010, key & 0b01111111, 16)
+  memSetC000(0xC010, (key & 0b11111111) | 128, 16)
 }
 
 export const clearKeyStrobe = () => {
