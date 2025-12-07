@@ -633,11 +633,15 @@ export const getHires = () => {
 }
 
 export const getDataBlock = (addr: number) => {
-  const offset = addressGetTable[addr >>> 8]
+  // The addr & 255 handles data blocks that span page boundaries.
+  // This assumes that the second half of the block is within the same memory table range.
+  const offset = addressGetTable[addr >>> 8] + (addr & 255)
   return memory.slice(offset, offset + 512)
 }
 
 export const setMemoryBlock = (addr: number, data: Uint8Array) => {
+  // The addr & 255 handles data blocks that span page boundaries.
+  // This assumes that the second half of the block is within the same memory table range.
   const offset = addressSetTable[addr >>> 8] + (addr & 255)
   memory.set(data, offset)
 }
