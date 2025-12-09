@@ -1,15 +1,15 @@
 /**
- * Software synthesizer using SoundFont samples
+ * Software synthesizer using SoundFont samples via smplr
  * Provides realistic orchestral sounds when no hardware MIDI devices are available
  */
 
-import { instrument, InstrumentName, Player } from "soundfont-player"
+import { Soundfont } from "smplr"
 
 let audioContext: AudioContext | null = null
 let masterGain: GainNode | null = null
-const channelInstruments: (Player | null)[] = new Array(16).fill(null)
+const channelInstruments: (Soundfont | null)[] = new Array(16).fill(null)
 const channelPrograms: number[] = new Array(16).fill(6) // Default to harpsichord (program 6)
-const activeNotes = new Map<string, { stop: () => void }>()
+const activeNotes = new Map<string, () => void>() // Map note keys to smplr stop functions
 const channelVolumes = new Array(16).fill(100)
 let isInitialized = false
 
@@ -153,13 +153,6 @@ const getNoteKey = (channel: number, note: number): string => {
   return `${channel}-${note}`
 }
 
-const midiNoteToName = (midiNote: number): string => {
-  const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-  const octave = Math.floor(midiNote / 12) - 1
-  const noteName = noteNames[midiNote % 12]
-  return `${noteName}${octave}`
-}
-
 export const initSoftSynth = async () => {
   if (!audioContext) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -169,22 +162,21 @@ export const initSoftSynth = async () => {
     masterGain.connect(audioContext.destination)
     
     // Load default instrument (harpsichord) for all channels
-    console.log("Initializing SoundFont synthesizer...")
+    console.log("Initializing smplr SoundFont synthesizer...")
     for (let ch = 0; ch < 16; ch++) {
       if (ch === 9) continue // Skip drums channel for now
       try {
-        const player = await instrument(audioContext,
-          getInstrumentName(channelPrograms[ch]) as InstrumentName, {
-          gain: 2.0,  // Boost instrument gain
-          destination: masterGain
+        const player = new Soundfont(audioContext, {
+          instrument: getInstrumentName(channelPrograms[ch])
         })
+        player.output.setVolume(200) // Boost volume (0-100 default, we boost to 200)
         channelInstruments[ch] = player
       } catch (err) {
         console.warn(`Failed to load instrument for channel ${ch}:`, err)
       }
     }
     isInitialized = true
-    console.log("SoundFont synthesizer initialized")
+    console.log("smplr SoundFont synthesizer initialized")
   }
 }
 
@@ -202,15 +194,15 @@ export const noteOn = async (channel: number, note: number, velocity: number) =>
   let player = channelInstruments[channel]
   
   // If no instrument loaded for this channel, load it based on current program
-  if (!player && audioContext && masterGain) {
+  if (!player && audioContext) {
     const program = channelPrograms[channel]
     const instrumentName = getInstrumentName(program)
     console.log(`SoftSynth: Lazy loading instrument for channel ${channel}: ${instrumentName} (program ${program})`)
     try {
-      player = await instrument(audioContext, instrumentName as InstrumentName, {
-        gain: 2.0,  // Boost instrument gain
-        destination: masterGain
+      player = new Soundfont(audioContext, {
+        instrument: instrumentName
       })
+      player.output.setVolume(200) // Boost volume
       channelInstruments[channel] = player
     } catch (err) {
       console.warn(`SoftSynth: Failed to load instrument ${instrumentName}:`, err)
@@ -224,20 +216,21 @@ export const noteOn = async (channel: number, note: number, velocity: number) =>
   
   // Stop existing note if playing
   if (activeNotes.has(noteKey)) {
-    const playback = activeNotes.get(noteKey)
-    if (playback) {
-      playback.stop()
+    const stopFn = activeNotes.get(noteKey)
+    if (stopFn) {
+      stopFn()
     }
   }
   
-  // Play the note
+  // Play the note - smplr uses 0-1 gain (velocity / 127) and channel volume adjustment
   const gain = (velocity / 127) * (channelVolumes[channel] / 127)
   try {
-    const playback = player.play(midiNoteToName(note), audioContext!.currentTime, {
-      gain,
-      duration: 100 // Long duration, we'll stop it manually
+    const stopFn = player.start({
+      note,
+      velocity: Math.round(gain * 127) // Convert back to MIDI velocity
+      // No duration - note will sustain until we call stopFn()
     })
-    activeNotes.set(noteKey, playback)
+    activeNotes.set(noteKey, stopFn)
   } catch (err) {
     console.warn(`SoftSynth: Failed to play note ${note} on channel ${channel}:`, err)
   }
@@ -245,10 +238,10 @@ export const noteOn = async (channel: number, note: number, velocity: number) =>
 
 export const noteOff = (channel: number, note: number) => {
   const noteKey = getNoteKey(channel, note)
-  const playback = activeNotes.get(noteKey)
+  const stopFn = activeNotes.get(noteKey)
   
-  if (playback) {
-    playback.stop()
+  if (stopFn) {
+    stopFn()
     activeNotes.delete(noteKey)
   }
 }
@@ -256,16 +249,16 @@ export const noteOff = (channel: number, note: number) => {
 export const allNotesOff = (channel?: number) => {
   if (channel !== undefined) {
     // Stop all notes on specific channel
-    for (const [key, playback] of activeNotes.entries()) {
+    for (const [key, stopFn] of activeNotes.entries()) {
       if (key.startsWith(`${channel}-`)) {
-        playback.stop()
+        stopFn()
         activeNotes.delete(key)
       }
     }
   } else {
     // Stop all notes on all channels
-    for (const playback of activeNotes.values()) {
-      playback.stop()
+    for (const stopFn of activeNotes.values()) {
+      stopFn()
     }
     activeNotes.clear()
   }
@@ -286,17 +279,17 @@ export const setChannelPan = (_channel: number, _pan: number) => {
 }
 
 export const programChange = async (channel: number, program: number) => {
-  if (!audioContext || !masterGain) return
+  if (!audioContext) return
 
   // Load the new instrument asynchronously
   const instrumentName = getInstrumentName(program)
   console.log(`SoftSynth: Loading instrument for channel ${channel}: ${instrumentName} (program ${program})`)
   
   try {
-    const player = await instrument(audioContext, instrumentName as InstrumentName, {
-      gain: 2.0,  // Boost instrument gain
-      destination: masterGain
+    const player = new Soundfont(audioContext, {
+      instrument: instrumentName
     })
+    player.output.setVolume(200) // Boost volume
     
     // Stop all notes on this channel before switching
     allNotesOff(channel)
@@ -364,7 +357,6 @@ export const send = async (data: Iterable<number>, timestamp?: DOMHighResTimeSta
       break
     case 0xC0: // Program Change
       if (msg.length >= 2) {
-        console.log("SoftSynth: Program Change", channel, msg)
         // Update the program number FIRST, synchronously, before async loading
         // This ensures lazy loading in noteOn will use the correct instrument
         channelPrograms[channel] = msg[1]
