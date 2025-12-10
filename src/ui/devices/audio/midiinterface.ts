@@ -1,5 +1,8 @@
 //import { passRxMidiData } from "../main2worker"
 import { checkEnhancedMidi } from "./enhancedmidi"
+import * as SoftSynth from "./softsynth"
+
+let useSoftSynth = true
 
 const connect = () => {
   if (navigator.requestMIDIAccess)
@@ -117,14 +120,16 @@ const initDevices = () => {
 //}
 
 const parseAndSendMsg = (msg: number[]) => {
-  const device = midiOutDevices[midiOutIndex]
+  // Determine the output device (hardware MIDI or software synth)
+  const device = (useSoftSynth || midiOutIndex === -1) 
+    ? SoftSynth as unknown as MIDIOutput  // Software synth has compatible send() API
+    : midiOutDevices[midiOutIndex]
 
+  // Check enhanced MIDI first with appropriate device
   if (checkEnhancedMidi(msg, device))
     return
 
-  //console.log(msgs.map(function (x) {return x.toString(16);}).toString());
-  
-  // if it wasn't enhanced midi, then send message
+  // If not enhanced MIDI, send directly
   device.send(msg)
 }
 
@@ -132,10 +137,17 @@ let once = false
 const buffer: number[] = []
 
 export const receiveMidiData = (data: Uint8Array) => {
-  if (midiOutIndex === -1) {
-    // connection failure?
+  // Initialize software synth if needed and no hardware MIDI available
+  if (midiOutIndex === -1 && !useSoftSynth && SoftSynth.isSoftSynthAvailable()) {
+    console.log("No MIDI interface detected. Using built-in software synthesizer.")
+    SoftSynth.initSoftSynth()
+    useSoftSynth = true
+  }
+
+  if (midiOutIndex === -1 && !useSoftSynth) {
+    // connection failure and no soft synth
     if (once) {
-      console.log("No MIDI interface.")
+      console.log("No MIDI interface and software synth unavailable.")
       once = false
     }
     return
@@ -204,3 +216,36 @@ export const receiveMidiData = (data: Uint8Array) => {
     parseAndSendMsg(msg)
   }
 }
+
+// Public API for controlling software synthesizer
+export const enableSoftSynth = () => {
+  if (SoftSynth.isSoftSynthAvailable()) {
+    SoftSynth.initSoftSynth()
+    useSoftSynth = true
+    console.log("Software synthesizer enabled")
+    return true
+  }
+  console.warn("Software synthesizer not available in this browser")
+  return false
+}
+
+export const disableSoftSynth = () => {
+  if (useSoftSynth) {
+    SoftSynth.stopAllNotes()
+    useSoftSynth = false
+    console.log("Software synthesizer disabled")
+  }
+}
+
+export const isSoftSynthEnabled = () => {
+  return useSoftSynth
+}
+
+export const isSoftSynthAvailable = () => {
+  return SoftSynth.isSoftSynthAvailable()
+}
+
+export const setSoftSynthMasterVolume = (volume: number) => {
+  SoftSynth.setMasterVolume(volume)
+}
+

@@ -110,7 +110,9 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
         return decode2MG(driveState, diskData)
       }
     }
-    if (isDSK(driveState.filename)) {
+    // We might have a DSK file that has already been renamed as a WOZ
+    // but is still in DSK format. So double check the disk data length.
+    if (isDSK(driveState.filename) || diskData.length === 143360) {
       diskData = decodeDSK(driveState, diskData)
     }
     if (decodeWoz2(driveState, diskData)) {
