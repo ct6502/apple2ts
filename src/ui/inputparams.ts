@@ -164,18 +164,34 @@ export const handleInputParams = (paramString = "") => {
   if (text) {
     const trimmed = text.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-    const sentinel = `REM ${Date.now()}`
-    const cmd = `${trimmed}\n${sentinel}\n`
 
-    sendTextAndWait("", "]", () => {
+    if (hasLineNumbers) {
+      const sentinel = `REM ${Date.now()}`
+      const cmd = `${trimmed}\n${sentinel}\n`
+
+      sendTextAndWait("", "]", () => {
       const prevSpeedMode = handleGetSpeedMode()
       setPreferenceSpeedMode(MaximumSpeedMode)
 
       sendTextAndWait(cmd, sentinel, () => {
         setPreferenceSpeedMode(prevSpeedMode)
-        passPasteText((hasLineNumbers && doRun) ? "\nRUN\n" : "\n")
+        if (doRun) {
+          passPasteText("\nRUN\n")
+        }
       })
     })
+    }
+    else {
+      const cmd = trimmed + (doRun ? "\nRUN\n" : "\n")
+      const waitForBoot = setInterval(() => {
+        // Wait a bit to give the emulator time to start and boot any disks.
+        const cycleCount = handleGetState6502().cycleCount
+        if (cycleCount > 2000000) {
+          clearInterval(waitForBoot)
+          passPasteText(cmd)
+        }
+      }, 100)
+    }
   }
 
   return hasBasicProgram
