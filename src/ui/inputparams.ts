@@ -3,7 +3,7 @@ import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setCapsLock, setColorMode, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
@@ -24,6 +24,13 @@ export const handleInputParams = (paramString = "") => {
 
   if (params.get("capslock") === "off") {
     setCapsLock(false)
+  }
+
+  const crtDistort = params.get("crtdistort")
+  if (crtDistort === "on") {
+    setCrtDistortion(true)
+  } else if (crtDistort === "off") {
+    setCrtDistortion(false)
   }
 
   if (params.get("debug") === "on") {

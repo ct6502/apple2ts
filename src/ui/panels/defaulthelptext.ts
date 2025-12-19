@@ -49,6 +49,7 @@ address=1234 (hex load address for binary files)
 binary=base64-encoded string of machine code to load at address
 capslock=off
 color=color|nofringe|green|amber|white|inverse
+crtdistort=on|off
 debug=on
 ghosting=on|off
 machine=apple2ee|apple2eu (enhanced or unenhanced)
