@@ -115,6 +115,7 @@ type UIState = {
   arrowKeysAsJoystick: boolean,
   capsLock: boolean,
   colorMode: COLOR_MODE,
+  crtDistortion: boolean,
   ghosting: boolean,
   helpText: string,
   hotReload: boolean,

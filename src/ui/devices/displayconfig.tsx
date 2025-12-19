@@ -5,16 +5,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons"
-import { setPreferenceColorMode, setPreferenceGhosting, setPreferenceShowScanlines } from "../localstorage"
+import { setPreferenceColorMode, setPreferenceCrtDistortion, setPreferenceGhosting, setPreferenceShowScanlines } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
-import { getColorMode, getGhosting, getShowScanlines } from "../ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines } from "../ui_settings"
 
 export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
   const colorMode = getColorMode()
   const showScanlines = getShowScanlines()
   const ghosting = getGhosting()
+  const crtDistortion = getCrtDistortion()
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
@@ -68,6 +69,14 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
             isSelected: () => { return ghosting },
             onClick: () => {
               setPreferenceGhosting(!ghosting)
+              props.updateDisplay()
+            }
+          },
+          {
+            label: "CRT Distortion",
+            isSelected: () => { return crtDistortion },
+            onClick: () => {
+              setPreferenceCrtDistortion(!crtDistortion)
               props.updateDisplay()
             }
           },
