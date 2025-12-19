@@ -7,6 +7,7 @@ import { drol } from "./drol"
 import { firebug } from "./firebug"
 import { injuredengine } from "./injuredengine"
 import { karateka } from "./karateka"
+import { lode_runner } from "./lode_runner"
 import { noxarchaist } from "./noxarchaist"
 import { one_on_one } from "./one_on_one"
 import { princeofpersia } from "./princeofpersia"
@@ -33,6 +34,7 @@ AddGameLibraryItem(drol)
 AddGameLibraryItem(firebug)
 AddGameLibraryItem(injuredengine)
 AddGameLibraryItem(karateka)
+AddGameLibraryItem(lode_runner)
 AddGameLibraryItem(noxarchaist)
 AddGameLibraryItem(one_on_one)
 AddGameLibraryItem(princeofpersia)

@@ -5,7 +5,7 @@ import { handleGetAltCharSet, handleGetTextPage,
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getGhosting, isGameMode, isMinimalTheme } from "./ui_settings"
+import { getColorMode, getCrtDistortion, getGhosting, isGameMode, isMinimalTheme } from "./ui_settings"
 const isTouchDevice = "ontouchstart" in document.documentElement
 let frameCount = 0
 
@@ -58,7 +58,7 @@ export const screenBytesToCanvasPixels = (current: HTMLCanvasElement, dx: number
 // if it's drawn directly onto the on-screen canvas.
 const processTextPage = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
-  colorMode: COLOR_MODE, width: number, height: number) => {
+  colorMode: COLOR_MODE, width: number, height: number, crtDistortion: boolean) => {
   const textPage = handleGetTextPage()
   if (textPage.length === 0) return false
   const switches = handleGetSoftSwitches()
@@ -116,7 +116,9 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       if (cfill) {
         ctx.fillStyle = cfill
         hiddenContext.fillStyle = cfill
-        ctx.fillRect(xmarginPx + i * cwidth, ymarginPx + j * cheight, 1.08 * cwidth, 1.03 * cheight)
+        if (!crtDistortion) {
+          ctx.fillRect(xmarginPx + i * cwidth, ymarginPx + j * cheight, 1.08 * cwidth, 1.03 * cheight)
+        }
         hiddenContext.fillRect(i * hiddenWidth, j * hiddenHeight, 1.08 * hiddenWidth, 1.03 * hiddenHeight)
       }
     })
@@ -152,7 +154,9 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       }
       ctx.fillStyle = cfill
       hiddenContext.fillStyle = cfill
-      ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
+      if (!crtDistortion) {
+        ctx.fillText(v, xmarginPx + i*cwidth, yoffset)
+      }
       hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
     })
   }
@@ -426,6 +430,83 @@ const drawImage = (ctx: CanvasRenderingContext2D,
 // For the ghosting effect
 let ghostFrame: ImageData | null = null
 
+const applyCrtDistortion = (ctx: CanvasRenderingContext2D,
+  hiddenContext: CanvasRenderingContext2D,
+  colorMode: COLOR_MODE, width: number, height: number) => {
+  // Draw text before distortion
+  processTextPage(ctx, hiddenContext, colorMode, width, height, true)
+
+  // Apply CRT barrel distortion effect (curved edges like a CRT monitor)
+  const nx = 560
+  const ny = 384
+  const hiddenData = hiddenContext.getImageData(0, 0, nx, ny)
+  const distortedData = new ImageData(nx * 2, ny * 2)
+  
+  // Barrel distortion parameters
+  const distortionStrengthX = 0.015  // Horizontal distortion (left/right edges)
+  const distortionStrengthY = 0.04  // Vertical distortion (top/bottom edges)
+  const centerX = nx / 2
+  const centerY = ny / 2
+  
+  // Apply barrel distortion by warping coordinates based on distance from center
+  for (let j = 0; j < ny * 2; j++) {
+    for (let i = 0; i < nx * 2; i++) {
+      // Map destination coordinates back to original coordinate space
+      const origX = i / 2
+      const origY = j / 2
+      
+      // Normalize coordinates to range [-1, 1] from center
+      const normX = (origX - centerX) / centerX
+      const normY = (origY - centerY) / centerY
+      
+      // Calculate distance from center with separate strengths per axis
+      const distanceX = normX * normX
+      const distanceY = normY * normY
+      
+      // Apply barrel distortion (quadratic function) with different strengths per axis
+      // Multiply to push edges outward (CRT bulge effect)
+      const distortionX = 1 + distortionStrengthX * (distanceX + distanceY)
+      const distortionY = 1 + distortionStrengthY * (distanceX + distanceY)
+      
+      // Calculate source coordinates (sample from farther out for barrel distortion)
+      const srcX = centerX + normX * centerX * distortionX
+      const srcY = centerY + normY * centerY * distortionY
+      
+      // Nearest neighbor sampling for sharper image
+      const x0 = Math.round(srcX)
+      const y0 = Math.round(srcY)
+      
+      // Only sample if within bounds of original image
+      if (x0 >= 0 && x0 < nx && y0 >= 0 && y0 < ny) {
+        const srcIndex = 4 * (y0 * nx + x0)
+        const dstIndex = 4 * (j * nx * 2 + i)
+        
+        // Nearest neighbor - copy pixel directly
+        distortedData.data[dstIndex] = hiddenData.data[srcIndex]
+        distortedData.data[dstIndex + 1] = hiddenData.data[srcIndex + 1]
+        distortedData.data[dstIndex + 2] = hiddenData.data[srcIndex + 2]
+        distortedData.data[dstIndex + 3] = hiddenData.data[srcIndex + 3]
+      }
+    }
+  }
+  
+  // Create a temporary canvas for the distorted image
+  const tempCanvas = document.createElement("canvas")
+  tempCanvas.width = nx * 2
+  tempCanvas.height = ny * 2
+  const tempCtx = tempCanvas.getContext("2d")!
+  tempCtx.putImageData(distortedData, 0, 0)
+  
+  // Draw the distorted image scaled and positioned with margins
+  const fudge = 1.25
+  const xmarginPx = xmargin * width / fudge
+  const ymarginPx = ymargin * height / fudge
+  const imgHeight = Math.floor(height * (1 - 2 * ymargin / fudge))
+  const imgWidth = Math.floor(width * (1 - 2 * xmargin / fudge))
+  ctx.drawImage(tempCanvas, 0, 0, nx * 2, ny * 2,
+    xmarginPx, ymarginPx, imgWidth, imgHeight)
+}
+
 export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
@@ -452,12 +533,16 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   const colorMode = getColorMode()
   let didDraw = processLoRes(hiddenContext, colorMode)
   didDraw = processHiRes(hiddenContext, colorMode) || didDraw
-  if (didDraw) {
-    drawImage(ctx, hiddenContext, width, height)
+  if (getCrtDistortion()) {
+    applyCrtDistortion(ctx, hiddenContext, colorMode, width, height)
+  } else {
+    if (didDraw) {
+      drawImage(ctx, hiddenContext, width, height)
+    }
+    // The hidden canvas was causing overlay issues with the text page.
+    // So instead, draw the graphics first and then overlay the text chars.
+    processTextPage(ctx, hiddenContext, colorMode, width, height, false)
   }
-  // The hidden canvas was causing overlay issues with the text page.
-  // So instead, draw the graphics first and then overlay the text chars.
-  processTextPage(ctx, hiddenContext, colorMode, width, height)
   // if (TEST_GRAPHICS) {
   //   const tile = [
   //     0x7F, 0x0, 0x40, 0x80, 0x15, 0x40, 0x80,  // 1

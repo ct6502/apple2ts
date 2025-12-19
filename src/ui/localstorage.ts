@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting } from "./ui_settings"
+import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion } from "./ui_settings"
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
@@ -20,6 +20,15 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
     localStorage.setItem("colorMode", JSON.stringify(mode))
   }
   setColorMode(mode)
+}
+
+export const setPreferenceCrtDistortion = (mode = false) => {
+  if (mode) {
+    localStorage.setItem("crtDistortion", JSON.stringify(mode))
+  } else {
+    localStorage.removeItem("crtDistortion")
+  }
+  setCrtDistortion(mode)
 }
 
 export const setPreferenceGhosting = (mode = false) => {
@@ -227,6 +236,15 @@ export const loadPreferences = () => {
       setColorMode(JSON.parse(colorMode))
     } catch {
       localStorage.removeItem("colorMode")
+    }
+  }
+
+  const crtDistortion = localStorage.getItem("crtDistortion")
+  if (crtDistortion) {
+    try {
+      setCrtDistortion(JSON.parse(crtDistortion))
+    } catch {
+      localStorage.removeItem("crtDistortion")
     }
   }
 

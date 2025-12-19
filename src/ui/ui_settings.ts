@@ -5,6 +5,7 @@ const uiState: UIState = {
   arrowKeysAsJoystick: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
+  crtDistortion: false,
   ghosting: false,
   helpText: "",
   hotReload: false,
@@ -25,6 +26,7 @@ export const setUIState = (state: UIState) => {
   uiState.arrowKeysAsJoystick = state?.arrowKeysAsJoystick ?? false
   uiState.capsLock = state?.capsLock ?? false
   uiState.colorMode = state?.colorMode ?? COLOR_MODE.COLOR
+  uiState.crtDistortion = state?.crtDistortion ?? false
   uiState.helpText = state?.helpText ?? ""
   uiState.hotReload = state?.hotReload ?? false
   uiState.showScanlines = state?.showScanlines ?? false
@@ -50,6 +52,10 @@ export const setCapsLock = (lock: boolean) => {
 
 export const setColorMode = (mode: COLOR_MODE) => {
   uiState.colorMode = mode
+}
+
+export const setCrtDistortion = (mode: boolean) => {
+  uiState.crtDistortion = mode
 }
 
 export const setGhosting = (mode: boolean) => {
@@ -104,6 +110,10 @@ export const getCapsLock = () => {
 
 export const getColorMode = () => {
   return uiState.colorMode
+}
+
+export const getCrtDistortion = () => {
+  return uiState.crtDistortion
 }
 
 export const getGhosting = () => {

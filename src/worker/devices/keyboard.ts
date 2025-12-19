@@ -83,6 +83,7 @@ export const sendTextToEmulator = (key: number) => {
   let text = String.fromCharCode(key)
   text = handleKeyMapping(text)
   addToBuffer(text)
+  popKey()
 }
 
 // TODO: Does this need its own buffer, so we can guarantee that chars

@@ -1,10 +1,13 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setCapsLock, setColorMode, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
 import * as pako from "pako"
+import { MaximumSpeedMode } from "./controls/speeddropdown"
+import { setPreferenceSpeedMode } from "./localstorage"
+import { Expectin } from "./expectin"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -21,6 +24,13 @@ export const handleInputParams = (paramString = "") => {
 
   if (params.get("capslock") === "off") {
     setCapsLock(false)
+  }
+
+  const crtDistort = params.get("crtdistort")
+  if (crtDistort === "on") {
+    setCrtDistortion(true)
+  } else if (crtDistort === "off") {
+    setCrtDistortion(false)
   }
 
   if (params.get("debug") === "on") {
@@ -154,15 +164,34 @@ export const handleInputParams = (paramString = "") => {
   if (text) {
     const trimmed = text.trim()
     const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-    const cmd = trimmed + ((hasLineNumbers && doRun) ? "\nRUN\n" : "\n")
-    const waitForBoot = setInterval(() => {
-      // Wait a bit to give the emulator time to start and boot any disks.
-      const cycleCount = handleGetState6502().cycleCount
-      if (cycleCount > 2000000) {
-        clearInterval(waitForBoot)
-        passPasteText(cmd)
-      }
-    }, 100)
+
+    if (hasLineNumbers) {
+      const sentinel = `REM ${Date.now()}`
+      const cmd = `${trimmed}\n${sentinel}\n`
+
+      sendTextAndWait("", "]", () => {
+      const prevSpeedMode = handleGetSpeedMode()
+      setPreferenceSpeedMode(MaximumSpeedMode)
+
+      sendTextAndWait(cmd, sentinel, () => {
+        setPreferenceSpeedMode(prevSpeedMode)
+        if (doRun) {
+          passPasteText("\nRUN\n")
+        }
+      })
+    })
+    }
+    else {
+      const cmd = trimmed + (doRun ? "\nRUN\n" : "\n")
+      const waitForBoot = setInterval(() => {
+        // Wait a bit to give the emulator time to start and boot any disks.
+        const cycleCount = handleGetState6502().cycleCount
+        if (cycleCount > 2000000) {
+          clearInterval(waitForBoot)
+          passPasteText(cmd)
+        }
+      }, 100)
+    }
   }
 
   return hasBasicProgram
@@ -203,4 +232,36 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
     // then boot our default blank ProDOS disk.
     handleSetDiskFromURL("blank.po", updateDisplay)
   }
+}
+
+const sendTextAndWait = (sendText: string, waitText: string, callback: () => void) => {
+  const expectinJson =
+    {
+        "commands": [
+            {
+                "send": sendText
+            },
+            {
+                "expect": [
+                    {
+                        "match": waitText,
+                        "commands": [
+                            {
+                                "disconnect": {}
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+  const expectin = new Expectin(JSON.stringify(expectinJson))
+  expectin.Run()
+
+  const interval = window.setInterval(() => {
+    if (!expectin.IsRunning()) {
+      clearInterval(interval)
+      callback()
+    }
+  }, 100)
 }
