@@ -53,7 +53,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
     doUpdateAddress(pc)
   }
 
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSymbolTableFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       loadUserSymbolTable(e.target.files[0])
 //      readFile(e.target.files[0], props.showFileOpenDialog.index)
@@ -151,7 +151,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         type="file"
         accept={isTouchDevice ? "" : ".sym"}
         ref={hiddenFileOpen}
-        onChange={handleFileSelected}
+        onChange={handleSymbolTableFileSelected}
         style={{ display: "none" }}
       />
     </span>

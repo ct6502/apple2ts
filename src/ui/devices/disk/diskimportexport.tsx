@@ -9,7 +9,7 @@ import { useRef, useState } from "react"
 import { passSetRunMode } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 
-const DriveStatus = () => {
+const DiskImportExport = () => {
   const dprops = handleGetDriveProps(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState(false)
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
@@ -105,4 +105,4 @@ const DriveStatus = () => {
   )
 }
 
-export default DriveStatus
+export default DiskImportExport
