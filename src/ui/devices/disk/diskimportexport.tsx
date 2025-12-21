@@ -6,7 +6,7 @@ import {
   faDownload,
 } from "@fortawesome/free-solid-svg-icons"
 import { useRef, useState } from "react"
-import { passSetRunMode } from "../../main2worker"
+import { handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 
 const DiskImportExport = () => {
@@ -68,7 +68,9 @@ const DiskImportExport = () => {
       // For now just handle hard drive images, so hardcode drive index = 0.
       setDiskImageToLocalStorage(0, new Uint8Array(buffer))
       handleSetDiskFromURL("file://" + file.name)
-      passSetRunMode(RUN_MODE.NEED_BOOT)
+      if (handleGetRunMode() === RUN_MODE.IDLE) {
+        passSetRunMode(RUN_MODE.NEED_BOOT)
+      }
     }
   }
 
