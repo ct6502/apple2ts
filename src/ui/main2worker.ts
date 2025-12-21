@@ -312,7 +312,8 @@ let showAppleMouse = false
 let softSwitchDescriptions = [""]
 
 export const handleGetShowAppleMouse = () => {
-  return showAppleMouse
+  const isFullscreen = document.fullscreenElement !== null
+  return showAppleMouse || isFullscreen
 }
 
 export const handleGetRunMode = () => {
