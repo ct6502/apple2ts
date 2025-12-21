@@ -60,6 +60,10 @@ export const passSetDebug = (doDebug: boolean) => {
   machineState.isDebugging = doDebug
 }
 
+export const passSetGameMode = (mode: boolean) => {
+  doPostMessage(MSG_MAIN.GAME_MODE, mode)
+}
+
 export const passSetShowDebugTab = (show: boolean) => {
   doPostMessage(MSG_MAIN.SHOW_DEBUG_TAB, show)
   // Force the state right away, so the UI can update.
