@@ -17,7 +17,8 @@ import { setPreferenceBreakpoints } from "../localstorage"
 
 const nlines = 40
 let currentScrollAddress = -1
-let skipCodeScroll = false
+let allowScrollEvent = false
+let isMouseDown = false
 //const lineNumbers: Array<number> = []
 
 const DisassemblyView = (props: DisassemblyProps) => {
@@ -36,10 +37,10 @@ const DisassemblyView = (props: DisassemblyProps) => {
     // 50 ms seems to be the sweet spot - any longer and the update delay is annoying.
     // Any shorter and it doesn't always settle down on the "correct" scroll position.
     // Clear the previous timeout
-    if (skipCodeScroll) {
-      skipCodeScroll = false
+    if (!allowScrollEvent && !isMouseDown) {
       return
     }
+    allowScrollEvent = false
     if (timeoutIdRef.current !== null) {
       clearTimeout(timeoutIdRef.current)
     }
@@ -65,6 +66,10 @@ const DisassemblyView = (props: DisassemblyProps) => {
     }, 50)
   }
 
+  const handleEnableScroll = () => {
+    allowScrollEvent = true
+  }
+
   const handleCodeKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault()  // suppress normal scroll events
@@ -80,7 +85,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
       }
       newAddress = Math.max(Math.min(newAddress, 0xFFFF), 0)
       if (newAddress !== currentAddr) {
-        skipCodeScroll = true
         setDisassemblyAddress(newAddress)
         props.refresh()
       }
@@ -154,6 +158,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
   }
 
   const handleCodeMouseLeave = () => {
+    isMouseDown = false
     if (fakePointRef.current) {
       const fakePoint = fakePointRef.current as HTMLDivElement
       fakePoint.style.display = "none"
@@ -172,7 +177,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
   // This function gets used in disassemblyview_singleline but we
   // define it here so it can access our local variables.
   const onJumpClick = (addr: number) => {
-    skipCodeScroll = true
     setDisassemblyAddress(addr)
     props.refresh()
   }
@@ -182,7 +186,8 @@ const DisassemblyView = (props: DisassemblyProps) => {
       return <div className="noselect" style={{ marginTop: "30px" }}>Pause to view disassembly</div>
     }
     let disArray = getDisassembly().split("\n").slice(0, nlines)
-    if (disArray.length <= 1) return <div
+    if (disArray.length <= 1) {
+      return <div
       style={{
         position: "relative",
         width: "200px",
@@ -190,6 +195,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
         height: `${nlines * 10 - 2}pt`,
       }}>
     </div>
+    }
     let foundLine = false
     if (getDisassemblyVisibleMode() !== DISASSEMBLE_VISIBLE.RESET) {
       const visibleLine = (getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
@@ -208,15 +214,16 @@ const DisassemblyView = (props: DisassemblyProps) => {
         setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
       }
     }
-    if (scrollTimeout.current !== null) {
-      clearTimeout(scrollTimeout.current)
-    }
+
     if (!foundLine) {
-      scrollTimeout.current = setTimeout(() => {
+      if (scrollTimeout.current !== null) {
+        clearTimeout(scrollTimeout.current)
+      }
+        scrollTimeout.current = setTimeout(() => {
         if (disassemblyRef.current) {
           if (scrollToRef.current) {
             const line = scrollToRef.current
-            skipCodeScroll = true
+            allowScrollEvent = false
             line.scrollIntoView()
           }
         }
@@ -248,6 +255,8 @@ const DisassemblyView = (props: DisassemblyProps) => {
     for (let i = istart; i <= 65535; i++) {
       bottomHalf.push(i)
     }
+
+    // console.log("getDisassemblyDiv ", props.update, disArray[0])
 
     return <div>
       {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
@@ -290,6 +299,9 @@ const DisassemblyView = (props: DisassemblyProps) => {
         tabIndex={0} // Makes the div focusable for keydown events
         onScroll={handleCodeScroll}
         onKeyDown={handleCodeKeyDown}
+        onWheel={handleEnableScroll}
+        onMouseDown={() => {isMouseDown = true}}
+        onMouseUp={() => {isMouseDown = false}}
         onMouseMove={handleCodeMouseMove}
         onMouseLeave={handleCodeMouseLeave}
         onClick={handleCodeClick}>

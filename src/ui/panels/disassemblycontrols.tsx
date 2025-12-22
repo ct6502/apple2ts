@@ -48,11 +48,6 @@ const DisassemblyControls = (props: DisassemblyProps) => {
     }
   }
 
-  const goToCurrentPC = () => {
-    const pc = handleGetState6502().PC
-    doUpdateAddress(pc)
-  }
-
   const handleSymbolTableFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target?.files?.length) {
       loadUserSymbolTable(e.target.files[0])
@@ -133,7 +128,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       </button>
       <button className="push-button"
         title="Go to Current PC"
-        onClick={goToCurrentPC}
+        onClick={() => {doUpdateAddress(handleGetState6502().PC)}}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="bigger-font" style={{cursor: "pointer"}}>PC</div>
       </button>
