@@ -3,8 +3,7 @@ import {
   handleSetDiskData, handleGetDriveProps,
   handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
   handleSaveWritableFile,
-  prepWritableFile,
-  showReadWriteFilePicker
+  prepWritableFile
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
@@ -470,16 +469,9 @@ const DiskDrive = (props: DiskDriveProps) => {
           ],
           [
             {
-              label: "Load Disk from Device",
+              label: "Load Disk",
               icon: faFolderOpen,
-              isVisible: () => { return !isFileSystemApiSupported() },
               onClick: () => { props.setShowFileOpenDialog(true, props.index) }
-            },
-            {
-              label: "Load Disk from Device (Read/Write)",
-              icon: faFolderOpen,
-              isVisible: () => { return isFileSystemApiSupported() },
-              onClick: () => { showReadWriteFilePicker(props.index) }
             },
             {
               label: "-"
@@ -490,9 +482,6 @@ const DiskDrive = (props: DiskDriveProps) => {
               onClick: () => {
                 showInternetArchivePicker()
               }
-            },
-            {
-              label: "-"
             },
             {
               label: "Load Disk from OneDrive",

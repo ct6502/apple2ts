@@ -3,7 +3,7 @@ import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK, DISK_CONVERSION_SUFFIXES } from "../../../common/utility"
+import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
@@ -384,47 +384,6 @@ export const prepWritableFile = async (index: number, writableFileHandle: FileSy
   }, 3 * 1000, index)
   return () => clearInterval(timer)
 }
-
-
-export const showReadWriteFilePicker = async (index: number) => {
-  let [writableFileHandle] = await window.showOpenFilePicker({
-    types: [
-      {
-        description: "Disk Images",
-        accept: {
-          "application/octet-stream": FILE_SUFFIXES_DISK.split(",") as `.${string}`[]
-        }
-      }
-    ],
-    excludeAcceptAllOption: true,
-    multiple: false,
-  })
-
-  if (writableFileHandle == null) {
-    return
-  }
-
-  const file = await writableFileHandle.getFile()
-  const fileExtension = file.name.substring(file.name.lastIndexOf("."))
-  let newIndex = index
-
-  if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
-    const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
-    writableFileHandle = await window.showSaveFilePicker({
-      excludeAcceptAllOption: false,
-      suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
-      types: [
-        {
-          description: "Disk Image",
-          accept: { "application/octet": [newFileExtension] as `.${string}`[] },
-        },
-      ]
-    })
-  }
-  newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
-  prepWritableFile(newIndex, writableFileHandle)
-}
-
 
 const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
