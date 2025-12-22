@@ -11,7 +11,7 @@ import { RUN_MODE } from "../../../common/utility"
 
 const DiskImportExport = () => {
   const dprops = handleGetDriveProps(0)
-  const [showFileOpenDialog, setShowFileOpenDialog] = useState(false)
+  const [showImportExportFileOpen, setShowImportExportFileOpen] = useState(false)
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const saveLocalStorageDiskImage = (url: string) => {
@@ -45,13 +45,13 @@ const DiskImportExport = () => {
         return
       }
     }
-    setShowFileOpenDialog(true)
+    setShowImportExportFileOpen(true)
   }
 
   // This is how we actually display the file selection dialog.
-  if (showFileOpenDialog) {
+  if (showImportExportFileOpen) {
     // Now that we're in here, turn off our property.
-    setTimeout(() => setShowFileOpenDialog(false), 0)
+    setTimeout(() => setShowImportExportFileOpen(false), 0)
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current
       // Hack - clear out old file so we can pick the same file again
