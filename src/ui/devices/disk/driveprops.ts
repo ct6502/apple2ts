@@ -302,8 +302,8 @@ export const handleSetDiskFromURL = async (url: string,
 
   showGlobalProgressModal(true)
 
-//  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
-  let response = await fetchWithCorsProxy("https://proxy.corsfix.com/?", url)
+  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
+//  let response = await fetchWithCorsProxy("https://proxy.corsfix.com/?", url)
 
   if (!response || !response.ok) {
     console.log("First CORS proxy failed, trying next proxy")
