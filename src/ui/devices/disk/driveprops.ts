@@ -198,7 +198,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 
 const fetchWithCorsProxy = async (proxy: string, url: string) => {
   try {
-    const response = await fetch("https://corsproxy.io/?" + url)
+    const response = await fetch(proxy + url)
     return response
   } catch {
     return null
@@ -210,9 +210,11 @@ const fetchWithCT6502Proxy = async (url: string) => {
   const favicon: { [key: string]: string } = {}
   favicon[iconKey()] = iconData()
   try {
-    const response = await fetch(iconName() + url, { headers: favicon })
+    const fullURL = iconName() + url
+    const response = await fetch(fullURL, { headers: favicon })
     return response
-  } catch {
+  } catch (error) {
+    console.error("CT6502 proxy fetch failed:", error)
     return null
   }
 }
@@ -300,7 +302,8 @@ export const handleSetDiskFromURL = async (url: string,
 
   showGlobalProgressModal(true)
 
-  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
+//  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
+  let response = await fetchWithCorsProxy("https://proxy.corsfix.com/?", url)
 
   if (!response || !response.ok) {
     console.log("First CORS proxy failed, trying next proxy")
@@ -356,8 +359,8 @@ export const handleSetDiskFromURL = async (url: string,
     } else {
       // $TODO: Add error handling
     }
-  } catch {
-    console.error(`Error fetching URL: ${url}`)
+  } catch (error) {
+    console.error(`Error fetching "${url}": ${error}`)
   }
 }
 
