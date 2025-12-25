@@ -3,6 +3,7 @@ import { setGamepad0, setGamepad1, setGamepad2, setGamepad3,
   setLeftButtonDown, setPushButton2, setRightButtonDown } from "../devices/joystick"
 import { passHelptext,passEnhancedMidi } from "../worker2main"
 import { aztec } from "./aztec"
+import { champ_lode_runner } from "./champ_lode_runner"
 import { drol } from "./drol"
 import { firebug } from "./firebug"
 import { injuredengine } from "./injuredengine"
@@ -30,6 +31,7 @@ export const AddGameLibraryItem = (item: GameLibraryItem | GameLibraryItem[]) =>
 }
 
 AddGameLibraryItem(aztec)
+AddGameLibraryItem(champ_lode_runner)
 AddGameLibraryItem(drol)
 AddGameLibraryItem(firebug)
 AddGameLibraryItem(injuredengine)
@@ -87,7 +89,7 @@ const defaultGame: GameLibraryItem = {
 export const handleKeyMapping = (key: string) => {
   for (const game of gameLibrary) {
     if (matchMemory(game.address, game.data)) {
-      return (key in game.keymap) ? game.keymap[key] : key
+      return (key.toUpperCase() in game.keymap) ? game.keymap[key.toUpperCase()] : key
     }   
   }
   return key
