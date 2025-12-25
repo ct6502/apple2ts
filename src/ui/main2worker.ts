@@ -19,9 +19,14 @@ import { Buffer } from "buffer"
 let worker: Worker | null = null
 
 let saveStateCallback: (sState: EmulatorSaveState) => void
+let bootCallback: (() => void) | null = null
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
+}
+
+export const setBootCallback = (callback: () => void) => {
+  bootCallback = callback
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
@@ -29,6 +34,9 @@ const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
 }
 
 export const passSetRunMode = (runMode: RUN_MODE) => {
+  if (runMode === RUN_MODE.NEED_BOOT && bootCallback) {
+    bootCallback()
+  }
   doPostMessage(MSG_MAIN.RUN_MODE, runMode)
 }
 

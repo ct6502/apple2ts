@@ -1,12 +1,3 @@
-import { memSet } from "../memory"
-
-
-const setup = () => {
-  // Disable the iris loading effect
-//  memSet(0xB6C9, 0xEA)
-//  memSet(0xB6CA, 0xEA)
-}
-
 const helptext = 
 `Championship Lode Runner by Doug Smith
 (c) 1984 Brøderbund Software
@@ -47,6 +38,6 @@ export const champ_lode_runner: GameLibraryItem = {
   gamepad: null,
   joystick: null,
   rumble: null,
-  setup: setup,
+  setup: null,
   helptext: helptext}
 

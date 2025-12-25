@@ -8,7 +8,8 @@ import {
   handleGetMemSize,
   passSetRunMode,
   passSetBinaryBlock,
-  handleGetState6502
+  handleGetState6502,
+  setBootCallback
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -34,6 +35,7 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
+  const [showCRTBoot, setShowCRTBoot] = useState(false)
   
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -68,6 +70,17 @@ const DisplayApple2 = () => {
   
   if (!myInit) {
     setMyInit(true)
+    
+    // Set up CRT boot effect callback
+    setBootCallback(() => {
+      setShowCRTBoot(true)
+      const audio = new Audio("crtnoise.mp3")
+      audio.volume = 0.3
+      audio.play().catch(err => console.log("Could not play CRT noise:", err))
+      // Hide effect after 2 seconds
+      setTimeout(() => setShowCRTBoot(false), 2000)
+    })
+    
     if ("launchQueue" in window) {
       const queue: LaunchQueue = window.launchQueue as LaunchQueue
       queue.setConsumer(async (launchParams: LaunchParams) => {
@@ -198,6 +211,7 @@ const DisplayApple2 = () => {
     handleOpenAppleDown: handleOpenAppleDown,
     handleClosedAppleDown: handleClosedAppleDown,
     setShowFileOpenDialog: handleShowFileOpenDialog,
+    showCRTBoot: showCRTBoot,
   }
   
   const theme = getTheme()
