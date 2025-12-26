@@ -14,13 +14,13 @@ export const diskImages: DiskCollectionItem[] = [
     type: undefined,
     lastUpdated: new Date(0),
   },
-  {
-    title: "Apple IIe Diagnostic",
-    diskUrl: "Apple IIe Diagnostic 2.1.po",
-    imageUrl: "disks/Apple IIe Diagnostic 2.1.png",
-    type: undefined,
-    lastUpdated: new Date(0),
-  },
+  // {
+  //   title: "Apple IIe Diagnostic",
+  //   diskUrl: "Apple IIe Diagnostic 2.1.po",
+  //   imageUrl: "disks/Apple IIe Diagnostic 2.1.png",
+  //   type: undefined,
+  //   lastUpdated: new Date(0),
+  // },
   {
     title: "MECC Inspector",
     diskUrl: "MECC-Inspector.woz",
