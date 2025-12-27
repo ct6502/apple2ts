@@ -123,7 +123,7 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
     }
   }
   if (fname !== "") {
-    console.error("Unknown disk format or unable to decode: " + driveState.filename)
+    console.error(`Unknown disk format or unable to decode: ${driveState.filename} (${diskData.length} bytes).`)
   }
   return new Uint8Array()
 }
