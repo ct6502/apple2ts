@@ -1,6 +1,6 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
-import { doSetRunMode, doTakeSnapshot } from "./motherboard"
+import { doSetRunMode, doTakeSnapshot, isGameMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
@@ -339,19 +339,22 @@ export const processInstruction = () => {
   const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
   const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
 
-  const bpResult = hitBreakpoint(instr, vLo, vHi, code)
-  if (bpResult === BREAKPOINT_RESULT.BREAK) {
-    doSetRunMode(RUN_MODE.PAUSED)
-    return -1
-  } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
-    // If we had a breakpoint action that did not halt, we want to leave
-    // here but continue running. This will then call immediately back
-    // into processInstruction. We need to do this in case the action
-    // change the program counter or one of the values in memory.
-    return 0
+  if (!isGameMode) {
+    const bpResult = hitBreakpoint(instr, vLo, vHi, code)
+    if (bpResult === BREAKPOINT_RESULT.BREAK) {
+      doSetRunMode(RUN_MODE.PAUSED)
+      return -1
+    } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
+      // If we had a breakpoint action that did not halt, we want to leave
+      // here but continue running. This will then call immediately back
+      // into processInstruction. We need to do this in case the action
+      // change the program counter or one of the values in memory.
+      return 0
+    }
+
+    breakpointSkipOnce = false
   }
 
-  breakpointSkipOnce = false
   const fn = specialJumpTable.get(PC1)
   if (fn && !SWITCHES.INTCXROM.isSet) {
     fn()

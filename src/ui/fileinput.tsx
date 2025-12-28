@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { FILE_SUFFIXES_ALL } from "../common/utility"
+import { DISK_CONVERSION_SUFFIXES, FILE_SUFFIXES_ALL } from "../common/utility"
 import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
-import { handleSetDiskOrFileFromBuffer } from "./devices/disk/driveprops"
+import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
+import { isFileSystemApiSupported } from "./ui_utilities"
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
@@ -30,6 +31,49 @@ const FileInput = (props: DisplayProps) => {
       } else {
         handleSetDiskOrFileFromBuffer(index, buffer, file.name, null, null)
       }
+    }
+  }
+
+  const showReadWriteFilePicker = async (index: number) => {
+    let [writableFileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "Disk Images",
+          accept: {
+            "application/octet-stream": FILE_SUFFIXES_ALL.split(",") as `.${string}`[]
+          }
+        }
+      ],
+      excludeAcceptAllOption: true,
+      multiple: false,
+    })
+
+    if (writableFileHandle == null) {
+      return
+    }
+
+    const file = await writableFileHandle.getFile()
+    const fileExtension = file.name.substring(file.name.lastIndexOf("."))
+    let newIndex = index
+
+    if (fileExtension === ".a2ts" || fileExtension === ".bin") {
+      readFile(file, props.showFileOpenDialog.index)
+    } else {
+      if (DISK_CONVERSION_SUFFIXES.has(fileExtension)) {
+        const newFileExtension = DISK_CONVERSION_SUFFIXES.get(fileExtension)
+        writableFileHandle = await window.showSaveFilePicker({
+          excludeAcceptAllOption: false,
+          suggestedName: file.name.replace(fileExtension, newFileExtension ?? ""),
+          types: [
+            {
+              description: "Disk Image",
+              accept: { "application/octet": [newFileExtension] as `.${string}`[] },
+            },
+          ]
+        })
+      }
+      newIndex = handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), writableFileHandle.name, null, writableFileHandle)
+      prepWritableFile(newIndex, writableFileHandle)
     }
   }
 
@@ -71,13 +115,17 @@ const FileInput = (props: DisplayProps) => {
     // and the file dialog pops up again right away.
     props.showFileOpenDialog.show = false
 
-    setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
-    if (hiddenFileOpen.current) {
-      const fileInput = hiddenFileOpen.current
-      // Hack - clear out old file so we can pick the same file again
-      fileInput.value = ""
-      // Display the dialog.
-      fileInput.click()
+    if (isFileSystemApiSupported()) {
+      showReadWriteFilePicker(props.showFileOpenDialog.index)
+    } else {
+      setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
+      if (hiddenFileOpen.current) {
+        const fileInput = hiddenFileOpen.current
+        // Hack - clear out old file so we can pick the same file again
+        fileInput.value = ""
+        // Display the dialog.
+        fileInput.click()
+      }
     }
   }
 

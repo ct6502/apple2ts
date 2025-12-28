@@ -19,9 +19,14 @@ import { Buffer } from "buffer"
 let worker: Worker | null = null
 
 let saveStateCallback: (sState: EmulatorSaveState) => void
+let bootCallback: (() => void) | null = null
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
+}
+
+export const setBootCallback = (callback: () => void) => {
+  bootCallback = callback
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
@@ -29,6 +34,9 @@ const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
 }
 
 export const passSetRunMode = (runMode: RUN_MODE) => {
+  if (runMode === RUN_MODE.NEED_BOOT && bootCallback) {
+    bootCallback()
+  }
   doPostMessage(MSG_MAIN.RUN_MODE, runMode)
 }
 
@@ -58,6 +66,10 @@ export const passSetDebug = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
   // Force the state right away, so the UI can update.
   machineState.isDebugging = doDebug
+}
+
+export const passSetGameMode = (mode: boolean) => {
+  doPostMessage(MSG_MAIN.GAME_MODE, mode)
 }
 
 export const passSetShowDebugTab = (show: boolean) => {
@@ -312,7 +324,8 @@ let showAppleMouse = false
 let softSwitchDescriptions = [""]
 
 export const handleGetShowAppleMouse = () => {
-  return showAppleMouse
+  const isFullscreen = document.fullscreenElement !== null
+  return showAppleMouse || isFullscreen
 }
 
 export const handleGetRunMode = () => {

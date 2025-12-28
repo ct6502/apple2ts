@@ -1,0 +1,226 @@
+/* CRT Power-On Boot Effect */
+.crt-boot-overlay {
+  position: absolute;
+  top: 7%;
+  left: 7%;
+  width: 86%;
+  height: 86%;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+  pointer-events: none;
+  animation: crt-boot 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  --crt-color: #8f8;
+  --crt-color-rgb: 136, 255, 136;
+  --crt-color-dim: #6d6;
+}
+
+@keyframes crt-boot {
+  0% {
+    opacity: 1;
+    border-radius: 20px;
+    background: radial-gradient(circle at center, #222 0%, #000 100%);
+    box-shadow: inset 0 0 100px rgba(255, 255, 255, 0);
+  }
+
+  /* Initial flash */
+  5% {
+    opacity: 1;
+    border-radius: 20px;
+    background: radial-gradient(circle at center, var(--crt-color) 30%, #000 100%);
+    box-shadow: inset 0 0 200px rgba(255, 255, 255, 0.8);
+  }
+
+  /* Horizontal line expanding */
+  8% {
+    opacity: 1;
+    border-radius: 20px;
+    background:
+      linear-gradient(to bottom,
+        transparent 0%,
+        transparent 49%,
+        var(--crt-color) 49.5%,
+        var(--crt-color) 50.5%,
+        transparent 51%,
+        transparent 100%),
+      radial-gradient(circle at center, #222 0%, #000 100%);
+    box-shadow: inset 0 0 100px rgba(var(--crt-color-rgb), 0.6);
+  }
+
+  /* Expand vertically with noise */
+  15% {
+    opacity: 1;
+    border-radius: 20px;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(var(--crt-color-rgb), 0.1) 0px,
+        rgba(var(--crt-color-rgb), 0.05) 1px,
+        transparent 2px,
+        transparent 3px),
+      radial-gradient(ellipse at center, var(--crt-color) 0%, #000 60%);
+    box-shadow: inset 0 0 150px rgba(var(--crt-color-rgb), 0.7);
+  }
+
+  /* Random glitch */
+  20% {
+    opacity: 1;
+    border-radius: 20px;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(var(--crt-color-rgb), 0.15) 0px,
+        rgba(var(--crt-color-rgb), 0.1) 1px,
+        transparent 2px,
+        transparent 3px),
+      radial-gradient(ellipse at center, var(--crt-color-dim) 0%, #000 70%);
+    box-shadow: inset 0 0 200px rgba(var(--crt-color-rgb), 0.8);
+    transform: translateX(-3px);
+  }
+
+  21% {
+    transform: translateX(3px);
+  }
+
+  22% {
+    transform: translateX(0);
+  }
+
+  /* Settle with scanlines */
+  40% {
+    opacity: 1;
+    border-radius: 20px;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0, 0, 0, 0.15) 0px,
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px),
+      linear-gradient(to bottom, rgba(var(--crt-color-rgb), 0.02) 0%, transparent 100%);
+    box-shadow: inset 0 0 100px rgba(var(--crt-color-rgb), 0.3);
+  }
+
+  /* Fade to transparent with subtle glow */
+  70% {
+    opacity: 0.6;
+    border-radius: 20px;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0, 0, 0, 0.1) 0px,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px);
+    box-shadow: inset 0 0 50px rgba(var(--crt-color-rgb), 0.1);
+  }
+
+  100% {
+    opacity: 0;
+    border-radius: 20px;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Add subtle vignette effect */
+.crt-boot-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+  animation: vignette-pulse 2s ease-out;
+}
+
+@keyframes vignette-pulse {
+
+  0%,
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Add static noise texture */
+.crt-boot-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.03) 2px,
+      rgba(255, 255, 255, 0.03) 4px),
+    repeating-linear-gradient(90deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.03) 2px,
+      rgba(255, 255, 255, 0.03) 4px);
+  animation: noise 0.2s steps(8) infinite, fade-noise 2s ease-out forwards;
+  opacity: 0.5;
+}
+
+@keyframes noise {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  10% {
+    transform: translate(-2%, -2%);
+  }
+
+  20% {
+    transform: translate(-4%, 4%);
+  }
+
+  30% {
+    transform: translate(4%, -4%);
+  }
+
+  40% {
+    transform: translate(-4%, -2%);
+  }
+
+  50% {
+    transform: translate(-2%, 4%);
+  }
+
+  60% {
+    transform: translate(4%, 2%);
+  }
+
+  70% {
+    transform: translate(2%, -4%);
+  }
+
+  80% {
+    transform: translate(-4%, 4%);
+  }
+
+  90% {
+    transform: translate(4%, -2%);
+  }
+
+  100% {
+    transform: translate(2%, 2%);
+  }
+}
+
+@keyframes fade-noise {
+
+  0%,
+  30% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

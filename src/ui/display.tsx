@@ -8,7 +8,9 @@ import {
   handleGetMemSize,
   passSetRunMode,
   passSetBinaryBlock,
-  handleGetState6502
+  handleGetState6502,
+  setBootCallback,
+  handleGetRunMode
 } from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
@@ -24,6 +26,7 @@ import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
+import { handleSetDiskOrFileFromBuffer } from "./devices/disk/driveprops"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -34,6 +37,7 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
+  const [showCRTBoot, setShowCRTBoot] = useState(false)
   
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -68,6 +72,17 @@ const DisplayApple2 = () => {
   
   if (!myInit) {
     setMyInit(true)
+    
+    // Set up CRT boot effect callback
+    setBootCallback(() => {
+      setShowCRTBoot(true)
+      const audio = new Audio("crtnoise.mp3")
+      audio.volume = 0.3
+      audio.play().catch(err => console.log("Could not play CRT noise:", err))
+      // Hide effect after 2 seconds
+      setTimeout(() => setShowCRTBoot(false), 2000)
+    })
+    
     if ("launchQueue" in window) {
       const queue: LaunchQueue = window.launchQueue as LaunchQueue
       queue.setConsumer(async (launchParams: LaunchParams) => {
@@ -99,6 +114,7 @@ const DisplayApple2 = () => {
       // Verify the message is from a trusted source (VS Code webview or localhost for development)
       const trustedOrigins = [
         "vscode-webview://", // VS Code webview
+        "file://",           // Electron app (apple2ts-app)
         "http://localhost",   // Local development
         "https://localhost"   // Local development with HTTPS
       ]
@@ -112,7 +128,7 @@ const DisplayApple2 = () => {
         console.warn("Received message from untrusted origin:", event.origin)
         return
       }
-      console.log("Apple2TS received message from VS Code:", event.data)
+      console.log("Apple2TS received message:", event.data)
       
       if (event.data.type === "loadBinary") {
         try {
@@ -143,6 +159,30 @@ const DisplayApple2 = () => {
           //   type: "error",
           //   message: error.message
           // }, event.origin)
+        }
+      }
+      
+      if (event.data.type === "loadDisk") {
+        try {
+          const { filename, data } = event.data
+          
+          console.log(`Loading disk image: ${filename}, ${data.length} bytes`)
+          
+          // Convert array back to Uint8Array
+          const diskData = new Uint8Array(data)
+          
+          // Reset all drives and load the disk into drive 0
+          // Use handleSetDiskOrFileFromBuffer which handles all disk types
+          handleSetDiskOrFileFromBuffer(0, diskData.buffer, filename, null, null)
+          
+          // Boot the disk if not already running
+          if (handleGetRunMode() === RUN_MODE.IDLE) {
+            passSetRunMode(RUN_MODE.NEED_BOOT)
+          }
+          
+          console.log(`Disk image loaded successfully: ${filename}`)
+        } catch (error) {
+          console.error("Error loading disk:", error)
         }
       }
     })
@@ -198,6 +238,7 @@ const DisplayApple2 = () => {
     handleOpenAppleDown: handleOpenAppleDown,
     handleClosedAppleDown: handleClosedAppleDown,
     setShowFileOpenDialog: handleShowFileOpenDialog,
+    showCRTBoot: showCRTBoot,
   }
   
   const theme = getTheme()

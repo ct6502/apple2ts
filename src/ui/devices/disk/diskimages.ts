@@ -16,14 +16,13 @@ export const diskImages: DiskCollectionItem[] = [
     lastUpdated: new Date(0),
     fileSize: 819200
   },
-  {
-    title: "Apple IIe Diagnostic",
-    diskUrl: "Apple IIe Diagnostic 2.1.po",
-    imageUrl: "disks/Apple IIe Diagnostic 2.1.png",
-    type: undefined,
-    lastUpdated: new Date(0),
-    fileSize: 143360
-  },
+  // {
+  //   title: "Apple IIe Diagnostic",
+  //   diskUrl: "Apple IIe Diagnostic 2.1.po",
+  //   imageUrl: "disks/Apple IIe Diagnostic 2.1.png",
+  //   type: undefined,
+  //   lastUpdated: new Date(0),
+  // },
   {
     title: "MECC Inspector",
     diskUrl: "MECC-Inspector.woz",
@@ -87,7 +86,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Total Replay",
-    diskUrl: "https://archive.org/download/TotalReplay/Total%20Replay%20v5.2.hdv",
+    diskUrl: "TotalReplay.hdv",
     imageUrl: "disks/Total%20Replay.png",
     detailsUrl: "https://archive.org/details/TotalReplay",
     type: undefined,
@@ -96,7 +95,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Instant Replay",
-    diskUrl: "https://archive.org/download/TotalReplay2/Total%20Replay%20II%20v1.0-alpha.4.hdv",
+    diskUrl: "TotalReplayII.hdv",
     imageUrl: "disks/Instant%20Replay.png",
     detailsUrl: "https://github.com/a2-4am/4sports",
     type: undefined,
@@ -105,7 +104,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Pitch Dark",
-    diskUrl: "https://archive.org/download/PitchDark/00playable.hdv",
+    diskUrl: "PitchDark.hdv",
     imageUrl: "disks/Pitch%20Dark.png",
     detailsUrl: "https://archive.org/details/PitchDark",
     type: undefined,
@@ -132,7 +131,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Wizard Replay",
-    diskUrl: "https://archive.org/download/WizardReplay/Wizard%20Replay%20v2.0.hdv",
+    diskUrl: "WizardReplay.hdv",
     imageUrl: "disks/WizardReplay.png",
     detailsUrl: "https://archive.org/details/WizardReplay",
     type: undefined,

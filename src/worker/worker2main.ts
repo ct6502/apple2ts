@@ -6,7 +6,8 @@ import { doSetRunMode,
   doSetMachineName,
   doSetRamWorks,
   doSetCycleCount,
-  doSetShowDebugTab} from "./motherboard"
+  doSetShowDebugTab,
+  doSetGameMode} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -110,6 +111,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.DEBUG:
         doSetIsDebugging(e.data.payload)
+        break
+      case MSG_MAIN.GAME_MODE:
+        doSetGameMode(e.data.payload)
         break
       case MSG_MAIN.SHOW_DEBUG_TAB:
         doSetShowDebugTab(e.data.payload as boolean)

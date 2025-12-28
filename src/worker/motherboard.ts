@@ -34,6 +34,7 @@ let prevTime = 0
 let speedMode = 0
 let cpuSpeed = 0
 export let isDebugging = TEST_DEBUG
+export let isGameMode = false
 let showDebugTab = false
 let refreshTime = 16.6881 // 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
@@ -308,6 +309,10 @@ export const doSetSpeedMode = (speedModeIn: number) => {
   refreshTime = (speedMode === 4) ? 1 : 16.6881
   cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 4])[speedMode + 2]
   resetRefreshCounter()
+}
+
+export const doSetGameMode = (enable: boolean) => {
+  isGameMode = enable
 }
 
 export const doSetIsDebugging = (enable: boolean) => {
