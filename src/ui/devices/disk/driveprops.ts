@@ -302,10 +302,15 @@ export const handleSetDiskFromURL = async (url: string,
 
   showGlobalProgressModal(true)
 
-  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
+  const corsURL = "https://corsproxy.io/?"
+  let response = await fetchWithCorsProxy(corsURL, url)
 //  let response = await fetchWithCorsProxy("https://proxy.corsfix.com/?", url)
 
-  if (!response || !response.ok) {
+  console.log("window.crossOriginIsolated:", window.crossOriginIsolated)
+
+  if (response && response.ok) {
+    console.log("CORS proxy succeeded: " + corsURL + url)
+  } else {
     console.log("First CORS proxy failed, trying next proxy")
     response = await fetchWithCT6502Proxy(url)
     if (!response) {
@@ -417,7 +422,7 @@ export const handleSetDiskFromFile = async (disk: string,
       if (helptext.startsWith("<!DOCTYPE html>")) {
         helptext = "<Default>"
       }
-      if (helpFile.includes("Total%20Replay")) {
+      if (helpFile === "TotalReplay.txt") {
         helptext = parseGameList(helptext)
       }
       updateDisplay(0, helptext)
