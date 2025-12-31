@@ -4,7 +4,7 @@ import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
-import { iconKey, iconData, iconName } from "../../img/iconfunctions"
+// import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
 import { showGlobalProgressModal } from "../../ui_utilities"
@@ -214,6 +214,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 
 const fetchWithCorsProxy = async (proxy: string, url: string) => {
   try {
+    console.log("CORS fetch: " + proxy + url)
     const response = await fetch(proxy + url)
     return response
   } catch {
@@ -221,19 +222,19 @@ const fetchWithCorsProxy = async (proxy: string, url: string) => {
   }
 }
 
-const fetchWithCT6502Proxy = async (url: string) => {
-  // Ask CT6502 for why we need to use this favicon header
-  const favicon: { [key: string]: string } = {}
-  favicon[iconKey()] = iconData()
-  try {
-    const fullURL = iconName() + url
-    const response = await fetch(fullURL, { headers: favicon })
-    return response
-  } catch (error) {
-    console.error("CT6502 proxy fetch failed:", error)
-    return null
-  }
-}
+// const fetchWithCT6502Proxy = async (url: string) => {
+//   // Ask CT6502 for why we need to use this favicon header
+//   const favicon: { [key: string]: string } = {}
+//   favicon[iconKey()] = iconData()
+//   try {
+//     const fullURL = iconName() + url
+//     const response = await fetch(fullURL, { headers: favicon })
+//     return response
+//   } catch (error) {
+//     console.error("CT6502 proxy fetch failed:", error)
+//     return null
+//   }
+// }
 
 let timerId: NodeJS.Timeout|null = null
 
@@ -318,20 +319,33 @@ export const handleSetDiskFromURL = async (url: string,
 
   showGlobalProgressModal(true)
 
-  const corsURL = "https://corsproxy.io/?"
-  let response = await fetchWithCorsProxy(corsURL, url)
-//  let response = await fetchWithCorsProxy("https://proxy.corsfix.com/?", url)
+  let response: Response | null = null
+  
+  // Try direct fetch first (works in Electron with CORS bypass)
+  console.log(`🌐 Attempting direct fetch: ${url}`)
+  try {
+    response = await fetch(url)
+    if (response.ok) {
+      console.log(`✅ Direct fetch succeeded: ${url}`)
+    } else {
+      console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
+      response = null
+    }
+  } catch (error) {
+    console.log(`❌ Direct fetch failed with error: ${error}`)
+    response = null
+  }
 
-  console.log("window.crossOriginIsolated:", window.crossOriginIsolated)
+  // If direct fetch failed, try CORS proxies
+  if (!response) {
+    const corsURL = "https://proxy.corsfix.com/?"
+    console.log(`🔄 Trying CORS proxy: ${corsURL}${url}`)
+    response = await fetchWithCorsProxy(corsURL, url)
 
-  if (response && response.ok) {
-    console.log("CORS proxy succeeded: " + corsURL + url)
-  } else {
-    console.log("First CORS proxy failed, trying next proxy")
-    response = await fetchWithCT6502Proxy(url)
-    if (!response) {
-      showGlobalProgressModal(false)
-      console.error(`Error fetching URL: ${url}`)
+    if (response && response.ok) {
+      console.log(`✅ CORS proxy succeeded: ${corsURL}${url}`)
+    } else {
+      console.error(`❌ All fetch methods failed for: ${url}`)
       return
     }
   }
@@ -339,9 +353,12 @@ export const handleSetDiskFromURL = async (url: string,
   showGlobalProgressModal(false)
 
   try {
-    const blob = await response.blob()
+    console.log(`📥 Downloading response body (Content-Length: ${response.headers.get("content-length") || "unknown"})...`)
+    const fileBuffer = await response.arrayBuffer()
+    console.log(`✅ Downloaded ${fileBuffer.byteLength} bytes`)
 
     if (url.toLowerCase().endsWith(".zip")) {
+      console.log("📦 Unzipping file...")
       const unzipper = new fflate.Unzip()
       unzipper.register(fflate.UnzipInflate)
 
@@ -353,6 +370,7 @@ export const handleSetDiskFromURL = async (url: string,
             if (data.length > 1024) {
               name = file.name
               buffer = data
+              console.log(`📄 Extracted file: ${name} (${data.length} bytes)`)
               return
             }
           }
@@ -360,8 +378,7 @@ export const handleSetDiskFromURL = async (url: string,
           return
         }
       }
-      const zipBuffer = await new Response(blob).arrayBuffer()
-      unzipper.push(new Uint8Array(zipBuffer), true)
+      unzipper.push(new Uint8Array(fileBuffer), true)
     } else {
       const urlObj = new URL(url)
       name = url
@@ -370,18 +387,23 @@ export const handleSetDiskFromURL = async (url: string,
         name = urlObj.pathname.substring(hasSlash + 1)
       }
 
-      buffer = await new Response(blob).arrayBuffer()
+      buffer = fileBuffer
+      console.log(`📄 File loaded: ${name} (${buffer.byteLength} bytes)`)
     }
 
     if (buffer) {
       // If we are loading from a URL, reset all drives. Fixes issue#186
+      console.log(`💾 Setting disk data for drive ${index}...`)
       resetAllDiskDrives()
       handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+      console.log("✅ Disk loaded successfully")
     } else {
+      console.error("❌ No buffer data available after download")
       // $TODO: Add error handling
     }
   } catch (error) {
-    console.error(`Error fetching "${url}": ${error}`)
+    console.error(`❌ Error processing download for "${url}":`, error)
+    console.error("Error details:", error instanceof Error ? error.message : String(error))
   }
 }
 
