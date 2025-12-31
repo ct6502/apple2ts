@@ -148,6 +148,18 @@ type CloudProvider = {
   requestAuthToken(callback: (authToken: string) => void): void
 }
 
+// Custom writable file handle type that supports both browser FileSystemFileHandle
+// and Electron IPC-based save handlers
+type CustomWritableHandler = {
+  requestPermission: () => Promise<{ state: PermissionState }>,
+  createWritable: () => Promise<{
+    write: (data: Uint8Array | Blob) => Promise<void>,
+    close: () => Promise<void>
+  }>
+}
+
+type WritableFileHandle = FileSystemFileHandle | CustomWritableHandler
+
 type DriveState = {
   index: number,
   hardDrive: boolean,
@@ -168,7 +180,7 @@ type DriveState = {
   maxQuarterTrack: number,
   lastWriteTime: number,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null,
+  writableFileHandle: WritableFileHandle | null,
   lastLocalWriteTime: number
   optimalTiming: number,
 }
@@ -185,7 +197,7 @@ type DriveProps = {
   diskData: Uint8Array,
   lastWriteTime: number,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null,
+  writableFileHandle: WritableFileHandle | null,
   lastLocalWriteTime: number
 }
 

@@ -55,6 +55,9 @@ export const handleGetFilename = (index: number) => {
 export const doSetUIDriveProps = (props: DriveProps) => {
   // For efficiency we only receive disk data if it has changed.
   // If our disk is the same but it hasn't changed, keep the existing data.
+  // Also preserve writableFileHandle (custom Electron handlers aren't sent to worker)
+  const existingWritableFileHandle = driveProps[props.index].writableFileHandle
+  
   if (props.diskData.length === 0) {
     const tmp = driveProps[props.index].diskData
     const diskHasChanges = driveProps[props.index].diskHasChanges
@@ -63,6 +66,11 @@ export const doSetUIDriveProps = (props: DriveProps) => {
     driveProps[props.index].diskHasChanges = diskHasChanges
   } else {
     driveProps[props.index] = props
+  }
+  
+  // Always preserve writableFileHandle from UI (worker never has custom handlers)
+  if (existingWritableFileHandle && !props.writableFileHandle) {
+    driveProps[props.index].writableFileHandle = existingWritableFileHandle
   }
 }
 
@@ -75,14 +83,22 @@ export const handleSetDiskData = (
   data: Uint8Array,
   filename: string,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null,
+  writableFileHandle: WritableFileHandle | null,
   lastLocalWriteTime: number) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
   driveProps[index].lastLocalWriteTime = lastLocalWriteTime
   driveProps[index].cloudData = cloudData
   driveProps[index].writableFileHandle = writableFileHandle
-  passSetDriveNewData(driveProps[index])
+  
+  // Only send FileSystemFileHandle to worker (not custom handlers with functions)
+  // Custom handlers can't be cloned via postMessage
+  const isFileSystemHandle = writableFileHandle && "getFile" in writableFileHandle
+  const propsForWorker = {
+    ...driveProps[index],
+    writableFileHandle: isFileSystemHandle ? writableFileHandle : null
+  }
+  passSetDriveNewData(propsForWorker)
 }
 
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
@@ -124,7 +140,7 @@ export const handleSetDiskOrFileFromBuffer = (
   buffer: ArrayBuffer,
   filename: string,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null) => {
+  writableFileHandle: WritableFileHandle | null) => {
   const fname = filename.toLowerCase()
   let newIndex = index
 
@@ -369,24 +385,39 @@ export const handleSetDiskFromURL = async (url: string,
   }
 }
 
-export const prepWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle) => {
+export const prepWritableFile = async (index: number, writableFileHandle: WritableFileHandle) => {
+  console.log(`🔄 prepWritableFile: Starting auto-save timer for drive ${index}`)
   const timer = setInterval(async (index: number) => {
     const dprops = handleGetDriveProps(index)
-
     if (getHotReload()) {
-      const file = await writableFileHandle.getFile()
-      if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
-        handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-        passSetRunMode(RUN_MODE.NEED_BOOT)
-        return
+      // Only FileSystemFileHandle supports getFile() for hot reload
+      if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
+        const file = await writableFileHandle.getFile()
+        if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
+          console.log(`🔄 Hot reload detected for drive ${index}`)
+          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+          return
+        }
       }
     }
 
     if (dprops.diskHasChanges && !dprops.motorRunning) {
+      console.log(`💾 Drive ${index} has changes and motor stopped, attempting save...`)
       if (await handleSaveWritableFile(index)) {
+        console.log(`✅ Save successful for drive ${index}`)
         dprops.diskHasChanges = false
         dprops.lastLocalWriteTime = Date.now()
-        passSetDriveProps(dprops)
+        
+        // Only send FileSystemFileHandle to worker (not custom handlers with functions)
+        const isFileSystemHandle = dprops.writableFileHandle && "getFile" in dprops.writableFileHandle
+        const propsForWorker = {
+          ...dprops,
+          writableFileHandle: isFileSystemHandle ? dprops.writableFileHandle : null
+        }
+        passSetDriveProps(propsForWorker)
+      } else {
+        console.log(`❌ Save failed for drive ${index}`)
       }
     }
   }, 3 * 1000, index)
@@ -433,28 +464,37 @@ export const handleSetDiskFromFile = async (disk: string,
   }
 }
 
-export const handleSaveWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle|null = null) => {
+export const handleSaveWritableFile = async (index: number, writableFileHandle: WritableFileHandle|null = null) => {
+  console.log(`💾 handleSaveWritableFile called for drive ${index}`)
   let success = false
 
   if (writableFileHandle === null) {
     writableFileHandle = driveProps[index].writableFileHandle
+    console.log("📁 Using stored writableFileHandle:", writableFileHandle ? "present" : "null")
   }
 
   const dprops = driveProps[index]
 
   if (writableFileHandle) {
-    // Handle browser FileSystemFileHandle writes
     try {
+      console.log(`🔨 Creating blob from disk data: ${dprops.filename}, ${dprops.diskData.length} bytes`)
       const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+      console.log("📝 Calling createWritable()...")
       const writable = await writableFileHandle.createWritable()
 
+      console.log("✍️ Calling write() with blob...")
+      // Both browser FileSystemWritableFileStream and custom handler support write()
       await writable.write(blob)
+      console.log("🔒 Calling close()...")
       await writable.close()
       
       success = true
+      console.log("✅ handleSaveWritableFile completed successfully")
     } catch (ex) {
-      console.log(`Error saving writable file: ${ex}`)
+      console.log(`❌ Error saving writable file: ${ex}`)
     }
+  } else {
+    console.log(`⚠️ No writableFileHandle available for drive ${index}`)
   }
 
   return success

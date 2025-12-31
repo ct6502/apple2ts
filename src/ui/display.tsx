@@ -26,7 +26,7 @@ import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
-import { handleSetDiskOrFileFromBuffer } from "./devices/disk/driveprops"
+import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -164,16 +164,56 @@ const DisplayApple2 = () => {
       
       if (event.data.type === "loadDisk") {
         try {
-          const { filename, data } = event.data
+          const { filename, filePath, data } = event.data
           
           console.log(`Loading disk image: ${filename}, ${data.length} bytes`)
           
           // Convert array back to Uint8Array
           const diskData = new Uint8Array(data)
           
+          // Create custom save handler for Electron that uses IPC to save to the original file
+          let customSaveHandler: CustomWritableHandler | null = null
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (filePath && (window as any).electronAPI) {
+            customSaveHandler = {
+              requestPermission: async () => {
+                console.log(`🔑 Electron: requestPermission called for ${filePath}`)
+                return { state: "granted" as PermissionState }
+              },
+              createWritable: async () => {
+                console.log(`📝 Electron: createWritable called for ${filePath}`)
+                return {
+                  write: async (data: Uint8Array | Blob) => {
+                    // Convert to Uint8Array if needed
+                    const dataArray = data instanceof Uint8Array 
+                      ? Array.from(data)
+                      : Array.from(new Uint8Array(await data.arrayBuffer()))
+                    console.log("💾 Electron: Writing disk data to IPC:", filePath, `(${dataArray.length} bytes)`)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const result = await (window as any).electronAPI.saveDiskImage(filePath, dataArray)
+                    console.log("✅ Electron: IPC save result:", result)
+                  },
+                  close: async () => { 
+                    console.log(`🔒 Electron: close called for ${filePath}`)
+                  }
+                }
+              }
+            }
+            console.log(`🎯 Created Electron save handler for: ${filePath}`)
+          }
+          
           // Reset all drives and load the disk into drive 0
           // Use handleSetDiskOrFileFromBuffer which handles all disk types
-          handleSetDiskOrFileFromBuffer(0, diskData.buffer, filename, null, null)
+          handleSetDiskOrFileFromBuffer(0, diskData.buffer, filename, null, customSaveHandler)
+          
+          // Set up auto-save timer for Electron
+          if (customSaveHandler) {
+            console.log("🚀 Setting up auto-save timer for Electron disk...")
+            const cleanup = prepWritableFile(0, customSaveHandler)
+            console.log("✅ Auto-save timer started, cleanup function:", cleanup)
+          } else {
+            console.log("⚠️ No customSaveHandler, skipping auto-save timer")
+          }
           
           // Boot the disk if not already running
           if (handleGetRunMode() === RUN_MODE.IDLE) {
