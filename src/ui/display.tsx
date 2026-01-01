@@ -307,9 +307,7 @@ const DisplayApple2 = () => {
   </div>
   
   if (isEmbedMode()) {
-    return <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
-      <Apple2Canvas {...props} />
-    </span>
+    return <Apple2Canvas {...props} />
   }
   return (
     <div>

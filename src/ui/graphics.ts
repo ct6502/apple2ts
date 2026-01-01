@@ -5,14 +5,13 @@ import { handleGetAltCharSet, handleGetTextPage,
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getCrtDistortion, getGhosting, isGameMode, isMinimalTheme } from "./ui_settings"
-const isTouchDevice = "ontouchstart" in document.documentElement
+import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
 let frameCount = 0
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
-export const xmargin = isTouchDevice ? 0.01 : 0.075
-export const ymargin = isTouchDevice ? 0.01 : 0.075
+export let xmargin = 0.075
+export let ymargin = 0.075
 
 // Convert canvas coordinates (absolute to the entire browser window)
 // to normalized HGR screen coordinates.
@@ -580,14 +579,19 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
 export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
+  xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : 0.075)
+  ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : 0.075)
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  if (isMinimalTheme()) {
+  if (isEmbedMode()) {
+    height -= noBackgroundImage ? 60 : 25
+    width -= noBackgroundImage ? 60 : 25
+  } else if (isMinimalTheme()) {
     const isTouchDevice = "ontouchstart" in document.documentElement
     const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
     if (isLandscape) {

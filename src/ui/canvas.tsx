@@ -27,6 +27,7 @@ import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme, getC
 
 let width = 800
 let height = 600
+let resizeTimeout = 0
 // This is an indidental property, we don't want to make it a "useState"
 // because we don't want it to re-render the canvas each time it is toggled.
 let withinScreen = false
@@ -452,7 +453,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
       document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
       document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
-    }, 200)
+      resizeTimeout = 200
+    }, resizeTimeout)
 
     return canvas.style.marginLeft
   }
