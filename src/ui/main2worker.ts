@@ -68,8 +68,8 @@ export const passSetDebug = (doDebug: boolean) => {
   machineState.isDebugging = doDebug
 }
 
-export const passSetGameMode = (mode: boolean) => {
-  doPostMessage(MSG_MAIN.GAME_MODE, mode)
+export const passSetAppMode = (mode: string) => {
+  doPostMessage(MSG_MAIN.APP_MODE, mode)
 }
 
 export const passSetShowDebugTab = (show: boolean) => {

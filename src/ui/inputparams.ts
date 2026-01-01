@@ -1,6 +1,6 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetGameMode } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
@@ -19,9 +19,11 @@ export const handleInputParams = (paramString = "") => {
   const porig = new URLSearchParams(paramString)
 
   if (params.get("appmode")) {
-    setAppMode(params.get("appmode") as string)
+    const mode = params.get("appmode") as string
+    setAppMode(mode)
     // Be sure to pass to the emulator, so we can disable breakpoints, etc.
-    passSetGameMode(params.get("appmode") === "game")
+    passSetAppMode(mode)
+    setTheme(UI_THEME.MINIMAL)
   }
 
   if (params.get("capslock") === "off") {

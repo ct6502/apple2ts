@@ -1,6 +1,6 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
-import { doSetRunMode, doTakeSnapshot, isGameMode } from "./motherboard"
+import { doSetRunMode, doTakeSnapshot, runOnlyMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
@@ -339,7 +339,7 @@ export const processInstruction = () => {
   const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
   const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
 
-  if (!isGameMode) {
+  if (!runOnlyMode()) {
     const bpResult = hitBreakpoint(instr, vLo, vHi, code)
     if (bpResult === BREAKPOINT_RESULT.BREAK) {
       doSetRunMode(RUN_MODE.PAUSED)

@@ -25,7 +25,7 @@ import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
-import { getTheme, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
+import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
 
 const DisplayApple2 = () => {
@@ -73,16 +73,6 @@ const DisplayApple2 = () => {
   if (!myInit) {
     setMyInit(true)
     
-    // Set up CRT boot effect callback
-    setBootCallback(() => {
-      setShowCRTBoot(true)
-      const audio = new Audio("crtnoise.mp3")
-      audio.volume = 0.3
-      audio.play().catch(err => console.log("Could not play CRT noise:", err))
-      // Hide effect after 2 seconds
-      setTimeout(() => setShowCRTBoot(false), 2000)
-    })
-    
     if ("launchQueue" in window) {
       const queue: LaunchQueue = window.launchQueue as LaunchQueue
       queue.setConsumer(async (launchParams: LaunchParams) => {
@@ -101,6 +91,19 @@ const DisplayApple2 = () => {
     loadPreferences()
     const hasBasicProgram = handleInputParams()
     handleFragment(updateDisplay, hasBasicProgram)
+
+    // Set up CRT boot effect callback
+    if (!isMinimalTheme()) {
+      setBootCallback(() => {
+        setShowCRTBoot(true)
+        const audio = new Audio("crtnoise.mp3")
+        audio.volume = 0.3
+        audio.play().catch(err => console.log("Could not play CRT noise:", err))
+        // Hide effect after 2 seconds
+        setTimeout(() => setShowCRTBoot(false), 2000)
+      })
+    }
+
     //    window.addEventListener('beforeunload', (event) => {
     // Cancel the event as stated by the standard.
     //      event.preventDefault();
@@ -303,6 +306,11 @@ const DisplayApple2 = () => {
   <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
   </div>
   
+  if (isEmbedMode()) {
+    return <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
+      <Apple2Canvas {...props} />
+    </span>
+  }
   return (
     <div>
     <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>

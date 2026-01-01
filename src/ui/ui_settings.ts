@@ -96,6 +96,10 @@ export const setUseOpenAppleKey = (openApple: boolean) => {
 
 //------------------------------------------------------
 
+export const isEmbedMode = () => {
+  return uiState.appMode === "embed"
+}
+
 export const isGameMode = () => {
   return uiState.appMode === "game"
 }

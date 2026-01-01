@@ -212,10 +212,10 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
   }
 }
 
-const fetchWithCorsProxy = async (proxy: string, url: string) => {
+const fetchWithCorsProxy = async (url: string) => {
   try {
-    console.log("CORS fetch: " + proxy + url)
-    const response = await fetch(proxy + url)
+    const response = await fetch("https://proxy.corsfix.com/?" + url,
+      { headers: {"x-corsfix-cache": "true"}, signal: AbortSignal.timeout(30000) })
     return response
   } catch {
     return null
@@ -338,13 +338,9 @@ export const handleSetDiskFromURL = async (url: string,
 
   // If direct fetch failed, try CORS proxies
   if (!response) {
-    const corsURL = "https://proxy.corsfix.com/?"
-    console.log(`🔄 Trying CORS proxy: ${corsURL}${url}`)
-    response = await fetchWithCorsProxy(corsURL, url)
+    response = await fetchWithCorsProxy(url)
 
-    if (response && response.ok) {
-      console.log(`✅ CORS proxy succeeded: ${corsURL}${url}`)
-    } else {
+    if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
       return
     }

@@ -34,7 +34,7 @@ let prevTime = 0
 let speedMode = 0
 let cpuSpeed = 0
 export let isDebugging = TEST_DEBUG
-export let isGameMode = false
+let appMode = "default"
 let showDebugTab = false
 let refreshTime = 16.6881 // 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
@@ -311,8 +311,12 @@ export const doSetSpeedMode = (speedModeIn: number) => {
   resetRefreshCounter()
 }
 
-export const doSetGameMode = (enable: boolean) => {
-  isGameMode = enable
+export const doSetAppMode = (mode: string) => {
+  appMode = mode
+}
+
+export const runOnlyMode = () => {
+  return appMode === "game" || appMode === "embed"
 }
 
 export const doSetIsDebugging = (enable: boolean) => {
