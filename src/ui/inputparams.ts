@@ -186,7 +186,7 @@ export const handleInputParams = (paramString = "") => {
     })
     }
     else {
-      const cmd = trimmed + (doRun ? "\nRUN\n" : "\n")
+      const cmd = text
       const waitForBoot = setInterval(() => {
         // Wait a bit to give the emulator time to start and boot any disks.
         const cycleCount = handleGetState6502().cycleCount
