@@ -7,11 +7,7 @@ import {
   setMain2Worker,
   handleGetMemSize,
   passSetRunMode,
-  passSetBinaryBlock,
-  handleGetState6502,
-  setBootCallback,
-  handleGetRunMode
-} from "./main2worker"
+  setBootCallback} from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import { useState } from "react"
@@ -26,7 +22,7 @@ import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
-import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
+import { messagelistener } from "./messagelistener"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -113,122 +109,7 @@ const DisplayApple2 = () => {
     //    window.addEventListener("resize", handleResize)
 
     // Listen for binary data from VS Code extension
-    window.addEventListener("message", function(event) {
-      // Verify the message is from a trusted source (VS Code webview or localhost for development)
-      const trustedOrigins = [
-        "vscode-webview://", // VS Code webview
-        "file://",           // Electron app (apple2ts-app)
-        "http://localhost",   // Local development
-        "https://localhost"   // Local development with HTTPS
-      ]
-      
-      const isTrusted = trustedOrigins.some(origin => 
-        event.origin.startsWith(origin) || 
-        event.origin === "null" // VS Code webview sometimes reports null origin
-      )
-      
-      if (!isTrusted) {
-        console.warn("Received message from untrusted origin:", event.origin)
-        return
-      }
-      console.log("Apple2TS received message:", event.data)
-      
-      if (event.data.type === "loadBinary") {
-        try {
-          const { address, format, runProgram, data } = event.data as MessageLoadProgram
-          
-          console.log(`Loading binary at address 0x${address.toString(16)}, ${data.length} bytes, format: ${format}`)
-          
-          // Convert array back to Uint8Array
-          const binaryData = new Uint8Array(data)
-          
-          passSetRunMode(RUN_MODE.NEED_BOOT)
-          setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
-
-          const waitForBoot = setInterval(() => {
-            // Wait a bit to give the emulator time to start and boot any disks.
-            const cycleCount = handleGetState6502().cycleCount
-            if (cycleCount > 2000000) {
-              clearInterval(waitForBoot)
-              if (format === "bin") {
-                passSetBinaryBlock(address, binaryData, runProgram)
-              }
-            }
-          }, 100)
-          
-        } catch (error) {
-          console.error("Error loading binary:", error)
-          // event.source.postMessage({
-          //   type: "error",
-          //   message: error.message
-          // }, event.origin)
-        }
-      }
-      
-      if (event.data.type === "loadDisk") {
-        try {
-          const { filename, filePath, data } = event.data
-          
-          console.log(`Loading disk image: ${filename}, ${data.length} bytes`)
-          
-          // Convert array back to Uint8Array
-          const diskData = new Uint8Array(data)
-          
-          // Create custom save handler for Electron that uses IPC to save to the original file
-          let customSaveHandler: CustomWritableHandler | null = null
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if (filePath && (window as any).electronAPI) {
-            customSaveHandler = {
-              requestPermission: async () => {
-                console.log(`🔑 Electron: requestPermission called for ${filePath}`)
-                return { state: "granted" as PermissionState }
-              },
-              createWritable: async () => {
-                console.log(`📝 Electron: createWritable called for ${filePath}`)
-                return {
-                  write: async (data: Uint8Array | Blob) => {
-                    // Convert to Uint8Array if needed
-                    const dataArray = data instanceof Uint8Array 
-                      ? Array.from(data)
-                      : Array.from(new Uint8Array(await data.arrayBuffer()))
-                    console.log("💾 Electron: Writing disk data to IPC:", filePath, `(${dataArray.length} bytes)`)
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const result = await (window as any).electronAPI.saveDiskImage(filePath, dataArray)
-                    console.log("✅ Electron: IPC save result:", result)
-                  },
-                  close: async () => { 
-                    console.log(`🔒 Electron: close called for ${filePath}`)
-                  }
-                }
-              }
-            }
-            console.log(`🎯 Created Electron save handler for: ${filePath}`)
-          }
-          
-          // Reset all drives and load the disk into drive 0
-          // Use handleSetDiskOrFileFromBuffer which handles all disk types
-          handleSetDiskOrFileFromBuffer(0, diskData.buffer, filename, null, customSaveHandler)
-          
-          // Set up auto-save timer for Electron
-          if (customSaveHandler) {
-            console.log("🚀 Setting up auto-save timer for Electron disk...")
-            const cleanup = prepWritableFile(0, customSaveHandler)
-            console.log("✅ Auto-save timer started, cleanup function:", cleanup)
-          } else {
-            console.log("⚠️ No customSaveHandler, skipping auto-save timer")
-          }
-          
-          // Boot the disk if not already running
-          if (handleGetRunMode() === RUN_MODE.IDLE) {
-            passSetRunMode(RUN_MODE.NEED_BOOT)
-          }
-          
-          console.log(`Disk image loaded successfully: ${filename}`)
-        } catch (error) {
-          console.error("Error loading disk:", error)
-        }
-      }
-    })
+    window.addEventListener("message", messagelistener)
     
     if (TEST_DEBUG) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
