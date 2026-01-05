@@ -21,8 +21,9 @@ import DiskCollectionPanel from "./panels/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
-import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText } from "./ui_settings"
+import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColorMode } from "./ui_settings"
 import { messagelistener } from "./messagelistener"
+import { CRTStartup } from "./graphics"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -33,7 +34,6 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
-  const [showCRTBoot, setShowCRTBoot] = useState(false)
   
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
@@ -89,24 +89,16 @@ const DisplayApple2 = () => {
     handleFragment(updateDisplay, hasBasicProgram)
 
     // Set up CRT boot effect callback
-    if (!isMinimalTheme()) {
-      setBootCallback(() => {
-        setShowCRTBoot(true)
-        const audio = new Audio("crtnoise.mp3")
-        audio.volume = 0.3
-        audio.play().catch(err => console.log("Could not play CRT noise:", err))
-        // Hide effect after 2 seconds
-        setTimeout(() => setShowCRTBoot(false), 2000)
-      })
-    }
-
-    //    window.addEventListener('beforeunload', (event) => {
-    // Cancel the event as stated by the standard.
-    //      event.preventDefault();
-    // Chrome requires returnValue to be set.
-    //      event.returnValue = '';
-    //    });
-    //    window.addEventListener("resize", handleResize)
+    setBootCallback(() => {
+      const canvas = document.getElementById("apple2canvas") as HTMLCanvasElement
+      if (canvas) {
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          const colorMode = getColorMode()
+          CRTStartup(ctx, colorMode)
+        }
+      }
+    })
 
     // Listen for binary data from VS Code extension
     window.addEventListener("message", messagelistener)
@@ -162,7 +154,6 @@ const DisplayApple2 = () => {
     handleOpenAppleDown: handleOpenAppleDown,
     handleClosedAppleDown: handleClosedAppleDown,
     setShowFileOpenDialog: handleShowFileOpenDialog,
-    showCRTBoot: showCRTBoot,
   }
   
   const theme = getTheme()

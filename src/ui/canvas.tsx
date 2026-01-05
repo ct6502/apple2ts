@@ -1,6 +1,5 @@
 import { FormEvent, KeyboardEvent, useRef, useState } from "react"
 import "./canvas.css"
-import "./crtboot.css"
 import {
   passSetRunMode, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
@@ -22,7 +21,7 @@ import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme, getColorMode } from "./ui_settings"
+import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme } from "./ui_settings"
 
 
 let width = 800
@@ -413,10 +412,10 @@ const Apple2Canvas = (props: DisplayProps) => {
       const width = canvas.offsetWidth
       const height = canvas.offsetHeight
 
-      const scanlinesWidth = width - 2 * width * xmargin
+      const scanlinesWidth = width - 2 * width * xmargin + 20
       const scanlinesHeight = height - 2 * height * ymargin
 
-      let scanlinesLeft = canvas.offsetLeft + width * xmargin
+      let scanlinesLeft = canvas.offsetLeft + width * xmargin - 10
       let scanlinesTop = canvas.offsetTop + height * ymargin
 
       if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
@@ -542,25 +541,6 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
 
-  // Set CRT boot color based on color mode
-  const crtBootStyle: React.CSSProperties & { [key: string]: string } = {}
-  if (props.showCRTBoot) {
-    const colorMode = getColorMode()
-    if (colorMode === COLOR_MODE.GREEN) {
-      crtBootStyle["--crt-color"] = "#8f8"
-      crtBootStyle["--crt-color-rgb"] = "136, 255, 136"
-      crtBootStyle["--crt-color-dim"] = "#6d6"
-    } else if (colorMode === COLOR_MODE.AMBER) {
-      crtBootStyle["--crt-color"] = "#ffb000"
-      crtBootStyle["--crt-color-rgb"] = "255, 176, 0"
-      crtBootStyle["--crt-color-dim"] = "#d89000"
-    } else { // COLOR, NOFRINGE, or other modes - use white
-      crtBootStyle["--crt-color"] = "#fff"
-      crtBootStyle["--crt-color-rgb"] = "255, 255, 255"
-      crtBootStyle["--crt-color-dim"] = "#ddd"
-    }
-  }
-
   return (
     <span className="canvas-text scanline-gradient" style={{ position: "relative" }}>
       <canvas ref={myCanvas}
@@ -590,7 +570,6 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {txt}
       {showHgrMagnifier && formatHgrMagnifier()}
-      {props.showCRTBoot && <div className="crt-boot-overlay" style={crtBootStyle} />}
     </span>
   )
 }

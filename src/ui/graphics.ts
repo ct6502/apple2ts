@@ -6,6 +6,7 @@ import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddr
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
+import { doCRTStartup } from "./crtstartup"
 let frameCount = 0
 
 export const nRowsHgrMagnifier = 16
@@ -624,4 +625,9 @@ export const getCanvasSize = () => {
   width = Math.floor(width)
   height = Math.floor(height)
   return [width, height]
+}
+
+// Animate a CRT turning on effect using canvas
+export const CRTStartup = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
+  doCRTStartup(ctx, colorMode, xmargin, ymargin)
 }

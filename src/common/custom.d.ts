@@ -74,7 +74,6 @@ type DisplayProps = {
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,
   setShowFileOpenDialog: (show: boolean, index: number) => void,
-  showCRTBoot: boolean,
 }
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE"
