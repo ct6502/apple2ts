@@ -103,7 +103,8 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
     if (isHardDriveImage(fname)) {
       driveState.hardDrive = true
       driveState.status = ""
-      if (fname.endsWith(".hdv") || fname.endsWith(".po")) {
+      // 2meg is just an HDV, it does not have a 2mg header.
+      if (fname.endsWith(".hdv") || fname.endsWith(".po") || fname.endsWith(".2meg")) {
         return diskData
       }
       if (fname.endsWith(".2mg")) {

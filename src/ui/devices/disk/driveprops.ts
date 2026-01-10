@@ -215,7 +215,7 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 const fetchWithCorsProxy = async (url: string) => {
   try {
     const response = await fetch("https://proxy.corsfix.com/?" + url,
-      { headers: {"x-corsfix-cache": "true"}, signal: AbortSignal.timeout(30000) })
+      { headers: {"x-corsfix-cache": "true"} })
     return response
   } catch {
     return null
@@ -317,10 +317,10 @@ export const handleSetDiskFromURL = async (url: string,
   let name = ""
   let buffer
 
+  let response: Response | null = null
+
   showGlobalProgressModal(true)
 
-  let response: Response | null = null
-  
   // Try direct fetch first (works in Electron with CORS bypass)
   console.log(`🌐 Attempting direct fetch: ${url}`)
   try {
@@ -342,11 +342,10 @@ export const handleSetDiskFromURL = async (url: string,
 
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
+      showGlobalProgressModal(false)
       return
     }
   }
-
-  showGlobalProgressModal(false)
 
   try {
     console.log(`📥 Downloading response body (Content-Length: ${response.headers.get("content-length") || "unknown"})...`)
@@ -400,6 +399,8 @@ export const handleSetDiskFromURL = async (url: string,
   } catch (error) {
     console.error(`❌ Error processing download for "${url}":`, error)
     console.error("Error details:", error instanceof Error ? error.message : String(error))
+  } finally {
+    showGlobalProgressModal(false)
   }
 }
 

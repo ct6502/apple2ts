@@ -5,7 +5,7 @@ export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
 const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
 const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do"
-const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po"
+const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK}`
 export const MAX_DRIVES = 4
@@ -443,6 +443,7 @@ export const getSymbolTables = (machineName: string) => {
 
 export const isHardDriveImage = (filename: string) => {
   const f = filename.toLowerCase()
-  return f.endsWith(".hdv") || f.endsWith(".po") || f.endsWith(".2mg")
+  const suffixes = HARD_DRIVE_SUFFIXES.split(",")
+  return suffixes.some(suffix => f.endsWith(suffix))
 }
 

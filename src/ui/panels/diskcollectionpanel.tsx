@@ -88,15 +88,17 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const loadDisk = (driveIndex: number, diskCollectionItem: DiskCollectionItem | undefined = popupItem) => {
     // We want to restart the emulator when loading a disk from our Disk Collection
     passSetRunMode(RUN_MODE.IDLE)
-    if (diskCollectionItem?.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-      handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
-    } else if (diskCollectionItem?.diskUrl && !diskCollectionItem.diskUrl.startsWith("http")) {
-      handleSetDiskFromFile(diskCollectionItem.diskUrl, props.updateDisplay, driveIndex)
-    } else {
-      handleSetDiskFromURL(diskCollectionItem?.diskUrl || "", undefined, driveIndex, diskCollectionItem?.cloudData)
-    }
-    if (diskCollectionItem?.params) {
-      handleInputParams(diskCollectionItem.params)
+    if (diskCollectionItem) {
+      if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+        handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex)
+      } else if (diskCollectionItem.diskUrl && !diskCollectionItem.diskUrl.includes("://")) {
+        handleSetDiskFromFile(diskCollectionItem.diskUrl, props.updateDisplay, driveIndex)
+      } else {
+        handleSetDiskFromURL(diskCollectionItem.diskUrl || "", undefined, driveIndex, diskCollectionItem.cloudData)
+      }
+      if (diskCollectionItem.params) {
+        handleInputParams(diskCollectionItem.params)
+      }
     }
     setPopupLocation(undefined)
     setIsFlyoutOpen(false)
