@@ -218,6 +218,8 @@ Don't forget to append the trailing back quote ` at the end of the file.
 
 ## Additional Info and Sponsors
 
+<a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
+
 [![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
 
 [Turtle icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/turtle)
