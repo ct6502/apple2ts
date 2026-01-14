@@ -542,7 +542,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
 
   return (
-    <span className="canvas-text scanline-gradient" style={{ position: "relative" }}>
+    <span className="canvas-text scanline-gradient">
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="main-canvas"
@@ -551,9 +551,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           borderRadius: noBackgroundImage ? "0" : "20px",
           borderWidth: noBackgroundImage ? "0" : "2px",
           backgroundImage: `${backgroundImage}`,
-          marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement),
-          position: "relative",
-          zIndex: 1
+          marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement)
         }}
         width={width} height={height}
         tabIndex={0}
