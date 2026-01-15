@@ -141,6 +141,12 @@ export const handleSetDiskOrFileFromBuffer = (
   filename: string,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null) => {
+
+  // Sanity check for strange downloads with no filename.
+  if (buffer.byteLength === 143360 && !filename.includes(".")) {
+    filename += ".dsk"
+  }
+
   const fname = filename.toLowerCase()
   let newIndex = index
 
@@ -352,6 +358,32 @@ export const handleSetDiskFromURL = async (url: string,
     const fileBuffer = await response.arrayBuffer()
     console.log(`✅ Downloaded ${fileBuffer.byteLength} bytes`)
 
+    // Try to get filename from Content-Disposition header first
+    const contentDisposition = response.headers.get("content-disposition")
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (filenameMatch && filenameMatch[1]) {
+        name = filenameMatch[1].replace(/['"]/g, "")
+        console.log(`📋 Filename from Content-Disposition: ${name}`)
+      }
+    }
+
+    // Hack for Internet Archive downloads which have the format:
+    // https://archive.org/download/Muppetville4amCrack/00playable.dsk
+    // Extract the actual game name from the URL.
+    if (name === "" && url.includes("00playable")) {
+      // Take the second-to-last part of the URL, and tack on the file suffix
+      const urlParts = url.split("/")
+      if (urlParts.length >= 2) {
+        const possibleName = urlParts[urlParts.length - 2]
+        const suffixIndex = url.lastIndexOf(".")
+        if (suffixIndex >= 0) {
+          const suffix = url.substring(suffixIndex)
+          name = possibleName + suffix
+        }
+      }
+    }
+
     if (url.toLowerCase().endsWith(".zip")) {
       console.log("📦 Unzipping file...")
       const unzipper = new fflate.Unzip()
@@ -375,13 +407,14 @@ export const handleSetDiskFromURL = async (url: string,
       }
       unzipper.push(new Uint8Array(fileBuffer), true)
     } else {
-      const urlObj = new URL(url)
-      name = url
-      const hasSlash = urlObj.pathname.lastIndexOf("/")
-      if (hasSlash >= 0) {
-        name = urlObj.pathname.substring(hasSlash + 1)
+      if (name === "") {
+        const urlObj = new URL(url)
+        name = url
+        const hasSlash = urlObj.pathname.lastIndexOf("/")
+        if (hasSlash >= 0) {
+          name = urlObj.pathname.substring(hasSlash + 1)
+        }
       }
-
       buffer = fileBuffer
       console.log(`📄 File loaded: ${name} (${buffer.byteLength} bytes)`)
     }
