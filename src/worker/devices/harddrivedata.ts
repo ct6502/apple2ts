@@ -122,8 +122,7 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
     //  0    1 = device currently open (character devices only)
     memSet(bufferAddr, 0xF0)
     // We assume that the unit number is the same as the drive number.
-    const dd = getHardDriveData(unitNumber)
-    const dataLen = dd.length
+    const [,, dataLen] = getHardDriveData(unitNumber)
     const nblocks = dataLen / 512
     memSet(bufferAddr + 1, nblocks & 0xFF)
     memSet(bufferAddr + 2, nblocks >>> 8)
@@ -142,8 +141,7 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
 
 const handleSmartPortDeviceInformationBlock = (unitNumber: number, bufferAddr: number) => {
   // We assume that the unit number is the same as the drive number.
-  const dd = getHardDriveData(unitNumber)
-  const dataLen = dd.length
+  const [,, dataLen] = getHardDriveData(unitNumber)
   const nblocks = dataLen / 512
   // claim we are a 3.5" drive if 1600 or less blocks
   const deviceType = nblocks > 1600 ? 0x02 : 0x01  // 1 = 3.5 drive 2 = hard disk
@@ -236,8 +234,8 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
-      const dd = getHardDriveData(unitNumber)
-      const dataRead = dd.slice(blockStart, blockStart + 512)
+      const [dd, offset] = getHardDriveData(unitNumber)
+      const dataRead = dd.slice(blockStart + offset, blockStart + 512 + offset)
       setMemoryBlock(bufferAddr, dataRead)
       break
     }
@@ -268,11 +266,10 @@ const processHardDriveBlockAccess = () => {
   const driveNumber = Math.max(Math.min(memGet(0x43) >> 6, 2), 0)
   const ds = getHardDriveState(driveNumber)
   if (!ds.hardDrive) return
-  const dd = getHardDriveData(driveNumber)
+  const [dd, offset, dataLen] = getHardDriveData(driveNumber)
   const block = memGet(0x46) + 256 * memGet(0x47)
   const blockStart = 512 * block
   const bufferAddr = memGet(0x44) + 256 * memGet(0x45)
-  const dataLen = dd.length
   ds.status = ` ${toHex(block, 4)}`
 //  console.log(`cmd=${firmwareCommandNumber} ${ds.status}`)
 
@@ -295,7 +292,7 @@ const processHardDriveBlockAccess = () => {
         setCarry()
         return
       }
-      const dataRead = dd.slice(blockStart, blockStart + 512)
+      const dataRead = dd.slice(blockStart + offset, blockStart + 512 + offset)
       setMemoryBlock(bufferAddr, dataRead)
       break
     }
@@ -309,7 +306,7 @@ const processHardDriveBlockAccess = () => {
         return  
       }
       const dataWrite = getDataBlock(bufferAddr)
-      dd.set(dataWrite, blockStart)
+      dd.set(dataWrite, blockStart + offset)
       ds.diskHasChanges = true
       ds.lastWriteTime = Date.now()
       break

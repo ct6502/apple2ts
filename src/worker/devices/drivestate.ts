@@ -55,7 +55,14 @@ export const getCurrentDriveState = () => driveState[currentDrive]
 export const getCurrentDriveData = () => driveData[currentDrive]
 
 export const getHardDriveState = (drive: number) => driveState[(drive == 2) ? 1 : 0]
-export const getHardDriveData = (drive: number) => driveData[(drive == 2) ? 1 : 0]
+export const getHardDriveData = (drive: number): [Uint8Array, number, number] => {
+  const data = driveData[(drive == 2) ? 1 : 0]
+  let magic = ""
+  for (let i = 0; i < 4; i++) magic += String.fromCharCode(data[i])
+  // 2MG files have a 64-byte header that we need to skip over
+  const offset = magic === "2IMG" ? 64 : 0
+  return [data, offset, data.length - offset]
+}
 
 export const getFilename = () => {
   for (let i = 0; i < driveState.length; i++) {

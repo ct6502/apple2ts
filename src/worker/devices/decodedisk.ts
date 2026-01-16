@@ -1,5 +1,5 @@
 import { convertdsk2woz } from "./convertdsk2woz"
-import { crc32, MAX_DRIVES, replaceSuffix, isHardDriveImage } from "../../common/utility"
+import { crc32, replaceSuffix, isHardDriveImage } from "../../common/utility"
 
 const decodeWoz2 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   const woz2 = [0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A]
@@ -72,30 +72,6 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   return newData
 }
 
-const int32 = (data: Uint8Array) => {
-  return data[0] + 256 * (data[1] + 256 * (data[2] + 256 * data[3]))
-}
-
-const decode2MG = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
-//    const nblocks = int32(diskData.slice(0x14, 0x18))
-  const offset = int32(diskData.slice(0x18, 0x1c))
-  const nbytes = int32(diskData.slice(0x1c, 0x20))
-  let magic = ""
-  for (let i = 0; i < MAX_DRIVES; i++) magic += String.fromCharCode(diskData[i]) 
-  if (magic !== "2IMG") {
-    console.error("Corrupt 2MG file.")
-    return new Uint8Array()
-  }
-  if (diskData[12] !== 1) {
-    console.error("Only ProDOS 2MG files are supported.")
-    return new Uint8Array()
-  }
-  driveState.filename = replaceSuffix(driveState.filename, "hdv")
-  driveState.diskHasChanges = true
-  driveState.lastWriteTime = Date.now()
-  return diskData.slice(offset, offset + nbytes)
-}
-
 export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Uint8Array => {
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
@@ -103,12 +79,8 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
     if (isHardDriveImage(fname)) {
       driveState.hardDrive = true
       driveState.status = ""
-      // 2meg is just an HDV, it does not have a 2mg header.
-      if (fname.endsWith(".hdv") || fname.endsWith(".po") || fname.endsWith(".2meg")) {
+      if (fname.endsWith(".hdv") || fname.endsWith(".po") || fname.endsWith(".2meg") || fname.endsWith(".2mg")) {
         return diskData
-      }
-      if (fname.endsWith(".2mg")) {
-        return decode2MG(driveState, diskData)
       }
     }
     // We might have a DSK file that has already been renamed as a WOZ
