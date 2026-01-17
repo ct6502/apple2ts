@@ -1,5 +1,27 @@
 # Changelog
 
+## [v3.1.1](https://github.com/ct6502/apple2ts/tree/v3.1.1) (2026-01-17)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.1...v3.1.1)
+
+**Implemented enhancements:**
+
+- iPhone support [\#198](https://github.com/ct6502/apple2ts/issues/198)
+- Add a no UI theme for embedded use? [\#197](https://github.com/ct6502/apple2ts/issues/197)
+- Add curved distortion effect for display, like a CRT [\#194](https://github.com/ct6502/apple2ts/issues/194)
+- Make plugin for VSCode with emulator [\#176](https://github.com/ct6502/apple2ts/issues/176)
+
+**Fixed bugs:**
+
+- Emulator strips the header off 2MG files when it saves them back out [\#200](https://github.com/ct6502/apple2ts/issues/200)
+- Disk image downloads don't set the correct name and content type [\#199](https://github.com/ct6502/apple2ts/issues/199)
+- $C010 bit 7 "Any Key Down" not being set [\#192](https://github.com/ct6502/apple2ts/issues/192)
+
+**Merged pull requests:**
+
+- Fix text query string param bug [\#196](https://github.com/ct6502/apple2ts/pull/196) ([boredsenseless](https://github.com/boredsenseless))
+- Improved perf when passing BASIC code via query string [\#195](https://github.com/ct6502/apple2ts/pull/195) ([boredsenseless](https://github.com/boredsenseless))
+
 ## [v3.1](https://github.com/ct6502/apple2ts/tree/v3.1) (2025-11-23)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.0...v3.1)
