@@ -192,7 +192,7 @@ git add .
 git commit -m "Update CHANGELOG for v$VERSION"
 # Now create and push the tag
 git tag -a "v$VERSION" -m"v$VERSION"
-git push origin --tags
+git push --follow-tags
 ```
 
 ## Apple II ROMs
