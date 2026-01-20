@@ -4,6 +4,7 @@
 .help-parent {
   box-sizing: content-box;
   margin: 0;
+  margin-right: 30px;
   padding: 0;
   height: auto;
   width: auto;

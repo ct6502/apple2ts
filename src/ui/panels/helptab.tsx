@@ -40,8 +40,8 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return (
     <div className="help-parent"
       style={{
-        width: narrow || isMinimalTheme() ? "687px" : 500, height:
-          narrow || isMinimalTheme() ? "" : paperheight,
+        width: narrow || isMinimalTheme() ? "687px" : 500,
+        height: narrow || isMinimalTheme() ? "" : paperheight,
         overflow: (narrow ? "visible" : "auto")
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>

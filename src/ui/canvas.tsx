@@ -417,8 +417,9 @@ const Apple2Canvas = (props: DisplayProps) => {
 
       let scanlinesLeft = canvas.offsetLeft + width * xmargin - 10
       let scanlinesTop = canvas.offsetTop + height * ymargin
+      const isFullScreen = document.fullscreenElement === canvas.parentElement
 
-      if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
+      if (!isFullScreen) {
         let marginLeft = canvas.offsetLeft + width * xmargin
         let marginTop = canvas.offsetTop + height * ymargin
 
