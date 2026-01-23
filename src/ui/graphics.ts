@@ -606,7 +606,7 @@ export const getCanvasSize = () => {
       height -= 70
       width -= 25
     } else {
-      height -= noBackgroundImage ? 40 : 200
+      height -= noBackgroundImage ? 40 : 160
       width -= noBackgroundImage ? 0 : 40
     }
   }

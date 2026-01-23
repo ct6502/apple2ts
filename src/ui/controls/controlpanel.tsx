@@ -30,8 +30,8 @@ const ControlPanel = (props: DisplayProps) => {
       onClick={handleFlyoutClick}
       position="top-left">
       <span className="flex-column">
-        <span className={isGameMode() ? "flex-row wrap" : ""}>
-        <span className={isGameMode() ? "flex-row" : "flex-row wrap"} id="tour-controlbuttons">
+        <span className={isGameMode() ? "flex-row flexwrap" : ""}>
+        <span className={isGameMode() ? "flex-row" : "flex-row flexwrap"} id="tour-controlbuttons">
           <ControlButtons {...props} />
           <DebugButtons {...props} />
           <FullScreenButton />

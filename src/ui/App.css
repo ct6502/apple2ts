@@ -106,7 +106,7 @@ input:focus {
   justify-content: space-between;
 }
 
-.wrap {
+.flexwrap {
   flex-wrap: wrap;
 }
 

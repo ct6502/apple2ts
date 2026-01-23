@@ -21,8 +21,8 @@ const DiskInterface = (props: DisplayProps) => {
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="bottom-left">
-      <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} wrap`}>
-        <span className="flex-row wrap">
+      <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
+        <span className="flex-row">
           {!isMinimalTheme() && <DiskImageChooser {...props} />}
           <DiskDrive key={0} index={0} renderCount={props.renderCount}
             setShowFileOpenDialog={props.setShowFileOpenDialog} />
@@ -30,7 +30,7 @@ const DiskInterface = (props: DisplayProps) => {
             setShowFileOpenDialog={props.setShowFileOpenDialog} />
           {(isMinimalTheme() && isScreenNarrow) && <ImageWriter />}
         </span>
-        <span className="flex-row wrap">
+        <span className="flex-row">
           <DiskDrive key={2} index={2} renderCount={props.renderCount}
             setShowFileOpenDialog={props.setShowFileOpenDialog} />
           <DiskDrive key={3} index={3} renderCount={props.renderCount}

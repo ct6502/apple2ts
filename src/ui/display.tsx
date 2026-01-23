@@ -162,7 +162,7 @@ const DisplayApple2 = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
-  const narrow = isTouchDevice || (width < height)
+  const narrow = isTouchDevice || (width < (1.1 * height))
   const isLandscape = isTouchDevice && (width > height)
   if (isTouchDevice) {
     document.body.style.marginLeft = "0"
@@ -186,16 +186,15 @@ const DisplayApple2 = () => {
     <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
     <div className={isLandscape ? "flex-row" : "flex-column"}>
     <Apple2Canvas {...props} />
-    <div className="flex-row-gap wrap"
-    style={{ paddingLeft: "2px" }}>
-    <ControlPanel {...props} />
-    {!isGameMode() && <DiskInterface {...props} />}
+    <div className={narrow ? "flex-column-gap" : "flex-row-gap" + " flexwrap"}  style={{ paddingLeft: "2px" }}>
+      <ControlPanel {...props} />
+      {!isGameMode() && <DiskInterface {...props} />}
     </div>
     {!isLandscape && !isGameMode() && status}
     </div>
     {isLandscape && !isGameMode() && status}
     {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
-    {!isGameMode() && <DebugSection updateDisplay={updateDisplay} />}
+    {!isGameMode() && <DebugSection updateDisplay={updateDisplay} narrow={narrow}/>}
     </span>
     {isMinimalTheme() && <DiskCollectionPanel {...props} />}
     {isMinimalTheme() && isTouchDevice && <TouchJoystick />}

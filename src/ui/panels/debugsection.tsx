@@ -14,7 +14,7 @@ import { setPreferenceDebugMode } from "../localstorage"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
-const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
+const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
 
   const [activeTab, setActiveTab] = useState<number>(0)
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
@@ -35,6 +35,9 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   const handleTabClick = (tabIndex: number) => (event: React.MouseEvent<HTMLElement>) => {
+    if (tabIndex == activeTab) {
+      tabIndex = -1
+    }
     setActiveTab(tabIndex)
     event.stopPropagation()
     forceRefresh()
@@ -62,6 +65,8 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlyoutOpen])
 
+  const tabClass = props.narrow ? "dbg-tab-horizontal" : "dbg-tab-vertical"
+
   return (
     <Flyout
       icon={faInfoCircle}
@@ -73,23 +78,23 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay }) => {
         setIsFlyoutOpen(!isFlyoutOpen)
         props.updateDisplay()
       }}>
-      <div id="debug-section">
-        {!isSmall && <div className="flex-row dbg-tab-row">
+      <div id="debug-section" className={`${props.narrow ? "flex-column" : "flex-row"}`}>
+        {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row`}>
           <div
-            className={`dbg-tab ${activeTab == 0 ? " dbg-tab-active" : ""}`}
+            className={`dbg-tab ${tabClass} ${activeTab == 0 ? " dbg-tab-active" : ""}`}
             title="Show help panel"
             onClick={handleTabClick(0)}>
             <FontAwesomeIcon icon={faHelp} size="lg" />
           </div>
           <div
-            className={`dbg-tab ${activeTab == 1 ? " dbg-tab-active" : ""}`}
+            className={`dbg-tab ${tabClass} ${activeTab == 1 ? " dbg-tab-active" : ""}`}
             title="Show debugging panel"
             id="tour-debug-button"
             onClick={handleTabClick(1)}>
             <FontAwesomeIcon icon={faBug} size="lg" />
           </div>
           <div
-            className={`dbg-tab ${activeTab == 2 ? " dbg-tab-active" : ""}`}
+            className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
             title="Show Apple exPectin panel"
             onClick={handleTabClick(2)}>
             <FontAwesomeIcon icon={faTerminal} size="lg" />

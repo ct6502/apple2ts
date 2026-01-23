@@ -107,7 +107,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
         onClick={(e) => e.stopPropagation()}
         style={{ left: "5%", top: "5%", backgroundColor: "white" }}>
         <div className="flex-column">
-          <div className="flex-row-space-between wrap">
+          <div className="flex-row-space-between flexwrap">
             <svg height="35" width="150">{imagewriter2}</svg>
             <div className="flex-row">
               <button className="push-button"
