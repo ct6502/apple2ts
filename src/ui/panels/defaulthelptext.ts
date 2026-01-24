@@ -66,6 +66,7 @@ tour=main|debug|settings
 <a href="https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10" target="_blank">Embedded Applesoft BASIC Program</a>
 <a href="https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin" target="_blank">Binary File with Hex Address</a>
 
-<b>Credits</b>
+<b>Links</b>
+<a href="https://ct6502.org/apple2ts/" target="_blank">Apple2TS Desktop App</a>
 <a href="https://corsfix.com" target="_blank">CORS Proxy by Corsfix</a>
 `
