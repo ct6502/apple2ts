@@ -162,16 +162,33 @@ export const handleInputParams = (paramString = "") => {
   const run = params.get("run")
   const doRun = !(run === "0" || run === "false")
 
+  const hasLineNumbers = (text: string) => {
+    // Remove all space characters, then make sure we don't have a CALL -151.
+    const trimmed = text.replace(/ +/g, "").toLowerCase()
+    if (!trimmed.includes("call-151")) {
+      // See if at least half of our lines start with line numbers.
+      const lines = trimmed.split(/\r?\n/)
+      let lineCount = 0
+      for (const line of lines) {
+        if (/^[0-9]/.test(line)) {
+          lineCount++
+          if (lineCount >= lines.length / 2) {
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
   // Use the original case of the text string or BASIC program.
-  const text = porig.get("basic") || porig.get("BASIC") || porig.get("text") || porig.get("TEXT")
+  const isBASIC = porig.get("basic") || porig.get("BASIC")
+  const text = isBASIC || porig.get("text") || porig.get("TEXT")
   hasBasicProgram = hasBasicProgram || (text !== null)
   if (text) {
-    const trimmed = text.trim()
-    const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-
-    if (hasLineNumbers) {
+    if (isBASIC || hasLineNumbers(text)) {
       const sentinel = `REM ${Date.now()}`
-      const cmd = `${trimmed}\n${sentinel}\n`
+      const cmd = `${text}\n${sentinel}\n`
 
       sendTextAndWait("", "]", () => {
       const prevSpeedMode = handleGetSpeedMode()
@@ -184,8 +201,7 @@ export const handleInputParams = (paramString = "") => {
         }
       })
     })
-    }
-    else {
+    } else {
       const cmd = text
       const waitForBoot = setInterval(() => {
         // Wait a bit to give the emulator time to start and boot any disks.
@@ -239,30 +255,38 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
 }
 
 const sendTextAndWait = (sendText: string, waitText: string, callback: () => void) => {
-  const expectinJson =
-    {
-        "commands": [
-            {
-                "send": sendText
-            },
-            {
-                "expect": [
-                    {
-                        "match": waitText,
-                        "commands": [
-                            {
-                                "disconnect": {}
-                            }
-                        ]
-                    }
-                ]
-            }
+  const expectinJson = {
+    "commands": [
+      {
+        "send": sendText
+      },
+      {
+        "expect": [
+          {
+            "match": waitText,
+            "commands": [
+              {
+                "disconnect": {}
+              }
+            ]
+          }
         ]
-    }
+      }
+    ]
+  }
   const expectin = new Expectin(JSON.stringify(expectinJson))
   expectin.Run()
 
+  // Safety check: If it turns out we don't have a BASIC program, we don't
+  // want to be stuck in ExpectIn forever. This timeout should be long
+  // enough that all normal BASIC programs should finish pasting.
+  const timeout = (sendText.length > 100) ? (sendText.length / 10) : 10
+  let counter = 0
   const interval = window.setInterval(() => {
+    counter++
+    if (counter > timeout) {
+      expectin.Cancel()
+    }
     if (!expectin.IsRunning()) {
       clearInterval(interval)
       callback()
