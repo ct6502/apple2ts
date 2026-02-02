@@ -3,6 +3,7 @@ import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/
 import { passSetRunMode, handleGetState6502, passSetBinaryBlock, handleGetRunMode } from "./main2worker"
 import { RestoreSaveState } from "./savestate"
 import { showGlobalProgressModal } from "./ui_utilities"
+import { handleInputParams } from "./inputparams"
 
 export const messagelistener = (event: MessageEvent) => {
   // Verify the message is from a trusted source (VS Code webview or localhost for development)
@@ -149,4 +150,20 @@ export const messagelistener = (event: MessageEvent) => {
       showGlobalProgressModal(false)
     }
   }
+
+  if (event.data.type === "updateParameters") {
+    try {
+      const params = event.data.params
+      console.log("Updating parameters:", params)
+      // Convert params object to URL search string
+      const searchParams = new URLSearchParams(params)
+      const paramString = "?" + searchParams.toString()
+      // Use existing parameter handler to update all settings
+      handleInputParams(paramString)
+      console.log("Parameters updated successfully")
+    } catch (error) {
+      console.error("Error updating parameters:", error)
+    }
+  }
+
 }

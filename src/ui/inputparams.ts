@@ -18,12 +18,11 @@ export const handleInputParams = (paramString = "") => {
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
 
-  if (params.get("appmode")) {
+  if (params.has("appmode")) {
     const mode = params.get("appmode") as string
     setAppMode(mode)
     // Be sure to pass to the emulator, so we can disable breakpoints, etc.
     passSetAppMode(mode)
-    setTheme(UI_THEME.MINIMAL)
   }
 
   if (params.get("capslock") === "off") {
