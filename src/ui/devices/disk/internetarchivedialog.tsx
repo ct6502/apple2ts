@@ -120,12 +120,13 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
   }
 
   const handleBookmarkAddClicked = async () => {
+    const url = generateUrlFromInternetArchiveId(props.identifier).toString()
     props.diskBookmarks.set({
       type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
       id: props.identifier,
       title: props.title,
       screenshotUrl: screenshotUrl,
-      diskUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
+      diskUrl: url,
       detailsUrl: detailsUrl,
       lastUpdated: new Date(),
       cloudData: {
@@ -136,7 +137,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
         fileName: "",
         itemId: props.identifier,
         apiEndpoint: "",
-        downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
+        downloadUrl: url,
         detailsUrl: `https://archive.org/details/${props.identifier}`
       }
     })

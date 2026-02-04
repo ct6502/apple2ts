@@ -13,32 +13,45 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
   const favicon: { [key: string]: string } = {}
   favicon[iconKey()] = iconData()
   
-  showGlobalProgressModal(true)
-  await fetch(iconName() + detailsUrl, { headers: favicon })
-    .then(async response => {
-      if (response.ok) {
-        const json = await response.json()
-        if (json.metadata && json.metadata.emulator_ext && json.files) {
-          const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
+  const processDiskImageResponse = async (response: Response) => {
+    if (response.ok) {
+      const json = await response.json()
+      if (json.metadata && json.metadata.emulator_ext && json.files) {
+        const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
 
-          Object.keys(json.files).forEach((file) => {
-            if (file.toLowerCase().endsWith(emulatorExt)) {
-              newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
-              return
-            }
-          })
-        } else {
-          console.warn(`${detailsUrl}: disk image not found`)
-          return undefined
-        }
+        Object.keys(json.files).forEach((file) => {
+          if (file.toLowerCase().endsWith(emulatorExt)) {
+            newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
+            console.log(`Found disk image ${newDiskImageUrl.toString}`)
+            return
+          }
+        })
       } else {
-        console.warn(`${detailsUrl}: ${response.statusText}`)
-        return undefined
+        console.warn(`getDiskImageUrlFromIdentifier ${detailsUrl}: disk image not found`)
       }
-    })
-    .finally(() => {
-      showGlobalProgressModal(false)
-    })
+    } else {
+      console.warn(`getDiskImageUrlFromIdentifier ${detailsUrl}: ${response.statusText}`)
+    }
+  }
+  
+  showGlobalProgressModal(true)
+  try {
+    // Try direct fetch first (works in Electron)
+    const response = await fetch(detailsUrl)
+    await processDiskImageResponse(response)
+  } catch {
+    try {
+      console.log("Direct fetch failed, trying with corsfix")
+      const response = await fetch("https://proxy.corsfix.com/?" + detailsUrl)
+      await processDiskImageResponse(response)
+    } catch {
+      console.log("Direct fetch failed, trying with CORS proxy")
+      const response = await fetch(iconName() + detailsUrl, { headers: favicon })
+      await processDiskImageResponse(response)
+    }
+  } finally {
+    showGlobalProgressModal(false)
+  }
 
   return newDiskImageUrl
 }
