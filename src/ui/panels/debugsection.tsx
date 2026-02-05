@@ -11,6 +11,7 @@ import ExpectinTab from "./expectintab"
 import HelpTab from "./helptab"
 import { defaultHelpText } from "./defaulthelptext"
 import { setPreferenceDebugMode } from "../localstorage"
+import BasicTab from "./basic_tab"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
@@ -95,15 +96,22 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
-            title="Show Apple exPectin panel"
+            title="Show Applesoft BASIC debug panel"
             onClick={handleTabClick(2)}>
+            <FontAwesomeIcon icon={faTerminal} size="lg" />
+          </div>
+          <div
+            className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
+            title="Show Apple exPectin panel"
+            onClick={handleTabClick(3)}>
             <FontAwesomeIcon icon={faTerminal} size="lg" />
           </div>
         </div>
         }
         {(activeTab == 0 || isSmall) && <HelpTab helptext={getHelpText()} theme={getTheme()} />}
         {activeTab == 1 && !isSmall && <DebugTab updateDisplay={props.updateDisplay} />}
-        {activeTab == 2 && !isSmall && <ExpectinTab />}
+        {activeTab == 2 && !isSmall && <BasicTab updateDisplay={props.updateDisplay}  />}
+        {activeTab == 3 && !isSmall && <ExpectinTab />}
       </div>
     </Flyout>
   )
