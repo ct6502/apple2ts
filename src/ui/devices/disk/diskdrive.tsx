@@ -226,6 +226,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
   let status = DISK_DRIVE_LABELS[props.index]
   status += dprops.status
+  const isElectron = navigator.userAgent.includes("Electron")
 
   return (
     <span className="flex-column">
@@ -351,11 +352,13 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Save Disk to OneDrive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { saveDiskToCloud(new OneDriveCloudDrive()) }
             },
             {
               label: "Save Disk to Google Drive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { saveDiskToCloud(new GoogleDrive()) }
             }
           ],
@@ -486,11 +489,13 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Load Disk from OneDrive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { loadDiskFromCloud(new OneDriveCloudDrive()) }
             },
             {
               label: "Load Disk from Google Drive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { loadDiskFromCloud(new GoogleDrive()) }
             }
           ]
