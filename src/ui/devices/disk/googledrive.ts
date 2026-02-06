@@ -1,4 +1,5 @@
 import { CLOUD_SYNC } from "../../../common/utility"
+import { appID, clientID, pickerKey } from "../../img/iconfunctions"
 import { showGlobalProgressModal } from "../../ui_utilities"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
@@ -11,7 +12,7 @@ let g_pickerInited = false
 export class GoogleDrive implements CloudProvider {
   
   tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: "831415990117-n2n9ms5nidatg7rmcb12tvpm8kirtbpt.apps.googleusercontent.com",
+    client_id: appID() + "-" + clientID() + ".apps.googleusercontent.com",
     scope: "https://www.googleapis.com/auth/drive.file",
     callback: () => {}, // defined later
   })
@@ -41,9 +42,9 @@ export class GoogleDrive implements CloudProvider {
         // .enableFeature(google.picker.Feature.NAV_HIDDEN)  // hide the nav bar at the top
         .enableFeature(google.picker.Feature.MINE_ONLY)   // only show user's drive files
         .setOAuthToken(g_accessToken)
-        .setDeveloperKey("AIzaSyAPlfA031A8MyXrDd-o9xaHjEmEUkW64R4")
+        .setDeveloperKey(pickerKey())
         .setCallback(this.pickerCallback)
-        .setAppId("831415990117")
+        .setAppId(appID())
         .setTitle(`Select a ${view === "file" ? "disk image" : "folder"}`)
         .build()
       picker.setVisible(true)
