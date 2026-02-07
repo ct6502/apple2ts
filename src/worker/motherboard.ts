@@ -14,7 +14,8 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksMaxBank,
   C800SlotGet,
   RamWorksBankGet,
-  doSetRom} from "./memory"
+  doSetRom,
+  getZeroPage} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
@@ -581,6 +582,7 @@ const updateExternalMachineState = () => {
     stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
+    zeroPage: getZeroPage()
   }
   passMachineState(state)
   // We need to pass this just once to the UI thread, so it can display

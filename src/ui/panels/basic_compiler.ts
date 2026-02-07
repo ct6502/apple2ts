@@ -52,6 +52,11 @@ export const BasicCompiler = (program: string) => {
       throw new Error(`Line ${lineNum}: Empty statement after line number`)
     }
     
+    // Skip validation if line is a REM statement
+    if (tokens[0].toUpperCase() === "REM") {
+      continue
+    }
+    
     // Validate tokens
     validateTokens(tokens, lineNum, lineNumber)
   }
@@ -63,6 +68,17 @@ export const BasicCompiler = (program: string) => {
 function tokenizeLine(line: string): string[] {
   const tokens: string[] = []
   let i = 0
+  
+  // Check if line starts with REM - if so, treat rest as a single comment
+  const trimmed = line.trimStart()
+  if (trimmed.toUpperCase().startsWith("REM")) {
+    tokens.push("REM")
+    const commentStart = line.indexOf("REM") + 3
+    if (commentStart < line.length) {
+      tokens.push(line.substring(commentStart))
+    }
+    return tokens
+  }
   
   while (i < line.length) {
     const char = line[i]

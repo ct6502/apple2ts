@@ -1,6 +1,7 @@
 import "./debugsection.css"
 import Flyout from "../flyout"
-import { faInfo as faHelp, faInfoCircle, faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
+import { faInfo as faHelp, faInfoCircle, faBug, faCode } from "@fortawesome/free-solid-svg-icons"
+import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32 } from "../../common/utility"
 import { getHelpText, getTheme, isMinimalTheme } from "../ui_settings"
@@ -98,13 +99,13 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
             className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
             title="Show Applesoft BASIC debug panel"
             onClick={handleTabClick(2)}>
-            <FontAwesomeIcon icon={faTerminal} size="lg" />
+            <b>{"]"}</b><FontAwesomeIcon icon={faApple as never} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
             title="Show Apple exPectin panel"
             onClick={handleTabClick(3)}>
-            <FontAwesomeIcon icon={faTerminal} size="lg" />
+            <FontAwesomeIcon icon={faCode} size="lg" />
           </div>
         </div>
         }

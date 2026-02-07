@@ -108,6 +108,7 @@ type MachineState = {
   stackString: string,
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
+  zeroPage: Uint8Array
 }
 
 type UIState = {

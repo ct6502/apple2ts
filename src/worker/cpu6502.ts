@@ -349,6 +349,9 @@ export const processInstruction = () => {
       // here but continue running. This will then call immediately back
       // into processInstruction. We need to do this in case the action
       // change the program counter or one of the values in memory.
+      if (s6502.PC === PC1) {
+        breakpointSkipOnce = true
+      }
       return 0
     }
 

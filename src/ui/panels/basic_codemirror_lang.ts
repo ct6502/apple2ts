@@ -11,6 +11,11 @@ const basicTokenizer = {
   startState: (): BasicState => ({ inString: false, inRemark: false }),
   
   token: (stream: StringStream, state: BasicState): string | null => {
+    // Reset remark state at start of new line
+    if (stream.sol()) {
+      state.inRemark = false
+    }
+    
     // Handle strings
     if (state.inString) {
       if (stream.skipTo("\"")) {
