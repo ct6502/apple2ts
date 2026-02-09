@@ -154,7 +154,7 @@ export const getTheme = () => {
 }
 
 export const isMinimalTheme = () => {
-  return uiState.theme == (UI_THEME.MINIMAL && !isGameMode()) || isEmbedMode()
+  return (uiState.theme == UI_THEME.MINIMAL && !isGameMode()) || isEmbedMode()
 }
 
 export const getTiltSensorJoystick = () => {
