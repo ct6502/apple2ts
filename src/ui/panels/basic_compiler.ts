@@ -28,7 +28,7 @@ export const BasicCompiler = (program: string) => {
     const lineNum = i + 1
     
     // Check for line number at start
-    const lineNumberMatch = line.match(/^(\d+)\s+(.*)/)
+    const lineNumberMatch = line.match(/^(\d+)\s*(.*)/)
     if (!lineNumberMatch) {
       throw new Error(`Line ${lineNum}: Missing line number`)
     }

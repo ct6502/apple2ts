@@ -114,6 +114,7 @@ type MachineState = {
 type UIState = {
   appMode: string,
   arrowKeysAsJoystick: boolean,
+  autoNumbering: boolean,
   capsLock: boolean,
   colorMode: COLOR_MODE,
   crtDistortion: boolean,

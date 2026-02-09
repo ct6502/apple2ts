@@ -3,6 +3,7 @@ import { COLOR_MODE, UI_THEME } from "../common/utility"
 const uiState: UIState = {
   appMode: "",
   arrowKeysAsJoystick: true,
+  autoNumbering: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
@@ -40,6 +41,10 @@ export const setUIState = (state: UIState) => {
 
 export const setArrowKeysAsJoystick = (joystick: boolean) => {
   uiState.arrowKeysAsJoystick = joystick
+}
+
+export const setAutoNumbering = (mode: boolean) => {
+  uiState.autoNumbering = mode
 }
 
 export const setAppMode = (mode: string) => {
@@ -106,6 +111,10 @@ export const isGameMode = () => {
 
 export const getArrowKeysAsJoystick = () => {
   return uiState.arrowKeysAsJoystick
+}
+
+export const handleGetAutoNumbering = () => {
+  return uiState.autoNumbering
 }
 
 export const getCapsLock = () => {

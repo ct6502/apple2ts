@@ -4,6 +4,7 @@ import { EditorState, Compartment, StateField, StateEffect } from "@codemirror/s
 import { basic } from "./basic_codemirror_lang"
 import { useEffect, useRef } from "react"
 import { oneDark } from "@codemirror/theme-one-dark"
+import { handleGetAutoNumbering } from "../ui_settings"
 
 interface EditorProps {
   value: string;
@@ -93,6 +94,57 @@ const BasicEditor = (props: EditorProps) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "s") {
         event.preventDefault()
       }
+      // If user hits return/enter and auto-numbering is enabled, insert a new line with the next line number
+      if (event.key === "Enter" && handleGetAutoNumbering()) {
+        const view = viewRef.current
+        if (view) {
+          const { state } = view
+          // Back up one character to get to the end of the current line,
+          // since the cursor is after the newline
+          const currentLine = state.doc.lineAt(state.selection.main.head - 1)
+          const lineText = currentLine.text
+          const lineNumberMatch = lineText.trim().match(/^(\d+)/)
+          if (lineNumberMatch) {
+            const currentLineNumber = parseInt(lineNumberMatch[1], 10)
+            
+            // Find the next line number after the current line
+            let nextLineNumber: number | null = null
+            for (let i = currentLine.number + 1; i <= state.doc.lines; i++) {
+              const text = state.doc.line(i).text
+              const match = text.trim().match(/^(\d+)/)
+              if (match) {
+                nextLineNumber = parseInt(match[1], 10)
+                break
+              }
+            }
+            // Calculate the new line number
+            let newLineNumber: number
+            if (nextLineNumber === null) {
+              // End of file, just add 10
+              newLineNumber = currentLineNumber + 10
+            } else if (currentLineNumber + 10 < nextLineNumber) {
+              // There's room, use +10
+              newLineNumber = currentLineNumber + 10
+            } else {
+              // Find a number between current and next
+              newLineNumber = Math.floor((currentLineNumber + nextLineNumber) / 2)
+              // If there's no room (consecutive numbers), use +1
+              if (newLineNumber <= currentLineNumber) {
+                newLineNumber = currentLineNumber + 1
+              }
+            }
+            
+            const indentMatch = lineText.match(/^\d+(\s*)/)
+            const indent = indentMatch ? indentMatch[1] : " "
+            const newText = `${newLineNumber}${indent}`
+            view.dispatch({
+              changes: { from: state.selection.main.head, insert: newText },
+              selection: { anchor: state.selection.main.head + newText.length }
+            })
+            event.preventDefault()
+          }
+        }
+      }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => {
@@ -111,6 +163,22 @@ const BasicEditor = (props: EditorProps) => {
       })
     }
   }, [props.readOnly])
+
+  // Update document when value prop changes externally
+  useEffect(() => {
+    if (viewRef.current) {
+      const currentDoc = viewRef.current.state.doc.toString()
+      if (currentDoc !== props.value) {
+        viewRef.current.dispatch({
+          changes: {
+            from: 0,
+            to: currentDoc.length,
+            insert: props.value
+          }
+        })
+      }
+    }
+  }, [props.value])
 
   // Update highlighted line when highlightLine prop changes
   useEffect(() => {

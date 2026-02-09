@@ -18,7 +18,6 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const crtDistortion = getCrtDistortion()
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
-
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
   }

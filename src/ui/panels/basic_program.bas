@@ -1,6 +1,6 @@
 10 REM ** Applesoft BASIC Command Showcase **
-20 HOME
-30 ?"APPLESOFT BASIC DEMO" : ?"===================="
+20 HOME : GOTO 40
+40 ?"APPLESOFT BASIC DEMO" : ?"===================="
 60 REM ** Variables and LET **
 70 LET X = 10 : Y = 20 : Z$ = "HELLO" : N% = 42
 110 PRINT "X=";X;" Y=";Y;" Z$=";Z$
@@ -55,6 +55,8 @@
 910 PRINT "PRESS ANY KEY TO EXIT"
 920 GET K$ : TEXT : HOME
 930 END
+945 GOTO 945 : REM Never reached but tests renumber
+950 GOTO 930 : REM Never reached but tests renumber
 960 REM ** Data Section **
 970 DATA 100,200,300
 980 REM ** Subroutine **

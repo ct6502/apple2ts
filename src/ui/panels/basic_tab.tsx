@@ -1,6 +1,6 @@
 import "./debugsection.css"
-import { faPause, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons"
-import { isMinimalTheme } from "../ui_settings"
+import { faGear, faListOl, faPause, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons"
+import { handleGetAutoNumbering, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultProgram from "./basic_program.bas?raw"
@@ -9,14 +9,21 @@ import { BasicCompiler } from "./basic_compiler"
 import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../main2worker"
 import { RUN_MODE } from "../../common/utility"
 import { handleSetDiskFromURL } from "../devices/disk/driveprops"
-import { setPreferenceSpeedMode } from "../localstorage"
+import { setPreferenceAutoNumbering, setPreferenceSpeedMode } from "../localstorage"
 import { MaximumSpeedMode } from "../controls/speeddropdown"
+import PopupMenu from "../controls/popupmenu"
+import { BasicRenumber } from "./basic_renumber"
 
 const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const [programText, setprogramText] = useState<string>(defaultProgram)
   const [programError, setprogramError] = useState<string>("")
   const [isBooting, setIsBooting] = useState<boolean>(false)
   const [highlightLine, setHighlightLine] = useState<number>(5)
+
+  const [popupLocation, setPopupLocation] = useState<[number, number]>()
+  const handleClick = (event: React.MouseEvent) => {
+    setPopupLocation([event.clientX, event.clientY])
+  }
 
   if (isMinimalTheme()) {
     import("./debugsection.minimal.css")
@@ -147,6 +154,11 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }
   }
 
+  const handleRenumberClick = async () => {
+    const newProgramText = BasicRenumber(programText)
+    setprogramText(newProgramText)
+  }
+
   const running = isRunning()
   const paused = isPaused()
 
@@ -173,8 +185,39 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
             onClick={handlePauseButtonClick}>
               <FontAwesomeIcon icon={(paused || !running) ? faRepeat : faPause} />
           </button>
-          </div>}
-      </div>
+          <button
+            className="dbg-expect-button"
+            title="Renumber Program"
+            onClick={handleRenumberClick}>
+              <FontAwesomeIcon icon={faListOl} />
+          </button>
+          
+          <button
+            id="basic-button"
+            className="dbg-expect-button"
+            title="Display Settings"
+            onClick={handleClick}
+          >
+            <FontAwesomeIcon icon={faGear} />
+          </button>          
+          
+          <PopupMenu
+            location={popupLocation}
+            onClose={() => { setPopupLocation(undefined) }}
+            menuItems={[[
+              {
+                label: "Auto Line Numbering",
+                isSelected: () => { return handleGetAutoNumbering() },
+                onClick: () => {
+                  setPreferenceAutoNumbering(!handleGetAutoNumbering())
+                }
+              },
+            ]]}
+          />
+
+        </div>
+      }
+</div>
     </div>
   )
 }
