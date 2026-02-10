@@ -2,7 +2,16 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion } from "./ui_settings"
+import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setAutoNumbering } from "./ui_settings"
+
+export const setPreferenceAutoNumbering = (mode = false) => {
+  if (mode === false) {
+    localStorage.removeItem("autoNumbering")
+  } else {
+    localStorage.setItem("autoNumbering", JSON.stringify(mode))
+  }
+  setAutoNumbering(mode)
+}
 
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {

@@ -5,7 +5,7 @@ import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 // import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer"
 // import { isDebugging } from "./motherboard";
-import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "../common/utility"
+import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress } from "../common/utility"
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
 
@@ -654,18 +654,9 @@ export const matchMemory = (addr: number, data: number[]) => {
 }
 
 export const getZeroPage = () => {
-  const status = [""]
   const offset = addressGetTable[0]
   const mem = memory.slice(offset, offset + 256)
-  status[0] = "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F"
-  for (let j = 0; j < 16; j++) {
-    let s = toHex(16 * j) + ":"
-    for (let i = 0; i < 16; i++) {
-      s += " " + toHex(mem[j * 16 + i])
-    }
-    status[j + 1] = s
-  }
-  return status.join("\n")
+  return mem
 }
 
 export const getBasePlusAuxMemory = () => {

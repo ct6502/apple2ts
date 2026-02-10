@@ -225,6 +225,7 @@ let machineState: MachineState = {
   stackString: "",
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
+  zeroPage: new Uint8Array(256).fill(255)
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -445,4 +446,8 @@ export const handleGetMachineName = () => {
 
 export const handleGetSoftSwitchDescriptions = () => {
   return softSwitchDescriptions
+}
+
+export const handleGetZeroPage = () => {
+  return machineState.zeroPage
 }

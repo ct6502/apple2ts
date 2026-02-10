@@ -188,18 +188,16 @@ export const handleInputParams = (paramString = "") => {
     if (isBASIC || hasLineNumbers(text)) {
       const sentinel = `REM ${Date.now()}`
       const cmd = `${text}\n${sentinel}\n`
-
       sendTextAndWait("", "]", () => {
-      const prevSpeedMode = handleGetSpeedMode()
-      setPreferenceSpeedMode(MaximumSpeedMode)
-
-      sendTextAndWait(cmd, sentinel, () => {
-        setPreferenceSpeedMode(prevSpeedMode)
-        if (doRun) {
-          passPasteText("\nRUN\n")
-        }
+        const prevSpeedMode = handleGetSpeedMode()
+        setPreferenceSpeedMode(MaximumSpeedMode)
+        sendTextAndWait(cmd, sentinel, () => {
+          setPreferenceSpeedMode(prevSpeedMode)
+          if (doRun) {
+            passPasteText("\nRUN\n")
+          }
+        })
       })
-    })
     } else {
       // Add a newline so running a program from Total Replay works.
       // This may need to be revisited in the future if someone complains

@@ -1,6 +1,7 @@
 import "./debugsection.css"
 import Flyout from "../flyout"
-import { faInfo as faHelp, faInfoCircle, faBug, faTerminal } from "@fortawesome/free-solid-svg-icons"
+import { faInfo as faHelp, faInfoCircle, faBug, faCode } from "@fortawesome/free-solid-svg-icons"
+import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32 } from "../../common/utility"
 import { getHelpText, getTheme, isMinimalTheme } from "../ui_settings"
@@ -11,12 +12,13 @@ import ExpectinTab from "./expectintab"
 import HelpTab from "./helptab"
 import { defaultHelpText } from "./defaulthelptext"
 import { setPreferenceDebugMode } from "../localstorage"
+import BasicTab from "./basic_tab"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
 
-  const [activeTab, setActiveTab] = useState<number>(0)
+  const [activeTab, setActiveTab] = useState<number>(2)
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
 
@@ -95,15 +97,22 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
-            title="Show Apple exPectin panel"
+            title="Show Applesoft BASIC debug panel"
             onClick={handleTabClick(2)}>
-            <FontAwesomeIcon icon={faTerminal} size="lg" />
+            <b>{"]"}</b><FontAwesomeIcon icon={faApple as never} size="lg" />
+          </div>
+          <div
+            className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
+            title="Show Apple exPectin panel"
+            onClick={handleTabClick(3)}>
+            <FontAwesomeIcon icon={faCode} size="lg" />
           </div>
         </div>
         }
         {(activeTab == 0 || isSmall) && <HelpTab helptext={getHelpText()} theme={getTheme()} />}
         {activeTab == 1 && !isSmall && <DebugTab updateDisplay={props.updateDisplay} />}
-        {activeTab == 2 && !isSmall && <ExpectinTab />}
+        {activeTab == 2 && !isSmall && <BasicTab updateDisplay={props.updateDisplay}  />}
+        {activeTab == 3 && !isSmall && <ExpectinTab />}
       </div>
     </Flyout>
   )

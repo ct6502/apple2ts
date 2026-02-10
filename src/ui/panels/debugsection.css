@@ -564,10 +564,11 @@ body.dark-mode .icon-text {
   margin-bottom: 4px;
 }
 
-.dbg-expectin-error {
+.dbg-program-error {
+  background-color: #282c34;
   margin-top: 8px;
   padding: 4px;
-  color: red;
+  color: white;
   font-size: 10pt;
   overflow: hidden;
   text-overflow: ellipsis;
