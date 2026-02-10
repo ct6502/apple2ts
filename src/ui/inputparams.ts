@@ -201,7 +201,10 @@ export const handleInputParams = (paramString = "") => {
       })
     })
     } else {
-      const cmd = text
+      // Add a newline so running a program from Total Replay works.
+      // This may need to be revisited in the future if someone complains
+      // about the additional newline.
+      const cmd = text + "\n"
       const waitForBoot = setInterval(() => {
         // Wait a bit to give the emulator time to start and boot any disks.
         const cycleCount = handleGetState6502().cycleCount
