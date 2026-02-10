@@ -41,11 +41,7 @@ const ExpectinTab = () => {
     <div className="flex-column-gap debug-section">
       <CodeMirrorEditor value={expectinText} setValue={setExpectinText}/>
       <div className="flex-row-gap">
-        <div
-          style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
-          title={expectinError}
-          className="dbg-expectin-error">{expectinError}</div>
-        {expectinError === "" &&
+        {expectinError === "" ?
           <button
             className="dbg-expect-button"
             title={expectinObject?.IsRunning() ? "Stop Script" : "Run Script"}
@@ -53,7 +49,10 @@ const ExpectinTab = () => {
               <FontAwesomeIcon icon={faStop} /> :
               <FontAwesomeIcon icon={faPlay} />
               }
-          </button>}
+          </button> : <div
+          style={{ gridColumn: expectinError === "" ? "span 1" : "span 2" }}
+          title={expectinError}
+          className="dbg-program-error">{expectinError}</div>}
       </div>
     </div>
   )
