@@ -18,7 +18,7 @@ const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
 
-  const [activeTab, setActiveTab] = useState<number>(2)
+  const [activeTab, setActiveTab] = useState<number>(0)
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
 
