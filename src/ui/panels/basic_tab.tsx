@@ -1,5 +1,5 @@
 import "./debugsection.css"
-import { faGear, faListOl, faPause, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons"
+import { faDatabase, faGear, faListOl, faPause, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons"
 import { handleGetAutoNumbering, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -13,6 +13,7 @@ import { setPreferenceAutoNumbering, setPreferenceSpeedMode } from "../localstor
 import { MaximumSpeedMode } from "../controls/speeddropdown"
 import PopupMenu from "../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
+import { BasicRebuildFromMemory } from "./basic_rebuild_memory"
 
 const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const [programText, setprogramText] = useState<string>(defaultProgram)
@@ -21,7 +22,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const [highlightLine, setHighlightLine] = useState<number>(5)
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
-  const handleClick = (event: React.MouseEvent) => {
+  const handleSettingsClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
@@ -75,7 +76,6 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const isRunning = () => {
     const newHighlightLine = currentEditorLineNumber()
     if (newHighlightLine != highlightLine) {
-      console.log(`Highlight line changed: ${highlightLine} -> ${newHighlightLine}`)
       setHighlightLine(newHighlightLine)
     }
     if (isBooting) {
@@ -159,6 +159,19 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     setprogramText(newProgramText)
   }
 
+  const handleRebuildClick = async () => {
+    if (programText.trim() !== "") {
+      const confirmRebuild = window.confirm(
+        "This will replace the current program with a version rebuilt from the Apple II memory. " +
+        "You will lose any unsaved changes. Are you sure?"
+      )
+      if (!confirmRebuild) {
+        return
+      }
+    }
+    BasicRebuildFromMemory(setprogramText)
+  }
+
   const running = isRunning()
   const paused = isPaused()
 
@@ -167,11 +180,6 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
       <BasicEditor value={programText} setValue={setprogramText}
         highlightLine={highlightLine} readOnly={running}/>
       <div className="flex-row-gap">
-        {programError !== "" && <div
-          style={{ gridColumn: "span 2" }}
-          title={programError}
-          className="dbg-program-error">❌ {programError}</div>}
-        {programError === "" &&
         <div>
           <button
             className="dbg-expect-button"
@@ -191,12 +199,19 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
             onClick={handleRenumberClick}>
               <FontAwesomeIcon icon={faListOl} />
           </button>
+          <button
+            className={handleGetRunMode() === RUN_MODE.IDLE ? "dbg-expect-button disabled" : "dbg-expect-button"}
+            title="Rebuild Program from Memory"
+            disabled={handleGetRunMode() === RUN_MODE.IDLE}
+            onClick={handleRebuildClick}>
+              <FontAwesomeIcon icon={faDatabase} />
+          </button>
           
           <button
             id="basic-button"
             className="dbg-expect-button"
             title="Display Settings"
-            onClick={handleClick}
+            onClick={handleSettingsClick}
           >
             <FontAwesomeIcon icon={faGear} />
           </button>          
@@ -214,10 +229,12 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
               },
             ]]}
           />
-
         </div>
-      }
-</div>
+      </div>
+        {programError !== "" && <div
+          style={{ gridColumn: "span 2" }}
+          title={programError}
+          className="dbg-program-error">❌ {programError}</div>}
     </div>
   )
 }

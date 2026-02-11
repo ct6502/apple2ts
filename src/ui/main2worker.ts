@@ -431,7 +431,7 @@ export const handleGetTimeTravelThumbnails = () => {
 }
 
 export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,
-  withSnapshots: boolean) => {
+  withSnapshots = false) => {
   saveStateCallback = callback
   doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)
 }

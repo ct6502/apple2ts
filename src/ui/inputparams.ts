@@ -3,7 +3,7 @@ import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTab, setTheme } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
@@ -145,6 +145,10 @@ export const handleInputParams = (paramString = "") => {
     }, 100)
   }
   
+  const tab = params.get("tab")
+  if (tab) {
+    setTab(parseInt(tab || "0"))
+  }
 
   const tour = params.get("tour")
   if (tour) {

@@ -4,7 +4,7 @@ import { faInfo as faHelp, faInfoCircle, faBug, faCode } from "@fortawesome/free
 import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32 } from "../../common/utility"
-import { getHelpText, getTheme, isMinimalTheme } from "../ui_settings"
+import { getHelpText, getTab, getTheme, isMinimalTheme } from "../ui_settings"
 import { useMemo, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
@@ -18,7 +18,7 @@ const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
 
-  const [activeTab, setActiveTab] = useState<number>(0)
+  const [activeTab, setActiveTab] = useState<number>(getTab())
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
 

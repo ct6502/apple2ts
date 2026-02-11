@@ -2,10 +2,10 @@
 20 HOME : GOTO 40
 40 ?"APPLESOFT BASIC DEMO" : ?"===================="
 60 REM ** Variables and LET **
-70 LET X = 10 : Y = 20 : Z$ = "HELLO" : N% = 42
+70 LET X = 10 : Y = 20 - 10 : Z$ = "HELLO" : N% = -42
 110 PRINT "X=";X;" Y=";Y;" Z$=";Z$
 130 REM ** Math Functions **
-140 PRINT "INT(3.7)=";INT(3.7);: PRINT " ABS(-5)=";ABS(-5)
+140 PRINT "INT(+3.7)=";INT(+3.7);: PRINT " ABS(-5)=";ABS(-5) + 0
 160 PRINT "SGN(-10)=";SGN(-10);: PRINT " SQR(16)=";SQR(16)
 180 PRINT "RND(1)=";RND(1)
 200 REM ** String Functions **
@@ -21,7 +21,7 @@
 360 REM ** FOR/NEXT Loop **
 370 PRINT "COUNTING:";
 380 FOR I = 1 TO 5 : PRINT "  ";I; : NEXT
-410 PRINT : PRINT "STEP LOOP:";
+410 PRINT : PRINT "STEP LOOP;";
 430 FOR J = 10 TO 20 STEP 2 : ?"  ";J;: NEXT J
 460 PRINT
 480 REM ** Arrays with DIM **
@@ -57,6 +57,7 @@
 930 END
 945 GOTO 945 : REM Never reached but tests renumber
 950 GOTO 930 : REM Never reached but tests renumber
+955 CALL -151
 960 REM ** Data Section **
 970 DATA 100,200,300
 980 REM ** Subroutine **
