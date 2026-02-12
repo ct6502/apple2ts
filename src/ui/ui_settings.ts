@@ -4,6 +4,7 @@ const uiState: UIState = {
   appMode: "",
   arrowKeysAsJoystick: true,
   autoNumbering: true,
+  capitalizeBasic: true,
   capsLock: true,
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
@@ -50,6 +51,10 @@ export const setAutoNumbering = (mode: boolean) => {
 
 export const setAppMode = (mode: string) => {
   uiState.appMode = mode
+}
+
+export const setCapitalizeBasic = (mode: boolean) => {
+  uiState.capitalizeBasic = mode
 }
 
 export const setCapsLock = (lock: boolean) => {
@@ -120,6 +125,10 @@ export const getArrowKeysAsJoystick = () => {
 
 export const handleGetAutoNumbering = () => {
   return uiState.autoNumbering
+}
+
+export const handleGetCapitalizeBasic = () => {
+  return uiState.capitalizeBasic
 }
 
 export const getCapsLock = () => {

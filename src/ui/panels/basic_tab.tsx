@@ -1,6 +1,6 @@
 import "./debugsection.css"
 import { faDatabase, faGear, faListOl, faPause, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons"
-import { handleGetAutoNumbering, isMinimalTheme } from "../ui_settings"
+import { handleGetAutoNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultProgram from "./basic_program.bas?raw"
@@ -9,7 +9,7 @@ import { BasicCompiler } from "./basic_compiler"
 import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../main2worker"
 import { RUN_MODE } from "../../common/utility"
 import { handleSetDiskFromURL } from "../devices/disk/driveprops"
-import { setPreferenceAutoNumbering, setPreferenceSpeedMode } from "../localstorage"
+import { setPreferenceAutoNumbering, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../localstorage"
 import { MaximumSpeedMode } from "../controls/speeddropdown"
 import PopupMenu from "../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
@@ -46,7 +46,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }
     const stack = handleGetStackString()
     // This is a tight loop that checks for key presses.
-    if (stack.endsWith("JSR $FB78")) {
+    if (stack.endsWith("JSR $FB78") && !stack.includes("JSR $DB3D")) {
       return true
     }
     return false
@@ -88,10 +88,12 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
       return false
     }
     // Are we in the Applesoft interpreter loop?
-    // This isn't totally reliable - for a short amount of time the
-    // interpreter loop will be outside of this subroutine. But it seems
-    // to spend most of its time with this on the stack, so good enough for now.
     if (stack.includes("JSR $D828")) {
+      return true
+    }
+    // Are we within the Applesoft code?
+    const s6502 = handleGetState6502()
+    if (s6502.PC >= 0xD365 && s6502.PC <= 0xEFFF) {
       return true
     }
     return false
@@ -145,13 +147,13 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }
   }
 
+  const handleContinueButtonClick = async () => {
+    passPasteText("CONT\n")
+  }
+
   const handlePauseButtonClick = async () => {
-    if (isRunning()) {
-      passKeypress(0x13)
-      passKeyRelease()
-    } else {
-      passPasteText("CONT\n")
-    }
+    passKeypress(0x13)
+    passKeyRelease()
   }
 
   const handleRenumberClick = async () => {
@@ -179,28 +181,35 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     <div className="flex-column-gap debug-section">
       <BasicEditor value={programText} setValue={setprogramText}
         highlightLine={highlightLine} readOnly={running}/>
-      <div className="flex-row-gap">
-        <div>
+      <div className="flex-row">
           <button
-            className="dbg-expect-button"
+            className="push-button"
             title={running ? "Break" : "Run"}
             onClick={handleRunButtonClick}>
               <FontAwesomeIcon icon={running ? faStop : faPlay} />
           </button>
           <button
-            className="dbg-expect-button"
-            title={(paused || !running) ? "Resume" : "Pause"}
-            onClick={handlePauseButtonClick}>
-              <FontAwesomeIcon icon={(paused || !running) ? faRepeat : faPause} />
+            className="push-button"
+            title="Continue Running"
+            disabled={running}
+            onClick={handleContinueButtonClick}>
+              <FontAwesomeIcon icon={faRepeat} />
           </button>
           <button
-            className="dbg-expect-button"
+            className={paused ? "push-button button-active" : "push-button"}
+            title={paused ? "Resume" : "Pause"}
+            onClick={handlePauseButtonClick}>
+              <FontAwesomeIcon icon={faPause} />
+          </button>
+          <button
+            className="push-button"
             title="Renumber Program"
             onClick={handleRenumberClick}>
               <FontAwesomeIcon icon={faListOl} />
           </button>
           <button
-            className={handleGetRunMode() === RUN_MODE.IDLE ? "dbg-expect-button disabled" : "dbg-expect-button"}
+            className={handleGetRunMode() === RUN_MODE.IDLE ?
+              "push-button disabled" : "push-button"}
             title="Rebuild Program from Memory"
             disabled={handleGetRunMode() === RUN_MODE.IDLE}
             onClick={handleRebuildClick}>
@@ -209,7 +218,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
           
           <button
             id="basic-button"
-            className="dbg-expect-button"
+            className="push-button"
             title="Display Settings"
             onClick={handleSettingsClick}
           >
@@ -227,9 +236,15 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
                   setPreferenceAutoNumbering(!handleGetAutoNumbering())
                 }
               },
+              {
+                label: "Capitalize Keywords",
+                isSelected: () => { return handleGetCapitalizeBasic() },
+                onClick: () => {
+                  setPreferenceCapitalizeBasic(!handleGetCapitalizeBasic())
+                }
+              },
             ]]}
           />
-        </div>
       </div>
         {programError !== "" && <div
           style={{ gridColumn: "span 2" }}

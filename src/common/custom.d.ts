@@ -115,6 +115,7 @@ type UIState = {
   appMode: string,
   arrowKeysAsJoystick: boolean,
   autoNumbering: boolean,
+  capitalizeBasic: boolean
   capsLock: boolean,
   colorMode: COLOR_MODE,
   crtDistortion: boolean,

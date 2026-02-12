@@ -1,5 +1,6 @@
 import { Buffer } from "buffer"
 import { handleGetSaveState } from "../main2worker"
+import { handleGetCapitalizeBasic } from "../ui_settings"
 
 const APPLESOFT_TOKENS: string[] = [
   "end ", // 128
@@ -146,7 +147,11 @@ export const BasicRebuildFromMemory = (setprogramText: (v: string) => void) => {
         if (currentToken === 0) break
         if (currentToken >= 128 && currentToken < 128 + APPLESOFT_TOKENS.length) {
           // This is a token, convert it to the corresponding string.
-          const tokenChars = APPLESOFT_TOKENS[currentToken - 128].split("")
+          let tokenString = APPLESOFT_TOKENS[currentToken - 128]
+          if (handleGetCapitalizeBasic()) {
+            tokenString = tokenString.toUpperCase()
+          }
+          const tokenChars = tokenString.split("")
           if (!justDidSpace && !justDidParensOrEquals) {
             lineTokens.push(32)
           }
