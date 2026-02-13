@@ -84,26 +84,26 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row`}>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 0 ? " dbg-tab-active" : ""}`}
-            title="Show help panel"
+            title="Help"
             onClick={handleTabClick(0)}>
             <FontAwesomeIcon icon={faHelp} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 1 ? " dbg-tab-active" : ""}`}
-            title="Show debugging panel"
+            title="Debugging"
             id="tour-debug-button"
             onClick={handleTabClick(1)}>
             <FontAwesomeIcon icon={faBug} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
-            title="Show Applesoft BASIC debug panel"
+            title="Applesoft BASIC"
             onClick={handleTabClick(2)}>
             <b>{"]"}</b><FontAwesomeIcon icon={faApple as never} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
-            title="Show Apple exPectin panel"
+            title="Apple exPectin"
             onClick={handleTabClick(3)}>
             <FontAwesomeIcon icon={faCode} size="lg" />
           </div>
