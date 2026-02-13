@@ -154,6 +154,24 @@ export const handleInputParams = (paramString = "") => {
     }, 100)
   }
 
+  const hex = porig.get("hex")  // Use original case for base64
+  if (hex) {
+    // Convert string of two-digit hex values to Uint8Array
+    const data = new Uint8Array(hex.length / 2)
+    for (let i = 0; i < data.length; i++) {
+      data[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16)
+    }
+    hasBasicProgram = true
+    const waitForBoot = setInterval(() => {
+      // Wait a bit to give the emulator time to start and boot any disks.
+      const cycleCount = handleGetState6502().cycleCount
+      if (cycleCount > 2000000) {
+        clearInterval(waitForBoot)
+        passSetBinaryBlock(binaryRunAddress, data, false)
+      }
+    }, 100)
+  }
+
   const tour = params.get("tour")
   if (tour) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
