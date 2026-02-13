@@ -44,10 +44,14 @@ export const BasicCompiler = (program: string) => {
       throw new Error(`Line ${lineNum}: Duplicate line number ${lineNumber}`)
     }
     lineNumbers.add(lineNumber)
-    
+
+    if (line.length > 239) {
+      throw new Error(`Line too long: ${line.length} characters (max 239)`)
+    }
+
     // Parse the rest of the line
     const tokens = tokenizeLine(restOfLine)
-    
+
     if (tokens.length === 0) {
       throw new Error(`Line ${lineNum}: Empty statement after line number`)
     }
@@ -65,7 +69,7 @@ export const BasicCompiler = (program: string) => {
 }
 
 // Simple tokenizer
-function tokenizeLine(line: string): string[] {
+const tokenizeLine = (line: string): string[] => {
   const tokens: string[] = []
   let i = 0
   
@@ -130,15 +134,19 @@ function tokenizeLine(line: string): string[] {
   return tokens
 }
 
+const trunkToken = (token: string): string => {
+  return token.length > 30 ? token.substring(0, 30) + "..." : token
+}
+
 // Validate tokens
-function validateTokens(tokens: string[], lineNum: number, lineNumber: number): void {
+const validateTokens = (tokens: string[], lineNum: number, lineNumber: number): void => {
   const firstToken = tokens[0].toUpperCase()
   
   // Check if first token is a valid keyword
   if (!KEYWORDS.has(firstToken) && !FUNCTIONS.has(firstToken) && firstToken !== "?") {
     // Could be a variable assignment (LET is optional)
     if (!/^[A-Za-z][A-Za-z0-9]*[$%]?$/.test(tokens[0])) {
-      throw new Error(`Line ${lineNum} (${lineNumber}): Invalid command or variable name '${tokens[0]}'`)
+      throw new Error(`Line ${lineNum} (${lineNumber}): Invalid command or variable name '${trunkToken(tokens[0])}'`)
     }
   }
   

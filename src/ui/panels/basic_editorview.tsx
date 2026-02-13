@@ -65,6 +65,7 @@ const BasicEditor = (props: EditorProps) => {
           fixedHeightEditor,
           basic(),
           highlightField,
+          EditorView.lineWrapping,
           editableCompartment.current.of([
             EditorView.editable.of(true),
             EditorState.readOnly.of(false)

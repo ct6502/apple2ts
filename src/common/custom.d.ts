@@ -123,7 +123,7 @@ type UIState = {
   helpText: string,
   hotReload: boolean,
   showScanlines: boolean,
-  tab: number,
+  tabView: number,
   theme: UI_THEME,
   tiltSensorJoystick: boolean,
   touchJoystickMode: TOUCH_JOYSTICK_MODE,

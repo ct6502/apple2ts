@@ -1,5 +1,5 @@
 import "./debugsection.css"
-import { faDatabase, faGear, faListOl, faPause, faPlay, faRepeat, faStop } from "@fortawesome/free-solid-svg-icons"
+import { faDatabase, faFolderOpen, faGear, faListOl, faPause, faPlay, faRepeat, faSave, faStop } from "@fortawesome/free-solid-svg-icons"
 import { handleGetAutoNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -99,15 +99,21 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     return false
   }
 
-  const pasteProgramAndWait = (text: string) => {
+  const pasteProgramAndWait = (sendText: string) => {
     const prevSpeedMode = handleGetSpeedMode()
-    setPreferenceSpeedMode(MaximumSpeedMode)
-    passPasteText(text)
+    let timeout = 0
+    if (sendText.length > 200) {
+      setPreferenceSpeedMode(MaximumSpeedMode)
+      timeout = sendText.length / 250
+    }
+    passPasteText(sendText)
+    let counter = 0
     const waitForPaste = setInterval(() => {
-      const stack = handleGetStackString()
-      if (stack.includes("JSR $D828")) {
+      counter++
+      if (counter > timeout || handleGetStackString().includes("JSR $D828")) {
         clearInterval(waitForPaste)
         setPreferenceSpeedMode(prevSpeedMode)
+        passPasteText("\nRUN\n")
       }
     }, 100)
   }
@@ -137,12 +143,12 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
       // Run program
       if (handleGetRunMode() === RUN_MODE.IDLE) {
         handleSetDiskFromURL("blank.po", props.updateDisplay)
-        bootAndRunProgram("NEW\n" + programText + "\nRUN\n")
+        bootAndRunProgram("NEW\n" + programText + "\n")
       } else {
         if (handleGetRunMode() === RUN_MODE.PAUSED) {
           passSetRunMode(RUN_MODE.RUNNING)
         }
-        pasteProgramAndWait("NEW\n" + programText + "\nRUN\n")
+        pasteProgramAndWait("NEW\n" + programText + "\n")
       }
     }
   }
@@ -154,6 +160,40 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const handlePauseButtonClick = async () => {
     passKeypress(0x13)
     passKeyRelease()
+  }
+
+  // const handleStepButtonClick = async () => {
+  //   passKeypress(0x13)
+  //   passKeyRelease()
+  // }
+
+  const handleImportButtonClick = async () => {
+    const fileInput = document.createElement("input")
+    fileInput.type = "file"
+    fileInput.accept = ".a,.bas,.txt"
+    fileInput.onchange = (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const text = e.target?.result as string
+        setprogramText(text)
+      }
+      reader.readAsText(file)
+    }
+    fileInput.click()
+  }
+  
+  const handleExportButtonClick = async () => {
+    const blob = new Blob([programText], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "program.bas"
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const handleRenumberClick = async () => {
@@ -198,8 +238,28 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
           <button
             className={paused ? "push-button button-active" : "push-button"}
             title={paused ? "Resume" : "Pause"}
+            disabled={!running}
             onClick={handlePauseButtonClick}>
               <FontAwesomeIcon icon={faPause} />
+          </button>
+          {/* <button
+            className="push-button"
+            title={"Step Program"}
+            disabled={running}
+            onClick={handleStepButtonClick}>
+              <FontAwesomeIcon icon={faForwardStep} />
+          </button> */}
+          <button
+            className="push-button"
+            title={"Import Program..."}
+            onClick={handleImportButtonClick}>
+              <FontAwesomeIcon icon={faFolderOpen} />
+          </button>
+          <button
+            className="push-button"
+            title={"Export Program..."}
+            onClick={handleExportButtonClick}>
+              <FontAwesomeIcon icon={faSave} />
           </button>
           <button
             className="push-button"

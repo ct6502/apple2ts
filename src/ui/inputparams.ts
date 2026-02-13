@@ -3,7 +3,7 @@ import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTab, setTheme } from "./ui_settings"
+import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTabView, setTheme } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
@@ -17,6 +17,15 @@ export const handleInputParams = (paramString = "") => {
   }
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
+
+  const tab = params.get("tab")
+  if (tab) {
+    const tabNum = parseInt(tab || "0")
+    setTabView(tabNum)
+    if (tabNum !== 1) {
+      passSetShowDebugTab(false)
+    }
+  }
 
   if (params.has("appmode")) {
     const mode = params.get("appmode") as string
@@ -143,11 +152,6 @@ export const handleInputParams = (paramString = "") => {
         passSetBinaryBlock(binaryRunAddress, data, false)
       }
     }, 100)
-  }
-  
-  const tab = params.get("tab")
-  if (tab) {
-    setTab(parseInt(tab || "0"))
   }
 
   const tour = params.get("tour")

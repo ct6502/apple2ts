@@ -158,7 +158,8 @@ body.dark-mode .push-button:active {
 .push-button:disabled {
   border: 0;
   opacity: 30%;
-  cursor: default;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .key-button {

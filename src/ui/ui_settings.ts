@@ -12,7 +12,7 @@ const uiState: UIState = {
   helpText: "",
   hotReload: false,
   showScanlines: false,
-  tab: 0,
+  tabView: 0,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
   touchJoystickMode: "off",
@@ -85,8 +85,8 @@ export const setShowScanlines = (mode: boolean) => {
   uiState.showScanlines = mode
 }
 
-export const setTab = (tab: number) => {
-  uiState.tab = tab
+export const setTabView = (tabView: number) => {
+  uiState.tabView = tabView
 }
 
 export const setTheme = (theme: UI_THEME) => {
@@ -159,8 +159,8 @@ export const getShowScanlines = () => {
   return uiState.showScanlines
 }
 
-export const getTab = () => {
-  return uiState.tab
+export const getTabView = () => {
+  return uiState.tabView
 }
 
 export const getTouchJoyStickMode = () => {

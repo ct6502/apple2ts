@@ -10,13 +10,13 @@ const replaceGoto = (line: string, statement: string, remap: Record<number, numb
 
 export const BasicRenumber = (program: string) => {
   const newProgram = program.split(/\r?\n/)
-  const remap: Record<number, number> = {}
+  const remap = []
   let nextLineNumber = 10
   for (let i = 0; i < newProgram.length; i++) {
     const line = newProgram[i].trim()
     const lineNumberMatch = line.match(/^(\d+)(.*)?/)
     if (lineNumberMatch) {
-      remap[parseInt(lineNumberMatch[1])] = nextLineNumber
+      remap[i] = nextLineNumber
       nextLineNumber += 10
     }
   }
@@ -28,7 +28,7 @@ export const BasicRenumber = (program: string) => {
       let restOfLine = (lineNumberMatch[2] || "").trim()
       restOfLine = replaceGoto(restOfLine, "GOTO", remap)
       restOfLine = replaceGoto(restOfLine, "GOSUB", remap)
-      newProgram[nline] = `${remap[parseInt(lineNumberMatch[1])]} ${restOfLine}`
+      newProgram[nline] = `${remap[i]} ${restOfLine}`
       nline++
     }
   }
