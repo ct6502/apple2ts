@@ -1,6 +1,6 @@
-import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { COLOR_MODE, RUN_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTabView, setTheme } from "./ui_settings"
@@ -133,6 +133,9 @@ export const handleInputParams = (paramString = "") => {
 
   let hasBasicProgram = false
 
+  const run = params.get("run")
+  const doRun = !(run === "0" || run === "false")
+
   const binary64 = porig.get("binary")  // Use original case for base64
   if (binary64) {
     const isGZIP = binary64.startsWith("GZIP")
@@ -142,24 +145,6 @@ export const handleInputParams = (paramString = "") => {
     let data = new Uint8Array(binary.split("").map(char => char.charCodeAt(0)))
     if (isGZIP) {
       data = pako.ungzip(data)
-    }
-    hasBasicProgram = true
-    const waitForBoot = setInterval(() => {
-      // Wait a bit to give the emulator time to start and boot any disks.
-      const cycleCount = handleGetState6502().cycleCount
-      if (cycleCount > 2000000) {
-        clearInterval(waitForBoot)
-        passSetBinaryBlock(binaryRunAddress, data, false)
-      }
-    }, 100)
-  }
-
-  const hex = porig.get("hex")  // Use original case for base64
-  if (hex) {
-    // Convert string of two-digit hex values to Uint8Array
-    const data = new Uint8Array(hex.length / 2)
-    for (let i = 0; i < data.length; i++) {
-      data[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16)
     }
     hasBasicProgram = true
     const waitForBoot = setInterval(() => {
@@ -183,9 +168,6 @@ export const handleInputParams = (paramString = "") => {
   if (hotReload) {
     setHotReload(hotReload === "true")
   }
-
-  const run = params.get("run")
-  const doRun = !(run === "0" || run === "false")
 
   const hasLineNumbers = (text: string) => {
     // Remove all space characters, then make sure we don't have a CALL -151.
@@ -238,6 +220,30 @@ export const handleInputParams = (paramString = "") => {
         }
       }, 100)
     }
+  }
+
+  const hex = porig.get("hex")  // Use original case for base64
+  if (hex) {
+    // Convert string of two-digit hex values to Uint8Array
+    const data = new Uint8Array(hex.length / 2)
+    for (let i = 0; i < data.length; i++) {
+      data[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16)
+    }
+    if (!hasBasicProgram) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+      setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
+    }
+    const waitForBoot = setInterval(() => {
+      // Wait a bit to give the emulator time to start and boot any disks.
+      const cycleCount = handleGetState6502().cycleCount
+      if (cycleCount > 2000000) {
+        clearInterval(waitForBoot)
+        passSetBinaryBlock(binaryRunAddress, data, false)
+        if (doRun) {
+          passPasteText(`\nCALL -151\n${binaryRunAddress.toString(16)}G\n`)
+        }
+      }
+    }, 100)
   }
 
   return hasBasicProgram

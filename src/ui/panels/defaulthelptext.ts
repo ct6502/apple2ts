@@ -40,17 +40,17 @@ defaultHelpText += `
 <b>Disk images:</b> hdv, 2mg, dsk, woz, po, do, bin, bas
 
 <b>Optional URL Parameters</b>
-address=1234 (hex load address for binary files)
+address=1234 (hex load address for binary or hex data)
 appmode=game|embed
-binary=base64-encoded string of machine code to load at address
 capslock=off
 color=color|nofringe|green|amber|white|inverse
 crtdistort=on|off
 debug=on
 ghosting=on|off
+hex=hexadecimal program to load at address
 machine=apple2ee|apple2eu (enhanced or unenhanced)
 ramdisk=64|512|1024|4096|8192
-run=false (do not run BASIC program)
+run=false (do not run Hex or BASIC program)
 scanlines=on|off
 sound=off
 speed=snail|slow|normal|two|three|fast|warp
