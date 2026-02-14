@@ -478,9 +478,9 @@ const resetRefreshCounter = () => {
   startTime = prevTime
 }
 
-export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
+export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
   configureMachine()
-  if (cpuRunMode === RUN_MODE.RUNNING && cpuRunModeIn === RUN_MODE.PAUSED) {
+  if (doShowDebugTab && cpuRunMode === RUN_MODE.RUNNING && cpuRunModeIn === RUN_MODE.PAUSED) {
     showDebugTab = true
   }
   cpuRunMode = cpuRunModeIn

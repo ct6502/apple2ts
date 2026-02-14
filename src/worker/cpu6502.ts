@@ -37,6 +37,20 @@ export const setStepOut = () => {
   breakpointMap.set(addr, bp)
 }
 
+export const doSetBasicStep = () => {
+  const bpTmp = new BreakpointMap(breakpointMap)
+  bpTmp.forEach((bp, key) => {
+    if (bp.once) breakpointMap.delete(key)
+  })
+  const addr = 0xD805
+  if (breakpointMap.get(addr)) return
+  const bp = BreakpointNew()
+  bp.address = addr
+  bp.once = true
+  bp.hidden = true
+  breakpointMap.set(addr, bp)
+}
+
 export const doSetBreakpoints = (bp: BreakpointMap) => {
   // This will automatically erase any "hit once" breakpoints, which is okay.
   breakpointMap = bp
@@ -228,7 +242,8 @@ const printBreakpointToConsole = (vLo: number, vHi: number, code: PCodeInstr | n
 export enum BREAKPOINT_RESULT {
   NO_BREAK,
   BREAK,
-  ACTION
+  ACTION,
+  HIDDEN_BREAK
 }
 
 const processBreakpointAction = (action: BreakpointAction,  vLo: number, vHi: number, code: PCodeInstr | null) => {
@@ -268,7 +283,7 @@ const processBreakpointActions = (bp: Breakpoint, vLo: number, vHi: number,
   if (didAction1 || didAction2) {
     return bp.halt ? BREAKPOINT_RESULT.BREAK : BREAKPOINT_RESULT.ACTION
   }
-  return BREAKPOINT_RESULT.BREAK
+  return  bp.hidden ? BREAKPOINT_RESULT.HIDDEN_BREAK : BREAKPOINT_RESULT.BREAK
 }
 
 // This is only exported for breakpoint testing
@@ -341,8 +356,8 @@ export const processInstruction = () => {
 
   if (!runOnlyMode()) {
     const bpResult = hitBreakpoint(instr, vLo, vHi, code)
-    if (bpResult === BREAKPOINT_RESULT.BREAK) {
-      doSetRunMode(RUN_MODE.PAUSED)
+    if (bpResult === BREAKPOINT_RESULT.BREAK || bpResult === BREAKPOINT_RESULT.HIDDEN_BREAK) {
+      doSetRunMode(RUN_MODE.PAUSED, bpResult !== BREAKPOINT_RESULT.HIDDEN_BREAK)
       return -1
     } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
       // If we had a breakpoint action that did not halt, we want to leave
@@ -361,7 +376,7 @@ export const processInstruction = () => {
   }
 
   const fn = specialJumpTable.get(PC1)
-  if (fn && !SWITCHES.INTCXROM.isSet) {
+  if (fn && (!SWITCHES.INTCXROM.isSet || (PC1 & 0xF000) !== 0xC000)) {
     fn()
   }
 

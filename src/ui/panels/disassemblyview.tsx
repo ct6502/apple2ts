@@ -234,7 +234,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
     const breakpoints = handleGetBreakpoints()
     for (let i = 0; i < nlines; i++) {
       const bp1 = breakpoints.get(getAddress(disArray[i]))
-      if (bp1) {
+      if (bp1 && !bp1.hidden) {
         bp[i] = bp1
       }
     }

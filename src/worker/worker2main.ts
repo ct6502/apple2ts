@@ -12,7 +12,7 @@ import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
-import { doSetBreakpoints } from "./cpu6502"
+import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
@@ -129,6 +129,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.STEP_OUT:
         doStepOut()
+        break
+      case MSG_MAIN.BASIC_STEP:
+        doSetBasicStep()
         break
       case MSG_MAIN.SPEED:
         doSetSpeedMode(e.data.payload as number)

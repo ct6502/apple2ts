@@ -163,7 +163,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
             cursor: "default"
           }}>
           {Array.from(breakpoints.values() as Breakpoint[]).map((bp: Breakpoint) => (
-            <div key={bp.address}>
+            !bp.hidden && <div key={bp.address}>
               <button className="breakpoint-pushbutton"
                 data-key={bp.address}
                 onClick={(e) => { handleBreakpointClick(e) }}>

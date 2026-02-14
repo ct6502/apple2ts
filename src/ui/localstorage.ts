@@ -230,6 +230,8 @@ export const loadPreferences = () => {
         const newBreakpoint = BreakpointNew()
         // Copy over any fields that exist in the stored data
         Object.assign(newBreakpoint, oldBreakpoint)
+        // Skip hidden breakpoints
+        if (newBreakpoint.hidden) return null
         return [address, newBreakpoint]
       })
       const breakpointMap = new BreakpointMap(migratedBreakpoints)

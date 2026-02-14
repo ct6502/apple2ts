@@ -1,12 +1,12 @@
 import "./debugsection.css"
-import { faDatabase, faFolderOpen, faGear, faListOl, faPause, faPlay, faRepeat, faSave, faStop } from "@fortawesome/free-solid-svg-icons"
+import { faDatabase, faFolderOpen, faForwardStep, faGear, faListOl, faPlay, faRepeat, faSave, faSnowflake, faStop } from "@fortawesome/free-solid-svg-icons"
 import { handleGetAutoNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultProgram from "./basic_program.bas?raw"
 import BasicEditor from "./basic_editorview"
 import { BasicCompiler } from "./basic_compiler"
-import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../main2worker"
+import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../main2worker"
 import { RUN_MODE } from "../../common/utility"
 import { handleSetDiskFromURL } from "../devices/disk/driveprops"
 import { setPreferenceAutoNumbering, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../localstorage"
@@ -46,7 +46,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }
     const stack = handleGetStackString()
     // This is a tight loop that checks for key presses.
-    if (stack.endsWith("JSR $FB78") && !stack.includes("JSR $DB3D")) {
+    if ((stack.endsWith("JSR $FB78") || stack.includes("JSR $FD10")) && !stack.includes("JSR $DB3D")) {
       return true
     }
     return false
@@ -73,11 +73,15 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     return finalIndex
   }
 
-  const isRunning = () => {
+  const updateHighlightLine = () => {
     const newHighlightLine = currentEditorLineNumber()
     if (newHighlightLine != highlightLine) {
       setHighlightLine(newHighlightLine)
     }
+  }
+
+  const isRunning = () => {
+    updateHighlightLine()
     if (isBooting) {
       // While emulator is booting to run a program, force it to look like running.
       return true
@@ -135,26 +139,41 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   const handleRunButtonClick = async () => {
-    if (isRunning()) {
-      // Stop program, pass Ctrl+C to break out of the interpreter loop
-      // Pass an extra newline to make sure we break out of any input statements
-      passPasteText("\x03\n")
+    // Run program
+    if (handleGetRunMode() === RUN_MODE.IDLE) {
+      handleSetDiskFromURL("blank.po", props.updateDisplay)
+      bootAndRunProgram("NEW\n" + programText + "\n")
     } else {
-      // Run program
-      if (handleGetRunMode() === RUN_MODE.IDLE) {
-        handleSetDiskFromURL("blank.po", props.updateDisplay)
-        bootAndRunProgram("NEW\n" + programText + "\n")
-      } else {
+      if (handleGetRunMode() === RUN_MODE.PAUSED) {
+        passSetRunMode(RUN_MODE.RUNNING)
+      }
+      if (isRunning()) {
         if (handleGetRunMode() === RUN_MODE.PAUSED) {
           passSetRunMode(RUN_MODE.RUNNING)
         }
-        pasteProgramAndWait("NEW\n" + programText + "\n")
+        // Stop program, pass Ctrl+C to break out of the interpreter loop
+        // Pass an extra newline to make sure we break out of any input statements
+        passPasteText("\x03\n")
       }
+      pasteProgramAndWait("NEW\n" + programText + "\n")
     }
   }
 
+  const handleBreakButtonClick = async () => {
+    if (handleGetRunMode() === RUN_MODE.PAUSED) {
+      passSetRunMode(RUN_MODE.RUNNING)
+    }
+    // Stop program, pass Ctrl+C to break out of the interpreter loop
+    // Pass an extra newline to make sure we break out of any input statements
+    passPasteText("\x03\n")
+  }
+
   const handleContinueButtonClick = async () => {
-    passPasteText("CONT\n")
+    if (handleGetRunMode() === RUN_MODE.PAUSED) {
+      passSetRunMode(RUN_MODE.RUNNING)
+    } else {
+      passPasteText("CONT\n")
+    }
   }
 
   const handlePauseButtonClick = async () => {
@@ -162,10 +181,18 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     passKeyRelease()
   }
 
-  // const handleStepButtonClick = async () => {
-  //   passKeypress(0x13)
-  //   passKeyRelease()
-  // }
+  const handleStepButtonClick = async () => {
+    if (isPaused()) {
+      passPasteText("CONT\n")
+    }
+    passBasicStep()
+    if (handleGetRunMode() === RUN_MODE.PAUSED) {
+      passSetRunMode(RUN_MODE.RUNNING)
+    }
+    setTimeout(() => {
+      updateHighlightLine()
+    }, 500)
+  }
 
   const handleImportButtonClick = async () => {
     const fileInput = document.createElement("input")
@@ -216,6 +243,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   const running = isRunning()
   const paused = isPaused()
+  const runMode = handleGetRunMode()
 
   return (
     <div className="flex-column-gap debug-section">
@@ -224,31 +252,38 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
       <div className="flex-row">
           <button
             className="push-button"
-            title={running ? "Break" : "Run"}
+            title="Run from Beginning"
             onClick={handleRunButtonClick}>
-              <FontAwesomeIcon icon={running ? faStop : faPlay} />
+              <FontAwesomeIcon icon={faPlay} />
+          </button>
+          <button
+            className="push-button"
+            title="Break"
+            disabled={runMode === RUN_MODE.IDLE || !isRunning()}
+            onClick={handleBreakButtonClick}>
+              <FontAwesomeIcon icon={faStop} />
           </button>
           <button
             className="push-button"
             title="Continue Running"
-            disabled={running}
+            disabled={runMode === RUN_MODE.IDLE || (running && runMode !== RUN_MODE.PAUSED)}
             onClick={handleContinueButtonClick}>
               <FontAwesomeIcon icon={faRepeat} />
           </button>
           <button
-            className={paused ? "push-button button-active" : "push-button"}
-            title={paused ? "Resume" : "Pause"}
-            disabled={!running}
-            onClick={handlePauseButtonClick}>
-              <FontAwesomeIcon icon={faPause} />
-          </button>
-          {/* <button
             className="push-button"
             title={"Step Program"}
-            disabled={running}
+            disabled={(running && runMode !== RUN_MODE.PAUSED) || runMode === RUN_MODE.IDLE}
             onClick={handleStepButtonClick}>
               <FontAwesomeIcon icon={faForwardStep} />
-          </button> */}
+          </button>
+          <button
+            className={paused ? "push-button button-active" : "push-button"}
+            title={paused ? "Resume Output" : "Freeze Output"}
+            disabled={!running || runMode === RUN_MODE.PAUSED || runMode === RUN_MODE.IDLE}
+            onClick={handlePauseButtonClick}>
+              <FontAwesomeIcon icon={faSnowflake} />
+          </button>
           <button
             className="push-button"
             title={"Import Program..."}

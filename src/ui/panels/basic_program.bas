@@ -1,6 +1,7 @@
 10 REM ** Applesoft BASIC Command Showcase **
 20 HOME : GOTO 40
 40 ?"APPLESOFT BASIC DEMO" : ?"===================="
+50 GOTO 40
 60 REM ** Variables and LET **
 70 LET X = 10 : Y = 20 - 10 : Z$ = "HELLO" : N% = -42
 110 PRINT "X=";X;" Y=";Y;" Z$=";Z$

@@ -62,6 +62,10 @@ export const passStepOut = () => {
   doPostMessage(MSG_MAIN.STEP_OUT, true)
 }
 
+export const passBasicStep = () => {
+  doPostMessage(MSG_MAIN.BASIC_STEP, true)
+}
+
 export const passSetDebug = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
   // Force the state right away, so the UI can update.
