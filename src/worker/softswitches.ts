@@ -1,4 +1,4 @@
-import { memGetC000, memSetC000 } from "./memory"
+import { getCurrentMachineName, memGetC000, memSetC000 } from "./memory"
 import { clearKeyStrobe, popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./devices/joystick"
@@ -208,6 +208,20 @@ export const checkSoftSwitches = (addr: number,
     const s = memGetC000(addr) > 0x80 ? 1 : 0
     console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "write" : ""}`)
   }
+  // Apple II+ compatibility: treat $C000-$C01F as keyboard/strobe and bus noise.
+  // Do not use IIe MMU/status semantics in this range.
+  if (getCurrentMachineName() === "APPLE2P" && addr <= 0xC01F) {
+    if (!calledFromMemSet && addr <= 0xC00F) {
+      popKey()
+    }
+    if (addr === 0xC010) {
+      clearKeyStrobe()
+    } else if (addr !== 0xC000) {
+      memSetC000(addr, rand())
+    }
+    return
+  }
+
   // Handle banked-RAM soft switches, since these have duplicate addresses
   // and need to call our special function.
   if (addr >= 0xC080 && addr <= 0xC08F) {

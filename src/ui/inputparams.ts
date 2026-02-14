@@ -91,7 +91,9 @@ export const handleInputParams = (paramString = "") => {
 
   const machineName = params.get("machine")?.toUpperCase()
   if (machineName) {
-    if (machineName === "APPLE2EU") {
+    if (machineName === "APPLE2P") {
+      passSetMachineName("APPLE2P")
+    } else if (machineName === "APPLE2EU") {
       passSetMachineName("APPLE2EU")
     } else {
       passSetMachineName("APPLE2EE")

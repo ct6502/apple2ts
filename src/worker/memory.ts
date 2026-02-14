@@ -1,5 +1,6 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches"
 import { s6502 } from "./instructions"
+import { rom as romBase64p } from "./roms/rom_2+"
 import { romBase64 as romBase64e } from "./roms/rom_2e"
 import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 // import { edmBase64 } from "./roms/edm_2e"
@@ -55,10 +56,19 @@ const RamWorksBankSet = (bank: number) => {
 // Include one extra slot, to avoid needing memory checks for > 65535.
 export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
+let currentMachineName: MACHINE_NAME = "APPLE2EE"
+
+export const getCurrentMachineName = () => {
+  return currentMachineName
+}
 
 export const doSetRom = (machineName: MACHINE_NAME) => {
+  currentMachineName = machineName
   let romStr = ""
   switch (machineName) {
+    case "APPLE2P":
+      romStr = romBase64p
+      break
     case "APPLE2EU":
       romStr = romBase64u
       break
