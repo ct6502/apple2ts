@@ -38,3 +38,27 @@ test("copy text in APPLE2P mode ignores alt charset mapping", () => {
   const output = writeText.mock.calls[0][0] as string
   expect(output.split("\n")[0]).toEqual("A\"B C,D.")
 })
+
+test("copy text preserves leading spaces", () => {
+  const textPage = new Uint8Array(960).fill(0xA0)
+  const line = "     WILLIAM SHAKESPEARE"
+  for (let i = 0; i < line.length; i++) {
+    textPage[i] = line.charCodeAt(i)
+  }
+
+  mockGetTextPage.mockReturnValue(textPage)
+  mockGetMachineName.mockReturnValue("APPLE2EE")
+  mockGetAltCharSet.mockReturnValue(false)
+
+  const writeText = jest.fn()
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText },
+    configurable: true,
+  })
+
+  handleCopyToClipboard()
+
+  expect(writeText).toHaveBeenCalledTimes(1)
+  const output = writeText.mock.calls[0][0] as string
+  expect(output.split("\n")[0]).toEqual("     WILLIAM SHAKESPEARE")
+})

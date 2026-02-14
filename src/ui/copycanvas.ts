@@ -46,7 +46,7 @@ export const handleCopyToClipboard = () => {
         )
         line += c
       }
-      line = line.trim()
+      line = line.trimEnd()
       output += line + "\n"
     }
     navigator.clipboard.writeText(output)
