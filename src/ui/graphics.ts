@@ -83,9 +83,12 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
-  const isAltCharSet = handleGetAltCharSet()
+  const machineName = handleGetMachineName()
+  const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
   const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
-  const hasMouseText = handleGetMachineName() === "APPLE2EE"
+  const hasMouseText = machineName === "APPLE2EE"
+  const hasLowerCase = machineName !== "APPLE2P"
+  const useApple2PlusMap = machineName === "APPLE2P"
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   // First draw all the background colors. That way our background rects
@@ -136,7 +139,9 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
         // If we do not have mouse text (IIe unenhanced) everything <= 127 is inverse.
         doInverse = hasMouseText ? ((value <= 63) || (value >= 96 && value <= 127)) : (value <= 127)
       }
-      const v = convertTextPageValueToASCII(value, isAltCharSet, hasMouseText)
+      const v = convertTextPageValueToASCII(
+        value, isAltCharSet, hasMouseText, hasLowerCase, useApple2PlusMap
+      )
 //      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       let cfill = colorFill
       if (isVideo7) {

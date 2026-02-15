@@ -363,7 +363,7 @@ export const handleGetState6502 = () => {
 
 export const handleGetTextPage = () => {
   // Always return the intial start page if we're idle
-  return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage() : machineState.textPage
+  return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage(machineState.machineName) : machineState.textPage
 }
 
 export const handleGetTextPageAsString = () => {

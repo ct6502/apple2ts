@@ -14,8 +14,8 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
     setPopupLocation([event.clientX, event.clientY])
   }
 
-  const machineNames: MACHINE_NAME[] = ["APPLE2EU", "APPLE2EE"]
-  const roms = ["Apple IIe (unenhanced)", "Apple IIe (enhanced)"]
+  const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"]
+  const roms = ["Apple II+", "Apple IIe (unenhanced)", "Apple IIe (enhanced)"]
   const names = ["64 KB (AUX)", "512 KB", "1024 KB", "4 MB", "8 MB"]
   const sizes = [64, 512, 1024, 4096, 8192]
   const extraMemSize = handleGetMemSize()
@@ -36,7 +36,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          ...Array.from(Array(2).keys()).map((i) => (
+          ...Array.from(Array(3).keys()).map((i) => (
             {
               label: roms[i],
               isSelected: () => { return machineName === machineNames[i] },

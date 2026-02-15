@@ -1,4 +1,5 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { handleGetMachineName } from "./main2worker"
 
 const uiState: UIState = {
   appMode: "",
@@ -132,7 +133,7 @@ export const handleGetCapitalizeBasic = () => {
 }
 
 export const getCapsLock = () => {
-  return uiState.capsLock
+  return uiState.capsLock || (handleGetMachineName() === "APPLE2P")
 }
 
 export const getColorMode = () => {

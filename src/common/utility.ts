@@ -248,8 +248,15 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
   return key
 }
 
-export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean, hasMouseText: boolean) => {
+export const convertTextPageValueToASCII = (
+  value: number,
+  isAltCharSet: boolean,
+  hasMouseText: boolean,
+  hasLowerCase = true,
+  useApple2PlusMap = false
+) => {
   let v1 = value
+  const original = value
   if (v1 >= 0 && v1 <= 31) {
     // Shift Ctrl chars into ASCII A-Z range
     // They will be displayed as inverse
@@ -257,6 +264,12 @@ export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean
   } else if (v1 >= 160) {
     // Normal text, just strip the high bit to convert to standard ASCII range
     v1 &= 0b01111111
+    // Apple II/II+ text conventions: many punctuation/space characters in
+    // the 0xE0-0xFF range map to ASCII by shifting 0x60-0x7F down to 0x20-0x3F.
+    // Example: E0 -> 0x60 -> 0x20 (space), E2 -> 0x62 -> 0x22 (quote).
+    if (useApple2PlusMap && original >= 0xE0 && v1 >= 0x60) {
+      v1 -= 0x40
+    }
   } else if (isAltCharSet) {
     if (hasMouseText && v1 >= 64 && v1 <= 95) {
       // Shift Mousetext chars into extended ASCII range.
@@ -278,6 +291,9 @@ export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean
     if (v1 >= 96) {
       v1 -= 64
     }
+  }
+  if (!hasLowerCase && v1 >= 0x61 && v1 <= 0x7A) {
+    v1 -= 0x20
   }
   return String.fromCodePoint(v1 === 0x83 ? 0xEBE7 : (v1 >= 127 ? (0xE000 + v1) : v1))
 }
