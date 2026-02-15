@@ -1,6 +1,6 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches"
 import { s6502 } from "./instructions"
-import { rom as romBase64p } from "./roms/rom_2+"
+import { romBase64 as romBase64p } from "./roms/rom_2+"
 import { romBase64 as romBase64e } from "./roms/rom_2e"
 import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 // import { edmBase64 } from "./roms/edm_2e"

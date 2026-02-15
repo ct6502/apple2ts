@@ -21,13 +21,9 @@ const constructStartupTextPage = (machineName: MACHINE_NAME) => {
 
   let emulatorStartText = `Welcome to Apple2TS
 
-TypeScript Apple IIe Emulator
+TypeScript Apple II Emulator
 
 (c) ${new Date().getFullYear()} CT6502`
-
-  if (machineName === "APPLE2P") {
-    emulatorStartText += "\n(APPLE ][+ MODE)"
-  }
 
   if (!isGameMode()) {
     emulatorStartText +=`
@@ -50,8 +46,18 @@ To send Ctrl or Open Apple keys,
 touch button to enable it, then
 touch screen to show keyboard.
 Touch twice to lock it on.`
-
   }
+
+  let mode = "]["
+  switch (machineName) {
+  case "APPLE2P": mode = "][+"; break
+  case "APPLE2EU": mode = "][e unenhanced"; break
+  case "APPLE2EE": mode = "//e enhanced"; break
+  default:
+  }
+
+  emulatorStartText += `\n\nAPPLE ${mode} mode`
+
   if (machineName === "APPLE2P") {
     emulatorStartText = emulatorStartText.toUpperCase()
   }
