@@ -76,7 +76,7 @@ type DisplayProps = {
   setShowFileOpenDialog: (show: boolean, index: number) => void,
 }
 
-type MACHINE_NAME = "APPLE2EU" | "APPLE2EE"
+type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
 
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 

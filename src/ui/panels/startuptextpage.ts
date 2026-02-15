@@ -14,13 +14,14 @@ const idx = (i: number) => {
 }
 
 let initStartupTextPage = false
+let startupTextMachineName: MACHINE_NAME | "" = ""
 const startupTextPage = new Uint8Array(40 * 24)
 
-const constructStartupTextPage = () => {
+const constructStartupTextPage = (machineName: MACHINE_NAME) => {
 
   let emulatorStartText = `Welcome to Apple2TS
 
-TypeScript Apple IIe Emulator
+TypeScript Apple II Emulator
 
 (c) ${new Date().getFullYear()} CT6502`
 
@@ -45,7 +46,20 @@ To send Ctrl or Open Apple keys,
 touch button to enable it, then
 touch screen to show keyboard.
 Touch twice to lock it on.`
+  }
 
+  let mode = "]["
+  switch (machineName) {
+  case "APPLE2P": mode = "][+"; break
+  case "APPLE2EU": mode = "][e unenhanced"; break
+  case "APPLE2EE": mode = "//e enhanced"; break
+  default:
+  }
+
+  emulatorStartText += `\n\nAPPLE ${mode} mode`
+
+  if (machineName === "APPLE2P") {
+    emulatorStartText = emulatorStartText.toUpperCase()
   }
 
   const textPage = new Array<string>(24).fill("")
@@ -71,11 +85,12 @@ Touch twice to lock it on.`
   }
 }
 
-export const getStartupTextPage = () => {
+export const getStartupTextPage = (machineName: MACHINE_NAME) => {
 
-  if (!initStartupTextPage) {
-    constructStartupTextPage()
+  if (!initStartupTextPage || startupTextMachineName !== machineName) {
+    constructStartupTextPage(machineName)
     initStartupTextPage = true
+    startupTextMachineName = machineName
   }
   
   // Advance frame counter and move asterisk every 10 frames (simulates 0.1 speed)
