@@ -56,7 +56,7 @@ Touch twice to lock it on.`
   default:
   }
 
-  emulatorStartText += `\n\nAPPLE ${mode} mode`
+  emulatorStartText += `\n\nApple ${mode} mode`
 
   if (machineName === "APPLE2P") {
     emulatorStartText = emulatorStartText.toUpperCase()
