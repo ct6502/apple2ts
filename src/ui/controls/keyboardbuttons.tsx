@@ -71,6 +71,11 @@ const KeyboardButtons = (props: DisplayProps) => {
       onMouseDown={() => props.handleCtrlDown((props.ctrlKeyMode + 1) % 3)}>
       <span className="text-key">ctrl</span>
     </button>
+    <button className="push-button key-button" title="Return"
+      onMouseDown={() => passKeypress(13)}
+      onMouseUp={() => passKeyRelease()}>
+      <span className="text-key">ret</span>
+    </button>
     <button className={lockedKeyStyle(props.openAppleKeyMode)}
       title="Open Apple"
       onMouseDown={() => props.handleOpenAppleDown((props.openAppleKeyMode + 1) % 3)}>
