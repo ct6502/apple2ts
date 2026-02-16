@@ -23,10 +23,10 @@ const initDriveState = (index: number, drive: number, hardDrive: boolean): Drive
     trackNbits: hardDrive ? Array<number>() : Array<number>(160).fill(51024),
     trackLocation: 0,
     maxQuarterTrack: 0,
-    lastLocalWriteTime: -1,
+    lastLocalFileWriteTime: -1,
     cloudData: null,
     writableFileHandle: null,
-    lastWriteTime: -1,
+    lastAppleWriteTime: -1,
     optimalTiming: 32,  // bits per 125 ns, so 32 = 4 µs
   }
 }
@@ -71,15 +71,7 @@ export const getFilename = () => {
   return ""
 }
 
-export const getDriveLastWriteTimeByIndex = (index: number) => {
-  return driveState[index].lastWriteTime
-}
-
-export const getDriveFileNameByIndex = (index: number) => {
-  return driveState[index].filename
-}
-
-export const passData = () => {
+export const passDriveData = () => {
   for (let i = 0; i < driveState.length; i++) {
     const dprops: DriveProps = {
       index: i,
@@ -91,8 +83,8 @@ export const passData = () => {
       diskHasChanges: driveState[i].diskHasChanges,
       isWriteProtected: driveState[i].isWriteProtected,
       diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
-      lastWriteTime: driveState[i].lastWriteTime,
-      lastLocalWriteTime: driveState[i].lastLocalWriteTime,
+      lastAppleWriteTime: driveState[i].lastAppleWriteTime,
+      lastLocalFileWriteTime: driveState[i].lastLocalFileWriteTime,
       cloudData: driveState[i].cloudData,
       writableFileHandle: driveState[i].writableFileHandle
     }
@@ -136,7 +128,7 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
     if (newState.driveState.length === 3 && i === 0) dindex = 1
     dindex++
   }
-  passData()
+  passDriveData()
 }
 
 export const resetFloppyDrives = () => {
@@ -145,12 +137,12 @@ export const resetFloppyDrives = () => {
         doResetDiskDrive(driveState[i])
     }
   }
-  passData()
+  passDriveData()
 }
 
 export const doPauseDrive = (resume = false) => {
   doPauseDiskDrive(resume)
-  passData()
+  passDriveData()
 }
 
 // Send in a new disk image to be loaded into the emulator.
@@ -178,14 +170,14 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   driveData[index] = decodeDiskData(driveState[index], props.diskData)
   if (driveData[index].length === 0) {
     driveState[index].filename = ""
-    passData()
+    passDriveData()
     return
   }
   driveState[index].motorRunning = props.motorRunning
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
-  driveState[index].lastLocalWriteTime = props.lastLocalWriteTime
-  passData()
+  driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime
+  passDriveData()
 }
 
 // Set properties on the current disk, without changing the data.
@@ -196,10 +188,10 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].motorRunning = props.motorRunning
   driveState[index].isWriteProtected = props.isWriteProtected
   driveState[index].diskHasChanges = props.diskHasChanges
-  driveState[index].lastWriteTime = props.lastWriteTime
-  driveState[index].lastLocalWriteTime = props.lastLocalWriteTime
+  driveState[index].lastAppleWriteTime = props.lastAppleWriteTime
+  driveState[index].lastLocalFileWriteTime = props.lastLocalFileWriteTime
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
-  passData()
+  passDriveData()
 }
 

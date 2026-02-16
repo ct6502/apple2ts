@@ -178,7 +178,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       dprops.diskHasChanges = true
       dprops.filename = writableFileHandle.name
       dprops.writableFileHandle = writableFileHandle
-      dprops.lastLocalWriteTime = -1
+      dprops.lastLocalFileWriteTime = -1
       passSetDriveProps(dprops)
 
       prepWritableFile(index, writableFileHandle)

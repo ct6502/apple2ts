@@ -22,10 +22,10 @@ const testDiskImage = (disk: string, address: number, minCycleCount: number, max
     diskHasChanges: false,
     isWriteProtected: false,
     diskData: new Uint8Array(data),
-    lastWriteTime: 0,
+    lastAppleWriteTime: 0,
     cloudData: null,
     writableFileHandle: null,
-    lastLocalWriteTime: 0,
+    lastLocalFileWriteTime: 0,
   }
   doSetEmuDriveNewData(props)
   // We cannot just call doSetRunMode(RUN_MODE.NEED_BOOT) since that relies

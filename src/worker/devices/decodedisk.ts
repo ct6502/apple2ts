@@ -68,7 +68,7 @@ const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   }
   driveState.filename = replaceSuffix(driveState.filename, "woz")
   driveState.diskHasChanges = true
-  driveState.lastWriteTime = Date.now()
+  driveState.lastAppleWriteTime = Date.now()
   return newData
 }
 

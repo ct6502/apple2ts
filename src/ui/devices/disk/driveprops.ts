@@ -30,10 +30,10 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     isWriteProtected: false,
     motorRunning: false,
     diskData: new Uint8Array(),
-    lastWriteTime: -1,
+    lastAppleWriteTime: -1,
     cloudData: null,
     writableFileHandle: null,
-    lastLocalWriteTime: -1
+    lastLocalFileWriteTime: -1
   }
 }
 
@@ -84,10 +84,10 @@ export const handleSetDiskData = (
   filename: string,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
-  lastLocalWriteTime: number) => {
+  lastLocalFileWriteTime: number) => {
   driveProps[index].filename = filename
   driveProps[index].diskData = data
-  driveProps[index].lastLocalWriteTime = lastLocalWriteTime
+  driveProps[index].lastLocalFileWriteTime = lastLocalFileWriteTime
   driveProps[index].cloudData = cloudData
   driveProps[index].writableFileHandle = writableFileHandle
   
@@ -254,7 +254,7 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
     if (dprops.diskHasChanges && !dprops.motorRunning) {
       setDiskImageToLocalStorage(index, dprops.diskData)      
       dprops.diskHasChanges = false
-      dprops.lastLocalWriteTime = Date.now()
+      dprops.lastLocalFileWriteTime = Date.now()
       passSetDriveProps(dprops)
     }
   }, 3 * 1000)
@@ -445,7 +445,7 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
       // Only FileSystemFileHandle supports getFile() for hot reload
       if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
         const file = await writableFileHandle.getFile()
-        if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
+        if (dprops.lastLocalFileWriteTime > 0 && file.lastModified > dprops.lastLocalFileWriteTime) {
           console.log(`🔄 Hot reload detected for drive ${index}`)
           handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
           passSetRunMode(RUN_MODE.NEED_BOOT)
@@ -459,7 +459,7 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
       if (await handleSaveWritableFile(index)) {
         console.log(`✅ Save successful for drive ${index}`)
         dprops.diskHasChanges = false
-        dprops.lastLocalWriteTime = Date.now()
+        dprops.lastLocalFileWriteTime = Date.now()
         
         // Only send FileSystemFileHandle to worker (not custom handlers with functions)
         const isFileSystemHandle = dprops.writableFileHandle && "getFile" in dprops.writableFileHandle

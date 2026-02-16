@@ -181,10 +181,10 @@ type DriveState = {
   trackNbits: Array<number>,
   trackLocation: number,
   maxQuarterTrack: number,
-  lastWriteTime: number,
+  lastAppleWriteTime: number,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
-  lastLocalWriteTime: number
+  lastLocalFileWriteTime: number
   optimalTiming: number,
 }
 
@@ -198,10 +198,10 @@ type DriveProps = {
   diskHasChanges: boolean,
   isWriteProtected: boolean,
   diskData: Uint8Array,
-  lastWriteTime: number,
+  lastAppleWriteTime: number,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
-  lastLocalWriteTime: number
+  lastLocalFileWriteTime: number
 }
 
 type DriveSaveState = {

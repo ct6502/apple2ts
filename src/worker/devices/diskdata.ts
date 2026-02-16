@@ -1,7 +1,7 @@
 import { passDriveSound } from "../worker2main"
 import { s6502 } from "../instructions"
 import { toHex, DRIVE } from "../../common/utility"
-import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
+import { getCurrentDriveData, getCurrentDriveState, passDriveData, setCurrentDrive } from "./drivestate"
 import { setSlotDriver, setSlotIOCallback } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
 
@@ -74,7 +74,7 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
     passDriveSound(DRIVE.TRACK_SEEK)
   }
   ds.status = ` Trk ${ds.quarterTrack / 4}`
-  passData()
+  passDriveData()
   // First adjust the current track location using the cycle count difference.
   // We need to do this before using the Applesauce formula below.
   cycleRemainder += cycles
@@ -235,7 +235,7 @@ const doWriteByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
     }
     debugCache.push(cycles >= 40 ? 2 : cycles >= 36 ? 1 : dataRegister)
     ds.diskHasChanges = true
-    ds.lastWriteTime = Date.now()
+    ds.lastAppleWriteTime = Date.now()
     dataRegister = 0
   }
 }
@@ -250,7 +250,7 @@ const doMotorTimeout = (ds: DriveState) => {
     if (diff > 10 && diff < 10000000) console.log(`Motor on time: ${diff}ms`)
     motorOnTime = Date.now()
   }
-  passData()
+  passDriveData()
   passDriveSound(DRIVE.MOTOR_OFF)
 }
 
@@ -263,7 +263,7 @@ const startMotor = (ds: DriveState) => {
     cycleRemainder = 0
   }
   ds.motorRunning = true
-  passData()
+  passDriveData()
   passDriveSound(DRIVE.MOTOR_ON)
 }
 
@@ -343,7 +343,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       if (ds !== dsOld && dsOld.motorRunning) {
         dsOld.motorRunning = false
         ds.motorRunning = true
-        passData()
+        passDriveData()
       }
       break
     }
@@ -393,7 +393,7 @@ export const handleDriveSoftSwitches: AddressCallback =
     case SWITCH.WRITE_OFF:  // $C08E,X: READ, Q7LOW
       if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, cycles)
-        ds.lastWriteTime = Date.now()
+        ds.lastAppleWriteTime = Date.now()
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = s6502.cycleCount
       }

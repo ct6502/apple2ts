@@ -1,6 +1,6 @@
 import { setX, setY, setCarry, s6502, setAccumulator } from "../instructions"
 import { setSlotDriver, memGet, getDataBlock, setMemoryBlock, memSet } from "../memory"
-import { getHardDriveData, getHardDriveState, passData } from "./drivestate"
+import { getHardDriveData, getHardDriveState, passDriveData } from "./drivestate"
 import { toHex } from "../../common/utility"
 import { parseAssembly } from ".././utility/assembler"
 
@@ -251,10 +251,10 @@ const processSmartPortAccess = () => {
     timerID = setTimeout(() => {
       timerID = 0
       if (ds) ds.motorRunning = false
-      passData()
+      passDriveData()
     }, 500)
   }
-  passData()
+  passDriveData()
 }
 
 
@@ -308,7 +308,7 @@ const processHardDriveBlockAccess = () => {
       const dataWrite = getDataBlock(bufferAddr)
       dd.set(dataWrite, blockStart + offset)
       ds.diskHasChanges = true
-      ds.lastWriteTime = Date.now()
+      ds.lastAppleWriteTime = Date.now()
       break
     }
     case 3:
@@ -327,8 +327,8 @@ const processHardDriveBlockAccess = () => {
     timerID = setTimeout(() => {
       timerID = 0
       if (ds) ds.motorRunning = false
-      passData()
+      passDriveData()
     }, 500)
   }
-  passData()
+  passDriveData()
 }
