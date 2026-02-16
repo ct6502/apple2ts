@@ -71,8 +71,21 @@ export const getFilename = () => {
   return ""
 }
 
+// Create an array of drive props, indexed by drive number
+const previousProps: Array<{diskHasChanges: boolean,
+  motorRunning: boolean, status: string}> = []
+
 export const passDriveData = () => {
   for (let i = 0; i < driveState.length; i++) {
+    // For empty drives, only update if one of our special properties changed.
+    if (driveState[i].filename === "" &&
+      !driveState[i].cloudData &&
+      previousProps[i] &&
+      previousProps[i].diskHasChanges === driveState[i].diskHasChanges &&
+      previousProps[i].motorRunning === driveState[i].motorRunning &&
+      previousProps[i].status === driveState[i].status) {
+      continue
+    }
     const dprops: DriveProps = {
       index: i,
       hardDrive: driveState[i].hardDrive,
@@ -82,13 +95,17 @@ export const passDriveData = () => {
       motorRunning: driveState[i].motorRunning,
       diskHasChanges: driveState[i].diskHasChanges,
       isWriteProtected: driveState[i].isWriteProtected,
-      diskData: driveState[i].diskHasChanges ? driveData[i] : new Uint8Array(),
+      diskData: (driveState[i].diskHasChanges && !driveState[i].motorRunning) ?
+        driveData[i] : new Uint8Array(),
       lastAppleWriteTime: driveState[i].lastAppleWriteTime,
       lastLocalFileWriteTime: driveState[i].lastLocalFileWriteTime,
       cloudData: driveState[i].cloudData,
       writableFileHandle: driveState[i].writableFileHandle
     }
     passDriveProps(dprops)
+    previousProps[i] = {diskHasChanges: dprops.diskHasChanges,
+      motorRunning: dprops.motorRunning,
+      status: dprops.status}
   }
 }
 
