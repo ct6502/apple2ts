@@ -1,5 +1,25 @@
 # Changelog
 
+## [v3.2.0](https://github.com/ct6502/apple2ts/tree/v3.2.0) (2026-02-17)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.1.1...v3.2.0)
+
+**Implemented enhancements:**
+
+- Enhancement Add Return Key to UI, or Soft Keyboard [\#210](https://github.com/ct6502/apple2ts/issues/210)
+
+**Fixed bugs:**
+
+- SPF - Stress ProDOS Filesystem Hangs [\#212](https://github.com/ct6502/apple2ts/issues/212)
+- Speed warp seems to have stopped working [\#201](https://github.com/ct6502/apple2ts/issues/201)
+
+**Merged pull requests:**
+
+- Add Apple II+ mode with II+-accurate text decoding/rendering [\#211](https://github.com/ct6502/apple2ts/pull/211) ([mocha-moonatic](https://github.com/mocha-moonatic))
+- Merge pull request \#207 from ct6502/main [\#208](https://github.com/ct6502/apple2ts/pull/208) ([ct6502](https://github.com/ct6502))
+- Avoid infinite loop with breakpoint actions [\#207](https://github.com/ct6502/apple2ts/pull/207) ([ct6502](https://github.com/ct6502))
+- merge [\#203](https://github.com/ct6502/apple2ts/pull/203) ([ct6502](https://github.com/ct6502))
+
 ## [v3.1.1](https://github.com/ct6502/apple2ts/tree/v3.1.1) (2026-01-17)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.1...v3.1.1)
