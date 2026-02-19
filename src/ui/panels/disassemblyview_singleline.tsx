@@ -19,6 +19,9 @@ const getShiftedMemoryValue = (addr: number) => {
     if (memory.length > 1) {
       const addressGetTable = handleGetAddressGetTable()
       const page = addr >>> 8
+      if (page === 0xC0) {
+        return memory[0x10000 + (addr & 255)]
+      }
       const shifted = addressGetTable[page]
       addr = shifted + (addr & 255)
       if (addr < memory.length) {
