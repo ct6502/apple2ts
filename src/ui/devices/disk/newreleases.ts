@@ -67,4 +67,13 @@ export const newReleases: DiskCollectionItem[] = [
     detailsUrl: "https://github.com/a2stuff/a2d",
     params: "color=white&speed=fast&scanlines=off"
   },
+  {
+    type: -1,
+    title: "Quarx",
+    lastUpdated: new Date("2/17/2026"),
+    imageUrl: "https://i0.wp.com/www.the8bitguy.com/wp-content/uploads/2026/02/screenshot-01.png",
+    diskUrl: "https://apple2ts.com/#https://www.the8bitguy.com/wp-content/uploads/2026/02/Apple-II-Quarx-Shareware-02-16-2026.zip",
+    detailsUrl: "https://www.the8bitguy.com/product/quarx-for-apple-iie-iic-iigs-and-laser-128/",
+  },
+
 ]
