@@ -1,4 +1,4 @@
-import { getCurrentMachineName, memGetC000, memSetC000 } from "./memory"
+import { getCurrentMachineName, memGet, memGetC000, memSetC000 } from "./memory"
 import { clearKeyStrobe, popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./devices/joystick"
@@ -50,6 +50,8 @@ const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
 // numbers to 0-0xB4 for now. This is still random enough for games like
 // Castle Wolfenstein (which rely on the cassette noise).
 const rand = () => Math.floor(0xB4 * Math.random())
+
+const fullrand = () => Math.floor(256 * Math.random())
 
 // let prevCount = 0
 
@@ -201,6 +203,14 @@ const video7clock = (onoff: boolean) => {
 // occur so frequently...
 const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC010, 0xC030, 0xC054, 0xC055, 0xC01F]
 
+// Get the corresponding byte from HGR memory $2000-$3FFF
+const hgrAddress = (scanline: number, column: number) => {
+  return 0x2000 + 0x400 * (scanline % 8) +
+    0x80 * (Math.trunc(scanline / 8) & 7) +
+    40 * Math.trunc(scanline / 64) +
+    column
+}
+
 export const checkSoftSwitches = (addr: number,
   calledFromMemSet: boolean, cycleCount: number) => {
 
@@ -274,7 +284,24 @@ export const checkSoftSwitches = (addr: number,
       memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
     }
     // Many games expect random "noise" from these soft switches.
-    if (addr >= 0xC020) memSetC000(addr, rand())
+    if (addr >= 0xC020) {
+      let value: number
+      if (addr >= 0xC050 && addr <= 0xC05F) {
+        // 262 scanlines * 65 cpu cycles/scanline = 17030 cycles per frame
+        const modCycles = (cycleCount % 17030) - 4550
+        if (modCycles >= 0) {
+          const scanline = Math.floor(modCycles / 65)
+          const pixelInLine = cycleCount % 65
+          const hgrAddr = hgrAddress(scanline, pixelInLine)
+          value = memGet(hgrAddr)
+        } else {
+          value = fullrand()
+        }
+      } else {
+        value = rand()
+      }
+      memSetC000(addr, value)
+    }
   } else if (addr === sswitch1.isSetAddr) {
     const value = memGetC000(addr)
     memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
