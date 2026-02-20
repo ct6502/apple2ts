@@ -392,12 +392,22 @@ const processSymbolData = (text: string) => {
     if (trimmedLine === "" || trimmedLine.startsWith(";")) {
       return
     }
-    // Split the line into address and symbol
-    const parts = trimmedLine.split(/\s+/)
-    if (parts.length >= 2) {
-      const address = parseInt(parts[0], 16)
-      const symbol = parts[1]
+    // First see if we have a line that is "SYMBOL equ $ADDRESS"
+    // Accept spaces or tabs between the parts.
+    // Watch out for optional ; comments at the end of the line.
+    const equMatch = trimmedLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+equ\s+\$([0-9A-Fa-f]{1,4})\b/i)
+    if (equMatch) {
+      const symbol = equMatch[1]
+      const address = parseInt(equMatch[2], 16)
       symbolMap.set(address, symbol)
+    } else {
+      // Now look for lines that start with an address followed by a symbol.
+      const parts = trimmedLine.split(/\s+/)
+      if (parts.length >= 2) {
+        const address = parseInt(parts[0], 16)
+        const symbol = parts[1]
+        symbolMap.set(address, symbol)
+      }
     }
   })
 
