@@ -344,7 +344,8 @@ type Breakpoint = {
   memoryBank: string,
   action1: BreakpointAction,
   action2: BreakpointAction,
-  halt: boolean
+  halt: boolean,
+  basic: boolean
 }
 
 type StepCallbackFunction = () => boolean

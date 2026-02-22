@@ -6,6 +6,7 @@ import {
 import BPEdit_Breakpoint from "./bpedit_breakpoint"
 import BPEdit_Watchpoint from "./bpedit_watchpoint"
 import BPEdit_Instruction from "./bpedit_instruction"
+import BPEdit_Basic from "./bpedit_basic"
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
@@ -48,6 +49,7 @@ const BreakpointEdit = (props: {
   const handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     props.breakpoint.watchpoint = e.target.value === "watchpoint"
     props.breakpoint.instruction = e.target.value === "instruction"
+    props.breakpoint.basic = e.target.value === "basic"
     if (props.breakpoint) {
       props.breakpoint.address = props.breakpoint.instruction ? 0 :
         props.breakpoint.address
@@ -55,7 +57,8 @@ const BreakpointEdit = (props: {
     setTriggerUpdate(!triggerUpdate)
   }
 
-  const isBreakpoint = !props.breakpoint.watchpoint && !props.breakpoint.instruction
+  const isBreakpoint = !props.breakpoint.watchpoint &&
+    !props.breakpoint.instruction && !props.breakpoint.basic
 
   return (
     <div className="modal-overlay"
@@ -73,7 +76,7 @@ const BreakpointEdit = (props: {
         ref={dialogRef}
         style={{
           left: `${props.dialogPositionX}px`, top: `${props.dialogPositionY}px`,
-          width: "525px", height: "auto"
+          width: "550px", height: "auto"
         }}
       >
         <div className="flex-column">
@@ -98,7 +101,7 @@ const BreakpointEdit = (props: {
               value="address"
               autoComplete="off"
               className="check-radio-box"
-              checked={!(props.breakpoint.watchpoint || props.breakpoint.instruction)}
+              checked={isBreakpoint}
               onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="Address" className="dialog-title flush-left">Breakpoint</label>
             <input type="radio"
@@ -119,6 +122,15 @@ const BreakpointEdit = (props: {
               checked={props.breakpoint.instruction}
               onChange={(e) => { handleBreakAtChange(e) }} />
             <label htmlFor="Instruction" className="dialog-title flush-left">Instruction</label>
+            <input type="radio"
+              id="Basic"
+              name="basic"
+              value="basic"
+              autoComplete="off"
+              className="check-radio-box"
+              checked={props.breakpoint.basic}
+              onChange={(e) => { handleBreakAtChange(e) }} />
+            <label htmlFor="Basic" className="dialog-title flush-left">Basic</label>
           </div>
 
           {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} />}
@@ -126,6 +138,7 @@ const BreakpointEdit = (props: {
             breakpoint={props.breakpoint} />}
           {props.breakpoint.instruction && <BPEdit_Instruction
             breakpoint={props.breakpoint} />}
+          {props.breakpoint.basic && <BPEdit_Basic breakpoint={props.breakpoint} />}
 
           <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
             <div></div>

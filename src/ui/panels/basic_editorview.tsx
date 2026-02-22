@@ -2,15 +2,21 @@ import { basicSetup } from "codemirror"
 import { EditorView, ViewUpdate, Decoration, DecorationSet } from "@codemirror/view"
 import { EditorState, Compartment, StateField, StateEffect } from "@codemirror/state"
 import { basic } from "./basic_codemirror_lang"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import { oneDark } from "@codemirror/theme-one-dark"
 import { handleGetAutoNumbering } from "../ui_settings"
+import { BreakpointMap } from "../../common/breakpoint"
+import { breakpointTheme, createBreakpointGutter, toggleBreakpoint } from "./basic_breakpoints"
+import { setPreferenceBreakpoints } from "../localstorage"
+import { handleGetBreakpoints } from "../main2worker"
 
 interface EditorProps {
   value: string;
   setValue: (v: string) => void;
   readOnly?: boolean;
   highlightLine?: number; // 1-based line number
+  breakpoints?: BreakpointMap;
+  onBreakpointsChange?: (breakpoints: BreakpointMap) => void;
 }
 
 // Effect to set the highlighted line
@@ -46,14 +52,37 @@ const BasicEditor = (props: EditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const editableCompartment = useRef(new Compartment())
+  const breakpointCompartment = useRef(new Compartment())
+
+  const handleBreakpointToggle = useCallback((line: number) => {
+    const currentBreakpoints = handleGetBreakpoints()
+    const newBreakpoints = toggleBreakpoint(currentBreakpoints, line)
+    
+    setPreferenceBreakpoints(newBreakpoints)
+    
+    // Notify parent component if callback provided
+    if (props.onBreakpointsChange) {
+      props.onBreakpointsChange(newBreakpoints)
+    }
+    
+    // Reconfigure the gutter completely to force update
+    if (viewRef.current) {
+      viewRef.current.dispatch({
+        effects: breakpointCompartment.current.reconfigure(
+          createBreakpointGutter(handleBreakpointToggle)
+        )
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.onBreakpointsChange])
 
   useEffect(() => {
     if (editorRef.current) {
       const fixedHeightEditor = EditorView.theme({
         "&": { height: "100%" },
         ".cm-highlighted-line": {
-          backgroundColor: "rgba(255, 255, 0, 0.15)",
-          borderLeft: "3px solid yellow"
+          backgroundColor: "rgba(255, 255, 0, 0.25)",
+          borderLeft: "5px solid yellow"
         }
       })
 
@@ -65,6 +94,8 @@ const BasicEditor = (props: EditorProps) => {
           fixedHeightEditor,
           basic(),
           highlightField,
+          breakpointCompartment.current.of(createBreakpointGutter(handleBreakpointToggle)),
+          breakpointTheme,
           EditorView.lineWrapping,
           editableCompartment.current.of([
             EditorView.editable.of(true),
@@ -189,6 +220,18 @@ const BasicEditor = (props: EditorProps) => {
       })
     }
   }, [props.highlightLine])
+
+  // Update breakpoints gutter when breakpoints change externally
+  useEffect(() => {
+    if (viewRef.current && props.breakpoints) {
+      // Reconfigure the gutter to force update
+      viewRef.current.dispatch({
+        effects: breakpointCompartment.current.reconfigure(
+          createBreakpointGutter(handleBreakpointToggle)
+        )
+      })
+    }
+  }, [props.breakpoints, handleBreakpointToggle])
 
   return <div ref={editorRef} style={{
     height: "760px", width: "687px",

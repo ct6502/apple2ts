@@ -43,7 +43,6 @@ export const doSetBasicStep = () => {
     if (bp.once) breakpointMap.delete(key)
   })
   const addr = 0xD805
-  if (breakpointMap.get(addr)) return
   const bp = BreakpointNew()
   bp.address = addr
   bp.once = true
@@ -293,6 +292,14 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     return BREAKPOINT_RESULT.BREAK
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return BREAKPOINT_RESULT.NO_BREAK
+  if (s6502.PC === 0xD805) {
+    // Look for BASIC breakpoints
+    const lineNum = memGet(0x75) + (memGet(0x76) << 8)
+    const bp = breakpointMap.get(lineNum)
+    if (bp && !bp.disabled) {
+      return BREAKPOINT_RESULT.HIDDEN_BREAK
+    }
+  }
   const bp = breakpointMap.get(s6502.PC) ||
     breakpointMap.get(-1) ||
     breakpointMap.get(instr | BRK_INSTR) ||

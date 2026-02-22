@@ -11,7 +11,7 @@ const BPEdit_Breakpoint = (props: {
 }) => {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
-    toHex(props.breakpoint.address) : "")
+    props.breakpoint.basic ? props.breakpoint.address.toString() : toHex(props.breakpoint.address) : "")
 
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
@@ -69,13 +69,14 @@ const BPEdit_Breakpoint = (props: {
   return (
     <div>
       <div className="flex-row">
-        <EditField name="Address: "
+        <EditField name={props.breakpoint.basic ? "BASIC Line Number: " : "Address: $"}
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
           placeholder="Any"
           width="5em" />
       </div>
+      {!props.breakpoint.basic && <div>
       <div style={{ marginTop: "16px" }}>
         <EditField name="Hit&nbsp;Count: "
           value={props.breakpoint.hitcount.toString()}
@@ -106,7 +107,7 @@ const BPEdit_Breakpoint = (props: {
         isDisabled={isBankDisabledForAddress} />
 
       <Breakpoint_Actions breakpoint={props.breakpoint}/>
-
+      </div>}
     </div>
   )
 }

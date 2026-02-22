@@ -265,7 +265,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
           ref={index === 0 ? scrollToRef : null}
           style={{ position: "relative" }}
           className={getAddress(line) === pc1 ? "program-counter" : ""}>
-          {(bp[index] &&
+          {(bp[index] && !bp[index].basic &&
             <FontAwesomeIcon icon={getBreakpointIcon(bp[index])}
               className={"breakpoint-position " + getBreakpointStyle(bp[index])}
               data-key={bp[index].address}
