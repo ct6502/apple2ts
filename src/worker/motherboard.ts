@@ -6,7 +6,8 @@ import { MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "../com
 import { getDriveSaveState, restoreDriveSaveState, resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
-  restoreSoftSwitches, getSoftSwitchDescriptions } from "./softswitches"
+  restoreSoftSwitches, getSoftSwitchDescriptions, 
+  syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable, 
   getBasePlusAuxMemory,
@@ -15,7 +16,8 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   C800SlotGet,
   RamWorksBankGet,
   doSetRom,
-  getZeroPage} from "./memory"
+  getZeroPage,
+  memSet} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
@@ -326,7 +328,11 @@ export const doSetIsDebugging = (enable: boolean) => {
 }
 
 export const doSetMemory = (addr: number, value: number) => {
-  memory[addr] = value
+  if (addr >> 8 === 0xC0) {
+    memSet(addr, value)
+  } else {
+    memory[addr] = value
+  }
   // If we have set an HGR memory location (for example) be sure to
   // pass our updated data to the main thread.
   updateExternalMachineState()
@@ -485,6 +491,7 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
   }
   cpuRunMode = cpuRunModeIn
   if (cpuRunMode === RUN_MODE.PAUSED) {
+    syncSoftSwitchStatusFlags()
     if (gameSetupTimerID) {
       clearInterval(gameSetupTimerID)
       gameSetupTimerID = 0

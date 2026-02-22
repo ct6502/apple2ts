@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine } from "../../common/utility"
+import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, ROMmemoryStart } from "../../common/utility"
 import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passSetMemory } from "../main2worker"
 import React from "react"
 import { Droplist } from "./droplist"
@@ -58,6 +58,8 @@ const MemoryDump = () => {
               result.set(memory.slice(lookup[i], lookup[i] + 256), i * 256)
             }
           }
+          // Retrieve $C0xx soft switch values
+          result.set(memory.slice(ROMmemoryStart, ROMmemoryStart + 0x100), 0xC000)
           return result
         }
       case MEMORY_RANGE.AUX:
@@ -244,8 +246,11 @@ const MemoryDump = () => {
         {
           const page = addr >>> 8
           const addressGetTable = handleGetAddressGetTable()
-          const shifted = addressGetTable[page]
-          addr = shifted + (addr & 255)
+          // Set $C0xx soft switch value
+          if (page !== 0xC0) {
+            const shifted = addressGetTable[page]
+            addr = shifted + (addr & 255)
+          }
         }
         break
       case MEMORY_RANGE.AUX:

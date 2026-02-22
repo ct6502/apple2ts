@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { getSymbolTables, toHex } from "../../common/utility"
+import { getSymbolTables, ROMmemoryStart, toHex } from "../../common/utility"
 import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetSoftSwitches, handleGetState6502 } from "../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 
@@ -19,8 +19,9 @@ const getShiftedMemoryValue = (addr: number) => {
     if (memory.length > 1) {
       const addressGetTable = handleGetAddressGetTable()
       const page = addr >>> 8
+      // Retrieve $C0xx soft switch values
       if (page === 0xC0) {
-        return memory[0x10000 + (addr & 255)]
+        return memory[ROMmemoryStart + (addr & 255)]
       }
       const shifted = addressGetTable[page]
       addr = shifted + (addr & 255)

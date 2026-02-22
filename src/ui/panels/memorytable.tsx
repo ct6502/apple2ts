@@ -189,11 +189,23 @@ const MemoryTable = (props: MemoryTableProps) => {
         if (row >= (nrows - 1)) return
         row++
       } else if (e.key === "ArrowLeft") {
-        if (col < 1) return
-        col--
+        if (col > 1) {
+          col--
+        } else if (row >= 1) {
+          row--
+          col = ncols - 2
+        } else {
+          return
+        }
       } else if (e.key === "ArrowRight") {
-        if (col >= (ncols - 2)) return
-        col++
+        if (col < (ncols - 2)) {
+          col++
+        } else if (row < (nrows - 1)) {
+          row++
+          col = 1
+        } else {
+          return
+        }
       }
       setNewFocus(table, col, row)
     } else if (e.key === "Escape") {

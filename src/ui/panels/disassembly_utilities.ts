@@ -1,5 +1,5 @@
 import { getInstructionString } from "../../common/util_disassemble"
-import { DISASSEMBLE_VISIBLE } from "../../common/utility"
+import { DISASSEMBLE_VISIBLE, ROMmemoryStart } from "../../common/utility"
 import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../main2worker"
 
 let instructions: Array<PCodeInstr1>
@@ -43,6 +43,14 @@ export const getDisassembly = () => {
   for (let i=0; i < nlines; i++) {
     if (addr > 0xFFFF) {
       r += "\n"
+      continue
+    }
+    if (addr >> 8 === 0xC0) {
+      // Retrieve $C0xx soft switch values
+      const instr = (handleGetMemoryDump())[ROMmemoryStart + addr - 0xC000]
+      const code =  instructions[instr]
+      r += getInstructionString(addr, code, 0x00, 0x00) + "\n"
+      addr++
       continue
     }
     const instr = memGetRaw(addr)

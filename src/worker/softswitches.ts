@@ -390,3 +390,14 @@ export const getSoftSwitchDescriptions = () => {
   SoftSwitchDescriptions[0xC000] = "C000 KBRD/STORE80-OFF"
   return SoftSwitchDescriptions
 }
+
+export const syncSoftSwitchStatusFlags = () => {
+  for (const key in SWITCHES) {
+    const keyTyped = key as keyof typeof SWITCHES
+    const sswitch = SWITCHES[keyTyped]
+    if (sswitch.isSetAddr) {
+      const value = memGetC000(sswitch.isSetAddr)
+      memSetC000(sswitch.isSetAddr, sswitch.isSet ? (value | 0x80) : (value & 0x7F))
+    }
+  }
+}

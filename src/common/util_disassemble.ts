@@ -7,6 +7,13 @@ const decodeBranch = (addr: number, vLo: number) => {
 
 export const getInstructionString = (addr: number, code: PCodeInstr1,
   vLo: number, vHi: number) => {
+  if (addr >> 8 === 0xC0) {
+    let codename = "---"
+    if (addr >= 0xC010 && addr <= 0xC01F) {
+      codename = code.pcode >= 0x80 ? "ON" : "OFF"
+    }
+    return `${toHex(addr, 4)}: ${toHex(code.pcode)}        ${codename}`
+  }
   let value = ""
   let hex = `${toHex(code.pcode)}`
   let sLo = ""
