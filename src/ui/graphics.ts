@@ -11,8 +11,8 @@ let frameCount = 0
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
-export let xmargin = 0.075
-export let ymargin = 0.075
+export let xmargin = 0
+export let ymargin = 0
 
 // Convert canvas coordinates (absolute to the entire browser window)
 // to normalized HGR screen coordinates.
@@ -586,8 +586,9 @@ export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
-  xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : 0.075)
-  ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : 0.075)
+  const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.17 : 0.075
+  xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
+  ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384

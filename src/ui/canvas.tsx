@@ -11,8 +11,9 @@ import {
   handleGetRunMode,
   handleGetCout,
   passKeyRelease,
+  handleGetMachineName,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "../common/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
@@ -21,7 +22,7 @@ import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme } from "./ui_settings"
+import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
 
 
 let width = 800
@@ -540,7 +541,10 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = (handleGetShowAppleMouse() && withinScreen) ? `url(${window.assetRegistry.dotCursor}), none` :
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
-  const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
+  const machine = handleGetMachineName()
+  const bgImg = machine === "APPLE2P" ?
+    window.assetRegistry.bgImgApple2Plus : window.assetRegistry.bgImage
+  const backgroundImage = noBackgroundImage ? "" : `url(${bgImg})`
 
   return (
     <span className="canvas-text scanline-gradient">
@@ -549,8 +553,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         className="main-canvas"
         style={{
           cursor: cursor,
+          borderColor: (machine === "APPLE2P" || getTheme() === UI_THEME.DARK) ? "black" : "#583927",
           borderRadius: noBackgroundImage ? "0" : "20px",
-          borderWidth: noBackgroundImage ? "0" : "2px",
+          borderWidth: (noBackgroundImage || machine === "APPLE2P") ? "0" : "2px",
           backgroundImage: `${backgroundImage}`,
           marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement)
         }}
