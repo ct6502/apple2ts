@@ -1,6 +1,6 @@
-import { Droplist } from "./droplist"
-import EditField from "./editfield"
-import { toHex } from "../../common/utility"
+import { Droplist } from "../droplist"
+import EditField from "../editfield"
+import { toHex } from "../../../common/utility"
 import { useState } from "react"
 
 interface BreakpointActionControlProps {

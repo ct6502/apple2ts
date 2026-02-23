@@ -1,9 +1,9 @@
 import { useRef, useState } from "react"
-import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, ROMmemoryStart } from "../../common/utility"
-import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passSetMemory } from "../main2worker"
+import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, ROMmemoryStart } from "../../../common/utility"
+import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passSetMemory } from "../../main2worker"
 import React from "react"
-import { Droplist } from "./droplist"
-import { overrideHires } from "../graphics"
+import { Droplist } from "../droplist"
+import { overrideHires } from "../../graphics"
 import MemoryTable from "./memorytable"
 import {
   faCrosshairs, faSave,
@@ -11,9 +11,9 @@ import {
   faArrowUp, faArrowDown
 } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { useGlobalContext } from "../globalcontext"
-import { BreakpointMap, BreakpointNew } from "../../common/breakpoint"
-import { setPreferenceBreakpoints } from "../localstorage"
+import { useGlobalContext } from "../../globalcontext"
+import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
+import { setPreferenceBreakpoints } from "../../localstorage"
 
 enum MEMORY_RANGE {
   CURRENT = "Current memory",

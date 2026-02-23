@@ -1,8 +1,8 @@
 import { useRef } from "react"
-import { hiresLineToAddress, toHex, UI_THEME } from "../../common/utility"
-import { useGlobalContext } from "../globalcontext"
-import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../graphics"
-import { getTheme } from "../ui_settings"
+import { hiresLineToAddress, toHex, UI_THEME } from "../../../common/utility"
+import { useGlobalContext } from "../../globalcontext"
+import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../../graphics"
+import { getTheme } from "../../ui_settings"
 
 type MemoryTableProps = {
   memory: Uint8Array

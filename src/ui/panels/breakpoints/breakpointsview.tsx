@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { handleGetBreakpoints, handleGetRunMode } from "../main2worker"
+import { handleGetBreakpoints, handleGetRunMode } from "../../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPencil as iconBreakpointEdit,
@@ -11,13 +11,13 @@ import {
   faCircle as iconBreakpointEnabled,
 } from "@fortawesome/free-solid-svg-icons"
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons"
-import { getLineOfDisassembly, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import { getLineOfDisassembly, setDisassemblyAddress, setDisassemblyVisibleMode } from "../disassembly/disassembly_utilities"
 import BreakpointEdit from "./breakpointedit"
-import { BreakpointMap, BreakpointNew, getBreakpointString, getBreakpointStyle } from "../../common/breakpoint"
-import { useGlobalContext } from "../globalcontext"
-import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../common/utility"
-import { setPreferenceBreakpoints } from "../localstorage"
-import { handleSetCPUState } from "../controller"
+import { BreakpointMap, BreakpointNew, getBreakpointString, getBreakpointStyle } from "../../../common/breakpoint"
+import { useGlobalContext } from "../../globalcontext"
+import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../../common/utility"
+import { setPreferenceBreakpoints } from "../../localstorage"
+import { handleSetCPUState } from "../../controller"
 
 const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()

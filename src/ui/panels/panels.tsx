@@ -1,4 +1,4 @@
-import "./debugsection.css"
+import "./panels.css"
 import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faCode } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
@@ -8,11 +8,11 @@ import { getHelpText, getTabView, getTheme, isMinimalTheme } from "../ui_setting
 import { useMemo, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
-import ExpectinTab from "./expectintab"
-import HelpTab from "./helptab"
-import { defaultHelpText } from "./defaulthelptext"
+import ExpectinTab from "./expectin/expectintab"
+import HelpTab from "./help/helptab"
+import { defaultHelpText } from "./help/defaulthelptext"
 import { setPreferenceDebugMode } from "../localstorage"
-import BasicTab from "./basic_tab"
+import BasicTab from "./basic/basic_tab"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
@@ -23,7 +23,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
 
   if (isMinimalTheme()) {
-    import("./debugsection.minimal.css")
+    import("./panels.minimal.css")
   }
 
   const currentHelpText = getHelpText()

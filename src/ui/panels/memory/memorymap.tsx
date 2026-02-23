@@ -1,7 +1,7 @@
 // import { handleGetStackString } from "../main2worker";
 
-import { RUN_MODE } from "../../common/utility"
-import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches, passSetSoftSwitches } from "../main2worker"
+import { RUN_MODE } from "../../../common/utility"
+import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches, passSetSoftSwitches } from "../../main2worker"
 
 const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
   const switches = handleGetSoftSwitches()

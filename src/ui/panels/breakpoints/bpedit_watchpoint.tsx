@@ -1,10 +1,10 @@
 import React, { useState } from "react"
-import EditField from "./editfield"
-import PullDownMenu from "./pulldownmenu"
-import { Droplist } from "./droplist"
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
-import { toHex } from "../../common/utility"
-import { handleGetSoftSwitchDescriptions } from "../main2worker"
+import EditField from "../editfield"
+import PullDownMenu from "../pulldownmenu"
+import { Droplist } from "../droplist"
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/memorybanks"
+import { toHex } from "../../../common/utility"
+import { handleGetSoftSwitchDescriptions } from "../../main2worker"
 import Breakpoint_Actions from "./breakpoint_actions"
 
 const BPEdit_Watchpoint = (props: {

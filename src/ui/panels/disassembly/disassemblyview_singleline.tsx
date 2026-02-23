@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { getSymbolTables, ROMmemoryStart, toHex } from "../../common/utility"
-import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetSoftSwitches, handleGetState6502 } from "../main2worker"
+import { getSymbolTables, ROMmemoryStart, toHex } from "../../../common/utility"
+import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetSoftSwitches, handleGetState6502 } from "../../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 
 // const fWeight = (opcode: string) => {

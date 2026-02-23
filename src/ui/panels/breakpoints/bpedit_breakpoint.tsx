@@ -1,8 +1,8 @@
 import { useState } from "react"
-import EditField from "./editfield"
-import { Droplist } from "./droplist"
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
-import { toHex } from "../../common/utility"
+import EditField from "../editfield"
+import { Droplist } from "../droplist"
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/memorybanks"
+import { toHex } from "../../../common/utility"
 import ExpressionControl from "./expressioncontrol"
 import Breakpoint_Actions from "./breakpoint_actions"
 

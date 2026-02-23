@@ -1,4 +1,4 @@
-import { isGameMode } from "../ui_settings"
+import { isGameMode } from "../../ui_settings"
 
 
 

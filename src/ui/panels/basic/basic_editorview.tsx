@@ -4,11 +4,11 @@ import { EditorState, Compartment, StateField, StateEffect } from "@codemirror/s
 import { basic } from "./basic_codemirror_lang"
 import { useEffect, useRef, useCallback } from "react"
 import { oneDark } from "@codemirror/theme-one-dark"
-import { handleGetAutoNumbering } from "../ui_settings"
-import { BreakpointMap } from "../../common/breakpoint"
+import { handleGetAutoNumbering } from "../../ui_settings"
+import { BreakpointMap } from "../../../common/breakpoint"
 import { breakpointTheme, createBreakpointGutter, toggleBreakpoint } from "./basic_breakpoints"
-import { setPreferenceBreakpoints } from "../localstorage"
-import { handleGetBreakpoints } from "../main2worker"
+import { setPreferenceBreakpoints } from "../../localstorage"
+import { handleGetBreakpoints } from "../../main2worker"
 
 interface EditorProps {
   value: string;

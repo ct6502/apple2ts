@@ -14,7 +14,7 @@ import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../c
 import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { passSetDriveProps } from "../../main2worker"
-import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
 import { isFileSystemApiSupported } from "../../ui_utilities"

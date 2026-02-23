@@ -3,7 +3,7 @@ import {
   handleGetRunMode,
   handleGetState6502,
   passStepInto, passStepOut, passStepOver
-} from "../main2worker"
+} from "../../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faPause,
@@ -11,11 +11,11 @@ import {
   faFolderOpen,
 } from "@fortawesome/free-solid-svg-icons"
 import React from "react"
-import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../common/utility"
-import { handleSetCPUState } from "../controller"
-import { bpStepInto } from "../img/icon_stepinto"
-import { bpStepOut } from "../img/icon_stepout"
-import { bpStepOver } from "../img/icon_stepover"
+import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
+import { handleSetCPUState } from "../../controller"
+import { bpStepInto } from "../../img/icon_stepinto"
+import { bpStepOut } from "../../img/icon_stepout"
+import { bpStepOver } from "../../img/icon_stepover"
 import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 
 const DisassemblyControls = (props: DisassemblyProps) => {

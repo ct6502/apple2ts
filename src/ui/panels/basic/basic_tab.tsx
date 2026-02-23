@@ -1,17 +1,17 @@
-import "./debugsection.css"
+import "../panels.css"
 import { faDatabase, faFolderOpen, faForwardStep, faGear, faListOl, faPlay, faRepeat, faSave, faSnowflake, faStop } from "@fortawesome/free-solid-svg-icons"
-import { handleGetAutoNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../ui_settings"
+import { handleGetAutoNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultProgram from "./basic_program.bas?raw"
 import BasicEditor from "./basic_editorview"
 import { BasicCompiler } from "./basic_compiler"
-import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../main2worker"
-import { RUN_MODE } from "../../common/utility"
-import { handleSetDiskFromURL } from "../devices/disk/driveprops"
-import { setPreferenceAutoNumbering, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../localstorage"
-import { MaximumSpeedMode } from "../controls/speeddropdown"
-import PopupMenu from "../controls/popupmenu"
+import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../../main2worker"
+import { RUN_MODE } from "../../../common/utility"
+import { handleSetDiskFromURL } from "../../devices/disk/driveprops"
+import { setPreferenceAutoNumbering, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../../localstorage"
+import { MaximumSpeedMode } from "../../controls/speeddropdown"
+import PopupMenu from "../../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
 import { BasicRebuildFromMemory } from "./basic_rebuild_memory"
 
@@ -27,7 +27,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   if (isMinimalTheme()) {
-    import("./debugsection.minimal.css")
+    import("../panels.minimal.css")
   }
 
   useEffect(() => {

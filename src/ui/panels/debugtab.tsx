@@ -1,17 +1,17 @@
-import "./debugsection.css"
-import DisassemblyPanel from "./disassemblypanel"
+import "./panels.css"
+import DisassemblyPanel from "./disassembly/disassemblypanel"
 import TimeTravelPanel from "./timetravelpanel"
 import State6502Controls from "./state6502controls"
-import MemoryDump from "./memorydump"
-import BreakpointsView from "./breakpointsview"
-import MemoryMap from "./memorymap"
+import MemoryDump from "./memory/memorydump"
+import BreakpointsView from "./breakpoints/breakpointsview"
+import MemoryMap from "./memory/memorymap"
 import StackDump from "./stackdump"
 import { isMinimalTheme } from "../ui_settings"
 
 const DebugTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   if (isMinimalTheme()) {
-    import("./debugsection.minimal.css")
+    import("./panels.minimal.css")
   }
 
   return (

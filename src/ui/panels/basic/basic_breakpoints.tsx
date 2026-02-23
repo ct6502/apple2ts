@@ -1,10 +1,10 @@
 import { EditorView, gutter, GutterMarker } from "@codemirror/view"
-import { BreakpointMap, BreakpointNew } from "../../common/breakpoint"
+import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCircle as iconBreakpointEnabled } from "@fortawesome/free-solid-svg-icons"
 import { faCircle as iconBreakpointDisabled } from "@fortawesome/free-regular-svg-icons"
 import { renderToString } from "react-dom/server"
-import { handleGetBreakpoints } from "../main2worker"
+import { handleGetBreakpoints } from "../../main2worker"
 
 /**
  * Extract the BASIC line number from a line of code

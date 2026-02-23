@@ -3,17 +3,17 @@ import {
   handleGetBreakpoints,
   handleGetRunMode,
   handleGetState6502,
-} from "../main2worker"
+} from "../../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../common/utility"
+import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../../common/utility"
 import {
   faCircle as iconBreakpoint,
 } from "@fortawesome/free-solid-svg-icons"
-import { useGlobalContext } from "../globalcontext"
-import { BreakpointMap, BreakpointNew, getBreakpointIcon, getBreakpointStyle } from "../../common/breakpoint"
+import { useGlobalContext } from "../../globalcontext"
+import { BreakpointMap, BreakpointNew, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
 import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
-import { setPreferenceBreakpoints } from "../localstorage"
+import { setPreferenceBreakpoints } from "../../localstorage"
 
 const nlines = 40
 let currentScrollAddress = -1

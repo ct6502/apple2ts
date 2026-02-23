@@ -1,5 +1,5 @@
 import { useState } from "react"
-import EditField from "./editfield"
+import EditField from "../editfield"
 
 const BPEdit_Basic = (props: {
   breakpoint: Breakpoint,

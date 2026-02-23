@@ -1,6 +1,6 @@
-import { getInstructionString } from "../../common/util_disassemble"
-import { DISASSEMBLE_VISIBLE, ROMmemoryStart } from "../../common/utility"
-import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../main2worker"
+import { getInstructionString } from "../../../common/util_disassemble"
+import { DISASSEMBLE_VISIBLE, ROMmemoryStart } from "../../../common/utility"
+import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../../main2worker"
 
 let instructions: Array<PCodeInstr1>
 export const set6502Instructions = (instr: Array<PCodeInstr1>) => {

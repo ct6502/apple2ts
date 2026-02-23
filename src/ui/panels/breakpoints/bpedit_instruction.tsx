@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, getBreakpointString } from "../../common/breakpoint"
-import EditField from "./editfield"
-import PullDownMenu from "./pulldownmenu"
-import { Droplist } from "./droplist"
-import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../common/memorybanks"
-import { opCodeNames, opCodes, opTable } from "../../common/opcodes"
+import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, getBreakpointString } from "../../../common/breakpoint"
+import EditField from "../editfield"
+import PullDownMenu from "../pulldownmenu"
+import { Droplist } from "../droplist"
+import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/memorybanks"
+import { opCodeNames, opCodes, opTable } from "../../../common/opcodes"
 import Breakpoint_Actions from "./breakpoint_actions"
 
 const addressModes = [

@@ -1,8 +1,8 @@
 import React, { } from "react"
 import "./helppanel.css"
 import { defaultHelpText } from "./defaulthelptext"
-import { UI_THEME } from "../../common/utility"
-import { isMinimalTheme } from "../ui_settings"
+import { UI_THEME } from "../../../common/utility"
+import { isMinimalTheme } from "../../ui_settings"
 
 type HelpPanelProps = {
   helptext: string,

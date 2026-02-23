@@ -1,6 +1,6 @@
 import { Buffer } from "buffer"
-import { handleGetSaveState } from "../main2worker"
-import { handleGetCapitalizeBasic } from "../ui_settings"
+import { handleGetSaveState } from "../../main2worker"
+import { handleGetCapitalizeBasic } from "../../ui_settings"
 
 const APPLESOFT_TOKENS: string[] = [
   "end ", // 128

@@ -1,4 +1,4 @@
-import DiskCollectionPanel from "../../panels/diskcollectionpanel"
+import DiskCollectionPanel from "../../diskdialog/diskcollectionpanel"
 
 interface DiskImageDialogProps {
   onClose: () => void;
