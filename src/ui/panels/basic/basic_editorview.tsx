@@ -80,6 +80,7 @@ const BasicEditor = (props: EditorProps) => {
     if (editorRef.current) {
       const fixedHeightEditor = EditorView.theme({
         "&": { height: "100%" },
+        ".cm-foldGutter": { width: 0 },
         ".cm-highlighted-line": {
           backgroundColor: "rgba(255, 255, 0, 0.25)",
           borderLeft: "5px solid yellow"
