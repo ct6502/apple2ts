@@ -147,7 +147,9 @@ export const passAppleCommandKeyRelease = (left: boolean) => {
 }
 
 export const passSetGamepads = (gamePads: EmuGamepad[] | null) => {
-  doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
+  if (machineState.runMode !== RUN_MODE.IDLE) {
+    doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
+  }
 }
 
 export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boolean) => {

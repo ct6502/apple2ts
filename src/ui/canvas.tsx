@@ -15,7 +15,7 @@ import {
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
-import { checkGamepad, handleArrowKey } from "./devices/gamepad"
+import { checkGamepad, handleArrowKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
 import { drawHiresTile } from "./graphicshgr"
 import { useGlobalContext } from "./globalcontext"
@@ -270,6 +270,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       if (ctx && hiddenCtx) {
         ProcessDisplay(ctx, hiddenCtx, width, height)
       }
+      checkGamepad()
     }
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
     window.requestAnimationFrame(RenderCanvas)
@@ -476,7 +477,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
-        window.setInterval(() => { checkGamepad() }, 34)
+        ensureGamepadEventListeners()
         handleResize()
 
         new ResizeObserver(entries => {

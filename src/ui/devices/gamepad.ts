@@ -6,6 +6,34 @@ import { CustomGamepad } from "./customgamepad"
 // Keep these outside so we can have both X and Y axes set at the same time.
 const arrowGamePad = [0, 0]
 
+// Cache the last gamepad state to avoid sending duplicate updates
+let lastGamepadState: EmuGamepad[] = []
+
+const AXIS_THRESHOLD = 0.01 // Ignore changes smaller than this
+
+const gamepadStateChanged = (current: EmuGamepad[], previous: EmuGamepad[]): boolean => {
+  if (current.length !== previous.length) return true
+  
+  for (let i = 0; i < current.length; i++) {
+    const curr = current[i]
+    const prev = previous[i]
+    
+    // Check axes with threshold
+    if (curr.axes.length !== prev.axes.length) return true
+    for (let j = 0; j < curr.axes.length; j++) {
+      if (Math.abs(curr.axes[j] - prev.axes[j]) > AXIS_THRESHOLD) return true
+    }
+    
+    // Check buttons
+    if (curr.buttons.length !== prev.buttons.length) return true
+    for (let j = 0; j < curr.buttons.length; j++) {
+      if (curr.buttons[j] !== prev.buttons[j]) return true
+    }
+  }
+  
+  return false
+}
+
 const convertArrowGamepadToValue = (index: number) => {
   const indexToValue = [0, 0.25, 0.5, 0.75, 1, 0]
   if (index < 0) {
@@ -41,6 +69,22 @@ const checkArrowKeyGamepadValues = () => {
 }
 
 let customGamepad: (CustomGamepad | null) = null
+
+// Force browser to update gamepad state by listening to events,
+// even if we don't really do anything with the events.
+// Otherwise the browser will sometimes not update the state.
+let gamepadEventListenersAdded = false
+export const ensureGamepadEventListeners = () => {
+  if (!gamepadEventListenersAdded) {
+    gamepadEventListenersAdded = true
+    window.addEventListener("gamepadconnected", () => {
+      console.log("Gamepad connected")
+    })
+    window.addEventListener("gamepaddisconnected", () => {
+      console.log("Gamepad disconnected")
+    })
+  }
+}
 
 export const setCustomGamepad = (buttons: boolean[] | null, axes: number[] | null) => {
   if (!customGamepad) {
@@ -84,7 +128,11 @@ export const checkGamepad = () => {
     }
   }
   if (gamePad.length > 0) {
-    passSetGamepads(gamePad)
+    // Only send update if state has changed
+    if (gamepadStateChanged(gamePad, lastGamepadState)) {
+      lastGamepadState = gamePad
+      passSetGamepads(gamePad)
+    }
   }
 }
 
