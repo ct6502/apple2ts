@@ -110,6 +110,22 @@ const getGamepads = () => {
   return gamepads
 }
 
+// Some controllers report the D-pad as special values for axes[9].
+// Convert those to standard axes[0] and axes[1] values.
+const checkXboxDpad = (axes: number[]) => {
+  if (axes.length >= 10) {
+    if ((Math.abs(axes[9] - 0.71)) < AXIS_THRESHOLD) {
+      axes[0] = -1
+    } else if ((Math.abs(axes[9] - 0.14)) < AXIS_THRESHOLD) {
+      axes[1] = 1
+    } else if ((Math.abs(axes[9] - (-1.0))) < AXIS_THRESHOLD) {
+      axes[1] = -1
+    } else if ((Math.abs(axes[9] - (-0.43))) < AXIS_THRESHOLD) {
+      axes[0] = 1
+    }
+  }
+}
+
 export const checkGamepad = () => {
   const gamepads = getGamepads()
   // If we don't have a gamepad, see if we're using our arrow keys as a joystick
@@ -121,10 +137,13 @@ export const checkGamepad = () => {
   }
   const gamePad: EmuGamepad[] = []
   for (let i = 0; i < gamepads.length; i++) {
-    const axes = gamepads[i]?.axes
     const buttons = gamepads[i]?.buttons
-    if (axes && buttons) {
-      gamePad.push({axes: axes.slice(), buttons: buttons.map(b => b.pressed)})
+    if (gamepads[i]?.axes && buttons) {
+      const axes = (gamepads[i].axes).slice()
+      if (axes.length >= 10) {
+        checkXboxDpad(axes)
+      }
+      gamePad.push({axes: axes, buttons: buttons.map(b => b.pressed)})
     }
   }
   if (gamePad.length > 0) {

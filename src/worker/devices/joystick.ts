@@ -5,11 +5,17 @@ import { SWITCHES } from "../softswitches"
 // import { addToBufferDebounce } from "./keyboard"
 
 let gamePads: EmuGamepad[]
-const maxTimeoutCycles = Math.trunc(0.0028*1.020484e6)
-let paddle0timeout = maxTimeoutCycles / 2
-let paddle1timeout = maxTimeoutCycles / 2
-let paddle2timeout = maxTimeoutCycles / 2
-let paddle3timeout = maxTimeoutCycles / 2
+
+// This is 2.8ms times the clock frequency, which is the maximum time that
+// the Apple II's PDL subroutine will wait for the RC timing circuit to
+// discharge from 5V to 0V, and is then scaled into a value 0 to 255.
+// This is actually a tiny bit less than 2.8ms, to guarantee that our
+// midpoint is at 128.
+const MAX_TIMEOUT_CYCLES = Math.trunc(0.00278 * 1.020484e6)
+let paddle0timeout = MAX_TIMEOUT_CYCLES / 2
+let paddle1timeout = MAX_TIMEOUT_CYCLES / 2
+let paddle2timeout = MAX_TIMEOUT_CYCLES / 2
+let paddle3timeout = MAX_TIMEOUT_CYCLES / 2
 // let prevPaddle0timeout = paddle0timeout
 // let prevPaddle1timeout = paddle1timeout
 let countStart = 0
@@ -21,13 +27,14 @@ let isPB2down = false
 let isLeftDown = false
 let isRightDown = false
 
+// 10 PRINT PEEK(49249); PEEK(49250); PEEK(49251): GOTO 10
 export const setLeftButtonDown = () => { leftButtonDown = true }
 export const setRightButtonDown = () => { rightButtonDown = true }
 export const setPushButton2 = () => { isPB2down = true }
 
 const valueToTimeout = (value: number) => {
   value = Math.min(Math.max(value, -1), 1)
-  return (value + 1) * maxTimeoutCycles / 2
+  return (value + 1) * MAX_TIMEOUT_CYCLES / 2
 }
 
 export const setGamepad0 = (value: number) => {
@@ -74,7 +81,7 @@ export const resetJoystick = (cycleCount: number) => {
 }
 
 // const largeDiff = (v1: number, v2: number) => {
-//   return (Math.abs(v1 - v2) > 0.1 * maxTimeoutCycles)
+//   return (Math.abs(v1 - v2) > 0.1 * MAX_TIMEOUT_CYCLES)
 // }
 
 export const checkJoystickValues = (cycleCount: number) => {
@@ -104,23 +111,33 @@ export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
 
-const scaleAxes = (xstick: number, ystick: number) => {
+// Convert a circular thumbstick into a square range.
+const circularToSquare = (xstick: number, ystick: number) => {
   if (nearZero(xstick)) xstick = 0
   if (nearZero(ystick)) ystick = 0
   const dist = Math.sqrt(xstick * xstick + ystick * ystick)
+  // The 0.95 factor gives some headroom to make sure we reach the corners.
   const clip = 0.95 * ((dist === 0) ? 1 :
     Math.max(Math.abs(xstick), Math.abs(ystick)) / dist)
   xstick = Math.min(Math.max(-clip, xstick), clip)
   ystick = Math.min(Math.max(-clip, ystick), clip)
-  xstick = Math.trunc(maxTimeoutCycles*(xstick + clip)/(2*clip))
-  ystick = Math.trunc(maxTimeoutCycles*(ystick + clip)/(2*clip))
+  xstick = (xstick + clip) / (2 * clip)
+  ystick = (ystick + clip) / (2 * clip)
+  return [xstick, ystick]
+}
+
+// Convert raw gamepad axes to a square joystick timeout values.
+const convertAxesToTimeout = (xstick: number, ystick: number) => {
+  [xstick, ystick] = circularToSquare(xstick, ystick)
+  xstick = Math.trunc(MAX_TIMEOUT_CYCLES * xstick)
+  ystick = Math.trunc(MAX_TIMEOUT_CYCLES * ystick)
   return [xstick, ystick]
 }
 
 const convertGamepadAxes = (axes: number[]) => {
-  const [xstick1, ystick1] = scaleAxes(axes[0], axes[1])
+  const [xstick1, ystick1] = convertAxesToTimeout(axes[0], axes[1])
   const joy2y = (axes.length >= 6) ? axes[5] : axes[3]
-  const [xstick2, ystick2] = (axes.length >= 4) ? scaleAxes(axes[2], joy2y) : [0, 0]
+  const [xstick2, ystick2] = (axes.length >= 4) ? convertAxesToTimeout(axes[2], joy2y) : [0, 0]
   return [xstick1, ystick1, xstick2, ystick2]
 }
 
@@ -148,9 +165,13 @@ const handleGamepad = (gp: number) => {
     }
   })
   // Special "no buttons down" call
-  if (!buttonPressed) gamePadMapping(-1, gamePads.length > 1, gp === 1)
+  if (!buttonPressed) {
+    gamePadMapping(-1, gamePads.length > 1, gp === 1)
+  }
 
-  if (gameMapping.rumble) gameMapping.rumble()
+  if (gameMapping.rumble) {
+    gameMapping.rumble()
+  }
   setButtonState()
 }
 
