@@ -30,6 +30,7 @@ export const BasicRenumber = (program: string) => {
       let restOfLine = (lineNumberMatch[2] || "").trim()
       restOfLine = replaceGoto(restOfLine, "GOTO", oldLineToNewLine)
       restOfLine = replaceGoto(restOfLine, "GOSUB", oldLineToNewLine)
+      restOfLine = replaceGoto(restOfLine, "THEN", oldLineToNewLine)
       newProgram[nline] = `${remap[i]} ${restOfLine}`
       nline++
     }
