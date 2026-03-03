@@ -15,12 +15,11 @@ import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
 import { useState } from "react"
 import PopupMenu from "./popupmenu"
-import { MidiDeviceSelect } from "../devices/audio/midiselect"
-import { MockingboardWaveform } from "../devices/audio/mockingboardwaveform"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
 import { getCapsLock, getArrowKeysAsJoystick, getUseOpenAppleKey, setUseOpenAppleKey, setArrowKeysAsJoystick, getTheme, isGameMode } from "../ui_settings"
+import { AudioConfig } from "../devices/audio/audioconfig"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -80,11 +79,9 @@ const ConfigButtons = (props: DisplayProps) => {
       }
     </div>
 
-    <MockingboardWaveform />
+    {!isGameMode() && <AudioConfig />}
 
     {!isGameMode() && <SerialPortSelect />}
-
-    {!isGameMode() && <MidiDeviceSelect />}
 
     {!isGameMode() && <MachineConfig updateDisplay={props.updateDisplay} />}
 
