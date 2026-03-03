@@ -3,8 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faVolumeHigh,
   faVolumeXmark,
-  faUpDownLeftRight,
-  faSlash,
   faSync,
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
@@ -18,8 +16,9 @@ import PopupMenu from "./popupmenu"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getCapsLock, getArrowKeysAsJoystick, getUseOpenAppleKey, setUseOpenAppleKey, setArrowKeysAsJoystick, getTheme, isGameMode } from "../ui_settings"
+import { getCapsLock, getUseOpenAppleKey, setUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
 import { AudioConfig } from "../devices/audio/audioconfig"
+import { GamepadConfig } from "../devices/gamepadconfig"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -28,7 +27,6 @@ const isMac = navigator.platform.startsWith("Mac")
 
 const ConfigButtons = (props: DisplayProps) => {
   const capsLock = getCapsLock()
-  const arrowKeysAsJoystick = getArrowKeysAsJoystick()
   const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
@@ -69,14 +67,7 @@ const ConfigButtons = (props: DisplayProps) => {
         </button>
       }
 
-      {!isTouchDevice &&
-        <button className="push-button" style={{ position: "relative" }}
-          title={`Use Arrow Keys as Joystick (${arrowKeysAsJoystick ? "on" : "off"})`}
-          onClick={() => { setArrowKeysAsJoystick(!arrowKeysAsJoystick); props.updateDisplay() }}>
-          <FontAwesomeIcon icon={faUpDownLeftRight} style={arrowKeysAsJoystick ? {} : { transform: "translateX(50%)" }} />
-          {!arrowKeysAsJoystick && <FontAwesomeIcon style={{ transform: "translateX(-50%)", width: "80%" }} icon={faSlash} />}
-        </button>
-      }
+      {!isTouchDevice && <GamepadConfig />}
     </div>
 
     {!isGameMode() && <AudioConfig />}

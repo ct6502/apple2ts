@@ -1,5 +1,5 @@
 import { matchMemory } from "../memory"
-import { setGamepad0, setGamepad1, setGamepad2, setGamepad3,
+import { setGamepadValue,
   setLeftButtonDown, setPushButton2, setRightButtonDown } from "../devices/joystick"
 import { passHelptext,passEnhancedMidi } from "../worker2main"
 import { aztec } from "./aztec"
@@ -19,6 +19,8 @@ import { ultima5 } from "./ultima5"
 import { wizardry } from "./wizardry"
 import { wolfenstein, wolfenstein_splash } from "./wolfenstein"
 import { beyondwolf } from "./beyondwolf"
+import { SWITCHES } from "../softswitches"
+import { getSiriusJoyport } from "../motherboard"
 
 const gameLibrary = new Array<GameLibraryItem>()
 
@@ -52,26 +54,63 @@ AddGameLibraryItem(beyondwolf)
 
 export const defaultButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
-  if (isJoystick2) {
-    switch (button) {
-      case 0: setPushButton2(); break  // button #0 becomes push button 2
-      case 1: break  // ignore button #1
-      case 12: setGamepad3(-1); break   // D-pad U
-      case 13: setGamepad3(1); break    // D-pad D
-      case 14: setGamepad2(-1); break   // D-pad L
-      case 15: setGamepad2(1); break    // D-pad R
-      default: break
-    }
-  } else {
-    switch (button) {
-      case 0: setLeftButtonDown(); break
-      case 1: if (!dualJoysticks) setRightButtonDown(); break
-      case 12: setGamepad1(-1); break   // D-pad U
-      case 13: setGamepad1(1); break    // D-pad D
-      case 14: setGamepad0(-1); break   // D-pad L
-      case 15: setGamepad0(1); break    // D-pad R
-      default: break
-    }
+  const isAN0 = SWITCHES.AN0.isSet
+  const isAN1 = SWITCHES.AN1.isSet
+  const siriusJoyport = getSiriusJoyport()
+
+  switch (button) {
+    case 0:
+      // Either both true or both false
+      if ((isJoystick2 && isAN0) || (!isJoystick2 && !isAN0)) setLeftButtonDown()
+      break
+    case 1:
+      if ((isJoystick2 && isAN0) || (!isJoystick2 && !isAN0)) setRightButtonDown()
+      break
+    case 12:   // D-pad Up
+      if (siriusJoyport) {
+        if (isAN1) setRightButtonDown()
+      } else {
+        if (isJoystick2) {
+          setGamepadValue(3, -1)
+        } else {
+          setGamepadValue(1, -1)
+        }
+      }
+      break
+    case 13:   // D-pad Down
+      if (siriusJoyport) {
+        if (isAN1) setPushButton2()
+      } else {
+        if (isJoystick2) {
+          setGamepadValue(3, 1)
+        } else {
+          setGamepadValue(1, 1)
+        }
+      }
+      break
+    case 14:   // D-pad Left
+      if (siriusJoyport) {
+        if (!isAN1) setRightButtonDown()
+      } else {
+        if (isJoystick2) {
+          setGamepadValue(2, -1)
+        } else {
+          setGamepadValue(0, -1)
+        }
+      }
+      break
+    case 15:   // D-pad Right
+      if (siriusJoyport) {
+        if (!isAN1) setPushButton2()
+      } else {
+        if (isJoystick2) {
+          setGamepadValue(2, 1)
+        } else {
+          setGamepadValue(0, 1)
+        }
+      }
+      break
+    default: break
   }
 }
 

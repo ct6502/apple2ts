@@ -4,6 +4,7 @@ import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./devices/joystick"
 import { s6502 } from "./instructions"
 import { toHex } from "../common/utility"
+import { getSiriusJoyport } from "./motherboard"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
@@ -303,8 +304,13 @@ export const checkSoftSwitches = (addr: number,
       memSetC000(addr, value)
     }
   } else if (addr === sswitch1.isSetAddr) {
-    const value = memGetC000(addr)
-    memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
+    if (addr >= SWITCHES.PB0.isSetAddr && addr <= SWITCHES.PB2.isSetAddr && getSiriusJoyport()) {
+      // Handle push button switches for Sirius Joyport - they are active low
+      memSetC000(addr, sswitch1.isSet ? 0 : 0x80)
+    } else {
+      const value = memGetC000(addr)
+      memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
+    }
   }
 }
 

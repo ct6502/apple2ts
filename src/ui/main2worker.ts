@@ -203,6 +203,12 @@ export const passSetDriveProps = (props: DriveProps) => {
   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }
 
+export const passSiriusJoyport = (mode: boolean) => {
+  doPostMessage(MSG_MAIN.SIRIUS_JOYPORT, mode)
+  // Force the state right away, so the UI can update.
+  machineState.siriusJoyport = mode
+}
+
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
@@ -226,6 +232,7 @@ let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   showDebugTab: false,
+  siriusJoyport: false,
   speedMode: 0,
   softSwitches: {},
   stackString: "",
@@ -456,4 +463,8 @@ export const handleGetSoftSwitchDescriptions = () => {
 
 export const handleGetZeroPage = () => {
   return machineState.zeroPage
+}
+
+export const handleGetSiriusJoyport = () => {
+  return machineState.siriusJoyport
 }

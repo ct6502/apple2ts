@@ -7,7 +7,8 @@ import { doSetRunMode,
   doSetRamWorks,
   doSetCycleCount,
   doSetShowDebugTab,
-  doSetAppMode} from "./motherboard"
+  doSetAppMode,
+  setSiriusJoyport} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
@@ -225,6 +226,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)
+        break
+      case MSG_MAIN.SIRIUS_JOYPORT:
+        setSiriusJoyport(e.data.payload)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)

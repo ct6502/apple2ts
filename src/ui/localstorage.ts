@@ -1,7 +1,7 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setAutoNumbering, setCapitalizeBasic } from "./ui_settings"
 
 export const setPreferenceAutoNumbering = (mode = false) => {
@@ -119,6 +119,15 @@ export const setPreferenceRamWorks = (size = 64) => {
     localStorage.setItem("ramWorks", JSON.stringify(size))
   }
   passSetRamWorks(size)
+}
+
+export const setPreferenceSiriusJoyport = (mode = false) => {
+  if (!mode) {
+    localStorage.removeItem("siriusJoyport")
+  } else {
+    localStorage.setItem("siriusJoyport", JSON.stringify(mode))
+  }
+  passSiriusJoyport(mode)
 }
 
 export const setPreferenceSpeedMode = (mode = 0) => {
@@ -353,6 +362,15 @@ export const loadPreferences = () => {
     }
   }
 
+  const siriusJoyport = localStorage.getItem("siriusJoyport")
+  if (siriusJoyport) {
+    try {
+      passSiriusJoyport(JSON.parse(siriusJoyport))
+    } catch {
+      localStorage.removeItem("siriusJoyport")
+    }
+  }
+
   const hotReload = localStorage.getItem("hotReload")
   if (hotReload) {
     try {
@@ -395,6 +413,7 @@ export const resetPreferences = () => {
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
   setPreferenceTiltSensorJoystick()
+  setPreferenceSiriusJoyport()
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
 }

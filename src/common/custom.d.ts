@@ -103,6 +103,7 @@ type MachineState = {
   runMode: number,
   s6502: STATE6502,
   showDebugTab: boolean,
+  siriusJoyport: boolean,
   softSwitches: {[name: string]: boolean},
   speedMode: number,
   stackString: string,

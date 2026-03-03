@@ -37,17 +37,21 @@ const valueToTimeout = (value: number) => {
   return (value + 1) * MAX_TIMEOUT_CYCLES / 2
 }
 
-export const setGamepad0 = (value: number) => {
-  paddle0timeout = valueToTimeout(value)
-}
-export const setGamepad1 = (value: number) => {
-  paddle1timeout = valueToTimeout(value)
-}
-export const setGamepad2 = (value: number) => {
-  paddle2timeout = valueToTimeout(value)
-}
-export const setGamepad3 = (value: number) => {
-  paddle3timeout = valueToTimeout(value)
+export const setGamepadValue = (gamepad: number, value: number) => {
+  switch (gamepad) {
+    case 0:
+      paddle0timeout = valueToTimeout(value)
+      break
+    case 1:
+      paddle1timeout = valueToTimeout(value)
+      break
+    case 2:
+      paddle2timeout = valueToTimeout(value)
+      break
+    case 3:
+      paddle3timeout = valueToTimeout(value)
+      break
+  }
 }
 
 export const setButtonState = () => {
@@ -150,8 +154,6 @@ const handleGamepad = (gp: number) => {
     paddle1timeout = stick[1]
     leftButtonDown = false
     rightButtonDown = false
-    paddle2timeout = stick[2]
-    paddle3timeout = stick[3]
   } else {
     paddle2timeout = stick[0]
     paddle3timeout = stick[1]

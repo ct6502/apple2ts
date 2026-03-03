@@ -49,6 +49,16 @@ let takeSnapshot = false
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
 let gameSetupTimerID: NodeJS.Timeout | number = 0
+let siriusJoyport = false
+
+export const getSiriusJoyport = () => {
+  return siriusJoyport
+}
+
+export const setSiriusJoyport = (mode: boolean) => {
+  siriusJoyport = mode
+  updateExternalMachineState()
+}
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
@@ -279,6 +289,10 @@ const doReset = () => {
   memGet(0xC082)
   reset6502()
   resetMachine()
+  if (siriusJoyport) {
+    setSiriusJoyport(false)
+    setTimeout(() => { setSiriusJoyport(true) }, 100)
+  }
 }
 
 // The theoretical maximum speed is about 66 MHz if we completely disable
@@ -584,6 +598,7 @@ const updateExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
+    siriusJoyport: siriusJoyport,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
     stackString: doGetStackString(),
