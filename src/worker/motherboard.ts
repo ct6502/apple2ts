@@ -291,7 +291,13 @@ const doReset = () => {
   resetMachine()
   if (siriusJoyport) {
     setSiriusJoyport(false)
-    setTimeout(() => { setSiriusJoyport(true) }, 100)
+    const currentPC = s6502.PC
+    const intervalId = setInterval(() => {
+      if ((s6502.PC - currentPC) > 1000) {
+        setSiriusJoyport(true)
+        clearInterval(intervalId)
+      }
+    }, 50)
   }
 }
 
