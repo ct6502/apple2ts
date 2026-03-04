@@ -2,7 +2,6 @@ import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faGamepad,
-  faUpDownLeftRight
 } from "@fortawesome/free-solid-svg-icons"
 import PopupMenu from "../controls/popupmenu"
 import { getArrowKeysAsJoystick, setArrowKeysAsJoystick } from "../ui_settings"
@@ -37,7 +36,6 @@ export const GamepadConfig = () => {
             {
               label: "Use Arrow Keys as Joystick",
               isSelected: () => {return arrowKeysAsJoystick},
-              icon: <FontAwesomeIcon icon={faUpDownLeftRight} />,
               onClick: () => {
                 setArrowKeysAsJoystick(!arrowKeysAsJoystick)
               }
@@ -45,7 +43,6 @@ export const GamepadConfig = () => {
             {
               label: "Sirius Joyport Mode",
               isSelected: () => {return siriusJoyport},
-              icon: <FontAwesomeIcon icon={faUpDownLeftRight} />,
               onClick: () => {
                 setPreferenceSiriusJoyport(!siriusJoyport)
               }
