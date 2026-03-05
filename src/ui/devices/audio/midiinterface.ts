@@ -123,7 +123,7 @@ const initDevices = () => {
 
 // probably not necessary
 let doActiveSense = false
-let itimer = -1
+let itimer: any = 0
 const activeSense = () => {
   const data = new Uint8Array(1).fill(0xFE)
   passRxMidiData(data)
@@ -136,7 +136,7 @@ const parseAndSendMsg = (msg: number[]) => {
     : midiOutDevices[midiOutIndex]
 
   // start active sensing every ~250ms once we send an initial message
-  if (doActiveSense && itimer === -1)
+  if (doActiveSense && itimer === 0)
     itimer = setInterval(activeSense, 250)
 
   if (DEBUG)
