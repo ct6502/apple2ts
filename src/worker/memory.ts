@@ -609,35 +609,50 @@ export const getTextPageAsString = () => {
   return Buffer.from(getTextPage().map((n) => (n &= 127))).toString()
 }
 
+const hiResSingle = new Uint8Array(40 * 192)
+const hiResDouble = new Uint8Array(80 * 192)
+let hiResCurrent = hiResSingle
+let hiResLines = 192
+
+export const exportMemoryToHiresLine = (line: number) => {
+  const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
+  const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
+  // Determine which hi-res buffer to use
+  if (doubleRes || SWITCHES.VIDEO7_MONO.isSet || SWITCHES.VIDEO7_160.isSet || video7foreground) {
+    if (line === 0) {
+      hiResCurrent = hiResDouble
+      hiResLines = SWITCHES.MIXED.isSet ? 160 : 192
+    }
+    // Only select second 80-column text page if STORE80 is also OFF
+    const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
+    const addr = hiresLineToAddress(pageOffset, line)
+    for (let i = 0; i < 40; i++) {
+      hiResDouble[line * 80 + 2 * i + 1] = memory[addr + i]
+      hiResDouble[line * 80 + 2 * i] = memory[RamWorksMemoryStart + addr + i]
+    }
+  } else {
+    if (line === 0) {
+      hiResCurrent = hiResSingle
+      hiResLines = SWITCHES.MIXED.isSet ? 160 : 192
+    }
+    const pageOffset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
+    const addr = pageOffset + 40 * Math.trunc(line / 64) +
+      1024 * (line % 8) + 128 * (Math.trunc(line / 8) & 7)
+    hiResSingle.set(memory.slice(addr, addr + 40), line * 40)
+    // Debugging code
+    // if (pageOffset === 0x2000) {
+    //   hiResSingle.fill(0xFF, line * 40, line * 40 + 30)
+    // } else {
+    //   hiResSingle.fill(0x55, line * 40 + 10, line * 40 + 40)
+    // }
+  }
+}
+
 export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }
-  const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
-  const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
-  const nlines = SWITCHES.MIXED.isSet ? 160 : 192
-  if (doubleRes || SWITCHES.VIDEO7_MONO.isSet || SWITCHES.VIDEO7_160.isSet || video7foreground) {
-    // Only select second 80-column text page if STORE80 is also OFF
-    const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
-    const hgrPage = new Uint8Array(80 * nlines)
-    for (let j = 0; j < nlines; j++) {
-      const addr = hiresLineToAddress(pageOffset, j)
-      for (let i = 0; i < 40; i++) {
-        hgrPage[j * 80 + 2 * i + 1] = memory[addr + i]
-        hgrPage[j * 80 + 2 * i] = memory[RamWorksMemoryStart + addr + i]
-      }
-    }
-    return hgrPage
-  } else {
-    const pageOffset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
-    const hgrPage = new Uint8Array(40 * nlines)
-    for (let j = 0; j < nlines; j++) {
-      const addr = pageOffset + 40 * Math.trunc(j / 64) +
-        1024 * (j % 8) + 128 * (Math.trunc(j / 8) & 7)
-      hgrPage.set(memory.slice(addr, addr + 40), j * 40)
-    }
-    return hgrPage
-  }
+  return (hiResLines === 192) ? hiResCurrent : hiResCurrent.slice(0, 40 * hiResLines)
 }
 
 export const getDataBlock = (addr: number) => {

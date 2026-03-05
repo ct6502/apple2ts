@@ -29,6 +29,7 @@ const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
+  const [avgFPS, setAvgFPS] = useState(0)
   const [ctrlKeyMode, setCtrlKeyMode] = useState(0)
   const [openAppleKeyMode, setOpenAppleKeyMode] = useState(0)
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
@@ -145,6 +146,7 @@ const DisplayApple2 = () => {
   const props: DisplayProps = {
     speed: currentSpeed,
     renderCount: renderCount,
+    setAvgFPS: setAvgFPS,
     ctrlKeyMode: ctrlKeyMode,
     openAppleKeyMode: openAppleKeyMode,
     closedAppleKeyMode: closedAppleKeyMode,
@@ -172,7 +174,7 @@ const DisplayApple2 = () => {
   const mem = handleGetMemSize() + 64
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item">
-  <span>{currentSpeed} MHz, {memSize}</span>
+  <span>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</span>
   <br />
   <span>Apple2TS ©{new Date().getFullYear()} CT6502&nbsp;
   <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>

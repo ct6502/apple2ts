@@ -31,6 +31,11 @@ let resizeTimeout = 0
 // This is an indidental property, we don't want to make it a "useState"
 // because we don't want it to re-render the canvas each time it is toggled.
 let withinScreen = false
+let lastFrameTime = 0
+const targetFrameRate = 75 // Hz
+const maxFrameSamples = 60
+let startTimeForMaxFrames = 0
+let lastFPSLog = 0
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
@@ -263,15 +268,33 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const RenderCanvas = () => {
-    if (myCanvas.current && hiddenCanvas.current) {
-      const ctx = (myCanvas.current as HTMLCanvasElement).getContext("2d")
-      const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
-      if (ctx && hiddenCtx) {
-        ProcessDisplay(ctx, hiddenCtx, width, height)
+  const RenderCanvas = (timestamp: number) => {
+    const elapsed = timestamp - lastFrameTime
+    const targetInterval = 1000 / targetFrameRate
+    
+    if (elapsed >= targetInterval) {
+      if (myCanvas.current && hiddenCanvas.current) {
+        const ctx = (myCanvas.current as HTMLCanvasElement).getContext("2d")
+        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
+        if (ctx && hiddenCtx) {
+          ProcessDisplay(ctx, hiddenCtx, width, height)
+        }
+        checkGamepad()
       }
-      checkGamepad()
+
+      // Calculate and log FPS
+      lastFPSLog++
+      if (lastFPSLog >= maxFrameSamples) {
+        const newTime = Date.now()
+        const avgFPS = (lastFPSLog / (newTime - startTimeForMaxFrames)) * 1000
+        props.setAvgFPS(avgFPS)
+        lastFPSLog = 0
+        startTimeForMaxFrames = newTime
+      }
+      
+      lastFrameTime = timestamp
     }
+    
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
     window.requestAnimationFrame(RenderCanvas)
   }
@@ -487,7 +510,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         }).observe(canvas)
         document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
 
-        RenderCanvas()
+        RenderCanvas(0)
       } else {
         // This doesn't ever seem to get hit. I guess just doing the 
         // setTimeout below (even with a timeout of 0) is enough to

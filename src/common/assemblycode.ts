@@ -1,5 +1,28 @@
 export const code = `
         ORG   $300
+        LDA   $C050
+        LDA   $C052
+        LDA   $C057
+LOOP    LDA   $C055
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        LDA   $C054
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        JMP   LOOP
+        RTS
+`
+
+export const codeMotor = `
+        ORG   $300
         LDA   $C000
         LDX   $C010
         JSR   $F941

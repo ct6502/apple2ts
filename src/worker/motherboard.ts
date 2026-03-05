@@ -17,7 +17,8 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksBankGet,
   doSetRom,
   getZeroPage,
-  memSet} from "./memory"
+  memSet,
+  exportMemoryToHiresLine} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
@@ -654,6 +655,7 @@ const doAdvance6502 = () => {
     doSetRunMode(RUN_MODE.RUNNING)
   }
   let cycleTotal = 0
+  let currentLine = -1
   for (;;) {
     const cycles = processInstruction()
     if (cycles < 0) break
@@ -665,6 +667,11 @@ const doAdvance6502 = () => {
       }
     } else {
       endVBL()
+      const line = Math.floor((cycleTotal - 4550) / 65)
+      if (line !== currentLine && line < 192) {
+        currentLine = line
+        exportMemoryToHiresLine(line)
+      }
     }
     if (cycleTotal >= cpuCyclesPerRefresh) {
       break

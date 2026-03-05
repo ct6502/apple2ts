@@ -65,6 +65,7 @@ type UpdateDisplay = (speed = 0, helptext = "") => void
 type DisplayProps = {
   speed: number,
   renderCount: number,
+  setAvgFPS: (fps: number) => void,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,

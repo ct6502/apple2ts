@@ -93,15 +93,15 @@ export const getStartupTextPage = (machineName: MACHINE_NAME) => {
     startupTextMachineName = machineName
   }
   
-  // Advance frame counter and move asterisk every 10 frames (simulates 0.1 speed)
+  // Move asterisk every few frames
   frameCounter++
-  if (frameCounter % 3 === 0) {
-    // Clear the old asterisk position
-    startupTextPage[idx(index)] = 170
+  if (frameCounter % 3 !== 0) {
+    // Put back the old asterisk
+    startupTextPage[idx(index)] = 170  // "*" plus high bit
     // Move to new position
     index = (index + 1) % 126
-    // Place new asterisk
-    startupTextPage[idx(index)] = 160
+    // Place new blank space
+    startupTextPage[idx(index)] = 160  // space plus high bit
   }
   
   return startupTextPage
