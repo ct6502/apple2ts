@@ -1,8 +1,9 @@
-//import { passRxMidiData } from "../main2worker"
+import { passRxMidiData } from "../../main2worker"
 import { checkEnhancedMidi } from "./enhancedmidi"
 import * as SoftSynth from "./softsynth"
 
 let useSoftSynth = true
+const DEBUG = false
 
 const connect = () => {
   if (navigator.requestMIDIAccess)
@@ -42,7 +43,8 @@ export const setMidiOutIndex = (index: number) => {
   if (midiOutIndex != index)
   {
     midiOutIndex = index
-    console.log("Selecting MidiOut Device: " + midiOutDevices[midiOutIndex].name)
+    if (midiOutIndex != -1)
+      console.log("Selecting MidiOut Device: " + midiOutDevices[midiOutIndex].name)
   }
 }
 
@@ -119,11 +121,29 @@ const initDevices = () => {
 //  passRxMidiData(data);
 //}
 
+// probably not necessary
+let doActiveSense = false
+let itimer = -1
+const activeSense = () => {
+  const data = new Uint8Array(1).fill(0xFE)
+  passRxMidiData(data)
+}
+
 const parseAndSendMsg = (msg: number[]) => {
   // Determine the output device (hardware MIDI or software synth)
   const device = (useSoftSynth || midiOutIndex === -1) 
     ? SoftSynth as unknown as MIDIOutput  // Software synth has compatible send() API
     : midiOutDevices[midiOutIndex]
+
+  // start active sensing every ~250ms once we send an initial message
+  if (doActiveSense && itimer === -1)
+    itimer = setInterval(activeSense, 250)
+
+  if (DEBUG)
+  {
+    const hexString = msg.map(x => ('00' + x.toString(16)).slice(-2)).join(' ');
+    console.log("Msg: ", hexString)
+  }
 
   // Check enhanced MIDI first with appropriate device
   if (checkEnhancedMidi(msg, device))
@@ -133,8 +153,18 @@ const parseAndSendMsg = (msg: number[]) => {
   device.send(msg)
 }
 
+enum State
+{
+  COMMAND,
+  ARGS2,
+  ARGS1,
+  SYSEX
+}
+
 let once = false
-const buffer: number[] = []
+const msg: number[] = []
+const rtMsg: number[] = []
+let state : State = State.COMMAND
 
 export const receiveMidiData = (data: Uint8Array) => {
   // Initialize software synth if needed and no hardware MIDI available
@@ -153,67 +183,98 @@ export const receiveMidiData = (data: Uint8Array) => {
     return
   }
 
+  // Must parse the message, as WebMIDI only accepts complete messages.
   for(let i=0;i<data.length;i++)
-    buffer.push(data[i])
-
-  // Must parse the message as WebMIDI only accepts complete messages.
-  while (buffer.length)
   {
-    let needBytes = 0
-    switch(buffer[0] & 0xF0)
+    const byte = data[i]
+    msg.push(byte)
+
+    switch(state)
     {
-      case 0x80:
-      case 0x90:
-      case 0xA0:
-      case 0xB0:
-      case 0xE0:
-        needBytes = 3
-        break
-      
-      case 0xC0:
-      case 0xD0:
-        needBytes = 2
+      case State.ARGS2:
+        // check for realtime message
+        if ((byte & 0xF8) == 0xF8)
+        {
+          rtMsg.push(byte)
+          msg.pop()
+        }
+        else
+          state = State.ARGS1
         break
 
-      case 0xF0:
-        switch(buffer[0])
+      case State.ARGS1:
+        // check for realtime message
+        if ((byte & 0xF8) == 0xF8)
         {
-          case 0xF0:  // SYSEX messages aren't parsed correctly ATM
-          case 0xF7:
-            buffer.shift()
-            needBytes = 0
+          rtMsg.push(byte)
+          msg.pop()
+        }
+        else
+          state = State.COMMAND
+        break
+
+      case State.SYSEX:
+        if (byte === 0xF7)
+          state = State.COMMAND
+        break
+        
+      case State.COMMAND:
+        switch(byte & 0xF0)
+        {
+          case 0x80:
+          case 0x90:
+          case 0xA0:
+          case 0xB0:
+          case 0xE0:
+            state = State.ARGS2
             break
-          case 0xF1:
-          case 0xF3:
-            needBytes = 2
+          
+          case 0xC0:
+          case 0xD0:
+            state = State.ARGS1
             break
-          case 0xF2:
-            needBytes = 3
+
+          case 0xF0:
+            switch(byte)
+            {
+              case 0xF0:
+                state = State.SYSEX
+                break;
+              case 0xF2:
+                state = State.ARGS2
+                break
+              case 0xF1:
+              case 0xF3:
+                state = State.ARGS1
+                break
+              default:
+                // remain in State.COMMAND, 1 byte arg
+                break
+            }
             break
+
           default:
-            needBytes = 1
+            // out of alignment / bad data?
+            // stay in command state
+            console.log("MIDI: byte unexpected: ", byte.toString(16))
+            msg.length = 0
             break
         }
-        break
-
-      default:
-        // we are out of alignment
-        buffer.shift()
-        needBytes = 0
-        break
+        break;
     }
 
-    if (needBytes === 0)
-      continue
+    // always send interleaved realtime messages
+    if (rtMsg.length > 0)
+    {
+      parseAndSendMsg(rtMsg)
+      rtMsg.length = 0
+    }
 
-    if (buffer.length < needBytes)
-      break
-
-    const msg: number[] = []
-    while( needBytes-- )
-      msg.push( buffer.shift()! )
-
-    parseAndSendMsg(msg)
+    if (state == State.COMMAND && msg.length > 0)
+    {
+      parseAndSendMsg(msg)
+      msg.length = 0
+    }
   }
 }
 
