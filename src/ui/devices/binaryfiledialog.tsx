@@ -69,13 +69,13 @@ const BinaryFileDialog = (props:
             width="5em" />
         </div>
         <div className="flex-row">
-          <input type="checkbox" id="memset" value="memset"
+          <input type="checkbox" id="runcode" value="runcode"
             className="check-radio-box shift-down"
             checked={runCode}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               setRunCode(event.target.checked)
             }} />
-          <label htmlFor="memset"
+          <label htmlFor="runcode"
             className="dialog-title flush-left">Run code after loading</label>
         </div>
         <div className="flex-row-space-between">

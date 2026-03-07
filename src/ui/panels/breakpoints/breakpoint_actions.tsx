@@ -40,11 +40,11 @@ const Breakpoint_Actions = (props: {breakpoint: Breakpoint}) => {
         pointerEvents: "none"
       })}}>
         <div style={{height: "8px" }} />
-        <input type="checkbox" id="memget" value="memget"
+        <input type="checkbox" id="halt" value="halt"
           className="check-radio-box shift-down"
           checked={props.breakpoint.halt}
           onChange={(e) => { handleHaltChange(e) }} />
-        <label htmlFor="memget" className="dialog-title flush-left">Halt execution after actions</label>
+        <label htmlFor="halt" className="dialog-title flush-left">Halt execution after actions</label>
       </div>
   </div>
 }
