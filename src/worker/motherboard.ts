@@ -682,11 +682,8 @@ const doAdvance6502 = () => {
   // The / 10 gets rid of the ones digit, which turns into the thousandths digit.
   cpuSpeed = (speedInCyclesPerMS < 10000) ? Math.round(speedInCyclesPerMS / 10) / 100 :
     Math.round(speedInCyclesPerMS / 100) / 10
-  // Lengthening this refresh interval has very little impact on the speed.
-  if (iRefresh % 2) {
     handleGamepads()
     updateExternalMachineState()
-  }
   if (takeSnapshot) {
     takeSnapshot = false
     doSnapshot()

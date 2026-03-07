@@ -639,12 +639,6 @@ export const exportMemoryToHiresLine = (line: number) => {
     const addr = pageOffset + 40 * Math.trunc(line / 64) +
       1024 * (line % 8) + 128 * (Math.trunc(line / 8) & 7)
     hiResSingle.set(memory.slice(addr, addr + 40), line * 40)
-    // Debugging code
-    // if (pageOffset === 0x2000) {
-    //   hiResSingle.fill(0xFF, line * 40, line * 40 + 30)
-    // } else {
-    //   hiResSingle.fill(0x55, line * 40 + 10, line * 40 + 40)
-    // }
   }
 }
 

@@ -4,19 +4,16 @@ export const code = `
         LDA   $C052
         LDA   $C057
 LOOP    LDA   $C055
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
+        LDA   #$4F ;73
+        JSR   $FCA8
+        LDA   #$09
+        JSR   $FCA8
+        BIT   $01
         LDA   $C054
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
-        NOP
+        LDA   #$4F ;73
+        JSR   $FCA8
+        LDA   #$09
+        JSR   $FCA8
         JMP   LOOP
         RTS
 `
