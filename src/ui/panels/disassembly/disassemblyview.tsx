@@ -211,6 +211,9 @@ const DisassemblyView = (props: DisassemblyProps) => {
         setDisassemblyAddress(visibleLine)
         disArray = getDisassembly().split("\n").slice(0, nlines)
       } else {
+        if (getDisassemblyAddress() === -1) {
+          setDisassemblyAddress(visibleLine)
+        }
         setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
       }
     }

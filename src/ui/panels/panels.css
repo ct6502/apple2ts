@@ -180,6 +180,7 @@ body.dark-mode .round-rect-border {
   padding-left: 10px;
   padding-right: 5px;
   color: var(--text-color);
+  user-select: none;
 }
 
 .dialog-text {

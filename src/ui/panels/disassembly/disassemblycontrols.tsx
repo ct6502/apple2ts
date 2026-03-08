@@ -9,6 +9,7 @@ import {
   faPause,
   faPlay,
   faFolderOpen,
+  faSave,
 } from "@fortawesome/free-solid-svg-icons"
 import React from "react"
 import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
@@ -17,6 +18,7 @@ import { bpStepInto } from "../../img/icon_stepinto"
 import { bpStepOut } from "../../img/icon_stepout"
 import { bpStepOver } from "../../img/icon_stepover"
 import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import SaveDisassemblyDialog from "./savedisassemblydialog"
 
 const DisassemblyControls = (props: DisassemblyProps) => {
   // The tooltips obscure the first line of disassembly.
@@ -27,6 +29,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   // The tooltip "show's" get reset when the instruction changes to/from JSR.
   const [address, setAddress] = useState("")
   const [showSymbolTableFileOpen, setShowSymbolTableFileOpen] = useState(false)
+  const [showSaveDisassembly, setShowSaveDisassembly] = useState(false)
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const doUpdateAddress = (addr: number) => {
@@ -141,6 +144,18 @@ const DisassemblyControls = (props: DisassemblyProps) => {
           <span className="icon-text">SYM</span>
         </div>
       </button>
+      <button className="push-button"
+        title="Save Disassembly"
+        onClick={() => setShowSaveDisassembly(true)}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="icon-container">
+          <FontAwesomeIcon icon={faSave} />
+        </div>
+      </button>
+      {showSaveDisassembly &&
+        <SaveDisassemblyDialog
+          onClose={() => setShowSaveDisassembly(false)} />
+      }
       <input
         name="fileInput"
         type="file"

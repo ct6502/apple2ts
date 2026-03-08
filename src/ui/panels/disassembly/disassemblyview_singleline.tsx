@@ -1,7 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { getSymbolTables, ROMmemoryStart, toHex } from "../../../common/utility"
-import { handleGetAddressGetTable, handleGetMachineName, handleGetMemoryDump, handleGetSoftSwitches, handleGetState6502 } from "../../main2worker"
+import { ROMmemoryStart, toHex } from "../../../common/utility"
+import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
+import { getSymbolForAddress } from "./disassembly_utilities"
 
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
@@ -68,26 +69,6 @@ const getOperandTooltip = (operand: string, addr: number) => {
     title = `value = $${toHex(value)}`
   }
   return title
-}
-
-
-const getSymbolForAddress = (addr: number) => {
-  const [machineSymbolTable, userSymbolTable] = getSymbolTables(handleGetMachineName())
-  // This is a bit of a hack - see if we are in the ROM range, and if we are,
-  // then see if our ROM is enabled or disabled.
-  if (addr >= 0xE000) {
-    const switches = handleGetSoftSwitches()
-    if (switches.BSRREADRAM || switches.BSR_WRITE) {
-      // ROM is disabled, just return the user symbol (if any)
-      return userSymbolTable ? userSymbolTable.get(addr) : null
-    }
-  }
-  // Return the user symbol (if any)
-  if (userSymbolTable && userSymbolTable.has(addr)) {
-    return userSymbolTable.get(addr)
-  }
-  // Return the machine symbol (or undefined)
-  return machineSymbolTable.get(addr)
 }
 
 

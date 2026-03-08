@@ -251,6 +251,12 @@ body.dark-mode .button-locked {
   outline: auto;
 }
 
+.text-button:disabled {
+  border-width: 1px;
+  border-color: gray;
+  border-style: outset;
+}
+
 .text-key {
   font-size: medium;
   letter-spacing: -0.03em;
