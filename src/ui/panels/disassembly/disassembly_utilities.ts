@@ -51,7 +51,7 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
       // Retrieve $C0xx soft switch values
       const instr = (handleGetMemoryDump())[ROMmemoryStart + addr - 0xC000]
       const code =  instructions[instr]
-      r += getInstructionString(addr, code, 0x00, 0x00) + "\n"
+      r += getInstructionString(addr, code, 0x00, 0x00, -1) + "\n"
       addr++
       continue
     }
@@ -63,7 +63,8 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
     const code =  instructions[instr]
     const vLo = memGetRaw((addr + 1) % 0x10000)
     const vHi = memGetRaw((addr + 2) % 0x10000)
-    r += getInstructionString(addr, code, vLo, vHi) + "\n"
+    // Do not want the branch to be marked as taken or not taken here
+    r += getInstructionString(addr, code, vLo, vHi, -1) + "\n"
     addr += code.bytes
     if (endAddress !== -1 && addr > endAddress) break
   }

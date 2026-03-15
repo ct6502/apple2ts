@@ -96,6 +96,7 @@ type MachineState = {
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,
+  isTracing: boolean,
   lores: Uint8Array,
   machineName: MACHINE_NAME,
   memoryDump: Uint8Array,
@@ -110,6 +111,7 @@ type MachineState = {
   stackString: string,
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
+  tracelog: Array<string>,
   zeroPage: Uint8Array
 }
 

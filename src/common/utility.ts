@@ -82,6 +82,7 @@ export enum MSG_MAIN {
   TIME_TRAVEL_INDEX,
   TIME_TRAVEL_SNAPSHOT,
   TIME_TRAVEL_STEP,
+  TRACING,
 }
 
 export enum COLOR_MODE {

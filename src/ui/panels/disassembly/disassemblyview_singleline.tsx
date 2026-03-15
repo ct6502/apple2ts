@@ -1,8 +1,9 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { ROMmemoryStart, toHex } from "../../../common/utility"
+import { isBranchInstruction, ROMmemoryStart, toHex } from "../../../common/utility"
 import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 import { getSymbolForAddress } from "./disassembly_utilities"
+import { willTakeBranch } from "../../../common/util_disassemble"
 
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
@@ -91,16 +92,8 @@ const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number
     let takebranch = null
     const yes = <FontAwesomeIcon icon={faCheck} style={{ color: "green", marginLeft: "17px" }} />
     const no = <FontAwesomeIcon icon={faTimes} style={{ color: "red", marginLeft: "17px" }} />
-    switch (opcode) {
-      case "BCS": takebranch = (s6502.PStatus & 0x01) ? yes : no; break
-      case "BCC": takebranch = !(s6502.PStatus & 0x01) ? yes : no; break
-      case "BEQ": takebranch = (s6502.PStatus & 0x02) ? yes : no; break
-      case "BNE": takebranch = !(s6502.PStatus & 0x02) ? yes : no; break
-      case "BMI": takebranch = (s6502.PStatus & 0x80) ? yes : no; break
-      case "BPL": takebranch = !(s6502.PStatus & 0x80) ? yes : no; break
-      case "BVS": takebranch = (s6502.PStatus & 0x40) ? yes : no; break
-      case "BVC": takebranch = !(s6502.PStatus & 0x40) ? yes : no; break
-      case "BRA": takebranch = yes; break
+    if (isBranchInstruction(opcode)) {
+      takebranch = willTakeBranch(opcode, s6502.PStatus) ? yes : no
     }
     return <span>{ops[0]}<span className="disassembly-link"
         title={`$${toHex(addr)}`}

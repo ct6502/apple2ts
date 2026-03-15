@@ -1,7 +1,6 @@
 import { KeyboardEvent, useRef, useState } from "react"
 import {
   handleGetRunMode,
-  handleGetState6502,
   passStepInto, passStepOut, passStepOver
 } from "../../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -10,15 +9,17 @@ import {
   faPlay,
   faFolderOpen,
   faSave,
+  faRoute,
 } from "@fortawesome/free-solid-svg-icons"
 import React from "react"
-import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
+import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE, TEST_DEBUG } from "../../../common/utility"
 import { handleSetCPUState } from "../../controller"
 import { bpStepInto } from "../../img/icon_stepinto"
 import { bpStepOut } from "../../img/icon_stepout"
 import { bpStepOver } from "../../img/icon_stepover"
 import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import SaveDisassemblyDialog from "./savedisassemblydialog"
+import TraceDialog from "./tracedialog"
 
 const DisassemblyControls = (props: DisassemblyProps) => {
   // The tooltips obscure the first line of disassembly.
@@ -30,6 +31,9 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const [address, setAddress] = useState("")
   const [showSymbolTableFileOpen, setShowSymbolTableFileOpen] = useState(false)
   const [showSaveDisassembly, setShowSaveDisassembly] = useState(false)
+  const [showTraceDialog, setShowTraceDialog] = useState(TEST_DEBUG)
+  const [dialogPosition, setDialogPosition] = useState([-1, -1])
+
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
 
   const doUpdateAddress = (addr: number) => {
@@ -72,6 +76,10 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       // Display the dialog.
       fileInput.click()
     }
+  }
+
+  const doSetDialogPosition = (x: number, y: number) => {
+    setDialogPosition([x, y])
   }
 
   return (
@@ -129,12 +137,12 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         disabled={runMode !== RUN_MODE.PAUSED}>
         <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>
       </button>
-      <button className="push-button"
+      {/* <button className="push-button"
         title="Go to Current PC"
         onClick={() => {doUpdateAddress(handleGetState6502().PC)}}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="bigger-font" style={{cursor: "pointer"}}>PC</div>
-      </button>
+      </button> */}
       </div>
       <button className="push-button"
         title="Load Symbol Table"
@@ -156,6 +164,20 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         <SaveDisassemblyDialog
           onClose={() => setShowSaveDisassembly(false)} />
       }
+      <button className="push-button"
+        title="Trace"
+        onClick={() => setShowTraceDialog(true)}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="icon-container">
+          <FontAwesomeIcon icon={faRoute} />
+        </div>
+      </button>
+      {showTraceDialog &&
+        <TraceDialog
+          cancelDialog={() => setShowTraceDialog(false)}
+          dialogPositionX={dialogPosition[0]}
+          dialogPositionY={dialogPosition[1]}
+          setDialogPosition={doSetDialogPosition} />}
       <input
         name="fileInput"
         type="file"

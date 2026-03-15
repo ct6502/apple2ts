@@ -5,8 +5,26 @@ const decodeBranch = (addr: number, vLo: number) => {
   return addr + 2 + (vLo > 127 ? vLo - 256 : vLo)
 }
 
+export const willTakeBranch = (opcode: string, PStatus: number) => {
+  // Will we take the branch (at least given our current 6502 state)?
+  if (PStatus < 0) return false
+  let takebranch = false
+  switch (opcode) {
+    case "BCS": takebranch = (PStatus & 0x01) !== 0; break
+    case "BCC": takebranch = (PStatus & 0x01) === 0; break
+    case "BEQ": takebranch = (PStatus & 0x02) !== 0; break
+    case "BNE": takebranch = (PStatus & 0x02) === 0; break
+    case "BMI": takebranch = (PStatus & 0x80) !== 0; break
+    case "BPL": takebranch = (PStatus & 0x80) === 0; break
+    case "BVS": takebranch = (PStatus & 0x40) !== 0; break
+    case "BVC": takebranch = (PStatus & 0x40) === 0; break
+    case "BRA": takebranch = true; break
+  }
+  return takebranch
+}
+
 export const getInstructionString = (addr: number, code: PCodeInstr1,
-  vLo: number, vHi: number) => {
+  vLo: number, vHi: number, PStatus: number) => {
   if (addr >> 8 === 0xC0) {
     let codename = "---"
     if (addr >= 0xC010 && addr <= 0xC01F) {
@@ -23,6 +41,10 @@ export const getInstructionString = (addr: number, code: PCodeInstr1,
     case 2: sLo = toHex(vLo); hex += ` ${sLo}   `; break
     case 3: sLo = toHex(vLo); sHi = toHex(vHi); hex += ` ${sLo} ${sHi}`; break
   }
+  let takebranch = ""
+  if (PStatus >= 0 && isBranchInstruction(code.name)) {
+    takebranch = willTakeBranch(code.name, PStatus) ? "  ✓" : "  ✗"
+  }
   const vRel = isBranchInstruction(code.name) ? toHex(decodeBranch(addr, vLo), 4) : sLo
   switch (code.mode) {
     case ADDR_MODE.IMPLIED: break  // BRK
@@ -37,5 +59,5 @@ export const getInstructionString = (addr: number, code: PCodeInstr1,
     case ADDR_MODE.IND_Y: value = ` ($${sLo}),Y`; break    // LDA ($FF),Y
     case ADDR_MODE.IND: value = ` ($${sHi.trim()}${sLo})`; break       // JMP ($1234) or LDA ($C0)
   }
-  return `${toHex(addr, 4)}: ${hex}  ${code.name}${value}`
+  return `${toHex(addr, 4)}: ${hex}  ${code.name}${value}${takebranch}`
 }

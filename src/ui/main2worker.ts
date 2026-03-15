@@ -209,6 +209,12 @@ export const passSiriusJoyport = (mode: boolean) => {
   machineState.siriusJoyport = mode
 }
 
+export const passSetTracing = (tracing: boolean) => {
+  doPostMessage(MSG_MAIN.TRACING, tracing)
+  // Force the state right away, so the UI can update.
+  machineState.isTracing = tracing
+}
+
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
@@ -223,6 +229,7 @@ let machineState: MachineState = {
   extraRamSize: 64,
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
+  isTracing: TEST_DEBUG,
   iTempState: 0,
   lores: new Uint8Array(),
   machineName: "APPLE2EE",
@@ -238,6 +245,7 @@ let machineState: MachineState = {
   stackString: "",
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
+  tracelog: new Array<string>(),
   zeroPage: new Uint8Array(256).fill(255)
 }
 
@@ -467,4 +475,12 @@ export const handleGetZeroPage = () => {
 
 export const handleGetSiriusJoyport = () => {
   return machineState.siriusJoyport
+}
+
+export const handleGetTracing = () => {
+  return machineState.isTracing
+}
+
+export const handleGetTracelog = () => {
+  return machineState.tracelog
 }

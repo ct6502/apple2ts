@@ -197,8 +197,9 @@ const DisassemblyView = (props: DisassemblyProps) => {
     </div>
     }
     let foundLine = false
-    if (getDisassemblyVisibleMode() !== DISASSEMBLE_VISIBLE.RESET) {
-      const visibleLine = (getDisassemblyVisibleMode() === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
+    const visibleMode = getDisassemblyVisibleMode()
+    if (visibleMode !== DISASSEMBLE_VISIBLE.RESET) {
+      const visibleLine = (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
         handleGetState6502().PC : getDisassemblyAddress()
       // console.log("visibleLine", visibleLine.toString(16))
       for (let i = 0; i < disArray.length; i++) {

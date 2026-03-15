@@ -7,8 +7,7 @@ import {
   setMain2Worker,
   handleGetMemSize,
   passSetRunMode,
-  setBootCallback,
-  passPasteText} from "./main2worker"
+  setBootCallback} from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
 import { useState } from "react"
@@ -107,9 +106,9 @@ const DisplayApple2 = () => {
     
     if (TEST_DEBUG) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
-      setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
-      setTimeout(() => { passPasteText("CALL 768\n") }, 1000)
-      // setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1000)
+      setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 700)
+      // setTimeout(() => { passPasteText("CALL 768\n") }, 1000)
+      setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1000)
     }
   }
   

@@ -51,22 +51,25 @@ const setPStatus = (value: number) => {
 }
 
 const getPStatusString = (P: number) => {
-  const result = ((P & 0x80) ? "N" : "n") +
-    ((P & 0x40) ? "V" : "v") +
-    "-" +
-    ((P & 0x10) ? "B" : "b") +
-    ((P & 0x8) ? "D" : "d") +
-    ((P & 0x4) ? "I" : "i") +
-    ((P & 0x2) ? "Z" : "z") +
-    ((P & 0x1) ? "C" : "c")
+  const result =
+    ((P & 0x80) ? "N" : ".") +
+    ((P & 0x40) ? "V" : ".") +
+    ((P & 0x10) ? "B" : ".") +
+    ((P & 0x8) ? "D" : ".") +
+    ((P & 0x4) ? "I" : ".") +
+    ((P & 0x2) ? "Z" : ".") +
+    ((P & 0x1) ? "C" : ".")
   return result
 }
 
 export const getProcessorStatus = () => {
   return (
-    `A=${toHex(s6502.Accum)} X=${toHex(s6502.XReg)} ` +
-    `Y=${toHex(s6502.YReg)} P=${toHex(s6502.PStatus)} ` +
-    `${getPStatusString(s6502.PStatus)} S=${toHex(s6502.StackPtr)}`
+    `${toHex(s6502.Accum)}  ` +
+    `${toHex(s6502.XReg)}  ` +
+    `${toHex(s6502.YReg)}  ` +
+    `${toHex(s6502.StackPtr)}  ` +
+    `${toHex(s6502.PStatus)}  ` +
+    `${getPStatusString(s6502.PStatus)}`
   )
 }
 
