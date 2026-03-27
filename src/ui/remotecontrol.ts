@@ -2,18 +2,25 @@ import { RUN_MODE } from "../common/utility"
 import { BreakpointMap } from "../common/breakpoint"
 import {
   handleGetBreakpoints,
+  handleCanGoBackward,
+  handleCanGoForward,
   handleGetC800Slot,
   handleGetIsDebugging,
   handleGetMachineName,
   handleGetMemSize,
   handleGetMemoryDump,
   handleGetRunMode,
+  handleGetSaveState,
   handleGetShowDebugTab,
   handleGetSoftSwitches,
   handleGetSpeedMode,
   handleGetStackString,
   handleGetState6502,
   handleGetTextPageAsString,
+  handleGetTempStateIndex,
+  handleGetTimeTravelThumbnails,
+  passGoBackInTime,
+  passGoForwardInTime,
   passAppleCommandKeyPress,
   passAppleCommandKeyRelease,
   passKeyRelease,
@@ -28,6 +35,8 @@ import {
   passStepInto,
   passStepOut,
   passStepOver,
+  passTimeTravelIndex,
+  passTimeTravelSnapshot,
 } from "./main2worker"
 import {
   setPreferenceBreakpoints,
@@ -37,8 +46,12 @@ import {
   setPreferenceRamWorks,
   setPreferenceSpeedMode,
 } from "./localstorage"
+import { RestoreSaveState } from "./savestate"
 import { getUIState } from "./ui_settings"
+import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
+import { isAudioEnabled } from "./devices/audio/speaker"
 import {
+  handleGetFilename,
   handleGetDriveProps,
   handleSetDiskOrFileFromBuffer,
   handleSetDiskWriteProtected,
@@ -80,6 +93,27 @@ const sleep = (ms: number) => {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms)
   })
+}
+
+const bytesToBase64 = (bytes: Uint8Array) => {
+  let binary = ""
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary)
+}
+
+const stringToBase64 = (value: string) => {
+  return bytesToBase64(new TextEncoder().encode(value))
+}
+
+const base64ToString = (value: string) => {
+  const binary = atob(value)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new TextDecoder().decode(bytes)
 }
 
 const getDriveSummary = () => {
@@ -135,6 +169,74 @@ const collectBreakpoints = () => {
     ...breakpoint,
     address,
   }))
+}
+
+const collectSnapshots = () => {
+  const activeIndex = handleGetTempStateIndex()
+  return handleGetTimeTravelThumbnails().map((snapshot, index) => ({
+    snapshotId: `snap:${index}`,
+    index,
+    cycleCount: snapshot.s6502.cycleCount,
+    label: null,
+    thumbnail: snapshot.thumbnail || null,
+    active: index === activeIndex,
+  }))
+}
+
+const waitForSnapshotChange = async (beforeIndex: number, beforeLength: number) => {
+  for (let i = 0; i < 40; i++) {
+    await sleep(10)
+    const snapshots = handleGetTimeTravelThumbnails()
+    const currentIndex = handleGetTempStateIndex()
+    if (snapshots.length !== beforeLength || currentIndex !== beforeIndex) {
+      return collectSnapshots()
+    }
+  }
+  return collectSnapshots()
+}
+
+const executeSnapshotAction = async (action: () => void) => {
+  const beforeIndex = handleGetTempStateIndex()
+  const beforeLength = handleGetTimeTravelThumbnails().length
+  action()
+  return waitForSnapshotChange(beforeIndex, beforeLength)
+}
+
+const exportSaveState = async (withSnapshots: boolean) => {
+  const saveState = await new Promise<EmulatorSaveState>((resolve) => {
+    handleGetSaveState((state) => {
+      resolve(state)
+    }, withSnapshots)
+  })
+
+  saveState.emulator = {
+    name: "Apple2TS Emulator",
+    date: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString(),
+    version: 1.0,
+    ...getUIState(),
+    audioEnable: isAudioEnabled(),
+    mockingboardMode: getMockingboardMode(),
+    speedMode: handleGetSpeedMode(),
+    isDebugging: handleGetIsDebugging(),
+    runMode: handleGetRunMode(),
+    breakpoints: JSON.stringify(Array.from(handleGetBreakpoints().entries())),
+  }
+
+  let filename = "apple2ts"
+  for (let i = 0; i < 4; i++) {
+    const name = handleGetFilename(i)
+    if (name) {
+      filename = name
+      break
+    }
+  }
+
+  const json = JSON.stringify(saveState, null, 2)
+  return {
+    filename: `${filename}.a2ts`,
+    mimeType: "text/plain",
+    dataBase64: stringToBase64(json),
+  }
 }
 
 const executeStep = async (stepAction: () => void) => {
@@ -336,6 +438,67 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       return {
         breakpoints: collectBreakpoints(),
       }
+
+    case "getSnapshots":
+      return {
+        snapshots: collectSnapshots(),
+      }
+
+    case "createSnapshot":
+      return {
+        snapshots: await executeSnapshotAction(() => {
+          passTimeTravelSnapshot()
+        }),
+      }
+
+    case "activateSnapshot": {
+      const snapshotId = String(payload.snapshotId || "")
+      const index = Number(snapshotId.replace(/^snap:/, ""))
+      if (!Number.isInteger(index) || index < 0) {
+        throw new Error("Invalid snapshot id")
+      }
+      return {
+        snapshots: await executeSnapshotAction(() => {
+          passTimeTravelIndex(index)
+        }),
+      }
+    }
+
+    case "stepSnapshotBack":
+      if (!handleCanGoBackward()) {
+        return {
+          snapshots: collectSnapshots(),
+        }
+      }
+      return {
+        snapshots: await executeSnapshotAction(() => {
+          passGoBackInTime()
+        }),
+      }
+
+    case "stepSnapshotForward":
+      if (!handleCanGoForward()) {
+        return {
+          snapshots: collectSnapshots(),
+        }
+      }
+      return {
+        snapshots: await executeSnapshotAction(() => {
+          passGoForwardInTime()
+        }),
+      }
+
+    case "exportSaveState":
+      return exportSaveState(Boolean(payload.includeSnapshots))
+
+    case "importSaveState": {
+      const dataBase64 = String(payload.dataBase64 || "")
+      if (!dataBase64) {
+        throw new Error("dataBase64 is required")
+      }
+      RestoreSaveState(base64ToString(dataBase64))
+      return collectStatus()
+    }
 
     case "setSoftSwitches":
       passSetSoftSwitches((payload.addresses as number[]) || null)

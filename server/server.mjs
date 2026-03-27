@@ -295,6 +295,16 @@ const setBreakpointsAndReadBack = async (client, breakpoints) => {
 const findBreakpointResourceByAddress = (breakpoints, address) =>
   breakpoints.find((breakpoint) => Number(breakpoint.address) === Number(address)) || null
 
+const getSnapshotResources = (snapshots) =>
+  (Array.isArray(snapshots) ? snapshots : []).map((snapshot) => ({
+    snapshotId: String(snapshot.snapshotId),
+    index: Number(snapshot.index ?? 0),
+    cycleCount: Number(snapshot.cycleCount ?? 0),
+    label: snapshot.label ?? null,
+    thumbnail: snapshot.thumbnail ?? null,
+    active: Boolean(snapshot.active),
+  }))
+
 const getStatusFromReply = async (client, action, payload) => {
   const reply = await dispatchCommand(client, action, payload, true)
   return reply.result
@@ -432,6 +442,36 @@ const applyCpuPatch = async (client, patch) => {
   client.latestState = status
   client.lastSeenAt = Date.now()
   return getCpuResource(status)
+}
+
+const getSnapshotsFromReply = async (client) => {
+  const reply = await dispatchCommand(client, "getSnapshots", {}, true)
+  return getSnapshotResources(reply.result?.snapshots)
+}
+
+const applySnapshotAction = async (client, action, payload = {}) => {
+  const reply = await dispatchCommand(client, action, payload, true)
+  client.lastSeenAt = Date.now()
+  return getSnapshotResources(reply.result?.snapshots)
+}
+
+const getActiveSnapshot = (snapshots) => snapshots.find((snapshot) => snapshot.active) || null
+
+const exportSaveStateFromReply = async (client, includeSnapshots) => {
+  const reply = await dispatchCommand(client, "exportSaveState", { includeSnapshots }, true, commandTimeoutMs * 3)
+  client.lastSeenAt = Date.now()
+  return {
+    filename: String(reply.result?.filename || "apple2ts.a2ts"),
+    mimeType: String(reply.result?.mimeType || "text/plain"),
+    dataBase64: String(reply.result?.dataBase64 || ""),
+  }
+}
+
+const importSaveStateFromReply = async (client, dataBase64) => {
+  const status = await getStatusFromReply(client, "importSaveState", { dataBase64 })
+  client.latestState = status
+  client.lastSeenAt = Date.now()
+  return getMachineResource(status)
 }
 
 const sendSseEvent = (res, eventName, data) => {
@@ -878,6 +918,92 @@ const server = createServer(async (req, res) => {
         writeEnvelope(res, 200, await setBreakpointsAndReadBack(client, filtered))
         return
       }
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/debug/snapshots") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await getSnapshotsFromReply(client))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/snapshots") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      const snapshots = await applySnapshotAction(client, "createSnapshot")
+      writeEnvelope(res, 200, getActiveSnapshot(snapshots))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/snapshots/step-back") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      const snapshots = await applySnapshotAction(client, "stepSnapshotBack")
+      writeEnvelope(res, 200, getActiveSnapshot(snapshots))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/snapshots/step-forward") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      const snapshots = await applySnapshotAction(client, "stepSnapshotForward")
+      writeEnvelope(res, 200, getActiveSnapshot(snapshots))
+      return
+    }
+
+    if (req.method === "POST" && /\/api\/debug\/snapshots\/[^/]+\/activate$/.test(url.pathname)) {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      const snapshotId = decodeURIComponent(url.pathname.slice("/api/debug/snapshots/".length, -"/activate".length))
+      if (!/^snap:\d+$/.test(snapshotId)) {
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Snapshot not found.")
+        return
+      }
+      const snapshots = await applySnapshotAction(client, "activateSnapshot", { snapshotId })
+      writeEnvelope(res, 200, getActiveSnapshot(snapshots))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/save-states/export") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      const body = await readJsonBody(req)
+      writeEnvelope(res, 200, await exportSaveStateFromReply(client, Boolean(body.includeSnapshots)))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/save-states/import") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      const body = await readJsonBody(req)
+      const dataBase64 = String(body.dataBase64 || "")
+      if (!dataBase64) {
+        writeErrorEnvelope(res, 400, "BAD_REQUEST", "dataBase64 is required.")
+        return
+      }
+      writeEnvelope(res, 200, await importSaveStateFromReply(client, dataBase64))
+      return
     }
 
     if (req.method === "GET" && url.pathname === "/api/status") {
