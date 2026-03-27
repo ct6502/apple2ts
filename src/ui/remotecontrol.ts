@@ -2,6 +2,8 @@ import { RUN_MODE } from "../common/utility"
 import {
   handleGetC800Slot,
   handleGetIsDebugging,
+  handleGetMachineName,
+  handleGetMemSize,
   handleGetMemoryDump,
   handleGetRunMode,
   handleGetShowDebugTab,
@@ -91,6 +93,8 @@ const collectStatus = () => {
     machine: {
       runMode: handleGetRunMode(),
       speedMode: handleGetSpeedMode(),
+      machineName: handleGetMachineName(),
+      ramWorksKb: handleGetMemSize(),
       isDebugging: handleGetIsDebugging(),
       showDebugTab: handleGetShowDebugTab(),
       machineState: handleGetState6502(),
