@@ -1,5 +1,7 @@
 import { RUN_MODE } from "../common/utility"
+import { BreakpointMap } from "../common/breakpoint"
 import {
+  handleGetBreakpoints,
   handleGetC800Slot,
   handleGetIsDebugging,
   handleGetMachineName,
@@ -19,6 +21,7 @@ import {
   passMouseEvent,
   passPasteText,
   passSetDebug,
+  passSetState6502,
   passSetMemory,
   passSetRunMode,
   passSetSoftSwitches,
@@ -27,6 +30,7 @@ import {
   passStepOver,
 } from "./main2worker"
 import {
+  setPreferenceBreakpoints,
   setPreferenceColorMode,
   setPreferenceDebugMode,
   setPreferenceMachineName,
@@ -124,6 +128,13 @@ const collectMemory = () => {
     machineState: handleGetState6502(),
     memoryDump: toByteArray(handleGetMemoryDump()),
   }
+}
+
+const collectBreakpoints = () => {
+  return Array.from(handleGetBreakpoints().entries() as IterableIterator<[number, Breakpoint]>).map(([address, breakpoint]) => ({
+    ...breakpoint,
+    address,
+  }))
 }
 
 const executeStep = async (stepAction: () => void) => {
@@ -308,6 +319,23 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
     case "setMemory":
       passSetMemory(Number(payload.address), Number(payload.value))
       return collectStatus()
+
+    case "setCpuState":
+      passSetState6502(payload.state as STATE6502)
+      return collectStatus()
+
+    case "getBreakpoints":
+      return {
+        breakpoints: collectBreakpoints(),
+      }
+
+    case "setBreakpoints":
+      setPreferenceBreakpoints(new BreakpointMap(
+        ((payload.breakpoints as Breakpoint[]) || []).map((breakpoint) => [breakpoint.address, breakpoint]),
+      ))
+      return {
+        breakpoints: collectBreakpoints(),
+      }
 
     case "setSoftSwitches":
       passSetSoftSwitches((payload.addresses as number[]) || null)

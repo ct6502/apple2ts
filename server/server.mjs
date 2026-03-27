@@ -180,6 +180,121 @@ const getCpuResource = (status) => {
   }
 }
 
+const buildCpuStateFromResource = (resource) => {
+  const flags = resource?.flags || {}
+  let pStatus
+  if ("PStatus" in resource) {
+    pStatus = Number(resource.PStatus)
+  } else {
+    pStatus = 0
+    if (flags.N) pStatus |= 1 << 7
+    if (flags.V) pStatus |= 1 << 6
+    if (flags.B) pStatus |= 1 << 4
+    if (flags.D) pStatus |= 1 << 3
+    if (flags.I) pStatus |= 1 << 2
+    if (flags.Z) pStatus |= 1 << 1
+    if (flags.C) pStatus |= 1 << 0
+  }
+
+  return {
+    PC: Number(resource.PC ?? 0),
+    Accum: Number(resource.A ?? 0),
+    XReg: Number(resource.X ?? 0),
+    YReg: Number(resource.Y ?? 0),
+    StackPtr: Number(resource.S ?? 0),
+    flagIRQ: Number(resource.IRQ ?? 0),
+    flagNMI: Boolean(flags.NMI),
+    PStatus: pStatus,
+    cycleCount: Number(resource.cycleCount ?? 0),
+  }
+}
+
+const mergeCpuPatch = (current, patch) => {
+  const next = {
+    ...current,
+    flags: {
+      ...current.flags,
+    },
+  }
+
+  if ("PC" in patch) next.PC = Number(patch.PC)
+  if ("A" in patch) next.A = Number(patch.A)
+  if ("X" in patch) next.X = Number(patch.X)
+  if ("Y" in patch) next.Y = Number(patch.Y)
+  if ("S" in patch) next.S = Number(patch.S)
+  if ("IRQ" in patch) next.IRQ = Number(patch.IRQ)
+  if ("cycleCount" in patch) next.cycleCount = Number(patch.cycleCount)
+  if ("PStatus" in patch) next.PStatus = Number(patch.PStatus)
+  if ("flags" in patch && patch.flags && typeof patch.flags === "object") {
+    next.flags = {
+      ...next.flags,
+      ...patch.flags,
+    }
+  }
+
+  return next
+}
+
+const allowedCpuPatchFields = new Set([
+  "PC",
+  "A",
+  "X",
+  "Y",
+  "S",
+  "IRQ",
+  "PStatus",
+  "cycleCount",
+  "flags",
+])
+
+const getBreakpointsFromReply = async (client) => {
+  const reply = await dispatchCommand(client, "getBreakpoints", {}, true)
+  return Array.isArray(reply.result?.breakpoints) ? reply.result.breakpoints : []
+}
+
+const breakpointIdFromAddress = (address) => `bp:${Number(address)}`
+
+const getBreakpointResource = (breakpoint) => ({
+  breakpointId: breakpointIdFromAddress(breakpoint.address),
+  address: Number(breakpoint.address),
+  disabled: Boolean(breakpoint.disabled),
+  watchpoint: Boolean(breakpoint.watchpoint),
+  instruction: Boolean(breakpoint.instruction),
+  hidden: Boolean(breakpoint.hidden),
+  once: Boolean(breakpoint.once),
+  memget: Boolean(breakpoint.memget),
+  memset: Boolean(breakpoint.memset),
+  expression1: breakpoint.expression1,
+  expression2: breakpoint.expression2,
+  expressionOperator: breakpoint.expressionOperator || "",
+  hexvalue: Number(breakpoint.hexvalue ?? -1),
+  hitcount: Number(breakpoint.hitcount ?? 1),
+  nhits: Number(breakpoint.nhits ?? 0),
+  memoryBank: breakpoint.memoryBank || "",
+  action1: breakpoint.action1,
+  action2: breakpoint.action2,
+  halt: Boolean(breakpoint.halt),
+})
+
+const getBreakpointListResource = (breakpoints) => breakpoints.map(getBreakpointResource)
+
+const parseBreakpointId = (breakpointId) => {
+  if (!/^bp:-?\d+$/.test(String(breakpointId))) {
+    return null
+  }
+  return Number(String(breakpointId).slice(3))
+}
+
+const setBreakpointsAndReadBack = async (client, breakpoints) => {
+  const reply = await dispatchCommand(client, "setBreakpoints", { breakpoints }, true)
+  const resultBreakpoints = Array.isArray(reply.result?.breakpoints) ? reply.result.breakpoints : breakpoints
+  client.lastSeenAt = Date.now()
+  return getBreakpointListResource(resultBreakpoints)
+}
+
+const findBreakpointResourceByAddress = (breakpoints, address) =>
+  breakpoints.find((breakpoint) => Number(breakpoint.address) === Number(address)) || null
+
 const getStatusFromReply = async (client, action, payload) => {
   const reply = await dispatchCommand(client, action, payload, true)
   return reply.result
@@ -296,6 +411,24 @@ const applyDebugStep = async (client, action) => {
   }
 
   const status = await getStatusFromReply(client, commandAction, {})
+  client.latestState = status
+  client.lastSeenAt = Date.now()
+  return getCpuResource(status)
+}
+
+const getFreshCpuResource = async (client) => {
+  const status = await getStatusFromReply(client, "getStatus", {})
+  client.latestState = status
+  client.lastSeenAt = Date.now()
+  return getCpuResource(status)
+}
+
+const applyCpuPatch = async (client, patch) => {
+  const current = await getFreshCpuResource(client)
+  const next = mergeCpuPatch(current, patch)
+  const status = await getStatusFromReply(client, "setCpuState", {
+    state: buildCpuStateFromResource(next),
+  })
   client.latestState = status
   client.lastSeenAt = Date.now()
   return getCpuResource(status)
@@ -616,6 +749,135 @@ const server = createServer(async (req, res) => {
       }
       writeEnvelope(res, 200, await applyDebugStep(client, "out"))
       return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/debug/cpu") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await getFreshCpuResource(client))
+      return
+    }
+
+    if (req.method === "PATCH" && url.pathname === "/api/debug/cpu") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      const keys = Object.keys(body)
+      if (keys.length === 0) {
+        writeErrorEnvelope(res, 400, "BAD_REQUEST", "At least one CPU field must be provided.")
+        return
+      }
+      const unknownKeys = keys.filter((key) => !allowedCpuPatchFields.has(key))
+      if (unknownKeys.length > 0) {
+        writeErrorEnvelope(res, 400, "BAD_REQUEST", `Unknown CPU fields: ${unknownKeys.join(", ")}`)
+        return
+      }
+
+      try {
+        writeEnvelope(res, 200, await applyCpuPatch(client, body))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/debug/breakpoints") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await getBreakpointListResource(await getBreakpointsFromReply(client)))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/breakpoints") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      if (!Number.isFinite(Number(body.address))) {
+        writeErrorEnvelope(res, 400, "BAD_REQUEST", "Breakpoint address is required.")
+        return
+      }
+
+      const breakpoints = await getBreakpointsFromReply(client)
+      const nextBreakpoint = {
+        ...body,
+        address: Number(body.address),
+      }
+      const filtered = breakpoints.filter((breakpoint) => Number(breakpoint.address) !== nextBreakpoint.address)
+      filtered.push(nextBreakpoint)
+      const nextResources = await setBreakpointsAndReadBack(client, filtered)
+      writeEnvelope(res, 200, findBreakpointResourceByAddress(nextResources, nextBreakpoint.address))
+      return
+    }
+
+    if (req.method === "DELETE" && url.pathname === "/api/debug/breakpoints") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await setBreakpointsAndReadBack(client, []))
+      return
+    }
+
+    if (url.pathname.startsWith("/api/debug/breakpoints/")) {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const breakpointId = decodeURIComponent(url.pathname.slice("/api/debug/breakpoints/".length))
+      const address = parseBreakpointId(breakpointId)
+      if (address === null) {
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Breakpoint not found.")
+        return
+      }
+
+      const breakpoints = await getBreakpointsFromReply(client)
+      const index = breakpoints.findIndex((breakpoint) => Number(breakpoint.address) === address)
+      if (index < 0) {
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Breakpoint not found.")
+        return
+      }
+
+      if (req.method === "PATCH") {
+        const body = await readJsonBody(req)
+        const nextBreakpoint = {
+          ...breakpoints[index],
+          ...body,
+          address: "address" in body ? Number(body.address) : address,
+        }
+        const filtered = breakpoints.filter((_, breakpointIndex) => breakpointIndex !== index)
+        filtered.push(nextBreakpoint)
+        const nextResources = await setBreakpointsAndReadBack(client, filtered)
+        writeEnvelope(res, 200, findBreakpointResourceByAddress(nextResources, nextBreakpoint.address))
+        return
+      }
+
+      if (req.method === "DELETE") {
+        const filtered = breakpoints.filter((_, breakpointIndex) => breakpointIndex !== index)
+        writeEnvelope(res, 200, await setBreakpointsAndReadBack(client, filtered))
+        return
+      }
     }
 
     if (req.method === "GET" && url.pathname === "/api/status") {
