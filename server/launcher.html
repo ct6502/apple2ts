@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Apple2TS Launcher</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #f5f1e6;
+        color: #1f1a12;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+
+      p {
+        margin: 0 0 16px;
+        line-height: 1.5;
+      }
+
+      form {
+        display: grid;
+        gap: 16px;
+      }
+
+      section {
+        padding: 16px;
+        border: 1px solid #cbbca0;
+        background: #fffaf0;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+      }
+
+      input,
+      select,
+      textarea,
+      button {
+        font: inherit;
+      }
+
+      input,
+      select,
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #9f8f72;
+        background: #fff;
+      }
+
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        padding: 10px 14px;
+        border: 1px solid #6b5b42;
+        background: #efe2b9;
+        color: #1f1a12;
+        cursor: pointer;
+      }
+
+      code,
+      pre {
+        font-family: monospace;
+      }
+
+      pre {
+        margin: 0;
+        padding: 12px;
+        overflow-x: auto;
+        border: 1px solid #cbbca0;
+        background: #fff;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Apple2TS Launcher</h1>
+      <p>Build a client URL using the supported query parameters from <code>src/ui/inputparams.ts</code> and open the emulator.</p>
+
+      <form id="launcher-form">
+        <section>
+          <h2>Boot Media</h2>
+          <div class="grid">
+            <label>
+              Disk or image URL
+              <input id="fragment" name="fragment" type="url" placeholder="https://archive.org/download/.../disk.woz">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Machine</h2>
+          <div class="grid">
+            <label>
+              App mode
+              <input name="appmode" type="text" placeholder="game">
+            </label>
+            <label>
+              Machine
+              <select name="machine">
+                <option value="">Default</option>
+                <option value="APPLE2EE">APPLE2EE</option>
+                <option value="APPLE2EU">APPLE2EU</option>
+              </select>
+            </label>
+            <label>
+              RAM disk
+              <select name="ramdisk">
+                <option value="">Default</option>
+                <option value="64">64 KB</option>
+                <option value="512">512 KB</option>
+                <option value="1024">1024 KB</option>
+                <option value="4096">4096 KB</option>
+                <option value="8192">8192 KB</option>
+              </select>
+            </label>
+            <label>
+              Speed
+              <select name="speed">
+                <option value="">Default</option>
+                <option value="snail">snail</option>
+                <option value="slow">slow</option>
+                <option value="normal">normal</option>
+                <option value="two">two</option>
+                <option value="three">three</option>
+                <option value="fast">fast</option>
+                <option value="warp">warp</option>
+                <option value="ludicrous">ludicrous</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Display And Theme</h2>
+          <div class="grid">
+            <label>
+              Theme
+              <select name="theme">
+                <option value="">Default</option>
+                <option value="classic">classic</option>
+                <option value="dark">dark</option>
+                <option value="minimal">minimal</option>
+              </select>
+            </label>
+            <label>
+              Color
+              <select name="color">
+                <option value="">Default</option>
+                <option value="color">color</option>
+                <option value="nofringe">nofringe</option>
+                <option value="green">green</option>
+                <option value="amber">amber</option>
+                <option value="white">white</option>
+                <option value="inverse">inverse</option>
+              </select>
+            </label>
+            <label>
+              Scanlines
+              <select name="scanlines">
+                <option value="">Default</option>
+                <option value="on">on</option>
+                <option value="off">off</option>
+              </select>
+            </label>
+            <label>
+              Ghosting
+              <select name="ghosting">
+                <option value="">Default</option>
+                <option value="on">on</option>
+                <option value="off">off</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Behavior</h2>
+          <div class="grid">
+            <label>
+              Caps lock
+              <select name="capslock">
+                <option value="">Default</option>
+                <option value="off">off</option>
+              </select>
+            </label>
+            <label>
+              Debug panel
+              <select name="debug">
+                <option value="">Default</option>
+                <option value="on">on</option>
+              </select>
+            </label>
+            <label>
+              Sound
+              <select name="sound">
+                <option value="">Default</option>
+                <option value="off">off</option>
+              </select>
+            </label>
+            <label>
+              Hot reload
+              <select name="hotreload">
+                <option value="">Default</option>
+                <option value="true">true</option>
+                <option value="false">false</option>
+              </select>
+            </label>
+            <label>
+              Run BASIC or text
+              <select name="run">
+                <option value="">Default</option>
+                <option value="true">true</option>
+                <option value="false">false</option>
+                <option value="0">0</option>
+              </select>
+            </label>
+            <label>
+              Tour
+              <input name="tour" type="text" placeholder="tour id">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Program Input</h2>
+          <div class="grid">
+            <label>
+              Binary load address (hex)
+              <input name="address" type="text" placeholder="300">
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              BASIC or text
+              <textarea name="basic" placeholder="10 PRINT &quot;HELLO&quot;&#10;20 GOTO 10"></textarea>
+            </label>
+            <label>
+              Binary payload (base64 or GZIP + base64)
+              <textarea name="binary" placeholder="R0laU..." spellcheck="false"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Result</h2>
+          <pre id="url-preview"></pre>
+        </section>
+
+        <div class="actions">
+          <button type="submit">Open Emulator</button>
+          <button type="button" id="copy-url">Copy URL</button>
+          <button type="reset">Reset</button>
+        </div>
+      </form>
+    </main>
+
+    <script>
+      const form = document.getElementById("launcher-form")
+      const preview = document.getElementById("url-preview")
+      const copyButton = document.getElementById("copy-url")
+
+      const buildUrl = () => {
+        const data = new FormData(form)
+        const params = new URLSearchParams()
+
+        for (const [key, rawValue] of data.entries()) {
+          const value = typeof rawValue === "string" ? rawValue.trim() : ""
+          if (!value || key === "fragment") {
+            continue
+          }
+          params.set(key, value)
+        }
+
+        const target = new URL("/", window.location.origin)
+        const query = params.toString()
+        if (query) {
+          target.search = query
+        }
+
+        const fragment = String(data.get("fragment") || "").trim()
+        if (fragment) {
+          target.hash = fragment
+        }
+
+        return target.toString()
+      }
+
+      const updatePreview = () => {
+        preview.textContent = buildUrl()
+      }
+
+      form.addEventListener("input", updatePreview)
+      form.addEventListener("reset", () => {
+        window.setTimeout(updatePreview, 0)
+      })
+      form.addEventListener("submit", (event) => {
+        event.preventDefault()
+        window.location.assign(buildUrl())
+      })
+
+      copyButton.addEventListener("click", async () => {
+        const url = buildUrl()
+        try {
+          await navigator.clipboard.writeText(url)
+          copyButton.textContent = "Copied"
+          window.setTimeout(() => {
+            copyButton.textContent = "Copy URL"
+          }, 1200)
+        } catch {
+          preview.textContent = url
+        }
+      })
+
+      updatePreview()
+    </script>
+  </body>
+</html>

@@ -76,6 +76,7 @@ This keeps client-webapp changes small and avoids introducing a second service.
 
 - OpenAPI spec: `/openapi.json`
 - Swagger UI: `/docs`
+- Launcher page: `/launcher`
 
 ## Implemented API Surface
 

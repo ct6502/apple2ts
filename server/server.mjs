@@ -1562,6 +1562,11 @@ const server = createServer(async (req, res) => {
       return
     }
 
+    if (req.method === "GET" && (url.pathname === "/launcher" || url.pathname === "/launcher/")) {
+      await serveFile(res, path.join(serverDir, "launcher.html"))
+      return
+    }
+
     await serveStaticFile(res, url.pathname)
   } catch (error) {
     writeJson(res, 500, {
