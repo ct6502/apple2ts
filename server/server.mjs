@@ -155,6 +155,31 @@ const getMachineResource = (status) => {
   }
 }
 
+const getCpuResource = (status) => {
+  const machineState = status?.machine?.machineState || {}
+  const pStatus = Number(machineState.PStatus ?? 0)
+  return {
+    PC: Number(machineState.PC ?? 0),
+    A: Number(machineState.Accum ?? 0),
+    X: Number(machineState.XReg ?? 0),
+    Y: Number(machineState.YReg ?? 0),
+    S: Number(machineState.StackPtr ?? 0),
+    IRQ: Number(machineState.flagIRQ ?? 0),
+    PStatus: pStatus,
+    cycleCount: Number(machineState.cycleCount ?? 0),
+    flags: {
+      N: Boolean(pStatus & (1 << 7)),
+      V: Boolean(pStatus & (1 << 6)),
+      B: Boolean(pStatus & (1 << 4)),
+      D: Boolean(pStatus & (1 << 3)),
+      I: Boolean(pStatus & (1 << 2)),
+      Z: Boolean(pStatus & (1 << 1)),
+      C: Boolean(pStatus & (1 << 0)),
+      NMI: Boolean(machineState.flagNMI),
+    },
+  }
+}
+
 const getStatusFromReply = async (client, action, payload) => {
   const reply = await dispatchCommand(client, action, payload, true)
   return reply.result
@@ -257,6 +282,23 @@ const applyLifecycleAction = async (client, action) => {
   client.latestState = status
   client.lastSeenAt = Date.now()
   return getMachineResource(status)
+}
+
+const applyDebugStep = async (client, action) => {
+  const stepActionMap = {
+    into: "stepInto",
+    over: "stepOver",
+    out: "stepOut",
+  }
+  const commandAction = stepActionMap[action]
+  if (!commandAction) {
+    throw new Error(`Unsupported debug step action '${action}'`)
+  }
+
+  const status = await getStatusFromReply(client, commandAction, {})
+  client.latestState = status
+  client.lastSeenAt = Date.now()
+  return getCpuResource(status)
 }
 
 const sendSseEvent = (res, eventName, data) => {
@@ -543,6 +585,36 @@ const server = createServer(async (req, res) => {
         return
       }
       writeEnvelope(res, 200, await applyLifecycleAction(client, "resume"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/step-into") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyDebugStep(client, "into"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/step-over") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyDebugStep(client, "over"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/step-out") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyDebugStep(client, "out"))
       return
     }
 

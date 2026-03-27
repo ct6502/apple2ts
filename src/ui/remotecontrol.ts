@@ -22,6 +22,9 @@ import {
   passSetMemory,
   passSetRunMode,
   passSetSoftSwitches,
+  passStepInto,
+  passStepOut,
+  passStepOver,
 } from "./main2worker"
 import {
   setPreferenceColorMode,
@@ -67,6 +70,12 @@ const decodeBase64 = (value: string) => {
 
 const toByteArray = (value: Uint8Array) => {
   return Array.from(value)
+}
+
+const sleep = (ms: number) => {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
 }
 
 const getDriveSummary = () => {
@@ -115,6 +124,21 @@ const collectMemory = () => {
     machineState: handleGetState6502(),
     memoryDump: toByteArray(handleGetMemoryDump()),
   }
+}
+
+const executeStep = async (stepAction: () => void) => {
+  const previousCycleCount = handleGetState6502().cycleCount
+  stepAction()
+
+  for (let i = 0; i < 40; i++) {
+    await sleep(10)
+    const currentState = handleGetState6502()
+    if (handleGetRunMode() === RUN_MODE.PAUSED && currentState.cycleCount !== previousCycleCount) {
+      return collectStatus()
+    }
+  }
+
+  return collectStatus()
 }
 
 const postJson = async (url: string, body: Record<string, unknown>) => {
@@ -288,6 +312,21 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
     case "setSoftSwitches":
       passSetSoftSwitches((payload.addresses as number[]) || null)
       return collectStatus()
+
+    case "stepInto":
+      return executeStep(() => {
+        passStepInto()
+      })
+
+    case "stepOver":
+      return executeStep(() => {
+        passStepOver()
+      })
+
+    case "stepOut":
+      return executeStep(() => {
+        passStepOut()
+      })
 
     case "setDriveWriteProtected":
       handleSetDiskWriteProtected(Number(payload.driveIndex), Boolean(payload.isWriteProtected))
