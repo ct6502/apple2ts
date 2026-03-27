@@ -16,6 +16,7 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint-fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
+    "serve": "node server/server.mjs",
     "test": "jest"
   },
   "dependencies": {

@@ -1,0 +1,499 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Apple2TS Remote Control API",
+    "version": "1.0.0",
+    "description": "Single-server API for serving the Apple2TS web client and controlling a connected browser-hosted emulator instance. WARNING: this server is intentionally localhost-only (127.0.0.1) and is not hardened for remote access."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Clients",
+      "description": "Connected browser sessions"
+    },
+    {
+      "name": "Status",
+      "description": "Current emulator status and inspection"
+    },
+    {
+      "name": "Control",
+      "description": "Remote control commands sent to a connected browser"
+    }
+  ],
+  "paths": {
+    "/api/clients": {
+      "get": {
+        "tags": ["Clients"],
+        "summary": "List connected clients",
+        "responses": {
+          "200": {
+            "description": "Connected browser sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clients": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ClientSummary"
+                      }
+                    }
+                  },
+                  "required": ["clients"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Get latest client status",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional client id. If omitted, the most recently active client is used."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest reported emulator status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "client": {
+                      "$ref": "#/components/schemas/ClientSummary"
+                    },
+                    "state": {
+                      "$ref": "#/components/schemas/StatusSnapshot"
+                    }
+                  },
+                  "required": ["client", "state"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/memory": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Request a fresh memory dump from a connected client",
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional client id. If omitted, the most recently active client is used."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Memory dump result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlReply"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/control": {
+      "post": {
+        "tags": ["Control"],
+        "summary": "Send a remote control command",
+        "description": "Dispatches a control action to a connected browser client. If `wait` is false, the command is accepted asynchronously.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlRequest"
+              },
+              "examples": {
+                "getStatus": {
+                  "value": {
+                    "action": "getStatus"
+                  }
+                },
+                "setSpeedMode": {
+                  "value": {
+                    "action": "setSpeedMode",
+                    "payload": {
+                      "speedMode": 3
+                    }
+                  }
+                },
+                "setColorMode": {
+                  "value": {
+                    "action": "setColorMode",
+                    "payload": {
+                      "colorMode": 2
+                    }
+                  }
+                },
+                "keypress": {
+                  "value": {
+                    "action": "keypress",
+                    "payload": {
+                      "key": "A",
+                      "release": true
+                    }
+                  }
+                },
+                "mountDisk": {
+                  "value": {
+                    "action": "mountDisk",
+                    "payload": {
+                      "driveIndex": 2,
+                      "filename": "disk.woz",
+                      "dataBase64": "AA=="
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Synchronous command completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ControlReply"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Asynchronous command accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedReply"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "NotFound": {
+        "description": "Target client not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Error": {
+        "description": "Server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ClientSummary": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "connectedAt": {
+            "type": "integer"
+          },
+          "lastSeenAt": {
+            "type": "integer"
+          },
+          "pathname": {
+            "type": "string"
+          },
+          "userAgent": {
+            "type": "string"
+          },
+          "hasEventStream": {
+            "type": "boolean"
+          }
+        },
+        "required": ["clientId", "connectedAt", "lastSeenAt", "pathname", "userAgent", "hasEventStream"]
+      },
+      "State6502": {
+        "type": "object",
+        "properties": {
+          "cycleCount": {
+            "type": "integer"
+          },
+          "PStatus": {
+            "type": "integer"
+          },
+          "PC": {
+            "type": "integer"
+          },
+          "Accum": {
+            "type": "integer"
+          },
+          "XReg": {
+            "type": "integer"
+          },
+          "YReg": {
+            "type": "integer"
+          },
+          "StackPtr": {
+            "type": "integer"
+          },
+          "flagIRQ": {
+            "type": "integer"
+          },
+          "flagNMI": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DriveSummary": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer"
+          },
+          "drive": {
+            "type": "integer"
+          },
+          "hardDrive": {
+            "type": "boolean"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "motorRunning": {
+            "type": "boolean"
+          },
+          "diskHasChanges": {
+            "type": "boolean"
+          },
+          "isWriteProtected": {
+            "type": "boolean"
+          },
+          "lastWriteTime": {
+            "type": "integer"
+          },
+          "byteLength": {
+            "type": "integer"
+          }
+        }
+      },
+      "StatusSnapshot": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "integer"
+          },
+          "machine": {
+            "type": "object",
+            "properties": {
+              "runMode": {
+                "type": "integer"
+              },
+              "speedMode": {
+                "type": "integer"
+              },
+              "isDebugging": {
+                "type": "boolean"
+              },
+              "showDebugTab": {
+                "type": "boolean"
+              },
+              "machineState": {
+                "$ref": "#/components/schemas/State6502"
+              },
+              "textPage": {
+                "type": "string"
+              },
+              "stackString": {
+                "type": "string"
+              },
+              "c800Slot": {
+                "type": "integer"
+              },
+              "softSwitches": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "boolean"
+                }
+              },
+              "memoryAvailable": {
+                "type": "boolean"
+              }
+            }
+          },
+          "ui": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "drives": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveSummary"
+            }
+          }
+        }
+      },
+      "ControlRequest": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "description": "Optional target client id. If omitted, the most recently active client is used."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "getStatus",
+              "getMemory",
+              "setRunMode",
+              "setSpeedMode",
+              "setColorMode",
+              "setMachineName",
+              "setRamWorks",
+              "setDebug",
+              "setShowDebugTab",
+              "keypress",
+              "pasteText",
+              "appleKey",
+              "mouseEvent",
+              "setMemory",
+              "setSoftSwitches",
+              "setDriveWriteProtected",
+              "mountDisk"
+            ]
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "wait": {
+            "type": "boolean",
+            "default": true
+          },
+          "waitMs": {
+            "type": "integer",
+            "default": 10000
+          }
+        },
+        "required": ["action"]
+      },
+      "ControlReply": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "commandId": {
+            "type": "string"
+          },
+          "result": {
+            "description": "Command-specific result payload",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StatusSnapshot"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "timestamp": {
+                    "type": "integer"
+                  },
+                  "machineState": {
+                    "$ref": "#/components/schemas/State6502"
+                  },
+                  "memoryDump": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": true
+              }
+            ]
+          }
+        },
+        "required": ["clientId", "commandId", "result"]
+      },
+      "AcceptedReply": {
+        "type": "object",
+        "properties": {
+          "commandId": {
+            "type": "string"
+          },
+          "accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": ["commandId", "accepted"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        },
+        "required": ["error"]
+      }
+    }
+  }
+}
