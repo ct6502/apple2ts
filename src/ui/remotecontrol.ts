@@ -27,6 +27,7 @@ import {
   passKeypress,
   passMouseEvent,
   passPasteText,
+  passSetBinaryBlock,
   passSetDebug,
   passSetState6502,
   passSetMemory,
@@ -52,8 +53,10 @@ import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled } from "./devices/audio/speaker"
 import {
   handleGetFilename,
+  handleEjectDisk,
   handleGetDriveProps,
   handleSetDiskOrFileFromBuffer,
+  handleSetDiskFromURL,
   handleSetDiskWriteProtected,
 } from "./devices/disk/driveprops"
 
@@ -535,6 +538,55 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
         status: collectStatus(),
       }
     }
+
+    case "mountDiskFromUrl": {
+      const url = String(payload.url || "")
+      const driveIndex = Number(payload.driveIndex || 0)
+      if (!url) {
+        throw new Error("url is required")
+      }
+      await handleSetDiskFromURL(url, undefined, driveIndex)
+      return {
+        status: collectStatus(),
+      }
+    }
+
+    case "mountBinaryBlock": {
+      const dataBase64 = String(payload.dataBase64 || "")
+      if (!dataBase64) {
+        throw new Error("dataBase64 is required")
+      }
+      const address = Number(payload.address ?? 0x300)
+      const autoRun = payload.autoRun !== false
+      passSetBinaryBlock(address, decodeBase64(dataBase64), autoRun)
+      return {
+        status: collectStatus(),
+      }
+    }
+
+    case "mountBasicText": {
+      const text = String(payload.text || "")
+      if (!text) {
+        throw new Error("text is required")
+      }
+      const autoRun = payload.autoRun !== false
+      let nextText = text
+      if (autoRun) {
+        const trimmed = text.trim()
+        const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
+        nextText += hasLineNumbers ? "\nRUN\n" : "\n"
+      }
+      passPasteText(nextText)
+      return {
+        status: collectStatus(),
+      }
+    }
+
+    case "ejectDisk":
+      handleEjectDisk(Number(payload.driveIndex))
+      return {
+        status: collectStatus(),
+      }
 
     default:
       throw new Error(`Unsupported action '${action}'`)

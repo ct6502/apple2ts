@@ -57,15 +57,6 @@ const readJsonBody = async (req) => {
   return raw.length ? JSON.parse(raw) : {}
 }
 
-const getClientSummary = (client) => ({
-  clientId: client.clientId,
-  connectedAt: client.connectedAt,
-  lastSeenAt: client.lastSeenAt,
-  pathname: client.pathname,
-  userAgent: client.userAgent,
-  hasEventStream: Boolean(client.eventStream),
-})
-
 const writeEnvelope = (res, statusCode, data) => {
   writeJson(res, statusCode, { ok: true, data })
 }
@@ -118,14 +109,6 @@ const runModeToApiName = (runMode) => {
   }
 }
 
-const getSessionResource = (client) => ({
-  clientId: client.clientId,
-  pathname: client.pathname,
-  connectedAt: client.connectedAt,
-  lastSeenAt: client.lastSeenAt,
-  connected: Boolean(client.eventStream),
-})
-
 const getDriveId = (drive) => {
   if (drive.hardDrive) {
     return drive.drive === 1 ? "hd1" : "hd2"
@@ -133,9 +116,39 @@ const getDriveId = (drive) => {
   return drive.drive === 1 ? "fd1" : "fd2"
 }
 
+const getDriveResource = (drive) => ({
+  driveId: getDriveId(drive),
+  index: Number(drive.index ?? 0),
+  kind: drive.hardDrive ? "hard-drive" : "floppy",
+  mounted: Boolean(drive.filename),
+  filename: drive.filename || null,
+  status: String(drive.status || ""),
+  writeProtected: Boolean(drive.isWriteProtected),
+  dirty: Boolean(drive.diskHasChanges),
+  motorRunning: Boolean(drive.motorRunning),
+  lastWriteTime: Number(drive.lastWriteTime ?? -1) >= 0 ? Number(drive.lastWriteTime) : null,
+  byteLength: Number(drive.byteLength ?? 0),
+})
+
+const getDriveResources = (status) => {
+  const drives = Array.isArray(status?.drives) ? status.drives : []
+  return drives.map(getDriveResource)
+}
+
+const findDriveResourceById = (drives, driveId) => drives.find((drive) => drive.driveId === driveId) || null
+
+const findDriveResourceByIndex = (drives, index) =>
+  drives.find((drive) => Number(drive.index) === Number(index)) || null
+
+const getSoftSwitchResource = (status) => ({
+  switches:
+    status?.machine?.softSwitches && typeof status.machine.softSwitches === "object"
+      ? status.machine.softSwitches
+      : {},
+})
+
 const getMachineResource = (status) => {
   const machine = status?.machine || {}
-  const drives = Array.isArray(status?.drives) ? status.drives : []
   return {
     runMode: runModeToApiName(Number(machine.runMode)),
     speedMode: Number(machine.speedMode ?? 0),
@@ -144,13 +157,13 @@ const getMachineResource = (status) => {
     debugEnabled: Boolean(machine.isDebugging),
     showDebugPanel: Boolean(machine.showDebugTab),
     textPage: machine.textPage || "",
-    drives: drives.map((drive) => ({
-      driveId: getDriveId(drive),
-      kind: drive.hardDrive ? "hard-drive" : "floppy",
-      mounted: Boolean(drive.filename),
-      filename: drive.filename || null,
-      writeProtected: Boolean(drive.isWriteProtected),
-      dirty: Boolean(drive.diskHasChanges),
+    drives: getDriveResources(status).map(({ driveId, kind, mounted, filename, writeProtected, dirty }) => ({
+      driveId,
+      kind,
+      mounted,
+      filename,
+      writeProtected,
+      dirty,
     })),
   }
 }
@@ -310,11 +323,40 @@ const getStatusFromReply = async (client, action, payload) => {
   return reply.result
 }
 
+const getStatusFromCommandResult = (result) => {
+  if (!result || typeof result !== "object") {
+    return null
+  }
+  if (result.machine || result.drives) {
+    return result
+  }
+  if (result.status && typeof result.status === "object") {
+    return result.status
+  }
+  return null
+}
+
+const updateClientStatusFromCommandResult = (client, result) => {
+  const status = getStatusFromCommandResult(result)
+  if (status) {
+    client.latestState = status
+  }
+  client.lastSeenAt = Date.now()
+  return status
+}
+
 const getFreshMachineResource = async (client) => {
   const status = await getStatusFromReply(client, "getStatus", {})
   client.latestState = status
   client.lastSeenAt = Date.now()
   return getMachineResource(status)
+}
+
+const getFreshStatus = async (client) => {
+  const status = await getStatusFromReply(client, "getStatus", {})
+  client.latestState = status
+  client.lastSeenAt = Date.now()
+  return status
 }
 
 const allowedMachinePatchFields = new Set([
@@ -447,6 +489,84 @@ const applyCpuPatch = async (client, patch) => {
 const getSnapshotsFromReply = async (client) => {
   const reply = await dispatchCommand(client, "getSnapshots", {}, true)
   return getSnapshotResources(reply.result?.snapshots)
+}
+
+const getMemoryDumpFromReply = async (client) => {
+  const reply = await dispatchCommand(client, "getMemory", {}, true)
+  const memoryDump = Array.isArray(reply.result?.memoryDump)
+    ? reply.result.memoryDump.map((value) => Number(value))
+    : null
+
+  if (!memoryDump) {
+    throw new Error("Memory dump was not available from the browser client.")
+  }
+
+  client.lastSeenAt = Date.now()
+  return {
+    byteLength: memoryDump.length,
+    data: memoryDump,
+  }
+}
+
+const formatBytesAsHex = (bytes) =>
+  bytes.map((byte) => Number(byte).toString(16).padStart(2, "0").toUpperCase()).join(" ")
+
+const getMemoryRangeResource = (memoryDump, start, length, format) => {
+  const slice = memoryDump.slice(start, start + length)
+  return {
+    start,
+    length,
+    format,
+    data: format === "hex" ? formatBytesAsHex(slice) : slice,
+  }
+}
+
+const getDriveIdFromPath = (pathname) => decodeURIComponent(pathname.slice("/api/drives/".length))
+
+const getDriveIdOrNull = (driveId) => (["hd1", "hd2", "fd1", "fd2"].includes(driveId) ? driveId : null)
+
+const getMountedDriveResourceFromResult = (result, requestedDriveId) => {
+  const status = getStatusFromCommandResult(result)
+  if (!status) {
+    return null
+  }
+  const driveResources = getDriveResources(status)
+  const mountedDriveIndex =
+    result && typeof result === "object" && "mountedDrive" in result ? Number(result.mountedDrive) : null
+
+  if (Number.isInteger(mountedDriveIndex)) {
+    const mountedDrive = findDriveResourceByIndex(driveResources, mountedDriveIndex)
+    if (mountedDrive) {
+      return mountedDrive
+    }
+  }
+
+  return findDriveResourceById(driveResources, requestedDriveId)
+}
+
+const dispatchAcceptedInput = async (client, action, payload) => {
+  const reply = await dispatchCommand(client, action, payload, true)
+  updateClientStatusFromCommandResult(client, reply.result)
+  return {
+    accepted: true,
+  }
+}
+
+const parseInteger = (value) => {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) ? parsed : null
+}
+
+const validateMemoryBounds = (start, length) => {
+  if (!Number.isInteger(start) || start < 0 || start > 65535) {
+    throw new Error("start must be an integer between 0 and 65535")
+  }
+  if (!Number.isInteger(length) || length < 1 || length > 65536) {
+    throw new Error("length must be an integer between 1 and 65536")
+  }
+  if (start + length > 65536) {
+    throw new Error("Requested memory range exceeds 64 KB address space")
+  }
 }
 
 const applySnapshotAction = async (client, action, payload = {}) => {
@@ -662,23 +782,6 @@ const server = createServer(async (req, res) => {
       return
     }
 
-    if (req.method === "GET" && url.pathname === "/api/clients") {
-      writeJson(res, 200, {
-        clients: [...clients.values()].map(getClientSummary),
-      })
-      return
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/session") {
-      const client = getTargetClient(url.searchParams.get("clientId"))
-      if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No browser client is connected.")
-        return
-      }
-      writeEnvelope(res, 200, getSessionResource(client))
-      return
-    }
-
     if (req.method === "GET" && url.pathname === "/api/machine") {
       const client = getConnectedClient(url.searchParams.get("clientId"))
       if (!client) {
@@ -758,6 +861,278 @@ const server = createServer(async (req, res) => {
         return
       }
       writeEnvelope(res, 200, await applyLifecycleAction(client, "resume"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/input/keys") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      try {
+        if (body.type === "key") {
+          if (typeof body.key !== "string" || body.key.length === 0) {
+            throw new Error("key is required for type 'key'")
+          }
+          writeEnvelope(
+            res,
+            200,
+            await dispatchAcceptedInput(client, "keypress", {
+              key: body.key,
+              release: body.release !== false,
+            }),
+          )
+          return
+        }
+
+        if (body.type === "keyCode") {
+          const keyCode = parseInteger(body.keyCode)
+          if (keyCode === null) {
+            throw new Error("keyCode is required for type 'keyCode'")
+          }
+          writeEnvelope(
+            res,
+            200,
+            await dispatchAcceptedInput(client, "keypress", {
+              key: keyCode,
+              release: body.release !== false,
+            }),
+          )
+          return
+        }
+
+        if (body.type === "text") {
+          if (typeof body.text !== "string") {
+            throw new Error("text is required for type 'text'")
+          }
+          writeEnvelope(res, 200, await dispatchAcceptedInput(client, "pasteText", { text: body.text }))
+          return
+        }
+
+        throw new Error("type must be one of 'key', 'keyCode', or 'text'")
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/input/apple-keys") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      try {
+        if (body.side !== "left" && body.side !== "right") {
+          throw new Error("side must be 'left' or 'right'")
+        }
+        if (typeof body.pressed !== "boolean") {
+          throw new Error("pressed must be a boolean")
+        }
+        writeEnvelope(res, 200, await dispatchAcceptedInput(client, "appleKey", body))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/input/mouse") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      try {
+        const x = parseInteger(body.x)
+        const y = parseInteger(body.y)
+        const buttons = parseInteger(body.buttons)
+        if (x === null || y === null || buttons === null) {
+          throw new Error("x, y, and buttons must be integers")
+        }
+        writeEnvelope(res, 200, await dispatchAcceptedInput(client, "mouseEvent", { x, y, buttons }))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/drives") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, getDriveResources(await getFreshStatus(client)))
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/debug/memory/full") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      try {
+        writeEnvelope(res, 200, await getMemoryDumpFromReply(client))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/debug/memory") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      try {
+        const start = parseInteger(url.searchParams.get("start"))
+        const length = parseInteger(url.searchParams.get("length"))
+        const format = url.searchParams.get("format") || "bytes"
+
+        if (start === null || length === null) {
+          throw new Error("start and length query parameters are required")
+        }
+        if (format !== "bytes" && format !== "hex") {
+          throw new Error("format must be 'bytes' or 'hex'")
+        }
+
+        validateMemoryBounds(start, length)
+
+        const memoryDump = await getMemoryDumpFromReply(client)
+        if (memoryDump.byteLength < start + length) {
+          throw new Error("Memory dump unavailable for the requested range. Pause the emulator first.")
+        }
+
+        writeEnvelope(res, 200, getMemoryRangeResource(memoryDump.data, start, length, format))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "PUT" && url.pathname === "/api/debug/memory") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      try {
+        const start = parseInteger(body.start)
+        const bytes = Array.isArray(body.data) ? body.data.map((value) => Number(value)) : null
+        if (start === null || !bytes) {
+          throw new Error("start and data are required")
+        }
+        if (bytes.length === 0) {
+          throw new Error("data must contain at least one byte")
+        }
+        if (bytes.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) {
+          throw new Error("data must be an array of byte values between 0 and 255")
+        }
+
+        validateMemoryBounds(start, bytes.length)
+
+        for (const [offset, value] of bytes.entries()) {
+          const status = await getStatusFromReply(client, "setMemory", {
+            address: start + offset,
+            value,
+          })
+          client.latestState = status
+          client.lastSeenAt = Date.now()
+        }
+
+        const memoryDump = await getMemoryDumpFromReply(client)
+        if (memoryDump.byteLength < start + bytes.length) {
+          throw new Error("Memory dump unavailable after write. Pause the emulator first.")
+        }
+
+        writeEnvelope(res, 200, getMemoryRangeResource(memoryDump.data, start, bytes.length, "bytes"))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/debug/soft-switches") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, getSoftSwitchResource(await getFreshStatus(client)))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/debug/soft-switches") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const body = await readJsonBody(req)
+      try {
+        const addresses = Array.isArray(body.addresses) ? body.addresses.map((value) => Number(value)) : null
+        if (!addresses) {
+          throw new Error("addresses is required")
+        }
+        if (addresses.some((value) => !Number.isInteger(value))) {
+          throw new Error("addresses must contain integer soft-switch addresses")
+        }
+        const status = await getStatusFromReply(client, "setSoftSwitches", { addresses })
+        client.latestState = status
+        client.lastSeenAt = Date.now()
+        writeEnvelope(res, 200, getSoftSwitchResource(status))
+      } catch (error) {
+        writeErrorEnvelope(
+          res,
+          400,
+          "BAD_REQUEST",
+          error instanceof Error ? error.message : String(error),
+        )
+      }
       return
     }
 
@@ -876,6 +1251,177 @@ const server = createServer(async (req, res) => {
       }
       writeEnvelope(res, 200, await setBreakpointsAndReadBack(client, []))
       return
+    }
+
+    if (url.pathname === "/api/drives" || url.pathname.startsWith("/api/drives/")) {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+
+      const mountPrefix = "/api/drives/"
+      const mountSuffix = "/mount"
+      const isMountRoute = req.method === "POST" && url.pathname.startsWith(mountPrefix) && url.pathname.endsWith(mountSuffix)
+      const driveId = isMountRoute
+        ? decodeURIComponent(url.pathname.slice(mountPrefix.length, -mountSuffix.length))
+        : getDriveIdFromPath(url.pathname)
+      const normalizedDriveId = getDriveIdOrNull(driveId)
+
+      if (!normalizedDriveId) {
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Drive not found.")
+        return
+      }
+
+      const status = await getFreshStatus(client)
+      const driveResources = getDriveResources(status)
+      const drive = findDriveResourceById(driveResources, normalizedDriveId)
+      if (!drive) {
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Drive not found.")
+        return
+      }
+
+      if (req.method === "GET" && url.pathname === `/api/drives/${normalizedDriveId}`) {
+        writeEnvelope(res, 200, drive)
+        return
+      }
+
+      if (req.method === "PATCH" && url.pathname === `/api/drives/${normalizedDriveId}`) {
+        const body = await readJsonBody(req)
+        try {
+          const keys = Object.keys(body)
+          if (keys.length === 0) {
+            throw new Error("At least one drive field must be provided.")
+          }
+          if (keys.some((key) => key !== "writeProtected")) {
+            throw new Error("Unknown drive fields. Only 'writeProtected' is supported.")
+          }
+          if (typeof body.writeProtected !== "boolean") {
+            throw new Error("writeProtected must be a boolean")
+          }
+
+          const reply = await dispatchCommand(client, "setDriveWriteProtected", {
+            driveIndex: drive.index,
+            isWriteProtected: body.writeProtected,
+          }, true)
+          const nextStatus = updateClientStatusFromCommandResult(client, reply.result)
+          const nextDrive = findDriveResourceById(getDriveResources(nextStatus || status), normalizedDriveId)
+          writeEnvelope(res, 200, nextDrive || drive)
+        } catch (error) {
+          writeErrorEnvelope(
+            res,
+            400,
+            "BAD_REQUEST",
+            error instanceof Error ? error.message : String(error),
+          )
+        }
+        return
+      }
+
+      if (req.method === "DELETE" && url.pathname === `/api/drives/${normalizedDriveId}`) {
+        const reply = await dispatchCommand(client, "ejectDisk", { driveIndex: drive.index }, true)
+        const nextStatus = updateClientStatusFromCommandResult(client, reply.result)
+        const nextDrive =
+          getMountedDriveResourceFromResult(reply.result, normalizedDriveId) ||
+          findDriveResourceById(getDriveResources(nextStatus || status), normalizedDriveId) ||
+          drive
+        writeEnvelope(res, 200, nextDrive)
+        return
+      }
+
+      if (isMountRoute && driveId === normalizedDriveId) {
+        const body = await readJsonBody(req)
+        try {
+          if (typeof body.sourceType !== "string") {
+            throw new Error("sourceType is required")
+          }
+
+          let reply
+          switch (body.sourceType) {
+            case "base64": {
+              if (typeof body.dataBase64 !== "string" || !body.dataBase64) {
+                throw new Error("dataBase64 is required for sourceType 'base64'")
+              }
+              if (typeof body.filename !== "string" || !body.filename) {
+                throw new Error("filename is required for sourceType 'base64'")
+              }
+              reply = await dispatchCommand(client, "mountDisk", {
+                driveIndex: drive.index,
+                filename: body.filename,
+                dataBase64: body.dataBase64,
+              }, true)
+              break
+            }
+
+            case "url": {
+              if (typeof body.url !== "string" || !body.url) {
+                throw new Error("url is required for sourceType 'url'")
+              }
+              reply = await dispatchCommand(client, "mountDiskFromUrl", {
+                driveIndex: drive.index,
+                url: body.url,
+              }, true, commandTimeoutMs * 3)
+              break
+            }
+
+            case "library-id": {
+              if (typeof body.libraryId !== "string" || !body.libraryId) {
+                throw new Error("libraryId is required for sourceType 'library-id'")
+              }
+              reply = await dispatchCommand(client, "mountDiskFromUrl", {
+                driveIndex: drive.index,
+                url: `a2ia://${body.libraryId}`,
+              }, true, commandTimeoutMs * 3)
+              break
+            }
+
+            case "binary-block": {
+              if (typeof body.dataBase64 !== "string" || !body.dataBase64) {
+                throw new Error("dataBase64 is required for sourceType 'binary-block'")
+              }
+              const address = parseInteger(body.address)
+              if (address === null) {
+                throw new Error("address is required for sourceType 'binary-block'")
+              }
+              reply = await dispatchCommand(client, "mountBinaryBlock", {
+                address,
+                autoRun: body.autoRun !== false,
+                dataBase64: body.dataBase64,
+              }, true)
+              break
+            }
+
+            case "basic-text": {
+              if (typeof body.text !== "string" || !body.text) {
+                throw new Error("text is required for sourceType 'basic-text'")
+              }
+              reply = await dispatchCommand(client, "mountBasicText", {
+                text: body.text,
+                autoRun: body.autoRun !== false,
+              }, true)
+              break
+            }
+
+            default:
+              throw new Error("Unsupported sourceType")
+          }
+
+          const nextStatus = updateClientStatusFromCommandResult(client, reply.result)
+          const nextDrive =
+            getMountedDriveResourceFromResult(reply.result, normalizedDriveId) ||
+            findDriveResourceById(getDriveResources(nextStatus || status), normalizedDriveId) ||
+            drive
+          writeEnvelope(res, 200, nextDrive)
+        } catch (error) {
+          writeErrorEnvelope(
+            res,
+            400,
+            "BAD_REQUEST",
+            error instanceof Error ? error.message : String(error),
+          )
+        }
+        return
+      }
     }
 
     if (url.pathname.startsWith("/api/debug/breakpoints/")) {
@@ -1006,56 +1552,8 @@ const server = createServer(async (req, res) => {
       return
     }
 
-    if (req.method === "GET" && url.pathname === "/api/status") {
-      const client = getTargetClient(url.searchParams.get("clientId"))
-      if (!client) {
-        writeJson(res, 404, { error: "No client is connected" })
-        return
-      }
-      writeJson(res, 200, {
-        client: getClientSummary(client),
-        state: client.latestState,
-      })
-      return
-    }
-
-    if (req.method === "GET" && url.pathname === "/api/memory") {
-      const client = getTargetClient(url.searchParams.get("clientId"))
-      if (!client) {
-        writeJson(res, 404, { error: "No client is connected" })
-        return
-      }
-      const response = await dispatchCommand(client, "getMemory", {}, true)
-      writeJson(res, 200, response)
-      return
-    }
-
-    if (req.method === "POST" && url.pathname === "/api/control") {
-      const body = await readJsonBody(req)
-      const client = getTargetClient(body.clientId)
-      if (!client) {
-        writeJson(res, 404, { error: "No client is connected" })
-        return
-      }
-      const waitForReply = body.wait !== false
-      const response = await dispatchCommand(
-        client,
-        body.action,
-        body.payload || {},
-        waitForReply,
-        Number(body.waitMs || commandTimeoutMs),
-      )
-      writeJson(res, waitForReply ? 200 : 202, response)
-      return
-    }
-
     if (req.method === "GET" && url.pathname === "/openapi.json") {
       await serveFile(res, path.join(serverDir, "openapi.json"))
-      return
-    }
-
-    if (req.method === "GET" && url.pathname === "/openapi-v1-draft.json") {
-      await serveFile(res, path.join(serverDir, "openapi-v1-draft.json"))
       return
     }
 

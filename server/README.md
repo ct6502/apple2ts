@@ -2,26 +2,25 @@
 
 This directory contains the single-process server for Apple2TS.
 
-WARNING: This server is intentionally limited to localhost (`127.0.0.1`) and is not hardened for remote access. Security controls are intentionally minimal for now because it is designed to work on localhost only.
+WARNING: This server is intentionally limited to localhost (`127.0.0.1`) and is not hardened for remote access. Security controls are intentionally minimal because it is designed for a localhost workflow.
 
 The server has two responsibilities:
 
 1. Serve the built client web app from `dist/`
-2. Provide HTTP APIs that remotely control a connected browser client running the emulator
+2. Provide an HTTP API for controlling a connected browser client running the emulator
 
-This is not a separate backend emulator. The emulator still runs in the browser. The server acts as:
+This is not a backend emulator. The emulator still runs in the browser. The server acts as:
 
 - static file host
-- client registry
-- command broker
-- status/memory API surface
+- browser client registry
+- SSE command bridge
+- resource-oriented API surface
 - OpenAPI/Swagger documentation host
 
 ## Files
 
 - `server.mjs`: Node.js HTTP server
-- `openapi.json`: OpenAPI 3.1 specification for the remote-control API
-- `openapi-v1-draft.json`: draft OpenAPI spec for the planned v1 API
+- `openapi.json`: canonical OpenAPI 3.1 contract for the v1 API surface
 - `swagger.html`: Swagger UI page for interactive API docs
 - `FEATURE_INVENTORY.md`: client feature inventory and candidate API groups
 - `API_DESIGN.md`: v1 API design notes and resource model
@@ -66,138 +65,109 @@ Flow:
 2. Browser registers itself with `POST /api/client/connect`
 3. Browser opens an SSE stream on `GET /api/client/events`
 4. Browser periodically posts state to `POST /api/client/state`
-5. Remote callers use `POST /api/control`
-6. Server forwards commands over SSE to the browser
-7. Browser executes the command using existing UI-to-worker control functions
+5. HTTP callers use resource-oriented endpoints such as `GET /api/machine` or `PATCH /api/debug/cpu`
+6. Server forwards bridge commands over SSE to the browser
+7. Browser executes those commands using existing UI-to-worker control functions
 8. Browser posts the command result to `POST /api/client/reply`
 
-This keeps client changes minimal and avoids introducing a second service.
+This keeps client-webapp changes small and avoids introducing a second service.
 
 ## Docs
 
 - OpenAPI spec: `/openapi.json`
 - Swagger UI: `/docs`
 
-## Public API
+## Implemented API Surface
 
-### `GET /api/clients`
+Implemented v1-style endpoints:
 
-Lists connected browser sessions.
+- `GET /api/machine`
+- `PATCH /api/machine`
+- `POST /api/machine/boot`
+- `POST /api/machine/reset`
+- `POST /api/machine/pause`
+- `POST /api/machine/resume`
+- `GET /api/debug/cpu`
+- `PATCH /api/debug/cpu`
+- `POST /api/debug/step-into`
+- `POST /api/debug/step-over`
+- `POST /api/debug/step-out`
+- `GET /api/debug/breakpoints`
+- `POST /api/debug/breakpoints`
+- `PATCH /api/debug/breakpoints/{breakpointId}`
+- `DELETE /api/debug/breakpoints/{breakpointId}`
+- `DELETE /api/debug/breakpoints`
+- `GET /api/debug/snapshots`
+- `POST /api/debug/snapshots`
+- `POST /api/debug/snapshots/{snapshotId}/activate`
+- `POST /api/debug/snapshots/step-back`
+- `POST /api/debug/snapshots/step-forward`
+- `POST /api/save-states/export`
+- `POST /api/save-states/import`
 
-### `GET /api/status`
+The v1 OpenAPI contract also includes endpoint groups that are not implemented yet:
 
-Returns the latest cached status from a connected client.
+- `/api/input/*`
+- `/api/drives/*`
+- `/api/debug/memory*`
+- `/api/debug/soft-switches`
 
-Optional query parameter:
+## Examples
 
-- `clientId`
-
-If omitted, the most recently active client is used.
-
-### `GET /api/memory`
-
-Requests a fresh memory dump from a connected client.
-
-Optional query parameter:
-
-- `clientId`
-
-Memory is only available when the emulator is paused. Otherwise the browser returns an empty dump.
-
-### `POST /api/control`
-
-Sends a command to a connected browser client.
-
-Request shape:
-
-```json
-{
-  "clientId": "optional-client-id",
-  "action": "setSpeedMode",
-  "payload": {
-    "speedMode": 3
-  },
-  "wait": true,
-  "waitMs": 10000
-}
-```
-
-If `clientId` is omitted, the most recently active client is targeted.
-
-If `wait` is `false`, the command is accepted asynchronously and the server returns HTTP `202`.
-
-## Supported Actions
-
-Current commands implemented by the browser bridge:
-
-- `getStatus`
-- `getMemory`
-- `setRunMode`
-- `setSpeedMode`
-- `setColorMode`
-- `setMachineName`
-- `setRamWorks`
-- `setDebug`
-- `setShowDebugTab`
-- `keypress`
-- `pasteText`
-- `appleKey`
-- `mouseEvent`
-- `setMemory`
-- `setSoftSwitches`
-- `setDriveWriteProtected`
-- `mountDisk`
-
-Examples:
+Get the current machine resource:
 
 ```bash
-curl http://127.0.0.1:6502/api/status
+curl http://127.0.0.1:6502/api/machine
 ```
 
+Pause execution:
+
 ```bash
-curl -X POST http://127.0.0.1:6502/api/control \
+curl -X POST http://127.0.0.1:6502/api/machine/pause
+```
+
+Update machine configuration:
+
+```bash
+curl -X PATCH http://127.0.0.1:6502/api/machine \
   -H 'Content-Type: application/json' \
-  -d '{"action":"setSpeedMode","payload":{"speedMode":3}}'
+  -d '{"speedMode":3,"debugEnabled":true}'
 ```
+
+Read CPU state:
 
 ```bash
-curl -X POST http://127.0.0.1:6502/api/control \
+curl http://127.0.0.1:6502/api/debug/cpu
+```
+
+Create a breakpoint:
+
+```bash
+curl -X POST http://127.0.0.1:6502/api/debug/breakpoints \
   -H 'Content-Type: application/json' \
-  -d '{"action":"keypress","payload":{"key":"A","release":true}}'
+  -d '{"address":49152,"disabled":false,"instruction":true,"halt":true}'
 ```
 
-## Mounting Disks
+Export a save state:
 
-`mountDisk` expects base64-encoded disk content in `payload.dataBase64`.
-
-Example payload:
-
-```json
-{
-  "action": "mountDisk",
-  "payload": {
-    "driveIndex": 2,
-    "filename": "disk.woz",
-    "dataBase64": "AA=="
-  }
-}
+```bash
+curl -X POST http://127.0.0.1:6502/api/save-states/export \
+  -H 'Content-Type: application/json' \
+  -d '{"includeSnapshots":true}'
 ```
-
-The browser decides whether the image belongs in a floppy or hard-drive slot based on filename suffix and existing client logic.
 
 ## Current Constraints
 
 - The emulator runs in the browser, not on the server
 - The integrated server binds to `127.0.0.1` only
-- Security hardening is intentionally minimal for now because this is a localhost-only workflow
-- Control APIs require at least one browser client to be open against this server
-- `GET /api/status` returns cached state, not a forced synchronous refresh
-- `GET /api/memory` is synchronous but depends on a live connected client
+- Security hardening is intentionally minimal because this is a localhost-only workflow
+- API calls that require live command execution depend on a connected browser SSE session
+- The browser bridge remains the execution layer behind the public API
 - Swagger UI currently loads its JS/CSS from `unpkg`
 
-## Good Next Steps
+## Next Work
 
-- add more API coverage for stepping, save states, breakpoints, and time travel
-- add authenticated access if this is exposed beyond a trusted network
+- implement the remaining v1 endpoint groups already described by `openapi.json`
+- tighten bridge/session validation for multi-client correctness
 - self-host Swagger UI assets if external CDN dependency is undesirable
-- add finer-grained memory read APIs instead of only full dumps
+- add automated route and bridge integration tests
