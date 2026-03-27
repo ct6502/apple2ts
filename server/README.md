@@ -21,7 +21,10 @@ This is not a separate backend emulator. The emulator still runs in the browser.
 
 - `server.mjs`: Node.js HTTP server
 - `openapi.json`: OpenAPI 3.1 specification for the remote-control API
+- `openapi-v1-draft.json`: draft OpenAPI spec for the planned v1 API
 - `swagger.html`: Swagger UI page for interactive API docs
+- `FEATURE_INVENTORY.md`: client feature inventory and candidate API groups
+- `API_DESIGN.md`: v1 API design notes and resource model
 
 ## Run
 
