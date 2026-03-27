@@ -38,6 +38,7 @@ export const passSetRunMode = (runMode: RUN_MODE) => {
     bootCallback()
   }
   doPostMessage(MSG_MAIN.RUN_MODE, runMode)
+  machineState.runMode = runMode
 }
 
 export const passSetState6502 = (state: STATE6502) => {

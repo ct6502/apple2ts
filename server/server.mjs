@@ -234,6 +234,31 @@ const applyMachinePatch = async (client, patch) => {
   return getMachineResource(lastStatus)
 }
 
+const applyLifecycleAction = async (client, action) => {
+  let runMode
+  switch (action) {
+    case "boot":
+      runMode = -3
+      break
+    case "reset":
+      runMode = -4
+      break
+    case "pause":
+      runMode = -2
+      break
+    case "resume":
+      runMode = -1
+      break
+    default:
+      throw new Error(`Unsupported lifecycle action '${action}'`)
+  }
+
+  const status = await getStatusFromReply(client, "setRunMode", { runMode })
+  client.latestState = status
+  client.lastSeenAt = Date.now()
+  return getMachineResource(status)
+}
+
 const sendSseEvent = (res, eventName, data) => {
   res.write(`event: ${eventName}\n`)
   res.write(`data: ${JSON.stringify(data)}\n\n`)
@@ -478,6 +503,46 @@ const server = createServer(async (req, res) => {
           error instanceof Error ? error.message : String(error),
         )
       }
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/machine/boot") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyLifecycleAction(client, "boot"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/machine/reset") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyLifecycleAction(client, "reset"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/machine/pause") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyLifecycleAction(client, "pause"))
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/machine/resume") {
+      const client = getConnectedClient(url.searchParams.get("clientId"))
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        return
+      }
+      writeEnvelope(res, 200, await applyLifecycleAction(client, "resume"))
       return
     }
 
