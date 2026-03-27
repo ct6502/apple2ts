@@ -43,7 +43,7 @@
             "$ref": "#/components/responses/MachineResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -68,7 +68,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -82,7 +82,7 @@
             "$ref": "#/components/responses/MachineResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -96,7 +96,7 @@
             "$ref": "#/components/responses/MachineResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -110,7 +110,7 @@
             "$ref": "#/components/responses/MachineResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -124,7 +124,7 @@
             "$ref": "#/components/responses/MachineResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -151,7 +151,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -178,7 +178,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -205,7 +205,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -219,7 +219,7 @@
             "$ref": "#/components/responses/DriveListResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -321,7 +321,7 @@
             "$ref": "#/components/responses/CpuStateResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -346,7 +346,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -395,7 +395,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -420,7 +420,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -434,7 +434,7 @@
             "$ref": "#/components/responses/MemoryFullResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -448,7 +448,7 @@
             "$ref": "#/components/responses/SoftSwitchResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -473,7 +473,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -487,7 +487,7 @@
             "$ref": "#/components/responses/CpuStateResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -501,7 +501,7 @@
             "$ref": "#/components/responses/CpuStateResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -515,7 +515,7 @@
             "$ref": "#/components/responses/CpuStateResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -529,7 +529,7 @@
             "$ref": "#/components/responses/BreakpointListResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -554,7 +554,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -566,7 +566,7 @@
             "$ref": "#/components/responses/BreakpointListResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -624,7 +624,7 @@
             "$ref": "#/components/responses/SnapshotListResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       },
@@ -636,7 +636,7 @@
             "$ref": "#/components/responses/SnapshotResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -669,7 +669,7 @@
             "$ref": "#/components/responses/SnapshotResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -683,7 +683,7 @@
             "$ref": "#/components/responses/SnapshotResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -707,7 +707,7 @@
             "$ref": "#/components/responses/SaveStateExportResponse"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -734,7 +734,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "404": {
-            "$ref": "#/components/responses/NoActiveSession"
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
@@ -901,16 +901,6 @@
       },
       "BadRequest": {
         "description": "Bad request",
-        "content": {
-          "application/json": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorEnvelope"
-            }
-          }
-        }
-      },
-      "NoActiveSession": {
-        "description": "No active browser client is connected",
         "content": {
           "application/json": {
             "schema": {

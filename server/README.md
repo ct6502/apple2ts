@@ -80,8 +80,6 @@ This keeps client-webapp changes small and avoids introducing a second service.
 
 ## Implemented API Surface
 
-Implemented v1-style endpoints:
-
 - `GET /api/machine`
 - `PATCH /api/machine`
 - `POST /api/machine/boot`
@@ -105,13 +103,19 @@ Implemented v1-style endpoints:
 - `POST /api/debug/snapshots/step-forward`
 - `POST /api/save-states/export`
 - `POST /api/save-states/import`
-
-The v1 OpenAPI contract also includes endpoint groups that are not implemented yet:
-
-- `/api/input/*`
-- `/api/drives/*`
-- `/api/debug/memory*`
-- `/api/debug/soft-switches`
+- `POST /api/input/keys`
+- `POST /api/input/apple-keys`
+- `POST /api/input/mouse`
+- `GET /api/drives`
+- `GET /api/drives/{driveId}`
+- `PATCH /api/drives/{driveId}`
+- `DELETE /api/drives/{driveId}`
+- `POST /api/drives/{driveId}/mount`
+- `GET /api/debug/memory`
+- `PUT /api/debug/memory`
+- `GET /api/debug/memory/full`
+- `GET /api/debug/soft-switches`
+- `POST /api/debug/soft-switches`
 
 ## Examples
 
@@ -168,7 +172,6 @@ curl -X POST http://127.0.0.1:6502/api/save-states/export \
 
 ## Next Work
 
-- implement the remaining v1 endpoint groups already described by `openapi.json`
 - tighten bridge/session validation for multi-client correctness
 - self-host Swagger UI assets if external CDN dependency is undesirable
 - add automated route and bridge integration tests

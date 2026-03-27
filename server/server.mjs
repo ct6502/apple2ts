@@ -71,21 +71,14 @@ const writeErrorEnvelope = (res, statusCode, code, message) => {
   })
 }
 
-const getTargetClient = (clientId) => {
-  if (clientId) {
-    return clients.get(clientId) || null
-  }
-  let selected = null
-  for (const client of clients.values()) {
-    if (!selected || client.lastSeenAt > selected.lastSeenAt) {
-      selected = client
+const getConnectedClient = () => {
+  let client = null
+  for (const candidate of clients.values()) {
+    if (!candidate.eventStream) continue
+    if (!client || candidate.lastSeenAt > client.lastSeenAt) {
+      client = candidate
     }
   }
-  return selected
-}
-
-const getConnectedClient = (clientId) => {
-  const client = getTargetClient(clientId)
   if (!client || !client.eventStream) {
     return null
   }
@@ -783,9 +776,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/machine") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await getFreshMachineResource(client))
@@ -793,9 +786,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "PATCH" && url.pathname === "/api/machine") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -825,9 +818,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/machine/boot") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyLifecycleAction(client, "boot"))
@@ -835,9 +828,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/machine/reset") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyLifecycleAction(client, "reset"))
@@ -845,9 +838,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/machine/pause") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyLifecycleAction(client, "pause"))
@@ -855,9 +848,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/machine/resume") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyLifecycleAction(client, "resume"))
@@ -865,9 +858,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/input/keys") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -925,9 +918,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/input/apple-keys") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -952,9 +945,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/input/mouse") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -979,9 +972,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/drives") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, getDriveResources(await getFreshStatus(client)))
@@ -989,9 +982,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/debug/memory/full") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1009,9 +1002,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/debug/memory") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1047,9 +1040,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "PUT" && url.pathname === "/api/debug/memory") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1096,9 +1089,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/debug/soft-switches") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, getSoftSwitchResource(await getFreshStatus(client)))
@@ -1106,9 +1099,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/soft-switches") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1137,9 +1130,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/step-into") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyDebugStep(client, "into"))
@@ -1147,9 +1140,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/step-over") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyDebugStep(client, "over"))
@@ -1157,9 +1150,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/step-out") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await applyDebugStep(client, "out"))
@@ -1167,9 +1160,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/debug/cpu") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await getFreshCpuResource(client))
@@ -1177,9 +1170,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "PATCH" && url.pathname === "/api/debug/cpu") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1209,9 +1202,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/debug/breakpoints") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await getBreakpointListResource(await getBreakpointsFromReply(client)))
@@ -1219,9 +1212,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/breakpoints") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1244,9 +1237,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "DELETE" && url.pathname === "/api/debug/breakpoints") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await setBreakpointsAndReadBack(client, []))
@@ -1254,9 +1247,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/drives" || url.pathname.startsWith("/api/drives/")) {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1425,9 +1418,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname.startsWith("/api/debug/breakpoints/")) {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
 
@@ -1467,9 +1460,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/debug/snapshots") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       writeEnvelope(res, 200, await getSnapshotsFromReply(client))
@@ -1477,9 +1470,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/snapshots") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       const snapshots = await applySnapshotAction(client, "createSnapshot")
@@ -1488,9 +1481,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/snapshots/step-back") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       const snapshots = await applySnapshotAction(client, "stepSnapshotBack")
@@ -1499,9 +1492,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/debug/snapshots/step-forward") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       const snapshots = await applySnapshotAction(client, "stepSnapshotForward")
@@ -1510,9 +1503,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && /\/api\/debug\/snapshots\/[^/]+\/activate$/.test(url.pathname)) {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       const snapshotId = decodeURIComponent(url.pathname.slice("/api/debug/snapshots/".length, -"/activate".length))
@@ -1526,9 +1519,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/save-states/export") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       const body = await readJsonBody(req)
@@ -1537,9 +1530,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/save-states/import") {
-      const client = getConnectedClient(url.searchParams.get("clientId"))
+      const client = getConnectedClient()
       if (!client) {
-        writeErrorEnvelope(res, 404, "NO_ACTIVE_SESSION", "No connected browser client is available.")
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
         return
       }
       const body = await readJsonBody(req)
