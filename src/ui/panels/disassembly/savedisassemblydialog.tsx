@@ -82,7 +82,7 @@ const SaveDisassemblyDialog = (props:
         if (event.key === "Escape") handleCancel()
       }}>
       <div className="floating-dialog flex-column"
-        style={{ left: "15%", top: "25%" }}>
+        style={{ left: "45%", top: "35%" }}>
         <div className="flex-column">
           <div className="flex-row-space-between">
             <div className="dialog-title">Save Disassembly</div>

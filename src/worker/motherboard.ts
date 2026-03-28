@@ -32,6 +32,7 @@ import { sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
+import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 
 let startTime = 0
 let prevTime = 0
@@ -64,72 +65,6 @@ export const setSiriusJoyport = (mode: boolean) => {
 
 export const setTracing = (doTracing: boolean) => {
   tracing = doTracing
-}
-
-const tracelog: Array<string> = []
-
-// Search the previous traces for duplicates and replace all of the earlier
-// duplicate lines with "..." to make it easier to see where we are in a loop.
-// We need the entire chunk to be duplicated.
-const lookForDuplicateTraces = () => {
-  if (tracelog.length < 50) return
-  // Remove the cycle count from the beginning, since that will always be different.
-  const cut1 = 10
-  const cut2 = 399
-  const last = tracelog[tracelog.length - 1].slice(cut1, cut2)
-  let pos = tracelog.length - 2
-  const maxSearchBack = Math.max(tracelog.length - 20, 0)
-  let match = -1
-  while (pos >= maxSearchBack) {
-    const line = tracelog[pos]
-    if (line.startsWith("... repeats")) {
-      return
-    }
-    if (line.slice(cut1, cut2) === last) {
-      match = pos
-      break
-    }
-    pos--
-  }
-  const matchLength = tracelog.length - match - 1
-  // No match, or there isn't room for a full second match, so give up.
-  if (match === -1 || (tracelog.length - 2 * matchLength) < 0) return
-  for (let i = match - 1; i >= match - matchLength + 1; i--) {
-    if (tracelog[i].slice(cut1, cut2) !== tracelog[i + matchLength].slice(cut1, cut2)) {
-      return
-    }
-  }
-  // Can safely remove the earlier chunk and replace with "..."
-  if (match >= matchLength && tracelog[match - matchLength].slice(0, 12) === "... repeats ") {
-    // Completely remove the earlier chunk, since we know it's a duplicate.
-    tracelog.splice(match - matchLength + 1, matchLength)
-    // Convert our dup counter back to an integer, increment it, and convert back to a string.
-    const chunk = parseInt(tracelog[match - matchLength].slice(12)) + 1
-    tracelog[match - matchLength] = `... repeats ${chunk}`
-    for (let i = match - matchLength + 1; i < tracelog.length; i++) {
-      tracelog[i] = "..." + tracelog[i].slice(3)
-    }
-  } else {
-    // Very first match for the chunk.
-    tracelog[match] = "... repeats 1"
-    // Remove the rest of the earlier chunk.
-    tracelog.splice(match - matchLength + 1, matchLength - 1)
-    for (let i = match - matchLength + 1; i < tracelog.length; i++) {
-      tracelog[i] = "..." + tracelog[i].slice(3)
-    }
-  }
-}
-
-const updateTrace = (str: string) => {
-  if (tracelog.length > 101) {
-    tracelog.shift()
-  }
-  tracelog.push(str)
-  lookForDuplicateTraces()
-}
-
-const getTracelog = () => {
-  return cpuRunMode === RUN_MODE.PAUSED ? tracelog : []
 }
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
@@ -541,7 +476,7 @@ export const doStepInto = () => {
     cpuRunMode = RUN_MODE.PAUSED
   }
   // Remove all tracelog values if we are no longer tracing.
-  if (!tracing) tracelog.length = 0
+  if (!tracing) clearTracelog()
   processInstruction(tracing ? updateTrace : null)
   doSetRunMode(RUN_MODE.PAUSED)
 }
@@ -554,7 +489,7 @@ export const doStepOver = () => {
   }
   if (memGet(s6502.PC, false) === 0x20) {
     // Remove all tracelog values if we are no longer tracing.
-    if (!tracing) tracelog.length = 0
+    if (!tracing) clearTracelog()
     // If we're at a JSR then briefly step in, then step out.
     processInstruction(tracing ? updateTrace : null)
     doStepOut()
@@ -604,7 +539,7 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
     }  
   }
   // Remove all tracelog values if we are no longer tracing.
-  if (!tracing) tracelog.length = 0
+  if (!tracing) clearTracelog()
   updateExternalMachineState()
   resetRefreshCounter()
   // Jump start the emulator if we have never executed anything.
@@ -689,7 +624,7 @@ const updateExternalMachineState = () => {
     stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
-    tracelog: getTracelog(),
+    tracelog: cpuRunMode === RUN_MODE.PAUSED ? getTracelog() : [],
     zeroPage: getZeroPage(),
   }
   passMachineState(state)

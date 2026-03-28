@@ -390,3 +390,9 @@ type MessageLoadProgram = {
   runProgram: boolean,
   data: Uint8Array,
 }
+
+type TraceSettings = {
+  numLines: number,
+  collapseLoops: boolean,
+  ignoreRegisters: boolean,
+}

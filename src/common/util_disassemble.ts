@@ -61,3 +61,9 @@ export const getInstructionString = (addr: number, code: PCodeInstr1,
   }
   return `${toHex(addr, 4)}: ${hex}  ${code.name}${value}${takebranch}`
 }
+
+export const TraceSettingsDefault: TraceSettings = {
+  numLines: 10000,
+  collapseLoops: true,
+  ignoreRegisters: false,
+}

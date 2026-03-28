@@ -1,11 +1,12 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
+import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setAutoNumbering, setCapitalizeBasic } from "./ui_settings"
 
-export const setPreferenceAutoNumbering = (mode = false) => {
-  if (mode === false) {
+export const setPreferenceAutoNumbering = (mode = true) => {
+  if (mode === true) {
     localStorage.removeItem("autoNumbering")
   } else {
     localStorage.setItem("autoNumbering", JSON.stringify(mode))
@@ -191,6 +192,27 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
     localStorage.setItem("touchJoystickSensitivity", JSON.stringify(sensitivity))
   }
   setTouchJoystickSensitivity(sensitivity)
+}
+
+export const setPreferenceTraceSettings = (traceSettings: TraceSettings =
+  TraceSettingsDefault) => {
+  const { numLines, collapseLoops, ignoreRegisters } = traceSettings
+  if (numLines === TraceSettingsDefault.numLines) {
+    localStorage.removeItem("traceNumLines")
+  } else {
+    localStorage.setItem("traceNumLines", JSON.stringify(numLines))
+  }
+  if (collapseLoops === TraceSettingsDefault.collapseLoops) {
+    localStorage.removeItem("traceCollapseLoops")
+  } else {
+    localStorage.setItem("traceCollapseLoops", JSON.stringify(collapseLoops))
+  }
+  if (ignoreRegisters === TraceSettingsDefault.ignoreRegisters) {
+    localStorage.removeItem("traceIgnoreRegisters")
+  } else {
+    localStorage.setItem("traceIgnoreRegisters", JSON.stringify(ignoreRegisters))
+  }
+  passSetTraceSettings({numLines, collapseLoops, ignoreRegisters})
 }
 
 const gameDataDrive = "GAME_DATA-DRIVE"
@@ -397,9 +419,16 @@ export const loadPreferences = () => {
       localStorage.removeItem("touchJoystickSensitivity")
     }
   }
+
+  const traceSettings = getPreferenceTraceSettings()
+  if (JSON.stringify(traceSettings) !== JSON.stringify(TraceSettingsDefault)) {
+    passSetTraceSettings(traceSettings)
+  }
 }
 
 export const resetPreferences = () => {
+  setPreferenceAutoNumbering()
+  setPreferenceCapitalizeBasic()
   setPreferenceSpeedMode()
   setPreferenceCapsLock()
   setPreferenceColorMode()
@@ -416,6 +445,7 @@ export const resetPreferences = () => {
   setPreferenceSiriusJoyport()
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
+  setPreferenceTraceSettings()
 }
 
 export const getPreferenceFirstRunMinimal = () => {
@@ -442,4 +472,36 @@ export const getPreferenceNewReleasesChecked = () => {
   }
 
   return value
+}
+
+export const getPreferenceTraceSettings = (): TraceSettings => {
+  let numLines = TraceSettingsDefault.numLines
+  const traceNumLines = localStorage.getItem("traceNumLines")
+  if (traceNumLines) {
+    try {
+      numLines = JSON.parse(traceNumLines)
+    } catch {
+      localStorage.removeItem("traceNumLines")
+    }
+  }
+  let collapseLoops = TraceSettingsDefault.collapseLoops
+  const traceCollapseLoops = localStorage.getItem("traceCollapseLoops")
+  if (traceCollapseLoops) {
+    try {
+      collapseLoops = JSON.parse(traceCollapseLoops)
+    } catch {
+      localStorage.removeItem("traceCollapseLoops")
+    }
+  }
+  let ignoreRegisters = TraceSettingsDefault.ignoreRegisters
+  const traceIgnoreRegisters = localStorage.getItem("traceIgnoreRegisters")
+  if (traceIgnoreRegisters) {
+    try {
+      ignoreRegisters = JSON.parse(traceIgnoreRegisters)
+    } catch {
+      localStorage.removeItem("traceIgnoreRegisters")
+    }
+  }
+
+  return { numLines, collapseLoops, ignoreRegisters }
 }

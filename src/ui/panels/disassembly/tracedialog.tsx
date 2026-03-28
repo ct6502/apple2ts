@@ -4,9 +4,11 @@ import {
   faRoute,
   faXmark,
   faSave,
+  faCog,
 } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../../common/utility"
 import { handleGetRunMode, handleGetTracelog, handleGetTracing, passSetTracing } from "../../main2worker"
+import TraceSettingsDialog from "./tracesettingsdialog"
 
 const width = 400
 const height = 600
@@ -25,6 +27,8 @@ const TraceDialog = (props: {
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
   const [tracing, setTracing] = useState(handleGetTracing())
+  const [showSettings, setShowSettings] = useState(false)
+  
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (dialogRef.current) {
@@ -121,7 +125,7 @@ const TraceDialog = (props: {
         ref={dialogRef}
         style={{
           left: `${dialogPositionX}px`, top: `${dialogPositionY}px`,
-          opacity: 0.95,
+          zIndex: 500,  // above most stuff but not modal dialogs
         }}
       >
         <div className="flex-column">
@@ -136,7 +140,9 @@ const TraceDialog = (props: {
           </div>
           <div className="horiz-rule"></div>
         </div>
-        <span className="flex-row" style={{ marginLeft: "5px", marginBottom: "5px" }}>
+        <div className="flex-row-space-between"
+          style={{ padding: "0.5em", paddingTop: 0 }}>
+          <div className="flex-row">
           <button
             className={`push-button ${tracing ? "button-active" : ""}`}
             title={`Tracing (${tracing ? "on" : "off"})`}
@@ -154,7 +160,20 @@ const TraceDialog = (props: {
             onClick={handleDownloadButtonClick}>
               <FontAwesomeIcon icon={faSave} />
           </button>
-        </span>
+          </div>
+          <button className="push-button"
+            title="Settings"
+            onClick={() => setShowSettings(true)}
+            disabled={runMode !== RUN_MODE.PAUSED}>
+            <div className="icon-container">
+              <FontAwesomeIcon icon={faCog} />
+            </div>
+          </button>
+          {showSettings &&
+            <TraceSettingsDialog
+              onClose={() => setShowSettings(false)} />
+          }
+        </div>
         <div className="flex-column">
           <div style={{width: `${width}px`, height: `${height}px`}}>
             <div className="debug-panel mono-text thin-border"
@@ -174,9 +193,7 @@ const TraceDialog = (props: {
                 paddingLeft: "5pt",
                 fontSize: "0.7em"
               }}>
-              {handleGetTracelog().map((line, index) => (
-                <div key={index}>{line}</div>
-              ))}
+              {handleGetTracelog().join("\n")}
             </div>
           </div>
         </div>

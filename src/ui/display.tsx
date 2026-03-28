@@ -108,7 +108,7 @@ const DisplayApple2 = () => {
       passSetRunMode(RUN_MODE.NEED_BOOT)
       setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 700)
       // setTimeout(() => { passPasteText("CALL 768\n") }, 1000)
-      setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1000)
+      setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1200)
     }
   }
   

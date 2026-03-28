@@ -215,6 +215,10 @@ export const passSetTracing = (tracing: boolean) => {
   machineState.isTracing = tracing
 }
 
+export const passSetTraceSettings = (traceSettings: TraceSettings) => {
+  doPostMessage(MSG_MAIN.TRACE_SETTINGS, traceSettings)
+}
+
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,

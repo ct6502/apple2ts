@@ -1,20 +1,15 @@
 export const code = `
         ORG   $300
-        LDA   $C050
-        LDA   $C052
-        LDA   $C057
-LOOP    LDA   $C055
-        LDA   #$4F ;73
-        JSR   $FCA8
-        LDA   #$09
-        JSR   $FCA8
-        BIT   $01
-        LDA   $C054
-        LDA   #$4F ;73
-        JSR   $FCA8
-        LDA   #$09
-        JSR   $FCA8
-        JMP   LOOP
+OVER    LDA   #$00
+LOOPA   LDX   #$00
+LOOPX   LDY   #$00
+LOOPY   INY
+        BNE   LOOPY
+        INX
+        BNE   LOOPX  ; do inner Y loop again, 256 times
+        INC
+        BNE   LOOPA  ; do inner X loop again, 256 times
+        JMP   OVER   ; do outer loop forever
         RTS
 `
 
