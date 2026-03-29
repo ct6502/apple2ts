@@ -1082,14 +1082,11 @@
           "motorRunning": {
             "type": "boolean"
           },
-          "lastWriteTime": {
-            "type": ["integer", "null"]
-          },
           "byteLength": {
             "type": "integer"
           }
         },
-        "required": ["driveId", "index", "kind", "mounted", "filename", "status", "writeProtected", "dirty", "motorRunning", "lastWriteTime", "byteLength"]
+        "required": ["driveId", "index", "kind", "mounted", "filename", "status", "writeProtected", "dirty", "motorRunning", "byteLength"]
       },
       "DrivePatch": {
         "type": "object",

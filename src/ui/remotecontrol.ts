@@ -131,7 +131,6 @@ const getDriveSummary = () => {
       motorRunning: drive.motorRunning,
       diskHasChanges: drive.diskHasChanges,
       isWriteProtected: drive.isWriteProtected,
-      lastWriteTime: drive.lastWriteTime,
       byteLength: drive.diskData.length,
     }
   })

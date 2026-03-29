@@ -119,7 +119,6 @@ const getDriveResource = (drive) => ({
   writeProtected: Boolean(drive.isWriteProtected),
   dirty: Boolean(drive.diskHasChanges),
   motorRunning: Boolean(drive.motorRunning),
-  lastWriteTime: Number(drive.lastWriteTime ?? -1) >= 0 ? Number(drive.lastWriteTime) : null,
   byteLength: Number(drive.byteLength ?? 0),
 })
 
