@@ -4,7 +4,7 @@ import { passClickSpeaker } from "./worker2main"
 import { resetJoystick, checkJoystickValues } from "./devices/joystick"
 import { s6502 } from "./instructions"
 import { toHex } from "../common/utility"
-import { getSiriusJoyport } from "./motherboard"
+import { getSiriusJoyport } from "./devices/sirius_joyport"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 

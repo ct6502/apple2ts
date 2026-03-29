@@ -8,7 +8,6 @@ import { doSetRunMode,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
-  setSiriusJoyport,
   setTracing} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
@@ -19,6 +18,7 @@ import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
+import { setSiriusJoyport } from "./devices/sirius_joyport"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.

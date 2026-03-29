@@ -5,8 +5,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import PopupMenu from "../controls/popupmenu"
 import { getArrowKeysAsJoystick, setArrowKeysAsJoystick } from "../ui_settings"
-import { handleGetSiriusJoyport } from "../main2worker"
-import { setPreferenceSiriusJoyport } from "../localstorage"
+import { getPreferenceSiriusJoyport, setPreferenceSiriusJoyport } from "../localstorage"
 
 export const GamepadConfig = () => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -16,7 +15,7 @@ export const GamepadConfig = () => {
   }
 
   const arrowKeysAsJoystick = getArrowKeysAsJoystick()
-  const siriusJoyport = handleGetSiriusJoyport()
+  const siriusJoyport = getPreferenceSiriusJoyport()
 
   return (
     <span>

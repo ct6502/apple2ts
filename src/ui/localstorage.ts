@@ -474,6 +474,17 @@ export const getPreferenceNewReleasesChecked = () => {
   return value
 }
 
+export const getPreferenceSiriusJoyport = () => {
+  let value = false
+  const item = localStorage.getItem("siriusJoyport")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch { /* empty */ }
+  }
+  return value
+}
+
 export const getPreferenceTraceSettings = (): TraceSettings => {
   let numLines = TraceSettingsDefault.numLines
   const traceNumLines = localStorage.getItem("traceNumLines")

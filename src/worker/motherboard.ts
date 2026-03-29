@@ -33,6 +33,7 @@ import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
+import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 
 let startTime = 0
 let prevTime = 0
@@ -51,17 +52,7 @@ let takeSnapshot = false
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
 let gameSetupTimerID: NodeJS.Timeout | number = 0
-let siriusJoyport = false
 let tracing = TEST_DEBUG
-
-export const getSiriusJoyport = () => {
-  return siriusJoyport
-}
-
-export const setSiriusJoyport = (mode: boolean) => {
-  siriusJoyport = mode
-  updateExternalMachineState()
-}
 
 export const setTracing = (doTracing: boolean) => {
   tracing = doTracing
@@ -296,11 +287,11 @@ const doReset = () => {
   memGet(0xC082)
   reset6502()
   resetMachine()
-  if (siriusJoyport) {
+  if (getSiriusJoyport()) {
     setSiriusJoyport(false)
-    const currentPC = s6502.PC
+    const currentCycle = s6502.cycleCount
     const intervalId = setInterval(() => {
-      if ((s6502.PC - currentPC) > 1000) {
+      if ((s6502.cycleCount - currentCycle) > 1000) {
         setSiriusJoyport(true)
         clearInterval(intervalId)
       }
@@ -618,7 +609,6 @@ const updateExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
-    siriusJoyport: siriusJoyport,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
     stackString: doGetStackString(),

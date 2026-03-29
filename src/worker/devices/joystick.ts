@@ -1,6 +1,7 @@
 import { defaultButtons, getGameMapping } from "../games/game_mappings"
 import { memSetC000 } from "../memory"
 import { SWITCHES } from "../softswitches"
+import { getSiriusJoyport, siriusJoyportButtons } from "./sirius_joyport"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBufferDebounce } from "./keyboard"
 
@@ -60,7 +61,7 @@ export const setButtonState = () => {
   isLeftDown = leftAppleDown || leftButtonDown
   isRightDown = rightAppleDown || rightButtonDown
   SWITCHES.PB0.isSet = isLeftDown
-  SWITCHES.PB1.isSet = isRightDown || isPB2down
+  SWITCHES.PB1.isSet = isRightDown
   SWITCHES.PB2.isSet = isPB2down
   if ((isLeftDown && !wasLeftDown) || (isRightDown && !wasRightDown)) {
 //    doSaveTimeSlice()
@@ -110,7 +111,12 @@ export const setGamepads = (gamePadsIn: EmuGamepad[]) => {
   gamePads = gamePadsIn
   isKeyboardJoystick = !gamePads.length || !gamePads[0].buttons.length
   gameMapping = getGameMapping()
-  gamePadMapping = gameMapping.gamepad ? gameMapping.gamepad : defaultButtons
+  if (gameMapping.gamepad) {
+    gamePadMapping = gameMapping.gamepad
+  } else {
+    const siriusJoyport = getSiriusJoyport()
+    gamePadMapping = siriusJoyport ? siriusJoyportButtons : defaultButtons
+  }
 }
 
 const nearZero = (value: number) => {return value > -0.01 && value < 0.01}
@@ -152,15 +158,28 @@ const handleGamepad = (gp: number) => {
   if (gp === 0) {
     paddle0timeout = stick[0]
     paddle1timeout = stick[1]
-    leftButtonDown = false
-    rightButtonDown = false
   } else {
     paddle2timeout = stick[0]
     paddle3timeout = stick[1]
-    isPB2down = false
   }
   let buttonPressed = false
-  gamePads[gp].buttons.forEach((button, i) => {
+  const buttons = gamePads[gp].buttons
+  // This is a hack for generic Ucom controllers, which map the D-pad buttons
+  // to strange values on axis 9.
+  if (axes.length >= 10) {
+    if (axes[9] !== 0 && axes[9] < 2) {
+      if (axes[9] < -0.4 && axes[9] > -0.5) {
+        buttons[15] = true  // D-pad Right
+      } else if (axes[9] > 0.7 && axes[9] < 0.8) {
+        buttons[14] = true  // D-pad Left
+      } else if (axes[9] > 0.1 && axes[9] < 0.2) {
+        buttons[13] = true  // D-pad Down
+      } else if (axes[9] < -0.95) {
+        buttons[12] = true  // D-pad Up
+      }
+    }
+  }
+  buttons.forEach((button, i) => {
     if (button) {
       gamePadMapping(i, gamePads.length > 1, gp === 1)
       buttonPressed = true
@@ -178,6 +197,10 @@ const handleGamepad = (gp: number) => {
 }
 
 export const handleGamepads = () => {
+  leftButtonDown = false
+  rightButtonDown = false
+  isPB2down = false
+
   if (gamePads && gamePads.length > 0) {
     handleGamepad(0)
     if (gamePads.length > 1) {
