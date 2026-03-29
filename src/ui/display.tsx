@@ -24,6 +24,7 @@ import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColorMode } from "./ui_settings"
 import { messagelistener } from "./messagelistener"
 import { CRTStartup } from "./graphics"
+import { startRemoteControlBridge } from "./remotecontrol"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)
@@ -35,7 +36,7 @@ const DisplayApple2 = () => {
   const [closedAppleKeyMode, setClosedAppleKeyMode] = useState(0)
   const [showFileOpenDialog, setShowFileOpenDialog] = useState({ show: false, index: 0 })
   const [worker, setWorker] = useState<Worker | null>(null)
-  
+
   // We need to create our worker here so it has access to our properties
   // such as cpu speed and help text. Otherwise, if the emulator changed
   // those, we would have no way of setting them here and re-rendering.
@@ -51,7 +52,7 @@ const DisplayApple2 = () => {
       }
     }
   }
-  
+
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = "") => {
     if (newhelptext && newhelptext.length > 1) {
       setHelpText(newhelptext)
@@ -66,10 +67,10 @@ const DisplayApple2 = () => {
     // zero and NOTHING will update.
     setRenderCount(prevRenderCount => prevRenderCount + 1)
   }
-  
+
   if (!myInit) {
     setMyInit(true)
-    
+
     if ("launchQueue" in window) {
       const queue: LaunchQueue = window.launchQueue as LaunchQueue
       queue.setConsumer(async (launchParams: LaunchParams) => {
@@ -86,6 +87,7 @@ const DisplayApple2 = () => {
     // preloadAssets()
     passSpeedMode(0)
     loadPreferences()
+    startRemoteControlBridge()
     const hasBasicProgram = handleInputParams()
     handleFragment(updateDisplay, hasBasicProgram)
 
@@ -103,7 +105,7 @@ const DisplayApple2 = () => {
 
     // Listen for binary data from VS Code extension
     window.addEventListener("message", messagelistener)
-    
+
     if (TEST_DEBUG) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
       setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 700)
@@ -111,11 +113,11 @@ const DisplayApple2 = () => {
       setTimeout(() => { passSetRunMode(RUN_MODE.PAUSED) }, 1200)
     }
   }
-  
+
   const handleCtrlDown = (ctrlKeyMode: number) => {
     setCtrlKeyMode(ctrlKeyMode)
   }
-  
+
   const handleOpenAppleDown = (newMode: number) => {
     // If we're going from 0 to nonzero, send the Open Apple keypress
     if (openAppleKeyMode === 0 && newMode > 0) {
@@ -127,7 +129,7 @@ const DisplayApple2 = () => {
     }
     setOpenAppleKeyMode(newMode)
   }
-  
+
   const handleClosedAppleDown = (newMode: number) => {
     // If we're going from 0 to nonzero, send the Closed Apple keypress
     if (closedAppleKeyMode === 0 && newMode > 0) {
@@ -139,11 +141,11 @@ const DisplayApple2 = () => {
     }
     setClosedAppleKeyMode(newMode)
   }
-  
+
   const handleShowFileOpenDialog = (show: boolean, index: number) => {
     setShowFileOpenDialog({ show, index })
   }
-  
+
   const props: DisplayProps = {
     speed: currentSpeed,
     renderCount: renderCount,
@@ -158,10 +160,10 @@ const DisplayApple2 = () => {
     handleClosedAppleDown: handleClosedAppleDown,
     setShowFileOpenDialog: handleShowFileOpenDialog,
   }
-  
+
   const theme = getTheme()
   handleSetTheme(theme)
-  
+
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
@@ -180,7 +182,7 @@ const DisplayApple2 = () => {
   <span>Apple2TS ©{new Date().getFullYear()} CT6502&nbsp;
   <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
   </div>
-  
+
   if (isEmbedMode()) {
     return <Apple2Canvas {...props} />
   }

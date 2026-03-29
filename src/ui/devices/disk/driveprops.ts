@@ -106,6 +106,11 @@ export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boo
   passSetDriveProps(driveProps[index])
 }
 
+export const handleEjectDisk = (index: number) => {
+  driveProps[index] = initDriveProps(index, driveProps[index].drive, driveProps[index].hardDrive)
+  passSetDriveNewData(driveProps[index])
+}
+
 const findMatchingDiskImage = (url: string) => {
   const name = decodeURIComponent(url).replace(/[^A-Z]/gi, "").toUpperCase()
   for (let i = 0; i < diskImages.length; i++) {
