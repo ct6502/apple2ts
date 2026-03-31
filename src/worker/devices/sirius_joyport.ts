@@ -1,5 +1,5 @@
+import { memSetC000 } from "../memory"
 import { SWITCHES } from "../softswitches"
-import { setLeftButtonDown, setRightButtonDown, setPushButton2 } from "./joystick"
 
 // The Sirius Joyport is designed to be used with two "Atari-style" joysticks.
 // In practice, this would be two gamepads, each with a D-pad and a single button.
@@ -22,47 +22,87 @@ export const setSiriusJoyport = (mode: boolean) => {
   siriusJoyport = mode
 }
 
-export const siriusJoyportButtons: GamePadMapping = (button: number,
-  dualJoysticks: boolean, isJoystick2: boolean) => {
+let joy1button = false
+let joy2button = false
+let joy1down = false
+let joy2down = false
+let joy1up = false
+let joy2up = false
+let joy1left = false
+let joy2left = false
+let joy1right = false
+let joy2right = false
+
+export const checkSiriusJoyportValues = (addr: number) => {
   const isAN0 = SWITCHES.AN0.isSet
   const isAN1 = SWITCHES.AN1.isSet
+  let isSet = false
+  switch (addr) {
+    case SWITCHES.PB0.isSetAddr:
+      SWITCHES.PB0.isSet = (!isAN0 && joy1button) || (isAN0 && joy2button)
+      isSet = SWITCHES.PB0.isSet
+      break
+    case SWITCHES.PB1.isSetAddr:
+      SWITCHES.PB1.isSet = (!isAN0 && isAN1 && joy1up) ||
+        (isAN0 && isAN1 && joy2up) ||
+        (!isAN0 && !isAN1 && joy1left) ||
+        (isAN0 && !isAN1 && joy2left)
+      isSet = SWITCHES.PB1.isSet
+      break
+    case SWITCHES.PB2.isSetAddr:
+      SWITCHES.PB2.isSet = (!isAN0 && isAN1 && joy1down) ||
+      (isAN0 && isAN1 && joy2down) ||
+        (!isAN0 && !isAN1 && joy1right) ||
+        (isAN0 && !isAN1 && joy2right)
+      isSet = SWITCHES.PB2.isSet
+      break
+  }
+  // Handle push button switches for Sirius Joyport - they are active low
+  memSetC000(addr, isSet ? 0 : 0x80)
+}
+
+export const siriusJoyportButtons: GamePadMapping = (button: number,
+  dualJoysticks: boolean, isJoystick2: boolean) => {
   const isJoystick1 = !isJoystick2
 
   switch (button) {
-    case 0:
-      if ((isJoystick1 && !isAN0) || (isJoystick2 && isAN0)) {
-        setLeftButtonDown()
+    case -1:
+      // Initialize buttons state for appropriate joystick
+      if (isJoystick1) {
+        joy1button = false
+        joy1down = false
+        joy1up = false
+        joy1left = false
+        joy1right = false
+      } else {
+        joy2button = false
+        joy2down = false
+        joy2up = false
+        joy2left = false
+        joy2right = false
       }
+      break
+    case 0:
+      if (isJoystick1) joy1button = true
+      if (isJoystick2) joy2button = true
       break
     case 1:
       break
     case 12:   // D-pad Up
-      if (isAN1) {
-        if ((isJoystick1 && !isAN0) || (isJoystick2 && isAN0)) {
-          setRightButtonDown()
-        }
-      }
+      if (isJoystick1) joy1up = true
+      if (isJoystick2) joy2up = true
       break
     case 13:   // D-pad Down
-      if (isAN1) {
-        if ((isJoystick1 && !isAN0) || (isJoystick2 && isAN0)) {
-          setPushButton2()
-        }
-      }
+      if (isJoystick1) joy1down = true
+      if (isJoystick2) joy2down = true
       break
     case 14:   // D-pad Left
-      if (!isAN1) {
-        if ((isJoystick1 && !isAN0) || (isJoystick2 && isAN0)) {
-          setRightButtonDown()
-        }
-      }
+      if (isJoystick1) joy1left = true
+      if (isJoystick2) joy2left = true
       break
     case 15:   // D-pad Right
-      if (!isAN1) {
-        if ((isJoystick1 && !isAN0) || (isJoystick2 && isAN0)) {
-          setPushButton2()
-        }
-      }
+      if (isJoystick1) joy1right = true
+      if (isJoystick2) joy2right = true
       break
     default: break
   }

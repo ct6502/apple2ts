@@ -585,6 +585,10 @@ const doGetStackString = () => {
 let didPassSoftSwitchDescriptions = false
 
 const updateExternalMachineState = () => {
+  // Make sure the push button values are up to date, since they can
+  // be modifed by other softswitches (like for the Sirius Joyport).
+  memGet(SWITCHES.PB0.isSetAddr)
+  memGet(SWITCHES.PB1.isSetAddr)
   const state: MachineState = {
     addressGetTable: addressGetTable,
     altChar: SWITCHES.ALTCHARSET.isSet,

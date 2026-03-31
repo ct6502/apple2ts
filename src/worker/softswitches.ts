@@ -1,10 +1,9 @@
 import { getCurrentMachineName, memGet, memGetC000, memSetC000 } from "./memory"
 import { clearKeyStrobe, popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
-import { resetJoystick, checkJoystickValues } from "./devices/joystick"
+import { resetJoystick, checkJoystickValues, checkPushButtonValues } from "./devices/joystick"
 import { s6502 } from "./instructions"
 import { toHex } from "../common/utility"
-import { getSiriusJoyport } from "./devices/sirius_joyport"
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
@@ -121,9 +120,9 @@ export const SWITCHES = {
   // Watch out - the addresses are in reverse order - $C05E is AN3 "off" but double hires "on"
   DHIRES: NewSwitch(0xC05F, 0xC05E, 0),
   CASSIN1: NewSwitch(0, 0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
-  PB0: NewSwitch(0, 0, 0xC061),  // status location, not a switch
-  PB1: NewSwitch(0, 0, 0xC062),  // status location, not a switch
-  PB2: NewSwitch(0, 0, 0xC063),  // status location, not a switch
+  PB0: NewSwitch(0, 0, 0xC061, false, (addr) => {checkPushButtonValues(addr)}),
+  PB1: NewSwitch(0, 0, 0xC062, false, (addr) => {checkPushButtonValues(addr)}),
+  PB2: NewSwitch(0, 0, 0xC063, false, (addr) => {checkPushButtonValues(addr)}),
   JOYSTICK0: NewSwitch(0, 0, 0xC064, false,
     (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
   JOYSTICK1: NewSwitch(0, 0, 0xC065, false,
@@ -258,6 +257,10 @@ export const checkSoftSwitches = (addr: number,
     clearKeyStrobe()
   }
   if (sswitch1.setFunc) {
+    // Be sure to set the isSet before calling our custom set function.
+    if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
+      sswitch1.isSet = (addr === sswitch1.onAddr)
+    }
     sswitch1.setFunc(addr, cycleCount)
     return
   }
@@ -304,13 +307,8 @@ export const checkSoftSwitches = (addr: number,
       memSetC000(addr, value)
     }
   } else if (addr === sswitch1.isSetAddr) {
-    if (addr >= SWITCHES.PB0.isSetAddr && addr <= SWITCHES.PB2.isSetAddr && getSiriusJoyport()) {
-      // Handle push button switches for Sirius Joyport - they are active low
-      memSetC000(addr, sswitch1.isSet ? 0 : 0x80)
-    } else {
-      const value = memGetC000(addr)
-      memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
-    }
+    const value = memGetC000(addr)
+    memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
   }
 }
 

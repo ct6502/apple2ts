@@ -1,7 +1,7 @@
 import { defaultButtons, getGameMapping } from "../games/game_mappings"
-import { memSetC000 } from "../memory"
+import { memGetC000, memSetC000 } from "../memory"
 import { SWITCHES } from "../softswitches"
-import { getSiriusJoyport, siriusJoyportButtons } from "./sirius_joyport"
+import { checkSiriusJoyportValues, getSiriusJoyport, siriusJoyportButtons } from "./sirius_joyport"
 // import { doSaveTimeSlice } from "./motherboard"
 // import { addToBufferDebounce } from "./keyboard"
 
@@ -103,6 +103,21 @@ export const checkJoystickValues = (cycleCount: number) => {
   memSetC000(0xC067, (diff < paddle3timeout) ? 0x80 : 0)
 }
 
+export const checkPushButtonValues = (addr: number) => {
+  if (getSiriusJoyport()) {
+    checkSiriusJoyportValues(addr)
+  } else {
+    const value = memGetC000(addr)
+    let isSet = false
+    switch (addr) {
+      case SWITCHES.PB0.isSetAddr: isSet = SWITCHES.PB0.isSet; break
+      case SWITCHES.PB1.isSetAddr: isSet = SWITCHES.PB1.isSet; break
+      case SWITCHES.PB2.isSetAddr: isSet = SWITCHES.PB2.isSet; break
+    }
+    memSetC000(addr, isSet ? (value | 0x80) : (value & 0x7F))
+  }
+}
+
 let gameMapping: GameLibraryItem
 let gamePadMapping: GamePadMapping
 let isKeyboardJoystick = false
@@ -162,7 +177,6 @@ const handleGamepad = (gp: number) => {
     paddle2timeout = stick[0]
     paddle3timeout = stick[1]
   }
-  let buttonPressed = false
   const buttons = gamePads[gp].buttons
   // This is a hack for generic Ucom controllers, which map the D-pad buttons
   // to strange values on axis 9.
@@ -179,16 +193,13 @@ const handleGamepad = (gp: number) => {
       }
     }
   }
+  // Pass in -1 to initialize button states for appropriate joystick
+  gamePadMapping(-1, gamePads.length > 1, gp === 1)
   buttons.forEach((button, i) => {
     if (button) {
       gamePadMapping(i, gamePads.length > 1, gp === 1)
-      buttonPressed = true
     }
   })
-  // Special "no buttons down" call
-  if (!buttonPressed) {
-    gamePadMapping(-1, gamePads.length > 1, gp === 1)
-  }
 
   if (gameMapping.rumble) {
     gameMapping.rumble()
