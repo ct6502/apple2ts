@@ -63,18 +63,25 @@ export const checkSiriusJoyportValues = (addr: number) => {
 
 export const siriusJoyportButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
-  const isJoystick1 = !isJoystick2
+  let isJoystick1 = !isJoystick2
+  // If we have only a single gamepad, treat it as both joystick 1 and 2.
+  if (!dualJoysticks) {
+     isJoystick1 = true
+     isJoystick2 = true
+   }
 
   switch (button) {
     case -1:
-      // Initialize buttons state for appropriate joystick
+      // Initialize buttons state for each joystick. We do this
+      // independently of each other, in case we only have a single gamepad.
       if (isJoystick1) {
         joy1button = false
         joy1down = false
         joy1up = false
         joy1left = false
         joy1right = false
-      } else {
+      }
+      if (isJoystick2) {
         joy2button = false
         joy2down = false
         joy2up = false
