@@ -1,5 +1,25 @@
 # Changelog
 
+## [v3.3.0](https://github.com/ct6502/apple2ts/tree/v3.3.0) (2026-04-01)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.2.0...v3.3.0)
+
+**Implemented enhancements:**
+
+- Enhancement - Add support for Sirius Software Joyport [\#213](https://github.com/ct6502/apple2ts/issues/213)
+- Enhancement - Add Applesoft Debugger Features [\#202](https://github.com/ct6502/apple2ts/issues/202)
+- Upgrade Total Replay to v5.3 [\#97](https://github.com/ct6502/apple2ts/issues/97)
+
+**Fixed bugs:**
+
+- BASIC Renumber does not correctly handle "if then" line numbers [\#214](https://github.com/ct6502/apple2ts/issues/214)
+
+**Merged pull requests:**
+
+- API server & CLI for Apple2TS [\#217](https://github.com/ct6502/apple2ts/pull/217) ([iolo](https://github.com/iolo))
+- Fixed broken Quarx URL [\#216](https://github.com/ct6502/apple2ts/pull/216) ([boredsenseless](https://github.com/boredsenseless))
+- MIDI Updates [\#215](https://github.com/ct6502/apple2ts/pull/215) ([code-bythepound](https://github.com/code-bythepound))
+
 ## [v3.2.0](https://github.com/ct6502/apple2ts/tree/v3.2.0) (2026-02-17)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.1.1...v3.2.0)
