@@ -85,8 +85,8 @@ const PrinterDialog = (props: PrinterDialogProps) => {
     props.printer.save()
   }
 
-  const handleReprint = () => {
-    props.printer.reprint()
+  const handleLoadData = () => {
+    props.printer.load()
   }
 
   useEffect(() => {
@@ -118,10 +118,9 @@ const PrinterDialog = (props: PrinterDialogProps) => {
                 <FontAwesomeIcon icon={faSave} />
               </button>
               <button className="push-button"
-                disabled={!hasPrinterData}
                 style={{ color: `${buttonColor}` }}
                 title="Reprint from Stored Data"
-                onClick={handleReprint}>
+                onClick={handleLoadData}>
                 <FontAwesomeIcon icon={faFolderOpen} />
               </button>
               <button className="push-button"

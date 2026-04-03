@@ -84,7 +84,34 @@ export const ImageWriterII : Printer = {
     _dbg = false
   },
 
-  load: function() {},
+  load: function() {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = ".blob"
+    input.onchange = e => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) {
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = e => {
+        const result = e.target?.result
+        if (result && typeof result === "string") {
+          const binaryString = atob(result.split(",")[1])
+          const len = binaryString.length
+          const bytes = new Uint8Array(len)
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          this.incomingData = bytes
+          this.reprint()
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+    input.click()
+  },
+
   save: function() {
     const blob = new Blob([this.incomingData] as BlobPart[])
     const link = document.createElement("a")
@@ -117,7 +144,7 @@ export const ImageWriterII : Printer = {
       html +="<style> @page { size: auto;  margin: 0mm; } </style>"
       html += "<div style='width:100%;height:100%;page-break-after:always;'>"
       const durl = _canvas.toDataURL("image/png")
-      html += "<img style='position:absolute;width:100%;height:100%;' src='"+durl+"'/>"
+      html += "<img style='position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;' src='"+durl+"'/>"
       html += "</div>"
     }
     html += "</body></html>"
