@@ -191,7 +191,7 @@ const DisplayApple2 = () => {
     <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
     <div className={isLandscape ? "flex-row" : "flex-column"}>
     <Apple2Canvas {...props} />
-    <div className={narrow ? "flex-column-gap" : "flex-row-gap" + " flexwrap"}  style={{ paddingLeft: "2px" }}>
+    <div className={"flex-row-gap" + " flexwrap"}  style={{ paddingLeft: "2px" }}>
       <ControlPanel {...props} />
       {!isGameMode() && <DiskInterface {...props} />}
     </div>

@@ -13,7 +13,7 @@
   line-height: 16px;
   margin-left: 7px;
   text-align: left;
-  font-size: 7pt;
+  font-size: 6pt;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
@@ -22,6 +22,12 @@
 
 .disk-label-unsaved {
   color: red;
+}
+
+.disk-label-small {
+  font-size: 5pt;
+  top: -33px;
+  width: 60px;
 }
 
 .disk-status {
@@ -33,6 +39,11 @@
   text-overflow: clip;
   user-select: none;
   padding-left: 1em;
+}
+
+.disk-status-small {
+  font-size: 6pt;
+  width: 60px;
 }
 
 body.dark-mode .disk-cloud {
@@ -111,6 +122,13 @@ body.dark-mode .disk-cloud {
   margin-top: 2px;
   -webkit-touch-callout: none;
   user-select: none;
+}
+
+.disk-image-small {
+  width: 64px;
+  height: 41px;
+  margin-left: 2px;
+  margin-right: 0px;
 }
 
 body.dark-mode .disk-image {

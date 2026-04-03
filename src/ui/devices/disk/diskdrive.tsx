@@ -227,12 +227,14 @@ const DiskDrive = (props: DiskDriveProps) => {
   let status = DISK_DRIVE_LABELS[props.index]
   status += dprops.status
   const isElectron = navigator.userAgent.includes("Electron")
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}${isTouchDevice ? " disk-label-small" : ""}`
 
   return (
     <span className="flex-column">
       <span className="flex-row">
         <span className="flex-column">
-          <img className="disk-image"
+          <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={diskDriveLabel}
@@ -243,10 +245,10 @@ const DiskDrive = (props: DiskDriveProps) => {
           </FontAwesomeIcon>
         </span>
       </span>
-      <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
+      <span className={diskLabelClass}>
         {dprops.diskHasChanges ? "*" : ""}{dprops.filename}</span>
       <span className="flex-row">
-        <span className={"default-font disk-status"}>{status}</span>
+        <span className={`default-font disk-status${isTouchDevice ? " disk-status-small" : ""}`}>{status}</span>
       </span>
 
       <PopupMenu

@@ -25,10 +25,11 @@ const ImageWriter = () => {
 
   registerSetPrinting(setPrinting)
   const img1 = printingTimeout ? iwiion : iwiioff
+  const isTouchDevice = "ontouchstart" in document.documentElement
 
   return (
     <span className="flex-column">
-      <img className="disk-image"
+      <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
         style={{ borderWidth: 0 }}
         src={img1} alt="iwii"
         title="ImageWriter II (Slot 1)"

@@ -595,12 +595,11 @@ export const getCanvasSize = () => {
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
+  const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
   if (isEmbedMode()) {
     height -= noBackgroundImage ? 60 : 25
     width -= noBackgroundImage ? 60 : 25
   } else if (isMinimalTheme()) {
-    const isTouchDevice = "ontouchstart" in document.documentElement
-    const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
     if (isLandscape) {
       height -= 150
     } else {
@@ -613,7 +612,7 @@ export const getCanvasSize = () => {
       width -= 25
     } else {
       height -= noBackgroundImage ? 40 : 160
-      width -= noBackgroundImage ? 0 : 40
+      width -= isLandscape ? 320 : 0
     }
   }
   if (!noBackgroundImage) {

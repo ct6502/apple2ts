@@ -284,6 +284,10 @@ body.dark-mode .fill-color {
   fill: var(--text-color);
 }
 
+.font-small {
+  font-size: 6pt;
+}
+
 body.dark-mode .default-font {
   color: var(--text-color-dark);
   fill: var(--text-color-dark);
