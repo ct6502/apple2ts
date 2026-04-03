@@ -24,6 +24,7 @@ const basicTokenizer = {
         return "string"
       }
       stream.skipToEnd()
+      state.inString = false
       return "string"
     }
     

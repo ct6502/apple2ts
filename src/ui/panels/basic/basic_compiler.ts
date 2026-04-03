@@ -99,7 +99,12 @@ const tokenizeLine = (line: string): string[] => {
       while (j < line.length && line[j] !== "\"") {
         j++
       }
-      tokens.push(line.substring(i, j + 1))
+      let quote = line.substring(i, j + 1)
+      // If we reach the end of the line without a closing quote, just add one.
+      if (!quote.endsWith("\"")) {
+        quote += "\""
+      }
+      tokens.push(quote)
       i = j + 1
       continue
     }
