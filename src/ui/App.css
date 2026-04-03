@@ -61,15 +61,13 @@ input:focus {
 @font-face {
   font-family: PrintChar21;
   src: url(./fonts/PrintChar21.woff2);
+  font-display: block;
 }
 
 @font-face {
   font-family: PRNumber3;
   src: url(./fonts/PRNumber3.woff2);
-}
-
-.loadFontEarly {
-  font-family: PrintChar21;
+  font-display: block;
 }
 
 .flex-row {
