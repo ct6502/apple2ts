@@ -612,7 +612,7 @@ export const getCanvasSize = () => {
       width -= 25
     } else {
       height -= noBackgroundImage ? 40 : 160
-      width -= isLandscape ? 320 : 0
+      width -= isLandscape ? 320 : 40
     }
   }
   if (!noBackgroundImage) {
