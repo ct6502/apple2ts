@@ -14,6 +14,8 @@ const FUNCTIONS = new Set([
   "ATN", "LEN", "VAL", "ASC", "CHR$", "LEFT$", "RIGHT$", "MID$", "STR$"
 ])
 
+const RESERVED_WORDS = new Set([...KEYWORDS, ...FUNCTIONS])
+
 // Applesoft BASIC compiler. Throws errors for invalid syntax.
 export const BasicCompiler = (program: string) => {
   if (program.trim() === "") {
@@ -143,6 +145,10 @@ const trunkToken = (token: string): string => {
   return token.length > 30 ? token.substring(0, 30) + "..." : token
 }
 
+const throwError = (lineNumber: number, message: string): never => {
+  throw new Error(`Line ${lineNumber}: ${message}`)
+}
+
 // Validate tokens
 const validateTokens = (tokens: string[], lineNum: number, lineNumber: number): void => {
   const firstToken = tokens[0].toUpperCase()
@@ -151,28 +157,47 @@ const validateTokens = (tokens: string[], lineNum: number, lineNumber: number): 
   if (!KEYWORDS.has(firstToken) && !FUNCTIONS.has(firstToken) && firstToken !== "?") {
     // Could be a variable assignment (LET is optional)
     if (!/^[A-Za-z][A-Za-z0-9]*[$%]?$/.test(tokens[0])) {
-      throw new Error(`Line ${lineNum} (${lineNumber}): Invalid command or variable name '${trunkToken(tokens[0])}'`)
+      throwError(lineNumber, `Invalid command or variable name '${trunkToken(tokens[0])}'`)
     }
   }
   
   // Check for unmatched quotes
   for (const token of tokens) {
-    if (token.startsWith("\"") && !token.endsWith("\"")) {
-      throw new Error(`Line ${lineNum} (${lineNumber}): Unmatched quote`)
+    if (token.startsWith("\"")) {
+      if (!token.endsWith("\"")) {
+        throwError(lineNumber, "Unmatched quote")
+      }
+      continue
+    }
+    if (token === "REM") break
+    const upperToken = token.toUpperCase()
+    for (const kw of RESERVED_WORDS) {
+      if (upperToken.includes(kw)) {
+        let foundMatch = false
+        for (const kw2 of RESERVED_WORDS) {
+          if (upperToken === kw2) {
+            foundMatch = true
+            break
+          }
+        }
+        if (!foundMatch) {
+          throwError(lineNumber, `Variable name contains reserved word '${kw}'`)
+        }
+      }
     }
   }
   
   // Check for basic FOR/NEXT structure
   if (firstToken === "FOR") {
     if (tokens.length < 5 || tokens[2].toUpperCase() !== "=" || !tokens.some(t => t.toUpperCase() === "TO")) {
-      throw new Error(`Line ${lineNum} (${lineNumber}): Invalid FOR statement syntax`)
+      throwError(lineNumber, "Invalid FOR statement syntax")
     }
   }
   
   // Check GOTO/GOSUB has a line number
   if (firstToken === "GOTO" || firstToken === "GOSUB") {
     if (tokens.length < 2 || !/^\d+$/.test(tokens[1])) {
-      throw new Error(`Line ${lineNum} (${lineNumber}): ${firstToken} requires a line number`)
+      throwError(lineNumber, `${firstToken} requires a line number`)
     }
   }
   
@@ -181,7 +206,7 @@ const validateTokens = (tokens: string[], lineNum: number, lineNumber: number): 
     const hasThen = tokens.some(t => t.toUpperCase() === "THEN")
     const hasGoto = tokens.some(t => t.toUpperCase() === "GOTO")
     if (!hasThen && !hasGoto) {
-      throw new Error(`Line ${lineNum} (${lineNumber}): IF statement missing THEN or GOTO`)
+      throwError(lineNumber, "IF statement missing THEN or GOTO")
     }
   }
 }

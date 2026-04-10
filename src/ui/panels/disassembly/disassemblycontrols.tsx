@@ -12,7 +12,7 @@ import {
   faRoute,
 } from "@fortawesome/free-solid-svg-icons"
 import React from "react"
-import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE, TEST_DEBUG } from "../../../common/utility"
+import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
 import { handleSetCPUState } from "../../controller"
 import { bpStepInto } from "../../img/icon_stepinto"
 import { bpStepOut } from "../../img/icon_stepout"
@@ -31,7 +31,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const [address, setAddress] = useState("")
   const [showSymbolTableFileOpen, setShowSymbolTableFileOpen] = useState(false)
   const [showSaveDisassembly, setShowSaveDisassembly] = useState(false)
-  const [showTraceDialog, setShowTraceDialog] = useState(TEST_DEBUG)
+  const [showTraceDialog, setShowTraceDialog] = useState(false)
   const [dialogPosition, setDialogPosition] = useState([-1, -1])
 
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
