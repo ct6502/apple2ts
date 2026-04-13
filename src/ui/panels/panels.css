@@ -485,6 +485,29 @@ body.dark-mode .memory-map td {
   border-color: var(--text-color-dark);
 }
 
+th {
+  user-select: none;
+}
+
+.basic-vars {
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.basic-vars td {
+  padding-left: 6px;
+  padding-right: 6px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  border-width: 0.5px;
+  border-style: solid;
+  border-color: var(--text-color);
+}
+
+body.dark-mode .basic-vars td {
+  border-color: var(--text-color-dark);
+}
+
 .mem-aux {
   background-color: palevioletred;
 }

@@ -221,6 +221,7 @@ export const passSetTraceSettings = (traceSettings: TraceSettings) => {
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
+  basicMemory: new Uint8Array(),
   breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
@@ -481,4 +482,8 @@ export const handleGetTracing = () => {
 
 export const handleGetTracelog = () => {
   return machineState.tracelog
+}
+
+export const handleGetBasicMemory = () => {
+  return machineState.basicMemory
 }

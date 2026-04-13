@@ -578,6 +578,34 @@ const getMemoryDump = () => {
   return new Uint8Array()
 }
 
+const getBasicMemory = () => {
+  const zp = getZeroPage()
+  const varStart = zp[0x69] | (zp[0x6A] << 8)
+  const arrStart = zp[0x6B] | (zp[0x6C] << 8)
+  let basicVars = memory.slice(varStart, arrStart + 1)
+  const nvarLength = basicVars.length - 1
+  // Make sure there's a zero byte at the end of the variables.
+  basicVars[nvarLength] = 0
+  // For strings, extract the string, append them to the end of basicVars,
+  // and then update the pointer to point to the new location.
+  for (let addr = 0; addr < nvarLength; addr += 7) {
+    const vardata = basicVars.slice(addr, addr + 7)
+    const nameByte1 = vardata[0]
+    if (nameByte1 === 0) break // No more variables
+    const nameByte2 = vardata[1]
+    const isString = (nameByte1 & 0x80) === 0 && (nameByte2 & 0x80)
+    if (isString) {
+      const strAddr = vardata[3] | (vardata[4] << 8)
+      const strLen = vardata[2]
+      const value = memory.slice(strAddr, strAddr + strLen)
+      basicVars[addr + 3] = basicVars.length & 0xFF
+      basicVars[addr + 4] = (basicVars.length >> 8) & 0xFF
+      basicVars = new Uint8Array([...basicVars, ...value])
+    }
+  }
+  return basicVars
+}
+
 const doGetStackString = () => {
   return (cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ""
 }
@@ -592,6 +620,7 @@ const updateExternalMachineState = () => {
   const state: MachineState = {
     addressGetTable: addressGetTable,
     altChar: SWITCHES.ALTCHARSET.isSet,
+    basicMemory: getBasicMemory(),
     breakpoints: breakpointMap,
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,

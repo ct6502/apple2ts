@@ -14,6 +14,7 @@ import { MaximumSpeedMode } from "../../controls/speeddropdown"
 import PopupMenu from "../../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
 import { BasicRebuildFromMemory } from "./basic_rebuild_memory"
+import BasicDebugView from "./basic_debugview"
 
 const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const [programText, setprogramText] = useState<string>(defaultProgram)
@@ -249,6 +250,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     <div className="flex-column-gap debug-section">
       <BasicEditor value={programText} setValue={setprogramText}
         highlightLine={highlightLine} readOnly={running}/>
+      <BasicDebugView/>
       <div className="flex-row">
           <button
             className="push-button"

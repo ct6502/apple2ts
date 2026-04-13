@@ -84,6 +84,7 @@ type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
+  basicMemory: Uint8Array,
   breakpoints: BreakpointMap,
   button0: boolean,
   button1: boolean,
