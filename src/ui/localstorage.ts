@@ -23,6 +23,18 @@ export const setPreferenceCapitalizeBasic = (mode = false) => {
   setCapitalizeBasic(mode)
 }
 
+export const setPreferenceBasicProgram = (program: string | null) => {
+  if (program === null || program === "") {
+    localStorage.removeItem("basicProgram")
+  } else {
+    localStorage.setItem("basicProgram", program)
+  }
+}
+
+export const getPreferenceBasicProgram = (): string | null => {
+  return localStorage.getItem("basicProgram")
+}
+
 export const setPreferenceCapsLock = (mode = true) => {
   if (mode === true) {
     localStorage.removeItem("capsLock")

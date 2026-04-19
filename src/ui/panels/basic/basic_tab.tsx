@@ -1,5 +1,5 @@
 import "../panels.css"
-import { faDatabase, faFolderOpen, faForwardStep, faGear, faListOl, faPlay, faRepeat, faSave, faSnowflake, faStop } from "@fortawesome/free-solid-svg-icons"
+import { faDatabase, faFile, faFolderOpen, faForwardStep, faGear, faListOl, faPlay, faRepeat, faSave, faSnowflake, faStop } from "@fortawesome/free-solid-svg-icons"
 import { handleGetAutoNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -9,7 +9,7 @@ import { BasicCompiler } from "./basic_compiler"
 import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 import { handleSetDiskFromURL } from "../../devices/disk/driveprops"
-import { setPreferenceAutoNumbering, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../../localstorage"
+import { getPreferenceBasicProgram, setPreferenceAutoNumbering, setPreferenceBasicProgram, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../../localstorage"
 import { MaximumSpeedMode } from "../../controls/speeddropdown"
 import PopupMenu from "../../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
@@ -17,8 +17,12 @@ import { BasicRebuildFromMemory } from "./basic_rebuild_memory"
 import BasicDebugView from "./basic_debugview"
 
 const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
-  const [programText, setprogramText] = useState<string>(defaultProgram)
-  const [programError, setprogramError] = useState<string>("")
+  const [programText, setProgramText] = useState<string>(() => {
+    // Load from localStorage if available, otherwise use default
+    const saved = getPreferenceBasicProgram()
+    return saved !== null ? saved : defaultProgram
+  })
+  const [programError, setProgramError] = useState<string>("")
   const [isBooting, setIsBooting] = useState<boolean>(false)
   const [highlightLine, setHighlightLine] = useState<number>(5)
 
@@ -34,10 +38,11 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   useEffect(() => {
     try {
       BasicCompiler(programText)
-      setprogramError("")
+      setProgramError("")
     } catch (error) {
-      setprogramError(`${error}`)
+      setProgramError(`${error}`)
     }
+    setPreferenceBasicProgram(programText)
   }, [programText])
 
   const isPaused = () => {
@@ -205,7 +210,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
       const reader = new FileReader()
       reader.onload = (e) => {
         const text = e.target?.result as string
-        setprogramText(text)
+        setProgramText(text)
       }
       reader.readAsText(file)
     }
@@ -226,7 +231,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   const handleRenumberClick = async () => {
     const newProgramText = BasicRenumber(programText)
-    setprogramText(newProgramText)
+    setProgramText(newProgramText)
   }
 
   const handleRebuildClick = async () => {
@@ -239,7 +244,20 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
         return
       }
     }
-    BasicRebuildFromMemory(setprogramText)
+    BasicRebuildFromMemory(setProgramText)
+  }
+
+  const handleNewProgramClick = () => {
+    if (programText !== defaultProgram) {
+      const confirmNew = window.confirm(
+        "This will clear the current program. " +
+        "You will lose any unsaved changes. Are you sure?"
+      )
+      if (!confirmNew) {
+        return
+      }
+    }
+    setProgramText("")
   }
 
   const running = isRunning()
@@ -248,10 +266,11 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   return (
     <div className="flex-column-gap debug-section">
-      <BasicEditor value={programText} setValue={setprogramText}
+      <BasicEditor value={programText} setValue={setProgramText}
         highlightLine={highlightLine} readOnly={running}/>
       <BasicDebugView/>
       <div className="flex-row">
+        <div className="flex-row">
           <button
             className="push-button"
             title="Run from Beginning"
@@ -304,6 +323,15 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
             onClick={handleRenumberClick}>
               <FontAwesomeIcon icon={faListOl} />
           </button>
+          </div>
+
+          <div className="flex-row" style={{ marginLeft: "10px" }}>
+          <button
+            className="push-button"
+            title="New Program"
+            onClick={handleNewProgramClick}>
+              <FontAwesomeIcon icon={faFile} />
+          </button>
           <button
             className={handleGetRunMode() === RUN_MODE.IDLE ?
               "push-button disabled" : "push-button"}
@@ -342,6 +370,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
               },
             ]]}
           />
+          </div>
       </div>
         {programError !== "" && <div
           style={{ gridColumn: "span 2" }}
