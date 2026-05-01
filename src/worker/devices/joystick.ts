@@ -1,5 +1,5 @@
 import { defaultButtons, getGameMapping } from "../games/game_mappings"
-import { memGetC000, memSetC000 } from "../memory"
+import { memSetC000 } from "../memory"
 import { SWITCHES } from "../softswitches"
 import { checkSiriusJoyportValues, getSiriusJoyport, siriusJoyportButtons } from "./sirius_joyport"
 // import { doSaveTimeSlice } from "./motherboard"
@@ -89,7 +89,7 @@ export const resetJoystick = (cycleCount: number) => {
 //   return (Math.abs(v1 - v2) > 0.1 * MAX_TIMEOUT_CYCLES)
 // }
 
-export const checkJoystickValues = (cycleCount: number) => {
+export const checkJoystickValues = (cycleCount: number, value: number) => {
 //   if (largeDiff(prevPaddle0timeout, paddle0timeout) ||
 //     largeDiff(prevPaddle1timeout, paddle1timeout)) {
 //     prevPaddle0timeout = paddle0timeout
@@ -97,17 +97,16 @@ export const checkJoystickValues = (cycleCount: number) => {
 //     doSaveTimeSlice()
 //   }
   const diff = cycleCount - countStart
-  memSetC000(0xC064, (diff < paddle0timeout) ? 0x80 : 0)
-  memSetC000(0xC065, (diff < paddle1timeout) ? 0x80 : 0)
-  memSetC000(0xC066, (diff < paddle2timeout) ? 0x80 : 0)
-  memSetC000(0xC067, (diff < paddle3timeout) ? 0x80 : 0)
+  memSetC000(0xC064, (diff < paddle0timeout) ? (value | 0x80) : (value & 0x7F))
+  memSetC000(0xC065, (diff < paddle1timeout) ? (value | 0x80) : (value & 0x7F))
+  memSetC000(0xC066, (diff < paddle2timeout) ? (value | 0x80) : (value & 0x7F))
+  memSetC000(0xC067, (diff < paddle3timeout) ? (value | 0x80) : (value & 0x7F))
 }
 
-export const checkPushButtonValues = (addr: number) => {
+export const checkPushButtonValues = (addr: number, value: number) => {
   if (getSiriusJoyport()) {
     checkSiriusJoyportValues(addr)
   } else {
-    const value = memGetC000(addr)
     let isSet = false
     switch (addr) {
       case SWITCHES.PB0.isSetAddr: isSet = SWITCHES.PB0.isSet; break

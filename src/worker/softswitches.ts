@@ -44,14 +44,21 @@ const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
 // Random number generator for bus noise on the cassette, speaker, and joystick
 // soft switches. On the Apple II, tests show that when graphics are on, the
 // random numbers tend to oscillate between 0 and 0xA0. When graphics are off,
-// the numbers range from 0 to 0xFF. However, issue #117
+// the numbers range from 0 to 0xFF. However, issue 117
 // (https://github.com/ct6502/apple2ts/issues/117) involved a game that was
 // broken by the random numbers being too high. So we will limit the random
 // numbers to 0-0xB4 for now. This is still random enough for games like
-// Castle Wolfenstein (which rely on the cassette noise).
+// Castle Wolfenstein (which relies on the cassette noise).
 const rand = () => Math.floor(0xB4 * Math.random())
 
 const fullrand = () => Math.floor(256 * Math.random())
+
+const mirrorHighBitPlusRand = (addr: number) => {
+  // The high bit of $C068...$C06F mirrors the high bit of $C060...$C067,
+  // and the rest of the bits are random.
+  const value = memGetC000(addr & 0xFFF7)
+  memSetC000(addr, (value & 0x80) | (rand() & 0x7F))
+}
 
 // let prevCount = 0
 
@@ -120,21 +127,27 @@ export const SWITCHES = {
   // Watch out - the addresses are in reverse order - $C05E is AN3 "off" but double hires "on"
   DHIRES: NewSwitch(0xC05F, 0xC05E, 0),
   CASSIN1: NewSwitch(0, 0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
-  PB0: NewSwitch(0, 0, 0xC061, false, (addr) => {checkPushButtonValues(addr)}),
-  PB1: NewSwitch(0, 0, 0xC062, false, (addr) => {checkPushButtonValues(addr)}),
-  PB2: NewSwitch(0, 0, 0xC063, false, (addr) => {checkPushButtonValues(addr)}),
+  PB0: NewSwitch(0, 0, 0xC061, false, (addr) => {checkPushButtonValues(addr, rand())}),
+  PB1: NewSwitch(0, 0, 0xC062, false, (addr) => {checkPushButtonValues(addr, rand())}),
+  PB2: NewSwitch(0, 0, 0xC063, false, (addr) => {checkPushButtonValues(addr, rand())}),
   JOYSTICK0: NewSwitch(0, 0, 0xC064, false,
-    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   JOYSTICK1: NewSwitch(0, 0, 0xC065, false,
-      (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   JOYSTICK2: NewSwitch(0, 0, 0xC066, false,
-    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   JOYSTICK3: NewSwitch(0, 0, 0xC067, false,
-    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
-  CASSIN2: NewSwitch(0, 0, 0xC068, false, () => {memSetC000(0xC068, rand())}),
-  FASTCHIP_LOCK: NewSwitch(0xC06A, 0, 0),   // used by Total Replay
-  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0, 0), // used by Total Replay
-  FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0),  // used by Total Replay
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
+  // The high bit of $C068...$C06F mirrors the high bit of $C060...$C067.
+  // Some of these have names but others don't.
+  CASSIN2: NewSwitch(0, 0, 0xC068, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  C069: NewSwitch(0, 0, 0xC069, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  FASTCHIP_LOCK: NewSwitch(0xC06A, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),   // used by Total Replay
+  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}), // used by Total Replay
+  C06C: NewSwitch(0, 0, 0xC06C, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),  // used by Total Replay
+  C06E: NewSwitch(0, 0, 0xC06E, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  C06F: NewSwitch(0, 0, 0xC06F, false, (addr) => {mirrorHighBitPlusRand(addr)}),
   JOYSTICKRESET: NewSwitch(0, 0, 0xC070, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
     memSetC000(0xC070, rand())
