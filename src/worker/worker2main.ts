@@ -11,7 +11,7 @@ import { doSetRunMode,
   setTracing} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
-import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
+import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
@@ -225,6 +225,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
+        break
+      case MSG_MAIN.REVERSE_YAXIS:
+        setReverseYAxis(e.data.payload)
         break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)

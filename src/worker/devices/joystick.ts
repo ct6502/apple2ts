@@ -27,14 +27,18 @@ let rightButtonDown = false
 let isPB2down = false
 let isLeftDown = false
 let isRightDown = false
+let reverseYAxis = false
 
 // 10 PRINT PEEK(49249); PEEK(49250); PEEK(49251): GOTO 10
 export const setLeftButtonDown = () => { leftButtonDown = true }
 export const setRightButtonDown = () => { rightButtonDown = true }
 export const setPushButton2 = () => { isPB2down = true }
 
-const valueToTimeout = (value: number) => {
+const valueToTimeout = (value: number, isYaxis = false) => {
   value = Math.min(Math.max(value, -1), 1)
+  if (isYaxis && reverseYAxis) {
+    value = -value
+  }
   return (value + 1) * MAX_TIMEOUT_CYCLES / 2
 }
 
@@ -44,7 +48,7 @@ export const setGamepadValue = (gamepad: number, value: number) => {
       paddle0timeout = valueToTimeout(value)
       break
     case 1:
-      paddle1timeout = valueToTimeout(value)
+      paddle1timeout = valueToTimeout(value, true)
       break
     case 2:
       paddle2timeout = valueToTimeout(value)
@@ -75,6 +79,10 @@ export const pressAppleCommandKey = (isDown: boolean, left: boolean) => {
     rightAppleDown = isDown
   }
   setButtonState()
+}
+
+export const setReverseYAxis = (mode: boolean) => {
+  reverseYAxis = mode
 }
 
 export const resetJoystick = (cycleCount: number) => {
@@ -159,6 +167,9 @@ const convertAxesToTimeout = (xstick: number, ystick: number) => {
 }
 
 const convertGamepadAxes = (axes: number[]) => {
+  if (reverseYAxis) {
+    axes = axes.map((value, index) => (index % 2 === 1) ? -value : value)
+  }
   const [xstick1, ystick1] = convertAxesToTimeout(axes[0], axes[1])
   const joy2y = (axes.length >= 6) ? axes[5] : axes[3]
   const [xstick2, ystick2] = (axes.length >= 4) ? convertAxesToTimeout(axes[2], joy2y) : [0, 0]

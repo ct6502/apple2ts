@@ -178,6 +178,10 @@ const passThumbnailImage = (thumbnail: string) => {
   doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
 }
 
+export const passReverseYAxis = (mode: boolean) => {
+  doPostMessage(MSG_MAIN.REVERSE_YAXIS, mode)
+}
+
 export const passSetRamWorks = (size: number) => {
   doPostMessage(MSG_MAIN.RAMWORKS, size)
   // This will also come from the emulator, but set it here so the UI updates

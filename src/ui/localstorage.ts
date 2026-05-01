@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setAutoNumbering, setCapitalizeBasic } from "./ui_settings"
 
 export const setPreferenceAutoNumbering = (mode = true) => {
@@ -132,6 +132,15 @@ export const setPreferenceRamWorks = (size = 64) => {
     localStorage.setItem("ramWorks", JSON.stringify(size))
   }
   passSetRamWorks(size)
+}
+
+export const setPreferenceReverseYAxis = (mode = false) => {
+  if (!mode) {
+    localStorage.removeItem("reverseYAxis")
+  } else {
+    localStorage.setItem("reverseYAxis", JSON.stringify(mode))
+  }
+  passReverseYAxis(mode)
 }
 
 export const setPreferenceSiriusJoyport = (mode = false) => {
@@ -396,6 +405,15 @@ export const loadPreferences = () => {
     }
   }
 
+  const reverseYAxis = localStorage.getItem("reverseYAxis")
+  if (reverseYAxis) {
+    try {
+      passReverseYAxis(JSON.parse(reverseYAxis))
+    } catch {
+      localStorage.removeItem("reverseYAxis")
+    }
+  }
+
   const siriusJoyport = localStorage.getItem("siriusJoyport")
   if (siriusJoyport) {
     try {
@@ -483,6 +501,17 @@ export const getPreferenceNewReleasesChecked = () => {
     } catch { /* empty */ }
   }
 
+  return value
+}
+
+export const getPreferenceReverseYAxis = () => {
+  let value = false
+  const item = localStorage.getItem("reverseYAxis")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch { /* empty */ }
+  }
   return value
 }
 
