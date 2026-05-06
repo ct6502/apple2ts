@@ -142,7 +142,6 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
       const v = convertTextPageValueToASCII(
         value, isAltCharSet, hasMouseText, hasLowerCase, useApple2PlusMap
       )
-//      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
       let cfill = colorFill
       if (isVideo7) {
         // Color information is in the second half of each line.

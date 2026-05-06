@@ -299,7 +299,7 @@ export const convertTextPageValueToASCII = (
   if (!hasLowerCase && v1 >= 0x61 && v1 <= 0x7A) {
     v1 -= 0x20
   }
-  return String.fromCodePoint(v1 === 0x83 ? 0xEBE7 : (v1 >= 127 ? (0xE000 + v1) : v1))
+  return String.fromCodePoint(v1 >= 127 ? (0xE000 + v1) : v1)
 }
 
 const zpPrev = new Uint8Array(256).fill(0)
