@@ -12,6 +12,7 @@ import {
   handleGetCout,
   passKeyRelease,
   handleGetMachineName,
+  handleGetState6502,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
@@ -36,6 +37,10 @@ const targetFrameRate = 75 // Hz
 const maxFrameSamples = 60
 let startTimeForMaxFrames = 0
 let lastFPSLog = 0
+
+let currentCommand = ""
+const recallBuffer: string[] = []
+let recallIndex = 99
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
@@ -206,8 +211,35 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
+    const s6502 = handleGetState6502()
+    const isKeyboardLoop = s6502.PC >= 0xC26D && s6502.PC <= 0xC28E
+
     if (e.key in arrowKeys) {
-      handleArrowKey(arrowKeys[e.key], false)
+
+      if (isKeyboardLoop && recallBuffer.length > 0) {
+        if (arrowKeys[e.key] === ARROW.UP) {
+          recallIndex = Math.max(0, recallIndex - 1)
+        } else if (arrowKeys[e.key] === ARROW.DOWN) {
+          recallIndex = Math.min(recallBuffer.length, recallIndex + 1)
+        }
+        const recallCommand = recallBuffer[recallIndex]
+        if (currentCommand.length > 0) {
+          // Clear current command from BASIC line
+          // Pass a single string containing the correct number of backspaces,
+          // to avoid flooding the message channel with individual key events.
+          const back = "\b".repeat(currentCommand.length)
+          passPasteText(back + " ".repeat(currentCommand.length) + back)
+        }
+        if (recallCommand) {
+          // Type recalled command into BASIC line
+          passPasteText(recallCommand)
+          currentCommand = recallCommand
+        } else {
+          currentCommand = ""
+        }
+      } else {
+        handleArrowKey(arrowKeys[e.key], false)
+      }
       e.preventDefault()
       e.stopPropagation()
       return
@@ -217,6 +249,22 @@ const Apple2Canvas = (props: DisplayProps) => {
     const key = convertAppleKey(e, capsLock, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
       passKeypress(key)
+      if (isKeyboardLoop) {
+        if (key === 13) {
+          if (currentCommand.length > 0) {
+            if (currentCommand !== recallBuffer[recallBuffer.length - 1]) {
+              recallBuffer.push(currentCommand)
+              if (recallBuffer.length > 50) {
+                recallBuffer.shift()
+              }
+            }
+            currentCommand = ""
+            recallIndex = recallBuffer.length
+          }
+        } else if (key >= 32 && key <= 126) {
+          currentCommand += String.fromCharCode(key)
+        }
+      }
       e.preventDefault()
       e.stopPropagation()
     }
