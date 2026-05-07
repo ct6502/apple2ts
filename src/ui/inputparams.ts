@@ -154,7 +154,7 @@ export const handleInputParams = (paramString = "") => {
       const cycleCount = handleGetState6502().cycleCount
       if (cycleCount > 2000000) {
         clearInterval(waitForBoot)
-        passSetBinaryBlock(binaryRunAddress, data, false)
+        passSetBinaryBlock(binaryRunAddress, data)
       }
     }, 100)
   }
@@ -240,7 +240,7 @@ export const handleInputParams = (paramString = "") => {
       const cycleCount = handleGetState6502().cycleCount
       if (cycleCount > 2000000) {
         clearInterval(waitForBoot)
-        passSetBinaryBlock(binaryRunAddress, data, false)
+        passSetBinaryBlock(binaryRunAddress, data)
         if (doRun) {
           passPasteText(`\nCALL -151\n${binaryRunAddress.toString(16)}G\n`)
         }

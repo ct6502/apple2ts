@@ -18,7 +18,8 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   doSetRom,
   getZeroPage,
   memSet,
-  exportMemoryToHiresLine} from "./memory"
+  exportMemoryToHiresLine,
+  getDataBlock} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
@@ -363,6 +364,37 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
     if (reset) doReset()
     updateExternalMachineState()
   }
+}
+
+// Temporarily hijack the CPU to change the string variable value.
+// Put the string `name="value"` into the $200 input buffer and then call
+// the Applesoft routine to parse it and set the new value.
+export const doSetStringVar = (name: string, value: string) => {
+  const prevState = {...s6502}
+  const stackPlusBuffer = getDataBlock(0x100)
+  const code = `
+       JSR   $D82A
+LOOP   JMP   LOOP
+`
+  const addr = 0x100
+  const pcode = parseAssembly(addr, code.split("\n"))
+  const inputBuffer = name + String.fromCharCode(0xD0) + "\"" + value.slice(0, 250) + "\""
+  for (let i = 0; i < inputBuffer.length; i++) {
+    memory[0x200 + i] = inputBuffer.charCodeAt(i)
+  }
+  memory.set(pcode, addr)
+  // Applesoft expects to find the input buffer address at $B8, $B9.
+  memory[0xB8] = 0x00
+  memory[0xB9] = 0x02
+  // Accumulator is expected to contain the first character of the variable name.
+  s6502.Accum = name.charCodeAt(0)
+  s6502.PC = addr
+  // Applesoft takes about 1100 cycles + 39 cycles per character to process the string,
+  // so just wait a bit longer than that before restoring our previous state.
+  setTimeout(() => {
+    setMemoryBlock(0x100, stackPlusBuffer)
+    setState6502(prevState)
+  }, 20)
 }
 
 export const doSetRamWorks = (size: number) => {

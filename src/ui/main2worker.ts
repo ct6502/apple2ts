@@ -153,9 +153,13 @@ export const passSetGamepads = (gamePads: EmuGamepad[] | null) => {
   }
 }
 
-export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boolean) => {
+export const passSetBinaryBlock = (address: number, data: Uint8Array, run = false) => {
   const memBlock: SetMemoryBlock = {address, data, run}
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
+}
+
+export const passSetStringVariable = (name: string, value: string) => {
+  doPostMessage(MSG_MAIN.SET_STRING_VAR, name + ":" + value)
 }
 
 export const passSetCycleCount = (count: number) => {

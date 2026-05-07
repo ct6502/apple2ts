@@ -622,3 +622,23 @@ body.dark-mode .icon-text {
 .cm-tooltip-autocomplete [aria-selected="true"] {
   background-color: var(--highlight) !important;
 }
+
+.basic-vars-field {
+  font-family: monospace;
+  font-size: 8pt;
+  width: 100%;
+  padding: 0px;
+  align-self: center;
+  margin: 0px;
+  border-width: 0px;
+  border-style: solid;
+  border-color: var(--text-color);
+  background-color: var(--input-background);
+  color: var(--text-color);
+}
+
+body.dark-mode .basic-vars-field {
+  background-color: var(--input-background-dark);
+  border-color: var(--text-color-dark);
+  color: var(--text-color-dark);
+}
