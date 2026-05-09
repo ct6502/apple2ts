@@ -1,4 +1,4 @@
-import { handleGetBasicMemory, handleGetZeroPage, passSetBinaryBlock, passSetStringVariable } from "../../main2worker"
+import { handleGetBasicMemory, passExecuteBasicCommand } from "../../main2worker"
 import { useState } from "react"
 
 enum TYPE {
@@ -76,59 +76,6 @@ const BasicVariablesView = () => {
     return intValue.toString()
   }
 
-  // Return 5 bytes representing the given integer value.
-  const encodeInteger = (value: string) => {
-    let intValue = parseInt(value)
-    if (isNaN(intValue) || intValue < -32768 || intValue > 32767) {
-      throw new Error("Invalid integer value")
-    }
-    if (intValue < 0) {
-      intValue += 0x10000 // Convert to two's complement
-    }
-    const vardata = new Uint8Array(5)
-    vardata[0] = (intValue >> 8) & 0xFF
-    vardata[1] = intValue & 0xFF
-    return vardata
-  }
-
-  // Return 5 bytes representing the given float value.
-  const encodeFloat = (value: string) => {
-    let numValue = parseFloat(value)
-    if (isNaN(numValue)) {
-      return new Uint8Array(5)
-    }
-    if (numValue === 0) {
-      return new Uint8Array(5) // All bytes are zero for zero value
-    }
-     // Clamp to range representable by Apple II BASIC
-    numValue = Math.min(Math.max(numValue, -1.7e38), 1.7e38)
-    if (Math.abs(numValue) < 3e-39) {
-      numValue = 0 // Underflow to zero
-    }
-    const sign = numValue < 0 ? 0x80 : 0
-    const absValue = Math.abs(numValue)
-    let exponent = Math.floor(Math.log2(absValue))
-    let mantissa = absValue / (2 ** exponent) + 5e-10
-    // Normalize mantissa to be in the range [1, 2)
-    while (mantissa < 1) {
-      mantissa *= 2
-      exponent--
-    }
-    while (mantissa >= 2) {
-      mantissa /= 2
-      exponent++
-    }
-    const expByte = exponent + 0x80 + 1
-    const mantissaBits = Math.round((mantissa - 1) * (2 ** 31))
-    const vardata = new Uint8Array(5)
-    vardata[0] = expByte
-    vardata[1] = (mantissaBits >> 24) & 0x7F | sign
-    vardata[2] = (mantissaBits >> 16) & 0xFF
-    vardata[3] = (mantissaBits >> 8) & 0xFF
-    vardata[4] = mantissaBits & 0xFF
-    return vardata
-  }
-
   const getName = (vardata: Uint8Array) => {
     const nameByte1 = vardata[0]
     const nameByte2 = vardata[1]
@@ -195,18 +142,14 @@ const BasicVariablesView = () => {
     const memory = handleGetBasicMemory()
     const vardata = memory.slice(index * 7, index * 7 + 7)
     const type = (vardata[0] & 0x80) ? TYPE.INTEGER : ((vardata[1] & 0x80) ? TYPE.STRING : TYPE.REAL)
-    const zp = handleGetZeroPage()
-    const varStart = zp[0x69] | (zp[0x6A] << 8)
-    if (type === TYPE.REAL) {
-      const newVardata = encodeFloat(newValue)
-      passSetBinaryBlock(varStart + index * 7 + 2, newVardata)
-    } else if (type === TYPE.STRING) {
-      // We are going to let Applesoft BASIC change the string value.
-      passSetStringVariable(name, newValue)
-    } else if (type === TYPE.INTEGER) {
-      const newVardata = encodeInteger(newValue)
-      passSetBinaryBlock(varStart + index * 7 + 2, newVardata)
+    let command = ""
+    // We are going to let Applesoft BASIC change the value.
+    if (type === TYPE.STRING) {
+      command = name + String.fromCharCode(0xD0) + "\"" + newValue.slice(0, 250) + "\""
+    } else {
+      command = name + String.fromCharCode(0xD0) + newValue.slice(0, 250).toUpperCase()
     }
+    passExecuteBasicCommand(command)
   }
 
   return <div style={{

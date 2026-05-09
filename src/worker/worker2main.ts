@@ -9,7 +9,7 @@ import { doSetRunMode,
   doSetShowDebugTab,
   doSetAppMode,
   setTracing,
-  doSetStringVar} from "./motherboard"
+  doExecuteBasicCommand} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
@@ -236,11 +236,9 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.SIRIUS_JOYPORT:
         setSiriusJoyport(e.data.payload)
         break
-      case MSG_MAIN.SET_STRING_VAR: {
-        const nameValue = (e.data.payload as string).split(":")
-        const name = nameValue[0]
-        const value = nameValue.slice(1).join(":")
-        doSetStringVar(name, value)
+      case MSG_MAIN.EXECUTE_BASIC_COMMAND: {
+        const command = e.data.payload as string
+        doExecuteBasicCommand(command)
         break
       }
       case MSG_MAIN.TRACING:
