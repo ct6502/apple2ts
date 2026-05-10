@@ -4,7 +4,7 @@ import {
 } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
-  faCamera,
+  faClock,
   faEye,
   faEyeSlash,
   faFastBackward,
@@ -32,10 +32,10 @@ const DebugButtons = (props: DisplayProps) => {
         <FontAwesomeIcon icon={faFastBackward} />
       </button>
       <button className="push-button"
-        title={"Take a Snapshot"}
+        title={"Time Travel Snapshot"}
         onClick={passTimeTravelSnapshot}
         disabled={notStarted}>
-        <FontAwesomeIcon icon={faCamera} />
+        <FontAwesomeIcon icon={faClock} />
       </button>
       <button className="push-button"
         title={"Go Forward in Time"}

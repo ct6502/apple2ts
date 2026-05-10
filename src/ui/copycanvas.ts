@@ -29,18 +29,19 @@ if (!canvas) return
    */
 export const handleCopyToClipboard = () => {
   const textPage = handleGetTextPage()
-  if (textPage.length === 960 || textPage.length === 1920) {
-    const nchars = textPage.length / 24
+  if (textPage.length > 0) {
+    const nlines = textPage.length < 960 ? 4 : 24
+    const ncharsPerLine = textPage.length / nlines
     const machineName = handleGetMachineName()
     const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
     const hasLowerCase = machineName !== "APPLE2P"
     const useApple2PlusMap = machineName === "APPLE2P"
     let output = ""
     const hasMouseText = machineName === "APPLE2EE"
-    for (let j = 0; j < 24; j++) {
+    for (let j = 0; j < nlines; j++) {
       let line = ""
-      for (let i = 0; i < nchars; i++) {
-        const value = textPage[j * nchars + i]
+      for (let i = 0; i < ncharsPerLine; i++) {
+        const value = textPage[j * ncharsPerLine + i]
         const c = convertTextPageValueToASCII(
           value, isAltCharSet, hasMouseText, hasLowerCase, useApple2PlusMap
         )
@@ -61,4 +62,17 @@ export const handleCopyToClipboard = () => {
     }
   }
 }
-  
+
+  /**
+   * Do a bitmap copy of the canvas.
+   */
+export const handleCopyScreenAsBitmap = () => {
+  try {
+    copyCanvas((blob) => {
+      navigator.clipboard.write([new ClipboardItem({ "image/png": blob, })])
+    })
+  }
+  catch (error) {
+    console.error(error)
+  }
+}
