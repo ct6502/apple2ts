@@ -236,6 +236,14 @@ export const setPreferenceTraceSettings = (traceSettings: TraceSettings =
   passSetTraceSettings({numLines, collapseLoops, ignoreRegisters})
 }
 
+export const setPreferenceDebugTabLeftWidth = (width: number) => {
+  if (width === -1) {
+    localStorage.removeItem("debugTabLeftWidth")
+  } else {
+    localStorage.setItem("debugTabLeftWidth", JSON.stringify(width))
+  }
+}
+
 const gameDataDrive = "GAME_DATA-DRIVE"
 const gameDataData = "GAME_DATA-DATA"
 
@@ -522,6 +530,19 @@ export const getPreferenceSiriusJoyport = () => {
     try {
       value = JSON.parse(item)
     } catch { /* empty */ }
+  }
+  return value
+}
+
+export const getPreferenceDebugTabLeftWidth = (): number => {
+  let value = -1
+  const item = localStorage.getItem("debugTabLeftWidth")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch {
+      localStorage.removeItem("debugTabLeftWidth")
+    }
   }
   return value
 }

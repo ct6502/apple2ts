@@ -132,13 +132,16 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
   return <span title={title} className={className}>{(operand + "         ").slice(0, 10)}</span>
 }
 
-export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => void) => {
+export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => void, width: number) => {
   const opcode = line.slice(16, 19)
   const addr = parseInt(line.slice(0, 4), 16)
-  const symbol = getSymbolForAddress(addr) || ""
-  let hexcodes = line.slice(0, 16) + "       "
-  hexcodes = hexcodes.substring(0, 23 - symbol.length) + symbol + " "
-  return <span className={borderStyle(opcode)}>{hexcodes}
+  let symbol = getSymbolForAddress(addr) || ""
+  const hexcodes = line.slice(0, 14).trim()
+  const maxSymLengthWithoutShift = Math.max((width + 2) / 2, 24) - hexcodes.length
+  // Right justify the symbol but if it is too long then just shove over the
+  // operand and don't add extra spaces after the hex codes.
+  symbol = " ".repeat(Math.max(2, maxSymLengthWithoutShift - symbol.length)) + symbol + " "
+  return <span className={borderStyle(opcode)}>{hexcodes}{symbol}
     <span className="disassembly-opcode">{opcode} </span>
     {getOperand(opcode, line.slice(20), onJumpClick)}</span>
 }

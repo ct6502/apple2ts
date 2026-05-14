@@ -137,7 +137,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const breakpoints = handleGetBreakpoints()
 
   return (
-    <div className="round-rect-border short-panel wide-panel">
+    <div className="round-rect-border short-panel" style={{ width: "calc(100% - 20px)" }}>
       <div className="bigger-font column-gap">Breakpoints</div>
       <div className="flex-column-gap">
         <div className="flex-row">
@@ -156,7 +156,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
         </div>
         <div className="debug-panel mono-text thin-border"
           style={{
-            width: "228px",
+            width: "calc(100% - 12pt)",
             height: "83pt",
             overflow: "auto",
             paddingLeft: "5pt",

@@ -148,6 +148,41 @@ body.dark-mode .debug-panel {
   margin: 0;
 }
 
+.dragbar {
+  width: 8px;
+  cursor: col-resize;
+  background-color: transparent;
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.dragbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 2px;
+  height: 100%;
+  background-color: var(--text-color);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.dragbar:hover::before {
+  opacity: 0.8;
+  background-color: #4a99cc;
+}
+
+body.dark-mode .dragbar::before {
+  background-color: var(--text-color-dark);
+}
+
+body.dark-mode .dragbar:hover::before {
+  opacity: 0.8;
+  background-color: #4a99cc;
+}
+
 .round-rect-border {
   border: 1px solid #000;
   border-radius: 10px;

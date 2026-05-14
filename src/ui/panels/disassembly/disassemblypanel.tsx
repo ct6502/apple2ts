@@ -15,7 +15,7 @@ const DisassemblyPanel = () => {
   }
 
   return (
-    <div className="round-rect-border tall-panel wide-panel">
+    <div className="round-rect-border tall-panel" style={{ width: "calc(100% - 20px)" }}>
       <div className="bigger-font column-gap">Disassembly</div>
       <DisassemblyControls {...props}/>
       <DisassemblyView {...props}/>

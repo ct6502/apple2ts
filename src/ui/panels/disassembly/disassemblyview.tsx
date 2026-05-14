@@ -13,7 +13,7 @@ import { useGlobalContext } from "../../globalcontext"
 import { BreakpointMap, BreakpointNew, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
 import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import { getChromacodedLine } from "./disassemblyview_singleline"
-import { setPreferenceBreakpoints } from "../../localstorage"
+import { getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
 
 const nlines = 40
 let currentScrollAddress = -1
@@ -185,6 +185,12 @@ const DisassemblyView = (props: DisassemblyProps) => {
     if (handleGetRunMode() !== RUN_MODE.PAUSED) {
       return <div className="noselect" style={{ marginTop: "30px" }}>Pause to view disassembly</div>
     }
+
+    // Calculate approximate width in characters
+    // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
+    const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
+    const width = Math.floor(containerWidth / 5.6)
+    
     let disArray = getDisassembly().split("\n").slice(0, nlines)
     if (disArray.length <= 1) {
       return <div
@@ -274,7 +280,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
               className={"breakpoint-position " + getBreakpointStyle(bp[index])}
               data-key={bp[index].address}
               onClick={handleBreakpointClick} />)}
-          {getChromacodedLine(line, onJumpClick)}
+          {getChromacodedLine(line, onJumpClick, width)}
         </div>
       ))}
       {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
@@ -293,7 +299,7 @@ const DisassemblyView = (props: DisassemblyProps) => {
         className="mono-text"
         style={{
           overflow: "auto",
-          width: "228px",
+          width: "100%",
           top: "0px",
           height: `${nlines * 10 - 2}pt`,
           paddingLeft: "15pt",
