@@ -4,7 +4,7 @@ import { isMinimalTheme } from "../../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultExpectin from "./default_expectin.json"
-import { Expectin } from "../../expectin"
+import { Expectin } from "../../api/expectin"
 import CodeMirrorEditor from "./editorview"
 
 const ExpectinTab = () => {

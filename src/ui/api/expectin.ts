@@ -1,6 +1,6 @@
-import { handleSetCPUState } from "./controller"
-import { handleGetTextPageAsString, passPasteText } from "./main2worker"
-import { RUN_MODE } from "../common/utility"
+import { handleSetCPUState } from "../controller"
+import { handleGetTextPageAsString, passPasteText } from "../main2worker"
+import { RUN_MODE } from "../../common/utility"
 
 function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms))

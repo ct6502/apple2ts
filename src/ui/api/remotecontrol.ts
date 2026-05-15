@@ -1,5 +1,5 @@
-import { RUN_MODE } from "../common/utility"
-import { BreakpointMap } from "../common/breakpoint"
+import { RUN_MODE } from "../../common/utility"
+import { BreakpointMap } from "../../common/breakpoint"
 import {
   handleGetBreakpoints,
   handleCanGoBackward,
@@ -38,7 +38,7 @@ import {
   passStepOver,
   passTimeTravelIndex,
   passTimeTravelSnapshot,
-} from "./main2worker"
+} from "../main2worker"
 import {
   setPreferenceBreakpoints,
   setPreferenceColorMode,
@@ -46,11 +46,11 @@ import {
   setPreferenceMachineName,
   setPreferenceRamWorks,
   setPreferenceSpeedMode,
-} from "./localstorage"
-import { RestoreSaveState } from "./savestate"
-import { getUIState } from "./ui_settings"
-import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { isAudioEnabled } from "./devices/audio/speaker"
+} from "../localstorage"
+import { RestoreSaveState } from "../savestate"
+import { getUIState } from "../ui_settings"
+import { getMockingboardMode } from "../devices/audio/mockingboard_audio"
+import { isAudioEnabled } from "../devices/audio/speaker"
 import {
   handleGetFilename,
   handleEjectDisk,
@@ -58,7 +58,7 @@ import {
   handleSetDiskOrFileFromBuffer,
   handleSetDiskFromURL,
   handleSetDiskWriteProtected,
-} from "./devices/disk/driveprops"
+} from "../devices/disk/driveprops"
 
 const CONNECT_RETRY_MS = 3000
 const HEARTBEAT_MS = 2000

@@ -22,9 +22,9 @@ import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
 import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColorMode } from "./ui_settings"
-import { messagelistener } from "./messagelistener"
+import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
-import { startRemoteControlBridge } from "./remotecontrol"
+import { startRemoteControlBridge } from "./api/remotecontrol"
 
 const DisplayApple2 = () => {
   const [myInit, setMyInit] = useState(false)

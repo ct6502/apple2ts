@@ -1,9 +1,9 @@
-import { RUN_MODE } from "../common/utility"
-import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
-import { passSetRunMode, handleGetState6502, passSetBinaryBlock, handleGetRunMode } from "./main2worker"
-import { RestoreSaveState } from "./savestate"
-import { showGlobalProgressModal } from "./ui_utilities"
-import { handleInputParams } from "./inputparams"
+import { RUN_MODE } from "../../common/utility"
+import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "../devices/disk/driveprops"
+import { passSetRunMode, handleGetState6502, passSetBinaryBlock, handleGetRunMode } from "../main2worker"
+import { RestoreSaveState } from "../savestate"
+import { showGlobalProgressModal } from "../ui_utilities"
+import { handleInputParams } from "../inputparams"
 
 export const messagelistener = (event: MessageEvent) => {
   // Verify the message is from a trusted source (VS Code webview or localhost for development)

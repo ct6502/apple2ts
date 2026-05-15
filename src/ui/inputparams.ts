@@ -7,7 +7,7 @@ import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, s
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { Expectin } from "./expectin"
+import { Expectin } from "./api/expectin"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
