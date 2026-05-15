@@ -185,6 +185,7 @@ To create or update the changelog, run the script:
 
 ```sh
 # Extract version from package.json
+(optional) npm version patch (or minor/major) - do not do "git tag"
 VERSION=$(node -p "require('./package.json').version")
 # Generate changelog with the version from package.json
 github_changelog_generator --token $GITHUB_TOKEN -u ct6502 -p apple2ts --future-release "v$VERSION"
