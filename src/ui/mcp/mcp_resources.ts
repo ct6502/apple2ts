@@ -1,6 +1,7 @@
 import { RUN_MODE } from "../../common/utility"
-import { handleGetMemoryDump, handleGetTextPageAsString, handleGetState6502, handleGetRunMode, handleGetMachineName, handleGetStackString, handleGetLores, handleGetHires } from "../main2worker"
+import { handleGetMemoryDump, handleGetTextPageAsString, handleGetState6502, handleGetRunMode, handleGetMachineName, handleGetStackString, handleGetLores, handleGetHires, handleGetSoftSwitches, handleGetBreakpoints, handleGetTracelog, handleGetTracing, handleGetSpeedMode } from "../main2worker"
 import { MCPResourceURI, MCPResource } from "./mcp_server"
+import { getUIState } from "../ui_settings"
 
 /**
  * Catalog of bundled disk images available in the emulator
@@ -110,12 +111,103 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
         }
       }
 
+      case "apple2ts://system/softswitches": {
+        const switches = handleGetSoftSwitches()
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            softswitches: switches,
+            description: "Apple II soft switches state",
+          },
+        }
+      }
+
       case "apple2ts://debugger/stack": {
         const stackString = handleGetStackString()
         return {
           uri: uri,
           mimeType: "text/plain",
           data: stackString,
+        }
+      }
+
+      case "apple2ts://debugger/breakpoints": {
+        const breakpoints = handleGetBreakpoints()
+        const list: Array<{
+          address: number
+          type: string
+          mode?: string
+          disabled: boolean
+        }> = []
+
+        breakpoints.forEach((bp: Record<string, unknown>, addr: number) => {
+          const watchpoint = bp.watchpoint as boolean | undefined
+          const disabled = bp.disabled as boolean | undefined
+          const memget = bp.memget as boolean | undefined
+          const memset = bp.memset as boolean | undefined
+
+          const item: {
+            address: number
+            type: string
+            mode?: string
+            disabled: boolean
+          } = {
+            address: addr,
+            type: watchpoint ? "watchpoint" : "breakpoint",
+            disabled: disabled || false,
+          }
+
+          if (watchpoint) {
+            if (memget && memset) {
+              item.mode = "rw"
+            } else if (memget) {
+              item.mode = "r"
+            } else if (memset) {
+              item.mode = "w"
+            }
+          }
+
+          list.push(item)
+        })
+
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            breakpoints: list,
+            count: list.length,
+          },
+        }
+      }
+
+      case "apple2ts://debugger/trace": {
+        const traceLog = handleGetTracelog()
+        const isTracing = handleGetTracing()
+
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            tracing: isTracing,
+            logEntries: traceLog,
+            count: traceLog.length,
+          },
+        }
+      }
+
+      case "apple2ts://debugger/backtrace": {
+        const stackString = handleGetStackString()
+        const state = handleGetState6502()
+
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            stackPointer: state.StackPtr,
+            stackString: stackString,
+            PC: state.PC,
+          },
         }
       }
 
@@ -127,6 +219,68 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
             disks: DISK_CATALOG,
             totalCount: DISK_CATALOG.length,
             instructions: "To load a disk, use the 'load_bundled_disk' tool with the filename from this catalog. Most games will auto-boot. URLs starting with 'https://' will be downloaded and loaded. For local files, use the filename as shown (may include URL encoding like %20 for spaces). For game collections (Total Replay, Instant Replay, Wizard Replay), after loading the disk, type the first 3-4 characters of the game name and press Enter to select and launch the game."
+          },
+        }
+      }
+
+      case "apple2ts://emulator/settings": {
+        const uiState = getUIState()
+        const speedMode = handleGetSpeedMode()
+        const machineName = handleGetMachineName()
+        const runMode = handleGetRunMode()
+        
+        const speedNames = [
+          "0.1 MHz (Snail)",
+          "0.5 MHz (Slow)",
+          "1 MHz (Normal)",
+          "2 MHz",
+          "3 MHz",
+          "4 MHz (Fast)",
+          "Ludicrous"
+        ]
+        const speedName = speedNames[speedMode + 2]
+        
+        const machineNames: Record<MACHINE_NAME, string> = {
+          "APPLE2P": "Apple II+",
+          "APPLE2EU": "Apple IIe (Unenhanced)",
+          "APPLE2EE": "Apple IIe (Enhanced)"
+        }
+        const machineDisplayName = machineNames[machineName]
+        
+        const colorModeNames = [
+          "Color",
+          "Color (No Fringe)",
+          "Green Monitor",
+          "Amber Monitor",
+          "Black & White",
+          "Inverse B&W"
+        ]
+        const colorModeName = colorModeNames[uiState.colorMode]
+        
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            speed: {
+              mode: speedMode,
+              name: speedName,
+            },
+            machine: {
+              type: machineName,
+              name: machineDisplayName,
+            },
+            display: {
+              colorMode: uiState.colorMode,
+              colorModeName: colorModeName,
+              showScanlines: uiState.showScanlines,
+              crtDistortion: uiState.crtDistortion,
+              ghosting: uiState.ghosting,
+            },
+            execution: {
+              runMode: RUN_MODE[runMode],
+              capsLock: uiState.capsLock,
+            },
+            theme: uiState.theme,
           },
         }
       }
@@ -182,15 +336,45 @@ export function listMCPResources(): Array<{
       mimeType: "application/json",
     },
     {
+      uri: "apple2ts://system/softswitches",
+      name: "Soft Switches",
+      description: "Current state of all Apple II soft switches",
+      mimeType: "application/json",
+    },
+    {
       uri: "apple2ts://debugger/stack",
       name: "Stack",
       description: "Current stack dump as a string",
       mimeType: "text/plain",
     },
     {
+      uri: "apple2ts://debugger/breakpoints",
+      name: "Breakpoints",
+      description: "List of all breakpoints and watchpoints",
+      mimeType: "application/json",
+    },
+    {
+      uri: "apple2ts://debugger/trace",
+      name: "Trace Log",
+      description: "Instruction trace log if tracing is enabled",
+      mimeType: "application/json",
+    },
+    {
+      uri: "apple2ts://debugger/backtrace",
+      name: "Backtrace",
+      description: "Call stack backtrace showing JSR addresses",
+      mimeType: "application/json",
+    },
+    {
       uri: "apple2ts://disks/catalog",
       name: "Disk Catalog",
       description: "Complete catalog of bundled disk images available in the emulator with metadata (names, types, descriptions, file paths)",
+      mimeType: "application/json",
+    },
+    {
+      uri: "apple2ts://emulator/settings",
+      name: "Emulator Settings",
+      description: "Current emulator configuration including speed, machine type, color mode, and display settings",
       mimeType: "application/json",
     },
   ]

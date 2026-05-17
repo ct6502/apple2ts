@@ -1549,6 +1549,40 @@ const server = createServer(async (req, res) => {
       return
     }
 
+    if (req.method === "POST" && url.pathname === "/api/anthropic") {
+      const apiKey = process.env.ANTHROPIC_API_KEY
+      if (!apiKey) {
+        writeErrorEnvelope(res, 500, "missing_api_key", "ANTHROPIC_API_KEY environment variable not set")
+        return
+      }
+
+      try {
+        const body = await readJsonBody(req)
+        
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify(body),
+        })
+
+        const data = await response.json()
+        
+        if (!response.ok) {
+          writeJson(res, response.status, data)
+          return
+        }
+
+        writeJson(res, 200, data)
+      } catch (error) {
+        writeErrorEnvelope(res, 500, "proxy_error", error.message)
+      }
+      return
+    }
+
     if (req.method === "GET" && (url.pathname === "/docs" || url.pathname === "/docs/")) {
       await serveFile(res, path.join(serverDir, "swagger.html"))
       return

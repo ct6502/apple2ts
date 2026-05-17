@@ -23,7 +23,8 @@ export default defineConfig({
     port: 6502,
   },
   build: {
-    chunkSizeWarningLimit: 1500
+    chunkSizeWarningLimit: 1500,
+    sourcemap: true
   },
   define: {
     "process.env.npm_config_urlparam": JSON.stringify(process.env.npm_config_urlparam),

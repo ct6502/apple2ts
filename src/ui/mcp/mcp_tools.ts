@@ -54,11 +54,6 @@ export function listMCPTools(): Array<{
       inputSchema: { type: "object", properties: {} },
     },
     {
-      name: "get_registers",
-      description: "Returns the current values of A, X, Y, PC, S (Stack Pointer), and P (Status Flags)",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
       name: "set_register",
       description: "Modifies a specific CPU register",
       inputSchema: {
@@ -78,7 +73,7 @@ export function listMCPTools(): Array<{
     },
     {
       name: "read_memory",
-      description: "Returns a hex dump or byte array from a specific memory range",
+      description: "Returns a hex dump or byte array from a specific memory range. For reading the entire text screen, use the 'apple2ts://video/text' resource instead.",
       inputSchema: {
         type: "object",
         properties: {
@@ -114,13 +109,8 @@ export function listMCPTools(): Array<{
       },
     },
     {
-      name: "get_softswitches",
-      description: "Returns the state of Apple II softswitches",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
       name: "set_softswitches",
-      description: "Sets soft switches by triggering their addresses",
+      description: "Sets soft switches by triggering their addresses. To read current soft switch state, use the 'apple2ts://system/softswitches' resource.",
       inputSchema: {
         type: "object",
         properties: {
@@ -135,7 +125,7 @@ export function listMCPTools(): Array<{
     },
     {
       name: "set_breakpoint",
-      description: "Pauses execution when the PC hits the address",
+      description: "Pauses execution when the PC hits the address. To list breakpoints, use the 'apple2ts://debugger/breakpoints' resource.",
       inputSchema: {
         type: "object",
         properties: {
@@ -167,7 +157,7 @@ export function listMCPTools(): Array<{
     },
     {
       name: "set_watchpoint",
-      description: "Pauses execution whenever a specific memory address is read from or written to",
+      description: "Pauses execution whenever a specific memory address is read from or written to. To list watchpoints, use the 'apple2ts://debugger/breakpoints' resource.",
       inputSchema: {
         type: "object",
         properties: {
@@ -186,38 +176,14 @@ export function listMCPTools(): Array<{
       },
     },
     {
-      name: "list_breakpoints",
-      description: "Returns a list of all active breakpoints and watchpoints",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
       name: "enable_trace",
-      description: "Starts logging every instruction executed",
+      description: "Starts logging every instruction executed. To read the trace log, use the 'apple2ts://debugger/trace' resource.",
       inputSchema: { type: "object", properties: {} },
     },
     {
       name: "disable_trace",
       description: "Stops logging instructions",
       inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "get_trace_log",
-      description: "Gets the current trace log",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "get_backtrace",
-      description: "Returns the call stack (sequence of JSR addresses on the stack)",
-      inputSchema: {
-        type: "object",
-        properties: {
-          depth: {
-            type: "number",
-            description: "Maximum depth to return",
-            default: 16,
-          },
-        },
-      },
     },
     {
       name: "insert_disk",
@@ -334,25 +300,89 @@ export function listMCPTools(): Array<{
     },
     {
       name: "read_resource",
-      description: "Reads a resource by URI. Resources provide high-level access to emulator state like the text screen, CPU status, disk catalog, etc. Use this instead of read_memory when you want to read the text screen or get formatted system information.",
+      description: "Reads a resource by URI. Resources provide high-level access to emulator state like the text screen, CPU status, disk catalog, etc. Use this instead of tool calls for reading state.",
       inputSchema: {
         type: "object",
         properties: {
           uri: {
             type: "string",
-            description: "Resource URI (e.g., 'apple2ts://video/text' for text screen, 'apple2ts://cpu/status' for CPU registers, 'apple2ts://disks/catalog' for disk list)",
+            description: "Resource URI (e.g., 'apple2ts://video/text' for text screen, 'apple2ts://cpu/status' for CPU registers and state, 'apple2ts://system/softswitches' for soft switches, 'apple2ts://debugger/breakpoints' for breakpoint list)",
             enum: [
               "apple2ts://memory/main",
               "apple2ts://video/text",
               "apple2ts://video/lores",
               "apple2ts://video/hires",
               "apple2ts://cpu/status",
+              "apple2ts://system/softswitches",
               "apple2ts://debugger/stack",
-              "apple2ts://disks/catalog"
+              "apple2ts://debugger/breakpoints",
+              "apple2ts://debugger/trace",
+              "apple2ts://debugger/backtrace",
+              "apple2ts://disks/catalog",
+              "apple2ts://emulator/settings"
             ],
           },
         },
         required: ["uri"],
+      },
+    },
+    {
+      name: "set_speed",
+      description: "Set the emulator speed. -2 = 0.1 MHz (Snail), -1 = 0.5 MHz (Slow), 0 = 1 MHz (Normal Apple II speed), 1 = 2 MHz, 2 = 3 MHz, 3 = 4 MHz (Fast), 4 = Ludicrous speed",
+      inputSchema: {
+        type: "object",
+        properties: {
+          speed: {
+            type: "number",
+            description: "Speed mode from -2 (slowest) to 4 (fastest)",
+            enum: [-2, -1, 0, 1, 2, 3, 4],
+          },
+        },
+        required: ["speed"],
+      },
+    },
+    {
+      name: "set_machine_type",
+      description: "Set the Apple II machine type. Changes the ROM and hardware capabilities. Note: This will reset the machine.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          machineType: {
+            type: "string",
+            description: "Machine type: APPLE2P (Apple II+), APPLE2EU (Apple IIe Unenhanced), APPLE2EE (Apple IIe Enhanced)",
+            enum: ["APPLE2P", "APPLE2EU", "APPLE2EE"],
+          },
+        },
+        required: ["machineType"],
+      },
+    },
+    {
+      name: "set_color_mode",
+      description: "Set the display color mode. Simulates different monitor types and display settings.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          colorMode: {
+            type: "string",
+            description: "Color mode: COLOR (full color), NOFRINGE (color without color fringing), GREEN (green phosphor monitor), AMBER (amber monitor), BLACKANDWHITE, INVERSEBLACKANDWHITE",
+            enum: ["COLOR", "NOFRINGE", "GREEN", "AMBER", "BLACKANDWHITE", "INVERSEBLACKANDWHITE"],
+          },
+        },
+        required: ["colorMode"],
+      },
+    },
+    {
+      name: "set_sound",
+      description: "Enable or disable emulator sound (speaker and disk drive sounds)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          enabled: {
+            type: "boolean",
+            description: "true to enable sound, false to disable",
+          },
+        },
+        required: ["enabled"],
       },
     },
   ]

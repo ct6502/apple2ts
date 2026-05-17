@@ -29,9 +29,6 @@ export async function trySimpleCommand(userMessage: string): Promise<SimpleComma
     "continue": { tool: "resume" },
     "run": { tool: "resume" },
     "step": { tool: "step", arguments: { count: 1 } },
-    "registers": { tool: "get_registers" },
-    "breakpoints": { tool: "list_breakpoints" },
-    "softswitches": { tool: "get_softswitches" },
   }
   
   if (simpleCommands[input]) {
@@ -74,49 +71,10 @@ export function formatSimpleCommandResult(toolName: MCPToolName, result: MCPTool
     case "step_over":
     case "step_out":
       return "✓ Step completed"
-    case "get_registers":
-      if (result.data && typeof result.data === "object") {
-        const regs = result.data as Record<string, number>
-        return `Registers:\n  A: $${regs.A?.toString(16).padStart(2, "0").toUpperCase()}\n  X: $${regs.X?.toString(16).padStart(2, "0").toUpperCase()}\n  Y: $${regs.Y?.toString(16).padStart(2, "0").toUpperCase()}\n  PC: $${regs.PC?.toString(16).padStart(4, "0").toUpperCase()}\n  S: $${regs.S?.toString(16).padStart(2, "0").toUpperCase()}\n  P: $${regs.P?.toString(16).padStart(2, "0").toUpperCase()}`
-      }
-      return "✓ Registers retrieved"
-    case "list_breakpoints":
-      if (result.data && typeof result.data === "object" && "breakpoints" in result.data) {
-        const bp = result.data as { breakpoints: unknown[] }
-        if (bp.breakpoints.length === 0) {
-          return "No breakpoints set"
-        }
-        return `Breakpoints (${bp.breakpoints.length}):\n${JSON.stringify(bp.breakpoints, null, 2)}`
-      }
-      return "✓ Breakpoints listed"
-    case "enable_trace":
-      return "✓ Trace logging enabled"
-    case "disable_trace":
-      return "✓ Trace logging disabled"
-    case "load_bundled_disk":
-      if (result.data && typeof result.data === "object" && "filename" in result.data) {
-        const data = result.data as { filename: string; message?: string }
-        return `✓ ${data.message || `Loaded ${data.filename}`}`
-      }
-      return "✓ Disk loaded"
-    case "send_keypress":
-      if (result.data && typeof result.data === "object") {
-        if ("typed" in result.data) {
-          const data = result.data as { typed: string }
-          return `✓ Typed: ${data.typed}`
-        } else if ("character" in result.data) {
-          const data = result.data as { character: string }
-          return `✓ Sent key: ${data.character}`
-        }
-      }
-      return "✓ Key sent"
     default:
-      if (typeof result.data === "string") {
-        return result.data
-      }
-      if (result.data) {
-        return JSON.stringify(result.data, null, 2)
-      }
-      return "✓ Command executed successfully"
+      // Generic success message for other tools
+      return result.data && typeof result.data === "object" && "message" in result.data
+        ? String((result.data as { message: unknown }).message)
+        : "✓ Command completed"
   }
 }

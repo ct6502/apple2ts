@@ -6,8 +6,72 @@ import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 const ANTHROPIC_VERSION = "2023-06-01"
-const CORS_PROXY = "https://proxy.corsfix.com/?"
+const USE_LOCAL_PROXY = window.location.hostname === "localhost2" || window.location.hostname === "127.0.0.1"
+const LOCAL_PROXY_URL = `http://${window.location.hostname}:6502/api/anthropic`
+const CORS_PROXY = "https://proxy.corsfix.com/?url="
 
+function getApiUrl(): string {
+  return USE_LOCAL_PROXY ? LOCAL_PROXY_URL : CORS_PROXY + ANTHROPIC_API_URL
+}
+/**
+ * Format Anthropic API error messages in a human-readable way
+ */
+function formatAnthropicError(status: number, statusText: string, errorData: Record<string, unknown>): string {
+  // Check if this is a CORS proxy error
+  if (errorData.corsfix_error) {
+    const message = errorData.message as string || "Connection failed"
+    const userMessage = errorData.if_you_are_user as string
+    
+    let formattedMessage = `## Connection Error (${status})\n`
+    formattedMessage += `**${message}**\n`
+    
+    if (userMessage) {
+      formattedMessage += `${userMessage}\n`
+    }
+    
+    formattedMessage += "This may be a temporary issue. Please try again in a moment."
+    
+    return formattedMessage
+  }
+  
+  // Check if this is an Anthropic API error
+  const error = errorData?.error as { type?: string; message?: string } | undefined
+  if (error?.type || error?.message) {
+    const errorType = error?.type || "unknown_error"
+    const errorMessage = error?.message || statusText
+    
+    let formattedMessage = `## Anthropic API Error (${status})\n`
+    
+    // Add error type with better formatting
+    if (errorType === "rate_limit_error") {
+      formattedMessage += "**Rate Limit Exceeded**\n"
+    } else if (errorType === "invalid_request_error") {
+      formattedMessage += "**Invalid Request**\n"
+    } else if (errorType === "authentication_error") {
+      formattedMessage += "**Authentication Error**\n"
+    } else {
+      formattedMessage += `**Error Type:** ${errorType}\n`
+    }
+    
+    // Add the main error message
+    formattedMessage += errorMessage
+    
+    return formattedMessage
+  }
+  
+  // Fallback for unknown error structures
+  let formattedMessage = `## API Error (${status})\n`
+  formattedMessage += `**${statusText}**\n`
+  
+  // Try to extract a message field if it exists
+  if (errorData.message && typeof errorData.message === "string") {
+    formattedMessage += errorData.message
+  } else {
+    formattedMessage += "An unexpected error occurred. Please try again."
+  }
+  
+  return formattedMessage
+}
 export class AnthropicProvider implements AIProvider {
   name = "Anthropic Claude"
   
@@ -73,21 +137,25 @@ export class AnthropicProvider implements AIProvider {
     }
     
     try {
-      const response = await fetch(CORS_PROXY + ANTHROPIC_API_URL, {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "anthropic-version": ANTHROPIC_VERSION,
+      }
+      
+      // Only send API key when using CORS proxy (local proxy uses env var)
+      if (!USE_LOCAL_PROXY) {
+        headers["x-api-key"] = this.apiKey
+      }
+      
+      const response = await fetch(getApiUrl(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.apiKey,
-          "anthropic-version": ANTHROPIC_VERSION,
-        },
+        headers,
         body: JSON.stringify(requestBody),
       })
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(
-          `Anthropic API error: ${response.status} ${response.statusText}\n${JSON.stringify(errorData, null, 2)}`
-        )
+        throw new Error(formatAnthropicError(response.status, response.statusText, errorData))
       }
       
       const data = await response.json()
@@ -116,7 +184,11 @@ export class AnthropicProvider implements AIProvider {
       
       return result
     } catch (error) {
-      throw new Error(`Failed to call Anthropic API: ${error instanceof Error ? error.message : String(error)}`)
+      // Re-throw without adding prefix - formatAnthropicError already provides context
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(String(error))
     }
   }
   
@@ -161,21 +233,25 @@ export class AnthropicProvider implements AIProvider {
     }
     
     try {
-      const response = await fetch(CORS_PROXY + ANTHROPIC_API_URL, {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "anthropic-version": ANTHROPIC_VERSION,
+      }
+      
+      // Only send API key when using CORS proxy (local proxy uses env var)
+      if (!USE_LOCAL_PROXY) {
+        headers["x-api-key"] = this.apiKey
+      }
+      
+      const response = await fetch(getApiUrl(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.apiKey,
-          "anthropic-version": ANTHROPIC_VERSION,
-        },
+        headers,
         body: JSON.stringify(requestBody),
       })
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(
-          `Anthropic API error: ${response.status} ${response.statusText}\n${JSON.stringify(errorData, null, 2)}`
-        )
+        throw new Error(formatAnthropicError(response.status, response.statusText, errorData))
       }
       
       if (!response.body) {
@@ -233,7 +309,11 @@ export class AnthropicProvider implements AIProvider {
         }
       }
     } catch (error) {
-      throw new Error(`Failed to stream from Anthropic API: ${error instanceof Error ? error.message : String(error)}`)
+      // Re-throw without adding prefix - formatAnthropicError already provides context
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(String(error))
     }
   }
 }

@@ -5,15 +5,8 @@ import { useState, useRef, useEffect } from "react"
 import { getAgent } from "../../mcp/mcp_agent"
 import type { ConversationMessage } from "../../mcp/mcp_agent_conversation"
 import { 
-  loadAgentConfig, 
-  saveAgentConfig, 
-  isAgentConfigured,
-  getProviderDisplayName,
-  validateApiKeyFormat,
-  getDefaultModel,
-  getSupportedModels,
-  type ProviderType 
-} from "../../mcp/mcp_agent_config"
+  isAgentConfigured} from "../../mcp/mcp_agent_config"
+import AgentTabConfig from "./agent_tab_config"
 
 /**
  * Simple markdown formatter for agent messages
@@ -27,10 +20,72 @@ function formatMarkdown(text: string): React.JSX.Element {
   const lines = text.split("\n")
   
   lines.forEach((line, lineIdx) => {
+    // Check for headings at the start of a line
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/)
+    if (headingMatch) {
+      const level = headingMatch[1].length
+      const content = headingMatch[2]
+      
+      // Create heading element based on level
+      if (level === 1) {
+        parts.push(<h1 key={`h1-${keyCounter++}`}>{content}</h1>)
+      } else if (level === 2) {
+        parts.push(<h2 key={`h2-${keyCounter++}`}>{content}</h2>)
+      } else if (level === 3) {
+        parts.push(<h3 key={`h3-${keyCounter++}`}>{content}</h3>)
+      } else if (level === 4) {
+        parts.push(<h4 key={`h4-${keyCounter++}`}>{content}</h4>)
+      } else if (level === 5) {
+        parts.push(<h5 key={`h5-${keyCounter++}`}>{content}</h5>)
+      } else {
+        parts.push(<h6 key={`h6-${keyCounter++}`}>{content}</h6>)
+      }
+      
+      // Add line break after heading unless it's the last line
+      if (lineIdx < lines.length - 1) {
+        parts.push(<br key={`br-${keyCounter++}`} />)
+      }
+      return
+    }
+    
     let remaining = line
     let lineKey = 0
     
     while (remaining.length > 0) {
+      // Match [text](url) links
+      const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/)
+      if (linkMatch) {
+        parts.push(
+          <a 
+            key={`${keyCounter++}-${lineKey++}`} 
+            href={linkMatch[2]} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            {linkMatch[1]}
+          </a>
+        )
+        remaining = remaining.slice(linkMatch[0].length)
+        continue
+      }
+      
+      // Match plain URLs (http:// or https://)
+      const urlMatch = remaining.match(/^(https?:\/\/[^\s<>"{}|\\^`[\]]+)/)
+      if (urlMatch) {
+        parts.push(
+          <a 
+            key={`${keyCounter++}-${lineKey++}`} 
+            href={urlMatch[1]} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            {urlMatch[1]}
+          </a>
+        )
+        remaining = remaining.slice(urlMatch[0].length)
+        continue
+      }
+      
       // Match **bold**
       const boldMatch = remaining.match(/^\*\*(.+?)\*\*/)
       if (boldMatch) {
@@ -56,7 +111,7 @@ function formatMarkdown(text: string): React.JSX.Element {
       }
       
       // Match plain text until next special character
-      const plainMatch = remaining.match(/^([^*`]+)/)
+      const plainMatch = remaining.match(/^([^*`[h]+)/)
       if (plainMatch) {
         parts.push(<span key={`${keyCounter++}-${lineKey++}`}>{plainMatch[1]}</span>)
         remaining = remaining.slice(plainMatch[0].length)
@@ -85,81 +140,34 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
     console.log(props)
   }
 
-  const [isConfigured, setIsConfigured] = useState(isAgentConfigured())
-  const [showConfig, setShowConfig] = useState(!isConfigured)
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [streamingContent, setStreamingContent] = useState("")
-  
-  // Config form state
-  const [provider, setProvider] = useState<ProviderType>("anthropic")
-  const [apiKey, setApiKey] = useState("")
-  const [model, setModel] = useState(getDefaultModel("anthropic"))
-  const [availableModels, setAvailableModels] = useState(getSupportedModels("anthropic"))
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const agent = getAgent()
 
-  // Initialize config state from localStorage on mount
-  useEffect(() => {
-    const config = loadAgentConfig()
-    if (config) {
-      setProvider(config.provider)
-      setModel(config.model || getDefaultModel(config.provider))
-      setAvailableModels(getSupportedModels(config.provider))
-    }
-  }, [])
+
 
   // Load existing conversation on mount
   useEffect(() => {
-    if (isConfigured) {
+    if (isAgentConfigured()) {
       const conversation = agent.getConversation()
       setMessages(conversation.getMessagesForDisplay())
     }
-  }, [isConfigured, agent])
+  }, [agent])
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, streamingContent])
-  
-  const handleConfigSave = () => {
-    if (!validateApiKeyFormat(provider, apiKey)) {
-      alert(`Invalid API key format for ${getProviderDisplayName(provider)}`)
-      return
-    }
-    
-    const config = { provider, apiKey, model }
-    saveAgentConfig(config)
-    agent.configure(provider, apiKey, model)
-    
-    setIsConfigured(true)
-    setShowConfig(false)
-    setApiKey("") // Clear from memory
-  }
-  
-  const handleConfigChange = () => {
-    setShowConfig(true)
-    const config = loadAgentConfig()
-    if (config) {
-      setProvider(config.provider)
-      setModel(config.model || getDefaultModel(config.provider))
-      setAvailableModels(getSupportedModels(config.provider))
-      // Don't pre-fill API key for security
-    }
-  }
-  
-  const handleProviderChange = (newProvider: ProviderType) => {
-    setProvider(newProvider)
-    setAvailableModels(getSupportedModels(newProvider))
-    setModel(getDefaultModel(newProvider))
-  }
+
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputValue.trim() || isProcessing || !isConfigured) return
+    if (!inputValue.trim() || isProcessing || !isAgentConfigured()) return
 
     const userInput = inputValue
     setInputValue("")
@@ -190,7 +198,7 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
       const conversation = agent.getConversation()
       conversation.addMessage({
         role: "assistant",
-        content: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        content: error instanceof Error ? error.message : String(error),
       })
       setMessages([...conversation.getMessagesForDisplay()])
       
@@ -198,13 +206,6 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
       setIsProcessing(false)
       setStreamingContent("")
       inputRef.current?.focus()
-    }
-  }
-  
-  const handleClearConversation = () => {
-    if (confirm("Clear all conversation history?")) {
-      agent.clearConversation()
-      setMessages([])
     }
   }
 
@@ -217,88 +218,8 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   return (
     <div className="flex-column-gap debug-section agent-container">
-      {/* Configuration Panel */}
-      {showConfig && (
-        <div className="agent-config-panel">
-          <h3>Configure AI Agent</h3>
-          <div className="agent-config-form">
-            <label>
-              Provider:
-              <select 
-                value={provider} 
-                onChange={(e) => handleProviderChange(e.target.value as ProviderType)}
-              >
-                <option value="anthropic">Anthropic Claude</option>
-                <option value="openai" disabled>OpenAI GPT (Coming soon)</option>
-                <option value="google" disabled>Google Gemini (Coming soon)</option>
-              </select>
-            </label>
-            
-            <label>
-              Model:
-              <select 
-                value={model} 
-                onChange={(e) => setModel(e.target.value)}
-              >
-                {availableModels.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            
-            <label>
-              API Key:
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-ant-..."
-                className="agent-api-key-input"
-              />
-            </label>
-            
-            <div className="agent-config-buttons">
-              <button onClick={handleConfigSave} disabled={!apiKey}>
-                Save Configuration
-              </button>
-              {isConfigured && (
-                <button onClick={() => setShowConfig(false)}>
-                  Cancel
-                </button>
-              )}
-            </div>
-            
-            <div className="agent-config-info">
-              <small>
-                Your API key is stored locally in your browser and never sent to apple2ts.com.
-                Get your Anthropic API key at <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>
-              </small>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Chat Header */}
-      {isConfigured && !showConfig && (
-        <div className="agent-header">
-          <span className="agent-status">
-            🤖 AI Agent Ready ({getProviderDisplayName(provider)})
-          </span>
-          <div className="agent-header-buttons">
-            <button onClick={handleClearConversation} title="Clear conversation">
-              Clear
-            </button>
-            <button onClick={handleConfigChange} title="Change configuration">
-              Settings
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Chat messages area */}
-      {isConfigured && !showConfig && (
+
+      {isAgentConfigured() && (
         <div className="agent-messages">
           {messages.length === 0 && (
             <div>
@@ -355,14 +276,16 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
             </div>
           )}
           
-          <div ref={messagesEndRef} />
+          {/* <div ref={messagesEndRef} /> */}
         </div>
       )}
 
       {/* Input area */}
-      {isConfigured && !showConfig && (
+      {isAgentConfigured() && (
+        <div style={{ display: "none2" }}>
         <form onSubmit={handleSubmit} className="agent-form">
           <textarea
+            className="agent-input"
             ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -370,7 +293,6 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
             placeholder="Ask me anything about the Apple II emulator... (Press Enter to send, Shift+Enter for new line)"
             disabled={isProcessing}
             spellCheck={true}
-            className="agent-input"
           />
           <div className="agent-controls">
             <button
@@ -382,18 +304,18 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
             </button>
           </div>
         </form>
+        </div>
       )}
       
       {/* Initial setup prompt */}
-      {!isConfigured && !showConfig && (
+      {/* {!isAgentConfigured() && (
         <div className="agent-setup-prompt">
           <h3>🤖 AI Agent Setup</h3>
           <p>Configure your AI assistant to interact with the Apple II emulator using natural language.</p>
-          <button onClick={() => setShowConfig(true)}>
-            Get Started
-          </button>
         </div>
-      )}
+      )} */}
+
+      <AgentTabConfig/>
     </div>
   )
 }

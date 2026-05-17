@@ -22,21 +22,16 @@ export type MCPToolName =
   | "step_over"
   | "step_out"
   // State Inspection & Modification
-  | "get_registers"
   | "set_register"
   | "read_memory"
   | "write_memory"
-  | "get_softswitches"
   | "set_softswitches"
   // Debugging & Tracing
   | "set_breakpoint"
   | "clear_breakpoint"
   | "set_watchpoint"
-  | "list_breakpoints"
   | "enable_trace"
   | "disable_trace"
-  | "get_trace_log"
-  | "get_backtrace"
   // Media & I/O
   | "insert_disk"
   | "eject_disk"
@@ -46,6 +41,11 @@ export type MCPToolName =
   // Symbol & Metadata
   | "disassemble"
   | "read_resource"
+  // Emulator Settings
+  | "set_speed"
+  | "set_machine_type"
+  | "set_color_mode"
+  | "set_sound"
 
 export type MCPResourceURI =
   | "apple2ts://memory/main"
@@ -53,8 +53,13 @@ export type MCPResourceURI =
   | "apple2ts://video/lores"
   | "apple2ts://video/hires"
   | "apple2ts://cpu/status"
+  | "apple2ts://system/softswitches"
   | "apple2ts://debugger/stack"
+  | "apple2ts://debugger/breakpoints"
+  | "apple2ts://debugger/trace"
+  | "apple2ts://debugger/backtrace"
   | "apple2ts://disks/catalog"
+  | "apple2ts://emulator/settings"
 
 export interface MCPToolCall {
   tool: MCPToolName
