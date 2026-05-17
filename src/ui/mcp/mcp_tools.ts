@@ -332,6 +332,29 @@ export function listMCPTools(): Array<{
         required: ["address"],
       },
     },
+    {
+      name: "read_resource",
+      description: "Reads a resource by URI. Resources provide high-level access to emulator state like the text screen, CPU status, disk catalog, etc. Use this instead of read_memory when you want to read the text screen or get formatted system information.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          uri: {
+            type: "string",
+            description: "Resource URI (e.g., 'apple2ts://video/text' for text screen, 'apple2ts://cpu/status' for CPU registers, 'apple2ts://disks/catalog' for disk list)",
+            enum: [
+              "apple2ts://memory/main",
+              "apple2ts://video/text",
+              "apple2ts://video/lores",
+              "apple2ts://video/hires",
+              "apple2ts://cpu/status",
+              "apple2ts://debugger/stack",
+              "apple2ts://disks/catalog"
+            ],
+          },
+        },
+        required: ["uri"],
+      },
+    },
   ]
 }
 

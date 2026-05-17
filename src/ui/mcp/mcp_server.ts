@@ -45,6 +45,7 @@ export type MCPToolName =
   | "load_binary"
   // Symbol & Metadata
   | "disassemble"
+  | "read_resource"
 
 export type MCPResourceURI =
   | "apple2ts://memory/main"

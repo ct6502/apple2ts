@@ -15,7 +15,7 @@ import { trySimpleCommand, formatSimpleCommandResult } from "./mcp_simple_comman
 export class MCPAgent {
   private provider: AIProvider | null = null
   private conversation: ConversationHistory
-  private maxToolIterations = 5 // Prevent infinite tool loops
+  private maxToolIterations = 8 // Prevent infinite tool loops (increased to allow more complex tasks)
   
   constructor() {
     this.conversation = new ConversationHistory()
@@ -51,18 +51,28 @@ export class MCPAgent {
   /**
    * Send a user message and get a response (with automatic tool execution)
    */
-  async sendMessage(userMessage: string): Promise<ConversationMessage> {
+  async sendMessage(
+    userMessage: string,
+    onProgress?: (status: string) => void
+  ): Promise<ConversationMessage> {
     if (!this.provider) {
       throw new Error("Agent not configured. Please set up your API key first.")
     }
     
-    // Add user message to conversation
-    this.conversation.addMessage({
-      role: "user",
-      content: userMessage.trim(),
-    })
+    // Add user message to conversation (skip if already added by UI)
+    const messages = this.conversation.getMessages()
+    const lastMessage = messages[messages.length - 1]
+    const trimmedInput = userMessage.trim()
+    
+    if (!lastMessage || lastMessage.role !== "user" || lastMessage.content !== trimmedInput) {
+      this.conversation.addMessage({
+        role: "user",
+        content: trimmedInput,
+      })
+    }
     
     // Try to execute as a simple command first (saves API calls)
+    onProgress?.("Checking for simple commands...")
     const simpleResult = await trySimpleCommand(userMessage)
     if (simpleResult !== null) {
       const responseText = formatSimpleCommandResult(
@@ -87,6 +97,7 @@ export class MCPAgent {
       iterations++
       
       // Get AI response
+      onProgress?.("Consulting AI...")
       const response = await this.provider.sendMessage(
         this.conversation.getMessagesForAI(),
         tools
@@ -94,14 +105,17 @@ export class MCPAgent {
       
       // If no tool calls, we're done
       if (!response.toolCalls || response.toolCalls.length === 0) {
+        onProgress?.("Response complete")
         finalResponse = response
         break
       }
       
       // Execute all tool calls
+      onProgress?.(`Executing ${response.toolCalls.length} tool${response.toolCalls.length > 1 ? 's' : ''}...`)
       const toolResults: Array<{ id: string; result: MCPToolResult }> = []
       
       for (const toolCall of response.toolCalls) {
+        onProgress?.(`Running ${toolCall.name}...`)
         const mcpToolCall: MCPToolCall = {
           tool: toolCall.name as any,
           arguments: toolCall.input,
@@ -143,30 +157,29 @@ export class MCPAgent {
       this.conversation.addMessage({
         role: "user",
         content: toolResultsText.trimEnd(),
+        isToolResult: true, // Mark as internal message for API, not shown to user
       })
       
-      // If the assistant provided meaningful text content along with tool calls, 
-      // use that as the final response (after we've added tool results)
-      if (response.content && response.content.trim().length > 0) {
-        finalResponse = response
-        break
-      }
-      
-      // Otherwise, let the AI continue with the tool results
+      // Always continue the loop to let the AI interpret tool results
+      // (even if it provided commentary alongside the tool calls)
     }
     
-    // If we exhausted iterations without a final response, create one
+    // If we exhausted iterations without a final response, give AI one more chance
+    // to interpret the results (without allowing more tool calls)
     if (!finalResponse) {
-      finalResponse = {
-        content: "I've completed the requested tool operations.",
-        stopReason: "end_turn",
-      }
+      onProgress?.("Generating final response...")
+      const finalAttempt = await this.provider.sendMessage(
+        this.conversation.getMessagesForAI(),
+        [] // No tools available - force a text response
+      )
+      finalResponse = finalAttempt
     }
     
-    // Always add a final assistant message (since last message is either user or assistant with tool calls)
+    // Add a final assistant message only if we need one (no content in previous messages)
+    onProgress?.("Complete!")
     return this.conversation.addMessage({
       role: "assistant",
-      content: finalResponse.content,
+      content: finalResponse.content || "Task completed.",
     })
   }
   

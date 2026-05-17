@@ -28,13 +28,18 @@ import { toolDisassemble } from "./mcp_tool_symbols"
 
 /**
  * Boots the system (power on)
+ * Waits for boot to complete before returning
  */
-export function toolBoot(): MCPToolResult {
+export async function toolBoot(): Promise<MCPToolResult> {
   try {
     passSetRunMode(RUN_MODE.NEED_BOOT)
+    
+    // Wait for boot to complete (Apple II boots quickly, ~1 second)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
     return {
       success: true,
-      data: { message: "System boot initiated" },
+      data: { message: "System booted and ready" },
     }
   } catch (error) {
     return {

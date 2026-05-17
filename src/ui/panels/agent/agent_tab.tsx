@@ -15,6 +15,68 @@ import {
   type ProviderType 
 } from "../../mcp/mcp_agent_config"
 
+/**
+ * Simple markdown formatter for agent messages
+ * Supports: **bold**, *italic*, `code`, line breaks
+ */
+function formatMarkdown(text: string): React.JSX.Element {
+  const parts: React.JSX.Element[] = []
+  let keyCounter = 0
+  
+  // Split by line breaks first
+  const lines = text.split("\n")
+  
+  lines.forEach((line, lineIdx) => {
+    let remaining = line
+    let lineKey = 0
+    
+    while (remaining.length > 0) {
+      // Match **bold**
+      const boldMatch = remaining.match(/^\*\*(.+?)\*\*/)
+      if (boldMatch) {
+        parts.push(<strong key={`${keyCounter++}-${lineKey++}`}>{boldMatch[1]}</strong>)
+        remaining = remaining.slice(boldMatch[0].length)
+        continue
+      }
+      
+      // Match *italic*
+      const italicMatch = remaining.match(/^\*(.+?)\*/)
+      if (italicMatch) {
+        parts.push(<em key={`${keyCounter++}-${lineKey++}`}>{italicMatch[1]}</em>)
+        remaining = remaining.slice(italicMatch[0].length)
+        continue
+      }
+      
+      // Match `code`
+      const codeMatch = remaining.match(/^`(.+?)`/)
+      if (codeMatch) {
+        parts.push(<code key={`${keyCounter++}-${lineKey++}`}>{codeMatch[1]}</code>)
+        remaining = remaining.slice(codeMatch[0].length)
+        continue
+      }
+      
+      // Match plain text until next special character
+      const plainMatch = remaining.match(/^([^*`]+)/)
+      if (plainMatch) {
+        parts.push(<span key={`${keyCounter++}-${lineKey++}`}>{plainMatch[1]}</span>)
+        remaining = remaining.slice(plainMatch[0].length)
+        continue
+      }
+      
+      // Single character (unmatched special char)
+      parts.push(<span key={`${keyCounter++}-${lineKey++}`}>{remaining[0]}</span>)
+      remaining = remaining.slice(1)
+    }
+    
+    // Add line break after each line except the last
+    if (lineIdx < lines.length - 1) {
+      parts.push(<br key={`br-${keyCounter++}`} />)
+    }
+  })
+  
+  return <>{parts}</>
+}
+
 const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   if (isMinimalTheme()) {
@@ -54,7 +116,7 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
   useEffect(() => {
     if (isConfigured) {
       const conversation = agent.getConversation()
-      setMessages(conversation.getMessages())
+      setMessages(conversation.getMessagesForDisplay())
     }
   }, [isConfigured, agent])
   
@@ -102,18 +164,24 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
     const userInput = inputValue
     setInputValue("")
     setIsProcessing(true)
-    setStreamingContent("")
+    setStreamingContent("Processing...")
 
     try {
-      // Update messages immediately with user input
+      // Add user message to conversation and update UI immediately
       const conversation = agent.getConversation()
-      setMessages([...conversation.getMessages()])
+      conversation.addMessage({
+        role: "user",
+        content: userInput.trim(),
+      })
+      setMessages([...conversation.getMessagesForDisplay()])
       
-      // Send message to AI agent
-      await agent.sendMessage(userInput)
+      // Send message to AI agent with progress updates
+      await agent.sendMessage(userInput, (status) => {
+        setStreamingContent(status)
+      })
       
       // Update with final response
-      setMessages([...agent.getConversation().getMessages()])
+      setMessages([...agent.getConversation().getMessagesForDisplay()])
       
     } catch (error) {
       console.error("Agent error:", error)
@@ -124,7 +192,7 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
         role: "assistant",
         content: `Error: ${error instanceof Error ? error.message : String(error)}`,
       })
-      setMessages([...conversation.getMessages()])
+      setMessages([...conversation.getMessagesForDisplay()])
       
     } finally {
       setIsProcessing(false)
@@ -234,8 +302,7 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
         <div className="agent-messages">
           {messages.length === 0 && (
             <div>
-              <p>👋 Welcome! I&apos;m your Apple II assistant.</p>
-              <p>I can help you with:</p>
+              <p>Welcome to the Apple II assistant! I can help you with:</p>
               <ul>
                 <li>Inspecting CPU registers and memory</li>
                 <li>Controlling execution (boot, reset, step, breakpoints)</li>
@@ -253,38 +320,37 @@ const AgentTab = (props: { updateDisplay: UpdateDisplay }) => {
               className={`agent-message agent-message-${msg.role}`}
             >
               <div className="agent-message-header">
-                <span>{msg.role === "user" ? "You" : "Assistant"}</span>
+                <span>{msg.role === "user" ? "You" : "🤖 Assistant"}</span>
                 <span>{msg.timestamp.toLocaleTimeString()}</span>
-              </div>
-              <div className="agent-message-content">
-                {msg.content}
               </div>
               {msg.toolCalls && msg.toolCalls.length > 0 && (
                 <div className="agent-tool-calls">
                   {msg.toolCalls.map((tc, idx) => (
                     <div key={idx} className="agent-tool-call">
-                      <div className="agent-tool-name">🔧 {tc.name}</div>
+                      <span className="agent-tool-name">🔧 {tc.name}</span>
                       {tc.result && (
-                        <div className={`agent-tool-result ${tc.result.success ? "success" : "error"}`}>
-                          {tc.result.success ? "✓" : "✗"} {tc.result.success ? "Success" : tc.result.error}
-                        </div>
+                        <span className={`agent-tool-status ${tc.result.success ? "success" : "error"}`}>
+                          {tc.result.success ? "✓" : "✗"}
+                        </span>
                       )}
                     </div>
                   ))}
                 </div>
               )}
+              {msg.content && (
+                <div className="agent-message-content">
+                  {formatMarkdown(msg.content)}
+                </div>
+              )}
             </div>
           ))}
           
-          {/* Streaming content */}
+          {/* Processing status */}
           {streamingContent && (
             <div className="agent-message agent-message-assistant agent-streaming">
               <div className="agent-message-header">
-                <span>Assistant</span>
-                <span>typing...</span>
-              </div>
-              <div className="agent-message-content">
-                {streamingContent}
+                <span>🤖 Assistant</span>
+                <span>⚙️ {streamingContent}</span>
               </div>
             </div>
           )}

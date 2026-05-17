@@ -8,6 +8,7 @@ import { toolSetBreakpoint, toolClearBreakpoint, toolSetWatchpoint, toolListBrea
 import { toolInsertDisk, toolEjectDisk, toolSendKeypress, toolLoadBinary, toolLoadBundledDisk } from "./mcp_tool_media"
 import { toolGetRegisters, toolSetRegister, toolReadMemory, toolWriteMemory, toolGetSoftSwitches, toolSetSoftSwitches } from "./mcp_tool_state"
 import { toolDisassemble } from "./mcp_tool_symbols"
+import { toolReadResource } from "./mcp_tool_resources"
 
 /**
  * Executes an MCP tool call
@@ -19,7 +20,7 @@ export async function executeMCPTool(call: MCPToolCall): Promise<MCPToolResult> 
     switch (call.tool) {
       // Execution Control
       case "boot":
-        return toolBoot()
+        return await toolBoot()
       case "reset":
         return toolReset()
       case "stop":
@@ -91,6 +92,9 @@ export async function executeMCPTool(call: MCPToolCall): Promise<MCPToolResult> 
       // Symbol & Metadata
       case "disassemble":
         return toolDisassemble(args.address as number, args.lines as number)
+      
+      case "read_resource":
+        return toolReadResource(args.uri as string)
 
       default:
         return {

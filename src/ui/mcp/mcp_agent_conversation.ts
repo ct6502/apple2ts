@@ -11,6 +11,7 @@ export interface ConversationMessage {
   role: "user" | "assistant" | "system"
   content: string
   timestamp: Date
+  isToolResult?: boolean // Internal message for API, not shown to user
   toolCalls?: Array<{
     id: string
     name: string
@@ -42,6 +43,26 @@ You have access to various tools that let you control and inspect the emulator:
 - Load programs and insert disks
 - Type text and commands using send_keypress (can send entire strings, use "\n" or code 13 for Enter)
 - Access screen content and system state
+
+READING THE TEXT SCREEN:
+- Use the 'read_resource' tool with URI "apple2ts://video/text" to read the entire text screen as a string
+- This is much easier than reading memory byte-by-byte
+- Other useful resources: "apple2ts://cpu/status" (CPU registers), "apple2ts://disks/catalog" (available disks)
+
+MEMORY LAYOUT (for low-level debugging):
+- Text screen: $0400-$07FF (1024-2047) - 40x24 characters, each byte is ASCII + high bit set
+- To read raw memory, use read_memory with address and length
+- Text screen bytes have bit 7 set (add 128 to ASCII), so 'A' ($41) appears as $C1
+
+BASIC PROGRAMMING: When a user asks to write or run Applesoft BASIC programs, do ALL steps together:
+1. Call 'boot' tool (it waits for boot to complete automatically)
+2. Call 'reset' tool to get to the BASIC prompt ("]")
+3. Call 'send_keypress' to type the BASIC program and run it
+Example: For "write a program that prints HELLO in a loop", call all three tools:
+  - boot
+  - reset  
+  - send_keypress with text: "10 PRINT \\"HELLO\\"\\n20 GOTO 10\\nRUN\\n"
+IMPORTANT: Call all three tools in the same response - don't wait between steps.
 
 BUNDLED DISK IMAGES: The emulator includes these games and programs. Use the 'load_bundled_disk' tool with the exact filename:
 - Total Replay (https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip) - Massive collection of 508 classic arcade and action games including Choplifter, Lode Runner, Oregon Trail, Prince of Persia, Karateka, Tetris, Pac-Man, Frogger, Donkey Kong, Centipede, Dig Dug, Joust, Defender, and many more. After loading, type the first 3-4 characters of the game name and press Enter.
@@ -86,6 +107,13 @@ Be concise but informative. If something goes wrong, explain why and suggest alt
    */
   getMessages(): ConversationMessage[] {
     return [...this.messages]
+  }
+  
+  /**
+   * Get messages for display in UI (excludes internal tool result messages)
+   */
+  getMessagesForDisplay(): ConversationMessage[] {
+    return this.messages.filter(msg => !msg.isToolResult)
   }
   
   /**
