@@ -37,10 +37,24 @@ export class ConversationHistory {
 
 You have access to various tools that let you control and inspect the emulator:
 - Execute and debug 6502 assembly code
-- Read/write memory and registers
+- Read/write memory and registers  
 - Control execution (boot, reset, step, breakpoints)
 - Load programs and insert disks
+- Type text and commands using send_keypress (can send entire strings, use "\n" or code 13 for Enter)
 - Access screen content and system state
+
+BUNDLED DISK IMAGES: The emulator includes these games and programs. Use the 'load_bundled_disk' tool with the exact filename:
+- Total Replay (https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip) - Massive collection of 508 classic arcade and action games including Choplifter, Lode Runner, Oregon Trail, Prince of Persia, Karateka, Tetris, Pac-Man, Frogger, Donkey Kong, Centipede, Dig Dug, Joust, Defender, and many more. After loading, type the first 3-4 characters of the game name and press Enter.
+- Instant Replay (https://ct6502.org/wp-content/uploads/2026/01/TotalReplayII.hdv_.zip) - Collection of 94 sports and strategy games (California Games, Hardball, F-15 Strike Eagle, Battle Chess, etc.)
+- Wizard Replay (https://ct6502.org/wp-content/uploads/2026/01/WizardReplay.hdv_.zip) - Frontend for 8 classic Wizardry RPG scenarios with integrated character editor
+- Pitch Dark (https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip) - Interactive fiction
+- Olympic Decathlon (Olympic%20Decathlon.woz) - Sports game
+- Ultima IV (Ultima%20IV.hdv) - Classic RPG
+- Ultima V (Ultima%20V.hdv) - Classic RPG
+- Nox Archaist Demo (Nox%20Archaist%20Demo.hdv) - Modern RPG
+- And several other games and utilities (check the disk catalog resource for the full list)
+
+IMPORTANT: When a user asks to play a game like "Choplifter", check the disk catalog to see which collection contains it. Load that collection disk using load_bundled_disk (this tool waits for the disk to boot), then use send_keypress to type the first 3-4 characters of the game name (e.g., "Chop") followed by Enter ("\n"). The collection menu will auto-complete and launch the game. You can call both tools in the same response.
 
 When users ask questions or request actions:
 1. Use the appropriate MCP tools to accomplish tasks
@@ -81,7 +95,7 @@ Be concise but informative. If something goes wrong, explain why and suggest alt
     const aiMessages: AIMessage[] = [
       {
         role: "system",
-        content: this.systemPrompt,
+        content: this.systemPrompt.trimEnd(),
       },
     ]
     
@@ -89,25 +103,8 @@ Be concise but informative. If something goes wrong, explain why and suggest alt
     for (const msg of this.messages) {
       if (msg.role === "system") continue // System messages already added
       
-      let content = msg.content
-      
-      // If message has tool calls, format them in the content
-      if (msg.toolCalls && msg.toolCalls.length > 0) {
-        content += "\n\n"
-        for (const toolCall of msg.toolCalls) {
-          content += `[Tool: ${toolCall.name}]\n`
-          if (toolCall.result) {
-            if (toolCall.result.success) {
-              const resultData = typeof toolCall.result.data === "string"
-                ? toolCall.result.data
-                : JSON.stringify(toolCall.result.data, null, 2)
-              content += `Result: ${resultData}\n`
-            } else {
-              content += `Error: ${toolCall.result.error || "Unknown error"}\n`
-            }
-          }
-        }
-      }
+      // Trim trailing whitespace to avoid Anthropic API errors
+      const content = msg.content.trimEnd()
       
       aiMessages.push({
         role: msg.role,

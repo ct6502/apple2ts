@@ -257,13 +257,32 @@ export function listMCPTools(): Array<{
       },
     },
     {
+      name: "load_bundled_disk",
+      description: "Loads a bundled disk image from the catalog. Use the 'apple2ts://disks/catalog' resource to see available disks. This is the easiest way to load games and programs. Accepts both local filenames and URLs.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          filename: {
+            type: "string",
+            description: "Filename or URL from the disk catalog (e.g., 'https://ct6502.org/.../TotalReplay.hdv_.zip', 'Olympic%20Decathlon.woz')",
+          },
+          drive: {
+            type: "number",
+            description: "Drive number (1-4), defaults to 1",
+            default: 1,
+          },
+        },
+        required: ["filename"],
+      },
+    },
+    {
       name: "send_keypress",
-      description: "Simulates a keypress on the Apple II keyboard",
+      description: "Simulates typing on the Apple II keyboard. Can send single characters, strings, or special keys. Use code 13 for Enter/Return.",
       inputSchema: {
         type: "object",
         properties: {
           key: {
-            description: "ASCII code or character to press",
+            description: "String to type (e.g., 'CATALOG'), single character, or ASCII code (13 for Enter)",
           },
         },
         required: ["key"],

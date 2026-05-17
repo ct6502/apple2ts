@@ -40,6 +40,7 @@ export type MCPToolName =
   // Media & I/O
   | "insert_disk"
   | "eject_disk"
+  | "load_bundled_disk"
   | "send_keypress"
   | "load_binary"
   // Symbol & Metadata
@@ -52,6 +53,7 @@ export type MCPResourceURI =
   | "apple2ts://video/hires"
   | "apple2ts://cpu/status"
   | "apple2ts://debugger/stack"
+  | "apple2ts://disks/catalog"
 
 export interface MCPToolCall {
   tool: MCPToolName

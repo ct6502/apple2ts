@@ -5,14 +5,14 @@
 
 import { MCPToolCall, MCPToolResult } from "./mcp_server"
 import { toolSetBreakpoint, toolClearBreakpoint, toolSetWatchpoint, toolListBreakpoints, toolEnableTrace, toolDisableTrace, toolGetTraceLog, toolGetBacktrace, toolBoot, toolReset, toolResume, toolStepInto, toolStepOut, toolStepOver, toolStop } from "./mcp_tool_debug"
-import { toolInsertDisk, toolEjectDisk, toolSendKeypress, toolLoadBinary } from "./mcp_tool_media"
+import { toolInsertDisk, toolEjectDisk, toolSendKeypress, toolLoadBinary, toolLoadBundledDisk } from "./mcp_tool_media"
 import { toolGetRegisters, toolSetRegister, toolReadMemory, toolWriteMemory, toolGetSoftSwitches, toolSetSoftSwitches } from "./mcp_tool_state"
 import { toolDisassemble } from "./mcp_tool_symbols"
 
 /**
  * Executes an MCP tool call
  */
-export function executeMCPTool(call: MCPToolCall): MCPToolResult {
+export async function executeMCPTool(call: MCPToolCall): Promise<MCPToolResult> {
   const args = call.arguments || {}
 
   try {
@@ -74,6 +74,11 @@ export function executeMCPTool(call: MCPToolCall): MCPToolResult {
         )
       case "eject_disk":
         return toolEjectDisk(args.drive as number)
+      case "load_bundled_disk":
+        return await toolLoadBundledDisk(
+          args.filename as string,
+          args.drive as number
+        )
       case "send_keypress":
         return toolSendKeypress(args.key as string | number)
       case "load_binary":

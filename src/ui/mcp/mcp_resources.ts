@@ -3,6 +3,49 @@ import { handleGetMemoryDump, handleGetTextPageAsString, handleGetState6502, han
 import { MCPResourceURI, MCPResource } from "./mcp_server"
 
 /**
+ * Catalog of bundled disk images available in the emulator
+ * Based on diskimages.ts - only includes locally available disks
+ */
+const DISK_CATALOG = [
+  { 
+    name: "Total Replay", 
+    filename: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip", 
+    path: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip", 
+    type: "game collection", 
+    description: "Massive collection of 508 classic arcade and action games with instant loading. Navigate by typing the first 3-4 characters of a game name and pressing Enter.",
+    games: "Examples: Choplifter, Lode Runner, Prince of Persia, Karateka, Tetris, Pac-Man, Frogger, Donkey Kong, Centipede, Dig Dug, Joust, Defender, Missile Command, Asteroids, Galaxian, Zaxxon, Qbert, Spy Hunter, Pitfall II, Burgertime, Archon, Arkanoid, Bruce Lee, Boulder Dash, Bubble Bobble, Commando, Crystal Castles, Dino Eggs, Montezuma's Revenge, Moon Patrol, Paperboy, Popeye, Space Invaders, Spy vs Spy, Track & Field, Winter Games, Oregon Trail, and 470+ more!"
+  },
+  { 
+    name: "Instant Replay", 
+    filename: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplayII.hdv_.zip", 
+    path: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplayII.hdv_.zip", 
+    type: "game collection", 
+    description: "Collection of 94 sports, strategy, and board games. Navigate by typing the first 3-4 characters of a game name and pressing Enter.",
+    games: "Examples: California Games, Hardball, Championship Basketball, Championship Baseball, F-15 Strike Eagle, Flight Simulator II, Chuck Yeager's Flight Simulator, Battle Chess, Go, Checkers, Card Sharks, Family Feud, Computer Foosball, Monopoly (Advance to Boardwalk), Draw Poker, Pool 1.5, Shuffleboard, World Karate Championship, and more!"
+  },
+  { 
+    name: "Wizard Replay", 
+    filename: "https://ct6502.org/wp-content/uploads/2026/01/WizardReplay.hdv_.zip", 
+    path: "https://ct6502.org/wp-content/uploads/2026/01/WizardReplay.hdv_.zip", 
+    type: "game collection", 
+    description: "Frontend for 8 classic RPG scenarios with integrated character editor and save management. Navigate by typing the first 3-4 characters of a game name and pressing Enter.",
+    games: "Classic RPGs: Wizardry: Proving Grounds of the Mad Overlord and other Wizardry series games with WizPlus character editor integration"
+  },
+  { name: "Pitch Dark", filename: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip", path: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip", type: "game", description: "Interactive fiction adventure" },
+  { name: "Aztec", filename: "Aztec.po", path: "disks/Aztec.po", type: "game", description: "Adventure game exploring Aztec pyramid" },
+  { name: "Eamon", filename: "Eamon%201.po", path: "disks/Eamon%201.po", type: "game", description: "Text adventure RPG system" },
+  { name: "MECC Inspector", filename: "MECC-Inspector.woz", path: "disks/MECC-Inspector.woz", type: "educational", description: "Educational detective game" },
+  { name: "MousePaint", filename: "MousePaint.woz", path: "disks/MousePaint.woz", type: "application", description: "Graphics drawing program" },
+  { name: "Nox Archaist Demo", filename: "Nox%20Archaist%20Demo.hdv", path: "disks/Nox%20Archaist%20Demo.hdv", type: "game", description: "Modern RPG demo with enhanced graphics" },
+  { name: "Olympic Decathlon", filename: "Olympic%20Decathlon.woz", path: "disks/Olympic%20Decathlon.woz", type: "game", description: "Sports game featuring 10 Olympic events" },
+  { name: "Print Shop Color", filename: "Print%20Shop%20Color.po", path: "disks/Print%20Shop%20Color.po", type: "application", description: "Desktop publishing and greeting card maker" },
+  { name: "ProDOS 2.4.3", filename: "ProDOS%202.4.3.po", path: "disks/ProDOS%202.4.3.po", type: "system", description: "ProDOS operating system disk" },
+  { name: "Robotron", filename: "Robotron4Joy.po", path: "disks/Robotron4Joy.po", type: "game", description: "Arcade shooter adapted for joystick control" },
+  { name: "Ultima IV", filename: "Ultima%20IV.hdv", path: "disks/Ultima%20IV.hdv", type: "game", description: "Classic RPG - Quest of the Avatar (hard disk image)" },
+  { name: "Ultima V", filename: "Ultima%20V.hdv", path: "disks/Ultima%20V.hdv", type: "game", description: "Classic RPG - Warriors of Destiny (hard disk image)" },
+]
+
+/**
  * Gets a resource by URI
  */
 export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
@@ -76,6 +119,18 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
         }
       }
 
+      case "apple2ts://disks/catalog": {
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            disks: DISK_CATALOG,
+            totalCount: DISK_CATALOG.length,
+            instructions: "To load a disk, use the 'load_bundled_disk' tool with the filename from this catalog. Most games will auto-boot. URLs starting with 'https://' will be downloaded and loaded. For local files, use the filename as shown (may include URL encoding like %20 for spaces). For game collections (Total Replay, Instant Replay, Wizard Replay), after loading the disk, type the first 3-4 characters of the game name and press Enter to select and launch the game."
+          },
+        }
+      }
+
       default:
         return null
     }
@@ -131,6 +186,12 @@ export function listMCPResources(): Array<{
       name: "Stack",
       description: "Current stack dump as a string",
       mimeType: "text/plain",
+    },
+    {
+      uri: "apple2ts://disks/catalog",
+      name: "Disk Catalog",
+      description: "Complete catalog of bundled disk images available in the emulator with metadata (names, types, descriptions, file paths)",
+      mimeType: "application/json",
     },
   ]
 }

@@ -10,6 +10,7 @@ import { loadAgentConfig, type ProviderType } from "./mcp_agent_config"
 import { listMCPTools } from "./mcp_tools"
 import { executeMCPTool } from "./mcp_tool_execute"
 import type { MCPToolCall, MCPToolResult } from "./mcp_server"
+import { trySimpleCommand, formatSimpleCommandResult } from "./mcp_simple_commands"
 
 export class MCPAgent {
   private provider: AIProvider | null = null
@@ -58,8 +59,22 @@ export class MCPAgent {
     // Add user message to conversation
     this.conversation.addMessage({
       role: "user",
-      content: userMessage,
+      content: userMessage.trim(),
     })
+    
+    // Try to execute as a simple command first (saves API calls)
+    const simpleResult = await trySimpleCommand(userMessage)
+    if (simpleResult !== null) {
+      const responseText = formatSimpleCommandResult(
+        simpleResult.toolName as any,
+        simpleResult.result
+      )
+      
+      return this.conversation.addMessage({
+        role: "assistant",
+        content: responseText,
+      })
+    }
     
     // Get available tools
     const tools = listMCPTools()
@@ -92,14 +107,14 @@ export class MCPAgent {
           arguments: toolCall.input,
         }
         
-        const result = executeMCPTool(mcpToolCall)
+        const result = await executeMCPTool(mcpToolCall)
         toolResults.push({ id: toolCall.id, result })
       }
       
       // Add assistant message with tool calls
       this.conversation.addMessage({
         role: "assistant",
-        content: response.content || "(Tool calls executed)",
+        content: response.content || "",
         toolCalls: response.toolCalls.map((tc, idx) => ({
           id: tc.id,
           name: tc.name,
@@ -108,14 +123,36 @@ export class MCPAgent {
         })),
       })
       
-      // If the response has content and tools succeeded, we might be done
+      // Add user message with tool results (required by Anthropic API)
+      let toolResultsText = "Tool results:\n"
+      for (let i = 0; i < response.toolCalls.length; i++) {
+        const tc = response.toolCalls[i]
+        const result = toolResults[i].result
+        toolResultsText += `\n[${tc.name}]\n`
+        if (result.success) {
+          const resultData = typeof result.data === "string"
+            ? result.data
+            : JSON.stringify(result.data, null, 2)
+          toolResultsText += resultData
+        } else {
+          toolResultsText += `Error: ${result.error || "Unknown error"}`
+        }
+        toolResultsText += "\n"
+      }
+      
+      this.conversation.addMessage({
+        role: "user",
+        content: toolResultsText.trimEnd(),
+      })
+      
+      // If the assistant provided meaningful text content along with tool calls, 
+      // use that as the final response (after we've added tool results)
       if (response.content && response.content.trim().length > 0) {
         finalResponse = response
         break
       }
       
-      // Otherwise, let the AI continue with tool results
-      // The tool results are already in the conversation history
+      // Otherwise, let the AI continue with the tool results
     }
     
     // If we exhausted iterations without a final response, create one
@@ -126,18 +163,11 @@ export class MCPAgent {
       }
     }
     
-    // Add final assistant message if needed
-    const messages = this.conversation.getMessages()
-    const lastMessage = messages[messages.length - 1]
-    
-    if (lastMessage.role !== "assistant" || lastMessage.toolCalls) {
-      return this.conversation.addMessage({
-        role: "assistant",
-        content: finalResponse.content,
-      })
-    }
-    
-    return lastMessage
+    // Always add a final assistant message (since last message is either user or assistant with tool calls)
+    return this.conversation.addMessage({
+      role: "assistant",
+      content: finalResponse.content,
+    })
   }
   
   /**

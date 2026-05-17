@@ -7,10 +7,12 @@ import {
   passKeypress,
   passKeyRelease,
   passSetBinaryBlock,
+  passPasteText,
 } from "../main2worker"
 import {
   handleEjectDisk,
   handleSetDiskOrFileFromBuffer,
+  handleSetDiskFromURL,
 } from "../devices/disk/driveprops"
 import type { MCPToolResult } from "./mcp_server"
 
@@ -40,6 +42,51 @@ export function toolInsertDisk(drive: number, data: Uint8Array, filename: string
         drive: drive,
         filename: filename,
         mountedDrive: mountedDrive,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: String(error),
+    }
+  }
+}
+
+/**
+ * Loads a bundled disk image from the catalog
+ * @param filename Filename or URL from the disk catalog (e.g., "https://...TotalReplay.hdv_.zip" or "Olympic%20Decathlon.woz")
+ * @param drive Drive number (1-4), defaults to 1
+ */
+export async function toolLoadBundledDisk(filename: string, drive: number = 1): Promise<MCPToolResult> {
+  try {
+    const driveIndex = drive - 1
+    if (driveIndex < 0 || driveIndex > 3) {
+      return {
+        success: false,
+        error: `Invalid drive number: ${drive}. Must be 1-4`,
+      }
+    }
+
+    // Determine URL - use as-is if it's already a URL, otherwise prepend /disks/
+    const url = filename.startsWith("http://") || filename.startsWith("https://")
+      ? filename
+      : `/disks/${filename}`
+    
+    // Use handleSetDiskFromURL which handles zip files, downloads, etc.
+    await handleSetDiskFromURL(url, undefined, driveIndex)
+    
+    // Wait for disk to boot (especially important for game collections like Total Replay)
+    // Most disks boot in under 2 seconds
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const displayName = filename.split("/").pop() || filename
+
+    return {
+      success: true,
+      data: {
+        drive: drive,
+        filename: displayName,
+        message: `Loaded ${displayName} into drive ${drive}. Disk is ready.`,
       },
     }
   } catch (error) {
@@ -83,10 +130,24 @@ export function toolEjectDisk(drive: number): MCPToolResult {
 
 /**
  * Simulates a keypress on the Apple II keyboard
- * @param key ASCII code or character to press
+ * @param key ASCII code, single character, or string to type
  */
 export function toolSendKeypress(key: string | number): MCPToolResult {
   try {
+    // Handle typing entire strings
+    if (typeof key === "string" && key.length > 1) {
+      passPasteText(key)
+      
+      return {
+        success: true,
+        data: {
+          typed: key,
+          characterCount: key.length,
+        },
+      }
+    }
+    
+    // Handle single character or key code
     const keyCode = typeof key === "string" ? key.charCodeAt(0) : key
     
     if (keyCode < 0 || keyCode > 255) {
@@ -103,7 +164,7 @@ export function toolSendKeypress(key: string | number): MCPToolResult {
       success: true,
       data: {
         keyCode: keyCode,
-        character: String.fromCharCode(keyCode),
+        character: keyCode === 13 ? "⏎" : String.fromCharCode(keyCode),
       },
     }
   } catch (error) {
