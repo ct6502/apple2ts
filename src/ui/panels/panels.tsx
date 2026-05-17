@@ -1,6 +1,6 @@
 import "./panels.css"
 import Flyout from "../flyout"
-import { faInfo as faHelp, faInfoCircle, faBug, faCode } from "@fortawesome/free-solid-svg-icons"
+import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32 } from "../../common/utility"
@@ -13,6 +13,7 @@ import HelpTab from "./help/helptab"
 import { defaultHelpText } from "./help/defaulthelptext"
 import { setPreferenceDebugMode } from "../localstorage"
 import BasicTab from "./basic/basic_tab"
+import AgentTab from "./agent/agent_tab"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
@@ -107,6 +108,12 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
             onClick={handleTabClick(3)}>
             <FontAwesomeIcon icon={faCode} size="lg" />
           </div>
+          <div
+            className={`dbg-tab ${tabClass} ${activeTab == 4 ? " dbg-tab-active" : ""}`}
+            title="Agent"
+            onClick={handleTabClick(4)}>
+            <FontAwesomeIcon icon={faRobot} size="lg" />
+          </div>
         </div>
         }
         {(activeTab == 0 || isSmall) && <HelpTab helptext={getHelpText()} theme={getTheme()} />}
@@ -118,6 +125,9 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         </div>
         <div style={{ display: activeTab == 3 && !isSmall ? "block" : "none" }}>
           <ExpectinTab />
+        </div>
+        <div style={{ display: activeTab == 4 && !isSmall ? "block" : "none" }}>
+          <AgentTab updateDisplay={props.updateDisplay} />
         </div>
       </div>
     </Flyout>
