@@ -29,12 +29,25 @@ export async function trySimpleCommand(userMessage: string): Promise<SimpleComma
     "continue": { tool: "resume" },
     "run": { tool: "resume" },
     "step": { tool: "step", arguments: { count: 1 } },
+    "step into": { tool: "step", arguments: { count: 1 } },
+    "step over": { tool: "step_over" },
+    "step out": { tool: "step_out" },
   }
   
   if (simpleCommands[input]) {
     const toolCall = simpleCommands[input]
     const result = await executeMCPTool(toolCall)
     return { toolName: toolCall.tool, result }
+  }
+  
+  // Common two-word patterns
+  if (input === "boot and reset" || input === "boot + reset" || input === "boot then reset") {
+    const bootResult = await executeMCPTool({ tool: "boot" })
+    if (!bootResult.success) {
+      return { toolName: "boot", result: bootResult }
+    }
+    const resetResult = await executeMCPTool({ tool: "reset" })
+    return { toolName: "reset", result: resetResult }
   }
   
   // Check for step with a number (e.g., "step 10") - unambiguous pattern

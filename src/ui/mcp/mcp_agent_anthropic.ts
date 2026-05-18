@@ -119,27 +119,44 @@ export class AnthropicProvider implements AIProvider {
       })),
     }
     
+    // Use prompt caching for system prompt (cache for 5 minutes across requests)
     if (systemPrompt) {
-      requestBody.system = systemPrompt
+      requestBody.system = [
+        {
+          type: "text",
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" },
+        },
+      ]
     }
     
     if (config?.temperature !== undefined) {
       requestBody.temperature = config.temperature
     }
     
-    // Add tools if available
+    // Add tools with caching on the last tool (all tools get cached together)
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = availableTools.map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        input_schema: tool.inputSchema,
-      }))
+      requestBody.tools = availableTools.map((tool, index) => {
+        const toolDef: Record<string, unknown> = {
+          name: tool.name,
+          description: tool.description,
+          input_schema: tool.inputSchema,
+        }
+        
+        // Add cache control to the last tool only
+        if (index === availableTools.length - 1) {
+          toolDef.cache_control = { type: "ephemeral" }
+        }
+        
+        return toolDef
+      })
     }
     
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "anthropic-version": ANTHROPIC_VERSION,
+        "anthropic-beta": "prompt-caching-2024-07-31",
       }
       
       // Only send API key when using CORS proxy (local proxy uses env var)
@@ -219,27 +236,44 @@ export class AnthropicProvider implements AIProvider {
       stream: true,
     }
     
+    // Use prompt caching for system prompt
     if (systemPrompt) {
-      requestBody.system = systemPrompt
+      requestBody.system = [
+        {
+          type: "text",
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" },
+        },
+      ]
     }
     
     if (config?.temperature !== undefined) {
       requestBody.temperature = config.temperature
     }
     
-    // Add tools if available
+    // Add tools with caching on the last tool
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = availableTools.map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        input_schema: tool.inputSchema,
-      }))
+      requestBody.tools = availableTools.map((tool, index) => {
+        const toolDef: Record<string, unknown> = {
+          name: tool.name,
+          description: tool.description,
+          input_schema: tool.inputSchema,
+        }
+        
+        // Add cache control to the last tool only
+        if (index === availableTools.length - 1) {
+          toolDef.cache_control = { type: "ephemeral" }
+        }
+        
+        return toolDef
+      })
     }
     
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "anthropic-version": ANTHROPIC_VERSION,
+        "anthropic-beta": "prompt-caching-2024-07-31",
       }
       
       // Only send API key when using CORS proxy (local proxy uses env var)

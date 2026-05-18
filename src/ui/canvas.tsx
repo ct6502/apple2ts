@@ -216,7 +216,8 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     if (e.key in arrowKeys) {
 
-      if (isKeyboardLoop && recallBuffer.length > 0) {
+      if (isKeyboardLoop && recallBuffer.length > 0 &&
+        (arrowKeys[e.key] === ARROW.UP || arrowKeys[e.key] === ARROW.DOWN)) {
         if (arrowKeys[e.key] === ARROW.UP) {
           recallIndex = Math.max(0, recallIndex - 1)
         } else if (arrowKeys[e.key] === ARROW.DOWN) {

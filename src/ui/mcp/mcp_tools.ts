@@ -243,12 +243,12 @@ export function listMCPTools(): Array<{
     },
     {
       name: "send_keypress",
-      description: "Simulates typing on the Apple II keyboard. Can send single characters, strings, or special keys. Use code 13 for Enter/Return.",
+      description: "Simulates typing on the Apple II keyboard. For printable text, send strings. For control characters (Ctrl+A through Ctrl+Z = codes 1-26) and special keys, send NUMERIC codes (not strings, not HTML entities). Examples: Ctrl+G=7, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27.",
       inputSchema: {
         type: "object",
         properties: {
           key: {
-            description: "String to type (e.g., 'CATALOG'), single character, or ASCII code (13 for Enter)",
+            description: "Printable text as string (e.g., 'CATALOG'), OR numeric code for control/special keys: Ctrl+A-Z=1-26, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27. NEVER use HTML entities or Unicode escapes for control chars.",
           },
         },
         required: ["key"],
