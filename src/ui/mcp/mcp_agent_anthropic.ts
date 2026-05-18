@@ -6,12 +6,62 @@ import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 const ANTHROPIC_VERSION = "2023-06-01"
-const USE_LOCAL_PROXY = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+let tryLocalhost = true
+const IS_LOCALHOST = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
 const LOCAL_PROXY_URL = `http://${window.location.hostname}:6502/api/anthropic`
 const CORS_PROXY = "https://proxy.corsfix.com/?url="
 
-function getApiUrl(): string {
-  return USE_LOCAL_PROXY ? LOCAL_PROXY_URL : CORS_PROXY + ANTHROPIC_API_URL
+/**
+ * Make an API request with automatic fallback from local proxy to CORS proxy
+ */
+async function makeApiRequest(
+  requestBody: Record<string, unknown>,
+  headers: Record<string, string>,
+  apiKey: string
+): Promise<Response> {
+  // Try local proxy first if on localhost
+  if (tryLocalhost && IS_LOCALHOST) {
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 1000) // 1 second timeout for local
+      
+      const localHeaders = { ...headers }
+      // Local proxy uses env var for API key
+      delete localHeaders["x-api-key"]
+      
+      const response = await fetch(LOCAL_PROXY_URL, {
+        method: "POST",
+        headers: localHeaders,
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      })
+      
+      clearTimeout(timeoutId)
+      
+      // If we get a response (even an error), use it
+      if (response.status !== 404) {
+        return response
+      }
+      // If we get a 404, the endpoint doesn't exist - fall through to CORS proxy
+    } catch {
+      // Connection failed or timeout - fall through to CORS proxy
+      console.log("Local proxy not available, using CORS proxy")
+    } finally {
+      tryLocalhost = false // Don't try local proxy again during this session
+    }
+  }
+  
+  // Use CORS proxy (either not localhost, or local proxy failed)
+  const corsHeaders = {
+    ...headers,
+    "x-api-key": apiKey, // CORS proxy needs the API key
+  }
+  
+  return fetch(CORS_PROXY + encodeURIComponent(ANTHROPIC_API_URL), {
+    method: "POST",
+    headers: corsHeaders,
+    body: JSON.stringify(requestBody),
+  })
 }
 /**
  * Format Anthropic API error messages in a human-readable way
@@ -72,6 +122,7 @@ function formatAnthropicError(status: number, statusText: string, errorData: Rec
   
   return formattedMessage
 }
+
 export class AnthropicProvider implements AIProvider {
   name = "Anthropic Claude"
   
@@ -159,16 +210,7 @@ export class AnthropicProvider implements AIProvider {
         "anthropic-beta": "prompt-caching-2024-07-31",
       }
       
-      // Only send API key when using CORS proxy (local proxy uses env var)
-      if (!USE_LOCAL_PROXY) {
-        headers["x-api-key"] = this.apiKey
-      }
-      
-      const response = await fetch(getApiUrl(), {
-        method: "POST",
-        headers,
-        body: JSON.stringify(requestBody),
-      })
+      const response = await makeApiRequest(requestBody, headers, this.apiKey)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -276,16 +318,7 @@ export class AnthropicProvider implements AIProvider {
         "anthropic-beta": "prompt-caching-2024-07-31",
       }
       
-      // Only send API key when using CORS proxy (local proxy uses env var)
-      if (!USE_LOCAL_PROXY) {
-        headers["x-api-key"] = this.apiKey
-      }
-      
-      const response = await fetch(getApiUrl(), {
-        method: "POST",
-        headers,
-        body: JSON.stringify(requestBody),
-      })
+      const response = await makeApiRequest(requestBody, headers, this.apiKey)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))

@@ -686,6 +686,15 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || "localhost"}`)
 
   try {
+    // Health check endpoint for proxy availability detection
+    if (req.method === "GET" && url.pathname === "/api/health") {
+      setCorsHeaders(res)
+      res.statusCode = 200
+      res.setHeader("Content-Type", "application/json; charset=utf-8")
+      res.end(JSON.stringify({ status: "ok" }))
+      return
+    }
+
     if (req.method === "POST" && url.pathname === "/api/client/connect") {
       const body = await readJsonBody(req)
       const clientId = randomUUID()
