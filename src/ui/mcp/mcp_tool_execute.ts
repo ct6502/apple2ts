@@ -5,7 +5,7 @@
 
 import { MCPToolCall, MCPToolResult } from "./mcp_server"
 import { toolSetBreakpoint, toolClearBreakpoint, toolSetWatchpoint, toolEnableTrace, toolDisableTrace, toolBoot, toolReset, toolResume, toolStepInto, toolStepOut, toolStepOver, toolStop } from "./mcp_tool_debug"
-import { toolInsertDisk, toolEjectDisk, toolSendKeypress, toolLoadBinary, toolLoadBundledDisk } from "./mcp_tool_media"
+import { toolInsertDisk, toolEjectDisk, toolSendKeypress, toolLoadBinary, toolLoadBundledDisk, toolPressAppleKey, toolReleaseAppleKey } from "./mcp_tool_media"
 import { toolSetRegister, toolReadMemory, toolWriteMemory, toolSetSoftSwitches } from "./mcp_tool_state"
 import { toolDisassemble } from "./mcp_tool_symbols"
 import { toolReadResource } from "./mcp_tool_resources"
@@ -73,6 +73,10 @@ export async function executeMCPTool(call: MCPToolCall): Promise<MCPToolResult> 
         )
       case "send_keypress":
         return toolSendKeypress(args.key as string | number)
+      case "press_apple_key":
+        return toolPressAppleKey(args.button as string)
+      case "release_apple_key":
+        return toolReleaseAppleKey(args.button as string)
       case "load_binary":
         return toolLoadBinary(
           args.data as number[],

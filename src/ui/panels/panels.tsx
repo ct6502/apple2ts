@@ -127,7 +127,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           <ExpectinTab />
         </div>
         <div style={{ display: activeTab == 4 && !isSmall ? "block" : "none" }}>
-          <AgentTab updateDisplay={props.updateDisplay} />
+          <AgentTab />
         </div>
       </div>
     </Flyout>

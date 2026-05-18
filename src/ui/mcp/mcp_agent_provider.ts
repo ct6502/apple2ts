@@ -18,6 +18,10 @@ export interface AIResponse {
   content: string
   toolCalls?: AIToolCall[]
   stopReason?: "end_turn" | "tool_use" | "max_tokens" | "stop_sequence"
+  usage?: {
+    inputTokens: number
+    outputTokens: number
+  }
 }
 
 export interface AIStreamChunk {

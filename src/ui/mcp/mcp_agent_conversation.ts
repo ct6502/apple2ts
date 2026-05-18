@@ -18,6 +18,10 @@ export interface ConversationMessage {
     input: Record<string, unknown>
     result?: MCPToolResult
   }>
+  usage?: {
+    inputTokens: number
+    outputTokens: number
+  }
 }
 
 export class ConversationHistory {

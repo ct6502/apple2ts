@@ -6,7 +6,7 @@ import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 const ANTHROPIC_VERSION = "2023-06-01"
-const USE_LOCAL_PROXY = window.location.hostname === "localhost2" || window.location.hostname === "127.0.0.1"
+const USE_LOCAL_PROXY = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
 const LOCAL_PROXY_URL = `http://${window.location.hostname}:6502/api/anthropic`
 const CORS_PROXY = "https://proxy.corsfix.com/?url="
 
@@ -165,6 +165,10 @@ export class AnthropicProvider implements AIProvider {
         content: "",
         stopReason: data.stop_reason,
         toolCalls: [],
+        usage: data.usage ? {
+          inputTokens: data.usage.input_tokens || 0,
+          outputTokens: data.usage.output_tokens || 0,
+        } : undefined,
       }
       
       // Handle content blocks

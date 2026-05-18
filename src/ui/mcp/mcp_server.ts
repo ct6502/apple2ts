@@ -37,6 +37,8 @@ export type MCPToolName =
   | "eject_disk"
   | "load_bundled_disk"
   | "send_keypress"
+  | "press_apple_key"
+  | "release_apple_key"
   | "load_binary"
   // Symbol & Metadata
   | "disassemble"

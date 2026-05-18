@@ -255,6 +255,36 @@ export function listMCPTools(): Array<{
       },
     },
     {
+      name: "press_apple_key",
+      description: "Presses an Apple command key (joystick button). Used in games and software that require button input. Button remains pressed until release_apple_key is called.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          button: {
+            type: "string",
+            description: "Button to press: 'left', 'right', 'button 0' (left), 'button 1' (right), 'button 2' (right), or 'joystick button 0/1/2'",
+            enum: ["left", "right", "button 0", "button 1", "button 2", "0", "1", "2"],
+          },
+        },
+        required: ["button"],
+      },
+    },
+    {
+      name: "release_apple_key",
+      description: "Releases an Apple command key (joystick button) that was previously pressed.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          button: {
+            type: "string",
+            description: "Button to release: 'left', 'right', 'button 0' (left), 'button 1' (right), 'button 2' (right), or 'joystick button 0/1/2'",
+            enum: ["left", "right", "button 0", "button 1", "button 2", "0", "1", "2"],
+          },
+        },
+        required: ["button"],
+      },
+    },
+    {
       name: "load_binary",
       description: "Loads a binary file directly into memory",
       inputSchema: {

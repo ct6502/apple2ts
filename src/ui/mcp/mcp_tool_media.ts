@@ -8,6 +8,8 @@ import {
   passKeyRelease,
   passSetBinaryBlock,
   passPasteText,
+  passAppleCommandKeyPress,
+  passAppleCommandKeyRelease,
 } from "../main2worker"
 import {
   handleEjectDisk,
@@ -200,6 +202,99 @@ export function toolLoadBinary(data: number[], address = 0x300, run = false): MC
         size: data.length,
         run: run,
         message: `Binary loaded at $${address.toString(16).padStart(4, "0").toUpperCase()}`,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: String(error),
+    }
+  }
+}
+
+/**
+ * Parses button description to determine left/right
+ * Accepts: "left", "right", "button 0", "button 1", "button 2", "joystick button 0/1/2"
+ */
+function parseButtonDescription(button: string): boolean | null {
+  const normalized = button.toLowerCase().trim()
+  
+  // Left button patterns
+  if (normalized.includes("left") || 
+      normalized === "button 0" || 
+      normalized === "button0" ||
+      normalized === "0") {
+    return true
+  }
+  
+  // Right button patterns
+  if (normalized.includes("right") || 
+      normalized === "button 1" || 
+      normalized === "button1" ||
+      normalized === "1" ||
+      normalized === "button 2" ||
+      normalized === "button2" ||
+      normalized === "2") {
+    return false
+  }
+  
+  return null
+}
+
+/**
+ * Presses an Apple command key (joystick button)
+ * @param button Button description: "left"/"right", "button 0/1/2", or "joystick button 0/1/2"
+ */
+export function toolPressAppleKey(button: string): MCPToolResult {
+  try {
+    const isLeft = parseButtonDescription(button)
+    
+    if (isLeft === null) {
+      return {
+        success: false,
+        error: `Invalid button description: "${button}". Use "left", "right", "button 0", "button 1", etc.`,
+      }
+    }
+    
+    passAppleCommandKeyPress(isLeft)
+    
+    return {
+      success: true,
+      data: {
+        button: isLeft ? "left (button 0)" : "right (button 1)",
+        action: "pressed",
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: String(error),
+    }
+  }
+}
+
+/**
+ * Releases an Apple command key (joystick button)
+ * @param button Button description: "left"/"right", "button 0/1/2", or "joystick button 0/1/2"
+ */
+export function toolReleaseAppleKey(button: string): MCPToolResult {
+  try {
+    const isLeft = parseButtonDescription(button)
+    
+    if (isLeft === null) {
+      return {
+        success: false,
+        error: `Invalid button description: "${button}". Use "left", "right", "button 0", "button 1", etc.`,
+      }
+    }
+    
+    passAppleCommandKeyRelease(isLeft)
+    
+    return {
+      success: true,
+      data: {
+        button: isLeft ? "left (button 0)" : "right (button 1)",
+        action: "released",
       },
     }
   } catch (error) {

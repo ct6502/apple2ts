@@ -9,7 +9,7 @@ import { ConversationHistory, type ConversationMessage } from "./mcp_agent_conve
 import { loadAgentConfig, type ProviderType } from "./mcp_agent_config"
 import { listMCPTools } from "./mcp_tools"
 import { executeMCPTool } from "./mcp_tool_execute"
-import type { MCPToolCall, MCPToolResult } from "./mcp_server"
+import type { MCPToolCall, MCPToolName, MCPToolResult } from "./mcp_server"
 import { trySimpleCommand, formatSimpleCommandResult } from "./mcp_simple_commands"
 
 export class MCPAgent {
@@ -53,11 +53,15 @@ export class MCPAgent {
    */
   async sendMessage(
     userMessage: string,
-    onProgress?: (status: string) => void
+    onProgress?: (status: string, usage?: { inputTokens: number; outputTokens: number }) => void
   ): Promise<ConversationMessage> {
     if (!this.provider) {
       throw new Error("Agent not configured. Please set up your API key first.")
     }
+    
+    // Track cumulative token usage across all API calls
+    let totalInputTokens = 0
+    let totalOutputTokens = 0
     
     // Add user message to conversation (skip if already added by UI)
     const messages = this.conversation.getMessages()
@@ -76,7 +80,7 @@ export class MCPAgent {
     const simpleResult = await trySimpleCommand(userMessage)
     if (simpleResult !== null) {
       const responseText = formatSimpleCommandResult(
-        simpleResult.toolName as any,
+        simpleResult.toolName as MCPToolName,
         simpleResult.result
       )
       
@@ -97,27 +101,33 @@ export class MCPAgent {
       iterations++
       
       // Get AI response
-      onProgress?.("Consulting AI...")
+      onProgress?.("Consulting AI...", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
       const response = await this.provider.sendMessage(
         this.conversation.getMessagesForAI(),
         tools
       )
       
+      // Update token counts
+      if (response.usage) {
+        totalInputTokens += response.usage.inputTokens
+        totalOutputTokens += response.usage.outputTokens
+      }
+      
       // If no tool calls, we're done
       if (!response.toolCalls || response.toolCalls.length === 0) {
-        onProgress?.("Response complete")
+        onProgress?.("Response complete", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
         finalResponse = response
         break
       }
       
       // Execute all tool calls
-      onProgress?.(`Executing ${response.toolCalls.length} tool${response.toolCalls.length > 1 ? 's' : ''}...`)
+      onProgress?.(`Executing ${response.toolCalls.length} tool${response.toolCalls.length > 1 ? "s" : ""}...`, { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
       const toolResults: Array<{ id: string; result: MCPToolResult }> = []
       
       for (const toolCall of response.toolCalls) {
-        onProgress?.(`Running ${toolCall.name}...`)
+        onProgress?.(`Running ${toolCall.name}...`, { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
         const mcpToolCall: MCPToolCall = {
-          tool: toolCall.name as any,
+          tool: toolCall.name as MCPToolName,
           arguments: toolCall.input,
         }
         
@@ -135,6 +145,10 @@ export class MCPAgent {
           input: tc.input,
           result: toolResults[idx].result,
         })),
+        usage: response.usage ? {
+          inputTokens: response.usage.inputTokens,
+          outputTokens: response.usage.outputTokens,
+        } : undefined,
       })
       
       // Add user message with tool results (required by Anthropic API)
@@ -167,19 +181,30 @@ export class MCPAgent {
     // If we exhausted iterations without a final response, give AI one more chance
     // to interpret the results (without allowing more tool calls)
     if (!finalResponse) {
-      onProgress?.("Generating final response...")
+      onProgress?.("Generating final response...", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
       const finalAttempt = await this.provider.sendMessage(
         this.conversation.getMessagesForAI(),
         [] // No tools available - force a text response
       )
+      
+      // Update token counts from final attempt
+      if (finalAttempt.usage) {
+        totalInputTokens += finalAttempt.usage.inputTokens
+        totalOutputTokens += finalAttempt.usage.outputTokens
+      }
+      
       finalResponse = finalAttempt
     }
     
     // Add a final assistant message only if we need one (no content in previous messages)
-    onProgress?.("Complete!")
+    onProgress?.("Complete!", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
     return this.conversation.addMessage({
       role: "assistant",
       content: finalResponse.content || "Task completed.",
+      usage: {
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
+      },
     })
   }
   
