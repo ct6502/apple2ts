@@ -29,7 +29,7 @@
 .agent-message-user {
   background-color: rgba(0, 192, 0, 0.3);
   border-radius: 15px;
-  margin-left: 50px;
+  margin-left: 100px;
 }
 
 .agent-message-system {
@@ -191,6 +191,7 @@
 
 /* Configuration Panel */
 .agent-config-panel {
+  width: calc(100% - 60px);
   background-color: black;
   border: 1px solid #00C000;
   border-radius: 8px;

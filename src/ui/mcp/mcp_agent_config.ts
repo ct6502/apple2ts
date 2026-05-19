@@ -5,7 +5,7 @@
 
 const STORAGE_KEY_PREFIX = "apple2ts_agent_"
 
-export type ProviderType = "anthropic" | "openai" | "google"
+export type ProviderType = "anthropic" | "deepseek" | "openai" | "google"
 
 export interface AgentConfig {
   provider: ProviderType
@@ -35,12 +35,16 @@ export function saveAgentConfig(config: AgentConfig): void {
 export function loadAgentConfig(): AgentConfig | null {
   try {
     const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}config`)
-    if (!stored) return null
+    if (!stored) {
+      console.log("[AgentConfig] No config in localStorage")
+      return null
+    }
     
     const config = JSON.parse(stored) as AgentConfig
     
     // Validate required fields
     if (!config.provider || !config.apiKey) {
+      console.warn("[AgentConfig] Invalid config - missing provider or apiKey")
       return null
     }
     
@@ -77,6 +81,8 @@ export function getProviderDisplayName(provider: ProviderType): string {
   switch (provider) {
     case "anthropic":
       return "Anthropic Claude"
+    case "deepseek":
+      return "DeepSeek AI"
     case "openai":
       return "OpenAI GPT"
     case "google":
@@ -93,6 +99,8 @@ export function getDefaultModel(provider: ProviderType): string {
   switch (provider) {
     case "anthropic":
       return "claude-sonnet-4-6"
+    case "deepseek":
+      return "DeepSeek-V4-Flash"
     case "openai":
       return "gpt-4o"
     case "google":
@@ -114,6 +122,11 @@ export function getSupportedModels(provider: ProviderType): Array<{ value: strin
         { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
         { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
         { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+      ]
+    case "deepseek":
+      return [
+        { value: "DeepSeek-V4-Flash", label: "DeepSeek V4 Flash" },
+        { value: "DeepSeek-V4-Pro", label: "DeepSeek V4 Pro" },
       ]
     case "openai":
       return [
@@ -138,6 +151,8 @@ export function validateApiKeyFormat(provider: ProviderType, apiKey: string): bo
   switch (provider) {
     case "anthropic":
       return apiKey.startsWith("sk-ant-") && apiKey.length > 20
+    case "deepseek":
+      return apiKey.startsWith("sk-") && apiKey.length > 20
     case "openai":
       return apiKey.startsWith("sk-") && apiKey.length > 20
     case "google":

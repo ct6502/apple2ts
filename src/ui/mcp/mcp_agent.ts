@@ -5,6 +5,7 @@
 
 import type { AIProvider, AIResponse } from "./mcp_agent_provider"
 import { AnthropicProvider } from "./mcp_agent_anthropic"
+import { DeepSeekProvider } from "./mcp_agent_deepseek"
 import { ConversationHistory, type ConversationMessage } from "./mcp_agent_conversation"
 import { loadAgentConfig, type ProviderType } from "./mcp_agent_config"
 import { listMCPTools } from "./mcp_tools"
@@ -27,10 +28,19 @@ export class MCPAgent {
   initialize(): boolean {
     const config = loadAgentConfig()
     if (!config) {
+      console.log("[MCPAgent] No saved config found")
       return false
     }
     
+    console.log(`[MCPAgent] Initializing with provider: ${config.provider}, model: ${config.model}`)
     this.provider = this.createProvider(config.provider, config.apiKey, config.model)
+    
+    if (this.provider) {
+      console.log(`[MCPAgent] Provider initialized: ${this.provider.name}`)
+    } else {
+      console.error(`[MCPAgent] Failed to create provider for: ${config.provider}`)
+    }
+    
     return this.provider !== null
   }
   
@@ -38,7 +48,14 @@ export class MCPAgent {
    * Configure the agent with a new provider and API key
    */
   configure(provider: ProviderType, apiKey: string, model?: string): void {
+    console.log(`[MCPAgent] Configuring with provider: ${provider}, model: ${model}`)
     this.provider = this.createProvider(provider, apiKey, model)
+    
+    if (this.provider) {
+      console.log(`[MCPAgent] Provider configured: ${this.provider.name}`)
+    } else {
+      console.error(`[MCPAgent] Failed to create provider for: ${provider}`)
+    }
   }
   
   /**
@@ -46,6 +63,19 @@ export class MCPAgent {
    */
   isReady(): boolean {
     return this.provider !== null
+  }
+  
+  /**
+   * Get current provider info (for debugging/display)
+   */
+  getProviderInfo(): { name: string; ready: boolean } | null {
+    if (!this.provider) {
+      return null
+    }
+    return {
+      name: this.provider.name,
+      ready: true,
+    }
   }
   
   /**
@@ -277,9 +307,13 @@ export class MCPAgent {
    * Create a provider instance
    */
   private createProvider(type: ProviderType, apiKey: string, model?: string): AIProvider | null {
+    console.log(`[MCPAgent] Creating provider: type=${type}, model=${model}`)
+    
     switch (type) {
       case "anthropic":
         return new AnthropicProvider(apiKey, model)
+      case "deepseek":
+        return new DeepSeekProvider(apiKey, model)
       // Future providers:
       // case "openai":
       //   return new OpenAIProvider(apiKey, model)
@@ -304,4 +338,11 @@ export function getAgent(): MCPAgent {
     agentInstance.initialize() // Try to load saved config
   }
   return agentInstance
+}
+
+/**
+ * Reset the agent singleton (forces reinitialization on next getAgent call)
+ */
+export function resetAgent(): void {
+  agentInstance = null
 }

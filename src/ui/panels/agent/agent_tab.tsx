@@ -8,6 +8,8 @@ import {
   isAgentConfigured} from "../../mcp/mcp_agent_config"
 import AgentTabConfig from "./agent_tab_config"
 import { formatMarkdown } from "./agent_formatmarkdown"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
 
 
 const AgentTab = () => {
@@ -24,6 +26,7 @@ const AgentTab = () => {
 
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const agent = getAgent()
 
 
@@ -71,6 +74,9 @@ const AgentTab = () => {
     setStreamingContent("Processing...")
     setTokenUsage(null)
 
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController()
+
     try {
       // Add user message to conversation and update UI immediately
       const conversation = agent.getConversation()
@@ -82,6 +88,11 @@ const AgentTab = () => {
       
       // Send message to AI agent with progress updates
       await agent.sendMessage(userInput, (status, usage) => {
+        // Check if aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error("Request cancelled by user")
+        }
+        
         setStreamingContent(status)
         if (usage) {
           setTokenUsage(usage)
@@ -94,18 +105,32 @@ const AgentTab = () => {
     } catch (error) {
       console.error("Agent error:", error)
       
-      // Add error message to conversation
-      const conversation = agent.getConversation()
-      conversation.addMessage({
-        role: "assistant",
-        content: error instanceof Error ? error.message : String(error),
-      })
-      setMessages([...conversation.getMessagesForDisplay()])
+      // Don't add error message if it was a user cancellation
+      if (error instanceof Error && error.message === "Request cancelled by user") {
+        console.log("Request was cancelled by user")
+      } else {
+        // Add error message to conversation
+        const conversation = agent.getConversation()
+        conversation.addMessage({
+          role: "assistant",
+          content: error instanceof Error ? error.message : String(error),
+        })
+        setMessages([...conversation.getMessagesForDisplay()])
+      }
       
     } finally {
       setIsProcessing(false)
       setStreamingContent("")
+      abortControllerRef.current = null
       inputRef.current?.focus()
+    }
+  }
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      console.log("Cancelling agent request...")
+      abortControllerRef.current.abort()
+      setStreamingContent("Cancelled")
     }
   }
 
@@ -209,11 +234,13 @@ const AgentTab = () => {
           />
           <div className="agent-controls">
             <button
-              type="submit"
-              disabled={!inputValue.trim() || isProcessing}
+              type={isProcessing ? "button" : "submit"}
+              onClick={isProcessing ? handleStop : undefined}
+              disabled={!isProcessing && !inputValue.trim()}
               className="agent-submit"
+              title={isProcessing ? "Stop" : "Send"}
             >
-              {isProcessing ? "Thinking..." : "Send"}
+              <FontAwesomeIcon icon={isProcessing ? faStop : faPlay} />
             </button>
           </div>
         </form>

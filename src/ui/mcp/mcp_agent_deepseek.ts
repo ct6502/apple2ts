@@ -1,69 +1,28 @@
 /**
- * Anthropic Claude Provider Implementation
+ * DeepSeek AI Provider Implementation
+ * Uses Anthropic-compatible API at https://api.deepseek.com
  */
 
 import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig } from "./mcp_agent_provider"
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-const ANTHROPIC_VERSION = "2023-06-01"
-let tryLocalhost = true
-const IS_LOCALHOST = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-const LOCAL_PROXY_URL = `http://${window.location.hostname}:6502/api/anthropic`
+const DEEPSEEK_API_URL = "https://api.deepseek.com/anthropic/v1/messages"
 const CORS_PROXY = "https://proxy.corsfix.com/?url="
 
 /**
- * Make an API request with automatic fallback from local proxy to CORS proxy
+ * Make an API request to DeepSeek (always through CORS proxy since no local proxy for DeepSeek)
  */
 async function makeApiRequest(
   requestBody: Record<string, unknown>,
   headers: Record<string, string>,
   apiKey: string
 ): Promise<Response> {
-  console.log("[Anthropic] Making API request, tryLocalhost=", tryLocalhost, "IS_LOCALHOST=", IS_LOCALHOST)
-  
-  // Try local proxy first if on localhost
-  if (tryLocalhost && IS_LOCALHOST) {
-    try {
-      console.log("[Anthropic] Trying local proxy at", LOCAL_PROXY_URL)
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 1000) // 1 second timeout for local
-      
-      const localHeaders = { ...headers }
-      // Local proxy uses env var for API key
-      delete localHeaders["x-api-key"]
-      
-      const response = await fetch(LOCAL_PROXY_URL, {
-        method: "POST",
-        headers: localHeaders,
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-      })
-      
-      clearTimeout(timeoutId)
-      
-      console.log("[Anthropic] Local proxy response status:", response.status)
-      
-      // If we get a response (even an error), use it
-      if (response.status !== 404) {
-        return response
-      }
-      // If we get a 404, the endpoint doesn't exist - fall through to CORS proxy
-      console.log("[Anthropic] Local proxy returned 404, falling back to CORS proxy")
-    } catch (error) {
-      // Connection failed or timeout - fall through to CORS proxy
-      console.log("[Anthropic] Local proxy failed:", error, "- using CORS proxy")
-    } finally {
-      tryLocalhost = false // Don't try local proxy again during this session
-    }
-  }
-  
-  // Use CORS proxy (either not localhost, or local proxy failed)
-  const corsUrl = CORS_PROXY + encodeURIComponent(ANTHROPIC_API_URL)
-  console.log("[Anthropic] Using CORS proxy:", corsUrl)
+  const corsUrl = CORS_PROXY + encodeURIComponent(DEEPSEEK_API_URL)
+  console.log("[DeepSeek] Making API request to:", corsUrl)
+  console.log("[DeepSeek] Model:", requestBody.model)
   
   const corsHeaders = {
     ...headers,
-    "x-api-key": apiKey, // CORS proxy needs the API key
+    "Authorization": `Bearer ${apiKey}`,
   }
   
   return fetch(corsUrl, {
@@ -72,10 +31,11 @@ async function makeApiRequest(
     body: JSON.stringify(requestBody),
   })
 }
+
 /**
- * Format Anthropic API error messages in a human-readable way
+ * Format DeepSeek API error messages in a human-readable way
  */
-function formatAnthropicError(status: number, statusText: string, errorData: Record<string, unknown>): string {
+function formatDeepSeekError(status: number, statusText: string, errorData: Record<string, unknown>): string {
   // Check if this is a CORS proxy error
   if (errorData.corsfix_error) {
     const message = errorData.message as string || "Connection failed"
@@ -93,13 +53,13 @@ function formatAnthropicError(status: number, statusText: string, errorData: Rec
     return formattedMessage
   }
   
-  // Check if this is an Anthropic API error
+  // Check if this is a DeepSeek API error (Anthropic-compatible format)
   const error = errorData?.error as { type?: string; message?: string } | undefined
   if (error?.type || error?.message) {
     const errorType = error?.type || "unknown_error"
     const errorMessage = error?.message || statusText
     
-    let formattedMessage = `## Anthropic API Error (${status})\n`
+    let formattedMessage = `## DeepSeek API Error (${status})\n`
     
     // Add error type with better formatting
     if (errorType === "rate_limit_error") {
@@ -132,29 +92,26 @@ function formatAnthropicError(status: number, statusText: string, errorData: Rec
   return formattedMessage
 }
 
-export class AnthropicProvider implements AIProvider {
-  name = "Anthropic Claude"
+export class DeepSeekProvider implements AIProvider {
+  name = "DeepSeek AI"
   
   private apiKey: string
   private defaultModel: string
   
-  constructor(apiKey: string, model = "claude-sonnet-4-6") {
+  constructor(apiKey: string, model = "DeepSeek-V4-Flash") {
     this.apiKey = apiKey
     this.defaultModel = model
   }
   
   validateApiKey(apiKey: string): boolean {
-    // Anthropic keys start with "sk-ant-"
-    return apiKey.startsWith("sk-ant-") && apiKey.length > 20
+    // DeepSeek keys start with "sk-" and are at least 20 characters
+    return apiKey.startsWith("sk-") && apiKey.length > 20
   }
   
   getSupportedModels(): string[] {
     return [
-      "claude-sonnet-4-6",
-      "claude-3-5-sonnet-20240620",
-      "claude-3-opus-20240229",
-      "claude-3-sonnet-20240229",
-      "claude-3-haiku-20240307",
+      "DeepSeek-V4-Flash",
+      "DeepSeek-V4-Pro",
     ]
   }
   
@@ -169,7 +126,7 @@ export class AnthropicProvider implements AIProvider {
     
     const systemPrompt = systemMessages.map(m => m.content).join("\n\n")
     
-    // Build request body
+    // Build request body (Anthropic-compatible format)
     const requestBody: Record<string, unknown> = {
       model: config?.model || this.defaultModel,
       max_tokens: config?.maxTokens || 4096,
@@ -179,51 +136,34 @@ export class AnthropicProvider implements AIProvider {
       })),
     }
     
-    // Use prompt caching for system prompt (cache for 5 minutes across requests)
+    // Add system prompt
     if (systemPrompt) {
-      requestBody.system = [
-        {
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" },
-        },
-      ]
+      requestBody.system = systemPrompt
     }
     
     if (config?.temperature !== undefined) {
       requestBody.temperature = config.temperature
     }
     
-    // Add tools with caching on the last tool (all tools get cached together)
+    // Add tools if provided
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = availableTools.map((tool, index) => {
-        const toolDef: Record<string, unknown> = {
-          name: tool.name,
-          description: tool.description,
-          input_schema: tool.inputSchema,
-        }
-        
-        // Add cache control to the last tool only
-        if (index === availableTools.length - 1) {
-          toolDef.cache_control = { type: "ephemeral" }
-        }
-        
-        return toolDef
-      })
+      requestBody.tools = availableTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.inputSchema,
+      }))
     }
     
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        "anthropic-version": ANTHROPIC_VERSION,
-        "anthropic-beta": "prompt-caching-2024-07-31",
       }
       
       const response = await makeApiRequest(requestBody, headers, this.apiKey)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(formatAnthropicError(response.status, response.statusText, errorData))
+        throw new Error(formatDeepSeekError(response.status, response.statusText, errorData))
       }
       
       const data = await response.json()
@@ -239,7 +179,7 @@ export class AnthropicProvider implements AIProvider {
         } : undefined,
       }
       
-      // Handle content blocks
+      // Handle content blocks (Anthropic-compatible format)
       if (data.content && Array.isArray(data.content)) {
         for (const block of data.content) {
           if (block.type === "text") {
@@ -256,7 +196,7 @@ export class AnthropicProvider implements AIProvider {
       
       return result
     } catch (error) {
-      // Re-throw without adding prefix - formatAnthropicError already provides context
+      // Re-throw without adding prefix - formatDeepSeekError already provides context
       if (error instanceof Error) {
         throw error
       }
@@ -287,51 +227,34 @@ export class AnthropicProvider implements AIProvider {
       stream: true,
     }
     
-    // Use prompt caching for system prompt
+    // Add system prompt
     if (systemPrompt) {
-      requestBody.system = [
-        {
-          type: "text",
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" },
-        },
-      ]
+      requestBody.system = systemPrompt
     }
     
     if (config?.temperature !== undefined) {
       requestBody.temperature = config.temperature
     }
     
-    // Add tools with caching on the last tool
+    // Add tools
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = availableTools.map((tool, index) => {
-        const toolDef: Record<string, unknown> = {
-          name: tool.name,
-          description: tool.description,
-          input_schema: tool.inputSchema,
-        }
-        
-        // Add cache control to the last tool only
-        if (index === availableTools.length - 1) {
-          toolDef.cache_control = { type: "ephemeral" }
-        }
-        
-        return toolDef
-      })
+      requestBody.tools = availableTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.inputSchema,
+      }))
     }
     
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        "anthropic-version": ANTHROPIC_VERSION,
-        "anthropic-beta": "prompt-caching-2024-07-31",
       }
       
       const response = await makeApiRequest(requestBody, headers, this.apiKey)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(formatAnthropicError(response.status, response.statusText, errorData))
+        throw new Error(formatDeepSeekError(response.status, response.statusText, errorData))
       }
       
       if (!response.body) {
@@ -389,7 +312,7 @@ export class AnthropicProvider implements AIProvider {
         }
       }
     } catch (error) {
-      // Re-throw without adding prefix - formatAnthropicError already provides context
+      // Re-throw without adding prefix - formatDeepSeekError already provides context
       if (error instanceof Error) {
         throw error
       }
