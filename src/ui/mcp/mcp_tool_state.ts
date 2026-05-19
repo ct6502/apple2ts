@@ -10,6 +10,7 @@ import {
   passSetState6502,
   passSetMemory,
   passSetSoftSwitches,
+  handleGetZeroPage,
 } from "../main2worker"
 import type { MCPToolResult } from "./mcp_server"
 
@@ -121,9 +122,16 @@ export function toolReadMemory(address: number, length: number): MCPToolResult {
       }
     }
 
-    const memory = handleGetMemoryDump()
+    let bytes: number[] = []
+    let memory: Uint8Array
     const endAddr = Math.min(address + length, 0x10000)
-    const bytes = Array.from(memory.slice(address, endAddr))
+    const start = 0
+    if (address + length < 0x100) {
+      memory = handleGetZeroPage()
+    } else {
+      memory = handleGetMemoryDump(true)
+    }
+    bytes = Array.from(memory.slice(address - start, endAddr - start))
 
     return {
       success: true,

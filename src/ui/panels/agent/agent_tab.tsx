@@ -10,6 +10,7 @@ import AgentTabConfig from "./agent_tab_config"
 import { formatMarkdown } from "./agent_formatmarkdown"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
+import { passRequestMemoryDump } from "../../main2worker"
 
 
 const AgentTab = () => {
@@ -21,7 +22,8 @@ const AgentTab = () => {
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [streamingContent, setStreamingContent] = useState("")
+  const [streamingMessage, setStreamingMessage] = useState<ConversationMessage | null>(null)
+  const [streamingStatus, setStreamingStatus] = useState("")
   const [tokenUsage, setTokenUsage] = useState<{ inputTokens: number; outputTokens: number } | null>(null)
 
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -44,7 +46,7 @@ const AgentTab = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
     }
-  }, [messages, streamingContent])
+  }, [messages, streamingMessage, streamingStatus])
 
   // Auto-focus input when tab becomes visible and agent is configured
   useEffect(() => {
@@ -71,8 +73,15 @@ const AgentTab = () => {
     const userInput = inputValue
     setInputValue("")
     setIsProcessing(true)
-    setStreamingContent("Processing...")
+    setStreamingStatus("Processing...")
+    setStreamingMessage(null)
     setTokenUsage(null)
+    // Request latest memory dump for agent context. This is critical to do before
+    // sending the message to ensure the agent has the most up-to-date information,
+    // especially if emulator is running, as the regular memory dump will be empty.
+    // This is also a race against time, as it assumes that the worker will
+    // respond before the AI can fire a tool call that needs memory access.
+    passRequestMemoryDump()
 
     // Create abort controller for this request
     abortControllerRef.current = new AbortController()
@@ -87,13 +96,23 @@ const AgentTab = () => {
       setMessages([...conversation.getMessagesForDisplay()])
       
       // Send message to AI agent with progress updates
-      await agent.sendMessage(userInput, (status, usage) => {
+      await agent.sendMessage(userInput, (status, usage, streamingText, streamingToolCalls) => {
         // Check if aborted
         if (abortControllerRef.current?.signal.aborted) {
           throw new Error("Request cancelled by user")
         }
         
-        setStreamingContent(status)
+        setStreamingStatus(status)
+        if (streamingText !== undefined || streamingToolCalls !== undefined) {
+          // Update streaming message with new content and/or tool calls
+          setStreamingMessage(prev => ({
+            id: prev?.id || "streaming",
+            role: "assistant" as const,
+            content: streamingText || prev?.content || "",
+            timestamp: prev?.timestamp || new Date(),
+            toolCalls: streamingToolCalls || prev?.toolCalls || [],
+          }))
+        }
         if (usage) {
           setTokenUsage(usage)
         }
@@ -120,7 +139,8 @@ const AgentTab = () => {
       
     } finally {
       setIsProcessing(false)
-      setStreamingContent("")
+      setStreamingStatus("")
+      setStreamingMessage(null)
       abortControllerRef.current = null
       inputRef.current?.focus()
     }
@@ -130,7 +150,8 @@ const AgentTab = () => {
     if (abortControllerRef.current) {
       console.log("Cancelling agent request...")
       abortControllerRef.current.abort()
-      setStreamingContent("Cancelled")
+      setStreamingStatus("Cancelled")
+      setStreamingMessage(null)
     }
   }
 
@@ -198,19 +219,48 @@ const AgentTab = () => {
             </div>
           ))}
           
-          {/* Processing status */}
-          {streamingContent && (
+          {/* Streaming message */}
+          {streamingMessage && (
             <div className="agent-message agent-message-assistant agent-streaming">
               <div className="agent-message-header">
                 <span>🤖 Assistant</span>
                 <span>
-                  ⚙️ {streamingContent}
+                  {streamingStatus && `⚙️ ${streamingStatus}`}
                   {tokenUsage && (
                     <span style={{ marginLeft: "10px", opacity: 0.7 }}>
                       • {tokenUsage.inputTokens.toLocaleString()} in / {tokenUsage.outputTokens.toLocaleString()} out
                     </span>
                   )}
                 </span>
+              </div>
+              {streamingMessage.toolCalls && streamingMessage.toolCalls.length > 0 && (
+                <div className="agent-tool-calls">
+                  {streamingMessage.toolCalls.map((tc, idx) => (
+                    <div key={idx} className="agent-tool-call">
+                      <span className="agent-tool-name">🔧 {tc.name}</span>
+                      {tc.result && (
+                        <span className={`agent-tool-status ${tc.result.success ? "success" : "error"}`}>
+                          {tc.result.success ? "✓" : "✗"}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {streamingMessage.content && (
+                <div className="agent-message-content">
+                  {formatMarkdown(streamingMessage.content)}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Status only (when no message yet) */}
+          {streamingStatus && !streamingMessage && (
+            <div className="agent-message agent-message-assistant agent-streaming">
+              <div className="agent-message-header">
+                <span>🤖 Assistant</span>
+                <span>⚙️ {streamingStatus}</span>
               </div>
             </div>
           )}

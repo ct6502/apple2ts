@@ -83,7 +83,7 @@ export class MCPAgent {
    */
   async sendMessage(
     userMessage: string,
-    onProgress?: (status: string, usage?: { inputTokens: number; outputTokens: number }) => void
+    onProgress?: (status: string, usage?: { inputTokens: number; outputTokens: number }, streamingText?: string, streamingToolCalls?: Array<{ id: string; name: string; input: Record<string, unknown>; result?: MCPToolResult }>) => void
   ): Promise<ConversationMessage> {
     if (!this.provider) {
       throw new Error("Agent not configured. Please set up your API key first.")
@@ -130,14 +130,54 @@ export class MCPAgent {
     while (iterations < this.maxToolIterations) {
       iterations++
       
-      // Get AI response
+      // Get AI response (with streaming)
       onProgress?.("Consulting AI...", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
-      const response = await this.provider.sendMessage(
-        this.conversation.getMessagesForAI(),
-        tools
-      )
       
-      // Update token counts
+      let streamedContent = ""
+      const response: AIResponse = {
+        content: "",
+        toolCalls: [],
+        stopReason: undefined,
+      }
+      
+      // Use streaming if available
+      if (this.provider.streamMessage) {
+        const streamingToolCalls: Array<{ id: string; name: string; input: Record<string, unknown> }> = []
+        await this.provider.streamMessage(
+          this.conversation.getMessagesForAI(),
+          tools,
+          (chunk) => {
+            if (chunk.type === "content" && chunk.content) {
+              streamedContent += chunk.content
+              response.content = streamedContent
+              // Update UI with streaming text and tool calls
+              onProgress?.("Generating response...", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens }, streamedContent, streamingToolCalls)
+            } else if (chunk.type === "tool_use" && chunk.toolCall) {
+              if (!response.toolCalls) {
+                response.toolCalls = []
+              }
+              response.toolCalls.push(chunk.toolCall)
+              streamingToolCalls.push(chunk.toolCall)
+              // Update UI with new tool call
+              onProgress?.("Tool call received...", { inputTokens: totalInputTokens, outputTokens: totalOutputTokens }, streamedContent, streamingToolCalls)
+            } else if (chunk.type === "usage" && chunk.usage) {
+              // Capture usage data from streaming
+              response.usage = chunk.usage
+            } else if (chunk.type === "done") {
+              response.stopReason = "end_turn"
+            }
+          }
+        )
+      } else {
+        // Fallback to non-streaming
+        const nonStreamingResponse = await this.provider.sendMessage(
+          this.conversation.getMessagesForAI(),
+          tools
+        )
+        Object.assign(response, nonStreamingResponse)
+      }
+      
+      // Update token counts (note: streaming doesn't provide usage in real-time)
       if (response.usage) {
         totalInputTokens += response.usage.inputTokens
         totalOutputTokens += response.usage.outputTokens
@@ -153,9 +193,10 @@ export class MCPAgent {
       // Execute all tool calls
       onProgress?.(`Executing ${response.toolCalls.length} tool${response.toolCalls.length > 1 ? "s" : ""}...`, { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
       const toolResults: Array<{ id: string; result: MCPToolResult }> = []
+      const executedToolCalls: Array<{ id: string; name: string; input: Record<string, unknown>; result?: MCPToolResult }> = []
       
       for (const toolCall of response.toolCalls) {
-        onProgress?.(`Running ${toolCall.name}...`, { inputTokens: totalInputTokens, outputTokens: totalOutputTokens })
+        onProgress?.(`Running ${toolCall.name}...`, { inputTokens: totalInputTokens, outputTokens: totalOutputTokens }, response.content || "", executedToolCalls)
         const mcpToolCall: MCPToolCall = {
           tool: toolCall.name as MCPToolName,
           arguments: toolCall.input,
@@ -163,6 +204,17 @@ export class MCPAgent {
         
         const result = await executeMCPTool(mcpToolCall)
         toolResults.push({ id: toolCall.id, result })
+        
+        // Update executed tool calls with result
+        executedToolCalls.push({
+          id: toolCall.id,
+          name: toolCall.name,
+          input: toolCall.input,
+          result,
+        })
+        
+        // Update UI with completed tool call
+        onProgress?.(`Completed ${toolCall.name}`, { inputTokens: totalInputTokens, outputTokens: totalOutputTokens }, response.content || "", executedToolCalls)
       }
       
       // Add assistant message with tool calls

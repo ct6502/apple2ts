@@ -17,8 +17,8 @@ async function makeApiRequest(
   apiKey: string
 ): Promise<Response> {
   const corsUrl = CORS_PROXY + encodeURIComponent(DEEPSEEK_API_URL)
-  console.log("[DeepSeek] Making API request to:", corsUrl)
-  console.log("[DeepSeek] Model:", requestBody.model)
+  // console.log("[DeepSeek] Making API request to:", corsUrl)
+  // console.log("[DeepSeek] Model:", requestBody.model)
   
   const corsHeaders = {
     ...headers,
@@ -110,9 +110,31 @@ export class DeepSeekProvider implements AIProvider {
   
   getSupportedModels(): string[] {
     return [
-      "DeepSeek-V4-Flash",
-      "DeepSeek-V4-Pro",
+      "deepseek-v4-flash",
+      "deepseek-v4-flash-thinking",
+      "deepseek-v4-pro",
+      "deepseek-v4-pro-thinking",
     ]
+  }
+  
+  /**
+   * Check if model uses thinking mode
+   */
+  private isThinkingMode(model: string): boolean {
+    return model.toLowerCase().includes("thinking")
+  }
+  
+  /**
+   * Get base model name (strip -thinking suffix and convert to API format)
+   */
+  private getBaseModel(model: string): string {
+    // Normalize model name (handle old format)
+    let normalizedModel = model.toLowerCase()
+    
+    // Remove -thinking suffix if present
+    normalizedModel = normalizedModel.replace("-thinking", "")
+    
+    return normalizedModel
   }
   
   async sendMessage(
@@ -126,14 +148,25 @@ export class DeepSeekProvider implements AIProvider {
     
     const systemPrompt = systemMessages.map(m => m.content).join("\n\n")
     
+    const modelToUse = config?.model || this.defaultModel
+    const baseModel = this.getBaseModel(modelToUse)
+    const enableThinking = this.isThinkingMode(modelToUse)
+    
     // Build request body (Anthropic-compatible format)
     const requestBody: Record<string, unknown> = {
-      model: config?.model || this.defaultModel,
+      model: baseModel,
       max_tokens: config?.maxTokens || 4096,
       messages: conversationMessages.map(m => ({
         role: m.role,
         content: m.content,
       })),
+    }
+    
+    // Enable thinking mode if requested
+    if (enableThinking) {
+      requestBody.thinking = {
+        type: "enabled",
+      }
     }
     
     // Add system prompt
@@ -216,15 +249,27 @@ export class DeepSeekProvider implements AIProvider {
     
     const systemPrompt = systemMessages.map(m => m.content).join("\n\n")
     
+    const modelToUse = config?.model || this.defaultModel
+    const baseModel = this.getBaseModel(modelToUse)
+    const enableThinking = this.isThinkingMode(modelToUse)
+    
     // Build request body
     const requestBody: Record<string, unknown> = {
-      model: config?.model || this.defaultModel,
+      model: baseModel,
       max_tokens: config?.maxTokens || 4096,
       messages: conversationMessages.map(m => ({
         role: m.role,
         content: m.content,
       })),
       stream: true,
+    }
+    
+    // Enable thinking mode if requested
+    if (enableThinking) {
+      requestBody.thinking = {
+        type: "enabled",
+        budget_tokens: 4096,
+      }
     }
     
     // Add system prompt
@@ -266,6 +311,10 @@ export class DeepSeekProvider implements AIProvider {
       const decoder = new TextDecoder()
       let buffer = ""
       
+      // Track tool inputs as they stream in
+      const toolInputBuffers = new Map<string, string>()
+      const toolMetadata = new Map<string, { id: string; name: string }>()
+      
       while (true) {
         const { done, value } = await reader.read()
         
@@ -296,12 +345,50 @@ export class DeepSeekProvider implements AIProvider {
                   content: event.delta.text,
                 })
               } else if (event.type === "content_block_start" && event.content_block?.type === "tool_use") {
+                // Store tool metadata
+                const blockIndex = event.index
+                toolMetadata.set(blockIndex, {
+                  id: event.content_block.id,
+                  name: event.content_block.name,
+                })
+                toolInputBuffers.set(blockIndex, "")
+              } else if (event.type === "content_block_delta" && event.delta?.type === "input_json_delta") {
+                // Accumulate tool input JSON
+                const blockIndex = event.index
+                const currentBuffer = toolInputBuffers.get(blockIndex) || ""
+                toolInputBuffers.set(blockIndex, currentBuffer + event.delta.partial_json)
+              } else if (event.type === "content_block_stop") {
+                // Tool input is complete, parse and emit
+                const blockIndex = event.index
+                const metadata = toolMetadata.get(blockIndex)
+                const inputJson = toolInputBuffers.get(blockIndex)
+                
+                if (metadata && inputJson !== undefined) {
+                  try {
+                    const input = JSON.parse(inputJson)
+                    onChunk({
+                      type: "tool_use",
+                      toolCall: {
+                        id: metadata.id,
+                        name: metadata.name,
+                        input,
+                      },
+                    })
+                  } catch (e) {
+                    console.warn("Failed to parse tool input JSON:", inputJson, e)
+                  }
+                  
+                  // Clean up
+                  toolMetadata.delete(blockIndex)
+                  toolInputBuffers.delete(blockIndex)
+                }
+              } else if (event.type === "message_delta" && event.usage) {
+                // Emit usage data
                 onChunk({
-                  type: "tool_use",
-                  toolCall: {
-                    id: event.content_block.id,
-                    name: event.content_block.name,
-                    input: {},
+                  type: "usage",
+                  usage: {
+                    inputTokens: event.usage.input_tokens || 0,
+                    outputTokens: event.usage.output_tokens || 0,
                   },
                 })
               }

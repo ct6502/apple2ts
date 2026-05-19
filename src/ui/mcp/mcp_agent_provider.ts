@@ -25,9 +25,13 @@ export interface AIResponse {
 }
 
 export interface AIStreamChunk {
-  type: "content" | "tool_use" | "done"
+  type: "content" | "tool_use" | "done" | "usage"
   content?: string
   toolCall?: AIToolCall
+  usage?: {
+    inputTokens: number
+    outputTokens: number
+  }
 }
 
 export interface AIProviderConfig {

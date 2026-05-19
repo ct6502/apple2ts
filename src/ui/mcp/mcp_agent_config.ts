@@ -100,7 +100,7 @@ export function getDefaultModel(provider: ProviderType): string {
     case "anthropic":
       return "claude-sonnet-4-6"
     case "deepseek":
-      return "DeepSeek-V4-Flash"
+      return "deepSeek-v4-flash"
     case "openai":
       return "gpt-4o"
     case "google":
@@ -125,8 +125,10 @@ export function getSupportedModels(provider: ProviderType): Array<{ value: strin
       ]
     case "deepseek":
       return [
-        { value: "DeepSeek-V4-Flash", label: "DeepSeek V4 Flash" },
-        { value: "DeepSeek-V4-Pro", label: "DeepSeek V4 Pro" },
+        { value: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+        { value: "deepseek-v4-flash-thinking", label: "DeepSeek V4 Flash (Thinking)" },
+        { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+        { value: "deepseek-v4-pro-thinking", label: "DeepSeek V4 Pro (Thinking)" },
       ]
     case "openai":
       return [

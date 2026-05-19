@@ -680,3 +680,12 @@ export const getBasePlusAuxMemory = () => {
   return memory.slice(0, RamWorksMemoryStart + 0x10000)
 }
 
+export const getMemoryDump = () => {
+  const dump = new Uint8Array(0x10000)
+  for (let page = 0; page < 256; page++) {
+    const offset = addressGetTable[page]
+    dump.set(memory.slice(offset, offset + 256), page * 256)
+  }
+  return dump
+}
+

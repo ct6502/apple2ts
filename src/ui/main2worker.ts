@@ -226,6 +226,12 @@ export const passSetTraceSettings = (traceSettings: TraceSettings) => {
   doPostMessage(MSG_MAIN.TRACE_SETTINGS, traceSettings)
 }
 
+export const passRequestMemoryDump = () => {
+  doPostMessage(MSG_MAIN.GET_MEMORY, true)
+}
+
+let memoryDump: Uint8Array<ArrayBufferLike> = new Uint8Array()
+
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
@@ -344,6 +350,10 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       set6502Instructions(instructions)
       break
     }
+    case MSG_WORKER.MEMORY:
+      // This is a response to a GET_MEMORY request. Update the memory dump in the state.
+      memoryDump = e.data.payload as Uint8Array
+      break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -430,7 +440,10 @@ export const handleGetRamWorksBank = () => {
   return machineState.ramWorksBank
 }
 
-export const handleGetMemoryDump = () => {
+export const handleGetMemoryDump = (cached = false) => {
+  if (cached) {
+    return (machineState.memoryDump.length > 0) ? machineState.memoryDump : memoryDump
+  }
   return machineState.memoryDump
 }
 

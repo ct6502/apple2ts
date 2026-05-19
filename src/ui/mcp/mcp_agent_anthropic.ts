@@ -19,7 +19,7 @@ async function makeApiRequest(
   headers: Record<string, string>,
   apiKey: string
 ): Promise<Response> {
-  console.log("[Anthropic] Making API request, tryLocalhost=", tryLocalhost, "IS_LOCALHOST=", IS_LOCALHOST)
+  // console.log("[Anthropic] Making API request, tryLocalhost=", tryLocalhost, "IS_LOCALHOST=", IS_LOCALHOST)
   
   // Try local proxy first if on localhost
   if (tryLocalhost && IS_LOCALHOST) {
@@ -41,7 +41,7 @@ async function makeApiRequest(
       
       clearTimeout(timeoutId)
       
-      console.log("[Anthropic] Local proxy response status:", response.status)
+      // console.log("[Anthropic] Local proxy response status:", response.status)
       
       // If we get a response (even an error), use it
       if (response.status !== 404) {
@@ -59,7 +59,7 @@ async function makeApiRequest(
   
   // Use CORS proxy (either not localhost, or local proxy failed)
   const corsUrl = CORS_PROXY + encodeURIComponent(ANTHROPIC_API_URL)
-  console.log("[Anthropic] Using CORS proxy:", corsUrl)
+  // console.log("[Anthropic] Using CORS proxy:", corsUrl)
   
   const corsHeaders = {
     ...headers,
@@ -343,6 +343,10 @@ export class AnthropicProvider implements AIProvider {
       const decoder = new TextDecoder()
       let buffer = ""
       
+      // Track tool inputs as they stream in
+      const toolInputBuffers = new Map<string, string>()
+      const toolMetadata = new Map<string, { id: string; name: string }>()
+      
       while (true) {
         const { done, value } = await reader.read()
         
@@ -373,12 +377,50 @@ export class AnthropicProvider implements AIProvider {
                   content: event.delta.text,
                 })
               } else if (event.type === "content_block_start" && event.content_block?.type === "tool_use") {
+                // Store tool metadata
+                const blockIndex = event.index
+                toolMetadata.set(blockIndex, {
+                  id: event.content_block.id,
+                  name: event.content_block.name,
+                })
+                toolInputBuffers.set(blockIndex, "")
+              } else if (event.type === "content_block_delta" && event.delta?.type === "input_json_delta") {
+                // Accumulate tool input JSON
+                const blockIndex = event.index
+                const currentBuffer = toolInputBuffers.get(blockIndex) || ""
+                toolInputBuffers.set(blockIndex, currentBuffer + event.delta.partial_json)
+              } else if (event.type === "content_block_stop") {
+                // Tool input is complete, parse and emit
+                const blockIndex = event.index
+                const metadata = toolMetadata.get(blockIndex)
+                const inputJson = toolInputBuffers.get(blockIndex)
+                
+                if (metadata && inputJson !== undefined) {
+                  try {
+                    const input = JSON.parse(inputJson)
+                    onChunk({
+                      type: "tool_use",
+                      toolCall: {
+                        id: metadata.id,
+                        name: metadata.name,
+                        input,
+                      },
+                    })
+                  } catch (e) {
+                    console.warn("Failed to parse tool input JSON:", inputJson, e)
+                  }
+                  
+                  // Clean up
+                  toolMetadata.delete(blockIndex)
+                  toolInputBuffers.delete(blockIndex)
+                }
+              } else if (event.type === "message_delta" && event.usage) {
+                // Emit usage data
                 onChunk({
-                  type: "tool_use",
-                  toolCall: {
-                    id: event.content_block.id,
-                    name: event.content_block.name,
-                    input: {},
+                  type: "usage",
+                  usage: {
+                    inputTokens: event.usage.input_tokens || 0,
+                    outputTokens: event.usage.output_tokens || 0,
                   },
                 })
               }

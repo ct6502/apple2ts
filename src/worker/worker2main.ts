@@ -20,6 +20,7 @@ import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
+import { getMemoryDump } from "./memory"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -57,6 +58,10 @@ export const passDriveProps = (props: DriveProps) => {
 
 export const passDriveSound = (sound: DRIVE) => {
   doPostMessage(MSG_WORKER.DRIVE_SOUND, sound)
+}
+
+const passMemory = (mem: Uint8Array) => {
+  doPostMessage(MSG_WORKER.MEMORY, mem)
 }
 
 const passSaveState = (sState: EmulatorSaveState) => {
@@ -182,6 +187,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.APPLE_RELEASE:
         pressAppleCommandKey(false, e.data.payload)
+        break
+      case MSG_MAIN.GET_MEMORY:
+        passMemory(getMemoryDump())
         break
       case MSG_MAIN.GET_SAVE_STATE:
         passSaveState(doGetSaveState(true))

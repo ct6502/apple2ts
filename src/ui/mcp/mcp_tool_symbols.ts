@@ -21,7 +21,7 @@ export function toolDisassemble(address: number, lines = 10): MCPToolResult {
       }
     }
 
-    const memory = handleGetMemoryDump()
+    const memory = handleGetMemoryDump(true)
     const instructions: Array<{
       address: number
       bytes: number[]

@@ -46,7 +46,7 @@ const MemoryDump = () => {
 
   const getMemoryRange = () => {
     const memory = handleGetMemoryDump()
-    if (memory.length < 1) return new Uint8Array()
+    if (memory.length < 0x10000) return new Uint8Array()
     switch (memoryRange) {
       case MEMORY_RANGE.CURRENT:
         {

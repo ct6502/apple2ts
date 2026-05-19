@@ -53,7 +53,7 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
   try {
     switch (uri) {
       case "apple2ts://memory/main": {
-        const memory = handleGetMemoryDump()
+        const memory = handleGetMemoryDump(true)
         return {
           uri: uri,
           mimeType: "application/octet-stream",
