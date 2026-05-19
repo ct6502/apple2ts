@@ -330,13 +330,13 @@ export function listMCPTools(): Array<{
     },
     {
       name: "read_resource",
-      description: "Reads a resource by URI. Resources provide high-level access to emulator state like the text screen, CPU status, disk catalog, etc. Use this instead of tool calls for reading state.",
+      description: "Reads a resource by URI. Resources provide high-level access to emulator state like the text screen, CPU status, disk catalog, current disk drive status, etc. Use this instead of tool calls for reading state.",
       inputSchema: {
         type: "object",
         properties: {
           uri: {
             type: "string",
-            description: "Resource URI (e.g., 'apple2ts://video/text' for text screen, 'apple2ts://cpu/status' for CPU registers and state, 'apple2ts://system/softswitches' for soft switches, 'apple2ts://debugger/breakpoints' for breakpoint list)",
+            description: "Resource URI (e.g., 'apple2ts://video/text' for text screen, 'apple2ts://cpu/status' for CPU registers and state, 'apple2ts://disks/current' for current disk drive status including motor state and mounted disks, 'apple2ts://system/softswitches' for soft switches, 'apple2ts://debugger/breakpoints' for breakpoint list)",
             enum: [
               "apple2ts://memory/main",
               "apple2ts://video/text",
@@ -349,6 +349,7 @@ export function listMCPTools(): Array<{
               "apple2ts://debugger/trace",
               "apple2ts://debugger/backtrace",
               "apple2ts://disks/catalog",
+              "apple2ts://disks/current",
               "apple2ts://emulator/settings"
             ],
           },

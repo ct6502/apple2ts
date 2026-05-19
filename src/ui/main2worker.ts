@@ -230,6 +230,9 @@ export const passRequestMemoryDump = () => {
   doPostMessage(MSG_MAIN.GET_MEMORY, true)
 }
 
+// This is a cached memory dump, updated whenever the main requests a new one.
+// Currently only used by the AI Agent, since it may want to look at memory
+// even when the emulator is not paused.
 let memoryDump: Uint8Array<ArrayBufferLike> = new Uint8Array()
 
 let machineState: MachineState = {

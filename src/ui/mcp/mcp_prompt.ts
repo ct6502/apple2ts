@@ -18,6 +18,7 @@ READING EMULATOR STATE - Use read_resource tool:
 - Trace log: "apple2ts://debugger/trace" - instruction trace if tracing is enabled
 - Call stack: "apple2ts://debugger/backtrace" - JSR return addresses on stack
 - Disk catalog: "apple2ts://disks/catalog" - available disk images with metadata
+- Current disk drive status: "apple2ts://disks/current" - status of all 4 disk drives (2 hard drives and 2 floppy drives), including motor state and mounted disks
 - Emulator settings: "apple2ts://emulator/settings" - current speed, machine type, color mode, and display settings
 
 Resources are READ-ONLY state snapshots. Use resources instead of tools when you need to inspect current state.

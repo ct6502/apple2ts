@@ -61,6 +61,7 @@ export type MCPResourceURI =
   | "apple2ts://debugger/trace"
   | "apple2ts://debugger/backtrace"
   | "apple2ts://disks/catalog"
+  | "apple2ts://disks/current"
   | "apple2ts://emulator/settings"
 
 export interface MCPToolCall {

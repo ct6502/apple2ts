@@ -60,7 +60,10 @@ export const getDisassembly = (startAddress = -1, endAddress = -1) => {
       r += "\n"
       continue
     }
-    const code =  instructions[instr]
+    const code = instructions[instr]
+    if (!code) {
+      return r
+    }
     const vLo = memGetRaw((addr + 1) % 0x10000)
     const vHi = memGetRaw((addr + 2) % 0x10000)
     // Do not want the branch to be marked as taken or not taken here

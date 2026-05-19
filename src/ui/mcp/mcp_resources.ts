@@ -2,6 +2,7 @@ import { RUN_MODE } from "../../common/utility"
 import { handleGetMemoryDump, handleGetTextPageAsString, handleGetState6502, handleGetRunMode, handleGetMachineName, handleGetStackString, handleGetLores, handleGetHires, handleGetSoftSwitches, handleGetBreakpoints, handleGetTracelog, handleGetTracing, handleGetSpeedMode } from "../main2worker"
 import { MCPResourceURI, MCPResource } from "./mcp_server"
 import { getUIState } from "../ui_settings"
+import { handleGetDriveProps } from "../devices/disk/driveprops"
 
 /**
  * Catalog of bundled disk images available in the emulator
@@ -223,6 +224,31 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
         }
       }
 
+      case "apple2ts://disks/current": {
+        const drives = [0, 1, 2, 3].map(index => {
+          const drive = handleGetDriveProps(index)
+          return {
+            index: drive.index,
+            type: drive.hardDrive ? "hard-drive" : "floppy",
+            driveNumber: drive.drive,
+            filename: drive.filename || null,
+            motorRunning: drive.motorRunning,
+            hasChanges: drive.diskHasChanges,
+            isWriteProtected: drive.isWriteProtected,
+            status: drive.status,
+          }
+        })
+        
+        return {
+          uri: uri,
+          mimeType: "application/json",
+          data: {
+            drives: drives,
+            description: "Status of all 4 disk drives (2 hard drives and 2 floppy drives). motorRunning indicates if the drive motor is currently on.",
+          },
+        }
+      }
+
       case "apple2ts://emulator/settings": {
         const uiState = getUIState()
         const speedMode = handleGetSpeedMode()
@@ -369,6 +395,12 @@ export function listMCPResources(): Array<{
       uri: "apple2ts://disks/catalog",
       name: "Disk Catalog",
       description: "Complete catalog of bundled disk images available in the emulator with metadata (names, types, descriptions, file paths)",
+      mimeType: "application/json",
+    },
+    {
+      uri: "apple2ts://disks/current",
+      name: "Current Disk Status",
+      description: "Real-time status of all 4 disk drives including whether motor is on, filename of mounted disk, and write protection status",
       mimeType: "application/json",
     },
     {
