@@ -183,11 +183,16 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyDown = (e: keyEvent) => {
     let keyHandledLocal = false
+    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
     }
     if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
+    }
+    if (isBrowserAltKey) {
+      e.preventDefault()
+      e.stopPropagation()
     }
     // TODO: What modifier key should be used on Windows? Can't use Ctrl
     // because that interferes with Apple II control keys like Ctrl+S
@@ -283,6 +288,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyUp = (e: keyEvent) => {
+    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
     } else if (isClosedAppleUp(e)) {
@@ -297,6 +303,11 @@ const Apple2Canvas = (props: DisplayProps) => {
       e.preventDefault()
       e.stopPropagation()
     }
+    if (isBrowserAltKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
   }
 
   const checkContentHeight = () => {
@@ -309,6 +320,22 @@ const Apple2Canvas = (props: DisplayProps) => {
       document.body.classList.add("no-scroll")
     } else {
       document.body.classList.remove("no-scroll")
+    }
+  }
+
+  const releaseBlurredModifierState = () => {
+    passAppleCommandKeyRelease(true)
+    passAppleCommandKeyRelease(false)
+    passKeyRelease()
+  }
+
+  const handleWindowBlur = () => {
+    releaseBlurredModifierState()
+  }
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      releaseBlurredModifierState()
     }
   }
 
@@ -551,6 +578,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
+        window.addEventListener("blur", handleWindowBlur)
+        document.addEventListener("visibilitychange", handleVisibilityChange)
         ensureGamepadEventListeners()
         handleResize()
 
