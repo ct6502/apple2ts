@@ -618,8 +618,8 @@ body.dark-mode .icon-text {
 .dbg-tab-vertical {
   width: 20px;
   height: 60px;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
   margin-bottom: 4px;
 }
 

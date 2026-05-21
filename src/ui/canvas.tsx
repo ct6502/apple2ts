@@ -13,6 +13,7 @@ import {
   passKeyRelease,
   handleGetMachineName,
   handleGetState6502,
+  handleGetSoftSwitches,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
@@ -212,7 +213,8 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
 
     const s6502 = handleGetState6502()
-    const isKeyboardLoop = s6502.PC >= 0xC26D && s6502.PC <= 0xC28E
+    const switches = handleGetSoftSwitches()
+    const isKeyboardLoop = switches.TEXT && s6502.PC >= 0xC26D && s6502.PC <= 0xC28E
 
     if (e.key in arrowKeys) {
 

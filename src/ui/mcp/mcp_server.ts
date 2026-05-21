@@ -37,6 +37,7 @@ export type MCPToolName =
   | "eject_disk"
   | "load_bundled_disk"
   | "send_keypress"
+  | "send_text"
   | "press_apple_key"
   | "release_apple_key"
   | "load_binary"

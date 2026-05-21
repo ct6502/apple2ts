@@ -2,9 +2,8 @@ import { useEffect, useState } from "react"
 import { validateApiKeyFormat, getProviderDisplayName, saveAgentConfig, loadAgentConfig, getDefaultModel, getSupportedModels, ProviderType, isAgentConfigured, clearAgentConfig } from "../../mcp/mcp_agent_config"
 import { getAgent } from "../../mcp/mcp_agent"
 
-const AgentTabConfig = () => {
+const AgentTabConfig = (props: {showConfig: boolean, setShowConfig: (show: boolean) => void }) => {
   const [apiKey, setApiKey] = useState("")
-  const [showConfig, setShowConfig] = useState(!isAgentConfigured())
   const [provider, setProvider] = useState<ProviderType>("anthropic")
   const [model, setModel] = useState(getDefaultModel("anthropic"))
   const [availableModels, setAvailableModels] = useState(getSupportedModels("anthropic"))
@@ -18,6 +17,7 @@ const AgentTabConfig = () => {
         setProvider(config.provider)
         setModel(config.model || getDefaultModel(config.provider))
         setAvailableModels(getSupportedModels(config.provider))
+        setApiKey(config.apiKey)
         setCurrentConfig(config)
       }
     }, [])
@@ -31,22 +31,10 @@ const AgentTabConfig = () => {
     const config = { provider, apiKey, model }
     saveAgentConfig(config)
     agent.configure(provider, apiKey, model)
-    setShowConfig(false)
-    setApiKey("") // Clear from memory
+    props.setShowConfig(false)
     
     // Reload the page to ensure the new provider is properly initialized
     window.location.reload()
-  }
-  
-  const handleConfigChange = () => {
-    setShowConfig(true)
-    const config = loadAgentConfig()
-    if (config) {
-      setProvider(config.provider)
-      setModel(config.model || getDefaultModel(config.provider))
-      setAvailableModels(getSupportedModels(config.provider))
-      // Don't pre-fill API key for security
-    }
   }
   
   const handleProviderChange = (newProvider: ProviderType) => {
@@ -93,8 +81,15 @@ const AgentTabConfig = () => {
   
 return (
 <div>
-  {showConfig &&
-    <div className="agent-config-panel">
+  {props.showConfig &&
+    <div className="modal-overlay"
+      tabIndex={0} // Make the div focusable
+      onKeyDown={(event) => {
+        if (event.key === "Escape") props.setShowConfig(false)
+      }}>
+      <div className="floating-dialog flex-column"
+        style={{ left: "15%", top: "25%" }}>
+        <div className="agent-config-panel">
       <h3>Configure AI Agent</h3>
       <div className="agent-config-form">
         <label>
@@ -139,16 +134,12 @@ return (
           <button onClick={handleConfigSave} disabled={!apiKey}>
             Save Configuration
           </button>
-          {isAgentConfigured() && (
-            <div>
             <button onClick={handleClearConfig}>
               Clear Configuration
             </button>
-            <button onClick={() => setShowConfig(false)}>
+            <button onClick={() => props.setShowConfig(false)}>
               Cancel
             </button>
-            </div>
-          )}
         </div>
         
         <div className="agent-config-info">
@@ -159,23 +150,18 @@ return (
         </div>
       </div>
     </div>
+      </div>
+    </div>
   }
 
-  {isAgentConfigured() && !showConfig && (
-    <div className="agent-header">
-      <div className="agent-header-buttons">
-        <button onClick={handleConfigChange} title="Change configuration">
-          Settings
-        </button>
-        <small style={{ marginLeft: "10px", opacity: 0.7 }}>
-          {(() => {
-            const providerInfo = agent.getProviderInfo()
-            return providerInfo 
-              ? `Provider: ${providerInfo.name} (${currentConfig?.model || "default"})` 
-              : "Not configured"
-          })()}
-        </small>
-      </div>
+  {isAgentConfigured() && (
+    <div className="agent-footer">
+      {(() => {
+        const providerInfo = agent.getProviderInfo()
+        return providerInfo 
+          ? `Provider: ${providerInfo.name} (${currentConfig?.model || "default"})` 
+          : "Not configured"
+      })()}
     </div>
   )}
 </div>

@@ -9,7 +9,7 @@ import {
 import AgentTabConfig from "./agent_tab_config"
 import { formatMarkdown } from "./agent_formatmarkdown"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
+import { faCog, faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
 import { passRequestMemoryDump } from "../../main2worker"
 
 
@@ -19,6 +19,7 @@ const AgentTab = () => {
     import("../panels.minimal.css")
   }
 
+  const [showConfig, setShowConfig] = useState(!isAgentConfigured())
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
@@ -282,21 +283,27 @@ const AgentTab = () => {
             disabled={isProcessing}
             spellCheck={true}
           />
-          <div className="agent-controls">
+        </form>
+        </div>
+      )}
+      
+      <div className="agent-controls">
             <button
               type={isProcessing ? "button" : "submit"}
-              onClick={isProcessing ? handleStop : undefined}
+              onClick={isProcessing ? handleStop : handleSubmit}
               disabled={!isProcessing && !inputValue.trim()}
               className="agent-submit"
               title={isProcessing ? "Stop" : "Send"}
             >
               <FontAwesomeIcon icon={isProcessing ? faStop : faPlay} />
             </button>
-          </div>
-        </form>
-        </div>
-      )}
-      
+        <button onClick={() => setShowConfig(true)}
+          className="agent-submit"
+          title="Change configuration">
+          <FontAwesomeIcon icon={faCog} />
+        </button>
+      </div>
+
       {/* Initial setup prompt */}
       {/* {!isAgentConfigured() && (
         <div className="agent-setup-prompt">
@@ -305,7 +312,7 @@ const AgentTab = () => {
         </div>
       )} */}
 
-      <AgentTabConfig/>
+      <AgentTabConfig showConfig={showConfig} setShowConfig={setShowConfig} />
     </div>
   )
 }

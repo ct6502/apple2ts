@@ -243,15 +243,33 @@ export function listMCPTools(): Array<{
     },
     {
       name: "send_keypress",
-      description: "Simulates typing on the Apple II keyboard. For printable text, send strings. For control characters (Ctrl+A through Ctrl+Z = codes 1-26) and special keys, send NUMERIC codes (not strings, not HTML entities). Examples: Ctrl+G=7, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27.",
+      description: "Simulates pressing a single key on the Apple II keyboard. IMPORTANT: When the user asks you to press a key, CALL THIS TOOL IMMEDIATELY - do not just describe what you will do. For control characters (Ctrl+A through Ctrl+Z = codes 1-26) and special keys, send NUMERIC codes (not strings, not HTML entities). Examples: Ctrl+G=7, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27.",
       inputSchema: {
         type: "object",
         properties: {
           key: {
-            description: "Printable text as string (e.g., 'CATALOG'), OR numeric code for control/special keys: Ctrl+A-Z=1-26, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27. NEVER use HTML entities or Unicode escapes for control chars.",
+            description: "A single ASCII character (e.g., 'A'), OR numeric code for control/special keys: Ctrl+A-Z=1-26, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27. NEVER use HTML entities or Unicode escapes for control chars.",
+          },
+          delay: {
+            type: "number",
+            description: "Delay in milliseconds before releasing the key (default: 50). Use longer delays (e.g., 1000) to hold keys down for extended periods.",
+            default: 50,
           },
         },
         required: ["key"],
+      },
+    },
+    {
+      name: "send_text",
+      description: "Simulates typing a string on the Apple II keyboard. IMPORTANT: When the user asks you to type something, CALL THIS TOOL IMMEDIATELY - do not just describe what you will do. For printable text, send strings. For control characters (Ctrl+A through Ctrl+Z = codes 1-26) and special keys, send NUMERIC codes (not strings, not HTML entities). Examples: Ctrl+G=7, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          text: {
+            description: "Printable text as string (e.g., 'CATALOG'), OR numeric code for control/special keys: Ctrl+A-Z=1-26, Left=8, Down=10, Up=11, Enter=13, Right=21, Esc=27. NEVER use HTML entities or Unicode escapes for control chars.",
+          },
+        },
+        required: ["text"],
       },
     },
     {

@@ -165,7 +165,7 @@ The AI agent has access to all MCP tools defined in `mcp_tools.ts`:
 - **State Inspection**: get_registers, read_memory, get_softswitches
 - **State Modification**: set_register, write_memory, set_softswitches
 - **Debugging**: set_breakpoint, clear_breakpoint, list_breakpoints
-- **Media**: insert_disk, eject_disk, send_keypress, load_binary
+- **Media**: insert_disk, eject_disk, send_keypress, send_text, load_binary
 - **Analysis**: disassemble
 
 The agent automatically chooses and executes the appropriate tools based on user requests.

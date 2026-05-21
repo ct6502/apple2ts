@@ -163,7 +163,7 @@
 /* Form controls */
 .agent-controls {
   display: flex;
-  justify-content: space-between;
+  gap: 10px;
   align-items: center;
 }
 
@@ -172,7 +172,7 @@
 }
 
 .agent-submit {
-  padding: 6px 16px;
+  padding: 6px 6px;
   background-color: #000000;
   border: none;
   border-radius: 4px;
@@ -192,17 +192,15 @@
 /* Configuration Panel */
 .agent-config-panel {
   width: calc(100% - 60px);
-  background-color: black;
-  border: 1px solid #00C000;
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 10px;
+  color: black;
 }
 
 .agent-config-panel h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #00FF00;
 }
 
 .agent-config-form {
@@ -215,16 +213,12 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: #00FF00;
 }
 
 .agent-config-form select,
 .agent-config-form input {
   padding: 6px;
-  background-color: #000;
-  border: 1px solid #00C000;
   border-radius: 4px;
-  color: #00FF00;
   font-family: inherit;
 }
 
@@ -246,10 +240,8 @@
 
 .agent-config-buttons button {
   padding: 8px 16px;
-  background-color: #000;
-  border: 1px solid #00C000;
+  border: 1px solid;
   border-radius: 4px;
-  color: #00FF00;
   cursor: pointer;
 }
 
@@ -265,49 +257,21 @@
 .agent-config-info {
   margin-top: 12px;
   padding: 8px;
-  background-color: black;
   border-radius: 4px;
 }
 
 .agent-config-info small {
-  color: #00C000;
   line-height: 1.4;
 }
 
 .agent-config-info a {
-  color: #00FF00;
   text-decoration: underline;
 }
 
 /* Header with status and buttons */
-.agent-header {
-  display: flex;
-  width: calc(100% - 50px);
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  background-color: black;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-.agent-header-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.agent-header-buttons button {
-  padding: 4px 12px;
-  background-color: #000;
-  border: 1px solid #00C000;
-  border-radius: 4px;
-  color: #00FF00;
-  cursor: pointer;
-  font-size: 0.9em;
-}
-
-.agent-header-buttons button:hover {
-  background-color: #222;
+.agent-footer {
+  background-color: default;
+  color: black;
 }
 
 /* Tool calls display */

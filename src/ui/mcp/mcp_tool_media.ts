@@ -17,6 +17,8 @@ import {
   handleSetDiskFromURL,
 } from "../devices/disk/driveprops"
 import type { MCPToolResult } from "./mcp_server"
+import { handleArrowKey } from "../devices/gamepad"
+import { ARROW } from "../../common/utility"
 
 /**
  * Mounts a disk image
@@ -130,11 +132,19 @@ export function toolEjectDisk(drive: number): MCPToolResult {
   }
 }
 
+// Map ASCII codes for arrow keys to ARROW enum
+const arrowKeys: { [key: number]: ARROW } = {
+  8: ARROW.LEFT,
+  21: ARROW.RIGHT,
+  11: ARROW.UP,
+  10: ARROW.DOWN,
+}
+
 /**
  * Simulates a keypress on the Apple II keyboard
  * @param key ASCII code, single character, or string to type
  */
-export function toolSendKeypress(key: string | number): MCPToolResult {
+export function toolSendKeypress(key: string | number, delay = 50): MCPToolResult {
   try {
     // Handle typing entire strings
     if (typeof key === "string" && key.length > 1) {
@@ -159,14 +169,49 @@ export function toolSendKeypress(key: string | number): MCPToolResult {
       }
     }
 
-    passKeypress(keyCode)
-    passKeyRelease()
+    if (keyCode in arrowKeys) {
+      // Handle arrow keys specially to support joystick mode
+      handleArrowKey(arrowKeys[keyCode], false)
+      setTimeout(() => {
+        handleArrowKey(arrowKeys[keyCode], true)
+      }, delay)
+    } else {
+      passKeypress(keyCode)
+      setTimeout(() => {
+        passKeyRelease()
+      }, delay)
+    }
 
     return {
       success: true,
       data: {
         keyCode: keyCode,
         character: keyCode === 13 ? "⏎" : String.fromCharCode(keyCode),
+        delay: delay,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: String(error),
+    }
+  }
+}
+
+/**
+ * Simulates typing a string on the Apple II keyboard
+ * @param text String to type
+ */
+export function toolSendText(text: string): MCPToolResult {
+  try {
+    // Handle typing entire strings
+    passPasteText(text)
+    
+    return {
+      success: true,
+      data: {
+        typed: text,
+        characterCount: text.length,
       },
     }
   } catch (error) {
