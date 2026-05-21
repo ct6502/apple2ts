@@ -246,6 +246,10 @@ body.dark-mode .button-locked {
   cursor: pointer;
 }
 
+.text-button:hover {
+  background-color: var(--button-active);
+}
+
 .text-button:focus {
   outline: auto;
 }

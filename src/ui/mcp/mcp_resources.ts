@@ -74,19 +74,77 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
 
       case "apple2ts://video/lores": {
         const loresPage = handleGetLores()
+        const switches = handleGetSoftSwitches()
+        
+        // Lores can be different sizes based on mode
+        const totalBytes = loresPage.length
+        const bytesPerLine = (totalBytes === 1600 || totalBytes === 1920) ? 80 : 40
+        const numLines = totalBytes / bytesPerLine
+        
         return {
           uri: uri,
-          mimeType: "application/octet-stream",
-          data: Array.from(loresPage),
+          mimeType: "application/json",
+          data: {
+            format: "lores",
+            dimensions: {
+              bytesWide: bytesPerLine,
+              linesHigh: numLines,
+              blocksWide: bytesPerLine,
+              blocksHigh: numLines * 2,  // Each byte = 2 blocks vertically
+              pixelsWide: bytesPerLine * 7,  // 7 pixels per block horizontally
+              pixelsHigh: numLines * 8,  // 4 pixels per block, 2 blocks per byte
+            },
+            mode: {
+              doubleRes: switches.DHIRES && switches.COLUMN80,
+              mixed: switches.MIXED,
+            },
+            encoding: {
+              description: "Apple II Lo-Res Graphics Format",
+              details: "Each byte represents 2 vertical blocks of 7×4 pixels. Low nibble (bits 0-3) = top block color, high nibble (bits 4-7) = bottom block color. 16 colors available (0=black, 1=red, 2=dk.blue, 3=purple, 4=dk.green, 5=gray, 6=med.blue, 7=lt.blue, 8=brown, 9=orange, 10=gray, 11=pink, 12=lt.green, 13=yellow, 14=aqua, 15=white).",
+              blockSize: "Each block is 7 pixels wide by 4 pixels tall",
+            },
+            data: Array.from(loresPage),
+          },
         }
       }
 
       case "apple2ts://video/hires": {
         const hiresPage = handleGetHires()
+        const switches = handleGetSoftSwitches()
+        
+        // Determine hires mode from soft switches and buffer size
+        const doubleRes = switches.DHIRES && switches.COLUMN80
+        const mixed = switches.MIXED
+        const video7 = switches.DHIRES && !switches.COLUMN80 && switches.STORE80
+        
+        // Calculate dimensions from buffer size
+        const totalBytes = hiresPage.length
+        const bytesPerLine = (totalBytes === 80 * 192 || totalBytes === 80 * 160) ? 80 : 40
+        const numLines = totalBytes / bytesPerLine
+        
         return {
           uri: uri,
-          mimeType: "application/octet-stream",
-          data: Array.from(hiresPage),
+          mimeType: "application/json",
+          data: {
+            format: "hires",
+            dimensions: {
+              bytesWide: bytesPerLine,
+              linesHigh: numLines,
+              pixelsWide: doubleRes ? 560 : 280,
+              pixelsHigh: numLines,
+            },
+            mode: {
+              doubleRes: doubleRes,
+              mixed: mixed,
+              video7: video7,
+            },
+            encoding: {
+              description: "Apple II Hi-Res Graphics Format",
+              details: "Each byte represents 7 pixels. Bits 0-6 are pixel data (1=on, 0=off). Bit 7 (high bit) controls color: 0=undelayed (violet/green), 1=delayed by 14MHz (blue/orange). In monochrome, bit 7 is ignored. Pixels are arranged left-to-right, bit 0 is leftmost.",
+              memoryLayout: "Lines are interleaved in a complex pattern for hardware compatibility, not sequential. Line addresses: $2000 + (line÷64)×40 + (line%8)×1024 + ((line÷8)%8)×128",
+            },
+            data: Array.from(hiresPage),
+          },
         }
       }
 
@@ -346,14 +404,14 @@ export function listMCPResources(): Array<{
     {
       uri: "apple2ts://video/lores",
       name: "Lo-Res Graphics",
-      description: "The current low-resolution graphics buffer as byte array",
-      mimeType: "application/octet-stream",
+      description: "Low-resolution graphics buffer with metadata: dimensions (bytes/blocks/pixels), mode (double-res, mixed), encoding format. Each byte = 2 vertical blocks (7×4 pixels each), low nibble = top, high nibble = bottom, 4-bit color (0-15).",
+      mimeType: "application/json",
     },
     {
       uri: "apple2ts://video/hires",
       name: "Hi-Res Graphics",
-      description: "The current high-resolution graphics buffer as byte array",
-      mimeType: "application/octet-stream",
+      description: "High-resolution graphics buffer with metadata: dimensions (bytes/pixels), mode (double-res, mixed, video7), encoding format, and raw byte data. Each byte = 7 pixels, bit 7 = color delay.",
+      mimeType: "application/json",
     },
     {
       uri: "apple2ts://cpu/status",

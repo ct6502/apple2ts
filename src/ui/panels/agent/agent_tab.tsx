@@ -19,7 +19,7 @@ const AgentTab = () => {
     import("../panels.minimal.css")
   }
 
-  const [showConfig, setShowConfig] = useState(!isAgentConfigured())
+  const [showConfig, setShowConfig] = useState(false)
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
@@ -31,8 +31,6 @@ const AgentTab = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const agent = getAgent()
-
-
 
   // Load existing conversation on mount
   useEffect(() => {
@@ -163,129 +161,147 @@ const AgentTab = () => {
     }
   }
 
+  const handleConfigChange = () => {
+    // Refresh messages after config change
+    const conversation = agent.getConversation()
+    setMessages(conversation.getMessagesForDisplay())
+    
+    // Clear any streaming state
+    setStreamingMessage(null)
+    setStreamingStatus("")
+    setTokenUsage(null)
+    
+    // Focus input if configured
+    if (isAgentConfigured()) {
+      inputRef.current?.focus()
+    }
+  }
+
+  const initialMessage = !isAgentConfigured() ? (
+    <div className="agent-setup-prompt">
+      <h3>🤖 AI Agent Setup</h3>
+      <p>Click the gear icon below to configure your AI assistant.</p>
+    </div>) :
+      (messages.length === 0 && (
+        <div>
+          <p>Welcome to the Apple II assistant! I can help you with:</p>
+          <ul>
+            <li>Inspecting CPU registers and memory</li>
+            <li>Controlling execution (boot, reset, step, breakpoints)</li>
+            <li>Loading programs and managing disks</li>
+            <li>Debugging 6502 assembly code</li>
+            <li>Reading screen content and system state</li>
+          </ul>
+          <p>Just ask me anything!</p>
+        </div>
+      ))
+
   return (
     <div className="flex-column-gap debug-section agent-container">
-
-      {isAgentConfigured() && (
-        <div className="agent-messages" ref={messagesContainerRef}>
-          {messages.length === 0 && (
-            <div>
-              <p>Welcome to the Apple II assistant! I can help you with:</p>
-              <ul>
-                <li>Inspecting CPU registers and memory</li>
-                <li>Controlling execution (boot, reset, step, breakpoints)</li>
-                <li>Loading programs and managing disks</li>
-                <li>Debugging 6502 assembly code</li>
-                <li>Reading screen content and system state</li>
-              </ul>
-              <p>Just ask me anything!</p>
+      <div className="agent-messages" ref={messagesContainerRef}>
+        {initialMessage}
+        
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`agent-message agent-message-${msg.role}`}
+          >
+            <div className="agent-message-header">
+              <span>{msg.role === "user" ? "You" : "🤖 Assistant"}</span>
+              <span>
+                {msg.timestamp.toLocaleTimeString()}
+                {msg.usage && (
+                  <span style={{ marginLeft: "8px", opacity: 0.6, fontSize: "0.9em" }}>
+                    • {msg.usage.inputTokens.toLocaleString()} in / {msg.usage.outputTokens.toLocaleString()} out
+                  </span>
+                )}
+              </span>
             </div>
-          )}
-          
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`agent-message agent-message-${msg.role}`}
-            >
-              <div className="agent-message-header">
-                <span>{msg.role === "user" ? "You" : "🤖 Assistant"}</span>
-                <span>
-                  {msg.timestamp.toLocaleTimeString()}
-                  {msg.usage && (
-                    <span style={{ marginLeft: "8px", opacity: 0.6, fontSize: "0.9em" }}>
-                      • {msg.usage.inputTokens.toLocaleString()} in / {msg.usage.outputTokens.toLocaleString()} out
-                    </span>
-                  )}
-                </span>
+            {msg.toolCalls && msg.toolCalls.length > 0 && (
+              <div className="agent-tool-calls">
+                {msg.toolCalls.map((tc, idx) => (
+                  <div key={idx} className="agent-tool-call">
+                    <span className="agent-tool-name">🔧 {tc.name}</span>
+                    {tc.result && (
+                      <span className={`agent-tool-status ${tc.result.success ? "success" : "error"}`}>
+                        {tc.result.success ? "✓" : "✗"}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
-              {msg.toolCalls && msg.toolCalls.length > 0 && (
-                <div className="agent-tool-calls">
-                  {msg.toolCalls.map((tc, idx) => (
-                    <div key={idx} className="agent-tool-call">
-                      <span className="agent-tool-name">🔧 {tc.name}</span>
-                      {tc.result && (
-                        <span className={`agent-tool-status ${tc.result.success ? "success" : "error"}`}>
-                          {tc.result.success ? "✓" : "✗"}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {msg.content && (
-                <div className="agent-message-content">
-                  {formatMarkdown(msg.content)}
-                </div>
-              )}
-            </div>
-          ))}
-          
-          {/* Streaming message */}
-          {streamingMessage && (
-            <div className="agent-message agent-message-assistant agent-streaming">
-              <div className="agent-message-header">
-                <span>🤖 Assistant</span>
-                <span>
-                  {streamingStatus && `⚙️ ${streamingStatus}`}
-                  {tokenUsage && (
-                    <span style={{ marginLeft: "10px", opacity: 0.7 }}>
-                      • {tokenUsage.inputTokens.toLocaleString()} in / {tokenUsage.outputTokens.toLocaleString()} out
-                    </span>
-                  )}
-                </span>
+            )}
+            {msg.content && (
+              <div className="agent-message-content">
+                {formatMarkdown(msg.content)}
               </div>
-              {streamingMessage.toolCalls && streamingMessage.toolCalls.length > 0 && (
-                <div className="agent-tool-calls">
-                  {streamingMessage.toolCalls.map((tc, idx) => (
-                    <div key={idx} className="agent-tool-call">
-                      <span className="agent-tool-name">🔧 {tc.name}</span>
-                      {tc.result && (
-                        <span className={`agent-tool-status ${tc.result.success ? "success" : "error"}`}>
-                          {tc.result.success ? "✓" : "✗"}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {streamingMessage.content && (
-                <div className="agent-message-content">
-                  {formatMarkdown(streamingMessage.content)}
-                </div>
-              )}
+            )}
+          </div>
+        ))}
+        
+        {/* Streaming message */}
+        {streamingMessage && (
+          <div className="agent-message agent-message-assistant agent-streaming">
+            <div className="agent-message-header">
+              <span>🤖 Assistant</span>
+              <span>
+                {streamingStatus && `⚙️ ${streamingStatus}`}
+                {tokenUsage && (
+                  <span style={{ marginLeft: "10px", opacity: 0.7 }}>
+                    • {tokenUsage.inputTokens.toLocaleString()} in / {tokenUsage.outputTokens.toLocaleString()} out
+                  </span>
+                )}
+              </span>
             </div>
-          )}
-          
-          {/* Status only (when no message yet) */}
-          {streamingStatus && !streamingMessage && (
-            <div className="agent-message agent-message-assistant agent-streaming">
-              <div className="agent-message-header">
-                <span>🤖 Assistant</span>
-                <span>⚙️ {streamingStatus}</span>
+            {streamingMessage.toolCalls && streamingMessage.toolCalls.length > 0 && (
+              <div className="agent-tool-calls">
+                {streamingMessage.toolCalls.map((tc, idx) => (
+                  <div key={idx} className="agent-tool-call">
+                    <span className="agent-tool-name">🔧 {tc.name}</span>
+                    {tc.result && (
+                      <span className={`agent-tool-status ${tc.result.success ? "success" : "error"}`}>
+                        {tc.result.success ? "✓" : "✗"}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
+            )}
+            {streamingMessage.content && (
+              <div className="agent-message-content">
+                {formatMarkdown(streamingMessage.content)}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Status only (when no message yet) */}
+        {streamingStatus && !streamingMessage && (
+          <div className="agent-message agent-message-assistant agent-streaming">
+            <div className="agent-message-header">
+              <span>🤖 Assistant</span>
+              <span>⚙️ {streamingStatus}</span>
             </div>
-          )}
-          
-        </div>
-      )}
+          </div>
+        )}
+        
+      </div>
 
       {/* Input area */}
-      {isAgentConfigured() && (
-        <div>
-        <form onSubmit={handleSubmit} className="agent-form">
-          <textarea
-            className="agent-input"
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask me anything about the Apple II emulator... (Press Enter to send, Shift+Enter for new line)"
-            disabled={isProcessing}
-            spellCheck={true}
-          />
-        </form>
-        </div>
-      )}
+      <div>
+      <form onSubmit={handleSubmit} className="agent-form">
+        <textarea
+          className="agent-input"
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask me anything about the Apple II emulator... (Press Enter to send, Shift+Enter for new line)"
+          disabled={isProcessing || !isAgentConfigured()}
+          spellCheck={true}
+        />
+      </form>
+      </div>
       
       <div className="agent-controls">
             <button
@@ -304,15 +320,11 @@ const AgentTab = () => {
         </button>
       </div>
 
-      {/* Initial setup prompt */}
-      {/* {!isAgentConfigured() && (
-        <div className="agent-setup-prompt">
-          <h3>🤖 AI Agent Setup</h3>
-          <p>Configure your AI assistant to interact with the Apple II emulator using natural language.</p>
-        </div>
-      )} */}
-
-      <AgentTabConfig showConfig={showConfig} setShowConfig={setShowConfig} />
+      <AgentTabConfig 
+        showConfig={showConfig} 
+        setShowConfig={setShowConfig}
+        onConfigChange={handleConfigChange}
+      />
     </div>
   )
 }

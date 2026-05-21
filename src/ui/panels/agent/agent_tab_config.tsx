@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react"
-import { validateApiKeyFormat, getProviderDisplayName, saveAgentConfig, loadAgentConfig, getDefaultModel, getSupportedModels, ProviderType, isAgentConfigured, clearAgentConfig } from "../../mcp/mcp_agent_config"
+import { validateApiKeyFormat, getProviderDisplayName, saveAgentConfig, loadAgentConfig, getDefaultModel, getSupportedModels, ProviderType, clearAgentConfig, isAgentConfigured } from "../../mcp/mcp_agent_config"
 import { getAgent } from "../../mcp/mcp_agent"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faXmark } from "@fortawesome/free-solid-svg-icons"
 
-const AgentTabConfig = (props: {showConfig: boolean, setShowConfig: (show: boolean) => void }) => {
+const AgentTabConfig = (props: {
+  showConfig: boolean, 
+  setShowConfig: (show: boolean) => void,
+  onConfigChange?: () => void
+}) => {
   const [apiKey, setApiKey] = useState("")
   const [provider, setProvider] = useState<ProviderType>("anthropic")
   const [model, setModel] = useState(getDefaultModel("anthropic"))
@@ -12,17 +18,19 @@ const AgentTabConfig = (props: {showConfig: boolean, setShowConfig: (show: boole
 
   // Initialize config state from localStorage on mount
   useEffect(() => {
-      const config = loadAgentConfig()
-      if (config) {
-        setProvider(config.provider)
-        setModel(config.model || getDefaultModel(config.provider))
-        setAvailableModels(getSupportedModels(config.provider))
-        setApiKey(config.apiKey)
-        setCurrentConfig(config)
-      }
-    }, [])
+    const config = loadAgentConfig()
+    if (config) {
+      setProvider(config.provider)
+      setModel(config.model || getDefaultModel(config.provider))
+      setAvailableModels(getSupportedModels(config.provider))
+      setApiKey(config.apiKey)
+      setCurrentConfig(config)
+    }
+  }, [])
     
-  const handleConfigSave = () => {
+  const handleConfigSave = (e?: React.FormEvent) => {
+    e?.preventDefault() // Prevent form submission page reload
+    
     if (!validateApiKeyFormat(provider, apiKey)) {
       alert(`Invalid API key format for ${getProviderDisplayName(provider)}`)
       return
@@ -31,22 +39,46 @@ const AgentTabConfig = (props: {showConfig: boolean, setShowConfig: (show: boole
     const config = { provider, apiKey, model }
     saveAgentConfig(config)
     agent.configure(provider, apiKey, model)
+    
+    // Clear conversation history when changing provider
+    agent.clearConversation()
+    
+    // Update current config state
+    setCurrentConfig(config)
+    
     props.setShowConfig(false)
     
-    // Reload the page to ensure the new provider is properly initialized
-    window.location.reload()
+    // Trigger parent component refresh if callback provided
+    if (props.onConfigChange) {
+      props.onConfigChange()
+    }
   }
   
   const handleProviderChange = (newProvider: ProviderType) => {
     setProvider(newProvider)
     setAvailableModels(getSupportedModels(newProvider))
     setModel(getDefaultModel(newProvider))
+    setApiKey("") // Clear API key when changing provider
   }
   
   const handleClearConfig = () => {
     clearAgentConfig()
-    // Reload the page to reset the agent
-    window.location.reload()
+    
+    // Clear conversation history
+    agent.clearConversation()
+    
+    // Reset local state
+    setApiKey("")
+    setProvider("anthropic")
+    setModel(getDefaultModel("anthropic"))
+    setCurrentConfig(null)
+    
+    props.setShowConfig(false)
+    
+    // Trigger parent component refresh if callback provided
+    if (props.onConfigChange) {
+      props.onConfigChange()
+    }
   }
   
   const getApiKeyPlaceholder = () => {
@@ -82,16 +114,24 @@ const AgentTabConfig = (props: {showConfig: boolean, setShowConfig: (show: boole
 return (
 <div>
   {props.showConfig &&
-    <div className="modal-overlay"
+  <div className="modal-overlay"
       tabIndex={0} // Make the div focusable
       onKeyDown={(event) => {
         if (event.key === "Escape") props.setShowConfig(false)
       }}>
-      <div className="floating-dialog flex-column"
-        style={{ left: "15%", top: "25%" }}>
-        <div className="agent-config-panel">
-      <h3>Configure AI Agent</h3>
-      <div className="agent-config-form">
+    <div className="floating-dialog flex-column"
+        style={{ left: "35%", top: "25%", width: "70%", maxWidth: "500px" }}>
+      <div className="agent-config-panel">
+      <div className="flex-row-space-between">
+        <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>Configure AI Agent</div>
+        <button className="push-button"
+          type="button"
+          onClick={() => props.setShowConfig(false)}>
+          <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
+        </button>
+      </div>
+      <div className="horiz-rule" style={{ marginTop: "2px", marginBottom: "10px" }}></div>
+      <form className="agent-config-form" onSubmit={handleConfigSave}>
         <label>
           Provider:
           <select 
@@ -130,16 +170,15 @@ return (
           />
         </label>
         
-        <div className="agent-config-buttons">
-          <button onClick={handleConfigSave} disabled={!apiKey}>
-            Save Configuration
+        <div className="flex-row">
+          <button className="push-button text-button"
+            type="submit" disabled={!apiKey}>
+            <span className="centered-title">Save</span>
           </button>
-            <button onClick={handleClearConfig}>
-              Clear Configuration
-            </button>
-            <button onClick={() => props.setShowConfig(false)}>
-              Cancel
-            </button>
+          <button type="button" className="push-button text-button"
+            onClick={handleClearConfig}>
+            <span className="centered-title">Clear</span>
+          </button>
         </div>
         
         <div className="agent-config-info">
@@ -148,22 +187,20 @@ return (
             Get your {getProviderDisplayName(provider)} API key at <a href={getApiKeyLink().url} target="_blank" rel="noopener noreferrer">{getApiKeyLink().text}</a>
           </small>
         </div>
-      </div>
+      </form>
     </div>
       </div>
     </div>
   }
 
-  {isAgentConfigured() && (
-    <div className="agent-footer">
-      {(() => {
-        const providerInfo = agent.getProviderInfo()
-        return providerInfo 
-          ? `Provider: ${providerInfo.name} (${currentConfig?.model || "default"})` 
-          : "Not configured"
-      })()}
-    </div>
-  )}
+  <div className="agent-footer">
+    {(() => {
+      const providerInfo = agent.getProviderInfo()
+      return (providerInfo && isAgentConfigured()) 
+        ? `Provider: ${providerInfo.name} (${currentConfig?.model || "default"})` 
+        : "Provider not configured - click the gear icon to set up your AI agent"
+    })()}
+  </div>
 </div>
 )
 }
