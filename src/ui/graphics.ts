@@ -585,7 +585,7 @@ export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
   const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
-  const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.17 : 0.075
+  const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
   xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
   ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)

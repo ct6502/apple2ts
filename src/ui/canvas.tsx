@@ -658,7 +658,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         style={{
           cursor: cursor,
           borderColor: (machine === "APPLE2P" || getTheme() === UI_THEME.DARK) ? "black" : "#583927",
-          borderRadius: noBackgroundImage ? "0" : "20px",
+          borderRadius: noBackgroundImage ? "0" : "18px",
           borderWidth: (noBackgroundImage || machine === "APPLE2P") ? "0" : "2px",
           backgroundImage: `${backgroundImage}`,
           marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement)
