@@ -19,6 +19,7 @@ import { SpeedDropdown } from "./speeddropdown"
 import { getCapsLock, getUseOpenAppleKey, setUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
+import LinkBuilder from "./linkbuilder"
 
 // import VideogameAssetIcon from '@mui/icons-material/VideogameAsset';
 // import VideogameAssetOffIcon from '@mui/icons-material/VideogameAssetOff';
@@ -113,6 +114,8 @@ const ConfigButtons = (props: DisplayProps) => {
     </button>}
 
     {!isGameMode() && <RunTour />}
+
+    {!isGameMode() && <LinkBuilder />}
 
   </div>
 }

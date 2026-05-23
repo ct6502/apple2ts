@@ -40,8 +40,8 @@ const ExpressionControl = (props: ExpressionControlProps) => {
     props.setExpr(props.expr)
   }
 
-  const spaces = "\u00A0\u00A0\u00A0\u00A0"
-  const registers = [`${spaces}(none)`, `$${spaces}Address`, `A${spaces}Accumulator`,
+  const spaces = "\u00A0\u00A0\u00A0\u00A0\u00A0"
+  const registers = [`_${spaces}(none)`, `$${spaces}Address`, `A${spaces}Accumulator`,
   `X${spaces}X Register`, `Y${spaces}Y Register`, `S${spaces}Stack Pointer`,
   `P${spaces}Processor Status`, `C${spaces}Program Counter`]
   const regmap = ["", "$", "A", "X", "Y", "S", "P", "C"]

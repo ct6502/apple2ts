@@ -25,7 +25,7 @@ export const Droplist = (props: DroplistProps) => {
         maxWidth = Math.max(maxWidth, spanWidth)
       }
       // The narrow width should be enough for a single character
-      selectRef.current.style.width = `${props.narrow ? 40 : maxWidth}px`
+      selectRef.current.style.width = `${props.narrow ? 35 : maxWidth}px`
     }
   }, [props.values, props.narrow])
 
