@@ -1,8 +1,8 @@
 import "./panels.css"
 import Flyout from "../flyout"
-import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot } from "@fortawesome/free-solid-svg-icons"
+import { faInfo as faHelp, faInfoCircle, faBug, faCode, faLink, faRobot } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
-import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
+import { handleGetMachineName, handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32 } from "../../common/utility"
 import { getHelpText, getTabView, getTheme, isMinimalTheme } from "../ui_settings"
 import { useMemo, useState } from "react"
@@ -14,6 +14,12 @@ import { defaultHelpText } from "./help/defaulthelptext"
 import { setPreferenceDebugMode } from "../localstorage"
 import BasicTab from "./basic/basic_tab"
 import AgentTab from "./agent/agent_tab"
+import LinkBuilderTab from "./linkbuilder/linkbuildertab"
+import {
+  createDefaultLinkBuilderUiState,
+  machineNameToLinkBuilderMachine,
+  parseLinkBuilderStateFromUrl,
+} from "./linkbuilder/linkbuilder"
 
 const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
@@ -22,6 +28,10 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   const [activeTab, setActiveTab] = useState<number>(getTabView())
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
+  const [linkBuilderState, setLinkBuilderState] = useState(() =>
+    parseLinkBuilderStateFromUrl(window.location.href, machineNameToLinkBuilderMachine(handleGetMachineName())),
+  )
+  const [linkBuilderUiState, setLinkBuilderUiState] = useState(() => createDefaultLinkBuilderUiState())
 
   if (isMinimalTheme()) {
     import("./panels.minimal.css")
@@ -114,6 +124,12 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
             onClick={handleTabClick(4)}>
             <FontAwesomeIcon icon={faRobot} size="lg" />
           </div>
+          <div
+            className={`dbg-tab ${tabClass} ${activeTab == 5 ? " dbg-tab-active" : ""}`}
+            title="Link builder"
+            onClick={handleTabClick(5)}>
+            <FontAwesomeIcon icon={faLink} size="lg" />
+          </div>
         </div>
         }
         {(activeTab == 0 || isSmall) && <HelpTab helptext={getHelpText()} theme={getTheme()} />}
@@ -128,6 +144,14 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         </div>
         <div style={{ display: activeTab == 4 && !isSmall ? "block" : "none" }}>
           <AgentTab />
+        </div>
+        <div style={{ display: activeTab == 5 && !isSmall ? "block" : "none" }}>
+          <LinkBuilderTab
+            linkState={linkBuilderState}
+            setLinkState={setLinkBuilderState}
+            uiState={linkBuilderUiState}
+            setUiState={setLinkBuilderUiState}
+          />
         </div>
       </div>
     </Flyout>
