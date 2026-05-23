@@ -5,6 +5,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
+import CheckBox from "../panels/checkbox"
 
 const BinaryFileDialog = (props:
   {
@@ -60,24 +61,18 @@ const BinaryFileDialog = (props:
           </div>
           <div className="horiz-rule"></div>
         </div>
-        <div className="flex-column">
+        <div className="flex-column" style={{ marginRight: "10px" }}>
           <EditField name="Load into memory at address $"
             initialFocus={true}
             value={runAddress}
             setValue={handleSetRunAddress}
+            isHex={true}
             placeholder="0300"
             width="5em" />
         </div>
-        <div className="flex-row">
-          <input type="checkbox" id="runcode" value="runcode"
-            className="check-radio-box shift-down"
-            checked={runCode}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setRunCode(event.target.checked)
-            }} />
-          <label htmlFor="runcode"
-            className="dialog-title flush-left">Run code after loading</label>
-        </div>
+        <CheckBox name="Run code after loading"
+          checked={runCode}
+          setChecked={setRunCode} />
         <div className="flex-row-space-between">
           <div></div>
           <div className="flex-row">

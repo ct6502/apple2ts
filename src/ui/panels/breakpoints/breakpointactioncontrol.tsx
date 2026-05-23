@@ -95,6 +95,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
           disabled={actionIndex === 0}
           value={bpAddress}
           setValue={handleAddressChange}
+          isHex={true}
           placeholder="Any"
           width="3em" />
         </span>
@@ -110,6 +111,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
             disabled={actionIndex === 0}
             value={bpValue}
             setValue={handleValueChange}
+            isHex={true}
             placeholder="FF"
             width="3em" />
         </span>

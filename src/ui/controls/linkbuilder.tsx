@@ -6,7 +6,10 @@ import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
 
 const LinkBuilder = () => {
-  const [showBuilder, setShowBuilder] = useState(true)
+  const [showBuilder, setShowBuilder] = useState(false)
+
+  const [hexAddress, setHexAddress] = useState("")
+  const [hexCode, setHexCode] = useState("")
   const [fragmentURL, setFragmentURL] = useState("")
   const [selectedDisk, setSelectedDisk] = useState("custom")
 
@@ -15,6 +18,12 @@ const LinkBuilder = () => {
   // When fragmentURL changes, generate the link
   const generateLink = () => {
     let link = `${window.location.origin}`
+    if (hexCode) {
+      link += `?hex=${encodeURIComponent(hexCode.replace(/\s+/g, ""))}`
+    }
+    if (hexAddress) {
+      link += `&address=${encodeURIComponent(hexAddress)}`
+    }
     if (isCustomURL) {
       if (fragmentURL) {
         const encodedURL = encodeURIComponent(fragmentURL)
@@ -35,10 +44,23 @@ const LinkBuilder = () => {
   useEffect(() => {
     setLink(generateLink())
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fragmentURL, selectedDisk])
+  }, [fragmentURL, selectedDisk, hexCode, hexAddress])
 
   // put custom url at the front of the list, then all the disk images sorted alphabetically
   const diskNames = ["Custom URL", ...diskImages.map(disk => disk.title).sort()]
+
+  const testKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Allow control keys, backspace, delete, arrows, tab, etc.
+    const safeKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight",
+      "ArrowUp", "ArrowDown", "Tab", "Enter", "Home", "End"]
+    if (e.ctrlKey || e.metaKey || e.altKey || safeKeys.includes(e.key)) {
+      return
+    }
+    // Only allow hex digits and space
+    if (!/^[0-9a-fA-F\s]$/.test(e.key)) {
+      e.preventDefault()
+    }
+  }
 
   return (
   <div>
@@ -59,6 +81,41 @@ const LinkBuilder = () => {
           </button>
         </div>
         <div className="horiz-rule"></div>
+
+        <textarea
+          style={{ margin: "10px", marginBottom: "0px", fontFamily: "monospace" }}
+          className="link-builder-textarea"
+          value={hexCode}
+          onChange={(e) => setHexCode(e.target.value)}
+          onKeyDown={testKey}
+          placeholder="Enter hexadecimal code here, e.g. A9 01 8D 00 03"
+        />
+        <EditField name={"Hex Load Address: $"}
+          value={hexAddress}
+          setValue={setHexAddress}
+          isHex={true}
+          placeholder="0300"
+          width="5em" />
+
+{/*
+
+<b>Optional URL Parameters</b>
+appmode=game|embed
+capslock=off
+color=color|nofringe|green|amber|white|inverse
+crtdistort=on|off
+debug=on
+ghosting=on|off
+machine=apple2p|apple2eu|apple2ee (II+, IIe, IIe enh)
+ramdisk=64|512|1024|4096|8192
+run=false (do not run Hex or BASIC program)
+scanlines=on|off
+sound=off
+speed=snail|slow|normal|two|three|fast|warp
+theme=classic|dark|minimal
+
+*/}
+
 
         {/* Custom URL text box */}
         <div className="flex-row">

@@ -23,6 +23,8 @@ const BPEdit_Basic = (props: {
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
+          isHex={!props.breakpoint.basic}
+          isNumber={props.breakpoint.basic}
           placeholder="Any"
           width="5em" />
       </div>

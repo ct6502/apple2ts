@@ -73,6 +73,8 @@ const BPEdit_Breakpoint = (props: {
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
+          isHex={!props.breakpoint.basic}
+          isNumber={props.breakpoint.basic}
           placeholder="Any"
           width="5em" />
       </div>
@@ -81,6 +83,7 @@ const BPEdit_Breakpoint = (props: {
         <EditField name="Hit&nbsp;Count: "
           value={props.breakpoint.hitcount.toString()}
           setValue={handleHitCountChange}
+          isNumber={true}
           placeholder="1"
           width="5em" />
         <span className="dialog-title">Expression:</span>

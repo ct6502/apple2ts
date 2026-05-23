@@ -63,6 +63,7 @@ const TraceSettingsDialog = (props:
             initialFocus={true}
             value={numLines}
             setValue={handleSetNumLines}
+            isNumber={true}
             width="5em" />
         </div>
         <div className="flex-column"

@@ -86,6 +86,7 @@ const BPEdit_Watchpoint = (props: {
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}
+          isHex={true}
           placeholder="F800"
           width="5em" />
         <PullDownMenu values={handleGetSoftSwitchDescriptions()} setValue={handleAddressChange} />
@@ -107,6 +108,7 @@ const BPEdit_Watchpoint = (props: {
         <EditField name="With hex value:"
           value={hexvalue}
           setValue={handleHexValueChange}
+          isHex={true}
           placeholder="any"
           width="5em" />
       </div>

@@ -199,6 +199,7 @@ const BPEdit_Instruction = (props: {
         <EditField name="Value:"
           value={hexvalue}
           setValue={handleHexValueChange}
+          isHex={true}
           placeholder="any"
           width="3em" />
       </div>

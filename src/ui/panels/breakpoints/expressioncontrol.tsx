@@ -61,6 +61,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
         disabled={props.disabled || index === 0}
         value={bpAddress}
         setValue={handleAddressChange}
+        isHex={true}
         placeholder="Any"
         width="3em" />
     }
@@ -75,6 +76,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
       disabled={props.disabled || index === 0}
       value={bpValue}
       setValue={handleValueChange}
+      isHex={true}
       placeholder="FF"
       width="3em" />
   </span>

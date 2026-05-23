@@ -100,11 +100,13 @@ const SaveDisassemblyDialog = (props:
             initialFocus={true}
             value={startAddress}
             setValue={handleSetStartAddress}
+            isHex={true}
             width="5em" />
           <EditField name="End address $"
             initialFocus={true}
             value={endAddress}
             setValue={handleSetEndAddress}
+            isHex={true}
             width="5em" />
         </div>
         </div>
