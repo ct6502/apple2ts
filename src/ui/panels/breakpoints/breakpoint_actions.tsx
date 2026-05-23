@@ -1,5 +1,6 @@
 import { useState } from "react"
 import BreakpointActionControl from "./breakpointactioncontrol"
+import CheckBox from "../checkbox"
 
 const Breakpoint_Actions = (props: {breakpoint: Breakpoint}) => {
   const [triggerUpdate, setTriggerUpdate] = useState(false)
@@ -11,11 +12,6 @@ const Breakpoint_Actions = (props: {breakpoint: Breakpoint}) => {
 
   const handleActionChange2 = (action: BreakpointAction) => {
     props.breakpoint.action2 = action
-    setTriggerUpdate(!triggerUpdate)
-  }
-  
-  const handleHaltChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.halt = e.target.checked
     setTriggerUpdate(!triggerUpdate)
   }
 
@@ -34,18 +30,13 @@ const Breakpoint_Actions = (props: {breakpoint: Breakpoint}) => {
         setAction={handleActionChange2}
       />
     </div>
-      <div style={{marginLeft: "22px",
-        ...(isDisabled && {
-        opacity: 0.4,
-        pointerEvents: "none"
-      })}}>
-        <div style={{height: "8px" }} />
-        <input type="checkbox" id="halt" value="halt"
-          className="check-radio-box shift-down"
-          checked={props.breakpoint.halt}
-          onChange={(e) => { handleHaltChange(e) }} />
-        <label htmlFor="halt" className="dialog-title flush-left">Halt execution after actions</label>
-      </div>
+    <CheckBox name="Halt execution after actions"
+      checked={props.breakpoint.halt}
+      setChecked={(checked) => {
+        props.breakpoint.halt = checked
+        setTriggerUpdate(!triggerUpdate)
+      }}
+      disabled={isDisabled} />
   </div>
 }
 

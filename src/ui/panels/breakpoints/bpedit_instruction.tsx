@@ -6,6 +6,7 @@ import { Droplist } from "../droplist"
 import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/memorybanks"
 import { opCodeNames, opCodes, opTable } from "../../../common/opcodes"
 import Breakpoint_Actions from "./breakpoint_actions"
+import CheckBox from "../checkbox"
 
 const addressModes = [
   "Implied",
@@ -150,15 +151,15 @@ const BPEdit_Instruction = (props: {
     }
   }
 
-  const handleIllegal65C02Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIllegal65C02(e.target.checked)
-    props.breakpoint.address = e.target.checked ? BRK_ILLEGAL_65C02 : 0
+  const handleIllegal65C02Change = (checked: boolean) => {
+    setIllegal65C02(checked)
+    props.breakpoint.address = checked ? BRK_ILLEGAL_65C02 : 0
     setTriggerUpdate(!triggerUpdate)
   }
 
-  const handleIllegal6502Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIllegal6502(e.target.checked)
-    props.breakpoint.address = e.target.checked ? BRK_ILLEGAL_6502 : 0
+  const handleIllegal6502Change = (checked: boolean) => {
+    setIllegal6502(checked)
+    props.breakpoint.address = checked ? BRK_ILLEGAL_6502 : 0
     setTriggerUpdate(!triggerUpdate)
   }
 
@@ -203,21 +204,13 @@ const BPEdit_Instruction = (props: {
           placeholder="any"
           width="3em" />
       </div>
-      <div>
-        <div style={{ height: "8px" }} />
-        <input type="checkbox" id="65C02" value="65C02"
-          className="check-radio-box shift-down"
-          checked={props.breakpoint.address === BRK_ILLEGAL_65C02}
-          onChange={(e) => { handleIllegal65C02Change(e) }} />
-        <label htmlFor="65C02" className="dialog-title flush-left">Any illegal 65c02 opcode</label>
-      </div>
-      <div>
-        <input type="checkbox" id="6502" value="6502"
-          className="check-radio-box shift-down"
-          checked={props.breakpoint.address === BRK_ILLEGAL_6502}
-          onChange={(e) => { handleIllegal6502Change(e) }} />
-        <label htmlFor="6502" className="dialog-title flush-left">Any illegal 6502 opcode</label>
-      </div>
+      <CheckBox name="Any illegal 65c02 opcode"
+        checked={props.breakpoint.address === BRK_ILLEGAL_65C02}
+        setChecked={handleIllegal65C02Change} />
+      <CheckBox name="Any illegal 6502 opcode"
+        checked={props.breakpoint.address === BRK_ILLEGAL_6502}
+        setChecked={handleIllegal6502Change}
+        disabled={props.breakpoint.address === BRK_ILLEGAL_65C02} />
       <div className="dialog-title">{getInstructionBreakpointString()}</div>
       <Droplist name="Memory&nbsp;Bank: "
         value={MEMORY_BANKS[props.breakpoint.memoryBank].name}

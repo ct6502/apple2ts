@@ -7,6 +7,7 @@ import EditField from "../../panels/editfield"
 import { getDisassembly, getDisassemblyAddress, getLineAsPlaintext } from "./disassembly_utilities"
 import { toHex } from "../../../common/utility"
 import { handleGetState6502 } from "../../main2worker"
+import CheckBox from "../checkbox"
 
 const SaveDisassemblyDialog = (props:
   {
@@ -110,27 +111,12 @@ const SaveDisassemblyDialog = (props:
             width="5em" />
         </div>
         </div>
-        <div className="flex-row">
-          <input type="checkbox" id="labels" value="labels"
-            className="check-radio-box shift-down"
-            checked={includeLabels}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setIncludeLabels(event.target.checked)
-            }} />
-          <label htmlFor="labels"
-            className="dialog-title flush-left">Include symbol labels</label>
-        </div>
-        <div className="flex-row"
-          style={{paddingRight: "1em"}}>
-          <input type="checkbox" id="separator" value="separator"
-            className="check-radio-box shift-down"
-            checked={includeSeparator}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setIncludeSeparator(event.target.checked)
-            }} />
-          <label htmlFor="separator"
-            className="dialog-title flush-left">Separator lines after JMP, RTS</label>
-        </div>
+        <CheckBox name="Include symbol labels"
+          checked={includeLabels}
+          setChecked={(checked) => setIncludeLabels(checked)} />
+        <CheckBox name="Separator lines after JMP, RTS"
+          checked={includeSeparator}
+          setChecked={(checked) => setIncludeSeparator(checked)} />
         <div className="flex-row"
           style={{paddingTop: "2em", alignSelf: "flex-end"}}>
           <div className="flex-row">

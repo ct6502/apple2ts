@@ -5,6 +5,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../../panels/editfield"
 import { getPreferenceTraceSettings, setPreferenceTraceSettings } from "../../localstorage"
+import CheckBox from "../checkbox"
 
 const TraceSettingsDialog = (props:
   {
@@ -72,28 +73,18 @@ const TraceSettingsDialog = (props:
             {(parseInt(numLines) < 100  || parseInt(numLines) > 100000) ? "Must be between 100 and 100000" : "\u00A0"}
           </span>
         </div>
-        <div className="flex-row">
-          <input type="checkbox" id="collapseLoops" value="collapseLoops"
-            className="check-radio-box shift-down"
-            checked={collapseLoops}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setCollapseLoops(event.target.checked)
-              setPreferenceTraceSettings({ numLines: parseInt(numLines), collapseLoops: event.target.checked, ignoreRegisters: ignoreRegisters })
-            }} />
-          <label htmlFor="collapseLoops"
-            className="dialog-title flush-left">Find repeating lines and collapse loops</label>
-        </div>
-        <div className="flex-row">
-          <input type="checkbox" id="ignoreRegisters" value="ignoreRegisters"
-            className="check-radio-box shift-down"
-            checked={ignoreRegisters}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setIgnoreRegisters(event.target.checked)
-              setPreferenceTraceSettings({ numLines: parseInt(numLines), collapseLoops: collapseLoops, ignoreRegisters: event.target.checked })
-            }} />
-          <label htmlFor="ignoreRegisters"
-            className="dialog-title flush-left">Ignore register values when finding repeating lines</label>
-        </div>
+        <CheckBox name="Collapse loops by finding repeating lines"
+          checked={collapseLoops}
+          setChecked={(checked: boolean) => {
+            setCollapseLoops(checked)
+            setPreferenceTraceSettings({ numLines: parseInt(numLines), collapseLoops: checked, ignoreRegisters })
+          }} />
+        <CheckBox name="Ignore register values when finding repeating lines"
+          checked={ignoreRegisters}
+          setChecked={(checked: boolean) => {
+            setIgnoreRegisters(checked)
+            setPreferenceTraceSettings({ numLines: parseInt(numLines), collapseLoops, ignoreRegisters: checked })
+          }} />
         <div className="flex-row"
           style={{paddingBottom: "1em"}}>
         </div>

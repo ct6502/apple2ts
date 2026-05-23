@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 import EditField from "../editfield"
 import PullDownMenu from "../pulldownmenu"
 import { Droplist } from "../droplist"
@@ -6,6 +6,7 @@ import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/m
 import { toHex } from "../../../common/utility"
 import { handleGetSoftSwitchDescriptions } from "../../main2worker"
 import Breakpoint_Actions from "./breakpoint_actions"
+import CheckBox from "../checkbox"
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
@@ -45,16 +46,6 @@ const BPEdit_Watchpoint = (props: {
     }
   }
 
-  const handleMemgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.memget = e.target.checked
-    setTriggerUpdate(!triggerUpdate)
-  }
-
-  const handleMemsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.memset = e.target.checked
-    setTriggerUpdate(!triggerUpdate)
-  }
-
   const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
       const bank = MEMORY_BANKS[key]
@@ -91,18 +82,19 @@ const BPEdit_Watchpoint = (props: {
           width="5em" />
         <PullDownMenu values={handleGetSoftSwitchDescriptions()} setValue={handleAddressChange} />
       </div>
-      <div>
-        <div style={{ height: "8px" }} />
-        <input type="checkbox" id="memget" value="memget"
-          className="check-radio-box shift-down"
+      <div className="flex-row" style={{ alignItems: "baseline" }}>
+        <CheckBox name="Read"
           checked={props.breakpoint.memget}
-          onChange={(e) => { handleMemgetChange(e) }} />
-        <label htmlFor="memget" className="dialog-title flush-left">Read</label>
-        <input type="checkbox" id="memset" value="memset"
-          className="check-radio-box shift-down"
+          setChecked={(checked) => {
+            props.breakpoint.memget = checked
+            setTriggerUpdate(!triggerUpdate)
+          }} />
+        <CheckBox name="Write"
           checked={props.breakpoint.memset}
-          onChange={(e) => { handleMemsetChange(e) }} />
-        <label htmlFor="memset" className="dialog-title flush-left">Write</label>
+          setChecked={(checked) => {
+            props.breakpoint.memset = checked
+            setTriggerUpdate(!triggerUpdate)
+          }} />
       </div>
       <div>
         <EditField name="With hex value:"
