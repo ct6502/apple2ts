@@ -115,7 +115,7 @@ const ConfigButtons = (props: DisplayProps) => {
 
     {!isGameMode() && <RunTour />}
 
-    {!isGameMode() && <LinkBuilder />}
+    <LinkBuilder />
 
   </div>
 }

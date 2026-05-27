@@ -1,6 +1,6 @@
 import { COLOR_MODE, RUN_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTabView, setTheme } from "./ui_settings"
@@ -18,17 +18,25 @@ export const handleInputParams = (paramString = "") => {
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
 
-  const tab = params.get("tab")
+  const tab = (params.get("tab") as string || "").toLowerCase()
+  const tabNames = ["info", "debug", "basic", "expectin", "ai"]
   if (tab) {
-    const tabNum = parseInt(tab || "0")
-    setTabView(tabNum)
-    if (tabNum !== 1) {
-      passSetShowDebugTab(false)
+    const tabNum = tabNames.indexOf(tab)
+    if (tabNum >= 0) {
+      setTabView(tabNum)
+      passSetDebug(tabNum === 1)
+      passSetShowDebugTab(tabNum === 1)
     }
   }
 
-  if (params.has("appmode")) {
-    const mode = params.get("appmode") as string
+  if (params.get("debug") === "on") {
+    setTabView(tabNames.indexOf("debug"))
+    passSetDebug(true)
+    passSetShowDebugTab(true)
+  }
+
+  const mode = params.get("appmode") as string
+  if (mode) {
     setAppMode(mode)
     // Be sure to pass to the emulator, so we can disable breakpoints, etc.
     passSetAppMode(mode)
@@ -43,10 +51,6 @@ export const handleInputParams = (paramString = "") => {
     setCrtDistortion(true)
   } else if (crtDistort === "off") {
     setCrtDistortion(false)
-  }
-
-  if (params.get("debug") === "on") {
-    passSetShowDebugTab(true)
   }
 
   const ghost = params.get("ghosting")

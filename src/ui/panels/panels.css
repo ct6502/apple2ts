@@ -232,7 +232,7 @@ body.dark-mode .dialog-title {
 .horiz-rule {
   border-top: 1px solid #888;
   margin-top: 0px;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .droplist-edit {
@@ -673,6 +673,25 @@ body.dark-mode .icon-text {
 }
 
 body.dark-mode .basic-vars-field {
+  background-color: var(--input-background-dark);
+  border-color: var(--text-color-dark);
+  color: var(--text-color-dark);
+}
+
+.link-builder-textarea {
+  margin: 10px;
+  margin-top: 0;
+  font-family: monospace;
+  padding: 8px;
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--text-color);
+  background-color: var(--input-background);
+  color: var(--text-color);
+}
+
+body.dark-mode .link-builder-textarea {
   background-color: var(--input-background-dark);
   border-color: var(--text-color-dark);
   color: var(--text-color-dark);

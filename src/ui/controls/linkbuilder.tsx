@@ -5,12 +5,18 @@ import EditField from "../panels/editfield"
 import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
 import CheckBox from "../panels/checkbox"
+import { getCapsLock, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
+import { UI_THEME } from "../../common/utility"
+import { isAudioEnabled } from "../devices/audio/speaker"
+import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
 
 const LinkBuilder = () => {
-  const [showBuilder, setShowBuilder] = useState(false)
+  const [showBuilder, setShowBuilder] = useState(true)
 
   const colorNames = ["Color", "Color (no fringing)", "Green Screen", "Amber Screen", "White Screen", "Inverse White"]
   const colorModes = ["color", "nofringe", "green", "amber", "white", "inverse"]
+  const speedNames = ["Snail", "Slow", "1 MHz (default)", "2 MHz", "3 MHz", "4 MHz", "Warp"]
+  const gameModes = ["Normal", "Game (no drives or tabs)", "Embed (hide all controls)"]
   const [appmode, setAppmode] = useState("")
 
   // Reverse the logic for these so the default is false and the checkbox is on,
@@ -25,13 +31,14 @@ const LinkBuilder = () => {
   const [fragmentURL, setFragmentURL] = useState("")
   const [ghosting, setGhosting] = useState(false)
   const [hexAddress, setHexAddress] = useState("")
-  const [hexCode, setHexCode] = useState("")
+  const [textBlock, setTextBlock] = useState("")
   const [machine, setMachine] = useState("")
   const [ramdisk, setRamdisk] = useState("64")
   const [scanlines, setScanlines] = useState(false)
   const [selectedDisk, setSelectedDisk] = useState("")
   const [speed, setSpeed] = useState("")
   const [theme, setTheme] = useState("")
+  const [isHex, setIsHex] = useState(false)
 
   const isCustomURL = selectedDisk === "" || selectedDisk.toLowerCase().includes("custom")
 
@@ -59,8 +66,16 @@ const LinkBuilder = () => {
     if (ghosting) {
       params.push("ghosting=on")
     }
-    if (hexCode) {
-      params.push(`hex=${encodeURIComponent(hexCode.replace(/\s+/g, ""))}`)
+    if (textBlock) {
+      if (isHex) {
+        const txt = encodeURIComponent(textBlock.replace(/\s+/g, ""))
+        params.push(`hex=${txt}`)
+      } else {
+        // We need to url-encode the textBlock, keeping all whitespace
+        // and special characters and converting them to URL-safe
+        const txt = encodeURIComponent(textBlock)
+        params.push(`${isHex ? "hex" : "text"}=${txt}`)
+      }
     }
     if (hexAddress) {
       params.push(`address=${encodeURIComponent(hexAddress)}`)
@@ -121,12 +136,15 @@ const LinkBuilder = () => {
     setLink(generateLink())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appmode, capslockoff, colormode, crtdistort, debug, ghosting, fragmentURL,
-    hexCode, hexAddress, machine, ramdisk, runprogoff, scanlines, selectedDisk, soundoff, speed, theme])
+    textBlock, hexAddress, isHex, machine, ramdisk, runprogoff, scanlines, selectedDisk, soundoff, speed, theme])
 
   // put custom url at the front of the list, then all the disk images sorted alphabetically
   const diskNames = ["Custom URL", ...diskImages.map(disk => disk.title).sort()]
 
   const testKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!isHex) {
+      return
+    }
     // Allow control keys, backspace, delete, arrows, tab, etc.
     const safeKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight",
       "ArrowUp", "ArrowDown", "Tab", "Enter", "Home", "End"]
@@ -139,6 +157,42 @@ const LinkBuilder = () => {
     }
   }
 
+  const retrieveFromEmulatorSettings = () => {
+    // Retrieve all of the emulator settings from their individual local
+    // local storage keys or from the emulator state and populate the fields in the link builder
+    setColormode(colorNames[getColorMode()])
+    setCrtdistort(getCrtDistortion())
+    setGhosting(getGhosting())
+    setScanlines(getShowScanlines())
+    setCapslockoff(!getCapsLock())
+    setDebug(handleGetIsDebugging())
+    setSoundoff(!isAudioEnabled())
+    setTextBlock("")
+    setHexAddress("")
+    setIsHex(false)
+    const machineName = handleGetMachineName()
+    setMachine(machineName === "APPLE2P" ? "Apple II+" :
+      machineName === "APPLE2EU" ? "Apple IIe unenhanced" : "Apple IIe enhanced")
+    const mem = handleGetMemSize()
+    setRamdisk(mem > 8000 ? "8192" : mem > 4000 ? "4096" : mem > 1000 ? "1024" : mem > 500 ? "512" : "64")
+    const currentSpeed = handleGetSpeedMode()
+    if (currentSpeed >= -2 && currentSpeed <= 4) {
+      setSpeed(speedNames[currentSpeed + 2])
+    } else {
+      setSpeed("")
+    }
+    setSelectedDisk("")
+    const mytheme = getTheme()
+    setTheme(mytheme === UI_THEME.CLASSIC ? "Classic" : mytheme === UI_THEME.DARK ? "Dark" : "Minimal")
+    if (isEmbedMode()) {
+      setAppmode(gameModes[2])
+    } else if (isGameMode()) {
+      setAppmode(gameModes[1])
+    } else {
+      setAppmode(gameModes[0])
+    }
+  }
+
   return (
   <div>
     {showBuilder &&
@@ -148,7 +202,7 @@ const LinkBuilder = () => {
           if (event.key === "Escape") setShowBuilder(false)
         }}>
       <div className="floating-dialog flex-column"
-          style={{ left: "35%", top: "10%", width: "70%", maxWidth: "600px" }}>
+          style={{ left: "3.5%", top: "10%", width: "70%", maxWidth: "600px" }}>
         <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
           <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>Link Builder</div>
           <button className="push-button"
@@ -159,75 +213,61 @@ const LinkBuilder = () => {
         </div>
         <div className="horiz-rule"></div>
 
-        <Droplist name="Application mode: "
-          value={appmode}
-          values={["Normal", "Game (no drives or tabs)", "Embed (hide all controls)"]}
-          setValue={setAppmode} />
+        <div className="flex-row">
+          <div className="flex-column">
+            <Droplist name="User interface: "
+              value={appmode}
+              values={gameModes}
+              setValue={setAppmode} />
 
-        <Droplist name="Machine: "
-          value={machine}
-          values={["Apple IIe enhanced", "Apple IIe unenhanced", "Apple II+"]}
-          setValue={setMachine} />
+            <Droplist name="Machine: "
+              value={machine}
+              values={["Apple IIe enhanced", "Apple IIe unenhanced", "Apple II+"]}
+              setValue={setMachine} />
 
-        <Droplist name="Color mode: "
-          value={colormode}
-          values={colorNames}
-          setValue={setColormode} />
+            <Droplist name="Color mode: "
+              value={colormode}
+              values={colorNames}
+              setValue={setColormode} />
 
-        <Droplist name="Size of RAM disk (kb): "
-          value={ramdisk}
-          values={["64 (default)", "512", "1024", "4096", "8192"]}
-          setValue={setRamdisk} />
+            <Droplist name="Size of RAM disk (kb): "
+              value={ramdisk}
+              values={["64 (default)", "512", "1024", "4096", "8192"]}
+              setValue={setRamdisk} />
 
-        <Droplist name="Speed of emulator: "
-          value={speed !== "" ? speed : "1 MHz (default)"}
-          values={["Snail", "Slow", "1 MHz (default)", "2 MHz", "3 MHz", "4 MHz", "Warp"]}
-          setValue={setSpeed} />
+            <Droplist name="Speed of emulator: "
+              value={speed !== "" ? speed : "1 MHz (default)"}
+              values={speedNames}
+              setValue={setSpeed} />
 
-        <Droplist name="User Interface Theme: "
-          value={theme !== "" ? theme : "Classic"}
-          values={["Classic", "Dark", "Minimal"]}
-          setValue={setTheme} />
+            <Droplist name="User Interface Theme: "
+              value={theme !== "" ? theme : "Classic"}
+              values={["Classic", "Dark", "Minimal"]}
+              setValue={setTheme} />
+          </div>
+          <div className="flex-column" style={{marginLeft: "20px"}}>
+            <CheckBox name="CRT Distortion"
+              checked={crtdistort}
+              setChecked={setCrtdistort} />
+            <CheckBox name="CRT Ghosting"
+              checked={ghosting}
+              setChecked={setGhosting} />
+            <CheckBox name="CRT Scanlines"
+              checked={scanlines}
+              setChecked={setScanlines} />
+            <CheckBox name="Capslock"
+              checked={!capslockoff}
+              setChecked={(on: boolean) => {setCapslockoff(!on)}} />
+            <CheckBox name="Show debug tab"
+              checked={debug}
+              setChecked={setDebug} />
+            <CheckBox name="Sound"
+              checked={!soundoff}
+              setChecked={(on: boolean) => {setSoundoff(!on)}} />
+          </div>
+        </div>
 
-
-        <CheckBox name="CRT Distortion"
-          checked={crtdistort}
-          setChecked={setCrtdistort} />
-        <CheckBox name="CRT Ghosting"
-          checked={ghosting}
-          setChecked={setGhosting} />
-        <CheckBox name="CRT Scanlines"
-          checked={scanlines}
-          setChecked={setScanlines} />
-        <CheckBox name="Capslock"
-          checked={!capslockoff}
-          setChecked={(on: boolean) => {setCapslockoff(!on)}} />
-        <CheckBox name="Debugging"
-          checked={debug}
-          setChecked={setDebug} />
-        <CheckBox name="Sound"
-          checked={!soundoff}
-          setChecked={(on: boolean) => {setSoundoff(!on)}} />
-
-        <textarea
-          style={{ margin: "10px", marginBottom: "0px", fontFamily: "monospace" }}
-          className="link-builder-textarea"
-          value={hexCode}
-          rows={4}
-          onChange={(e) => setHexCode(e.target.value)}
-          onKeyDown={testKey}
-          placeholder="Enter hexadecimal code here, e.g. A9 01 8D 00 03"
-        />
-        <EditField name={"Hex Load Address: $"}
-          value={hexAddress}
-          setValue={setHexAddress}
-          isHex={true}
-          placeholder="0300"
-          width="5em" />
-
-        <CheckBox name="Run Hex or BASIC Program"
-          checked={!runprogoff}
-          setChecked={(on: boolean) => {setRunprogoff(!on)}} />
+        <div className="horiz-rule" style={{marginTop: "15px"}}></div>
 
         <Droplist name="Disk image to load on startup: "
           value={selectedDisk}
@@ -241,6 +281,41 @@ const LinkBuilder = () => {
           placeholder="http://example.com/disk.dsk"
           width="30em" />
 
+        <div className="horiz-rule" style={{marginTop: "15px"}}></div>
+
+        <div className="flex-row" style={{alignItems: "baseline"}}>
+          <CheckBox name="Text or BASIC Code"
+            checked={!isHex}
+            setChecked={(checked: boolean) => {setIsHex(!checked)}} />
+          <CheckBox name="Hexadecimal"
+            checked={isHex}
+            setChecked={(checked: boolean) => {setIsHex(checked)}} />
+          <div style={{padding: "0px", translate: "0 -2px"}}>
+          <EditField name={"Hex load address: $"}
+            value={hexAddress}
+            setValue={setHexAddress}
+            disabled={!isHex}
+            isHex={true}
+            placeholder="0300"
+            width="5em" />
+            </div>
+        </div>
+
+        <textarea
+          style={{ marginBottom: "0" }}
+          className="link-builder-textarea"
+          value={textBlock}
+          rows={4}
+          onChange={(e) => setTextBlock(e.target.value)}
+          onKeyDown={testKey}
+          placeholder={isHex ? "Enter hexadecimal code here, e.g. A9 01 8D 00 03" : "Enter Text or BASIC code here"}
+        />
+        <CheckBox name="Run BASIC or Hex program after loading"
+          checked={!runprogoff}
+          setChecked={(on: boolean) => {setRunprogoff(!on)}} />
+
+        <div className="horiz-rule" style={{marginTop: "10px"}}></div>
+
         {/* Show final link, readonly textarea for now */}
         <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
           <div className="dialog-title">Final URL:</div>
@@ -251,8 +326,8 @@ const LinkBuilder = () => {
           </button>
         </div>
         <textarea
-          style={{ margin: "10px", marginTop: "0px", fontFamily: "monospace"}}
           className="link-builder-textarea"
+          style={{backgroundColor: "var(--input-bg-color)"}}
           rows={5}
           value={link}
           readOnly
@@ -280,7 +355,10 @@ const LinkBuilder = () => {
 
     <button className="push-button"
       title="Link Builder"
-      onClick={() => { setShowBuilder(true) }}>
+      onClick={() => {
+        retrieveFromEmulatorSettings()
+        setShowBuilder(true)
+      }}>
       <FontAwesomeIcon icon={faLink} />
     </button>
   </div>
