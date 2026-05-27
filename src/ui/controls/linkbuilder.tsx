@@ -11,7 +11,7 @@ import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
 
 const LinkBuilder = () => {
-  const [showBuilder, setShowBuilder] = useState(true)
+  const [showBuilder, setShowBuilder] = useState(false)
 
   const colorNames = ["Color", "Color (no fringing)", "Green Screen", "Amber Screen", "White Screen", "Inverse White"]
   const colorModes = ["color", "nofringe", "green", "amber", "white", "inverse"]
@@ -202,7 +202,7 @@ const LinkBuilder = () => {
           if (event.key === "Escape") setShowBuilder(false)
         }}>
       <div className="floating-dialog flex-column"
-          style={{ left: "3.5%", top: "10%", width: "70%", maxWidth: "600px" }}>
+          style={{ left: "35%", top: "10%", width: "70%", maxWidth: "600px" }}>
         <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
           <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>Link Builder</div>
           <button className="push-button"
