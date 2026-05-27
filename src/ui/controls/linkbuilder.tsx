@@ -10,6 +10,12 @@ import { UI_THEME } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
 
+export enum TAB {
+  DISK,
+  TEXT,
+  HEX,
+}
+
 const LinkBuilder = () => {
   const [showBuilder, setShowBuilder] = useState(false)
 
@@ -32,13 +38,15 @@ const LinkBuilder = () => {
   const [ghosting, setGhosting] = useState(false)
   const [hexAddress, setHexAddress] = useState("")
   const [textBlock, setTextBlock] = useState("")
+  const [loadBlock, setLoadBlock] = useState("")
+  const [hexBlock, setHexBlock] = useState("")
   const [machine, setMachine] = useState("")
   const [ramdisk, setRamdisk] = useState("64")
   const [scanlines, setScanlines] = useState(false)
   const [selectedDisk, setSelectedDisk] = useState("")
   const [speed, setSpeed] = useState("")
   const [theme, setTheme] = useState("")
-  const [isHex, setIsHex] = useState(false)
+  const [tabSection, setTabSection] = useState(TAB.DISK)
 
   const isCustomURL = selectedDisk === "" || selectedDisk.toLowerCase().includes("custom")
 
@@ -66,16 +74,18 @@ const LinkBuilder = () => {
     if (ghosting) {
       params.push("ghosting=on")
     }
-    if (textBlock) {
-      if (isHex) {
-        const txt = encodeURIComponent(textBlock.replace(/\s+/g, ""))
+    if (hexBlock) {
+        const txt = encodeURIComponent(hexBlock.replace(/\s+/g, ""))
         params.push(`hex=${txt}`)
-      } else {
-        // We need to url-encode the textBlock, keeping all whitespace
-        // and special characters and converting them to URL-safe
-        const txt = encodeURIComponent(textBlock)
-        params.push(`${isHex ? "hex" : "text"}=${txt}`)
-      }
+    }
+    if (loadBlock && tabSection === TAB.DISK) {
+      const txt = encodeURIComponent(loadBlock)
+      params.push(`text=${txt}`)
+    } else if (textBlock) {
+      // We need to url-encode the textBlock, keeping all whitespace
+      // and special characters and converting them to URL-safe
+      const txt = encodeURIComponent(textBlock)
+      params.push(`text=${txt}`)
     }
     if (hexAddress) {
       params.push(`address=${encodeURIComponent(hexAddress)}`)
@@ -85,7 +95,7 @@ const LinkBuilder = () => {
     } else if (machine.includes("II+")) {
       params.push("machine=apple2p")
     }
-    if (ramdisk !== "" && !ramdisk.startsWith("64")) {
+    if (ramdisk && !ramdisk.startsWith("64")) {
       params.push("ramdisk=" + ramdisk)
     }
     if (runprogoff) {
@@ -97,7 +107,7 @@ const LinkBuilder = () => {
     if (soundoff) {
       params.push("sound=off")
     }
-    if (speed !== "" && !speed.startsWith("1")) {
+    if (speed && !speed.startsWith("1")) {
       let speedParam = speed.toLowerCase()
       if (speedParam.startsWith("2")) {
         speedParam = "two"
@@ -108,7 +118,7 @@ const LinkBuilder = () => {
       }
       params.push(`speed=${speedParam}`)
     }
-    if (theme !== "" && !theme.toLowerCase().startsWith("classic")) {
+    if (theme && !theme.toLowerCase().startsWith("classic")) {
       params.push(`theme=${theme.toLowerCase()}`)
     }
 
@@ -136,15 +146,13 @@ const LinkBuilder = () => {
     setLink(generateLink())
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appmode, capslockoff, colormode, crtdistort, debug, ghosting, fragmentURL,
-    textBlock, hexAddress, isHex, machine, ramdisk, runprogoff, scanlines, selectedDisk, soundoff, speed, theme])
+    hexBlock, loadBlock, textBlock, hexAddress, machine, ramdisk,
+    runprogoff, scanlines, selectedDisk, soundoff, speed, theme, tabSection])
 
   // put custom url at the front of the list, then all the disk images sorted alphabetically
   const diskNames = ["Custom URL", ...diskImages.map(disk => disk.title).sort()]
 
   const testKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!isHex) {
-      return
-    }
     // Allow control keys, backspace, delete, arrows, tab, etc.
     const safeKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight",
       "ArrowUp", "ArrowDown", "Tab", "Enter", "Home", "End"]
@@ -155,6 +163,27 @@ const LinkBuilder = () => {
     if (!/^[0-9a-fA-F\s]$/.test(e.key)) {
       e.preventDefault()
     }
+  }
+
+  const resetAllSettings = () => {
+    setAppmode("")
+    setCapslockoff(false)
+    setRunprogoff(false)
+    setSoundoff(false)
+    setColormode("")
+    setCrtdistort(false)
+    setDebug(false)
+    setGhosting(false)
+    setHexAddress("")
+    setTextBlock("")
+    setLoadBlock("")
+    setHexBlock("")
+    setMachine("")
+    setRamdisk("")
+    setScanlines(false)
+    setSelectedDisk("")
+    setSpeed("")
+    setTheme("")
   }
 
   const retrieveFromEmulatorSettings = () => {
@@ -168,8 +197,8 @@ const LinkBuilder = () => {
     setDebug(handleGetIsDebugging())
     setSoundoff(!isAudioEnabled())
     setTextBlock("")
+    setHexBlock("")
     setHexAddress("")
-    setIsHex(false)
     const machineName = handleGetMachineName()
     setMachine(machineName === "APPLE2P" ? "Apple II+" :
       machineName === "APPLE2EU" ? "Apple IIe unenhanced" : "Apple IIe enhanced")
@@ -269,52 +298,102 @@ const LinkBuilder = () => {
 
         <div className="horiz-rule" style={{marginTop: "15px"}}></div>
 
-        <Droplist name="Disk image to load on startup: "
-          value={selectedDisk}
-          values={diskNames}
-          setValue={setSelectedDisk} />
-
-        <EditField name="Custom disk image URL: "
-          value={fragmentURL}
-          setValue={setFragmentURL}
-          disabled={!isCustomURL}
-          placeholder="http://example.com/disk.dsk"
-          width="30em" />
-
-        <div className="horiz-rule" style={{marginTop: "15px"}}></div>
-
-        <div className="flex-row" style={{alignItems: "baseline"}}>
-          <CheckBox name="Text or BASIC Code"
-            checked={!isHex}
-            setChecked={(checked: boolean) => {setIsHex(!checked)}} />
-          <CheckBox name="Hexadecimal"
-            checked={isHex}
-            setChecked={(checked: boolean) => {setIsHex(checked)}} />
-          <div style={{padding: "0px", translate: "0 -2px"}}>
-          <EditField name={"Hex load address: $"}
-            value={hexAddress}
-            setValue={setHexAddress}
-            disabled={!isHex}
-            isHex={true}
-            placeholder="0300"
-            width="5em" />
-            </div>
+        <div className="flex-row" style={{marginBottom: "15px"}}>
+          <div className="dialog-title">On startup: </div>
+          <input type="radio"
+            id="Address"
+            name="breakAt"
+            value="address"
+            autoComplete="off"
+            className="check-radio-box"
+            checked={tabSection === TAB.DISK}
+            onChange={() => { setTabSection(TAB.DISK) }} />
+          <label htmlFor="Address" className="dialog-title flush-left">Load Disk Image</label>
+          <input type="radio"
+            id="Watchpoint"
+            name="watch"
+            value="watchpoint"
+            autoComplete="off"
+            className="check-radio-box"
+            checked={tabSection === TAB.TEXT}
+            onChange={() => { setTabSection(TAB.TEXT) }} />
+          <label htmlFor="Watchpoint" className="dialog-title flush-left">Load BASIC Program</label>
+          <input type="radio"
+            id="Instruction"
+            name="instruction"
+            value="instruction"
+            autoComplete="off"
+            className="check-radio-box"
+            checked={tabSection === TAB.HEX}
+            onChange={() => { setTabSection(TAB.HEX) }} />
+          <label htmlFor="Instruction" className="dialog-title flush-left">Load Hex Code</label>
         </div>
 
-        <textarea
-          style={{ marginBottom: "0" }}
-          className="link-builder-textarea"
-          value={textBlock}
-          rows={4}
-          onChange={(e) => setTextBlock(e.target.value)}
-          onKeyDown={testKey}
-          placeholder={isHex ? "Enter hexadecimal code here, e.g. A9 01 8D 00 03" : "Enter Text or BASIC code here"}
-        />
-        <CheckBox name="Run BASIC or Hex program after loading"
-          checked={!runprogoff}
-          setChecked={(on: boolean) => {setRunprogoff(!on)}} />
+        {tabSection === TAB.DISK &&
+          <div style={{minHeight: "150px"}}>
+            <Droplist name="Disk image to load on startup: "
+              value={selectedDisk}
+              values={diskNames}
+              setValue={setSelectedDisk} />
 
-        <div className="horiz-rule" style={{marginTop: "10px"}}></div>
+            <div className="dialog-title">Custom disk image URL:</div>
+
+            <div style={{marginLeft: "10px", marginRight: "10px"}}>
+            <EditField
+              value={fragmentURL}
+              setValue={setFragmentURL}
+              disabled={!isCustomURL}
+              placeholder="http://example.com/disk.dsk" />
+            </div>
+
+            <EditField name="Text to type after loading disk: "
+              value={loadBlock}
+              setValue={setLoadBlock}
+              placeholder="CHOP"
+              width="15em" />
+
+          </div>
+        }
+
+        {tabSection === TAB.TEXT &&
+          <div style={{minHeight: "150px"}}>
+            <textarea
+              className="link-builder-textarea"
+              value={textBlock}
+              rows={5}
+              onChange={(e) => setTextBlock(e.target.value)}
+              placeholder={"Enter Text or BASIC code here"}
+            />
+            <CheckBox name="Run BASIC program after loading"
+              checked={!runprogoff}
+              setChecked={(on: boolean) => {setRunprogoff(!on)}} />
+          </div>
+        }
+
+        {tabSection === TAB.HEX &&
+          <div style={{minHeight: "150px"}}>
+            <textarea
+              className="link-builder-textarea"
+              value={hexBlock}
+              rows={4}
+              onChange={(e) => setHexBlock(e.target.value)}
+              onKeyDown={testKey}
+              placeholder={"Enter hexadecimal code here, e.g. A9 01 8D 00 03"}
+            />
+            <EditField name={"Hex load address: $"}
+              value={hexAddress}
+              setValue={setHexAddress}
+              isHex={true}
+              placeholder="0300"
+              width="5em" />
+            <CheckBox name="Run Hex program after loading"
+              checked={!runprogoff}
+              setChecked={(on: boolean) => {setRunprogoff(!on)}} />
+          </div>
+        }
+
+
+        <div className="horiz-rule" style={{marginTop: "20px"}}></div>
 
         {/* Show final link, readonly textarea for now */}
         <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
@@ -340,7 +419,7 @@ const LinkBuilder = () => {
             <span className="centered-title">Try It</span>
           </button>
           <button className="push-button text-button"
-            onClick={() => { setFragmentURL("") }}>
+            onClick={resetAllSettings}>
             <span className="centered-title">Reset</span>
           </button>
           <button className="push-button text-button"
