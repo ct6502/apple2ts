@@ -1,5 +1,27 @@
 # Changelog
 
+## [v3.3.4](https://github.com/ct6502/apple2ts/tree/v3.3.4) (2026-05-27)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.3...v3.3.4)
+
+**Implemented enhancements:**
+
+- Link Builder to make it easier to construct an Apple2TS URL [\#228](https://github.com/ct6502/apple2ts/issues/228)
+- Add MCP server interface [\#218](https://github.com/ct6502/apple2ts/issues/218)
+
+**Fixed bugs:**
+
+- Alt causes problems in most browsers on Windows [\#224](https://github.com/ct6502/apple2ts/issues/224)
+- Mac desktop app doesn't show entire UI until resized [\#223](https://github.com/ct6502/apple2ts/issues/223)
+
+**Merged pull requests:**
+
+- Fixes \#224 - Windows Alt key problems [\#225](https://github.com/ct6502/apple2ts/pull/225) ([sicklittlemonkey](https://github.com/sicklittlemonkey))
+
+## [v3.3.3](https://github.com/ct6502/apple2ts/tree/v3.3.3) (2026-05-14)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.2...v3.3.3)
+
 ## [v3.3.2](https://github.com/ct6502/apple2ts/tree/v3.3.2) (2026-05-14)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.0...v3.3.2)
