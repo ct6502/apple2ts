@@ -3,6 +3,10 @@
  * Handles storing/loading API keys and provider settings from localStorage
  */
 
+import { AnthropicProvider } from "./mcp_agent_anthropic"
+import { DeepSeekProvider } from "./mcp_agent_deepseek"
+import { OpenAIProvider } from "./mcp_agent_openai"
+
 const STORAGE_KEY_PREFIX = "apple2ts_agent_"
 
 export type ProviderType = "anthropic" | "deepseek" | "openai" | "google"
@@ -10,9 +14,13 @@ export type ProviderType = "anthropic" | "deepseek" | "openai" | "google"
 export interface AgentConfig {
   provider: ProviderType
   apiKey: string
-  model?: string
+  model: string
   maxTokens?: number
-  temperature?: number
+}
+
+export type AIProviderModel = {
+  value: string,
+  label: string
 }
 
 /**
@@ -96,54 +104,28 @@ export function getProviderDisplayName(provider: ProviderType): string {
  * Get default models for each provider
  */
 export function getDefaultModel(provider: ProviderType): string {
-  switch (provider) {
-    case "anthropic":
-      return "claude-sonnet-4-6"
-    case "deepseek":
-      return "deepSeek-v4-flash"
-    case "openai":
-      return "gpt-4o"
-    case "google":
-      return "gemini-1.5-pro"
-    default:
-      return ""
-  }
+  const models = getSupportedModels(provider)
+  return models.length > 0 ? models[0].value : ""
 }
 
 /**
  * Get supported models for each provider
  */
-export function getSupportedModels(provider: ProviderType): Array<{ value: string; label: string }> {
+export function getSupportedModels(provider: ProviderType): Array<AIProviderModel> {
   switch (provider) {
     case "anthropic":
-      return [
-        { value: "claude-sonnet-4-6", label: "Claude Sonnet 4" },
-        { value: "claude-3-5-sonnet-20240620", label: "Claude 3.5 Sonnet (June)" },
-        { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
-        { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
-        { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
-      ]
+      return AnthropicProvider.getSupportedModels()
     case "deepseek":
-      return [
-        { value: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
-        { value: "deepseek-v4-flash-thinking", label: "DeepSeek V4 Flash (Thinking)" },
-        { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
-        { value: "deepseek-v4-pro-thinking", label: "DeepSeek V4 Pro (Thinking)" },
-      ]
+      return DeepSeekProvider.getSupportedModels()
     case "openai":
-      return [
-        { value: "gpt-4o", label: "GPT-4o" },
-        { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-        { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-      ]
+      return OpenAIProvider.getSupportedModels()
     case "google":
-      return [
-        { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-        { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-      ]
+//      return GoogleProvider.getSupportedModels()
+      break
     default:
-      return []
+      break
   }
+  return []
 }
 
 /**
@@ -152,14 +134,16 @@ export function getSupportedModels(provider: ProviderType): Array<{ value: strin
 export function validateApiKeyFormat(provider: ProviderType, apiKey: string): boolean {
   switch (provider) {
     case "anthropic":
-      return apiKey.startsWith("sk-ant-") && apiKey.length > 20
+      return AnthropicProvider.validateApiKeyFormat(apiKey)
     case "deepseek":
-      return apiKey.startsWith("sk-") && apiKey.length > 20
+      return DeepSeekProvider.validateApiKeyFormat(apiKey)
     case "openai":
-      return apiKey.startsWith("sk-") && apiKey.length > 20
+      return OpenAIProvider.validateApiKeyFormat(apiKey)
     case "google":
-      return apiKey.length > 20 // Google keys don't have a consistent prefix
+//      return GoogleProvider.validateApiKeyFormat(apiKey)
+      break
     default:
-      return false
+      break
   }
+  return false
 }

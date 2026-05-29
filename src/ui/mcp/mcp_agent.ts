@@ -6,6 +6,7 @@
 import type { AIProvider, AIResponse } from "./mcp_agent_provider"
 import { AnthropicProvider } from "./mcp_agent_anthropic"
 import { DeepSeekProvider } from "./mcp_agent_deepseek"
+import { OpenAIProvider } from "./mcp_agent_openai"
 import { ConversationHistory, type ConversationMessage } from "./mcp_agent_conversation"
 import { loadAgentConfig, type ProviderType } from "./mcp_agent_config"
 import { listMCPTools } from "./mcp_tools"
@@ -47,7 +48,7 @@ export class MCPAgent {
   /**
    * Configure the agent with a new provider and API key
    */
-  configure(provider: ProviderType, apiKey: string, model?: string): void {
+  configure(provider: ProviderType, apiKey: string, model: string): void {
     console.log(`[MCPAgent] Configuring with provider: ${provider}, model: ${model}`)
     this.provider = this.createProvider(provider, apiKey, model)
     
@@ -358,7 +359,7 @@ export class MCPAgent {
   /**
    * Create a provider instance
    */
-  private createProvider(type: ProviderType, apiKey: string, model?: string): AIProvider | null {
+  private createProvider(type: ProviderType, apiKey: string, model: string): AIProvider | null {
     console.log(`[MCPAgent] Creating provider: type=${type}, model=${model}`)
     
     switch (type) {
@@ -366,9 +367,9 @@ export class MCPAgent {
         return new AnthropicProvider(apiKey, model)
       case "deepseek":
         return new DeepSeekProvider(apiKey, model)
+      case "openai":
+        return new OpenAIProvider(apiKey, model)
       // Future providers:
-      // case "openai":
-      //   return new OpenAIProvider(apiKey, model)
       // case "google":
       //   return new GoogleProvider(apiKey, model)
       default:

@@ -2,6 +2,7 @@
  * Anthropic Claude Provider Implementation
  */
 
+import { AIProviderModel } from "./mcp_agent_config"
 import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig } from "./mcp_agent_provider"
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
@@ -133,12 +134,23 @@ function formatAnthropicError(status: number, statusText: string, errorData: Rec
 }
 
 export class AnthropicProvider implements AIProvider {
+  static validateApiKeyFormat(apiKey: string): boolean {
+    return apiKey.startsWith("sk-ant-") && apiKey.length > 20
+  }
   name = "Anthropic Claude"
   
   private apiKey: string
   private defaultModel: string
   
-  constructor(apiKey: string, model = "claude-sonnet-4-6") {
+  static getSupportedModels(): Array<AIProviderModel> {
+    return [
+        { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+        { value: "claude-opus-4-8", label: "Claude Opus 4.8" },
+        { value: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+    ]
+  }
+
+  constructor(apiKey: string, model: string) {
     this.apiKey = apiKey
     this.defaultModel = model
   }
@@ -146,16 +158,6 @@ export class AnthropicProvider implements AIProvider {
   validateApiKey(apiKey: string): boolean {
     // Anthropic keys start with "sk-ant-"
     return apiKey.startsWith("sk-ant-") && apiKey.length > 20
-  }
-  
-  getSupportedModels(): string[] {
-    return [
-      "claude-sonnet-4-6",
-      "claude-3-5-sonnet-20240620",
-      "claude-3-opus-20240229",
-      "claude-3-sonnet-20240229",
-      "claude-3-haiku-20240307",
-    ]
   }
   
   async sendMessage(
@@ -188,10 +190,6 @@ export class AnthropicProvider implements AIProvider {
           cache_control: { type: "ephemeral" },
         },
       ]
-    }
-    
-    if (config?.temperature !== undefined) {
-      requestBody.temperature = config.temperature
     }
     
     // Add tools with caching on the last tool (all tools get cached together)
@@ -296,10 +294,6 @@ export class AnthropicProvider implements AIProvider {
           cache_control: { type: "ephemeral" },
         },
       ]
-    }
-    
-    if (config?.temperature !== undefined) {
-      requestBody.temperature = config.temperature
     }
     
     // Add tools with caching on the last tool

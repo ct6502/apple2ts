@@ -26,18 +26,55 @@ const AgentTab = () => {
   const [streamingMessage, setStreamingMessage] = useState<ConversationMessage | null>(null)
   const [streamingStatus, setStreamingStatus] = useState("")
   const [tokenUsage, setTokenUsage] = useState<{ inputTokens: number; outputTokens: number } | null>(null)
+  const [promptHistory, setPromptHistory] = useState<string[]>([])
+  const [historyIndex, setHistoryIndex] = useState<number>(-1)
 
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const agent = getAgent()
 
-  // Load existing conversation on mount
+  // Load prompt history from localStorage
+  const loadPromptHistory = (): string[] => {
+    try {
+      const saved = localStorage.getItem("agent_prompt_history")
+      return saved ? JSON.parse(saved) : []
+    } catch (error) {
+      console.error("Failed to load prompt history:", error)
+      return []
+    }
+  }
+
+  // Save prompt history to localStorage
+  const savePromptHistory = (history: string[]) => {
+    try {
+      localStorage.setItem("agent_prompt_history", JSON.stringify(history))
+    } catch (error) {
+      console.error("Failed to save prompt history:", error)
+    }
+  }
+
+  // Add prompt to history (max 10, max 2000 chars each)
+  const addToHistory = (prompt: string) => {
+    const trimmed = prompt.trim()
+    if (trimmed.length === 0 || trimmed.length > 2000) return
+    
+    // Don't add duplicate of the most recent prompt
+    if (promptHistory.length > 0 && promptHistory[promptHistory.length - 1] === trimmed) return
+    
+    const newHistory = [...promptHistory, trimmed].slice(-10) // Keep last 10
+    setPromptHistory(newHistory)
+    savePromptHistory(newHistory)
+    setHistoryIndex(-1) // Reset navigation
+  }
+
+  // Load existing conversation and prompt history on mount
   useEffect(() => {
     if (isAgentConfigured()) {
       const conversation = agent.getConversation()
       setMessages(conversation.getMessagesForDisplay())
     }
+    setPromptHistory(loadPromptHistory())
   }, [agent])
   
   // Auto-scroll to bottom when new messages arrive
@@ -70,6 +107,7 @@ const AgentTab = () => {
     if (!inputValue.trim() || isProcessing || !isAgentConfigured()) return
 
     const userInput = inputValue
+    addToHistory(userInput) // Save to history
     setInputValue("")
     setIsProcessing(true)
     setStreamingStatus("Processing...")
@@ -149,8 +187,11 @@ const AgentTab = () => {
     if (abortControllerRef.current) {
       console.log("Cancelling agent request...")
       abortControllerRef.current.abort()
-      setStreamingStatus("Cancelled")
+      setIsProcessing(false)
+      setStreamingStatus("")
       setStreamingMessage(null)
+      abortControllerRef.current = null
+      inputRef.current?.focus()
     }
   }
 
@@ -158,6 +199,32 @@ const AgentTab = () => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSubmit(e)
+      return
+    }
+    
+    // Navigate history with up/down arrows (when cursor at start/end)
+    if (e.key === "ArrowUp" && promptHistory.length > 0) {
+        e.preventDefault()
+        const newIndex = historyIndex === -1 ? promptHistory.length - 1 : Math.max(0, historyIndex - 1)
+        setHistoryIndex(newIndex)
+        setInputValue(promptHistory[newIndex])
+        // Set cursor to end after state updates
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.selectionStart = inputRef.current.value.length
+            inputRef.current.selectionEnd = inputRef.current.value.length
+          }
+        }, 0)
+    } else if (e.key === "ArrowDown" && historyIndex !== -1) {
+      e.preventDefault()
+      const newIndex = historyIndex + 1
+      if (newIndex >= promptHistory.length) {
+        setHistoryIndex(-1)
+        setInputValue("")
+      } else {
+        setHistoryIndex(newIndex)
+        setInputValue(promptHistory[newIndex])
+      }
     }
   }
 

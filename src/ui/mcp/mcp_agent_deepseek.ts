@@ -3,6 +3,7 @@
  * Uses Anthropic-compatible API at https://api.deepseek.com
  */
 
+import { AIProviderModel } from "./mcp_agent_config"
 import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig } from "./mcp_agent_provider"
 
 const DEEPSEEK_API_URL = "https://api.deepseek.com/anthropic/v1/messages"
@@ -93,12 +94,24 @@ function formatDeepSeekError(status: number, statusText: string, errorData: Reco
 }
 
 export class DeepSeekProvider implements AIProvider {
+  static validateApiKeyFormat(apiKey: string): boolean {
+    return apiKey.startsWith("sk-") && apiKey.length > 20
+  }
   name = "DeepSeek AI"
   
   private apiKey: string
   private defaultModel: string
-  
-  constructor(apiKey: string, model = "DeepSeek-V4-Flash") {
+
+  static getSupportedModels(): Array<AIProviderModel> {
+    return [
+      { value: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+      { value: "deepseek-v4-flash-thinking", label: "DeepSeek V4 Flash (Thinking)" },
+      { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+      { value: "deepseek-v4-pro-thinking", label: "DeepSeek V4 Pro (Thinking)" },
+    ]
+  }
+
+  constructor(apiKey: string, model: string) {
     this.apiKey = apiKey
     this.defaultModel = model
   }
@@ -106,15 +119,6 @@ export class DeepSeekProvider implements AIProvider {
   validateApiKey(apiKey: string): boolean {
     // DeepSeek keys start with "sk-" and are at least 20 characters
     return apiKey.startsWith("sk-") && apiKey.length > 20
-  }
-  
-  getSupportedModels(): string[] {
-    return [
-      "deepseek-v4-flash",
-      "deepseek-v4-flash-thinking",
-      "deepseek-v4-pro",
-      "deepseek-v4-pro-thinking",
-    ]
   }
   
   /**
@@ -172,10 +176,6 @@ export class DeepSeekProvider implements AIProvider {
     // Add system prompt
     if (systemPrompt) {
       requestBody.system = systemPrompt
-    }
-    
-    if (config?.temperature !== undefined) {
-      requestBody.temperature = config.temperature
     }
     
     // Add tools if provided
@@ -275,10 +275,6 @@ export class DeepSeekProvider implements AIProvider {
     // Add system prompt
     if (systemPrompt) {
       requestBody.system = systemPrompt
-    }
-    
-    if (config?.temperature !== undefined) {
-      requestBody.temperature = config.temperature
     }
     
     // Add tools

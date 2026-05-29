@@ -53,8 +53,7 @@ export type MCPToolName =
 export type MCPResourceURI =
   | "apple2ts://memory/main"
   | "apple2ts://video/text"
-  | "apple2ts://video/lores"
-  | "apple2ts://video/hires"
+  | "apple2ts://video/screen"
   | "apple2ts://cpu/status"
   | "apple2ts://system/softswitches"
   | "apple2ts://debugger/stack"

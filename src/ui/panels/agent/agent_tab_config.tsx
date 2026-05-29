@@ -140,7 +140,7 @@ return (
           >
             <option value="anthropic">Anthropic Claude</option>
             <option value="deepseek">DeepSeek AI</option>
-            <option value="openai" disabled>OpenAI GPT (Coming soon)</option>
+            <option value="openai">OpenAI ChatGPT</option>
             <option value="google" disabled>Google Gemini (Coming soon)</option>
           </select>
         </label>

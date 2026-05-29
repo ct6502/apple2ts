@@ -38,7 +38,6 @@ export interface AIProviderConfig {
   apiKey: string
   model?: string
   maxTokens?: number
-  temperature?: number
 }
 
 /**
@@ -70,9 +69,4 @@ export interface AIProvider {
    * Validate API key format
    */
   validateApiKey(apiKey: string): boolean
-  
-  /**
-   * Get list of supported models
-   */
-  getSupportedModels(): string[]
 }

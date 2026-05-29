@@ -471,6 +471,8 @@ export const resetPreferences = () => {
   setPreferenceCapsLock()
   setPreferenceColorMode()
   setPreferenceShowScanlines()
+  setPreferenceCrtDistortion()
+  setPreferenceGhosting()
   setPreferenceTheme()
   setPreferenceMockingboardMode()
   setPreferenceMachineName()

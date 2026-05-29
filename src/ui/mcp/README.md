@@ -177,7 +177,7 @@ The agent automatically chooses and executes the appropriate tools based on user
 - [ ] Google Gemini provider implementation
 - [ ] Conversation export/import
 - [ ] Custom system prompts
-- [ ] Model parameter tuning (temperature, max_tokens)
+- [ ] Model parameter tuning (max_tokens)
 - [ ] Cost tracking and usage statistics
 - [ ] Multi-turn tool execution with confirmation
 - [ ] Voice input/output integration

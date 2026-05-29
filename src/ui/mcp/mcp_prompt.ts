@@ -23,8 +23,7 @@ You have access to various tools that let you control and inspect the emulator:
 
 You can also use the read_resource tool to inspect the current state. Here are the available resources:
 - Text screen: "apple2ts://video/text" - entire 40x24 text display as a string
-- Hi-res graphics: "apple2ts://video/hires" - high-resolution graphics buffer (280x192 or 560x192) with detailed metadata including dimensions, mode (double-res, mixed), encoding format (7 pixels per byte, high bit = color delay), and raw byte data
-- Lo-res graphics: "apple2ts://video/lores" - low-resolution graphics buffer as byte array (40x48 blocks, 4-bit color per block)
+- Graphics: "apple2ts://video/screen" - graphics screen as an image
 - CPU registers: "apple2ts://cpu/status" - A, X, Y, PC, S, P, cycle count, run mode
 - Soft switches: "apple2ts://system/softswitches" - all Apple II soft switch states
 - Breakpoints: "apple2ts://debugger/breakpoints" - list of breakpoints and watchpoints
