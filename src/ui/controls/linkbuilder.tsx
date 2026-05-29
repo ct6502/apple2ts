@@ -127,8 +127,7 @@ const LinkBuilder = () => {
     }
     if (isCustomURL) {
       if (fragmentURL) {
-        const encodedURL = encodeURIComponent(fragmentURL)
-        link += `#${encodedURL}`
+        link += `#${fragmentURL}`
       }
     } else if (selectedDisk) {
       const disk = diskImages.find(d => d.title === selectedDisk)
