@@ -23,6 +23,8 @@ enum MEMORY_RANGE {
   HGR2 = "HGR page 2 (screen order)",
 }
 
+let previousMemLength = 0
+
 const MemoryDump = () => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const memoryDumpRef = useRef(null)
@@ -103,9 +105,8 @@ const MemoryDump = () => {
     }
   }
 
-  const handleSearchAscii = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAscii(e.target.value)
-    const len = e.target.value.length
+  const doSearchAscii = (value: string) => {
+    const len = value.length
     if (len < 1) {
       setMatches(new Array(0))
       setHighlight(new Array(0))
@@ -118,7 +119,7 @@ const MemoryDump = () => {
     const newmatches = new Array(0)
     const newhighlight = new Array(0)
     while (pos < memAscii.length) {
-      const addr = memAscii.indexOf(e.target.value, pos)
+      const addr = memAscii.indexOf(value, pos)
       if (addr < 0) break
       newmatches.push(addr)
       for (let i = 0; i < len; i++) {
@@ -131,6 +132,18 @@ const MemoryDump = () => {
     setHighlight(newhighlight)
     if (newmatches.length > 0) {
       doSetScrollRow(addrToRow(newmatches[0]))
+    }
+  }
+
+  const handleSearchAscii = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAscii(e.target.value)
+    doSearchAscii(e.target.value)
+  }
+
+  const handleAsciiKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && ascii.length > 0) {
+      e.preventDefault()
+      doSearchAscii(ascii)
     }
   }
 
@@ -152,21 +165,19 @@ const MemoryDump = () => {
     return -1
   }
 
-  const handleSearchHex = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase()
-    setHexsearch(newvalue)
-    if (newvalue.length < 1) {
+  const doSearchHex = (value: string) => {
+    if (value.length < 1) {
       setMatches(new Array(0))
       setHighlight(new Array(0))
       setMatchIndex(0)
       return
     }
     // Convert our string 'FF1234' to an array of bytes [0xFF, 0x12, 0x34]
-    const len = Math.floor((newvalue.length + 1) / 2)
+    const len = Math.floor((value.length + 1) / 2)
     const values = new Uint8Array(len)
     for (let i = 0; i < values.length; i++) {
       const offset = i * 2
-      values[i] = parseInt(newvalue.slice(offset, offset + 2), 16)
+      values[i] = parseInt(value.slice(offset, offset + 2), 16)
     }
     // Erase our ASCII search box
     setAscii("")
@@ -187,6 +198,19 @@ const MemoryDump = () => {
     setHighlight(newhighlight)
     if (newmatches.length > 0) {
       doSetScrollRow(addrToRow(newmatches[0]))
+    }
+  }
+
+  const handleSearchHex = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase()
+    setHexsearch(value)
+    doSearchHex(value)
+  }
+
+  const handleHexKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && hexsearch.length > 0) {
+      e.preventDefault()
+      doSearchHex(hexsearch)
     }
   }
 
@@ -282,9 +306,22 @@ const MemoryDump = () => {
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
   const offset = isHGR ? (memoryRange === MEMORY_RANGE.HGR1 ? 0x2000 : 0x4000) : 0
   const memory = getMemoryRange()
+  const justPaused = memory.length > 0 && previousMemLength === 0 && runMode === RUN_MODE.PAUSED
+  previousMemLength = memory.length
   const decoder = new TextDecoder()
   const memAscii = decoder.decode(memory.map((value) => (value & 0x7F)))
   const addressGetTable = memoryRange === MEMORY_RANGE.CURRENT ? handleGetAddressGetTable() : null
+  if (justPaused) {
+    if (ascii.length > 0) {
+      setTimeout(() => {
+        doSearchAscii(ascii)
+      }, 1)
+    } else if (hexsearch.length > 0) {
+      setTimeout(() => {
+        doSearchHex(hexsearch)
+      }, 1)
+    }
+  }
 
   // The marginTop: auto makes the memory dump panel drift to the bottom of its parent.
   return (
@@ -339,6 +376,7 @@ const MemoryDump = () => {
           type="text"
           placeholder="Search Hex"
           value={hexsearch}
+          onKeyDown={handleHexKeyDown}
           onChange={handleSearchHex}
         />
         <input className="hex-field"
@@ -347,6 +385,8 @@ const MemoryDump = () => {
           type="text"
           placeholder="Search ASCII"
           value={ascii}
+          autoComplete="off"
+          onKeyDown={handleAsciiKeyDown}
           onChange={handleSearchAscii}
         />
         <span className="bigger-font" style={{ marginLeft: "5pt", width: "7em" }}>

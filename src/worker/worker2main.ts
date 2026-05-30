@@ -61,7 +61,7 @@ export const passDriveSound = (sound: DRIVE) => {
 }
 
 const passMemory = (mem: Uint8Array) => {
-  doPostMessage(MSG_WORKER.MEMORY, mem)
+  doPostMessage(MSG_WORKER.GET_MEMORY_RESPONSE, mem)
 }
 
 const passSaveState = (sState: EmulatorSaveState) => {

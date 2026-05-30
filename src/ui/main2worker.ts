@@ -233,7 +233,7 @@ export const passRequestMemoryDump = () => {
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory
 // even when the emulator is not paused.
-let memoryDump: Uint8Array<ArrayBufferLike> = new Uint8Array()
+let memoryResource: Uint8Array<ArrayBufferLike> = new Uint8Array()
 
 let machineState: MachineState = {
   addressGetTable: [],
@@ -353,9 +353,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       set6502Instructions(instructions)
       break
     }
-    case MSG_WORKER.MEMORY:
+    case MSG_WORKER.GET_MEMORY_RESPONSE:
       // This is a response to a GET_MEMORY request. Update the memory dump in the state.
-      memoryDump = e.data.payload as Uint8Array
+      memoryResource = e.data.payload as Uint8Array
       break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
@@ -443,10 +443,11 @@ export const handleGetRamWorksBank = () => {
   return machineState.ramWorksBank
 }
 
-export const handleGetMemoryDump = (cached = false) => {
-  if (cached) {
-    return (machineState.memoryDump.length > 0) ? machineState.memoryDump : memoryDump
-  }
+export const handleGetMemoryResource = () => {
+  return memoryResource
+}
+
+export const handleGetMemoryDump = () => {
   return machineState.memoryDump
 }
 

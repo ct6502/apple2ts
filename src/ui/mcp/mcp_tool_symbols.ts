@@ -3,7 +3,7 @@
  * Tools for disassembly and symbol management
  */
 
-import { handleGetMemoryDump } from "../main2worker"
+import { handleGetMemoryResource } from "../main2worker"
 import { opCodes } from "../../common/opcodes"
 import type { MCPToolResult } from "./mcp_server"
 
@@ -21,7 +21,7 @@ export function toolDisassemble(address: number, lines = 10): MCPToolResult {
       }
     }
 
-    const memory = handleGetMemoryDump(true)
+    const memory = handleGetMemoryResource()
     const instructions: Array<{
       address: number
       bytes: number[]

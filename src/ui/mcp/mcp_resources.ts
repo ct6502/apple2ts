@@ -1,5 +1,5 @@
 import { RUN_MODE } from "../../common/utility"
-import { handleGetMemoryDump, handleGetTextPageAsString, handleGetState6502, handleGetRunMode, handleGetMachineName, handleGetStackString, handleGetSoftSwitches, handleGetBreakpoints, handleGetTracelog, handleGetTracing, handleGetSpeedMode } from "../main2worker"
+import { handleGetTextPageAsString, handleGetState6502, handleGetRunMode, handleGetMachineName, handleGetStackString, handleGetSoftSwitches, handleGetBreakpoints, handleGetTracelog, handleGetTracing, handleGetSpeedMode, handleGetMemoryResource } from "../main2worker"
 import { MCPResourceURI, MCPResource } from "./mcp_server"
 import { getUIState } from "../ui_settings"
 import { handleGetDriveProps } from "../devices/disk/driveprops"
@@ -54,7 +54,7 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
   try {
     switch (uri) {
       case "apple2ts://memory/main": {
-        const memory = handleGetMemoryDump(true)
+        const memory = handleGetMemoryResource()
         return {
           uri: uri,
           mimeType: "application/octet-stream",

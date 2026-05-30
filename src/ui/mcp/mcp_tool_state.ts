@@ -5,12 +5,12 @@
 
 import {
   handleGetState6502,
-  handleGetMemoryDump,
   handleGetSoftSwitches,
   passSetState6502,
   passSetMemory,
   passSetSoftSwitches,
   handleGetZeroPage,
+  handleGetMemoryResource,
 } from "../main2worker"
 import type { MCPToolResult } from "./mcp_server"
 
@@ -129,7 +129,7 @@ export function toolReadMemory(address: number, length: number): MCPToolResult {
     if (address + length < 0x100) {
       memory = handleGetZeroPage()
     } else {
-      memory = handleGetMemoryDump(true)
+      memory = handleGetMemoryResource()
     }
     bytes = Array.from(memory.slice(address - start, endAddr - start))
 
