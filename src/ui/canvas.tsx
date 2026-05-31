@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useRef, useState } from "react"
+import { KeyboardEvent, useRef, useState } from "react"
 import "./canvas.css"
 import {
   passSetRunMode, passKeypress,
@@ -25,6 +25,7 @@ import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
 import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
+import { KeyboardControl } from "./controls/keyboardcontrol"
 
 
 let width = 800
@@ -138,29 +139,29 @@ const Apple2Canvas = (props: DisplayProps) => {
   // This is needed for Android, which does not send keydown/up events.
   // https://bugs.chromium.org/p/chromium/issues/detail?id=118639
   // https://stackoverflow.com/questions/36753548/keycode-on-android-is-always-229
-  const handleOnInput = (e: FormEvent) => {
-    if ("nativeEvent" in e) {
-      const ev = e.nativeEvent as InputEvent
-      const event = {
-        key: "",
-        code: "",
-        shiftKey: false,
-        metaKey: false,
-        altKey: false,
-        preventDefault: () => { },
-        stopPropagation: () => { }
-      }
-      // Is this a normal character, or a special one?
-      if (ev.data) {
-        event.key = ev.data as string
-      } else if (ev.inputType === "deleteContentBackward") {
-        event.key = "Backspace"
-      } else if (ev.inputType === "insertLineBreak") {
-        event.key = "Enter"
-      }
-      handleKeyDown(event as keyEvent)
-    }
-  }
+  // const handleOnInput = (e: FormEvent) => {
+  //   if ("nativeEvent" in e) {
+  //     const ev = e.nativeEvent as InputEvent
+  //     const event = {
+  //       key: "",
+  //       code: "",
+  //       shiftKey: false,
+  //       metaKey: false,
+  //       altKey: false,
+  //       preventDefault: () => { },
+  //       stopPropagation: () => { }
+  //     }
+  //     // Is this a normal character, or a special one?
+  //     if (ev.data) {
+  //       event.key = ev.data as string
+  //     } else if (ev.inputType === "deleteContentBackward") {
+  //       event.key = "Backspace"
+  //     } else if (ev.inputType === "insertLineBreak") {
+  //       event.key = "Enter"
+  //     }
+  //     handleKeyDown(event as keyEvent)
+  //   }
+  // }
 
   const isMetaSequence = (e: keyEvent): boolean => {
     if (e.shiftKey) {
@@ -621,15 +622,16 @@ const Apple2Canvas = (props: DisplayProps) => {
   [width, height] = getCanvasSize()
 
   // Make keyboard events work on touch devices by using a hidden textarea.
-  const isAndroidDevice = /Android/i.test(navigator.userAgent)
-  const txt = isAndroidDevice ?
-    <textarea className="hidden-textarea" hidden={false} ref={myText}
-      onInput={handleOnInput} /> :
-    (isTouchDevice ?
-      <textarea className="hidden-textarea" hidden={false} ref={myText}
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}
-      /> : <span></span>)
+//  const isAndroidDevice = /Android/i.test(navigator.userAgent)
+  const txt = <></>
+  // isAndroidDevice ?
+  //   <textarea className="hidden-textarea" hidden={false} ref={myText}
+  //     onInput={handleOnInput} /> :
+  //   (isTouchDevice ?
+  //     <textarea className="hidden-textarea" hidden={false} ref={myText}
+  //       onKeyDown={handleKeyDown}
+  //       onKeyUp={handleKeyUp}
+  //     /> : <span></span>)
 
   if (handleGetOverrideHires() && updateHgr) {
     setTimeout(() => { setUpdateHgr(false) }, 0)
@@ -678,6 +680,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {txt}
       {showHgrMagnifier && formatHgrMagnifier()}
+      {isTouchDevice && <KeyboardControl/>}
     </span>
   )
 }

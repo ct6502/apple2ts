@@ -610,8 +610,8 @@ export const getCanvasSize = () => {
       height -= 70
       width -= 25
     } else {
-      height -= noBackgroundImage ? 40 : 160
-      width -= isLandscape ? 320 : 40
+      height -= noBackgroundImage ? (isTouchDevice ? 0 : 40) : 160
+      width -= isLandscape ? 320 : (isTouchDevice ? 0 : 40)
     }
   }
   if (!noBackgroundImage) {
