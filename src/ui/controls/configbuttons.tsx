@@ -52,13 +52,12 @@ const ConfigButtons = (props: DisplayProps) => {
     </div>
 
     <div className="flex-row" id="tour-keyboardbuttons">
-      <button className={lockedKeyStyle(capsLock ? 2 : 0)}
-        title={`Caps Lock (${capsLock ? "on" : "off"})`}
-        onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
-        <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? "A" : "a"}</span>
-      </button>
-
-      {!isTouchDevice &&
+      {!isTouchDevice && <>
+        <button className={lockedKeyStyle(capsLock ? 2 : 0)}
+          title={`Caps Lock (${capsLock ? "on" : "off"})`}
+          onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
+          <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? "A" : "a"}</span>
+        </button>
         <button className="push-button"
           title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
           onClick={() => { setUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
@@ -66,6 +65,7 @@ const ConfigButtons = (props: DisplayProps) => {
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
         </button>
+        </>
       }
 
       {!isTouchDevice && <GamepadConfig />}

@@ -680,7 +680,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {txt}
       {showHgrMagnifier && formatHgrMagnifier()}
-      {isTouchDevice && <KeyboardControl/>}
+      <KeyboardControl/>
     </span>
   )
 }

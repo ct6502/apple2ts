@@ -6,12 +6,15 @@ import { faKeyboard, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { getCapsLock } from "../ui_settings"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
+import { setPreferenceCapsLock } from "../localstorage"
 
 enum KEY {
   OPEN_APPLE = 256,
   CLOSED_APPLE = 257,
   CTRL = 258,
   SHIFT = 259,
+  CAPSLOCK = 260,
+  SYMBOLS = 261,
   ESC = 27,
 }
 
@@ -21,16 +24,23 @@ enum LOCK {
   LOCKED,
 }
 
+type KeyCap = {
+  label: string;
+  code: number;
+  width?: number;
+}
+
 export const KeyboardControl = () => {
   const [showKeyboard, setShowKeyboard] = useState(false)
   const [shiftMode, setShiftMode] = useState(LOCK.NONE)
+  const [symbolMode, setSymbolMode] = useState(false)
   const [ctrlMode, setCtrlMode] = useState(LOCK.NONE)
   const [escMode, setEscMode] = useState(LOCK.NONE)
-  const isTouchDevice = "ontouchstart" in document.documentElement
+//  const isTouchDevice = "ontouchstart" in document.documentElement
 
-  if (!isTouchDevice) {
-    return null
-  }
+  // if (!isTouchDevice) {
+  //   return null
+  // }
 
   const handleKeyDown = (keyCode: number, e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault() // Prevent synthetic mouse events on touch devices
@@ -40,11 +50,14 @@ export const KeyboardControl = () => {
           setCtrlMode((ctrlMode + 1) % 3)
           break
         case KEY.SHIFT:
-          setShiftMode((shiftMode + 1) % 3)
+          setShiftMode((shiftMode === LOCK.NONE) ? LOCK.TEMP : LOCK.NONE)
           break
         case KEY.ESC:
           setEscMode((escMode === LOCK.NONE) ? LOCK.LOCKED : LOCK.NONE)
           passKeypress(keyCode)
+          break
+        case KEY.CAPSLOCK:
+          setPreferenceCapsLock(getCapsLock() ? false : true)
           break
         case KEY.OPEN_APPLE:
           passAppleCommandKeyPress(true)
@@ -52,32 +65,38 @@ export const KeyboardControl = () => {
         case KEY.CLOSED_APPLE:
           passAppleCommandKeyPress(false)
           break
+        case KEY.SYMBOLS:
+          {
+            const newMode = !symbolMode
+            setSymbolMode(newMode)
+          }
+          break
       }
-    } else {
-      if (keyCode >= 65 && keyCode <= 90 && !shiftMode && !getCapsLock() && !ctrlMode && !escMode) {
-        keyCode += 32 // Convert to lowercase
-      }
-      if (shiftMode === LOCK.TEMP) {
-        setShiftMode(LOCK.NONE)
-      }
-      if (ctrlMode) {
-        // Map certain keys to control codes when Ctrl is held
-        if (keyCode >= 64 && keyCode <= 95) {
-          keyCode -= 64 // Ctrl+A becomes 1, Ctrl+B becomes 2, etc.
-        } else if (keyCode >= 96 || (keyCode >= 27 && keyCode < 64)) {
-          return
-        }
-      }
-      if (ctrlMode === LOCK.TEMP) {
-        setCtrlMode(LOCK.NONE)
-      }
-      if (escMode === LOCK.LOCKED) {
-        if (![73, 74, 75, 77].includes(keyCode)) {
-          setEscMode(LOCK.NONE)
-        }
-      }
-      passKeypress(keyCode)
+      return
     }
+    if (keyCode >= 65 && keyCode <= 90 && !shiftMode && !getCapsLock() && !ctrlMode && !escMode) {
+      keyCode += 32 // Convert to lowercase
+    }
+    if (shiftMode !== LOCK.NONE) {
+      setShiftMode(LOCK.NONE)
+    }
+    if (ctrlMode) {
+      // Map certain keys to control codes when Ctrl is held
+      if (keyCode >= 64 && keyCode <= 95) {
+        keyCode -= 64 // Ctrl+A becomes 1, Ctrl+B becomes 2, etc.
+      } else if (keyCode >= 96 || (keyCode >= 27 && keyCode < 64)) {
+        return
+      }
+    }
+    if (ctrlMode === LOCK.TEMP) {
+      setCtrlMode(LOCK.NONE)
+    }
+    if (escMode === LOCK.LOCKED) {
+      if (![73, 74, 75, 77].includes(keyCode)) {
+        setEscMode(LOCK.NONE)
+      }
+    }
+    passKeypress(keyCode)
   }
 
   const handleKeyUp = (keyCode: number, e: React.TouchEvent | React.MouseEvent) => {
@@ -102,13 +121,12 @@ export const KeyboardControl = () => {
 
   // Apple IIe keyboard layout
   const specialKeys = [
-    { label: "Esc", code: 27 },
+    { label: "Caps", code: KEY.CAPSLOCK },
+    { label: "Esc", code: KEY.ESC },
     { label: "Tab", code: 9 },
   ]
 
-  const keyboardLayout = [
-    // Row 1: ESC through DELETE
-    [
+  const keySym1 = [
       { label: "`", code: 224 },
       { label: "\u2013", code: 45 },
       { label: "=", code: 61 },
@@ -120,74 +138,8 @@ export const KeyboardControl = () => {
       { label: ",", code: 44 },
       { label: ".", code: 46 },
       { label: "/", code: 47 },
-    ],
-    [
-      { label: "1", code: 49 },
-      { label: "2", code: 50 },
-      { label: "3", code: 51 },
-      { label: "4", code: 52 },
-      { label: "5", code: 53 },
-      { label: "6", code: 54 },
-      { label: "7", code: 55 },
-      { label: "8", code: 56 },
-      { label: "9", code: 57 },
-      { label: "0", code: 48 },
-      { label: "\u232B", code: 8, width: 1.5 },
-    ],
-    // Row 2: TAB through ]
-    [
-      { label: "Q", code: 81 },
-      { label: "W", code: 87 },
-      { label: "E", code: 69 },
-      { label: "R", code: 82 },
-      { label: "T", code: 84 },
-      { label: "Y", code: 89 },
-      { label: "U", code: 85 },
-      { label: "I", code: 73 },
-      { label: "O", code: 79 },
-      { label: "P", code: 80 },
-    ],
-    // Row 3: A through '
-    [
-      { label: "Ctrl", code: KEY.CTRL, width: 1.75 },
-      { label: "A", code: 65 },
-      { label: "S", code: 83 },
-      { label: "D", code: 68 },
-      { label: "F", code: 70 },
-      { label: "G", code: 71 },
-      { label: "H", code: 72 },
-      { label: "J", code: 74 },
-      { label: "K", code: 75 },
-      { label: "L", code: 76 },
-    ],
-    // Row 4: Z through /
-    [
-      { label: "Shift", code: KEY.SHIFT, width: 2 },
-      { label: "Z", code: 90 },
-      { label: "X", code: 88 },
-      { label: "C", code: 67 },
-      { label: "V", code: 86 },
-      { label: "B", code: 66 },
-      { label: "N", code: 78 },
-      { label: "M", code: 77 },
-      { label: "Return", code: 13, width: 1.5 },
-    ],
-    // Row 5: Space bar and arrows
-    [
-      { label: "A", code: KEY.OPEN_APPLE },
-      { label: " ", code: 32, width: 8 },
-      { label: "A", code: KEY.CLOSED_APPLE },
-      { label: "←", code: 8 },
-      { label: "→", code: 21 },
-      { label: "↓", code: 10 },
-      { label: "↑", code: 11 },
-    ],
-  ]
-
-  // Make a copy of the keyboard layout for shifted keys
-  const keyboardLayoutShifted = JSON.parse(JSON.stringify(keyboardLayout)) as typeof keyboardLayout
-  keyboardLayoutShifted[0] = 
-    [
+    ]
+  const keySym2 = [
       { label: "~", code: 254 },
       { label: "_", code: 95 },
       { label: "+", code: 43 },
@@ -200,8 +152,7 @@ export const KeyboardControl = () => {
       { label: ">", code: 62 },
       { label: "?", code: 63 },
     ]
-  keyboardLayoutShifted[1] = 
-    [
+  const keySym3 = [
       { label: "!", code: 33 },
       { label: "@", code: 64 },
       { label: "#", code: 35 },
@@ -213,12 +164,82 @@ export const KeyboardControl = () => {
       { label: "(", code: 40 },
       { label: ")", code: 41 },
     ]
-  const del = keyboardLayoutShifted[1].length - 1
-  keyboardLayoutShifted[1][del] = { label: "Del", code: 127, width: 1.5 }
+  const keyNumbers = [
+      { label: "1", code: 49 },
+      { label: "2", code: 50 },
+      { label: "3", code: 51 },
+      { label: "4", code: 52 },
+      { label: "5", code: 53 },
+      { label: "6", code: 54 },
+      { label: "7", code: 55 },
+      { label: "8", code: 56 },
+      { label: "9", code: 57 },
+      { label: "0", code: 48 },
+      { label: "Del", code: 127 },
+    ]
+  const keySpecial = [
+      { label: symbolMode ? "ABC" : "123?", code: KEY.SYMBOLS, width: 2 },
+      { label: "A", code: KEY.OPEN_APPLE },
+      { label: " ", code: 32, width: 8 },
+      { label: "A", code: KEY.CLOSED_APPLE },
+      { label: "←", code: 8 },
+      { label: "→", code: 21 },
+      { label: "↓", code: 10 },
+      { label: "↑", code: 11 },
+    ]
 
-  const kbrd = shiftMode ? keyboardLayoutShifted : keyboardLayout
+  const keyboardLayout: KeyCap[][] = [
+    [
+      { label: "Q", code: 81 },
+      { label: "W", code: 87 },
+      { label: "E", code: 69 },
+      { label: "R", code: 82 },
+      { label: "T", code: 84 },
+      { label: "Y", code: 89 },
+      { label: "U", code: 85 },
+      { label: "I", code: 73 },
+      { label: "O", code: 79 },
+      { label: "P", code: 80 },
+      { label: "\u232B", code: 8 },
+    ],
+    [
+      { label: "Ctrl", code: KEY.CTRL, width: 1.75 },
+      { label: "A", code: 65 },
+      { label: "S", code: 83 },
+      { label: "D", code: 68 },
+      { label: "F", code: 70 },
+      { label: "G", code: 71 },
+      { label: "H", code: 72 },
+      { label: "J", code: 74 },
+      { label: "K", code: 75 },
+      { label: "L", code: 76 },
+    ],
+    [
+      { label: "\u21E7", code: KEY.SHIFT },
+      { label: "Z", code: 90 },
+      { label: "X", code: 88 },
+      { label: "C", code: 67 },
+      { label: "V", code: 86 },
+      { label: "B", code: 66 },
+      { label: "N", code: 78 },
+      { label: "M", code: 77 },
+      { label: "Return", code: 13, width: 1.5 },
+    ],
+    keySpecial
+  ]
 
-  const getKeyLabel = (key: { label: string; code: number }) => {
+  // Make a copy of the keyboard layout for symbol keys
+  const keyboardLayoutSymbols: KeyCap[][] = [
+    keyNumbers,
+    keySym3,
+    keySym1,
+    keySym2,
+    keySpecial
+  ]
+
+  const kbrd = symbolMode ? keyboardLayoutSymbols : keyboardLayout
+
+  const getKeyLabel = (key: KeyCap) => {
     const { code, label } = key
     if (code === KEY.OPEN_APPLE) {
       return  <svg width="20" height="20" style={{fill: "#fff"}}>{appleOutline}</svg>
@@ -241,13 +262,15 @@ export const KeyboardControl = () => {
       mode = ctrlMode
     } else if (code === KEY.ESC) {
       mode = escMode
+    } else if (code === KEY.CAPSLOCK) {
+      mode = getCapsLock() ? LOCK.LOCKED : LOCK.NONE
     }
     switch (mode) {
       case LOCK.TEMP:
         style += " key-down"
         break
       case LOCK.LOCKED:
-        style += " key-down key-locked"
+        style += " key-locked"
         break
     }
     return style

@@ -1,35 +1,17 @@
 import {
   handleGetLeftButton, handleGetRightButton, passAppleCommandKeyPress,
-  passAppleCommandKeyRelease, passKeypress,
-  passKeyRelease
-} from "../main2worker"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import {
-  faArrowRight,
-  faArrowLeft,
-  faArrowDown,
-  faArrowUp,
-} from "@fortawesome/free-solid-svg-icons"
-import { lockedKeyStyle } from "../../common/utility"
-import { handleArrowKey } from "../devices/gamepad"
-import { appleOutline } from "../img/icon_appleoutline"
-import { appleSolid } from "../img/icon_applesolid"
-import { joystick } from "../img/icon_joystick"
+  passAppleCommandKeyRelease
+  } from "../main2worker"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
 import { setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
-import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity, isMinimalTheme } from "../ui_settings"
+import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
 
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
-  const arrowKeys = [
-    { name: "Left", icon: faArrowLeft },
-    { name: "Right", icon: faArrowRight },
-    { name: "Up", icon: faArrowUp },
-    { name: "Down", icon: faArrowDown },
-  ]
   const isTouchDevice = "ontouchstart" in document.documentElement
+
   const tryButtonPressRelease = (doTouch: boolean, key: string, press: boolean) => {
     if (doTouch !== isTouchDevice) return
     // If one of our Apple keys is locked, ignore the button press.
@@ -45,68 +27,24 @@ const KeyboardButtons = (props: DisplayProps) => {
     }
   }
 
-  return <span>{isTouchDevice && <span className="flex-row">
-    {arrowKeys.map((key, i) => (
-      <button className="push-button key-button" title={key.name}
-        key={key.name}
-        onMouseDown={() => handleArrowKey(i, false)}
-        onMouseUp={() => handleArrowKey(i, true)}
-      >
-        <FontAwesomeIcon icon={key.icon} />
+  return <span>
+    {!isTouchDevice && <>
+      <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
+        title="Button 1"
+        onTouchStart={() => tryButtonPressRelease(true, "left", true)}
+        onTouchEnd={() => tryButtonPressRelease(true, "left", false)}
+        onMouseDown={() => tryButtonPressRelease(false, "left", true)}
+        onMouseUp={() => tryButtonPressRelease(false, "left", false)}>
       </button>
-    ))}
-    <button className="push-button key-button" title="Escape"
-      onMouseDown={() => passKeypress(27)}
-      onMouseUp={() => passKeyRelease()}>
-      <span className="text-key">esc</span>
-    </button>
-    <button className="push-button key-button" title="Tab"
-      onMouseDown={() => passKeypress(9)}
-      onMouseUp={() => passKeyRelease()}>
-      <span className="text-key">tab</span>
-    </button>
-    <button
-      className={lockedKeyStyle(props.ctrlKeyMode)}
-      title="Control"
-      onMouseDown={() => props.handleCtrlDown((props.ctrlKeyMode + 1) % 3)}>
-      <span className="text-key">ctrl</span>
-    </button>
-    <button className="push-button key-button" title="Return"
-      onMouseDown={() => passKeypress(13)}
-      onMouseUp={() => passKeyRelease()}>
-      <span className="text-key">ret</span>
-    </button>
-    <button className={lockedKeyStyle(props.openAppleKeyMode)}
-      title="Open Apple"
-      onMouseDown={() => props.handleOpenAppleDown((props.openAppleKeyMode + 1) % 3)}>
-      <svg width="25" height="25" className="fill-color">{appleOutline}</svg>
-    </button>
-    <button className={lockedKeyStyle(props.closedAppleKeyMode)} title="Closed Apple"
-      onMouseDown={() => props.handleClosedAppleDown((props.closedAppleKeyMode + 1) % 3)}>
-      <svg width="25" height="25" className="fill-color">{appleSolid}</svg>
-    </button>
-    {isMinimalTheme() &&
-      <button title="Touch Joystick"
-        className="push-button"
-        onMouseDown={(event: React.MouseEvent) => setPopupLocation([event.clientX, event.clientY])}>
-        <svg width="25" height="25" className="fill-color">{joystick}</svg>
-      </button>}
-  </span >
-  }
-    <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
-      title="Button 1"
-      onTouchStart={() => tryButtonPressRelease(true, "left", true)}
-      onTouchEnd={() => tryButtonPressRelease(true, "left", false)}
-      onMouseDown={() => tryButtonPressRelease(false, "left", true)}
-      onMouseUp={() => tryButtonPressRelease(false, "left", false)}>
-    </button>
-    <button className={`joystick-button ${handleGetRightButton() ? "joystick-active" : ""}`}
-      title="Button 2"
-      onTouchStart={() => tryButtonPressRelease(true, "right", true)}
-      onTouchEnd={() => tryButtonPressRelease(true, "right", false)}
-      onMouseDown={() => tryButtonPressRelease(false, "right", true)}
-      onMouseUp={() => tryButtonPressRelease(false, "right", false)}>
-    </button>
+      <button className={`joystick-button ${handleGetRightButton() ? "joystick-active" : ""}`}
+        title="Button 2"
+        onTouchStart={() => tryButtonPressRelease(true, "right", true)}
+        onTouchEnd={() => tryButtonPressRelease(true, "right", false)}
+        onMouseDown={() => tryButtonPressRelease(false, "right", true)}
+        onMouseUp={() => tryButtonPressRelease(false, "right", false)}>
+      </button>
+      </>
+    }
     <PopupMenu
       location={popupLocation}
       onClose={() => { setPopupLocation(undefined) }}
