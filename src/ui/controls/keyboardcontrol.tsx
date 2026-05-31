@@ -1,5 +1,5 @@
 import "./keyboardcontrol.css"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passKeyRelease } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faKeyboard, faXmark } from "@fortawesome/free-solid-svg-icons"
@@ -36,6 +36,7 @@ export const KeyboardControl = () => {
   const [symbolMode, setSymbolMode] = useState(false)
   const [ctrlMode, setCtrlMode] = useState(LOCK.NONE)
   const [escMode, setEscMode] = useState(LOCK.NONE)
+  const lastTouchTime = useRef(0)
 //  const isTouchDevice = "ontouchstart" in document.documentElement
 
   // if (!isTouchDevice) {
@@ -43,6 +44,16 @@ export const KeyboardControl = () => {
   // }
 
   const handleKeyDown = (keyCode: number, e: React.TouchEvent | React.MouseEvent) => {
+    // Prevent double-firing on touch devices (touch events generate synthetic mouse events)
+    const now = Date.now()
+    if (e.type === "mousedown" && now - lastTouchTime.current < 500) {
+      e.preventDefault()
+      return
+    }
+    if (e.type === "touchstart") {
+      lastTouchTime.current = now
+    }
+    
     e.preventDefault() // Prevent synthetic mouse events on touch devices
     if (keyCode >= KEY.OPEN_APPLE || keyCode === KEY.ESC) {
       switch (keyCode) {
@@ -100,6 +111,16 @@ export const KeyboardControl = () => {
   }
 
   const handleKeyUp = (keyCode: number, e: React.TouchEvent | React.MouseEvent) => {
+    // Prevent double-firing on touch devices (touch events generate synthetic mouse events)
+    const now = Date.now()
+    if (e.type === "mouseup" && now - lastTouchTime.current < 500) {
+      e.preventDefault()
+      return
+    }
+    if (e.type === "touchend") {
+      lastTouchTime.current = now
+    }
+    
     e.preventDefault() // Prevent synthetic mouse events on touch devices
     if (keyCode >= KEY.OPEN_APPLE) {
       switch (keyCode) {
