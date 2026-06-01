@@ -53,8 +53,7 @@ export const KeyboardControl = () => {
     if (e.type === "touchstart") {
       lastTouchTime.current = now
     }
-    
-    e.preventDefault() // Prevent synthetic mouse events on touch devices
+//    e.preventDefault() // Prevent synthetic mouse events on touch devices
     if (keyCode >= KEY.OPEN_APPLE || keyCode === KEY.ESC) {
       switch (keyCode) {
         case KEY.CTRL:
@@ -147,44 +146,6 @@ export const KeyboardControl = () => {
     { label: "Tab", code: 9 },
   ]
 
-  const keySym1 = [
-      { label: "`", code: 224 },
-      { label: "\u2013", code: 45 },
-      { label: "=", code: 61 },
-      { label: "[", code: 91 },
-      { label: "]", code: 93 },
-      { label: "\\", code: 92 },
-      { label: ";", code: 59 },
-      { label: "'", code: 39 },
-      { label: ",", code: 44 },
-      { label: ".", code: 46 },
-      { label: "/", code: 47 },
-    ]
-  const keySym2 = [
-      { label: "~", code: 254 },
-      { label: "_", code: 95 },
-      { label: "+", code: 43 },
-      { label: "{", code: 123 },
-      { label: "}", code: 125 },
-      { label: "|", code: 124 },
-      { label: ":", code: 58 },
-      { label: "\"", code: 34 },
-      { label: "<", code: 60 },
-      { label: ">", code: 62 },
-      { label: "?", code: 63 },
-    ]
-  const keySym3 = [
-      { label: "!", code: 33 },
-      { label: "@", code: 64 },
-      { label: "#", code: 35 },
-      { label: "$", code: 36 },
-      { label: "%", code: 37 },
-      { label: "^", code: 94 },
-      { label: "&", code: 38 },
-      { label: "*", code: 42 },
-      { label: "(", code: 40 },
-      { label: ")", code: 41 },
-    ]
   const keyNumbers = [
       { label: "1", code: 49 },
       { label: "2", code: 50 },
@@ -198,6 +159,45 @@ export const KeyboardControl = () => {
       { label: "0", code: 48 },
       { label: "Del", code: 127 },
     ]
+  const keySym1 = [
+      { label: "!", code: 33 },
+      { label: "@", code: 64 },
+      { label: "#", code: 35 },
+      { label: "$", code: 36 },
+      { label: "%", code: 37 },
+      { label: "^", code: 94 },
+      { label: "&", code: 38 },
+      { label: "*", code: 42 },
+      { label: "(", code: 40 },
+      { label: ")", code: 41 },
+    ]
+  const keySym2 = [
+      { label: "`", code: 224 },
+      { label: "\u2013", code: 45 },
+      { label: "=", code: 61 },
+      { label: "[", code: 91 },
+      { label: "]", code: 93 },
+      { label: "\\", code: 92 },
+      { label: ";", code: 59 },
+      { label: "'", code: 39 },
+      { label: ",", code: 44 },
+      { label: ".", code: 46 },
+      { label: "/", code: 47 },
+    ]
+  const keySym3 = [
+      { label: "~", code: 254 },
+      { label: "_", code: 95 },
+      { label: "+", code: 43 },
+      { label: "{", code: 123 },
+      { label: "}", code: 125 },
+      { label: "|", code: 124 },
+      { label: ":", code: 58 },
+      { label: "\"", code: 34 },
+      { label: "<", code: 60 },
+      { label: ">", code: 62 },
+      { label: "?", code: 63 },
+    ]
+
   const keySpecial = [
       { label: symbolMode ? "ABC" : "123?", code: KEY.SYMBOLS, width: 2 },
       { label: "A", code: KEY.OPEN_APPLE },
@@ -209,8 +209,7 @@ export const KeyboardControl = () => {
       { label: "↑", code: 11 },
     ]
 
-  const keyboardLayout: KeyCap[][] = [
-    [
+  const keyLetter1 = [
       { label: "Q", code: 81 },
       { label: "W", code: 87 },
       { label: "E", code: 69 },
@@ -222,8 +221,9 @@ export const KeyboardControl = () => {
       { label: "O", code: 79 },
       { label: "P", code: 80 },
       { label: "\u232B", code: 8 },
-    ],
-    [
+    ]
+
+  const keyLetter2 = [
       { label: "Ctrl", code: KEY.CTRL, width: 1.75 },
       { label: "A", code: 65 },
       { label: "S", code: 83 },
@@ -234,8 +234,8 @@ export const KeyboardControl = () => {
       { label: "J", code: 74 },
       { label: "K", code: 75 },
       { label: "L", code: 76 },
-    ],
-    [
+    ]
+  const keyLetter3 = [
       { label: "\u21E7", code: KEY.SHIFT },
       { label: "Z", code: 90 },
       { label: "X", code: 88 },
@@ -245,28 +245,33 @@ export const KeyboardControl = () => {
       { label: "N", code: 78 },
       { label: "M", code: 77 },
       { label: "Return", code: 13, width: 1.5 },
-    ],
-    keySpecial
   ]
 
-  // Make a copy of the keyboard layout for symbol keys
-  const keyboardLayoutSymbols: KeyCap[][] = [
-    keyNumbers,
-    keySym3,
-    keySym1,
-    keySym2,
-    keySpecial
-  ]
-
-  const kbrd = symbolMode ? keyboardLayoutSymbols : keyboardLayout
+  let keyboardLayout: KeyCap[][]
+  if (symbolMode) {
+    keyboardLayout = [
+      keyNumbers,
+      keySym1,
+      keySym2,
+      keySym3,
+      keySpecial
+    ]
+  } else {
+    keyboardLayout = [
+      keyLetter1,
+      keyLetter2,
+      keyLetter3,
+      keySpecial
+    ]
+  }
 
   const getKeyLabel = (key: KeyCap) => {
     const { code, label } = key
     if (code === KEY.OPEN_APPLE) {
-      return  <svg width="20" height="20" style={{fill: "#fff"}}>{appleOutline}</svg>
+      return  <svg width="24" height="24" style={{fill: "#fff"}}>{appleOutline}</svg>
     }
     if (code === KEY.CLOSED_APPLE) {
-      return  <svg width="20" height="20" style={{fill: "#ddd"}}>{appleSolid}</svg>
+      return  <svg width="24" height="24" style={{fill: "#ddd"}}>{appleSolid}</svg>
     }
     if (code >= 65 && code <= 90 && !shiftMode && !getCapsLock() && !ctrlMode) {
       return String.fromCharCode(code + 32) // Convert to lowercase
@@ -274,8 +279,12 @@ export const KeyboardControl = () => {
     return label
   }
 
-  const getKeyStyle = (code : number) => {
+  const getKeyStyle = (key: KeyCap) => {
+    const { code, label } = key
     let style = "keyboard-key"
+    if (label.length > 1 && !label.startsWith("&")) {
+      style += " keyboard-key-wide"
+    }
     let mode = LOCK.NONE
     if (code === KEY.SHIFT) {
       mode = shiftMode
@@ -297,6 +306,12 @@ export const KeyboardControl = () => {
     return style
   }
 
+  // Calculate key height to keep keyboard same height in both modes
+  // Symbol mode: 5 rows at 38px, Letter mode: 4 rows taller to match
+  const getKeyHeight = () => {
+    return symbolMode ? 36 : 44
+  }
+
   return (
     <>
       {/* Toggle button */}
@@ -310,14 +325,18 @@ export const KeyboardControl = () => {
 
       {/* Floating keyboard */}
       {showKeyboard && (
-        <div className="floating-keyboard">
+        <div 
+          className="floating-keyboard"
+          onTouchMove={(e) => e.preventDefault()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
           <div className="keyboard-header">
               <div className="keyboard-row" style={{ marginBottom: "4px" }}>
                 {specialKeys.map((key, keyIndex) => (
                   <button
                     key={keyIndex}
-                    className={getKeyStyle(key.code)}
-                    style={{ minWidth: "50px" }}
+                    className={getKeyStyle(key)}
+                    style={{ minWidth: "50px", height: `${getKeyHeight() - 4}px` }}
                     onMouseDown={(e) => key.code > 0 && handleKeyDown(key.code, e)}
                     onMouseUp={(e) => handleKeyUp(key.code, e)}
                     onTouchStart={(e) => key.code > 0 && handleKeyDown(key.code, e)}
@@ -329,19 +348,20 @@ export const KeyboardControl = () => {
               </div>
             <button
               className="keyboard-close-button"
+              style={{userSelect: "none"}}
               onClick={() => setShowKeyboard(false)}
             >
               <FontAwesomeIcon icon={faXmark} style={{userSelect: "none"}}/>
             </button>
           </div>
           <div className="keyboard-rows">
-            {kbrd.map((row, rowIndex) => (
+            {keyboardLayout.map((row, rowIndex) => (
               <div key={rowIndex} className="keyboard-row">
                 {row.map((key, keyIndex) => (
                   <button
-                    key={keyIndex}
-                    className={getKeyStyle(key.code)}
-                    style={{ flexGrow: key.width || 1 }}
+                    key={keyIndex * 1000 + key.code}
+                    className={getKeyStyle(key)}
+                    style={{ flexGrow: key.width || 1, height: `${getKeyHeight()}px` }}
                     onMouseDown={(e) => key.code > 0 && handleKeyDown(key.code, e)}
                     onMouseUp={(e) => handleKeyUp(key.code, e)}
                     onTouchStart={(e) => key.code > 0 && handleKeyDown(key.code, e)}

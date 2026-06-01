@@ -43,7 +43,7 @@
   overflow-wrap: break-word;
   white-space: pre-wrap;
   margin-right: 10px;
-  font-size: 0.5em;
+  font-size: 1em;
 }
 
 
@@ -65,8 +65,8 @@
   color: #00FF00;
 }
 
-@media (min-width: 1290px) {
+@media (max-width: 600px) {
   .help-text {
-    font-size: 1em;
+    font-size: 0.5em;
   }
 }
