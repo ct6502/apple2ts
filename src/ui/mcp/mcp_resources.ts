@@ -11,10 +11,10 @@ import { handleGetDriveProps } from "../devices/disk/driveprops"
 const DISK_CATALOG = [
   { 
     name: "Total Replay", 
-    filename: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip", 
-    path: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip", 
+    filename: "https://ct6502.org/wp-content/uploads/2026/06/TotalReplay.hdv_.zip", 
+    path: "https://ct6502.org/wp-content/uploads/2026/06/TotalReplay.hdv_.zip", 
     type: "game collection", 
-    description: "Massive collection of 508 classic arcade and action games with instant loading. Navigate by typing the first 3-4 characters of a game name and pressing Enter.",
+    description: "Massive collection of over 500 classic arcade and action games with instant loading. Navigate by typing the first 3-4 characters of a game name and pressing Enter.",
     games: "Examples: Choplifter, Lode Runner, Prince of Persia, Karateka, Tetris, Pac-Man, Frogger, Donkey Kong, Centipede, Dig Dug, Joust, Defender, Missile Command, Asteroids, Galaxian, Zaxxon, Qbert, Spy Hunter, Pitfall II, Burgertime, Archon, Arkanoid, Bruce Lee, Boulder Dash, Bubble Bobble, Commando, Crystal Castles, Dino Eggs, Montezuma's Revenge, Moon Patrol, Paperboy, Popeye, Space Invaders, Spy vs Spy, Track & Field, Winter Games, Oregon Trail, and 470+ more!"
   },
   { 

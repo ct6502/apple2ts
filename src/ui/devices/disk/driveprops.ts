@@ -12,7 +12,7 @@ import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./int
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
-import { getHotReload } from "../../ui_settings"
+import { getHotReload, setHelpText } from "../../ui_settings"
 import { getDiskImageFromLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -99,6 +99,10 @@ export const handleSetDiskData = (
     writableFileHandle: isFileSystemHandle ? writableFileHandle : null
   }
   passSetDriveNewData(propsForWorker)
+  if (filename) {
+    checkForHelpFile(filename)
+  }
+
 }
 
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
@@ -487,18 +491,7 @@ const resetAllDiskDrives = () => {
   }
 }
 
-export const handleSetDiskFromFile = async (disk: string,
-  updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
-  let data: ArrayBuffer
-  try {
-    const res = await fetch("disks/" + disk)
-    data = await res.arrayBuffer()
-  } catch {
-   return
-  }
-  resetAllDiskDrives()
-  handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
-  passSetRunMode(RUN_MODE.NEED_BOOT)
+const checkForHelpFile = async (disk: string) => {
   const helpFile = replaceSuffix(disk, "txt")
   try {
     const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
@@ -513,12 +506,25 @@ export const handleSetDiskFromFile = async (disk: string,
       if (helpFile === "TotalReplay.txt") {
         helptext = parseGameList(helptext)
       }
-      updateDisplay(0, helptext)
+      setHelpText(helptext)
     }      
   } catch {
     // If we don't have a help text file, just revert to the default text.
-    updateDisplay(0, "<Default>")
+    setHelpText("<Default>")  }
+}
+
+export const handleSetDiskFromFile = async (disk: string,
+  updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
+  let data: ArrayBuffer
+  try {
+    const res = await fetch("disks/" + disk)
+    data = await res.arrayBuffer()
+  } catch {
+   return
   }
+  resetAllDiskDrives()
+  handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
+  passSetRunMode(RUN_MODE.NEED_BOOT)
 }
 
 export const handleSaveWritableFile = async (index: number, writableFileHandle: WritableFileHandle|null = null) => {

@@ -9,18 +9,24 @@ export const parseGameList = (fileContent: string) => {
   // Remove blank lines and comments
   parsedGames = parsedGames.filter((line) => line && !line.startsWith("#"))
   parsedGames = parsedGames.map((line) => {
-    const joystick = (line.charAt(0) === "1") ? "joystick" : ""
-    const cheats = (line.charAt(3) !== "0") ? `cheats=${line.charAt(3)}` : ""
+    const mouse = (line.charAt(0) === "1")
+    const joystick = (line.charAt(1) === "1")
+    const cheats = (line.charAt(4) !== "0") ? `cheats=${line.charAt(4)}` : ""
     // Get everything after '='
     const index = line.indexOf("=")
     line = (index !== -1) ? line.substring(index + 1) : ""
-    if (joystick || cheats) {
+    line = line.replace(/\//g, ", ")
+    if (mouse || joystick || cheats) {
       line += " ("
+      if (mouse) {
+        line += "mouse"
+      }
       if (joystick) {
-        line += joystick
+        if (mouse) line += ", "
+        line += "joystick"
       }
       if (cheats) {
-        if (joystick) line += ", "
+        if (mouse || joystick) line += ", "
         line += cheats
       }
       line += ")"

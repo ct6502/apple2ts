@@ -78,3 +78,4 @@ test("StickybearTown", () => testDiskImage("StickybearTown.woz", 0x9F68, 2700000
 // See https://github.com/ct6502/apple2ts/issues/179
 test("Frogger", () => testDiskImage("Frogger.woz", 0x9C4E, 5900000, 6100000))
 
+// test("Algernon", () => testDiskImage("Algernon.woz", 0x0000, 5900000, 6100000))

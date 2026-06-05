@@ -77,7 +77,7 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Total Replay",
-    diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplay.hdv_.zip",
+    diskUrl: "https://ct6502.org/wp-content/uploads/2026/06/TotalReplay.hdv_.zip",
     // diskUrl: "TotalReplay.hdv",
     // diskUrl: "https://archive.org/download/TotalReplay/Total%20Replay%20v5.2.hdv",
     imageUrl: "disks/Total%20Replay.png",

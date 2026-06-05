@@ -116,19 +116,21 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           </div>
         </div>
         }
-        {(activeTab == 0 || isSmall) && <HelpTab helptext={getHelpText()} theme={getTheme()} />}
-        <div style={{ display: activeTab == 1 && !isSmall ? "block" : "none" }}>
+        {(activeTab == 0 || isSmall) &&
+          <HelpTab helptext={getHelpText()} theme={getTheme()} />
+        }
+        {(activeTab == 1 && !isSmall) &&
           <DebugTab updateDisplay={props.updateDisplay} />
-        </div>
-        <div style={{ display: activeTab == 2 && !isSmall ? "block" : "none" }}>
+        }
+        {(activeTab == 2 && !isSmall) && 
           <BasicTab updateDisplay={props.updateDisplay}  />
-        </div>
-        <div style={{ display: activeTab == 3 && !isSmall ? "block" : "none" }}>
+        }
+        {(activeTab == 3 && !isSmall) && 
           <ExpectinTab />
-        </div>
-        <div style={{ display: activeTab == 4 && !isSmall ? "block" : "none" }}>
+        }
+        {(activeTab == 4 && !isSmall) && 
           <AgentTab />
-        </div>
+        }
       </div>
     </Flyout>
   )
