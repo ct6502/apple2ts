@@ -35,7 +35,7 @@ let resizeTimeout = 0
 // because we don't want it to re-render the canvas each time it is toggled.
 let withinScreen = false
 let lastFrameTime = 0
-const targetFrameRate = 75 // Hz
+const targetFrameRate = 45 // Hz
 const maxFrameSamples = 60
 let startTimeForMaxFrames = 0
 let lastFPSLog = 0
