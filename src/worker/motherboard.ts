@@ -36,24 +36,21 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 
-let startTime = 0
-let prevTime = 0
 let speedMode = 0
 let cpuSpeed = 0
 export let isDebugging = false
 let appMode = "default"
 let showDebugTab = false
-let refreshTime = 16.6881 // 17030 / 1020.488
+let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
-let timeDelta = 0
 let cpuRunMode = RUN_MODE.IDLE
 let machineName: MACHINE_NAME = "APPLE2EE"
-let iRefresh = 0
 let takeSnapshot = false
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
 let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
+let speedTracker: Array<{time: number, cycles: number}> = []
 
 export const setTracing = (doTracing: boolean) => {
   tracing = doTracing
@@ -328,8 +325,8 @@ export const doSetSpeedMode = (speedModeIn: number) => {
   speedMode = speedModeIn
   // speedMode = -2 is slowest, but add 2 to it to make the arrays be zero based.
   // speedMode = 0 is still 1 MHz, so no risk of backwards compatibility issues.
-  refreshTime = (speedMode === 4) ? 1 : 16.6881
-  cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 4])[speedMode + 2]
+  refreshTime = (speedMode === 4) ? 0 : 16.6881
+  cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 24])[speedMode + 2]
   resetRefreshCounter()
 }
 
@@ -534,9 +531,7 @@ export const doStepOut = () => {
 }
 
 const resetRefreshCounter = () => {
-  iRefresh = 0
-  prevTime = performance.now()
-  startTime = prevTime
+  speedTracker = [{time: performance.now(), cycles: s6502.cycleCount}]
 }
 
 export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
@@ -709,11 +704,8 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
   updateExternalMachineState()
 }
 
+//let quickReturn = 0
 const doAdvance6502 = () => {
-  const newTime = performance.now()
-  timeDelta = newTime - prevTime
-  if (timeDelta < refreshTime) return
-  prevTime = newTime
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
     return
   }
@@ -747,35 +739,30 @@ const doAdvance6502 = () => {
       break
     }
   }
-  iRefresh++
-  const speedInCyclesPerMS = (iRefresh * cpuCyclesPerRefresh) / (performance.now() - startTime)
+  if (speedTracker.length > 120) {
+    speedTracker.shift()
+  }
+  speedTracker.push({time: performance.now(), cycles: s6502.cycleCount})
+  const speedInCyclesPerMS = speedTracker.length > 1 ? (speedTracker[speedTracker.length - 1].cycles - speedTracker[0].cycles) / (speedTracker[speedTracker.length - 1].time - speedTracker[0].time) : 0
   // The / 10 gets rid of the ones digit, which turns into the thousandths digit.
   cpuSpeed = (speedInCyclesPerMS < 10000) ? Math.round(speedInCyclesPerMS / 10) / 100 :
     Math.round(speedInCyclesPerMS / 100) / 10
-    handleGamepads()
-    updateExternalMachineState()
+  
+  handleGamepads()
+  updateExternalMachineState()
   if (takeSnapshot) {
     takeSnapshot = false
     doSnapshot()
   }
 }
 
-// To speed up the emulator in fast mode, we can change this refresh interval.
-// This makes the GUI less responsive since we are starving the main thread.
-// The results look something like:
-//  iRefresh + 1:     5.5 MHz
-//  iRefresh + 2:     7.9 MHz
-//  iRefresh + 3:     9.6 MHz
-//  iRefresh + 4:     11.3 MHz
-//  iRefresh + 5:     12.6 MHz
-//  iRefresh + 10:    18.0 MHz
-//  iRefresh + 20:    23.2 MHz
-//
+
+let nextFrameTime = performance.now()
+
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  const iRefreshFinish = iRefresh + ([1, 1, 1, 5, 5, 5, 10])[speedMode + 2]
-  while (cpuRunMode === RUN_MODE.RUNNING && iRefresh !== iRefreshFinish) {
-    doAdvance6502()
-  }
-  setTimeout(doAdvance6502Timer, cpuRunMode === RUN_MODE.RUNNING ? 0 : 20)
+  nextFrameTime += refreshTime
+  // Calculate exactly how long until the next frame is due
+  const delay = (cpuRunMode === RUN_MODE.PAUSED) ? 20 : Math.max(1, nextFrameTime - performance.now())
+  setTimeout(doAdvance6502Timer, delay)
 }
