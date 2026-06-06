@@ -115,7 +115,14 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
   let title = ""
   if (operand.startsWith("#$")) {
     const value = parseInt(operand.slice(2), 16)
-    title += value.toString() + " = " + (value | 256).toString(2).slice(1)
+    let char = ""
+    if (value < 256) {
+      let cvalue = value & 0x7F
+      const caret = (cvalue <= 31) ? "^" : ""
+      if (cvalue <= 31) cvalue += 64
+      char = ` = "${caret}${String.fromCharCode(cvalue)}"`
+    }
+    title += `${value.toString()} = ${(value | 256).toString(2).slice(1)}${char}`
     className = "disassembly-immediate"
   } else {
     const ops = operand.split(/(\$[0-9A-Fa-f]{2,4})/)
