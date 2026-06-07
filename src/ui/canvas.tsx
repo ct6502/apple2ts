@@ -14,6 +14,7 @@ import {
   handleGetMachineName,
   handleGetState6502,
   handleGetSoftSwitches,
+  handleGetSpeedMode,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
@@ -35,7 +36,6 @@ let resizeTimeout = 0
 // because we don't want it to re-render the canvas each time it is toggled.
 let withinScreen = false
 let lastFrameTime = 0
-const targetFrameRate = 45 // Hz
 const maxFrameSamples = 60
 let startTimeForMaxFrames = 0
 let lastFPSLog = 0
@@ -349,6 +349,12 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const RenderCanvas = (timestamp: number) => {
     const elapsed = timestamp - lastFrameTime
+    // Some odd "race the beam" graphics demos require 60 FPS, but only do this
+    // for 1 MHz or slower speeds. Throttle the frame rate at higher CPU
+    // speed to help reduce CPU usage.
+    // Test image from Brendan:
+    // https://github.com/badvision/a2-pseudocolor/raw/refs/heads/main/disks/flicker.po
+    const targetFrameRate = (handleGetSpeedMode() <= 0) ? 75 : 45 // Hz
     const targetInterval = 1000 / targetFrameRate
     
     if (elapsed >= targetInterval) {
