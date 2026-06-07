@@ -38,11 +38,11 @@ import {
   passStepOver,
   passTimeTravelIndex,
   passTimeTravelSnapshot,
+  passSetShowDebugTab,
 } from "../main2worker"
 import {
   setPreferenceBreakpoints,
   setPreferenceColorMode,
-  setPreferenceDebugMode,
   setPreferenceMachineName,
   setPreferenceRamWorks,
   setPreferenceSpeedMode,
@@ -381,7 +381,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       return collectStatus()
 
     case "setShowDebugTab":
-      setPreferenceDebugMode(Boolean(payload.enabled))
+      passSetShowDebugTab(Boolean(payload.enabled))
       return collectStatus()
 
     case "keypress": {

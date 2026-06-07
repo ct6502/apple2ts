@@ -3,7 +3,7 @@ import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setLowercaseMode, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTabView, setTheme } from "./ui_settings"
+import { setAppMode, setColorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
@@ -43,21 +43,21 @@ export const handleInputParams = (paramString = "") => {
   }
 
   if (params.get("capslock") === "off") {
-    setLowercaseMode(true)
+    setUIStateBoolean("lowercaseMode", true)
   }
 
   const crtDistort = params.get("crtdistort")
   if (crtDistort === "on") {
-    setCrtDistortion(true)
+    setUIStateBoolean("crtDistortion", true)
   } else if (crtDistort === "off") {
-    setCrtDistortion(false)
+    setUIStateBoolean("crtDistortion", false)
   }
 
   const ghost = params.get("ghosting")
   if (ghost === "on") {
-    setGhosting(true)
+    setUIStateBoolean("ghosting", true)
   } else if (ghost === "off") {
-    setGhosting(false)
+    setUIStateBoolean("ghosting", false)
   }
 
   const speed = params.get("speed")
@@ -88,9 +88,9 @@ export const handleInputParams = (paramString = "") => {
 
   const scanlines = params.get("scanlines")
   if (scanlines === "on") {
-    setShowScanlines(true)
+    setUIStateBoolean("showScanlines", true)
   } else if (scanlines === "off") {
-    setShowScanlines(false)
+    setUIStateBoolean("showScanlines", false)
   }
 
   const machineName = params.get("machine")?.toUpperCase()
@@ -172,7 +172,7 @@ export const handleInputParams = (paramString = "") => {
 
   const hotReload = params.get("hotreload")
   if (hotReload) {
-    setHotReload(hotReload === "true")
+    setUIStateBoolean("hotReload", hotReload === "true")
   }
 
   const hasLineNumbers = (text: string) => {

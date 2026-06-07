@@ -3,24 +3,31 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
-import { setLowercaseMode, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setManualNumbering, setCapitalizeBasic } from "./ui_settings"
+import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
-export const setPreferenceManualNumbering = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("manualNumbering")
+const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
+  "showScanlines", "hotReload", "tiltSensorJoystick", "useOpenAppleKey", "debugMode"]
+
+
+export const setPreferenceBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
+  if (value) {
+    localStorage.setItem(key, JSON.stringify(value))
   } else {
-    localStorage.setItem("manualNumbering", JSON.stringify(mode))
+    localStorage.removeItem(key)
   }
-  setManualNumbering(mode)
+  setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
 }
 
-export const setPreferenceCapitalizeBasic = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("capitalizeBasic")
-  } else {
-    localStorage.setItem("capitalizeBasic", JSON.stringify(mode))
+export const getPreferenceBoolean = (key: string): boolean => {
+  const item = localStorage.getItem(key)
+  if (item) {
+    try {
+      return JSON.parse(item)
+    } catch {
+      localStorage.removeItem(key)
+    }
   }
-  setCapitalizeBasic(mode)
+  return false
 }
 
 export const setPreferenceBasicProgram = (program: string | null) => {
@@ -35,15 +42,6 @@ export const getPreferenceBasicProgram = (): string | null => {
   return localStorage.getItem("basicProgram")
 }
 
-export const setPreferenceLowercaseMode = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("lowercaseMode")
-  } else {
-    localStorage.setItem("lowercaseMode", JSON.stringify(mode))
-  }
-  setLowercaseMode(mode)
-}
-
 export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
   if (mode === COLOR_MODE.COLOR) {
     localStorage.removeItem("colorMode")
@@ -51,33 +49,6 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
     localStorage.setItem("colorMode", JSON.stringify(mode))
   }
   setColorMode(mode)
-}
-
-export const setPreferenceCrtDistortion = (mode = false) => {
-  if (mode) {
-    localStorage.setItem("crtDistortion", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("crtDistortion")
-  }
-  setCrtDistortion(mode)
-}
-
-export const setPreferenceGhosting = (mode = false) => {
-  if (mode) {
-    localStorage.setItem("ghosting", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("ghosting")
-  }
-  setGhosting(mode)
-}
-
-export const setPreferenceShowScanlines = (mode = false) => {
-  if (mode) {
-    localStorage.setItem("showScanlines", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("showScanlines")
-  }
-  setShowScanlines(mode)
 }
 
 export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
@@ -96,15 +67,6 @@ export const setPreferenceBreakpoints = (breakpoints: BreakpointMap) => {
     localStorage.setItem("breakpoints", JSON.stringify([...breakpoints]))
   }
   passBreakpoints(breakpoints)
-}
-
-export const setPreferenceDebugMode = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("debugMode")
-  } else {
-    localStorage.setItem("debugMode", JSON.stringify(mode))
-  }
-  passSetShowDebugTab(mode)
 }
 
 export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
@@ -134,24 +96,6 @@ export const setPreferenceRamWorks = (size = 64) => {
   passSetRamWorks(size)
 }
 
-export const setPreferenceReverseYAxis = (mode = false) => {
-  if (!mode) {
-    localStorage.removeItem("reverseYAxis")
-  } else {
-    localStorage.setItem("reverseYAxis", JSON.stringify(mode))
-  }
-  passReverseYAxis(mode)
-}
-
-export const setPreferenceSiriusJoyport = (mode = false) => {
-  if (!mode) {
-    localStorage.removeItem("siriusJoyport")
-  } else {
-    localStorage.setItem("siriusJoyport", JSON.stringify(mode))
-  }
-  passSiriusJoyport(mode)
-}
-
 export const setPreferenceSpeedMode = (mode = 0) => {
   if (mode === 0) {
     localStorage.removeItem("speedMode")
@@ -161,15 +105,6 @@ export const setPreferenceSpeedMode = (mode = 0) => {
   passSpeedMode(mode)
 }
 
-export const setPreferenceHotReload = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("hotReload")
-  } else {
-    localStorage.setItem("hotReload", JSON.stringify(mode))
-  }
-  setHotReload(mode)
-}
-
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   if (lastChecked == -1) {
     localStorage.removeItem("newReleasesChecked")
@@ -177,15 +112,6 @@ export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
     localStorage.setItem("newReleasesChecked", JSON.stringify(lastChecked))
   }
   // UI-only setting, pass along not necessary
-}
-
-export const setPreferenceTiltSensorJoystick = (mode = false) => {
-  if (!mode) {
-    localStorage.removeItem("tiltSensorJoystick")
-  } else {
-    localStorage.setItem("tiltSensorJoystick", "true")
-  }
-  setTiltSensorJoystick(mode)
 }
 
 export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
@@ -291,15 +217,17 @@ export const loadPreferences = () => {
       localStorage.removeItem("breakpoints")
     }
   }
-  
-  const lowercaseMode = localStorage.getItem("lowercaseMode")
-  if (lowercaseMode) {
-    try {
-      setLowercaseMode(JSON.parse(lowercaseMode))
-    } catch {
-      localStorage.removeItem("lowercaseMode")
+
+  booleanUIKeys.forEach(key => {
+    const item = localStorage.getItem(key)
+    if (item) {
+      try {
+        setUIStateBoolean(key, JSON.parse(item))
+      } catch {
+        localStorage.removeItem(key)
+      }
     }
-  }
+  })
 
   const colorMode = localStorage.getItem("colorMode")
   if (colorMode) {
@@ -307,33 +235,6 @@ export const loadPreferences = () => {
       setColorMode(JSON.parse(colorMode))
     } catch {
       localStorage.removeItem("colorMode")
-    }
-  }
-
-  const crtDistortion = localStorage.getItem("crtDistortion")
-  if (crtDistortion) {
-    try {
-      setCrtDistortion(JSON.parse(crtDistortion))
-    } catch {
-      localStorage.removeItem("crtDistortion")
-    }
-  }
-
-  const ghosting = localStorage.getItem("ghosting")
-  if (ghosting) {
-    try {
-      setGhosting(JSON.parse(ghosting))
-    } catch {
-      localStorage.removeItem("ghosting")
-    }
-  }
-
-  const showScanlines = localStorage.getItem("showScanlines")
-  if (showScanlines) {
-    try {
-      setShowScanlines(JSON.parse(showScanlines))
-    } catch {
-      localStorage.removeItem("showScanlines")
     }
   }
 
@@ -422,15 +323,6 @@ export const loadPreferences = () => {
     }
   }
 
-  const hotReload = localStorage.getItem("hotReload")
-  if (hotReload) {
-    try {
-      setHotReload(JSON.parse(hotReload))
-    } catch {
-      localStorage.removeItem("hotReload")
-    }
-  }
-
   const touchJoystickMode = localStorage.getItem("touchJoystickMode")
   if (touchJoystickMode !== "off") {
     try {
@@ -456,24 +348,26 @@ export const loadPreferences = () => {
 }
 
 export const resetPreferences = () => {
-  setPreferenceManualNumbering()
-  setPreferenceCapitalizeBasic()
+  booleanUIKeys.forEach(key => {
+    localStorage.removeItem(key)
+    setUIStateBoolean(key, false)
+  })
+  // Reset other localStorage-only boolean preferences
+  localStorage.removeItem("reverseYAxis")
+  localStorage.removeItem("siriusJoyport")
+  localStorage.removeItem("debugMode")
+  passReverseYAxis(false)
+  passSiriusJoyport(false)
+  passSetShowDebugTab(false)
+  
   setPreferenceSpeedMode()
-  setPreferenceLowercaseMode()
   setPreferenceColorMode()
-  setPreferenceShowScanlines()
-  setPreferenceCrtDistortion()
-  setPreferenceGhosting()
   setPreferenceTheme()
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()
-  setPreferenceDebugMode()
-  setPreferenceHotReload()
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
-  setPreferenceTiltSensorJoystick()
-  setPreferenceSiriusJoyport()
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
@@ -489,28 +383,6 @@ export const getPreferenceNewReleasesChecked = () => {
     } catch { /* empty */ }
   }
 
-  return value
-}
-
-export const getPreferenceReverseYAxis = () => {
-  let value = false
-  const item = localStorage.getItem("reverseYAxis")
-  if (item) {
-    try {
-      value = JSON.parse(item)
-    } catch { /* empty */ }
-  }
-  return value
-}
-
-export const getPreferenceSiriusJoyport = () => {
-  let value = false
-  const item = localStorage.getItem("siriusJoyport")
-  if (item) {
-    try {
-      value = JSON.parse(item)
-    } catch { /* empty */ }
-  }
   return value
 }
 

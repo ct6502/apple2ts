@@ -9,7 +9,7 @@ import { BasicCompiler } from "./basic_compiler"
 import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 import { handleSetDiskFromURL } from "../../devices/disk/driveprops"
-import { getPreferenceBasicProgram, setPreferenceManualNumbering, setPreferenceBasicProgram, setPreferenceCapitalizeBasic, setPreferenceSpeedMode } from "../../localstorage"
+import { getPreferenceBasicProgram, setPreferenceBasicProgram, setPreferenceSpeedMode, setPreferenceBoolean } from "../../localstorage"
 import { MaximumSpeedMode } from "../../controls/speeddropdown"
 import PopupMenu from "../../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
@@ -358,14 +358,14 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
                 label: "Auto Line Numbering",
                 isSelected: () => { return handleGetManualNumbering() },
                 onClick: () => {
-                  setPreferenceManualNumbering(!handleGetManualNumbering())
+                  setPreferenceBoolean("manualNumbering", !handleGetManualNumbering())
                 }
               },
               {
                 label: "Capitalize Keywords",
                 isSelected: () => { return handleGetCapitalizeBasic() },
                 onClick: () => {
-                  setPreferenceCapitalizeBasic(!handleGetCapitalizeBasic())
+                  setPreferenceBoolean("capitalizeBasic", !handleGetCapitalizeBasic())
                 }
               },
             ]]}

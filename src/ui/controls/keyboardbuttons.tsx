@@ -4,7 +4,7 @@ import {
   } from "../main2worker"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
-import { setPreferenceTiltSensorJoystick, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
+import { setPreferenceBoolean, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
 import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
 
 const KeyboardButtons = (props: DisplayProps) => {
@@ -96,7 +96,7 @@ const KeyboardButtons = (props: DisplayProps) => {
                 }
               }
             }
-            setPreferenceTiltSensorJoystick(turningOn)
+            setPreferenceBoolean("tiltSensorJoystick", turningOn)
           }
         },
       ]]}

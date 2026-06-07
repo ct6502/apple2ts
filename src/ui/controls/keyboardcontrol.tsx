@@ -6,7 +6,7 @@ import { faKeyboard } from "@fortawesome/free-solid-svg-icons"
 import { getLowercaseMode } from "../ui_settings"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
-import { setPreferenceLowercaseMode } from "../localstorage"
+import { setPreferenceBoolean } from "../localstorage"
 
 enum KEY {
   OPEN_APPLE = 256,
@@ -76,7 +76,7 @@ export const KeyboardControl = () => {
           passKeypress(key.code)
           break
         case KEY.CAPSLOCK:
-          setPreferenceLowercaseMode(!getLowercaseMode())
+          setPreferenceBoolean("lowercaseMode", !getLowercaseMode())
           break
         case KEY.OPEN_APPLE:
           passAppleCommandKeyPress(true)

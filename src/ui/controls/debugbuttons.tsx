@@ -15,10 +15,10 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
 import { handleFileSave } from "../savestate"
-import { setPreferenceHotReload } from "../localstorage"
 import { RUN_MODE } from "../../common/utility"
 import { getHotReload, isGameMode } from "../ui_settings"
 import { isFileSystemApiSupported } from "../ui_utilities"
+import { setPreferenceBoolean } from "../localstorage"
 
 const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
@@ -65,7 +65,7 @@ const DebugButtons = (props: DisplayProps) => {
       <button className="push-button"
         title={getHotReload() ? "Hot Reload Enabled" : "Hot Reload Disabled"}
         onClick={() => {
-          setPreferenceHotReload(!getHotReload())
+          setPreferenceBoolean("hotReload", !getHotReload())
           props.updateDisplay()
         }}>
         <FontAwesomeIcon icon={getHotReload() ? faEye : faEyeSlash} />

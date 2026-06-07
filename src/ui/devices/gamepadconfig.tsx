@@ -4,8 +4,8 @@ import {
   faGamepad,
 } from "@fortawesome/free-solid-svg-icons"
 import PopupMenu from "../controls/popupmenu"
-import { getArrowKeysAsJoystick, setArrowKeysAsJoystick } from "../ui_settings"
-import { getPreferenceReverseYAxis, getPreferenceSiriusJoyport, setPreferenceReverseYAxis, setPreferenceSiriusJoyport } from "../localstorage"
+import { getArrowKeysAsJoystick } from "../ui_settings"
+import { getPreferenceBoolean, setPreferenceBoolean } from "../localstorage"
 
 export const GamepadConfig = () => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -15,8 +15,8 @@ export const GamepadConfig = () => {
   }
 
   const arrowKeysAsJoystick = getArrowKeysAsJoystick()
-  const reverseYAxis = getPreferenceReverseYAxis()
-  const siriusJoyport = getPreferenceSiriusJoyport()
+  const reverseYAxis = getPreferenceBoolean("reverseYAxis")
+  const siriusJoyport = getPreferenceBoolean("siriusJoyport")
 
   return (
     <span>
@@ -37,21 +37,21 @@ export const GamepadConfig = () => {
               label: "Use Arrow Keys as Joystick",
               isSelected: () => {return arrowKeysAsJoystick},
               onClick: () => {
-                setArrowKeysAsJoystick(!arrowKeysAsJoystick)
+                setPreferenceBoolean("arrowKeysAsJoystick", !arrowKeysAsJoystick)
               }
             },
             {
               label: "Reverse Y-Axis for Joystick",
               isSelected: () => {return reverseYAxis},
               onClick: () => {
-                setPreferenceReverseYAxis(!reverseYAxis)
+                setPreferenceBoolean("reverseYAxis", !reverseYAxis)
               }
             },
             {
               label: "Sirius Joyport Mode",
               isSelected: () => {return siriusJoyport},
               onClick: () => {
-                setPreferenceSiriusJoyport(!siriusJoyport)
+                setPreferenceBoolean("siriusJoyport", !siriusJoyport)
               }
             },
         ]]}

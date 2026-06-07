@@ -1,6 +1,6 @@
 import { BreakpointMap } from "../common/breakpoint"
 import { MAX_DRIVES, RUN_MODE } from "../common/utility"
-import { setPreferenceBreakpoints, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
+import { setPreferenceBoolean, setPreferenceBreakpoints, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
@@ -72,7 +72,7 @@ export const RestoreSaveState = (fileContents: string) => {
     setPreferenceSpeedMode(displayState.speedMode)
   }
   if (displayState?.isDebugging !== undefined) {
-    setPreferenceDebugMode(displayState.isDebugging)
+    setPreferenceBoolean("debugMode", displayState.isDebugging)
   }
   const runMode = displayState?.runMode ? (displayState.runMode as RUN_MODE) : RUN_MODE.RUNNING
   passSetRunMode(runMode)

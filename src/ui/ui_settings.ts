@@ -9,10 +9,13 @@ const uiState: UIState = {
   lowercaseMode: true,
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
+  debugMode: false,
   ghosting: false,
   helpText: "",
   hotReload: false,
+  reverseYAxis: false,
   showScanlines: false,
+  siriusJoyport: false,
   tabView: 0,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
@@ -42,48 +45,28 @@ export const setUIState = (state: UIState) => {
 
 //------------------------------------------------------
 
+export type BooleanKeyOf<T> = {
+  [K in keyof T]: T[K] extends boolean ? K : never
+}[keyof T]
+
 export const setArrowKeysAsJoystick = (joystick: boolean) => {
   uiState.arrowKeysAsJoystick = joystick
 }
 
-export const setManualNumbering = (mode: boolean) => {
-  uiState.manualNumbering = mode
+export const setUIStateBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
+  uiState[key] = value
 }
 
 export const setAppMode = (mode: string) => {
   uiState.appMode = mode
 }
 
-export const setCapitalizeBasic = (mode: boolean) => {
-  uiState.capitalizeBasic = mode
-}
-
-export const setLowercaseMode = (lock: boolean) => {
-  uiState.lowercaseMode = lock
-}
-
 export const setColorMode = (mode: COLOR_MODE) => {
   uiState.colorMode = mode
 }
 
-export const setCrtDistortion = (mode: boolean) => {
-  uiState.crtDistortion = mode
-}
-
-export const setGhosting = (mode: boolean) => {
-  uiState.ghosting = mode
-}
-
 export const setHelpText = (helptext: string) => {
   uiState.helpText = helptext
-}
-
-export const setHotReload = (mode: boolean) => {
-  uiState.hotReload = mode
-}
-
-export const setShowScanlines = (mode: boolean) => {
-  uiState.showScanlines = mode
 }
 
 export const setTabView = (tabView: number) => {
@@ -94,20 +77,12 @@ export const setTheme = (theme: UI_THEME) => {
   uiState.theme = theme
 }
 
-export const setTiltSensorJoystick = (mode: boolean) => {
-  uiState.tiltSensorJoystick = mode
-}
-
 export const setTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE) => {
   uiState.touchJoystickMode = mode
 }
 
 export const setTouchJoystickSensitivity = (sensitivity: number) => {
   uiState.touchJoystickSensitivity = sensitivity
-}
-
-export const setUseOpenAppleKey = (openApple: boolean) => {
-  uiState.useOpenAppleKey = openApple
 }
 
 //------------------------------------------------------

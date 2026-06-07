@@ -7,7 +7,7 @@ import {
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceLowercaseMode, setPreferenceTheme } from "../localstorage"
+import { resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
@@ -16,7 +16,7 @@ import PopupMenu from "./popupmenu"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getLowercaseMode, getUseOpenAppleKey, setUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
@@ -55,12 +55,12 @@ const ConfigButtons = (props: DisplayProps) => {
       {!isTouchDevice && <>
         <button className={lockedKeyStyle(lowercaseMode ? 0 : 2)}
           title={`Caps Lock (${lowercaseMode ? "off" : "on"})`}
-          onClick={() => { setPreferenceLowercaseMode(!lowercaseMode); props.updateDisplay() }}>
+          onClick={() => { setPreferenceBoolean("lowercaseMode", !lowercaseMode); props.updateDisplay() }}>
           <span className="text-key" style={{ fontSize: "18pt" }}>{lowercaseMode ? "a" : "A"}</span>
         </button>
         <button className="push-button"
           title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}
-          onClick={() => { setUseOpenAppleKey(!useOpenAppleKey); props.updateDisplay() }}>
+          onClick={() => { setPreferenceBoolean("useOpenAppleKey", !useOpenAppleKey); props.updateDisplay() }}>
           {useOpenAppleKey ?
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
