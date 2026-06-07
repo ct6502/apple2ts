@@ -25,7 +25,7 @@ import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
+import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
 
 
@@ -254,8 +254,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    const capsLock = getCapsLock()
-    const key = convertAppleKey(e, capsLock, props.ctrlKeyMode, handleGetCout())
+    const lowercaseMode = getLowercaseMode()
+    const key = convertAppleKey(e, lowercaseMode, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
       passKeypress(key)
       if (isKeyboardLoop) {

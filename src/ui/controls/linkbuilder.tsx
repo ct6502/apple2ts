@@ -5,7 +5,7 @@ import EditField from "../panels/editfield"
 import { Droplist } from "../panels/droplist"
 import { diskImages } from "../devices/disk/diskimages"
 import CheckBox from "../panels/checkbox"
-import { getCapsLock, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowScanlines, getTheme, isEmbedMode, isGameMode } from "../ui_settings"
 import { UI_THEME } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
@@ -27,7 +27,7 @@ const LinkBuilder = () => {
 
   // Reverse the logic for these so the default is false and the checkbox is on,
   // but the URL parameter is "xyz=off/false" when it's true
-  const [capslockoff, setCapslockoff] = useState(false)
+  const [lowercaseMode, setLowercaseMode] = useState(false)
   const [runprogoff, setRunprogoff] = useState(false)
   const [soundoff, setSoundoff] = useState(false)
 
@@ -57,7 +57,7 @@ const LinkBuilder = () => {
     if (appmode.length > 0 && appmode !== "Normal") {
       params.push(`appmode=${appmode.split(" ")[0]}`)
     }
-    if (capslockoff) {
+    if (lowercaseMode) {
       params.push("capslock=off")
     }
     const match = colorNames.indexOf(colormode)
@@ -144,7 +144,7 @@ const LinkBuilder = () => {
   useEffect(() => {
     setLink(generateLink())
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appmode, capslockoff, colormode, crtdistort, debug, ghosting, fragmentURL,
+  }, [appmode, lowercaseMode, colormode, crtdistort, debug, ghosting, fragmentURL,
     hexBlock, loadBlock, textBlock, hexAddress, machine, ramdisk,
     runprogoff, scanlines, selectedDisk, soundoff, speed, theme, tabSection])
 
@@ -166,7 +166,7 @@ const LinkBuilder = () => {
 
   const resetAllSettings = () => {
     setAppmode("")
-    setCapslockoff(false)
+    setLowercaseMode(false)
     setRunprogoff(false)
     setSoundoff(false)
     setColormode("")
@@ -192,7 +192,7 @@ const LinkBuilder = () => {
     setCrtdistort(getCrtDistortion())
     setGhosting(getGhosting())
     setScanlines(getShowScanlines())
-    setCapslockoff(!getCapsLock())
+    setLowercaseMode(getLowercaseMode())
     setDebug(handleGetIsDebugging())
     setSoundoff(!isAudioEnabled())
     setTextBlock("")
@@ -284,8 +284,8 @@ const LinkBuilder = () => {
               checked={scanlines}
               setChecked={setScanlines} />
             <CheckBox name="Capslock"
-              checked={!capslockoff}
-              setChecked={(on: boolean) => {setCapslockoff(!on)}} />
+              checked={!lowercaseMode}
+              setChecked={(on: boolean) => {setLowercaseMode(!on)}} />
             <CheckBox name="Show debug tab"
               checked={debug}
               setChecked={setDebug} />

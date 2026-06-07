@@ -763,6 +763,7 @@ const doAdvance6502Timer = () => {
   doAdvance6502()
   nextFrameTime += refreshTime
   // Calculate exactly how long until the next frame is due
-  const delay = (cpuRunMode === RUN_MODE.PAUSED) ? 20 : Math.max(1, nextFrameTime - performance.now())
+  let delay = nextFrameTime - performance.now()
+  delay = (cpuRunMode === RUN_MODE.PAUSED) ? 20 : Math.max(1, delay)
   setTimeout(doAdvance6502Timer, delay)
 }

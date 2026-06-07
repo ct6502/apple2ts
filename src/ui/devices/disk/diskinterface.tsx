@@ -8,7 +8,7 @@ import ImageWriter from "../printer/imagewriter"
 import { isMinimalTheme } from "../../ui_settings"
 
 const DiskInterface = (props: DisplayProps) => {
-  const [isFlyoutOpen, setIsFlyoutOpen] = useState(true)
+  const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
 
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)

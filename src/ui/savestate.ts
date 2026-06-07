@@ -57,9 +57,9 @@ export const RestoreSaveState = (fileContents: string) => {
   const sState: EmulatorSaveState = JSON.parse(fileContents)
   passRestoreSaveState(sState)
   const displayState = sState.emulator
-  // In an old version, property was renamed from uppercase to capsLock
+  // In an old version, property was renamed from uppercase to lowercaseMode
   if (displayState && ("uppercase" in displayState)) {
-    displayState.capsLock = displayState["uppercase"] as boolean
+    displayState.lowercaseMode = displayState["uppercase"] as boolean
   }
   setUIState(displayState as UIState)
   if (displayState?.audioEnable !== undefined) {

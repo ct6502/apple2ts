@@ -304,7 +304,7 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
             },
             execution: {
               runMode: RUN_MODE[runMode],
-              capsLock: uiState.capsLock,
+              lowercaseMode: uiState.lowercaseMode,
             },
             theme: uiState.theme,
           },

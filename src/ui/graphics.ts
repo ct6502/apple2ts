@@ -515,8 +515,9 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
-  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingEnabled = false
   if (getGhosting()) {
+    ctx.imageSmoothingEnabled = true
     // Make a copy of the current canvas contents.
     const dx = xmargin * width
     const dy = ymargin * height

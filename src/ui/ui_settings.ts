@@ -4,9 +4,9 @@ import { handleGetMachineName } from "./main2worker"
 const uiState: UIState = {
   appMode: "",
   arrowKeysAsJoystick: true,
-  autoNumbering: true,
+  manualNumbering: true,
   capitalizeBasic: true,
-  capsLock: true,
+  lowercaseMode: true,
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
   ghosting: false,
@@ -28,7 +28,7 @@ export const getUIState = () => {
 export const setUIState = (state: UIState) => {
   uiState.appMode = state?.appMode ?? ""
   uiState.arrowKeysAsJoystick = state?.arrowKeysAsJoystick ?? false
-  uiState.capsLock = state?.capsLock ?? false
+  uiState.lowercaseMode = state?.lowercaseMode ?? false
   uiState.colorMode = state?.colorMode ?? COLOR_MODE.COLOR
   uiState.crtDistortion = state?.crtDistortion ?? false
   uiState.helpText = state?.helpText ?? ""
@@ -46,8 +46,8 @@ export const setArrowKeysAsJoystick = (joystick: boolean) => {
   uiState.arrowKeysAsJoystick = joystick
 }
 
-export const setAutoNumbering = (mode: boolean) => {
-  uiState.autoNumbering = mode
+export const setManualNumbering = (mode: boolean) => {
+  uiState.manualNumbering = mode
 }
 
 export const setAppMode = (mode: string) => {
@@ -58,8 +58,8 @@ export const setCapitalizeBasic = (mode: boolean) => {
   uiState.capitalizeBasic = mode
 }
 
-export const setCapsLock = (lock: boolean) => {
-  uiState.capsLock = lock
+export const setLowercaseMode = (lock: boolean) => {
+  uiState.lowercaseMode = lock
 }
 
 export const setColorMode = (mode: COLOR_MODE) => {
@@ -124,16 +124,16 @@ export const getArrowKeysAsJoystick = () => {
   return uiState.arrowKeysAsJoystick
 }
 
-export const handleGetAutoNumbering = () => {
-  return uiState.autoNumbering
+export const handleGetManualNumbering = () => {
+  return uiState.manualNumbering
 }
 
 export const handleGetCapitalizeBasic = () => {
   return uiState.capitalizeBasic
 }
 
-export const getCapsLock = () => {
-  return uiState.capsLock || (handleGetMachineName() === "APPLE2P")
+export const getLowercaseMode = () => {
+  return uiState.lowercaseMode && (handleGetMachineName() !== "APPLE2P")
 }
 
 export const getColorMode = () => {

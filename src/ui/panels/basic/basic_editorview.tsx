@@ -4,7 +4,7 @@ import { EditorState, Compartment, StateField, StateEffect } from "@codemirror/s
 import { basic } from "./basic_codemirror_lang"
 import { useEffect, useRef, useCallback } from "react"
 import { oneDark } from "@codemirror/theme-one-dark"
-import { handleGetAutoNumbering } from "../../ui_settings"
+import { handleGetManualNumbering } from "../../ui_settings"
 import { BreakpointMap } from "../../../common/breakpoint"
 import { breakpointTheme, createBreakpointGutter, toggleBreakpoint } from "./basic_breakpoints"
 import { setPreferenceBreakpoints } from "../../localstorage"
@@ -117,7 +117,7 @@ const BasicEditor = (props: EditorProps) => {
                 return true
               }
               // If user hits return/enter and auto-numbering is enabled, insert a new line with the next line number
-              if (event.key === "Enter" && handleGetAutoNumbering()) {
+              if (event.key === "Enter" && handleGetManualNumbering()) {
                 const { state } = view
                 // Back up one character to get to the end of the current line,
                 // since the cursor is after the newline

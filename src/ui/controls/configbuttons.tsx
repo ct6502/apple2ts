@@ -7,7 +7,7 @@ import {
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceCapsLock, setPreferenceTheme } from "../localstorage"
+import { resetPreferences, setPreferenceLowercaseMode, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
@@ -16,7 +16,7 @@ import PopupMenu from "./popupmenu"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getCapsLock, getUseOpenAppleKey, setUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getUseOpenAppleKey, setUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
@@ -27,7 +27,7 @@ const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
 
 const ConfigButtons = (props: DisplayProps) => {
-  const capsLock = getCapsLock()
+  const lowercaseMode = getLowercaseMode()
   const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = isMac ? "⌘" : "Alt"
 
@@ -53,10 +53,10 @@ const ConfigButtons = (props: DisplayProps) => {
 
     <div className="flex-row" id="tour-keyboardbuttons">
       {!isTouchDevice && <>
-        <button className={lockedKeyStyle(capsLock ? 2 : 0)}
-          title={`Caps Lock (${capsLock ? "on" : "off"})`}
-          onClick={() => { setPreferenceCapsLock(!capsLock); props.updateDisplay() }}>
-          <span className="text-key" style={{ fontSize: "18pt" }}>{capsLock ? "A" : "a"}</span>
+        <button className={lockedKeyStyle(lowercaseMode ? 0 : 2)}
+          title={`Caps Lock (${lowercaseMode ? "off" : "on"})`}
+          onClick={() => { setPreferenceLowercaseMode(!lowercaseMode); props.updateDisplay() }}>
+          <span className="text-key" style={{ fontSize: "18pt" }}>{lowercaseMode ? "a" : "A"}</span>
         </button>
         <button className="push-button"
           title={useOpenAppleKey ? `Use ${modKey} as Open Apple key` : `Use ${modKey} for keyboard shortcuts`}

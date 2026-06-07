@@ -342,7 +342,7 @@ body.dark-mode .centered-title {
 .footer-item {
   width: 100px;
   /* transform: translate(0, -12px); */
-  margin-left: 0;
+  margin-left: 0.5em;
   margin-right: 0.5em;
   white-space: nowrap;
   user-select: none;

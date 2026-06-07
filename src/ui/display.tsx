@@ -177,18 +177,18 @@ const DisplayApple2 = () => {
   const mem = handleGetMemSize() + 64
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item">
-  <span>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</span>
+  <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
   <br />
-  <span>Apple2TS ©{new Date().getFullYear()} CT6502&nbsp;
-  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></span>
+  <>Apple2TS ©{new Date().getFullYear()}&nbsp;CT6502&nbsp;
+  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></>
   </div>
 
   if (isEmbedMode()) {
     return <Apple2Canvas {...props} />
   }
   return (
-    <div>
-    <span className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
+    <>
+    <div className={narrow ? "flex-column-gap" : "flex-row-gap"} style={{ alignItems: "inherit" }}>
     <div className={isLandscape ? "flex-row" : "flex-column"}>
     <Apple2Canvas {...props} />
     <div className={"flex-row-gap" + " flexwrap"}  style={{ paddingLeft: "2px" }}>
@@ -200,11 +200,11 @@ const DisplayApple2 = () => {
     {isLandscape && !isGameMode() && status}
     {narrow && !isMinimalTheme() && !isGameMode() && <div className="divider"></div>}
     {!isGameMode() && <DebugSection updateDisplay={updateDisplay} narrow={narrow}/>}
-    </span>
+    </div>
     {isMinimalTheme() && <DiskCollectionPanel {...props} />}
     {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
     <FileInput {...props} />
-    </div>
+    </>
   )
 }
 

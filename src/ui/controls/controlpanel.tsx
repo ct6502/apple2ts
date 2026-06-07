@@ -6,26 +6,19 @@ import DebugButtons from "./debugbuttons"
 import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
 import { useState } from "react"
-import { getPreferenceFirstRunMinimal, setPreferenceFirstRunMinimal } from "../localstorage"
 import { isGameMode } from "../ui_settings"
 
 const ControlPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-  const showHighlight = getPreferenceFirstRunMinimal()
 
   const handleFlyoutClick = () => {
-    if (showHighlight) {
-      setPreferenceFirstRunMinimal(false)
-    }
-
-    setIsFlyoutOpen(!isFlyoutOpen)
+      setIsFlyoutOpen(!isFlyoutOpen)
   }
 
   return (
     <Flyout
       icon={faWrench}
       title="settings"
-      highlight={showHighlight}
       isOpen={() => { return isFlyoutOpen }}
       onClick={handleFlyoutClick}
       position="top-left">

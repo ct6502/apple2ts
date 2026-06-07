@@ -3,10 +3,10 @@ import { useState, useRef } from "react"
 import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passKeyRelease, passPasteText } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faKeyboard } from "@fortawesome/free-solid-svg-icons"
-import { getCapsLock } from "../ui_settings"
+import { getLowercaseMode } from "../ui_settings"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
-import { setPreferenceCapsLock } from "../localstorage"
+import { setPreferenceLowercaseMode } from "../localstorage"
 
 enum KEY {
   OPEN_APPLE = 256,
@@ -76,7 +76,7 @@ export const KeyboardControl = () => {
           passKeypress(key.code)
           break
         case KEY.CAPSLOCK:
-          setPreferenceCapsLock(getCapsLock() ? false : true)
+          setPreferenceLowercaseMode(!getLowercaseMode())
           break
         case KEY.OPEN_APPLE:
           passAppleCommandKeyPress(true)
@@ -96,7 +96,7 @@ export const KeyboardControl = () => {
       }
       return
     }
-    if (key.code >= 65 && key.code <= 90 && !shiftMode && !getCapsLock() && !ctrlMode && !escMode) {
+    if (key.code >= 65 && key.code <= 90 && !shiftMode && getLowercaseMode() && !ctrlMode && !escMode) {
       key.code += 32 // Convert to lowercase
     }
     if (shiftMode !== LOCK.NONE) {
@@ -328,7 +328,7 @@ export const KeyboardControl = () => {
     if (code === KEY.COLLAPSE) {
       return <FontAwesomeIcon icon={faKeyboard} style={{ fontSize: "24px" }} />
     }
-    if (code >= 65 && code <= 90 && !shiftMode && !getCapsLock() && !ctrlMode) {
+    if (code >= 65 && code <= 90 && !shiftMode && getLowercaseMode() && !ctrlMode) {
       return String.fromCharCode(code + 32) // Convert to lowercase
     }
     return label
@@ -348,7 +348,7 @@ export const KeyboardControl = () => {
     } else if (code === KEY.ESC) {
       mode = escMode
     } else if (code === KEY.CAPSLOCK) {
-      mode = getCapsLock() ? LOCK.LOCKED : LOCK.NONE
+      mode = getLowercaseMode() ? LOCK.NONE : LOCK.LOCKED
     }
     switch (mode) {
       case LOCK.TEMP:

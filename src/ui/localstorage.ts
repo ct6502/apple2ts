@@ -3,15 +3,15 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setAutoNumbering, setCapitalizeBasic } from "./ui_settings"
+import { setLowercaseMode, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion, setManualNumbering, setCapitalizeBasic } from "./ui_settings"
 
-export const setPreferenceAutoNumbering = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("autoNumbering")
+export const setPreferenceManualNumbering = (mode = false) => {
+  if (mode === false) {
+    localStorage.removeItem("manualNumbering")
   } else {
-    localStorage.setItem("autoNumbering", JSON.stringify(mode))
+    localStorage.setItem("manualNumbering", JSON.stringify(mode))
   }
-  setAutoNumbering(mode)
+  setManualNumbering(mode)
 }
 
 export const setPreferenceCapitalizeBasic = (mode = false) => {
@@ -35,13 +35,13 @@ export const getPreferenceBasicProgram = (): string | null => {
   return localStorage.getItem("basicProgram")
 }
 
-export const setPreferenceCapsLock = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("capsLock")
+export const setPreferenceLowercaseMode = (mode = false) => {
+  if (mode === false) {
+    localStorage.removeItem("lowercaseMode")
   } else {
-    localStorage.setItem("capsLock", JSON.stringify(mode))
+    localStorage.setItem("lowercaseMode", JSON.stringify(mode))
   }
-  setCapsLock(mode)
+  setLowercaseMode(mode)
 }
 
 export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
@@ -170,15 +170,6 @@ export const setPreferenceHotReload = (mode = false) => {
   setHotReload(mode)
 }
 
-export const setPreferenceFirstRunMinimal = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("firstRunMinimal")
-  } else {
-    localStorage.setItem("firstRunMinimal", JSON.stringify(mode))
-  }
-  // UI-only setting, pass along not necessary
-}
-
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   if (lastChecked == -1) {
     localStorage.removeItem("newReleasesChecked")
@@ -301,12 +292,12 @@ export const loadPreferences = () => {
     }
   }
   
-  const capsLock = localStorage.getItem("capsLock")
-  if (capsLock) {
+  const lowercaseMode = localStorage.getItem("lowercaseMode")
+  if (lowercaseMode) {
     try {
-      setCapsLock(JSON.parse(capsLock))
+      setLowercaseMode(JSON.parse(lowercaseMode))
     } catch {
-      localStorage.removeItem("capsLock")
+      localStorage.removeItem("lowercaseMode")
     }
   }
 
@@ -465,10 +456,10 @@ export const loadPreferences = () => {
 }
 
 export const resetPreferences = () => {
-  setPreferenceAutoNumbering()
+  setPreferenceManualNumbering()
   setPreferenceCapitalizeBasic()
   setPreferenceSpeedMode()
-  setPreferenceCapsLock()
+  setPreferenceLowercaseMode()
   setPreferenceColorMode()
   setPreferenceShowScanlines()
   setPreferenceCrtDistortion()
@@ -486,19 +477,6 @@ export const resetPreferences = () => {
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
-}
-
-export const getPreferenceFirstRunMinimal = () => {
-  let value: boolean = true
-
-  const item = localStorage.getItem("firstRunMinimal")
-  if (item) {
-    try {
-      value = JSON.parse(item)
-    } catch { /* empty */ }
-  }
-
-  return value
 }
 
 export const getPreferenceNewReleasesChecked = () => {
