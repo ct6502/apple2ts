@@ -44,6 +44,7 @@ let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let cpuRunMode = RUN_MODE.IDLE
+let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let takeSnapshot = false
 let iTempState = 0
@@ -532,6 +533,7 @@ export const doStepOut = () => {
 
 const resetRefreshCounter = () => {
   speedTracker = [{time: performance.now(), cycles: s6502.cycleCount}]
+  nextFrameTime = performance.now()
 }
 
 export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
@@ -757,13 +759,19 @@ const doAdvance6502 = () => {
 }
 
 
-let nextFrameTime = performance.now()
-
 const doAdvance6502Timer = () => {
   doAdvance6502()
   nextFrameTime += refreshTime
   // Calculate exactly how long until the next frame is due
-  let delay = nextFrameTime - performance.now()
+  const now = performance.now()
+  let delay = nextFrameTime - now
+  if (delay < 0) {
+    // If we're already past the time for the next frame, we were probably
+    // stopped at a breakpoint or the browser was paused. In that case,
+    // just set the next frame time to now.
+    nextFrameTime = now
+    delay = 0
+  }
   delay = (cpuRunMode === RUN_MODE.PAUSED) ? 20 : Math.max(1, delay)
   setTimeout(doAdvance6502Timer, delay)
 }
