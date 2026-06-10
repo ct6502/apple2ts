@@ -358,6 +358,28 @@ export const handleSetDiskFromURL = async (url: string,
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
       showGlobalProgressModal(false)
+      
+      // Show user-friendly error message
+      const isGitHub = url.includes("github.com")
+      const isExternal = !url.includes(window.location.hostname)
+      
+      let errorMessage = `Unable to download disk image:\n"${url}".\n`
+      
+      if (isGitHub) {
+        errorMessage += "Some GitHub files cannot be loaded directly in browsers due to cross-origin restrictions.\n"
+        errorMessage += "Options:\n"
+        errorMessage += "1. Download the file manually and use 'Load from File'\n"
+        errorMessage += "2. Use the desktop/Electron version of this emulator"
+      } else if (isExternal) {
+        errorMessage += "This external URL cannot be loaded due to browser cross-origin restrictions.\n"
+        errorMessage += "Options:\n"
+        errorMessage += "1. Download the file manually and use 'Load from File'\n"
+        errorMessage += "2. Use the Desktop version for unrestricted downloads"
+      } else {
+        errorMessage += "The file could not be downloaded. Please check your internet connection and try again."
+      }
+      
+      setTimeout(() => alert(errorMessage), 100)
       return
     }
   }
