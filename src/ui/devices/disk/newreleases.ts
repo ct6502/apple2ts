@@ -12,7 +12,7 @@ export const newReleases: DiskCollectionItem[] = [
     type: -1,
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
-    imageUrl: "https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png",
+    imageUrl: "https://archive.org/download/MillionPerfectTiles/00playable_screenshot.png",
     diskUrl: "https://archive.org/download/MillionPerfectTiles/00playable.po",
     detailsUrl: "https://archive.org/details/MillionPerfectTiles"
   },

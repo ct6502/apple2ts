@@ -202,7 +202,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       <div className="disk-collection-panel"
         onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs[activeTab].disks.map((diskCollectionItem, index) => (
-          <div key={`dcp-item-${index}`} className="dcp-item">
+          <div key={`dcp-${tabs[activeTab].label}-${index}`} className="dcp-item">
             <div className="dcp-item-title-box">
               <div
                 className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
