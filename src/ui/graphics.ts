@@ -5,14 +5,14 @@ import { handleGetAltCharSet, handleGetTextPage,
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
-import { getColorMode, getCrtDistortion, getGhosting, isGameMode, isMinimalTheme } from "./ui_settings"
-const isTouchDevice = "ontouchstart" in document.documentElement
+import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
+import { doCRTStartup } from "./crtstartup"
 let frameCount = 0
 
 export const nRowsHgrMagnifier = 16
 export const nColsHgrMagnifier = 2
-export const xmargin = isTouchDevice ? 0.01 : 0.075
-export const ymargin = isTouchDevice ? 0.01 : 0.075
+export let xmargin = 0
+export let ymargin = 0
 
 // Convert canvas coordinates (absolute to the entire browser window)
 // to normalized HGR screen coordinates.
@@ -83,9 +83,12 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   // full text page will be more than 80 char x 4 lines
   const jstart = mixedMode ? 20 : 0
   const doFlashCycle = (Math.trunc(frameCount / 15) % 2) === 0
-  const isAltCharSet = handleGetAltCharSet()
+  const machineName = handleGetMachineName()
+  const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
   const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
-  const hasMouseText = handleGetMachineName() === "APPLE2EE"
+  const hasMouseText = machineName === "APPLE2EE"
+  const hasLowerCase = machineName !== "APPLE2P"
+  const useApple2PlusMap = machineName === "APPLE2P"
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   // First draw all the background colors. That way our background rects
@@ -136,8 +139,9 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
         // If we do not have mouse text (IIe unenhanced) everything <= 127 is inverse.
         doInverse = hasMouseText ? ((value <= 63) || (value >= 96 && value <= 127)) : (value <= 127)
       }
-      const v = convertTextPageValueToASCII(value, isAltCharSet, hasMouseText)
-//      const v = String.fromCharCode(v1 < 127 ? v1 : v1 === 0x83 ? 0xEBE7 : (v1 + 0xE000))
+      const v = convertTextPageValueToASCII(
+        value, isAltCharSet, hasMouseText, hasLowerCase, useApple2PlusMap
+      )
       let cfill = colorFill
       if (isVideo7) {
         // Color information is in the second half of each line.
@@ -511,8 +515,9 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
   hiddenContext: CanvasRenderingContext2D,
   width: number, height: number) => {
   frameCount++
-  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingEnabled = false
   if (getGhosting()) {
+    ctx.imageSmoothingEnabled = true
     // Make a copy of the current canvas contents.
     const dx = xmargin * width
     const dy = ymargin * height
@@ -580,16 +585,21 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
 export const getCanvasSize = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const isCanvasFullScreen = document.fullscreenElement !== null
-  const noBackgroundImage = isTouchDevice || isCanvasFullScreen
+  const noBackgroundImage = isTouchDevice || isCanvasFullScreen || isMinimalTheme()
+  const margin = (handleGetMachineName() === "APPLE2P" && !isCanvasFullScreen) ? 0.12 : 0.075
+  xmargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
+  ymargin = (isEmbedMode() && noBackgroundImage) ? 0.0 : (isTouchDevice ? 0.01 : margin)
   const screenRatio = 1.4583334 // 1.33  // (20 * 40) / (24 * 24)
   if (TEST_GRAPHICS) {
     return [659, 452]  // This will give an actual size of 560 x 384
   }
   let width = window.innerWidth ? window.innerWidth : window.outerWidth
   let height = window.innerHeight ? window.innerHeight : (window.outerHeight - 150)
-  if (isMinimalTheme()) {
-    const isTouchDevice = "ontouchstart" in document.documentElement
-    const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
+  const isLandscape = isTouchDevice && (window.innerWidth > window.innerHeight)
+  if (isEmbedMode()) {
+    height -= noBackgroundImage ? 60 : 25
+    width -= noBackgroundImage ? 60 : 25
+  } else if (isMinimalTheme()) {
     if (isLandscape) {
       height -= 150
     } else {
@@ -601,8 +611,8 @@ export const getCanvasSize = () => {
       height -= 70
       width -= 25
     } else {
-      height -= noBackgroundImage ? 40 : 300
-      width -= noBackgroundImage ? 0 : 40
+      height -= noBackgroundImage ? (isTouchDevice ? 0 : 40) : 160
+      width -= isLandscape ? 320 : (isTouchDevice ? 0 : 40)
     }
   }
   if (!noBackgroundImage) {
@@ -620,4 +630,9 @@ export const getCanvasSize = () => {
   width = Math.floor(width)
   height = Math.floor(height)
   return [width, height]
+}
+
+// Animate a CRT turning on effect using canvas
+export const CRTStartup = (ctx: CanvasRenderingContext2D, colorMode: COLOR_MODE) => {
+  doCRTStartup(ctx, colorMode, xmargin, ymargin)
 }

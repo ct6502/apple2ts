@@ -86,7 +86,9 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Total Replay",
-    diskUrl: "TotalReplay.hdv",
+    diskUrl: "https://ct6502.org/wp-content/uploads/2026/06/TotalReplay.hdv_.zip",
+    // diskUrl: "TotalReplay.hdv",
+    // diskUrl: "https://archive.org/download/TotalReplay/Total%20Replay%20v5.2.hdv",
     imageUrl: "disks/Total%20Replay.png",
     detailsUrl: "https://archive.org/details/TotalReplay",
     type: undefined,
@@ -95,7 +97,8 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Instant Replay",
-    diskUrl: "TotalReplayII.hdv",
+    diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplayII.hdv_.zip",
+    // diskUrl: "https://archive.org/download/TotalReplay2/Total%20Replay%20II%20v1.0-alpha.4.hdv",
     imageUrl: "disks/Instant%20Replay.png",
     detailsUrl: "https://github.com/a2-4am/4sports",
     type: undefined,
@@ -104,7 +107,8 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Pitch Dark",
-    diskUrl: "PitchDark.hdv",
+    diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip",
+    // diskUrl: "https://archive.org/download/PitchDark/00playable.hdv",
     imageUrl: "disks/Pitch%20Dark.png",
     detailsUrl: "https://archive.org/details/PitchDark",
     type: undefined,
@@ -131,7 +135,8 @@ export const diskImages: DiskCollectionItem[] = [
   },
   {
     title: "Wizard Replay",
-    diskUrl: "WizardReplay.hdv",
+    diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/WizardReplay.hdv_.zip",
+    // diskUrl: "https://archive.org/download/WizardReplay/Wizard%20Replay%20v2.0.hdv",
     imageUrl: "disks/WizardReplay.png",
     detailsUrl: "https://archive.org/details/WizardReplay",
     type: undefined,

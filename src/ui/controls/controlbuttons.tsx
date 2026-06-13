@@ -2,6 +2,7 @@ import { RUN_MODE } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faArrowRotateRight,
+  faCamera,
   faClipboard,
   faFolderOpen,
   faPaste,
@@ -9,8 +10,8 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
-import { handleCopyToClipboard } from "../copycanvas"
-import { handleGetRunMode, passPasteText } from "../main2worker"
+import { handleCopyScreenAsBitmap, handleCopyToClipboard } from "../copycanvas"
+import { handleGetRunMode, handleGetTextPage, passPasteText } from "../main2worker"
 import { handleFileSave } from "../savestate"
 import { isGameMode } from "../ui_settings"
 import DiskImportExport from "../devices/disk/diskimportexport"
@@ -46,7 +47,8 @@ const ControlButtons = (props: DisplayProps) => {
       </button>
       </span>
     }
-    <button className="push-button" title="Copy Screen"
+    <button className="push-button" title="Copy Text"
+      disabled={handleGetTextPage().length === 0}
       onClick={() => handleCopyToClipboard()}>
       <FontAwesomeIcon icon={faClipboard} />
     </button>
@@ -55,6 +57,10 @@ const ControlButtons = (props: DisplayProps) => {
         navigator.clipboard.readText().then((data) => passPasteText(data))
       }}>
       <FontAwesomeIcon icon={faPaste} />
+    </button>
+    <button className="push-button" title="Copy Screen"
+      onClick={() => handleCopyScreenAsBitmap()}>
+      <FontAwesomeIcon icon={faCamera} />
     </button>
   </span>
 }

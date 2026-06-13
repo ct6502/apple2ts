@@ -22,10 +22,10 @@ const testDiskImage = (disk: string, address: number, minCycleCount: number, max
     diskHasChanges: false,
     isWriteProtected: false,
     diskData: new Uint8Array(data),
-    lastWriteTime: 0,
+    lastAppleWriteTime: 0,
     cloudData: null,
     writableFileHandle: null,
-    lastLocalWriteTime: 0,
+    lastLocalFileWriteTime: 0,
   }
   doSetEmuDriveNewData(props)
   // We cannot just call doSetRunMode(RUN_MODE.NEED_BOOT) since that relies
@@ -78,3 +78,4 @@ test("StickybearTown", () => testDiskImage("StickybearTown.woz", 0x9F68, 2700000
 // See https://github.com/ct6502/apple2ts/issues/179
 test("Frogger", () => testDiskImage("Frogger.woz", 0x9C4E, 5900000, 6100000))
 
+test("Algernon", () => testDiskImage("Algernon.woz", 0xE76F, 25000000, 26000000))

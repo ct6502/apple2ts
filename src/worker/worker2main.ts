@@ -1,21 +1,25 @@
-import { doSetRunMode,
-  doGetSaveState, doRestoreSaveState, doSetSpeedMode,
-  doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
+import { doSetRunMode, doSetSpeedMode,
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches, 
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
   doSetCycleCount,
   doSetShowDebugTab,
-  doSetGameMode} from "./motherboard"
+  doSetAppMode,
+  setTracing,
+  doExecuteBasicCommand} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
-import { pressAppleCommandKey, setGamepads } from "./devices/joystick"
+import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
-import { doSetBreakpoints } from "./cpu6502"
+import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
 import { MouseCardEvent } from "./devices/mouse"
 import { receiveMidiData } from "./devices/passport/passport"
 import { receiveCommData } from "./devices/superserial/serial"
+import { setTraceSettings } from "./tracelog"
+import { setSiriusJoyport } from "./devices/sirius_joyport"
+import { getMemoryDump } from "./memory"
+import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -30,7 +34,13 @@ export const setIsTesting = () => {
 }
 
 const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
-  if (!isTesting) self.postMessage({msg, payload})
+  if (!isTesting) {
+    try {
+      self.postMessage({msg, payload})    
+    } catch (error) {
+      console.error(`worker2main: doPostMessage error: ${error}`)
+    }
+  }
 }
 
 export const passMachineState = (state: MachineState) => {
@@ -47,6 +57,10 @@ export const passDriveProps = (props: DriveProps) => {
 
 export const passDriveSound = (sound: DRIVE) => {
   doPostMessage(MSG_WORKER.DRIVE_SOUND, sound)
+}
+
+const passMemory = (mem: Uint8Array) => {
+  doPostMessage(MSG_WORKER.GET_MEMORY_RESPONSE, mem)
 }
 
 const passSaveState = (sState: EmulatorSaveState) => {
@@ -112,8 +126,8 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.DEBUG:
         doSetIsDebugging(e.data.payload)
         break
-      case MSG_MAIN.GAME_MODE:
-        doSetGameMode(e.data.payload)
+      case MSG_MAIN.APP_MODE:
+        doSetAppMode(e.data.payload as string)
         break
       case MSG_MAIN.SHOW_DEBUG_TAB:
         doSetShowDebugTab(e.data.payload as boolean)
@@ -129,6 +143,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.STEP_OUT:
         doStepOut()
+        break
+      case MSG_MAIN.BASIC_STEP:
+        doSetBasicStep()
         break
       case MSG_MAIN.SPEED:
         doSetSpeedMode(e.data.payload as number)
@@ -169,6 +186,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.APPLE_RELEASE:
         pressAppleCommandKey(false, e.data.payload)
+        break
+      case MSG_MAIN.GET_MEMORY:
+        passMemory(getMemoryDump())
         break
       case MSG_MAIN.GET_SAVE_STATE:
         passSaveState(doGetSaveState(true))
@@ -214,8 +234,25 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
         break
+      case MSG_MAIN.REVERSE_YAXIS:
+        setReverseYAxis(e.data.payload)
+        break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)
+        break
+      case MSG_MAIN.SIRIUS_JOYPORT:
+        setSiriusJoyport(e.data.payload)
+        break
+      case MSG_MAIN.EXECUTE_BASIC_COMMAND: {
+        const command = e.data.payload as string
+        doExecuteBasicCommand(command)
+        break
+      }
+      case MSG_MAIN.TRACING:
+        setTracing(e.data.payload as boolean)
+        break
+      case MSG_MAIN.TRACE_SETTINGS:
+        setTraceSettings(e.data.payload)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)

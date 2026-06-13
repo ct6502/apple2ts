@@ -14,7 +14,7 @@ import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../c
 import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { passSetDriveProps } from "../../main2worker"
-import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
 import { isFileSystemApiSupported } from "../../ui_utilities"
@@ -179,7 +179,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       dprops.diskHasChanges = true
       dprops.filename = writableFileHandle.name
       dprops.writableFileHandle = writableFileHandle
-      dprops.lastLocalWriteTime = -1
+      dprops.lastLocalFileWriteTime = -1
       passSetDriveProps(dprops)
 
       prepWritableFile(index, writableFileHandle)
@@ -227,12 +227,15 @@ const DiskDrive = (props: DiskDriveProps) => {
   const filename = (dprops.filename.length > 0) ? dprops.filename : ""
   let status = DISK_DRIVE_LABELS[props.index]
   status += dprops.status
+  const isElectron = navigator.userAgent.includes("Electron")
+  const isTouchDevice = "ontouchstart" in document.documentElement
+  const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}${isTouchDevice ? " disk-label-small" : ""}`
 
   return (
     <span className="flex-column">
       <span className="flex-row">
         <span className="flex-column">
-          <img className="disk-image"
+          <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={diskDriveLabel}
@@ -243,10 +246,10 @@ const DiskDrive = (props: DiskDriveProps) => {
           </FontAwesomeIcon>
         </span>
       </span>
-      <span className={"disk-label" + (dprops.diskHasChanges ? " disk-label-unsaved" : "")}>
+      <span className={diskLabelClass}>
         {dprops.diskHasChanges ? "*" : ""}{dprops.filename}</span>
       <span className="flex-row">
-        <span className={"default-font disk-status"}>{status}</span>
+        <span className={`default-font disk-status${isTouchDevice ? " disk-status-small" : ""}`}>{status}</span>
       </span>
 
       <PopupMenu
@@ -352,11 +355,13 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Save Disk to OneDrive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { saveDiskToCloud(new OneDriveCloudDrive()) }
             },
             {
               label: "Save Disk to Google Drive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { saveDiskToCloud(new GoogleDrive()) }
             }
           ],
@@ -487,11 +492,13 @@ const DiskDrive = (props: DiskDriveProps) => {
             {
               label: "Load Disk from OneDrive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { loadDiskFromCloud(new OneDriveCloudDrive()) }
             },
             {
               label: "Load Disk from Google Drive",
               icon: faCloud,
+              isVisible: () => { return !isElectron },
               onClick: () => { loadDiskFromCloud(new GoogleDrive()) }
             }
           ]

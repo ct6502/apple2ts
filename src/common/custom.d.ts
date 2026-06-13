@@ -57,6 +57,8 @@ type Apple2SaveState = {
   machineName: MACHINE_NAME,
   softSwitches: {[name: string]: boolean},
   stackDump: Array<string>,
+  memvalid: string,
+  memC000: string,
   memory: string
 }
 
@@ -65,6 +67,7 @@ type UpdateDisplay = (speed = 0, helptext = "") => void
 type DisplayProps = {
   speed: number,
   renderCount: number,
+  setAvgFPS: (fps: number) => void,
   ctrlKeyMode: number,
   openAppleKeyMode: number,
   closedAppleKeyMode: number,
@@ -74,16 +77,16 @@ type DisplayProps = {
   handleOpenAppleDown: (mode: number) => void,
   handleClosedAppleDown: (mode: number) => void,
   setShowFileOpenDialog: (show: boolean, index: number) => void,
-  showCRTBoot: boolean,
 }
 
-type MACHINE_NAME = "APPLE2EU" | "APPLE2EE"
+type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
 
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
+  basicMemory: Uint8Array,
   breakpoints: BreakpointMap,
   button0: boolean,
   button1: boolean,
@@ -96,6 +99,7 @@ type MachineState = {
   hires: Uint8Array,
   iTempState: number,
   isDebugging: boolean,
+  isTracing: boolean,
   lores: Uint8Array,
   machineName: MACHINE_NAME,
   memoryDump: Uint8Array,
@@ -109,18 +113,26 @@ type MachineState = {
   stackString: string,
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
+  tracelog: Array<string>,
+  zeroPage: Uint8Array
 }
 
 type UIState = {
   appMode: string,
   arrowKeysAsJoystick: boolean,
-  capsLock: boolean,
+  manualNumbering: boolean,
+  capitalizeBasic: boolean
+  lowercaseMode: boolean,
   colorMode: COLOR_MODE,
   crtDistortion: boolean,
+  debugMode: boolean,
   ghosting: boolean,
   helpText: string,
   hotReload: boolean,
+  reverseYAxis: boolean,
   showScanlines: boolean,
+  siriusJoyport: boolean,
+  tabView: number,
   theme: UI_THEME,
   tiltSensorJoystick: boolean,
   touchJoystickMode: TOUCH_JOYSTICK_MODE,
@@ -149,6 +161,18 @@ type CloudProvider = {
   requestAuthToken(callback: (authToken: string) => void): void
 }
 
+// Custom writable file handle type that supports both browser FileSystemFileHandle
+// and Electron IPC-based save handlers
+type CustomWritableHandler = {
+  requestPermission: () => Promise<{ state: PermissionState }>,
+  createWritable: () => Promise<{
+    write: (data: Uint8Array | Blob) => Promise<void>,
+    close: () => Promise<void>
+  }>
+}
+
+type WritableFileHandle = FileSystemFileHandle | CustomWritableHandler
+
 type DriveState = {
   index: number,
   hardDrive: boolean,
@@ -167,10 +191,10 @@ type DriveState = {
   trackNbits: Array<number>,
   trackLocation: number,
   maxQuarterTrack: number,
-  lastWriteTime: number,
+  lastAppleWriteTime: number,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null,
-  lastLocalWriteTime: number
+  writableFileHandle: WritableFileHandle | null,
+  lastLocalFileWriteTime: number
   optimalTiming: number,
 }
 
@@ -184,15 +208,15 @@ type DriveProps = {
   diskHasChanges: boolean,
   isWriteProtected: boolean,
   diskData: Uint8Array,
-  lastWriteTime: number,
+  lastAppleWriteTime: number,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null,
-  lastLocalWriteTime: number
+  writableFileHandle: WritableFileHandle | null,
+  lastLocalFileWriteTime: number
 }
 
 type DriveSaveState = {
   currentDrive: number,
-  driveState: DriveState[],
+  driveState: (DriveState | object)[],
   driveData: string[]
 }
 
@@ -330,7 +354,8 @@ type Breakpoint = {
   memoryBank: string,
   action1: BreakpointAction,
   action2: BreakpointAction,
-  halt: boolean
+  halt: boolean,
+  basic: boolean
 }
 
 type StepCallbackFunction = () => boolean
@@ -371,4 +396,10 @@ type MessageLoadProgram = {
   format: string,
   runProgram: boolean,
   data: Uint8Array,
+}
+
+type TraceSettings = {
+  numLines: number,
+  collapseLoops: boolean,
+  ignoreRegisters: boolean,
 }

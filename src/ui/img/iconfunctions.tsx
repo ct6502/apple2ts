@@ -17,6 +17,23 @@ export const iconData = () => {
   return image.map(code => String.fromCharCode(code + 45)).join("")
 }
 
+export const pickerKey = () => {
+  const image = [17,25,74,49,35,73,20, 0,27,72,63,71,62,24,72,38,70,55,21,58,
+    35,59,71, 6,57,50, 3,24,73,22,30,17,20,26,33,42,27, 4, 8]
+  return image.map(code => String.fromCharCode(code + 48)).join("")
+}
+
+export const appID = () => {
+  const image = [56,51,49,52,49,53,57,57,48,49,49,55]
+  return image.map(code => String.fromCharCode(code)).join("")
+}
+
+export const clientID = () => {
+  const image = [62, 2,62, 9,61,67, 5,62,57,52,49,68,55, 7,66,61,51,50, 1,
+    2,68,70,64,61, 8,59,57,66,68,50,64,68]
+  return image.map(code => String.fromCharCode(code + 48)).join("")
+}
+
 export const getColorModeSVG = (colorMode: COLOR_MODE) => {
   let svgRect: React.SVGProps<SVGSVGElement>
   const h = 15

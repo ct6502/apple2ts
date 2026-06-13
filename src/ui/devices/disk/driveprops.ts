@@ -4,15 +4,15 @@ import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
-import { iconKey, iconData, iconName } from "../../img/iconfunctions"
+// import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
-import { DISK_COLLECTION_ITEM_TYPE } from "../../panels/diskcollectionpanel"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
-import { getHotReload } from "../../ui_settings"
+import { getHotReload, setHelpText } from "../../ui_settings"
 import { getDiskImageFromLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 
 // Technically, all of these properties should be in the main2worker.ts file,
@@ -30,10 +30,10 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
     isWriteProtected: false,
     motorRunning: false,
     diskData: new Uint8Array(),
-    lastWriteTime: -1,
+    lastAppleWriteTime: -1,
     cloudData: null,
     writableFileHandle: null,
-    lastLocalWriteTime: -1
+    lastLocalFileWriteTime: -1
   }
 }
 
@@ -55,6 +55,9 @@ export const handleGetFilename = (index: number) => {
 export const doSetUIDriveProps = (props: DriveProps) => {
   // For efficiency we only receive disk data if it has changed.
   // If our disk is the same but it hasn't changed, keep the existing data.
+  // Also preserve writableFileHandle (custom Electron handlers aren't sent to worker)
+  const existingWritableFileHandle = driveProps[props.index].writableFileHandle
+  
   if (props.diskData.length === 0) {
     const tmp = driveProps[props.index].diskData
     const diskHasChanges = driveProps[props.index].diskHasChanges
@@ -63,6 +66,11 @@ export const doSetUIDriveProps = (props: DriveProps) => {
     driveProps[props.index].diskHasChanges = diskHasChanges
   } else {
     driveProps[props.index] = props
+  }
+  
+  // Always preserve writableFileHandle from UI (worker never has custom handlers)
+  if (existingWritableFileHandle && !props.writableFileHandle) {
+    driveProps[props.index].writableFileHandle = existingWritableFileHandle
   }
 }
 
@@ -75,22 +83,39 @@ export const handleSetDiskData = (
   data: Uint8Array,
   filename: string,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null,
-  lastLocalWriteTime: number) => {
+  writableFileHandle: WritableFileHandle | null,
+  lastLocalFileWriteTime: number) => {
   if (cloudData) {
     cloudData.fileSize = data.length
   }
   driveProps[index].filename = filename
   driveProps[index].diskData = data
-  driveProps[index].lastLocalWriteTime = lastLocalWriteTime
+  driveProps[index].lastLocalFileWriteTime = lastLocalFileWriteTime
   driveProps[index].cloudData = cloudData
   driveProps[index].writableFileHandle = writableFileHandle
-  passSetDriveNewData(driveProps[index])
+  
+  // Only send FileSystemFileHandle to worker (not custom handlers with functions)
+  // Custom handlers can't be cloned via postMessage
+  const isFileSystemHandle = writableFileHandle && "getFile" in writableFileHandle
+  const propsForWorker = {
+    ...driveProps[index],
+    writableFileHandle: isFileSystemHandle ? writableFileHandle : null
+  }
+  passSetDriveNewData(propsForWorker)
+  if (filename) {
+    checkForHelpFile(filename)
+  }
+
 }
 
 export const handleSetDiskWriteProtected = (index: number, isWriteProtected: boolean) => {
   driveProps[index].isWriteProtected = isWriteProtected
   passSetDriveProps(driveProps[index])
+}
+
+export const handleEjectDisk = (index: number) => {
+  driveProps[index] = initDriveProps(index, driveProps[index].drive, driveProps[index].hardDrive)
+  passSetDriveNewData(driveProps[index])
 }
 
 const findMatchingDiskImage = (url: string) => {
@@ -127,7 +152,13 @@ export const handleSetDiskOrFileFromBuffer = (
   buffer: ArrayBuffer,
   filename: string,
   cloudData: CloudData | null,
-  writableFileHandle: FileSystemFileHandle | null) => {
+  writableFileHandle: WritableFileHandle | null) => {
+
+  // Sanity check for strange downloads with no filename.
+  if (buffer.byteLength === 143360 && !filename.includes(".")) {
+    filename += ".dsk"
+  }
+
   const fname = filename.toLowerCase()
   let newIndex = index
 
@@ -215,28 +246,29 @@ export const handleSetDiskFromCloudData = async (
   }
 }
 
-const fetchWithCorsProxy = async (proxy: string, url: string) => {
+const fetchWithCorsProxy = async (url: string) => {
   try {
-    const response = await fetch(proxy + url)
+    const response = await fetch("https://proxy.corsfix.com/?" + url,
+      { headers: {"x-corsfix-cache": "true"} })
     return response
   } catch {
     return null
   }
 }
 
-const fetchWithCT6502Proxy = async (url: string) => {
-  // Ask CT6502 for why we need to use this favicon header
-  const favicon: { [key: string]: string } = {}
-  favicon[iconKey()] = iconData()
-  try {
-    const fullURL = iconName() + url
-    const response = await fetch(fullURL, { headers: favicon })
-    return response
-  } catch (error) {
-    console.error("CT6502 proxy fetch failed:", error)
-    return null
-  }
-}
+// const fetchWithCT6502Proxy = async (url: string) => {
+//   // Ask CT6502 for why we need to use this favicon header
+//   const favicon: { [key: string]: string } = {}
+//   favicon[iconKey()] = iconData()
+//   try {
+//     const fullURL = iconName() + url
+//     const response = await fetch(fullURL, { headers: favicon })
+//     return response
+//   } catch (error) {
+//     console.error("CT6502 proxy fetch failed:", error)
+//     return null
+//   }
+// }
 
 let timerId: NodeJS.Timeout|null = null
 
@@ -250,7 +282,7 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
     if (dprops.diskHasChanges && !dprops.motorRunning) {
       setDiskImageToLocalStorage(index, dprops.diskData)      
       dprops.diskHasChanges = false
-      dprops.lastLocalWriteTime = Date.now()
+      dprops.lastLocalFileWriteTime = Date.now()
       passSetDriveProps(dprops)
     }
   }, 3 * 1000)
@@ -320,38 +352,99 @@ export const handleSetDiskFromURL = async (url: string,
   // Download the file from the fragment URL
   let name = ""
   let buffer
+  let response: Response | null = null
 
   if (!callback) {
     showGlobalProgressModal(true, "Downloading disk")
+  } else {
+    showGlobalProgressModal(true)
   }
 
-  let response = await fetchWithCorsProxy("https://corsproxy.io/?", url)
-//  let response = await fetchWithCorsProxy("https://proxy.corsfix.com/?", url)
+  // Try direct fetch first (works in Electron with CORS bypass)
+  console.log(`🌐 Attempting direct fetch: ${url}`)
+  try {
+    response = await fetch(url)
+    if (response.ok) {
+      console.log(`✅ Direct fetch succeeded: ${url}`)
+    } else {
+      console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
+      response = null
+    }
+  } catch (error) {
+    console.log(`❌ Direct fetch failed with error: ${error}`)
+    response = null
+  }
 
+  // If direct fetch failed, try CORS proxies
   if (!response || !response.ok) {
-    console.log("First CORS proxy failed, trying next proxy")
-    response = await fetchWithCT6502Proxy(url)
-    if (!response) {
-      if (!callback) {
-        showGlobalProgressModal(false)
-      }
+    console.log("Direct fetch failed, trying CORS proxy")
+    response = await fetchWithCorsProxy(url)
+    if (!response || !response.ok) {
+      console.error(`❌ All fetch methods failed for: ${url}`)
+      showGlobalProgressModal(false)
       
-      console.error(`Error fetching URL: ${url}`)
+      // Show user-friendly error message
+      const isGitHub = url.includes("github.com")
+      const isExternal = !url.includes(window.location.hostname)
+      
+      let errorMessage = `Unable to download disk image:\n"${url}".\n`
+      
+      if (isGitHub) {
+        errorMessage += "Some GitHub files cannot be loaded directly in browsers due to cross-origin restrictions.\n"
+        errorMessage += "Options:\n"
+        errorMessage += "1. Download the file manually and use 'Load from File'\n"
+        errorMessage += "2. Use the desktop/Electron version of this emulator"
+      } else if (isExternal) {
+        errorMessage += "This external URL cannot be loaded due to browser cross-origin restrictions.\n"
+        errorMessage += "Options:\n"
+        errorMessage += "1. Download the file manually and use 'Load from File'\n"
+        errorMessage += "2. Use the Desktop version for unrestricted downloads"
+      } else {
+        errorMessage += "The file could not be downloaded. Please check your internet connection and try again."
+      }
       
       if (callback) {
         callback(null)
       } else {
+        setTimeout(() => alert(errorMessage), 100)
         return
       }
     }
   }
 
-  showGlobalProgressModal(false)
-
   try {
-    const blob = await response.blob()
+    console.log(`📥 Downloading response body (Content-Length: ${response.headers.get("content-length") || "unknown"})...`)
+    const fileBuffer = await response.arrayBuffer()
+    console.log(`✅ Downloaded ${fileBuffer.byteLength} bytes`)
+
+    // Try to get filename from Content-Disposition header first
+    const contentDisposition = response.headers.get("content-disposition")
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+      if (filenameMatch && filenameMatch[1]) {
+        name = filenameMatch[1].replace(/['"]/g, "")
+        console.log(`📋 Filename from Content-Disposition: ${name}`)
+      }
+    }
+
+    // Hack for Internet Archive downloads which have the format:
+    // https://archive.org/download/Muppetville4amCrack/00playable.dsk
+    // Extract the actual game name from the URL.
+    if (name === "" && url.includes("00playable")) {
+      // Take the second-to-last part of the URL, and tack on the file suffix
+      const urlParts = url.split("/")
+      if (urlParts.length >= 2) {
+        const possibleName = urlParts[urlParts.length - 2]
+        const suffixIndex = url.lastIndexOf(".")
+        if (suffixIndex >= 0) {
+          const suffix = url.substring(suffixIndex)
+          name = possibleName + suffix
+        }
+      }
+    }
 
     if (url.toLowerCase().endsWith(".zip")) {
+      console.log("📦 Unzipping file...")
       const unzipper = new fflate.Unzip()
       unzipper.register(fflate.UnzipInflate)
 
@@ -363,6 +456,7 @@ export const handleSetDiskFromURL = async (url: string,
             if (data.length > 1024) {
               name = file.name
               buffer = data
+              console.log(`📄 Extracted file: ${name} (${data.length} bytes)`)
               return
             }
           }
@@ -370,17 +464,18 @@ export const handleSetDiskFromURL = async (url: string,
           return
         }
       }
-      const zipBuffer = await new Response(blob).arrayBuffer()
-      unzipper.push(new Uint8Array(zipBuffer), true)
+      unzipper.push(new Uint8Array(fileBuffer), true)
     } else {
-      const urlObj = new URL(url)
-      name = url
-      const hasSlash = urlObj.pathname.lastIndexOf("/")
-      if (hasSlash >= 0) {
-        name = urlObj.pathname.substring(hasSlash + 1)
+      if (name === "") {
+        const urlObj = new URL(url)
+        name = url
+        const hasSlash = urlObj.pathname.lastIndexOf("/")
+        if (hasSlash >= 0) {
+          name = urlObj.pathname.substring(hasSlash + 1)
+        }
       }
-
-      buffer = await new Response(blob).arrayBuffer()
+      buffer = fileBuffer
+      console.log(`📄 File loaded: ${name} (${buffer.byteLength} bytes)`)
     }
 
     if (buffer) {
@@ -388,43 +483,64 @@ export const handleSetDiskFromURL = async (url: string,
         callback(buffer)
       } else {
         // If we are loading from a URL, reset all drives. Fixes issue#186
+        console.log(`💾 Setting disk data for drive ${index}...`)
         resetAllDiskDrives()
         
         handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+        console.log("✅ Disk loaded successfully")
       }
     } else {
       if (callback) {
         callback(null)
       } else {
+        console.error("❌ No buffer data available after download")
         // $TODO: Add error handling
       }
     }
   } catch (error) {
-    console.error(`Error fetching "${url}": ${error}`)
+    console.error(`❌ Error processing download for "${url}":`, error)
+    console.error("Error details:", error instanceof Error ? error.message : String(error))
     if (callback) {
-        callback(null)
+      callback(null)
     }
+  } finally {
+    showGlobalProgressModal(false)
   }
 }
 
-export const prepWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle) => {
+export const prepWritableFile = async (index: number, writableFileHandle: WritableFileHandle) => {
+  console.log(`🔄 prepWritableFile: Starting auto-save timer for drive ${index}`)
   const timer = setInterval(async (index: number) => {
     const dprops = handleGetDriveProps(index)
-
     if (getHotReload()) {
-      const file = await writableFileHandle.getFile()
-      if (dprops.lastLocalWriteTime > 0 && file.lastModified > dprops.lastLocalWriteTime) {
-        handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
-        passSetRunMode(RUN_MODE.NEED_BOOT)
-        return
+      // Only FileSystemFileHandle supports getFile() for hot reload
+      if ("getFile" in writableFileHandle && typeof writableFileHandle.getFile === "function") {
+        const file = await writableFileHandle.getFile()
+        if (dprops.lastLocalFileWriteTime > 0 && file.lastModified > dprops.lastLocalFileWriteTime) {
+          console.log(`🔄 Hot reload detected for drive ${index}`)
+          handleSetDiskOrFileFromBuffer(index, await file.arrayBuffer(), file.name, null, writableFileHandle)
+          passSetRunMode(RUN_MODE.NEED_BOOT)
+          return
+        }
       }
     }
 
     if (dprops.diskHasChanges && !dprops.motorRunning) {
+      console.log(`💾 Drive ${index} has changes and motor stopped, attempting save...`)
       if (await handleSaveWritableFile(index)) {
+        console.log(`✅ Save successful for drive ${index}`)
         dprops.diskHasChanges = false
-        dprops.lastLocalWriteTime = Date.now()
-        passSetDriveProps(dprops)
+        dprops.lastLocalFileWriteTime = Date.now()
+        
+        // Only send FileSystemFileHandle to worker (not custom handlers with functions)
+        const isFileSystemHandle = dprops.writableFileHandle && "getFile" in dprops.writableFileHandle
+        const propsForWorker = {
+          ...dprops,
+          writableFileHandle: isFileSystemHandle ? dprops.writableFileHandle : null
+        }
+        passSetDriveProps(propsForWorker)
+      } else {
+        console.log(`❌ Save failed for drive ${index}`)
       }
     }
   }, 3 * 1000, index)
@@ -435,6 +551,28 @@ const resetAllDiskDrives = () => {
   for (let i=0; i < MAX_DRIVES; i++) {
     handleSetDiskData(i, new Uint8Array(), "", null, null, -1)
   }
+}
+
+const checkForHelpFile = async (disk: string) => {
+  const helpFile = replaceSuffix(disk, "txt")
+  try {
+    const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
+    let helptext = "<Default>"
+    if (help.ok) {
+      helptext = await help.text()
+      // Hack: when running on localhost, if the file is missing it just
+      // returns the index.html. So just return an empty string instead.
+      if (helptext.startsWith("<!DOCTYPE html>")) {
+        helptext = "<Default>"
+      }
+      if (helpFile === "TotalReplay.txt") {
+        helptext = parseGameList(helptext)
+      }
+      setHelpText(helptext)
+    }      
+  } catch {
+    // If we don't have a help text file, just revert to the default text.
+    setHelpText("<Default>")  }
 }
 
 export const handleSetDiskFromFile = async (disk: string,
@@ -497,28 +635,37 @@ export const handleSetDiskFromFile = async (disk: string,
   }
 }
 
-export const handleSaveWritableFile = async (index: number, writableFileHandle: FileSystemFileHandle|null = null) => {
+export const handleSaveWritableFile = async (index: number, writableFileHandle: WritableFileHandle|null = null) => {
+  console.log(`💾 handleSaveWritableFile called for drive ${index}`)
   let success = false
 
   if (writableFileHandle === null) {
     writableFileHandle = driveProps[index].writableFileHandle
+    console.log("📁 Using stored writableFileHandle:", writableFileHandle ? "present" : "null")
   }
 
   const dprops = driveProps[index]
 
   if (writableFileHandle) {
-    // Handle browser FileSystemFileHandle writes
     try {
+      console.log(`🔨 Creating blob from disk data: ${dprops.filename}, ${dprops.diskData.length} bytes`)
       const blob = getBlobFromDiskData(dprops.diskData, dprops.filename)
+      console.log("📝 Calling createWritable()...")
       const writable = await writableFileHandle.createWritable()
 
+      console.log("✍️ Calling write() with blob...")
+      // Both browser FileSystemWritableFileStream and custom handler support write()
       await writable.write(blob)
+      console.log("🔒 Calling close()...")
       await writable.close()
       
       success = true
+      console.log("✅ handleSaveWritableFile completed successfully")
     } catch (ex) {
-      console.log(`Error saving writable file: ${ex}`)
+      console.log(`❌ Error saving writable file: ${ex}`)
     }
+  } else {
+    console.log(`⚠️ No writableFileHandle available for drive ${index}`)
   }
 
   return success

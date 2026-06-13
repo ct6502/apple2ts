@@ -5,7 +5,7 @@ export const TEST_GRAPHICS = false
 export const MAX_SNAPSHOTS = 30
 const FILE_OPEN_SUFFIXES = ".a2ts,.bin,.a,.bas"
 const FLOPPY_DISK_SUFFIXES = ".dsk,.woz,.do"
-const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po"
+const HARD_DRIVE_SUFFIXES = ".2mg,.hdv,.po,.2meg"
 export const FILE_SUFFIXES_DISK = `${FLOPPY_DISK_SUFFIXES},${HARD_DRIVE_SUFFIXES}`
 export const FILE_SUFFIXES_ALL = `${FILE_OPEN_SUFFIXES},${FILE_SUFFIXES_DISK}`
 export const MAX_DRIVES = 4
@@ -32,6 +32,7 @@ export enum MSG_WORKER {
   CLICK,
   DRIVE_PROPS,
   DRIVE_SOUND,
+  GET_MEMORY_RESPONSE,
   SAVE_STATE,
   RUMBLE,
   HELP_TEXT,
@@ -46,40 +47,47 @@ export enum MSG_WORKER {
 }
 
 export enum MSG_MAIN {
-  RUN_MODE,
-  STATE6502,
-  DEBUG,
-  GAME_MODE,
-  SHOW_DEBUG_TAB,
-  BREAKPOINTS,
-  STEP_INTO,
-  STEP_OVER,
-  STEP_OUT,
-  SPEED,
-  TIME_TRAVEL_STEP,
-  TIME_TRAVEL_INDEX,
-  TIME_TRAVEL_SNAPSHOT,
-  THUMBNAIL_IMAGE,
-  RESTORE_STATE,
-  KEYPRESS,
-  KEYRELEASE,
-  MOUSEEVENT,
-  PASTE_TEXT,
   APPLE_PRESS,
   APPLE_RELEASE,
+  APP_MODE,
+  BASIC_STEP,
+  BREAKPOINTS,
+  COMM_DATA,
+  DEBUG,
+  DRIVE_NEW_DATA,
+  DRIVE_PROPS,
+  EXECUTE_BASIC_COMMAND,
+  GAMEPAD,
+  GET_MEMORY,
   GET_SAVE_STATE,
   GET_SAVE_STATE_SNAPSHOTS,
-  DRIVE_PROPS,
-  DRIVE_NEW_DATA,
-  GAMEPAD,
+  KEYPRESS,
+  KEYRELEASE,
+  MACHINE_NAME,
+  MIDI_DATA,
+  MOUSEEVENT,
+  PASTE_TEXT,
+  RAMWORKS,
+  RESTORE_STATE,
+  REVERSE_YAXIS,
+  RUN_MODE,
   SET_BINARY_BLOCK,
   SET_CYCLECOUNT,
   SET_MEMORY,
-  COMM_DATA,
-  MIDI_DATA,
-  RAMWORKS,
-  MACHINE_NAME,
+  SHOW_DEBUG_TAB,
+  SIRIUS_JOYPORT,
   SOFTSWITCHES,
+  SPEED,
+  STATE6502,
+  STEP_INTO,
+  STEP_OUT,
+  STEP_OVER,
+  THUMBNAIL_IMAGE,
+  TIME_TRAVEL_INDEX,
+  TIME_TRAVEL_SNAPSHOT,
+  TIME_TRAVEL_STEP,
+  TRACING,
+  TRACE_SETTINGS,
 }
 
 export enum COLOR_MODE {
@@ -200,7 +208,7 @@ export const toHex = (value: number, ndigits = 2) => {
   return ("0000" + value.toString(16).toUpperCase()).slice(-ndigits)
 }
 
-export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
+export const convertAppleKey = (e: KeyboardEvent, lowercase: boolean,
   ctrlKeyMode: number, cout: number) => {
   let key = 0
   if (e.altKey && e.key !== "Alt") {
@@ -214,7 +222,7 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
       } else {
         return 0
       }
-    } else if (uppercase) {
+    } else if (!lowercase) {
       key = String.fromCharCode(key).toUpperCase().charCodeAt(0)
     }
   } else {
@@ -247,8 +255,15 @@ export const convertAppleKey = (e: KeyboardEvent, uppercase: boolean,
   return key
 }
 
-export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean, hasMouseText: boolean) => {
+export const convertTextPageValueToASCII = (
+  value: number,
+  isAltCharSet: boolean,
+  hasMouseText: boolean,
+  hasLowerCase = true,
+  useApple2PlusMap = false
+) => {
   let v1 = value
+  const original = value
   if (v1 >= 0 && v1 <= 31) {
     // Shift Ctrl chars into ASCII A-Z range
     // They will be displayed as inverse
@@ -256,6 +271,12 @@ export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean
   } else if (v1 >= 160) {
     // Normal text, just strip the high bit to convert to standard ASCII range
     v1 &= 0b01111111
+    // Apple II/II+ text conventions: many punctuation/space characters in
+    // the 0xE0-0xFF range map to ASCII by shifting 0x60-0x7F down to 0x20-0x3F.
+    // Example: E0 -> 0x60 -> 0x20 (space), E2 -> 0x62 -> 0x22 (quote).
+    if (useApple2PlusMap && original >= 0xE0 && v1 >= 0x60) {
+      v1 -= 0x40
+    }
   } else if (isAltCharSet) {
     if (hasMouseText && v1 >= 64 && v1 <= 95) {
       // Shift Mousetext chars into extended ASCII range.
@@ -278,7 +299,10 @@ export const convertTextPageValueToASCII = (value: number, isAltCharSet: boolean
       v1 -= 64
     }
   }
-  return String.fromCodePoint(v1 === 0x83 ? 0xEBE7 : (v1 >= 127 ? (0xE000 + v1) : v1))
+  if (!hasLowerCase && v1 >= 0x61 && v1 <= 0x7A) {
+    v1 -= 0x20
+  }
+  return String.fromCodePoint(v1 >= 127 ? (0xE000 + v1) : v1)
 }
 
 const zpPrev = new Uint8Array(256).fill(0)
@@ -375,12 +399,22 @@ const processSymbolData = (text: string) => {
     if (trimmedLine === "" || trimmedLine.startsWith(";")) {
       return
     }
-    // Split the line into address and symbol
-    const parts = trimmedLine.split(/\s+/)
-    if (parts.length >= 2) {
-      const address = parseInt(parts[0], 16)
-      const symbol = parts[1]
+    // First see if we have a line that is "SYMBOL equ $ADDRESS"
+    // Accept spaces or tabs between the parts.
+    // Watch out for optional ; comments at the end of the line.
+    const equMatch = trimmedLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+equ\s+\$([0-9A-Fa-f]{1,4})\b/i)
+    if (equMatch) {
+      const symbol = equMatch[1]
+      const address = parseInt(equMatch[2], 16)
       symbolMap.set(address, symbol)
+    } else {
+      // Now look for lines that start with an address followed by a symbol.
+      const parts = trimmedLine.split(/\s+/)
+      if (parts.length >= 2) {
+        const address = parseInt(parts[0], 16)
+        const symbol = parts[1]
+        symbolMap.set(address, symbol)
+      }
     }
   })
 
@@ -443,6 +477,7 @@ export const getSymbolTables = (machineName: string) => {
 
 export const isHardDriveImage = (filename: string) => {
   const f = filename.toLowerCase()
-  return f.endsWith(".hdv") || f.endsWith(".po") || f.endsWith(".2mg")
+  const suffixes = HARD_DRIVE_SUFFIXES.split(",")
+  return suffixes.some(suffix => f.endsWith(suffix))
 }
 

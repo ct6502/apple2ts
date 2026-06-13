@@ -1,7 +1,7 @@
 :root {
-  --background-color: #BFBB98;
+  --background-color: #c0b5a3;
   --background-color-dark: #181818;
-  --panel-background: #C9C5A0;
+  --panel-background: #c6bba8;
   --panel-background-dark: #222;
   --text-color: black;
   --text-color-dark: #ddd;
@@ -61,15 +61,13 @@ input:focus {
 @font-face {
   font-family: PrintChar21;
   src: url(./fonts/PrintChar21.woff2);
+  font-display: block;
 }
 
 @font-face {
   font-family: PRNumber3;
   src: url(./fonts/PRNumber3.woff2);
-}
-
-.loadFontEarly {
-  font-family: PrintChar21;
+  font-display: block;
 }
 
 .flex-row {
@@ -106,7 +104,7 @@ input:focus {
   justify-content: space-between;
 }
 
-.wrap {
+.flexwrap {
   flex-wrap: wrap;
 }
 
@@ -158,7 +156,8 @@ body.dark-mode .push-button:active {
 .push-button:disabled {
   border: 0;
   opacity: 30%;
-  cursor: default;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .key-button {
@@ -175,6 +174,7 @@ body.dark-mode .key-button {
 
 .button-active {
   background-color: var(--button-active);
+  box-shadow: inset 0 0 0 1px currentColor;
 }
 
 body.dark-mode .button-active {
@@ -246,8 +246,18 @@ body.dark-mode .button-locked {
   cursor: pointer;
 }
 
+.text-button:hover {
+  background-color: var(--button-active);
+}
+
 .text-button:focus {
   outline: auto;
+}
+
+.text-button:disabled {
+  border-width: 1px;
+  border-color: gray;
+  border-style: outset;
 }
 
 .text-key {
@@ -276,6 +286,10 @@ body.dark-mode .fill-color {
   font-size: 8pt;
   color: var(--text-color);
   fill: var(--text-color);
+}
+
+.font-small {
+  font-size: 6pt;
 }
 
 body.dark-mode .default-font {
@@ -328,7 +342,7 @@ body.dark-mode .centered-title {
 .footer-item {
   width: 100px;
   /* transform: translate(0, -12px); */
-  margin-left: 0;
+  margin-left: 0.5em;
   margin-right: 0.5em;
   white-space: nowrap;
   user-select: none;

@@ -1,19 +1,14 @@
 import { doInterruptRequest, doNonMaskableInterrupt, getLastJSR, getProcessorStatus, incrementPC, pcodes, s6502, setCycleCount } from "./instructions"
 import { memGet, memGetRaw, specialJumpTable } from "./memory"
-import { doSetRunMode, doTakeSnapshot, isGameMode } from "./motherboard"
+import { doSetRunMode, doTakeSnapshot, runOnlyMode } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { BRK_ILLEGAL_6502, BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { RUN_MODE } from "../common/utility"
 import { MEMORY_BANKS } from "../common/memorybanks"
 import { getInstructionString } from "../common/util_disassemble"
 
-// let prevMemory = Buffer.from(mainMem)
-// let DEBUG_ADDRESS = -1 // 0x9631
 let breakpointSkipOnce = false
 let doWatchpointBreak = false
-// let doDebugZeroPage = false
-// const instrTrail = new Array<string>(1000)
-// let posTrail = 0
 export let breakpointMap: BreakpointMap = new BreakpointMap()
 let runToRTS = false
 
@@ -30,6 +25,19 @@ export const setStepOut = () => {
   const addr = getLastJSR()
   if (addr < 0) return
   if (breakpointMap.get(addr)) return
+  const bp = BreakpointNew()
+  bp.address = addr
+  bp.once = true
+  bp.hidden = true
+  breakpointMap.set(addr, bp)
+}
+
+export const doSetBasicStep = () => {
+  const bpTmp = new BreakpointMap(breakpointMap)
+  bpTmp.forEach((bp, key) => {
+    if (bp.once) breakpointMap.delete(key)
+  })
+  const addr = 0xD805
   const bp = BreakpointNew()
   bp.address = addr
   bp.once = true
@@ -115,36 +123,6 @@ export const isWatchpoint = (addr: number, value: number, set: boolean) => {
   return set ? bp.memset : bp.memget
 }
 
-// let memZP = new Uint8Array(256).fill(0)
-// const checkZeroPageDiff = () => {
-//   const mem = getDataBlock(0)
-//   const diff = new Uint8Array(256)
-//   let ndiff = 0
-//   for (let i=0; i < 256; i++) {
-//     diff[i] = mem[i] - memZP[i]
-//     memZP[i] = mem[i]
-//     if (diff[i]) ndiff++
-//   }
-//   const skip = [0x4E, 0xEB, 0xEC, 0xED, 0xF9, 0xFA, 0xFB, 0xFC]
-//   for (let i = 0; i < skip.length; i++) {
-//     if (diff[skip[i]]) {
-//       diff[skip[i]] = 0
-//       ndiff--
-//     }
-//   }
-//   let s = ''
-//   if (ndiff > 0 && ndiff < 127) {
-//     for (let i=0; i < 256; i++) {
-//       if (diff[i]) s += ` ${toHex(i)}:${toHex(diff[i])}`
-//     }
-//     console.log(s)
-//   }
-// }
-
-// const outputInstructionTrail = () => {
-//   instrTrail.slice(posTrail).forEach(s => console.log(s));
-//   instrTrail.slice(0, posTrail).forEach(s => console.log(s));
-// }
 
 export const interruptRequest = (slot = 0, set = true) => {
   // IRQ is level sensitive, so it is always active while true
@@ -219,8 +197,8 @@ export const setWatchpointBreak = () => {
 }
 
 const printBreakpointToConsole = (vLo: number, vHi: number, code: PCodeInstr | null) => {
-  const ins = getInstructionString(s6502.PC, {...code} as PCodeInstr1, vLo, vHi) + "          "
-  const count = ("          " + s6502.cycleCount.toString()).slice(-10)
+  const ins = getInstructionString(s6502.PC, {...code} as PCodeInstr1, vLo, vHi, s6502.PStatus) + "          "
+  const count = ("0000000000" + s6502.cycleCount.toString()).slice(-10)
   const out = `${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}`
   console.log(out)
 }
@@ -228,7 +206,8 @@ const printBreakpointToConsole = (vLo: number, vHi: number, code: PCodeInstr | n
 export enum BREAKPOINT_RESULT {
   NO_BREAK,
   BREAK,
-  ACTION
+  ACTION,
+  HIDDEN_BREAK
 }
 
 const processBreakpointAction = (action: BreakpointAction,  vLo: number, vHi: number, code: PCodeInstr | null) => {
@@ -268,7 +247,7 @@ const processBreakpointActions = (bp: Breakpoint, vLo: number, vHi: number,
   if (didAction1 || didAction2) {
     return bp.halt ? BREAKPOINT_RESULT.BREAK : BREAKPOINT_RESULT.ACTION
   }
-  return BREAKPOINT_RESULT.BREAK
+  return  bp.hidden ? BREAKPOINT_RESULT.HIDDEN_BREAK : BREAKPOINT_RESULT.BREAK
 }
 
 // This is only exported for breakpoint testing
@@ -278,6 +257,14 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     return BREAKPOINT_RESULT.BREAK
   }
   if (breakpointMap.size === 0 || breakpointSkipOnce) return BREAKPOINT_RESULT.NO_BREAK
+  if (s6502.PC === 0xD805) {
+    // Look for BASIC breakpoints
+    const lineNum = memGet(0x75) + (memGet(0x76) << 8)
+    const bp = breakpointMap.get(lineNum)
+    if (bp && !bp.disabled) {
+      return BREAKPOINT_RESULT.HIDDEN_BREAK
+    }
+  }
   const bp = breakpointMap.get(s6502.PC) ||
     breakpointMap.get(-1) ||
     breakpointMap.get(instr | BRK_INSTR) ||
@@ -319,16 +306,7 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
   return processBreakpointActions(bp, vLo, vHi, code)
 }
 
-let doInstructionTrail = false
-let instrTrailMax = 40000
-let instrTrailCount = 0
-export const setInstructionTrail = (enable: boolean, max = 0) => {
-  doInstructionTrail = enable
-  if (max > 0) instrTrailMax = max
-  instrTrailCount = 0
-}
-
-export const processInstruction = () => {
+export const processInstruction = (updateTrace: ((str: string) => void) | null = null) => {
   let cycles = 0
   const PC1 = s6502.PC
   // Do not trigger watchpoints. Those should only trigger on true read/writes.
@@ -339,16 +317,21 @@ export const processInstruction = () => {
   const vLo = (code.bytes > 1) ? memGet(s6502.PC + 1, false) : -1
   const vHi = (code.bytes > 2) ? memGet(s6502.PC + 2, false) : 0
 
-  if (!isGameMode) {
+  if (!runOnlyMode()) {
     const bpResult = hitBreakpoint(instr, vLo, vHi, code)
-    if (bpResult === BREAKPOINT_RESULT.BREAK) {
-      doSetRunMode(RUN_MODE.PAUSED)
+    if (bpResult === BREAKPOINT_RESULT.BREAK || bpResult === BREAKPOINT_RESULT.HIDDEN_BREAK) {
+      doSetRunMode(RUN_MODE.PAUSED, bpResult !== BREAKPOINT_RESULT.HIDDEN_BREAK)
       return -1
     } else if (bpResult === BREAKPOINT_RESULT.ACTION) {
       // If we had a breakpoint action that did not halt, we want to leave
       // here but continue running. This will then call immediately back
       // into processInstruction. We need to do this in case the action
       // change the program counter or one of the values in memory.
+      // However, if we are still at the same instruction, we want to skip
+      // the breakpoint check the next time around to avoid an infinite loop.
+      if (s6502.PC === PC1) {
+        breakpointSkipOnce = true
+      }
       return 0
     }
 
@@ -356,25 +339,30 @@ export const processInstruction = () => {
   }
 
   const fn = specialJumpTable.get(PC1)
-  if (fn && !SWITCHES.INTCXROM.isSet) {
+  if (fn && (!SWITCHES.INTCXROM.isSet || (PC1 & 0xF000) !== 0xC000)) {
     fn()
   }
 
   // *** EXECUTE A SINGLE INSTRUCTION ***
   cycles = code.execute(vLo, vHi)
 
-  if (doInstructionTrail && instrTrailCount < instrTrailMax) {
+  if (updateTrace) {
     // Do not output during the Apple II's WAIT subroutine
     if ((PC1 < 0xFCA8 || PC1 > 0xFCB3)) {
-      const index = ("000000" + instrTrailCount.toString()).slice(-7)
-      const ins = getInstructionString(PC1, code, vLo, vHi) + "          "
-      const count = ("          " + s6502.cycleCount.toString()).slice(-10)
-      const out = `${index} ${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}`
-      if (instrTrailCount === 0) console.clear()
-      console.log(out)
-      instrTrailCount++
-  //   instrTrail[posTrail] = out
-  //   posTrail = (posTrail + 1) % instrTrail.length
+//      const index = ("000000" + instrTrailCount.toString()).slice(-7)
+      const ins = getInstructionString(PC1, code, vLo, vHi, s6502.PStatus) + "          "
+      const count = ("00000000" + s6502.cycleCount.toString()).slice(-8)
+      let out = `${count}  ${ins.slice(0, 29)}  ${getProcessorStatus()}`
+      let endsubroutine = out.indexOf("JMP")
+      if (endsubroutine === -1) {
+        endsubroutine = out.indexOf("RTS")
+      }
+      if (endsubroutine !== -1) {
+        let tmp = out.slice(endsubroutine, endsubroutine + 15)
+        tmp = tmp.replaceAll(" ", "_")
+        out = out.slice(0, endsubroutine) + tmp + out.slice(endsubroutine + 15)
+      }
+      updateTrace(out)
     }
   }
 

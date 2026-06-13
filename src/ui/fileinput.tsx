@@ -22,7 +22,7 @@ const FileInput = (props: DisplayProps) => {
       fileread.readAsText(file)
     } else {
       const buffer = await file.arrayBuffer()
-      if (fname.endsWith(".bin")) {
+      if (fname.toLowerCase().endsWith(".bin")) {
         // Display dialog, ask for address for where to put into memory
         setBinaryBuffer(new Uint8Array(buffer))
         if (buffer.byteLength > 0) {

@@ -21,11 +21,11 @@ export const Droplist = (props: DroplistProps) => {
       let maxWidth = 45  // minimum width
       for (const option of selectRef.current.options) {
         spanRef.current.textContent = option.textContent || ""
-        const spanWidth = spanRef.current.getBoundingClientRect().width + 5
+        const spanWidth = spanRef.current.getBoundingClientRect().width + 25
         maxWidth = Math.max(maxWidth, spanWidth)
       }
       // The narrow width should be enough for a single character
-      selectRef.current.style.width = `${props.narrow ? 40 : maxWidth}px`
+      selectRef.current.style.width = `${props.narrow ? 35 : maxWidth}px`
     }
   }, [props.values, props.narrow])
 
@@ -38,7 +38,7 @@ export const Droplist = (props: DroplistProps) => {
       ref={selectRef}
       name={props.name ? props.name : "droplist"}
       className={"droplist-edit" + (props.monospace ? " use-monospace" : "")}
-      style={{ paddingTop: "3px", paddingBottom: "3px" }}
+      style={{ paddingTop: "3px", paddingBottom: "3px", minWidth: "2em" }}
       disabled={props.disabled}
       onChange={handleValueChange}>
       {props.values.map((value, i) => (

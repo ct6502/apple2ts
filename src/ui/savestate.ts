@@ -1,6 +1,6 @@
 import { BreakpointMap } from "../common/breakpoint"
 import { MAX_DRIVES, RUN_MODE } from "../common/utility"
-import { setPreferenceBreakpoints, setPreferenceDebugMode, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
+import { setPreferenceBoolean, setPreferenceBreakpoints, setPreferenceMockingboardMode, setPreferenceSpeedMode } from "./localstorage"
 import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
@@ -19,7 +19,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const displayState: DisplaySaveState = {
     name: "Apple2TS Emulator",
     date: datetime,
-    version: 1.0,
+    version: 2.0,
     ...uiState,
     audioEnable: isAudioEnabled(),
     mockingboardMode: getMockingboardMode(),
@@ -57,9 +57,9 @@ export const RestoreSaveState = (fileContents: string) => {
   const sState: EmulatorSaveState = JSON.parse(fileContents)
   passRestoreSaveState(sState)
   const displayState = sState.emulator
-  // In an old version, property was renamed from uppercase to capsLock
+  // In an old version, property was renamed from uppercase to lowercaseMode
   if (displayState && ("uppercase" in displayState)) {
-    displayState.capsLock = displayState["uppercase"] as boolean
+    displayState.lowercaseMode = displayState["uppercase"] as boolean
   }
   setUIState(displayState as UIState)
   if (displayState?.audioEnable !== undefined) {
@@ -72,7 +72,7 @@ export const RestoreSaveState = (fileContents: string) => {
     setPreferenceSpeedMode(displayState.speedMode)
   }
   if (displayState?.isDebugging !== undefined) {
-    setPreferenceDebugMode(displayState.isDebugging)
+    setPreferenceBoolean("debugMode", displayState.isDebugging)
   }
   const runMode = displayState?.runMode ? (displayState.runMode as RUN_MODE) : RUN_MODE.RUNNING
   passSetRunMode(runMode)

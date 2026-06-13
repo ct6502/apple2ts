@@ -1,7 +1,7 @@
-import { memGetC000, memSetC000 } from "./memory"
+import { getCurrentMachineName, memGet, memGetC000, memSetC000 } from "./memory"
 import { clearKeyStrobe, popKey } from "./devices/keyboard"
 import { passClickSpeaker } from "./worker2main"
-import { resetJoystick, checkJoystickValues } from "./devices/joystick"
+import { resetJoystick, checkJoystickValues, checkPushButtonValues } from "./devices/joystick"
 import { s6502 } from "./instructions"
 import { toHex } from "../common/utility"
 
@@ -44,12 +44,21 @@ const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
 // Random number generator for bus noise on the cassette, speaker, and joystick
 // soft switches. On the Apple II, tests show that when graphics are on, the
 // random numbers tend to oscillate between 0 and 0xA0. When graphics are off,
-// the numbers range from 0 to 0xFF. However, issue #117
+// the numbers range from 0 to 0xFF. However, issue 117
 // (https://github.com/ct6502/apple2ts/issues/117) involved a game that was
 // broken by the random numbers being too high. So we will limit the random
 // numbers to 0-0xB4 for now. This is still random enough for games like
-// Castle Wolfenstein (which rely on the cassette noise).
+// Castle Wolfenstein (which relies on the cassette noise).
 const rand = () => Math.floor(0xB4 * Math.random())
+
+const fullrand = () => Math.floor(256 * Math.random())
+
+const mirrorHighBitPlusRand = (addr: number) => {
+  // The high bit of $C068...$C06F mirrors the high bit of $C060...$C067,
+  // and the rest of the bits are random.
+  const value = memGetC000(addr & 0xFFF7)
+  memSetC000(addr, (value & 0x80) | (rand() & 0x7F))
+}
 
 // let prevCount = 0
 
@@ -118,21 +127,27 @@ export const SWITCHES = {
   // Watch out - the addresses are in reverse order - $C05E is AN3 "off" but double hires "on"
   DHIRES: NewSwitch(0xC05F, 0xC05E, 0),
   CASSIN1: NewSwitch(0, 0, 0xC060, false, () => {memSetC000(0xC060, rand())}),
-  PB0: NewSwitch(0, 0, 0xC061),  // status location, not a switch
-  PB1: NewSwitch(0, 0, 0xC062),  // status location, not a switch
-  PB2: NewSwitch(0, 0, 0xC063),  // status location, not a switch
+  PB0: NewSwitch(0, 0, 0xC061, false, (addr) => {checkPushButtonValues(addr, rand())}),
+  PB1: NewSwitch(0, 0, 0xC062, false, (addr) => {checkPushButtonValues(addr, rand())}),
+  PB2: NewSwitch(0, 0, 0xC063, false, (addr) => {checkPushButtonValues(addr, rand())}),
   JOYSTICK0: NewSwitch(0, 0, 0xC064, false,
-    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   JOYSTICK1: NewSwitch(0, 0, 0xC065, false,
-      (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   JOYSTICK2: NewSwitch(0, 0, 0xC066, false,
-    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
   JOYSTICK3: NewSwitch(0, 0, 0xC067, false,
-    (addr, cycleCount) => {checkJoystickValues(cycleCount)}),
-  CASSIN2: NewSwitch(0, 0, 0xC068, false, () => {memSetC000(0xC068, rand())}),
-  FASTCHIP_LOCK: NewSwitch(0xC06A, 0, 0),   // used by Total Replay
-  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0, 0), // used by Total Replay
-  FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0),  // used by Total Replay
+    (addr, cycleCount) => {checkJoystickValues(cycleCount, rand())}),
+  // The high bit of $C068...$C06F mirrors the high bit of $C060...$C067.
+  // Some of these have names but others don't.
+  CASSIN2: NewSwitch(0, 0, 0xC068, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  C069: NewSwitch(0, 0, 0xC069, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  FASTCHIP_LOCK: NewSwitch(0xC06A, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),   // used by Total Replay
+  FASTCHIP_ENABLE: NewSwitch(0xC06B, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}), // used by Total Replay
+  C06C: NewSwitch(0, 0, 0xC06C, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),  // used by Total Replay
+  C06E: NewSwitch(0, 0, 0xC06E, false, (addr) => {mirrorHighBitPlusRand(addr)}),
+  C06F: NewSwitch(0, 0, 0xC06F, false, (addr) => {mirrorHighBitPlusRand(addr)}),
   JOYSTICKRESET: NewSwitch(0, 0, 0xC070, false, (addr, cycleCount) => {
     resetJoystick(cycleCount)
     memSetC000(0xC070, rand())
@@ -201,13 +216,37 @@ const video7clock = (onoff: boolean) => {
 // occur so frequently...
 const skipDebugFlags = [0xC000, 0xC001, 0xC00D, 0xC00F, 0xC010, 0xC030, 0xC054, 0xC055, 0xC01F]
 
+// Get the corresponding byte from HGR memory $2000-$3FFF
+const hgrAddress = (scanline: number, column: number) => {
+  return 0x2000 + 0x400 * (scanline % 8) +
+    0x80 * (Math.trunc(scanline / 8) & 7) +
+    40 * Math.trunc(scanline / 64) +
+    column
+}
+
 export const checkSoftSwitches = (addr: number,
   calledFromMemSet: boolean, cycleCount: number) => {
-    // Set this address to something (like 0) to enable debugging of softswitches.
+
+  // Set this address to something (like 0) to enable debugging of softswitches.
   if (addr > 0xFFFFF && !skipDebugFlags.includes(addr)) {
     const s = memGetC000(addr) > 0x80 ? 1 : 0
     console.log(`${cycleCount} $${toHex(s6502.PC)}: $${toHex(addr)} [${s}] ${calledFromMemSet ? "write" : ""}`)
   }
+
+  // Apple II+ compatibility: treat $C000-$C01F as keyboard/strobe and bus noise.
+  // Do not use IIe MMU/status semantics in this range.
+  if (addr <= 0xC01F && getCurrentMachineName() === "APPLE2P") {
+    if (!calledFromMemSet && addr <= 0xC00F) {
+      popKey()
+    }
+    if (addr === 0xC010) {
+      clearKeyStrobe()
+    } else if (addr !== 0xC000) {
+      memSetC000(addr, rand())
+    }
+    return
+  }
+
   // Handle banked-RAM soft switches, since these have duplicate addresses
   // and need to call our special function.
   if (addr >= 0xC080 && addr <= 0xC08F) {
@@ -231,6 +270,10 @@ export const checkSoftSwitches = (addr: number,
     clearKeyStrobe()
   }
   if (sswitch1.setFunc) {
+    // Be sure to set the isSet before calling our custom set function.
+    if (addr === sswitch1.offAddr || addr === sswitch1.onAddr) {
+      sswitch1.isSet = (addr === sswitch1.onAddr)
+    }
     sswitch1.setFunc(addr, cycleCount)
     return
   }
@@ -258,7 +301,24 @@ export const checkSoftSwitches = (addr: number,
       memSetC000(sswitch1.isSetAddr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
     }
     // Many games expect random "noise" from these soft switches.
-    if (addr >= 0xC020) memSetC000(addr, rand())
+    if (addr >= 0xC020) {
+      let value: number
+      if (addr >= 0xC050 && addr <= 0xC05F) {
+        // 262 scanlines * 65 cpu cycles/scanline = 17030 cycles per frame
+        const modCycles = (cycleCount % 17030) - 4550
+        if (modCycles >= 0) {
+          const scanline = Math.floor(modCycles / 65)
+          const pixelInLine = cycleCount % 65
+          const hgrAddr = hgrAddress(scanline, pixelInLine)
+          value = memGet(hgrAddr)
+        } else {
+          value = fullrand()
+        }
+      } else {
+        value = rand()
+      }
+      memSetC000(addr, value)
+    }
   } else if (addr === sswitch1.isSetAddr) {
     const value = memGetC000(addr)
     memSetC000(addr, sswitch1.isSet ? (value | 0x80) : (value & 0x7F))
@@ -346,4 +406,15 @@ export const getSoftSwitchDescriptions = () => {
   }
   SoftSwitchDescriptions[0xC000] = "C000 KBRD/STORE80-OFF"
   return SoftSwitchDescriptions
+}
+
+export const syncSoftSwitchStatusFlags = () => {
+  for (const key in SWITCHES) {
+    const keyTyped = key as keyof typeof SWITCHES
+    const sswitch = SWITCHES[keyTyped]
+    if (sswitch.isSetAddr) {
+      const value = memGetC000(sswitch.isSetAddr)
+      memSetC000(sswitch.isSetAddr, sswitch.isSet ? (value | 0x80) : (value & 0x7F))
+    }
+  }
 }

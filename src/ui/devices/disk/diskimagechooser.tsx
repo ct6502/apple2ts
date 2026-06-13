@@ -15,9 +15,11 @@ export const DiskImageChooser = (props: DisplayProps) => {
     handleSetDiskFromFile(disk, props.updateDisplay)
   }
 
+  const isTouchDevice = "ontouchstart" in document.documentElement
+
   return (
     <div style={{ userSelect: "none" }}>
-      <img className="disk-image"
+      <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
         src={floppyDisks} alt="disks"
         id="tour-disk-images"
         title="Choose disk image"

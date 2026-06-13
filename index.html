@@ -16,11 +16,16 @@
     -->
     <link rel="manifest" href="manifest.json" />
     
+    <!-- Preload custom fonts -->
+    <link rel="preload" href="src/ui/fonts/PrintChar21.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="src/ui/fonts/PRNumber3.woff2" as="font" type="font/woff2" crossorigin />
+    
     <!-- Asset Registry Script -->
     <script>
       window.assetRegistry = {
         // Images
         bgImage: "assets/crt.jpg",
+        bgImgApple2Plus: "assets/nec_monitor.jpg",
         disk2off: "assets/disk2off.png",
         disk2on: "assets/disk2on.png",
         disk2offEmpty: "assets/disk2off-empty.png",
@@ -37,9 +42,6 @@
       };
     </script>
     
-    <script type="text/javascript" src="js/onedrive.js"></script>
-    <script type="text/javascript" src="js/google_api.js"></script>
-    <script type="text/javascript" src="js/google_client.js"></script>
     <title>Apple2TS</title>
   </head>
   <body>

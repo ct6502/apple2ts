@@ -5,31 +5,22 @@
       "name": "Launch Chrome",
       "type": "chrome",
       "request": "launch",
-      "url": "https://localhost:6502",
-      "webRoot": "${workspaceFolder}/src",
-      "sourceMapPathOverrides": {
-        "webpack:///src/*": "${webRoot}/*"
-      }
+      "url": "http://localhost:6502",
+      "webRoot": "${workspaceFolder}"
     },
     {
       "name": "Launch Firefox",
       "type": "firefox",
       "request": "launch",
-      "url": "https://localhost:6502",
-      "webRoot": "${workspaceFolder}/src",
-      "pathMappings": [
-        {
-          "url": "http://localhost:6502/src",
-          "path": "${workspaceFolder}/src"
-        }
-      ]
+      "url": "http://localhost:6502",
+      "webRoot": "${workspaceFolder}"
     },
     {
       "name": "Attach to Chrome",
       "port": 9222,
       "request": "attach",
       "type": "chrome",
-      "url": "https://localhost:6502",
+      "url": "http://localhost:6502",
       "webRoot": "${workspaceFolder}"
     }
   ]

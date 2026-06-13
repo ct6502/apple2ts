@@ -1,11 +1,12 @@
 import { SWITCHES, checkSoftSwitches } from "./softswitches"
 import { s6502 } from "./instructions"
+import { romBase64 as romBase64p } from "./roms/rom_2+"
 import { romBase64 as romBase64e } from "./roms/rom_2e"
 import { romBase64 as romBase64u } from "./roms/rom_2e_unenhanced"
 // import { edmBase64 } from "./roms/edm_2e"
 import { Buffer } from "buffer"
 // import { isDebugging } from "./motherboard";
-import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress, toHex } from "../common/utility"
+import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress } from "../common/utility"
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
 
@@ -55,10 +56,19 @@ const RamWorksBankSet = (bank: number) => {
 // Include one extra slot, to avoid needing memory checks for > 65535.
 export const addressGetTable = (new Array<number>(257)).fill(0)
 const addressSetTable = (new Array<number>(257)).fill(0)
+let currentMachineName: MACHINE_NAME = "APPLE2EE"
+
+export const getCurrentMachineName = () => {
+  return currentMachineName
+}
 
 export const doSetRom = (machineName: MACHINE_NAME) => {
+  currentMachineName = machineName
   let romStr = ""
   switch (machineName) {
+    case "APPLE2P":
+      romStr = romBase64p
+      break
     case "APPLE2EU":
       romStr = romBase64u
       break
@@ -78,17 +88,15 @@ export const doSetRom = (machineName: MACHINE_NAME) => {
   // Hack: The IIe enhanced checks 3 bytes in each slot to determine if there
   // is a disk drive. If memory locations $Cx01, $Cx03, and $Cx05 contain
   // the values $20, $00, $03 then it's a disk drive (hard drive or floppy).
-  // The IIe unenhanced checks 4 bytes. The last byte checked is at $C707 and
-  // is expected to be $3C. However, the value will only be $3C for a
+  // The II+ and IIe unenhanced checks 4 bytes. The last byte checked is at
+  // $C707 and is expected to be $3C. However, the value will only be $3C for a
   // floppy drive. A SmartPort hard drive will have the value $00.
-  // The result is that on an unenhanced IIe, the SmartPort hard drive will
-  // be skipped and the machine will always try to boot slot 6.
+  // The result is that on a II+ or unenhanced IIe, the SmartPort hard drive
+  // will be skipped and the machine will always try to boot slot 6.
   // To work around this, hack the monitor ROM to only check the first
   // 3 bytes. This will allow the SmartPort hard drive to be booted.
-  if (machineName === "APPLE2EU") {
-    // Change LDA #$07 to LDA #$05
-    rom[0xFABB - 0xC000] = 0x05
-  }
+  // Change LDA #$07 to LDA #$05, do for all ROMs.
+  rom[0xFABB - 0xC000] = 0x05
   memory.set(rom, ROMmemoryStart)
 }
 
@@ -601,35 +609,44 @@ export const getTextPageAsString = () => {
   return Buffer.from(getTextPage().map((n) => (n &= 127))).toString()
 }
 
+const hiResSingle = new Uint8Array(40 * 192)
+const hiResDouble = new Uint8Array(80 * 192)
+let hiResCurrent = hiResSingle
+let hiResLines = 192
+
+export const exportMemoryToHiresLine = (line: number) => {
+  const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
+  const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
+  // Determine which hi-res buffer to use
+  if (doubleRes || SWITCHES.VIDEO7_MONO.isSet || SWITCHES.VIDEO7_160.isSet || video7foreground) {
+    if (line === 0) {
+      hiResCurrent = hiResDouble
+      hiResLines = SWITCHES.MIXED.isSet ? 160 : 192
+    }
+    // Only select second 80-column text page if STORE80 is also OFF
+    const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
+    const addr = hiresLineToAddress(pageOffset, line)
+    for (let i = 0; i < 40; i++) {
+      hiResDouble[line * 80 + 2 * i + 1] = memory[addr + i]
+      hiResDouble[line * 80 + 2 * i] = memory[RamWorksMemoryStart + addr + i]
+    }
+  } else {
+    if (line === 0) {
+      hiResCurrent = hiResSingle
+      hiResLines = SWITCHES.MIXED.isSet ? 160 : 192
+    }
+    const pageOffset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
+    const addr = pageOffset + 40 * Math.trunc(line / 64) +
+      1024 * (line % 8) + 128 * (Math.trunc(line / 8) & 7)
+    hiResSingle.set(memory.slice(addr, addr + 40), line * 40)
+  }
+}
+
 export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }
-  const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
-  const video7foreground = SWITCHES.DHIRES.isSet && !SWITCHES.COLUMN80.isSet && SWITCHES.STORE80.isSet
-  const nlines = SWITCHES.MIXED.isSet ? 160 : 192
-  if (doubleRes || SWITCHES.VIDEO7_MONO.isSet || SWITCHES.VIDEO7_160.isSet || video7foreground) {
-    // Only select second 80-column text page if STORE80 is also OFF
-    const pageOffset = (SWITCHES.PAGE2.isSet && !SWITCHES.STORE80.isSet) ? 0x4000 : 0x2000
-    const hgrPage = new Uint8Array(80 * nlines)
-    for (let j = 0; j < nlines; j++) {
-      const addr = hiresLineToAddress(pageOffset, j)
-      for (let i = 0; i < 40; i++) {
-        hgrPage[j * 80 + 2 * i + 1] = memory[addr + i]
-        hgrPage[j * 80 + 2 * i] = memory[RamWorksMemoryStart + addr + i]
-      }
-    }
-    return hgrPage
-  } else {
-    const pageOffset = SWITCHES.PAGE2.isSet ? 0x4000 : 0x2000
-    const hgrPage = new Uint8Array(40 * nlines)
-    for (let j = 0; j < nlines; j++) {
-      const addr = pageOffset + 40 * Math.trunc(j / 64) +
-        1024 * (j % 8) + 128 * (Math.trunc(j / 8) & 7)
-      hgrPage.set(memory.slice(addr, addr + 40), j * 40)
-    }
-    return hgrPage
-  }
+  return (hiResLines === 192) ? hiResCurrent : hiResCurrent.slice(0, 40 * hiResLines)
 }
 
 export const getDataBlock = (addr: number) => {
@@ -654,21 +671,21 @@ export const matchMemory = (addr: number, data: number[]) => {
 }
 
 export const getZeroPage = () => {
-  const status = [""]
   const offset = addressGetTable[0]
   const mem = memory.slice(offset, offset + 256)
-  status[0] = "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F"
-  for (let j = 0; j < 16; j++) {
-    let s = toHex(16 * j) + ":"
-    for (let i = 0; i < 16; i++) {
-      s += " " + toHex(mem[j * 16 + i])
-    }
-    status[j + 1] = s
-  }
-  return status.join("\n")
+  return mem
 }
 
 export const getBasePlusAuxMemory = () => {
   return memory.slice(0, RamWorksMemoryStart + 0x10000)
+}
+
+export const getMemoryDump = () => {
+  const dump = new Uint8Array(0x10000)
+  for (let page = 0; page < 256; page++) {
+    const offset = addressGetTable[page]
+    dump.set(memory.slice(offset, offset + 256), page * 256)
+  }
+  return dump
 }
 

@@ -6,6 +6,34 @@ import { CustomGamepad } from "./customgamepad"
 // Keep these outside so we can have both X and Y axes set at the same time.
 const arrowGamePad = [0, 0]
 
+// Cache the last gamepad state to avoid sending duplicate updates
+let lastGamepadState: EmuGamepad[] = []
+
+const AXIS_THRESHOLD = 0.01 // Ignore changes smaller than this
+
+const gamepadStateChanged = (current: EmuGamepad[], previous: EmuGamepad[]): boolean => {
+  if (current.length !== previous.length) return true
+  
+  for (let i = 0; i < current.length; i++) {
+    const curr = current[i]
+    const prev = previous[i]
+    
+    // Check axes with threshold
+    if (curr.axes.length !== prev.axes.length) return true
+    for (let j = 0; j < curr.axes.length; j++) {
+      if (Math.abs(curr.axes[j] - prev.axes[j]) > AXIS_THRESHOLD) return true
+    }
+    
+    // Check buttons
+    if (curr.buttons.length !== prev.buttons.length) return true
+    for (let j = 0; j < curr.buttons.length; j++) {
+      if (curr.buttons[j] !== prev.buttons[j]) return true
+    }
+  }
+  
+  return false
+}
+
 const convertArrowGamepadToValue = (index: number) => {
   const indexToValue = [0, 0.25, 0.5, 0.75, 1, 0]
   if (index < 0) {
@@ -42,6 +70,22 @@ const checkArrowKeyGamepadValues = () => {
 
 let customGamepad: (CustomGamepad | null) = null
 
+// Force browser to update gamepad state by listening to events,
+// even if we don't really do anything with the events.
+// Otherwise the browser will sometimes not update the state.
+let gamepadEventListenersAdded = false
+export const ensureGamepadEventListeners = () => {
+  if (!gamepadEventListenersAdded) {
+    gamepadEventListenersAdded = true
+    window.addEventListener("gamepadconnected", () => {
+      console.log("Gamepad connected")
+    })
+    window.addEventListener("gamepaddisconnected", () => {
+      console.log("Gamepad disconnected")
+    })
+  }
+}
+
 export const setCustomGamepad = (buttons: boolean[] | null, axes: number[] | null) => {
   if (!customGamepad) {
     customGamepad = new CustomGamepad()
@@ -66,6 +110,22 @@ const getGamepads = () => {
   return gamepads
 }
 
+// Some controllers report the D-pad as special values for axes[9].
+// Convert those to standard axes[0] and axes[1] values.
+const checkXboxDpad = (axes: number[]) => {
+  if (axes.length >= 10) {
+    if ((Math.abs(axes[9] - 0.71)) < AXIS_THRESHOLD) {
+      axes[0] = -1
+    } else if ((Math.abs(axes[9] - 0.14)) < AXIS_THRESHOLD) {
+      axes[1] = 1
+    } else if ((Math.abs(axes[9] - (-1.0))) < AXIS_THRESHOLD) {
+      axes[1] = -1
+    } else if ((Math.abs(axes[9] - (-0.43))) < AXIS_THRESHOLD) {
+      axes[0] = 1
+    }
+  }
+}
+
 export const checkGamepad = () => {
   const gamepads = getGamepads()
   // If we don't have a gamepad, see if we're using our arrow keys as a joystick
@@ -77,14 +137,21 @@ export const checkGamepad = () => {
   }
   const gamePad: EmuGamepad[] = []
   for (let i = 0; i < gamepads.length; i++) {
-    const axes = gamepads[i]?.axes
     const buttons = gamepads[i]?.buttons
-    if (axes && buttons) {
-      gamePad.push({axes: axes.slice(), buttons: buttons.map(b => b.pressed)})
+    if (gamepads[i]?.axes && buttons) {
+      const axes = (gamepads[i].axes).slice()
+      if (axes.length >= 10) {
+        checkXboxDpad(axes)
+      }
+      gamePad.push({axes: axes, buttons: buttons.map(b => b.pressed)})
     }
   }
   if (gamePad.length > 0) {
-    passSetGamepads(gamePad)
+    // Only send update if state has changed
+    if (gamepadStateChanged(gamePad, lastGamepadState)) {
+      lastGamepadState = gamePad
+      passSetGamepads(gamePad)
+    }
   }
 }
 

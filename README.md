@@ -167,22 +167,33 @@ gem install github_changelog_generator
 
 You may need to update to Ruby v3.x to install this gem.
 
-Go through the commits, and add any missing tags. For a given commit sha (say `1befdec`), checkout the commit, force the date to be the commit date, and then add the tag:
+If you don't already have one, [generate a Github token](https://github.com/settings/tokens/new?description=GitHub%20Changelog%20Generator%20token) to run the Changelog Generator script with authentication. You only need "repo" scope for private repositories.
+
+To retroactively generate a changelog, first go through the commits, and add any missing tags. For a given commit sha (say `1befdec`), checkout the commit, force the date to be the commit date, and then add the tag:
 
 ```sh
-git checkout 1befdec  # skip this if you want changelog for most recent code
+git checkout 1befdec
 GIT_COMMITTER_DATE="$(git show --format=%aD | head -1)"
-git tag -a v3.1 -m"v3.1"  # bump this each time, and change it here as well
+git tag -a v1.2.3 -m"v1.2.3"
 git push origin --tags
 git checkout main
 ```
 
-If you don't already have one, [generate a Github token](https://github.com/settings/tokens/new?description=GitHub%20Changelog%20Generator%20token) to run the Changelog Generator script with authentication. You only need "repo" scope for private repositories.
+Do this repeatedly until you've added all of your missing tags.
 
-Now run the script:
+To create or update the changelog, run the script:
 
 ```sh
-github_changelog_generator --token xxxxx -u ct6502 -p apple2ts
+# Extract version from package.json
+(optional) npm version patch (or minor/major) - do not do "git tag"
+VERSION=$(node -p "require('./package.json').version")
+# Generate changelog with the version from package.json
+github_changelog_generator --token $GITHUB_TOKEN -u ct6502 -p apple2ts --future-release "v$VERSION"
+git add .
+git commit -m "Update CHANGELOG for v$VERSION"
+# Now create and push the tag
+git tag -a "v$VERSION" -m"v$VERSION"
+git push --follow-tags
 ```
 
 ## Apple II ROMs
@@ -217,6 +228,8 @@ Don't forget to append the trailing back quote ` at the end of the file.
 ![Process Instruction](images/Process%20Instruction.png)
 
 ## Additional Info and Sponsors
+
+<a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
 
 [![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
 

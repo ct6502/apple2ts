@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
   faDisplay,
 } from "@fortawesome/free-solid-svg-icons"
-import { setPreferenceColorMode, setPreferenceCrtDistortion, setPreferenceGhosting, setPreferenceShowScanlines } from "../localstorage"
+import { setPreferenceBoolean, setPreferenceColorMode } from "../localstorage"
 import { getColorModeSVG, getShowScanlinesSVG } from "../img/iconfunctions"
 import PopupMenu from "../controls/popupmenu"
 import { getColorMode, getCrtDistortion, getGhosting, getShowScanlines } from "../ui_settings"
@@ -18,7 +18,6 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const crtDistortion = getCrtDistortion()
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
-
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
   }
@@ -60,7 +59,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
             isSelected: () => { return showScanlines },
             onClick: () => {
               document.body.style.setProperty("--scanlines-display", showScanlines ? "none" : "block")
-              setPreferenceShowScanlines(!showScanlines)
+              setPreferenceBoolean("showScanlines", !showScanlines)
               props.updateDisplay()
             }
           },
@@ -68,7 +67,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
             label: "Phosphor Ghosting",
             isSelected: () => { return ghosting },
             onClick: () => {
-              setPreferenceGhosting(!ghosting)
+              setPreferenceBoolean("ghosting", !ghosting)
               props.updateDisplay()
             }
           },
@@ -76,7 +75,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
             label: "CRT Distortion",
             isSelected: () => { return crtDistortion },
             onClick: () => {
-              setPreferenceCrtDistortion(!crtDistortion)
+              setPreferenceBoolean("crtDistortion", !crtDistortion)
               props.updateDisplay()
             }
           },

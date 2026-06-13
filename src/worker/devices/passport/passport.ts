@@ -24,6 +24,7 @@ const cycleCountCallback = (slot: number) => {
   {
     const cycleDelta = s6502.cycleCount - prevCycleCount
     timer.update(cycleDelta)
+    acia.update(cycleDelta)
   }
   prevCycleCount = s6502.cycleCount
 }
@@ -112,7 +113,7 @@ const handleMIDIIO = (addr: number, val = -1): number => {
         else
         {
           result = acia.status
-          //console.log("Read ACIAControl: " + result.toString(16))
+          //console.log("Read ACIAStatus: " + result.toString(16))
         }
         break
 

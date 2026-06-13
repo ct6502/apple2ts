@@ -1,0 +1,8 @@
+{
+  "name": "apple2ts-cli",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "apple2ts-cli": "./index.mjs"
+  }
+}

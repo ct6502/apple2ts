@@ -1,5 +1,115 @@
 # Changelog
 
+## [v3.4.0](https://github.com/ct6502/apple2ts/tree/v3.4.0) (2026-06-13)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.4...v3.4.0)
+
+**Implemented enhancements:**
+
+- Virtual Keyboard\(especially for mobile device, landscape mode\) [\#227](https://github.com/ct6502/apple2ts/issues/227)
+
+**Fixed bugs:**
+
+- Improve on disk handling to make Algernon works [\#230](https://github.com/ct6502/apple2ts/issues/230)
+
+## [v3.3.4](https://github.com/ct6502/apple2ts/tree/v3.3.4) (2026-05-27)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.3...v3.3.4)
+
+**Implemented enhancements:**
+
+- Link Builder to make it easier to construct an Apple2TS URL [\#228](https://github.com/ct6502/apple2ts/issues/228)
+- Add MCP server interface [\#218](https://github.com/ct6502/apple2ts/issues/218)
+
+**Fixed bugs:**
+
+- Alt causes problems in most browsers on Windows [\#224](https://github.com/ct6502/apple2ts/issues/224)
+- Mac desktop app doesn't show entire UI until resized [\#223](https://github.com/ct6502/apple2ts/issues/223)
+
+**Merged pull requests:**
+
+- Fixes \#224 - Windows Alt key problems [\#225](https://github.com/ct6502/apple2ts/pull/225) ([sicklittlemonkey](https://github.com/sicklittlemonkey))
+
+## [v3.3.3](https://github.com/ct6502/apple2ts/tree/v3.3.3) (2026-05-14)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.2...v3.3.3)
+
+## [v3.3.2](https://github.com/ct6502/apple2ts/tree/v3.3.2) (2026-05-14)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.0...v3.3.2)
+
+**Implemented enhancements:**
+
+- Allow PNG screenshot [\#222](https://github.com/ct6502/apple2ts/issues/222)
+- Allow changing font size on Mac desktop app [\#221](https://github.com/ct6502/apple2ts/issues/221)
+- Allow resizing of disassembly window [\#220](https://github.com/ct6502/apple2ts/issues/220)
+
+**Fixed bugs:**
+
+- MouseText Incorrect for //e //c [\#219](https://github.com/ct6502/apple2ts/issues/219)
+
+## [v3.3.0](https://github.com/ct6502/apple2ts/tree/v3.3.0) (2026-04-01)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.2.0...v3.3.0)
+
+**Implemented enhancements:**
+
+- Enhancement - Add support for Sirius Software Joyport [\#213](https://github.com/ct6502/apple2ts/issues/213)
+- Enhancement - Add Applesoft Debugger Features [\#202](https://github.com/ct6502/apple2ts/issues/202)
+- Upgrade Total Replay to v5.3 [\#97](https://github.com/ct6502/apple2ts/issues/97)
+
+**Fixed bugs:**
+
+- BASIC Renumber does not correctly handle "if then" line numbers [\#214](https://github.com/ct6502/apple2ts/issues/214)
+
+**Merged pull requests:**
+
+- API server & CLI for Apple2TS [\#217](https://github.com/ct6502/apple2ts/pull/217) ([iolo](https://github.com/iolo))
+- Fixed broken Quarx URL [\#216](https://github.com/ct6502/apple2ts/pull/216) ([boredsenseless](https://github.com/boredsenseless))
+- MIDI Updates [\#215](https://github.com/ct6502/apple2ts/pull/215) ([code-bythepound](https://github.com/code-bythepound))
+
+## [v3.2.0](https://github.com/ct6502/apple2ts/tree/v3.2.0) (2026-02-17)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.1.1...v3.2.0)
+
+**Implemented enhancements:**
+
+- Enhancement Add Return Key to UI, or Soft Keyboard [\#210](https://github.com/ct6502/apple2ts/issues/210)
+
+**Fixed bugs:**
+
+- SPF - Stress ProDOS Filesystem Hangs [\#212](https://github.com/ct6502/apple2ts/issues/212)
+- Speed warp seems to have stopped working [\#201](https://github.com/ct6502/apple2ts/issues/201)
+
+**Merged pull requests:**
+
+- Add Apple II+ mode with II+-accurate text decoding/rendering [\#211](https://github.com/ct6502/apple2ts/pull/211) ([mocha-moonatic](https://github.com/mocha-moonatic))
+- Merge pull request \#207 from ct6502/main [\#208](https://github.com/ct6502/apple2ts/pull/208) ([ct6502](https://github.com/ct6502))
+- Avoid infinite loop with breakpoint actions [\#207](https://github.com/ct6502/apple2ts/pull/207) ([ct6502](https://github.com/ct6502))
+- merge [\#203](https://github.com/ct6502/apple2ts/pull/203) ([ct6502](https://github.com/ct6502))
+
+## [v3.1.1](https://github.com/ct6502/apple2ts/tree/v3.1.1) (2026-01-17)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.1...v3.1.1)
+
+**Implemented enhancements:**
+
+- iPhone support [\#198](https://github.com/ct6502/apple2ts/issues/198)
+- Add a no UI theme for embedded use? [\#197](https://github.com/ct6502/apple2ts/issues/197)
+- Add curved distortion effect for display, like a CRT [\#194](https://github.com/ct6502/apple2ts/issues/194)
+- Make plugin for VSCode with emulator [\#176](https://github.com/ct6502/apple2ts/issues/176)
+
+**Fixed bugs:**
+
+- Emulator strips the header off 2MG files when it saves them back out [\#200](https://github.com/ct6502/apple2ts/issues/200)
+- Disk image downloads don't set the correct name and content type [\#199](https://github.com/ct6502/apple2ts/issues/199)
+- $C010 bit 7 "Any Key Down" not being set [\#192](https://github.com/ct6502/apple2ts/issues/192)
+
+**Merged pull requests:**
+
+- Fix text query string param bug [\#196](https://github.com/ct6502/apple2ts/pull/196) ([boredsenseless](https://github.com/boredsenseless))
+- Improved perf when passing BASIC code via query string [\#195](https://github.com/ct6502/apple2ts/pull/195) ([boredsenseless](https://github.com/boredsenseless))
+
 ## [v3.1](https://github.com/ct6502/apple2ts/tree/v3.1) (2025-11-23)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.0...v3.1)

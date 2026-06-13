@@ -4,6 +4,7 @@ declare global {
     assetRegistry: {
       // Images
       bgImage: string;
+      bgImgApple2Plus: string;
       disk2off: string;
       disk2on: string;
       disk2offEmpty: string;

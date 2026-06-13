@@ -1,12 +1,12 @@
 // Chris Torrence, 2022
-import { Buffer } from "buffer"
-import { passMachineState, passRequestThumbnail, passSoftSwitchDescriptions } from "./worker2main"
-import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, setStackDump, get6502Instructions, getStackDump } from "./instructions"
-import { MAX_SNAPSHOTS, RUN_MODE, RamWorksMemoryStart, TEST_DEBUG } from "../common/utility"
-import { getDriveSaveState, restoreDriveSaveState, resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
+import { passMachineState, passSoftSwitchDescriptions } from "./worker2main"
+import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
+import { RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
-  restoreSoftSwitches, getSoftSwitchDescriptions } from "./softswitches"
+  restoreSoftSwitches, getSoftSwitchDescriptions, 
+  syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable, 
   getBasePlusAuxMemory,
@@ -14,7 +14,11 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksMaxBank,
   C800SlotGet,
   RamWorksBankGet,
-  doSetRom} from "./memory"
+  doSetRom,
+  getZeroPage,
+  memSet,
+  exportMemoryToHiresLine,
+  getDataBlock} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
 import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
@@ -28,24 +32,28 @@ import { sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
+import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
+import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
+import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails } from "./save_restore"
 
-let startTime = 0
-let prevTime = 0
 let speedMode = 0
 let cpuSpeed = 0
-export let isDebugging = TEST_DEBUG
-export let isGameMode = false
+export let isDebugging = false
+let appMode = "default"
 let showDebugTab = false
-let refreshTime = 16.6881 // 17030 / 1020.488
+let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
-let timeDelta = 0
 let cpuRunMode = RUN_MODE.IDLE
+let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
-let iRefresh = 0
 let takeSnapshot = false
-let iTempState = 0
-const saveStates: Array<EmulatorSaveState> = []
 let gameSetupTimerID: NodeJS.Timeout | number = 0
+let tracing = TEST_DEBUG
+let speedTracker: Array<{time: number, cycles: number}> = []
+
+export const setTracing = (doTracing: boolean) => {
+  tracing = doTracing
+}
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
@@ -57,7 +65,7 @@ const endVBL = (): void => {
   SWITCHES.VBL.isSet = false
 }
 
-const getSoftSwitches = () => {
+export const getSoftSwitches = () => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
     softSwitches[key] = SWITCHES[key as keyof typeof SWITCHES].isSet
@@ -65,110 +73,8 @@ const getSoftSwitches = () => {
   return softSwitches
 }
 
-export const getApple2State = (): Apple2SaveState => {
-  // Make a copy
-  const save6502 = JSON.parse(JSON.stringify(s6502))
-  // Find the largest page of RamWorks memory that has some non-0xFF data.
-  let memkeep = RamWorksMemoryStart
-  for (let i = RamWorksMemoryStart; i < memory.length; i++) {
-    if (memory[i] !== 0xFF) {
-      // If we find any non-0xFF's, jump to the next page of memory.
-      // We only add 255 since we still do the i++ for the loop
-      i += 255 - (i % 256)
-      memkeep = i + 1
-    }
-  }
-  const membuffer = Buffer.from(memory.slice(0, memkeep))
-  // let memdiff: { [addr: number]: number } = {};
-  // for (let i = 0; i < memory.length; i++) {
-  //   if (prevMemory[i] !== memory[i]) {
-  //     memdiff[i] = memory[i]
-  //   }
-  // }
-  // prevMemory = memory
-  return {
-    s6502: save6502,
-    extraRamSize: 64 * (RamWorksMaxBank + 1),
-    machineName: machineName,
-    softSwitches: getSoftSwitches(),
-    stackDump: getStackDump(),
-    memory: membuffer.toString("base64"),
-  }
-}
-
-export const setApple2State = (newState: Apple2SaveState, version: number) => {
-  const new6502: STATE6502 = JSON.parse(JSON.stringify(newState.s6502))
-  setState6502(new6502)
-  const softSwitches: { [name: string]: boolean } = newState.softSwitches
-  for (const key in softSwitches) {
-    const keyTyped = key as keyof typeof SWITCHES
-    // Our switches have changed slightly over time, so ignore errors.
-    // We will fix up any changed softswitches below.
-    try {
-      SWITCHES[keyTyped].isSet = softSwitches[key]
-    } catch {
-      // do nothing
-    }
-  }
-  // If we have an old save file, we need to set the BSR_WRITE switch
-  // based upon the old bank-switched RAM switches.
-  if ("WRITEBSR1" in softSwitches) {
-    // We didn't have prewrite before, so just make sure it's off.
-    SWITCHES.BSR_PREWRITE.isSet = false
-    SWITCHES.BSR_WRITE.isSet = softSwitches.WRITEBSR1 || softSwitches.WRITEBSR2 ||
-      softSwitches.RDWRBSR1 || softSwitches.RDWRBSR2
-  }
-  const newmemory = new Uint8Array(Buffer.from(newState.memory, "base64"))
-  if (version < 1) {
-    // Main memory
-    memory.set(newmemory.slice(0, 0x10000))
-    // ROM and peripheral card memory moved from 0x20000 down to 0x10000
-    memory.set(newmemory.slice(0x20000, 0x27F00), 0x10000)
-    // AUX memory moved from 0x10000 up to RamWorksMemoryStart
-    memory.set(newmemory.slice(0x10000, 0x20000), RamWorksMemoryStart)
-    // See if we have additional RamWorks memory
-    const ramWorks = (newmemory.length - 0x27F00) / 1024
-    if (ramWorks > 0) {
-      // If there's more data, it's the new RamWorks memory.
-      setRamWorks(ramWorks + 64)  // the 64 is existing AUX memory
-      memory.set(newmemory.slice(0x27F00), RamWorksMemoryStart + 0x10000)
-    }
-  } else {
-    // Adjust our current RamWorks memory to match the restored state.
-    setRamWorks(newState.extraRamSize)
-    // Note that our restored memory might be much smaller in size if
-    // the RamWorks is mostly filled with 0xFF's.
-    memory.set(newmemory)
-  }
-  // This was added to Apple2SaveState later
-  if (newState.stackDump) {
-    setStackDump(newState.stackDump)
-  }
-  // Machine name might not be in older save states, so use a default in that case.
-  machineName = newState.machineName || "APPLE2EE"
-  doSetMachineName(machineName, false)
-  updateAddressTables()
-  // Force the help text to be reset if necessary.
-  handleGameSetup(true)
-}
-
-export const doGetSaveState = (full: boolean): EmulatorSaveState => {
-  const state = {
-    emulator: null,  // filled in by UI thread
-    state6502: getApple2State(),
-    driveState: getDriveSaveState(full),
-    thumbnail: "",
-    snapshots: null
-  }
-  return state
-//  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
-}
-
-export const doGetSaveStateWithSnapshots = (): EmulatorSaveState => {
-  const state = doGetSaveState(true)
-  state.snapshots = saveStates
-  return state
-//  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
+export const getMachineName = () => {
+  return machineName
 }
 
 export const doSetState6502 = (newState: STATE6502) => {
@@ -183,25 +89,6 @@ export const doSetCycleCount = (count: number) => {
 
 export const doSetShowDebugTab = (show: boolean) => {
   showDebugTab = show
-  updateExternalMachineState()
-}
-
-export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = false) => {
-  doReset()
-  // There was never a version 0.9 (it was before the version was saved),
-  // but this gives us a number to key off of.
-  const version = sState.emulator?.version ? sState.emulator.version : 0.9
-  setApple2State(sState.state6502, version)
-  restoreDriveSaveState(sState.driveState)
-  if (eraseSnapshots) {
-    saveStates.length = 0
-    iTempState = 0
-  }
-  if (sState.snapshots) {
-    saveStates.length = 0
-    saveStates.push(...sState.snapshots)
-    iTempState = saveStates.length
-  }
   updateExternalMachineState()
 }
 
@@ -225,7 +112,7 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
 // }
 
 let didConfiguration = false
-const configureMachine = () => {
+export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   enableSerialCard()
@@ -269,13 +156,23 @@ export const doBoot = () => {
   }
 }
 
-const doReset = () => {
+export const doReset = () => {
   clearInterrupts()
   resetSoftSwitches()
   // Reset banked RAM
   memGet(0xC082)
   reset6502()
   resetMachine()
+  if (getSiriusJoyport()) {
+    setSiriusJoyport(false)
+    const currentCycle = s6502.cycleCount
+    const intervalId = setInterval(() => {
+      if ((s6502.cycleCount - currentCycle) > 1000) {
+        setSiriusJoyport(true)
+        clearInterval(intervalId)
+      }
+    }, 50)
+  }
 }
 
 // The theoretical maximum speed is about 66 MHz if we completely disable
@@ -306,13 +203,17 @@ export const doSetSpeedMode = (speedModeIn: number) => {
   speedMode = speedModeIn
   // speedMode = -2 is slowest, but add 2 to it to make the arrays be zero based.
   // speedMode = 0 is still 1 MHz, so no risk of backwards compatibility issues.
-  refreshTime = (speedMode === 4) ? 1 : 16.6881
-  cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 4])[speedMode + 2]
+  refreshTime = (speedMode === 4) ? 0 : 16.6881
+  cpuCyclesPerRefresh = 17030 * ([0.1, 0.5, 1, 2, 3, 4, 24])[speedMode + 2]
   resetRefreshCounter()
 }
 
-export const doSetGameMode = (enable: boolean) => {
-  isGameMode = enable
+export const doSetAppMode = (mode: string) => {
+  appMode = mode
+}
+
+export const runOnlyMode = () => {
+  return appMode === "game" || appMode === "embed"
 }
 
 export const doSetIsDebugging = (enable: boolean) => {
@@ -321,99 +222,58 @@ export const doSetIsDebugging = (enable: boolean) => {
 }
 
 export const doSetMemory = (addr: number, value: number) => {
-  memory[addr] = value
+  if (addr >> 8 === 0xC0) {
+    memSet(addr, value)
+  } else {
+    memory[addr] = value
+  }
   // If we have set an HGR memory location (for example) be sure to
   // pass our updated data to the main thread.
   updateExternalMachineState()
 }
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
-  if (machineName !== name) {
-    machineName = name
-    doSetRom(machineName)
-    if (reset) doReset()
-    updateExternalMachineState()
+  machineName = name
+  doSetRom(machineName)
+  if (reset) doReset()
+  updateExternalMachineState()
+}
+
+// Temporarily hijack the CPU to change the string variable value.
+// Put the string `name="value"` into the $200 input buffer and then call
+// the Applesoft routine to parse it and set the new value.
+export const doExecuteBasicCommand = (command: string) => {
+  const prevState = {...s6502}
+  const stackPlusBuffer = getDataBlock(0x100)
+  const code = `
+       JSR   $D82A
+LOOP   JMP   LOOP
+`
+  const addr = 0x100
+  const pcode = parseAssembly(addr, code.split("\n"))
+  for (let i = 0; i < command.length; i++) {
+    memory[0x200 + i] = command.charCodeAt(i)
   }
+  memory[0x200 + command.length] = 0  // null terminate the command
+  memory.set(pcode, addr)
+  // Applesoft expects to find the input buffer address at $B8, $B9.
+  memory[0xB8] = 0x00
+  memory[0xB9] = 0x02
+  // Accumulator is expected to contain the first character of the variable name.
+  s6502.Accum = command.charCodeAt(0)
+  s6502.PC = addr
+  // Applesoft takes about 1100 cycles + 39 cycles per character to process a string,
+  // and about 20,000 cycles to process a float.
+  // So just wait a bit longer than that before restoring our previous state.
+  setTimeout(() => {
+    setMemoryBlock(0x100, stackPlusBuffer)
+    setState6502(prevState)
+  }, 30)
 }
 
 export const doSetRamWorks = (size: number) => {
   setRamWorks(size)
   updateExternalMachineState()
-}
-
-const getGoBackwardIndex = () => {
-  const newTmp = iTempState - 1
-  if (newTmp < 0 || !saveStates[newTmp]) {
-    return -1
-  }
-  return newTmp
-}
-
-const getGoForwardIndex = () => {
-  const newTmp = iTempState + 1
-  if (newTmp >= saveStates.length || !saveStates[newTmp]) {
-    return -1
-  }
-  return newTmp
-}
-
-const doSnapshot = () => {
-  if (saveStates.length === MAX_SNAPSHOTS) {
-    saveStates.shift()
-  }
-  saveStates.push(doGetSaveState(false))
-  // This is at the current "time" and is just past our recently-saved state.
-  iTempState = saveStates.length
-  passRequestThumbnail(saveStates[saveStates.length - 1].state6502.s6502.PC)
-}
-
-export const doGoBackInTime = () => {
-  let newTmp = getGoBackwardIndex()
-  if (newTmp < 0) return
-  doSetRunMode(RUN_MODE.PAUSED)
-  setTimeout(() => {
-    // if this is the first time we're called, make sure our current
-    // state is up to date
-    if (iTempState === saveStates.length) {
-      doSnapshot()
-      newTmp = Math.max(iTempState - 2, 0)
-    }
-    iTempState = newTmp
-    doRestoreSaveState(saveStates[iTempState])
-  }, 50)
-}
-
-export const doGoForwardInTime = () => {
-  const newTmp = getGoForwardIndex()
-  if (newTmp < 0) return
-  doSetRunMode(RUN_MODE.PAUSED)
-  setTimeout(() => {
-    iTempState = newTmp
-    doRestoreSaveState(saveStates[newTmp])
-  }, 50)
-}
-
-export const doGotoTimeTravelIndex = (index: number) => {
-  if (index < 0 || index >= saveStates.length) return
-  doSetRunMode(RUN_MODE.PAUSED)
-  setTimeout(() => {
-    iTempState = index
-    doRestoreSaveState(saveStates[index])
-  }, 50)
-}
-
-const getTimeTravelThumbnails = () => {
-  const result: Array<TimeTravelThumbnail> = []
-  for (let i = 0; i < saveStates.length; i++) {
-    result[i] = {s6502: saveStates[i].state6502.s6502, thumbnail: saveStates[i].thumbnail}
-  }
-  return result
-}
-
-export const doSetThumbnailImage = (thumbnail: string) => {
-  if (saveStates.length > 0) {
-    saveStates[saveStates.length - 1].thumbnail = thumbnail
-  }
 }
 
 let timeout: NodeJS.Timeout | null = null
@@ -437,7 +297,9 @@ export const doStepInto = () => {
     doBoot()
     cpuRunMode = RUN_MODE.PAUSED
   }
-  processInstruction()
+  // Remove all tracelog values if we are no longer tracing.
+  if (!tracing) clearTracelog()
+  processInstruction(tracing ? updateTrace : null)
   doSetRunMode(RUN_MODE.PAUSED)
 }
 
@@ -448,8 +310,10 @@ export const doStepOver = () => {
     cpuRunMode = RUN_MODE.PAUSED
   }
   if (memGet(s6502.PC, false) === 0x20) {
+    // Remove all tracelog values if we are no longer tracing.
+    if (!tracing) clearTracelog()
     // If we're at a JSR then briefly step in, then step out.
-    processInstruction()
+    processInstruction(tracing ? updateTrace : null)
     doStepOut()
   } else {
     // Otherwise just do a single step.
@@ -468,18 +332,18 @@ export const doStepOut = () => {
 }
 
 const resetRefreshCounter = () => {
-  iRefresh = 0
-  prevTime = performance.now()
-  startTime = prevTime
+  speedTracker = [{time: performance.now(), cycles: s6502.cycleCount}]
+  nextFrameTime = performance.now()
 }
 
-export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
+export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
   configureMachine()
-  if (cpuRunMode === RUN_MODE.RUNNING && cpuRunModeIn === RUN_MODE.PAUSED) {
+  if (doShowDebugTab && cpuRunMode === RUN_MODE.RUNNING && cpuRunModeIn === RUN_MODE.PAUSED) {
     showDebugTab = true
   }
   cpuRunMode = cpuRunModeIn
   if (cpuRunMode === RUN_MODE.PAUSED) {
+    syncSoftSwitchStatusFlags()
     if (gameSetupTimerID) {
       clearInterval(gameSetupTimerID)
       gameSetupTimerID = 0
@@ -489,12 +353,13 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE) => {
     doPauseDrive(true)
     doSetBreakpointSkipOnce()
     // If we go back in time and then resume running, remove all future states.
-    while (saveStates.length > 0 && iTempState < (saveStates.length - 1)) saveStates.pop()
-    iTempState = saveStates.length
+    fixSaveStates()
     if (!gameSetupTimerID) {
       gameSetupTimerID = setInterval(handleGameSetup, 1000)
     }  
   }
+  // Remove all tracelog values if we are no longer tracing.
+  if (!tracing) clearTracelog()
   updateExternalMachineState()
   resetRefreshCounter()
   // Jump start the emulator if we have never executed anything.
@@ -542,16 +407,49 @@ const getMemoryDump = () => {
   return new Uint8Array()
 }
 
+const getBasicMemory = () => {
+  const zp = getZeroPage()
+  const varStart = zp[0x69] | (zp[0x6A] << 8)
+  const arrStart = zp[0x6B] | (zp[0x6C] << 8)
+  let basicVars = memory.slice(varStart, arrStart + 1)
+  const nvarLength = basicVars.length - 1
+  // Make sure there's a zero byte at the end of the variables.
+  basicVars[nvarLength] = 0
+  // For strings, extract the string, append them to the end of basicVars,
+  // and then update the pointer to point to the new location.
+  for (let addr = 0; addr < nvarLength; addr += 7) {
+    const vardata = basicVars.slice(addr, addr + 7)
+    const nameByte1 = vardata[0]
+    if (nameByte1 === 0) break // No more variables
+    const nameByte2 = vardata[1]
+    const isString = (nameByte1 & 0x80) === 0 && (nameByte2 & 0x80)
+    if (isString) {
+      const strAddr = vardata[3] | (vardata[4] << 8)
+      const strLen = vardata[2]
+      const value = memory.slice(strAddr, strAddr + strLen)
+      basicVars[addr + 3] = basicVars.length & 0xFF
+      basicVars[addr + 4] = (basicVars.length >> 8) & 0xFF
+      basicVars = new Uint8Array([...basicVars, ...value])
+    }
+  }
+  return basicVars
+}
+
 const doGetStackString = () => {
   return (cpuRunMode !== RUN_MODE.IDLE) ? getStackString() : ""
 }
 
 let didPassSoftSwitchDescriptions = false
 
-const updateExternalMachineState = () => {
+export const updateExternalMachineState = () => {
+  // Make sure the push button values are up to date, since they can
+  // be modifed by other softswitches (like for the Sirius Joyport).
+  memGet(SWITCHES.PB0.isSetAddr)
+  memGet(SWITCHES.PB1.isSetAddr)
   const state: MachineState = {
     addressGetTable: addressGetTable,
     altChar: SWITCHES.ALTCHARSET.isSet,
+    basicMemory: getBasicMemory(),
     breakpoints: breakpointMap,
     button0: SWITCHES.PB0.isSet,
     button1: SWITCHES.PB1.isSet,
@@ -562,8 +460,9 @@ const updateExternalMachineState = () => {
     cpuSpeed: cpuSpeed,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     hires: getHires(),
-    iTempState: iTempState,
+    iTempState: getTempStateIndex(),
     isDebugging: isDebugging,
+    isTracing: false,
     lores: getTextPage(true),
     machineName: machineName,
     memoryDump: getMemoryDump(),
@@ -577,6 +476,8 @@ const updateExternalMachineState = () => {
     stackString: doGetStackString(),
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
+    tracelog: cpuRunMode === RUN_MODE.PAUSED ? getTracelog() : [],
+    zeroPage: getZeroPage(),
   }
   passMachineState(state)
   // We need to pass this just once to the UI thread, so it can display
@@ -604,11 +505,8 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
   updateExternalMachineState()
 }
 
+//let quickReturn = 0
 const doAdvance6502 = () => {
-  const newTime = performance.now()
-  timeDelta = newTime - prevTime
-  if (timeDelta < refreshTime) return
-  prevTime = newTime
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
     return
   }
@@ -620,8 +518,9 @@ const doAdvance6502 = () => {
     doSetRunMode(RUN_MODE.RUNNING)
   }
   let cycleTotal = 0
+  let currentLine = -1
   for (;;) {
-    const cycles = processInstruction()
+    const cycles = processInstruction(tracing ? updateTrace : null)
     if (cycles < 0) break
     cycleTotal += cycles
     if (cycleTotal < 4550) {
@@ -631,43 +530,47 @@ const doAdvance6502 = () => {
       }
     } else {
       endVBL()
+      const line = Math.floor((cycleTotal - 4550) / 65)
+      if (line !== currentLine && line < 192) {
+        currentLine = line
+        exportMemoryToHiresLine(line)
+      }
     }
     if (cycleTotal >= cpuCyclesPerRefresh) {
       break
     }
   }
-  iRefresh++
-  const speedInCyclesPerMS = (iRefresh * cpuCyclesPerRefresh) / (performance.now() - startTime)
+  if (speedTracker.length > 120) {
+    speedTracker.shift()
+  }
+  speedTracker.push({time: performance.now(), cycles: s6502.cycleCount})
+  const speedInCyclesPerMS = speedTracker.length > 1 ? (speedTracker[speedTracker.length - 1].cycles - speedTracker[0].cycles) / (speedTracker[speedTracker.length - 1].time - speedTracker[0].time) : 0
   // The / 10 gets rid of the ones digit, which turns into the thousandths digit.
   cpuSpeed = (speedInCyclesPerMS < 10000) ? Math.round(speedInCyclesPerMS / 10) / 100 :
     Math.round(speedInCyclesPerMS / 100) / 10
-  // Lengthening this refresh interval has very little impact on the speed.
-  if (iRefresh % 2) {
-    handleGamepads()
-    updateExternalMachineState()
-  }
+  
+  handleGamepads()
+  updateExternalMachineState()
   if (takeSnapshot) {
     takeSnapshot = false
     doSnapshot()
   }
 }
 
-// To speed up the emulator in fast mode, we can change this refresh interval.
-// This makes the GUI less responsive since we are starving the main thread.
-// The results look something like:
-//  iRefresh + 1:     5.5 MHz
-//  iRefresh + 2:     7.9 MHz
-//  iRefresh + 3:     9.6 MHz
-//  iRefresh + 4:     11.3 MHz
-//  iRefresh + 5:     12.6 MHz
-//  iRefresh + 10:    18.0 MHz
-//  iRefresh + 20:    23.2 MHz
-//
+
 const doAdvance6502Timer = () => {
   doAdvance6502()
-  const iRefreshFinish = iRefresh + ([1, 1, 1, 5, 5, 5, 10])[speedMode + 2]
-  while (cpuRunMode === RUN_MODE.RUNNING && iRefresh !== iRefreshFinish) {
-    doAdvance6502()
+  nextFrameTime += refreshTime
+  // Calculate exactly how long until the next frame is due
+  const now = performance.now()
+  let delay = nextFrameTime - now
+  if (delay < 0) {
+    // If we're already past the time for the next frame, we were probably
+    // stopped at a breakpoint or the browser was paused. In that case,
+    // just set the next frame time to now.
+    nextFrameTime = now
+    delay = 0
   }
-  setTimeout(doAdvance6502Timer, cpuRunMode === RUN_MODE.RUNNING ? 0 : 20)
+  delay = (cpuRunMode === RUN_MODE.PAUSED) ? 20 : Math.max(1, delay)
+  setTimeout(doAdvance6502Timer, delay)
 }

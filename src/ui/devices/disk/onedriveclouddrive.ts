@@ -1,5 +1,6 @@
 import { CLOUD_SYNC } from "../../../common/utility"
 import { showGlobalProgressModal } from "../../ui_utilities"
+import { loadOneDriveScript } from "./cloudscriptloader"
 
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
@@ -11,6 +12,10 @@ const authUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=
 let g_accessToken: string
 
 export class OneDriveCloudDrive implements CloudProvider {
+
+  async ensureScriptsLoaded() {
+    await loadOneDriveScript()
+  }
 
   requestAuthToken(callback: (authToken: string) => void) {
     if (!g_accessToken) {
@@ -34,6 +39,7 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
+    await this.ensureScriptsLoaded()
     const result = await launchPicker("share", "files", filter)
     const file = result?.value[0]
     if (file) {
@@ -71,6 +77,7 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   async upload(filename: string): Promise<CloudData | null> {
+    await this.ensureScriptsLoaded()
     const result = await launchPicker("save", "folders")
     const file = result?.value && result.value[0]
     if (file) {

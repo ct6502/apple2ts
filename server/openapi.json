@@ -1,0 +1,1665 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Apple2TS Server API",
+    "version": "1.0.0",
+    "description": "v1 API for the localhost-only Apple2TS integrated server."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current localhost server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Machine",
+      "description": "Top-level emulator lifecycle and configuration"
+    },
+    {
+      "name": "Input",
+      "description": "Keyboard, Apple key, and mouse input injection"
+    },
+    {
+      "name": "Drives",
+      "description": "Mounted disk and media resources"
+    },
+    {
+      "name": "Debug",
+      "description": "Debugger, CPU, memory, breakpoints, and time travel"
+    },
+    {
+      "name": "SaveStates",
+      "description": "Save-state export and import"
+    }
+  ],
+  "paths": {
+    "/api/machine": {
+      "get": {
+        "tags": ["Machine"],
+        "summary": "Get current machine state",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Machine"],
+        "summary": "Update machine configuration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MachinePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/machine/boot": {
+      "post": {
+        "tags": ["Machine"],
+        "summary": "Boot the emulator",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/machine/reset": {
+      "post": {
+        "tags": ["Machine"],
+        "summary": "Reset the emulator",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/machine/pause": {
+      "post": {
+        "tags": ["Machine"],
+        "summary": "Pause execution",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/machine/resume": {
+      "post": {
+        "tags": ["Machine"],
+        "summary": "Resume execution",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/input/keys": {
+      "post": {
+        "tags": ["Input"],
+        "summary": "Send keyboard or text input",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyInputRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/InputAcceptedResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/input/apple-keys": {
+      "post": {
+        "tags": ["Input"],
+        "summary": "Send Open Apple or Closed Apple key state",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppleKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/InputAcceptedResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/input/mouse": {
+      "post": {
+        "tags": ["Input"],
+        "summary": "Send mouse input",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MouseInputRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/InputAcceptedResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/drives": {
+      "get": {
+        "tags": ["Drives"],
+        "summary": "List drive slots",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DriveListResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/drives/{driveId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DriveId"
+        }
+      ],
+      "get": {
+        "tags": ["Drives"],
+        "summary": "Get a drive slot",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DriveResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Drives"],
+        "summary": "Update drive properties",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DrivePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DriveResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Drives"],
+        "summary": "Eject the mounted media from a drive slot",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DriveResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/drives/{driveId}/mount": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DriveId"
+        }
+      ],
+      "post": {
+        "tags": ["Drives"],
+        "summary": "Mount media into a drive slot",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MountMediaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DriveResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/cpu": {
+      "get": {
+        "tags": ["Debug"],
+        "summary": "Get CPU state",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CpuStateResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Debug"],
+        "summary": "Update CPU state",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CpuStatePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CpuStateResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/memory": {
+      "get": {
+        "tags": ["Debug"],
+        "summary": "Read a memory range",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            }
+          },
+          {
+            "name": "length",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65536
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["bytes", "hex"],
+              "default": "bytes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MemoryRangeResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Debug"],
+        "summary": "Write a memory block",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoryWriteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MemoryRangeResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/memory/full": {
+      "get": {
+        "tags": ["Debug"],
+        "summary": "Read the full memory dump",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MemoryFullResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/soft-switches": {
+      "get": {
+        "tags": ["Debug"],
+        "summary": "Get current soft-switch state",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SoftSwitchResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Apply one or more soft-switch operations",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SoftSwitchWriteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SoftSwitchResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/step-into": {
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Execute one step into",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CpuStateResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/step-over": {
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Execute one step over",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CpuStateResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/step-out": {
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Execute one step out",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CpuStateResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/breakpoints": {
+      "get": {
+        "tags": ["Debug"],
+        "summary": "List breakpoints",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BreakpointListResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Create a breakpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreakpointCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BreakpointResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Debug"],
+        "summary": "Clear all breakpoints",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BreakpointListResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/breakpoints/{breakpointId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BreakpointId"
+        }
+      ],
+      "patch": {
+        "tags": ["Debug"],
+        "summary": "Update a breakpoint",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreakpointPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BreakpointResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Debug"],
+        "summary": "Delete a breakpoint",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BreakpointListResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/snapshots": {
+      "get": {
+        "tags": ["Debug"],
+        "summary": "List time-travel snapshots",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SnapshotListResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Create a time-travel snapshot",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SnapshotResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/snapshots/{snapshotId}/activate": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/SnapshotId"
+        }
+      ],
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Activate a snapshot by id",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SnapshotResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/snapshots/step-back": {
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Move to the previous snapshot",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SnapshotResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/debug/snapshots/step-forward": {
+      "post": {
+        "tags": ["Debug"],
+        "summary": "Move to the next snapshot",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SnapshotResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/save-states/export": {
+      "post": {
+        "tags": ["SaveStates"],
+        "summary": "Export a save state",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveStateExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SaveStateExportResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/save-states/import": {
+      "post": {
+        "tags": ["SaveStates"],
+        "summary": "Import and restore a save state",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveStateImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MachineResponse"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "DriveId": {
+        "name": "driveId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": ["hd1", "hd2", "fd1", "fd2"]
+        }
+      },
+      "BreakpointId": {
+        "name": "breakpointId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "SnapshotId": {
+        "name": "snapshotId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "MachineResponse": {
+        "description": "Machine state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MachineEnvelope"
+            }
+          }
+        }
+      },
+      "DriveListResponse": {
+        "description": "Drive list",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DriveListEnvelope"
+            }
+          }
+        }
+      },
+      "DriveResponse": {
+        "description": "Drive state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DriveEnvelope"
+            }
+          }
+        }
+      },
+      "CpuStateResponse": {
+        "description": "CPU state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CpuEnvelope"
+            }
+          }
+        }
+      },
+      "MemoryRangeResponse": {
+        "description": "Memory range result",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MemoryRangeEnvelope"
+            }
+          }
+        }
+      },
+      "MemoryFullResponse": {
+        "description": "Full memory dump",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MemoryFullEnvelope"
+            }
+          }
+        }
+      },
+      "SoftSwitchResponse": {
+        "description": "Soft-switch state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SoftSwitchEnvelope"
+            }
+          }
+        }
+      },
+      "BreakpointListResponse": {
+        "description": "Breakpoint list",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BreakpointListEnvelope"
+            }
+          }
+        }
+      },
+      "BreakpointResponse": {
+        "description": "Breakpoint state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BreakpointEnvelope"
+            }
+          }
+        }
+      },
+      "SnapshotListResponse": {
+        "description": "Snapshot list",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SnapshotListEnvelope"
+            }
+          }
+        }
+      },
+      "SnapshotResponse": {
+        "description": "Snapshot result",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SnapshotEnvelope"
+            }
+          }
+        }
+      },
+      "SaveStateExportResponse": {
+        "description": "Save-state export payload",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SaveStateExportEnvelope"
+            }
+          }
+        }
+      },
+      "InputAcceptedResponse": {
+        "description": "Input request accepted",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/InputAcceptedEnvelope"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Requested resource was not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EnvelopeBase": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": ["ok"]
+      },
+      "ErrorInfo": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"]
+      },
+      "ErrorEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EnvelopeBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ok": {
+                "const": false
+              },
+              "error": {
+                "$ref": "#/components/schemas/ErrorInfo"
+              }
+            },
+            "required": ["ok", "error"]
+          }
+        ]
+      },
+      "DriveSummary": {
+        "type": "object",
+        "properties": {
+          "driveId": {
+            "type": "string",
+            "enum": ["hd1", "hd2", "fd1", "fd2"]
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["hard-drive", "floppy"]
+          },
+          "mounted": {
+            "type": "boolean"
+          },
+          "filename": {
+            "type": ["string", "null"]
+          },
+          "writeProtected": {
+            "type": "boolean"
+          },
+          "dirty": {
+            "type": "boolean"
+          }
+        },
+        "required": ["driveId", "kind", "mounted", "filename", "writeProtected", "dirty"]
+      },
+      "Machine": {
+        "type": "object",
+        "properties": {
+          "runMode": {
+            "type": "string",
+            "enum": ["idle", "booting", "running", "paused", "resetting"]
+          },
+          "speedMode": {
+            "type": "integer"
+          },
+          "machineName": {
+            "type": "string",
+            "enum": ["APPLE2EU", "APPLE2EE"]
+          },
+          "ramWorksKb": {
+            "type": "integer",
+            "enum": [64, 512, 1024, 4096, 8192]
+          },
+          "debugEnabled": {
+            "type": "boolean"
+          },
+          "showDebugPanel": {
+            "type": "boolean"
+          },
+          "textPage": {
+            "type": "string"
+          },
+          "drives": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriveSummary"
+            }
+          }
+        },
+        "required": ["runMode", "speedMode", "machineName", "ramWorksKb", "debugEnabled", "showDebugPanel", "textPage", "drives"]
+      },
+      "MachinePatch": {
+        "type": "object",
+        "properties": {
+          "runMode": {
+            "type": "string",
+            "enum": ["running", "paused"]
+          },
+          "speedMode": {
+            "type": "integer"
+          },
+          "machineName": {
+            "type": "string",
+            "enum": ["APPLE2EU", "APPLE2EE"]
+          },
+          "ramWorksKb": {
+            "type": "integer",
+            "enum": [64, 512, 1024, 4096, 8192]
+          },
+          "debugEnabled": {
+            "type": "boolean"
+          },
+          "showDebugPanel": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Drive": {
+        "type": "object",
+        "properties": {
+          "driveId": {
+            "type": "string",
+            "enum": ["hd1", "hd2", "fd1", "fd2"]
+          },
+          "index": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["hard-drive", "floppy"]
+          },
+          "mounted": {
+            "type": "boolean"
+          },
+          "filename": {
+            "type": ["string", "null"]
+          },
+          "status": {
+            "type": "string"
+          },
+          "writeProtected": {
+            "type": "boolean"
+          },
+          "dirty": {
+            "type": "boolean"
+          },
+          "motorRunning": {
+            "type": "boolean"
+          },
+          "byteLength": {
+            "type": "integer"
+          }
+        },
+        "required": ["driveId", "index", "kind", "mounted", "filename", "status", "writeProtected", "dirty", "motorRunning", "byteLength"]
+      },
+      "DrivePatch": {
+        "type": "object",
+        "properties": {
+          "writeProtected": {
+            "type": "boolean"
+          }
+        },
+        "required": ["writeProtected"],
+        "additionalProperties": false
+      },
+      "MountMediaRequest": {
+        "type": "object",
+        "properties": {
+          "sourceType": {
+            "type": "string",
+            "enum": ["base64", "url", "library-id", "binary-block", "basic-text"]
+          },
+          "filename": {
+            "type": "string"
+          },
+          "dataBase64": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "libraryId": {
+            "type": "string"
+          },
+          "address": {
+            "type": "integer"
+          },
+          "autoRun": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": ["sourceType"],
+        "additionalProperties": false
+      },
+      "CpuFlags": {
+        "type": "object",
+        "properties": {
+          "N": { "type": "boolean" },
+          "V": { "type": "boolean" },
+          "B": { "type": "boolean" },
+          "D": { "type": "boolean" },
+          "I": { "type": "boolean" },
+          "Z": { "type": "boolean" },
+          "C": { "type": "boolean" },
+          "NMI": { "type": "boolean" }
+        },
+        "required": ["N", "V", "B", "D", "I", "Z", "C", "NMI"]
+      },
+      "CpuState": {
+        "type": "object",
+        "properties": {
+          "PC": { "type": "integer" },
+          "A": { "type": "integer" },
+          "X": { "type": "integer" },
+          "Y": { "type": "integer" },
+          "S": { "type": "integer" },
+          "IRQ": { "type": "integer" },
+          "PStatus": { "type": "integer" },
+          "cycleCount": { "type": "integer" },
+          "flags": {
+            "$ref": "#/components/schemas/CpuFlags"
+          }
+        },
+        "required": ["PC", "A", "X", "Y", "S", "IRQ", "PStatus", "cycleCount", "flags"]
+      },
+      "CpuStatePatch": {
+        "type": "object",
+        "properties": {
+          "PC": { "type": "integer" },
+          "A": { "type": "integer" },
+          "X": { "type": "integer" },
+          "Y": { "type": "integer" },
+          "S": { "type": "integer" },
+          "IRQ": { "type": "integer" },
+          "PStatus": { "type": "integer" },
+          "cycleCount": { "type": "integer" },
+          "flags": {
+            "$ref": "#/components/schemas/CpuFlags"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryRange": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer"
+          },
+          "length": {
+            "type": "integer"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["bytes", "hex"]
+          },
+          "data": {
+            "oneOf": [
+              {
+                "type": "array",
+                "items": { "type": "integer" }
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": ["start", "length", "format", "data"]
+      },
+      "MemoryFull": {
+        "type": "object",
+        "properties": {
+          "byteLength": {
+            "type": "integer"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": ["byteLength", "data"]
+      },
+      "MemoryWriteRequest": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": ["start", "data"],
+        "additionalProperties": false
+      },
+      "SoftSwitchState": {
+        "type": "object",
+        "properties": {
+          "switches": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          }
+        },
+        "required": ["switches"]
+      },
+      "SoftSwitchWriteRequest": {
+        "type": "object",
+        "properties": {
+          "addresses": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": ["addresses"],
+        "additionalProperties": false
+      },
+      "Breakpoint": {
+        "type": "object",
+        "properties": {
+          "breakpointId": {
+            "type": "string"
+          },
+          "address": {
+            "type": "integer"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "watchpoint": {
+            "type": "boolean"
+          },
+          "expression1": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expression2": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expressionOperator": {
+            "type": "string"
+          },
+          "hitcount": {
+            "type": "integer"
+          }
+        },
+        "required": ["breakpointId", "address", "disabled", "watchpoint", "expression1", "expression2", "expressionOperator", "hitcount"]
+      },
+      "BreakpointCreate": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "integer"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "watchpoint": {
+            "type": "boolean"
+          },
+          "expression1": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expression2": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expressionOperator": {
+            "type": "string"
+          },
+          "hitcount": {
+            "type": "integer"
+          }
+        },
+        "required": ["address"],
+        "additionalProperties": false
+      },
+      "BreakpointPatch": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "integer"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "watchpoint": {
+            "type": "boolean"
+          },
+          "expression1": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expression2": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "expressionOperator": {
+            "type": "string"
+          },
+          "hitcount": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Snapshot": {
+        "type": "object",
+        "properties": {
+          "snapshotId": {
+            "type": "string"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "cycleCount": {
+            "type": "integer"
+          },
+          "label": {
+            "type": ["string", "null"]
+          },
+          "thumbnail": {
+            "type": ["string", "null"]
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": ["snapshotId", "index", "cycleCount", "label", "thumbnail", "active"]
+      },
+      "SaveStateExportRequest": {
+        "type": "object",
+        "properties": {
+          "includeSnapshots": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "SaveStateImportRequest": {
+        "type": "object",
+        "properties": {
+          "dataBase64": {
+            "type": "string"
+          }
+        },
+        "required": ["dataBase64"],
+        "additionalProperties": false
+      },
+      "SaveStateExport": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "dataBase64": {
+            "type": "string"
+          }
+        },
+        "required": ["filename", "mimeType", "dataBase64"]
+      },
+      "KeyInputRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "key"
+              },
+              "key": {
+                "type": "string"
+              },
+              "release": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": ["type", "key"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "keyCode"
+              },
+              "keyCode": {
+                "type": "integer"
+              },
+              "release": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "required": ["type", "keyCode"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "text"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": ["type", "text"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "AppleKeyRequest": {
+        "type": "object",
+        "properties": {
+          "side": {
+            "type": "string",
+            "enum": ["left", "right"]
+          },
+          "pressed": {
+            "type": "boolean"
+          }
+        },
+        "required": ["side", "pressed"],
+        "additionalProperties": false
+      },
+      "MouseInputRequest": {
+        "type": "object",
+        "properties": {
+          "x": { "type": "integer" },
+          "y": { "type": "integer" },
+          "buttons": { "type": "integer" }
+        },
+        "required": ["x", "y", "buttons"],
+        "additionalProperties": false
+      },
+      "InputAccepted": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          }
+        },
+        "required": ["accepted"]
+      },
+      "MachineEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Machine"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "DriveEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Drive"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "DriveListEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Drive"
+            }
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "CpuEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/CpuState"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "MemoryRangeEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/MemoryRange"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "MemoryFullEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/MemoryFull"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "SoftSwitchEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SoftSwitchState"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "BreakpointEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Breakpoint"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "BreakpointListEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Breakpoint"
+            }
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "SnapshotEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Snapshot"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "SnapshotListEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Snapshot"
+            }
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "SaveStateExportEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SaveStateExport"
+          }
+        },
+        "required": ["ok", "data"]
+      },
+      "InputAcceptedEnvelope": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/InputAccepted"
+          }
+        },
+        "required": ["ok", "data"]
+      }
+    }
+  }
+}

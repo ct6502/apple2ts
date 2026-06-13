@@ -13,7 +13,7 @@ export const newReleases: DiskCollectionItem[] = [
     type: -1,
     title: "Million Perfect Tiles",
     lastUpdated: new Date("12/30/2024"),
-    imageUrl: "https://ia800300.us.archive.org/16/items/MillionPerfectTiles/00playable_screenshot.png",
+    imageUrl: "https://archive.org/download/MillionPerfectTiles/00playable_screenshot.png",
     diskUrl: "https://archive.org/download/MillionPerfectTiles/00playable.po",
     detailsUrl: "https://archive.org/details/MillionPerfectTiles",
     fileSize: 143360
@@ -75,4 +75,13 @@ export const newReleases: DiskCollectionItem[] = [
     params: "color=white&speed=fast&scanlines=off",
     fileSize: 819264
   },
+  {
+    type: -1,
+    title: "Quarx",
+    lastUpdated: new Date("2/17/2026"),
+    imageUrl: "https://i0.wp.com/www.the8bitguy.com/wp-content/uploads/2026/02/screenshot-01.png",
+    diskUrl: "https://www.the8bitguy.com/wp-content/uploads/2026/02/Apple-II-Quarx-Shareware-02-16-2026.zip",
+    detailsUrl: "https://www.the8bitguy.com/product/quarx-for-apple-iie-iic-iigs-and-laser-128/",
+  },
+
 ]

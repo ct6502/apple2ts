@@ -1,6 +1,6 @@
 import { matchMemory } from "../memory"
-import { setGamepad0, setGamepad1, setGamepad2, setGamepad3,
-  setLeftButtonDown, setPushButton2, setRightButtonDown } from "../devices/joystick"
+import { setGamepadValue,
+  setLeftButtonDown, setRightButtonDown } from "../devices/joystick"
 import { passHelptext,passEnhancedMidi } from "../worker2main"
 import { aztec } from "./aztec"
 import { champ_lode_runner } from "./champ_lode_runner"
@@ -52,26 +52,54 @@ AddGameLibraryItem(beyondwolf)
 
 export const defaultButtons: GamePadMapping = (button: number,
   dualJoysticks: boolean, isJoystick2: boolean) => {
-  if (isJoystick2) {
-    switch (button) {
-      case 0: setPushButton2(); break  // button #0 becomes push button 2
-      case 1: break  // ignore button #1
-      case 12: setGamepad3(-1); break   // D-pad U
-      case 13: setGamepad3(1); break    // D-pad D
-      case 14: setGamepad2(-1); break   // D-pad L
-      case 15: setGamepad2(1); break    // D-pad R
-      default: break
-    }
-  } else {
-    switch (button) {
-      case 0: setLeftButtonDown(); break
-      case 1: if (!dualJoysticks) setRightButtonDown(); break
-      case 12: setGamepad1(-1); break   // D-pad U
-      case 13: setGamepad1(1); break    // D-pad D
-      case 14: setGamepad0(-1); break   // D-pad L
-      case 15: setGamepad0(1); break    // D-pad R
-      default: break
-    }
+  const isJoystick1 = !isJoystick2
+  // Not implemented yet...
+  const paddleMode = false
+
+  switch (button) {
+    case 0:
+      if (isJoystick1) {
+        setLeftButtonDown()
+      } else {
+        if (paddleMode) {
+          setRightButtonDown()
+        }
+      }
+      break
+    case 1:
+      if (isJoystick1) {
+        setRightButtonDown()
+      }
+      break
+    case 12:   // D-pad Up
+      if (isJoystick2) {
+        setGamepadValue(3, -1)
+      } else {
+        setGamepadValue(1, -1)
+      }
+      break
+    case 13:   // D-pad Down
+      if (isJoystick2) {
+        setGamepadValue(3, 1)
+      } else {
+        setGamepadValue(1, 1)
+      }
+      break
+    case 14:   // D-pad Left
+      if (isJoystick2) {
+        setGamepadValue(paddleMode ? 1 : 2, -1)
+      } else {
+        setGamepadValue(0, -1)
+      }
+      break
+    case 15:   // D-pad Right
+      if (isJoystick2) {
+        setGamepadValue(paddleMode ? 1 : 2, 1)
+      } else {
+        setGamepadValue(0, 1)
+      }
+      break
+    default: break
   }
 }
 

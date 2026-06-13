@@ -34,6 +34,16 @@ export default [
     },
   },
   {
+    // Server files need Node.js globals, not browser globals
+    files: ["server/**/*.{js,mjs}"],
+    languageOptions: { 
+      globals: {
+        ...globals.node,
+        ...globals.es2021
+      }
+    },
+  },
+  {
     // this needs to be outside of the curly braces above, so it acts as "global" ignores
     ignores: ["**/dist", "**/.eslintrc.cjs", "**/public"],
   },

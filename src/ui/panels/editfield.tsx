@@ -14,6 +14,8 @@ interface EditFieldProps {
   warning?: string;
   initialFocus?: boolean;
   disabled?: boolean;
+  isHex?: boolean;
+  isNumber?: boolean;
 }
 
 const EditField = (props: EditFieldProps) => {
@@ -27,12 +29,31 @@ const EditField = (props: EditFieldProps) => {
       input.focus()
     }
   }, [props.initialFocus])
+
+  const testKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow control keys, backspace, delete, arrows, tab, etc.
+    const safeKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight",
+      "ArrowUp", "ArrowDown", "Tab", "Enter", "Home", "End"]
+    if (e.ctrlKey || e.metaKey || e.altKey || safeKeys.includes(e.key)) {
+      return
+    }
+    // Only allow hex digits and space
+    if (props.isHex && !/^[0-9a-fA-F\s]$/.test(e.key)) {
+      e.preventDefault()
+    }
+    // Only allow numbers
+    if (props.isNumber && !/^[0-9]$/.test(e.key)) {
+      e.preventDefault()
+    }
+  }
+
   const textfield = <span>
     <input type="text"
       disabled={props.disabled}
       name={props.name ? props.name : "textfield"}
       ref={inputRef}
       className="hex-field"
+      onKeyDown={props.isHex || props.isNumber ? testKey : undefined}
       placeholder={props.placeholder}
       value={props.value}
       style={{ width: props.width || "100%" }}

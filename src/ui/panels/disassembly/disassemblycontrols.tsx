@@ -1,0 +1,193 @@
+import { KeyboardEvent, useRef, useState } from "react"
+import {
+  handleGetRunMode,
+  passStepInto, passStepOut, passStepOver
+} from "../../main2worker"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import {
+  faPause,
+  faPlay,
+  faFolderOpen,
+  faSave,
+  faRoute,
+} from "@fortawesome/free-solid-svg-icons"
+import React from "react"
+import { DISASSEMBLE_VISIBLE, loadUserSymbolTable, RUN_MODE } from "../../../common/utility"
+import { handleSetCPUState } from "../../controller"
+import { bpStepInto } from "../../img/icon_stepinto"
+import { bpStepOut } from "../../img/icon_stepout"
+import { bpStepOver } from "../../img/icon_stepover"
+import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
+import SaveDisassemblyDialog from "./savedisassemblydialog"
+import TraceDialog from "./tracedialog"
+
+const DisassemblyControls = (props: DisassemblyProps) => {
+  // The tooltips obscure the first line of disassembly.
+  // Only show them until each button has been clicked once.
+  const [tooltipOverShow, setTooltipOverShow] = useState(true)
+  const [tooltipIntoShow, setTooltipIntoShow] = useState(true)
+  const [tooltipOutShow, setTooltipOutShow] = useState(true)
+  // The tooltip "show's" get reset when the instruction changes to/from JSR.
+  const [address, setAddress] = useState("")
+  const [showSymbolTableFileOpen, setShowSymbolTableFileOpen] = useState(false)
+  const [showSaveDisassembly, setShowSaveDisassembly] = useState(false)
+  const [showTraceDialog, setShowTraceDialog] = useState(false)
+  const [dialogPosition, setDialogPosition] = useState([-1, -1])
+
+  const hiddenFileOpen = useRef<HTMLInputElement>(null)
+
+  const doUpdateAddress = (addr: number) => {
+    setDisassemblyAddress(addr)
+    setAddress(addr.toString(16).toUpperCase())
+    props.refresh()
+  }
+
+  const handleDisassembleAddrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newvalue = e.target.value.replace(/[^0-9a-f]/gi, "").toUpperCase().substring(0, 4)
+    setAddress(newvalue)
+  }
+
+  const handleDisassembleAddrKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      const addr = parseInt(address || "0", 16)
+      doUpdateAddress(addr)
+    }
+  }
+
+  const handleSymbolTableFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target?.files?.length) {
+      loadUserSymbolTable(e.target.files[0])
+//      readFile(e.target.files[0], props.showFileOpenDialog.index)
+    }
+  }
+
+  const runMode = handleGetRunMode()
+  const isTouchDevice = "ontouchstart" in document.documentElement
+
+  // This is how we actually display the file selection dialog.
+  if (showSymbolTableFileOpen) {
+    // Now that we're in here, turn off our property.
+    setTimeout(() => setShowSymbolTableFileOpen(false), 0)
+    if (hiddenFileOpen.current) {
+      const fileInput = hiddenFileOpen.current
+      // Hack - clear out old file so we can pick the same file again
+      fileInput.value = ""
+      // Display the dialog.
+      fileInput.click()
+    }
+  }
+
+  const doSetDialogPosition = (x: number, y: number) => {
+    setDialogPosition([x, y])
+  }
+
+  return (
+    <span className="flex-row" style={{ marginBottom: "5px" }}>
+      <input className="hex-field"
+        name="disassembleAddr"
+        type="text"
+        placeholder="FFFF"
+        value={address}
+        onChange={handleDisassembleAddrChange}
+        onKeyDown={handleDisassembleAddrKeyDown}
+      />
+      <button className="push-button" id="tour-debug-pause"
+        title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
+        onClick={() => {
+          handleSetCPUState(runMode === RUN_MODE.PAUSED ?
+            RUN_MODE.RUNNING : RUN_MODE.PAUSED)
+          if (runMode === RUN_MODE.RUNNING) {
+            setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+          }
+        }}
+        disabled={runMode === RUN_MODE.IDLE}>
+        {runMode === RUN_MODE.PAUSED ?
+          <FontAwesomeIcon icon={faPlay} /> :
+          <FontAwesomeIcon icon={faPause} />}
+      </button>
+      <div className="flex-row" id="tour-debug-controls">
+      <button className="push-button"
+        title={tooltipOverShow ? "Step Over" : ""}
+        onClick={() => {
+          setTooltipOverShow(false)
+          passStepOver()
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+        }}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <svg width="23" height="23" className="fill-color">{bpStepOver}</svg>
+      </button>
+      <button className="push-button"
+        title={tooltipIntoShow ? "Step Into" : ""}
+        onClick={() => {
+          setTooltipIntoShow(false)
+          passStepInto()
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+        }}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <svg width="23" height="23" className="fill-color">{bpStepInto}</svg>
+      </button>
+      <button className="push-button"
+        title={tooltipOutShow ? "Step Out" : ""}
+        onClick={() => {
+          setTooltipOutShow(false)
+          passStepOut()
+          setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.CURRENT_PC)
+        }}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <svg width="23" height="23" className="fill-color">{bpStepOut}</svg>
+      </button>
+      {/* <button className="push-button"
+        title="Go to Current PC"
+        onClick={() => {doUpdateAddress(handleGetState6502().PC)}}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="bigger-font" style={{cursor: "pointer"}}>PC</div>
+      </button> */}
+      </div>
+      <button className="push-button"
+        title="Load Symbol Table"
+        onClick={() => setShowSymbolTableFileOpen(true)}>
+        <div className="icon-container">
+          <FontAwesomeIcon icon={faFolderOpen} />
+          <span className="icon-text">SYM</span>
+        </div>
+      </button>
+      <button className="push-button"
+        title="Save Disassembly"
+        onClick={() => setShowSaveDisassembly(true)}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="icon-container">
+          <FontAwesomeIcon icon={faSave} />
+        </div>
+      </button>
+      {showSaveDisassembly &&
+        <SaveDisassemblyDialog
+          onClose={() => setShowSaveDisassembly(false)} />
+      }
+      <button className="push-button"
+        title="Trace"
+        onClick={() => setShowTraceDialog(true)}
+        disabled={runMode !== RUN_MODE.PAUSED}>
+        <div className="icon-container">
+          <FontAwesomeIcon icon={faRoute} />
+        </div>
+      </button>
+      {showTraceDialog &&
+        <TraceDialog
+          cancelDialog={() => setShowTraceDialog(false)}
+          dialogPositionX={dialogPosition[0]}
+          dialogPositionY={dialogPosition[1]}
+          setDialogPosition={doSetDialogPosition} />}
+      <input
+        name="fileInput"
+        type="file"
+        accept={isTouchDevice ? "" : ".sym"}
+        ref={hiddenFileOpen}
+        onChange={handleSymbolTableFileSelected}
+        style={{ display: "none" }}
+      />
+    </span>
+  )
+}
+
+export default DisassemblyControls

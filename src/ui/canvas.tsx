@@ -1,6 +1,5 @@
-import { FormEvent, KeyboardEvent, useRef, useState } from "react"
+import { KeyboardEvent, useRef, useState } from "react"
 import "./canvas.css"
-import "./crtboot.css"
 import {
   passSetRunMode, passKeypress,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
@@ -12,24 +11,38 @@ import {
   handleGetRunMode,
   handleGetCout,
   passKeyRelease,
+  handleGetMachineName,
+  handleGetState6502,
+  handleGetSoftSwitches,
+  handleGetSpeedMode,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex } from "../common/utility"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
-import { checkGamepad, handleArrowKey } from "./devices/gamepad"
+import { checkGamepad, handleArrowKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
 import { drawHiresTile } from "./graphicshgr"
 import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getCapsLock, getShowScanlines, isMinimalTheme, getColorMode } from "./ui_settings"
+import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
+import { KeyboardControl } from "./controls/keyboardcontrol"
 
 
 let width = 800
 let height = 600
+let resizeTimeout = 0
 // This is an indidental property, we don't want to make it a "useState"
 // because we don't want it to re-render the canvas each time it is toggled.
 let withinScreen = false
+let lastFrameTime = 0
+const maxFrameSamples = 60
+let startTimeForMaxFrames = 0
+let lastFPSLog = 0
+
+let currentCommand = ""
+const recallBuffer: string[] = []
+let recallIndex = 99
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
 
@@ -126,29 +139,29 @@ const Apple2Canvas = (props: DisplayProps) => {
   // This is needed for Android, which does not send keydown/up events.
   // https://bugs.chromium.org/p/chromium/issues/detail?id=118639
   // https://stackoverflow.com/questions/36753548/keycode-on-android-is-always-229
-  const handleOnInput = (e: FormEvent) => {
-    if ("nativeEvent" in e) {
-      const ev = e.nativeEvent as InputEvent
-      const event = {
-        key: "",
-        code: "",
-        shiftKey: false,
-        metaKey: false,
-        altKey: false,
-        preventDefault: () => { },
-        stopPropagation: () => { }
-      }
-      // Is this a normal character, or a special one?
-      if (ev.data) {
-        event.key = ev.data as string
-      } else if (ev.inputType === "deleteContentBackward") {
-        event.key = "Backspace"
-      } else if (ev.inputType === "insertLineBreak") {
-        event.key = "Enter"
-      }
-      handleKeyDown(event as keyEvent)
-    }
-  }
+  // const handleOnInput = (e: FormEvent) => {
+  //   if ("nativeEvent" in e) {
+  //     const ev = e.nativeEvent as InputEvent
+  //     const event = {
+  //       key: "",
+  //       code: "",
+  //       shiftKey: false,
+  //       metaKey: false,
+  //       altKey: false,
+  //       preventDefault: () => { },
+  //       stopPropagation: () => { }
+  //     }
+  //     // Is this a normal character, or a special one?
+  //     if (ev.data) {
+  //       event.key = ev.data as string
+  //     } else if (ev.inputType === "deleteContentBackward") {
+  //       event.key = "Backspace"
+  //     } else if (ev.inputType === "insertLineBreak") {
+  //       event.key = "Enter"
+  //     }
+  //     handleKeyDown(event as keyEvent)
+  //   }
+  // }
 
   const isMetaSequence = (e: keyEvent): boolean => {
     if (e.shiftKey) {
@@ -171,11 +184,16 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyDown = (e: keyEvent) => {
     let keyHandledLocal = false
+    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     if (isOpenAppleDown(e)) {
       passAppleCommandKeyPress(true)
     }
     if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
+    }
+    if (isBrowserAltKey) {
+      e.preventDefault()
+      e.stopPropagation()
     }
     // TODO: What modifier key should be used on Windows? Can't use Ctrl
     // because that interferes with Apple II control keys like Ctrl+S
@@ -200,17 +218,62 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
+    const s6502 = handleGetState6502()
+    const switches = handleGetSoftSwitches()
+    const isKeyboardLoop = switches.TEXT && s6502.PC >= 0xC26D && s6502.PC <= 0xC28E
+
     if (e.key in arrowKeys) {
-      handleArrowKey(arrowKeys[e.key], false)
+
+      if (isKeyboardLoop && recallBuffer.length > 0 &&
+        (arrowKeys[e.key] === ARROW.UP || arrowKeys[e.key] === ARROW.DOWN)) {
+        if (arrowKeys[e.key] === ARROW.UP) {
+          recallIndex = Math.max(0, recallIndex - 1)
+        } else if (arrowKeys[e.key] === ARROW.DOWN) {
+          recallIndex = Math.min(recallBuffer.length, recallIndex + 1)
+        }
+        const recallCommand = recallBuffer[recallIndex]
+        if (currentCommand.length > 0) {
+          // Clear current command from BASIC line
+          // Pass a single string containing the correct number of backspaces,
+          // to avoid flooding the message channel with individual key events.
+          const back = "\b".repeat(currentCommand.length)
+          passPasteText(back + " ".repeat(currentCommand.length) + back)
+        }
+        if (recallCommand) {
+          // Type recalled command into BASIC line
+          passPasteText(recallCommand)
+          currentCommand = recallCommand
+        } else {
+          currentCommand = ""
+        }
+      } else {
+        handleArrowKey(arrowKeys[e.key], false)
+      }
       e.preventDefault()
       e.stopPropagation()
       return
     }
 
-    const capsLock = getCapsLock()
-    const key = convertAppleKey(e, capsLock, props.ctrlKeyMode, handleGetCout())
+    const lowercaseMode = getLowercaseMode()
+    const key = convertAppleKey(e, lowercaseMode, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
       passKeypress(key)
+      if (isKeyboardLoop) {
+        if (key === 13) {
+          if (currentCommand.length > 0) {
+            if (currentCommand !== recallBuffer[recallBuffer.length - 1]) {
+              recallBuffer.push(currentCommand)
+              if (recallBuffer.length > 50) {
+                recallBuffer.shift()
+              }
+            }
+            currentCommand = ""
+            recallIndex = recallBuffer.length
+          }
+        } else if (key >= 32 && key <= 126) {
+          currentCommand += String.fromCharCode(key)
+        }
+      }
       e.preventDefault()
       e.stopPropagation()
     }
@@ -226,6 +289,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const handleKeyUp = (e: keyEvent) => {
+    const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
     } else if (isClosedAppleUp(e)) {
@@ -239,6 +303,11 @@ const Apple2Canvas = (props: DisplayProps) => {
       setKeyHandled(false)
       e.preventDefault()
       e.stopPropagation()
+    }
+    if (isBrowserAltKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
     }
   }
 
@@ -255,6 +324,22 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
+  const releaseBlurredModifierState = () => {
+    passAppleCommandKeyRelease(true)
+    passAppleCommandKeyRelease(false)
+    passKeyRelease()
+  }
+
+  const handleWindowBlur = () => {
+    releaseBlurredModifierState()
+  }
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      releaseBlurredModifierState()
+    }
+  }
+
   const handleResize = () => {
     if (myCanvas.current) {
       checkContentHeight()
@@ -262,14 +347,39 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const RenderCanvas = () => {
-    if (myCanvas.current && hiddenCanvas.current) {
-      const ctx = (myCanvas.current as HTMLCanvasElement).getContext("2d")
-      const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
-      if (ctx && hiddenCtx) {
-        ProcessDisplay(ctx, hiddenCtx, width, height)
+  const RenderCanvas = (timestamp: number) => {
+    const elapsed = timestamp - lastFrameTime
+    // Some odd "race the beam" graphics demos require 60 FPS, but only do this
+    // for 1 MHz or slower speeds. Throttle the frame rate at higher CPU
+    // speed to help reduce CPU usage.
+    // Test image from Brendan:
+    // https://github.com/badvision/a2-pseudocolor/raw/refs/heads/main/disks/flicker.po
+    const targetFrameRate = (handleGetSpeedMode() <= 0) ? 75 : 45 // Hz
+    const targetInterval = 1000 / targetFrameRate
+    
+    if (elapsed >= targetInterval) {
+      if (myCanvas.current && hiddenCanvas.current) {
+        const ctx = (myCanvas.current as HTMLCanvasElement).getContext("2d")
+        const hiddenCtx = (hiddenCanvas.current as HTMLCanvasElement).getContext("2d")
+        if (ctx && hiddenCtx) {
+          ProcessDisplay(ctx, hiddenCtx, width, height)
+        }
+        checkGamepad()
       }
+
+      // Calculate and log FPS
+      lastFPSLog++
+      if (lastFPSLog >= maxFrameSamples) {
+        const newTime = Date.now()
+        const avgFPS = (lastFPSLog / (newTime - startTimeForMaxFrames)) * 1000
+        props.setAvgFPS(avgFPS)
+        lastFPSLog = 0
+        startTimeForMaxFrames = newTime
+      }
+      
+      lastFrameTime = timestamp
     }
+    
     // Changing this refresh interval to be less often has no effect on the "fast" speed.
     window.requestAnimationFrame(RenderCanvas)
   }
@@ -412,13 +522,14 @@ const Apple2Canvas = (props: DisplayProps) => {
       const width = canvas.offsetWidth
       const height = canvas.offsetHeight
 
-      const scanlinesWidth = width - 2 * width * xmargin
+      const scanlinesWidth = width - 2 * width * xmargin + 20
       const scanlinesHeight = height - 2 * height * ymargin
 
-      let scanlinesLeft = canvas.offsetLeft + width * xmargin
+      let scanlinesLeft = canvas.offsetLeft + width * xmargin - 10
       let scanlinesTop = canvas.offsetTop + height * ymargin
+      const isFullScreen = document.fullscreenElement === canvas.parentElement
 
-      if (document.fullscreenElement !== myCanvas?.current?.parentElement) {
+      if (!isFullScreen) {
         let marginLeft = canvas.offsetLeft + width * xmargin
         let marginTop = canvas.offsetTop + height * ymargin
 
@@ -452,7 +563,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       document.body.style.setProperty("--scanlines-top", `${scanlinesTop}px`)
       document.body.style.setProperty("--scanlines-width", `${scanlinesWidth}px`)
       document.body.style.setProperty("--scanlines-height", `${scanlinesHeight}px`)
-    }, 200)
+      resizeTimeout = 200
+    }, resizeTimeout)
 
     return canvas.style.marginLeft
   }
@@ -473,7 +585,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
         canvas.addEventListener("paste", paste)
         window.addEventListener("resize", handleResize)
-        window.setInterval(() => { checkGamepad() }, 34)
+        window.addEventListener("blur", handleWindowBlur)
+        document.addEventListener("visibilitychange", handleVisibilityChange)
+        ensureGamepadEventListeners()
         handleResize()
 
         new ResizeObserver(entries => {
@@ -483,7 +597,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         }).observe(canvas)
         document.body.style.setProperty("--scanlines-display", getShowScanlines() ? "block" : "none")
 
-        RenderCanvas()
+        RenderCanvas(0)
       } else {
         // This doesn't ever seem to get hit. I guess just doing the 
         // setTimeout below (even with a timeout of 0) is enough to
@@ -514,15 +628,16 @@ const Apple2Canvas = (props: DisplayProps) => {
   [width, height] = getCanvasSize()
 
   // Make keyboard events work on touch devices by using a hidden textarea.
-  const isAndroidDevice = /Android/i.test(navigator.userAgent)
-  const txt = isAndroidDevice ?
-    <textarea className="hidden-textarea" hidden={false} ref={myText}
-      onInput={handleOnInput} /> :
-    (isTouchDevice ?
-      <textarea className="hidden-textarea" hidden={false} ref={myText}
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}
-      /> : <span></span>)
+//  const isAndroidDevice = /Android/i.test(navigator.userAgent)
+  const txt = <></>
+  // isAndroidDevice ?
+  //   <textarea className="hidden-textarea" hidden={false} ref={myText}
+  //     onInput={handleOnInput} /> :
+  //   (isTouchDevice ?
+  //     <textarea className="hidden-textarea" hidden={false} ref={myText}
+  //       onKeyDown={handleKeyDown}
+  //       onKeyUp={handleKeyUp}
+  //     /> : <span></span>)
 
   if (handleGetOverrideHires() && updateHgr) {
     setTimeout(() => { setUpdateHgr(false) }, 0)
@@ -538,40 +653,23 @@ const Apple2Canvas = (props: DisplayProps) => {
   const cursor = (handleGetShowAppleMouse() && withinScreen) ? `url(${window.assetRegistry.dotCursor}), none` :
     ((showHgrMagnifier && !lockHgrMagnifierRef.current) ? "none" : "default")
 
-  const backgroundImage = noBackgroundImage ? "" : `url(${window.assetRegistry.bgImage})`
-
-  // Set CRT boot color based on color mode
-  const crtBootStyle: React.CSSProperties & { [key: string]: string } = {}
-  if (props.showCRTBoot) {
-    const colorMode = getColorMode()
-    if (colorMode === COLOR_MODE.GREEN) {
-      crtBootStyle["--crt-color"] = "#8f8"
-      crtBootStyle["--crt-color-rgb"] = "136, 255, 136"
-      crtBootStyle["--crt-color-dim"] = "#6d6"
-    } else if (colorMode === COLOR_MODE.AMBER) {
-      crtBootStyle["--crt-color"] = "#ffb000"
-      crtBootStyle["--crt-color-rgb"] = "255, 176, 0"
-      crtBootStyle["--crt-color-dim"] = "#d89000"
-    } else { // COLOR, NOFRINGE, or other modes - use white
-      crtBootStyle["--crt-color"] = "#fff"
-      crtBootStyle["--crt-color-rgb"] = "255, 255, 255"
-      crtBootStyle["--crt-color-dim"] = "#ddd"
-    }
-  }
+  const machine = handleGetMachineName()
+  const bgImg = machine === "APPLE2P" ?
+    window.assetRegistry.bgImgApple2Plus : window.assetRegistry.bgImage
+  const backgroundImage = noBackgroundImage ? "" : `url(${bgImg})`
 
   return (
-    <span className="canvas-text scanline-gradient" style={{ position: "relative" }}>
+    <span className="canvas-text scanline-gradient">
       <canvas ref={myCanvas}
         id="apple2canvas"
         className="main-canvas"
         style={{
           cursor: cursor,
-          borderRadius: noBackgroundImage ? "0" : "20px",
-          borderWidth: noBackgroundImage ? "0" : "2px",
+          borderColor: (machine === "APPLE2P" || getTheme() === UI_THEME.DARK) ? "black" : "#583927",
+          borderRadius: noBackgroundImage ? "0" : "18px",
+          borderWidth: (noBackgroundImage || machine === "APPLE2P") ? "0" : "2px",
           backgroundImage: `${backgroundImage}`,
-          marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement),
-          position: "relative",
-          zIndex: 1
+          marginLeft: handleCanvasResize(myCanvas.current as HTMLCanvasElement)
         }}
         width={width} height={height}
         tabIndex={0}
@@ -588,7 +686,7 @@ const Apple2Canvas = (props: DisplayProps) => {
         width={560} height={384} />
       {txt}
       {showHgrMagnifier && formatHgrMagnifier()}
-      {props.showCRTBoot && <div className="crt-boot-overlay" style={crtBootStyle} />}
+      <KeyboardControl/>
     </span>
   )
 }

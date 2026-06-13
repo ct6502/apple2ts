@@ -1,16 +1,45 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
+import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSpeedMode, } from "./main2worker"
-import { setCapsLock, setColorMode, setShowScanlines, setTheme, setHotReload, setTouchJoystickMode, setTouchJoystickSensitivity, setTiltSensorJoystick, setGhosting, setCrtDistortion } from "./ui_settings"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
-export const setPreferenceCapsLock = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("capsLock")
+const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
+  "showScanlines", "hotReload", "tiltSensorJoystick", "useOpenAppleKey", "debugMode"]
+
+
+export const setPreferenceBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
+  if (value) {
+    localStorage.setItem(key, JSON.stringify(value))
   } else {
-    localStorage.setItem("capsLock", JSON.stringify(mode))
+    localStorage.removeItem(key)
   }
-  setCapsLock(mode)
+  setUIStateBoolean(key as BooleanKeyOf<UIState>, value)
+}
+
+export const getPreferenceBoolean = (key: string): boolean => {
+  const item = localStorage.getItem(key)
+  if (item) {
+    try {
+      return JSON.parse(item)
+    } catch {
+      localStorage.removeItem(key)
+    }
+  }
+  return false
+}
+
+export const setPreferenceBasicProgram = (program: string | null) => {
+  if (program === null || program === "") {
+    localStorage.removeItem("basicProgram")
+  } else {
+    localStorage.setItem("basicProgram", program)
+  }
+}
+
+export const getPreferenceBasicProgram = (): string | null => {
+  return localStorage.getItem("basicProgram")
 }
 
 export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
@@ -20,33 +49,6 @@ export const setPreferenceColorMode = (mode: COLOR_MODE = COLOR_MODE.COLOR) => {
     localStorage.setItem("colorMode", JSON.stringify(mode))
   }
   setColorMode(mode)
-}
-
-export const setPreferenceCrtDistortion = (mode = false) => {
-  if (mode) {
-    localStorage.setItem("crtDistortion", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("crtDistortion")
-  }
-  setCrtDistortion(mode)
-}
-
-export const setPreferenceGhosting = (mode = false) => {
-  if (mode) {
-    localStorage.setItem("ghosting", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("ghosting")
-  }
-  setGhosting(mode)
-}
-
-export const setPreferenceShowScanlines = (mode = false) => {
-  if (mode) {
-    localStorage.setItem("showScanlines", JSON.stringify(mode))
-  } else {
-    localStorage.removeItem("showScanlines")
-  }
-  setShowScanlines(mode)
 }
 
 export const setPreferenceTheme = (theme: UI_THEME = UI_THEME.CLASSIC) => {
@@ -65,15 +67,6 @@ export const setPreferenceBreakpoints = (breakpoints: BreakpointMap) => {
     localStorage.setItem("breakpoints", JSON.stringify([...breakpoints]))
   }
   passBreakpoints(breakpoints)
-}
-
-export const setPreferenceDebugMode = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("debugMode")
-  } else {
-    localStorage.setItem("debugMode", JSON.stringify(mode))
-  }
-  passSetShowDebugTab(mode)
 }
 
 export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
@@ -112,24 +105,6 @@ export const setPreferenceSpeedMode = (mode = 0) => {
   passSpeedMode(mode)
 }
 
-export const setPreferenceHotReload = (mode = false) => {
-  if (mode === false) {
-    localStorage.removeItem("hotReload")
-  } else {
-    localStorage.setItem("hotReload", JSON.stringify(mode))
-  }
-  setHotReload(mode)
-}
-
-export const setPreferenceFirstRunMinimal = (mode = true) => {
-  if (mode === true) {
-    localStorage.removeItem("firstRunMinimal")
-  } else {
-    localStorage.setItem("firstRunMinimal", JSON.stringify(mode))
-  }
-  // UI-only setting, pass along not necessary
-}
-
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   if (lastChecked == -1) {
     localStorage.removeItem("newReleasesChecked")
@@ -137,15 +112,6 @@ export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
     localStorage.setItem("newReleasesChecked", JSON.stringify(lastChecked))
   }
   // UI-only setting, pass along not necessary
-}
-
-export const setPreferenceTiltSensorJoystick = (mode = false) => {
-  if (!mode) {
-    localStorage.removeItem("tiltSensorJoystick")
-  } else {
-    localStorage.setItem("tiltSensorJoystick", "true")
-  }
-  setTiltSensorJoystick(mode)
 }
 
 export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
@@ -164,6 +130,35 @@ export const setPreferenceTouchJoystickSensitivity = (sensitivity: number = 2) =
     localStorage.setItem("touchJoystickSensitivity", JSON.stringify(sensitivity))
   }
   setTouchJoystickSensitivity(sensitivity)
+}
+
+export const setPreferenceTraceSettings = (traceSettings: TraceSettings =
+  TraceSettingsDefault) => {
+  const { numLines, collapseLoops, ignoreRegisters } = traceSettings
+  if (numLines === TraceSettingsDefault.numLines) {
+    localStorage.removeItem("traceNumLines")
+  } else {
+    localStorage.setItem("traceNumLines", JSON.stringify(numLines))
+  }
+  if (collapseLoops === TraceSettingsDefault.collapseLoops) {
+    localStorage.removeItem("traceCollapseLoops")
+  } else {
+    localStorage.setItem("traceCollapseLoops", JSON.stringify(collapseLoops))
+  }
+  if (ignoreRegisters === TraceSettingsDefault.ignoreRegisters) {
+    localStorage.removeItem("traceIgnoreRegisters")
+  } else {
+    localStorage.setItem("traceIgnoreRegisters", JSON.stringify(ignoreRegisters))
+  }
+  passSetTraceSettings({numLines, collapseLoops, ignoreRegisters})
+}
+
+export const setPreferenceDebugTabLeftWidth = (width: number) => {
+  if (width === -1) {
+    localStorage.removeItem("debugTabLeftWidth")
+  } else {
+    localStorage.setItem("debugTabLeftWidth", JSON.stringify(width))
+  }
 }
 
 const gameDataDrive = "GAME_DATA-DRIVE"
@@ -212,6 +207,8 @@ export const loadPreferences = () => {
         const newBreakpoint = BreakpointNew()
         // Copy over any fields that exist in the stored data
         Object.assign(newBreakpoint, oldBreakpoint)
+        // Skip hidden breakpoints
+        if (newBreakpoint.hidden) return null
         return [address, newBreakpoint]
       })
       const breakpointMap = new BreakpointMap(migratedBreakpoints)
@@ -220,15 +217,17 @@ export const loadPreferences = () => {
       localStorage.removeItem("breakpoints")
     }
   }
-  
-  const capsLock = localStorage.getItem("capsLock")
-  if (capsLock) {
-    try {
-      setCapsLock(JSON.parse(capsLock))
-    } catch {
-      localStorage.removeItem("capsLock")
+
+  booleanUIKeys.forEach(key => {
+    const item = localStorage.getItem(key)
+    if (item) {
+      try {
+        setUIStateBoolean(key, JSON.parse(item))
+      } catch {
+        localStorage.removeItem(key)
+      }
     }
-  }
+  })
 
   const colorMode = localStorage.getItem("colorMode")
   if (colorMode) {
@@ -236,33 +235,6 @@ export const loadPreferences = () => {
       setColorMode(JSON.parse(colorMode))
     } catch {
       localStorage.removeItem("colorMode")
-    }
-  }
-
-  const crtDistortion = localStorage.getItem("crtDistortion")
-  if (crtDistortion) {
-    try {
-      setCrtDistortion(JSON.parse(crtDistortion))
-    } catch {
-      localStorage.removeItem("crtDistortion")
-    }
-  }
-
-  const ghosting = localStorage.getItem("ghosting")
-  if (ghosting) {
-    try {
-      setGhosting(JSON.parse(ghosting))
-    } catch {
-      localStorage.removeItem("ghosting")
-    }
-  }
-
-  const showScanlines = localStorage.getItem("showScanlines")
-  if (showScanlines) {
-    try {
-      setShowScanlines(JSON.parse(showScanlines))
-    } catch {
-      localStorage.removeItem("showScanlines")
     }
   }
 
@@ -333,12 +305,21 @@ export const loadPreferences = () => {
     }
   }
 
-  const hotReload = localStorage.getItem("hotReload")
-  if (hotReload) {
+  const reverseYAxis = localStorage.getItem("reverseYAxis")
+  if (reverseYAxis) {
     try {
-      setHotReload(JSON.parse(hotReload))
+      passReverseYAxis(JSON.parse(reverseYAxis))
     } catch {
-      localStorage.removeItem("hotReload")
+      localStorage.removeItem("reverseYAxis")
+    }
+  }
+
+  const siriusJoyport = localStorage.getItem("siriusJoyport")
+  if (siriusJoyport) {
+    try {
+      passSiriusJoyport(JSON.parse(siriusJoyport))
+    } catch {
+      localStorage.removeItem("siriusJoyport")
     }
   }
 
@@ -359,37 +340,37 @@ export const loadPreferences = () => {
       localStorage.removeItem("touchJoystickSensitivity")
     }
   }
+
+  const traceSettings = getPreferenceTraceSettings()
+  if (JSON.stringify(traceSettings) !== JSON.stringify(TraceSettingsDefault)) {
+    passSetTraceSettings(traceSettings)
+  }
 }
 
 export const resetPreferences = () => {
+  booleanUIKeys.forEach(key => {
+    localStorage.removeItem(key)
+    setUIStateBoolean(key, false)
+  })
+  // Reset other localStorage-only boolean preferences
+  localStorage.removeItem("reverseYAxis")
+  localStorage.removeItem("siriusJoyport")
+  localStorage.removeItem("debugMode")
+  passReverseYAxis(false)
+  passSiriusJoyport(false)
+  passSetShowDebugTab(false)
+  
   setPreferenceSpeedMode()
-  setPreferenceCapsLock()
   setPreferenceColorMode()
-  setPreferenceShowScanlines()
   setPreferenceTheme()
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()
-  setPreferenceDebugMode()
-  setPreferenceHotReload()
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
-  setPreferenceTiltSensorJoystick()
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
-}
-
-export const getPreferenceFirstRunMinimal = () => {
-  let value: boolean = true
-
-  const item = localStorage.getItem("firstRunMinimal")
-  if (item) {
-    try {
-      value = JSON.parse(item)
-    } catch { /* empty */ }
-  }
-
-  return value
+  setPreferenceTraceSettings()
 }
 
 export const getPreferenceNewReleasesChecked = () => {
@@ -403,4 +384,49 @@ export const getPreferenceNewReleasesChecked = () => {
   }
 
   return value
+}
+
+export const getPreferenceDebugTabLeftWidth = (): number => {
+  let value = -1
+  const item = localStorage.getItem("debugTabLeftWidth")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch {
+      localStorage.removeItem("debugTabLeftWidth")
+    }
+  }
+  return value
+}
+
+export const getPreferenceTraceSettings = (): TraceSettings => {
+  let numLines = TraceSettingsDefault.numLines
+  const traceNumLines = localStorage.getItem("traceNumLines")
+  if (traceNumLines) {
+    try {
+      numLines = JSON.parse(traceNumLines)
+    } catch {
+      localStorage.removeItem("traceNumLines")
+    }
+  }
+  let collapseLoops = TraceSettingsDefault.collapseLoops
+  const traceCollapseLoops = localStorage.getItem("traceCollapseLoops")
+  if (traceCollapseLoops) {
+    try {
+      collapseLoops = JSON.parse(traceCollapseLoops)
+    } catch {
+      localStorage.removeItem("traceCollapseLoops")
+    }
+  }
+  let ignoreRegisters = TraceSettingsDefault.ignoreRegisters
+  const traceIgnoreRegisters = localStorage.getItem("traceIgnoreRegisters")
+  if (traceIgnoreRegisters) {
+    try {
+      ignoreRegisters = JSON.parse(traceIgnoreRegisters)
+    } catch {
+      localStorage.removeItem("traceIgnoreRegisters")
+    }
+  }
+
+  return { numLines, collapseLoops, ignoreRegisters }
 }

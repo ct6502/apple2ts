@@ -1,7 +1,8 @@
-import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory"
-import { getApple2State, setApple2State } from "./motherboard"
+import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver, memGetC000 } from "./memory"
 import { RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
+import { getApple2State, setApple2State } from "./save_restore"
+import { SWITCHES } from "./softswitches"
 
 type ExpectValue = (i: number) => void
 
@@ -323,16 +324,29 @@ test("test RamWorks Save/Restore", () => {
   setIsTesting()
   memoryReset()
   setRamWorks(4096)
-  memSet(0x00C0, 99)
-  memSet(0xC073, 5)
-  memSet(0xC009, 0)
-  memSet(0x00C0, 5)
+  const bank = 5
+  memSet(0x00C0, 99) // sample value in main mem
+  memGet(0xC08B)  // Bank-switched read/write enable (bank 1), $D000-$FFFF
+  memGet(0xC08B)  // Need to read twice to enable
+  memSet(0xC073, bank)  // aux bank number
+  memSet(0xC009, 0)  // aux mem
+  memSet(0x00C0, 5)  // sample value in aux mem
+  memSet(0xFFFF, 6)  // sample value in (bank-switched) aux mem
   expect(memGet(0x00C0)).toEqual(5)
   const sState = getApple2State()
   memoryReset()
   expect(memGet(0x00C0)).toEqual(0xFF)
-  setApple2State(sState, 1.0)
+  setApple2State(sState, 2.0)
+  // We should still be in aux mem since that was our "saved" state
+  expect(SWITCHES.ALTZP.isSet).toEqual(true)
+  expect(SWITCHES.BSRREADRAM.isSet).toEqual(true)
+  expect(SWITCHES.BSR_WRITE.isSet).toEqual(true)
+  expect(memGetC000(0xC073)).toEqual(bank)
   expect(memGet(0x00C0)).toEqual(5)
+  expect(memGet(0xFFFF)).toEqual(6)
+  // Switch back to main mem
+  memSet(0xC008, 0)
+  expect(memGet(0x00C0)).toEqual(99)
 })
 
 const LOC1 = 0xD17B   // $53 in Apple II/plus/e/enhanced

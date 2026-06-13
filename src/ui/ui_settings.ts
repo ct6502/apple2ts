@@ -1,15 +1,22 @@
 import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { handleGetMachineName } from "./main2worker"
 
 const uiState: UIState = {
   appMode: "",
   arrowKeysAsJoystick: true,
-  capsLock: true,
+  manualNumbering: true,
+  capitalizeBasic: true,
+  lowercaseMode: true,
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
+  debugMode: false,
   ghosting: false,
   helpText: "",
   hotReload: false,
+  reverseYAxis: false,
   showScanlines: false,
+  siriusJoyport: false,
+  tabView: 0,
   theme: UI_THEME.CLASSIC,
   tiltSensorJoystick: false,
   touchJoystickMode: "off",
@@ -24,7 +31,7 @@ export const getUIState = () => {
 export const setUIState = (state: UIState) => {
   uiState.appMode = state?.appMode ?? ""
   uiState.arrowKeysAsJoystick = state?.arrowKeysAsJoystick ?? false
-  uiState.capsLock = state?.capsLock ?? false
+  uiState.lowercaseMode = state?.lowercaseMode ?? false
   uiState.colorMode = state?.colorMode ?? COLOR_MODE.COLOR
   uiState.crtDistortion = state?.crtDistortion ?? false
   uiState.helpText = state?.helpText ?? ""
@@ -38,48 +45,36 @@ export const setUIState = (state: UIState) => {
 
 //------------------------------------------------------
 
+export type BooleanKeyOf<T> = {
+  [K in keyof T]: T[K] extends boolean ? K : never
+}[keyof T]
+
 export const setArrowKeysAsJoystick = (joystick: boolean) => {
   uiState.arrowKeysAsJoystick = joystick
+}
+
+export const setUIStateBoolean = (key: BooleanKeyOf<UIState>, value: boolean) => {
+  uiState[key] = value
 }
 
 export const setAppMode = (mode: string) => {
   uiState.appMode = mode
 }
 
-export const setCapsLock = (lock: boolean) => {
-  uiState.capsLock = lock
-}
-
 export const setColorMode = (mode: COLOR_MODE) => {
   uiState.colorMode = mode
-}
-
-export const setCrtDistortion = (mode: boolean) => {
-  uiState.crtDistortion = mode
-}
-
-export const setGhosting = (mode: boolean) => {
-  uiState.ghosting = mode
 }
 
 export const setHelpText = (helptext: string) => {
   uiState.helpText = helptext
 }
 
-export const setHotReload = (mode: boolean) => {
-  uiState.hotReload = mode
-}
-
-export const setShowScanlines = (mode: boolean) => {
-  uiState.showScanlines = mode
+export const setTabView = (tabView: number) => {
+  uiState.tabView = tabView
 }
 
 export const setTheme = (theme: UI_THEME) => {
   uiState.theme = theme
-}
-
-export const setTiltSensorJoystick = (mode: boolean) => {
-  uiState.tiltSensorJoystick = mode
 }
 
 export const setTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE) => {
@@ -90,11 +85,11 @@ export const setTouchJoystickSensitivity = (sensitivity: number) => {
   uiState.touchJoystickSensitivity = sensitivity
 }
 
-export const setUseOpenAppleKey = (openApple: boolean) => {
-  uiState.useOpenAppleKey = openApple
-}
-
 //------------------------------------------------------
+
+export const isEmbedMode = () => {
+  return uiState.appMode === "embed"
+}
 
 export const isGameMode = () => {
   return uiState.appMode === "game"
@@ -104,8 +99,16 @@ export const getArrowKeysAsJoystick = () => {
   return uiState.arrowKeysAsJoystick
 }
 
-export const getCapsLock = () => {
-  return uiState.capsLock
+export const handleGetManualNumbering = () => {
+  return uiState.manualNumbering
+}
+
+export const handleGetCapitalizeBasic = () => {
+  return uiState.capitalizeBasic
+}
+
+export const getLowercaseMode = () => {
+  return uiState.lowercaseMode && (handleGetMachineName() !== "APPLE2P")
 }
 
 export const getColorMode = () => {
@@ -132,6 +135,10 @@ export const getShowScanlines = () => {
   return uiState.showScanlines
 }
 
+export const getTabView = () => {
+  return uiState.tabView
+}
+
 export const getTouchJoyStickMode = () => {
   return uiState.touchJoystickMode
 }
@@ -141,7 +148,7 @@ export const getTheme = () => {
 }
 
 export const isMinimalTheme = () => {
-  return uiState.theme == UI_THEME.MINIMAL && !isGameMode()
+  return (uiState.theme == UI_THEME.MINIMAL && !isGameMode()) || isEmbedMode()
 }
 
 export const getTiltSensorJoystick = () => {

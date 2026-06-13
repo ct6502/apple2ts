@@ -1,11 +1,11 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
   DISASSEMBLE_VISIBLE} from "../common/utility"
-import { getStartupTextPage } from "./panels/startuptextpage"
+import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
 import { copyCanvas } from "./copycanvas"
-import { set6502Instructions, setDisassemblyVisibleMode } from "./panels/disassembly_utilities"
+import { set6502Instructions, setDisassemblyVisibleMode } from "./panels/disassembly/disassembly_utilities"
 import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData } from "./devices/audio/midiinterface"
@@ -38,6 +38,7 @@ export const passSetRunMode = (runMode: RUN_MODE) => {
     bootCallback()
   }
   doPostMessage(MSG_MAIN.RUN_MODE, runMode)
+  machineState.runMode = runMode
 }
 
 export const passSetState6502 = (state: STATE6502) => {
@@ -62,14 +63,18 @@ export const passStepOut = () => {
   doPostMessage(MSG_MAIN.STEP_OUT, true)
 }
 
+export const passBasicStep = () => {
+  doPostMessage(MSG_MAIN.BASIC_STEP, true)
+}
+
 export const passSetDebug = (doDebug: boolean) => {
   doPostMessage(MSG_MAIN.DEBUG, doDebug)
   // Force the state right away, so the UI can update.
   machineState.isDebugging = doDebug
 }
 
-export const passSetGameMode = (mode: boolean) => {
-  doPostMessage(MSG_MAIN.GAME_MODE, mode)
+export const passSetAppMode = (mode: string) => {
+  doPostMessage(MSG_MAIN.APP_MODE, mode)
 }
 
 export const passSetShowDebugTab = (show: boolean) => {
@@ -143,12 +148,18 @@ export const passAppleCommandKeyRelease = (left: boolean) => {
 }
 
 export const passSetGamepads = (gamePads: EmuGamepad[] | null) => {
-  doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
+  if (machineState.runMode !== RUN_MODE.IDLE) {
+    doPostMessage(MSG_MAIN.GAMEPAD, gamePads)
+  }
 }
 
-export const passSetBinaryBlock = (address: number, data: Uint8Array, run: boolean) => {
+export const passSetBinaryBlock = (address: number, data: Uint8Array, run = false) => {
   const memBlock: SetMemoryBlock = {address, data, run}
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
+}
+
+export const passExecuteBasicCommand = (command: string) => {
+  doPostMessage(MSG_MAIN.EXECUTE_BASIC_COMMAND, command)
 }
 
 export const passSetCycleCount = (count: number) => {
@@ -169,6 +180,10 @@ export const passRxMidiData = (data: Uint8Array) => {
 
 const passThumbnailImage = (thumbnail: string) => {
   doPostMessage(MSG_MAIN.THUMBNAIL_IMAGE, thumbnail)
+}
+
+export const passReverseYAxis = (mode: boolean) => {
+  doPostMessage(MSG_MAIN.REVERSE_YAXIS, mode)
 }
 
 export const passSetRamWorks = (size: number) => {
@@ -197,9 +212,33 @@ export const passSetDriveProps = (props: DriveProps) => {
   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }
 
+export const passSiriusJoyport = (mode: boolean) => {
+  doPostMessage(MSG_MAIN.SIRIUS_JOYPORT, mode)
+}
+
+export const passSetTracing = (tracing: boolean) => {
+  doPostMessage(MSG_MAIN.TRACING, tracing)
+  // Force the state right away, so the UI can update.
+  machineState.isTracing = tracing
+}
+
+export const passSetTraceSettings = (traceSettings: TraceSettings) => {
+  doPostMessage(MSG_MAIN.TRACE_SETTINGS, traceSettings)
+}
+
+export const passRequestMemoryDump = () => {
+  doPostMessage(MSG_MAIN.GET_MEMORY, true)
+}
+
+// This is a cached memory dump, updated whenever the main requests a new one.
+// Currently only used by the AI Agent, since it may want to look at memory
+// even when the emulator is not paused.
+let memoryResource: Uint8Array<ArrayBufferLike> = new Uint8Array()
+
 let machineState: MachineState = {
   addressGetTable: [],
   altChar: true,
+  basicMemory: new Uint8Array(),
   breakpoints: new BreakpointMap(),
   button0: false,
   button1: false,
@@ -211,6 +250,7 @@ let machineState: MachineState = {
   extraRamSize: 64,
   hires: new Uint8Array(),
   isDebugging: TEST_DEBUG,
+  isTracing: TEST_DEBUG,
   iTempState: 0,
   lores: new Uint8Array(),
   machineName: "APPLE2EE",
@@ -225,6 +265,8 @@ let machineState: MachineState = {
   stackString: "",
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
+  tracelog: new Array<string>(),
+  zeroPage: new Uint8Array(256).fill(255)
 }
 
 export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} | null => {
@@ -311,6 +353,10 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       set6502Instructions(instructions)
       break
     }
+    case MSG_WORKER.GET_MEMORY_RESPONSE:
+      // This is a response to a GET_MEMORY request. Update the memory dump in the state.
+      memoryResource = e.data.payload as Uint8Array
+      break
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -358,7 +404,7 @@ export const handleGetState6502 = () => {
 
 export const handleGetTextPage = () => {
   // Always return the intial start page if we're idle
-  return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage() : machineState.textPage
+  return(machineState.runMode === RUN_MODE.IDLE) ? getStartupTextPage(machineState.machineName) : machineState.textPage
 }
 
 export const handleGetTextPageAsString = () => {
@@ -397,6 +443,10 @@ export const handleGetRamWorksBank = () => {
   return machineState.ramWorksBank
 }
 
+export const handleGetMemoryResource = () => {
+  return memoryResource
+}
+
 export const handleGetMemoryDump = () => {
   return machineState.memoryDump
 }
@@ -430,7 +480,7 @@ export const handleGetTimeTravelThumbnails = () => {
 }
 
 export const handleGetSaveState = (callback: (sState: EmulatorSaveState) => void,
-  withSnapshots: boolean) => {
+  withSnapshots = false) => {
   saveStateCallback = callback
   doPostMessage(withSnapshots ? MSG_MAIN.GET_SAVE_STATE_SNAPSHOTS : MSG_MAIN.GET_SAVE_STATE, true)
 }
@@ -445,4 +495,20 @@ export const handleGetMachineName = () => {
 
 export const handleGetSoftSwitchDescriptions = () => {
   return softSwitchDescriptions
+}
+
+export const handleGetZeroPage = () => {
+  return machineState.zeroPage
+}
+
+export const handleGetTracing = () => {
+  return machineState.isTracing
+}
+
+export const handleGetTracelog = () => {
+  return machineState.tracelog
+}
+
+export const handleGetBasicMemory = () => {
+  return machineState.basicMemory
 }

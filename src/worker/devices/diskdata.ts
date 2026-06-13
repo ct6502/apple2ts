@@ -1,12 +1,13 @@
 import { passDriveSound } from "../worker2main"
 import { s6502 } from "../instructions"
 import { toHex, DRIVE } from "../../common/utility"
-import { getCurrentDriveData, getCurrentDriveState, passData, setCurrentDrive } from "./drivestate"
+import { getCurrentDriveData, getCurrentDriveState, passDriveData, setCurrentDrive } from "./drivestate"
 import { setSlotDriver, setSlotIOCallback } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
 let dataRegister = 0
+let dataRegHold = false
 let cycleRemainder = 0
 let motorOnTime = 0
 const doDebugDrive = false
@@ -74,7 +75,7 @@ const moveHead = (ds: DriveState, offset: number, cycles: number) => {
     passDriveSound(DRIVE.TRACK_SEEK)
   }
   ds.status = ` Trk ${ds.quarterTrack / 4}`
-  passData()
+  passDriveData()
   // First adjust the current track location using the cycle count difference.
   // We need to do this before using the Applesauce formula below.
   cycleRemainder += cycles
@@ -166,21 +167,27 @@ const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
 
   while (cycleRemainder >= ds.optimalTiming / 8) {
     const bit = getNextBit(ds, dd)
-    if (!(dataRegister & 0x80 && !bit)) {
+
+    // When the data register high bit is set, the data register should
+    // hold for at least 4 cycles. Needed for Algernon.woz and others.
+    // https://github.com/ct6502/apple2ts/issues/230
+    if (dataRegHold) {
+      dataRegHold = !bit
+    } else {
       if (dataRegister & 0x80) {
-          dataRegister = 0
+        dataRegister = 0x2 | bit
+      } else {
+        dataRegister = (dataRegister << 1) | bit
+        if (dataRegister & 0x80) {
+          dataRegHold = true
+        }
       }
-      dataRegister = (dataRegister << 1) | bit
     }
+
     // optimalTiming / 8 might be a float if it's not equal to 32.
     // For example, for Paul Whitehead Teaches Chess.woz, optimalTiming = 31.
     // This is actually okay and seems to work fine.
     cycleRemainder -= (ds.optimalTiming / 8)
-    // Changing this cycleRemainder cutoff to less than 6 will break
-    // loading certain disks like Balance of Power.
-    // 6 - will break Planetfall and Border Zone
-    // 8 - will work for all the test images in driverstate.test
-    if (dataRegister & 128 && cycleRemainder <= (ds.optimalTiming / 4)) break
   }
   if (cycleRemainder < 0) {
     cycleRemainder = 0
@@ -235,7 +242,7 @@ const doWriteByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
     }
     debugCache.push(cycles >= 40 ? 2 : cycles >= 36 ? 1 : dataRegister)
     ds.diskHasChanges = true
-    ds.lastWriteTime = Date.now()
+    ds.lastAppleWriteTime = Date.now()
     dataRegister = 0
   }
 }
@@ -250,7 +257,7 @@ const doMotorTimeout = (ds: DriveState) => {
     if (diff > 10 && diff < 10000000) console.log(`Motor on time: ${diff}ms`)
     motorOnTime = Date.now()
   }
-  passData()
+  passDriveData()
   passDriveSound(DRIVE.MOTOR_OFF)
 }
 
@@ -263,7 +270,7 @@ const startMotor = (ds: DriveState) => {
     cycleRemainder = 0
   }
   ds.motorRunning = true
-  passData()
+  passDriveData()
   passDriveSound(DRIVE.MOTOR_ON)
 }
 
@@ -343,7 +350,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       if (ds !== dsOld && dsOld.motorRunning) {
         dsOld.motorRunning = false
         ds.motorRunning = true
-        passData()
+        passDriveData()
       }
       break
     }
@@ -382,18 +389,18 @@ export const handleDriveSoftSwitches: AddressCallback =
           cycleRemainder = cycleRemainder % 4
           // Reset the Disk II Logic State Sequencer clock
           prevCycleCount = s6502.cycleCount
-          if (value >= 0) {
-            console.log(`${ds.filename}: Illegal LOAD of write data latch during read: PC=${toHex(s6502.PC)} Value=${toHex(value)}`)
-          } else {
-            console.log(`${ds.filename}: Illegal READ of write data latch during read: PC=${toHex(s6502.PC)}`)
-          }
+          // if (value >= 0) {
+          //   console.log(`${ds.filename}: Illegal LOAD of write data latch during read: PC=${toHex(s6502.PC)} Value=${toHex(value)}`)
+          // } else {
+          //   console.log(`${ds.filename}: Illegal READ of write data latch during read: PC=${toHex(s6502.PC)}`)
+          // }
         }
       }
       break
     case SWITCH.WRITE_OFF:  // $C08E,X: READ, Q7LOW
       if (ds.motorRunning && ds.writeMode) {
         doWriteByte(ds, dd, cycles)
-        ds.lastWriteTime = Date.now()
+        ds.lastAppleWriteTime = Date.now()
         // Reset the Disk II Logic State Sequencer clock
         prevCycleCount = s6502.cycleCount
       }

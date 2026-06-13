@@ -1,13 +1,13 @@
-import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { COLOR_MODE, RUN_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
-import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetGameMode } from "./main2worker"
+import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setCapsLock, setColorMode, setCrtDistortion, setGhosting, setHotReload, setShowScanlines, setTheme } from "./ui_settings"
+import { setAppMode, setColorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { Expectin } from "./expectin"
+import { Expectin } from "./api/expectin"
 
 export const handleInputParams = (paramString = "") => {
   // Most parameters are case insensitive. The only exception is the BASIC
@@ -18,32 +18,46 @@ export const handleInputParams = (paramString = "") => {
   const params = new URLSearchParams(paramString.toLowerCase())
   const porig = new URLSearchParams(paramString)
 
-  if (params.get("appmode")) {
-    setAppMode(params.get("appmode") as string)
+  const tab = (params.get("tab") as string || "").toLowerCase()
+  const tabNames = ["info", "debug", "basic", "expectin", "ai"]
+  if (tab) {
+    const tabNum = tabNames.indexOf(tab)
+    if (tabNum >= 0) {
+      setTabView(tabNum)
+      passSetDebug(tabNum === 1)
+      passSetShowDebugTab(tabNum === 1)
+    }
+  }
+
+  if (params.get("debug") === "on") {
+    setTabView(tabNames.indexOf("debug"))
+    passSetDebug(true)
+    passSetShowDebugTab(true)
+  }
+
+  const mode = params.get("appmode") as string
+  if (mode) {
+    setAppMode(mode)
     // Be sure to pass to the emulator, so we can disable breakpoints, etc.
-    passSetGameMode(params.get("appmode") === "game")
+    passSetAppMode(mode)
   }
 
   if (params.get("capslock") === "off") {
-    setCapsLock(false)
+    setUIStateBoolean("lowercaseMode", true)
   }
 
   const crtDistort = params.get("crtdistort")
   if (crtDistort === "on") {
-    setCrtDistortion(true)
+    setUIStateBoolean("crtDistortion", true)
   } else if (crtDistort === "off") {
-    setCrtDistortion(false)
-  }
-
-  if (params.get("debug") === "on") {
-    passSetShowDebugTab(true)
+    setUIStateBoolean("crtDistortion", false)
   }
 
   const ghost = params.get("ghosting")
   if (ghost === "on") {
-    setGhosting(true)
+    setUIStateBoolean("ghosting", true)
   } else if (ghost === "off") {
-    setGhosting(false)
+    setUIStateBoolean("ghosting", false)
   }
 
   const speed = params.get("speed")
@@ -74,14 +88,16 @@ export const handleInputParams = (paramString = "") => {
 
   const scanlines = params.get("scanlines")
   if (scanlines === "on") {
-    setShowScanlines(true)
+    setUIStateBoolean("showScanlines", true)
   } else if (scanlines === "off") {
-    setShowScanlines(false)
+    setUIStateBoolean("showScanlines", false)
   }
 
   const machineName = params.get("machine")?.toUpperCase()
   if (machineName) {
-    if (machineName === "APPLE2EU") {
+    if (machineName === "APPLE2P") {
+      passSetMachineName("APPLE2P")
+    } else if (machineName === "APPLE2EU") {
       passSetMachineName("APPLE2EU")
     } else {
       passSetMachineName("APPLE2EE")
@@ -123,6 +139,9 @@ export const handleInputParams = (paramString = "") => {
 
   let hasBasicProgram = false
 
+  const run = params.get("run")
+  const doRun = !(run === "0" || run === "false")
+
   const binary64 = porig.get("binary")  // Use original case for base64
   if (binary64) {
     const isGZIP = binary64.startsWith("GZIP")
@@ -139,11 +158,10 @@ export const handleInputParams = (paramString = "") => {
       const cycleCount = handleGetState6502().cycleCount
       if (cycleCount > 2000000) {
         clearInterval(waitForBoot)
-        passSetBinaryBlock(binaryRunAddress, data, false)
+        passSetBinaryBlock(binaryRunAddress, data)
       }
     }, 100)
   }
-  
 
   const tour = params.get("tour")
   if (tour) {
@@ -154,37 +172,51 @@ export const handleInputParams = (paramString = "") => {
 
   const hotReload = params.get("hotreload")
   if (hotReload) {
-    setHotReload(hotReload === "true")
+    setUIStateBoolean("hotReload", hotReload === "true")
   }
 
-  const run = params.get("run")
-  const doRun = !(run === "0" || run === "false")
+  const hasLineNumbers = (text: string) => {
+    // Remove all space characters, then make sure we don't have a CALL -151.
+    const trimmed = text.replace(/ +/g, "").toLowerCase()
+    if (!trimmed.includes("call-151")) {
+      // See if at least half of our lines start with line numbers.
+      const lines = trimmed.split(/\r?\n/)
+      let lineCount = 0
+      for (const line of lines) {
+        if (/^[0-9]/.test(line)) {
+          lineCount++
+          if (lineCount >= lines.length / 2) {
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
 
   // Use the original case of the text string or BASIC program.
-  const text = porig.get("basic") || porig.get("BASIC") || porig.get("text") || porig.get("TEXT")
+  const isBASIC = porig.get("basic") || porig.get("BASIC")
+  const text = isBASIC || porig.get("text") || porig.get("TEXT")
   hasBasicProgram = hasBasicProgram || (text !== null)
   if (text) {
-    const trimmed = text.trim()
-    const hasLineNumbers = /^[0-9]/.test(trimmed) || /[\n\r][0-9]/.test(trimmed)
-
-    if (hasLineNumbers) {
+    if (isBASIC || hasLineNumbers(text)) {
       const sentinel = `REM ${Date.now()}`
-      const cmd = `${trimmed}\n${sentinel}\n`
-
+      const cmd = `${text}\n${sentinel}\n`
       sendTextAndWait("", "]", () => {
-      const prevSpeedMode = handleGetSpeedMode()
-      setPreferenceSpeedMode(MaximumSpeedMode)
-
-      sendTextAndWait(cmd, sentinel, () => {
-        setPreferenceSpeedMode(prevSpeedMode)
-        if (doRun) {
-          passPasteText("\nRUN\n")
-        }
+        const prevSpeedMode = handleGetSpeedMode()
+        setPreferenceSpeedMode(MaximumSpeedMode)
+        sendTextAndWait(cmd, sentinel, () => {
+          setPreferenceSpeedMode(prevSpeedMode)
+          if (doRun) {
+            passPasteText("\nRUN\n")
+          }
+        })
       })
-    })
-    }
-    else {
-      const cmd = trimmed + (doRun ? "\nRUN\n" : "\n")
+    } else {
+      // Add a newline so running a program from Total Replay works.
+      // This may need to be revisited in the future if someone complains
+      // about the additional newline.
+      const cmd = text + "\n"
       const waitForBoot = setInterval(() => {
         // Wait a bit to give the emulator time to start and boot any disks.
         const cycleCount = handleGetState6502().cycleCount
@@ -194,6 +226,30 @@ export const handleInputParams = (paramString = "") => {
         }
       }, 100)
     }
+  }
+
+  const hex = porig.get("hex")  // Use original case for base64
+  if (hex) {
+    // Convert string of two-digit hex values to Uint8Array
+    const data = new Uint8Array(hex.length / 2)
+    for (let i = 0; i < data.length; i++) {
+      data[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16)
+    }
+    if (!hasBasicProgram) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+      setTimeout(() => { passSetRunMode(RUN_MODE.NEED_RESET) }, 500)
+    }
+    const waitForBoot = setInterval(() => {
+      // Wait a bit to give the emulator time to start and boot any disks.
+      const cycleCount = handleGetState6502().cycleCount
+      if (cycleCount > 2000000) {
+        clearInterval(waitForBoot)
+        passSetBinaryBlock(binaryRunAddress, data)
+        if (doRun) {
+          passPasteText(`\nCALL -151\n${binaryRunAddress.toString(16)}G\n`)
+        }
+      }
+    }, 100)
   }
 
   return hasBasicProgram
@@ -237,30 +293,38 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
 }
 
 const sendTextAndWait = (sendText: string, waitText: string, callback: () => void) => {
-  const expectinJson =
-    {
-        "commands": [
-            {
-                "send": sendText
-            },
-            {
-                "expect": [
-                    {
-                        "match": waitText,
-                        "commands": [
-                            {
-                                "disconnect": {}
-                            }
-                        ]
-                    }
-                ]
-            }
+  const expectinJson = {
+    "commands": [
+      {
+        "send": sendText
+      },
+      {
+        "expect": [
+          {
+            "match": waitText,
+            "commands": [
+              {
+                "disconnect": {}
+              }
+            ]
+          }
         ]
-    }
+      }
+    ]
+  }
   const expectin = new Expectin(JSON.stringify(expectinJson))
   expectin.Run()
 
+  // Safety check: If it turns out we don't have a BASIC program, we don't
+  // want to be stuck in ExpectIn forever. This timeout should be long
+  // enough that all normal BASIC programs should finish pasting.
+  const timeout = (sendText.length > 100) ? (sendText.length / 10) : 10
+  let counter = 0
   const interval = window.setInterval(() => {
+    counter++
+    if (counter > timeout) {
+      expectin.Cancel()
+    }
     if (!expectin.IsRunning()) {
       clearInterval(interval)
       callback()

@@ -1,5 +1,20 @@
 export const code = `
         ORG   $300
+OVER    LDA   #$00
+LOOPA   LDX   #$00
+LOOPX   LDY   #$00
+LOOPY   INY
+        BNE   LOOPY
+        INX
+        BNE   LOOPX  ; do inner Y loop again, 256 times
+        INC
+        BNE   LOOPA  ; do inner X loop again, 256 times
+        JMP   OVER   ; do outer loop forever
+        RTS
+`
+
+export const codeMotor = `
+        ORG   $300
         LDA   $C000
         LDX   $C010
         JSR   $F941
