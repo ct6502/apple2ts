@@ -405,6 +405,7 @@ export const handleSetDiskFromURL = async (url: string,
       
       if (callback) {
         callback(null)
+        return
       } else {
         setTimeout(() => alert(errorMessage), 100)
         return

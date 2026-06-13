@@ -56,4 +56,4 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
   }
 
   return [newDiskImageUrl, fileSize]
-}}
+}

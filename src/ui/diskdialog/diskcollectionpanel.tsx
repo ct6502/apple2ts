@@ -108,7 +108,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     callback?: (buffer: ArrayBuffer | null) => void) => {
     // We want to restart the emulator when loading a disk from our Disk Collection
     passSetRunMode(RUN_MODE.IDLE)
-    
+
     if (diskCollectionItem) {
       if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
         handleSetDiskFromCloudData(diskCollectionItem.cloudData, driveIndex, callback)
