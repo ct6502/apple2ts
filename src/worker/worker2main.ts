@@ -1,7 +1,5 @@
-import { doSetRunMode,
-  doGetSaveState, doRestoreSaveState, doSetSpeedMode,
-  doGoBackInTime, doGoForwardInTime,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doGotoTimeTravelIndex, doSetState6502, doTakeSnapshot, doGetSaveStateWithSnapshots, doSetThumbnailImage, doSetPastedText, forceSoftSwitches, 
+import { doSetRunMode, doSetSpeedMode,
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches, 
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
@@ -21,6 +19,7 @@ import { receiveCommData } from "./devices/superserial/serial"
 import { setTraceSettings } from "./tracelog"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
 import { getMemoryDump } from "./memory"
+import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
