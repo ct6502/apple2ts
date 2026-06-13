@@ -28,8 +28,8 @@ TypeScript Apple II Emulator
   if (!isGameMode()) {
     emulatorStartText +=`
 
-Click on the Start Tour globe
-button to begin a guided tour.
+Click on the Disk Collections icon
+to load a built-in disk or game.
 `
   }
 

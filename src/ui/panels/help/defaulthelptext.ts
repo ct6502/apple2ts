@@ -40,24 +40,7 @@ defaultHelpText += `
 <b>Disk images:</b> hdv, 2mg, dsk, woz, po, do, bin, bas
 
 <b>Optional URL Parameters</b>
-address=1234 (hex load address for hex data)
-appmode=game|embed
-capslock=off
-color=color|nofringe|green|amber|white|inverse
-crtdistort=on|off
-debug=on
-ghosting=on|off
-hex=hexadecimal program to load at address
-machine=apple2p|apple2eu|apple2ee (II+, IIe, IIe enh)
-ramdisk=64|512|1024|4096|8192
-run=false (do not run Hex or BASIC program)
-scanlines=on|off
-sound=off
-speed=snail|slow|normal|two|three|fast|warp
-text=<a href="https://www.urlencoder.org" target="_blank" rel="noopener noreferrer">urlencoded</a> string or BASIC program to paste
-theme=classic|dark|minimal
-tour=main|debug|settings
-#urltodiskimage
+Press the Link Builder button on the toolbar to generate links with emulator parameters.
 
 <b>Examples</b>
 <a href="https://apple2ts.com/?debug=on#Replay" target="_blank">Total Replay with debugging</a>
