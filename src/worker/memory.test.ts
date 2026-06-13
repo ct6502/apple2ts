@@ -1,7 +1,7 @@
 import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver } from "./memory"
-import { getApple2State, setApple2State } from "./motherboard"
 import { RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
+import { getApple2State, setApple2State } from "./save_restore"
 
 type ExpectValue = (i: number) => void
 
