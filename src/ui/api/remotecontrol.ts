@@ -39,6 +39,8 @@ import {
   passTimeTravelIndex,
   passTimeTravelSnapshot,
   passSetShowDebugTab,
+  handleIsRetroHardcoreBlocked,
+  handleGetRetroAchievementsState,
 } from "../main2worker"
 import {
   setPreferenceBreakpoints,
@@ -155,6 +157,7 @@ const collectStatus = () => {
     },
     ui: getUIState(),
     drives: getDriveSummary(),
+    retroAchievements: handleGetRetroAchievementsState(),
   }
 }
 
@@ -349,6 +352,12 @@ const connectToRemoteServer = async () => {
 }
 
 const executeCommand = async (action: string, payload: Record<string, unknown>) => {
+  const assertHardcoreAllowed = (blockedActions: string[]) => {
+    if (handleIsRetroHardcoreBlocked() && blockedActions.includes(action)) {
+      throw new Error("RetroAchievements hardcore is active. Requested action is disabled.")
+    }
+  }
+
   switch (action) {
     case "getStatus":
       return collectStatus()
@@ -356,7 +365,13 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
     case "getMemory":
       return collectMemory()
 
+    case "getRetroAchievements":
+      return {
+        retroAchievements: handleGetRetroAchievementsState(),
+      }
+
     case "setRunMode":
+      assertHardcoreAllowed(["setRunMode"])
       passSetRunMode(Number(payload.runMode))
       return collectStatus()
 
@@ -421,10 +436,12 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       return collectStatus()
 
     case "setMemory":
+      assertHardcoreAllowed(["setMemory"])
       passSetMemory(Number(payload.address), Number(payload.value))
       return collectStatus()
 
     case "setCpuState":
+      assertHardcoreAllowed(["setCpuState"])
       passSetState6502(payload.state as STATE6502)
       return collectStatus()
 
@@ -447,6 +464,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       }
 
     case "createSnapshot":
+      assertHardcoreAllowed(["createSnapshot"])
       return {
         snapshots: await executeSnapshotAction(() => {
           passTimeTravelSnapshot()
@@ -454,6 +472,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       }
 
     case "activateSnapshot": {
+      assertHardcoreAllowed(["activateSnapshot"])
       const snapshotId = String(payload.snapshotId || "")
       const index = Number(snapshotId.replace(/^snap:/, ""))
       if (!Number.isInteger(index) || index < 0) {
@@ -467,6 +486,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
     }
 
     case "stepSnapshotBack":
+      assertHardcoreAllowed(["stepSnapshotBack"])
       if (!handleCanGoBackward()) {
         return {
           snapshots: collectSnapshots(),
@@ -479,6 +499,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       }
 
     case "stepSnapshotForward":
+      assertHardcoreAllowed(["stepSnapshotForward"])
       if (!handleCanGoForward()) {
         return {
           snapshots: collectSnapshots(),
@@ -494,6 +515,7 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       return exportSaveState(Boolean(payload.includeSnapshots))
 
     case "importSaveState": {
+      assertHardcoreAllowed(["importSaveState"])
       const dataBase64 = String(payload.dataBase64 || "")
       if (!dataBase64) {
         throw new Error("dataBase64 is required")
@@ -507,16 +529,19 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       return collectStatus()
 
     case "stepInto":
+      assertHardcoreAllowed(["stepInto"])
       return executeStep(() => {
         passStepInto()
       })
 
     case "stepOver":
+      assertHardcoreAllowed(["stepOver"])
       return executeStep(() => {
         passStepOver()
       })
 
     case "stepOut":
+      assertHardcoreAllowed(["stepOut"])
       return executeStep(() => {
         passStepOut()
       })

@@ -4,6 +4,7 @@ import BinaryFileDialog from "./devices/binaryfiledialog"
 import { RestoreSaveState } from "./savestate"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "./devices/disk/driveprops"
 import { isFileSystemApiSupported } from "./ui_utilities"
+import { handleIsRetroHardcoreBlocked } from "./main2worker"
 
 const FileInput = (props: DisplayProps) => {
   const [displayBinaryDialog, setDisplayBinaryDialog] = useState(false)
@@ -13,6 +14,10 @@ const FileInput = (props: DisplayProps) => {
   const readFile = async (file: File, index: number) => {
     const fname = file.name.toLowerCase()
     if (fname.endsWith("a2ts")) {
+      if (handleIsRetroHardcoreBlocked()) {
+        window.alert("RetroAchievements hardcore is active. Loading save states is disabled.")
+        return
+      }
       const fileread = new FileReader()
       fileread.onload = function (ev) {
         if (ev.target) {

@@ -139,6 +139,35 @@ const getSoftSwitchResource = (status) => ({
       : {},
 })
 
+const getRetroAchievementsResource = (status) => {
+  const retroAchievements = status?.retroAchievements
+  if (!retroAchievements || typeof retroAchievements !== "object") {
+    return {
+      enabled: false,
+      hardcore: false,
+      active: false,
+      gameId: null,
+      gameTitle: "",
+      statusText: "RetroAchievements unavailable.",
+      trackerText: "",
+      achievements: [],
+      toasts: [],
+    }
+  }
+
+  return {
+    enabled: Boolean(retroAchievements.enabled),
+    hardcore: Boolean(retroAchievements.hardcore),
+    active: Boolean(retroAchievements.active),
+    gameId: retroAchievements.gameId ?? null,
+    gameTitle: String(retroAchievements.gameTitle || ""),
+    statusText: String(retroAchievements.statusText || ""),
+    trackerText: String(retroAchievements.trackerText || ""),
+    achievements: Array.isArray(retroAchievements.achievements) ? retroAchievements.achievements : [],
+    toasts: Array.isArray(retroAchievements.toasts) ? retroAchievements.toasts : [],
+  }
+}
+
 const getMachineResource = (status) => {
   const machine = status?.machine || {}
   return {
@@ -790,6 +819,17 @@ const server = createServer(async (req, res) => {
         return
       }
       writeEnvelope(res, 200, await getFreshMachineResource(client))
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/retroachievements") {
+      const client = getConnectedClient()
+      if (!client) {
+        writeErrorEnvelope(res, 404, "NOT_FOUND", "Requested resource was not found.")
+        return
+      }
+      const status = await getFreshStatus(client)
+      writeEnvelope(res, 200, getRetroAchievementsResource(status))
       return
     }
 

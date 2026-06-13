@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passRetroAchievementsConfig, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
@@ -163,6 +163,8 @@ export const setPreferenceDebugTabLeftWidth = (width: number) => {
 
 const gameDataDrive = "GAME_DATA-DRIVE"
 const gameDataData = "GAME_DATA-DATA"
+const retroAchievementsEnabledKey = "retroAchievementsEnabled"
+const retroAchievementsHardcoreKey = "retroAchievementsHardcore"
 
 export const hasDiskImageInLocalStorage = () => {
   return localStorage.getItem(gameDataDrive) !== null
@@ -193,6 +195,46 @@ export const setDiskImageToLocalStorage = (index: number, data: Uint8Array | nul
   } else {
     localStorage.removeItem(gameDataDrive)
     localStorage.removeItem(gameDataData)
+  }
+}
+
+export const setPreferenceRetroAchievementsEnabled = (enabled: boolean) => {
+  if (enabled) {
+    localStorage.removeItem(retroAchievementsEnabledKey)
+  } else {
+    localStorage.setItem(retroAchievementsEnabledKey, JSON.stringify(enabled))
+  }
+  passRetroAchievementsConfig({ enabled })
+}
+
+export const getPreferenceRetroAchievementsEnabled = () => {
+  const item = localStorage.getItem(retroAchievementsEnabledKey)
+  if (!item) return true
+  try {
+    return Boolean(JSON.parse(item))
+  } catch {
+    localStorage.removeItem(retroAchievementsEnabledKey)
+    return true
+  }
+}
+
+export const setPreferenceRetroAchievementsHardcore = (hardcore: boolean) => {
+  if (hardcore) {
+    localStorage.removeItem(retroAchievementsHardcoreKey)
+  } else {
+    localStorage.setItem(retroAchievementsHardcoreKey, JSON.stringify(hardcore))
+  }
+  passRetroAchievementsConfig({ hardcore })
+}
+
+export const getPreferenceRetroAchievementsHardcore = () => {
+  const item = localStorage.getItem(retroAchievementsHardcoreKey)
+  if (!item) return true
+  try {
+    return Boolean(JSON.parse(item))
+  } catch {
+    localStorage.removeItem(retroAchievementsHardcoreKey)
+    return true
   }
 }
 
@@ -259,6 +301,11 @@ export const loadPreferences = () => {
       localStorage.removeItem("theme")
     }
   }
+
+  passRetroAchievementsConfig({
+    enabled: getPreferenceRetroAchievementsEnabled(),
+    hardcore: getPreferenceRetroAchievementsHardcore(),
+  })
 
   const speedMode = localStorage.getItem("speedMode")
   if (speedMode) {

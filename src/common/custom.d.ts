@@ -23,6 +23,91 @@ declare module "*.hdv" {
 
 type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
 
+type RetroAchievementOperator = "==" | "!=" | ">" | ">=" | "<" | "<="
+
+type RetroAchievementCondition = {
+  address: number,
+  operator: RetroAchievementOperator,
+  value: number,
+}
+
+type RetroAchievementProgressDefinition = {
+  address: number,
+  min: number,
+  max: number,
+  direction: "up" | "down",
+}
+
+type RetroAchievementDefinition = {
+  id: string,
+  title: string,
+  description: string,
+  points: number,
+  conditions: RetroAchievementCondition[],
+  progress?: RetroAchievementProgressDefinition,
+  category?: "core" | "unofficial",
+}
+
+type RetroAchievementGameDefinition = {
+  gameId: string,
+  title: string,
+  mediaMatches: string[],
+  signatureAddress: number,
+  signatureData: number[],
+  achievements: RetroAchievementDefinition[],
+}
+
+type RetroAchievementRuntimeState = {
+  unlocked: boolean,
+  unlockedAt: number | null,
+  measuredValue: number | null,
+  measuredPercent: number,
+}
+
+type RetroAchievementView = {
+  id: string,
+  title: string,
+  description: string,
+  points: number,
+  unlocked: boolean,
+  unlockedAt: number | null,
+  measuredValue: number | null,
+  measuredPercent: number,
+  category: "core" | "unofficial",
+}
+
+type RetroAchievementToast = {
+  id: string,
+  title: string,
+  description: string,
+  kind: "unlock" | "mastery" | "status",
+  createdAt: number,
+}
+
+type RetroAchievementsState = {
+  enabled: boolean,
+  hardcore: boolean,
+  active: boolean,
+  gameId: string | null,
+  gameTitle: string,
+  statusText: string,
+  trackerText: string,
+  achievements: RetroAchievementView[],
+  toasts: RetroAchievementToast[],
+}
+
+type RetroAchievementsConfig = {
+  enabled?: boolean,
+  hardcore?: boolean,
+}
+
+type RetroAchievementsSaveState = {
+  enabled: boolean,
+  hardcore: boolean,
+  gameId: string | null,
+  runtime: Record<string, RetroAchievementRuntimeState>,
+}
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
@@ -236,7 +321,8 @@ type EmulatorSaveState = {
   state6502: Apple2SaveState,
   driveState: DriveSaveState,
   thumbnail: string,
-  snapshots: Array<EmulatorSaveState> | null
+  snapshots: Array<EmulatorSaveState> | null,
+  retroAchievements?: RetroAchievementsSaveState | null,
 }
 
 type TimeTravelThumbnail = {

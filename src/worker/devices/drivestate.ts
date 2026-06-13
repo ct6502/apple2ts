@@ -71,6 +71,10 @@ export const getFilename = () => {
   return ""
 }
 
+export const getMountedMediaFilenames = () => {
+  return driveState.filter((drive) => drive.filename !== "").map((drive) => drive.filename)
+}
+
 // Create an array of drive props, indexed by drive number
 const previousProps: Array<{diskHasChanges: boolean,
   motorRunning: boolean, status: string}> = []

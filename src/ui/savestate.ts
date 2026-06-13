@@ -4,7 +4,7 @@ import { setPreferenceBoolean, setPreferenceBreakpoints, setPreferenceMockingboa
 import { handleGetFilename } from "./devices/disk/driveprops"
 import { getMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { isAudioEnabled, audioEnable } from "./devices/audio/speaker"
-import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, passRestoreSaveState, passSetRunMode } from "./main2worker"
+import { handleGetBreakpoints, handleGetSpeedMode, handleGetIsDebugging, handleGetRunMode, handleGetSaveState, handleIsRetroHardcoreBlocked, passRestoreSaveState, passSetRunMode } from "./main2worker"
 import { 
   
   getUIState,
@@ -54,6 +54,10 @@ export const handleFileSave = (withSnapshots: boolean) => {
 }
 
 export const RestoreSaveState = (fileContents: string) => {
+  if (handleIsRetroHardcoreBlocked()) {
+    window.alert("RetroAchievements hardcore is active. Loading save states is disabled.")
+    return false
+  }
   const sState: EmulatorSaveState = JSON.parse(fileContents)
   passRestoreSaveState(sState)
   const displayState = sState.emulator
@@ -99,4 +103,5 @@ export const RestoreSaveState = (fileContents: string) => {
       setPreferenceBreakpoints(deserializedBreakpoints)
     }
   }
+  return true
 }

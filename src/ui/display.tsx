@@ -21,6 +21,7 @@ import DiskCollectionPanel from "./diskdialog/diskcollectionpanel"
 import { handleSetTheme } from "./ui_utilities"
 import DiskInterface from "./devices/disk/diskinterface"
 import TouchJoystick from "./controls/touchjoystick"
+import RetroAchievementsOverlay from "./retroachievementsoverlay"
 import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColorMode } from "./ui_settings"
 import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
@@ -203,6 +204,7 @@ const DisplayApple2 = () => {
     </div>
     {isMinimalTheme() && <DiskCollectionPanel {...props} />}
     {isMinimalTheme() && isTouchDevice && <TouchJoystick />}
+    <RetroAchievementsOverlay />
     <FileInput {...props} />
     </>
   )

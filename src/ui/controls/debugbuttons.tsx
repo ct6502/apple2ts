@@ -19,34 +19,36 @@ import { RUN_MODE } from "../../common/utility"
 import { getHotReload, isGameMode } from "../ui_settings"
 import { isFileSystemApiSupported } from "../ui_utilities"
 import { setPreferenceBoolean } from "../localstorage"
+import { handleIsRetroHardcoreBlocked } from "../main2worker"
 
 const DebugButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
   const notStarted = runMode === RUN_MODE.IDLE || runMode === RUN_MODE.NEED_BOOT
+  const hardcoreBlocked = handleIsRetroHardcoreBlocked()
   return <span className="flex-row">
     <div className="flex-row" id="tour-snapshot">
       <button className="push-button"
         title={"Go Back in Time"}
         onClick={passGoBackInTime}
-        disabled={notStarted || !handleCanGoBackward()}>
+        disabled={hardcoreBlocked || notStarted || !handleCanGoBackward()}>
         <FontAwesomeIcon icon={faFastBackward} />
       </button>
       <button className="push-button"
         title={"Time Travel Snapshot"}
         onClick={passTimeTravelSnapshot}
-        disabled={notStarted}>
+        disabled={hardcoreBlocked || notStarted}>
         <FontAwesomeIcon icon={faClock} />
       </button>
       <button className="push-button"
         title={"Go Forward in Time"}
         onClick={passGoForwardInTime}
-        disabled={notStarted || !handleCanGoForward()}>
+        disabled={hardcoreBlocked || notStarted || !handleCanGoForward()}>
         <FontAwesomeIcon icon={faFastForward} />
       </button>
       {!isGameMode() && <button className="push-button"
         title={"Save State with Snapshots"}
         onClick={() => handleFileSave(true)}
-        disabled={notStarted}>
+        disabled={hardcoreBlocked || notStarted}>
         <FontAwesomeIcon icon={faLayerGroup} />
       </button>}
     </div>

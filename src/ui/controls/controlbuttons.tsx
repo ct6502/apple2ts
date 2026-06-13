@@ -11,13 +11,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { handleSetCPUState } from "../controller"
 import { handleCopyScreenAsBitmap, handleCopyToClipboard } from "../copycanvas"
-import { handleGetRunMode, handleGetTextPage, passPasteText } from "../main2worker"
+import { handleGetRunMode, handleGetTextPage, handleIsRetroHardcoreBlocked, passPasteText } from "../main2worker"
 import { handleFileSave } from "../savestate"
 import { isGameMode } from "../ui_settings"
 import DiskImportExport from "../devices/disk/diskimportexport"
 
 const ControlButtons = (props: DisplayProps) => {
   const runMode = handleGetRunMode()
+  const hardcoreBlocked = handleIsRetroHardcoreBlocked()
   return <span className="flex-row" id="tour-maincontrols">
     <button className="push-button .boot-button"
       title="Boot"
@@ -37,6 +38,7 @@ const ControlButtons = (props: DisplayProps) => {
     {!isGameMode() &&
       <span id="tour-saverestore" className="flex-row">
       <button className="push-button" title="Restore State"
+        disabled={hardcoreBlocked}
         onClick={() => props.setShowFileOpenDialog(true, 0)}>
         <FontAwesomeIcon icon={faFolderOpen} style={{ fontSize: "0.9em" }} />
       </button>

@@ -5,6 +5,7 @@ import ControlButtons from "./controlbuttons"
 import DebugButtons from "./debugbuttons"
 import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
+import RetroAchievementsButtons from "./retroachievements"
 import { useState } from "react"
 import { isGameMode } from "../ui_settings"
 
@@ -27,6 +28,7 @@ const ControlPanel = (props: DisplayProps) => {
         <span className={isGameMode() ? "flex-row" : "flex-row flexwrap"} id="tour-controlbuttons">
           <ControlButtons {...props} />
           <DebugButtons {...props} />
+          <RetroAchievementsButtons {...props} />
           <FullScreenButton />
         </span>
         <ConfigButtons {...props} />

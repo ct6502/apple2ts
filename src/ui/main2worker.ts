@@ -20,6 +20,17 @@ let worker: Worker | null = null
 
 let saveStateCallback: (sState: EmulatorSaveState) => void
 let bootCallback: (() => void) | null = null
+let retroAchievementsState: RetroAchievementsState = {
+  enabled: true,
+  hardcore: true,
+  active: false,
+  gameId: null,
+  gameTitle: "",
+  statusText: "No supported game loaded.",
+  trackerText: "",
+  achievements: [],
+  toasts: [],
+}
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
@@ -212,6 +223,15 @@ export const passSetDriveProps = (props: DriveProps) => {
   doPostMessage(MSG_MAIN.DRIVE_PROPS, props)
 }
 
+export const passRetroAchievementsConfig = (config: RetroAchievementsConfig) => {
+  doPostMessage(MSG_MAIN.RETRO_ACHIEVEMENTS_CONFIG, config)
+  retroAchievementsState = {
+    ...retroAchievementsState,
+    enabled: config.enabled ?? retroAchievementsState.enabled,
+    hardcore: config.hardcore ?? retroAchievementsState.hardcore,
+  }
+}
+
 export const passSiriusJoyport = (mode: boolean) => {
   doPostMessage(MSG_MAIN.SIRIUS_JOYPORT, mode)
 }
@@ -357,6 +377,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // This is a response to a GET_MEMORY request. Update the memory dump in the state.
       memoryResource = e.data.payload as Uint8Array
       break
+    case MSG_WORKER.RETRO_ACHIEVEMENTS_STATE:
+      retroAchievementsState = e.data.payload as RetroAchievementsState
+      return {speed: machineState.cpuSpeed, helptext: ""}
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -511,4 +534,12 @@ export const handleGetTracelog = () => {
 
 export const handleGetBasicMemory = () => {
   return machineState.basicMemory
+}
+
+export const handleGetRetroAchievementsState = () => {
+  return retroAchievementsState
+}
+
+export const handleIsRetroHardcoreBlocked = () => {
+  return retroAchievementsState.enabled && retroAchievementsState.hardcore && retroAchievementsState.active
 }

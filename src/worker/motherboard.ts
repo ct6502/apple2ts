@@ -35,6 +35,7 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails } from "./save_restore"
+import { doRetroAchievementsFrame, resetRetroAchievements } from "./retroachievements"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -138,6 +139,7 @@ export const doBoot = () => {
   memoryReset()
   doSetRom(machineName)
   configureMachine()
+  resetRetroAchievements()
   if (code.length > 0) {
     const pcode = parseAssembly(0x300, code.split("\n"))
     memory.set(pcode, 0x300)
@@ -159,6 +161,7 @@ export const doBoot = () => {
 export const doReset = () => {
   clearInterrupts()
   resetSoftSwitches()
+  resetRetroAchievements()
   // Reset banked RAM
   memGet(0xC082)
   reset6502()
@@ -550,6 +553,7 @@ const doAdvance6502 = () => {
     Math.round(speedInCyclesPerMS / 100) / 10
   
   handleGamepads()
+  doRetroAchievementsFrame()
   updateExternalMachineState()
   if (takeSnapshot) {
     takeSnapshot = false

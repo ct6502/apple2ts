@@ -7,6 +7,7 @@ import { memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables 
 import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, updateExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { passRequestThumbnail } from "./worker2main"
+import { restoreRetroAchievements, serializeRetroAchievements } from "./retroachievements"
 
 let iTempState = 0
 const saveStates: Array<EmulatorSaveState> = []
@@ -146,7 +147,8 @@ export const doGetSaveState = (full: boolean): EmulatorSaveState => {
     state6502: getApple2State(),
     driveState: getDriveSaveState(full),
     thumbnail: "",
-    snapshots: null
+    snapshots: null,
+    retroAchievements: serializeRetroAchievements(),
   }
   return state
 //  return Buffer.from(compress(JSON.stringify(state)), 'ucs2').toString('base64')
@@ -175,6 +177,7 @@ export const doRestoreSaveState = (sState: EmulatorSaveState, eraseSnapshots = f
     saveStates.push(...sState.snapshots)
     iTempState = saveStates.length
   }
+  restoreRetroAchievements(sState.retroAchievements)
   updateExternalMachineState()
 }
 

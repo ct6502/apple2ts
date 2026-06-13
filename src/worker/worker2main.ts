@@ -20,6 +20,7 @@ import { setTraceSettings } from "./tracelog"
 import { setSiriusJoyport } from "./devices/sirius_joyport"
 import { getMemoryDump } from "./memory"
 import { doGotoTimeTravelIndex, doSetThumbnailImage, doGetSaveStateWithSnapshots, doGetSaveState, doGoBackInTime, doGoForwardInTime, doRestoreSaveState } from "./save_restore"
+import { configureRetroAchievements } from "./retroachievements"
 
 // This file must have worker types, but not DOM types.
 // The global should be that of a dedicated worker.
@@ -105,6 +106,10 @@ export const passSoftSwitchDescriptions = (desc: string[]) => {
 
 export const pass6502Instructions = (instructions: Array<PCodeInstr1>) => {
   doPostMessage(MSG_WORKER.INSTRUCTIONS, instructions)
+}
+
+export const passRetroAchievementsState = (state: RetroAchievementsState) => {
+  doPostMessage(MSG_WORKER.RETRO_ACHIEVEMENTS_STATE, state)
 }
 
 // We do this weird check so we can safely run this code from the node.js
@@ -253,6 +258,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.TRACE_SETTINGS:
         setTraceSettings(e.data.payload)
+        break
+      case MSG_MAIN.RETRO_ACHIEVEMENTS_CONFIG:
+        configureRetroAchievements(e.data.payload as RetroAchievementsConfig)
         break
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)
