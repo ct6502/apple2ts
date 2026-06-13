@@ -1,6 +1,7 @@
 import { CLOUD_SYNC } from "../../../common/utility"
 import { appID, clientID, pickerKey } from "../../img/iconfunctions"
 import { showGlobalProgressModal } from "../../ui_utilities"
+import { loadGoogleDriveScripts } from "./cloudscriptloader"
 
 // const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 // 4 MB
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
@@ -11,6 +12,10 @@ let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
   
+  async ensureScriptsLoaded() {
+    await loadGoogleDriveScripts()
+  }
+
   tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
     client_id: appID() + "-" + clientID() + ".apps.googleusercontent.com",
     scope: "https://www.googleapis.com/auth/drive.file",
@@ -111,17 +116,20 @@ export class GoogleDrive implements CloudProvider {
   }
 
   requestAuthToken(callback: (authToken: string) => void) {
-    this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
-      if (response.error !== undefined) {
-        throw (response)
+    this.ensureScriptsLoaded().then(() => {
+      this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+        if (response.error !== undefined) {
+          throw (response)
+        }
+        g_accessToken = response.access_token
+        callback(`Bearer ${response.access_token}`)
       }
-      g_accessToken = response.access_token
-      callback(`Bearer ${response.access_token}`)
-    }
-    this.tokenClient.requestAccessToken({prompt: "consent"})
+      this.tokenClient.requestAccessToken({prompt: "consent"})
+    })
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
+    await this.ensureScriptsLoaded()
     const result = await this.launchPicker("file", filter)
     if (result) {
       const cloudData: CloudData = {
@@ -161,6 +169,7 @@ export class GoogleDrive implements CloudProvider {
   }
 
   async upload(filename: string, blob: Blob): Promise<CloudData | null> {
+    await this.ensureScriptsLoaded()
     const result = await this.launchPicker("folder")
 
     if (result) {
