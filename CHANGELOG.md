@@ -1,5 +1,17 @@
 # Changelog
 
+## [v3.4.0](https://github.com/ct6502/apple2ts/tree/v3.4.0) (2026-06-13)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.4...v3.4.0)
+
+**Implemented enhancements:**
+
+- Virtual Keyboard\(especially for mobile device, landscape mode\) [\#227](https://github.com/ct6502/apple2ts/issues/227)
+
+**Fixed bugs:**
+
+- Improve on disk handling to make Algernon works [\#230](https://github.com/ct6502/apple2ts/issues/230)
+
 ## [v3.3.4](https://github.com/ct6502/apple2ts/tree/v3.3.4) (2026-05-27)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.3...v3.3.4)
