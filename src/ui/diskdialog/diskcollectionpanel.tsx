@@ -127,14 +127,6 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     }
   }
 
-  const handleItemClick = (diskCollectionItem: DiskCollectionItem, driveIndex: number = -1) => () => {
-    if (activeTab == TAB_INDEX_SELECT) {
-      toggleSelectedItem(diskCollectionItem)
-    } else {
-      loadDisk(driveIndex, diskCollectionItem)
-    }
-  }
-
   const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     if (activeTab == TAB_INDEX_SELECT) {
       setSelectPopupLocation([event.clientX, event.clientY])
@@ -157,35 +149,46 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     event.stopPropagation()
   }
 
-  const toggleSelectedItem = async (diskCollectionItem: DiskCollectionItem, selectItem: boolean = false) => {
-    if (!selectItem && selectedDisks.includes(diskCollectionItem)) {
-      selectedDisks.splice(selectedDisks.findIndex(x => x === diskCollectionItem), 1)
-    } else {
-      if (diskCollectionItem.cloudData && (!diskCollectionItem.cloudData.fileSize || diskCollectionItem.cloudData.fileSize <= 0)) {
-        let fileSize = 0
+  const prepareSelectedItem = async (diskCollectionItem: DiskCollectionItem) => {
+    if (diskCollectionItem.cloudData && (!diskCollectionItem.cloudData.fileSize || diskCollectionItem.cloudData.fileSize <= 0)) {
+      let fileSize = 0
 
-        if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
-          const [downloadUrl, newFileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
+      if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
+        const [downloadUrl, newFileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
 
-          if (downloadUrl) {
-            diskCollectionItem.cloudData.downloadUrl = downloadUrl?.toString()
-            fileSize = newFileSize
-          }
-        }
-        diskCollectionItem.cloudData.fileSize = fileSize
-
-        if (diskCollectionItem.bookmarkId) {
-          const bookmark = diskBookmarks.get(diskCollectionItem.bookmarkId)
-          if (bookmark && bookmark.cloudData) {
-            bookmark.cloudData.downloadUrl = diskCollectionItem.cloudData.downloadUrl
-            bookmark.cloudData.fileSize = fileSize
-            diskBookmarks.set(bookmark)
-          }
+        if (downloadUrl) {
+          diskCollectionItem.cloudData.downloadUrl = downloadUrl.toString()
+          fileSize = newFileSize
         }
       }
-      selectedDisks.push(diskCollectionItem)
+      diskCollectionItem.cloudData.fileSize = fileSize
+
+      if (diskCollectionItem.bookmarkId) {
+        const bookmark = diskBookmarks.get(diskCollectionItem.bookmarkId)
+        if (bookmark && bookmark.cloudData) {
+          bookmark.cloudData.downloadUrl = diskCollectionItem.cloudData.downloadUrl
+          bookmark.cloudData.fileSize = fileSize
+          diskBookmarks.set(bookmark)
+        }
+      }
     }
-    setSelectedDisks(selectedDisks.slice())
+
+    return diskCollectionItem
+  }
+
+  const toggleSelectedItem = async (diskCollectionItem: DiskCollectionItem, selectItem: boolean = false) => {
+    if (!selectItem && selectedDisks.includes(diskCollectionItem)) {
+      setSelectedDisks(selectedDisks.filter(x => x !== diskCollectionItem))
+      return
+    }
+
+    await prepareSelectedItem(diskCollectionItem)
+    setSelectedDisks((prevSelectedDisks) => {
+      if (prevSelectedDisks.includes(diskCollectionItem)) {
+        return prevSelectedDisks
+      }
+      return [...prevSelectedDisks, diskCollectionItem]
+    })
   }
 
   const handleSelectedClick = (diskCollectionItem: DiskCollectionItem) => async (event: React.MouseEvent<HTMLElement>) => {
@@ -357,18 +360,34 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       <div className="disk-collection-panel"
         onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs[activeTab].disks.map((diskCollectionItem, index) => (
-          <div key={`dcp-${tabs[activeTab].label}-${index}`} className="dcp-item">
+          <div
+            key={`dcp-${tabs[activeTab].label}-${index}`}
+            className="dcp-item"
+            onClick={(e) => {
+              if (activeTab == TAB_INDEX_SELECT) {
+                toggleSelectedItem(diskCollectionItem)
+                e.stopPropagation()
+              }
+            }}>
             <div className="dcp-item-title-box">
               <div
                 className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
                 title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
-                onClick={diskCollectionItem.detailsUrl ? handleHelpClick(diskCollectionItem) : () => { }}>{diskCollectionItem.title}</div>
+                onClick={(e) => {
+                  if (activeTab != TAB_INDEX_SELECT && diskCollectionItem.detailsUrl) {
+                    handleHelpClick(diskCollectionItem)(e as any)
+                  }
+                }}>{diskCollectionItem.title}</div>
             </div>
             {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
             <div
               className="dcp-item-image-box"
               title={`Click to load disk "${diskCollectionItem.title}"`}
-              onClick={handleItemClick(diskCollectionItem)}
+              onClick={() => {
+                if (activeTab != TAB_INDEX_SELECT) {
+                  loadDisk(-1, diskCollectionItem)
+                }
+              }}
               onContextMenu={handleItemRightClick(diskCollectionItem)}
             >
               <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
@@ -376,26 +395,42 @@ const DiskCollectionPanel = (props: DisplayProps) => {
             <img className="dcp-item-disk" src="assets/floppy.png" />
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
               <div className="dcp-item-new" title="Disk is a new release">
-                <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => event.stopPropagation()} />
+                <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
+                  if (activeTab != TAB_INDEX_SELECT) {
+                    event.stopPropagation()
+                  }
+                }} />
                 <div className="dcp-item-new-icon-bg">&nbsp;</div>
               </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
               <div className="dcp-item-a2ts" title="Disk is part of the Apple2TS collection">
-                <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => event.stopPropagation()} />
+                <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
+                  if (activeTab != TAB_INDEX_SELECT) {
+                    event.stopPropagation()
+                  }
+                }} />
                 <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
               </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
               <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
                 <svg
                   className="dcp-item-ia-icon"
-                  onClick={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    if (activeTab != TAB_INDEX_SELECT) {
+                      event.stopPropagation()
+                    }
+                  }}
                   fill="#ffffff"
                   viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
                 <div className="dcp-item-ia-icon-bg">&nbsp;</div>
               </div>}
             {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
               <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
-                <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => event.stopPropagation()} />
+                <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
+                  if (activeTab != TAB_INDEX_SELECT) {
+                    event.stopPropagation()
+                  }
+                }} />
               </div>}
             {activeTab == 2 && diskCollectionItem.bookmarkId &&
               <div
@@ -417,9 +452,12 @@ const DiskCollectionPanel = (props: DisplayProps) => {
         ))}
       </div>
       {activeTab == TAB_INDEX_SELECT &&
-        <div className="dcp-export-row">
+        <div className="dcp-export-row" onClick={(e) => e.stopPropagation()}>
           <div className="dcp-export-size">HDV size: <b><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</b></div>
-          <button className="dcp-export-button" disabled={isExportButtonDisabled()} onClick={handleExportClick}>Export</button>
+          <button className="dcp-export-button" disabled={isExportButtonDisabled()} onClick={(e) => {
+            e.stopPropagation()
+            handleExportClick()
+          }}>Export</button>
         </div>}
       <PopupMenu
         key="drive-popup"
@@ -469,12 +507,15 @@ const DiskCollectionPanel = (props: DisplayProps) => {
           {
             label: "Select all disks",
             icon: faCheckCircle,
-            onClick: () => {
-              tabs[TAB_INDEX_SELECT].disks.forEach((diskCollectionItem) => {
-                if (!selectedDisks.includes(diskCollectionItem)) {
-                  toggleSelectedItem(diskCollectionItem, true)
+            onClick: async () => {
+              const newSelectedDisks = [...selectedDisks]
+              for (const diskCollectionItem of tabs[TAB_INDEX_SELECT].disks) {
+                if (!newSelectedDisks.includes(diskCollectionItem)) {
+                  await prepareSelectedItem(diskCollectionItem)
+                  newSelectedDisks.push(diskCollectionItem)
                 }
-              })
+              }
+              setSelectedDisks(newSelectedDisks)
             }
           },
           {

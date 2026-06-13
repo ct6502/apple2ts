@@ -73,7 +73,6 @@
 
 .dcp-export-button:disabled {
   cursor: default;
-  pointer-events: none;
 }
 
 .dcp-tab:hover {
