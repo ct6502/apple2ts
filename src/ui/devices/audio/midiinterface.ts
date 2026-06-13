@@ -9,7 +9,7 @@ const connect = () => {
   if (navigator.requestMIDIAccess)
   {
     console.log("Midi Connect")
-    navigator.requestMIDIAccess()
+    navigator.requestMIDIAccess({ sysex: true })
     .then(
       (midi) => midiReady(midi),
       (err) => console.log("requestMIDIAccess fails", err))
@@ -122,8 +122,8 @@ const initDevices = () => {
 //}
 
 // probably not necessary
-let doActiveSense = false
-let itimer: any = 0
+const doActiveSense = false
+let itimer: ReturnType<typeof setInterval> | number = 0
 const activeSense = () => {
   const data = new Uint8Array(1).fill(0xFE)
   passRxMidiData(data)
@@ -141,7 +141,7 @@ const parseAndSendMsg = (msg: number[]) => {
 
   if (DEBUG)
   {
-    const hexString = msg.map(x => ('00' + x.toString(16)).slice(-2)).join(' ');
+    const hexString = msg.map(x => ("00" + x.toString(16)).slice(-2)).join(" ")
     console.log("Msg: ", hexString)
   }
 
@@ -239,7 +239,7 @@ export const receiveMidiData = (data: Uint8Array) => {
             {
               case 0xF0:
                 state = State.SYSEX
-                break;
+                break
               case 0xF2:
                 state = State.ARGS2
                 break
@@ -260,7 +260,7 @@ export const receiveMidiData = (data: Uint8Array) => {
             msg.length = 0
             break
         }
-        break;
+        break
     }
 
     // always send interleaved realtime messages
