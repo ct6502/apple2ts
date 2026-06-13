@@ -1,9 +1,10 @@
-import { MAX_SNAPSHOTS, RamWorksMemoryStart, RUN_MODE } from "../common/utility"
+import { Buffer } from "buffer"
+import { MAX_SNAPSHOTS, RamWorksMemoryStart, ROMmemoryStart, RUN_MODE } from "../common/utility"
 import { getDriveSaveState, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
-import { memory, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
-import { doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, updateExternalMachineState } from "./motherboard"
+import { memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
+import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, updateExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { passRequestThumbnail } from "./worker2main"
 
@@ -15,36 +16,62 @@ export const getTempStateIndex = () => iTempState
 export const getApple2State = (): Apple2SaveState => {
   // Make a copy
   const save6502 = JSON.parse(JSON.stringify(s6502))
-  // Find the largest page of RamWorks memory that has some non-0xFF data.
-  let memkeep = RamWorksMemoryStart
-  for (let i = RamWorksMemoryStart; i < memory.length; i++) {
-    if (memory[i] !== 0xFF) {
-      // If we find any non-0xFF's, jump to the next page of memory.
-      // We only add 255 since we still do the i++ for the loop
-      i += 255 - (i % 256)
-      memkeep = i + 1
+
+  // Only save memory pages that have non-$FF data.
+  // Check for both main memory and RamWorks memory.
+  // Don't bother saving ROM memory or peripheral card memory since
+  // that can be reconstructed from the machine type.
+  let counterValid = 0
+  const memvalid = new Array<number>(256 + 256 * (RamWorksMaxBank + 1)).fill(0)
+  for (let page = 0; page < 256; page++) {
+    const start = page * 256
+    if (memory.subarray(start, start + 256).some(byte => byte !== 0xFF)) {
+      memvalid[page] = 1
+      counterValid++
     }
   }
-  const membuffer = Buffer.from(memory.slice(0, memkeep))
-  // let memdiff: { [addr: number]: number } = {};
-  // for (let i = 0; i < memory.length; i++) {
-  //   if (prevMemory[i] !== memory[i]) {
-  //     memdiff[i] = memory[i]
-  //   }
-  // }
-  // prevMemory = memory
+  for (let page = 0; page < 256 * (RamWorksMaxBank + 1); page++) {
+    const start = RamWorksMemoryStart + page * 256
+    if (memory.subarray(start, start + 256).some(byte => byte !== 0xFF)) {
+      memvalid[256 + page] = 1
+      counterValid++
+    }
+  }
+  const memgood = new Uint8Array(counterValid * 256)
+  counterValid = 0
+  let maxGood = 0
+  memvalid.forEach((isValid, index) => {
+    if (isValid) {
+      const offset = (index < 256) ? 0 : (RamWorksMemoryStart - 0x10000)
+      const start = offset + index * 256
+      const memslicekeep = memory.subarray(start, start + 256)
+      memgood.set(memslicekeep, 256 * counterValid)
+      counterValid++
+      maxGood = index
+    }
+  })
+
+  const memC000 = memory.subarray(ROMmemoryStart, ROMmemoryStart + 256)
+
   return {
     s6502: save6502,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     machineName: getMachineName(),
     softSwitches: getSoftSwitches(),
     stackDump: getStackDump(),
-    memory: membuffer.toString("base64"),
+    memvalid: memvalid.slice(0, maxGood + 1).join(""),
+    memC000: Buffer.from(memC000).toString("base64"),
+    memory: Buffer.from(memgood).toString("base64"),
   }
 }
 
 export const setApple2State = (newState: Apple2SaveState, version: number) => {
   const new6502: STATE6502 = JSON.parse(JSON.stringify(newState.s6502))
+  memoryReset()
+  // Machine name might not be in older save states, so use a default in that case.
+  const machineName = newState.machineName || "APPLE2EE"
+  doSetMachineName(machineName, false)
+  configureMachine()
   setState6502(new6502)
   const softSwitches: { [name: string]: boolean } = newState.softSwitches
   for (const key in softSwitches) {
@@ -65,7 +92,7 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
     SWITCHES.BSR_WRITE.isSet = softSwitches.WRITEBSR1 || softSwitches.WRITEBSR2 ||
       softSwitches.RDWRBSR1 || softSwitches.RDWRBSR2
   }
-  const newmemory = new Uint8Array(Buffer.from(newState.memory, "base64"))
+  const newmemory = Buffer.from(newState.memory, "base64")
   if (version < 1) {
     // Main memory
     memory.set(newmemory.slice(0, 0x10000))
@@ -80,20 +107,34 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
       setRamWorks(ramWorks + 64)  // the 64 is existing AUX memory
       memory.set(newmemory.slice(0x27F00), RamWorksMemoryStart + 0x10000)
     }
-  } else {
+  } else if (version < 2) {
     // Adjust our current RamWorks memory to match the restored state.
     setRamWorks(newState.extraRamSize)
     // Note that our restored memory might be much smaller in size if
     // the RamWorks is mostly filled with 0xFF's.
     memory.set(newmemory)
+  } else {
+    let counterValid = 0
+    const memvalidArray = typeof newState.memvalid === "string" 
+      ? newState.memvalid.split("").map(c => c === "1" ? 1 : 0)
+      : newState.memvalid
+    memvalidArray.forEach((isValid, index) => {
+      if (isValid) {
+        const memslicekeep = newmemory.subarray(counterValid * 256, counterValid * 256 + 256)
+        if (index < 256) {
+          memory.set(memslicekeep, index * 256)
+        } else {
+          memory.set(memslicekeep, RamWorksMemoryStart + (index - 256) * 256)
+        }
+        counterValid++
+      }
+    })
+    memory.set(Buffer.from(newState.memC000, "base64"), ROMmemoryStart)
   }
   // This was added to Apple2SaveState later
   if (newState.stackDump) {
     setStackDump(newState.stackDump)
   }
-  // Machine name might not be in older save states, so use a default in that case.
-  const machineName = newState.machineName || "APPLE2EE"
-  doSetMachineName(machineName, false)
   updateAddressTables()
   // Force the help text to be reset if necessary.
   handleGameSetup(true)

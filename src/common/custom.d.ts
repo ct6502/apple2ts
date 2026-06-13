@@ -57,6 +57,8 @@ type Apple2SaveState = {
   machineName: MACHINE_NAME,
   softSwitches: {[name: string]: boolean},
   stackDump: Array<string>,
+  memvalid: string,
+  memC000: string,
   memory: string
 }
 
@@ -213,7 +215,7 @@ type DriveProps = {
 
 type DriveSaveState = {
   currentDrive: number,
-  driveState: DriveState[],
+  driveState: (DriveState | object)[],
   driveData: string[]
 }
 

@@ -110,19 +110,21 @@ export const passDriveData = () => {
 }
 
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
-  const data = ["", "", ""]
+  const data: string[] = new Array(driveState.length).fill("")
   for (let i=0; i < driveState.length; i++) {
     // Always save small disk images (< 32Mb), or if a full save was requested
     if (full || driveData[i].length < 32000000) {
       data[i] = Buffer.from(driveData[i]).toString("base64")
     }
   }
-  const result = { currentDrive: currentDrive,
-    driveState: [initDriveState(0, 1, true), initDriveState(1, 2, true),
-      initDriveState(2, 1, false), initDriveState(3, 2, false)],
-    driveData: data }
+  const result = { 
+    currentDrive: currentDrive,
+    driveState: [] as (DriveState | object)[],
+    driveData: data 
+  }
   for (let i=0; i < driveState.length; i++) {
-    result.driveState[i] = { ...driveState[i] }
+    // For empty drives just stash an empty object.
+    result.driveState[i] = driveState[i].filename !== "" ? { ...driveState[i] } : {}
   }
   return result
 }
@@ -137,7 +139,9 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
   initializeDriveState()
   let dindex = 0
   for (let i=0; i < newState.driveState.length; i++) {
-    driveState[dindex] = { ...newState.driveState[i] }
+    // If we had an empty drive, just skip over it.
+    if (Object.keys(newState.driveState[i]).length === 0) continue
+    driveState[dindex] = { ...newState.driveState[i] } as DriveState
     if (newState.driveData[i] !== "") {
       driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
     }

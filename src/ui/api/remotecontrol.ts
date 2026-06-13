@@ -214,7 +214,7 @@ const exportSaveState = async (withSnapshots: boolean) => {
   saveState.emulator = {
     name: "Apple2TS Emulator",
     date: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString(),
-    version: 1.0,
+    version: 2.0,
     ...getUIState(),
     audioEnable: isAudioEnabled(),
     mockingboardMode: getMockingboardMode(),

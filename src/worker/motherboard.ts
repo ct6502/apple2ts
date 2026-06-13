@@ -112,7 +112,7 @@ export const doSetShowDebugTab = (show: boolean) => {
 // }
 
 let didConfiguration = false
-const configureMachine = () => {
+export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   enableSerialCard()
@@ -233,12 +233,10 @@ export const doSetMemory = (addr: number, value: number) => {
 }
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
-  if (machineName !== name) {
-    machineName = name
-    doSetRom(machineName)
-    if (reset) doReset()
-    updateExternalMachineState()
-  }
+  machineName = name
+  doSetRom(machineName)
+  if (reset) doReset()
+  updateExternalMachineState()
 }
 
 // Temporarily hijack the CPU to change the string variable value.

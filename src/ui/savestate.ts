@@ -19,7 +19,7 @@ const useSaveStateCallback = (sState: EmulatorSaveState) => {
   const displayState: DisplaySaveState = {
     name: "Apple2TS Emulator",
     date: datetime,
-    version: 1.0,
+    version: 2.0,
     ...uiState,
     audioEnable: isAudioEnabled(),
     mockingboardMode: getMockingboardMode(),
