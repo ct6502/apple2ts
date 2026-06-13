@@ -76,11 +76,18 @@ export const getProcessorStatus = () => {
 const stackDump = new Array<string>(256).fill("")
 
 export const getStackDump = () => {
-  return stackDump.slice(0, 256)
+  // Find first non-empty string and return up to 256 entries after that (which is the max stack size)
+  let firstNonEmpty = 0
+  while (firstNonEmpty < 256 && stackDump[firstNonEmpty] === "") {
+    firstNonEmpty++
+  }
+  return stackDump.slice(firstNonEmpty, 256)
 }
 
 export const setStackDump = (dump: Array<string>) => {
-  stackDump.splice(0, dump.length, ...dump)
+  // The saved dump will usually have less than 256 entries,
+  // and we want to put the good entries at the end.
+  stackDump.splice(256 - dump.length, dump.length, ...dump)
 }
 
 export const getStackString = () => {
