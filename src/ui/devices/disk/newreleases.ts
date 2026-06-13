@@ -82,6 +82,7 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://i0.wp.com/www.the8bitguy.com/wp-content/uploads/2026/02/screenshot-01.png",
     diskUrl: "https://www.the8bitguy.com/wp-content/uploads/2026/02/Apple-II-Quarx-Shareware-02-16-2026.zip",
     detailsUrl: "https://www.the8bitguy.com/product/quarx-for-apple-iie-iic-iigs-and-laser-128/",
+    fileSize: 143360,
   },
 
 ]

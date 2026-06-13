@@ -3,6 +3,8 @@ import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../common/utility"
+import { buildProDosHdv, PRODOS_FILE_TYPE_LIBRARY, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry } from "../../common/prodos_hdv"
+import { loadAndConvertImageToHires } from "./screenshot_utils"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
 import PopupMenu from "../controls/popupmenu"
@@ -35,6 +37,43 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric"
 })
 
+type DownloadedExportDisk = {
+  item: DiskCollectionItem,
+  buffer: Uint8Array,
+  filename: string,
+}
+
+const getExportFilename = (diskCollectionItem: DiskCollectionItem, buffer: Uint8Array) => {
+  const fromCloud = diskCollectionItem.cloudData?.fileName?.trim()
+  if (fromCloud) {
+    return fromCloud
+  }
+
+  const rawName = diskCollectionItem.diskUrl.split("/").pop() || diskCollectionItem.title || "disk"
+  const decodedName = decodeURIComponent(rawName)
+  if (decodedName.includes(".")) {
+    return decodedName
+  }
+
+  const normalizedTitle = diskCollectionItem.title.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "disk"
+  return `${normalizedTitle}.${buffer.byteLength <= 143360 ? "dsk" : "po"}`
+}
+
+const downloadExportHdv = (data: Uint8Array, filename: string) => {
+  const arrayBuffer = new ArrayBuffer(data.byteLength)
+  new Uint8Array(arrayBuffer).set(data)
+  const blob = new Blob([arrayBuffer], { type: "application/octet-stream" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = filename
+  link.style.display = "none"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
   if (a.lastUpdated && b.lastUpdated) {
     const aTime = a.lastUpdated
@@ -61,7 +100,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
-  const [downloadedDisks, setDownloadedDisks] = useState<ArrayBuffer[]>([])
+  const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
 
   const TAB_INDEX_SELECT = 3
 
@@ -214,6 +253,8 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       newExportQueue.push(selectedDisk)
     })
 
+    setIsFlyoutOpen(false)
+    setDownloadedDisks([])
     setExportQueue(newExportQueue)
   }
 
@@ -224,9 +265,17 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       setDownloadedDisks([])
       alert("An unexpected error occurred while downloading the disk. Export to HDV has been aborted.")
     } else if (buffer !== undefined) {
-      downloadedDisks.push(buffer)
-      setDownloadedDisks(downloadedDisks)
-      setExportQueue(exportQueue.slice(1))
+      const currentItem = exportQueue[0]
+      if (!currentItem) {
+        return
+      }
+      const diskBuffer = new Uint8Array(buffer)
+      const filename = getExportFilename(currentItem, diskBuffer)
+      setDownloadedDisks((prevDownloadedDisks) => ([
+        ...prevDownloadedDisks,
+        { item: currentItem, buffer: diskBuffer, filename }
+      ]))
+      setExportQueue((prevExportQueue) => prevExportQueue.slice(1))
     } else if (exportQueue.length > 0) {
       showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(-1, exportQueue[0], processExportQueue)
@@ -257,29 +306,46 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     return hdvSize <= 0 || hdvSize > maxHdvBytes
   }
 
-  const createHdv = () => {
-    const dosVolumes = {
-      560: 0,
-      640: 0,
-      800: 0,
-      1600: 0
+  const createHdv = async () => {
+    if (downloadedDisks.length === 0) {
+      return
     }
 
-    // Calculate volume types and sizes
-    downloadedDisks.forEach((buffer) => {
-      if (buffer.byteLength <= 143360) {
-        dosVolumes[560]++
-      } else if (buffer.byteLength <= 819200) {
-        dosVolumes[800]++
-      } else if (buffer.byteLength <= 1474560) {
-        dosVolumes[1600]++
-      }
-    })
+    showGlobalProgressModal(true, "Building ProDOS HDV with screenshots")
+    try {
+      const fileEntries = downloadedDisks.map((downloadedDisk) => ({
+        name: downloadedDisk.filename.split(".")[0].slice(0, 15),
+        type: downloadedDisk.filename.toUpperCase().endsWith(".TXT") ? PRODOS_FILE_TYPE_TEXT : PRODOS_FILE_TYPE_LIBRARY,
+        data: downloadedDisk.buffer,
+        auxType: 0x0000,
+      }))
 
-    //
-    while (downloadedDisks.length > 0) {
-      const buffer = downloadedDisks.pop()
-      console.log(buffer?.byteLength)
+      // Load screenshots from disk collection items
+      const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
+      for (const disk of downloadedDisks) {
+        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl)
+        screenshots.push({
+          name: disk.filename.split(".")[0].slice(0, 15),
+          data: screenshotData,
+        })
+      }
+
+      // Create menu metadata with screenshot references
+      const menuEntries: MenuDiskEntry[] = downloadedDisks.map((disk, index) => ({
+        filename: disk.filename.split(".")[0].slice(0, 15),
+        displayName: disk.item.title,
+        screenshotData: screenshots[index].data || undefined,
+      }))
+
+      const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)
+      downloadExportHdv(hdvData, "apple2ts-export.hdv")
+      setIsFlyoutOpen(false)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      alert(`Failed to build ProDOS HDV: ${message}`)
+    } finally {
+      showGlobalProgressModal(false)
+      setDownloadedDisks([])
     }
   }
 
@@ -329,7 +395,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
     showGlobalProgressModal(false)
     if (exportQueue.length > 0) {
       processExportQueue()
-    } else {
+    } else if (downloadedDisks.length > 0) {
       createHdv()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

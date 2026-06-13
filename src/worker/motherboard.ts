@@ -8,7 +8,7 @@ import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
   syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
-  updateAddressTables, setMemoryBlock, addressGetTable, 
+  updateAddressTables, setMemoryBlock, addressGetTable,
   getBasePlusAuxMemory,
   setRamWorks,
   RamWorksMaxBank,
@@ -143,6 +143,9 @@ export const doBoot = () => {
     memory.set(pcode, 0x300)
   }
 //  testTiming()
+
+  enableHardDrive()
+
   doReset()
   // Force the help text to be reset if necessary.
   handleGameSetup(true)
