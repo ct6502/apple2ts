@@ -83,9 +83,116 @@ const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlo
   return data
 }
 
+// Applesoft BASIC keyword token table, sorted longest-first so greedy matching
+// always picks the longest possible token at each position.
+const APPLESOFT_TOKENS: ReadonlyArray<readonly [string, number]> = [
+  ["HCOLOR=", 0x92], ["NOTRACE", 0x9C], ["RESTORE", 0xAE], ["INVERSE", 0x9E],
+  ["HIMEM:", 0xA3],  ["LOMEM:", 0xA4],  ["NORMAL", 0x9D],  ["RETURN", 0xB1],
+  ["RESUME", 0xA6],  ["RECALL", 0xA7],  ["SHLOAD", 0x9A],  ["SCALE=", 0x99],
+  ["SPEED=", 0xA9],  ["COLOR=", 0xA0],  ["RIGHT$", 0xE9],
+  ["ONERR", 0xA5],   ["TRACE", 0x9B],   ["PRINT", 0xBA],   ["HPLOT", 0x93],
+  ["XDRAW", 0x95],   ["STORE", 0xA8],   ["FLASH", 0x9F],   ["CLEAR", 0xBD],
+  ["GOSUB", 0xB0],   ["SCRN(", 0xD7],   ["LEFT$", 0xE8],
+  ["TEXT", 0x89],    ["VTAB", 0xA2],    ["HTAB", 0x96],    ["POKE", 0xB9],
+  ["GOTO", 0xAB],    ["HOME", 0x97],    ["NEXT", 0x82],    ["DATA", 0x83],
+  ["READ", 0x87],    ["CALL", 0x8C],    ["PLOT", 0x8D],    ["DRAW", 0x94],
+  ["WAIT", 0xB5],    ["LOAD", 0xB6],    ["SAVE", 0xB7],    ["CONT", 0xBB],
+  ["LIST", 0xBC],    ["THEN", 0xC4],    ["STEP", 0xC7],    ["HGR2", 0x90],
+  ["HLIN", 0x8E],    ["VLIN", 0x8F],    ["ROT=", 0x98],    ["MID$", 0xEA],
+  ["STR$", 0xE4],    ["CHR$", 0xE7],    ["PEEK", 0xE2],    ["TAB(", 0xC0],
+  ["SPC(", 0xC3],    ["STOP", 0xB3],
+  ["ATN", 0xE1],     ["REM", 0xB2],     ["DEL", 0x85],     ["DIM", 0x86],
+  ["DEF", 0xB8],     ["NEW", 0xBF],     ["POP", 0xA1],     ["NOT", 0xC6],
+  ["GET", 0xBE],     ["AND", 0xCD],     ["SGN", 0xD2],     ["INT", 0xD3],
+  ["ABS", 0xD4],     ["USR", 0xD5],     ["FRE", 0xD6],     ["PDL", 0xD8],
+  ["POS", 0xD9],     ["SQR", 0xDA],     ["RND", 0xDB],     ["LOG", 0xDC],
+  ["EXP", 0xDD],     ["COS", 0xDE],     ["SIN", 0xDF],     ["TAN", 0xE0],
+  ["LEN", 0xE3],     ["VAL", 0xE5],     ["ASC", 0xE6],     ["RUN", 0xAC],
+  ["END", 0x80],     ["FOR", 0x81],     ["HGR", 0x91],     ["PR#", 0x8A],
+  ["IN#", 0x8B],     ["LET", 0xAA],
+  ["GR", 0x88],      ["IF", 0xAD],      ["ON", 0xB4],      ["OR", 0xCE],
+  ["FN", 0xC2],      ["AT", 0xC5],      ["TO", 0xC1],
+  ["+", 0xC8], ["-", 0xC9], ["*", 0xCA], ["/", 0xCB], ["^", 0xCC],
+  [">", 0xCF], ["=", 0xD0], ["<", 0xD1],
+]
+
 /**
- * Generates an Applesoft source file to be EXEC'd by BASIC.SYSTEM.
- * This draws screenshots and supports left/right navigation.
+ * Tokenizes a single Applesoft BASIC line (without its line number).
+ * Spaces outside string literals are stripped, keywords become token bytes.
+ */
+const tokenizeApplesoftLine = (text: string): number[] => {
+  const tokens: number[] = []
+  let i = 0
+  let afterREM = false
+  while (i < text.length) {
+    if (afterREM) {
+      tokens.push(text.charCodeAt(i++))
+      continue
+    }
+    if (text[i] === '"') {
+      tokens.push(text.charCodeAt(i++))
+      while (i < text.length && text[i] !== '"') tokens.push(text.charCodeAt(i++))
+      if (i < text.length) tokens.push(text.charCodeAt(i++))
+      continue
+    }
+    if (text[i] === ' ') { i++; continue }
+    let matched = false
+    for (const [keyword, tokenByte] of APPLESOFT_TOKENS) {
+      const end = i + keyword.length
+      if (end <= text.length && text.substring(i, end).toUpperCase() === keyword) {
+        tokens.push(tokenByte)
+        i = end
+        matched = true
+        if (tokenByte === 0xB2) afterREM = true // REM: rest of line is literal
+        break
+      }
+    }
+    if (!matched) tokens.push(text.charCodeAt(i++))
+  }
+  return tokens
+}
+
+/**
+ * Converts Applesoft BASIC source text (lines separated by \r) into the
+ * tokenized binary format used by ProDOS file type 0xFC (load address $0801).
+ */
+const tokenizeApplesoftBasic = (source: string): Uint8Array => {
+  const BASE = 0x0801
+  const lines = source.split('\r').filter(l => l.length > 0)
+  const parsed: Array<{ lineNum: number; tokens: number[] }> = []
+  for (const line of lines) {
+    let i = 0
+    while (i < line.length && line[i] >= '0' && line[i] <= '9') i++
+    if (i === 0) continue
+    const lineNum = parseInt(line.substring(0, i), 10)
+    parsed.push({ lineNum, tokens: tokenizeApplesoftLine(line.substring(i)) })
+  }
+  // Each line: 2 (next-ptr) + 2 (linenum) + tokens + 1 (null). End: 2 (0x0000).
+  let totalSize = 2
+  for (const { tokens } of parsed) totalSize += 4 + tokens.length + 1
+  const data = new Uint8Array(totalSize)
+  let offset = 0
+  let addr = BASE
+  for (const { lineNum, tokens } of parsed) {
+    const lineSize = 4 + tokens.length + 1
+    const nextAddr = addr + lineSize
+    data[offset]     = nextAddr & 0xFF
+    data[offset + 1] = (nextAddr >> 8) & 0xFF
+    data[offset + 2] = lineNum & 0xFF
+    data[offset + 3] = (lineNum >> 8) & 0xFF
+    for (let j = 0; j < tokens.length; j++) data[offset + 4 + j] = tokens[j]
+    data[offset + 4 + tokens.length] = 0x00
+    offset += lineSize
+    addr = nextAddr
+  }
+  data[offset] = 0x00
+  data[offset + 1] = 0x00
+  return data
+}
+
+/**
+ * Generates a tokenized Applesoft BASIC program that draws screenshots and
+ * supports left/right navigation among disk images.
  */
 const generateMenuSourceProgram = (
   menuEntries: MenuDiskEntry[],
@@ -130,10 +237,6 @@ const generateMenuSourceProgram = (
   // Apple II text mode is uppercase-oriented; lowercase prints as symbols on many setups.
   lines.push("1120 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
   lines.push("1130 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
-  for (let idx = 1; idx <= count; idx++) {
-    const lineNo = 1130 + idx
-    lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"${idx}. ${escapedNames[idx - 1]}\":NORMAL`)
-  }
   lines.push("1160 RETURN")
 
   // ENTER handling by image kind.
@@ -172,13 +275,11 @@ const generateMenuSourceProgram = (
   lines.push("2050 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("2060 RETURN")
 
-  // EXEC this file to define and run the program immediately.
-  lines.push("RUN")
   return `${lines.join("\r")}\r`
 }
 
 /**
- * Generates STARTUP command file. For interactive exports, STARTUP EXECs MENUSRC.
+ * Generates STARTUP command file. For interactive exports, STARTUP runs MENUSRC.
  */
 const generateInteractiveMenuStartup = (
   menuEntries: MenuDiskEntry[]
@@ -186,7 +287,7 @@ const generateInteractiveMenuStartup = (
   if (menuEntries.length === 0) {
     return "BRUN A2TSLAUNCH\rCATALOG\r"
   }
-  return "EXEC MENUSRC\r"
+  return "RUN MENUSRC\r"
 }
 
 const writeLittleEndian16 = (data: Uint8Array, offset: number, value: number) => {
@@ -1292,9 +1393,9 @@ export const buildProDosHdv = async (
   if (menuEntries && menuEntries.length > 0) {
     withStartup.push({
       name: "MENUSRC",
-      type: PRODOS_FILE_TYPE_TEXT,
-      data: new TextEncoder().encode(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes)),
-      auxType: 0x0000,
+      type: 0xFC,
+      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes)),
+      auxType: 0x0801,
     })
   }
 
