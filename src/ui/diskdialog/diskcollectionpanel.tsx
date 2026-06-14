@@ -427,7 +427,7 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       return
     }
 
-    showGlobalProgressModal(true, "Building ProDOS HDV with screenshots")
+    showGlobalProgressModal(true, "Creating HDV image")
     try {
       const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
       for (let i = 0; i < downloadedDisks.length; i++) {

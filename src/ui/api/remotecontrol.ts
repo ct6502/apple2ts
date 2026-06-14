@@ -75,6 +75,16 @@ let eventSource: EventSource | null = null
 let heartbeatId = 0
 let reconnectId = 0
 
+const isRemoteControlEnabled = () => {
+  try {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("remoteControl") === "1") return true
+    return window.localStorage.getItem("remoteControlEnabled") === "true"
+  } catch {
+    return false
+  }
+}
+
 const isRemoteServerAvailable = () => {
   return window.location.protocol === "http:" || window.location.protocol === "https:"
 }
@@ -610,6 +620,7 @@ const handleCommand = async (event: MessageEvent<string>) => {
 
 export const startRemoteControlBridge = () => {
   if (started) return
+  if (!isRemoteControlEnabled()) return
   started = true
   void connectToRemoteServer()
 }
