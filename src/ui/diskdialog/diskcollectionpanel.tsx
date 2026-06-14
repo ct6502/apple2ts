@@ -3,7 +3,7 @@ import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../common/utility"
-import { buildProDosHdv, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry } from "../../common/prodos_hdv"
+import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry } from "../../common/prodos_hdv"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -109,6 +109,9 @@ const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "prodos"
   const ext = filename.toLowerCase().split(".").pop() || ""
   const size140k = (35 * 16 * 256)
 
+  // WOZ is a container format; determine DOS/ProDOS only after explicit extraction/probing.
+  if (ext === "woz") return "unknown"
+
   // First, positively identify DOS structure (under both sector orders).
   // This is done before ProDOS to avoid false ProDOS positives on DOS .po files.
   if (isLikelyDos33Volume(data)) return "dos"
@@ -130,12 +133,6 @@ const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "prodos"
   // Extension fallback when structure probes are inconclusive.
   if (ext === "dsk" || ext === "do" || ext === "nib") {
     return "dos"
-  }
-
-  // .woz is a container format; prefer ProDOS for 3.5" disks if structure is inconclusive.
-  if (ext === "woz") {
-    // 3.5" disks (800K+) are more commonly ProDOS; 5.25" disks are typically DOS.
-    return data.length > size140k ? "prodos" : "dos"
   }
 
   if (ext === "po") {
@@ -432,9 +429,23 @@ const DiskCollectionPanel = (props: DisplayProps) => {
 
     showGlobalProgressModal(true, "Building ProDOS HDV with screenshots")
     try {
+      const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
+      for (let i = 0; i < downloadedDisks.length; i++) {
+        const disk = downloadedDisks[i]
+        if (!disk.filename.toLowerCase().endsWith(".woz")) continue
+        const extracted = loadWozAndExtractProDosFiles(disk.buffer)
+        if (extracted.length > 0) {
+          wozExtractedByIndex.set(i, extracted)
+        }
+      }
+
       const fileKinds = downloadedDisks.map((downloadedDisk) =>
         classifyImageKind(downloadedDisk.filename, downloadedDisk.buffer)
       )
+
+      for (const [index] of wozExtractedByIndex) {
+        fileKinds[index] = "prodos"
+      }
 
       const fileEntries = downloadedDisks.map((downloadedDisk, index) => {
         const fileKind = fileKinds[index]
@@ -462,9 +473,11 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       // Create menu metadata with screenshot references
       const menuEntries: MenuDiskEntry[] = downloadedDisks.map((disk, index) => ({
         filename: disk.filename.split(".")[0].slice(0, 15),
+        sourceFilename: disk.filename,
         displayName: disk.item.title,
         screenshotData: screenshots[index].data || undefined,
         imageKind: fileKinds[index],
+        wozExtractedProDosFiles: wozExtractedByIndex.get(index),
       }))
 
       const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)

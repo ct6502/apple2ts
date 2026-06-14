@@ -17,15 +17,26 @@ export type ProDosFileEntry = {
 
 export type MenuDiskEntry = {
   filename: string
+  sourceFilename?: string
   displayName?: string
   screenshotData?: Uint8Array
   imageKind?: "dos" | "prodos" | "unknown"
+  wozExtractedProDosFiles?: ImportedDiskFile[]
 }
 
-type BuildInputFile = { name: string; type: number; data: Uint8Array; auxType?: number }
+export type ImportedDiskFile = {
+  name: string
+  relativePath?: string
+  type: number
+  auxType?: number
+  data: Uint8Array
+}
+
+type BuildInputFile = { name: string; type: number; data: Uint8Array; auxType?: number; relativePath?: string }
 
 type ExtractedProDosFile = {
   name: string
+  relativePath?: string
   type: number
   auxType: number
   storageType: 1 | 2 | 3
@@ -229,6 +240,13 @@ const readLittleEndian24 = (data: Uint8Array, offset: number) => {
   return data[offset] | (data[offset + 1] << 8) | (data[offset + 2] << 16)
 }
 
+const readLittleEndian32 = (data: Uint8Array, offset: number) => {
+  return (data[offset]) |
+    (data[offset + 1] << 8) |
+    (data[offset + 2] << 16) |
+    (data[offset + 3] << 24)
+}
+
 const readFileDataFromProDosImage = (
   disk: Uint8Array,
   storageType: 1 | 2 | 3,
@@ -257,7 +275,11 @@ const readFileDataFromProDosImage = (
     if (!indexBlock) return out
     for (let i = 0; i < 256 && outPos < eof; i++) {
       const blockNum = indexBlock[i] | (indexBlock[256 + i] << 8)
-      if (blockNum === 0) break
+      if (blockNum === 0) {
+        // Sparse file holes still consume logical space.
+        outPos += Math.min(BLOCK_SIZE, eof - outPos)
+        continue
+      }
       copyDataBlock(blockNum)
     }
     return out
@@ -267,64 +289,386 @@ const readFileDataFromProDosImage = (
   if (!masterBlock) return out
   for (let i = 0; i < 256 && outPos < eof; i++) {
     const indexBlockNum = masterBlock[i] | (masterBlock[256 + i] << 8)
-    if (indexBlockNum === 0) break
+    if (indexBlockNum === 0) {
+      // Sparse tree index holes represent 256 logical data blocks.
+      outPos += Math.min(BLOCK_SIZE * 256, eof - outPos)
+      continue
+    }
     const indexBlock = readBlock(disk, indexBlockNum)
     if (!indexBlock) continue
     for (let j = 0; j < 256 && outPos < eof; j++) {
       const blockNum = indexBlock[j] | (indexBlock[256 + j] << 8)
-      if (blockNum === 0) break
+      if (blockNum === 0) {
+        outPos += Math.min(BLOCK_SIZE, eof - outPos)
+        continue
+      }
       copyDataBlock(blockNum)
     }
   }
   return out
 }
 
-const extractProDosRootFiles = (diskImage: Uint8Array): ExtractedProDosFile[] => {
+const collectDirectoryBlocksFromStart = (disk: Uint8Array, startBlock: number): number[] => {
+  const blocks: number[] = []
+  let block = startBlock
+  const visited = new Set<number>()
+
+  while (block !== 0 && !visited.has(block)) {
+    visited.add(block)
+    blocks.push(block)
+    const dir = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    block = readDirNextBlock(dir)
+  }
+
+  return blocks
+}
+
+const extractProDosFilesRecursive = (diskImage: Uint8Array): ExtractedProDosFile[] => {
   const extracted: ExtractedProDosFile[] = []
-  const dirBlocks = collectRootDirectoryBlocks(diskImage)
-  if (dirBlocks.length === 0) return extracted
+  const visitedDirectoryHeaders = new Set<number>()
 
-  for (let b = 0; b < dirBlocks.length; b++) {
-    const dirBlockNumber = dirBlocks[b]
-    const dirBlock = readBlock(diskImage, dirBlockNumber)
-    if (!dirBlock) continue
-    const startIndex = b === 0 ? 1 : 0
+  const walkDirectory = (dirBlocks: number[], pathParts: string[]) => {
+    for (let b = 0; b < dirBlocks.length; b++) {
+      const dirBlockNumber = dirBlocks[b]
+      const dirBlock = readBlock(diskImage, dirBlockNumber)
+      if (!dirBlock) continue
+      const startIndex = b === 0 ? 1 : 0
 
-    for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
-      const entryOffset = getDirEntryOffset(slot)
-      const byte0 = dirBlock[entryOffset]
-      if (isDirectorySlotFree(byte0)) continue
+      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+        const entryOffset = getDirEntryOffset(slot)
+        const byte0 = dirBlock[entryOffset]
+        if (isDirectorySlotFree(byte0)) continue
 
-      const storageType = ((byte0 >> 4) & 0x0F)
-      const nameLength = byte0 & 0x0F
-      if (storageType < 1 || storageType > 3) continue
-      if (nameLength < 1 || nameLength > 15) continue
+        const storageType = ((byte0 >> 4) & 0x0F)
+        const nameLength = byte0 & 0x0F
+        if (nameLength < 1 || nameLength > 15) continue
 
-      let name = ""
-      for (let i = 0; i < nameLength; i++) {
-        const c = dirBlock[entryOffset + 1 + i]
-        if (c >= 0x20 && c <= 0x7E) name += String.fromCharCode(c)
+        let name = ""
+        for (let i = 0; i < nameLength; i++) {
+          const c = dirBlock[entryOffset + 1 + i]
+          if (c >= 0x20 && c <= 0x7E) name += String.fromCharCode(c)
+        }
+        if (!name) continue
+
+        const fileType = dirBlock[entryOffset + 16]
+        const keyBlock = readLittleEndian16(dirBlock, entryOffset + 17)
+        const eof = readLittleEndian24(dirBlock, entryOffset + 21)
+        const auxType = readLittleEndian16(dirBlock, entryOffset + 31)
+
+        if (storageType === 0x0D && keyBlock > 0) {
+          if (visitedDirectoryHeaders.has(keyBlock)) continue
+          visitedDirectoryHeaders.add(keyBlock)
+          const childDirBlocks = collectDirectoryBlocksFromStart(diskImage, keyBlock)
+          if (childDirBlocks.length > 0) {
+            walkDirectory(childDirBlocks, [...pathParts, name])
+          }
+          continue
+        }
+
+        if (storageType < 1 || storageType > 3) continue
+
+        const data = readFileDataFromProDosImage(diskImage, storageType as 1 | 2 | 3, keyBlock, eof)
+        extracted.push({
+          name,
+          relativePath: pathParts.length > 0 ? pathParts.join("/") : undefined,
+          type: fileType,
+          auxType,
+          storageType: storageType as 1 | 2 | 3,
+          eof,
+          data,
+        })
       }
-      if (!name) continue
-
-      const fileType = dirBlock[entryOffset + 16]
-      const keyBlock = readLittleEndian16(dirBlock, entryOffset + 17)
-      const eof = readLittleEndian24(dirBlock, entryOffset + 21)
-      const auxType = readLittleEndian16(dirBlock, entryOffset + 31)
-      const data = readFileDataFromProDosImage(diskImage, storageType as 1 | 2 | 3, keyBlock, eof)
-
-      extracted.push({
-        name,
-        type: fileType,
-        auxType,
-        storageType: storageType as 1 | 2 | 3,
-        eof,
-        data,
-      })
     }
   }
 
+  const rootBlocks = collectRootDirectoryBlocks(diskImage)
+  if (rootBlocks.length === 0) return extracted
+  walkDirectory(rootBlocks, [])
+
   return extracted
+}
+
+const SIX_AND_TWO_ENCODE = [
+  0x96, 0x97, 0x9A, 0x9B, 0x9D, 0x9E, 0x9F, 0xA6,
+  0xA7, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB2, 0xB3,
+  0xB4, 0xB5, 0xB6, 0xB7, 0xB9, 0xBA, 0xBB, 0xBC,
+  0xBD, 0xBE, 0xBF, 0xCB, 0xCD, 0xCE, 0xCF, 0xD3,
+  0xD6, 0xD7, 0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE,
+  0xDF, 0xE5, 0xE6, 0xE7, 0xE9, 0xEA, 0xEB, 0xEC,
+  0xED, 0xEE, 0xEF, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6,
+  0xF7, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF,
+]
+
+const SIX_AND_TWO_DECODE = (() => {
+  const table = new Int16Array(256)
+  table.fill(-1)
+  for (let i = 0; i < SIX_AND_TWO_ENCODE.length; i++) {
+    table[SIX_AND_TWO_ENCODE[i]] = i
+  }
+  return table
+})()
+
+const DOS_PHYSICAL_TO_LOGICAL = [0, 13, 11, 9, 7, 5, 3, 1, 14, 12, 10, 8, 6, 4, 2, 15]
+const PRODOS_PHYSICAL_TO_LOGICAL = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
+const DOS_LOGICAL_TO_PHYSICAL = [0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15]
+const PRODOS_LOGICAL_TO_PHYSICAL = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
+
+const decode4and4 = (a: number, b: number) => (((a << 1) | 1) & b) & 0xFF
+
+const decodeSixAndTwoSector = (encoded: Uint8Array): Uint8Array | undefined => {
+  if (encoded.length < 343) return undefined
+
+  const delta = new Uint8Array(343)
+  for (let i = 0; i < 343; i++) {
+    const v = SIX_AND_TWO_DECODE[encoded[i]]
+    if (v < 0) return undefined
+    delta[i] = v
+  }
+
+  const unxor = new Uint8Array(342)
+  unxor[0] = delta[0]
+  for (let i = 1; i <= 341; i++) {
+    unxor[i] = delta[i] ^ unxor[i - 1]
+  }
+  if (delta[342] !== unxor[341]) return undefined
+
+  const out = new Uint8Array(256)
+  for (let i = 0; i < 256; i++) {
+    out[i] = (unxor[86 + i] & 0x3F) << 2
+  }
+
+  const bitReverse = [0, 2, 1, 3]
+  for (let c = 0; c < 84; c++) {
+    const packed = unxor[c]
+    out[c] |= bitReverse[(packed >> 0) & 0x03]
+    out[c + 86] |= bitReverse[(packed >> 2) & 0x03]
+    out[c + 172] |= bitReverse[(packed >> 4) & 0x03]
+  }
+  out[84] |= bitReverse[(unxor[84] >> 0) & 0x03]
+  out[170] |= bitReverse[(unxor[84] >> 2) & 0x03]
+  out[85] |= bitReverse[(unxor[85] >> 0) & 0x03]
+  out[171] |= bitReverse[(unxor[85] >> 2) & 0x03]
+
+  return out
+}
+
+type WozTrackBits = {
+  bits: Uint8Array
+  bitCount: number
+}
+
+const getWozTracks = (wozData: Uint8Array): Array<WozTrackBits | undefined> | undefined => {
+  if (wozData.length < 256) return undefined
+  const sig = String.fromCharCode(wozData[0], wozData[1], wozData[2], wozData[3])
+  if (sig !== "WOZ1" && sig !== "WOZ2") return undefined
+
+  let tmapOffset = -1
+  let trksOffset = -1
+  let ptr = 12
+  while (ptr + 8 <= wozData.length) {
+    const id = String.fromCharCode(wozData[ptr], wozData[ptr + 1], wozData[ptr + 2], wozData[ptr + 3])
+    const size = readLittleEndian32(wozData, ptr + 4)
+    const dataOffset = ptr + 8
+    if (dataOffset + size > wozData.length) break
+    if (id === "TMAP") tmapOffset = dataOffset
+    if (id === "TRKS") trksOffset = dataOffset
+    ptr = dataOffset + size
+  }
+
+  if (tmapOffset < 0 || trksOffset < 0) return undefined
+  const tracks: Array<WozTrackBits | undefined> = new Array(160)
+
+  for (let q = 0; q < 160; q++) {
+    const tmapIndex = wozData[tmapOffset + q]
+    if (tmapIndex === undefined || tmapIndex >= 0xFF) continue
+
+    if (sig === "WOZ2") {
+      const meta = trksOffset + (tmapIndex * 8)
+      if (meta + 8 > wozData.length) continue
+      const startBlock = readLittleEndian16(wozData, meta)
+      const blockCount = readLittleEndian16(wozData, meta + 2)
+      const bitCount = readLittleEndian32(wozData, meta + 4)
+      const start = startBlock * 512
+      const byteCount = Math.max(1, Math.ceil(bitCount / 8))
+      if (blockCount <= 0 || bitCount <= 0 || start + byteCount > wozData.length) continue
+      tracks[q] = { bits: wozData.slice(start, start + byteCount), bitCount }
+    } else {
+      const start = trksOffset + (tmapIndex * 6656)
+      if (start + 6656 > wozData.length) continue
+      const bitCount = readLittleEndian16(wozData, start + 6648)
+      const byteCount = Math.max(1, Math.ceil(bitCount / 8))
+      if (bitCount <= 0 || start + byteCount > wozData.length) continue
+      tracks[q] = { bits: wozData.slice(start, start + byteCount), bitCount }
+    }
+  }
+
+  return tracks
+}
+
+const getBit = (bits: Uint8Array, bitPos: number, bitCount: number) => {
+  if (bitCount <= 0) return 0
+  const wrapped = ((bitPos % bitCount) + bitCount) % bitCount
+  const bytePos = wrapped >> 3
+  const shift = 7 - (wrapped & 7)
+  if (bytePos < 0 || bytePos >= bits.length) return 0
+  return (bits[bytePos] >> shift) & 1
+}
+
+const getByteAtBit = (bits: Uint8Array, bitPos: number, bitCount: number) => {
+  let value = 0
+  for (let i = 0; i < 8; i++) {
+    value = (value << 1) | getBit(bits, bitPos + i, bitCount)
+  }
+  return value
+}
+
+const isLikelyProDosVolume = (data: Uint8Array): boolean => {
+  if (data.length < (3 * 512)) return false
+
+  const totalBlocksFromSize = Math.floor(data.length / 512)
+  const root = 2 * 512
+  const nextBlock = data[root + 2] | (data[root + 3] << 8)
+  const entry0 = root + 4
+  const byte0 = data[entry0]
+  const storageType = (byte0 >> 4) & 0x0F
+  const nameLen = byte0 & 0x0F
+
+  if (storageType !== 0x0F || nameLen < 1 || nameLen > 15) return false
+  if (nextBlock !== 0 && (nextBlock < 2 || nextBlock > totalBlocksFromSize)) return false
+
+  for (let i = 0; i < nameLen; i++) {
+    const c = data[entry0 + 1 + i]
+    if (c < 0x20 || c > 0x7E) return false
+  }
+
+  const bitmapBlock = data[entry0 + 35] | (data[entry0 + 36] << 8)
+  const totalBlocks = data[entry0 + 37] | (data[entry0 + 38] << 8)
+  if (totalBlocks < totalBlocksFromSize || totalBlocks > 65535) return false
+  if (bitmapBlock < 2 || bitmapBlock > totalBlocks) return false
+  return true
+}
+
+const decodeWozToSectorCandidates = (wozData: Uint8Array): { candidates: Array<{ label: string, data: Uint8Array }>, decodedSectorCount: number } | undefined => {
+  const tracks = getWozTracks(wozData)
+  if (!tracks) return undefined
+
+  const dosPhysicalToLogical = new Uint8Array(35 * 16 * 256)
+  const prodosPhysicalToLogical = new Uint8Array(35 * 16 * 256)
+  const dosLogicalToPhysical = new Uint8Array(35 * 16 * 256)
+  const prodosLogicalToPhysical = new Uint8Array(35 * 16 * 256)
+  const seen = new Set<string>()
+
+  for (let q = 0; q < tracks.length; q++) {
+    const track = tracks[q]
+    if (!track || track.bitCount < 5000) continue
+
+    let pendingTrack = -1
+    let pendingSector = -1
+    let pendingBitPos = -1
+
+    // Prologues are not guaranteed to be byte-aligned in the captured bitstream.
+    // Scan every bit so we do not miss valid address/data fields on shifted tracks.
+    for (let bitPos = 0; bitPos < track.bitCount; bitPos++) {
+      const b0 = getByteAtBit(track.bits, bitPos, track.bitCount)
+      const b1 = getByteAtBit(track.bits, bitPos + 8, track.bitCount)
+      const b2 = getByteAtBit(track.bits, bitPos + 16, track.bitCount)
+
+      // Address prologue: D5 AA 96
+      if (b0 === 0xD5 && b1 === 0xAA && b2 === 0x96) {
+        const vol = decode4and4(
+          getByteAtBit(track.bits, bitPos + 24, track.bitCount),
+          getByteAtBit(track.bits, bitPos + 32, track.bitCount)
+        )
+        const addrTrack = decode4and4(
+          getByteAtBit(track.bits, bitPos + 40, track.bitCount),
+          getByteAtBit(track.bits, bitPos + 48, track.bitCount)
+        )
+        const addrSector = decode4and4(
+          getByteAtBit(track.bits, bitPos + 56, track.bitCount),
+          getByteAtBit(track.bits, bitPos + 64, track.bitCount)
+        )
+        const checksum = decode4and4(
+          getByteAtBit(track.bits, bitPos + 72, track.bitCount),
+          getByteAtBit(track.bits, bitPos + 80, track.bitCount)
+        )
+
+        if (((vol ^ addrTrack ^ addrSector) & 0xFF) === checksum &&
+          addrTrack >= 0 && addrTrack < 35 &&
+          addrSector >= 0 && addrSector < 16) {
+          pendingTrack = addrTrack
+          pendingSector = addrSector
+          pendingBitPos = bitPos
+        }
+        continue
+      }
+
+      // Data prologue: D5 AA AD
+      if (b0 === 0xD5 && b1 === 0xAA && b2 === 0xAD) {
+        if (pendingTrack < 0 || pendingSector < 0) continue
+        // Require proximity to reduce false pairings.
+        if (pendingBitPos >= 0 && bitPos - pendingBitPos > (700 * 8)) continue
+
+        const encoded = new Uint8Array(343)
+        for (let i = 0; i < 343; i++) {
+          encoded[i] = getByteAtBit(track.bits, bitPos + 24 + (i * 8), track.bitCount)
+        }
+        const decoded = decodeSixAndTwoSector(encoded)
+        if (!decoded) continue
+
+        const key = `${pendingTrack}:${pendingSector}`
+        if (seen.has(key)) continue
+        seen.add(key)
+
+        const dosLogical = DOS_PHYSICAL_TO_LOGICAL[pendingSector]
+        const prodosLogical = PRODOS_PHYSICAL_TO_LOGICAL[pendingSector]
+        const dosPhysical = DOS_LOGICAL_TO_PHYSICAL[pendingSector]
+        const prodosPhysical = PRODOS_LOGICAL_TO_PHYSICAL[pendingSector]
+
+        dosPhysicalToLogical.set(decoded, ((pendingTrack * 16) + dosLogical) * 256)
+        prodosPhysicalToLogical.set(decoded, ((pendingTrack * 16) + prodosLogical) * 256)
+        dosLogicalToPhysical.set(decoded, ((pendingTrack * 16) + dosPhysical) * 256)
+        prodosLogicalToPhysical.set(decoded, ((pendingTrack * 16) + prodosPhysical) * 256)
+      }
+    }
+  }
+
+  if (seen.size === 0) return undefined
+
+  return {
+    candidates: [
+      { label: "prodos-physical-to-logical", data: prodosPhysicalToLogical },
+      { label: "dos-physical-to-logical", data: dosPhysicalToLogical },
+      { label: "prodos-logical-to-physical", data: prodosLogicalToPhysical },
+      { label: "dos-logical-to-physical", data: dosLogicalToPhysical },
+    ],
+    decodedSectorCount: seen.size,
+  }
+}
+
+export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskFile[] => {
+  const decoded = decodeWozToSectorCandidates(wozData)
+  if (!decoded) return []
+
+  let headerMatches = 0
+  for (const candidate of decoded.candidates) {
+    if (!isLikelyProDosVolume(candidate.data)) continue
+    headerMatches++
+
+    const extracted = extractProDosFilesRecursive(candidate.data)
+    if (extracted.length > 0) {
+      console.log(`[HDV Export] WOZ ProDOS candidate matched: ${candidate.label} (${extracted.length} files, ${decoded.decodedSectorCount} sectors decoded)`)
+      return extracted.map((file) => ({
+        name: file.name,
+        relativePath: file.relativePath,
+        type: file.type,
+        auxType: file.auxType,
+        data: file.data,
+      }))
+    }
+  }
+
+  console.log(`[HDV Export] WOZ decode failed ProDOS extraction: ${decoded.decodedSectorCount} sectors decoded, ${headerMatches} ProDOS-header candidates, 0 files extracted`)
+  return []
 }
 
 const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined => {
@@ -352,6 +696,107 @@ const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined 
   return undefined
 }
 
+const replaceAsciiAll = (data: Uint8Array, fromText: string, toText: string) => {
+  const from = new TextEncoder().encode(fromText)
+  const to = new TextEncoder().encode(toText)
+  if (from.length === 0 || data.length < from.length) return data
+
+  const chunks: Uint8Array[] = []
+  let i = 0
+  let changed = false
+  let segmentStart = 0
+
+  while (i <= data.length - from.length) {
+    let match = true
+    for (let j = 0; j < from.length; j++) {
+      if (data[i + j] !== from[j]) {
+        match = false
+        break
+      }
+    }
+    if (match) {
+      changed = true
+      if (segmentStart < i) chunks.push(data.slice(segmentStart, i))
+      chunks.push(to)
+      i += from.length
+      segmentStart = i
+      continue
+    }
+    i++
+  }
+
+  if (!changed) return data
+  if (segmentStart < data.length) chunks.push(data.slice(segmentStart))
+
+  const total = chunks.reduce((sum, c) => sum + c.length, 0)
+  const out = new Uint8Array(total)
+  let outPos = 0
+  for (const chunk of chunks) {
+    out.set(chunk, outPos)
+    outPos += chunk.length
+  }
+  return out
+}
+
+const rewriteTokenizedApplesoftProgramPath = (data: Uint8Array, fromText: string, toText: string): Uint8Array | undefined => {
+  // For Applesoft BASIC, try simple ASCII replacement first (preserves structure).
+  // Only attempt if pattern is found.
+  const result = replaceAsciiAll(data, fromText, toText)
+  if (result.length !== data.length) {
+    // Replacement happened and size changed - this is risky for BASIC.
+    // Only return if the original size was an exact match.
+    return undefined
+  }
+  // If sizes match or no replacement, safe to return.
+  return result.every((v, i) => v === data[i]) ? undefined : result
+}
+
+const rewriteImportedProgramPath = (type: number, data: Uint8Array, fromText: string, toText: string): Uint8Array => {
+  if (fromText === toText) return data
+
+  // Text files can be rewritten directly.
+  if (type === PRODOS_FILE_TYPE_TEXT) {
+    return replaceAsciiAll(data, fromText, toText)
+  }
+
+  // Applesoft BASIC programs are tokenized with linked-line pointers.
+  // Rebuild pointers after replacement to avoid corrupting program structure.
+  if (type === 0xFC) {
+    const rewritten = rewriteTokenizedApplesoftProgramPath(data, fromText, toText)
+    console.log(`[HDV Export] Rewrite tokenized BASIC (0xFC): pattern found=${rewritten !== undefined}`)
+    return rewritten || data
+  }
+
+  // 0xFF files might also be BASIC programs (e.g., MousePaint's BASIC file).
+  // Try to rewrite as tokenized BASIC.
+  if (type === 0xFF) {
+    const rewritten = rewriteTokenizedApplesoftProgramPath(data, fromText, toText)
+    if (rewritten) {
+      console.log(`[HDV Export] Rewrite tokenized BASIC (0xFF file): pattern found, applying rewrite`)
+      return rewritten
+    }
+  }
+
+  return data
+}
+
+const applyGenericPrefixRewrite = (type: number, data: Uint8Array, fileName?: string): Uint8Array => {
+  let out = data
+  const replacements: Array<[string, string]> = [
+    ["PREFIX /", "PREFIX /APPLE2TS/"],
+  ]
+
+  for (const [fromText, toText] of replacements) {
+    const before = out
+    out = rewriteImportedProgramPath(type, out, fromText, toText)
+    if (before !== out) {
+      console.log(`[HDV Export] Prefix rewrite applied to ${fileName} (type=$${type.toString(16).toUpperCase()})`)
+    }
+  }
+
+  return out
+}
+
 const preprocessInputFilesForMenu = (
   files: BuildInputFile[],
   menuEntries?: MenuDiskEntry[],
@@ -367,40 +812,84 @@ const preprocessInputFilesForMenu = (
     const file = files[i]
     const kind = menuEntries?.[i]?.imageKind || "unknown"
     const filename = menuEntries?.[i]?.filename || file.name
-    const isWozContainer = filename.toLowerCase().endsWith(".woz")
+    const sourceFilename = menuEntries?.[i]?.sourceFilename || filename
+    const isWozContainer = sourceFilename.toLowerCase().endsWith(".woz")
+    const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
+
+    if (wozExtractedFiles && wozExtractedFiles.length > 0) {
+      const imagePrefix = normalizeProDosFilename(file.name).split(".")[0] || "IMG"
+      const directoryName = makeUniqueProDosFilename(imagePrefix, usedNames)
+      const directoryFiles: BuildInputFile[] = []
+      const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
+      for (const extractedFile of wozExtractedFiles) {
+        if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) {
+          console.log(`[HDV Export] Skipping duplicate system file: ${extractedFile.name}`)
+          continue
+        }
+        const normalized = normalizeProDosFilename(extractedFile.name)
+        const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data, normalized)
+        directoryFiles.push({
+          name: normalized,
+          type: extractedFile.type,
+          data: rewrittenData,
+          auxType: extractedFile.auxType,
+          relativePath: extractedFile.relativePath,
+        })
+      }
+      const launchCommand = detectProDosLaunchCommand(directoryFiles)
+      console.log(`[HDV Export] WOZ ProDOS detected: ${filename} -> ${directoryName} (${directoryFiles.length} files)`)
+      console.log("[HDV Export] WOZ extracted files:", directoryFiles.map((f) => `${f.relativePath ? `${f.relativePath}/` : ""}${f.name} [$${f.type.toString(16).toUpperCase()}] ${f.data.length} bytes`))
+      directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
+      menuProDosPrefixes[i] = directoryName
+      menuProDosCommands[i] = launchCommand
+      continue
+    }
 
     // Keep WOZ container images as-is (track-based, not block-addressable ProDOS).
     if (isWozContainer) {
       const normalized = makeUniqueProDosFilename(file.name, usedNames)
+      console.log(`[HDV Export] WOZ not ProDOS-extractable, keeping container: ${filename} -> ${normalized}`)
       outputFiles.push({ ...file, name: normalized })
       menuProDosCommands[i] = undefined
       menuProDosPrefixes[i] = undefined
       continue
     }
 
-    // For ProDOS block images, import root files into this export under an image-name prefix.
-    if (kind === "prodos") {
-      const extracted = extractProDosRootFiles(file.data)
+    // For block images that are ProDOS by structure or classification, import files under an image-name prefix.
+    const shouldTryProDosImport = kind === "prodos" || isLikelyProDosVolume(file.data)
+    if (shouldTryProDosImport) {
+      const extracted = extractProDosFilesRecursive(file.data)
       if (extracted.length > 0) {
         const imagePrefix = normalizeProDosFilename(file.name).split(".")[0] || "IMG"
         const directoryName = makeUniqueProDosFilename(imagePrefix, usedNames)
-        const directoryUsedNames = new Set<string>()
         const directoryFiles: BuildInputFile[] = []
+        // Filter out system files that duplicate across all disk extracts.
+        const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
         for (const extractedFile of extracted) {
-          const normalized = makeUniqueProDosFilename(extractedFile.name, directoryUsedNames)
+          // Skip system files that appear in every disk image.
+          if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) {
+            console.log(`[HDV Export] Skipping duplicate system file: ${extractedFile.name} (type=$${extractedFile.type.toString(16).toUpperCase()})`)
+            continue
+          }
+          const normalized = normalizeProDosFilename(extractedFile.name)
+          const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data, normalized)
           directoryFiles.push({
             name: normalized,
             type: extractedFile.type,
-            data: extractedFile.data,
+            data: rewrittenData,
             auxType: extractedFile.auxType,
+            relativePath: extractedFile.relativePath,
           })
         }
         const launchCommand = detectProDosLaunchCommand(directoryFiles)
+        console.log(`[HDV Export] ProDOS detected: ${filename} -> ${directoryName} (${directoryFiles.length} files)`)
+        console.log("[HDV Export] ProDOS extracted files:", directoryFiles.map((f) => `${f.relativePath ? `${f.relativePath}/` : ""}${f.name} [$${f.type.toString(16).toUpperCase()}] ${f.data.length} bytes`))
         directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
         menuProDosPrefixes[i] = directoryName
         menuProDosCommands[i] = launchCommand
       } else {
         const normalized = makeUniqueProDosFilename(file.name, usedNames)
+        console.log(`[HDV Export] ProDOS extraction found 0 files, keeping image as file: ${filename} -> ${normalized}`)
         outputFiles.push({ ...file, name: normalized })
         menuProDosCommands[i] = undefined
         menuProDosPrefixes[i] = undefined
@@ -409,12 +898,16 @@ const preprocessInputFilesForMenu = (
     }
 
     const normalized = makeUniqueProDosFilename(file.name, usedNames)
+    console.log(`[HDV Export] Non-ProDOS image copied as file: ${filename} -> ${normalized}`)
     outputFiles.push({
       ...file,
       name: normalized,
     })
     menuProDosPrefixes[i] = undefined
   }
+
+  const totalDetectedFiles = directoryPlans.reduce((sum, d) => sum + d.files.length, 0)
+  console.log(`[HDV Export] Detection summary: ${directoryPlans.length} extracted directories, ${totalDetectedFiles} extracted files, ${outputFiles.length} root files`)
 
   return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes }
 }
@@ -711,28 +1204,16 @@ export const buildProDosHdv = async (
   let hdv = prodos243Base
   if (!hdv) {
     try {
-      // Always use DOS.MASTER base when available (32MB in this workspace).
-      const dosMasterCandidates = [
-        "disks/dosmaster18.po",
-        "disks/DOSMASTER%20BASE.po",
-        "disks/DOSMASTER_BASE.po",
-        "disks/DOSMASTER.po",
-      ]
-      for (const candidate of dosMasterCandidates) {
-        const response = await fetch(candidate)
-        if (response.ok) {
-          hdv = new Uint8Array(await response.arrayBuffer())
-          break
-        }
+      const dosMasterBase = "disks/dosmaster18.po"
+      const response = await fetch(dosMasterBase)
+      if (!response.ok) {
+        throw new Error(`Failed to load required base image: ${dosMasterBase}`)
       }
-
-      if (!hdv) {
-        const response = await fetch("disks/ProDOS%202.4.3.po")
-        hdv = new Uint8Array(await response.arrayBuffer())
-      }
+      hdv = new Uint8Array(await response.arrayBuffer())
+      console.log(`[HDV Export] Using base image: ${dosMasterBase} (${hdv.length} bytes)`)
     } catch (e) {
-      console.error("Failed to load ProDOS 2.4.3 base:", e)
-      throw new Error("Could not load ProDOS 2.4.3 base disk")
+      console.error("Failed to load dosmaster18.po base:", e)
+      throw new Error("Could not load dosmaster18.po base disk")
     }
   }
 
@@ -750,6 +1231,10 @@ export const buildProDosHdv = async (
   const rootScan = scanRootDirectory(hdv, dirBlocks)
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
   const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  console.log(`[HDV Export] Build summary before copy: root files=${outputFiles.length}, directories=${directoryPlans.length}`)
+  for (const plan of directoryPlans) {
+    console.log(`[HDV Export] Directory copy plan ${plan.name}: ${plan.files.length} files`, plan.files.map((f) => `${f.name} (${f.data.length} bytes)`))
+  }
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -831,6 +1316,18 @@ export const buildProDosHdv = async (
     }
   }
 
+  type DirectoryNode = {
+    name: string
+    normalizedName?: string
+    files: BuildInputFile[]
+    children: DirectoryNode[]
+    keyBlock: number
+    blocksUsed: number
+    blocks: number[]
+    parentEntryBlock?: number
+    parentEntrySlot?: number
+  }
+
   const filePlans: Array<{
     name: string
     type: number
@@ -841,19 +1338,13 @@ export const buildProDosHdv = async (
     storageType: 1 | 2 | 3
     indexBlocks: number[]
     dataBlocks: number[]
-    parentDirectoryBlock?: number
+    parentDirectoryNode?: DirectoryNode
   }> = []
 
-  const directoryEntryPlans: Array<{
-    name: string
-    keyBlock: number
-    blocksUsed: number
-    blocks: number[]
-  }> = []
-
+  const filePlansByDirectory = new Map<DirectoryNode, typeof filePlans>()
   const subdirectoryTemplate = findSubdirectoryHeaderTemplate(hdv)
 
-  for (const file of withStartup) {
+  const allocatePlannedFile = (file: BuildInputFile, parentDirectoryNode?: DirectoryNode) => {
     const dataBlocksNeeded = Math.max(1, Math.ceil(file.data.length / BLOCK_SIZE))
 
     let storageType: 1 | 2 | 3 = 1
@@ -863,33 +1354,29 @@ export const buildProDosHdv = async (
     let dataBlocks: number[] = []
 
     if (dataBlocksNeeded === 1) {
-      // Seedling: key block points directly to data block
       storageType = 1
       dataBlocks = allocateFreeBlocks(1)
       keyBlock = dataBlocks[0]
       blocksUsed = 1
     } else if (dataBlocksNeeded <= 256) {
-      // Sapling: key block points to one index block
       storageType = 2
       keyBlock = allocateFreeBlocks(1)[0]
       indexBlocks = [keyBlock]
       dataBlocks = allocateFreeBlocks(dataBlocksNeeded)
       blocksUsed = dataBlocksNeeded + 1
     } else {
-      // Tree: key block points to master index, which points to index blocks
       storageType = 3
       const indexBlockCount = Math.ceil(dataBlocksNeeded / 256)
       if (indexBlockCount > 256) {
         throw new Error(`File too large for tree format: ${file.name}`)
       }
-
       keyBlock = allocateFreeBlocks(1)[0]
       indexBlocks = allocateFreeBlocks(indexBlockCount)
       dataBlocks = allocateFreeBlocks(dataBlocksNeeded)
       blocksUsed = 1 + indexBlockCount + dataBlocksNeeded
     }
 
-    filePlans.push({
+    const plan = {
       name: file.name,
       type: file.type,
       data: file.data,
@@ -899,69 +1386,90 @@ export const buildProDosHdv = async (
       storageType,
       indexBlocks,
       dataBlocks,
-    })
+      parentDirectoryNode,
+    }
+
+    filePlans.push(plan)
+    const parentName = parentDirectoryNode?.name || "root"
+    console.log(`[HDV Export] Allocated file: ${file.name} (${file.data.length} bytes, ST=${storageType}) -> parent=${parentName}`)
+    if (parentDirectoryNode) {
+      const bucket = filePlansByDirectory.get(parentDirectoryNode) || []
+      bucket.push(plan)
+      filePlansByDirectory.set(parentDirectoryNode, bucket)
+    }
   }
 
-  // Allocate subdirectories and their extracted files.
-  for (const directory of directoryPlans) {
-    const firstBlockCapacity = DIR_ENTRIES_PER_BLOCK - 1
-    const remaining = Math.max(0, directory.files.length - firstBlockCapacity)
-    const extraBlocks = Math.ceil(remaining / DIR_ENTRIES_PER_BLOCK)
-    const directoryBlocksNeeded = Math.max(1, 1 + extraBlocks)
-    const directoryBlocks = allocateFreeBlocks(directoryBlocksNeeded)
-    const directoryBlock = directoryBlocks[0]
-    directoryEntryPlans.push({
+  for (const file of withStartup) {
+    allocatePlannedFile(file)
+  }
+
+  const getOrCreateChildNode = (parent: DirectoryNode, name: string) => {
+    const existing = parent.children.find((c) => c.name === name)
+    if (existing) return existing
+    const child: DirectoryNode = {
+      name,
+      files: [],
+      children: [],
+      keyBlock: 0,
+      blocksUsed: 0,
+      blocks: [],
+    }
+    parent.children.push(child)
+    return child
+  }
+
+  const buildDirectoryTree = (directory: DirectoryImportPlan): DirectoryNode => {
+    const root: DirectoryNode = {
       name: directory.name,
-      keyBlock: directoryBlock,
-      blocksUsed: directoryBlocksNeeded,
-      blocks: directoryBlocks,
-    })
+      files: [],
+      children: [],
+      keyBlock: 0,
+      blocksUsed: 0,
+      blocks: [],
+    }
 
     for (const file of directory.files) {
-      const dataBlocksNeeded = Math.max(1, Math.ceil(file.data.length / BLOCK_SIZE))
+      const normalizedFileName = normalizeProDosFilename(file.name)
+      const pathParts = file.relativePath
+        ? file.relativePath.split("/").filter((p) => p.length > 0).map((p) => normalizeProDosFilename(p))
+        : []
 
-      let storageType: 1 | 2 | 3 = 1
-      let keyBlock = 0
-      let blocksUsed = dataBlocksNeeded
-      let indexBlocks: number[] = []
-      let dataBlocks: number[] = []
-
-      if (dataBlocksNeeded === 1) {
-        storageType = 1
-        dataBlocks = allocateFreeBlocks(1)
-        keyBlock = dataBlocks[0]
-        blocksUsed = 1
-      } else if (dataBlocksNeeded <= 256) {
-        storageType = 2
-        keyBlock = allocateFreeBlocks(1)[0]
-        indexBlocks = [keyBlock]
-        dataBlocks = allocateFreeBlocks(dataBlocksNeeded)
-        blocksUsed = dataBlocksNeeded + 1
-      } else {
-        storageType = 3
-        const indexBlockCount = Math.ceil(dataBlocksNeeded / 256)
-        if (indexBlockCount > 256) {
-          throw new Error(`File too large for tree format: ${file.name}`)
-        }
-        keyBlock = allocateFreeBlocks(1)[0]
-        indexBlocks = allocateFreeBlocks(indexBlockCount)
-        dataBlocks = allocateFreeBlocks(dataBlocksNeeded)
-        blocksUsed = 1 + indexBlockCount + dataBlocksNeeded
+      let node = root
+      for (const part of pathParts) {
+        node = getOrCreateChildNode(node, part)
       }
-
-      filePlans.push({
-        name: file.name,
-        type: file.type,
-        data: file.data,
-        auxType: file.auxType ?? 0x0000,
-        keyBlock,
-        blocksUsed,
-        storageType,
-        indexBlocks,
-        dataBlocks,
-        parentDirectoryBlock: directoryBlock,
+      node.files.push({
+        ...file,
+        name: normalizedFileName,
       })
     }
+
+    return root
+  }
+
+  const rootDirectoryNodes = directoryPlans.map(buildDirectoryTree)
+
+  const allocateDirectoryTree = (node: DirectoryNode) => {
+    const entriesInDirectory = node.files.length + node.children.length
+    const firstBlockCapacity = DIR_ENTRIES_PER_BLOCK - 1
+    const remaining = Math.max(0, entriesInDirectory - firstBlockCapacity)
+    const extraBlocks = Math.ceil(remaining / DIR_ENTRIES_PER_BLOCK)
+    const directoryBlocksNeeded = Math.max(1, 1 + extraBlocks)
+    node.blocks = allocateFreeBlocks(directoryBlocksNeeded)
+    node.keyBlock = node.blocks[0]
+    node.blocksUsed = node.blocks.length
+
+    for (const child of node.children) {
+      allocateDirectoryTree(child)
+    }
+
+    for (const file of node.files) {
+      allocatePlannedFile(file, node)
+    }
+  }
+
+  for (const rootNode of rootDirectoryNodes) {
+    allocateDirectoryTree(rootNode)
   }
 
   // Create MENUDATA file with screenshot block references if screenshots exist
@@ -1031,47 +1539,75 @@ export const buildProDosHdv = async (
     }
   }
 
-  const rootEntriesNeeded = filePlans.filter((p) => !p.parentDirectoryBlock).length + directoryEntryPlans.length
+  const rootEntriesNeeded = filePlans.filter((p) => !p.parentDirectoryNode).length + rootDirectoryNodes.length
   if (rootEntriesNeeded > freeSlots.length) {
     throw new Error(`Not enough free directory entries. Need ${rootEntriesNeeded}, have ${freeSlots.length}.`)
   }
 
   let rootSlotIndex = 0
 
-  for (let i = 0; i < directoryEntryPlans.length; i++) {
-    const plan = directoryEntryPlans[i]
-    const entry = freeSlots[rootSlotIndex++]
-    const dirBlock = new Uint8Array(newHdv.buffer, entry.block * BLOCK_SIZE, BLOCK_SIZE)
-    const entryOffset = getDirEntryOffset(entry.slot)
-    const directoryEntry = createDirectoryEntry(
-      plan.name,
-      plan.keyBlock,
-      plan.blocksUsed,
-      entry.block,
-    )
-    dirBlock.set(directoryEntry, entryOffset)
+  const initializeDirectoryBlocks = (node: DirectoryNode) => {
+    if (node.parentEntryBlock === undefined || node.parentEntrySlot === undefined) {
+      throw new Error(`Directory parent entry not set for ${node.name}`)
+    }
 
-    // Initialize and chain all directory blocks for this subdirectory.
-    for (let i = 0; i < plan.blocks.length; i++) {
-      const currentBlockNum = plan.blocks[i]
+    for (let i = 0; i < node.blocks.length; i++) {
+      const currentBlockNum = node.blocks[i]
       const currentBlock = new Uint8Array(newHdv.buffer, currentBlockNum * BLOCK_SIZE, BLOCK_SIZE)
       currentBlock.fill(0)
-      const prevBlock = i > 0 ? plan.blocks[i - 1] : 0
-      const nextBlock = i + 1 < plan.blocks.length ? plan.blocks[i + 1] : 0
+      const prevBlock = i > 0 ? node.blocks[i - 1] : 0
+      const nextBlock = i + 1 < node.blocks.length ? node.blocks[i + 1] : 0
       writeLittleEndian16(currentBlock, 0, prevBlock)
       writeLittleEndian16(currentBlock, 2, nextBlock)
       if (i === 0) {
-        const dirHeader = createSubdirectoryHeaderBlock(plan.name, entry.block, entry.slot, subdirectoryTemplate)
+        const dirHeader = createSubdirectoryHeaderBlock(
+          node.normalizedName || node.name,
+          node.parentEntryBlock,
+          node.parentEntrySlot,
+          subdirectoryTemplate
+        )
         currentBlock.set(dirHeader)
       }
     }
+  }
 
+  const getDirectoryEntryPosition = (node: DirectoryNode, entryIndex: number) => {
+    const firstBlockCapacity = DIR_ENTRIES_PER_BLOCK - 1
+    const blockIndex = entryIndex < firstBlockCapacity
+      ? 0
+      : 1 + Math.floor((entryIndex - firstBlockCapacity) / DIR_ENTRIES_PER_BLOCK)
+    const slot = blockIndex === 0
+      ? entryIndex + 1
+      : (entryIndex - firstBlockCapacity) % DIR_ENTRIES_PER_BLOCK
+    if (blockIndex >= node.blocks.length) {
+      throw new Error(`Directory entry overflow in ${node.name}`)
+    }
+    return { block: node.blocks[blockIndex], slot }
+  }
+
+  const rootDirUsedNames = new Set<string>()
+  for (const node of rootDirectoryNodes) {
+    const entry = freeSlots[rootSlotIndex++]
+    const dirBlock = new Uint8Array(newHdv.buffer, entry.block * BLOCK_SIZE, BLOCK_SIZE)
+    const entryOffset = getDirEntryOffset(entry.slot)
+    const normalizedName = makeUniqueProDosFilename(node.name, rootDirUsedNames)
+    node.normalizedName = normalizedName
+    node.parentEntryBlock = entry.block
+    node.parentEntrySlot = entry.slot
+    const directoryEntry = createDirectoryEntry(
+      normalizedName,
+      node.keyBlock,
+      node.blocksUsed,
+      entry.block,
+    )
+    dirBlock.set(directoryEntry, entryOffset)
+    initializeDirectoryBlocks(node)
     fileCount++
   }
 
   for (let i = 0; i < filePlans.length; i++) {
     const plan = filePlans[i]
-    if (plan.parentDirectoryBlock) continue
+    if (plan.parentDirectoryNode) continue
     const entry = freeSlots[rootSlotIndex++]
     const dirBlock = new Uint8Array(newHdv.buffer, entry.block * BLOCK_SIZE, BLOCK_SIZE)
     const entryOffset = getDirEntryOffset(entry.slot)
@@ -1089,48 +1625,56 @@ export const buildProDosHdv = async (
     fileCount++
   }
 
-  // Place subdirectory file entries within each subdirectory block.
-  const subdirEntriesByBlock = new Map<number, typeof filePlans>()
-  for (const plan of filePlans) {
-    if (!plan.parentDirectoryBlock) continue
-    const bucket = subdirEntriesByBlock.get(plan.parentDirectoryBlock) || []
-    bucket.push(plan)
-    subdirEntriesByBlock.set(plan.parentDirectoryBlock, bucket)
-  }
+  const writeDirectoryContents = (node: DirectoryNode) => {
+    const dirUsedNames = new Set<string>()
+    let entryIndex = 0
 
-  for (const [dirBlockNum, plans] of subdirEntriesByBlock.entries()) {
-    const dirPlan = directoryEntryPlans.find((p) => p.keyBlock === dirBlockNum)
-    if (!dirPlan) {
-      throw new Error(`Missing subdirectory block chain for directory block ${dirBlockNum}`)
-    }
-    const capacity = (DIR_ENTRIES_PER_BLOCK - 1) + ((dirPlan.blocks.length - 1) * DIR_ENTRIES_PER_BLOCK)
-    if (plans.length > capacity) {
-      throw new Error(`Subdirectory exceeds capacity (${plans.length}/${capacity} files): block ${dirBlockNum}`)
-    }
-
-    for (let i = 0; i < plans.length; i++) {
-      const plan = plans[i]
-      const blockIndex = i < (DIR_ENTRIES_PER_BLOCK - 1)
-        ? 0
-        : 1 + Math.floor((i - (DIR_ENTRIES_PER_BLOCK - 1)) / DIR_ENTRIES_PER_BLOCK)
-      const slot = blockIndex === 0
-        ? i + 1
-        : (i - (DIR_ENTRIES_PER_BLOCK - 1)) % DIR_ENTRIES_PER_BLOCK
-      const targetDirBlockNum = dirPlan.blocks[blockIndex]
-      const dirBlock = new Uint8Array(newHdv.buffer, targetDirBlockNum * BLOCK_SIZE, BLOCK_SIZE)
+    for (const child of node.children) {
+      const { block, slot } = getDirectoryEntryPosition(node, entryIndex++)
+      const dirBlock = new Uint8Array(newHdv.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
       const entryOffset = getDirEntryOffset(slot)
+      const normalizedChildName = makeUniqueProDosFilename(child.name, dirUsedNames)
+      child.normalizedName = normalizedChildName
+      child.parentEntryBlock = block
+      child.parentEntrySlot = slot
+      const directoryEntry = createDirectoryEntry(
+        normalizedChildName,
+        child.keyBlock,
+        child.blocksUsed,
+        block,
+      )
+      dirBlock.set(directoryEntry, entryOffset)
+      initializeDirectoryBlocks(child)
+    }
+
+    const plans = filePlansByDirectory.get(node) || []
+    console.log(`[HDV Export] Writing ${plans.length} file entries to directory ${node.name}`)
+    for (const plan of plans) {
+      const { block, slot } = getDirectoryEntryPosition(node, entryIndex++)
+      const dirBlock = new Uint8Array(newHdv.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const entryOffset = getDirEntryOffset(slot)
+      const normalizedFileName = makeUniqueProDosFilename(plan.name, dirUsedNames)
+      console.log(`[HDV Export] Writing file entry: ${normalizedFileName} to ${node.name}/${block}/${slot}`)
       const fileEntry = createFileEntry(
-        plan.name,
+        normalizedFileName,
         plan.type,
         plan.keyBlock,
         plan.data.length,
         plan.blocksUsed,
-        targetDirBlockNum,
+        block,
         plan.storageType,
         plan.auxType,
       )
       dirBlock.set(fileEntry, entryOffset)
     }
+
+    for (const child of node.children) {
+      writeDirectoryContents(child)
+    }
+  }
+
+  for (const node of rootDirectoryNodes) {
+    writeDirectoryContents(node)
   }
 
   const newRootHeader = new Uint8Array(newHdv.buffer, ROOT_DIR_BLOCK * BLOCK_SIZE, BLOCK_SIZE)
