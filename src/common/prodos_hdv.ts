@@ -32,7 +32,7 @@ export type ImportedDiskFile = {
   data: Uint8Array
 }
 
-type BuildInputFile = { name: string; type: number; data: Uint8Array; auxType?: number; relativePath?: string; sourceMenuIndex?: number }
+type BuildInputFile = { name: string; type: number; data: Uint8Array; auxType?: number; relativePath?: string }
 
 type ExtractedProDosFile = {
   name: string
@@ -44,7 +44,12 @@ type ExtractedProDosFile = {
   data: Uint8Array
 }
 
-// DirectoryImportPlan removed - using multi-volume approach
+type DirectoryImportPlan = {
+  name: string
+  files: BuildInputFile[]
+  sourceMenuIndex: number
+  launchCommand?: string
+}
 
 /**
  * Creates binary menu metadata file with disk names and screenshot block references
@@ -82,25 +87,29 @@ const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlo
  * Generates an Applesoft source file to be EXEC'd by BASIC.SYSTEM.
  * This draws screenshots and supports left/right navigation.
  */
-type MenuLaunchMode = "dosmaster" | "prodos-native" | "unavailable"
-
-type MenuLaunchDirective = {
-  mode: MenuLaunchMode
-  commands: string[]
-  message?: string
-}
-
-// Baseline-first guard: verify DOS.MASTER runtime boots before issuing V-volume
-// selectors or app-specific launch commands.
-const DOSMASTER_BASELINE_ONLY = true
-const DOSMASTER_SLOT = 7
-
-export const generateMenuSourceProgram = (
+const generateMenuSourceProgram = (
   menuEntries: MenuDiskEntry[],
-  launchDirectives: MenuLaunchDirective[]
+  dosRuntimeLauncher: string | undefined,
+  menuProDosCommands: Array<string | undefined>,
+  menuProDosPrefixes: Array<string | undefined>
 ): string => {
+  const hasDosMasterRuntime = !!dosRuntimeLauncher
+  const dosRuntimeRunCommand = dosRuntimeLauncher === "DOS.MASTER"
+    ? `BRUN /${dosRuntimeLauncher}/${dosRuntimeLauncher}`
+    : `BRUN ${dosRuntimeLauncher || ""}`
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
+  const escapedNames = menuEntries.slice(0, count).map((entry) =>
+    (entry.displayName || entry.filename).toUpperCase().replace(/"/g, "'").slice(0, 28)
+  )
+  const imageKinds = menuEntries.slice(0, count).map((entry) => entry.imageKind || "unknown")
+  const runtimeVolumes: number[] = []
+  let runtimeVolumeCounter = 1
+  for (let i = 0; i < count; i++) {
+    runtimeVolumes[i] = runtimeVolumeCounter
+    runtimeVolumeCounter++
+  }
+
   lines.push("10 D$=CHR$(4)")
   lines.push(`20 I=1:MAX=${count}`)
   lines.push("30 GOSUB 1000")
@@ -121,32 +130,51 @@ export const generateMenuSourceProgram = (
   // Apple II text mode is uppercase-oriented; lowercase prints as symbols on many setups.
   lines.push("1120 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
   lines.push("1130 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
+  for (let idx = 1; idx <= count; idx++) {
+    const lineNo = 1130 + idx
+    lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"${idx}. ${escapedNames[idx - 1]}\":NORMAL`)
+  }
   lines.push("1160 RETURN")
 
-  // ENTER handling uses explicit launch directives only; no runtime fallbacks.
+  // ENTER handling by image kind.
+  // DOS images: use DOS.MASTER commands (non-emulator-compatible path).
+  // ProDOS/unknown images: keep explicit message, as raw image containers are not directly executable.
   lines.push("2000 REM ENTER HANDLER")
-  console.log(`[HDV Export] Menu launch directives: ${launchDirectives.slice(0, count).map((d, i) => `${i}:${d.mode}:${d.commands.join("|") || d.message || ""}`).join("; ")}`)
   for (let idx = 1; idx <= count; idx++) {
     const lineNo = 2000 + idx
-    const directive = launchDirectives[idx - 1] || { mode: "unavailable", commands: [], message: "ENTRY NOT CONFIGURED" }
-    if (directive.mode === "unavailable" || directive.commands.length === 0) {
-      const message = (directive.message || "ENTRY NOT AVAILABLE").replace(/"/g, "")
-      lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"${message}\":NORMAL:RETURN`)
+    if (imageKinds[idx - 1] === "dos") {
+      if (hasDosMasterRuntime) {
+        // Route launch through DOS.MASTER runtime volume selection.
+        lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"${dosRuntimeRunCommand}\":PRINT D$;\"CATALOG,V${runtimeVolumes[idx - 1]}\":RETURN`)
+      } else {
+        lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:RETURN`)
+      }
+    } else if (imageKinds[idx - 1] === "prodos") {
+      const runCmd = menuProDosCommands[idx - 1]
+      const prefix = menuProDosPrefixes[idx - 1]
+      if (prefix && runCmd) {
+        lines.push(`${lineNo} IF I=${idx} THEN TEXT:PRINT D$;\"PREFIX ${prefix}\":PRINT D$;\"${runCmd}\":RETURN`)
+      } else if (prefix) {
+        lines.push(`${lineNo} IF I=${idx} THEN TEXT:PRINT D$;\"PREFIX ${prefix}\":PRINT D$;\"CATALOG\":RETURN`)
+      } else if (runCmd) {
+        lines.push(`${lineNo} IF I=${idx} THEN TEXT:PRINT D$;\"${runCmd}\":RETURN`)
+      } else {
+        lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":RETURN`)
+      }
     } else {
-      const commandChain = directive.commands
-        .map((command) => `PRINT D$;\"${command}\"`)
-        .join(":")
-      lines.push(`${lineNo} IF I=${idx} THEN TEXT:${commandChain}:RETURN`)
+      if (hasDosMasterRuntime) {
+        lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"${dosRuntimeRunCommand}\":PRINT D$;\"CATALOG,V${runtimeVolumes[idx - 1]}\":RETURN`)
+      } else {
+        lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:RETURN`)
+      }
     }
   }
-  lines.push("2050 VTAB 24:HTAB 1:INVERSE:PRINT \"LAUNCH REQUESTED\":NORMAL")
+  lines.push("2050 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("2060 RETURN")
 
   // EXEC this file to define and run the program immediately.
   lines.push("RUN")
-  const menusrc = `${lines.join("\r")}\r`
-  console.log(`[HDV Export] Generated MENUSRC (first 1000 chars):\n${menusrc.slice(0, 1000)}...`)
-  return menusrc
+  return `${lines.join("\r")}\r`
 }
 
 /**
@@ -159,16 +187,6 @@ const generateInteractiveMenuStartup = (
     return "BRUN A2TSLAUNCH\rCATALOG\r"
   }
   return "EXEC MENUSRC\r"
-}
-
-const buildDosMasterLaunchCommands = (dosRuntimeLauncher: string | undefined) => {
-  if (!dosRuntimeLauncher) return undefined
-  if (dosRuntimeLauncher.includes("/")) {
-    const parts = dosRuntimeLauncher.split("/")
-    if (parts.length !== 2 || !parts[0] || !parts[1]) return undefined
-    return [`PREFIX ${parts[0]}`, `-${parts[1]}`]
-  }
-  return [`-${dosRuntimeLauncher}`]
 }
 
 const writeLittleEndian16 = (data: Uint8Array, offset: number, value: number) => {
@@ -294,10 +312,8 @@ const collectDirectoryBlocksFromStart = (disk: Uint8Array, startBlock: number): 
   const blocks: number[] = []
   let block = startBlock
   const visited = new Set<number>()
-  const totalBlocks = Math.floor(disk.length / BLOCK_SIZE)
 
   while (block !== 0 && !visited.has(block)) {
-    if (block < 0 || block >= totalBlocks) break
     visited.add(block)
     blocks.push(block)
     const dir = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
@@ -396,45 +412,6 @@ const DOS_PHYSICAL_TO_LOGICAL = [0, 13, 11, 9, 7, 5, 3, 1, 14, 12, 10, 8, 6, 4, 
 const PRODOS_PHYSICAL_TO_LOGICAL = [0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]
 const DOS_LOGICAL_TO_PHYSICAL = [0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15]
 const PRODOS_LOGICAL_TO_PHYSICAL = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
-const ALLOW_RELAXED_WOZ_DOS_FALLBACK = false
-
-const isLikelyDos33Volume = (data: Uint8Array): boolean => {
-  if (data.length < (35 * 16 * 256)) return false
-
-  const getSectorOffset = (track: number, sector: number, map: number[]) => {
-    if (track < 0 || sector < 0 || sector > 15) return -1
-    return (track * 16 + map[sector]) * 256
-  }
-
-  const matchesVtoc = (offset: number) => {
-    if (offset < 0 || offset + 0x3A >= data.length) return false
-    const catTrack = data[offset + 0x01]
-    const catSector = data[offset + 0x02]
-    const dosRelease = data[offset + 0x03]
-    const maxTSPairs = data[offset + 0x27]
-    const tracks = data[offset + 0x34]
-    const sectorsPerTrack = data[offset + 0x35]
-    const bytesPerSectorLo = data[offset + 0x36]
-    const bytesPerSectorHi = data[offset + 0x37]
-    const allocDirection = data[offset + 0x31]
-
-    return (
-      catTrack > 0 && catTrack < 35 &&
-      catSector < 16 &&
-      (dosRelease === 2 || dosRelease === 3 || dosRelease === 0) &&
-      (maxTSPairs === 122 || maxTSPairs === 0) &&
-      tracks === 35 &&
-      sectorsPerTrack === 16 &&
-      bytesPerSectorLo === 0 &&
-      bytesPerSectorHi === 1 &&
-      (allocDirection === 1 || allocDirection === 255 || allocDirection === 0)
-    )
-  }
-
-  const dosOrderVtoc = getSectorOffset(17, 0, DOS_LOGICAL_TO_PHYSICAL)
-  const prodosOrderVtoc = getSectorOffset(17, 0, PRODOS_LOGICAL_TO_PHYSICAL)
-  return matchesVtoc(dosOrderVtoc) || matchesVtoc(prodosOrderVtoc)
-}
 
 const decode4and4 = (a: number, b: number) => (((a << 1) | 1) & b) & 0xFF
 
@@ -694,104 +671,130 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
   return []
 }
 
-const decodeWozToDosImage = (wozData: Uint8Array): Uint8Array | undefined => {
-  const decoded = decodeWozToSectorCandidates(wozData)
-  if (!decoded) return undefined
+const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined => {
+  const byName = new Map(files.map((f) => [f.name.toUpperCase(), f]))
 
-  for (const candidate of decoded.candidates) {
-    if (!candidate.label.startsWith("dos")) continue
-    if (!isLikelyDos33Volume(candidate.data)) continue
-    console.log(`[HDV Export] WOZ DOS candidate matched: ${candidate.label} (${decoded.decodedSectorCount} sectors decoded)`)
-    return candidate.data
+  if (byName.has("BASIC.SYSTEM")) return "-BASIC.SYSTEM"
+  if (byName.has("STARTUP")) return "-STARTUP"
+
+  if (byName.has("HELLO")) {
+    const hello = byName.get("HELLO")
+    if (hello?.type === 0xFC) return "RUN HELLO"
+    if (hello?.type === 0x06) return "BRUN HELLO"
+    return "-HELLO"
   }
 
-  for (const candidate of decoded.candidates) {
-    if (!isLikelyDos33Volume(candidate.data)) continue
-    console.log(`[HDV Export] WOZ DOS candidate fallback matched: ${candidate.label} (${decoded.decodedSectorCount} sectors decoded)`)
-    return candidate.data
+  const sys = files.find((f) => f.type === 0xFF)
+  if (sys) return `-${sys.name}`
+
+  const bin = files.find((f) => f.type === 0x06)
+  if (bin) return `BRUN ${bin.name}`
+
+  const bas = files.find((f) => f.type === 0xFC)
+  if (bas) return `RUN ${bas.name}`
+
+  return undefined
+}
+
+const replaceAsciiAll = (data: Uint8Array, fromText: string, toText: string) => {
+  const from = new TextEncoder().encode(fromText)
+  const to = new TextEncoder().encode(toText)
+  if (from.length === 0 || data.length < from.length) return data
+
+  const chunks: Uint8Array[] = []
+  let i = 0
+  let changed = false
+  let segmentStart = 0
+
+  while (i <= data.length - from.length) {
+    let match = true
+    for (let j = 0; j < from.length; j++) {
+      if (data[i + j] !== from[j]) {
+        match = false
+        break
+      }
+    }
+    if (match) {
+      changed = true
+      if (segmentStart < i) chunks.push(data.slice(segmentStart, i))
+      chunks.push(to)
+      i += from.length
+      segmentStart = i
+      continue
+    }
+    i++
   }
 
-  // Optional last resort: allow DOS-sector-order payload even without recognizable VTOC.
-  if (ALLOW_RELAXED_WOZ_DOS_FALLBACK) {
-    // Use startsWith("dos") to avoid matching "prodos" which has wrong sector interleave for DOS.
-    const relaxedDosCandidate = decoded.candidates.find((candidate) => candidate.label.startsWith("dos"))
-    if (relaxedDosCandidate) {
-      console.warn(
-        `[HDV Export] WOZ DOS relaxed fallback used: ${relaxedDosCandidate.label} (${decoded.decodedSectorCount} sectors decoded, no DOS VTOC signature)`
-      )
-      return relaxedDosCandidate.data
+  if (!changed) return data
+  if (segmentStart < data.length) chunks.push(data.slice(segmentStart))
+
+  const total = chunks.reduce((sum, c) => sum + c.length, 0)
+  const out = new Uint8Array(total)
+  let outPos = 0
+  for (const chunk of chunks) {
+    out.set(chunk, outPos)
+    outPos += chunk.length
+  }
+  return out
+}
+
+const rewriteTokenizedApplesoftProgramPath = (data: Uint8Array, fromText: string, toText: string): Uint8Array | undefined => {
+  // For Applesoft BASIC, try simple ASCII replacement first (preserves structure).
+  // Only attempt if pattern is found.
+  const result = replaceAsciiAll(data, fromText, toText)
+  if (result.length !== data.length) {
+    // Replacement happened and size changed - this is risky for BASIC.
+    // Only return if the original size was an exact match.
+    return undefined
+  }
+  // If sizes match or no replacement, safe to return.
+  return result.every((v, i) => v === data[i]) ? undefined : result
+}
+
+const rewriteImportedProgramPath = (type: number, data: Uint8Array, fromText: string, toText: string): Uint8Array => {
+  if (fromText === toText) return data
+
+  // Text files can be rewritten directly.
+  if (type === PRODOS_FILE_TYPE_TEXT) {
+    return replaceAsciiAll(data, fromText, toText)
+  }
+
+  // Applesoft BASIC programs are tokenized with linked-line pointers.
+  // Rebuild pointers after replacement to avoid corrupting program structure.
+  if (type === 0xFC) {
+    const rewritten = rewriteTokenizedApplesoftProgramPath(data, fromText, toText)
+    console.log(`[HDV Export] Rewrite tokenized BASIC (0xFC): pattern found=${rewritten !== undefined}`)
+    return rewritten || data
+  }
+
+  // 0xFF files might also be BASIC programs (e.g., MousePaint's BASIC file).
+  // Try to rewrite as tokenized BASIC.
+  if (type === 0xFF) {
+    const rewritten = rewriteTokenizedApplesoftProgramPath(data, fromText, toText)
+    if (rewritten) {
+      console.log(`[HDV Export] Rewrite tokenized BASIC (0xFF file): pattern found, applying rewrite`)
+      return rewritten
     }
   }
 
-  return undefined
+  return data
 }
 
-const decodeWozToProDosImage = (wozData: Uint8Array): Uint8Array | undefined => {
-  const decoded = decodeWozToSectorCandidates(wozData)
-  if (!decoded) return undefined
+const applyGenericPrefixRewrite = (type: number, data: Uint8Array, fileName?: string): Uint8Array => {
+  let out = data
+  const replacements: Array<[string, string]> = [
+    ["PREFIX /", "PREFIX /APPLE2TS/"],
+  ]
 
-  for (const candidate of decoded.candidates) {
-    if (!candidate.label.includes("prodos")) continue
-    if (!isLikelyProDosVolume(candidate.data)) continue
-    console.log(`[HDV Export] WOZ ProDOS image candidate matched: ${candidate.label} (${decoded.decodedSectorCount} sectors decoded)`)
-    return candidate.data
+  for (const [fromText, toText] of replacements) {
+    const before = out
+    out = rewriteImportedProgramPath(type, out, fromText, toText)
+    if (before !== out) {
+      console.log(`[HDV Export] Prefix rewrite applied to ${fileName} (type=$${type.toString(16).toUpperCase()})`)
+    }
   }
 
-  for (const candidate of decoded.candidates) {
-    if (!isLikelyProDosVolume(candidate.data)) continue
-    console.log(`[HDV Export] WOZ ProDOS image candidate fallback matched: ${candidate.label} (${decoded.decodedSectorCount} sectors decoded)`)
-    return candidate.data
-  }
-
-  return undefined
-}
-
-// Tokenizer and PATH rewriting removed - using multi-volume approach instead
-
-
-
-// Multi-volume approach: each disk is its own volume, no subdirectories or path rewriting needed
-type VolumeData = {
-  volumeName: string
-  files: BuildInputFile[]
-  sourceKind: "dos" | "prodos" | "unknown"
-  sourceMenuIndex: number
-  sourceImageData?: Uint8Array
-  sourceFilename?: string
-}
-
-const chooseProDosLaunchCommands = (volumeName: string, files: BuildInputFile[]) => {
-  if (files.length === 0) return undefined
-
-  const normalizedVolumeBase = normalizeProDosFilename(volumeName).split(".")[0]
-  const scoreCandidate = (file: BuildInputFile) => {
-    const name = normalizeProDosFilename(file.name)
-    let score = 0
-    if (name === normalizedVolumeBase) score += 100
-    if (name === `${normalizedVolumeBase}.SYSTEM`) score += 90
-    if (name.endsWith(".SYSTEM")) score += 20
-    if (!name.includes(".")) score += 10
-    return score
-  }
-
-  const pickBestByType = (type: number) => {
-    const candidates = files.filter((file) => file.type === type)
-    if (candidates.length === 0) return undefined
-    return candidates.reduce((best, current) => {
-      return scoreCandidate(current) > scoreCandidate(best) ? current : best
-    })
-  }
-
-  const sysFile = pickBestByType(0xFF)
-  if (sysFile) return [`-${normalizeProDosFilename(sysFile.name)}`]
-
-  const binaryFile = pickBestByType(PRODOS_FILE_TYPE_BINARY)
-  if (binaryFile) return [`BRUN ${normalizeProDosFilename(binaryFile.name)}`]
-
-  const textFile = pickBestByType(PRODOS_FILE_TYPE_TEXT)
-  if (textFile) return [`EXEC ${normalizeProDosFilename(textFile.name)}`]
-
-  return undefined
+  return out
 }
 
 const preprocessInputFilesForMenu = (
@@ -799,8 +802,10 @@ const preprocessInputFilesForMenu = (
   menuEntries?: MenuDiskEntry[],
   reservedNames?: Set<string>
 ) => {
-  const volumes: VolumeData[] = []
-  const rootFiles: BuildInputFile[] = []
+  const outputFiles: BuildInputFile[] = []
+  const directoryPlans: DirectoryImportPlan[] = []
+  const menuProDosCommands: Array<string | undefined> = []
+  const menuProDosPrefixes: Array<string | undefined> = []
   const usedNames = new Set<string>(reservedNames || [])
 
   for (let i = 0; i < files.length; i++) {
@@ -811,86 +816,102 @@ const preprocessInputFilesForMenu = (
     const isWozContainer = sourceFilename.toLowerCase().endsWith(".woz")
     const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
 
-    // Check if this is a ProDOS volume we should extract
     if (wozExtractedFiles && wozExtractedFiles.length > 0) {
-      const volumeName = makeUniqueProDosFilename(normalizeProDosFilename(filename).split(".")[0] || "IMG", usedNames)
-      const volumeFiles: BuildInputFile[] = []
+      const imagePrefix = normalizeProDosFilename(file.name).split(".")[0] || "IMG"
+      const directoryName = makeUniqueProDosFilename(imagePrefix, usedNames)
+      const directoryFiles: BuildInputFile[] = []
       const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
-      
       for (const extractedFile of wozExtractedFiles) {
-        if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) continue
-        volumeFiles.push({
-          name: normalizeProDosFilename(extractedFile.name),
+        if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) {
+          console.log(`[HDV Export] Skipping duplicate system file: ${extractedFile.name}`)
+          continue
+        }
+        const normalized = normalizeProDosFilename(extractedFile.name)
+        const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data, normalized)
+        directoryFiles.push({
+          name: normalized,
           type: extractedFile.type,
-          data: extractedFile.data,
+          data: rewrittenData,
           auxType: extractedFile.auxType,
+          relativePath: extractedFile.relativePath,
         })
       }
-
-      volumes.push({
-        volumeName,
-        files: volumeFiles,
-        sourceKind: "prodos",
-        sourceMenuIndex: i,
-        sourceImageData: file.data,
-        sourceFilename,
-      })
-      console.log(`[HDV Export] WOZ volume: ${filename} -> ${volumeName} (${volumeFiles.length} files)`)
+      const launchCommand = detectProDosLaunchCommand(directoryFiles)
+      console.log(`[HDV Export] WOZ ProDOS detected: ${filename} -> ${directoryName} (${directoryFiles.length} files)`)
+      console.log("[HDV Export] WOZ extracted files:", directoryFiles.map((f) => `${f.relativePath ? `${f.relativePath}/` : ""}${f.name} [$${f.type.toString(16).toUpperCase()}] ${f.data.length} bytes`))
+      directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
+      menuProDosPrefixes[i] = directoryName
+      menuProDosCommands[i] = launchCommand
       continue
     }
 
+    // Keep WOZ container images as-is (track-based, not block-addressable ProDOS).
     if (isWozContainer) {
-      const name = makeUniqueProDosFilename(filename, usedNames)
-      rootFiles.push({ ...file, name, sourceMenuIndex: i })
+      const normalized = makeUniqueProDosFilename(file.name, usedNames)
+      console.log(`[HDV Export] WOZ not ProDOS-extractable, keeping container: ${filename} -> ${normalized}`)
+      outputFiles.push({ ...file, name: normalized })
+      menuProDosCommands[i] = undefined
+      menuProDosPrefixes[i] = undefined
       continue
     }
 
-    // Try ProDOS extraction
+    // For block images that are ProDOS by structure or classification, import files under an image-name prefix.
     const shouldTryProDosImport = kind === "prodos" || isLikelyProDosVolume(file.data)
     if (shouldTryProDosImport) {
       const extracted = extractProDosFilesRecursive(file.data)
       if (extracted.length > 0) {
-        const volumeName = makeUniqueProDosFilename(normalizeProDosFilename(filename).split(".")[0] || "IMG", usedNames)
-        const volumeFiles: BuildInputFile[] = []
+        const imagePrefix = normalizeProDosFilename(file.name).split(".")[0] || "IMG"
+        const directoryName = makeUniqueProDosFilename(imagePrefix, usedNames)
+        const directoryFiles: BuildInputFile[] = []
+        // Filter out system files that duplicate across all disk extracts.
         const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
-        
         for (const extractedFile of extracted) {
-          if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) continue
-          volumeFiles.push({
-            name: normalizeProDosFilename(extractedFile.name),
+          // Skip system files that appear in every disk image.
+          if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) {
+            console.log(`[HDV Export] Skipping duplicate system file: ${extractedFile.name} (type=$${extractedFile.type.toString(16).toUpperCase()})`)
+            continue
+          }
+          const normalized = normalizeProDosFilename(extractedFile.name)
+          const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data, normalized)
+          directoryFiles.push({
+            name: normalized,
             type: extractedFile.type,
-            data: extractedFile.data,
+            data: rewrittenData,
             auxType: extractedFile.auxType,
+            relativePath: extractedFile.relativePath,
           })
         }
-
-        volumes.push({
-          volumeName,
-          files: volumeFiles,
-          sourceKind: "prodos",
-          sourceMenuIndex: i,
-          sourceImageData: file.data,
-          sourceFilename,
-        })
-        console.log(`[HDV Export] ProDOS volume: ${filename} -> ${volumeName} (${volumeFiles.length} files)`)
-        continue
+        const launchCommand = detectProDosLaunchCommand(directoryFiles)
+        console.log(`[HDV Export] ProDOS detected: ${filename} -> ${directoryName} (${directoryFiles.length} files)`)
+        console.log("[HDV Export] ProDOS extracted files:", directoryFiles.map((f) => `${f.relativePath ? `${f.relativePath}/` : ""}${f.name} [$${f.type.toString(16).toUpperCase()}] ${f.data.length} bytes`))
+        directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
+        menuProDosPrefixes[i] = directoryName
+        menuProDosCommands[i] = launchCommand
+      } else {
+        const normalized = makeUniqueProDosFilename(file.name, usedNames)
+        console.log(`[HDV Export] ProDOS extraction found 0 files, keeping image as file: ${filename} -> ${normalized}`)
+        outputFiles.push({ ...file, name: normalized })
+        menuProDosCommands[i] = undefined
+        menuProDosPrefixes[i] = undefined
       }
+      continue
     }
 
-    // Skip DOS images (use base image DOS.MASTER instead); keep other non-extractable files in root
-    const isDosImage = kind === "dos"
-    if (!isDosImage) {
-      const name = makeUniqueProDosFilename(filename, usedNames)
-      rootFiles.push({ ...file, name, sourceMenuIndex: i })
-      console.log(`[HDV Export] Root file: ${filename} -> ${name} (${kind})`)
-    } else {
-      console.log(`[HDV Export] Skipped DOS image: ${filename} (use base image DOS.MASTER)`)
-    }
+    const normalized = makeUniqueProDosFilename(file.name, usedNames)
+    console.log(`[HDV Export] Non-ProDOS image copied as file: ${filename} -> ${normalized}`)
+    outputFiles.push({
+      ...file,
+      name: normalized,
+    })
+    menuProDosPrefixes[i] = undefined
   }
 
-  console.log(`[HDV Export] Multi-volume summary: ${volumes.length} volumes, ${rootFiles.length} root files`)
-  return { volumes, rootFiles }
+  const totalDetectedFiles = directoryPlans.reduce((sum, d) => sum + d.files.length, 0)
+  console.log(`[HDV Export] Detection summary: ${directoryPlans.length} extracted directories, ${totalDetectedFiles} extracted files, ${outputFiles.length} root files`)
+
+  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes }
 }
+
 const encodeProDosTime = (date: Date = new Date()) => {
   const year = Math.max(0, Math.min(127, date.getFullYear() - 1900))
   const month = date.getMonth() + 1
@@ -998,9 +1019,96 @@ const createFileEntry = (
   return entry
 }
 
-// Directory entry and template functions removed - using multi-volume approach
+const createDirectoryEntry = (
+  dirname: string,
+  keyBlock: number,
+  blocksUsed: number,
+  headerPointer: number,
+): Uint8Array => {
+  const entry = new Uint8Array(39)
+  const nameBytes = dirname.toUpperCase().slice(0, 15).split("").map(c => c.charCodeAt(0))
 
-// Directory functions removed - using multi-volume approach
+  // Directory entry in parent: storage type $D, file type $0F.
+  entry[0] = (0x0D << 4) | nameBytes.length
+  for (let i = 0; i < nameBytes.length; i++) {
+    entry[1 + i] = nameBytes[i]
+  }
+  entry[16] = 0x0F
+  writeLittleEndian16(entry, 17, keyBlock)
+  writeLittleEndian16(entry, 19, blocksUsed)
+  writeLittleEndian24(entry, 21, blocksUsed * BLOCK_SIZE)
+
+  const now = encodeProDosTime()
+  writeLittleEndian16(entry, 24, now.dateWord)
+  writeLittleEndian16(entry, 26, now.timeWord)
+  entry[28] = 0x00
+  entry[29] = 0x00
+  entry[30] = 0xE3
+  writeLittleEndian16(entry, 31, 0x0000)
+  writeLittleEndian16(entry, 33, now.dateWord)
+  writeLittleEndian16(entry, 35, now.timeWord)
+  writeLittleEndian16(entry, 37, headerPointer)
+
+  return entry
+}
+
+const findSubdirectoryHeaderTemplate = (disk: Uint8Array): Uint8Array | undefined => {
+  const dirBlocks = collectRootDirectoryBlocks(disk)
+  for (let b = 0; b < dirBlocks.length; b++) {
+    const blockNum = dirBlocks[b]
+    const dirBlock = new Uint8Array(disk.buffer, blockNum * BLOCK_SIZE, BLOCK_SIZE)
+    const startIndex = b === 0 ? 1 : 0
+    for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+      const entryOffset = getDirEntryOffset(slot)
+      const byte0 = dirBlock[entryOffset]
+      if (isDirectorySlotFree(byte0)) continue
+      const storageType = (byte0 >> 4) & 0x0F
+      const fileType = dirBlock[entryOffset + 16]
+      if (storageType === 0x0D && fileType === 0x0F) {
+        const keyBlock = readLittleEndian16(dirBlock, entryOffset + 17)
+        const template = readBlock(disk, keyBlock)
+        if (template) return template
+      }
+    }
+  }
+  return undefined
+}
+
+const createSubdirectoryHeaderBlock = (
+  dirname: string,
+  parentBlock: number,
+  parentSlot: number,
+  template?: Uint8Array
+): Uint8Array => {
+  const block = new Uint8Array(BLOCK_SIZE)
+  if (template && template.length === BLOCK_SIZE) {
+    block.set(template)
+  }
+
+  // Linked-list pointers for this directory block.
+  writeLittleEndian16(block, 0, 0)
+  writeLittleEndian16(block, 2, 0)
+
+  const headerOffset = getDirEntryOffset(0)
+  const nameBytes = dirname.toUpperCase().slice(0, 15).split("").map(c => c.charCodeAt(0))
+  block[headerOffset] = (0x0E << 4) | nameBytes.length
+  for (let i = 0; i < 15; i++) {
+    block[headerOffset + 1 + i] = i < nameBytes.length ? nameBytes[i] : 0
+  }
+
+  // Keep canonical ProDOS directory header markers.
+  block[headerOffset + 16] = 0x75
+  writeLittleEndian16(block, headerOffset + 17, 0)
+  writeLittleEndian16(block, headerOffset + 19, 0)
+  writeLittleEndian24(block, headerOffset + 21, 0)
+  writeLittleEndian16(block, headerOffset + 31, 0x0D27) // entry length ($27) + entries/block ($0D)
+  writeLittleEndian16(block, headerOffset + 33, parentBlock)
+  block[headerOffset + 35] = parentSlot
+  block[headerOffset + 36] = 0
+  writeLittleEndian16(block, headerOffset + 37, 0x2703)
+
+  return block
+}
 
 const BLOCK_SIZE = 512
 const ROOT_DIR_BLOCK = 2
@@ -1040,10 +1148,8 @@ const collectRootDirectoryBlocks = (disk: Uint8Array) => {
   const blocks: number[] = []
   let block = ROOT_DIR_BLOCK
   const visited = new Set<number>()
-  const totalBlocks = Math.floor(disk.length / BLOCK_SIZE)
 
   while (block !== 0 && !visited.has(block)) {
-    if (block < 0 || block >= totalBlocks) break
     visited.add(block)
     blocks.push(block)
     const dir = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
@@ -1062,639 +1168,10 @@ const readDirectoryEntryName = (entry: Uint8Array) => {
   return name
 }
 
-const findDirectoryKeyBlockByName = (disk: Uint8Array, dirBlocks: number[], directoryName: string) => {
-  for (let b = 0; b < dirBlocks.length; b++) {
-    const block = dirBlocks[b]
-    const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
-    const startIndex = b === 0 ? 1 : 0
-    for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
-      const entryOffset = getDirEntryOffset(slot)
-      const byte0 = dirBlock[entryOffset]
-      if (isDirectorySlotFree(byte0)) continue
-      const storageType = ((byte0 >> 4) & 0x0F)
-      if (storageType !== 0x0D) continue
-
-      const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
-      const name = readDirectoryEntryName(entry)
-      if (name !== directoryName) continue
-      return readLittleEndian16(entry, 17)
-    }
-  }
-  return undefined
-}
-
-type ProDosFileLocation = {
-  storageType: 1 | 2 | 3
-  keyBlock: number
-  eof: number
-}
-
-type ProDosFileEntryMetadata = ProDosFileLocation & {
-  blocksUsed: number
-  headerPointer: number
-  fileType: number
-}
-
-const findFileEntryMetadataByPath = (disk: Uint8Array, pathParts: string[]): ProDosFileEntryMetadata | undefined => {
-  if (pathParts.length === 0) return undefined
-
-  const findEntryInDirectory = (dirBlocks: number[], name: string) => {
-    for (let b = 0; b < dirBlocks.length; b++) {
-      const block = dirBlocks[b]
-      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
-      const startIndex = b === 0 ? 1 : 0
-      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
-        const entryOffset = getDirEntryOffset(slot)
-        const byte0 = dirBlock[entryOffset]
-        if (isDirectorySlotFree(byte0)) continue
-
-        const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
-        const entryName = readDirectoryEntryName(entry)
-        if (entryName !== name) continue
-
-        const storageType = ((byte0 >> 4) & 0x0F)
-        return {
-          storageType,
-          keyBlock: readLittleEndian16(entry, 17),
-          blocksUsed: readLittleEndian16(entry, 19),
-          eof: readLittleEndian24(entry, 21),
-          fileType: entry[16],
-          headerPointer: readLittleEndian16(entry, 37),
-        }
-      }
-    }
-    return undefined
-  }
-
-  let currentDirBlocks = collectRootDirectoryBlocks(disk)
-  if (currentDirBlocks.length === 0) return undefined
-
-  for (let i = 0; i < pathParts.length; i++) {
-    const part = pathParts[i]
-    const found = findEntryInDirectory(currentDirBlocks, part)
-    if (!found) return undefined
-    const isLast = i === pathParts.length - 1
-    if (isLast) {
-      if (found.storageType < 1 || found.storageType > 3) return undefined
-      return {
-        storageType: found.storageType as 1 | 2 | 3,
-        keyBlock: found.keyBlock,
-        blocksUsed: found.blocksUsed,
-        eof: found.eof,
-        fileType: found.fileType,
-        headerPointer: found.headerPointer,
-      }
-    }
-    if (found.storageType !== 0x0D || found.keyBlock <= 0) return undefined
-    currentDirBlocks = collectDirectoryBlocksFromStart(disk, found.keyBlock)
-    if (currentDirBlocks.length === 0) return undefined
-  }
-
-  return undefined
-}
-
-const findFileByPath = (disk: Uint8Array, pathParts: string[]): ProDosFileLocation | undefined => {
-  if (pathParts.length === 0) return undefined
-
-  const findEntryInDirectory = (dirBlocks: number[], name: string) => {
-    for (let b = 0; b < dirBlocks.length; b++) {
-      const block = dirBlocks[b]
-      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
-      const startIndex = b === 0 ? 1 : 0
-      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
-        const entryOffset = getDirEntryOffset(slot)
-        const byte0 = dirBlock[entryOffset]
-        if (isDirectorySlotFree(byte0)) continue
-
-        const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
-        const entryName = readDirectoryEntryName(entry)
-        if (entryName !== name) continue
-
-        const storageType = ((byte0 >> 4) & 0x0F)
-        return {
-          storageType,
-          keyBlock: readLittleEndian16(entry, 17),
-          eof: readLittleEndian24(entry, 21),
-        }
-      }
-    }
-    return undefined
-  }
-
-  let currentDirBlocks = collectRootDirectoryBlocks(disk)
-  if (currentDirBlocks.length === 0) return undefined
-
-  for (let i = 0; i < pathParts.length; i++) {
-    const part = pathParts[i]
-    const found = findEntryInDirectory(currentDirBlocks, part)
-    if (!found) return undefined
-    const isLast = i === pathParts.length - 1
-    if (isLast) {
-      if (found.storageType < 1 || found.storageType > 3) return undefined
-      return {
-        storageType: found.storageType as 1 | 2 | 3,
-        keyBlock: found.keyBlock,
-        eof: found.eof,
-      }
-    }
-    if (found.storageType !== 0x0D || found.keyBlock <= 0) return undefined
-    currentDirBlocks = collectDirectoryBlocksFromStart(disk, found.keyBlock)
-    if (currentDirBlocks.length === 0) return undefined
-  }
-  return undefined
-}
-
-const writeFileDataToProDosImage = (
-  disk: Uint8Array,
-  location: ProDosFileLocation,
-  data: Uint8Array,
-) => {
-  const writeDataBlock = (blockNum: number, sourceOffset: number) => {
-    if (blockNum === 0 || sourceOffset >= data.length) return
-    const blockOffset = blockNum * BLOCK_SIZE
-    const n = Math.min(BLOCK_SIZE, data.length - sourceOffset)
-    disk.fill(0, blockOffset, blockOffset + BLOCK_SIZE)
-    disk.set(data.slice(sourceOffset, sourceOffset + n), blockOffset)
-  }
-
-  if (location.storageType === 1) {
-    writeDataBlock(location.keyBlock, 0)
-    return
-  }
-
-  if (location.storageType === 2) {
-    const indexBlock = readBlock(disk, location.keyBlock)
-    if (!indexBlock) return
-    for (let i = 0; i < 256; i++) {
-      const blockNum = indexBlock[i] | (indexBlock[256 + i] << 8)
-      writeDataBlock(blockNum, i * BLOCK_SIZE)
-    }
-    return
-  }
-
-  const masterBlock = readBlock(disk, location.keyBlock)
-  if (!masterBlock) return
-  for (let i = 0; i < 256; i++) {
-    const indexBlockNum = masterBlock[i] | (masterBlock[256 + i] << 8)
-    if (indexBlockNum === 0) continue
-    const indexBlock = readBlock(disk, indexBlockNum)
-    if (!indexBlock) continue
-    for (let j = 0; j < 256; j++) {
-      const blockNum = indexBlock[j] | (indexBlock[256 + j] << 8)
-      writeDataBlock(blockNum, ((i * 256) + j) * BLOCK_SIZE)
-    }
-  }
-}
-
-type DosMasterPatchResult = {
-  requestedVolumes: number
-  mappedVolumes: number
-  activePairs: number
-  patchedTargets: number
-}
-
-type DosMasterPatchFailure = {
-  error: string
-}
-
-type DosMasterPatchSkip = {
-  skipped: true
-  reason: string
-}
-
-type DosMasterPairAllocation = {
-  pairIndex: number
-  volSizeBlocks: number
-  mappedVolumes: number
-  mappedBlocks: number
-}
-
-export const computeDosMasterPairAllocation = (
-  runtimeVolumeCount: number,
-  pairVolSizes: number[],
-  fallbackVolSizeBlocks = 280,
-) => {
-  const requestedVolumes = Math.max(0, runtimeVolumeCount)
-  const safeFallbackVolSizeBlocks =
-    fallbackVolSizeBlocks > 0 && fallbackVolSizeBlocks <= 1600
-      ? fallbackVolSizeBlocks
-      : 280
-  let remainingVolumes = requestedVolumes
-  const allocations: DosMasterPairAllocation[] = []
-
-  for (let i = 0; i < pairVolSizes.length; i++) {
-    let volSizeBlocks = pairVolSizes[i]
-    if (volSizeBlocks <= 0 || volSizeBlocks > 1600) volSizeBlocks = safeFallbackVolSizeBlocks
-
-    const maxVolumesForPair = Math.max(1, Math.floor(0xFFFF / volSizeBlocks))
-    const mappedVolumes = Math.min(remainingVolumes, maxVolumesForPair)
-    const mappedBlocks = mappedVolumes > 0 ? mappedVolumes * volSizeBlocks : 0
-
-    allocations.push({
-      pairIndex: i,
-      volSizeBlocks,
-      mappedVolumes,
-      mappedBlocks,
-    })
-    remainingVolumes -= mappedVolumes
-  }
-
-  return {
-    allocations,
-    requestedVolumes,
-    mappedVolumes: requestedVolumes - remainingVolumes,
-    unmappedVolumes: remainingVolumes,
-  }
-}
-
-const patchDosMasterDos33Configuration = (disk: Uint8Array, runtimeVolumeCount: number): DosMasterPatchResult | DosMasterPatchFailure => {
-  // runtimeVolumeCount=0 is valid: zeros out NUM_BLOCKS so DOS.MASTER doesn't try to access non-existent volumes.
-  const safeVolumeCount = Math.max(0, runtimeVolumeCount)
-
-  const TABLE_DEV_OFFSET = 0x38
-  const TABLE_NUM_BLOCKS_OFFSET = 0x50
-  const TABLE_VOL_SIZE_OFFSET = 0x58
-
-  const patchFinderDataCompanionMetadata = () => {
-    const finderLocation =
-      findFileByPath(disk, ["DOS.MASTER", "FINDER.DATA"]) ||
-      findFileByPath(disk, ["FINDER.DATA"])
-    if (!finderLocation) return 0
-
-    const finderData = readFileDataFromProDosImage(
-      disk,
-      finderLocation.storageType,
-      finderLocation.keyBlock,
-      finderLocation.eof,
-    )
-    if (finderData.length === 0) return 0
-
-    const patchFinderRecord = (name: string, blocksUsed: number, keyBlock: number) => {
-      const encodedName = new TextEncoder().encode(name)
-      let patched = 0
-      for (let offset = 0; offset + 1 + encodedName.length + 7 < finderData.length; offset++) {
-        if (finderData[offset] !== encodedName.length) continue
-        let match = true
-        for (let i = 0; i < encodedName.length; i++) {
-          if (finderData[offset + 1 + i] !== encodedName[i]) {
-            match = false
-            break
-          }
-        }
-        if (!match) continue
-
-        // Record layout contains 4 words after a marker byte; update blocks used and key block.
-        writeLittleEndian16(finderData, offset + 1 + encodedName.length + 1, blocksUsed)
-        writeLittleEndian16(finderData, offset + 1 + encodedName.length + 5, keyBlock)
-        patched++
-      }
-      return patched
-    }
-
-    let patchedRecords = 0
-    const metadataTargets = ["DOS.3.3", "DDOS.3.3"]
-    for (const name of metadataTargets) {
-      const entry =
-        findFileEntryMetadataByPath(disk, ["DOS.MASTER", name]) ||
-        findFileEntryMetadataByPath(disk, [name])
-      if (!entry) continue
-      patchedRecords += patchFinderRecord(name, entry.blocksUsed, entry.keyBlock)
-    }
-
-    if (patchedRecords > 0) {
-      writeFileDataToProDosImage(disk, finderLocation, finderData)
-    }
-    return patchedRecords
-  }
-
-  const patchSingleDosMasterConfigPayload = (payload: Uint8Array, targetName: string):
-    | {
-      patched: Uint8Array
-      mappedVolumes: number
-      activePairs: number
-      unmappedVolumes: number
-      pairSummaries: string[]
-      expectedNumBlocks: number[]
-    }
-    | DosMasterPatchSkip
-    | DosMasterPatchFailure => {
-    if (payload.length < 0x60) return { error: `${targetName} payload too small to patch configuration table (${payload.length} bytes < 0x60).` }
-
-    const patched = payload.slice()
-    const readWord = (offset: number) => patched[offset] | (patched[offset + 1] << 8)
-    const writeWord = (offset: number, value: number) => {
-      patched[offset] = value & 0xFF
-      patched[offset + 1] = (value >> 8) & 0xFF
-    }
-
-    // Log device pair configuration before patching for debugging
-    const devPairsBefore = []
-    for (let pair = 0; pair < 4; pair++) {
-      devPairsBefore.push(`P${pair}:$${patched[TABLE_DEV_OFFSET + pair * 2].toString(16).padStart(2, '0')}$${patched[TABLE_DEV_OFFSET + pair * 2 + 1].toString(16).padStart(2, '0')}`)
-    }
-
-    const activePairIndices: number[] = []
-    for (let pair = 0; pair < 4; pair++) {
-      const d1 = patched[TABLE_DEV_OFFSET + (pair * 2)]
-      const d2 = patched[TABLE_DEV_OFFSET + (pair * 2) + 1]
-      if (d1 !== 0 || d2 !== 0) activePairIndices.push(pair)
-    }
-    if (activePairIndices.length === 0) {
-      return {
-        skipped: true,
-        reason: `${targetName} has no active DOS.MASTER device pairs. Device pairs before patch: ${devPairsBefore.join(", ")}`,
-      }
-    }
-
-    const primaryPair = activePairIndices[0]
-    const primaryVolSizeOffset = TABLE_VOL_SIZE_OFFSET + (primaryPair * 2)
-    let fallbackVolSizeBlocks = readWord(primaryVolSizeOffset)
-    if (fallbackVolSizeBlocks <= 0 || fallbackVolSizeBlocks > 1600) fallbackVolSizeBlocks = 280
-
-    const pairVolSizes = activePairIndices.map((pair) => readWord(TABLE_VOL_SIZE_OFFSET + (pair * 2)))
-    const allocation = computeDosMasterPairAllocation(safeVolumeCount, pairVolSizes, fallbackVolSizeBlocks)
-
-    const pairSummaries: string[] = []
-    const expectedNumBlocks = [0, 0, 0, 0]
-    for (let i = 0; i < activePairIndices.length; i++) {
-      const pair = activePairIndices[i]
-      const numBlocksOffset = TABLE_NUM_BLOCKS_OFFSET + (pair * 2)
-      const pairAllocation = allocation.allocations[i]
-      writeWord(numBlocksOffset, pairAllocation.mappedBlocks)
-      expectedNumBlocks[pair] = pairAllocation.mappedBlocks
-      pairSummaries.push(`P${pair + 1}:V=${pairAllocation.mappedVolumes},B=${pairAllocation.mappedBlocks},S=${pairAllocation.volSizeBlocks}`)
-    }
-
-    // Disable non-active pairs so stale defaults do not expose phantom volumes.
-    const activePairSet = new Set(activePairIndices)
-    for (let pair = 0; pair < 4; pair++) {
-      if (activePairSet.has(pair)) continue
-      const numBlocksOffset = TABLE_NUM_BLOCKS_OFFSET + (pair * 2)
-      writeWord(numBlocksOffset, 0)
-      expectedNumBlocks[pair] = 0
-    }
-
-    return {
-      patched,
-      mappedVolumes: allocation.mappedVolumes,
-      activePairs: activePairIndices.length,
-      unmappedVolumes: allocation.unmappedVolumes,
-      pairSummaries,
-      expectedNumBlocks,
-    }
-  }
-
-  const verifyPatchedConfigPayload = (payload: Uint8Array, expectedNumBlocks: number[], targetName: string) => {
-    if (payload.length < 0x60) {
-      return { error: `${targetName} payload too small during post-write verification (${payload.length} bytes < 0x60).` }
-    }
-    for (let pair = 0; pair < 4; pair++) {
-      const offset = TABLE_NUM_BLOCKS_OFFSET + (pair * 2)
-      const actual = payload[offset] | (payload[offset + 1] << 8)
-      const expected = expectedNumBlocks[pair] || 0
-      if (actual !== expected) {
-        return {
-          error: `${targetName} post-write verification failed for pair ${pair + 1}: expected NUM_BLOCKS=${expected}, got ${actual}.`,
-        }
-      }
-    }
-    return undefined
-  }
-
-  const configTargets = [
-    { path: ["DOS.MASTER", "DOS.MASTER"], label: "DOS.MASTER/DOS.MASTER" },
-    { path: ["DOS.MASTER", "DOS.3.3"], label: "DOS.MASTER/DOS.3.3" },
-    { path: ["DOS.3.3"], label: "DOS.3.3" },
-    { path: ["DOS.MASTER", "DDOS.3.3"], label: "DOS.MASTER/DDOS.3.3" },
-    { path: ["DDOS.3.3"], label: "DDOS.3.3" },
-  ] as const
-
-  const foundTargets: Array<{ label: string; location: ProDosFileLocation }> = []
-  for (const target of configTargets) {
-    const location = findFileByPath(disk, [...target.path])
-    if (location) foundTargets.push({ label: target.label, location })
-  }
-  if (foundTargets.length === 0) {
-    return { error: "Could not locate DOS.3.3 or DDOS.3.3 in DOS.MASTER base image." }
-  }
-
-  let mappedVolumes: number | undefined
-  let activePairs: number | undefined
-  const patchedLabels: string[] = []
-  let appliedTargets = 0
-
-  for (const target of foundTargets) {
-    const current = readFileDataFromProDosImage(
-      disk,
-      target.location.storageType,
-      target.location.keyBlock,
-      target.location.eof,
-    )
-    const patchResult = patchSingleDosMasterConfigPayload(current, target.label)
-    if ("skipped" in patchResult) {
-      console.warn(`[HDV Export] Skipping DOS.MASTER config target: ${patchResult.reason}`)
-      continue
-    }
-    if ("error" in patchResult) return { error: patchResult.error }
-
-    if (mappedVolumes === undefined) mappedVolumes = patchResult.mappedVolumes
-    if (activePairs === undefined) activePairs = patchResult.activePairs
-
-    if (patchResult.mappedVolumes !== mappedVolumes) {
-      return { error: `Inconsistent mapped volume counts across DOS.MASTER config targets (saw ${mappedVolumes} and ${patchResult.mappedVolumes}).` }
-    }
-
-    writeFileDataToProDosImage(disk, target.location, patchResult.patched)
-
-    const verifyPayload = readFileDataFromProDosImage(
-      disk,
-      target.location.storageType,
-      target.location.keyBlock,
-      target.location.eof,
-    )
-    const verifyError = verifyPatchedConfigPayload(verifyPayload, patchResult.expectedNumBlocks, target.label)
-    if (verifyError) return verifyError
-
-    patchedLabels.push(`${target.label}:${patchResult.pairSummaries.join("|")}`)
-    appliedTargets++
-    if (patchResult.unmappedVolumes > 0) {
-      console.warn(`[HDV Export] ${target.label} capacity exhausted: ${patchResult.unmappedVolumes} runtime volumes could not be mapped.`)
-    }
-  }
-
-  if (appliedTargets === 0) {
-    return { error: "Could not patch any DOS.MASTER runtime config target with active device pairs." }
-  }
-
-  const patchedFinderRecords = patchFinderDataCompanionMetadata()
-
-  console.log(`[HDV Export] Patched DOS.MASTER config targets: requested=${runtimeVolumeCount}, mapped=${mappedVolumes || 0}, targets=${patchedLabels.join("; ")}, finderRecords=${patchedFinderRecords}`)
-  return {
-    requestedVolumes: runtimeVolumeCount,
-    mappedVolumes: mappedVolumes || 0,
-    activePairs: activePairs || 0,
-    patchedTargets: appliedTargets,
-  }
-}
-
-type DosInstallLikeResult = {
-  installedVolumes: number
-  maxVolumes: number
-  firstBlock: number
-  volumeSizeBlocks: number
-  partitionBlocks: number
-  deviceUnit: number
-}
-
-const installDosMasterLikePartitions = (
-  disk: Uint8Array,
-  runtimeVolumes: BuildInputFile[],
-  totalBlocks: number,
-  bitmapStartBlock: number,
-  slot: number,
-  drive: 1 | 2 = 1,
-): DosInstallLikeResult | DosMasterPatchFailure => {
-  if (runtimeVolumes.length === 0) {
-    return {
-      installedVolumes: 0,
-      maxVolumes: 0,
-      firstBlock: 0,
-      volumeSizeBlocks: 0,
-      partitionBlocks: 0,
-      deviceUnit: ((slot & 0x07) << 4) | (drive === 2 ? 0x80 : 0x00),
-    }
-  }
-
-  const TABLE_DEV_OFFSET = 0x38
-  const TABLE_FIRST_OFFSET = 0x40
-  const TABLE_NUM_BLOCKS_OFFSET = 0x50
-  const TABLE_VOL_SIZE_OFFSET = 0x58
-
-  const targets = [
-    { path: ["DOS.MASTER", "DOS.3.3"], label: "DOS.MASTER/DOS.3.3" },
-    { path: ["DOS.3.3"], label: "DOS.3.3" },
-    { path: ["DOS.MASTER", "DDOS.3.3"], label: "DOS.MASTER/DDOS.3.3" },
-    { path: ["DDOS.3.3"], label: "DDOS.3.3" },
-  ] as const
-
-  const foundTargets: Array<{ label: string; location: ProDosFileLocation }> = []
-  for (const target of targets) {
-    const location = findFileByPath(disk, [...target.path])
-    if (location) foundTargets.push({ label: target.label, location })
-  }
-  if (foundTargets.length === 0) {
-    return { error: "Could not locate DOS.3.3 or DDOS.3.3 for DOS.INSTALL-style partition install." }
-  }
-
-  const primaryPayload = readFileDataFromProDosImage(
-    disk,
-    foundTargets[0].location.storageType,
-    foundTargets[0].location.keyBlock,
-    foundTargets[0].location.eof,
-  )
-  if (primaryPayload.length < 0x60) {
-    return { error: `${foundTargets[0].label} payload too small for DOS.INSTALL-style patching.` }
-  }
-
-  const deviceUnit = ((slot & 0x07) << 4) | (drive === 2 ? 0x80 : 0x00)
-  let deviceIndex = -1
-  for (let i = 0; i < 8; i++) {
-    if (primaryPayload[TABLE_DEV_OFFSET + i] === deviceUnit) {
-      deviceIndex = i
-      break
-    }
-  }
-  if (deviceIndex < 0) {
-    return { error: `DOS.3.3 config does not support target unit $${deviceUnit.toString(16).padStart(2, "0")}.` }
-  }
-
-  const pairOffset = deviceIndex & 0x06
-  const readWord = (payload: Uint8Array, offset: number) => payload[offset] | (payload[offset + 1] << 8)
-  const writeWord = (payload: Uint8Array, offset: number, value: number) => {
-    payload[offset] = value & 0xFF
-    payload[offset + 1] = (value >> 8) & 0xFF
-  }
-
-  const volumeSizeBlocks = readWord(primaryPayload, TABLE_VOL_SIZE_OFFSET + pairOffset)
-  if (volumeSizeBlocks <= 0 || volumeSizeBlocks > 1600) {
-    return { error: `Invalid DOS volume size in config table: ${volumeSizeBlocks}.` }
-  }
-
-  const firstBaseBlock = readWord(primaryPayload, TABLE_FIRST_OFFSET + (deviceIndex * 2))
-  const firstBlock = firstBaseBlock + volumeSizeBlocks
-  if (firstBlock <= 0 || firstBlock >= totalBlocks) {
-    return { error: `Computed DOS partition first block out of range: ${firstBlock} (total=${totalBlocks}).` }
-  }
-
-  let partitionBlocks = readWord(primaryPayload, TABLE_NUM_BLOCKS_OFFSET + pairOffset)
-  if (partitionBlocks === 0xFFFF || partitionBlocks <= firstBlock || partitionBlocks > totalBlocks) {
-    partitionBlocks = totalBlocks
-  }
-
-  const availablePartitionBlocks = Math.max(0, partitionBlocks - firstBlock)
-  const maxVolumes = Math.floor(availablePartitionBlocks / volumeSizeBlocks)
-  if (maxVolumes <= 0) {
-    return { error: `DOS.INSTALL-style geometry yields no installable volumes (first=${firstBlock}, partitionBlocks=${partitionBlocks}, volumeSize=${volumeSizeBlocks}).` }
-  }
-  if (runtimeVolumes.length > maxVolumes) {
-    return { error: `DOS.INSTALL-style geometry supports ${maxVolumes} volumes, but ${runtimeVolumes.length} were requested.` }
-  }
-
-  for (const target of foundTargets) {
-    const payload = readFileDataFromProDosImage(
-      disk,
-      target.location.storageType,
-      target.location.keyBlock,
-      target.location.eof,
-    )
-    if (payload.length < 0x60) continue
-    const patched = payload.slice()
-    writeWord(patched, TABLE_NUM_BLOCKS_OFFSET + pairOffset, partitionBlocks)
-    writeFileDataToProDosImage(disk, target.location, patched)
-  }
-
-  for (let block = firstBlock; block < partitionBlocks; block++) {
-    setBlockUsedInBitmap(disk, bitmapStartBlock, block)
-  }
-
-  for (let i = 0; i < runtimeVolumes.length; i++) {
-    const runtime = runtimeVolumes[i]
-    const startBlock = firstBlock + (i * volumeSizeBlocks)
-    const startOffset = startBlock * BLOCK_SIZE
-    const volumeCapacityBytes = volumeSizeBlocks * BLOCK_SIZE
-    if (startOffset < 0 || startOffset + volumeCapacityBytes > disk.length) {
-      return { error: `DOS.INSTALL-style write out of range for volume ${i + 1} at block ${startBlock}.` }
-    }
-
-    const writeBytes = Math.min(runtime.data.length, volumeCapacityBytes)
-    disk.fill(0, startOffset, startOffset + volumeCapacityBytes)
-    disk.set(runtime.data.slice(0, writeBytes), startOffset)
-    if (runtime.data.length > volumeCapacityBytes) {
-      console.warn(`[HDV Export] DOS runtime image truncated to partition capacity: ${runtime.name} (${runtime.data.length} -> ${volumeCapacityBytes} bytes)`)
-    }
-  }
-
-  console.log(
-    `[HDV Export] DOS.INSTALL-style partition write: unit=$${deviceUnit.toString(16).padStart(2, "0")}, first=${firstBlock}, volSize=${volumeSizeBlocks}, partitionBlocks=${partitionBlocks}, installed=${runtimeVolumes.length}/${maxVolumes}`
-  )
-
-  return {
-    installedVolumes: runtimeVolumes.length,
-    maxVolumes,
-    firstBlock,
-    volumeSizeBlocks,
-    partitionBlocks,
-    deviceUnit,
-  }
-}
-
 const scanRootDirectory = (disk: Uint8Array, dirBlocks: number[]) => {
   let fileCount = 0
   const existingNames = new Set<string>()
-  let hasDos33 = false
-  let hasDos33System = false
-  let hasDosMaster = false
-  let hasDosmaster = false
+  let dosRuntimeLauncher: string | undefined
   for (let b = 0; b < dirBlocks.length; b++) {
     const block = dirBlocks[b]
     const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
@@ -1708,53 +1185,12 @@ const scanRootDirectory = (disk: Uint8Array, dirBlocks: number[]) => {
       const name = readDirectoryEntryName(entry)
       existingNames.add(name)
       fileCount++
-      if (name === "DOS.3.3") hasDos33 = true
-      else if (name === "DOS.3.3.SYSTEM") hasDos33System = true
-      else if (name === "DOS.MASTER") hasDosMaster = true
-      else if (name === "DOSMASTER") hasDosmaster = true
-    }
-  }
-
-  let hasDosMasterDirDos33 = false
-  let hasDosMasterDirDos33System = false
-  let hasDosMasterDirDosMaster = false
-  const dosMasterDirKeyBlock = findDirectoryKeyBlockByName(disk, dirBlocks, "DOS.MASTER")
-  if (dosMasterDirKeyBlock) {
-    const dosMasterDirBlocks = collectDirectoryBlocksFromStart(disk, dosMasterDirKeyBlock)
-    for (let b = 0; b < dosMasterDirBlocks.length; b++) {
-      const block = dosMasterDirBlocks[b]
-      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
-      const startIndex = b === 0 ? 1 : 0
-      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
-        const entryOffset = getDirEntryOffset(slot)
-        const byte0 = dirBlock[entryOffset]
-        if (isDirectorySlotFree(byte0)) continue
-        const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
-        const name = readDirectoryEntryName(entry)
-        if (name === "DOS.MASTER") hasDosMasterDirDosMaster = true
-        else if (name === "DOS.3.3") hasDosMasterDirDos33 = true
-        else if (name === "DOS.3.3.SYSTEM") hasDosMasterDirDos33System = true
+      if (!dosRuntimeLauncher) {
+        if (name === "DOS.3.3") dosRuntimeLauncher = "DOS.3.3"
+        else if (name === "DOS.MASTER") dosRuntimeLauncher = "DOS.MASTER"
+        else if (name === "DOSMASTER") dosRuntimeLauncher = "DOSMASTER"
       }
     }
-  }
-
-  // Prefer DOS.3.3 runtime launcher. DOS.MASTER front-end may not be directly runnable
-  // in this flow and has been observed to drop to monitor on some exports.
-  let dosRuntimeLauncher: string | undefined
-  if (hasDos33) {
-    dosRuntimeLauncher = "DOS.3.3"
-  } else if (hasDosMasterDirDos33) {
-    dosRuntimeLauncher = "DOS.MASTER/DOS.3.3"
-  } else if (hasDosMasterDirDos33System) {
-    dosRuntimeLauncher = "DOS.MASTER/DOS.3.3.SYSTEM"
-  } else if (hasDosMasterDirDosMaster) {
-    dosRuntimeLauncher = "DOS.MASTER/DOS.MASTER"
-  } else if (hasDos33System) {
-    dosRuntimeLauncher = "DOS.3.3.SYSTEM"
-  } else if (hasDosMaster) {
-    dosRuntimeLauncher = "DOS.MASTER"
-  } else if (hasDosmaster) {
-    dosRuntimeLauncher = "DOSMASTER"
   }
   return { fileCount, existingNames, dosRuntimeLauncher }
 }
@@ -1763,11 +1199,8 @@ export const buildProDosHdv = async (
   files: Array<{ name: string; type: number; data: Uint8Array; auxType?: number }>,
   volumeName = "APPLE2TS",
   prodos243Base?: Uint8Array,
-  menuEntries?: MenuDiskEntry[],
-  options?: { includeStartup?: boolean; enableVolumeExtraction?: boolean }
+  menuEntries?: MenuDiskEntry[]
 ): Promise<Uint8Array> => {
-  const includeStartup = options?.includeStartup ?? true
-  const enableVolumeExtraction = options?.enableVolumeExtraction ?? true
   let hdv = prodos243Base
   if (!hdv) {
     try {
@@ -1784,9 +1217,6 @@ export const buildProDosHdv = async (
     }
   }
 
-  // Never mutate caller-owned/base buffers (important for recursive multi-volume builds).
-  hdv = hdv.slice()
-
   // Keep this builder simple and standards-compliant for <= 4096 blocks (2MB).
   // Supporting larger sizes requires additional bitmap blocks and linked directory blocks.
   const dirBlocks = collectRootDirectoryBlocks(hdv)
@@ -1800,264 +1230,14 @@ export const buildProDosHdv = async (
   // Keep existing files from the base image intact.
   const rootScan = scanRootDirectory(hdv, dirBlocks)
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
-  const dosRuntimeCommands = buildDosMasterLaunchCommands(dosRuntimeLauncher)
-  const hasDosRuntimeLauncherFile = (() => {
-    if (!dosRuntimeLauncher) return false
-    const launcherPath = dosRuntimeLauncher.split("/").filter(Boolean)
-    if (launcherPath.length === 0) return false
-    return !!findFileByPath(hdv, launcherPath)
-  })()
-
-  let volumes: VolumeData[] = []
-  let rootFiles: BuildInputFile[] = []
-  if (enableVolumeExtraction) {
-    const preprocessed = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
-    volumes = preprocessed.volumes
-    rootFiles = preprocessed.rootFiles
-  } else {
-    const usedNames = new Set<string>(rootScan.existingNames)
-    rootFiles = files.map((file, index) => {
-      const name = makeUniqueProDosFilename(file.name, usedNames)
-      return { ...file, name, sourceMenuIndex: index }
-    })
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  console.log(`[HDV Export] Build summary before copy: root files=${outputFiles.length}, directories=${directoryPlans.length}`)
+  for (const plan of directoryPlans) {
+    console.log(`[HDV Export] Directory copy plan ${plan.name}: ${plan.files.length} files`, plan.files.map((f) => `${f.name} (${f.data.length} bytes)`))
   }
-
-  console.log(`[HDV Export] Build summary: ${volumes.length} volumes, ${rootFiles.length} root files`)
-
-  let blankProDosBase: Uint8Array | undefined
-  const loadBlankProDosBase = async (): Promise<Uint8Array> => {
-    if (blankProDosBase) return blankProDosBase
-    const response = await fetch("blank.po")
-    if (!response.ok) {
-      throw new Error("Failed to load blank.po for runtime volume creation")
-    }
-    blankProDosBase = new Uint8Array(await response.arrayBuffer())
-    return blankProDosBase
-  }
-
-  const runtimeFilesByMenuIndex = new Map<number, BuildInputFile>()
-  const prodosLaunchCommandsByMenuIndex = new Map<number, string[]>()
-
-  for (const volume of volumes) {
-    if (volume.sourceKind !== "prodos") continue
-    const launchCommands = chooseProDosLaunchCommands(volume.volumeName, volume.files)
-    if (launchCommands && launchCommands.length > 0) {
-      prodosLaunchCommandsByMenuIndex.set(volume.sourceMenuIndex, launchCommands)
-    }
-    console.log(`[HDV Export] ProDOS runtime volume plan: ${volume.volumeName} (${volume.files.length} files), launch=${launchCommands?.join("|") || "(none)"}`)
-  }
-
-  for (const file of rootFiles) {
-    if (file.type === PRODOS_FILE_TYPE_DOS_MASTER && file.sourceMenuIndex !== undefined) {
-      runtimeFilesByMenuIndex.set(file.sourceMenuIndex, file)
-    }
-  }
-
-  for (const volume of volumes) {
-    // ProDOS volumes cannot be mapped as DOS.3.3 virtual F1 partitions; DOS.3.3 would
-    // try to read them as DOS disks and fail with I/O ERROR. Skip them here — DOS/unknown
-    // images are handled by the fallback section below.
-    if (volume.sourceKind === "prodos") {
-      console.log(`[HDV Export] ProDOS volume skipped from DOS.MASTER F1 mapping: ${volume.volumeName} (sourceKind=prodos)`)
-      continue
-    }
-    const volumeBase = (await loadBlankProDosBase()).slice()
-    let runtimeImage: Uint8Array
-    try {
-      runtimeImage = await buildProDosHdv(
-        volume.files,
-        volume.volumeName,
-        volumeBase,
-        undefined,
-        { includeStartup: false, enableVolumeExtraction: false }
-      )
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      const isOutOfBlocks = message.includes("Not enough free blocks in base image")
-      if (isOutOfBlocks && volume.sourceImageData) {
-        const isWozSource = (volume.sourceFilename || "").toLowerCase().endsWith(".woz")
-        if (isWozSource) {
-          const decodedProDosImage = decodeWozToProDosImage(volume.sourceImageData)
-          if (!decodedProDosImage) {
-            throw new Error(`Runtime volume fallback failed: could not decode WOZ ProDOS image for ${volume.volumeName}`)
-          }
-          runtimeImage = decodedProDosImage
-          console.warn(`[HDV Export] Runtime volume fallback to decoded WOZ ProDOS image: ${volume.volumeName}`)
-        } else {
-          // Fall back to the original source image when extracted content cannot fit in blank.po.
-          runtimeImage = volume.sourceImageData
-          console.warn(`[HDV Export] Runtime volume fallback to source image: ${volume.volumeName}`)
-        }
-      } else {
-        throw error
-      }
-    }
-    runtimeFilesByMenuIndex.set(volume.sourceMenuIndex, {
-      name: volume.volumeName,
-      type: PRODOS_FILE_TYPE_DOS_MASTER,
-      data: runtimeImage,
-      auxType: 0x0000,
-      sourceMenuIndex: volume.sourceMenuIndex,
-    })
-    console.log(`[HDV Export] Runtime volume created: ${volume.volumeName} (${runtimeImage.length} bytes)`)
-  }
-
-  // Fallback: ensure DOS/unknown menu entries are routable via DOS.MASTER runtime volumes.
-  if (menuEntries) {
-    for (let i = 0; i < menuEntries.length && i < files.length; i++) {
-      if (runtimeFilesByMenuIndex.has(i)) continue
-      const kind = menuEntries[i].imageKind || "unknown"
-      if (kind !== "dos" && kind !== "unknown") continue
-
-      const source = files[i]
-      const sourceFilename = menuEntries[i].sourceFilename || menuEntries[i].filename || source.name
-      const isWozSource = sourceFilename.toLowerCase().endsWith(".woz")
-      let dosRuntimeData: Uint8Array | undefined
-      if (isWozSource) {
-        dosRuntimeData = decodeWozToDosImage(source.data)
-        if (!dosRuntimeData) {
-          console.warn(`[HDV Export] Skipping DOS runtime volume: WOZ image '${sourceFilename}' decoded ${source.data.length} bytes but no valid DOS 3.3 filesystem (VTOC/catalog) found. This disk likely has no catalog and boots via custom code — it cannot be served as a DOS.MASTER virtual volume.`)
-          continue
-        }
-      } else {
-        if (!isLikelyDos33Volume(source.data)) {
-          console.warn(`[HDV Export] Skipping DOS runtime volume: '${sourceFilename}' does not contain a recognizable DOS 3.3 VTOC/catalog.`)
-          continue
-        }
-        dosRuntimeData = source.data
-      }
-      runtimeFilesByMenuIndex.set(i, {
-        name: makeUniqueProDosFilename(menuEntries[i].filename || source.name, rootScan.existingNames),
-        type: PRODOS_FILE_TYPE_DOS_MASTER,
-        data: dosRuntimeData,
-        auxType: 0x0000,
-        sourceMenuIndex: i,
-      })
-      console.log(`[HDV Export] Runtime volume fallback from source image: ${menuEntries[i].filename || source.name} (${dosRuntimeData.length} bytes)`)
-    }
-  }
-
-  const runtimeVolumeByMenuIndex: Array<number | undefined> = new Array(menuEntries?.length || 0).fill(undefined)
-  const orderedRuntimeIndices = Array.from(runtimeFilesByMenuIndex.keys()).sort((a, b) => a - b)
-  const orderedRuntimeFiles = orderedRuntimeIndices.map((index) => runtimeFilesByMenuIndex.get(index) as BuildInputFile)
-  for (let i = 0; i < orderedRuntimeIndices.length; i++) {
-    const menuIndex = orderedRuntimeIndices[i]
-    runtimeVolumeByMenuIndex[menuIndex] = i + 1
-  }
-
-  if (menuEntries) {
-    const unmappedDosEntries: string[] = []
-    for (let i = 0; i < menuEntries.length; i++) {
-      const kind = menuEntries[i].imageKind || "unknown"
-      if (kind !== "dos" && kind !== "unknown") continue
-      if (runtimeVolumeByMenuIndex[i] !== undefined) continue
-      unmappedDosEntries.push(menuEntries[i].filename || files[i]?.name || `ENTRY_${i}`)
-    }
-    if (unmappedDosEntries.length > 0) {
-      throw new Error(
-        `Cannot export HDV: the following disk(s) do not contain a valid DOS 3.3 filesystem: ${unmappedDosEntries.join(", ")}. ` +
-        "DOS Master requires each DOS entry to have a VTOC and catalog. " +
-        "Disks that boot via custom code without a catalog (e.g. many WOZ game images) cannot be used as DOS Master virtual volumes."
-      )
-    }
-  }
-
-  // Filter root files to exclude any that were promoted to runtime volumes by the fallback logic
-  const runtimeMenuIndices = new Set(runtimeFilesByMenuIndex.keys())
-  const nonRuntimeRootFiles = rootFiles.filter((file) => {
-    if (file.type === PRODOS_FILE_TYPE_DOS_MASTER && file.sourceMenuIndex !== undefined) {
-      return false // Already a type-F1 file, skip
-    }
-    if (file.sourceMenuIndex !== undefined && runtimeMenuIndices.has(file.sourceMenuIndex)) {
-      return false // This menu entry now has a runtime volume, skip the raw file
-    }
-    return true
-  })
-  const outputFiles = [...nonRuntimeRootFiles, ...orderedRuntimeFiles]
-
-  // Keep legacy DOS.MASTER table patching for compatibility with existing menu/runtime assumptions.
-  const dosMasterPatchResult = patchDosMasterDos33Configuration(hdv, orderedRuntimeFiles.length)
-  if ("error" in dosMasterPatchResult) {
-    throw new Error(`Failed to patch DOS.MASTER runtime configuration: ${dosMasterPatchResult.error}`)
-  }
-
-  if (orderedRuntimeFiles.length > 0 && !dosRuntimeLauncher) {
-    throw new Error("DOS.MASTER runtime volumes were created, but no DOS runtime launcher was found (expected DOS.3.3 or DOS.MASTER launcher).")
-  }
-
-  const launchDirectives: MenuLaunchDirective[] = new Array(menuEntries?.length || 0)
-    .fill(undefined)
-    .map(() => ({ mode: "unavailable", commands: [], message: "ENTRY NOT CONFIGURED" }))
-
-  for (let i = 0; i < (menuEntries?.length || 0); i++) {
-    const entry = menuEntries?.[i]
-    const kind = entry?.imageKind || "unknown"
-    const runtimeVolume = runtimeVolumeByMenuIndex[i]
-    const prodosLaunch = prodosLaunchCommandsByMenuIndex.get(i)
-
-    if (DOSMASTER_BASELINE_ONLY) {
-      if (!dosRuntimeCommands || !hasDosRuntimeLauncherFile) {
-        launchDirectives[i] = { mode: "unavailable", commands: [], message: "DOS.MASTER LAUNCHER NOT INSTALLED" }
-      } else if (orderedRuntimeFiles.length === 0) {
-        launchDirectives[i] = { mode: "unavailable", commands: [], message: "NO F1 VOLUMES TO TEST" }
-      } else {
-        launchDirectives[i] = {
-          mode: "dosmaster",
-          commands: [...dosRuntimeCommands, `CATALOG,S${DOSMASTER_SLOT},V1`],
-          message: "BASELINE MODE",
-        }
-      }
-    } else if (kind === "prodos") {
-      if (runtimeVolume && prodosLaunch && prodosLaunch.length > 0) {
-        if (!dosRuntimeCommands || !hasDosRuntimeLauncherFile) {
-          launchDirectives[i] = { mode: "unavailable", commands: [], message: "DOS.MASTER LAUNCHER NOT INSTALLED" }
-        } else {
-          // Select mapped DOS.MASTER runtime volume explicitly before launching in-volume program.
-          launchDirectives[i] = {
-            mode: "prodos-native",
-            commands: [...dosRuntimeCommands, `CATALOG,S${DOSMASTER_SLOT},V${runtimeVolume}`, ...prodosLaunch],
-          }
-        }
-      } else {
-        launchDirectives[i] = { mode: "unavailable", commands: [], message: "PRODOS LAUNCH NOT AVAILABLE" }
-      }
-    } else {
-      // Route DOS and unknown images through DOS.MASTER runtime mapping.
-      if (!runtimeVolume) {
-        launchDirectives[i] = { mode: "unavailable", commands: [], message: "DOS RUNTIME VOLUME NOT MAPPED" }
-      } else if (!dosRuntimeCommands || !hasDosRuntimeLauncherFile) {
-        launchDirectives[i] = { mode: "unavailable", commands: [], message: "DOS.MASTER LAUNCHER NOT INSTALLED" }
-      } else {
-        // DOS.MASTER needs explicit volume selection for each menu entry.
-        launchDirectives[i] = { mode: "dosmaster", commands: [...dosRuntimeCommands, `CATALOG,S${DOSMASTER_SLOT},V${runtimeVolume}`] }
-      }
-    }
-
-    const directive = launchDirectives[i]
-    console.log(`[HDV Export] Menu[${i}]: ${entry?.filename || "?"} (${kind}), mode=${directive.mode}, commands=${directive.commands.join("|") || "(none)"}, message=${directive.message || ""}`)
-  }
-
   let fileCount = rootScan.fileCount
-  const headerTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
-  const imageTotalBlocks = Math.floor(hdv.length / BLOCK_SIZE)
-  const currentTotalBlocks = Math.min(headerTotalBlocks, imageTotalBlocks)
+  const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
-
-  if (currentTotalBlocks <= 0) {
-    throw new Error("Invalid ProDOS image size: no addressable blocks")
-  }
-
-  const dosInstallResult = installDosMasterLikePartitions(
-    hdv,
-    orderedRuntimeFiles,
-    currentTotalBlocks,
-    bitmapStartBlock,
-    DOSMASTER_SLOT,
-    1,
-  )
-  if ("error" in dosInstallResult) {
-    throw new Error(`Failed DOS.INSTALL-style partition write: ${dosInstallResult.error}`)
-  }
 
   const allocateFreeBlocks = (count: number): number[] => {
     const allocated: number[] = []
@@ -2084,40 +1264,38 @@ export const buildProDosHdv = async (
 
   const withStartup = [...outputFiles]
 
-  if (includeStartup) {
-    const launcherName = "A2TSLAUNCH"
-    withStartup.unshift({
-      name: launcherName,
-      type: PRODOS_FILE_TYPE_BINARY,
-      data: createLauncherBinary(),
-      auxType: 0x2000,
-    })
+  const launcherName = "A2TSLAUNCH"
+  withStartup.unshift({
+    name: launcherName,
+    type: PRODOS_FILE_TYPE_BINARY,
+    data: createLauncherBinary(),
+    auxType: 0x2000,
+  })
 
-    // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
-    let startupText: string
-    if (menuEntries && menuEntries.length > 0) {
-      // Generate interactive menu program
-      startupText = generateInteractiveMenuStartup(menuEntries)
-    } else {
-      // Fall back to simple launcher + catalog
-      startupText = `BRUN ${launcherName}\rCATALOG\r`
-    }
+  // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
+  let startupText: string
+  if (menuEntries && menuEntries.length > 0) {
+    // Generate interactive menu program
+    startupText = generateInteractiveMenuStartup(menuEntries)
+  } else {
+    // Fall back to simple launcher + catalog
+    startupText = `BRUN ${launcherName}\rCATALOG\r`
+  }
+  
+  withStartup.unshift({
+    name: "STARTUP",
+    type: PRODOS_FILE_TYPE_TEXT,
+    data: new TextEncoder().encode(startupText),
+    auxType: 0x0000,
+  })
 
-    withStartup.unshift({
-      name: "STARTUP",
+  if (menuEntries && menuEntries.length > 0) {
+    withStartup.push({
+      name: "MENUSRC",
       type: PRODOS_FILE_TYPE_TEXT,
-      data: new TextEncoder().encode(startupText),
+      data: new TextEncoder().encode(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes)),
       auxType: 0x0000,
     })
-
-    if (menuEntries && menuEntries.length > 0) {
-      withStartup.push({
-        name: "MENUSRC",
-        type: PRODOS_FILE_TYPE_TEXT,
-        data: new TextEncoder().encode(generateMenuSourceProgram(menuEntries, launchDirectives)),
-        auxType: 0x0000,
-      })
-    }
   }
 
   // Track screenshot files for later metadata creation
@@ -2164,7 +1342,7 @@ export const buildProDosHdv = async (
   }> = []
 
   const filePlansByDirectory = new Map<DirectoryNode, typeof filePlans>()
-  // Multi-volume: subdirectories no longer created
+  const subdirectoryTemplate = findSubdirectoryHeaderTemplate(hdv)
 
   const allocatePlannedFile = (file: BuildInputFile, parentDirectoryNode?: DirectoryNode) => {
     const dataBlocksNeeded = Math.max(1, Math.ceil(file.data.length / BLOCK_SIZE))
@@ -2225,10 +1403,74 @@ export const buildProDosHdv = async (
     allocatePlannedFile(file)
   }
 
-  // Directory tree functions removed - using multi-volume approach
+  const getOrCreateChildNode = (parent: DirectoryNode, name: string) => {
+    const existing = parent.children.find((c) => c.name === name)
+    if (existing) return existing
+    const child: DirectoryNode = {
+      name,
+      files: [],
+      children: [],
+      keyBlock: 0,
+      blocksUsed: 0,
+      blocks: [],
+    }
+    parent.children.push(child)
+    return child
+  }
 
-  // Multi-volume approach: extracted disk files will go into separate volumes (future enhancement)
-  // For now, all extracted files are kept in root volume as files or further organization as needed
+  const buildDirectoryTree = (directory: DirectoryImportPlan): DirectoryNode => {
+    const root: DirectoryNode = {
+      name: directory.name,
+      files: [],
+      children: [],
+      keyBlock: 0,
+      blocksUsed: 0,
+      blocks: [],
+    }
+
+    for (const file of directory.files) {
+      const normalizedFileName = normalizeProDosFilename(file.name)
+      const pathParts = file.relativePath
+        ? file.relativePath.split("/").filter((p) => p.length > 0).map((p) => normalizeProDosFilename(p))
+        : []
+
+      let node = root
+      for (const part of pathParts) {
+        node = getOrCreateChildNode(node, part)
+      }
+      node.files.push({
+        ...file,
+        name: normalizedFileName,
+      })
+    }
+
+    return root
+  }
+
+  const rootDirectoryNodes = directoryPlans.map(buildDirectoryTree)
+
+  const allocateDirectoryTree = (node: DirectoryNode) => {
+    const entriesInDirectory = node.files.length + node.children.length
+    const firstBlockCapacity = DIR_ENTRIES_PER_BLOCK - 1
+    const remaining = Math.max(0, entriesInDirectory - firstBlockCapacity)
+    const extraBlocks = Math.ceil(remaining / DIR_ENTRIES_PER_BLOCK)
+    const directoryBlocksNeeded = Math.max(1, 1 + extraBlocks)
+    node.blocks = allocateFreeBlocks(directoryBlocksNeeded)
+    node.keyBlock = node.blocks[0]
+    node.blocksUsed = node.blocks.length
+
+    for (const child of node.children) {
+      allocateDirectoryTree(child)
+    }
+
+    for (const file of node.files) {
+      allocatePlannedFile(file, node)
+    }
+  }
+
+  for (const rootNode of rootDirectoryNodes) {
+    allocateDirectoryTree(rootNode)
+  }
 
   // Create MENUDATA file with screenshot block references if screenshots exist
   if (screenshotNames.size > 0 && menuEntries) {
@@ -2287,9 +1529,6 @@ export const buildProDosHdv = async (
   const freeSlots: Array<{ block: number; slot: number }> = []
   for (let b = 0; b < newDirBlocks.length; b++) {
     const dirBlockNumber = newDirBlocks[b]
-    if (dirBlockNumber < 0 || dirBlockNumber >= currentTotalBlocks) {
-      continue
-    }
     const dirBlock = new Uint8Array(newHdv.buffer, dirBlockNumber * BLOCK_SIZE, BLOCK_SIZE)
     const startIndex = b === 0 ? 1 : 0
     for (let i = startIndex; i < DIR_ENTRIES_PER_BLOCK; i++) {
@@ -2300,22 +1539,76 @@ export const buildProDosHdv = async (
     }
   }
 
-  const rootEntriesNeeded = filePlans.filter((p) => !p.parentDirectoryNode).length
+  const rootEntriesNeeded = filePlans.filter((p) => !p.parentDirectoryNode).length + rootDirectoryNodes.length
   if (rootEntriesNeeded > freeSlots.length) {
     throw new Error(`Not enough free directory entries. Need ${rootEntriesNeeded}, have ${freeSlots.length}.`)
   }
 
   let rootSlotIndex = 0
 
-  // Multi-volume: directory entries no longer created (extracted disk files will go to separate volumes)
+  const initializeDirectoryBlocks = (node: DirectoryNode) => {
+    if (node.parentEntryBlock === undefined || node.parentEntrySlot === undefined) {
+      throw new Error(`Directory parent entry not set for ${node.name}`)
+    }
+
+    for (let i = 0; i < node.blocks.length; i++) {
+      const currentBlockNum = node.blocks[i]
+      const currentBlock = new Uint8Array(newHdv.buffer, currentBlockNum * BLOCK_SIZE, BLOCK_SIZE)
+      currentBlock.fill(0)
+      const prevBlock = i > 0 ? node.blocks[i - 1] : 0
+      const nextBlock = i + 1 < node.blocks.length ? node.blocks[i + 1] : 0
+      writeLittleEndian16(currentBlock, 0, prevBlock)
+      writeLittleEndian16(currentBlock, 2, nextBlock)
+      if (i === 0) {
+        const dirHeader = createSubdirectoryHeaderBlock(
+          node.normalizedName || node.name,
+          node.parentEntryBlock,
+          node.parentEntrySlot,
+          subdirectoryTemplate
+        )
+        currentBlock.set(dirHeader)
+      }
+    }
+  }
+
+  const getDirectoryEntryPosition = (node: DirectoryNode, entryIndex: number) => {
+    const firstBlockCapacity = DIR_ENTRIES_PER_BLOCK - 1
+    const blockIndex = entryIndex < firstBlockCapacity
+      ? 0
+      : 1 + Math.floor((entryIndex - firstBlockCapacity) / DIR_ENTRIES_PER_BLOCK)
+    const slot = blockIndex === 0
+      ? entryIndex + 1
+      : (entryIndex - firstBlockCapacity) % DIR_ENTRIES_PER_BLOCK
+    if (blockIndex >= node.blocks.length) {
+      throw new Error(`Directory entry overflow in ${node.name}`)
+    }
+    return { block: node.blocks[blockIndex], slot }
+  }
+
+  const rootDirUsedNames = new Set<string>()
+  for (const node of rootDirectoryNodes) {
+    const entry = freeSlots[rootSlotIndex++]
+    const dirBlock = new Uint8Array(newHdv.buffer, entry.block * BLOCK_SIZE, BLOCK_SIZE)
+    const entryOffset = getDirEntryOffset(entry.slot)
+    const normalizedName = makeUniqueProDosFilename(node.name, rootDirUsedNames)
+    node.normalizedName = normalizedName
+    node.parentEntryBlock = entry.block
+    node.parentEntrySlot = entry.slot
+    const directoryEntry = createDirectoryEntry(
+      normalizedName,
+      node.keyBlock,
+      node.blocksUsed,
+      entry.block,
+    )
+    dirBlock.set(directoryEntry, entryOffset)
+    initializeDirectoryBlocks(node)
+    fileCount++
+  }
 
   for (let i = 0; i < filePlans.length; i++) {
     const plan = filePlans[i]
     if (plan.parentDirectoryNode) continue
     const entry = freeSlots[rootSlotIndex++]
-    if (entry.block < 0 || entry.block >= currentTotalBlocks) {
-      throw new Error(`Directory entry block out of range: ${entry.block}`)
-    }
     const dirBlock = new Uint8Array(newHdv.buffer, entry.block * BLOCK_SIZE, BLOCK_SIZE)
     const entryOffset = getDirEntryOffset(entry.slot)
     const fileEntry = createFileEntry(
@@ -2332,7 +1625,57 @@ export const buildProDosHdv = async (
     fileCount++
   }
 
-  // Multi-volume: directory writing removed
+  const writeDirectoryContents = (node: DirectoryNode) => {
+    const dirUsedNames = new Set<string>()
+    let entryIndex = 0
+
+    for (const child of node.children) {
+      const { block, slot } = getDirectoryEntryPosition(node, entryIndex++)
+      const dirBlock = new Uint8Array(newHdv.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const entryOffset = getDirEntryOffset(slot)
+      const normalizedChildName = makeUniqueProDosFilename(child.name, dirUsedNames)
+      child.normalizedName = normalizedChildName
+      child.parentEntryBlock = block
+      child.parentEntrySlot = slot
+      const directoryEntry = createDirectoryEntry(
+        normalizedChildName,
+        child.keyBlock,
+        child.blocksUsed,
+        block,
+      )
+      dirBlock.set(directoryEntry, entryOffset)
+      initializeDirectoryBlocks(child)
+    }
+
+    const plans = filePlansByDirectory.get(node) || []
+    console.log(`[HDV Export] Writing ${plans.length} file entries to directory ${node.name}`)
+    for (const plan of plans) {
+      const { block, slot } = getDirectoryEntryPosition(node, entryIndex++)
+      const dirBlock = new Uint8Array(newHdv.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const entryOffset = getDirEntryOffset(slot)
+      const normalizedFileName = makeUniqueProDosFilename(plan.name, dirUsedNames)
+      console.log(`[HDV Export] Writing file entry: ${normalizedFileName} to ${node.name}/${block}/${slot}`)
+      const fileEntry = createFileEntry(
+        normalizedFileName,
+        plan.type,
+        plan.keyBlock,
+        plan.data.length,
+        plan.blocksUsed,
+        block,
+        plan.storageType,
+        plan.auxType,
+      )
+      dirBlock.set(fileEntry, entryOffset)
+    }
+
+    for (const child of node.children) {
+      writeDirectoryContents(child)
+    }
+  }
+
+  for (const node of rootDirectoryNodes) {
+    writeDirectoryContents(node)
+  }
 
   const newRootHeader = new Uint8Array(newHdv.buffer, ROOT_DIR_BLOCK * BLOCK_SIZE, BLOCK_SIZE)
   writeLittleEndian16(newRootHeader, volumeEntryOffset + 33, fileCount)
@@ -2342,9 +1685,6 @@ export const buildProDosHdv = async (
     if (plan.storageType === 2) {
       // Sapling index block
       const indexBlockNum = plan.indexBlocks[0]
-      if (indexBlockNum < 0 || indexBlockNum >= currentTotalBlocks) {
-        throw new Error(`Sapling index block out of range: ${indexBlockNum}`)
-      }
       setBlockUsedInBitmap(newHdv, bitmapStartBlock, indexBlockNum)
 
       const indexBlockOffset = indexBlockNum * BLOCK_SIZE
@@ -2358,17 +1698,11 @@ export const buildProDosHdv = async (
 
     if (plan.storageType === 3) {
       // Tree master index block points to per-256-block index blocks
-      if (plan.keyBlock < 0 || plan.keyBlock >= currentTotalBlocks) {
-        throw new Error(`Tree master block out of range: ${plan.keyBlock}`)
-      }
       setBlockUsedInBitmap(newHdv, bitmapStartBlock, plan.keyBlock)
       const masterBlock = new Uint8Array(newHdv.buffer, plan.keyBlock * BLOCK_SIZE, BLOCK_SIZE)
 
       for (let i = 0; i < plan.indexBlocks.length; i++) {
         const indexBlockNum = plan.indexBlocks[i]
-        if (indexBlockNum < 0 || indexBlockNum >= currentTotalBlocks) {
-          throw new Error(`Tree index block out of range: ${indexBlockNum}`)
-        }
         masterBlock[i] = indexBlockNum & 0xFF
         masterBlock[256 + i] = (indexBlockNum >> 8) & 0xFF
         setBlockUsedInBitmap(newHdv, bitmapStartBlock, indexBlockNum)
@@ -2387,9 +1721,6 @@ export const buildProDosHdv = async (
 
     for (let i = 0; i < plan.dataBlocks.length; i++) {
       const blockNumber = plan.dataBlocks[i]
-      if (blockNumber < 0 || blockNumber >= currentTotalBlocks) {
-        throw new Error(`Data block out of range: ${blockNumber}`)
-      }
       setBlockUsedInBitmap(newHdv, bitmapStartBlock, blockNumber)
       const writeOffset = blockNumber * BLOCK_SIZE
       const sourceOffset = i * BLOCK_SIZE
