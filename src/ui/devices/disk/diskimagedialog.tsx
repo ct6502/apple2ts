@@ -27,7 +27,7 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
           overflowX: "hidden",
           overflowY: "auto",
         }}>
-          <DiskCollectionPanel {...props.displayProps}/>
+          <DiskCollectionPanel {...props.displayProps} onDismissDialog={onClose} />
         </div>
       </div>
     </div>

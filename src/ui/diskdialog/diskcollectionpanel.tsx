@@ -204,7 +204,11 @@ const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): num
   return 0
 }
 
-const DiskCollectionPanel = (props: DisplayProps) => {
+type DiskCollectionPanelProps = DisplayProps & {
+  onDismissDialog?: () => void
+}
+
+const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
@@ -427,6 +431,10 @@ const DiskCollectionPanel = (props: DisplayProps) => {
       return
     }
 
+    props.onDismissDialog?.()
+    if (!isMinimalTheme()) {
+      setIsFlyoutOpen(false)
+    }
     showGlobalProgressModal(true, "Creating HDV image")
     try {
       const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
