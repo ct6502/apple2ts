@@ -128,7 +128,7 @@ export const ImageWriterII : Printer = {
     let html = "<html><head>"
     html += "<style> @page { size: auto;  margin: 0mm; } </style>"
     html += "</head><body style='margin:0;padding:0;'>"
-    const divStyle = "width:100%;height:100%;page-break-after:always;"
+    const divStyle = "position:relative;width:8.5in;height:11in;page-break-after:always;"
     const imgStyle = "position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;"  
     // add all previous pages
     for(let i=0;i<_pages.length;i++)
@@ -1001,7 +1001,7 @@ function incy( n:number )
   {
     _py = _tmargin
   }
-  else if( _py > _bmargin )
+  else if( _py >= _bmargin )
   {
     // new page
     ff()
