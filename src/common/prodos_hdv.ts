@@ -750,14 +750,11 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
   const decoded = decodeWozToSectorCandidates(wozData)
   if (!decoded) return []
 
-  let headerMatches = 0
   for (const candidate of decoded.candidates) {
     if (!isLikelyProDosVolume(candidate.data)) continue
-    headerMatches++
 
     const extracted = extractProDosFilesRecursive(candidate.data)
     if (extracted.length > 0) {
-      console.log(`[HDV Export] WOZ ProDOS candidate matched: ${candidate.label} (${extracted.length} files, ${decoded.decodedSectorCount} sectors decoded)`)
       return extracted.map((file) => ({
         name: file.name,
         relativePath: file.relativePath,
@@ -768,7 +765,6 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
     }
   }
 
-  console.log(`[HDV Export] WOZ decode failed ProDOS extraction: ${decoded.decodedSectorCount} sectors decoded, ${headerMatches} ProDOS-header candidates, 0 files extracted`)
   return []
 }
 
@@ -864,7 +860,6 @@ const rewriteImportedProgramPath = (type: number, data: Uint8Array, fromText: st
   // Rebuild pointers after replacement to avoid corrupting program structure.
   if (type === 0xFC) {
     const rewritten = rewriteTokenizedApplesoftProgramPath(data, fromText, toText)
-    console.log(`[HDV Export] Rewrite tokenized BASIC (0xFC): pattern found=${rewritten !== undefined}`)
     return rewritten || data
   }
 
@@ -873,7 +868,6 @@ const rewriteImportedProgramPath = (type: number, data: Uint8Array, fromText: st
   if (type === 0xFF) {
     const rewritten = rewriteTokenizedApplesoftProgramPath(data, fromText, toText)
     if (rewritten) {
-      console.log(`[HDV Export] Rewrite tokenized BASIC (0xFF file): pattern found, applying rewrite`)
       return rewritten
     }
   }
@@ -881,18 +875,14 @@ const rewriteImportedProgramPath = (type: number, data: Uint8Array, fromText: st
   return data
 }
 
-const applyGenericPrefixRewrite = (type: number, data: Uint8Array, fileName?: string): Uint8Array => {
+const applyGenericPrefixRewrite = (type: number, data: Uint8Array): Uint8Array => {
   let out = data
   const replacements: Array<[string, string]> = [
     ["PREFIX /", "PREFIX /APPLE2TS/"],
   ]
 
   for (const [fromText, toText] of replacements) {
-    const before = out
     out = rewriteImportedProgramPath(type, out, fromText, toText)
-    if (before !== out) {
-      console.log(`[HDV Export] Prefix rewrite applied to ${fileName} (type=$${type.toString(16).toUpperCase()})`)
-    }
   }
 
   return out
@@ -912,8 +902,7 @@ const preprocessInputFilesForMenu = (
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
     const kind = menuEntries?.[i]?.imageKind || "unknown"
-    const filename = menuEntries?.[i]?.filename || file.name
-    const sourceFilename = menuEntries?.[i]?.sourceFilename || filename
+    const sourceFilename = menuEntries?.[i]?.sourceFilename || file.name
     const isWozContainer = sourceFilename.toLowerCase().endsWith(".woz")
     const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
 
@@ -924,11 +913,10 @@ const preprocessInputFilesForMenu = (
       const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
       for (const extractedFile of wozExtractedFiles) {
         if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) {
-          console.log(`[HDV Export] Skipping duplicate system file: ${extractedFile.name}`)
           continue
         }
         const normalized = normalizeProDosFilename(extractedFile.name)
-        const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data, normalized)
+        const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data)
         directoryFiles.push({
           name: normalized,
           type: extractedFile.type,
@@ -938,8 +926,6 @@ const preprocessInputFilesForMenu = (
         })
       }
       const launchCommand = detectProDosLaunchCommand(directoryFiles)
-      console.log(`[HDV Export] WOZ ProDOS detected: ${filename} -> ${directoryName} (${directoryFiles.length} files)`)
-      console.log("[HDV Export] WOZ extracted files:", directoryFiles.map((f) => `${f.relativePath ? `${f.relativePath}/` : ""}${f.name} [$${f.type.toString(16).toUpperCase()}] ${f.data.length} bytes`))
       directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
       menuProDosPrefixes[i] = directoryName
       menuProDosCommands[i] = launchCommand
@@ -949,7 +935,6 @@ const preprocessInputFilesForMenu = (
     // Keep WOZ container images as-is (track-based, not block-addressable ProDOS).
     if (isWozContainer) {
       const normalized = makeUniqueProDosFilename(file.name, usedNames)
-      console.log(`[HDV Export] WOZ not ProDOS-extractable, keeping container: ${filename} -> ${normalized}`)
       outputFiles.push({ ...file, name: normalized })
       menuProDosCommands[i] = undefined
       menuProDosPrefixes[i] = undefined
@@ -969,11 +954,10 @@ const preprocessInputFilesForMenu = (
         for (const extractedFile of extracted) {
           // Skip system files that appear in every disk image.
           if (SYSTEM_FILES_TO_SKIP.has(extractedFile.name)) {
-            console.log(`[HDV Export] Skipping duplicate system file: ${extractedFile.name} (type=$${extractedFile.type.toString(16).toUpperCase()})`)
             continue
           }
           const normalized = normalizeProDosFilename(extractedFile.name)
-          const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data, normalized)
+          const rewrittenData = applyGenericPrefixRewrite(extractedFile.type, extractedFile.data)
           directoryFiles.push({
             name: normalized,
             type: extractedFile.type,
@@ -983,14 +967,11 @@ const preprocessInputFilesForMenu = (
           })
         }
         const launchCommand = detectProDosLaunchCommand(directoryFiles)
-        console.log(`[HDV Export] ProDOS detected: ${filename} -> ${directoryName} (${directoryFiles.length} files)`)
-        console.log("[HDV Export] ProDOS extracted files:", directoryFiles.map((f) => `${f.relativePath ? `${f.relativePath}/` : ""}${f.name} [$${f.type.toString(16).toUpperCase()}] ${f.data.length} bytes`))
         directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
         menuProDosPrefixes[i] = directoryName
         menuProDosCommands[i] = launchCommand
       } else {
         const normalized = makeUniqueProDosFilename(file.name, usedNames)
-        console.log(`[HDV Export] ProDOS extraction found 0 files, keeping image as file: ${filename} -> ${normalized}`)
         outputFiles.push({ ...file, name: normalized })
         menuProDosCommands[i] = undefined
         menuProDosPrefixes[i] = undefined
@@ -999,16 +980,12 @@ const preprocessInputFilesForMenu = (
     }
 
     const normalized = makeUniqueProDosFilename(file.name, usedNames)
-    console.log(`[HDV Export] Non-ProDOS image copied as file: ${filename} -> ${normalized}`)
     outputFiles.push({
       ...file,
       name: normalized,
     })
     menuProDosPrefixes[i] = undefined
   }
-
-  const totalDetectedFiles = directoryPlans.reduce((sum, d) => sum + d.files.length, 0)
-  console.log(`[HDV Export] Detection summary: ${directoryPlans.length} extracted directories, ${totalDetectedFiles} extracted files, ${outputFiles.length} root files`)
 
   return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes }
 }
@@ -1311,7 +1288,6 @@ export const buildProDosHdv = async (
         throw new Error(`Failed to load required base image: ${dosMasterBase}`)
       }
       hdv = new Uint8Array(await response.arrayBuffer())
-      console.log(`[HDV Export] Using base image: ${dosMasterBase} (${hdv.length} bytes)`)
     } catch (e) {
       console.error("Failed to load dosmaster18.po base:", e)
       throw new Error("Could not load dosmaster18.po base disk")
@@ -1332,10 +1308,6 @@ export const buildProDosHdv = async (
   const rootScan = scanRootDirectory(hdv, dirBlocks)
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
   const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
-  console.log(`[HDV Export] Build summary before copy: root files=${outputFiles.length}, directories=${directoryPlans.length}`)
-  for (const plan of directoryPlans) {
-    console.log(`[HDV Export] Directory copy plan ${plan.name}: ${plan.files.length} files`, plan.files.map((f) => `${f.name} (${f.data.length} bytes)`))
-  }
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -1491,8 +1463,6 @@ export const buildProDosHdv = async (
     }
 
     filePlans.push(plan)
-    const parentName = parentDirectoryNode?.name || "root"
-    console.log(`[HDV Export] Allocated file: ${file.name} (${file.data.length} bytes, ST=${storageType}) -> parent=${parentName}`)
     if (parentDirectoryNode) {
       const bucket = filePlansByDirectory.get(parentDirectoryNode) || []
       bucket.push(plan)
@@ -1749,13 +1719,11 @@ export const buildProDosHdv = async (
     }
 
     const plans = filePlansByDirectory.get(node) || []
-    console.log(`[HDV Export] Writing ${plans.length} file entries to directory ${node.name}`)
     for (const plan of plans) {
       const { block, slot } = getDirectoryEntryPosition(node, entryIndex++)
       const dirBlock = new Uint8Array(newHdv.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
       const entryOffset = getDirEntryOffset(slot)
       const normalizedFileName = makeUniqueProDosFilename(plan.name, dirUsedNames)
-      console.log(`[HDV Export] Writing file entry: ${normalizedFileName} to ${node.name}/${block}/${slot}`)
       const fileEntry = createFileEntry(
         normalizedFileName,
         plan.type,

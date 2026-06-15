@@ -1,0 +1,4 @@
+/* Toggle button - fixed position in bottom-right corner */
+.keyboard-toggle-button {
+  bottom: 44px;
+}
