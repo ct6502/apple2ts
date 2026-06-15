@@ -109,6 +109,11 @@
   margin-right: 8px;
 }
 
+.dcp-item-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .dcp-item-title-box {
   position: absolute;
   width: 50%;

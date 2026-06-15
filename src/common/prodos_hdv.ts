@@ -167,6 +167,7 @@ const tokenizeApplesoftBasic = (source: string): Uint8Array => {
     const lineNum = parseInt(line.substring(0, i), 10)
     parsed.push({ lineNum, tokens: tokenizeApplesoftLine(line.substring(i)) })
   }
+  parsed.sort((a, b) => a.lineNum - b.lineNum)
   // Each line: 2 (next-ptr) + 2 (linenum) + tokens + 1 (null). End: 2 (0x0000).
   let totalSize = 2
   for (const { tokens } of parsed) totalSize += 4 + tokens.length + 1
@@ -206,28 +207,28 @@ const generateMenuSourceProgram = (
     : `BRUN ${dosRuntimeLauncher || ""}`
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
-  const escapedNames = menuEntries.slice(0, count).map((entry) =>
-    (entry.displayName || entry.filename).toUpperCase().replace(/"/g, "'").slice(0, 28)
-  )
   const imageKinds = menuEntries.slice(0, count).map((entry) => entry.imageKind || "unknown")
   const runtimeVolumes: number[] = []
-  let runtimeVolumeCounter = 1
   for (let i = 0; i < count; i++) {
-    runtimeVolumes[i] = runtimeVolumeCounter
-    runtimeVolumeCounter++
+    runtimeVolumes[i] = i + 1
   }
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 I=1:MAX=${count}`)
-  lines.push("30 GOSUB 1000")
-  lines.push("40 GET K$:IF K$=\"\" THEN 40")
-  lines.push("50 IF K$=CHR$(8) THEN I=I-1:IF I<1 THEN I=MAX")
-  lines.push("60 IF K$=CHR$(21) THEN I=I+1:IF I>MAX THEN I=1")
-  lines.push("70 IF K$=CHR$(8) OR K$=CHR$(21) THEN GOSUB 1000:GOTO 40")
-  lines.push("80 IF K$=CHR$(13) THEN GOSUB 2000:GOTO 40")
+  lines.push(`20 MAX=${count}:I=1`)
+  lines.push("25 IF PEEK(49152)<128 THEN 30")
+  lines.push("26 X=PEEK(49168)")
+  lines.push("27 GOTO 25")
+  lines.push("30 GOSUB 3000")
+  lines.push("40 IF PEEK(49152)<128 THEN 40")
+  lines.push("45 K=PEEK(49152)-128:X=PEEK(49168)")
+  lines.push("50 IF K=8 THEN I=I-1:IF I<1 THEN I=MAX")
+  lines.push("60 IF K=21 THEN I=I+1:IF I>MAX THEN I=1")
+  lines.push("70 IF K=8 OR K=21 THEN GOSUB 1000:GOTO 40")
+  lines.push("80 IF K=13 THEN GOSUB 2000:GOTO 40")
   lines.push("90 GOTO 40")
 
   lines.push("1000 HOME")
+  lines.push("1005 IF I<1 OR I>MAX THEN I=1")
   // GRAPHICS + MIXED + PAGE1 + HIRES for screenshot + bottom text lines.
   lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
   for (let idx = 1; idx <= count; idx++) {
@@ -239,6 +240,14 @@ const generateMenuSourceProgram = (
   lines.push("1130 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
   lines.push("1160 RETURN")
 
+  // Startup render is explicit so initial display matches the first disk.
+  lines.push("3000 HOME")
+  lines.push("3010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
+  lines.push(`3020 PRINT D$;\"BLOAD SCREEN${String(1).padStart(2, "0")},A$2000\"`)
+  lines.push("3030 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
+  lines.push("3040 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
+  lines.push("3050 RETURN")
+
   // ENTER handling by image kind.
   // DOS images: use DOS.MASTER commands (non-emulator-compatible path).
   // ProDOS/unknown images: keep explicit message, as raw image containers are not directly executable.
@@ -248,27 +257,27 @@ const generateMenuSourceProgram = (
     if (imageKinds[idx - 1] === "dos") {
       if (hasDosMasterRuntime) {
         // Route launch through DOS.MASTER runtime volume selection.
-        lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"${dosRuntimeRunCommand}\":PRINT D$;\"CATALOG,V${runtimeVolumes[idx - 1]}\":RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN PRINT D$;"' + dosRuntimeRunCommand + '":PRINT D$;"CATALOG,V' + runtimeVolumes[idx - 1] + '":RETURN')
       } else {
-        lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "DOS.MASTER RUNTIME NOT INSTALLED":NORMAL:RETURN')
       }
     } else if (imageKinds[idx - 1] === "prodos") {
       const runCmd = menuProDosCommands[idx - 1]
       const prefix = menuProDosPrefixes[idx - 1]
       if (prefix && runCmd) {
-        lines.push(`${lineNo} IF I=${idx} THEN TEXT:PRINT D$;\"PREFIX ${prefix}\":PRINT D$;\"${runCmd}\":RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"' + runCmd + '":RETURN')
       } else if (prefix) {
-        lines.push(`${lineNo} IF I=${idx} THEN TEXT:PRINT D$;\"PREFIX ${prefix}\":PRINT D$;\"CATALOG\":RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"CATALOG":RETURN')
       } else if (runCmd) {
-        lines.push(`${lineNo} IF I=${idx} THEN TEXT:PRINT D$;\"${runCmd}\":RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:PRINT D$;"' + runCmd + '":RETURN')
       } else {
-        lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "PRODOS FILES IMPORTED":NORMAL:PRINT D$;"CATALOG":RETURN')
       }
     } else {
       if (hasDosMasterRuntime) {
-        lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"${dosRuntimeRunCommand}\":PRINT D$;\"CATALOG,V${runtimeVolumes[idx - 1]}\":RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN PRINT D$;"' + dosRuntimeRunCommand + '":PRINT D$;"CATALOG,V' + runtimeVolumes[idx - 1] + '":RETURN')
       } else {
-        lines.push(`${lineNo} IF I=${idx} THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:RETURN`)
+        lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "DOS.MASTER RUNTIME NOT INSTALLED":NORMAL:RETURN')
       }
     }
   }
