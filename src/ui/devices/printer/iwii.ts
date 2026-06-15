@@ -32,7 +32,7 @@ export interface Printer {
   read(): Uint8Array;
   write(data: Uint8Array): void;
 
-  print(): boolean;
+  print(): void;
   formfeed(): void;
 
   incomingData: Uint8Array;
@@ -124,36 +124,60 @@ export const ImageWriterII : Printer = {
     document.body.removeChild(link)
   },
 
-  print: (): boolean => {
+  print: (): void => {
     let html = "<html><head>"
-    html += "<script>"
-    html += "window.addEventListener('load',function() { window.print(); window.close(); });"
-    html += "</script></head><body style='margin:0;padding:0;'>"
+    html += "<style> @page { size: auto;  margin: 0mm; } </style>"
+    html += "</head><body style='margin:0;padding:0;'>"
+    const divStyle = "width:100%;height:100%;page-break-after:always;"
+    const imgStyle = "position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;"  
     // add all previous pages
     for(let i=0;i<_pages.length;i++)
     {
-      // the following removes the date/time/page info
-      html +="<style> @page { size: auto;  margin: 0mm; } </style>"
-      html += "<div style='width:100%;height:100%;page-break-after:always;'>"
-      html += "<img style='position:absolute;width:100%;height:100%;' src='"+_pages[i]+"'/>"
+      html += `<div style='${divStyle}'>`
+      html += `<img style='${imgStyle}' src='${_pages[i]}'/>`
       html += "</div>"
     }
     // add current page, but only if there was rendering
     if( _renders )
     {
-      html +="<style> @page { size: auto;  margin: 0mm; } </style>"
-      html += "<div style='width:100%;height:100%;page-break-after:always;'>"
+      html += `<div style='${divStyle}'>`
       const durl = _canvas.toDataURL("image/png")
-      html += "<img style='position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;' src='"+durl+"'/>"
+      html += `<img style='${imgStyle}' src='${durl}'/>`
       html += "</div>"
     }
     html += "</body></html>"
 
-    const printWin = window.open("","","left=0,top=0,width=576,height=792,toolbar=0,scrollbars=0,status  =0")
-    printWin?.document.write(html)
-    printWin?.document.close()
-    printWin?.focus()
-    return true
+    const iframe = document.createElement("iframe")
+    iframe.style.position = "absolute"
+    iframe.style.width = "0"
+    iframe.style.height = "0"
+    iframe.style.border = "none"
+    document.body.appendChild(iframe)
+    
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (doc) {
+      doc.open()
+      doc.write(html)
+      doc.close()
+      
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      
+      if (isSafari) {
+        // Safari needs a longer delay and simpler approach
+        setTimeout(() => {
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+          setTimeout(() => document.body.removeChild(iframe), 1000)
+        }, 500)
+      } else {
+        // Chrome/Firefox work better with onload event
+        iframe.onload = () => {
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+          setTimeout(() => document.body.removeChild(iframe), 1000)
+        }
+      }
+    }
   },
 
   formfeed: () => {
