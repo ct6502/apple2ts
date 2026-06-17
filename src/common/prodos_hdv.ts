@@ -1522,7 +1522,8 @@ const createSubdirectoryHeaderBlock = (
   block[headerOffset + 32] = 0x0D // Entries per block
   writeLittleEndian16(block, headerOffset + 33, Math.min(fileCount, 0xFFFF))
   writeLittleEndian16(block, headerOffset + 35, parentBlock)
-  block[headerOffset + 37] = parentSlot & 0xFF
+  // Parent entry number is 1-based within the parent directory block.
+  block[headerOffset + 37] = (parentSlot + 1) & 0xFF
   block[headerOffset + 38] = 0x27 // Parent entry length
 
   return block
@@ -1990,6 +1991,10 @@ export const buildProDosHdv = async (
           subdirectoryTemplate
         )
         currentBlock.set(dirHeader)
+        // Re-apply linked-list pointers: header synthesis initializes these to 0,
+        // but multi-block directories must preserve prev/next chain links.
+        writeLittleEndian16(currentBlock, 0, prevBlock)
+        writeLittleEndian16(currentBlock, 2, nextBlock)
       }
     }
   }
