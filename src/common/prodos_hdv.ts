@@ -1151,6 +1151,12 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   // Mark successful pathname pointer read.
   emit(0xEE, debugPathnamePtrAddr & 0xFF, (debugPathnamePtrAddr >> 8) & 0xFF) // INC 25491
 
+  // Guard: empty path has no leading character, so pass through unchanged.
+  emit(0xA0, 0x00); emit(0xB1, 0x0A) // LDY #0, LDA ($0A),Y (path length)
+  emit(0xD0, 0x03) // BNE +3 (skip JMP)
+  const jmpNoLeadingCharPos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP restore (patched later)
+
   // Read first pathname character (offset 1; offset 0 is length).
   emit(0xA0, 0x01); emit(0xB1, 0x0A) // LDY #1, LDA ($0A),Y
 
@@ -1163,6 +1169,82 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   const jmp2pos = code.length
   emit(0x4C, 0x00, 0x00) // JMP restore (patched later)
   emit(0xEE, debugAbsMatchAddr & 0xFF, (debugAbsMatchAddr >> 8) & 0xFF) // INC 25493
+
+  // If already rooted at /APPLE2TS or /APPLE2TS/, pass through unchanged.
+  // This avoids double-prefixing when callers canonicalize relative paths.
+  emit(0xA0, 0x00); emit(0xB1, 0x0A) // LDY #0, LDA ($0A),Y (orig len)
+  emit(0xC9, 0x09) // CMP #9 ('/APPLE2TS')
+  emit(0xB0, 0x03) // BCS +3 (skip JMP)
+  const jmpAlreadyPrefixedContLenPos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP alreadyPrefixedContinue (patched later)
+
+  emit(0xA0, 0x02); emit(0xB1, 0x0A) // 'A'
+  emit(0xC9, 0x41)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont1Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x03); emit(0xB1, 0x0A) // 'P'
+  emit(0xC9, 0x50)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont2Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x04); emit(0xB1, 0x0A) // 'P'
+  emit(0xC9, 0x50)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont3Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x05); emit(0xB1, 0x0A) // 'L'
+  emit(0xC9, 0x4C)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont4Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x06); emit(0xB1, 0x0A) // 'E'
+  emit(0xC9, 0x45)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont5Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x07); emit(0xB1, 0x0A) // '2'
+  emit(0xC9, 0x32)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont6Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x08); emit(0xB1, 0x0A) // 'T'
+  emit(0xC9, 0x54)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont7Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  emit(0xA0, 0x09); emit(0xB1, 0x0A) // 'S'
+  emit(0xC9, 0x53)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont8Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+
+  // Exact '/APPLE2TS' should pass through.
+  emit(0xA0, 0x00); emit(0xB1, 0x0A) // len
+  emit(0xC9, 0x09)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCheckSlashPos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP check slash char at offset 10
+  const jmpAlreadyPrefixedRestoreLen9Pos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP restore
+
+  // '/APPLE2TS/' should also pass through.
+  emit(0xA0, 0x0A); emit(0xB1, 0x0A)
+  emit(0xC9, 0x2F)
+  emit(0xF0, 0x03)
+  const jmpAlreadyPrefixedCont9Pos = code.length
+  emit(0x4C, 0x00, 0x00)
+  const jmpAlreadyPrefixedRestoreSlashPos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP restore
+
+  const alreadyPrefixedContinueAddr = loadAddress + code.length
 
   // Length guard: if original length >= 55, adding 9 chars would exceed ProDOS max 63.
   emit(0xA0, 0x00); emit(0xB1, 0x0A) // LDY #0, LDA ($0A),Y (orig len)
@@ -1211,8 +1293,23 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   // --- restore ---  (patch JMP placeholders)
   const restoreAddr = loadAddress + code.length
   code[jmp1pos + 1] = restoreAddr & 0xFF; code[jmp1pos + 2] = (restoreAddr >> 8) & 0xFF
+  code[jmpNoLeadingCharPos + 1] = restoreAddr & 0xFF; code[jmpNoLeadingCharPos + 2] = (restoreAddr >> 8) & 0xFF
   code[jmp2pos + 1] = restoreAddr & 0xFF; code[jmp2pos + 2] = (restoreAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedRestoreLen9Pos + 1] = restoreAddr & 0xFF; code[jmpAlreadyPrefixedRestoreLen9Pos + 2] = (restoreAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedRestoreSlashPos + 1] = restoreAddr & 0xFF; code[jmpAlreadyPrefixedRestoreSlashPos + 2] = (restoreAddr >> 8) & 0xFF
   code[jmp3pos + 1] = restoreAddr & 0xFF; code[jmp3pos + 2] = (restoreAddr >> 8) & 0xFF
+
+  code[jmpAlreadyPrefixedContLenPos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedContLenPos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont1Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont1Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont2Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont2Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont3Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont3Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont4Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont4Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont5Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont5Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont6Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont6Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont7Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont7Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont8Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont8Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCont9Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont9Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCheckSlashPos + 1] = (jmpAlreadyPrefixedRestoreLen9Pos + 3 + loadAddress) & 0xFF; code[jmpAlreadyPrefixedCheckSlashPos + 2] = ((jmpAlreadyPrefixedRestoreLen9Pos + 3 + loadAddress) >> 8) & 0xFF
 
   // Unwind in reverse push order ($0B first, A last)
   emit(0x68); emit(0x85, 0x0B)           // PLA → $0B
