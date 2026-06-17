@@ -28,16 +28,18 @@ export type ImportedDiskFile = {
   name: string
   relativePath?: string
   volumeName?: string
+  creationSortKey?: number
   type: number
   auxType?: number
   data: Uint8Array
 }
 
-type BuildInputFile = { name: string; type: number; data: Uint8Array; auxType?: number; relativePath?: string }
+type BuildInputFile = { name: string; type: number; data: Uint8Array; auxType?: number; relativePath?: string; creationSortKey?: number }
 
 type ExtractedProDosFile = {
   name: string
   relativePath?: string
+  creationSortKey?: number
   type: number
   auxType: number
   storageType: 1 | 2 | 3
@@ -464,6 +466,8 @@ const extractProDosFilesRecursive = (diskImage: Uint8Array): ExtractedProDosFile
         const fileType = dirBlock[entryOffset + 16]
         const keyBlock = readLittleEndian16(dirBlock, entryOffset + 17)
         const eof = readLittleEndian24(dirBlock, entryOffset + 21)
+        const creationDateWord = readLittleEndian16(dirBlock, entryOffset + 24)
+        const creationTimeWord = readLittleEndian16(dirBlock, entryOffset + 26)
         const auxType = readLittleEndian16(dirBlock, entryOffset + 31)
 
         if (storageType === 0x0D && keyBlock > 0) {
@@ -482,6 +486,7 @@ const extractProDosFilesRecursive = (diskImage: Uint8Array): ExtractedProDosFile
         extracted.push({
           name,
           relativePath: pathParts.length > 0 ? pathParts.join("/") : undefined,
+          creationSortKey: ((creationDateWord << 16) | creationTimeWord) >>> 0,
           type: fileType,
           auxType,
           storageType: storageType as 1 | 2 | 3,
@@ -791,6 +796,7 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
         name: file.name,
         relativePath: file.relativePath,
         volumeName,
+        creationSortKey: file.creationSortKey,
         type: file.type,
         auxType: file.auxType,
         data: file.data,
@@ -802,9 +808,18 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
 }
 
 const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined => {
-  const byName = new Map(files.map((f) => [f.name.toUpperCase(), f]))
+  // Preserve on-disk root catalog order by scanning input sequence directly.
+  // System startup programs are .SYSTEM files with startup load aux type $2000.
+  const rootFiles = files.filter((f) => !f.relativePath)
+  const startupEligibleSystem = rootFiles.find(
+    (f) => f.name.toUpperCase().endsWith(".SYSTEM") && f.type === 0xFF && (f.auxType ?? 0) === 0x2000
+  )
+  if (startupEligibleSystem) return `-${startupEligibleSystem.name}`
 
-  if (byName.has("BASIC.SYSTEM")) return "-BASIC.SYSTEM"
+  const firstRootSystem = rootFiles.find((f) => f.name.toUpperCase().endsWith(".SYSTEM"))
+  if (firstRootSystem) return `-${firstRootSystem.name}`
+
+  const byName = new Map(rootFiles.map((f) => [f.name.toUpperCase(), f]))
   if (byName.has("STARTUP")) return "-STARTUP"
 
   if (byName.has("HELLO")) {
@@ -814,13 +829,10 @@ const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined 
     return "-HELLO"
   }
 
-  const sys = files.find((f) => f.type === 0xFF)
-  if (sys) return `-${sys.name}`
-
-  const bin = files.find((f) => f.type === 0x06)
+  const bin = rootFiles.find((f) => f.type === 0x06)
   if (bin) return `BRUN ${bin.name}`
 
-  const bas = files.find((f) => f.type === 0xFC)
+  const bas = rootFiles.find((f) => f.type === 0xFC)
   if (bas) return `RUN ${bas.name}`
 
   return undefined
@@ -950,6 +962,7 @@ const preprocessInputFilesForMenu = (
           data: rewrittenData,
           auxType: extractedFile.auxType,
           relativePath: extractedFile.relativePath,
+          creationSortKey: extractedFile.creationSortKey,
         })
       }
       const launchCommand = detectProDosLaunchCommand(directoryFiles)
@@ -992,6 +1005,7 @@ const preprocessInputFilesForMenu = (
             data: rewrittenData,
             auxType: extractedFile.auxType,
             relativePath: extractedFile.relativePath,
+            creationSortKey: extractedFile.creationSortKey,
           })
         }
         const launchCommand = detectProDosLaunchCommand(directoryFiles)
