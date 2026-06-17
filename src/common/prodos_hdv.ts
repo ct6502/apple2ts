@@ -809,7 +809,7 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
 
 const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined => {
   // Preserve on-disk root catalog order by scanning input sequence directly.
-  // System startup programs are .SYSTEM files with startup load aux type $2000.
+  // Prefer startup-eligible .SYSTEM (type $FF, aux $2000), then fallback to first .SYSTEM.
   const rootFiles = files.filter((f) => !f.relativePath)
   const startupEligibleSystem = rootFiles.find(
     (f) => f.name.toUpperCase().endsWith(".SYSTEM") && f.type === 0xFF && (f.auxType ?? 0) === 0x2000
@@ -2021,7 +2021,7 @@ export const buildProDosHdv = async (
       normalizedName,
       node.keyBlock,
       node.blocksUsed,
-      entry.block,
+      ROOT_DIR_BLOCK,
     )
     dirBlock.set(directoryEntry, entryOffset)
     initializeDirectoryBlocks(node)
@@ -2040,7 +2040,7 @@ export const buildProDosHdv = async (
       plan.keyBlock,
       plan.data.length,
       plan.blocksUsed,
-      entry.block,
+      ROOT_DIR_BLOCK,
       plan.storageType,
       plan.auxType,
     )
@@ -2064,7 +2064,7 @@ export const buildProDosHdv = async (
         normalizedChildName,
         child.keyBlock,
         child.blocksUsed,
-        block,
+        node.keyBlock,
       )
       dirBlock.set(directoryEntry, entryOffset)
       initializeDirectoryBlocks(child)
@@ -2082,7 +2082,7 @@ export const buildProDosHdv = async (
         plan.keyBlock,
         plan.data.length,
         plan.blocksUsed,
-        block,
+        node.keyBlock,
         plan.storageType,
         plan.auxType,
       )
