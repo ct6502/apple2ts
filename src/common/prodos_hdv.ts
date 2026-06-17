@@ -27,6 +27,7 @@ export type MenuDiskEntry = {
 export type ImportedDiskFile = {
   name: string
   relativePath?: string
+  volumeName?: string
   type: number
   auxType?: number
   data: Uint8Array
@@ -658,6 +659,27 @@ const isLikelyProDosVolume = (data: Uint8Array): boolean => {
   return true
 }
 
+const readProDosVolumeName = (data: Uint8Array): string | undefined => {
+  // Root directory header entry lives at block 2, entry slot 0.
+  if (data.length < (3 * BLOCK_SIZE)) return undefined
+  const entry0 = (2 * BLOCK_SIZE) + getDirEntryOffset(0)
+  const byte0 = data[entry0]
+  const storageType = (byte0 >> 4) & 0x0F
+  const nameLen = byte0 & 0x0F
+
+  if (storageType !== 0x0F || nameLen < 1 || nameLen > 15) return undefined
+
+  let rawName = ""
+  for (let i = 0; i < nameLen; i++) {
+    const c = data[entry0 + 1 + i]
+    if (c < 0x20 || c > 0x7E) return undefined
+    rawName += String.fromCharCode(c)
+  }
+
+  const normalized = normalizeProDosFilename(rawName)
+  return normalized.length > 0 ? normalized : undefined
+}
+
 const decodeWozToSectorCandidates = (wozData: Uint8Array): { candidates: Array<{ label: string, data: Uint8Array }>, decodedSectorCount: number } | undefined => {
   const tracks = getWozTracks(wozData)
   if (!tracks) return undefined
@@ -764,9 +786,11 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
 
     const extracted = extractProDosFilesRecursive(candidate.data)
     if (extracted.length > 0) {
+      const volumeName = readProDosVolumeName(candidate.data)
       return extracted.map((file) => ({
         name: file.name,
         relativePath: file.relativePath,
+        volumeName,
         type: file.type,
         auxType: file.auxType,
         data: file.data,
@@ -909,7 +933,8 @@ const preprocessInputFilesForMenu = (
     const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
 
     if (wozExtractedFiles && wozExtractedFiles.length > 0) {
-      const imagePrefix = normalizeProDosFilename(file.name).split(".")[0] || "IMG"
+      const extractedVolumeName = wozExtractedFiles.find((f) => !!f.volumeName)?.volumeName
+      const imagePrefix = extractedVolumeName || normalizeProDosFilename(file.name).split(".")[0] || "IMG"
       const directoryName = makeUniqueProDosFilename(imagePrefix, usedNames)
       const directoryFiles: BuildInputFile[] = []
       const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
@@ -948,7 +973,8 @@ const preprocessInputFilesForMenu = (
     if (shouldTryProDosImport) {
       const extracted = extractProDosFilesRecursive(file.data)
       if (extracted.length > 0) {
-        const imagePrefix = normalizeProDosFilename(file.name).split(".")[0] || "IMG"
+        const extractedVolumeName = readProDosVolumeName(file.data)
+        const imagePrefix = extractedVolumeName || normalizeProDosFilename(file.name).split(".")[0] || "IMG"
         const directoryName = makeUniqueProDosFilename(imagePrefix, usedNames)
         const directoryFiles: BuildInputFile[] = []
         // Filter out system files that duplicate across all disk extracts.
