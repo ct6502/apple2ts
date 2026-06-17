@@ -885,16 +885,9 @@ const rewriteImportedProgramPath = (type: number, data: Uint8Array, fromText: st
 }
 
 const applyGenericPrefixRewrite = (type: number, data: Uint8Array): Uint8Array => {
-  let out = data
-  const replacements: Array<[string, string]> = [
-    ["PREFIX /", "PREFIX /APPLE2TS/"],
-  ]
-
-  for (const [fromText, toText] of replacements) {
-    out = rewriteImportedProgramPath(type, out, fromText, toText)
-  }
-
-  return out
+  // Shim-only rewrite strategy: do not mutate imported BAS/TXT payloads.
+  // Keep helper reference compile-used.
+  return rewriteImportedProgramPath(type, data, "", "")
 }
 
 const preprocessInputFilesForMenu = (
@@ -1038,6 +1031,205 @@ const createLauncherBinary = () => {
   result.set(code)
   result.set(message, code.length)
   return result
+}
+
+const ALIAS_SHIM_LOAD_ADDRESS = 0x6000
+
+const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
+  const origVectorOffset = 0x170
+  const runtimeOffset = 0x180
+  const debugExecMarkerOffset = 0x38D
+  const debugInstallMarkerOffset = 0x38E
+  const debugCounterOffset = 0x38F
+  const debugPrefixCounterOffset = 0x390
+  const debugAbsPathOffset = 0x391
+  const debugParamPtrOffset = 0x392
+  const debugPathnamePtrOffset = 0x393
+  const debugPathnameCharOffset = 0x394
+  const debugAbsMatchOffset = 0x395
+  const debugWriteProbeOffset = 0x396
+
+  const origVectorAddr = loadAddress + origVectorOffset
+  const runtimeLo = (loadAddress + runtimeOffset) & 0xFF
+  const runtimeHi = ((loadAddress + runtimeOffset) >> 8) & 0xFF
+  const debugExecMarkerAddr = loadAddress + debugExecMarkerOffset
+  const debugInstallMarkerAddr = loadAddress + debugInstallMarkerOffset
+  const debugCounterAddr = loadAddress + debugCounterOffset
+  const debugPrefixCounterAddr = loadAddress + debugPrefixCounterOffset
+  const debugAbsPathAddr = loadAddress + debugAbsPathOffset
+  const debugParamPtrAddr = loadAddress + debugParamPtrOffset
+  const debugPathnamePtrAddr = loadAddress + debugPathnamePtrOffset
+  const debugPathnameCharAddr = loadAddress + debugPathnameCharOffset
+  const debugAbsMatchAddr = loadAddress + debugAbsMatchOffset
+  const debugWriteProbeAddr = loadAddress + debugWriteProbeOffset
+
+  const code: number[] = []
+  const emit = (...bytes: number[]) => code.push(...bytes)
+
+  // Mark installer entry.
+  emit(0xA9, 0xA1)
+  emit(0x8D, debugExecMarkerAddr & 0xFF, (debugExecMarkerAddr >> 8) & 0xFF)
+  emit(0xA9, 0x01)
+  emit(0x8D, debugInstallMarkerAddr & 0xFF, (debugInstallMarkerAddr >> 8) & 0xFF)
+
+  // Idempotency check against BF01/BF02 target.
+  emit(0xAD, 0x01, 0xBF) // LDA $BF01
+  emit(0xC9, runtimeLo)  // CMP #runtimeLo
+  emit(0xD0, 0x07)       // BNE install
+  emit(0xAD, 0x02, 0xBF) // LDA $BF02
+  emit(0xC9, runtimeHi)  // CMP #runtimeHi
+  emit(0xF0, 0x14)       // BEQ done
+
+  // Save original BF01/BF02 target and patch to runtime.
+  emit(0xAD, 0x01, 0xBF)
+  emit(0x8D, origVectorAddr & 0xFF, (origVectorAddr >> 8) & 0xFF)
+  emit(0xAD, 0x02, 0xBF)
+  emit(0x8D, (origVectorAddr + 1) & 0xFF, ((origVectorAddr + 1) >> 8) & 0xFF)
+  emit(0xA9, runtimeLo)
+  emit(0x8D, 0x01, 0xBF)
+  emit(0xA9, runtimeHi)
+  emit(0x8D, 0x02, 0xBF)
+  emit(0xA9, 0x02)
+  emit(0x8D, debugInstallMarkerAddr & 0xFF, (debugInstallMarkerAddr >> 8) & 0xFF)
+
+  // done
+  emit(0x60)
+
+  if (code.length > runtimeOffset) {
+    throw new Error(`A2TSALIAS installer too large for runtime slot: ${code.length}`)
+  }
+  while (code.length < runtimeOffset) emit(0xEA)
+
+  // Runtime: rewrite absolute SET_PREFIX paths in-place.
+  // 25487 = every entry, 25488 = SET_PREFIX, 25489 = in SET_PREFIX branch,
+  // 25490 = param pointer read, 25491 = pathname pointer read,
+  // 25492 = pathname[1] read, 25493 = pathname[1] == '/', 25494 = rewrite applied
+  emit(0xEE, debugCounterAddr & 0xFF, (debugCounterAddr >> 8) & 0xFF) // INC 25487
+
+  // Save state: 9 pushes (A, X, Y, $06-$0B)
+  emit(0x48)                              // PHA (A)
+  emit(0x8A); emit(0x48)                  // TXA, PHA (X)
+  emit(0x98); emit(0x48)                  // TYA, PHA (Y)
+  emit(0xA5, 0x06); emit(0x48)            // LDA $06, PHA
+  emit(0xA5, 0x07); emit(0x48)            // LDA $07, PHA
+  emit(0xA5, 0x08); emit(0x48)            // LDA $08, PHA
+  emit(0xA5, 0x09); emit(0x48)            // LDA $09, PHA
+  emit(0xA5, 0x0A); emit(0x48)            // LDA $0A, PHA
+  emit(0xA5, 0x0B); emit(0x48)            // LDA $0B, PHA
+
+  // 9 pushes → stack offset = $0101 + 9 = $010A/$010B
+  emit(0xBA)                              // TSX
+  emit(0xBD, 0x0A, 0x01)                 // LDA $010A,X (return addr lo)
+  emit(0x18); emit(0x69, 0x01)            // CLC, ADC #1
+  emit(0x85, 0x06)                        // STA $06 (cmd ptr lo)
+  emit(0xBD, 0x0B, 0x01)                 // LDA $010B,X (return addr hi)
+  emit(0x69, 0x00)                        // ADC #0
+  emit(0x85, 0x07)                        // STA $07 (cmd ptr hi)
+
+  // Read command byte
+  emit(0xA0, 0x00); emit(0xB1, 0x06)      // LDY #0, LDA ($06),Y
+  emit(0xC9, 0xC6)                        // CMP #$C6
+  emit(0xF0, 0x03)                        // BEQ +3 (skip JMP)
+  const jmp1pos = code.length
+  emit(0x4C, 0x00, 0x00)                  // JMP restore (patched later)
+
+  // --- SET_PREFIX detected ---
+  emit(0xEE, debugPrefixCounterAddr & 0xFF, (debugPrefixCounterAddr >> 8) & 0xFF) // INC 25488
+  emit(0xEE, debugAbsPathAddr & 0xFF, (debugAbsPathAddr >> 8) & 0xFF) // INC 25489 (branch reached)
+
+  // Read param block ptr: cmd+1=lo, cmd+2=hi → $08/$09
+  emit(0xA0, 0x01); emit(0xB1, 0x06); emit(0x85, 0x08)
+  emit(0xA0, 0x02); emit(0xB1, 0x06); emit(0x85, 0x09)
+
+  // Mark successful param pointer read.
+  emit(0xEE, debugParamPtrAddr & 0xFF, (debugParamPtrAddr >> 8) & 0xFF) // INC 25490
+
+  // Read pathname ptr from param block offset 1(lo), 2(hi) → $0A/$0B
+  emit(0xA0, 0x01); emit(0xB1, 0x08); emit(0x85, 0x0A)
+  emit(0xA0, 0x02); emit(0xB1, 0x08); emit(0x85, 0x0B)
+
+  // Mark successful pathname pointer read.
+  emit(0xEE, debugPathnamePtrAddr & 0xFF, (debugPathnamePtrAddr >> 8) & 0xFF) // INC 25491
+
+  // Read first pathname character (offset 1; offset 0 is length).
+  emit(0xA0, 0x01); emit(0xB1, 0x0A) // LDY #1, LDA ($0A),Y
+
+  // Mark successful pathname byte read.
+  emit(0xEE, debugPathnameCharAddr & 0xFF, (debugPathnameCharAddr >> 8) & 0xFF) // INC 25492
+
+  // Check absolute path indicator: '/'
+  emit(0xC9, 0x2F) // CMP #'/'
+  emit(0xF0, 0x03) // BEQ +3 (skip JMP)
+  const jmp2pos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP restore (patched later)
+  emit(0xEE, debugAbsMatchAddr & 0xFF, (debugAbsMatchAddr >> 8) & 0xFF) // INC 25493
+
+  // Length guard: if original length >= 55, adding 9 chars would exceed ProDOS max 63.
+  emit(0xA0, 0x00); emit(0xB1, 0x0A) // LDY #0, LDA ($0A),Y (orig len)
+  emit(0xC9, 0x37) // CMP #55
+  emit(0x90, 0x03) // BCC +3 (skip JMP)
+  const jmp3pos = code.length
+  emit(0x4C, 0x00, 0x00) // JMP restore (patched later)
+
+  // X = original length. Update length += 9.
+  emit(0xAA) // TAX
+  emit(0x18); emit(0x69, 0x09) // CLC, ADC #9
+  emit(0xA0, 0x00); emit(0x91, 0x0A) // LDY #0, STA ($0A),Y
+
+  // Shift bytes [2..orig_len] right by 9 positions, from end to start.
+  // Preserve the loaded source byte across index math so A is not clobbered.
+  const shiftLoopAddr = loadAddress + code.length
+  emit(0xE0, 0x01) // CPX #1
+  emit(0xF0, 0x11) // BEQ done_shift
+  emit(0x8A) // TXA
+  emit(0xA8) // TAY
+  emit(0xB1, 0x0A) // LDA ($0A),Y
+  emit(0x48) // PHA
+  emit(0x8A) // TXA
+  emit(0x18); emit(0x69, 0x09) // CLC, ADC #9
+  emit(0xA8) // TAY
+  emit(0x68) // PLA
+  emit(0x91, 0x0A) // STA ($0A),Y
+  emit(0xCA) // DEX
+  emit(0x4C, shiftLoopAddr & 0xFF, (shiftLoopAddr >> 8) & 0xFF) // JMP shiftLoop
+
+  // Insert "APPLE2TS/" at offsets 2..10 (after leading '/').
+  emit(0xA0, 0x02) // LDY #2
+  emit(0xA9, 0x41); emit(0x91, 0x0A); emit(0xC8) // 'A'
+  emit(0xA9, 0x50); emit(0x91, 0x0A); emit(0xC8) // 'P'
+  emit(0xA9, 0x50); emit(0x91, 0x0A); emit(0xC8) // 'P'
+  emit(0xA9, 0x4C); emit(0x91, 0x0A); emit(0xC8) // 'L'
+  emit(0xA9, 0x45); emit(0x91, 0x0A); emit(0xC8) // 'E'
+  emit(0xA9, 0x32); emit(0x91, 0x0A); emit(0xC8) // '2'
+  emit(0xA9, 0x54); emit(0x91, 0x0A); emit(0xC8) // 'T'
+  emit(0xA9, 0x53); emit(0x91, 0x0A); emit(0xC8) // 'S'
+  emit(0xA9, 0x2F); emit(0x91, 0x0A)             // '/'
+
+  // Mark rewrite applied.
+  emit(0xEE, debugWriteProbeAddr & 0xFF, (debugWriteProbeAddr >> 8) & 0xFF) // INC 25494
+
+  // --- restore ---  (patch JMP placeholders)
+  const restoreAddr = loadAddress + code.length
+  code[jmp1pos + 1] = restoreAddr & 0xFF; code[jmp1pos + 2] = (restoreAddr >> 8) & 0xFF
+  code[jmp2pos + 1] = restoreAddr & 0xFF; code[jmp2pos + 2] = (restoreAddr >> 8) & 0xFF
+  code[jmp3pos + 1] = restoreAddr & 0xFF; code[jmp3pos + 2] = (restoreAddr >> 8) & 0xFF
+
+  // Unwind in reverse push order ($0B first, A last)
+  emit(0x68); emit(0x85, 0x0B)           // PLA → $0B
+  emit(0x68); emit(0x85, 0x0A)           // PLA → $0A
+  emit(0x68); emit(0x85, 0x09)           // PLA → $09
+  emit(0x68); emit(0x85, 0x08)           // PLA → $08
+  emit(0x68); emit(0x85, 0x07)           // PLA → $07
+  emit(0x68); emit(0x85, 0x06)           // PLA → $06
+  emit(0x68); emit(0xA8)                 // PLA → TAY
+  emit(0x68); emit(0xAA)                 // PLA → TAX
+  emit(0x68)                             // PLA (restore A)
+  emit(0x6C, origVectorAddr & 0xFF, (origVectorAddr >> 8) & 0xFF) // JMP (origVector)
+
+  // Pad
+  while (code.length <= 0x3FF) emit(0x00)
+
+  return new Uint8Array(code)
 }
 
 /**
@@ -1345,6 +1537,7 @@ export const buildProDosHdv = async (
   }
 
   const withStartup = [...outputFiles]
+  const installAliasShim = directoryPlans.length > 0
 
   const launcherName = "A2TSLAUNCH"
   withStartup.unshift({
@@ -1354,14 +1547,24 @@ export const buildProDosHdv = async (
     auxType: 0x2000,
   })
 
+  if (installAliasShim) {
+    withStartup.unshift({
+      name: "A2TSAL3",
+      type: PRODOS_FILE_TYPE_BINARY,
+      data: createAliasShimBinary(ALIAS_SHIM_LOAD_ADDRESS),
+      auxType: ALIAS_SHIM_LOAD_ADDRESS,
+    })
+  }
+
   // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
   let startupText: string
+  const aliasShimRunCommand = `BRUN /${normalizedVolumeName}/A2TSAL3`
   if (menuEntries && menuEntries.length > 0) {
     // Generate interactive menu program
-    startupText = generateInteractiveMenuStartup(menuEntries)
+    startupText = `${installAliasShim ? `${aliasShimRunCommand}\r` : ""}${generateInteractiveMenuStartup(menuEntries)}`
   } else {
     // Fall back to simple launcher + catalog
-    startupText = `BRUN ${launcherName}\rCATALOG\r`
+    startupText = `${installAliasShim ? `${aliasShimRunCommand}\r` : ""}BRUN ${launcherName}\rCATALOG\r`
   }
   
   withStartup.unshift({
