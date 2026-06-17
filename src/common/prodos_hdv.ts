@@ -1480,6 +1480,7 @@ const createSubdirectoryHeaderBlock = (
   dirname: string,
   parentBlock: number,
   parentSlot: number,
+  fileCount: number,
   template?: Uint8Array
 ): Uint8Array => {
   const block = new Uint8Array(BLOCK_SIZE)
@@ -1503,11 +1504,12 @@ const createSubdirectoryHeaderBlock = (
   writeLittleEndian16(block, headerOffset + 17, 0)
   writeLittleEndian16(block, headerOffset + 19, 0)
   writeLittleEndian24(block, headerOffset + 21, 0)
-  writeLittleEndian16(block, headerOffset + 31, 0x0D27) // entry length ($27) + entries/block ($0D)
-  writeLittleEndian16(block, headerOffset + 33, parentBlock)
-  block[headerOffset + 35] = parentSlot
-  block[headerOffset + 36] = 0
-  writeLittleEndian16(block, headerOffset + 37, 0x2703)
+  block[headerOffset + 31] = 0x27 // Entry length
+  block[headerOffset + 32] = 0x0D // Entries per block
+  writeLittleEndian16(block, headerOffset + 33, Math.min(fileCount, 0xFFFF))
+  writeLittleEndian16(block, headerOffset + 35, parentBlock)
+  block[headerOffset + 37] = parentSlot & 0xFF
+  block[headerOffset + 38] = 0x27 // Parent entry length
 
   return block
 }
@@ -1970,6 +1972,7 @@ export const buildProDosHdv = async (
           node.normalizedName || node.name,
           node.parentEntryBlock,
           node.parentEntrySlot,
+          node.files.length + node.children.length,
           subdirectoryTemplate
         )
         currentBlock.set(dirHeader)
