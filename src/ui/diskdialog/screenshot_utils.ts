@@ -210,10 +210,10 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
       satSum += sat
       if (sat > 28) satHighCount++
     }
-    const filteredRow = smoothRowChroma(rawRow)
     const satMean = satSum / 560
     const satHighRatio = satHighCount / 560
     const rowIsMostlyMonochrome = satMean < 22 && satHighRatio < 0.08
+    const filteredRow = rowIsMostlyMonochrome ? rawRow : smoothRowChroma(rawRow)
 
     const chosenStateByPhase: number[][] = [new Array(140).fill(0), new Array(140).fill(0)]
     const phaseCost = [0, 0]
@@ -238,6 +238,16 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
       const tSat = tMax - tMin
       const tLum = 0.299 * tr + 0.587 * tg + 0.114 * tb
 
+      if (rowIsMostlyMonochrome) {
+        const bestState = tLum > 160 ? 3 : 0
+        const bestErr = colorError(tr, tg, tb, ...APPLE2_COLORS[bestState === 3 ? "white" : "black"])
+        chosenStateByPhase[0][cell] = bestState
+        chosenStateByPhase[1][cell] = bestState
+        phaseCost[0] += bestErr
+        phaseCost[1] += bestErr
+        continue
+      }
+
       for (let phase = 0; phase <= 1; phase++) {
         const evenColor = phase === 0 ? APPLE2_COLORS.purple : APPLE2_COLORS.blue
         const oddColor = phase === 0 ? APPLE2_COLORS.green : APPLE2_COLORS.orange
@@ -252,7 +262,6 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
         let bestState = 0
         let bestErr = Number.POSITIVE_INFINITY
         for (let state = 0; state < 4; state++) {
-          if (rowIsMostlyMonochrome && (state === 1 || state === 2)) continue
           const c = candidates[state]
           let err = colorError(tr, tg, tb, c[0], c[1], c[2])
 
