@@ -194,14 +194,26 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
 
     const sourceY = getFineY(y)
     const rawRow = new Uint8Array(560 * 3)
+    let satSum = 0
+    let satHighCount = 0
     for (let fx = 0; fx < 560; fx++) {
       const [r, g, b] = sampleBilinear(imageData, getFineX(fx) + 0.5, sourceY + 0.5)
       const off = fx * 3
-      rawRow[off] = clamp8(r)
-      rawRow[off + 1] = clamp8(g)
-      rawRow[off + 2] = clamp8(b)
+      const rr = clamp8(r)
+      const gg = clamp8(g)
+      const bb = clamp8(b)
+      rawRow[off] = rr
+      rawRow[off + 1] = gg
+      rawRow[off + 2] = bb
+
+      const sat = Math.max(rr, gg, bb) - Math.min(rr, gg, bb)
+      satSum += sat
+      if (sat > 28) satHighCount++
     }
     const filteredRow = smoothRowChroma(rawRow)
+    const satMean = satSum / 560
+    const satHighRatio = satHighCount / 560
+    const rowIsMostlyMonochrome = satMean < 22 && satHighRatio < 0.08
 
     const chosenStateByPhase: number[][] = [new Array(140).fill(0), new Array(140).fill(0)]
     const phaseCost = [0, 0]
@@ -240,6 +252,7 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
         let bestState = 0
         let bestErr = Number.POSITIVE_INFINITY
         for (let state = 0; state < 4; state++) {
+          if (rowIsMostlyMonochrome && (state === 1 || state === 2)) continue
           const c = candidates[state]
           let err = colorError(tr, tg, tb, c[0], c[1], c[2])
 
@@ -262,7 +275,7 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
 
     const costPhase0 = phaseCost[0] + (previousRowPhase === 0 ? 0 : rowPhaseSwitchPenalty)
     const costPhase1 = phaseCost[1] + (previousRowPhase === 1 ? 0 : rowPhaseSwitchPenalty)
-    const rowPhase = costPhase0 <= costPhase1 ? 0 : 1
+    const rowPhase = rowIsMostlyMonochrome ? 0 : (costPhase0 <= costPhase1 ? 0 : 1)
     previousRowPhase = rowPhase
 
     const rowBits = new Uint8Array(width)
@@ -288,7 +301,7 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
         }
       }
 
-      if (rowPhase === 1) {
+      if (!rowIsMostlyMonochrome && rowPhase === 1) {
         byte |= 0x80
       }
       hiresData[byteIndex] = byte
