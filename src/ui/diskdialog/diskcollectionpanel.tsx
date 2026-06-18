@@ -686,14 +686,20 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           )
         })}
       </div>
-      {activeTab == TAB_INDEX_SELECT &&
-        <div className="dcp-export-row" onClick={(e) => e.stopPropagation()}>
-          <div className="dcp-export-size">HDV size: <b><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</b></div>
-          <button className="dcp-export-button" disabled={isExportButtonDisabled()} onClick={(e) => {
+      <div
+        className={`dcp-export-row${activeTab == TAB_INDEX_SELECT ? "" : " dcp-export-row-inactive"}`}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="dcp-export-size">HDV size: <b><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</b></div>
+        <button
+          className="dcp-export-button"
+          disabled={activeTab != TAB_INDEX_SELECT || isExportButtonDisabled()}
+          onClick={(e) => {
             e.stopPropagation()
-            handleExportClick()
+            if (activeTab == TAB_INDEX_SELECT) {
+              handleExportClick()
+            }
           }}>Export</button>
-        </div>}
+      </div>
       <PopupMenu
         key="drive-popup"
         location={drivePopupLocation}
