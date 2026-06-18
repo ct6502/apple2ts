@@ -242,7 +242,7 @@ let _tmargin = _tbm
 let _bmargin = 0
 const _paperDPI = 180
 const _dpih = 144
-const _72DPIV = 2 // 2 = force 72dpi vertical (majority of software)
+const _scaleFactor = 4 // resolution multiplier for sharper output
 let _dpi = _paperDPI
 let _tof = _tmargin
 const _lm = _lmargin
@@ -709,7 +709,9 @@ function setswitches( a: number, b: number, sc: string )
 
 function resizeCanvas(width: number, height:number)
 {
-  if (_canvas.width !== width || _canvas.height !== height)
+  const scaledWidth = width * _scaleFactor
+  const scaledHeight = height * _scaleFactor
+  if (_canvas.width !== scaledWidth || _canvas.height !== scaledHeight)
   {
     if (_renders)
       ff()
@@ -717,8 +719,8 @@ function resizeCanvas(width: number, height:number)
     // context is reset on resize
     _ctx.save()
 
-    _canvas.width = width
-    _canvas.height = height
+    _canvas.width = scaledWidth
+    _canvas.height = scaledHeight
 
     _ctx.fillStyle = "#FFFFFF"
     _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
@@ -947,6 +949,9 @@ function setxscale(which:number)
   if (which === SCALE.FONTS)
     scale *= (_usePropFont ? _propScale : _fixedScale)
 
+  // apply resolution scale factor
+  scale *= _scaleFactor
+
   const rescale = _ctx.getTransform().a / scale
 
   _px *= rescale
@@ -964,7 +969,7 @@ function setxscale(which:number)
 
   dbg("lmargin: " + _lmargin + " _rmargin: " + _rmargin)
 
-  const v = 1.0
+  const v = 1.0 * _scaleFactor
   _ctx.setTransform(scale,0,0,
                     v,    0,0)
 }
@@ -1157,7 +1162,7 @@ function reset()
   _customGlyphWidth = 0
 
   setprintquality(0)
-  setdpi(DPI.F10CPI)
+  setdpi(DPI.F12CPI)
 
   // black
   setcolor(48)
@@ -1180,48 +1185,38 @@ function setcolor(c:number)
       _ctx.globalAlpha = 1.0
       break
     case 49: // yellow`
-      _ctx.fillStyle = "#FFFF00"
-      _ctx.strokeStyle = "#FFFF00"
+      _ctx.fillStyle = "#faf947"
+      _ctx.strokeStyle = "#faf947"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
     case 50: // magenta`
-//      _ctx.fillStyle = '#FF00FF';
-//      _ctx.strokeStyle = '#FF00FF';
-      _ctx.fillStyle = "#9B1525"
-      _ctx.strokeStyle = "#9B1525"
+      _ctx.fillStyle = "#ff61d9"
+      _ctx.strokeStyle = "#ff61d9"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
     case 51: // cyan`
-//      _ctx.fillStyle = '#00FFFF';
-//      _ctx.strokeStyle = '#00FFFF';
-      _ctx.fillStyle = "#0B48CB"
-      _ctx.strokeStyle = "#0B48CB"
+      _ctx.fillStyle = "#009ed0"
+      _ctx.strokeStyle = "#009ed0"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
     case 52: // orange
-//      _ctx.fillStyle = '#FFA500';
-//      _ctx.strokeStyle = '#FFA500';
-      _ctx.fillStyle = "#AC180A"
-      _ctx.strokeStyle = "#AC180A"
+      _ctx.fillStyle = "#ee7c00"
+      _ctx.strokeStyle = "#ee7c00"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
     case 53: // green
-//      _ctx.fillStyle = '#00FF00';
-//      _ctx.strokeStyle = '#00FF00';
-      _ctx.fillStyle = "#10361B"
-      _ctx.strokeStyle = "#10361B"
+      _ctx.fillStyle = "#218521"
+      _ctx.strokeStyle = "#218521"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
     case 54: // purple
-//      _ctx.fillStyle = '#800080';
-//      _ctx.strokeStyle = '#800080';
-      _ctx.fillStyle = "#040A1B"
-      _ctx.strokeStyle = "#040A1B"
+      _ctx.fillStyle = "#552c8d"
+      _ctx.strokeStyle = "#552c8d"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
@@ -1231,55 +1226,45 @@ function setcolor(c:number)
   }
 }
 
+const drawDot = (x:number, y:number, vdpi = 2) =>
+{
+  _ctx.beginPath()
+  _ctx.arc(x + 0.5, y + 0.5, vdpi === 2 ? 1 : 0.75, 0, Math.PI * 2)
+  _ctx.fill()
+}
+
 function gfx(ch:number)
 {
   // bold and double width work for graphics as well
-  const boldLoop = _bold ? 4 : 1
+  const boldLoop = _bold ? 2 : 1
   const doubleLoop = _doubleWidth ? 2 : 1
 
   const fgfx = (ch:number, xoff:number) =>
   {
     // draw vertical dot pattern
-    if( ch & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+2*0, 1, 1)
-    if( ch & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+2*1, 1, 1)
-    if( ch & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+2*2, 1, 1)
-    if( ch & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+2*3, 1, 1)
-    if( ch & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+2*4, 1, 1)
-    if( ch & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+2*5, 1, 1)
-    if( ch & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+2*6, 1, 1)
-    if( ch & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+2*7, 1, 1)
-  }
-
-  const oldPY = _py
-  for(let d=0;d<_72DPIV;d++)
-  {
-    _py += d
-    for(let i=0;i<doubleLoop;i++)
-    {
-      let x = i*2
-      for(let j=0;j<boldLoop;j++)
-      {
-        x += (j*0.25)
-        fgfx(ch,x)
+    for(let i=0; i<8; i++) {
+      if(ch & (1 << i)) {
+        drawDot(_px+xoff, _py+2*i)
       }
     }
   }
-  _py = oldPY
+
+  for(let i=0;i<doubleLoop;i++)
+  {
+    let x = i*2
+    for(let j=0;j<boldLoop;j++)
+    {
+      x += (j / boldLoop)
+      fgfx(ch,x)
+    }
+  }
 
   incx(doubleLoop)
 }
 
 export function fontGfx(ch:number)
 {
-  const boldLoop = _bold ? 4 : 1
+  const boldLoop = _bold ? 2 : 1
   const doubleLoop = _doubleWidth ? 2 : 1
   const vdpi = (_halfHeight || _subscript || _superscript) ? 1 : 2
   let yoff = 0
@@ -1288,7 +1273,7 @@ export function fontGfx(ch:number)
   if (_halfHeight)
     yoff = 4
   else if (_subscript)
-    yoff = 6
+    yoff = 8
 
   // the font is technically 9 bits high but the font values are only 8 bit
   // if the high bit is set, it is code to shift by two for descenders
@@ -1298,49 +1283,32 @@ export function fontGfx(ch:number)
   const fgfx = (ch:number) =>
   {
     // draw vertical dot pattern
-    if( ch & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*0, 1, 1)
-    if( ch & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*1, 1, 1)
-    if( ch & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*2, 1, 1)
-    if( ch & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*3, 1, 1)
-    if( ch & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*4, 1, 1)
-    if( ch & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*5, 1, 1)
-    if( ch & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*6, 1, 1)
-    if( ch & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*7, 1, 1)
-    // ninth wire for descenders and underline
-    if( ch & 0x100 || _underline )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*8, 1, 1)
-  }
-
-  const oldPY = _py
-  for(let d=0;d<_72DPIV;d++)
-  {
-    _py += d
-    for(let i=0;i<doubleLoop;i++)
-    {
-      xoff = i*2
-      for(let j=0;j<boldLoop;j++)
-      {
-        xoff += (j*0.25)
-        fgfx(ch)
+    for(let i=0; i<8; i++) {
+      if(ch & (1 << i)) {
+        drawDot(_px + xoff, _py + yoff + vdpi * i, vdpi)
       }
     }
+    // ninth wire for descenders and underline
+    if( ch & 0x100 || (_underline && (_px % 2) === 0) )
+      drawDot(_px + xoff, _py + yoff + vdpi * 8, vdpi)
   }
-  _py = oldPY
+
+  for(let i=0;i<doubleLoop;i++)
+  {
+    xoff = i * 2
+    for(let j = 0; j < boldLoop; j++)
+    {
+      xoff += (j / boldLoop)
+      fgfx(ch)
+    }
+  }
 
   incx(doubleLoop)
 }
 
 export function fontGfx16(chh:number, chl:number)
 {
-  const boldLoop = _bold ? 4 : 1
+  const boldLoop = _bold ? 2 : 1
   const doubleLoop = _doubleWidth ? 2 : 1
   let xoff = 0
 
@@ -1358,59 +1326,27 @@ export function fontGfx16(chh:number, chl:number)
   const fgfx = (chh:number, chl:number) =>
   {
     // draw vertical dot pattern
-    if( chh & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+0, 1, 1)
-    if( chl & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+1, 1, 1)
-
-    if( chh & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+2, 1, 1)
-    if( chl & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+3, 1, 1)
-
-    if( chh & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+4, 1, 1)
-    if( chl & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+5, 1, 1)
-
-    if( chh & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+6, 1, 1)
-    if( chl & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+7, 1, 1)
-
-    if( chh & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+8, 1, 1)
-    if( chl & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+9, 1, 1)
-
-    if( chh & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+10, 1, 1)
-    if( chl & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+11, 1, 1)
-
-    if( chh & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+12, 1, 1)
-    if( chl & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+13, 1, 1)
-
-    if( chh & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+14, 1, 1)
-    if( chl & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+15, 1, 1)
-
+    for(let i=0; i<8; i++) {
+      if(chh & (1 << i)) {
+        drawDot(_px + xoff, _py + i * 2)
+      }
+      if(chl & (1 << i)) {
+        drawDot(_px + xoff, _py + i * 2 + 1)
+      }
+    }
     // ninth wire for descenders and underline
-    if( chh & 0x100 || _underline )
-      _ctx.fillRect(_px+xoff, _py+16, 1, 1)
-    if( chl & 0x100 || _underline )
-      _ctx.fillRect(_px+xoff, _py+17, 1, 1)
+    if( chh & 0x100 || (_underline && (_px % 2) === 0) )
+      drawDot(_px + xoff, _py + 16, 2)
+    if( chl & 0x100 || (_underline && (_px % 2) === 0) )
+      drawDot(_px + xoff, _py + 17, 2)
   }
 
   for(let i=0;i<doubleLoop;i++)
   {
-    xoff = i*2
+    xoff = i * 2
     for(let j=0;j<boldLoop;j++)
     {
-      xoff += (j*0.25)
+      xoff += (j / boldLoop)
       fgfx(chh, chl)
     }
   }
