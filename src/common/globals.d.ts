@@ -20,6 +20,7 @@ declare global {
       driveTrackSeekLong: string;
       imagewriterPrint: string;
       imagewriterLinefeed: string;
+      imagewriterTurnOn: string;
     };
   }
 }

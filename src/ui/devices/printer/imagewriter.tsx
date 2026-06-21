@@ -5,9 +5,14 @@ import PrinterDialog from "./printerdialog"
 import { ImageWriterII, registerSetPrinting } from "./iwii"
 import { constructAudio, playAudio } from "../../../common/utility"
 import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
+import { setSerialConfigCallback } from "../../main2worker"
 
-let printerAudio: AudioDevice | undefined
-let linefeedAudio: AudioDevice | undefined
+const audioDevices: Array<AudioDevice | undefined> = []
+enum AUDIO {
+  TURN_ON = 0,
+  PRINT = 1,
+  LINEFEED = 2,
+}
 let printingTimeout = 0
 let audioStartTime = 0
 let setPrintCalls = 0
@@ -19,61 +24,62 @@ const ImageWriter = () => {
   const [open, setOpen] = useState(false)
   const [canvas] = useState(document.createElement("canvas"))
 
-  const playLinefeedAudio = () => {
+  const playPrinterAudio = (audio: AUDIO, audioFile: string, duration: number, loop: boolean) => {
     if (!isAudioEnabled()) {
-      return
+      audioDevices[audio]?.context.close()
+      audioDevices[audio] = undefined
     }
-    if (!linefeedAudio) {
-      linefeedAudio = constructAudio(window.assetRegistry.imagewriterLinefeed)
+    if (!audioDevices[audio]) {
+      audioDevices[audio] = constructAudio(audioFile)
+      if (loop) {
+        audioDevices[audio]!.element.loop = true
+      }
       registerAudioContext((enable: boolean) => {
-        if (!enable) linefeedAudio?.context.suspend()
+        if (!enable) {
+          audioDevices[audio]?.context.close()
+          audioDevices[audio] = undefined
+        }
       })
     }
-    playAudio(linefeedAudio, 2000)
-  }
-
-  const playPrinterAudio = () => {
-    if (!isAudioEnabled()) {
-      return
-    }
-    if (!printerAudio) {
-      printerAudio = constructAudio(window.assetRegistry.imagewriterPrint)
-      printerAudio.element.loop = true
-      registerAudioContext((enable: boolean) => {
-        // Just turn off audio if disabled, don't bother to turn it
-        // back on because this sound is so short.
-        if (!enable) printerAudio?.context.suspend()
-      })
-    }
-    audioStartTime = Date.now()
-    playAudio(printerAudio, 975000)
+    playAudio(audioDevices[audio], duration)
   }
 
   useEffect(() => {
     ImageWriterII.startup(canvas)
+    setSerialConfigCallback((config: SerialConfig) => {
+      if (config.baud > 0) {
+        playPrinterAudio(AUDIO.TURN_ON, window.assetRegistry.imagewriterTurnOn, 3000, false)
+        audioDevices[AUDIO.TURN_ON]!.element.addEventListener("ended", () => {
+          if (audioDevices[AUDIO.TURN_ON]?.context.state !== "closed") {
+            audioDevices[AUDIO.TURN_ON]?.context.close()
+          }
+          audioDevices[AUDIO.TURN_ON] = undefined
+        })
+      }
+    })
     
     // Cleanup audio on unmount
     return () => {
-      if (printerAudio) {
-        printerAudio.context.close()
-        printerAudio = undefined
-      }
-      if (linefeedAudio) {
-        linefeedAudio.context.close()
-        linefeedAudio = undefined
+      for (const audio in audioDevices) {
+        audioDevices[audio]?.context.close()
+        audioDevices[audio] = undefined
       }
     }
   }, [canvas])
 
   const setPrinting = () => {
+    if (audioDevices[AUDIO.TURN_ON]) {
+      return
+    }
     // Start audio on first call or if it was previously stopped
     if (printingTimeout === 0) {
       // Always restart audio and reset timer for a new print job
-      if (printerAudio) {
-        printerAudio.context.close()
-        printerAudio = undefined
+      if (audioDevices[AUDIO.PRINT]) {
+        audioDevices[AUDIO.PRINT]?.context.close()
+        audioDevices[AUDIO.PRINT] = undefined
       }
-      playPrinterAudio()
+      playPrinterAudio(AUDIO.PRINT, window.assetRegistry.imagewriterPrint, 975000, true)
+      audioStartTime = Date.now()
     } else {
       // Just reset the timeout if already printing
       clearTimeout(printingTimeout)
@@ -101,12 +107,12 @@ const ImageWriter = () => {
         audioStartTime = 0
         setPrintCalls = 0
         // Stop printer sound
-        if (printerAudio) {
-          printerAudio.context.close()
-          printerAudio = undefined
+        if (audioDevices[AUDIO.PRINT]) {
+          audioDevices[AUDIO.PRINT]?.context.close()
+          audioDevices[AUDIO.PRINT] = undefined
         }
         if (overallPrintTime > 1) {
-          playLinefeedAudio()
+          playPrinterAudio(AUDIO.LINEFEED, window.assetRegistry.imagewriterLinefeed, 2000, false)
         }
       }, timeoutMs)
     }, remainingTimeout)

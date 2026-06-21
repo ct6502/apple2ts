@@ -401,3 +401,11 @@ type TraceSettings = {
   collapseLoops: boolean,
   ignoreRegisters: boolean,
 }
+
+type SerialConfig =
+{
+  baud: number
+  bits: number
+  stop: number
+  parity: string
+}

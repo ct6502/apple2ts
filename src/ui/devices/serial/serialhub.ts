@@ -18,7 +18,7 @@ export const changeSerialMode = (i: number) => {
   }
   else
   {
-    if (i>0)
+    if (i > 0)
       requestSerialPort()
     else
       setUseWebSerial(false)
