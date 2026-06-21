@@ -6,6 +6,7 @@ import { ImageWriterII, registerSetPrinting } from "./iwii"
 import { constructAudio, playAudio } from "../../../common/utility"
 import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
 import { setSerialConfigCallback } from "../../main2worker"
+import { getSerialMode } from "../serial/serialhub"
 
 const audioDevices: Array<AudioDevice | undefined> = []
 enum AUDIO {
@@ -47,7 +48,7 @@ const ImageWriter = () => {
   useEffect(() => {
     ImageWriterII.startup(canvas)
     setSerialConfigCallback((config: SerialConfig) => {
-      if (config.baud > 0) {
+      if (config.baud > 0 && getSerialMode() === 0) {
         playPrinterAudio(AUDIO.TURN_ON, window.assetRegistry.imagewriterTurnOn, 3000, false)
         audioDevices[AUDIO.TURN_ON]!.element.addEventListener("ended", () => {
           if (audioDevices[AUDIO.TURN_ON]?.context.state !== "closed") {
