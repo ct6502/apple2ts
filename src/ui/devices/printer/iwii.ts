@@ -7,8 +7,8 @@ export const registerSetPrinting = (fn: () => void) => {
 }
 
 export const receivePrinterData = (data: Uint8Array) => {
-  if (doSetPrinting) doSetPrinting()
-  ImageWriterII.write(data)
+  const isOutput = ImageWriterII.write(data)
+  if (isOutput && doSetPrinting) doSetPrinting()
 }
 
 import { Font,
@@ -30,22 +30,26 @@ export interface Printer {
 
   canRead(): boolean;
   read(): Uint8Array;
-  write(data: Uint8Array): void;
+  write(data: Uint8Array): boolean;
 
   print(): void;
   formfeed(): void;
 
-  incomingData: Uint8Array;
+  currentData: Uint8Array;
+  dataLength: number;
   hasData(): boolean;
   reprint(): void;
 }
+
+const BUFFER_CHUNK_SIZE = 16384 // 16K
 
 export const ImageWriterII : Printer = {
   startup: (canvas) => { return initcanvas(canvas) },
   shutdown: () => {},
   reset: function() {
     this.localReset()
-    this.incomingData = new Uint8Array(0)
+    this.currentData = new Uint8Array(BUFFER_CHUNK_SIZE)
+    this.dataLength = 0
   },
 
   localReset: function() {
@@ -59,27 +63,38 @@ export const ImageWriterII : Printer = {
   canRead: () => { return false },
   read: () => { return new Uint8Array(0) },
 
-  write: function (data: Uint8Array) {
-
-    const tmp = new Uint8Array(this.incomingData.length + data.length)
-    tmp.set(this.incomingData)
-    tmp.set(data, this.incomingData.length)
-    this.incomingData = tmp
-
-    for(let i=0;i<data.length;i++) {
-      parseChar(data[i])
+  write: function (newData: Uint8Array) {
+    // Ensure buffer has enough space
+    const neededSize = this.dataLength + newData.length
+    if (neededSize > this.currentData.length) {
+      // Grow buffer by 16K chunks
+      const newSize = Math.ceil(neededSize / BUFFER_CHUNK_SIZE) * BUFFER_CHUNK_SIZE
+      const newBuffer = new Uint8Array(newSize)
+      newBuffer.set(this.currentData.subarray(0, this.dataLength))
+      this.currentData = newBuffer
     }
+    
+    // Append new data
+    this.currentData.set(newData, this.dataLength)
+    this.dataLength += newData.length
+
+    let isOutput = false
+    for (let i = 0; i < newData.length; i++) {
+      isOutput ||= parseChar(newData[i])
+    }
+    return isOutput
   },
 
-  incomingData: new Uint8Array(0),
+  currentData: new Uint8Array(BUFFER_CHUNK_SIZE),
+  dataLength: 0,
 
-  hasData: function () { return this.incomingData.length > 0 },
+  hasData: function () { return this.dataLength > 0 },
 
   reprint: function () {
     _dbg = true
     this.localReset()
-    for(let i=0;i<this.incomingData.length;i++) {
-      parseChar(this.incomingData[i])
+    for(let i=0;i<this.dataLength;i++) {
+      parseChar(this.currentData[i])
     }
     _dbg = false
   },
@@ -99,11 +114,15 @@ export const ImageWriterII : Printer = {
         if (result && typeof result === "string") {
           const binaryString = atob(result.split(",")[1])
           const len = binaryString.length
-          const bytes = new Uint8Array(len)
-          for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i)
+          // Ensure buffer is large enough
+          const neededSize = Math.ceil(len / BUFFER_CHUNK_SIZE) * BUFFER_CHUNK_SIZE
+          if (neededSize > this.currentData.length) {
+            this.currentData = new Uint8Array(neededSize)
           }
-          this.incomingData = bytes
+          for (let i = 0; i < len; i++) {
+            this.currentData[i] = binaryString.charCodeAt(i)
+          }
+          this.dataLength = len
           this.reprint()
         }
       }
@@ -113,7 +132,8 @@ export const ImageWriterII : Printer = {
   },
 
   save: function() {
-    const blob = new Blob([this.incomingData] as BlobPart[])
+    const data = this.currentData.subarray(0, this.dataLength)
+    const blob = new Blob([data] as BlobPart[])
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
@@ -181,7 +201,7 @@ export const ImageWriterII : Printer = {
   },
 
   formfeed: () => {
-    ff()
+    formFeed()
     prerender() // to clear the screen
   },
 }
@@ -709,12 +729,12 @@ function setswitches( a: number, b: number, sc: string )
 
 function resizeCanvas(width: number, height:number)
 {
-  const scaledWidth = width * _scaleFactor
-  const scaledHeight = height * _scaleFactor
+  const scaledWidth = width * _scaleFactor + 1
+  const scaledHeight = height * _scaleFactor + 1
   if (_canvas.width !== scaledWidth || _canvas.height !== scaledHeight)
   {
     if (_renders)
-      ff()
+      formFeed()
 
     // context is reset on resize
     _ctx.save()
@@ -725,8 +745,8 @@ function resizeCanvas(width: number, height:number)
     _ctx.fillStyle = "#FFFFFF"
     _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
     _ctx.imageSmoothingEnabled = false
-    _rmargin = _canvas.width - _lrm
-    _bmargin = _canvas.height - _tbm
+    _rmargin = width - _lrm
+    _bmargin = height - _tbm
 
     _ctx.restore()
   }
@@ -961,11 +981,8 @@ function setxscale(which:number)
     scaletabs(rescale) 
 
   // recompute margins
-  _lmargin = _lrm
-  _rmargin = _canvas.width - _lrm
-
-  _lmargin *= (1.0/scale)
-  _rmargin *= (1.0/scale)
+  _lmargin = _lrm / scale
+  _rmargin = (_canvas.width - _lrm) / scale
 
   dbg("lmargin: " + _lmargin + " _rmargin: " + _rmargin)
 
@@ -1009,7 +1026,7 @@ function incy( n:number )
   else if( _py >= _bmargin )
   {
     // new page
-    ff()
+    formFeed()
   }
   dbg("_py: " + _py)
 }
@@ -1022,11 +1039,11 @@ function cr()
     linefeed()
 }
 
-function ff()
+function formFeed()
 {
   prerender()
 
-  dbg("(ff)")
+  dbg("(formFeed)")
   if(_autoCRonLF && !_autoLFonCR)
     cr() 
 
@@ -1229,7 +1246,7 @@ function setcolor(c:number)
 const drawDot = (x:number, y:number, vdpi = 2) =>
 {
   _ctx.beginPath()
-  _ctx.arc(x + 0.5, y + 0.5, vdpi === 2 ? 1 : 0.75, 0, Math.PI * 2)
+  _ctx.arc(x + 1.5, y + 1.5, vdpi === 2 ? 1 : 0.75, 0, Math.PI * 2)
   _ctx.fill()
 }
 
@@ -1397,6 +1414,7 @@ const state =
 function parseChar(raw:number)
 {
   const ch = raw & _ignoreBit8
+  let isOutput = false
 
   switch( state.cur )
   {
@@ -1419,12 +1437,15 @@ function parseChar(raw:number)
           break
         case CHCODE.cJ:
           linefeed(1)
+          isOutput = true
           break
         case CHCODE.cL:
-          ff()
+          formFeed()
+          isOutput = true
           break
         case CHCODE.cM:
           cr()
+          isOutput = true
           break
         case CHCODE.cN:
           doubleWidth(true)
@@ -1763,7 +1784,7 @@ function parseChar(raw:number)
     case state.GFXN:
       // expect 4 chars
       command.push(String.fromCharCode(ch))
-      if(command.length === 4)
+      if (command.length === 4)
       {
         setxscale(SCALE.GFX)
         state.cur = state.GFX
@@ -1778,7 +1799,7 @@ function parseChar(raw:number)
     case state.GFX8N:
       // expect 3 chars
       command.push(String.fromCharCode(ch))
-      if(command.length === 3)
+      if (command.length === 3)
       {
         setxscale(SCALE.GFX)
         state.cur = state.GFX
@@ -1792,6 +1813,7 @@ function parseChar(raw:number)
 
     case state.GFX:
       gfx(ch)
+      isOutput = true
       _gfxchars--
       if(_gfxchars === 0)
       {
@@ -1822,6 +1844,7 @@ function parseChar(raw:number)
       {
         gfx(ch)
       }
+      isOutput = true
       state.cur = state.OUTER
       _ignoreBit8 = 0x7f
       setxscale(SCALE.FONTS)
@@ -1915,8 +1938,10 @@ function parseChar(raw:number)
       const count = "0123456789:;<=>?"
       const cf = String.fromCharCode(ch)
       const nl = count.indexOf(cf)
-      if (nl > 0)
+      if (nl > 0) {
         linefeed(nl)
+        isOutput = true
+      }
       break
     }
 
@@ -2000,5 +2025,6 @@ function parseChar(raw:number)
       log("invalid state!")
       break
   }
+  return isOutput
 }
 

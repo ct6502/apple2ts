@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react"
+import "./printer.css"
 import { Printer } from "./iwii"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
@@ -21,6 +22,8 @@ const CopyCanvas = (props: CopyCanvasProps) => {
   // these dimensions represent a max dpi page
   const width = 1360
   const height = 1584
+  const marginx = 0
+  const marginy = 0
 
   useEffect(() => {
     let intervalId = 0
@@ -32,7 +35,7 @@ const CopyCanvas = (props: CopyCanvasProps) => {
         // copy internal canvas over the other one
         if (destContext) {
           //copy the data, scale if necessary
-          destContext?.drawImage(props.srcCanvas, 0, 0, width, height)
+          destContext?.drawImage(props.srcCanvas, marginx, marginy, width - 2 * marginx, height - 2 * marginy)
         } else {
           console.log("destinationCtx is NULL!")
         }
@@ -49,11 +52,13 @@ const CopyCanvas = (props: CopyCanvasProps) => {
     }
   }, [canvasRef, props.srcCanvas, height, width])
 
-  return <canvas ref={canvasRef} {...rest}
-    className="printerCanvas"
-    style={{ width: "600px", height: "700px" }}
-    hidden={false}
-    width={width} height={height} />
+  return <div className="printer-paper">
+      <canvas ref={canvasRef} {...rest}
+        className="printer-canvas"
+        style={{ width: "540px", height: "700px" }}
+        hidden={false}
+        width={width} height={height} />
+    </div>
 }
 
 export interface PrinterDialogProps {
@@ -102,13 +107,13 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   const hasPrinterData = props.printer.hasData()
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="modal-overlay">
       <div className="floating-dialog flex-column"
         onClick={(e) => e.stopPropagation()}
-        style={{ left: "5%", top: "5%", backgroundColor: "white" }}>
+        style={{ left: "5%", top: "5%", backgroundColor: "var(--panel-background)" }}>
         <div className="flex-column">
-          <div className="flex-row-space-between flexwrap">
-            <svg height="35" width="150">{imagewriter2}</svg>
+          <div className="flex-row-space-between flexwrap printer-controls">
+            <svg height="28" width="120" style={{ marginLeft: "15px" }}>{imagewriter2}</svg>
             <div className="flex-row">
               <button className="push-button"
                 disabled={!hasPrinterData}

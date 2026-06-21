@@ -1,0 +1,46 @@
+.printer-controls {
+  margin: 0px;
+  padding: 5px;
+}
+
+.printer-paper {
+  position: relative;
+  background-color: #fff;
+  background-position: 40px 40px;
+}
+
+.printer-paper::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0px;
+  bottom: 0;
+  width: 40px;
+  background: repeating-radial-gradient(circle,
+      #222 0% 20%,
+      transparent 20% 100%);
+  background-size: 100% 40px;
+  mix-blend-mode: multiply;
+}
+
+.printer-paper::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: 0px;
+  bottom: 0;
+  width: 40px;
+  background: repeating-radial-gradient(circle,
+      #222 0% 20%,
+      transparent 20% 100%);
+  background-size: 100% 40px;
+  mix-blend-mode: multiply;
+}
+
+.printer-canvas {
+  margin-left: 40px;
+  margin-right: 40px;
+  padding: 20px;
+  border-left: 1px solid #CCC;
+  border-right: 1px solid #CCC;
+}

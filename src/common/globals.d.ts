@@ -18,6 +18,8 @@ declare global {
       driveMotor: string;
       driveTrackOffEnd: string;
       driveTrackSeekLong: string;
+      imagewriterPrint: string;
+      imagewriterLinefeed: string;
     };
   }
 }

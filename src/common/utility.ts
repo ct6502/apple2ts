@@ -481,3 +481,33 @@ export const isHardDriveImage = (filename: string) => {
   return suffixes.some(suffix => f.endsWith(suffix))
 }
 
+export const constructAudio = (mp3track: string) => {
+  const audioDevice: AudioDevice = {
+    context: new AudioContext(),
+    element: new Audio(mp3track),
+    timeout: 0
+  }
+  audioDevice.element.volume = 0.5
+  const node = audioDevice.context.createMediaElementSource(audioDevice.element)
+  node.connect(audioDevice.context.destination)
+  return audioDevice
+}
+
+export const playAudio = (audioDevice: AudioDevice, timeout: number) => {
+  if (audioDevice.context.state === "suspended") {
+    audioDevice.context.resume()
+  }
+  const playPromise = audioDevice.element.play()
+  if (playPromise) {
+    playPromise.then(() => {
+      window.clearTimeout(audioDevice.timeout)
+      audioDevice.timeout = window.setTimeout(() => {
+        if (audioDevice.context.state !== "closed") {
+          audioDevice.context.suspend()
+        }
+      }, timeout)
+    }).catch(() => {
+//      console.log(error)
+    })
+  }
+}
