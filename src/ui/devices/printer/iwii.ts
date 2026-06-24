@@ -80,7 +80,8 @@ export const ImageWriterII : Printer = {
 
     let isOutput = false
     for (let i = 0; i < newData.length; i++) {
-      isOutput ||= parseChar(newData[i])
+      const newOutput = parseChar(newData[i])
+      isOutput = newOutput || isOutput
     }
     return isOutput
   },
@@ -743,7 +744,10 @@ function resizeCanvas(width: number, height:number)
     _canvas.height = scaledHeight
 
     _ctx.fillStyle = "#FFFFFF"
+    const tmpAlpha = _ctx.globalAlpha
+    _ctx.globalAlpha = 1.0
     _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
+    _ctx.globalAlpha = tmpAlpha
     _ctx.imageSmoothingEnabled = false
     _rmargin = width - _lrm
     _bmargin = height - _tbm
@@ -1075,14 +1079,17 @@ function clearcanvas()
   _ctx.setTransform(1,0,0,
                     1,0,0)
   _ctx.fillStyle = "#FFFFFF"
+  const tmpAlpha = _ctx.globalAlpha
+  _ctx.globalAlpha = 1.0
   _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
+  _ctx.globalAlpha = tmpAlpha
   _ctx.restore()
 }
 
 function linefeed(n = 1)
 {
   dbg("(lf)(" + n + ")")
-  if(_autoCRonLF && !_autoLFonCR)
+  if (_autoCRonLF && !_autoLFonCR)
     cr()
 
   // new line feed spacing is applied after current line?
@@ -1193,7 +1200,7 @@ function reset()
 function setcolor(c:number)
 {
   dbg("setcolor: " + c )
-  switch(c)
+  switch (c)
   {
     case 48: // black`
       _ctx.fillStyle = "#000000"
@@ -1411,6 +1418,290 @@ const state =
   cur: 0,
 }
 
+const handleOuterCommand = (ch: number) => {
+  let isOutput = false
+  switch(ch)
+  {
+    case CHCODE.ESC:
+      state.cur = state.CMD
+      break
+    case CHCODE.c_:
+      state.cur = state.FEEDLINES
+      dbg("c_")
+      break
+    case CHCODE.cH:
+      dbg("cH")
+      bs()
+      break
+    case CHCODE.cI:
+      tab() 
+      break
+    case CHCODE.cJ:
+      linefeed(1)
+      isOutput = true
+      break
+    case CHCODE.cL:
+      formFeed()
+      isOutput = true
+      break
+    case CHCODE.cM:
+      cr()
+      isOutput = true
+      break
+    case CHCODE.cN:
+      doubleWidth(true)
+      break
+    case CHCODE.cO:
+      doubleWidth(false)
+      break
+    case CHCODE.cX: // erase current line from buffer.
+      dbg("cX")
+      break
+    case CHCODE.cG:
+      bell()
+      break
+    default:
+      output(ch)
+      break
+  }
+  return isOutput
+}
+
+
+const handleCommand = (ch: number) => {
+  const isOutput = false
+  let newState = state.OUTER
+  switch(ch)
+  {
+    case 27:
+      command = []
+      newState = state.TABSTOP
+      break
+
+    case 48:  // clear all tabs
+      cleartabs()
+      break
+
+    case 40:
+      command = []
+      newState = state.SETTABS
+      // clears all tabs to start
+      cleartabs()
+      break
+
+    case 41:
+      command = []
+      newState = state.CLEARTABS
+      break
+
+    case 39:
+      usecustomfont(true)
+      break
+
+    case 42:
+      usecustomfonthi(true)
+      break
+
+    case 45:
+      setcustomfontwidth(8)
+      break
+
+    case 43:
+      setcustomfontwidth(16)
+      break
+
+    case 36:
+      mapmousetext(false)
+      usecustomfonthi(false)
+      break
+
+    case 71:
+    case 83:
+      command = []
+      newState = state.GFXN
+      break
+
+    case 103:
+      command = []
+      newState = state.GFX8N
+      break
+
+    case 86:
+      command = []
+      newState = state.GFXRN
+      break
+
+    case 70:
+      command = []
+      newState = state.HPOS
+      break
+
+    case 72:
+      command = []
+      newState = state.PLENGTH
+      break
+
+    case 76:
+      command = []
+      newState = state.LMARGIN
+      break
+
+    case 90:
+      newState = state.EZ0
+      break
+
+    case 68:
+      command = []
+      newState = state.ED0
+      break
+
+    case 99:
+      reset()
+      break
+
+    case 75:
+      newState = state.COLOR
+      break
+
+    case 82:
+      command = []
+      newState = state.RCHAR
+      break
+
+    case 84:
+      command = []
+      newState = state.CHEIGHT
+      break
+
+    case 65: // 6 lines per inch
+      _nlfSpacing = 24
+      dbg("nlfSpacing: " + _nlfSpacing)
+      break
+    case 66: // 8 lines per inch
+      _nlfSpacing = 18
+      dbg("nlfSpacing: " + _nlfSpacing)
+      break
+
+    case 102: // forward linefeed
+      _lfSpacing = Math.abs(_lfSpacing)
+      dbg("fw lf")
+      break
+
+    case 114: // reverse linefeed
+      _lfSpacing = -Math.abs(_lfSpacing)
+      dbg("rev lf")
+      break
+
+    case 79:  // paper out sensor off
+    case 111: // paper out sensor on
+      break
+
+    case 62:  // set unidirectional print
+      setunidirectional(true)
+      break
+
+    case 60:  // set bidirectional print
+      setunidirectional(false)
+      break
+
+    case 33:
+      bold(true)
+      break
+    case 34:
+      bold(false)
+      break
+
+    case 88:
+      underline(true)
+      break
+    case 89:
+      underline(false)
+      break
+
+    case 119:
+      halfheight(true)
+      break
+    case 87:
+      halfheight(false)
+      break
+
+    case 120:
+      superscript(true)
+      break
+    case 121:
+      subscript(true)
+      break
+    case 122:
+      subscript(false)
+      superscript(false)
+      break
+
+    case 49:  // insert N dots (1-6) for proportional
+    case 50:
+    case 51:
+    case 52:
+    case 53:
+    case 54:
+      if (_usePropFont)
+        incx(ch-48) // 49 = 1
+      break
+
+    case 115:
+      newState = state.SETPROPSPACING
+      break
+
+    case 73:
+      dbg("begin load custom font")
+      newState = state.LOADCUSTOM
+      customdata = []
+      break
+
+    case 108:
+      newState = state.CRLF
+      break
+
+    case 118:
+      _tof = _py
+      break
+
+    case 38:
+      mapmousetext(true)
+      break
+
+    case 97:
+      newState = state.PRINTQUALITY
+      break
+    case 109:
+      setprintquality(0)
+      break
+    case 77:
+      setprintquality(1)
+      break
+
+    case 63:
+      sendidstring()
+      break
+
+    case 110:
+    case 78:
+    case 69:
+    case 112:
+    case 80:
+    case 101:
+    case 113:
+    case 81:
+      setdpi(ch)
+      break
+
+    default:
+      log("Unknown ESC code: " + ch)
+      break
+  }
+  state.cur = newState
+  return isOutput
+}
+
+
 function parseChar(raw:number)
 {
   const ch = raw & _ignoreBit8
@@ -1419,308 +1710,10 @@ function parseChar(raw:number)
   switch( state.cur )
   {
     case state.OUTER:
-      switch(ch)
-      {
-        case CHCODE.ESC:
-          state.cur = state.CMD
-          break
-        case CHCODE.c_:
-          state.cur = state.FEEDLINES
-          dbg("c_")
-          break
-        case CHCODE.cH:
-          dbg("cH")
-          bs()
-          break
-        case CHCODE.cI:
-          tab() 
-          break
-        case CHCODE.cJ:
-          linefeed(1)
-          isOutput = true
-          break
-        case CHCODE.cL:
-          formFeed()
-          isOutput = true
-          break
-        case CHCODE.cM:
-          cr()
-          isOutput = true
-          break
-        case CHCODE.cN:
-          doubleWidth(true)
-          break
-        case CHCODE.cO:
-          doubleWidth(false)
-          break
-        case CHCODE.cX: // erase current line from buffer.
-          dbg("cX")
-          break
-        case CHCODE.cG:
-          bell()
-          break
-        default:
-          output(ch)
-          break
-      }
-      break
+      return handleOuterCommand(ch)
 
     case state.CMD:
-      switch(ch)
-      {
-        case 27:
-          command = []
-          state.cur = state.TABSTOP
-          break
-
-        case 48:  // clear all tabs
-          state.cur = state.OUTER
-          cleartabs()
-          break
-
-        case 40:
-          command = []
-          state.cur = state.SETTABS
-          // clears all tabs to start
-          cleartabs()
-          break
-
-        case 41:
-          command = []
-          state.cur = state.CLEARTABS
-          break
-
-        case 39:
-          state.cur = state.OUTER
-          usecustomfont(true)
-          break
-
-        case 42:
-          state.cur = state.OUTER
-          usecustomfonthi(true)
-          break
-
-        case 45:
-          state.cur = state.OUTER
-          setcustomfontwidth(8)
-          break
-
-        case 43:
-          state.cur = state.OUTER
-          setcustomfontwidth(16)
-          break
-
-        case 36:
-          state.cur = state.OUTER
-          mapmousetext(false)
-          usecustomfonthi(false)
-          break
-
-        case 71:
-        case 83:
-          command = []
-          state.cur = state.GFXN
-          break
-
-        case 103:
-          command = []
-          state.cur = state.GFX8N
-          break
-
-        case 86:
-          command = []
-          state.cur = state.GFXRN
-          break
-
-        case 70:
-          command = []
-          state.cur = state.HPOS
-          break
-
-        case 72:
-          command = []
-          state.cur = state.PLENGTH
-          break
-
-        case 76:
-          command = []
-          state.cur = state.LMARGIN
-          break
-
-        case 90:
-          state.cur = state.EZ0
-          break
-
-        case 68:
-          state.cur = state.ED0
-          break
-
-        case 99:
-          state.cur = state.OUTER
-          reset()
-          break
-
-        case 75:
-          state.cur = state.COLOR
-          break
-
-        case 82:
-          command = []
-          state.cur = state.RCHAR
-          break
-
-        case 84:
-          command = []
-          state.cur = state.CHEIGHT
-          break
-
-        case 65: // 6 lines per inch
-          state.cur = state.OUTER
-          _nlfSpacing = 24
-          dbg("nlfSpacing: " + _nlfSpacing)
-          break
-        case 66: // 8 lines per inch
-          state.cur = state.OUTER
-          _nlfSpacing = 18
-          dbg("nlfSpacing: " + _nlfSpacing)
-          break
-
-        case 102: // forward linefeed
-          state.cur = state.OUTER
-          _lfSpacing = Math.abs(_lfSpacing)
-          dbg("fw lf")
-          break
-
-        case 114: // reverse linefeed
-          state.cur = state.OUTER
-          _lfSpacing = -Math.abs(_lfSpacing)
-          dbg("rev lf")
-          break
-
-        case 79:  // paper out sensor off
-        case 111: // paper out sensor on
-          state.cur = state.OUTER
-          break
-
-        case 62:  // set unidirectional print
-          setunidirectional(true)
-          state.cur = state.OUTER
-          break
-
-        case 60:  // set bidirectional print
-          setunidirectional(false)
-          state.cur = state.OUTER
-          break
-
-        case 33:
-          bold(true)
-          state.cur = state.OUTER
-          break
-        case 34:
-          bold(false)
-          state.cur = state.OUTER
-          break
-
-        case 88:
-          underline(true)
-          state.cur = state.OUTER
-          break
-        case 89:
-          underline(false)
-          state.cur = state.OUTER
-          break
-
-        case 119:
-          halfheight(true)
-          state.cur = state.OUTER
-          break
-        case 87:
-          halfheight(false)
-          state.cur = state.OUTER
-          break
-
-        case 120:
-          superscript(true)
-          state.cur = state.OUTER
-          break
-        case 121:
-          subscript(true)
-          state.cur = state.OUTER
-          break
-        case 122:
-          subscript(false)
-          superscript(false)
-          state.cur = state.OUTER
-          break
-
-        case 49:  // insert N dots (1-6) for proportional
-        case 50:
-        case 51:
-        case 52:
-        case 53:
-        case 54:
-          state.cur = state.OUTER
-          if (_usePropFont)
-            incx(ch-48) // 49 = 1
-          break
-
-        case 115:
-          state.cur = state.SETPROPSPACING
-          break
-
-        case 73:
-          dbg("begin load custom font")
-          state.cur = state.LOADCUSTOM
-          customdata = []
-          break
-
-        case 108:
-          state.cur = state.CRLF
-          break
-
-        case 118:
-          _tof = _py
-          break
-
-        case 38:
-          state.cur = state.OUTER
-          mapmousetext(true)
-          break
-
-        case 97:
-          state.cur = state.PRINTQUALITY
-          break
-        case 109:
-          state.cur = state.OUTER
-          setprintquality(0)
-          break
-        case 77:
-          state.cur = state.OUTER
-          setprintquality(1)
-          break
-
-        case 63:
-          state.cur = state.OUTER
-          sendidstring()
-          break
-
-        case 110:
-        case 78:
-        case 69:
-        case 112:
-        case 80:
-        case 101:
-        case 113:
-        case 81:
-          state.cur = state.OUTER
-          setdpi(ch)
-          break
-
-        default:
-          log("Unknown ESC code: " + ch)
-          break
-      }
-      break
+      return handleCommand(ch)
 
     case state.SETTABS:
       // expect 3 chars at a time, ending with comma or period
@@ -1821,6 +1814,10 @@ function parseChar(raw:number)
         _ignoreBit8 = 0x7f
         dbg("gfxend")
         setxscale(SCALE.FONTS)
+        cr()
+        if (_autoLFonFull) {
+          linefeed()
+        }
       }
       break
 
@@ -2014,6 +2011,7 @@ function parseChar(raw:number)
 
     case state.ED0:
       state.cur = state.ED1
+      command[0] = ch
       break
 
     case state.ED1:
