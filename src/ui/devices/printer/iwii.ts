@@ -758,34 +758,34 @@ function resizeCanvas(width: number, height:number)
 
 const CHCODE = 
 {
-  ESC: 27,
-  cAt: 0,
-  cA:  1,
-  cD:  4, // end char download
-  cG:  7,	// bell
-  cH:  8,	// backspace
-  cI:  9,	// tab
-  cJ:  10,	// linefeed
-  cL:  12,  // TOF feed
-  cM:  13,	// CR
-  cN:  14,  // start double width
-  cO:  15,  // end double width
-  cQ:  17,  // select printer
-  cS:  19,  // deselect printer
-  cX:  24,
-  c_:  31,  // multi-linefeed
+  ESC: "\x1B",
+  cAt: "\x00",
+  cA:  "\x01",
+  cD:  "\x04", // end char download
+  cG:  "\x07",	// bell
+  cH:  "\x08",	// backspace
+  cI:  "\x09",	// tab
+  cJ:  "\x0A",	// linefeed
+  cL:  "\x0C",  // TOF feed
+  cM:  "\x0D",	// CR
+  cN:  "\x0E",  // start double width
+  cO:  "\x0F",  // end double width
+  cQ:  "\x11",  // select printer
+  cS:  "\x13",  // deselect printer
+  cX:  "\x18",
+  c_:  "\x1F",  // multi-linefeed
 }
 
 const DPI = 
 {
-  F9CPI:   110,
-  F10CPI:  78,
-  F12CPI:  69,
-  F13CPI:  101,
-  F15CPI:  113,
-  F17CPI:  81,
-  F10CPIP: 112,
-  F12CPIP: 80,
+  F9CPI:   "n",
+  F10CPI:  "N",
+  F12CPI:  "E",
+  F13CPI:  "e",
+  F15CPI:  "q",
+  F17CPI:  "Q",
+  F10CPIP: "p",
+  F12CPIP: "P",
 }
 
 function setprintquality(q:number)
@@ -918,7 +918,7 @@ function subscript(onoff:boolean)
   checkforcecsp()
 }
 
-function setdpi(f:number)
+function setdpi(f:string)
 {
   switch(f)
   {
@@ -1138,11 +1138,11 @@ function dbgchar(ascii:number)
   dbg(out)
 }
 
-function output(val:number)
+function output(ch: string)
 {
   prerender()
 
-  const ascii = val & 0x7f
+  const ascii = ch.charCodeAt(0) & 0x7f
   dbgchar(ascii)
 
   if (ascii >= 0x20)
@@ -1189,7 +1189,7 @@ function reset()
   setdpi(DPI.F12CPI)
 
   // black
-  setcolor(48)
+  setcolor("0")
   setswitches( 0xff, 0xff, "Z" )
   // defaults
   setswitches( 0x50, 0x24, "D" )
@@ -1197,48 +1197,48 @@ function reset()
   setinitialtabstops()
 }
 
-function setcolor(c:number)
+function setcolor(c:string)
 {
   dbg("setcolor: " + c )
   switch (c)
   {
-    case 48: // black`
+    case "0": // black`
       _ctx.fillStyle = "#000000"
       _ctx.strokeStyle = "#000000"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 1.0
       break
-    case 49: // yellow`
+    case "1": // yellow`
       _ctx.fillStyle = "#faf947"
       _ctx.strokeStyle = "#faf947"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
-    case 50: // magenta`
+    case "2": // magenta`
       _ctx.fillStyle = "#ff61d9"
       _ctx.strokeStyle = "#ff61d9"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
-    case 51: // cyan`
+    case "3": // cyan`
       _ctx.fillStyle = "#009ed0"
       _ctx.strokeStyle = "#009ed0"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
-    case 52: // orange
+    case "4": // orange
       _ctx.fillStyle = "#ee7c00"
       _ctx.strokeStyle = "#ee7c00"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
-    case 53: // green
+    case "5": // green
       _ctx.fillStyle = "#218521"
       _ctx.strokeStyle = "#218521"
       _ctx.globalCompositeOperation = "source-over"
       _ctx.globalAlpha = 0.5
       break
-    case 54: // purple
+    case "6": // purple
       _ctx.fillStyle = "#552c8d"
       _ctx.strokeStyle = "#552c8d"
       _ctx.globalCompositeOperation = "source-over"
@@ -1418,7 +1418,7 @@ const state =
   cur: 0,
 }
 
-const handleOuterCommand = (ch: number) => {
+const handleOuterCommand = (ch: string) => {
   let isOutput = false
   switch(ch)
   {
@@ -1468,228 +1468,230 @@ const handleOuterCommand = (ch: number) => {
 }
 
 
-const handleCommand = (ch: number) => {
+const handleCommand = (ch: string) => {
   const isOutput = false
   let newState = state.OUTER
   switch(ch)
   {
-    case 27:
+    case "\x1B":  // ESC
       command = []
       newState = state.TABSTOP
       break
 
-    case 48:  // clear all tabs
+    case "0":  // clear all tabs
       cleartabs()
       break
 
-    case 40:
+    case "(":
       command = []
       newState = state.SETTABS
       // clears all tabs to start
       cleartabs()
       break
 
-    case 41:
+    case ")":
       command = []
       newState = state.CLEARTABS
       break
 
-    case 39:
+    case "'":
+      usecustomfont(true)
+      break
       usecustomfont(true)
       break
 
-    case 42:
+    case "*":
       usecustomfonthi(true)
       break
 
-    case 45:
+    case "-":
       setcustomfontwidth(8)
       break
 
-    case 43:
+    case "+":
       setcustomfontwidth(16)
       break
 
-    case 36:
+    case "$":
       mapmousetext(false)
       usecustomfonthi(false)
       break
 
-    case 71:
-    case 83:
+    case "G":
+    case "S":
       command = []
       newState = state.GFXN
       break
 
-    case 103:
+    case "g":
       command = []
       newState = state.GFX8N
       break
 
-    case 86:
+    case "V":
       command = []
       newState = state.GFXRN
       break
 
-    case 70:
+    case "F":
       command = []
       newState = state.HPOS
       break
 
-    case 72:
+    case "H":
       command = []
       newState = state.PLENGTH
       break
 
-    case 76:
+    case "L":
       command = []
       newState = state.LMARGIN
       break
 
-    case 90:
+    case "Z":
       newState = state.EZ0
       break
 
-    case 68:
+    case "D":
       command = []
       newState = state.ED0
       break
 
-    case 99:
+    case "c":
       reset()
       break
 
-    case 75:
+    case "K":
       newState = state.COLOR
       break
 
-    case 82:
+    case "R":
       command = []
       newState = state.RCHAR
       break
 
-    case 84:
+    case "T":
       command = []
       newState = state.CHEIGHT
       break
 
-    case 65: // 6 lines per inch
+    case "A": // 6 lines per inch
       _nlfSpacing = 24
       dbg("nlfSpacing: " + _nlfSpacing)
       break
-    case 66: // 8 lines per inch
+    case "B": // 8 lines per inch
       _nlfSpacing = 18
       dbg("nlfSpacing: " + _nlfSpacing)
       break
 
-    case 102: // forward linefeed
+    case "f": // forward linefeed
       _lfSpacing = Math.abs(_lfSpacing)
       dbg("fw lf")
       break
 
-    case 114: // reverse linefeed
+    case "r": // reverse linefeed
       _lfSpacing = -Math.abs(_lfSpacing)
       dbg("rev lf")
       break
 
-    case 79:  // paper out sensor off
-    case 111: // paper out sensor on
+    case "O":  // paper out sensor off
+    case "o": // paper out sensor on
       break
 
-    case 62:  // set unidirectional print
+    case ">":  // set unidirectional print
       setunidirectional(true)
       break
 
-    case 60:  // set bidirectional print
+    case "<":  // set bidirectional print
       setunidirectional(false)
       break
 
-    case 33:
+    case "!":
       bold(true)
       break
-    case 34:
+    case "\\":
       bold(false)
       break
 
-    case 88:
+    case "X":
       underline(true)
       break
-    case 89:
+    case "Y":
       underline(false)
       break
 
-    case 119:
+    case "w":
       halfheight(true)
       break
-    case 87:
+    case "W":
       halfheight(false)
       break
 
-    case 120:
+    case "x":
       superscript(true)
       break
-    case 121:
+    case "y":
       subscript(true)
       break
-    case 122:
+    case "z":
       subscript(false)
       superscript(false)
       break
 
-    case 49:  // insert N dots (1-6) for proportional
-    case 50:
-    case 51:
-    case 52:
-    case 53:
-    case 54:
+    case "1":  // insert N dots (1-6) for proportional
+    case "2":
+    case "3":
+    case "4":
+    case "5":
+    case "6":
       if (_usePropFont)
-        incx(ch-48) // 49 = 1
+        incx(ch.charCodeAt(0)-48) // 49 = 1
       break
 
-    case 115:
+    case "s":
       newState = state.SETPROPSPACING
       break
 
-    case 73:
+    case "I":
       dbg("begin load custom font")
       newState = state.LOADCUSTOM
       customdata = []
       break
 
-    case 108:
+    case "l":
       newState = state.CRLF
       break
 
-    case 118:
+    case "v":
       _tof = _py
       break
 
-    case 38:
+    case "&":
       mapmousetext(true)
       break
 
-    case 97:
+    case "a":
       newState = state.PRINTQUALITY
       break
-    case 109:
+    case "m":
       setprintquality(0)
       break
-    case 77:
+    case "M":
       setprintquality(1)
       break
 
-    case 63:
+    case "?":
       sendidstring()
       break
 
-    case 110:
-    case 78:
-    case 69:
-    case 112:
-    case 80:
-    case 101:
-    case 113:
-    case 81:
+    case "n":
+    case "N":
+    case "E":
+    case "p":
+    case "P":
+    case "e":
+    case "q":
+    case "Q":
       setdpi(ch)
       break
 
@@ -1704,7 +1706,7 @@ const handleCommand = (ch: number) => {
 
 function parseChar(raw:number)
 {
-  const ch = raw & _ignoreBit8
+  const ch = String.fromCharCode(raw & _ignoreBit8)
   let isOutput = false
 
   switch( state.cur )
@@ -1722,9 +1724,9 @@ function parseChar(raw:number)
         const cmd = command[0] + command[1] + command[2]
         settabstop(parseInt(cmd))
 
-        if (ch === 46) // period, ends sequence
+        if (ch === ".") // period, ends sequence
           state.cur = state.OUTER
-        else if (ch === 44) // comma continues
+        else if (ch === ",") // comma continues
         {
           command = []
         }
@@ -1735,13 +1737,13 @@ function parseChar(raw:number)
         }
       }
       else
-        command.push(String.fromCharCode(ch))
+        command.push(ch)
 
       break
 
     case state.TABSTOP:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 3)
       {
         state.cur = state.OUTER
@@ -1757,9 +1759,9 @@ function parseChar(raw:number)
         const cmd = command[0] + command[1] + command[2]
         cleartabstop(parseInt(cmd))
 
-        if (ch === 46) // period, ends sequence
+        if (ch === ".") // period, ends sequence
           state.cur = state.OUTER
-        else if (ch === 44) // comma continues
+        else if (ch === ",") // comma continues
         {
           command = []
         }
@@ -1770,13 +1772,13 @@ function parseChar(raw:number)
         }
       }
       else
-        command.push(String.fromCharCode(ch))
+        command.push(ch)
 
       break
 
     case state.GFXN:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if (command.length === 4)
       {
         setxscale(SCALE.GFX)
@@ -1791,7 +1793,7 @@ function parseChar(raw:number)
 
     case state.GFX8N:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if (command.length === 3)
       {
         setxscale(SCALE.GFX)
@@ -1805,7 +1807,7 @@ function parseChar(raw:number)
       break
 
     case state.GFX:
-      gfx(ch)
+      gfx(ch.charCodeAt(0))
       isOutput = true
       _gfxchars--
       if(_gfxchars === 0)
@@ -1823,7 +1825,7 @@ function parseChar(raw:number)
 
     case state.GFXRN:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 4)
       {
         state.cur = state.GFXR
@@ -1839,7 +1841,7 @@ function parseChar(raw:number)
       setxscale(SCALE.GFX)
       while(_gfxchars--)
       {
-        gfx(ch)
+        gfx(ch.charCodeAt(0))
       }
       isOutput = true
       state.cur = state.OUTER
@@ -1849,7 +1851,7 @@ function parseChar(raw:number)
 
     case state.HPOS:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 4)
       {
         setxscale(SCALE.GFX)
@@ -1863,7 +1865,7 @@ function parseChar(raw:number)
 
     case state.RCHARN:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 3)
       {
         state.cur = state.RCHAR
@@ -1883,7 +1885,7 @@ function parseChar(raw:number)
 
     case state.PRINTQUALITY:
       state.cur = state.OUTER
-      setprintquality(ch-48)
+      setprintquality(ch.charCodeAt(0)-48)
       break
 
     case state.LOADCUSTOM:
@@ -1933,8 +1935,7 @@ function parseChar(raw:number)
     case state.FEEDLINES: {
       state.cur = state.OUTER
       const count = "0123456789:;<=>?"
-      const cf = String.fromCharCode(ch)
-      const nl = count.indexOf(cf)
+      const nl = count.indexOf(ch)
       if (nl > 0) {
         linefeed(nl)
         isOutput = true
@@ -1944,7 +1945,7 @@ function parseChar(raw:number)
 
     case state.LMARGIN:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 3)
       {
         state.cur = state.OUTER
@@ -1955,7 +1956,7 @@ function parseChar(raw:number)
 
     case state.PLENGTH:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 4)
       {
         state.cur = state.OUTER
@@ -1966,7 +1967,7 @@ function parseChar(raw:number)
 
     case state.CHEIGHT:
       // expect 2 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 2)
       {
         state.cur = state.OUTER
@@ -1978,17 +1979,17 @@ function parseChar(raw:number)
 
     case state.SETPROPSPACING:
       state.cur = state.OUTER
-      setpropspacing(ch-48) // 48 == ascii 0
+      setpropspacing(ch.charCodeAt(0)-48) // 48 == ascii 0
       break
 
     case state.CRLF:
       state.cur = state.OUTER
       switch(ch)
       {
-        case 49:
+        case "1":
           autocr(false)
           break
-        case 48:
+        case "0":
           autocr(true)
           break
       }
@@ -2006,7 +2007,7 @@ function parseChar(raw:number)
 
     case state.EZ1:
       state.cur = state.OUTER
-      setswitches(command[0], ch, "Z")
+      setswitches(command[0], ch.charCodeAt(0), "Z")
       break
 
     case state.ED0:
@@ -2016,7 +2017,7 @@ function parseChar(raw:number)
 
     case state.ED1:
       state.cur = state.OUTER
-      setswitches(command[0], ch, "D")
+      setswitches(command[0], ch.charCodeAt(0), "D")
       break
 
     default:
