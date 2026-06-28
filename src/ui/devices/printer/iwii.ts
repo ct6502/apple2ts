@@ -39,6 +39,7 @@ export interface Printer {
   dataLength: number;
   hasData(): boolean;
   reprint(): void;
+  getPages(): string[];
 }
 
 const BUFFER_CHUNK_SIZE = 16384 // 16K
@@ -188,14 +189,14 @@ export const ImageWriterII : Printer = {
         setTimeout(() => {
           iframe.contentWindow?.focus()
           iframe.contentWindow?.print()
-          setTimeout(() => document.body.removeChild(iframe), 1000)
+          setTimeout(() => document.body.removeChild(iframe), 2000)
         }, 500)
       } else {
         // Chrome/Firefox work better with onload event
         iframe.onload = () => {
           iframe.contentWindow?.focus()
           iframe.contentWindow?.print()
-          setTimeout(() => document.body.removeChild(iframe), 1000)
+          setTimeout(() => document.body.removeChild(iframe), 2000)
         }
       }
     }
@@ -204,6 +205,10 @@ export const ImageWriterII : Printer = {
   formfeed: () => {
     formFeed()
     prerender() // to clear the screen
+  },
+
+  getPages: () => {
+    return _pages
   },
 }
 
@@ -272,8 +277,8 @@ let _pages: any[] = []
 let _renders = 0
 let _px = _lm
 let _py = _tof
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let command: any = []
+ 
+let command: Array<string> = []
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let customdata: any = []
 
@@ -1200,54 +1205,24 @@ function reset()
 function setcolor(c:string)
 {
   dbg("setcolor: " + c )
-  switch (c)
-  {
-    case "0": // black`
-      _ctx.fillStyle = "#000000"
-      _ctx.strokeStyle = "#000000"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 1.0
-      break
-    case "1": // yellow`
-      _ctx.fillStyle = "#faf947"
-      _ctx.strokeStyle = "#faf947"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case "2": // magenta`
-      _ctx.fillStyle = "#ff61d9"
-      _ctx.strokeStyle = "#ff61d9"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case "3": // cyan`
-      _ctx.fillStyle = "#009ed0"
-      _ctx.strokeStyle = "#009ed0"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case "4": // orange
-      _ctx.fillStyle = "#ee7c00"
-      _ctx.strokeStyle = "#ee7c00"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case "5": // green
-      _ctx.fillStyle = "#218521"
-      _ctx.strokeStyle = "#218521"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case "6": // purple
-      _ctx.fillStyle = "#552c8d"
-      _ctx.strokeStyle = "#552c8d"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    default:
-      log("invalid color: " + c )
-      break
+  const penColors = [
+    "#000000",
+    "#FFFF00",
+    "#DD0000",
+    "#0000CC",
+    "#FF6600",
+    "#009900",
+    "#990099"
+  ]
+
+  const cnum = parseInt(c)
+  if (cnum < 0 || cnum > 6) {
+    log("invalid color: " + c )
+    return
   }
+  _ctx.fillStyle = penColors[cnum]
+  _ctx.strokeStyle = _ctx.fillStyle
+  _ctx.globalCompositeOperation = "source-over"
 }
 
 const drawDot = (x:number, y:number, vdpi = 2) =>
@@ -1273,6 +1248,7 @@ function gfx(ch:number)
     }
   }
 
+  _ctx.globalAlpha = 0.5
   for(let i=0;i<doubleLoop;i++)
   {
     let x = i*2
@@ -1282,6 +1258,7 @@ function gfx(ch:number)
       fgfx(ch,x)
     }
   }
+  _ctx.globalAlpha = 1.0
 
   incx(doubleLoop)
 }
@@ -1609,7 +1586,7 @@ const handleCommand = (ch: string) => {
     case "!":
       bold(true)
       break
-    case "\\":
+    case "\"":
       bold(false)
       break
 
@@ -2007,7 +1984,7 @@ function parseChar(raw:number)
 
     case state.EZ1:
       state.cur = state.OUTER
-      setswitches(command[0], ch.charCodeAt(0), "Z")
+      setswitches(command[0].charCodeAt(0), ch.charCodeAt(0), "Z")
       break
 
     case state.ED0:
@@ -2017,7 +1994,7 @@ function parseChar(raw:number)
 
     case state.ED1:
       state.cur = state.OUTER
-      setswitches(command[0], ch.charCodeAt(0), "D")
+      setswitches(command[0].charCodeAt(0), ch.charCodeAt(0), "D")
       break
 
     default:
