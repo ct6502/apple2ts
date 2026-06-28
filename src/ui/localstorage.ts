@@ -161,6 +161,14 @@ export const setPreferenceDebugTabLeftWidth = (width: number) => {
   }
 }
 
+export const setPreferencePrinterDialogPosition = (position: { x: number, y: number }) => {
+  if (position.x === -1 && position.y === -1) {
+    localStorage.removeItem("printerDialogPosition")
+  } else {
+    localStorage.setItem("printerDialogPosition", JSON.stringify(position))
+  }
+}
+
 const gameDataDrive = "GAME_DATA-DRIVE"
 const gameDataData = "GAME_DATA-DATA"
 
@@ -397,6 +405,19 @@ export const getPreferenceDebugTabLeftWidth = (): number => {
     }
   }
   return value
+}
+
+export const getPreferencePrinterDialogPosition = (): { x: number, y: number } => {
+  let position = { x: -1, y: -1 }
+  const item = localStorage.getItem("printerDialogPosition")
+  if (item) {
+    try {
+      position = JSON.parse(item)
+    } catch {
+      localStorage.removeItem("printerDialogPosition")
+    }
+  }
+  return position
 }
 
 export const getPreferenceTraceSettings = (): TraceSettings => {
