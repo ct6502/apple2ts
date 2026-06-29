@@ -1075,76 +1075,33 @@ const createLauncherBinary = () => {
 
 const ALIAS_SHIM_LOAD_ADDRESS = 0x6000
 
-const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
-  const origVectorOffset = 0x170
-  const runtimeOffset = 0x180
-  const debugExecMarkerOffset = 0x38D
-  const debugInstallMarkerOffset = 0x38E
-  const debugCounterOffset = 0x38F
-  const debugPrefixCounterOffset = 0x390
-  const debugAbsPathOffset = 0x391
-  const debugParamPtrOffset = 0x392
-  const debugPathnamePtrOffset = 0x393
-  const debugPathnameCharOffset = 0x394
-  const debugAbsMatchOffset = 0x395
-  const debugWriteProbeOffset = 0x396
+// Resident MLI hook layout.
+//
+// The previous implementation kept the runtime hook at $6180 in main RAM. Any
+// program loaded with BRUN at a fixed address (e.g. Robotron, $2DFD-$8FFC) would
+// overwrite it, so the next MLI call after the load jumped into garbage and crashed.
+//
+// To survive arbitrary program loads, the resident runtime ("body") now lives in
+// language-card bank 1 ($D000-$DFFF). ProDOS runs from bank 2 + $E000-$FFFF and does
+// not use bank 1's $DA00-$DBFF, and the language card is never a program-load target.
+// A tiny dispatcher ("trampoline") sits in an unused hole of the ProDOS global page
+// ($BF72-$BF8C), which is always readable and is also never a program-load target.
+// $BF00's MLI JMP vector is patched to point at the trampoline.
+const ALIAS_BODY_ADDRESS = 0xDA00     // resident runtime, LC bank 1 ($DA00-$DBFF free)
+// $BF74-$BF8C is an unused run in the ProDOS global page that survives program loads.
+// (The adjacent odd bytes $BF71/$BF73 and $BF8D are used as scratch by ProDOS/DOS.MASTER,
+// so the dispatcher is kept clear of them.)
+const ALIAS_TRAMP_ADDRESS = 0xBF74    // dispatcher, ProDOS global-page hole
+const ALIAS_ORIGVEC_ADDRESS = 0xBF80  // 2-byte saved original $BF01/$BF02 (same hole)
 
-  const origVectorAddr = loadAddress + origVectorOffset
-  const runtimeLo = (loadAddress + runtimeOffset) & 0xFF
-  const runtimeHi = ((loadAddress + runtimeOffset) >> 8) & 0xFF
-  const debugExecMarkerAddr = loadAddress + debugExecMarkerOffset
-  const debugInstallMarkerAddr = loadAddress + debugInstallMarkerOffset
-  const debugCounterAddr = loadAddress + debugCounterOffset
-  const debugPrefixCounterAddr = loadAddress + debugPrefixCounterOffset
-  const debugAbsPathAddr = loadAddress + debugAbsPathOffset
-  const debugParamPtrAddr = loadAddress + debugParamPtrOffset
-  const debugPathnamePtrAddr = loadAddress + debugPathnamePtrOffset
-  const debugPathnameCharAddr = loadAddress + debugPathnameCharOffset
-  const debugAbsMatchAddr = loadAddress + debugAbsMatchOffset
-  const debugWriteProbeAddr = loadAddress + debugWriteProbeOffset
-
+// Builds the resident runtime that rewrites absolute SET_PREFIX paths in-place to be
+// rooted at /APPLE2TS. Assembled to execute at `base` (LC bank 1) and entered via
+// "JSR body" from the trampoline, returning with RTS. It only reads/writes main RAM
+// (zero page $06-$0B and the caller's path buffer) and never calls ROM, so it runs
+// correctly while the language card is switched to read bank-1 RAM.
+const buildAliasBody = (base: number): Uint8Array => {
   const code: number[] = []
   const emit = (...bytes: number[]) => code.push(...bytes)
-
-  // Mark installer entry.
-  emit(0xA9, 0xA1)
-  emit(0x8D, debugExecMarkerAddr & 0xFF, (debugExecMarkerAddr >> 8) & 0xFF)
-  emit(0xA9, 0x01)
-  emit(0x8D, debugInstallMarkerAddr & 0xFF, (debugInstallMarkerAddr >> 8) & 0xFF)
-
-  // Idempotency check against BF01/BF02 target.
-  emit(0xAD, 0x01, 0xBF) // LDA $BF01
-  emit(0xC9, runtimeLo)  // CMP #runtimeLo
-  emit(0xD0, 0x07)       // BNE install
-  emit(0xAD, 0x02, 0xBF) // LDA $BF02
-  emit(0xC9, runtimeHi)  // CMP #runtimeHi
-  emit(0xF0, 0x14)       // BEQ done
-
-  // Save original BF01/BF02 target and patch to runtime.
-  emit(0xAD, 0x01, 0xBF)
-  emit(0x8D, origVectorAddr & 0xFF, (origVectorAddr >> 8) & 0xFF)
-  emit(0xAD, 0x02, 0xBF)
-  emit(0x8D, (origVectorAddr + 1) & 0xFF, ((origVectorAddr + 1) >> 8) & 0xFF)
-  emit(0xA9, runtimeLo)
-  emit(0x8D, 0x01, 0xBF)
-  emit(0xA9, runtimeHi)
-  emit(0x8D, 0x02, 0xBF)
-  emit(0xA9, 0x02)
-  emit(0x8D, debugInstallMarkerAddr & 0xFF, (debugInstallMarkerAddr >> 8) & 0xFF)
-
-  // done
-  emit(0x60)
-
-  if (code.length > runtimeOffset) {
-    throw new Error(`A2TSALIAS installer too large for runtime slot: ${code.length}`)
-  }
-  while (code.length < runtimeOffset) emit(0xEA)
-
-  // Runtime: rewrite absolute SET_PREFIX paths in-place.
-  // 25487 = every entry, 25488 = SET_PREFIX, 25489 = in SET_PREFIX branch,
-  // 25490 = param pointer read, 25491 = pathname pointer read,
-  // 25492 = pathname[1] read, 25493 = pathname[1] == '/', 25494 = rewrite applied
-  emit(0xEE, debugCounterAddr & 0xFF, (debugCounterAddr >> 8) & 0xFF) // INC 25487
 
   // Save state: 9 pushes (A, X, Y, $06-$0B)
   emit(0x48)                              // PHA (A)
@@ -1157,12 +1114,14 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   emit(0xA5, 0x0A); emit(0x48)            // LDA $0A, PHA
   emit(0xA5, 0x0B); emit(0x48)            // LDA $0B, PHA
 
-  // 9 pushes → stack offset = $0101 + 9 = $010A/$010B
+  // The body is reached via "JSR body" from the trampoline, so the MLI caller's
+  // return address (pointing at the inline SET_PREFIX parameters) is 2 bytes deeper
+  // than for a direct entry: 9 register pushes + 2-byte JSR return = $010C/$010D.
   emit(0xBA)                              // TSX
-  emit(0xBD, 0x0A, 0x01)                 // LDA $010A,X (return addr lo)
+  emit(0xBD, 0x0C, 0x01)                 // LDA $010C,X (return addr lo)
   emit(0x18); emit(0x69, 0x01)            // CLC, ADC #1
   emit(0x85, 0x06)                        // STA $06 (cmd ptr lo)
-  emit(0xBD, 0x0B, 0x01)                 // LDA $010B,X (return addr hi)
+  emit(0xBD, 0x0D, 0x01)                 // LDA $010D,X (return addr hi)
   emit(0x69, 0x00)                        // ADC #0
   emit(0x85, 0x07)                        // STA $07 (cmd ptr hi)
 
@@ -1174,22 +1133,13 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   emit(0x4C, 0x00, 0x00)                  // JMP restore (patched later)
 
   // --- SET_PREFIX detected ---
-  emit(0xEE, debugPrefixCounterAddr & 0xFF, (debugPrefixCounterAddr >> 8) & 0xFF) // INC 25488
-  emit(0xEE, debugAbsPathAddr & 0xFF, (debugAbsPathAddr >> 8) & 0xFF) // INC 25489 (branch reached)
-
   // Read param block ptr: cmd+1=lo, cmd+2=hi → $08/$09
   emit(0xA0, 0x01); emit(0xB1, 0x06); emit(0x85, 0x08)
   emit(0xA0, 0x02); emit(0xB1, 0x06); emit(0x85, 0x09)
 
-  // Mark successful param pointer read.
-  emit(0xEE, debugParamPtrAddr & 0xFF, (debugParamPtrAddr >> 8) & 0xFF) // INC 25490
-
   // Read pathname ptr from param block offset 1(lo), 2(hi) → $0A/$0B
   emit(0xA0, 0x01); emit(0xB1, 0x08); emit(0x85, 0x0A)
   emit(0xA0, 0x02); emit(0xB1, 0x08); emit(0x85, 0x0B)
-
-  // Mark successful pathname pointer read.
-  emit(0xEE, debugPathnamePtrAddr & 0xFF, (debugPathnamePtrAddr >> 8) & 0xFF) // INC 25491
 
   // Guard: empty path has no leading character, so pass through unchanged.
   emit(0xA0, 0x00); emit(0xB1, 0x0A) // LDY #0, LDA ($0A),Y (path length)
@@ -1200,15 +1150,11 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   // Read first pathname character (offset 1; offset 0 is length).
   emit(0xA0, 0x01); emit(0xB1, 0x0A) // LDY #1, LDA ($0A),Y
 
-  // Mark successful pathname byte read.
-  emit(0xEE, debugPathnameCharAddr & 0xFF, (debugPathnameCharAddr >> 8) & 0xFF) // INC 25492
-
   // Check absolute path indicator: '/'
   emit(0xC9, 0x2F) // CMP #'/'
   emit(0xF0, 0x03) // BEQ +3 (skip JMP)
   const jmp2pos = code.length
   emit(0x4C, 0x00, 0x00) // JMP restore (patched later)
-  emit(0xEE, debugAbsMatchAddr & 0xFF, (debugAbsMatchAddr >> 8) & 0xFF) // INC 25493
 
   // If already rooted at /APPLE2TS or /APPLE2TS/, pass through unchanged.
   // This avoids double-prefixing when callers canonicalize relative paths.
@@ -1284,7 +1230,7 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   const jmpAlreadyPrefixedRestoreSlashPos = code.length
   emit(0x4C, 0x00, 0x00) // JMP restore
 
-  const alreadyPrefixedContinueAddr = loadAddress + code.length
+  const alreadyPrefixedContinueAddr = base + code.length
 
   // Length guard: if original length >= 55, adding 9 chars would exceed ProDOS max 63.
   emit(0xA0, 0x00); emit(0xB1, 0x0A) // LDY #0, LDA ($0A),Y (orig len)
@@ -1300,7 +1246,7 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
 
   // Shift bytes [2..orig_len] right by 9 positions, from end to start.
   // Preserve the loaded source byte across index math so A is not clobbered.
-  const shiftLoopAddr = loadAddress + code.length
+  const shiftLoopAddr = base + code.length
   emit(0xE0, 0x01) // CPX #1
   emit(0xF0, 0x11) // BEQ done_shift
   emit(0x8A) // TXA
@@ -1327,11 +1273,8 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   emit(0xA9, 0x53); emit(0x91, 0x0A); emit(0xC8) // 'S'
   emit(0xA9, 0x2F); emit(0x91, 0x0A)             // '/'
 
-  // Mark rewrite applied.
-  emit(0xEE, debugWriteProbeAddr & 0xFF, (debugWriteProbeAddr >> 8) & 0xFF) // INC 25494
-
   // --- restore ---  (patch JMP placeholders)
-  const restoreAddr = loadAddress + code.length
+  const restoreAddr = base + code.length
   code[jmp1pos + 1] = restoreAddr & 0xFF; code[jmp1pos + 2] = (restoreAddr >> 8) & 0xFF
   code[jmpNoLeadingCharPos + 1] = restoreAddr & 0xFF; code[jmpNoLeadingCharPos + 2] = (restoreAddr >> 8) & 0xFF
   code[jmp2pos + 1] = restoreAddr & 0xFF; code[jmp2pos + 2] = (restoreAddr >> 8) & 0xFF
@@ -1349,7 +1292,7 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   code[jmpAlreadyPrefixedCont7Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont7Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
   code[jmpAlreadyPrefixedCont8Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont8Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
   code[jmpAlreadyPrefixedCont9Pos + 1] = alreadyPrefixedContinueAddr & 0xFF; code[jmpAlreadyPrefixedCont9Pos + 2] = (alreadyPrefixedContinueAddr >> 8) & 0xFF
-  code[jmpAlreadyPrefixedCheckSlashPos + 1] = (jmpAlreadyPrefixedRestoreLen9Pos + 3 + loadAddress) & 0xFF; code[jmpAlreadyPrefixedCheckSlashPos + 2] = ((jmpAlreadyPrefixedRestoreLen9Pos + 3 + loadAddress) >> 8) & 0xFF
+  code[jmpAlreadyPrefixedCheckSlashPos + 1] = (jmpAlreadyPrefixedRestoreLen9Pos + 3 + base) & 0xFF; code[jmpAlreadyPrefixedCheckSlashPos + 2] = ((jmpAlreadyPrefixedRestoreLen9Pos + 3 + base) >> 8) & 0xFF
 
   // Unwind in reverse push order ($0B first, A last)
   emit(0x68); emit(0x85, 0x0B)           // PLA → $0B
@@ -1361,12 +1304,128 @@ const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
   emit(0x68); emit(0xA8)                 // PLA → TAY
   emit(0x68); emit(0xAA)                 // PLA → TAX
   emit(0x68)                             // PLA (restore A)
-  emit(0x6C, origVectorAddr & 0xFF, (origVectorAddr >> 8) & 0xFF) // JMP (origVector)
-
-  // Pad
-  while (code.length <= 0x3FF) emit(0x00)
+  emit(0x60)                             // RTS (return to trampoline)
 
   return new Uint8Array(code)
+}
+
+// Builds the trampoline that $BF00 jumps to. It runs in the global page (main RAM,
+// always readable). It switches the language card to read bank 1 so the body is
+// visible, calls it, restores ROM read state, then chains to the real MLI.
+//
+// Restoring to "read ROM" is correct for every MLI caller in the exported volume
+// (BASIC.SYSTEM, the Applesoft menu, and imported .SYSTEM programs all invoke the
+// MLI with ROM enabled), matching the state the real MLI would otherwise restore.
+const buildAliasTramp = (bodyBase: number, origVecAddr: number): Uint8Array => {
+  return new Uint8Array([
+    0x2C, 0x88, 0xC0,                                   // BIT $C088  (read RAM bank 1)
+    0x20, bodyBase & 0xFF, (bodyBase >> 8) & 0xFF,      // JSR body
+    0x2C, 0x82, 0xC0,                                   // BIT $C082  (read ROM)
+    0x6C, origVecAddr & 0xFF, (origVecAddr >> 8) & 0xFF // JMP (origVector)
+  ])
+}
+
+// Builds the one-shot installer (BRUN at $6000 from STARTUP). It copies the body
+// into LC bank 1 and the trampoline into the global page, saves the original MLI
+// vector, and patches $BF00's vector to the trampoline. `bodySrc`/`trampSrc` are the
+// absolute main-RAM addresses where the embedded body/tramp data follow the installer.
+const buildAliasInstaller = (
+  bodySrc: number,
+  trampSrc: number,
+  bodyBase: number,
+  trampBase: number,
+  origVecAddr: number,
+  bodyLen: number,
+  trampLen: number,
+): Uint8Array => {
+  const code: number[] = []
+  const emit = (...bytes: number[]) => code.push(...bytes)
+  const lo = (a: number) => a & 0xFF
+  const hi = (a: number) => (a >> 8) & 0xFF
+
+  // Idempotency: if $BF01/$BF02 already point at the trampoline, do nothing.
+  emit(0xAD, 0x01, 0xBF)        // LDA $BF01
+  emit(0xC9, lo(trampBase))     // CMP #trampLo
+  emit(0xD0, 0x08)              // BNE install
+  emit(0xAD, 0x02, 0xBF)        // LDA $BF02
+  emit(0xC9, hi(trampBase))     // CMP #trampHi
+  emit(0xD0, 0x01)              // BNE install
+  emit(0x60)                    // RTS (already installed)
+
+  // install:
+  // Save original MLI vector ($BF01/$BF02) → origVec slot.
+  emit(0xAD, 0x01, 0xBF); emit(0x8D, lo(origVecAddr), hi(origVecAddr))
+  emit(0xAD, 0x02, 0xBF); emit(0x8D, lo(origVecAddr + 1), hi(origVecAddr + 1))
+
+  // Copy trampoline (< 256 bytes) → global page, descending Y index.
+  emit(0xA0, trampLen - 1)                         // LDY #trampLen-1
+  const tloop = code.length
+  emit(0xB9, lo(trampSrc), hi(trampSrc))           // LDA trampSrc,Y
+  emit(0x99, lo(trampBase), hi(trampBase))         // STA trampBase,Y
+  emit(0x88)                                       // DEY
+  emit(0x10, (tloop - (code.length + 2)) & 0xFF)   // BPL tloop
+
+  // Copy body → LC bank 1. $C089 read twice = read ROM + write-enable bank 1, so we
+  // can write bank-1 RAM without disturbing the ROM read state.
+  emit(0xAD, 0x89, 0xC0)        // LDA $C089
+  emit(0xAD, 0x89, 0xC0)        // LDA $C089
+  emit(0xA9, lo(bodySrc)); emit(0x85, 0x06)        // src ptr → $06/$07
+  emit(0xA9, hi(bodySrc)); emit(0x85, 0x07)
+  emit(0xA9, lo(bodyBase)); emit(0x85, 0x08)       // dst ptr → $08/$09
+  emit(0xA9, hi(bodyBase)); emit(0x85, 0x09)
+  emit(0xA9, lo(bodyLen)); emit(0x85, 0x0A)        // remaining count → $0A/$0B
+  emit(0xA9, hi(bodyLen)); emit(0x85, 0x0B)
+  emit(0xA0, 0x00)                                 // LDY #0
+  const bloop = code.length
+  emit(0xA5, 0x0A); emit(0x05, 0x0B)               // LDA $0A; ORA $0B
+  const bdoneBranchPos = code.length
+  emit(0xF0, 0x00)                                 // BEQ bdone (patched)
+  emit(0xB1, 0x06)                                 // LDA ($06),Y
+  emit(0x91, 0x08)                                 // STA ($08),Y
+  emit(0xE6, 0x06); emit(0xD0, 0x02); emit(0xE6, 0x07) // INC $06; BNE +2; INC $07
+  emit(0xE6, 0x08); emit(0xD0, 0x02); emit(0xE6, 0x09) // INC $08; BNE +2; INC $09
+  emit(0xA5, 0x0A); emit(0xD0, 0x02); emit(0xC6, 0x0B) // LDA $0A; BNE +2; DEC $0B
+  emit(0xC6, 0x0A)                                 // DEC $0A
+  emit(0x4C, lo(ALIAS_SHIM_LOAD_ADDRESS + bloop), hi(ALIAS_SHIM_LOAD_ADDRESS + bloop)) // JMP bloop
+  // bdone:
+  code[bdoneBranchPos + 1] = (code.length - (bdoneBranchPos + 2)) & 0xFF
+  emit(0x2C, 0x82, 0xC0)        // BIT $C082 (read ROM, write protect)
+
+  // Patch $BF00's MLI vector to the trampoline.
+  emit(0xA9, lo(trampBase)); emit(0x8D, 0x01, 0xBF)
+  emit(0xA9, hi(trampBase)); emit(0x8D, 0x02, 0xBF)
+  emit(0x60)                    // RTS
+
+  return new Uint8Array(code)
+}
+
+const createAliasShimBinary = (loadAddress = ALIAS_SHIM_LOAD_ADDRESS) => {
+  const bodyBase = ALIAS_BODY_ADDRESS
+  const trampBase = ALIAS_TRAMP_ADDRESS
+  const origVecAddr = ALIAS_ORIGVEC_ADDRESS
+
+  const body = buildAliasBody(bodyBase)
+  const tramp = buildAliasTramp(bodyBase, origVecAddr)
+
+  if (body.length > 0x200) {
+    throw new Error(`A2TSALIAS body too large for LC bank-1 slot: ${body.length}`)
+  }
+  if (trampBase + tramp.length - 1 > ALIAS_ORIGVEC_ADDRESS) {
+    throw new Error(`A2TSALIAS trampoline overlaps origVector slot: ${tramp.length}`)
+  }
+
+  // The installer's length is independent of the (2-/3-byte) operand values, so
+  // assemble once to measure, then again with the real embedded-data addresses.
+  const installerLen = buildAliasInstaller(0, 0, bodyBase, trampBase, origVecAddr, body.length, tramp.length).length
+  const bodySrc = loadAddress + installerLen
+  const trampSrc = bodySrc + body.length
+  const installer = buildAliasInstaller(bodySrc, trampSrc, bodyBase, trampBase, origVecAddr, body.length, tramp.length)
+
+  const out = new Uint8Array(installer.length + body.length + tramp.length)
+  out.set(installer, 0)
+  out.set(body, installer.length)
+  out.set(tramp, installer.length + body.length)
+  return out
 }
 
 /**
