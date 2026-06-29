@@ -807,16 +807,39 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
   return []
 }
 
+// In ProDOS a "system program" is any file of type $FF (SYS) loaded at $2000; the
+// ".SYSTEM" name is only a convention. Two kinds of system program cannot be launched as
+// a standalone program once a disk has been extracted into a subdirectory:
+//  - Driver installers such as *.CLOCK.SYSTEM (e.g. ProDOS 2.4.x's NS.CLOCK.SYSTEM)
+//    install a driver and then chain to the next .SYSTEM file by scanning the *boot
+//    volume root* -- verified live that they ignore both the current prefix and the
+//    $0280 pathname buffer -- so they always fail with "Unable to find next '.SYSTEM'
+//    file" when run from an imported subdirectory.
+//  - QUIT.SYSTEM is the ProDOS quit dispatcher; under the menu's ProDOS kernel it just
+//    quits to the emulator splash (a dead end), so it is never a useful launch target.
+// Skip those and launch the first remaining system program in catalog order. For
+// ProDOS 2.4.x this resolves to BITSY.BOOT, which honors the prefix and brings up the
+// authentic "Bitsy Bye" program selector for the imported subdirectory (verified live),
+// so the disk launches into a working, interactive ProDOS 2.4.x environment.
+const isNonLaunchableSystemFile = (name: string): boolean => {
+  const upper = name.toUpperCase()
+  return upper === "QUIT.SYSTEM" || upper.endsWith(".CLOCK.SYSTEM")
+}
+
 const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined => {
   // Preserve on-disk root catalog order by scanning input sequence directly.
-  // Prefer startup-eligible .SYSTEM (type $FF, aux $2000), then fallback to first .SYSTEM.
   const rootFiles = files.filter((f) => !f.relativePath)
-  const startupEligibleSystem = rootFiles.find(
-    (f) => f.name.toUpperCase().endsWith(".SYSTEM") && f.type === 0xFF && (f.auxType ?? 0) === 0x2000
-  )
-  if (startupEligibleSystem) return `-${startupEligibleSystem.name}`
 
-  const firstRootSystem = rootFiles.find((f) => f.name.toUpperCase().endsWith(".SYSTEM"))
+  // Prefer a launchable ProDOS system program (type $FF, load address $2000).
+  const systemProgram = rootFiles.find(
+    (f) => f.type === 0xFF && (f.auxType ?? 0) === 0x2000 && !isNonLaunchableSystemFile(f.name)
+  )
+  if (systemProgram) return `-${systemProgram.name}`
+
+  // Fall back to any other .SYSTEM-named file that is not a known dead end.
+  const firstRootSystem = rootFiles.find(
+    (f) => f.name.toUpperCase().endsWith(".SYSTEM") && !isNonLaunchableSystemFile(f.name)
+  )
   if (firstRootSystem) return `-${firstRootSystem.name}`
 
   const byName = new Map(rootFiles.map((f) => [f.name.toUpperCase(), f]))
