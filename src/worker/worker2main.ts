@@ -107,6 +107,10 @@ export const pass6502Instructions = (instructions: Array<PCodeInstr1>) => {
   doPostMessage(MSG_WORKER.INSTRUCTIONS, instructions)
 }
 
+export const passSerialConfig = (config: SerialConfig) => {
+  doPostMessage(MSG_WORKER.SERIAL_CONFIG_CHANGE, config)
+}
+
 // We do this weird check so we can safely run this code from the node.js
 // command line where self will be undefined.
 if (typeof self !== "undefined") {

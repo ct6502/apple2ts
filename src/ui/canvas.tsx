@@ -15,6 +15,7 @@ import {
   handleGetState6502,
   handleGetSoftSwitches,
   handleGetSpeedMode,
+  handleGetTextPage,
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
@@ -182,6 +183,30 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
+  const inKeyboardLoop = () => {
+    const s6502 = handleGetState6502()
+    const switches = handleGetSoftSwitches()
+    const isKeyboardLoop = switches.TEXT && s6502.PC >= 0xC26D && s6502.PC <= 0xC28E
+    // See if we have a square bracket ], integer basic >, or monitor * prompt,
+    // which are the three known keyboard loops. If we're not in one of those,
+    // then just treat it as a normal keypress.
+    if (!isKeyboardLoop) {
+      return false
+    }
+    const textPage = handleGetTextPage()
+    // First split into lines, dependiing upon whether we are 40 or 80 columns
+    if (textPage.length > 0) {
+      const nBytesPerLine = (textPage.length === 320 || textPage.length === 1920) ? 80 : 40
+      for (let i = 0; i < textPage.length; i += nBytesPerLine) {
+        const prompt = String.fromCharCode(textPage[i] & 0x7F)
+        if (prompt.includes("]") || prompt.includes(">") || prompt.includes("*")) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
   const handleKeyDown = (e: keyEvent) => {
     let keyHandledLocal = false
     const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
@@ -218,9 +243,7 @@ const Apple2Canvas = (props: DisplayProps) => {
       return
     }
 
-    const s6502 = handleGetState6502()
-    const switches = handleGetSoftSwitches()
-    const isKeyboardLoop = switches.TEXT && s6502.PC >= 0xC26D && s6502.PC <= 0xC28E
+    const isKeyboardLoop = inKeyboardLoop()
 
     if (e.key in arrowKeys) {
 

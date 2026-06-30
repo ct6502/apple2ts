@@ -20,6 +20,7 @@ let worker: Worker | null = null
 
 let saveStateCallback: (sState: EmulatorSaveState) => void
 let bootCallback: (() => void) | null = null
+let serialConfigCallback: ((config: SerialConfig) => void) | null = null
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
@@ -27,6 +28,10 @@ export const setMain2Worker = (workerIn: Worker) => {
 
 export const setBootCallback = (callback: () => void) => {
   bootCallback = callback
+}
+
+export const setSerialConfigCallback = (callback: (config: SerialConfig) => void) => {
+  serialConfigCallback = callback
 }
 
 const doPostMessage = (msg: MSG_MAIN, payload: MessagePayload) => {
@@ -285,7 +290,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     }
     case MSG_WORKER.SAVE_STATE: {
       const sState = e.data.payload as EmulatorSaveState
-      saveStateCallback(sState)
+      if (saveStateCallback) saveStateCallback(sState)
       break
     }
     case MSG_WORKER.CLICK:
@@ -357,6 +362,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       // This is a response to a GET_MEMORY request. Update the memory dump in the state.
       memoryResource = e.data.payload as Uint8Array
       break
+    case MSG_WORKER.SERIAL_CONFIG_CHANGE: {
+      const serialConfig = e.data.payload as SerialConfig
+      if (serialConfigCallback) serialConfigCallback(serialConfig)
+      break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break

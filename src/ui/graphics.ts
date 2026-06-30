@@ -129,8 +129,8 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
 
   // Now draw the text.
   for (let j = jstart; j < 24; j++) {
-    const yoffset = ymarginPx + (j + 1)*cheight - 3
-    const yoffsetHidden = (j + 1) * hiddenHeight - 3
+    const yoffset = ymarginPx + (j + 1)*cheight - 2
+    const yoffsetHidden = (j + 1) * hiddenHeight - 2
     const joffset = (j - jstart) * nBytesPerLine
     textPage.slice(joffset, joffset + nchars).forEach((value, i) => {
       let doInverse = (value <= 63)

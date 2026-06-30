@@ -18,7 +18,7 @@ export const changeSerialMode = (i: number) => {
   }
   else
   {
-    if (i>0)
+    if (i > 0)
       requestSerialPort()
     else
       setUseWebSerial(false)
@@ -85,10 +85,11 @@ const queueRead = () => {
 }
 
 export const receiveCommData = (data: Uint8Array) => {
-  if (useWebSerial)
+  if (useWebSerial) {
     receiveWebSerial2(data)
-  else
+  } else {
     receivePrinterData(data)
+  }
 }
 
 const receiveWebSerial2 = async (data: Uint8Array) => {

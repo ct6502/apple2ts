@@ -1,4 +1,4 @@
-import { DRIVE } from "../../../common/utility"
+import { constructAudio, DRIVE, playAudio } from "../../../common/utility"
 import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
 import "./diskinterface.css"
 
@@ -6,33 +6,6 @@ let motorAudio: AudioDevice
 let trackSeekAudio: AudioDevice
 let trackOffEndAudio: AudioDevice
 let motorIsRunning = false
-
-const constructAudio = (mp3track: string) => {
-  const audioDevice: AudioDevice = {
-    context: new AudioContext(),
-    element: new Audio(mp3track),
-    timeout: 0
-  }
-  audioDevice.element.volume = 0.5
-  const node = audioDevice.context.createMediaElementSource(audioDevice.element)
-  node.connect(audioDevice.context.destination)
-  return audioDevice
-}
-
-const playAudio = (audioDevice: AudioDevice, timeout: number) => {
-  if (isAudioEnabled() && audioDevice.context.state === "suspended") {
-    audioDevice.context.resume()
-  }
-  const playPromise = audioDevice.element.play()
-  if (playPromise) {
-    playPromise.then(() => {
-      window.clearTimeout(audioDevice.timeout)
-      audioDevice.timeout = window.setTimeout(() => audioDevice.context.suspend(), timeout)
-    }).catch(() => {
-//      console.log(error)
-    })
-  }
-}
 
 const playTrackOffEnd = () => {
   if (!trackOffEndAudio) {
@@ -43,7 +16,7 @@ const playTrackOffEnd = () => {
       if (!enable) trackOffEndAudio.context.suspend()
     })
   }
-  playAudio(trackOffEndAudio, 309)
+  if (isAudioEnabled()) playAudio(trackOffEndAudio, 309)
 }
 
 const playTrackSeek = () => {
@@ -55,7 +28,7 @@ const playTrackSeek = () => {
       if (!enable) trackSeekAudio.context.suspend()
     })
   }
-  playAudio(trackSeekAudio, 50)
+  if (isAudioEnabled()) playAudio(trackSeekAudio, 50)
 }
 
 const playMotorOn = () => {
@@ -72,7 +45,7 @@ const playMotorOn = () => {
     })
   }
   // Motor should stay on forever, but 10 minutes is plenty long.
-  playAudio(motorAudio, 600000)
+  if (isAudioEnabled()) playAudio(motorAudio, 600000)
 }
 
 const playMotorOff = () => {

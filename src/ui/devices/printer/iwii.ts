@@ -7,8 +7,8 @@ export const registerSetPrinting = (fn: () => void) => {
 }
 
 export const receivePrinterData = (data: Uint8Array) => {
-  if (doSetPrinting) doSetPrinting()
-  ImageWriterII.write(data)
+  const isOutput = ImageWriterII.write(data)
+  if (isOutput && doSetPrinting) doSetPrinting()
 }
 
 import { Font,
@@ -30,22 +30,27 @@ export interface Printer {
 
   canRead(): boolean;
   read(): Uint8Array;
-  write(data: Uint8Array): void;
+  write(data: Uint8Array): boolean;
 
-  print(): boolean;
+  print(): void;
   formfeed(): void;
 
-  incomingData: Uint8Array;
+  currentData: Uint8Array;
+  dataLength: number;
   hasData(): boolean;
   reprint(): void;
+  getPages(): string[];
 }
+
+const BUFFER_CHUNK_SIZE = 16384 // 16K
 
 export const ImageWriterII : Printer = {
   startup: (canvas) => { return initcanvas(canvas) },
   shutdown: () => {},
   reset: function() {
     this.localReset()
-    this.incomingData = new Uint8Array(0)
+    this.currentData = new Uint8Array(BUFFER_CHUNK_SIZE)
+    this.dataLength = 0
   },
 
   localReset: function() {
@@ -59,27 +64,39 @@ export const ImageWriterII : Printer = {
   canRead: () => { return false },
   read: () => { return new Uint8Array(0) },
 
-  write: function (data: Uint8Array) {
-
-    const tmp = new Uint8Array(this.incomingData.length + data.length)
-    tmp.set(this.incomingData)
-    tmp.set(data, this.incomingData.length)
-    this.incomingData = tmp
-
-    for(let i=0;i<data.length;i++) {
-      parseChar(data[i])
+  write: function (newData: Uint8Array) {
+    // Ensure buffer has enough space
+    const neededSize = this.dataLength + newData.length
+    if (neededSize > this.currentData.length) {
+      // Grow buffer by 16K chunks
+      const newSize = Math.ceil(neededSize / BUFFER_CHUNK_SIZE) * BUFFER_CHUNK_SIZE
+      const newBuffer = new Uint8Array(newSize)
+      newBuffer.set(this.currentData.subarray(0, this.dataLength))
+      this.currentData = newBuffer
     }
+    
+    // Append new data
+    this.currentData.set(newData, this.dataLength)
+    this.dataLength += newData.length
+
+    let isOutput = false
+    for (let i = 0; i < newData.length; i++) {
+      const newOutput = parseChar(newData[i])
+      isOutput = newOutput || isOutput
+    }
+    return isOutput
   },
 
-  incomingData: new Uint8Array(0),
+  currentData: new Uint8Array(BUFFER_CHUNK_SIZE),
+  dataLength: 0,
 
-  hasData: function () { return this.incomingData.length > 0 },
+  hasData: function () { return this.dataLength > 0 },
 
   reprint: function () {
     _dbg = true
     this.localReset()
-    for(let i=0;i<this.incomingData.length;i++) {
-      parseChar(this.incomingData[i])
+    for(let i=0;i<this.dataLength;i++) {
+      parseChar(this.currentData[i])
     }
     _dbg = false
   },
@@ -99,11 +116,15 @@ export const ImageWriterII : Printer = {
         if (result && typeof result === "string") {
           const binaryString = atob(result.split(",")[1])
           const len = binaryString.length
-          const bytes = new Uint8Array(len)
-          for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i)
+          // Ensure buffer is large enough
+          const neededSize = Math.ceil(len / BUFFER_CHUNK_SIZE) * BUFFER_CHUNK_SIZE
+          if (neededSize > this.currentData.length) {
+            this.currentData = new Uint8Array(neededSize)
           }
-          this.incomingData = bytes
+          for (let i = 0; i < len; i++) {
+            this.currentData[i] = binaryString.charCodeAt(i)
+          }
+          this.dataLength = len
           this.reprint()
         }
       }
@@ -113,7 +134,8 @@ export const ImageWriterII : Printer = {
   },
 
   save: function() {
-    const blob = new Blob([this.incomingData] as BlobPart[])
+    const data = this.currentData.subarray(0, this.dataLength)
+    const blob = new Blob([data] as BlobPart[])
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
@@ -124,41 +146,69 @@ export const ImageWriterII : Printer = {
     document.body.removeChild(link)
   },
 
-  print: (): boolean => {
+  print: (): void => {
     let html = "<html><head>"
-    html += "<script>"
-    html += "window.addEventListener('load',function() { window.print(); window.close(); });"
-    html += "</script></head><body style='margin:0;padding:0;'>"
+    html += "<style> @page { size: auto;  margin: 0mm; } </style>"
+    html += "</head><body style='margin:0;padding:0;'>"
+    const divStyle = "position:relative;width:8.5in;height:11in;page-break-after:always;"
+    const imgStyle = "position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;"  
     // add all previous pages
     for(let i=0;i<_pages.length;i++)
     {
-      // the following removes the date/time/page info
-      html +="<style> @page { size: auto;  margin: 0mm; } </style>"
-      html += "<div style='width:100%;height:100%;page-break-after:always;'>"
-      html += "<img style='position:absolute;width:100%;height:100%;' src='"+_pages[i]+"'/>"
+      html += `<div style='${divStyle}'>`
+      html += `<img style='${imgStyle}' src='${_pages[i]}'/>`
       html += "</div>"
     }
     // add current page, but only if there was rendering
     if( _renders )
     {
-      html +="<style> @page { size: auto;  margin: 0mm; } </style>"
-      html += "<div style='width:100%;height:100%;page-break-after:always;'>"
+      html += `<div style='${divStyle}'>`
       const durl = _canvas.toDataURL("image/png")
-      html += "<img style='position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;' src='"+durl+"'/>"
+      html += `<img style='${imgStyle}' src='${durl}'/>`
       html += "</div>"
     }
     html += "</body></html>"
 
-    const printWin = window.open("","","left=0,top=0,width=576,height=792,toolbar=0,scrollbars=0,status  =0")
-    printWin?.document.write(html)
-    printWin?.document.close()
-    printWin?.focus()
-    return true
+    const iframe = document.createElement("iframe")
+    iframe.style.position = "absolute"
+    iframe.style.width = "0"
+    iframe.style.height = "0"
+    iframe.style.border = "none"
+    document.body.appendChild(iframe)
+    
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (doc) {
+      doc.open()
+      doc.write(html)
+      doc.close()
+      
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      
+      if (isSafari) {
+        // Safari needs a longer delay and simpler approach
+        setTimeout(() => {
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+          setTimeout(() => document.body.removeChild(iframe), 2000)
+        }, 500)
+      } else {
+        // Chrome/Firefox work better with onload event
+        iframe.onload = () => {
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+          setTimeout(() => document.body.removeChild(iframe), 2000)
+        }
+      }
+    }
   },
 
   formfeed: () => {
-    ff()
+    formFeed()
     prerender() // to clear the screen
+  },
+
+  getPages: () => {
+    return _pages
   },
 }
 
@@ -218,7 +268,7 @@ let _tmargin = _tbm
 let _bmargin = 0
 const _paperDPI = 180
 const _dpih = 144
-const _72DPIV = 2 // 2 = force 72dpi vertical (majority of software)
+const _scaleFactor = 4 // resolution multiplier for sharper output
 let _dpi = _paperDPI
 let _tof = _tmargin
 const _lm = _lmargin
@@ -227,8 +277,8 @@ let _pages: any[] = []
 let _renders = 0
 let _px = _lm
 let _py = _tof
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let command: any = []
+ 
+let command: Array<string> = []
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let customdata: any = []
 
@@ -685,22 +735,27 @@ function setswitches( a: number, b: number, sc: string )
 
 function resizeCanvas(width: number, height:number)
 {
-  if (_canvas.width !== width || _canvas.height !== height)
+  const scaledWidth = width * _scaleFactor + 1
+  const scaledHeight = height * _scaleFactor + 1
+  if (_canvas.width !== scaledWidth || _canvas.height !== scaledHeight)
   {
     if (_renders)
-      ff()
+      formFeed()
 
     // context is reset on resize
     _ctx.save()
 
-    _canvas.width = width
-    _canvas.height = height
+    _canvas.width = scaledWidth
+    _canvas.height = scaledHeight
 
     _ctx.fillStyle = "#FFFFFF"
+    const tmpAlpha = _ctx.globalAlpha
+    _ctx.globalAlpha = 1.0
     _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
+    _ctx.globalAlpha = tmpAlpha
     _ctx.imageSmoothingEnabled = false
-    _rmargin = _canvas.width - _lrm
-    _bmargin = _canvas.height - _tbm
+    _rmargin = width - _lrm
+    _bmargin = height - _tbm
 
     _ctx.restore()
   }
@@ -708,34 +763,34 @@ function resizeCanvas(width: number, height:number)
 
 const CHCODE = 
 {
-  ESC: 27,
-  cAt: 0,
-  cA:  1,
-  cD:  4, // end char download
-  cG:  7,	// bell
-  cH:  8,	// backspace
-  cI:  9,	// tab
-  cJ:  10,	// linefeed
-  cL:  12,  // TOF feed
-  cM:  13,	// CR
-  cN:  14,  // start double width
-  cO:  15,  // end double width
-  cQ:  17,  // select printer
-  cS:  19,  // deselect printer
-  cX:  24,
-  c_:  31,  // multi-linefeed
+  ESC: "\x1B",
+  cAt: "\x00",
+  cA:  "\x01",
+  cD:  "\x04", // end char download
+  cG:  "\x07",	// bell
+  cH:  "\x08",	// backspace
+  cI:  "\x09",	// tab
+  cJ:  "\x0A",	// linefeed
+  cL:  "\x0C",  // TOF feed
+  cM:  "\x0D",	// CR
+  cN:  "\x0E",  // start double width
+  cO:  "\x0F",  // end double width
+  cQ:  "\x11",  // select printer
+  cS:  "\x13",  // deselect printer
+  cX:  "\x18",
+  c_:  "\x1F",  // multi-linefeed
 }
 
 const DPI = 
 {
-  F9CPI:   110,
-  F10CPI:  78,
-  F12CPI:  69,
-  F13CPI:  101,
-  F15CPI:  113,
-  F17CPI:  81,
-  F10CPIP: 112,
-  F12CPIP: 80,
+  F9CPI:   "n",
+  F10CPI:  "N",
+  F12CPI:  "E",
+  F13CPI:  "e",
+  F15CPI:  "q",
+  F17CPI:  "Q",
+  F10CPIP: "p",
+  F12CPIP: "P",
 }
 
 function setprintquality(q:number)
@@ -868,7 +923,7 @@ function subscript(onoff:boolean)
   checkforcecsp()
 }
 
-function setdpi(f:number)
+function setdpi(f:string)
 {
   switch(f)
   {
@@ -923,6 +978,9 @@ function setxscale(which:number)
   if (which === SCALE.FONTS)
     scale *= (_usePropFont ? _propScale : _fixedScale)
 
+  // apply resolution scale factor
+  scale *= _scaleFactor
+
   const rescale = _ctx.getTransform().a / scale
 
   _px *= rescale
@@ -932,15 +990,12 @@ function setxscale(which:number)
     scaletabs(rescale) 
 
   // recompute margins
-  _lmargin = _lrm
-  _rmargin = _canvas.width - _lrm
-
-  _lmargin *= (1.0/scale)
-  _rmargin *= (1.0/scale)
+  _lmargin = _lrm / scale
+  _rmargin = (_canvas.width - _lrm) / scale
 
   dbg("lmargin: " + _lmargin + " _rmargin: " + _rmargin)
 
-  const v = 1.0
+  const v = 1.0 * _scaleFactor
   _ctx.setTransform(scale,0,0,
                     v,    0,0)
 }
@@ -977,10 +1032,10 @@ function incy( n:number )
   {
     _py = _tmargin
   }
-  else if( _py > _bmargin )
+  else if( _py >= _bmargin )
   {
     // new page
-    ff()
+    formFeed()
   }
   dbg("_py: " + _py)
 }
@@ -993,11 +1048,11 @@ function cr()
     linefeed()
 }
 
-function ff()
+function formFeed()
 {
   prerender()
 
-  dbg("(ff)")
+  dbg("(formFeed)")
   if(_autoCRonLF && !_autoLFonCR)
     cr() 
 
@@ -1029,14 +1084,17 @@ function clearcanvas()
   _ctx.setTransform(1,0,0,
                     1,0,0)
   _ctx.fillStyle = "#FFFFFF"
+  const tmpAlpha = _ctx.globalAlpha
+  _ctx.globalAlpha = 1.0
   _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
+  _ctx.globalAlpha = tmpAlpha
   _ctx.restore()
 }
 
 function linefeed(n = 1)
 {
   dbg("(lf)(" + n + ")")
-  if(_autoCRonLF && !_autoLFonCR)
+  if (_autoCRonLF && !_autoLFonCR)
     cr()
 
   // new line feed spacing is applied after current line?
@@ -1085,11 +1143,11 @@ function dbgchar(ascii:number)
   dbg(out)
 }
 
-function output(val:number)
+function output(ch: string)
 {
   prerender()
 
-  const ascii = val & 0x7f
+  const ascii = ch.charCodeAt(0) & 0x7f
   dbgchar(ascii)
 
   if (ascii >= 0x20)
@@ -1133,10 +1191,10 @@ function reset()
   _customGlyphWidth = 0
 
   setprintquality(0)
-  setdpi(DPI.F10CPI)
+  setdpi(DPI.F12CPI)
 
   // black
-  setcolor(48)
+  setcolor("0")
   setswitches( 0xff, 0xff, "Z" )
   // defaults
   setswitches( 0x50, 0x24, "D" )
@@ -1144,118 +1202,70 @@ function reset()
   setinitialtabstops()
 }
 
-function setcolor(c:number)
+function setcolor(c:string)
 {
   dbg("setcolor: " + c )
-  switch(c)
-  {
-    case 48: // black`
-      _ctx.fillStyle = "#000000"
-      _ctx.strokeStyle = "#000000"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 1.0
-      break
-    case 49: // yellow`
-      _ctx.fillStyle = "#FFFF00"
-      _ctx.strokeStyle = "#FFFF00"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case 50: // magenta`
-//      _ctx.fillStyle = '#FF00FF';
-//      _ctx.strokeStyle = '#FF00FF';
-      _ctx.fillStyle = "#9B1525"
-      _ctx.strokeStyle = "#9B1525"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case 51: // cyan`
-//      _ctx.fillStyle = '#00FFFF';
-//      _ctx.strokeStyle = '#00FFFF';
-      _ctx.fillStyle = "#0B48CB"
-      _ctx.strokeStyle = "#0B48CB"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case 52: // orange
-//      _ctx.fillStyle = '#FFA500';
-//      _ctx.strokeStyle = '#FFA500';
-      _ctx.fillStyle = "#AC180A"
-      _ctx.strokeStyle = "#AC180A"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case 53: // green
-//      _ctx.fillStyle = '#00FF00';
-//      _ctx.strokeStyle = '#00FF00';
-      _ctx.fillStyle = "#10361B"
-      _ctx.strokeStyle = "#10361B"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    case 54: // purple
-//      _ctx.fillStyle = '#800080';
-//      _ctx.strokeStyle = '#800080';
-      _ctx.fillStyle = "#040A1B"
-      _ctx.strokeStyle = "#040A1B"
-      _ctx.globalCompositeOperation = "source-over"
-      _ctx.globalAlpha = 0.5
-      break
-    default:
-      log("invalid color: " + c )
-      break
+  const penColors = [
+    "#000000",
+    "#FFFF00",
+    "#DD0000",
+    "#0000CC",
+    "#FF6600",
+    "#009900",
+    "#990099"
+  ]
+
+  const cnum = parseInt(c)
+  if (cnum < 0 || cnum > 6) {
+    log("invalid color: " + c )
+    return
   }
+  _ctx.fillStyle = penColors[cnum]
+  _ctx.strokeStyle = _ctx.fillStyle
+  _ctx.globalCompositeOperation = "source-over"
+}
+
+const drawDot = (x:number, y:number, vdpi = 2) =>
+{
+  _ctx.beginPath()
+  _ctx.arc(x + 1.5, y + 1.5, vdpi === 2 ? 1 : 0.75, 0, Math.PI * 2)
+  _ctx.fill()
 }
 
 function gfx(ch:number)
 {
   // bold and double width work for graphics as well
-  const boldLoop = _bold ? 4 : 1
+  const boldLoop = _bold ? 2 : 1
   const doubleLoop = _doubleWidth ? 2 : 1
 
   const fgfx = (ch:number, xoff:number) =>
   {
     // draw vertical dot pattern
-    if( ch & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+2*0, 1, 1)
-    if( ch & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+2*1, 1, 1)
-    if( ch & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+2*2, 1, 1)
-    if( ch & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+2*3, 1, 1)
-    if( ch & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+2*4, 1, 1)
-    if( ch & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+2*5, 1, 1)
-    if( ch & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+2*6, 1, 1)
-    if( ch & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+2*7, 1, 1)
-  }
-
-  const oldPY = _py
-  for(let d=0;d<_72DPIV;d++)
-  {
-    _py += d
-    for(let i=0;i<doubleLoop;i++)
-    {
-      let x = i*2
-      for(let j=0;j<boldLoop;j++)
-      {
-        x += (j*0.25)
-        fgfx(ch,x)
+    for(let i=0; i<8; i++) {
+      if(ch & (1 << i)) {
+        drawDot(_px+xoff, _py+2*i)
       }
     }
   }
-  _py = oldPY
+
+  _ctx.globalAlpha = 0.5
+  for(let i=0;i<doubleLoop;i++)
+  {
+    let x = i*2
+    for(let j=0;j<boldLoop;j++)
+    {
+      x += (j / boldLoop)
+      fgfx(ch,x)
+    }
+  }
+  _ctx.globalAlpha = 1.0
 
   incx(doubleLoop)
 }
 
 export function fontGfx(ch:number)
 {
-  const boldLoop = _bold ? 4 : 1
+  const boldLoop = _bold ? 2 : 1
   const doubleLoop = _doubleWidth ? 2 : 1
   const vdpi = (_halfHeight || _subscript || _superscript) ? 1 : 2
   let yoff = 0
@@ -1264,7 +1274,7 @@ export function fontGfx(ch:number)
   if (_halfHeight)
     yoff = 4
   else if (_subscript)
-    yoff = 6
+    yoff = 8
 
   // the font is technically 9 bits high but the font values are only 8 bit
   // if the high bit is set, it is code to shift by two for descenders
@@ -1274,49 +1284,32 @@ export function fontGfx(ch:number)
   const fgfx = (ch:number) =>
   {
     // draw vertical dot pattern
-    if( ch & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*0, 1, 1)
-    if( ch & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*1, 1, 1)
-    if( ch & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*2, 1, 1)
-    if( ch & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*3, 1, 1)
-    if( ch & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*4, 1, 1)
-    if( ch & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*5, 1, 1)
-    if( ch & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*6, 1, 1)
-    if( ch & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*7, 1, 1)
-    // ninth wire for descenders and underline
-    if( ch & 0x100 || _underline )
-      _ctx.fillRect(_px+xoff, _py+yoff+vdpi*8, 1, 1)
-  }
-
-  const oldPY = _py
-  for(let d=0;d<_72DPIV;d++)
-  {
-    _py += d
-    for(let i=0;i<doubleLoop;i++)
-    {
-      xoff = i*2
-      for(let j=0;j<boldLoop;j++)
-      {
-        xoff += (j*0.25)
-        fgfx(ch)
+    for(let i=0; i<8; i++) {
+      if(ch & (1 << i)) {
+        drawDot(_px + xoff, _py + yoff + vdpi * i, vdpi)
       }
     }
+    // ninth wire for descenders and underline
+    if( ch & 0x100 || (_underline && (_px % 2) === 0) )
+      drawDot(_px + xoff, _py + yoff + vdpi * 8, vdpi)
   }
-  _py = oldPY
+
+  for(let i=0;i<doubleLoop;i++)
+  {
+    xoff = i * 2
+    for(let j = 0; j < boldLoop; j++)
+    {
+      xoff += (j / boldLoop)
+      fgfx(ch)
+    }
+  }
 
   incx(doubleLoop)
 }
 
 export function fontGfx16(chh:number, chl:number)
 {
-  const boldLoop = _bold ? 4 : 1
+  const boldLoop = _bold ? 2 : 1
   const doubleLoop = _doubleWidth ? 2 : 1
   let xoff = 0
 
@@ -1334,59 +1327,27 @@ export function fontGfx16(chh:number, chl:number)
   const fgfx = (chh:number, chl:number) =>
   {
     // draw vertical dot pattern
-    if( chh & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+0, 1, 1)
-    if( chl & 0x01 )
-      _ctx.fillRect(_px+xoff, _py+1, 1, 1)
-
-    if( chh & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+2, 1, 1)
-    if( chl & 0x02 )
-      _ctx.fillRect(_px+xoff, _py+3, 1, 1)
-
-    if( chh & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+4, 1, 1)
-    if( chl & 0x04 )
-      _ctx.fillRect(_px+xoff, _py+5, 1, 1)
-
-    if( chh & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+6, 1, 1)
-    if( chl & 0x08 )
-      _ctx.fillRect(_px+xoff, _py+7, 1, 1)
-
-    if( chh & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+8, 1, 1)
-    if( chl & 0x10 )
-      _ctx.fillRect(_px+xoff, _py+9, 1, 1)
-
-    if( chh & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+10, 1, 1)
-    if( chl & 0x20 )
-      _ctx.fillRect(_px+xoff, _py+11, 1, 1)
-
-    if( chh & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+12, 1, 1)
-    if( chl & 0x40 )
-      _ctx.fillRect(_px+xoff, _py+13, 1, 1)
-
-    if( chh & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+14, 1, 1)
-    if( chl & 0x80 )
-      _ctx.fillRect(_px+xoff, _py+15, 1, 1)
-
+    for(let i=0; i<8; i++) {
+      if(chh & (1 << i)) {
+        drawDot(_px + xoff, _py + i * 2)
+      }
+      if(chl & (1 << i)) {
+        drawDot(_px + xoff, _py + i * 2 + 1)
+      }
+    }
     // ninth wire for descenders and underline
-    if( chh & 0x100 || _underline )
-      _ctx.fillRect(_px+xoff, _py+16, 1, 1)
-    if( chl & 0x100 || _underline )
-      _ctx.fillRect(_px+xoff, _py+17, 1, 1)
+    if( chh & 0x100 || (_underline && (_px % 2) === 0) )
+      drawDot(_px + xoff, _py + 16, 2)
+    if( chl & 0x100 || (_underline && (_px % 2) === 0) )
+      drawDot(_px + xoff, _py + 17, 2)
   }
 
   for(let i=0;i<doubleLoop;i++)
   {
-    xoff = i*2
+    xoff = i * 2
     for(let j=0;j<boldLoop;j++)
     {
-      xoff += (j*0.25)
+      xoff += (j / boldLoop)
       fgfx(chh, chl)
     }
   }
@@ -1434,312 +1395,304 @@ const state =
   cur: 0,
 }
 
+const handleOuterCommand = (ch: string) => {
+  let isOutput = false
+  switch(ch)
+  {
+    case CHCODE.ESC:
+      state.cur = state.CMD
+      break
+    case CHCODE.c_:
+      state.cur = state.FEEDLINES
+      dbg("c_")
+      break
+    case CHCODE.cH:
+      dbg("cH")
+      bs()
+      break
+    case CHCODE.cI:
+      tab() 
+      break
+    case CHCODE.cJ:
+      linefeed(1)
+      isOutput = true
+      break
+    case CHCODE.cL:
+      formFeed()
+      isOutput = true
+      break
+    case CHCODE.cM:
+      cr()
+      isOutput = true
+      break
+    case CHCODE.cN:
+      doubleWidth(true)
+      break
+    case CHCODE.cO:
+      doubleWidth(false)
+      break
+    case CHCODE.cX: // erase current line from buffer.
+      dbg("cX")
+      break
+    case CHCODE.cG:
+      bell()
+      break
+    default:
+      output(ch)
+      break
+  }
+  return isOutput
+}
+
+
+const handleCommand = (ch: string) => {
+  const isOutput = false
+  let newState = state.OUTER
+  switch(ch)
+  {
+    case "\x1B":  // ESC
+      command = []
+      newState = state.TABSTOP
+      break
+
+    case "0":  // clear all tabs
+      cleartabs()
+      break
+
+    case "(":
+      command = []
+      newState = state.SETTABS
+      // clears all tabs to start
+      cleartabs()
+      break
+
+    case ")":
+      command = []
+      newState = state.CLEARTABS
+      break
+
+    case "'":
+      usecustomfont(true)
+      break
+      usecustomfont(true)
+      break
+
+    case "*":
+      usecustomfonthi(true)
+      break
+
+    case "-":
+      setcustomfontwidth(8)
+      break
+
+    case "+":
+      setcustomfontwidth(16)
+      break
+
+    case "$":
+      mapmousetext(false)
+      usecustomfonthi(false)
+      break
+
+    case "G":
+    case "S":
+      command = []
+      newState = state.GFXN
+      break
+
+    case "g":
+      command = []
+      newState = state.GFX8N
+      break
+
+    case "V":
+      command = []
+      newState = state.GFXRN
+      break
+
+    case "F":
+      command = []
+      newState = state.HPOS
+      break
+
+    case "H":
+      command = []
+      newState = state.PLENGTH
+      break
+
+    case "L":
+      command = []
+      newState = state.LMARGIN
+      break
+
+    case "Z":
+      newState = state.EZ0
+      break
+
+    case "D":
+      command = []
+      newState = state.ED0
+      break
+
+    case "c":
+      reset()
+      break
+
+    case "K":
+      newState = state.COLOR
+      break
+
+    case "R":
+      command = []
+      newState = state.RCHAR
+      break
+
+    case "T":
+      command = []
+      newState = state.CHEIGHT
+      break
+
+    case "A": // 6 lines per inch
+      _nlfSpacing = 24
+      dbg("nlfSpacing: " + _nlfSpacing)
+      break
+    case "B": // 8 lines per inch
+      _nlfSpacing = 18
+      dbg("nlfSpacing: " + _nlfSpacing)
+      break
+
+    case "f": // forward linefeed
+      _lfSpacing = Math.abs(_lfSpacing)
+      dbg("fw lf")
+      break
+
+    case "r": // reverse linefeed
+      _lfSpacing = -Math.abs(_lfSpacing)
+      dbg("rev lf")
+      break
+
+    case "O":  // paper out sensor off
+    case "o": // paper out sensor on
+      break
+
+    case ">":  // set unidirectional print
+      setunidirectional(true)
+      break
+
+    case "<":  // set bidirectional print
+      setunidirectional(false)
+      break
+
+    case "!":
+      bold(true)
+      break
+    case "\"":
+      bold(false)
+      break
+
+    case "X":
+      underline(true)
+      break
+    case "Y":
+      underline(false)
+      break
+
+    case "w":
+      halfheight(true)
+      break
+    case "W":
+      halfheight(false)
+      break
+
+    case "x":
+      superscript(true)
+      break
+    case "y":
+      subscript(true)
+      break
+    case "z":
+      subscript(false)
+      superscript(false)
+      break
+
+    case "1":  // insert N dots (1-6) for proportional
+    case "2":
+    case "3":
+    case "4":
+    case "5":
+    case "6":
+      if (_usePropFont)
+        incx(ch.charCodeAt(0)-48) // 49 = 1
+      break
+
+    case "s":
+      newState = state.SETPROPSPACING
+      break
+
+    case "I":
+      dbg("begin load custom font")
+      newState = state.LOADCUSTOM
+      customdata = []
+      break
+
+    case "l":
+      newState = state.CRLF
+      break
+
+    case "v":
+      _tof = _py
+      break
+
+    case "&":
+      mapmousetext(true)
+      break
+
+    case "a":
+      newState = state.PRINTQUALITY
+      break
+    case "m":
+      setprintquality(0)
+      break
+    case "M":
+      setprintquality(1)
+      break
+
+    case "?":
+      sendidstring()
+      break
+
+    case "n":
+    case "N":
+    case "E":
+    case "p":
+    case "P":
+    case "e":
+    case "q":
+    case "Q":
+      setdpi(ch)
+      break
+
+    default:
+      log("Unknown ESC code: " + ch)
+      break
+  }
+  state.cur = newState
+  return isOutput
+}
+
+
 function parseChar(raw:number)
 {
-  const ch = raw & _ignoreBit8
+  const ch = String.fromCharCode(raw & _ignoreBit8)
+  let isOutput = false
 
   switch( state.cur )
   {
     case state.OUTER:
-      switch(ch)
-      {
-        case CHCODE.ESC:
-          state.cur = state.CMD
-          break
-        case CHCODE.c_:
-          state.cur = state.FEEDLINES
-          dbg("c_")
-          break
-        case CHCODE.cH:
-          dbg("cH")
-          bs()
-          break
-        case CHCODE.cI:
-          tab() 
-          break
-        case CHCODE.cJ:
-          linefeed(1)
-          break
-        case CHCODE.cL:
-          ff()
-          break
-        case CHCODE.cM:
-          cr()
-          break
-        case CHCODE.cN:
-          doubleWidth(true)
-          break
-        case CHCODE.cO:
-          doubleWidth(false)
-          break
-        case CHCODE.cX: // erase current line from buffer.
-          dbg("cX")
-          break
-        case CHCODE.cG:
-          bell()
-          break
-        default:
-          output(ch)
-          break
-      }
-      break
+      return handleOuterCommand(ch)
 
     case state.CMD:
-      switch(ch)
-      {
-        case 27:
-          command = []
-          state.cur = state.TABSTOP
-          break
-
-        case 48:  // clear all tabs
-          state.cur = state.OUTER
-          cleartabs()
-          break
-
-        case 40:
-          command = []
-          state.cur = state.SETTABS
-          // clears all tabs to start
-          cleartabs()
-          break
-
-        case 41:
-          command = []
-          state.cur = state.CLEARTABS
-          break
-
-        case 39:
-          state.cur = state.OUTER
-          usecustomfont(true)
-          break
-
-        case 42:
-          state.cur = state.OUTER
-          usecustomfonthi(true)
-          break
-
-        case 45:
-          state.cur = state.OUTER
-          setcustomfontwidth(8)
-          break
-
-        case 43:
-          state.cur = state.OUTER
-          setcustomfontwidth(16)
-          break
-
-        case 36:
-          state.cur = state.OUTER
-          mapmousetext(false)
-          usecustomfonthi(false)
-          break
-
-        case 71:
-        case 83:
-          command = []
-          state.cur = state.GFXN
-          break
-
-        case 103:
-          command = []
-          state.cur = state.GFX8N
-          break
-
-        case 86:
-          command = []
-          state.cur = state.GFXRN
-          break
-
-        case 70:
-          command = []
-          state.cur = state.HPOS
-          break
-
-        case 72:
-          command = []
-          state.cur = state.PLENGTH
-          break
-
-        case 76:
-          command = []
-          state.cur = state.LMARGIN
-          break
-
-        case 90:
-          state.cur = state.EZ0
-          break
-
-        case 68:
-          state.cur = state.ED0
-          break
-
-        case 99:
-          state.cur = state.OUTER
-          reset()
-          break
-
-        case 75:
-          state.cur = state.COLOR
-          break
-
-        case 82:
-          command = []
-          state.cur = state.RCHAR
-          break
-
-        case 84:
-          command = []
-          state.cur = state.CHEIGHT
-          break
-
-        case 65: // 6 lines per inch
-          state.cur = state.OUTER
-          _nlfSpacing = 24
-          dbg("nlfSpacing: " + _nlfSpacing)
-          break
-        case 66: // 8 lines per inch
-          state.cur = state.OUTER
-          _nlfSpacing = 18
-          dbg("nlfSpacing: " + _nlfSpacing)
-          break
-
-        case 102: // forward linefeed
-          state.cur = state.OUTER
-          _lfSpacing = Math.abs(_lfSpacing)
-          dbg("fw lf")
-          break
-
-        case 114: // reverse linefeed
-          state.cur = state.OUTER
-          _lfSpacing = -Math.abs(_lfSpacing)
-          dbg("rev lf")
-          break
-
-        case 79:  // paper out sensor off
-        case 111: // paper out sensor on
-          state.cur = state.OUTER
-          break
-
-        case 62:  // set unidirectional print
-          setunidirectional(true)
-          state.cur = state.OUTER
-          break
-
-        case 60:  // set bidirectional print
-          setunidirectional(false)
-          state.cur = state.OUTER
-          break
-
-        case 33:
-          bold(true)
-          state.cur = state.OUTER
-          break
-        case 34:
-          bold(false)
-          state.cur = state.OUTER
-          break
-
-        case 88:
-          underline(true)
-          state.cur = state.OUTER
-          break
-        case 89:
-          underline(false)
-          state.cur = state.OUTER
-          break
-
-        case 119:
-          halfheight(true)
-          state.cur = state.OUTER
-          break
-        case 87:
-          halfheight(false)
-          state.cur = state.OUTER
-          break
-
-        case 120:
-          superscript(true)
-          state.cur = state.OUTER
-          break
-        case 121:
-          subscript(true)
-          state.cur = state.OUTER
-          break
-        case 122:
-          subscript(false)
-          superscript(false)
-          state.cur = state.OUTER
-          break
-
-        case 49:  // insert N dots (1-6) for proportional
-        case 50:
-        case 51:
-        case 52:
-        case 53:
-        case 54:
-          state.cur = state.OUTER
-          if (_usePropFont)
-            incx(ch-48) // 49 = 1
-          break
-
-        case 115:
-          state.cur = state.SETPROPSPACING
-          break
-
-        case 73:
-          dbg("begin load custom font")
-          state.cur = state.LOADCUSTOM
-          customdata = []
-          break
-
-        case 108:
-          state.cur = state.CRLF
-          break
-
-        case 118:
-          _tof = _py
-          break
-
-        case 38:
-          state.cur = state.OUTER
-          mapmousetext(true)
-          break
-
-        case 97:
-          state.cur = state.PRINTQUALITY
-          break
-        case 109:
-          state.cur = state.OUTER
-          setprintquality(0)
-          break
-        case 77:
-          state.cur = state.OUTER
-          setprintquality(1)
-          break
-
-        case 63:
-          state.cur = state.OUTER
-          sendidstring()
-          break
-
-        case 110:
-        case 78:
-        case 69:
-        case 112:
-        case 80:
-        case 101:
-        case 113:
-        case 81:
-          state.cur = state.OUTER
-          setdpi(ch)
-          break
-
-        default:
-          log("Unknown ESC code: " + ch)
-          break
-      }
-      break
+      return handleCommand(ch)
 
     case state.SETTABS:
       // expect 3 chars at a time, ending with comma or period
@@ -1748,9 +1701,9 @@ function parseChar(raw:number)
         const cmd = command[0] + command[1] + command[2]
         settabstop(parseInt(cmd))
 
-        if (ch === 46) // period, ends sequence
+        if (ch === ".") // period, ends sequence
           state.cur = state.OUTER
-        else if (ch === 44) // comma continues
+        else if (ch === ",") // comma continues
         {
           command = []
         }
@@ -1761,13 +1714,13 @@ function parseChar(raw:number)
         }
       }
       else
-        command.push(String.fromCharCode(ch))
+        command.push(ch)
 
       break
 
     case state.TABSTOP:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 3)
       {
         state.cur = state.OUTER
@@ -1783,9 +1736,9 @@ function parseChar(raw:number)
         const cmd = command[0] + command[1] + command[2]
         cleartabstop(parseInt(cmd))
 
-        if (ch === 46) // period, ends sequence
+        if (ch === ".") // period, ends sequence
           state.cur = state.OUTER
-        else if (ch === 44) // comma continues
+        else if (ch === ",") // comma continues
         {
           command = []
         }
@@ -1796,14 +1749,14 @@ function parseChar(raw:number)
         }
       }
       else
-        command.push(String.fromCharCode(ch))
+        command.push(ch)
 
       break
 
     case state.GFXN:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
-      if(command.length === 4)
+      command.push(ch)
+      if (command.length === 4)
       {
         setxscale(SCALE.GFX)
         state.cur = state.GFX
@@ -1817,8 +1770,8 @@ function parseChar(raw:number)
 
     case state.GFX8N:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
-      if(command.length === 3)
+      command.push(ch)
+      if (command.length === 3)
       {
         setxscale(SCALE.GFX)
         state.cur = state.GFX
@@ -1831,7 +1784,8 @@ function parseChar(raw:number)
       break
 
     case state.GFX:
-      gfx(ch)
+      gfx(ch.charCodeAt(0))
+      isOutput = true
       _gfxchars--
       if(_gfxchars === 0)
       {
@@ -1839,12 +1793,16 @@ function parseChar(raw:number)
         _ignoreBit8 = 0x7f
         dbg("gfxend")
         setxscale(SCALE.FONTS)
+        cr()
+        if (_autoLFonFull) {
+          linefeed()
+        }
       }
       break
 
     case state.GFXRN:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 4)
       {
         state.cur = state.GFXR
@@ -1860,8 +1818,9 @@ function parseChar(raw:number)
       setxscale(SCALE.GFX)
       while(_gfxchars--)
       {
-        gfx(ch)
+        gfx(ch.charCodeAt(0))
       }
+      isOutput = true
       state.cur = state.OUTER
       _ignoreBit8 = 0x7f
       setxscale(SCALE.FONTS)
@@ -1869,7 +1828,7 @@ function parseChar(raw:number)
 
     case state.HPOS:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 4)
       {
         setxscale(SCALE.GFX)
@@ -1883,7 +1842,7 @@ function parseChar(raw:number)
 
     case state.RCHARN:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 3)
       {
         state.cur = state.RCHAR
@@ -1903,7 +1862,7 @@ function parseChar(raw:number)
 
     case state.PRINTQUALITY:
       state.cur = state.OUTER
-      setprintquality(ch-48)
+      setprintquality(ch.charCodeAt(0)-48)
       break
 
     case state.LOADCUSTOM:
@@ -1953,16 +1912,17 @@ function parseChar(raw:number)
     case state.FEEDLINES: {
       state.cur = state.OUTER
       const count = "0123456789:;<=>?"
-      const cf = String.fromCharCode(ch)
-      const nl = count.indexOf(cf)
-      if (nl > 0)
+      const nl = count.indexOf(ch)
+      if (nl > 0) {
         linefeed(nl)
+        isOutput = true
+      }
       break
     }
 
     case state.LMARGIN:
       // expect 3 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 3)
       {
         state.cur = state.OUTER
@@ -1973,7 +1933,7 @@ function parseChar(raw:number)
 
     case state.PLENGTH:
       // expect 4 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 4)
       {
         state.cur = state.OUTER
@@ -1984,7 +1944,7 @@ function parseChar(raw:number)
 
     case state.CHEIGHT:
       // expect 2 chars
-      command.push(String.fromCharCode(ch))
+      command.push(ch)
       if(command.length === 2)
       {
         state.cur = state.OUTER
@@ -1996,17 +1956,17 @@ function parseChar(raw:number)
 
     case state.SETPROPSPACING:
       state.cur = state.OUTER
-      setpropspacing(ch-48) // 48 == ascii 0
+      setpropspacing(ch.charCodeAt(0)-48) // 48 == ascii 0
       break
 
     case state.CRLF:
       state.cur = state.OUTER
       switch(ch)
       {
-        case 49:
+        case "1":
           autocr(false)
           break
-        case 48:
+        case "0":
           autocr(true)
           break
       }
@@ -2024,21 +1984,23 @@ function parseChar(raw:number)
 
     case state.EZ1:
       state.cur = state.OUTER
-      setswitches(command[0], ch, "Z")
+      setswitches(command[0].charCodeAt(0), ch.charCodeAt(0), "Z")
       break
 
     case state.ED0:
       state.cur = state.ED1
+      command[0] = ch
       break
 
     case state.ED1:
       state.cur = state.OUTER
-      setswitches(command[0], ch, "D")
+      setswitches(command[0].charCodeAt(0), ch.charCodeAt(0), "D")
       break
 
     default:
       log("invalid state!")
       break
   }
+  return isOutput
 }
 

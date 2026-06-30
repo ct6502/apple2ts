@@ -191,7 +191,7 @@ VERSION=$(node -p "require('./package.json').version")
 github_changelog_generator --token $GITHUB_TOKEN -u ct6502 -p apple2ts --future-release "v$VERSION"
 git add .
 git commit -m "Update CHANGELOG for v$VERSION"
-# Now create and push the tag
+# Now create and push the tag (skip this line if you did npm version ...)
 git tag -a "v$VERSION" -m"v$VERSION"
 git push --follow-tags
 ```

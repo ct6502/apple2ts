@@ -35,14 +35,21 @@ export const apple2KeyRelease = () => {
 // TODO: We could use two buffers - one for keypress (with a short delay)
 // and another for pasted text, with a longer delay to give Applesoft BASIC
 // time to process
-
 let keyBuffer = ""
 let tPrevPop = 1000000000
 let tPrevSnapshot = 0
+
+// CT 6/27/2026: Added a tiny delay of a couple calls to avoid dropping keys when
+// Applesoft BASIC is processing them. This only seemed to be a problem when
+// pasting programs in Chrome. Safari worked fine.
+let nCalled = 0
+
 export const popKey = () => {
   // See note above about this time cutoff before dropping buffer text.
   const t = performance.now()
-  if (keyBuffer !== "" && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 3800)) {
+  nCalled++
+  if (keyBuffer !== "" && nCalled > 2 && (memGetC000(0xC000) < 128 || (t - tPrevPop) > 3800)) {
+    nCalled = 0
     tPrevPop = t
     const key = keyBuffer.charCodeAt(0)
     setKeyStrobe(key)
@@ -92,5 +99,5 @@ export const sendPastedText = (text: string) => {
   if (text.length === 1) {
     text = handleKeyMapping(text)
   }
-  addToBuffer(text)
+  addToBuffer(text) // Bypass duplicate check for pasted text
 }

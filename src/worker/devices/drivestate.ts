@@ -139,11 +139,12 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
   initializeDriveState()
   let dindex = 0
   for (let i=0; i < newState.driveState.length; i++) {
-    // If we had an empty drive, just skip over it.
-    if (Object.keys(newState.driveState[i]).length === 0) continue
-    driveState[dindex] = { ...newState.driveState[i] } as DriveState
-    if (newState.driveData[i] !== "") {
-      driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
+    // Make sure our drive had data.
+    if (Object.keys(newState.driveState[i]).length > 0) {
+      driveState[dindex] = { ...newState.driveState[i] } as DriveState
+      if (newState.driveData[i] !== "") {
+        driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
+      }
     }
     // See if we had a second hard drive in our save state or not.
     if (newState.driveState.length === 3 && i === 0) dindex = 1

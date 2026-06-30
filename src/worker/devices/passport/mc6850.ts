@@ -13,7 +13,7 @@ export interface MC6850Ext
 
   // external call to configuration state changes
   // not needed - always in midi mode
-  //configChange(config: ConfigChange): void;
+  //serialConfig(config: SerialConfig): void;
 };
 
 // 6850 regs
@@ -159,7 +159,7 @@ export class MC6850
 
   set control(val: number)
   {
-    let lastctrl = this._control
+    const lastctrl = this._control
     this._control = val
     if ((this._control & CONTROL.COUNTER_DIV) === COUNTER.RESET)
     {
@@ -189,7 +189,7 @@ export class MC6850
             break
           case COUNTER.RESET:
             str += "RESET "
-            break;
+            break
         }
         switch(val & CONTROL.WORD_SEL)
         {
@@ -222,16 +222,16 @@ export class MC6850
         {
           case TXRTS.RTS_NO_INT:
             str += "RTS /TX_INT "
-            break;
+            break
           case TXRTS.RTS_TX_INT:
             str += "RTS TX_INT "
-            break;
+            break
           case TXRTS.RTS_CLEAR:
             str += "RTS_CLEAR  "
-            break;
+            break
           case TXRTS.RTS_BREAK:
             str += "RTS_BREAK  "
-            break;
+            break
         }
         if (val & CONTROL.RX_INT_ENABLE)
           str += "RX_INT"

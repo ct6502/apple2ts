@@ -1,9 +1,9 @@
 // Super Serial Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
 import { interruptRequest } from "../../cpu6502"
-import { passTxCommData } from "../../worker2main"
+import { passSerialConfig, passTxCommData } from "../../worker2main"
 import { setSlotDriver, setSlotIOCallback } from "../../memory"
-import { SY6551, SY6551Ext, ConfigChange } from "./sy6551"
+import { SY6551, SY6551Ext } from "./sy6551"
 
 //  Apple II Super Serial Card ROM - 341-0065-A.bin
 const rom = new Uint8Array([
@@ -203,9 +203,9 @@ const interrupt = (onoff: boolean): void => {
   interruptRequest(slot, onoff)
 }
 
-const configChange = (config: ConfigChange): void => {
-  // do nothing here yet
-  console.log("ConfigChange: ", config)
+const serialConfig = (config: SerialConfig): void => {
+  console.log("SerialConfig: ", config)
+  passSerialConfig(config)
 }
 
 export const receiveCommData = (data: Uint8Array) => {
@@ -227,7 +227,7 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
   const ext: SY6551Ext = {
     sendData: passTxCommData,
     interrupt: interrupt,
-    configChange: configChange
+    serialConfig: serialConfig
   }
   acia = new SY6551(ext)
 
@@ -241,7 +241,7 @@ export const enableSerialCard = (enable = true, aslot = 1) => {
   setSlotIOCallback(slot, handleSerialIO)
 }
 
-const handleSerialIO = (addr: number, val = -1): number => {
+const handleSerialIO = (addr: number, value = -1): number => {
 
   // We don't manage the ROM
   if (addr >= 0xC100)
@@ -271,29 +271,29 @@ const handleSerialIO = (addr: number, val = -1): number => {
         // Bit:  7  6 5   4 3   2  1          0
         return 0x28
     case REG.IOREG:
-        if (val >= 0)
-          acia.data = val
+        if (value >= 0)
+          acia.data = value
         else
           return acia.data
         break
 
     case REG.STATUS:
-        if(val >= 0)
-          acia.status = val
+        if(value >= 0)
+          acia.status = value
         else
           return acia.status
         break
 
     case REG.COMMAND:
-        if(val >= 0)
-          acia.command = val  
+        if(value >= 0)
+          acia.command = value  
         else
           return acia.command
         break
 
     case REG.CONTROL:
-        if(val >= 0)
-          acia.control = val
+        if(value >= 0)
+          acia.control = value
         else
           return acia.control
         break

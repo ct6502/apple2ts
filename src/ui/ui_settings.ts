@@ -6,7 +6,7 @@ const uiState: UIState = {
   arrowKeysAsJoystick: true,
   manualNumbering: true,
   capitalizeBasic: true,
-  lowercaseMode: true,
+  lowercaseMode: false,
   colorMode: COLOR_MODE.COLOR,
   crtDistortion: false,
   debugMode: false,

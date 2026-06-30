@@ -3,14 +3,6 @@
 // The superserial firmware seems configured for synertek 6551, as it requires
 // command register to be zeroed on init rather than containing 0x02 like MOS/WD.
 
-export type ConfigChange =
-{
-  baud: number;
-  bits: number;
-  stop: number;
-  parity: string;
-};
-
 export interface SY6551Ext
 {
   // external call to send async data
@@ -20,7 +12,7 @@ export interface SY6551Ext
   interrupt(onoff: boolean): void;
 
   // external call to configuration state changes
-  configChange(config: ConfigChange): void;
+  serialConfig(config: SerialConfig): void;
 };
 
 // 6551 regs
@@ -98,7 +90,7 @@ export class SY6551
   _status: number
   _command: number
   _lastRead: number
-  _lastConfig: ConfigChange
+  _lastConfig: SerialConfig
   _receiveBuffer: number[]
   _extFuncs: SY6551Ext
 
@@ -169,7 +161,7 @@ export class SY6551
   {
     // need to report this as it changes config
     this._control = val
-    this.configChange(this.buildConfigChange())
+    this.serialConfigChange(this.buildConfigChange())
   }
 
   get control(): number
@@ -181,7 +173,7 @@ export class SY6551
   {
     // send a state change here for parity
     this._command = val
-    this.configChange(this.buildConfigChange())
+    this.serialConfigChange(this.buildConfigChange())
   }
 
   get command(): number
@@ -220,9 +212,9 @@ export class SY6551
     this._extFuncs.interrupt(set)
   }
 
-  buildConfigChange(): ConfigChange
+  buildConfigChange(): SerialConfig
   {
-    const change = <ConfigChange>{}
+    const change = <SerialConfig>{}
 
     switch(this._control & CONTROL.BAUD_RATE)
     {
@@ -321,10 +313,10 @@ export class SY6551
     return change
   }
 
-  configChange(newconf: ConfigChange)
+  serialConfigChange(newconf: SerialConfig)
   {
     let send = false
-    if (newconf.baud != this._lastConfig.baud)
+    if (newconf.baud != this._lastConfig.baud || newconf.baud > 0)
       send = true
     if (newconf.bits != this._lastConfig.bits)
       send = true
@@ -337,7 +329,7 @@ export class SY6551
     {
       // note that not all params may be valid, ie: baud could be zero
       this._lastConfig = newconf
-      this._extFuncs.configChange(this._lastConfig)
+      this._extFuncs.serialConfig(this._lastConfig)
     }
   }
 
