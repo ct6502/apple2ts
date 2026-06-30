@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../common/utility"
-import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry } from "../../common/prodos_hdv"
+import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry, classifyImageKind, determineVtocType } from "../../common/prodos_hdv"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -29,121 +29,6 @@ export enum DISK_COLLECTION_ITEM_TYPE {
 }
 
 const maxHdvBytes = 33554432
-
-const DOS_ORDER_MAP = [0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15]
-const PRODOS_ORDER_MAP = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
-
-const getSectorOffset = (track: number, sector: number, map: number[]) => {
-  if (track < 0 || sector < 0 || sector > 15) return -1
-  const mappedSector = map[sector]
-  return (track * 16 + mappedSector) * 256
-}
-
-const isLikelyDos33Volume = (data: Uint8Array): boolean => {
-  // DOS 3.3 5.25" image size (35 tracks x 16 sectors x 256 bytes).
-  if (data.length < (35 * 16 * 256)) return false
-
-  const matchesVtoc = (offset: number) => {
-    if (offset < 0 || offset + 0x3A >= data.length) return false
-
-    const catTrack = data[offset + 0x01]
-    const catSector = data[offset + 0x02]
-    const dosRelease = data[offset + 0x03]
-    const maxTSPairs = data[offset + 0x27]
-    const tracks = data[offset + 0x34]
-    const sectorsPerTrack = data[offset + 0x35]
-    const bytesPerSectorLo = data[offset + 0x36]
-    const bytesPerSectorHi = data[offset + 0x37]
-    const allocDirection = data[offset + 0x31]
-
-    return (
-      catTrack > 0 && catTrack < 35 &&
-      catSector < 16 &&
-      (dosRelease === 2 || dosRelease === 3 || dosRelease === 0) &&
-      (maxTSPairs === 122 || maxTSPairs === 0) &&
-      tracks === 35 &&
-      sectorsPerTrack === 16 &&
-      bytesPerSectorLo === 0 &&
-      bytesPerSectorHi === 1 &&
-      (allocDirection === 1 || allocDirection === 255 || allocDirection === 0)
-    )
-  }
-
-  // VTOC is logical T17,S0; test both on-disk sector orders.
-  const dosOrderVtoc = getSectorOffset(17, 0, DOS_ORDER_MAP)
-  const prodosOrderVtoc = getSectorOffset(17, 0, PRODOS_ORDER_MAP)
-
-  return matchesVtoc(dosOrderVtoc) || matchesVtoc(prodosOrderVtoc)
-}
-
-const isLikelyProDosVolume = (data: Uint8Array): boolean => {
-  if (data.length < (3 * 512)) return false
-
-  const totalBlocksFromSize = Math.floor(data.length / 512)
-  const root = 2 * 512
-  const nextBlock = data[root + 2] | (data[root + 3] << 8)
-  const entry0 = root + 4
-  const byte0 = data[entry0]
-  const storageType = (byte0 >> 4) & 0x0F
-  const nameLen = byte0 & 0x0F
-
-  if (storageType !== 0x0F || nameLen < 1 || nameLen > 15) return false
-  if (nextBlock !== 0 && (nextBlock < 2 || nextBlock > totalBlocksFromSize)) return false
-
-  for (let i = 0; i < nameLen; i++) {
-    const c = data[entry0 + 1 + i]
-    // ProDOS volume names are uppercase-ish 7-bit ASCII; reject control/non-ASCII bytes.
-    if (c < 0x20 || c > 0x7E) return false
-  }
-
-  const bitmapBlock = data[entry0 + 35] | (data[entry0 + 36] << 8)
-  const totalBlocks = data[entry0 + 37] | (data[entry0 + 38] << 8)
-
-  if (totalBlocks < totalBlocksFromSize || totalBlocks > 65535) return false
-  if (bitmapBlock < 2 || bitmapBlock > totalBlocks) return false
-
-  return true
-}
-
-const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "prodos" | "unknown" => {
-  const ext = filename.toLowerCase().split(".").pop() || ""
-  const size140k = (35 * 16 * 256)
-
-  // WOZ is a container format; determine DOS/ProDOS only after explicit extraction/probing.
-  if (ext === "woz") return "unknown"
-
-  // First, positively identify DOS structure (under both sector orders).
-  // This is done before ProDOS to avoid false ProDOS positives on DOS .po files.
-  if (isLikelyDos33Volume(data)) return "dos"
-
-  // Then, positively identify ProDOS structure.
-  if (isLikelyProDosVolume(data)) return "prodos"
-
-  // For 140K floppy images, default to DOS-family handling when ambiguous.
-  if (data.length === size140k) {
-    return "dos"
-  }
-
-  // .po can mean DOS-order or ProDOS-order. For non-140K block images,
-  // prefer ProDOS handling when DOS structure probes are negative.
-  if (ext === "po" && data.length > size140k && data.length % 512 === 0) {
-    return "prodos"
-  }
-
-  // Extension fallback when structure probes are inconclusive.
-  if (ext === "dsk" || ext === "do" || ext === "nib") {
-    return "dos"
-  }
-
-  if (ext === "po") {
-    return "prodos"
-  }
-  if (ext === "hdv" || ext === "2mg") {
-    return "prodos"
-  }
-
-  return "unknown"
-}
 
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -221,10 +106,23 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
   const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
 
+  // Tracks disk items for which a runtime VTOC determination has already been
+  // attempted this session, so we don't repeatedly re-download the same disk.
+  const vtocResolveAttempted = useRef<Set<string>>(new Set())
+
   const TAB_INDEX_SELECT = 3
 
   if (isMinimalTheme()) {
     import("./diskcollectionpanel.minimal.css")
+  }
+
+  const isDiskExportable = (disk: DiskCollectionItem) => {
+    // A disk whose VTOC has been determined to be neither DOS nor ProDOS ("other")
+    // cannot be exported. An undetermined (undefined) vtocType is treated as
+    // potentially exportable until background determination resolves it.
+    return !disk.diskUrl.toString().endsWith(".hdv") &&
+      disk.fileSize < maxHdvBytes * 0.95 &&
+      disk.vtocType !== "other"
   }
 
   const tabs = [
@@ -249,14 +147,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     {
       icon: faDownload,
       label: "Export disks to HDV",
-      disks: diskCollection.sort(sortByLastUpdatedAsc),
+      // Only show disks that can actually be exported. Disks that are too large
+      // or whose VTOC is "other" (neither DOS nor ProDOS) are hidden entirely.
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(isDiskExportable),
       isHighlighted: false
     }
   ]
-
-  const isDiskExportable = (disk: DiskCollectionItem) => {
-    return !disk.diskUrl.toString().endsWith(".hdv") && disk.fileSize < maxHdvBytes * 0.95
-  }
 
   const handleHelpClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation()
@@ -287,6 +183,40 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     if (!callback) {
       setIsFlyoutOpen(false)
     }
+  }
+
+  // Downloads a disk's bytes without disturbing the running emulator. Unlike
+  // loadDisk(), this never changes the run mode or loads the disk into a drive;
+  // it simply resolves with the raw buffer (or null on failure) via callback.
+  const fetchDiskBufferForItem = (diskCollectionItem: DiskCollectionItem): Promise<Uint8Array | null> => {
+    return new Promise((resolve) => {
+      const cb = (buffer: ArrayBuffer | null) => resolve(buffer ? new Uint8Array(buffer) : null)
+      if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+        handleSetDiskFromCloudData(diskCollectionItem.cloudData, -1, cb)
+      } else if (diskCollectionItem.diskUrl && !diskCollectionItem.diskUrl.includes("://")) {
+        handleSetDiskFromFile(diskCollectionItem.diskUrl, props.updateDisplay, -1, cb)
+      } else {
+        handleSetDiskFromURL(diskCollectionItem.diskUrl || "", undefined, -1, diskCollectionItem.cloudData, cb)
+      }
+    })
+  }
+
+  // Stores a determined VTOC type onto the in-memory collection item and, for
+  // bookmarked disks, persists it to local storage so it only needs to be
+  // determined once.
+  const persistVtocType = (diskCollectionItem: DiskCollectionItem, vtocType: VtocType) => {
+    diskCollectionItem.vtocType = vtocType
+
+    if (diskCollectionItem.bookmarkId) {
+      const bookmark = diskBookmarks.get(diskCollectionItem.bookmarkId)
+      if (bookmark) {
+        bookmark.vtocType = vtocType
+        diskBookmarks.set(bookmark)
+      }
+    }
+
+    // Trigger a re-render so the export filter reflects the new VTOC type.
+    setDiskCollection((prev) => [...prev])
   }
 
   const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
@@ -538,7 +468,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         detailsUrl: diskBookmark.cloudData?.detailsUrl ? diskBookmark.cloudData.detailsUrl : diskBookmark.detailsUrl?.toString(),
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData,
-        fileSize: diskBookmark.cloudData?.fileSize || -1
+        fileSize: diskBookmark.cloudData?.fileSize || -1,
+        vtocType: diskBookmark.vtocType
       })
     }
 
@@ -564,6 +495,43 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
+
+  // When the Export tab is displayed, determine (and cache) the VTOC type of any
+  // disk that doesn't already have one. Built-in disks and new releases ship with
+  // a predefined vtocType, and freshly bookmarked disks are classified at bookmark
+  // time, so this primarily migrates legacy bookmarks created before this feature.
+  // Disks are resolved one at a time to avoid a download stampede.
+  useEffect(() => {
+    if (activeTab != TAB_INDEX_SELECT || !isFlyoutOpen) {
+      return
+    }
+
+    const itemKey = (item: DiskCollectionItem) =>
+      item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
+
+    const pending = diskCollection.find((item) =>
+      item.vtocType === undefined &&
+      !item.diskUrl.toString().toLowerCase().endsWith(".hdv") &&
+      !vtocResolveAttempted.current.has(itemKey(item))
+    )
+    if (!pending) {
+      return
+    }
+
+    vtocResolveAttempted.current.add(itemKey(pending))
+    let cancelled = false
+
+    fetchDiskBufferForItem(pending).then((data) => {
+      if (cancelled || !data) {
+        return
+      }
+      const filename = getExportFilename(pending, data)
+      persistVtocType(pending, determineVtocType(filename, data))
+    })
+
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, isFlyoutOpen, diskCollection])
 
   return (
     <Flyout
@@ -665,6 +633,15 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                       event.stopPropagation()
                     }
                   }} />
+                </div>}
+              {isDiskExportable(diskCollectionItem) &&
+                <div className="dcp-item-export-badge" title="Disk can be exported to HDV">
+                  <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" onClick={(event) => {
+                    if (activeTab != TAB_INDEX_SELECT) {
+                      event.stopPropagation()
+                    }
+                  }} />
+                  <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
                 </div>}
               {activeTab == 2 && diskCollectionItem.bookmarkId &&
                 <div

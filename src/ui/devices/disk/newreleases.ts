@@ -7,7 +7,8 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: "https://colino.net/tmp/glider-en-beta-202503162.po",
     detailsUrl: "https://www.colino.net/wordpress/glider-for-apple-ii/",
     params: "color=green",
-    fileSize: 143360
+    fileSize: 143360,
+    vtocType: "prodos"
   },
   {
     type: -1,
@@ -16,7 +17,8 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://archive.org/download/MillionPerfectTiles/00playable_screenshot.png",
     diskUrl: "https://archive.org/download/MillionPerfectTiles/00playable.po",
     detailsUrl: "https://archive.org/details/MillionPerfectTiles",
-    fileSize: 143360
+    fileSize: 143360,
+    vtocType: "prodos"
   },
   {
     type: -1,
@@ -25,7 +27,8 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/title.jpg",
     diskUrl: "https://github.com/antoinevignau/source/raw/refs/heads/main/encounter/encounteradventure.dsk",
     detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/encounter/",
-    fileSize: 143360
+    fileSize: 143360,
+    vtocType: "dos"
   },
   {
     type: -1,
@@ -43,7 +46,8 @@ export const newReleases: DiskCollectionItem[] = [
     imageUrl: "https://www.brutaldeluxe.fr/products/apple2/kontrabant/Kontrabant%20Box.jpg",
     diskUrl: "https://github.com/antoinevignau/source/raw/refs/heads/main/kontrabant/kontra_en.dsk",
     detailsUrl: "https://www.brutaldeluxe.fr/products/apple2/kontrabant/",
-    fileSize: 819200
+    fileSize: 819200,
+    vtocType: "dos"
   },
   {
     type: -1,
@@ -53,7 +57,8 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: "https://github.com/colinleroy/a2tools/releases/latest/download/shufflepuck.po",
     detailsUrl: "https://www.colino.net/wordpress/en/shufflepuck-cafe-for-apple-ii/",
     params: "color=green",
-    fileSize: 143360
+    fileSize: 143360,
+    vtocType: "prodos"
   },
   {
     type: -1,
@@ -63,7 +68,8 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: "https://github.com/rsheehan/K2/raw/refs/heads/main/K2.po",
     detailsUrl: "https://github.com/rsheehan/K2",
     params: "TEXT=%2BK2%20ABOUTK2",
-    fileSize: 143360
+    fileSize: 143360,
+    vtocType: "prodos"
   },
   {
     type: -1,
@@ -73,7 +79,8 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: "https://a2desktop.s3.amazonaws.com/A2DeskTop-1.5-alpha4-en_800k.2mg",
     detailsUrl: "https://github.com/a2stuff/a2d",
     params: "color=white&speed=fast&scanlines=off",
-    fileSize: 819264
+    fileSize: 819264,
+    vtocType: "prodos"
   },
   {
     type: -1,

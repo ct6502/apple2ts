@@ -365,6 +365,8 @@ type DisassemblyProps = {
   refresh: () => void,
 }
 
+type VtocType = "dos" | "prodos" | "other"
+
 type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
@@ -375,7 +377,8 @@ type DiskCollectionItem = {
   bookmarkId?: string,
   cloudData?: CloudData,
   params?: string,
-  fileSize: number
+  fileSize: number,
+  vtocType?: VtocType
 }
 
 interface OpenerWindow {

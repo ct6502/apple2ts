@@ -638,6 +638,52 @@ const getByteAtBit = (bits: Uint8Array, bitPos: number, bitCount: number) => {
   return value
 }
 
+const DOS_ORDER_MAP = [0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15]
+const PRODOS_ORDER_MAP = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
+
+const getDosSectorOffset = (track: number, sector: number, map: number[]) => {
+  if (track < 0 || sector < 0 || sector > 15) return -1
+  const mappedSector = map[sector]
+  return (track * 16 + mappedSector) * 256
+}
+
+const isLikelyDos33Volume = (data: Uint8Array): boolean => {
+  // DOS 3.3 5.25" image size (35 tracks x 16 sectors x 256 bytes).
+  if (data.length < (35 * 16 * 256)) return false
+
+  const matchesVtoc = (offset: number) => {
+    if (offset < 0 || offset + 0x3A >= data.length) return false
+
+    const catTrack = data[offset + 0x01]
+    const catSector = data[offset + 0x02]
+    const dosRelease = data[offset + 0x03]
+    const maxTSPairs = data[offset + 0x27]
+    const tracks = data[offset + 0x34]
+    const sectorsPerTrack = data[offset + 0x35]
+    const bytesPerSectorLo = data[offset + 0x36]
+    const bytesPerSectorHi = data[offset + 0x37]
+    const allocDirection = data[offset + 0x31]
+
+    return (
+      catTrack > 0 && catTrack < 35 &&
+      catSector < 16 &&
+      (dosRelease === 2 || dosRelease === 3 || dosRelease === 0) &&
+      (maxTSPairs === 122 || maxTSPairs === 0) &&
+      tracks === 35 &&
+      sectorsPerTrack === 16 &&
+      bytesPerSectorLo === 0 &&
+      bytesPerSectorHi === 1 &&
+      (allocDirection === 1 || allocDirection === 255 || allocDirection === 0)
+    )
+  }
+
+  // VTOC is logical T17,S0; test both on-disk sector orders.
+  const dosOrderVtoc = getDosSectorOffset(17, 0, DOS_ORDER_MAP)
+  const prodosOrderVtoc = getDosSectorOffset(17, 0, PRODOS_ORDER_MAP)
+
+  return matchesVtoc(dosOrderVtoc) || matchesVtoc(prodosOrderVtoc)
+}
+
 const isLikelyProDosVolume = (data: Uint8Array): boolean => {
   if (data.length < (3 * 512)) return false
 
@@ -805,6 +851,78 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
   }
 
   return []
+}
+
+/**
+ * Classifies a disk image's filesystem family ("dos" | "prodos" | "unknown") from its
+ * raw bytes and filename. Uses structural VTOC/volume-directory probes first, then falls
+ * back to extension/size heuristics. WOZ is a bitstream container, so it always returns
+ * "unknown" here -- use determineVtocType() to classify WOZ via full bit decoding.
+ */
+export const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "prodos" | "unknown" => {
+  const ext = filename.toLowerCase().split(".").pop() || ""
+  const size140k = (35 * 16 * 256)
+
+  // WOZ is a container format; determine DOS/ProDOS only after explicit extraction/probing.
+  if (ext === "woz") return "unknown"
+
+  // First, positively identify DOS structure (under both sector orders).
+  // This is done before ProDOS to avoid false ProDOS positives on DOS .po files.
+  if (isLikelyDos33Volume(data)) return "dos"
+
+  // Then, positively identify ProDOS structure.
+  if (isLikelyProDosVolume(data)) return "prodos"
+
+  // For 140K floppy images, default to DOS-family handling when ambiguous.
+  if (data.length === size140k) {
+    return "dos"
+  }
+
+  // .po can mean DOS-order or ProDOS-order. For non-140K block images,
+  // prefer ProDOS handling when DOS structure probes are negative.
+  if (ext === "po" && data.length > size140k && data.length % 512 === 0) {
+    return "prodos"
+  }
+
+  // Extension fallback when structure probes are inconclusive.
+  if (ext === "dsk" || ext === "do" || ext === "nib") {
+    return "dos"
+  }
+
+  if (ext === "po") {
+    return "prodos"
+  }
+  if (ext === "hdv" || ext === "2mg") {
+    return "prodos"
+  }
+
+  return "unknown"
+}
+
+/**
+ * Determines the exportable VTOC type of a disk image: "dos", "prodos", or "other".
+ * "other" means the image is neither a recognizable DOS 3.3 nor ProDOS volume and so
+ * cannot be exported. WOZ images are fully bit-decoded and probed under every sector
+ * order before being classified.
+ */
+export const determineVtocType = (filename: string, data: Uint8Array): VtocType => {
+  const ext = filename.toLowerCase().split(".").pop() || ""
+
+  if (ext === "woz") {
+    const decoded = decodeWozToSectorCandidates(data)
+    if (decoded) {
+      for (const candidate of decoded.candidates) {
+        if (isLikelyProDosVolume(candidate.data)) return "prodos"
+      }
+      for (const candidate of decoded.candidates) {
+        if (isLikelyDos33Volume(candidate.data)) return "dos"
+      }
+    }
+    return "other"
+  }
+
+  const kind = classifyImageKind(filename, data)
+  return kind === "unknown" ? "other" : kind
 }
 
 // In ProDOS a "system program" is any file of type $FF (SYS) loaded at $2000; the

@@ -229,7 +229,7 @@
   position: relative;
   width: 12px;
   height: 12px;
-  left: 18%;
+  left: 19%;
   bottom: 6px;
   background-color: black;
   z-index: 0;
@@ -294,9 +294,9 @@
 
 .dcp-item-a2ts-icon-bg {
   position: relative;
-  width: 12px;
+  width: 14px;
   height: 14px;
-  left: 12%;
+  left: 13%;
   bottom: 6px;
   background-color: black;
   z-index: 0;
@@ -343,6 +343,29 @@
   z-index: 1;
 }
 
+.dcp-item-export-badge {
+  position: absolute;
+  right: 7px;
+  bottom: 4px;
+}
+
+.dcp-item-export-badge-icon {
+  position: relative;
+  top: 1px;
+  color: gainsboro;
+  z-index: 1;
+}
+
+.dcp-item-export-badge-icon-bg {
+  position: relative;
+  width: 14px;
+  height: 3px;
+  left: 25%;
+  bottom: 6px;
+  background-color: black;
+  z-index: 0;
+}
+
 @media (min-width: 1290px) {
   .disk-collection-panel {
     grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
@@ -370,6 +393,10 @@
 
   .dcp-item-a2ts {
     bottom: 8px;
+  }
+
+  .dcp-item-export-badge {
+    bottom: 10px;
   }
 
   .dcp-item-ia {
