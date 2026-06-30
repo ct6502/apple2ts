@@ -357,7 +357,7 @@ export const handleSetDiskFromURL = async (url: string,
   if (!callback) {
     showGlobalProgressModal(true, "Downloading disk")
   } else {
-    showGlobalProgressModal(true)
+    // showGlobalProgressModal(true)
   }
 
   // Try direct fetch first (works in Electron with CORS bypass)
