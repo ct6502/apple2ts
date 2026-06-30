@@ -106,11 +106,24 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
   const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
 
-  // Tracks disk items for which a runtime VTOC determination has already been
-  // attempted this session, so we don't repeatedly re-download the same disk.
+  // Tracks disk items whose VTOC download has been attempted during this open
+  // of the export tab (success or failure), so we don't re-pick the same disk
+  // while iterating the queue. Cleared on a fresh open so failures retry.
   const vtocResolveAttempted = useRef<Set<string>>(new Set())
+  // Bumped after a failed download so the verification effect advances to the
+  // next pending disk. CORS/network failures are retried when the export tab is
+  // reopened (a testing-only scenario).
+  const [vtocCheckPass, setVtocCheckPass] = useState(0)
+  // True while the export tab is open; used to detect a fresh open so that
+  // previously-failed (unresolved) disks can be retried.
+  const exportTabOpenRef = useRef(false)
 
   const TAB_INDEX_SELECT = 3
+
+  // Stable identity for a disk across re-renders (bookmark id, cloud item id,
+  // disk URL, or finally the title).
+  const itemKey = (item: DiskCollectionItem): string =>
+    item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
 
   if (isMinimalTheme()) {
     import("./diskcollectionpanel.minimal.css")
@@ -147,9 +160,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     {
       icon: faDownload,
       label: "Export disks to HDV",
-      // Only show disks that can actually be exported. Disks that are too large
-      // or whose VTOC is "other" (neither DOS nor ProDOS) are hidden entirely.
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(isDiskExportable),
+      // Show disks whose VTOC is known and exportable. Built-in disks ship with
+      // a predefined vtocType and appear immediately; disks without one (e.g.
+      // new releases) appear only after their bytes download successfully and
+      // their VTOC is determined, so unreachable (CORS-blocked) disks stay
+      // hidden. Disks whose VTOC is "other" or too large are excluded.
+      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.vtocType !== undefined && isDiskExportable(x)),
       isHighlighted: false
     }
   ]
@@ -319,6 +335,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       showGlobalProgressModal(false)
       setExportQueue([])
       setDownloadedDisks([])
+      setSelectedDisks([])
+      setActiveTab(0)
+      // Dismiss the disk collection dialog/flyout so the error isn't left
+      // hanging over a half-finished export.
+      props.onDismissDialog?.()
+      setIsFlyoutOpen(false)
       alert("An unexpected error occurred while downloading the disk. Export to HDV has been aborted.")
     } else if (buffer !== undefined) {
       const currentItem = exportQueue[0]
@@ -409,10 +431,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         }
       })
 
-      // Load screenshots from disk collection items
+      // Convert each disk's preview screenshot to Apple II hi-res, stamping the
+      // Apple2TS logo into the corner. Conversion is deterministic; the result
+      // is computed fresh from the source image each export (no caching).
       const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
       for (const disk of orderedDownloadedDisks) {
-        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl)
+        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl, true)
         screenshots.push({
           name: disk.filename.split(".")[0].slice(0, 15),
           data: screenshotData,
@@ -496,22 +520,32 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
 
-  // When the Export tab is displayed, determine (and cache) the VTOC type of any
-  // disk that doesn't already have one. Built-in disks and new releases ship with
-  // a predefined vtocType, and freshly bookmarked disks are classified at bookmark
-  // time, so this primarily migrates legacy bookmarks created before this feature.
-  // Disks are resolved one at a time to avoid a download stampede.
+  // When the Export tab is displayed, fill in (and cache) the VTOC type of any
+  // disk that doesn't already have one by downloading its bytes. Built-in disks
+  // ship with a predefined vtocType and are trusted as-is (never re-downloaded);
+  // disks without one are resolved here, so a disk that can't be downloaded
+  // (e.g. CORS-blocked) never gets a VTOC and is never shown as exportable.
+  // Disks are resolved one at a time to avoid a download stampede; failures can
+  // be retried by reopening the export tab.
   useEffect(() => {
-    if (activeTab != TAB_INDEX_SELECT || !isFlyoutOpen) {
+    const exportActive = activeTab == TAB_INDEX_SELECT && isFlyoutOpen
+    if (!exportActive) {
+      exportTabOpenRef.current = false
       return
     }
 
-    const itemKey = (item: DiskCollectionItem) =>
-      item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
+    // On a fresh open of the export tab, retry any disk whose VTOC is still
+    // unresolved. Disks that already resolved keep their cached vtocType and are
+    // not re-picked below.
+    if (!exportTabOpenRef.current) {
+      exportTabOpenRef.current = true
+      vtocResolveAttempted.current.clear()
+    }
 
+    // Pick the next exportable-candidate disk that still lacks a VTOC type.
     const pending = diskCollection.find((item) =>
       item.vtocType === undefined &&
-      !item.diskUrl.toString().toLowerCase().endsWith(".hdv") &&
+      isDiskExportable(item) &&
       !vtocResolveAttempted.current.has(itemKey(item))
     )
     if (!pending) {
@@ -521,17 +555,30 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     vtocResolveAttempted.current.add(itemKey(pending))
     let cancelled = false
 
-    fetchDiskBufferForItem(pending).then((data) => {
-      if (cancelled || !data) {
-        return
-      }
-      const filename = getExportFilename(pending, data)
-      persistVtocType(pending, determineVtocType(filename, data))
-    })
+    fetchDiskBufferForItem(pending)
+      .then((data) => {
+        if (cancelled) {
+          return
+        }
+        if (!data) {
+          // Download failed (CORS/network). Advance to the next disk; this one
+          // can be retried the next time the export tab is opened.
+          setVtocCheckPass((pass) => pass + 1)
+          return
+        }
+        const filename = getExportFilename(pending, data)
+        // Cache the determined VTOC (and persist it for bookmarks).
+        persistVtocType(pending, determineVtocType(filename, data))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setVtocCheckPass((pass) => pass + 1)
+        }
+      })
 
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, isFlyoutOpen, diskCollection])
+  }, [activeTab, isFlyoutOpen, diskCollection, vtocCheckPass])
 
   return (
     <Flyout
@@ -634,7 +681,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                     }
                   }} />
                 </div>}
-              {isDiskExportable(diskCollectionItem) &&
+              {diskCollectionItem.vtocType !== undefined && isDiskExportable(diskCollectionItem) &&
                 <div className="dcp-item-export-badge" title="Disk can be exported to HDV">
                   <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" onClick={(event) => {
                     if (activeTab != TAB_INDEX_SELECT) {

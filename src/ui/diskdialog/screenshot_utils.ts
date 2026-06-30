@@ -4,8 +4,6 @@
 
 type Rgb = [number, number, number]
 
-const clamp8 = (v: number): number => Math.max(0, Math.min(255, Math.round(v)))
-
 const sampleBilinear = (imageData: ImageData, x: number, y: number): Rgb => {
   const w = imageData.width
   const h = imageData.height
@@ -58,65 +56,148 @@ const APPLE2_COLORS = {
   blue: [32, 112, 255] as Rgb,
 }
 
-const smoothRowChroma = (row: Uint8Array): Uint8Array => {
-  const out = new Uint8Array(row.length)
-  const w = 560
-  const yVals = new Float32Array(w)
-  const uVals = new Float32Array(w)
-  const vVals = new Float32Array(w)
-  const uSm = new Float32Array(w)
-  const vSm = new Float32Array(w)
-  const kernel = [1, 2, 3, 4, 3, 2, 1]
-  const norm = 16
-
-  for (let x = 0; x < w; x++) {
-    const off = x * 3
-    const r = row[off]
-    const g = row[off + 1]
-    const b = row[off + 2]
-    const [y, u, v] = rgbToYuv(r, g, b)
-    yVals[x] = y
-    uVals[x] = u
-    vVals[x] = v
+/**
+ * Loads (once) the Apple2TS logo used to watermark exported screenshots.
+ * Resolves to null if the logo can't be loaded.
+ */
+let logoImagePromise: Promise<HTMLImageElement | null> | null = null
+const loadLogoImage = (): Promise<HTMLImageElement | null> => {
+  if (!logoImagePromise) {
+    logoImagePromise = new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => resolve(null)
+      img.src = new URL("logo48x48.png", window.location.href).toString()
+    })
   }
+  return logoImagePromise
+}
 
-  for (let x = 0; x < w; x++) {
-    let su = 0
-    let sv = 0
-    for (let k = -3; k <= 3; k++) {
-      const sx = Math.max(0, Math.min(w - 1, x + k))
-      const kw = kernel[k + 3]
-      su += uVals[sx] * kw
-      sv += vVals[sx] * kw
+const LOGO_NATIVE_SIZE = 48
+const LOGO_OUTLINE = 2
+
+// 8-neighbor dilation of a binary mask by one pixel.
+const dilateMask = (mask: Uint8Array, size: number): Uint8Array => {
+  const out = new Uint8Array(mask.length)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (mask[y * size + x]) {
+        out[y * size + x] = 1
+        continue
+      }
+      let hit = 0
+      for (let dy = -1; dy <= 1 && !hit; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx
+          const ny = y + dy
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue
+          if (mask[ny * size + nx]) {
+            hit = 1
+            break
+          }
+        }
+      }
+      out[y * size + x] = hit
     }
-    uSm[x] = su / norm
-    vSm[x] = sv / norm
   }
-
-  for (let x = 0; x < w; x++) {
-    const y = yVals[x]
-    const u = uSm[x]
-    const v = vSm[x]
-    const r = y + v
-    const b = y + u
-    const g = (y - 0.299 * r - 0.114 * b) / 0.587
-    const off = x * 3
-    out[off] = clamp8(r)
-    out[off + 1] = clamp8(g)
-    out[off + 2] = clamp8(b)
-  }
-
   return out
+}
+
+/**
+ * Stamps the logo into an already-converted hi-res page in its original colors
+ * with a black/white outline so it reads clearly on any background. The logo is
+ * converted to hi-res in isolation (without dithering, so its small footprint
+ * stays crisp), then only the logo and its outline pixels are composited into
+ * the page — leaving the rest of the screenshot untouched.
+ */
+const stampLogoIntoHires = (hiresData: Uint8Array, logo: HTMLImageElement): void => {
+  const logoSize = LOGO_NATIVE_SIZE
+  const outline = LOGO_OUTLINE
+  const stampSize = logoSize + outline * 2 // 52: leaves room for the outline ring
+
+  // 1. Rasterize the logo, inset by the outline width, on a transparent canvas.
+  const stampCanvas = document.createElement("canvas")
+  stampCanvas.width = stampSize
+  stampCanvas.height = stampSize
+  const sctx = stampCanvas.getContext("2d")
+  if (!sctx) return
+  sctx.imageSmoothingEnabled = true
+  sctx.drawImage(logo, outline, outline, logoSize, logoSize)
+  const stamp = sctx.getImageData(0, 0, stampSize, stampSize)
+  const sd = stamp.data
+
+  // 2. Body mask = opaque logo pixels; dilate twice for two 1px outline rings.
+  const body = new Uint8Array(stampSize * stampSize)
+  for (let i = 0; i < body.length; i++) {
+    body[i] = sd[i * 4 + 3] > 128 ? 1 : 0
+  }
+  const dil1 = dilateMask(body, stampSize) // body + inner ring
+  const dil2 = dilateMask(dil1, stampSize) // body + inner ring + outer ring
+
+  // 3. Paint the outline: inner ring white, outer ring black, rest transparent.
+  for (let i = 0; i < body.length; i++) {
+    if (body[i]) continue // keep the original logo color
+    const o = i * 4
+    if (dil1[i]) {
+      sd[o] = 255; sd[o + 1] = 255; sd[o + 2] = 255; sd[o + 3] = 255
+    } else if (dil2[i]) {
+      sd[o] = 0; sd[o + 1] = 0; sd[o + 2] = 0; sd[o + 3] = 255
+    } else {
+      sd[o + 3] = 0
+    }
+  }
+  sctx.putImageData(stamp, 0, 0)
+  const covered = dil2
+
+  // 4. Convert the stamp to hi-res in isolation at its final absolute position
+  //    (upper-right corner of the screen). The fine canvas is 560 wide (2×
+  //    native horizontally) × 192 tall, so x parity and byte/palette layout
+  //    match the page exactly. Dithering is disabled so the logo stays crisp.
+  const originX = 280 - stampSize // 228
+  const originY = 0 // upper-right corner
+  const fineCanvas = document.createElement("canvas")
+  fineCanvas.width = 560
+  fineCanvas.height = 192
+  const fctx = fineCanvas.getContext("2d")
+  if (!fctx) return
+  fctx.fillStyle = "#000"
+  fctx.fillRect(0, 0, 560, 192)
+  fctx.imageSmoothingEnabled = false
+  fctx.drawImage(stampCanvas, originX * 2, originY, stampSize * 2, stampSize)
+  const logoHires = convertCanvasToHires(fctx.getImageData(0, 0, 560, 192), false)
+
+  // 5. Composite only the covered pixels into the page, copying each affected
+  //    byte's palette high bit so the logo's colors render correctly.
+  for (let sy = 0; sy < stampSize; sy++) {
+    const y = originY + sy
+    const rowBase =
+      (y & 0x07) * 0x400 +
+      ((y >> 3) & 0x07) * 0x80 +
+      ((y >> 6) & 0x03) * 0x28
+    for (let sx = 0; sx < stampSize; sx++) {
+      if (!covered[sy * stampSize + sx]) continue
+      const x = originX + sx
+      const byteIndex = rowBase + Math.floor(x / 7)
+      const bit = 1 << (x % 7)
+      if ((logoHires[byteIndex] >> (x % 7)) & 1) hiresData[byteIndex] |= bit
+      else hiresData[byteIndex] &= ~bit
+      hiresData[byteIndex] = (hiresData[byteIndex] & 0x7f) | (logoHires[byteIndex] & 0x80)
+    }
+  }
 }
 
 /**
  * Loads an image from a URL and converts it to Apple II hi-res format
  * @param imageUrl URL to load (http/https, data URL, or relative path)
+ * @param stampLogo When true, watermarks the 48×48 Apple2TS logo into the
+ *   upper-right corner of the screen.
  * @returns Hi-res binary data (8KB for 280×192) or null if load fails
  */
-export const loadAndConvertImageToHires = async (imageUrl?: string): Promise<Uint8Array | null> => {
+export const loadAndConvertImageToHires = async (imageUrl?: string, stampLogo = false): Promise<Uint8Array | null> => {
   if (!imageUrl) return null
-  
+
+  const logo = stampLogo ? await loadLogoImage() : null
+
   try {
     let url = imageUrl
     
@@ -145,10 +226,13 @@ export const loadAndConvertImageToHires = async (imageUrl?: string): Promise<Uin
           ctx.fillRect(0, 0, 560, 192)
           ctx.imageSmoothingEnabled = true
           ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 560, 160)
-          
-          // Convert to hi-res format
+
+          // Convert to hi-res format, then stamp the logo directly into the
+          // hi-res bytes so it stays crisp instead of being blurred/fringed by
+          // the color-matching pipeline.
           const imageData = ctx.getImageData(0, 0, 560, 192)
           const hiresData = convertCanvasToHires(imageData)
+          if (logo) stampLogoIntoHires(hiresData, logo)
           resolve(hiresData)
         } catch (e) {
           console.error("Error converting image to hi-res:", e)
@@ -167,25 +251,89 @@ export const loadAndConvertImageToHires = async (imageUrl?: string): Promise<Uin
 }
 
 /**
- * Converts canvas ImageData to Apple II hi-res format
- * Hi-res format: 40 bytes/row × 192 rows = 8KB total
- * Pixel data is organized by rows, with each byte containing 7 pixels
+ * Converts canvas ImageData to Apple II hi-res format (8KB page, 280×192).
+ *
+ * The color conversion is adapted from Bill Buckels' royalty-free Bmp2DHR
+ * (which itself credits Sheldon Simms' tohgr): every scanline is dithered
+ * twice — once assuming the Orange-Blue HGR palette and once assuming the
+ * Green-Violet palette — and then, for each 7-dot byte, the palette giving the
+ * lower accumulated error is selected. A final pass dithers each color cell
+ * against its byte's chosen palette with Floyd–Steinberg error diffusion.
+ *
+ * @param imageData Source pixels, expected 560×192 (2× native horizontally).
+ * @param dither When false (logo/sprite path) the image is quantized with no
+ *   error diffusion so small graphics stay crisp.
+ * @param ditherStrength Fraction (0–1) of the quantization error that is
+ *   diffused to neighboring cells. Lower values reduce the speckly "fuzz" in
+ *   flat areas (at the cost of some banding); 1 is full Floyd–Steinberg.
  */
-export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
+export const convertCanvasToHires = (imageData: ImageData, dither = true, ditherStrength = 0.1): Uint8Array => {
   const width = 280
   const height = 192
+  const cells = 140
+  const bytesPerRow = 40
   const fineWidth = imageData.width
   const fineHeight = imageData.height
   const hiresData = new Uint8Array(8192) // Full HGR page ($2000-$3FFF)
-  const rowPhaseSwitchPenalty = 500
-  let previousRowPhase = 0
+
+  // HGR color cell states: 0 black, 1 odd-column color, 2 even-column color,
+  // 3 white. The odd/even colors depend on the byte's palette (high) bit:
+  //   Orange-Blue  (high bit set):   odd = orange, even = blue
+  //   Green-Violet (high bit clear): odd = green,  even = violet
+  const paletteOB: Rgb[] = [APPLE2_COLORS.black, APPLE2_COLORS.orange, APPLE2_COLORS.blue, APPLE2_COLORS.white]
+  const paletteGV: Rgb[] = [APPLE2_COLORS.black, APPLE2_COLORS.green, APPLE2_COLORS.purple, APPLE2_COLORS.white]
 
   const getFineX = (xFine: number): number => Math.min(fineWidth - 1, Math.max(0, xFine * fineWidth / 560))
   const getFineY = (y: number): number => Math.min(fineHeight - 1, Math.max(0, y * fineHeight / 192))
-  
+
+  // The 7-dot byte that a color cell's even dot (column 2*cell) falls in.
+  const cellByte = (cell: number): number => Math.floor((cell * 2) / 7)
+
+  // Index of the nearest palette entry to an RGB target.
+  const nearest = (palette: Rgb[], r: number, g: number, b: number): number => {
+    let best = 0
+    let bestErr = Number.POSITIVE_INFINITY
+    for (let s = 0; s < 4; s++) {
+      const c = palette[s]
+      const err = colorError(r, g, b, c[0], c[1], c[2])
+      if (err < bestErr) {
+        bestErr = err
+        best = s
+      }
+    }
+    return best
+  }
+
+  // Bmp2DHR palette-test pass: dither a copy of the line against one palette,
+  // diffusing error forward within the line only, and report the absolute
+  // error per cell (used to pick the per-byte palette).
+  const testPaletteError = (sr: Float32Array, sg: Float32Array, sb: Float32Array, palette: Rgb[]): Float32Array => {
+    const lr = sr.slice()
+    const lg = sg.slice()
+    const lb = sb.slice()
+    const err = new Float32Array(cells)
+    for (let c = 0; c < cells; c++) {
+      const col = palette[nearest(palette, lr[c], lg[c], lb[c])]
+      const eR = lr[c] - col[0]
+      const eG = lg[c] - col[1]
+      const eB = lb[c] - col[2]
+      err[c] = Math.abs(eR) + Math.abs(eG) + Math.abs(eB)
+      if (dither && c + 1 < cells) {
+        lr[c + 1] += eR * 7 / 16 * ditherStrength
+        lg[c + 1] += eG * 7 / 16 * ditherStrength
+        lb[c + 1] += eB * 7 / 16 * ditherStrength
+      }
+    }
+    return err
+  }
+
+  // Error diffused down from the previous row, per color cell.
+  let rowErrR = new Float32Array(cells)
+  let rowErrG = new Float32Array(cells)
+  let rowErrB = new Float32Array(cells)
+
   for (let y = 0; y < height; y++) {
     // Apple II HGR layout is interleaved in memory, not linear by rows.
-    // Offset within page (without $2000 base):
     //   (y % 8) * $400 + ((y / 8) % 8) * $80 + (y / 64) * $28
     const rowBase =
       (y & 0x07) * 0x400 +
@@ -193,130 +341,101 @@ export const convertCanvasToHires = (imageData: ImageData): Uint8Array => {
       ((y >> 6) & 0x03) * 0x28
 
     const sourceY = getFineY(y)
-    const rawRow = new Uint8Array(560 * 3)
-    let satSum = 0
-    let satHighCount = 0
-    for (let fx = 0; fx < 560; fx++) {
-      const [r, g, b] = sampleBilinear(imageData, getFineX(fx) + 0.5, sourceY + 0.5)
-      const off = fx * 3
-      const rr = clamp8(r)
-      const gg = clamp8(g)
-      const bb = clamp8(b)
-      rawRow[off] = rr
-      rawRow[off + 1] = gg
-      rawRow[off + 2] = bb
 
-      const sat = Math.max(rr, gg, bb) - Math.min(rr, gg, bb)
-      satSum += sat
-      if (sat > 28) satHighCount++
-    }
-    const satMean = satSum / 560
-    const satHighRatio = satHighCount / 560
-    const rowIsMostlyMonochrome = satMean < 22 && satHighRatio < 0.08
-    const filteredRow = rowIsMostlyMonochrome ? rawRow : smoothRowChroma(rawRow)
-
-    const chosenStateByPhase: number[][] = [new Array(140).fill(0), new Array(140).fill(0)]
-    const phaseCost = [0, 0]
-
-    for (let cell = 0; cell < 140; cell++) {
+    // Sample 140 color cells (4 fine pixels each) and fold in the error
+    // diffused down from the row above.
+    const baseR = new Float32Array(cells)
+    const baseG = new Float32Array(cells)
+    const baseB = new Float32Array(cells)
+    for (let c = 0; c < cells; c++) {
       let tr = 0
       let tg = 0
       let tb = 0
-      const fxStart = cell * 4
       for (let i = 0; i < 4; i++) {
-        const off = (fxStart + i) * 3
-        tr += filteredRow[off]
-        tg += filteredRow[off + 1]
-        tb += filteredRow[off + 2]
+        const [r, g, b] = sampleBilinear(imageData, getFineX(c * 4 + i) + 0.5, sourceY + 0.5)
+        tr += r
+        tg += g
+        tb += b
       }
-      tr /= 4
-      tg /= 4
-      tb /= 4
-
-      const tMin = Math.min(tr, tg, tb)
-      const tMax = Math.max(tr, tg, tb)
-      const tSat = tMax - tMin
-      const tLum = 0.299 * tr + 0.587 * tg + 0.114 * tb
-
-      if (rowIsMostlyMonochrome) {
-        const bestState = tLum > 160 ? 3 : 0
-        const bestErr = colorError(tr, tg, tb, ...APPLE2_COLORS[bestState === 3 ? "white" : "black"])
-        chosenStateByPhase[0][cell] = bestState
-        chosenStateByPhase[1][cell] = bestState
-        phaseCost[0] += bestErr
-        phaseCost[1] += bestErr
-        continue
-      }
-
-      for (let phase = 0; phase <= 1; phase++) {
-        const evenColor = phase === 0 ? APPLE2_COLORS.purple : APPLE2_COLORS.blue
-        const oddColor = phase === 0 ? APPLE2_COLORS.green : APPLE2_COLORS.orange
-
-        const candidates: Rgb[] = [
-          APPLE2_COLORS.black,
-          oddColor,
-          evenColor,
-          APPLE2_COLORS.white,
-        ]
-
-        let bestState = 0
-        let bestErr = Number.POSITIVE_INFINITY
-        for (let state = 0; state < 4; state++) {
-          const c = candidates[state]
-          let err = colorError(tr, tg, tb, c[0], c[1], c[2])
-
-          // Reduce false color in near-monochrome zones.
-          if (state === 1 || state === 2) {
-            if (tSat < 30) err += 2600
-            if (tSat < 18 && (tLum < 50 || tLum > 175)) err += 2400
-          }
-
-          if (err < bestErr) {
-            bestErr = err
-            bestState = state
-          }
-        }
-
-        chosenStateByPhase[phase][cell] = bestState
-        phaseCost[phase] += bestErr
-      }
+      baseR[c] = tr / 4 + rowErrR[c]
+      baseG[c] = tg / 4 + rowErrG[c]
+      baseB[c] = tb / 4 + rowErrB[c]
     }
 
-    const costPhase0 = phaseCost[0] + (previousRowPhase === 0 ? 0 : rowPhaseSwitchPenalty)
-    const costPhase1 = phaseCost[1] + (previousRowPhase === 1 ? 0 : rowPhaseSwitchPenalty)
-    const rowPhase = rowIsMostlyMonochrome ? 0 : (costPhase0 <= costPhase1 ? 0 : 1)
-    previousRowPhase = rowPhase
+    // Pick the palette per byte: dither the line under both palettes and keep
+    // whichever has the lower accumulated error over the byte's 7 dots.
+    const obErr = testPaletteError(baseR, baseG, baseB, paletteOB)
+    const gvErr = testPaletteError(baseR, baseG, baseB, paletteGV)
+    const byteIsOB = new Uint8Array(bytesPerRow)
+    const obSum = new Float32Array(bytesPerRow)
+    const gvSum = new Float32Array(bytesPerRow)
+    for (let c = 0; c < cells; c++) {
+      const b = cellByte(c)
+      obSum[b] += obErr[c]
+      gvSum[b] += gvErr[c]
+    }
+    for (let b = 0; b < bytesPerRow; b++) {
+      // Ties go to Orange-Blue, matching Bmp2DHR.
+      byteIsOB[b] = gvSum[b] < obSum[b] ? 0 : 1
+    }
 
+    // Final pass: dither each cell against its byte's palette with full
+    // Floyd–Steinberg diffusion (forward in the row and down to the next).
     const rowBits = new Uint8Array(width)
-    for (let cell = 0; cell < 140; cell++) {
-      const state = chosenStateByPhase[rowPhase][cell]
-      const x = cell * 2
-      // state bits are ordered as [b1 b0]: 0=00 black, 1=01 odd color,
-      // 2=10 even color, 3=11 white.
+    const nextErrR = new Float32Array(cells)
+    const nextErrG = new Float32Array(cells)
+    const nextErrB = new Float32Array(cells)
+    for (let c = 0; c < cells; c++) {
+      const palette = byteIsOB[cellByte(c)] ? paletteOB : paletteGV
+      const dr = baseR[c]
+      const dg = baseG[c]
+      const db = baseB[c]
+      const state = nearest(palette, dr, dg, db)
+      const col = palette[state]
+
+      if (dither) {
+        const eR = (dr - col[0]) * ditherStrength
+        const eG = (dg - col[1]) * ditherStrength
+        const eB = (db - col[2]) * ditherStrength
+        if (c + 1 < cells) {
+          baseR[c + 1] += eR * 7 / 16
+          baseG[c + 1] += eG * 7 / 16
+          baseB[c + 1] += eB * 7 / 16
+          nextErrR[c + 1] += eR / 16
+          nextErrG[c + 1] += eG / 16
+          nextErrB[c + 1] += eB / 16
+        }
+        if (c - 1 >= 0) {
+          nextErrR[c - 1] += eR * 3 / 16
+          nextErrG[c - 1] += eG * 3 / 16
+          nextErrB[c - 1] += eB * 3 / 16
+        }
+        nextErrR[c] += eR * 5 / 16
+        nextErrG[c] += eG * 5 / 16
+        nextErrB[c] += eB * 5 / 16
+      }
+
+      const x = c * 2
+      // state -> bit pair: 0=00 black, 1=01 odd color, 2=10 even color, 3=11 white.
       rowBits[x] = (state >> 1) & 1
       rowBits[x + 1] = state & 1
     }
-    
+    rowErrR = nextErrR
+    rowErrG = nextErrG
+    rowErrB = nextErrB
+
+    // Pack 7 dots per byte and OR in the byte's palette (high) bit.
     for (let x = 0; x < width; x += 7) {
       const byteIndex = rowBase + Math.floor(x / 7)
       let byte = 0
-      
       for (let bit = 0; bit < 7; bit++) {
-        const pixelX = x + bit
-        if (pixelX < width) {
-          if (rowBits[pixelX] !== 0) {
-            byte |= (1 << bit)
-          }
-        }
+        if (rowBits[x + bit] !== 0) byte |= (1 << bit)
       }
-
-      if (!rowIsMostlyMonochrome && rowPhase === 1) {
-        byte |= 0x80
-      }
+      if (byteIsOB[x / 7]) byte |= 0x80
       hiresData[byteIndex] = byte
     }
   }
-  
+
   return hiresData
 }
 
@@ -357,3 +476,4 @@ export const createMenuMetadata = (
   
   return data
 }
+
