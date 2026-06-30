@@ -7,6 +7,23 @@ Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significan
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
+---
+
+## AI Agent Integration
+
+**[AI Agent Integration Guide](src/ui/mcp/README.md)**
+
+Apple2TS includes an integrated AI Agent capable of interacting with the emulator (inspecting CPU registers, viewing screen text, reading/writing memory, managing breakpoints, etc.). It supports:
+- Anthropic Claude
+- OpenAI ChatGPT
+- DeepSeek AI
+- Google Gemini
+- **Ollama (Local)** (with tool-calling models like `ornith:9b`, `qwen2.5-coder`, etc.)
+
+Refer to the guide above for detailed setup, including environment configurations for local Ollama.
+
+---
+
 ## Development
 
 Be sure to install `node.js` and `npm` on your system using either `nvm` (the Node version manager) or the Node installer. Either one should work fine.

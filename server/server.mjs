@@ -37,7 +37,7 @@ const MIME_TYPES = {
 
 const setCorsHeaders = (res) => {
   res.setHeader("Access-Control-Allow-Origin", "*")
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-ollama-url")
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS")
 }
 
@@ -1586,6 +1586,61 @@ const server = createServer(async (req, res) => {
         }
 
         writeJson(res, 200, data)
+      } catch (error) {
+        writeErrorEnvelope(res, 500, "proxy_error", error.message)
+      }
+      return
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/ollama") {
+      try {
+        const body = await readJsonBody(req)
+        let ollamaUrl = req.headers["x-ollama-url"] || "http://127.0.0.1:11434"
+        if (ollamaUrl.includes("localhost")) {
+          ollamaUrl = ollamaUrl.replace("localhost", "127.0.0.1")
+        }
+        
+        const response = await fetch(`${ollamaUrl}/v1/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        })
+
+        if (body.stream) {
+          res.writeHead(response.status, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+          })
+          
+          const reader = response.body.getReader()
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            res.write(value)
+          }
+          res.end()
+        } else {
+          const data = await response.json()
+          writeJson(res, response.status, data)
+        }
+      } catch (error) {
+        writeErrorEnvelope(res, 500, "proxy_error", error.message)
+      }
+      return
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/ollama/tags") {
+      try {
+        let ollamaUrl = req.headers["x-ollama-url"] || "http://127.0.0.1:11434"
+        if (ollamaUrl.includes("localhost")) {
+          ollamaUrl = ollamaUrl.replace("localhost", "127.0.0.1")
+        }
+        const response = await fetch(`${ollamaUrl}/api/tags`)
+        const data = await response.json()
+        writeJson(res, response.status, data)
       } catch (error) {
         writeErrorEnvelope(res, 500, "proxy_error", error.message)
       }

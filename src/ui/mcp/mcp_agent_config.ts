@@ -6,10 +6,12 @@
 import { AnthropicProvider } from "./mcp_agent_anthropic"
 import { DeepSeekProvider } from "./mcp_agent_deepseek"
 import { OpenAIProvider } from "./mcp_agent_openai"
+import { OllamaProvider } from "./mcp_agent_ollama"
+import { GoogleProvider } from "./mcp_agent_google"
 
 const STORAGE_KEY_PREFIX = "apple2ts_agent_"
 
-export type ProviderType = "anthropic" | "deepseek" | "openai" | "google"
+export type ProviderType = "anthropic" | "deepseek" | "openai" | "google" | "ollama"
 
 export interface AgentConfig {
   provider: ProviderType
@@ -95,6 +97,8 @@ export function getProviderDisplayName(provider: ProviderType): string {
       return "OpenAI GPT"
     case "google":
       return "Google Gemini"
+    case "ollama":
+      return "Ollama (Local)"
     default:
       return "Unknown Provider"
   }
@@ -120,8 +124,9 @@ export function getSupportedModels(provider: ProviderType): Array<AIProviderMode
     case "openai":
       return OpenAIProvider.getSupportedModels()
     case "google":
-//      return GoogleProvider.getSupportedModels()
-      break
+      return GoogleProvider.getSupportedModels()
+    case "ollama":
+      return OllamaProvider.getSupportedModels()
     default:
       break
   }
@@ -140,8 +145,9 @@ export function validateApiKeyFormat(provider: ProviderType, apiKey: string): bo
     case "openai":
       return OpenAIProvider.validateApiKeyFormat(apiKey)
     case "google":
-//      return GoogleProvider.validateApiKeyFormat(apiKey)
-      break
+      return GoogleProvider.validateApiKeyFormat(apiKey)
+    case "ollama":
+      return OllamaProvider.validateApiKeyFormat(apiKey)
     default:
       break
   }
