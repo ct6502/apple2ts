@@ -3,7 +3,7 @@ import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../common/utility"
-import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry, classifyImageKind, determineVtocType } from "../../common/prodos_hdv"
+import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry, classifyImageKind, determineVtocType } from "../../common/prodos_hdv"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -403,12 +403,22 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     showGlobalProgressModal(true, "Creating HDV image")
     try {
       const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
+      // WOZ DOS disks decoded to a flat DOS 3.3 (.dsk) sector image, keyed by disk index.
+      // DOS.MASTER runtime volumes must be plain DOS-order sector images, but classifyImageKind
+      // (unlike determineVtocType used for export eligibility) does not decode the WOZ
+      // bitstream, so decode it here to keep detection and writing consistent.
+      const wozDosImageByIndex = new Map<number, Uint8Array>()
       for (let i = 0; i < orderedDownloadedDisks.length; i++) {
         const disk = orderedDownloadedDisks[i]
         if (!disk.filename.toLowerCase().endsWith(".woz")) continue
         const extracted = loadWozAndExtractProDosFiles(disk.buffer)
         if (extracted.length > 0) {
           wozExtractedByIndex.set(i, extracted)
+          continue
+        }
+        const dosImage = loadWozAndExtractDosImage(disk.buffer)
+        if (dosImage) {
+          wozDosImageByIndex.set(i, dosImage)
         }
       }
 
@@ -420,15 +430,33 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         fileKinds[index] = "prodos"
       }
 
+      for (const [index] of wozDosImageByIndex) {
+        fileKinds[index] = "dos"
+      }
+
       const fileEntries = orderedDownloadedDisks.map((downloadedDisk, index) => {
         const fileKind = fileKinds[index]
         const isText = downloadedDisk.filename.toUpperCase().endsWith(".TXT")
+        // Prefer the decoded DOS-order sector image for WOZ DOS disks so the runtime
+        // volume is a plain .dsk that DOS.MASTER can read; otherwise use the raw buffer.
+        const wozDosImage = wozDosImageByIndex.get(index)
+        let data = wozDosImage ?? downloadedDisk.buffer
+        if (fileKind === "dos" && !isText) {
+          // DOS.MASTER always runs a greeting named HELLO on the selected volume; ensure
+          // one exists (chaining to the source disk's real greeting) so booting a volume
+          // whose greeting was not named HELLO does not fail with FILE NOT FOUND.
+          const greeting = ensureDosVolumeHasHelloGreeting(data)
+          data = greeting.image
+          if (greeting.action === "injected") {
+            console.log(`[HDV Export] Injected HELLO greeting into ${downloadedDisk.filename}: ${greeting.command}`)
+          }
+        }
         return {
           name: downloadedDisk.filename.split(".")[0].slice(0, 15),
           type: isText
             ? PRODOS_FILE_TYPE_TEXT
             : (fileKind === "dos" ? PRODOS_FILE_TYPE_DOS_MASTER : 0xE0),
-          data: downloadedDisk.buffer,
+          data,
           auxType: 0x0000,
         }
       })

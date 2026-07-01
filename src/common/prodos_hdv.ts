@@ -194,6 +194,12 @@ const tokenizeApplesoftBasic = (source: string): Uint8Array => {
   return data
 }
 
+// Screen-hole byte ($0478 = 1144, the slot-0 hole) used to pass the menu-selected DOS
+// volume number across the ProDOS -> DOS.MASTER -> DOS 3.3 boot to the volume-1 dispatcher
+// HELLO. Screen holes survive HOME (they are not display character positions) and the DOS
+// transition (they are reserved for peripheral-card scratch and untouched by DOS/ProDOS).
+const DOS_DISPATCH_VOLUME_ADDRESS = 0x0478
+
 /**
  * Generates a tokenized Applesoft BASIC program that draws screenshots and
  * supports left/right navigation among disk images.
@@ -202,18 +208,45 @@ const generateMenuSourceProgram = (
   menuEntries: MenuDiskEntry[],
   dosRuntimeLauncher: string | undefined,
   menuProDosCommands: Array<string | undefined>,
-  menuProDosPrefixes: Array<string | undefined>
+  menuProDosPrefixes: Array<string | undefined>,
+  aliasShimInstallCommand?: string,
+  runtimeVolumeByMenuIndex?: Array<number | undefined>
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
-  const dosRuntimeRunCommand = dosRuntimeLauncher === "DOS.MASTER"
-    ? `BRUN /${dosRuntimeLauncher}/${dosRuntimeLauncher}`
-    : `BRUN ${dosRuntimeLauncher || ""}`
+  // Build the BASIC statement(s) that launch the DOS runtime, using paths relative to
+  // the current (/APPLE2TS) prefix. For a "DIR/FILE" launcher (e.g. DOS.MASTER/DOS.3.3)
+  // we set the prefix into the subdirectory then run the file with "-" (handles BIN/SYS),
+  // matching the proven-good launch sequence. A leading slash would root the path at a
+  // non-existent volume, so relative paths are required.
+  const dosRuntimeRunStatements = (() => {
+    if (!dosRuntimeLauncher) return ""
+    if (dosRuntimeLauncher.includes("/")) {
+      const [dir, file] = dosRuntimeLauncher.split("/")
+      return 'PRINT D$;"PREFIX ' + dir + '":PRINT D$;"-' + file + '"'
+    }
+    if (dosRuntimeLauncher === "DOS.MASTER") {
+      return 'PRINT D$;"BRUN ' + dosRuntimeLauncher + '/' + dosRuntimeLauncher + '"'
+    }
+    return 'PRINT D$;"-' + dosRuntimeLauncher + '"'
+  })()
+  // Per-volume DOS boot sequence. DOS.MASTER always cold-starts and boots volume 1, running
+  // its "HELLO" greeting, then takes over the machine (so any statement chained after the
+  // launch never runs). To boot the *selected* disk's volume we (1) POKE the target DOS
+  // volume number into a screen-hole byte that survives the ProDOS -> DOS.MASTER -> DOS 3.3
+  // transition and HOME, then (2) use the proven "-DOS.3.3" launch. A dispatcher HELLO that
+  // lives on volume 1 (installed by installDosMasterLikePartitions) PEEKs that byte and does
+  // RUN HELLO,S<slot>,V<vol> to chain into the real disk's volume. We also TEXT:HOME first to
+  // clear the HGR screenshot image before the launch takes over the screen.
+  const dosBootStatements = (volume: number): string => {
+    if (!dosRuntimeLauncher) return ""
+    return "TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + "," + volume + ":" + dosRuntimeRunStatements
+  }
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
   const imageKinds = menuEntries.slice(0, count).map((entry) => entry.imageKind || "unknown")
   const runtimeVolumes: number[] = []
   for (let i = 0; i < count; i++) {
-    runtimeVolumes[i] = i + 1
+    runtimeVolumes[i] = runtimeVolumeByMenuIndex?.[i] ?? (i + 1)
   }
 
   lines.push("10 D$=CHR$(4)")
@@ -259,26 +292,33 @@ const generateMenuSourceProgram = (
     const lineNo = 2000 + idx
     if (imageKinds[idx - 1] === "dos") {
       if (hasDosMasterRuntime) {
-        // Route launch through DOS.MASTER runtime volume selection.
-        lines.push(lineNo + ' IF I=' + idx + ' THEN PRINT D$;"' + dosRuntimeRunCommand + '":PRINT D$;"CATALOG,V' + runtimeVolumes[idx - 1] + '":RETURN')
+        // Route launch through DOS.MASTER, selecting the disk's own volume via the STARTUP
+        // string patch (see dosBootStatements). The old chained CATALOG line never executed
+        // because -DOS.3.3 takes over the machine, so it is dropped.
+        lines.push(lineNo + ' IF I=' + idx + ' THEN ' + dosBootStatements(runtimeVolumes[idx - 1]) + ':RETURN')
       } else {
         lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "DOS.MASTER RUNTIME NOT INSTALLED":NORMAL:RETURN')
       }
     } else if (imageKinds[idx - 1] === "prodos") {
       const runCmd = menuProDosCommands[idx - 1]
       const prefix = menuProDosPrefixes[idx - 1]
+      // Install the absolute-SET_PREFIX rewrite shim only here, immediately before a
+      // ProDOS launch. It is never installed for DOS images, so DOS.MASTER can safely
+      // reclaim the language card without the shim's resident hook crashing it. The
+      // installer is idempotent, so re-running it across selections is harmless.
+      const shimInstall = aliasShimInstallCommand ? 'PRINT D$;"' + aliasShimInstallCommand + '":' : ''
       if (prefix && runCmd) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"' + runCmd + '":RETURN')
+        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"' + runCmd + '":RETURN')
       } else if (prefix) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"CATALOG":RETURN')
+        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"CATALOG":RETURN')
       } else if (runCmd) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:PRINT D$;"' + runCmd + '":RETURN')
+        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"' + runCmd + '":RETURN')
       } else {
         lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "PRODOS FILES IMPORTED":NORMAL:PRINT D$;"CATALOG":RETURN')
       }
     } else {
       if (hasDosMasterRuntime) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN PRINT D$;"' + dosRuntimeRunCommand + '":PRINT D$;"CATALOG,V' + runtimeVolumes[idx - 1] + '":RETURN')
+        lines.push(lineNo + ' IF I=' + idx + ' THEN ' + dosBootStatements(runtimeVolumes[idx - 1]) + ':RETURN')
       } else {
         lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "DOS.MASTER RUNTIME NOT INSTALLED":NORMAL:RETURN')
       }
@@ -854,6 +894,429 @@ export const loadWozAndExtractProDosFiles = (wozData: Uint8Array): ImportedDiskF
 }
 
 /**
+ * Validates the DOS 3.3 catalog of a flat image stored in DOS *logical* sector order
+ * (sector S of track T at byte offset (T*16 + S)*256, i.e. a ".dsk"/".do" layout).
+ * Walks the catalog chain from the VTOC's catalog pointer and requires a structurally
+ * valid, non-looping chain that contains at least one real file entry.
+ *
+ * A VTOC-field match alone (see isLikelyDos33Volume) is not sufficient: copy-protected
+ * and other non-standard disks frequently present a VTOC-shaped sector at track 17 that
+ * passes the field checks yet have no readable DOS 3.3 catalog (Copy II Plus reports such
+ * disks as "NOT A PRODOS OR DOS 3.3 DISK"). Requiring a walkable catalog with a genuine
+ * file entry rejects those false positives so they are not exported as DOS volumes.
+ */
+const dosLogicalImageHasValidCatalog = (data: Uint8Array): boolean => {
+  const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+  const vtoc = sectorOffset(17, 0)
+  if (vtoc + 0x38 > data.length) return false
+
+  let catTrack = data[vtoc + 1]
+  let catSector = data[vtoc + 2]
+  const visited = new Set<number>()
+  let validFiles = 0
+  let catalogSectors = 0
+
+  for (let guard = 0; guard < 20; guard++) {
+    if (catTrack === 0) break // 0,0 marks the end of the catalog chain
+    if (catTrack >= 35 || catSector >= 16) break // a bogus link ends (invalidates) the chain
+    const key = catTrack * 16 + catSector
+    if (visited.has(key)) break // a loop means a corrupt/fake catalog
+    visited.add(key)
+
+    const off = sectorOffset(catTrack, catSector)
+    if (off + 256 > data.length) break
+    catalogSectors++
+
+    for (let e = 0; e < 7; e++) {
+      const eoff = off + 0x0b + e * 0x23 // 7 entries of 0x23 bytes, first at 0x0B
+      const tsListTrack = data[eoff]
+      if (tsListTrack === 0x00 || tsListTrack === 0xff) continue // never-used or deleted
+      const tsListSector = data[eoff + 1]
+      if (tsListTrack >= 35 || tsListSector >= 16) continue // not a plausible file entry
+      const firstChar = data[eoff + 3] & 0x7f // DOS 3.3 names are high-bit ASCII
+      if (firstChar < 0x20 || firstChar > 0x7e) continue
+      validFiles++
+    }
+
+    catTrack = data[off + 1]
+    catSector = data[off + 2]
+  }
+
+  // A genuine DOS 3.3 catalog either lists real files or presents the standard linked
+  // catalog chain (an INIT'd disk has 15 back-linked catalog sectors on track 17). A
+  // copy-protected/fake VTOC yields neither (its catalog sector is absent or unlinked).
+  return validFiles > 0 || catalogSectors >= 8
+}
+
+/**
+ * Decodes a WOZ 5.25" image into a standard DOS 3.3 logical-order sector image
+ * (143360 bytes, i.e. a ".dsk"/".do" layout) suitable for use as a DOS.MASTER runtime
+ * volume. DOS.MASTER expects its volumes in DOS logical sector order, which is the
+ * "dos-physical-to-logical" candidate produced by the WOZ decoder. Returns undefined
+ * unless the decode yields a recognizable DOS 3.3 volume with a walkable catalog (see
+ * dosLogicalImageHasValidCatalog), so copy-protected/non-standard disks are rejected.
+ */
+export const loadWozAndExtractDosImage = (wozData: Uint8Array): Uint8Array | undefined => {
+  const decoded = decodeWozToSectorCandidates(wozData)
+  if (!decoded) return undefined
+
+  // The "*-physical-to-logical" candidates are in logical sector order (a .dsk layout),
+  // which is what dosLogicalImageHasValidCatalog and DOS.MASTER expect. Prefer the DOS
+  // logical-order reconstruction; the VTOC alone cannot distinguish sector orders
+  // (sector 0 maps to 0 in every order), so validate the catalog to pick the real one.
+  const candidate = decoded.candidates.find((c) => c.label === "dos-physical-to-logical")
+  if (candidate &&
+    isLikelyDos33Volume(candidate.data) &&
+    dosLogicalImageHasValidCatalog(candidate.data)) {
+    return candidate.data
+  }
+  return undefined
+}
+
+// DOS 3.3 catalog file-type codes (low 7 bits; bit 7 = locked).
+const DOS33_TYPE_TEXT = 0x00
+const DOS33_TYPE_INTEGER = 0x01
+const DOS33_TYPE_APPLESOFT = 0x02
+const DOS33_TYPE_BINARY = 0x04
+
+type DosCatalogEntry = {
+  catalogOffset: number // byte offset of the 0x23-byte entry within the image
+  tsListTrack: number
+  tsListSector: number
+  typeByte: number
+  name: string
+  sectorCount: number
+}
+
+/**
+ * Walks the DOS 3.3 catalog of a flat DOS *logical*-order image (a ".dsk"/".do" layout,
+ * sector S of track T at byte offset (T*16 + S)*256) and returns the live file entries
+ * plus the offset of the first reusable (never-used or deleted) catalog entry slot.
+ */
+const readDos33Catalog = (image: Uint8Array): { entries: DosCatalogEntry[]; freeEntryOffset: number | undefined } => {
+  const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+  const vtoc = sectorOffset(17, 0)
+  const entries: DosCatalogEntry[] = []
+  let freeEntryOffset: number | undefined
+  let catTrack = image[vtoc + 1]
+  let catSector = image[vtoc + 2]
+  const visited = new Set<number>()
+  for (let guard = 0; guard < 40; guard++) {
+    if (catTrack === 0 || catTrack >= 35 || catSector >= 16) break
+    const key = catTrack * 16 + catSector
+    if (visited.has(key)) break
+    visited.add(key)
+    const off = sectorOffset(catTrack, catSector)
+    if (off + 256 > image.length) break
+    for (let e = 0; e < 7; e++) {
+      const eoff = off + 0x0b + e * 0x23
+      const tsListTrack = image[eoff]
+      if (tsListTrack === 0x00 || tsListTrack === 0xff) {
+        // 0x00 = never used, 0xff = deleted: both are reusable entry slots.
+        if (freeEntryOffset === undefined) freeEntryOffset = eoff
+        continue
+      }
+      const tsListSector = image[eoff + 1]
+      if (tsListTrack >= 35 || tsListSector >= 16) continue
+      let name = ""
+      for (let i = 0; i < 30; i++) name += String.fromCharCode(image[eoff + 3 + i] & 0x7f)
+      name = name.replace(/\s+$/, "")
+      entries.push({
+        catalogOffset: eoff,
+        tsListTrack,
+        tsListSector,
+        typeByte: image[eoff + 2],
+        name,
+        sectorCount: image[eoff + 0x21] | (image[eoff + 0x22] << 8),
+      })
+    }
+    catTrack = image[off + 1]
+    catSector = image[off + 2]
+  }
+  return { entries, freeEntryOffset }
+}
+
+/**
+ * Chooses the DOS command that best reproduces a source DOS 3.3 disk's boot behaviour
+ * ("examine the source disk to determine what HELLO should launch"). DOS 3.3 runs a
+ * greeting program set at INIT time (default name "HELLO"); that name is not reliably
+ * recoverable from a custom/fast-DOS image, so the catalog is used as the source of truth.
+ * The greeting is almost always the first launchable program in catalog order (INIT writes
+ * it first), so pick that and RUN/BRUN/EXEC it by type. Returns undefined if nothing is
+ * launchable (the caller then falls back to CATALOG).
+ */
+const chooseDosGreetingCommand = (entries: DosCatalogEntry[]): { command: string; target: string } | undefined => {
+  for (const entry of entries) {
+    // Skip zero-sector entries: these are decorative catalog "title" entries (a common
+    // trick to show a banner in the CATALOG listing) with no real file data, not programs.
+    if (entry.sectorCount < 1) continue
+    const type = entry.typeByte & 0x7f
+    if (type === DOS33_TYPE_APPLESOFT || type === DOS33_TYPE_INTEGER) {
+      return { command: `RUN ${entry.name}`, target: entry.name }
+    }
+    if (type === DOS33_TYPE_BINARY) {
+      return { command: `BRUN ${entry.name}`, target: entry.name }
+    }
+    if (type === DOS33_TYPE_TEXT) {
+      return { command: `EXEC ${entry.name}`, target: entry.name }
+    }
+  }
+  return undefined
+}
+
+/**
+ * Builds the on-disk DOS 3.3 Applesoft ("A") file image for a one-line greeting program
+ *   10 PRINT CHR$(4)"<command>"
+ * which issues a DOS command (e.g. RUN/BRUN/EXEC of the real greeting) when run. The file
+ * is the 2-byte program length followed by the tokenized program as it appears in memory
+ * loaded at $0801 (the standard Applesoft load address).
+ */
+const buildDosHelloApplesoftFile = (command: string): Uint8Array => {
+  const cmdBytes = Array.from(command, (c) => c.charCodeAt(0) & 0x7f)
+  // PRINT CHR$ ( 4 ) "  <command>  "  <end-of-line>
+  const tokens = [0xba, 0xe7, 0x28, 0x34, 0x29, 0x22, ...cmdBytes, 0x22, 0x00]
+  const lineLength = 4 + tokens.length // link(2) + lineNo(2) + tokens
+  const link = 0x0801 + lineLength
+  const image: number[] = [
+    link & 0xff, (link >> 8) & 0xff, // link to next line (the terminator)
+    0x0a, 0x00, // line number 10
+    ...tokens,
+    0x00, 0x00, // program terminator (link = 0)
+  ]
+  const programLength = image.length
+  return Uint8Array.from([programLength & 0xff, (programLength >> 8) & 0xff, ...image])
+}
+
+export type DosGreetingResult = {
+  image: Uint8Array
+  action: "already-present" | "injected" | "skipped"
+  command?: string
+  target?: string
+  reason?: string
+}
+
+/**
+ * Ensures a DOS.MASTER runtime volume (a flat 140K DOS 3.3 logical-order image) has a file
+ * named HELLO so booting it under DOS.MASTER -- which always runs a greeting named "HELLO"
+ * on the selected volume -- does not fail with FILE NOT FOUND. If the source disk already
+ * has a HELLO file it is left untouched (that IS its greeting). Otherwise a small Applesoft
+ * HELLO is injected that launches the source disk's real greeting program (the first
+ * launchable file in catalog order; see chooseDosGreetingCommand), or CATALOG if none.
+ * Returns the (possibly new) image; on any structural problem the original is returned
+ * unchanged with action "skipped".
+ */
+export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreetingResult => {
+  const size140k = 35 * 16 * 256
+  if (source.length !== size140k) {
+    return { image: source, action: "skipped", reason: "not a 140K DOS image" }
+  }
+  if (!isLikelyDos33Volume(source) || !dosLogicalImageHasValidCatalog(source)) {
+    return { image: source, action: "skipped", reason: "no valid DOS 3.3 catalog" }
+  }
+
+  const { entries, freeEntryOffset } = readDos33Catalog(source)
+  if (entries.some((e) => e.name.toUpperCase() === "HELLO")) {
+    return { image: source, action: "already-present" }
+  }
+  if (freeEntryOffset === undefined) {
+    return { image: source, action: "skipped", reason: "catalog is full" }
+  }
+
+  const chosen = chooseDosGreetingCommand(entries)
+  const command = chosen ? chosen.command : "CATALOG"
+
+  const image = source.slice()
+  const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+  const vtoc = sectorOffset(17, 0)
+
+  // Allocate free sectors from the VTOC bitmap (byte 0x38 + T*4 holds sectors 8-15 with
+  // bit (S-8); byte +1 holds sectors 0-7 with bit S; a set bit means free). Scan tracks
+  // outward from the catalog track, skipping the DOS/catalog area that is already marked
+  // used, and clear each allocated bit.
+  const isSectorFree = (track: number, sector: number): boolean => {
+    const base = vtoc + 0x38 + track * 4
+    const byte = sector >= 8 ? image[base] : image[base + 1]
+    const bit = sector >= 8 ? sector - 8 : sector
+    return ((byte >> bit) & 1) === 1
+  }
+  const markSectorUsed = (track: number, sector: number) => {
+    const base = vtoc + 0x38 + track * 4
+    const idx = sector >= 8 ? base : base + 1
+    const bit = sector >= 8 ? sector - 8 : sector
+    image[idx] &= ~(1 << bit) & 0xff
+  }
+  const allocateSector = (): { track: number; sector: number } | undefined => {
+    for (let track = 18; track < 35; track++) {
+      for (let sector = 0; sector < 16; sector++) {
+        if (isSectorFree(track, sector)) { markSectorUsed(track, sector); return { track, sector } }
+      }
+    }
+    for (let track = 16; track >= 0; track--) {
+      for (let sector = 0; sector < 16; sector++) {
+        if (isSectorFree(track, sector)) { markSectorUsed(track, sector); return { track, sector } }
+      }
+    }
+    return undefined
+  }
+
+  const dataSector = allocateSector()
+  const tsListSector = dataSector ? allocateSector() : undefined
+  if (!dataSector || !tsListSector) {
+    return { image: source, action: "skipped", reason: "no free sectors" }
+  }
+
+  // Data sector: the Applesoft HELLO file image (<= 256 bytes for a one-line program).
+  const fileBytes = buildDosHelloApplesoftFile(command)
+  const dataOff = sectorOffset(dataSector.track, dataSector.sector)
+  image.fill(0, dataOff, dataOff + 256)
+  image.set(fileBytes.subarray(0, 256), dataOff)
+
+  // Track/Sector List sector: describes the single data sector.
+  const tsOff = sectorOffset(tsListSector.track, tsListSector.sector)
+  image.fill(0, tsOff, tsOff + 256)
+  image[tsOff + 0x0c] = dataSector.track
+  image[tsOff + 0x0d] = dataSector.sector
+
+  // Catalog entry: HELLO, Applesoft, 2 sectors (T/S list + data).
+  image[freeEntryOffset] = tsListSector.track
+  image[freeEntryOffset + 1] = tsListSector.sector
+  image[freeEntryOffset + 2] = DOS33_TYPE_APPLESOFT
+  for (let i = 0; i < 30; i++) {
+    const c = i < 5 ? "HELLO".charCodeAt(i) : 0x20
+    image[freeEntryOffset + 3 + i] = c | 0x80
+  }
+  image[freeEntryOffset + 0x21] = 2
+  image[freeEntryOffset + 0x22] = 0
+
+  return { image, action: "injected", command, target: chosen?.target }
+}
+
+/**
+ * Builds the on-disk DOS 3.3 Applesoft ("A") file image for the DOS.MASTER volume-1
+ * "dispatcher" HELLO:
+ *   10 V=PEEK(<addr>)
+ *   20 IF V<2 THEN PRINT CHR$(4)"CATALOG,S<slot>,V1":END
+ *   30 PRINT CHR$(4)"RUN HELLO,S<slot>,V"V
+ * On boot DOS.MASTER always runs volume 1's HELLO; this one reads the volume number the
+ * ProDOS menu POKEd into <addr> and chains to that volume's own HELLO. If the byte is not a
+ * real disk volume (< 2, e.g. it failed to survive the boot) it falls back to a harmless
+ * CATALOG instead of looping on itself. The ",S<slot>,V<n>" also makes <n> the current DOS
+ * volume, so the target HELLO's own subsequent RUN/BRUN stay on that volume.
+ */
+const buildDosDispatcherApplesoftFile = (slot: number): Uint8Array => {
+  const ascii = (s: string) => Array.from(s, (c) => c.charCodeAt(0) & 0x7f)
+  // Applesoft tokens: PRINT=0xBA, POKE n/a, IF=0xAD, THEN=0xC4, END=0xB1, '<'=0xD1,
+  // '='=0xD0, PEEK=0xE2, CHR$=0xE7. Numbers and (),"," are stored as literal ASCII.
+  const line10 = [0x56, 0xd0, 0xe2, 0x28, ...ascii(DOS_DISPATCH_VOLUME_ADDRESS.toString()), 0x29]
+  const line20 = [
+    0xad, 0x56, 0xd1, 0x32, 0xc4, 0xba, 0xe7, 0x28, 0x34, 0x29, 0x22,
+    ...ascii(`CATALOG,S${slot},V1`), 0x22, 0x3a, 0xb1,
+  ]
+  const line30 = [
+    0xba, 0xe7, 0x28, 0x34, 0x29, 0x22, ...ascii(`RUN HELLO,S${slot},V`), 0x22, 0x56,
+  ]
+  const lines: Array<{ num: number; tokens: number[] }> = [
+    { num: 10, tokens: line10 },
+    { num: 20, tokens: line20 },
+    { num: 30, tokens: line30 },
+  ]
+  const image: number[] = []
+  let addr = 0x0801
+  for (const ln of lines) {
+    const lineLen = 4 + ln.tokens.length + 1 // link(2) + lineNo(2) + tokens + terminator(1)
+    const link = addr + lineLen
+    image.push(link & 0xff, (link >> 8) & 0xff, ln.num & 0xff, (ln.num >> 8) & 0xff, ...ln.tokens, 0x00)
+    addr += lineLen
+  }
+  image.push(0x00, 0x00) // program terminator (next-line link = 0)
+  const programLength = image.length
+  return Uint8Array.from([programLength & 0xff, (programLength >> 8) & 0xff, ...image])
+}
+
+/**
+ * Builds a blank, valid DOS 3.3 logical-order volume (143360 bytes) whose only file is the
+ * dispatcher HELLO (buildDosDispatcherApplesoftFile). This is installed as DOS.MASTER
+ * volume 1 -- always the boot volume -- so selecting any menu disk boots that disk's own
+ * volume via the dispatcher. The volume is a DATA-style DOS disk (no DOS image on tracks
+ * 0-2, which DOS.MASTER supplies): a VTOC at T17S0, a back-linked catalog on track 17, and
+ * the HELLO file on track 18.
+ */
+const buildDosMasterDispatcherVolume = (slot: number): Uint8Array => {
+  const image = new Uint8Array(35 * 16 * 256)
+  const sectorOffset = (t: number, s: number) => (t * 16 + s) * 256
+  const vtoc = sectorOffset(17, 0)
+
+  // VTOC (T17S0).
+  image[vtoc + 0x01] = 17 // first catalog track
+  image[vtoc + 0x02] = 15 // first catalog sector
+  image[vtoc + 0x03] = 3 // DOS 3.3 release
+  image[vtoc + 0x06] = 254 // volume number
+  image[vtoc + 0x27] = 122 // max track/sector pairs per T/S list sector
+  image[vtoc + 0x30] = 18 // last track sectors were allocated on
+  image[vtoc + 0x31] = 1 // allocation direction (+1)
+  image[vtoc + 0x34] = 35 // tracks per disk
+  image[vtoc + 0x35] = 16 // sectors per track
+  image[vtoc + 0x36] = 0x00 // bytes per sector (256, little-endian)
+  image[vtoc + 0x37] = 0x01
+
+  // Free-sector bitmap: 4 bytes/track at 0x38 + T*4. byte0 = sectors 8-15 (bit S-8),
+  // byte1 = sectors 0-7 (bit S); a SET bit means FREE. Mark everything free, then mark the
+  // DOS area (tracks 0-2) and the catalog/VTOC track (17) fully used.
+  for (let t = 0; t < 35; t++) {
+    const base = vtoc + 0x38 + t * 4
+    const used = t <= 2 || t === 17
+    image[base] = used ? 0x00 : 0xff
+    image[base + 1] = used ? 0x00 : 0xff
+    image[base + 2] = 0x00
+    image[base + 3] = 0x00
+  }
+
+  // Catalog chain on track 17: sectors 15 down to 1, each back-linked to the next lower
+  // sector; sector 1 terminates the chain (link 0,0). Entries are left empty.
+  for (let s = 15; s >= 1; s--) {
+    const off = sectorOffset(17, s)
+    image[off + 0x00] = 0x00
+    image[off + 0x01] = s > 1 ? 17 : 0
+    image[off + 0x02] = s > 1 ? s - 1 : 0
+  }
+
+  // Allocate track 18 sectors 0/1 (both free above) for the HELLO data + T/S list sectors.
+  const markUsed = (t: number, s: number) => {
+    const base = vtoc + 0x38 + t * 4
+    const idx = s >= 8 ? base : base + 1
+    const bit = s >= 8 ? s - 8 : s
+    image[idx] &= ~(1 << bit) & 0xff
+  }
+  const dataTrack = 18
+  const dataSectorNum = 0
+  const tsTrack = 18
+  const tsSectorNum = 1
+  markUsed(dataTrack, dataSectorNum)
+  markUsed(tsTrack, tsSectorNum)
+
+  const fileBytes = buildDosDispatcherApplesoftFile(slot)
+  const dataOff = sectorOffset(dataTrack, dataSectorNum)
+  image.set(fileBytes.subarray(0, 256), dataOff)
+
+  const tsOff = sectorOffset(tsTrack, tsSectorNum)
+  image[tsOff + 0x0c] = dataTrack
+  image[tsOff + 0x0d] = dataSectorNum
+
+  // Catalog entry for HELLO in the first catalog sector (T17S15), first entry slot (0x0B).
+  const entryOff = sectorOffset(17, 15) + 0x0b
+  image[entryOff + 0] = tsTrack
+  image[entryOff + 1] = tsSectorNum
+  image[entryOff + 2] = DOS33_TYPE_APPLESOFT
+  for (let i = 0; i < 30; i++) {
+    image[entryOff + 3 + i] = (i < 5 ? "HELLO".charCodeAt(i) : 0x20) | 0x80
+  }
+  image[entryOff + 0x21] = 2 // sector count (T/S list + data)
+  image[entryOff + 0x22] = 0
+
+  return image
+}
+
+/**
  * Classifies a disk image's filesystem family ("dos" | "prodos" | "unknown") from its
  * raw bytes and filename. Uses structural VTOC/volume-directory probes first, then falls
  * back to extension/size heuristics. WOZ is a bitstream container, so it always returns
@@ -866,16 +1329,24 @@ export const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "
   // WOZ is a container format; determine DOS/ProDOS only after explicit extraction/probing.
   if (ext === "woz") return "unknown"
 
-  // First, positively identify DOS structure (under both sector orders).
-  // This is done before ProDOS to avoid false ProDOS positives on DOS .po files.
-  if (isLikelyDos33Volume(data)) return "dos"
+  const is140k = data.length === size140k
+
+  // Positively identify DOS structure first (to avoid false ProDOS positives on DOS .po
+  // files). For 140K .dsk/.do images (DOS logical sector order) also require a walkable
+  // catalog, so copy-protected/non-standard disks that merely present a VTOC-shaped sector
+  // at track 17 are not mistaken for exportable DOS 3.3 volumes.
+  if (isLikelyDos33Volume(data)) {
+    if (!is140k || dosLogicalImageHasValidCatalog(data)) return "dos"
+  }
 
   // Then, positively identify ProDOS structure.
   if (isLikelyProDosVolume(data)) return "prodos"
 
-  // For 140K floppy images, default to DOS-family handling when ambiguous.
-  if (data.length === size140k) {
-    return "dos"
+  // A 140K 5.25" image with neither a valid DOS 3.3 catalog nor ProDOS structure is not a
+  // usable/exportable volume (previously such images defaulted to DOS, which let fake-VTOC
+  // protected disks through).
+  if (is140k) {
+    return "unknown"
   }
 
   // .po can mean DOS-order or ProDOS-order. For non-140K block images,
@@ -914,9 +1385,9 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       for (const candidate of decoded.candidates) {
         if (isLikelyProDosVolume(candidate.data)) return "prodos"
       }
-      for (const candidate of decoded.candidates) {
-        if (isLikelyDos33Volume(candidate.data)) return "dos"
-      }
+      // Require a genuinely walkable DOS 3.3 catalog (not just a VTOC-shaped sector) so
+      // copy-protected/non-standard disks are classified "other" and not exported.
+      if (loadWozAndExtractDosImage(data)) return "dos"
     }
     return "other"
   }
@@ -1076,6 +1547,12 @@ const preprocessInputFilesForMenu = (
   const directoryPlans: DirectoryImportPlan[] = []
   const menuProDosCommands: Array<string | undefined> = []
   const menuProDosPrefixes: Array<string | undefined> = []
+  // DOS 3.3 images become DOS.MASTER virtual volumes (V1, V2, ...). They are
+  // collected here in menu order for DOS.INSTALL-style contiguous partition
+  // placement; runtimeVolumeByMenuIndex maps each source menu entry to its
+  // DOS.MASTER volume number for the launch CATALOG,Sn,Vn command.
+  const runtimeVolumes: BuildInputFile[] = []
+  const runtimeVolumeByMenuIndex: Array<number | undefined> = []
   const usedNames = new Set<string>(reservedNames || [])
 
   for (let i = 0; i < files.length; i++) {
@@ -1084,6 +1561,22 @@ const preprocessInputFilesForMenu = (
     const sourceFilename = menuEntries?.[i]?.sourceFilename || file.name
     const isWozContainer = sourceFilename.toLowerCase().endsWith(".woz")
     const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
+
+    // DOS 3.3 disks are served as DOS.MASTER virtual volumes. Collect them for
+    // contiguous partition installation (installDosMasterLikePartitions); leaving
+    // them only as generic ProDOS files would leave DOS.MASTER's geometry table
+    // pointing at an uninitialized partition area and crash on launch.
+    const isDosVolume = kind === "dos" || file.type === PRODOS_FILE_TYPE_DOS_MASTER
+    if (isDosVolume) {
+      const normalized = makeUniqueProDosFilename(file.name, usedNames)
+      const runtimeFile: BuildInputFile = { ...file, type: PRODOS_FILE_TYPE_DOS_MASTER, name: normalized }
+      runtimeVolumeByMenuIndex[i] = runtimeVolumes.length + 1
+      runtimeVolumes.push(runtimeFile)
+      outputFiles.push(runtimeFile)
+      menuProDosPrefixes[i] = undefined
+      menuProDosCommands[i] = undefined
+      continue
+    }
 
     if (wozExtractedFiles && wozExtractedFiles.length > 0) {
       const extractedVolumeName = wozExtractedFiles.find((f) => !!f.volumeName)?.volumeName
@@ -1170,7 +1663,25 @@ const preprocessInputFilesForMenu = (
     menuProDosPrefixes[i] = undefined
   }
 
-  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes }
+  // If any DOS 3.3 volumes were collected, reserve DOS.MASTER volume 1 as a "dispatcher"
+  // volume and shift the real disks to volumes 2..N+1. DOS.MASTER always cold-boots volume
+  // 1 and runs its HELLO; the dispatcher's HELLO PEEKs the menu-selected volume number and
+  // chains to that volume (see buildDosMasterDispatcherVolume / dosBootStatements), so each
+  // menu disk boots its own volume instead of always booting the first one. The dispatcher
+  // is a runtime partition volume only (not a ProDOS-visible output file).
+  if (runtimeVolumes.length > 0) {
+    runtimeVolumes.unshift({
+      name: "DOSDISPATCH",
+      type: PRODOS_FILE_TYPE_DOS_MASTER,
+      data: buildDosMasterDispatcherVolume(DOSMASTER_SLOT),
+    })
+    for (let i = 0; i < runtimeVolumeByMenuIndex.length; i++) {
+      const v = runtimeVolumeByMenuIndex[i]
+      if (v !== undefined) runtimeVolumeByMenuIndex[i] = v + 1
+    }
+  }
+
+  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, runtimeVolumes, runtimeVolumeByMenuIndex }
 }
 
 const encodeProDosTime = (date: Date = new Date()) => {
@@ -1787,10 +2298,34 @@ const readDirectoryEntryName = (entry: Uint8Array) => {
   return name
 }
 
+const findDirectoryKeyBlockByName = (disk: Uint8Array, dirBlocks: number[], directoryName: string) => {
+  for (let b = 0; b < dirBlocks.length; b++) {
+    const block = dirBlocks[b]
+    const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const startIndex = b === 0 ? 1 : 0
+    for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+      const entryOffset = getDirEntryOffset(slot)
+      const byte0 = dirBlock[entryOffset]
+      if (isDirectorySlotFree(byte0)) continue
+      const storageType = ((byte0 >> 4) & 0x0F)
+      if (storageType !== 0x0D) continue
+
+      const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
+      const name = readDirectoryEntryName(entry)
+      if (name !== directoryName) continue
+      return readLittleEndian16(entry, 17)
+    }
+  }
+  return undefined
+}
+
 const scanRootDirectory = (disk: Uint8Array, dirBlocks: number[]) => {
   let fileCount = 0
   const existingNames = new Set<string>()
-  let dosRuntimeLauncher: string | undefined
+  let hasDos33 = false
+  let hasDos33System = false
+  let hasDosMaster = false
+  let hasDosmaster = false
   for (let b = 0; b < dirBlocks.length; b++) {
     const block = dirBlocks[b]
     const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
@@ -1804,14 +2339,677 @@ const scanRootDirectory = (disk: Uint8Array, dirBlocks: number[]) => {
       const name = readDirectoryEntryName(entry)
       existingNames.add(name)
       fileCount++
-      if (!dosRuntimeLauncher) {
-        if (name === "DOS.3.3") dosRuntimeLauncher = "DOS.3.3"
-        else if (name === "DOS.MASTER") dosRuntimeLauncher = "DOS.MASTER"
-        else if (name === "DOSMASTER") dosRuntimeLauncher = "DOSMASTER"
+      if (name === "DOS.3.3") hasDos33 = true
+      else if (name === "DOS.3.3.SYSTEM") hasDos33System = true
+      else if (name === "DOS.MASTER") hasDosMaster = true
+      else if (name === "DOSMASTER") hasDosmaster = true
+    }
+  }
+
+  let hasDosMasterDirDos33 = false
+  let hasDosMasterDirDos33System = false
+  let hasDosMasterDirDosMaster = false
+  const dosMasterDirKeyBlock = findDirectoryKeyBlockByName(disk, dirBlocks, "DOS.MASTER")
+  if (dosMasterDirKeyBlock) {
+    const dosMasterDirBlocks = collectDirectoryBlocksFromStart(disk, dosMasterDirKeyBlock)
+    for (let b = 0; b < dosMasterDirBlocks.length; b++) {
+      const block = dosMasterDirBlocks[b]
+      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const startIndex = b === 0 ? 1 : 0
+      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+        const entryOffset = getDirEntryOffset(slot)
+        const byte0 = dirBlock[entryOffset]
+        if (isDirectorySlotFree(byte0)) continue
+        const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
+        const name = readDirectoryEntryName(entry)
+        if (name === "DOS.MASTER") hasDosMasterDirDosMaster = true
+        else if (name === "DOS.3.3") hasDosMasterDirDos33 = true
+        else if (name === "DOS.3.3.SYSTEM") hasDosMasterDirDos33System = true
       }
     }
   }
+
+  // Prefer DOS.3.3 runtime launcher. The DOS.MASTER front-end binary is not directly
+  // runnable in this flow and has been observed to drop to the monitor ($9D88) on some
+  // exports; the DOS.3.3 image installed by DOS.MASTER boots cleanly instead.
+  let dosRuntimeLauncher: string | undefined
+  if (hasDos33) {
+    dosRuntimeLauncher = "DOS.3.3"
+  } else if (hasDosMasterDirDos33) {
+    dosRuntimeLauncher = "DOS.MASTER/DOS.3.3"
+  } else if (hasDosMasterDirDos33System) {
+    dosRuntimeLauncher = "DOS.MASTER/DOS.3.3.SYSTEM"
+  } else if (hasDosMasterDirDosMaster) {
+    dosRuntimeLauncher = "DOS.MASTER/DOS.MASTER"
+  } else if (hasDos33System) {
+    dosRuntimeLauncher = "DOS.3.3.SYSTEM"
+  } else if (hasDosMaster) {
+    dosRuntimeLauncher = "DOS.MASTER"
+  } else if (hasDosmaster) {
+    dosRuntimeLauncher = "DOSMASTER"
+  }
   return { fileCount, existingNames, dosRuntimeLauncher }
+}
+
+// ===== DOS.MASTER virtual-volume support (ported from commit 05cc1999) =====
+const DOSMASTER_SLOT = 7
+
+type ProDosFileLocation = {
+  storageType: 1 | 2 | 3
+  keyBlock: number
+  eof: number
+}
+
+type ProDosFileEntryMetadata = ProDosFileLocation & {
+  blocksUsed: number
+  headerPointer: number
+  fileType: number
+}
+
+const findFileEntryMetadataByPath = (disk: Uint8Array, pathParts: string[]): ProDosFileEntryMetadata | undefined => {
+  if (pathParts.length === 0) return undefined
+
+  const findEntryInDirectory = (dirBlocks: number[], name: string) => {
+    for (let b = 0; b < dirBlocks.length; b++) {
+      const block = dirBlocks[b]
+      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const startIndex = b === 0 ? 1 : 0
+      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+        const entryOffset = getDirEntryOffset(slot)
+        const byte0 = dirBlock[entryOffset]
+        if (isDirectorySlotFree(byte0)) continue
+
+        const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
+        const entryName = readDirectoryEntryName(entry)
+        if (entryName !== name) continue
+
+        const storageType = ((byte0 >> 4) & 0x0F)
+        return {
+          storageType,
+          keyBlock: readLittleEndian16(entry, 17),
+          blocksUsed: readLittleEndian16(entry, 19),
+          eof: readLittleEndian24(entry, 21),
+          fileType: entry[16],
+          headerPointer: readLittleEndian16(entry, 37),
+        }
+      }
+    }
+    return undefined
+  }
+
+  let currentDirBlocks = collectRootDirectoryBlocks(disk)
+  if (currentDirBlocks.length === 0) return undefined
+
+  for (let i = 0; i < pathParts.length; i++) {
+    const part = pathParts[i]
+    const found = findEntryInDirectory(currentDirBlocks, part)
+    if (!found) return undefined
+    const isLast = i === pathParts.length - 1
+    if (isLast) {
+      if (found.storageType < 1 || found.storageType > 3) return undefined
+      return {
+        storageType: found.storageType as 1 | 2 | 3,
+        keyBlock: found.keyBlock,
+        blocksUsed: found.blocksUsed,
+        eof: found.eof,
+        fileType: found.fileType,
+        headerPointer: found.headerPointer,
+      }
+    }
+    if (found.storageType !== 0x0D || found.keyBlock <= 0) return undefined
+    currentDirBlocks = collectDirectoryBlocksFromStart(disk, found.keyBlock)
+    if (currentDirBlocks.length === 0) return undefined
+  }
+
+  return undefined
+}
+
+const findFileByPath = (disk: Uint8Array, pathParts: string[]): ProDosFileLocation | undefined => {
+  if (pathParts.length === 0) return undefined
+
+  const findEntryInDirectory = (dirBlocks: number[], name: string) => {
+    for (let b = 0; b < dirBlocks.length; b++) {
+      const block = dirBlocks[b]
+      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const startIndex = b === 0 ? 1 : 0
+      for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+        const entryOffset = getDirEntryOffset(slot)
+        const byte0 = dirBlock[entryOffset]
+        if (isDirectorySlotFree(byte0)) continue
+
+        const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
+        const entryName = readDirectoryEntryName(entry)
+        if (entryName !== name) continue
+
+        const storageType = ((byte0 >> 4) & 0x0F)
+        return {
+          storageType,
+          keyBlock: readLittleEndian16(entry, 17),
+          eof: readLittleEndian24(entry, 21),
+        }
+      }
+    }
+    return undefined
+  }
+
+  let currentDirBlocks = collectRootDirectoryBlocks(disk)
+  if (currentDirBlocks.length === 0) return undefined
+
+  for (let i = 0; i < pathParts.length; i++) {
+    const part = pathParts[i]
+    const found = findEntryInDirectory(currentDirBlocks, part)
+    if (!found) return undefined
+    const isLast = i === pathParts.length - 1
+    if (isLast) {
+      if (found.storageType < 1 || found.storageType > 3) return undefined
+      return {
+        storageType: found.storageType as 1 | 2 | 3,
+        keyBlock: found.keyBlock,
+        eof: found.eof,
+      }
+    }
+    if (found.storageType !== 0x0D || found.keyBlock <= 0) return undefined
+    currentDirBlocks = collectDirectoryBlocksFromStart(disk, found.keyBlock)
+    if (currentDirBlocks.length === 0) return undefined
+  }
+  return undefined
+}
+
+const writeFileDataToProDosImage = (
+  disk: Uint8Array,
+  location: ProDosFileLocation,
+  data: Uint8Array,
+) => {
+  const writeDataBlock = (blockNum: number, sourceOffset: number) => {
+    if (blockNum === 0 || sourceOffset >= data.length) return
+    const blockOffset = blockNum * BLOCK_SIZE
+    const n = Math.min(BLOCK_SIZE, data.length - sourceOffset)
+    disk.fill(0, blockOffset, blockOffset + BLOCK_SIZE)
+    disk.set(data.slice(sourceOffset, sourceOffset + n), blockOffset)
+  }
+
+  if (location.storageType === 1) {
+    writeDataBlock(location.keyBlock, 0)
+    return
+  }
+
+  if (location.storageType === 2) {
+    const indexBlock = readBlock(disk, location.keyBlock)
+    if (!indexBlock) return
+    for (let i = 0; i < 256; i++) {
+      const blockNum = indexBlock[i] | (indexBlock[256 + i] << 8)
+      writeDataBlock(blockNum, i * BLOCK_SIZE)
+    }
+    return
+  }
+
+  const masterBlock = readBlock(disk, location.keyBlock)
+  if (!masterBlock) return
+  for (let i = 0; i < 256; i++) {
+    const indexBlockNum = masterBlock[i] | (masterBlock[256 + i] << 8)
+    if (indexBlockNum === 0) continue
+    const indexBlock = readBlock(disk, indexBlockNum)
+    if (!indexBlock) continue
+    for (let j = 0; j < 256; j++) {
+      const blockNum = indexBlock[j] | (indexBlock[256 + j] << 8)
+      writeDataBlock(blockNum, ((i * 256) + j) * BLOCK_SIZE)
+    }
+  }
+}
+
+type DosMasterPatchResult = {
+  requestedVolumes: number
+  mappedVolumes: number
+  activePairs: number
+  patchedTargets: number
+}
+
+type DosMasterPatchFailure = {
+  error: string
+}
+
+type DosMasterPatchSkip = {
+  skipped: true
+  reason: string
+}
+
+type DosMasterPairAllocation = {
+  pairIndex: number
+  volSizeBlocks: number
+  mappedVolumes: number
+  mappedBlocks: number
+}
+
+export const computeDosMasterPairAllocation = (
+  runtimeVolumeCount: number,
+  pairVolSizes: number[],
+  fallbackVolSizeBlocks = 280,
+) => {
+  const requestedVolumes = Math.max(0, runtimeVolumeCount)
+  const safeFallbackVolSizeBlocks =
+    fallbackVolSizeBlocks > 0 && fallbackVolSizeBlocks <= 1600
+      ? fallbackVolSizeBlocks
+      : 280
+  let remainingVolumes = requestedVolumes
+  const allocations: DosMasterPairAllocation[] = []
+
+  for (let i = 0; i < pairVolSizes.length; i++) {
+    let volSizeBlocks = pairVolSizes[i]
+    if (volSizeBlocks <= 0 || volSizeBlocks > 1600) volSizeBlocks = safeFallbackVolSizeBlocks
+
+    const maxVolumesForPair = Math.max(1, Math.floor(0xFFFF / volSizeBlocks))
+    const mappedVolumes = Math.min(remainingVolumes, maxVolumesForPair)
+    const mappedBlocks = mappedVolumes > 0 ? mappedVolumes * volSizeBlocks : 0
+
+    allocations.push({
+      pairIndex: i,
+      volSizeBlocks,
+      mappedVolumes,
+      mappedBlocks,
+    })
+    remainingVolumes -= mappedVolumes
+  }
+
+  return {
+    allocations,
+    requestedVolumes,
+    mappedVolumes: requestedVolumes - remainingVolumes,
+    unmappedVolumes: remainingVolumes,
+  }
+}
+
+const patchDosMasterDos33Configuration = (disk: Uint8Array, runtimeVolumeCount: number): DosMasterPatchResult | DosMasterPatchFailure => {
+  // runtimeVolumeCount=0 is valid: zeros out NUM_BLOCKS so DOS.MASTER doesn't try to access non-existent volumes.
+  const safeVolumeCount = Math.max(0, runtimeVolumeCount)
+
+  const TABLE_DEV_OFFSET = 0x38
+  const TABLE_NUM_BLOCKS_OFFSET = 0x50
+  const TABLE_VOL_SIZE_OFFSET = 0x58
+
+  const patchFinderDataCompanionMetadata = () => {
+    const finderLocation =
+      findFileByPath(disk, ["DOS.MASTER", "FINDER.DATA"]) ||
+      findFileByPath(disk, ["FINDER.DATA"])
+    if (!finderLocation) return 0
+
+    const finderData = readFileDataFromProDosImage(
+      disk,
+      finderLocation.storageType,
+      finderLocation.keyBlock,
+      finderLocation.eof,
+    )
+    if (finderData.length === 0) return 0
+
+    const patchFinderRecord = (name: string, blocksUsed: number, keyBlock: number) => {
+      const encodedName = new TextEncoder().encode(name)
+      let patched = 0
+      for (let offset = 0; offset + 1 + encodedName.length + 7 < finderData.length; offset++) {
+        if (finderData[offset] !== encodedName.length) continue
+        let match = true
+        for (let i = 0; i < encodedName.length; i++) {
+          if (finderData[offset + 1 + i] !== encodedName[i]) {
+            match = false
+            break
+          }
+        }
+        if (!match) continue
+
+        // Record layout contains 4 words after a marker byte; update blocks used and key block.
+        writeLittleEndian16(finderData, offset + 1 + encodedName.length + 1, blocksUsed)
+        writeLittleEndian16(finderData, offset + 1 + encodedName.length + 5, keyBlock)
+        patched++
+      }
+      return patched
+    }
+
+    let patchedRecords = 0
+    const metadataTargets = ["DOS.3.3", "DDOS.3.3"]
+    for (const name of metadataTargets) {
+      const entry =
+        findFileEntryMetadataByPath(disk, ["DOS.MASTER", name]) ||
+        findFileEntryMetadataByPath(disk, [name])
+      if (!entry) continue
+      patchedRecords += patchFinderRecord(name, entry.blocksUsed, entry.keyBlock)
+    }
+
+    if (patchedRecords > 0) {
+      writeFileDataToProDosImage(disk, finderLocation, finderData)
+    }
+    return patchedRecords
+  }
+
+  const patchSingleDosMasterConfigPayload = (payload: Uint8Array, targetName: string):
+    | {
+      patched: Uint8Array
+      mappedVolumes: number
+      activePairs: number
+      unmappedVolumes: number
+      pairSummaries: string[]
+      expectedNumBlocks: number[]
+    }
+    | DosMasterPatchSkip
+    | DosMasterPatchFailure => {
+    if (payload.length < 0x60) return { error: `${targetName} payload too small to patch configuration table (${payload.length} bytes < 0x60).` }
+
+    const patched = payload.slice()
+    const readWord = (offset: number) => patched[offset] | (patched[offset + 1] << 8)
+    const writeWord = (offset: number, value: number) => {
+      patched[offset] = value & 0xFF
+      patched[offset + 1] = (value >> 8) & 0xFF
+    }
+
+    // Log device pair configuration before patching for debugging
+    const devPairsBefore = []
+    for (let pair = 0; pair < 4; pair++) {
+      devPairsBefore.push(`P${pair}:$${patched[TABLE_DEV_OFFSET + pair * 2].toString(16).padStart(2, "0")}$${patched[TABLE_DEV_OFFSET + pair * 2 + 1].toString(16).padStart(2, "0")}`)
+    }
+
+    const activePairIndices: number[] = []
+    for (let pair = 0; pair < 4; pair++) {
+      const d1 = patched[TABLE_DEV_OFFSET + (pair * 2)]
+      const d2 = patched[TABLE_DEV_OFFSET + (pair * 2) + 1]
+      if (d1 !== 0 || d2 !== 0) activePairIndices.push(pair)
+    }
+    if (activePairIndices.length === 0) {
+      return {
+        skipped: true,
+        reason: `${targetName} has no active DOS.MASTER device pairs. Device pairs before patch: ${devPairsBefore.join(", ")}`,
+      }
+    }
+
+    const primaryPair = activePairIndices[0]
+    const primaryVolSizeOffset = TABLE_VOL_SIZE_OFFSET + (primaryPair * 2)
+    let fallbackVolSizeBlocks = readWord(primaryVolSizeOffset)
+    if (fallbackVolSizeBlocks <= 0 || fallbackVolSizeBlocks > 1600) fallbackVolSizeBlocks = 280
+
+    const pairVolSizes = activePairIndices.map((pair) => readWord(TABLE_VOL_SIZE_OFFSET + (pair * 2)))
+    const allocation = computeDosMasterPairAllocation(safeVolumeCount, pairVolSizes, fallbackVolSizeBlocks)
+
+    const pairSummaries: string[] = []
+    const expectedNumBlocks = [0, 0, 0, 0]
+    for (let i = 0; i < activePairIndices.length; i++) {
+      const pair = activePairIndices[i]
+      const numBlocksOffset = TABLE_NUM_BLOCKS_OFFSET + (pair * 2)
+      const pairAllocation = allocation.allocations[i]
+      writeWord(numBlocksOffset, pairAllocation.mappedBlocks)
+      expectedNumBlocks[pair] = pairAllocation.mappedBlocks
+      pairSummaries.push(`P${pair + 1}:V=${pairAllocation.mappedVolumes},B=${pairAllocation.mappedBlocks},S=${pairAllocation.volSizeBlocks}`)
+    }
+
+    // Disable non-active pairs so stale defaults do not expose phantom volumes.
+    const activePairSet = new Set(activePairIndices)
+    for (let pair = 0; pair < 4; pair++) {
+      if (activePairSet.has(pair)) continue
+      const numBlocksOffset = TABLE_NUM_BLOCKS_OFFSET + (pair * 2)
+      writeWord(numBlocksOffset, 0)
+      expectedNumBlocks[pair] = 0
+    }
+
+    return {
+      patched,
+      mappedVolumes: allocation.mappedVolumes,
+      activePairs: activePairIndices.length,
+      unmappedVolumes: allocation.unmappedVolumes,
+      pairSummaries,
+      expectedNumBlocks,
+    }
+  }
+
+  const verifyPatchedConfigPayload = (payload: Uint8Array, expectedNumBlocks: number[], targetName: string) => {
+    if (payload.length < 0x60) {
+      return { error: `${targetName} payload too small during post-write verification (${payload.length} bytes < 0x60).` }
+    }
+    for (let pair = 0; pair < 4; pair++) {
+      const offset = TABLE_NUM_BLOCKS_OFFSET + (pair * 2)
+      const actual = payload[offset] | (payload[offset + 1] << 8)
+      const expected = expectedNumBlocks[pair] || 0
+      if (actual !== expected) {
+        return {
+          error: `${targetName} post-write verification failed for pair ${pair + 1}: expected NUM_BLOCKS=${expected}, got ${actual}.`,
+        }
+      }
+    }
+    return undefined
+  }
+
+  const configTargets = [
+    { path: ["DOS.MASTER", "DOS.MASTER"], label: "DOS.MASTER/DOS.MASTER" },
+    { path: ["DOS.MASTER", "DOS.3.3"], label: "DOS.MASTER/DOS.3.3" },
+    { path: ["DOS.3.3"], label: "DOS.3.3" },
+    { path: ["DOS.MASTER", "DDOS.3.3"], label: "DOS.MASTER/DDOS.3.3" },
+    { path: ["DDOS.3.3"], label: "DDOS.3.3" },
+  ] as const
+
+  const foundTargets: Array<{ label: string; location: ProDosFileLocation }> = []
+  for (const target of configTargets) {
+    const location = findFileByPath(disk, [...target.path])
+    if (location) foundTargets.push({ label: target.label, location })
+  }
+  if (foundTargets.length === 0) {
+    return { error: "Could not locate DOS.3.3 or DDOS.3.3 in DOS.MASTER base image." }
+  }
+
+  let mappedVolumes: number | undefined
+  let activePairs: number | undefined
+  const patchedLabels: string[] = []
+  let appliedTargets = 0
+
+  for (const target of foundTargets) {
+    const current = readFileDataFromProDosImage(
+      disk,
+      target.location.storageType,
+      target.location.keyBlock,
+      target.location.eof,
+    )
+    const patchResult = patchSingleDosMasterConfigPayload(current, target.label)
+    if ("skipped" in patchResult) {
+      console.warn(`[HDV Export] Skipping DOS.MASTER config target: ${patchResult.reason}`)
+      continue
+    }
+    if ("error" in patchResult) return { error: patchResult.error }
+
+    if (mappedVolumes === undefined) mappedVolumes = patchResult.mappedVolumes
+    if (activePairs === undefined) activePairs = patchResult.activePairs
+
+    if (patchResult.mappedVolumes !== mappedVolumes) {
+      return { error: `Inconsistent mapped volume counts across DOS.MASTER config targets (saw ${mappedVolumes} and ${patchResult.mappedVolumes}).` }
+    }
+
+    writeFileDataToProDosImage(disk, target.location, patchResult.patched)
+
+    const verifyPayload = readFileDataFromProDosImage(
+      disk,
+      target.location.storageType,
+      target.location.keyBlock,
+      target.location.eof,
+    )
+    const verifyError = verifyPatchedConfigPayload(verifyPayload, patchResult.expectedNumBlocks, target.label)
+    if (verifyError) return verifyError
+
+    patchedLabels.push(`${target.label}:${patchResult.pairSummaries.join("|")}`)
+    appliedTargets++
+    if (patchResult.unmappedVolumes > 0) {
+      console.warn(`[HDV Export] ${target.label} capacity exhausted: ${patchResult.unmappedVolumes} runtime volumes could not be mapped.`)
+    }
+  }
+
+  if (appliedTargets === 0) {
+    return { error: "Could not patch any DOS.MASTER runtime config target with active device pairs." }
+  }
+
+  const patchedFinderRecords = patchFinderDataCompanionMetadata()
+
+  console.log(`[HDV Export] Patched DOS.MASTER config targets: requested=${runtimeVolumeCount}, mapped=${mappedVolumes || 0}, targets=${patchedLabels.join("; ")}, finderRecords=${patchedFinderRecords}`)
+  return {
+    requestedVolumes: runtimeVolumeCount,
+    mappedVolumes: mappedVolumes || 0,
+    activePairs: activePairs || 0,
+    patchedTargets: appliedTargets,
+  }
+}
+
+type DosInstallLikeResult = {
+  installedVolumes: number
+  maxVolumes: number
+  firstBlock: number
+  volumeSizeBlocks: number
+  partitionBlocks: number
+  deviceUnit: number
+}
+
+const installDosMasterLikePartitions = (
+  disk: Uint8Array,
+  runtimeVolumes: BuildInputFile[],
+  totalBlocks: number,
+  bitmapStartBlock: number,
+  slot: number,
+  drive: 1 | 2 = 1,
+): DosInstallLikeResult | DosMasterPatchFailure => {
+  if (runtimeVolumes.length === 0) {
+    return {
+      installedVolumes: 0,
+      maxVolumes: 0,
+      firstBlock: 0,
+      volumeSizeBlocks: 0,
+      partitionBlocks: 0,
+      deviceUnit: ((slot & 0x07) << 4) | (drive === 2 ? 0x80 : 0x00),
+    }
+  }
+
+  const TABLE_DEV_OFFSET = 0x38
+  const TABLE_FIRST_OFFSET = 0x40
+  const TABLE_NUM_BLOCKS_OFFSET = 0x50
+  const TABLE_VOL_SIZE_OFFSET = 0x58
+
+  const targets = [
+    { path: ["DOS.MASTER", "DOS.3.3"], label: "DOS.MASTER/DOS.3.3" },
+    { path: ["DOS.3.3"], label: "DOS.3.3" },
+    { path: ["DOS.MASTER", "DDOS.3.3"], label: "DOS.MASTER/DDOS.3.3" },
+    { path: ["DDOS.3.3"], label: "DDOS.3.3" },
+  ] as const
+
+  const foundTargets: Array<{ label: string; location: ProDosFileLocation }> = []
+  for (const target of targets) {
+    const location = findFileByPath(disk, [...target.path])
+    if (location) foundTargets.push({ label: target.label, location })
+  }
+  if (foundTargets.length === 0) {
+    return { error: "Could not locate DOS.3.3 or DDOS.3.3 for DOS.INSTALL-style partition install." }
+  }
+
+  const primaryPayload = readFileDataFromProDosImage(
+    disk,
+    foundTargets[0].location.storageType,
+    foundTargets[0].location.keyBlock,
+    foundTargets[0].location.eof,
+  )
+  if (primaryPayload.length < 0x60) {
+    return { error: `${foundTargets[0].label} payload too small for DOS.INSTALL-style patching.` }
+  }
+
+  const deviceUnit = ((slot & 0x07) << 4) | (drive === 2 ? 0x80 : 0x00)
+  let deviceIndex = -1
+  for (let i = 0; i < 8; i++) {
+    if (primaryPayload[TABLE_DEV_OFFSET + i] === deviceUnit) {
+      deviceIndex = i
+      break
+    }
+  }
+  if (deviceIndex < 0) {
+    return { error: `DOS.3.3 config does not support target unit $${deviceUnit.toString(16).padStart(2, "0")}.` }
+  }
+
+  const pairOffset = deviceIndex & 0x06
+  const readWord = (payload: Uint8Array, offset: number) => payload[offset] | (payload[offset + 1] << 8)
+  const writeWord = (payload: Uint8Array, offset: number, value: number) => {
+    payload[offset] = value & 0xFF
+    payload[offset + 1] = (value >> 8) & 0xFF
+  }
+
+  const volumeSizeBlocks = readWord(primaryPayload, TABLE_VOL_SIZE_OFFSET + pairOffset)
+  if (volumeSizeBlocks <= 0 || volumeSizeBlocks > 1600) {
+    return { error: `Invalid DOS volume size in config table: ${volumeSizeBlocks}.` }
+  }
+
+  // DOS.MASTER derives the number of exposed volumes from the config as
+  //   NUMVOLS = floor((NUMBLKS - config_FIRST - VOLSIZ) / VOLSIZ)
+  // where config_FIRST is the value written to the FIRST table below and DOS.MASTER's
+  // volume N lives at config_FIRST + N*VOLSIZ (the config_FIRST..config_FIRST+VOLSIZ slot is
+  // reserved). To expose EXACTLY runtimeVolumes.length volumes (no phantom volumes whose
+  // zero-filled VTOC would give "I/O ERROR"), set config_FIRST so NUMVOLS === N:
+  //   config_FIRST = totalBlocks - (N + 1) * VOLSIZ
+  // This places the volumes flush against the top of the disk; the reserved area is marked
+  // used in the bitmap below. (For N=2 this equals the proven default base of 64695.)
+  const firstBaseBlock = totalBlocks - (runtimeVolumes.length + 1) * volumeSizeBlocks
+  if (firstBaseBlock <= 0) {
+    return { error: `Not enough space to install ${runtimeVolumes.length} DOS volumes of ${volumeSizeBlocks} blocks each (total=${totalBlocks}).` }
+  }
+  const firstBlock = firstBaseBlock + volumeSizeBlocks
+  if (firstBlock <= 0 || firstBlock >= totalBlocks) {
+    return { error: `Computed DOS partition first block out of range: ${firstBlock} (total=${totalBlocks}).` }
+  }
+
+  let partitionBlocks = readWord(primaryPayload, TABLE_NUM_BLOCKS_OFFSET + pairOffset)
+  if (partitionBlocks === 0xFFFF || partitionBlocks <= firstBlock || partitionBlocks > totalBlocks) {
+    partitionBlocks = totalBlocks
+  }
+
+  const availablePartitionBlocks = Math.max(0, partitionBlocks - firstBlock)
+  const maxVolumes = Math.floor(availablePartitionBlocks / volumeSizeBlocks)
+  if (maxVolumes <= 0) {
+    return { error: `DOS.INSTALL-style geometry yields no installable volumes (first=${firstBlock}, partitionBlocks=${partitionBlocks}, volumeSize=${volumeSizeBlocks}).` }
+  }
+  if (runtimeVolumes.length > maxVolumes) {
+    return { error: `DOS.INSTALL-style geometry supports ${maxVolumes} volumes, but ${runtimeVolumes.length} were requested.` }
+  }
+
+  for (const target of foundTargets) {
+    const payload = readFileDataFromProDosImage(
+      disk,
+      target.location.storageType,
+      target.location.keyBlock,
+      target.location.eof,
+    )
+    if (payload.length < 0x60) continue
+    const patched = payload.slice()
+    writeWord(patched, TABLE_FIRST_OFFSET + (deviceIndex * 2), firstBaseBlock)
+    writeWord(patched, TABLE_NUM_BLOCKS_OFFSET + pairOffset, partitionBlocks)
+    writeFileDataToProDosImage(disk, target.location, patched)
+  }
+
+  for (let block = firstBaseBlock; block < partitionBlocks; block++) {
+    setBlockUsedInBitmap(disk, bitmapStartBlock, block)
+  }
+
+  for (let i = 0; i < runtimeVolumes.length; i++) {
+    const runtime = runtimeVolumes[i]
+    const startBlock = firstBlock + (i * volumeSizeBlocks)
+    const startOffset = startBlock * BLOCK_SIZE
+    const volumeCapacityBytes = volumeSizeBlocks * BLOCK_SIZE
+    if (startOffset < 0 || startOffset + volumeCapacityBytes > disk.length) {
+      return { error: `DOS.INSTALL-style write out of range for volume ${i + 1} at block ${startBlock}.` }
+    }
+
+    const writeBytes = Math.min(runtime.data.length, volumeCapacityBytes)
+    disk.fill(0, startOffset, startOffset + volumeCapacityBytes)
+    disk.set(runtime.data.slice(0, writeBytes), startOffset)
+    if (runtime.data.length > volumeCapacityBytes) {
+      console.warn(`[HDV Export] DOS runtime image truncated to partition capacity: ${runtime.name} (${runtime.data.length} -> ${volumeCapacityBytes} bytes)`)
+    }
+  }
+
+  console.log(
+    `[HDV Export] DOS.INSTALL-style partition write: unit=$${deviceUnit.toString(16).padStart(2, "0")}, first=${firstBlock}, volSize=${volumeSizeBlocks}, partitionBlocks=${partitionBlocks}, installed=${runtimeVolumes.length}/${maxVolumes}`
+  )
+
+  return {
+    installedVolumes: runtimeVolumes.length,
+    maxVolumes,
+    firstBlock,
+    volumeSizeBlocks,
+    partitionBlocks,
+    deviceUnit,
+  }
 }
 
 export const buildProDosHdv = async (
@@ -1848,10 +3046,24 @@ export const buildProDosHdv = async (
   // Keep existing files from the base image intact.
   const rootScan = scanRootDirectory(hdv, dirBlocks)
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, runtimeVolumes, runtimeVolumeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
+
+  // Install DOS 3.3 images as DOS.MASTER virtual volumes BEFORE generic block
+  // allocation: patch DOS.MASTER's geometry/config table, reserve the partition
+  // blocks in the volume bitmap, and write each DOS volume contiguously at the
+  // blocks DOS.MASTER expects. Skipping this (the regression in commit 97598b0e)
+  // left DOS.MASTER reading an uninitialized partition area and crashing at boot.
+  const dosMasterPatchResult = patchDosMasterDos33Configuration(hdv, runtimeVolumes.length)
+  if ("error" in dosMasterPatchResult) {
+    throw new Error(`Failed to patch DOS.MASTER runtime configuration: ${dosMasterPatchResult.error}`)
+  }
+  const dosInstallResult = installDosMasterLikePartitions(hdv, runtimeVolumes, currentTotalBlocks, bitmapStartBlock, DOSMASTER_SLOT, 1)
+  if ("error" in dosInstallResult) {
+    throw new Error(`Failed DOS.INSTALL-style partition write: ${dosInstallResult.error}`)
+  }
 
   const allocateFreeBlocks = (count: number): number[] => {
     const allocated: number[] = []
@@ -1877,7 +3089,11 @@ export const buildProDosHdv = async (
   }
 
   const withStartup = [...outputFiles]
-  const installAliasShim = directoryPlans.length > 0
+  // Always copy the alias shim file onto the HDV whenever any ProDOS disk is imported.
+  // It is NOT installed at boot anymore: the menu BRUNs it per-launch, only before a
+  // ProDOS disk. DOS images never install it, so DOS.MASTER can reclaim the language
+  // card (where the shim's resident hook lives) without crashing.
+  const includeAliasShimFile = directoryPlans.length > 0
 
   const launcherName = "A2TSLAUNCH"
   withStartup.unshift({
@@ -1887,7 +3103,7 @@ export const buildProDosHdv = async (
     auxType: 0x2000,
   })
 
-  if (installAliasShim) {
+  if (includeAliasShimFile) {
     withStartup.unshift({
       name: "A2TSAL3",
       type: PRODOS_FILE_TYPE_BINARY,
@@ -1898,13 +3114,14 @@ export const buildProDosHdv = async (
 
   // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
   let startupText: string
-  const aliasShimRunCommand = `BRUN /${normalizedVolumeName}/A2TSAL3`
+  const aliasShimInstallCommand = `BRUN /${normalizedVolumeName}/A2TSAL3`
   if (menuEntries && menuEntries.length > 0) {
-    // Generate interactive menu program
-    startupText = `${installAliasShim ? `${aliasShimRunCommand}\r` : ""}${generateInteractiveMenuStartup(menuEntries)}`
+    // The menu installs the shim per-launch (only before ProDOS disks), so STARTUP
+    // must NOT install it globally.
+    startupText = generateInteractiveMenuStartup(menuEntries)
   } else {
-    // Fall back to simple launcher + catalog
-    startupText = `${installAliasShim ? `${aliasShimRunCommand}\r` : ""}BRUN ${launcherName}\rCATALOG\r`
+    // Non-interactive fallback has no DOS.MASTER launch, so a boot-time install is safe.
+    startupText = `${includeAliasShimFile ? `${aliasShimInstallCommand}\r` : ""}BRUN ${launcherName}\rCATALOG\r`
   }
   
   withStartup.unshift({
@@ -1918,7 +3135,7 @@ export const buildProDosHdv = async (
     withStartup.push({
       name: "MENUSRC",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes)),
+      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex)),
       auxType: 0x0801,
     })
   }
