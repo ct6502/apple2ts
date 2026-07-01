@@ -194,7 +194,8 @@
   position: absolute;
   width: 96%;
   height: 64%;
-  top: 30%;
+  top: 29.5%;
+  left: 0.5%;
   cursor: pointer;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -254,9 +255,9 @@
 
 .dcp-item-select {
   position: absolute;
-  right: 10px;
-  width: 19%;
-  height: 19%;
+  right: 9px;
+  width: 20%;
+  height: 20%;
   bottom: 45%;
   cursor: pointer;
 }
@@ -306,8 +307,9 @@
   position: absolute;
   width: 14%;
   height: 10%;
-  left: 4px;
+  left: 6px;
   bottom: 26px;
+  padding-left: 2px;
 }
 
 .dcp-item-ia-icon {
@@ -345,14 +347,14 @@
 
 .dcp-item-export-badge {
   position: absolute;
-  right: 7px;
+  left: 26px;
   bottom: 4px;
 }
 
 .dcp-item-export-badge-icon {
   position: relative;
   top: 1px;
-  color: gainsboro;
+  color: greenyellow;
   z-index: 1;
 }
 
@@ -362,6 +364,30 @@
   height: 3px;
   left: 25%;
   bottom: 6px;
+  background-color: black;
+  z-index: 0;
+}
+
+.dcp-item-report {
+  position: absolute;
+  right: 5px;
+  bottom: 10px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.dcp-item-report-icon {
+  position: relative;
+  color: orange;
+  z-index: 1;
+}
+
+.dcp-item-report-icon-bg {
+  position: relative;
+  width: 14px;
+  height: 3px;
+  right: -20%;
+  bottom: 12px;
   background-color: black;
   z-index: 0;
 }

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
-import { faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
+import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../common/utility"
 import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry, classifyImageKind, determineVtocType } from "../../common/prodos_hdv"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
@@ -91,6 +91,41 @@ const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): num
 
 type DiskCollectionPanelProps = DisplayProps & {
   onDismissDialog?: () => void
+}
+
+// Renders a disk title that automatically shrinks its font size so the text
+// fits within the fixed-size title box instead of being clipped.
+const DiskItemTitle = (props: {
+  text: string,
+  className: string,
+  title: string,
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void,
+}) => {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const fit = () => {
+      // Start from the CSS-defined size and only shrink if it overflows.
+      el.style.fontSize = ""
+      const maxSize = parseFloat(window.getComputedStyle(el).fontSize)
+      const minSize = 6
+      let size = maxSize
+      while (size > minSize && (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight)) {
+        size -= 0.5
+        el.style.fontSize = `${size}px`
+      }
+    }
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [props.text])
+
+  return (
+    <div ref={ref} className={props.className} title={props.title} onClick={props.onClick}>{props.text}</div>
+  )
 }
 
 const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
@@ -659,14 +694,15 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 }
               }}>
               <div className="dcp-item-title-box">
-                <div
+                <DiskItemTitle
+                  text={diskCollectionItem.title}
                   className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
                   title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
                   onClick={(e) => {
                     if (activeTab != TAB_INDEX_SELECT && diskCollectionItem.detailsUrl) {
                       handleHelpClick(diskCollectionItem)(e as any)
                     }
-                  }}>{diskCollectionItem.title}</div>
+                  }} />
               </div>
               {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
               <div
@@ -729,6 +765,18 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                     }
                   }} />
                   <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
+                </div>}
+              {activeTab == TAB_INDEX_SELECT &&
+                <div
+                  className="dcp-item-report"
+                  title="Report an export issue"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=Export+to+HDV+issue:+${encodeURIComponent(diskCollectionItem.title)}`
+                    window.open(reportUrl, "_blank", "noopener,noreferrer")
+                  }}>
+                  <FontAwesomeIcon icon={faCommentDots} size="lg" className="dcp-item-report-icon" />
+                  <div className="dcp-item-report-icon-bg">&nbsp;</div>
                 </div>}
               {activeTab == 2 && diskCollectionItem.bookmarkId &&
                 <div
