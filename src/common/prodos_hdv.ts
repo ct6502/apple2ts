@@ -269,7 +269,7 @@ const generateMenuSourceProgram = (
   lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
   for (let idx = 1; idx <= count; idx++) {
     const lineNo = 1010 + idx
-    lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"BLOAD SCREEN${String(idx).padStart(2, "0")},A$2000\"`)
+    lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(idx).padStart(2, "0")},A$2000\"`)
   }
   // Apple II text mode is uppercase-oriented; lowercase prints as symbols on many setups.
   lines.push("1120 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
@@ -279,7 +279,7 @@ const generateMenuSourceProgram = (
   // Startup render is explicit so initial display matches the first disk.
   lines.push("3000 HOME")
   lines.push("3010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
-  lines.push(`3020 PRINT D$;\"BLOAD SCREEN${String(1).padStart(2, "0")},A$2000\"`)
+  lines.push(`3020 PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(1).padStart(2, "0")},A$2000\"`)
   lines.push("3030 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
   lines.push("3040 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
   lines.push("3050 RETURN")
@@ -1572,7 +1572,9 @@ const preprocessInputFilesForMenu = (
       const runtimeFile: BuildInputFile = { ...file, type: PRODOS_FILE_TYPE_DOS_MASTER, name: normalized }
       runtimeVolumeByMenuIndex[i] = runtimeVolumes.length + 1
       runtimeVolumes.push(runtimeFile)
-      outputFiles.push(runtimeFile)
+      // DOS 3.3 disks are booted from the DOS.MASTER partition (by block, via its geometry
+      // table), never as a ProDOS file. Writing a second ProDOS copy wasted a root directory
+      // entry and ~280 blocks per disk, capping many-disk exports; it is not written anymore.
       menuProDosPrefixes[i] = undefined
       menuProDosCommands[i] = undefined
       continue
@@ -2245,6 +2247,12 @@ const ROOT_DIR_BLOCK = 2
 const DIR_HEADER_SIZE = 4
 const DIR_ENTRY_SIZE = 39
 const DIR_ENTRIES_PER_BLOCK = 13
+
+// Per-disk screenshots live in this subdirectory instead of the volume root. The ProDOS
+// volume directory is a fixed 4-block area (~51 entries), so keeping one root entry per
+// screenshot capped exports at ~21 disks. Grouping them under one subdirectory keeps root
+// usage constant regardless of disk count. The menu BLOADs them via this relative path.
+const SCREENSHOT_SUBDIR = "SHOTS"
 
 const getDirEntryOffset = (entryIndex: number) => DIR_HEADER_SIZE + (entryIndex * DIR_ENTRY_SIZE)
 
@@ -3046,6 +3054,8 @@ export const buildProDosHdv = async (
   // Keep existing files from the base image intact.
   const rootScan = scanRootDirectory(hdv, dirBlocks)
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
+  // Reserve the screenshot subdirectory name so imported ProDOS volumes can't collide with it.
+  rootScan.existingNames.add(SCREENSHOT_SUBDIR)
   const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, runtimeVolumes, runtimeVolumeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
@@ -3140,15 +3150,19 @@ export const buildProDosHdv = async (
     })
   }
 
-  // Track screenshot files for later metadata creation
+  // Track screenshot files for later metadata creation. Screenshots go into a dedicated
+  // subdirectory (SCREENSHOT_SUBDIR) rather than the volume root: one root entry for the
+  // whole group instead of one per disk, so exports scale to many disks. The menu BLOADs
+  // them via the relative "SHOTS/SCREENnn" path (see generateMenuSourceProgram).
   const screenshotNames: Set<string> = new Set()
+  const screenshotFiles: BuildInputFile[] = []
   if (menuEntries && menuEntries.length > 0) {
     for (let i = 0; i < menuEntries.length; i++) {
       const entry = menuEntries[i]
       if (entry.screenshotData && entry.screenshotData.length > 0) {
         const screenshotName = `SCREEN${String(i + 1).padStart(2, "0")}`
         screenshotNames.add(screenshotName)
-        withStartup.push({
+        screenshotFiles.push({
           name: screenshotName,
           type: PRODOS_FILE_TYPE_BINARY,
           data: entry.screenshotData,
@@ -3156,6 +3170,9 @@ export const buildProDosHdv = async (
         })
       }
     }
+  }
+  if (screenshotFiles.length > 0) {
+    directoryPlans.push({ name: SCREENSHOT_SUBDIR, files: screenshotFiles, sourceMenuIndex: -1 })
   }
 
   type DirectoryNode = {
