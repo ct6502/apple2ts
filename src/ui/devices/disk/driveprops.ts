@@ -346,6 +346,15 @@ export const handleSetDiskFromURL = async (url: string,
         }
         diskBookmarks.set(bookmark)
       }
+    } else {
+      // The identifier could not be resolved to a real disk image URL. Don't
+      // fall through with the still-unresolved "a2ia://" URL: fetching it (and
+      // forwarding it to the CORS proxy) is guaranteed to fail.
+      console.warn(`Unable to resolve Internet Archive disk image for "${identifier}"`)
+      if (callback) {
+        callback(null)
+      }
+      return
     }
   }
 
