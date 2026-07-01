@@ -221,7 +221,7 @@
 
 .dcp-item-new-icon {
   position: relative;
-  top: 11px;
+  top: 10px;
   color: gainsboro;
   z-index: 1;
 }
@@ -288,7 +288,7 @@
 
 .dcp-item-a2ts-icon {
   position: relative;
-  top: 11px;
+  top: 8px;
   color: gainsboro;
   z-index: 1;
 }
@@ -314,14 +314,16 @@
 
 .dcp-item-ia-icon {
   position: relative;
-  top: 11px;
+  left: 4%;
+  top: 56%;
+  width: 85%;
   color: gainsboro;
   z-index: 1;
 }
 
 .dcp-item-ia-icon-bg {
   position: relative;
-  width: 58%;
+  width: 50%;
   height: 80%;
   left: 12%;
   bottom: 48%;
@@ -353,7 +355,7 @@
 
 .dcp-item-export-badge-icon {
   position: relative;
-  top: 1px;
+  top: -1px;
   color: greenyellow;
   z-index: 1;
 }
@@ -379,6 +381,7 @@
 .dcp-item-report-icon {
   position: relative;
   color: orange;
+  bottom: 1px;
   z-index: 1;
 }
 
@@ -387,9 +390,22 @@
   width: 14px;
   height: 3px;
   right: -20%;
-  bottom: 12px;
+  bottom: 13px;
   background-color: black;
   z-index: 0;
+}
+
+/* Solid outline (1px black next to the glyph, surrounded by 1px white) for all
+   disk icons. drop-shadow filters are applied in order, so the black outline is
+   drawn first and the white outline is drawn around that. */
+.dcp-item-new-icon,
+.dcp-item-a2ts-icon,
+.dcp-item-ia-icon,
+.dcp-item-cloud-icon,
+.dcp-item-export-badge-icon,
+.dcp-item-report-icon {
+  filter:
+    drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
 }
 
 @media (min-width: 1290px) {
