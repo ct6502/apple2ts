@@ -365,7 +365,7 @@ type DisassemblyProps = {
   refresh: () => void,
 }
 
-type VtocType = "dos" | "prodos" | "other"
+type VtocType = "dos" | "prodos" | "other" | "dosup"
 
 type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,

@@ -1475,10 +1475,111 @@ export const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "
 }
 
 /**
- * Determines the exportable VTOC type of a disk image: "dos", "prodos", or "other".
- * "other" means the image is neither a recognizable DOS 3.3 nor ProDOS volume and so
- * cannot be exported. WOZ images are fully bit-decoded and probed under every sector
- * order before being classified.
+ * Detects whether a DOS 3.3 *logical*-order image's boot greeting installs a
+ * "DOS in the language card" relocator (e.g. DOS-UP, Diversi-DOS 64K). Such movers
+ * write-enable the language card ($C081/$C083/...) and bulk-copy DOS into $D000-$FFFF --
+ * the exact region DOS.MASTER's own patched RWTS occupies. Running one from a DOS.MASTER
+ * volume overwrites that driver, so every subsequent disk access fails with I/O ERROR.
+ * Such disks cannot run as DOS.MASTER volumes and are excluded from export (vtocType
+ * "dosup"). The greeting is inspected specifically so disks that merely carry such a
+ * utility without booting it are not falsely excluded.
+ */
+const dosImageInstallsLanguageCardDos = (image: Uint8Array): boolean => {
+  const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+
+  // Concatenates a DOS 3.3 file's data sectors by walking its track/sector list.
+  const readDosFileData = (tsListTrack: number, tsListSector: number): Uint8Array => {
+    const chunks: Uint8Array[] = []
+    let listTrack = tsListTrack
+    let listSector = tsListSector
+    const visited = new Set<number>()
+    for (let guard = 0; guard < 64; guard++) {
+      if (listTrack === 0 || listTrack >= 35 || listSector >= 16) break
+      const key = listTrack * 16 + listSector
+      if (visited.has(key)) break
+      visited.add(key)
+      const off = sectorOffset(listTrack, listSector)
+      if (off + 256 > image.length) break
+      for (let i = 0; i < 122; i++) {
+        const dataTrack = image[off + 0x0c + i * 2]
+        const dataSector = image[off + 0x0c + i * 2 + 1]
+        if (dataTrack === 0 && dataSector === 0) continue
+        const dataOff = sectorOffset(dataTrack, dataSector)
+        if (dataTrack < 35 && dataSector < 16 && dataOff + 256 <= image.length) {
+          chunks.push(image.subarray(dataOff, dataOff + 256))
+        }
+      }
+      listTrack = image[off + 1]
+      listSector = image[off + 2]
+    }
+    const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    const out = new Uint8Array(total)
+    let pos = 0
+    for (const chunk of chunks) { out.set(chunk, pos); pos += chunk.length }
+    return out
+  }
+
+  // A binary file is a language-card DOS mover if it both write-enables the language card
+  // (any $C081/$C083/$C089/$C08B access) and stores to many distinct locations in
+  // $D000-$FFFF (the copied-in DOS image). DOS-UP hits ~34 such targets; the threshold is
+  // set well below that but high enough to ignore incidental language-card use.
+  const LANGUAGE_CARD_DOS_TARGET_THRESHOLD = 16
+  const isLanguageCardDosMover = (entry: DosCatalogEntry): boolean => {
+    if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) return false
+    const raw = readDosFileData(entry.tsListTrack, entry.tsListSector)
+    if (raw.length < 6) return false
+    const body = raw.subarray(4) // skip the 2-byte load address + 2-byte length header
+    let writeEnablesLanguageCard = false
+    const languageCardTargets = new Set<number>()
+    for (let i = 0; i + 2 < body.length; i++) {
+      // A two-byte operand referencing $C08x (the language-card control soft switches).
+      if (body[i + 2] === 0xc0 && (body[i + 1] & 0xf0) === 0x80) {
+        const lowNibble = body[i + 1] & 0x0f
+        if (lowNibble === 0x01 || lowNibble === 0x03 || lowNibble === 0x09 || lowNibble === 0x0b) {
+          writeEnablesLanguageCard = true
+        }
+      }
+      // STA absolute (0x8D) into the $D000-$FFFF language-card window.
+      if (body[i] === 0x8d) {
+        const target = body[i + 1] | (body[i + 2] << 8)
+        if (target >= 0xd000) languageCardTargets.add(target)
+      }
+    }
+    return writeEnablesLanguageCard && languageCardTargets.size >= LANGUAGE_CARD_DOS_TARGET_THRESHOLD
+  }
+
+  const { entries } = readDos33Catalog(image)
+  const greeting = chooseDosGreetingCommand(entries)
+  if (!greeting) return false
+
+  const greetingEntry = entries.find((entry) => entry.name.trim() === greeting.target.trim())
+  if (!greetingEntry) return false
+
+  // The greeting program itself may be a binary mover (BRUN greeting)...
+  if (isLanguageCardDosMover(greetingEntry)) return true
+
+  // ...or, more commonly, an Applesoft greeting BRUNs one. Read the greeting file and, for
+  // each binary whose name the greeting mentions, check whether that binary is a mover.
+  const greetingBytes = readDosFileData(greetingEntry.tsListTrack, greetingEntry.tsListSector)
+  let greetingText = ""
+  for (const byte of greetingBytes) greetingText += String.fromCharCode(byte & 0x7f)
+  for (const entry of entries) {
+    if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) continue
+    const name = entry.name.trim()
+    if (name.length >= 3 && greetingText.includes(name) && isLanguageCardDosMover(entry)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Determines the exportable VTOC type of a disk image: "dos", "prodos", "dosup", or
+ * "other". "other" means the image is neither a recognizable DOS 3.3 nor ProDOS volume.
+ * "dosup" means a DOS 3.3 volume whose greeting installs a language-card DOS relocator
+ * (see dosImageInstallsLanguageCardDos) that is incompatible with DOS.MASTER. Both
+ * "other" and "dosup" are non-exportable. WOZ images are fully bit-decoded and probed
+ * under every sector order before being classified.
  */
 export const determineVtocType = (filename: string, data: Uint8Array): VtocType => {
   const ext = filename.toLowerCase().split(".").pop() || ""
@@ -1491,12 +1592,23 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       }
       // Require a genuinely walkable DOS 3.3 catalog (not just a VTOC-shaped sector) so
       // copy-protected/non-standard disks are classified "other" and not exported.
-      if (loadWozAndExtractDosImage(data)) return "dos"
+      const dosImage = loadWozAndExtractDosImage(data)
+      if (dosImage) {
+        return dosImageInstallsLanguageCardDos(dosImage) ? "dosup" : "dos"
+      }
     }
     return "other"
   }
 
   const kind = classifyImageKind(filename, data)
+  // A raw 140K DOS logical-order image (.dsk/.do) whose greeting installs a language-card
+  // DOS mover is likewise incompatible with DOS.MASTER.
+  if (kind === "dos" &&
+    data.length === (35 * 16 * 256) &&
+    dosLogicalImageHasValidCatalog(data) &&
+    dosImageInstallsLanguageCardDos(data)) {
+    return "dosup"
+  }
   return kind === "unknown" ? "other" : kind
 }
 

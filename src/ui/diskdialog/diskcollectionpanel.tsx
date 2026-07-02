@@ -165,10 +165,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   const isDiskExportable = (disk: DiskCollectionItem) => {
-    // A disk whose VTOC has been determined to be neither DOS nor ProDOS ("other")
-    // cannot be exported. An undetermined (undefined) vtocType is treated as
-    // potentially exportable until background determination resolves it.
-    return disk.fileSize < maxHdvBytes * 0.95 && disk.vtocType !== "other"
+    // A disk whose VTOC has been determined to be neither DOS nor ProDOS ("other"), or a
+    // DOS 3.3 disk whose greeting installs a language-card DOS relocator ("dosup", which
+    // is incompatible with DOS.MASTER), cannot be exported. An undetermined (undefined)
+    // vtocType is treated as potentially exportable until background determination resolves it.
+    return disk.fileSize < maxHdvBytes * 0.95 && disk.vtocType !== "other" && disk.vtocType !== "dosup"
   }
 
   const tabs = [
