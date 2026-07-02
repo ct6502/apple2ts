@@ -45,6 +45,9 @@ class Oscillator extends AudioWorkletProcessor {
       // of looping around thru the entire tick array.
       if (delta > this.offset) {
         this.currIndex = (this.playbackIndex + this.offset) % this.len
+        let i0 = Math.floor(this.currIndex) % this.len
+        this.tick[i0] = this.tick[i0] + this.value
+        this.value = -this.value
       } else {
         let newIndex = this.currIndex + delta
         let i0 = Math.floor(this.currIndex) % this.len
