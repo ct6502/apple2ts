@@ -22,7 +22,11 @@ export class OneDriveCloudDrive implements CloudProvider {
     const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
     const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
 
-    window.open(`${authUrl}${redirectUri}`, "_blank")
+    // The redirect URI must be percent-encoded, otherwise its own query string
+    // (?cloudProvider=OneDrive) is parsed as part of the login.live.com URL and
+    // is dropped from the redirect, so the popup returns to Apple2TS without the
+    // cloudProvider marker and the access token is never picked up.
+    window.open(`${authUrl}${encodeURIComponent(redirectUri)}`, "_blank")
     const interval = window.setInterval(async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const accessToken = (window as any).accessToken
