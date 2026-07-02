@@ -13,7 +13,7 @@ import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL
 import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
-import { getPreferenceNewReleasesChecked, setPreferenceNewReleasesChecked } from "../localstorage"
+import { addSessionVtocFailure, getPreferenceNewReleasesChecked, getPreferenceVtocType, hasSessionVtocFailure, setPreferenceNewReleasesChecked, setPreferenceVtocType } from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
 import { handleInputParams } from "../inputparams"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
@@ -154,7 +154,6 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const exportTabOpenRef = useRef(false)
 
   const TAB_INDEX_SELECT = 3
-  const TAB_INDEX_NEW_RELEASE = 1
 
   // Stable identity for a disk across re-renders (bookmark id, cloud item id,
   // disk URL, or finally the title).
@@ -267,6 +266,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         diskBookmarks.set(bookmark)
       }
     }
+
+    // A disk's VTOC type never changes, so cache it by URL. This lets
+    // non-bookmarked disks (e.g. new releases) avoid re-downloading their bytes
+    // to redetermine the VTOC on every visit.
+    setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType)
 
     // Trigger a re-render so the export filter reflects the new VTOC type.
     setDiskCollection((prev) => [...prev])
@@ -565,6 +569,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // Load new releases
     newReleases.forEach((newRelease) => {
       newRelease.type = DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE
+      // Reuse the previously determined VTOC type from local storage so we don't
+      // re-download the disk's bytes just to redetermine an unchanging value.
+      if (newRelease.vtocType === undefined) {
+        newRelease.vtocType = getPreferenceVtocType(newRelease.diskUrl.toString())
+      }
       newDiskCollection.push(newRelease)
 
       if (newRelease.lastUpdated >= newReleasesChecked) {
@@ -585,28 +594,29 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
 
-  // When the Export or New Releases tab is displayed, fill in (and cache) the
-  // VTOC type of any disk that doesn't already have one by downloading its
-  // bytes. Built-in disks ship with a predefined vtocType and are trusted as-is
-  // (never re-downloaded); disks without one are resolved here, so a disk that
-  // can't be downloaded (e.g. CORS-blocked) never gets a VTOC and is never shown
-  // as exportable. Disks are resolved one at a time to avoid a download
-  // stampede; failures can be retried by reopening the tab. The New Releases tab
-  // only resolves its own disks; the Export tab resolves any export candidate.
+  // Whenever the panel is visible, fill in (and cache) the VTOC type of any disk
+  // that doesn't already have one by downloading its bytes. The exportable badge
+  // is shown on every tab, so verification must run on every tab for it to be
+  // accurate everywhere. Built-in disks ship with a predefined vtocType and are
+  // trusted as-is (never re-downloaded); disks without one are resolved here, so
+  // a disk that can't be downloaded (e.g. CORS-blocked) never gets a VTOC and is
+  // never shown as exportable. Disks are resolved one at a time to avoid a
+  // download stampede, and each result is cached in local storage so a given
+  // disk is only ever downloaded once. Download failures are remembered for the
+  // browser session (sessionStorage) so they aren't re-attempted on reload; they
+  // are retried in a new browser session.
   useEffect(() => {
     // The panel content is shown when the flyout is open (minimal theme) or
     // always (classic theme renders it inside a dialog), matching Flyout's own
     // render condition. Gate verification on actual visibility so it runs in
     // both themes, not just when isFlyoutOpen is toggled.
     const panelVisible = isFlyoutOpen || !isMinimalTheme()
-    const verifyActive = panelVisible &&
-      (activeTab == TAB_INDEX_SELECT || activeTab == TAB_INDEX_NEW_RELEASE)
-    if (!verifyActive) {
+    if (!panelVisible) {
       exportTabOpenRef.current = false
       return
     }
 
-    // On a fresh open of a verifying tab, retry any disk whose VTOC is still
+    // On a fresh open of the panel, retry any disk whose VTOC is still
     // unresolved. Disks that already resolved keep their cached vtocType and are
     // not re-picked below.
     if (!exportTabOpenRef.current) {
@@ -614,14 +624,19 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       vtocResolveAttempted.current.clear()
     }
 
-    // Pick the next exportable-candidate disk that still lacks a VTOC type. On
-    // the New Releases tab, restrict resolution to new-release disks so we don't
-    // download unrelated favorites in the background.
-    const pending = diskCollection.find((item) =>
+    // Only resolve disks that are visible in the current tab, so we don't
+    // background-download disks the user can't see. The Export tab is the
+    // superset of all exportable disks, but its rendered list is pre-filtered to
+    // already-determined disks; use the full exportable candidate set for it so
+    // its not-yet-determined disks still get resolved when it's navigated to.
+    const visibleCandidates = activeTab === TAB_INDEX_SELECT
+      ? diskCollection.filter(isDiskExportable)
+      : tabs[activeTab].disks
+    const pending = visibleCandidates.find((item) =>
       item.vtocType === undefined &&
       isDiskExportable(item) &&
       !vtocResolveAttempted.current.has(itemKey(item)) &&
-      (activeTab != TAB_INDEX_NEW_RELEASE || item.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE)
+      !hasSessionVtocFailure(item.diskUrl.toString())
     )
     if (!pending) {
       return
@@ -636,8 +651,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           return
         }
         if (!data) {
-          // Download failed (CORS/network). Advance to the next disk; this one
-          // can be retried the next time the tab is opened.
+          // Download failed (CORS/network). Remember the failure for this browser
+          // session so we don't re-attempt the download on every reload, then
+          // advance to the next disk. It will be retried in a new session.
+          addSessionVtocFailure(pending.diskUrl.toString())
           setVtocCheckPass((pass) => pass + 1)
           return
         }
@@ -647,6 +664,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       })
       .catch(() => {
         if (!cancelled) {
+          addSessionVtocFailure(pending.diskUrl.toString())
           setVtocCheckPass((pass) => pass + 1)
         }
       })
