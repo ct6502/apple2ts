@@ -32,7 +32,7 @@ export const diskImages: DiskCollectionItem[] = [
     type: undefined,
     lastUpdated: new Date(0),
     fileSize: 234496,
-    vtocType: "other"
+    vtocType: "dosup"
   },
   {
     title: "MousePaint",

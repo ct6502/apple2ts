@@ -1475,16 +1475,20 @@ export const classifyImageKind = (filename: string, data: Uint8Array): "dos" | "
 }
 
 /**
- * Detects whether a DOS 3.3 *logical*-order image's boot greeting installs a
- * "DOS in the language card" relocator (e.g. DOS-UP, Diversi-DOS 64K). Such movers
- * write-enable the language card ($C081/$C083/...) and bulk-copy DOS into $D000-$FFFF --
- * the exact region DOS.MASTER's own patched RWTS occupies. Running one from a DOS.MASTER
- * volume overwrites that driver, so every subsequent disk access fails with I/O ERROR.
+ * Detects whether a DOS 3.3 *logical*-order image's boot greeting relies on the language
+ * card, making the disk incompatible with DOS.MASTER (which keeps its relocated DOS 3.3 and
+ * patched RWTS in the language card). Two cases are caught:
+ *  - the greeting installs a "DOS in the language card" relocator / mover (e.g. DOS-UP,
+ *    Diversi-DOS 64K) that write-enables the language card and bulk-copies DOS into
+ *    $D000-$FFFF, overwriting DOS.MASTER's driver (subsequent access -> I/O ERROR); or
+ *  - the greeting program itself switches/uses language-card RAM (e.g. MECC loaders whose
+ *    Applesoft HELLO CALLs embedded machine code that bank-switches LC RAM), which clobbers
+ *    DOS.MASTER just the same (observed failure: hang or "PROGRAM TOO LARGE").
  * Such disks cannot run as DOS.MASTER volumes and are excluded from export (vtocType
- * "dosup"). The greeting is inspected specifically so disks that merely carry such a
- * utility without booting it are not falsely excluded.
+ * "dosup"). The greeting is inspected specifically so disks that merely carry such code
+ * without booting it are not falsely excluded.
  */
-const dosImageInstallsLanguageCardDos = (image: Uint8Array): boolean => {
+const dosImageUsesLanguageCard = (image: Uint8Array): boolean => {
   const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
 
   // Concatenates a DOS 3.3 file's data sectors by walking its track/sector list.
@@ -1548,6 +1552,30 @@ const dosImageInstallsLanguageCardDos = (image: Uint8Array): boolean => {
     return writeEnablesLanguageCard && languageCardTargets.size >= LANGUAGE_CARD_DOS_TARGET_THRESHOLD
   }
 
+  // Absolute-addressing opcodes (abs, abs,X, abs,Y) whose two-byte operand could name a
+  // soft switch. Requiring one of these before a $C08x operand avoids matching incidental
+  // data bytes that merely look like a soft-switch address.
+  const ABSOLUTE_MEMORY_OPCODES = new Set([
+    0x0d, 0x0e, 0x1d, 0x1e, 0x2c, 0x2d, 0x2e, 0x3d, 0x3e, 0x4d, 0x4e, 0x5d, 0x5e,
+    0x6d, 0x6e, 0x7d, 0x7e, 0x8c, 0x8d, 0x8e, 0x99, 0x9d, 0xac, 0xad, 0xae,
+    0xb9, 0xbc, 0xbd, 0xbe, 0xcd, 0xce, 0xdd, 0xde, 0xed, 0xee, 0xfd, 0xfe
+  ])
+  // A program "uses the language card" if it accesses any $C08x soft switch that reads or
+  // write-enables language-card RAM. The pure read-ROM switches ($C082/$C086/$C08A/$C08E,
+  // i.e. low nibble & 3 == 2) don't touch LC RAM and are ignored. DOS.MASTER lives in the
+  // language card, so any other $C08x use clobbers it.
+  const usesLanguageCardRam = (raw: Uint8Array): boolean => {
+    for (let i = 0; i + 2 < raw.length; i++) {
+      if (!ABSOLUTE_MEMORY_OPCODES.has(raw[i])) continue
+      if (raw[i + 2] !== 0xc0) continue
+      const low = raw[i + 1]
+      if ((low & 0xf0) !== 0x80) continue
+      if ((low & 0x03) === 0x02) continue
+      return true
+    }
+    return false
+  }
+
   const { entries } = readDos33Catalog(image)
   const greeting = chooseDosGreetingCommand(entries)
   if (!greeting) return false
@@ -1561,6 +1589,11 @@ const dosImageInstallsLanguageCardDos = (image: Uint8Array): boolean => {
   // ...or, more commonly, an Applesoft greeting BRUNs one. Read the greeting file and, for
   // each binary whose name the greeting mentions, check whether that binary is a mover.
   const greetingBytes = readDosFileData(greetingEntry.tsListTrack, greetingEntry.tsListSector)
+
+  // The greeting program itself may also drive the language card directly (e.g. MECC
+  // loaders whose Applesoft HELLO CALLs embedded ML that bank-switches LC RAM).
+  if (usesLanguageCardRam(greetingBytes)) return true
+
   let greetingText = ""
   for (const byte of greetingBytes) greetingText += String.fromCharCode(byte & 0x7f)
   for (const entry of entries) {
@@ -1576,8 +1609,9 @@ const dosImageInstallsLanguageCardDos = (image: Uint8Array): boolean => {
 /**
  * Determines the exportable VTOC type of a disk image: "dos", "prodos", "dosup", or
  * "other". "other" means the image is neither a recognizable DOS 3.3 nor ProDOS volume.
- * "dosup" means a DOS 3.3 volume whose greeting installs a language-card DOS relocator
- * (see dosImageInstallsLanguageCardDos) that is incompatible with DOS.MASTER. Both
+ * "dosup" means a DOS 3.3 volume whose greeting relies on the language card -- either by
+ * installing a language-card DOS relocator or by driving language-card RAM directly (see
+ * dosImageUsesLanguageCard) -- which is incompatible with DOS.MASTER. Both
  * "other" and "dosup" are non-exportable. WOZ images are fully bit-decoded and probed
  * under every sector order before being classified.
  */
@@ -1594,7 +1628,7 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       // copy-protected/non-standard disks are classified "other" and not exported.
       const dosImage = loadWozAndExtractDosImage(data)
       if (dosImage) {
-        return dosImageInstallsLanguageCardDos(dosImage) ? "dosup" : "dos"
+        return dosImageUsesLanguageCard(dosImage) ? "dosup" : "dos"
       }
     }
     return "other"
@@ -1606,7 +1640,7 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
   if (kind === "dos" &&
     data.length === (35 * 16 * 256) &&
     dosLogicalImageHasValidCatalog(data) &&
-    dosImageInstallsLanguageCardDos(data)) {
+    dosImageUsesLanguageCard(data)) {
     return "dosup"
   }
   return kind === "unknown" ? "other" : kind

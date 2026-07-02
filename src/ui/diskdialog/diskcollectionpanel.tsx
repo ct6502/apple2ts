@@ -196,9 +196,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return { exportable: false, title: "Disk is not exportable due to DOS Master incompatibility" }
     }
     if (disk.vtocType === undefined) {
-      return { exportable: false, title: "Disk export status could not be determined" }
+      return { exportable: false, title: "Disk exportability could not be determined" }
     }
-    return { exportable: true, title: "Disk can be exported to HDV" }
+    return { exportable: true, title: "Disk can be exported" }
   }
 
   const tabs = [
