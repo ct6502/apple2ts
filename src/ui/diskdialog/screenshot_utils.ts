@@ -267,7 +267,7 @@ export const loadAndConvertImageToHires = async (imageUrl?: string, stampLogo = 
  *   diffused to neighboring cells. Lower values reduce the speckly "fuzz" in
  *   flat areas (at the cost of some banding); 1 is full Floyd–Steinberg.
  */
-export const convertCanvasToHires = (imageData: ImageData, dither = true, ditherStrength = 0.1): Uint8Array => {
+export const convertCanvasToHires = (imageData: ImageData, dither = true, ditherStrength = 0.0): Uint8Array => {
   const width = 280
   const height = 192
   const cells = 140
