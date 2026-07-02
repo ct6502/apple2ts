@@ -305,18 +305,17 @@
 
 .dcp-item-ia {
   position: absolute;
-  width: 14%;
+  width: 16%;
   height: 10%;
   left: 6px;
-  bottom: 26px;
   padding-left: 2px;
 }
 
 .dcp-item-ia-icon {
   position: relative;
-  left: 4%;
-  top: 56%;
-  width: 85%;
+  left: 10%;
+  bottom: -11px;
+  width: 90%;
   color: gainsboro;
   z-index: 1;
 }
