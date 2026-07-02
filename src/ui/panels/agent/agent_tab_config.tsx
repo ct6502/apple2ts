@@ -4,6 +4,13 @@ import { getAgent } from "../../mcp/mcp_agent"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
 
+interface OllamaModel {
+  name: string
+  modified_at?: string
+  size?: number
+  digest?: string
+}
+
 const AgentTabConfig = (props: {
   showConfig: boolean, 
   setShowConfig: (show: boolean) => void,
@@ -14,6 +21,9 @@ const AgentTabConfig = (props: {
   const [model, setModel] = useState(getDefaultModel("anthropic"))
   const [availableModels, setAvailableModels] = useState(getSupportedModels("anthropic"))
   const [currentConfig, setCurrentConfig] = useState<ReturnType<typeof loadAgentConfig>>(null)
+  const [ollamaModels, setOllamaModels] = useState<Array<{ value: string; label: string }>>([])
+  const [isCustomModel, setIsCustomModel] = useState(false)
+  const [customModelValue, setCustomModelValue] = useState("")
   const agent = getAgent()
 
   // Initialize config state from localStorage on mount
@@ -21,12 +31,88 @@ const AgentTabConfig = (props: {
     const config = loadAgentConfig()
     if (config) {
       setProvider(config.provider)
-      setModel(config.model || getDefaultModel(config.provider))
+      const modelName = config.model || getDefaultModel(config.provider)
+      setModel(modelName)
       setAvailableModels(getSupportedModels(config.provider))
       setApiKey(config.apiKey)
       setCurrentConfig(config)
+      
+      if (config.provider === "ollama") {
+        const isPredefined = getSupportedModels("ollama").some(m => m.value === modelName)
+        if (!isPredefined) {
+          setIsCustomModel(true)
+          setCustomModelValue(modelName)
+        }
+      }
     }
   }, [])
+
+  // Dynamic tag fetching for Ollama
+  useEffect(() => {
+    if (provider !== "ollama" || !apiKey) {
+      return
+    }
+    
+    let active = true
+    const fetchModels = async () => {
+      try {
+        const IS_LOCALHOST = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        const IS_DEFAULT_OLLAMA = apiKey.includes("localhost") || apiKey.includes("127.0.0.1")
+        const proxyUrl = "/api/ollama/tags"
+        
+        let response
+        if (IS_LOCALHOST && IS_DEFAULT_OLLAMA) {
+          try {
+            response = await fetch(proxyUrl, {
+              headers: { "x-ollama-url": apiKey }
+            })
+            // Check if response is actually JSON (SPA routing might redirect to index.html with 200 OK)
+            const contentType = response.headers.get("content-type")
+            if (!response.ok || !contentType || !contentType.includes("application/json")) {
+              response = undefined
+            }
+          } catch {
+            // fallback
+          }
+        }
+        
+        if (!response) {
+          response = await fetch(`${apiKey}/api/tags`)
+        }
+        
+        if (response && response.ok) {
+          const data = await response.json()
+          if (data && Array.isArray(data.models) && active) {
+            const models = data.models.map((m: OllamaModel) => ({
+              value: m.name,
+              label: m.name,
+            }))
+            setOllamaModels(models)
+          }
+        }
+      } catch (err) {
+        console.log("Failed to fetch Ollama models:", err)
+      }
+    }
+    
+    const timer = setTimeout(fetchModels, 500)
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [provider, apiKey])
+
+  // Update custom model state based on loaded Ollama models
+  useEffect(() => {
+    if (provider === "ollama" && model) {
+      const isPredefined = getSupportedModels("ollama").some(m => m.value === model) || 
+                           ollamaModels.some(m => m.value === model)
+      if (!isPredefined) {
+        setIsCustomModel(true)
+        setCustomModelValue(model)
+      }
+    }
+  }, [ollamaModels, provider])
     
   const handleConfigSave = (e?: React.FormEvent) => {
     e?.preventDefault() // Prevent form submission page reload
@@ -58,7 +144,13 @@ const AgentTabConfig = (props: {
     setProvider(newProvider)
     setAvailableModels(getSupportedModels(newProvider))
     setModel(getDefaultModel(newProvider))
-    setApiKey("") // Clear API key when changing provider
+    setIsCustomModel(false)
+    setCustomModelValue("")
+    if (newProvider === "ollama") {
+      setApiKey("http://localhost:11434")
+    } else {
+      setApiKey("") // Clear API key when changing provider
+    }
   }
   
   const handleClearConfig = () => {
@@ -71,6 +163,8 @@ const AgentTabConfig = (props: {
     setApiKey("")
     setProvider("anthropic")
     setModel(getDefaultModel("anthropic"))
+    setIsCustomModel(false)
+    setCustomModelValue("")
     setCurrentConfig(null)
     
     props.setShowConfig(false)
@@ -90,7 +184,9 @@ const AgentTabConfig = (props: {
       case "openai":
         return "sk-..."
       case "google":
-        return "AIza..."
+        return "AIza... or AQ..."
+      case "ollama":
+        return "http://localhost:11434"
       default:
         return ""
     }
@@ -106,6 +202,8 @@ const AgentTabConfig = (props: {
         return { url: "https://platform.openai.com/", text: "platform.openai.com" }
       case "google":
         return { url: "https://makersuite.google.com/", text: "makersuite.google.com" }
+      case "ollama":
+        return { url: "https://ollama.com/", text: "ollama.com" }
       default:
         return { url: "#", text: "provider website" }
     }
@@ -141,28 +239,76 @@ return (
             <option value="anthropic">Anthropic Claude</option>
             <option value="deepseek">DeepSeek AI</option>
             <option value="openai">OpenAI ChatGPT</option>
-            <option value="google" disabled>Google Gemini (Coming soon)</option>
+            <option value="google">Google Gemini</option>
+            <option value="ollama">Ollama (Local)</option>
           </select>
         </label>
         
         <label>
           Model:
-          <select 
-            value={model} 
-            onChange={(e) => setModel(e.target.value)}
-          >
-            {availableModels.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+          {provider === "ollama" ? (
+            <select 
+              value={isCustomModel ? "custom" : model} 
+              onChange={(e) => {
+                const val = e.target.value
+                if (val === "custom") {
+                  setIsCustomModel(true)
+                  setModel(customModelValue || "ornith:9b")
+                } else {
+                  setIsCustomModel(false)
+                  setModel(val)
+                }
+              }}
+            >
+              {ollamaModels.length > 0 ? (
+                ollamaModels.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))
+              ) : (
+                availableModels.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))
+              )}
+              <option value="custom">Custom Model...</option>
+            </select>
+          ) : (
+            <select 
+              value={model} 
+              onChange={(e) => setModel(e.target.value)}
+            >
+              {availableModels.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          )}
         </label>
+
+        {provider === "ollama" && isCustomModel && (
+          <label style={{ marginTop: "10px" }}>
+            Custom Model Name:
+            <input
+              type="text"
+              value={customModelValue}
+              onChange={(e) => {
+                setCustomModelValue(e.target.value)
+                setModel(e.target.value)
+              }}
+              placeholder="e.g. gemma2:27b"
+              className="agent-model-input"
+            />
+          </label>
+        )}
         
         <label>
-          API Key:
+          {provider === "ollama" ? "Ollama URL:" : "API Key:"}
           <input
-            type="password"
+            type={provider === "ollama" ? "text" : "password"}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={getApiKeyPlaceholder()}
@@ -183,8 +329,11 @@ return (
         
         <div className="agent-config-info">
           <small>
-            Your API key is stored locally in your browser and never sent to apple2ts.com.
-            Get your {getProviderDisplayName(provider)} API key at <a href={getApiKeyLink().url} target="_blank" rel="noopener noreferrer">{getApiKeyLink().text}</a>
+            {provider === "ollama"
+              ? "Ollama runs locally on your machine. Make sure you have Ollama installed and running. Download from "
+              : `Your API key is stored locally in your browser and never sent to apple2ts.com. Get your ${getProviderDisplayName(provider)} API key at `
+            }
+            <a href={getApiKeyLink().url} target="_blank" rel="noopener noreferrer">{getApiKeyLink().text}</a>
           </small>
         </div>
       </form>

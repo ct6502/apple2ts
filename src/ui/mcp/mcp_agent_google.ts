@@ -1,75 +1,54 @@
 /**
- * OpenAI ChatGPT Provider Implementation
+ * Google Gemini Provider Implementation
+ * Uses OpenAI-compatible API at https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
  */
 
 import { AIProviderModel } from "./mcp_agent_config"
 import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig } from "./mcp_agent_provider"
 
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
-const CORS_PROXY = "https://proxy.corsfix.com/?url="
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 
 /**
- * Make an API request to OpenAI (with CORS proxy fallback)
+ * Make an API request to Gemini (direct browser request since Google supports CORS)
  */
 async function makeApiRequest(
   requestBody: Record<string, unknown>,
   headers: Record<string, string>,
   apiKey: string
 ): Promise<Response> {
-  // Add authorization header
   const fullHeaders = {
     ...headers,
     "Authorization": `Bearer ${apiKey}`,
   }
 
-  // Try direct request first (OpenAI supports CORS)
-  try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: fullHeaders,
-      body: JSON.stringify(requestBody),
-    })
-    return response
-  } catch (error) {
-    console.log("[OpenAI] Direct request failed, trying CORS proxy:", error)
-  }
-
-  // Fallback to CORS proxy
-  const proxiedUrl = CORS_PROXY + encodeURIComponent(OPENAI_API_URL)
-  const response = await fetch(proxiedUrl, {
+  return fetch(GEMINI_API_URL, {
     method: "POST",
     headers: fullHeaders,
     body: JSON.stringify(requestBody),
   })
-
-  return response
 }
 
 /**
- * Format OpenAI API error messages in a human-readable way
+ * Format Gemini API error messages in a human-readable way
  */
-function formatOpenAIError(status: number, statusText: string, errorData: Record<string, unknown>): string {
+function formatGeminiError(status: number, statusText: string, errorData: Record<string, unknown>): string {
   const errorObj = errorData.error as Record<string, unknown> | undefined
   const message = errorObj?.message as string | undefined
-  const type = errorObj?.type as string | undefined
+  const statusStr = errorObj?.status as string | undefined
 
-  if (status === 401) {
-    return "OpenAI API Error: Invalid API key. Please check your API key in the configuration."
-  } else if (status === 429) {
-    return "OpenAI API Error: Rate limit exceeded or quota reached. Please check your OpenAI account."
-  } else if (status === 500 || status === 502 || status === 503) {
-    return `OpenAI API Error: Server error (${status}). The OpenAI service may be temporarily unavailable.`
+  if (status === 400 && message?.includes("API key")) {
+    return "Google Gemini API Error: Invalid API key. Please check your Gemini API key in the configuration."
   } else if (message) {
-    return `OpenAI API Error: ${message}${type ? ` (${type})` : ""}`
+    return `Google Gemini API Error: ${message}${statusStr ? ` (${statusStr})` : ""}`
   } else {
-    return `OpenAI API Error: ${status} ${statusText}`
+    return `Google Gemini API Error: ${status} ${statusText}`
   }
 }
 
 /**
- * Convert Anthropic-style tool format to OpenAI format
+ * Convert Anthropic-style tool format to OpenAI/Gemini format
  */
-function convertToolsToOpenAI(
+function convertToolsToGemini(
   tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>
 ): Array<Record<string, unknown>> {
   return tools.map(tool => {
@@ -89,20 +68,24 @@ function convertToolsToOpenAI(
   })
 }
 
-export class OpenAIProvider implements AIProvider {
+export class GoogleProvider implements AIProvider {
   static validateApiKeyFormat(apiKey: string): boolean {
-    return apiKey.startsWith("sk-") && apiKey.length > 20
+    // Gemini keys start with "AIzaSy" (legacy) or "AQ" (new format)
+    return (apiKey.startsWith("AIzaSy") || apiKey.startsWith("AQ")) && apiKey.length > 20
   }
-  name = "OpenAI ChatGPT"
+  
+  name = "Google Gemini"
 
   private apiKey: string
   private defaultModel: string
   
   static getSupportedModels(): Array<AIProviderModel> {
     return [
-      { value: "gpt-5.4-mini", label: "GPT-5.4 mini" },
-      { value: "gpt-5.4", label: "GPT-5.4" },
-      { value: "gpt-5.5", label: "GPT-5.5" },
+      { value: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+      { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite" },
+      { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (Preview)" },
+      { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+      { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
     ]
   }
   
@@ -112,8 +95,7 @@ export class OpenAIProvider implements AIProvider {
   }
   
   validateApiKey(apiKey: string): boolean {
-    // OpenAI keys start with "sk-" and are at least 20 characters
-    return apiKey.startsWith("sk-") && apiKey.length > 20
+    return GoogleProvider.validateApiKeyFormat(apiKey)
   }
   
   async sendMessage(
@@ -138,7 +120,7 @@ export class OpenAIProvider implements AIProvider {
     
     // Add tools if provided
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = convertToolsToOpenAI(availableTools)
+      requestBody.tools = convertToolsToGemini(availableTools)
       requestBody.tool_choice = "auto"
     }
     
@@ -151,7 +133,7 @@ export class OpenAIProvider implements AIProvider {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(formatOpenAIError(response.status, response.statusText, errorData))
+        throw new Error(formatGeminiError(response.status, response.statusText, errorData))
       }
       
       const data = await response.json()
@@ -178,7 +160,9 @@ export class OpenAIProvider implements AIProvider {
           result.toolCalls = choice.message.tool_calls.map((tc: any) => ({
             id: tc.id,
             name: tc.function.name,
-            input: JSON.parse(tc.function.arguments),
+            input: typeof tc.function.arguments === "string"
+              ? JSON.parse(tc.function.arguments)
+              : tc.function.arguments,
           }))
         }
       }
@@ -216,7 +200,7 @@ export class OpenAIProvider implements AIProvider {
     
     // Add tools
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = convertToolsToOpenAI(availableTools)
+      requestBody.tools = convertToolsToGemini(availableTools)
       requestBody.tool_choice = "auto"
     }
     
@@ -229,7 +213,7 @@ export class OpenAIProvider implements AIProvider {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(formatOpenAIError(response.status, response.statusText, errorData))
+        throw new Error(formatGeminiError(response.status, response.statusText, errorData))
       }
       
       if (!response.body) {
@@ -329,7 +313,7 @@ export class OpenAIProvider implements AIProvider {
               
               // Check for finish_reason to emit complete tool calls
               const finishReason = event.choices?.[0]?.finish_reason
-              if (finishReason === "tool_calls" || finishReason === "stop") {
+              if (finishReason === "tool_calls" || finishReason === "function_call" || finishReason === "stop") {
                 for (const [, buffer] of toolCallBuffers) {
                   if (buffer.id && buffer.name && buffer.arguments) {
                     try {
@@ -375,13 +359,14 @@ export class OpenAIProvider implements AIProvider {
   }
   
   /**
-   * Map OpenAI finish_reason to standard stop reason
+   * Map Gemini finish_reason to standard stop reason
    */
   private mapFinishReason(reason: string | undefined): AIResponse["stopReason"] {
     switch (reason) {
       case "stop":
         return "end_turn"
       case "tool_calls":
+      case "function_call":
         return "tool_use"
       case "length":
         return "max_tokens"

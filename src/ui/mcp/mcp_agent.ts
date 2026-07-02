@@ -7,6 +7,8 @@ import type { AIProvider, AIResponse } from "./mcp_agent_provider"
 import { AnthropicProvider } from "./mcp_agent_anthropic"
 import { DeepSeekProvider } from "./mcp_agent_deepseek"
 import { OpenAIProvider } from "./mcp_agent_openai"
+import { OllamaProvider } from "./mcp_agent_ollama"
+import { GoogleProvider } from "./mcp_agent_google"
 import { ConversationHistory, type ConversationMessage } from "./mcp_agent_conversation"
 import { loadAgentConfig, type ProviderType } from "./mcp_agent_config"
 import { listMCPTools } from "./mcp_tools"
@@ -369,9 +371,10 @@ export class MCPAgent {
         return new DeepSeekProvider(apiKey, model)
       case "openai":
         return new OpenAIProvider(apiKey, model)
-      // Future providers:
-      // case "google":
-      //   return new GoogleProvider(apiKey, model)
+      case "ollama":
+        return new OllamaProvider(apiKey, model)
+      case "google":
+        return new GoogleProvider(apiKey, model)
       default:
         console.error(`Unknown provider type: ${type}`)
         return null

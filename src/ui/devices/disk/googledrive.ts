@@ -11,16 +11,22 @@ let g_accessToken: string = ""
 let g_pickerInited = false
 
 export class GoogleDrive implements CloudProvider {
-  
+
+  // The token client can only be created after the Google Identity Services
+  // script has loaded, so it is created lazily in ensureScriptsLoaded() rather
+  // than in a class-field initializer (which would run before the script loads).
+  tokenClient: GoogleTokenClient | null = null
+
   async ensureScriptsLoaded() {
     await loadGoogleDriveScripts()
+    if (!this.tokenClient) {
+      this.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: appID() + "-" + clientID() + ".apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/drive.file",
+        callback: () => {}, // defined later
+      })
+    }
   }
-
-  tokenClient: GoogleTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: appID() + "-" + clientID() + ".apps.googleusercontent.com",
-    scope: "https://www.googleapis.com/auth/drive.file",
-    callback: () => {}, // defined later
-  })
 
   private resolvePicker: ((result: GoogleDriveResult | null) => void) | null = null
 
@@ -64,7 +70,7 @@ export class GoogleDrive implements CloudProvider {
     }
 
     // Request an access token.
-    this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+    this.tokenClient!.callback = async (response: google.accounts.oauth2.TokenResponse) => {
       if (response.error !== undefined) {
         throw (response)
       }
@@ -75,7 +81,7 @@ export class GoogleDrive implements CloudProvider {
     if (g_accessToken === "") {
       // Prompt the user to select a Google Account and ask for consent to share their data
       // when establishing a new session.
-      this.tokenClient.requestAccessToken({prompt: "consent"})
+      this.tokenClient!.requestAccessToken({prompt: "consent"})
     } else {
       // Skip display of account chooser and consent dialog for an existing session.
       showPicker(view, filter)
@@ -118,14 +124,14 @@ export class GoogleDrive implements CloudProvider {
   requestAuthToken(callback: (authToken: string) => void) {
     this.ensureScriptsLoaded().then(() => {
       if (!g_accessToken) {
-        this.tokenClient.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+        this.tokenClient!.callback = async (response: google.accounts.oauth2.TokenResponse) => {
           if (response.error !== undefined) {
             throw (response)
           }
           g_accessToken = response.access_token
           callback(`Bearer ${response.access_token}`)
         }
-        this.tokenClient.requestAccessToken({prompt: "consent"})
+        this.tokenClient!.requestAccessToken({prompt: "consent"})
       } else {
         callback(`Bearer ${g_accessToken}`)
       }

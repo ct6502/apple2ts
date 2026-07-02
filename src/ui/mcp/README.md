@@ -27,7 +27,8 @@ mcp_agent.ts              - Main orchestrator
 ### Providers
 - ✅ **Anthropic Claude** (3.5 Sonnet, 3 Opus, 3 Sonnet, 3 Haiku)
 - 🚧 OpenAI GPT (architecture ready, implementation pending)
-- 🚧 Google Gemini (architecture ready, implementation pending)
+- ✅ **Google Gemini** (Gemini 3.5, Gemini 3.1, Gemini 2.5)
+- ✅ **Ollama (Local)** (with models like ornith:9b, qwen2.5-coder, etc.)
 
 ### Features
 - Chat interface with message history
@@ -38,12 +39,18 @@ mcp_agent.ts              - Main orchestrator
 
 ## Usage
 
-### 1. Get an API Key
+### 1. Setup Provider / Get API Key
 
-For Claude (Anthropic):
-- Visit https://console.anthropic.com/
-- Create an account and generate an API key
-- Key format: `sk-ant-...`
+- **Anthropic Claude**: Visit https://console.anthropic.com/ to generate an API key (`sk-ant-...`).
+- **OpenAI ChatGPT / DeepSeek AI**: Generate keys from their platform consoles.
+- **Google Gemini**: Visit [aistudio.google.com](https://aistudio.google.com/) to generate an API key (`AIzaSy...`).
+- **Ollama (Local)**:
+  1. Download and run Ollama from [ollama.com](https://ollama.com/).
+  2. Pull a tool-calling capable model, e.g., `ollama run ornith:9b` or `ollama run qwen2.5-coder`.
+  3. **CORS Requirement**: To allow browser connections from remote sites (like GitHub Pages), you must configure Ollama to accept external origins:
+     - **Windows**: Add an environment variable `OLLAMA_ORIGINS` with value `*` in System Properties, then restart Ollama.
+     - **macOS**: Run `launchctl setenv OLLAMA_ORIGINS "*"` in Terminal, then restart Ollama.
+     - **Linux**: Edit systemd service with `systemctl edit ollama.service`, add `Environment="OLLAMA_ORIGINS=*"` under the `[Service]` section, and run `systemctl daemon-reload && systemctl restart ollama`.
 
 ### 2. Configure the Agent
 

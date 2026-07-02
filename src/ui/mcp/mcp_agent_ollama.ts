@@ -1,119 +1,118 @@
 /**
- * OpenAI ChatGPT Provider Implementation
+ * Ollama AI Provider Implementation
+ * Uses OpenAI-compatible API at local Ollama instance (default http://localhost:11434)
  */
 
 import { AIProviderModel } from "./mcp_agent_config"
 import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig } from "./mcp_agent_provider"
 
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
-const CORS_PROXY = "https://proxy.corsfix.com/?url="
-
 /**
- * Make an API request to OpenAI (with CORS proxy fallback)
+ * Make an API request to Ollama (with local dev server proxy fallback)
  */
 async function makeApiRequest(
+  ollamaUrl: string,
   requestBody: Record<string, unknown>,
-  headers: Record<string, string>,
-  apiKey: string
+  headers: Record<string, string>
 ): Promise<Response> {
-  // Add authorization header
-  const fullHeaders = {
-    ...headers,
-    "Authorization": `Bearer ${apiKey}`,
+  const IS_LOCALHOST = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  const IS_DEFAULT_OLLAMA = ollamaUrl.includes("localhost") || ollamaUrl.includes("127.0.0.1")
+  const LOCAL_PROXY_URL = "/api/ollama"
+  
+  // Try local proxy first if on localhost to bypass CORS
+  if (IS_LOCALHOST && IS_DEFAULT_OLLAMA) {
+    try {
+      const response = await fetch(LOCAL_PROXY_URL, {
+        method: "POST",
+        headers: {
+          ...headers,
+          "x-ollama-url": ollamaUrl,
+        },
+        body: JSON.stringify(requestBody),
+      })
+      const contentType = response.headers.get("content-type")
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        return response
+      }
+    } catch (error) {
+      console.log("[Ollama] Local proxy failed, falling back to direct request:", error)
+    }
   }
 
-  // Try direct request first (OpenAI supports CORS)
-  try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: fullHeaders,
-      body: JSON.stringify(requestBody),
-    })
-    return response
-  } catch (error) {
-    console.log("[OpenAI] Direct request failed, trying CORS proxy:", error)
-  }
-
-  // Fallback to CORS proxy
-  const proxiedUrl = CORS_PROXY + encodeURIComponent(OPENAI_API_URL)
-  const response = await fetch(proxiedUrl, {
+  // Direct browser request to Ollama endpoint
+  const directUrl = `${ollamaUrl}/v1/chat/completions`
+  return fetch(directUrl, {
     method: "POST",
-    headers: fullHeaders,
+    headers,
     body: JSON.stringify(requestBody),
   })
-
-  return response
 }
 
 /**
- * Format OpenAI API error messages in a human-readable way
+ * Format Ollama API error messages in a human-readable way
  */
-function formatOpenAIError(status: number, statusText: string, errorData: Record<string, unknown>): string {
-  const errorObj = errorData.error as Record<string, unknown> | undefined
-  const message = errorObj?.message as string | undefined
-  const type = errorObj?.type as string | undefined
+function formatOllamaError(status: number, statusText: string, errorData: Record<string, unknown>): string {
+  const errorObj = errorData.error as Record<string, unknown> | string | undefined
+  const message = typeof errorObj === "object" ? errorObj?.message as string | undefined : errorObj as string | undefined
 
-  if (status === 401) {
-    return "OpenAI API Error: Invalid API key. Please check your API key in the configuration."
-  } else if (status === 429) {
-    return "OpenAI API Error: Rate limit exceeded or quota reached. Please check your OpenAI account."
-  } else if (status === 500 || status === 502 || status === 503) {
-    return `OpenAI API Error: Server error (${status}). The OpenAI service may be temporarily unavailable.`
+  if (status === 404) {
+    return "Ollama Error: Model not found. Please verify you have downloaded the model using 'ollama run <model-name>'."
   } else if (message) {
-    return `OpenAI API Error: ${message}${type ? ` (${type})` : ""}`
+    return `Ollama Error: ${message}`
   } else {
-    return `OpenAI API Error: ${status} ${statusText}`
+    return `Ollama Error: ${status} ${statusText}`
   }
 }
 
 /**
- * Convert Anthropic-style tool format to OpenAI format
+ * Convert Anthropic-style tool format to OpenAI/Ollama format
  */
-function convertToolsToOpenAI(
+function convertToolsToOllama(
   tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>
 ): Array<Record<string, unknown>> {
-  return tools.map(tool => {
-    const hasProperties = tool.inputSchema &&
-      typeof tool.inputSchema === "object" &&
-      (tool.inputSchema as any).properties &&
-      Object.keys((tool.inputSchema as any).properties).length > 0
-
-    return {
-      type: "function",
-      function: {
-        name: tool.name,
-        description: tool.description,
-        ...(hasProperties ? { parameters: tool.inputSchema } : {}),
-      },
-    }
-  })
+  return tools.map(tool => ({
+    type: "function",
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.inputSchema,
+    },
+  }))
 }
 
-export class OpenAIProvider implements AIProvider {
+export class OllamaProvider implements AIProvider {
   static validateApiKeyFormat(apiKey: string): boolean {
-    return apiKey.startsWith("sk-") && apiKey.length > 20
+    // For Ollama, the "API key" is actually the Ollama endpoint URL.
+    try {
+      const url = new URL(apiKey)
+      return url.protocol === "http:" || url.protocol === "https:"
+    } catch {
+      return false
+    }
   }
-  name = "OpenAI ChatGPT"
+  
+  name = "Ollama (Local)"
 
-  private apiKey: string
+  private ollamaUrl: string
   private defaultModel: string
   
   static getSupportedModels(): Array<AIProviderModel> {
     return [
-      { value: "gpt-5.4-mini", label: "GPT-5.4 mini" },
-      { value: "gpt-5.4", label: "GPT-5.4" },
-      { value: "gpt-5.5", label: "GPT-5.5" },
+      { value: "ornith:9b", label: "ornith:9b" },
+      { value: "qwen2.5-coder", label: "qwen2.5-coder" },
+      { value: "llama3.1", label: "llama3.1" },
+      { value: "llama3", label: "llama3" },
+      { value: "mistral", label: "mistral" },
+      { value: "phi3", label: "phi3" },
     ]
   }
   
-  constructor(apiKey: string, model: string) {
-    this.apiKey = apiKey
-    this.defaultModel = model
+  constructor(ollamaUrl: string, model: string) {
+    this.ollamaUrl = ollamaUrl || "http://localhost:11434"
+    this.defaultModel = model || "ornith:9b"
   }
   
   validateApiKey(apiKey: string): boolean {
-    // OpenAI keys start with "sk-" and are at least 20 characters
-    return apiKey.startsWith("sk-") && apiKey.length > 20
+    return OllamaProvider.validateApiKeyFormat(apiKey)
   }
   
   async sendMessage(
@@ -138,7 +137,7 @@ export class OpenAIProvider implements AIProvider {
     
     // Add tools if provided
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = convertToolsToOpenAI(availableTools)
+      requestBody.tools = convertToolsToOllama(availableTools)
       requestBody.tool_choice = "auto"
     }
     
@@ -147,11 +146,11 @@ export class OpenAIProvider implements AIProvider {
         "Content-Type": "application/json",
       }
       
-      const response = await makeApiRequest(requestBody, headers, this.apiKey)
+      const response = await makeApiRequest(this.ollamaUrl, requestBody, headers)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(formatOpenAIError(response.status, response.statusText, errorData))
+        throw new Error(formatOllamaError(response.status, response.statusText, errorData))
       }
       
       const data = await response.json()
@@ -178,13 +177,18 @@ export class OpenAIProvider implements AIProvider {
           result.toolCalls = choice.message.tool_calls.map((tc: any) => ({
             id: tc.id,
             name: tc.function.name,
-            input: JSON.parse(tc.function.arguments),
+            input: typeof tc.function.arguments === "string"
+              ? JSON.parse(tc.function.arguments)
+              : tc.function.arguments,
           }))
         }
       }
       
       return result
     } catch (error) {
+      if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        throw new Error(`Failed to connect to Ollama at ${this.ollamaUrl}. Please make sure Ollama is running and CORS is allowed (OLLAMA_ORIGINS="*").`)
+      }
       if (error instanceof Error) {
         throw error
       }
@@ -216,7 +220,7 @@ export class OpenAIProvider implements AIProvider {
     
     // Add tools
     if (availableTools && availableTools.length > 0) {
-      requestBody.tools = convertToolsToOpenAI(availableTools)
+      requestBody.tools = convertToolsToOllama(availableTools)
       requestBody.tool_choice = "auto"
     }
     
@@ -225,11 +229,11 @@ export class OpenAIProvider implements AIProvider {
         "Content-Type": "application/json",
       }
       
-      const response = await makeApiRequest(requestBody, headers, this.apiKey)
+      const response = await makeApiRequest(this.ollamaUrl, requestBody, headers)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(formatOpenAIError(response.status, response.statusText, errorData))
+        throw new Error(formatOllamaError(response.status, response.statusText, errorData))
       }
       
       if (!response.body) {
@@ -248,26 +252,6 @@ export class OpenAIProvider implements AIProvider {
         const { done, value } = await reader.read()
         
         if (done) {
-          // Emit any remaining tool calls in the buffer (just in case they weren't emitted yet)
-          for (const [, buffer] of toolCallBuffers) {
-            if (buffer.id && buffer.name && buffer.arguments) {
-              try {
-                const input = JSON.parse(buffer.arguments)
-                onChunk({
-                  type: "tool_use",
-                  toolCall: {
-                    id: buffer.id,
-                    name: buffer.name,
-                    input,
-                  },
-                })
-              } catch (e) {
-                console.warn("Failed to parse tool arguments on stream end:", buffer.arguments, e)
-              }
-            }
-          }
-          toolCallBuffers.clear()
-
           onChunk({ type: "done" })
           break
         }
@@ -328,8 +312,7 @@ export class OpenAIProvider implements AIProvider {
               }
               
               // Check for finish_reason to emit complete tool calls
-              const finishReason = event.choices?.[0]?.finish_reason
-              if (finishReason === "tool_calls" || finishReason === "stop") {
+              if (event.choices?.[0]?.finish_reason === "tool_calls" || event.choices?.[0]?.finish_reason === "function_call") {
                 for (const [, buffer] of toolCallBuffers) {
                   if (buffer.id && buffer.name && buffer.arguments) {
                     try {
@@ -367,6 +350,9 @@ export class OpenAIProvider implements AIProvider {
         }
       }
     } catch (error) {
+      if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+        throw new Error(`Failed to connect to Ollama at ${this.ollamaUrl}. Please make sure Ollama is running and CORS is allowed (OLLAMA_ORIGINS="*").`)
+      }
       if (error instanceof Error) {
         throw error
       }
@@ -375,13 +361,14 @@ export class OpenAIProvider implements AIProvider {
   }
   
   /**
-   * Map OpenAI finish_reason to standard stop reason
+   * Map Ollama finish_reason to standard stop reason
    */
   private mapFinishReason(reason: string | undefined): AIResponse["stopReason"] {
     switch (reason) {
       case "stop":
         return "end_turn"
       case "tool_calls":
+      case "function_call":
         return "tool_use"
       case "length":
         return "max_tokens"

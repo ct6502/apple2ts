@@ -2,6 +2,7 @@ import { COLOR_MODE, RUN_MODE, UI_THEME } from "../common/utility"
 import { useGlobalContext } from "./globalcontext"
 import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, passSetShowDebugTab, passSetMachineName, passSetBinaryBlock, handleGetSpeedMode, passSetAppMode, passSetRunMode, passSetDebug } from "./main2worker"
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
+import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { audioEnable } from "./devices/audio/speaker"
 import { setAppMode, setColorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
@@ -259,6 +260,20 @@ export const handleInputParams = (paramString = "") => {
 // https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg
 // https://apple2ts.com/#https://archive.org/download/TotalReplay/Total%20Replay%20v5.0.1.hdv
 // https://apple2ts.com/#https://archive.org/download/wozaday_Davids_Midnight_Magic/00playable.woz
+
+// The OneDrive file-picker SDK routes its OAuth flow through this page. It first
+// navigates its popup to <ourpage>?oauth=<config>, and later back to
+// <ourpage>#access_token=...&state=... In both cases the onAuth() handler in
+// onedrive.js must run here: it reads these parameters, redirects the popup to
+// the Microsoft login page, and finally posts the token back to the opener.
+// This mirrors the SDK's own detection, which reads both the query and the hash.
+const isOneDriveAuthRedirect = () => {
+  const params = new URLSearchParams(window.location.search)
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""))
+  const has = (key: string) => params.has(key) || hashParams.has(key)
+  return has("oauth") || ((has("access_token") || has("error")) && has("state"))
+}
+
 export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgram: boolean) => {
   const fragment = window.location.hash
   // If you start npm locally with 'npm start --xyz=blahblah', then npm
@@ -270,12 +285,23 @@ export const handleFragment = async (updateDisplay: UpdateDisplay, hasBasicProgr
       window.location.href = window.location.pathname + "?" + process.env.npm_config_urlparam
     }
   }
+  // If this page was opened as a OneDrive file-picker auth popup, load
+  // onedrive.js so its onAuth() handler can run. The SDK routes its OAuth flow
+  // through this page (first ?oauth=<config>, then #access_token=...&state=...),
+  // and onAuth() redirects the popup to the Microsoft login page and posts the
+  // token back to the opener. Because the script is now lazy-loaded, without
+  // this the popup is stranded on the Apple2TS page.
+  if (window.opener && isOneDriveAuthRedirect()) {
+    await loadOneDriveScript()
+    return
+  }
+
   if (fragment.length >= 2) {
     const params = new URLSearchParams(window.location.search)
     const cloudProvider = params.get("cloudProvider")
     const regex: RegExp = /access_token=([^&]+)/
     const matches = regex.exec(window.location.hash)
-    
+
     if (cloudProvider && matches && matches.length > 0) {
       // Handle access token in fragment for cloud drive providers
       const opener = window.opener as OpenerWindow
