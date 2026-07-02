@@ -34,6 +34,7 @@ const App = () => {
       <DisplayApple2 />
       <div className="global-progress-modal-overlay">
         <img src={window.assetRegistry.runningGuy} alt="Loading..." className="global-progress-spinner2" />
+        <div className="global-progress-message" />
       </div>
     </GlobalContext.Provider>
   )

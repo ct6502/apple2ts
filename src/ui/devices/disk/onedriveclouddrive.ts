@@ -18,24 +18,28 @@ export class OneDriveCloudDrive implements CloudProvider {
   }
 
   requestAuthToken(callback: (authToken: string) => void) {
-    const baseUrl = new URL(window.location.href)
-    const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
-    const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
+    if (!g_accessToken) {
+      const baseUrl = new URL(window.location.href)
+      const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
+      const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
 
-    // The redirect URI must be percent-encoded, otherwise its own query string
-    // (?cloudProvider=OneDrive) is parsed as part of the login.live.com URL and
-    // is dropped from the redirect, so the popup returns to Apple2TS without the
-    // cloudProvider marker and the access token is never picked up.
-    window.open(`${authUrl}${encodeURIComponent(redirectUri)}`, "_blank")
-    const interval = window.setInterval(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const accessToken = (window as any).accessToken
-      if (accessToken) {
-        clearInterval(interval)
-        g_accessToken = accessToken
-        callback(`bearer ${accessToken}`)
-      }
-    }, 500)
+      // The redirect URI must be percent-encoded, otherwise its own query string
+      // (?cloudProvider=OneDrive) is parsed as part of the login.live.com URL and
+      // is dropped from the redirect, so the popup returns to Apple2TS without the
+      // cloudProvider marker and the access token is never picked up.
+      window.open(`${authUrl}${encodeURIComponent(redirectUri)}`, "_blank")
+      const interval = window.setInterval(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const accessToken = (window as any).accessToken
+        if (accessToken) {
+          clearInterval(interval)
+          g_accessToken = accessToken
+          callback(`bearer ${accessToken}`)
+        }
+      }, 500)
+    } else {
+      callback(`bearer ${g_accessToken}`)
+    }
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {
@@ -53,11 +57,12 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: file.id,
         apiEndpoint: result.apiEndpoint,
         downloadUrl: `${result.apiEndpoint}drive/items/${file.id}/content`,
-        detailsUrl: file.webUrl
+        detailsUrl: file.webUrl,
+        fileSize: file.size
       }
       g_accessToken = result.accessToken
 
-      showGlobalProgressModal(true)
+      showGlobalProgressModal(true, "Downloading disk")
 
       const response = await fetch(file["@content.downloadUrl"])
       .finally(() => {
@@ -90,7 +95,8 @@ export class OneDriveCloudDrive implements CloudProvider {
         itemId: "", // Item ID is unknown until file is sucessfully uploaded
         apiEndpoint: result.apiEndpoint,
         downloadUrl: "",
-        detailsUrl: ""
+        detailsUrl: "",
+        fileSize: -1
       }
       g_accessToken = result.accessToken
       return cloudData

@@ -12,6 +12,12 @@ export const isFileSystemApiSupported = () => {
   return "showOpenFilePicker" in window && "showSaveFilePicker" in window
 }
 
-export const showGlobalProgressModal = (show: boolean = true) => {
+export const showGlobalProgressModal = (show: boolean = true, message: string = "") => {
+  const messageElement = document.getElementsByClassName("global-progress-message")[0] as HTMLElement
+
+  if (messageElement) {
+    messageElement.innerText = show && message ? message : ""
+  }
+
   document.body.style.setProperty("--global-progress-visibility", show ? "visible" : "hidden")
 }

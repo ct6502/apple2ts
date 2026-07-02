@@ -13,13 +13,18 @@ function trim(str: string) {
 export class Expectin {
   json: ExpectinJSON
   cancel: boolean
+  disconnectCallback?: () => void
 
   constructor(jsonString: string) {
     this.json = Convert.toExpectinJSON(jsonString)
     this.cancel = false
   }
 
-  public async Run() {
+  public async Run(disconnectCallback?: () => void) {
+    if (disconnectCallback) {
+      this.disconnectCallback = disconnectCallback
+    }
+    
     if (this.json.commands) {
       this.processCommands(this.json.commands)
     }
@@ -37,6 +42,9 @@ export class Expectin {
     for (const command of commands) {
       if (command.disconnect) {
         this.cancel = true
+        if (this.disconnectCallback != undefined) {
+          this.disconnectCallback()
+        }
       } else if (command.emulator) {
         switch (command.emulator) {
           case "boot":

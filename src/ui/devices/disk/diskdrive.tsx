@@ -17,6 +17,7 @@ import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
+import { determineVtocType } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
@@ -66,6 +67,7 @@ const DiskDrive = (props: DiskDriveProps) => {
       const success = await cloudProvider.sync(blob, dprops.cloudData)
       if (success) {
         dprops.diskHasChanges = false
+        dprops.cloudData.fileSize = blob.size
         passSetDriveProps(dprops)
       }
     }
@@ -297,7 +299,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                     screenshotUrl: getImageDataUrlFromCanvas(),
                     lastUpdated: new Date(Date.now()),
                     diskUrl: dprops.cloudData.downloadUrl,
-                    cloudData: dprops.cloudData
+                    cloudData: dprops.cloudData,
+                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData)
                   })
                 }
               }
@@ -396,7 +399,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                     title: dprops.cloudData.fileName,
                     screenshotUrl: getImageDataUrlFromCanvas(),
                     lastUpdated: new Date(dprops.cloudData.lastSyncTime),
-                    cloudData: dprops.cloudData
+                    cloudData: dprops.cloudData,
+                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData)
                   })
                 }
               }
