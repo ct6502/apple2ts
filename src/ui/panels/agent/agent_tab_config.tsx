@@ -4,6 +4,13 @@ import { getAgent } from "../../mcp/mcp_agent"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
 
+interface OllamaModel {
+  name: string
+  modified_at?: string
+  size?: number
+  digest?: string
+}
+
 const AgentTabConfig = (props: {
   showConfig: boolean, 
   setShowConfig: (show: boolean) => void,
@@ -76,7 +83,7 @@ const AgentTabConfig = (props: {
         if (response && response.ok) {
           const data = await response.json()
           if (data && Array.isArray(data.models) && active) {
-            const models = data.models.map((m: any) => ({
+            const models = data.models.map((m: OllamaModel) => ({
               value: m.name,
               label: m.name,
             }))
@@ -177,7 +184,7 @@ const AgentTabConfig = (props: {
       case "openai":
         return "sk-..."
       case "google":
-        return "AIza..."
+        return "AIza... or AQ..."
       case "ollama":
         return "http://localhost:11434"
       default:
