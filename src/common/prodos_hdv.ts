@@ -362,8 +362,17 @@ const generateMenuSourceProgram = (
   //                  never corrupt the image (the baked vector is already correct there).
   //   PATCH_LINE+50: skip the BSAVE when the baked vector already matches the live one
   //                  (the common case on the machine the image was baked for).
-  //   PATCH_LINE+60/70: patch ADRLIST and persist it, then -DOS.3.3 (which reloads the patched
-  //                  file from disk and takes over the machine, so no RETURN is needed).
+  //   PATCH_LINE+60: patch ADRLIST (offset $60 -> 8288/8289) with the live driver vector AND
+  //                  the DEV table (offset $38 -> 8248/8249) with the live boot unit
+  //                  (S*16 drive 1 / S*16+128 drive 2). The DEV table is DOS.MASTER's LIST of
+  //                  intercepted slots: the volume-1 dispatcher issues "RUN HELLO,S<bootslot>",
+  //                  so unless the boot slot is in the LIST, DOS.MASTER passes the command
+  //                  through to the real card and the DOS volume read fails (I/O ERROR on a
+  //                  non-slot-7 machine such as an IIGS booting slot 6). ADRLIST and the DEV
+  //                  table are baked together for the same slot, so the +50 ADRLIST check is a
+  //                  sufficient proxy for "already configured for this machine".
+  //   PATCH_LINE+70: persist the patched image, then -DOS.3.3 (which reloads the patched file
+  //                  from disk and takes over the machine, so no RETURN is needed).
   if (injectDriverPatch) {
     lines.push(PATCH_LINE + " S=INT(PEEK(48944)/16):IF S>7 THEN S=S-8")
     lines.push((PATCH_LINE + 10) + " A=48912+2*S:LO=PEEK(A):HI=PEEK(A+1)")
@@ -371,7 +380,7 @@ const generateMenuSourceProgram = (
     lines.push((PATCH_LINE + 30) + " PRINT D$;\"BLOAD DOS.3.3,TSYS,A$2000\"")
     lines.push((PATCH_LINE + 40) + " IF PEEK(8289)<192 OR PEEK(8289)>199 THEN " + (PATCH_LINE + 80))
     lines.push((PATCH_LINE + 50) + " IF PEEK(8288)=LO AND PEEK(8289)=HI THEN " + (PATCH_LINE + 80))
-    lines.push((PATCH_LINE + 60) + " POKE 8288,LO:POKE 8289,HI")
+    lines.push((PATCH_LINE + 60) + " POKE 8288,LO:POKE 8289,HI:POKE 8248,S*16:POKE 8249,S*16+128")
     lines.push((PATCH_LINE + 70) + " PRINT D$;\"UNLOCK DOS.3.3\":PRINT D$;\"BSAVE DOS.3.3,TSYS,A$2000,L$2800\"")
     lines.push((PATCH_LINE + 80) + " PRINT D$;\"-DOS.3.3\"")
   }
