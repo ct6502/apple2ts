@@ -70,8 +70,8 @@ function convertToolsToGemini(
 
 export class GoogleProvider implements AIProvider {
   static validateApiKeyFormat(apiKey: string): boolean {
-    // Gemini keys start with "AIzaSy" and are typically 39 characters
-    return apiKey.startsWith("AIzaSy") && apiKey.length > 20
+    // Gemini keys start with "AIzaSy" (legacy) or "AQ" (new format)
+    return (apiKey.startsWith("AIzaSy") || apiKey.startsWith("AQ")) && apiKey.length > 20
   }
   
   name = "Google Gemini"
