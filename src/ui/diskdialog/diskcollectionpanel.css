@@ -353,8 +353,12 @@
 .dcp-item-export-badge-icon {
   position: relative;
   top: -1px;
-  color: greenyellow;
+  color: lightgreen;
   z-index: 1;
+}
+
+.dcp-item-export-badge-disabled .dcp-item-export-badge-icon {
+  color: orange;
 }
 
 .dcp-item-export-badge-icon-bg {
