@@ -1007,10 +1007,62 @@ const dosLogicalImageHasValidCatalog = (data: Uint8Array): boolean => {
 }
 
 /**
+ * Scores how self-consistent a flat DOS *logical*-order image (a ".dsk"/".do" layout) is
+ * as a real DOS 3.3 filesystem, returning the fraction of catalogued file data sectors that
+ * the VTOC free-sector bitmap actually marks as in-use. A correctly reconstructed image has
+ * every file's T/S-list data sectors marked used (fraction ~1.0); an image decoded with the
+ * wrong sector interleave points its T/S lists at effectively random sectors, most of which
+ * the bitmap marks free (a low fraction). The catalog on track 17 can walk identically in
+ * more than one sector order, so this file-vs-bitmap cross-check is what distinguishes the
+ * genuine interleave from the scrambled ones.
+ */
+const scoreDosLogicalImageCoherence = (data: Uint8Array): number => {
+  const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+  const vtoc = sectorOffset(17, 0)
+  // DOS 3.3 VTOC free-sector bitmap: 4 bytes per track at VTOC+0x38; byte 0 covers sectors
+  // 15..8 and byte 1 covers sectors 7..0, where a *set* bit means the sector is FREE.
+  const isSectorUsed = (track: number, sector: number): boolean => {
+    const base = vtoc + 0x38 + track * 4
+    if (base + 1 >= data.length) return false
+    const bit = sector >= 8 ? (data[base] >> (sector - 8)) : (data[base + 1] >> sector)
+    return (bit & 1) === 0
+  }
+
+  const { entries } = readDos33Catalog(data)
+  let totalDataSectors = 0
+  let usedDataSectors = 0
+  for (const entry of entries) {
+    let listTrack = entry.tsListTrack
+    let listSector = entry.tsListSector
+    const visited = new Set<number>()
+    for (let guard = 0; guard < 64; guard++) {
+      if (listTrack === 0 || listTrack >= 35 || listSector >= 16) break
+      const key = listTrack * 16 + listSector
+      if (visited.has(key)) break
+      visited.add(key)
+      const off = sectorOffset(listTrack, listSector)
+      if (off + 256 > data.length) break
+      for (let i = 0; i < 122; i++) {
+        const dataTrack = data[off + 0x0c + i * 2]
+        const dataSector = data[off + 0x0c + i * 2 + 1]
+        if (dataTrack === 0 && dataSector === 0) continue // empty T/S-list slot
+        totalDataSectors++
+        if (dataTrack < 35 && dataSector < 16 && isSectorUsed(dataTrack, dataSector)) {
+          usedDataSectors++
+        }
+      }
+      listTrack = data[off + 1]
+      listSector = data[off + 2]
+    }
+  }
+
+  return totalDataSectors > 0 ? usedDataSectors / totalDataSectors : 0
+}
+
+/**
  * Decodes a WOZ 5.25" image into a standard DOS 3.3 logical-order sector image
  * (143360 bytes, i.e. a ".dsk"/".do" layout) suitable for use as a DOS.MASTER runtime
- * volume. DOS.MASTER expects its volumes in DOS logical sector order, which is the
- * "dos-physical-to-logical" candidate produced by the WOZ decoder. Returns undefined
+ * volume. DOS.MASTER expects its volumes in DOS logical sector order. Returns undefined
  * unless the decode yields a recognizable DOS 3.3 volume with a walkable catalog (see
  * dosLogicalImageHasValidCatalog), so copy-protected/non-standard disks are rejected.
  */
@@ -1018,17 +1070,24 @@ export const loadWozAndExtractDosImage = (wozData: Uint8Array): Uint8Array | und
   const decoded = decodeWozToSectorCandidates(wozData)
   if (!decoded) return undefined
 
-  // The "*-physical-to-logical" candidates are in logical sector order (a .dsk layout),
-  // which is what dosLogicalImageHasValidCatalog and DOS.MASTER expect. Prefer the DOS
-  // logical-order reconstruction; the VTOC alone cannot distinguish sector orders
-  // (sector 0 maps to 0 in every order), so validate the catalog to pick the real one.
-  const candidate = decoded.candidates.find((c) => c.label === "dos-physical-to-logical")
-  if (candidate &&
-    isLikelyDos33Volume(candidate.data) &&
-    dosLogicalImageHasValidCatalog(candidate.data)) {
-    return candidate.data
+  // Both DOS-numbered reconstructions ("dos-physical-to-logical" and "dos-logical-to-physical")
+  // yield a DOS-order image; which one is correct depends on how the source disk's sectors were
+  // interleaved (some tools, including Apple2TS's own WOZ writer, use the opposite skew). The
+  // VTOC and even the track-17 catalog can validate in either order, so pick the interleave whose
+  // file data is actually consistent with the VTOC bitmap (see scoreDosLogicalImageCoherence).
+  let best: Uint8Array | undefined
+  let bestScore = -1
+  for (const candidate of decoded.candidates) {
+    if (!candidate.label.startsWith("dos-")) continue
+    if (!isLikelyDos33Volume(candidate.data)) continue
+    if (!dosLogicalImageHasValidCatalog(candidate.data)) continue
+    const score = scoreDosLogicalImageCoherence(candidate.data)
+    if (score > bestScore) {
+      bestScore = score
+      best = candidate.data
+    }
   }
-  return undefined
+  return best
 }
 
 // DOS 3.3 catalog file-type codes (low 7 bits; bit 7 = locked).
