@@ -168,9 +168,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // A disk whose VTOC has been determined to be neither DOS nor ProDOS ("other")
     // cannot be exported. An undetermined (undefined) vtocType is treated as
     // potentially exportable until background determination resolves it.
-    return !disk.diskUrl.toString().endsWith(".hdv") &&
-      disk.fileSize < maxHdvBytes * 0.95 &&
-      disk.vtocType !== "other"
+    return disk.fileSize < maxHdvBytes * 0.95 && disk.vtocType !== "other"
   }
 
   const tabs = [
