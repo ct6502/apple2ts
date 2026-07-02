@@ -30,6 +30,16 @@ export enum DISK_COLLECTION_ITEM_TYPE {
 
 const maxHdvBytes = 33554432
 
+// Recover the known byte size of a disk by matching its URL against the built-in
+// catalogs. Favorited disks are rebuilt from bookmarks that don't store a size,
+// so without this a favorited large disk (e.g. Total Replay) would report an
+// unknown size (-1) and slip past the export size limit.
+const getKnownFileSizeForUrl = (diskUrl?: string): number | undefined => {
+  if (!diskUrl) return undefined
+  const match = [...diskImages, ...newReleases].find(d => d.diskUrl?.toString() === diskUrl)
+  return match?.fileSize && match.fileSize > 0 ? match.fileSize : undefined
+}
+
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "2-digit",
@@ -558,7 +568,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         detailsUrl: diskBookmark.cloudData?.detailsUrl ? diskBookmark.cloudData.detailsUrl : diskBookmark.detailsUrl?.toString(),
         bookmarkId: diskBookmark.id,
         cloudData: diskBookmark.cloudData,
-        fileSize: diskBookmark.cloudData?.fileSize || -1,
+        fileSize: diskBookmark.cloudData?.fileSize || getKnownFileSizeForUrl(diskBookmark.diskUrl?.toString()) || -1,
         vtocType: diskBookmark.vtocType
       })
     }
