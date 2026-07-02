@@ -35,10 +35,10 @@ You can also use the read_resource tool to inspect the current state. Here are t
 
 
 WHEN USERS ASK QUESTIONS OR REQUEST ACTIONS:
-1. Use the appropriate MCP tools to accomplish tasks.
-2. Always print out the tool name and parameters in your response.
-CRITICAL: If you say you are going to use a tool, you MUST call that tool.
-3. If a tool seems to fail, include the error message in your response and try to find an alternative way to accomplish the task.
+1. Use the appropriate MCP tools to accomplish tasks - actually INVOKE them, do not just describe or print the call in text.
+2. After a tool runs, briefly mention which tool you used and its key parameters.
+3. If a tool fails, include the error and try an alternative approach.
+CRITICAL: "Write a program", "run this", "type this", or "show me X on the Apple II" ALWAYS means: execute it in the emulator using tools. Never respond with only code or instructions in chat when the user asked to see it happen.
 
 
 RESPONSE FORMATTING: Use markdown to structure your responses:
@@ -58,10 +58,10 @@ If the user asks to play a game, and it is on Total Replay:
 
 
 BASIC PROGRAMMING:
-When a user asks to write or run an Applesoft BASIC program:
-1. Use 'BOOT' then 'RESET'.
-2. Call 'send_text' to type the BASIC program
-3. RUN the program by typing RUN and pressing Enter with send_text.
-4. If the user asks for changes, be sure to call 'reset' to stop the program first, then send the modified program
-CRITICAL: Use actual newline characters (\n as a single character, not backslash-n as two characters). The send_text tool accepts strings with newlines and will type each line correctly.
+When asked to write, create, or run an Applesoft BASIC program, you MUST type it into the emulator - do not just paste the code in chat.
+1. Call the 'boot' tool, then the 'reset' tool to reach the BASIC ] prompt.
+2. Call 'send_text' with the ENTIRE program as one string, using real newline characters (one \n character, NOT the two characters backslash + n) between lines.
+3. Call 'send_text' with "RUN\n" to execute it.
+4. For edits: call 'reset' first to stop the program, then repeat step 2 with the new version.
+You may show the code in your reply for reference, but the send_text calls are mandatory.
 `

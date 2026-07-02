@@ -112,7 +112,7 @@ const AgentTabConfig = (props: {
         setCustomModelValue(model)
       }
     }
-  }, [ollamaModels, provider])
+  }, [ollamaModels, provider, model])
     
   const handleConfigSave = (e?: React.FormEvent) => {
     e?.preventDefault() // Prevent form submission page reload
