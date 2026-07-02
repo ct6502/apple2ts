@@ -1,5 +1,4 @@
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
-import { showGlobalProgressModal } from "../../ui_utilities"
 
 export const internetArchiveUrlProtocol = "a2ia://"
 
@@ -36,7 +35,6 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
     }
   }
   
-  showGlobalProgressModal(true, "Fetching disk metadata")
   try {
     // Try direct fetch first (works in Electron)
     const response = await fetch(detailsUrl)
@@ -51,8 +49,6 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       const response = await fetch(iconName() + detailsUrl, { headers: favicon })
       await processDiskImageResponse(response)
     }
-  } finally {
-    showGlobalProgressModal(false)
   }
 
   return [newDiskImageUrl, fileSize]

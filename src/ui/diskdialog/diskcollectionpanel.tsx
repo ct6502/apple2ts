@@ -201,22 +201,22 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   // Determine the export badge state and tooltip for a disk. Exportable disks show
-  // a green badge; non-exportable disks show a red badge explaining why the disk
-  // cannot be exported.
-  const getExportBadgeInfo = (disk: DiskCollectionItem): { exportable: boolean; title: string } => {
+  // a green badge; disks that cannot be exported show an orange badge explaining
+  // why; disks whose VTOC hasn't been determined yet show a yellow "pending" badge.
+  const getExportBadgeInfo = (disk: DiskCollectionItem): { state: "exportable" | "blocked" | "pending"; title: string } => {
     if (disk.fileSize >= maxHdvBytes * 0.95) {
-      return { exportable: false, title: "Disk is too large to be exported" }
+      return { state: "blocked", title: "Disk is too large to be exported" }
     }
     if (disk.vtocType === "other") {
-      return { exportable: false, title: "Disk is not exportable due to copy protection" }
+      return { state: "blocked", title: "Disk is not exportable due to copy protection" }
     }
     if (disk.vtocType === "dosup") {
-      return { exportable: false, title: "Disk is not exportable due to DOS Master incompatibility" }
+      return { state: "blocked", title: "Disk is not exportable due to DOS Master incompatibility" }
     }
     if (disk.vtocType === undefined) {
-      return { exportable: false, title: "Disk exportability could not be determined" }
+      return { state: "pending", title: "Exportablity determination pending" }
     }
-    return { exportable: true, title: "Disk can be exported" }
+    return { state: "exportable", title: "Disk can be exported" }
   }
 
   const tabs = [
@@ -843,9 +843,14 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 </div>}
               {(() => {
                 const exportBadge = getExportBadgeInfo(diskCollectionItem)
+                const badgeStateClass = exportBadge.state === "blocked"
+                  ? " dcp-item-export-badge-disabled"
+                  : exportBadge.state === "pending"
+                    ? " dcp-item-export-badge-pending"
+                    : ""
                 return (
                   <div
-                    className={`dcp-item-export-badge${exportBadge.exportable ? "" : " dcp-item-export-badge-disabled"}`}
+                    className={`dcp-item-export-badge${badgeStateClass}`}
                     title={exportBadge.title}>
                     <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" onClick={(event) => {
                       if (activeTab != TAB_INDEX_SELECT) {

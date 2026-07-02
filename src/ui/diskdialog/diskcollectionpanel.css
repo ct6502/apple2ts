@@ -361,6 +361,10 @@
   color: orange;
 }
 
+.dcp-item-export-badge-pending .dcp-item-export-badge-icon {
+  color: yellow;
+}
+
 .dcp-item-export-badge-icon-bg {
   position: relative;
   width: 14px;
