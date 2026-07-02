@@ -200,6 +200,13 @@ const tokenizeApplesoftBasic = (source: string): Uint8Array => {
 // transition (they are reserved for peripheral-card scratch and untouched by DOS/ProDOS).
 const DOS_DISPATCH_VOLUME_ADDRESS = 0x0478
 
+// DOS 3.3 RWTS IOB slot byte ($B7E9 = 47081), holding the boot slot * 16. DOS.MASTER's boot
+// code sets this to the actual boot slot (it reads DEVNUM at the correct moment and matches
+// the config), and the dispatcher HELLO runs immediately after DOS.MASTER loaded it from that
+// same slot -- so PEEK(47081)/16 is a reliable boot-slot source on every machine, independent
+// of the flaky ProDOS-side DEVNUM timing.
+const DOS_IBSLOT_ADDRESS = 0xb7e9
+
 /**
  * Generates a tokenized Applesoft BASIC program that draws screenshots and
  * supports left/right navigation among disk images.
@@ -217,12 +224,29 @@ const generateMenuSourceProgram = (
   // the current (/APPLE2TS) prefix. For a "DIR/FILE" launcher (e.g. DOS.MASTER/DOS.3.3)
   // we set the prefix into the subdirectory then run the file with "-" (handles BIN/SYS),
   // matching the proven-good launch sequence. A leading slash would root the path at a
-  // non-existent volume, so relative paths are required.
+  // non-existent volume, so relative paths are required. DOS.MASTER's config is baked for
+  // the boot slot at export time (installDosMasterLikePartitions); the volume-1 dispatcher
+  // HELLO reads the live boot slot from DOS.MASTER's IBSLOT so it chains on the right slot.
+  //
+  // DOS.MASTER's config ADRLIST (file offset $60 -> $2060/$2061 when the DOS.3.3 image loads
+  // at $2000) holds the FULL 16-bit ProDOS block-driver entry that its RWTS JSRs for every
+  // read -- including loading volume 1's HELLO. The export bakes only the high byte ($C0+slot);
+  // the low byte is the card firmware's entry offset ($CnFF), which differs per machine
+  // (Apple2TS slot 7 = $C7C0, Virtual II slot 7 = $C764). A stale low byte makes DOS.MASTER
+  // JSR the wrong address and crash on its own banner. So for DOS.MASTER/DOS.3.3 we route the
+  // launch through a small subroutine (PATCH_LINE) that reads the LIVE driver vector from
+  // DEVADR ($BF10 + 2*bootslot) and patches ADRLIST before -DOS.3.3. It is guarded (only
+  // patches when $2061 already looks like a $Cx firmware page) and idempotent (skips the
+  // BSAVE when the baked vector already matches), so on a machine where the bake is already
+  // correct it does nothing and launches exactly as the proven-good path did.
+  const PATCH_LINE = 2500
+  const injectDriverPatch = dosRuntimeLauncher === "DOS.MASTER/DOS.3.3"
   const dosRuntimeRunStatements = (() => {
     if (!dosRuntimeLauncher) return ""
     if (dosRuntimeLauncher.includes("/")) {
       const [dir, file] = dosRuntimeLauncher.split("/")
-      return 'PRINT D$;"PREFIX ' + dir + '":PRINT D$;"-' + file + '"'
+      if (injectDriverPatch) return "GOTO " + PATCH_LINE
+      return "PRINT D$;\"PREFIX " + dir + "\":PRINT D$;\"-" + file + "\""
     }
     if (dosRuntimeLauncher === "DOS.MASTER") {
       return 'PRINT D$;"BRUN ' + dosRuntimeLauncher + '/' + dosRuntimeLauncher + '"'
@@ -235,7 +259,7 @@ const generateMenuSourceProgram = (
   // volume number into a screen-hole byte that survives the ProDOS -> DOS.MASTER -> DOS 3.3
   // transition and HOME, then (2) use the proven "-DOS.3.3" launch. A dispatcher HELLO that
   // lives on volume 1 (installed by installDosMasterLikePartitions) PEEKs that byte and does
-  // RUN HELLO,S<slot>,V<vol> to chain into the real disk's volume. We also TEXT:HOME first to
+  // RUN HELLO,V<vol> to chain into the real disk's volume. We also TEXT:HOME first to
   // clear the HGR screenshot image before the launch takes over the screen.
   const dosBootStatements = (volume: number): string => {
     if (!dosRuntimeLauncher) return ""
@@ -326,6 +350,31 @@ const generateMenuSourceProgram = (
   }
   lines.push("2050 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("2060 RETURN")
+
+  // Live driver-vector fix-up subroutine (see the injectDriverPatch comment above). Reached
+  // via GOTO from the DOS boot statement (with the target volume already POKEd into $0478).
+  //   PATCH_LINE+0 : boot slot from DEVNUM ($BF30 = 48944); strip the drive-2 bit ($80).
+  //   PATCH_LINE+10: live ProDOS driver vector from DEVADR ($BF10 + 2*slot = 48912 + 2*S).
+  //   PATCH_LINE+20/30: set the prefix and load the DOS.3.3 image to $2000 so ADRLIST is at
+  //                     $2060/$2061 (8288/8289).
+  //   PATCH_LINE+40: bail out to the plain launch unless $2061 looks like a $Cx firmware page
+  //                  ($C0-$C7 = 192-199); this guards against an unexpected load layout so we
+  //                  never corrupt the image (the baked vector is already correct there).
+  //   PATCH_LINE+50: skip the BSAVE when the baked vector already matches the live one
+  //                  (the common case on the machine the image was baked for).
+  //   PATCH_LINE+60/70: patch ADRLIST and persist it, then -DOS.3.3 (which reloads the patched
+  //                  file from disk and takes over the machine, so no RETURN is needed).
+  if (injectDriverPatch) {
+    lines.push(PATCH_LINE + " S=INT(PEEK(48944)/16):IF S>7 THEN S=S-8")
+    lines.push((PATCH_LINE + 10) + " A=48912+2*S:LO=PEEK(A):HI=PEEK(A+1)")
+    lines.push((PATCH_LINE + 20) + " PRINT D$;\"PREFIX DOS.MASTER\"")
+    lines.push((PATCH_LINE + 30) + " PRINT D$;\"BLOAD DOS.3.3,TSYS,A$2000\"")
+    lines.push((PATCH_LINE + 40) + " IF PEEK(8289)<192 OR PEEK(8289)>199 THEN " + (PATCH_LINE + 80))
+    lines.push((PATCH_LINE + 50) + " IF PEEK(8288)=LO AND PEEK(8289)=HI THEN " + (PATCH_LINE + 80))
+    lines.push((PATCH_LINE + 60) + " POKE 8288,LO:POKE 8289,HI")
+    lines.push((PATCH_LINE + 70) + " PRINT D$;\"UNLOCK DOS.3.3\":PRINT D$;\"BSAVE DOS.3.3,TSYS,A$2000,L$2800\"")
+    lines.push((PATCH_LINE + 80) + " PRINT D$;\"-DOS.3.3\"")
+  }
 
   return `${lines.join("\r")}\r`
 }
@@ -1194,43 +1243,30 @@ export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreeting
 /**
  * Builds the on-disk DOS 3.3 Applesoft ("A") file image for the DOS.MASTER volume-1
  * "dispatcher" HELLO:
- *   10 V=PEEK(<addr>)
- *   20 IF V<2 THEN PRINT CHR$(4)"CATALOG,S<slot>,V1":END
- *   30 PRINT CHR$(4)"RUN HELLO,S<slot>,V"V
+ *   10 V=PEEK(1144):S=INT(PEEK(47081)/16)
+ *   20 IF V<2 THEN PRINT CHR$(4)"CATALOG,S"S",V1":END
+ *   30 PRINT CHR$(4)"RUN HELLO,S"S",V"V
  * On boot DOS.MASTER always runs volume 1's HELLO; this one reads the volume number the
- * ProDOS menu POKEd into <addr> and chains to that volume's own HELLO. If the byte is not a
- * real disk volume (< 2, e.g. it failed to survive the boot) it falls back to a harmless
- * CATALOG instead of looping on itself. The ",S<slot>,V<n>" also makes <n> the current DOS
- * volume, so the target HELLO's own subsequent RUN/BRUN stay on that volume.
+ * ProDOS menu POKEd into $0478/1144 and chains to that volume's own HELLO. If the byte is not
+ * a real disk volume (< 2, e.g. it failed to survive the boot) it falls back to a harmless
+ * CATALOG instead of looping on itself. The ",V<n>" also makes <n> the current DOS volume,
+ * so the target HELLO's own subsequent RUN/BRUN stay on that volume. The slot ",S<n>" comes
+ * from DOS.MASTER's own IOB slot byte (IBSLOT $B7E9/47081 = boot slot * 16): DOS.MASTER passes
+ * the DOS 3.3 command's slot to the physical driver as the unit number, so the dispatcher must
+ * name the actual boot slot -- and IBSLOT is the boot slot DOS.MASTER itself just used to load
+ * this HELLO, which is reliable where the ProDOS-side DEVNUM read was not.
  */
-const buildDosDispatcherApplesoftFile = (slot: number): Uint8Array => {
-  const ascii = (s: string) => Array.from(s, (c) => c.charCodeAt(0) & 0x7f)
-  // Applesoft tokens: PRINT=0xBA, POKE n/a, IF=0xAD, THEN=0xC4, END=0xB1, '<'=0xD1,
-  // '='=0xD0, PEEK=0xE2, CHR$=0xE7. Numbers and (),"," are stored as literal ASCII.
-  const line10 = [0x56, 0xd0, 0xe2, 0x28, ...ascii(DOS_DISPATCH_VOLUME_ADDRESS.toString()), 0x29]
-  const line20 = [
-    0xad, 0x56, 0xd1, 0x32, 0xc4, 0xba, 0xe7, 0x28, 0x34, 0x29, 0x22,
-    ...ascii(`CATALOG,S${slot},V1`), 0x22, 0x3a, 0xb1,
-  ]
-  const line30 = [
-    0xba, 0xe7, 0x28, 0x34, 0x29, 0x22, ...ascii(`RUN HELLO,S${slot},V`), 0x22, 0x56,
-  ]
-  const lines: Array<{ num: number; tokens: number[] }> = [
-    { num: 10, tokens: line10 },
-    { num: 20, tokens: line20 },
-    { num: 30, tokens: line30 },
-  ]
-  const image: number[] = []
-  let addr = 0x0801
-  for (const ln of lines) {
-    const lineLen = 4 + ln.tokens.length + 1 // link(2) + lineNo(2) + tokens + terminator(1)
-    const link = addr + lineLen
-    image.push(link & 0xff, (link >> 8) & 0xff, ln.num & 0xff, (ln.num >> 8) & 0xff, ...ln.tokens, 0x00)
-    addr += lineLen
-  }
-  image.push(0x00, 0x00) // program terminator (next-line link = 0)
-  const programLength = image.length
-  return Uint8Array.from([programLength & 0xff, (programLength >> 8) & 0xff, ...image])
+const buildDosDispatcherApplesoftFile = (): Uint8Array => {
+  const vol = DOS_DISPATCH_VOLUME_ADDRESS.toString()
+  const ibslot = DOS_IBSLOT_ADDRESS.toString()
+  const source =
+    `10 V=PEEK(${vol}):S=INT(PEEK(${ibslot})/16)\r` +
+    "20 IF V<2 THEN PRINT CHR$(4)\"CATALOG,S\"S\",V1\":END\r" +
+    "30 PRINT CHR$(4)\"RUN HELLO,S\"S\",V\"V\r"
+  const program = tokenizeApplesoftBasic(source)
+  // DOS 3.3 "A" (Applesoft) files are stored as a 2-byte little-endian program length
+  // followed by the tokenized program (which loads at $0801).
+  return Uint8Array.from([program.length & 0xff, (program.length >> 8) & 0xff, ...program])
 }
 
 /**
@@ -1241,7 +1277,7 @@ const buildDosDispatcherApplesoftFile = (slot: number): Uint8Array => {
  * 0-2, which DOS.MASTER supplies): a VTOC at T17S0, a back-linked catalog on track 17, and
  * the HELLO file on track 18.
  */
-const buildDosMasterDispatcherVolume = (slot: number): Uint8Array => {
+const buildDosMasterDispatcherVolume = (): Uint8Array => {
   const image = new Uint8Array(35 * 16 * 256)
   const sectorOffset = (t: number, s: number) => (t * 16 + s) * 256
   const vtoc = sectorOffset(17, 0)
@@ -1294,7 +1330,7 @@ const buildDosMasterDispatcherVolume = (slot: number): Uint8Array => {
   markUsed(dataTrack, dataSectorNum)
   markUsed(tsTrack, tsSectorNum)
 
-  const fileBytes = buildDosDispatcherApplesoftFile(slot)
+  const fileBytes = buildDosDispatcherApplesoftFile()
   const dataOff = sectorOffset(dataTrack, dataSectorNum)
   image.set(fileBytes.subarray(0, 256), dataOff)
 
@@ -1675,7 +1711,7 @@ const preprocessInputFilesForMenu = (
     runtimeVolumes.unshift({
       name: "DOSDISPATCH",
       type: PRODOS_FILE_TYPE_DOS_MASTER,
-      data: buildDosMasterDispatcherVolume(DOSMASTER_SLOT),
+      data: buildDosMasterDispatcherVolume(),
     })
     for (let i = 0; i < runtimeVolumeByMenuIndex.length; i++) {
       const v = runtimeVolumeByMenuIndex[i]
@@ -2888,6 +2924,10 @@ const installDosMasterLikePartitions = (
   const TABLE_FIRST_OFFSET = 0x40
   const TABLE_NUM_BLOCKS_OFFSET = 0x50
   const TABLE_VOL_SIZE_OFFSET = 0x58
+  // ADRS table (REVISE.DM): the per-pair firmware-page byte DOS.MASTER's RWTS calls
+  // to reach the device lives at TABLE_FIRMWARE_PAGE_OFFSET + pairIndex + 1 and holds
+  // $C0 + slot (e.g. $C7 for slot 7). See REVISE.DM line 580: POKE ADRS+INT(D/2)+1,$C0+T.
+  const TABLE_FIRMWARE_PAGE_OFFSET = 0x60
 
   const targets = [
     { path: ["DOS.MASTER", "DOS.3.3"], label: "DOS.MASTER/DOS.3.3" },
@@ -2916,18 +2956,16 @@ const installDosMasterLikePartitions = (
   }
 
   const deviceUnit = ((slot & 0x07) << 4) | (drive === 2 ? 0x80 : 0x00)
-  let deviceIndex = -1
-  for (let i = 0; i < 8; i++) {
-    if (primaryPayload[TABLE_DEV_OFFSET + i] === deviceUnit) {
-      deviceIndex = i
-      break
-    }
-  }
-  if (deviceIndex < 0) {
-    return { error: `DOS.3.3 config does not support target unit $${deviceUnit.toString(16).padStart(2, "0")}.` }
-  }
-
-  const pairOffset = deviceIndex & 0x06
+  // DOS.INSTALL bakes the target ProDOS unit(s) into the config DEV table. The
+  // base image ships configured for slot 7 ($70 drive 1 / $F0 drive 2). To let
+  // the export target an arbitrary slot (so the HDV boots on whatever slot the
+  // user mounts it in), overwrite DEV pair 0 with the chosen slot's unit pair
+  // below and drive DOS.MASTER's geometry off that pair. For slot 7 this
+  // reproduces the base image's default configuration exactly.
+  const deviceIndex = 0
+  const pairOffset = 0
+  const drive1Unit = (slot & 0x07) << 4
+  const drive2Unit = drive1Unit | 0x80
   const readWord = (payload: Uint8Array, offset: number) => payload[offset] | (payload[offset + 1] << 8)
   const writeWord = (payload: Uint8Array, offset: number, value: number) => {
     payload[offset] = value & 0xFF
@@ -2980,6 +3018,18 @@ const installDosMasterLikePartitions = (
     )
     if (payload.length < 0x60) continue
     const patched = payload.slice()
+    patched[TABLE_DEV_OFFSET + 0] = drive1Unit
+    patched[TABLE_DEV_OFFSET + 1] = drive2Unit
+    // REVISE.DM (manual section 9) also rewrites the per-pair firmware-page byte that
+    // DOS.MASTER's RWTS jumps to when reaching the device (config offset ADRS+pair+1).
+    // The base image ships this as $C7 (slot 7); leaving it stale makes DOS.MASTER call
+    // $C7xx regardless of the DEV table, which faults (crash at ~$C7xx) on any machine
+    // where the HDV is not on slot 7. Rewrite it to $C0+slot for the active pair, mirroring
+    // REVISE.DM line 580. Only touch a byte that already looks like a firmware page ($C0-$C7).
+    const firmwarePageOffset = TABLE_FIRMWARE_PAGE_OFFSET + deviceIndex + 1
+    if (firmwarePageOffset < patched.length && (patched[firmwarePageOffset] & 0xF8) === 0xC0) {
+      patched[firmwarePageOffset] = 0xC0 | (slot & 0x07)
+    }
     writeWord(patched, TABLE_FIRST_OFFSET + (deviceIndex * 2), firstBaseBlock)
     writeWord(patched, TABLE_NUM_BLOCKS_OFFSET + pairOffset, partitionBlocks)
     writeFileDataToProDosImage(disk, target.location, patched)
@@ -3024,7 +3074,8 @@ export const buildProDosHdv = async (
   files: Array<{ name: string; type: number; data: Uint8Array; auxType?: number }>,
   volumeName = "APPLE2TS",
   prodos243Base?: Uint8Array,
-  menuEntries?: MenuDiskEntry[]
+  menuEntries?: MenuDiskEntry[],
+  dosMasterSlot: number = DOSMASTER_SLOT
 ): Promise<Uint8Array> => {
   let hdv = prodos243Base
   if (!hdv) {
@@ -3070,7 +3121,7 @@ export const buildProDosHdv = async (
   if ("error" in dosMasterPatchResult) {
     throw new Error(`Failed to patch DOS.MASTER runtime configuration: ${dosMasterPatchResult.error}`)
   }
-  const dosInstallResult = installDosMasterLikePartitions(hdv, runtimeVolumes, currentTotalBlocks, bitmapStartBlock, DOSMASTER_SLOT, 1)
+  const dosInstallResult = installDosMasterLikePartitions(hdv, runtimeVolumes, currentTotalBlocks, bitmapStartBlock, dosMasterSlot, 1)
   if ("error" in dosInstallResult) {
     throw new Error(`Failed DOS.INSTALL-style partition write: ${dosInstallResult.error}`)
   }

@@ -55,6 +55,7 @@
 .dcp-export-row {
   display: grid;
   grid-template-columns: 1fr 100px;
+  column-gap: 10px;
   margin-left: -2px;
   padding: 12px;
   padding-left: 14px;
@@ -298,7 +299,7 @@
   width: 14px;
   height: 14px;
   left: 13%;
-  bottom: 6px;
+  bottom: 10px;
   background-color: black;
   z-index: 0;
 }

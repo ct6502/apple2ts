@@ -523,7 +523,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       }))
 
       const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)
-      downloadExportHdv(hdvData, "apple2ts-export.hdv")
+      downloadExportHdv(hdvData, `APPLE2TS.HDV`)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       alert(`Failed to build ProDOS HDV: ${message}`)
