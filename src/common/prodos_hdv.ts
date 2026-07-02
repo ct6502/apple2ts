@@ -1606,14 +1606,90 @@ const dosImageUsesLanguageCard = (image: Uint8Array): boolean => {
   return false
 }
 
+// Concatenates a DOS 3.3 file's data sectors by walking its track/sector list. (A
+// module-level twin of the reader used inside dosImageUsesLanguageCard, usable without a
+// captured image.)
+const readDosFileBytes = (image: Uint8Array, tsListTrack: number, tsListSector: number): Uint8Array => {
+  const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+  const chunks: Uint8Array[] = []
+  let listTrack = tsListTrack
+  let listSector = tsListSector
+  const visited = new Set<number>()
+  for (let guard = 0; guard < 64; guard++) {
+    if (listTrack === 0 || listTrack >= 35 || listSector >= 16) break
+    const key = listTrack * 16 + listSector
+    if (visited.has(key)) break
+    visited.add(key)
+    const off = sectorOffset(listTrack, listSector)
+    if (off + 256 > image.length) break
+    for (let i = 0; i < 122; i++) {
+      const dataTrack = image[off + 0x0c + i * 2]
+      const dataSector = image[off + 0x0c + i * 2 + 1]
+      if (dataTrack === 0 && dataSector === 0) continue
+      const dataOff = sectorOffset(dataTrack, dataSector)
+      if (dataTrack < 35 && dataSector < 16 && dataOff + 256 <= image.length) {
+        chunks.push(image.subarray(dataOff, dataOff + 256))
+      }
+    }
+    listTrack = image[off + 1]
+    listSector = image[off + 2]
+  }
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+  const out = new Uint8Array(total)
+  let pos = 0
+  for (const chunk of chunks) { out.set(chunk, pos); pos += chunk.length }
+  return out
+}
+
+/**
+ * Detects a DOS 3.3 disk whose greeting program has no executable content, meaning it boots
+ * only to the ] prompt under DOS.MASTER. Such disks -- commonly single-file "4am"-style
+ * cracks -- carry a decoy/empty HELLO and load their game from raw, un-catalogued sectors via
+ * a custom bootloader that DOS.MASTER (which reproduces only the standard DOS greeting boot)
+ * cannot run. The greeting is the first launchable catalog file (see chooseDosGreetingCommand).
+ * An Applesoft greeting is empty when it has no program lines: either its 2-byte length header
+ * is 0, or (for decoy greetings that report a small nonzero length such as 2) its first line's
+ * address link is null. An Integer greeting is empty when its 2-byte length is 0, and a binary
+ * greeting when its 2-byte length field is 0. A disk with no launchable greeting at all is empty.
+ */
+const dosImageGreetingIsEmpty = (image: Uint8Array): boolean => {
+  const { entries } = readDos33Catalog(image)
+  const greeting = chooseDosGreetingCommand(entries)
+  if (!greeting) return true
+  const greetingEntry = entries.find((entry) => entry.name.trim() === greeting.target.trim())
+  if (!greetingEntry) return true
+  const bytes = readDosFileBytes(image, greetingEntry.tsListTrack, greetingEntry.tsListSector)
+  const type = greetingEntry.typeByte & 0x7f
+  if (type === DOS33_TYPE_APPLESOFT) {
+    // Applesoft file layout: a 2-byte length header followed by the tokenized program, whose
+    // first two bytes are the address link to the next line. A zero link means the program has
+    // no lines. Some decoy greetings report a nonzero length yet contain only a null link, so
+    // check the link rather than trusting the length alone.
+    const programLength = bytes.length >= 2 ? (bytes[0] | (bytes[1] << 8)) : 0
+    if (programLength === 0) return true
+    const firstLineLink = bytes.length >= 4 ? (bytes[2] | (bytes[3] << 8)) : 0
+    return firstLineLink === 0
+  }
+  if (type === DOS33_TYPE_INTEGER) {
+    const programLength = bytes.length >= 2 ? (bytes[0] | (bytes[1] << 8)) : 0
+    return programLength === 0
+  }
+  if (type === DOS33_TYPE_BINARY) {
+    const binaryLength = bytes.length >= 4 ? (bytes[2] | (bytes[3] << 8)) : 0
+    return binaryLength === 0
+  }
+  return bytes.length === 0
+}
+
 /**
  * Determines the exportable VTOC type of a disk image: "dos", "prodos", "dosup", or
  * "other". "other" means the image is neither a recognizable DOS 3.3 nor ProDOS volume.
- * "dosup" means a DOS 3.3 volume whose greeting relies on the language card -- either by
- * installing a language-card DOS relocator or by driving language-card RAM directly (see
- * dosImageUsesLanguageCard) -- which is incompatible with DOS.MASTER. Both
- * "other" and "dosup" are non-exportable. WOZ images are fully bit-decoded and probed
- * under every sector order before being classified.
+ * "dosup" means a DOS 3.3 volume that is incompatible with DOS.MASTER, either because its
+ * greeting relies on the language card (installing a language-card DOS relocator or driving
+ * language-card RAM directly; see dosImageUsesLanguageCard) or because its greeting is empty
+ * -- a decoy HELLO whose real game loads from raw sectors via a custom bootloader DOS.MASTER
+ * can't reproduce (see dosImageGreetingIsEmpty). Both "other" and "dosup" are non-exportable.
+ * WOZ images are fully bit-decoded and probed under every sector order before being classified.
  */
 export const determineVtocType = (filename: string, data: Uint8Array): VtocType => {
   const ext = filename.toLowerCase().split(".").pop() || ""
@@ -1628,7 +1704,7 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       // copy-protected/non-standard disks are classified "other" and not exported.
       const dosImage = loadWozAndExtractDosImage(data)
       if (dosImage) {
-        return dosImageUsesLanguageCard(dosImage) ? "dosup" : "dos"
+        return (dosImageUsesLanguageCard(dosImage) || dosImageGreetingIsEmpty(dosImage)) ? "dosup" : "dos"
       }
     }
     return "other"
@@ -1636,11 +1712,12 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
 
   const kind = classifyImageKind(filename, data)
   // A raw 140K DOS logical-order image (.dsk/.do) whose greeting installs a language-card
-  // DOS mover is likewise incompatible with DOS.MASTER.
+  // DOS mover -- or whose greeting is empty (a custom-bootloader game with a decoy HELLO) --
+  // is likewise incompatible with DOS.MASTER.
   if (kind === "dos" &&
     data.length === (35 * 16 * 256) &&
     dosLogicalImageHasValidCatalog(data) &&
-    dosImageUsesLanguageCard(data)) {
+    (dosImageUsesLanguageCard(data) || dosImageGreetingIsEmpty(data))) {
     return "dosup"
   }
   return kind === "unknown" ? "other" : kind

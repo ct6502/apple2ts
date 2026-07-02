@@ -40,12 +40,15 @@ const getKnownFileSizeForUrl = (diskUrl?: string): number | undefined => {
   return match?.fileSize && match.fileSize > 0 ? match.fileSize : undefined
 }
 
-// Assigns a disk's VTOC type without downloading its bytes, when possible. This
-// caching is applied uniformly to built-in disks, new releases, and bookmarks:
+// Assigns a disk's VTOC type without downloading its bytes, when possible:
 //  - HDV images are hard-drive volumes that are always ProDOS, so their type is
 //    set directly by file extension (no download or decode needed).
-//  - Otherwise a VTOC type determined in a previous session is restored from the
-//    permanent local-storage cache (keyed by URL).
+//  - Bookmarks persist their own VTOC type in their dbm- entry (the item is built
+//    with vtocType: diskBookmark.vtocType), so that stored value is authoritative
+//    and nothing further is restored here for them.
+//  - Other disks (built-in images, new releases) have no per-disk store, so a VTOC
+//    type determined in a previous session is restored from the permanent
+//    URL-keyed local-storage cache.
 // Anything still undefined is resolved later by the background effect, but only
 // if the disk is small enough to ever be exported.
 const restoreCachedVtocType = (item: DiskCollectionItem) => {
@@ -55,6 +58,7 @@ const restoreCachedVtocType = (item: DiskCollectionItem) => {
     item.vtocType = "prodos"
     return
   }
+  if (item.bookmarkId) return
   item.vtocType = getPreferenceVtocType(url)
 }
 
@@ -300,9 +304,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     })
   }
 
-  // Stores a determined VTOC type onto the in-memory collection item and, for
-  // bookmarked disks, persists it to local storage so it only needs to be
-  // determined once.
+  // Stores a determined VTOC type onto the in-memory collection item and persists
+  // it so it only needs to be determined once. Bookmarks keep their type in their
+  // own dbm- entry; other disks (built-in images, new releases) use the shared
+  // URL-keyed cache. A disk is never written to both, so a bookmark can't pick up
+  // a stale URL-cache value (and vice versa).
   const persistVtocType = (diskCollectionItem: DiskCollectionItem, vtocType: VtocType) => {
     diskCollectionItem.vtocType = vtocType
 
@@ -312,12 +318,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         bookmark.vtocType = vtocType
         diskBookmarks.set(bookmark)
       }
+    } else {
+      // A disk's VTOC type never changes, so cache it by URL. This lets
+      // non-bookmarked disks (e.g. new releases) avoid re-downloading their bytes
+      // to redetermine the VTOC on every visit.
+      setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType)
     }
-
-    // A disk's VTOC type never changes, so cache it by URL. This lets
-    // non-bookmarked disks (e.g. new releases) avoid re-downloading their bytes
-    // to redetermine the VTOC on every visit.
-    setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType)
 
     // Trigger a re-render so the export filter reflects the new VTOC type.
     setDiskCollection((prev) => [...prev])
