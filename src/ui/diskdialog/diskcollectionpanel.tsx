@@ -40,6 +40,24 @@ const getKnownFileSizeForUrl = (diskUrl?: string): number | undefined => {
   return match?.fileSize && match.fileSize > 0 ? match.fileSize : undefined
 }
 
+// Assigns a disk's VTOC type without downloading its bytes, when possible. This
+// caching is applied uniformly to built-in disks, new releases, and bookmarks:
+//  - HDV images are hard-drive volumes that are always ProDOS, so their type is
+//    set directly by file extension (no download or decode needed).
+//  - Otherwise a VTOC type determined in a previous session is restored from the
+//    permanent local-storage cache (keyed by URL).
+// Anything still undefined is resolved later by the background effect, but only
+// if the disk is small enough to ever be exported.
+const restoreCachedVtocType = (item: DiskCollectionItem) => {
+  if (item.vtocType !== undefined) return
+  const url = item.diskUrl?.toString() || ""
+  if (url.toLowerCase().split(/[?#]/)[0].endsWith(".hdv")) {
+    item.vtocType = "prodos"
+    return
+  }
+  item.vtocType = getPreferenceVtocType(url)
+}
+
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "2-digit",
@@ -223,11 +241,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     {
       icon: faDownload,
       label: "Export disks to HDV",
-      // Show disks whose VTOC is known and exportable. Built-in disks ship with
-      // a predefined vtocType and appear immediately; disks without one (e.g.
-      // new releases) appear only after their bytes download successfully and
-      // their VTOC is determined, so unreachable (CORS-blocked) disks stay
-      // hidden. Disks whose VTOC is "other" or too large are excluded.
+      // Show disks whose VTOC is known and exportable. HDV images and disks with
+      // a cached VTOC appear immediately; other disks appear only after their
+      // bytes download successfully and their VTOC is determined, so unreachable
+      // (CORS-blocked) disks stay hidden. Disks whose VTOC is "other"/"dosup" or
+      // too large are excluded.
       disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.vtocType !== undefined && isDiskExportable(x)),
       isHighlighted: false
     }
@@ -267,8 +285,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   // Downloads a disk's bytes without disturbing the running emulator. Unlike
   // loadDisk(), this never changes the run mode or loads the disk into a drive;
   // it simply resolves with the raw buffer (or null on failure) via callback.
+  // This runs as silent background verification (to populate export badges), so
+  // it deliberately does NOT show a blocking progress modal.
   const fetchDiskBufferForItem = (diskCollectionItem: DiskCollectionItem): Promise<Uint8Array | null> => {
-    showGlobalProgressModal(true, "Fetching disk metadata")
     return new Promise((resolve) => {
       const cb = (buffer: ArrayBuffer | null) => resolve(buffer ? new Uint8Array(buffer) : null)
       if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
@@ -573,12 +592,13 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // Load built-in disk images
     diskImages.forEach((diskImage) => {
       diskImage.type = DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE
+      restoreCachedVtocType(diskImage)
       newDiskCollection.push(diskImage)
     })
 
     // Load favorites
     for (const diskBookmark of diskBookmarks) {
-      newDiskCollection.push({
+      const item: DiskCollectionItem = {
         type: diskBookmark.type,
         title: diskBookmark.title,
         lastUpdated: new Date(diskBookmark.lastUpdated),
@@ -589,17 +609,17 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         cloudData: diskBookmark.cloudData,
         fileSize: diskBookmark.cloudData?.fileSize || getKnownFileSizeForUrl(diskBookmark.diskUrl?.toString()) || -1,
         vtocType: diskBookmark.vtocType
-      })
+      }
+      restoreCachedVtocType(item)
+      newDiskCollection.push(item)
     }
 
     // Load new releases
     newReleases.forEach((newRelease) => {
       newRelease.type = DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE
-      // Reuse the previously determined VTOC type from local storage so we don't
+      // Reuse the previously determined VTOC type (or HDV assumption) so we don't
       // re-download the disk's bytes just to redetermine an unchanging value.
-      if (newRelease.vtocType === undefined) {
-        newRelease.vtocType = getPreferenceVtocType(newRelease.diskUrl.toString())
-      }
+      restoreCachedVtocType(newRelease)
       newDiskCollection.push(newRelease)
 
       if (newRelease.lastUpdated >= newReleasesChecked) {
@@ -623,14 +643,16 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   // Whenever the panel is visible, fill in (and cache) the VTOC type of any disk
   // that doesn't already have one by downloading its bytes. The exportable badge
   // is shown on every tab, so verification must run on every tab for it to be
-  // accurate everywhere. Built-in disks ship with a predefined vtocType and are
-  // trusted as-is (never re-downloaded); disks without one are resolved here, so
-  // a disk that can't be downloaded (e.g. CORS-blocked) never gets a VTOC and is
-  // never shown as exportable. Disks are resolved one at a time to avoid a
-  // download stampede, and each result is cached in local storage so a given
-  // disk is only ever downloaded once. Download failures are remembered for the
-  // browser session (sessionStorage) so they aren't re-attempted on reload; they
-  // are retried in a new browser session.
+  // accurate everywhere. Built-in disks, new releases, and bookmarks are all
+  // treated identically: an HDV or previously-cached type is filled in without a
+  // download (see restoreCachedVtocType), and only disks small enough to ever be
+  // exported are resolved here -- so large disks and un-downloadable (e.g.
+  // CORS-blocked) disks never trigger a download and never show as exportable.
+  // Disks are resolved one at a time to avoid a download stampede, and each
+  // result is cached in local storage so a given disk is only ever downloaded
+  // once. Download failures are remembered for the browser session
+  // (sessionStorage) so they aren't re-attempted on reload; they are retried in a
+  // new browser session.
   useEffect(() => {
     // The panel content is shown when the flyout is open (minimal theme) or
     // always (classic theme renders it inside a dialog), matching Flyout's own
@@ -669,10 +691,16 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     }
 
     vtocResolveAttempted.current.add(itemKey(pending))
+    // Capture the ref's Set (stable across renders) and the item key so the
+    // cleanup below doesn't read a ref during teardown (which lint flags).
+    const attempted = vtocResolveAttempted.current
+    const pendingKey = itemKey(pending)
     let cancelled = false
+    let settled = false
 
     fetchDiskBufferForItem(pending)
       .then((data) => {
+        settled = true
         if (cancelled) {
           return
         }
@@ -689,13 +717,25 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         persistVtocType(pending, determineVtocType(filename, data))
       })
       .catch(() => {
+        settled = true
         if (!cancelled) {
           addSessionVtocFailure(pending.diskUrl.toString())
           setVtocCheckPass((pass) => pass + 1)
         }
       })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      // If this effect re-ran (e.g. diskCollection changed during the panel-open
+      // re-render storm) before the fetch settled, un-mark the disk so it is
+      // retried on the next pass. Otherwise it would be stranded with an
+      // undefined VTOC -- showing a non-exportable badge until the panel is
+      // reopened. This most often struck the first disk, whose fetch is in flight
+      // exactly while the collection is still settling.
+      if (!settled) {
+        attempted.delete(pendingKey)
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, isFlyoutOpen, diskCollection, vtocCheckPass])
 
