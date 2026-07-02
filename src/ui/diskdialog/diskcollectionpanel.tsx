@@ -365,8 +365,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return selectedDisks.includes(diskCollectionItem) && isDiskExportable(diskCollectionItem)
     })
 
-    setIsFlyoutOpen(false)
-    setActiveTab(0)
+    // Leave the panel open on the export tab so it stays visible behind the
+    // export progress modal; it is closed once the export completes (createHdv's
+    // finally block) or is aborted on error (processExportQueue).
     setDownloadedDisks([])
     setExportQueue(newExportQueue)
   }
@@ -435,10 +436,6 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       .map((diskCollectionItem) => downloadedDisks.find((downloadedDisk) => downloadedDisk.item === diskCollectionItem))
       .filter((downloadedDisk): downloadedDisk is DownloadedExportDisk => downloadedDisk !== undefined)
 
-    props.onDismissDialog?.()
-    if (!isMinimalTheme()) {
-      setIsFlyoutOpen(false)
-    }
     showGlobalProgressModal(true, "Creating HDV image")
     try {
       const wozExtractedByIndex = new Map<number, ImportedDiskFile[]>()
@@ -533,6 +530,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       setSelectedDisks([])
       setActiveTab(0)
       setIsFlyoutOpen(false)
+      props.onDismissDialog?.()
     }
   }
 
