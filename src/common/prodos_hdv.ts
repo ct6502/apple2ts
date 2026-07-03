@@ -328,12 +328,13 @@ const generateMenuSourceProgram = (
       const runCmd = menuProDosCommands[idx - 1]
       const prefix = menuProDosPrefixes[idx - 1]
       // Install the absolute-SET_PREFIX rewrite shim only here, immediately before a
-      // ProDOS launch, and only for disks that actually issue a SET_PREFIX MLI call
-      // (menuNeedsAliasShim). It is never installed for DOS images, so DOS.MASTER can
-      // safely reclaim the language card without the shim's resident hook crashing it,
-      // and never for ProDOS disks that don't need it, so interrupt/language-card games
-      // (e.g. Glider) aren't destabilized by an unnecessary resident MLI hook. The
-      // installer is idempotent, so re-running it across selections is harmless.
+      // ProDOS launch, and only for disks that hardcode an absolute "/VOLUME/..." path the
+      // shim can actually rewrite (menuNeedsAliasShim; see proDosFilesNeedAliasShim). It is
+      // never installed for DOS images, so DOS.MASTER can safely reclaim the language card
+      // without the shim's resident hook crashing it, and never for ProDOS disks that don't
+      // need it, so interrupt/language-card games (e.g. Glider) and disks that build their
+      // prefix at runtime (e.g. Undead) aren't destabilized by an unnecessary resident MLI
+      // hook. The installer is idempotent, so re-running it across selections is harmless.
       const needsShim = menuNeedsAliasShim?.[idx - 1] ?? false
       const shimInstall = (aliasShimInstallCommand && needsShim) ? 'PRINT D$;"' + aliasShimInstallCommand + '":' : ''
       if (prefix && runCmd) {
@@ -1750,21 +1751,57 @@ const isNonLaunchableSystemFile = (name: string): boolean => {
   return upper === "QUIT.SYSTEM" || upper.endsWith("CLOCK.SYSTEM")
 }
 
-// Scans a ProDOS disk's imported files for an MLI SET_PREFIX call (JSR $BF00 followed by
-// command byte $C6). The resident alias shim exists solely to rewrite an absolute SET_PREFIX
-// from a disk's original volume path to its HDV subdirectory, so a disk that never issues
-// SET_PREFIX cannot need it. Skipping the shim for such disks avoids installing a resident
-// MLI hook (which lives in the language card and reroutes every MLI call); that hook
-// destabilizes games that keep code/data in the language card or drive interrupts -- e.g.
-// Glider, which otherwise dies mid-load with a ProDOS "RESTART SYSTEM" system death.
-const proDosFilesIssueSetPrefix = (files: BuildInputFile[]): boolean => {
-  for (const file of files) {
-    const d = file.data
-    for (let i = 0; i + 3 < d.length; i++) {
-      if (d[i] === 0x20 && d[i + 1] === 0x00 && d[i + 2] === 0xbf && d[i + 3] === 0xc6) {
-        return true
-      }
+// Scans an imported executable/data file for a literal absolute path that begins with the
+// disk's own original volume name, e.g. "/UNDEAD" or "/GAMEVOL/DIR" (matched in both normal
+// and high-bit ASCII). Rejects a trailing alphanumeric so "/UNDEAD" does not match
+// "/UNDEADED". Only executable/data types that can carry a usable pathname are scanned
+// ($06 BIN, $FF SYS, $FC BAS, $04 TXT); Finder-metadata types such as $CA icons are ignored
+// (an icon's embedded "/UNDEAD/BASIC.SYSTEM" is never fed to an MLI path call).
+const PROBABLE_PATH_BEARING_TYPES = new Set([0x06, 0xFF, 0xFC, 0x04])
+const isProDosNameChar = (byte: number): boolean => {
+  const c = byte & 0x7f
+  return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || c === 0x2e
+}
+const dataReferencesAbsoluteVolumePath = (data: Uint8Array, volumeName: string): boolean => {
+  const vol = volumeName.toUpperCase()
+  if (vol.length === 0) return false
+  for (let base = 0; base + 1 + vol.length <= data.length; base++) {
+    if ((data[base] & 0x7f) !== 0x2f) continue // leading '/'
+    let matched = true
+    for (let k = 0; k < vol.length; k++) {
+      let c = data[base + 1 + k] & 0x7f
+      if (c >= 0x61 && c <= 0x7a) c -= 0x20 // uppercase for comparison
+      if (c !== vol.charCodeAt(k)) { matched = false; break }
     }
+    if (!matched) continue
+    // Require the volume name to be delimited (end of data, '/', or any non-name byte) so a
+    // longer volume like "/UNDEADED" is not matched against a shorter target "/UNDEAD".
+    const after = base + 1 + vol.length
+    if (after < data.length && isProDosNameChar(data[after]) && (data[after] & 0x7f) !== 0x2f) continue
+    return true
+  }
+  return false
+}
+
+// Decides whether a ProDOS disk needs the resident alias shim. The shim exists solely to
+// rewrite an absolute SET_PREFIX (MLI $C6) whose pathname begins with the disk's original
+// volume name so it points at the disk's HDV subdirectory instead. It therefore helps only a
+// disk that hardcodes such an absolute path literal in one of its programs. Disks that use
+// only relative paths, or that reconstruct their prefix at runtime from GET_PREFIX/ONLINE
+// (which already yields the HDV volume /APPLE2TS), gain nothing from the shim.
+//
+// Installing the shim anyway is not free: it patches the $BF00 MLI vector to a resident
+// language-card hook that runs on every MLI call, which destabilizes games that keep
+// code/data in the language card or drive interrupts. Glider (no SET_PREFIX at all) dies with
+// a ProDOS "RESTART SYSTEM" death; Undead (SET_PREFIX only on runtime-built /APPLE2TS paths)
+// fails its file OPENs with ProDOS error $56 "bad buffer address". Gating on an actual
+// hardcoded volume-path literal skips the shim for both while still installing it for disks
+// that genuinely embed "/VOLUME/..." absolute paths.
+const proDosFilesNeedAliasShim = (files: BuildInputFile[], volumeName: string | undefined): boolean => {
+  if (!volumeName) return false
+  for (const file of files) {
+    if (!PROBABLE_PATH_BEARING_TYPES.has(file.type ?? 0)) continue
+    if (dataReferencesAbsoluteVolumePath(file.data, volumeName)) return true
   }
   return false
 }
@@ -1963,7 +2000,7 @@ const preprocessInputFilesForMenu = (
       directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
       menuProDosPrefixes[i] = directoryName
       menuProDosCommands[i] = launchCommand
-      menuNeedsAliasShim[i] = proDosFilesIssueSetPrefix(directoryFiles)
+      menuNeedsAliasShim[i] = proDosFilesNeedAliasShim(directoryFiles, extractedVolumeName)
       continue
     }
 
@@ -2007,7 +2044,7 @@ const preprocessInputFilesForMenu = (
         directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
         menuProDosPrefixes[i] = directoryName
         menuProDosCommands[i] = launchCommand
-        menuNeedsAliasShim[i] = proDosFilesIssueSetPrefix(directoryFiles)
+        menuNeedsAliasShim[i] = proDosFilesNeedAliasShim(directoryFiles, extractedVolumeName)
       } else {
         const normalized = makeUniqueProDosFilename(file.name, usedNames)
         outputFiles.push({ ...file, name: normalized })
@@ -3607,11 +3644,12 @@ export const buildProDosHdv = async (
 
   const withStartup = [...outputFiles]
   // Copy the alias shim file onto the HDV only when at least one imported ProDOS disk
-  // actually issues a SET_PREFIX MLI call (menuNeedsAliasShim). It is NOT installed at
-  // boot: the menu BRUNs it per-launch, only before a ProDOS disk that needs it. DOS
-  // images never install it (so DOS.MASTER can reclaim the language card where the shim's
-  // resident hook lives), and ProDOS disks that never call SET_PREFIX skip it too (so
-  // interrupt/language-card games aren't destabilized by an unnecessary MLI hook).
+  // hardcodes an absolute "/VOLUME/..." path the shim can rewrite (menuNeedsAliasShim; see
+  // proDosFilesNeedAliasShim). It is NOT installed at boot: the menu BRUNs it per-launch,
+  // only before a ProDOS disk that needs it. DOS images never install it (so DOS.MASTER can
+  // reclaim the language card where the shim's resident hook lives), and ProDOS disks that
+  // use only relative or runtime-built paths skip it too (so interrupt/language-card games
+  // and disks like Undead aren't destabilized by an unnecessary MLI hook).
   const includeAliasShimFile = menuNeedsAliasShim.some(Boolean)
 
   const launcherName = "A2TSLAUNCH"
