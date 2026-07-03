@@ -565,7 +565,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
       for (let index = 0; index < orderedDownloadedDisks.length; index++) {
         const disk = orderedDownloadedDisks[index]
-        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl, true, index)
+        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl, true, index + 1)
         screenshots.push({
           name: disk.filename.split(".")[0].slice(0, 15),
           data: screenshotData,
