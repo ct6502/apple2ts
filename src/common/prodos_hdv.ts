@@ -276,6 +276,7 @@ const generateMenuSourceProgram = (
   }
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
+  const showNavigationArrows = count > 1
   const imageKinds = menuEntries.slice(0, count).map((entry) => entry.imageKind || "unknown")
   const runtimeVolumes: number[] = []
   for (let i = 0; i < count; i++) {
@@ -307,8 +308,10 @@ const generateMenuSourceProgram = (
   }
   for (let idx = 1; idx <= count; idx++) {
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
+    const leftArrow = showNavigationArrows ? "<- " : "   "
+    const rightArrow = showNavigationArrows ? " ->" : "   "
     const lineNo = 1120 + idx
-    lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 22:HTAB 1:PRINT "<- ' + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + ' ->";')
+    lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
   }
   lines.push("1220 RETURN")
 
@@ -318,7 +321,9 @@ const generateMenuSourceProgram = (
   lines.push(`3020 PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(1).padStart(2, "0")},A$2000\"`)
   {
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[0])
-    lines.push('3030 VTAB 22:HTAB 1:PRINT "<- ' + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + ' ->";')
+    const leftArrow = showNavigationArrows ? "<- " : "   "
+    const rightArrow = showNavigationArrows ? " ->" : "   "
+    lines.push('3030 VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
   }
   lines.push("3040 RETURN")
 
