@@ -173,17 +173,17 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
   const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
 
-  // Tracks disk items whose VTOC download has been attempted during this open
-  // of the export tab (success or failure), so we don't re-pick the same disk
-  // while iterating the queue. Cleared on a fresh open so failures retry.
+  // Tracks disk items whose VTOC download has been attempted during the current
+  // active-tab verification pass (success or failure), so we don't re-pick the
+  // same disk while iterating the queue. Cleared when the active tab changes.
   const vtocResolveAttempted = useRef<Set<string>>(new Set())
   // Bumped after a failed download so the verification effect advances to the
-  // next pending disk. CORS/network failures are retried when the export tab is
-  // reopened (a testing-only scenario).
+  // next pending disk. CORS/network failures are retried when the user revisits
+  // the tab in a new browser session.
   const [vtocCheckPass, setVtocCheckPass] = useState(0)
-  // True while the export tab is open; used to detect a fresh open so that
-  // previously-failed (unresolved) disks can be retried.
-  const exportTabOpenRef = useRef(false)
+  // Remembers which tab the current VTOC pass belongs to so a tab switch starts
+  // a fresh pass for the newly visible disks.
+  const vtocActiveTabRef = useRef<number | null>(null)
   const vtocProgressVisibleRef = useRef(false)
 
   const TAB_INDEX_SELECT = 3
@@ -671,6 +671,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   // they aren't re-attempted on reload; they are retried in a new browser
   // session.
   useEffect(() => {
+    const shouldShowVtocProgress = activeTab === TAB_INDEX_SELECT
     // The panel content is shown when the flyout is open (minimal theme) or
     // always (classic theme renders it inside a dialog), matching Flyout's own
     // render condition. Gate verification on actual visibility so it runs in
@@ -681,17 +682,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
-      exportTabOpenRef.current = false
-      return
-    }
-
-    // VTOC verification is only driven from the Export tab. Other tabs should
-    // not trigger downloads or show progress while browsing.
-    if (activeTab !== TAB_INDEX_SELECT) {
-      if (vtocProgressVisibleRef.current) {
-        showGlobalProgressModal(false)
-        vtocProgressVisibleRef.current = false
-      }
+      vtocActiveTabRef.current = null
       return
     }
 
@@ -705,11 +696,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return
     }
 
-    // On a fresh open of the panel, retry any disk whose VTOC is still
-    // unresolved. Disks that already resolved keep their cached vtocType and are
-    // not re-picked below.
-    if (!exportTabOpenRef.current) {
-      exportTabOpenRef.current = true
+    // On a tab change, start a fresh pass for the newly visible disks. Disks
+    // that already resolved keep their cached vtocType and are not re-picked.
+    if (vtocActiveTabRef.current !== activeTab) {
+      vtocActiveTabRef.current = activeTab
       vtocResolveAttempted.current.clear()
     }
 
@@ -718,7 +708,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // superset of all exportable disks, but its rendered list is pre-filtered to
     // already-determined disks; use the full exportable candidate set for it so
     // its not-yet-determined disks still get resolved when it's navigated to.
-    const visibleCandidates = diskCollection.filter(isDiskExportable)
+    const visibleCandidates = activeTab === TAB_INDEX_SELECT
+      ? diskCollection.filter(isDiskExportable)
+      : tabs[activeTab].disks.filter(isDiskExportable)
     const pendingCandidates = visibleCandidates.filter((item) =>
       item.vtocType === undefined &&
       isDiskExportable(item) &&
@@ -737,8 +729,13 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
 
     const currentDisk = vtocResolveAttempted.current.size + 1
     const totalDisks = vtocResolveAttempted.current.size + pendingCandidates.length
-    showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
-    vtocProgressVisibleRef.current = true
+    if (shouldShowVtocProgress) {
+      showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
+      vtocProgressVisibleRef.current = true
+    } else if (vtocProgressVisibleRef.current) {
+      showGlobalProgressModal(false)
+      vtocProgressVisibleRef.current = false
+    }
 
     vtocResolveAttempted.current.add(itemKey(pending))
     // Capture the ref's Set (stable across renders) and the item key so the
