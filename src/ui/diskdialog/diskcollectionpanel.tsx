@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { ChangeEvent, useEffect, useLayoutEffect, useRef, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
@@ -13,7 +13,17 @@ import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL
 import { diskImages } from "../devices/disk/diskimages"
 import { newReleases } from "../devices/disk/newreleases"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
-import { addSessionVtocFailure, getPreferenceNewReleasesChecked, getPreferenceVtocType, hasSessionVtocFailure, setPreferenceNewReleasesChecked, setPreferenceVtocType } from "../localstorage"
+import {
+  addSessionVtocFailure,
+  DiskCollectionSortMode,
+  getPreferenceDiskCollectionSort,
+  getPreferenceNewReleasesChecked,
+  getPreferenceVtocType,
+  hasSessionVtocFailure,
+  setPreferenceDiskCollectionSort,
+  setPreferenceNewReleasesChecked,
+  setPreferenceVtocType
+} from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
 import { handleInputParams } from "../inputparams"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
@@ -106,19 +116,63 @@ const downloadExportHdv = (data: Uint8Array, filename: string) => {
   URL.revokeObjectURL(url)
 }
 
-const sortByLastUpdatedAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
-  if (a.lastUpdated && b.lastUpdated) {
-    const aTime = a.lastUpdated
-    const bTime = b.lastUpdated
-    if (aTime > bTime) return -1
-    if (aTime < bTime) return 1
-  }
+const TAB_INDEX_BUILT_IN = 0
+const TAB_INDEX_NEW_RELEASES = 1
+const TAB_INDEX_FAVORITES = 2
+const TAB_INDEX_SELECT = 3
 
-  if (a.title && b.title) {
-    return a.title.localeCompare(b.title)
-  }
+const diskCollectionSortOptions: Array<{ value: DiskCollectionSortMode; label: string }> = [
+  { value: "name-asc", label: "A-Z" },
+  { value: "name-desc", label: "Z-A" },
+  { value: "date-newest", label: "New" },
+  { value: "date-oldest", label: "Old" },
+]
 
-  return 0
+const defaultSortModeByTab: Record<number, DiskCollectionSortMode> = {
+  [TAB_INDEX_BUILT_IN]: "name-asc",
+  [TAB_INDEX_NEW_RELEASES]: "date-newest",
+  [TAB_INDEX_FAVORITES]: "date-newest",
+  [TAB_INDEX_SELECT]: "name-asc",
+}
+
+const getLastUpdatedMs = (item: DiskCollectionItem): number => {
+  if (!item.lastUpdated) return 0
+  const date = item.lastUpdated instanceof Date ? item.lastUpdated : new Date(item.lastUpdated)
+  const value = date.getTime()
+  return Number.isFinite(value) ? value : 0
+}
+
+const compareByNameAsc = (a: DiskCollectionItem, b: DiskCollectionItem): number => {
+  const byName = a.title.localeCompare(b.title)
+  if (byName !== 0) return byName
+  return getLastUpdatedMs(b) - getLastUpdatedMs(a)
+}
+
+const sortDisks = (disks: DiskCollectionItem[], mode: DiskCollectionSortMode): DiskCollectionItem[] => {
+  const sorted = [...disks]
+  sorted.sort((a, b) => {
+    switch (mode) {
+      case "name-desc": {
+        const byName = b.title.localeCompare(a.title)
+        if (byName !== 0) return byName
+        return getLastUpdatedMs(b) - getLastUpdatedMs(a)
+      }
+      case "date-newest": {
+        const byDate = getLastUpdatedMs(b) - getLastUpdatedMs(a)
+        if (byDate !== 0) return byDate
+        return compareByNameAsc(a, b)
+      }
+      case "date-oldest": {
+        const byDate = getLastUpdatedMs(a) - getLastUpdatedMs(b)
+        if (byDate !== 0) return byDate
+        return compareByNameAsc(a, b)
+      }
+      case "name-asc":
+      default:
+        return compareByNameAsc(a, b)
+    }
+  })
+  return sorted
 }
 
 type DiskCollectionPanelProps = DisplayProps & {
@@ -168,6 +222,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [selectPopupLocation, setSelectPopupLocation] = useState<[number, number]>()
   const [popupItem, setPopupItem] = useState<DiskCollectionItem>()
   const [activeTab, setActiveTab] = useState<number>(0)
+  const [sortModeByTab, setSortModeByTab] = useState<Record<number, DiskCollectionSortMode>>(() => ({
+    [TAB_INDEX_BUILT_IN]: getPreferenceDiskCollectionSort(TAB_INDEX_BUILT_IN) || defaultSortModeByTab[TAB_INDEX_BUILT_IN],
+    [TAB_INDEX_NEW_RELEASES]: getPreferenceDiskCollectionSort(TAB_INDEX_NEW_RELEASES) || defaultSortModeByTab[TAB_INDEX_NEW_RELEASES],
+    [TAB_INDEX_FAVORITES]: getPreferenceDiskCollectionSort(TAB_INDEX_FAVORITES) || defaultSortModeByTab[TAB_INDEX_FAVORITES],
+    [TAB_INDEX_SELECT]: getPreferenceDiskCollectionSort(TAB_INDEX_SELECT) || defaultSortModeByTab[TAB_INDEX_SELECT],
+  }))
   const [hasNewRelease, setHasNewRelease] = useState<boolean>(false)
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
@@ -186,12 +246,14 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const vtocActiveTabRef = useRef<number | null>(null)
   const vtocProgressVisibleRef = useRef(false)
 
-  const TAB_INDEX_SELECT = 3
-
   // Stable identity for a disk across re-renders (bookmark id, cloud item id,
   // disk URL, or finally the title).
   const itemKey = (item: DiskCollectionItem): string =>
     item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
+
+  const getSortModeForTab = (tabIndex: number): DiskCollectionSortMode => {
+    return sortModeByTab[tabIndex] || defaultSortModeByTab[tabIndex] || "name-asc"
+  }
 
   if (isMinimalTheme()) {
     import("./diskcollectionpanel.minimal.css")
@@ -234,19 +296,28 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     {
       icon: faFloppyDisk,
       label: "Show Apple2TS collection",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE),
+      disks: sortDisks(
+        diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE),
+        getSortModeForTab(TAB_INDEX_BUILT_IN)
+      ),
       isHighlighted: false
     },
     {
       icon: faClock,
       label: "Show new releases",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE),
+      disks: sortDisks(
+        diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE),
+        getSortModeForTab(TAB_INDEX_NEW_RELEASES)
+      ),
       isHighlighted: hasNewRelease
     },
     {
       icon: faStar,
       label: "Show favorites",
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
+      disks: sortDisks(
+        diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
+        getSortModeForTab(TAB_INDEX_FAVORITES)
+      ),
       isHighlighted: false
     },
     {
@@ -257,10 +328,22 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       // bytes download successfully and their VTOC is determined, so unreachable
       // (CORS-blocked) disks stay hidden. Disks whose VTOC is "other"/"dosup" or
       // too large are excluded.
-      disks: diskCollection.sort(sortByLastUpdatedAsc).filter(x => x.vtocType !== undefined && isDiskExportable(x)),
+      disks: sortDisks(
+        diskCollection.filter(x => x.vtocType !== undefined && isDiskExportable(x)),
+        getSortModeForTab(TAB_INDEX_SELECT)
+      ),
       isHighlighted: false
     }
   ]
+
+  const handleSortModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const mode = event.target.value as DiskCollectionSortMode
+    setSortModeByTab((prev) => ({
+      ...prev,
+      [activeTab]: mode,
+    }))
+    setPreferenceDiskCollectionSort(activeTab, mode)
+  }
 
   const handleHelpClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation()
@@ -457,7 +540,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       ]))
       setExportQueue((prevExportQueue) => prevExportQueue.slice(1))
     } else if (exportQueue.length > 0) {
-      showGlobalProgressModal(true, `Importing disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
+      showGlobalProgressModal(true, `Fetching disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(-1, exportQueue[0], processExportQueue)
     }
   }
@@ -941,18 +1024,36 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         })}
       </div>
       <div
-        className={`dcp-export-row${activeTab == TAB_INDEX_SELECT ? "" : " dcp-export-row-inactive"}`}
+        className="dcp-export-row"
         onClick={(e) => e.stopPropagation()}>
-        <div className="dcp-export-size">HDV size: <b><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</b></div>
-        <button
-          className="dcp-export-button"
-          disabled={activeTab != TAB_INDEX_SELECT || isExportButtonDisabled()}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (activeTab == TAB_INDEX_SELECT) {
-              handleExportClick()
-            }
-          }}>Export</button>
+        <div className="dcp-sort-controls">
+          <select
+            id="dcp-sort-select"
+            className="dcp-sort-select"
+            value={getSortModeForTab(activeTab)}
+            onChange={handleSortModeChange}
+            onClick={(e) => e.stopPropagation()}>
+            {diskCollectionSortOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="dcp-export-size-cell">
+          {activeTab == TAB_INDEX_SELECT &&
+            <div className="dcp-export-size"><span className={`${estimateHdvSize() > maxHdvBytes ? "dcp-export-size-exceeded" : ""}`}>{formatBytes(estimateHdvSize())}</span> / {formatBytes(maxHdvBytes)}</div>
+          }
+        </div>
+        <div className={`dcp-export-controls${activeTab == TAB_INDEX_SELECT ? "" : " dcp-export-row-inactive"}`}>
+          <button
+            className="dcp-export-button"
+            disabled={activeTab != TAB_INDEX_SELECT || isExportButtonDisabled()}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (activeTab == TAB_INDEX_SELECT) {
+                handleExportClick()
+              }
+            }}>Export</button>
+        </div>
       </div>
       <PopupMenu
         key="drive-popup"

@@ -114,6 +114,31 @@ export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   // UI-only setting, pass along not necessary
 }
 
+export type DiskCollectionSortMode = "name-asc" | "name-desc" | "date-newest" | "date-oldest"
+
+export const getPreferenceDiskCollectionSort = (tabIndex: number): DiskCollectionSortMode | undefined => {
+  const item = localStorage.getItem(`diskCollectionSort.${tabIndex}`)
+  if (!item) {
+    return undefined
+  }
+
+  try {
+    const value = JSON.parse(item)
+    if (value === "name-asc" || value === "name-desc" || value === "date-newest" || value === "date-oldest") {
+      return value
+    }
+  } catch {
+    // Invalid data is treated as unset and falls back to per-tab default.
+  }
+
+  localStorage.removeItem(`diskCollectionSort.${tabIndex}`)
+  return undefined
+}
+
+export const setPreferenceDiskCollectionSort = (tabIndex: number, mode: DiskCollectionSortMode) => {
+  localStorage.setItem(`diskCollectionSort.${tabIndex}`, JSON.stringify(mode))
+}
+
 export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
   if (mode === "off") {
     localStorage.removeItem("touchJoystickMode")
