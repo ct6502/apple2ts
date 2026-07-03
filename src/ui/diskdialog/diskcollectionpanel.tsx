@@ -184,6 +184,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   // True while the export tab is open; used to detect a fresh open so that
   // previously-failed (unresolved) disks can be retried.
   const exportTabOpenRef = useRef(false)
+  const vtocProgressVisibleRef = useRef(false)
 
   const TAB_INDEX_SELECT = 3
 
@@ -656,19 +657,19 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
 
-  // Whenever the panel is visible, fill in (and cache) the VTOC type of any disk
-  // that doesn't already have one by downloading its bytes. The exportable badge
-  // is shown on every tab, so verification must run on every tab for it to be
-  // accurate everywhere. Built-in disks, new releases, and bookmarks are all
-  // treated identically: an HDV or previously-cached type is filled in without a
-  // download (see restoreCachedVtocType), and only disks small enough to ever be
-  // exported are resolved here -- so large disks and un-downloadable (e.g.
-  // CORS-blocked) disks never trigger a download and never show as exportable.
-  // Disks are resolved one at a time to avoid a download stampede, and each
-  // result is cached in local storage so a given disk is only ever downloaded
-  // once. Download failures are remembered for the browser session
-  // (sessionStorage) so they aren't re-attempted on reload; they are retried in a
-  // new browser session.
+  // While the Export tab is visible, fill in (and cache) the VTOC type of any
+  // disk that doesn't already have one by downloading its bytes. This keeps VTOC
+  // probing and its progress modal scoped to export workflows only. Built-in
+  // disks, new releases, and bookmarks are treated identically: an HDV or
+  // previously-cached type is filled in without a download (see
+  // restoreCachedVtocType), and only disks small enough to ever be exported are
+  // resolved here -- so large disks and un-downloadable (e.g. CORS-blocked)
+  // disks never trigger a download and never show as exportable. Disks are
+  // resolved one at a time to avoid a download stampede, and each result is
+  // cached in local storage so a given disk is only ever downloaded once.
+  // Download failures are remembered for the browser session (sessionStorage) so
+  // they aren't re-attempted on reload; they are retried in a new browser
+  // session.
   useEffect(() => {
     // The panel content is shown when the flyout is open (minimal theme) or
     // always (classic theme renders it inside a dialog), matching Flyout's own
@@ -676,7 +677,31 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // both themes, not just when isFlyoutOpen is toggled.
     const panelVisible = isFlyoutOpen || !isMinimalTheme()
     if (!panelVisible) {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
       exportTabOpenRef.current = false
+      return
+    }
+
+    // VTOC verification is only driven from the Export tab. Other tabs should
+    // not trigger downloads or show progress while browsing.
+    if (activeTab !== TAB_INDEX_SELECT) {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
+      return
+    }
+
+    // While exporting or building, progress ownership belongs to the export
+    // pipeline; avoid overlapping VTOC progress updates.
+    if (exportQueue.length > 0 || downloadedDisks.length > 0) {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
       return
     }
 
@@ -693,18 +718,27 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     // superset of all exportable disks, but its rendered list is pre-filtered to
     // already-determined disks; use the full exportable candidate set for it so
     // its not-yet-determined disks still get resolved when it's navigated to.
-    const visibleCandidates = activeTab === TAB_INDEX_SELECT
-      ? diskCollection.filter(isDiskExportable)
-      : tabs[activeTab].disks
-    const pending = visibleCandidates.find((item) =>
+    const visibleCandidates = diskCollection.filter(isDiskExportable)
+    const pendingCandidates = visibleCandidates.filter((item) =>
       item.vtocType === undefined &&
       isDiskExportable(item) &&
-      !vtocResolveAttempted.current.has(itemKey(item)) &&
       !hasSessionVtocFailure(item.diskUrl.toString())
     )
+    const pending = pendingCandidates.find((item) =>
+      !vtocResolveAttempted.current.has(itemKey(item))
+    )
     if (!pending) {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
       return
     }
+
+    const currentDisk = vtocResolveAttempted.current.size + 1
+    const totalDisks = vtocResolveAttempted.current.size + pendingCandidates.length
+    showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
+    vtocProgressVisibleRef.current = true
 
     vtocResolveAttempted.current.add(itemKey(pending))
     // Capture the ref's Set (stable across renders) and the item key so the
@@ -753,7 +787,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, isFlyoutOpen, diskCollection, vtocCheckPass])
+  }, [activeTab, isFlyoutOpen, diskCollection, vtocCheckPass, exportQueue.length, downloadedDisks.length])
 
   return (
     <Flyout
