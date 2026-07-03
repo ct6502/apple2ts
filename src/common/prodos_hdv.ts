@@ -3391,6 +3391,133 @@ const installDosMasterLikePartitions = (
   }
 }
 
+// Locates a root-directory file entry by name and returns its on-disk storage descriptor
+// (storage type, key block, and EOF length). Used to overwrite a base-image system file in
+// place. Directories (storage type $0D) and empty slots are skipped.
+const findRootFileEntry = (
+  disk: Uint8Array,
+  dirBlocks: number[],
+  fileName: string,
+): { storageType: 1 | 2 | 3; keyBlock: number; eof: number } | undefined => {
+  for (let b = 0; b < dirBlocks.length; b++) {
+    const block = dirBlocks[b]
+    const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const startIndex = b === 0 ? 1 : 0
+    for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+      const entryOffset = getDirEntryOffset(slot)
+      const byte0 = dirBlock[entryOffset]
+      if (isDirectorySlotFree(byte0)) continue
+      const storageType = (byte0 >> 4) & 0x0F
+      if (storageType < 1 || storageType > 3) continue
+      const entry = dirBlock.slice(entryOffset, entryOffset + DIR_ENTRY_SIZE)
+      if (readDirectoryEntryName(entry) !== fileName) continue
+      return {
+        storageType: storageType as 1 | 2 | 3,
+        keyBlock: readLittleEndian16(entry, 17),
+        eof: readLittleEndian24(entry, 21),
+      }
+    }
+  }
+  return undefined
+}
+
+// Overwrites an existing ProDOS file's data blocks in place with newData, walking the same
+// seedling/sapling/tree block structure as readFileDataFromProDosImage. The caller must
+// ensure newData.length equals the file's EOF so the existing block layout is reused exactly
+// (no allocation or directory changes). Each written block is zero-padded past the copied
+// bytes. Returns true when all bytes were written.
+const overwriteProDosFileData = (
+  disk: Uint8Array,
+  storageType: 1 | 2 | 3,
+  keyBlock: number,
+  newData: Uint8Array,
+): boolean => {
+  const eof = newData.length
+  let pos = 0
+  const writeBlock = (blockNum: number) => {
+    if (pos >= eof || blockNum === 0) return
+    const n = Math.min(BLOCK_SIZE, eof - pos)
+    const offset = blockNum * BLOCK_SIZE
+    if (offset < 0 || offset + BLOCK_SIZE > disk.length) return
+    disk.set(newData.subarray(pos, pos + n), offset)
+    if (n < BLOCK_SIZE) disk.fill(0, offset + n, offset + BLOCK_SIZE)
+    pos += n
+  }
+
+  if (storageType === 1) {
+    writeBlock(keyBlock)
+    return pos >= eof
+  }
+
+  if (storageType === 2) {
+    const indexBlock = readBlock(disk, keyBlock)
+    if (!indexBlock) return false
+    for (let i = 0; i < 256 && pos < eof; i++) {
+      const blockNum = indexBlock[i] | (indexBlock[256 + i] << 8)
+      if (blockNum === 0) {
+        pos += Math.min(BLOCK_SIZE, eof - pos)
+        continue
+      }
+      writeBlock(blockNum)
+    }
+    return pos >= eof
+  }
+
+  const masterBlock = readBlock(disk, keyBlock)
+  if (!masterBlock) return false
+  for (let i = 0; i < 256 && pos < eof; i++) {
+    const indexBlockNum = masterBlock[i] | (masterBlock[256 + i] << 8)
+    if (indexBlockNum === 0) {
+      pos += Math.min(BLOCK_SIZE * 256, eof - pos)
+      continue
+    }
+    const indexBlock = readBlock(disk, indexBlockNum)
+    if (!indexBlock) continue
+    for (let j = 0; j < 256 && pos < eof; j++) {
+      const blockNum = indexBlock[j] | (indexBlock[256 + j] << 8)
+      if (blockNum === 0) {
+        pos += Math.min(BLOCK_SIZE, eof - pos)
+        continue
+      }
+      writeBlock(blockNum)
+    }
+  }
+  return pos >= eof
+}
+
+// The base HDV template (dosmaster18.po) ships with ProDOS 8 v2.0.3. Some ProDOS games are
+// unstable under 2.0.3 (e.g. interrupt-driven / language-card titles), so we upgrade the
+// kernel by copying PRODOS and BASIC.SYSTEM from ProDOS 2.4.3.po over the base's identically
+// sized copies. Equal byte length => identical block layout, so the base's existing blocks are
+// reused and the directory/volume bitmap are never touched. Best-effort: if the upgrade disk
+// can't be loaded, or a file is missing or a different size, the base 2.0.3 version is kept.
+const upgradeBaseProDosToLatest = async (hdv: Uint8Array, dirBlocks: number[]): Promise<void> => {
+  const UPGRADE_FILE_NAMES = ["PRODOS", "BASIC.SYSTEM"]
+  let upgradeSource: Uint8Array
+  try {
+    const response = await fetch("disks/ProDOS%202.4.3.po")
+    if (!response.ok) return
+    upgradeSource = new Uint8Array(await response.arrayBuffer())
+  } catch (e) {
+    console.warn("[HDV Export] Could not load ProDOS 2.4.3.po; keeping base ProDOS version.", e)
+    return
+  }
+
+  const upgradeFiles = extractProDosFilesRecursive(upgradeSource)
+  for (const targetName of UPGRADE_FILE_NAMES) {
+    const replacement = upgradeFiles.find((f) => !f.relativePath && f.name === targetName)
+    if (!replacement) continue
+    const existing = findRootFileEntry(hdv, dirBlocks, targetName)
+    if (!existing) continue
+    // In-place overwrite requires an exact size match so the existing block layout fits.
+    if (existing.eof !== replacement.data.length) {
+      console.warn(`[HDV Export] Skipping ${targetName} upgrade: size ${replacement.data.length} != base ${existing.eof}.`)
+      continue
+    }
+    overwriteProDosFileData(hdv, existing.storageType, existing.keyBlock, replacement.data)
+  }
+}
+
 export const buildProDosHdv = async (
   files: Array<{ name: string; type: number; data: Uint8Array; auxType?: number }>,
   volumeName = "APPLE2TS",
@@ -3419,6 +3546,11 @@ export const buildProDosHdv = async (
   if (dirBlocks.length === 0) {
     throw new Error("Could not locate ProDOS root directory")
   }
+
+  // Upgrade the base image's ProDOS 8 kernel (and BASIC.SYSTEM) to 2.4.3 in place before
+  // importing disks, for better compatibility with some ProDOS games. Best-effort; keeps
+  // the base version if the upgrade disk is unavailable.
+  await upgradeBaseProDosToLatest(hdv, dirBlocks)
 
   const rootHeader = new Uint8Array(hdv.buffer, ROOT_DIR_BLOCK * BLOCK_SIZE, BLOCK_SIZE)
   const volumeEntryOffset = getDirEntryOffset(0)
