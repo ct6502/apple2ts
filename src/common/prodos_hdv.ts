@@ -87,7 +87,8 @@ const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlo
 }
 
 const formatMenuScreenTitle = (name: string) => {
-  const safeName = " " + name.replace(/"/g, "'").slice(0, 34).toUpperCase() + " "
+  // Reserve 2 of the 34 columns for the leading/trailing spaces so safeName never exceeds 34.
+  const safeName = " " + name.replace(/"/g, "'").slice(0, 32).toUpperCase() + " "
   const leftPad = Math.max(0, Math.floor((34 - safeName.length) / 2))
   const rightPad = Math.max(0, 34 - safeName.length - leftPad)
   return { safeName, leftPad, rightPad }
