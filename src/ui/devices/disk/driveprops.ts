@@ -390,7 +390,9 @@ export const handleSetDiskFromURL = async (url: string,
     response = await fetchWithCorsProxy(url)
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
-      showGlobalProgressModal(false)
+      if (!callback) {
+        showGlobalProgressModal(false)
+      }
       
       // Show user-friendly error message
       const isGitHub = url.includes("github.com")
@@ -514,7 +516,9 @@ export const handleSetDiskFromURL = async (url: string,
       callback(null)
     }
   } finally {
-    showGlobalProgressModal(false)
+    if (!callback) {
+      showGlobalProgressModal(false)
+    }
   }
 }
 
