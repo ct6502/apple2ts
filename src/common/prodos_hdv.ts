@@ -1427,6 +1427,24 @@ const buildDosMasterDispatcherVolume = (): Uint8Array => {
 }
 
 /**
+ * Strips a 2IMG (.2mg) container's 64-byte header so the underlying ProDOS/DOS block image
+ * can be parsed directly. 2IMG files begin with the ASCII magic "2IMG" followed by a header
+ * whose length is stored at offset 8 (always 64 in practice). Returns the buffer unchanged
+ * when it is not a 2IMG container (e.g. raw .po/.hdv). Without this, the volume directory at
+ * block 2 sits 64 bytes off and extraction finds zero files (the disk then falls back to a
+ * raw passthrough that only shows "PRODOS FILES IMPORTED"/CATALOG instead of launching).
+ */
+export const stripTwoImgHeader = (data: Uint8Array): Uint8Array => {
+  if (data.length < 64) return data
+  if (data[0] !== 0x32 || data[1] !== 0x49 || data[2] !== 0x4d || data[3] !== 0x47) return data // "2IMG"
+  const headerLength = data[8] | (data[9] << 8)
+  const offset = headerLength >= 64 ? headerLength : 64
+  // Return a fresh, zero-byteOffset copy (slice, not subarray) so downstream parsers that
+  // read via the underlying ArrayBuffer are not thrown off by a non-zero byteOffset.
+  return data.length > offset ? data.slice(offset) : data
+}
+
+/**
  * Classifies a disk image's filesystem family ("dos" | "prodos" | "unknown") from its
  * raw bytes and filename. Uses structural VTOC/volume-directory probes first, then falls
  * back to extension/size heuristics. WOZ is a bitstream container, so it always returns

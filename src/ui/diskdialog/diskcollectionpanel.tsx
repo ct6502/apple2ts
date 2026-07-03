@@ -3,7 +3,7 @@ import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../common/utility"
-import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry, classifyImageKind, determineVtocType } from "../../common/prodos_hdv"
+import { buildProDosHdv, ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_DOS_MASTER, PRODOS_FILE_TYPE_TEXT, MenuDiskEntry, classifyImageKind, determineVtocType, stripTwoImgHeader } from "../../common/prodos_hdv"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
@@ -197,17 +197,23 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   const isDiskExportable = (disk: DiskCollectionItem) => {
-    // A disk whose VTOC has been determined to be neither DOS nor ProDOS ("other"), or a
-    // DOS 3.3 disk whose greeting installs a language-card DOS relocator ("dosup", which
-    // is incompatible with DOS.MASTER), cannot be exported. An undetermined (undefined)
-    // vtocType is treated as potentially exportable until background determination resolves it.
-    return disk.fileSize < maxHdvBytes * 0.95 && disk.vtocType !== "other" && disk.vtocType !== "dosup"
+    // A disk explicitly flagged exportDisabled is never exportable (e.g. whole-volume
+    // desktop OS boot disks that assume they own the boot volume root and can't run from
+    // an imported subdirectory). A disk whose VTOC has been determined to be neither DOS
+    // nor ProDOS ("other"), or a DOS 3.3 disk whose greeting installs a language-card DOS
+    // relocator ("dosup", which is incompatible with DOS.MASTER), cannot be exported. An
+    // undetermined (undefined) vtocType is treated as potentially exportable until
+    // background determination resolves it.
+    return !disk.exportDisabled && disk.fileSize < maxHdvBytes * 0.95 && disk.vtocType !== "other" && disk.vtocType !== "dosup"
   }
 
   // Determine the export badge state and tooltip for a disk. Exportable disks show
   // a green badge; disks that cannot be exported show an orange badge explaining
   // why; disks whose VTOC hasn't been determined yet show a yellow "pending" badge.
   const getExportBadgeInfo = (disk: DiskCollectionItem): { state: "exportable" | "blocked" | "pending"; title: string } => {
+    if (disk.exportDisabled) {
+      return { state: "blocked", title: "Export is not currently supported for this disk" }
+    }
     if (disk.fileSize >= maxHdvBytes * 0.95) {
       return { state: "blocked", title: "Disk is too large to be exported" }
     }
@@ -528,8 +534,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         const isText = downloadedDisk.filename.toUpperCase().endsWith(".TXT")
         // Prefer the decoded DOS-order sector image for WOZ DOS disks so the runtime
         // volume is a plain .dsk that DOS.MASTER can read; otherwise use the raw buffer.
+        // Strip any 2IMG (.2mg) 64-byte header so the ProDOS/DOS block image parses from
+        // block 0 (otherwise extraction finds no files and the disk only shows
+        // "PRODOS FILES IMPORTED"/CATALOG instead of launching).
         const wozDosImage = wozDosImageByIndex.get(index)
-        let data = wozDosImage ?? downloadedDisk.buffer
+        let data = wozDosImage ?? stripTwoImgHeader(downloadedDisk.buffer)
         if (fileKind === "dos" && !isText) {
           // DOS.MASTER always runs a greeting named HELLO on the selected volume; ensure
           // one exists (chaining to the source disk's real greeting) so booting a volume

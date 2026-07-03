@@ -378,7 +378,8 @@ type DiskCollectionItem = {
   cloudData?: CloudData,
   params?: string,
   fileSize: number,
-  vtocType?: VtocType
+  vtocType?: VtocType,
+  exportDisabled?: boolean
 }
 
 interface OpenerWindow {

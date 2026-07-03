@@ -73,7 +73,8 @@ export const newReleases: DiskCollectionItem[] = [
     diskUrl: "https://a2desktop.s3.amazonaws.com/A2DeskTop-1.5-alpha4-en_800k.2mg",
     detailsUrl: "https://github.com/a2stuff/a2d",
     params: "color=white&speed=fast&scanlines=off",
-    fileSize: 819264
+    fileSize: 819264,
+    exportDisabled: true
   },
   {
     type: -1,
