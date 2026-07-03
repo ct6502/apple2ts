@@ -86,6 +86,13 @@ const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlo
   return data
 }
 
+const formatMenuScreenTitle = (name: string) => {
+  const safeName = " " + name.replace(/"/g, "'").slice(0, 34).toUpperCase() + " "
+  const leftPad = Math.max(0, Math.floor((34 - safeName.length) / 2))
+  const rightPad = Math.max(0, 34 - safeName.length - leftPad)
+  return { safeName, leftPad, rightPad }
+}
+
 // Applesoft BASIC keyword token table, sorted longest-first so greedy matching
 // always picks the longest possible token at each position.
 const APPLESOFT_TOKENS: ReadonlyArray<readonly [string, number]> = [
@@ -273,6 +280,7 @@ const generateMenuSourceProgram = (
   for (let i = 0; i < count; i++) {
     runtimeVolumes[i] = runtimeVolumeByMenuIndex?.[i] ?? (i + 1)
   }
+  const diskTitles = menuEntries.slice(0, count).map((entry) => entry.displayName || entry.filename)
 
   lines.push("10 D$=CHR$(4)")
   lines.push(`20 MAX=${count}:I=1`)
@@ -285,7 +293,7 @@ const generateMenuSourceProgram = (
   lines.push("50 IF K=8 THEN I=I-1:IF I<1 THEN I=MAX")
   lines.push("60 IF K=21 THEN I=I+1:IF I>MAX THEN I=1")
   lines.push("70 IF K=8 OR K=21 THEN GOSUB 1000:GOTO 40")
-  lines.push("80 IF K=13 THEN GOSUB 2000:GOTO 40")
+  lines.push("80 IF K=13 OR K=32 THEN GOSUB 2000:GOTO 40")
   lines.push("90 GOTO 40")
 
   lines.push("1000 HOME")
@@ -296,18 +304,22 @@ const generateMenuSourceProgram = (
     const lineNo = 1010 + idx
     lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(idx).padStart(2, "0")},A$2000\"`)
   }
-  // Apple II text mode is uppercase-oriented; lowercase prints as symbols on many setups.
-  lines.push("1120 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
-  lines.push("1130 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
-  lines.push("1160 RETURN")
+  for (let idx = 1; idx <= count; idx++) {
+    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
+    const lineNo = 1120 + idx
+    lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 22:HTAB 1:PRINT "<- ' + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + ' ->";')
+  }
+  lines.push("1220 RETURN")
 
   // Startup render is explicit so initial display matches the first disk.
   lines.push("3000 HOME")
   lines.push("3010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
   lines.push(`3020 PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(1).padStart(2, "0")},A$2000\"`)
-  lines.push("3030 VTAB 22:HTAB 1:PRINT \"USE <- AND -> TO SELECT A DISK\"")
-  lines.push("3040 VTAB 23:HTAB 1:PRINT \"PRESS ENTER TO RUN\"")
-  lines.push("3050 RETURN")
+  {
+    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[0])
+    lines.push('3030 VTAB 22:HTAB 1:PRINT "<- ' + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + ' ->";')
+  }
+  lines.push("3040 RETURN")
 
   // ENTER handling by image kind.
   // DOS images: use DOS.MASTER commands (non-emulator-compatible path).
@@ -1728,7 +1740,7 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       // copy-protected/non-standard disks are classified "other" and not exported.
       const dosImage = loadWozAndExtractDosImage(data)
       if (dosImage) {
-        return (dosImageUsesLanguageCard(dosImage) || dosImageGreetingIsEmpty(dosImage)) ? "dosup" : "dos"
+        return (dosImageUsesLanguageCard(dosImage) || dosImageGreetingIsEmpty(dosImage)) ? ("dosup" as VtocType) : "dos"
       }
     }
     return "other"
@@ -1742,7 +1754,7 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
     data.length === (35 * 16 * 256) &&
     dosLogicalImageHasValidCatalog(data) &&
     (dosImageUsesLanguageCard(data) || dosImageGreetingIsEmpty(data))) {
-    return "dosup"
+    return "dosup" as VtocType
   }
   return kind === "unknown" ? "other" : kind
 }
@@ -4162,3 +4174,4 @@ export const PRODOS_FILE_TYPE_TEXT = 0x04
 export const PRODOS_FILE_TYPE_LIBRARY = 0xE0
 // DOS.MASTER volumes are commonly represented as file type $F1 on ProDOS volumes.
 export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
+
