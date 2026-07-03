@@ -1731,11 +1731,12 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
 // In ProDOS a "system program" is any file of type $FF (SYS) loaded at $2000; the
 // ".SYSTEM" name is only a convention. Two kinds of system program cannot be launched as
 // a standalone program once a disk has been extracted into a subdirectory:
-//  - Driver installers such as *.CLOCK.SYSTEM (e.g. ProDOS 2.4.x's NS.CLOCK.SYSTEM)
+//  - Driver installers such as CLOCK.SYSTEM / NS.CLOCK.SYSTEM (ProDOS 2.4.x clock drivers)
 //    install a driver and then chain to the next .SYSTEM file by scanning the *boot
 //    volume root* -- verified live that they ignore both the current prefix and the
 //    $0280 pathname buffer -- so they always fail with "Unable to find next '.SYSTEM'
-//    file" when run from an imported subdirectory.
+//    file" when run from an imported subdirectory (and drop into the ProDOS 2.4.x "Bitsy
+//    Bye" selector instead of the game).
 //  - QUIT.SYSTEM is the ProDOS quit dispatcher; under the menu's ProDOS kernel it just
 //    quits to the emulator splash (a dead end), so it is never a useful launch target.
 // Skip those and launch the first remaining system program in catalog order. For
@@ -1744,7 +1745,9 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
 // so the disk launches into a working, interactive ProDOS 2.4.x environment.
 const isNonLaunchableSystemFile = (name: string): boolean => {
   const upper = name.toUpperCase()
-  return upper === "QUIT.SYSTEM" || upper.endsWith(".CLOCK.SYSTEM")
+  // endsWith("CLOCK.SYSTEM") matches both a bare CLOCK.SYSTEM and prefixed variants like
+  // NS.CLOCK.SYSTEM / THERMO.CLOCK.SYSTEM.
+  return upper === "QUIT.SYSTEM" || upper.endsWith("CLOCK.SYSTEM")
 }
 
 // Scans a ProDOS disk's imported files for an MLI SET_PREFIX call (JSR $BF00 followed by
