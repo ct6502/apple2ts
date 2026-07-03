@@ -456,7 +456,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       ]))
       setExportQueue((prevExportQueue) => prevExportQueue.slice(1))
     } else if (exportQueue.length > 0) {
-      showGlobalProgressModal(true, `Downloading disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
+      showGlobalProgressModal(true, `Importing disk ${selectedDisks.length - exportQueue.length + 1}/${selectedDisks.length}`)
       loadDisk(-1, exportQueue[0], processExportQueue)
     }
   }
