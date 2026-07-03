@@ -259,12 +259,18 @@ export const loadAndConvertImageToHires = async (
   stampLogo = false,
   watermarkFrameIndex = 0,
 ): Promise<Uint8Array | null> => {
-  if (!imageUrl) return null
-
   const logo = stampLogo ? await loadFallbackWatermarkImage() : null
   const watermark = stampLogo
     ? (await getRunningGuyFrameCanvas(watermarkFrameIndex)) || logo
     : null
+  const buildFallbackHires = (): Uint8Array | null => {
+    if (!stampLogo) return null
+    const hiresData = new Uint8Array(8192)
+    if (watermark) stampLogoIntoHires(hiresData, watermark)
+    return hiresData
+  }
+
+  if (!imageUrl) return buildFallbackHires()
 
   try {
     let url = imageUrl
@@ -284,7 +290,7 @@ export const loadAndConvertImageToHires = async (
           canvas.height = 192
           const ctx = canvas.getContext("2d")
           if (!ctx) {
-            resolve(null)
+            resolve(buildFallbackHires())
             return
           }
           
@@ -304,17 +310,17 @@ export const loadAndConvertImageToHires = async (
           resolve(hiresData)
         } catch (e) {
           console.error("Error converting image to hi-res:", e)
-          resolve(null)
+          resolve(buildFallbackHires())
         }
       }
       img.onerror = () => {
-        resolve(null)
+        resolve(buildFallbackHires())
       }
       img.src = url
     })
   } catch (e) {
     console.error("Error loading image:", e)
-    return null
+    return buildFallbackHires()
   }
 }
 
