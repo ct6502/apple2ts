@@ -217,7 +217,8 @@ const generateMenuSourceProgram = (
   menuProDosCommands: Array<string | undefined>,
   menuProDosPrefixes: Array<string | undefined>,
   aliasShimInstallCommand?: string,
-  runtimeVolumeByMenuIndex?: Array<number | undefined>
+  runtimeVolumeByMenuIndex?: Array<number | undefined>,
+  menuNeedsAliasShim?: boolean[]
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
   // Build the BASIC statement(s) that launch the DOS runtime, using paths relative to
@@ -327,10 +328,14 @@ const generateMenuSourceProgram = (
       const runCmd = menuProDosCommands[idx - 1]
       const prefix = menuProDosPrefixes[idx - 1]
       // Install the absolute-SET_PREFIX rewrite shim only here, immediately before a
-      // ProDOS launch. It is never installed for DOS images, so DOS.MASTER can safely
-      // reclaim the language card without the shim's resident hook crashing it. The
+      // ProDOS launch, and only for disks that actually issue a SET_PREFIX MLI call
+      // (menuNeedsAliasShim). It is never installed for DOS images, so DOS.MASTER can
+      // safely reclaim the language card without the shim's resident hook crashing it,
+      // and never for ProDOS disks that don't need it, so interrupt/language-card games
+      // (e.g. Glider) aren't destabilized by an unnecessary resident MLI hook. The
       // installer is idempotent, so re-running it across selections is harmless.
-      const shimInstall = aliasShimInstallCommand ? 'PRINT D$;"' + aliasShimInstallCommand + '":' : ''
+      const needsShim = menuNeedsAliasShim?.[idx - 1] ?? false
+      const shimInstall = (aliasShimInstallCommand && needsShim) ? 'PRINT D$;"' + aliasShimInstallCommand + '":' : ''
       if (prefix && runCmd) {
         lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"' + runCmd + '":RETURN')
       } else if (prefix) {
@@ -1742,6 +1747,25 @@ const isNonLaunchableSystemFile = (name: string): boolean => {
   return upper === "QUIT.SYSTEM" || upper.endsWith(".CLOCK.SYSTEM")
 }
 
+// Scans a ProDOS disk's imported files for an MLI SET_PREFIX call (JSR $BF00 followed by
+// command byte $C6). The resident alias shim exists solely to rewrite an absolute SET_PREFIX
+// from a disk's original volume path to its HDV subdirectory, so a disk that never issues
+// SET_PREFIX cannot need it. Skipping the shim for such disks avoids installing a resident
+// MLI hook (which lives in the language card and reroutes every MLI call); that hook
+// destabilizes games that keep code/data in the language card or drive interrupts -- e.g.
+// Glider, which otherwise dies mid-load with a ProDOS "RESTART SYSTEM" system death.
+const proDosFilesIssueSetPrefix = (files: BuildInputFile[]): boolean => {
+  for (const file of files) {
+    const d = file.data
+    for (let i = 0; i + 3 < d.length; i++) {
+      if (d[i] === 0x20 && d[i + 1] === 0x00 && d[i + 2] === 0xbf && d[i + 3] === 0xc6) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 const detectProDosLaunchCommand = (files: BuildInputFile[]): string | undefined => {
   // Preserve on-disk root catalog order by scanning input sequence directly.
   const rootFiles = files.filter((f) => !f.relativePath)
@@ -1874,6 +1898,10 @@ const preprocessInputFilesForMenu = (
   const directoryPlans: DirectoryImportPlan[] = []
   const menuProDosCommands: Array<string | undefined> = []
   const menuProDosPrefixes: Array<string | undefined> = []
+  // Per-menu-index flag: does this ProDOS disk issue a SET_PREFIX MLI call and thus need
+  // the resident alias-prefix shim? Disks that never call SET_PREFIX skip the shim so its
+  // MLI hook can't destabilize language-card/interrupt games (see proDosFilesIssueSetPrefix).
+  const menuNeedsAliasShim: boolean[] = []
   // DOS 3.3 images become DOS.MASTER virtual volumes (V1, V2, ...). They are
   // collected here in menu order for DOS.INSTALL-style contiguous partition
   // placement; runtimeVolumeByMenuIndex maps each source menu entry to its
@@ -1932,6 +1960,7 @@ const preprocessInputFilesForMenu = (
       directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
       menuProDosPrefixes[i] = directoryName
       menuProDosCommands[i] = launchCommand
+      menuNeedsAliasShim[i] = proDosFilesIssueSetPrefix(directoryFiles)
       continue
     }
 
@@ -1975,6 +2004,7 @@ const preprocessInputFilesForMenu = (
         directoryPlans.push({ name: directoryName, files: directoryFiles, sourceMenuIndex: i, launchCommand })
         menuProDosPrefixes[i] = directoryName
         menuProDosCommands[i] = launchCommand
+        menuNeedsAliasShim[i] = proDosFilesIssueSetPrefix(directoryFiles)
       } else {
         const normalized = makeUniqueProDosFilename(file.name, usedNames)
         outputFiles.push({ ...file, name: normalized })
@@ -2010,7 +2040,7 @@ const preprocessInputFilesForMenu = (
     }
   }
 
-  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, runtimeVolumes, runtimeVolumeByMenuIndex }
+  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex }
 }
 
 const encodeProDosTime = (date: Date = new Date()) => {
@@ -3398,7 +3428,7 @@ export const buildProDosHdv = async (
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
   // Reserve the screenshot subdirectory name so imported ProDOS volumes can't collide with it.
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, runtimeVolumes, runtimeVolumeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -3441,11 +3471,13 @@ export const buildProDosHdv = async (
   }
 
   const withStartup = [...outputFiles]
-  // Always copy the alias shim file onto the HDV whenever any ProDOS disk is imported.
-  // It is NOT installed at boot anymore: the menu BRUNs it per-launch, only before a
-  // ProDOS disk. DOS images never install it, so DOS.MASTER can reclaim the language
-  // card (where the shim's resident hook lives) without crashing.
-  const includeAliasShimFile = directoryPlans.length > 0
+  // Copy the alias shim file onto the HDV only when at least one imported ProDOS disk
+  // actually issues a SET_PREFIX MLI call (menuNeedsAliasShim). It is NOT installed at
+  // boot: the menu BRUNs it per-launch, only before a ProDOS disk that needs it. DOS
+  // images never install it (so DOS.MASTER can reclaim the language card where the shim's
+  // resident hook lives), and ProDOS disks that never call SET_PREFIX skip it too (so
+  // interrupt/language-card games aren't destabilized by an unnecessary MLI hook).
+  const includeAliasShimFile = menuNeedsAliasShim.some(Boolean)
 
   const launcherName = "A2TSLAUNCH"
   withStartup.unshift({
@@ -3487,7 +3519,7 @@ export const buildProDosHdv = async (
     withStartup.push({
       name: "MENUSRC",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex)),
+      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, menuNeedsAliasShim)),
       auxType: 0x0801,
     })
   }
