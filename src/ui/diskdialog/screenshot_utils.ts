@@ -57,20 +57,81 @@ const APPLE2_COLORS = {
 }
 
 /**
- * Loads (once) the Apple2TS logo used to watermark exported screenshots.
- * Resolves to null if the logo can't be loaded.
+ * Loads watermark artwork from runningGuy.gif.
+ * Uses ImageDecoder when available so exports can use successive animated frames.
  */
-let logoImagePromise: Promise<HTMLImageElement | null> | null = null
-const loadLogoImage = (): Promise<HTMLImageElement | null> => {
-  if (!logoImagePromise) {
-    logoImagePromise = new Promise((resolve) => {
+const RUNNING_GUY_URL = "assets/runningGuy.gif"
+const FALLBACK_WATERMARK_URL = "logo48x48.png"
+
+let fallbackWatermarkPromise: Promise<HTMLImageElement | null> | null = null
+const loadFallbackWatermarkImage = (): Promise<HTMLImageElement | null> => {
+  if (!fallbackWatermarkPromise) {
+    fallbackWatermarkPromise = new Promise((resolve) => {
       const img = new Image()
       img.onload = () => resolve(img)
       img.onerror = () => resolve(null)
-      img.src = new URL("logo48x48.png", window.location.href).toString()
+      img.src = new URL(FALLBACK_WATERMARK_URL, window.location.href).toString()
     })
   }
-  return logoImagePromise
+  return fallbackWatermarkPromise
+}
+
+let runningGuyDataPromise: Promise<ArrayBuffer | null> | null = null
+const loadRunningGuyGifData = async (): Promise<ArrayBuffer | null> => {
+  if (!runningGuyDataPromise) {
+    runningGuyDataPromise = (async () => {
+      try {
+        const response = await fetch(new URL(RUNNING_GUY_URL, window.location.href).toString())
+        if (!response.ok) return null
+        return await response.arrayBuffer()
+      } catch {
+        return null
+      }
+    })()
+  }
+  return runningGuyDataPromise
+}
+
+const runningGuyFrameCache = new Map<number, HTMLCanvasElement>()
+
+const getRunningGuyFrameCanvas = async (frameIndex: number): Promise<HTMLCanvasElement | null> => {
+  if (typeof ImageDecoder === "undefined") {
+    return null
+  }
+
+  try {
+    const data = await loadRunningGuyGifData()
+    if (!data) return null
+
+    const decoder = new ImageDecoder({ data, type: "image/gif" })
+    await decoder.tracks.ready
+    const frameCount = decoder.tracks.selectedTrack?.frameCount || 1
+    const safeFrame = ((frameIndex % frameCount) + frameCount) % frameCount
+
+    const cached = runningGuyFrameCache.get(safeFrame)
+    if (cached) {
+      return cached
+    }
+
+    const result = await decoder.decode({ frameIndex: safeFrame })
+    const image = result.image
+    const canvas = document.createElement("canvas")
+    canvas.width = image.displayWidth
+    canvas.height = image.displayHeight
+    const ctx = canvas.getContext("2d")
+    if (!ctx) {
+      image.close()
+      return null
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(image, 0, 0)
+    image.close()
+    runningGuyFrameCache.set(safeFrame, canvas)
+    return canvas
+  } catch {
+    return null
+  }
 }
 
 const LOGO_NATIVE_SIZE = 48
@@ -110,7 +171,7 @@ const dilateMask = (mask: Uint8Array, size: number): Uint8Array => {
  * stays crisp), then only the logo and its outline pixels are composited into
  * the page — leaving the rest of the screenshot untouched.
  */
-const stampLogoIntoHires = (hiresData: Uint8Array, logo: HTMLImageElement): void => {
+const stampLogoIntoHires = (hiresData: Uint8Array, logo: CanvasImageSource): void => {
   const logoSize = LOGO_NATIVE_SIZE
   const outline = LOGO_OUTLINE
   const stampSize = logoSize + outline * 2 // 52: leaves room for the outline ring
@@ -189,14 +250,21 @@ const stampLogoIntoHires = (hiresData: Uint8Array, logo: HTMLImageElement): void
 /**
  * Loads an image from a URL and converts it to Apple II hi-res format
  * @param imageUrl URL to load (http/https, data URL, or relative path)
- * @param stampLogo When true, watermarks the 48×48 Apple2TS logo into the
- *   upper-right corner of the screen.
+ * @param stampLogo When true, watermarks the export screenshot.
+ * @param watermarkFrameIndex Frame index used for animated runningGuy.gif watermark.
  * @returns Hi-res binary data (8KB for 280×192) or null if load fails
  */
-export const loadAndConvertImageToHires = async (imageUrl?: string, stampLogo = false): Promise<Uint8Array | null> => {
+export const loadAndConvertImageToHires = async (
+  imageUrl?: string,
+  stampLogo = false,
+  watermarkFrameIndex = 0,
+): Promise<Uint8Array | null> => {
   if (!imageUrl) return null
 
-  const logo = stampLogo ? await loadLogoImage() : null
+  const logo = stampLogo ? await loadFallbackWatermarkImage() : null
+  const watermark = stampLogo
+    ? (await getRunningGuyFrameCanvas(watermarkFrameIndex)) || logo
+    : null
 
   try {
     let url = imageUrl
@@ -232,7 +300,7 @@ export const loadAndConvertImageToHires = async (imageUrl?: string, stampLogo = 
           // the color-matching pipeline.
           const imageData = ctx.getImageData(0, 0, 560, 192)
           const hiresData = convertCanvasToHires(imageData)
-          if (logo) stampLogoIntoHires(hiresData, logo)
+          if (watermark) stampLogoIntoHires(hiresData, watermark)
           resolve(hiresData)
         } catch (e) {
           console.error("Error converting image to hi-res:", e)

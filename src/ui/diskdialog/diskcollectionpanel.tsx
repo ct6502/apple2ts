@@ -563,8 +563,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       // Apple2TS logo into the corner. Conversion is deterministic; the result
       // is computed fresh from the source image each export (no caching).
       const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
-      for (const disk of orderedDownloadedDisks) {
-        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl, true)
+      for (let index = 0; index < orderedDownloadedDisks.length; index++) {
+        const disk = orderedDownloadedDisks[index]
+        const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl, true, index)
         screenshots.push({
           name: disk.filename.split(".")[0].slice(0, 15),
           data: screenshotData,
