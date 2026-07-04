@@ -250,6 +250,31 @@ const stampLogoIntoHires = (hiresData: Uint8Array, logo: CanvasImageSource): voi
 // localStorage key prefix for cached screenshot data URLs (keyed by absolute source URL).
 const SCREENSHOT_CACHE_PREFIX = "ssc-"
 
+// Once localStorage is exhausted and eviction fails, stop attempting writes for the rest of
+// the session so we don't log a quota warning for every screenshot.
+let screenshotCacheWritesDisabled = false
+
+const isQuotaExceededError = (e: unknown): boolean => {
+  return e instanceof DOMException &&
+    (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED" || e.code === 22 || e.code === 1014)
+}
+
+// Removes cached screenshot entries to free localStorage space. Returns true if any were removed.
+const evictCachedScreenshots = (): boolean => {
+  try {
+    const keys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith(SCREENSHOT_CACHE_PREFIX)) keys.push(key)
+    }
+    if (keys.length === 0) return false
+    for (const key of keys) localStorage.removeItem(key)
+    return true
+  } catch {
+    return false
+  }
+}
+
 const readCachedScreenshotDataUrl = (absoluteUrl: string): string | undefined => {
   try {
     return localStorage.getItem(SCREENSHOT_CACHE_PREFIX + absoluteUrl) || undefined
@@ -259,11 +284,24 @@ const readCachedScreenshotDataUrl = (absoluteUrl: string): string | undefined =>
 }
 
 const writeCachedScreenshotDataUrl = (absoluteUrl: string, dataUrl: string) => {
+  if (screenshotCacheWritesDisabled) return
+  const key = SCREENSHOT_CACHE_PREFIX + absoluteUrl
   try {
-    localStorage.setItem(SCREENSHOT_CACHE_PREFIX + absoluteUrl, dataUrl)
+    localStorage.setItem(key, dataUrl)
   } catch (e) {
-    // localStorage is unavailable or over quota; caching is best-effort so ignore.
-    console.warn("Failed to cache screenshot in local storage:", e)
+    if (isQuotaExceededError(e) && evictCachedScreenshots()) {
+      // Freed space by evicting older cached screenshots; retry once.
+      try {
+        localStorage.setItem(key, dataUrl)
+        return
+      } catch {
+        // Still over quota even after eviction.
+      }
+    }
+    // localStorage is unavailable or over quota; caching is best-effort. Disable further
+    // write attempts so we don't log this warning for every remaining screenshot.
+    screenshotCacheWritesDisabled = true
+    console.warn("Disabling screenshot local storage cache (unavailable or over quota):", e)
   }
 }
 
