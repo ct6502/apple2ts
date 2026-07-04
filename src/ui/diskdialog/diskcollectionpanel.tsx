@@ -644,8 +644,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       })
 
       // Convert each disk's preview screenshot to Apple II hi-res, stamping the
-      // Apple2TS logo into the corner. Conversion is deterministic; the result
-      // is computed fresh from the source image each export (no caching).
+      // Apple2TS logo into the corner. Conversion is deterministic; the source image is
+      // fetched through a localStorage cache (see resolveScreenshotUrlWithCache) so each
+      // screenshot only hits the network/app assets once across exports.
       const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
       for (let index = 0; index < orderedDownloadedDisks.length; index++) {
         const disk = orderedDownloadedDisks[index]

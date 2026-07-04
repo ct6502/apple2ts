@@ -247,6 +247,68 @@ const stampLogoIntoHires = (hiresData: Uint8Array, logo: CanvasImageSource): voi
   }
 }
 
+// localStorage key prefix for cached screenshot data URLs (keyed by absolute source URL).
+const SCREENSHOT_CACHE_PREFIX = "ssc-"
+
+const readCachedScreenshotDataUrl = (absoluteUrl: string): string | undefined => {
+  try {
+    return localStorage.getItem(SCREENSHOT_CACHE_PREFIX + absoluteUrl) || undefined
+  } catch {
+    return undefined
+  }
+}
+
+const writeCachedScreenshotDataUrl = (absoluteUrl: string, dataUrl: string) => {
+  try {
+    localStorage.setItem(SCREENSHOT_CACHE_PREFIX + absoluteUrl, dataUrl)
+  } catch (e) {
+    // localStorage is unavailable or over quota; caching is best-effort so ignore.
+    console.warn("Failed to cache screenshot in local storage:", e)
+  }
+}
+
+const fetchImageAsDataUrl = async (url: string): Promise<string | undefined> => {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return undefined
+    const blob = await response.blob()
+    return await new Promise<string | undefined>((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : undefined)
+      reader.onerror = () => resolve(undefined)
+      reader.readAsDataURL(blob)
+    })
+  } catch (e) {
+    // Cross-origin images without CORS headers can't be fetched/read; caller falls back
+    // to a direct <img> load from the original URL.
+    console.warn("Failed to fetch screenshot for caching:", url, e)
+    return undefined
+  }
+}
+
+/**
+ * Resolves a screenshot URL to a locally-available source, using localStorage as a cache
+ * so a given screenshot is only fetched from the network (or app assets) once. Data URLs
+ * are already local and returned unchanged. Relative/http(s) URLs are normalized to an
+ * absolute URL, looked up in the cache, and (on a miss) fetched, stored as a data URL, and
+ * returned. On any fetch/cache failure the absolute URL is returned so the caller can still
+ * attempt a direct load.
+ */
+export const resolveScreenshotUrlWithCache = async (imageUrl: string): Promise<string> => {
+  if (imageUrl.startsWith("data:")) return imageUrl
+  const absoluteUrl = (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
+    ? imageUrl
+    : new URL(imageUrl, window.location.href).toString()
+  const cached = readCachedScreenshotDataUrl(absoluteUrl)
+  if (cached) return cached
+  const dataUrl = await fetchImageAsDataUrl(absoluteUrl)
+  if (dataUrl) {
+    writeCachedScreenshotDataUrl(absoluteUrl, dataUrl)
+    return dataUrl
+  }
+  return absoluteUrl
+}
+
 /**
  * Loads an image from a URL and converts it to Apple II hi-res format
  * @param imageUrl URL to load (http/https, data URL, or relative path)
@@ -273,12 +335,10 @@ export const loadAndConvertImageToHires = async (
   if (!imageUrl) return buildFallbackHires()
 
   try {
-    let url = imageUrl
-    
-    // Handle relative URLs
-    if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("data:")) {
-      url = new URL(url, window.location.href).toString()
-    }
+    // Resolve through the localStorage cache so each screenshot is fetched at most once.
+    // Returns a data URL for cached/cacheable images (which also avoids canvas tainting),
+    // or an absolute URL to load directly when it can't be cached.
+    const url = await resolveScreenshotUrlWithCache(imageUrl)
     
     return new Promise((resolve) => {
       const img = new Image()
