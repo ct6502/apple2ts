@@ -353,6 +353,49 @@ const cacheLoadedScreenshot = (img: HTMLImageElement, cacheKey: string) => {
   }
 }
 
+// Removes a single cached screenshot entry (used to self-heal a poisoned/undecodable cache
+// write so a bad entry can't permanently break the export).
+const removeCachedScreenshot = (cacheKey: string) => {
+  try {
+    localStorage.removeItem(SCREENSHOT_CACHE_PREFIX + cacheKey)
+  } catch {
+    // localStorage unavailable — nothing to clear.
+  }
+}
+
+// Loads an <img> from a src, resolving to the element on success or null on error.
+const loadImageElement = (src: string, useCors: boolean): Promise<HTMLImageElement | null> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    if (useCors) img.crossOrigin = "anonymous"
+    img.onload = () => resolve(img)
+    img.onerror = () => resolve(null)
+    img.src = src
+  })
+}
+
+const blobToDataUrl = (blob: Blob): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : null)
+    reader.onerror = () => resolve(null)
+    reader.readAsDataURL(blob)
+  })
+}
+
+// Fetches a screenshot through the CORS proxy (matching disk-download behavior) and returns
+// its bytes as a data URL that can be loaded into an <img> without cross-origin taint.
+const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | null> => {
+  try {
+    const response = await fetch("https://proxy.corsfix.com/?" + absoluteUrl,
+      { headers: { "x-corsfix-cache": "true" } })
+    if (!response.ok) return null
+    return await blobToDataUrl(await response.blob())
+  } catch {
+    return null
+  }
+}
+
 /**
  * Loads an image from a URL and converts it to Apple II hi-res format
  * @param imageUrl URL to load (http/https, data URL, or relative path)
@@ -378,52 +421,72 @@ export const loadAndConvertImageToHires = async (
 
   if (!imageUrl) return buildFallbackHires()
 
+  const convertLoadedImage = (img: HTMLImageElement): Uint8Array | null => {
+    try {
+      const canvas = document.createElement("canvas")
+      canvas.width = 560
+      canvas.height = 192
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return buildFallbackHires()
+
+      // Clear and draw image scaled to hi-res dimensions.
+      // Mixed mode only shows top 160 lines as graphics.
+      ctx.fillStyle = "#000"
+      ctx.fillRect(0, 0, 560, 192)
+      ctx.imageSmoothingEnabled = true
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 560, 160)
+
+      // Convert to hi-res format, then stamp the logo directly into the
+      // hi-res bytes so it stays crisp instead of being blurred/fringed by
+      // the color-matching pipeline.
+      const imageData = ctx.getImageData(0, 0, 560, 192)
+      const hiresData = convertCanvasToHires(imageData)
+      if (watermark) stampLogoIntoHires(hiresData, watermark)
+      return hiresData
+    } catch (e) {
+      console.error("Error converting image to hi-res:", e)
+      return buildFallbackHires()
+    }
+  }
+
   try {
     // Resolve against the localStorage cache without issuing any network request: on a hit
-    // we load a cached data URL, on a miss we load the original URL via <img> (as before)
-    // and cache the decoded image afterwards. This avoids adding extra fetches that could
-    // compete with the connection-limited CORS proxy used for Internet Archive resolution.
+    // we load a cached data URL, on a miss we load the original URL via <img> (as before).
     const { url, cacheKey, cached } = resolveScreenshotUrlWithCache(imageUrl)
 
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.crossOrigin = "anonymous"
-      img.onload = () => {
-        try {
-          if (!cached && cacheKey) cacheLoadedScreenshot(img, cacheKey)
-          const canvas = document.createElement("canvas")
-          canvas.width = 560
-          canvas.height = 192
-          const ctx = canvas.getContext("2d")
-          if (!ctx) {
-            resolve(buildFallbackHires())
-            return
-          }
-          
-          // Clear and draw image scaled to hi-res dimensions.
-          // Mixed mode only shows top 160 lines as graphics.
-          ctx.fillStyle = "#000"
-          ctx.fillRect(0, 0, 560, 192)
-          ctx.imageSmoothingEnabled = true
-          ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 560, 160)
+    let img: HTMLImageElement | null = null
+    let proxyDataUrl: string | null = null
+    let decodedFromNetwork = false
 
-          // Convert to hi-res format, then stamp the logo directly into the
-          // hi-res bytes so it stays crisp instead of being blurred/fringed by
-          // the color-matching pipeline.
-          const imageData = ctx.getImageData(0, 0, 560, 192)
-          const hiresData = convertCanvasToHires(imageData)
-          if (watermark) stampLogoIntoHires(hiresData, watermark)
-          resolve(hiresData)
-        } catch (e) {
-          console.error("Error converting image to hi-res:", e)
-          resolve(buildFallbackHires())
-        }
-      }
-      img.onerror = () => {
-        resolve(buildFallbackHires())
-      }
-      img.src = url
-    })
+    // Attempt 1: the resolved source — a cached data URL on a hit, else the network URL.
+    img = await loadImageElement(url, true)
+    if (img) decodedFromNetwork = !cached
+
+    // (a) Self-heal: a cached data URL failed to decode (stale/poisoned entry). Evict it so
+    //     it can't permanently break the export, then retry from the network.
+    if (!img && cached && cacheKey && url !== cacheKey) {
+      removeCachedScreenshot(cacheKey)
+      img = await loadImageElement(cacheKey, true)
+      if (img) decodedFromNetwork = true
+    }
+
+    // (b) Cross-origin load failed (host sends no CORS headers). Route the load through the
+    //     CORS proxy exactly like disk downloads, then load the returned bytes locally.
+    if (!img && cacheKey) {
+      proxyDataUrl = await fetchScreenshotViaProxy(cacheKey)
+      if (proxyDataUrl) img = await loadImageElement(proxyDataUrl, false)
+    }
+
+    if (!img) return buildFallbackHires()
+
+    // Cache the decoded image for future exports (best-effort). Proxy loads already hold
+    // clean bytes; direct network loads are re-encoded via canvas.
+    if (cacheKey) {
+      if (proxyDataUrl) writeCachedScreenshotDataUrl(cacheKey, proxyDataUrl)
+      else if (decodedFromNetwork) cacheLoadedScreenshot(img, cacheKey)
+    }
+
+    return convertLoadedImage(img)
   } catch (e) {
     console.error("Error loading image:", e)
     return buildFallbackHires()
