@@ -370,18 +370,21 @@ export const handleSetDiskFromURL = async (url: string,
   }
 
   // Try direct fetch first (works in Electron with CORS bypass)
-  console.log(`🌐 Attempting direct fetch: ${url}`)
-  try {
-    response = await fetch(url)
-    if (response.ok) {
-      console.log(`✅ Direct fetch succeeded: ${url}`)
-    } else {
-      console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
+  const canUseDirectFetch = "electronAPI" in window
+  if (canUseDirectFetch) {
+    console.log(`🌐 Attempting direct fetch: ${url}`)
+    try {
+      response = await fetch(url)
+      if (response.ok) {
+        console.log(`✅ Direct fetch succeeded: ${url}`)
+      } else {
+        console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
+        response = null
+      }
+    } catch (error) {
+      console.log(`❌ Direct fetch failed with error: ${error}`)
       response = null
     }
-  } catch (error) {
-    console.log(`❌ Direct fetch failed with error: ${error}`)
-    response = null
   }
 
   // If direct fetch failed, try CORS proxies
