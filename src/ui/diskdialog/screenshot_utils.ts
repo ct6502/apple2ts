@@ -267,46 +267,52 @@ const writeCachedScreenshotDataUrl = (absoluteUrl: string, dataUrl: string) => {
   }
 }
 
-const fetchImageAsDataUrl = async (url: string): Promise<string | undefined> => {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) return undefined
-    const blob = await response.blob()
-    return await new Promise<string | undefined>((resolve) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : undefined)
-      reader.onerror = () => resolve(undefined)
-      reader.readAsDataURL(blob)
-    })
-  } catch (e) {
-    // Cross-origin images without CORS headers can't be fetched/read; caller falls back
-    // to a direct <img> load from the original URL.
-    console.warn("Failed to fetch screenshot for caching:", url, e)
-    return undefined
-  }
+/**
+ * Normalizes a screenshot URL to an absolute cache key, or returns undefined for URLs that
+ * should not be cached (data URLs are already local).
+ */
+const screenshotCacheKey = (imageUrl: string): string | undefined => {
+  if (imageUrl.startsWith("data:")) return undefined
+  return (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
+    ? imageUrl
+    : new URL(imageUrl, window.location.href).toString()
 }
 
 /**
- * Resolves a screenshot URL to a locally-available source, using localStorage as a cache
- * so a given screenshot is only fetched from the network (or app assets) once. Data URLs
- * are already local and returned unchanged. Relative/http(s) URLs are normalized to an
- * absolute URL, looked up in the cache, and (on a miss) fetched, stored as a data URL, and
- * returned. On any fetch/cache failure the absolute URL is returned so the caller can still
- * attempt a direct load.
+ * Resolves a screenshot URL against the localStorage cache WITHOUT issuing any network
+ * request. Returns the source to load (a cached data URL when available, otherwise the
+ * original/absolute URL) plus the cache key to store the image under after it loads. The
+ * caller loads the returned url via an <img> element exactly as before — so this adds no
+ * extra HTTP requests that could compete with other in-flight fetches (e.g. the connection-
+ * limited CORS proxy used for Internet Archive resolution).
  */
-export const resolveScreenshotUrlWithCache = async (imageUrl: string): Promise<string> => {
-  if (imageUrl.startsWith("data:")) return imageUrl
-  const absoluteUrl = (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
-    ? imageUrl
-    : new URL(imageUrl, window.location.href).toString()
-  const cached = readCachedScreenshotDataUrl(absoluteUrl)
-  if (cached) return cached
-  const dataUrl = await fetchImageAsDataUrl(absoluteUrl)
-  if (dataUrl) {
-    writeCachedScreenshotDataUrl(absoluteUrl, dataUrl)
-    return dataUrl
+export const resolveScreenshotUrlWithCache = (imageUrl: string): { url: string; cacheKey?: string; cached: boolean } => {
+  const cacheKey = screenshotCacheKey(imageUrl)
+  if (!cacheKey) return { url: imageUrl, cached: true }
+  const cached = readCachedScreenshotDataUrl(cacheKey)
+  if (cached) return { url: cached, cacheKey, cached: true }
+  return { url: cacheKey, cacheKey, cached: false }
+}
+
+/**
+ * Encodes an already-loaded image to a data URL and stores it in the localStorage cache so
+ * subsequent exports resolve it locally. Uses the loaded <img> (no new network request); a
+ * cross-origin image without CORS headers taints the canvas and toDataURL throws, in which
+ * case it simply isn't cached (best-effort).
+ */
+const cacheLoadedScreenshot = (img: HTMLImageElement, cacheKey: string) => {
+  try {
+    const canvas = document.createElement("canvas")
+    canvas.width = img.naturalWidth || img.width
+    canvas.height = img.naturalHeight || img.height
+    if (canvas.width === 0 || canvas.height === 0) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.drawImage(img, 0, 0)
+    writeCachedScreenshotDataUrl(cacheKey, canvas.toDataURL("image/png"))
+  } catch {
+    // Tainted canvas (cross-origin image without CORS) — can't read it back to cache.
   }
-  return absoluteUrl
 }
 
 /**
@@ -335,16 +341,18 @@ export const loadAndConvertImageToHires = async (
   if (!imageUrl) return buildFallbackHires()
 
   try {
-    // Resolve through the localStorage cache so each screenshot is fetched at most once.
-    // Returns a data URL for cached/cacheable images (which also avoids canvas tainting),
-    // or an absolute URL to load directly when it can't be cached.
-    const url = await resolveScreenshotUrlWithCache(imageUrl)
-    
+    // Resolve against the localStorage cache without issuing any network request: on a hit
+    // we load a cached data URL, on a miss we load the original URL via <img> (as before)
+    // and cache the decoded image afterwards. This avoids adding extra fetches that could
+    // compete with the connection-limited CORS proxy used for Internet Archive resolution.
+    const { url, cacheKey, cached } = resolveScreenshotUrlWithCache(imageUrl)
+
     return new Promise((resolve) => {
       const img = new Image()
       img.crossOrigin = "anonymous"
       img.onload = () => {
         try {
+          if (!cached && cacheKey) cacheLoadedScreenshot(img, cacheKey)
           const canvas = document.createElement("canvas")
           canvas.width = 560
           canvas.height = 192
