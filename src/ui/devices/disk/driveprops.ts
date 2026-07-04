@@ -256,6 +256,27 @@ const getCorsProxyCandidates = (url: string): string[] => {
   ]
 }
 
+const FETCH_DEBUG_LOGS = false
+
+const logFetchDebug = (...args: unknown[]) => {
+  if (FETCH_DEBUG_LOGS) {
+    console.log(...args)
+  }
+}
+
+const shouldAttemptDirectFetch = (url: string): boolean => {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return true
+    }
+    return parsed.origin === window.location.origin
+  } catch {
+    // If URL parsing fails, keep prior behavior and try direct fetch.
+    return true
+  }
+}
+
 const fetchWithCorsProxy = async (url: string) => {
   let lastResponse: Response | null = null
   const candidates = getCorsProxyCandidates(url)
@@ -267,14 +288,14 @@ const fetchWithCorsProxy = async (url: string) => {
       const response = await fetch(proxyUrl)
 
       if (response.ok) {
-        console.log(`✅ Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+        logFetchDebug(`Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
         return response
       }
 
-      console.warn(`⚠️ Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+      logFetchDebug(`Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
       lastResponse = response
     } catch (error) {
-      console.warn(`⚠️ Proxy attempt errored via ${proxyName} (attempt ${i + 1}/${candidates.length})`, error)
+      logFetchDebug(`Proxy attempt errored via ${proxyName} (attempt ${i + 1}/${candidates.length})`, error)
     }
   }
 
@@ -288,31 +309,31 @@ const fetchWithCT6502Proxy = async (url: string) => {
   try {
     const response = await fetch(iconName() + url)
     if (response.ok) {
-      console.log("✅ Proxy fetch succeeded via CT6502 proxy")
+      logFetchDebug("CT6502 proxy fetch succeeded")
     } else {
-      console.warn(`⚠️ CT6502 proxy failed (${response.status})`)
+      logFetchDebug(`CT6502 proxy failed (${response.status})`)
 
       const keyedResponse = await fetch(iconName() + url, { headers })
       if (keyedResponse.ok) {
-        console.log("✅ Proxy fetch succeeded via CT6502 proxy (keyed)")
+        logFetchDebug("CT6502 keyed proxy fetch succeeded")
       } else {
-        console.warn(`⚠️ CT6502 keyed proxy failed (${keyedResponse.status})`)
+        logFetchDebug(`CT6502 keyed proxy failed (${keyedResponse.status})`)
       }
       return keyedResponse
     }
     return response
   } catch (error) {
-    console.warn("⚠️ CT6502 proxy errored, retrying keyed", error)
+    logFetchDebug("CT6502 proxy errored, retrying keyed", error)
     try {
       const keyedResponse = await fetch(iconName() + url, { headers })
       if (keyedResponse.ok) {
-        console.log("✅ Proxy fetch succeeded via CT6502 proxy (keyed)")
+        logFetchDebug("CT6502 keyed proxy fetch succeeded")
       } else {
-        console.warn(`⚠️ CT6502 keyed proxy failed (${keyedResponse.status})`)
+        logFetchDebug(`CT6502 keyed proxy failed (${keyedResponse.status})`)
       }
       return keyedResponse
     } catch (keyedError) {
-      console.warn("⚠️ CT6502 keyed proxy errored", keyedError)
+      logFetchDebug("CT6502 keyed proxy errored", keyedError)
       return null
     }
   }
@@ -424,28 +445,26 @@ export const handleSetDiskFromURL = async (url: string,
   // hosts). The disk VTOC check that drives these downloads is serialized one
   // request at a time, so this does not flood Internet Archive with parallel
   // requests (the cause of the earlier 429 throttling).
-  console.log(`🌐 Attempting direct fetch: ${url}`)
-  try {
-    response = await fetch(url)
-    if (response.ok) {
-      console.log(`✅ Direct fetch succeeded: ${url}`)
-    } else {
-      console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
+  if (shouldAttemptDirectFetch(url)) {
+    try {
+      response = await fetch(url)
+      if (!response.ok) {
+        response = null
+      }
+    } catch {
+      // Expected for many cross-origin sources; fall through to proxy chain.
       response = null
     }
-  } catch (error) {
-    console.log(`❌ Direct fetch failed with error: ${error}`)
-    response = null
   }
 
   // If direct fetch failed, try CORS proxies
   if (!response || !response.ok) {
-    console.log("Direct fetch failed, trying CORS proxy")
+    logFetchDebug("Direct fetch failed, trying CORS proxies")
     response = await fetchWithCorsProxy(url)
   }
 
   if (!response || !response.ok) {
-    console.log("CORS proxy failed, trying CT6502 proxy")
+    logFetchDebug("CORS proxies failed, trying CT6502 proxy")
     response = await fetchWithCT6502Proxy(url)
 
     if (!response || !response.ok) {
@@ -485,9 +504,7 @@ export const handleSetDiskFromURL = async (url: string,
   }
 
   try {
-    console.log(`📥 Downloading response body (Content-Length: ${response.headers.get("content-length") || "unknown"})...`)
     const fileBuffer = await response.arrayBuffer()
-    console.log(`✅ Downloaded ${fileBuffer.byteLength} bytes`)
 
     // Try to get filename from Content-Disposition header first
     const contentDisposition = response.headers.get("content-disposition")
@@ -495,7 +512,6 @@ export const handleSetDiskFromURL = async (url: string,
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
       if (filenameMatch && filenameMatch[1]) {
         name = filenameMatch[1].replace(/['"]/g, "")
-        console.log(`📋 Filename from Content-Disposition: ${name}`)
       }
     }
 
@@ -516,7 +532,6 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (url.toLowerCase().endsWith(".zip")) {
-      console.log("📦 Unzipping file...")
       const unzipper = new fflate.Unzip()
       unzipper.register(fflate.UnzipInflate)
 
@@ -528,7 +543,6 @@ export const handleSetDiskFromURL = async (url: string,
             if (data.length > 1024) {
               name = file.name
               buffer = data
-              console.log(`📄 Extracted file: ${name} (${data.length} bytes)`)
               return
             }
           }
@@ -547,7 +561,6 @@ export const handleSetDiskFromURL = async (url: string,
         }
       }
       buffer = fileBuffer
-      console.log(`📄 File loaded: ${name} (${buffer.byteLength} bytes)`)
     }
 
     if (buffer) {
@@ -555,11 +568,9 @@ export const handleSetDiskFromURL = async (url: string,
         callback(buffer)
       } else {
         // If we are loading from a URL, reset all drives. Fixes issue#186
-        console.log(`💾 Setting disk data for drive ${index}...`)
         resetAllDiskDrives()
         
         handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
-        console.log("✅ Disk loaded successfully")
       }
     } else {
       if (callback) {
