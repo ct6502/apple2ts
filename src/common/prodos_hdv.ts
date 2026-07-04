@@ -258,10 +258,11 @@ const generateMenuSourceProgram = (
   lines.push("1005 IF I<1 OR I>MAX THEN I=1")
   // GRAPHICS + MIXED + PAGE1 + HIRES for screenshot + bottom text lines.
   lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
-  for (let idx = 1; idx <= count; idx++) {
-    const lineNo = 1010 + idx
-    lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(idx).padStart(2, "0")},A$2000"`)
-  }
+  // The screenshot filename is SCREEN + the zero-padded index, which is a pure
+  // function of I, so compute it at runtime instead of emitting one IF-line per
+  // disk. This keeps MENUSRC's size constant regardless of the disk count.
+  lines.push("1011 N$=STR$(I):IF I<10 THEN N$=\"0\"+N$")
+  lines.push(`1012 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
   for (let idx = 1; idx <= count; idx++) {
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
     const leftArrow = showNavigationArrows ? "<- " : "   "
