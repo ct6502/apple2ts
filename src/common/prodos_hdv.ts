@@ -214,6 +214,8 @@ const DOS_DISPATCH_VOLUME_ADDRESS = 0x0478
 // same slot -- so PEEK(47081)/16 is a reliable boot-slot source on every machine, independent
 // of the flaky ProDOS-side DEVNUM timing.
 const DOS_IBSLOT_ADDRESS = 0xb7e9
+const MENU_SELECTED_INDEX_ADDRESS = 0x0479
+const HELPER_SUBDIR = "A2TSHLP"
 
 /**
  * Generates a tokenized Applesoft BASIC program that draws screenshots and
@@ -224,30 +226,79 @@ const generateMenuSourceProgram = (
   dosRuntimeLauncher: string | undefined,
   menuProDosCommands: Array<string | undefined>,
   menuProDosPrefixes: Array<string | undefined>,
+  helperSubdir: string,
+  aliasShimInstallCommand?: string,
+  runtimeVolumeByMenuIndex?: Array<number | undefined>,
+  menuNeedsAliasShim?: boolean[]
+): string => {
+  const lines: string[] = []
+  const count = Math.max(1, Math.min(menuEntries.length, 99))
+  const showNavigationArrows = count > 1
+  const runtimeVolumes: number[] = []
+  for (let i = 0; i < count; i++) {
+    runtimeVolumes[i] = runtimeVolumeByMenuIndex?.[i] ?? (i + 1)
+  }
+  const diskTitles = menuEntries.slice(0, count).map((entry) => entry.displayName || entry.filename)
+
+  lines.push("10 D$=CHR$(4)")
+  lines.push(`20 MAX=${count}:I=1`)
+  lines.push("25 IF PEEK(49152)<128 THEN 30")
+  lines.push("26 X=PEEK(49168)")
+  lines.push("27 GOTO 25")
+  lines.push("30 GOSUB 1000")
+  lines.push("40 IF PEEK(49152)<128 THEN 40")
+  lines.push("45 K0=PEEK(49152)-128:X=PEEK(49168)")
+  lines.push("50 IF K0=8 THEN I=I-1:IF I<1 THEN I=MAX")
+  lines.push("60 IF K0=21 THEN I=I+1:IF I>MAX THEN I=1")
+  lines.push("70 IF K0=8 OR K0=21 THEN GOSUB 1000:GOTO 40")
+  lines.push("80 IF K0=13 OR K0=32 THEN GOSUB 2000:GOTO 40")
+  lines.push("90 GOTO 40")
+
+  lines.push("1000 HOME")
+  lines.push("1005 IF I<1 OR I>MAX THEN I=1")
+  // GRAPHICS + MIXED + PAGE1 + HIRES for screenshot + bottom text lines.
+  lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
+  for (let idx = 1; idx <= count; idx++) {
+    const lineNo = 1010 + idx
+    lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(idx).padStart(2, "0")},A$2000"`)
+  }
+  for (let idx = 1; idx <= count; idx++) {
+    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
+    const leftArrow = showNavigationArrows ? "<- " : "   "
+    const rightArrow = showNavigationArrows ? " ->" : "   "
+    const lineNo = 1120 + idx
+    lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
+  }
+  lines.push("1220 RETURN")
+
+  lines.push(`2000 POKE ${MENU_SELECTED_INDEX_ADDRESS},I:PRINT D$;"RUN ${helperSubdir}/MENULAUNCH":RETURN`)
+
+  // Startup render is explicit so initial display matches the first disk.
+  lines.push("3000 HOME")
+  lines.push("3010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
+  lines.push(`3020 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(1).padStart(2, "0")},A$2000"`)
+  {
+    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[0])
+    const leftArrow = showNavigationArrows ? "<- " : "   "
+    const rightArrow = showNavigationArrows ? " ->" : "   "
+    lines.push('3030 VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
+  }
+  lines.push("3040 RETURN")
+
+  return `${lines.join("\r")}\r`
+}
+
+const generateMenuLaunchProgram = (
+  menuEntries: MenuDiskEntry[],
+  dosRuntimeLauncher: string | undefined,
+  menuProDosCommands: Array<string | undefined>,
+  menuProDosPrefixes: Array<string | undefined>,
+  helperSubdir: string,
   aliasShimInstallCommand?: string,
   runtimeVolumeByMenuIndex?: Array<number | undefined>,
   menuNeedsAliasShim?: boolean[]
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
-  // Build the BASIC statement(s) that launch the DOS runtime, using paths relative to
-  // the current (/APPLE2TS) prefix. For a "DIR/FILE" launcher (e.g. DOS.MASTER/DOS.3.3)
-  // we set the prefix into the subdirectory then run the file with "-" (handles BIN/SYS),
-  // matching the proven-good launch sequence. A leading slash would root the path at a
-  // non-existent volume, so relative paths are required. DOS.MASTER's config is baked for
-  // the boot slot at export time (installDosMasterLikePartitions); the volume-1 dispatcher
-  // HELLO reads the live boot slot from DOS.MASTER's IBSLOT so it chains on the right slot.
-  //
-  // DOS.MASTER's config ADRLIST (file offset $60 -> $2060/$2061 when the DOS.3.3 image loads
-  // at $2000) holds the FULL 16-bit ProDOS block-driver entry that its RWTS JSRs for every
-  // read -- including loading volume 1's HELLO. The export bakes only the high byte ($C0+slot);
-  // the low byte is the card firmware's entry offset ($CnFF), which differs per machine
-  // (Apple2TS slot 7 = $C7C0, Virtual II slot 7 = $C764). A stale low byte makes DOS.MASTER
-  // JSR the wrong address and crash on its own banner. So for DOS.MASTER/DOS.3.3 we route the
-  // launch through a small subroutine (PATCH_LINE) that reads the LIVE driver vector from
-  // DEVADR ($BF10 + 2*bootslot) and patches ADRLIST before -DOS.3.3. It is guarded (only
-  // patches when $2061 already looks like a $Cx firmware page) and idempotent (skips the
-  // BSAVE when the baked vector already matches), so on a machine where the bake is already
-  // correct it does nothing and launches exactly as the proven-good path did.
   const PATCH_LINE = 2500
   const injectDriverPatch = dosRuntimeLauncher === "DOS.MASTER/DOS.3.3"
   const dosRuntimeRunStatements = (() => {
@@ -262,141 +313,81 @@ const generateMenuSourceProgram = (
     }
     return 'PRINT D$;"-' + dosRuntimeLauncher + '"'
   })()
-  // Per-volume DOS boot sequence. DOS.MASTER always cold-starts and boots volume 1, running
-  // its "HELLO" greeting, then takes over the machine (so any statement chained after the
-  // launch never runs). To boot the *selected* disk's volume we (1) POKE the target DOS
-  // volume number into a screen-hole byte that survives the ProDOS -> DOS.MASTER -> DOS 3.3
-  // transition and HOME, then (2) use the proven "-DOS.3.3" launch. A dispatcher HELLO that
-  // lives on volume 1 (installed by installDosMasterLikePartitions) PEEKs that byte and does
-  // RUN HELLO,V<vol> to chain into the real disk's volume. We also TEXT:HOME first to
-  // clear the HGR screenshot image before the launch takes over the screen.
-  const dosBootStatements = (volume: number): string => {
-    if (!dosRuntimeLauncher) return ""
-    return "TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + "," + volume + ":" + dosRuntimeRunStatements
-  }
+
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
-  const showNavigationArrows = count > 1
   const imageKinds = menuEntries.slice(0, count).map((entry) => entry.imageKind || "unknown")
   const runtimeVolumes: number[] = []
   for (let i = 0; i < count; i++) {
     runtimeVolumes[i] = runtimeVolumeByMenuIndex?.[i] ?? (i + 1)
   }
-  const diskTitles = menuEntries.slice(0, count).map((entry) => entry.displayName || entry.filename)
+  const toDataString = (value: string | undefined) => (value || "").replace(/"/g, "'")
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 MAX=${count}:I=1`)
-  lines.push("25 IF PEEK(49152)<128 THEN 30")
-  lines.push("26 X=PEEK(49168)")
-  lines.push("27 GOTO 25")
-  lines.push("30 GOSUB 3000")
-  lines.push("40 IF PEEK(49152)<128 THEN 40")
-  lines.push("45 K=PEEK(49152)-128:X=PEEK(49168)")
-  lines.push("50 IF K=8 THEN I=I-1:IF I<1 THEN I=MAX")
-  lines.push("60 IF K=21 THEN I=I+1:IF I>MAX THEN I=1")
-  lines.push("70 IF K=8 OR K=21 THEN GOSUB 1000:GOTO 40")
-  lines.push("80 IF K=13 OR K=32 THEN GOSUB 2000:GOTO 40")
-  lines.push("90 GOTO 40")
-
-  lines.push("1000 HOME")
-  lines.push("1005 IF I<1 OR I>MAX THEN I=1")
-  // GRAPHICS + MIXED + PAGE1 + HIRES for screenshot + bottom text lines.
-  lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
-  for (let idx = 1; idx <= count; idx++) {
-    const lineNo = 1010 + idx
-    lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(idx).padStart(2, "0")},A$2000\"`)
+  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count})`)
+  lines.push(`22 I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
+  lines.push("24 RESTORE")
+  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J):NEXT")
+  if (hasDosMasterRuntime) {
+    lines.push("30 IF K(I)=0 THEN TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + ",V(I):" + dosRuntimeRunStatements + ":END")
+  } else {
+    lines.push("30 IF K(I)=0 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:GOTO 220")
   }
-  for (let idx = 1; idx <= count; idx++) {
-    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
-    const leftArrow = showNavigationArrows ? "<- " : "   "
-    const rightArrow = showNavigationArrows ? " ->" : "   "
-    const lineNo = 1120 + idx
-    lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
+  lines.push("40 IF K(I)=5 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:GOTO 220")
+  lines.push("50 IF K(I)=1 THEN TEXT:GOSUB 150:PRINT D$;\"PREFIX \";P$(I):PRINT D$;R$(I):END")
+  lines.push("60 IF K(I)=2 THEN TEXT:GOSUB 150:PRINT D$;\"PREFIX \";P$(I):PRINT D$;\"CATALOG\":END")
+  lines.push("70 IF K(I)=3 THEN TEXT:GOSUB 150:PRINT D$;R$(I):END")
+  lines.push("80 IF K(I)=4 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":GOTO 220")
+  lines.push("90 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
+  lines.push("100 GOTO 220")
+  lines.push("150 IF S(I)=0 THEN RETURN")
+  if (aliasShimInstallCommand) {
+    lines.push("160 PRINT D$;\"" + toDataString(aliasShimInstallCommand) + "\":RETURN")
+  } else {
+    lines.push("160 RETURN")
   }
-  lines.push("1220 RETURN")
+  lines.push(`220 PRINT D$;"RUN ${helperSubdir}/MENUSRC":END`)
 
-  // Startup render is explicit so initial display matches the first disk.
-  lines.push("3000 HOME")
-  lines.push("3010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
-  lines.push(`3020 PRINT D$;\"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(1).padStart(2, "0")},A$2000\"`)
-  {
-    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[0])
-    const leftArrow = showNavigationArrows ? "<- " : "   "
-    const rightArrow = showNavigationArrows ? " ->" : "   "
-    lines.push('3030 VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
-  }
-  lines.push("3040 RETURN")
+  let dataLine = 9000
+  for (let idx = 0; idx < count; idx++) {
+    const entryKind = imageKinds[idx]
+    let launchCode = 4
+    let volume = 0
+    let prefix = ""
+    let runCmd = ""
+    let shimFlag = 0
 
-  // ENTER handling by image kind.
-  // DOS images: use DOS.MASTER commands (non-emulator-compatible path).
-  // ProDOS/unknown images: keep explicit message, as raw image containers are not directly executable.
-  lines.push("2000 REM ENTER HANDLER")
-  for (let idx = 1; idx <= count; idx++) {
-    const lineNo = 2000 + idx
-    if (imageKinds[idx - 1] === "dos") {
+    if (entryKind === "dos" || entryKind === "unknown") {
       if (hasDosMasterRuntime) {
-        // Route launch through DOS.MASTER, selecting the disk's own volume via the STARTUP
-        // string patch (see dosBootStatements). The old chained CATALOG line never executed
-        // because -DOS.3.3 takes over the machine, so it is dropped.
-        lines.push(lineNo + ' IF I=' + idx + ' THEN ' + dosBootStatements(runtimeVolumes[idx - 1]) + ':RETURN')
+        launchCode = 0
+        volume = runtimeVolumes[idx]
       } else {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "DOS.MASTER RUNTIME NOT INSTALLED":NORMAL:RETURN')
-      }
-    } else if (imageKinds[idx - 1] === "prodos") {
-      const runCmd = menuProDosCommands[idx - 1]
-      const prefix = menuProDosPrefixes[idx - 1]
-      // Install the absolute-SET_PREFIX rewrite shim only here, immediately before a
-      // ProDOS launch, and only for disks that hardcode an absolute "/VOLUME/..." path the
-      // shim can actually rewrite (menuNeedsAliasShim; see proDosFilesNeedAliasShim). It is
-      // never installed for DOS images, so DOS.MASTER can safely reclaim the language card
-      // without the shim's resident hook crashing it, and never for ProDOS disks that don't
-      // need it, so interrupt/language-card games (e.g. Glider) and disks that build their
-      // prefix at runtime (e.g. Undead) aren't destabilized by an unnecessary resident MLI
-      // hook. The installer is idempotent, so re-running it across selections is harmless.
-      const needsShim = menuNeedsAliasShim?.[idx - 1] ?? false
-      const shimInstall = (aliasShimInstallCommand && needsShim) ? 'PRINT D$;"' + aliasShimInstallCommand + '":' : ''
-      if (prefix && runCmd) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"' + runCmd + '":RETURN')
-      } else if (prefix) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"PREFIX ' + prefix + '":PRINT D$;"CATALOG":RETURN')
-      } else if (runCmd) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN TEXT:' + shimInstall + 'PRINT D$;"' + runCmd + '":RETURN')
-      } else {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "PRODOS FILES IMPORTED":NORMAL:PRINT D$;"CATALOG":RETURN')
+        launchCode = 5
       }
     } else {
-      if (hasDosMasterRuntime) {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN ' + dosBootStatements(runtimeVolumes[idx - 1]) + ':RETURN')
+      const prefixValue = menuProDosPrefixes[idx] || ""
+      const runValue = menuProDosCommands[idx] || ""
+      const needsShim = (menuNeedsAliasShim?.[idx] ?? false) && !!aliasShimInstallCommand
+      shimFlag = needsShim ? 1 : 0
+      if (prefixValue && runValue) {
+        launchCode = 1
+        prefix = prefixValue
+        runCmd = runValue
+      } else if (prefixValue) {
+        launchCode = 2
+        prefix = prefixValue
+      } else if (runValue) {
+        launchCode = 3
+        runCmd = runValue
       } else {
-        lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 24:HTAB 1:INVERSE:PRINT "DOS.MASTER RUNTIME NOT INSTALLED":NORMAL:RETURN')
+        launchCode = 4
       }
     }
-  }
-  lines.push("2050 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
-  lines.push("2060 RETURN")
 
-  // Live driver-vector fix-up subroutine (see the injectDriverPatch comment above). Reached
-  // via GOTO from the DOS boot statement (with the target volume already POKEd into $0478).
-  //   PATCH_LINE+0 : boot slot from DEVNUM ($BF30 = 48944); strip the drive-2 bit ($80).
-  //   PATCH_LINE+10: live ProDOS driver vector from DEVADR ($BF10 + 2*slot = 48912 + 2*S).
-  //   PATCH_LINE+20/30: set the prefix and load the DOS.3.3 image to $2000 so ADRLIST is at
-  //                     $2060/$2061 (8288/8289).
-  //   PATCH_LINE+40: bail out to the plain launch unless $2061 looks like a $Cx firmware page
-  //                  ($C0-$C7 = 192-199); this guards against an unexpected load layout so we
-  //                  never corrupt the image (the baked vector is already correct there).
-  //   PATCH_LINE+50: skip the BSAVE when the baked vector already matches the live one
-  //                  (the common case on the machine the image was baked for).
-  //   PATCH_LINE+60: patch ADRLIST (offset $60 -> 8288/8289) with the live driver vector AND
-  //                  the DEV table (offset $38 -> 8248/8249) with the live boot unit
-  //                  (S*16 drive 1 / S*16+128 drive 2). The DEV table is DOS.MASTER's LIST of
-  //                  intercepted slots: the volume-1 dispatcher issues "RUN HELLO,S<bootslot>",
-  //                  so unless the boot slot is in the LIST, DOS.MASTER passes the command
-  //                  through to the real card and the DOS volume read fails (I/O ERROR on a
-  //                  non-slot-7 machine such as an IIGS booting slot 6). ADRLIST and the DEV
-  //                  table are baked together for the same slot, so the +50 ADRLIST check is a
-  //                  sufficient proxy for "already configured for this machine".
-  //   PATCH_LINE+70: persist the patched image, then -DOS.3.3 (which reloads the patched file
-  //                  from disk and takes over the machine, so no RETURN is needed).
+    lines.push(dataLine + ' DATA ' + launchCode + ',' + volume + ',"' + toDataString(prefix) + '","' + toDataString(runCmd) + '",' + shimFlag)
+    dataLine += 10
+  }
+
   if (injectDriverPatch) {
     lines.push(PATCH_LINE + " S=INT(PEEK(48944)/16):IF S>7 THEN S=S-8")
     lines.push((PATCH_LINE + 10) + " A=48912+2*S:LO=PEEK(A):HI=PEEK(A+1)")
@@ -416,12 +407,13 @@ const generateMenuSourceProgram = (
  * Generates STARTUP command file. For interactive exports, STARTUP runs MENUSRC.
  */
 const generateInteractiveMenuStartup = (
-  menuEntries: MenuDiskEntry[]
+  menuEntries: MenuDiskEntry[],
+  helperSubdir: string
 ): string => {
   if (menuEntries.length === 0) {
-    return "BRUN A2TSLAUNCH\rCATALOG\r"
+    return `BRUN ${helperSubdir}/A2TSLAUNCH\rCATALOG\r`
   }
-  return "RUN MENUSRC\r"
+  return `RUN ${helperSubdir}/MENUSRC\r`
 }
 
 const writeLittleEndian16 = (data: Uint8Array, offset: number, value: number) => {
@@ -3636,6 +3628,8 @@ export const buildProDosHdv = async (
   const dosRuntimeLauncher = rootScan.dosRuntimeLauncher
   // Reserve the screenshot subdirectory name so imported ProDOS volumes can't collide with it.
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
+  // Reserve helper-program subdirectory name to avoid root-path exhaustion.
+  rootScan.existingNames.add(HELPER_SUBDIR)
   const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
@@ -3679,6 +3673,7 @@ export const buildProDosHdv = async (
   }
 
   const withStartup = [...outputFiles]
+  const helperFiles: BuildInputFile[] = []
   // Copy the alias shim file onto the HDV only when at least one imported ProDOS disk
   // hardcodes an absolute "/VOLUME/..." path the shim can rewrite (menuNeedsAliasShim; see
   // proDosFilesNeedAliasShim). It is NOT installed at boot: the menu BRUNs it per-launch,
@@ -3689,7 +3684,7 @@ export const buildProDosHdv = async (
   const includeAliasShimFile = menuNeedsAliasShim.some(Boolean)
 
   const launcherName = "A2TSLAUNCH"
-  withStartup.unshift({
+  helperFiles.push({
     name: launcherName,
     type: PRODOS_FILE_TYPE_BINARY,
     data: createLauncherBinary(),
@@ -3697,7 +3692,7 @@ export const buildProDosHdv = async (
   })
 
   if (includeAliasShimFile) {
-    withStartup.unshift({
+    helperFiles.push({
       name: "A2TSAL3",
       type: PRODOS_FILE_TYPE_BINARY,
       data: createAliasShimBinary(ALIAS_SHIM_LOAD_ADDRESS),
@@ -3707,14 +3702,14 @@ export const buildProDosHdv = async (
 
   // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
   let startupText: string
-  const aliasShimInstallCommand = `BRUN /${normalizedVolumeName}/A2TSAL3`
+  const aliasShimInstallCommand = `BRUN /${normalizedVolumeName}/${HELPER_SUBDIR}/A2TSAL3`
   if (menuEntries && menuEntries.length > 0) {
     // The menu installs the shim per-launch (only before ProDOS disks), so STARTUP
     // must NOT install it globally.
-    startupText = generateInteractiveMenuStartup(menuEntries)
+    startupText = generateInteractiveMenuStartup(menuEntries, HELPER_SUBDIR)
   } else {
     // Non-interactive fallback has no DOS.MASTER launch, so a boot-time install is safe.
-    startupText = `${includeAliasShimFile ? `${aliasShimInstallCommand}\r` : ""}BRUN ${launcherName}\rCATALOG\r`
+    startupText = `${includeAliasShimFile ? `${aliasShimInstallCommand}\r` : ""}BRUN ${HELPER_SUBDIR}/${launcherName}\rCATALOG\r`
   }
   
   withStartup.unshift({
@@ -3725,12 +3720,22 @@ export const buildProDosHdv = async (
   })
 
   if (menuEntries && menuEntries.length > 0) {
-    withStartup.push({
+    helperFiles.push({
       name: "MENUSRC",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, menuNeedsAliasShim)),
+      data: tokenizeApplesoftBasic(generateMenuSourceProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, menuNeedsAliasShim)),
       auxType: 0x0801,
     })
+    helperFiles.push({
+      name: "MENULAUNCH",
+      type: 0xFC,
+      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, menuNeedsAliasShim)),
+      auxType: 0x0801,
+    })
+  }
+
+  if (helperFiles.length > 0) {
+    directoryPlans.push({ name: HELPER_SUBDIR, files: helperFiles, sourceMenuIndex: -1 })
   }
 
   // Track screenshot files for later metadata creation. Screenshots go into a dedicated
