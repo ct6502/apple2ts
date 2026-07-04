@@ -54,7 +54,7 @@ const DisplayApple2 = () => {
   }
 
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = "") => {
-    if (newhelptext && newhelptext.length > 1) {
+    if (newhelptext.length > 0) {
       setHelpText(newhelptext)
     }
     if (speed && speed !== currentSpeed) {
