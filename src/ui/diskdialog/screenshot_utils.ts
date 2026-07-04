@@ -247,6 +247,112 @@ const stampLogoIntoHires = (hiresData: Uint8Array, logo: CanvasImageSource): voi
   }
 }
 
+// localStorage key prefix for cached screenshot data URLs (keyed by absolute source URL).
+const SCREENSHOT_CACHE_PREFIX = "ssc-"
+
+// Once localStorage is exhausted and eviction fails, stop attempting writes for the rest of
+// the session so we don't log a quota warning for every screenshot.
+let screenshotCacheWritesDisabled = false
+
+const isQuotaExceededError = (e: unknown): boolean => {
+  return e instanceof DOMException &&
+    (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED" || e.code === 22 || e.code === 1014)
+}
+
+// Removes cached screenshot entries to free localStorage space. Returns true if any were removed.
+const evictCachedScreenshots = (): boolean => {
+  try {
+    const keys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && key.startsWith(SCREENSHOT_CACHE_PREFIX)) keys.push(key)
+    }
+    if (keys.length === 0) return false
+    for (const key of keys) localStorage.removeItem(key)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const readCachedScreenshotDataUrl = (absoluteUrl: string): string | undefined => {
+  try {
+    return localStorage.getItem(SCREENSHOT_CACHE_PREFIX + absoluteUrl) || undefined
+  } catch {
+    return undefined
+  }
+}
+
+const writeCachedScreenshotDataUrl = (absoluteUrl: string, dataUrl: string) => {
+  if (screenshotCacheWritesDisabled) return
+  const key = SCREENSHOT_CACHE_PREFIX + absoluteUrl
+  try {
+    localStorage.setItem(key, dataUrl)
+  } catch (e) {
+    if (isQuotaExceededError(e) && evictCachedScreenshots()) {
+      // Freed space by evicting older cached screenshots; retry once.
+      try {
+        localStorage.setItem(key, dataUrl)
+        return
+      } catch {
+        // Still over quota even after eviction.
+      }
+    }
+    // localStorage is unavailable or over quota; caching is best-effort. Disable further
+    // write attempts so we don't log this warning for every remaining screenshot.
+    screenshotCacheWritesDisabled = true
+    console.warn("Disabling screenshot local storage cache (unavailable or over quota):", e)
+  }
+}
+
+/**
+ * Normalizes a screenshot URL to an absolute cache key, or returns undefined for URLs that
+ * should not be cached (data URLs are already local).
+ */
+const screenshotCacheKey = (imageUrl: string): string | undefined => {
+  if (imageUrl.startsWith("data:")) return undefined
+  return (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
+    ? imageUrl
+    : new URL(imageUrl, window.location.href).toString()
+}
+
+/**
+ * Resolves a screenshot URL against the localStorage cache WITHOUT issuing any network
+ * request. Returns the source to load (a cached data URL when available, otherwise the
+ * original/absolute URL) plus the cache key to store the image under after it loads. The
+ * caller loads the returned url via an <img> element exactly as before — so this adds no
+ * extra HTTP requests that could compete with other in-flight fetches (e.g. the connection-
+ * limited CORS proxy used for Internet Archive resolution).
+ */
+export const resolveScreenshotUrlWithCache = (imageUrl: string): { url: string; cacheKey?: string; cached: boolean } => {
+  const cacheKey = screenshotCacheKey(imageUrl)
+  if (!cacheKey) return { url: imageUrl, cached: true }
+  const cached = readCachedScreenshotDataUrl(cacheKey)
+  if (cached) return { url: cached, cacheKey, cached: true }
+  return { url: cacheKey, cacheKey, cached: false }
+}
+
+/**
+ * Encodes an already-loaded image to a data URL and stores it in the localStorage cache so
+ * subsequent exports resolve it locally. Uses the loaded <img> (no new network request); a
+ * cross-origin image without CORS headers taints the canvas and toDataURL throws, in which
+ * case it simply isn't cached (best-effort).
+ */
+const cacheLoadedScreenshot = (img: HTMLImageElement, cacheKey: string) => {
+  try {
+    const canvas = document.createElement("canvas")
+    canvas.width = img.naturalWidth || img.width
+    canvas.height = img.naturalHeight || img.height
+    if (canvas.width === 0 || canvas.height === 0) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.drawImage(img, 0, 0)
+    writeCachedScreenshotDataUrl(cacheKey, canvas.toDataURL("image/png"))
+  } catch {
+    // Tainted canvas (cross-origin image without CORS) — can't read it back to cache.
+  }
+}
+
 /**
  * Loads an image from a URL and converts it to Apple II hi-res format
  * @param imageUrl URL to load (http/https, data URL, or relative path)
@@ -273,18 +379,18 @@ export const loadAndConvertImageToHires = async (
   if (!imageUrl) return buildFallbackHires()
 
   try {
-    let url = imageUrl
-    
-    // Handle relative URLs
-    if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("data:")) {
-      url = new URL(url, window.location.href).toString()
-    }
-    
+    // Resolve against the localStorage cache without issuing any network request: on a hit
+    // we load a cached data URL, on a miss we load the original URL via <img> (as before)
+    // and cache the decoded image afterwards. This avoids adding extra fetches that could
+    // compete with the connection-limited CORS proxy used for Internet Archive resolution.
+    const { url, cacheKey, cached } = resolveScreenshotUrlWithCache(imageUrl)
+
     return new Promise((resolve) => {
       const img = new Image()
       img.crossOrigin = "anonymous"
       img.onload = () => {
         try {
+          if (!cached && cacheKey) cacheLoadedScreenshot(img, cacheKey)
           const canvas = document.createElement("canvas")
           canvas.width = 560
           canvas.height = 192

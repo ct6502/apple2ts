@@ -1,7 +1,8 @@
 .disk-collection-panel {
   display: grid;
-  grid-template-rows: repeat(auto-fill, minmax(175px, 1fr));
+  grid-auto-rows: max-content;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
   row-gap: 0px;
   column-gap: 0px;
   margin: 0px;
@@ -232,10 +233,12 @@
 .dcp-item-image-box {
   position: absolute;
   width: 96%;
-  height: 64%;
-  top: 29.5%;
-  left: 0.5%;
+  height: 66%;
+  top: 30%;
+  left: 1.5%;
   cursor: pointer;
+  contain: paint;
+  transform: translateZ(0);
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
@@ -252,57 +255,106 @@
   opacity: 100%;
 }
 
-.dcp-item-new {
+.dcp-item-icon-row {
   position: absolute;
-  left: 6px;
-  bottom: 8px;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  display: grid;
+  grid-template-columns: max-content auto;
+  align-items: end;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dcp-item-icon-top-right {
+  position: absolute;
+  top: 12px;
+  right: 8px;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 4px;
+  align-items: start;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.dcp-item-icon-left-group,
+.dcp-item-icon-right-group {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 2px;
+  align-items: end;
+}
+
+.dcp-item-icon-left-group {
+  justify-self: start;
+  padding-left: 2px;
+}
+
+.dcp-item-icon-right-group {
+  justify-self: end;
+}
+
+.dcp-item-new,
+.dcp-item-a2ts,
+.dcp-item-cloud,
+.dcp-item-export-badge,
+.dcp-item-report {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  pointer-events: auto;
+}
+
+.dcp-item-bookmark,
+.dcp-item-select {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  pointer-events: auto;
+}
+
+.dcp-item-ia {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  margin-right: -4px;
+  pointer-events: auto;
 }
 
 .dcp-item-new-icon {
   position: relative;
-  top: 10px;
+  width: 100%;
+  height: 100%;
   color: gainsboro;
   z-index: 1;
 }
 
 .dcp-item-new-icon-bg {
-  position: relative;
+  position: absolute;
   width: 12px;
   height: 12px;
-  left: 19%;
-  bottom: 6px;
-  background-color: black;
+  left: 4px;
   z-index: 0;
 }
 
-.dcp-item-bookmark {
-  position: absolute;
-  right: 8px;
-  width: 20%;
-  height: 20%;
-  bottom: 45%;
-  cursor: pointer;
-}
+.dcp-item-bookmark { cursor: pointer; }
 
 .dcp-item-bookmark-icon {
   position: relative;
+  display: block;
   width: 100%;
   height: 100%;
   color: yellow;
   z-index: 1;
 }
 
-.dcp-item-select {
-  position: absolute;
-  right: 9px;
-  width: 20%;
-  height: 20%;
-  bottom: 45%;
-  cursor: pointer;
-}
+.dcp-item-select { cursor: pointer; }
 
 .dcp-item-select-icon {
   position: relative;
+  display: block;
   width: 100%;
   height: 100%;
   color: greenyellow;
@@ -310,68 +362,51 @@
 }
 
 .dcp-item-select-icon-bg {
-  position: relative;
-  width: 70%;
-  height: 50%;
-  left: 12%;
-  bottom: 80%;
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  left: -2px;
+  bottom: -2px;
+  border-radius: 50%;
   background-color: black;
   z-index: 0;
 }
 
-.dcp-item-a2ts {
-  position: absolute;
-  left: 6px;
-  bottom: 4px;
-}
-
 .dcp-item-a2ts-icon {
   position: relative;
-  top: 8px;
+  width: 100%;
+  height: 100%;
   color: gainsboro;
   z-index: 1;
 }
 
 .dcp-item-a2ts-icon-bg {
-  position: relative;
+  position: absolute;
   width: 14px;
   height: 14px;
-  left: 13%;
-  bottom: 10px;
+  left: 4px;
+  bottom: 2px;
   background-color: black;
   z-index: 0;
 }
 
-.dcp-item-ia {
-  position: absolute;
-  left: 6px;
-  bottom: 4px;
-}
-
 .dcp-item-ia-icon {
   position: relative;
-  left: 4px;
-  bottom: -50%;
+  display: block;
+  width: 100%;
+  height: 100%;
   color: gainsboro;
   z-index: 1;
 }
 
 .dcp-item-ia-icon-bg {
-  position: relative;
-  width: 50%;
-  height: 80%;
-  left: 20%;
-  bottom: 48%;
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  left: 4px;
+  bottom: 4px;
   background-color: black;
   z-index: 0;
-}
-
-.dcp-item-cloud {
-  position: absolute;
-  left: 6px;
-  bottom: 10px;
-  width: 10%;
-  height: 10%;
 }
 
 .dcp-item-cloud-icon {
@@ -382,15 +417,10 @@
   z-index: 1;
 }
 
-.dcp-item-export-badge {
-  position: absolute;
-  left: 26px;
-  bottom: 4px;
-}
-
 .dcp-item-export-badge-icon {
   position: relative;
-  top: -1px;
+  width: 100%;
+  height: 100%;
   color: lightgreen;
   z-index: 1;
 }
@@ -404,36 +434,41 @@
 }
 
 .dcp-item-export-badge-icon-bg {
-  position: relative;
+  position: absolute;
   width: 14px;
   height: 3px;
-  left: 25%;
-  bottom: 6px;
+  left: 3px;
+  bottom: 2px;
   background-color: black;
   z-index: 0;
 }
 
-.dcp-item-report {
-  position: absolute;
-  right: 5px;
-  bottom: 10px;
-  cursor: pointer;
-  pointer-events: auto;
-}
+.dcp-item-report { cursor: pointer; }
 
 .dcp-item-report-icon {
   position: relative;
+  width: 100%;
+  height: 100%;
   color: orange;
-  bottom: 1px;
   z-index: 1;
 }
 
+.dcp-item-new-icon-bg,
+.dcp-item-select-icon-bg,
+.dcp-item-a2ts-icon-bg,
+.dcp-item-ia-icon-bg,
+.dcp-item-export-badge-icon-bg,
 .dcp-item-report-icon-bg {
-  position: relative;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dcp-item-report-icon-bg {
+  position: absolute;
   width: 14px;
   height: 3px;
-  right: -20%;
-  bottom: 13px;
+  right: 3px;
+  bottom: 2px;
   background-color: black;
   z-index: 0;
 }
@@ -447,13 +482,14 @@
 .dcp-item-cloud-icon,
 .dcp-item-export-badge-icon,
 .dcp-item-report-icon {
+  backface-visibility: hidden;
+  transform: translateZ(0);
   filter:
     drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
 }
 
 @media (min-width: 1290px) {
   .disk-collection-panel {
-    grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
     grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
   }
 
@@ -472,23 +508,4 @@
     max-height: 65vh;
   }
 
-  .dcp-item-new {
-    bottom: 12px;
-  }
-
-  .dcp-item-a2ts {
-    bottom: 8px;
-  }
-
-  .dcp-item-export-badge {
-    bottom: 10px;
-  }
-
-  .dcp-item-ia {
-    position: absolute;
-    width: 14%;
-    height: 10%;
-    left: 4px;
-    bottom: 32px;
-  }
 }

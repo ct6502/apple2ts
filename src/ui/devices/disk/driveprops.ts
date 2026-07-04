@@ -369,7 +369,13 @@ export const handleSetDiskFromURL = async (url: string,
     // showGlobalProgressModal(true)
   }
 
-  // Try direct fetch first (works in Electron with CORS bypass)
+  // Try a direct fetch first for every host (GitHub, Internet Archive, etc.).
+  // Most sources (including archive.org/download) send permissive CORS headers,
+  // so the direct fetch succeeds and never burdens the CORS proxy. We only fall
+  // back to the proxy when a direct fetch genuinely fails (truly CORS-blocked
+  // hosts). The disk VTOC check that drives these downloads is serialized one
+  // request at a time, so this does not flood Internet Archive with parallel
+  // requests (the cause of the earlier 429 throttling).
   console.log(`🌐 Attempting direct fetch: ${url}`)
   try {
     response = await fetch(url)

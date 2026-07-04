@@ -258,10 +258,11 @@ const generateMenuSourceProgram = (
   lines.push("1005 IF I<1 OR I>MAX THEN I=1")
   // GRAPHICS + MIXED + PAGE1 + HIRES for screenshot + bottom text lines.
   lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
-  for (let idx = 1; idx <= count; idx++) {
-    const lineNo = 1010 + idx
-    lines.push(`${lineNo} IF I=${idx} THEN PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(idx).padStart(2, "0")},A$2000"`)
-  }
+  // The screenshot filename is SCREEN + the zero-padded index, which is a pure
+  // function of I, so compute it at runtime instead of emitting one IF-line per
+  // disk. This keeps MENUSRC's size constant regardless of the disk count.
+  lines.push("1011 N$=STR$(I):IF I<10 THEN N$=\"0\"+N$")
+  lines.push(`1012 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
   for (let idx = 1; idx <= count; idx++) {
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
     const leftArrow = showNavigationArrows ? "<- " : "   "
@@ -543,7 +544,8 @@ const collectDirectoryBlocksFromStart = (disk: Uint8Array, startBlock: number): 
   while (block !== 0 && !visited.has(block)) {
     visited.add(block)
     blocks.push(block)
-    const dir = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const dir = readBlock(disk, block)
+    if (!dir) break
     block = readDirNextBlock(dir)
   }
 
@@ -2610,7 +2612,8 @@ const findSubdirectoryHeaderTemplate = (disk: Uint8Array): Uint8Array | undefine
   const dirBlocks = collectRootDirectoryBlocks(disk)
   for (let b = 0; b < dirBlocks.length; b++) {
     const blockNum = dirBlocks[b]
-    const dirBlock = new Uint8Array(disk.buffer, blockNum * BLOCK_SIZE, BLOCK_SIZE)
+    const dirBlock = readBlock(disk, blockNum)
+    if (!dirBlock) continue
     const startIndex = b === 0 ? 1 : 0
     for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
       const entryOffset = getDirEntryOffset(slot)
@@ -2715,7 +2718,8 @@ const collectRootDirectoryBlocks = (disk: Uint8Array) => {
   while (block !== 0 && !visited.has(block)) {
     visited.add(block)
     blocks.push(block)
-    const dir = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const dir = readBlock(disk, block)
+    if (!dir) break
     block = readDirNextBlock(dir)
   }
 
@@ -2734,7 +2738,8 @@ const readDirectoryEntryName = (entry: Uint8Array) => {
 const findDirectoryKeyBlockByName = (disk: Uint8Array, dirBlocks: number[], directoryName: string) => {
   for (let b = 0; b < dirBlocks.length; b++) {
     const block = dirBlocks[b]
-    const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const dirBlock = readBlock(disk, block)
+    if (!dirBlock) continue
     const startIndex = b === 0 ? 1 : 0
     for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
       const entryOffset = getDirEntryOffset(slot)
@@ -2761,7 +2766,8 @@ const scanRootDirectory = (disk: Uint8Array, dirBlocks: number[]) => {
   let hasDosmaster = false
   for (let b = 0; b < dirBlocks.length; b++) {
     const block = dirBlocks[b]
-    const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const dirBlock = readBlock(disk, block)
+    if (!dirBlock) continue
     const startIndex = b === 0 ? 1 : 0
     for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
       const entryOffset = getDirEntryOffset(slot)
@@ -2787,7 +2793,8 @@ const scanRootDirectory = (disk: Uint8Array, dirBlocks: number[]) => {
     const dosMasterDirBlocks = collectDirectoryBlocksFromStart(disk, dosMasterDirKeyBlock)
     for (let b = 0; b < dosMasterDirBlocks.length; b++) {
       const block = dosMasterDirBlocks[b]
-      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const dirBlock = readBlock(disk, block)
+      if (!dirBlock) continue
       const startIndex = b === 0 ? 1 : 0
       for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
         const entryOffset = getDirEntryOffset(slot)
@@ -2845,7 +2852,8 @@ const findFileEntryMetadataByPath = (disk: Uint8Array, pathParts: string[]): Pro
   const findEntryInDirectory = (dirBlocks: number[], name: string) => {
     for (let b = 0; b < dirBlocks.length; b++) {
       const block = dirBlocks[b]
-      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const dirBlock = readBlock(disk, block)
+      if (!dirBlock) continue
       const startIndex = b === 0 ? 1 : 0
       for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
         const entryOffset = getDirEntryOffset(slot)
@@ -2903,7 +2911,8 @@ const findFileByPath = (disk: Uint8Array, pathParts: string[]): ProDosFileLocati
   const findEntryInDirectory = (dirBlocks: number[], name: string) => {
     for (let b = 0; b < dirBlocks.length; b++) {
       const block = dirBlocks[b]
-      const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+      const dirBlock = readBlock(disk, block)
+      if (!dirBlock) continue
       const startIndex = b === 0 ? 1 : 0
       for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
         const entryOffset = getDirEntryOffset(slot)
@@ -3469,7 +3478,8 @@ const findRootFileEntry = (
 ): { storageType: 1 | 2 | 3; keyBlock: number; eof: number } | undefined => {
   for (let b = 0; b < dirBlocks.length; b++) {
     const block = dirBlocks[b]
-    const dirBlock = new Uint8Array(disk.buffer, block * BLOCK_SIZE, BLOCK_SIZE)
+    const dirBlock = readBlock(disk, block)
+    if (!dirBlock) continue
     const startIndex = b === 0 ? 1 : 0
     for (let slot = startIndex; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
       const entryOffset = getDirEntryOffset(slot)

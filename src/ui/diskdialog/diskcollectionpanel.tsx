@@ -287,7 +287,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return { state: "blocked", title: "Disk is not exportable due to DOS Master incompatibility" }
     }
     if (disk.vtocType === undefined) {
-      return { state: "pending", title: "Exportablity determination pending" }
+      return { state: "pending", title: "Disk export status pending" }
     }
     return { state: "exportable", title: "Disk can be exported" }
   }
@@ -644,8 +644,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       })
 
       // Convert each disk's preview screenshot to Apple II hi-res, stamping the
-      // Apple2TS logo into the corner. Conversion is deterministic; the result
-      // is computed fresh from the source image each export (no caching).
+      // Apple2TS logo into the corner. Conversion is deterministic; the source image is
+      // fetched through a localStorage cache (see resolveScreenshotUrlWithCache) so each
+      // screenshot only hits the network/app assets once across exports.
       const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
       for (let index = 0; index < orderedDownloadedDisks.length; index++) {
         const disk = orderedDownloadedDisks[index]
@@ -930,95 +931,103 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 onContextMenu={handleItemRightClick(diskCollectionItem)}
               >
                 <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
+                <div className="dcp-item-icon-top-right">
+                  {activeTab == 2 && diskCollectionItem.bookmarkId &&
+                    <div
+                      className="dcp-item-bookmark"
+                      title="Click to remove from disk collection"
+                      onClick={handleBookmarkClick(diskCollectionItem)}>
+                      <FontAwesomeIcon icon={faStar} size="lg" className="dcp-item-bookmark-icon" />
+                    </div>}
+                  {activeTab == TAB_INDEX_SELECT && isDiskExportable(diskCollectionItem) &&
+                    <div
+                      className="dcp-item-select"
+                      title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
+                      onClick={isDisabledForExport ? undefined : handleSelectedClick(diskCollectionItem)}
+                      onContextMenu={isDisabledForExport ? undefined : handleItemRightClick(diskCollectionItem)}>
+                      <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} size="lg" className="dcp-item-select-icon" />
+                      {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
+                    </div>}
+                </div>
+                <div className="dcp-item-icon-row">
+                  <div className="dcp-item-icon-left-group">
+                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
+                      <div className="dcp-item-new" title="Disk is a new release">
+                        <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
+                          if (activeTab != TAB_INDEX_SELECT) {
+                            event.stopPropagation()
+                          }
+                        }} />
+                        <div className="dcp-item-new-icon-bg">&nbsp;</div>
+                      </div>}
+                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
+                      <div className="dcp-item-a2ts" title="Disk is part of the Apple2TS collection">
+                        <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
+                          if (activeTab != TAB_INDEX_SELECT) {
+                            event.stopPropagation()
+                          }
+                        }} />
+                        <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
+                      </div>}
+                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
+                      <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
+                        <svg
+                          className="dcp-item-ia-icon"
+                          onClick={(event) => {
+                            if (activeTab != TAB_INDEX_SELECT) {
+                              event.stopPropagation()
+                            }
+                          }}
+                          fill="#ffffff"
+                          viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
+                        <div className="dcp-item-ia-icon-bg">&nbsp;</div>
+                      </div>}
+                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
+                      <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
+                        <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
+                          if (activeTab != TAB_INDEX_SELECT) {
+                            event.stopPropagation()
+                          }
+                        }} />
+                      </div>}
+                    {(() => {
+                      const exportBadge = getExportBadgeInfo(diskCollectionItem)
+                      const badgeStateClass = exportBadge.state === "blocked"
+                        ? " dcp-item-export-badge-disabled"
+                        : exportBadge.state === "pending"
+                          ? " dcp-item-export-badge-pending"
+                          : ""
+                      return (
+                        <div
+                          className={`dcp-item-export-badge${badgeStateClass}`}
+                          title={exportBadge.title}>
+                          <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" onClick={(event) => {
+                            if (activeTab != TAB_INDEX_SELECT) {
+                              event.stopPropagation()
+                            }
+                          }} />
+                          <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  <div className="dcp-item-icon-right-group">
+                    {activeTab == TAB_INDEX_SELECT &&
+                      <div
+                        className="dcp-item-report"
+                        title="Report an export issue"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=Export+to+HDV+issue:+${encodeURIComponent(diskCollectionItem.title)}`
+                          window.open(reportUrl, "_blank", "noopener,noreferrer")
+                        }}>
+                        <FontAwesomeIcon icon={faCommentDots} size="lg" className="dcp-item-report-icon" />
+                        <div className="dcp-item-report-icon-bg">&nbsp;</div>
+                      </div>}
+                  </div>
+                </div>
               </div>
               <img className="dcp-item-disk" src="assets/floppy.png" />
-              {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
-                <div className="dcp-item-new" title="Disk is a new release">
-                  <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
-                    if (activeTab != TAB_INDEX_SELECT) {
-                      event.stopPropagation()
-                    }
-                  }} />
-                  <div className="dcp-item-new-icon-bg">&nbsp;</div>
-                </div>}
-              {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
-                <div className="dcp-item-a2ts" title="Disk is part of the Apple2TS collection">
-                  <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
-                    if (activeTab != TAB_INDEX_SELECT) {
-                      event.stopPropagation()
-                    }
-                  }} />
-                  <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
-                </div>}
-              {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
-                <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
-                  <svg
-                    className="dcp-item-ia-icon"
-                    onClick={(event) => {
-                      if (activeTab != TAB_INDEX_SELECT) {
-                        event.stopPropagation()
-                      }
-                    }}
-                    fill="#ffffff"
-                    viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
-                  <div className="dcp-item-ia-icon-bg">&nbsp;</div>
-                </div>}
-              {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
-                <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
-                  <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
-                    if (activeTab != TAB_INDEX_SELECT) {
-                      event.stopPropagation()
-                    }
-                  }} />
-                </div>}
-              {(() => {
-                const exportBadge = getExportBadgeInfo(diskCollectionItem)
-                const badgeStateClass = exportBadge.state === "blocked"
-                  ? " dcp-item-export-badge-disabled"
-                  : exportBadge.state === "pending"
-                    ? " dcp-item-export-badge-pending"
-                    : ""
-                return (
-                  <div
-                    className={`dcp-item-export-badge${badgeStateClass}`}
-                    title={exportBadge.title}>
-                    <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" onClick={(event) => {
-                      if (activeTab != TAB_INDEX_SELECT) {
-                        event.stopPropagation()
-                      }
-                    }} />
-                    <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
-                  </div>
-                )
-              })()}
-              {activeTab == TAB_INDEX_SELECT &&
-                <div
-                  className="dcp-item-report"
-                  title="Report an export issue"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=Export+to+HDV+issue:+${encodeURIComponent(diskCollectionItem.title)}`
-                    window.open(reportUrl, "_blank", "noopener,noreferrer")
-                  }}>
-                  <FontAwesomeIcon icon={faCommentDots} size="lg" className="dcp-item-report-icon" />
-                  <div className="dcp-item-report-icon-bg">&nbsp;</div>
-                </div>}
-              {activeTab == 2 && diskCollectionItem.bookmarkId &&
-                <div
-                  className="dcp-item-bookmark"
-                  title="Click to remove from disk collection"
-                  onClick={handleBookmarkClick(diskCollectionItem)}>
-                  <FontAwesomeIcon icon={faStar} className="dcp-item-bookmark-icon" />
-                </div>}
-              {activeTab == TAB_INDEX_SELECT && isDiskExportable(diskCollectionItem) &&
-                <div
-                  className="dcp-item-select"
-                  title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
-                  onClick={isDisabledForExport ? undefined : handleSelectedClick(diskCollectionItem)}
-                  onContextMenu={isDisabledForExport ? undefined : handleItemRightClick(diskCollectionItem)}>
-                  <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} className="dcp-item-select-icon" />
-                  {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
-                </div>}
             </div>
           )
         })}
