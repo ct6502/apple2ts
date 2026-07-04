@@ -668,7 +668,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       }))
 
       const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)
-      downloadExportHdv(hdvData, `APPLE2TS.HDV`)
+      downloadExportHdv(hdvData, "APPLE2TS.HDV")
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       alert(`Failed to build ProDOS HDV: ${message}`)
@@ -915,7 +915,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
                   onClick={(e) => {
                     if (activeTab != TAB_INDEX_SELECT && diskCollectionItem.detailsUrl) {
-                      handleHelpClick(diskCollectionItem)(e as any)
+                      handleHelpClick(diskCollectionItem)(e as React.MouseEvent<HTMLElement>)
                     }
                   }} />
               </div>
