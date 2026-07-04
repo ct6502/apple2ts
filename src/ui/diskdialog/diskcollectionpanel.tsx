@@ -287,7 +287,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return { state: "blocked", title: "Disk is not exportable due to DOS Master incompatibility" }
     }
     if (disk.vtocType === undefined) {
-      return { state: "pending", title: "Exportablity determination pending" }
+      return { state: "pending", title: "Disk export status pending" }
     }
     return { state: "exportable", title: "Disk can be exported" }
   }
