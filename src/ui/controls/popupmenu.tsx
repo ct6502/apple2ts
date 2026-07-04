@@ -46,6 +46,7 @@ const PopupMenu = (props: PopupMenuProps) => {
         style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
         onClick={props.onClose}>
         <div className="floating-dialog flex-column droplist-option"
+          onClick={(e) => e.stopPropagation()}
           style={getPopupLocationStyle()}>
           {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
             (menuItem.isVisible == undefined || menuItem.isVisible()) &&
@@ -59,7 +60,13 @@ const PopupMenu = (props: PopupMenuProps) => {
                 className="droplist-option" style={{ padding: "5px" }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
-                onClick={menuItem.onClick}>
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  if (menuItem.onClick) {
+                    await menuItem.onClick()
+                  }
+                  props.onClose()
+                }}>
                 {menuItem.isSelected != undefined && menuItem.isSelected()
                   ? "\u2714\u2009"
                   : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}

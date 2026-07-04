@@ -1,5 +1,4 @@
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
-import { showGlobalProgressModal } from "../../ui_utilities"
 
 export const internetArchiveUrlProtocol = "a2ia://"
 
@@ -7,8 +6,9 @@ export const generateUrlFromInternetArchiveId = (identifier: string): URL => {
   return new URL(internetArchiveUrlProtocol + identifier)
 }
 
-export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
+export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise<[URL | undefined, number]> => {
   let newDiskImageUrl: URL | undefined
+  let fileSize: number = -1
   const detailsUrl = `https://archive.org/details/${identifier}?output=json`
   const favicon: { [key: string]: string } = {}
   favicon[iconKey()] = iconData()
@@ -22,6 +22,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
         Object.keys(json.files).forEach((file) => {
           if (file.toLowerCase().endsWith(emulatorExt)) {
             newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
+            fileSize = parseInt(json.files[file].size)
             console.log(`Found disk image ${newDiskImageUrl.toString}`)
             return
           }
@@ -34,7 +35,6 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
     }
   }
   
-  showGlobalProgressModal(true)
   try {
     // Try direct fetch first (works in Electron)
     const response = await fetch(detailsUrl)
@@ -49,9 +49,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string) => {
       const response = await fetch(iconName() + detailsUrl, { headers: favicon })
       await processDiskImageResponse(response)
     }
-  } finally {
-    showGlobalProgressModal(false)
   }
 
-  return newDiskImageUrl
+  return [newDiskImageUrl, fileSize]
 }

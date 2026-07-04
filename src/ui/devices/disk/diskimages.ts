@@ -5,6 +5,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: "disks/Aztec.png",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 819200
   },
   {
     title: "Eamon",
@@ -13,6 +14,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 819200
   },
   // {
   //   title: "Apple IIe Diagnostic",
@@ -27,6 +29,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: "disks/MECC-Inspector.png",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234496
   },
   {
     title: "MousePaint",
@@ -35,6 +38,7 @@ export const diskImages: DiskCollectionItem[] = [
     type: undefined,
     lastUpdated: new Date(0),
     params: "color=white",
+    fileSize: 234496
   },
   {
     title: "Nox Archaist Demo",
@@ -43,6 +47,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://noxarchaist.com",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 1474560
   },
   {
     title: "Olympic Decathalon",
@@ -51,6 +56,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://archive.org/details/microsoft-olympic-decathlon-a2-ph/",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234496
   },
   {
     title: "Print Shop Color",
@@ -58,6 +64,7 @@ export const diskImages: DiskCollectionItem[] = [
     imageUrl: "disks/Print%20Shop%20Color.png",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 234757
   },
   {
     title: "ProDOS 2.4.3",
@@ -66,6 +73,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://prodos8.com/",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 143360
   },
   {
     title: "Robotron",
@@ -74,6 +82,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://groups.google.com/g/comp.sys.apple2/c/2xlihijn82o/",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 143360
   },
   {
     title: "Total Replay",
@@ -84,6 +93,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://archive.org/details/TotalReplay",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
   },
   {
     title: "Instant Replay",
@@ -93,6 +103,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://github.com/a2-4am/4sports",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
   },
   {
     title: "Pitch Dark",
@@ -102,6 +113,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://archive.org/details/PitchDark",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
   },
   {
     title: "Ultima IV",
@@ -110,6 +122,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://wiki.ultimacodex.com/wiki/Ultima_IV:_Quest_of_the_Avatar",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 819200
   },
   {
     title: "Ultima V",
@@ -118,6 +131,7 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://wiki.ultimacodex.com/wiki/Ultima_V:_Warriors_of_Destiny",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 1474560
   },
   {
     title: "Wizard Replay",
@@ -127,5 +141,6 @@ export const diskImages: DiskCollectionItem[] = [
     detailsUrl: "https://archive.org/details/WizardReplay",
     type: undefined,
     lastUpdated: new Date(0),
+    fileSize: 33553920
     }
-    ]
+  ]

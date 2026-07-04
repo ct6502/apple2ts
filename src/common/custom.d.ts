@@ -150,7 +150,8 @@ type CloudData = {
   itemId: string,
   apiEndpoint: string,
   downloadUrl: string,
-  detailsUrl: string
+  detailsUrl: string,
+  fileSize: number
 }
 
 type CloudProvider = {
@@ -364,6 +365,8 @@ type DisassemblyProps = {
   refresh: () => void,
 }
 
+type VtocType = "dos" | "prodos" | "other" | "dosup"
+
 type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,
@@ -372,8 +375,11 @@ type DiskCollectionItem = {
   diskUrl: string,
   detailsUrl?: string,
   bookmarkId?: string,
+  cloudData?: CloudData,
   params?: string,
-  cloudData?: CloudData
+  fileSize: number,
+  vtocType?: VtocType,
+  exportDisabled?: boolean
 }
 
 interface OpenerWindow {

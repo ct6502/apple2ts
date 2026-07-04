@@ -107,7 +107,8 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       itemId: props.identifier,
       apiEndpoint: "",
       downloadUrl: generateUrlFromInternetArchiveId(props.identifier).toString(),
-      detailsUrl: `https://archive.org/details/${props.identifier}`
+      detailsUrl: `https://archive.org/details/${props.identifier}`,
+      fileSize: -1
     }
 
     props.closeParent()
@@ -138,7 +139,8 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
         itemId: props.identifier,
         apiEndpoint: "",
         downloadUrl: url,
-        detailsUrl: `https://archive.org/details/${props.identifier}`
+        detailsUrl: `https://archive.org/details/${props.identifier}`,
+        fileSize: -1
       }
     })
     setBookmarked(true)
@@ -274,7 +276,7 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
 
-    showGlobalProgressModal(true)
+    showGlobalProgressModal(true, "Fetching query results")
     fetch(queryUrl)
       .then(async response => {
         if (response.ok) {

@@ -8,7 +8,7 @@ import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
   syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
-  updateAddressTables, setMemoryBlock, addressGetTable, 
+  updateAddressTables, setMemoryBlock, addressGetTable,
   getBasePlusAuxMemory,
   setRamWorks,
   RamWorksMaxBank,
@@ -144,9 +144,10 @@ export const doBoot = () => {
     memory.set(pcode, 0x300)
   }
 //  testTiming()
+
+  enableHardDrive()
+
   doReset()
-  // Force the help text to be reset if necessary.
-  handleGameSetup(true)
   // This is a hack. If we don't currently have a hard drive image on boot,
   // temporarily disable the hard drive and then re-enable it later.
   // This allows the floppy disk to boot instead.
@@ -164,6 +165,8 @@ export const doReset = () => {
   memGet(0xC082)
   reset6502()
   resetMachine()
+  // Force the help text panel back to default on reset/reboot paths.
+  handleGameSetup(true)
   if (getSiriusJoyport()) {
     setSiriusJoyport(false)
     const currentCycle = s6502.cycleCount

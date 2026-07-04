@@ -85,6 +85,9 @@ export const handleSetDiskData = (
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
   lastLocalFileWriteTime: number) => {
+  if (cloudData) {
+    cloudData.fileSize = data.length
+  }
   driveProps[index].filename = filename
   driveProps[index].diskData = data
   driveProps[index].lastLocalFileWriteTime = lastLocalFileWriteTime
@@ -173,7 +176,7 @@ export const handleSetDiskOrFileFromBuffer = (
   } else {
     // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
     if (isHardDriveImage(fname)) {
-      if (index > 1) newIndex = 0
+      if (index < 0 || index > 1) newIndex = 0
     } else {
       if (index < 2) newIndex = 2
     }
@@ -188,7 +191,10 @@ export const handleSetDiskOrFileFromBuffer = (
   return newIndex
 }
 
-export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveIndex: number = 0) => {
+export const handleSetDiskFromCloudData = async (
+  cloudData: CloudData,
+  driveIndex: number = 0,
+  callback?: (buffer: ArrayBuffer | null) => void) => {
   let cloudProvider
   switch (cloudData.providerName) {
     case "GoogleDrive":
@@ -202,7 +208,10 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
 
   if (cloudProvider) {
     cloudProvider.requestAuthToken(async (authToken: string) => {
-      showGlobalProgressModal(true)
+      if (!callback) {
+        showGlobalProgressModal(true, "Downloading disk")
+      }
+
       const response = await fetch(cloudData.downloadUrl, {
         headers: {
           "Authorization": authToken,
@@ -211,17 +220,27 @@ export const handleSetDiskFromCloudData = async (cloudData: CloudData, driveInde
         redirect: "follow"
       })
         .finally(() => {
-          showGlobalProgressModal(false)
+          if (!callback) {
+            showGlobalProgressModal(false)
+          }
         })
 
       if (response.ok) {
         const blob = await response.blob()
         const buffer = await new Response(blob).arrayBuffer()
 
-        cloudData.lastSyncTime = Date.now()
-        handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+        if (callback) {
+          callback(buffer)
+        } else {
+          cloudData.lastSyncTime = Date.now()
+          handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+        }
       } else {
-        // $TODO: Add error handling
+        if (callback) {
+          callback(null)
+        } else {
+          // $TODO: Add error handling
+        }
       }
     })
   }
@@ -270,7 +289,7 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
 }
 
 export const handleSetDiskFromURL = async (url: string,
-  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData) => {
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void) => {
   // Check if it's a local file (not http/https URL)
   const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
   
@@ -310,11 +329,10 @@ export const handleSetDiskFromURL = async (url: string,
     }
   }
 
-
   // Resolve Internet Archive URL, if necessary
   if (url.startsWith(internetArchiveUrlProtocol)) {
     const identifier = url.substring(internetArchiveUrlProtocol.length)
-    const resolvedUrl = await getDiskImageUrlFromIdentifier(identifier)
+    const [resolvedUrl, fileSize] = await getDiskImageUrlFromIdentifier(identifier)
 
     if (resolvedUrl) {
       url = resolvedUrl.toString()
@@ -323,18 +341,33 @@ export const handleSetDiskFromURL = async (url: string,
       const bookmark = diskBookmarks.get(identifier)
       if (bookmark) {
         bookmark.diskUrl = resolvedUrl.toString()
+        if (bookmark.cloudData) {
+          bookmark.cloudData.fileSize = fileSize
+        }
         diskBookmarks.set(bookmark)
       }
+    } else {
+      // The identifier could not be resolved to a real disk image URL. Don't
+      // fall through with the still-unresolved "a2ia://" URL: fetching it (and
+      // forwarding it to the CORS proxy) is guaranteed to fail.
+      console.warn(`Unable to resolve Internet Archive disk image for "${identifier}"`)
+      if (callback) {
+        callback(null)
+      }
+      return
     }
   }
 
   // Download the file from the fragment URL
   let name = ""
   let buffer
-
   let response: Response | null = null
 
-  showGlobalProgressModal(true)
+  if (!callback) {
+    showGlobalProgressModal(true, "Downloading disk")
+  } else {
+    // showGlobalProgressModal(true)
+  }
 
   // Try direct fetch first (works in Electron with CORS bypass)
   console.log(`🌐 Attempting direct fetch: ${url}`)
@@ -352,12 +385,14 @@ export const handleSetDiskFromURL = async (url: string,
   }
 
   // If direct fetch failed, try CORS proxies
-  if (!response) {
+  if (!response || !response.ok) {
+    console.log("Direct fetch failed, trying CORS proxy")
     response = await fetchWithCorsProxy(url)
-
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
-      showGlobalProgressModal(false)
+      if (!callback) {
+        showGlobalProgressModal(false)
+      }
       
       // Show user-friendly error message
       const isGitHub = url.includes("github.com")
@@ -379,8 +414,13 @@ export const handleSetDiskFromURL = async (url: string,
         errorMessage += "The file could not be downloaded. Please check your internet connection and try again."
       }
       
-      setTimeout(() => alert(errorMessage), 100)
-      return
+      if (callback) {
+        callback(null)
+        return
+      } else {
+        setTimeout(() => alert(errorMessage), 100)
+        return
+      }
     }
   }
 
@@ -451,20 +491,34 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (buffer) {
-      // If we are loading from a URL, reset all drives. Fixes issue#186
-      console.log(`💾 Setting disk data for drive ${index}...`)
-      resetAllDiskDrives()
-      handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
-      console.log("✅ Disk loaded successfully")
+      if (callback) {
+        callback(buffer)
+      } else {
+        // If we are loading from a URL, reset all drives. Fixes issue#186
+        console.log(`💾 Setting disk data for drive ${index}...`)
+        resetAllDiskDrives()
+        
+        handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+        console.log("✅ Disk loaded successfully")
+      }
     } else {
-      console.error("❌ No buffer data available after download")
-      // $TODO: Add error handling
+      if (callback) {
+        callback(null)
+      } else {
+        console.error("❌ No buffer data available after download")
+        // $TODO: Add error handling
+      }
     }
   } catch (error) {
     console.error(`❌ Error processing download for "${url}":`, error)
     console.error("Error details:", error instanceof Error ? error.message : String(error))
+    if (callback) {
+      callback(null)
+    }
   } finally {
-    showGlobalProgressModal(false)
+    if (!callback) {
+      showGlobalProgressModal(false)
+    }
   }
 }
 
@@ -536,17 +590,63 @@ const checkForHelpFile = async (disk: string) => {
 }
 
 export const handleSetDiskFromFile = async (disk: string,
-  updateDisplay: UpdateDisplay, driveIndex: number = 0) => {
+  updateDisplay: UpdateDisplay, driveIndex: number = -1,
+  callback?: (buffer: ArrayBuffer | null) => void) => {
   let data: ArrayBuffer
   try {
     const res = await fetch("disks/" + disk)
     data = await res.arrayBuffer()
   } catch {
-   return
+    if (callback) {
+      callback(null)
+    } else {
+      // $TODO: Add error handling
+    }
+    return
   }
-  resetAllDiskDrives()
-  handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
-  passSetRunMode(RUN_MODE.NEED_BOOT)
+
+  if (callback) {
+    callback(data)
+  } else {
+    let needsBoot = false
+    
+    if (driveIndex < 0) {
+      needsBoot = true
+      driveIndex = 0
+    }
+    
+    if (needsBoot) {
+      resetAllDiskDrives()
+      driveIndex = 0
+    }
+
+    handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
+
+    if (needsBoot) {
+      passSetRunMode(RUN_MODE.NEED_BOOT)
+    }
+
+    const helpFile = replaceSuffix(disk, "txt")
+    try {
+      const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
+      let helptext = "<Default>"
+      if (help.ok) {
+        helptext = await help.text()
+        // Hack: when running on localhost, if the file is missing it just
+        // returns the index.html. So just return an empty string instead.
+        if (helptext.startsWith("<!DOCTYPE html>")) {
+          helptext = "<Default>"
+        }
+        if (helpFile.includes("Total%20Replay")) {
+        helptext = parseGameList(helptext)
+      }
+      updateDisplay(0, helptext)
+      }      
+    } catch {
+      // If we don't have a help text file, just revert to the default text.
+      updateDisplay(0, "<Default>")
+    }
+  }
 }
 
 export const handleSaveWritableFile = async (index: number, writableFileHandle: WritableFileHandle|null = null) => {

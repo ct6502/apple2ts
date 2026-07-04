@@ -10,7 +10,8 @@ export type DiskBookmark = {
   diskUrl?: string,
   detailsUrl?: URL,
   lastUpdated: Date,
-  cloudData?: CloudData
+  cloudData?: CloudData,
+  vtocType?: VtocType
 }
 
 export class DiskBookmarks {

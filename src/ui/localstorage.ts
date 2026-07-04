@@ -114,6 +114,31 @@ export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
   // UI-only setting, pass along not necessary
 }
 
+export type DiskCollectionSortMode = "name-asc" | "name-desc" | "date-newest" | "date-oldest"
+
+export const getPreferenceDiskCollectionSort = (tabIndex: number): DiskCollectionSortMode | undefined => {
+  const item = localStorage.getItem(`diskCollectionSort.${tabIndex}`)
+  if (!item) {
+    return undefined
+  }
+
+  try {
+    const value = JSON.parse(item)
+    if (value === "name-asc" || value === "name-desc" || value === "date-newest" || value === "date-oldest") {
+      return value
+    }
+  } catch {
+    // Invalid data is treated as unset and falls back to per-tab default.
+  }
+
+  localStorage.removeItem(`diskCollectionSort.${tabIndex}`)
+  return undefined
+}
+
+export const setPreferenceDiskCollectionSort = (tabIndex: number, mode: DiskCollectionSortMode) => {
+  localStorage.setItem(`diskCollectionSort.${tabIndex}`, JSON.stringify(mode))
+}
+
 export const setPreferenceTouchJoystickMode = (mode: TOUCH_JOYSTICK_MODE = "off") => {
   if (mode === "off") {
     localStorage.removeItem("touchJoystickMode")
@@ -392,6 +417,67 @@ export const getPreferenceNewReleasesChecked = () => {
   }
 
   return value
+}
+
+// A disk's VTOC type is determined once from its bytes and never changes, so we
+// cache it in local storage keyed by the disk URL. This lets non-bookmarked
+// disks (e.g. new releases) skip re-downloading their bytes on every visit to
+// the Export/New Releases tabs.
+const getVtocTypeCache = (): { [diskUrl: string]: VtocType } => {
+  const item = localStorage.getItem("vtocTypeCache")
+  if (item) {
+    try {
+      return JSON.parse(item)
+    } catch { /* empty */ }
+  }
+  return {}
+}
+
+export const getPreferenceVtocType = (diskUrl: string): VtocType | undefined => {
+  if (!diskUrl) {
+    return undefined
+  }
+  return getVtocTypeCache()[diskUrl]
+}
+
+export const setPreferenceVtocType = (diskUrl: string, vtocType: VtocType) => {
+  if (!diskUrl) {
+    return
+  }
+  const cache = getVtocTypeCache()
+  cache[diskUrl] = vtocType
+  localStorage.setItem("vtocTypeCache", JSON.stringify(cache))
+}
+
+// A disk whose VTOC can't be determined because its bytes fail to download
+// (CORS/network) is remembered for the current browser session in sessionStorage
+// so we don't re-attempt the download on every page reload. Unlike the VTOC type
+// cache (which is permanent), these failures intentionally clear when the browser
+// session ends, so a temporarily unreachable disk is retried in a new session.
+const getVtocFailureSet = (): Set<string> => {
+  const item = sessionStorage.getItem("vtocFailedUrls")
+  if (item) {
+    try {
+      return new Set(JSON.parse(item))
+    } catch { /* empty */ }
+  }
+  return new Set()
+}
+
+export const hasSessionVtocFailure = (diskUrl: string): boolean => {
+  if (!diskUrl) {
+    return false
+  }
+  return getVtocFailureSet().has(diskUrl)
+}
+
+export const addSessionVtocFailure = (diskUrl: string) => {
+  if (!diskUrl) {
+    return
+  }
+  const failures = getVtocFailureSet()
+  failures.add(diskUrl)
+  sessionStorage.setItem("vtocFailedUrls", JSON.stringify([...failures]))
 }
 
 export const getPreferenceDebugTabLeftWidth = (): number => {

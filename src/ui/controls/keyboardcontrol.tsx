@@ -3,7 +3,7 @@ import { useState, useRef } from "react"
 import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passKeyRelease, passPasteText } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faKeyboard } from "@fortawesome/free-solid-svg-icons"
-import { getLowercaseMode } from "../ui_settings"
+import { getLowercaseMode, isMinimalTheme } from "../ui_settings"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
 import { setPreferenceBoolean } from "../localstorage"
@@ -359,6 +359,10 @@ export const KeyboardControl = () => {
         break
     }
     return style
+  }
+
+  if (isMinimalTheme()) {
+    import("./keyboardcontrol.minimal.css")
   }
 
   return (

@@ -78,7 +78,7 @@ const DiskImportExport = () => {
   const hasDiskImage = hasDiskImageInLocalStorage()
 
   return (
-    <span className="flex-row" style={{alignItems: "center"}}>
+    <span className="flex-row" style={{ alignItems: "center" }}>
       <button className="push-button" title="Import Disk Image into Emulator"
         onClick={verifyImport}>
         <FontAwesomeIcon icon={faUpload} />
