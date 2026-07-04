@@ -105,6 +105,14 @@ const getRunningGuyFrameCanvas = async (frameIndex: number): Promise<HTMLCanvasE
 
     const decoder = new ImageDecoder({ data, type: "image/gif" })
     await decoder.tracks.ready
+    // For a GIF, frameCount is often still 1 immediately after tracks.ready (only the first
+    // frame has been parsed). Wait for the full decode so every frame index maps correctly;
+    // otherwise frameCount reads 1 and every screenshot collapses onto frame 0.
+    try {
+      await decoder.completed
+    } catch {
+      // Fall through and use whatever frameCount is available.
+    }
     const frameCount = decoder.tracks.selectedTrack?.frameCount || 1
     const safeFrame = ((frameIndex % frameCount) + frameCount) % frameCount
 
