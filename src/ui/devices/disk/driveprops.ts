@@ -369,27 +369,25 @@ export const handleSetDiskFromURL = async (url: string,
     // showGlobalProgressModal(true)
   }
 
-  // Try a direct fetch first for CORS-friendly hosts (GitHub, etc.); only fall
-  // back to the proxy when that fails. This keeps proxy traffic to a minimum so
-  // it isn't overwhelmed. Internet Archive is the exception: direct requests get
-  // 429-throttled when many disks are checked at once, so those always go through
-  // the cached CORS proxy (see fetchWithCorsProxy's x-corsfix-cache header).
-  const isInternetArchive = url.includes("archive.org")
-  const canUseDirectFetch = !isInternetArchive
-  if (canUseDirectFetch) {
-    console.log(`🌐 Attempting direct fetch: ${url}`)
-    try {
-      response = await fetch(url)
-      if (response.ok) {
-        console.log(`✅ Direct fetch succeeded: ${url}`)
-      } else {
-        console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
-        response = null
-      }
-    } catch (error) {
-      console.log(`❌ Direct fetch failed with error: ${error}`)
+  // Try a direct fetch first for every host (GitHub, Internet Archive, etc.).
+  // Most sources (including archive.org/download) send permissive CORS headers,
+  // so the direct fetch succeeds and never burdens the CORS proxy. We only fall
+  // back to the proxy when a direct fetch genuinely fails (truly CORS-blocked
+  // hosts). The disk VTOC check that drives these downloads is serialized one
+  // request at a time, so this does not flood Internet Archive with parallel
+  // requests (the cause of the earlier 429 throttling).
+  console.log(`🌐 Attempting direct fetch: ${url}`)
+  try {
+    response = await fetch(url)
+    if (response.ok) {
+      console.log(`✅ Direct fetch succeeded: ${url}`)
+    } else {
+      console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
       response = null
     }
+  } catch (error) {
+    console.log(`❌ Direct fetch failed with error: ${error}`)
+    response = null
   }
 
   // If direct fetch failed, try CORS proxies
