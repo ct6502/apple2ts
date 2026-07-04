@@ -192,9 +192,12 @@ const handleInterruptFlag = (slot: number, chip: number, value: number) => {
     ifr &= (127 - (value & 127))
     memSetSlotROM(slot, IFR[chip], ifr)
   }
+  // Real 6522: IRQ line is asserted only when (IFR & IER & 0x7F) != 0
+  const ier = memGetSlotROM(slot, IER[chip])
+  const active = (ifr & ier & 0x7F) !== 0
   switch (chip) {
-    case 0: interruptRequest(slot, ifr !== 0); break
-    case 1: nonMaskableInterrupt(ifr !== 0); break
+    case 0: interruptRequest(slot, active); break
+    case 1: nonMaskableInterrupt(active); break
   }
 }
 
@@ -215,6 +218,8 @@ const handleInterruptEnable = (slot: number, chip: number, value: number) => {
   // Bit 7 is always on for reading.
   ier |= 128
   memSetSlotROM(slot, IER[chip], ier)
+  // IER changed, so re-evaluate whether the IRQ line should still be asserted.
+  handleInterruptFlag(slot, chip, -1)
 }
 
 let debug = 1000
