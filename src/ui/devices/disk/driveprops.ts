@@ -369,8 +369,13 @@ export const handleSetDiskFromURL = async (url: string,
     // showGlobalProgressModal(true)
   }
 
-  // Try direct fetch first (works in Electron with CORS bypass)
-  const canUseDirectFetch = "electronAPI" in window
+  // Try a direct fetch first for CORS-friendly hosts (GitHub, etc.); only fall
+  // back to the proxy when that fails. This keeps proxy traffic to a minimum so
+  // it isn't overwhelmed. Internet Archive is the exception: direct requests get
+  // 429-throttled when many disks are checked at once, so those always go through
+  // the cached CORS proxy (see fetchWithCorsProxy's x-corsfix-cache header).
+  const isInternetArchive = url.includes("archive.org")
+  const canUseDirectFetch = !isInternetArchive
   if (canUseDirectFetch) {
     console.log(`🌐 Attempting direct fetch: ${url}`)
     try {
