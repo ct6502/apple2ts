@@ -2,6 +2,16 @@ import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 
 export const internetArchiveUrlProtocol = "a2ia://"
 
+const getCorsProxyCandidates = (url: string): string[] => {
+  const encodedUrl = encodeURIComponent(url)
+  return [
+    "https://proxy.corsfix.com/?" + url,
+    "https://proxy.corsfix.com/?" + encodedUrl,
+    "https://proxy.corsfix.com/?url=" + encodedUrl,
+    "https://corsproxy.io/?" + encodedUrl,
+  ]
+}
+
 const iaResolveCache = new Map<string, {
   resolvedUrl: string,
   fileSize: number,
@@ -66,19 +76,25 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       // Direct fetch failed (likely CORS); fall back to the proxies below.
     }
 
-    try {
-      if (!newDiskImageUrl) {
-        const response = await fetch("https://proxy.corsfix.com/?" + detailsUrl,
-          { headers: { "x-corsfix-cache": "true" } })
-        await processDiskImageResponse(response)
+    if (!newDiskImageUrl) {
+      for (const proxyUrl of getCorsProxyCandidates(detailsUrl)) {
+        try {
+          const response = await fetch(proxyUrl)
+          await processDiskImageResponse(response)
+          if (newDiskImageUrl) break
+        } catch {
+          // Continue to next proxy candidate.
+        }
       }
+    }
 
-      if (!newDiskImageUrl) {
+    if (!newDiskImageUrl) {
+      try {
         const response = await fetch(iconName() + detailsUrl, { headers: favicon })
         await processDiskImageResponse(response)
+      } catch {
+        // We cache failure below to avoid repeated hammering when a provider is down.
       }
-    } catch {
-      // We cache failure below to avoid repeated hammering when a provider is down.
     }
 
     iaResolveCache.set(identifier, {

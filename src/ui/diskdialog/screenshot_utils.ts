@@ -2,6 +2,8 @@
  * Screenshot capture and conversion utilities for HDV export
  */
 
+import { iconData, iconKey, iconName } from "../img/iconfunctions"
+
 type Rgb = [number, number, number]
 
 const sampleBilinear = (imageData: ImageData, x: number, y: number): Rgb => {
@@ -383,14 +385,45 @@ const blobToDataUrl = (blob: Blob): Promise<string | null> => {
   })
 }
 
+const getCorsProxyCandidates = (url: string): string[] => {
+  const encodedUrl = encodeURIComponent(url)
+  return [
+    "https://proxy.corsfix.com/?" + url,
+    "https://proxy.corsfix.com/?" + encodedUrl,
+    "https://proxy.corsfix.com/?url=" + encodedUrl,
+    "https://corsproxy.io/?" + encodedUrl,
+  ]
+}
+
 // Fetches a screenshot through the CORS proxy (matching disk-download behavior) and returns
 // its bytes as a data URL that can be loaded into an <img> without cross-origin taint.
 const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | null> => {
+  for (const proxyUrl of getCorsProxyCandidates(absoluteUrl)) {
+    try {
+      const response = await fetch(proxyUrl)
+      if (!response.ok) continue
+      return await blobToDataUrl(await response.blob())
+    } catch {
+      // Continue to next proxy candidate.
+    }
+  }
+
+  const headers: { [key: string]: string } = {}
+  headers[iconKey()] = iconData()
+
   try {
-    const response = await fetch("https://proxy.corsfix.com/?" + absoluteUrl,
-      { headers: { "x-corsfix-cache": "true" } })
-    if (!response.ok) return null
-    return await blobToDataUrl(await response.blob())
+    const response = await fetch(iconName() + absoluteUrl)
+    if (response.ok) {
+      return await blobToDataUrl(await response.blob())
+    }
+  } catch {
+    // Fall through to keyed request.
+  }
+
+  try {
+    const keyedResponse = await fetch(iconName() + absoluteUrl, { headers })
+    if (!keyedResponse.ok) return null
+    return await blobToDataUrl(await keyedResponse.blob())
   } catch {
     return null
   }

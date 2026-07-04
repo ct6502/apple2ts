@@ -4,7 +4,7 @@ import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
-// import { iconKey, iconData, iconName } from "../../img/iconfunctions"
+import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
 import { showGlobalProgressModal } from "../../ui_utilities"
@@ -246,29 +246,77 @@ export const handleSetDiskFromCloudData = async (
   }
 }
 
-const fetchWithCorsProxy = async (url: string) => {
-  try {
-    const response = await fetch("https://proxy.corsfix.com/?" + url,
-      { headers: {"x-corsfix-cache": "true"} })
-    return response
-  } catch {
-    return null
-  }
+const getCorsProxyCandidates = (url: string): string[] => {
+  const encodedUrl = encodeURIComponent(url)
+  return [
+    "https://proxy.corsfix.com/?" + url,
+    "https://proxy.corsfix.com/?" + encodedUrl,
+    "https://proxy.corsfix.com/?url=" + encodedUrl,
+    "https://corsproxy.io/?" + encodedUrl,
+  ]
 }
 
-// const fetchWithCT6502Proxy = async (url: string) => {
-//   // Ask CT6502 for why we need to use this favicon header
-//   const favicon: { [key: string]: string } = {}
-//   favicon[iconKey()] = iconData()
-//   try {
-//     const fullURL = iconName() + url
-//     const response = await fetch(fullURL, { headers: favicon })
-//     return response
-//   } catch (error) {
-//     console.error("CT6502 proxy fetch failed:", error)
-//     return null
-//   }
-// }
+const fetchWithCorsProxy = async (url: string) => {
+  let lastResponse: Response | null = null
+  const candidates = getCorsProxyCandidates(url)
+
+  for (let i = 0; i < candidates.length; i++) {
+    const proxyUrl = candidates[i]
+    const proxyName = proxyUrl.includes("corsproxy.io") ? "corsproxy.io" : "corsfix"
+    try {
+      const response = await fetch(proxyUrl)
+
+      if (response.ok) {
+        console.log(`✅ Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+        return response
+      }
+
+      console.warn(`⚠️ Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+      lastResponse = response
+    } catch (error) {
+      console.warn(`⚠️ Proxy attempt errored via ${proxyName} (attempt ${i + 1}/${candidates.length})`, error)
+    }
+  }
+
+  return lastResponse
+}
+
+const fetchWithCT6502Proxy = async (url: string) => {
+  const headers: { [key: string]: string } = {}
+  headers[iconKey()] = iconData()
+
+  try {
+    const response = await fetch(iconName() + url)
+    if (response.ok) {
+      console.log("✅ Proxy fetch succeeded via CT6502 proxy")
+    } else {
+      console.warn(`⚠️ CT6502 proxy failed (${response.status})`)
+
+      const keyedResponse = await fetch(iconName() + url, { headers })
+      if (keyedResponse.ok) {
+        console.log("✅ Proxy fetch succeeded via CT6502 proxy (keyed)")
+      } else {
+        console.warn(`⚠️ CT6502 keyed proxy failed (${keyedResponse.status})`)
+      }
+      return keyedResponse
+    }
+    return response
+  } catch (error) {
+    console.warn("⚠️ CT6502 proxy errored, retrying keyed", error)
+    try {
+      const keyedResponse = await fetch(iconName() + url, { headers })
+      if (keyedResponse.ok) {
+        console.log("✅ Proxy fetch succeeded via CT6502 proxy (keyed)")
+      } else {
+        console.warn(`⚠️ CT6502 keyed proxy failed (${keyedResponse.status})`)
+      }
+      return keyedResponse
+    } catch (keyedError) {
+      console.warn("⚠️ CT6502 keyed proxy errored", keyedError)
+      return null
+    }
+  }
+}
 
 let timerId: NodeJS.Timeout|null = null
 
@@ -394,6 +442,12 @@ export const handleSetDiskFromURL = async (url: string,
   if (!response || !response.ok) {
     console.log("Direct fetch failed, trying CORS proxy")
     response = await fetchWithCorsProxy(url)
+  }
+
+  if (!response || !response.ok) {
+    console.log("CORS proxy failed, trying CT6502 proxy")
+    response = await fetchWithCT6502Proxy(url)
+
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
       if (!callback) {
