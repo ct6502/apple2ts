@@ -54,14 +54,19 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       }
     }
 
-    const canUseDirectFetch = typeof window !== "undefined" && "electronAPI" in window
+    // Try a direct fetch first: archive.org sends permissive CORS headers, so
+    // this succeeds in the browser and avoids depending on the CORS proxies.
+    // Only fall back to the proxies if the direct request fails. The resolve
+    // result is cached (positive and negative) below, so this doesn't hammer
+    // Internet Archive with repeated requests.
+    try {
+      const response = await fetch(detailsUrl)
+      await processDiskImageResponse(response)
+    } catch {
+      // Direct fetch failed (likely CORS); fall back to the proxies below.
+    }
 
     try {
-      if (canUseDirectFetch) {
-        const response = await fetch(detailsUrl)
-        await processDiskImageResponse(response)
-      }
-
       if (!newDiskImageUrl) {
         const response = await fetch("https://proxy.corsfix.com/?" + detailsUrl,
           { headers: { "x-corsfix-cache": "true" } })
