@@ -44,6 +44,7 @@ let showDebugTab = false
 let refreshTime = 16.6881 // = 17030 / 1020.488
 let cpuCyclesPerRefresh = 17030
 let cpuRunMode = RUN_MODE.IDLE
+let cyclesToRun = 0
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
 let takeSnapshot = false
@@ -369,6 +370,14 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
   }
 }
 
+export const doSetCyclesToRun = (cycles: number) => {
+  if (isNaN(cycles) || cycles < 1) {
+    cyclesToRun = 0
+  } else {
+    cyclesToRun = cycles
+  }
+}
+
 const doAutoboot = (fn: () => void) => {
   if (cpuRunMode === RUN_MODE.IDLE) {
     doSetRunMode(RUN_MODE.NEED_BOOT)
@@ -506,6 +515,8 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
 }
 
 //let quickReturn = 0
+let cycleToRunStart = -1
+
 const doAdvance6502 = () => {
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
     return
@@ -519,6 +530,9 @@ const doAdvance6502 = () => {
   }
   let cycleTotal = 0
   let currentLine = -1
+  if (cyclesToRun > 0) {
+    cycleToRunStart = s6502.cycleCount
+  }
   for (;;) {
     const cycles = processInstruction(tracing ? updateTrace : null)
     if (cycles < 0) break
@@ -535,6 +549,11 @@ const doAdvance6502 = () => {
         currentLine = line
         exportMemoryToHiresLine(line)
       }
+    }
+    if (cyclesToRun > 0 && (s6502.cycleCount - cycleToRunStart) >= cyclesToRun) {
+      cyclesToRun = 0
+      doSetRunMode(RUN_MODE.PAUSED)
+      break
     }
     if (cycleTotal >= cpuCyclesPerRefresh) {
       break

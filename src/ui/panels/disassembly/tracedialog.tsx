@@ -1,18 +1,22 @@
 import React, { useEffect, useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
-  faRoute,
   faXmark,
   faSave,
   faCog,
+  faPause,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../../common/utility"
-import { handleGetRunMode, handleGetTracelog, handleGetTracing, passSetTracing } from "../../main2worker"
+import { handleGetRunMode, handleGetTracelog, passSetCyclesToRun } from "../../main2worker"
 import TraceSettingsDialog from "./tracesettingsdialog"
+import { handleSetCPUState } from "../../controller"
+import EditField from "../editfield"
 
 const width = 400
 const height = 600
 const header = " Cycle     PC            Instruction     A   X   Y   S   P   NVBDIZC"
+let currentTracelog: string[] = []
 
 const TraceDialog = (props: {
   cancelDialog: () => void,
@@ -26,8 +30,8 @@ const TraceDialog = (props: {
   const previousLastLineRef = useRef("")
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
-  const [tracing, setTracing] = useState(handleGetTracing())
   const [showSettings, setShowSettings] = useState(false)
+  const [cyclesToRun, setCyclesToRun] = useState(0)
   
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -61,8 +65,8 @@ const TraceDialog = (props: {
     setDragging(false)
   }
 
-  const handleDownloadButtonClick = async () => {
-    const text = [header, ...handleGetTracelog()].join("\n")
+  const handleDownloadButtonClick = async (tracelog: string[]) => {
+    const text = [header, ...tracelog].join("\n")
     const blob = new Blob([text], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -102,8 +106,27 @@ const TraceDialog = (props: {
     }
   })
 
+  const doSetCyclesToRun = (value: string) => {
+    let numValue = parseInt(value)
+    if (isNaN(numValue) || numValue < 1) {
+      numValue = 0
+    }
+    setCyclesToRun(numValue)
+  }
+
+  const doGetCyclesToRun = () => {
+    if (cyclesToRun < 1) {
+      return ""
+    }
+    return cyclesToRun.toString()
+  }
+
   const runMode = handleGetRunMode()
   
+  if (runMode === RUN_MODE.PAUSED) {
+    currentTracelog = handleGetTracelog()
+  }
+
   return (
     <div
       tabIndex={0} // Make the div focusable
@@ -144,22 +167,34 @@ const TraceDialog = (props: {
           style={{ padding: "0.5em", paddingTop: 0 }}>
           <div className="flex-row">
           <button
-            className={`push-button ${tracing ? "button-active" : ""}`}
-            title={`Tracing (${tracing ? "on" : "off"})`}
-            onClick={() => {
-              const isTracing = tracing
-              setTracing(!isTracing)
-              passSetTracing(!isTracing)
-            }}
-            disabled={runMode === RUN_MODE.IDLE}>
-              <FontAwesomeIcon icon={faRoute} />
-          </button>
-          <button
             className="push-button"
             title={"Download Trace Log"}
-            onClick={handleDownloadButtonClick}>
+            disabled={currentTracelog.length === 0}
+            onClick={() => handleDownloadButtonClick(currentTracelog)}>
               <FontAwesomeIcon icon={faSave} />
           </button>
+          <button className="push-button" id="tour-debug-pause"
+            title={runMode === RUN_MODE.PAUSED ? "Run" : "Pause"}
+            onClick={() => {
+              if (runMode === RUN_MODE.PAUSED) {
+                passSetCyclesToRun(cyclesToRun)
+              }
+              handleSetCPUState(runMode === RUN_MODE.PAUSED ?
+                RUN_MODE.RUNNING : RUN_MODE.PAUSED)
+            }}
+            disabled={runMode === RUN_MODE.IDLE}>
+            {runMode === RUN_MODE.PAUSED ?
+              <FontAwesomeIcon icon={faPlay} /> :
+              <FontAwesomeIcon icon={faPause} />}
+          </button>
+          <EditField
+            value={doGetCyclesToRun()}
+            setValue={doSetCyclesToRun}
+            isNumber={true}
+            placeholder="Unlimited"
+            showSuggestions={false}
+            width="6em" />
+          <span className="bigger-font" style={{ alignSelf: "center" }}>&nbsp;cycles</span>
           </div>
           <button className="push-button"
             title="Settings"
@@ -191,9 +226,10 @@ const TraceDialog = (props: {
                 height: `${height - 30}px`,
                 overflow: "auto",
                 paddingLeft: "5pt",
-                fontSize: "0.7em"
+                fontSize: "0.7em",
+                color: runMode === RUN_MODE.RUNNING ? "gray" : undefined,
               }}>
-              {handleGetTracelog().join("\n")}
+              {currentTracelog.join("\n")}
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { KeyboardEvent, useRef, useState } from "react"
 import {
   handleGetRunMode,
+  passSetTracing,
   passStepInto, passStepOut, passStepOver
 } from "../../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -80,6 +81,15 @@ const DisassemblyControls = (props: DisassemblyProps) => {
 
   const doSetDialogPosition = (x: number, y: number) => {
     setDialogPosition([x, y])
+  }
+
+  const turnOnTracing = () => {
+    passSetTracing(true)
+    setShowTraceDialog(true)
+  }
+  const turnOffTracing = () => {
+    passSetTracing(false)
+    setShowTraceDialog(false)
   }
 
   return (
@@ -166,7 +176,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       }
       <button className="push-button"
         title="Trace"
-        onClick={() => setShowTraceDialog(true)}
+        onClick={turnOnTracing}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="icon-container">
           <FontAwesomeIcon icon={faRoute} />
@@ -174,7 +184,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       </button>
       {showTraceDialog &&
         <TraceDialog
-          cancelDialog={() => setShowTraceDialog(false)}
+          cancelDialog={turnOffTracing}
           dialogPositionX={dialogPosition[0]}
           dialogPositionY={dialogPosition[1]}
           setDialogPosition={doSetDialogPosition} />}

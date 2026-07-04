@@ -16,6 +16,7 @@ interface EditFieldProps {
   disabled?: boolean;
   isHex?: boolean;
   isNumber?: boolean;
+  showSuggestions?: boolean;
 }
 
 const EditField = (props: EditFieldProps) => {
@@ -53,10 +54,11 @@ const EditField = (props: EditFieldProps) => {
       name={props.name ? props.name : "textfield"}
       ref={inputRef}
       className="hex-field"
+      autoComplete={props.showSuggestions === false ? "off" : undefined}
       onKeyDown={props.isHex || props.isNumber ? testKey : undefined}
       placeholder={props.placeholder}
       value={props.value}
-      style={{ width: props.width || "100%" }}
+      style={{ width: props.width || "100%", textAlign: "right" }}
       onChange={(e) => handleValueChange(e)} />
     {props.warning &&
       <div className="warning-div flex-row">

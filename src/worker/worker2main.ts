@@ -7,7 +7,8 @@ import { doSetRunMode, doSetSpeedMode,
   doSetShowDebugTab,
   doSetAppMode,
   setTracing,
-  doExecuteBasicCommand} from "./motherboard"
+  doExecuteBasicCommand,
+  doSetCyclesToRun} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
@@ -123,6 +124,9 @@ if (typeof self !== "undefined") {
     switch (e.data.msg as MSG_MAIN) {
       case MSG_MAIN.RUN_MODE:
         doSetRunMode(e.data.payload as RUN_MODE)
+        break
+      case MSG_MAIN.CYCLES_TO_RUN:
+        doSetCyclesToRun(e.data.payload as number)
         break
       case MSG_MAIN.STATE6502:
         doSetState6502(e.data.payload as STATE6502)

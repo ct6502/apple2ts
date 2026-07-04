@@ -46,6 +46,10 @@ export const passSetRunMode = (runMode: RUN_MODE) => {
   machineState.runMode = runMode
 }
 
+export const passSetCyclesToRun = (cycles: number) => {
+  doPostMessage(MSG_MAIN.CYCLES_TO_RUN, cycles)
+}
+
 export const passSetState6502 = (state: STATE6502) => {
   doPostMessage(MSG_MAIN.STATE6502, state)
 }

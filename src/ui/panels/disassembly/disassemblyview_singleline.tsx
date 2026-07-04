@@ -11,7 +11,7 @@ import { willTakeBranch } from "../../../common/util_disassemble"
 // }
 
 const borderStyle = (opcode: string) => {
-  if ((["JMP", "RTS"]).includes(opcode)) return "disassembly-separator"
+  if ((["JMP", "RTS", "RTI"]).includes(opcode)) return "disassembly-separator"
   return ""
 }
 
