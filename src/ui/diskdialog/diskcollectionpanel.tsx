@@ -50,6 +50,21 @@ const getKnownFileSizeForUrl = (diskUrl?: string): number | undefined => {
   return match?.fileSize && match.fileSize > 0 ? match.fileSize : undefined
 }
 
+const shouldLoadScreenshotInPanel = (imageUrl?: string): boolean => {
+  if (!imageUrl) return false
+  if (imageUrl.startsWith("data:")) return true
+
+  try {
+    const parsed = new URL(imageUrl, window.location.href)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return true
+    }
+    return parsed.origin === window.location.origin
+  } catch {
+    return true
+  }
+}
+
 // Assigns a disk's VTOC type without downloading its bytes, when possible:
 //  - HDV images are hard-drive volumes that are always ProDOS, so their type is
 //    set directly by file extension (no download or decode needed).
@@ -897,6 +912,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         {tabs[activeTab].disks.map((diskCollectionItem, index) => {
           const isExportTab = activeTab == TAB_INDEX_SELECT
           const isDisabledForExport = isExportTab && !isDiskExportable(diskCollectionItem)
+          const panelScreenshotSrc = shouldLoadScreenshotInPanel(diskCollectionItem.imageUrl)
+            ? diskCollectionItem.imageUrl
+            : undefined
 
           return (
             <div
@@ -930,7 +948,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 }}
                 onContextMenu={handleItemRightClick(diskCollectionItem)}
               >
-                <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
+                {panelScreenshotSrc && <img className="dcp-item-image" src={panelScreenshotSrc} />}
                 <div className="dcp-item-icon-top-right">
                   {activeTab == 2 && diskCollectionItem.bookmarkId &&
                     <div
