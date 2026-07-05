@@ -4,7 +4,7 @@ import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
-// import { iconKey, iconData, iconName } from "../../img/iconfunctions"
+import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
 import { showGlobalProgressModal } from "../../ui_utilities"
@@ -246,29 +246,177 @@ export const handleSetDiskFromCloudData = async (
   }
 }
 
-const fetchWithCorsProxy = async (url: string) => {
+type ProxyCandidate = {
+  id: string,
+  url: string,
+}
+
+const PROXY_SCORE_STORAGE_PREFIX = "proxy-score:"
+const proxyScoreMemoryCache = new Map<string, Record<string, number>>()
+
+const getProxyTargetDomain = (url: string): string => {
   try {
-    const response = await fetch("https://proxy.corsfix.com/?" + url,
-      { headers: {"x-corsfix-cache": "true"} })
-    return response
+    return new URL(url).hostname.toLowerCase()
   } catch {
-    return null
+    return ""
   }
 }
 
-// const fetchWithCT6502Proxy = async (url: string) => {
-//   // Ask CT6502 for why we need to use this favicon header
-//   const favicon: { [key: string]: string } = {}
-//   favicon[iconKey()] = iconData()
-//   try {
-//     const fullURL = iconName() + url
-//     const response = await fetch(fullURL, { headers: favicon })
-//     return response
-//   } catch (error) {
-//     console.error("CT6502 proxy fetch failed:", error)
-//     return null
-//   }
-// }
+const getProxyScoreRecord = (domain: string): Record<string, number> => {
+  if (!domain) return {}
+
+  const cached = proxyScoreMemoryCache.get(domain)
+  if (cached) return cached
+
+  try {
+    const raw = sessionStorage.getItem(PROXY_SCORE_STORAGE_PREFIX + domain)
+    if (!raw) {
+      const empty = {}
+      proxyScoreMemoryCache.set(domain, empty)
+      return empty
+    }
+
+    const parsed = JSON.parse(raw) as Record<string, number>
+    proxyScoreMemoryCache.set(domain, parsed)
+    return parsed
+  } catch {
+    const empty = {}
+    proxyScoreMemoryCache.set(domain, empty)
+    return empty
+  }
+}
+
+const persistProxyScoreRecord = (domain: string, record: Record<string, number>) => {
+  if (!domain) return
+  proxyScoreMemoryCache.set(domain, record)
+  try {
+    sessionStorage.setItem(PROXY_SCORE_STORAGE_PREFIX + domain, JSON.stringify(record))
+  } catch {
+    // sessionStorage may be unavailable; keep in-memory score only.
+  }
+}
+
+const noteProxyScore = (domain: string, proxyId: string, success: boolean) => {
+  if (!domain || !proxyId) return
+  const record = { ...getProxyScoreRecord(domain) }
+  const current = record[proxyId] || 0
+  const updated = success ? Math.min(20, current + 3) : Math.max(-20, current - 1)
+  record[proxyId] = updated
+  persistProxyScoreRecord(domain, record)
+}
+
+const sortProxyCandidatesForDomain = (domain: string, candidates: ProxyCandidate[]): ProxyCandidate[] => {
+  const record = getProxyScoreRecord(domain)
+  return candidates
+    .map((candidate, index) => ({
+      candidate,
+      index,
+      score: record[candidate.id] || 0,
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return a.index - b.index
+    })
+    .map(entry => entry.candidate)
+}
+
+const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
+  const encodedUrl = encodeURIComponent(url)
+  return [
+    { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url },
+    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
+    { id: "corsfix-param", url: "https://proxy.corsfix.com/?url=" + encodedUrl },
+    { id: "corsproxy-encoded", url: "https://corsproxy.io/?" + encodedUrl },
+  ]
+}
+
+const FETCH_DEBUG_LOGS = false
+
+const logFetchDebug = (...args: unknown[]) => {
+  if (FETCH_DEBUG_LOGS) {
+    console.log(...args)
+  }
+}
+
+const shouldAttemptDirectFetch = (url: string): boolean => {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return true
+    }
+    return parsed.origin === window.location.origin
+  } catch {
+    // If URL parsing fails, keep prior behavior and try direct fetch.
+    return true
+  }
+}
+
+const fetchWithCorsProxy = async (url: string) => {
+  let lastResponse: Response | null = null
+  const domain = getProxyTargetDomain(url)
+  const candidates = sortProxyCandidatesForDomain(domain, getCorsProxyCandidates(url))
+
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i]
+    const proxyUrl = candidate.url
+    const proxyName = proxyUrl.includes("corsproxy.io") ? "corsproxy.io" : "corsfix"
+    try {
+      const response = await fetch(proxyUrl)
+
+      if (response.ok) {
+        noteProxyScore(domain, candidate.id, true)
+        logFetchDebug(`Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+        return response
+      }
+
+      noteProxyScore(domain, candidate.id, false)
+      logFetchDebug(`Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
+      lastResponse = response
+    } catch (error) {
+      noteProxyScore(domain, candidate.id, false)
+      logFetchDebug(`Proxy attempt errored via ${proxyName} (attempt ${i + 1}/${candidates.length})`, error)
+    }
+  }
+
+  return lastResponse
+}
+
+const fetchWithCT6502Proxy = async (url: string) => {
+  const headers: { [key: string]: string } = {}
+  headers[iconKey()] = iconData()
+
+  try {
+    const response = await fetch(iconName() + url)
+    if (response.ok) {
+      logFetchDebug("CT6502 proxy fetch succeeded")
+    } else {
+      logFetchDebug(`CT6502 proxy failed (${response.status})`)
+
+      const keyedResponse = await fetch(iconName() + url, { headers })
+      if (keyedResponse.ok) {
+        logFetchDebug("CT6502 keyed proxy fetch succeeded")
+      } else {
+        logFetchDebug(`CT6502 keyed proxy failed (${keyedResponse.status})`)
+      }
+      return keyedResponse
+    }
+    return response
+  } catch (error) {
+    logFetchDebug("CT6502 proxy errored, retrying keyed", error)
+    try {
+      const keyedResponse = await fetch(iconName() + url, { headers })
+      if (keyedResponse.ok) {
+        logFetchDebug("CT6502 keyed proxy fetch succeeded")
+      } else {
+        logFetchDebug(`CT6502 keyed proxy failed (${keyedResponse.status})`)
+      }
+      return keyedResponse
+    } catch (keyedError) {
+      logFetchDebug("CT6502 keyed proxy errored", keyedError)
+      return null
+    }
+  }
+}
 
 let timerId: NodeJS.Timeout|null = null
 
@@ -376,24 +524,28 @@ export const handleSetDiskFromURL = async (url: string,
   // hosts). The disk VTOC check that drives these downloads is serialized one
   // request at a time, so this does not flood Internet Archive with parallel
   // requests (the cause of the earlier 429 throttling).
-  console.log(`🌐 Attempting direct fetch: ${url}`)
-  try {
-    response = await fetch(url)
-    if (response.ok) {
-      console.log(`✅ Direct fetch succeeded: ${url}`)
-    } else {
-      console.log(`❌ Direct fetch failed with status ${response.status}: ${url}`)
+  if (shouldAttemptDirectFetch(url)) {
+    try {
+      response = await fetch(url)
+      if (!response.ok) {
+        response = null
+      }
+    } catch {
+      // Expected for many cross-origin sources; fall through to proxy chain.
       response = null
     }
-  } catch (error) {
-    console.log(`❌ Direct fetch failed with error: ${error}`)
-    response = null
   }
 
   // If direct fetch failed, try CORS proxies
   if (!response || !response.ok) {
-    console.log("Direct fetch failed, trying CORS proxy")
+    logFetchDebug("Direct fetch failed, trying CORS proxies")
     response = await fetchWithCorsProxy(url)
+  }
+
+  if (!response || !response.ok) {
+    logFetchDebug("CORS proxies failed, trying CT6502 proxy")
+    response = await fetchWithCT6502Proxy(url)
+
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
       if (!callback) {
@@ -431,9 +583,7 @@ export const handleSetDiskFromURL = async (url: string,
   }
 
   try {
-    console.log(`📥 Downloading response body (Content-Length: ${response.headers.get("content-length") || "unknown"})...`)
     const fileBuffer = await response.arrayBuffer()
-    console.log(`✅ Downloaded ${fileBuffer.byteLength} bytes`)
 
     // Try to get filename from Content-Disposition header first
     const contentDisposition = response.headers.get("content-disposition")
@@ -441,7 +591,6 @@ export const handleSetDiskFromURL = async (url: string,
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
       if (filenameMatch && filenameMatch[1]) {
         name = filenameMatch[1].replace(/['"]/g, "")
-        console.log(`📋 Filename from Content-Disposition: ${name}`)
       }
     }
 
@@ -462,7 +611,6 @@ export const handleSetDiskFromURL = async (url: string,
     }
 
     if (url.toLowerCase().endsWith(".zip")) {
-      console.log("📦 Unzipping file...")
       const unzipper = new fflate.Unzip()
       unzipper.register(fflate.UnzipInflate)
 
@@ -474,7 +622,6 @@ export const handleSetDiskFromURL = async (url: string,
             if (data.length > 1024) {
               name = file.name
               buffer = data
-              console.log(`📄 Extracted file: ${name} (${data.length} bytes)`)
               return
             }
           }
@@ -493,7 +640,6 @@ export const handleSetDiskFromURL = async (url: string,
         }
       }
       buffer = fileBuffer
-      console.log(`📄 File loaded: ${name} (${buffer.byteLength} bytes)`)
     }
 
     if (buffer) {
@@ -501,11 +647,9 @@ export const handleSetDiskFromURL = async (url: string,
         callback(buffer)
       } else {
         // If we are loading from a URL, reset all drives. Fixes issue#186
-        console.log(`💾 Setting disk data for drive ${index}...`)
         resetAllDiskDrives()
         
         handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
-        console.log("✅ Disk loaded successfully")
       }
     } else {
       if (callback) {

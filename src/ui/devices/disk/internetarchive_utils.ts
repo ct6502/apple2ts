@@ -2,6 +2,90 @@ import { iconKey, iconData, iconName } from "../../img/iconfunctions"
 
 export const internetArchiveUrlProtocol = "a2ia://"
 
+type ProxyCandidate = {
+  id: string,
+  url: string,
+}
+
+const PROXY_SCORE_STORAGE_PREFIX = "proxy-score:"
+const proxyScoreMemoryCache = new Map<string, Record<string, number>>()
+
+const getProxyTargetDomain = (url: string): string => {
+  try {
+    return new URL(url).hostname.toLowerCase()
+  } catch {
+    return ""
+  }
+}
+
+const getProxyScoreRecord = (domain: string): Record<string, number> => {
+  if (!domain) return {}
+
+  const cached = proxyScoreMemoryCache.get(domain)
+  if (cached) return cached
+
+  try {
+    const raw = sessionStorage.getItem(PROXY_SCORE_STORAGE_PREFIX + domain)
+    if (!raw) {
+      const empty = {}
+      proxyScoreMemoryCache.set(domain, empty)
+      return empty
+    }
+
+    const parsed = JSON.parse(raw) as Record<string, number>
+    proxyScoreMemoryCache.set(domain, parsed)
+    return parsed
+  } catch {
+    const empty = {}
+    proxyScoreMemoryCache.set(domain, empty)
+    return empty
+  }
+}
+
+const persistProxyScoreRecord = (domain: string, record: Record<string, number>) => {
+  if (!domain) return
+  proxyScoreMemoryCache.set(domain, record)
+  try {
+    sessionStorage.setItem(PROXY_SCORE_STORAGE_PREFIX + domain, JSON.stringify(record))
+  } catch {
+    // sessionStorage may be unavailable; keep in-memory score only.
+  }
+}
+
+const noteProxyScore = (domain: string, proxyId: string, success: boolean) => {
+  if (!domain || !proxyId) return
+  const record = { ...getProxyScoreRecord(domain) }
+  const current = record[proxyId] || 0
+  const updated = success ? Math.min(20, current + 3) : Math.max(-20, current - 1)
+  record[proxyId] = updated
+  persistProxyScoreRecord(domain, record)
+}
+
+const sortProxyCandidatesForDomain = (domain: string, candidates: ProxyCandidate[]): ProxyCandidate[] => {
+  const record = getProxyScoreRecord(domain)
+  return candidates
+    .map((candidate, index) => ({
+      candidate,
+      index,
+      score: record[candidate.id] || 0,
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return a.index - b.index
+    })
+    .map(entry => entry.candidate)
+}
+
+const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
+  const encodedUrl = encodeURIComponent(url)
+  return [
+    { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url },
+    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
+    { id: "corsfix-param", url: "https://proxy.corsfix.com/?url=" + encodedUrl },
+    { id: "corsproxy-encoded", url: "https://corsproxy.io/?" + encodedUrl },
+  ]
+}
+
 const iaResolveCache = new Map<string, {
   resolvedUrl: string,
   fileSize: number,
@@ -66,19 +150,32 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       // Direct fetch failed (likely CORS); fall back to the proxies below.
     }
 
-    try {
-      if (!newDiskImageUrl) {
-        const response = await fetch("https://proxy.corsfix.com/?" + detailsUrl,
-          { headers: { "x-corsfix-cache": "true" } })
-        await processDiskImageResponse(response)
+    if (!newDiskImageUrl) {
+      const domain = getProxyTargetDomain(detailsUrl)
+      const proxyCandidates = sortProxyCandidatesForDomain(domain, getCorsProxyCandidates(detailsUrl))
+      for (const candidate of proxyCandidates) {
+        try {
+          const response = await fetch(candidate.url)
+          await processDiskImageResponse(response)
+          if (newDiskImageUrl) {
+            noteProxyScore(domain, candidate.id, true)
+            break
+          }
+          noteProxyScore(domain, candidate.id, response.ok)
+        } catch {
+          noteProxyScore(domain, candidate.id, false)
+          // Continue to next proxy candidate.
+        }
       }
+    }
 
-      if (!newDiskImageUrl) {
+    if (!newDiskImageUrl) {
+      try {
         const response = await fetch(iconName() + detailsUrl, { headers: favicon })
         await processDiskImageResponse(response)
+      } catch {
+        // We cache failure below to avoid repeated hammering when a provider is down.
       }
-    } catch {
-      // We cache failure below to avoid repeated hammering when a provider is down.
     }
 
     iaResolveCache.set(identifier, {

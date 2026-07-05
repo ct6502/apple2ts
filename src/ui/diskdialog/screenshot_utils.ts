@@ -2,6 +2,8 @@
  * Screenshot capture and conversion utilities for HDV export
  */
 
+import { iconData, iconKey, iconName } from "../img/iconfunctions"
+
 type Rgb = [number, number, number]
 
 const sampleBilinear = (imageData: ImageData, x: number, y: number): Rgb => {
@@ -374,6 +376,26 @@ const loadImageElement = (src: string, useCors: boolean): Promise<HTMLImageEleme
   })
 }
 
+const tryLoadImageElement = async (src: string, useCors: boolean): Promise<HTMLImageElement | null> => {
+  try {
+    return await loadImageElement(src, useCors)
+  } catch {
+    return null
+  }
+}
+
+const isCrossOriginHttpUrl = (src: string): boolean => {
+  try {
+    const parsed = new URL(src, window.location.href)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false
+    }
+    return parsed.origin !== window.location.origin
+  } catch {
+    return false
+  }
+}
+
 const blobToDataUrl = (blob: Blob): Promise<string | null> => {
   return new Promise((resolve) => {
     const reader = new FileReader()
@@ -383,14 +405,45 @@ const blobToDataUrl = (blob: Blob): Promise<string | null> => {
   })
 }
 
+const getCorsProxyCandidates = (url: string): string[] => {
+  const encodedUrl = encodeURIComponent(url)
+  return [
+    "https://proxy.corsfix.com/?" + url,
+    "https://proxy.corsfix.com/?" + encodedUrl,
+    "https://proxy.corsfix.com/?url=" + encodedUrl,
+    "https://corsproxy.io/?" + encodedUrl,
+  ]
+}
+
 // Fetches a screenshot through the CORS proxy (matching disk-download behavior) and returns
 // its bytes as a data URL that can be loaded into an <img> without cross-origin taint.
 const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | null> => {
+  for (const proxyUrl of getCorsProxyCandidates(absoluteUrl)) {
+    try {
+      const response = await fetch(proxyUrl)
+      if (!response.ok) continue
+      return await blobToDataUrl(await response.blob())
+    } catch {
+      // Continue to next proxy candidate.
+    }
+  }
+
+  const headers: { [key: string]: string } = {}
+  headers[iconKey()] = iconData()
+
   try {
-    const response = await fetch("https://proxy.corsfix.com/?" + absoluteUrl,
-      { headers: { "x-corsfix-cache": "true" } })
-    if (!response.ok) return null
-    return await blobToDataUrl(await response.blob())
+    const response = await fetch(iconName() + absoluteUrl)
+    if (response.ok) {
+      return await blobToDataUrl(await response.blob())
+    }
+  } catch {
+    // Fall through to keyed request.
+  }
+
+  try {
+    const keyedResponse = await fetch(iconName() + absoluteUrl, { headers })
+    if (!keyedResponse.ok) return null
+    return await blobToDataUrl(await keyedResponse.blob())
   } catch {
     return null
   }
@@ -458,15 +511,22 @@ export const loadAndConvertImageToHires = async (
     let proxyDataUrl: string | null = null
     let decodedFromNetwork = false
 
-    // Attempt 1: the resolved source — a cached data URL on a hit, else the network URL.
-    img = await loadImageElement(url, true)
-    if (img) decodedFromNetwork = !cached
+    // Attempt 1: load locally cached data URLs directly. For cross-origin network URLs,
+    // skip direct image loading (which predictably emits browser CORS errors) and let
+    // the proxy path below handle the fetch.
+    const isDirectCrossOrigin = !cached && cacheKey && isCrossOriginHttpUrl(cacheKey)
+    if (!isDirectCrossOrigin) {
+      img = await tryLoadImageElement(url, true)
+      if (img) decodedFromNetwork = !cached
+    }
 
     // (a) Self-heal: a cached data URL failed to decode (stale/poisoned entry). Evict it so
     //     it can't permanently break the export, then retry from the network.
     if (!img && cached && cacheKey && url !== cacheKey) {
       removeCachedScreenshot(cacheKey)
-      img = await loadImageElement(cacheKey, true)
+      if (!isCrossOriginHttpUrl(cacheKey)) {
+        img = await tryLoadImageElement(cacheKey, true)
+      }
       if (img) decodedFromNetwork = true
     }
 
@@ -474,7 +534,7 @@ export const loadAndConvertImageToHires = async (
     //     CORS proxy exactly like disk downloads, then load the returned bytes locally.
     if (!img && cacheKey) {
       proxyDataUrl = await fetchScreenshotViaProxy(cacheKey)
-      if (proxyDataUrl) img = await loadImageElement(proxyDataUrl, false)
+      if (proxyDataUrl) img = await tryLoadImageElement(proxyDataUrl, false)
     }
 
     if (!img) return buildFallbackHires()
