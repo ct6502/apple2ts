@@ -18,6 +18,8 @@ import { isMinimalTheme } from "../ui_settings"
 import { faCircle } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
+import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
+import { GoogleDrive } from "../devices/disk/googledrive"
 import { sortDisks, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
@@ -47,6 +49,44 @@ const defaultSortModeByTab: Record<number, DiskCollectionSortMode> = {
 
 const getSortModeForTab = (tabIndex: number): DiskCollectionSortMode => {
   return getPreferenceDiskCollectionSort(tabIndex) || defaultSortModeByTab[tabIndex] || "name-asc"
+}
+
+const createCloudProviderForItem = (item: DiskCollectionItem): CloudProvider | null => {
+  const providerName = item.cloudData?.providerName
+  if (!providerName) return null
+  switch (providerName) {
+    case "GoogleDrive":
+      return new GoogleDrive()
+    case "OneDrive":
+      return new OneDriveCloudDrive()
+    default:
+      return null
+  }
+}
+
+const requestCloudAuthTokenWithTimeout = (provider: CloudProvider, timeoutMs = 15000): Promise<boolean> => {
+  return new Promise((resolve) => {
+    let settled = false
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return
+      settled = true
+      resolve(false)
+    }, timeoutMs)
+
+    try {
+      provider.requestAuthToken(() => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeoutId)
+        resolve(true)
+      })
+    } catch {
+      if (settled) return
+      settled = true
+      clearTimeout(timeoutId)
+      resolve(false)
+    }
+  })
 }
 
 type DiskCollectionPanelProps = DisplayProps & {
@@ -159,7 +199,18 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     event.stopPropagation()
   }
 
-  const prepareSelectedItem = async (diskCollectionItem: DiskCollectionItem) => {
+  const prepareSelectedItem = async (diskCollectionItem: DiskCollectionItem): Promise<DiskCollectionItem | null> => {
+    if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
+      const cloudProvider = createCloudProviderForItem(diskCollectionItem)
+      if (cloudProvider) {
+        const authReady = await requestCloudAuthTokenWithTimeout(cloudProvider)
+        if (!authReady) {
+          alert("Cloud authorization did not complete. Please allow the provider popup and try selecting the disk again.")
+          return null
+        }
+      }
+    }
+
     if (diskCollectionItem.cloudData && (!diskCollectionItem.cloudData.fileSize || diskCollectionItem.cloudData.fileSize <= 0)) {
       let fileSize = 0
 
@@ -196,7 +247,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return
     }
 
-    await prepareSelectedItem(diskCollectionItem)
+    const preparedItem = await prepareSelectedItem(diskCollectionItem)
+    if (!preparedItem) {
+      return
+    }
     setSelectedDisks((prevSelectedDisks) => {
       if (prevSelectedDisks.includes(diskCollectionItem)) {
         return prevSelectedDisks
@@ -564,7 +618,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               const newSelectedDisks = [...selectedDisks]
               for (const diskCollectionItem of tabs[TAB_INDEX.EXPORT].disks) {
                 if (isDiskExportable(diskCollectionItem) && !newSelectedDisks.includes(diskCollectionItem)) {
-                  await prepareSelectedItem(diskCollectionItem)
+                  const preparedItem = await prepareSelectedItem(diskCollectionItem)
+                  if (!preparedItem) continue
                   newSelectedDisks.push(diskCollectionItem)
                 }
               }
