@@ -415,3 +415,9 @@ type SerialConfig =
   stop: number
   parity: string
 }
+
+type DownloadedExportDisk = {
+  item: DiskCollectionItem,
+  buffer: Uint8Array,
+  filename: string,
+}

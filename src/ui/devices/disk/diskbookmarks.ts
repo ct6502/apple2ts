@@ -1,4 +1,4 @@
-import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskcollectionpanel"
+import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 
 const storageKeyPrefix = "dbm-"
 
