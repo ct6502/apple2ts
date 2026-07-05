@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from "react"
+import { ChangeEvent, useEffect, useRef, useState } from "react"
 import "./diskcollectionpanel.css"
 import Flyout from "../flyout"
 import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
@@ -15,7 +15,7 @@ import {
   setPreferenceNewReleasesChecked,
 } from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
-import { faCircle } from "@fortawesome/free-regular-svg-icons"
+import { faCircle, faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
@@ -111,6 +111,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
   const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
+  const [pendingBookmarkRemovals, setPendingBookmarkRemovals] = useState<Set<string>>(new Set())
+  const pendingBookmarkRemovalsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    pendingBookmarkRemovalsRef.current = pendingBookmarkRemovals
+  }, [pendingBookmarkRemovals])
 
 
 
@@ -191,9 +197,17 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   const handleBookmarkClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
-    if (diskCollectionItem.bookmarkId) {
-      diskBookmarks.remove(diskCollectionItem.bookmarkId)
-      setDiskBookmarks(new DiskBookmarks())
+    const bookmarkId = diskCollectionItem.bookmarkId
+    if (bookmarkId) {
+      setPendingBookmarkRemovals((prev) => {
+        const next = new Set(prev)
+        if (next.has(bookmarkId)) {
+          next.delete(bookmarkId)
+        } else {
+          next.add(bookmarkId)
+        }
+        return next
+      })
     }
 
     event.stopPropagation()
@@ -296,8 +310,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       setActiveTab(0)
       // Dismiss the disk collection dialog/flyout so the error isn't left
       // hanging over a half-finished export.
-      props.onDismissDialog?.()
-      setIsFlyoutOpen(false)
+      dismissDiskCollection()
       alert("An unexpected error occurred while downloading the disk. Export to HDV has been aborted.")
     } else if (buffer !== undefined) {
       const currentItem = exportQueue[0]
@@ -341,9 +354,41 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     return hdvSize <= 0 || hdvSize > maxHdvBytes
   }
 
+  const commitPendingBookmarkRemovals = (refreshBookmarks: boolean = true) => {
+    const pending = pendingBookmarkRemovalsRef.current
+    if (pending.size > 0) {
+      const bookmarks = new DiskBookmarks()
+      pending.forEach((bookmarkId) => {
+        bookmarks.remove(bookmarkId)
+      })
+    }
+
+    if (refreshBookmarks) {
+      setPendingBookmarkRemovals(new Set())
+      setDiskBookmarks(new DiskBookmarks())
+    }
+  }
+
+  const dismissDiskCollection = (notifyParent: boolean = true) => {
+    commitPendingBookmarkRemovals()
+    setIsFlyoutOpen(false)
+    if (notifyParent) {
+      props.onDismissDialog?.()
+    }
+  }
+
   useEffect(() => {
+    if (!isFlyoutOpen) return
+    setPendingBookmarkRemovals(new Set())
     setDiskBookmarks(new DiskBookmarks())
   }, [isFlyoutOpen])
+
+  useEffect(() => {
+    return () => {
+      commitPendingBookmarkRemovals(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const newDiskCollectionFinal = getDiskCollection(diskBookmarks, newReleases)
@@ -363,8 +408,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       setDownloadedDisks([])
       setSelectedDisks([])
       setActiveTab(0)
-      setIsFlyoutOpen(false)
-      props.onDismissDialog?.()
+      dismissDiskCollection()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
@@ -375,7 +419,13 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       buttonId="tour-disk-images"
       title="disk collection"
       isOpen={() => { return isFlyoutOpen }}
-      onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
+      onClick={() => {
+        if (isFlyoutOpen) {
+          dismissDiskCollection(false)
+        } else {
+          setIsFlyoutOpen(true)
+        }
+      }}
       width={`max( ${isMinimalTheme() ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
@@ -396,6 +446,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         {tabs[activeTab].disks.map((diskCollectionItem, index) => {
           const isExportTab = activeTab == TAB_INDEX.EXPORT
           const isDisabledForExport = isExportTab && !isDiskExportable(diskCollectionItem)
+          const isBookmarkPendingRemoval = !!diskCollectionItem.bookmarkId && pendingBookmarkRemovals.has(diskCollectionItem.bookmarkId)
 
           return (
             <div
@@ -435,9 +486,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   {activeTab == 2 && diskCollectionItem.bookmarkId &&
                     <div
                       className="dcp-item-bookmark"
-                      title="Click to remove from disk collection"
+                      title={isBookmarkPendingRemoval
+                        ? "Click to keep in disk collection"
+                        : "Click to mark for removal from disk collection"}
                       onClick={handleBookmarkClick(diskCollectionItem)}>
-                      <FontAwesomeIcon icon={faStar} size="lg" className="dcp-item-bookmark-icon" />
+                      <FontAwesomeIcon icon={isBookmarkPendingRemoval ? faStarOutline : faStar} size="lg" className="dcp-item-bookmark-icon" />
                     </div>}
                   {activeTab == TAB_INDEX.EXPORT && isDiskExportable(diskCollectionItem) &&
                     <div
