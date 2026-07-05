@@ -140,8 +140,12 @@ export const loadDisk = (
   diskCollectionItem: DiskCollectionItem | undefined,
   updateDisplay: UpdateDisplay,
   callback?: (buffer: ArrayBuffer | null) => void) => {
-  // We want to restart the emulator when loading a disk from our Disk Collection
-  passSetRunMode(RUN_MODE.IDLE)
+  // Only force idle when actually loading into a drive. Background fetches for
+  // export/VTOC pass a callback (and often driveIndex -1) and must not disrupt
+  // the currently running program/canvas state.
+  if (!callback && driveIndex >= 0) {
+    passSetRunMode(RUN_MODE.IDLE)
+  }
 
   if (diskCollectionItem) {
     if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
