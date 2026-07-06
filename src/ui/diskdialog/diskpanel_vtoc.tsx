@@ -18,6 +18,7 @@ type DiskPanelVtocProps = {
 }
 
 const BOOKMARK_VTOC_PAUSE_UNTIL_KEY = "diskcollection-vtoc-pause-until"
+const BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY = "diskcollection-vtoc-suppress-while-open"
 
 // Downloads a disk's bytes without disturbing the running emulator. Unlike
 // loadDisk(), this never changes the run mode or loads the disk into a drive;
@@ -51,11 +52,6 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // a fresh pass for the newly visible disks.
   const vtocActiveTabRef = useRef<number | null>(null)
   const vtocProgressVisibleRef = useRef(false)
-  // True while a single background probe download is in flight. Guarantees only
-  // one probe runs at a time, so the effect re-running (its visibleCandidates
-  // dependency is a fresh array on every parent render, which happens
-  // constantly while the emulator runs) can't launch overlapping downloads.
-  const vtocFetchInFlightRef = useRef(false)
 
   // Stable identity for a disk across re-renders (bookmark id, cloud item id,
   // disk URL, or finally the title).
@@ -107,11 +103,20 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     // both themes, not just when isFlyoutOpen is toggled.
     const panelVisible = props.isFlyoutOpen || !isMinimalTheme()
     if (!panelVisible) {
+      sessionStorage.removeItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY)
       if (vtocProgressVisibleRef.current) {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
       vtocActiveTabRef.current = null
+      return
+    }
+
+    if (sessionStorage.getItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY) === "1") {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
       return
     }
 
@@ -154,15 +159,6 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     const pending = pendingCandidates.find((item) =>
       !vtocResolveAttempted.current.has(itemKey(item))
     )
-
-    // Only one probe download runs at a time. If one is already in flight, wait
-    // for it to settle (it bumps vtocCheckPass, re-running this effect to pick
-    // the next disk). This is what keeps a constantly re-running effect from
-    // starting a flood of duplicate downloads for the same disk.
-    if (vtocFetchInFlightRef.current) {
-      return
-    }
-
     if (!pending) {
       if (vtocProgressVisibleRef.current) {
         showGlobalProgressModal(false)
@@ -183,33 +179,50 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     }
 
     vtocResolveAttempted.current.add(itemKey(pending))
-    vtocFetchInFlightRef.current = true
-    // Capture the item so the async handlers don't depend on the changing
-    // `pending` binding. The fetch always runs to completion (it is never
-    // cancelled): on success it caches the VTOC type, on failure it records a
-    // session failure so hasSessionVtocFailure() filters the disk out and it is
-    // never re-downloaded this session. The disk also stays marked in
-    // `attempted`, so it is not re-picked while the fetch is in flight -- this
-    // is what stopped the infinite re-fetch loop for un-fetchable disks.
-    const probing = pending
+    // Capture the ref's Set (stable across renders) and the item key so the
+    // cleanup below doesn't read a ref during teardown (which lint flags).
+    const attempted = vtocResolveAttempted.current
+    const pendingKey = itemKey(pending)
+    let cancelled = false
+    let settled = false
 
-    fetchDiskBufferForItem(probing).then((data) => {
-      if (!data) {
-        addSessionVtocFailure(probing.diskUrl.toString())
+    fetchDiskBufferForItem(pending).then((data) => {
+      settled = true
+      if (cancelled) {
         return
       }
-      const filename = getExportFilename(probing, data)
+      if (!data) {
+        // Download failed (CORS/network). Remember the failure for this browser
+        // session so we don't re-attempt the download on every reload, then
+        // advance to the next disk. It will be retried in a new session.
+        addSessionVtocFailure(pending.diskUrl.toString())
+        setVtocCheckPass((pass) => pass + 1)
+        return
+      }
+      const filename = getExportFilename(pending, data)
       // Cache the determined VTOC (and persist it for bookmarks).
-      persistVtocType(probing, determineVtocType(filename, data))
+      persistVtocType(pending, determineVtocType(filename, data))
     })
     .catch(() => {
-      addSessionVtocFailure(probing.diskUrl.toString())
+      settled = true
+      if (!cancelled) {
+        addSessionVtocFailure(pending.diskUrl.toString())
+        setVtocCheckPass((pass) => pass + 1)
+      }
     })
-    .finally(() => {
-      vtocFetchInFlightRef.current = false
-      // Advance to the next pending disk.
-      setVtocCheckPass((pass) => pass + 1)
-    })
+
+    return () => {
+      cancelled = true
+      // If this effect re-ran (e.g. diskCollection changed during the panel-open
+      // re-render storm) before the fetch settled, un-mark the disk so it is
+      // retried on the next pass. Otherwise it would be stranded with an
+      // undefined VTOC -- showing a non-exportable badge until the panel is
+      // reopened. This most often struck the first disk, whose fetch is in flight
+      // exactly while the collection is still settling.
+      if (!settled) {
+        attempted.delete(pendingKey)
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, props.visibleCandidates])
 

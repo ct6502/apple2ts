@@ -21,6 +21,7 @@ import { isFileSystemApiSupported } from "../../ui_utilities"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
 const BOOKMARK_VTOC_PAUSE_UNTIL_KEY = "diskcollection-vtoc-pause-until"
+const BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY = "diskcollection-vtoc-suppress-while-open"
 
 export const getBlobFromDiskData = (diskData: Uint8Array, filename: string): Blob => {
   // Only WOZ requires a checksum. Other formats should be ready to download.
@@ -302,6 +303,7 @@ const DiskDrive = (props: DiskDriveProps) => {
                     cloudData: dprops.cloudData,
                   })
                   sessionStorage.setItem(BOOKMARK_VTOC_PAUSE_UNTIL_KEY, String(Date.now() + 1500))
+                  sessionStorage.setItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY, "1")
                 }
               }
             },
@@ -402,6 +404,7 @@ const DiskDrive = (props: DiskDriveProps) => {
                     cloudData: dprops.cloudData,
                   })
                   sessionStorage.setItem(BOOKMARK_VTOC_PAUSE_UNTIL_KEY, String(Date.now() + 1500))
+                  sessionStorage.setItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY, "1")
                 }
               }
             },
