@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { Buffer } from "node:buffer"
+import { createHash, randomUUID } from "node:crypto"
+import { spawn } from "node:child_process"
 import { promises as fs } from "node:fs"
 import path from "node:path"
 
@@ -30,6 +32,8 @@ Groups:
   input                  Send keyboard, Apple key, or mouse input
   snapshots              Manage debugger snapshots
   save-state             Export or import save states
+  export                 Export-focused automation commands
+  batch                  Batch runner for large-scale disk testing
 
 Examples:
   npm run cli -- machine get
@@ -40,6 +44,9 @@ Examples:
   npm run cli -- drives mount-file fd1 --file public/disks/blank.po
   npm run cli -- input text --text "PRINT CHR$(4);\\"CATALOG\\""
   npm run cli -- save-state export --output session.a2ts
+  npm run cli -- export hdv-batch --input disks.txt --output results.jsonl --shards 8 --shard-index 0
+  npm run cli -- batch run --input disks.txt --output results.jsonl --shards 8 --shard-index 0
+  npm run cli -- export hdv-batch --input disks.txt --output results.jsonl --runner-preset electron-hdv-packaged-auto --runner-app-dir C:/git/apple2ts-app
 `
 
 const printHelp = () => {
@@ -824,6 +831,675 @@ const handleSaveState = async (context, command, tokens) => {
   }
 }
 
+const sha256Hex = (bytes) => createHash("sha256").update(bytes).digest("hex")
+
+const normalizePathForHash = (value) => value.replace(/\\/g, "/").toLowerCase()
+
+const computeShardForValue = (value, shards) => {
+  const digest = createHash("sha1").update(value).digest()
+  const bucket = digest.readUInt32BE(0)
+  return bucket % shards
+}
+
+const ensureParentDirectory = async (filePath) => {
+  await fs.mkdir(path.dirname(filePath), { recursive: true })
+}
+
+const looksLike2Img = (bytes) => {
+  if (bytes.length < 64) {
+    return false
+  }
+  return bytes[0] === 0x32 && bytes[1] === 0x49 && bytes[2] === 0x4D && bytes[3] === 0x47
+}
+
+const getCanonicalDiskBytes = (filename, bytes) => {
+  const extension = path.extname(filename).toLowerCase()
+  if (extension === ".2mg" && looksLike2Img(bytes)) {
+    return {
+      bytes: bytes.subarray(64),
+      canonicalization: "strip-2img-header",
+    }
+  }
+
+  return {
+    bytes,
+    canonicalization: "none",
+  }
+}
+
+const loadDiskListFromFile = async (inputPath) => {
+  const raw = await fs.readFile(inputPath, "utf8")
+  const lower = inputPath.toLowerCase()
+  if (lower.endsWith(".json")) {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      fail("batch input JSON must be an array of disk paths")
+    }
+    return parsed.map((value) => {
+      if (typeof value === "string") return value
+      if (value && typeof value === "object" && typeof value.path === "string") return value.path
+      fail("batch input JSON entries must be strings or objects with a 'path' string")
+    })
+  }
+
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"))
+}
+
+const applyTemplate = (template, variables) => {
+  return template.replace(/\{([A-Za-z0-9_]+)\}/g, (_, name) => {
+    return Object.prototype.hasOwnProperty.call(variables, name) ? String(variables[name]) : ""
+  })
+}
+
+const runShellCommand = async (command, timeoutMs) => {
+  return new Promise((resolve) => {
+    const isWindows = process.platform === "win32"
+    const shell = isWindows ? "powershell.exe" : "sh"
+    const args = isWindows
+      ? ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]
+      : ["-lc", command]
+    const child = spawn(shell, args, { stdio: ["ignore", "pipe", "pipe"] })
+
+    let stdout = ""
+    let stderr = ""
+    let finished = false
+    let timedOut = false
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString("utf8")
+    })
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString("utf8")
+    })
+
+    const timeout = setTimeout(() => {
+      timedOut = true
+      child.kill("SIGKILL")
+    }, timeoutMs)
+
+    child.on("close", (exitCode, signal) => {
+      if (finished) return
+      finished = true
+      clearTimeout(timeout)
+      resolve({
+        exitCode,
+        signal,
+        timedOut,
+        stdout,
+        stderr,
+      })
+    })
+  })
+}
+
+const validateRunnerContractName = (value) => {
+  if (value === "none" || value === "electron-hdv-v1") {
+    return value
+  }
+  fail("--runner-contract must be one of: none, electron-hdv-v1")
+}
+
+const validateRunnerPresetName = (value) => {
+  if (
+    value === "none" ||
+    value === "electron-hdv-dev" ||
+    value === "electron-hdv-packaged" ||
+    value === "electron-hdv-packaged-auto"
+  ) {
+    return value
+  }
+  fail(
+    "--runner-preset must be one of: none, electron-hdv-dev, electron-hdv-packaged, electron-hdv-packaged-auto",
+  )
+}
+
+const escapeDoubleQuoted = (value) => String(value).replaceAll('"', '\\"')
+
+const buildHdvGenerationCommand = ({ diskPath, exportedHdvPath, diskName }) => {
+  return [
+    "node --import tsx cli/generate-hdv.mts",
+    `--input \"${escapeDoubleQuoted(diskPath)}\"`,
+    `--output \"${escapeDoubleQuoted(exportedHdvPath)}\"`,
+    `--name \"${escapeDoubleQuoted(diskName)}\"`,
+    '--volume "APPLE2TS"',
+  ].join(" ")
+}
+
+const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe }) => {
+  const base = [
+    "node cli/electron-hdv-runner.mjs",
+    '--disk "{diskPath}"',
+    '--result "{resultPath}"',
+    '--video "{videoPath}"',
+    '--log "{logPath}"',
+    '--run-id "{runId}"',
+    '--attempt {attempt}',
+    '--raw-sha256 "{rawSha256}"',
+    '--canonical-sha256 "{canonicalSha256}"',
+    '--exported-hdv "{exportedHdvPath}"',
+    '--require-exported-hdv true',
+  ]
+
+  const appendProfile = (profileName) => {
+    base.push(`--profile ${profileName}`)
+    if (runnerAppDir) {
+      base.push(`--app-dir "${escapeDoubleQuoted(runnerAppDir)}"`)
+    }
+  }
+
+  switch (preset) {
+    case "electron-hdv-dev":
+      appendProfile("apple2ts-app-dev")
+      break
+    case "electron-hdv-packaged":
+      appendProfile("apple2ts-app-packaged")
+      if (!runnerAppExe) {
+        fail("--runner-app-exe is required when --runner-preset=electron-hdv-packaged")
+      }
+      base.push(`--app-exe "${escapeDoubleQuoted(runnerAppExe)}"`)
+      break
+    case "electron-hdv-packaged-auto":
+      appendProfile("apple2ts-app-packaged-auto")
+      break
+    default:
+      fail(`Unsupported runner preset '${preset}'`)
+  }
+
+  return base.join(" ")
+}
+
+const validateElectronHdvRunnerPayload = (payload) => {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return "payload must be an object"
+  }
+  if (payload.contractVersion !== 1) {
+    return "contractVersion must be 1"
+  }
+  if (payload.scenario !== "export-hdv-launch-test") {
+    return "scenario must be 'export-hdv-launch-test'"
+  }
+
+  const status = payload.status
+  if (!status || typeof status !== "object" || Array.isArray(status)) {
+    return "status must be an object"
+  }
+  if (typeof status.exportOk !== "boolean") {
+    return "status.exportOk must be a boolean"
+  }
+  if (typeof status.launchOk !== "boolean") {
+    return "status.launchOk must be a boolean"
+  }
+
+  const timing = payload.timing
+  if (!timing || typeof timing !== "object" || Array.isArray(timing)) {
+    return "timing must be an object"
+  }
+  if (!Number.isFinite(Number(timing.captureSeconds))) {
+    return "timing.captureSeconds must be a number"
+  }
+  if (!Number.isFinite(Number(timing.elapsedMs))) {
+    return "timing.elapsedMs must be a number"
+  }
+
+  const artifacts = payload.artifacts
+  if (!artifacts || typeof artifacts !== "object" || Array.isArray(artifacts)) {
+    return "artifacts must be an object"
+  }
+  if (typeof artifacts.videoPath !== "string" || artifacts.videoPath.length === 0) {
+    return "artifacts.videoPath must be a non-empty string"
+  }
+
+  return null
+}
+
+const validateRunnerPayloadAgainstContract = (payload, contractName) => {
+  if (contractName === "none") {
+    return null
+  }
+  if (contractName === "electron-hdv-v1") {
+    return validateElectronHdvRunnerPayload(payload)
+  }
+  return `Unknown runner contract '${contractName}'`
+}
+
+const handleBatch = async (context, command, tokens) => {
+  const { options, positionals } = parseOptionTokens(tokens)
+
+  if (command !== "run") {
+    fail(`Unknown batch command: ${command}`)
+  }
+  assertNoExtraPositionals(positionals, "batch run")
+
+  const inputPath = path.resolve(process.cwd(), String(requireOption(options, "input")))
+  const outputPath = path.resolve(process.cwd(), String(requireOption(options, "output")))
+  const corpusRoot = options.has("root") ? path.resolve(process.cwd(), String(options.get("root"))) : process.cwd()
+  const shards = options.has("shards") ? parseRequiredNumber(String(options.get("shards")), "shards") : 1
+  const shardIndex = options.has("shard-index")
+    ? parseRequiredNumber(String(options.get("shard-index")), "shard-index")
+    : null
+  const concurrency = options.has("concurrency")
+    ? parseRequiredNumber(String(options.get("concurrency")), "concurrency")
+    : 1
+  const retries = options.has("retries")
+    ? parseRequiredNumber(String(options.get("retries")), "retries")
+    : 0
+  const runnerTimeoutMs = options.has("runner-timeout-ms")
+    ? parseRequiredNumber(String(options.get("runner-timeout-ms")), "runner-timeout-ms")
+    : 180000
+  const hdvGenerateTimeoutMs = options.has("hdv-generate-timeout-ms")
+    ? parseRequiredNumber(String(options.get("hdv-generate-timeout-ms")), "hdv-generate-timeout-ms")
+    : 120000
+  const runnerPreset = validateRunnerPresetName(
+    options.has("runner-preset") ? String(options.get("runner-preset")) : "none",
+  )
+  const hasRunnerCommand = options.has("runner-command")
+  if (hasRunnerCommand && runnerPreset !== "none") {
+    fail("Use either --runner-command or --runner-preset, not both")
+  }
+
+  if (!hasRunnerCommand && runnerPreset === "none") {
+    fail("Either --runner-command or --runner-preset is required")
+  }
+
+  const runnerAppDir = options.has("runner-app-dir")
+    ? path.resolve(process.cwd(), String(options.get("runner-app-dir")))
+    : ""
+  const runnerAppExe = options.has("runner-app-exe")
+    ? path.resolve(process.cwd(), String(options.get("runner-app-exe")))
+    : ""
+
+  const runnerCommandTemplate = hasRunnerCommand
+    ? String(requireOption(options, "runner-command"))
+    : buildRunnerCommandFromPreset(runnerPreset, { runnerAppDir, runnerAppExe })
+
+  const runnerContract = validateRunnerContractName(
+    options.has("runner-contract")
+      ? String(options.get("runner-contract"))
+      : runnerPreset !== "none"
+        ? "electron-hdv-v1"
+        : "none",
+  )
+  const runnerResultsDir = options.has("runner-results-dir")
+    ? path.resolve(process.cwd(), String(options.get("runner-results-dir")))
+    : path.resolve(process.cwd(), ".apple2ts-batch", "runner-results")
+  const exportedHdvDir = options.has("exported-hdv-dir")
+    ? path.resolve(process.cwd(), String(options.get("exported-hdv-dir")))
+    : null
+  const videoDir = options.has("video-dir")
+    ? path.resolve(process.cwd(), String(options.get("video-dir")))
+    : null
+  const logDir = options.has("log-dir")
+    ? path.resolve(process.cwd(), String(options.get("log-dir")))
+    : null
+  const append = options.has("append") ? parseBoolean(options.get("append"), "append") : false
+  const runId = options.has("run-id") ? String(options.get("run-id")) : randomUUID()
+
+  if (shards < 1) {
+    fail("--shards must be at least 1")
+  }
+  if (shardIndex !== null && (shardIndex < 0 || shardIndex >= shards)) {
+    fail("--shard-index must be between 0 and shards-1")
+  }
+  if (concurrency < 1) {
+    fail("--concurrency must be at least 1")
+  }
+  if (retries < 0) {
+    fail("--retries must be >= 0")
+  }
+
+  const diskPaths = await loadDiskListFromFile(inputPath)
+  const resolvedDisks = diskPaths.map((diskPath) => {
+    if (path.isAbsolute(diskPath)) {
+      return path.normalize(diskPath)
+    }
+    return path.resolve(corpusRoot, diskPath)
+  })
+
+  const shardedDisks = resolvedDisks.filter((diskPath) => {
+    if (shardIndex === null) return true
+    const shard = computeShardForValue(normalizePathForHash(diskPath), shards)
+    return shard === shardIndex
+  })
+
+  await ensureParentDirectory(outputPath)
+  await fs.mkdir(runnerResultsDir, { recursive: true })
+  if (videoDir) await fs.mkdir(videoDir, { recursive: true })
+  if (logDir) await fs.mkdir(logDir, { recursive: true })
+  if (exportedHdvDir) await fs.mkdir(exportedHdvDir, { recursive: true })
+  if (!append) {
+    await fs.writeFile(outputPath, "")
+  }
+
+  let writeQueue = Promise.resolve()
+  const appendRecord = async (record) => {
+    writeQueue = writeQueue.then(() => fs.appendFile(outputPath, `${JSON.stringify(record)}\n`))
+    return writeQueue
+  }
+
+  const processDisk = async (diskPath) => {
+    const filename = path.basename(diskPath)
+    let rawBytes
+
+    try {
+      rawBytes = await fs.readFile(diskPath)
+    } catch (error) {
+      return {
+        schemaVersion: 1,
+        runId,
+        createdAt: new Date().toISOString(),
+        disk: {
+          path: diskPath,
+          filename,
+          sizeBytes: 0,
+          rawSha256: "0".repeat(64),
+          canonicalSha256: "0".repeat(64),
+          canonicalization: "none",
+        },
+        attempt: {
+          index: 1,
+          max: retries + 1,
+          retryable: false,
+        },
+        status: {
+          ok: false,
+          code: error && error.code === "ENOENT" ? "input_not_found" : "input_read_error",
+          message: error instanceof Error ? error.message : String(error),
+        },
+        timing: {
+          elapsedMs: 0,
+        },
+      }
+    }
+
+    const canonical = getCanonicalDiskBytes(filename, rawBytes)
+    const rawSha256 = sha256Hex(rawBytes)
+    const canonicalSha256 = sha256Hex(canonical.bytes)
+    const diskId = `${canonicalSha256.slice(0, 12)}-${filename.replace(/[^A-Za-z0-9._-]/g, "_")}`
+    const maxAttempts = retries + 1
+    let lastRecord = null
+
+    for (let attemptIndex = 1; attemptIndex <= maxAttempts; attemptIndex += 1) {
+      const startedAt = Date.now()
+      const runnerResultPath = path.join(runnerResultsDir, `${diskId}.attempt${attemptIndex}.json`)
+      const videoPath = videoDir ? path.join(videoDir, `${diskId}.attempt${attemptIndex}.mp4`) : ""
+      const logPath = logDir ? path.join(logDir, `${diskId}.attempt${attemptIndex}.log`) : ""
+      const exportedHdvPath = exportedHdvDir ? path.join(exportedHdvDir, `${diskId}.hdv`) : ""
+
+      let hdvGeneration = { exitCode: 0, signal: null, timedOut: false, stdout: "", stderr: "", command: "" }
+      if (exportedHdvPath && runnerContract === "electron-hdv-v1") {
+        const generationCommand = buildHdvGenerationCommand({
+          diskPath,
+          exportedHdvPath,
+          diskName: filename.replace(/\.[^.]+$/, "") || filename,
+        })
+        hdvGeneration = await runShellCommand(generationCommand, hdvGenerateTimeoutMs)
+        if (hdvGeneration.timedOut || hdvGeneration.exitCode !== 0) {
+          const failureRecord = {
+            schemaVersion: 1,
+            runId,
+            createdAt: new Date().toISOString(),
+            disk: {
+              path: diskPath,
+              filename,
+              sizeBytes: rawBytes.length,
+              rawSha256,
+              canonicalSha256,
+              canonicalization: canonical.canonicalization,
+            },
+            attempt: {
+              index: attemptIndex,
+              max: maxAttempts,
+              retryable: attemptIndex < maxAttempts,
+            },
+            timing: {
+              elapsedMs: Date.now() - startedAt,
+            },
+            artifacts: {
+              runnerResultPath,
+              videoPath: videoPath || undefined,
+              logPath: logPath || undefined,
+              exportedHdvPath,
+            },
+            status: {
+              ok: false,
+              code: hdvGeneration.timedOut ? "export_hdv_generation_timeout" : "export_hdv_generation_failed",
+              message: hdvGeneration.timedOut
+                ? `HDV generation timed out after ${hdvGenerateTimeoutMs} ms`
+                : `HDV generation failed with code ${hdvGeneration.exitCode}`,
+            },
+            generation: {
+              exitCode: hdvGeneration.exitCode,
+              signal: hdvGeneration.signal,
+              command: generationCommand,
+            },
+          }
+
+          if (logPath) {
+            const combined = [hdvGeneration.stdout, hdvGeneration.stderr].filter(Boolean).join("\n")
+            await fs.writeFile(logPath, combined)
+          }
+
+          lastRecord = failureRecord
+          await appendRecord(failureRecord)
+          continue
+        }
+      }
+
+      const command = applyTemplate(runnerCommandTemplate, {
+        diskPath,
+        resultPath: runnerResultPath,
+        videoPath,
+        logPath,
+        exportedHdvPath,
+        attempt: attemptIndex,
+        runId,
+        rawSha256,
+        canonicalSha256,
+      })
+
+      const runner = await runShellCommand(command, runnerTimeoutMs)
+      if (logPath) {
+        const wrapperOutput = [runner.stdout, runner.stderr].filter(Boolean).join("\n")
+        if (wrapperOutput.length > 0) {
+          const existingLog = await fs.readFile(logPath, "utf8").catch(() => "")
+          if (!existingLog) {
+            await fs.writeFile(logPath, wrapperOutput)
+          } else {
+            await fs.appendFile(logPath, `\n\n[BATCH_WRAPPER]\n${wrapperOutput}`)
+          }
+        }
+      }
+
+      const baseRecord = {
+        schemaVersion: 1,
+        runId,
+        createdAt: new Date().toISOString(),
+        disk: {
+          path: diskPath,
+          filename,
+          sizeBytes: rawBytes.length,
+          rawSha256,
+          canonicalSha256,
+          canonicalization: canonical.canonicalization,
+        },
+        attempt: {
+          index: attemptIndex,
+          max: maxAttempts,
+          retryable: false,
+        },
+        timing: {
+          elapsedMs: Date.now() - startedAt,
+        },
+        artifacts: {
+          runnerResultPath,
+          videoPath: videoPath || undefined,
+          logPath: logPath || undefined,
+        },
+        runner: {
+          exitCode: runner.exitCode,
+          signal: runner.signal,
+          command,
+        },
+      }
+
+      if (runner.timedOut) {
+        lastRecord = {
+          ...baseRecord,
+          attempt: {
+            ...baseRecord.attempt,
+            retryable: true,
+          },
+          status: {
+            ok: false,
+            code: "runner_timeout",
+            message: `Runner timed out after ${runnerTimeoutMs} ms`,
+          },
+        }
+      } else if (runner.exitCode !== 0) {
+        lastRecord = {
+          ...baseRecord,
+          attempt: {
+            ...baseRecord.attempt,
+            retryable: true,
+          },
+          status: {
+            ok: false,
+            code: "runner_failed",
+            message: `Runner exited with code ${runner.exitCode}`,
+          },
+        }
+      } else {
+        let payload
+        try {
+          const rawPayload = await fs.readFile(runnerResultPath, "utf8")
+          payload = JSON.parse(rawPayload)
+          const contractError = validateRunnerPayloadAgainstContract(payload, runnerContract)
+          if (contractError) {
+            lastRecord = {
+              ...baseRecord,
+              attempt: {
+                ...baseRecord.attempt,
+                retryable: false,
+              },
+              status: {
+                ok: false,
+                code: "runner_result_invalid",
+                message: `Runner contract validation failed: ${contractError}`,
+              },
+            }
+          } else {
+          lastRecord = {
+            ...baseRecord,
+            status: {
+              ok: true,
+              code: "ok",
+            },
+            payload,
+          }
+          }
+        } catch (error) {
+          lastRecord = {
+            ...baseRecord,
+            attempt: {
+              ...baseRecord.attempt,
+              retryable: false,
+            },
+            status: {
+              ok: false,
+              code: error && error.code === "ENOENT" ? "runner_result_missing" : "runner_result_invalid",
+              message: error instanceof Error ? error.message : String(error),
+            },
+          }
+        }
+      }
+
+      if (lastRecord.status.ok || !lastRecord.attempt.retryable || attemptIndex >= maxAttempts) {
+        return lastRecord
+      }
+    }
+
+    return lastRecord || {
+      schemaVersion: 1,
+      runId,
+      createdAt: new Date().toISOString(),
+      disk: {
+        path: diskPath,
+        filename,
+        sizeBytes: rawBytes.length,
+        rawSha256,
+        canonicalSha256,
+        canonicalization: canonical.canonicalization,
+      },
+      attempt: {
+        index: maxAttempts,
+        max: maxAttempts,
+        retryable: false,
+      },
+      status: {
+        ok: false,
+        code: "unexpected_error",
+        message: "Batch runner reached an unexpected state",
+      },
+      timing: {
+        elapsedMs: 0,
+      },
+    }
+  }
+
+  let cursor = 0
+  const workers = Array.from({ length: concurrency }, () => (async () => {
+    while (true) {
+      const index = cursor
+      cursor += 1
+      if (index >= shardedDisks.length) {
+        return
+      }
+      const record = await processDisk(shardedDisks[index])
+      await appendRecord(record)
+    }
+  })())
+
+  await Promise.all(workers)
+  await writeQueue
+
+  return {
+    runId,
+    inputPath,
+    outputPath,
+    schemaPath: path.resolve(process.cwd(), "cli", "batch-result.schema.json"),
+    runnerContract,
+    runnerContractSchemaPath:
+      runnerContract === "electron-hdv-v1"
+        ? path.resolve(process.cwd(), "cli", "electron-hdv-runner-result.schema.json")
+        : null,
+    totals: {
+      diskCount: shardedDisks.length,
+      shards,
+      shardIndex,
+      concurrency,
+      retries,
+    },
+  }
+}
+
+const handleExport = async (context, command, tokens) => {
+  switch (command) {
+    case "hdv-batch": {
+      const hasRunnerContractOption = tokens.some((token) => token === "--runner-contract" || token.startsWith("--runner-contract="))
+      const nextTokens = hasRunnerContractOption ? tokens : [...tokens, "--runner-contract", "electron-hdv-v1"]
+      return handleBatch(context, "run", nextTokens)
+    }
+    case "batch":
+      return handleBatch(context, "run", tokens)
+    default:
+      fail(`Unknown export command: ${command}`)
+  }
+}
+
 const parseGlobalArgs = (argv) => {
   const context = {
     server: DEFAULT_SERVER,
@@ -885,6 +1561,10 @@ const dispatch = async (context, group, command, tokens) => {
       return handleSnapshots(context, command, tokens)
     case "save-state":
       return handleSaveState(context, command, tokens)
+    case "export":
+      return handleExport(context, command, tokens)
+    case "batch":
+      return handleBatch(context, command, tokens)
     default:
       fail(`Unknown command group: ${group}`)
   }

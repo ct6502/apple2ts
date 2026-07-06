@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apple2ts.local/schemas/batch-result.schema.json",
+  "title": "Apple2TS Batch Result",
+  "description": "Per-disk result record emitted by the apple2ts-cli batch runner.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "disk",
+    "attempt",
+    "status",
+    "timing",
+    "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "disk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "filename",
+        "sizeBytes",
+        "rawSha256",
+        "canonicalSha256"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "filename": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "rawSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "canonicalSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "canonicalization": {
+          "type": "string",
+          "enum": ["none", "strip-2img-header"]
+        }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "max", "retryable"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 1 },
+        "max": { "type": "integer", "minimum": 1 },
+        "retryable": { "type": "boolean" }
+      }
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "code"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "code": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "input_not_found",
+            "input_read_error",
+            "runner_timeout",
+            "runner_failed",
+            "runner_result_missing",
+            "runner_result_invalid",
+            "unexpected_error"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["elapsedMs"],
+      "properties": {
+        "elapsedMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "runnerResultPath": { "type": "string" },
+        "videoPath": { "type": "string" },
+        "logPath": { "type": "string" }
+      }
+    },
+    "runner": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exitCode": { "type": ["integer", "null"] },
+        "signal": { "type": ["string", "null"] },
+        "command": { "type": "string" }
+      }
+    },
+    "payload": {
+      "description": "Optional unvalidated JSON payload produced by an external runner.",
+      "type": ["object", "array", "string", "number", "boolean", "null"]
+    }
+  }
+}

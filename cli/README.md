@@ -34,6 +34,8 @@ npm run cli -- --server http://127.0.0.1:6502 machine get
 - `input`: send text, key, key-code, Apple key, or mouse input
 - `snapshots`: list/create/activate/step-back/step-forward
 - `save-state`: export or import `.a2ts` data
+- `export`: export-focused workflows (`hdv-batch` for large-scale disk automation)
+- `batch`: large-scale local disk automation with sharding and retries
 
 ## Examples
 
@@ -64,6 +66,270 @@ npm run cli -- snapshots create
 npm run cli -- snapshots activate snap:3
 npm run cli -- save-state export --output session.a2ts
 npm run cli -- save-state import --file session.a2ts
+npm run cli -- export hdv-batch --input disks.txt --output results.jsonl --runner-command "my-runner --disk {diskPath} --result {resultPath}"
+npm run cli -- batch run --input disks.txt --output results.jsonl --runner-command "my-runner --disk {diskPath} --result {resultPath}"
+```
+
+## Batch Runner
+
+Preferred command for this scenario:
+
+- `npm run cli -- export hdv-batch ...`
+
+Compatibility alias:
+
+- `npm run cli -- batch run ...`
+
+The batch runner is designed for large local corpora where source URLs are unavailable
+or unreliable. Each output record includes stable content hashes and per-attempt status.
+
+### Input
+
+- `--input <path>`: required.
+- Supported formats:
+	- text file with one disk path per line (`#` comments supported)
+	- JSON array of strings
+	- JSON array of objects with a `path` field
+
+Relative paths are resolved from `--root` when provided, otherwise from the current working directory.
+
+### Required options
+
+- `--output <path>`: JSONL output file.
+- One of:
+	- `--runner-command <template>`: custom command template invoked per disk.
+	- `--runner-preset <name>`: built-in Electron runner preset.
+
+Built-in presets:
+
+- `electron-hdv-dev`
+- `electron-hdv-packaged`
+- `electron-hdv-packaged-auto`
+
+Preset-specific options:
+
+- `--runner-app-dir <path>`
+- `--runner-app-exe <path>` (required for `electron-hdv-packaged`)
+
+The command template supports placeholders:
+
+- `{diskPath}`
+- `{resultPath}`
+- `{videoPath}`
+- `{logPath}`
+- `{attempt}`
+- `{runId}`
+- `{rawSha256}`
+- `{canonicalSha256}`
+
+Your external runner should write JSON to `{resultPath}` when it succeeds.
+
+When using `--runner-preset`, the CLI generates a command template automatically.
+
+Contract options:
+
+- `--runner-contract <name>` where name is:
+	- `none` (default for `batch run`)
+	- `electron-hdv-v1` (default for `export hdv-batch`)
+
+If `--runner-preset` is used and `--runner-contract` is omitted, the CLI defaults to `electron-hdv-v1`.
+For `export hdv-batch` presets, the generated runner command includes `--require-exported-hdv true`.
+When `--exported-hdv-dir` is provided, batch generates an HDV file per disk before launching the runner.
+
+When `electron-hdv-v1` is active, the runner payload must follow:
+
+- `cli/electron-hdv-runner-result.schema.json`
+
+Minimum required payload fields for `electron-hdv-v1`:
+
+- `contractVersion: 1`
+- `scenario: "export-hdv-launch-test"`
+- `status.exportOk` (boolean)
+- `status.launchOk` (boolean)
+- `timing.captureSeconds` (number)
+- `timing.elapsedMs` (number)
+- `artifacts.videoPath` (string)
+
+If contract validation fails, the record is written as `runner_result_invalid`.
+
+### Scale options
+
+- `--shards <n>` and `--shard-index <i>`
+- `--concurrency <n>`
+- `--retries <n>`
+- `--runner-timeout-ms <ms>`
+- `--hdv-generate-timeout-ms <ms>`
+- `--runner-results-dir <path>`
+- `--video-dir <path>`
+- `--log-dir <path>`
+- `--exported-hdv-dir <path>` (per-disk HDV output location for runner handoff)
+- `--run-id <id>`
+- `--append true|false`
+
+### Result schema
+
+Each JSONL line follows schema version 1 in:
+
+- `cli/batch-result.schema.json`
+
+When `runnerContract` is `electron-hdv-v1`, payload schema is:
+
+- `cli/electron-hdv-runner-result.schema.json`
+
+Identity fields include:
+
+- `disk.rawSha256`: exact file bytes hash
+- `disk.canonicalSha256`: normalized hash (currently strips 2IMG headers for `.2mg`)
+
+### Example
+
+```bash
+npm run cli -- batch run \
+	--input disks.txt \
+	--output results-shard0.jsonl \
+	--shards 8 \
+	--shard-index 0 \
+	--concurrency 4 \
+	--retries 2 \
+	--video-dir artifacts/videos \
+	--log-dir artifacts/logs \
+	--runner-command "electron-runner --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\""
+```
+
+Starter runner in this repo:
+
+- cli/electron-hdv-runner.mjs
+
+It now runs as a process harness:
+
+- launches an app command (default: apple2ts-app via npm start)
+- waits for readiness window (5 seconds)
+- keeps app alive for capture window (`--capture-seconds`)
+- optionally runs a recorder command to write real video
+- writes contract payload with launch/export classification
+
+Runner-specific options:
+
+- `--profile <name>` (default: `apple2ts-app-dev`)
+- `--app-dir <path>` (default: `../apple2ts-app` from this repo)
+- `--app-exe <path>` (used by packaged profile command templates)
+- `--app-command <command>`
+- `--recorder-command <command>`
+- `--recorder-start-delay-ms <ms>`
+- `--app-ready-timeout-ms <ms>` (wait for `[AUTOMATION] window-ready` marker)
+- `--disk-ready-timeout-ms <ms>` (wait for `[AUTOMATION] disk-loaded|state-loaded` marker)
+- `--window-title <title>` (window-only capture target, default `Apple2TS`)
+- `--ffmpeg-exe <path>` (optional override for ffmpeg binary)
+- `--exported-hdv <path>`
+- `--require-exported-hdv <true|false>` (when true, fail if exported HDV path is missing)
+
+Supported profiles:
+
+- `apple2ts-app-dev`: launches Electron app via `npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash "{launchPath}"`
+- `apple2ts-app-packaged`: launches packaged app via `"{appExe}" --automation --disable-gpu --fullscreen --no-splash "{launchPath}"`
+- `apple2ts-app-packaged-auto`: same as packaged, but auto-detects `{appExe}` in common `out/` build paths
+- `none`: no profile defaults (use explicit `--app-command`)
+
+Placeholder tokens supported in `--app-command` and `--recorder-command`:
+
+- `{diskPath}`
+- `{launchPath}` (resolved launch target: exported HDV when present, otherwise source disk)
+- `{videoPath}`
+- `{captureSeconds}`
+- `{exportedHdvPath}`
+- `{appPid}` (recorder only)
+- `{appExe}`
+- `{ffmpegExe}`
+- `{windowTitle}`
+- `{captureX}`
+- `{captureY}`
+- `{captureWidth}`
+- `{captureHeight}`
+
+Runner behavior notes:
+
+- Capture does not start until the app emits automation markers for window readiness and disk/state load.
+- On Windows, if `--recorder-command` is omitted, the runner uses a default ffmpeg `gdigrab` command that records the app window region only (desktop source constrained to automation-reported window bounds).
+
+Example using the starter runner:
+
+```bash
+npm run cli -- export hdv-batch \
+	--input disks.txt \
+	--output artifacts/results.jsonl \
+	--video-dir artifacts/videos \
+	--log-dir artifacts/logs \
+	--runner-results-dir artifacts/runner-results \
+	--runner-command "node cli/electron-hdv-runner.mjs --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\" --log \"{logPath}\" --run-id \"{runId}\" --attempt \"{attempt}\" --raw-sha256 \"{rawSha256}\" --canonical-sha256 \"{canonicalSha256}\" --profile apple2ts-app-dev --app-dir \"C:/git/apple2ts-app\""
+```
+
+CI-friendly one-liner using built-in preset (no escaped runner template):
+
+```bash
+npm run cli -- export hdv-batch \
+	--input disks.txt \
+	--output artifacts/results.jsonl \
+	--video-dir artifacts/videos \
+	--log-dir artifacts/logs \
+	--runner-results-dir artifacts/runner-results \
+	--runner-preset electron-hdv-packaged-auto \
+	--runner-app-dir "C:/git/apple2ts-app"
+```
+
+Example using packaged app profile on Windows:
+
+```bash
+npm run cli -- export hdv-batch \
+	--input disks.txt \
+	--output artifacts/results.jsonl \
+	--video-dir artifacts/videos \
+	--log-dir artifacts/logs \
+	--runner-results-dir artifacts/runner-results \
+	--runner-command "node cli/electron-hdv-runner.mjs --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\" --log \"{logPath}\" --profile apple2ts-app-packaged --app-dir \"C:/git/apple2ts-app\" --app-exe \"C:/git/apple2ts-app/out/Apple2TS-win32-x64/Apple2TS.exe\""
+```
+
+Example using auto-packaged profile (no explicit `--app-exe`):
+
+```bash
+npm run cli -- export hdv-batch \
+	--input disks.txt \
+	--output artifacts/results.jsonl \
+	--video-dir artifacts/videos \
+	--log-dir artifacts/logs \
+	--runner-results-dir artifacts/runner-results \
+	--runner-command "node cli/electron-hdv-runner.mjs --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\" --log \"{logPath}\" --profile apple2ts-app-packaged-auto --app-dir \"C:/git/apple2ts-app\""
+```
+
+Example payload written by Electron runner (`{resultPath}`):
+
+```json
+{
+	"contractVersion": 1,
+	"scenario": "export-hdv-launch-test",
+	"status": {
+		"exportOk": true,
+		"launchOk": true,
+		"classification": "ok"
+	},
+	"timing": {
+		"captureSeconds": 30,
+		"elapsedMs": 31782
+	},
+	"hashes": {
+		"inputRawSha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+		"inputCanonicalSha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+		"exportHdvSha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+	},
+	"telemetry": {
+		"finalRunMode": "running",
+		"cycleCountStart": 100,
+		"cycleCountEnd": 400000
+	},
+	"artifacts": {
+		"videoPath": "C:/artifacts/videos/sample.mp4",
+		"logPath": "C:/artifacts/logs/sample.log"
+	}
+}
 ```
 
 ## Notes

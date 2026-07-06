@@ -5,6 +5,31 @@ import { RestoreSaveState } from "../savestate"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { handleInputParams } from "../inputparams"
 
+const decodePayloadBytes = (data: unknown, dataBase64: unknown): Uint8Array => {
+  if (typeof dataBase64 === "string" && dataBase64.length > 0) {
+    const binary = atob(dataBase64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
+  }
+
+  if (Array.isArray(data)) {
+    return new Uint8Array(data as number[])
+  }
+
+  throw new Error("Missing payload data")
+}
+
+const reportAutomationEvent = (eventName: string, payload?: unknown) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).electronAPI?.reportAutomationEvent) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).electronAPI.reportAutomationEvent(eventName, payload)
+  }
+}
+
 export const messagelistener = (event: MessageEvent) => {
   // Verify the message is from a trusted source (VS Code webview or localhost for development)
   const trustedOrigins = [
@@ -21,8 +46,11 @@ export const messagelistener = (event: MessageEvent) => {
   
   if (!isTrusted) {
     console.warn("Received message from untrusted origin:", event.origin)
+    reportAutomationEvent("message-untrusted", { origin: event.origin, type: event.data?.type })
     return
   }
+
+  reportAutomationEvent("message-received", { origin: event.origin, type: event.data?.type })
 
   if (event.data.type === "showProgress") {
     showGlobalProgressModal()
@@ -66,17 +94,18 @@ export const messagelistener = (event: MessageEvent) => {
   if (event.data.type === "loadState") {
     try {
       showGlobalProgressModal()
-      const { filename, filePath, data } = event.data
+      const { filename, filePath, data, dataBase64 } = event.data
       
       console.log(`Loading save state: ${filename}, ${filePath}`)
       
       // Convert array back to string
-      const stateData = new TextDecoder().decode(new Uint8Array(data))
+      const stateData = new TextDecoder().decode(decodePayloadBytes(data, dataBase64))
       
       // Restore the save state
       RestoreSaveState(stateData)
       
       console.log(`Save state loaded successfully: ${filename}`)
+      reportAutomationEvent("state-loaded", { filename, filePath })
     } catch (error) {
       console.error("Error loading save state:", error)
     } finally {
@@ -87,12 +116,11 @@ export const messagelistener = (event: MessageEvent) => {
   if (event.data.type === "loadDisk") {
     try {
       showGlobalProgressModal()
-      const { filename, filePath, data } = event.data
+      const { filename, filePath, data, dataBase64 } = event.data
+
+      const diskData = decodePayloadBytes(data, dataBase64)
       
-      console.log(`Loading disk image: ${filename}, ${data.length} bytes`)
-      
-      // Convert array back to Uint8Array
-      const diskData = new Uint8Array(data)
+      console.log(`Loading disk image: ${filename}, ${diskData.length} bytes`)
       
       // Create custom save handler for Electron that uses IPC to save to the original file
       let customSaveHandler: CustomWritableHandler | null = null
@@ -127,7 +155,8 @@ export const messagelistener = (event: MessageEvent) => {
       
       // Reset all drives and load the disk into drive 0
       // Use handleSetDiskOrFileFromBuffer which handles all disk types
-      handleSetDiskOrFileFromBuffer(0, diskData.buffer, filename, null, customSaveHandler)
+      const diskBuffer = new Uint8Array(diskData).buffer
+      handleSetDiskOrFileFromBuffer(0, diskBuffer, filename, null, customSaveHandler)
       
       // Set up auto-save timer for Electron
       if (customSaveHandler) {
@@ -144,6 +173,7 @@ export const messagelistener = (event: MessageEvent) => {
       }
       
       console.log(`Disk image loaded successfully: ${filename}`)
+      reportAutomationEvent("disk-loaded", { filename, filePath })
     } catch (error) {
       console.error("Error loading disk:", error)
     } finally {

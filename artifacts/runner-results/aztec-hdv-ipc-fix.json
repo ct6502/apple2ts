@@ -1,0 +1,58 @@
+{
+  "contractVersion": 1,
+  "scenario": "export-hdv-launch-test",
+  "status": {
+    "exportOk": true,
+    "launchOk": true,
+    "classification": "ok",
+    "message": "Launch/capture window completed."
+  },
+  "timing": {
+    "captureSeconds": 8,
+    "elapsedMs": 21075
+  },
+  "hashes": {
+    "inputRawSha256": "1843d35fedf03d81949a33649d5a00cabcf96f917c5fd465d8e0aac11add96b1",
+    "inputCanonicalSha256": "1843d35fedf03d81949a33649d5a00cabcf96f917c5fd465d8e0aac11add96b1",
+    "exportHdvSha256": "948293b0196ddc612f6a90792bfe188eb484368a49d59c559ebd0945a30f5858",
+    "providedRawSha256": null,
+    "providedCanonicalSha256": null
+  },
+  "telemetry": {
+    "finalRunMode": "running",
+    "cycleCountStart": 0,
+    "cycleCountEnd": 0,
+    "textMarkers": [
+      "> Apple2TS@1.3.0 start:no-prestart",
+      "> electron-forge start -- --automation --disable-gpu --fullscreen --no-splash C:\\git\\apple2ts\\public\\disks\\Ultima IV.hdv",
+      "\u001b[33m❯\u001b[39m Checking your system",
+      "\u001b[33m❯\u001b[39m Checking package manager version",
+      "\u001b[32m✔\u001b[39m Found npm@11.1.0",
+      "\u001b[32m✔\u001b[39m Checking your system",
+      "\u001b[?25h\u001b[33m❯\u001b[39m Locating application",
+      "\u001b[32m✔\u001b[39m Locating application",
+      "\u001b[33m❯\u001b[39m Loading configuration",
+      "🎨 Building with branding from: assets/apple2ts",
+      "📱 App name: Apple2TS",
+      "🎨 Baking apple2ts branding into the app as default...",
+      "  ✅ Copied App.png to apple2ts-assets",
+      "  ✅ Copied config.json to apple2ts-assets",
+      "  ✅ Copied DiskImage.icns to apple2ts-assets",
+      "  ✅ Copied DiskImage.ico to apple2ts-assets",
+      "  ⏭️  Skipping DiskImage.psd (PSD file)",
+      "  ✅ Copied Header.png to apple2ts-assets",
+      "  ⏭️  Skipping Header.psd (PSD file)",
+      "  ✅ Copied MacOS.icns to apple2ts-assets"
+    ]
+  },
+  "metadata": {
+    "runId": "aztec-hdv-ipc-fix",
+    "attempt": 1,
+    "runner": "electron-hdv-runner-harness",
+    "profile": "apple2ts-app-dev"
+  },
+  "artifacts": {
+    "videoPath": "C:\\git\\apple2ts\\artifacts\\videos\\aztec-hdv-ipc-fix.mp4",
+    "logPath": "C:\\git\\apple2ts\\artifacts\\logs\\aztec-hdv-ipc-fix.log"
+  }
+}

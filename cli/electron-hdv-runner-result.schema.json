@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apple2ts.local/schemas/electron-hdv-runner-result.schema.json",
+  "title": "Apple2TS Electron HDV Runner Result",
+  "description": "Payload contract written by an Electron runner for export-hdv-launch-test.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "scenario",
+    "status",
+    "timing",
+    "artifacts"
+  ],
+  "properties": {
+    "contractVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "scenario": {
+      "type": "string",
+      "const": "export-hdv-launch-test"
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "exportOk",
+        "launchOk"
+      ],
+      "properties": {
+        "exportOk": { "type": "boolean" },
+        "launchOk": { "type": "boolean" },
+        "classification": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "captureSeconds",
+        "elapsedMs"
+      ],
+      "properties": {
+        "captureSeconds": { "type": "number", "minimum": 0 },
+        "elapsedMs": { "type": "number", "minimum": 0 }
+      }
+    },
+    "hashes": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "inputRawSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "inputCanonicalSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "exportHdvSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "finalRunMode": { "type": "string" },
+        "cycleCountStart": { "type": "number" },
+        "cycleCountEnd": { "type": "number" },
+        "textMarkers": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "videoPath"
+      ],
+      "properties": {
+        "videoPath": { "type": "string", "minLength": 1 },
+        "logPath": { "type": "string" },
+        "telemetryPath": { "type": "string" },
+        "screenshotPath": { "type": "string" }
+      }
+    }
+  }
+}

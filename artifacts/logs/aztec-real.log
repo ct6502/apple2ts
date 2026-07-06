@@ -1,0 +1,53 @@
+
+> Apple2TS@1.3.0 prestart
+> npx tsx scripts/download-apple2ts.ts
+
+✅ Apple2TS already exists at: C:\git\apple2ts-app\apple2ts-dist
+Skipping download and install. Delete folder to force a reinstall.
+
+> Apple2TS@1.3.0 start
+> electron-forge start -- C:\Users\bored\Downloads\Aztec.po
+
+[33m❯[39m Checking your system
+[33m❯[39m Checking package manager version
+[32m✔[39m Found npm@11.1.0
+[32m✔[39m Checking your system
+[?25h[33m❯[39m Locating application
+[32m✔[39m Locating application
+[33m❯[39m Loading configuration
+🎨 Building with branding from: assets/apple2ts
+📱 App name: Apple2TS
+🎨 Baking apple2ts branding into the app as default...
+  ✅ Copied App.png to apple2ts-assets
+  ✅ Copied config.json to apple2ts-assets
+  ✅ Copied DiskImage.icns to apple2ts-assets
+  ✅ Copied DiskImage.ico to apple2ts-assets
+  ⏭️  Skipping DiskImage.psd (PSD file)
+  ✅ Copied Header.png to apple2ts-assets
+  ⏭️  Skipping Header.psd (PSD file)
+  ✅ Copied MacOS.icns to apple2ts-assets
+  ✅ Copied splash.jpg to apple2ts-assets
+  ⏭️  Skipping splash.psd (PSD file)
+  ✅ Copied Windows.ico to apple2ts-assets
+🎨 Branding complete! App will use apple2ts assets.
+[32m✔[39m Loading configuration
+[33m❯[39m Preparing native dependencies
+[32m✔[39m Preparing native dependencies
+[33m❯[39m Running generateAssets hook
+[32m✔[39m Running generateAssets hook
+[33m❯[39m Running preStart hook
+[33m❯[39m [plugin-vite] Preparing Vite bundles
+[33m❯[39m Launching Vite dev servers for renderer process code...
+[32m✔[39m Launched Vite dev servers for renderer process code
+[33m❯[39m Building main process and preload bundles...
+[33m❯[39m Building src/main.ts target
+[33m❯[39m Building src/preload.ts target
+1:37:12 AM [@electron-forge/plugin-vite] target built src/preload.ts
+[32m✔[39m Building src/preload.ts target
+1:37:17 AM [@electron-forge/plugin-vite] target built src/main.ts
+[32m✔[39m Building src/main.ts target
+[32m✔[39m Built main process and preload bundles
+[32m✔[39m [plugin-vite] Preparing Vite bundles
+[32m✔[39m Running preStart hook
+[32m✔[39m Launched Electron app. Type rs in terminal to restart main process.
+[?25h

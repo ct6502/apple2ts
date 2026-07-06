@@ -571,6 +571,7 @@ export const handleSetDiskFromURL = async (url: string,
 
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
+      reportAutomationEvent("disk-load-failed", { url, phase: "fetch" })
       if (!callback) {
         showGlobalProgressModal(false)
       }
@@ -673,18 +674,25 @@ export const handleSetDiskFromURL = async (url: string,
         resetAllDiskDrives()
         
         handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+        reportAutomationEvent("disk-loaded", { url, filename: name, driveIndex: index })
       }
     } else {
       if (callback) {
         callback(null)
       } else {
         console.error("❌ No buffer data available after download")
+        reportAutomationEvent("disk-load-failed", { url, phase: "decode" })
         // $TODO: Add error handling
       }
     }
   } catch (error) {
     console.error(`❌ Error processing download for "${url}":`, error)
     console.error("Error details:", error instanceof Error ? error.message : String(error))
+    reportAutomationEvent("disk-load-failed", {
+      url,
+      phase: "process",
+      message: error instanceof Error ? error.message : String(error),
+    })
     if (callback) {
       callback(null)
     }
@@ -732,6 +740,14 @@ export const prepWritableFile = async (index: number, writableFileHandle: Writab
     }
   }, 3 * 1000, index)
   return () => clearInterval(timer)
+}
+
+const reportAutomationEvent = (eventName: string, payload?: unknown) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).electronAPI?.reportAutomationEvent) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).electronAPI.reportAutomationEvent(eventName, payload)
+  }
 }
 
 const resetAllDiskDrives = () => {
@@ -794,6 +810,7 @@ export const handleSetDiskFromFile = async (disk: string,
     }
 
     handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
+    reportAutomationEvent("disk-loaded", { filename: disk, driveIndex })
 
     if (needsBoot) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
