@@ -17,6 +17,9 @@ type DiskPanelVtocProps = {
   visibleCandidates: DiskCollectionItem[],
 }
 
+const BOOKMARK_VTOC_PAUSE_UNTIL_KEY = "diskcollection-vtoc-pause-until"
+const BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY = "diskcollection-vtoc-suppress-while-open"
+
 // Downloads a disk's bytes without disturbing the running emulator. Unlike
 // loadDisk(), this never changes the run mode or loads the disk into a drive;
 // it simply resolves with the raw buffer (or null on failure) via callback.
@@ -100,11 +103,29 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     // both themes, not just when isFlyoutOpen is toggled.
     const panelVisible = props.isFlyoutOpen || !isMinimalTheme()
     if (!panelVisible) {
+      sessionStorage.removeItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY)
       if (vtocProgressVisibleRef.current) {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
       vtocActiveTabRef.current = null
+      return
+    }
+
+    if (sessionStorage.getItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY) === "1") {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
+      return
+    }
+
+    const pauseUntil = Number(sessionStorage.getItem(BOOKMARK_VTOC_PAUSE_UNTIL_KEY) || 0)
+    if (Date.now() < pauseUntil) {
+      if (vtocProgressVisibleRef.current) {
+        showGlobalProgressModal(false)
+        vtocProgressVisibleRef.current = false
+      }
       return
     }
 

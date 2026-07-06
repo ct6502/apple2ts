@@ -207,39 +207,62 @@ export const handleSetDiskFromCloudData = async (
   }
 
   if (cloudProvider) {
+    const authTimeoutMs = 15000
+    let authResolved = false
+    const authTimeoutId = window.setTimeout(() => {
+      if (authResolved) return
+      authResolved = true
+      if (!callback) {
+        showGlobalProgressModal(false)
+        alert("Cloud authorization timed out. Please allow the popup/login window and try again.")
+      } else {
+        callback(null)
+      }
+    }, authTimeoutMs)
+
     cloudProvider.requestAuthToken(async (authToken: string) => {
+      if (authResolved) return
+      authResolved = true
+      clearTimeout(authTimeoutId)
       if (!callback) {
         showGlobalProgressModal(true, "Downloading disk")
       }
 
-      const response = await fetch(cloudData.downloadUrl, {
-        headers: {
-          "Authorization": authToken,
-          "Content-Type": "application/octet"
-        },
-        redirect: "follow"
-      })
-        .finally(() => {
-          if (!callback) {
-            showGlobalProgressModal(false)
-          }
+      try {
+        const response = await fetch(cloudData.downloadUrl, {
+          headers: {
+            "Authorization": authToken,
+            "Content-Type": "application/octet"
+          },
+          redirect: "follow"
         })
 
-      if (response.ok) {
-        const blob = await response.blob()
-        const buffer = await new Response(blob).arrayBuffer()
+        if (response.ok) {
+          const blob = await response.blob()
+          const buffer = await new Response(blob).arrayBuffer()
 
-        if (callback) {
-          callback(buffer)
+          if (callback) {
+            callback(buffer)
+          } else {
+            cloudData.lastSyncTime = Date.now()
+            handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+          }
         } else {
-          cloudData.lastSyncTime = Date.now()
-          handleSetDiskOrFileFromBuffer(driveIndex, buffer, cloudData.fileName, cloudData, null)
+          if (callback) {
+            callback(null)
+          } else {
+            alert("Unable to download cloud disk. Please re-authenticate and try again.")
+          }
         }
-      } else {
+      } catch {
         if (callback) {
           callback(null)
         } else {
-          // $TODO: Add error handling
+          alert("Unable to download cloud disk. Please re-authenticate and try again.")
+        }
+      } finally {
+        if (!callback) {
+          showGlobalProgressModal(false)
         }
       }
     })
