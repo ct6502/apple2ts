@@ -123,8 +123,7 @@ export class GoogleDrive implements CloudProvider {
 
   requestAuthToken(callback: (authToken: string) => void) {
     this.ensureScriptsLoaded().then(() => {
-      if (!g_accessToken) {
-        this.tokenClient!.callback = async (response: google.accounts.oauth2.TokenResponse) => {
+      if (!g_accessToken) {        this.tokenClient!.callback = async (response: google.accounts.oauth2.TokenResponse) => {
           if (response.error !== undefined) {
             throw (response)
           }
@@ -136,6 +135,12 @@ export class GoogleDrive implements CloudProvider {
         callback(`Bearer ${g_accessToken}`)
       }
     })
+  }
+
+  // Whether a Google Drive access token is already cached in memory. Used to
+  // decide, without triggering an auth popup, whether a sign-in is still needed.
+  hasAuthToken(): boolean {
+    return g_accessToken !== ""
   }
 
   async download(filter: string): Promise<[Blob, CloudData]|null> {

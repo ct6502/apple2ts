@@ -26,6 +26,11 @@ import { DiskPanelVtoc } from "./diskpanel_vtoc"
 
 const maxHdvBytes = 33554432
 
+// Fixed rendered height (px) of one auth notification bar. The disk collection
+// panel's height is reduced by this amount per visible bar so the overall dialog
+// height stays constant. Must match .dcp-auth-bar height in the CSS.
+const AUTH_BAR_HEIGHT = 32
+
 const minDate = new Date(0)
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "2-digit",
@@ -51,9 +56,7 @@ const getSortModeForTab = (tabIndex: number): DiskCollectionSortMode => {
   return getPreferenceDiskCollectionSort(tabIndex) || defaultSortModeByTab[tabIndex] || "name-asc"
 }
 
-const createCloudProviderForItem = (item: DiskCollectionItem): CloudProvider | null => {
-  const providerName = item.cloudData?.providerName
-  if (!providerName) return null
+const createCloudProviderByName = (providerName: string): CloudProvider | null => {
   switch (providerName) {
     case "GoogleDrive":
       return new GoogleDrive()
@@ -62,6 +65,21 @@ const createCloudProviderForItem = (item: DiskCollectionItem): CloudProvider | n
     default:
       return null
   }
+}
+
+// Human-readable name for a cloud provider, used in the auth notification bar.
+const CLOUD_PROVIDER_DISPLAY_NAME: Record<string, string> = {
+  GoogleDrive: "Google Drive",
+  OneDrive: "OneDrive",
+}
+
+const cloudProviderDisplayName = (providerName: string): string =>
+  CLOUD_PROVIDER_DISPLAY_NAME[providerName] || providerName
+
+// Whether a cloud provider already has an access token cached in memory. Reading
+// this never triggers an auth popup.
+const cloudProviderHasAuthToken = (providerName: string): boolean => {
+  return createCloudProviderByName(providerName)?.hasAuthToken() ?? false
 }
 
 const requestCloudAuthTokenWithTimeout = (provider: CloudProvider, timeoutMs = 15000): Promise<boolean> => {
@@ -111,6 +129,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [selectedDisks, setSelectedDisks] = useState<DiskCollectionItem[]>([])
   const [exportQueue, setExportQueue] = useState<DiskCollectionItem[]>([])
   const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
+  // Bumped after a cloud sign-in completes so the render re-reads each provider's
+  // in-memory auth-token state (which lives outside React) to hide the auth
+  // notification bar and re-enable the Export button.
+  const [, setAuthRefresh] = useState<number>(0)
   const [pendingBookmarkRemovals, setPendingBookmarkRemovals] = useState<Set<string>>(new Set())
   const pendingBookmarkRemovalsRef = useRef<Set<string>>(new Set())
 
@@ -214,17 +236,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   const prepareSelectedItem = async (diskCollectionItem: DiskCollectionItem): Promise<DiskCollectionItem | null> => {
-    if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && diskCollectionItem.cloudData) {
-      const cloudProvider = createCloudProviderForItem(diskCollectionItem)
-      if (cloudProvider) {
-        const authReady = await requestCloudAuthTokenWithTimeout(cloudProvider)
-        if (!authReady) {
-          alert("Cloud authorization did not complete. Please allow the provider popup and try selecting the disk again.")
-          return null
-        }
-      }
-    }
-
+    // Selecting a cloud disk must not trigger any auth or VTOC check. Its VTOC
+    // type was already determined (from the in-memory bytes) when it was
+    // bookmarked, and any sign-in is deferred to the notification bar's "Sign in"
+    // button (or the actual export). This keeps selection side-effect free and
+    // avoids background auth popups the browser would block.
     if (diskCollectionItem.cloudData && (!diskCollectionItem.cloudData.fileSize || diskCollectionItem.cloudData.fileSize <= 0)) {
       let fileSize = 0
 
@@ -348,8 +364,40 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     return estimatedSize
   }
 
+  // Cloud providers that have at least one disk selected on the Export tab but
+  // still need a sign-in (no access token cached in memory). Drives both the auth
+  // notification bar and the Export button's disabled state. Reading the token
+  // state here never triggers an auth popup.
+  const selectedCloudProviderNames = Array.from(new Set(
+    selectedDisks
+      .filter((d) => d.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && d.cloudData?.providerName)
+      .map((d) => d.cloudData!.providerName as string)
+  ))
+  const cloudProvidersNeedingAuth = selectedCloudProviderNames.filter(
+    (providerName) => !cloudProviderHasAuthToken(providerName)
+  )
+
+  const handleCloudSignIn = async (providerName: string) => {
+    const provider = createCloudProviderByName(providerName)
+    if (!provider) return
+    // Runs from an explicit "Sign in" click, so the provider popup is allowed.
+    const authReady = await requestCloudAuthTokenWithTimeout(provider)
+    if (authReady) {
+      // The token is now cached in memory; re-render so the bar hides and Export enables.
+      setAuthRefresh((n) => n + 1)
+    } else {
+      alert(`${cloudProviderDisplayName(providerName)} sign-in did not complete. Please allow the provider popup and try again.`)
+    }
+  }
+
   const isExportButtonDisabled = () => {
     const hdvSize = estimateHdvSize()
+
+    // Block export while any selected cloud disk's provider is not signed in;
+    // fetching that disk during export would fail (or trigger a blocked popup).
+    if (cloudProvidersNeedingAuth.length > 0) {
+      return true
+    }
 
     return hdvSize <= 0 || hdvSize > maxHdvBytes
   }
@@ -440,7 +488,24 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           </div>
         ))}
       </div>
+      {activeTab == TAB_INDEX.EXPORT && cloudProvidersNeedingAuth.map((providerName) => (
+        <div
+          key={`dcp-auth-bar-${providerName}`}
+          className="dcp-auth-bar"
+          onClick={(e) => e.stopPropagation()}>
+          <span className="dcp-auth-bar-text">{`${cloudProviderDisplayName(providerName)} auth required`}</span>
+          <button
+            className="dcp-auth-bar-button"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleCloudSignIn(providerName)
+            }}>Login</button>
+        </div>
+      ))}
       <div className="disk-collection-panel"
+        style={activeTab == TAB_INDEX.EXPORT && cloudProvidersNeedingAuth.length > 0
+          ? { height: `calc(65vh - ${cloudProvidersNeedingAuth.length * AUTH_BAR_HEIGHT}px)` }
+          : undefined}
         onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs[activeTab].disks.map((diskCollectionItem, index) => {
           const isExportTab = activeTab == TAB_INDEX.EXPORT

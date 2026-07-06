@@ -206,15 +206,15 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       // effect, so bump the pass counter explicitly.
       setVtocCheckPass((pass) => pass + 1)
     })
-    .catch(() => {
-      settled = true
-      // A rejected fetch is a definitive failure; remember it regardless of
-      // cancellation so it is never retried this session.
-      addSessionVtocFailure(pending.diskUrl.toString())
-      if (!cancelled) {
-        setVtocCheckPass((pass) => pass + 1)
-      }
-    })
+      .catch(() => {
+        settled = true
+        // A rejected fetch is a definitive failure; remember it regardless of
+        // cancellation so it is never retried this session.
+        addSessionVtocFailure(pending.diskUrl.toString())
+        if (!cancelled) {
+          setVtocCheckPass((pass) => pass + 1)
+        }
+      })
 
     return () => {
       cancelled = true
@@ -228,7 +228,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
         attempted.delete(pendingKey)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, visibleCandidatesKey])
 
   return (<></>)

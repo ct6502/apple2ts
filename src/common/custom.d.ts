@@ -158,7 +158,8 @@ type CloudProvider = {
   download(filter: string): Promise<[Blob, CloudData] | null>,
   upload(fileName: string, blob: Blob): Promise<CloudData | null>,
   sync(blob: Blob, cloudData: CloudData): Promise<boolean>,
-  requestAuthToken(callback: (authToken: string) => void): void
+  requestAuthToken(callback: (authToken: string) => void): void,
+  hasAuthToken(): boolean
 }
 
 // Custom writable file handle type that supports both browser FileSystemFileHandle
