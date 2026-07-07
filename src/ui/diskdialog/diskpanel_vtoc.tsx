@@ -17,9 +17,6 @@ type DiskPanelVtocProps = {
   visibleCandidates: DiskCollectionItem[],
 }
 
-const BOOKMARK_VTOC_PAUSE_UNTIL_KEY = "diskcollection-vtoc-pause-until"
-const BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY = "diskcollection-vtoc-suppress-while-open"
-
 // Downloads a disk's bytes without disturbing the running emulator. Unlike
 // loadDisk(), this never changes the run mode or loads the disk into a drive;
 // it simply resolves with the raw buffer (or null on failure) via callback.
@@ -83,6 +80,16 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     props.setDiskCollection((prev) => [...prev])
   }
 
+  // A stable signature of the currently visible disks. Used as the effect
+  // dependency instead of the visibleCandidates array itself, whose identity
+  // changes on every parent render (it is produced by .filter()). Depending on
+  // the array identity re-ran the effect on every render, cancelling in-flight
+  // VTOC fetches before they could record a failure -- an infinite retry loop
+  // for un-fetchable (CORS/offline) disks.
+  const visibleCandidatesKey = props.visibleCandidates
+    .map((item) => item.diskUrl?.toString() || "")
+    .join("|")
+
   // While the Export tab is visible, fill in (and cache) the VTOC type of any
   // disk that doesn't already have one by downloading its bytes. This keeps VTOC
   // probing and its progress modal scoped to export workflows only. Built-in
@@ -103,29 +110,11 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     // both themes, not just when isFlyoutOpen is toggled.
     const panelVisible = props.isFlyoutOpen || !isMinimalTheme()
     if (!panelVisible) {
-      sessionStorage.removeItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY)
       if (vtocProgressVisibleRef.current) {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
       vtocActiveTabRef.current = null
-      return
-    }
-
-    if (sessionStorage.getItem(BOOKMARK_VTOC_SUPPRESS_WHILE_OPEN_KEY) === "1") {
-      if (vtocProgressVisibleRef.current) {
-        showGlobalProgressModal(false)
-        vtocProgressVisibleRef.current = false
-      }
-      return
-    }
-
-    const pauseUntil = Number(sessionStorage.getItem(BOOKMARK_VTOC_PAUSE_UNTIL_KEY) || 0)
-    if (Date.now() < pauseUntil) {
-      if (vtocProgressVisibleRef.current) {
-        showGlobalProgressModal(false)
-        vtocProgressVisibleRef.current = false
-      }
       return
     }
 
@@ -151,8 +140,14 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     // superset of all exportable disks, but its rendered list is pre-filtered to
     // already-determined disks; use the full exportable candidate set for it so
     // its not-yet-determined disks still get resolved when it's navigated to.
+    // Cloud disks (Google Drive / OneDrive) are never background-probed here:
+    // fetching them requires an auth token and would trigger an auth popup. Their
+    // VTOC type is determined synchronously from the in-memory bytes when the
+    // bookmark is added, and any remaining auth happens when the disk is actually
+    // exported.
     const pendingCandidates = props.visibleCandidates.filter((item) =>
       item.vtocType === undefined &&
+      item.type !== DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
       isDiskExportable(item) &&
       !hasSessionVtocFailure(item.diskUrl.toString())
     )
@@ -188,28 +183,38 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
 
     fetchDiskBufferForItem(pending).then((data) => {
       settled = true
-      if (cancelled) {
-        return
-      }
       if (!data) {
         // Download failed (CORS/network). Remember the failure for this browser
-        // session so we don't re-attempt the download on every reload, then
-        // advance to the next disk. It will be retried in a new session.
+        // session -- even if this effect was cancelled/re-run in the meantime --
+        // so it is not re-attempted on every render (an infinite retry loop) or
+        // on reload. It is retried in a new session. Only advance the pass when
+        // still mounted; a cancelled run's successor will pick the next disk.
         addSessionVtocFailure(pending.diskUrl.toString())
-        setVtocCheckPass((pass) => pass + 1)
+        if (!cancelled) {
+          setVtocCheckPass((pass) => pass + 1)
+        }
+        return
+      }
+      if (cancelled) {
         return
       }
       const filename = getExportFilename(pending, data)
       // Cache the determined VTOC (and persist it for bookmarks).
       persistVtocType(pending, determineVtocType(filename, data))
+      // Advance to the next pending disk. We no longer rely on the collection
+      // re-render (which changes visibleCandidates identity) to re-run this
+      // effect, so bump the pass counter explicitly.
+      setVtocCheckPass((pass) => pass + 1)
     })
-    .catch(() => {
-      settled = true
-      if (!cancelled) {
+      .catch(() => {
+        settled = true
+        // A rejected fetch is a definitive failure; remember it regardless of
+        // cancellation so it is never retried this session.
         addSessionVtocFailure(pending.diskUrl.toString())
-        setVtocCheckPass((pass) => pass + 1)
-      }
-    })
+        if (!cancelled) {
+          setVtocCheckPass((pass) => pass + 1)
+        }
+      })
 
     return () => {
       cancelled = true
@@ -223,8 +228,8 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
         attempted.delete(pendingKey)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, props.visibleCandidates])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, visibleCandidatesKey])
 
   return (<></>)
 }

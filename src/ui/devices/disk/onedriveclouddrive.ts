@@ -42,6 +42,12 @@ export class OneDriveCloudDrive implements CloudProvider {
     }
   }
 
+  // Whether a OneDrive access token is already cached in memory. Used to decide,
+  // without triggering an auth popup, whether a sign-in is still needed.
+  hasAuthToken(): boolean {
+    return !!g_accessToken
+  }
+
   async download(filter: string): Promise<[Blob, CloudData]|null> {
     await this.ensureScriptsLoaded()
     const result = await launchPicker("share", "files", filter)
