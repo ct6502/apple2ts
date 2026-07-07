@@ -499,7 +499,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
             onClick={(e) => {
               e.stopPropagation()
               handleCloudSignIn(providerName)
-            }}>Login</button>
+            }}>Sign in</button>
         </div>
       ))}
       <div className="disk-collection-panel"
