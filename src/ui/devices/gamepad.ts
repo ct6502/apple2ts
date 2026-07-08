@@ -1,5 +1,5 @@
 import { ARROW } from "../../common/utility"
-import { passKeypress, passKeyRelease, passSetGamepads } from "../main2worker"
+import { passSetGamepads } from "../main2worker"
 import { getArrowKeysAsJoystick } from "../ui_settings"
 import { CustomGamepad } from "./customgamepad"
 
@@ -175,14 +175,6 @@ export const doRumble = (params: GamePadActuatorEffect) => {
 
 export const handleArrowKey = (key: ARROW, release: boolean) => {
   if (!release) {
-    let code = 0
-    switch (key) {
-      case ARROW.LEFT: code = 8; break
-      case ARROW.RIGHT: code = 21; break
-      case ARROW.UP: code = 11; break
-      case ARROW.DOWN: code = 10; break
-    }
-    passKeypress(code)
     if (getArrowKeysAsJoystick()) {
       switch (key) {
         case ARROW.LEFT:
@@ -226,6 +218,5 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
         arrowGamePad[1] = 5
         break
     }
-    passKeyRelease()
   }
 }

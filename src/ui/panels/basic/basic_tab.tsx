@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultProgram from "./basic_program.bas?raw"
 import BasicEditor from "./basic_editorview"
 import { BasicCompiler } from "./basic_compiler"
-import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passKeypress, passKeyRelease, passPasteText, passSetRunMode } from "../../main2worker"
+import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passPasteText, passSetRunMode, passSingleKeyPress } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 import { handleSetDiskFromURL } from "../../devices/disk/driveprops"
 import { getPreferenceBasicProgram, setPreferenceBasicProgram, setPreferenceSpeedMode, setPreferenceBoolean } from "../../localstorage"
@@ -183,8 +183,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   const handlePauseButtonClick = async () => {
-    passKeypress(0x13)
-    passKeyRelease()
+    passSingleKeyPress(0x13)
   }
 
   const handleStepButtonClick = async () => {

@@ -122,10 +122,27 @@ export const passKeypress = (key: number) => {
   doPostMessage(MSG_MAIN.KEYPRESS, key)
 }
 
+export const passKeyboardState = (payload: KeyboardState) => {
+  doPostMessage(MSG_MAIN.KEYBOARD_STATE, payload)
+}
+
 export const passKeyRelease = () => {
   setTimeout(() => {
     // Delay the key release to give the emulator time to process the keypress
     doPostMessage(MSG_MAIN.KEYRELEASE, true)}, 50)
+}
+
+export const passSingleKeyPress = (key: number) => {
+  passKeyboardState({
+    key: key,
+    isDown: true,
+    repeat: false,
+  })
+  setTimeout(() => {passKeyboardState({
+    key: 0x13,
+    isDown: false,
+    repeat: false,
+  })}, 50)
 }
 
 export const passMouseEvent = (event: MouseEventSimple) => {

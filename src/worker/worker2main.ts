@@ -10,7 +10,7 @@ import { doSetRunMode, doSetSpeedMode,
   doExecuteBasicCommand,
   doSetCyclesToRun} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
+import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
@@ -176,6 +176,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.RESTORE_STATE:
         doRestoreSaveState(e.data.payload as EmulatorSaveState, true)
+        break
+      case MSG_MAIN.KEYBOARD_STATE:
+        setKeyboardState(e.data.payload as KeyboardState)
         break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload as number)

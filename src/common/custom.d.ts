@@ -23,6 +23,12 @@ declare module "*.hdv" {
 
 type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
 
+type KeyboardState = {
+  key: number,
+  isDown: boolean,
+  repeat: boolean,
+}
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }

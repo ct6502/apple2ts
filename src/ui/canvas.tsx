@@ -1,7 +1,7 @@
 import { KeyboardEvent, MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react"
 import "./canvas.css"
 import {
-  passSetRunMode, passKeypress,
+  passSetRunMode, passKeyboardState,
   passAppleCommandKeyPress, passAppleCommandKeyRelease,
   passGoBackInTime,
   passGoForwardInTime,
@@ -53,6 +53,7 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
+  const hardwareKeyboardKey = useRef<{ code: string, key: number } | null>(null)
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById("apple2canvas")
@@ -101,11 +102,47 @@ const Apple2Canvas = (props: DisplayProps) => {
     return false
   }
 
+  const hardwareKeyboardRepeats = () => {
+    const machine = handleGetMachineName()
+    return machine === "APPLE2EU" || machine === "APPLE2EE"
+  }
+
+  const stopHardwareKeyboard = (code?: string) => {
+    if (code && hardwareKeyboardKey.current?.code !== code) return
+    if (hardwareKeyboardKey.current) {
+      passKeyboardState({
+        key: hardwareKeyboardKey.current.key,
+        isDown: false,
+        repeat: false,
+      })
+    }
+    hardwareKeyboardKey.current = null
+  }
+
+  const startHardwareKeyboard = (code: string, key: number) => {
+    if (key <= 0) return
+    if (hardwareKeyboardKey.current?.code === code) return
+    stopHardwareKeyboard()
+    hardwareKeyboardKey.current = { code: code, key }
+    passKeyboardState({
+      key,
+      isDown: true,
+      repeat: hardwareKeyboardRepeats(),
+    })
+  }
+
   const arrowKeys: { [key: string]: ARROW } = {
     ArrowLeft: ARROW.LEFT,
     ArrowRight: ARROW.RIGHT,
     ArrowUp: ARROW.UP,
     ArrowDown: ARROW.DOWN,
+  }
+
+  const arrowKeyCodes: { [key: string]: number } = {
+    ArrowLeft: 8,
+    ArrowRight: 21,
+    ArrowUp: 11,
+    ArrowDown: 10,
   }
 
   const isMac = navigator.platform.startsWith("Mac")
@@ -212,6 +249,11 @@ const Apple2Canvas = (props: DisplayProps) => {
     const isKeyboardLoop = inKeyboardLoop()
 
     if (e.key in arrowKeys) {
+      if (e.repeat) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
 
       if (isKeyboardLoop && recallBuffer.length > 0 &&
         (arrowKeys[e.key] === ARROW.UP || arrowKeys[e.key] === ARROW.DOWN)) {
@@ -236,6 +278,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           currentCommand = ""
         }
       } else {
+        startHardwareKeyboard(e.code, arrowKeyCodes[e.key])
         handleArrowKey(arrowKeys[e.key], false)
       }
       e.preventDefault()
@@ -246,7 +289,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     const lowercaseMode = getLowercaseMode()
     const key = convertAppleKey(e, lowercaseMode, props.ctrlKeyMode, handleGetCout())
     if (key > 0) {
-      passKeypress(key)
+      if (e.repeat) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+      startHardwareKeyboard(e.code, key)
       if (isKeyboardLoop) {
         if (key === 13) {
           if (currentCommand.length > 0) {
@@ -279,14 +327,13 @@ const Apple2Canvas = (props: DisplayProps) => {
 
   const handleKeyUp = (e: keyEvent) => {
     const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
+    stopHardwareKeyboard(e.code)
     if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
     } else if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
     } else if (e.key in arrowKeys) {
       handleArrowKey(arrowKeys[e.key], true)
-    } else {
-      passKeyRelease()
     }
     if (keyHandled) {
       setKeyHandled(false)
@@ -314,6 +361,7 @@ const Apple2Canvas = (props: DisplayProps) => {
   }
 
   const releaseBlurredModifierState = () => {
+    stopHardwareKeyboard()
     passAppleCommandKeyRelease(true)
     passAppleCommandKeyRelease(false)
     passKeyRelease()
