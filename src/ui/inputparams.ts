@@ -4,7 +4,7 @@ import { passSpeedMode, passSetRamWorks, passPasteText, handleGetState6502, pass
 import { setDefaultBinaryAddress, handleSetDiskFromURL } from "./devices/disk/driveprops"
 import { loadOneDriveScript } from "./devices/disk/cloudscriptloader"
 import { audioEnable } from "./devices/audio/speaker"
-import { setAppMode, setColorMode, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
+import { setAppMode, setColorMode, setKeyboardConfig, setTabView, setTheme, setUIStateBoolean } from "./ui_settings"
 import * as pako from "pako"
 import { MaximumSpeedMode } from "./controls/speeddropdown"
 import { setPreferenceSpeedMode } from "./localstorage"
@@ -74,6 +74,13 @@ export const handleInputParams = (paramString = "") => {
   }
   if (speed && speedMap[speed] !== undefined) {
     passSpeedMode(speedMap[speed])
+  }
+
+  const keyboardMode = params.get("keyboardmode")
+  if (keyboardMode !== null) {
+    setKeyboardConfig({
+      keyboardMode: keyboardMode === "hardware" ? "hardware" : "host",
+    })
   }
 
   if (params.get("sound") === "off") {

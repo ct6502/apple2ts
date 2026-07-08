@@ -9,7 +9,7 @@ import { toolInsertDisk, toolEjectDisk, toolSendKeypress, toolLoadBinary, toolLo
 import { toolSetRegister, toolReadMemory, toolWriteMemory, toolSetSoftSwitches } from "./mcp_tool_state"
 import { toolDisassemble } from "./mcp_tool_symbols"
 import { toolReadResource } from "./mcp_tool_resources"
-import { toolSetSpeed, toolSetMachineType, toolSetColorMode, toolSetSound } from "./mcp_tool_settings"
+import { toolSetSpeed, toolSetMachineType, toolSetKeyboardMode, toolSetColorMode, toolSetSound } from "./mcp_tool_settings"
 
 /**
  * Executes an MCP tool call
@@ -98,6 +98,8 @@ export async function executeMCPTool(call: MCPToolCall): Promise<MCPToolResult> 
         return toolSetSpeed(args.speed as number)
       case "set_machine_type":
         return toolSetMachineType(args.machineType as string)
+      case "set_keyboard_mode":
+        return toolSetKeyboardMode(args.keyboardMode as string)
       case "set_color_mode":
         return toolSetColorMode(args.colorMode as string)
       case "set_sound":

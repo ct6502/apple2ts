@@ -47,6 +47,7 @@ export type MCPToolName =
   // Emulator Settings
   | "set_speed"
   | "set_machine_type"
+  | "set_keyboard_mode"
   | "set_color_mode"
   | "set_sound"
 

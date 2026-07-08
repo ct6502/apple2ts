@@ -141,11 +141,13 @@ const getSoftSwitchResource = (status) => ({
 
 const getMachineResource = (status) => {
   const machine = status?.machine || {}
+  const ui = status?.ui || {}
   return {
     runMode: runModeToApiName(Number(machine.runMode)),
     speedMode: Number(machine.speedMode ?? 0),
     machineName: machine.machineName || "APPLE2EE",
     ramWorksKb: Number(machine.ramWorksKb ?? 64),
+    keyboardMode: ui.keyboardMode === "hardware" ? "hardware" : "host",
     debugEnabled: Boolean(machine.isDebugging),
     showDebugPanel: Boolean(machine.showDebugTab),
     textPage: machine.textPage || "",
@@ -356,6 +358,7 @@ const allowedMachinePatchFields = new Set([
   "speedMode",
   "machineName",
   "ramWorksKb",
+  "keyboardMode",
   "debugEnabled",
   "showDebugPanel",
 ])
@@ -381,8 +384,10 @@ const applyMachinePatch = async (client, patch) => {
   }
 
   if ("machineName" in patch) {
-    if (patch.machineName !== "APPLE2EU" && patch.machineName !== "APPLE2EE") {
-      throw new Error("machineName must be 'APPLE2EU' or 'APPLE2EE'")
+    if (patch.machineName !== "APPLE2P" &&
+        patch.machineName !== "APPLE2EU" &&
+        patch.machineName !== "APPLE2EE") {
+      throw new Error("machineName must be 'APPLE2P', 'APPLE2EU', or 'APPLE2EE'")
     }
     lastStatus = await getStatusFromReply(client, "setMachineName", {
       machineName: patch.machineName,
@@ -395,6 +400,17 @@ const applyMachinePatch = async (client, patch) => {
       throw new Error("ramWorksKb must be one of 64, 512, 1024, 4096, or 8192")
     }
     lastStatus = await getStatusFromReply(client, "setRamWorks", { size: ramWorksKb })
+  }
+
+  if ("keyboardMode" in patch) {
+    const currentUi = lastStatus?.ui || {}
+    const keyboardMode = patch.keyboardMode ?? currentUi.keyboardMode ?? "host"
+    if (keyboardMode !== "host" && keyboardMode !== "hardware") {
+      throw new Error("keyboardMode must be 'host' or 'hardware'")
+    }
+    lastStatus = await getStatusFromReply(client, "setKeyboardConfig", {
+      keyboardMode,
+    })
   }
 
   if ("debugEnabled" in patch) {

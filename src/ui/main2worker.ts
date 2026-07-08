@@ -122,6 +122,10 @@ export const passKeypress = (key: number) => {
   doPostMessage(MSG_MAIN.KEYPRESS, key)
 }
 
+export const passKeyboardState = (payload: KeyboardState) => {
+  doPostMessage(MSG_MAIN.KEYBOARD_STATE, payload)
+}
+
 export const passKeyRelease = () => {
   setTimeout(() => {
     // Delay the key release to give the emulator time to process the keypress

@@ -43,6 +43,7 @@ import {
 import {
   setPreferenceBreakpoints,
   setPreferenceColorMode,
+  setPreferenceKeyboardConfig,
   setPreferenceMachineName,
   setPreferenceRamWorks,
   setPreferenceSpeedMode,
@@ -384,6 +385,12 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
 
     case "setRamWorks":
       setPreferenceRamWorks(Number(payload.size))
+      return collectStatus()
+
+    case "setKeyboardConfig":
+      setPreferenceKeyboardConfig(
+        payload.keyboardMode === "hardware" ? "hardware" : "host",
+      )
       return collectStatus()
 
     case "setDebug":

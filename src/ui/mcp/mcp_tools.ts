@@ -405,6 +405,21 @@ export function listMCPTools(): Array<{
       },
     },
     {
+      name: "set_keyboard_mode",
+      description: "Set the keyboard input policy. host passes browser/OS key repeat through. hardware emulates the selected Apple II machine keyboard behavior.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          keyboardMode: {
+            type: "string",
+            description: "Keyboard mode: host (browser/OS repeat), hardware (Apple II hardware keyboard semantics)",
+            enum: ["host", "hardware"],
+          },
+        },
+        required: ["keyboardMode"],
+      },
+    },
+    {
       name: "set_color_mode",
       description: "Set the display color mode. Simulates different monitor types and display settings.",
       inputSchema: {
@@ -435,4 +450,3 @@ export function listMCPTools(): Array<{
     },
   ]
 }
-

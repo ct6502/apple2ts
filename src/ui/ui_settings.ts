@@ -13,6 +13,7 @@ const uiState: UIState = {
   ghosting: false,
   helpText: "",
   hotReload: false,
+  keyboardMode: "host",
   reverseYAxis: false,
   showScanlines: false,
   siriusJoyport: false,
@@ -36,6 +37,7 @@ export const setUIState = (state: UIState) => {
   uiState.crtDistortion = state?.crtDistortion ?? false
   uiState.helpText = state?.helpText ?? ""
   uiState.hotReload = state?.hotReload ?? false
+  uiState.keyboardMode = state?.keyboardMode ?? "host"
   uiState.showScanlines = state?.showScanlines ?? false
   uiState.theme = state?.theme ?? UI_THEME.CLASSIC
   uiState.touchJoystickMode = state?.touchJoystickMode ?? "off"
@@ -111,6 +113,19 @@ export const getLowercaseMode = () => {
   return uiState.lowercaseMode && (handleGetMachineName() !== "APPLE2P")
 }
 
+export const getKeyboardConfig = () => {
+  return {
+    keyboardMode: uiState.keyboardMode,
+  }
+}
+
+export const setKeyboardConfig = (config: Partial<Pick<UIState,
+  "keyboardMode">>) => {
+  if (config.keyboardMode !== undefined) {
+    uiState.keyboardMode = config.keyboardMode === "hardware" ? "hardware" : "host"
+  }
+}
+
 export const getColorMode = () => {
   return uiState.colorMode
 }
@@ -162,4 +177,3 @@ export const getTouchJoystickSensitivity = () => {
 export const getUseOpenAppleKey = () => {
   return uiState.useOpenAppleKey
 }
-

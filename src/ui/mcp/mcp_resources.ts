@@ -295,6 +295,12 @@ export function getMCPResource(uri: MCPResourceURI): MCPResource | null {
               type: machineName,
               name: machineDisplayName,
             },
+            keyboard: {
+              mode: uiState.keyboardMode,
+              description: uiState.keyboardMode === "hardware"
+                ? "Apple II hardware keyboard semantics"
+                : "Browser/OS keyboard repeat passthrough",
+            },
             display: {
               colorMode: uiState.colorMode,
               colorModeName: colorModeName,
@@ -400,7 +406,7 @@ export function listMCPResources(): Array<{
     {
       uri: "apple2ts://emulator/settings",
       name: "Emulator Settings",
-      description: "Current emulator configuration including speed, machine type, color mode, and display settings",
+      description: "Current emulator configuration including speed, machine type, keyboard mode, color mode, and display settings",
       mimeType: "application/json",
     },
   ]

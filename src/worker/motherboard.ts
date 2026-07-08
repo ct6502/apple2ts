@@ -28,7 +28,7 @@ import { enablePassportCard, resetPassport } from "./devices/passport/passport"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
-import { sendPastedText } from "./devices/keyboard"
+import { pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { code } from "../common/assemblycode"
@@ -572,6 +572,7 @@ const doAdvance6502 = () => {
     Math.round(speedInCyclesPerMS / 100) / 10
   
   handleGamepads()
+  pollKeyboardRepeat()
   updateExternalMachineState()
   if (takeSnapshot) {
     takeSnapshot = false

@@ -3,7 +3,7 @@ import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
 import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
-import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
+import { setColorMode, setKeyboardConfig, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
   "showScanlines", "hotReload", "tiltSensorJoystick", "useOpenAppleKey", "debugMode"]
@@ -103,6 +103,21 @@ export const setPreferenceSpeedMode = (mode = 0) => {
     localStorage.setItem("speedMode", JSON.stringify(mode))
   }
   passSpeedMode(mode)
+}
+
+export const setPreferenceKeyboardConfig = (
+  keyboardMode: KEYBOARD_MODE = "host",
+) => {
+  if (keyboardMode === "host") {
+    localStorage.removeItem("keyboardMode")
+  } else {
+    localStorage.setItem("keyboardMode", JSON.stringify(keyboardMode))
+  }
+  localStorage.removeItem("keyboardRepeatDelayMs")
+  localStorage.removeItem("keyboardRepeatRateMs")
+  localStorage.removeItem("initialRepeatDelayMs")
+  localStorage.removeItem("repeatRateMs")
+  setKeyboardConfig({keyboardMode})
 }
 
 export const setPreferenceNewReleasesChecked = (lastChecked = -1) => {
@@ -338,6 +353,22 @@ export const loadPreferences = () => {
     }
   }
 
+  let keyboardMode: KEYBOARD_MODE = "host"
+  const storedKeyboardMode = localStorage.getItem("keyboardMode")
+  if (storedKeyboardMode) {
+    try {
+      const parsed = JSON.parse(storedKeyboardMode)
+      keyboardMode = parsed === "hardware" ? "hardware" : "host"
+    } catch {
+      localStorage.removeItem("keyboardMode")
+    }
+  }
+  localStorage.removeItem("keyboardRepeatDelayMs")
+  localStorage.removeItem("keyboardRepeatRateMs")
+  localStorage.removeItem("initialRepeatDelayMs")
+  localStorage.removeItem("repeatRateMs")
+  setKeyboardConfig({keyboardMode})
+
   const reverseYAxis = localStorage.getItem("reverseYAxis")
   if (reverseYAxis) {
     try {
@@ -399,6 +430,7 @@ export const resetPreferences = () => {
   setPreferenceMockingboardMode()
   setPreferenceMachineName()
   setPreferenceRamWorks()
+  setPreferenceKeyboardConfig()
   setPreferenceTouchJoystickMode()
   setPreferenceTouchJoystickSensitivity()
   setPreferenceNewReleasesChecked()

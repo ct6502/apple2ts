@@ -173,7 +173,7 @@ export const doRumble = (params: GamePadActuatorEffect) => {
   }
 }
 
-export const handleArrowKey = (key: ARROW, release: boolean) => {
+export const handleArrowKey = (key: ARROW, release: boolean, sendKeyboard = true) => {
   if (!release) {
     let code = 0
     switch (key) {
@@ -182,7 +182,9 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
       case ARROW.UP: code = 11; break
       case ARROW.DOWN: code = 10; break
     }
-    passKeypress(code)
+    if (sendKeyboard) {
+      passKeypress(code)
+    }
     if (getArrowKeysAsJoystick()) {
       switch (key) {
         case ARROW.LEFT:
@@ -226,6 +228,8 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
         arrowGamePad[1] = 5
         break
     }
-    passKeyRelease()
+    if (sendKeyboard) {
+      passKeyRelease()
+    }
   }
 }

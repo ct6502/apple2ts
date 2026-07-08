@@ -999,11 +999,15 @@
           },
           "machineName": {
             "type": "string",
-            "enum": ["APPLE2EU", "APPLE2EE"]
+            "enum": ["APPLE2P", "APPLE2EU", "APPLE2EE"]
           },
           "ramWorksKb": {
             "type": "integer",
             "enum": [64, 512, 1024, 4096, 8192]
+          },
+          "keyboardMode": {
+            "type": "string",
+            "enum": ["host", "hardware"]
           },
           "debugEnabled": {
             "type": "boolean"
@@ -1021,7 +1025,7 @@
             }
           }
         },
-        "required": ["runMode", "speedMode", "machineName", "ramWorksKb", "debugEnabled", "showDebugPanel", "textPage", "drives"]
+        "required": ["runMode", "speedMode", "machineName", "ramWorksKb", "keyboardMode", "debugEnabled", "showDebugPanel", "textPage", "drives"]
       },
       "MachinePatch": {
         "type": "object",
@@ -1035,11 +1039,15 @@
           },
           "machineName": {
             "type": "string",
-            "enum": ["APPLE2EU", "APPLE2EE"]
+            "enum": ["APPLE2P", "APPLE2EU", "APPLE2EE"]
           },
           "ramWorksKb": {
             "type": "integer",
             "enum": [64, 512, 1024, 4096, 8192]
+          },
+          "keyboardMode": {
+            "type": "string",
+            "enum": ["host", "hardware"]
           },
           "debugEnabled": {
             "type": "boolean"

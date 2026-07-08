@@ -23,6 +23,12 @@ declare module "*.hdv" {
 
 type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
 
+type KeyboardState = {
+  key: number,
+  isDown: boolean,
+  repeat: boolean,
+}
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
@@ -83,6 +89,8 @@ type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
 
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
+type KEYBOARD_MODE = "host" | "hardware"
+
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
@@ -129,6 +137,7 @@ type UIState = {
   ghosting: boolean,
   helpText: string,
   hotReload: boolean,
+  keyboardMode: KEYBOARD_MODE,
   reverseYAxis: boolean,
   showScanlines: boolean,
   siriusJoyport: boolean,

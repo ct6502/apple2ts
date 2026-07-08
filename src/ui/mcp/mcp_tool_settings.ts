@@ -1,11 +1,11 @@
 /**
  * MCP Emulator Settings Tools
- * Tools for controlling emulator configuration (speed, machine type, color, sound)
+ * Tools for controlling emulator configuration (speed, machine type, keyboard, color, sound)
  */
 
 import { COLOR_MODE } from "../../common/utility"
 import { passSetMachineName, passSpeedMode } from "../main2worker"
-import { setPreferenceColorMode } from "../localstorage"
+import { setPreferenceColorMode, setPreferenceKeyboardConfig } from "../localstorage"
 import { audioEnable } from "../devices/audio/speaker"
 import type { MCPToolResult } from "./mcp_server"
 
@@ -60,7 +60,7 @@ export function toolSetMachineType(machineType: string): MCPToolResult {
     if (machineType !== "APPLE2P" && machineType !== "APPLE2EU" && machineType !== "APPLE2EE") {
       return {
         success: false,
-        error: 'Machine type must be "APPLE2P", "APPLE2EU", or "APPLE2EE"',
+        error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", or \"APPLE2EE\"",
       }
     }
 
@@ -79,6 +79,36 @@ export function toolSetMachineType(machineType: string): MCPToolResult {
         machineType: machineType,
         machineName: machineName,
         message: `Machine type set to ${machineName}`,
+      },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: String(error),
+    }
+  }
+}
+
+/**
+ * Set the keyboard input policy
+ * @param keyboardMode "host" uses browser/OS key repeat, "hardware" emulates Apple II keyboard behavior
+ */
+export function toolSetKeyboardMode(keyboardMode: string): MCPToolResult {
+  try {
+    if (keyboardMode !== "host" && keyboardMode !== "hardware") {
+      return {
+        success: false,
+        error: "Keyboard mode must be \"host\" or \"hardware\"",
+      }
+    }
+
+    setPreferenceKeyboardConfig(keyboardMode as KEYBOARD_MODE)
+
+    return {
+      success: true,
+      data: {
+        keyboardMode: keyboardMode,
+        message: `Keyboard mode set to ${keyboardMode}`,
       },
     }
   } catch (error) {
