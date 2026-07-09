@@ -10,19 +10,9 @@ import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
 let slot: number = 5
 let curInter: boolean = false
 
-let interruptCount = 0
 const interrupt = (onoff: boolean): void => {
   if (onoff != curInter) {
     curInter = onoff
-    if (onoff) {
-      if (interruptCount < 6) {
-        console.log(`[VERA] Interrupt raised (${interruptCount + 1}/6)`)
-        interruptCount++
-      }
-    } else {
-        console.log(`[VERA] Interrupt cleared (${interruptCount + 1}/6)`)
-    }
-
     interruptRequest(slot, onoff)
   }
 }
@@ -37,12 +27,13 @@ const veraInit = (): boolean => {
 }
 
 export const initVera = () => {
-  console.log("[VERA] initVera called")
+  console.log("[VERA] initVera")
   video_reset()
   sdcard_select(false)
 }
 
 export const resetVera = () => {
+  console.log("[VERA] resetVera")
   video_reset()
 }
 
@@ -62,12 +53,7 @@ export const enableVera = (enable = true, aslot = 3) => {
 
 let prevCycleCount = 0
 
-let dbg_cycle_logs = 0
 const cycleCountCallback = (slot: number) => {
-  if (dbg_cycle_logs < 5) {
-    console.log(`[VERA] cycleCountCallback(slot=${slot}), prevCycleCount=${prevCycleCount}, s6502.cycleCount=${s6502.cycleCount}`)
-    dbg_cycle_logs++
-  }
   if (prevCycleCount)
   {
     const cycleDelta = s6502.cycleCount - prevCycleCount
@@ -83,12 +69,7 @@ const cycleCountCallback = (slot: number) => {
   prevCycleCount = s6502.cycleCount
 }
 
-let dbg_io_logs = 0
 const handleVeraIO = (addr: number, val = -1): number => {
-  if (dbg_io_logs < 10) {
-    console.log(`[VERA] handleVeraIO(addr=${addr.toString(16)}, val=${val})`)
-    dbg_io_logs++
-  }
   // We dont have any ROM, but we have vera regs starting at Cx00
   if (addr >= 0xc100) {
     if (val >= 0) {
