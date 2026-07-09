@@ -3,7 +3,7 @@
 
 import { interruptRequest, registerCycleCountCallback } from "../../cpu6502"
 import { s6502 } from "../../instructions"
-import { setSlotDriver, setSlotIOCallback } from "../../memory"
+import { setSlotIOCallback } from "../../memory"
 import { video_init, video_step, video_update, video_reset, video_read, video_write, video_get_irq_out } from "./video"
 import { vera_spi_init, vera_spi_step, sdcard_select } from "./sdcard"
 

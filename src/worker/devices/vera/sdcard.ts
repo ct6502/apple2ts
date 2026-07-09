@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Vera Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
 
 const SPI_CLOCK_RATE_MHZ = 12 // really 12.5, but it won't matter
@@ -77,12 +76,12 @@ export const vera_spi_read = (reg : number): number =>
 			}
 			return received_byte
 		case 1:
-			return busy << 7 | autotx << 2 | ss
+			return (busy ? 1 : 0) << 7 | (autotx ? 1 : 0) << 2 | (ss ? 1 : 0)
 	}
 	return 0
 }
 
-export const vera_spi_write = (reg: number, value: number): number =>
+export const vera_spi_write = (reg: number, value: number): void =>
 {
 	switch (reg) {
 		case 0:
@@ -93,8 +92,8 @@ export const vera_spi_write = (reg: number, value: number): number =>
 			}
 			break
 		case 1:
-			if (ss != (value & 1)) {
-				ss = value & 1
+			if ((ss ? 1 : 0) !== (value & 1)) {
+				ss = (value & 1) !== 0
 				if (ss) {
 					sdcard_select(ss)
 				}
@@ -105,31 +104,29 @@ export const vera_spi_write = (reg: number, value: number): number =>
 }
 
 // MMC/SD command (SPI mode)
-const SDCMD = {
-	CMD0   : 0,         // GO_IDLE_STATE
-	CMD1   : 1,         // SEND_OP_COND
-	ACMD41 : 0x80 | 41, // SEND_OP_COND (SDC)
-	CMD8   : 8,         // SEND_IF_COND
-	CMD9   : 9,         // SEND_CSD
-	CMD10  : 10,        // SEND_CID
-	CMD12  : 12,        // STOP_TRANSMISSION
-	CMD13  : 13,        // SEND_STATUS
-	ACMD13 : 0x80 | 13, // SD_STATUS (SDC)
-	CMD16  : 16,        // SET_BLOCKLEN
-	CMD17  : 17,        // READ_SINGLE_BLOCK
-	CMD18  : 18,        // READ_MULTIPLE_BLOCK
-	CMD23  : 23,        // SET_BLOCK_COUNT
-	ACMD23 : 0x80 | 23, // SET_WR_BLK_ERASE_COUNT (SDC)
-	CMD24  : 24,        // WRITE_BLOCK
-	CMD25  : 25,        // WRITE_MULTIPLE_BLOCK
-	CMD32  : 32,        // ERASE_WR_BLK_START
-	CMD33  : 33,        // ERASE_WR_BLK_END
-	CMD38  : 38,        // ERASE
-	CMD55  : 55,        // APP_CMD
-	CMD58  : 58,        // READ_OCR
-}
+const CMD0 = 0
+const CMD8 = 8
+const CMD9 = 9
+const ACMD41 = 0x80 | 41
+const CMD12 = 12
+const CMD13 = 13
+const CMD16 = 16
+const CMD17 = 17
+const CMD18 = 18
+const CMD24 = 24
+const CMD55 = 55
+const CMD58 = 58
 
-const sdcard_set_path = (path: string): void =>
+// Stubs for missing C-API functions
+const x16open = (path: string, mode: string): any => null
+const x16close = (file: any): void => {}
+const x16seek = (file: any, offset: number, whence: number): void => {}
+const x16read = (file: any, dest: any, size: number, count: number): number => 0
+const x16write = (file: any, src: any, size: number, count: number): number => 0
+const x16size = (file: any): number => 0
+const XSEEK_SET = 0
+
+export const sdcard_set_path = (path: string): void =>
 {
 	sdcard_detach()
 
@@ -140,7 +137,7 @@ const sdcard_set_path = (path: string): void =>
 
 const sdcard_path_is_set = (): boolean =>
 {
-	return sdcard_path > 0
+	return sdcard_path !== undefined && sdcard_path.length > 0
 }
 
 const sdcard_attach = (): void =>
@@ -201,7 +198,7 @@ const set_response_csd = (): void =>
 		0x00, // FILE_FORMAT_GRP [7] = 0, COPY [6], PERM_WRITE_PROTECT [5], TMP_WRITE_PROTECT [4], RESERVED [3:0]
 		0x01 // CRC[7:1], ALWAYS_1 [0]
 		]
-	c_size = (x16size(sdcard_file) >> 19)-1
+	let c_size = (x16size(sdcard_file) >> 19)-1
 	rr[12] |= (c_size >> 16) & 0x3f
 	rr[13] = (c_size >> 8) & 0xff
 	rr[14] = c_size & 0xff
@@ -245,7 +242,7 @@ const set_response_r7 = (): void =>
 }
 
 // Return length of reply
-const loadBlock = (dest: number[]): number =>
+const loadBlock = (dest: Uint8Array): number =>
 {
 	let response_length = 0
 
@@ -256,7 +253,7 @@ const loadBlock = (dest: number[]): number =>
 		response_length = 1
 	} else {
 		x16seek(sdcard_file, lba * 512, XSEEK_SET)
-		const bytes_read = x16read(sdcard_file, dest[1], 1, 512)
+		const bytes_read = x16read(sdcard_file, dest.subarray(1), 1, 512)
 		if (bytes_read != 512) {
 			console.log("Warning: short read!")
 		}
@@ -281,7 +278,7 @@ const sdcard_handle = (inbyte: number): number =>
 					const read_multiblock_next_response = new Uint8Array(1 + 512 + 2)
 					// Prepare next multiblock reply
 					lba++
-					response_length = loadBlock(read_multiblock_next_response[0])
+					response_length = loadBlock(read_multiblock_next_response)
 					// Stop multiblock read if error
 					if (response_length == 1) {
 						ongoing_multiblock_read = false
@@ -363,7 +360,15 @@ if (false) {
 				case CMD18: {
 					// READ_MULTIPLE_BLOCK
 					ongoing_multiblock_read = true
-					// Fallthrough
+					lba = (rxbuf[1] << 24) | (rxbuf[2] << 16) | (rxbuf[3] << 8) | rxbuf[4]
+					const read_block_response = new Uint8Array(2 + 512 + 2)
+					read_block_response[0] = 0 // R1 response to command
+					response_length = 1 + loadBlock(read_block_response.subarray(1))
+					if (response_length == 2) {
+						ongoing_multiblock_read = false
+					}
+					response = read_block_response
+					break
 				}
 				case CMD17: {
 					// READ_SINGLE_BLOCK
@@ -429,7 +434,7 @@ if (false) {
 					// do nothing?
 				} else {
 					x16seek(sdcard_file, lba * 512, XSEEK_SET)
-					let bytes_written = x16write(sdcard_file, rxbuf + 1, 1, 512)
+					let bytes_written = x16write(sdcard_file, rxbuf.subarray(1), 1, 512)
 					if (bytes_written != 512) {
 						console.log("Warning: short write!\n")
 					}

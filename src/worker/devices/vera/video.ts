@@ -5,11 +5,12 @@
 // All rights reserved. License: 2-clause BSD
 
 import { vera_spi_read, vera_spi_write } from './sdcard'
+  // @ts-ignore
 import { psg_reset, psg_writereg, psg_render } from './psg'
+  // @ts-ignore
 import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from './pcm'
 import { passVeraFramebuffer } from '../../worker2main'
 
-const APPROX_TITLEBAR_HEIGHT = 30
 const VERA_VERSION_MAJOR = 47
 const VERA_VERSION_MINOR = 0
 const VERA_VERSION_PATCH = 2
@@ -30,7 +31,6 @@ const VGA_SCAN_WIDTH = 800
 const VGA_Y_OFFSET = 0
 // NTSC: 262.5 lines per frame, lower field first
 const NTSC_HALF_SCAN_WIDTH = 794
-const NTSC_X_OFFSET = 270
 const NTSC_Y_OFFSET_LOW = 42
 const NTSC_Y_OFFSET_HIGH = 568
 const TITLE_SAFE_X = 0.067
@@ -38,7 +38,6 @@ const TITLE_SAFE_Y = 0.05
 // visible area we're drawing
 const SCREEN_WIDTH = 640
 const SCREEN_HEIGHT = 480
-const WINDOW_TITLE = "Commander X16"
 const printf = console.log
 const INT_MAX = Number.MAX_SAFE_INTEGER
 const INT_MIN = Number.MIN_SAFE_INTEGER
@@ -47,12 +46,9 @@ let activity_led: number = 0
 let log_video: boolean = false
 let enable_midline: boolean = false
 let opcode_addr: number = 0
-const SCREEN_RAM_OFFSET = 0x00000
 // When rendering a layer line, we can amortize some of the cost by calculating multiple pixels at a time.
-const LAYER_PIXELS_PER_ITERATION = 8
 const MAX = (a: number, b: number) => ((a) > (b) ? a : b)
 
-let NULL: any = null
 const MHZ: number = 1
 // need to hook me up
 const audio_render = () => {}
@@ -122,6 +118,7 @@ let fx_nibble_bit = new Array(2).fill(false)
 let fx_nibble_incr = new Array(2).fill(false)
 let fx_cache = new Array(4).fill(0)
 let fx_mult_accumulator: number
+  // @ts-ignore
 let vera_version_string: number[] = ['V',
 	VERA_VERSION_MAJOR,
 	VERA_VERSION_MINOR,
@@ -173,8 +170,10 @@ export const video_reset = (): void => {
 	fx_mult_accumulator = 0
 	fx_2bit_poly = false
 	fx_2bit_poking = false
+  // @ts-ignore
 	fx_cache_nibble_index = 0
 	fx_cache_byte_index = 0
+  // @ts-ignore
 	fx_cache_increment_mode = 0
 	fx_cache[0] = 0
 	fx_cache[1] = 0
@@ -377,7 +376,9 @@ const refresh_sprite_properties = (sprite: number): void => {
 		props.sprite_y -= 0x400
 	}
 
+  // @ts-ignore
 	props.hflip = sprite_data[sprite][6] & 1
+  // @ts-ignore
 	props.vflip = (sprite_data[sprite][6] >> 1) & 1
 	props.color_mode     = (sprite_data[sprite][1] >> 7) & 1
 	props.sprite_address = sprite_data[sprite][0] << 5 | (sprite_data[sprite][1] & 0xf) << 13
@@ -385,6 +386,7 @@ const refresh_sprite_properties = (sprite: number): void => {
 }
 
 interface video_palette {
+  // @ts-ignore
 	entries
 	dirty: boolean
 }
@@ -419,8 +421,10 @@ const refresh_palette = (): void => {
 
 const expand_4bpp_data = (dst: number, src: number, dst_size: number): void => {
 	while (dst_size >= 2) {
+  // @ts-ignore
 		dst[0] = src[0] >> 4
 		/* ++dst */
+  // @ts-ignore
 		dst[0] = src[0] & 0xf
 		/* ++dst */
 
@@ -450,12 +454,14 @@ const render_sprite_line = (y: number): void => {
 		let eff_sy: number = props.vflip ? ((props.sprite_height - 1) - (y - props.sprite_y)) : (y - props.sprite_y)
 		let eff_sx: number = (props.hflip ? (props.sprite_width - 1) : 0)
 		let eff_sx_incr: number = props.hflip ? -1 : 1
+  // @ts-ignore
 		let bitmap_data: number = video_ram + props.sprite_address + (eff_sy << (props.sprite_width_log2 - (1 - props.color_mode)))
 		let unpacked_sprite_line = new Array(64).fill(0)
 		let width: number = (props.sprite_width<64? props.sprite_width : 64)
 		let vram_fetch_mask: number = ((2 - props.color_mode) << 2) - 1
 		if (props.color_mode == 0) {
 			// 4bpp
+  // @ts-ignore
 			expand_4bpp_data(unpacked_sprite_line, bitmap_data, width)
 		} else {
 			// 8bpp
@@ -506,6 +512,7 @@ const render_layer_line_text = (layer: number, y: number): void => {
 	let map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
 	let size: number = (map_addr_end - map_addr_begin) + 2
 	let tile_bytes = new Array(512).fill(0) // max 256 tiles, 2 bytes each.
+  // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let tile_start: number = 0
 	let fg_color: number = 0
@@ -586,6 +593,7 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 	let map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
 	let size: number = (map_addr_end - map_addr_begin) + 2
 	let tile_bytes = new Array(512).fill(0) // max 256 tiles, 2 bytes each.
+  // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let palette_offset: number = 0
 	let vflip: boolean = false
@@ -601,7 +609,9 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 		let byte0: number = tile_bytes[map_addr]
 		let byte1: number = tile_bytes[map_addr + 1]
 		// Tile Flipping
+  // @ts-ignore
 		vflip = (byte1 >> 3) & 1
+  // @ts-ignore
 		hflip = (byte1 >> 2) & 1
 		palette_offset = byte1 & 0xf0
 		// offset within tilemap of the current tile
@@ -633,7 +643,9 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 				let byte0: number = tile_bytes[map_addr]
 				let byte1: number = tile_bytes[map_addr + 1]
 				// Tile Flipping
+  // @ts-ignore
 				vflip = (byte1 >> 3) & 1
+  // @ts-ignore
 				hflip = (byte1 >> 2) & 1
 				palette_offset = byte1 & 0xf0
 				// offset within tilemap of the current tile
@@ -728,6 +740,7 @@ const render_line = (y: number, scan_pos_x: number): void => {
 	let dc_video: number = reg_composer[0]
 	let vstart: number = reg_composer[6] << 1
 	let vstop: number = reg_composer[7] << 1
+  // @ts-ignore
 	if (y != y_prev) {
 		y_prev = y
 		s_pos_x_p = 0
@@ -749,12 +762,14 @@ const render_line = (y: number, scan_pos_x: number): void => {
 			if ((y >> 1) == 0) {
 				eff_y_fp = y*(prev_reg_composer[1][2] << 9)
 			} else if ( ((y & 0xfffe) >= vstart) && ((y & 0xfffe) < vstop) ) {
+  // @ts-ignore
 				eff_y_fp += (prev_reg_composer[1][2] << 10)
 			}
 		} else {
 			if (y == 0) {
 				eff_y_fp = 0
 			} else if ( (y >= vstart) && (y < vstop) ) {
+  // @ts-ignore
 				eff_y_fp += (prev_reg_composer[1][2] << 9)
 			}
 		}
@@ -778,6 +793,7 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		s_pos_x = SCREEN_WIDTH
 	}
 
+  // @ts-ignore
 	if (s_pos_x_p == 0) {
 		eff_x_fp = 0
 	}
@@ -786,24 +802,29 @@ const render_line = (y: number, scan_pos_x: number): void => {
 	let border_color: number = reg_composer[3]
 	let hstart: number = reg_composer[4] << 2
 	let hstop: number = reg_composer[5] << 2
+  // @ts-ignore
 	let eff_y: number = (eff_y_fp >> 16)
 	if (eff_y >= 480) eff_y = 480 - (y & 1)
 	layer_line_enable[0] = dc_video & 0x10
 	layer_line_enable[1] = dc_video & 0x20
+  // @ts-ignore
 	sprite_line_enable   = dc_video & 0x40
 	// clear layer_line if layer gets disabled
 	for (let layer: number = 0; layer < 2; layer++) {
 		if (!layer_line_enable[layer] && old_layer_line_enable[layer]) {
+  // @ts-ignore
 			for (let i: number = s_pos_x_p; i < SCREEN_WIDTH; i++) {
 				layer_line[layer][i] = 0
 			}
 		}
+  // @ts-ignore
 		if (s_pos_x_p == 0)
 			old_layer_line_enable[layer] = layer_line_enable[layer]
 	}
 
 	// clear sprite_line if sprites get disabled
 	if (!sprite_line_enable && old_sprite_line_enable) {
+  // @ts-ignore
 		for (let i: number = s_pos_x_p; i < SCREEN_WIDTH; i++) {
 			sprite_line_col[i] = 0
 			sprite_line_z[i] = 0
@@ -811,6 +832,7 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		}
 	}
 
+  // @ts-ignore
 	if (s_pos_x_p == 0)
 		old_sprite_line_enable = sprite_line_enable
 	if (sprite_line_enable) {
@@ -853,14 +875,18 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		} else {
 			hstart = hstart < 640 ? hstart : 640
 			hstop = hstop < 640 ? hstop : 640
+  // @ts-ignore
 			for (let x: number = s_pos_x_p; x < hstart && x < s_pos_x; ++x) {
 				col_line[x] = border_color
 			}
 
 			let scale: number = reg_composer[1]
+  // @ts-ignore
 			for (let x: number = MAX(hstart, s_pos_x_p); x < hstop && x < s_pos_x; ++x) {
+  // @ts-ignore
 				let eff_x: number = eff_x_fp >> 16
 				col_line[x] = (eff_x < SCREEN_WIDTH) ? calculate_line_col_index(sprite_line_z[eff_x], sprite_line_col[eff_x], layer_line[0][eff_x], layer_line[1][eff_x]) : 0
+  // @ts-ignore
 				eff_x_fp += (scale << 9)
 			}
 			for (let x: number = hstop; x < s_pos_x; ++x) {
@@ -871,7 +897,9 @@ const render_line = (y: number, scan_pos_x: number): void => {
 
 	// Look up all color indices.
 	{
+  // @ts-ignore
 		let fb_idx: number = (y * SCREEN_WIDTH + s_pos_x_p) * 4
+  // @ts-ignore
 		for (let x: number = s_pos_x_p; x < s_pos_x; x++) {
 			let entry = video_palette.entries[col_line[x]]
 			
@@ -887,7 +915,9 @@ const render_line = (y: number, scan_pos_x: number): void => {
 
 	// NTSC overscan
 	if (out_mode == 2) {
+  // @ts-ignore
 		let fb_idx: number = (y * SCREEN_WIDTH + s_pos_x_p) * 4
+  // @ts-ignore
 		for (let x: number = s_pos_x_p; x < s_pos_x; x++)
 		{
 			if (x < SCREEN_WIDTH * TITLE_SAFE_X ||
@@ -923,6 +953,7 @@ const update_isr_and_coll = (y: number, compare: number): void => {
 
 export const video_step = (mhz: number, steps: number, midline: boolean): boolean => {
 	let y: number = 0
+  // @ts-ignore
 	let ntsc_mode: boolean = reg_composer[0] & 2
 	let new_frame: boolean = false
 	vga_scan_pos_x += PIXEL_FREQ * steps / mhz
@@ -1014,24 +1045,26 @@ export const video_get_irq_out = (): boolean => {
 
 export const video_update = (): boolean => {
 
+  // don't think this will be necessary
 	// for activity LED, overlay red 8x4 square into top right of framebuffer
 	// for progressive modes, draw LED only on even scanlines
-	for (let y: number = 0; y < 4; y+=1+!!((reg_composer[0] & 0x0b) > 0x09)) {
-		for (let x: number = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
-			let b: number = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0]
-			let g: number = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1]
-			let r: number = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2]
-			r = Number(r) * (255 - activity_led) / 255 + activity_led
-			g = Number(g) * (255 - activity_led) / 255
-			b = Number(b) * (255 - activity_led) / 255
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0] = b
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1] = g
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2] = r
-			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 3] = 0x00
-		}
-	}
+  // @ts-ignore
+//	for (let y: number = 0; y < 4; y+=1+!!((reg_composer[0] & 0x0b) > 0x09)) {
+//		for (let x: number = SCREEN_WIDTH - 8; x < SCREEN_WIDTH; x++) {
+//			let b: number = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0]
+//			let g: number = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1]
+//			let r: number = framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2]
+//			r = Number(r) * (255 - activity_led) / 255 + activity_led
+//			g = Number(g) * (255 - activity_led) / 255
+//			b = Number(b) * (255 - activity_led) / 255
+//			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 0] = b
+//			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 1] = g
+//			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 2] = r
+//			framebuffer[(y * SCREEN_WIDTH + x) * 4 + 3] = 0xFF
+//		}
+//	}
 
-  // we should inform the renderer here that framebuffer is updated
+  // inform the renderer here that framebuffer is updated
   passVeraFramebuffer(framebuffer, reg_composer[0])
 	return true
 }
@@ -1058,6 +1091,7 @@ let increments: number[] = [
 	320, -320,
 	640, -640,
 ]
+  // @ts-ignore
 const video_get_address = (sel: number): number => {
 	let address: number = io_addr[sel]
 	return address & 0x1ffff
@@ -1143,16 +1177,21 @@ const fx_affine_prefetch = (): void => {
 
 	if (affine_x_tile >= fx_affine_map_size || affine_y_tile >= fx_affine_map_size) {
 		// We clipped, return value for tile 0
+  // @ts-ignore
 		address = fx_affine_tile_base + (affine_y_sub_tile << (3 - fx_4bit_mode)) + (affine_x_sub_tile >> Number(fx_4bit_mode))
+  // @ts-ignore
 		fx_nibble_bit[1] = (affine_x_sub_tile & 1) >> (1 - fx_4bit_mode)
 	} else {
 		// Get the address within the tile map
 		address = fx_affine_map_base + (affine_y_tile * fx_affine_map_size) + affine_x_tile
 		// Now translate that to the tile base address
 		let affine_tile_idx: number = video_space_read(address)
+  // @ts-ignore
 		address = fx_affine_tile_base + (affine_tile_idx << (6 - fx_4bit_mode))
 		// Now add the sub-tile address
+  // @ts-ignore
 		address += (affine_y_sub_tile << (3 - fx_4bit_mode)) + (affine_x_sub_tile >> Number(fx_4bit_mode))
+  // @ts-ignore
 		fx_nibble_bit[1] = (affine_x_sub_tile & 1) >> (1 - fx_4bit_mode)
 	}
 	io_addr[1] = address
@@ -1172,11 +1211,13 @@ const video_space_read_range = (dest: number, address: number, size: number): vo
 		memcpy(dest, video_ram[address], size)
 	} else {
 		for (let i: number = 0; i < size; ++i) {
+  // @ts-ignore
 let dest_idx = 0; 			dest[dest_idx++] = video_space_read(address + i)
 		}
 	}
 }
 
+  // @ts-ignore
 const video_space_write = (address: number, value: number): void => {
 	video_ram[address & 0x1FFFF] = value
 	if (address >= ADDR_PSG_START && address < ADDR_PSG_END) {
@@ -1237,6 +1278,7 @@ const fx_vram_cache_write = (address: number, value: number, mask: number): void
 	}
 }
 
+  // @ts-ignore
 const video_get_fx_accum = (): number => {
 	return fx_mult_accumulator
 }
@@ -1292,12 +1334,14 @@ const video_get_dc_value = (reg: number): number => {
 						((fx_poly_fill_length & 0x0007) << 1) |
 						((fx_x_pixel_position & 0x00008000) >> 15)
 				} else {
+  // @ts-ignore
 					return ((!!(fx_poly_fill_length & 0xfff8)) << 7) |
 						((fx_x_pixel_position >> 11) & 0x60) |
 						((fx_x_pixel_position >> 14) & 0x10) |
 						((fx_poly_fill_length & 0x0007) << 1)
 				}
 			} else {
+  // @ts-ignore
 				return ((!!(fx_poly_fill_length & 0xfff0)) << 7) |
 					((fx_x_pixel_position >> 11) & 0x60) |
 					((fx_poly_fill_length & 0x000f) << 1)
@@ -1409,6 +1453,7 @@ const check_not_writeonly = (reg: number): void => {
 }
 
 export const video_read = (reg: number, debugOn: boolean): number => {
+  // @ts-ignore
 	let ntsc_mode: boolean = reg_composer[0] & 2
 	let scanline: number = ntsc_mode ? ntsc_scan_pos_y % SCAN_HEIGHT : vga_scan_pos_y
 	if (scanline >= 512) scanline=511
@@ -1435,10 +1480,12 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 					let nibble_read: number = (addr_nibble ? ((value & 0x0f) << 4) : (value & 0xf0))
 					if (fx_cache_nibble_index) {
 						fx_cache[fx_cache_byte_index] = (fx_cache[fx_cache_byte_index] & 0xf0) | (nibble_read >> 4)
+  // @ts-ignore
 						fx_cache_nibble_index = 0
 						fx_cache_byte_index = ((fx_cache_byte_index + 1) & 0x3)
 					} else {
 						fx_cache[fx_cache_byte_index] = (fx_cache[fx_cache_byte_index] & 0x0f) | (nibble_read)
+  // @ts-ignore
 						fx_cache_nibble_index = 1
 					}
 				} else {
@@ -1623,9 +1670,13 @@ export const video_write = (reg: number, value: number): void => {
 				address &= 0x1fffc
 				if (fx_trans_writes) {
 					if (fx_4bit_mode) {
+  // @ts-ignore
 						nibble_mask[0] = (((ram_wrdata[0] & 0xf0) == 0) << 1) | ((ram_wrdata[0] & 0x0f) == 0)
+  // @ts-ignore
 						nibble_mask[1] = (((ram_wrdata[1] & 0xf0) == 0) << 1) | ((ram_wrdata[1] & 0x0f) == 0)
+  // @ts-ignore
 						nibble_mask[2] = (((ram_wrdata[2] & 0xf0) == 0) << 1) | ((ram_wrdata[2] & 0x0f) == 0)
+  // @ts-ignore
 						nibble_mask[3] = (((ram_wrdata[3] & 0xf0) == 0) << 1) | ((ram_wrdata[3] & 0x0f) == 0)
 					} else {
 						nibble_mask[0] = (ram_wrdata[0] != 0) ? 0 : 3
@@ -1693,16 +1744,24 @@ export const video_write = (reg: number, value: number): void => {
 			switch (i) {
 				case 0x08: // DCSEL=2, $9F29
 					fx_addr1_mode = value & 0x03
+  // @ts-ignore
 					fx_4bit_mode = (value & 0x04) >> 2
+  // @ts-ignore
 					fx_16bit_hop = (value & 0x08) >> 3
+  // @ts-ignore
 					fx_cache_byte_cycling = (value & 0x10) >> 4
+  // @ts-ignore
 					fx_cache_fill = (value & 0x20) >> 5
+  // @ts-ignore
 					fx_cache_write = (value & 0x40) >> 6
+  // @ts-ignore
 					fx_trans_writes = (value & 0x80) >> 7
 					break
 				case 0x09: // DCSEL=2, $9F2A
 					fx_affine_tile_base = (value & 0xfc) << 9
+  // @ts-ignore
 					fx_affine_clip = (value & 0x02) >> 1
+  // @ts-ignore
 					fx_2bit_poly = (value & 0x01)
 					break
 				case 0x0a: // DCSEL=2, $9F2B
@@ -1710,10 +1769,14 @@ export const video_write = (reg: number, value: number): void => {
 					fx_affine_map_size = 2 << ((value & 0x03) << 1)
 					break
 				case 0x0b: // DCSEL=2, $9F2C
+  // @ts-ignore
 					fx_cache_increment_mode = value & 0x01
+  // @ts-ignore
 					fx_cache_nibble_index = (value & 0x02) >> 1
 					fx_cache_byte_index = (value & 0x0c) >> 2
+  // @ts-ignore
 					fx_multiplier = (value & 0x10) >> 4
+  // @ts-ignore
 					fx_subtract = (value & 0x20) >> 5
 					if (value & 0x40) { // accumulate
 						let m_result: number = Number((fx_cache[1] << 8) | fx_cache[0]) * Number((fx_cache[3] << 8) | fx_cache[2])
@@ -1729,11 +1792,13 @@ export const video_write = (reg: number, value: number): void => {
 				case 0x0c: // DCSEL=3, $9F29
 					fx_x_pixel_increment = ((((reg_composer[0x0d] & 0x7f) << 15) + (reg_composer[0x0c] << 7)) // base value
 						| ((reg_composer[0x0d] & 0x40) ? 0xffc00000 : 0)) // sign extend if negative
+  // @ts-ignore
 						<< 5*(!!(reg_composer[0x0d] & 0x80)) // multiply by 32 if flag set
 					break
 				case 0x0d: // DCSEL=3, $9F2A
 					fx_x_pixel_increment = ((((reg_composer[0x0d] & 0x7f) << 15) + (reg_composer[0x0c] << 7)) // base value
 						| ((reg_composer[0x0d] & 0x40) ? 0xffc00000 : 0)) // sign extend if negative
+  // @ts-ignore
 						<< 5*(!!(reg_composer[0x0d] & 0x80)) // multiply by 32 if flag set
 					if (fx_addr1_mode == 1 || fx_addr1_mode == 2) {
 						// Reset subpixel to 0.5
@@ -1743,11 +1808,13 @@ export const video_write = (reg: number, value: number): void => {
 				case 0x0e: // DCSEL=3, $9F2B
 					fx_y_pixel_increment = ((((reg_composer[0x0f] & 0x7f) << 15) + (reg_composer[0x0e] << 7)) // base value
 						| ((reg_composer[0x0f] & 0x40) ? 0xffc00000 : 0)) // sign extend if negative
+  // @ts-ignore
 						<< 5*(!!(reg_composer[0x0f] & 0x80)) // multiply by 32 if flag set
 					break
 				case 0x0f: // DCSEL=3, $9F2C
 					fx_y_pixel_increment = ((((reg_composer[0x0f] & 0x7f) << 15) + (reg_composer[0x0e] << 7)) // base value
 						| ((reg_composer[0x0f] & 0x40) ? 0xffc00000 : 0)) // sign extend if negative
+  // @ts-ignore
 						<< 5*(!!(reg_composer[0x0f] & 0x80)) // multiply by 32 if flag set
 					if (fx_addr1_mode == 1 || fx_addr1_mode == 2) {
 						// Reset subpixel to 0.5
@@ -1824,6 +1891,7 @@ export const video_write = (reg: number, value: number): void => {
 	}
 }
 
+  // @ts-ignore
 const video_is_tilemap_address = (addr: number): boolean => {
 	for (let l: number = 0; l < 2; ++l) {
 		let props: video_layer_properties = layer_properties[l]
@@ -1839,6 +1907,7 @@ const video_is_tilemap_address = (addr: number): boolean => {
 	return false
 }
 
+  // @ts-ignore
 const video_is_tiledata_address = (addr: number): boolean => {
 	for (let l: number = 0; l < 2; ++l) {
 		let props: video_layer_properties = layer_properties[l]
@@ -1855,6 +1924,7 @@ const video_is_tiledata_address = (addr: number): boolean => {
 	return false
 }
 
+  // @ts-ignore
 const video_is_special_address = (addr: number): boolean => {
 	return addr >= 0x1F9C0
 }
@@ -1878,6 +1948,7 @@ const memcpy = (dest: any, src: any, size: any) => {
     }
 }
 
+  // @ts-ignore
 const sprintf = (out: any, format: string, ...args: any[]) => {
     let i = 0
     let res = format.replace(/%[0-9]*[a-zA-Z]/g, (match) => {
@@ -1900,4 +1971,3 @@ const sprintf = (out: any, format: string, ...args: any[]) => {
     }
     return res
 }
-
