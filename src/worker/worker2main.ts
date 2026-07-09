@@ -44,6 +44,10 @@ const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
   }
 }
 
+export const passVeraFramebuffer = (fb: Uint8ClampedArray, dcVideo: number) => {
+  doPostMessage(MSG_WORKER.VERA_FRAME, { fb, dcVideo })
+}
+
 export const passMachineState = (state: MachineState) => {
   doPostMessage(MSG_WORKER.MACHINE_STATE, state)
 }

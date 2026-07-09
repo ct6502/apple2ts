@@ -25,6 +25,7 @@ import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruc
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
+import { enableVera, resetVera } from "./devices/vera/vera"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
@@ -119,7 +120,8 @@ export const configureMachine = () => {
   enableSerialCard()
   enablePassportCard(true, 2)
   enableMockingboard(true, 4)
-  enableMouseCard(true, 5)
+  //enableMouseCard(true, 5)
+  enableVera(true, 5)
   enableDiskDrive()
   enableHardDrive()
   get6502Instructions()
@@ -130,6 +132,7 @@ const resetMachine = () => {
   setButtonState()
   resetMouse()
   resetPassport()
+  resetVera()
   resetSerial()
   resetMockingboard(4)
 }
