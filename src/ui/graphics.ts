@@ -534,28 +534,6 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     ctx.clearRect(0, 0, width, height)
   }
 
-  const veraFrame = handleGetVeraFrame()
-  if (veraFrame && (veraFrame.dcVideo & 3) !== 0) {
-    const imgData = new ImageData(veraFrame.fb, 640, 480)
-    
-    // We need to resize the 640x480 VERA frame to fit the main canvas viewport
-    // First put it onto the hidden context at its native size
-    hiddenContext.canvas.width = 640
-    hiddenContext.canvas.height = 480
-    hiddenContext.putImageData(imgData, 0, 0)
-    
-    // Then drawImage it onto the main canvas, scaling it properly
-    ctx.imageSmoothingEnabled = false
-    const dx = xmargin * width
-    const dy = ymargin * height
-    ctx.drawImage(hiddenContext.canvas, 0, 0, 640, 480, dx, dy, width - 2 * dx, height - 2 * dy)
-    
-    // Restore hidden context size for Apple II fallback just in case
-    hiddenContext.canvas.width = 560
-    hiddenContext.canvas.height = 384
-    return
-  }
-
   hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
