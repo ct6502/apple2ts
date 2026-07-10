@@ -140,13 +140,13 @@ const tokenizeApplesoftLine = (text: string): number[] => {
       tokens.push(text.charCodeAt(i++))
       continue
     }
-    if (text[i] === '"') {
+    if (text[i] === "\"") {
       tokens.push(text.charCodeAt(i++))
-      while (i < text.length && text[i] !== '"') tokens.push(text.charCodeAt(i++))
+      while (i < text.length && text[i] !== "\"") tokens.push(text.charCodeAt(i++))
       if (i < text.length) tokens.push(text.charCodeAt(i++))
       continue
     }
-    if (text[i] === ' ') { i++; continue }
+    if (text[i] === " ") { i++; continue }
     let matched = false
     for (const [keyword, tokenByte] of APPLESOFT_TOKENS) {
       const end = i + keyword.length
@@ -169,11 +169,11 @@ const tokenizeApplesoftLine = (text: string): number[] => {
  */
 const tokenizeApplesoftBasic = (source: string): Uint8Array => {
   const BASE = 0x0801
-  const lines = source.split('\r').filter(l => l.length > 0)
+  const lines = source.split("\r").filter(l => l.length > 0)
   const parsed: Array<{ lineNum: number; tokens: number[] }> = []
   for (const line of lines) {
     let i = 0
-    while (i < line.length && line[i] >= '0' && line[i] <= '9') i++
+    while (i < line.length && line[i] >= "0" && line[i] <= "9") i++
     if (i === 0) continue
     const lineNum = parseInt(line.substring(0, i), 10)
     parsed.push({ lineNum, tokens: tokenizeApplesoftLine(line.substring(i)) })
@@ -229,6 +229,7 @@ const generateMenuSourceProgram = (
   helperSubdir: string,
   aliasShimInstallCommand?: string,
   runtimeVolumeByMenuIndex?: Array<number | undefined>,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   menuNeedsAliasShim?: boolean[]
 ): string => {
   const lines: string[] = []
@@ -268,7 +269,7 @@ const generateMenuSourceProgram = (
     const leftArrow = showNavigationArrows ? "<- " : "   "
     const rightArrow = showNavigationArrows ? " ->" : "   "
     const lineNo = 1120 + idx
-    lines.push(lineNo + ' IF I=' + idx + ' THEN VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
+    lines.push(lineNo + " IF I=" + idx + " THEN VTAB 22:HTAB 1:PRINT \"" + leftArrow + " ".repeat(leftPad) + "\";:INVERSE:PRINT \"" + safeName + "\";:NORMAL:PRINT \"" + " ".repeat(rightPad) + rightArrow + "\";")
   }
   lines.push("1220 RETURN")
 
@@ -282,7 +283,7 @@ const generateMenuSourceProgram = (
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[0])
     const leftArrow = showNavigationArrows ? "<- " : "   "
     const rightArrow = showNavigationArrows ? " ->" : "   "
-    lines.push('3030 VTAB 22:HTAB 1:PRINT "' + leftArrow + ' '.repeat(leftPad) + '";:INVERSE:PRINT "' + safeName + '";:NORMAL:PRINT "' + ' '.repeat(rightPad) + rightArrow + '";')
+    lines.push("3030 VTAB 22:HTAB 1:PRINT \"" + leftArrow + " ".repeat(leftPad) + "\";:INVERSE:PRINT \"" + safeName + "\";:NORMAL:PRINT \"" + " ".repeat(rightPad) + rightArrow + "\";")
   }
   lines.push("3040 RETURN")
 
@@ -310,9 +311,9 @@ const generateMenuLaunchProgram = (
       return "PRINT D$;\"PREFIX " + dir + "\":PRINT D$;\"-" + file + "\""
     }
     if (dosRuntimeLauncher === "DOS.MASTER") {
-      return 'PRINT D$;"BRUN ' + dosRuntimeLauncher + '/' + dosRuntimeLauncher + '"'
+      return "PRINT D$;\"BRUN " + dosRuntimeLauncher + "/" + dosRuntimeLauncher + "\""
     }
-    return 'PRINT D$;"-' + dosRuntimeLauncher + '"'
+    return "PRINT D$;\"-" + dosRuntimeLauncher + "\""
   })()
 
   const lines: string[] = []
@@ -385,7 +386,7 @@ const generateMenuLaunchProgram = (
       }
     }
 
-    lines.push(dataLine + ' DATA ' + launchCode + ',' + volume + ',"' + toDataString(prefix) + '","' + toDataString(runCmd) + '",' + shimFlag)
+    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag)
     dataLine += 10
   }
 

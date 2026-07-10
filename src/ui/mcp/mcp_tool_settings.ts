@@ -60,7 +60,7 @@ export function toolSetMachineType(machineType: string): MCPToolResult {
     if (machineType !== "APPLE2P" && machineType !== "APPLE2EU" && machineType !== "APPLE2EE") {
       return {
         success: false,
-        error: 'Machine type must be "APPLE2P", "APPLE2EU", or "APPLE2EE"',
+        error: "Machine type must be \"APPLE2P\", \"APPLE2EU\", or \"APPLE2EE\"",
       }
     }
 

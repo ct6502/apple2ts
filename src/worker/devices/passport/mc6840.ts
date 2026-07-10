@@ -58,26 +58,26 @@ const getControlString = (timer: number, ctrl: number): string =>
     {
       case 0:
         ret += "RST  "
-        break;
+        break
       case 1:
         ret += "WR0  "
-        break;
+        break
       case 2:
         ret += "DIV8 "
-        break;
+        break
     }
   else
     switch(timer)
     {
       case 0:
         ret += "RUN  "
-        break;
+        break
       case 1:
         ret += "WR2  "
-        break;
+        break
       case 2:
         ret += "DIV1 "
-        break;
+        break
     }
 
   ret += "-> "
@@ -86,28 +86,28 @@ const getControlString = (timer: number, ctrl: number): string =>
   {
     case MODE.CONTINUOUS0:
       ret += "CONTINUOUS0"
-      break;
+      break
     case MODE.FREQUENCY_CMP0:
       ret += "FREQUENCY_CMP0"
-      break;
+      break
     case MODE.CONTINUOUS1:
       ret += "CONTINUOUS1"
-      break;
+      break
     case MODE.PULSE_WIDTH_CMP0:
       ret += "PULSE_WIDTH_CMP0"
-      break;
+      break
     case MODE.SINGLE_SHOT0:
       ret += "SINGLE_SHOT0"
-      break;
+      break
     case MODE.FREQUENCY_CMP1:
       ret += "FREQUENCY_CMP1"
-      break;
+      break
     case MODE.SINGLE_SHOT1:
       ret += "SINGLE_SHOT1"
-      break;
+      break
     case MODE.PULSE_WIDTH_CMP1:
       ret += "PULSE_WIDTH_CMP1"
-      break;
+      break
   }
    
   return ret
@@ -233,7 +233,7 @@ export class MC6840
     if (idx === 0)
       idx = (this._timer[1].control & CONTROL.SPECIAL) ? 0 : 2
 
-    let prev = this._timer[idx].control
+    const prev = this._timer[idx].control
     this._timer[idx].control = value
 
     // check for various changes
@@ -256,13 +256,13 @@ export class MC6840
 
       if (idx == 0)
       {
-        let state = (prev & CONTROL.SPECIAL) << 1 | value & CONTROL.SPECIAL
+        const state = (prev & CONTROL.SPECIAL) << 1 | value & CONTROL.SPECIAL
 
         switch(state)
         {
           case 0: // not set or same state
           case 3:
-            break;
+            break
 
           case 1: // enter reset
           case 2: // leave reset
@@ -272,7 +272,7 @@ export class MC6840
             this.irq(0,false)
             this.irq(1,false)
             this.irq(2,false)
-            break;
+            break
         }
       }
     }

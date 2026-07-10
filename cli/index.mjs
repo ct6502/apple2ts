@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { Buffer } from "node:buffer"
 import { promises as fs } from "node:fs"

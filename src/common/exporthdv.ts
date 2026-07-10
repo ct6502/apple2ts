@@ -195,7 +195,7 @@ export const buildExportHdvBasicProgram = (manifest: ExportHdvManifest) => {
 
   let lineNumber = 2000
   for (const chunk of chunkTitles(titles)) {
-    const values = chunk.map((title) => `\"${title}\"`).join(",")
+    const values = chunk.map((title) => `"${title}"`).join(",")
     lines.push(`${lineNumber} DATA ${values}`)
     lineNumber += 10
   }

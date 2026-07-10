@@ -4,6 +4,7 @@
 
 import { AIProviderModel } from "./mcp_agent_config"
 import type { AIProvider, AIMessage, AIResponse, AIStreamChunk, AIProviderConfig } from "./mcp_agent_provider"
+import { hasToolSchemaProperties, type OpenAIStyleToolCall } from "./mcp_agent_tool_types"
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 const CORS_PROXY = "https://proxy.corsfix.com/?url="
@@ -73,10 +74,7 @@ function convertToolsToOpenAI(
   tools: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>
 ): Array<Record<string, unknown>> {
   return tools.map(tool => {
-    const hasProperties = tool.inputSchema &&
-      typeof tool.inputSchema === "object" &&
-      (tool.inputSchema as any).properties &&
-      Object.keys((tool.inputSchema as any).properties).length > 0
+    const hasProperties = hasToolSchemaProperties(tool.inputSchema)
 
     return {
       type: "function",
@@ -174,11 +172,12 @@ export class OpenAIProvider implements AIProvider {
         
         // Handle tool calls
         if (choice.message.tool_calls) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          result.toolCalls = choice.message.tool_calls.map((tc: any) => ({
+          result.toolCalls = (choice.message.tool_calls as OpenAIStyleToolCall[]).map((tc) => ({
             id: tc.id,
             name: tc.function.name,
-            input: JSON.parse(tc.function.arguments),
+            input: typeof tc.function.arguments === "string"
+              ? JSON.parse(tc.function.arguments)
+              : tc.function.arguments,
           }))
         }
       }
