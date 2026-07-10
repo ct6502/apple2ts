@@ -2,6 +2,10 @@
   "name": "apple2ts-cli",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24",
+    "npm": ">=11"
+  },
   "bin": {
     "apple2ts-cli": "./index.mjs"
   }
