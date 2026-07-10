@@ -5,7 +5,7 @@ import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
 import { crc32 } from "../../common/utility"
 import { getHelpText, getTabView, getTheme, isMinimalTheme } from "../ui_settings"
-import { useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
 import ExpectinTab from "./expectin/expectintab"
@@ -21,7 +21,6 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
 
   const [activeTab, setActiveTab] = useState<number>(getTabView())
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-  const [helpTextCrc, setHelpTextCrc] = useState(defaultHelpTextCrc)
 
   if (isMinimalTheme()) {
     import("./panels.minimal.css")
@@ -30,7 +29,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   const currentHelpText = getHelpText()
   const helpText = (currentHelpText.length > 1 && currentHelpText !== "<Default>") ? currentHelpText : defaultHelpText
   const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
-  const showHighlight = !isFlyoutOpen && newHelpTextCrc != helpTextCrc && newHelpTextCrc != defaultHelpTextCrc
+  const showHighlight = !isFlyoutOpen && newHelpTextCrc != defaultHelpTextCrc
 
   const forceRefresh = () => {
     // Force a refresh to pick up the new canvas size
@@ -62,10 +61,8 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
     passSetShowDebugTab(false)
   }
 
-  useMemo(() => {
+  useEffect(() => {
     forceRefresh()
-    setHelpTextCrc(newHelpTextCrc)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlyoutOpen])
 
   const tabClass = props.narrow ? "dbg-tab-horizontal" : "dbg-tab-vertical"

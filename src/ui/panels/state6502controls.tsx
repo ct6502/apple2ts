@@ -95,7 +95,7 @@ const State6502Controls = () => {
             style={{ marginLeft: "2pt", marginRight: "2pt", marginTop: "1pt" }}> {s6502.cycleCount}</span>
           <button className="push-button tight-button"
             title="Reset cycle count"
-            onClick={() => { passSetCycleCount(0); s6502.cycleCount = 0 }}>
+            onClick={() => { passSetCycleCount(0) }}>
             <FontAwesomeIcon icon={faSync} style={{ fontSize: "0.7em" }}/>
           </button>
         </div>

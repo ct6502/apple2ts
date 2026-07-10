@@ -17,7 +17,6 @@ import { BreakpointMap, BreakpointNew, getBreakpointString, getBreakpointStyle }
 import { useGlobalContext } from "../../globalcontext"
 import { DISASSEMBLE_VISIBLE, RUN_MODE } from "../../../common/utility"
 import { setPreferenceBreakpoints } from "../../localstorage"
-import { handleSetCPUState } from "../../controller"
 
 const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
@@ -60,26 +59,10 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
     }
   }
 
-  let wasRunning = false
-
-  const doShowBreakpointEdit = (show: boolean) => {
-    if (show) {
-      wasRunning = handleGetRunMode() === RUN_MODE.RUNNING
-      if (wasRunning) {
-        handleSetCPUState(RUN_MODE.PAUSED)
-      }
-    } else {
-      if (wasRunning) {
-        handleSetCPUState(RUN_MODE.RUNNING)
-      }
-    }
-    setShowBreakpointEdit(show)
-  }
-
   const addBreakpoint = () => {
     setBreakpointEditAddress(-1)
     setBreakpointEditValue(BreakpointNew())
-    doShowBreakpointEdit(true)
+    setShowBreakpointEdit(true)
   }
 
   const removeAllBreakpoints = () => {
@@ -96,7 +79,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
       // we'll need to remove the old one.
       setBreakpointEditAddress(addr)
       setBreakpointEditValue({ ...bp })
-      doShowBreakpointEdit(true)
+      setShowBreakpointEdit(true)
     }
   }
 
@@ -113,11 +96,11 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
     }
     breakpoints.set(breakpointEditValue.address, breakpointEditValue)
     setPreferenceBreakpoints(breakpoints)
-    doShowBreakpointEdit(false)
+    setShowBreakpointEdit(false)
   }
 
   const cancelEdit = () => {
-    doShowBreakpointEdit(false)
+    setShowBreakpointEdit(false)
   }
 
   const doSetDialogPosition = (x: number, y: number) => {

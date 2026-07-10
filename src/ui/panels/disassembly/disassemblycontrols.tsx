@@ -30,7 +30,6 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const [tooltipOutShow, setTooltipOutShow] = useState(true)
   // The tooltip "show's" get reset when the instruction changes to/from JSR.
   const [address, setAddress] = useState("")
-  const [showSymbolTableFileOpen, setShowSymbolTableFileOpen] = useState(false)
   const [showSaveDisassembly, setShowSaveDisassembly] = useState(false)
   const [showTraceDialog, setShowTraceDialog] = useState(false)
   const [dialogPosition, setDialogPosition] = useState([-1, -1])
@@ -67,9 +66,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
   const isTouchDevice = "ontouchstart" in document.documentElement
 
   // This is how we actually display the file selection dialog.
-  if (showSymbolTableFileOpen) {
-    // Now that we're in here, turn off our property.
-    setTimeout(() => setShowSymbolTableFileOpen(false), 0)
+  const showSymbolTableFileOpen = () => {
     if (hiddenFileOpen.current) {
       const fileInput = hiddenFileOpen.current
       // Hack - clear out old file so we can pick the same file again
@@ -156,7 +153,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       </div>
       <button className="push-button"
         title="Load Symbol Table"
-        onClick={() => setShowSymbolTableFileOpen(true)}>
+        onClick={showSymbolTableFileOpen}>
         <div className="icon-container">
           <FontAwesomeIcon icon={faFolderOpen} />
           <span className="icon-text">SYM</span>

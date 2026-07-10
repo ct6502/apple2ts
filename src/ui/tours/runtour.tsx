@@ -1,4 +1,4 @@
-import Joyride, { ACTIONS, CallBackProps, EVENTS, Step } from "react-joyride"
+import { ACTIONS, EventData, EVENTS, Joyride, Step } from "react-joyride"
 import { useGlobalContext } from "../globalcontext"
 import { tourMain } from "./tourmain"
 import { tourSettings } from "./toursettings"
@@ -11,7 +11,7 @@ const RunTour = () => {
   const { runTour: runTour, setRunTour: setRunTour,
     tourIndex: tourIndex, setTourIndex: setTourIndex } = useGlobalContext()
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  const handleJoyrideCallback = (data: EventData) => {
     const stepCallbackFunction = data.step.data as StepCallbackFunction
     if (stepCallbackFunction) {
       const completed = stepCallbackFunction()
@@ -90,20 +90,22 @@ const RunTour = () => {
         tabIndex={0} // Make the div focusable
       >
       <Joyride
-        callback={handleJoyrideCallback}
+        onEvent={handleJoyrideCallback}
         steps={tour}
         locale={locale}
+        options={{
+          showProgress: true,
+          buttons: ["back", "close", "primary", "skip"],
+          blockTargetInteraction: false,
+        }}
         run={tour.length > 0}
         continuous={true}
-        showProgress={true}
-        showSkipButton={true}
-        spotlightClicks={true}
         stepIndex={tourIndex}
         styles={{
           tooltipContent: {
             textAlign: "left",
           },
-          options: {
+          floater: {
             zIndex: 10000,
           },
         }}

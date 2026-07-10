@@ -1,19 +1,14 @@
 import React, { KeyboardEvent, useRef } from "react"
 import {
   handleGetBreakpoints,
-  handleGetRunMode,
-  handleGetState6502,
 } from "../../main2worker"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { DISASSEMBLE_VISIBLE, RUN_MODE, toHex } from "../../../common/utility"
-import {
-  faCircle as iconBreakpoint,
-} from "@fortawesome/free-solid-svg-icons"
 import { useGlobalContext } from "../../globalcontext"
-import { BreakpointMap, BreakpointNew, getBreakpointIcon, getBreakpointStyle } from "../../../common/breakpoint"
-import { getDisassembly, getDisassemblyAddress, getDisassemblyVisibleMode, setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
-import { getChromacodedLine } from "./disassemblyview_singleline"
-import { getPreferenceDebugTabLeftWidth, setPreferenceBreakpoints } from "../../localstorage"
+import { BreakpointMap, BreakpointNew } from "../../../common/breakpoint"
+import { getDisassembly, setDisassemblyAddress } from "./disassembly_utilities"
+import { setPreferenceBreakpoints } from "../../localstorage"
+import DisassemblyDiv from "./disassemblydiv"
+import { faCircle } from "@fortawesome/free-solid-svg-icons"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 const nlines = 40
 let currentScrollAddress = -1
@@ -24,8 +19,6 @@ let isMouseDown = false
 const DisassemblyView = (props: DisassemblyProps) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null)
-  const scrollTimeout = useRef<NodeJS.Timeout | null>(null)
-  const scrollToRef = useRef<HTMLDivElement>(null)
   const disassemblyRef = useRef<HTMLDivElement>(null)
   // We cannot assign an actual type to this ref since it is both an
   // HTMLDivElement and an SVGSVGElement
@@ -123,25 +116,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
     setUpdateBreakpoint(updateBreakpoint + 1)
   }
 
-  const handleBreakpointClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    event.stopPropagation()
-    const addr = parseInt(event.currentTarget.getAttribute("data-key") || "-1")
-    const breakpoints = new BreakpointMap(handleGetBreakpoints())
-    const bp = breakpoints.get(addr)
-    if (bp) {
-      if (bp.disabled) {
-        bp.disabled = false
-      } else {
-        breakpoints.delete(addr)
-      }
-      setPreferenceBreakpoints(breakpoints)
-      setUpdateBreakpoint(updateBreakpoint + 1)
-    }
-    if (fakePointRef.current) {
-      (fakePointRef.current as HTMLDivElement).style.display = "none"
-    }
-  }
-
   const handleCodeMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!disassemblyRef.current || !fakePointRef.current) return -1
     const [addr, mouseY] = getAddressAtMouse(event)
@@ -163,131 +137,6 @@ const DisassemblyView = (props: DisassemblyProps) => {
       const fakePoint = fakePointRef.current as HTMLDivElement
       fakePoint.style.display = "none"
     }
-  }
-
-  const getAddress = (line: string) => {
-    return parseInt(line.slice(0, line.indexOf(":")), 16)
-  }
-
-  // const fWeight = (opcode: string) => {
-  //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
-  //   return ""
-  // }
-
-  // This function gets used in disassemblyview_singleline but we
-  // define it here so it can access our local variables.
-  const onJumpClick = (addr: number) => {
-    setDisassemblyAddress(addr)
-    props.refresh()
-  }
-
-  const getDisassemblyDiv = () => {
-    if (handleGetRunMode() !== RUN_MODE.PAUSED) {
-      return <div className="noselect" style={{ marginTop: "30px" }}>Pause to view disassembly</div>
-    }
-
-    // Calculate approximate width in characters
-    // For 7pt monospace at line-height 10pt: char width ≈ 0.6 * height = 0.6 * 9.33px ≈ 5.6px
-    const containerWidth = Math.max(getPreferenceDebugTabLeftWidth(), 260) - 36
-    const width = Math.floor(containerWidth / 5.6)
-    
-    let disArray = getDisassembly().split("\n").slice(0, nlines)
-    if (disArray.length <= 1) {
-      return <div
-      style={{
-        position: "relative",
-        width: "200px",
-        top: "0px",
-        height: `${nlines * 10 - 2}pt`,
-      }}>
-    </div>
-    }
-    let foundLine = false
-    const visibleMode = getDisassemblyVisibleMode()
-    if (visibleMode !== DISASSEMBLE_VISIBLE.RESET) {
-      const visibleLine = (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
-        handleGetState6502().PC : getDisassemblyAddress()
-      // console.log("visibleLine", visibleLine.toString(16))
-      for (let i = 0; i < disArray.length; i++) {
-        if (getAddress(disArray[i]) === visibleLine) {
-          foundLine = true
-          break
-        }
-      }
-      if (!foundLine) {
-        setDisassemblyAddress(visibleLine)
-        disArray = getDisassembly().split("\n").slice(0, nlines)
-      } else {
-        if (getDisassemblyAddress() === -1) {
-          setDisassemblyAddress(visibleLine)
-        }
-        setDisassemblyVisibleMode(DISASSEMBLE_VISIBLE.RESET)
-      }
-    }
-
-    if (!foundLine) {
-      if (scrollTimeout.current !== null) {
-        clearTimeout(scrollTimeout.current)
-      }
-        scrollTimeout.current = setTimeout(() => {
-        if (disassemblyRef.current) {
-          if (scrollToRef.current) {
-            const line = scrollToRef.current
-            allowScrollEvent = false
-            line.scrollIntoView()
-          }
-        }
-      }, 20)
-    }
-    // Put the breakpoints into an easier to digest array format.
-    const bp: Array<Breakpoint> = []
-    const breakpoints = handleGetBreakpoints()
-    for (let i = 0; i < nlines; i++) {
-      const bp1 = breakpoints.get(getAddress(disArray[i]))
-      if (bp1 && !bp1.hidden) {
-        bp[i] = bp1
-      }
-    }
-    const pc1 = handleGetState6502().PC
-    const lineTop = getAddress(disArray[0])
-    const lineBottom = (disArray[nlines - 1] !== "") ? getAddress(disArray[nlines - 1]) : 65535
-    const topHalf = Array.from({ length: Math.floor(lineTop / 16) }, (_, i) => (i * 16))
-    for (let i = topHalf[topHalf.length - 1] + 1; i < lineTop; i++) {
-      topHalf.push(i)
-    }
-    // Construct an evenly-spaced array for the bottom but stop well before 65535.
-    // Then fill in all the remaining values up to 65535. This provides a smooth
-    // scrolling experience and allows you to drag the scrollbar all the way to the bottom.
-    const length = Math.max(Math.floor((65535 - lineBottom) / 16) - 2, 0)
-    const bottomHalf = Array.from({ length: length },
-      (_, i) => Math.min((i * 16) + lineBottom + 1, 65535))
-    const istart = (bottomHalf.length > 0) ? (bottomHalf[bottomHalf.length - 1] + 1) : (lineBottom + 1)
-    for (let i = istart; i <= 65535; i++) {
-      bottomHalf.push(i)
-    }
-
-    // console.log("getDisassemblyDiv ", props.update, disArray[0])
-
-    return <div>
-      {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
-      {disArray.map((line, index) => (
-        <div key={index}
-          ref={index === 0 ? scrollToRef : null}
-          style={{ position: "relative" }}
-          className={getAddress(line) === pc1 ? "program-counter" : ""}>
-          {(bp[index] && !bp[index].basic &&
-            <FontAwesomeIcon icon={getBreakpointIcon(bp[index])}
-              className={"breakpoint-position " + getBreakpointStyle(bp[index])}
-              data-key={bp[index].address}
-              onClick={handleBreakpointClick} />)}
-          {getChromacodedLine(line, onJumpClick, width)}
-        </div>
-      ))}
-      {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
-      <FontAwesomeIcon icon={iconBreakpoint} ref={fakePointRef}
-        className="breakpoint-style fake-point"
-        style={{ pointerEvents: "none", display: "none" }} />
-    </div>
   }
 
   // console.log(`Render ${props.update} ${handleGetState6502().PC.toString(16)}`)
@@ -315,7 +164,19 @@ const DisassemblyView = (props: DisassemblyProps) => {
         onMouseMove={handleCodeMouseMove}
         onMouseLeave={handleCodeMouseLeave}
         onClick={handleCodeClick}>
-        {getDisassemblyDiv()}
+        <DisassemblyDiv
+          hideFakePoint={() => {
+            if (fakePointRef.current) {
+              const fakePoint = fakePointRef.current as HTMLDivElement
+              fakePoint.style.display = "none"
+            }
+          }}
+          disassemblyRef={disassemblyRef}
+          setAllowScrollEvent={(value: boolean) => {allowScrollEvent = value}}
+          refresh={props.refresh} />
+        <FontAwesomeIcon icon={faCircle} ref={fakePointRef}
+          className="breakpoint-style fake-point"
+          style={{ pointerEvents: "none", display: "none" }} />
       </div>
     </div>
   )

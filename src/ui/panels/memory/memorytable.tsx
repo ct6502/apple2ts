@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 import { hiresLineToAddress, toHex, UI_THEME } from "../../../common/utility"
 import { useGlobalContext } from "../../globalcontext"
 import { nColsHgrMagnifier, nRowsHgrMagnifier } from "../../graphics"
@@ -23,6 +23,68 @@ const MemoryTable = (props: MemoryTableProps) => {
     setUpdateHgr: setUpdateHgr } = useGlobalContext()
   const hgrMagnifierLocal = useRef([-1, -1])
   const cellValue = useRef("")
+
+  const clearSelection = (table: HTMLTableElement) => {
+    if (!table || !table.rows) return
+    for (let i = 0; i < table.rows.length; i++) {
+      for (let j = 0; j < table.rows[i].cells.length; j++) {
+        table.rows[i].cells[j].classList.remove("selected")
+      }
+    }
+  }
+
+  const setSelection = (offset: number[], table: HTMLTableElement) => {
+    for (let j = offset[1] + 1; j <= offset[1] + nRowsHgrMagnifier; j++) {
+      for (let i = offset[0] + 1; i <= offset[0] + nColsHgrMagnifier; i++) {
+        const cell = table?.rows[j]?.cells[i]
+        cell?.classList.add("selected")
+      }
+    }
+  }
+
+  // Make sure we keep our selection up to date, especially if it was changed
+  // by clicking on the canvas.
+  useEffect(() => {
+
+    // This scrolling code is used with the HGR mode, where we want to scroll
+    // both vertically and horizontally to keep the HGR selection box in view.
+    const scrollHgrIntoView = (table: HTMLTableElement) => {
+      const cell1 = table.rows[hgrMagnifier[1] + 1].cells[hgrMagnifier[0] + 1]
+      const cell2 = table.rows[hgrMagnifier[1] + nRowsHgrMagnifier].cells[hgrMagnifier[0] + 2]
+      if (cell1 && cell2) {
+        const r1 = cell1.getBoundingClientRect()
+        const r2 = cell2.getBoundingClientRect()
+        const tr = table.getBoundingClientRect()
+        const f = 10
+        const isInView = (r1.left - 4 * f) >= tr.left && (r1.top - f) >= tr.top &&
+          (r2.right + f) <= tr.right && (r2.bottom + f) <= tr.bottom
+        if (!isInView) {
+          cell1.scrollIntoView({ block: "center", inline: "center" })
+        }
+      }
+    }
+
+    if (props.isHGR) {
+      if ((hgrMagnifier[0] >= 0) &&
+        (hgrMagnifierLocal.current[0] !== hgrMagnifier[0] ||
+          hgrMagnifierLocal.current[1] !== hgrMagnifier[1])) {
+        hgrMagnifierLocal.current[0] = hgrMagnifier[0]
+        hgrMagnifierLocal.current[1] = hgrMagnifier[1]
+        setTimeout(() => {
+          const table = document.querySelector("#memory-table") as HTMLTableElement
+          if (!table) return
+          clearSelection(table)
+          setSelection(hgrMagnifier, table)
+          scrollHgrIntoView(table)
+        }, 10)
+      }
+    } else {
+      setTimeout(() => {
+        const table = document.querySelector("#memory-table") as HTMLTableElement
+        clearSelection(table)
+      }, 10)
+    }
+  }, [hgrMagnifier, props.isHGR])
 
   if (props.memory.length <= 1) return "\n\n\n      *** Pause emulator to view memory ***"
 
@@ -77,24 +139,6 @@ const MemoryTable = (props: MemoryTableProps) => {
     return [-1, -1]
   }
 
-  const clearSelection = (table: HTMLTableElement) => {
-    if (!table || !table.rows) return
-    for (let i = 0; i < table.rows.length; i++) {
-      for (let j = 0; j < table.rows[i].cells.length; j++) {
-        table.rows[i].cells[j].classList.remove("selected")
-      }
-    }
-  }
-
-  const setSelection = (offset: number[], table: HTMLTableElement) => {
-    for (let j = offset[1] + 1; j <= offset[1] + nRowsHgrMagnifier; j++) {
-      for (let i = offset[0] + 1; i <= offset[0] + nColsHgrMagnifier; i++) {
-        const cell = table?.rows[j]?.cells[i]
-        cell?.classList.add("selected")
-      }
-    }
-  }
-
   const onMouseDown = (e: React.MouseEvent) => {
     const cell = e.target as HTMLTableCellElement
     const offset = getMemoryOffset(cell)
@@ -121,24 +165,6 @@ const MemoryTable = (props: MemoryTableProps) => {
   const onMouseOver = (e: React.MouseEvent) => {
     if (e.buttons === 1) {
       onMouseDown(e)
-    }
-  }
-
-  // This scrolling code is used with the HGR mode, where we want to scroll
-  // both vertically and horizontally to keep the HGR selection box in view.
-  const scrollHgrIntoView = (table: HTMLTableElement) => {
-    const cell1 = table.rows[hgrMagnifier[1] + 1].cells[hgrMagnifier[0] + 1]
-    const cell2 = table.rows[hgrMagnifier[1] + nRowsHgrMagnifier].cells[hgrMagnifier[0] + 2]
-    if (cell1 && cell2) {
-      const r1 = cell1.getBoundingClientRect()
-      const r2 = cell2.getBoundingClientRect()
-      const tr = table.getBoundingClientRect()
-      const f = 10
-      const isInView = (r1.left - 4 * f) >= tr.left && (r1.top - f) >= tr.top &&
-        (r2.right + f) <= tr.right && (r2.bottom + f) <= tr.bottom
-      if (!isInView) {
-        cell1.scrollIntoView({ block: "center", inline: "center" })
-      }
     }
   }
 
@@ -248,7 +274,6 @@ const MemoryTable = (props: MemoryTableProps) => {
       hiresLineToAddress(props.offset, row) : (16 * row + props.offset)) + col - 1
     const value = parseInt(newvalue, 16)
     props.doSetMemory(addr, value)
-    props.memory[addr] = value
     cell.textContent = newvalue
     cellValue.current = ""
   }
@@ -291,26 +316,7 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   // Make sure we keep our selection up to date, especially if it was changed
   // by clicking on the canvas.
-  if (props.isHGR) {
-    if ((hgrMagnifier[0] >= 0) &&
-      (hgrMagnifierLocal.current[0] !== hgrMagnifier[0] ||
-        hgrMagnifierLocal.current[1] !== hgrMagnifier[1])) {
-      hgrMagnifierLocal.current[0] = hgrMagnifier[0]
-      hgrMagnifierLocal.current[1] = hgrMagnifier[1]
-      setTimeout(() => {
-        const table = document.querySelector("#memory-table") as HTMLTableElement
-        if (!table) return
-        clearSelection(table)
-        setSelection(hgrMagnifier, table)
-        scrollHgrIntoView(table)
-      }, 10)
-    }
-  } else {
-    setTimeout(() => {
-      const table = document.querySelector("#memory-table") as HTMLTableElement
-      clearSelection(table)
-    }, 10)
-  }
+  // (useEffect moved above early return to satisfy rules-of-hooks)
 
   const width = props.isHGR ? 40 : 16
   const rows = convertMemoryToArray()
