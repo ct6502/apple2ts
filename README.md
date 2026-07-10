@@ -7,6 +7,8 @@ Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significan
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
+Note: The integrated server and CLI were moved out of this repository into `apple2ts-server`.
+
 ---
 
 ## AI Agent Integration
