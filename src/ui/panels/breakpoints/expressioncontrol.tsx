@@ -17,27 +17,23 @@ const ExpressionControl = (props: ExpressionControlProps) => {
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
     setBpAddress(value)
-    props.expr.address = parseInt(value || "-1", 16)
-    props.setExpr(props.expr)
+    props.setExpr({ ...props.expr, address: parseInt(value || "-1", 16) })
   }
 
   const handleRegisterChange = (value: RegisterValues) => {
-    props.expr.register = value
     //    setTriggerUpdate(!triggerUpdate)
-    props.setExpr(props.expr)
+    props.setExpr({ ...props.expr, register: value })
   }
 
   const handleOperatorChange = (value: OperatorValues) => {
-    props.expr.operator = value
-    props.setExpr(props.expr)
+    props.setExpr({ ...props.expr, operator: value })
   }
 
   const handleValueChange = (value: string) => {
     const maxlen = props.expr.register === "C" ? 4 : 2
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, maxlen).toUpperCase()
     setBpValue(value)
-    props.expr.value = parseInt(value || "-1", 16)
-    props.setExpr(props.expr)
+    props.setExpr({ ...props.expr, value: parseInt(value || "-1", 16) })
   }
 
   const spaces = "\u00A0\u00A0\u00A0\u00A0\u00A0"

@@ -37,9 +37,6 @@ export interface PrinterDialogProps {
 
 const PrinterDialog = (props: PrinterDialogProps) => {
   const { open } = props
-  const [state] = useState({
-    canvasRef: React.createRef<HTMLCanvasElement>()
-  })
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
@@ -99,10 +96,6 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   const handleClear = () => {
     props.printer.reset()
   }
-
-  useEffect(() => {
-    return () => { }
-  }, [state.canvasRef, props.canvas])
 
   const buttonColor = "#404040"
 

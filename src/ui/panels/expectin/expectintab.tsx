@@ -1,7 +1,7 @@
 import "../panels.css"
 import { faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
 import { isMinimalTheme } from "../../ui_settings"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import defaultExpectin from "./default_expectin.json"
 import { Expectin } from "../../api/expectin"
@@ -11,20 +11,17 @@ const ExpectinTab = () => {
 
   const [expectinObject, setExpectinObject] = useState<Expectin>()
   const [expectinText, setExpectinText] = useState<string>(JSON.stringify(defaultExpectin, null, 2))
-  const [expectinError, setExpectinError] = useState<string>("")
 
   if (isMinimalTheme()) {
     import("../panels.minimal.css")
   }
 
-  useEffect(() => {
-    try {
-      new Expectin(expectinText)
-      setExpectinError("")
-    } catch (error) {
-      setExpectinError(`${error}`)
-    }
-  }, [expectinText])
+  let expectinError = ""
+  try {
+    new Expectin(expectinText)
+  } catch (error) {
+    expectinError = `${error}`
+  }
 
   const handleExpectButtonClick = async () => {
     if (expectinObject && expectinObject.IsRunning()) {

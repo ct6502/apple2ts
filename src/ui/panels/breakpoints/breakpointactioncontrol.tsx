@@ -15,26 +15,22 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
   const handleAddressChange = (value: string) => {
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
     setBpAddress(value)
-    props.action.address = parseInt(value || "-1", 16)
-    props.setAction(props.action)
+    props.setAction({ ...props.action, address: parseInt(value || "-1", 16) })
   }
 
   const handleRegisterChange = (value: RegisterValues) => {
-    props.action.register = value
-    props.setAction(props.action)
+    props.setAction({ ...props.action, register: value })
   }
 
   const handleActionChange = (value: BPActions) => {
-    props.action.action = value
-    props.setAction(props.action)
+    props.setAction({ ...props.action, action: value })
   }
 
   const handleValueChange = (value: string) => {
     const maxlen = props.action.register === "C" ? 4 : 2
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, maxlen).toUpperCase()
     setBpValue(value)
-    props.action.value = parseInt(value || "-1", 16)
-    props.setAction(props.action)
+    props.setAction({ ...props.action, value: parseInt(value || "-1", 16) })
   }
 
   const actionLabels = ["(no action)", "Set", "Jump to", "Print to console", "Snapshot"]
@@ -56,10 +52,8 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
   "X Register", "Y Register", "Stack Pointer",
   "Processor Status", "Program Counter"]
   const registerValues = [ "$", "A", "X", "Y", "S", "P", "C"]
-  if (props.action.register === "") {
-    props.action.register = "A"
-  }
-  const registerIndex = registerValues.indexOf(props.action.register)
+  const effectiveRegister = props.action.register || "A"
+  const registerIndex = registerValues.indexOf(effectiveRegister)
 
   const handleDroplistRegisterChange = (selectedText: string) => {
     // Find the index of the selected text in the registers array

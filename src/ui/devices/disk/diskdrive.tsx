@@ -3,7 +3,8 @@ import {
   handleSetDiskData, handleGetDriveProps,
   handleSetDiskWriteProtected, handleSetDiskOrFileFromBuffer,
   handleSaveWritableFile,
-  prepWritableFile
+  prepWritableFile,
+  doSetUIDriveProps
 } from "./driveprops"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faClock, faCloud, faDownload, faEject, faFloppyDisk, faFolderOpen, faLock, faPause, faRotate, faStar, faSync } from "@fortawesome/free-solid-svg-icons"
@@ -61,14 +62,30 @@ const DiskDrive = (props: DiskDriveProps) => {
     handleSetDiskData(index, new Uint8Array(), "", null, null, -1)
   }
 
+  const getDriveFileName = () => {
+    if (dprops.cloudData) {
+      if (dprops.filename != dprops.cloudData.fileName) {
+        const dpropsTmp: DriveProps = { ...dprops }
+        if (dpropsTmp.cloudData) {
+          dpropsTmp.cloudData.fileName = `apple2ts.${dpropsTmp.filename}`
+          doSetUIDriveProps(dpropsTmp)
+        }
+      }
+    }
+    return dprops.filename
+  }
+
   const updateCloudDrive = async (cloudProvider: CloudProvider) => {
-    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
+    const blob = getBlobFromDiskData(dprops.diskData, getDriveFileName())
     if (dprops.cloudData) {
       const success = await cloudProvider.sync(blob, dprops.cloudData)
       if (success) {
-        dprops.diskHasChanges = false
-        dprops.cloudData.fileSize = blob.size
-        passSetDriveProps(dprops)
+        const dpropsTmp: DriveProps = { ...dprops }
+        dpropsTmp.diskHasChanges = false
+        if (dpropsTmp.cloudData) {
+          dpropsTmp.cloudData.fileSize = blob.size
+        }
+        passSetDriveProps(dpropsTmp)
       }
     }
   }
@@ -78,7 +95,11 @@ const DiskDrive = (props: DiskDriveProps) => {
 
     const timer = setInterval(() => {
       if (dprops.cloudData?.syncStatus == CLOUD_SYNC.ACTIVE && dprops.diskHasChanges) {
-        dprops.cloudData.syncStatus = CLOUD_SYNC.PENDING
+        const dpropsTmp: DriveProps = { ...dprops }
+        if (dpropsTmp.cloudData) {
+          dpropsTmp.cloudData.syncStatus = CLOUD_SYNC.PENDING
+          doSetUIDriveProps(dpropsTmp)
+        }
       }
 
       if (dprops.cloudData?.syncStatus == CLOUD_SYNC.PENDING) {
@@ -127,18 +148,6 @@ const DiskDrive = (props: DiskDriveProps) => {
     return label
   }, [dprops.cloudData, dprops.diskHasChanges, dprops.filename])
 
-  const driveFileName = useMemo(() => {
-    // if (dprops.filename == '') {
-    // }
-
-    if (dprops.cloudData) {
-      if (dprops.filename != dprops.cloudData.fileName) {
-        dprops.cloudData.fileName = `apple2ts.${dprops.filename}`
-      }
-    }
-    return dprops.filename
-  }, [dprops.filename, dprops.cloudData])
-
   const loadDiskFromCloud = async (newCloudDrive: CloudProvider) => {
     const result = await newCloudDrive.download(FILE_SUFFIXES_DISK)
     if (result) {
@@ -149,15 +158,16 @@ const DiskDrive = (props: DiskDriveProps) => {
   }
 
   const saveDiskToCloud = async (cloudProvider: CloudProvider) => {
-    const blob = getBlobFromDiskData(dprops.diskData, driveFileName)
-    dprops.cloudData = await cloudProvider.upload(dprops.filename, blob)
-    if (dprops.cloudData) {
-      if (dprops.writableFileHandle) {
+    const blob = getBlobFromDiskData(dprops.diskData, getDriveFileName())
+    const dpropsTmp: DriveProps = { ...dprops }
+    dpropsTmp.cloudData = await cloudProvider.upload(dprops.filename, blob)
+    if (dpropsTmp.cloudData) {
+      if (dpropsTmp.writableFileHandle) {
         await handleSaveWritableFile(dprops.index)
-        dprops.writableFileHandle = null
+        dpropsTmp.writableFileHandle = null
       }
-      dprops.diskHasChanges = false
-      passSetDriveProps(dprops)
+      dpropsTmp.diskHasChanges = false
+      passSetDriveProps(dpropsTmp)
     }
   }
 
@@ -177,12 +187,12 @@ const DiskDrive = (props: DiskDriveProps) => {
     })
 
     if (writableFileHandle) {
-      dprops.diskHasChanges = true
-      dprops.filename = writableFileHandle.name
-      dprops.writableFileHandle = writableFileHandle
-      dprops.lastLocalFileWriteTime = -1
-      passSetDriveProps(dprops)
-
+      const dpropsTmp: DriveProps = { ...dprops }
+      dpropsTmp.diskHasChanges = true
+      dpropsTmp.filename = writableFileHandle.name
+      dpropsTmp.writableFileHandle = writableFileHandle
+      dpropsTmp.lastLocalFileWriteTime = -1
+      passSetDriveProps(dpropsTmp)
       prepWritableFile(index, writableFileHandle)
     }
   }
@@ -329,7 +339,9 @@ const DiskDrive = (props: DiskDriveProps) => {
               onClick: () => {
                 if (dprops.diskData.length > 0) {
                   downloadDisk(dprops.diskData, filename)
-                  dprops.diskHasChanges = false
+                  const dpropsTmp: DriveProps = { ...dprops }
+                  dpropsTmp.diskHasChanges = false
+                  doSetUIDriveProps(dpropsTmp)
                 }
               }
             },
@@ -339,7 +351,9 @@ const DiskDrive = (props: DiskDriveProps) => {
               onClick: () => {
                 if (dprops.diskData.length > 0) {
                   downloadDisk(dprops.diskData, filename)
-                  dprops.diskHasChanges = false
+                  const dpropsTmp: DriveProps = { ...dprops }
+                  dpropsTmp.diskHasChanges = false
+                  doSetUIDriveProps(dpropsTmp)
                   ejectDisk(props.index)
                 }
               }
@@ -429,7 +443,11 @@ const DiskDrive = (props: DiskDriveProps) => {
               isSelected: () => { return dprops.cloudData?.syncInterval == 60000 },
               onClick: () => {
                 if (dprops.cloudData) {
-                  dprops.cloudData.syncInterval = 60000
+                  const dpropsTmp: DriveProps = { ...dprops }
+                  if (dpropsTmp.cloudData) {
+                    dpropsTmp.cloudData.syncInterval = 60000
+                    doSetUIDriveProps(dpropsTmp)
+                  }
                 }
               }
             },
@@ -439,7 +457,11 @@ const DiskDrive = (props: DiskDriveProps) => {
               isSelected: () => { return dprops.cloudData?.syncInterval == 300000 },
               onClick: () => {
                 if (dprops.cloudData) {
-                  dprops.cloudData.syncInterval = 300000
+                  const dpropsTmp: DriveProps = { ...dprops }
+                  if (dpropsTmp.cloudData) {
+                    dpropsTmp.cloudData.syncInterval = 300000
+                    doSetUIDriveProps(dpropsTmp)
+                  }
                 }
               }
             },
@@ -449,7 +471,11 @@ const DiskDrive = (props: DiskDriveProps) => {
               isSelected: () => { return dprops.cloudData?.syncInterval == Number.MAX_VALUE },
               onClick: () => {
                 if (dprops.cloudData) {
-                  dprops.cloudData.syncInterval = Number.MAX_VALUE
+                  const dpropsTmp: DriveProps = { ...dprops }
+                  if (dpropsTmp.cloudData) {
+                    dpropsTmp.cloudData.syncInterval = Number.MAX_VALUE
+                    doSetUIDriveProps(dpropsTmp)
+                  }
                 }
               }
             },

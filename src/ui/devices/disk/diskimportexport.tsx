@@ -5,14 +5,20 @@ import {
   faUpload,
   faDownload,
 } from "@fortawesome/free-solid-svg-icons"
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { RUN_MODE } from "../../../common/utility"
 
 const DiskImportExport = () => {
   const dprops = handleGetDriveProps(0)
-  const [showImportExportFileOpen, setShowImportExportFileOpen] = useState(false)
   const hiddenFileOpen = useRef<HTMLInputElement>(null)
+
+  const openFileDialog = () => {
+    if (hiddenFileOpen.current) {
+      hiddenFileOpen.current.value = ""
+      hiddenFileOpen.current.click()
+    }
+  }
 
   const saveLocalStorageDiskImage = (url: string) => {
     if (!hasDiskImageInLocalStorage()) {
@@ -45,20 +51,7 @@ const DiskImportExport = () => {
         return
       }
     }
-    setShowImportExportFileOpen(true)
-  }
-
-  // This is how we actually display the file selection dialog.
-  if (showImportExportFileOpen) {
-    // Now that we're in here, turn off our property.
-    setTimeout(() => setShowImportExportFileOpen(false), 0)
-    if (hiddenFileOpen.current) {
-      const fileInput = hiddenFileOpen.current
-      // Hack - clear out old file so we can pick the same file again
-      fileInput.value = ""
-      // Display the dialog.
-      fileInput.click()
-    }
+    openFileDialog()
   }
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {

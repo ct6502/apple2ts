@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faLink, faXmark, faClipboard } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../panels/editfield"
@@ -139,14 +139,7 @@ const LinkBuilder = () => {
     return link
   }
 
-  const [link, setLink] = useState(generateLink())
-
-  useEffect(() => {
-    setLink(generateLink())
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appmode, lowercaseMode, colormode, crtdistort, debug, ghosting, fragmentURL,
-    hexBlock, loadBlock, textBlock, hexAddress, machine, ramdisk,
-    runprogoff, scanlines, selectedDisk, soundoff, speed, theme, tabSection])
+  const link = generateLink()
 
   // put custom url at the front of the list, then all the disk images sorted alphabetically
   const diskNames = ["Custom URL", ...diskImages.map(disk => disk.title).sort()]

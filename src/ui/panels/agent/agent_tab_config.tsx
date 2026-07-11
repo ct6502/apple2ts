@@ -16,36 +16,20 @@ const AgentTabConfig = (props: {
   setShowConfig: (show: boolean) => void,
   onConfigChange?: () => void
 }) => {
-  const [apiKey, setApiKey] = useState("")
-  const [provider, setProvider] = useState<ProviderType>("anthropic")
-  const [model, setModel] = useState(getDefaultModel("anthropic"))
-  const [availableModels, setAvailableModels] = useState(getSupportedModels("anthropic"))
-  const [currentConfig, setCurrentConfig] = useState<ReturnType<typeof loadAgentConfig>>(null)
+  const initialConfig = loadAgentConfig()
+  const initialProvider: ProviderType = initialConfig?.provider ?? "anthropic"
+  const initialModel = initialConfig?.model || getDefaultModel(initialProvider)
+  const [apiKey, setApiKey] = useState(initialConfig?.apiKey ?? "")
+  const [provider, setProvider] = useState<ProviderType>(initialProvider)
+  const [model, setModel] = useState(initialModel)
+  const [availableModels, setAvailableModels] = useState(getSupportedModels(initialProvider))
+  const [currentConfig, setCurrentConfig] = useState<ReturnType<typeof loadAgentConfig>>(initialConfig ?? null)
   const [ollamaModels, setOllamaModels] = useState<Array<{ value: string; label: string }>>([])
-  const [isCustomModel, setIsCustomModel] = useState(false)
-  const [customModelValue, setCustomModelValue] = useState("")
   const agent = getAgent()
 
-  // Initialize config state from localStorage on mount
-  useEffect(() => {
-    const config = loadAgentConfig()
-    if (config) {
-      setProvider(config.provider)
-      const modelName = config.model || getDefaultModel(config.provider)
-      setModel(modelName)
-      setAvailableModels(getSupportedModels(config.provider))
-      setApiKey(config.apiKey)
-      setCurrentConfig(config)
-      
-      if (config.provider === "ollama") {
-        const isPredefined = getSupportedModels("ollama").some(m => m.value === modelName)
-        if (!isPredefined) {
-          setIsCustomModel(true)
-          setCustomModelValue(modelName)
-        }
-      }
-    }
-  }, [])
+  const isCustomModel = provider === "ollama" && Boolean(model) &&
+    !getSupportedModels("ollama").some(m => m.value === model) &&
+    !ollamaModels.some(m => m.value === model)
 
   // Dynamic tag fetching for Ollama
   useEffect(() => {
@@ -102,18 +86,6 @@ const AgentTabConfig = (props: {
     }
   }, [provider, apiKey])
 
-  // Update custom model state based on loaded Ollama models
-  useEffect(() => {
-    if (provider === "ollama" && model) {
-      const isPredefined = getSupportedModels("ollama").some(m => m.value === model) || 
-                           ollamaModels.some(m => m.value === model)
-      if (!isPredefined) {
-        setIsCustomModel(true)
-        setCustomModelValue(model)
-      }
-    }
-  }, [ollamaModels, provider, model])
-    
   const handleConfigSave = (e?: React.FormEvent) => {
     e?.preventDefault() // Prevent form submission page reload
     
@@ -144,8 +116,6 @@ const AgentTabConfig = (props: {
     setProvider(newProvider)
     setAvailableModels(getSupportedModels(newProvider))
     setModel(getDefaultModel(newProvider))
-    setIsCustomModel(false)
-    setCustomModelValue("")
     if (newProvider === "ollama") {
       setApiKey("http://localhost:11434")
     } else {
@@ -163,8 +133,6 @@ const AgentTabConfig = (props: {
     setApiKey("")
     setProvider("anthropic")
     setModel(getDefaultModel("anthropic"))
-    setIsCustomModel(false)
-    setCustomModelValue("")
     setCurrentConfig(null)
     
     props.setShowConfig(false)
@@ -252,10 +220,8 @@ return (
               onChange={(e) => {
                 const val = e.target.value
                 if (val === "custom") {
-                  setIsCustomModel(true)
-                  setModel(customModelValue || "ornith:9b")
+                  setModel("ornith:9b")
                 } else {
-                  setIsCustomModel(false)
                   setModel(val)
                 }
               }}
@@ -294,11 +260,8 @@ return (
             Custom Model Name:
             <input
               type="text"
-              value={customModelValue}
-              onChange={(e) => {
-                setCustomModelValue(e.target.value)
-                setModel(e.target.value)
-              }}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
               placeholder="e.g. gemma2:27b"
               className="agent-model-input"
             />

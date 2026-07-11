@@ -108,26 +108,19 @@ const FileInput = (props: DisplayProps) => {
   const isTouchDevice = "ontouchstart" in document.documentElement
 
   // This is how we actually display the file selection dialog.
-  if (props.showFileOpenDialog.show) {
-    // Now that we're in here, turn off our property. Send a message to our
-    // parent to turn off the dialog, but also manually turn it off here
-    // because occasionally the message doesn't get through fast enough
-    // and the file dialog pops up again right away.
-    props.showFileOpenDialog.show = false
-
+  useEffect(() => {
+    if (!props.showFileOpenDialog.show) return
+    const { index } = props.showFileOpenDialog
+    props.setShowFileOpenDialog(false, index)
     if (isFileSystemApiSupported()) {
-      showReadWriteFilePicker(props.showFileOpenDialog.index)
-    } else {
-      setTimeout(() => props.setShowFileOpenDialog(false, props.showFileOpenDialog.index), 0)
-      if (hiddenFileOpen.current) {
-        const fileInput = hiddenFileOpen.current
-        // Hack - clear out old file so we can pick the same file again
-        fileInput.value = ""
-        // Display the dialog.
-        fileInput.click()
-      }
+      setTimeout(() => showReadWriteFilePicker(index), 0)
+    } else if (hiddenFileOpen.current) {
+      // Hack - clear out old file so we can pick the same file again
+      hiddenFileOpen.current.value = ""
+      hiddenFileOpen.current.click()
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.showFileOpenDialog.show])
 
   return (
     <>

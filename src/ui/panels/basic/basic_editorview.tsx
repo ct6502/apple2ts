@@ -53,6 +53,7 @@ const BasicEditor = (props: EditorProps) => {
   const viewRef = useRef<EditorView | null>(null)
   const editableCompartment = useRef(new Compartment())
   const breakpointCompartment = useRef(new Compartment())
+  const handleBreakpointToggleRef = useRef<((line: number) => void) | null>(null)
 
   const handleBreakpointToggle = useCallback((line: number) => {
     const currentBreakpoints = handleGetBreakpoints()
@@ -69,12 +70,16 @@ const BasicEditor = (props: EditorProps) => {
     if (viewRef.current) {
       viewRef.current.dispatch({
         effects: breakpointCompartment.current.reconfigure(
-          createBreakpointGutter(handleBreakpointToggle)
+          createBreakpointGutter(handleBreakpointToggleRef.current!)
         )
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.onBreakpointsChange])
+
+  useEffect(() => {
+    handleBreakpointToggleRef.current = handleBreakpointToggle
+  }, [handleBreakpointToggle])
 
   useEffect(() => {
     if (editorRef.current) {
@@ -95,7 +100,7 @@ const BasicEditor = (props: EditorProps) => {
           fixedHeightEditor,
           basic(),
           highlightField,
-          breakpointCompartment.current.of(createBreakpointGutter(handleBreakpointToggle)),
+          breakpointCompartment.current.of(createBreakpointGutter(handleBreakpointToggleRef.current!)),
           breakpointTheme,
           EditorView.lineWrapping,
           editableCompartment.current.of([
@@ -223,7 +228,7 @@ const BasicEditor = (props: EditorProps) => {
       // Reconfigure the gutter to force update
       viewRef.current.dispatch({
         effects: breakpointCompartment.current.reconfigure(
-          createBreakpointGutter(handleBreakpointToggle)
+          createBreakpointGutter(handleBreakpointToggleRef.current!)
         )
       })
     }

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { RamWorksMemoryStart, RUN_MODE, hiresAddressToLine, ROMmemoryStart } from "../../../common/utility"
 import { handleGetAddressGetTable, handleGetBreakpoints, handleGetMemoryDump, handleGetRunMode, passSetMemory } from "../../main2worker"
 import React from "react"
@@ -23,8 +23,6 @@ enum MEMORY_RANGE {
   HGR2 = "HGR page 2 (screen order)",
 }
 
-let previousMemLength = 0
-
 const MemoryDump = () => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
   const memoryDumpRef = useRef(null)
@@ -38,6 +36,7 @@ const MemoryDump = () => {
   const [highlight, setHighlight] = useState(new Array(0))
   const [matchIndex, setMatchIndex] = useState(0)
   const [highAscii, setHighAscii] = useState(false)
+  const previousMemLengthRef = useRef(0)
 
   const doSetScrollRow = (row: number) => {
     setScrollRow(row)
@@ -306,12 +305,16 @@ const MemoryDump = () => {
   const isHGR = (memoryRange === MEMORY_RANGE.HGR1 || memoryRange === MEMORY_RANGE.HGR2)
   const offset = isHGR ? (memoryRange === MEMORY_RANGE.HGR1 ? 0x2000 : 0x4000) : 0
   const memory = getMemoryRange()
-  const justPaused = memory.length > 0 && previousMemLength === 0 && runMode === RUN_MODE.PAUSED
-  previousMemLength = memory.length
   const decoder = new TextDecoder()
   const memAscii = decoder.decode(memory.map((value) => (value & 0x7F)))
   const addressGetTable = memoryRange === MEMORY_RANGE.CURRENT ? handleGetAddressGetTable() : null
-  if (justPaused) {
+  useEffect(() => {
+    const justPaused = memory.length > 0 && previousMemLengthRef.current === 0 && runMode === RUN_MODE.PAUSED
+    previousMemLengthRef.current = memory.length
+    if (!justPaused) {
+      return
+    }
+
     if (ascii.length > 0) {
       setTimeout(() => {
         doSearchAscii(ascii)
@@ -321,7 +324,8 @@ const MemoryDump = () => {
         doSearchHex(hexsearch)
       }, 1)
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ascii, hexsearch, memory.length, runMode])
 
   // The marginTop: auto makes the memory dump panel drift to the bottom of its parent.
   return (

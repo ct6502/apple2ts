@@ -1,5 +1,5 @@
 import "./keyboardcontrol.css"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { passAppleCommandKeyPress, passAppleCommandKeyRelease, passKeypress, passKeyRelease, passPasteText } from "../main2worker"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faKeyboard } from "@fortawesome/free-solid-svg-icons"
@@ -44,7 +44,8 @@ export const KeyboardControl = () => {
   const [symbolMode, setSymbolMode] = useState(MODE.LETTER)
   const [ctrlMode, setCtrlMode] = useState(LOCK.NONE)
   const [escMode, setEscMode] = useState(LOCK.NONE)
-  const lastTouchTime = useRef(0)
+  const [keyDownDebounce, setKeyDownDebounce] = useState(false)
+  const [touchUpDebounce, setTouchUpDebounce] = useState(false)
 //  const isTouchDevice = "ontouchstart" in document.documentElement
 
   // if (!isTouchDevice) {
@@ -53,12 +54,12 @@ export const KeyboardControl = () => {
 
   const handleKeyDown = (key: KeyCap, e: React.TouchEvent | React.MouseEvent) => {
     // Prevent double-firing on touch devices (touch events generate synthetic mouse events)
-    const now = Date.now()
-    if (now - lastTouchTime.current < 100) {
+    if (keyDownDebounce) {
       e.preventDefault()
       return
     }
-    lastTouchTime.current = now
+    setKeyDownDebounce(true)
+    setTimeout(() => setKeyDownDebounce(false), 100)
     if (key.code < 0) {
       passPasteText(key.label)
       return
@@ -123,13 +124,13 @@ export const KeyboardControl = () => {
 
   const handleKeyUp = (keyCode: number, e: React.TouchEvent | React.MouseEvent) => {
     // Prevent double-firing on touch devices (touch events generate synthetic mouse events)
-    const now = Date.now()
-    if (e.type === "mouseup" && now - lastTouchTime.current < 100) {
+    if (e.type === "mouseup" && touchUpDebounce) {
       e.preventDefault()
       return
     }
     if (e.type === "touchend") {
-      lastTouchTime.current = now
+      setTouchUpDebounce(true)
+      setTimeout(() => setTouchUpDebounce(false), 150)
     }
     
     e.preventDefault() // Prevent synthetic mouse events on touch devices
@@ -370,7 +371,7 @@ export const KeyboardControl = () => {
       {/* Toggle button */}
       {!showKeyboard && <button
         className="keyboard-toggle-button"
-        disabled={Date.now() - lastTouchTime.current < 150}
+        disabled={touchUpDebounce}
         onClick={() => setShowKeyboard(!showKeyboard)}
         title={showKeyboard ? "Hide Keyboard" : "Show Keyboard"}
       >

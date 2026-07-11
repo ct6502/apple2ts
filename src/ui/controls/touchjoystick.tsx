@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import "./touchjoystick.css"
 import { clearCustomGamepad, setCustomGamepad } from "../devices/gamepad"
 import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
@@ -10,7 +10,6 @@ let timePrev = 0
 let timeTiltPrev = 0
 let oldAxis0 = 0
 let oldAxis1 = 0
-let tiltSensorLoaded = false
 
 export const TouchJoystick = () => {
 
@@ -25,6 +24,11 @@ export const TouchJoystick = () => {
     }
     setCustomGamepad(buttons, axes)
   }
+
+  const scaleJoystick = (value: number, yMin: number, yMax: number, xMin: number, xMax: number) => {
+    return ((value - yMin) / (yMax - yMin)) * (xMax - xMin) + xMin
+  }
+
 
   const deviceOrientationEvent = (event: DeviceOrientationEvent) => {
     if (event.beta === null || event.gamma === null) return
@@ -42,19 +46,18 @@ export const TouchJoystick = () => {
     }
     timeTiltPrev = t
 
-    const axes = [scale(event.gamma, -25, 25, -1, 1),
-      scale(event.beta, -25, 25, -1, 1)]
+    const axes = [scaleJoystick(event.gamma, -25, 25, -1, 1),
+      scaleJoystick(event.beta, -25, 25, -1, 1)]
     doSetCustomGamepad(null, axes)
   }
 
-  if (!tiltSensorLoaded) {
-    tiltSensorLoaded = true
+  useEffect(() => {
     window.addEventListener("deviceorientation", deviceOrientationEvent)
-  }
-
-  const scale = (value: number, yMin: number, yMax: number, xMin: number, xMax: number) => {
-    return ((value - yMin) / (yMax - yMin)) * (xMax - xMin) + xMin
-  }
+    return () => {
+      window.removeEventListener("deviceorientation", deviceOrientationEvent)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const toggleButton = (buttonNumber: number, enabled: boolean) => {
     const button = document.getElementById(`tj-button${buttonNumber}`) as HTMLElement
@@ -88,8 +91,8 @@ export const TouchJoystick = () => {
     const offsetY = event.clientY
 
     const axes = [0, 0]
-    axes[0] = scale(offsetX, stickLeft, stickRight, -1, 1)
-    axes[1] = scale(offsetY, stickTop, stickBottom, -1, 1)
+    axes[0] = scaleJoystick(offsetX, stickLeft, stickRight, -1, 1)
+    axes[1] = scaleJoystick(offsetY, stickTop, stickBottom, -1, 1)
 
     if (Math.abs(axes[0] - oldAxis0) < 0.01 && Math.abs(axes[1] - oldAxis1) < 0.01) {
       return

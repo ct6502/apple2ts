@@ -10,6 +10,7 @@ import BPEdit_Basic from "./bpedit_basic"
 
 const BreakpointEdit = (props: {
   breakpoint: Breakpoint,
+  setBreakpoint: (bp: Breakpoint) => void,
   saveBreakpoint: () => void,
   cancelDialog: () => void,
   dialogPositionX: number,
@@ -17,7 +18,6 @@ const BreakpointEdit = (props: {
   setDialogPosition: (x: number, y: number) => void
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null)
-  const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
 
@@ -47,14 +47,14 @@ const BreakpointEdit = (props: {
   }
 
   const handleBreakAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    props.breakpoint.watchpoint = e.target.value === "watchpoint"
-    props.breakpoint.instruction = e.target.value === "instruction"
-    props.breakpoint.basic = e.target.value === "basic"
-    if (props.breakpoint) {
-      props.breakpoint.address = props.breakpoint.instruction ? 0 :
-        props.breakpoint.address
-    }
-    setTriggerUpdate(!triggerUpdate)
+    const isInstruction = e.target.value === "instruction"
+    props.setBreakpoint({
+      ...props.breakpoint,
+      watchpoint: e.target.value === "watchpoint",
+      instruction: isInstruction,
+      basic: e.target.value === "basic",
+      address: isInstruction ? 0 : props.breakpoint.address,
+    })
   }
 
   const isBreakpoint = !props.breakpoint.watchpoint &&
@@ -133,12 +133,12 @@ const BreakpointEdit = (props: {
             <label htmlFor="Basic" className="dialog-title flush-left">Basic</label>
           </div>
 
-          {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} />}
+          {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
           {props.breakpoint.watchpoint && <BPEdit_Watchpoint
-            breakpoint={props.breakpoint} />}
+            breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
           {props.breakpoint.instruction && <BPEdit_Instruction
-            breakpoint={props.breakpoint} />}
-          {props.breakpoint.basic && <BPEdit_Basic breakpoint={props.breakpoint} />}
+            breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
+          {props.breakpoint.basic && <BPEdit_Basic breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
 
           <div className="flex-row-space-between" style={{ marginTop: "5px" }}>
             <div></div>

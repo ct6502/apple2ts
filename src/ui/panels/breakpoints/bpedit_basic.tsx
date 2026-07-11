@@ -3,8 +3,8 @@ import EditField from "../editfield"
 
 const BPEdit_Basic = (props: {
   breakpoint: Breakpoint,
+  setBreakpoint: (bp: Breakpoint) => void,
 }) => {
-  const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
     props.breakpoint.address.toString() : "")
 
@@ -12,8 +12,7 @@ const BPEdit_Basic = (props: {
     value = value.replace(/[^0-9]/gi, "").slice(0, 4)
     setBpAddress(value)
     const address = parseInt(value || "-1")
-    props.breakpoint.address = address
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, address })
   }
 
   return (

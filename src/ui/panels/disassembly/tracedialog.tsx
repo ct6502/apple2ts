@@ -16,7 +16,6 @@ import EditField from "../editfield"
 const width = 400
 const height = 600
 const header = " Cycle     PC            Instruction     A   X   Y   S   P   NVBDIZC"
-let currentTracelog: string[] = []
 
 const TraceDialog = (props: {
   cancelDialog: () => void,
@@ -122,10 +121,7 @@ const TraceDialog = (props: {
   }
 
   const runMode = handleGetRunMode()
-  
-  if (runMode === RUN_MODE.PAUSED) {
-    currentTracelog = handleGetTracelog()
-  }
+  const currentTracelog = handleGetTracelog()
 
   return (
     <div

@@ -10,8 +10,8 @@ import CheckBox from "../checkbox"
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
+  setBreakpoint: (bp: Breakpoint) => void,
 }) => {
-  const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
     toHex(props.breakpoint.address) : "")
 
@@ -20,20 +20,21 @@ const BPEdit_Watchpoint = (props: {
     setBpAddress(value)
     if (props.breakpoint) {
       const address = parseInt(value || "0", 16)
+      let memget = props.breakpoint.memget
+      let memset = props.breakpoint.memset
       if (address >= 0xC000 && address <= 0xC0FF) {
-        props.breakpoint.memget = true
-        props.breakpoint.memset = true
+        memget = true
+        memset = true
         const switches = handleGetSoftSwitchDescriptions()
         if (switches[address]) {
           if (switches[address].includes("status")) {
-            props.breakpoint.memset = false
+            memset = false
           } else if (switches[address].includes("write")) {
-            props.breakpoint.memget = false
+            memget = false
           }
         }
       }
-      props.breakpoint.address = address
-      setTriggerUpdate(!triggerUpdate)
+      props.setBreakpoint({ ...props.breakpoint, address, memget, memset })
     }
   }
 
@@ -41,8 +42,7 @@ const BPEdit_Watchpoint = (props: {
     const hexSize = props.breakpoint.instruction ? 4 : 2
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, hexSize).toUpperCase()
     if (props.breakpoint) {
-      props.breakpoint.hexvalue = parseInt(value ? value : "-1", 16)
-      setTriggerUpdate(!triggerUpdate)
+      props.setBreakpoint({ ...props.breakpoint, hexvalue: parseInt(value ? value : "-1", 16) })
     }
   }
 
@@ -50,8 +50,7 @@ const BPEdit_Watchpoint = (props: {
     for (const key of MemoryBankKeys) {
       const bank = MEMORY_BANKS[key]
       if (bank.name === value) {
-        props.breakpoint.memoryBank = key
-        setTriggerUpdate(!triggerUpdate)
+        props.setBreakpoint({ ...props.breakpoint, memoryBank: key })
         // bail early since we found a match
         return false
       }
@@ -85,16 +84,10 @@ const BPEdit_Watchpoint = (props: {
       <div className="flex-row" style={{ alignItems: "baseline" }}>
         <CheckBox name="Read"
           checked={props.breakpoint.memget}
-          setChecked={(checked) => {
-            props.breakpoint.memget = checked
-            setTriggerUpdate(!triggerUpdate)
-          }} />
+          setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, memget: checked })} />
         <CheckBox name="Write"
           checked={props.breakpoint.memset}
-          setChecked={(checked) => {
-            props.breakpoint.memset = checked
-            setTriggerUpdate(!triggerUpdate)
-          }} />
+          setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, memset: checked })} />
       </div>
       <div>
         <EditField name="With hex value:"
@@ -111,7 +104,7 @@ const BPEdit_Watchpoint = (props: {
         userdata={props.breakpoint.address}
         isDisabled={isBankDisabledForAddress} />
 
-      <Breakpoint_Actions breakpoint={props.breakpoint}/>
+      <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )
 }

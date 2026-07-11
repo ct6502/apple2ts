@@ -10,7 +10,7 @@ import {
   setBootCallback} from "./main2worker"
 import Apple2Canvas from "./canvas"
 import ControlPanel from "./controls/controlpanel"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import DebugSection from "./panels/panels"
 import FileInput from "./fileinput"
 import { RestoreSaveState } from "./savestate"
@@ -43,14 +43,14 @@ const DisplayApple2 = () => {
   if (!worker) {
     const newWorker = new Worker(new URL("../worker/worker2main", import.meta.url),
     { type: "module" })
-    setWorker(newWorker)
-    setMain2Worker(newWorker)
     newWorker.onmessage = (e: MessageEvent) => {
       const result = doOnMessage(e)
       if (result) {
         updateDisplay(result.speed, result.helptext)
       }
     }
+    setWorker(newWorker)
+    setMain2Worker(newWorker)
   }
 
   const updateDisplay: UpdateDisplay = (speed = 0, newhelptext = "") => {
@@ -169,11 +169,13 @@ const DisplayApple2 = () => {
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const narrow = isTouchDevice || (width < (1.1 * height))
   const isLandscape = isTouchDevice && (width > height)
-  if (isTouchDevice) {
-    document.body.style.marginLeft = "0"
-    document.body.style.marginRight = "0"
-    document.body.style.marginTop = isLandscape ? "10px" : "0"
-  }
+  useEffect(() => {
+    if (isTouchDevice) {
+      document.body.style.marginLeft = "0"
+      document.body.style.marginRight = "0"
+      document.body.style.marginTop = isLandscape ? "10px" : "0"
+    }
+  }, [isTouchDevice, isLandscape])
   const mem = handleGetMemSize() + 64
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item">

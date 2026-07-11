@@ -1,18 +1,17 @@
-import { useState } from "react"
 import BreakpointActionControl from "./breakpointactioncontrol"
 import CheckBox from "../checkbox"
 
-const Breakpoint_Actions = (props: {breakpoint: Breakpoint}) => {
-  const [triggerUpdate, setTriggerUpdate] = useState(false)
+const Breakpoint_Actions = (props: {
+  breakpoint: Breakpoint,
+  setBreakpoint: (bp: Breakpoint) => void,
+}) => {
 
   const handleActionChange1 = (action: BreakpointAction) => {
-    props.breakpoint.action1 = action
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, action1: action })
   }
 
   const handleActionChange2 = (action: BreakpointAction) => {
-    props.breakpoint.action2 = action
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, action2: action })
   }
 
   const isDisabled = props.breakpoint.action1.action === "" && props.breakpoint.action2.action === ""
@@ -32,10 +31,7 @@ const Breakpoint_Actions = (props: {breakpoint: Breakpoint}) => {
     </div>
     <CheckBox name="Halt execution after actions"
       checked={props.breakpoint.halt}
-      setChecked={(checked) => {
-        props.breakpoint.halt = checked
-        setTriggerUpdate(!triggerUpdate)
-      }}
+      setChecked={(checked) => props.setBreakpoint({ ...props.breakpoint, halt: checked })}
       disabled={isDisabled} />
   </div>
 }

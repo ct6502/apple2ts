@@ -22,7 +22,6 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     const saved = getPreferenceBasicProgram()
     return saved !== null ? saved : defaultProgram
   })
-  const [programError, setProgramError] = useState<string>("")
   const [isBooting, setIsBooting] = useState<boolean>(false)
   const [highlightLine, setHighlightLine] = useState<number>(5)
 
@@ -36,14 +35,15 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   useEffect(() => {
-    try {
-      BasicCompiler(programText)
-      setProgramError("")
-    } catch (error) {
-      setProgramError(`${error}`)
-    }
     setPreferenceBasicProgram(programText)
   }, [programText])
+
+  let programError = ""
+  try {
+    BasicCompiler(programText)
+  } catch (error) {
+    programError = `${error}`
+  }
 
   const isPaused = () => {
     if (isBooting) {

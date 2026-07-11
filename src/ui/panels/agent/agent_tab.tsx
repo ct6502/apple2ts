@@ -19,31 +19,29 @@ const AgentTab = () => {
     import("../panels.minimal.css")
   }
 
+  const agent = getAgent()
+
   const [showConfig, setShowConfig] = useState(false)
-  const [messages, setMessages] = useState<ConversationMessage[]>([])
+  const [messages, setMessages] = useState<ConversationMessage[]>(() =>
+    isAgentConfigured() ? agent.getConversation().getMessagesForDisplay() : [])
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState<ConversationMessage | null>(null)
   const [streamingStatus, setStreamingStatus] = useState("")
   const [tokenUsage, setTokenUsage] = useState<{ inputTokens: number; outputTokens: number } | null>(null)
-  const [promptHistory, setPromptHistory] = useState<string[]>([])
+  const [promptHistory, setPromptHistory] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("agent_prompt_history")
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [historyIndex, setHistoryIndex] = useState<number>(-1)
 
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const agent = getAgent()
-
-  // Load prompt history from localStorage
-  const loadPromptHistory = (): string[] => {
-    try {
-      const saved = localStorage.getItem("agent_prompt_history")
-      return saved ? JSON.parse(saved) : []
-    } catch (error) {
-      console.error("Failed to load prompt history:", error)
-      return []
-    }
-  }
 
   // Save prompt history to localStorage
   const savePromptHistory = (history: string[]) => {
@@ -69,13 +67,7 @@ const AgentTab = () => {
   }
 
   // Load existing conversation and prompt history on mount
-  useEffect(() => {
-    if (isAgentConfigured()) {
-      const conversation = agent.getConversation()
-      setMessages(conversation.getMessagesForDisplay())
-    }
-    setPromptHistory(loadPromptHistory())
-  }, [agent])
+  // (messages are initialized lazily; effect kept for future agent-change handling)
   
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

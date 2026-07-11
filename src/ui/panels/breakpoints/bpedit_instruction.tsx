@@ -24,9 +24,9 @@ const addressModes = [
 
 const BPEdit_Instruction = (props: {
   breakpoint: Breakpoint,
+  setBreakpoint: (bp: Breakpoint) => void,
 }) => {
   const [myInit, setMyInit] = useState(false)
-  const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [instruction, setInstruction] = useState("")
   const [popup, setPopup] = useState<string[]>([])
   const [addressMode, setAddressMode] = useState("")
@@ -60,7 +60,7 @@ const BPEdit_Instruction = (props: {
     }
     // No matches? Clear the current address and do not accept the new value.
     if (newPopup.length === 0) {
-      props.breakpoint.address = 0
+      props.setBreakpoint({ ...props.breakpoint, address: 0 })
       setInstruction(value.length > 0 ? instruction : "")
       return
     }
@@ -80,7 +80,7 @@ const BPEdit_Instruction = (props: {
       for (let i = 0; i < modes.length; i++) {
         if (modes[i] !== undefined) {
           setAddressMode(addressModes[i])
-          props.breakpoint.address = modes[i] | BRK_INSTR
+          props.setBreakpoint({ ...props.breakpoint, address: modes[i] | BRK_INSTR })
           break
         }
       }
@@ -88,9 +88,7 @@ const BPEdit_Instruction = (props: {
 
     // If we don't have a valid instruction yet, clear out the current value.
     if (value.length < 3 && props.breakpoint) {
-      const address = 0
-      props.breakpoint.address = address | BRK_INSTR
-      setTriggerUpdate(!triggerUpdate)
+      props.setBreakpoint({ ...props.breakpoint, address: BRK_INSTR })
     }
   }
 
@@ -98,15 +96,13 @@ const BPEdit_Instruction = (props: {
     handleInstructionChange(popup[parseInt(v ? v : "0", 16)])
   }
 
-  const checkHexvalue = () => {
-    if (props.breakpoint.hexvalue !== -1) {
-      const bytes = opCodes[props.breakpoint.address & 0xFF].bytes
-      if (bytes === 1) {
-        props.breakpoint.hexvalue = -1
-      } else if (bytes === 2) {
-        props.breakpoint.hexvalue &= 0xFF
-      }
+  const computeHexvalue = (hexvalue: number, address: number) => {
+    if (hexvalue !== -1) {
+      const bytes = opCodes[address & 0xFF].bytes
+      if (bytes === 1) return -1
+      if (bytes === 2) return hexvalue & 0xFF
     }
+    return hexvalue
   }
 
   const handleAddressModeChange = (value: string) => {
@@ -114,7 +110,7 @@ const BPEdit_Instruction = (props: {
     const modes = opTable[instruction]
     for (let i = 0; i < modes.length; i++) {
       if (addressModes[i] === value) {
-        props.breakpoint.address = modes[i] | BRK_INSTR
+        props.setBreakpoint({ ...props.breakpoint, address: modes[i] | BRK_INSTR })
         setAddressMode(value)
       }
     }
@@ -146,37 +142,32 @@ const BPEdit_Instruction = (props: {
     }
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, hexSize).toUpperCase()
     if (props.breakpoint) {
-      props.breakpoint.hexvalue = parseInt(value ? value : "-1", 16)
-      setTriggerUpdate(!triggerUpdate)
+      props.setBreakpoint({ ...props.breakpoint, hexvalue: parseInt(value ? value : "-1", 16) })
     }
   }
 
   const handleIllegal65C02Change = (checked: boolean) => {
     setIllegal65C02(checked)
-    props.breakpoint.address = checked ? BRK_ILLEGAL_65C02 : 0
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, address: checked ? BRK_ILLEGAL_65C02 : 0 })
   }
 
   const handleIllegal6502Change = (checked: boolean) => {
     setIllegal6502(checked)
-    props.breakpoint.address = checked ? BRK_ILLEGAL_6502 : 0
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, address: checked ? BRK_ILLEGAL_6502 : 0 })
   }
 
   const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
       const bank = MEMORY_BANKS[key]
       if (bank.name === value) {
-        props.breakpoint.memoryBank = key
-        setTriggerUpdate(!triggerUpdate)
+        props.setBreakpoint({ ...props.breakpoint, memoryBank: key })
         // bail early since we found a match
         return false
       }
     }
   }
 
-  checkHexvalue()
-  const v = props.breakpoint.hexvalue
+  const v = computeHexvalue(props.breakpoint.hexvalue, props.breakpoint.address)
   const hexvalue = v >= 0 ? v.toString(16).toUpperCase() : ""
 
   return (
@@ -219,7 +210,7 @@ const BPEdit_Instruction = (props: {
         userdata={props.breakpoint.address}
         isDisabled={() => false} />
 
-      <Breakpoint_Actions breakpoint={props.breakpoint}/>
+      <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )
 }

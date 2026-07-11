@@ -233,40 +233,6 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
     return () => observer.disconnect()
   }, [isIntersecting, results])
 
-  useEffect(() => {
-    if (isIntersecting && ref.current) {
-      const lastElement = (ref.current as HTMLElement).getElementsByClassName("iad-result-last")[0]
-      if (lastElement) {
-        lastElement.classList.remove("iad-result-last")
-        getResults(query, collection, true)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIntersecting])
-
-  const handleClose = () => {
-    props.onClose()
-    setQuery("")
-    setResults([])
-  }
-
-  const handleSearchBoxKeyDown = (event: { key: string }) => {
-    if (event.key === "Enter") {
-      const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
-      getResults(searchBox.value, collection)
-    } else if (event.key == "Escape") {
-      handleClose()
-    }
-  }
-
-  const handleCollectionClick = (collectionIndex: number) => () => {
-    getResults(query, softwareCollections[collectionIndex])
-  }
-
-  const handleSearchButtonClick = () => {
-    getResults(query, collection)
-  }
-
   const getResults = async (newQuery: string, newCollection: SoftwareCollection, pagedResults = false) => {
     if (!pagedResults) {
       setQuery(newQuery)
@@ -300,6 +266,40 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
       .finally(() => {
         showGlobalProgressModal(false)
       })
+  }
+
+  useEffect(() => {
+    if (isIntersecting && ref.current) {
+      const lastElement = (ref.current as HTMLElement).getElementsByClassName("iad-result-last")[0]
+      if (lastElement) {
+        lastElement.classList.remove("iad-result-last")
+        getResults(query, collection, true)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIntersecting])
+
+  const handleClose = () => {
+    props.onClose()
+    setQuery("")
+    setResults([])
+  }
+
+  const handleSearchBoxKeyDown = (event: { key: string }) => {
+    if (event.key === "Enter") {
+      const searchBox = document.getElementsByClassName("iad-search-box")[0] as HTMLInputElement
+      getResults(searchBox.value, collection)
+    } else if (event.key == "Escape") {
+      handleClose()
+    }
+  }
+
+  const handleCollectionClick = (collectionIndex: number) => () => {
+    getResults(query, softwareCollections[collectionIndex])
+  }
+
+  const handleSearchButtonClick = () => {
+    getResults(query, collection)
   }
 
   if (!props.open) return (<></>)

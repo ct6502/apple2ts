@@ -91,10 +91,10 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
     // Sanity check for watchpoints - make sure we have a valid address,
     // otherwise our watchpoint address will say "Any", which is confusing
     // since it won't actually break.
-    if (breakpointEditValue.watchpoint) {
-      breakpointEditValue.address = Math.max(0, breakpointEditValue.address)
-    }
-    breakpoints.set(breakpointEditValue.address, breakpointEditValue)
+    const bpToSave = breakpointEditValue.watchpoint
+      ? { ...breakpointEditValue, address: Math.max(0, breakpointEditValue.address) }
+      : breakpointEditValue
+    breakpoints.set(bpToSave.address, bpToSave)
     setPreferenceBreakpoints(breakpoints)
     setShowBreakpointEdit(false)
   }
@@ -173,6 +173,7 @@ const BreakpointsView = (props: {updateDisplay: UpdateDisplay}) => {
         </div>
         {showBreakpointEdit &&
           <BreakpointEdit breakpoint={breakpointEditValue}
+            setBreakpoint={setBreakpointEditValue}
             saveBreakpoint={saveBreakpoint}
             cancelDialog={cancelEdit}
             dialogPositionX={dialogPosition[0]}

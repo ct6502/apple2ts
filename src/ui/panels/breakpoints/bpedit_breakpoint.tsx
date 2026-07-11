@@ -8,8 +8,8 @@ import Breakpoint_Actions from "./breakpoint_actions"
 
 const BPEdit_Breakpoint = (props: {
   breakpoint: Breakpoint,
+  setBreakpoint: (bp: Breakpoint) => void,
 }) => {
-  const [triggerUpdate, setTriggerUpdate] = useState(false)
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
     props.breakpoint.basic ? props.breakpoint.address.toString() : toHex(props.breakpoint.address) : "")
 
@@ -17,23 +17,19 @@ const BPEdit_Breakpoint = (props: {
     value = value.replace(/[^0-9a-f]/gi, "").slice(0, 4).toUpperCase()
     setBpAddress(value)
     const address = parseInt(value || "-1", 16)
-    props.breakpoint.address = address
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, address })
   }
 
   const handleExpressionChange1 = (expr: BreakpointExpression) => {
-    props.breakpoint.expression1 = expr
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, expression1: expr })
   }
 
   const handleExpressionChange2 = (expr: BreakpointExpression) => {
-    props.breakpoint.expression2 = expr
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, expression2: expr })
   }
 
   const handleExpressionOperatorChange = (value: ExpressionOperator) => {
-    props.breakpoint.expressionOperator = value
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, expressionOperator: value })
   }
 
   const handleHitCountChange = (value: string) => {
@@ -41,16 +37,14 @@ const BPEdit_Breakpoint = (props: {
     if (value.trim() !== "") {
       value = Math.max(parseInt(value), 1).toString()
     }
-    props.breakpoint.hitcount = parseInt(value || "1")
-    setTriggerUpdate(!triggerUpdate)
+    props.setBreakpoint({ ...props.breakpoint, hitcount: parseInt(value || "1") })
   }
 
   const handleMemoryBankChange = (value: string) => {
     for (const key of MemoryBankKeys) {
       const bank = MEMORY_BANKS[key]
       if (bank.name === value) {
-        props.breakpoint.memoryBank = key
-        setTriggerUpdate(!triggerUpdate)
+        props.setBreakpoint({ ...props.breakpoint, memoryBank: key })
         // bail early since we found a match
         return false
       }
@@ -109,7 +103,7 @@ const BPEdit_Breakpoint = (props: {
         userdata={props.breakpoint.address}
         isDisabled={isBankDisabledForAddress} />
 
-      <Breakpoint_Actions breakpoint={props.breakpoint}/>
+      <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
       </div>}
     </div>
   )

@@ -113,8 +113,8 @@ type DiskCollectionPanelProps = DisplayProps & {
 
 const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-  const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>([])
-  const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(new DiskBookmarks)
+  const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(() => new DiskBookmarks())
+  const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>(() => getDiskCollection(new DiskBookmarks(), newReleases))
   const [drivePopupLocation, setDrivePopupLocation] = useState<[number, number]>()
   const [selectPopupLocation, setSelectPopupLocation] = useState<[number, number]>()
   const [popupItem, setPopupItem] = useState<DiskCollectionItem>()
@@ -412,8 +412,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     }
 
     if (refreshBookmarks) {
+      const newBookmarks = new DiskBookmarks()
       setPendingBookmarkRemovals(new Set())
-      setDiskBookmarks(new DiskBookmarks())
+      setDiskBookmarks(newBookmarks)
+      setDiskCollection(getDiskCollection(newBookmarks, newReleases))
     }
   }
 
@@ -426,21 +428,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   useEffect(() => {
-    if (!isFlyoutOpen) return
-    setPendingBookmarkRemovals(new Set())
-    setDiskBookmarks(new DiskBookmarks())
-  }, [isFlyoutOpen])
-
-  useEffect(() => {
     return () => {
       commitPendingBookmarkRemovals(false)
     }
   }, [])
-
-  useEffect(() => {
-    const newDiskCollectionFinal = getDiskCollection(diskBookmarks, newReleases)
-    setDiskCollection(newDiskCollectionFinal)
-  }, [diskBookmarks])
 
   useEffect(() => {
     showGlobalProgressModal(false)
@@ -451,11 +442,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         .filter((diskCollectionItem) => selectedDisks.includes(diskCollectionItem))
         .map((diskCollectionItem) => downloadedDisks.find((downloadedDisk) => downloadedDisk.item === diskCollectionItem))
         .filter((downloadedDisk): downloadedDisk is DownloadedExportDisk => downloadedDisk !== undefined)
-      createHdv(orderedDownloadedDisks)
-      setDownloadedDisks([])
-      setSelectedDisks([])
-      setActiveTab(0)
-      dismissDiskCollection()
+      createHdv(orderedDownloadedDisks).then(() => {
+        setDownloadedDisks([])
+        setSelectedDisks([])
+        setActiveTab(0)
+        dismissDiskCollection()
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exportQueue])
@@ -470,6 +462,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         if (isFlyoutOpen) {
           dismissDiskCollection(false)
         } else {
+          const newBookmarks = new DiskBookmarks()
+          setPendingBookmarkRemovals(new Set())
+          setDiskBookmarks(newBookmarks)
+          setDiskCollection(getDiskCollection(newBookmarks, newReleases))
           setIsFlyoutOpen(true)
         }
       }}
