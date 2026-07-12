@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
@@ -233,6 +233,9 @@ export const doSetMemory = (addr: number, value: number) => {
   }
   // If we have set an HGR memory location (for example) be sure to
   // pass our updated data to the main thread.
+  if (addr >= 0x2000 && addr <= 0x5FFF && cpuRunMode === RUN_MODE.PAUSED) {
+    exportMemoryToHiresLine(hiresAddressToLine(addr))
+  }
   updateExternalMachineState()
 }
 

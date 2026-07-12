@@ -124,13 +124,16 @@ const MemoryTable = (props: MemoryTableProps) => {
       const ncols = table.rows[0].cells.length
       // The header row doesn't count as a real row, so just find the row index.
       const rawRow = Array.from(row.parentNode.children).indexOf(row as Element)
-      let rowIndex = Math.min(rawRow, nrows - 8)
       // However, for the column, subtract 1 to get rid of the address column.
       const rawCol = Array.from(row.children).indexOf(cell) - 1
-      let cellIndex = Math.min(rawCol, ncols - 3)
+      let cellIndex = -1
+      let rowIndex = -1
       if (props.isHGR) {
-        cellIndex = Math.min(cellIndex, 40 - nColsHgrMagnifier)
-        rowIndex = Math.min(rowIndex, nrows - nRowsHgrMagnifier)
+        cellIndex = Math.min(rawCol, 40 - nColsHgrMagnifier)
+        rowIndex = Math.min(rawRow, nrows - nRowsHgrMagnifier)
+      } else {
+        cellIndex = Math.min(rawCol, ncols - 3)
+        rowIndex = Math.min(rawRow, nrows - 8)
       }
       if (rowIndex >= 0 && cellIndex >= 0) {
         return [cellIndex, rowIndex]
@@ -195,7 +198,7 @@ const MemoryTable = (props: MemoryTableProps) => {
 
   const setNewFocus = (table: HTMLTableElement, col: number, row: number) => {
     const nextCell = table.rows[row].cells[col]
-    nextCell?.scrollIntoView({ behavior: "auto", block: "center", inline: "center" })
+//    nextCell?.scrollIntoView({ behavior: "auto", block: "center", inline: "center" })
     nextCell?.focus()
   }
 
@@ -204,7 +207,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     const cell = e.currentTarget
     const table = cell.parentNode?.parentNode as HTMLTableElement
     const nrows = table.rows.length
-    const ncols = table.rows[0].cells.length
+    const lastCol = props.isHGR ? 40 : 16
     if (e.key.startsWith("Arrow")) {
       e.preventDefault()
       cellValue.current = ""
@@ -219,12 +222,12 @@ const MemoryTable = (props: MemoryTableProps) => {
           col--
         } else if (row >= 1) {
           row--
-          col = ncols - 2
+          col = lastCol
         } else {
           return
         }
       } else if (e.key === "ArrowRight") {
-        if (col < (ncols - 2)) {
+        if (col <= (lastCol - 1)) {
           col++
         } else if (row < (nrows - 1)) {
           row++
@@ -249,7 +252,7 @@ const MemoryTable = (props: MemoryTableProps) => {
         cellValue.current = "00"
         setNewValue(col, row, cell, "00")
       }
-      if (col < (ncols - 2)) {
+      if (col < (lastCol - 1)) {
         col++
         setNewFocus(table, col, row)
       }
@@ -303,8 +306,8 @@ const MemoryTable = (props: MemoryTableProps) => {
       // Advance the selection to the next cell
       const table = cell.parentNode?.parentNode as HTMLTableElement
       const nrows = table.rows.length
-      const ncols = table.rows[0].cells.length
-      if (col < (ncols - 2)) {
+      const lastCol = props.isHGR ? 40 : 16
+      if (col <= (lastCol - 1)) {
         col++
       } else if (row < (nrows - 1)) {
         row++
@@ -321,9 +324,9 @@ const MemoryTable = (props: MemoryTableProps) => {
   const width = props.isHGR ? 40 : 16
   const rows = convertMemoryToArray()
   const isEditable = (col: number, row: number) => {
-    if (col === 0 || col === 17) return false
+    if (col === 0 || col === (width + 1)) return false
     if (!props.addressGetTable) return true
-    const index = props.addressGetTable[Math.floor(row / 16)]
+    const index = props.addressGetTable[Math.floor(row / width)]
     return (index < 0x10000) || (index >= 0x17F00)
   }
 
