@@ -781,7 +781,7 @@ export const handleSetDiskFromFile = async (disk: string,
   if (callback) {
     callback(data)
   } else {
-    let needsBoot = false
+    let needsBoot = handleGetRunMode() === RUN_MODE.IDLE
     
     if (driveIndex < 0) {
       needsBoot = true
