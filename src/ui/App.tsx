@@ -5,8 +5,9 @@ import { GlobalContext } from "./globalcontext"
 import { isMinimalTheme } from "./ui_settings"
 
 const App = () => {
-  const [updateHgr, setUpdateHgr] = useState(false)
-  const [hgrMagnifier, setHgrMagnifier] = useState([-1, -1])
+  const [updateHgrMagnifier, setUpdateHgrMagnifier] = useState(false)
+  const [hgrMagnifierLoc, setHgrMagnifierLoc] = useState([-1, -1])
+  const [lockHgrMagnifier, setLockHgrMagnifier] = useState(false)
   const [updateBreakpoint, setUpdateBreakpoint] = useState(0)
   const [runTour, setRunTour] = useState("")
   const [tourIndex, setTourIndex] = useState(0)
@@ -24,10 +25,12 @@ const App = () => {
         setRunTour: setRunTour,
         tourIndex: tourIndex,
         setTourIndex: setTourIndex,
-        updateHgr: updateHgr,
-        setUpdateHgr: setUpdateHgr,
-        hgrMagnifier: hgrMagnifier,
-        setHgrMagnifier: setHgrMagnifier,
+        updateHgrMagnifier: updateHgrMagnifier,
+        setUpdateHgrMagnifier: setUpdateHgrMagnifier,
+        hgrMagnifierLoc: hgrMagnifierLoc,
+        setHgrMagnifierLoc: setHgrMagnifierLoc,
+        lockHgrMagnifier: lockHgrMagnifier,
+        setLockHgrMagnifier: setLockHgrMagnifier,
         updateBreakpoint: updateBreakpoint,
         setUpdateBreakpoint: setUpdateBreakpoint,
       }}>

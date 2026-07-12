@@ -1,4 +1,4 @@
-import { KeyboardEvent, useEffect, useRef, useState } from "react"
+import { KeyboardEvent, MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react"
 import "./canvas.css"
 import {
   passSetRunMode, passKeypress,
@@ -17,17 +17,17 @@ import {
   handleGetSpeedMode,
   handleGetTextPage,
 } from "./main2worker"
-import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, COLOR_MODE, toHex, UI_THEME } from "../common/utility"
-import { ProcessDisplay, getCanvasSize, getOverrideHiresPixels, handleGetOverrideHires, canvasCoordToNormScreenCoord, screenBytesToCanvasPixels, screenCoordToCanvasCoord, nRowsHgrMagnifier, nColsHgrMagnifier, xmargin, ymargin } from "./graphics"
+import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
+import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
 import { checkGamepad, handleArrowKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
-import { drawHiresTile } from "./graphicshgr"
-import { useGlobalContext } from "./globalcontext"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
 import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
+import HgrMagnifier from "./hgrmagnifier"
+import { useGlobalContext } from "./globalcontext"
 
 let resizeTimeout = 0
 const maxFrameSamples = 60
@@ -41,28 +41,18 @@ let mainCanvas : HTMLCanvasElement | null = null
 
 const Apple2Canvas = (props: DisplayProps) => {
   // const { updateHgr: updateHgr, setUpdateHgr: setUpdateHgr,
-  //   hgrMagnifier, setHgrMagnifier: setHgrMagnifier } = useGlobalContext()
-  const { setHgrMagnifier: setHgrMagnifier } = useGlobalContext()
+  //   hgrMagnifierLoc, setHgrMagnifierLoc: setHgrMagnifierLoc } = useGlobalContext()
+  const { lockHgrMagnifier, setLockHgrMagnifier } = useGlobalContext()
   const [keyHandled, setKeyHandled] = useState(false)
-  const [showHgrMagnifier, setshowHgrMagnifier] = useState(false)
-  const [hgrMagnifierLocal, setHgrMagnifierLocal] = useState([-1, -1])
-  const hgrMagnifierRef = useRef([-1, -1])
-  const [lockHgrMagnifier, setLockHgrMagnifier] = useState(false)
-  const lockHgrMagnifierRef = useRef(false)
+  const [magnifierMouseLoc, setMagnifierMouseLoc] = useState([-1, -1])
   const [isCanvasFullScreen, setIsCanvasFullScreen] = useState(false)
   const [withinScreen, setWithinScreen] = useState(false)
   const lastFrameTimeRef = useRef(0)
   const startTimeForMaxFramesRef = useRef(0)
   const lastFPSLogRef = useRef(0)
 
-  const setHgrMagnifierCoord = (coords: number[]) => {
-    hgrMagnifierRef.current = coords
-    setHgrMagnifierLocal(coords)
-  }
-
   const myCanvas = useRef<HTMLCanvasElement>(null)
   const hiddenCanvas = useRef<HTMLCanvasElement>(null)
-  const infoCanvas = useRef<HTMLCanvasElement>(null)
 
   const pasteHandler = (e: ClipboardEvent) => {
     const canvas = document.getElementById("apple2canvas")
@@ -385,7 +375,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     window.requestAnimationFrame(RenderCanvas)
   }
 
-  const scaleMouseEvent = (event: MouseEvent): MouseEventSimple | null => {
+  const scaleMouseEvent = (event: ReactMouseEvent<HTMLCanvasElement>): MouseEventSimple | null => {
     let x = 0
     let y = 0
     if (mainCanvas) {
@@ -397,124 +387,36 @@ const Apple2Canvas = (props: DisplayProps) => {
     return { x, y, buttons: -1 }
   }
 
-  const handleMouseDown = (event: MouseEvent) => {
+  const handleMouseDown = (event: ReactMouseEvent<HTMLCanvasElement>) => {
     const evt = scaleMouseEvent(event)
     if (!evt) return
     evt.buttons = event.button === 0 ? 0x10 : 0x11
     passMouseEvent(evt)
     if (handleGetOverrideHires()) {
-      lockHgrMagnifierRef.current = !lockHgrMagnifierRef.current
-      setLockHgrMagnifier(lockHgrMagnifierRef.current)
-      handleNewHgrMagnifierCoord(event.clientX, event.clientY)
-      setHgrMagnifier(hgrMagnifierRef.current)
+      const newLockHgrMagnifier = !lockHgrMagnifier
+      setLockHgrMagnifier(newLockHgrMagnifier)
+      setMagnifierMouseLoc([event.clientX, event.clientY])
     }
   }
 
-  const handleMouseUp = (event: MouseEvent) => {
+  const handleMouseUp = (event: ReactMouseEvent<HTMLCanvasElement>) => {
     const evt = scaleMouseEvent(event)
     if (!evt) return
     evt.buttons = event.button === 0 ? 0x00 : 0x01
     passMouseEvent(evt)
   }
 
-  const handleNewHgrMagnifierCoord = (clientX: number, clientY: number) => {
-    let showView = false
-    if (handleGetOverrideHires()) {
-      if (mainCanvas) {
-        const canvas = mainCanvas
-        showView = true
-        let [x, y] = canvasCoordToNormScreenCoord(canvas, clientX, clientY)
-        x = Math.floor(x * 280)
-        y = Math.floor(y * 192)
-        if (x >= 0 && x < 280 && y >= 0 && y < 192) {
-          // Make sure the showHgrMagnifier doesn't go off the edge of the screen.
-          // Also shift it to the left so it falls more naturally on an
-          // HGR screen byte boundary.
-          x = Math.min(Math.max(Math.floor(x / 7), 0), 40 - nColsHgrMagnifier)
-          const nHalf = nRowsHgrMagnifier / 2
-          y = Math.max(nHalf - 1, Math.min(y, 191 - nHalf)) - (nHalf - 1)
-          if (!lockHgrMagnifierRef.current) {
-            setHgrMagnifierCoord([x, y])
-          }
-        }
-      }
-    }
-    setshowHgrMagnifier(showView)
-  }
-
-  const handleMouseMove = (event: MouseEvent) => {
+  const handleMouseMove = (event: ReactMouseEvent<HTMLCanvasElement>) => {
     const evt = scaleMouseEvent(event)
+    if (handleGetOverrideHires() && !lockHgrMagnifier) {
+      setMagnifierMouseLoc([event.clientX, event.clientY])
+    }
     if (!evt) {
       setWithinScreen(false)
       return
     }
     setWithinScreen(true)
-    handleNewHgrMagnifierCoord(event.clientX, event.clientY)
     passMouseEvent(evt)
-  }
-
-  const drawBytes = (pixels: number[][]) => {
-    const infoCanvas = document.getElementById("hgr-info-canvas") as HTMLCanvasElement | null
-    if (infoCanvas) {
-      const canvas = infoCanvas
-      const context = canvas.getContext("2d")
-      if (context) {
-        context.fillStyle = "black"
-        context.fillRect(0, 0, canvas.width, canvas.height)
-        const tile = new Uint8Array(nColsHgrMagnifier * nRowsHgrMagnifier)
-        for (let j = 0; j < nRowsHgrMagnifier; j++) {
-          for (let i = 0; i < nColsHgrMagnifier; i++) {
-            tile[nColsHgrMagnifier * j + i] = pixels[j][i + 1]
-          }
-        }
-        context.imageSmoothingEnabled = false
-        const addr = pixels[0][0]
-        const isEven = addr % 2 === 0
-        drawHiresTile(context, tile, COLOR_MODE.NOFRINGE,
-          nRowsHgrMagnifier, 0, 0, 11, isEven)
-        // Draw vertical lines
-        const nPixels = 7 * nColsHgrMagnifier
-        for (let i = 1; i < nPixels; i++) {
-          const x = Math.round((canvas.width / nPixels) * i + 0.5) - 0.5
-          context.moveTo(x, 0)
-          context.lineTo(x, canvas.height)
-        }
-        // Draw horizontal lines
-        for (let i = 1; i <= nRowsHgrMagnifier - 1; i++) {
-          const y = Math.round((canvas.height / nRowsHgrMagnifier) * i + 0.5) - 0.5
-          context.moveTo(0, y)
-          context.lineTo(canvas.width, y)
-        }
-        context.strokeStyle = "#888"
-        context.stroke()
-      }
-    }
-  }
-
-  const formatHgrMagnifier = () => {
-    if (!mainCanvas || hgrMagnifierLocal[0] < 0) return <></>
-    const pixels = getOverrideHiresPixels(hgrMagnifierLocal[0], hgrMagnifierLocal[1])
-    if (!pixels) return <></>
-    const pixelText = pixels.map((line: Array<number>, i) => {
-      return <div key={i}>
-        {`${toHex(line[0])}: ${line.slice(1, nColsHgrMagnifier + 1).map((value) => toHex(value, 2)).join(" ")}`}
-      </div>
-    })
-    const [dx, dy] = screenBytesToCanvasPixels(mainCanvas, nColsHgrMagnifier, nRowsHgrMagnifier)
-    const col = 7 * hgrMagnifierLocal[0]
-    const row = hgrMagnifierLocal[1]
-    let [x, y] = screenCoordToCanvasCoord(mainCanvas, col, row)
-    x -= 2
-    y -= 2
-    setTimeout(() => drawBytes(pixels), 50)
-    return <div className="hgr-view flex-row"
-      style={{ left: `${x}px`, top: `${y}px` }}>
-      <div className="hgr-view-box" style={{ width: `${dx}px`, height: `${dy}px` }}>&nbsp;</div>
-      <div className="hgr-view-text">{pixelText}</div>
-      <canvas ref={infoCanvas} id="hgr-info-canvas"
-        style={{ zIndex: "9999", border: "2px solid red" }}
-        width={`${77 * nColsHgrMagnifier}pt`} height={`${11 * nRowsHgrMagnifier}pt`} />
-    </div>
   }
 
   const handleCanvasResize = (canvas: HTMLCanvasElement) => {
@@ -575,9 +477,6 @@ const Apple2Canvas = (props: DisplayProps) => {
   // To make sure this only gets called once, do not add dependencies such as RenderCanvas.
   useEffect(() => {
     mainCanvas = document.getElementById("apple2canvas") as HTMLCanvasElement
-    mainCanvas.addEventListener("mousemove", handleMouseMove)
-    mainCanvas.addEventListener("mousedown", handleMouseDown)
-    mainCanvas.addEventListener("mouseup", handleMouseUp)
     mainCanvas.addEventListener("copy", () => { handleCopyToClipboard() })
     const paste = (e: object) => { pasteHandler(e as ClipboardEvent) }
     mainCanvas.addEventListener("paste", paste)
@@ -622,8 +521,8 @@ const Apple2Canvas = (props: DisplayProps) => {
   // // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [updateHgr, hgrMagnifier])
 
-  const cursor = (handleGetShowAppleMouse() && withinScreen) ? `url(${window.assetRegistry.dotCursor}), none` :
-    ((showHgrMagnifier && !lockHgrMagnifier) ? "none" : "default")
+  const cursor = (handleGetShowAppleMouse() && withinScreen) ?
+    `url(${window.assetRegistry.dotCursor}), none` : "default"
 
   const machine = handleGetMachineName()
   const bgImg = machine === "APPLE2P" ?
@@ -647,7 +546,9 @@ const Apple2Canvas = (props: DisplayProps) => {
         onKeyDown={isTouchDevice ? () => { } : handleKeyDown}
         onKeyUp={isTouchDevice ? () => { } : handleKeyUp}
         onMouseEnter={setFocus}
-        onMouseDown={setFocus}
+        onMouseDown={isTouchDevice ? setFocus : (e) => { setFocus(); handleMouseDown(e) }}
+        onMouseUp={isTouchDevice ? undefined : handleMouseUp}
+        onMouseMove={isTouchDevice ? undefined : handleMouseMove}
       />
       {/* Use hidden canvas/context so image rescaling works in iOS < 15.
           See graphics.ts drawImage() */}
@@ -655,7 +556,8 @@ const Apple2Canvas = (props: DisplayProps) => {
         id="hiddenCanvas"
         hidden={true}
         width={560} height={384} />
-      {showHgrMagnifier && mainCanvas && formatHgrMagnifier()}
+      {handleGetOverrideHires() && <HgrMagnifier mainCanvas={mainCanvas}
+        mouseLoc={magnifierMouseLoc} lockHgrMagnifier={lockHgrMagnifier} />}
       <KeyboardControl/>
     </span>
   )

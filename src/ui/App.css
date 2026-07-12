@@ -1,3 +1,7 @@
+html {
+  overflow-x: hidden;
+}
+
 :root {
   --background-color: #c0b5a3;
   --background-color-dark: #181818;
@@ -34,7 +38,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
   margin: 10px;
-  min-width: 100vw;
+  /* Subtract left + right margin */
+  min-width: calc(100vw - 20px);
 }
 
 body.dark-mode {

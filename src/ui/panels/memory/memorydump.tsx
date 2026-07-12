@@ -411,6 +411,7 @@ const MemoryDump = () => {
       </span>
       <div className="debug-panel mono-text"
         style={{
+          overflow: "hidden",
           height: "220px",
           width: "380px"
         }}
