@@ -30,6 +30,20 @@ const reportAutomationEvent = (eventName: string, payload?: unknown) => {
   }
 }
 
+const seenLoadRequestIds = new Set<string>()
+
+const isDuplicateLoadRequest = (eventType: string, requestId: unknown) => {
+  if (typeof requestId !== "string" || requestId.length === 0) {
+    return false
+  }
+  if (seenLoadRequestIds.has(requestId)) {
+    reportAutomationEvent("load-request-duplicate-ignored", { eventType, requestId })
+    return true
+  }
+  seenLoadRequestIds.add(requestId)
+  return false
+}
+
 export const messagelistener = (event: MessageEvent) => {
   // Verify the message is from a trusted source (VS Code webview or localhost for development)
   const trustedOrigins = [
@@ -94,7 +108,11 @@ export const messagelistener = (event: MessageEvent) => {
   if (event.data.type === "loadState") {
     try {
       showGlobalProgressModal()
-      const { filename, filePath, data, dataBase64 } = event.data
+      const { filename, filePath, data, dataBase64, requestId } = event.data
+
+      if (isDuplicateLoadRequest("loadState", requestId)) {
+        return
+      }
       
       console.log(`Loading save state: ${filename}, ${filePath}`)
       
@@ -116,7 +134,11 @@ export const messagelistener = (event: MessageEvent) => {
   if (event.data.type === "loadDisk") {
     try {
       showGlobalProgressModal()
-      const { filename, filePath, data, dataBase64 } = event.data
+      const { filename, filePath, data, dataBase64, requestId } = event.data
+
+      if (isDuplicateLoadRequest("loadDisk", requestId)) {
+        return
+      }
 
       const diskData = decodePayloadBytes(data, dataBase64)
       

@@ -423,7 +423,8 @@ const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | nu
       const response = await fetch(proxyUrl)
       if (!response.ok) continue
       return await blobToDataUrl(await response.blob())
-    } catch {
+    } catch (error) {
+      console.warn("Screenshot proxy fetch failed:", proxyUrl, error)
       // Continue to next proxy candidate.
     }
   }
@@ -436,7 +437,8 @@ const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | nu
     if (response.ok) {
       return await blobToDataUrl(await response.blob())
     }
-  } catch {
+  } catch (error) {
+    console.warn("Screenshot proxy fetch failed:", iconName() + absoluteUrl, error)
     // Fall through to keyed request.
   }
 
@@ -444,7 +446,8 @@ const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | nu
     const keyedResponse = await fetch(iconName() + absoluteUrl, { headers })
     if (!keyedResponse.ok) return null
     return await blobToDataUrl(await keyedResponse.blob())
-  } catch {
+  } catch (error) {
+    console.warn("Screenshot keyed proxy fetch failed:", absoluteUrl, error)
     return null
   }
 }
@@ -506,6 +509,7 @@ export const loadAndConvertImageToHires = async (
     // Resolve against the localStorage cache without issuing any network request: on a hit
     // we load a cached data URL, on a miss we load the original URL via <img> (as before).
     const { url, cacheKey, cached } = resolveScreenshotUrlWithCache(imageUrl)
+    console.log("Export screenshot load start:", { imageUrl, resolvedUrl: url, cacheKey, cached })
 
     let img: HTMLImageElement | null = null
     let proxyDataUrl: string | null = null
@@ -524,6 +528,7 @@ export const loadAndConvertImageToHires = async (
     //     it can't permanently break the export, then retry from the network.
     if (!img && cached && cacheKey && url !== cacheKey) {
       removeCachedScreenshot(cacheKey)
+      console.warn("Export screenshot cache decode failed, retrying network source:", cacheKey)
       if (!isCrossOriginHttpUrl(cacheKey)) {
         img = await tryLoadImageElement(cacheKey, true)
       }
@@ -535,9 +540,13 @@ export const loadAndConvertImageToHires = async (
     if (!img && cacheKey) {
       proxyDataUrl = await fetchScreenshotViaProxy(cacheKey)
       if (proxyDataUrl) img = await tryLoadImageElement(proxyDataUrl, false)
+      else console.warn("Export screenshot proxy fallback returned no data:", cacheKey)
     }
 
-    if (!img) return buildFallbackHires()
+    if (!img) {
+      console.warn("Export screenshot load fell back to generated placeholder:", { imageUrl, cacheKey })
+      return buildFallbackHires()
+    }
 
     // Cache the decoded image for future exports (best-effort). Proxy loads already hold
     // clean bytes; direct network loads are re-encoded via canvas.
@@ -548,7 +557,7 @@ export const loadAndConvertImageToHires = async (
 
     return convertLoadedImage(img)
   } catch (e) {
-    console.error("Error loading image:", e)
+    console.error("Error loading image:", imageUrl, e)
     return buildFallbackHires()
   }
 }
