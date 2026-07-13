@@ -644,6 +644,7 @@ const FATAL_TEXT_PATTERNS = [
 ]
 
 const MONITOR_CRASH_PATTERN = /(?:^|\r?\n)[0-9A-F]{4}-\s*\r?\n\*/i
+const MONITOR_CRASH_INLINE_PATTERN = /\b[0-9A-F]{4}-\b[^\n\r]{0,96}\*/i
 
 const summarizeScreenText = (text, maxLen = 160) => {
   const flat = String(text || "")
@@ -666,7 +667,7 @@ const detectFatalScreenCondition = (text) => {
     }
   }
 
-  if (MONITOR_CRASH_PATTERN.test(sample)) {
+  if (MONITOR_CRASH_PATTERN.test(sample) || MONITOR_CRASH_INLINE_PATTERN.test(normalized)) {
     return {
       code: "monitor_crash",
       message: "Monitor crash signature detected",
@@ -678,6 +679,27 @@ const detectFatalScreenCondition = (text) => {
 
 const detectRendererFatalEvent = (text) => {
   const normalized = String(text || "")
+  const machineSampleRegex = /^\[AUTOMATION\]\s+machine-text-sample\s+(\{[^\n\r]*\})$/gim
+  let machineSampleMatch = null
+  for (const candidate of normalized.matchAll(machineSampleRegex)) {
+    machineSampleMatch = candidate
+  }
+  if (machineSampleMatch && machineSampleMatch[1]) {
+    try {
+      const payload = JSON.parse(machineSampleMatch[1])
+      const sample = String(payload.sample || "")
+      if (MONITOR_CRASH_INLINE_PATTERN.test(sample)) {
+        return {
+          code: "monitor_crash",
+          message: "Monitor crash signature detected",
+          source: "renderer-machine-text",
+        }
+      }
+    } catch {
+      // fall through to explicit machine-text-fatal parsing
+    }
+  }
+
   const regex = /^\[AUTOMATION\]\s+machine-text-fatal\s+(\{[^\n\r]*\})$/gim
   let match = null
   for (const candidate of normalized.matchAll(regex)) {
@@ -784,6 +806,7 @@ const waitForScreenText = async ({
   timeoutMs,
   pollMs,
   requestTimeoutMs,
+  shouldAbort,
 }) => {
   const normalizedServer = normalizeServerBaseUrl(serverUrl)
   const normalizedMarker = String(marker || "").trim().toLowerCase()
@@ -806,6 +829,16 @@ const waitForScreenText = async ({
   const started = Date.now()
   let lastText = ""
   while (Date.now() - started < timeoutMs) {
+    const abortFatal = typeof shouldAbort === "function" ? shouldAbort() : null
+    if (abortFatal) {
+      return {
+        ok: false,
+        message: "screen_text_aborted_fatal",
+        fatal: abortFatal,
+        lastText,
+      }
+    }
+
     const reply = await getJson({
       url: endpoint,
       timeoutMs: requestTimeoutMs,
@@ -853,6 +886,7 @@ const waitForControlApiReady = async ({
   timeoutMs,
   pollMs,
   requestTimeoutMs,
+  shouldAbort,
 }) => {
   const normalizedServer = normalizeServerBaseUrl(serverUrl)
   if (!normalizedServer) {
@@ -865,6 +899,14 @@ const waitForControlApiReady = async ({
   const endpoint = `${normalizedServer}/api/machine`
   const started = Date.now()
   while (Date.now() - started < timeoutMs) {
+    const abortFatal = typeof shouldAbort === "function" ? shouldAbort() : null
+    if (abortFatal) {
+      return {
+        ok: false,
+        message: "control_api_aborted_fatal",
+      }
+    }
+
     const reply = await getJson({
       url: endpoint,
       timeoutMs: requestTimeoutMs,
@@ -1143,6 +1185,28 @@ const runScenario = async ({
   let fatalDetection = null
 
   try {
+    let liveFatalDetection = null
+    const detectLiveFatal = () => {
+      if (liveFatalDetection) return liveFatalDetection
+
+      const rendererFatal = detectRendererFatalEvent(liveOutput)
+      if (rendererFatal) {
+        liveFatalDetection = rendererFatal
+        return liveFatalDetection
+      }
+
+      const outputFatal = detectFatalScreenCondition(liveOutput)
+      if (outputFatal) {
+        liveFatalDetection = {
+          ...outputFatal,
+          source: "app-output",
+        }
+        return liveFatalDetection
+      }
+
+      return null
+    }
+
     appProc = spawnShellCommand(launchCommand, appDir)
     collectProcessOutput(appProc, processOutput, appendOutput)
 
@@ -1200,6 +1264,7 @@ const runScenario = async ({
             timeoutMs: Math.max(1000, Math.floor(controlApiReadyTimeoutMs)),
             pollMs: Math.max(50, Math.floor(controlApiPollMs)),
             requestTimeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+            shouldAbort: detectLiveFatal,
           })
           processOutput.push(`[AUTOMATION] ${controlApiResult.message}\n`)
         }
@@ -1211,6 +1276,7 @@ const runScenario = async ({
             timeoutMs: Math.max(250, Math.floor(screenTextPrewaitMs)),
             pollMs: Math.max(50, Math.floor(screenTextPollMs)),
             requestTimeoutMs: Math.max(250, Math.floor(screenTextRequestTimeoutMs)),
+            shouldAbort: detectLiveFatal,
           })
           processOutput.push(`[AUTOMATION] ${screenTextResult.message}\n`)
           const prewaitSummary = summarizeScreenText(screenTextResult.lastText || "")
@@ -1240,7 +1306,11 @@ const runScenario = async ({
 
         if (menuEnterEnabled && !fatalDetection) {
           if (menuEnterDelayMs > 0) {
-            await sleep(menuEnterDelayMs)
+            const delayStart = Date.now()
+            while (Date.now() - delayStart < menuEnterDelayMs) {
+              if (detectLiveFatal()) break
+              await sleep(50)
+            }
           }
 
           const beforeMenuEnterFatal = detectRendererFatalEvent(liveOutput)
@@ -1291,7 +1361,11 @@ const runScenario = async ({
               }
 
               if (menuEnterRetryDelayMs > 0) {
-                await sleep(menuEnterRetryDelayMs)
+                const retryDelayStart = Date.now()
+                while (Date.now() - retryDelayStart < menuEnterRetryDelayMs) {
+                  if (detectLiveFatal()) break
+                  await sleep(50)
+                }
               }
               const retryResult = await injectMenuEnter({
                 serverUrl,
