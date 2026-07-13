@@ -86,6 +86,8 @@ or unreliable. Each output record includes stable content hashes and per-attempt
 ### Input
 
 - `export hdv-batch`: `--input-dir <path>` is required and recursively scans for disk images.
+- `export hdv-batch` runs the same VTOC exportability check used by the export UI and skips disks classified as non-exportable (`other`/`dosup`).
+- `export hdv-batch` generates a per-run launch marker and embeds it into generated menu disk titles; the runner waits for that marker (`--screen-text-marker`) to reduce false positives.
 - `batch run`: `--input <path>` is required.
 - `batch run` supports:
 	- text file with one disk path per line (`#` comments supported)
@@ -226,11 +228,11 @@ Runner-specific options:
 - `--app-ready-timeout-ms <ms>` (wait for `[AUTOMATION] window-ready` marker)
 - `--disk-ready-timeout-ms <ms>` (wait for `[AUTOMATION] disk-loaded|state-loaded` marker)
 - `--server <url>` (Apple2TS control API base URL, default `http://127.0.0.1:6502`; use `none` to disable API control and rely on native fallback)
-- `--menu-enter <true|false>` (default `true`; inject ENTER after disk/state ready)
-- `--menu-enter-count <n>` (default `1`; number of ENTER presses)
-- `--menu-enter-delay-ms <ms>` (default `800`; delay before first ENTER)
-- `--menu-enter-interval-ms <ms>` (default `150`; delay between ENTER presses)
-- `--menu-enter-timeout-ms <ms>` (default `3000`; timeout per ENTER API request)
+- `--menu-enter <true|false>` (default `true`; inject launch sequence (SPACE then ENTER) after disk/state ready)
+- `--menu-enter-count <n>` (default `1`; number of launch-sequence attempts)
+- `--menu-enter-delay-ms <ms>` (default `800`; delay before first launch-key press)
+- `--menu-enter-interval-ms <ms>` (default `150`; delay between launch-key presses)
+- `--menu-enter-timeout-ms <ms>` (default `3000`; timeout per launch-key API request)
 - `--menu-enter-native-fallback <true|false>` (default `true` on Windows; uses native SendKeys if API injection fails or API is disabled)
 - `--menu-enter-native-window-title <title>` (default: same value as `--window-title`)
 - `--menu-enter-native-timeout-ms <ms>` (default `5000`; timeout for native SendKeys fallback)
@@ -240,10 +242,18 @@ Runner-specific options:
 - `--control-api-poll-ms <ms>` (default `250`; control readiness poll cadence)
 - `--control-api-request-timeout-ms <ms>` (default `2000`; timeout per control readiness request)
 - `--wait-for-screen-text <true|false>` (default `true`; advisory pre-launch check by polling text page)
+- `--instrumentation-ready-timeout-ms <ms>` (default `3000`; wait for renderer automation instrumentation handshake event)
 - `--screen-text-marker <text>` (default: source disk filename without extension)
-- `--screen-text-timeout-ms <ms>` (default `30000`; max wait for marker before ENTER fallback)
+- `--screen-text-timeout-ms <ms>` (default `30000`; full-window marker timeout used for final status classification)
+- `--screen-text-prewait-ms <ms>` (default `1500`; short pre-launch marker wait before sending launch key)
 - `--screen-text-poll-ms <ms>` (default `250`; poll cadence)
 - `--screen-text-request-timeout-ms <ms>` (default `2000`; timeout per poll request)
+- `--ensure-automation-markers <true|false>` (default `true` for `apple2ts-app-dev`; verifies renderer automation instrumentation exists in dist)
+- `--automation-project-dir <path>` (default: runner current working directory)
+- `--automation-dist-dir <path>` (default: `{automation-project-dir}/dist`)
+- `--automation-markers <csv>` (default: `machine-text-sample,machine-text-fatal,launch-key-attempt,launch-before-,automation-instrumentation-version`)
+- `--automation-build-command <command>` (default: `npm run build`; runs only when markers are missing)
+- `--automation-build-timeout-ms <ms>` (default `180000`)
 - `--window-title <title>` (window-only capture target, default `Apple2TS`)
 - `--ffmpeg-exe <path>` (optional override for ffmpeg binary)
 - `--exported-hdv <path>`
@@ -276,6 +286,9 @@ Runner behavior notes:
 
 - Capture does not start until the app emits automation markers for window readiness and disk/state load.
 - On Windows, if `--recorder-command` is omitted, the runner uses a default ffmpeg `gdigrab` command that records the app window region only (desktop source constrained to automation-reported window bounds).
+- The runner fails immediately if fatal signatures are detected: `I/O ERROR`, `PATH NOT FOUND`, `SYNTAX ERROR`, or monitor crash pattern (`^[0-9A-F]{4}-` then newline and `*`).
+- The runner logs sampled machine screen text (`[AUTOMATION] machine_text_sample ...`) when API polling is available to aid regex/debug analysis.
+- For `apple2ts-app-dev`, the runner preflights renderer automation markers in dist and auto-runs `npm run build` when they are missing, preventing stale frontend bundles from silently dropping automation events.
 
 Example using the starter runner:
 

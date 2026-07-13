@@ -1021,6 +1021,13 @@ const buildHdvGenerationCommand = ({ diskPath, exportedHdvPath, diskName }) => {
   ].join(" ")
 }
 
+const buildVtocExportabilityCommand = ({ diskPath }) => {
+  return [
+    "node --import tsx cli/check-vtoc-exportable.mts",
+    `--input \"${escapeDoubleQuoted(diskPath)}\"`,
+  ].join(" ")
+}
+
 const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe }) => {
   const base = [
     "node cli/electron-hdv-runner.mjs",
@@ -1033,6 +1040,7 @@ const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe }) =>
     '--raw-sha256 "{rawSha256}"',
     '--canonical-sha256 "{canonicalSha256}"',
     '--exported-hdv "{exportedHdvPath}"',
+    '--screen-text-marker "{launchMarker}"',
     '--require-exported-hdv true',
   ]
 
@@ -1198,6 +1206,7 @@ const handleBatch = async (context, command, tokens) => {
     : null
   const append = options.has("append") ? parseBoolean(options.get("append"), "append") : false
   const runId = options.has("run-id") ? String(options.get("run-id")) : randomUUID()
+  const launchMarker = `RUN${runId.replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase() || "MARK"}`
 
   if (shards < 1) {
     fail("--shards must be at least 1")
@@ -1286,19 +1295,120 @@ const handleBatch = async (context, command, tokens) => {
     const maxAttempts = retries + 1
     let lastRecord = null
 
+    if (exportedHdvDir && runnerContract === "electron-hdv-v1") {
+      const vtocCheckCommand = buildVtocExportabilityCommand({ diskPath })
+      const vtocCheck = await runShellCommand(vtocCheckCommand, Math.min(hdvGenerateTimeoutMs, 60000))
+
+      if (vtocCheck.timedOut || vtocCheck.exitCode !== 0) {
+        return {
+          schemaVersion: 1,
+          runId,
+          createdAt: new Date().toISOString(),
+          disk: {
+            path: diskPath,
+            filename,
+            sizeBytes: rawBytes.length,
+            rawSha256,
+            canonicalSha256,
+            canonicalization: canonical.canonicalization,
+          },
+          attempt: {
+            index: 1,
+            max: maxAttempts,
+            retryable: false,
+          },
+          status: {
+            ok: false,
+            code: vtocCheck.timedOut ? "vtoc_check_timeout" : "vtoc_check_failed",
+            message: vtocCheck.timedOut
+              ? "VTOC exportability check timed out"
+              : `VTOC exportability check failed with code ${vtocCheck.exitCode}`,
+          },
+          timing: {
+            elapsedMs: 0,
+          },
+        }
+      }
+
+      try {
+        const vtocPayload = JSON.parse(vtocCheck.stdout || "{}")
+        const vtocType = String(vtocPayload.vtocType || "unknown")
+        const exportable = Boolean(vtocPayload.exportable)
+        if (!exportable) {
+          return {
+            schemaVersion: 1,
+            runId,
+            createdAt: new Date().toISOString(),
+            disk: {
+              path: diskPath,
+              filename,
+              sizeBytes: rawBytes.length,
+              rawSha256,
+              canonicalSha256,
+              canonicalization: canonical.canonicalization,
+            },
+            attempt: {
+              index: 1,
+              max: maxAttempts,
+              retryable: false,
+            },
+            status: {
+              ok: false,
+              code: "disk_not_exportable",
+              message: `Disk was skipped because VTOC check marked it non-exportable (${vtocType}).`,
+            },
+            timing: {
+              elapsedMs: 0,
+            },
+            exportability: {
+              vtocType,
+            },
+          }
+        }
+      } catch (error) {
+        return {
+          schemaVersion: 1,
+          runId,
+          createdAt: new Date().toISOString(),
+          disk: {
+            path: diskPath,
+            filename,
+            sizeBytes: rawBytes.length,
+            rawSha256,
+            canonicalSha256,
+            canonicalization: canonical.canonicalization,
+          },
+          attempt: {
+            index: 1,
+            max: maxAttempts,
+            retryable: false,
+          },
+          status: {
+            ok: false,
+            code: "vtoc_check_invalid",
+            message: error instanceof Error ? error.message : String(error),
+          },
+          timing: {
+            elapsedMs: 0,
+          },
+        }
+      }
+    }
+
     for (let attemptIndex = 1; attemptIndex <= maxAttempts; attemptIndex += 1) {
       const startedAt = Date.now()
       const runnerResultPath = path.join(runnerResultsDir, `${diskId}.attempt${attemptIndex}.json`)
       const videoPath = videoDir ? path.join(videoDir, `${diskId}.attempt${attemptIndex}.mp4`) : ""
       const logPath = logDir ? path.join(logDir, `${diskId}.attempt${attemptIndex}.log`) : ""
       const exportedHdvPath = exportedHdvDir ? path.join(exportedHdvDir, `${diskId}.hdv`) : ""
+      const launchTitle = `${launchMarker}-${filename.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9]/g, "").slice(0, 20)}`
 
       let hdvGeneration = { exitCode: 0, signal: null, timedOut: false, stdout: "", stderr: "", command: "" }
       if (exportedHdvPath && runnerContract === "electron-hdv-v1") {
         const generationCommand = buildHdvGenerationCommand({
           diskPath,
           exportedHdvPath,
-          diskName: filename.replace(/\.[^.]+$/, "") || filename,
+          diskName: launchTitle,
         })
         hdvGeneration = await runShellCommand(generationCommand, hdvGenerateTimeoutMs)
         if (hdvGeneration.timedOut || hdvGeneration.exitCode !== 0) {
@@ -1359,6 +1469,7 @@ const handleBatch = async (context, command, tokens) => {
         videoPath,
         logPath,
         exportedHdvPath,
+        launchMarker,
         attempt: attemptIndex,
         runId,
         rawSha256,

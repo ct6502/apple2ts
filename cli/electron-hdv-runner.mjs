@@ -250,6 +250,168 @@ const removeIfExists = async (filePath) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const listFilesRecursive = async (rootDir) => {
+  const files = []
+  const queue = [rootDir]
+  while (queue.length > 0) {
+    const current = queue.pop()
+    let entries = []
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name)
+      if (entry.isDirectory()) {
+        queue.push(fullPath)
+      } else if (entry.isFile()) {
+        files.push(fullPath)
+      }
+    }
+  }
+  return files
+}
+
+const checkAutomationMarkersInDist = async ({ distDir, markers }) => {
+  const markerSet = new Set((markers || []).map((value) => String(value || "").trim()).filter(Boolean))
+  if (markerSet.size === 0) {
+    return { ok: true, missing: [] }
+  }
+
+  const candidates = []
+  const indexPath = path.join(distDir, "index.html")
+  candidates.push(indexPath)
+  const assetsDir = path.join(distDir, "assets")
+  const assetFiles = await listFilesRecursive(assetsDir)
+  for (const candidate of assetFiles) {
+    if (/\.(js|mjs|cjs)$/i.test(candidate)) {
+      candidates.push(candidate)
+    }
+  }
+
+  for (const candidate of candidates) {
+    if (markerSet.size === 0) break
+    let text = ""
+    try {
+      text = await fs.readFile(candidate, "utf8")
+    } catch {
+      continue
+    }
+    for (const marker of Array.from(markerSet)) {
+      if (text.includes(marker)) {
+        markerSet.delete(marker)
+      }
+    }
+  }
+
+  return {
+    ok: markerSet.size === 0,
+    missing: Array.from(markerSet),
+  }
+}
+
+const runShellCommandWithTimeout = async ({ command, cwd, timeoutMs }) => {
+  const proc = spawn(command, {
+    cwd,
+    shell: true,
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+  })
+
+  const output = []
+  proc.stdout.on("data", (chunk) => output.push(String(chunk)))
+  proc.stderr.on("data", (chunk) => output.push(String(chunk)))
+
+  const result = await waitForExitWithTimeout(proc, timeoutMs)
+  if (!result.completed) {
+    await terminateProcessTree(proc)
+    return {
+      ok: false,
+      code: null,
+      message: "automation_prepare_timeout",
+      output: flattenOutput(output, 40000),
+    }
+  }
+
+  return {
+    ok: result.code === 0,
+    code: result.code,
+    message: result.code === 0 ? "automation_prepare_ok" : `automation_prepare_exit_${result.code}`,
+    output: flattenOutput(output, 40000),
+  }
+}
+
+const ensureAutomationMarkers = async ({
+  enabled,
+  projectDir,
+  distDir,
+  markers,
+  buildCommand,
+  buildTimeoutMs,
+}) => {
+  if (!enabled) {
+    return {
+      ok: true,
+      message: "automation_markers_check_disabled",
+      built: false,
+      details: "",
+    }
+  }
+
+  const initialCheck = await checkAutomationMarkersInDist({ distDir, markers })
+  if (initialCheck.ok) {
+    return {
+      ok: true,
+      message: "automation_markers_present",
+      built: false,
+      details: "",
+    }
+  }
+
+  if (!String(buildCommand || "").trim()) {
+    return {
+      ok: false,
+      message: "automation_markers_missing_no_build_command",
+      built: false,
+      details: `Missing markers: ${initialCheck.missing.join(", ")}`,
+    }
+  }
+
+  const prepareResult = await runShellCommandWithTimeout({
+    command: buildCommand,
+    cwd: projectDir,
+    timeoutMs: Math.max(1000, Math.floor(buildTimeoutMs)),
+  })
+
+  if (!prepareResult.ok) {
+    return {
+      ok: false,
+      message: prepareResult.message,
+      built: true,
+      details: prepareResult.output,
+    }
+  }
+
+  const afterBuildCheck = await checkAutomationMarkersInDist({ distDir, markers })
+  if (!afterBuildCheck.ok) {
+    return {
+      ok: false,
+      message: "automation_markers_missing_after_build",
+      built: true,
+      details: `Missing markers: ${afterBuildCheck.missing.join(", ")}`,
+    }
+  }
+
+  return {
+    ok: true,
+    message: "automation_markers_rebuilt",
+    built: true,
+    details: prepareResult.output,
+  }
+}
+
 const replacePlaceholders = (template, values) =>
   template.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, key) => {
     if (!(key in values)) return match
@@ -344,13 +506,14 @@ const sendNativeEnter = async ({
 
   const script = [
     "$ws = New-Object -ComObject WScript.Shell",
+    "Add-Type -AssemblyName System.Windows.Forms",
     "$ok = $false",
-    `if (${safePid} -gt 0) { try { $ok = $ws.AppActivate(${safePid}) } catch {} }`,
     `if (-not $ok) { try { $ok = $ws.AppActivate('${safeTitle}') } catch {} }`,
     "if (-not $ok) { try { $ok = $ws.AppActivate('Apple2TS') } catch {} }",
+    `if (-not $ok -and ${safePid} -gt 0) { try { $ok = $ws.AppActivate(${safePid}) } catch {} }`,
     "if (-not $ok) { exit 2 }",
     "Start-Sleep -Milliseconds 150",
-    `for ($i = 0; $i -lt ${safeCount}; $i++) { $ws.SendKeys('{ENTER}'); if ($i -lt ${safeCount - 1}) { Start-Sleep -Milliseconds ${safeInterval} } }`,
+    `for ($i = 0; $i -lt ${safeCount}; $i++) { try { [System.Windows.Forms.SendKeys]::SendWait(' ') } catch { exit 3 }; Start-Sleep -Milliseconds 40; try { [System.Windows.Forms.SendKeys]::SendWait('{ENTER}') } catch { exit 4 }; if ($i -lt ${safeCount - 1}) { Start-Sleep -Milliseconds ${safeInterval} } }`,
   ].join("; ")
 
   const nativeResult = await runPowerShell(script, Math.max(1000, Math.floor(nativeTimeoutMs)))
@@ -437,6 +600,128 @@ const flattenOutput = (chunks, maxChars = 200000) => {
   return `${joined.slice(0, maxChars)}\n...[truncated ${joined.length - maxChars} chars]...\n`
 }
 
+const collapseMachineTextFatalLines = (combinedLog) => {
+  const lines = String(combinedLog || "").split(/\r?\n/)
+  const fatalIndexes = []
+
+  for (let i = 0; i < lines.length; i += 1) {
+    if (/^\[AUTOMATION\]\s+machine-text-fatal\b/i.test(lines[i])) {
+      fatalIndexes.push(i)
+    }
+  }
+
+  if (fatalIndexes.length <= 1) {
+    return combinedLog
+  }
+
+  const keepIndex = fatalIndexes[fatalIndexes.length - 1]
+  const filtered = lines.filter((line, index) => {
+    if (!/^\[AUTOMATION\]\s+machine-text-fatal\b/i.test(line)) return true
+    return index === keepIndex
+  })
+
+  return filtered.join("\n")
+}
+
+const buildTelemetryTextMarkers = (combinedLog) => {
+  const lines = String(combinedLog || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+  const automationLines = lines.filter((line) => /\[AUTOMATION\]/i.test(line))
+  if (automationLines.length > 0) {
+    return automationLines.slice(-200)
+  }
+
+  return lines.slice(-200)
+}
+
+const FATAL_TEXT_PATTERNS = [
+  /\bI\s*\/\s*O\s+ERROR\b/i,
+  /\bPATH\s+NOT\s+FOUND\b/i,
+  /\bSYNTAX\s+ERROR\b/i,
+]
+
+const MONITOR_CRASH_PATTERN = /(?:^|\r?\n)[0-9A-F]{4}-\s*\r?\n\*/i
+
+const summarizeScreenText = (text, maxLen = 160) => {
+  const flat = String(text || "")
+    .replace(/[\x00-\x1F]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (flat.length <= maxLen) return flat
+  return `${flat.slice(0, maxLen)}...`
+}
+
+const detectFatalScreenCondition = (text) => {
+  const sample = String(text || "")
+  const normalized = sample.replace(/\r/g, "\n")
+  for (const needle of FATAL_TEXT_PATTERNS) {
+    if (needle.test(normalized)) {
+      return {
+        code: "fatal_screen_text",
+        message: needle.source,
+      }
+    }
+  }
+
+  if (MONITOR_CRASH_PATTERN.test(sample)) {
+    return {
+      code: "monitor_crash",
+      message: "Monitor crash signature detected",
+    }
+  }
+
+  return null
+}
+
+const detectRendererFatalEvent = (text) => {
+  const normalized = String(text || "")
+  const regex = /^\[AUTOMATION\]\s+machine-text-fatal\s+(\{[^\n\r]*\})$/gim
+  let match = null
+  for (const candidate of normalized.matchAll(regex)) {
+    match = candidate
+  }
+  if (!match || !match[1]) {
+    return null
+  }
+
+  try {
+    const payload = JSON.parse(match[1])
+    return {
+      code: String(payload.code || "fatal_screen_text"),
+      message: String(payload.label || payload.needle || "Renderer machine-text fatal event"),
+      source: "renderer-machine-text",
+    }
+  } catch {
+    return {
+      code: "fatal_screen_text",
+      message: "Renderer machine-text fatal event",
+      source: "renderer-machine-text",
+    }
+  }
+}
+
+const extractLatestAutomationMachineSample = (text) => {
+  const normalized = String(text || "")
+  const regex = /^\[AUTOMATION\]\s+machine-text-sample\s+(\{[^\n\r]*\})$/gim
+  let match = null
+  for (const candidate of normalized.matchAll(regex)) {
+    match = candidate
+  }
+  if (!match || !match[1]) {
+    return ""
+  }
+
+  try {
+    const payload = JSON.parse(match[1])
+    return summarizeScreenText(String(payload.sample || ""))
+  } catch {
+    return ""
+  }
+}
+
 const postJson = async ({ url, body, timeoutMs }) => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -519,6 +804,7 @@ const waitForScreenText = async ({
 
   const endpoint = `${normalizedServer}/api/machine`
   const started = Date.now()
+  let lastText = ""
   while (Date.now() - started < timeoutMs) {
     const reply = await getJson({
       url: endpoint,
@@ -533,10 +819,21 @@ const waitForScreenText = async ({
 
     if (reply.ok) {
       const textPage = String(reply.payload?.data?.textPage || "")
+      lastText = textPage
+      const fatal = detectFatalScreenCondition(textPage)
+      if (fatal) {
+        return {
+          ok: false,
+          message: `screen_text_fatal:${fatal.code}`,
+          fatal,
+          lastText,
+        }
+      }
       if (textPage.toLowerCase().includes(normalizedMarker)) {
         return {
           ok: true,
           message: `screen_text_found:${normalizedMarker}`,
+          lastText,
         }
       }
     }
@@ -547,6 +844,7 @@ const waitForScreenText = async ({
   return {
     ok: false,
     message: `screen_text_timeout:${normalizedMarker}`,
+    lastText,
   }
 }
 
@@ -626,11 +924,11 @@ const injectMenuEnter = async ({
   let apiFailed = false
   let apiFailureMessage = ""
   for (let index = 0; index < enterCount; index += 1) {
-    const keyCodeResponse = await postJson({
+    const spaceKeyResponse = await postJson({
       url: endpoint,
       body: {
         type: "keyCode",
-        keyCode: 13,
+        keyCode: 32,
         release: true,
       },
       timeoutMs: requestTimeoutMs,
@@ -642,13 +940,41 @@ const injectMenuEnter = async ({
       },
     }))
 
-    let accepted = keyCodeResponse.ok
+    if (spaceKeyResponse.ok) {
+      await sleep(40)
+      const enterKeyResponse = await postJson({
+        url: endpoint,
+        body: {
+          type: "keyCode",
+          keyCode: 13,
+          release: true,
+        },
+        timeoutMs: requestTimeoutMs,
+      }).catch((error) => ({
+        ok: false,
+        status: 0,
+        payload: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      }))
+
+      if (!enterKeyResponse.ok) {
+        apiFailed = true
+        apiFailureMessage =
+          enterKeyResponse.payload?.error ||
+          enterKeyResponse.payload?.message ||
+          `menu_enter_failed_http_${enterKeyResponse.status}`
+        break
+      }
+    }
+
+    let accepted = spaceKeyResponse.ok
     if (!accepted) {
       const textFallbackResponse = await postJson({
         url: endpoint,
         body: {
           type: "text",
-          text: "\r",
+          text: " ",
         },
         timeoutMs: requestTimeoutMs,
       }).catch((error) => ({
@@ -665,9 +991,9 @@ const injectMenuEnter = async ({
         apiFailureMessage =
           textFallbackResponse.payload?.error ||
           textFallbackResponse.payload?.message ||
-          keyCodeResponse.payload?.error ||
-          keyCodeResponse.payload?.message ||
-          `menu_enter_failed_http_${textFallbackResponse.status || keyCodeResponse.status}`
+          spaceKeyResponse.payload?.error ||
+          spaceKeyResponse.payload?.message ||
+          `menu_enter_failed_http_${textFallbackResponse.status || spaceKeyResponse.status}`
         break
       }
     }
@@ -755,8 +1081,10 @@ const runScenario = async ({
   controlApiPollMs,
   controlApiRequestTimeoutMs,
   waitForScreenTextEnabled,
+  instrumentationReadyTimeoutMs,
   screenTextMarker,
   screenTextTimeoutMs,
+  screenTextPrewaitMs,
   screenTextPollMs,
   screenTextRequestTimeoutMs,
 }) => {
@@ -812,6 +1140,7 @@ const runScenario = async ({
   let appProc = null
   let recorderProc = null
   let earlyExit = null
+  let fatalDetection = null
 
   try {
     appProc = spawnShellCommand(launchCommand, appDir)
@@ -828,6 +1157,10 @@ const runScenario = async ({
     let menuEnterResult = null
     let screenTextResult = null
     let controlApiResult = null
+    let screenMarkerSeen = false
+    let instrumentationReady = false
+    let lastMachineTextSummary = ""
+    let sawMachineText = false
 
     if (launchOk) {
       const appReady = await waitForOutputMarker({
@@ -848,6 +1181,17 @@ const runScenario = async ({
         loadReadyOk = diskReady.ok
         if (!diskReady.ok) {
           launchOk = false
+        } else {
+          const instrumentationReadyResult = await waitForOutputMarker({
+            proc: appProc,
+            readOutput: () => liveOutput,
+            marker: /\[AUTOMATION\]\s+automation-instrumentation-version\b/i,
+            timeoutMs: Math.max(500, Math.floor(instrumentationReadyTimeoutMs)),
+          })
+          instrumentationReady = instrumentationReadyResult.ok
+          processOutput.push(
+            `[AUTOMATION] ${instrumentationReady ? "automation_instrumentation_ready" : "automation_instrumentation_timeout"}\n`,
+          )
         }
 
         if (waitForScreenTextEnabled || menuEnterEnabled) {
@@ -864,29 +1208,67 @@ const runScenario = async ({
           screenTextResult = await waitForScreenText({
             serverUrl,
             marker: screenTextMarker,
-            timeoutMs: Math.max(1000, Math.floor(screenTextTimeoutMs)),
+            timeoutMs: Math.max(250, Math.floor(screenTextPrewaitMs)),
             pollMs: Math.max(50, Math.floor(screenTextPollMs)),
             requestTimeoutMs: Math.max(250, Math.floor(screenTextRequestTimeoutMs)),
           })
           processOutput.push(`[AUTOMATION] ${screenTextResult.message}\n`)
+          const prewaitSummary = summarizeScreenText(screenTextResult.lastText || "")
+          if (prewaitSummary) {
+            processOutput.push(`[AUTOMATION] screen_text_prewait_sample ${prewaitSummary}\n`)
+            sawMachineText = true
+          }
+          if (screenTextResult.ok) {
+            screenMarkerSeen = true
+          }
+          if (screenTextResult.fatal) {
+            fatalDetection = {
+              ...screenTextResult.fatal,
+              source: "machine-text-prewait",
+            }
+            launchOk = false
+            processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          }
+
+          const preMenuRendererFatal = detectRendererFatalEvent(liveOutput)
+          if (preMenuRendererFatal) {
+            fatalDetection = preMenuRendererFatal
+            launchOk = false
+            processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          }
         }
 
-        if (menuEnterEnabled) {
+        if (menuEnterEnabled && !fatalDetection) {
           if (menuEnterDelayMs > 0) {
             await sleep(menuEnterDelayMs)
           }
 
-          menuEnterResult = await injectMenuEnter({
-            serverUrl,
-            appPid: appProc?.pid || 0,
-            enterCount: Math.max(1, Math.floor(menuEnterCount)),
-            enterIntervalMs: Math.max(0, Math.floor(menuEnterIntervalMs)),
-            requestTimeoutMs: Math.max(250, Math.floor(menuEnterTimeoutMs)),
-            nativeFallback: Boolean(menuEnterNativeFallback),
-            nativeWindowTitle: menuEnterNativeWindowTitle,
-            nativeTimeoutMs: Math.max(1000, Math.floor(menuEnterNativeTimeoutMs)),
-          })
-          processOutput.push(`[AUTOMATION] ${menuEnterResult.message}\n`)
+          const beforeMenuEnterFatal = detectRendererFatalEvent(liveOutput)
+          if (beforeMenuEnterFatal) {
+            fatalDetection = beforeMenuEnterFatal
+            launchOk = false
+            processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          }
+
+          if (fatalDetection) {
+            menuEnterResult = {
+              ok: false,
+              message: "menu_enter_skipped_due_to_fatal_detection",
+            }
+          } else {
+
+            menuEnterResult = await injectMenuEnter({
+              serverUrl,
+              appPid: appProc?.pid || 0,
+              enterCount: Math.max(1, Math.floor(menuEnterCount)),
+              enterIntervalMs: Math.max(0, Math.floor(menuEnterIntervalMs)),
+              requestTimeoutMs: Math.max(250, Math.floor(menuEnterTimeoutMs)),
+              nativeFallback: Boolean(menuEnterNativeFallback),
+              nativeWindowTitle: menuEnterNativeWindowTitle,
+              nativeTimeoutMs: Math.max(1000, Math.floor(menuEnterNativeTimeoutMs)),
+            })
+            processOutput.push(`[AUTOMATION] ${menuEnterResult.message}\n`)
+          }
 
           if (
             menuEnterResult.ok &&
@@ -896,6 +1278,18 @@ const runScenario = async ({
             menuEnterRetryCount > 0
           ) {
             for (let retryIndex = 0; retryIndex < menuEnterRetryCount; retryIndex += 1) {
+              const beforeRetryFatal = detectRendererFatalEvent(liveOutput)
+              if (beforeRetryFatal) {
+                fatalDetection = beforeRetryFatal
+                launchOk = false
+                processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+                menuEnterResult = {
+                  ok: false,
+                  message: "menu_enter_retry_skipped_due_to_fatal_detection",
+                }
+                break
+              }
+
               if (menuEnterRetryDelayMs > 0) {
                 await sleep(menuEnterRetryDelayMs)
               }
@@ -912,6 +1306,19 @@ const runScenario = async ({
               processOutput.push(
                 `[AUTOMATION] menu_enter_retry_${retryIndex + 1}_${retryResult.ok ? "ok" : "failed"} ${retryResult.message}\n`,
               )
+
+              const afterRetryFatal = detectRendererFatalEvent(liveOutput)
+              if (afterRetryFatal) {
+                fatalDetection = afterRetryFatal
+                launchOk = false
+                processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+                menuEnterResult = {
+                  ok: false,
+                  message: "menu_enter_retry_stopped_due_to_fatal_detection",
+                }
+                break
+              }
+
               if (!retryResult.ok) {
                 menuEnterResult = retryResult
                 break
@@ -924,7 +1331,22 @@ const runScenario = async ({
 
     let statusLaunchOk = launchOk
 
-    if (launchOk) {
+    const initialFatal = detectFatalScreenCondition(liveOutput)
+    const rendererFatal = detectRendererFatalEvent(liveOutput)
+    if (rendererFatal) {
+      fatalDetection = rendererFatal
+      processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+      statusLaunchOk = false
+    } else if (initialFatal) {
+      fatalDetection = {
+        ...initialFatal,
+        source: "app-output",
+      }
+      processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+      statusLaunchOk = false
+    }
+
+    if (launchOk && !fatalDetection) {
       const effectiveRecorderCommand =
         recorderCommand || buildDefaultWindowRecorderCommand({ ffmpegExe })
 
@@ -961,7 +1383,76 @@ const runScenario = async ({
         await fs.writeFile(videoPath, "")
       }
 
-      await sleep(safeCaptureSeconds * 1000)
+      const captureStartedAt = Date.now()
+      const captureDeadline = captureStartedAt + (safeCaptureSeconds * 1000)
+      const canPollMachineText = Boolean(normalizeServerBaseUrl(serverUrl))
+      let nextMachinePollAt = captureStartedAt
+
+      while (Date.now() < captureDeadline) {
+        if (appProc && appProc.exitCode !== null) {
+          statusLaunchOk = false
+          fatalDetection = fatalDetection || {
+            code: "app_exited_during_capture",
+            message: "Application exited during capture window",
+            source: "app-process",
+          }
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        const outputFatal = detectFatalScreenCondition(liveOutput)
+        const outputRendererFatal = detectRendererFatalEvent(liveOutput)
+        if (outputRendererFatal) {
+          statusLaunchOk = false
+          fatalDetection = outputRendererFatal
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        if (outputFatal) {
+          statusLaunchOk = false
+          fatalDetection = {
+            ...outputFatal,
+            source: "app-output",
+          }
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        if (canPollMachineText && Date.now() >= nextMachinePollAt) {
+          nextMachinePollAt = Date.now() + 500
+          const machineReply = await getJson({
+            url: `${normalizeServerBaseUrl(serverUrl)}/api/machine`,
+            timeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+          }).catch(() => null)
+
+          if (machineReply && machineReply.ok) {
+            const textPage = String(machineReply.payload?.data?.textPage || "")
+            if (!screenMarkerSeen && textPage.toLowerCase().includes(String(screenTextMarker || "").toLowerCase())) {
+              screenMarkerSeen = true
+              processOutput.push(`[AUTOMATION] screen_text_found_during_capture ${String(screenTextMarker || "").toLowerCase()}\n`)
+            }
+            const machineSummary = summarizeScreenText(textPage)
+            if (machineSummary && machineSummary !== lastMachineTextSummary) {
+              lastMachineTextSummary = machineSummary
+              processOutput.push(`[AUTOMATION] machine_text_sample ${machineSummary}\n`)
+              sawMachineText = true
+            }
+            const machineFatal = detectFatalScreenCondition(textPage)
+            if (machineFatal) {
+              statusLaunchOk = false
+              fatalDetection = {
+                ...machineFatal,
+                source: "machine-text",
+              }
+              processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+              break
+            }
+          }
+        }
+
+        await sleep(100)
+      }
     }
 
     if (recorderProc) {
@@ -981,7 +1472,11 @@ const runScenario = async ({
     let classification = "ok"
     let message = "Launch/capture window completed."
 
-    if (!launchOk) {
+    if (fatalDetection) {
+      statusLaunchOk = false
+      classification = fatalDetection.code
+      message = `Failure signature detected (${fatalDetection.source}): ${fatalDetection.message}`
+    } else if (!launchOk) {
       classification = "launch_failed"
       message = `App exited before ${launchProbeMs} ms readiness window.`
       if (!/\[AUTOMATION\]\s+window-ready/i.test(liveOutput)) {
@@ -990,24 +1485,35 @@ const runScenario = async ({
       } else if (!loadReadyOk) {
         classification = "disk_not_loaded"
         message = `App did not report disk-loaded/state-loaded within ${diskReadyTimeoutMs} ms.`
+      } else if (!instrumentationReady) {
+        classification = "automation_instrumentation_missing"
+        message = `Renderer automation instrumentation did not report ready event within ${instrumentationReadyTimeoutMs} ms.`
       }
     } else if (menuEnterEnabled && menuEnterResult && !menuEnterResult.ok) {
       statusLaunchOk = false
       classification = "menu_enter_failed"
-      message = `Failed to inject ENTER for MENUSRC launch: ${menuEnterResult.message}`
+      message = `Failed to inject launch key for MENUSRC launch: ${menuEnterResult.message}`
     } else if (!exportOk) {
       classification = "export_not_verified"
       message = "Launch completed but exported HDV was not found."
     }
 
-    if (
-      classification === "ok" &&
-      waitForScreenTextEnabled &&
-      screenTextResult &&
-      !screenTextResult.ok
-    ) {
+    if (classification === "ok" && waitForScreenTextEnabled && !screenMarkerSeen) {
       classification = "screen_text_not_ready"
-      message = `Launch completed, but disk-name marker was not observed: ${screenTextResult.message}`
+      const reason = screenTextResult?.message || "screen_text_not_observed"
+      message = `Launch completed, but disk-name marker was not observed: ${reason}`
+    }
+
+    if (
+      waitForScreenTextEnabled &&
+      controlApiResult &&
+      !controlApiResult.ok &&
+      !sawMachineText &&
+      /\[AUTOMATION\]\s+machine-text-sample\b/i.test(liveOutput) === false
+    ) {
+      classification = "screen_text_unavailable"
+      statusLaunchOk = false
+      message = "Control API unavailable and no machine text was captured from renderer automation events."
     }
 
     if (resolvedLaunchPath === diskPath && path.extname(diskPath).toLowerCase() !== ".hdv") {
@@ -1015,7 +1521,21 @@ const runScenario = async ({
       message = `${message} Launch target remained source disk (no HDV launch target resolved).`
     }
 
-    const combinedLog = flattenOutput(processOutput)
+    if (classification !== "ok") {
+      processOutput.push(`[RESULT] 🔴 FAIL classification=${classification}\n`)
+      processOutput.push(`[AUTOMATION] run_failed classification=${classification} message=${message}\n`)
+      const finalSample =
+        extractLatestAutomationMachineSample(liveOutput) ||
+        summarizeScreenText(screenTextResult?.lastText || "") ||
+        summarizeScreenText(liveOutput)
+      if (finalSample) {
+        processOutput.push(`[AUTOMATION] failure_text_capture ${finalSample}\n`)
+      }
+    } else {
+      processOutput.push("[RESULT] PASS\n")
+    }
+
+    const combinedLog = collapseMachineTextFatalLines(flattenOutput(processOutput))
     if (logPath) {
       await ensureParentDirectory(logPath)
       await fs.writeFile(logPath, combinedLog, "utf8")
@@ -1032,10 +1552,7 @@ const runScenario = async ({
         finalRunMode: statusLaunchOk ? "running" : "unknown",
         cycleCountStart: 0,
         cycleCountEnd: 0,
-        textMarkers: combinedLog
-          .split(/\r?\n/)
-          .filter((line) => line.trim().length > 0)
-          .slice(0, 20),
+        textMarkers: buildTelemetryTextMarkers(combinedLog),
       },
       hashes: {
         inputRawSha256: sha256Hex(diskData),
@@ -1068,10 +1585,7 @@ const runScenario = async ({
         finalRunMode: "unknown",
         cycleCountStart: 0,
         cycleCountEnd: 0,
-        textMarkers: combinedLog
-          .split(/\r?\n/)
-          .filter((line) => line.trim().length > 0)
-          .slice(0, 20),
+        textMarkers: buildTelemetryTextMarkers(combinedLog),
       },
       hashes: {
         inputRawSha256: sha256Hex(diskData),
@@ -1132,11 +1646,30 @@ const main = async () => {
   const controlApiPollMs = parseOptionalNumber(options, "control-api-poll-ms", 250)
   const controlApiRequestTimeoutMs = parseOptionalNumber(options, "control-api-request-timeout-ms", 2000)
   const waitForScreenTextEnabled = parseOptionalBoolean(options, "wait-for-screen-text", true)
+  const instrumentationReadyTimeoutMs = parseOptionalNumber(options, "instrumentation-ready-timeout-ms", 3000)
   const defaultScreenTextMarker = path.basename(diskPath, path.extname(diskPath))
   const screenTextMarker = parseOptionalString(options, "screen-text-marker", defaultScreenTextMarker)
   const screenTextTimeoutMs = parseOptionalNumber(options, "screen-text-timeout-ms", 30000)
+  const screenTextPrewaitMs = parseOptionalNumber(options, "screen-text-prewait-ms", 1500)
   const screenTextPollMs = parseOptionalNumber(options, "screen-text-poll-ms", 250)
   const screenTextRequestTimeoutMs = parseOptionalNumber(options, "screen-text-request-timeout-ms", 2000)
+  const ensureAutomationMarkersEnabled = parseOptionalBoolean(
+    options,
+    "ensure-automation-markers",
+    profileDefaults.profile === "apple2ts-app-dev",
+  )
+  const automationProjectDir = path.resolve(parseOptionalString(options, "automation-project-dir", process.cwd()))
+  const automationDistDir = path.resolve(parseOptionalString(options, "automation-dist-dir", path.join(automationProjectDir, "dist")))
+  const automationMarkers = parseOptionalString(
+    options,
+    "automation-markers",
+    "machine-text-sample,machine-text-fatal,launch-key-attempt,launch-before-,automation-instrumentation-version",
+  )
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+  const automationBuildCommand = parseOptionalString(options, "automation-build-command", "npm run build")
+  const automationBuildTimeoutMs = parseOptionalNumber(options, "automation-build-timeout-ms", 180000)
   const requestedFfmpegExe = parseOptionalString(options, "ffmpeg-exe", "")
   const exportedHdvPath = parseOptionalString(options, "exported-hdv", profileDefaults.exportedHdvPath)
   const requireExportedHdv = parseOptionalBoolean(options, "require-exported-hdv", false)
@@ -1185,6 +1718,20 @@ const main = async () => {
     }
   }
 
+  const automationCheck = await ensureAutomationMarkers({
+    enabled: ensureAutomationMarkersEnabled,
+    projectDir: automationProjectDir,
+    distDir: automationDistDir,
+    markers: automationMarkers,
+    buildCommand: automationBuildCommand,
+    buildTimeoutMs: automationBuildTimeoutMs,
+  })
+  process.stdout.write(`[AUTOMATION] ${automationCheck.message}\n`)
+  if (!automationCheck.ok) {
+    const detail = automationCheck.details ? `\n${automationCheck.details}` : ""
+    fail(`Automation instrumentation check failed: ${automationCheck.message}${detail}`)
+  }
+
   const startedAt = Date.now()
   const ffmpegExe = await resolveFfmpegExe(requestedFfmpegExe)
   const scenario = await runScenario({
@@ -1214,8 +1761,10 @@ const main = async () => {
     controlApiPollMs,
     controlApiRequestTimeoutMs,
     waitForScreenTextEnabled,
+    instrumentationReadyTimeoutMs,
     screenTextMarker,
     screenTextTimeoutMs,
+    screenTextPrewaitMs,
     screenTextPollMs,
     screenTextRequestTimeoutMs,
     ffmpegExe,

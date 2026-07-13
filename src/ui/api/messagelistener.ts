@@ -1,9 +1,19 @@
 import { RUN_MODE } from "../../common/utility"
 import { handleSetDiskOrFileFromBuffer, prepWritableFile } from "../devices/disk/driveprops"
-import { passSetRunMode, handleGetState6502, passSetBinaryBlock, handleGetRunMode } from "../main2worker"
+import {
+  passSetRunMode,
+  handleGetState6502,
+  passSetBinaryBlock,
+  handleGetRunMode,
+  handleGetTextPageAsString,
+  passKeypress,
+  passKeyRelease,
+} from "../main2worker"
 import { RestoreSaveState } from "../savestate"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { handleInputParams } from "../inputparams"
+
+const AUTOMATION_INSTRUMENTATION_VERSION = "a2ts-automation-v4"
 
 const decodePayloadBytes = (data: unknown, dataBase64: unknown): Uint8Array => {
   if (typeof dataBase64 === "string" && dataBase64.length > 0) {
@@ -31,6 +41,97 @@ const reportAutomationEvent = (eventName: string, payload?: unknown) => {
 }
 
 const seenLoadRequestIds = new Set<string>()
+let automationTextSamplerTimer: number | null = null
+let automationTextSamplerDeadline = 0
+let lastAutomationTextSample: string | null = null
+let lastFatalSignature: string | null = null
+
+const FATAL_TEXT_PATTERNS = [
+  /\bI\s*\/\s*O\s+ERROR\b/i,
+  /\bPATH\s+NOT\s+FOUND\b/i,
+  /\bSYNTAX\s+ERROR\b/i,
+]
+
+const summarizeText = (raw: string, maxLen = 220) => {
+  const normalized = String(raw || "")
+    .replace(/[\x00-\x1F\x7F]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (normalized.length <= maxLen) return normalized
+  return `${normalized.slice(0, maxLen)}...`
+}
+
+const fatalLabelFromText = (text: string) => {
+  if (/SYNTAX\s+ERROR/i.test(text)) return "SYNTAX ERROR"
+  if (/PATH\s+NOT\s+FOUND/i.test(text)) return "PATH NOT FOUND"
+  if (/I\s*\/\s*O\s+ERROR/i.test(text)) return "I/O ERROR"
+  return "FATAL SCREEN TEXT"
+}
+
+const stopAutomationTextSampler = () => {
+  if (automationTextSamplerTimer !== null) {
+    window.clearInterval(automationTextSamplerTimer)
+    automationTextSamplerTimer = null
+  }
+}
+
+const reportMachineTextSnapshot = (reason: string) => {
+  try {
+    const rawText = handleGetTextPageAsString()
+    const sample = summarizeText(rawText)
+
+    if (sample !== lastAutomationTextSample) {
+      lastAutomationTextSample = sample
+      reportAutomationEvent("machine-text-sample", {
+        reason,
+        sample,
+        rawLength: String(rawText || "").length,
+      })
+    }
+
+    const fatalMatch = FATAL_TEXT_PATTERNS.find((pattern) => pattern.test(rawText))
+    if (fatalMatch) {
+      const fatalLabel = fatalLabelFromText(rawText)
+      const signature = `${fatalLabel}|${fatalMatch.source}|${sample}`
+      if (signature !== lastFatalSignature) {
+        lastFatalSignature = signature
+        reportAutomationEvent("machine-text-fatal", {
+          code: "fatal_screen_text",
+          label: fatalLabel,
+          needle: fatalMatch.source,
+          sample,
+        })
+        // Stop periodic sampling after first fatal to avoid log spam.
+        stopAutomationTextSampler()
+      }
+    } else {
+      lastFatalSignature = null
+    }
+  } catch (error) {
+    reportAutomationEvent("machine-text-sampler-error", {
+      reason,
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+const startAutomationTextSampler = (durationMs = 90000, intervalMs = 500) => {
+  stopAutomationTextSampler()
+  automationTextSamplerDeadline = Date.now() + Math.max(1000, durationMs)
+  lastAutomationTextSample = null
+
+  const tick = () => {
+    if (Date.now() >= automationTextSamplerDeadline) {
+      stopAutomationTextSampler()
+      return
+    }
+
+    reportMachineTextSnapshot("sampler-tick")
+  }
+
+  tick()
+  automationTextSamplerTimer = window.setInterval(tick, Math.max(150, intervalMs))
+}
 
 const isDuplicateLoadRequest = (eventType: string, requestId: unknown) => {
   if (typeof requestId !== "string" || requestId.length === 0) {
@@ -42,6 +143,25 @@ const isDuplicateLoadRequest = (eventType: string, requestId: unknown) => {
   }
   seenLoadRequestIds.add(requestId)
   return false
+}
+
+const queueAutomationLaunchKeys = (attempts = 3, initialDelayMs = 700, retryDelayMs = 1200) => {
+  const launchOnce = (attempt: number) => {
+    reportMachineTextSnapshot(`launch-before-${attempt}`)
+    reportAutomationEvent("launch-key-attempt", { sequence: [32, 13], attempt })
+    passKeypress(32)
+    passKeyRelease()
+    setTimeout(() => {
+      passKeypress(13)
+      passKeyRelease()
+      reportMachineTextSnapshot(`launch-after-${attempt}`)
+    }, 70)
+  }
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const delay = initialDelayMs + ((attempt - 1) * retryDelayMs)
+    setTimeout(() => launchOnce(attempt), delay)
+  }
 }
 
 export const messagelistener = (event: MessageEvent) => {
@@ -140,6 +260,12 @@ export const messagelistener = (event: MessageEvent) => {
         return
       }
 
+      reportAutomationEvent("automation-instrumentation-version", {
+        version: AUTOMATION_INSTRUMENTATION_VERSION,
+      })
+
+      stopAutomationTextSampler()
+
       const diskData = decodePayloadBytes(data, dataBase64)
       
       console.log(`Loading disk image: ${filename}, ${diskData.length} bytes`)
@@ -196,6 +322,11 @@ export const messagelistener = (event: MessageEvent) => {
       
       console.log(`Disk image loaded successfully: ${filename}`)
       reportAutomationEvent("disk-loaded", { filename, filePath })
+      startAutomationTextSampler()
+
+      // In automation runs, launch the selected menu entry via emulator key path
+      // (worker -> sendTextToEmulator), avoiding host window focus/native key issues.
+      queueAutomationLaunchKeys()
     } catch (error) {
       console.error("Error loading disk:", error)
     } finally {
