@@ -111,14 +111,14 @@ const DisassemblyDiv = (props: {
   }, [foundLine, hasDisassembly, isPaused, props.disassemblyRef, props.setAllowScrollEvent])
 
   if (!isPaused) {
-    return <div className="noselect" style={{ marginTop: "30px" }}>Pause to view disassembly</div>
+    return <div className="noselect" style={{ marginTop: "30px", width: "24em" }}>Pause to view disassembly</div>
   }
 
   if (!hasDisassembly) {
     return <div
     style={{
       position: "relative",
-      width: "200px",
+      width: "24em",
       top: "0px",
       height: `${nlines * 10 - 2}pt`,
     }}>
@@ -154,7 +154,7 @@ const DisassemblyDiv = (props: {
 
   // console.log("getDisassemblyDiv ", props.update, disArray[0])
 
-  return <div>
+  return <div style={{ width: "24em" }}>
     {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
     {disArray.map((line, index) => (
       <div key={index}

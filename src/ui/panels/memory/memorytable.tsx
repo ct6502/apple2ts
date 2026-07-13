@@ -342,7 +342,7 @@ const MemoryTable = (props: MemoryTableProps) => {
     const table = document.querySelector("#memory-table") as HTMLTableElement
     const row = table.rows[props.scrollRow + 1]
     if (row) {
-      row.scrollIntoView({ block: "center", inline: "center" })
+      row.scrollIntoView({ block: "center", inline: "nearest" })
       applyHighlightAnimation(row)
       // Tried to also highlight the address column, but it does strange things
       // in HGR mode where it draws some of the columns on top of each other...

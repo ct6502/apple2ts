@@ -147,7 +147,8 @@ const DisassemblyView = (props: DisassemblyProps) => {
       <div ref={disassemblyRef}
         className="mono-text"
         style={{
-          overflow: "auto",
+          overflowY: "scroll",
+          overflowX: "hidden",
           width: "100%",
           top: "0px",
           height: `${nlines * 10 - 2}pt`,
