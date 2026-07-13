@@ -1028,7 +1028,7 @@ const buildVtocExportabilityCommand = ({ diskPath }) => {
   ].join(" ")
 }
 
-const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe }) => {
+const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, concurrency }) => {
   const base = [
     "node cli/electron-hdv-runner.mjs",
     '--disk "{diskPath}"',
@@ -1067,6 +1067,11 @@ const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe }) =>
       break
     default:
       fail(`Unsupported runner preset '${preset}'`)
+  }
+
+  if (Number(concurrency) > 1) {
+    // Native key injection can target the wrong window when parallel workers run.
+    base.push("--menu-enter-native-fallback false")
   }
 
   return base.join(" ")
@@ -1183,7 +1188,7 @@ const handleBatch = async (context, command, tokens) => {
 
   const runnerCommandTemplate = hasRunnerCommand
     ? String(requireOption(options, "runner-command"))
-    : buildRunnerCommandFromPreset(runnerPreset, { runnerAppDir, runnerAppExe })
+    : buildRunnerCommandFromPreset(runnerPreset, { runnerAppDir, runnerAppExe, concurrency })
 
   const runnerContract = validateRunnerContractName(
     options.has("runner-contract")

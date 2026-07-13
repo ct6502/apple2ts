@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto"
 import { spawn } from "node:child_process"
 import { promises as fs } from "node:fs"
+import os from "node:os"
 import path from "node:path"
 
 const fail = (message, exitCode = 1) => {
@@ -199,7 +200,7 @@ const resolveProfileDefaults = (profile, appDirForDefaults) => {
     return {
       profile: "apple2ts-app-dev",
       appDir: appDirForDefaults,
-      appCommand: "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash \"{launchPath}\"",
+      appCommand: "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash --user-data-dir \"{runtimeUserDataDir}\" --disk-cache-dir \"{runtimeDiskCacheDir}\" \"{launchPath}\"",
       recorderCommand: "",
       exportedHdvPath: "",
       appExe: "",
@@ -249,6 +250,13 @@ const removeIfExists = async (filePath) => {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const sanitizePathComponent = (value, fallback = "session") => {
+  const normalized = String(value || "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+  return normalized || fallback
+}
 
 const listFilesRecursive = async (rootDir) => {
   const files = []
@@ -418,12 +426,16 @@ const replacePlaceholders = (template, values) =>
     return String(values[key])
   })
 
-const spawnShellCommand = (command, cwd = process.cwd()) =>
+const spawnShellCommand = (command, cwd = process.cwd(), envOverrides = {}) =>
   spawn(command, {
     cwd,
     shell: true,
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
+    env: {
+      ...process.env,
+      ...envOverrides,
+    },
   })
 
 const waitForExit = (proc) =>
@@ -644,7 +656,13 @@ const FATAL_TEXT_PATTERNS = [
 ]
 
 const MONITOR_CRASH_PATTERN = /(?:^|\r?\n)[0-9A-F]{4}-\s*\r?\n\*/i
-const MONITOR_CRASH_INLINE_PATTERN = /\b[0-9A-F]{4}-\b[^\n\r]{0,96}\*/i
+const MONITOR_CRASH_INLINE_PATTERN = /\b[0-9A-F]{4}-[^\n\r]{0,256}\*/i
+
+const hasMonitorCrashSignature = (text) => {
+  const sample = String(text || "")
+  const normalized = sample.replace(/\r/g, "\n")
+  return MONITOR_CRASH_PATTERN.test(sample) || MONITOR_CRASH_INLINE_PATTERN.test(normalized)
+}
 
 const summarizeScreenText = (text, maxLen = 160) => {
   const flat = String(text || "")
@@ -667,9 +685,9 @@ const detectFatalScreenCondition = (text) => {
     }
   }
 
-  if (MONITOR_CRASH_PATTERN.test(sample) || MONITOR_CRASH_INLINE_PATTERN.test(normalized)) {
+  if (hasMonitorCrashSignature(sample)) {
     return {
-      code: "monitor_crash",
+      code: "fatal_screen_text",
       message: "Monitor crash signature detected",
     }
   }
@@ -680,23 +698,30 @@ const detectFatalScreenCondition = (text) => {
 const detectRendererFatalEvent = (text) => {
   const normalized = String(text || "")
   const machineSampleRegex = /^\[AUTOMATION\]\s+machine-text-sample\s+(\{[^\n\r]*\})$/gim
-  let machineSampleMatch = null
-  for (const candidate of normalized.matchAll(machineSampleRegex)) {
-    machineSampleMatch = candidate
-  }
-  if (machineSampleMatch && machineSampleMatch[1]) {
+  const machineSampleMatches = Array.from(normalized.matchAll(machineSampleRegex))
+  for (let index = machineSampleMatches.length - 1; index >= 0; index -= 1) {
+    const machineSampleMatch = machineSampleMatches[index]
+    if (!machineSampleMatch || !machineSampleMatch[1]) {
+      continue
+    }
     try {
       const payload = JSON.parse(machineSampleMatch[1])
       const sample = String(payload.sample || "")
-      if (MONITOR_CRASH_INLINE_PATTERN.test(sample)) {
+      if (hasMonitorCrashSignature(sample)) {
         return {
-          code: "monitor_crash",
+          code: "fatal_screen_text",
           message: "Monitor crash signature detected",
           source: "renderer-machine-text",
         }
       }
     } catch {
-      // fall through to explicit machine-text-fatal parsing
+      if (hasMonitorCrashSignature(machineSampleMatch[1])) {
+        return {
+          code: "fatal_screen_text",
+          message: "Monitor crash signature detected",
+          source: "renderer-machine-text",
+        }
+      }
     }
   }
 
@@ -711,8 +736,9 @@ const detectRendererFatalEvent = (text) => {
 
   try {
     const payload = JSON.parse(match[1])
+    const payloadCode = String(payload.code || "fatal_screen_text")
     return {
-      code: String(payload.code || "fatal_screen_text"),
+      code: payloadCode === "monitor_crash" ? "fatal_screen_text" : payloadCode,
       message: String(payload.label || payload.needle || "Renderer machine-text fatal event"),
       source: "renderer-machine-text",
     }
@@ -1094,6 +1120,8 @@ const fileExists = async (filePath) => {
 
 const runScenario = async ({
   diskPath,
+  runId,
+  attempt,
   videoPath,
   logPath,
   captureSeconds,
@@ -1169,6 +1197,25 @@ const runScenario = async ({
   }
   const safeCaptureSeconds = Math.max(1, Math.floor(captureSeconds))
   const launchProbeMs = 5000
+  const runtimeSessionId = `${Date.now()}-${process.pid}-${Math.random().toString(16).slice(2, 8)}`
+  const runtimeBaseDir = path.resolve(
+    os.tmpdir(),
+    "apple2ts-hdv-runner",
+    sanitizePathComponent(path.basename(diskPath, path.extname(diskPath)), "disk"),
+    sanitizePathComponent(runId || "run", "run"),
+    sanitizePathComponent(String(attempt), "attempt"),
+    runtimeSessionId,
+  )
+  const runtimeUserDataDir = path.join(runtimeBaseDir, "user-data")
+  const runtimeDiskCacheDir = path.join(runtimeBaseDir, "cache")
+  const runtimeAppDataRoamingDir = path.join(runtimeBaseDir, "appdata-roaming")
+  const runtimeAppDataLocalDir = path.join(runtimeBaseDir, "appdata-local")
+  const runtimeTempDir = path.join(runtimeBaseDir, "tmp")
+  await fs.mkdir(runtimeUserDataDir, { recursive: true })
+  await fs.mkdir(runtimeDiskCacheDir, { recursive: true })
+  await fs.mkdir(runtimeAppDataRoamingDir, { recursive: true })
+  await fs.mkdir(runtimeAppDataLocalDir, { recursive: true })
+  await fs.mkdir(runtimeTempDir, { recursive: true })
   const appCmd = appCommand || "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash \"{launchPath}\""
   const launchCommand = replacePlaceholders(appCmd, {
     diskPath,
@@ -1177,12 +1224,22 @@ const runScenario = async ({
     captureSeconds: safeCaptureSeconds,
     exportedHdvPath,
     appExe,
+    runtimeUserDataDir,
+    runtimeDiskCacheDir,
   })
 
   let appProc = null
   let recorderProc = null
   let earlyExit = null
   let fatalDetection = null
+  const appEnvOverrides = process.platform === "win32"
+    ? {
+      APPDATA: runtimeAppDataRoamingDir,
+      LOCALAPPDATA: runtimeAppDataLocalDir,
+      TEMP: runtimeTempDir,
+      TMP: runtimeTempDir,
+    }
+    : {}
 
   try {
     let liveFatalDetection = null
@@ -1207,7 +1264,7 @@ const runScenario = async ({
       return null
     }
 
-    appProc = spawnShellCommand(launchCommand, appDir)
+    appProc = spawnShellCommand(launchCommand, appDir, appEnvOverrides)
     collectProcessOutput(appProc, processOutput, appendOutput)
 
     const exitPromise = waitForExit(appProc)
@@ -1686,7 +1743,7 @@ const main = async () => {
 
   const runId = options.has("run-id") ? String(options.get("run-id")) : ""
   const attempt = parseOptionalNumber(options, "attempt", 1)
-  const captureSeconds = parseOptionalNumber(options, "capture-seconds", 30)
+  const captureSeconds = parseOptionalNumber(options, "capture-seconds", 15)
   const defaultAppDir = path.resolve(process.cwd(), "..", "apple2ts-app")
   const requestedProfile = parseOptionalString(options, "profile", "apple2ts-app-dev")
   const profileDefaults = resolveProfileDefaults(requestedProfile, defaultAppDir)
@@ -1723,7 +1780,7 @@ const main = async () => {
   const instrumentationReadyTimeoutMs = parseOptionalNumber(options, "instrumentation-ready-timeout-ms", 3000)
   const defaultScreenTextMarker = path.basename(diskPath, path.extname(diskPath))
   const screenTextMarker = parseOptionalString(options, "screen-text-marker", defaultScreenTextMarker)
-  const screenTextTimeoutMs = parseOptionalNumber(options, "screen-text-timeout-ms", 30000)
+  const screenTextTimeoutMs = parseOptionalNumber(options, "screen-text-timeout-ms", 15000)
   const screenTextPrewaitMs = parseOptionalNumber(options, "screen-text-prewait-ms", 1500)
   const screenTextPollMs = parseOptionalNumber(options, "screen-text-poll-ms", 250)
   const screenTextRequestTimeoutMs = parseOptionalNumber(options, "screen-text-request-timeout-ms", 2000)
@@ -1810,6 +1867,8 @@ const main = async () => {
   const ffmpegExe = await resolveFfmpegExe(requestedFfmpegExe)
   const scenario = await runScenario({
     diskPath,
+    runId,
+    attempt,
     videoPath,
     logPath,
     captureSeconds,
