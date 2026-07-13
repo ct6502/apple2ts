@@ -66,7 +66,7 @@ npm run cli -- snapshots create
 npm run cli -- snapshots activate snap:3
 npm run cli -- save-state export --output session.a2ts
 npm run cli -- save-state import --file session.a2ts
-npm run cli -- export hdv-batch --input disks.txt --output results.jsonl --runner-command "my-runner --disk {diskPath} --result {resultPath}"
+npm run cli -- export hdv-batch --input-dir disks --output-dir artifacts --runner-command "my-runner --disk {diskPath} --result {resultPath}"
 npm run cli -- batch run --input disks.txt --output results.jsonl --runner-command "my-runner --disk {diskPath} --result {resultPath}"
 ```
 
@@ -85,8 +85,9 @@ or unreliable. Each output record includes stable content hashes and per-attempt
 
 ### Input
 
-- `--input <path>`: required.
-- Supported formats:
+- `export hdv-batch`: `--input-dir <path>` is required and recursively scans for disk images.
+- `batch run`: `--input <path>` is required.
+- `batch run` supports:
 	- text file with one disk path per line (`#` comments supported)
 	- JSON array of strings
 	- JSON array of objects with a `path` field
@@ -95,7 +96,15 @@ Relative paths are resolved from `--root` when provided, otherwise from the curr
 
 ### Required options
 
-- `--output <path>`: JSONL output file.
+- `export hdv-batch`: `--output-dir <path>` is required.
+- For `export hdv-batch`, artifact paths are derived automatically:
+	- `<outputDir>/results.jsonl`
+	- `<outputDir>/videos`
+	- `<outputDir>/logs`
+	- `<outputDir>/runner-results`
+	- `<outputDir>/exported-hdv`
+
+- `batch run`: `--output <path>` is required (JSONL output file).
 - One of:
 	- `--runner-command <template>`: custom command template invoked per disk.
 	- `--runner-preset <name>`: built-in Electron runner preset.
@@ -134,7 +143,7 @@ Contract options:
 
 If `--runner-preset` is used and `--runner-contract` is omitted, the CLI defaults to `electron-hdv-v1`.
 For `export hdv-batch` presets, the generated runner command includes `--require-exported-hdv true`.
-When `--exported-hdv-dir` is provided, batch generates an HDV file per disk before launching the runner.
+`export hdv-batch` always generates HDV files under `<outputDir>/exported-hdv` before launching the runner.
 
 When `electron-hdv-v1` is active, the runner payload must follow:
 
@@ -155,16 +164,14 @@ If contract validation fails, the record is written as `runner_result_invalid`.
 ### Scale options
 
 - `--shards <n>` and `--shard-index <i>`
-- `--concurrency <n>`
-- `--retries <n>`
+- `--concurrency <n>` (optional, default: `1`)
+- `--retries <n>` (optional, default: `0`)
 - `--runner-timeout-ms <ms>`
 - `--hdv-generate-timeout-ms <ms>`
-- `--runner-results-dir <path>`
-- `--video-dir <path>`
-- `--log-dir <path>`
-- `--exported-hdv-dir <path>` (per-disk HDV output location for runner handoff)
-- `--run-id <id>`
 - `--append true|false`
+
+`export hdv-batch` does not accept `--run-id`; it is generated automatically.
+`export hdv-batch` also does not accept explicit output artifact dirs (`--video-dir`, `--log-dir`, `--runner-results-dir`, `--exported-hdv-dir`).
 
 ### Result schema
 
@@ -255,11 +262,8 @@ Example using the starter runner:
 
 ```bash
 npm run cli -- export hdv-batch \
-	--input disks.txt \
-	--output artifacts/results.jsonl \
-	--video-dir artifacts/videos \
-	--log-dir artifacts/logs \
-	--runner-results-dir artifacts/runner-results \
+	--input-dir disks \
+	--output-dir artifacts \
 	--runner-command "node cli/electron-hdv-runner.mjs --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\" --log \"{logPath}\" --run-id \"{runId}\" --attempt \"{attempt}\" --raw-sha256 \"{rawSha256}\" --canonical-sha256 \"{canonicalSha256}\" --profile apple2ts-app-dev --app-dir \"C:/git/apple2ts-app\""
 ```
 
@@ -267,11 +271,8 @@ CI-friendly one-liner using built-in preset (no escaped runner template):
 
 ```bash
 npm run cli -- export hdv-batch \
-	--input disks.txt \
-	--output artifacts/results.jsonl \
-	--video-dir artifacts/videos \
-	--log-dir artifacts/logs \
-	--runner-results-dir artifacts/runner-results \
+	--input-dir disks \
+	--output-dir artifacts \
 	--runner-preset electron-hdv-packaged-auto \
 	--runner-app-dir "C:/git/apple2ts-app"
 ```
@@ -280,11 +281,8 @@ Example using packaged app profile on Windows:
 
 ```bash
 npm run cli -- export hdv-batch \
-	--input disks.txt \
-	--output artifacts/results.jsonl \
-	--video-dir artifacts/videos \
-	--log-dir artifacts/logs \
-	--runner-results-dir artifacts/runner-results \
+	--input-dir disks \
+	--output-dir artifacts \
 	--runner-command "node cli/electron-hdv-runner.mjs --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\" --log \"{logPath}\" --profile apple2ts-app-packaged --app-dir \"C:/git/apple2ts-app\" --app-exe \"C:/git/apple2ts-app/out/Apple2TS-win32-x64/Apple2TS.exe\""
 ```
 
@@ -292,11 +290,8 @@ Example using auto-packaged profile (no explicit `--app-exe`):
 
 ```bash
 npm run cli -- export hdv-batch \
-	--input disks.txt \
-	--output artifacts/results.jsonl \
-	--video-dir artifacts/videos \
-	--log-dir artifacts/logs \
-	--runner-results-dir artifacts/runner-results \
+	--input-dir disks \
+	--output-dir artifacts \
 	--runner-command "node cli/electron-hdv-runner.mjs --disk \"{diskPath}\" --result \"{resultPath}\" --video \"{videoPath}\" --log \"{logPath}\" --profile apple2ts-app-packaged-auto --app-dir \"C:/git/apple2ts-app\""
 ```
 

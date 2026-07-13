@@ -44,9 +44,9 @@ Examples:
   npm run cli -- drives mount-file fd1 --file public/disks/blank.po
   npm run cli -- input text --text "PRINT CHR$(4);\\"CATALOG\\""
   npm run cli -- save-state export --output session.a2ts
-  npm run cli -- export hdv-batch --input disks.txt --output results.jsonl --shards 8 --shard-index 0
+  npm run cli -- export hdv-batch --input-dir disks --output-dir artifacts --shards 8 --shard-index 0
   npm run cli -- batch run --input disks.txt --output results.jsonl --shards 8 --shard-index 0
-  npm run cli -- export hdv-batch --input disks.txt --output results.jsonl --runner-preset electron-hdv-packaged-auto --runner-app-dir C:/git/apple2ts-app
+  npm run cli -- export hdv-batch --input-dir disks --output-dir artifacts --runner-preset electron-hdv-packaged-auto --runner-app-dir C:/git/apple2ts-app
 `
 
 const printHelp = () => {
@@ -833,6 +833,17 @@ const handleSaveState = async (context, command, tokens) => {
 
 const sha256Hex = (bytes) => createHash("sha256").update(bytes).digest("hex")
 
+const DISK_FILE_EXTENSIONS = new Set([
+  ".po",
+  ".woz",
+  ".hdv",
+  ".2mg",
+  ".dsk",
+  ".do",
+  ".nib",
+  ".img",
+])
+
 const normalizePathForHash = (value) => value.replace(/\\/g, "/").toLowerCase()
 
 const computeShardForValue = (value, shards) => {
@@ -887,6 +898,47 @@ const loadDiskListFromFile = async (inputPath) => {
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !line.startsWith("#"))
 }
+
+const loadDiskListFromDirectory = async (inputDir) => {
+  const stat = await fs.stat(inputDir).catch(() => null)
+  if (!stat || !stat.isDirectory()) {
+    fail(`input directory not found or not a directory: ${inputDir}`)
+  }
+
+  const files = []
+  const visit = async (currentDir) => {
+    const entries = await fs.readdir(currentDir, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(currentDir, entry.name)
+      if (entry.isDirectory()) {
+        await visit(fullPath)
+        continue
+      }
+      if (!entry.isFile()) {
+        continue
+      }
+      const extension = path.extname(entry.name).toLowerCase()
+      if (DISK_FILE_EXTENSIONS.has(extension)) {
+        files.push(fullPath)
+      }
+    }
+  }
+
+  await visit(inputDir)
+  files.sort((left, right) => left.localeCompare(right))
+  return files
+}
+
+const getAliasedOptionValue = (options, names) => {
+  for (const name of names) {
+    if (options.has(name)) {
+      return options.get(name)
+    }
+  }
+  return undefined
+}
+
+const hasAnyOption = (options, names) => names.some((name) => options.has(name))
 
 const applyTemplate = (template, variables) => {
   return template.replace(/\{([A-Za-z0-9_]+)\}/g, (_, name) => {
@@ -1074,7 +1126,16 @@ const handleBatch = async (context, command, tokens) => {
   }
   assertNoExtraPositionals(positionals, "batch run")
 
-  const inputPath = path.resolve(process.cwd(), String(requireOption(options, "input")))
+  const hasInputPath = options.has("input")
+  const hasInputDir = options.has("input-dir")
+  if (hasInputPath && hasInputDir) {
+    fail("Use either --input or --input-dir, not both")
+  }
+  if (!hasInputPath && !hasInputDir) {
+    fail("Missing required option --input (or --input-dir)")
+  }
+  const inputPath = hasInputPath ? path.resolve(process.cwd(), String(requireOption(options, "input"))) : null
+  const inputDir = hasInputDir ? path.resolve(process.cwd(), String(requireOption(options, "input-dir"))) : null
   const outputPath = path.resolve(process.cwd(), String(requireOption(options, "output")))
   const corpusRoot = options.has("root") ? path.resolve(process.cwd(), String(options.get("root"))) : process.cwd()
   const shards = options.has("shards") ? parseRequiredNumber(String(options.get("shards")), "shards") : 1
@@ -1151,7 +1212,10 @@ const handleBatch = async (context, command, tokens) => {
     fail("--retries must be >= 0")
   }
 
-  const diskPaths = await loadDiskListFromFile(inputPath)
+  const diskPaths = inputDir ? await loadDiskListFromDirectory(inputDir) : await loadDiskListFromFile(inputPath)
+  if (inputDir && diskPaths.length === 0) {
+    fail(`No supported disk images found under input directory: ${inputDir}`)
+  }
   const resolvedDisks = diskPaths.map((diskPath) => {
     if (path.isAbsolute(diskPath)) {
       return path.normalize(diskPath)
@@ -1469,6 +1533,7 @@ const handleBatch = async (context, command, tokens) => {
   return {
     runId,
     inputPath,
+    inputDir,
     outputPath,
     schemaPath: path.resolve(process.cwd(), "cli", "batch-result.schema.json"),
     runnerContract,
@@ -1489,9 +1554,49 @@ const handleBatch = async (context, command, tokens) => {
 const handleExport = async (context, command, tokens) => {
   switch (command) {
     case "hdv-batch": {
-      const hasRunnerContractOption = tokens.some((token) => token === "--runner-contract" || token.startsWith("--runner-contract="))
-      const nextTokens = hasRunnerContractOption ? tokens : [...tokens, "--runner-contract", "electron-hdv-v1"]
-      return handleBatch(context, "run", nextTokens)
+      const { options, positionals } = parseOptionTokens(tokens)
+      assertNoExtraPositionals(positionals, "export hdv-batch")
+
+      if (hasAnyOption(options, ["input", "output", "video-dir", "log-dir", "runner-results-dir", "exported-hdv-dir"])) {
+        fail(
+          "export hdv-batch now requires --input-dir and --output-dir (legacy --input/--output and explicit artifact dirs are not supported)",
+        )
+      }
+      if (hasAnyOption(options, ["run-id", "runId"])) {
+        fail("export hdv-batch no longer accepts --run-id")
+      }
+
+      const inputDirValue = getAliasedOptionValue(options, ["input-dir", "inputDir"])
+      if (inputDirValue === undefined) {
+        fail("Missing required option --input-dir")
+      }
+      const outputDirValue = getAliasedOptionValue(options, ["output-dir", "outputDir"])
+      if (outputDirValue === undefined) {
+        fail("Missing required option --output-dir")
+      }
+
+      const outputDir = path.resolve(process.cwd(), String(outputDirValue))
+      const nextTokens = [
+        ...tokens,
+        "--input-dir",
+        String(inputDirValue),
+        "--output",
+        path.join(outputDir, "results.jsonl"),
+        "--video-dir",
+        path.join(outputDir, "videos"),
+        "--log-dir",
+        path.join(outputDir, "logs"),
+        "--runner-results-dir",
+        path.join(outputDir, "runner-results"),
+        "--exported-hdv-dir",
+        path.join(outputDir, "exported-hdv"),
+      ]
+
+      const hasRunnerContractOption = nextTokens.some(
+        (token) => token === "--runner-contract" || token.startsWith("--runner-contract="),
+      )
+      const finalTokens = hasRunnerContractOption ? nextTokens : [...nextTokens, "--runner-contract", "electron-hdv-v1"]
+      return handleBatch(context, "run", finalTokens)
     }
     case "batch":
       return handleBatch(context, "run", tokens)
