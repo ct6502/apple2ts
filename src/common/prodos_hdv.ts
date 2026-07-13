@@ -2681,6 +2681,7 @@ const DIR_ENTRIES_PER_BLOCK = 13
 // screenshot capped exports at ~21 disks. Grouping them under one subdirectory keeps root
 // usage constant regardless of disk count. The menu BLOADs them via this relative path.
 const SCREENSHOT_SUBDIR = "SHOTS"
+const FALLBACK_SCREENSHOT_SIZE = 0x2000
 
 const getDirEntryOffset = (entryIndex: number) => DIR_HEADER_SIZE + (entryIndex * DIR_ENTRY_SIZE)
 
@@ -3757,16 +3758,19 @@ export const buildProDosHdv = async (
   if (menuEntries && menuEntries.length > 0) {
     for (let i = 0; i < menuEntries.length; i++) {
       const entry = menuEntries[i]
-      if (entry.screenshotData && entry.screenshotData.length > 0) {
-        const screenshotName = `SCREEN${String(i + 1).padStart(2, "0")}`
-        screenshotNames.add(screenshotName)
-        screenshotFiles.push({
-          name: screenshotName,
-          type: PRODOS_FILE_TYPE_BINARY,
-          data: entry.screenshotData,
-          auxType: 0x2000,
-        })
-      }
+      const screenshotName = `SCREEN${String(i + 1).padStart(2, "0")}`
+      screenshotNames.add(screenshotName)
+      screenshotFiles.push({
+        name: screenshotName,
+        type: PRODOS_FILE_TYPE_BINARY,
+        // Menu rendering always BLOADs SHOTS/SCREENnn, so provide a blank fallback
+        // screenshot when source data is unavailable to keep exported HDVs bootable.
+        data:
+          entry.screenshotData && entry.screenshotData.length > 0
+            ? entry.screenshotData
+            : new Uint8Array(FALLBACK_SCREENSHOT_SIZE),
+        auxType: 0x2000,
+      })
     }
   }
   if (screenshotFiles.length > 0) {

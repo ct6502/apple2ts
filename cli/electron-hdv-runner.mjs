@@ -63,6 +63,13 @@ const parseOptionalBoolean = (options, key, fallback = false) => {
   fail(`Option --${key} must be a boolean (true/false)`)
 }
 
+const normalizeServerBaseUrl = (value) => {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  if (raw.toLowerCase() === "none" || raw.toLowerCase() === "off") return ""
+  return raw.endsWith("/") ? raw.slice(0, -1) : raw
+}
+
 const defaultPackagedAppExe = (appDir) => {
   if (process.platform === "win32") {
     return path.resolve(appDir, "out", "Apple2TS-win32-x64", "Apple2TS.exe")
@@ -270,6 +277,96 @@ const waitForExitWithTimeout = (proc, timeoutMs) =>
     sleep(timeoutMs).then(() => ({ completed: false })),
   ])
 
+const runPowerShell = async (script, timeoutMs = 5000) => {
+  const proc = spawn("powershell.exe", [
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-Command",
+    script,
+  ], {
+    windowsHide: true,
+    stdio: ["ignore", "pipe", "pipe"],
+  })
+
+  const stdout = []
+  const stderr = []
+  collectProcessOutput(proc, [], (chunk) => {
+    // Keep tiny debug buffers for error messages.
+    if (stdout.length < 10) stdout.push(chunk)
+    if (stderr.length < 10) stderr.push(chunk)
+  })
+
+  const result = await waitForExitWithTimeout(proc, timeoutMs)
+  if (!result.completed) {
+    await terminateProcessTree(proc)
+    return {
+      ok: false,
+      message: "native_enter_timeout",
+      details: "PowerShell fallback timed out",
+    }
+  }
+
+  if (result.code !== 0) {
+    return {
+      ok: false,
+      message: `native_enter_exit_${result.code}`,
+      details: `${stdout.join("")} ${stderr.join("")}`.trim(),
+    }
+  }
+
+  return {
+    ok: true,
+    message: "native_enter_ok",
+    details: "",
+  }
+}
+
+const sendNativeEnter = async ({
+  appPid,
+  enterCount,
+  enterIntervalMs,
+  nativeWindowTitle,
+  nativeTimeoutMs,
+}) => {
+  if (process.platform !== "win32") {
+    return {
+      ok: false,
+      message: "native_enter_unsupported_platform",
+    }
+  }
+
+  const safeTitle = String(nativeWindowTitle || "Apple2TS").replace(/'/g, "''")
+  const safeCount = Math.max(1, Math.floor(enterCount))
+  const safeInterval = Math.max(0, Math.floor(enterIntervalMs))
+  const safePid = Number.isFinite(Number(appPid)) ? Math.floor(Number(appPid)) : 0
+
+  const script = [
+    "$ws = New-Object -ComObject WScript.Shell",
+    "$ok = $false",
+    `if (${safePid} -gt 0) { try { $ok = $ws.AppActivate(${safePid}) } catch {} }`,
+    `if (-not $ok) { try { $ok = $ws.AppActivate('${safeTitle}') } catch {} }`,
+    "if (-not $ok) { try { $ok = $ws.AppActivate('Apple2TS') } catch {} }",
+    "if (-not $ok) { exit 2 }",
+    "Start-Sleep -Milliseconds 150",
+    `for ($i = 0; $i -lt ${safeCount}; $i++) { $ws.SendKeys('{ENTER}'); if ($i -lt ${safeCount - 1}) { Start-Sleep -Milliseconds ${safeInterval} } }`,
+  ].join("; ")
+
+  const nativeResult = await runPowerShell(script, Math.max(1000, Math.floor(nativeTimeoutMs)))
+  if (nativeResult.ok) {
+    return {
+      ok: true,
+      message: `menu_enter_native_sent_x${safeCount}`,
+    }
+  }
+
+  return {
+    ok: false,
+    message: `${nativeResult.message}${nativeResult.details ? ` (${nativeResult.details})` : ""}`,
+  }
+}
+
 const terminateProcessTree = async (proc) => {
   if (!proc || proc.exitCode !== null) return
 
@@ -340,6 +437,275 @@ const flattenOutput = (chunks, maxChars = 200000) => {
   return `${joined.slice(0, maxChars)}\n...[truncated ${joined.length - maxChars} chars]...\n`
 }
 
+const postJson = async ({ url, body, timeoutMs }) => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+
+    let payload = null
+    try {
+      payload = await response.json()
+    } catch {
+      payload = null
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      payload,
+    }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const getJson = async ({ url, timeoutMs }) => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      signal: controller.signal,
+    })
+
+    let payload = null
+    try {
+      payload = await response.json()
+    } catch {
+      payload = null
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      payload,
+    }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const waitForScreenText = async ({
+  serverUrl,
+  marker,
+  timeoutMs,
+  pollMs,
+  requestTimeoutMs,
+}) => {
+  const normalizedServer = normalizeServerBaseUrl(serverUrl)
+  const normalizedMarker = String(marker || "").trim().toLowerCase()
+
+  if (!normalizedServer) {
+    return {
+      ok: false,
+      message: "screen_text_check_skipped_empty_server",
+    }
+  }
+
+  if (!normalizedMarker) {
+    return {
+      ok: false,
+      message: "screen_text_check_skipped_empty_marker",
+    }
+  }
+
+  const endpoint = `${normalizedServer}/api/machine`
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    const reply = await getJson({
+      url: endpoint,
+      timeoutMs: requestTimeoutMs,
+    }).catch((error) => ({
+      ok: false,
+      status: 0,
+      payload: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    }))
+
+    if (reply.ok) {
+      const textPage = String(reply.payload?.data?.textPage || "")
+      if (textPage.toLowerCase().includes(normalizedMarker)) {
+        return {
+          ok: true,
+          message: `screen_text_found:${normalizedMarker}`,
+        }
+      }
+    }
+
+    await sleep(Math.max(50, pollMs))
+  }
+
+  return {
+    ok: false,
+    message: `screen_text_timeout:${normalizedMarker}`,
+  }
+}
+
+const waitForControlApiReady = async ({
+  serverUrl,
+  timeoutMs,
+  pollMs,
+  requestTimeoutMs,
+}) => {
+  const normalizedServer = normalizeServerBaseUrl(serverUrl)
+  if (!normalizedServer) {
+    return {
+      ok: false,
+      message: "control_api_skipped_empty_server",
+    }
+  }
+
+  const endpoint = `${normalizedServer}/api/machine`
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    const reply = await getJson({
+      url: endpoint,
+      timeoutMs: requestTimeoutMs,
+    }).catch((error) => ({
+      ok: false,
+      status: 0,
+      payload: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    }))
+
+    if (reply.ok && reply.payload?.ok === true) {
+      return {
+        ok: true,
+        message: "control_api_ready",
+      }
+    }
+
+    await sleep(Math.max(50, pollMs))
+  }
+
+  return {
+    ok: false,
+    message: "control_api_timeout",
+  }
+}
+
+const injectMenuEnter = async ({
+  serverUrl,
+  appPid,
+  enterCount,
+  enterIntervalMs,
+  requestTimeoutMs,
+  nativeFallback,
+  nativeWindowTitle,
+  nativeTimeoutMs,
+}) => {
+  const normalizedServer = normalizeServerBaseUrl(serverUrl)
+  if (!normalizedServer) {
+    if (nativeFallback) {
+      return sendNativeEnter({
+        appPid,
+        enterCount,
+        enterIntervalMs,
+        nativeWindowTitle,
+        nativeTimeoutMs,
+      })
+    }
+
+    return {
+      ok: false,
+      message: "menu_enter_skipped_empty_server",
+    }
+  }
+
+  const endpoint = `${normalizedServer}/api/input/keys`
+  let apiFailed = false
+  let apiFailureMessage = ""
+  for (let index = 0; index < enterCount; index += 1) {
+    const keyCodeResponse = await postJson({
+      url: endpoint,
+      body: {
+        type: "keyCode",
+        keyCode: 13,
+        release: true,
+      },
+      timeoutMs: requestTimeoutMs,
+    }).catch((error) => ({
+      ok: false,
+      status: 0,
+      payload: {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    }))
+
+    let accepted = keyCodeResponse.ok
+    if (!accepted) {
+      const textFallbackResponse = await postJson({
+        url: endpoint,
+        body: {
+          type: "text",
+          text: "\r",
+        },
+        timeoutMs: requestTimeoutMs,
+      }).catch((error) => ({
+        ok: false,
+        status: 0,
+        payload: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      }))
+
+      accepted = textFallbackResponse.ok
+      if (!accepted) {
+        apiFailed = true
+        apiFailureMessage =
+          textFallbackResponse.payload?.error ||
+          textFallbackResponse.payload?.message ||
+          keyCodeResponse.payload?.error ||
+          keyCodeResponse.payload?.message ||
+          `menu_enter_failed_http_${textFallbackResponse.status || keyCodeResponse.status}`
+        break
+      }
+    }
+
+    if (index + 1 < enterCount && enterIntervalMs > 0) {
+      await sleep(enterIntervalMs)
+    }
+  }
+
+  if (apiFailed) {
+    if (nativeFallback && process.platform === "win32") {
+      const nativeResult = await sendNativeEnter({
+        appPid,
+        enterCount,
+        enterIntervalMs,
+        nativeWindowTitle,
+        nativeTimeoutMs,
+      })
+      if (nativeResult.ok) return nativeResult
+
+      return {
+        ok: false,
+        message: `${apiFailureMessage}; ${nativeResult.message}`,
+      }
+    }
+
+    return {
+      ok: false,
+      message: apiFailureMessage,
+    }
+  }
+
+  return {
+    ok: true,
+    message: `menu_enter_sent_x${enterCount}`,
+  }
+}
+
 const maybeReadFile = async (filePath) => {
   try {
     const bytes = await fs.readFile(filePath)
@@ -374,6 +740,25 @@ const runScenario = async ({
   exportedHdvPath,
   requireExportedHdv,
   appExe,
+  serverUrl,
+  menuEnterEnabled,
+  menuEnterCount,
+  menuEnterDelayMs,
+  menuEnterIntervalMs,
+  menuEnterTimeoutMs,
+  menuEnterNativeFallback,
+  menuEnterNativeWindowTitle,
+  menuEnterNativeTimeoutMs,
+  menuEnterRetryCount,
+  menuEnterRetryDelayMs,
+  controlApiReadyTimeoutMs,
+  controlApiPollMs,
+  controlApiRequestTimeoutMs,
+  waitForScreenTextEnabled,
+  screenTextMarker,
+  screenTextTimeoutMs,
+  screenTextPollMs,
+  screenTextRequestTimeoutMs,
 }) => {
   const diskData = await fs.readFile(diskPath)
   const hasExportedHdv = exportedHdvPath && (await fileExists(exportedHdvPath))
@@ -440,6 +825,9 @@ const runScenario = async ({
 
     let launchOk = !earlyExit
     let loadReadyOk = false
+    let menuEnterResult = null
+    let screenTextResult = null
+    let controlApiResult = null
 
     if (launchOk) {
       const appReady = await waitForOutputMarker({
@@ -461,8 +849,80 @@ const runScenario = async ({
         if (!diskReady.ok) {
           launchOk = false
         }
+
+        if (waitForScreenTextEnabled || menuEnterEnabled) {
+          controlApiResult = await waitForControlApiReady({
+            serverUrl,
+            timeoutMs: Math.max(1000, Math.floor(controlApiReadyTimeoutMs)),
+            pollMs: Math.max(50, Math.floor(controlApiPollMs)),
+            requestTimeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+          })
+          processOutput.push(`[AUTOMATION] ${controlApiResult.message}\n`)
+        }
+
+        if (waitForScreenTextEnabled) {
+          screenTextResult = await waitForScreenText({
+            serverUrl,
+            marker: screenTextMarker,
+            timeoutMs: Math.max(1000, Math.floor(screenTextTimeoutMs)),
+            pollMs: Math.max(50, Math.floor(screenTextPollMs)),
+            requestTimeoutMs: Math.max(250, Math.floor(screenTextRequestTimeoutMs)),
+          })
+          processOutput.push(`[AUTOMATION] ${screenTextResult.message}\n`)
+        }
+
+        if (menuEnterEnabled) {
+          if (menuEnterDelayMs > 0) {
+            await sleep(menuEnterDelayMs)
+          }
+
+          menuEnterResult = await injectMenuEnter({
+            serverUrl,
+            appPid: appProc?.pid || 0,
+            enterCount: Math.max(1, Math.floor(menuEnterCount)),
+            enterIntervalMs: Math.max(0, Math.floor(menuEnterIntervalMs)),
+            requestTimeoutMs: Math.max(250, Math.floor(menuEnterTimeoutMs)),
+            nativeFallback: Boolean(menuEnterNativeFallback),
+            nativeWindowTitle: menuEnterNativeWindowTitle,
+            nativeTimeoutMs: Math.max(1000, Math.floor(menuEnterNativeTimeoutMs)),
+          })
+          processOutput.push(`[AUTOMATION] ${menuEnterResult.message}\n`)
+
+          if (
+            menuEnterResult.ok &&
+            waitForScreenTextEnabled &&
+            screenTextResult &&
+            !screenTextResult.ok &&
+            menuEnterRetryCount > 0
+          ) {
+            for (let retryIndex = 0; retryIndex < menuEnterRetryCount; retryIndex += 1) {
+              if (menuEnterRetryDelayMs > 0) {
+                await sleep(menuEnterRetryDelayMs)
+              }
+              const retryResult = await injectMenuEnter({
+                serverUrl,
+                appPid: appProc?.pid || 0,
+                enterCount: Math.max(1, Math.floor(menuEnterCount)),
+                enterIntervalMs: Math.max(0, Math.floor(menuEnterIntervalMs)),
+                requestTimeoutMs: Math.max(250, Math.floor(menuEnterTimeoutMs)),
+                nativeFallback: Boolean(menuEnterNativeFallback),
+                nativeWindowTitle: menuEnterNativeWindowTitle,
+                nativeTimeoutMs: Math.max(1000, Math.floor(menuEnterNativeTimeoutMs)),
+              })
+              processOutput.push(
+                `[AUTOMATION] menu_enter_retry_${retryIndex + 1}_${retryResult.ok ? "ok" : "failed"} ${retryResult.message}\n`,
+              )
+              if (!retryResult.ok) {
+                menuEnterResult = retryResult
+                break
+              }
+            }
+          }
+        }
       }
     }
+
+    let statusLaunchOk = launchOk
 
     if (launchOk) {
       const effectiveRecorderCommand =
@@ -531,9 +991,23 @@ const runScenario = async ({
         classification = "disk_not_loaded"
         message = `App did not report disk-loaded/state-loaded within ${diskReadyTimeoutMs} ms.`
       }
+    } else if (menuEnterEnabled && menuEnterResult && !menuEnterResult.ok) {
+      statusLaunchOk = false
+      classification = "menu_enter_failed"
+      message = `Failed to inject ENTER for MENUSRC launch: ${menuEnterResult.message}`
     } else if (!exportOk) {
       classification = "export_not_verified"
       message = "Launch completed but exported HDV was not found."
+    }
+
+    if (
+      classification === "ok" &&
+      waitForScreenTextEnabled &&
+      screenTextResult &&
+      !screenTextResult.ok
+    ) {
+      classification = "screen_text_not_ready"
+      message = `Launch completed, but disk-name marker was not observed: ${screenTextResult.message}`
     }
 
     if (resolvedLaunchPath === diskPath && path.extname(diskPath).toLowerCase() !== ".hdv") {
@@ -550,12 +1024,12 @@ const runScenario = async ({
     return {
       status: {
         exportOk,
-        launchOk,
+        launchOk: statusLaunchOk,
         classification,
         message,
       },
       telemetry: {
-        finalRunMode: launchOk ? "running" : "unknown",
+        finalRunMode: statusLaunchOk ? "running" : "unknown",
         cycleCountStart: 0,
         cycleCountEnd: 0,
         textMarkers: combinedLog
@@ -637,6 +1111,32 @@ const main = async () => {
   const appReadyTimeoutMs = parseOptionalNumber(options, "app-ready-timeout-ms", 45000)
   const diskReadyTimeoutMs = parseOptionalNumber(options, "disk-ready-timeout-ms", 45000)
   const windowTitle = parseOptionalString(options, "window-title", "Apple2TS")
+  const serverUrl = normalizeServerBaseUrl(
+    parseOptionalString(options, "server", process.env.APPLE2TS_SERVER_URL || "http://127.0.0.1:6502"),
+  )
+  const menuEnterEnabled = parseOptionalBoolean(options, "menu-enter", true)
+  const menuEnterCount = parseOptionalNumber(options, "menu-enter-count", 1)
+  const menuEnterDelayMs = parseOptionalNumber(options, "menu-enter-delay-ms", 800)
+  const menuEnterIntervalMs = parseOptionalNumber(options, "menu-enter-interval-ms", 150)
+  const menuEnterTimeoutMs = parseOptionalNumber(options, "menu-enter-timeout-ms", 3000)
+  const menuEnterNativeFallback = parseOptionalBoolean(
+    options,
+    "menu-enter-native-fallback",
+    process.platform === "win32",
+  )
+  const menuEnterNativeWindowTitle = parseOptionalString(options, "menu-enter-native-window-title", windowTitle)
+  const menuEnterNativeTimeoutMs = parseOptionalNumber(options, "menu-enter-native-timeout-ms", 5000)
+  const menuEnterRetryCount = parseOptionalNumber(options, "menu-enter-retry-count", 2)
+  const menuEnterRetryDelayMs = parseOptionalNumber(options, "menu-enter-retry-delay-ms", 1500)
+  const controlApiReadyTimeoutMs = parseOptionalNumber(options, "control-api-ready-timeout-ms", 15000)
+  const controlApiPollMs = parseOptionalNumber(options, "control-api-poll-ms", 250)
+  const controlApiRequestTimeoutMs = parseOptionalNumber(options, "control-api-request-timeout-ms", 2000)
+  const waitForScreenTextEnabled = parseOptionalBoolean(options, "wait-for-screen-text", true)
+  const defaultScreenTextMarker = path.basename(diskPath, path.extname(diskPath))
+  const screenTextMarker = parseOptionalString(options, "screen-text-marker", defaultScreenTextMarker)
+  const screenTextTimeoutMs = parseOptionalNumber(options, "screen-text-timeout-ms", 30000)
+  const screenTextPollMs = parseOptionalNumber(options, "screen-text-poll-ms", 250)
+  const screenTextRequestTimeoutMs = parseOptionalNumber(options, "screen-text-request-timeout-ms", 2000)
   const requestedFfmpegExe = parseOptionalString(options, "ffmpeg-exe", "")
   const exportedHdvPath = parseOptionalString(options, "exported-hdv", profileDefaults.exportedHdvPath)
   const requireExportedHdv = parseOptionalBoolean(options, "require-exported-hdv", false)
@@ -699,6 +1199,25 @@ const main = async () => {
     appReadyTimeoutMs,
     diskReadyTimeoutMs,
     windowTitle,
+    serverUrl,
+    menuEnterEnabled,
+    menuEnterCount,
+    menuEnterDelayMs,
+    menuEnterIntervalMs,
+    menuEnterTimeoutMs,
+    menuEnterNativeFallback,
+    menuEnterNativeWindowTitle,
+    menuEnterNativeTimeoutMs,
+    menuEnterRetryCount,
+    menuEnterRetryDelayMs,
+    controlApiReadyTimeoutMs,
+    controlApiPollMs,
+    controlApiRequestTimeoutMs,
+    waitForScreenTextEnabled,
+    screenTextMarker,
+    screenTextTimeoutMs,
+    screenTextPollMs,
+    screenTextRequestTimeoutMs,
     ffmpegExe,
     exportedHdvPath: exportedHdvPath ? path.resolve(exportedHdvPath) : "",
     requireExportedHdv,
