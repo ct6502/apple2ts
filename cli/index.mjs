@@ -1339,7 +1339,7 @@ const handleBatch = async (context, command, tokens) => {
         const vtocPayload = JSON.parse(vtocCheck.stdout || "{}")
         const vtocType = String(vtocPayload.vtocType || "unknown")
         const exportable = Boolean(vtocPayload.exportable)
-        if (!exportable) {
+        if (!exportable && vtocType !== "dosup") {
           return {
             schemaVersion: 1,
             runId,
