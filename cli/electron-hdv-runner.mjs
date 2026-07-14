@@ -635,6 +635,60 @@ const waitForPredicate = async ({
   return { ok: false, reason: "timeout" }
 }
 
+const waitForDiskReadyWithResettableTimeout = async ({
+  proc,
+  readOutput,
+  startSignal,
+  readySignal,
+  timeoutMs,
+  pollMs = 100,
+}) => {
+  const effectiveTimeoutMs = Math.max(1000, Math.floor(timeoutMs))
+  let timerStartedAt = Date.now()
+  let timerStartedBySignal = false
+
+  const initialOutput = readOutput()
+  if (startSignal(initialOutput)) {
+    timerStartedAt = Date.now()
+    timerStartedBySignal = true
+  }
+
+  while (true) {
+    const output = readOutput()
+
+    if (!timerStartedBySignal && startSignal(output)) {
+      timerStartedAt = Date.now()
+      timerStartedBySignal = true
+    }
+
+    if (readySignal.test(output)) {
+      return {
+        ok: true,
+        reason: "ready",
+        timerStartedBySignal,
+      }
+    }
+
+    if (proc && proc.exitCode !== null) {
+      return {
+        ok: false,
+        reason: "process_exited",
+        timerStartedBySignal,
+      }
+    }
+
+    if (Date.now() - timerStartedAt >= effectiveTimeoutMs) {
+      return {
+        ok: false,
+        reason: timerStartedBySignal ? "timeout" : "timeout_no_start_signal",
+        timerStartedBySignal,
+      }
+    }
+
+    await sleep(pollMs)
+  }
+}
+
 const flattenOutput = (chunks, maxChars = 200000) => {
   const joined = chunks.join("")
   if (joined.length <= maxChars) return joined
@@ -869,6 +923,29 @@ const hasAutomationLoadSuccessSignal = (text) => {
     }
   }
 
+  return false
+}
+
+const hasDiskReadyTimerStartSignal = (text) => {
+  const normalized = String(text || "")
+  if (/\[AUTOMATION\]\s+disk_mount_ok\b/i.test(normalized)) {
+    return true
+  }
+  if (/\[AUTOMATION\]\s+machine_boot_requested\b/i.test(normalized)) {
+    return true
+  }
+  if (/\[AUTOMATION\]\s+disk-load-requested\b/i.test(normalized)) {
+    return true
+  }
+  if (/\[AUTOMATION\]\s+disk-load-dispatched\b/i.test(normalized)) {
+    return true
+  }
+  if (/\[AUTOMATION\]\s+message-received\s+\{[^\n\r]*"type"\s*:\s*"loadDisk"/i.test(normalized)) {
+    return true
+  }
+  if (/\[AUTOMATION\]\s+launch-before-/i.test(normalized)) {
+    return true
+  }
   return false
 }
 
@@ -1441,12 +1518,18 @@ const runScenario = async ({
         launchOk = false
       } else {
         appendTiming("window_ready")
-        const diskReady = await waitForOutputMarker({
+        const diskReady = await waitForDiskReadyWithResettableTimeout({
           proc: appProc,
           readOutput: () => liveOutput,
-          marker: /\[AUTOMATION\]\s+(disk-loaded|state-loaded)\b/i,
+          startSignal: hasDiskReadyTimerStartSignal,
+          readySignal: /\[AUTOMATION\]\s+(disk-loaded|state-loaded)\b/i,
           timeoutMs: Math.max(1000, Math.floor(diskReadyTimeoutMs)),
         })
+        if (diskReady.timerStartedBySignal) {
+          appendTiming("disk_ready_timer_start")
+        } else {
+          processOutput.push("[AUTOMATION] disk_ready_timer_start_immediate\n")
+        }
         loadReadyOk = diskReady.ok
         if (!diskReady.ok) {
           const markerSeenInOutput = shouldWaitForScreenText
@@ -2163,22 +2246,37 @@ const postApiEnvelope = async ({ serverUrl, pathname, body, timeoutMs }) => {
     },
   }))
 
-  if (!reply.ok || reply.payload?.ok !== true) {
+  const payload = reply.payload
+  const envelopeOk = Boolean(reply.ok && payload?.ok === true)
+  const legacyPayloadOk = Boolean(
+    reply.ok &&
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    typeof payload.dataBase64 === "string" &&
+    payload.dataBase64,
+  )
+
+  if (!envelopeOk && !legacyPayloadOk) {
     return {
       ok: false,
       message:
-        reply.payload?.error?.message ||
-        reply.payload?.error ||
-        reply.payload?.message ||
+        payload?.error?.message ||
+        payload?.error ||
+        payload?.message ||
         `http_${reply.status}`,
-      data: reply.payload?.data || null,
+      data: payload?.data || null,
     }
   }
+
+  const data = envelopeOk
+    ? (payload?.data || null)
+    : payload
 
   return {
     ok: true,
     message: "ok",
-    data: reply.payload?.data || null,
+    data,
   }
 }
 
@@ -2330,7 +2428,7 @@ export const launchPersistentSession = async ({
     launchCommand,
     appDir,
     appEnvOverrides,
-    ["ignore", "ignore", "pipe"],
+    ["ignore", "ignore", "ignore"],
   )
   collectProcessOutput(appProc, processOutput, appendOutput)
 
@@ -2360,15 +2458,35 @@ export const launchPersistentSession = async ({
     throw new Error(`Persistent session control API failed: ${controlApiReady.message}`)
   }
 
-  const baselineExport = await postApiEnvelope({
-    serverUrl,
-    pathname: "/api/save-states/export",
-    body: { includeSnapshots: false },
-    timeoutMs: Math.max(1000, Math.floor(controlApiRequestTimeoutMs * 3)),
-  })
-  if (!baselineExport.ok || typeof baselineExport.data?.dataBase64 !== "string" || !baselineExport.data.dataBase64) {
-    await terminateProcessTree(appProc)
-    throw new Error(`Persistent session baseline export failed: ${baselineExport.message}`)
+  let baselineExport = { ok: false, message: "not_attempted", data: null }
+  const baselineExportAttempts = 3
+  for (let attemptIndex = 1; attemptIndex <= baselineExportAttempts; attemptIndex += 1) {
+    baselineExport = await postApiEnvelope({
+      serverUrl,
+      pathname: "/api/save-states/export",
+      body: { includeSnapshots: false },
+      timeoutMs: Math.max(1000, Math.floor(controlApiRequestTimeoutMs * 3)),
+    })
+
+    const dataBase64 = typeof baselineExport.data?.dataBase64 === "string"
+      ? baselineExport.data.dataBase64
+      : ""
+    if (baselineExport.ok && dataBase64) {
+      break
+    }
+
+    const transient = /aborted|http_200/i.test(String(baselineExport.message || ""))
+    if (!transient || attemptIndex >= baselineExportAttempts) {
+      break
+    }
+    await sleep(250 * attemptIndex)
+  }
+
+  const baselineSaveStateBase64 = typeof baselineExport.data?.dataBase64 === "string"
+    ? baselineExport.data.dataBase64
+    : ""
+  if (!baselineSaveStateBase64) {
+    processOutput.push(`[AUTOMATION] baseline_export_unavailable ${baselineExport.message}\n`)
   }
 
   return {
@@ -2378,7 +2496,7 @@ export const launchPersistentSession = async ({
     serverUrl,
     processOutput,
     getLiveOutput: () => liveOutput,
-    baselineSaveStateBase64: baselineExport.data.dataBase64,
+    baselineSaveStateBase64,
     shouldRestoreBaselineBeforeNextScenario: false,
     runtimeBaseDir,
     controlApiPollMs,
@@ -2519,7 +2637,7 @@ export const runScenarioInPersistentSession = async (session, {
       processOutput.push("[AUTOMATION] headless_mode_enabled\n")
     }
 
-    if (session.shouldRestoreBaselineBeforeNextScenario) {
+    if (session.shouldRestoreBaselineBeforeNextScenario && session.baselineSaveStateBase64) {
       const baselineRestore = await postApiEnvelope({
         serverUrl: session.serverUrl,
         pathname: "/api/save-states/import",
@@ -2530,6 +2648,8 @@ export const runScenarioInPersistentSession = async (session, {
       if (!baselineRestore.ok) {
         statusLaunchOk = false
       }
+    } else if (session.shouldRestoreBaselineBeforeNextScenario) {
+      processOutput.push("[AUTOMATION] baseline_restore_skipped_missing_baseline\n")
     } else {
       processOutput.push("[AUTOMATION] baseline_reuse_initial_session\n")
     }
@@ -2559,13 +2679,26 @@ export const runScenarioInPersistentSession = async (session, {
     }
 
     if (statusLaunchOk) {
-      const diskReady = await waitForOutputMarker({
-        proc: session.appProc,
-        readOutput: readScenarioLiveOutput,
-        marker: /\[AUTOMATION\]\s+(disk-loaded|state-loaded)\b/i,
-        timeoutMs: Math.max(1000, Math.floor(diskReadyTimeoutMs)),
-      })
-      loadReadyOk = diskReady.ok || hasAutomationLoadSuccessSignal(readScenarioLiveOutput())
+      // In persistent mode, a successful mount API call is authoritative enough to
+      // start execution without waiting for optional renderer-only disk-loaded markers.
+      if (mountResult.ok) {
+        loadReadyOk = true
+        processOutput.push("[AUTOMATION] disk_ready_by_mount_ack\n")
+      } else {
+        const diskReady = await waitForDiskReadyWithResettableTimeout({
+          proc: session.appProc,
+          readOutput: readScenarioLiveOutput,
+          startSignal: hasDiskReadyTimerStartSignal,
+          readySignal: /\[AUTOMATION\]\s+(disk-loaded|state-loaded)\b/i,
+          timeoutMs: Math.max(1000, Math.floor(diskReadyTimeoutMs)),
+        })
+        if (diskReady.timerStartedBySignal) {
+          appendTiming("disk_ready_timer_start")
+        } else {
+          processOutput.push("[AUTOMATION] disk_ready_timer_start_immediate\n")
+        }
+        loadReadyOk = diskReady.ok || hasAutomationLoadSuccessSignal(readScenarioLiveOutput())
+      }
       if (!loadReadyOk) {
         statusLaunchOk = false
       }
@@ -2989,7 +3122,7 @@ export const runScenarioInPersistentSession = async (session, {
       },
     }
   } finally {
-    session.shouldRestoreBaselineBeforeNextScenario = true
+    session.shouldRestoreBaselineBeforeNextScenario = Boolean(session.baselineSaveStateBase64)
   }
 }
 

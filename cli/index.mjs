@@ -1035,6 +1035,17 @@ const ensureDisksCacheShape = (input = {}) => {
 }
 
 const buildCacheStatus = (record) => {
+  const payloadStatus = record?.payload?.status
+  const payloadClassification = typeof payloadStatus?.classification === "string"
+    ? payloadStatus.classification
+    : ""
+  if (payloadClassification) {
+    if (payloadClassification === "disk_not_exportable") {
+      return "skipped"
+    }
+    return payloadClassification === "ok" ? "pass" : "fail"
+  }
+
   const code = typeof record?.status?.code === "string" ? record.status.code : ""
   if (code === "disk_not_exportable") {
     return "skipped"
@@ -1059,12 +1070,20 @@ const buildCacheEntryFromRecord = (record) => {
     ? disk.rawSha256.toLowerCase()
     : null
   const statusName = buildCacheStatus(record)
+  const payloadStatus = record?.payload?.status
+  const payloadClassification = typeof payloadStatus?.classification === "string"
+    ? payloadStatus.classification
+    : ""
+  const derivedCode = payloadClassification || (typeof status.code === "string" ? status.code : "unknown")
+  const derivedMessage = typeof payloadStatus?.message === "string"
+    ? payloadStatus.message
+    : (typeof status.message === "string" ? status.message : null)
   return {
     canonicalSha256,
     value: {
       diskName: typeof disk.filename === "string" ? disk.filename : null,
-      code: typeof status.code === "string" ? status.code : "unknown",
-      message: typeof status.message === "string" ? status.message : null,
+      code: derivedCode,
+      message: derivedMessage,
       status: statusName,
       rawSha256,
       lastUpdated: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),

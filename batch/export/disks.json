@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-07-14T08:11:11.876Z",
+  "lastUpdated": "2026-07-14T09:05:27.877Z",
   "disks": {
     "0a4acee6ab91195400d94884c471824433f8b6aa9e6b0a7ffba81232eb1c57bf": {
       "diskName": "abm.dsk",
@@ -1489,6 +1489,94 @@
       "message": null,
       "rawSha256": "add4786de9db7c11f5a967bad98ef8db13f92cc89901dc6e6385d2fc3a085b29",
       "lastUpdated": "2026-07-14T07:14:55.047Z"
+    },
+    "8d17282593dd15cc0c1ab118832f95c96a741ffbfefc2df56e720bb0a1220614": {
+      "diskName": "mouse_attack+.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "8d17282593dd15cc0c1ab118832f95c96a741ffbfefc2df56e720bb0a1220614",
+      "lastUpdated": "2026-07-14T09:00:04.141Z"
+    },
+    "9f8add27fc0bec899ccfd8acc0d53d4435b3ab4dd6e2bd295759c4ff1465edd3": {
+      "diskName": "mr_cool.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9f8add27fc0bec899ccfd8acc0d53d4435b3ab4dd6e2bd295759c4ff1465edd3",
+      "lastUpdated": "2026-07-14T09:00:19.026Z"
+    },
+    "730412db513286aa0e3a2c6a7772a0394bef4ef0123241ddfd1d365dc008224e": {
+      "diskName": "mr_do.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (renderer-machine-text): SYNTAX ERROR",
+      "status": "fail",
+      "rawSha256": "730412db513286aa0e3a2c6a7772a0394bef4ef0123241ddfd1d365dc008224e",
+      "lastUpdated": "2026-07-14T09:00:37.563Z"
+    },
+    "3458d6294d8ef8d041baa1f4e3625bbbd92e6fb244425ab17df920af86d7cc0d": {
+      "diskName": "mr_robot1.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "3458d6294d8ef8d041baa1f4e3625bbbd92e6fb244425ab17df920af86d7cc0d",
+      "lastUpdated": "2026-07-14T09:00:51.068Z"
+    },
+    "db6be09f319ca3452bcb49c4f642b48eafde943ce5fbd4dcf12fe833c1b4f87a": {
+      "diskName": "mr_robot2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "db6be09f319ca3452bcb49c4f642b48eafde943ce5fbd4dcf12fe833c1b4f87a",
+      "lastUpdated": "2026-07-14T09:00:58.536Z"
+    },
+    "af61e1937ade79d3f45d609f28a50227b92182bc44e5c094859fd8c6ad2cc789": {
+      "diskName": "ms_pacman.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text-prewait): SYNTAX ERROR",
+      "status": "fail",
+      "rawSha256": "af61e1937ade79d3f45d609f28a50227b92182bc44e5c094859fd8c6ad2cc789",
+      "lastUpdated": "2026-07-14T09:01:05.585Z"
+    },
+    "2cb95e73c015a8aa8d4cf08d1bb91fae1b29d73f3e463b812d829fae4a86366e": {
+      "diskName": "ms_pacman+.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "2cb95e73c015a8aa8d4cf08d1bb91fae1b29d73f3e463b812d829fae4a86366e",
+      "lastUpdated": "2026-07-14T09:04:43.230Z"
+    },
+    "9cead7a1be5722c4c94dbc3a8c253b8daa2cc1a5eb8d9bebf0aa29dd9a234ef0": {
+      "diskName": "mutant.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9cead7a1be5722c4c94dbc3a8c253b8daa2cc1a5eb8d9bebf0aa29dd9a234ef0",
+      "lastUpdated": "2026-07-14T09:04:52.826Z"
+    },
+    "73078b2484c7c71e321d817ac7babb36b5d9aeb496b6ea5b92826c670e53381d": {
+      "diskName": "neon.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "73078b2484c7c71e321d817ac7babb36b5d9aeb496b6ea5b92826c670e53381d",
+      "lastUpdated": "2026-07-14T09:05:02.513Z"
+    },
+    "4b5e59fad0b9b041e0f08248c478fb6fc8ce52fcd51d388274b443896cdb4562": {
+      "diskName": "night_crawler.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "4b5e59fad0b9b041e0f08248c478fb6fc8ce52fcd51d388274b443896cdb4562",
+      "lastUpdated": "2026-07-14T09:05:06.309Z"
+    },
+    "dc88eb4d586fcc7ce4cfde7630798a7484bd443c93f8bacb32682addad1dbd2e": {
+      "diskName": "night_driver+.dsk",
+      "code": "runner_failed",
+      "message": "Cannot read properties of null (reading 'options')",
+      "status": "fail",
+      "rawSha256": "dc88eb4d586fcc7ce4cfde7630798a7484bd443c93f8bacb32682addad1dbd2e",
+      "lastUpdated": "2026-07-14T09:05:18.284Z"
     }
   }
 }
