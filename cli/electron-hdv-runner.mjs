@@ -1244,6 +1244,7 @@ const runScenario = async ({
   screenTextPrewaitMs,
   screenTextPollMs,
   screenTextRequestTimeoutMs,
+  captureVideo,
 }) => {
   const diskData = await fs.readFile(diskPath)
   const hasExportedHdv = exportedHdvPath && (await fileExists(exportedHdvPath))
@@ -1288,6 +1289,7 @@ const runScenario = async ({
     }
   }
   const safeCaptureSeconds = Math.max(1, Math.floor(captureSeconds))
+  const shouldWaitForScreenText = Boolean(waitForScreenTextEnabled && captureVideo)
   const launchProbeMs = 5000
   const runtimeSessionId = `${Date.now()}-${process.pid}-${Math.random().toString(16).slice(2, 8)}`
   const runtimeBaseDir = path.resolve(
@@ -1395,7 +1397,7 @@ const runScenario = async ({
         })
         loadReadyOk = diskReady.ok
         if (!diskReady.ok) {
-          const markerSeenInOutput = waitForScreenTextEnabled
+          const markerSeenInOutput = shouldWaitForScreenText
             ? hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
             : false
           if (markerSeenInOutput) {
@@ -1413,7 +1415,7 @@ const runScenario = async ({
               proc: appProc,
               timeoutMs: lateLoadGraceMs,
               predicate: () => {
-                const markerSeen = waitForScreenTextEnabled
+                const markerSeen = shouldWaitForScreenText
                   ? hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
                   : false
                 if (markerSeen) {
@@ -1456,7 +1458,7 @@ const runScenario = async ({
           processOutput.push(`[AUTOMATION] ${controlApiResult.message}\n`)
         }
 
-        if (launchOk && waitForScreenTextEnabled) {
+        if (launchOk && shouldWaitForScreenText) {
           screenTextResult = await waitForScreenText({
             serverUrl,
             marker: screenTextMarker,
@@ -1530,7 +1532,7 @@ const runScenario = async ({
 
           if (
             menuEnterResult.ok &&
-            waitForScreenTextEnabled &&
+            shouldWaitForScreenText &&
             screenTextResult &&
             !screenTextResult.ok &&
             menuEnterRetryCount > 0
@@ -1616,7 +1618,7 @@ const runScenario = async ({
       statusLaunchOk = false
     }
 
-    if (launchOk && !fatalDetection) {
+    if (launchOk && !fatalDetection && captureVideo) {
       const effectiveRecorderCommand =
         recorderCommand || buildDefaultWindowRecorderCommand({ ffmpegExe })
 
@@ -1673,7 +1675,7 @@ const runScenario = async ({
         }
       }
 
-      if (!screenMarkerSeen && waitForScreenTextEnabled && hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)) {
+      if (!screenMarkerSeen && shouldWaitForScreenText && hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)) {
         screenMarkerSeen = true
         processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
       }
@@ -1721,7 +1723,7 @@ const runScenario = async ({
 
         if (
           !screenMarkerSeen &&
-          waitForScreenTextEnabled &&
+          shouldWaitForScreenText &&
           hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
         ) {
           screenMarkerSeen = true
@@ -1780,6 +1782,8 @@ const runScenario = async ({
           await terminateProcessTree(recorderProc)
         }
       }
+    } else if (launchOk && !fatalDetection && !captureVideo) {
+      processOutput.push("[AUTOMATION] capture_disabled_by_option\n")
     }
 
     if (recorderProc && recorderProc.exitCode === null) {
@@ -1818,7 +1822,7 @@ const runScenario = async ({
     }
 
     if (
-      waitForScreenTextEnabled &&
+      shouldWaitForScreenText &&
       controlApiResult &&
       !controlApiResult.ok &&
       !sawMachineText &&
@@ -1833,16 +1837,20 @@ const runScenario = async ({
       processOutput.push(`[AUTOMATION] menu_enter_warning ${menuEnterResult.message}\n`)
     }
 
-    if (classification === "ok" && waitForScreenTextEnabled && !screenMarkerSeen) {
+    if (classification === "ok" && shouldWaitForScreenText && !screenMarkerSeen) {
       const reason = screenTextResult?.message || "screen_text_not_observed"
       processOutput.push(`[AUTOMATION] screen_text_marker_not_observed ${reason}\n`)
     }
 
-    if (classification === "disk_not_loaded" && waitForScreenTextEnabled && screenMarkerSeen) {
+    if (classification === "disk_not_loaded" && shouldWaitForScreenText && screenMarkerSeen) {
       classification = "ok"
       statusLaunchOk = true
       message = "Launch/capture window completed. Disk title marker detected."
       processOutput.push("[AUTOMATION] disk_loaded_by_screen_marker\n")
+    }
+
+    if (classification === "ok" && waitForScreenTextEnabled && !shouldWaitForScreenText) {
+      processOutput.push("[AUTOMATION] screen_text_checks_skipped_capture_disabled\n")
     }
 
     if (resolvedLaunchPath === diskPath && path.extname(diskPath).toLowerCase() !== ".hdv") {
@@ -1983,6 +1991,7 @@ const main = async () => {
   const screenTextPrewaitMs = parseOptionalNumber(options, "screen-text-prewait-ms", 1500)
   const screenTextPollMs = parseOptionalNumber(options, "screen-text-poll-ms", 250)
   const screenTextRequestTimeoutMs = parseOptionalNumber(options, "screen-text-request-timeout-ms", 2000)
+  const captureVideo = parseOptionalBoolean(options, "capture-video", true)
   const ensureAutomationMarkersEnabled = parseOptionalBoolean(
     options,
     "ensure-automation-markers",
@@ -2099,6 +2108,7 @@ const main = async () => {
     screenTextPrewaitMs,
     screenTextPollMs,
     screenTextRequestTimeoutMs,
+    captureVideo,
     ffmpegExe,
     exportedHdvPath: exportedHdvPath ? path.resolve(exportedHdvPath) : "",
     requireExportedHdv,
