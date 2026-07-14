@@ -15,6 +15,7 @@ import { princeofpersia } from "./princeofpersia"
 import { printshop } from "./printshop"
 import { robotron } from "./robotron"
 import { snoggle } from "./snoggle"
+import { ultima4 } from "./ultima4"
 import { ultima5 } from "./ultima5"
 import { wizardry } from "./wizardry"
 import { wolfenstein, wolfenstein_splash } from "./wolfenstein"
@@ -43,6 +44,7 @@ AddGameLibraryItem(princeofpersia)
 AddGameLibraryItem(printshop)
 AddGameLibraryItem(robotron)
 AddGameLibraryItem(snoggle)
+AddGameLibraryItem(ultima4)
 AddGameLibraryItem(ultima5)
 AddGameLibraryItem(wizardry)
 AddGameLibraryItem(wolfenstein)
