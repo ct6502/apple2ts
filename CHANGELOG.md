@@ -1,5 +1,29 @@
 # Changelog
 
+## [v3.5.0](https://github.com/ct6502/apple2ts/tree/v3.5.0) (2026-07-14)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.4.0...v3.5.0)
+
+**Fixed bugs:**
+
+- Stalled while detecting mockboard [\#237](https://github.com/ct6502/apple2ts/issues/237)
+- Printing issues with multiple pages [\#231](https://github.com/ct6502/apple2ts/issues/231)
+
+**Merged pull requests:**
+
+- Fix: Remove unused bootloaders [\#246](https://github.com/ct6502/apple2ts/pull/246) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Cloud drive export auth issues [\#243](https://github.com/ct6502/apple2ts/pull/243) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Export hangs when exporting cloud disk [\#242](https://github.com/ct6502/apple2ts/pull/242) ([boredsenseless](https://github.com/boredsenseless))
+- Split diskcollectionpanel into a few files to make it more readable [\#241](https://github.com/ct6502/apple2ts/pull/241) ([ct6502](https://github.com/ct6502))
+- Fix: Undead and other disks still fail to fetch for export [\#240](https://github.com/ct6502/apple2ts/pull/240) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: HDV screenshot fetch failing due to proxy errors [\#239](https://github.com/ct6502/apple2ts/pull/239) ([boredsenseless](https://github.com/boredsenseless))
+- Fix: Cascading requests flooding CORSFIX proxy resulting in 429 throttling [\#238](https://github.com/ct6502/apple2ts/pull/238) ([boredsenseless](https://github.com/boredsenseless))
+- fix: make isolated speaker clicks audible after silence \(fixes Aztec footstep sounds\) [\#236](https://github.com/ct6502/apple2ts/pull/236) ([anomixer](https://github.com/anomixer))
+- Feature: Export to HDV [\#235](https://github.com/ct6502/apple2ts/pull/235) ([boredsenseless](https://github.com/boredsenseless))
+- Fix google gemini to accept newer AQ keys [\#234](https://github.com/ct6502/apple2ts/pull/234) ([ct6502](https://github.com/ct6502))
+- Fix: Cloud drive auth [\#233](https://github.com/ct6502/apple2ts/pull/233) ([boredsenseless](https://github.com/boredsenseless))
+- feat: add local Ollama and Google Gemini AI providers [\#232](https://github.com/ct6502/apple2ts/pull/232) ([anomixer](https://github.com/anomixer))
+
 ## [v3.4.0](https://github.com/ct6502/apple2ts/tree/v3.4.0) (2026-06-13)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.3.4...v3.4.0)
