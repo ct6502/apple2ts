@@ -1028,7 +1028,7 @@ const buildVtocExportabilityCommand = ({ diskPath }) => {
   ].join(" ")
 }
 
-const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, concurrency }) => {
+const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, concurrency, captureVideo, headless }) => {
   const base = [
     "node cli/electron-hdv-runner.mjs",
     '--disk "{diskPath}"',
@@ -1040,11 +1040,13 @@ const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, conc
     '--raw-sha256 "{rawSha256}"',
     '--canonical-sha256 "{canonicalSha256}"',
     '--exported-hdv "{exportedHdvPath}"',
+    '--capture-video {captureVideo}',
+    '--headless {headless}',
     '--screen-text-marker "{launchMarker}"',
     '--require-exported-hdv true',
     '--menu-enter false',
-    '--app-ready-timeout-ms 5000',
-    '--disk-ready-timeout-ms 5000',
+    '--app-ready-timeout-ms 12000',
+    '--disk-ready-timeout-ms 12000',
     '--control-api-ready-timeout-ms 5000',
   ]
 
@@ -1079,6 +1081,18 @@ const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, conc
   }
 
   return base.join(" ")
+}
+
+const inferDefaultRunnerContract = ({ runnerPreset, runnerCommandTemplate }) => {
+  if (runnerPreset !== "none") {
+    return "electron-hdv-v1"
+  }
+
+  if (typeof runnerCommandTemplate === "string" && /(^|\s)node\s+cli\/electron-hdv-runner\.mjs(\s|$)/.test(runnerCommandTemplate)) {
+    return "electron-hdv-v1"
+  }
+
+  return "none"
 }
 
 const validateElectronHdvRunnerPayload = (payload) => {
@@ -1120,6 +1134,45 @@ const validateElectronHdvRunnerPayload = (payload) => {
   }
   if (typeof artifacts.videoPath !== "string" || artifacts.videoPath.length === 0) {
     return "artifacts.videoPath must be a non-empty string"
+  }
+
+  const telemetry = payload.telemetry
+  if (telemetry !== undefined && (typeof telemetry !== "object" || telemetry === null || Array.isArray(telemetry))) {
+    return "telemetry must be an object"
+  }
+
+  const observationWindow = telemetry?.observationWindow
+  if (observationWindow !== undefined) {
+    if (typeof observationWindow !== "object" || observationWindow === null || Array.isArray(observationWindow)) {
+      return "telemetry.observationWindow must be an object"
+    }
+    if (typeof observationWindow.expected !== "boolean") {
+      return "telemetry.observationWindow.expected must be a boolean"
+    }
+    if (typeof observationWindow.mode !== "string" || observationWindow.mode.length === 0) {
+      return "telemetry.observationWindow.mode must be a non-empty string"
+    }
+    if (typeof observationWindow.fastWindowArmed !== "boolean") {
+      return "telemetry.observationWindow.fastWindowArmed must be a boolean"
+    }
+    if (observationWindow.expected) {
+      if (!Number.isFinite(Number(observationWindow.startedAtMs))) {
+        return "telemetry.observationWindow.startedAtMs must be a number when expected"
+      }
+      if (!Number.isFinite(Number(observationWindow.endedAtMs))) {
+        return "telemetry.observationWindow.endedAtMs must be a number when expected"
+      }
+      if (!Number.isFinite(Number(observationWindow.durationMs))) {
+        return "telemetry.observationWindow.durationMs must be a number when expected"
+      }
+      if (Number(observationWindow.durationMs) < 0) {
+        return "telemetry.observationWindow.durationMs must be >= 0"
+      }
+    }
+  }
+
+  if (status.launchOk && observationWindow?.expected && Number(observationWindow.durationMs) <= 0) {
+    return "telemetry.observationWindow.durationMs must be > 0 for successful launches"
   }
 
   return null
@@ -1165,6 +1218,12 @@ const handleBatch = async (context, command, tokens) => {
   const retries = options.has("retries")
     ? parseRequiredNumber(String(options.get("retries")), "retries")
     : 0
+  const captureVideo = options.has("capture-video")
+    ? parseBoolean(options.get("capture-video"), "capture-video")
+    : true
+  const headless = options.has("headless")
+    ? parseBoolean(options.get("headless"), "headless")
+    : false
   const runnerTimeoutMs = options.has("runner-timeout-ms")
     ? parseRequiredNumber(String(options.get("runner-timeout-ms")), "runner-timeout-ms")
     : 10000
@@ -1192,14 +1251,16 @@ const handleBatch = async (context, command, tokens) => {
 
   const runnerCommandTemplate = hasRunnerCommand
     ? String(requireOption(options, "runner-command"))
-    : buildRunnerCommandFromPreset(runnerPreset, { runnerAppDir, runnerAppExe, concurrency })
+    : buildRunnerCommandFromPreset(runnerPreset, { runnerAppDir, runnerAppExe, concurrency, captureVideo, headless })
+  const defaultRunnerContract = inferDefaultRunnerContract({
+    runnerPreset,
+    runnerCommandTemplate,
+  })
 
   const runnerContract = validateRunnerContractName(
     options.has("runner-contract")
       ? String(options.get("runner-contract"))
-      : runnerPreset !== "none"
-        ? "electron-hdv-v1"
-        : "none",
+      : defaultRunnerContract,
   )
   const runnerResultsDir = options.has("runner-results-dir")
     ? path.resolve(process.cwd(), String(options.get("runner-results-dir")))
@@ -1475,18 +1536,21 @@ const handleBatch = async (context, command, tokens) => {
       const diskTitleMarker = filename.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9]/g, "").slice(0, 20)
       const combinedScreenMarker = [launchMarker, diskTitleMarker].filter(Boolean).join("|")
 
-      const command = applyTemplate(runnerCommandTemplate, {
+      const templatedCommand = applyTemplate(runnerCommandTemplate, {
         diskPath,
         resultPath: runnerResultPath,
         videoPath,
         logPath,
         exportedHdvPath,
+        captureVideo,
+        headless,
         launchMarker: combinedScreenMarker,
         attempt: attemptIndex,
         runId,
         rawSha256,
         canonicalSha256,
       })
+      const command = `${templatedCommand} --capture-video ${captureVideo} --headless ${headless}`
 
       const runner = await runShellCommand(command, runnerTimeoutMs)
       if (logPath) {

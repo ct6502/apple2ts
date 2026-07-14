@@ -63,6 +63,19 @@
         "finalRunMode": { "type": "string" },
         "cycleCountStart": { "type": "number" },
         "cycleCountEnd": { "type": "number" },
+        "observationWindow": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "expected": { "type": "boolean" },
+            "mode": { "type": "string" },
+            "fastWindowArmed": { "type": "boolean" },
+            "armedReason": { "type": ["string", "null"] },
+            "startedAtMs": { "type": ["number", "null"], "minimum": 0 },
+            "endedAtMs": { "type": ["number", "null"], "minimum": 0 },
+            "durationMs": { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
         "textMarkers": {
           "type": "array",
           "items": { "type": "string" }

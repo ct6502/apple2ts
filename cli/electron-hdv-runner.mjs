@@ -693,6 +693,11 @@ const summarizeScreenText = (text, maxLen = 160) => {
   return `${flat.slice(0, maxLen)}...`
 }
 
+const isMeaningfulMachineTextSummary = (summary) => {
+  const normalized = String(summary || "").trim()
+  return normalized.length >= 12 && /[A-Za-z]/.test(normalized)
+}
+
 const parseMarkerCandidates = (marker) => {
   return String(marker || "")
     .split(/[|,]/g)
@@ -1245,6 +1250,7 @@ const runScenario = async ({
   screenTextPollMs,
   screenTextRequestTimeoutMs,
   captureVideo,
+  headless,
 }) => {
   const diskData = await fs.readFile(diskPath)
   const hasExportedHdv = exportedHdvPath && (await fileExists(exportedHdvPath))
@@ -1289,7 +1295,32 @@ const runScenario = async ({
     }
   }
   const safeCaptureSeconds = Math.max(1, Math.floor(captureSeconds))
-  const shouldWaitForScreenText = Boolean(waitForScreenTextEnabled && captureVideo)
+  const effectiveCaptureVideo = Boolean(captureVideo && !headless)
+  const shouldWaitForScreenText = Boolean(waitForScreenTextEnabled)
+  const observationWindow = {
+    expected: false,
+    mode: effectiveCaptureVideo ? "video" : "no-video",
+    fastWindowArmed: false,
+    armedReason: null,
+    startedAtMs: null,
+    endedAtMs: null,
+    durationMs: null,
+  }
+  const markObservationWindowStart = () => {
+    observationWindow.expected = true
+    if (observationWindow.startedAtMs === null) {
+      observationWindow.startedAtMs = Date.now() - scenarioStartedAt
+    }
+    appendTiming("capture_window_start")
+  }
+  const markObservationWindowEnd = () => {
+    observationWindow.expected = true
+    observationWindow.endedAtMs = Date.now() - scenarioStartedAt
+    if (observationWindow.startedAtMs !== null) {
+      observationWindow.durationMs = observationWindow.endedAtMs - observationWindow.startedAtMs
+    }
+    appendTiming("capture_window_end")
+  }
   const launchProbeMs = 5000
   const runtimeSessionId = `${Date.now()}-${process.pid}-${Math.random().toString(16).slice(2, 8)}`
   const runtimeBaseDir = path.resolve(
@@ -1310,8 +1341,15 @@ const runScenario = async ({
   await fs.mkdir(runtimeAppDataRoamingDir, { recursive: true })
   await fs.mkdir(runtimeAppDataLocalDir, { recursive: true })
   await fs.mkdir(runtimeTempDir, { recursive: true })
-  const appCmd = appCommand || "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash \"{launchPath}\""
-  const launchCommand = replacePlaceholders(appCmd, {
+  const appCmd = appCommand || "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash {headlessFlags} \"{launchPath}\""
+  const headlessFlags = headless
+    ? "--headless --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+    : ""
+  // Some profile defaults omit {headlessFlags}; inject flags explicitly when headless is enabled.
+  const normalizedAppCmd = headless && !appCmd.includes("{headlessFlags}")
+    ? `${appCmd} {headlessFlags}`
+    : appCmd
+  const launchCommand = replacePlaceholders(normalizedAppCmd, {
     diskPath,
     launchPath: resolvedLaunchPath,
     videoPath,
@@ -1320,6 +1358,7 @@ const runScenario = async ({
     appExe,
     runtimeUserDataDir,
     runtimeDiskCacheDir,
+    headlessFlags,
   })
 
   let appProc = null
@@ -1360,6 +1399,9 @@ const runScenario = async ({
 
     appProc = spawnShellCommand(launchCommand, appDir, appEnvOverrides)
     collectProcessOutput(appProc, processOutput, appendOutput)
+    if (headless) {
+      processOutput.push("[AUTOMATION] headless_mode_enabled\n")
+    }
     appendTiming("app_spawned")
 
     const exitPromise = waitForExit(appProc)
@@ -1618,7 +1660,7 @@ const runScenario = async ({
       statusLaunchOk = false
     }
 
-    if (launchOk && !fatalDetection && captureVideo) {
+    if (launchOk && !fatalDetection && effectiveCaptureVideo) {
       const effectiveRecorderCommand =
         recorderCommand || buildDefaultWindowRecorderCommand({ ffmpegExe })
 
@@ -1670,6 +1712,8 @@ const runScenario = async ({
           captureDeadline = Math.min(captureDeadline, fastDeadline)
           fastWindowArmed = true
           usedFastCaptureWindow = true
+          observationWindow.fastWindowArmed = true
+          observationWindow.armedReason = reason
           processOutput.push(`[AUTOMATION] fast_capture_window_armed ${postMarkerTotalBudgetMs}ms reason=${reason}\n`)
           appendTiming("fast_window_armed", `reason=${reason}`)
         }
@@ -1682,11 +1726,11 @@ const runScenario = async ({
 
       if (screenMarkerSeen) {
         armFastCaptureWindow("screen_marker_pre_capture")
-      } else if (loadReadyOk) {
-        // Once load success is confirmed, bound the remaining run to a short post-load window.
+      } else if (loadReadyOk && !shouldWaitForScreenText) {
+        // When screen-text waiting is disabled, bound the remaining run to a short post-load window.
         armFastCaptureWindow("load_ready_pre_capture")
       }
-      appendTiming("capture_window_start")
+      markObservationWindowStart()
       const canPollMachineText = Boolean(normalizeServerBaseUrl(serverUrl))
       let nextMachinePollAt = captureStartedAt
 
@@ -1732,6 +1776,16 @@ const runScenario = async ({
           armFastCaptureWindow("screen_marker_in_renderer_output")
         }
 
+        if (
+          shouldWaitForScreenText &&
+          !screenMarkerSeen &&
+          screenTextResult &&
+          !screenTextResult.ok &&
+          isMeaningfulMachineTextSummary(extractLatestAutomationMachineSample(liveOutput))
+        ) {
+          armFastCaptureWindow("renderer_machine_text_activity_fallback")
+        }
+
         if (canPollMachineText && Date.now() >= nextMachinePollAt) {
           nextMachinePollAt = Date.now() + 500
           const machineReply = await getJson({
@@ -1752,6 +1806,15 @@ const runScenario = async ({
               lastMachineTextSummary = machineSummary
               processOutput.push(`[AUTOMATION] machine_text_sample ${machineSummary}\n`)
               sawMachineText = true
+              if (
+                shouldWaitForScreenText &&
+                !screenMarkerSeen &&
+                screenTextResult &&
+                !screenTextResult.ok &&
+                isMeaningfulMachineTextSummary(machineSummary)
+              ) {
+                armFastCaptureWindow("machine_text_activity_fallback")
+              }
             }
             const machineFatal = detectFatalScreenCondition(textPage)
             if (machineFatal) {
@@ -1768,7 +1831,7 @@ const runScenario = async ({
 
         await sleep(100)
       }
-      appendTiming("capture_window_end")
+      markObservationWindowEnd()
 
       if (recorderProc) {
         const remainingBudgetMs = postMarkerHardStopAt ? Math.max(100, postMarkerHardStopAt - Date.now()) : null
@@ -1782,8 +1845,140 @@ const runScenario = async ({
           await terminateProcessTree(recorderProc)
         }
       }
-    } else if (launchOk && !fatalDetection && !captureVideo) {
+    } else if (launchOk && !fatalDetection && !effectiveCaptureVideo) {
       processOutput.push("[AUTOMATION] capture_disabled_by_option\n")
+
+      const captureStartedAt = Date.now()
+      let captureDeadline = captureStartedAt + (safeCaptureSeconds * 1000)
+      const postMarkerTotalBudgetMs = 5000
+      const postMarkerTeardownReserveMs = 1000
+      let fastWindowArmed = false
+      const armFastCaptureWindow = (reason) => {
+        const armedAt = Date.now()
+        const fastDeadline = armedAt + Math.max(500, postMarkerTotalBudgetMs - postMarkerTeardownReserveMs)
+        if (!fastWindowArmed || fastDeadline < captureDeadline) {
+          captureDeadline = Math.min(captureDeadline, fastDeadline)
+          fastWindowArmed = true
+          observationWindow.fastWindowArmed = true
+          observationWindow.armedReason = reason
+          processOutput.push(`[AUTOMATION] fast_capture_window_armed ${postMarkerTotalBudgetMs}ms reason=${reason}\n`)
+          appendTiming("fast_window_armed", `reason=${reason}`)
+        }
+      }
+
+      if (!screenMarkerSeen && shouldWaitForScreenText && hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)) {
+        screenMarkerSeen = true
+        processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
+      }
+
+      if (screenMarkerSeen) {
+        armFastCaptureWindow("screen_marker_pre_capture")
+      } else if (loadReadyOk && !shouldWaitForScreenText) {
+        armFastCaptureWindow("load_ready_pre_capture")
+      }
+
+      markObservationWindowStart()
+      const canPollMachineText = Boolean(normalizeServerBaseUrl(serverUrl))
+      let nextMachinePollAt = captureStartedAt
+
+      while (Date.now() < captureDeadline) {
+        if (appProc && appProc.exitCode !== null) {
+          statusLaunchOk = false
+          fatalDetection = fatalDetection || {
+            code: "app_exited_during_capture",
+            message: "Application exited during capture window",
+            source: "app-process",
+          }
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        const outputFatal = detectFatalScreenCondition(liveOutput)
+        const outputRendererFatal = detectRendererFatalEvent(liveOutput)
+        if (outputRendererFatal) {
+          statusLaunchOk = false
+          fatalDetection = outputRendererFatal
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        if (outputFatal) {
+          statusLaunchOk = false
+          fatalDetection = {
+            ...outputFatal,
+            source: "app-output",
+          }
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        if (
+          !screenMarkerSeen &&
+          shouldWaitForScreenText &&
+          hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
+        ) {
+          screenMarkerSeen = true
+          processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
+          appendTiming("screen_marker_seen", "source=renderer_output_loop")
+          armFastCaptureWindow("screen_marker_in_renderer_output")
+        }
+
+        if (
+          shouldWaitForScreenText &&
+          !screenMarkerSeen &&
+          screenTextResult &&
+          !screenTextResult.ok &&
+          isMeaningfulMachineTextSummary(extractLatestAutomationMachineSample(liveOutput))
+        ) {
+          armFastCaptureWindow("renderer_machine_text_activity_fallback")
+        }
+
+        if (canPollMachineText && Date.now() >= nextMachinePollAt) {
+          nextMachinePollAt = Date.now() + 500
+          const machineReply = await getJson({
+            url: `${normalizeServerBaseUrl(serverUrl)}/api/machine`,
+            timeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+          }).catch(() => null)
+
+          if (machineReply && machineReply.ok) {
+            const textPage = String(machineReply.payload?.data?.textPage || "")
+            if (!screenMarkerSeen && textContainsAnyMarkerCandidate(textPage, screenTextMarker)) {
+              screenMarkerSeen = true
+              processOutput.push(`[AUTOMATION] screen_text_found_during_capture ${String(screenTextMarker || "").toLowerCase()}\n`)
+              appendTiming("screen_marker_seen", "source=control_api_capture")
+              armFastCaptureWindow("screen_marker_during_capture")
+            }
+            const machineSummary = summarizeScreenText(textPage)
+            if (machineSummary && machineSummary !== lastMachineTextSummary) {
+              lastMachineTextSummary = machineSummary
+              processOutput.push(`[AUTOMATION] machine_text_sample ${machineSummary}\n`)
+              sawMachineText = true
+              if (
+                shouldWaitForScreenText &&
+                !screenMarkerSeen &&
+                screenTextResult &&
+                !screenTextResult.ok &&
+                isMeaningfulMachineTextSummary(machineSummary)
+              ) {
+                armFastCaptureWindow("machine_text_activity_fallback")
+              }
+            }
+            const machineFatal = detectFatalScreenCondition(textPage)
+            if (machineFatal) {
+              statusLaunchOk = false
+              fatalDetection = {
+                ...machineFatal,
+                source: "machine-text",
+              }
+              processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+              break
+            }
+          }
+        }
+
+        await sleep(100)
+      }
+      markObservationWindowEnd()
     }
 
     if (recorderProc && recorderProc.exitCode === null) {
@@ -1849,8 +2044,8 @@ const runScenario = async ({
       processOutput.push("[AUTOMATION] disk_loaded_by_screen_marker\n")
     }
 
-    if (classification === "ok" && waitForScreenTextEnabled && !shouldWaitForScreenText) {
-      processOutput.push("[AUTOMATION] screen_text_checks_skipped_capture_disabled\n")
+    if (classification === "ok" && !waitForScreenTextEnabled) {
+      processOutput.push("[AUTOMATION] screen_text_checks_disabled_by_option\n")
     }
 
     if (resolvedLaunchPath === diskPath && path.extname(diskPath).toLowerCase() !== ".hdv") {
@@ -1890,6 +2085,7 @@ const runScenario = async ({
         finalRunMode: statusLaunchOk ? "running" : "unknown",
         cycleCountStart: 0,
         cycleCountEnd: 0,
+        observationWindow,
         textMarkers: buildTelemetryTextMarkers(combinedLog),
       },
       hashes: {
@@ -1923,6 +2119,7 @@ const runScenario = async ({
         finalRunMode: "unknown",
         cycleCountStart: 0,
         cycleCountEnd: 0,
+        observationWindow,
         textMarkers: buildTelemetryTextMarkers(combinedLog),
       },
       hashes: {
@@ -1992,6 +2189,7 @@ const main = async () => {
   const screenTextPollMs = parseOptionalNumber(options, "screen-text-poll-ms", 250)
   const screenTextRequestTimeoutMs = parseOptionalNumber(options, "screen-text-request-timeout-ms", 2000)
   const captureVideo = parseOptionalBoolean(options, "capture-video", true)
+  const headless = parseOptionalBoolean(options, "headless", false)
   const ensureAutomationMarkersEnabled = parseOptionalBoolean(
     options,
     "ensure-automation-markers",
@@ -2109,6 +2307,7 @@ const main = async () => {
     screenTextPollMs,
     screenTextRequestTimeoutMs,
     captureVideo,
+    headless,
     ffmpegExe,
     exportedHdvPath: exportedHdvPath ? path.resolve(exportedHdvPath) : "",
     requireExportedHdv,
