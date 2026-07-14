@@ -1042,6 +1042,10 @@ const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, conc
     '--exported-hdv "{exportedHdvPath}"',
     '--screen-text-marker "{launchMarker}"',
     '--require-exported-hdv true',
+    '--menu-enter false',
+    '--app-ready-timeout-ms 5000',
+    '--disk-ready-timeout-ms 5000',
+    '--control-api-ready-timeout-ms 5000',
   ]
 
   const appendProfile = (profileName) => {
@@ -1163,7 +1167,7 @@ const handleBatch = async (context, command, tokens) => {
     : 0
   const runnerTimeoutMs = options.has("runner-timeout-ms")
     ? parseRequiredNumber(String(options.get("runner-timeout-ms")), "runner-timeout-ms")
-    : 180000
+    : 10000
   const hdvGenerateTimeoutMs = options.has("hdv-generate-timeout-ms")
     ? parseRequiredNumber(String(options.get("hdv-generate-timeout-ms")), "hdv-generate-timeout-ms")
     : 120000
@@ -1468,13 +1472,16 @@ const handleBatch = async (context, command, tokens) => {
         }
       }
 
+      const diskTitleMarker = filename.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9]/g, "").slice(0, 20)
+      const combinedScreenMarker = [launchMarker, diskTitleMarker].filter(Boolean).join("|")
+
       const command = applyTemplate(runnerCommandTemplate, {
         diskPath,
         resultPath: runnerResultPath,
         videoPath,
         logPath,
         exportedHdvPath,
-        launchMarker,
+        launchMarker: combinedScreenMarker,
         attempt: attemptIndex,
         runId,
         rawSha256,

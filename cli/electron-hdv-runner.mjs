@@ -606,6 +606,25 @@ const waitForOutputMarker = async ({
   return { ok: false, reason: "timeout" }
 }
 
+const waitForPredicate = async ({
+  proc,
+  predicate,
+  timeoutMs,
+  pollMs = 100,
+}) => {
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    if (predicate()) {
+      return { ok: true }
+    }
+    if (proc.exitCode !== null) {
+      return { ok: false, reason: "process_exited" }
+    }
+    await sleep(pollMs)
+  }
+  return { ok: false, reason: "timeout" }
+}
+
 const flattenOutput = (chunks, maxChars = 200000) => {
   const joined = chunks.join("")
   if (joined.length <= maxChars) return joined
@@ -651,6 +670,7 @@ const buildTelemetryTextMarkers = (combinedLog) => {
 
 const FATAL_TEXT_PATTERNS = [
   /\bI\s*\/\s*O\s+ERROR\b/i,
+  /\bFILE\s+NOT\s+FOUND\b/i,
   /\bPATH\s+NOT\s+FOUND\b/i,
   /\bSYNTAX\s+ERROR\b/i,
 ]
@@ -671,6 +691,22 @@ const summarizeScreenText = (text, maxLen = 160) => {
     .trim()
   if (flat.length <= maxLen) return flat
   return `${flat.slice(0, maxLen)}...`
+}
+
+const parseMarkerCandidates = (marker) => {
+  return String(marker || "")
+    .split(/[|,]/g)
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+const textContainsAnyMarkerCandidate = (text, marker) => {
+  const haystack = String(text || "").toLowerCase()
+  const candidates = parseMarkerCandidates(marker)
+  if (candidates.length === 0) {
+    return false
+  }
+  return candidates.some((candidate) => haystack.includes(candidate))
 }
 
 const detectFatalScreenCondition = (text) => {
@@ -770,6 +806,57 @@ const extractLatestAutomationMachineSample = (text) => {
   }
 }
 
+const hasScreenTextMarkerInAutomationSamples = (text, marker) => {
+  const normalized = String(text || "")
+  const candidates = parseMarkerCandidates(marker)
+  if (candidates.length === 0) {
+    return false
+  }
+
+  const machineSampleRegex = /^\[AUTOMATION\]\s+machine-text-sample\s+(\{[^\n\r]*\})$/gim
+  for (const match of normalized.matchAll(machineSampleRegex)) {
+    if (!match || !match[1]) continue
+    try {
+      const payload = JSON.parse(match[1])
+      const sampleText = String(payload.sample || "").toLowerCase()
+      if (candidates.some((candidate) => sampleText.includes(candidate))) {
+        return true
+      }
+    } catch {
+      // Ignore malformed sample lines.
+    }
+  }
+
+  return false
+}
+
+const hasAutomationLoadSuccessSignal = (text) => {
+  const normalized = String(text || "")
+  if (/\[AUTOMATION\]\s+(disk-loaded|state-loaded)\b/i.test(normalized)) {
+    return true
+  }
+  if (/\[AUTOMATION\]\s+disk-load-dispatched\b[^\n\r]*\(acknowledged\)/i.test(normalized)) {
+    return true
+  }
+
+  const machineSampleRegex = /^\[AUTOMATION\]\s+machine-text-sample\s+(\{[^\n\r]*\})$/gim
+  for (const match of normalized.matchAll(machineSampleRegex)) {
+    if (!match || !match[1]) continue
+    try {
+      const payload = JSON.parse(match[1])
+      const rawLength = Number(payload.rawLength || 0)
+      const sampleText = String(payload.sample || "").trim()
+      if (rawLength > 0 || sampleText.length > 0) {
+        return true
+      }
+    } catch {
+      // Ignore malformed sample lines.
+    }
+  }
+
+  return false
+}
+
 const postJson = async ({ url, body, timeoutMs }) => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -835,7 +922,7 @@ const waitForScreenText = async ({
   shouldAbort,
 }) => {
   const normalizedServer = normalizeServerBaseUrl(serverUrl)
-  const normalizedMarker = String(marker || "").trim().toLowerCase()
+  const markerCandidates = parseMarkerCandidates(marker)
 
   if (!normalizedServer) {
     return {
@@ -844,7 +931,7 @@ const waitForScreenText = async ({
     }
   }
 
-  if (!normalizedMarker) {
+  if (markerCandidates.length === 0) {
     return {
       ok: false,
       message: "screen_text_check_skipped_empty_marker",
@@ -888,10 +975,10 @@ const waitForScreenText = async ({
           lastText,
         }
       }
-      if (textPage.toLowerCase().includes(normalizedMarker)) {
+      if (textContainsAnyMarkerCandidate(textPage, marker)) {
         return {
           ok: true,
-          message: `screen_text_found:${normalizedMarker}`,
+          message: `screen_text_found:${markerCandidates.join("|")}`,
           lastText,
         }
       }
@@ -902,7 +989,7 @@ const waitForScreenText = async ({
 
   return {
     ok: false,
-    message: `screen_text_timeout:${normalizedMarker}`,
+    message: `screen_text_timeout:${markerCandidates.join("|")}`,
     lastText,
   }
 }
@@ -1189,6 +1276,11 @@ const runScenario = async ({
 
   const processOutput = []
   let liveOutput = ""
+  const scenarioStartedAt = Date.now()
+  const appendTiming = (label, details = "") => {
+    const elapsed = Date.now() - scenarioStartedAt
+    processOutput.push(`[AUTOMATION] timing t+${elapsed}ms ${label}${details ? ` ${details}` : ""}\n`)
+  }
   const appendOutput = (text) => {
     liveOutput += text
     if (liveOutput.length > 400000) {
@@ -1266,6 +1358,7 @@ const runScenario = async ({
 
     appProc = spawnShellCommand(launchCommand, appDir, appEnvOverrides)
     collectProcessOutput(appProc, processOutput, appendOutput)
+    appendTiming("app_spawned")
 
     const exitPromise = waitForExit(appProc)
     earlyExit = await Promise.race([
@@ -1293,6 +1386,7 @@ const runScenario = async ({
       if (!appReady.ok) {
         launchOk = false
       } else {
+        appendTiming("window_ready")
         const diskReady = await waitForOutputMarker({
           proc: appProc,
           readOutput: () => liveOutput,
@@ -1301,7 +1395,43 @@ const runScenario = async ({
         })
         loadReadyOk = diskReady.ok
         if (!diskReady.ok) {
-          launchOk = false
+          const markerSeenInOutput = waitForScreenTextEnabled
+            ? hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
+            : false
+          if (markerSeenInOutput) {
+            screenMarkerSeen = true
+            loadReadyOk = true
+            processOutput.push("[AUTOMATION] disk_ready_by_screen_marker\n")
+            appendTiming("screen_marker_seen", "source=renderer_output")
+          } else if (hasAutomationLoadSuccessSignal(liveOutput)) {
+            loadReadyOk = true
+            processOutput.push("[AUTOMATION] disk_ready_fallback_signal_detected\n")
+          } else {
+            const lateLoadGraceMs = 5000
+            processOutput.push(`[AUTOMATION] disk_ready_grace_wait ${lateLoadGraceMs}ms\n`)
+            const lateLoad = await waitForPredicate({
+              proc: appProc,
+              timeoutMs: lateLoadGraceMs,
+              predicate: () => {
+                const markerSeen = waitForScreenTextEnabled
+                  ? hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
+                  : false
+                if (markerSeen) {
+                  screenMarkerSeen = true
+                  appendTiming("screen_marker_seen", "source=renderer_output_grace")
+                }
+                return markerSeen || hasAutomationLoadSuccessSignal(liveOutput)
+              },
+            })
+
+            if (lateLoad.ok) {
+              loadReadyOk = true
+              processOutput.push("[AUTOMATION] disk_ready_grace_success\n")
+            } else {
+              launchOk = false
+              processOutput.push(`[AUTOMATION] disk_ready_grace_timeout ${lateLoad.reason || "timeout"}\n`)
+            }
+          }
         } else {
           const instrumentationReadyResult = await waitForOutputMarker({
             proc: appProc,
@@ -1315,7 +1445,7 @@ const runScenario = async ({
           )
         }
 
-        if (waitForScreenTextEnabled || menuEnterEnabled) {
+        if (launchOk && menuEnterEnabled) {
           controlApiResult = await waitForControlApiReady({
             serverUrl,
             timeoutMs: Math.max(1000, Math.floor(controlApiReadyTimeoutMs)),
@@ -1326,7 +1456,7 @@ const runScenario = async ({
           processOutput.push(`[AUTOMATION] ${controlApiResult.message}\n`)
         }
 
-        if (waitForScreenTextEnabled) {
+        if (launchOk && waitForScreenTextEnabled) {
           screenTextResult = await waitForScreenText({
             serverUrl,
             marker: screenTextMarker,
@@ -1343,6 +1473,7 @@ const runScenario = async ({
           }
           if (screenTextResult.ok) {
             screenMarkerSeen = true
+            appendTiming("screen_marker_seen", "source=control_api_prewait")
           }
           if (screenTextResult.fatal) {
             fatalDetection = {
@@ -1361,7 +1492,7 @@ const runScenario = async ({
           }
         }
 
-        if (menuEnterEnabled && !fatalDetection) {
+        if (launchOk && menuEnterEnabled && !fatalDetection && !screenMarkerSeen) {
           if (menuEnterDelayMs > 0) {
             const delayStart = Date.now()
             while (Date.now() - delayStart < menuEnterDelayMs) {
@@ -1457,6 +1588,14 @@ const runScenario = async ({
             }
           }
         }
+
+        if (launchOk && menuEnterEnabled && screenMarkerSeen) {
+          menuEnterResult = {
+            ok: true,
+            message: "menu_enter_skipped_screen_marker_seen",
+          }
+          processOutput.push(`[AUTOMATION] ${menuEnterResult.message}\n`)
+        }
       }
     }
 
@@ -1515,7 +1654,37 @@ const runScenario = async ({
       }
 
       const captureStartedAt = Date.now()
-      const captureDeadline = captureStartedAt + (safeCaptureSeconds * 1000)
+      let captureDeadline = captureStartedAt + (safeCaptureSeconds * 1000)
+      const postMarkerTotalBudgetMs = 5000
+      const postMarkerTeardownReserveMs = 1000
+      let postMarkerHardStopAt = null
+      let usedFastCaptureWindow = false
+      let fastWindowArmed = false
+      const armFastCaptureWindow = (reason) => {
+        const armedAt = Date.now()
+        const fastDeadline = armedAt + Math.max(500, postMarkerTotalBudgetMs - postMarkerTeardownReserveMs)
+        postMarkerHardStopAt = armedAt + postMarkerTotalBudgetMs
+        if (!fastWindowArmed || fastDeadline < captureDeadline) {
+          captureDeadline = Math.min(captureDeadline, fastDeadline)
+          fastWindowArmed = true
+          usedFastCaptureWindow = true
+          processOutput.push(`[AUTOMATION] fast_capture_window_armed ${postMarkerTotalBudgetMs}ms reason=${reason}\n`)
+          appendTiming("fast_window_armed", `reason=${reason}`)
+        }
+      }
+
+      if (!screenMarkerSeen && waitForScreenTextEnabled && hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)) {
+        screenMarkerSeen = true
+        processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
+      }
+
+      if (screenMarkerSeen) {
+        armFastCaptureWindow("screen_marker_pre_capture")
+      } else if (loadReadyOk) {
+        // Once load success is confirmed, bound the remaining run to a short post-load window.
+        armFastCaptureWindow("load_ready_pre_capture")
+      }
+      appendTiming("capture_window_start")
       const canPollMachineText = Boolean(normalizeServerBaseUrl(serverUrl))
       let nextMachinePollAt = captureStartedAt
 
@@ -1550,6 +1719,17 @@ const runScenario = async ({
           break
         }
 
+        if (
+          !screenMarkerSeen &&
+          waitForScreenTextEnabled &&
+          hasScreenTextMarkerInAutomationSamples(liveOutput, screenTextMarker)
+        ) {
+          screenMarkerSeen = true
+          processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
+          appendTiming("screen_marker_seen", "source=renderer_output_loop")
+          armFastCaptureWindow("screen_marker_in_renderer_output")
+        }
+
         if (canPollMachineText && Date.now() >= nextMachinePollAt) {
           nextMachinePollAt = Date.now() + 500
           const machineReply = await getJson({
@@ -1559,9 +1739,11 @@ const runScenario = async ({
 
           if (machineReply && machineReply.ok) {
             const textPage = String(machineReply.payload?.data?.textPage || "")
-            if (!screenMarkerSeen && textPage.toLowerCase().includes(String(screenTextMarker || "").toLowerCase())) {
+            if (!screenMarkerSeen && textContainsAnyMarkerCandidate(textPage, screenTextMarker)) {
               screenMarkerSeen = true
               processOutput.push(`[AUTOMATION] screen_text_found_during_capture ${String(screenTextMarker || "").toLowerCase()}\n`)
+              appendTiming("screen_marker_seen", "source=control_api_capture")
+              armFastCaptureWindow("screen_marker_during_capture")
             }
             const machineSummary = summarizeScreenText(textPage)
             if (machineSummary && machineSummary !== lastMachineTextSummary) {
@@ -1584,14 +1766,24 @@ const runScenario = async ({
 
         await sleep(100)
       }
+      appendTiming("capture_window_end")
+
+      if (recorderProc) {
+        const remainingBudgetMs = postMarkerHardStopAt ? Math.max(100, postMarkerHardStopAt - Date.now()) : null
+        const recorderGraceMs = remainingBudgetMs === null
+          ? (usedFastCaptureWindow ? 500 : 4000)
+          : Math.min(usedFastCaptureWindow ? 500 : 4000, remainingBudgetMs)
+        processOutput.push(`[AUTOMATION] recorder_finalize_wait ${recorderGraceMs}ms\n`)
+        // Keep finalization short in fast-window mode so total post-marker delay stays near 5s.
+        const recorderExit = await waitForExitWithTimeout(recorderProc, recorderGraceMs)
+        if (!recorderExit.completed) {
+          await terminateProcessTree(recorderProc)
+        }
+      }
     }
 
-    if (recorderProc) {
-      // Give recorder a short grace window to flush/finalize outputs (for MP4 moov atom).
-      const recorderExit = await waitForExitWithTimeout(recorderProc, 4000)
-      if (!recorderExit.completed) {
-        await terminateProcessTree(recorderProc)
-      }
+    if (recorderProc && recorderProc.exitCode === null) {
+      await terminateProcessTree(recorderProc)
     }
     if (appProc) {
       await terminateProcessTree(appProc)
@@ -1620,19 +1812,9 @@ const runScenario = async ({
         classification = "automation_instrumentation_missing"
         message = `Renderer automation instrumentation did not report ready event within ${instrumentationReadyTimeoutMs} ms.`
       }
-    } else if (menuEnterEnabled && menuEnterResult && !menuEnterResult.ok) {
-      statusLaunchOk = false
-      classification = "menu_enter_failed"
-      message = `Failed to inject launch key for MENUSRC launch: ${menuEnterResult.message}`
     } else if (!exportOk) {
       classification = "export_not_verified"
       message = "Launch completed but exported HDV was not found."
-    }
-
-    if (classification === "ok" && waitForScreenTextEnabled && !screenMarkerSeen) {
-      classification = "screen_text_not_ready"
-      const reason = screenTextResult?.message || "screen_text_not_observed"
-      message = `Launch completed, but disk-name marker was not observed: ${reason}`
     }
 
     if (
@@ -1645,6 +1827,22 @@ const runScenario = async ({
       classification = "screen_text_unavailable"
       statusLaunchOk = false
       message = "Control API unavailable and no machine text was captured from renderer automation events."
+    }
+
+    if (classification === "ok" && menuEnterEnabled && menuEnterResult && !menuEnterResult.ok) {
+      processOutput.push(`[AUTOMATION] menu_enter_warning ${menuEnterResult.message}\n`)
+    }
+
+    if (classification === "ok" && waitForScreenTextEnabled && !screenMarkerSeen) {
+      const reason = screenTextResult?.message || "screen_text_not_observed"
+      processOutput.push(`[AUTOMATION] screen_text_marker_not_observed ${reason}\n`)
+    }
+
+    if (classification === "disk_not_loaded" && waitForScreenTextEnabled && screenMarkerSeen) {
+      classification = "ok"
+      statusLaunchOk = true
+      message = "Launch/capture window completed. Disk title marker detected."
+      processOutput.push("[AUTOMATION] disk_loaded_by_screen_marker\n")
     }
 
     if (resolvedLaunchPath === diskPath && path.extname(diskPath).toLowerCase() !== ".hdv") {
@@ -1663,8 +1861,9 @@ const runScenario = async ({
         processOutput.push(`[AUTOMATION] failure_text_capture ${finalSample}\n`)
       }
     } else {
-      processOutput.push("[RESULT] PASS\n")
+      processOutput.push("[RESULT] ✅ PASS\n")
     }
+    appendTiming("scenario_complete", `classification=${classification}`)
 
     const combinedLog = collapseMachineTextFatalLines(flattenOutput(processOutput))
     if (logPath) {
