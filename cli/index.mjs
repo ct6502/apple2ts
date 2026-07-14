@@ -940,6 +940,196 @@ const loadDiskListFromDirectory = async (inputDir) => {
   return files
 }
 
+const isSha256Hex = (value) => typeof value === "string" && /^[0-9a-f]{64}$/i.test(value)
+
+const normalizeCachedDiskOutcome = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null
+  }
+  if (typeof value.code !== "string" || value.code.length === 0) {
+    return null
+  }
+
+  const status = typeof value.status === "string"
+    ? value.status
+    : (value.code === "disk_not_exportable"
+      ? "skipped"
+      : (typeof value.ok === "boolean"
+        ? (value.ok ? "pass" : "fail")
+        : (value.pass === true ? "pass" : (value.fail === true ? "fail" : "unknown"))))
+
+  return {
+    code: value.code,
+    message: typeof value.message === "string" ? value.message : null,
+    status,
+    diskName: typeof value.diskName === "string" ? value.diskName : null,
+    lastUpdated: typeof value.lastUpdated === "string"
+      ? value.lastUpdated
+      : (typeof value.createdAt === "string" ? value.createdAt : null),
+  }
+}
+
+const loadDisksCacheFile = async (disksPath) => {
+  const resolvedPath = path.resolve(process.cwd(), disksPath)
+  const raw = await fs.readFile(resolvedPath, "utf8")
+
+  let parsed
+  try {
+    parsed = JSON.parse(raw)
+  } catch (error) {
+    fail(`--disks JSON is invalid: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    fail("--disks JSON must be an object")
+  }
+
+  const disks = parsed.disks
+  if (!disks || typeof disks !== "object" || Array.isArray(disks)) {
+    fail("--disks JSON must contain a 'disks' object keyed by canonical SHA256")
+  }
+
+  const byCanonicalSha256 = new Map()
+  const byRawSha256 = new Map()
+
+  for (const [canonicalSha256, entry] of Object.entries(disks)) {
+    if (!isSha256Hex(canonicalSha256)) {
+      continue
+    }
+
+    const normalized = normalizeCachedDiskOutcome(entry)
+    if (!normalized) {
+      continue
+    }
+
+    const canonicalKey = canonicalSha256.toLowerCase()
+    byCanonicalSha256.set(canonicalKey, normalized)
+
+    const rawSha256 = typeof entry.rawSha256 === "string" && isSha256Hex(entry.rawSha256)
+      ? entry.rawSha256.toLowerCase()
+      : null
+    if (rawSha256) {
+      byRawSha256.set(rawSha256, normalized)
+    }
+  }
+
+  return {
+    resolvedPath,
+    parsed,
+    byCanonicalSha256,
+    byRawSha256,
+    count: byCanonicalSha256.size,
+  }
+}
+
+const ensureDisksCacheShape = (input = {}) => {
+  const cache = input && typeof input === "object" && !Array.isArray(input)
+    ? { ...input }
+    : {}
+  cache.schemaVersion = 1
+  cache.lastUpdated = typeof cache.lastUpdated === "string" ? cache.lastUpdated : new Date().toISOString()
+  if (!cache.disks || typeof cache.disks !== "object" || Array.isArray(cache.disks)) {
+    cache.disks = {}
+  }
+  return cache
+}
+
+const buildCacheStatus = (record) => {
+  const code = typeof record?.status?.code === "string" ? record.status.code : ""
+  if (code === "disk_not_exportable") {
+    return "skipped"
+  }
+  return Boolean(record?.status?.ok) ? "pass" : "fail"
+}
+
+const buildCacheEntryFromRecord = (record) => {
+  const status = record?.status
+  if (!status || typeof status !== "object") {
+    return null
+  }
+  const disk = record?.disk
+  if (!disk || typeof disk !== "object") {
+    return null
+  }
+  const canonicalSha256 = typeof disk.canonicalSha256 === "string" ? disk.canonicalSha256.toLowerCase() : ""
+  if (!isSha256Hex(canonicalSha256)) {
+    return null
+  }
+  const rawSha256 = typeof disk.rawSha256 === "string" && isSha256Hex(disk.rawSha256)
+    ? disk.rawSha256.toLowerCase()
+    : null
+  const statusName = buildCacheStatus(record)
+  return {
+    canonicalSha256,
+    value: {
+      diskName: typeof disk.filename === "string" ? disk.filename : null,
+      code: typeof status.code === "string" ? status.code : "unknown",
+      message: typeof status.message === "string" ? status.message : null,
+      status: statusName,
+      rawSha256,
+      lastUpdated: typeof record.createdAt === "string" ? record.createdAt : new Date().toISOString(),
+    },
+  }
+}
+
+const createDisksCacheWriter = (cacheFilePath, initialParsed) => {
+  if (!cacheFilePath) {
+    return {
+      async updateFromRecord() {},
+    }
+  }
+
+  const resolvedPath = path.resolve(process.cwd(), cacheFilePath)
+  const cacheJson = ensureDisksCacheShape(initialParsed)
+  let queue = Promise.resolve()
+
+  const persistNow = async () => {
+    cacheJson.lastUpdated = new Date().toISOString()
+    await fs.mkdir(path.dirname(resolvedPath), { recursive: true })
+    await fs.writeFile(resolvedPath, `${JSON.stringify(cacheJson, null, 2)}\n`)
+  }
+
+  const updateFromRecord = async (record) => {
+    const entry = buildCacheEntryFromRecord(record)
+    if (!entry) {
+      return
+    }
+    cacheJson.disks[entry.canonicalSha256] = entry.value
+    queue = queue.then(() => persistNow())
+    await queue
+  }
+
+  return {
+    updateFromRecord,
+  }
+}
+
+const lookupDiskOutcomeInCache = (cache, { canonicalSha256, rawSha256 }) => {
+  if (!cache) {
+    return null
+  }
+
+  const canonicalKey = typeof canonicalSha256 === "string" ? canonicalSha256.toLowerCase() : ""
+  if (canonicalKey && cache.byCanonicalSha256.has(canonicalKey)) {
+    return {
+      keyType: "canonicalSha256",
+      key: canonicalKey,
+      outcome: cache.byCanonicalSha256.get(canonicalKey),
+    }
+  }
+
+  const rawKey = typeof rawSha256 === "string" ? rawSha256.toLowerCase() : ""
+  if (rawKey && cache.byRawSha256.has(rawKey)) {
+    return {
+      keyType: "rawSha256",
+      key: rawKey,
+      outcome: cache.byRawSha256.get(rawKey),
+    }
+  }
+
+  return null
+}
+
 const getAliasedOptionValue = (options, names) => {
   for (const name of names) {
     if (options.has(name)) {
@@ -1479,8 +1669,12 @@ const handleBatch = async (context, command, tokens) => {
     ? path.resolve(process.cwd(), String(options.get("log-dir")))
     : null
   const append = options.has("append") ? parseBoolean(options.get("append"), "append") : false
+  const disksCachePath = options.has("disks") ? String(options.get("disks")) : null
   const runId = options.has("run-id") ? String(options.get("run-id")) : randomUUID()
   const launchMarker = `RUN${runId.replace(/[^A-Za-z0-9]/g, "").slice(0, 8).toUpperCase() || "MARK"}`
+  const disksCache = disksCachePath ? await loadDisksCacheFile(disksCachePath) : null
+  const disksCacheWriter = createDisksCacheWriter(disksCachePath, disksCache?.parsed)
+  let skippedByDisksCache = 0
 
   if (shards < 1) {
     fail("--shards must be at least 1")
@@ -1574,6 +1768,44 @@ const handleBatch = async (context, command, tokens) => {
     const diskId = `${canonicalSha256.slice(0, 12)}-${filename.replace(/[^A-Za-z0-9._-]/g, "_")}`
     const maxAttempts = retries + 1
     let lastRecord = null
+
+    const cached = lookupDiskOutcomeInCache(disksCache, { canonicalSha256, rawSha256 })
+    if (cached) {
+      skippedByDisksCache += 1
+      console.log(`[batch] Skipping ${filename} via --disks cache (${cached.keyType}:${cached.key})`)
+      return {
+        schemaVersion: 1,
+        runId,
+        createdAt: new Date().toISOString(),
+        disk: {
+          path: diskPath,
+          filename,
+          sizeBytes: rawBytes.length,
+          rawSha256,
+          canonicalSha256,
+          canonicalization: canonical.canonicalization,
+        },
+        attempt: {
+          index: 0,
+          max: maxAttempts,
+          retryable: false,
+        },
+        status: {
+          ok: true,
+          code: "skipped_cached_disk",
+          message: `Skipped because disk hash matched prior result in --disks (${cached.keyType}).`,
+        },
+        timing: {
+          elapsedMs: 0,
+        },
+        cache: {
+          source: disksCache.resolvedPath,
+          keyType: cached.keyType,
+          key: cached.key,
+          previous: cached.outcome,
+        },
+      }
+    }
 
     if (exportedHdvDir && runnerContract === "electron-hdv-v1") {
       const vtocCheckCommand = buildVtocExportabilityCommand({ diskPath })
@@ -2054,6 +2286,9 @@ const handleBatch = async (context, command, tokens) => {
         }
         const record = await processDisk(shardedDisks[index])
         await appendRecord(record)
+        if (record?.status?.code !== "skipped_cached_disk") {
+          await disksCacheWriter.updateFromRecord(record)
+        }
       }
     })())
 
@@ -2078,6 +2313,7 @@ const handleBatch = async (context, command, tokens) => {
         : null,
     totals: {
       diskCount: shardedDisks.length,
+      skippedByDisksCache,
       shards,
       shardIndex,
       concurrency,

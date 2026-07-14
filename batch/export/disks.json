@@ -1,0 +1,1494 @@
+{
+  "schemaVersion": 1,
+  "lastUpdated": "2026-07-14T08:11:11.876Z",
+  "disks": {
+    "0a4acee6ab91195400d94884c471824433f8b6aa9e6b0a7ffba81232eb1c57bf": {
+      "diskName": "abm.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "0a4acee6ab91195400d94884c471824433f8b6aa9e6b0a7ffba81232eb1c57bf",
+      "lastUpdated": "2026-07-14T06:31:14.616Z"
+    },
+    "87070c9c6fa30169182fe489dd07c2156eead11964a7bd07dba155942278b32a": {
+      "diskName": "acid_trip.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "87070c9c6fa30169182fe489dd07c2156eead11964a7bd07dba155942278b32a",
+      "lastUpdated": "2026-07-14T06:31:24.711Z"
+    },
+    "280fc1d50290cdae020564301e9011464e82dcd0df71b2012393436a2d8c56d0": {
+      "diskName": "AE1.DSK",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "280fc1d50290cdae020564301e9011464e82dcd0df71b2012393436a2d8c56d0",
+      "lastUpdated": "2026-07-14T06:31:35.478Z"
+    },
+    "22ddda97b6fc551e7e84663284580afba3c8058a86581b2e4084ba244cca44b7": {
+      "diskName": "AE2.DSK",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "22ddda97b6fc551e7e84663284580afba3c8058a86581b2e4084ba244cca44b7",
+      "lastUpdated": "2026-07-14T06:31:42.509Z"
+    },
+    "fb8da66ff3795046321ba4035bcb0062616babefca2c43f5da1b778eb79982ee": {
+      "diskName": "aeronaut.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "fb8da66ff3795046321ba4035bcb0062616babefca2c43f5da1b778eb79982ee",
+      "lastUpdated": "2026-07-14T06:31:46.730Z"
+    },
+    "019bf802b7e6be436386b5f2a47339e38eebd016150179267222bd2b9823978b": {
+      "diskName": "AirHeart.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "019bf802b7e6be436386b5f2a47339e38eebd016150179267222bd2b9823978b",
+      "lastUpdated": "2026-07-14T06:31:53.573Z"
+    },
+    "03c85c6a1a80e6aaa5d401d04bb9f804c0e14e8095d1f69c2f5746378ecb7568": {
+      "diskName": "alcazar_full_disk.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "03c85c6a1a80e6aaa5d401d04bb9f804c0e14e8095d1f69c2f5746378ecb7568",
+      "lastUpdated": "2026-07-14T06:31:56.872Z"
+    },
+    "632445cf73792a16fd4ef44e77b1ccf0703d4082b04909a585092cb06e70c2d4": {
+      "diskName": "alien+.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "632445cf73792a16fd4ef44e77b1ccf0703d4082b04909a585092cb06e70c2d4",
+      "lastUpdated": "2026-07-14T06:32:07.414Z"
+    },
+    "5f9f53dc80eaa1461597cdc0c28387e3f0337ec627b95fb146391dd624e92fee": {
+      "diskName": "aliens_a.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5f9f53dc80eaa1461597cdc0c28387e3f0337ec627b95fb146391dd624e92fee",
+      "lastUpdated": "2026-07-14T06:32:18.534Z"
+    },
+    "eeacb275714b3896cf88dff05da6a85afa64233c02da05fa1ae08d1ab3987d35": {
+      "diskName": "aliens_b.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "eeacb275714b3896cf88dff05da6a85afa64233c02da05fa1ae08d1ab3987d35",
+      "lastUpdated": "2026-07-14T06:32:29.678Z"
+    },
+    "af7dc6e53efba542e7ce2529c336835e5e281e0537948b4e2d94fb9b4f797082": {
+      "diskName": "apple_bowling.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "af7dc6e53efba542e7ce2529c336835e5e281e0537948b4e2d94fb9b4f797082",
+      "lastUpdated": "2026-07-14T06:32:40.635Z"
+    },
+    "d77618080186c3ec0b8d9aa3133971510e21c3925bc13cf00016335d02dcfae0": {
+      "diskName": "apple_panic_joystick_version.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "d77618080186c3ec0b8d9aa3133971510e21c3925bc13cf00016335d02dcfae0",
+      "lastUpdated": "2026-07-14T06:32:50.863Z"
+    },
+    "2950feb283b190c83439885e29430520670910b4cda6ed11f5a004dba2cc5208": {
+      "diskName": "apple_panic.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "2950feb283b190c83439885e29430520670910b4cda6ed11f5a004dba2cc5208",
+      "lastUpdated": "2026-07-14T06:33:01.300Z"
+    },
+    "5338f06a120b2cbb63871bb7dacdd4ed5a4d0f9861be30b04a9353ce1abaec6c": {
+      "diskName": "arcade_bootcamp.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5338f06a120b2cbb63871bb7dacdd4ed5a4d0f9861be30b04a9353ce1abaec6c",
+      "lastUpdated": "2026-07-14T06:33:13.409Z"
+    },
+    "afe89d404559d303f0bc4a8d4f4235289f819398aca2c7a3f8097c56b13e5f8d": {
+      "diskName": "arcade_insanity.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "afe89d404559d303f0bc4a8d4f4235289f819398aca2c7a3f8097c56b13e5f8d",
+      "lastUpdated": "2026-07-14T06:33:28.387Z"
+    },
+    "8c6dd0efef98436e1a48f5f44c8e6ca6a76906b0a7a33c2a20b2650238e9bf92": {
+      "diskName": "arctic_fox.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "8c6dd0efef98436e1a48f5f44c8e6ca6a76906b0a7a33c2a20b2650238e9bf92",
+      "lastUpdated": "2026-07-14T06:33:44.176Z"
+    },
+    "b321be9a9548ba46be1d2e008ff69a438c84d74ae96502d465597d4209d1dae2": {
+      "diskName": "argos.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "b321be9a9548ba46be1d2e008ff69a438c84d74ae96502d465597d4209d1dae2",
+      "lastUpdated": "2026-07-14T06:33:53.796Z"
+    },
+    "7b0718a537bdd8b5bd835f5b8577136144f9f392ee674103e0468f74f9140bb5": {
+      "diskName": "arkanoid.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "7b0718a537bdd8b5bd835f5b8577136144f9f392ee674103e0468f74f9140bb5",
+      "lastUpdated": "2026-07-14T06:34:08.533Z"
+    },
+    "c3356430998032773839546b0bd320e19dc80674066a9ccf2a4c2314c5d555ab": {
+      "diskName": "artesians.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "c3356430998032773839546b0bd320e19dc80674066a9ccf2a4c2314c5d555ab",
+      "lastUpdated": "2026-07-14T06:34:23.760Z"
+    },
+    "839ccef48d85f6937155b68a6dcec91e480b306ea0b982d334525f53b9bfa64e": {
+      "diskName": "asteroid.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "839ccef48d85f6937155b68a6dcec91e480b306ea0b982d334525f53b9bfa64e",
+      "lastUpdated": "2026-07-14T06:34:36.373Z"
+    },
+    "abf4eb8e68605120251a24b0d4a1305d2b1fadd24e0807dcd4fd2983dd09e69a": {
+      "diskName": "asteroids_NM_H5.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "abf4eb8e68605120251a24b0d4a1305d2b1fadd24e0807dcd4fd2983dd09e69a",
+      "lastUpdated": "2026-07-14T06:34:48.615Z"
+    },
+    "4ebbcaefe89dd9140e7dd287cb51627e0f71e8a1a15573955052f1c1398c5c7d": {
+      "diskName": "aztec.alt.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "4ebbcaefe89dd9140e7dd287cb51627e0f71e8a1a15573955052f1c1398c5c7d",
+      "lastUpdated": "2026-07-14T06:35:01.079Z"
+    },
+    "398b55ac1497e33bfa2b61ab5879ec847dd8482356680b247cd06ceb451b4b28": {
+      "diskName": "aztec.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "398b55ac1497e33bfa2b61ab5879ec847dd8482356680b247cd06ceb451b4b28",
+      "lastUpdated": "2026-07-14T06:35:11.422Z"
+    },
+    "529c75b11f8a9a4f34f6cfacc10c473464832c217be307c8177618aabc359a13": {
+      "diskName": "aztec.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "529c75b11f8a9a4f34f6cfacc10c473464832c217be307c8177618aabc359a13",
+      "lastUpdated": "2026-07-14T06:35:20.359Z"
+    },
+    "8321dc59b5642f37a6a6f672ff35f8bdbc61c3bbc6a1254468ac21c4b3d05a91": {
+      "diskName": "bad_dudes1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "8321dc59b5642f37a6a6f672ff35f8bdbc61c3bbc6a1254468ac21c4b3d05a91",
+      "lastUpdated": "2026-07-14T06:35:27.626Z"
+    },
+    "5364a44c8ac8f3f0123ba2ffa6fb0f3909a2437beb1160c8444aaea18ca4e581": {
+      "diskName": "bad_dudes2.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5364a44c8ac8f3f0123ba2ffa6fb0f3909a2437beb1160c8444aaea18ca4e581",
+      "lastUpdated": "2026-07-14T06:35:31.388Z"
+    },
+    "5e0cc7aa1fd0832ceccb24e3a24f4921534e200cadc57ea96e576d02c60b0aeb": {
+      "diskName": "ball_blazer.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5e0cc7aa1fd0832ceccb24e3a24f4921534e200cadc57ea96e576d02c60b0aeb",
+      "lastUpdated": "2026-07-14T06:35:44.844Z"
+    },
+    "6d578787bcd51a4093dab8b7861c0d994948ffa7192eb906d46a29f3e7d2f11f": {
+      "diskName": "bandits_button_shield.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "6d578787bcd51a4093dab8b7861c0d994948ffa7192eb906d46a29f3e7d2f11f",
+      "lastUpdated": "2026-07-14T06:36:01.005Z"
+    },
+    "b77b7f46ef36113a1b19dd28ef5a358c160f00948437ac170fb8c1cad1511942": {
+      "diskName": "bandits.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "b77b7f46ef36113a1b19dd28ef5a358c160f00948437ac170fb8c1cad1511942",
+      "lastUpdated": "2026-07-14T06:36:14.217Z"
+    },
+    "d3b5de498849d184a03d52d1a16d51650cb9672c5dacdf11d9af49005652c5a4": {
+      "diskName": "batman1.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "d3b5de498849d184a03d52d1a16d51650cb9672c5dacdf11d9af49005652c5a4",
+      "lastUpdated": "2026-07-14T06:36:27.786Z"
+    },
+    "96243fca03e567a51b1142dc94c29c60aa75be61dba22fed3522cab271c148f7": {
+      "diskName": "batman2.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "96243fca03e567a51b1142dc94c29c60aa75be61dba22fed3522cab271c148f7",
+      "lastUpdated": "2026-07-14T06:36:36.911Z"
+    },
+    "2a1f5978f1a707d1575b8c5ecb4219950d623ba918e1f7522d56cbe6d920e4af": {
+      "diskName": "battle_of_hoth.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "2a1f5978f1a707d1575b8c5ecb4219950d623ba918e1f7522d56cbe6d920e4af",
+      "lastUpdated": "2026-07-14T06:36:43.634Z"
+    },
+    "cdc2cbc53530ec7402170ab393ec31070c08de90bef0b7ed651ec13c2a5db427": {
+      "diskName": "beachhead_II.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "cdc2cbc53530ec7402170ab393ec31070c08de90bef0b7ed651ec13c2a5db427",
+      "lastUpdated": "2026-07-14T06:36:54.586Z"
+    },
+    "8d5c0a14e904dc942e62849b5e4780066d7fad6dfae77c12deb563d9a30b0355": {
+      "diskName": "beachlanding.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "8d5c0a14e904dc942e62849b5e4780066d7fad6dfae77c12deb563d9a30b0355",
+      "lastUpdated": "2026-07-14T06:36:55.996Z"
+    },
+    "2df82c808a280d9ac85cc44879be041d05628b7c9eb0986cdad9918105c70ee8": {
+      "diskName": "beer_run_disk.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "2df82c808a280d9ac85cc44879be041d05628b7c9eb0986cdad9918105c70ee8",
+      "lastUpdated": "2026-07-14T06:36:58.733Z"
+    },
+    "5fa9e47cb7c744de5223f9ecf38aa8cdd519a427d1be736018551337ae2471ee": {
+      "diskName": "beer_run.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5fa9e47cb7c744de5223f9ecf38aa8cdd519a427d1be736018551337ae2471ee",
+      "lastUpdated": "2026-07-14T06:37:11.859Z"
+    },
+    "2f0e2de6a60bec5b4bed1d4398717a88047c107b512ba8084a67fd635a64e533": {
+      "diskName": "berzap.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "2f0e2de6a60bec5b4bed1d4398717a88047c107b512ba8084a67fd635a64e533",
+      "lastUpdated": "2026-07-14T06:37:23.098Z"
+    },
+    "8a8b6e1647205b79a8dea972202831e2c45fee95dc9ae2a16b8ceddb8749337b": {
+      "diskName": "beyond_castle_wolfenstien.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "8a8b6e1647205b79a8dea972202831e2c45fee95dc9ae2a16b8ceddb8749337b",
+      "lastUpdated": "2026-07-14T06:37:41.340Z"
+    },
+    "5ee8696cb484ba9153e9b222123bad832a0e0f75ab82dbc6ff0a172d67a27d06": {
+      "diskName": "beyond_floppy.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "5ee8696cb484ba9153e9b222123bad832a0e0f75ab82dbc6ff0a172d67a27d06",
+      "lastUpdated": "2026-07-14T06:37:51.020Z"
+    },
+    "a796cb64142a2b5acacefb87a106234a46f08886ea63c1a8fae925eb804a4c83": {
+      "diskName": "beyond_pinball.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "a796cb64142a2b5acacefb87a106234a46f08886ea63c1a8fae925eb804a4c83",
+      "lastUpdated": "2026-07-14T06:37:52.975Z"
+    },
+    "d25eabce1923ff7f7c5583d6f44e741f0d0aa527e46deccd3d19bb5dd9d21034": {
+      "diskName": "bilestoad.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "d25eabce1923ff7f7c5583d6f44e741f0d0aa527e46deccd3d19bb5dd9d21034",
+      "lastUpdated": "2026-07-14T06:38:15.042Z"
+    },
+    "795a2d5c17732483f2b2f1e795aa21479b77febd76dc09208a3441a3223666be": {
+      "diskName": "black_magic.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "795a2d5c17732483f2b2f1e795aa21479b77febd76dc09208a3441a3223666be",
+      "lastUpdated": "2026-07-14T06:38:24.516Z"
+    },
+    "52a1b7f97887e8ef907df7d79aeed69154f5e159542958fe979f0a30ca6b6103": {
+      "diskName": "blitzkrieg.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "52a1b7f97887e8ef907df7d79aeed69154f5e159542958fe979f0a30ca6b6103",
+      "lastUpdated": "2026-07-14T06:38:26.544Z"
+    },
+    "ab41a91bf338cf024d99d34fe0823d7cd932c5f4f05fa2a93ccb07951e3507a5": {
+      "diskName": "bolo.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "ab41a91bf338cf024d99d34fe0823d7cd932c5f4f05fa2a93ccb07951e3507a5",
+      "lastUpdated": "2026-07-14T06:38:36.449Z"
+    },
+    "e97c54e556c9c0643339f498c5f74da0c2f0c771432196518e9868a41a25034b": {
+      "diskName": "borg.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "e97c54e556c9c0643339f498c5f74da0c2f0c771432196518e9868a41a25034b",
+      "lastUpdated": "2026-07-14T06:38:46.778Z"
+    },
+    "c0cc84274d787d5727c0963d419ecf21a319c4af20010bb8e2bdf65ca53fdd27": {
+      "diskName": "both_barrels.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "c0cc84274d787d5727c0963d419ecf21a319c4af20010bb8e2bdf65ca53fdd27",
+      "lastUpdated": "2026-07-14T06:38:56.952Z"
+    },
+    "1f019563ee0fa89288b814f5a826b61a649d8dae71f9184356c823c98eb65c12": {
+      "diskName": "boulderdash_1.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "1f019563ee0fa89288b814f5a826b61a649d8dae71f9184356c823c98eb65c12",
+      "lastUpdated": "2026-07-14T06:39:07.532Z"
+    },
+    "019eed6ff3cee6e46489d7886ea4fb01a786914b2c085a7a10e5bd2b59bfc6f8": {
+      "diskName": "boulderdash_2.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "019eed6ff3cee6e46489d7886ea4fb01a786914b2c085a7a10e5bd2b59bfc6f8",
+      "lastUpdated": "2026-07-14T06:39:20.296Z"
+    },
+    "3c134b01c3f32f6077e03911793baf4b6490a65f4279c3929aea2c7d80095a2f": {
+      "diskName": "bouncing_kumungas.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "3c134b01c3f32f6077e03911793baf4b6490a65f4279c3929aea2c7d80095a2f",
+      "lastUpdated": "2026-07-14T06:39:37.468Z"
+    },
+    "267becf8e604037947e0b45312a536af6ecb60f712bf3bdafaaa0f988e5b210c": {
+      "diskName": "break_through.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "267becf8e604037947e0b45312a536af6ecb60f712bf3bdafaaa0f988e5b210c",
+      "lastUpdated": "2026-07-14T06:39:52.399Z"
+    },
+    "f705362d3f62b65e4f641d6a9fb91ca0b48ebfb9331bb5e1f7b07d84aa362f28": {
+      "diskName": "breakout.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "f705362d3f62b65e4f641d6a9fb91ca0b48ebfb9331bb5e1f7b07d84aa362f28",
+      "lastUpdated": "2026-07-14T06:40:06.610Z"
+    },
+    "4cb8ee50a831bc5ad217bf74029474bed1c9213fd008e723b0d56adc1a2bffc0": {
+      "diskName": "bruce_lee.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "4cb8ee50a831bc5ad217bf74029474bed1c9213fd008e723b0d56adc1a2bffc0",
+      "lastUpdated": "2026-07-14T06:40:18.203Z"
+    },
+    "73009e40197a73ed16e7e1b2b786a45e1e60807a1d91497059838d9849382149": {
+      "diskName": "bruce_lee.po",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "73009e40197a73ed16e7e1b2b786a45e1e60807a1d91497059838d9849382149",
+      "lastUpdated": "2026-07-14T06:40:20.036Z"
+    },
+    "3d05073be44d58162275a68e4996fb1290ac093d4c90b1229379dd066999fb3a": {
+      "diskName": "brucelee.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "3d05073be44d58162275a68e4996fb1290ac093d4c90b1229379dd066999fb3a",
+      "lastUpdated": "2026-07-14T06:40:23.597Z"
+    },
+    "1159fcf335c4c2c7cda0303aee182c5214783dfffef68406ab9aaaa5735e3113": {
+      "diskName": "bubble_bobble_1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "1159fcf335c4c2c7cda0303aee182c5214783dfffef68406ab9aaaa5735e3113",
+      "lastUpdated": "2026-07-14T06:40:25.333Z"
+    },
+    "3c9252be2462c19a9d625ed701aa62cd4b690f50c83bbb54215b59276dc37e4f": {
+      "diskName": "bubble_bobble_2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "3c9252be2462c19a9d625ed701aa62cd4b690f50c83bbb54215b59276dc37e4f",
+      "lastUpdated": "2026-07-14T06:40:26.632Z"
+    },
+    "ef1e4797bf4197d128ba1774d4d8531cd08a8c54d2b6ac0f62bbe654302599ff": {
+      "diskName": "bubble_bobble1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "ef1e4797bf4197d128ba1774d4d8531cd08a8c54d2b6ac0f62bbe654302599ff",
+      "lastUpdated": "2026-07-14T06:40:28.090Z"
+    },
+    "cbe661537151ace57ea66d6b80f880b5f49c930933caf2942b2f74ccb1ff8351": {
+      "diskName": "bubble_bobble2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "cbe661537151ace57ea66d6b80f880b5f49c930933caf2942b2f74ccb1ff8351",
+      "lastUpdated": "2026-07-14T06:40:30.013Z"
+    },
+    "d033a9cd0bcd7f19846a53deb1745bf1b213300b980b5842dc1a68d8c2f264eb": {
+      "diskName": "bubble_head.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "d033a9cd0bcd7f19846a53deb1745bf1b213300b980b5842dc1a68d8c2f264eb",
+      "lastUpdated": "2026-07-14T06:40:33.363Z"
+    },
+    "0691307b7cf43a48de888bf870f9b94a96b9ce02e697128ecaaeae53e8fabace": {
+      "diskName": "buck_rogers.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "0691307b7cf43a48de888bf870f9b94a96b9ce02e697128ecaaeae53e8fabace",
+      "lastUpdated": "2026-07-14T06:40:48.442Z"
+    },
+    "c4432e8d0549310bf7045b8bf9de6145c351474998d0d2a87ac4f056a74679f5": {
+      "diskName": "burgertime.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "c4432e8d0549310bf7045b8bf9de6145c351474998d0d2a87ac4f056a74679f5",
+      "lastUpdated": "2026-07-14T06:40:57.006Z"
+    },
+    "bbcd96792edbd6ce8400038ecdb2e05ab50d886e1a53240fdc77b665fdee3d4b": {
+      "diskName": "cannonball_blitz.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "bbcd96792edbd6ce8400038ecdb2e05ab50d886e1a53240fdc77b665fdee3d4b",
+      "lastUpdated": "2026-07-14T06:41:14.185Z"
+    },
+    "b8bbf4d4f3a02726ff2a44986051d3b0423531225713f4d6931858ed682fce85": {
+      "diskName": "carnival.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "b8bbf4d4f3a02726ff2a44986051d3b0423531225713f4d6931858ed682fce85",
+      "lastUpdated": "2026-07-14T06:41:35.084Z"
+    },
+    "4fdc34fd4aee685458ea6a9a6542d7b71e8a9b8193871f8723b7d78fccd26529": {
+      "diskName": "castle_smurfenstien.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "4fdc34fd4aee685458ea6a9a6542d7b71e8a9b8193871f8723b7d78fccd26529",
+      "lastUpdated": "2026-07-14T06:41:49.965Z"
+    },
+    "37357addcaf9a8762cfedca8f98ed0f6bb55477d26a9a3db8cd77060393e1979": {
+      "diskName": "castle_wolfenstien.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "37357addcaf9a8762cfedca8f98ed0f6bb55477d26a9a3db8cd77060393e1979",
+      "lastUpdated": "2026-07-14T06:41:54.446Z"
+    },
+    "3386d7229d1c7f6a7d298d67ba0ea645d9e442b8abda63ec8c911a373e0f7cce": {
+      "diskName": "cavern_creatures.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "3386d7229d1c7f6a7d298d67ba0ea645d9e442b8abda63ec8c911a373e0f7cce",
+      "lastUpdated": "2026-07-14T06:42:16.539Z"
+    },
+    "2c50a06826eb029da3e2d28835eb6ed48ccb0cf294c4069613fa9461c4f15d32": {
+      "diskName": "caverns_of_callisto.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "2c50a06826eb029da3e2d28835eb6ed48ccb0cf294c4069613fa9461c4f15d32",
+      "lastUpdated": "2026-07-14T06:42:33.057Z"
+    },
+    "e448f95855f5849cb8eac6232436d30b0e007b10d1c72ccad650c01b765c23b6": {
+      "diskName": "championship_lode_runner.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "e448f95855f5849cb8eac6232436d30b0e007b10d1c72ccad650c01b765c23b6",
+      "lastUpdated": "2026-07-14T06:42:37.897Z"
+    },
+    "b516ebadee2bd4f9eb2438ce9e2b5ed820b5980eedb104b00234eb796e533728": {
+      "diskName": "choplifter.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "b516ebadee2bd4f9eb2438ce9e2b5ed820b5980eedb104b00234eb796e533728",
+      "lastUpdated": "2026-07-14T06:42:48.212Z"
+    },
+    "0fead573dd0cc549fd45068f9afc3ecde18584e8a1a00a25d26a3f67a5bc08bc": {
+      "diskName": "choplifter+.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "0fead573dd0cc549fd45068f9afc3ecde18584e8a1a00a25d26a3f67a5bc08bc",
+      "lastUpdated": "2026-07-14T06:43:16.543Z"
+    },
+    "5c3d625c2767b2a455b714bde4c0a47a9aa71120d90befd6d797c13b68e43894": {
+      "diskName": "chrono_warrior.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5c3d625c2767b2a455b714bde4c0a47a9aa71120d90befd6d797c13b68e43894",
+      "lastUpdated": "2026-07-14T06:43:39.414Z"
+    },
+    "ffa44184faabff16dd55aaf44ac77c539d0ccd6767596ff3a8c30d87da27362b": {
+      "diskName": "cider_spider.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "ffa44184faabff16dd55aaf44ac77c539d0ccd6767596ff3a8c30d87da27362b",
+      "lastUpdated": "2026-07-14T06:44:05.049Z"
+    },
+    "b6b047566a6396c2a69fd5f5d8abd9fd93e29fa10964e77f029dbd05903d966c": {
+      "diskName": "commando.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "b6b047566a6396c2a69fd5f5d8abd9fd93e29fa10964e77f029dbd05903d966c",
+      "lastUpdated": "2026-07-14T06:44:21.368Z"
+    },
+    "4911b1a3b9d2976f06f109480375d3f59b03849451281449397287ba2d14f983": {
+      "diskName": "Conan1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "4911b1a3b9d2976f06f109480375d3f59b03849451281449397287ba2d14f983",
+      "lastUpdated": "2026-07-14T06:44:33.470Z"
+    },
+    "3a8dc927d397a2a89555bae69bad91bcc8f8ac4338d500ce3b91d513bd34af0e": {
+      "diskName": "Conan2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "3a8dc927d397a2a89555bae69bad91bcc8f8ac4338d500ce3b91d513bd34af0e",
+      "lastUpdated": "2026-07-14T06:44:35.290Z"
+    },
+    "840bcdb6e0613a0ce216577f1a1bc4f9df063990a690f89a279aa235abfbe2d4": {
+      "diskName": "congo_bongo.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "840bcdb6e0613a0ce216577f1a1bc4f9df063990a690f89a279aa235abfbe2d4",
+      "lastUpdated": "2026-07-14T06:44:39.341Z"
+    },
+    "1e029710787420dfbcfc7971010826c8c3ba0ff884302f3e8e5c8d3483d178b3": {
+      "diskName": "congo_bongo.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "1e029710787420dfbcfc7971010826c8c3ba0ff884302f3e8e5c8d3483d178b3",
+      "lastUpdated": "2026-07-14T06:44:53.943Z"
+    },
+    "2fc85c7ef3f8fcfc3cd8554b0fc3ce082a2da37ae42df9566d626c10c576291d": {
+      "diskName": "crazy_maczy.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "2fc85c7ef3f8fcfc3cd8554b0fc3ce082a2da37ae42df9566d626c10c576291d",
+      "lastUpdated": "2026-07-14T06:45:08.080Z"
+    },
+    "13583e2651d3ade6839644667319e72a04cedee6575a7b05c174a208f56cba13": {
+      "diskName": "cricketeer.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "13583e2651d3ade6839644667319e72a04cedee6575a7b05c174a208f56cba13",
+      "lastUpdated": "2026-07-14T06:45:22.916Z"
+    },
+    "60ad1a9055e2a37845a3364e9de63760987af828e8c3a5c0fcf061b4432c1d6f": {
+      "diskName": "crisis_mountain+.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "60ad1a9055e2a37845a3364e9de63760987af828e8c3a5c0fcf061b4432c1d6f",
+      "lastUpdated": "2026-07-14T06:45:47.265Z"
+    },
+    "024bace1eaf17ff796e69d3e56401dafc33e7483446b06c43966aaf908ab526b": {
+      "diskName": "cross_city.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "024bace1eaf17ff796e69d3e56401dafc33e7483446b06c43966aaf908ab526b",
+      "lastUpdated": "2026-07-14T06:45:58.230Z"
+    },
+    "4b83b124dd6d71407509b0cdd2829aad2d549d2e5313803b7434640579cb8d9e": {
+      "diskName": "crossfire.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "4b83b124dd6d71407509b0cdd2829aad2d549d2e5313803b7434640579cb8d9e",
+      "lastUpdated": "2026-07-14T06:46:12.955Z"
+    },
+    "7c920a3b9eb923b03bd6cb5f1c117adc302ff3af3f701bf41cac191c35a25ab1": {
+      "diskName": "crystal_quest.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "7c920a3b9eb923b03bd6cb5f1c117adc302ff3af3f701bf41cac191c35a25ab1",
+      "lastUpdated": "2026-07-14T06:46:26.706Z"
+    },
+    "a12c2de5fdcaab27862c65c1c590839f51cddd4f4112f4474a32efb006eca9af": {
+      "diskName": "death_race82.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "a12c2de5fdcaab27862c65c1c590839f51cddd4f4112f4474a32efb006eca9af",
+      "lastUpdated": "2026-07-14T06:46:40.197Z"
+    },
+    "c2ea97e79df91cd5654b052c3336eeddb7bf9b9ef253101315c35f3b10dd68f6": {
+      "diskName": "deathsword.do",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "c2ea97e79df91cd5654b052c3336eeddb7bf9b9ef253101315c35f3b10dd68f6",
+      "lastUpdated": "2026-07-14T06:46:52.330Z"
+    },
+    "0a761ceaefda5c415d7d4689ce62cba84377b923007b95e1771455ed5f1c79e5": {
+      "diskName": "defender2.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "0a761ceaefda5c415d7d4689ce62cba84377b923007b95e1771455ed5f1c79e5",
+      "lastUpdated": "2026-07-14T06:47:23.725Z"
+    },
+    "ea5de870457933ce38f4a34da8c8799f8e706b8be7cd34107e9d23a89cce8958": {
+      "diskName": "defender1.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "ea5de870457933ce38f4a34da8c8799f8e706b8be7cd34107e9d23a89cce8958",
+      "lastUpdated": "2026-07-14T06:47:09.449Z"
+    },
+    "8007ca406eb6931e6ab7e27df12c6ad17186303c1ddc0756e410cdf9ace5ae71": {
+      "diskName": "dig_em.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "8007ca406eb6931e6ab7e27df12c6ad17186303c1ddc0756e410cdf9ace5ae71",
+      "lastUpdated": "2026-07-14T06:47:38.295Z"
+    },
+    "d588181ca55303bd83387e8d75b385470ac623c95137b9db83d2c82424d083c1": {
+      "diskName": "digdug.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "d588181ca55303bd83387e8d75b385470ac623c95137b9db83d2c82424d083c1",
+      "lastUpdated": "2026-07-14T06:47:51.849Z"
+    },
+    "0f35f5fddbc0bef2ef57d0d92569bb9cfc5523ac2dd583944c29e816576be984": {
+      "diskName": "dino_eggs_prodos.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "0f35f5fddbc0bef2ef57d0d92569bb9cfc5523ac2dd583944c29e816576be984",
+      "lastUpdated": "2026-07-14T06:48:04.939Z"
+    },
+    "8cf0be5ed33f398efcba0adf6d37ba6561a86d21c8a447de7a2971b7ce963e92": {
+      "diskName": "dino_eggs.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "8cf0be5ed33f398efcba0adf6d37ba6561a86d21c8a447de7a2971b7ce963e92",
+      "lastUpdated": "2026-07-14T06:48:08.044Z"
+    },
+    "c96837bf1f8b50df809aae27985143c2a6610cc40d3e6c06e17cceab3114cbff": {
+      "diskName": "dino_eggs.po",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "c96837bf1f8b50df809aae27985143c2a6610cc40d3e6c06e17cceab3114cbff",
+      "lastUpdated": "2026-07-14T06:48:20.570Z"
+    },
+    "8005ded9d053a2c33d761db5ad793bfa31564889a3e507e872af2f47969d289f": {
+      "diskName": "dino_smurf.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "8005ded9d053a2c33d761db5ad793bfa31564889a3e507e872af2f47969d289f",
+      "lastUpdated": "2026-07-14T06:48:22.542Z"
+    },
+    "05cab571d0454a79bb7003e20e02560d3dfb5d4b0da79b565e055b48ae8896b4": {
+      "diskName": "docking_mission.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "05cab571d0454a79bb7003e20e02560d3dfb5d4b0da79b565e055b48ae8896b4",
+      "lastUpdated": "2026-07-14T06:48:25.861Z"
+    },
+    "4422567c53bbf5a8d2c97d02990f458910d67f36ed4d2debb998d9c10fd03085": {
+      "diskName": "dog_fight.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "4422567c53bbf5a8d2c97d02990f458910d67f36ed4d2debb998d9c10fd03085",
+      "lastUpdated": "2026-07-14T06:48:39.791Z"
+    },
+    "53e4f522f1b6ee11ffaf4667df607f97744830a938cf8171647ab5fa665e7188": {
+      "diskName": "donkey_kong.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "53e4f522f1b6ee11ffaf4667df607f97744830a938cf8171647ab5fa665e7188",
+      "lastUpdated": "2026-07-14T06:49:04.111Z"
+    },
+    "fb9939636d492f64eaa4fb2d84e701017d2744ecb372d85ae9391ec888f2cf19": {
+      "diskName": "dr_dracupig.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "fb9939636d492f64eaa4fb2d84e701017d2744ecb372d85ae9391ec888f2cf19",
+      "lastUpdated": "2026-07-14T06:49:15.131Z"
+    },
+    "8e9bad5e279535f8af975bafdde1f8fa8790378ec3200d24bc2f4679dbf4bc8b": {
+      "diskName": "drol.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "8e9bad5e279535f8af975bafdde1f8fa8790378ec3200d24bc2f4679dbf4bc8b",
+      "lastUpdated": "2026-07-14T06:49:29.187Z"
+    },
+    "9b0a8c672f535aaabd35a000fb1e4e2acefe47e995281eb0e600af441567db52": {
+      "diskName": "dung_beetles.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "9b0a8c672f535aaabd35a000fb1e4e2acefe47e995281eb0e600af441567db52",
+      "lastUpdated": "2026-07-14T06:49:32.697Z"
+    },
+    "7a04534e2f04c4930d49625d11daa880346b72aa461f118019d8b62e2b1a825b": {
+      "diskName": "escape_from_arcturus.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "7a04534e2f04c4930d49625d11daa880346b72aa461f118019d8b62e2b1a825b",
+      "lastUpdated": "2026-07-14T06:49:47.508Z"
+    },
+    "bb26fec0edab7c0e442d6702dd0b70dcc05965832d57644bd6e040f191ab7927": {
+      "diskName": "evolution.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "bb26fec0edab7c0e442d6702dd0b70dcc05965832d57644bd6e040f191ab7927",
+      "lastUpdated": "2026-07-14T06:49:59.960Z"
+    },
+    "2b86bbba94ce758974329ada41d70abcac1296f04b78a34a9fd9b03f3b8b4444": {
+      "diskName": "exterminator+.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "2b86bbba94ce758974329ada41d70abcac1296f04b78a34a9fd9b03f3b8b4444",
+      "lastUpdated": "2026-07-14T06:50:01.484Z"
+    },
+    "a0b37c397a1799f6ae685786375ad3830be34c86b5d0dd16a8ac582d5e0579c2": {
+      "diskName": "falcons.dsk",
+      "status": "fail",
+      "code": "vtoc_check_timeout",
+      "message": "VTOC exportability check timed out",
+      "rawSha256": "a0b37c397a1799f6ae685786375ad3830be34c86b5d0dd16a8ac582d5e0579c2",
+      "lastUpdated": "2026-07-14T07:05:02.668Z"
+    },
+    "0321cf71ed38a16727b80d64b1cb3787c0756e717ca0e57b84362e3b643c0fff": {
+      "diskName": "falcons+.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "0321cf71ed38a16727b80d64b1cb3787c0756e717ca0e57b84362e3b643c0fff",
+      "lastUpdated": "2026-07-14T07:05:07.899Z"
+    },
+    "3a0b9292d8028794e07e1fdc3b9976876e9eb7921c05989d71c83e48ffce05bb": {
+      "diskName": "fido.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "3a0b9292d8028794e07e1fdc3b9976876e9eb7921c05989d71c83e48ffce05bb",
+      "lastUpdated": "2026-07-14T07:05:11.700Z"
+    },
+    "369c76d8b0d4535c19b7ac5e5e86b474fe775976480e647de95f9215aab2e936": {
+      "diskName": "flak.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "369c76d8b0d4535c19b7ac5e5e86b474fe775976480e647de95f9215aab2e936",
+      "lastUpdated": "2026-07-14T07:05:14.851Z"
+    },
+    "c33c8561be6336dd400e584ba86534df930e73cfe124887462f1d52a39787777": {
+      "diskName": "floppy.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "c33c8561be6336dd400e584ba86534df930e73cfe124887462f1d52a39787777",
+      "lastUpdated": "2026-07-14T07:05:16.348Z"
+    },
+    "0f2b63e7108f7f817efcb272096d1b0f97a2c6bc331aebb2696b374190e9be3f": {
+      "diskName": "force7.good.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "0f2b63e7108f7f817efcb272096d1b0f97a2c6bc331aebb2696b374190e9be3f",
+      "lastUpdated": "2026-07-14T07:05:17.687Z"
+    },
+    "921136ebad4f2ff76a8ea80bf95e55627f0da3b6aa29ff1124be023e05371061": {
+      "diskName": "freefall.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "921136ebad4f2ff76a8ea80bf95e55627f0da3b6aa29ff1124be023e05371061",
+      "lastUpdated": "2026-07-14T07:05:20.779Z"
+    },
+    "bdc9bb9adae48eaa7fa0273b419afcdfbe2d426bc7947ef825b91d9d31d75a03": {
+      "diskName": "frogger1.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "bdc9bb9adae48eaa7fa0273b419afcdfbe2d426bc7947ef825b91d9d31d75a03",
+      "lastUpdated": "2026-07-14T07:05:32.494Z"
+    },
+    "8a4d7124d06b751e482eb2a103cc4204a65fbb881adbe6dc93715086451f81bf": {
+      "diskName": "frogger2.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "8a4d7124d06b751e482eb2a103cc4204a65fbb881adbe6dc93715086451f81bf",
+      "lastUpdated": "2026-07-14T07:05:42.242Z"
+    },
+    "3734e257b1924f5a9c0e5e07e689a60fea226609df43edc9165a4ed5fdf1e438": {
+      "diskName": "galaxians.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "3734e257b1924f5a9c0e5e07e689a60fea226609df43edc9165a4ed5fdf1e438",
+      "lastUpdated": "2026-07-14T07:05:56.013Z"
+    },
+    "cb59dfb2530878f1736720761c96dab9fc8880db4173e352664b8c88df40cb65": {
+      "diskName": "galaxy.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "cb59dfb2530878f1736720761c96dab9fc8880db4173e352664b8c88df40cb65",
+      "lastUpdated": "2026-07-14T07:06:07.106Z"
+    },
+    "2d2bc651dffaa6b7c6c00b0287b834ff4c010a78eb3f27234cf79adf72ff6039": {
+      "diskName": "gamma_goblins+.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "2d2bc651dffaa6b7c6c00b0287b834ff4c010a78eb3f27234cf79adf72ff6039",
+      "lastUpdated": "2026-07-14T07:06:17.035Z"
+    },
+    "8269db72f525f6faa25bc366ca52d57e72dfbedb456387ed12f59dd216b50c5e": {
+      "diskName": "gauntlet_1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "8269db72f525f6faa25bc366ca52d57e72dfbedb456387ed12f59dd216b50c5e",
+      "lastUpdated": "2026-07-14T07:06:26.162Z"
+    },
+    "fb3b52f45fb146a722fcfb76134cb514f8fc29a0567a4d1dc58fc413625197a9": {
+      "diskName": "gauntlet_2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "fb3b52f45fb146a722fcfb76134cb514f8fc29a0567a4d1dc58fc413625197a9",
+      "lastUpdated": "2026-07-14T07:06:26.784Z"
+    },
+    "e294f745afbc3709129cb0095a9ae0026865200746dacec506932b022b60b2d9": {
+      "diskName": "gemstone_warrior.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "e294f745afbc3709129cb0095a9ae0026865200746dacec506932b022b60b2d9",
+      "lastUpdated": "2026-07-14T07:06:28.121Z"
+    },
+    "2e52e42230d7c297c6e21ddd84f0697518db361ca2aa7dd3dc8f88c928d0cbd1": {
+      "diskName": "ghostbusters.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "2e52e42230d7c297c6e21ddd84f0697518db361ca2aa7dd3dc8f88c928d0cbd1",
+      "lastUpdated": "2026-07-14T07:06:33.671Z"
+    },
+    "37ab285a19f6364c17a22d1465d0c976f347b2c63e94f7009ff28e8d823c3c56": {
+      "diskName": "gobbler.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "37ab285a19f6364c17a22d1465d0c976f347b2c63e94f7009ff28e8d823c3c56",
+      "lastUpdated": "2026-07-14T07:06:35.289Z"
+    },
+    "c196e70d2011114da141ded24244fbb1d713474aed56ff938d5b4c6f95b398ce": {
+      "diskName": "goonies.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "c196e70d2011114da141ded24244fbb1d713474aed56ff938d5b4c6f95b398ce",
+      "lastUpdated": "2026-07-14T07:06:43.934Z"
+    },
+    "11195d7dd998592f8b52482efdd738fdb363b5d4330b06b2a575189e06abc571": {
+      "diskName": "gorgon_joystick_version.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "11195d7dd998592f8b52482efdd738fdb363b5d4330b06b2a575189e06abc571",
+      "lastUpdated": "2026-07-14T07:06:45.264Z"
+    },
+    "20189463da8c062d3348801221961624630855b3dcee33d36795f585f1a72451": {
+      "diskName": "gorgon.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "20189463da8c062d3348801221961624630855b3dcee33d36795f585f1a72451",
+      "lastUpdated": "2026-07-14T07:06:54.734Z"
+    },
+    "131389fb600d1c7834cb2974f9ce9d30b3715b75349bfa1d585ed7c33ae26e47": {
+      "diskName": "gremlins.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "131389fb600d1c7834cb2974f9ce9d30b3715b75349bfa1d585ed7c33ae26e47",
+      "lastUpdated": "2026-07-14T07:07:04.174Z"
+    },
+    "dcf7ee5279c9c4636e7a25a13efe2a45582efa9b7eb5cdfa67933cddacf396ad": {
+      "diskName": "hadron.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "dcf7ee5279c9c4636e7a25a13efe2a45582efa9b7eb5cdfa67933cddacf396ad",
+      "lastUpdated": "2026-07-14T07:07:10.288Z"
+    },
+    "9360f4213c3263ed2b9517084a93bb3186a45e16c1a79bc298e42f886af3be5c": {
+      "diskName": "halloween.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "9360f4213c3263ed2b9517084a93bb3186a45e16c1a79bc298e42f886af3be5c",
+      "lastUpdated": "2026-07-14T07:07:19.097Z"
+    },
+    "8b154247b3570beb47c5cc522e6f50b93f8ddd06840b8306e6a17df37f539608": {
+      "diskName": "handy_dandy.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "8b154247b3570beb47c5cc522e6f50b93f8ddd06840b8306e6a17df37f539608",
+      "lastUpdated": "2026-07-14T07:07:20.339Z"
+    },
+    "163c0f9ee34fd0d201de632318ecc86e584d878f50a26a7977212144985a63e2": {
+      "diskName": "hard_hat_mack.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "163c0f9ee34fd0d201de632318ecc86e584d878f50a26a7977212144985a63e2",
+      "lastUpdated": "2026-07-14T07:07:29.537Z"
+    },
+    "63a4c622b3abc8314f1f535fcdbc5cb7478432a4b448c98ac181f217f65475bb": {
+      "diskName": "hard_hat_mack+.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "63a4c622b3abc8314f1f535fcdbc5cb7478432a4b448c98ac181f217f65475bb",
+      "lastUpdated": "2026-07-14T07:07:39.137Z"
+    },
+    "53a3361cef978bcc1c8b62d2d939033b0b0464952413626b01ba84ebdd640bd6": {
+      "diskName": "heavy_barrel_1.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "53a3361cef978bcc1c8b62d2d939033b0b0464952413626b01ba84ebdd640bd6",
+      "lastUpdated": "2026-07-14T07:07:48.740Z"
+    },
+    "6cc743bf73f9ecc710d2ac55b160e753bdb7c660b46295a336f166181e640a4c": {
+      "diskName": "heavy_barrel_2.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "6cc743bf73f9ecc710d2ac55b160e753bdb7c660b46295a336f166181e640a4c",
+      "lastUpdated": "2026-07-14T07:07:55.585Z"
+    },
+    "07a6c39366bdd633958717beb81b0d88ee285d1593b6ba119f7b6dde5a2fc648": {
+      "diskName": "helicopter_rescue.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "07a6c39366bdd633958717beb81b0d88ee285d1593b6ba119f7b6dde5a2fc648",
+      "lastUpdated": "2026-07-14T07:08:02.226Z"
+    },
+    "eba3c76bbf8cff6054fabd6dbd9977d339890e5c5f6d53d29f13820a57ca9288": {
+      "diskName": "high_rise.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "eba3c76bbf8cff6054fabd6dbd9977d339890e5c5f6d53d29f13820a57ca9288",
+      "lastUpdated": "2026-07-14T07:08:11.930Z"
+    },
+    "18cb5b6c77e9b0ad7ccbbd074aec2340f044074d49718b50f774a96f333e7b6f": {
+      "diskName": "human_fly.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "18cb5b6c77e9b0ad7ccbbd074aec2340f044074d49718b50f774a96f333e7b6f",
+      "lastUpdated": "2026-07-14T07:08:21.459Z"
+    },
+    "ddba145f21f87607311f439a35ab614b92688f49517bbc111e680d14e08f73bc": {
+      "diskName": "indiana_jones1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "ddba145f21f87607311f439a35ab614b92688f49517bbc111e680d14e08f73bc",
+      "lastUpdated": "2026-07-14T07:08:29.782Z"
+    },
+    "19289bf258912cd08f832426a4d3cc2db19c0e73c10b359c296972b6d12b4a84": {
+      "diskName": "indiana_jones2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "19289bf258912cd08f832426a4d3cc2db19c0e73c10b359c296972b6d12b4a84",
+      "lastUpdated": "2026-07-14T07:08:30.389Z"
+    },
+    "de7b42b06a5704107c40009f06e55d136f4aa99f59cd9b1c6b0b42d4e92d1c47": {
+      "diskName": "infiltrator.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "de7b42b06a5704107c40009f06e55d136f4aa99f59cd9b1c6b0b42d4e92d1c47",
+      "lastUpdated": "2026-07-14T07:08:31.873Z"
+    },
+    "34fccf37084ff8964c63b783fec026124b9c62f6ae85e6311a4cee94ff0f0559": {
+      "diskName": "infiltrator_1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "34fccf37084ff8964c63b783fec026124b9c62f6ae85e6311a4cee94ff0f0559",
+      "lastUpdated": "2026-07-14T07:08:40.738Z"
+    },
+    "1ebf5fb840ec1bde8ad75a76af86cbbe2762e4ecfb8b3d805ba847aa366bd894": {
+      "diskName": "infiltrator_2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "1ebf5fb840ec1bde8ad75a76af86cbbe2762e4ecfb8b3d805ba847aa366bd894",
+      "lastUpdated": "2026-07-14T07:08:41.320Z"
+    },
+    "9f8821db7ae6e4397675c39d4f4dcb7b74b675be6e3a3f3462189466825ff9b7": {
+      "diskName": "invader1.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "9f8821db7ae6e4397675c39d4f4dcb7b74b675be6e3a3f3462189466825ff9b7",
+      "lastUpdated": "2026-07-14T07:08:42.565Z"
+    },
+    "1fe16f2de931fffe826d0a380466b96a0b1f6edba3dff0a5e9b18823fc38278b": {
+      "diskName": "invader2.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "1fe16f2de931fffe826d0a380466b96a0b1f6edba3dff0a5e9b18823fc38278b",
+      "lastUpdated": "2026-07-14T07:08:51.837Z"
+    },
+    "20353b59d7cf30c8489965227d7a37cd776f53fb91c720b7240a54aa3f46ae58": {
+      "diskName": "j-bird.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "20353b59d7cf30c8489965227d7a37cd776f53fb91c720b7240a54aa3f46ae58",
+      "lastUpdated": "2026-07-14T07:09:01.481Z"
+    },
+    "83e45bb96b391da705a874dcbab531d68abe4b45c5b86ade0907f65e66479ec9": {
+      "diskName": "jawbreaker.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "83e45bb96b391da705a874dcbab531d68abe4b45c5b86ade0907f65e66479ec9",
+      "lastUpdated": "2026-07-14T07:09:08.723Z"
+    },
+    "94bf2458dec8f30089fc8a5014ec525b7f019b360414dfa55bf5693fe9d7f759": {
+      "diskName": "jet_pack.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "94bf2458dec8f30089fc8a5014ec525b7f019b360414dfa55bf5693fe9d7f759",
+      "lastUpdated": "2026-07-14T07:09:19.545Z"
+    },
+    "af741f652e2b3618d373e54cd5b9dc8e95916f66c11e4c9944772d4477df4159": {
+      "diskName": "joust.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "af741f652e2b3618d373e54cd5b9dc8e95916f66c11e4c9944772d4477df4159",
+      "lastUpdated": "2026-07-14T07:09:30.657Z"
+    },
+    "7c2c297eab28853db16e57707311d082eb249d021b12bcb4373d2edf08a396ee": {
+      "diskName": "jumpman_1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "7c2c297eab28853db16e57707311d082eb249d021b12bcb4373d2edf08a396ee",
+      "lastUpdated": "2026-07-14T07:09:40.437Z"
+    },
+    "2395c4b6e5d2d262c27dc8735eb893ce0cdec23afff4330d0fcc4a4f81e0f20f": {
+      "diskName": "jumpman_2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "2395c4b6e5d2d262c27dc8735eb893ce0cdec23afff4330d0fcc4a4f81e0f20f",
+      "lastUpdated": "2026-07-14T07:09:41.066Z"
+    },
+    "56e99c6d8fb6decb8f8318d3e59e01055a83b1b2eae6807e803ec180811d597b": {
+      "diskName": "jungle_hunt.do",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "56e99c6d8fb6decb8f8318d3e59e01055a83b1b2eae6807e803ec180811d597b",
+      "lastUpdated": "2026-07-14T07:09:43.701Z"
+    },
+    "772eb485b7adeeadf52bf79d24650491ccc295e04310b4f3963b0c3610eb6a4a": {
+      "diskName": "jungle_hunt.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "772eb485b7adeeadf52bf79d24650491ccc295e04310b4f3963b0c3610eb6a4a",
+      "lastUpdated": "2026-07-14T07:09:54.682Z"
+    },
+    "cb2f1ca60e426902a607c3bc9ab145f6305f3abe3873568faa4a66cda904b381": {
+      "diskName": "karateka.do",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "cb2f1ca60e426902a607c3bc9ab145f6305f3abe3873568faa4a66cda904b381",
+      "lastUpdated": "2026-07-14T07:10:05.139Z"
+    },
+    "920ea969e28ccdd431e5bd28519714701c95f3d8fdf101ecbe13033df4b68a7a": {
+      "diskName": "kid_nikki1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "920ea969e28ccdd431e5bd28519714701c95f3d8fdf101ecbe13033df4b68a7a",
+      "lastUpdated": "2026-07-14T07:10:06.307Z"
+    },
+    "3df1400232fb2bd609e654271ea817c7c590ba6284019de5fb2f20ac0d89b578": {
+      "diskName": "kid_nikki2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "3df1400232fb2bd609e654271ea817c7c590ba6284019de5fb2f20ac0d89b578",
+      "lastUpdated": "2026-07-14T07:10:07.594Z"
+    },
+    "c1216791362fc1e99072987a71ffdc3f8cce62c5c89c34e28a8fc1172a42e296": {
+      "diskName": "nikki1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "c1216791362fc1e99072987a71ffdc3f8cce62c5c89c34e28a8fc1172a42e296",
+      "lastUpdated": "2026-07-14T07:10:09.171Z"
+    },
+    "5a51b92391249943048148ae0cc4968d539bdef12c0bedd61257176fa2206b53": {
+      "diskName": "nikki2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "5a51b92391249943048148ae0cc4968d539bdef12c0bedd61257176fa2206b53",
+      "lastUpdated": "2026-07-14T07:10:10.737Z"
+    },
+    "44023088db26337dff14044b21ece1f3d5299a55b5cf5e54b038f2182422cec9": {
+      "diskName": "klan_cookout+.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "44023088db26337dff14044b21ece1f3d5299a55b5cf5e54b038f2182422cec9",
+      "lastUpdated": "2026-07-14T07:10:13.441Z"
+    },
+    "c3e6e756c60fa745b7b0f78f9fb134165c2371f4bac03000d765cc9b96b5f1cc": {
+      "diskName": "lady_tut.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "c3e6e756c60fa745b7b0f78f9fb134165c2371f4bac03000d765cc9b96b5f1cc",
+      "lastUpdated": "2026-07-14T07:10:23.419Z"
+    },
+    "a5b9b18a5ada93e72f6cced2b744c3d926f693f7a413b1ce17cc78f8ffe116f8": {
+      "diskName": "Lancaster.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "a5b9b18a5ada93e72f6cced2b744c3d926f693f7a413b1ce17cc78f8ffe116f8",
+      "lastUpdated": "2026-07-14T07:10:33.912Z"
+    },
+    "776b26562b727d85cb5b92906ae6cd05455479a0033072dd95396d709f572b8e": {
+      "diskName": "LandOfThePyramids.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "776b26562b727d85cb5b92906ae6cd05455479a0033072dd95396d709f572b8e",
+      "lastUpdated": "2026-07-14T07:10:44.760Z"
+    },
+    "1e914277b9e3b1f8b761de09c33205f56d8f2b8c00a3616586dfafadc542405b": {
+      "diskName": "laser_maze.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "1e914277b9e3b1f8b761de09c33205f56d8f2b8c00a3616586dfafadc542405b",
+      "lastUpdated": "2026-07-14T07:10:55.988Z"
+    },
+    "3f549fd9f6af79fef85e66070f8892d6bff22c184b5775961c6d05607bbe3295": {
+      "diskName": "LastGladiator.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "3f549fd9f6af79fef85e66070f8892d6bff22c184b5775961c6d05607bbe3295",
+      "lastUpdated": "2026-07-14T07:11:05.601Z"
+    },
+    "9aa86ed4f4a23b802ca38a84097d7f25966dc9e5a45611eedbf4474a2fbd951a": {
+      "diskName": "lock_n_chase+.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "9aa86ed4f4a23b802ca38a84097d7f25966dc9e5a45611eedbf4474a2fbd951a",
+      "lastUpdated": "2026-07-14T07:11:06.920Z"
+    },
+    "22b3b578e254c781fd456fbbf7c22124e970997f328cd83b89ca29a1219c871e": {
+      "diskName": "lode_runner.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "22b3b578e254c781fd456fbbf7c22124e970997f328cd83b89ca29a1219c871e",
+      "lastUpdated": "2026-07-14T07:11:21.764Z"
+    },
+    "cbc048a55c2835f1b3b54696660e8902c84c25dac44a6dc94b13a7e8f81379ec": {
+      "diskName": "lode_runner1.po",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "cbc048a55c2835f1b3b54696660e8902c84c25dac44a6dc94b13a7e8f81379ec",
+      "lastUpdated": "2026-07-14T07:11:33.211Z"
+    },
+    "a7df9746290d75c5d6102c179913625b2ed00f3afdd3185de986b0d79602bd9e": {
+      "diskName": "lode_runner2.po",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "a7df9746290d75c5d6102c179913625b2ed00f3afdd3185de986b0d79602bd9e",
+      "lastUpdated": "2026-07-14T07:11:42.962Z"
+    },
+    "6316e779e96bc0184586d217fc8d2a9bdafdc25d19b520a9aeeccee7ae8d592c": {
+      "diskName": "lost_tomb_etc.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "6316e779e96bc0184586d217fc8d2a9bdafdc25d19b520a9aeeccee7ae8d592c",
+      "lastUpdated": "2026-07-14T07:11:45.931Z"
+    },
+    "27838a86cf847d1f1b3adb7261489943fc50229e151141df2080392176d2aac5": {
+      "diskName": "lunar_leaper.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "27838a86cf847d1f1b3adb7261489943fc50229e151141df2080392176d2aac5",
+      "lastUpdated": "2026-07-14T07:11:59.368Z"
+    },
+    "9d0bb11e8521604f8e92d9bd71c8fe603c196ea668044d0a8f885da9ddf7d367": {
+      "diskName": "lunar_leepers.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "9d0bb11e8521604f8e92d9bd71c8fe603c196ea668044d0a8f885da9ddf7d367",
+      "lastUpdated": "2026-07-14T07:12:15.711Z"
+    },
+    "abf4e62d5af7937794fc537961dcfa89ea13b00fee6ef463621b93d31d653060": {
+      "diskName": "marauder.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "abf4e62d5af7937794fc537961dcfa89ea13b00fee6ef463621b93d31d653060",
+      "lastUpdated": "2026-07-14T07:12:31.657Z"
+    },
+    "9bb95a04e4e7479c08e7af4d5bcf76640f3bca48cf1b9ab933078ef1783f8181": {
+      "diskName": "marble_madness_cracked1.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "9bb95a04e4e7479c08e7af4d5bcf76640f3bca48cf1b9ab933078ef1783f8181",
+      "lastUpdated": "2026-07-14T07:12:41.212Z"
+    },
+    "8336148036e045f744b111316d2886144aab90a9d305eda2ddb501b8f3269803": {
+      "diskName": "marble_madness_cracked2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "8336148036e045f744b111316d2886144aab90a9d305eda2ddb501b8f3269803",
+      "lastUpdated": "2026-07-14T07:12:43.223Z"
+    },
+    "afb4234408e7c7491baf1e37e816d0bfb86bc3cc645121d706353fe3a7fda42b": {
+      "diskName": "marble_madness2.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "afb4234408e7c7491baf1e37e816d0bfb86bc3cc645121d706353fe3a7fda42b",
+      "lastUpdated": "2026-07-14T07:12:47.318Z"
+    },
+    "60cb1cef99f2c2c39a318e05dc6f42d53ccdc7d069fd49b05709d5fece0aa554": {
+      "diskName": "marble1_another.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "60cb1cef99f2c2c39a318e05dc6f42d53ccdc7d069fd49b05709d5fece0aa554",
+      "lastUpdated": "2026-07-14T07:12:48.744Z"
+    },
+    "5eaf74e966a8c6e5c1065ad6f6eae12b252c37bde701d15cb6d6258c0534fbd2": {
+      "diskName": "mario_bros.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5eaf74e966a8c6e5c1065ad6f6eae12b252c37bde701d15cb6d6258c0534fbd2",
+      "lastUpdated": "2026-07-14T07:12:53.342Z"
+    },
+    "4c948cd3f605aa69847ba5879b2810e5fcc07a8701e05216cd8f397266cea5e5": {
+      "diskName": "mating_zone_etc.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "4c948cd3f605aa69847ba5879b2810e5fcc07a8701e05216cd8f397266cea5e5",
+      "lastUpdated": "2026-07-14T07:13:09.063Z"
+    },
+    "3780901162954429295e976c7ea259238cff97d9fe750cf61f3c6dd91074bfa7": {
+      "diskName": "microscopic_journey.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "3780901162954429295e976c7ea259238cff97d9fe750cf61f3c6dd91074bfa7",
+      "lastUpdated": "2026-07-14T07:13:22.320Z"
+    },
+    "a52d24eff2e9e5fbd00b06ede1f722a0e93ced1ca8ca77ea23a4a2e491df68d1": {
+      "diskName": "miner_2049er_II.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "a52d24eff2e9e5fbd00b06ede1f722a0e93ced1ca8ca77ea23a4a2e491df68d1",
+      "lastUpdated": "2026-07-14T07:13:34.887Z"
+    },
+    "694250f5f88dc52cab3be01a33c2b0ced353277ad0625ee66edb85b381409bdd": {
+      "diskName": "miner_2049er.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "694250f5f88dc52cab3be01a33c2b0ced353277ad0625ee66edb85b381409bdd",
+      "lastUpdated": "2026-07-14T07:13:36.328Z"
+    },
+    "35d5c3ed8a517d00fb6e366baffb307b9fd1b7e8423f7211ca1a66584f4d8526": {
+      "diskName": "miner.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "35d5c3ed8a517d00fb6e366baffb307b9fd1b7e8423f7211ca1a66584f4d8526",
+      "lastUpdated": "2026-07-14T07:13:39.605Z"
+    },
+    "e8c0d7bd8c6888c8599687dac2f5a21fd86d326ee664495e667ba6fa8e425d71": {
+      "diskName": "mings_challenge.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "e8c0d7bd8c6888c8599687dac2f5a21fd86d326ee664495e667ba6fa8e425d71",
+      "lastUpdated": "2026-07-14T07:13:52.676Z"
+    },
+    "85be18ac225545aa1bacacb11dcbc0cae104a1f4b61d47bbcc6300b184c008ca": {
+      "diskName": "minotaur.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "85be18ac225545aa1bacacb11dcbc0cae104a1f4b61d47bbcc6300b184c008ca",
+      "lastUpdated": "2026-07-14T07:13:56.608Z"
+    },
+    "5a0b08170fd13283bca72f3f96714503b7f6ced4120d7732d4b087ced6e18d6a": {
+      "diskName": "minuteman.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "5a0b08170fd13283bca72f3f96714503b7f6ced4120d7732d4b087ced6e18d6a",
+      "lastUpdated": "2026-07-14T07:14:10.779Z"
+    },
+    "47bb86f4ac989bb57f45414f1ab9e4fc2ca27796ff0f24597030a5763d4004b4": {
+      "diskName": "mission_asteriod.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "47bb86f4ac989bb57f45414f1ab9e4fc2ca27796ff0f24597030a5763d4004b4",
+      "lastUpdated": "2026-07-14T07:14:22.516Z"
+    },
+    "6600f8a96805c26f0fc0fdbe4751e5cb6e24b14eafebacd253e7a2b6bab71bdd": {
+      "diskName": "mission_escape.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "6600f8a96805c26f0fc0fdbe4751e5cb6e24b14eafebacd253e7a2b6bab71bdd",
+      "lastUpdated": "2026-07-14T07:14:23.731Z"
+    },
+    "369765bc1be59ade5a8dd82b3c94b0a8d5d8cbe2f3425c1261ff0baf6f3ce206": {
+      "diskName": "mission_on_thunderhead.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "369765bc1be59ade5a8dd82b3c94b0a8d5d8cbe2f3425c1261ff0baf6f3ce206",
+      "lastUpdated": "2026-07-14T07:14:26.900Z"
+    },
+    "3f2b6e479066cc8dc23596114e771189f38fd92299dc23a071cd0d64b80a960f": {
+      "diskName": "mission.dsk",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "3f2b6e479066cc8dc23596114e771189f38fd92299dc23a071cd0d64b80a960f",
+      "lastUpdated": "2026-07-14T07:14:39.780Z"
+    },
+    "55416aa11471b1eb694b21d88b515eed6bf1a01af189bb8232bba64620875f89": {
+      "diskName": "montezuma_etc.dsk",
+      "status": "skipped",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "rawSha256": "55416aa11471b1eb694b21d88b515eed6bf1a01af189bb8232bba64620875f89",
+      "lastUpdated": "2026-07-14T07:14:51.401Z"
+    },
+    "add4786de9db7c11f5a967bad98ef8db13f92cc89901dc6e6385d2fc3a085b29": {
+      "diskName": "moue_attack.po",
+      "status": "pass",
+      "code": "ok",
+      "message": null,
+      "rawSha256": "add4786de9db7c11f5a967bad98ef8db13f92cc89901dc6e6385d2fc3a085b29",
+      "lastUpdated": "2026-07-14T07:14:55.047Z"
+    }
+  }
+}

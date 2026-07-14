@@ -171,6 +171,7 @@ If contract validation fails, the record is written as `runner_result_invalid`.
 - `--runner-timeout-ms <ms>`
 - `--hdv-generate-timeout-ms <ms>`
 - `--append true|false`
+- `--disks <path>` optional cache file keyed by disk hashes; matched disks are skipped and each completed disk updates this file in-place.
 
 `export hdv-batch` does not accept `--run-id`; it is generated automatically.
 `export hdv-batch` also does not accept explicit output artifact dirs (`--video-dir`, `--log-dir`, `--runner-results-dir`, `--exported-hdv-dir`).
@@ -189,6 +190,35 @@ Identity fields include:
 
 - `disk.rawSha256`: exact file bytes hash
 - `disk.canonicalSha256`: normalized hash (currently strips 2IMG headers for `.2mg`)
+
+### Disks cache (`--disks`)
+
+When `--disks <path>` is provided:
+
+- Disk identity matching is hash-based only (never filename-based).
+- Match order: `disk.canonicalSha256` first, fallback to `disk.rawSha256`.
+- Matched disks are skipped with `status.code = skipped_cached_disk`.
+- After each processed disk record (pass or fail), the cache file is updated and saved immediately so progress survives abrupt runner termination.
+- Per-disk `status` uses `skipped` when `code = disk_not_exportable`.
+
+Cache JSON shape:
+
+```json
+{
+	"schemaVersion": 1,
+	"lastUpdated": "2026-07-14T07:45:00.000Z",
+	"disks": {
+		"<canonicalSha256>": {
+			"diskName": "Aztec.po",
+			"status": "pass",
+			"code": "ok",
+			"message": null,
+			"rawSha256": "<rawSha256-or-null>",
+			"lastUpdated": "2026-07-14T07:44:00.000Z"
+		}
+	}
+}
+```
 
 ### Example
 
