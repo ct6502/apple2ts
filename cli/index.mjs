@@ -1181,6 +1181,7 @@ const createPersistentSessionContext = async ({
   runnerAppExe,
   runId,
   serverUrl,
+  headless,
 }) => {
   const localControlServer = await startLocalControlServerIfNeeded(serverUrl)
   const profileName = getRunnerProfileFromPreset(runnerPreset)
@@ -1243,6 +1244,7 @@ const createPersistentSessionContext = async ({
     appCommand: profileDefaults.appCommand,
     appExe,
     serverUrl,
+    headless,
     appReadyTimeoutMs: 90000,
     controlApiReadyTimeoutMs: 90000,
     controlApiPollMs: 250,
@@ -1999,6 +2001,7 @@ const handleBatch = async (context, command, tokens) => {
         runnerAppExe,
         runId,
         serverUrl: context.server,
+        headless,
       })
     }
 

@@ -2188,10 +2188,15 @@ const buildLaunchCommand = ({
   appExe,
   runtimeUserDataDir,
   runtimeDiskCacheDir,
+  headless,
 }) => {
   const appCmd = appCommand || "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash {headlessFlags} \"{launchPath}\""
-  const headlessFlags = ""
-  const normalizedAppCmd = appCmd.includes("{headlessFlags}") ? appCmd : `${appCmd} {headlessFlags}`
+  const headlessFlags = headless
+    ? "--headless --disable-renderer-backgrounding --disable-backgrounding-occluded-windows"
+    : ""
+  const normalizedAppCmd = headless && !appCmd.includes("{headlessFlags}")
+    ? `${appCmd} {headlessFlags}`
+    : appCmd
   const rendered = replacePlaceholders(normalizedAppCmd, {
     diskPath,
     launchPath: resolvedLaunchPath,
@@ -2256,6 +2261,7 @@ export const launchPersistentSession = async ({
   appCommand,
   appExe,
   serverUrl,
+  headless,
   appReadyTimeoutMs,
   controlApiReadyTimeoutMs,
   controlApiPollMs,
@@ -2299,6 +2305,7 @@ export const launchPersistentSession = async ({
     appExe,
     runtimeUserDataDir,
     runtimeDiskCacheDir,
+    headless,
   })
 
   const appEnvOverrides = process.platform === "win32"
@@ -2490,6 +2497,10 @@ export const runScenarioInPersistentSession = async (session, {
   let statusLaunchOk = true
 
   try {
+    if (headless) {
+      processOutput.push("[AUTOMATION] headless_mode_enabled\n")
+    }
+
     if (session.shouldRestoreBaselineBeforeNextScenario) {
       const baselineRestore = await postApiEnvelope({
         serverUrl: session.serverUrl,
