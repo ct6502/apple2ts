@@ -1993,6 +1993,45 @@ const handleBatch = async (context, command, tokens) => {
   }
 
   let persistentSessionContext = null
+  let cleanupInFlight = false
+  const cleanupPersistentSession = async () => {
+    if (!persistentSessionContext || cleanupInFlight) {
+      return
+    }
+    cleanupInFlight = true
+    const contextToClose = persistentSessionContext
+    persistentSessionContext = null
+    try {
+      await closePersistentSession(contextToClose.session)
+      if (contextToClose.localControlServer?.managed) {
+        await stopManagedProcessTree(contextToClose.localControlServer.proc)
+      }
+    } finally {
+      cleanupInFlight = false
+    }
+  }
+
+  let terminating = false
+  const handleTerminationSignal = async (signal, exitCode) => {
+    if (terminating) {
+      return
+    }
+    terminating = true
+    process.stderr.write(`[BATCH] received ${signal}; cleaning up managed processes...\n`)
+    await cleanupPersistentSession()
+    process.exit(exitCode)
+  }
+
+  const onSigint = () => {
+    void handleTerminationSignal("SIGINT", 130)
+  }
+  const onSigterm = () => {
+    void handleTerminationSignal("SIGTERM", 143)
+  }
+
+  process.once("SIGINT", onSigint)
+  process.once("SIGTERM", onSigterm)
+
   try {
     if (reuseApp) {
       persistentSessionContext = await createPersistentSessionContext({
@@ -2021,12 +2060,9 @@ const handleBatch = async (context, command, tokens) => {
     await Promise.all(workers)
     await writeQueue
   } finally {
-    if (persistentSessionContext) {
-      await closePersistentSession(persistentSessionContext.session)
-      if (persistentSessionContext.localControlServer?.managed) {
-        await stopManagedProcessTree(persistentSessionContext.localControlServer.proc)
-      }
-    }
+    process.removeListener("SIGINT", onSigint)
+    process.removeListener("SIGTERM", onSigterm)
+    await cleanupPersistentSession()
   }
 
   return {

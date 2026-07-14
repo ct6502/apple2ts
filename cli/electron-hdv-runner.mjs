@@ -427,11 +427,16 @@ const replacePlaceholders = (template, values) =>
     return String(values[key])
   })
 
-const spawnShellCommand = (command, cwd = process.cwd(), envOverrides = {}) =>
+const spawnShellCommand = (
+  command,
+  cwd = process.cwd(),
+  envOverrides = {},
+  stdio = ["ignore", "pipe", "pipe"],
+) =>
   spawn(command, {
     cwd,
     shell: true,
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio,
     windowsHide: true,
     env: {
       ...process.env,
@@ -575,16 +580,20 @@ const terminateProcessTree = async (proc) => {
 }
 
 const collectProcessOutput = (proc, sink, onChunk) => {
-  proc.stdout.on("data", (chunk) => {
-    const text = String(chunk)
-    sink.push(text)
-    if (onChunk) onChunk(text)
-  })
-  proc.stderr.on("data", (chunk) => {
-    const text = String(chunk)
-    sink.push(text)
-    if (onChunk) onChunk(text)
-  })
+  if (proc.stdout) {
+    proc.stdout.on("data", (chunk) => {
+      const text = String(chunk)
+      sink.push(text)
+      if (onChunk) onChunk(text)
+    })
+  }
+  if (proc.stderr) {
+    proc.stderr.on("data", (chunk) => {
+      const text = String(chunk)
+      sink.push(text)
+      if (onChunk) onChunk(text)
+    })
+  }
 }
 
 const waitForOutputMarker = async ({
@@ -2317,18 +2326,27 @@ export const launchPersistentSession = async ({
     }
     : {}
 
-  const appProc = spawnShellCommand(launchCommand, appDir, appEnvOverrides)
+  const appProc = spawnShellCommand(
+    launchCommand,
+    appDir,
+    appEnvOverrides,
+    ["ignore", "ignore", "pipe"],
+  )
   collectProcessOutput(appProc, processOutput, appendOutput)
 
-  const windowReady = await waitForOutputMarker({
-    proc: appProc,
-    readOutput: () => liveOutput,
-    marker: /\[AUTOMATION\]\s+window-ready/i,
-    timeoutMs: Math.max(1000, Math.floor(appReadyTimeoutMs)),
-  })
-  if (!windowReady.ok) {
-    await terminateProcessTree(appProc)
-    throw new Error(`Persistent session window-ready failed: ${windowReady.reason || "timeout"}`)
+  if (appProc.stdout) {
+    const windowReady = await waitForOutputMarker({
+      proc: appProc,
+      readOutput: () => liveOutput,
+      marker: /\[AUTOMATION\]\s+window-ready/i,
+      timeoutMs: Math.max(1000, Math.floor(appReadyTimeoutMs)),
+    })
+    if (!windowReady.ok) {
+      await terminateProcessTree(appProc)
+      throw new Error(`Persistent session window-ready failed: ${windowReady.reason || "timeout"}`)
+    }
+  } else {
+    processOutput.push("[AUTOMATION] window-ready-check skipped (stdout not captured)\n")
   }
 
   const controlApiReady = await waitForControlApiReady({
