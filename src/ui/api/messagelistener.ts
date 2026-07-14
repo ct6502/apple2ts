@@ -13,7 +13,7 @@ import { RestoreSaveState } from "../savestate"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { handleInputParams } from "../inputparams"
 
-const AUTOMATION_INSTRUMENTATION_VERSION = "a2ts-automation-v4"
+export const AUTOMATION_INSTRUMENTATION_VERSION = "a2ts-automation-v4"
 
 const decodePayloadBytes = (data: unknown, dataBase64: unknown): Uint8Array => {
   if (typeof dataBase64 === "string" && dataBase64.length > 0) {
@@ -32,7 +32,7 @@ const decodePayloadBytes = (data: unknown, dataBase64: unknown): Uint8Array => {
   throw new Error("Missing payload data")
 }
 
-const reportAutomationEvent = (eventName: string, payload?: unknown) => {
+export const reportAutomationEvent = (eventName: string, payload?: unknown) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window as any).electronAPI?.reportAutomationEvent) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,14 +68,14 @@ const fatalLabelFromText = (text: string) => {
   return "FATAL SCREEN TEXT"
 }
 
-const stopAutomationTextSampler = () => {
+export const stopAutomationTextSampler = () => {
   if (automationTextSamplerTimer !== null) {
     window.clearInterval(automationTextSamplerTimer)
     automationTextSamplerTimer = null
   }
 }
 
-const reportMachineTextSnapshot = (reason: string) => {
+export const reportMachineTextSnapshot = (reason: string) => {
   try {
     const rawText = handleGetTextPageAsString()
     const sample = summarizeText(rawText)
@@ -115,7 +115,7 @@ const reportMachineTextSnapshot = (reason: string) => {
   }
 }
 
-const startAutomationTextSampler = (durationMs = 90000, intervalMs = 500) => {
+export const startAutomationTextSampler = (durationMs = 90000, intervalMs = 500) => {
   stopAutomationTextSampler()
   automationTextSamplerDeadline = Date.now() + Math.max(1000, durationMs)
   lastAutomationTextSample = null
@@ -145,7 +145,7 @@ const isDuplicateLoadRequest = (eventType: string, requestId: unknown) => {
   return false
 }
 
-const queueAutomationLaunchKeys = (attempts = 3, initialDelayMs = 700, retryDelayMs = 1200) => {
+export const queueAutomationLaunchKeys = (attempts = 3, initialDelayMs = 700, retryDelayMs = 1200) => {
   const launchOnce = (attempt: number) => {
     reportMachineTextSnapshot(`launch-before-${attempt}`)
     reportAutomationEvent("launch-key-attempt", { sequence: [32, 13], attempt })
@@ -162,6 +162,16 @@ const queueAutomationLaunchKeys = (attempts = 3, initialDelayMs = 700, retryDela
     const delay = initialDelayMs + ((attempt - 1) * retryDelayMs)
     setTimeout(() => launchOnce(attempt), delay)
   }
+}
+
+export const notifyAutomationDiskLoaded = (filename: string, filePath = "") => {
+  reportAutomationEvent("automation-instrumentation-version", {
+    version: AUTOMATION_INSTRUMENTATION_VERSION,
+  })
+  stopAutomationTextSampler()
+  reportAutomationEvent("disk-loaded", { filename, filePath })
+  startAutomationTextSampler()
+  queueAutomationLaunchKeys()
 }
 
 export const messagelistener = (event: MessageEvent) => {
@@ -321,12 +331,7 @@ export const messagelistener = (event: MessageEvent) => {
       }
       
       console.log(`Disk image loaded successfully: ${filename}`)
-      reportAutomationEvent("disk-loaded", { filename, filePath })
-      startAutomationTextSampler()
-
-      // In automation runs, launch the selected menu entry via emulator key path
-      // (worker -> sendTextToEmulator), avoiding host window focus/native key issues.
-      queueAutomationLaunchKeys()
+      notifyAutomationDiskLoaded(filename, filePath)
     } catch (error) {
       console.error("Error loading disk:", error)
     } finally {

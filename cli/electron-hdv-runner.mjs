@@ -5,6 +5,7 @@ import { spawn } from "node:child_process"
 import { promises as fs } from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { pathToFileURL } from "node:url"
 
 const fail = (message, exitCode = 1) => {
   process.stderr.write(`${message}\n`)
@@ -95,7 +96,7 @@ const ffmpegCandidates = () => {
   return [...fromEnv, "ffmpeg"]
 }
 
-const resolveFfmpegExe = async (explicitPath = "") => {
+export const resolveFfmpegExe = async (explicitPath = "") => {
   const candidates = explicitPath ? [explicitPath] : ffmpegCandidates()
   for (const candidate of candidates) {
     try {
@@ -168,7 +169,7 @@ const packagedAppCandidates = (appDir) => {
   ]
 }
 
-const resolveAutoPackagedExe = async (appDir) => {
+export const resolveAutoPackagedExe = async (appDir) => {
   for (const candidate of packagedAppCandidates(appDir)) {
     try {
       const stat = await fs.stat(candidate)
@@ -182,7 +183,7 @@ const resolveAutoPackagedExe = async (appDir) => {
   return ""
 }
 
-const resolveProfileDefaults = (profile, appDirForDefaults) => {
+export const resolveProfileDefaults = (profile, appDirForDefaults) => {
   const normalized = String(profile || "apple2ts-app-dev").trim()
 
   if (normalized === "none") {
@@ -351,7 +352,7 @@ const runShellCommandWithTimeout = async ({ command, cwd, timeoutMs }) => {
   }
 }
 
-const ensureAutomationMarkers = async ({
+export const ensureAutomationMarkers = async ({
   enabled,
   projectDir,
   distDir,
@@ -2131,6 +2132,838 @@ const runScenario = async ({
   }
 }
 
+const postApiEnvelope = async ({ serverUrl, pathname, body, timeoutMs }) => {
+  const normalizedServer = normalizeServerBaseUrl(serverUrl)
+  if (!normalizedServer) {
+    return {
+      ok: false,
+      message: "empty_server_url",
+      data: null,
+    }
+  }
+
+  const reply = await postJson({
+    url: `${normalizedServer}${pathname}`,
+    body,
+    timeoutMs,
+  }).catch((error) => ({
+    ok: false,
+    status: 0,
+    payload: {
+      error: error instanceof Error ? error.message : String(error),
+    },
+  }))
+
+  if (!reply.ok || reply.payload?.ok !== true) {
+    return {
+      ok: false,
+      message:
+        reply.payload?.error?.message ||
+        reply.payload?.error ||
+        reply.payload?.message ||
+        `http_${reply.status}`,
+      data: reply.payload?.data || null,
+    }
+  }
+
+  return {
+    ok: true,
+    message: "ok",
+    data: reply.payload?.data || null,
+  }
+}
+
+const inferDriveIdForDiskPath = (diskPath) => {
+  const extension = path.extname(String(diskPath || "")).toLowerCase()
+  return extension === ".hdv" ? "hd1" : "fd1"
+}
+
+const buildLaunchCommand = ({
+  appCommand,
+  diskPath,
+  resolvedLaunchPath,
+  videoPath,
+  captureSeconds,
+  exportedHdvPath,
+  appExe,
+  runtimeUserDataDir,
+  runtimeDiskCacheDir,
+}) => {
+  const appCmd = appCommand || "npm run start:no-prestart -- -- --automation --disable-gpu --fullscreen --no-splash {headlessFlags} \"{launchPath}\""
+  const headlessFlags = ""
+  const normalizedAppCmd = appCmd.includes("{headlessFlags}") ? appCmd : `${appCmd} {headlessFlags}`
+  const rendered = replacePlaceholders(normalizedAppCmd, {
+    diskPath,
+    launchPath: resolvedLaunchPath,
+    videoPath,
+    captureSeconds,
+    exportedHdvPath,
+    appExe,
+    runtimeUserDataDir,
+    runtimeDiskCacheDir,
+    headlessFlags,
+  })
+  return resolvedLaunchPath
+    ? rendered
+    : rendered.replace(/\s+""(?=\s|$)/g, "")
+}
+
+export const buildRunnerPayload = ({
+  scenario,
+  captureSeconds,
+  elapsedMs,
+  providedRawSha256,
+  providedCanonicalSha256,
+  runId,
+  attempt,
+  profile,
+  videoPath,
+  logPath,
+}) => ({
+  contractVersion: 1,
+  scenario: "export-hdv-launch-test",
+  status: scenario.status,
+  timing: {
+    captureSeconds,
+    elapsedMs,
+  },
+  hashes: {
+    ...scenario.hashes,
+    providedRawSha256: providedRawSha256 || null,
+    providedCanonicalSha256: providedCanonicalSha256 || null,
+  },
+  telemetry: scenario.telemetry,
+  metadata: {
+    runId,
+    attempt,
+    runner: "electron-hdv-runner-harness",
+    profile,
+  },
+  artifacts: {
+    videoPath,
+    logPath: logPath || undefined,
+  },
+})
+
+export const writeRunnerPayload = async (resultPath, payload) => {
+  await ensureParentDirectory(resultPath)
+  await fs.writeFile(resultPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8")
+}
+
+export const launchPersistentSession = async ({
+  runId,
+  appDir,
+  appCommand,
+  appExe,
+  serverUrl,
+  appReadyTimeoutMs,
+  controlApiReadyTimeoutMs,
+  controlApiPollMs,
+  controlApiRequestTimeoutMs,
+}) => {
+  const runtimeSessionId = `${Date.now()}-${process.pid}-${Math.random().toString(16).slice(2, 8)}`
+  const runtimeBaseDir = path.resolve(
+    os.tmpdir(),
+    "apple2ts-hdv-session",
+    sanitizePathComponent(runId || "run", "run"),
+    runtimeSessionId,
+  )
+  const runtimeUserDataDir = path.join(runtimeBaseDir, "user-data")
+  const runtimeDiskCacheDir = path.join(runtimeBaseDir, "cache")
+  const runtimeAppDataRoamingDir = path.join(runtimeBaseDir, "appdata-roaming")
+  const runtimeAppDataLocalDir = path.join(runtimeBaseDir, "appdata-local")
+  const runtimeTempDir = path.join(runtimeBaseDir, "tmp")
+  await fs.mkdir(runtimeUserDataDir, { recursive: true })
+  await fs.mkdir(runtimeDiskCacheDir, { recursive: true })
+  await fs.mkdir(runtimeAppDataRoamingDir, { recursive: true })
+  await fs.mkdir(runtimeAppDataLocalDir, { recursive: true })
+  await fs.mkdir(runtimeTempDir, { recursive: true })
+
+  const processOutput = []
+  let liveOutput = ""
+  const appendOutput = (text) => {
+    liveOutput += text
+    if (liveOutput.length > 400000) {
+      liveOutput = liveOutput.slice(-200000)
+    }
+  }
+
+  const resolvedLaunchPath = ""
+  const launchCommand = buildLaunchCommand({
+    appCommand,
+    diskPath: "",
+    resolvedLaunchPath,
+    videoPath: "",
+    captureSeconds: 1,
+    exportedHdvPath: "",
+    appExe,
+    runtimeUserDataDir,
+    runtimeDiskCacheDir,
+  })
+
+  const appEnvOverrides = process.platform === "win32"
+    ? {
+      APPDATA: runtimeAppDataRoamingDir,
+      LOCALAPPDATA: runtimeAppDataLocalDir,
+      TEMP: runtimeTempDir,
+      TMP: runtimeTempDir,
+    }
+    : {}
+
+  const appProc = spawnShellCommand(launchCommand, appDir, appEnvOverrides)
+  collectProcessOutput(appProc, processOutput, appendOutput)
+
+  const windowReady = await waitForOutputMarker({
+    proc: appProc,
+    readOutput: () => liveOutput,
+    marker: /\[AUTOMATION\]\s+window-ready/i,
+    timeoutMs: Math.max(1000, Math.floor(appReadyTimeoutMs)),
+  })
+  if (!windowReady.ok) {
+    await terminateProcessTree(appProc)
+    throw new Error(`Persistent session window-ready failed: ${windowReady.reason || "timeout"}`)
+  }
+
+  const controlApiReady = await waitForControlApiReady({
+    serverUrl,
+    timeoutMs: Math.max(1000, Math.floor(controlApiReadyTimeoutMs)),
+    pollMs: Math.max(50, Math.floor(controlApiPollMs)),
+    requestTimeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+  })
+  if (!controlApiReady.ok) {
+    await terminateProcessTree(appProc)
+    throw new Error(`Persistent session control API failed: ${controlApiReady.message}`)
+  }
+
+  const baselineExport = await postApiEnvelope({
+    serverUrl,
+    pathname: "/api/save-states/export",
+    body: { includeSnapshots: false },
+    timeoutMs: Math.max(1000, Math.floor(controlApiRequestTimeoutMs * 3)),
+  })
+  if (!baselineExport.ok || typeof baselineExport.data?.dataBase64 !== "string" || !baselineExport.data.dataBase64) {
+    await terminateProcessTree(appProc)
+    throw new Error(`Persistent session baseline export failed: ${baselineExport.message}`)
+  }
+
+  return {
+    appProc,
+    appDir,
+    appExe,
+    serverUrl,
+    processOutput,
+    getLiveOutput: () => liveOutput,
+    baselineSaveStateBase64: baselineExport.data.dataBase64,
+    shouldRestoreBaselineBeforeNextScenario: false,
+    runtimeBaseDir,
+    controlApiPollMs,
+    controlApiRequestTimeoutMs,
+  }
+}
+
+export const closePersistentSession = async (session) => {
+  if (!session) return
+  if (session.appProc) {
+    await terminateProcessTree(session.appProc)
+  }
+}
+
+export const runScenarioInPersistentSession = async (session, {
+  diskPath,
+  runId,
+  attempt,
+  videoPath,
+  logPath,
+  captureSeconds,
+  recorderCommand,
+  recorderStartDelayMs,
+  diskReadyTimeoutMs,
+  windowTitle,
+  ffmpegExe,
+  exportedHdvPath,
+  requireExportedHdv,
+  menuEnterEnabled,
+  menuEnterCount,
+  menuEnterDelayMs,
+  menuEnterIntervalMs,
+  menuEnterTimeoutMs,
+  menuEnterNativeFallback,
+  menuEnterNativeWindowTitle,
+  menuEnterNativeTimeoutMs,
+  menuEnterRetryCount,
+  menuEnterRetryDelayMs,
+  controlApiReadyTimeoutMs,
+  controlApiPollMs,
+  controlApiRequestTimeoutMs,
+  waitForScreenTextEnabled,
+  screenTextMarker,
+  screenTextTimeoutMs,
+  screenTextPrewaitMs,
+  screenTextPollMs,
+  screenTextRequestTimeoutMs,
+  captureVideo,
+  headless,
+}) => {
+  const diskData = await fs.readFile(diskPath)
+  const hasExportedHdv = exportedHdvPath && (await fileExists(exportedHdvPath))
+  if (requireExportedHdv && !hasExportedHdv) {
+    return {
+      status: {
+        exportOk: false,
+        launchOk: false,
+        classification: "export_hdv_missing",
+        message: "Configured to require exported HDV, but --exported-hdv was missing or not found.",
+      },
+      telemetry: {
+        finalRunMode: "unknown",
+        cycleCountStart: 0,
+        cycleCountEnd: 0,
+        observationWindow: {
+          expected: false,
+          mode: captureVideo && !headless ? "video" : "no-video",
+          fastWindowArmed: false,
+          armedReason: null,
+          startedAtMs: null,
+          endedAtMs: null,
+          durationMs: null,
+        },
+        textMarkers: [
+          "[AUTOMATION] require-exported-hdv enabled",
+          `[AUTOMATION] missing-exported-hdv ${exportedHdvPath || "(empty)"}`,
+        ],
+      },
+      hashes: {
+        inputRawSha256: sha256Hex(diskData),
+        inputCanonicalSha256: sha256Hex(diskData),
+        exportHdvSha256: null,
+      },
+    }
+  }
+
+  const resolvedLaunchPath = hasExportedHdv ? exportedHdvPath : diskPath
+  const scenarioOutputStart = session.processOutput.length
+  const liveOutputStart = session.getLiveOutput().length
+  const processOutput = session.processOutput
+  const scenarioStartedAt = Date.now()
+  const appendTiming = (label, details = "") => {
+    const elapsed = Date.now() - scenarioStartedAt
+    processOutput.push(`[AUTOMATION] timing t+${elapsed}ms ${label}${details ? ` ${details}` : ""}\n`)
+  }
+  const readScenarioLiveOutput = () => session.getLiveOutput().slice(liveOutputStart)
+  const safeCaptureSeconds = Math.max(1, Math.floor(captureSeconds))
+  const effectiveCaptureVideo = Boolean(captureVideo && !headless)
+  const shouldWaitForScreenText = Boolean(waitForScreenTextEnabled)
+  const observationWindow = {
+    expected: false,
+    mode: effectiveCaptureVideo ? "video" : "no-video",
+    fastWindowArmed: false,
+    armedReason: null,
+    startedAtMs: null,
+    endedAtMs: null,
+    durationMs: null,
+  }
+  const markObservationWindowStart = () => {
+    observationWindow.expected = true
+    if (observationWindow.startedAtMs === null) {
+      observationWindow.startedAtMs = Date.now() - scenarioStartedAt
+    }
+    appendTiming("capture_window_start")
+  }
+  const markObservationWindowEnd = () => {
+    observationWindow.expected = true
+    observationWindow.endedAtMs = Date.now() - scenarioStartedAt
+    if (observationWindow.startedAtMs !== null) {
+      observationWindow.durationMs = observationWindow.endedAtMs - observationWindow.startedAtMs
+    }
+    appendTiming("capture_window_end")
+  }
+
+  let recorderProc = null
+  let fatalDetection = null
+  let loadReadyOk = false
+  let screenMarkerSeen = false
+  let screenTextResult = null
+  let controlApiResult = null
+  let menuEnterResult = null
+  let lastMachineTextSummary = ""
+  let sawMachineText = false
+  let statusLaunchOk = true
+
+  try {
+    if (session.shouldRestoreBaselineBeforeNextScenario) {
+      const baselineRestore = await postApiEnvelope({
+        serverUrl: session.serverUrl,
+        pathname: "/api/save-states/import",
+        body: { dataBase64: session.baselineSaveStateBase64 },
+        timeoutMs: Math.max(1000, Math.floor(controlApiRequestTimeoutMs * 3)),
+      })
+      processOutput.push(`[AUTOMATION] ${baselineRestore.ok ? "baseline_restored" : `baseline_restore_failed ${baselineRestore.message}`}\n`)
+      if (!baselineRestore.ok) {
+        statusLaunchOk = false
+      }
+    } else {
+      processOutput.push("[AUTOMATION] baseline_reuse_initial_session\n")
+    }
+
+    const mountBytes = await fs.readFile(resolvedLaunchPath)
+    const mountDriveId = inferDriveIdForDiskPath(resolvedLaunchPath)
+    const mountResult = await postApiEnvelope({
+      serverUrl: session.serverUrl,
+      pathname: `/api/drives/${mountDriveId}/mount`,
+      body: {
+        sourceType: "base64",
+        filename: path.basename(resolvedLaunchPath),
+        dataBase64: mountBytes.toString("base64"),
+        boot: true,
+        automation: true,
+        filePath: resolvedLaunchPath,
+      },
+      timeoutMs: Math.max(1000, Math.floor(controlApiRequestTimeoutMs * 6)),
+    })
+    processOutput.push(`[AUTOMATION] ${mountResult.ok ? `disk_mount_ok drive=${mountDriveId}` : `disk_mount_failed ${mountResult.message}`}\n`)
+    if (!mountResult.ok) {
+      statusLaunchOk = false
+    }
+
+    if (statusLaunchOk) {
+      processOutput.push("[AUTOMATION] machine_boot_requested\n")
+    }
+
+    if (statusLaunchOk) {
+      const diskReady = await waitForOutputMarker({
+        proc: session.appProc,
+        readOutput: readScenarioLiveOutput,
+        marker: /\[AUTOMATION\]\s+(disk-loaded|state-loaded)\b/i,
+        timeoutMs: Math.max(1000, Math.floor(diskReadyTimeoutMs)),
+      })
+      loadReadyOk = diskReady.ok || hasAutomationLoadSuccessSignal(readScenarioLiveOutput())
+      if (!loadReadyOk) {
+        statusLaunchOk = false
+      }
+    }
+
+    const detectLiveFatal = () => {
+      const rendererFatal = detectRendererFatalEvent(readScenarioLiveOutput())
+      if (rendererFatal) {
+        return rendererFatal
+      }
+
+      const outputFatal = detectFatalScreenCondition(readScenarioLiveOutput())
+      if (outputFatal) {
+        return {
+          ...outputFatal,
+          source: "app-output",
+        }
+      }
+
+      return null
+    }
+
+    if (statusLaunchOk) {
+      controlApiResult = await waitForControlApiReady({
+        serverUrl: session.serverUrl,
+        timeoutMs: Math.max(1000, Math.floor(controlApiReadyTimeoutMs)),
+        pollMs: Math.max(50, Math.floor(controlApiPollMs)),
+        requestTimeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+        shouldAbort: detectLiveFatal,
+      })
+      processOutput.push(`[AUTOMATION] ${controlApiResult.message}\n`)
+    }
+
+    if (statusLaunchOk && shouldWaitForScreenText) {
+      screenTextResult = await waitForScreenText({
+        serverUrl: session.serverUrl,
+        marker: screenTextMarker,
+        timeoutMs: Math.max(250, Math.floor(screenTextPrewaitMs)),
+        pollMs: Math.max(50, Math.floor(screenTextPollMs)),
+        requestTimeoutMs: Math.max(250, Math.floor(screenTextRequestTimeoutMs)),
+        shouldAbort: detectLiveFatal,
+      })
+      processOutput.push(`[AUTOMATION] ${screenTextResult.message}\n`)
+      const prewaitSummary = summarizeScreenText(screenTextResult.lastText || "")
+      if (prewaitSummary) {
+        processOutput.push(`[AUTOMATION] screen_text_prewait_sample ${prewaitSummary}\n`)
+        sawMachineText = true
+      }
+      if (screenTextResult.ok) {
+        screenMarkerSeen = true
+        appendTiming("screen_marker_seen", "source=control_api_prewait")
+      }
+      if (screenTextResult.fatal) {
+        fatalDetection = {
+          ...screenTextResult.fatal,
+          source: "machine-text-prewait",
+        }
+        statusLaunchOk = false
+      }
+    }
+
+    if (statusLaunchOk && menuEnterEnabled && !fatalDetection && !screenMarkerSeen) {
+      if (menuEnterDelayMs > 0) {
+        await sleep(menuEnterDelayMs)
+      }
+
+      menuEnterResult = await injectMenuEnter({
+        serverUrl: session.serverUrl,
+        appPid: session.appProc?.pid || 0,
+        enterCount: Math.max(1, Math.floor(menuEnterCount)),
+        enterIntervalMs: Math.max(0, Math.floor(menuEnterIntervalMs)),
+        requestTimeoutMs: Math.max(250, Math.floor(menuEnterTimeoutMs)),
+        nativeFallback: Boolean(menuEnterNativeFallback),
+        nativeWindowTitle: menuEnterNativeWindowTitle,
+        nativeTimeoutMs: Math.max(1000, Math.floor(menuEnterNativeTimeoutMs)),
+      })
+      processOutput.push(`[AUTOMATION] ${menuEnterResult.message}\n`)
+
+      if (menuEnterResult.ok && shouldWaitForScreenText && screenTextResult && !screenTextResult.ok && menuEnterRetryCount > 0) {
+        for (let retryIndex = 0; retryIndex < menuEnterRetryCount; retryIndex += 1) {
+          if (menuEnterRetryDelayMs > 0) {
+            await sleep(menuEnterRetryDelayMs)
+          }
+          const retryResult = await injectMenuEnter({
+            serverUrl: session.serverUrl,
+            appPid: session.appProc?.pid || 0,
+            enterCount: Math.max(1, Math.floor(menuEnterCount)),
+            enterIntervalMs: Math.max(0, Math.floor(menuEnterIntervalMs)),
+            requestTimeoutMs: Math.max(250, Math.floor(menuEnterTimeoutMs)),
+            nativeFallback: Boolean(menuEnterNativeFallback),
+            nativeWindowTitle: menuEnterNativeWindowTitle,
+            nativeTimeoutMs: Math.max(1000, Math.floor(menuEnterNativeTimeoutMs)),
+          })
+          processOutput.push(`[AUTOMATION] menu_enter_retry_${retryIndex + 1}_${retryResult.ok ? "ok" : "failed"} ${retryResult.message}\n`)
+          if (!retryResult.ok) {
+            menuEnterResult = retryResult
+            break
+          }
+        }
+      }
+    }
+
+    if (statusLaunchOk && menuEnterEnabled && screenMarkerSeen) {
+      menuEnterResult = {
+        ok: true,
+        message: "menu_enter_skipped_screen_marker_seen",
+      }
+      processOutput.push(`[AUTOMATION] ${menuEnterResult.message}\n`)
+    }
+
+    if (!fatalDetection && statusLaunchOk) {
+      const effectiveRecorderCommand = effectiveCaptureVideo
+        ? (recorderCommand || buildDefaultWindowRecorderCommand({ ffmpegExe }))
+        : ""
+      const captureBounds = extractLatestWindowBounds(readScenarioLiveOutput()) || {
+        x: 0,
+        y: 0,
+        width: 1920,
+        height: 1080,
+      }
+
+      if (effectiveCaptureVideo) {
+        if (effectiveRecorderCommand) {
+          if (recorderStartDelayMs > 0) {
+            await sleep(recorderStartDelayMs)
+          }
+          const renderedRecorder = replacePlaceholders(effectiveRecorderCommand, {
+            diskPath,
+            launchPath: resolvedLaunchPath,
+            videoPath,
+            captureSeconds: safeCaptureSeconds,
+            appPid: session.appProc.pid,
+            exportedHdvPath,
+            appExe: session.appExe,
+            ffmpegExe,
+            windowTitle,
+            captureX: captureBounds.x,
+            captureY: captureBounds.y,
+            captureWidth: captureBounds.width,
+            captureHeight: captureBounds.height,
+          })
+          recorderProc = spawnShellCommand(renderedRecorder, session.appDir)
+          collectProcessOutput(recorderProc, processOutput, null)
+        } else {
+          await ensureParentDirectory(videoPath)
+          await fs.writeFile(videoPath, "")
+        }
+      } else {
+        processOutput.push("[AUTOMATION] capture_disabled_by_option\n")
+      }
+
+      const captureStartedAt = Date.now()
+      let captureDeadline = captureStartedAt + (safeCaptureSeconds * 1000)
+      const postMarkerTotalBudgetMs = 5000
+      const postMarkerTeardownReserveMs = 1000
+      let postMarkerHardStopAt = null
+      let usedFastCaptureWindow = false
+      let fastWindowArmed = false
+      const armFastCaptureWindow = (reason) => {
+        const armedAt = Date.now()
+        const fastDeadline = armedAt + Math.max(500, postMarkerTotalBudgetMs - postMarkerTeardownReserveMs)
+        postMarkerHardStopAt = armedAt + postMarkerTotalBudgetMs
+        if (!fastWindowArmed || fastDeadline < captureDeadline) {
+          captureDeadline = Math.min(captureDeadline, fastDeadline)
+          fastWindowArmed = true
+          usedFastCaptureWindow = true
+          observationWindow.fastWindowArmed = true
+          observationWindow.armedReason = reason
+          processOutput.push(`[AUTOMATION] fast_capture_window_armed ${postMarkerTotalBudgetMs}ms reason=${reason}\n`)
+          appendTiming("fast_window_armed", `reason=${reason}`)
+        }
+      }
+
+      if (!screenMarkerSeen && shouldWaitForScreenText && hasScreenTextMarkerInAutomationSamples(readScenarioLiveOutput(), screenTextMarker)) {
+        screenMarkerSeen = true
+        processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
+      }
+
+      if (screenMarkerSeen) {
+        armFastCaptureWindow("screen_marker_pre_capture")
+      } else if (loadReadyOk && !shouldWaitForScreenText) {
+        armFastCaptureWindow("load_ready_pre_capture")
+      }
+
+      markObservationWindowStart()
+      const canPollMachineText = Boolean(normalizeServerBaseUrl(session.serverUrl))
+      let nextMachinePollAt = captureStartedAt
+
+      while (Date.now() < captureDeadline) {
+        if (session.appProc && session.appProc.exitCode !== null) {
+          statusLaunchOk = false
+          fatalDetection = fatalDetection || {
+            code: "app_exited_during_capture",
+            message: "Application exited during capture window",
+            source: "app-process",
+          }
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        const scenarioLiveOutput = readScenarioLiveOutput()
+        const outputFatal = detectFatalScreenCondition(scenarioLiveOutput)
+        const outputRendererFatal = detectRendererFatalEvent(scenarioLiveOutput)
+        if (outputRendererFatal) {
+          statusLaunchOk = false
+          fatalDetection = outputRendererFatal
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        if (outputFatal) {
+          statusLaunchOk = false
+          fatalDetection = {
+            ...outputFatal,
+            source: "app-output",
+          }
+          processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+          break
+        }
+
+        if (!screenMarkerSeen && shouldWaitForScreenText && hasScreenTextMarkerInAutomationSamples(scenarioLiveOutput, screenTextMarker)) {
+          screenMarkerSeen = true
+          processOutput.push(`[AUTOMATION] screen_text_found_in_renderer_output ${String(screenTextMarker || "").toLowerCase()}\n`)
+          appendTiming("screen_marker_seen", "source=renderer_output_loop")
+          armFastCaptureWindow("screen_marker_in_renderer_output")
+        }
+
+        if (
+          shouldWaitForScreenText &&
+          !screenMarkerSeen &&
+          screenTextResult &&
+          !screenTextResult.ok &&
+          isMeaningfulMachineTextSummary(extractLatestAutomationMachineSample(scenarioLiveOutput))
+        ) {
+          armFastCaptureWindow("renderer_machine_text_activity_fallback")
+        }
+
+        if (canPollMachineText && Date.now() >= nextMachinePollAt) {
+          nextMachinePollAt = Date.now() + 500
+          const machineReply = await getJson({
+            url: `${normalizeServerBaseUrl(session.serverUrl)}/api/machine`,
+            timeoutMs: Math.max(250, Math.floor(controlApiRequestTimeoutMs)),
+          }).catch(() => null)
+
+          if (machineReply && machineReply.ok) {
+            const textPage = String(machineReply.payload?.data?.textPage || "")
+            if (!screenMarkerSeen && textContainsAnyMarkerCandidate(textPage, screenTextMarker)) {
+              screenMarkerSeen = true
+              processOutput.push(`[AUTOMATION] screen_text_found_during_capture ${String(screenTextMarker || "").toLowerCase()}\n`)
+              appendTiming("screen_marker_seen", "source=control_api_capture")
+              armFastCaptureWindow("screen_marker_during_capture")
+            }
+            const machineSummary = summarizeScreenText(textPage)
+            if (machineSummary && machineSummary !== lastMachineTextSummary) {
+              lastMachineTextSummary = machineSummary
+              processOutput.push(`[AUTOMATION] machine_text_sample ${machineSummary}\n`)
+              sawMachineText = true
+              if (
+                shouldWaitForScreenText &&
+                !screenMarkerSeen &&
+                screenTextResult &&
+                !screenTextResult.ok &&
+                isMeaningfulMachineTextSummary(machineSummary)
+              ) {
+                armFastCaptureWindow("machine_text_activity_fallback")
+              }
+            }
+            const machineFatal = detectFatalScreenCondition(textPage)
+            if (machineFatal) {
+              statusLaunchOk = false
+              fatalDetection = {
+                ...machineFatal,
+                source: "machine-text",
+              }
+              processOutput.push(`[AUTOMATION] fatal_detected ${fatalDetection.code} ${fatalDetection.message}\n`)
+              break
+            }
+          }
+        }
+
+        await sleep(100)
+      }
+      markObservationWindowEnd()
+
+      if (recorderProc) {
+        const remainingBudgetMs = postMarkerHardStopAt ? Math.max(100, postMarkerHardStopAt - Date.now()) : null
+        const recorderGraceMs = remainingBudgetMs === null
+          ? (usedFastCaptureWindow ? 500 : 4000)
+          : Math.min(usedFastCaptureWindow ? 500 : 4000, remainingBudgetMs)
+        processOutput.push(`[AUTOMATION] recorder_finalize_wait ${recorderGraceMs}ms\n`)
+        const recorderExit = await waitForExitWithTimeout(recorderProc, recorderGraceMs)
+        if (!recorderExit.completed) {
+          await terminateProcessTree(recorderProc)
+        }
+      }
+    }
+
+    const exportHdvBytes = exportedHdvPath ? await maybeReadFile(exportedHdvPath) : null
+    const exportOk = Boolean(exportHdvBytes && exportHdvBytes.length > 0)
+
+    let classification = "ok"
+    let message = "Launch/capture window completed."
+
+    if (fatalDetection) {
+      statusLaunchOk = false
+      classification = fatalDetection.code
+      message = `Failure signature detected (${fatalDetection.source}): ${fatalDetection.message}`
+    } else if (!statusLaunchOk) {
+      classification = loadReadyOk ? "runner_failed" : "disk_not_loaded"
+      message = loadReadyOk
+        ? "Persistent session scenario failed before completion."
+        : `App did not report disk-loaded/state-loaded within ${diskReadyTimeoutMs} ms.`
+    } else if (!exportOk) {
+      classification = "export_not_verified"
+      message = "Launch completed but exported HDV was not found."
+    }
+
+    if (
+      shouldWaitForScreenText &&
+      controlApiResult &&
+      !controlApiResult.ok &&
+      !sawMachineText &&
+      /\[AUTOMATION\]\s+machine-text-sample\b/i.test(readScenarioLiveOutput()) === false
+    ) {
+      classification = "screen_text_unavailable"
+      statusLaunchOk = false
+      message = "Control API unavailable and no machine text was captured from renderer automation events."
+    }
+
+    if (classification === "ok" && menuEnterEnabled && menuEnterResult && !menuEnterResult.ok) {
+      processOutput.push(`[AUTOMATION] menu_enter_warning ${menuEnterResult.message}\n`)
+    }
+
+    if (classification === "ok" && shouldWaitForScreenText && !screenMarkerSeen) {
+      const reason = screenTextResult?.message || "screen_text_not_observed"
+      processOutput.push(`[AUTOMATION] screen_text_marker_not_observed ${reason}\n`)
+    }
+
+    if (classification === "disk_not_loaded" && shouldWaitForScreenText && screenMarkerSeen) {
+      classification = "ok"
+      statusLaunchOk = true
+      message = "Launch/capture window completed. Disk title marker detected."
+      processOutput.push("[AUTOMATION] disk_loaded_by_screen_marker\n")
+    }
+
+    if (resolvedLaunchPath === diskPath && path.extname(diskPath).toLowerCase() !== ".hdv") {
+      classification = classification === "ok" ? "source_disk_launched" : classification
+      message = `${message} Launch target remained source disk (no HDV launch target resolved).`
+    }
+
+    if (classification !== "ok") {
+      processOutput.push(`[RESULT] 🔴 FAIL classification=${classification}\n`)
+      processOutput.push(`[AUTOMATION] run_failed classification=${classification} message=${message}\n`)
+      const finalSample =
+        extractLatestAutomationMachineSample(readScenarioLiveOutput()) ||
+        summarizeScreenText(screenTextResult?.lastText || "") ||
+        summarizeScreenText(readScenarioLiveOutput())
+      if (finalSample) {
+        processOutput.push(`[AUTOMATION] failure_text_capture ${finalSample}\n`)
+      }
+    } else {
+      processOutput.push("[RESULT] ✅ PASS\n")
+    }
+    appendTiming("scenario_complete", `classification=${classification}`)
+
+    const combinedLog = collapseMachineTextFatalLines(flattenOutput(processOutput.slice(scenarioOutputStart)))
+    if (logPath) {
+      await ensureParentDirectory(logPath)
+      await fs.writeFile(logPath, combinedLog, "utf8")
+    }
+
+    return {
+      status: {
+        exportOk,
+        launchOk: statusLaunchOk,
+        classification,
+        message,
+      },
+      telemetry: {
+        finalRunMode: statusLaunchOk ? "running" : "unknown",
+        cycleCountStart: 0,
+        cycleCountEnd: 0,
+        observationWindow,
+        textMarkers: buildTelemetryTextMarkers(combinedLog),
+      },
+      hashes: {
+        inputRawSha256: sha256Hex(diskData),
+        inputCanonicalSha256: sha256Hex(diskData),
+        exportHdvSha256: exportHdvBytes ? sha256Hex(exportHdvBytes) : null,
+      },
+    }
+  } catch (error) {
+    if (recorderProc) {
+      await terminateProcessTree(recorderProc)
+    }
+
+    const combinedLog = flattenOutput(processOutput.slice(scenarioOutputStart))
+    if (logPath) {
+      await ensureParentDirectory(logPath)
+      await fs.writeFile(logPath, combinedLog, "utf8")
+    }
+
+    return {
+      status: {
+        exportOk: false,
+        launchOk: false,
+        classification: "runner_error",
+        message: error instanceof Error ? error.message : String(error),
+      },
+      telemetry: {
+        finalRunMode: "unknown",
+        cycleCountStart: 0,
+        cycleCountEnd: 0,
+        observationWindow,
+        textMarkers: buildTelemetryTextMarkers(combinedLog),
+      },
+      hashes: {
+        inputRawSha256: sha256Hex(diskData),
+        inputCanonicalSha256: sha256Hex(diskData),
+        exportHdvSha256: null,
+      },
+    }
+  } finally {
+    session.shouldRestoreBaselineBeforeNextScenario = true
+  }
+}
+
 const main = async () => {
   const options = parseArgs(process.argv.slice(2))
 
@@ -2315,39 +3148,27 @@ const main = async () => {
   })
   const elapsedMs = Date.now() - startedAt
 
-  const payload = {
-    contractVersion: 1,
-    scenario: "export-hdv-launch-test",
-    status: scenario.status,
-    timing: {
-      captureSeconds,
-      elapsedMs,
-    },
-    hashes: {
-      ...scenario.hashes,
-      providedRawSha256: providedRawSha256 || null,
-      providedCanonicalSha256: providedCanonicalSha256 || null,
-    },
-    telemetry: scenario.telemetry,
-    metadata: {
-      runId,
-      attempt,
-      runner: "electron-hdv-runner-harness",
-      profile: profileDefaults.profile,
-    },
-    artifacts: {
-      videoPath,
-      logPath: logPath || undefined,
-    },
-  }
+  const payload = buildRunnerPayload({
+    scenario,
+    captureSeconds,
+    elapsedMs,
+    providedRawSha256,
+    providedCanonicalSha256,
+    runId,
+    attempt,
+    profile: profileDefaults.profile,
+    videoPath,
+    logPath,
+  })
 
-  await ensureParentDirectory(resultPath)
-  await fs.writeFile(resultPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8")
+  await writeRunnerPayload(resultPath, payload)
 
   process.stdout.write(`Wrote runner result: ${resultPath}\n`)
   process.exit(0)
 }
 
-main().catch((error) => {
-  fail(error instanceof Error ? error.message : String(error))
-})
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    fail(error instanceof Error ? error.message : String(error))
+  })
+}

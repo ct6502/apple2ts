@@ -5,6 +5,17 @@ import { createHash, randomUUID } from "node:crypto"
 import { spawn } from "node:child_process"
 import { promises as fs } from "node:fs"
 import path from "node:path"
+import {
+  buildRunnerPayload,
+  closePersistentSession,
+  ensureAutomationMarkers,
+  launchPersistentSession,
+  resolveAutoPackagedExe,
+  resolveFfmpegExe,
+  resolveProfileDefaults,
+  runScenarioInPersistentSession,
+  writeRunnerPayload,
+} from "./electron-hdv-runner.mjs"
 
 const DEFAULT_SERVER = "http://127.0.0.1:6502"
 const DEFAULT_OUTPUT = "pretty"
@@ -988,6 +999,70 @@ const runShellCommand = async (command, timeoutMs) => {
   })
 }
 
+const waitForServerHealth = async (serverUrl, timeoutMs = 30000) => {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(`${serverUrl.replace(/\/+$/, "")}/api/health`)
+      if (response.ok) {
+        return true
+      }
+    } catch {
+      // Keep polling until timeout.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  return false
+}
+
+const stopManagedProcessTree = async (proc) => {
+  if (!proc || proc.exitCode !== null) return
+
+  if (process.platform === "win32") {
+    await new Promise((resolve) => {
+      const killer = spawn("taskkill", ["/pid", String(proc.pid), "/t", "/f"], {
+        windowsHide: true,
+        stdio: ["ignore", "ignore", "ignore"],
+      })
+      killer.once("close", () => resolve())
+      killer.once("error", () => resolve())
+    })
+    return
+  }
+
+  try {
+    process.kill(proc.pid, "SIGTERM")
+  } catch {
+    return
+  }
+}
+
+const startLocalControlServerIfNeeded = async (serverUrl) => {
+  if (await waitForServerHealth(serverUrl, 1000)) {
+    return {
+      proc: null,
+      managed: false,
+    }
+  }
+
+  const serverProc = spawn(process.execPath, [path.resolve(process.cwd(), "server", "server.mjs")], {
+    cwd: process.cwd(),
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+  })
+
+  const ready = await waitForServerHealth(serverUrl, 30000)
+  if (!ready) {
+    await stopManagedProcessTree(serverProc)
+    fail(`Persistent Electron reuse could not start the local control server at ${serverUrl}`)
+  }
+
+  return {
+    proc: serverProc,
+    managed: true,
+  }
+}
+
 const validateRunnerContractName = (value) => {
   if (value === "none" || value === "electron-hdv-v1") {
     return value
@@ -1081,6 +1156,130 @@ const buildRunnerCommandFromPreset = (preset, { runnerAppDir, runnerAppExe, conc
   }
 
   return base.join(" ")
+}
+
+const getRunnerProfileFromPreset = (preset) => {
+  switch (preset) {
+    case "electron-hdv-dev":
+      return "apple2ts-app-dev"
+    case "electron-hdv-packaged":
+      return "apple2ts-app-packaged"
+    case "electron-hdv-packaged-auto":
+      return "apple2ts-app-packaged-auto"
+    default:
+      return "none"
+  }
+}
+
+const shouldReuseElectronAppByDefault = ({ runnerContract, runnerPreset, concurrency }) => {
+  return runnerContract === "electron-hdv-v1" && runnerPreset !== "none" && Number(concurrency) === 1
+}
+
+const createPersistentSessionContext = async ({
+  runnerPreset,
+  runnerAppDir,
+  runnerAppExe,
+  runId,
+  serverUrl,
+}) => {
+  const localControlServer = await startLocalControlServerIfNeeded(serverUrl)
+  const profileName = getRunnerProfileFromPreset(runnerPreset)
+  if (profileName === "none") {
+    fail("Persistent Electron reuse requires a built-in Electron runner preset")
+  }
+
+  const defaultAppDir = runnerAppDir || path.resolve(process.cwd(), "..", "apple2ts-app")
+  const profileDefaults = resolveProfileDefaults(profileName, defaultAppDir)
+  const appDir = path.resolve(runnerAppDir || profileDefaults.appDir)
+
+  let appExe = runnerAppExe || profileDefaults.appExe
+  if (!appExe && profileDefaults.profile === "apple2ts-app-packaged-auto") {
+    appExe = await resolveAutoPackagedExe(appDir)
+    if (!appExe) {
+      fail(`Could not auto-detect packaged app executable under ${appDir}. Use --runner-app-exe or build a packaged app first.`)
+    }
+  }
+
+  const appDirStat = await fs.stat(appDir).catch(() => null)
+  if (!appDirStat || !appDirStat.isDirectory()) {
+    fail(`--runner-app-dir must point to a directory: ${appDir}`)
+  }
+
+  if (profileDefaults.appCommand.includes("{appExe}")) {
+    if (!appExe) {
+      fail("Persistent Electron reuse requires an app executable for this preset")
+    }
+    const appExePath = path.resolve(appExe)
+    const appExeStat = await fs.stat(appExePath).catch(() => null)
+    if (!appExeStat && !String(appExePath).toLowerCase().endsWith(".app")) {
+      fail(`--runner-app-exe does not exist: ${appExePath}`)
+    }
+    appExe = appExePath
+  }
+
+  const automationCheck = await ensureAutomationMarkers({
+    enabled: profileDefaults.profile === "apple2ts-app-dev",
+    projectDir: process.cwd(),
+    distDir: path.resolve(process.cwd(), "dist"),
+    markers: [
+      "machine-text-sample",
+      "machine-text-fatal",
+      "launch-key-attempt",
+      "launch-before-",
+      "automation-instrumentation-version",
+    ],
+    buildCommand: "npm run build",
+    buildTimeoutMs: 180000,
+  })
+  if (!automationCheck.ok) {
+    const detail = automationCheck.details ? `\n${automationCheck.details}` : ""
+    fail(`Automation instrumentation check failed: ${automationCheck.message}${detail}`)
+  }
+
+  const ffmpegExe = await resolveFfmpegExe("")
+  const session = await launchPersistentSession({
+    runId,
+    appDir,
+    appCommand: profileDefaults.appCommand,
+    appExe,
+    serverUrl,
+    appReadyTimeoutMs: 90000,
+    controlApiReadyTimeoutMs: 90000,
+    controlApiPollMs: 250,
+    controlApiRequestTimeoutMs: 2000,
+  })
+
+  return {
+    session,
+    localControlServer,
+    ffmpegExe,
+    profile: profileDefaults.profile,
+    options: {
+      captureSeconds: 15,
+      recorderCommand: profileDefaults.recorderCommand,
+      recorderStartDelayMs: 0,
+      diskReadyTimeoutMs: 12000,
+      windowTitle: "Apple2TS",
+      menuEnterEnabled: false,
+      menuEnterCount: 1,
+      menuEnterDelayMs: 800,
+      menuEnterIntervalMs: 150,
+      menuEnterTimeoutMs: 3000,
+      menuEnterNativeFallback: false,
+      menuEnterNativeWindowTitle: "Apple2TS",
+      menuEnterNativeTimeoutMs: 5000,
+      menuEnterRetryCount: 2,
+      menuEnterRetryDelayMs: 1500,
+      controlApiReadyTimeoutMs: 5000,
+      controlApiPollMs: 250,
+      controlApiRequestTimeoutMs: 2000,
+      waitForScreenTextEnabled: true,
+      screenTextTimeoutMs: 15000,
+      screenTextPrewaitMs: 1500,
+      screenTextPollMs: 250,
+      screenTextRequestTimeoutMs: 2000,
+    },
+  }
 }
 
 const inferDefaultRunnerContract = ({ runnerPreset, runnerCommandTemplate }) => {
@@ -1262,6 +1461,9 @@ const handleBatch = async (context, command, tokens) => {
       ? String(options.get("runner-contract"))
       : defaultRunnerContract,
   )
+  const reuseApp = options.has("reuse-app")
+    ? parseBoolean(options.get("reuse-app"), "reuse-app")
+    : shouldReuseElectronAppByDefault({ runnerContract, runnerPreset, concurrency })
   const runnerResultsDir = options.has("runner-results-dir")
     ? path.resolve(process.cwd(), String(options.get("runner-results-dir")))
     : path.resolve(process.cwd(), ".apple2ts-batch", "runner-results")
@@ -1289,6 +1491,12 @@ const handleBatch = async (context, command, tokens) => {
   }
   if (retries < 0) {
     fail("--retries must be >= 0")
+  }
+  if (reuseApp && concurrency !== 1) {
+    fail("--reuse-app currently requires --concurrency 1")
+  }
+  if (reuseApp && runnerPreset === "none") {
+    fail("--reuse-app currently requires a built-in Electron runner preset")
   }
 
   const diskPaths = inputDir ? await loadDiskListFromDirectory(inputDir) : await loadDiskListFromFile(inputPath)
@@ -1552,19 +1760,6 @@ const handleBatch = async (context, command, tokens) => {
       })
       const command = `${templatedCommand} --capture-video ${captureVideo} --headless ${headless}`
 
-      const runner = await runShellCommand(command, runnerTimeoutMs)
-      if (logPath) {
-        const wrapperOutput = [runner.stdout, runner.stderr].filter(Boolean).join("\n")
-        if (wrapperOutput.length > 0) {
-          const existingLog = await fs.readFile(logPath, "utf8").catch(() => "")
-          if (!existingLog) {
-            await fs.writeFile(logPath, wrapperOutput)
-          } else {
-            await fs.appendFile(logPath, `\n\n[BATCH_WRAPPER]\n${wrapperOutput}`)
-          }
-        }
-      }
-
       const baseRecord = {
         schemaVersion: 1,
         runId,
@@ -1590,44 +1785,49 @@ const handleBatch = async (context, command, tokens) => {
           videoPath: videoPath || undefined,
           logPath: logPath || undefined,
         },
-        runner: {
-          exitCode: runner.exitCode,
-          signal: runner.signal,
-          command,
-        },
+        runner: reuseApp
+          ? {
+            exitCode: 0,
+            signal: null,
+            command: `[persistent-session] ${runnerPreset}`,
+          }
+          : {
+            exitCode: 0,
+            signal: null,
+            command,
+          },
       }
 
-      if (runner.timedOut) {
-        lastRecord = {
-          ...baseRecord,
-          attempt: {
-            ...baseRecord.attempt,
-            retryable: true,
-          },
-          status: {
-            ok: false,
-            code: "runner_timeout",
-            message: `Runner timed out after ${runnerTimeoutMs} ms`,
-          },
-        }
-      } else if (runner.exitCode !== 0) {
-        lastRecord = {
-          ...baseRecord,
-          attempt: {
-            ...baseRecord.attempt,
-            retryable: true,
-          },
-          status: {
-            ok: false,
-            code: "runner_failed",
-            message: `Runner exited with code ${runner.exitCode}`,
-          },
-        }
-      } else {
-        let payload
+      if (persistentSessionContext) {
         try {
-          const rawPayload = await fs.readFile(runnerResultPath, "utf8")
-          payload = JSON.parse(rawPayload)
+          const scenarioStartedAt = Date.now()
+          const scenario = await runScenarioInPersistentSession(persistentSessionContext.session, {
+            diskPath,
+            runId,
+            attempt: attemptIndex,
+            videoPath,
+            logPath,
+            exportedHdvPath,
+            requireExportedHdv: true,
+            captureVideo,
+            headless,
+            screenTextMarker: combinedScreenMarker,
+            ffmpegExe: persistentSessionContext.ffmpegExe,
+            ...persistentSessionContext.options,
+          })
+          const payload = buildRunnerPayload({
+            scenario,
+            captureSeconds: persistentSessionContext.options.captureSeconds,
+            elapsedMs: Date.now() - scenarioStartedAt,
+            providedRawSha256: rawSha256,
+            providedCanonicalSha256: canonicalSha256,
+            runId,
+            attempt: attemptIndex,
+            profile: persistentSessionContext.profile,
+            videoPath,
+            logPath,
+          })
+          await writeRunnerPayload(runnerResultPath, payload)
           const contractError = validateRunnerPayloadAgainstContract(payload, runnerContract)
           if (contractError) {
             lastRecord = {
@@ -1643,27 +1843,116 @@ const handleBatch = async (context, command, tokens) => {
               },
             }
           } else {
-          lastRecord = {
-            ...baseRecord,
-            status: {
-              ok: true,
-              code: "ok",
-            },
-            payload,
-          }
+            lastRecord = {
+              ...baseRecord,
+              status: {
+                ok: true,
+                code: "ok",
+              },
+              payload,
+            }
           }
         } catch (error) {
           lastRecord = {
             ...baseRecord,
             attempt: {
               ...baseRecord.attempt,
-              retryable: false,
+              retryable: attemptIndex < maxAttempts,
             },
             status: {
               ok: false,
-              code: error && error.code === "ENOENT" ? "runner_result_missing" : "runner_result_invalid",
+              code: "runner_failed",
               message: error instanceof Error ? error.message : String(error),
             },
+          }
+        }
+      } else {
+        const runner = await runShellCommand(command, runnerTimeoutMs)
+        baseRecord.runner = {
+          exitCode: runner.exitCode,
+          signal: runner.signal,
+          command,
+        }
+        if (logPath) {
+          const wrapperOutput = [runner.stdout, runner.stderr].filter(Boolean).join("\n")
+          if (wrapperOutput.length > 0) {
+            const existingLog = await fs.readFile(logPath, "utf8").catch(() => "")
+            if (!existingLog) {
+              await fs.writeFile(logPath, wrapperOutput)
+            } else {
+              await fs.appendFile(logPath, `\n\n[BATCH_WRAPPER]\n${wrapperOutput}`)
+            }
+          }
+        }
+
+        if (runner.timedOut) {
+          lastRecord = {
+            ...baseRecord,
+            attempt: {
+              ...baseRecord.attempt,
+              retryable: true,
+            },
+            status: {
+              ok: false,
+              code: "runner_timeout",
+              message: `Runner timed out after ${runnerTimeoutMs} ms`,
+            },
+          }
+        } else if (runner.exitCode !== 0) {
+          lastRecord = {
+            ...baseRecord,
+            attempt: {
+              ...baseRecord.attempt,
+              retryable: true,
+            },
+            status: {
+              ok: false,
+              code: "runner_failed",
+              message: `Runner exited with code ${runner.exitCode}`,
+            },
+          }
+        } else {
+          let payload
+          try {
+            const rawPayload = await fs.readFile(runnerResultPath, "utf8")
+            payload = JSON.parse(rawPayload)
+            const contractError = validateRunnerPayloadAgainstContract(payload, runnerContract)
+            if (contractError) {
+              lastRecord = {
+                ...baseRecord,
+                attempt: {
+                  ...baseRecord.attempt,
+                  retryable: false,
+                },
+                status: {
+                  ok: false,
+                  code: "runner_result_invalid",
+                  message: `Runner contract validation failed: ${contractError}`,
+                },
+              }
+            } else {
+              lastRecord = {
+                ...baseRecord,
+                status: {
+                  ok: true,
+                  code: "ok",
+                },
+                payload,
+              }
+            }
+          } catch (error) {
+            lastRecord = {
+              ...baseRecord,
+              attempt: {
+                ...baseRecord.attempt,
+                retryable: false,
+              },
+              status: {
+                ok: false,
+                code: error && error.code === "ENOENT" ? "runner_result_missing" : "runner_result_invalid",
+                message: error instanceof Error ? error.message : String(error),
+              },
+            }
           }
         }
       }
@@ -1701,21 +1990,41 @@ const handleBatch = async (context, command, tokens) => {
     }
   }
 
-  let cursor = 0
-  const workers = Array.from({ length: concurrency }, () => (async () => {
-    while (true) {
-      const index = cursor
-      cursor += 1
-      if (index >= shardedDisks.length) {
-        return
-      }
-      const record = await processDisk(shardedDisks[index])
-      await appendRecord(record)
+  let persistentSessionContext = null
+  try {
+    if (reuseApp) {
+      persistentSessionContext = await createPersistentSessionContext({
+        runnerPreset,
+        runnerAppDir,
+        runnerAppExe,
+        runId,
+        serverUrl: context.server,
+      })
     }
-  })())
 
-  await Promise.all(workers)
-  await writeQueue
+    let cursor = 0
+    const workers = Array.from({ length: concurrency }, () => (async () => {
+      while (true) {
+        const index = cursor
+        cursor += 1
+        if (index >= shardedDisks.length) {
+          return
+        }
+        const record = await processDisk(shardedDisks[index])
+        await appendRecord(record)
+      }
+    })())
+
+    await Promise.all(workers)
+    await writeQueue
+  } finally {
+    if (persistentSessionContext) {
+      await closePersistentSession(persistentSessionContext.session)
+      if (persistentSessionContext.localControlServer?.managed) {
+        await stopManagedProcessTree(persistentSessionContext.localControlServer.proc)
+      }
+    }
+  }
 
   return {
     runId,

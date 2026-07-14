@@ -1350,6 +1350,9 @@ const server = createServer(async (req, res) => {
                 driveIndex: drive.index,
                 filename: body.filename,
                 dataBase64: body.dataBase64,
+                boot: body.boot === true,
+                automation: body.automation === true,
+                filePath: typeof body.filePath === "string" ? body.filePath : "",
               }, true)
               break
             }

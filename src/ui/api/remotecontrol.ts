@@ -48,6 +48,7 @@ import {
   setPreferenceSpeedMode,
 } from "../localstorage"
 import { RestoreSaveState } from "../savestate"
+import { notifyAutomationDiskLoaded } from "./messagelistener"
 import { getUIState } from "../ui_settings"
 import { getMockingboardMode } from "../devices/audio/mockingboard_audio"
 import { isAudioEnabled } from "../devices/audio/speaker"
@@ -79,14 +80,37 @@ const isRemoteControlEnabled = () => {
   try {
     const params = new URLSearchParams(window.location.search)
     if (params.get("remoteControl") === "1") return true
+    if (window.location.protocol === "file:" && (window as any).electronAPI?.reportAutomationEvent) return true
     return window.localStorage.getItem("remoteControlEnabled") === "true"
   } catch {
     return false
   }
 }
 
+const getRemoteServerBaseUrl = () => {
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const explicit = params.get("remoteServer") || window.localStorage.getItem("remoteControlServerUrl") || ""
+    if (explicit) {
+      return explicit.replace(/\/+$/, "")
+    }
+  } catch {
+    // Ignore malformed query/local storage access.
+  }
+
+  if (window.location.protocol === "file:" && (window as any).electronAPI?.reportAutomationEvent) {
+    return "http://127.0.0.1:6502"
+  }
+
+  if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+    return ""
+  }
+
+  return ""
+}
+
 const isRemoteServerAvailable = () => {
-  return window.location.protocol === "http:" || window.location.protocol === "https:"
+  return getRemoteServerBaseUrl() !== "" || window.location.protocol === "http:" || window.location.protocol === "https:"
 }
 
 const decodeBase64 = (value: string) => {
@@ -267,7 +291,9 @@ const executeStep = async (stepAction: () => void) => {
 }
 
 const postJson = async (url: string, body: Record<string, unknown>) => {
-  await fetch(url, {
+  const baseUrl = getRemoteServerBaseUrl()
+  const resolvedUrl = baseUrl && url.startsWith("/") ? `${baseUrl}${url}` : url
+  await fetch(resolvedUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -324,8 +350,11 @@ const scheduleReconnect = () => {
 const connectToRemoteServer = async () => {
   if (!isRemoteServerAvailable()) return
 
+  const baseUrl = getRemoteServerBaseUrl()
+  const resolveRemoteUrl = (pathname: string) => baseUrl ? `${baseUrl}${pathname}` : pathname
+
   try {
-    const response = await fetch("/api/client/connect", {
+    const response = await fetch(resolveRemoteUrl("/api/client/connect"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -343,7 +372,7 @@ const connectToRemoteServer = async () => {
     if (eventSource) {
       eventSource.close()
     }
-    eventSource = new EventSource(`/api/client/events?clientId=${encodeURIComponent(clientId)}`)
+    eventSource = new EventSource(resolveRemoteUrl(`/api/client/events?clientId=${encodeURIComponent(clientId)}`))
     eventSource.addEventListener("command", (event) => {
       void handleCommand(event as MessageEvent<string>)
     })
@@ -539,9 +568,18 @@ const executeCommand = async (action: string, payload: Record<string, unknown>) 
       const dataBase64 = String(payload.dataBase64 || "")
       const filename = String(payload.filename || "remote.woz")
       const driveIndex = Number(payload.driveIndex || 0)
+      const forceBoot = payload.boot === true
+      const automation = payload.automation === true
+      const filePath = String(payload.filePath || "")
       const bytes = decodeBase64(dataBase64)
       const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
       const mountedDrive = handleSetDiskOrFileFromBuffer(driveIndex, arrayBuffer, filename, null, null)
+      if (forceBoot || handleGetRunMode() === RUN_MODE.IDLE) {
+        passSetRunMode(RUN_MODE.NEED_BOOT)
+      }
+      if (automation) {
+        notifyAutomationDiskLoaded(filename, filePath)
+      }
       return {
         mountedDrive,
         status: collectStatus(),
