@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-07-14T11:13:39.601Z",
+  "lastUpdated": "2026-07-14T16:39:19.378Z",
   "disks": {
     "0a4acee6ab91195400d94884c471824433f8b6aa9e6b0a7ffba81232eb1c57bf": {
       "diskName": "abm.dsk",
@@ -10585,6 +10585,3238 @@
       "status": "pass",
       "rawSha256": "1cf3674d35b167de4f7cbe27a1ffb56c1fb1c7cff2b56ffdd4d05322b8d66863",
       "lastUpdated": "2026-07-14T11:13:31.269Z"
+    },
+    "460217758208f2d9f240f211e6441e55ad61623eb8031802ef4bbda9faa5e519": {
+      "diskName": "agent_usa.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "460217758208f2d9f240f211e6441e55ad61623eb8031802ef4bbda9faa5e519",
+      "lastUpdated": "2026-07-14T15:51:34.512Z"
+    },
+    "00572a16c0f9fd235977faf96662d2419a1a68d3c02ddd76f3eb22058de96af9": {
+      "diskName": "BodyTransparent.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "00572a16c0f9fd235977faf96662d2419a1a68d3c02ddd76f3eb22058de96af9",
+      "lastUpdated": "2026-07-14T15:51:42.823Z"
+    },
+    "878283513d7de9fd9ed0e9e8b0e0b63bdd6befcbd5eac2434b3302ba90187e07": {
+      "diskName": "Camps.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "878283513d7de9fd9ed0e9e8b0e0b63bdd6befcbd5eac2434b3302ba90187e07",
+      "lastUpdated": "2026-07-14T15:51:43.427Z"
+    },
+    "06afec1ca936e93187a067c646b6c51c68f2f2221199f7856017a9d53db41b28": {
+      "diskName": "CharacteristicsOfLight.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "06afec1ca936e93187a067c646b6c51c68f2f2221199f7856017a9d53db41b28",
+      "lastUpdated": "2026-07-14T15:51:44.017Z"
+    },
+    "1ce9fa2fb162aa09860fe88104ced8d8760868abf56628acfc86a7fb8bf88d3f": {
+      "diskName": "create_with_garfield1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "1ce9fa2fb162aa09860fe88104ced8d8760868abf56628acfc86a7fb8bf88d3f",
+      "lastUpdated": "2026-07-14T15:51:44.618Z"
+    },
+    "9d29776f96217cb0fb68d2878470ea6503d0fa9fa5a15b773674c51e35a9c29a": {
+      "diskName": "create_with_garfield2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "9d29776f96217cb0fb68d2878470ea6503d0fa9fa5a15b773674c51e35a9c29a",
+      "lastUpdated": "2026-07-14T15:51:45.927Z"
+    },
+    "8c4a8a74cb8fd7ba09b783ac11a0719532c8e472535de1991a77292fc4079906": {
+      "diskName": "Crisis.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "8c4a8a74cb8fd7ba09b783ac11a0719532c8e472535de1991a77292fc4079906",
+      "lastUpdated": "2026-07-14T15:51:52.563Z"
+    },
+    "a87787fb6aebbd0a66f5075c5bb101bee40ad0d2c7535dbc797e88ab0425c615": {
+      "diskName": "CrossCountryUSA1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "a87787fb6aebbd0a66f5075c5bb101bee40ad0d2c7535dbc797e88ab0425c615",
+      "lastUpdated": "2026-07-14T15:52:02.084Z"
+    },
+    "c260d9f1d4687c9a239afb3414fe7367475ea0978b5128d9c6f689548c205942": {
+      "diskName": "CrossCountryUSA2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "c260d9f1d4687c9a239afb3414fe7367475ea0978b5128d9c6f689548c205942",
+      "lastUpdated": "2026-07-14T15:52:10.819Z"
+    },
+    "61d88d271904430e8ec6d52a8e8cdc35a73e1f992a1f529315a60ee62ad6dc2e": {
+      "diskName": "elementary_games.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "61d88d271904430e8ec6d52a8e8cdc35a73e1f992a1f529315a60ee62ad6dc2e",
+      "lastUpdated": "2026-07-14T15:52:16.710Z"
+    },
+    "92355bc4c1557354a3004244f9420959e47cafae2da054f521a8993459701faf": {
+      "diskName": "fuzzywomp.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "92355bc4c1557354a3004244f9420959e47cafae2da054f521a8993459701faf",
+      "lastUpdated": "2026-07-14T15:52:26.136Z"
+    },
+    "086541c2c51e4f5a72db9a4616ccd78ddaa8113fe00eb1529057863b76ddcef0": {
+      "diskName": "GameOfTheStates.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "086541c2c51e4f5a72db9a4616ccd78ddaa8113fe00eb1529057863b76ddcef0",
+      "lastUpdated": "2026-07-14T15:52:35.803Z"
+    },
+    "3a4fc6c4d5c6fe92cec3f17b7bb9ce5af314dca876eca492f146fa3805a6b7eb": {
+      "diskName": "garfield_double_dares.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3a4fc6c4d5c6fe92cec3f17b7bb9ce5af314dca876eca492f146fa3805a6b7eb",
+      "lastUpdated": "2026-07-14T15:52:45.258Z"
+    },
+    "fd1505ed540bf677cf049e41803ffc2cbe51d580d931633fa373d5252f29f04d": {
+      "diskName": "garfield_eat_your_words.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "fd1505ed540bf677cf049e41803ffc2cbe51d580d931633fa373d5252f29f04d",
+      "lastUpdated": "2026-07-14T15:52:54.673Z"
+    },
+    "58896853d7a05e94c2b741992f060619d45f26149dc86d2eacfef351b41de381": {
+      "diskName": "Gears.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "58896853d7a05e94c2b741992f060619d45f26149dc86d2eacfef351b41de381",
+      "lastUpdated": "2026-07-14T15:53:04.062Z"
+    },
+    "21d0dfc5884bb2e0c3a7ba0ae4692a6ef309256dec50aa3e382d0fcb820c4b2a": {
+      "diskName": "GreatAmericanCrossCountryRoadRace.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "21d0dfc5884bb2e0c3a7ba0ae4692a6ef309256dec50aa3e382d0fcb820c4b2a",
+      "lastUpdated": "2026-07-14T15:53:12.805Z"
+    },
+    "b67d67c23b3d4c11c8731377937676ca5948430a167b4e49a77014c81a490617": {
+      "diskName": "GreatRace.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "b67d67c23b3d4c11c8731377937676ca5948430a167b4e49a77014c81a490617",
+      "lastUpdated": "2026-07-14T15:53:14.021Z"
+    },
+    "d50fd3db555595512b956986e0599231f84fd43a50500baffd81f63b06e4185b": {
+      "diskName": "master_type.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d50fd3db555595512b956986e0599231f84fd43a50500baffd81f63b06e4185b",
+      "lastUpdated": "2026-07-14T15:53:23.568Z"
+    },
+    "19b3d7bbb2a5867167a34b4893446f5f6561868cee06175dfe4c62147a4fed99": {
+      "diskName": "MindMirror.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "19b3d7bbb2a5867167a34b4893446f5f6561868cee06175dfe4c62147a4fed99",
+      "lastUpdated": "2026-07-14T15:53:33.053Z"
+    },
+    "6869f8b73139a0024595ed7ece2b9b2ca474ece6d9479b39d9fbc1943f0ed8e3": {
+      "diskName": "music_made_easy.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "6869f8b73139a0024595ed7ece2b9b2ca474ece6d9479b39d9fbc1943f0ed8e3",
+      "lastUpdated": "2026-07-14T15:53:42.349Z"
+    },
+    "c3e9ad70cbf92734ee41ab29690f1383b0b6f610138d91a99034ab9ac52c573e": {
+      "diskName": "OperationFrog1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "c3e9ad70cbf92734ee41ab29690f1383b0b6f610138d91a99034ab9ac52c573e",
+      "lastUpdated": "2026-07-14T15:53:51.765Z"
+    },
+    "0398f459cb228b32b25e7a3360165dfe90a915dfdef67f9f7ec3baaa7b6dbb1a": {
+      "diskName": "OperationFrog2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "0398f459cb228b32b25e7a3360165dfe90a915dfdef67f9f7ec3baaa7b6dbb1a",
+      "lastUpdated": "2026-07-14T15:54:01.500Z"
+    },
+    "288f768d4774372be303cbb9cd7a805eebb88c3bab59b8d1bafa94286a7fed47": {
+      "diskName": "road_rally_usa.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "288f768d4774372be303cbb9cd7a805eebb88c3bab59b8d1bafa94286a7fed47",
+      "lastUpdated": "2026-07-14T15:54:11.402Z"
+    },
+    "be330e9a6bebb2937d8e1219bdccc50ced9457ec0ef7221d7c08fb679fc81429": {
+      "diskName": "robot_odyssey1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "be330e9a6bebb2937d8e1219bdccc50ced9457ec0ef7221d7c08fb679fc81429",
+      "lastUpdated": "2026-07-14T15:54:20.982Z"
+    },
+    "893afa3aaad0fa488a27342871951761aaf98387b7393a34223c601dbb1fc789": {
+      "diskName": "robot_odyssey2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "893afa3aaad0fa488a27342871951761aaf98387b7393a34223c601dbb1fc789",
+      "lastUpdated": "2026-07-14T15:54:21.614Z"
+    },
+    "6524d47a509fd5c1c3d8e8d7089006c4778b2f95093d5f4097a89c4c9f1f9b6b": {
+      "diskName": "RobotOdyssey1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "6524d47a509fd5c1c3d8e8d7089006c4778b2f95093d5f4097a89c4c9f1f9b6b",
+      "lastUpdated": "2026-07-14T15:54:22.175Z"
+    },
+    "042240b6afea981e6d2d46558c23d22e9672efa656270b08ef390b73e779b33a": {
+      "diskName": "RobotOdyssey2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "042240b6afea981e6d2d46558c23d22e9672efa656270b08ef390b73e779b33a",
+      "lastUpdated": "2026-07-14T15:54:22.783Z"
+    },
+    "a03ecffd8c5d98f78fe360abf468afee925900f953e4ee6f6b34de500881c7cc": {
+      "diskName": "rockys_boots.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a03ecffd8c5d98f78fe360abf468afee925900f953e4ee6f6b34de500881c7cc",
+      "lastUpdated": "2026-07-14T15:54:23.430Z"
+    },
+    "9b384dafd72408ebac49994c9ffc8a5155e9049c3352851d6145447d44b7bec8": {
+      "diskName": "SeaVoyagers.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9b384dafd72408ebac49994c9ffc8a5155e9049c3352851d6145447d44b7bec8",
+      "lastUpdated": "2026-07-14T15:54:24.806Z"
+    },
+    "98407f417f5b9c8a3e7d11822159c438fed175327a41062d6bfb314b7db830ef": {
+      "diskName": "sexuality_life_dynamic.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "98407f417f5b9c8a3e7d11822159c438fed175327a41062d6bfb314b7db830ef",
+      "lastUpdated": "2026-07-14T15:54:34.531Z"
+    },
+    "6a2a7ccc24646c087df298ef6887a55131a159addb462c9f8436bd5fb49b8f57": {
+      "diskName": "shifty_sam.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "6a2a7ccc24646c087df298ef6887a55131a159addb462c9f8436bd5fb49b8f57",
+      "lastUpdated": "2026-07-14T15:54:44.057Z"
+    },
+    "ad6bd94c39b42746bc756e910991d6cf8cbf057e2837d34cc33b83cb38418bb6": {
+      "diskName": "snooper_troops_II.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ad6bd94c39b42746bc756e910991d6cf8cbf057e2837d34cc33b83cb38418bb6",
+      "lastUpdated": "2026-07-14T15:54:53.600Z"
+    },
+    "b76a5b8d872a1b2654ab5aa455205d95b01a90184857181c07f5356d33565369": {
+      "diskName": "snooper_troops.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b76a5b8d872a1b2654ab5aa455205d95b01a90184857181c07f5356d33565369",
+      "lastUpdated": "2026-07-14T15:55:02.309Z"
+    },
+    "43467a99026c8e8b19246531c6c0d32e442cdb3c71493e32406f5e2e5928e8fc": {
+      "diskName": "StickyBearABC.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "43467a99026c8e8b19246531c6c0d32e442cdb3c71493e32406f5e2e5928e8fc",
+      "lastUpdated": "2026-07-14T15:55:02.875Z"
+    },
+    "be7cf2e3c3207d8a838df89e0125093b3bb8cf8b7963ed2251eb3530d43992f2": {
+      "diskName": "StickyBearBasketBounce.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "be7cf2e3c3207d8a838df89e0125093b3bb8cf8b7963ed2251eb3530d43992f2",
+      "lastUpdated": "2026-07-14T15:55:03.471Z"
+    },
+    "f3cfde688b927ea686dc996f36af091139c4d50f307a4fd8d52b988399aee3b6": {
+      "diskName": "StickyBearBOP.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "f3cfde688b927ea686dc996f36af091139c4d50f307a4fd8d52b988399aee3b6",
+      "lastUpdated": "2026-07-14T15:55:04.039Z"
+    },
+    "dc225b628964327d07c2465fb1154ecf38570fe876571d4bcf773293ba93d3d7": {
+      "diskName": "StickyBearMath.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "dc225b628964327d07c2465fb1154ecf38570fe876571d4bcf773293ba93d3d7",
+      "lastUpdated": "2026-07-14T15:55:04.594Z"
+    },
+    "9660c55d2415cc824e50fb94201c9d8aab15e8713fc491e6c3e47940299a8375": {
+      "diskName": "StickyBearNumbers.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "9660c55d2415cc824e50fb94201c9d8aab15e8713fc491e6c3e47940299a8375",
+      "lastUpdated": "2026-07-14T15:55:05.180Z"
+    },
+    "e78ade0b322f7981a508f345d5620def23f084acc18f3911c3d1d1d8817931ac": {
+      "diskName": "StickyBearOpposites.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e78ade0b322f7981a508f345d5620def23f084acc18f3911c3d1d1d8817931ac",
+      "lastUpdated": "2026-07-14T15:55:05.767Z"
+    },
+    "756390001238c21480422e39cae4a3e78eef4b2270404b0c77d3063b6d6e5669": {
+      "diskName": "StickyBearPrinter.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "756390001238c21480422e39cae4a3e78eef4b2270404b0c77d3063b6d6e5669",
+      "lastUpdated": "2026-07-14T15:55:06.318Z"
+    },
+    "79a4a464ad73a0bb19231bba13fcc2a4b6cf72494b1b728318084741e759eded": {
+      "diskName": "StickyBearShapes.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "79a4a464ad73a0bb19231bba13fcc2a4b6cf72494b1b728318084741e759eded",
+      "lastUpdated": "2026-07-14T15:55:06.875Z"
+    },
+    "09c50d8389fe85c66d2ea45d0be1cb41d208924776b7e2c098c689237b6c2a85": {
+      "diskName": "StickyBearSpellGrabber.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "09c50d8389fe85c66d2ea45d0be1cb41d208924776b7e2c098c689237b6c2a85",
+      "lastUpdated": "2026-07-14T15:55:07.426Z"
+    },
+    "6d76b15aea040b0af2c338adcefe984babff02340315c374f59d11fe1dc6fdb3": {
+      "diskName": "StickyBearTyping.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "6d76b15aea040b0af2c338adcefe984babff02340315c374f59d11fe1dc6fdb3",
+      "lastUpdated": "2026-07-14T15:55:08.001Z"
+    },
+    "2586f3d9e69dee159cb856f1868bdc57ce1d9df78256846decb59f8ccd66bdf4": {
+      "diskName": "StoryTree.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "2586f3d9e69dee159cb856f1868bdc57ce1d9df78256846decb59f8ccd66bdf4",
+      "lastUpdated": "2026-07-14T15:55:09.200Z"
+    },
+    "3f501a0514201d8f92134ea7c6f9e7ab548ec41ff17ded1dd93759c5addfc111": {
+      "diskName": "ticket_to_london_1.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "3f501a0514201d8f92134ea7c6f9e7ab548ec41ff17ded1dd93759c5addfc111",
+      "lastUpdated": "2026-07-14T15:55:18.474Z"
+    },
+    "993d71f0c42fdb7d8da1273456bd18482bfc29829b46a7c90c6c87c91b935557": {
+      "diskName": "ticket_to_london_2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "993d71f0c42fdb7d8da1273456bd18482bfc29829b46a7c90c6c87c91b935557",
+      "lastUpdated": "2026-07-14T15:55:25.261Z"
+    },
+    "6ec67d4295a2929c03316c45cc429770ccaaf5e5636ea238e5cae24da6145b63": {
+      "diskName": "ticket_to_paris_1.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "6ec67d4295a2929c03316c45cc429770ccaaf5e5636ea238e5cae24da6145b63",
+      "lastUpdated": "2026-07-14T15:55:31.602Z"
+    },
+    "1bf360ab15e00cecb9b2e6e8e9a72e1de4ee03679eaf364e14b8f243051abc2c": {
+      "diskName": "ticket_to_paris_2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1bf360ab15e00cecb9b2e6e8e9a72e1de4ee03679eaf364e14b8f243051abc2c",
+      "lastUpdated": "2026-07-14T15:55:39.622Z"
+    },
+    "52fc22a47647122845d19a15e970262bde11906960446843ce100e6f2e738603": {
+      "diskName": "treasure_hunter.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "52fc22a47647122845d19a15e970262bde11906960446843ce100e6f2e738603",
+      "lastUpdated": "2026-07-14T15:55:48.956Z"
+    },
+    "2feb08b7759a410d19a516347e88dd298f630e4baabd542ebeb3faeb30818e69": {
+      "diskName": "TypeHype1.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "2feb08b7759a410d19a516347e88dd298f630e4baabd542ebeb3faeb30818e69",
+      "lastUpdated": "2026-07-14T15:55:58.197Z"
+    },
+    "20f6d936b2f315f6efcb8f4487449b708f155c3e6bd361905f198c1f6f771a2c": {
+      "diskName": "TypeHype2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "20f6d936b2f315f6efcb8f4487449b708f155c3e6bd361905f198c1f6f771a2c",
+      "lastUpdated": "2026-07-14T15:56:03.844Z"
+    },
+    "eb56cd55ff8d7cab7ddb4a7cf34dcce2311e9593b664781437475e0465ca9a5b": {
+      "diskName": "WecomeABoardBoot.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "eb56cd55ff8d7cab7ddb4a7cf34dcce2311e9593b664781437475e0465ca9a5b",
+      "lastUpdated": "2026-07-14T15:56:05.074Z"
+    },
+    "a75520ce9feb49e8e92d67e5688cfb25542883f0d735e58b8e7533c60542e091": {
+      "diskName": "WelcomeAboardA.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "a75520ce9feb49e8e92d67e5688cfb25542883f0d735e58b8e7533c60542e091",
+      "lastUpdated": "2026-07-14T15:56:11.408Z"
+    },
+    "bd4688b1abd280a3cfada5471717acaed809fb1ce648cd13a387a0281f388f84": {
+      "diskName": "WelcomeAboardB.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "bd4688b1abd280a3cfada5471717acaed809fb1ce648cd13a387a0281f388f84",
+      "lastUpdated": "2026-07-14T15:56:17.757Z"
+    },
+    "639796c922c59e91752debe8b4580e7570f3050537fbea72e9cdea222fc31a46": {
+      "diskName": "WelcomeAboardC.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "639796c922c59e91752debe8b4580e7570f3050537fbea72e9cdea222fc31a46",
+      "lastUpdated": "2026-07-14T15:56:24.078Z"
+    },
+    "9fadb6bfd629a94b12607be1fb8237805bc99532fdca1f7085e26548cea40cfa": {
+      "diskName": "CarmenUSA1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "9fadb6bfd629a94b12607be1fb8237805bc99532fdca1f7085e26548cea40cfa",
+      "lastUpdated": "2026-07-14T15:56:32.682Z"
+    },
+    "4e8b2277b4fd0bd1cb94034d4a6ba46dfd18b117382b76670c83004ecbbb21c2": {
+      "diskName": "WhereInTheUSAisCarmenSandiego2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "4e8b2277b4fd0bd1cb94034d4a6ba46dfd18b117382b76670c83004ecbbb21c2",
+      "lastUpdated": "2026-07-14T15:56:34.413Z"
+    },
+    "84d6f5cafe948c1194dab3a2ab06dcf1121c559a3c97c53de3484ee3aa211c30": {
+      "diskName": "WhereInTheUSAisCarmenSandiego1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "84d6f5cafe948c1194dab3a2ab06dcf1121c559a3c97c53de3484ee3aa211c30",
+      "lastUpdated": "2026-07-14T15:56:33.821Z"
+    },
+    "19c726c5b2df82113f51f47368d490101204b1130cf5aaf6bd301bc4f18a7cb3": {
+      "diskName": "CarmenWorld1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "19c726c5b2df82113f51f47368d490101204b1130cf5aaf6bd301bc4f18a7cb3",
+      "lastUpdated": "2026-07-14T15:56:35.607Z"
+    },
+    "abe1189fd279a884924cdc06d9f3819ebd2937a6e91029120ea4d928e7e0986c": {
+      "diskName": "CarmenWorld2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "abe1189fd279a884924cdc06d9f3819ebd2937a6e91029120ea4d928e7e0986c",
+      "lastUpdated": "2026-07-14T15:56:44.232Z"
+    },
+    "eb94bc1b15e996727a7df46fa5a131b727b82e0eff4fb969365aa838c39c66e8": {
+      "diskName": "wiztype.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "eb94bc1b15e996727a7df46fa5a131b727b82e0eff4fb969365aa838c39c66e8",
+      "lastUpdated": "2026-07-14T15:56:45.447Z"
+    },
+    "74eabfe39afcc15094441c9e6938b1307d79d0d71ffeb4b4dd2c94f1ea505868": {
+      "diskName": "wordworx1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "74eabfe39afcc15094441c9e6938b1307d79d0d71ffeb4b4dd2c94f1ea505868",
+      "lastUpdated": "2026-07-14T15:56:54.711Z"
+    },
+    "f155e0bc6932253528f610df91a797275e3bbb3d76e9ccd6849a7918df4864e1": {
+      "diskName": "wordworx2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f155e0bc6932253528f610df91a797275e3bbb3d76e9ccd6849a7918df4864e1",
+      "lastUpdated": "2026-07-14T15:57:04.002Z"
+    },
+    "de7d8e2106ed36059dab228c5bb5002a81a3d0b36a19b50fb14f13fb7743644b": {
+      "diskName": "WorldAtlasAction.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "de7d8e2106ed36059dab228c5bb5002a81a3d0b36a19b50fb14f13fb7743644b",
+      "lastUpdated": "2026-07-14T15:57:13.289Z"
+    },
+    "d5203047890a55af474dccfb2e8736614266976ec6e50a6966373eace015d849": {
+      "diskName": "Amdos.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d5203047890a55af474dccfb2e8736614266976ec6e50a6966373eace015d849",
+      "lastUpdated": "2026-07-14T15:57:28.379Z"
+    },
+    "2ab292850b0da5382fff44329fd6399e994344d9265a016922ad5c7a522ee9f9": {
+      "diskName": "Blank.nib",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "2ab292850b0da5382fff44329fd6399e994344d9265a016922ad5c7a522ee9f9",
+      "lastUpdated": "2026-07-14T15:57:38.593Z"
+    },
+    "7beb06981c7310601613ddbc77791ece20e4ab675ad2edacf7c72fd6a7213abc": {
+      "diskName": "david_dos.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7beb06981c7310601613ddbc77791ece20e4ab675ad2edacf7c72fd6a7213abc",
+      "lastUpdated": "2026-07-14T15:57:46.128Z"
+    },
+    "e35afcc84250da0e509fe65b1ee6bd0b20916910f070746bf89e7ecc29d23bb0": {
+      "diskName": "deversim.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e35afcc84250da0e509fe65b1ee6bd0b20916910f070746bf89e7ecc29d23bb0",
+      "lastUpdated": "2026-07-14T15:57:56.830Z"
+    },
+    "1e77fdd4639bd705ba7b931858e9eb6778ebab86bd15369c224805f7f9fcb057": {
+      "diskName": "DOS33.po",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1e77fdd4639bd705ba7b931858e9eb6778ebab86bd15369c224805f7f9fcb057",
+      "lastUpdated": "2026-07-14T15:58:31.786Z"
+    },
+    "70986935d95c4a918852700364ac107607eb861a7d93a69c2b5caf44a696b17a": {
+      "diskName": "dos33_fixed.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "70986935d95c4a918852700364ac107607eb861a7d93a69c2b5caf44a696b17a",
+      "lastUpdated": "2026-07-14T15:58:20.571Z"
+    },
+    "e368ba1dc37000c40846a25f33fdbd784767f63711c25fc682b7c1686658db20": {
+      "diskName": "presents.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e368ba1dc37000c40846a25f33fdbd784767f63711c25fc682b7c1686658db20",
+      "lastUpdated": "2026-07-14T15:58:41.524Z"
+    },
+    "96122161d8531f7c382c669b1c96bf0842a27fb4486b6514641f6392a8da13e8": {
+      "diskName": "Prodos402.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "96122161d8531f7c382c669b1c96bf0842a27fb4486b6514641f6392a8da13e8",
+      "lastUpdated": "2026-07-14T15:58:45.046Z"
+    },
+    "d802a140db3b57a227176acf2aa56b3b8027918432efbf5a7484f1507def50fa": {
+      "diskName": "Aaf.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d802a140db3b57a227176acf2aa56b3b8027918432efbf5a7484f1507def50fa",
+      "lastUpdated": "2026-07-14T15:58:45.970Z"
+    },
+    "7ef96f0e3ffb00a923144e3d5e44a164e71c4c44a59f5c7793eae8e5de7129fc": {
+      "diskName": "adv1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7ef96f0e3ffb00a923144e3d5e44a164e71c4c44a59f5c7793eae8e5de7129fc",
+      "lastUpdated": "2026-07-14T15:58:47.780Z"
+    },
+    "ef601b81190c5fbddfb437ac92ad107efbb69e7141ea4737d6826839e178d212": {
+      "diskName": "ale.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ef601b81190c5fbddfb437ac92ad107efbb69e7141ea4737d6826839e178d212",
+      "lastUpdated": "2026-07-14T15:58:58.456Z"
+    },
+    "2b5e4f07c063e9c22452fd9339d88da73ab87f05dfed05541eae6fa6da8b3f9d": {
+      "diskName": "alf.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "2b5e4f07c063e9c22452fd9339d88da73ab87f05dfed05541eae6fa6da8b3f9d",
+      "lastUpdated": "2026-07-14T15:59:08.146Z"
+    },
+    "236f8aa7639c00f6c8dc6006e2f2ab843ea2046be4f5484beda45871ef8bc37a": {
+      "diskName": "Archive.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "236f8aa7639c00f6c8dc6006e2f2ab843ea2046be4f5484beda45871ef8bc37a",
+      "lastUpdated": "2026-07-14T15:59:09.079Z"
+    },
+    "758666d27300e79ead03cfcc087ac06d16b42e73d78cc33a36752c685f9b6b4f": {
+      "diskName": "Arcade1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "758666d27300e79ead03cfcc087ac06d16b42e73d78cc33a36752c685f9b6b4f",
+      "lastUpdated": "2026-07-14T15:59:11.145Z"
+    },
+    "54e54e696b68e248287f6587fc89d683eebb623f1fb0ce53e7029340f92ac79b": {
+      "diskName": "Arcade2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "54e54e696b68e248287f6587fc89d683eebb623f1fb0ce53e7029340f92ac79b",
+      "lastUpdated": "2026-07-14T15:59:22.243Z"
+    },
+    "4f5efe7992ac89df25f5a34f046c471a29f759b8c0b73b5236f54efd3d2e7653": {
+      "diskName": "SeaDragon.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "4f5efe7992ac89df25f5a34f046c471a29f759b8c0b73b5236f54efd3d2e7653",
+      "lastUpdated": "2026-07-14T15:59:33.814Z"
+    },
+    "f65f98917f9a2a68b290e2f37b1aaeb007a323710458d3167848cb2e4a0893e7": {
+      "diskName": "Gruds-in-Space-1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f65f98917f9a2a68b290e2f37b1aaeb007a323710458d3167848cb2e4a0893e7",
+      "lastUpdated": "2026-07-14T15:59:41.925Z"
+    },
+    "0247e15df6774da7e29cbcf3c1d82c396ab4d7eae321953cead219a38cd9cc7b": {
+      "diskName": "Gruds-in-Space-2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "0247e15df6774da7e29cbcf3c1d82c396ab4d7eae321953cead219a38cd9cc7b",
+      "lastUpdated": "2026-07-14T15:59:52.447Z"
+    },
+    "88aa0064663ced21044cfb9f69e310faf82f1657a51e17310e76752f0bb7d806": {
+      "diskName": "Lucifers-Realm.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "88aa0064663ced21044cfb9f69e310faf82f1657a51e17310e76752f0bb7d806",
+      "lastUpdated": "2026-07-14T15:59:59.707Z"
+    },
+    "964a52b6f3f4efc93c987a4554b6ac3fbb4ce446e35e520e62ec330c53114108": {
+      "diskName": "beyond_wolfenstein.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "964a52b6f3f4efc93c987a4554b6ac3fbb4ce446e35e520e62ec330c53114108",
+      "lastUpdated": "2026-07-14T16:00:10.669Z"
+    },
+    "b71cc0b51f17feb31e30bc59165c9f6c8aa22d2f02c49b7a46b54133be0d4ae0": {
+      "diskName": "castle_wolfenstein.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "b71cc0b51f17feb31e30bc59165c9f6c8aa22d2f02c49b7a46b54133be0d4ae0",
+      "lastUpdated": "2026-07-14T16:00:21.849Z"
+    },
+    "44b55ccde58c94bd8496b136fd15a093506ff17d2338e5afee57c0b20a83ea6b": {
+      "diskName": "copy1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "44b55ccde58c94bd8496b136fd15a093506ff17d2338e5afee57c0b20a83ea6b",
+      "lastUpdated": "2026-07-14T16:00:32.657Z"
+    },
+    "ee796ff89a79f5471b71f57da993caf0b0c07aadf25256c0bd32a8e1288d19f7": {
+      "diskName": "Cyborg.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ee796ff89a79f5471b71f57da993caf0b0c07aadf25256c0bd32a8e1288d19f7",
+      "lastUpdated": "2026-07-14T16:00:43.516Z"
+    },
+    "417469e204bd368103119c4b682f75fbcdcd6948570b0dec33eba38474116185": {
+      "diskName": "D7s1.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "417469e204bd368103119c4b682f75fbcdcd6948570b0dec33eba38474116185",
+      "lastUpdated": "2026-07-14T16:00:54.677Z"
+    },
+    "657230196f676a072375800fe0536db59ab2fc677d65d2b8e64736ef91238fb8": {
+      "diskName": "D7s2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "657230196f676a072375800fe0536db59ab2fc677d65d2b8e64736ef91238fb8",
+      "lastUpdated": "2026-07-14T16:01:02.178Z"
+    },
+    "a2c6e09921e1110a200d1e54bf3fb9037633ef47c6c1a569836cd05baccfaefc": {
+      "diskName": "D8s1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a2c6e09921e1110a200d1e54bf3fb9037633ef47c6c1a569836cd05baccfaefc",
+      "lastUpdated": "2026-07-14T16:01:12.291Z"
+    },
+    "4359a3f4051e25f77bcaef9e3ea9c57972f490073d4342165c20a009b5617755": {
+      "diskName": "D8s2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "4359a3f4051e25f77bcaef9e3ea9c57972f490073d4342165c20a009b5617755",
+      "lastUpdated": "2026-07-14T16:01:14.317Z"
+    },
+    "849958c16323996f880d41b3cd692b6c80a48deed56a00c6608e553f3749c632": {
+      "diskName": "Darkness.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "849958c16323996f880d41b3cd692b6c80a48deed56a00c6608e553f3749c632",
+      "lastUpdated": "2026-07-14T16:01:24.979Z"
+    },
+    "9196120914955284c7cbcebf3dc3aeba0319e0f53576facc5920de7360965988": {
+      "diskName": "Deathsword.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "9196120914955284c7cbcebf3dc3aeba0319e0f53576facc5920de7360965988",
+      "lastUpdated": "2026-07-14T16:01:31.806Z"
+    },
+    "e493beaef6ce68405f23505a42979e53044ae208c34e5fcc44f1f2f1d21ed45e": {
+      "diskName": "digcir.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "e493beaef6ce68405f23505a42979e53044ae208c34e5fcc44f1f2f1d21ed45e",
+      "lastUpdated": "2026-07-14T16:01:33.634Z"
+    },
+    "e4e6b995e0a89eb94f45900f23a1993d7ce93c24897c86e8f4717e83be3f86ad": {
+      "diskName": "duet.do",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e4e6b995e0a89eb94f45900f23a1993d7ce93c24897c86e8f4717e83be3f86ad",
+      "lastUpdated": "2026-07-14T16:37:45.479Z"
+    },
+    "14d5bbab69dd39814a54c80fe58ff77d77e591e47654388073e62c05f7ec409f": {
+      "diskName": "Dungeon.nib",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "14d5bbab69dd39814a54c80fe58ff77d77e591e47654388073e62c05f7ec409f",
+      "lastUpdated": "2026-07-14T16:01:53.791Z"
+    },
+    "92b1cb42753bb390e282cfd3a7ff755ddd3a2a6ece4e97b0a35dc1edc5ff7872": {
+      "diskName": "Ecp8bin.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "92b1cb42753bb390e282cfd3a7ff755ddd3a2a6ece4e97b0a35dc1edc5ff7872",
+      "lastUpdated": "2026-07-14T16:02:00.037Z"
+    },
+    "a39cf74e369e94fb02d5bc92688c9af57e468e0afe3a633142e2e680037e2623": {
+      "diskName": "Ecp8cmd.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a39cf74e369e94fb02d5bc92688c9af57e468e0afe3a633142e2e680037e2623",
+      "lastUpdated": "2026-07-14T16:02:00.944Z"
+    },
+    "97f0299240a2f107680f30aa8c9f88c077426c559bc127a9b1a5245332b34f97": {
+      "diskName": "Ecp8doc.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "97f0299240a2f107680f30aa8c9f88c077426c559bc127a9b1a5245332b34f97",
+      "lastUpdated": "2026-07-14T16:02:01.740Z"
+    },
+    "7b32ab85ba655220512a4d6711498eef32934ee1d510bc661f1854e106d0317a": {
+      "diskName": "Engine.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7b32ab85ba655220512a4d6711498eef32934ee1d510bc661f1854e106d0317a",
+      "lastUpdated": "2026-07-14T16:02:03.546Z"
+    },
+    "92b62a125df7149fb3447bdc6e4121d040d62f5fbb516c4d2087c68651798cd1": {
+      "diskName": "Exer.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "92b62a125df7149fb3447bdc6e4121d040d62f5fbb516c4d2087c68651798cd1",
+      "lastUpdated": "2026-07-14T16:02:12.964Z"
+    },
+    "34048f699669978e652d5f9511448759425454b12bccc850d9263923f600385a": {
+      "diskName": "Floppy1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "34048f699669978e652d5f9511448759425454b12bccc850d9263923f600385a",
+      "lastUpdated": "2026-07-14T16:02:13.935Z"
+    },
+    "d03b65f0dd31b1e05c74f01700d81215a973eb98c5cd82b8ddef70b046740957": {
+      "diskName": "Floppy2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d03b65f0dd31b1e05c74f01700d81215a973eb98c5cd82b8ddef70b046740957",
+      "lastUpdated": "2026-07-14T16:02:14.765Z"
+    },
+    "a42be928bf961bc677ff3c17cbde4d6b49464e687ec1df5253a8d68e9a87c432": {
+      "diskName": "Force_7.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "a42be928bf961bc677ff3c17cbde4d6b49464e687ec1df5253a8d68e9a87c432",
+      "lastUpdated": "2026-07-14T16:02:16.730Z"
+    },
+    "2688b43a09ce467e0d5744f2e97d64159d6893650e29ed7139c12ccce78ff2b1": {
+      "diskName": "frank_work1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "2688b43a09ce467e0d5744f2e97d64159d6893650e29ed7139c12ccce78ff2b1",
+      "lastUpdated": "2026-07-14T16:02:23.883Z"
+    },
+    "bab211e2cf1438ec15e775ffadc550d74f5bc72ec454c0f0280caf87ee6e7149": {
+      "diskName": "Frogger2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "bab211e2cf1438ec15e775ffadc550d74f5bc72ec454c0f0280caf87ee6e7149",
+      "lastUpdated": "2026-07-14T16:02:34.961Z"
+    },
+    "d072a17313e48aa9e7c408a50798927aafff1c71cf75a13905a940f738c1befe": {
+      "diskName": "Fs2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d072a17313e48aa9e7c408a50798927aafff1c71cf75a13905a940f738c1befe",
+      "lastUpdated": "2026-07-14T16:02:44.297Z"
+    },
+    "776a6524cd3613283f2836e612d915e14f8060c0751de1f700dae0370195bb85": {
+      "diskName": "G.I_Joe.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "776a6524cd3613283f2836e612d915e14f8060c0751de1f700dae0370195bb85",
+      "lastUpdated": "2026-07-14T16:02:46.277Z"
+    },
+    "ec3fa7f98e4de3b87d69aa8d7253cb80bd573f4c3b3477995723332fa692afec": {
+      "diskName": "games1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ec3fa7f98e4de3b87d69aa8d7253cb80bd573f4c3b3477995723332fa692afec",
+      "lastUpdated": "2026-07-14T16:02:53.134Z"
+    },
+    "9c21659f5b000b35a174d957be045dbb665eb6220e3e5db7db0d9a94d48b3d3f": {
+      "diskName": "games10.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "9c21659f5b000b35a174d957be045dbb665eb6220e3e5db7db0d9a94d48b3d3f",
+      "lastUpdated": "2026-07-14T16:03:02.373Z"
+    },
+    "a180911ad409c1b61fc6bf423f9b57d1835d785210197d9a2f4c4375d30d624b": {
+      "diskName": "games11.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a180911ad409c1b61fc6bf423f9b57d1835d785210197d9a2f4c4375d30d624b",
+      "lastUpdated": "2026-07-14T16:03:03.218Z"
+    },
+    "52b5a160dcda2d3d01077864828aba7185d10cf3b075a821e8c2daced06f902e": {
+      "diskName": "games3.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "52b5a160dcda2d3d01077864828aba7185d10cf3b075a821e8c2daced06f902e",
+      "lastUpdated": "2026-07-14T16:03:05.051Z"
+    },
+    "298431958c8ec56965a07c6f2a176aa83c45a56d76ba1d490d340c5ce47a8cbc": {
+      "diskName": "games4.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "298431958c8ec56965a07c6f2a176aa83c45a56d76ba1d490d340c5ce47a8cbc",
+      "lastUpdated": "2026-07-14T16:03:14.280Z"
+    },
+    "1ef9ba60007114fbace09fe73d7883d6e23ba1d1babe2109e0694ebcd0eb8970": {
+      "diskName": "games5.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1ef9ba60007114fbace09fe73d7883d6e23ba1d1babe2109e0694ebcd0eb8970",
+      "lastUpdated": "2026-07-14T16:03:16.434Z"
+    },
+    "e5e9e05f151b869b64b1f2fa4a9b38544a7bca05e530fab9fc61e6d868be762a": {
+      "diskName": "games6.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e5e9e05f151b869b64b1f2fa4a9b38544a7bca05e530fab9fc61e6d868be762a",
+      "lastUpdated": "2026-07-14T16:03:26.872Z"
+    },
+    "dcff1fde64c79601f7e71d7a18d90109fd433192a88eeec69f7e9b6582568120": {
+      "diskName": "games8.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "dcff1fde64c79601f7e71d7a18d90109fd433192a88eeec69f7e9b6582568120",
+      "lastUpdated": "2026-07-14T16:03:36.363Z"
+    },
+    "b0359567e1959ba7d3c60ab74483eafb7b9ee68aa8b32628613c716c903672a3": {
+      "diskName": "games9.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b0359567e1959ba7d3c60ab74483eafb7b9ee68aa8b32628613c716c903672a3",
+      "lastUpdated": "2026-07-14T16:03:37.362Z"
+    },
+    "4be413b421d611ad037eccd530bfe0cf2cc8b1599b717c06e81c29c976c1b245": {
+      "diskName": "gam_04a.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "4be413b421d611ad037eccd530bfe0cf2cc8b1599b717c06e81c29c976c1b245",
+      "lastUpdated": "2026-07-14T16:03:39.693Z"
+    },
+    "7b5a747ffd7b749742bdeeb73e95ddcfd62bcd101c20875b0b44318aeef39e6d": {
+      "diskName": "gam_04b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7b5a747ffd7b749742bdeeb73e95ddcfd62bcd101c20875b0b44318aeef39e6d",
+      "lastUpdated": "2026-07-14T16:03:47.387Z"
+    },
+    "29beca0a030140e851f4040c5e0c3f9299e38f810a553f4ddb5009fe3e9acb2c": {
+      "diskName": "gam_05a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "29beca0a030140e851f4040c5e0c3f9299e38f810a553f4ddb5009fe3e9acb2c",
+      "lastUpdated": "2026-07-14T16:03:58.394Z"
+    },
+    "3012191238451457ac5e3924113d20c572fc5c6c60f94eae6cf8772408ad5f8b": {
+      "diskName": "gam_05b.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "3012191238451457ac5e3924113d20c572fc5c6c60f94eae6cf8772408ad5f8b",
+      "lastUpdated": "2026-07-14T16:04:08.261Z"
+    },
+    "a0546df09d2acfa4a9a15e29037ab7240a9482a112651cb3a6a802b2e315c9b1": {
+      "diskName": "gam_06a.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "a0546df09d2acfa4a9a15e29037ab7240a9482a112651cb3a6a802b2e315c9b1",
+      "lastUpdated": "2026-07-14T16:04:10.081Z"
+    },
+    "f097245a740f439fb02b058d22182e101fa00ad42189aad4ca5f43da8bb0bae8": {
+      "diskName": "gam_06b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f097245a740f439fb02b058d22182e101fa00ad42189aad4ca5f43da8bb0bae8",
+      "lastUpdated": "2026-07-14T16:04:18.044Z"
+    },
+    "39a8c37333267e829d37666ce1c4ea3e9aed0dbae881c1fe20eb407653ae2663": {
+      "diskName": "gam_07a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "39a8c37333267e829d37666ce1c4ea3e9aed0dbae881c1fe20eb407653ae2663",
+      "lastUpdated": "2026-07-14T16:04:28.808Z"
+    },
+    "a77b1f512f0c26fec33e10021087d6479b5ed96b45eb55667f01e4bd1a7374b8": {
+      "diskName": "gam_07b.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a77b1f512f0c26fec33e10021087d6479b5ed96b45eb55667f01e4bd1a7374b8",
+      "lastUpdated": "2026-07-14T16:04:39.249Z"
+    },
+    "f94ac4a1728122261aa87762d998a8798da83f7008d1e7632c3310f9f6392bb1": {
+      "diskName": "gam_08a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f94ac4a1728122261aa87762d998a8798da83f7008d1e7632c3310f9f6392bb1",
+      "lastUpdated": "2026-07-14T16:04:41.196Z"
+    },
+    "cbd7523bad52633e11328ab919cb08df7d6bac1a6919da6a51c7f362039882ab": {
+      "diskName": "gam_08b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "cbd7523bad52633e11328ab919cb08df7d6bac1a6919da6a51c7f362039882ab",
+      "lastUpdated": "2026-07-14T16:04:52.116Z"
+    },
+    "1ab9bdd7c76fac1d7ea0dc178586115cf0441155126ce0059f188468ce7f16dc": {
+      "diskName": "game_01a.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "1ab9bdd7c76fac1d7ea0dc178586115cf0441155126ce0059f188468ce7f16dc",
+      "lastUpdated": "2026-07-14T16:04:59.675Z"
+    },
+    "a4b21a2faf92736bed99edda0a99f7c565a1c5a652a990fb28c64dda40d7a335": {
+      "diskName": "game_01b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "a4b21a2faf92736bed99edda0a99f7c565a1c5a652a990fb28c64dda40d7a335",
+      "lastUpdated": "2026-07-14T16:05:08.490Z"
+    },
+    "9fd5eebfcf99f418c70af3da6a6a0db0a12a29a3544951e5e46f5b452089bae1": {
+      "diskName": "game_02a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9fd5eebfcf99f418c70af3da6a6a0db0a12a29a3544951e5e46f5b452089bae1",
+      "lastUpdated": "2026-07-14T16:05:19.404Z"
+    },
+    "ac4296d6a7a4509527c5fe1a11372d683914c7a1fffec8872f86f77e5ff869be": {
+      "diskName": "game_02b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ac4296d6a7a4509527c5fe1a11372d683914c7a1fffec8872f86f77e5ff869be",
+      "lastUpdated": "2026-07-14T16:05:30.644Z"
+    },
+    "b03a4ee246ede1fac07d0e01a9a84b2aeaafb58a4dcb4a2c2010e151fd4c5d0e": {
+      "diskName": "game_03b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "b03a4ee246ede1fac07d0e01a9a84b2aeaafb58a4dcb4a2c2010e151fd4c5d0e",
+      "lastUpdated": "2026-07-14T16:05:41.254Z"
+    },
+    "7a0ae6fb630d4123b9d5c387790b4d24040d01ba992eb227b7b7414e9a9aac6b": {
+      "diskName": "game_12a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "7a0ae6fb630d4123b9d5c387790b4d24040d01ba992eb227b7b7414e9a9aac6b",
+      "lastUpdated": "2026-07-14T16:05:50.900Z"
+    },
+    "5dfeca8d8698837165b98d44c0864f4ee17bacfe23ff0b8ef1404eded00efbee": {
+      "diskName": "game_14a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "5dfeca8d8698837165b98d44c0864f4ee17bacfe23ff0b8ef1404eded00efbee",
+      "lastUpdated": "2026-07-14T16:05:51.850Z"
+    },
+    "d253e15b5e2a971d0c5e54cb30a9408f708b810c48cf27d8364f897336795c2a": {
+      "diskName": "game_14b.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d253e15b5e2a971d0c5e54cb30a9408f708b810c48cf27d8364f897336795c2a",
+      "lastUpdated": "2026-07-14T16:05:52.762Z"
+    },
+    "fc6927c48e7419521a2aebde3a074cce4621cff6d96db8841afed06b4853e600": {
+      "diskName": "game_15b.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "fc6927c48e7419521a2aebde3a074cce4621cff6d96db8841afed06b4853e600",
+      "lastUpdated": "2026-07-14T16:05:53.799Z"
+    },
+    "119f691ea5437f9627ea7827ae06e261b88ad40c79e76ee5eb2c78d767912147": {
+      "diskName": "game_20a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "119f691ea5437f9627ea7827ae06e261b88ad40c79e76ee5eb2c78d767912147",
+      "lastUpdated": "2026-07-14T16:05:54.666Z"
+    },
+    "e1c176da89facd15b75825e74f3ccfea5fab01de30f94c744d0fa7fc47b35cfc": {
+      "diskName": "game_21a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e1c176da89facd15b75825e74f3ccfea5fab01de30f94c744d0fa7fc47b35cfc",
+      "lastUpdated": "2026-07-14T16:05:55.589Z"
+    },
+    "f33c4570019ce4c575834533f5e6544d243a51542beaaf709668311a534fc737": {
+      "diskName": "game_21b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "f33c4570019ce4c575834533f5e6544d243a51542beaaf709668311a534fc737",
+      "lastUpdated": "2026-07-14T16:05:57.490Z"
+    },
+    "2e4ebd6209bad0a54870a1031756f97f304f849678d379f1b5032ee207426bb2": {
+      "diskName": "game_23b.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "2e4ebd6209bad0a54870a1031756f97f304f849678d379f1b5032ee207426bb2",
+      "lastUpdated": "2026-07-14T16:06:04.434Z"
+    },
+    "245052304d7bf93c7fe0b45caf0901170ac940bd43701756be7c0cc24d33b349": {
+      "diskName": "game_24a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "245052304d7bf93c7fe0b45caf0901170ac940bd43701756be7c0cc24d33b349",
+      "lastUpdated": "2026-07-14T16:06:05.323Z"
+    },
+    "90a1925ece7cc242b806d37016165ecabd70d10ad12d798a384aed11f9f2b444": {
+      "diskName": "game_24b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "90a1925ece7cc242b806d37016165ecabd70d10ad12d798a384aed11f9f2b444",
+      "lastUpdated": "2026-07-14T16:06:07.218Z"
+    },
+    "92f00d679a71bba66a9e4f3f7be9198e9ac4b1149e8ba952ac0d937a2792f13e": {
+      "diskName": "game_25a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "92f00d679a71bba66a9e4f3f7be9198e9ac4b1149e8ba952ac0d937a2792f13e",
+      "lastUpdated": "2026-07-14T16:06:17.115Z"
+    },
+    "fa2a009b136db6ce1f0973103a7ce99e07e199481be9d0b152b0509ba72b6e41": {
+      "diskName": "game_25b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "fa2a009b136db6ce1f0973103a7ce99e07e199481be9d0b152b0509ba72b6e41",
+      "lastUpdated": "2026-07-14T16:06:19.265Z"
+    },
+    "4ae00ddecd56605008a806f0159282d7a44c86f543038d6867cae1383129b31f": {
+      "diskName": "game_26a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "4ae00ddecd56605008a806f0159282d7a44c86f543038d6867cae1383129b31f",
+      "lastUpdated": "2026-07-14T16:06:29.838Z"
+    },
+    "1f0a7b45ca1a1fa08c28739cbb82255321204a3c2f34f2d0decb15ca66a47598": {
+      "diskName": "abmblaze.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1f0a7b45ca1a1fa08c28739cbb82255321204a3c2f34f2d0decb15ca66a47598",
+      "lastUpdated": "2026-07-14T16:06:32.080Z"
+    },
+    "ce925ad53fe71e289e2effc6b3e4b1cf42a12398648c8936d737304a321a180c": {
+      "diskName": "microwav.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "ce925ad53fe71e289e2effc6b3e4b1cf42a12398648c8936d737304a321a180c",
+      "lastUpdated": "2026-07-14T16:06:41.515Z"
+    },
+    "f872db5efe577d7c3bcaae6c03a99c9955c2b38b0b64b183acd256d555aec066": {
+      "diskName": "robotwar.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f872db5efe577d7c3bcaae6c03a99c9955c2b38b0b64b183acd256d555aec066",
+      "lastUpdated": "2026-07-14T16:06:43.818Z"
+    },
+    "b3388fd6ea65487794b8e9fa2e24c04b1e462e2148badb8dbb7d488dea1f61bd": {
+      "diskName": "serpbolo.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "b3388fd6ea65487794b8e9fa2e24c04b1e462e2148badb8dbb7d488dea1f61bd",
+      "lastUpdated": "2026-07-14T16:06:54.385Z"
+    },
+    "f9e65c41e8de9064791ce2b64461ace47e04da04528da6a4887b4640a458f84c": {
+      "diskName": "Golf1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f9e65c41e8de9064791ce2b64461ace47e04da04528da6a4887b4640a458f84c",
+      "lastUpdated": "2026-07-14T16:07:05.616Z"
+    },
+    "fb5b4adc3fbf57672719d6c9e244106c5f2c783f7d3e9b6d2e85bc7cec175ec9": {
+      "diskName": "Golf2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "fb5b4adc3fbf57672719d6c9e244106c5f2c783f7d3e9b6d2e85bc7cec175ec9",
+      "lastUpdated": "2026-07-14T16:07:16.167Z"
+    },
+    "7a3fce8ad231fc3f811c7cbe02a43cc95f69dc1f9b9189e8e7b7e2a1f6d303fb": {
+      "diskName": "grn_02a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "7a3fce8ad231fc3f811c7cbe02a43cc95f69dc1f9b9189e8e7b7e2a1f6d303fb",
+      "lastUpdated": "2026-07-14T16:07:22.497Z"
+    },
+    "95952a47732bb09e68de3a13a5bbd2126c97352718b25800d590e831ca6e6d35": {
+      "diskName": "grn_02b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "95952a47732bb09e68de3a13a5bbd2126c97352718b25800d590e831ca6e6d35",
+      "lastUpdated": "2026-07-14T16:07:24.387Z"
+    },
+    "cf3c669e40cd6c8d44f1bef5cc9d4838e5bad12444af3055a56d5e84cb877b32": {
+      "diskName": "grn_03a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "cf3c669e40cd6c8d44f1bef5cc9d4838e5bad12444af3055a56d5e84cb877b32",
+      "lastUpdated": "2026-07-14T16:07:32.005Z"
+    },
+    "89e559b1a33b367d9aacf18bcac466901d0bc3c72e3f684ff90f32d9b992b4a6": {
+      "diskName": "grn_03b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "89e559b1a33b367d9aacf18bcac466901d0bc3c72e3f684ff90f32d9b992b4a6",
+      "lastUpdated": "2026-07-14T16:07:42.857Z"
+    },
+    "42eb1934520dd3b051dea4309bf1da0059b99eb1efb361d012cf6708a3e60e87": {
+      "diskName": "grn_04a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "42eb1934520dd3b051dea4309bf1da0059b99eb1efb361d012cf6708a3e60e87",
+      "lastUpdated": "2026-07-14T16:07:53.569Z"
+    },
+    "d443a38f4bfea7ec5f15adbac1b94cdee5ff492276b5793decedc78da1289edc": {
+      "diskName": "grn_04b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d443a38f4bfea7ec5f15adbac1b94cdee5ff492276b5793decedc78da1289edc",
+      "lastUpdated": "2026-07-14T16:08:03.874Z"
+    },
+    "76b7325e23d98f17883e39c121f534d2050aab7b65829959f904c5882549dc34": {
+      "diskName": "grn_05a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "76b7325e23d98f17883e39c121f534d2050aab7b65829959f904c5882549dc34",
+      "lastUpdated": "2026-07-14T16:08:14.444Z"
+    },
+    "85c04c6ee672d6c2eb44f855d5c5dd8753d5dfdf6753f3b2a20ac0c760f6b5e7": {
+      "diskName": "grn_05b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "85c04c6ee672d6c2eb44f855d5c5dd8753d5dfdf6753f3b2a20ac0c760f6b5e7",
+      "lastUpdated": "2026-07-14T16:08:25.282Z"
+    },
+    "239dd918e6879e55509867cb1a51f63f4af915d120d5d7dd0e09d9f4603f65b7": {
+      "diskName": "grn_06a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "239dd918e6879e55509867cb1a51f63f4af915d120d5d7dd0e09d9f4603f65b7",
+      "lastUpdated": "2026-07-14T16:08:35.824Z"
+    },
+    "14ad446a55cb5996c9691a29eb1254dd58bc28babb6a8fd02e3b8f11829b6ecc": {
+      "diskName": "grn_06b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "14ad446a55cb5996c9691a29eb1254dd58bc28babb6a8fd02e3b8f11829b6ecc",
+      "lastUpdated": "2026-07-14T16:08:46.979Z"
+    },
+    "cae0f0201e6373627e3d7ce9e9307f601cd688ba041115e46a3c291d6a5d81e3": {
+      "diskName": "Gumball.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "cae0f0201e6373627e3d7ce9e9307f601cd688ba041115e46a3c291d6a5d81e3",
+      "lastUpdated": "2026-07-14T16:08:57.078Z"
+    },
+    "f73009c7bfa00bd28efea73f37ab004657b81425b83387046d536263e8a1065d": {
+      "diskName": "IAC_Disk_%2319.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f73009c7bfa00bd28efea73f37ab004657b81425b83387046d536263e8a1065d",
+      "lastUpdated": "2026-07-14T16:08:59.067Z"
+    },
+    "e022183f334d283e68332f32d3a077b855df061c6b7e53a586d6cbea25e28d73": {
+      "diskName": "Integer_Educ.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e022183f334d283e68332f32d3a077b855df061c6b7e53a586d6cbea25e28d73",
+      "lastUpdated": "2026-07-14T16:09:09.484Z"
+    },
+    "489e117e026af4b6a4b84465ec83e4fafe9158d7ec3e42610220b18ca7ea7e84": {
+      "diskName": "Key_Bored.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "489e117e026af4b6a4b84465ec83e4fafe9158d7ec3e42610220b18ca7ea7e84",
+      "lastUpdated": "2026-07-14T16:09:20.969Z"
+    },
+    "ee5ab1ba85adeec43289b6ebc111915b4f7c40028d889dac4049fbd6838d1d05": {
+      "diskName": "Lifelike.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "ee5ab1ba85adeec43289b6ebc111915b4f7c40028d889dac4049fbd6838d1d05",
+      "lastUpdated": "2026-07-14T16:09:31.096Z"
+    },
+    "719a3f3d5ff0b4ddaafeb34520e840ea41217ddbb49b3e18da407583ddd43f00": {
+      "diskName": "Mark-hmpt.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "719a3f3d5ff0b4ddaafeb34520e840ea41217ddbb49b3e18da407583ddd43f00",
+      "lastUpdated": "2026-07-14T16:09:33.121Z"
+    },
+    "591ca59c5aa0d72f2c0c68e4f49ed3802044c4b980694337a10067b19315eed0": {
+      "diskName": "Mark1-3.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "591ca59c5aa0d72f2c0c68e4f49ed3802044c4b980694337a10067b19315eed0",
+      "lastUpdated": "2026-07-14T16:09:42.994Z"
+    },
+    "bd3241774121ba4328260d39d91955e6164cf1dfd8275dc0a50774624f56e5c0": {
+      "diskName": "Mark4-6.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "bd3241774121ba4328260d39d91955e6164cf1dfd8275dc0a50774624f56e5c0",
+      "lastUpdated": "2026-07-14T16:09:43.907Z"
+    },
+    "1ef8e2da7f97542527ebe62e1c0e586e92c123b5d519ac3aa24ca8ceca604271": {
+      "diskName": "Mathe1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "1ef8e2da7f97542527ebe62e1c0e586e92c123b5d519ac3aa24ca8ceca604271",
+      "lastUpdated": "2026-07-14T16:09:44.738Z"
+    },
+    "b847f0ff89c94b27c19bb6c75ecb297ad066cc9f0b50807832e0fc8decec9a67": {
+      "diskName": "Mathe2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b847f0ff89c94b27c19bb6c75ecb297ad066cc9f0b50807832e0fc8decec9a67",
+      "lastUpdated": "2026-07-14T16:09:45.592Z"
+    },
+    "288fb7034709ea48c5f5ec5b92bdaaa42760886331d4bbd8245b726ff29554e8": {
+      "diskName": "Mouse_Paint.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "288fb7034709ea48c5f5ec5b92bdaaa42760886331d4bbd8245b726ff29554e8",
+      "lastUpdated": "2026-07-14T16:09:46.403Z"
+    },
+    "e8d0054d561748bcdc5bfcf3faf5a8ad17e1e663ac73ae3cfb05f6a1b0269f12": {
+      "diskName": "New.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e8d0054d561748bcdc5bfcf3faf5a8ad17e1e663ac73ae3cfb05f6a1b0269f12",
+      "lastUpdated": "2026-07-14T16:09:48.265Z"
+    },
+    "1037500751fb3720c496985976389ba666ac18abc37d46b9abe56a9c6ec62b28": {
+      "diskName": "Number03.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1037500751fb3720c496985976389ba666ac18abc37d46b9abe56a9c6ec62b28",
+      "lastUpdated": "2026-07-14T16:10:00.828Z"
+    },
+    "3d55fbd02aada8049cd76355db912dbfd8f62345d634c623d066e8a5357efde5": {
+      "diskName": "Number11.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3d55fbd02aada8049cd76355db912dbfd8f62345d634c623d066e8a5357efde5",
+      "lastUpdated": "2026-07-14T16:10:12.582Z"
+    },
+    "87c1a9b5eee66d98d02114420f28a83b09918641d6da2582791b1100d8b7df64": {
+      "diskName": "Physik1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "87c1a9b5eee66d98d02114420f28a83b09918641d6da2582791b1100d8b7df64",
+      "lastUpdated": "2026-07-14T16:10:23.584Z"
+    },
+    "1c54db43a4e6003c4be186ef587c7613a6a8d9a61540896a6b95865cc1f8cc65": {
+      "diskName": "Physik2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1c54db43a4e6003c4be186ef587c7613a6a8d9a61540896a6b95865cc1f8cc65",
+      "lastUpdated": "2026-07-14T16:10:25.766Z"
+    },
+    "84dc1fa7aaff9d40500ccb5d90ce48172479b072cad9f074a2c1898bf3038711": {
+      "diskName": "Physik3.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "84dc1fa7aaff9d40500ccb5d90ce48172479b072cad9f074a2c1898bf3038711",
+      "lastUpdated": "2026-07-14T16:10:37.254Z"
+    },
+    "b6186ded39f0d8e844687329da1c21714127c60d4fe5e23e240a4a622d0af7c1": {
+      "diskName": "Picture3.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b6186ded39f0d8e844687329da1c21714127c60d4fe5e23e240a4a622d0af7c1",
+      "lastUpdated": "2026-07-14T16:10:46.924Z"
+    },
+    "1613ad76c4e0d089399719961f31f1a9b1efd3ef10457ffe3483dceef1a02799": {
+      "diskName": "Picture4.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "1613ad76c4e0d089399719961f31f1a9b1efd3ef10457ffe3483dceef1a02799",
+      "lastUpdated": "2026-07-14T16:10:47.807Z"
+    },
+    "47cfaeb07a331f6239f427757d21bd5e692cef83cb0f097acff49ce33bf7eb14": {
+      "diskName": "Qop.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "47cfaeb07a331f6239f427757d21bd5e692cef83cb0f097acff49ce33bf7eb14",
+      "lastUpdated": "2026-07-14T16:10:48.731Z"
+    },
+    "fd81e71cae87777336a50cc51d58639a2697ec789936c481060cf26447a23227": {
+      "diskName": "Right_Again.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "fd81e71cae87777336a50cc51d58639a2697ec789936c481060cf26447a23227",
+      "lastUpdated": "2026-07-14T16:10:49.543Z"
+    },
+    "75f46d30f84533fed68baa3a1eebf802bbf95f22b3061f75a0e23c3a9770c1b2": {
+      "diskName": "Shrink.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "75f46d30f84533fed68baa3a1eebf802bbf95f22b3061f75a0e23c3a9770c1b2",
+      "lastUpdated": "2026-07-14T16:10:50.487Z"
+    },
+    "637fbcdf2750312184f16999d6d92931be60c2f13d68d45c94896986d8243799": {
+      "diskName": "Shrinkit2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "637fbcdf2750312184f16999d6d92931be60c2f13d68d45c94896986d8243799",
+      "lastUpdated": "2026-07-14T16:10:51.498Z"
+    },
+    "081f4c6889ded0499c7d074ff6fac5bcade815afac17ecd880b1fab8cf86d59d": {
+      "diskName": "Shuffleboard+.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "081f4c6889ded0499c7d074ff6fac5bcade815afac17ecd880b1fab8cf86d59d",
+      "lastUpdated": "2026-07-14T16:10:53.469Z"
+    },
+    "a2d6fe4913c236f6a86a4b3f45d72cadb3cefbbfc1740fcfd755dee48321be0a": {
+      "diskName": "Situation_Critical.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "a2d6fe4913c236f6a86a4b3f45d72cadb3cefbbfc1740fcfd755dee48321be0a",
+      "lastUpdated": "2026-07-14T16:11:03.771Z"
+    },
+    "10fd0122097f69c5d2855f121c6f5b0235990928e7fc0398d2bb141a894eda82": {
+      "diskName": "Snooper.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "10fd0122097f69c5d2855f121c6f5b0235990928e7fc0398d2bb141a894eda82",
+      "lastUpdated": "2026-07-14T16:11:11.025Z"
+    },
+    "f138149f329e7a0e705fb420d8ee9b8bd84841cc6923be80c8b65ecaefafc8c6": {
+      "diskName": "Soft_Seventy+.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f138149f329e7a0e705fb420d8ee9b8bd84841cc6923be80c8b65ecaefafc8c6",
+      "lastUpdated": "2026-07-14T16:11:21.672Z"
+    },
+    "8d7c32c5c405d86c22800699fb824d8d4b387cf87a35ff0639eabb6e8f919a98": {
+      "diskName": "Sparkee.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "8d7c32c5c405d86c22800699fb824d8d4b387cf87a35ff0639eabb6e8f919a98",
+      "lastUpdated": "2026-07-14T16:11:32.217Z"
+    },
+    "2077670b0d6bb08db2204f05105693cd1e212192ad3913feb3e36cecd19f18dd": {
+      "diskName": "sunrace2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "2077670b0d6bb08db2204f05105693cd1e212192ad3913feb3e36cecd19f18dd",
+      "lastUpdated": "2026-07-14T16:11:41.863Z"
+    },
+    "b917bd4da45b49937d077f8db77f2944cfa30bac816c3b76d7eefe8f8f993c8b": {
+      "diskName": "sunracer.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b917bd4da45b49937d077f8db77f2944cfa30bac816c3b76d7eefe8f8f993c8b",
+      "lastUpdated": "2026-07-14T16:11:42.822Z"
+    },
+    "cc6464d9707231e8224c5ee36bffbb991455495bf11dbc3adaf5d4f3b127a23a": {
+      "diskName": "white_01b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "cc6464d9707231e8224c5ee36bffbb991455495bf11dbc3adaf5d4f3b127a23a",
+      "lastUpdated": "2026-07-14T16:11:44.780Z"
+    },
+    "b8ba777a0bb457fec52949d9075fd1f11dc6d803f886d1d133086a343b6d4122": {
+      "diskName": "white_02b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "b8ba777a0bb457fec52949d9075fd1f11dc6d803f886d1d133086a343b6d4122",
+      "lastUpdated": "2026-07-14T16:11:55.564Z"
+    },
+    "1fa2f08c4b4bde7f48f245630074e3759bd3e0391b82a8f1db6cf25fde01677a": {
+      "diskName": "white_03a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1fa2f08c4b4bde7f48f245630074e3759bd3e0391b82a8f1db6cf25fde01677a",
+      "lastUpdated": "2026-07-14T16:12:06.207Z"
+    },
+    "8aa23ea096f6bbfb143b94bd0bed0819511a3bab156f10fc3581597d73e142c6": {
+      "diskName": "white_03b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "8aa23ea096f6bbfb143b94bd0bed0819511a3bab156f10fc3581597d73e142c6",
+      "lastUpdated": "2026-07-14T16:12:17.487Z"
+    },
+    "1c03f9dcdd19e539cdf6ea9dd371c80cb1c1ff0f9ad76f6e2fe0e809d2d70214": {
+      "diskName": "white_04a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1c03f9dcdd19e539cdf6ea9dd371c80cb1c1ff0f9ad76f6e2fe0e809d2d70214",
+      "lastUpdated": "2026-07-14T16:12:28.033Z"
+    },
+    "84e78836120b11a1c1f6b6cfeb30ac4165ad096f744afa0937debfcdd6f4a80a": {
+      "diskName": "music_construction_set.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "84e78836120b11a1c1f6b6cfeb30ac4165ad096f744afa0937debfcdd6f4a80a",
+      "lastUpdated": "2026-07-14T16:38:28.394Z"
+    },
+    "3cae6b424bb1b67a5db008531ee35b28b3a6b438757a9f60e17471edf87ef750": {
+      "diskName": "white_05b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "3cae6b424bb1b67a5db008531ee35b28b3a6b438757a9f60e17471edf87ef750",
+      "lastUpdated": "2026-07-14T16:12:49.522Z"
+    },
+    "f669efcf453832cff2b84cebb07294a2b3f6bbc0725db9f3153f2f82a3fdbef1": {
+      "diskName": "white_06b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f669efcf453832cff2b84cebb07294a2b3f6bbc0725db9f3153f2f82a3fdbef1",
+      "lastUpdated": "2026-07-14T16:12:58.202Z"
+    },
+    "4ac572e8bdf2381476aa9ba7d366e780f8a888b96be961d31e8bd27910279667": {
+      "diskName": "white_07a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "4ac572e8bdf2381476aa9ba7d366e780f8a888b96be961d31e8bd27910279667",
+      "lastUpdated": "2026-07-14T16:13:08.425Z"
+    },
+    "248b54358f45e3eae79a9b3fa9ce06a1d16fdad50e9a212e688d6aabf8ae9c97": {
+      "diskName": "white_07b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "248b54358f45e3eae79a9b3fa9ce06a1d16fdad50e9a212e688d6aabf8ae9c97",
+      "lastUpdated": "2026-07-14T16:13:19.083Z"
+    },
+    "03f79e0eb8d8fd787ec0100f9c34a2f4e50b8d14046ea60d0fa0693601736b09": {
+      "diskName": "white_08a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "03f79e0eb8d8fd787ec0100f9c34a2f4e50b8d14046ea60d0fa0693601736b09",
+      "lastUpdated": "2026-07-14T16:13:29.994Z"
+    },
+    "70d4b327d60a8f0845c4142bc5dc9f7a94d85ff6f2310c511f2778705df6de6a": {
+      "diskName": "white_08b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "70d4b327d60a8f0845c4142bc5dc9f7a94d85ff6f2310c511f2778705df6de6a",
+      "lastUpdated": "2026-07-14T16:13:40.611Z"
+    },
+    "7607de96d1835522db8928fa4e814a7b607bd9399876294d88ed68697484d1ac": {
+      "diskName": "white_09b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7607de96d1835522db8928fa4e814a7b607bd9399876294d88ed68697484d1ac",
+      "lastUpdated": "2026-07-14T16:13:51.639Z"
+    },
+    "3ac572aa58f2741cf3166f51aa5165e3663e087738300bbdfcb47877e0291227": {
+      "diskName": "white_10b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3ac572aa58f2741cf3166f51aa5165e3663e087738300bbdfcb47877e0291227",
+      "lastUpdated": "2026-07-14T16:14:02.425Z"
+    },
+    "9ae4e88fdc5adcf4a39a56f296b4499b6b6adf2c740fa44a4f32302b6060c41e": {
+      "diskName": "white_11a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9ae4e88fdc5adcf4a39a56f296b4499b6b6adf2c740fa44a4f32302b6060c41e",
+      "lastUpdated": "2026-07-14T16:14:13.256Z"
+    },
+    "f3313fdcc38fdd32f1985de0e5ee4a1dd46ac852b7310e752b9cde73e62c0f28": {
+      "diskName": "white_11b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f3313fdcc38fdd32f1985de0e5ee4a1dd46ac852b7310e752b9cde73e62c0f28",
+      "lastUpdated": "2026-07-14T16:14:24.291Z"
+    },
+    "0f016625f3f0a0c5dfef6c24e0a83a7f864a1e3f86c70f2ae82c365d32f09e40": {
+      "diskName": "white_12a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "0f016625f3f0a0c5dfef6c24e0a83a7f864a1e3f86c70f2ae82c365d32f09e40",
+      "lastUpdated": "2026-07-14T16:14:35.012Z"
+    },
+    "1b940caf9e223ef96786c0a5f500be33a1aaeb025cef58b0743738bc4d8176f9": {
+      "diskName": "white_12b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1b940caf9e223ef96786c0a5f500be33a1aaeb025cef58b0743738bc4d8176f9",
+      "lastUpdated": "2026-07-14T16:14:45.687Z"
+    },
+    "46fba0851e05150c0be204d86be3880b518f453c480d8dbe19adda73b82f3deb": {
+      "diskName": "white_13a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "46fba0851e05150c0be204d86be3880b518f453c480d8dbe19adda73b82f3deb",
+      "lastUpdated": "2026-07-14T16:14:56.304Z"
+    },
+    "65de7e6545d967aecf4d8d8add252977e4fc527ab3edb8f4cbf5c92eab2e5323": {
+      "diskName": "white_14a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "65de7e6545d967aecf4d8d8add252977e4fc527ab3edb8f4cbf5c92eab2e5323",
+      "lastUpdated": "2026-07-14T16:15:06.171Z"
+    },
+    "29ae8010cee78b86db98c1dcfbda50838f9c83e3b618c4433dde565efb998331": {
+      "diskName": "white_14b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "29ae8010cee78b86db98c1dcfbda50838f9c83e3b618c4433dde565efb998331",
+      "lastUpdated": "2026-07-14T16:15:08.098Z"
+    },
+    "1c7dd9eb50d6a47f87f01acd72900225dadc900230f2d486e77c018808ffc931": {
+      "diskName": "white_16a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "1c7dd9eb50d6a47f87f01acd72900225dadc900230f2d486e77c018808ffc931",
+      "lastUpdated": "2026-07-14T16:15:16.926Z"
+    },
+    "5aa18c9998f135d49a956a2866f3834d6c6e820891db8f6e525e516b4915230f": {
+      "diskName": "white_16b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "5aa18c9998f135d49a956a2866f3834d6c6e820891db8f6e525e516b4915230f",
+      "lastUpdated": "2026-07-14T16:15:27.421Z"
+    },
+    "ec53f18304bce62a30e082dd6d37c2ec2175b8a566c901abfdd2656b0e7be3b2": {
+      "diskName": "white_18a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ec53f18304bce62a30e082dd6d37c2ec2175b8a566c901abfdd2656b0e7be3b2",
+      "lastUpdated": "2026-07-14T16:15:38.249Z"
+    },
+    "74f6e3d085c1fac6622e4b25257ef2b80d84cdf40f405e55cc227474d8bbc7d0": {
+      "diskName": "white_18b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "74f6e3d085c1fac6622e4b25257ef2b80d84cdf40f405e55cc227474d8bbc7d0",
+      "lastUpdated": "2026-07-14T16:15:49.071Z"
+    },
+    "36ab6e23b365635de780842d8ce9f076ce3c4c19d27ab5d18d735cf714d28f0a": {
+      "diskName": "white_20a.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "36ab6e23b365635de780842d8ce9f076ce3c4c19d27ab5d18d735cf714d28f0a",
+      "lastUpdated": "2026-07-14T16:15:59.797Z"
+    },
+    "ade69ce78c89b366b2c68476769a92baf98f12cee4c5e8cc535fe4993636518a": {
+      "diskName": "white_20b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ade69ce78c89b366b2c68476769a92baf98f12cee4c5e8cc535fe4993636518a",
+      "lastUpdated": "2026-07-14T16:16:07.923Z"
+    },
+    "90e7027499ae4ae14ac812564b21945f35cf85fb022e2844dd4baf3d6d4c12dc": {
+      "diskName": "white_21a.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "90e7027499ae4ae14ac812564b21945f35cf85fb022e2844dd4baf3d6d4c12dc",
+      "lastUpdated": "2026-07-14T16:16:18.747Z"
+    },
+    "f97ff8e0f81cc2a3c172d33a72ee6bae1e345f11a208a1e77cf9020363e3d672": {
+      "diskName": "white_21b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f97ff8e0f81cc2a3c172d33a72ee6bae1e345f11a208a1e77cf9020363e3d672",
+      "lastUpdated": "2026-07-14T16:16:27.334Z"
+    },
+    "2cd8d3bc4d48e9caa941f8f4014144ba315e8ab108f1e83197e78bb59b3cc075": {
+      "diskName": "white_22a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "2cd8d3bc4d48e9caa941f8f4014144ba315e8ab108f1e83197e78bb59b3cc075",
+      "lastUpdated": "2026-07-14T16:16:38.200Z"
+    },
+    "76f91856d4307b7432b0fc160ff087b420f9fd42b3952ff7bf7d39c15a070291": {
+      "diskName": "white_22b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "76f91856d4307b7432b0fc160ff087b420f9fd42b3952ff7bf7d39c15a070291",
+      "lastUpdated": "2026-07-14T16:16:48.543Z"
+    },
+    "cada9086812848ed6bd12217b1e6ba6f871d14446fb69e533706068c8d5126c5": {
+      "diskName": "cracking_techniques_1982.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "cada9086812848ed6bd12217b1e6ba6f871d14446fb69e533706068c8d5126c5",
+      "lastUpdated": "2026-07-14T16:22:43.392Z"
+    },
+    "d9cf2f440d4e420041ad9a90a65813b57cf4d7894803ea1c541b4e7f827cbc5f": {
+      "diskName": "white_23b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d9cf2f440d4e420041ad9a90a65813b57cf4d7894803ea1c541b4e7f827cbc5f",
+      "lastUpdated": "2026-07-14T16:17:10.278Z"
+    },
+    "bac24164a17a355d85ca7fc09e5fff75904b7b402f5dd9ed21d13c0d2b3e23d8": {
+      "diskName": "white_24a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "bac24164a17a355d85ca7fc09e5fff75904b7b402f5dd9ed21d13c0d2b3e23d8",
+      "lastUpdated": "2026-07-14T16:17:21.528Z"
+    },
+    "3861fe2efb968dea255d0257624f53af7443de0ee7f94dd94225c73047cb8bb8": {
+      "diskName": "white_24b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "3861fe2efb968dea255d0257624f53af7443de0ee7f94dd94225c73047cb8bb8",
+      "lastUpdated": "2026-07-14T16:17:32.001Z"
+    },
+    "4f5902132ae5f3e22b1339ba70c33a3a6c1d82395328eb2fb48060838ed36deb": {
+      "diskName": "white_25a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "4f5902132ae5f3e22b1339ba70c33a3a6c1d82395328eb2fb48060838ed36deb",
+      "lastUpdated": "2026-07-14T16:17:39.865Z"
+    },
+    "576e0970391f5958ba9b85996e8bf0da0c5e3f73bec81ed07b0a1dab24ac7187": {
+      "diskName": "white_25b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "576e0970391f5958ba9b85996e8bf0da0c5e3f73bec81ed07b0a1dab24ac7187",
+      "lastUpdated": "2026-07-14T16:17:50.962Z"
+    },
+    "78bf78f1d9b60db3e5f05208748739b760b28ffa8fb287aef8f6e9efb7ebbcfd": {
+      "diskName": "white_26a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "78bf78f1d9b60db3e5f05208748739b760b28ffa8fb287aef8f6e9efb7ebbcfd",
+      "lastUpdated": "2026-07-14T16:18:01.704Z"
+    },
+    "a6c95299bf47216f292297ec2a650d7bbd18f3a26f425900f2183d5acf268ef4": {
+      "diskName": "white_26b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "a6c95299bf47216f292297ec2a650d7bbd18f3a26f425900f2183d5acf268ef4",
+      "lastUpdated": "2026-07-14T16:18:13.062Z"
+    },
+    "05ac80a8b218ec117596ac5421526529f2744ac99986ac050c8b7a4482d75b19": {
+      "diskName": "white_27a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "05ac80a8b218ec117596ac5421526529f2744ac99986ac050c8b7a4482d75b19",
+      "lastUpdated": "2026-07-14T16:18:22.853Z"
+    },
+    "3805dbc99c4ebaf2f117c9e720f793dabbd10ef93f921eae7708853b2fd2a72e": {
+      "diskName": "white_27b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3805dbc99c4ebaf2f117c9e720f793dabbd10ef93f921eae7708853b2fd2a72e",
+      "lastUpdated": "2026-07-14T16:18:24.678Z"
+    },
+    "02e8eba657f7433210f41f720c5ef2af44781f20d867015d1864259493c1ddc3": {
+      "diskName": "white_28a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "02e8eba657f7433210f41f720c5ef2af44781f20d867015d1864259493c1ddc3",
+      "lastUpdated": "2026-07-14T16:18:34.010Z"
+    },
+    "983110550b586659dd69e372e15a84863f28192daa9eea4e6b737760971fca2f": {
+      "diskName": "white_28b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "983110550b586659dd69e372e15a84863f28192daa9eea4e6b737760971fca2f",
+      "lastUpdated": "2026-07-14T16:18:35.868Z"
+    },
+    "a91b2daf37c51b416dfc890c4b46591200dad3e4018dbbdf10b90d518a8466aa": {
+      "diskName": "white_29a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "a91b2daf37c51b416dfc890c4b46591200dad3e4018dbbdf10b90d518a8466aa",
+      "lastUpdated": "2026-07-14T16:18:46.398Z"
+    },
+    "d7b7c69dbf66c1fda7fcf102cb9d4fbc167b163b63216fa895f0e8d852020430": {
+      "diskName": "white_29b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d7b7c69dbf66c1fda7fcf102cb9d4fbc167b163b63216fa895f0e8d852020430",
+      "lastUpdated": "2026-07-14T16:18:57.588Z"
+    },
+    "da16312668111dfc7c2dadd1839f716c7ce7d5aac668a855e60f3ea8d50d4c91": {
+      "diskName": "white_32a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "da16312668111dfc7c2dadd1839f716c7ce7d5aac668a855e60f3ea8d50d4c91",
+      "lastUpdated": "2026-07-14T16:19:08.121Z"
+    },
+    "86a82648410d6438d9ee833a4960be18671d380a11bb768835cc6da739fc75bd": {
+      "diskName": "white_32b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "86a82648410d6438d9ee833a4960be18671d380a11bb768835cc6da739fc75bd",
+      "lastUpdated": "2026-07-14T16:19:18.463Z"
+    },
+    "e25842110d8009447a39a7ab14d257af4fe08d87cc0f5ad793dd042f0cae740d": {
+      "diskName": "white_34a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e25842110d8009447a39a7ab14d257af4fe08d87cc0f5ad793dd042f0cae740d",
+      "lastUpdated": "2026-07-14T16:19:29.318Z"
+    },
+    "50d633da3b4baa8f2a15984cd5db9ab49fc5647d4fce18bcb0bade2e2b6820e9": {
+      "diskName": "white_34b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "50d633da3b4baa8f2a15984cd5db9ab49fc5647d4fce18bcb0bade2e2b6820e9",
+      "lastUpdated": "2026-07-14T16:19:40.037Z"
+    },
+    "a7bd93cfca56a0c4a155413dcfb488e7ea5415c012547d5a32013c5e07b41182": {
+      "diskName": "white_35a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a7bd93cfca56a0c4a155413dcfb488e7ea5415c012547d5a32013c5e07b41182",
+      "lastUpdated": "2026-07-14T16:19:49.599Z"
+    },
+    "979323e8f188f42c98ec5429f3cad254b5df7f8957817c599c1ed8396fc10e32": {
+      "diskName": "white_35b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "979323e8f188f42c98ec5429f3cad254b5df7f8957817c599c1ed8396fc10e32",
+      "lastUpdated": "2026-07-14T16:19:51.602Z"
+    },
+    "7255c06705af58732a6c691b02b546ec429f269d6d6342e34dda28d83af7a0b9": {
+      "diskName": "white_37a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7255c06705af58732a6c691b02b546ec429f269d6d6342e34dda28d83af7a0b9",
+      "lastUpdated": "2026-07-14T16:20:02.296Z"
+    },
+    "55120d0d5b04c590c9431cd7199ecee11612c56c11620186a9f7a53c625343dd": {
+      "diskName": "white_37b.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "55120d0d5b04c590c9431cd7199ecee11612c56c11620186a9f7a53c625343dd",
+      "lastUpdated": "2026-07-14T16:20:15.801Z"
+    },
+    "e6404cf0e440eeb1fc3b6106bc4caef7b3c58921afa43200825b0851d7939a82": {
+      "diskName": "white_38a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e6404cf0e440eeb1fc3b6106bc4caef7b3c58921afa43200825b0851d7939a82",
+      "lastUpdated": "2026-07-14T16:20:24.531Z"
+    },
+    "8fdd11572895b8b01272b049c8e09fa1e8e2d1ff453efa9209224695242f120d": {
+      "diskName": "white_38b.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "8fdd11572895b8b01272b049c8e09fa1e8e2d1ff453efa9209224695242f120d",
+      "lastUpdated": "2026-07-14T16:20:25.452Z"
+    },
+    "3ba57210751a9a1af063bc0ad719b0d70a911c217475021f06b5ce0eb01124d5": {
+      "diskName": "white_39a.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3ba57210751a9a1af063bc0ad719b0d70a911c217475021f06b5ce0eb01124d5",
+      "lastUpdated": "2026-07-14T16:20:27.401Z"
+    },
+    "514ae12c41a3437ea5f5b7781a8faa2297938d78458650fc9c9bd17eba9b0ebc": {
+      "diskName": "white_39b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "514ae12c41a3437ea5f5b7781a8faa2297938d78458650fc9c9bd17eba9b0ebc",
+      "lastUpdated": "2026-07-14T16:20:38.165Z"
+    },
+    "cec77e89541d73a7d944250b54cf68fdd5cfc515c313cb0652f23b0378b12a20": {
+      "diskName": "white_40a.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "cec77e89541d73a7d944250b54cf68fdd5cfc515c313cb0652f23b0378b12a20",
+      "lastUpdated": "2026-07-14T16:20:48.003Z"
+    },
+    "cd9d2b7f193431232f18e39bee65ded61aaef81c3b249760de985834b60a94cf": {
+      "diskName": "white_40b.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "cd9d2b7f193431232f18e39bee65ded61aaef81c3b249760de985834b60a94cf",
+      "lastUpdated": "2026-07-14T16:20:49.858Z"
+    },
+    "ad019a692d153156308e8916cf7e0c88141f32bac55341923c6d49e0b31f3e41": {
+      "diskName": "Zenith_others.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "ad019a692d153156308e8916cf7e0c88141f32bac55341923c6d49e0b31f3e41",
+      "lastUpdated": "2026-07-14T16:21:00.650Z"
+    },
+    "bac2e380b4fdf85c02b805756f74be0f3d9b0eced17868aadbe87ce5790c25e1": {
+      "diskName": "comm_programs.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "bac2e380b4fdf85c02b805756f74be0f3d9b0eced17868aadbe87ce5790c25e1",
+      "lastUpdated": "2026-07-14T16:21:06.581Z"
+    },
+    "8878bcf6540e27d9bf195a3e38ac406b1950abb0a9cddbac8242e14f3e9ee34f": {
+      "diskName": "extender_bender.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "8878bcf6540e27d9bf195a3e38ac406b1950abb0a9cddbac8242e14f3e9ee34f",
+      "lastUpdated": "2026-07-14T16:21:07.584Z"
+    },
+    "dd3ac416e086adbad3b7f7e30f7670c691dc747d0a9ae092e7d0c7bbcd8297cd": {
+      "diskName": "gbbs_1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "dd3ac416e086adbad3b7f7e30f7670c691dc747d0a9ae092e7d0c7bbcd8297cd",
+      "lastUpdated": "2026-07-14T16:21:08.416Z"
+    },
+    "86cef50edf9ff3b2f81bb5760ddb12c7129a30be7d5533ba95a1b3bd574932b7": {
+      "diskName": "gbbs_2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "86cef50edf9ff3b2f81bb5760ddb12c7129a30be7d5533ba95a1b3bd574932b7",
+      "lastUpdated": "2026-07-14T16:21:09.239Z"
+    },
+    "89f8337028dedc3e860d669710c54c4f8d6c5798e0971ba0112a4b40860ac7a8": {
+      "diskName": "hacking_construction_set.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "89f8337028dedc3e860d669710c54c4f8d6c5798e0971ba0112a4b40860ac7a8",
+      "lastUpdated": "2026-07-14T16:21:11.135Z"
+    },
+    "22d2b2cefb1bba7b7103933ad23bb615220eba156a8c16237ca8690614cb36e3": {
+      "diskName": "hayes_hacamatic.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "22d2b2cefb1bba7b7103933ad23bb615220eba156a8c16237ca8690614cb36e3",
+      "lastUpdated": "2026-07-14T16:21:22.246Z"
+    },
+    "75a5f7c8bdb212291873ed1ac3ff6ffbb3b21b75a622318a352984387e7d9535": {
+      "diskName": "kermit_protocol.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "75a5f7c8bdb212291873ed1ac3ff6ffbb3b21b75a622318a352984387e7d9535",
+      "lastUpdated": "2026-07-14T16:21:31.818Z"
+    },
+    "b6e890e4530633f3f90bc09744e5eb6752aee0516e67c5b3ce27b2f37c200f02": {
+      "diskName": "apple_diagnostics.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b6e890e4530633f3f90bc09744e5eb6752aee0516e67c5b3ce27b2f37c200f02",
+      "lastUpdated": "2026-07-14T16:21:32.801Z"
+    },
+    "b72d9f4459f7608476bcd4afa78192707bd5f3215b725780e37dd3b16d330189": {
+      "diskName": "apple_dj_utils1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b72d9f4459f7608476bcd4afa78192707bd5f3215b725780e37dd3b16d330189",
+      "lastUpdated": "2026-07-14T16:21:33.901Z"
+    },
+    "caf3fede8661fbc40a543d92ab96ec5c03a2952e0d781db4bca11936699db100": {
+      "diskName": "apple_dj_utils2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "caf3fede8661fbc40a543d92ab96ec5c03a2952e0d781db4bca11936699db100",
+      "lastUpdated": "2026-07-14T16:21:34.866Z"
+    },
+    "da5ae8aaa13883892a2489218ed8754053e617b08ab55c4918236b910deb8f47": {
+      "diskName": "bag_of_tricks_alt.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "da5ae8aaa13883892a2489218ed8754053e617b08ab55c4918236b910deb8f47",
+      "lastUpdated": "2026-07-14T16:21:36.755Z"
+    },
+    "cf7379c366148119378d4f05ae375aabb70a6cf521b806458c620dbf017aaf26": {
+      "diskName": "bag_of_tricks_II.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "cf7379c366148119378d4f05ae375aabb70a6cf521b806458c620dbf017aaf26",
+      "lastUpdated": "2026-07-14T16:21:46.229Z"
+    },
+    "798aa52d3f15f0a26ee349b29dcd76d5e6b36766ab7dae917a0da45cad9e4c44": {
+      "diskName": "bag_of_tricks.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "798aa52d3f15f0a26ee349b29dcd76d5e6b36766ab7dae917a0da45cad9e4c44",
+      "lastUpdated": "2026-07-14T16:21:48.351Z"
+    },
+    "5511881e7f272274ffb636ea0dc96ed0e67ed06d3d95b850d208d2020ec1991e": {
+      "diskName": "cia_utils.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "5511881e7f272274ffb636ea0dc96ed0e67ed06d3d95b850d208d2020ec1991e",
+      "lastUpdated": "2026-07-14T16:21:58.822Z"
+    },
+    "f47dc1ba3936a1374cf493d340e0b25e5a51a8fa5c74c4a3e343c8c758b90cda": {
+      "diskName": "computist_starter_kit_v2.02.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f47dc1ba3936a1374cf493d340e0b25e5a51a8fa5c74c4a3e343c8c758b90cda",
+      "lastUpdated": "2026-07-14T16:22:09.632Z"
+    },
+    "9825842b89db855dbe3645c17d0c816e5449a9cba2f1e1e521f43646d385255d": {
+      "diskName": "copy_ii+_v5.5.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9825842b89db855dbe3645c17d0c816e5449a9cba2f1e1e521f43646d385255d",
+      "lastUpdated": "2026-07-14T16:22:20.043Z"
+    },
+    "b46a262a4686b851538aaf47a2bf9157eb9193b0868916627649bc6bc697ee25": {
+      "diskName": "copy_ii+_v7.1.do",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b46a262a4686b851538aaf47a2bf9157eb9193b0868916627649bc6bc697ee25",
+      "lastUpdated": "2026-07-14T16:22:38.195Z"
+    },
+    "902727cbd415595a9c4eb7d08c8a01cc2f19b427e9a117390ab4c77329b558ce": {
+      "diskName": "copy_ii+_v7.1_s2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "902727cbd415595a9c4eb7d08c8a01cc2f19b427e9a117390ab4c77329b558ce",
+      "lastUpdated": "2026-07-14T16:22:32.202Z"
+    },
+    "810ae962b79531578d284fbd754d35baa63240bb7607455a11552f24fd65b3ed": {
+      "diskName": "copy_ii+_v7.2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "810ae962b79531578d284fbd754d35baa63240bb7607455a11552f24fd65b3ed",
+      "lastUpdated": "2026-07-14T16:22:39.122Z"
+    },
+    "c97f66baf58fd6719a9599c543db83f73ed2aa3b73ce9e6013249e052ffa62ba": {
+      "diskName": "copy_ii+_v9.1_s1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "c97f66baf58fd6719a9599c543db83f73ed2aa3b73ce9e6013249e052ffa62ba",
+      "lastUpdated": "2026-07-14T16:22:39.988Z"
+    },
+    "4ae1d9293888f95bea6265943ea05d0b520026e92ea5ca6814d65b4e26c0beb8": {
+      "diskName": "copy_ii+_v9.1_s2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "4ae1d9293888f95bea6265943ea05d0b520026e92ea5ca6814d65b4e26c0beb8",
+      "lastUpdated": "2026-07-14T16:22:40.802Z"
+    },
+    "3cebfa766a313f25c2cd2e6f11a88c1fb7588c19840a09e2dbe293e68a8a0e85": {
+      "diskName": "copy_ii+_v9.1_s3.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "3cebfa766a313f25c2cd2e6f11a88c1fb7588c19840a09e2dbe293e68a8a0e85",
+      "lastUpdated": "2026-07-14T16:22:41.659Z"
+    },
+    "7b74886e823a4a6303320b8b0b2be27585dd3abe7d2ceb72dc8fa1fc74a433fb": {
+      "diskName": "cracking_techniques_1983.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "7b74886e823a4a6303320b8b0b2be27585dd3abe7d2ceb72dc8fa1fc74a433fb",
+      "lastUpdated": "2026-07-14T16:22:53.856Z"
+    },
+    "ca6b0eb514b612f36589b87e3c8f9949b065b7ad1522827dd55bc6d57e4e1235": {
+      "diskName": "cracking_techniques_1984.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "ca6b0eb514b612f36589b87e3c8f9949b065b7ad1522827dd55bc6d57e4e1235",
+      "lastUpdated": "2026-07-14T16:23:05.005Z"
+    },
+    "6a48f117361d9428633f008538a5887ef4581c12cc6b3fa303dc317445078018": {
+      "diskName": "cracking_utils1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "6a48f117361d9428633f008538a5887ef4581c12cc6b3fa303dc317445078018",
+      "lastUpdated": "2026-07-14T16:23:12.652Z"
+    },
+    "d3402d914e44e48ee85e319043bb4233af9b4638fee9fea3fbc530949897e783": {
+      "diskName": "cracking_utils2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d3402d914e44e48ee85e319043bb4233af9b4638fee9fea3fbc530949897e783",
+      "lastUpdated": "2026-07-14T16:23:23.219Z"
+    },
+    "d55e014b8afb4d07f42eadd5acb8b537ec92126adec377e046898959f818485c": {
+      "diskName": "DatalifeDiskDriveAnalyzer.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d55e014b8afb4d07f42eadd5acb8b537ec92126adec377e046898959f818485c",
+      "lastUpdated": "2026-07-14T16:23:32.767Z"
+    },
+    "65f3cac90a574779632a371fdbd07e1260d454693f06aaf2079c22ad04314e5b": {
+      "diskName": "diagnostics_ii+.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "65f3cac90a574779632a371fdbd07e1260d454693f06aaf2079c22ad04314e5b",
+      "lastUpdated": "2026-07-14T16:23:34.700Z"
+    },
+    "c60373d9a58f21fb8f3266cc9d5cddbdd03f1a2954a4a4eeee1edd727be106ca": {
+      "diskName": "diagnostics_iie.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "c60373d9a58f21fb8f3266cc9d5cddbdd03f1a2954a4a4eeee1edd727be106ca",
+      "lastUpdated": "2026-07-14T16:23:45.404Z"
+    },
+    "55b96e709c46a396a59a296a9411d9c65d351115527bec7db440639f1fca3004": {
+      "diskName": "diagnostics.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "55b96e709c46a396a59a296a9411d9c65d351115527bec7db440639f1fca3004",
+      "lastUpdated": "2026-07-14T16:23:55.135Z"
+    },
+    "c5a66dd77448d6eeaf61571c6f83439bdfacebed80283c14f8e773a03f4c9cc0": {
+      "diskName": "disk_ii_analyzer.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "c5a66dd77448d6eeaf61571c6f83439bdfacebed80283c14f8e773a03f4c9cc0",
+      "lastUpdated": "2026-07-14T16:23:57.035Z"
+    },
+    "30908e4471e785f7192a95b2b086530b3ea1cc76a33acaacd978f6f50bf8dd9d": {
+      "diskName": "disk_muncher.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "30908e4471e785f7192a95b2b086530b3ea1cc76a33acaacd978f6f50bf8dd9d",
+      "lastUpdated": "2026-07-14T16:24:07.859Z"
+    },
+    "4454ff161bbd8eff597f5c09bfef838eed32c1c29fd7ed9b4b6acb169ea30fb9": {
+      "diskName": "dos_boss.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "4454ff161bbd8eff597f5c09bfef838eed32c1c29fd7ed9b4b6acb169ea30fb9",
+      "lastUpdated": "2026-07-14T16:24:18.497Z"
+    },
+    "d4ca3ccd058e8b160302de7f0eb8f7cbe5a4b47d0b3f949c3bd5b1939cfe95a5": {
+      "diskName": "fatcat.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d4ca3ccd058e8b160302de7f0eb8f7cbe5a4b47d0b3f949c3bd5b1939cfe95a5",
+      "lastUpdated": "2026-07-14T16:24:30.507Z"
+    },
+    "415f832b427ffe25a71f4a7b5175faed56d1ef3876305a4563aad3a3f7d85a14": {
+      "diskName": "kkk_utils1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "415f832b427ffe25a71f4a7b5175faed56d1ef3876305a4563aad3a3f7d85a14",
+      "lastUpdated": "2026-07-14T16:24:41.299Z"
+    },
+    "8af892595eb60282317df25e54302f0f7c44883f22a4169c800f2c327eb94b22": {
+      "diskName": "kkk_utils2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "8af892595eb60282317df25e54302f0f7c44883f22a4169c800f2c327eb94b22",
+      "lastUpdated": "2026-07-14T16:24:51.701Z"
+    },
+    "7fcd44a86fb9f91c52340ab0cd3b0a69a23b49a72ce9c396eed6400333f5e8b4": {
+      "diskName": "kkk_utils3.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "7fcd44a86fb9f91c52340ab0cd3b0a69a23b49a72ce9c396eed6400333f5e8b4",
+      "lastUpdated": "2026-07-14T16:24:59.336Z"
+    },
+    "94496521cb000c0c6e043f2420e65e11640c98c3ff6784e1c668e82495521b03": {
+      "diskName": "locksmith_v5.0.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "94496521cb000c0c6e043f2420e65e11640c98c3ff6784e1c668e82495521b03",
+      "lastUpdated": "2026-07-14T16:25:07.390Z"
+    },
+    "06ed027fd58a1a270c7e8b5fed76eeef35a56556079c00e0720f3e2cc981d3cb": {
+      "diskName": "locksmith_v6.0_library_1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "06ed027fd58a1a270c7e8b5fed76eeef35a56556079c00e0720f3e2cc981d3cb",
+      "lastUpdated": "2026-07-14T16:25:13.716Z"
+    },
+    "e00b8e788499b848c31e030a0c744c70af236b479fa816976cc1a8d04b41ec08": {
+      "diskName": "locksmith_v6.0_library_1d.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e00b8e788499b848c31e030a0c744c70af236b479fa816976cc1a8d04b41ec08",
+      "lastUpdated": "2026-07-14T16:25:14.612Z"
+    },
+    "2b93af3993d97a91247169390737032107a89d99519686fed99998029f3d1957": {
+      "diskName": "locksmith_v6.0.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "2b93af3993d97a91247169390737032107a89d99519686fed99998029f3d1957",
+      "lastUpdated": "2026-07-14T16:25:15.552Z"
+    },
+    "ef29e978411718838fcb14f2ab41414413858e00893d0a566c953cb93e45bcdb": {
+      "diskName": "util1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "ef29e978411718838fcb14f2ab41414413858e00893d0a566c953cb93e45bcdb",
+      "lastUpdated": "2026-07-14T16:25:16.371Z"
+    },
+    "f4a174936bc658b21391634a3f8dd9dfb8ed81c3d2c9994c57c6a1b9a589f0b5": {
+      "diskName": "Util2_11.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "f4a174936bc658b21391634a3f8dd9dfb8ed81c3d2c9994c57c6a1b9a589f0b5",
+      "lastUpdated": "2026-07-14T16:25:17.271Z"
+    },
+    "37ca994d65bffb78d46cf66e89c894208d39f1b9304dbb3689d9952c242ecb63": {
+      "diskName": "util2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "37ca994d65bffb78d46cf66e89c894208d39f1b9304dbb3689d9952c242ecb63",
+      "lastUpdated": "2026-07-14T16:25:18.088Z"
+    },
+    "77cb4a0c4d726a87587e3115e04b3fd582b5099bca0da78d6b343ed0c7e36238": {
+      "diskName": "Util3_1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "77cb4a0c4d726a87587e3115e04b3fd582b5099bca0da78d6b343ed0c7e36238",
+      "lastUpdated": "2026-07-14T16:25:18.920Z"
+    },
+    "a0e74a1c0f5b87f3c666536ce8409266e985b26c2d8c4661fdac0147adb7bc90": {
+      "diskName": "util3.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "a0e74a1c0f5b87f3c666536ce8409266e985b26c2d8c4661fdac0147adb7bc90",
+      "lastUpdated": "2026-07-14T16:25:19.770Z"
+    },
+    "252a43d957aa1d892b36eb61d74365fb6939df45c2ecd372598843ecb80b8b87": {
+      "diskName": "util4.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "252a43d957aa1d892b36eb61d74365fb6939df45c2ecd372598843ecb80b8b87",
+      "lastUpdated": "2026-07-14T16:25:20.904Z"
+    },
+    "8a18344c9cd551c2ca0184b30ca83166c012959f4136d5560e9ebdce72a4a3ee": {
+      "diskName": "util5.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "8a18344c9cd551c2ca0184b30ca83166c012959f4136d5560e9ebdce72a4a3ee",
+      "lastUpdated": "2026-07-14T16:25:22.091Z"
+    },
+    "3ebefd9ab1b0401b2b6ea45c73fd8cc2c9717c7de9f047386cd0a3178ea5ce43": {
+      "diskName": "util6.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "3ebefd9ab1b0401b2b6ea45c73fd8cc2c9717c7de9f047386cd0a3178ea5ce43",
+      "lastUpdated": "2026-07-14T16:25:23.011Z"
+    },
+    "67d27de0fc86e947f54ae7e9774059cb92cec8c21661fa36b42e145fe133a919": {
+      "diskName": "mpg_utils_1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "67d27de0fc86e947f54ae7e9774059cb92cec8c21661fa36b42e145fe133a919",
+      "lastUpdated": "2026-07-14T16:25:24.787Z"
+    },
+    "b7a0b9a01c085a7f037e00a80fc2ddaa5316285a15fef044216dd62cb5a1faaa": {
+      "diskName": "mpg_utils_2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b7a0b9a01c085a7f037e00a80fc2ddaa5316285a15fef044216dd62cb5a1faaa",
+      "lastUpdated": "2026-07-14T16:25:34.143Z"
+    },
+    "90ed8b748513f74d7f8222d5e00acfd4887b85bfe4f79fd2ecd5fbf72782fb92": {
+      "diskName": "nibbler.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "90ed8b748513f74d7f8222d5e00acfd4887b85bfe4f79fd2ecd5fbf72782fb92",
+      "lastUpdated": "2026-07-14T16:25:36.216Z"
+    },
+    "95afb3737eb4bcfd66b714c8dce4b484803b7bd6bbccef3b254f0f8c0a49d372": {
+      "diskName": "nibbles_away.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "95afb3737eb4bcfd66b714c8dce4b484803b7bd6bbccef3b254f0f8c0a49d372",
+      "lastUpdated": "2026-07-14T16:25:44.046Z"
+    },
+    "b943f8791282bf5c5b690d0d58bba109da12c659582dfba83f51aef3288facbc": {
+      "diskName": "profiler.po",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "b943f8791282bf5c5b690d0d58bba109da12c659582dfba83f51aef3288facbc",
+      "lastUpdated": "2026-07-14T16:25:54.664Z"
+    },
+    "120f23fb39cab38563b18c39c183da6a19a3a02d1cfe6628e8f5c2494c397c2a": {
+      "diskName": "profix_1.po",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "120f23fb39cab38563b18c39c183da6a19a3a02d1cfe6628e8f5c2494c397c2a",
+      "lastUpdated": "2026-07-14T16:26:06.142Z"
+    },
+    "22f27aaf365fd316bfda60efd2b6eab0e0886b81cdaa5083ad4b2dfd2a92e5b2": {
+      "diskName": "profix_2.po",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "22f27aaf365fd316bfda60efd2b6eab0e0886b81cdaa5083ad4b2dfd2a92e5b2",
+      "lastUpdated": "2026-07-14T16:26:13.920Z"
+    },
+    "40a26138657517f8918556acb8a45513bc60fc97517f24ce03547b8f315efd2b": {
+      "diskName": "Blank.nib",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bI\\s*\\/\\s*O\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "40a26138657517f8918556acb8a45513bc60fc97517f24ce03547b8f315efd2b",
+      "lastUpdated": "2026-07-14T16:26:21.012Z"
+    },
+    "c1f24099429b0b0bb41a5b385bdfc89194b8887cbcfaf435f78e82f1b58462a2": {
+      "diskName": "super_iob_vol1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "c1f24099429b0b0bb41a5b385bdfc89194b8887cbcfaf435f78e82f1b58462a2",
+      "lastUpdated": "2026-07-14T16:26:28.840Z"
+    },
+    "0095ed2c01b7f263f10896bb311d9f2c642df07dde5d7d4b0ccd0ac920321a24": {
+      "diskName": "super_iob_vol2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "0095ed2c01b7f263f10896bb311d9f2c642df07dde5d7d4b0ccd0ac920321a24",
+      "lastUpdated": "2026-07-14T16:26:39.853Z"
+    },
+    "88b0074e397acbaccf39b91d6401428420dd819771e552b868cdd5000b2ab6c6": {
+      "diskName": "trax.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "88b0074e397acbaccf39b91d6401428420dd819771e552b868cdd5000b2ab6c6",
+      "lastUpdated": "2026-07-14T16:26:50.318Z"
+    },
+    "cea1ee79a58e6898f13bcbc0eba474ca5cd76ea24e984334de4c1314f18aba36": {
+      "diskName": "utility_city.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "cea1ee79a58e6898f13bcbc0eba474ca5cd76ea24e984334de4c1314f18aba36",
+      "lastUpdated": "2026-07-14T16:27:00.835Z"
+    },
+    "7ef5e784c13b93ceee10e314465a83dcabd37a827a47bc840156feb77a087ddd": {
+      "diskName": "xps_diagnostics_iie.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "7ef5e784c13b93ceee10e314465a83dcabd37a827a47bc840156feb77a087ddd",
+      "lastUpdated": "2026-07-14T16:27:10.116Z"
+    },
+    "2d7b1a807739ba2450709a4fb5cd4e7ede87168e26bd002cd4844954d27eee5a": {
+      "diskName": "816_paint.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "2d7b1a807739ba2450709a4fb5cd4e7ede87168e26bd002cd4844954d27eee5a",
+      "lastUpdated": "2026-07-14T16:27:11.079Z"
+    },
+    "bc5cd56f535f81c664e4fde9d1757b3ac430f111afa9392c820b9949baa4b6b5": {
+      "diskName": "alpha_plot.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "bc5cd56f535f81c664e4fde9d1757b3ac430f111afa9392c820b9949baa4b6b5",
+      "lastUpdated": "2026-07-14T16:27:13.021Z"
+    },
+    "a640cefad05b3224518e3c58cdcb08aed29a1706ff0e93f11f2f93bb20e60017": {
+      "diskName": "apple_mechanic_typefaces.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "a640cefad05b3224518e3c58cdcb08aed29a1706ff0e93f11f2f93bb20e60017",
+      "lastUpdated": "2026-07-14T16:27:23.603Z"
+    },
+    "3b7c0025f5f9e23e97c2f470800d8976ea9331391ca95914909644d590f1644f": {
+      "diskName": "apple_mechanic.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3b7c0025f5f9e23e97c2f470800d8976ea9331391ca95914909644d590f1644f",
+      "lastUpdated": "2026-07-14T16:27:34.626Z"
+    },
+    "86b808bfa4c2a27475e8afbf93fec79fa6483babffd208c41b84205274e2d839": {
+      "diskName": "beagle_graphics.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "86b808bfa4c2a27475e8afbf93fec79fa6483babffd208c41b84205274e2d839",
+      "lastUpdated": "2026-07-14T16:27:45.248Z"
+    },
+    "cb77d430f981c83d03309a5eee8666eb5c4e5acd5e52e87b0ce40ee3d37af6bd": {
+      "diskName": "blazing_paddles.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "cb77d430f981c83d03309a5eee8666eb5c4e5acd5e52e87b0ce40ee3d37af6bd",
+      "lastUpdated": "2026-07-14T16:27:55.842Z"
+    },
+    "b0050b196455f4c58b489b3824239e85ec22c20d219f5afa6d6250833b8911c0": {
+      "diskName": "dazzle_draw.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "b0050b196455f4c58b489b3824239e85ec22c20d219f5afa6d6250833b8911c0",
+      "lastUpdated": "2026-07-14T16:28:02.236Z"
+    },
+    "d1ac2c0e355d0208e5f1e00cf60d897a509ab3a4e1504edee9f03bf27b703a15": {
+      "diskName": "fantavasion_1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d1ac2c0e355d0208e5f1e00cf60d897a509ab3a4e1504edee9f03bf27b703a15",
+      "lastUpdated": "2026-07-14T16:28:03.114Z"
+    },
+    "e0642d033ab69618faf599871cb6ab52c1fbff6459012178b7c5294a7d354dc6": {
+      "diskName": "fantavision_2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e0642d033ab69618faf599871cb6ab52c1fbff6459012178b7c5294a7d354dc6",
+      "lastUpdated": "2026-07-14T16:28:03.987Z"
+    },
+    "47a39a283f928bda22f7fd81b321548a5af74825d6999a9c255a271a85a23ef5": {
+      "diskName": "flex_type.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "47a39a283f928bda22f7fd81b321548a5af74825d6999a9c255a271a85a23ef5",
+      "lastUpdated": "2026-07-14T16:28:05.791Z"
+    },
+    "57aa82f642e423f7c8fbfccbccadb084d2b4e2350949675e53c451ad2851195b": {
+      "diskName": "font_mechanic_s1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "57aa82f642e423f7c8fbfccbccadb084d2b4e2350949675e53c451ad2851195b",
+      "lastUpdated": "2026-07-14T16:28:16.585Z"
+    },
+    "0554222df3c887ab3dcfc0c6928516b1e4a84474034bc1057149029eb104b18f": {
+      "diskName": "font_mechanic_s2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "0554222df3c887ab3dcfc0c6928516b1e4a84474034bc1057149029eb104b18f",
+      "lastUpdated": "2026-07-14T16:28:27.622Z"
+    },
+    "f08e8097b0760bebf17621385a862dbc4a283459e72778ed5094bfc73b54c177": {
+      "diskName": "fontrix_v1.1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "f08e8097b0760bebf17621385a862dbc4a283459e72778ed5094bfc73b54c177",
+      "lastUpdated": "2026-07-14T16:28:35.204Z"
+    },
+    "47237960de85516bc57a57f922bfa4d8c800b9835732558370806ed6b1fd7b83": {
+      "diskName": "graphics_grab.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "47237960de85516bc57a57f922bfa4d8c800b9835732558370806ed6b1fd7b83",
+      "lastUpdated": "2026-07-14T16:28:45.765Z"
+    },
+    "0ea1639f085cc346753dd0ffe81d2a7a6d737327b98d54538420ee226922396b": {
+      "diskName": "graphics_magician.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "0ea1639f085cc346753dd0ffe81d2a7a6d737327b98d54538420ee226922396b",
+      "lastUpdated": "2026-07-14T16:28:56.224Z"
+    },
+    "2e8d3e65be1fd4580977f5287d5b1e94428b065413553543cc4b353364007bff": {
+      "diskName": "graphmag.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "2e8d3e65be1fd4580977f5287d5b1e94428b065413553543cc4b353364007bff",
+      "lastUpdated": "2026-07-14T16:29:07.338Z"
+    },
+    "44e9fd893c129e2e59a1e0451506b05b9067caeaf41a39f9aa5dc2b6d531442e": {
+      "diskName": "hi_res_scroller.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "44e9fd893c129e2e59a1e0451506b05b9067caeaf41a39f9aa5dc2b6d531442e",
+      "lastUpdated": "2026-07-14T16:29:18.224Z"
+    },
+    "03f1243da5d952d5818771f475265359d6fb7a0d0b73a51df84f28eb7e683f66": {
+      "diskName": "koala_micro_illustrator.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "03f1243da5d952d5818771f475265359d6fb7a0d0b73a51df84f28eb7e683f66",
+      "lastUpdated": "2026-07-14T16:29:28.825Z"
+    },
+    "25a6bf2687897053ccf9dcd234aeeb46c4458d24cb0dd40020970f4623165b17": {
+      "diskName": "MicroHabitatsConstructionSet.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "25a6bf2687897053ccf9dcd234aeeb46c4458d24cb0dd40020970f4623165b17",
+      "lastUpdated": "2026-07-14T16:29:38.681Z"
+    },
+    "8fb229bd9beabb657df891107a5bf797045c88375b8c46fa4db84ba173c736de": {
+      "diskName": "MrPixelsCartoonKit.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "8fb229bd9beabb657df891107a5bf797045c88375b8c46fa4db84ba173c736de",
+      "lastUpdated": "2026-07-14T16:29:39.753Z"
+    },
+    "e904ca44882e0d39cf58909fc73e6f843b1684fed2e1a8e18b51f48603c73749": {
+      "diskName": "newsroom_clip_art1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "e904ca44882e0d39cf58909fc73e6f843b1684fed2e1a8e18b51f48603c73749",
+      "lastUpdated": "2026-07-14T16:29:40.814Z"
+    },
+    "96461fb76172ea027ef086ee5d6eae237ecbc45955779e412a9cf8d5ef1ddd92": {
+      "diskName": "newsroom_clip_art2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "96461fb76172ea027ef086ee5d6eae237ecbc45955779e412a9cf8d5ef1ddd92",
+      "lastUpdated": "2026-07-14T16:29:41.749Z"
+    },
+    "df9412e2ceee90b27a3f9a3bc8ea856cfc888db71adc569f606053b0de2b023d": {
+      "diskName": "newsroom.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "df9412e2ceee90b27a3f9a3bc8ea856cfc888db71adc569f606053b0de2b023d",
+      "lastUpdated": "2026-07-14T16:29:44.074Z"
+    },
+    "512dfcde84ca78a1ad58b26f57b888bb8feef0bbad75deee1df0de78d2886137": {
+      "diskName": "print_magic_1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "512dfcde84ca78a1ad58b26f57b888bb8feef0bbad75deee1df0de78d2886137",
+      "lastUpdated": "2026-07-14T16:29:54.652Z"
+    },
+    "28f41e9ae02ea8f0dcc00d6479fdbd3131ef77de38b26791b69384270c9db97d": {
+      "diskName": "print_magic_2.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "28f41e9ae02ea8f0dcc00d6479fdbd3131ef77de38b26791b69384270c9db97d",
+      "lastUpdated": "2026-07-14T16:30:05.319Z"
+    },
+    "fd0b3339ec90ca10442eff315c19def3cd319d31e86f525ab41b1e7203a0ed97": {
+      "diskName": "print_magic_3.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "fd0b3339ec90ca10442eff315c19def3cd319d31e86f525ab41b1e7203a0ed97",
+      "lastUpdated": "2026-07-14T16:30:13.018Z"
+    },
+    "d0cb46999c4fe6175ee2be904b9e6f29848c1061042adc6cf5c0894ce5b111f1": {
+      "diskName": "print_magic_4.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d0cb46999c4fe6175ee2be904b9e6f29848c1061042adc6cf5c0894ce5b111f1",
+      "lastUpdated": "2026-07-14T16:30:23.747Z"
+    },
+    "6bad02b291942f7e5a9df984f1444ba3e1bf59763413d32558d21e95df388411": {
+      "diskName": "print_magic_5.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "6bad02b291942f7e5a9df984f1444ba3e1bf59763413d32558d21e95df388411",
+      "lastUpdated": "2026-07-14T16:30:33.399Z"
+    },
+    "037d1b51bb785929f6e95c29a0c58a09c2fc1fad64514888ae4f5fc8323e7509": {
+      "diskName": "street_scenes.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "037d1b51bb785929f6e95c29a0c58a09c2fc1fad64514888ae4f5fc8323e7509",
+      "lastUpdated": "2026-07-14T16:30:34.301Z"
+    },
+    "f51fc307791ac37ae1e788d81c7531ec8120a293f71c8dd14b0fb86bb21a5eac": {
+      "diskName": "take1_lib1.do",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "f51fc307791ac37ae1e788d81c7531ec8120a293f71c8dd14b0fb86bb21a5eac",
+      "lastUpdated": "2026-07-14T16:31:26.722Z"
+    },
+    "bddb4eaef04254555a0e5d735203e4cc19307baa35b9c4042c08a61c5baf62a1": {
+      "diskName": "take1_lib2.do",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "bddb4eaef04254555a0e5d735203e4cc19307baa35b9c4042c08a61c5baf62a1",
+      "lastUpdated": "2026-07-14T16:31:34.308Z"
+    },
+    "7228e5f24da22ea8e227c3c2126db335ecf0bb820cdc500a60de3e95f8d2df82": {
+      "diskName": "take1_1.do",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "7228e5f24da22ea8e227c3c2126db335ecf0bb820cdc500a60de3e95f8d2df82",
+      "lastUpdated": "2026-07-14T16:31:08.734Z"
+    },
+    "47f8143adf6b490f00c5c651b98c103b3495a90105accf52d9630174bda1d4f6": {
+      "diskName": "take1_2.do",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "47f8143adf6b490f00c5c651b98c103b3495a90105accf52d9630174bda1d4f6",
+      "lastUpdated": "2026-07-14T16:31:16.383Z"
+    },
+    "819fefe030c6823900d7f786d5a73d27713c35d7ea6aeae7f9829f28cb3fd151": {
+      "diskName": "view_gif.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "819fefe030c6823900d7f786d5a73d27713c35d7ea6aeae7f9829f28cb3fd151",
+      "lastUpdated": "2026-07-14T16:31:41.744Z"
+    },
+    "3341daca6edec945a56d769378f8becf997da01392b153f4e13be3a113849069": {
+      "diskName": "AirplaneConstructionSet1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "3341daca6edec945a56d769378f8becf997da01392b153f4e13be3a113849069",
+      "lastUpdated": "2026-07-14T16:31:42.673Z"
+    },
+    "d6909d6eb025672f7e773922477aa8d7542fb200674b69704dbe9298d5c2d849": {
+      "diskName": "AirplaneConstructionSet2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d6909d6eb025672f7e773922477aa8d7542fb200674b69704dbe9298d5c2d849",
+      "lastUpdated": "2026-07-14T16:31:43.516Z"
+    },
+    "ad66418c670afe9fddb74e4f153eeceb86f88b427a7cb783af2bd39923e8ca2f": {
+      "diskName": "AutoAtlas1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ad66418c670afe9fddb74e4f153eeceb86f88b427a7cb783af2bd39923e8ca2f",
+      "lastUpdated": "2026-07-14T16:31:45.336Z"
+    },
+    "84dc3076f1de5780e73fe9445ed12ddbca99f571ae712883d40046ee6e191755": {
+      "diskName": "AutoAtlas2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "84dc3076f1de5780e73fe9445ed12ddbca99f571ae712883d40046ee6e191755",
+      "lastUpdated": "2026-07-14T16:31:56.309Z"
+    },
+    "6dcfc5ebe97c7af9bc2424da2eb63ef5e6877dd30b0a10938a52cba8ea6e7758": {
+      "diskName": "davex_boot.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "6dcfc5ebe97c7af9bc2424da2eb63ef5e6877dd30b0a10938a52cba8ea6e7758",
+      "lastUpdated": "2026-07-14T16:32:05.950Z"
+    },
+    "2f84d5ad49f0296c8bf3f4b9ee6c78181840c89f0b66719cdf9cf830cc14a297": {
+      "diskName": "davex_help.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "2f84d5ad49f0296c8bf3f4b9ee6c78181840c89f0b66719cdf9cf830cc14a297",
+      "lastUpdated": "2026-07-14T16:32:06.905Z"
+    },
+    "af23b33b7d1baef109435efd0ca422ead7b23a66a68c53587c5a5661701b27ee": {
+      "diskName": "double_take.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "af23b33b7d1baef109435efd0ca422ead7b23a66a68c53587c5a5661701b27ee",
+      "lastUpdated": "2026-07-14T16:32:08.663Z"
+    },
+    "2b57171b0a78e0861c809c36e8ce8cd9b389cfb36a0dec115f95ad4fce72cbb4": {
+      "diskName": "DreamHouse1.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "2b57171b0a78e0861c809c36e8ce8cd9b389cfb36a0dec115f95ad4fce72cbb4",
+      "lastUpdated": "2026-07-14T16:32:19.203Z"
+    },
+    "42c175f3d51a6b07e7c6a28794286dcdcee85a999e9485b67d3c5e4eaab168c3": {
+      "diskName": "DreamHouse2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "42c175f3d51a6b07e7c6a28794286dcdcee85a999e9485b67d3c5e4eaab168c3",
+      "lastUpdated": "2026-07-14T16:32:30.365Z"
+    },
+    "89a2663abacff2c102add9815a548f3e5534903f73bcd9b110ba49f09a10468d": {
+      "diskName": "emulator_speed_test.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "89a2663abacff2c102add9815a548f3e5534903f73bcd9b110ba49f09a10468d",
+      "lastUpdated": "2026-07-14T16:32:41.626Z"
+    },
+    "0df51ec1a8a401a231109f9b548f088684082d5f19bc8d20a1d51449ce5c87aa": {
+      "diskName": "FamilyRoots1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "0df51ec1a8a401a231109f9b548f088684082d5f19bc8d20a1d51449ce5c87aa",
+      "lastUpdated": "2026-07-14T16:32:54.003Z"
+    },
+    "ac303c65d65ce02f2e23b20c837e7948552e9d90f5afa716021b3e2b03d9185a": {
+      "diskName": "FamilyRoots2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "ac303c65d65ce02f2e23b20c837e7948552e9d90f5afa716021b3e2b03d9185a",
+      "lastUpdated": "2026-07-14T16:33:04.557Z"
+    },
+    "2945ff30396f24e10e05a403aa8414fb30668d14c9bfacbc37ac818feed0f81a": {
+      "diskName": "GardenersAssistant1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "2945ff30396f24e10e05a403aa8414fb30668d14c9bfacbc37ac818feed0f81a",
+      "lastUpdated": "2026-07-14T16:33:14.944Z"
+    },
+    "d596d18f0c93a97f9e8ef8040b61c8e0f2eabf11d23835f34e8f0d3927de88cf": {
+      "diskName": "GardenersAssistant2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d596d18f0c93a97f9e8ef8040b61c8e0f2eabf11d23835f34e8f0d3927de88cf",
+      "lastUpdated": "2026-07-14T16:33:25.488Z"
+    },
+    "01c95dcf6101cfb2db82b112fffc756384864487445d6bc1f799d6d6dfb0c19e": {
+      "diskName": "Karateka_II.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "01c95dcf6101cfb2db82b112fffc756384864487445d6bc1f799d6d6dfb0c19e",
+      "lastUpdated": "2026-07-14T16:33:36.927Z"
+    },
+    "9d2b098a41a3e690e1988a5f3817cefa5693a7bda2c65850f8c51f5f4e4e7f5f": {
+      "diskName": "magic.window.ii.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): Monitor crash signature detected",
+      "status": "fail",
+      "rawSha256": "9d2b098a41a3e690e1988a5f3817cefa5693a7bda2c65850f8c51f5f4e4e7f5f",
+      "lastUpdated": "2026-07-14T16:33:45.099Z"
+    },
+    "dd6f8b11c1e34594eae35fbbb95b2b0ead5ac96164ebf07871a6acfe6d809ee5": {
+      "diskName": "MasterDiagnosticsIIe.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "dd6f8b11c1e34594eae35fbbb95b2b0ead5ac96164ebf07871a6acfe6d809ee5",
+      "lastUpdated": "2026-07-14T16:33:52.750Z"
+    },
+    "4a9c3b5e693854fd5b1d83f7cc863d1c224e3998b4feba6962637ce150567315": {
+      "diskName": "RoadSearch-Plus.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "4a9c3b5e693854fd5b1d83f7cc863d1c224e3998b4feba6962637ce150567315",
+      "lastUpdated": "2026-07-14T16:34:04.414Z"
+    },
+    "213ae94ea501ec0e6017450a11d9ea4bc2b7eac98547fe051b7dad53b47ebc91": {
+      "diskName": "triple_dump1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "213ae94ea501ec0e6017450a11d9ea4bc2b7eac98547fe051b7dad53b47ebc91",
+      "lastUpdated": "2026-07-14T16:34:15.865Z"
+    },
+    "dc0487c1f842960e357bbf59fe64a9a296e745789d32c1d7445b3736a8a93229": {
+      "diskName": "triple_dump2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "dc0487c1f842960e357bbf59fe64a9a296e745789d32c1d7445b3736a8a93229",
+      "lastUpdated": "2026-07-14T16:34:27.276Z"
+    },
+    "4e6b479263944d5c49cf0ef3030754568413ea4ccfe443e47adcb3d65219cf4b": {
+      "diskName": "apple_pascal_0.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "4e6b479263944d5c49cf0ef3030754568413ea4ccfe443e47adcb3d65219cf4b",
+      "lastUpdated": "2026-07-14T16:34:37.206Z"
+    },
+    "d6e7509a8ae0c0157f84634c40dd04c22f424b3540d344e5db10bc98fec74229": {
+      "diskName": "apple_pascal_1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "d6e7509a8ae0c0157f84634c40dd04c22f424b3540d344e5db10bc98fec74229",
+      "lastUpdated": "2026-07-14T16:34:38.182Z"
+    },
+    "88b67683f3ac645a91e0139d987a8b8fd8725b6b4045d38eb272e4cb91341adf": {
+      "diskName": "apple_pascal_2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "88b67683f3ac645a91e0139d987a8b8fd8725b6b4045d38eb272e4cb91341adf",
+      "lastUpdated": "2026-07-14T16:34:39.168Z"
+    },
+    "86141693ae9a869ae032fef2bd4ff5916a54b72c5337b618758b4eefb20f3058": {
+      "diskName": "apple_pascal_3.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "86141693ae9a869ae032fef2bd4ff5916a54b72c5337b618758b4eefb20f3058",
+      "lastUpdated": "2026-07-14T16:34:40.115Z"
+    },
+    "a5cd9876c79f74271bc013bf9fd792b7c55feb9ca61a5079e17a8c94e528e958": {
+      "diskName": "beagle_bag.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bFILE\\s+NOT\\s+FOUND\\b",
+      "status": "fail",
+      "rawSha256": "a5cd9876c79f74271bc013bf9fd792b7c55feb9ca61a5079e17a8c94e528e958",
+      "lastUpdated": "2026-07-14T16:34:42.332Z"
+    },
+    "d88eb8cca838d17cf9a52a3e3d110c175caa297d0683f13c1f7ba8869dc1defe": {
+      "diskName": "beagle_basic.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d88eb8cca838d17cf9a52a3e3d110c175caa297d0683f13c1f7ba8869dc1defe",
+      "lastUpdated": "2026-07-14T16:34:50.022Z"
+    },
+    "02cc6606184b0055a45636abef7d2a92abab67910f6e6f2480fba458e2dd077c": {
+      "diskName": "dcode.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "02cc6606184b0055a45636abef7d2a92abab67910f6e6f2480fba458e2dd077c",
+      "lastUpdated": "2026-07-14T16:35:00.843Z"
+    },
+    "c099fdd3e114cae5d9a39b6f07a3f536ca425c57144febfe7dc5c7831242e0da": {
+      "diskName": "extra_k.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "c099fdd3e114cae5d9a39b6f07a3f536ca425c57144febfe7dc5c7831242e0da",
+      "lastUpdated": "2026-07-14T16:35:09.206Z"
+    },
+    "5d937a902aa132001c9d1b2664fce6e9ec3c324861236b18d2dc85b6a211a5f2": {
+      "diskName": "gple.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "5d937a902aa132001c9d1b2664fce6e9ec3c324861236b18d2dc85b6a211a5f2",
+      "lastUpdated": "2026-07-14T16:35:17.632Z"
+    },
+    "777ccb8205438bfe711f7fba78149a47a527e905158d4b065d69d0847f28d040": {
+      "diskName": "graforth.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "777ccb8205438bfe711f7fba78149a47a527e905158d4b065d69d0847f28d040",
+      "lastUpdated": "2026-07-14T16:35:28.892Z"
+    },
+    "8254933a1b6a2d9328314f9db8f7619b78377a5bbe62d5a12c9c83c50dc0e67b": {
+      "diskName": "hayden_applesoft_compiler+_v4.0.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "8254933a1b6a2d9328314f9db8f7619b78377a5bbe62d5a12c9c83c50dc0e67b",
+      "lastUpdated": "2026-07-14T16:35:40.328Z"
+    },
+    "28a7869a5086043a03c136cac3af7ecd5a360b0220bf517a2e1750267a463222": {
+      "diskName": "hyper_c_fp.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "28a7869a5086043a03c136cac3af7ecd5a360b0220bf517a2e1750267a463222",
+      "lastUpdated": "2026-07-14T16:35:50.583Z"
+    },
+    "ee05342f31457278b1c98b8354b3bec69416df1e485f4262ba3b183c14ab1675": {
+      "diskName": "hyper_c_system.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "ee05342f31457278b1c98b8354b3bec69416df1e485f4262ba3b183c14ab1675",
+      "lastUpdated": "2026-07-14T16:35:51.500Z"
+    },
+    "e1e5e0e580015dd45db48f9284a94026ef100b2c01c95392941f23e08d2065b3": {
+      "diskName": "macrosoft.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e1e5e0e580015dd45db48f9284a94026ef100b2c01c95392941f23e08d2065b3",
+      "lastUpdated": "2026-07-14T16:35:53.397Z"
+    },
+    "42148820974a9cce453c218b4595b6c6923f4fdb27ae7d4977480afce8a045fc": {
+      "diskName": "Maf.bin.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "42148820974a9cce453c218b4595b6c6923f4fdb27ae7d4977480afce8a045fc",
+      "lastUpdated": "2026-07-14T16:36:03.596Z"
+    },
+    "44442505f4d059b60e4eae451b49fb4ca82312a574cda7eb6784b98e862cd4b2": {
+      "diskName": "Maf.data.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "44442505f4d059b60e4eae451b49fb4ca82312a574cda7eb6784b98e862cd4b2",
+      "lastUpdated": "2026-07-14T16:36:04.545Z"
+    },
+    "af6447d77b38a88ef5e748c19edb7c44a2cc23f65d3235619c60fd133bbf7264": {
+      "diskName": "Maf.src1.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "af6447d77b38a88ef5e748c19edb7c44a2cc23f65d3235619c60fd133bbf7264",
+      "lastUpdated": "2026-07-14T16:36:05.352Z"
+    },
+    "56436ed2ce95c0b2b97a8fc873ec172e0aacfb77ef7695c5e045e570e247d6b8": {
+      "diskName": "Maf.src2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "56436ed2ce95c0b2b97a8fc873ec172e0aacfb77ef7695c5e045e570e247d6b8",
+      "lastUpdated": "2026-07-14T16:36:06.192Z"
+    },
+    "32e4650bed08230f3bf17959fd647d626e776d4f7c30ebc539498399e684f5fd": {
+      "diskName": "merlin_assembler_1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "32e4650bed08230f3bf17959fd647d626e776d4f7c30ebc539498399e684f5fd",
+      "lastUpdated": "2026-07-14T16:36:07.918Z"
+    },
+    "7231b4449437d45346a2e7d1f2b4cef8d177f8f9613b4395f2eb645dd9034e86": {
+      "diskName": "merlin_assembler_2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "7231b4449437d45346a2e7d1f2b4cef8d177f8f9613b4395f2eb645dd9034e86",
+      "lastUpdated": "2026-07-14T16:36:17.642Z"
+    },
+    "4af615d3c0d43decfe57b7faa53ca9e504618a31790727b43d6a44ed53fc62e8": {
+      "diskName": "merlin_assembler_3.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "4af615d3c0d43decfe57b7faa53ca9e504618a31790727b43d6a44ed53fc62e8",
+      "lastUpdated": "2026-07-14T16:36:18.687Z"
+    },
+    "e7d95669772b74c8928a330503360fa1b2f32ae4a560630229b89ca8db288477": {
+      "diskName": "merlin_pro_2.47.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e7d95669772b74c8928a330503360fa1b2f32ae4a560630229b89ca8db288477",
+      "lastUpdated": "2026-07-14T16:36:20.735Z"
+    },
+    "45addca602fd4f588e44dfedb777d6fd8c9b3c8c1cd75297ce64ece460d55fef": {
+      "diskName": "silicon_salad.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "45addca602fd4f588e44dfedb777d6fd8c9b3c8c1cd75297ce64ece460d55fef",
+      "lastUpdated": "2026-07-14T16:36:32.152Z"
+    },
+    "d5721032c8a48ae1b8228308705b82519255539c623bb109759c91848c9320f4": {
+      "diskName": "take1_programmers_toolbox.dsk",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "d5721032c8a48ae1b8228308705b82519255539c623bb109759c91848c9320f4",
+      "lastUpdated": "2026-07-14T16:36:42.630Z"
+    },
+    "9ae50de9a3301223938cbbf010a17f714c7bd7509d80ca741d3b0dd5c17e7cc2": {
+      "diskName": "tip_disk1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9ae50de9a3301223938cbbf010a17f714c7bd7509d80ca741d3b0dd5c17e7cc2",
+      "lastUpdated": "2026-07-14T16:36:50.597Z"
+    },
+    "aefbb03d66d57f958b7368d595ac760d6bef517f025f1273be6c09c986c4a617": {
+      "diskName": "toolkit.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "aefbb03d66d57f958b7368d595ac760d6bef517f025f1273be6c09c986c4a617",
+      "lastUpdated": "2026-07-14T16:37:01.956Z"
+    },
+    "9abf356266417e230b2636d35bfbe8a6a7457aa35380063b3ac2d90bf01918ce": {
+      "diskName": "apple_organ.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "9abf356266417e230b2636d35bfbe8a6a7457aa35380063b3ac2d90bf01918ce",
+      "lastUpdated": "2026-07-14T16:37:13.171Z"
+    },
+    "f176525b4f3bd75b69908d85d5e6d809b810404d7c895ad3e9fad80fd3600575": {
+      "diskName": "audex.po",
+      "code": "fatal_screen_text",
+      "message": "Failure signature detected (machine-text): \\bSYNTAX\\s+ERROR\\b",
+      "status": "fail",
+      "rawSha256": "f176525b4f3bd75b69908d85d5e6d809b810404d7c895ad3e9fad80fd3600575",
+      "lastUpdated": "2026-07-14T16:37:24.371Z"
+    },
+    "5fbb25f957ed05c48baf635882501001448ccc685dfe605d3e57994bafd35746": {
+      "diskName": "digi_demo.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "5fbb25f957ed05c48baf635882501001448ccc685dfe605d3e57994bafd35746",
+      "lastUpdated": "2026-07-14T16:37:34.228Z"
+    },
+    "d689276b4434b5a3074ef0d34de10392cb3290ad2d156185515ce13685319d94": {
+      "diskName": "ElectricDuet1.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d689276b4434b5a3074ef0d34de10392cb3290ad2d156185515ce13685319d94",
+      "lastUpdated": "2026-07-14T16:37:56.281Z"
+    },
+    "3da2e3da79cac7346f29b2c8b0b67fa866d72b83c197ee4b90883c95974249a0": {
+      "diskName": "ElectricDuet2.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "3da2e3da79cac7346f29b2c8b0b67fa866d72b83c197ee4b90883c95974249a0",
+      "lastUpdated": "2026-07-14T16:38:06.804Z"
+    },
+    "e2cf9c14b5c006e87ed20c2ce5a9b0369ff8369ed3728e3a116ac550a37ebb72": {
+      "diskName": "four_voice_music.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "e2cf9c14b5c006e87ed20c2ce5a9b0369ff8369ed3728e3a116ac550a37ebb72",
+      "lastUpdated": "2026-07-14T16:38:17.135Z"
+    },
+    "c3e294331d16f5e3bdba371319d13ff66d2a937a53d88515ceb32ec097811eb6": {
+      "diskName": "mega-music-2.dsk",
+      "code": "disk_not_exportable",
+      "message": "Disk was skipped because VTOC check marked it non-exportable (other).",
+      "status": "skipped",
+      "rawSha256": "c3e294331d16f5e3bdba371319d13ff66d2a937a53d88515ceb32ec097811eb6",
+      "lastUpdated": "2026-07-14T16:38:26.512Z"
+    },
+    "98acf5053bb051a02c7b85ba1354776e934625d1ea07b28c198d146d87d02b0a": {
+      "diskName": "musicomp.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "98acf5053bb051a02c7b85ba1354776e934625d1ea07b28c198d146d87d02b0a",
+      "lastUpdated": "2026-07-14T16:38:39.501Z"
+    },
+    "d6c5f0f3d43b990f5943f1b4af266b0a28d78976674dec4a345cbc03a40764e5": {
+      "diskName": "software_automated_mouth.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "d6c5f0f3d43b990f5943f1b4af266b0a28d78976674dec4a345cbc03a40764e5",
+      "lastUpdated": "2026-07-14T16:38:49.954Z"
+    },
+    "bb6be3032e48de30b556ab7e77a9f168f47381cad654ad31059dcb11dd8ec2cc": {
+      "diskName": "talk_for_you.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "bb6be3032e48de30b556ab7e77a9f168f47381cad654ad31059dcb11dd8ec2cc",
+      "lastUpdated": "2026-07-14T16:39:00.417Z"
+    },
+    "979b7ff42f505cb715fc7c2432b92baa2d55275fdb91ee5bfdb3b113e0bda87f": {
+      "diskName": "twovoice.dsk",
+      "code": "ok",
+      "message": "Launch/capture window completed.",
+      "status": "pass",
+      "rawSha256": "979b7ff42f505cb715fc7c2432b92baa2d55275fdb91ee5bfdb3b113e0bda87f",
+      "lastUpdated": "2026-07-14T16:39:10.846Z"
     }
   }
 }
