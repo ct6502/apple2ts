@@ -80,9 +80,9 @@ const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
   const encodedUrl = encodeURIComponent(url)
   return [
     { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url },
-    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
     { id: "corsfix-param", url: "https://proxy.corsfix.com/?url=" + encodedUrl },
     { id: "corsproxy-encoded", url: "https://corsproxy.io/?" + encodedUrl },
+    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
   ]
 }
 
