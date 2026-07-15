@@ -41,8 +41,8 @@ const PrinterDialog = (props: PrinterDialogProps) => {
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
   const printerDialogPosition = getPreferencePrinterDialogPosition()
-  const [dialogPositionX, setDialogPositionX] = useState(printerDialogPosition.x === -1 ? window.outerWidth / 2 - 275 : printerDialogPosition.x)
-  const [dialogPositionY, setDialogPositionY] = useState(printerDialogPosition.y === -1 ? window.outerHeight / 2 - 400 : printerDialogPosition.y)
+  const [dialogPositionX, setDialogPositionX] = useState(printerDialogPosition.x < 0 ? window.outerWidth / 2 - 275 : printerDialogPosition.x)
+  const [dialogPositionY, setDialogPositionY] = useState(printerDialogPosition.y < 0 ? window.outerHeight / 2 - 400 : printerDialogPosition.y)
   const [, setPageCount] = useState(0)
 
   // Update page count to trigger re-renders when pages change
@@ -125,7 +125,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
       <div className="floating-dialog flex-column"
         ref={dialogRef}
         style={{
-          left: `${dialogPositionX}px`, top: `${dialogPositionY}px`,
+          left: `${Math.max(1, dialogPositionX)}px`, top: `${Math.max(1, dialogPositionY)}px`,
         }}
         onClick={(e) => e.stopPropagation()}>
         <div className="flex-column">
