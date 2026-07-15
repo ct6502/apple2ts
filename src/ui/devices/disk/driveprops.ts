@@ -347,9 +347,9 @@ const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
   const encodedUrl = encodeURIComponent(url)
   return [
     { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url },
-    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
     { id: "corsfix-param", url: "https://proxy.corsfix.com/?url=" + encodedUrl },
     { id: "corsproxy-encoded", url: "https://corsproxy.io/?" + encodedUrl },
+    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
   ]
 }
 
@@ -559,15 +559,15 @@ export const handleSetDiskFromURL = async (url: string,
     }
   }
 
-  // If direct fetch failed, try CORS proxies
+  // If direct fetch failed, try CT6502 proxy (fastest based on benchmarks)
   if (!response || !response.ok) {
-    logFetchDebug("Direct fetch failed, trying CORS proxies")
-    response = await fetchWithCorsProxy(url)
+    logFetchDebug("Direct fetch failed, trying CT6502 proxy")
+    response = await fetchWithCT6502Proxy(url)
   }
 
   if (!response || !response.ok) {
-    logFetchDebug("CORS proxies failed, trying CT6502 proxy")
-    response = await fetchWithCT6502Proxy(url)
+    logFetchDebug("CT6502 proxy failed, trying CORS proxies")
+    response = await fetchWithCorsProxy(url)
 
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
