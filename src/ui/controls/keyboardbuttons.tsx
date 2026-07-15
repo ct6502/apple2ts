@@ -30,14 +30,14 @@ const KeyboardButtons = (props: DisplayProps) => {
   return <span>
     {!isTouchDevice && <>
       <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
-        title="Button 1"
+        title={`Button 1 (${navigator.platform.startsWith("Mac") ? "Option Left" : "Alt Left"})`}
         onTouchStart={() => tryButtonPressRelease(true, "left", true)}
         onTouchEnd={() => tryButtonPressRelease(true, "left", false)}
         onMouseDown={() => tryButtonPressRelease(false, "left", true)}
         onMouseUp={() => tryButtonPressRelease(false, "left", false)}>
       </button>
       <button className={`joystick-button ${handleGetRightButton() ? "joystick-active" : ""}`}
-        title="Button 2"
+        title={`Button 2 (${navigator.platform.startsWith("Mac") ? "Option Right" : "Alt Right"})`}
         onTouchStart={() => tryButtonPressRelease(true, "right", true)}
         onTouchEnd={() => tryButtonPressRelease(true, "right", false)}
         onMouseDown={() => tryButtonPressRelease(false, "right", true)}
