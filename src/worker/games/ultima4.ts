@@ -45,8 +45,8 @@ Be sure to thoroughly explore the cities and townes! Many of the quests within U
 NOTE: During thy conversations with people in Ultima IV, thou may feel the impulse to show thy generosity to less fortunate fellows. Thou may do so by saying: “Give”.
 `
 export const ultima4: GameLibraryItem = {
-  address: 0x0200,
-  data: [0x84, 0xC2, 0xCC],
+  address: 0x7114,
+  data: [0xD5, 0xCC, 0xD4],
   keymap: {},
   gamepad: null,
   joystick: null,
