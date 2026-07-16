@@ -1,6 +1,6 @@
 import { basicSetup } from "codemirror"
 import { EditorView, ViewUpdate, Decoration, DecorationSet } from "@codemirror/view"
-import { EditorState, Compartment, StateField, StateEffect } from "@codemirror/state"
+import { EditorState, Compartment, StateField, StateEffect, Prec } from "@codemirror/state"
 import { basic } from "./basic_codemirror_lang"
 import { useEffect, useRef, useCallback } from "react"
 import { oneDark } from "@codemirror/theme-one-dark"
@@ -114,7 +114,7 @@ const BasicEditor = (props: EditorProps) => {
               props.setValue(newValue)
             }
           }),
-          EditorView.domEventHandlers({
+          Prec.highest(EditorView.domEventHandlers({
             keydown: (event, view) => {
               // Swallow Ctrl+S or Cmd+S to avoid spurious save dialogs
               if ((event.metaKey || event.ctrlKey) && event.key === "s") {
@@ -161,7 +161,7 @@ const BasicEditor = (props: EditorProps) => {
                   
                   const indentMatch = lineText.match(/^\d+(\s*)/)
                   const indent = indentMatch ? indentMatch[1] : " "
-                  const newText = `${newLineNumber}${indent}`
+                  const newText = `\n${newLineNumber}${indent}`
                   view.dispatch({
                     changes: { from: state.selection.main.head, insert: newText },
                     selection: { anchor: state.selection.main.head + newText.length }
@@ -172,7 +172,7 @@ const BasicEditor = (props: EditorProps) => {
               }
               return false
             }
-          })
+          }))
         ],
       })
       viewRef.current = view
