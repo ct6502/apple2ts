@@ -207,6 +207,9 @@ const tokenizeApplesoftBasic = (source: string): Uint8Array => {
 // HELLO. Screen holes survive HOME (they are not display character positions) and the DOS
 // transition (they are reserved for peripheral-card scratch and untouched by DOS/ProDOS).
 const DOS_DISPATCH_VOLUME_ADDRESS = 0x0478
+// Adjacent screen-hole byte ($047A = 1146) used to pass how the selected DOS volume's
+// HELLO should be launched: 0 = RUN HELLO, 1 = BRUN HELLO.
+const DOS_DISPATCH_HELLO_MODE_ADDRESS = 0x047a
 
 // DOS 3.3 RWTS IOB slot byte ($B7E9 = 47081), holding the boot slot * 16. DOS.MASTER's boot
 // code sets this to the actual boot slot (it reads DEVNUM at the correct moment and matches
@@ -298,6 +301,7 @@ const generateMenuLaunchProgram = (
   helperSubdir: string,
   aliasShimInstallCommand?: string,
   runtimeVolumeByMenuIndex?: Array<number | undefined>,
+  runtimeHelloModeByMenuIndex?: Array<number | undefined>,
   menuNeedsAliasShim?: boolean[]
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
@@ -326,12 +330,12 @@ const generateMenuLaunchProgram = (
   const toDataString = (value: string | undefined) => (value || "").replace(/"/g, "'")
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count})`)
+  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count})`)
   lines.push(`22 I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
   lines.push("24 RESTORE")
-  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J):NEXT")
+  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J):NEXT")
   if (hasDosMasterRuntime) {
-    lines.push("30 IF K(I)=0 THEN TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + ",V(I):" + dosRuntimeRunStatements + ":END")
+    lines.push("30 IF K(I)=0 THEN TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + ",V(I):POKE " + DOS_DISPATCH_HELLO_MODE_ADDRESS + ",H(I):" + dosRuntimeRunStatements + ":END")
   } else {
     lines.push("30 IF K(I)=0 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER RUNTIME NOT INSTALLED\":NORMAL:GOTO 220")
   }
@@ -358,11 +362,13 @@ const generateMenuLaunchProgram = (
     let prefix = ""
     let runCmd = ""
     let shimFlag = 0
+    let helloMode = 0
 
     if (entryKind === "dos" || entryKind === "unknown") {
       if (hasDosMasterRuntime) {
         launchCode = 0
         volume = runtimeVolumes[idx]
+        helloMode = runtimeHelloModeByMenuIndex?.[idx] === 1 ? 1 : 0
       } else {
         launchCode = 5
       }
@@ -386,7 +392,7 @@ const generateMenuLaunchProgram = (
       }
     }
 
-    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag)
+    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode)
     dataLine += 10
   }
 
@@ -1330,11 +1336,13 @@ export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreeting
 /**
  * Builds the on-disk DOS 3.3 Applesoft ("A") file image for the DOS.MASTER volume-1
  * "dispatcher" HELLO:
- *   10 V=PEEK(1144):S=INT(PEEK(47081)/16)
+ *   10 V=PEEK(1144):S=INT(PEEK(47081)/16):H=PEEK(1146)
  *   20 IF V<2 THEN PRINT CHR$(4)"CATALOG,S"S",V1":END
- *   30 PRINT CHR$(4)"RUN HELLO,S"S",V"V
+ *   30 IF H=1 THEN PRINT CHR$(4)"BRUN HELLO,S"S",V"V:END
+ *   40 PRINT CHR$(4)"RUN HELLO,S"S",V"V
  * On boot DOS.MASTER always runs volume 1's HELLO; this one reads the volume number the
- * ProDOS menu POKEd into $0478/1144 and chains to that volume's own HELLO. If the byte is not
+ * ProDOS menu POKEd into $0478/1144 plus a launch mode byte in $047A/1146, then chains to
+ * that volume's own HELLO. If the volume byte is not
  * a real disk volume (< 2, e.g. it failed to survive the boot) it falls back to a harmless
  * CATALOG instead of looping on itself. The ",V<n>" also makes <n> the current DOS volume,
  * so the target HELLO's own subsequent RUN/BRUN stay on that volume. The slot ",S<n>" comes
@@ -1345,11 +1353,13 @@ export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreeting
  */
 const buildDosDispatcherApplesoftFile = (): Uint8Array => {
   const vol = DOS_DISPATCH_VOLUME_ADDRESS.toString()
+  const helloMode = DOS_DISPATCH_HELLO_MODE_ADDRESS.toString()
   const ibslot = DOS_IBSLOT_ADDRESS.toString()
   const source =
-    `10 V=PEEK(${vol}):S=INT(PEEK(${ibslot})/16)\r` +
+    `10 V=PEEK(${vol}):S=INT(PEEK(${ibslot})/16):H=PEEK(${helloMode})\r` +
     "20 IF V<2 THEN PRINT CHR$(4)\"CATALOG,S\"S\",V1\":END\r" +
-    "30 PRINT CHR$(4)\"RUN HELLO,S\"S\",V\"V\r"
+    "30 IF H=1 THEN PRINT CHR$(4)\"BRUN HELLO,S\"S\",V\"V:END\r" +
+    "40 PRINT CHR$(4)\"RUN HELLO,S\"S\",V\"V\r"
   const program = tokenizeApplesoftBasic(source)
   // DOS 3.3 "A" (Applesoft) files are stored as a 2-byte little-endian program length
   // followed by the tokenized program (which loads at $0801).
@@ -1979,6 +1989,7 @@ const preprocessInputFilesForMenu = (
   // DOS.MASTER volume number for the launch CATALOG,Sn,Vn command.
   const runtimeVolumes: BuildInputFile[] = []
   const runtimeVolumeByMenuIndex: Array<number | undefined> = []
+  const runtimeHelloModeByMenuIndex: Array<number | undefined> = []
   const usedNames = new Set<string>(reservedNames || [])
 
   for (let i = 0; i < files.length; i++) {
@@ -1997,6 +2008,7 @@ const preprocessInputFilesForMenu = (
       const normalized = makeUniqueProDosFilename(file.name, usedNames)
       const runtimeFile: BuildInputFile = { ...file, type: PRODOS_FILE_TYPE_DOS_MASTER, name: normalized }
       runtimeVolumeByMenuIndex[i] = runtimeVolumes.length + 1
+      runtimeHelloModeByMenuIndex[i] = detectDosHelloLaunchMode(file.data)
       runtimeVolumes.push(runtimeFile)
       // DOS 3.3 disks are booted from the DOS.MASTER partition (by block, via its geometry
       // table), never as a ProDOS file. Writing a second ProDOS copy wasted a root directory
@@ -2111,7 +2123,17 @@ const preprocessInputFilesForMenu = (
     }
   }
 
-  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex }
+  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex }
+}
+
+// For DOS.MASTER-dispatched launches, choose how to invoke HELLO on the selected volume:
+// 0 => RUN HELLO (Applesoft/Integer), 1 => BRUN HELLO (binary).
+const detectDosHelloLaunchMode = (image: Uint8Array): number => {
+  if (!isLikelyDos33Volume(image) || !dosLogicalImageHasValidCatalog(image)) return 0
+  const { entries } = readDos33Catalog(image)
+  const hello = entries.find((entry) => entry.name.toUpperCase() === "HELLO" && entry.sectorCount > 0)
+  if (!hello) return 0
+  return (hello.typeByte & 0x7f) === DOS33_TYPE_BINARY ? 1 : 0
 }
 
 const encodeProDosTime = (date: Date = new Date()) => {
@@ -3641,7 +3663,7 @@ export const buildProDosHdv = async (
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
   // Reserve helper-program subdirectory name to avoid root-path exhaustion.
   rootScan.existingNames.add(HELPER_SUBDIR)
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -3740,7 +3762,7 @@ export const buildProDosHdv = async (
     helperFiles.push({
       name: "MENULAUNCH",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, menuNeedsAliasShim)),
+      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim)),
       auxType: 0x0801,
     })
   }
