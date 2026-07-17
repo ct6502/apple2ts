@@ -1206,6 +1206,47 @@ const chooseDosGreetingCommand = (entries: DosCatalogEntry[]): { command: string
   return undefined
 }
 
+const tryRewriteGreetingCommandForDosMaster = (
+  image: Uint8Array,
+  entries: DosCatalogEntry[],
+  chosen: { command: string; target: string }
+): { command: string; target: string } => {
+  // If the selected greeting is an Applesoft wrapper (usually RUN <name>), inspect its
+  // quoted DOS command strings and translate compact non-stock binary-launch commands
+  // like "BNPACMAN" to stock DOS.MASTER-compatible "BRUN PACMAN" when the target binary
+  // exists in the catalog.
+  if (!chosen.command.startsWith("RUN ")) return chosen
+  const greetingEntry = entries.find((entry) => entry.name.trim().toUpperCase() === chosen.target.trim().toUpperCase())
+  if (!greetingEntry || ((greetingEntry.typeByte & 0x7f) !== DOS33_TYPE_APPLESOFT)) return chosen
+
+  const bytes = readDosFileBytes(image, greetingEntry.tsListTrack, greetingEntry.tsListSector)
+  let text = ""
+  for (const b of bytes) text += String.fromCharCode(b & 0x7f)
+  const quoted = [...text.matchAll(/"([^\"]{2,80})"/g)]
+  const binaryNames = new Map<string, string>()
+  for (const entry of entries) {
+    if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) continue
+    binaryNames.set(entry.name.trim().toUpperCase(), entry.name)
+  }
+
+  for (const match of quoted) {
+    const cmd = (match[1] ?? "").replace(/[\x00-\x1f]/g, "").trim().toUpperCase()
+    // A compact custom DOS command of the form "B?<name>" (e.g. BNPACMAN) where
+    // DOS.MASTER does not know the alias but does support BRUN.
+    if (!/^B[A-Z][A-Z0-9.$#_ -]{1,30}$/.test(cmd)) continue
+    if (cmd.startsWith("BRUN") || cmd.startsWith("BLOAD") || cmd.startsWith("BSAVE")) continue
+    const rawTail = cmd.substring(2).trim()
+    if (!rawTail) continue
+    const candidate = rawTail.split(/[,:;]/, 1)[0].trim()
+    if (!candidate) continue
+    const existingBinaryName = binaryNames.get(candidate)
+    if (!existingBinaryName) continue
+    return { command: `BRUN ${existingBinaryName}`, target: existingBinaryName }
+  }
+
+  return chosen
+}
+
 /**
  * Builds the on-disk DOS 3.3 Applesoft ("A") file image for a one-line greeting program
  *   10 PRINT CHR$(4)"<command>"
@@ -1257,7 +1298,50 @@ export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreeting
   }
 
   const { entries, freeEntryOffset } = readDos33Catalog(source)
-  if (entries.some((e) => e.name.toUpperCase() === "HELLO")) {
+  const existingHello = entries.find((e) => e.name.trim().toUpperCase() === "HELLO")
+  if (existingHello) {
+    const rewritten = tryRewriteGreetingCommandForDosMaster(source, entries, { command: `RUN ${existingHello.name}`, target: existingHello.name })
+    if (rewritten.command !== `RUN ${existingHello.name}`) {
+      const image = source.slice()
+      const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
+
+      // Patch HELLO in place by rewriting its first data sector with a one-line
+      // Applesoft launcher that uses stock DOS.MASTER-compatible command syntax.
+      let listTrack = existingHello.tsListTrack
+      let listSector = existingHello.tsListSector
+      let patched = false
+      const visited = new Set<number>()
+      for (let guard = 0; guard < 64; guard++) {
+        if (listTrack === 0 || listTrack >= 35 || listSector >= 16) break
+        const key = listTrack * 16 + listSector
+        if (visited.has(key)) break
+        visited.add(key)
+        const tsOff = sectorOffset(listTrack, listSector)
+        if (tsOff + 256 > image.length) break
+
+        for (let i = 0; i < 122; i++) {
+          const dataTrack = image[tsOff + 0x0c + i * 2]
+          const dataSector = image[tsOff + 0x0d + i * 2]
+          if (dataTrack === 0 && dataSector === 0) continue
+          const dataOff = sectorOffset(dataTrack, dataSector)
+          if (dataTrack >= 35 || dataSector >= 16 || dataOff + 256 > image.length) continue
+
+          const fileBytes = buildDosHelloApplesoftFile(rewritten.command)
+          image.fill(0, dataOff, dataOff + 256)
+          image.set(fileBytes.subarray(0, 256), dataOff)
+          patched = true
+          break
+        }
+
+        if (patched) break
+        listTrack = image[tsOff + 1]
+        listSector = image[tsOff + 2]
+      }
+
+      if (patched) {
+        return { image, action: "injected", command: rewritten.command, target: rewritten.target }
+      }
+    }
     return { image: source, action: "already-present" }
   }
   if (freeEntryOffset === undefined) {
@@ -1265,7 +1349,8 @@ export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreeting
   }
 
   const chosen = chooseDosGreetingCommand(entries)
-  const command = chosen ? chosen.command : "CATALOG"
+  const rewritten = chosen ? tryRewriteGreetingCommandForDosMaster(source, entries, chosen) : undefined
+  const command = rewritten ? rewritten.command : "CATALOG"
 
   const image = source.slice()
   const sectorOffset = (track: number, sector: number) => (track * 16 + sector) * 256
@@ -1330,7 +1415,7 @@ export const ensureDosVolumeHasHelloGreeting = (source: Uint8Array): DosGreeting
   image[freeEntryOffset + 0x21] = 2
   image[freeEntryOffset + 0x22] = 0
 
-  return { image, action: "injected", command, target: chosen?.target }
+  return { image, action: "injected", command, target: rewritten?.target }
 }
 
 /**
