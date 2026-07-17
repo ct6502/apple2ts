@@ -538,6 +538,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       width={`max( ${isMinimalTheme() ? "55vw" : "75vw"}, 348px )`}
       highlight={hasNewRelease}
       position="bottom-right">
+      <div onContextMenuCapture={(e) => e.preventDefault()}>
       <div className="flex-row dcp-tab-row"
         onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
         {tabs.map((tab, i) => (
@@ -955,6 +956,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           ? diskCollection.filter(isDiskExportable)
           : tabs[activeTab].disks.filter(isDiskExportable)}
       />
+      </div>
     </Flyout >
   )
 }
