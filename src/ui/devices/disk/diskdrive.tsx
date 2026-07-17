@@ -243,13 +243,24 @@ const DiskDrive = (props: DiskDriveProps) => {
   const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}${isTouchDevice ? " disk-label-small" : ""}`
 
   return (
-    <span className="flex-column">
+    <span
+      className="flex-column"
+      onContextMenu={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        handleMenuClick(event)
+      }}>
       <span className="flex-row">
         <span className="flex-column">
           <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={diskDriveLabel}
+            onContextMenu={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              handleMenuClick(event)
+            }}
             onClick={handleMenuClick} />
           <FontAwesomeIcon
             icon={faRotate}

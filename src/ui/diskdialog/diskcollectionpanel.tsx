@@ -135,6 +135,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [, setAuthRefresh] = useState<number>(0)
   const [pendingBookmarkRemovals, setPendingBookmarkRemovals] = useState<Set<string>>(new Set())
   const pendingBookmarkRemovalsRef = useRef<Set<string>>(new Set())
+  const suppressClickUntilRef = useRef(0)
+  const popupOpenRef = useRef(false)
+  const primaryPressRef = useRef(false)
 
   useEffect(() => {
     pendingBookmarkRemovalsRef.current = pendingBookmarkRemovals
@@ -205,20 +208,69 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     return false
   }
 
-  const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+  const showItemContextMenu = (diskCollectionItem: DiskCollectionItem, event: React.MouseEvent<HTMLElement>) => {
+    popupOpenRef.current = true
+    setPopupItem(diskCollectionItem)
     if (activeTab == TAB_INDEX.EXPORT) {
       setSelectPopupLocation([event.clientX, event.clientY])
     } else {
-      setPopupItem(diskCollectionItem)
       setDrivePopupLocation([event.clientX, event.clientY])
     }
-
     event.stopPropagation()
     event.preventDefault()
+  }
+
+  const showBookmarkContextMenu = (diskCollectionItem: DiskCollectionItem, event: React.MouseEvent<HTMLElement>) => {
+    popupOpenRef.current = true
+    setPopupItem(diskCollectionItem)
+    setSelectPopupLocation([event.clientX, event.clientY])
+    event.stopPropagation()
+    event.preventDefault()
+  }
+
+  const shouldSuppressClick = () => Date.now() < suppressClickUntilRef.current
+
+  const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+    // Some browsers fire a trailing click after context-menu gestures.
+    primaryPressRef.current = false
+    suppressClickUntilRef.current = Date.now() + 800
+    showItemContextMenu(diskCollectionItem, event)
     return false
   }
 
-  const handleBookmarkClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+  const handleBookmarkRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+    primaryPressRef.current = false
+    suppressClickUntilRef.current = Date.now() + 800
+    showBookmarkContextMenu(diskCollectionItem, event)
+    return false
+  }
+
+  const beginPrimaryPress = (event: React.MouseEvent<HTMLElement>) => {
+    primaryPressRef.current = event.button === 0 && !event.ctrlKey
+    if (!primaryPressRef.current) {
+      suppressClickUntilRef.current = Date.now() + 800
+    }
+  }
+
+  const handleBookmarkMouseUp = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
+    if (!primaryPressRef.current) {
+      event.stopPropagation()
+      return
+    }
+    primaryPressRef.current = false
+    if (popupOpenRef.current) {
+      event.stopPropagation()
+      return
+    }
+    if (shouldSuppressClick()) {
+      event.stopPropagation()
+      return
+    }
+    if ((event.nativeEvent as MouseEvent).button !== 0 || event.ctrlKey) {
+      event.stopPropagation()
+      return
+    }
+
     const bookmarkId = diskCollectionItem.bookmarkId
     if (bookmarkId) {
       setPendingBookmarkRemovals((prev) => {
@@ -289,7 +341,21 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     })
   }
 
-  const handleSelectedClick = (diskCollectionItem: DiskCollectionItem) => async (event: React.MouseEvent<HTMLElement>) => {
+  const handleSelectedMouseUp = (diskCollectionItem: DiskCollectionItem) => async (event: React.MouseEvent<HTMLElement>) => {
+    if (!primaryPressRef.current) {
+      event.stopPropagation()
+      return
+    }
+    primaryPressRef.current = false
+    if (popupOpenRef.current) {
+      event.stopPropagation()
+      return
+    }
+    if (shouldSuppressClick()) {
+      event.stopPropagation()
+      return
+    }
+    if ((event.nativeEvent as MouseEvent).button !== 0 || event.ctrlKey) return
     toggleSelectedItem(diskCollectionItem)
     event.stopPropagation()
   }
@@ -512,7 +578,38 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
             <div
               key={`dcp-${tabs[activeTab].label}-${index}`}
               className={`dcp-item${isDisabledForExport ? " dcp-item-disabled" : ""}`}
-              onClick={(e) => {
+              onContextMenu={handleItemRightClick(diskCollectionItem)}
+              onClickCapture={(e) => {
+                if (shouldSuppressClick()) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }
+              }}
+              onAuxClickCapture={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+              onMouseDown={(e) => {
+                beginPrimaryPress(e)
+              }}
+              onMouseUp={(e) => {
+                if (!primaryPressRef.current) {
+                  e.stopPropagation()
+                  return
+                }
+                primaryPressRef.current = false
+                if (popupOpenRef.current) {
+                  e.stopPropagation()
+                  return
+                }
+                if (shouldSuppressClick()) {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  return
+                }
+                if (e.button !== 0 || e.ctrlKey) {
+                  return
+                }
                 if (activeTab == TAB_INDEX.EXPORT && !isDisabledForExport) {
                   toggleSelectedItem(diskCollectionItem)
                   e.stopPropagation()
@@ -523,23 +620,72 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   text={diskCollectionItem.title}
                   className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
                   title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
+                    beginPrimaryPress(e as unknown as React.MouseEvent<HTMLElement>)
+                  }}
+                  onMouseUp={(e) => {
+                    if (!primaryPressRef.current) {
+                      e.stopPropagation()
+                      return
+                    }
+                    primaryPressRef.current = false
+                    if (popupOpenRef.current) {
+                      e.stopPropagation()
+                      return
+                    }
+                    if (shouldSuppressClick()) {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return
+                    }
+                    if (e.button !== 0 || e.ctrlKey) return
                     if (activeTab != TAB_INDEX.EXPORT && diskCollectionItem.detailsUrl) {
-                      handleHelpClick(diskCollectionItem)(e as React.MouseEvent<HTMLElement>)
+                      handleHelpClick(diskCollectionItem)(e as unknown as React.MouseEvent<HTMLElement>)
                     }
                   }} />
               </div>
               {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
               <div
                 className="dcp-item-image-box"
-                title={`Click to load disk "${diskCollectionItem.title}"`}
-                onClick={() => {
-                  if (activeTab != TAB_INDEX.EXPORT) {
+                title={activeTab == TAB_INDEX.EXPORT
+                  ? `Click to ${selectedDisks.includes(diskCollectionItem) ? "remove from" : "add to"} selected disks`
+                  : `Click to load disk "${diskCollectionItem.title}"`}
+                onMouseDown={(event) => {
+                  beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                }}
+                onMouseUp={(event) => {
+                  if (!primaryPressRef.current) {
+                    event.stopPropagation()
+                    return
+                  }
+                  primaryPressRef.current = false
+                  if (popupOpenRef.current) {
+                    event.stopPropagation()
+                    return
+                  }
+                  if (shouldSuppressClick()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    return
+                  }
+                  if (event.button !== 0 || event.ctrlKey) return
+                  if (activeTab == TAB_INDEX.EXPORT) {
+                    if (!isDisabledForExport) {
+                      toggleSelectedItem(diskCollectionItem)
+                      event.stopPropagation()
+                    }
+                  } else {
                     loadDisk(-1, diskCollectionItem, props.updateDisplay)
-                    setIsFlyoutOpen(false)
+                    dismissDiskCollection()
                   }
                 }}
-                onContextMenu={handleItemRightClick(diskCollectionItem)}
+                onContextMenu={(event) => {
+                  handleItemRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
+                }}
+                onAuxClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                }}
               >
                 <img className="dcp-item-image" src={diskCollectionItem.imageUrl} />
                 <div className="dcp-item-icon-top-right">
@@ -549,15 +695,34 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                       title={isBookmarkPendingRemoval
                         ? "Click to keep in disk collection"
                         : "Click to mark for removal from disk collection"}
-                      onClick={handleBookmarkClick(diskCollectionItem)}>
+                      onMouseDown={(event) => {
+                        beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                      }}
+                      onMouseUp={handleBookmarkMouseUp(diskCollectionItem)}
+                      onContextMenu={(event) => {
+                        handleBookmarkRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
+                      }}
+                      onAuxClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                      }}>
                       <FontAwesomeIcon icon={isBookmarkPendingRemoval ? faStarOutline : faStar} size="lg" className="dcp-item-bookmark-icon" />
                     </div>}
                   {activeTab == TAB_INDEX.EXPORT && isDiskExportable(diskCollectionItem) &&
                     <div
                       className="dcp-item-select"
                       title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
-                      onClick={isDisabledForExport ? undefined : handleSelectedClick(diskCollectionItem)}
-                      onContextMenu={isDisabledForExport ? undefined : handleItemRightClick(diskCollectionItem)}>
+                      onMouseDown={(event) => {
+                        beginPrimaryPress(event as unknown as React.MouseEvent<HTMLElement>)
+                      }}
+                      onMouseUp={isDisabledForExport ? undefined : handleSelectedMouseUp(diskCollectionItem)}
+                      onContextMenu={(event) => {
+                        handleItemRightClick(diskCollectionItem)(event as unknown as React.MouseEvent<HTMLElement>)
+                      }}
+                      onAuxClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                      }}>
                       <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} size="lg" className="dcp-item-select-icon" />
                       {selectedDisks.includes(diskCollectionItem) && <div className="dcp-item-select-icon-bg">&nbsp;</div>}
                     </div>}
@@ -685,7 +850,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           paddingLeft: "10px",
           paddingRight: "10px"
         }}
-        onClose={() => { setDrivePopupLocation(undefined) }}
+        onClose={() => {
+          popupOpenRef.current = false
+          setDrivePopupLocation(undefined)
+        }}
         menuItems={[[
           ...[0, 1].map((i) => (
             {
@@ -695,7 +863,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               onClick: () => {
                 setDrivePopupLocation(undefined)
                 loadDisk(i, popupItem, props.updateDisplay)
-                setIsFlyoutOpen(false)
+                dismissDiskCollection()
               }
             }
           )),
@@ -708,7 +876,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               onClick: () => {
                 setDrivePopupLocation(undefined)
                 loadDisk(i, popupItem, props.updateDisplay)
-                setIsFlyoutOpen(false)
+                dismissDiskCollection()
               }
             }
           ))
@@ -722,30 +890,58 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           paddingLeft: "10px",
           paddingRight: "10px"
         }}
-        onClose={() => { setSelectPopupLocation(undefined) }}
+        onClose={() => {
+          popupOpenRef.current = false
+          setSelectPopupLocation(undefined)
+        }}
         menuItems={[[
-          {
-            label: "Select all disks",
-            icon: faCheckCircle,
-            onClick: async () => {
-              const newSelectedDisks = [...selectedDisks]
-              for (const diskCollectionItem of tabs[TAB_INDEX.EXPORT].disks) {
-                if (isDiskExportable(diskCollectionItem) && !newSelectedDisks.includes(diskCollectionItem)) {
-                  const preparedItem = await prepareSelectedItem(diskCollectionItem)
-                  if (!preparedItem) continue
-                  newSelectedDisks.push(diskCollectionItem)
+          ...(activeTab == TAB_INDEX.EXPORT
+            ? [
+              {
+                label: "Select all disks",
+                icon: faCheckCircle,
+                onClick: async () => {
+                  const newSelectedDisks = [...selectedDisks]
+                  for (const diskCollectionItem of tabs[TAB_INDEX.EXPORT].disks) {
+                    if (isDiskExportable(diskCollectionItem) && !newSelectedDisks.includes(diskCollectionItem)) {
+                      const preparedItem = await prepareSelectedItem(diskCollectionItem)
+                      if (!preparedItem) continue
+                      newSelectedDisks.push(diskCollectionItem)
+                    }
+                  }
+                  setSelectedDisks(newSelectedDisks)
+                }
+              },
+              {
+                label: "Unselect all disks",
+                icon: faCircle,
+                onClick: () => {
+                  setSelectedDisks([])
                 }
               }
-              setSelectedDisks(newSelectedDisks)
-            }
-          },
-          {
-            label: "Unselect all disks",
-            icon: faCircle,
-            onClick: () => {
-              setSelectedDisks([])
-            }
-          }
+            ]
+            : [
+              {
+                label: "Delete all bookmarks",
+                icon: faStarOutline,
+                onClick: () => {
+                  const allBookmarkIds = new Set<string>()
+                  for (const diskCollectionItem of tabs[TAB_INDEX.FAVORITES].disks) {
+                    if (diskCollectionItem.bookmarkId) {
+                      allBookmarkIds.add(diskCollectionItem.bookmarkId)
+                    }
+                  }
+                  setPendingBookmarkRemovals(allBookmarkIds)
+                }
+              },
+              {
+                label: "Restore all bookmarks",
+                icon: faStar,
+                onClick: () => {
+                  setPendingBookmarkRemovals(new Set())
+                }
+              }
+            ])
         ]]}
       />
       <DiskPanelVtoc
