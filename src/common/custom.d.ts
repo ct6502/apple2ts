@@ -373,6 +373,12 @@ type CaptureBootStateRequest = {
   filename: string
   entryAddress: number
   timeoutMs?: number
+  captureMemory?: boolean
+}
+
+type CaptureBootResult = {
+  zeroPage: Uint8Array
+  memoryDump?: Uint8Array
 }
 
 type DiskCollectionItem = {

@@ -21,7 +21,7 @@ let worker: Worker | null = null
 let saveStateCallback: (sState: EmulatorSaveState) => void
 let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
-let captureBootStateResolve: ((zp: Uint8Array | null) => void) | null = null
+let captureBootStateResolve: ((result: CaptureBootResult | null) => void) | null = null
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
@@ -244,7 +244,7 @@ export const passRequestMemoryDump = () => {
 // zero page ($00-$FF) when the given entry address is reached, then restore
 // the previous emulator state.  Returns a 256-byte Uint8Array on success
 // or null on timeout.
-export const captureBootZeroPage = (req: CaptureBootStateRequest): Promise<Uint8Array | null> => {
+export const captureBootZeroPage = (req: CaptureBootStateRequest): Promise<CaptureBootResult | null> => {
   return new Promise((resolve) => {
     captureBootStateResolve = resolve
     doPostMessage(MSG_MAIN.CAPTURE_BOOT_STATE, req)
@@ -384,9 +384,9 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     }
     case MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE: {
-      const zp = e.data.payload as Uint8Array | null
+      const result = e.data.payload as CaptureBootResult | null
       if (captureBootStateResolve) {
-        captureBootStateResolve(zp)
+        captureBootStateResolve(result)
         captureBootStateResolve = null
       }
       break

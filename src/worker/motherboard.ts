@@ -16,6 +16,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksBankGet,
   doSetRom,
   getZeroPage,
+  getMemoryDump as getCpuMemoryDump,
   memSet,
   exportMemoryToHiresLine,
   getDataBlock} from "./memory"
@@ -63,7 +64,8 @@ let captureSavedSpeedMode = 0
 let captureSavedRunMode: RUN_MODE = RUN_MODE.IDLE
 let captureSavedBreakpoints: BreakpointMap | null = null
 let captureTimeoutId: ReturnType<typeof setTimeout> | null = null
-let captureCallback: ((zp: Uint8Array | null) => void) | null = null
+let captureCallback: ((result: CaptureBootResult | null) => void) | null = null
+let captureRequest: CaptureBootStateRequest | null = null
 
 export const setTracing = (doTracing: boolean) => {
   tracing = doTracing
@@ -150,6 +152,9 @@ const resetMachine = () => {
 export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
+  // Reset PC sampler for fresh boot
+  nextPcSampleCycle = 1
+  pcSampleCount = 0
   doSetRom(machineName)
   configureMachine()
   if (code.length > 0) {
@@ -231,7 +236,7 @@ export const doSetSpeedMode = (speedModeIn: number) => {
 // on success, or null on timeout.
 export const startCaptureBootState = (
   req: CaptureBootStateRequest,
-  callback: (zp: Uint8Array | null) => void
+  callback: (result: CaptureBootResult | null) => void
 ) => {
   // 1. Save current emulator state (full, including disk data)
   captureSavedState = doGetSaveState(true)
@@ -239,6 +244,7 @@ export const startCaptureBootState = (
   captureSavedRunMode = cpuRunMode
   captureSavedBreakpoints = new BreakpointMap(breakpointMap)
   captureCallback = callback
+  captureRequest = req
 
   // 2. Load the floppy image into slot 6 drive 1
   const driveProps: DriveProps = {
@@ -303,10 +309,15 @@ export const startCaptureBootState = (
 }
 
 const finishCaptureBootState = (timedOut = false) => {
-  // Read zero page before restoring state
-  const zp = timedOut ? null : getZeroPage()
+  // Read zero page (and optionally full memory) before restoring state
+  let result: CaptureBootResult | null = null
   if (!timedOut) {
-    console.log(`[Capture] Hit entry point, captured ${zp!.length} bytes of zero page`)
+    const zp = getZeroPage()
+    result = { zeroPage: zp }
+    if (captureRequest?.captureMemory) {
+      result.memoryDump = getCpuMemoryDump()
+    }
+    console.log(`[Capture] Hit entry point, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ''}`)
   }
 
   // Clear the timeout
@@ -332,9 +343,10 @@ const finishCaptureBootState = (timedOut = false) => {
 
   // Send result
   if (captureCallback) {
-    captureCallback(zp)
+    captureCallback(result)
     captureCallback = null
   }
+  captureRequest = null
 }
 
 export const doSetAppMode = (mode: string) => {
@@ -654,6 +666,13 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
 //let quickReturn = 0
 let cycleToRunStart = -1
 
+// Periodic PC sampler: logs CPU state every ~200K cycles for debugging game hangs.
+// Only active after the game entry point is reached (first HGR switch from game code).
+const PC_SAMPLE_INTERVAL = 200_000  // ~0.2 seconds at 1 MHz
+let nextPcSampleCycle = 1  // start from first cycle
+let pcSampleCount = 0
+const PC_SAMPLE_MAX = 60  // stop after 60 samples (~12 seconds)
+
 const doAdvance6502 = () => {
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
     return
@@ -674,6 +693,22 @@ const doAdvance6502 = () => {
     const cycles = processInstruction(tracing ? updateTrace : null)
     if (cycles < 0) break
     cycleTotal += cycles
+
+    // Periodic PC sampler for debugging
+    if (pcSampleCount < PC_SAMPLE_MAX && !captureActive && s6502.cycleCount >= nextPcSampleCycle && nextPcSampleCycle > 0) {
+      const pc = s6502.PC
+      const op = memGet(pc)
+      console.log(`[CPU@${s6502.cycleCount}] PC=$${pc.toString(16).toUpperCase().padStart(4,'0')} A=$${s6502.Accum.toString(16).toUpperCase().padStart(2,'0')} X=$${s6502.XReg.toString(16).toUpperCase().padStart(2,'0')} Y=$${s6502.YReg.toString(16).toUpperCase().padStart(2,'0')} SP=$${s6502.StackPtr.toString(16).toUpperCase().padStart(2,'0')} op=$${op.toString(16).toUpperCase().padStart(2,'0')}`)
+      nextPcSampleCycle = s6502.cycleCount + PC_SAMPLE_INTERVAL
+      pcSampleCount++
+    }
+    // Trap: log ZP $D6/$D7 when BurgerTime's fill routine exits at $BDEE
+    if (s6502.PC === 0xBDEE && pcSampleCount > 0 && pcSampleCount < PC_SAMPLE_MAX) {
+      const d6 = memGet(0xD6)
+      const d7 = memGet(0xD7)
+      const target = (d7 << 8) | d6
+      console.log(`[TRAP@$BDEE] cycle=${s6502.cycleCount} ZP $D6=$${d6.toString(16).padStart(2,'0')} $D7=$${d7.toString(16).padStart(2,'0')} → JMP target=$${target.toString(16).toUpperCase().padStart(4,'0')} SP=$${s6502.StackPtr.toString(16).padStart(2,'0')}`)
+    }
     if (cycleTotal < 4550) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {

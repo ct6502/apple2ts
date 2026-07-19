@@ -63,6 +63,8 @@ type DirectLoadEntry = {
   coldStartFlagAddr?: number  // zero-page address of cold-start "done" flag (e.g. $37)
   coldStartFlagValue?: number // magic value to store (e.g. $A3) to skip cold-start
   zpSnapshot?: Uint8Array     // 256-byte zero page snapshot captured from floppy boot
+  zpBlock?: number            // filled in by HDV builder: raw block holding zpSnapshot data
+  p3Snapshot?: Uint8Array     // 256-byte page 3 ($0300-$03FF) snapshot from floppy boot
 }
 
 /**
@@ -306,7 +308,8 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number; zpFlagO
 
   // Call device driver directly at $C7C0 (slot 7 block driver)
   emit(0x20, 0xC0, 0xC7)                  // JSR $C7C0
-  emitBranchRef(0xB0, "error")            // BCS error
+  emit(0x90, 0x03)                         // BCC +3 (skip JMP on success)
+  emit(0x4C); emitAddrRef("error")         // JMP error
 
   // Advance buffer +$200
   emit(0xE6, 0x45)                        // INC $45
@@ -326,15 +329,135 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number; zpFlagO
   emit(0xCE); emitAddrRef("blockCount", 1) // DEC blockCount hi
   emit(0x4C); emitAddrRef("loop")           // JMP loop
 
-  // === DONE: set up slot ROM table, cold-start flag, then jump to game entry ===
+  // === DONE: copy trampoline, set up slot ROM, ZP, cold-start, then JMP ===
   markLabel("done")
 
-  // Set up $BF73 slot ROM signature table.
-  // Many games compare slot ROM first-bytes with a lookup table at $BF73,X
-  // during hardware detection.  The original launcher (e.g. MDSADJ) populated
-  // this table from the actual slot ROMs.  On ProDOS HDV boot, $BF00-$BFFF
-  // has ProDOS system globals instead, causing the detection to fail.
-  // Fix: read $Cn00 for each slot 1-7 and store at $BF73+n.
+  // Save buffer end address ($45) — the reload routine needs it as the stop
+  // condition.  We must save before ZP restore overwrites $45.
+  emit(0xA5, 0x45)                            // LDA $45
+  emit(0x8D); emitAddrRef("saveEndHi", 0)     // STA saveEndHi
+
+  // --- Combined cleanup + reload trampoline (128 bytes at $BF00-$BF7F) ---
+  // The stub at $0300 overlaps DOS 3.3 vectors ($03D0-$03EF). We can't fill
+  // $0300+ from here because we're executing from within that range. Solution:
+  // copy a combined cleanup/reload block to $BF00 which:
+  //
+  // CLEANUP ($BF00, runs once at initial boot):
+  //   1. Fills $0300-$03F1 with RTS ($60) — neutralizes all DOS vectors
+  //   2. Sets reset vector ($03F2-$03F4) to the game entry point
+  //   3. Places RTI at $03F0 and sets IRQ vector ($03FE-$03FF) → $03F0
+  //   4. Installs JMP $BF40 at $03F5 (reload path for fill-and-restart games)
+  //   5. JMPs to the game entry point
+  //
+  // RELOAD ($BF40, called on fill-and-restart):
+  //   Reads game binary blocks directly from HD into the target range,
+  //   then sets the cold-start bypass flag (ZP[flagAddr] = flagValue) so
+  //   the game skips destructive re-initialization on re-entry, and JMPs
+  //   to game entry via the post-reload trampoline at $03F8.
+  //
+  // POST-RELOAD TRAMPOLINE ($03F8, 5 bytes, installed by boot stub):
+  //   $03F8: STA flagAddr  — stores the cold-start flag value (in A) to ZP
+  //   $03FA: JMP ($BF7E)   — indirect jump to game entry
+  //   This survives cleanup (which only fills $0300-$03F1).
+  //
+  // Parameter layout ($BF6E-$BF7F):
+  //   $BF6E: cold-start flag value (operand of LDA #$xx, patched by boot stub)
+  //   $BF72: startBlock lo    (first block of game binary on HD)
+  //   $BF73: startBlock hi
+  //   $BF74-$BF7A: slot ROM table (overwritten by boot stub for game HW detect)
+  //   $BF7B: buffer start hi  (target load address high byte, e.g. $0C)
+  //   $BF7C: buffer end hi    (stop condition: targetHi + blockCount*2)
+  //   $BF7E: entry lo
+  //   $BF7F: entry hi
+  const cleanupTrampoline = [
+    // --- CLEANUP SECTION ($BF00-$BF3D, 62 bytes) ---
+    // Fill $0300-$03F1 with RTS ($60) — neutralizes all DOS vectors
+    0xA9, 0x60,                         // $BF00: LDA #$60
+    0xA2, 0x00,                         // $BF02: LDX #$00
+    0x9D, 0x00, 0x03,                   // $BF04: STA $0300,X
+    0xE8,                               // $BF07: INX
+    0xE0, 0xF2,                         // $BF08: CPX #$F2
+    0xD0, 0xF8,                         // $BF0A: BNE $BF04
+    // Set RTI at $03F0, IRQ vector → $03F0
+    0xA9, 0x40,                         // $BF0C: LDA #$40 (RTI)
+    0x8D, 0xF0, 0x03,                   // $BF0E: STA $03F0
+    0xA9, 0xF0,                         // $BF11: LDA #$F0
+    0x8D, 0xFE, 0x03,                   // $BF13: STA $03FE
+    0xA9, 0x03,                         // $BF16: LDA #$03
+    0x8D, 0xFF, 0x03,                   // $BF18: STA $03FF
+    // Set reset vector → entry
+    0xAD, 0x7E, 0xBF,                   // $BF1B: LDA $BF7E (entry lo)
+    0x8D, 0xF2, 0x03,                   // $BF1E: STA $03F2
+    0xAD, 0x7F, 0xBF,                   // $BF21: LDA $BF7F (entry hi)
+    0x8D, 0xF3, 0x03,                   // $BF24: STA $03F3
+    0x49, 0xA5,                         // $BF27: EOR #$A5
+    0x8D, 0xF4, 0x03,                   // $BF29: STA $03F4
+    // Install JMP $BF40 at $03F5 (reload routine for fill-and-restart)
+    0xA9, 0x4C,                         // $BF2C: LDA #$4C
+    0x8D, 0xF5, 0x03,                   // $BF2E: STA $03F5
+    0xA9, 0x40,                         // $BF31: LDA #$40
+    0x8D, 0xF6, 0x03,                   // $BF33: STA $03F6
+    0xA9, 0xBF,                         // $BF36: LDA #$BF
+    0x8D, 0xF7, 0x03,                   // $BF38: STA $03F7
+    // Jump to game entry
+    0x6C, 0x7E, 0xBF,                   // $BF3B: JMP ($BF7E)
+
+    // --- PADDING ($BF3E-$BF3F) ---
+    0x00, 0x00,
+
+    // --- RELOAD SECTION ($BF40-$BF71, 50 bytes) ---
+    // Reloads game binary from HD blocks, then sets cold-start bypass flag
+    // and jumps to entry via the $03F8 trampoline.
+    // Uses ZP $42-$47 (ProDOS block I/O area) only.
+    0xAD, 0x7B, 0xBF,                   // $BF40: LDA $BF7B (buffer start hi)
+    0x85, 0x45,                         // $BF43: STA $45
+    0x64, 0x44,                         // $BF45: STZ $44 (buffer lo = 0, 65C02)
+    0xAD, 0x72, 0xBF,                   // $BF47: LDA $BF72 (start block lo)
+    0x85, 0x46,                         // $BF4A: STA $46
+    0xAD, 0x73, 0xBF,                   // $BF4C: LDA $BF73 (start block hi)
+    0x85, 0x47,                         // $BF4F: STA $47
+    0xA9, 0x01,                         // $BF51: LDA #$01 (read command)
+    0x85, 0x42,                         // $BF53: STA $42
+    0xA9, 0x70,                         // $BF55: LDA #$70 (unit: slot 7 drive 1)
+    0x85, 0x43,                         // $BF57: STA $43
+    // Read loop
+    0x20, 0xC0, 0xC7,                   // $BF59: JSR $C7C0 (read block)
+    0xE6, 0x45,                         // $BF5C: INC $45 (buffer += $200)
+    0xE6, 0x45,                         // $BF5E: INC $45
+    0xE6, 0x46,                         // $BF60: INC $46 (block++)
+    0xD0, 0x02,                         // $BF62: BNE +2
+    0xE6, 0x47,                         // $BF64: INC $47
+    0xA5, 0x45,                         // $BF66: LDA $45
+    0xCD, 0x7C, 0xBF,                   // $BF68: CMP $BF7C (buffer end hi)
+    0x90, 0xEC,                         // $BF6B: BCC $BF59 (loop if not done)
+    // Done: load cold-start flag value, then jump to $03F8 trampoline
+    // which stores it to ZP[flagAddr] and JMPs to entry.
+    0xA9, 0x00,                         // $BF6D: LDA #$00 (← flagValue, patched by boot stub at $BF6E)
+    0x4C, 0xF8, 0x03,                   // $BF6F: JMP $03F8 (post-reload trampoline)
+
+    // --- PARAMETERS ($BF72-$BF7F) — patched by boot stub ---
+    0x00,                               // $BF72: startBlock lo
+    0x00,                               // $BF73: startBlock hi
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // $BF74-$BF7A: slot ROM table
+    0x00,                               // $BF7B: buffer start hi
+    0x00,                               // $BF7C: buffer end hi
+    0x00,                               // $BF7D: (unused)
+    0x00,                               // $BF7E: entry lo
+    0x00,                               // $BF7F: entry hi
+  ]
+
+  // Copy 128-byte trampoline to $BF00 (must happen BEFORE slot ROM table)
+  emit(0xA2, cleanupTrampoline.length - 1)    // LDX #$7F (127)
+  markLabel("cleanupCopyLoop")
+  emit(0xBD); emitAddrRef("cleanupData", 0)   // LDA cleanupData,X
+  emit(0x9D, 0x00, 0xBF)                      // STA $BF00,X
+  emit(0xCA)                                   // DEX
+  emitBranchRef(0x10, "cleanupCopyLoop")       // BPL cleanupCopyLoop
+
+  // Set up $BF73 slot ROM signature table (overwrites $BF74-$BF7A).
+  // Games compare slot ROM first-bytes with a lookup table at $BF73,X during
+  // hardware detection. The trampoline copy zeros those bytes; we now fill
+  // them from the actual slot ROMs. Writes X=7..1 → $BF7A..$BF74.
   emit(0xA2, 0x07)                            // LDX #$07
   emit(0xA0, 0x00)                            // LDY #$00
   markLabel("slotLoop")
@@ -347,11 +470,8 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number; zpFlagO
   emit(0xCA)                                  // DEX
   emitBranchRef(0xD0, "slotLoop")             // BNE slotLoop
 
-  // Zero-page restore: if a 256-byte snapshot was captured from floppy boot,
-  // copy it from $0200 (where the Applesoft launcher BLOADed it) to $00-$FF.
+  // Zero-page restore: copy 256-byte snapshot from $0200 to $00-$FF.
   // This runs BEFORE the cold-start flag so the flag can override one ZP value.
-  // The zpFlag parameter is set to 1 by the Applesoft launcher when a snapshot
-  // is present.
   emit(0xAD); emitAddrRef("zpFlag", 0)      // LDA zpFlag
   emitBranchRef(0xF0, "skipZP")             // BEQ skipZP
   emit(0xA2, 0x00)                           // LDX #$00
@@ -363,19 +483,56 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number; zpFlagO
   markLabel("skipZP")
 
   // Cold-start flag: pre-set zero-page flag to bypass destructive cold-start.
-  // flagValue=0 means no flag to set.
   emit(0xAD); emitAddrRef("flagValue", 0)   // LDA flagValue
   emitBranchRef(0xF0, "skipFlag")            // BEQ skipFlag (no flag)
   emit(0xAE); emitAddrRef("flagAddr", 0)     // LDX flagAddr
   emit(0x95, 0x00)                            // STA $00,X (store to zero page)
-  // Also set up JMP ($0200) fallback in case the slot detection still fails
-  // despite the $BF73 table fix (safety net).
+  // Safety net: place RTS at $0B00 for games using JMP ($0200)
   emit(0xA9, 0x60)                            // LDA #$60 (RTS opcode)
   emit(0x8D, 0x00, 0x0B)                      // STA $0B00
   emit(0xA9, 0x0B)                            // LDA #$0B
   emit(0x8D, 0x01, 0x02)                      // STA $0201
   markLabel("skipFlag")
-  emit(0x6C); emitAddrRef("entryAddr")       // JMP (entryAddr)
+
+  // Patch reload routine parameters at $BF72-$BF7F
+  emit(0xAD); emitAddrRef("startBlock", 0)    // LDA startBlock lo
+  emit(0x8D, 0x72, 0xBF)                      // STA $BF72
+  emit(0xAD); emitAddrRef("startBlock", 1)    // LDA startBlock hi
+  emit(0x8D, 0x73, 0xBF)                      // STA $BF73
+  emit(0xAD); emitAddrRef("targetAddr", 1)    // LDA targetAddr hi (buffer start)
+  emit(0x8D, 0x7B, 0xBF)                      // STA $BF7B
+  emit(0xAD); emitAddrRef("saveEndHi", 0)     // LDA saveEndHi (buffer end)
+  emit(0x8D, 0x7C, 0xBF)                      // STA $BF7C
+  emit(0xAD); emitAddrRef("entryAddr", 0)     // LDA entryAddr lo
+  emit(0x8D, 0x7E, 0xBF)                      // STA $BF7E
+  emit(0xAD); emitAddrRef("entryAddr", 1)     // LDA entryAddr hi
+  emit(0x8D, 0x7F, 0xBF)                      // STA $BF7F
+
+  // Patch reload exit: write cold-start flag value to $BF6E (operand of LDA #$xx)
+  emit(0xAD); emitAddrRef("flagValue", 0)     // LDA flagValue
+  emit(0x8D, 0x6E, 0xBF)                      // STA $BF6E
+
+  // Install post-reload trampoline at $03F8-$03FC.
+  // This survives cleanup (which only fills $0300-$03F1 with RTS).
+  // Layout: STA flagAddr; JMP ($BF7E)
+  // For games without a cold-start flag (flagAddr=0, flagValue=0),
+  // this harmlessly stores 0 to ZP $00 before jumping to entry.
+  emit(0xA9, 0x85)                            // LDA #$85 (STA zp opcode)
+  emit(0x8D, 0xF8, 0x03)                      // STA $03F8
+  emit(0xAD); emitAddrRef("flagAddr", 0)      // LDA flagAddr
+  emit(0x8D, 0xF9, 0x03)                      // STA $03F9
+  emit(0xA9, 0x6C)                            // LDA #$6C (JMP indirect opcode)
+  emit(0x8D, 0xFA, 0x03)                      // STA $03FA
+  emit(0xA9, 0x7E)                            // LDA #$7E
+  emit(0x8D, 0xFB, 0x03)                      // STA $03FB
+  emit(0xA9, 0xBF)                            // LDA #$BF
+  emit(0x8D, 0xFC, 0x03)                      // STA $03FC
+
+  emit(0x4C, 0x00, 0xBF)                      // JMP $BF00
+
+  // Inline trampoline data (128 bytes)
+  markLabel("cleanupData")
+  for (const b of cleanupTrampoline) emit(b)
 
   // === ERROR ===
   markLabel("error")
@@ -397,6 +554,8 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number; zpFlagO
   emit(0x00)                        // cold-start flag value (1 byte)
   markLabel("zpFlag")
   emit(0x00)                        // 1 if zpData is valid, 0 otherwise
+  markLabel("saveEndHi")
+  emit(0x00)                        // buffer end hi (saved at runtime)
 
   // === RESOLVE PATCHES ===
   for (const patch of patches) {
@@ -509,6 +668,7 @@ const generateMenuLaunchProgram = (
   runtimeHelloModeByMenuIndex?: Array<number | undefined>,
   menuNeedsAliasShim?: boolean[],
   directLoadByMenuIndex?: Array<DirectLoadEntry | undefined>,
+  stubBlock?: number,
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
   const PATCH_LINE = 2500
@@ -536,10 +696,10 @@ const generateMenuLaunchProgram = (
   const toDataString = (value: string | undefined) => (value || "").replace(/"/g, "'")
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count}),Z(${count})`)
+  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count}),Z(${count}),ZB(${count})`)
   lines.push(`22 I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
   lines.push("24 RESTORE")
-  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J),Z(J):NEXT")
+  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J),Z(J),ZB(J):NEXT")
   if (hasDosMasterRuntime) {
     lines.push("30 IF K(I)=0 THEN TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + ",V(I):POKE " + DOS_DISPATCH_HELLO_MODE_ADDRESS + ",H(I):" + dosRuntimeRunStatements + ":END")
   } else {
@@ -551,33 +711,38 @@ const generateMenuLaunchProgram = (
   lines.push("70 IF K(I)=3 THEN TEXT:GOSUB 150:PRINT D$;R$(I):END")
   lines.push("80 IF K(I)=4 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":GOTO 220")
   // Launch code 6: direct block load. V(I)=startBlock, H(I)=blockCount,
-  // P$(I)=targetAddr, R$(I)=entryAddr. BLOAD the block-reader stub, POKE params, CALL.
-  // Split across multiple lines because Applesoft's IF...THEN has trouble with very long
-  // THEN clauses (>250 tokenized bytes) — the interpreter silently skips the line.
+  // P$(I)=targetAddr, R$(I)=entryAddr.
+  // Bypasses ProDOS BLOAD entirely to avoid "NO BUFFERS AVAILABLE" — POKEs
+  // a 12-byte block reader to $0500 that calls the slot 7 driver directly,
+  // then reads the stub and ZP data from pre-allocated raw blocks.
   {
     const stub = buildDirectLoadStub()
     const PA = DIRECT_LOAD_STUB_ADDRESS + stub.paramOffset
     const ZF = DIRECT_LOAD_STUB_ADDRESS + stub.zpFlagOffset
-    lines.push("85 IF K(I)=6 THEN 250")
-    lines.push(`250 TEXT:HOME:PRINT D$;"BLOAD ${helperSubdir}/A2TSDL,A$${DIRECT_LOAD_STUB_ADDRESS.toString(16).toUpperCase()}"`)
+    const stubBlockLo = (stubBlock ?? 0) & 0xFF
+    const stubBlockHi = ((stubBlock ?? 0) >> 8) & 0xFF
+    lines.push("85 IF K(I)=6 THEN 248")
+    lines.push(`248 TEXT:HOME:PRINT D$;"CLOSE"`)
+    // POKE a 12-byte raw block reader to $0500:
+    //   LDA #$01; STA $42  (cmd=read)
+    //   LDA #$70; STA $43  (unit=slot7/drive1)
+    //   JSR $C7C0           (call driver)
+    //   RTS
+    // Caller sets $44/$45 (buf lo/hi) and $46/$47 (block lo/hi) via POKE.
+    lines.push(`249 POKE 1280,169:POKE 1281,1:POKE 1282,133:POKE 1283,66:POKE 1284,169:POKE 1285,112:POKE 1286,133:POKE 1287,67:POKE 1288,32:POKE 1289,192:POKE 1290,199:POKE 1291,96`)
+    // Read ZP snapshot to $0200 FIRST (if needed) — must precede stub read
+    // because reading 1 block (512 bytes) to $0200 also writes $0300-$03FF.
+    lines.push(`250 IF Z(I)>=1 THEN POKE 68,0:POKE 69,2:POKE 70,ZB(I)-INT(ZB(I)/256)*256:POKE 71,INT(ZB(I)/256):CALL 1280`)
+    // Read the stub binary to $0300 (overwrites $0300-$04FF, which is fine).
+    lines.push(`251 POKE 68,0:POKE 69,3:POKE 70,${stubBlockLo}:POKE 71,${stubBlockHi}:CALL 1280`)
     lines.push(`252 POKE ${PA},V(I)-INT(V(I)/256)*256:POKE ${PA + 1},INT(V(I)/256)`)
     lines.push(`254 POKE ${PA + 2},H(I)-INT(H(I)/256)*256:POKE ${PA + 3},INT(H(I)/256)`)
     lines.push(`256 TA=VAL(P$(I)):EA=VAL(R$(I))`)
     lines.push(`258 POKE ${PA + 4},TA-INT(TA/256)*256:POKE ${PA + 5},INT(TA/256)`)
     lines.push(`260 POKE ${PA + 6},EA-INT(EA/256)*256:POKE ${PA + 7},INT(EA/256)`)
-    // Cold-start flag: POKE the flag address and value into the stub's
-    // inline params. The stub writes flagValue to zero-page flagAddr
-    // just before JMP to the game entry — this avoids corrupting CSWL
-    // ($36/$37) while BASIC.SYSTEM is still active.
-    // S(I) encodes flagAddr + flagValue*256; 0 means no flag.
     lines.push(`261 IF S(I)>0 THEN POKE ${PA + 8},S(I)-INT(S(I)/256)*256:POKE ${PA + 9},INT(S(I)/256)`)
-    // Zero-page snapshot: if Z(I)=1, BLOAD the captured ZP data into the
-    // Applesoft input buffer ($0200) and set zpFlag=1.  The stub copies
-    // $0200-$02FF to $00-$FF before jumping to the game entry point.
-    // STR$ may or may not include a leading space; strip it conditionally.
-    lines.push(`262 N$=MID$(STR$(I),2):IF N$="" THEN N$=STR$(I)`)
-    lines.push(`263 IF Z(I)=1 THEN PRINT D$;"BLOAD ${helperSubdir}/A2TSZP";N$;",A$200":POKE ${ZF},1`)
-    lines.push(`264 CALL ${DIRECT_LOAD_STUB_ADDRESS}`)
+    lines.push(`263 IF Z(I)>=1 THEN POKE ${ZF},Z(I)`)
+    lines.push(`266 CALL ${DIRECT_LOAD_STUB_ADDRESS}`)
   }
   lines.push("90 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("100 GOTO 220")
@@ -599,6 +764,7 @@ const generateMenuLaunchProgram = (
     let shimFlag = 0
     let helloMode = 0
     let zpHasSnapshot = 0
+    let zpBlock = 0
 
     if (entryKind === "dos" || entryKind === "unknown") {
       if (hasDosMasterRuntime) {
@@ -620,7 +786,8 @@ const generateMenuLaunchProgram = (
           shimFlag = dl.coldStartFlagAddr + dl.coldStartFlagValue * 256
         }
         if (dl.zpSnapshot) {
-          zpHasSnapshot = 1
+          zpHasSnapshot = dl.p3Snapshot ? 2 : 1
+          zpBlock = dl.zpBlock ?? 0
         }
       } else {
         launchCode = 4 // fallback: show "PRODOS FILES IMPORTED"
@@ -645,7 +812,7 @@ const generateMenuLaunchProgram = (
       }
     }
 
-    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode + "," + zpHasSnapshot)
+    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode + "," + zpHasSnapshot + "," + zpBlock)
     dataLine += 10
   }
 
@@ -666,15 +833,19 @@ const generateMenuLaunchProgram = (
 
 /**
  * Generates STARTUP command file. For interactive exports, STARTUP runs MENUSRC.
+ * Returns Applesoft source (with line numbers) that will be tokenized to type BAS.
+ * Using BAS type (RUN directly) instead of TXT (EXEC'd) avoids holding a file
+ * buffer open — which can cause "NO BUFFERS AVAILABLE" when the game launcher
+ * later needs to BLOAD the block-reader stub.
  */
 const generateInteractiveMenuStartup = (
   menuEntries: MenuDiskEntry[],
   helperSubdir: string
 ): string => {
   if (menuEntries.length === 0) {
-    return `BRUN ${helperSubdir}/A2TSLAUNCH\rCATALOG\r`
+    return `10 D$=CHR$(4):PRINT D$;"BRUN ${helperSubdir}/A2TSLAUNCH"\r20 PRINT D$;"CATALOG"\r`
   }
-  return `RUN ${helperSubdir}/MENUSRC\r`
+  return `10 D$=CHR$(4):PRINT D$;"RUN ${helperSubdir}/MENUSRC"\r`
 }
 
 const writeLittleEndian16 = (data: Uint8Array, offset: number, value: number) => {
@@ -2184,7 +2355,7 @@ const findEntryFromGreeting = (
   candidateLoadAddress: number,
   candidateBinaryLength: number,
   candidateName: string
-): { entryAddress: number; auxBinary?: { loadAddress: number; data: Uint8Array } } | undefined => {
+): { entryAddress: number; auxBinary?: { loadAddress: number; data: Uint8Array }; mdsadjDetected?: boolean } | undefined => {
   if (!isLikelyDos33Volume(image) || !dosLogicalImageHasValidCatalog(image)) return undefined
   const { entries } = readDos33Catalog(image)
   const endAddr = candidateLoadAddress + candidateBinaryLength
@@ -2366,34 +2537,42 @@ const findEntryFromGreeting = (
       console.log(`[HDV Export] Fallback launcher "${targetName}": loadAddr=$${auxLoadAddr.toString(16)}, len=${auxLength}, traced ${visited.size} instruction offsets`)
       console.log(`[HDV Export] Outgoing JMP/JSR targets (traced): ${outgoingJmps.map(a => "$" + a.toString(16).toUpperCase()).join(", ") || "(none)"}`)
 
-      // Scan for all references to $07DC (and nearby) in the MDSADJ data.
-      // MDSADJ uses JMP ($07DC) to enter the game — find where it stores the target.
+      // Scan MDSADJ for JMP $07Dx — the game-launch trampoline that MDSADJ
+      // jumps through after controller-select and disk-adjustment are done.
+      let launchTrampolineOffset = -1
       for (let i = 0; i < auxData.length - 2; i++) {
         const lo = auxData[i + 1], hi = auxData[i + 2]
         const addr16 = hi << 8 | lo
-        if (addr16 >= 0x07D0 && addr16 <= 0x07E0) {
-          const op = auxData[i]
-          const srcAddr = auxLoadAddr + i
-          console.log(`[HDV Export] MDSADJ ref to $${addr16.toString(16).toUpperCase()} at $${srcAddr.toString(16).toUpperCase()}: op=$${op.toString(16).toUpperCase()}`)
+        if (addr16 >= 0x07D0 && addr16 <= 0x07E0 && auxData[i] === 0x4C) {
+          launchTrampolineOffset = i
+          console.log(`[HDV Export] MDSADJ game-launch trampoline at $${(auxLoadAddr + i).toString(16).toUpperCase()}: JMP $${addr16.toString(16).toUpperCase()}`)
+          break
         }
       }
 
-      // Dump hex at key areas: around the JMP indirect, and the last 128 valid bytes
-      const dumpHex = (label: string, data: Uint8Array, off: number, len: number) => {
-        const end = Math.min(off + len, data.length)
-        if (off >= data.length) return
-        const hex = Array.from(data.subarray(off, end)).map(b => b.toString(16).padStart(2, "0")).join(" ")
-        console.log(`[HDV Export] ${label} (offset $${off.toString(16)}, addr $${(auxLoadAddr + off).toString(16)}): ${hex}`)
+      // Patch MDSADJ to skip controller-select and disk-reading entirely.
+      // MDSADJ entry at offset $20 is:
+      //   JSR init    ; copies RWTS to $0400-$07FF
+      //   JSR floppy  ; motor on, clear HGR2
+      //   JSR $8500   ; unknown
+      //   JMP mainLoop; controller select + disk reads (hangs w/o floppy!)
+      // Redirect the JMP mainLoop → JMP launchTrampoline so MDSADJ does its
+      // init but skips the disk-reading loop that would spin forever.
+      if (launchTrampolineOffset >= 0) {
+        // Find the first JMP ($4C) in the entry sequence (offsets $20-$30)
+        let entryJmpOffset = -1
+        for (let off = 0x20; off < 0x30 && off < auxData.length; off++) {
+          if (auxData[off] === 0x4C) { entryJmpOffset = off; break }
+        }
+        if (entryJmpOffset >= 0) {
+          const launchAddr = auxLoadAddr + launchTrampolineOffset
+          const oldTarget = auxData[entryJmpOffset + 1] | (auxData[entryJmpOffset + 2] << 8)
+          auxData[entryJmpOffset + 1] = launchAddr & 0xFF
+          auxData[entryJmpOffset + 2] = launchAddr >> 8
+          console.log(`[HDV Export] Patched MDSADJ JMP at $${(auxLoadAddr + entryJmpOffset).toString(16).toUpperCase()}: $${oldTarget.toString(16).toUpperCase()} → $${launchAddr.toString(16).toUpperCase()} (skip disk reading)`)
+        }
       }
-      // Area around JMP ($07DC) at offset $4E7
-      const jmpOffset = auxData.indexOf(0x6C) // Find actual JMP indirect
-      if (jmpOffset >= 0) {
-        dumpHex("Around JMP indirect", auxData, Math.max(0, jmpOffset - 16), 48)
-      }
-      // Last 128 valid bytes (before corruption at ~offset 8960)
-      dumpHex("Pre-corruption area", auxData, Math.max(0, auxData.length - 320), 128)
-      dumpHex("Corruption boundary", auxData, Math.max(0, auxData.length - 192), 128)
-      dumpHex("Corrupted tail", auxData, Math.max(0, auxData.length - 64), 64)
+
       // If we found outgoing JMPs to the main binary, use the last one as
       // the game entry point and skip the launcher overlay entirely.
       // The launcher's T/S list may be corrupted (common on 4am cracks).
@@ -2406,7 +2585,8 @@ const findEntryFromGreeting = (
       // No outgoing JMPs found — fall back to using the launcher with overlay
       return {
         entryAddress: auxLoadAddr,
-        auxBinary: { loadAddress: auxLoadAddr, data: auxData }
+        auxBinary: { loadAddress: auxLoadAddr, data: auxData },
+        mdsadjDetected: launchTrampolineOffset >= 0
       }
     }
   }
@@ -2455,7 +2635,14 @@ const classifyDosUpOrDirect = (image: Uint8Array): VtocType => {
 export const determineVtocType = (filename: string, data: Uint8Array): VtocType => {
   const ext = filename.toLowerCase().split(".").pop() || ""
 
-  if (ext === "woz") {
+  // Detect WOZ by magic header bytes rather than file extension — the emulator
+  // may internally convert DSK→WOZ or cloud providers may alter filenames, so
+  // the extension alone is unreliable.
+  const isWozData = data.length > 8 &&
+    data[0] === 0x57 && data[1] === 0x4F && data[2] === 0x5A &&  // "WOZ"
+    (data[3] === 0x31 || data[3] === 0x32)                        // "1" or "2"
+
+  if (ext === "woz" || isWozData) {
     const decoded = decodeWozToSectorCandidates(data)
     if (decoded) {
       for (const candidate of decoded.candidates) {
@@ -2694,7 +2881,7 @@ const preprocessInputFilesForMenu = async (
   files: BuildInputFile[],
   menuEntries?: MenuDiskEntry[],
   reservedNames?: Set<string>,
-  zpCaptureCallback?: (menuIndex: number, entryAddress: number) => Promise<Uint8Array | null>,
+  zpCaptureCallback?: (menuIndex: number, entryAddress: number, captureMemory?: boolean) => Promise<CaptureBootResult | null>,
 ) => {
   const outputFiles: BuildInputFile[] = []
   const directoryPlans: DirectoryImportPlan[] = []
@@ -2765,9 +2952,25 @@ const preprocessInputFilesForMenu = async (
           }
         }
 
+        let mdsadjBypassed = false
         if (greetingResult) {
           entryAddress = greetingResult.entryAddress
-          if (greetingResult.auxBinary) {
+
+          // MDSADJ bypass: when the launcher is MDSADJ (multi-disk set adjuster)
+          // with a trampoline, it will hang on HDV because it spins waiting for
+          // floppy disk access.  Instead of running MDSADJ, jump directly to
+          // the game's cold-start entry point found in the main binary.
+          // Also skip merging the MDSADJ overlay so it doesn't overwrite game
+          // code in the $6400-$87FF range.
+          mdsadjBypassed = !!(greetingResult.mdsadjDetected && initCandidates.length > 0)
+          if (mdsadjBypassed) {
+            const stackInit = initCandidates.find(c => c.pattern === "LDX#FF+TXS")
+            const candidate = stackInit || initCandidates[0]
+            console.log(`[HDV Export] MDSADJ bypass: skipping launcher and overlay, using game init at $${candidate.addr.toString(16).toUpperCase()} (${candidate.pattern})`)
+            entryAddress = candidate.addr
+          }
+
+          if (greetingResult.auxBinary && !mdsadjBypassed) {
             // HELLO BLOADs main binary, then BRUNs a separate launcher.
             const aux = greetingResult.auxBinary
             const auxOffset = aux.loadAddress - loadAddress
@@ -2808,17 +3011,11 @@ const preprocessInputFilesForMenu = async (
               }
               if (repaired > 0) {
                 console.log(`[HDV Export] Repaired ${repaired} corrupted sector(s) in launcher "${aux.loadAddress.toString(16)}" using main binary data`)
-                // If the launcher has corrupted sectors AND the init scan found game
-                // entry candidates, the launcher's post-selection code is likely broken
-                // (e.g. it can't write the trampoline to $07DC). Skip the launcher
-                // overlay and jump directly to the game init.
-                if (initCandidates.length > 0) {
-                  entryAddress = initCandidates[0].addr
-                  console.log(`[HDV Export] Launcher corrupted — bypassing overlay, using game init at $${entryAddress.toString(16).toUpperCase()}`)
-                }
               }
-              if (!(repaired > 0 && initCandidates.length > 0)) {
+              {
                 // Merge both into a single contiguous payload.
+                // Layer main binary first, then clean auxiliary (launcher) on top
+                // so the launcher code overlays the corresponding game addresses.
                 const mergedStart = Math.min(loadAddress, aux.loadAddress)
                 const mergedEnd = Math.max(loadAddress + payload.length, aux.loadAddress + cleanAux.length)
                 const merged = new Uint8Array(mergedEnd - mergedStart)
@@ -2833,11 +3030,12 @@ const preprocessInputFilesForMenu = async (
           }
         }
 
-        // Scan for cold-start copy protection pattern:
+        // Detect cold-start copy protection pattern (for stub POKE fallback):
         // LDA $xx; CMP #$yy; BEQ +6; LDA #hh; PHA; LDA #ll; PHA; RTS
-        // Pattern: A5 xx C9 yy F0 06 A9 hh 48 A9 ll 48 60 (13 bytes)
-        // When found, pre-setting zero-page $xx = $yy skips the destructive
-        // cold-start that clears game memory and returns to the (missing) boot code.
+        // The zero-page snapshot restores the correct flag value so anti-tamper
+        // checks pass naturally without patching the binary.  We still record
+        // the flag address/value so the boot stub can POKE it as a belt-and-
+        // suspenders fallback if the ZP capture ever fails.
         let coldStartFlagAddr: number | undefined
         let coldStartFlagValue: number | undefined
         for (let i = 0; i < payload.length - 13; i++) {
@@ -2855,109 +3053,11 @@ const preprocessInputFilesForMenu = async (
             const trampolineHi = payload[i + 7]
             const trampolineLo = payload[i + 10]
             const trampolineTarget = (trampolineHi << 8 | trampolineLo) + 1
-            // Verify trampoline target is within the binary range
             if (trampolineTarget >= loadAddress && trampolineTarget < loadAddress + payload.length) {
               coldStartFlagAddr = flagAddr
               coldStartFlagValue = flagVal
-              console.log(`[HDV Export] Cold-start check at $${(loadAddress + i).toString(16).toUpperCase()}: flag=$${flagAddr.toString(16).toUpperCase()}==$${flagVal.toString(16).toUpperCase()}, trampoline=$${trampolineTarget.toString(16).toUpperCase()}`)
-              // Patch the binary: change LDA $xx to LDA #$yy so the cold-start
-              // check always passes.  The zero-page flag may be overwritten by
-              // the game during gameplay; the stub-only POKE would then fail on
-              // subsequent demo/restart cycles.  A permanent binary patch avoids
-              // this.  The checksum at $ACE7 covers $BDC1-$BDF2, well outside
-              // this patch site, so it is unaffected.
-              payload[i] = 0xA9       // LDA #imm  (was LDA zp)
-              payload[i + 1] = flagVal // immediate value = expected flag value
-              console.log(`[HDV Export] Patched cold-start: $${(loadAddress + i).toString(16).toUpperCase()}: LDA $${flagAddr.toString(16).toUpperCase()} → LDA #$${flagVal.toString(16).toUpperCase()}`)
-
-              // Patch the trampoline target itself to RTS, as a safety net in
-              // case any OTHER code path reaches it (e.g. a secondary protection
-              // check).  The trampoline target typically contains a tight
-              // infinite loop (JMP self) that hangs the game.
-              const trapOffset = trampolineTarget - loadAddress
-              if (trapOffset >= 0 && trapOffset < payload.length) {
-                const oldByte = payload[trapOffset]
-                payload[trapOffset] = 0x60   // RTS
-                console.log(`[HDV Export] Patched death-trap at $${trampolineTarget.toString(16).toUpperCase()}: $${oldByte.toString(16).toUpperCase()} → $60 (RTS)`)
-              }
-
-              // Neutralise the anti-tamper checksum that protects the area
-              // around the trampoline target.  Pattern:
-              //   EOR $xxxx,X; DEX; BNE loop; EOR $xxxx; BNE fail; RTS
-              // The checksum XORs a range of bytes and branches on failure.
-              // During gameplay the game may use the checksummed area as
-              // scratch data, causing the checksum to fail on subsequent calls.
-              // We NOP the BNE-fail so the checksum always passes.
-              for (let j = 0; j < payload.length - 10; j++) {
-                // Look for: EOR abs,X (5D); DEX (CA); BNE loop (D0 FA);
-                //           EOR abs (4D); BNE +1 (D0 01); RTS (60)
-                if (payload[j] === 0x5D &&              // EOR $xxxx,X
-                    payload[j + 3] === 0xCA &&          // DEX
-                    payload[j + 4] === 0xD0 &&          // BNE (loop back)
-                    payload[j + 5] === 0xFA &&          // relative offset -6
-                    payload[j + 6] === 0x4D &&          // EOR $xxxx
-                    // verify the EOR base addresses match
-                    payload[j + 1] === payload[j + 7] &&
-                    payload[j + 2] === payload[j + 8] &&
-                    payload[j + 9] === 0xD0 &&          // BNE (fail)
-                    payload[j + 11] === 0x60) {         // RTS
-                  const checksumBase = payload[j + 1] | (payload[j + 2] << 8)
-                  const failOffset = payload[j + 10]    // BNE relative offset
-                  const checksumAddr = loadAddress + j
-                  const bneAddr = loadAddress + j + 9
-                  console.log(`[HDV Export] Anti-tamper checksum at $${checksumAddr.toString(16).toUpperCase()}: EOR base=$${checksumBase.toString(16).toUpperCase()}, BNE fail at $${bneAddr.toString(16).toUpperCase()} (+${failOffset})`)
-                  // NOP the BNE so the checksum always passes
-                  payload[j + 9] = 0xEA   // NOP
-                  payload[j + 10] = 0xEA  // NOP
-                  console.log(`[HDV Export] Patched checksum BNE → NOP NOP at $${bneAddr.toString(16).toUpperCase()}`)
-                  break
-                }
-              }
-
+              console.log(`[HDV Export] Cold-start flag detected at $${(loadAddress + i).toString(16).toUpperCase()}: zp $${flagAddr.toString(16).toUpperCase()}==$${flagVal.toString(16).toUpperCase()} (no binary patch — ZP snapshot handles this)`)
               break
-            }
-          }
-        }
-
-        // Scan for secondary cold-start guards that use ORA with the flag byte:
-        //   LDA $xx; ORA $flagAddr; CMP #$flagVal; BNE +1; RTS
-        //   followed by ASL $addr; INC $addr+1; DEC $addr+2
-        // Pattern: A5 xx 05 yy C9 zz D0 01 60 [0E aa bb EE aa+1 bb CE aa+2 bb]
-        // These guards protect destructive self-modifying code loops that corrupt
-        // the game binary.  The guard may be bypassed by alternate code paths
-        // (e.g. via secondary JMP table entries), so we must also NOP the
-        // self-modifying instructions (ASL/INC/DEC) to prevent corruption
-        // regardless of which path reaches them.
-        if (coldStartFlagAddr !== undefined && coldStartFlagValue !== undefined) {
-          for (let i = 0; i < payload.length - 9; i++) {
-            if (payload[i] === 0xA5 &&                          // LDA $xx
-                payload[i + 2] === 0x05 &&                      // ORA $yy
-                payload[i + 3] === coldStartFlagAddr &&         // yy = flagAddr
-                payload[i + 4] === 0xC9 &&                      // CMP #$zz
-                payload[i + 5] === coldStartFlagValue &&        // zz = flagVal
-                payload[i + 6] === 0xD0 &&                      // BNE
-                payload[i + 7] === 0x01 &&                      // +1
-                payload[i + 8] === 0x60) {                      // RTS
-              const addr = loadAddress + i
-              const bneAddr = loadAddress + i + 6
-              payload[i + 6] = 0xEA   // NOP (was BNE)
-              payload[i + 7] = 0xEA   // NOP (was +1)
-              console.log(`[HDV Export] Patched secondary cold-start guard at $${addr.toString(16).toUpperCase()}: BNE → NOP NOP at $${bneAddr.toString(16).toUpperCase()}`)
-
-              // Also NOP the self-modifying code that follows the RTS:
-              //   ASL $addr (0E); INC $addr+1 (EE); DEC $addr+2 (CE)
-              // These corrupt the game binary and are reachable via alternate
-              // code paths that bypass the guard entirely.
-              if (i + 17 < payload.length &&
-                  payload[i + 9] === 0x0E &&                    // ASL abs
-                  payload[i + 12] === 0xEE &&                   // INC abs
-                  payload[i + 15] === 0xCE) {                   // DEC abs
-                const aslAddr = loadAddress + i + 9
-                for (let k = 9; k < 18; k++) {
-                  payload[i + k] = 0xEA  // NOP
-                }
-                console.log(`[HDV Export] Neutralised self-modifying code at $${aslAddr.toString(16).toUpperCase()}: ASL/INC/DEC → 9x NOP`)
-              }
             }
           }
         }
@@ -2975,11 +3075,92 @@ const preprocessInputFilesForMenu = async (
         // Capture zero-page snapshot from floppy boot if a callback is provided.
         // This runs the original disk in the emulator at ludicrous speed,
         // captures ZP at the entry point, then restores the emulator state.
+        // For MDSADJ-bypassed games, also capture the full memory dump so we
+        // can use the MDSADJ-patched binary instead of the raw file data.
         if (zpCaptureCallback) {
-          const zpSnapshot = await zpCaptureCallback(i, entryAddress)
-          if (zpSnapshot) {
-            directLoadByMenuIndex[i]!.zpSnapshot = zpSnapshot
-            console.log(`[HDV Export] Captured ${zpSnapshot.length}-byte ZP snapshot for menu index ${i} at entry $${entryAddress.toString(16).toUpperCase()}`)
+          const captureResult = await zpCaptureCallback(i, entryAddress, mdsadjBypassed)
+          if (captureResult) {
+            directLoadByMenuIndex[i]!.zpSnapshot = captureResult.zeroPage
+            console.log(`[HDV Export] Captured ${captureResult.zeroPage.length}-byte ZP snapshot for menu index ${i} at entry $${entryAddress.toString(16).toUpperCase()}`)
+
+            // For MDSADJ bypass: replace the raw binary payload with the
+            // memory snapshot taken after MDSADJ ran on the original floppy.
+            // This gives us the game binary with all of MDSADJ's runtime
+            // patches applied (RWTS adjustments, anti-tamper fixes, etc.).
+            if (mdsadjBypassed && captureResult.memoryDump) {
+              const dump = captureResult.memoryDump
+              const newPayload = dump.slice(loadAddress, loadAddress + payload.length)
+              let diffs = 0
+              for (let b = 0; b < newPayload.length; b++) {
+                if (newPayload[b] !== payload[b]) diffs++
+              }
+              if (diffs > 0) {
+                // Log the exact bytes MDSADJ patched so we can diagnose issues
+                const patchDetails: string[] = []
+                for (let b = 0; b < newPayload.length; b++) {
+                  if (newPayload[b] !== payload[b]) {
+                    const addr = loadAddress + b
+                    patchDetails.push(`$${addr.toString(16).toUpperCase()}: $${payload[b].toString(16).toUpperCase().padStart(2, '0')}→$${newPayload[b].toString(16).toUpperCase().padStart(2, '0')}`)
+                  }
+                }
+                console.log(`[HDV Export] MDSADJ memory capture: replacing payload with ${diffs} patched byte(s) from floppy boot snapshot`)
+                console.log(`[HDV Export] MDSADJ patch details: ${patchDetails.join(', ')}`)
+                // Log tail of game binary for debugging crash at $BDE1
+                const tailStart = payload.length - 48
+                const tailBytes = Array.from(payload.slice(tailStart)).map(b => b.toString(16).padStart(2, '0')).join(' ')
+                console.log(`[HDV Export] Binary tail ($${(loadAddress + tailStart).toString(16).toUpperCase()}-$${(loadAddress + payload.length - 1).toString(16).toUpperCase()}): ${tailBytes}`)
+                payload = newPayload
+                directLoadByMenuIndex[i]!.binaryData = payload
+                directLoadByMenuIndex[i]!.blockCount = Math.ceil(payload.length / BLOCK_SIZE)
+                // Also log tail after patch
+                const patchedTail = Array.from(payload.slice(tailStart)).map(b => b.toString(16).padStart(2, '0')).join(' ')
+                console.log(`[HDV Export] Patched tail ($${(loadAddress + tailStart).toString(16).toUpperCase()}-$${(loadAddress + payload.length - 1).toString(16).toUpperCase()}): ${patchedTail}`)
+
+                // Patch the fill routine's exit JMP at $BDF0: change JMP ($00D6)
+                // to JMP $03F5. The game's memory-fill routine at $BDD9 zeros
+                // $04C0-$BDBF (destroying game code) then tries to restart via
+                // an indirect jump whose target ($0B5C) was just zeroed.
+                // $03F5 → JMP $BF40 (reload routine) which re-reads game blocks
+                // from HD and jumps to entry via JMP ($BF7E).
+                // NOTE: BurgerTime's mode transitions require loading different
+                // code sections from floppy for each mode — this can't be fully
+                // replicated on HDV, so the game re-enters from entry after reload.
+                const jmpOffset = 0xBDF0 - loadAddress
+                if (jmpOffset >= 0 && jmpOffset + 2 < payload.length &&
+                    payload[jmpOffset] === 0x6C && payload[jmpOffset + 1] === 0xD6 && payload[jmpOffset + 2] === 0x00) {
+                  payload[jmpOffset] = 0x4C     // JMP abs
+                  payload[jmpOffset + 1] = 0xF5 // lo: $03F5
+                  payload[jmpOffset + 2] = 0x03 // hi: $03F5
+                  console.log(`[HDV Export] Patched fill-routine exit at $BDF0: JMP ($00D6) → JMP $03F5`)
+                }
+              } else {
+                console.log(`[HDV Export] MDSADJ memory capture: no differences found (binary already matches)`)
+              }
+
+              // Extract page 3 ($0300-$03FF) from the floppy boot snapshot.
+              // MDSADJ installs custom handlers here that the game may call.
+              // Pre-patch the reset vector ($03F2-$03F4) with the game's
+              // entry address so soft resets go back to the game.
+              const p3 = new Uint8Array(dump.slice(0x0300, 0x0400))
+              p3[0xF2] = entryAddress & 0xFF
+              p3[0xF3] = (entryAddress >> 8) & 0xFF
+              p3[0xF4] = p3[0xF3] ^ 0xA5
+              // Page 3 restore is disabled for now — the captured page 3 from
+              // floppy boot contains DOS 3.3 vectors that aren't needed by the
+              // game, and restoring them wastes a ProDOS file buffer (causing
+              // "NO BUFFERS AVAILABLE" on systems with tight buffer limits).
+              // const p3HasContent = p3.slice(0, 0xF2).some(b => b !== 0x00 && b !== 0xFF)
+              // if (p3HasContent) {
+              //   directLoadByMenuIndex[i]!.p3Snapshot = p3
+              // }
+              const p3FE = (p3[0xFF] << 8) | p3[0xFE]
+              console.log(`[HDV Export] Page 3 snapshot (disabled): $03FE=$${p3FE.toString(16).toUpperCase().padStart(4,'0')}, first4=[${Array.from(p3.slice(0,4)).map(b => b.toString(16).padStart(2,'0')).join(' ')}]`)
+              // Log memory above game binary ($BE00-$BF1F) from floppy boot dump
+              const above = new Uint8Array(dump.slice(0xBE00, 0xBF20))
+              console.log(`[HDV Export] Floppy dump $BE00-$BE1F: ${Array.from(above.slice(0, 32)).map(b => b.toString(16).padStart(2, '0')).join(' ')}`)
+              console.log(`[HDV Export] Floppy dump $BE20-$BE3F: ${Array.from(above.slice(32, 64)).map(b => b.toString(16).padStart(2, '0')).join(' ')}`)
+              console.log(`[HDV Export] Floppy dump $BF00-$BF1F: ${Array.from(above.slice(256, 288)).map(b => b.toString(16).padStart(2, '0')).join(' ')}`)
+            }
           }
         }
 
@@ -4622,7 +4803,7 @@ export const buildProDosHdv = async (
   prodos243Base?: Uint8Array,
   menuEntries?: MenuDiskEntry[],
   dosMasterSlot: number = DOSMASTER_SLOT,
-  zpCaptureCallback?: (menuIndex: number, entryAddress: number) => Promise<Uint8Array | null>,
+  zpCaptureCallback?: (menuIndex: number, entryAddress: number, captureMemory?: boolean) => Promise<CaptureBootResult | null>,
 ): Promise<Uint8Array> => {
   let hdv = prodos243Base
   if (!hdv) {
@@ -4756,54 +4937,48 @@ export const buildProDosHdv = async (
     })
   }
 
-  // Include the direct block-load stub as a helper binary when any menu entry
-  // needs it. The Applesoft launcher BLOADs it to $0300, POKEs parameters, and
-  // CALLs 768 to load the game binary directly from raw HDV blocks.
+  // Build the direct block-load stub. Its binary data is written to a
+  // pre-allocated raw block (not a ProDOS file) to avoid "NO BUFFERS AVAILABLE"
+  // errors when the launcher tries to BLOAD from within BASIC.SYSTEM.
+  let stubCodeForRawBlock: Uint8Array | undefined
   if (hasDirectLoadEntries) {
     const stub = buildDirectLoadStub()
+    stubCodeForRawBlock = stub.code
     const stubEnd = DIRECT_LOAD_STUB_ADDRESS + stub.code.length
     console.log(`[HDV Export] Stub size=${stub.code.length} bytes, range=$${DIRECT_LOAD_STUB_ADDRESS.toString(16).toUpperCase()}-$${stubEnd.toString(16).toUpperCase()}, paramOffset=${stub.paramOffset}, zpFlagOffset=${stub.zpFlagOffset}${stubEnd > 0x03D0 ? ' *** WARNING: overlaps $03D0 vectors! ***' : ''}`)
-    helperFiles.push({
-      name: "A2TSDL",
-      type: PRODOS_FILE_TYPE_BINARY,
-      data: stub.code,
-      auxType: DIRECT_LOAD_STUB_ADDRESS,
-    })
-    // Per-disk zero-page snapshot files: each dosdirect entry with a captured
-    // zpSnapshot gets a binary file named "A2TSZPn" (n = 1-based menu index).
-    // The Applesoft launcher BLOADs it into the input buffer at $0200.
+    // ZP snapshots are also written to raw blocks (not ProDOS files).
     for (let i = 0; i < directLoadByMenuIndex.length; i++) {
       const dl = directLoadByMenuIndex[i]
       if (dl?.zpSnapshot) {
-        const zpName = `A2TSZP${i + 1}`
-        console.log(`[HDV Export] Adding ZP snapshot helper file: ${zpName}, size=${dl.zpSnapshot.length}, first4=[${Array.from(dl.zpSnapshot.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
-        helperFiles.push({
-          name: zpName,
-          type: PRODOS_FILE_TYPE_BINARY,
-          data: dl.zpSnapshot,
-          auxType: 0x0200,
-        })
+        console.log(`[HDV Export] ZP snapshot for entry ${i + 1}: size=${dl.zpSnapshot.length}, first4=[${Array.from(dl.zpSnapshot.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
+      }
+      if (dl?.p3Snapshot) {
+        console.log(`[HDV Export] Page 3 snapshot (disabled): entry ${i + 1}, size=${dl.p3Snapshot.length}, $03FE=${((dl.p3Snapshot[0xFF] << 8) | dl.p3Snapshot[0xFE]).toString(16).toUpperCase().padStart(4,'0')}`)
       }
     }
   }
 
   // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
-  let startupText: string
+  let startupSource: string
   const aliasShimInstallCommand = `BRUN /${normalizedVolumeName}/${HELPER_SUBDIR}/A2TSAL3`
   if (menuEntries && menuEntries.length > 0) {
     // The menu installs the shim per-launch (only before ProDOS disks), so STARTUP
     // must NOT install it globally.
-    startupText = generateInteractiveMenuStartup(menuEntries, HELPER_SUBDIR)
+    startupSource = generateInteractiveMenuStartup(menuEntries, HELPER_SUBDIR)
   } else {
-    // Non-interactive fallback has no DOS.MASTER launch, so a boot-time install is safe.
-    startupText = `${includeAliasShimFile ? `${aliasShimInstallCommand}\r` : ""}BRUN ${HELPER_SUBDIR}/${launcherName}\rCATALOG\r`
+    // Non-interactive fallback: convert text commands to Applesoft source lines.
+    const cmds: string[] = []
+    if (includeAliasShimFile) cmds.push(aliasShimInstallCommand)
+    cmds.push(`BRUN ${HELPER_SUBDIR}/${launcherName}`)
+    cmds.push("CATALOG")
+    startupSource = cmds.map((cmd, i) => `${(i + 1) * 10} D$=CHR$(4):PRINT D$;"${cmd}"`).join("\r") + "\r"
   }
   
   withStartup.unshift({
     name: "STARTUP",
-    type: PRODOS_FILE_TYPE_TEXT,
-    data: new TextEncoder().encode(startupText),
-    auxType: 0x0000,
+    type: 0xFC,
+    data: tokenizeApplesoftBasic(startupSource),
+    auxType: 0x0801,
   })
 
   // Pre-allocate blocks for direct-load binaries so their start block numbers
@@ -4812,6 +4987,12 @@ export const buildProDosHdv = async (
   // Must be contiguous because the stub reads sequentially from startBlock.
   const directLoadBlockAllocations: Array<{ blocks: number[]; entryIndex: number }> = []
 
+  // Pre-allocate 1 block for the stub binary and 1 block per ZP snapshot.
+  // These are read directly via the slot 7 driver (bypassing ProDOS BLOAD)
+  // to avoid "NO BUFFERS AVAILABLE" errors.
+  let stubBlockNumber = 0
+  const zpBlockAllocations: Array<{ block: number; entryIndex: number }> = []
+
   if (menuEntries && menuEntries.length > 0) {
     for (let i = 0; i < directLoadByMenuIndex.length; i++) {
       const dl = directLoadByMenuIndex[i]
@@ -4819,6 +5000,22 @@ export const buildProDosHdv = async (
       const blocks = allocateContiguousFreeBlocks(dl.blockCount)
       dl.startBlock = blocks[0]
       directLoadBlockAllocations.push({ blocks, entryIndex: i })
+    }
+
+    // Allocate raw blocks for stub and ZP (bypasses ProDOS file I/O)
+    if (hasDirectLoadEntries) {
+      const stubBlocks = allocateContiguousFreeBlocks(1)
+      stubBlockNumber = stubBlocks[0]
+      console.log(`[HDV Export] Stub raw block: ${stubBlockNumber}`)
+
+      for (let i = 0; i < directLoadByMenuIndex.length; i++) {
+        const dl = directLoadByMenuIndex[i]
+        if (!dl?.zpSnapshot) continue
+        const zpBlocks = allocateContiguousFreeBlocks(1)
+        dl.zpBlock = zpBlocks[0]
+        zpBlockAllocations.push({ block: zpBlocks[0], entryIndex: i })
+        console.log(`[HDV Export] ZP snapshot raw block for entry ${i}: ${zpBlocks[0]}`)
+      }
     }
 
     helperFiles.push({
@@ -4830,7 +5027,7 @@ export const buildProDosHdv = async (
     helperFiles.push({
       name: "MENULAUNCH",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim, directLoadByMenuIndex)),
+      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim, directLoadByMenuIndex, stubBlockNumber)),
       auxType: 0x0801,
     })
   }
@@ -5301,10 +5498,24 @@ export const buildProDosHdv = async (
     console.log(`[HDV Export] Direct-load binary: startBlock=${dl.startBlock}, blocks=${dl.blockCount}, loadAddr=$${dl.loadAddress.toString(16)}, entryAddr=$${dl.entryAddress.toString(16)}, dataLen=${dl.binaryData.length}, contiguous=${isContiguous}, first16=[${first16}]`)
   }
 
+  // Write stub binary to its pre-allocated raw block.
+  if (stubCodeForRawBlock && stubBlockNumber > 0) {
+    const writeOffset = stubBlockNumber * BLOCK_SIZE
+    newHdv.set(stubCodeForRawBlock, writeOffset)
+    console.log(`[HDV Export] Stub raw block ${stubBlockNumber} written (${stubCodeForRawBlock.length} bytes)`)
+  }
+
+  // Write ZP snapshot data to their pre-allocated raw blocks.
+  for (const alloc of zpBlockAllocations) {
+    const dl = directLoadByMenuIndex[alloc.entryIndex]
+    if (!dl?.zpSnapshot) continue
+    const writeOffset = alloc.block * BLOCK_SIZE
+    newHdv.set(dl.zpSnapshot, writeOffset)
+    console.log(`[HDV Export] ZP snapshot raw block ${alloc.block} written for entry ${alloc.entryIndex} (${dl.zpSnapshot.length} bytes)`)
+  }
+
   // === POST-BUILD VERIFICATION ===
-  // Verify that every A2TSZP file referenced in the DATA (Z(I)=1) is actually
-  // readable on the generated ProDOS volume.  A mismatch here would cause
-  // I/O ERROR at runtime (line 263 in MENULAUNCH).
+  // Verify that stub and ZP raw blocks were written correctly.
 
   // Dump A2TSHLP subdirectory block header for debugging
   const helperNode = rootDirectoryNodes.find(n => (n.normalizedName || n.name) === HELPER_SUBDIR)
@@ -5317,7 +5528,6 @@ export const buildProDosHdv = async (
       const entriesPerBlock = hlpBlock[4 + 32]
       const fileCount = hlpBlock[4 + 33] | (hlpBlock[4 + 34] << 8)
       console.log(`[HDV Verify] A2TSHLP parsed: entry_length=$${entryLen.toString(16)}, entries_per_block=$${entriesPerBlock.toString(16)}, file_count=${fileCount}`)
-      // Also dump entry 3 (slot 3 = A2TSZP1 if it's 3rd file)
       for (let s = 1; s <= 5; s++) {
         const off = 4 + s * 39
         const st = (hlpBlock[off] >> 4) & 0xF
@@ -5330,20 +5540,23 @@ export const buildProDosHdv = async (
     }
   }
 
-  for (let i = 0; i < directLoadByMenuIndex.length; i++) {
-    const dl = directLoadByMenuIndex[i]
-    if (!dl?.zpSnapshot) continue
-    const zpName = `A2TSZP${i + 1}`
-    const found = findFileByPath(newHdv, [HELPER_SUBDIR, zpName])
-    if (!found) {
-      console.error(`[HDV Export] *** VERIFICATION FAILED: ${HELPER_SUBDIR}/${zpName} NOT FOUND on generated volume! Z(${i + 1})=1 but file is missing. ***`)
-      continue
+  // Verify stub raw block
+  if (stubCodeForRawBlock && stubBlockNumber > 0) {
+    const blockData = readBlock(newHdv, stubBlockNumber)
+    if (blockData) {
+      const match = stubCodeForRawBlock.every((b, j) => blockData[j] === b)
+      console.log(`[HDV Verify] Stub raw block ${stubBlockNumber}: match=${match}, first8=[${Array.from(blockData.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
     }
-    const fileData = readFileDataFromProDosImage(newHdv, found.storageType as 1 | 2 | 3, found.keyBlock, found.eof)
-    const match = fileData.length === dl.zpSnapshot.length && fileData.every((b, j) => b === dl.zpSnapshot![j])
-    console.log(`[HDV Export] Verify ${HELPER_SUBDIR}/${zpName}: storageType=${found.storageType}, keyBlock=${found.keyBlock}, eof=${found.eof}, dataLen=${fileData.length}, match=${match}, first4=[${Array.from(fileData.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
-    if (!match) {
-      console.error(`[HDV Export] *** VERIFICATION FAILED: ${HELPER_SUBDIR}/${zpName} data mismatch! Expected ${dl.zpSnapshot.length} bytes, got ${fileData.length}. ***`)
+  }
+
+  // Verify ZP raw blocks
+  for (const alloc of zpBlockAllocations) {
+    const dl = directLoadByMenuIndex[alloc.entryIndex]
+    if (!dl?.zpSnapshot) continue
+    const blockData = readBlock(newHdv, alloc.block)
+    if (blockData) {
+      const match = dl.zpSnapshot.every((b, j) => blockData[j] === b)
+      console.log(`[HDV Verify] ZP raw block ${alloc.block} (entry ${alloc.entryIndex}): match=${match}, first4=[${Array.from(blockData.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
     }
   }
 
@@ -5359,5 +5572,5 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
-export const VTOC_REFRESH = 4
+export const VTOC_REFRESH = 5
 

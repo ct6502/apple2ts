@@ -348,8 +348,8 @@
 .dcp-item-export-badge,
 .dcp-item-report {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   pointer-events: auto;
 }
 
@@ -363,10 +363,11 @@
 
 .dcp-item-ia {
   position: relative;
-  width: 24px;
-  height: 24px;
-  margin-right: -4px;
+  width: 32px;
+  height: 32px;
+  margin-right: -8px;
   pointer-events: auto;
+  bottom: 1px;
 }
 
 .dcp-item-new-icon {
@@ -375,6 +376,7 @@
   height: 100%;
   color: gainsboro;
   z-index: 1;
+  bottom: 1px;
 }
 
 .dcp-item-new-icon-bg {
@@ -432,8 +434,8 @@
 
 .dcp-item-a2ts-icon-bg {
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   left: 4px;
   bottom: 2px;
   background-color: black;
@@ -451,8 +453,8 @@
 
 .dcp-item-ia-icon-bg {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   left: 4px;
   bottom: 4px;
   background-color: black;
@@ -465,6 +467,7 @@
   height: 100%;
   color: gainsboro;
   z-index: 1;
+  bottom: 1px;
 }
 
 .dcp-item-export-badge-icon {
@@ -485,7 +488,7 @@
 
 .dcp-item-export-badge-icon-bg {
   position: absolute;
-  width: 14px;
+  width: 18px;
   height: 3px;
   left: 3px;
   bottom: 2px;
@@ -503,6 +506,7 @@
   height: 100%;
   color: orange;
   z-index: 1;
+  bottom: 2px;
 }
 
 .dcp-item-new-icon-bg,

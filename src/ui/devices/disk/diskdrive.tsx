@@ -18,7 +18,7 @@ import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import InternetArchivePopup from "./internetarchivedialog"
 import { DiskBookmarks } from "./diskbookmarks"
-import { determineVtocType } from "../../../common/prodos_hdv"
+import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 
 export const DISK_DRIVE_LABELS = ["S7D1", "S7D2", "S6D1", "S6D2"]
@@ -321,7 +321,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                     lastUpdated: new Date(Date.now()),
                     diskUrl: dprops.cloudData.downloadUrl,
                     cloudData: dprops.cloudData,
-                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData)
+                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData),
+                    vtocVersion: VTOC_REFRESH
                   })
                 }
               }
@@ -425,7 +426,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                     screenshotUrl: getImageDataUrlFromCanvas(),
                     lastUpdated: new Date(dprops.cloudData.lastSyncTime),
                     cloudData: dprops.cloudData,
-                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData)
+                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData),
+                    vtocVersion: VTOC_REFRESH
                   })
                 }
               }

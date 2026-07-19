@@ -2,7 +2,7 @@ import { passDriveSound } from "../worker2main"
 import { s6502 } from "../instructions"
 import { toHex, DRIVE } from "../../common/utility"
 import { getCurrentDriveData, getCurrentDriveState, passDriveData, setCurrentDrive } from "./drivestate"
-import { setSlotDriver, setSlotIOCallback } from "../memory"
+import { setSlotDriver, setSlotIOCallback, memGetRaw } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
@@ -10,6 +10,7 @@ let dataRegister = 0
 let dataRegHold = false
 let cycleRemainder = 0
 let motorOnTime = 0
+let floppyAccessLogCount = 0
 const doDebugDrive = false
 
 enum SWITCH {
@@ -155,11 +156,20 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
 
 const randByte = () => Math.floor(256 * Math.random())
 
+// When no disk is loaded, return a repeating D5-AA-97 pattern instead of
+// random noise.  This causes DOS 3.3 RWTS sector-read loops to fail their
+// address-field check quickly (97 ≠ expected 96), decrementing the retry
+// counter every 3 reads so the RWTS times out in milliseconds instead of
+// hanging forever on random data that almost never matches D5.
+const NODISK_PATTERN = [0xD5, 0xAA, 0x97]
+let noDiskPatternIdx = 0
+
 const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // const tracklocSave = ds.trackLocation
-  // If no disk then return random noise from the drive.
-  // Some programs (like anti-m) use this to check if no disk is inserted.
-  if (dd.length === 0) return randByte()
+  // If no disk then return a fast-fail pattern.
+  // Programs that check for no-disk (like anti-m) will still get a read
+  // error, but the RWTS timeout happens in milliseconds, not minutes.
+  if (dd.length === 0) return NODISK_PATTERN[noDiskPatternIdx++ % 3]
   let result = 0
 
   // Read individual bits and combine them.
@@ -318,6 +328,10 @@ export const handleDriveSoftSwitches: AddressCallback =
   switch (addr) {
     case SWITCH.MOTOR_ON:  // $C089,X
       MOTOR_RUNNING = true
+      if (floppyAccessLogCount < 20) {
+        floppyAccessLogCount++
+        console.log(`[Floppy] Motor ON  at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4,'0')} track=${ds.quarterTrack/4} cycle=${s6502.cycleCount}`)
+      }
       startMotor(ds)
       dumpData(ds)
       break

@@ -131,8 +131,9 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const [downloadedDisks, setDownloadedDisks] = useState<DownloadedExportDisk[]>([])
   // Bumped after a cloud sign-in completes so the render re-reads each provider's
   // in-memory auth-token state (which lives outside React) to hide the auth
-  // notification bar and re-enable the Export button.
-  const [, setAuthRefresh] = useState<number>(0)
+  // notification bar, re-enable the Export button, and trigger VTOC checks for
+  // cloud disks that were previously skipped due to missing auth.
+  const [authRefresh, setAuthRefresh] = useState<number>(0)
   const [pendingBookmarkRemovals, setPendingBookmarkRemovals] = useState<Set<string>>(new Set())
   const pendingBookmarkRemovalsRef = useRef<Set<string>>(new Set())
   const suppressClickUntilRef = useRef(0)
@@ -180,13 +181,11 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     {
       icon: faDownload,
       label: "Export disks to HDV",
-      // Show disks whose VTOC is known and exportable. HDV images and disks with
-      // a cached VTOC appear immediately; other disks appear only after their
-      // bytes download successfully and their VTOC is determined, so unreachable
-      // (CORS-blocked) disks stay hidden. Disks whose VTOC is "other"/"dosup" or
-      // too large are excluded.
+      // Show all potentially exportable disks, including those whose VTOC is
+      // still pending (undefined). Disks whose VTOC is "other"/"dosup", too
+      // large, or explicitly disabled are excluded by isDiskExportable.
       disks: sortDisks(
-        diskCollection.filter(x => x.vtocType !== undefined && isDiskExportable(x)),
+        diskCollection.filter(x => isDiskExportable(x)),
         sortModeByTab[TAB_INDEX.EXPORT]
       ),
       isHighlighted: false
@@ -436,16 +435,27 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     return estimatedSize
   }
 
-  // Cloud providers that have at least one disk selected on the Export tab but
-  // still need a sign-in (no access token cached in memory). Drives both the auth
-  // notification bar and the Export button's disabled state. Reading the token
-  // state here never triggers an auth popup.
-  const selectedCloudProviderNames = Array.from(new Set(
-    selectedDisks
-      .filter((d) => d.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && d.cloudData?.providerName)
-      .map((d) => d.cloudData!.providerName as string)
+  // Cloud providers that need a sign-in (no access token cached in memory).
+  // On the Export tab, only show auth bars when cloud disks from a provider are
+  // pending VTOC check (vtocType undefined) or selected for export — not for
+  // cloud disks that already resolved and weren't selected. On other tabs, show
+  // auth bars for any visible cloud disk. Reading the token state here never
+  // triggers an auth popup.
+  const currentTabCloudDisks = tabs[activeTab].disks
+    .filter((d) => d.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && d.cloudData?.providerName)
+  const relevantCloudProviderNames = Array.from(new Set(
+    activeTab === TAB_INDEX.EXPORT
+      ? [
+        ...currentTabCloudDisks
+          .filter((d) => d.vtocType === undefined)
+          .map((d) => d.cloudData!.providerName as string),
+        ...selectedDisks
+          .filter((d) => d.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE && d.cloudData?.providerName)
+          .map((d) => d.cloudData!.providerName as string),
+      ]
+      : currentTabCloudDisks.map((d) => d.cloudData!.providerName as string)
   ))
-  const cloudProvidersNeedingAuth = selectedCloudProviderNames.filter(
+  const cloudProvidersNeedingAuth = relevantCloudProviderNames.filter(
     (providerName) => !cloudProviderHasAuthToken(providerName)
   )
 
@@ -467,7 +477,20 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
 
     // Block export while any selected cloud disk's provider is not signed in;
     // fetching that disk during export would fail (or trigger a blocked popup).
-    if (cloudProvidersNeedingAuth.length > 0) {
+    const selectedNeedAuth = selectedDisks.some(
+      (d) => d.type === DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
+        d.cloudData?.providerName &&
+        !cloudProviderHasAuthToken(d.cloudData.providerName)
+    )
+    if (selectedNeedAuth) {
+      return true
+    }
+
+    // Not sure how this happens given the blocking VTOC check logic,
+    // but if any selected disk's VTOC is still pending (undefined), block export until it resolves.
+    // This avoids exporting a disk that may be too large or otherwise not exportable.
+    const selectedPendingVtocCheck = selectedDisks.some((d) => d.vtocType === undefined)
+    if (selectedPendingVtocCheck) {
       return true
     }
 
@@ -557,7 +580,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           </div>
         ))}
       </div>
-      {activeTab == TAB_INDEX.EXPORT && cloudProvidersNeedingAuth.map((providerName) => (
+      {cloudProvidersNeedingAuth.length > 0 && cloudProvidersNeedingAuth.map((providerName) => (
         <div
           key={`dcp-auth-bar-${providerName}`}
           className="dcp-auth-bar"
@@ -572,7 +595,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         </div>
       ))}
       <div className="disk-collection-panel"
-        style={activeTab == TAB_INDEX.EXPORT && cloudProvidersNeedingAuth.length > 0
+        style={cloudProvidersNeedingAuth.length > 0
           ? { height: `calc(65vh - ${cloudProvidersNeedingAuth.length * AUTH_BAR_HEIGHT}px)` }
           : undefined}
         onClick={(e) => { if (e.target === e.currentTarget) e.stopPropagation() }}>
@@ -961,6 +984,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         visibleCandidates={activeTab === TAB_INDEX.EXPORT
           ? diskCollection.filter(isDiskExportable)
           : tabs[activeTab].disks.filter(isDiskExportable)}
+        authRefresh={authRefresh}
+        cloudProviderHasAuthToken={cloudProviderHasAuthToken}
       />
       </div>
     </Flyout >

@@ -15,6 +15,8 @@ type DiskPanelVtocProps = {
   exportQueue: DiskCollectionItem[],
   downloadedDisks: DownloadedExportDisk[],
   visibleCandidates: DiskCollectionItem[],
+  authRefresh: number,
+  cloudProviderHasAuthToken: (providerName: string) => boolean,
 }
 
 // Downloads a disk's bytes without disturbing the running emulator. Unlike
@@ -49,6 +51,8 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // a fresh pass for the newly visible disks.
   const vtocActiveTabRef = useRef<number | null>(null)
   const vtocProgressVisibleRef = useRef(false)
+  // Tracks the last authRefresh value so a sign-in clears attempted cloud disks.
+  const vtocAuthRefreshRef = useRef<number>(props.authRefresh)
 
   // Stable identity for a disk across re-renders (bookmark id, cloud item id,
   // disk URL, or finally the title).
@@ -136,21 +140,25 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       vtocResolveAttempted.current.clear()
     }
 
+    // After a cloud sign-in, clear attempted disks so cloud disks that were
+    // previously skipped (no auth token) get picked up for VTOC resolution.
+    if (vtocAuthRefreshRef.current !== props.authRefresh) {
+      vtocAuthRefreshRef.current = props.authRefresh
+      vtocResolveAttempted.current.clear()
+    }
+
     // Only resolve disks that are visible in the current tab, so we don't
-    // background-download disks the user can't see. The Export tab is the
-    // superset of all exportable disks, but its rendered list is pre-filtered to
-    // already-determined disks; use the full exportable candidate set for it so
-    // its not-yet-determined disks still get resolved when it's navigated to.
-    // Cloud disks (Google Drive / OneDrive) are never background-probed here:
-    // fetching them requires an auth token and would trigger an auth popup. Their
-    // VTOC type is determined synchronously from the in-memory bytes when the
-    // bookmark is added, and any remaining auth happens when the disk is actually
-    // exported.
+    // background-download disks the user can't see. Cloud disks (Google Drive /
+    // OneDrive) are only probed when their provider has an auth token; without a
+    // token the fetch would fail or trigger an auth popup. After a successful
+    // sign-in, authRefresh bumps and this effect re-runs with the cloud disks
+    // now eligible.
     const pendingCandidates = props.visibleCandidates.filter((item) =>
       item.vtocType === undefined &&
-      item.type !== DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
       isDiskExportable(item) &&
-      !hasSessionVtocFailure(item.diskUrl.toString())
+      !hasSessionVtocFailure(item.diskUrl.toString()) &&
+      (item.type !== DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE ||
+        props.cloudProviderHasAuthToken(item.cloudData?.providerName || ""))
     )
     const pending = pendingCandidates.find((item) =>
       !vtocResolveAttempted.current.has(itemKey(item))
@@ -165,14 +173,8 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
 
     const currentDisk = vtocResolveAttempted.current.size + 1
     const totalDisks = vtocResolveAttempted.current.size + pendingCandidates.length
-    const shouldShowVtocProgress = props.activeTab === TAB_INDEX.EXPORT
-    if (shouldShowVtocProgress) {
-      showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
-      vtocProgressVisibleRef.current = true
-    } else if (vtocProgressVisibleRef.current) {
-      showGlobalProgressModal(false)
-      vtocProgressVisibleRef.current = false
-    }
+    showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
+    vtocProgressVisibleRef.current = true
 
     vtocResolveAttempted.current.add(itemKey(pending))
     // Capture the ref's Set (stable across renders) and the item key so the
@@ -230,7 +232,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, visibleCandidatesKey])
+  }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, visibleCandidatesKey, props.authRefresh])
 
   return (<></>)
 }

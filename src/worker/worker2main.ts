@@ -113,8 +113,8 @@ export const passSerialConfig = (config: SerialConfig) => {
   doPostMessage(MSG_WORKER.SERIAL_CONFIG_CHANGE, config)
 }
 
-export const passCaptureBootStateResponse = (zp: Uint8Array | null) => {
-  doPostMessage(MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE, zp)
+export const passCaptureBootStateResponse = (result: CaptureBootResult | null) => {
+  doPostMessage(MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE, result)
 }
 
 // We do this weird check so we can safely run this code from the node.js
@@ -269,8 +269,8 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.CAPTURE_BOOT_STATE: {
         const req = e.data.payload as CaptureBootStateRequest
-        startCaptureBootState(req, (zp) => {
-          passCaptureBootStateResponse(zp)
+        startCaptureBootState(req, (result) => {
+          passCaptureBootStateResponse(result)
         })
         break
       }

@@ -343,22 +343,23 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
     // floppy in the emulator at ludicrous speed to capture the zero page
     // state at the game's entry point.  This ensures the HDV boot replicates
     // the exact zero page environment the game expects from its floppy loader.
-    const zpCaptureCallback = async (menuIndex: number, entryAddress: number): Promise<Uint8Array | null> => {
+    const zpCaptureCallback = async (menuIndex: number, entryAddress: number, captureMemory?: boolean): Promise<CaptureBootResult | null> => {
       const disk = orderedDownloadedDisks[menuIndex]
       if (!disk) return null
-      console.log(`[HDV Export] Capturing ZP for "${disk.filename}" at entry $${entryAddress.toString(16).toUpperCase()}...`)
-      const zp = await captureBootZeroPage({
+      console.log(`[HDV Export] Capturing ZP${captureMemory ? ' + memory' : ''} for "${disk.filename}" at entry $${entryAddress.toString(16).toUpperCase()}...`)
+      const result = await captureBootZeroPage({
         diskImage: disk.buffer,
         filename: disk.filename,
         entryAddress,
         timeoutMs: 15000,
+        captureMemory,
       })
-      if (zp) {
-        console.log(`[HDV Export] ZP capture succeeded for "${disk.filename}"`)
+      if (result) {
+        console.log(`[HDV Export] ZP capture succeeded for "${disk.filename}"${result.memoryDump ? ` (memory dump: ${result.memoryDump.length} bytes)` : ''}`)
       } else {
         console.warn(`[HDV Export] ZP capture timed out for "${disk.filename}"`)
       }
-      return zp
+      return result
     }
 
     const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries, undefined, zpCaptureCallback)
