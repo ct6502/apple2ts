@@ -52,12 +52,12 @@ const decodeWoz1 = (driveState: DriveState, diskData: Uint8Array): boolean => {
   return true
 }
 
-const isDSK = (filename: string) => {
-  const f = filename.toLowerCase()
-  const isDSK = f.endsWith(".dsk") || f.endsWith(".do")
-  const isPO = f.endsWith(".po")
-  return isDSK || isPO
-}
+// const isDSK = (filename: string) => {
+//   const f = filename.toLowerCase()
+//   const isDSK = f.endsWith(".dsk") || f.endsWith(".do")
+//   const isPO = f.endsWith(".po")
+//   return isDSK || isPO
+// }
 
 const decodeDSK = (driveState: DriveState, diskData: Uint8Array) => {
   const f = driveState.filename.toLowerCase()
@@ -85,10 +85,15 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
     }
     // We might have a DSK file that has already been renamed as a WOZ
     // but is still in DSK format. So double check the disk data length.
-    if (isDSK(driveState.filename) || diskData.length === 143360) {
+    if (diskData.length === 143360) {
       diskData = decodeDSK(driveState, diskData)
     }
     if (decodeWoz2(driveState, diskData)) {
+      if (fname.endsWith(".dsk") || fname.endsWith(".do") || fname.endsWith(".po")) {
+        driveState.filename = replaceSuffix(driveState.filename, "woz")
+        driveState.diskHasChanges = true
+        driveState.lastAppleWriteTime = Date.now()
+      }
       return diskData
     }
     if (decodeWoz1(driveState, diskData)) {
