@@ -419,11 +419,12 @@ export const getPreferenceNewReleasesChecked = () => {
   return value
 }
 
-// A disk's VTOC type is determined once from its bytes and never changes, so we
-// cache it in local storage keyed by the disk URL. This lets non-bookmarked
-// disks (e.g. new releases) skip re-downloading their bytes on every visit to
-// the Export/New Releases tabs.
-const getVtocTypeCache = (): { [diskUrl: string]: VtocType } => {
+// A disk's VTOC type is determined once from its bytes and cached in local
+// storage keyed by the disk URL. When new detection logic is introduced (see
+// VTOC_REFRESH in prodos_hdv.ts), entries with a stale or missing version are
+// treated as undetermined so they are re-evaluated by the background VTOC pass.
+type VtocCacheEntry = { type: VtocType; version: number }
+const getVtocTypeCache = (): { [diskUrl: string]: VtocType | VtocCacheEntry } => {
   const item = localStorage.getItem("vtocTypeCache")
   if (item) {
     try {
@@ -433,19 +434,24 @@ const getVtocTypeCache = (): { [diskUrl: string]: VtocType } => {
   return {}
 }
 
-export const getPreferenceVtocType = (diskUrl: string): VtocType | undefined => {
+export const getPreferenceVtocType = (diskUrl: string, requiredVersion: number): { type: VtocType; version: number } | undefined => {
   if (!diskUrl) {
     return undefined
   }
-  return getVtocTypeCache()[diskUrl]
+  const entry = getVtocTypeCache()[diskUrl]
+  if (!entry) return undefined
+  // Legacy entries are bare strings (pre-versioned cache).
+  if (typeof entry === "string") return undefined
+  if (entry.version < requiredVersion) return undefined
+  return entry
 }
 
-export const setPreferenceVtocType = (diskUrl: string, vtocType: VtocType) => {
+export const setPreferenceVtocType = (diskUrl: string, vtocType: VtocType, version: number) => {
   if (!diskUrl) {
     return
   }
   const cache = getVtocTypeCache()
-  cache[diskUrl] = vtocType
+  cache[diskUrl] = { type: vtocType, version }
   localStorage.setItem("vtocTypeCache", JSON.stringify(cache))
 }
 

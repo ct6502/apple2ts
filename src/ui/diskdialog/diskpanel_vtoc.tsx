@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { determineVtocType } from "../../common/prodos_hdv"
+import { determineVtocType, VTOC_REFRESH } from "../../common/prodos_hdv"
 import { hasSessionVtocFailure, addSessionVtocFailure, setPreferenceVtocType } from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
 import { showGlobalProgressModal } from "../ui_utilities"
@@ -62,18 +62,19 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // a stale URL-cache value (and vice versa).
   const persistVtocType = (diskCollectionItem: DiskCollectionItem, vtocType: VtocType) => {
     diskCollectionItem.vtocType = vtocType
+    diskCollectionItem.vtocVersion = VTOC_REFRESH
 
     if (diskCollectionItem.bookmarkId) {
       const bookmark = props.diskBookmarks.get(diskCollectionItem.bookmarkId)
       if (bookmark) {
         bookmark.vtocType = vtocType
+        bookmark.vtocVersion = VTOC_REFRESH
         props.diskBookmarks.set(bookmark)
       }
     } else {
-      // A disk's VTOC type never changes, so cache it by URL. This lets
-      // non-bookmarked disks (e.g. new releases) avoid re-downloading their bytes
-      // to redetermine the VTOC on every visit.
-      setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType)
+      // Cache by URL so non-bookmarked disks (e.g. new releases) avoid
+      // re-downloading their bytes to redetermine the VTOC on every visit.
+      setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType, VTOC_REFRESH)
     }
 
     // Trigger a re-render so the export filter reflects the new VTOC type.

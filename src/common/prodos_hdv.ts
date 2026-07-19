@@ -20,7 +20,7 @@ export type MenuDiskEntry = {
   sourceFilename?: string
   displayName?: string
   screenshotData?: Uint8Array
-  imageKind?: "dos" | "prodos" | "unknown"
+  imageKind?: "dos" | "prodos" | "unknown" | "dosdirect"
   wozExtractedProDosFiles?: ImportedDiskFile[]
 }
 
@@ -54,10 +54,20 @@ type DirectoryImportPlan = {
   launchCommand?: string
 }
 
+type DirectLoadEntry = {
+  binaryData: Uint8Array     // raw game binary payload (without DOS 4-byte header)
+  loadAddress: number         // target load address ($0400-$9600)
+  entryAddress: number        // JMP target after loading (typically == loadAddress)
+  blockCount: number          // ceil(binaryData.length / 512)
+  startBlock?: number         // filled in by HDV builder after block allocation
+  coldStartFlagAddr?: number  // zero-page address of cold-start "done" flag (e.g. $37)
+  coldStartFlagValue?: number // magic value to store (e.g. $A3) to skip cold-start
+}
+
 /**
  * Creates binary menu metadata file with disk names and screenshot block references
  */
-const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlock: number; imageKind?: "dos" | "prodos" | "unknown" }>): Uint8Array => {
+const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlock: number; imageKind?: "dos" | "prodos" | "unknown" | "dosdirect" }>): Uint8Array => {
   const totalSize = 1 + (entries.length * 40)
   const data = new Uint8Array(totalSize)
   
@@ -220,6 +230,179 @@ const DOS_IBSLOT_ADDRESS = 0xb7e9
 const MENU_SELECTED_INDEX_ADDRESS = 0x0479
 const HELPER_SUBDIR = "A2TSHLP"
 
+// ===== Direct block-load support =====
+// Address where the block-reader stub is POKEd by the Applesoft launcher.
+const DIRECT_LOAD_STUB_ADDRESS = 0x0300
+// ProDOS global page: current device number (DSSS0000).
+const PRODOS_DEVNUM_ADDRESS = 0xBF30
+
+/**
+ * Builds the 6502 machine-language block-reader stub that the Applesoft launcher
+ * BLOADs to $0300. The stub reads sequential blocks from the boot device by
+ * calling the slot 7 device driver directly ($C7C0), bypassing the ProDOS MLI.
+ *
+ * The driver uses the standard ProDOS block-device page-zero protocol:
+ *   $42 = command (1=READ)
+ *   $43 = unit number (from DEVNUM at $BF30)
+ *   $44-$45 = data buffer address
+ *   $46-$47 = block number
+ *
+ * Parameters are embedded as inline data following the code, POKEd by the
+ * Applesoft program before CALL 768:
+ *
+ *   Offset  Size  Field
+ *   +0      code  (the stub itself)
+ *   +N      2     startBlock  (LE) - first block to read
+ *   +N+2    2     blockCount  (LE) - number of blocks to read
+ *   +N+4    2     targetAddr  (LE) - base load address
+ *   +N+6    2     entryAddr   (LE) - JMP target after loading
+ */
+const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number } => {
+  const BASE = DIRECT_LOAD_STUB_ADDRESS
+  const code: number[] = []
+  const emit = (...bytes: number[]) => { for (const b of bytes) code.push(b) }
+
+  const patches: Array<{ pos: number; target: string; offset: number }> = []
+  const labels: { [key: string]: number } = {}
+  const markLabel = (name: string) => { labels[name] = code.length }
+  const emitAddrRef = (name: string, off = 0) => {
+    patches.push({ pos: code.length, target: name, offset: off })
+    emit(0x00, 0x00)
+  }
+  const emitBranchRef = (opcode: number, name: string) => {
+    emit(opcode)
+    patches.push({ pos: code.length, target: name, offset: -(code.length + 1) })
+    emit(0x00)
+  }
+
+  // === INIT: Set up page-zero block-device parameters ===
+
+  // Command = READ (1)
+  emit(0xA9, 0x01)                        // LDA #$01
+  emit(0x85, 0x42)                        // STA $42
+
+  // Unit number from DEVNUM
+  emit(0xAD, PRODOS_DEVNUM_ADDRESS & 0xFF, (PRODOS_DEVNUM_ADDRESS >> 8) & 0xFF) // LDA $BF30
+  emit(0x85, 0x43)                        // STA $43
+
+  // Copy targetAddr -> buffer address ($44-$45)
+  emit(0xAD); emitAddrRef("targetAddr", 0) // LDA targetAddr lo
+  emit(0x85, 0x44)                        // STA $44
+  emit(0xAD); emitAddrRef("targetAddr", 1) // LDA targetAddr hi
+  emit(0x85, 0x45)                        // STA $45
+
+  // Copy startBlock -> block number ($46-$47)
+  emit(0xAD); emitAddrRef("startBlock", 0) // LDA startBlock lo
+  emit(0x85, 0x46)                        // STA $46
+  emit(0xAD); emitAddrRef("startBlock", 1) // LDA startBlock hi
+  emit(0x85, 0x47)                        // STA $47
+
+  // === LOOP ===
+  markLabel("loop")
+  emit(0xAD); emitAddrRef("blockCount", 0) // LDA blockCount lo
+  emit(0x0D); emitAddrRef("blockCount", 1) // ORA blockCount hi
+  emitBranchRef(0xF0, "done")              // BEQ done
+
+  // Call device driver directly at $C7C0 (slot 7 block driver)
+  emit(0x20, 0xC0, 0xC7)                  // JSR $C7C0
+  emitBranchRef(0xB0, "error")            // BCS error
+
+  // Advance buffer +$200
+  emit(0xE6, 0x45)                        // INC $45
+  emit(0xE6, 0x45)                        // INC $45
+
+  // Increment block number (16-bit)
+  emit(0xE6, 0x46)                        // INC $46
+  emit(0xD0, 0x02)                        // BNE +2
+  emit(0xE6, 0x47)                        // INC $47
+
+  // Decrement blockCount (16-bit)
+  emit(0xAD); emitAddrRef("blockCount", 0) // LDA blockCount lo
+  emit(0x38)                                // SEC
+  emit(0xE9, 0x01)                          // SBC #1
+  emit(0x8D); emitAddrRef("blockCount", 0) // STA blockCount lo
+  emit(0xB0, 0x03)                          // BCS +3 (no borrow -> loop)
+  emit(0xCE); emitAddrRef("blockCount", 1) // DEC blockCount hi
+  emit(0x4C); emitAddrRef("loop")           // JMP loop
+
+  // === DONE: set up slot ROM table, cold-start flag, then jump to game entry ===
+  markLabel("done")
+
+  // Set up $BF73 slot ROM signature table.
+  // Many games compare slot ROM first-bytes with a lookup table at $BF73,X
+  // during hardware detection.  The original launcher (e.g. MDSADJ) populated
+  // this table from the actual slot ROMs.  On ProDOS HDV boot, $BF00-$BFFF
+  // has ProDOS system globals instead, causing the detection to fail.
+  // Fix: read $Cn00 for each slot 1-7 and store at $BF73+n.
+  emit(0xA2, 0x07)                            // LDX #$07
+  emit(0xA0, 0x00)                            // LDY #$00
+  markLabel("slotLoop")
+  emit(0x8A)                                  // TXA
+  emit(0x09, 0xC0)                            // ORA #$C0
+  emit(0x85, 0xA5)                            // STA $A5
+  emit(0x84, 0xA4)                            // STY $A4
+  emit(0xB1, 0xA4)                            // LDA ($A4),Y
+  emit(0x9D, 0x73, 0xBF)                      // STA $BF73,X
+  emit(0xCA)                                  // DEX
+  emitBranchRef(0xD0, "slotLoop")             // BNE slotLoop
+
+  // Cold-start flag: pre-set zero-page flag to bypass destructive cold-start.
+  // flagValue=0 means no flag to set.
+  emit(0xAD); emitAddrRef("flagValue", 0)   // LDA flagValue
+  emitBranchRef(0xF0, "skipFlag")            // BEQ skipFlag (no flag)
+  emit(0xAE); emitAddrRef("flagAddr", 0)     // LDX flagAddr
+  emit(0x95, 0x00)                            // STA $00,X (store to zero page)
+  // Also set up JMP ($0200) fallback in case the slot detection still fails
+  // despite the $BF73 table fix (safety net).
+  emit(0xA9, 0x60)                            // LDA #$60 (RTS opcode)
+  emit(0x8D, 0x00, 0x0B)                      // STA $0B00
+  emit(0xA9, 0x0B)                            // LDA #$0B
+  emit(0x8D, 0x01, 0x02)                      // STA $0201
+  markLabel("skipFlag")
+  emit(0x6C); emitAddrRef("entryAddr")       // JMP (entryAddr)
+
+  // === ERROR ===
+  markLabel("error")
+  emit(0x20, 0xDA, 0xFD)                   // JSR $FDDA (PRBYTE - prints A as hex)
+  emit(0x4C, 0x59, 0xFF)                   // JMP $FF59 (MONITOR)
+
+  // === INLINE PARAMETERS (POKEd by Applesoft before CALL) ===
+  markLabel("startBlock")
+  emit(0x00, 0x00)                  // start block (2 bytes LE)
+  markLabel("blockCount")
+  emit(0x00, 0x00)                  // block count (2 bytes LE)
+  markLabel("targetAddr")
+  emit(0x00, 0x00)                  // target load address (2 bytes LE)
+  markLabel("entryAddr")
+  emit(0x00, 0x00)                  // entry point address (2 bytes LE)
+  markLabel("flagAddr")
+  emit(0x00)                        // cold-start flag zero-page address (1 byte)
+  markLabel("flagValue")
+  emit(0x00)                        // cold-start flag value (1 byte)
+
+  // === RESOLVE PATCHES ===
+  for (const patch of patches) {
+    const targetAddr = labels[patch.target]
+    if (targetAddr === undefined) {
+      throw new Error(`Unresolved label: ${patch.target}`)
+    }
+    if (patch.offset < 0) {
+      const rel = (BASE + targetAddr) - (BASE + patch.pos + 1)
+      if (rel < -128 || rel > 127) {
+        throw new Error(`Branch out of range to ${patch.target}: ${rel}`)
+      }
+      code[patch.pos] = rel & 0xFF
+    } else {
+      const fullAddr = BASE + targetAddr + patch.offset
+      code[patch.pos] = fullAddr & 0xFF
+      code[patch.pos + 1] = (fullAddr >> 8) & 0xFF
+    }
+  }
+
+  const paramOffset = labels["startBlock"]
+  return { code: Uint8Array.from(code), paramOffset }
+}
+
 /**
  * Generates a tokenized Applesoft BASIC program that draws screenshots and
  * supports left/right navigation among disk images.
@@ -302,7 +485,8 @@ const generateMenuLaunchProgram = (
   aliasShimInstallCommand?: string,
   runtimeVolumeByMenuIndex?: Array<number | undefined>,
   runtimeHelloModeByMenuIndex?: Array<number | undefined>,
-  menuNeedsAliasShim?: boolean[]
+  menuNeedsAliasShim?: boolean[],
+  directLoadByMenuIndex?: Array<DirectLoadEntry | undefined>,
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
   const PATCH_LINE = 2500
@@ -344,6 +528,28 @@ const generateMenuLaunchProgram = (
   lines.push("60 IF K(I)=2 THEN TEXT:GOSUB 150:PRINT D$;\"PREFIX \";P$(I):PRINT D$;\"CATALOG\":END")
   lines.push("70 IF K(I)=3 THEN TEXT:GOSUB 150:PRINT D$;R$(I):END")
   lines.push("80 IF K(I)=4 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":GOTO 220")
+  // Launch code 6: direct block load. V(I)=startBlock, H(I)=blockCount,
+  // P$(I)=targetAddr, R$(I)=entryAddr. BLOAD the block-reader stub, POKE params, CALL.
+  // Split across multiple lines because Applesoft's IF...THEN has trouble with very long
+  // THEN clauses (>250 tokenized bytes) — the interpreter silently skips the line.
+  {
+    const stub = buildDirectLoadStub()
+    const PA = DIRECT_LOAD_STUB_ADDRESS + stub.paramOffset
+    lines.push("85 IF K(I)=6 THEN 250")
+    lines.push(`250 TEXT:HOME:PRINT D$;"BLOAD ${helperSubdir}/A2TSDL,A$${DIRECT_LOAD_STUB_ADDRESS.toString(16).toUpperCase()}"`)
+    lines.push(`252 POKE ${PA},V(I)-INT(V(I)/256)*256:POKE ${PA + 1},INT(V(I)/256)`)
+    lines.push(`254 POKE ${PA + 2},H(I)-INT(H(I)/256)*256:POKE ${PA + 3},INT(H(I)/256)`)
+    lines.push(`256 TA=VAL(P$(I)):EA=VAL(R$(I))`)
+    lines.push(`258 POKE ${PA + 4},TA-INT(TA/256)*256:POKE ${PA + 5},INT(TA/256)`)
+    lines.push(`260 POKE ${PA + 6},EA-INT(EA/256)*256:POKE ${PA + 7},INT(EA/256)`)
+    // Cold-start flag: POKE the flag address and value into the stub's
+    // inline params. The stub writes flagValue to zero-page flagAddr
+    // just before JMP to the game entry — this avoids corrupting CSWL
+    // ($36/$37) while BASIC.SYSTEM is still active.
+    // S(I) encodes flagAddr + flagValue*256; 0 means no flag.
+    lines.push(`261 IF S(I)>0 THEN POKE ${PA + 8},S(I)-INT(S(I)/256)*256:POKE ${PA + 9},INT(S(I)/256)`)
+    lines.push(`262 CALL ${DIRECT_LOAD_STUB_ADDRESS}`)
+  }
   lines.push("90 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("100 GOTO 220")
   lines.push("150 IF S(I)=0 THEN RETURN")
@@ -371,6 +577,20 @@ const generateMenuLaunchProgram = (
         helloMode = runtimeHelloModeByMenuIndex?.[idx] === 1 ? 1 : 0
       } else {
         launchCode = 5
+      }
+    } else if (entryKind === "dosdirect") {
+      const dl = directLoadByMenuIndex?.[idx]
+      if (dl && dl.startBlock !== undefined) {
+        launchCode = 6
+        volume = dl.startBlock
+        helloMode = dl.blockCount
+        prefix = String(dl.loadAddress)
+        runCmd = String(dl.entryAddress)
+        if (dl.coldStartFlagAddr && dl.coldStartFlagValue) {
+          shimFlag = dl.coldStartFlagAddr + dl.coldStartFlagValue * 256
+        }
+      } else {
+        launchCode = 4 // fallback: show "PRODOS FILES IMPORTED"
       }
     } else {
       const prefixValue = menuProDosPrefixes[idx] || ""
@@ -1814,13 +2034,389 @@ const dosImageGreetingIsEmpty = (image: Uint8Array): boolean => {
 }
 
 /**
- * Determines the exportable VTOC type of a disk image: "dos", "prodos", "dosup", or
- * "other". "other" means the image is neither a recognizable DOS 3.3 nor ProDOS volume.
- * "dosup" means a DOS 3.3 volume that is incompatible with DOS.MASTER, either because its
- * greeting relies on the language card (installing a language-card DOS relocator or driving
- * language-card RAM directly; see dosImageUsesLanguageCard) or because its greeting is empty
- * -- a decoy HELLO whose real game loads from raw sectors via a custom bootloader DOS.MASTER
- * can't reproduce (see dosImageGreetingIsEmpty). Both "other" and "dosup" are non-exportable.
+ * Checks whether a DOS 3.3 logical-order image whose greeting is empty contains a large
+ * binary file suitable for direct block loading (bypassing DOS.MASTER entirely). A disk
+ * qualifies when its catalog contains at least one binary file with:
+ *  - a valid load address in the range $0400-$9600
+ *  - a payload length >= 4096 bytes (a real game, not a small stub)
+ * The largest such binary is assumed to be the game. Returns the catalog entry and parsed
+ * header of the best candidate, or undefined if none qualifies.
+ */
+const findDirectLoadCandidate = (image: Uint8Array): {
+  entry: DosCatalogEntry
+  loadAddress: number
+  binaryLength: number
+} | undefined => {
+  if (!isLikelyDos33Volume(image) || !dosLogicalImageHasValidCatalog(image)) return undefined
+  const { entries } = readDos33Catalog(image)
+  let best: { entry: DosCatalogEntry; loadAddress: number; binaryLength: number } | undefined
+  for (const entry of entries) {
+    if (entry.sectorCount < 1) continue
+    if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) continue
+    const bytes = readDosFileBytes(image, entry.tsListTrack, entry.tsListSector)
+    // Binary file header: 2-byte load address LE, 2-byte length LE, then data.
+    if (bytes.length < 4) continue
+    const loadAddress = bytes[0] | (bytes[1] << 8)
+    const binaryLength = bytes[2] | (bytes[3] << 8)
+    if (binaryLength < 4096) continue
+    if (loadAddress < 0x0400 || loadAddress > 0x9600) continue
+    if (!best || binaryLength > best.binaryLength) {
+      best = { entry, loadAddress, binaryLength }
+    }
+  }
+  return best
+}
+
+/**
+ * Parses a DOS 3.3 Applesoft file's tokenized bytes to extract CALL addresses
+ * and quoted DOS command strings. Properly handles the file format:
+ *   bytes[0-1] = program length (2-byte LE header)
+ *   bytes[2+]  = tokenized program (linked list of lines)
+ * Each line: [next-ptr-lo] [next-ptr-hi] [linenum-lo] [linenum-hi] [tokens...] [$00]
+ * Program end: next-ptr = $0000.
+ */
+const parseApplesoftFileTokens = (bytes: Uint8Array): { callAddrs: number[]; dosCommands: string[] } => {
+  const callAddrs: number[] = []
+  const dosCommands: string[] = []
+  const CALL_TOKEN = 0x8C
+  const MINUS_TOKEN = 0xC9
+
+  // Skip 2-byte length header; tokenized program starts at offset 2
+  let offset = 2
+
+  while (offset + 4 < bytes.length) {
+    const nextPtr = bytes[offset] | (bytes[offset + 1] << 8)
+    if (nextPtr === 0) break // end of program
+
+    // Tokens start after 4-byte line header (2 ptr + 2 linenum)
+    const tokStart = offset + 4
+    let tokEnd = tokStart
+    while (tokEnd < bytes.length && bytes[tokEnd] !== 0x00) tokEnd++
+
+    // Scan tokens within this line
+    let inString = false
+    let currentString = ""
+    for (let i = tokStart; i < tokEnd; i++) {
+      const b = bytes[i]
+      if (b === 0x22) { // real quote character in token stream
+        if (inString) {
+          const cmd = currentString.trim().toUpperCase()
+          if (cmd.length >= 2) dosCommands.push(cmd)
+          currentString = ""
+        }
+        inString = !inString
+        continue
+      }
+      if (inString) {
+        currentString += String.fromCharCode(b & 0x7f)
+        continue
+      }
+      // Outside string: look for CALL token
+      if (b === CALL_TOKEN) {
+        let j = i + 1
+        while (j < tokEnd && bytes[j] === 0x20) j++ // skip spaces
+        if (j < tokEnd && (bytes[j] === MINUS_TOKEN || bytes[j] === 0x2D)) continue // negative
+        let numStr = ""
+        while (j < tokEnd && bytes[j] >= 0x30 && bytes[j] <= 0x39) {
+          numStr += String.fromCharCode(bytes[j])
+          j++
+        }
+        if (numStr.length > 0) {
+          callAddrs.push(parseInt(numStr, 10))
+        }
+      }
+    }
+
+    offset = tokEnd + 1 // skip past the $00 terminator
+  }
+
+  return { callAddrs, dosCommands }
+}
+
+/**
+ * Analyzes the Applesoft greeting (HELLO) program on a DOS 3.3 disk to determine
+ * the correct entry point for a direct-loaded game. Handles two patterns:
+ *
+ * 1. BLOAD + CALL: HELLO BLOADs the binary, then CALLs an address within it.
+ *    Returns `{ entryAddress, auxBinary: undefined }`.
+ *
+ * 2. BLOAD + BRUN: HELLO BLOADs the main binary, then BRUNs a separate launcher
+ *    binary (e.g. MDSADJ for BurgerTime). Returns `{ entryAddress, auxBinary }` with
+ *    the launcher's load address and data so the caller can merge it into the payload.
+ *
+ * Returns undefined when no entry point can be determined (caller falls back to loadAddress).
+ */
+const findEntryFromGreeting = (
+  image: Uint8Array,
+  candidateLoadAddress: number,
+  candidateBinaryLength: number,
+  candidateName: string
+): { entryAddress: number; auxBinary?: { loadAddress: number; data: Uint8Array } } | undefined => {
+  if (!isLikelyDos33Volume(image) || !dosLogicalImageHasValidCatalog(image)) return undefined
+  const { entries } = readDos33Catalog(image)
+  const endAddr = candidateLoadAddress + candidateBinaryLength
+
+  // Log catalog for diagnostics
+  const catSummary = entries.filter(e => e.sectorCount > 0).map(e => {
+    const t = e.typeByte & 0x7f
+    const typeStr = t === 0x02 ? "A" : t === 0x04 ? "B" : t === 0x01 ? "I" : t === 0x00 ? "T" : `?${t}`
+    return `${e.name.trim()}(${typeStr},${e.sectorCount}s)`
+  }).join(", ")
+  console.log(`[HDV Export] DOS catalog: ${catSummary}`)
+
+  const applesoftEntries = entries.filter(e =>
+    e.sectorCount > 0 && (e.typeByte & 0x7f) === DOS33_TYPE_APPLESOFT
+  )
+
+  if (applesoftEntries.length === 0) {
+    console.log(`[HDV Export] No Applesoft entries found in catalog`)
+    return undefined
+  }
+
+  const candidateNameUpper = candidateName.trim().toUpperCase()
+
+  // Build a map of binary filenames for BRUN target lookup
+  const binaryEntries = new Map<string, DosCatalogEntry>()
+  for (const entry of entries) {
+    if (entry.sectorCount > 0 && (entry.typeByte & 0x7f) === DOS33_TYPE_BINARY) {
+      binaryEntries.set(entry.name.trim().toUpperCase(), entry)
+    }
+  }
+
+  for (const entry of applesoftEntries) {
+    const bytes = readDosFileBytes(image, entry.tsListTrack, entry.tsListSector)
+    if (bytes.length < 6) continue
+
+    // Diagnostic: dump first 64 bytes of Applesoft file
+    const dumpLen = Math.min(64, bytes.length)
+    const hexDump = Array.from(bytes.subarray(0, dumpLen)).map(b => b.toString(16).padStart(2, "0")).join(" ")
+    console.log(`[HDV Export] Applesoft "${entry.name.trim()}" (${bytes.length} bytes): ${hexDump}`)
+
+    const { callAddrs, dosCommands } = parseApplesoftFileTokens(bytes)
+
+    if (callAddrs.length > 0) {
+      console.log(`[HDV Export] CALL addresses in "${entry.name.trim()}": ${callAddrs.map(a => "$" + a.toString(16).toUpperCase()).join(", ")}`)
+      const inRange = callAddrs.filter(a => a >= candidateLoadAddress && a < endAddr)
+      if (inRange.length > 0) {
+        const chosen = inRange[inRange.length - 1]
+        console.log(`[HDV Export] Using CALL entry address $${chosen.toString(16).toUpperCase()} from "${entry.name.trim()}"`)
+        return { entryAddress: chosen }
+      }
+    }
+
+    console.log(`[HDV Export] DOS commands in "${entry.name.trim()}": ${dosCommands.length > 0 ? dosCommands.join("; ") : "(none)"}`)
+
+    // Look for BRUN <target> where target is a binary file OTHER than the candidate
+    for (const cmd of dosCommands) {
+      if (!cmd.startsWith("BRUN ") && !cmd.startsWith("BRUN\t")) continue
+      const target = cmd.substring(5).split(",")[0].trim()
+      if (!target || target === candidateNameUpper) continue
+      const targetEntry = binaryEntries.get(target)
+      if (!targetEntry) continue
+
+      // Found a BRUN of a different binary — read its load address and data
+      const targetBytes = readDosFileBytes(image, targetEntry.tsListTrack, targetEntry.tsListSector)
+      if (targetBytes.length < 4) continue
+      const auxLoadAddr = targetBytes[0] | (targetBytes[1] << 8)
+      const auxLength = targetBytes[2] | (targetBytes[3] << 8)
+      const auxData = targetBytes.subarray(4, 4 + auxLength)
+      console.log(`[HDV Export] BRUN target "${target}": loadAddr=$${auxLoadAddr.toString(16)}, len=${auxLength}`)
+      return {
+        entryAddress: auxLoadAddr,
+        auxBinary: { loadAddress: auxLoadAddr, data: auxData }
+      }
+    }
+  }
+
+  // Fallback: if Applesoft parsing found nothing (e.g. decoy HELLO on 4am cracks),
+  // look for a binary file in the catalog that isn't the candidate. If there's exactly
+  // one such file, assume it's a launcher (equivalent to BRUN).
+  const otherBinaries = [...binaryEntries.entries()].filter(([name]) => name !== candidateNameUpper)
+  if (otherBinaries.length === 1) {
+    const [targetName, targetEntry] = otherBinaries[0]
+    const targetBytes = readDosFileBytes(image, targetEntry.tsListTrack, targetEntry.tsListSector)
+    if (targetBytes.length >= 4) {
+      const auxLoadAddr = targetBytes[0] | (targetBytes[1] << 8)
+      const auxLength = targetBytes[2] | (targetBytes[3] << 8)
+      const auxData = targetBytes.subarray(4, 4 + auxLength)
+
+      // Recursive-descent disassembly of the launcher binary to find outgoing
+      // JMP/JSR targets (addresses OUTSIDE the launcher's range but INSIDE the
+      // main binary's range). This follows actual code flow to avoid false
+      // positives from data bytes that look like JMP/JSR opcodes.
+      // 65C02 instruction lengths by opcode
+      const instrLengths = new Uint8Array(256)
+      // Default: 1 byte (undefined opcodes are 1-byte NOPs on 65C02)
+      instrLengths.fill(1)
+      // 2-byte instructions: immediate, zero-page, zp-indexed, relative, indirect
+      for (const op of [
+        0x09,0x29,0x49,0x69,0x89,0xA0,0xA2,0xA9,0xC0,0xC9,0xE0,0xE9, // IMM
+        0x05,0x06,0x24,0x25,0x26,0x45,0x46,0x64,0x65,0x66,0x84,0x85,0x86, // ZP
+        0xA4,0xA5,0xA6,0xC4,0xC5,0xC6,0xE4,0xE5,0xE6,0x04,0x14,0x44, // ZP cont
+        0x15,0x16,0x34,0x35,0x36,0x55,0x56,0x74,0x75,0x76,0x94,0x95, // ZP,X
+        0xB4,0xB5,0xD5,0xD6,0xF5,0xF6,0x96,0xB6,0x54, // ZP,X/Y cont
+        0x10,0x30,0x50,0x70,0x80,0x90,0xB0,0xD0,0xF0, // REL branches
+        0x01,0x11,0x21,0x31,0x41,0x51,0x61,0x71,0x81,0x91,0xA1,0xB1, // (IND,X)/(IND),Y
+        0xC1,0xD1,0xE1,0xF1,0x12,0x32,0x52,0x72,0x92,0xB2,0xD2,0xF2, // (IND)
+      ]) instrLengths[op] = 2
+      // 3-byte instructions: absolute, absolute-indexed, indirect JMP
+      for (const op of [
+        0x0D,0x0E,0x19,0x1E,0x2C,0x2D,0x2E,0x39,0x3C,0x3E,0x4C,0x4D,0x4E, // ABS
+        0x59,0x5E,0x6C,0x6D,0x6E,0x79,0x7C,0x7E,0x8C,0x8D,0x8E,0x9C,0x9E, // ABS cont
+        0xAC,0xAD,0xAE,0xB9,0xBC,0xBE,0xCC,0xCD,0xCE,0xD9,0xDE, // ABS cont
+        0xEC,0xED,0xEE,0xF9,0xFE, // ABS cont
+        0x20, // JSR abs
+        0x1D,0x3D,0x5D,0x7D,0x99,0xBD,0xDD,0xFD, // ABS,X / ABS,Y
+      ]) instrLengths[op] = 3
+
+      // Branch opcodes (all 2-byte relative)
+      const branchOps = new Set([0x10,0x30,0x50,0x70,0x80,0x90,0xB0,0xD0,0xF0])
+
+      const visited = new Set<number>() // offsets in auxData
+      const outgoingJmps: number[] = []
+      const queue: number[] = []
+
+      // Start tracing from the entry point
+      if (auxData[0] === 0x4C && auxData.length >= 3) {
+        // Entry is JMP abs — follow it
+        const entryTarget = auxData[1] | (auxData[2] << 8)
+        const entryOffset = entryTarget - auxLoadAddr
+        if (entryOffset >= 0 && entryOffset < auxData.length) {
+          queue.push(entryOffset)
+        }
+      } else {
+        queue.push(0) // Start from beginning
+      }
+
+      while (queue.length > 0) {
+        let offset = queue.pop()!
+        while (offset >= 0 && offset < auxData.length - 2 && !visited.has(offset)) {
+          visited.add(offset)
+          const opcode = auxData[offset]
+          const len = instrLengths[opcode]
+
+          if (offset + len > auxData.length) break // Runs off end
+
+          // JMP abs ($4C) or JSR abs ($20)
+          if ((opcode === 0x4C || opcode === 0x20) && len === 3) {
+            const target = auxData[offset + 1] | (auxData[offset + 2] << 8)
+            const targetOffset = target - auxLoadAddr
+            if (targetOffset >= 0 && targetOffset < auxData.length) {
+              queue.push(targetOffset) // Internal — follow it
+            } else if (target >= candidateLoadAddress && target < endAddr) {
+              outgoingJmps.push(target) // External to main binary!
+            }
+            if (opcode === 0x4C) break // JMP doesn't fall through
+          }
+
+          // JMP indirect ($6C) or JMP (abs,X) ($7C) — can't follow, stop
+          if (opcode === 0x6C || opcode === 0x7C) break
+
+          // Branches — follow both paths
+          if (branchOps.has(opcode)) {
+            const rel = auxData[offset + 1]
+            const branchTarget = offset + 2 + (rel < 128 ? rel : rel - 256)
+            if (branchTarget >= 0 && branchTarget < auxData.length) {
+              queue.push(branchTarget)
+            }
+            // Fall through to the next instruction too (conditional branch)
+            if (opcode === 0x80) break // BRA is unconditional
+          }
+
+          // RTS ($60), RTI ($40), BRK ($00) — end of path
+          if (opcode === 0x60 || opcode === 0x40 || opcode === 0x00) break
+
+          offset += len
+        }
+      }
+
+      console.log(`[HDV Export] Fallback launcher "${targetName}": loadAddr=$${auxLoadAddr.toString(16)}, len=${auxLength}, traced ${visited.size} instruction offsets`)
+      console.log(`[HDV Export] Outgoing JMP/JSR targets (traced): ${outgoingJmps.map(a => "$" + a.toString(16).toUpperCase()).join(", ") || "(none)"}`)
+
+      // Scan for all references to $07DC (and nearby) in the MDSADJ data.
+      // MDSADJ uses JMP ($07DC) to enter the game — find where it stores the target.
+      for (let i = 0; i < auxData.length - 2; i++) {
+        const lo = auxData[i + 1], hi = auxData[i + 2]
+        const addr16 = hi << 8 | lo
+        if (addr16 >= 0x07D0 && addr16 <= 0x07E0) {
+          const op = auxData[i]
+          const srcAddr = auxLoadAddr + i
+          console.log(`[HDV Export] MDSADJ ref to $${addr16.toString(16).toUpperCase()} at $${srcAddr.toString(16).toUpperCase()}: op=$${op.toString(16).toUpperCase()}`)
+        }
+      }
+
+      // Dump hex at key areas: around the JMP indirect, and the last 128 valid bytes
+      const dumpHex = (label: string, data: Uint8Array, off: number, len: number) => {
+        const end = Math.min(off + len, data.length)
+        if (off >= data.length) return
+        const hex = Array.from(data.subarray(off, end)).map(b => b.toString(16).padStart(2, "0")).join(" ")
+        console.log(`[HDV Export] ${label} (offset $${off.toString(16)}, addr $${(auxLoadAddr + off).toString(16)}): ${hex}`)
+      }
+      // Area around JMP ($07DC) at offset $4E7
+      const jmpOffset = auxData.indexOf(0x6C) // Find actual JMP indirect
+      if (jmpOffset >= 0) {
+        dumpHex("Around JMP indirect", auxData, Math.max(0, jmpOffset - 16), 48)
+      }
+      // Last 128 valid bytes (before corruption at ~offset 8960)
+      dumpHex("Pre-corruption area", auxData, Math.max(0, auxData.length - 320), 128)
+      dumpHex("Corruption boundary", auxData, Math.max(0, auxData.length - 192), 128)
+      dumpHex("Corrupted tail", auxData, Math.max(0, auxData.length - 64), 64)
+      // If we found outgoing JMPs to the main binary, use the last one as
+      // the game entry point and skip the launcher overlay entirely.
+      // The launcher's T/S list may be corrupted (common on 4am cracks).
+      if (outgoingJmps.length > 0) {
+        const gameEntry = outgoingJmps[outgoingJmps.length - 1]
+        console.log(`[HDV Export] Using game entry $${gameEntry.toString(16).toUpperCase()} (bypassing launcher)`)
+        return { entryAddress: gameEntry }
+      }
+
+      // No outgoing JMPs found — fall back to using the launcher with overlay
+      return {
+        entryAddress: auxLoadAddr,
+        auxBinary: { loadAddress: auxLoadAddr, data: auxData }
+      }
+    }
+  }
+
+  console.log(`[HDV Export] No entry point found in any Applesoft program (range $${candidateLoadAddress.toString(16)}-$${endAddr.toString(16)})`)
+  return undefined
+}
+
+/**
+ * Classifies a DOS 3.3 image that may be incompatible with DOS.MASTER as either
+ * "dos" (normal), "dosup" (genuinely non-exportable), or "dosdirect" (exportable
+ * via direct block loading, bypassing DOS.MASTER).
+ *
+ * A disk is "dosdirect" when its catalog contains a binary that would overwrite
+ * DOS memory ($9D00+) when loaded, AND that binary qualifies for direct block
+ * loading. This covers both:
+ *  - disks with empty/stub greetings (e.g. a blank HELLO + large game binary)
+ *  - disks with real Applesoft greetings that BRUN a binary too large for
+ *    DOS.MASTER (e.g. BurgerTime's HELLO BRUNs a binary extending to $BD00)
+ *
+ * Language-card disks stay "dosup" regardless (the LC conflict is fundamental).
+ * Disks with empty greetings and no viable binary are "dosup".
+ */
+const classifyDosUpOrDirect = (image: Uint8Array): VtocType => {
+  if (dosImageUsesLanguageCard(image)) return "dosup"
+  const candidate = findDirectLoadCandidate(image)
+  if (candidate) {
+    // If the binary extends past DOS memory ($9D00), it will overwrite DOS.MASTER's
+    // RWTS and DOS buffers when loaded — DOS.MASTER cannot survive this, so bypass it.
+    const endAddress = candidate.loadAddress + candidate.binaryLength
+    if (endAddress > 0x9D00 || dosImageGreetingIsEmpty(image)) return "dosdirect"
+  }
+  if (dosImageGreetingIsEmpty(image)) return "dosup"
+  return "dos"
+}
+
+/**
+ * Determines the exportable VTOC type of a disk image: "dos", "prodos", "dosdirect",
+ * "dosup", or "other". "other" means the image is neither a recognizable DOS 3.3 nor
+ * ProDOS volume. "dosup" means a DOS 3.3 volume that is incompatible with DOS.MASTER and
+ * has no viable binary for direct loading. "dosdirect" means a DOS 3.3 volume whose
+ * catalog contains a large binary whose end address overlaps DOS memory ($9D00+), or whose
+ * greeting is empty — either way bypassed by direct SmartPort block loading.
  * WOZ images are fully bit-decoded and probed under every sector order before being classified.
  */
 export const determineVtocType = (filename: string, data: Uint8Array): VtocType => {
@@ -1836,21 +2432,27 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       // copy-protected/non-standard disks are classified "other" and not exported.
       const dosImage = loadWozAndExtractDosImage(data)
       if (dosImage) {
-        return (dosImageUsesLanguageCard(dosImage) || dosImageGreetingIsEmpty(dosImage)) ? ("dosup" as VtocType) : "dos"
+        return classifyDosUpOrDirect(dosImage)
       }
     }
     return "other"
   }
 
   const kind = classifyImageKind(filename, data)
-  // A raw 140K DOS logical-order image (.dsk/.do) whose greeting installs a language-card
-  // DOS mover -- or whose greeting is empty (a custom-bootloader game with a decoy HELLO) --
-  // is likewise incompatible with DOS.MASTER.
+  // A raw 140K DOS logical-order image (.dsk/.do) that is incompatible with DOS.MASTER:
+  // uses a language-card DOS mover, has an empty/decoy greeting, or contains a binary
+  // whose end address overlaps DOS memory ($9D00+) and would corrupt DOS.MASTER on BRUN.
   if (kind === "dos" &&
     data.length === (35 * 16 * 256) &&
-    dosLogicalImageHasValidCatalog(data) &&
-    (dosImageUsesLanguageCard(data) || dosImageGreetingIsEmpty(data))) {
-    return "dosup" as VtocType
+    dosLogicalImageHasValidCatalog(data)) {
+    if (dosImageUsesLanguageCard(data) || dosImageGreetingIsEmpty(data)) {
+      return classifyDosUpOrDirect(data)
+    }
+    // Even with a real greeting, check for binaries that extend past DOS memory.
+    const candidate = findDirectLoadCandidate(data)
+    if (candidate && candidate.loadAddress + candidate.binaryLength > 0x9D00) {
+      return classifyDosUpOrDirect(data)
+    }
   }
   return kind === "unknown" ? "other" : kind
 }
@@ -2075,6 +2677,10 @@ const preprocessInputFilesForMenu = (
   const runtimeVolumes: BuildInputFile[] = []
   const runtimeVolumeByMenuIndex: Array<number | undefined> = []
   const runtimeHelloModeByMenuIndex: Array<number | undefined> = []
+  // Direct-load entries for "dosdirect" disks: per-menu-index metadata describing
+  // a self-contained binary that will be loaded via the block-reader stub. The
+  // startBlock is filled in later by the HDV builder after block allocation.
+  const directLoadByMenuIndex: Array<DirectLoadEntry | undefined> = []
   const usedNames = new Set<string>(reservedNames || [])
 
   for (let i = 0; i < files.length; i++) {
@@ -2083,6 +2689,260 @@ const preprocessInputFilesForMenu = (
     const sourceFilename = menuEntries?.[i]?.sourceFilename || file.name
     const isWozContainer = sourceFilename.toLowerCase().endsWith(".woz")
     const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
+
+    // Direct-load disks: extract the binary from the catalog and store metadata
+    // for the block-reader stub. These bypass DOS.MASTER entirely.
+    if (kind === "dosdirect") {
+      const candidate = findDirectLoadCandidate(file.data)
+      if (candidate) {
+        const bytes = readDosFileBytes(file.data, candidate.entry.tsListTrack, candidate.entry.tsListSector)
+        // Binary file header: 2-byte load address, 2-byte length, then payload.
+        const rawHeader = Array.from(bytes.subarray(0, 8)).map(b => b.toString(16).padStart(2, "0")).join(" ")
+        console.log(`[HDV Export] Binary file "${candidate.entry.name.trim()}": rawHeader=[${rawHeader}], loadAddr=$${candidate.loadAddress.toString(16)}, len=${candidate.binaryLength}, totalFileBytes=${bytes.length}`)
+        let payload = bytes.subarray(4, 4 + candidate.binaryLength)
+        let loadAddress = candidate.loadAddress
+        let entryAddress = candidate.loadAddress
+
+        // Analyze the greeting to find the real entry point (CALL addr or BRUN target).
+        const greetingResult = findEntryFromGreeting(file.data, candidate.loadAddress, candidate.binaryLength, candidate.entry.name)
+
+        // Scan payload for common 6502 game init sequences to find entry point candidates.
+        // Useful when the launcher (MDSADJ etc.) has corrupted data.
+        const initCandidates: {addr: number, pattern: string, context: string}[] = []
+        for (let i = 0; i < payload.length - 4; i++) {
+          const addr = loadAddress + i
+          // SEI + CLD pattern (very common game init)
+          if (payload[i] === 0x78 && payload[i + 1] === 0xD8) {
+            const ctx = Array.from(payload.subarray(i, Math.min(i + 64, payload.length)))
+              .map(b => b.toString(16).padStart(2, "0")).join(" ")
+            initCandidates.push({addr, pattern: "SEI+CLD", context: ctx})
+          }
+          // LDX #$FF + TXS pattern (stack init)
+          if (payload[i] === 0xA2 && payload[i + 1] === 0xFF && payload[i + 2] === 0x9A) {
+            const ctx = Array.from(payload.subarray(i, Math.min(i + 64, payload.length)))
+              .map(b => b.toString(16).padStart(2, "0")).join(" ")
+            initCandidates.push({addr, pattern: "LDX#FF+TXS", context: ctx})
+          }
+        }
+        if (initCandidates.length > 0) {
+          console.log(`[HDV Export] Game init candidates in payload:`)
+          for (const c of initCandidates.slice(0, 20)) {
+            console.log(`  $${c.addr.toString(16).toUpperCase()} ${c.pattern}: ${c.context}`)
+          }
+        }
+
+        if (greetingResult) {
+          entryAddress = greetingResult.entryAddress
+          if (greetingResult.auxBinary) {
+            // HELLO BLOADs main binary, then BRUNs a separate launcher.
+            const aux = greetingResult.auxBinary
+            const auxOffset = aux.loadAddress - loadAddress
+            // Check if the main binary already contains the launcher at the right offset
+            // (common in 4am cracks where the cracker merges everything into one binary).
+            const mainAtAux = payload.subarray(auxOffset, auxOffset + Math.min(32, aux.data.length))
+            const auxHead = aux.data.subarray(0, Math.min(32, aux.data.length))
+            const alreadyMerged = mainAtAux.length === auxHead.length &&
+              mainAtAux.every((b, i) => b === auxHead[i])
+            if (alreadyMerged) {
+              console.log(`[HDV Export] Main binary already contains launcher at $${aux.loadAddress.toString(16)}, skipping overlay`)
+            } else {
+              // Detect corrupted sectors in aux data (sequential-byte pattern from bad T/S list).
+              // For each corrupted 256-byte sector, fall back to the main binary's data at that offset.
+              const isSequentialSector = (data: Uint8Array, sectorStart: number): boolean => {
+                if (sectorStart + 256 > data.length) return false
+                let sequential = 0
+                for (let j = 1; j < 256; j++) {
+                  if (data[sectorStart + j] === ((data[sectorStart + j - 1] + 1) & 0xFF)) sequential++
+                }
+                return sequential >= 250 // nearly all bytes are sequential
+              }
+              // Build clean aux data, replacing corrupted sectors with main binary data
+              const cleanAux = new Uint8Array(aux.data)
+              let repaired = 0
+              for (let s = 0; s < cleanAux.length; s += 256) {
+                if (isSequentialSector(cleanAux, s)) {
+                  // Replace corrupted sector with main binary data at same address
+                  const mainOff = auxOffset + s
+                  if (mainOff + 256 <= payload.length) {
+                    cleanAux.set(payload.subarray(mainOff, mainOff + 256), s)
+                  } else {
+                    // Zero out if main binary doesn't cover this region
+                    cleanAux.fill(0, s, Math.min(s + 256, cleanAux.length))
+                  }
+                  repaired++
+                }
+              }
+              if (repaired > 0) {
+                console.log(`[HDV Export] Repaired ${repaired} corrupted sector(s) in launcher "${aux.loadAddress.toString(16)}" using main binary data`)
+                // If the launcher has corrupted sectors AND the init scan found game
+                // entry candidates, the launcher's post-selection code is likely broken
+                // (e.g. it can't write the trampoline to $07DC). Skip the launcher
+                // overlay and jump directly to the game init.
+                if (initCandidates.length > 0) {
+                  entryAddress = initCandidates[0].addr
+                  console.log(`[HDV Export] Launcher corrupted — bypassing overlay, using game init at $${entryAddress.toString(16).toUpperCase()}`)
+                }
+              }
+              if (!(repaired > 0 && initCandidates.length > 0)) {
+                // Merge both into a single contiguous payload.
+                const mergedStart = Math.min(loadAddress, aux.loadAddress)
+                const mergedEnd = Math.max(loadAddress + payload.length, aux.loadAddress + cleanAux.length)
+                const merged = new Uint8Array(mergedEnd - mergedStart)
+                // Layer main binary first, then clean auxiliary on top
+                merged.set(payload, loadAddress - mergedStart)
+                merged.set(cleanAux, aux.loadAddress - mergedStart)
+                payload = merged
+                loadAddress = mergedStart
+                console.log(`[HDV Export] Merged binary: $${mergedStart.toString(16)}-$${mergedEnd.toString(16)} (${merged.length} bytes), entry=$${entryAddress.toString(16)}`)
+              }
+            }
+          }
+        }
+
+        // Scan for cold-start copy protection pattern:
+        // LDA $xx; CMP #$yy; BEQ +6; LDA #hh; PHA; LDA #ll; PHA; RTS
+        // Pattern: A5 xx C9 yy F0 06 A9 hh 48 A9 ll 48 60 (13 bytes)
+        // When found, pre-setting zero-page $xx = $yy skips the destructive
+        // cold-start that clears game memory and returns to the (missing) boot code.
+        let coldStartFlagAddr: number | undefined
+        let coldStartFlagValue: number | undefined
+        for (let i = 0; i < payload.length - 13; i++) {
+          if (payload[i] === 0xA5 &&             // LDA $xx
+              payload[i + 2] === 0xC9 &&          // CMP #$yy
+              payload[i + 4] === 0xF0 &&          // BEQ
+              payload[i + 5] === 0x06 &&          // +6 (skip PHA/LDA/PHA/RTS)
+              payload[i + 6] === 0xA9 &&          // LDA #hh
+              payload[i + 8] === 0x48 &&          // PHA
+              payload[i + 9] === 0xA9 &&          // LDA #ll
+              payload[i + 11] === 0x48 &&         // PHA
+              payload[i + 12] === 0x60) {         // RTS
+            const flagAddr = payload[i + 1]
+            const flagVal = payload[i + 3]
+            const trampolineHi = payload[i + 7]
+            const trampolineLo = payload[i + 10]
+            const trampolineTarget = (trampolineHi << 8 | trampolineLo) + 1
+            // Verify trampoline target is within the binary range
+            if (trampolineTarget >= loadAddress && trampolineTarget < loadAddress + payload.length) {
+              coldStartFlagAddr = flagAddr
+              coldStartFlagValue = flagVal
+              console.log(`[HDV Export] Cold-start check at $${(loadAddress + i).toString(16).toUpperCase()}: flag=$${flagAddr.toString(16).toUpperCase()}==$${flagVal.toString(16).toUpperCase()}, trampoline=$${trampolineTarget.toString(16).toUpperCase()}`)
+              // Patch the binary: change LDA $xx to LDA #$yy so the cold-start
+              // check always passes.  The zero-page flag may be overwritten by
+              // the game during gameplay; the stub-only POKE would then fail on
+              // subsequent demo/restart cycles.  A permanent binary patch avoids
+              // this.  The checksum at $ACE7 covers $BDC1-$BDF2, well outside
+              // this patch site, so it is unaffected.
+              payload[i] = 0xA9       // LDA #imm  (was LDA zp)
+              payload[i + 1] = flagVal // immediate value = expected flag value
+              console.log(`[HDV Export] Patched cold-start: $${(loadAddress + i).toString(16).toUpperCase()}: LDA $${flagAddr.toString(16).toUpperCase()} → LDA #$${flagVal.toString(16).toUpperCase()}`)
+
+              // Patch the trampoline target itself to RTS, as a safety net in
+              // case any OTHER code path reaches it (e.g. a secondary protection
+              // check).  The trampoline target typically contains a tight
+              // infinite loop (JMP self) that hangs the game.
+              const trapOffset = trampolineTarget - loadAddress
+              if (trapOffset >= 0 && trapOffset < payload.length) {
+                const oldByte = payload[trapOffset]
+                payload[trapOffset] = 0x60   // RTS
+                console.log(`[HDV Export] Patched death-trap at $${trampolineTarget.toString(16).toUpperCase()}: $${oldByte.toString(16).toUpperCase()} → $60 (RTS)`)
+              }
+
+              // Neutralise the anti-tamper checksum that protects the area
+              // around the trampoline target.  Pattern:
+              //   EOR $xxxx,X; DEX; BNE loop; EOR $xxxx; BNE fail; RTS
+              // The checksum XORs a range of bytes and branches on failure.
+              // During gameplay the game may use the checksummed area as
+              // scratch data, causing the checksum to fail on subsequent calls.
+              // We NOP the BNE-fail so the checksum always passes.
+              for (let j = 0; j < payload.length - 10; j++) {
+                // Look for: EOR abs,X (5D); DEX (CA); BNE loop (D0 FA);
+                //           EOR abs (4D); BNE +1 (D0 01); RTS (60)
+                if (payload[j] === 0x5D &&              // EOR $xxxx,X
+                    payload[j + 3] === 0xCA &&          // DEX
+                    payload[j + 4] === 0xD0 &&          // BNE (loop back)
+                    payload[j + 5] === 0xFA &&          // relative offset -6
+                    payload[j + 6] === 0x4D &&          // EOR $xxxx
+                    // verify the EOR base addresses match
+                    payload[j + 1] === payload[j + 7] &&
+                    payload[j + 2] === payload[j + 8] &&
+                    payload[j + 9] === 0xD0 &&          // BNE (fail)
+                    payload[j + 11] === 0x60) {         // RTS
+                  const checksumBase = payload[j + 1] | (payload[j + 2] << 8)
+                  const failOffset = payload[j + 10]    // BNE relative offset
+                  const checksumAddr = loadAddress + j
+                  const bneAddr = loadAddress + j + 9
+                  console.log(`[HDV Export] Anti-tamper checksum at $${checksumAddr.toString(16).toUpperCase()}: EOR base=$${checksumBase.toString(16).toUpperCase()}, BNE fail at $${bneAddr.toString(16).toUpperCase()} (+${failOffset})`)
+                  // NOP the BNE so the checksum always passes
+                  payload[j + 9] = 0xEA   // NOP
+                  payload[j + 10] = 0xEA  // NOP
+                  console.log(`[HDV Export] Patched checksum BNE → NOP NOP at $${bneAddr.toString(16).toUpperCase()}`)
+                  break
+                }
+              }
+
+              break
+            }
+          }
+        }
+
+        // Scan for secondary cold-start guards that use ORA with the flag byte:
+        //   LDA $xx; ORA $flagAddr; CMP #$flagVal; BNE +1; RTS
+        //   followed by ASL $addr; INC $addr+1; DEC $addr+2
+        // Pattern: A5 xx 05 yy C9 zz D0 01 60 [0E aa bb EE aa+1 bb CE aa+2 bb]
+        // These guards protect destructive self-modifying code loops that corrupt
+        // the game binary.  The guard may be bypassed by alternate code paths
+        // (e.g. via secondary JMP table entries), so we must also NOP the
+        // self-modifying instructions (ASL/INC/DEC) to prevent corruption
+        // regardless of which path reaches them.
+        if (coldStartFlagAddr !== undefined && coldStartFlagValue !== undefined) {
+          for (let i = 0; i < payload.length - 9; i++) {
+            if (payload[i] === 0xA5 &&                          // LDA $xx
+                payload[i + 2] === 0x05 &&                      // ORA $yy
+                payload[i + 3] === coldStartFlagAddr &&         // yy = flagAddr
+                payload[i + 4] === 0xC9 &&                      // CMP #$zz
+                payload[i + 5] === coldStartFlagValue &&        // zz = flagVal
+                payload[i + 6] === 0xD0 &&                      // BNE
+                payload[i + 7] === 0x01 &&                      // +1
+                payload[i + 8] === 0x60) {                      // RTS
+              const addr = loadAddress + i
+              const bneAddr = loadAddress + i + 6
+              payload[i + 6] = 0xEA   // NOP (was BNE)
+              payload[i + 7] = 0xEA   // NOP (was +1)
+              console.log(`[HDV Export] Patched secondary cold-start guard at $${addr.toString(16).toUpperCase()}: BNE → NOP NOP at $${bneAddr.toString(16).toUpperCase()}`)
+
+              // Also NOP the self-modifying code that follows the RTS:
+              //   ASL $addr (0E); INC $addr+1 (EE); DEC $addr+2 (CE)
+              // These corrupt the game binary and are reachable via alternate
+              // code paths that bypass the guard entirely.
+              if (i + 17 < payload.length &&
+                  payload[i + 9] === 0x0E &&                    // ASL abs
+                  payload[i + 12] === 0xEE &&                   // INC abs
+                  payload[i + 15] === 0xCE) {                   // DEC abs
+                const aslAddr = loadAddress + i + 9
+                for (let k = 9; k < 18; k++) {
+                  payload[i + k] = 0xEA  // NOP
+                }
+                console.log(`[HDV Export] Neutralised self-modifying code at $${aslAddr.toString(16).toUpperCase()}: ASL/INC/DEC → 9x NOP`)
+              }
+            }
+          }
+        }
+
+        const blockCount = Math.ceil(payload.length / BLOCK_SIZE)
+        directLoadByMenuIndex[i] = {
+          binaryData: payload,
+          loadAddress,
+          entryAddress,
+          blockCount,
+          coldStartFlagAddr,
+          coldStartFlagValue,
+        }
+        menuProDosPrefixes[i] = undefined
+        menuProDosCommands[i] = undefined
+        continue
+      }
+      // If extraction failed despite classification, fall through to generic handling.
+    }
 
     // DOS 3.3 disks are served as DOS.MASTER virtual volumes. Collect them for
     // contiguous partition installation (installDosMasterLikePartitions); leaving
@@ -2208,7 +3068,7 @@ const preprocessInputFilesForMenu = (
     }
   }
 
-  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex }
+  return { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, directLoadByMenuIndex }
 }
 
 // For DOS.MASTER-dispatched launches, choose how to invoke HELLO on the selected volume:
@@ -3748,7 +4608,7 @@ export const buildProDosHdv = async (
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
   // Reserve helper-program subdirectory name to avoid root-path exhaustion.
   rootScan.existingNames.add(HELPER_SUBDIR)
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, directLoadByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -3783,6 +4643,30 @@ export const buildProDosHdv = async (
     return allocated
   }
 
+  // Allocate a contiguous run of free blocks. Required for direct-load binaries
+  // where the stub reads sequentially from startBlock.
+  const allocateContiguousFreeBlocks = (count: number): number[] => {
+    let runStart = -1
+    let runLength = 0
+    for (let block = 0; block < currentTotalBlocks; block++) {
+      if (isBlockFreeInBitmap(hdv, bitmapStartBlock, block)) {
+        if (runLength === 0) runStart = block
+        runLength++
+        if (runLength >= count) {
+          const allocated: number[] = []
+          for (let i = 0; i < count; i++) {
+            setBlockUsedInBitmap(hdv, bitmapStartBlock, runStart + i)
+            allocated.push(runStart + i)
+          }
+          return allocated
+        }
+      } else {
+        runLength = 0
+      }
+    }
+    throw new Error(`Not enough contiguous free blocks. Need ${count}, largest run: ${runLength}.`)
+  }
+
   const normalizedVolumeName = volumeName.toUpperCase().slice(0, 15)
   const volumeNameLength = normalizedVolumeName.length
   rootHeader[volumeEntryOffset] = 0xF0 | volumeNameLength
@@ -3800,6 +4684,7 @@ export const buildProDosHdv = async (
   // use only relative or runtime-built paths skip it too (so interrupt/language-card games
   // and disks like Undead aren't destabilized by an unnecessary MLI hook).
   const includeAliasShimFile = menuNeedsAliasShim.some(Boolean)
+  const hasDirectLoadEntries = directLoadByMenuIndex.some(Boolean)
 
   const launcherName = "A2TSLAUNCH"
   helperFiles.push({
@@ -3815,6 +4700,19 @@ export const buildProDosHdv = async (
       type: PRODOS_FILE_TYPE_BINARY,
       data: createAliasShimBinary(ALIAS_SHIM_LOAD_ADDRESS),
       auxType: ALIAS_SHIM_LOAD_ADDRESS,
+    })
+  }
+
+  // Include the direct block-load stub as a helper binary when any menu entry
+  // needs it. The Applesoft launcher BLOADs it to $0300, POKEs parameters, and
+  // CALLs 768 to load the game binary directly from raw HDV blocks.
+  if (hasDirectLoadEntries) {
+    const stub = buildDirectLoadStub()
+    helperFiles.push({
+      name: "A2TSDL",
+      type: PRODOS_FILE_TYPE_BINARY,
+      data: stub.code,
+      auxType: DIRECT_LOAD_STUB_ADDRESS,
     })
   }
 
@@ -3837,7 +4735,21 @@ export const buildProDosHdv = async (
     auxType: 0x0000,
   })
 
+  // Pre-allocate blocks for direct-load binaries so their start block numbers
+  // are known before the MENULAUNCH program is generated. The binary data is
+  // written to these blocks later (after all ProDOS files are written).
+  // Must be contiguous because the stub reads sequentially from startBlock.
+  const directLoadBlockAllocations: Array<{ blocks: number[]; entryIndex: number }> = []
+
   if (menuEntries && menuEntries.length > 0) {
+    for (let i = 0; i < directLoadByMenuIndex.length; i++) {
+      const dl = directLoadByMenuIndex[i]
+      if (!dl) continue
+      const blocks = allocateContiguousFreeBlocks(dl.blockCount)
+      dl.startBlock = blocks[0]
+      directLoadBlockAllocations.push({ blocks, entryIndex: i })
+    }
+
     helperFiles.push({
       name: "MENUSRC",
       type: 0xFC,
@@ -3847,7 +4759,7 @@ export const buildProDosHdv = async (
     helperFiles.push({
       name: "MENULAUNCH",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim)),
+      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim, directLoadByMenuIndex)),
       auxType: 0x0801,
     })
   }
@@ -4295,6 +5207,24 @@ export const buildProDosHdv = async (
     }
   }
 
+  // Write direct-load binary data to their pre-allocated blocks.
+  for (const alloc of directLoadBlockAllocations) {
+    const dl = directLoadByMenuIndex[alloc.entryIndex]
+    if (!dl) continue
+    for (let i = 0; i < alloc.blocks.length; i++) {
+      const blockNumber = alloc.blocks[i]
+      const writeOffset = blockNumber * BLOCK_SIZE
+      const sourceOffset = i * BLOCK_SIZE
+      const sourceEnd = Math.min(sourceOffset + BLOCK_SIZE, dl.binaryData.length)
+      if (sourceOffset < dl.binaryData.length) {
+        newHdv.set(dl.binaryData.slice(sourceOffset, sourceEnd), writeOffset)
+      }
+    }
+    const isContiguous = alloc.blocks.every((b, i) => i === 0 || b === alloc.blocks[i - 1] + 1)
+    const first16 = Array.from(dl.binaryData.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ')
+    console.log(`[HDV Export] Direct-load binary: startBlock=${dl.startBlock}, blocks=${dl.blockCount}, loadAddr=$${dl.loadAddress.toString(16)}, entryAddr=$${dl.entryAddress.toString(16)}, dataLen=${dl.binaryData.length}, contiguous=${isContiguous}, first16=[${first16}]`)
+  }
+
   return newHdv
 }
 
@@ -4303,4 +5233,9 @@ export const PRODOS_FILE_TYPE_TEXT = 0x04
 export const PRODOS_FILE_TYPE_LIBRARY = 0xE0
 // DOS.MASTER volumes are commonly represented as file type $F1 on ProDOS volumes.
 export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
+
+// Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
+// categories). Cached VTOC results older than this version are re-evaluated so
+// disks previously classified as non-exportable can be reclassified.
+export const VTOC_REFRESH = 4
 
