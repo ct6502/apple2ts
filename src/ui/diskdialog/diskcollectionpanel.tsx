@@ -376,6 +376,12 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return selectedDisks.includes(diskCollectionItem) && isDiskExportable(diskCollectionItem)
     })
 
+    if (newExportQueue.some((d) => d.vtocType === "dosdirect")) {
+      if (!window.confirm("Exporting will reset the running emulator state. Proceed?")) {
+        return
+      }
+    }
+
     // Leave the panel open on the export tab so it stays visible behind the
     // export progress modal; it is closed once the export completes (createHdv's
     // finally block) or is aborted on error (processExportQueue).

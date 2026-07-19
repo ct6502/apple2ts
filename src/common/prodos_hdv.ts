@@ -62,6 +62,7 @@ type DirectLoadEntry = {
   startBlock?: number         // filled in by HDV builder after block allocation
   coldStartFlagAddr?: number  // zero-page address of cold-start "done" flag (e.g. $37)
   coldStartFlagValue?: number // magic value to store (e.g. $A3) to skip cold-start
+  zpSnapshot?: Uint8Array     // 256-byte zero page snapshot captured from floppy boot
 }
 
 /**
@@ -257,7 +258,7 @@ const PRODOS_DEVNUM_ADDRESS = 0xBF30
  *   +N+4    2     targetAddr  (LE) - base load address
  *   +N+6    2     entryAddr   (LE) - JMP target after loading
  */
-const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number } => {
+const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number; zpFlagOffset: number } => {
   const BASE = DIRECT_LOAD_STUB_ADDRESS
   const code: number[] = []
   const emit = (...bytes: number[]) => { for (const b of bytes) code.push(b) }
@@ -346,6 +347,21 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number } => {
   emit(0xCA)                                  // DEX
   emitBranchRef(0xD0, "slotLoop")             // BNE slotLoop
 
+  // Zero-page restore: if a 256-byte snapshot was captured from floppy boot,
+  // copy it from $0200 (where the Applesoft launcher BLOADed it) to $00-$FF.
+  // This runs BEFORE the cold-start flag so the flag can override one ZP value.
+  // The zpFlag parameter is set to 1 by the Applesoft launcher when a snapshot
+  // is present.
+  emit(0xAD); emitAddrRef("zpFlag", 0)      // LDA zpFlag
+  emitBranchRef(0xF0, "skipZP")             // BEQ skipZP
+  emit(0xA2, 0x00)                           // LDX #$00
+  markLabel("zpLoop")
+  emit(0xBD, 0x00, 0x02)                     // LDA $0200,X
+  emit(0x95, 0x00)                           // STA $00,X
+  emit(0xE8)                                 // INX
+  emitBranchRef(0xD0, "zpLoop")             // BNE zpLoop
+  markLabel("skipZP")
+
   // Cold-start flag: pre-set zero-page flag to bypass destructive cold-start.
   // flagValue=0 means no flag to set.
   emit(0xAD); emitAddrRef("flagValue", 0)   // LDA flagValue
@@ -379,6 +395,8 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number } => {
   emit(0x00)                        // cold-start flag zero-page address (1 byte)
   markLabel("flagValue")
   emit(0x00)                        // cold-start flag value (1 byte)
+  markLabel("zpFlag")
+  emit(0x00)                        // 1 if zpData is valid, 0 otherwise
 
   // === RESOLVE PATCHES ===
   for (const patch of patches) {
@@ -400,7 +418,8 @@ const buildDirectLoadStub = (): { code: Uint8Array; paramOffset: number } => {
   }
 
   const paramOffset = labels["startBlock"]
-  return { code: Uint8Array.from(code), paramOffset }
+  const zpFlagOffset = labels["zpFlag"]
+  return { code: Uint8Array.from(code), paramOffset, zpFlagOffset }
 }
 
 /**
@@ -448,8 +467,11 @@ const generateMenuSourceProgram = (
   // The screenshot filename is SCREEN + the zero-padded index, which is a pure
   // function of I, so compute it at runtime instead of emitting one IF-line per
   // disk. This keeps MENUSRC's size constant regardless of the disk count.
-  lines.push("1011 N$=STR$(I):IF I<10 THEN N$=\"0\"+N$")
-  lines.push(`1012 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
+  // STR$ may or may not include a leading space depending on the Applesoft
+  // implementation, so strip it conditionally with MID$/fallback.
+  lines.push("1011 N$=MID$(STR$(I),2):IF N$=\"\" THEN N$=STR$(I)")
+  lines.push("1013 IF I<10 THEN N$=\"0\"+N$")
+  lines.push(`1014 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
   for (let idx = 1; idx <= count; idx++) {
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
     const leftArrow = showNavigationArrows ? "<- " : "   "
@@ -514,10 +536,10 @@ const generateMenuLaunchProgram = (
   const toDataString = (value: string | undefined) => (value || "").replace(/"/g, "'")
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count})`)
+  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count}),Z(${count})`)
   lines.push(`22 I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
   lines.push("24 RESTORE")
-  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J):NEXT")
+  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J),Z(J):NEXT")
   if (hasDosMasterRuntime) {
     lines.push("30 IF K(I)=0 THEN TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + ",V(I):POKE " + DOS_DISPATCH_HELLO_MODE_ADDRESS + ",H(I):" + dosRuntimeRunStatements + ":END")
   } else {
@@ -535,6 +557,7 @@ const generateMenuLaunchProgram = (
   {
     const stub = buildDirectLoadStub()
     const PA = DIRECT_LOAD_STUB_ADDRESS + stub.paramOffset
+    const ZF = DIRECT_LOAD_STUB_ADDRESS + stub.zpFlagOffset
     lines.push("85 IF K(I)=6 THEN 250")
     lines.push(`250 TEXT:HOME:PRINT D$;"BLOAD ${helperSubdir}/A2TSDL,A$${DIRECT_LOAD_STUB_ADDRESS.toString(16).toUpperCase()}"`)
     lines.push(`252 POKE ${PA},V(I)-INT(V(I)/256)*256:POKE ${PA + 1},INT(V(I)/256)`)
@@ -548,7 +571,13 @@ const generateMenuLaunchProgram = (
     // ($36/$37) while BASIC.SYSTEM is still active.
     // S(I) encodes flagAddr + flagValue*256; 0 means no flag.
     lines.push(`261 IF S(I)>0 THEN POKE ${PA + 8},S(I)-INT(S(I)/256)*256:POKE ${PA + 9},INT(S(I)/256)`)
-    lines.push(`262 CALL ${DIRECT_LOAD_STUB_ADDRESS}`)
+    // Zero-page snapshot: if Z(I)=1, BLOAD the captured ZP data into the
+    // Applesoft input buffer ($0200) and set zpFlag=1.  The stub copies
+    // $0200-$02FF to $00-$FF before jumping to the game entry point.
+    // STR$ may or may not include a leading space; strip it conditionally.
+    lines.push(`262 N$=MID$(STR$(I),2):IF N$="" THEN N$=STR$(I)`)
+    lines.push(`263 IF Z(I)=1 THEN PRINT D$;"BLOAD ${helperSubdir}/A2TSZP";N$;",A$200":POKE ${ZF},1`)
+    lines.push(`264 CALL ${DIRECT_LOAD_STUB_ADDRESS}`)
   }
   lines.push("90 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("100 GOTO 220")
@@ -569,6 +598,7 @@ const generateMenuLaunchProgram = (
     let runCmd = ""
     let shimFlag = 0
     let helloMode = 0
+    let zpHasSnapshot = 0
 
     if (entryKind === "dos" || entryKind === "unknown") {
       if (hasDosMasterRuntime) {
@@ -588,6 +618,9 @@ const generateMenuLaunchProgram = (
         runCmd = String(dl.entryAddress)
         if (dl.coldStartFlagAddr && dl.coldStartFlagValue) {
           shimFlag = dl.coldStartFlagAddr + dl.coldStartFlagValue * 256
+        }
+        if (dl.zpSnapshot) {
+          zpHasSnapshot = 1
         }
       } else {
         launchCode = 4 // fallback: show "PRODOS FILES IMPORTED"
@@ -612,7 +645,7 @@ const generateMenuLaunchProgram = (
       }
     }
 
-    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode)
+    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode + "," + zpHasSnapshot)
     dataLine += 10
   }
 
@@ -2657,10 +2690,11 @@ const applyGenericPrefixRewrite = (type: number, data: Uint8Array): Uint8Array =
   return rewriteImportedProgramPath(type, data, "", "")
 }
 
-const preprocessInputFilesForMenu = (
+const preprocessInputFilesForMenu = async (
   files: BuildInputFile[],
   menuEntries?: MenuDiskEntry[],
-  reservedNames?: Set<string>
+  reservedNames?: Set<string>,
+  zpCaptureCallback?: (menuIndex: number, entryAddress: number) => Promise<Uint8Array | null>,
 ) => {
   const outputFiles: BuildInputFile[] = []
   const directoryPlans: DirectoryImportPlan[] = []
@@ -2937,6 +2971,18 @@ const preprocessInputFilesForMenu = (
           coldStartFlagAddr,
           coldStartFlagValue,
         }
+
+        // Capture zero-page snapshot from floppy boot if a callback is provided.
+        // This runs the original disk in the emulator at ludicrous speed,
+        // captures ZP at the entry point, then restores the emulator state.
+        if (zpCaptureCallback) {
+          const zpSnapshot = await zpCaptureCallback(i, entryAddress)
+          if (zpSnapshot) {
+            directLoadByMenuIndex[i]!.zpSnapshot = zpSnapshot
+            console.log(`[HDV Export] Captured ${zpSnapshot.length}-byte ZP snapshot for menu index ${i} at entry $${entryAddress.toString(16).toUpperCase()}`)
+          }
+        }
+
         menuProDosPrefixes[i] = undefined
         menuProDosCommands[i] = undefined
         continue
@@ -3622,18 +3668,24 @@ const createSubdirectoryHeaderBlock = (
     block[headerOffset + 1 + i] = i < nameBytes.length ? nameBytes[i] : 0
   }
 
-  // Keep canonical ProDOS directory header markers.
   block[headerOffset + 16] = 0x75
   writeLittleEndian16(block, headerOffset + 17, 0)
   writeLittleEndian16(block, headerOffset + 19, 0)
   writeLittleEndian24(block, headerOffset + 21, 0)
-  block[headerOffset + 31] = 0x27 // Entry length
-  block[headerOffset + 32] = 0x0D // Entries per block
-  writeLittleEndian16(block, headerOffset + 33, Math.min(fileCount, 0xFFFF))
+  block[headerOffset + 31] = 0x27
+  block[headerOffset + 32] = 0x0D
+  writeLittleEndian16(block, headerOffset + 33, fileCount)
   writeLittleEndian16(block, headerOffset + 35, parentBlock)
-  // Parent entry number is 1-based within the parent directory block.
   block[headerOffset + 37] = (parentSlot + 1) & 0xFF
-  block[headerOffset + 38] = 0x27 // Parent entry length
+  block[headerOffset + 38] = 0x27
+
+  // Diagnostic: dump critical header bytes to verify ProDOS layout
+  const hdrBytes = Array.from(block.slice(headerOffset, headerOffset + 39))
+    .map(b => b.toString(16).padStart(2, '0')).join(' ')
+  console.log(`[HDV SubdirHeader] "${dirname}" parentBlock=${parentBlock} parentSlot=${parentSlot} fileCount=${fileCount}`)
+  console.log(`[HDV SubdirHeader] Raw header bytes: ${hdrBytes}`)
+  console.log(`[HDV SubdirHeader] +24-30 (date/ver/access): ${Array.from(block.slice(headerOffset + 24, headerOffset + 31)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`)
+  console.log(`[HDV SubdirHeader] +31=entryLen:0x${block[headerOffset + 31].toString(16)} +32=entriesPerBlk:0x${block[headerOffset + 32].toString(16)} +33-34=fileCount:${block[headerOffset + 33] | (block[headerOffset + 34] << 8)} +35-36=parentPtr:${block[headerOffset + 35] | (block[headerOffset + 36] << 8)} +37=parentEntry:${block[headerOffset + 37]} +38=parentEntryLen:0x${block[headerOffset + 38].toString(16)}`)
 
   return block
 }
@@ -4569,7 +4621,8 @@ export const buildProDosHdv = async (
   volumeName = "APPLE2TS",
   prodos243Base?: Uint8Array,
   menuEntries?: MenuDiskEntry[],
-  dosMasterSlot: number = DOSMASTER_SLOT
+  dosMasterSlot: number = DOSMASTER_SLOT,
+  zpCaptureCallback?: (menuIndex: number, entryAddress: number) => Promise<Uint8Array | null>,
 ): Promise<Uint8Array> => {
   let hdv = prodos243Base
   if (!hdv) {
@@ -4608,7 +4661,7 @@ export const buildProDosHdv = async (
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
   // Reserve helper-program subdirectory name to avoid root-path exhaustion.
   rootScan.existingNames.add(HELPER_SUBDIR)
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, directLoadByMenuIndex } = preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, directLoadByMenuIndex } = await preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames, zpCaptureCallback)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -4708,12 +4761,30 @@ export const buildProDosHdv = async (
   // CALLs 768 to load the game binary directly from raw HDV blocks.
   if (hasDirectLoadEntries) {
     const stub = buildDirectLoadStub()
+    const stubEnd = DIRECT_LOAD_STUB_ADDRESS + stub.code.length
+    console.log(`[HDV Export] Stub size=${stub.code.length} bytes, range=$${DIRECT_LOAD_STUB_ADDRESS.toString(16).toUpperCase()}-$${stubEnd.toString(16).toUpperCase()}, paramOffset=${stub.paramOffset}, zpFlagOffset=${stub.zpFlagOffset}${stubEnd > 0x03D0 ? ' *** WARNING: overlaps $03D0 vectors! ***' : ''}`)
     helperFiles.push({
       name: "A2TSDL",
       type: PRODOS_FILE_TYPE_BINARY,
       data: stub.code,
       auxType: DIRECT_LOAD_STUB_ADDRESS,
     })
+    // Per-disk zero-page snapshot files: each dosdirect entry with a captured
+    // zpSnapshot gets a binary file named "A2TSZPn" (n = 1-based menu index).
+    // The Applesoft launcher BLOADs it into the input buffer at $0200.
+    for (let i = 0; i < directLoadByMenuIndex.length; i++) {
+      const dl = directLoadByMenuIndex[i]
+      if (dl?.zpSnapshot) {
+        const zpName = `A2TSZP${i + 1}`
+        console.log(`[HDV Export] Adding ZP snapshot helper file: ${zpName}, size=${dl.zpSnapshot.length}, first4=[${Array.from(dl.zpSnapshot.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
+        helperFiles.push({
+          name: zpName,
+          type: PRODOS_FILE_TYPE_BINARY,
+          data: dl.zpSnapshot,
+          auxType: 0x0200,
+        })
+      }
+    }
   }
 
   // Generate STARTUP: interactive menu if menuEntries provided, else simple CATALOG
@@ -4765,6 +4836,7 @@ export const buildProDosHdv = async (
   }
 
   if (helperFiles.length > 0) {
+    console.log(`[HDV Export] Helper files in ${HELPER_SUBDIR}/: ${helperFiles.map(f => `${f.name}(${f.data.length}B)`).join(', ')}`)
     directoryPlans.push({ name: HELPER_SUBDIR, files: helperFiles, sourceMenuIndex: -1 })
   }
 
@@ -4864,6 +4936,10 @@ export const buildProDosHdv = async (
       indexBlocks,
       dataBlocks,
       parentDirectoryNode,
+    }
+
+    if (file.name.startsWith("A2TSZP")) {
+      console.log(`[HDV Export] Allocated ZP file plan: ${file.name}, storageType=${storageType}, keyBlock=${keyBlock}, blocksUsed=${blocksUsed}, dataBlocks=[${dataBlocks.join(',')}], dataLen=${file.data.length}`)
     }
 
     filePlans.push(plan)
@@ -5223,6 +5299,52 @@ export const buildProDosHdv = async (
     const isContiguous = alloc.blocks.every((b, i) => i === 0 || b === alloc.blocks[i - 1] + 1)
     const first16 = Array.from(dl.binaryData.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ')
     console.log(`[HDV Export] Direct-load binary: startBlock=${dl.startBlock}, blocks=${dl.blockCount}, loadAddr=$${dl.loadAddress.toString(16)}, entryAddr=$${dl.entryAddress.toString(16)}, dataLen=${dl.binaryData.length}, contiguous=${isContiguous}, first16=[${first16}]`)
+  }
+
+  // === POST-BUILD VERIFICATION ===
+  // Verify that every A2TSZP file referenced in the DATA (Z(I)=1) is actually
+  // readable on the generated ProDOS volume.  A mismatch here would cause
+  // I/O ERROR at runtime (line 263 in MENULAUNCH).
+
+  // Dump A2TSHLP subdirectory block header for debugging
+  const helperNode = rootDirectoryNodes.find(n => (n.normalizedName || n.name) === HELPER_SUBDIR)
+  if (helperNode && helperNode.keyBlock > 0) {
+    const hlpBlock = readBlock(newHdv, helperNode.keyBlock)
+    if (hlpBlock) {
+      const hdr50 = Array.from(hlpBlock.slice(0, 50)).map(b => b.toString(16).padStart(2, '0')).join(' ')
+      console.log(`[HDV Verify] A2TSHLP block ${helperNode.keyBlock} header (bytes 0-49): ${hdr50}`)
+      const entryLen = hlpBlock[4 + 31]
+      const entriesPerBlock = hlpBlock[4 + 32]
+      const fileCount = hlpBlock[4 + 33] | (hlpBlock[4 + 34] << 8)
+      console.log(`[HDV Verify] A2TSHLP parsed: entry_length=$${entryLen.toString(16)}, entries_per_block=$${entriesPerBlock.toString(16)}, file_count=${fileCount}`)
+      // Also dump entry 3 (slot 3 = A2TSZP1 if it's 3rd file)
+      for (let s = 1; s <= 5; s++) {
+        const off = 4 + s * 39
+        const st = (hlpBlock[off] >> 4) & 0xF
+        const nl = hlpBlock[off] & 0xF
+        const name = String.fromCharCode(...Array.from(hlpBlock.slice(off + 1, off + 1 + nl)))
+        const kp = hlpBlock[off + 17] | (hlpBlock[off + 18] << 8)
+        const eof = hlpBlock[off + 21] | (hlpBlock[off + 22] << 8) | (hlpBlock[off + 23] << 16)
+        console.log(`[HDV Verify] A2TSHLP slot ${s}: st=${st} name="${name}" keyBlock=${kp} eof=${eof}`)
+      }
+    }
+  }
+
+  for (let i = 0; i < directLoadByMenuIndex.length; i++) {
+    const dl = directLoadByMenuIndex[i]
+    if (!dl?.zpSnapshot) continue
+    const zpName = `A2TSZP${i + 1}`
+    const found = findFileByPath(newHdv, [HELPER_SUBDIR, zpName])
+    if (!found) {
+      console.error(`[HDV Export] *** VERIFICATION FAILED: ${HELPER_SUBDIR}/${zpName} NOT FOUND on generated volume! Z(${i + 1})=1 but file is missing. ***`)
+      continue
+    }
+    const fileData = readFileDataFromProDosImage(newHdv, found.storageType as 1 | 2 | 3, found.keyBlock, found.eof)
+    const match = fileData.length === dl.zpSnapshot.length && fileData.every((b, j) => b === dl.zpSnapshot![j])
+    console.log(`[HDV Export] Verify ${HELPER_SUBDIR}/${zpName}: storageType=${found.storageType}, keyBlock=${found.keyBlock}, eof=${found.eof}, dataLen=${fileData.length}, match=${match}, first4=[${Array.from(fileData.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ')}]`)
+    if (!match) {
+      console.error(`[HDV Export] *** VERIFICATION FAILED: ${HELPER_SUBDIR}/${zpName} data mismatch! Expected ${dl.zpSnapshot.length} bytes, got ${fileData.length}. ***`)
+    }
   }
 
   return newHdv

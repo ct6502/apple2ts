@@ -368,6 +368,13 @@ type DisassemblyProps = {
 
 type VtocType = "dos" | "prodos" | "other" | "dosup" | "dosdirect"
 
+type CaptureBootStateRequest = {
+  diskImage: Uint8Array
+  filename: string
+  entryAddress: number
+  timeoutMs?: number
+}
+
 type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
   title: string,

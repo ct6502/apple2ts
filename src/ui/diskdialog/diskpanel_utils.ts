@@ -5,7 +5,7 @@ import { diskImages } from "../devices/disk/diskimages"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
 import { handleInputParams } from "../inputparams"
 import { DiskCollectionSortMode, getPreferenceVtocType } from "../localstorage"
-import { passSetRunMode } from "../main2worker"
+import { passSetRunMode, captureBootZeroPage } from "../main2worker"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 
@@ -339,7 +339,29 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       wozExtractedProDosFiles: wozExtractedByIndex.get(index),
     }))
 
-    const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)
+    // Zero-page capture callback: for dosdirect disks, boot the original
+    // floppy in the emulator at ludicrous speed to capture the zero page
+    // state at the game's entry point.  This ensures the HDV boot replicates
+    // the exact zero page environment the game expects from its floppy loader.
+    const zpCaptureCallback = async (menuIndex: number, entryAddress: number): Promise<Uint8Array | null> => {
+      const disk = orderedDownloadedDisks[menuIndex]
+      if (!disk) return null
+      console.log(`[HDV Export] Capturing ZP for "${disk.filename}" at entry $${entryAddress.toString(16).toUpperCase()}...`)
+      const zp = await captureBootZeroPage({
+        diskImage: disk.buffer,
+        filename: disk.filename,
+        entryAddress,
+        timeoutMs: 15000,
+      })
+      if (zp) {
+        console.log(`[HDV Export] ZP capture succeeded for "${disk.filename}"`)
+      } else {
+        console.warn(`[HDV Export] ZP capture timed out for "${disk.filename}"`)
+      }
+      return zp
+    }
+
+    const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries, undefined, zpCaptureCallback)
     downloadExportHdv(hdvData, "APPLE2TS.HDV")
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
