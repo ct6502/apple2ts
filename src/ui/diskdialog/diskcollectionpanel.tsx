@@ -20,7 +20,7 @@ import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_u
 import { showGlobalProgressModal } from "../ui_utilities"
 import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
 import { GoogleDrive } from "../devices/disk/googledrive"
-import { sortDisks, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv } from "./diskpanel_utils"
+import { sortDisks, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv, diskItemKey } from "./diskpanel_utils"
 import { DiskItemTitle } from "./diskitemtitle"
 import { DiskPanelVtoc } from "./diskpanel_vtoc"
 
@@ -139,6 +139,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const suppressClickUntilRef = useRef(0)
   const popupOpenRef = useRef(false)
   const primaryPressRef = useRef(false)
+  const forceVtocCheckRef = useRef<((disk: DiskCollectionItem) => void) | null>(null)
+  const [activeVtocCheckKey, setActiveVtocCheckKey] = useState<string | null>(null)
 
   useEffect(() => {
     pendingBookmarkRemovalsRef.current = pendingBookmarkRemovals
@@ -296,11 +298,17 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       let fileSize = 0
 
       if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
-        const [downloadUrl, newFileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
-
-        if (downloadUrl) {
-          diskCollectionItem.cloudData.downloadUrl = downloadUrl.toString()
-          fileSize = newFileSize
+        // Try to resolve the download URL and file size, but don't block
+        // selection if resolution fails (CORS from localhost). The export
+        // pipeline will resolve the URL again at download time.
+        try {
+          const [downloadUrl, newFileSize] = await getDiskImageUrlFromIdentifier(diskCollectionItem.cloudData.itemId)
+          if (downloadUrl) {
+            diskCollectionItem.cloudData.downloadUrl = downloadUrl.toString()
+            fileSize = newFileSize
+          }
+        } catch {
+          // Resolution failed; proceed with selection anyway.
         }
       }
       diskCollectionItem.cloudData.fileSize = fileSize
@@ -375,12 +383,6 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return selectedDisks.includes(diskCollectionItem) && isDiskExportable(diskCollectionItem)
     })
 
-    if (newExportQueue.some((d) => d.vtocType === "replay")) {
-      if (!window.confirm("Exporting will reset the running emulator state. Proceed?")) {
-        return
-      }
-    }
-
     // Leave the panel open on the export tab so it stays visible behind the
     // export progress modal; it is closed once the export completes (createHdv's
     // finally block) or is aborted on error (processExportQueue).
@@ -426,7 +428,14 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
 
     selectedDisks.forEach((selectedDisk) => {
       if (selectedDisk.cloudData) {
-        estimatedSize += selectedDisk.cloudData.fileSize || 0
+        if (selectedDisk.cloudData.fileSize > 0) {
+          estimatedSize += selectedDisk.cloudData.fileSize
+        } else {
+          // Internet Archive disks whose metadata couldn't be resolved (CORS)
+          // have fileSize 0. Use a conservative estimate (140K for a typical
+          // floppy) so the export button isn't disabled.
+          estimatedSize += 143360
+        }
       } else if (selectedDisk.fileSize >= 0) {
         estimatedSize += selectedDisk.fileSize
       }
@@ -803,17 +812,21 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                       const badgeStateClass = exportBadge.state === "blocked"
                         ? " dcp-item-export-badge-disabled"
                         : exportBadge.state === "pending"
-                          ? " dcp-item-export-badge-pending"
+                          ? (activeVtocCheckKey === diskItemKey(diskCollectionItem)
+                            ? " dcp-item-export-badge-checking"
+                            : " dcp-item-export-badge-pending")
                           : ""
                       return (
                         <div
                           className={`dcp-item-export-badge${badgeStateClass}`}
-                          title={exportBadge.title}>
-                          <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" onClick={(event) => {
-                            if (activeTab != TAB_INDEX.EXPORT) {
-                              event.stopPropagation()
-                            }
-                          }} />
+                          title={exportBadge.title}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onMouseUp={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            forceVtocCheckRef.current?.(diskCollectionItem)
+                          }}>
+                          <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" />
                           <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
                         </div>
                       )
@@ -930,12 +943,10 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               {
                 label: "Select all disks",
                 icon: faCheckCircle,
-                onClick: async () => {
+                onClick: () => {
                   const newSelectedDisks = [...selectedDisks]
                   for (const diskCollectionItem of tabs[TAB_INDEX.EXPORT].disks) {
-                    if (isDiskExportable(diskCollectionItem) && !newSelectedDisks.includes(diskCollectionItem)) {
-                      const preparedItem = await prepareSelectedItem(diskCollectionItem)
-                      if (!preparedItem) continue
+                    if (isDiskExportable(diskCollectionItem) && diskCollectionItem.vtocType !== undefined && !newSelectedDisks.includes(diskCollectionItem)) {
                       newSelectedDisks.push(diskCollectionItem)
                     }
                   }
@@ -986,6 +997,8 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           : tabs[activeTab].disks.filter(isDiskExportable)}
         authRefresh={authRefresh}
         cloudProviderHasAuthToken={cloudProviderHasAuthToken}
+        forceVtocCheckRef={forceVtocCheckRef}
+        setActiveVtocCheckKey={setActiveVtocCheckKey}
       />
       </div>
     </Flyout >

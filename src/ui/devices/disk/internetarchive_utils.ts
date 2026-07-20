@@ -100,6 +100,10 @@ export const generateUrlFromInternetArchiveId = (identifier: string): URL => {
   return new URL(internetArchiveUrlProtocol + identifier)
 }
 
+export const clearIaResolveCache = (identifier: string) => {
+  iaResolveCache.delete(identifier)
+}
+
 export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise<[URL | undefined, number]> => {
   const cached = iaResolveCache.get(identifier)
   if (cached && cached.expiresAt > Date.now()) {
@@ -124,16 +128,34 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       }
 
       const json = await response.json()
-      if (!(json.metadata && json.metadata.emulator_ext && json.files)) {
+      if (!(json.metadata && json.files)) {
         return
       }
 
-      const emulatorExt = json.metadata.emulator_ext.toString().toLowerCase()
-      for (const file of Object.keys(json.files)) {
-        if (file.toLowerCase().endsWith(emulatorExt)) {
-          newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
-          fileSize = parseInt(json.files[file].size)
-          return
+      const emulatorExt = json.metadata.emulator_ext
+        ? json.metadata.emulator_ext.toString().toLowerCase()
+        : ""
+
+      if (emulatorExt) {
+        for (const file of Object.keys(json.files)) {
+          if (file.toLowerCase().endsWith(emulatorExt)) {
+            newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
+            fileSize = parseInt(json.files[file].size)
+            return
+          }
+        }
+      }
+
+      // Fallback: emulator_ext missing or no matching file found. Scan for
+      // known disk image extensions (prefer .woz, then common formats).
+      const knownExts = [".woz", ".dsk", ".po", ".hdv", ".2mg", ".nib", ".do"]
+      for (const ext of knownExts) {
+        for (const file of Object.keys(json.files)) {
+          if (file.toLowerCase().endsWith(ext)) {
+            newDiskImageUrl = new URL(`https://archive.org/download/${identifier}${file}`)
+            fileSize = parseInt(json.files[file].size)
+            return
+          }
         }
       }
     }

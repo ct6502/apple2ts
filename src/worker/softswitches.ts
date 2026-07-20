@@ -5,28 +5,6 @@ import { resetJoystick, checkJoystickValues, checkPushButtonValues } from "./dev
 import { s6502 } from "./instructions"
 import { toHex } from "../common/utility"
 
-// --- Display mode transition logging ---
-// Tracks TEXT/MIXED/PAGE2/HIRES switch changes to diagnose black-screen issues.
-// Only logs transitions (state changes), throttled to max 50 total.
-let displayLogCount = 0
-const displayLogMax = 50
-let prevDisplayState = ""
-const logDisplayModeChange = (addr: number) => {
-  if (displayLogCount >= displayLogMax) return
-  const text = SWITCHES.TEXT.isSet
-  const mixed = SWITCHES.MIXED.isSet
-  const page2 = SWITCHES.PAGE2.isSet
-  const hires = SWITCHES.HIRES.isSet
-  const mode = text ? "TEXT" : (hires ? "HGR" : "GR")
-  const page = page2 ? "page2" : "page1"
-  const mix = mixed ? "+mixed" : ""
-  const state = `${mode} ${page}${mix}`
-  if (state !== prevDisplayState) {
-    displayLogCount++
-    console.log(`[Display] ${state} (sw=$${addr.toString(16).toUpperCase()}) PC=$${s6502.PC.toString(16).toUpperCase().padStart(4,'0')} cycle=${s6502.cycleCount}`)
-    prevDisplayState = state
-  }
-}
 
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
@@ -321,10 +299,6 @@ export const checkSoftSwitches = (addr: number,
         overriddenSwitches[sswitch1.offAddr - 0xC000] = (addr === sswitch1.onAddr)
       } else {
         sswitch1.isSet = (addr === sswitch1.onAddr)
-      }
-      // Log display mode transitions for diagnostics
-      if (addr >= 0xC050 && addr <= 0xC057) {
-        logDisplayModeChange(addr)
       }
     }
     if (sswitch1.isSetAddr) {

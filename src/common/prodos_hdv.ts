@@ -265,11 +265,8 @@ const generateMenuSourceProgram = (
   // The screenshot filename is SCREEN + the zero-padded index, which is a pure
   // function of I, so compute it at runtime instead of emitting one IF-line per
   // disk. This keeps MENUSRC's size constant regardless of the disk count.
-  // STR$ may or may not include a leading space depending on the Applesoft
-  // implementation, so strip it conditionally with MID$/fallback.
-  lines.push("1011 N$=MID$(STR$(I),2):IF N$=\"\" THEN N$=STR$(I)")
-  lines.push("1013 IF I<10 THEN N$=\"0\"+N$")
-  lines.push(`1014 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
+  lines.push("1011 N$=STR$(I):IF I<10 THEN N$=\"0\"+N$")
+  lines.push(`1012 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
   for (let idx = 1; idx <= count; idx++) {
     const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
     const leftArrow = showNavigationArrows ? "<- " : "   "
@@ -2176,7 +2173,6 @@ const preprocessInputFilesForMenu = async (
     // state, and write that as a direct-loadable binary on the HDV.
     // TODO: implement replay-based export (emulator trace → memory snapshot → HDV)
     if (kind === "replay") {
-      console.log(`[HDV Export] Replay disk "${sourceFilename}" — not yet implemented, skipping`)
       menuProDosPrefixes[i] = undefined
       menuProDosCommands[i] = undefined
       continue
@@ -2871,14 +2867,6 @@ const createSubdirectoryHeaderBlock = (
   block[headerOffset + 37] = (parentSlot + 1) & 0xFF
   block[headerOffset + 38] = 0x27
 
-  // Diagnostic: dump critical header bytes to verify ProDOS layout
-  const hdrBytes = Array.from(block.slice(headerOffset, headerOffset + 39))
-    .map(b => b.toString(16).padStart(2, '0')).join(' ')
-  console.log(`[HDV SubdirHeader] "${dirname}" parentBlock=${parentBlock} parentSlot=${parentSlot} fileCount=${fileCount}`)
-  console.log(`[HDV SubdirHeader] Raw header bytes: ${hdrBytes}`)
-  console.log(`[HDV SubdirHeader] +24-30 (date/ver/access): ${Array.from(block.slice(headerOffset + 24, headerOffset + 31)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`)
-  console.log(`[HDV SubdirHeader] +31=entryLen:0x${block[headerOffset + 31].toString(16)} +32=entriesPerBlk:0x${block[headerOffset + 32].toString(16)} +33-34=fileCount:${block[headerOffset + 33] | (block[headerOffset + 34] << 8)} +35-36=parentPtr:${block[headerOffset + 35] | (block[headerOffset + 36] << 8)} +37=parentEntry:${block[headerOffset + 37]} +38=parentEntryLen:0x${block[headerOffset + 38].toString(16)}`)
-
   return block
 }
 
@@ -3457,7 +3445,6 @@ const patchDosMasterDos33Configuration = (disk: Uint8Array, runtimeVolumeCount: 
     )
     const patchResult = patchSingleDosMasterConfigPayload(current, target.label)
     if ("skipped" in patchResult) {
-      console.warn(`[HDV Export] Skipping DOS.MASTER config target: ${patchResult.reason}`)
       continue
     }
     if ("error" in patchResult) return { error: patchResult.error }
@@ -3482,18 +3469,14 @@ const patchDosMasterDos33Configuration = (disk: Uint8Array, runtimeVolumeCount: 
 
     patchedLabels.push(`${target.label}:${patchResult.pairSummaries.join("|")}`)
     appliedTargets++
-    if (patchResult.unmappedVolumes > 0) {
-      console.warn(`[HDV Export] ${target.label} capacity exhausted: ${patchResult.unmappedVolumes} runtime volumes could not be mapped.`)
-    }
   }
 
   if (appliedTargets === 0) {
     return { error: "Could not patch any DOS.MASTER runtime config target with active device pairs." }
   }
 
-  const patchedFinderRecords = patchFinderDataCompanionMetadata()
+  patchFinderDataCompanionMetadata()
 
-  console.log(`[HDV Export] Patched DOS.MASTER config targets: requested=${runtimeVolumeCount}, mapped=${mappedVolumes || 0}, targets=${patchedLabels.join("; ")}, finderRecords=${patchedFinderRecords}`)
   return {
     requestedVolumes: runtimeVolumeCount,
     mappedVolumes: mappedVolumes || 0,
@@ -3661,14 +3644,7 @@ const installDosMasterLikePartitions = (
     const writeBytes = Math.min(runtime.data.length, volumeCapacityBytes)
     disk.fill(0, startOffset, startOffset + volumeCapacityBytes)
     disk.set(runtime.data.slice(0, writeBytes), startOffset)
-    if (runtime.data.length > volumeCapacityBytes) {
-      console.warn(`[HDV Export] DOS runtime image truncated to partition capacity: ${runtime.name} (${runtime.data.length} -> ${volumeCapacityBytes} bytes)`)
-    }
   }
-
-  console.log(
-    `[HDV Export] DOS.INSTALL-style partition write: unit=$${deviceUnit.toString(16).padStart(2, "0")}, first=${firstBlock}, volSize=${volumeSizeBlocks}, partitionBlocks=${partitionBlocks}, installed=${runtimeVolumes.length}/${maxVolumes}`
-  )
 
   return {
     installedVolumes: runtimeVolumes.length,
@@ -3788,8 +3764,7 @@ const upgradeBaseProDosToLatest = async (hdv: Uint8Array, dirBlocks: number[]): 
     const response = await fetch("disks/ProDOS%202.4.3.po")
     if (!response.ok) return
     upgradeSource = new Uint8Array(await response.arrayBuffer())
-  } catch (e) {
-    console.warn("[HDV Export] Could not load ProDOS 2.4.3.po; keeping base ProDOS version.", e)
+  } catch {
     return
   }
 
@@ -3801,7 +3776,6 @@ const upgradeBaseProDosToLatest = async (hdv: Uint8Array, dirBlocks: number[]): 
     if (!existing) continue
     // In-place overwrite requires an exact size match so the existing block layout fits.
     if (existing.eof !== replacement.data.length) {
-      console.warn(`[HDV Export] Skipping ${targetName} upgrade: size ${replacement.data.length} != base ${existing.eof}.`)
       continue
     }
     overwriteProDosFileData(hdv, existing.storageType, existing.keyBlock, replacement.data)
@@ -3959,7 +3933,6 @@ export const buildProDosHdv = async (
   }
 
   if (helperFiles.length > 0) {
-    console.log(`[HDV Export] Helper files in ${HELPER_SUBDIR}/: ${helperFiles.map(f => `${f.name}(${f.data.length}B)`).join(', ')}`)
     directoryPlans.push({ name: HELPER_SUBDIR, files: helperFiles, sourceMenuIndex: -1 })
   }
 
@@ -4059,10 +4032,6 @@ export const buildProDosHdv = async (
       indexBlocks,
       dataBlocks,
       parentDirectoryNode,
-    }
-
-    if (file.name.startsWith("A2TSZP")) {
-      console.log(`[HDV Export] Allocated ZP file plan: ${file.name}, storageType=${storageType}, keyBlock=${keyBlock}, blocksUsed=${blocksUsed}, dataBlocks=[${dataBlocks.join(',')}], dataLen=${file.data.length}`)
     }
 
     filePlans.push(plan)
@@ -4408,29 +4377,6 @@ export const buildProDosHdv = async (
 
   // === POST-BUILD VERIFICATION ===
 
-  // Dump A2TSHLP subdirectory block header for debugging
-  const helperNode = rootDirectoryNodes.find(n => (n.normalizedName || n.name) === HELPER_SUBDIR)
-  if (helperNode && helperNode.keyBlock > 0) {
-    const hlpBlock = readBlock(newHdv, helperNode.keyBlock)
-    if (hlpBlock) {
-      const hdr50 = Array.from(hlpBlock.slice(0, 50)).map(b => b.toString(16).padStart(2, '0')).join(' ')
-      console.log(`[HDV Verify] A2TSHLP block ${helperNode.keyBlock} header (bytes 0-49): ${hdr50}`)
-      const entryLen = hlpBlock[4 + 31]
-      const entriesPerBlock = hlpBlock[4 + 32]
-      const fileCount = hlpBlock[4 + 33] | (hlpBlock[4 + 34] << 8)
-      console.log(`[HDV Verify] A2TSHLP parsed: entry_length=$${entryLen.toString(16)}, entries_per_block=$${entriesPerBlock.toString(16)}, file_count=${fileCount}`)
-      for (let s = 1; s <= 5; s++) {
-        const off = 4 + s * 39
-        const st = (hlpBlock[off] >> 4) & 0xF
-        const nl = hlpBlock[off] & 0xF
-        const name = String.fromCharCode(...Array.from(hlpBlock.slice(off + 1, off + 1 + nl)))
-        const kp = hlpBlock[off + 17] | (hlpBlock[off + 18] << 8)
-        const eof = hlpBlock[off + 21] | (hlpBlock[off + 22] << 8) | (hlpBlock[off + 23] << 16)
-        console.log(`[HDV Verify] A2TSHLP slot ${s}: st=${st} name="${name}" keyBlock=${kp} eof=${eof}`)
-      }
-    }
-  }
-
   return newHdv
 }
 
@@ -4443,5 +4389,5 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
-export const VTOC_REFRESH = 5
+export const VTOC_REFRESH = 6
 

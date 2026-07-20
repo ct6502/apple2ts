@@ -461,8 +461,8 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
 
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void) => {
-  // Check if it's a local file (not http/https URL)
-  const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
+  // Check if it's a local file (not http/https URL and not Internet Archive)
+  const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith(internetArchiveUrlProtocol)
   
   if (isLocalFile) {
     if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {

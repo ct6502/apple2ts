@@ -219,6 +219,11 @@ export const downloadExportHdv = (data: Uint8Array, filename: string) => {
   URL.revokeObjectURL(url)
 }
 
+// Stable identity for a disk across re-renders (bookmark id, cloud item id,
+// disk URL, or finally the title).
+export const diskItemKey = (item: DiskCollectionItem): string =>
+  item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
+
 // Determine the export badge state and tooltip for a disk. Exportable disks show
 // a green badge; disks that cannot be exported show an orange badge explaining
 // why; disks whose VTOC hasn't been determined yet show a yellow "pending" badge.

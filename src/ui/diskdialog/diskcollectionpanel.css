@@ -467,7 +467,7 @@
   height: 100%;
   color: gainsboro;
   z-index: 1;
-  bottom: 1px;
+  bottom: -2px;
 }
 
 .dcp-item-export-badge-icon {
@@ -484,6 +484,22 @@
 
 .dcp-item-export-badge-pending .dcp-item-export-badge-icon {
   color: yellow;
+}
+
+.dcp-item-export-badge-checking .dcp-item-export-badge-icon {
+  animation: badgePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+
+  0%,
+  100% {
+    color: gray;
+  }
+
+  50% {
+    color: yellow;
+  }
 }
 
 .dcp-item-export-badge-icon-bg {

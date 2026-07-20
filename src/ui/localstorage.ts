@@ -486,6 +486,16 @@ export const addSessionVtocFailure = (diskUrl: string) => {
   sessionStorage.setItem("vtocFailedUrls", JSON.stringify([...failures]))
 }
 
+export const removeSessionVtocFailure = (diskUrl: string) => {
+  if (!diskUrl) {
+    return
+  }
+  const failures = getVtocFailureSet()
+  if (failures.delete(diskUrl)) {
+    sessionStorage.setItem("vtocFailedUrls", JSON.stringify([...failures]))
+  }
+}
+
 export const getPreferenceDebugTabLeftWidth = (): number => {
   let value = -1
   const item = localStorage.getItem("debugTabLeftWidth")

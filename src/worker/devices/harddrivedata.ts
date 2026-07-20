@@ -271,7 +271,6 @@ const processHardDriveBlockAccess = () => {
   const blockStart = 512 * block
   const bufferAddr = memGet(0x44) + 256 * memGet(0x45)
   ds.status = ` ${toHex(block, 4)}`
-  if (block >= 400) console.log(`[HDD] cmd=${firmwareCommandNumber} drive=${driveNumber} block=${block} buf=$${toHex(bufferAddr, 4)} dataLen=${dataLen}`)
 
   switch (firmwareCommandNumber) {
     case 0: {
