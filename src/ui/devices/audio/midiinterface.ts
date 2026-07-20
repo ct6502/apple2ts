@@ -5,23 +5,8 @@ import * as SoftSynth from "./softsynth"
 let useSoftSynth = true
 const DEBUG = false
 
-const connect = () => {
-  if (navigator.requestMIDIAccess)
-  {
-    console.log("Midi Connect")
-    navigator.requestMIDIAccess({ sysex: true })
-    .then(
-      (midi) => midiReady(midi),
-      (err) => console.log("requestMIDIAccess fails", err))
-  }
-  else
-    console.log("WebMidi not supported") 
-}
-
-// execute on load
-connect()
-
-let midiAccess: MIDIAccess
+let midiAccess: MIDIAccess | undefined
+let midiAccessRequest: Promise<boolean> | undefined
 
 const midiReady = (midi: MIDIAccess) => {
   // Also react to device changes.
@@ -32,20 +17,64 @@ const midiReady = (midi: MIDIAccess) => {
 
 let midiInIndex  = -1
 let midiOutIndex = -1
-export let midiInDevices: MIDIInput[]
-export let midiOutDevices: MIDIOutput[]
+export let midiInDevices: MIDIInput[] = []
+export let midiOutDevices: MIDIOutput[] = []
+
+export const isWebMidiSupported = () => {
+  return typeof navigator !== "undefined" && !!navigator.requestMIDIAccess
+}
+
+export const hasWebMidiAccess = () => {
+  return midiAccess !== undefined
+}
+
+export const requestWebMidiAccess = async (): Promise<boolean> => {
+  if (midiAccess)
+    return true
+
+  if (!isWebMidiSupported()) {
+    console.log("Web MIDI not supported")
+    return false
+  }
+
+  if (midiAccessRequest)
+    return midiAccessRequest
+
+  console.log("Requesting MIDI access")
+  midiAccessRequest = navigator.requestMIDIAccess({ sysex: true })
+    .then((midi) => {
+      midiReady(midi)
+      return true
+    })
+    .catch((err) => {
+      console.log("requestMIDIAccess fails", err)
+      return false
+    })
+
+  try {
+    return await midiAccessRequest
+  } finally {
+    midiAccessRequest = undefined
+  }
+}
 
 export const getMidiOutIndex = (): number => {
   return midiOutIndex
 }
 
 export const setMidiOutIndex = (index: number) => {
+  if (index < -1 || index >= midiOutDevices.length) {
+    console.warn(`Cannot select MIDI output index ${index}; selection unchanged.`)
+    return false
+  }
+
   if (midiOutIndex != index)
   {
     midiOutIndex = index
     if (midiOutIndex != -1)
-      console.log("Selecting MidiOut Device: " + midiOutDevices[midiOutIndex].name)
+      console.log("Selecting MIDI output: " + midiOutDevices[midiOutIndex].name)
   }
+  return true
 }
 
 export const getMidiInIndex = (): number => {
@@ -63,10 +92,25 @@ export const setMidiInIndex = (index: number) => {
 
 const initDevices = () => {
 
-  const midi: MIDIAccess = midiAccess
+  const midi = midiAccess
 
   if (!midi)
     return
+
+  const selectedOutput = midiOutDevices[midiOutIndex]
+  const selectedOutputId = selectedOutput?.id
+  const fallbackToBuiltInSynth = () => {
+    midiOutIndex = -1
+    if (!useSoftSynth) {
+      const outputName = selectedOutput?.name || "Unknown MIDI Output"
+      if (SoftSynth.isSoftSynthAvailable()) {
+        console.warn(`MIDI output "${outputName}" is no longer available; using the built-in synthesizer.`)
+        enableSoftSynth()
+      } else {
+        console.warn(`MIDI output "${outputName}" is no longer available; no MIDI output is selected.`)
+      }
+    }
+  }
 
   // Reset.
   midiInDevices = []
@@ -74,19 +118,28 @@ const initDevices = () => {
 
   const outputs = midi.outputs.values()
   for (let output = outputs.next(); output && !output.done; output = outputs.next()) {
-    //console.log("Midi Out: " + output.value.name);
-    midiOutDevices.push(output.value)
+    if (output.value.state !== "disconnected")
+      midiOutDevices.push(output.value)
   }
 
   if (midiOutDevices.length)
   {
-    // pick last one
-    if (midiOutIndex != midiOutDevices.length-1)
+    if (selectedOutputId !== undefined)
     {
-      midiOutIndex = midiOutDevices.length-1
-      const device = midiOutDevices[midiOutIndex]
-      console.log("Selecting MidiOutDevice: " + device.name)
+      midiOutIndex = midiOutDevices.findIndex((device) => device.id === selectedOutputId)
+      if (midiOutIndex === -1)
+        fallbackToBuiltInSynth()
     }
+    else
+    {
+      midiOutIndex = 0
+      const device = midiOutDevices[midiOutIndex]
+      console.log("Selecting MIDI output: " + device.name)
+    }
+  }
+  else
+  {
+    fallbackToBuiltInSynth()
   }
   
   const inputs = midi.inputs.values()
@@ -130,7 +183,7 @@ const activeSense = () => {
 }
 
 const parseAndSendMsg = (msg: number[]) => {
-  // Determine the output device (hardware MIDI or software synth)
+  // Determine the output device (Web MIDI or built-in synth)
   const device = (useSoftSynth || midiOutIndex === -1) 
     ? SoftSynth as unknown as MIDIOutput  // Software synth has compatible send() API
     : midiOutDevices[midiOutIndex]
@@ -167,7 +220,7 @@ const rtMsg: number[] = []
 let state : State = State.COMMAND
 
 export const receiveMidiData = (data: Uint8Array) => {
-  // Initialize software synth if needed and no hardware MIDI available
+  // Fall back to the built-in synth if no external output is selected.
   if (midiOutIndex === -1 && !useSoftSynth && SoftSynth.isSoftSynthAvailable()) {
     console.log("No MIDI interface detected. Using built-in software synthesizer.")
     SoftSynth.initSoftSynth()
@@ -309,4 +362,3 @@ export const isSoftSynthAvailable = () => {
 export const setSoftSynthMasterVolume = (volume: number) => {
   SoftSynth.setMasterVolume(volume)
 }
-

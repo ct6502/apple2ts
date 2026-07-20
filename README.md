@@ -131,6 +131,10 @@ the "test" script, and select 'Debug Script'.
 
 ## Testing
 
+### MIDI Testing
+
+Apple2TS uses its built-in software synthesizer by default. Selecting **Enable External MIDI…** from the **Audio Configuration** menu may trigger a browser permission prompt before external MIDI outputs are listed. If the selected output disappears, Apple2TS returns to its built-in synthesizer. On macOS, the [built-in IAC Driver](https://support.apple.com/guide/audio-midi-setup/transfer-midi-information-between-apps-ams1013/mac) can provide virtual MIDI buses for testing.
+
 ### If you change disk drive code
 
 1. Press _Boot_ then _Reset_, type some characters, click on _File save_ button, verify `apple2ts.a2ts` is downloaded.
