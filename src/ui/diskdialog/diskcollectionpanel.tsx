@@ -375,7 +375,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       return selectedDisks.includes(diskCollectionItem) && isDiskExportable(diskCollectionItem)
     })
 
-    if (newExportQueue.some((d) => d.vtocType === "dosdirect")) {
+    if (newExportQueue.some((d) => d.vtocType === "replay")) {
       if (!window.confirm("Exporting will reset the running emulator state. Proceed?")) {
         return
       }

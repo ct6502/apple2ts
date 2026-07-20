@@ -152,9 +152,6 @@ const resetMachine = () => {
 export const doBoot = () => {
   setCycleCount(0)
   memoryReset()
-  // Reset PC sampler for fresh boot
-  nextPcSampleCycle = 1
-  pcSampleCount = 0
   doSetRom(machineName)
   configureMachine()
   if (code.length > 0) {
@@ -666,13 +663,6 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
 //let quickReturn = 0
 let cycleToRunStart = -1
 
-// Periodic PC sampler: logs CPU state every ~200K cycles for debugging game hangs.
-// Only active after the game entry point is reached (first HGR switch from game code).
-const PC_SAMPLE_INTERVAL = 200_000  // ~0.2 seconds at 1 MHz
-let nextPcSampleCycle = 1  // start from first cycle
-let pcSampleCount = 0
-const PC_SAMPLE_MAX = 60  // stop after 60 samples (~12 seconds)
-
 const doAdvance6502 = () => {
   if (cpuRunMode === RUN_MODE.IDLE || cpuRunMode === RUN_MODE.PAUSED) {
     return
@@ -694,21 +684,6 @@ const doAdvance6502 = () => {
     if (cycles < 0) break
     cycleTotal += cycles
 
-    // Periodic PC sampler for debugging
-    if (pcSampleCount < PC_SAMPLE_MAX && !captureActive && s6502.cycleCount >= nextPcSampleCycle && nextPcSampleCycle > 0) {
-      const pc = s6502.PC
-      const op = memGet(pc)
-      console.log(`[CPU@${s6502.cycleCount}] PC=$${pc.toString(16).toUpperCase().padStart(4,'0')} A=$${s6502.Accum.toString(16).toUpperCase().padStart(2,'0')} X=$${s6502.XReg.toString(16).toUpperCase().padStart(2,'0')} Y=$${s6502.YReg.toString(16).toUpperCase().padStart(2,'0')} SP=$${s6502.StackPtr.toString(16).toUpperCase().padStart(2,'0')} op=$${op.toString(16).toUpperCase().padStart(2,'0')}`)
-      nextPcSampleCycle = s6502.cycleCount + PC_SAMPLE_INTERVAL
-      pcSampleCount++
-    }
-    // Trap: log ZP $D6/$D7 when BurgerTime's fill routine exits at $BDEE
-    if (s6502.PC === 0xBDEE && pcSampleCount > 0 && pcSampleCount < PC_SAMPLE_MAX) {
-      const d6 = memGet(0xD6)
-      const d7 = memGet(0xD7)
-      const target = (d7 << 8) | d6
-      console.log(`[TRAP@$BDEE] cycle=${s6502.cycleCount} ZP $D6=$${d6.toString(16).padStart(2,'0')} $D7=$${d7.toString(16).padStart(2,'0')} → JMP target=$${target.toString(16).toUpperCase().padStart(4,'0')} SP=$${s6502.StackPtr.toString(16).padStart(2,'0')}`)
-    }
     if (cycleTotal < 4550) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {

@@ -366,7 +366,7 @@ type DisassemblyProps = {
   refresh: () => void,
 }
 
-type VtocType = "dos" | "prodos" | "other" | "dosup" | "dosdirect"
+type VtocType = "dos" | "prodos" | "other" | "dosup" | "replay"
 
 type CaptureBootStateRequest = {
   diskImage: Uint8Array

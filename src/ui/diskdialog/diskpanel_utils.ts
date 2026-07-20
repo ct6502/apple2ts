@@ -265,7 +265,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       }
     }
 
-    const fileKinds: Array<"dos" | "prodos" | "unknown" | "dosdirect"> = orderedDownloadedDisks.map((downloadedDisk) =>
+    const fileKinds: Array<"dos" | "prodos" | "unknown" | "replay"> = orderedDownloadedDisks.map((downloadedDisk) =>
       classifyImageKind(downloadedDisk.filename, downloadedDisk.buffer)
     )
 
@@ -277,11 +277,11 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       fileKinds[index] = "dos"
     }
 
-    // Override fileKinds for disks whose VTOC type was determined to be "dosdirect"
+    // Override fileKinds for disks whose VTOC type was determined to be "replay"
     // (DOS 3.3 binaries that overlap DOS memory and must be block-loaded directly).
     for (let i = 0; i < orderedDownloadedDisks.length; i++) {
-      if (orderedDownloadedDisks[i].item.vtocType === "dosdirect") {
-        fileKinds[i] = "dosdirect"
+      if (orderedDownloadedDisks[i].item.vtocType === "replay") {
+        fileKinds[i] = "replay"
       }
     }
 
@@ -339,7 +339,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       wozExtractedProDosFiles: wozExtractedByIndex.get(index),
     }))
 
-    // Zero-page capture callback: for dosdirect disks, boot the original
+    // Zero-page capture callback: for replay disks, boot the original
     // floppy in the emulator at ludicrous speed to capture the zero page
     // state at the game's entry point.  This ensures the HDV boot replicates
     // the exact zero page environment the game expects from its floppy loader.
