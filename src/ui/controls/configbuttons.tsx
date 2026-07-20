@@ -1,14 +1,13 @@
 import { lockedKeyStyle, themeToName, UI_THEME } from "../../common/utility"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import {
-  faKeyboard,
   faVolumeHigh,
   faVolumeXmark,
   faSync,
   faPalette,
 } from "@fortawesome/free-solid-svg-icons"
 import { MachineConfig } from "../devices/machineconfig"
-import { resetPreferences, setPreferenceBoolean, setPreferenceKeyboardConfig, setPreferenceTheme } from "../localstorage"
+import { resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../localstorage"
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
@@ -17,7 +16,7 @@ import PopupMenu from "./popupmenu"
 import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
-import { getKeyboardConfig, getLowercaseMode, getUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
+import { getLowercaseMode, getUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
@@ -30,23 +29,12 @@ const isMac = navigator.platform.startsWith("Mac")
 const ConfigButtons = (props: DisplayProps) => {
   const lowercaseMode = getLowercaseMode()
   const useOpenAppleKey = getUseOpenAppleKey()
-  const keyboardMode = getKeyboardConfig().keyboardMode
   const modKey = isMac ? "⌘" : "Alt"
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
-  const [keyboardPopupLocation, setKeyboardPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
-  }
-
-  const handleKeyboardModeClick = (event: React.MouseEvent) => {
-    setKeyboardPopupLocation([event.clientX, event.clientY])
-  }
-
-  const setKeyboardMode = (mode: KEYBOARD_MODE) => {
-    setPreferenceKeyboardConfig(mode)
-    props.updateDisplay()
   }
   return <div className="flex-row">
     <div className="flex-row" id="tour-configbuttons">
@@ -76,11 +64,6 @@ const ConfigButtons = (props: DisplayProps) => {
           {useOpenAppleKey ?
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
             <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
-        </button>
-        <button className={keyboardMode === "hardware" ? "push-button button-active" : "push-button"}
-          title="Keyboard Mode"
-          onClick={handleKeyboardModeClick}>
-          <FontAwesomeIcon icon={faKeyboard} />
         </button>
         </>
       }
@@ -122,23 +105,6 @@ const ConfigButtons = (props: DisplayProps) => {
           }
         }
       })]}
-    />
-
-    <PopupMenu
-      location={keyboardPopupLocation}
-      onClose={() => { setKeyboardPopupLocation(undefined) }}
-      menuItems={[[
-        {
-          label: "Host/Browser Passthrough",
-          isSelected: () => keyboardMode === "host",
-          onClick: () => setKeyboardMode("host")
-        },
-        {
-          label: "Apple II Hardware Emulation",
-          isSelected: () => keyboardMode === "hardware",
-          onClick: () => setKeyboardMode("hardware")
-        }
-      ]]}
     />
 
     {!isGameMode() && <button className="push-button" id="tour-clearcookies"
