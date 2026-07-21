@@ -10,6 +10,7 @@ import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData } from "./devices/audio/midiinterface"
 import { playMockingboard } from "./devices/audio/mockingboard_audio"
+import { playVeraPsgWrite } from "./devices/audio/vera_psg_audio"
 import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
@@ -344,6 +345,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.MBOARD_SOUND: {
       const mboard = e.data.payload as MockingboardSound
       playMockingboard(mboard)
+      break
+    }
+    case MSG_WORKER.VERA_PSG_WRITE: {
+      const psgWrite = e.data.payload as VeraPsgWrite
+      playVeraPsgWrite(psgWrite)
       break
     }
     case MSG_WORKER.COMM_DATA: {

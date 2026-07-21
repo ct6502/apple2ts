@@ -29,6 +29,12 @@ type KeyboardState = {
   repeat: boolean,
 }
 
+type VeraPsgWrite = {
+  cycle: number,
+  reg: number,
+  value: number,
+}
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }

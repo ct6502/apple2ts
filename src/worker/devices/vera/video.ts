@@ -9,7 +9,8 @@ import { vera_spi_read, vera_spi_write } from './sdcard'
 import { psg_reset, psg_writereg, psg_render } from './psg'
   // @ts-ignore
 import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from './pcm'
-import { passVeraFramebuffer } from '../../worker2main'
+import { s6502 } from "../../instructions"
+import { passVeraFramebuffer, passVeraPsgWrite } from "../../worker2main"
 
 const VERA_VERSION_MAJOR = 47
 const VERA_VERSION_MINOR = 0
@@ -42,6 +43,7 @@ const printf = console.log
 const INT_MAX = Number.MAX_SAFE_INTEGER
 const INT_MIN = Number.MIN_SAFE_INTEGER
 let warp_mode: boolean = false
+// @ts-ignore
 let activity_led: number = 0
 let log_video: boolean = false
 let enable_midline: boolean = false
@@ -53,29 +55,29 @@ const MHZ: number = 1
 // need to hook me up
 const audio_render = () => {}
 
-let video_ram = new Array(0x20000).fill(0)
-let palette = new Array(256 * 2).fill(0)
-let sprite_data = new Array(128).fill(null).map(() => new Array(8).fill(0))
+let video_ram = new Uint8Array(0x20000)
+let palette = new Uint8Array(256 * 2)
+let sprite_data = new Array(NUM_SPRITES).fill(null).map(() => new Uint8Array(8))
 // I/O registers
-let io_addr = new Array(2).fill(0)
-let io_rddata = new Array(2).fill(0)
-let io_inc = new Array(2).fill(0)
+let io_addr = new Uint32Array(2)
+let io_rddata = new Uint8Array(2)
+let io_inc = new Uint8Array(2)
 let io_addrsel: number = 0
 let io_dcsel: number = 0
 let ien: number = 0
 let isr: number = 0
 let irq_line: number = 0
-let reg_layer = new Array(2).fill(null).map(() => new Array(7).fill(0))
+let reg_layer = new Array(2).fill(null).map(() => new Uint8Array(7))
 const COMPOSER_SLOTS = 4*64
-let reg_composer = new Array(COMPOSER_SLOTS).fill(0)
-let prev_reg_composer = new Array(2).fill(null).map(() => new Array(COMPOSER_SLOTS).fill(0))
-let layer_line = new Array(2).fill(null).map(() => new Array(SCREEN_WIDTH).fill(0))
-let sprite_line_col = new Array(SCREEN_WIDTH).fill(0)
-let sprite_line_z = new Array(SCREEN_WIDTH).fill(0)
-let sprite_line_mask = new Array(SCREEN_WIDTH).fill(0)
+let reg_composer = new Uint8Array(COMPOSER_SLOTS)
+let prev_reg_composer = new Array(2).fill(null).map(() => new Uint8Array(COMPOSER_SLOTS))
+let layer_line = new Array(2).fill(null).map(() => new Uint8Array(SCREEN_WIDTH))
+let sprite_line_col = new Uint8Array(SCREEN_WIDTH)
+let sprite_line_z = new Uint8Array(SCREEN_WIDTH)
+let sprite_line_mask = new Uint8Array(SCREEN_WIDTH)
 let sprite_line_collisions: number = 0
-let layer_line_enable = new Array(2).fill(false)
-let old_layer_line_enable = new Array(2).fill(false)
+let layer_line_enable = new Uint8Array(2)
+let old_layer_line_enable = new Uint8Array(2)
 let old_sprite_line_enable: boolean = false
 let sprite_line_enable: boolean = false
 ////////////////////////////////////////////////////////////
@@ -114,25 +116,24 @@ let fx_multiplier: boolean
 let fx_subtract: boolean
 let fx_affine_clip: boolean
 let fx_16bit_hop_align: number
-let fx_nibble_bit = new Array(2).fill(false)
-let fx_nibble_incr = new Array(2).fill(false)
-let fx_cache = new Array(4).fill(0)
+let fx_nibble_bit = new Uint8Array(2)
+let fx_nibble_incr = new Uint8Array(2)
+let fx_cache = new Uint8Array(4)
 let fx_mult_accumulator: number
-  // @ts-ignore
-let vera_version_string: number[] = ['V',
+let vera_version_string = new Uint8Array(["V".charCodeAt(0),
 	VERA_VERSION_MAJOR,
 	VERA_VERSION_MINOR,
 	VERA_VERSION_PATCH
-]
+])
 let vga_scan_pos_x: number = 0
 let vga_scan_pos_y: number = 0
 let ntsc_half_cnt: number = 0
 let ntsc_scan_pos_y: number = 0
 let frame_count: number = 0
 let framebuffer = new Uint8ClampedArray(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
-let default_palette: number[] = [
+let default_palette = new Uint16Array([
 0x000,0xfff,0x800,0xafe,0xc4c,0x0c5,0x00a,0xee7,0xd85,0x640,0xf77,0x333,0x777,0xaf6,0x08f,0xbbb,0x000,0x111,0x222,0x333,0x444,0x555,0x666,0x777,0x888,0x999,0xaaa,0xbbb,0xccc,0xddd,0xeee,0xfff,0x211,0x433,0x644,0x866,0xa88,0xc99,0xfbb,0x211,0x422,0x633,0x844,0xa55,0xc66,0xf77,0x200,0x411,0x611,0x822,0xa22,0xc33,0xf33,0x200,0x400,0x600,0x800,0xa00,0xc00,0xf00,0x221,0x443,0x664,0x886,0xaa8,0xcc9,0xfeb,0x211,0x432,0x653,0x874,0xa95,0xcb6,0xfd7,0x210,0x431,0x651,0x862,0xa82,0xca3,0xfc3,0x210,0x430,0x640,0x860,0xa80,0xc90,0xfb0,0x121,0x343,0x564,0x786,0x9a8,0xbc9,0xdfb,0x121,0x342,0x463,0x684,0x8a5,0x9c6,0xbf7,0x120,0x241,0x461,0x582,0x6a2,0x8c3,0x9f3,0x120,0x240,0x360,0x480,0x5a0,0x6c0,0x7f0,0x121,0x343,0x465,0x686,0x8a8,0x9ca,0xbfc,0x121,0x242,0x364,0x485,0x5a6,0x6c8,0x7f9,0x020,0x141,0x162,0x283,0x2a4,0x3c5,0x3f6,0x020,0x041,0x061,0x082,0x0a2,0x0c3,0x0f3,0x122,0x344,0x466,0x688,0x8aa,0x9cc,0xbff,0x122,0x244,0x366,0x488,0x5aa,0x6cc,0x7ff,0x022,0x144,0x166,0x288,0x2aa,0x3cc,0x3ff,0x022,0x044,0x066,0x088,0x0aa,0x0cc,0x0ff,0x112,0x334,0x456,0x668,0x88a,0x9ac,0xbcf,0x112,0x224,0x346,0x458,0x56a,0x68c,0x79f,0x002,0x114,0x126,0x238,0x24a,0x35c,0x36f,0x002,0x014,0x016,0x028,0x02a,0x03c,0x03f,0x112,0x334,0x546,0x768,0x98a,0xb9c,0xdbf,0x112,0x324,0x436,0x648,0x85a,0x96c,0xb7f,0x102,0x214,0x416,0x528,0x62a,0x83c,0x93f,0x102,0x204,0x306,0x408,0x50a,0x60c,0x70f,0x212,0x434,0x646,0x868,0xa8a,0xc9c,0xfbe,0x211,0x423,0x635,0x847,0xa59,0xc6b,0xf7d,0x201,0x413,0x615,0x826,0xa28,0xc3a,0xf3c,0x201,0x403,0x604,0x806,0xa08,0xc09,0xf0b
-]
+])
 
 export const video_reset = (): void => {
 	console.log("[VERA] video_reset")
@@ -180,10 +181,10 @@ export const video_reset = (): void => {
 	fx_cache[2] = 0
 	fx_cache[3] = 0
 	fx_16bit_hop_align = 0
-	fx_nibble_bit[0] = false
-	fx_nibble_bit[1] = false
-	fx_nibble_incr[0] = false
-	fx_nibble_incr[1] = false
+	fx_nibble_bit[0] = 0
+	fx_nibble_bit[1] = 0
+	fx_nibble_incr[0] = 0
+	fx_nibble_incr[1] = 0
 	fx_poly_fill_length = 0
 	fx_affine_tile_base = 0
 	fx_affine_map_base = 0
@@ -386,11 +387,10 @@ const refresh_sprite_properties = (sprite: number): void => {
 }
 
 interface video_palette {
-  // @ts-ignore
-	entries
+	entries: Uint32Array
 	dirty: boolean
 }
-let video_palette: video_palette = { entries: [], dirty: false } as video_palette
+let video_palette: video_palette = { entries: new Uint32Array(256), dirty: false }
 const refresh_palette = (): void => {
 	let out_mode: number = reg_composer[0] & 3
 	let chroma_disable: boolean = ((reg_composer[0] & 0x07) == 6)
@@ -419,16 +419,13 @@ const refresh_palette = (): void => {
 	video_palette.dirty = false
 }
 
-const expand_4bpp_data = (dst: number, src: number, dst_size: number): void => {
+const expand_4bpp_data = (dst: Uint8Array, src_addr: number, dst_size: number): void => {
+	let dst_idx = 0
+	let src_idx = src_addr
 	while (dst_size >= 2) {
-  // @ts-ignore
-		dst[0] = src[0] >> 4
-		/* ++dst */
-  // @ts-ignore
-		dst[0] = src[0] & 0xf
-		/* ++dst */
-
-		/* ++src */
+		let val = video_ram[src_idx++]
+		dst[dst_idx++] = val >> 4
+		dst[dst_idx++] = val & 0xf
 		dst_size -= 2
 	}
 }
@@ -454,18 +451,16 @@ const render_sprite_line = (y: number): void => {
 		let eff_sy: number = props.vflip ? ((props.sprite_height - 1) - (y - props.sprite_y)) : (y - props.sprite_y)
 		let eff_sx: number = (props.hflip ? (props.sprite_width - 1) : 0)
 		let eff_sx_incr: number = props.hflip ? -1 : 1
-  // @ts-ignore
-		let bitmap_data: number = video_ram + props.sprite_address + (eff_sy << (props.sprite_width_log2 - (1 - props.color_mode)))
-		let unpacked_sprite_line = new Array(64).fill(0)
+		let bitmap_data: number = props.sprite_address + (eff_sy << (props.sprite_width_log2 - (1 - props.color_mode)))
+		let unpacked_sprite_line = new Uint8Array(64)
 		let width: number = (props.sprite_width<64? props.sprite_width : 64)
 		let vram_fetch_mask: number = ((2 - props.color_mode) << 2) - 1
 		if (props.color_mode == 0) {
 			// 4bpp
-  // @ts-ignore
 			expand_4bpp_data(unpacked_sprite_line, bitmap_data, width)
 		} else {
 			// 8bpp
-			memcpy(unpacked_sprite_line, bitmap_data, width)
+			for (let i = 0; i < width; i++) unpacked_sprite_line[i] = video_ram[bitmap_data + i]
 		}
 
 		for (let sx: number = 0; sx < props.sprite_width; ++sx) {
@@ -511,7 +506,7 @@ const render_layer_line_text = (layer: number, y: number): void => {
 	let map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
 	let map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
 	let size: number = (map_addr_end - map_addr_begin) + 2
-	let tile_bytes = new Array(512).fill(0) // max 256 tiles, 2 bytes each.
+	let tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let tile_start: number = 0
@@ -592,7 +587,7 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 	let map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
 	let map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
 	let size: number = (map_addr_end - map_addr_begin) + 2
-	let tile_bytes = new Array(512).fill(0) // max 256 tiles, 2 bytes each.
+	let tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let palette_offset: number = 0
@@ -730,13 +725,14 @@ const calculate_line_col_index = (spr_zindex: number, spr_col_index: number, l1_
 	return col_index
 }
 
-const render_line = (y: number, scan_pos_x: number): void => {
-	let y_prev: number
-	let s_pos_x_p: number
-	let eff_y_fp: number // 16.16 fixed point
-	let eff_x_fp: number // 16.16 fixed point
+let y_prev: number = -1
+let s_pos_x_p: number = 0
+let eff_y_fp: number = 0
+let eff_x_fp: number = 0
 
-	let col_line = new Array(SCREEN_WIDTH).fill(0)
+const render_line = (y: number, scan_pos_x: number): void => {
+
+	let col_line = new Uint8Array(SCREEN_WIDTH)
 	let dc_video: number = reg_composer[0]
 	let vstart: number = reg_composer[6] << 1
 	let vstop: number = reg_composer[7] << 1
@@ -805,10 +801,9 @@ const render_line = (y: number, scan_pos_x: number): void => {
   // @ts-ignore
 	let eff_y: number = (eff_y_fp >> 16)
 	if (eff_y >= 480) eff_y = 480 - (y & 1)
-	layer_line_enable[0] = dc_video & 0x10
-	layer_line_enable[1] = dc_video & 0x20
-  // @ts-ignore
-	sprite_line_enable   = dc_video & 0x40
+	layer_line_enable[0] = (dc_video & 0x10) ? 1 : 0
+	layer_line_enable[1] = (dc_video & 0x20) ? 1 : 0
+	sprite_line_enable = !!(dc_video & 0x40)
 	// clear layer_line if layer gets disabled
 	for (let layer: number = 0; layer < 2; layer++) {
 		if (!layer_line_enable[layer] && old_layer_line_enable[layer]) {
@@ -1073,7 +1068,7 @@ export const video_end = (): void => {
 }
 
 
-let increments: number[] = [
+let increments = new Int16Array([
 	0,   0,
 	1,   -1,
 	2,   -2,
@@ -1090,7 +1085,7 @@ let increments: number[] = [
 	160, -160,
 	320, -320,
 	640, -640,
-]
+])
   // @ts-ignore
 const video_get_address = (sel: number): number => {
 	let address: number = io_addr[sel]
@@ -1206,23 +1201,32 @@ const video_space_read = (address: number): number => {
 	return video_ram[address & 0x1FFFF]
 }
 
-const video_space_read_range = (dest: number, address: number, size: number): void => {
+const video_space_read_range = (dest: any, address: number, size: number): void => {
 	if (address >= ADDR_VRAM_START && (address+size) <= ADDR_VRAM_END) {
-		memcpy(dest, video_ram[address], size)
+		for (let i = 0; i < size; i++) dest[i] = video_ram[address + i]
 	} else {
 		for (let i: number = 0; i < size; ++i) {
-  // @ts-ignore
-let dest_idx = 0; 			dest[dest_idx++] = video_space_read(address + i)
+			dest[i] = video_space_read(address + i)
 		}
 	}
+}
+
+const write_psg = (address: number, value: number): void => {
+	const reg = address & 0x3f
+	audio_render()
+	psg_writereg(reg, value)
+	passVeraPsgWrite({
+		cycle: s6502.cycleCount,
+		reg,
+		value,
+	})
 }
 
   // @ts-ignore
 const video_space_write = (address: number, value: number): void => {
 	video_ram[address & 0x1FFFF] = value
 	if (address >= ADDR_PSG_START && address < ADDR_PSG_END) {
-		audio_render()
-		psg_writereg(address & 0x3f, value)
+		write_psg(address, value)
 	} else if (address >= ADDR_PALETTE_START && address < ADDR_PALETTE_END) {
 		palette[address & 0x1ff] = value
 		video_palette.dirty = true
@@ -1248,8 +1252,7 @@ const fx_video_space_write = (address: number, nibble: boolean, value: number): 
 		if (!fx_trans_writes || value > 0) video_ram[address & 0x1FFFF] = value
 	}
 	if (address >= ADDR_PSG_START && address < ADDR_PSG_END) {
-		audio_render()
-		psg_writereg(address & 0x3f, value)
+		write_psg(address, value)
 	} else if (address >= ADDR_PALETTE_START && address < ADDR_PALETTE_END) {
 		palette[address & 0x1ff] = value
 		video_palette.dirty = true
@@ -1468,7 +1471,7 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 				return io_rddata[reg - 3]
 			}
 
-			let addr_nibble: boolean = fx_nibble_bit[reg - 3]
+			let addr_nibble: boolean = !!fx_nibble_bit[reg - 3]
 			let address: number = get_and_inc_address(reg - 3, false)
 			let value: number = io_rddata[reg - 3]
 			if (reg == 4 && fx_addr1_mode == 3)
@@ -1532,7 +1535,7 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 					break
 				case 0x19: // DCSEL=6, 0x9F2A
 					 // <- as: void the error in some compilers about a declaration after a label
-					let m_result: number = Number((fx_cache[1] << 8) | fx_cache[0]) * Number((fx_cache[3] << 8) | fx_cache[2])
+					let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 					if (fx_subtract)
 						fx_mult_accumulator -= m_result
 					else
@@ -1624,18 +1627,18 @@ export const video_write = (reg: number, value: number): void => {
 
 			if (enable_midline)
 				video_step(MHZ, 0, true) // potential midline raster effect
-			let nibble: boolean = fx_nibble_bit[reg - 3]
+			let nibble: boolean = !!fx_nibble_bit[reg - 3]
 			let address: number = get_and_inc_address(reg - 3, true)
 			if (log_video) {
 				printf("WRITE video_space[$%X] = $%02X\n", address, value)
 			}
 
 			let wrdata_to_use: number = 0
-			let ram_wrdata = new Array(4).fill(0)
-			let nibble_mask = new Array(4).fill(0)
-			let cache_to_use = new Array(4).fill(0)
+			let ram_wrdata = new Uint8Array(4)
+			let nibble_mask = new Uint8Array(4)
+			let cache_to_use = new Uint8Array(4)
 			if (fx_multiplier) {
-				let m_result: number = Number((fx_cache[1] << 8) | fx_cache[0]) * Number((fx_cache[3] << 8) | fx_cache[2])
+				let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 				if (fx_subtract)
 					m_result = fx_mult_accumulator - m_result
 				else
@@ -1645,7 +1648,7 @@ export const video_write = (reg: number, value: number): void => {
 				cache_to_use[2] = (m_result >> 16) & 0xff
 				cache_to_use[3] = (m_result >> 24) & 0xff
 			} else {
-				memcpy(cache_to_use, fx_cache, 1)
+				memcpy(cache_to_use, fx_cache, fx_cache.length)
 			}
 
 			if (fx_cache_byte_cycling) {
@@ -1779,7 +1782,7 @@ export const video_write = (reg: number, value: number): void => {
   // @ts-ignore
 					fx_subtract = (value & 0x20) >> 5
 					if (value & 0x40) { // accumulate
-						let m_result: number = Number((fx_cache[1] << 8) | fx_cache[0]) * Number((fx_cache[3] << 8) | fx_cache[2])
+						let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 						if (fx_subtract)
 							fx_mult_accumulator -= m_result
 						else
@@ -1929,23 +1932,35 @@ const video_is_special_address = (addr: number): boolean => {
 	return addr >= 0x1F9C0
 }
 
-// --- Stubs for C  functions ---
-const memset = (dest: any, val: any, size: any) => {
-    if (dest && dest.fill) {
-        dest.fill(val, 0, size)
-    } else {
-        for (let i = 0; i < size; i++) dest[i] = val
-    }
+// These helpers use element counts, not byte counts. The port calls them only
+// with same-width typed arrays or object arrays that model C structs.
+const memset = (dest: any, val: number, size: number) => {
+	if (dest && dest.fill) {
+		dest.fill(val, 0, size)
+		return
+	}
+	for (let i = 0; i < size; i++) dest[i] = val
 }
 
-const memcpy = (dest: any, src: any, size: any) => {
-    if (dest && dest.set && src && src.subarray) {
-        dest.set(src.subarray(0, size))
-    } else if (dest && dest.set && src && src.slice) {
-        dest.set(src.slice(0, size))
-    } else {
-        for (let i = 0; i < size; i++) dest[i] = src[i]
-    }
+const memcpy = (dest: any, src: any, size: number) => {
+	if (dest && dest.set && src && src.subarray) {
+		dest.set(src.subarray(0, size), 0)
+		return
+	}
+	if (dest && dest.set && src && src.slice) {
+		dest.set(src.slice(0, size), 0)
+		return
+	}
+	for (let i = 0; i < size; i++) {
+		if (ArrayBuffer.isView(dest[i]) && ArrayBuffer.isView(src[i]) && "set" in dest[i]) {
+			dest[i].set(src[i])
+		} else if (typeof src[i] === "object" && src[i] !== null) {
+			if (!dest[i]) dest[i] = Array.isArray(src[i]) ? [] : {}
+			Object.assign(dest[i], src[i])
+		} else {
+			dest[i] = src[i]
+		}
+	}
 }
 
   // @ts-ignore

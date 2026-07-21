@@ -52,6 +52,10 @@ export const passVeraFramebuffer = (fb: Uint8ClampedArray, dcVideo: number) => {
   }
 }
 
+export const passVeraPsgWrite = (event: VeraPsgWrite) => {
+  doPostMessage(MSG_WORKER.VERA_PSG_WRITE, event)
+}
+
 export const passMachineState = (state: MachineState) => {
   doPostMessage(MSG_WORKER.MACHINE_STATE, state)
 }
