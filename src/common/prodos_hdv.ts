@@ -63,28 +63,44 @@ type FourCadeDiskMetadata = {
   capturedZeroPage?: Uint8Array  // 512-byte block: ZP (0-255) + $BF00 page (256-511)
   floppyPatchAddress?: number    // address of RWTS to patch to RTS (disable floppy reads)
   rawDiskImage?: Uint8Array      // original floppy DSK image for HD read shim
-  prelaunch?: FourCadePrelaunchEntry  // when set, use 4cade-style init calls (no RWTS shim)
+  prelaunch?: { sequence: PrelaunchOp[]; entry: number }  // when set, use 4cade-style init calls (no RWTS shim)
 }
 
-import { FOUR_CADE_PRELAUNCH_DB, FourCadePrelaunchEntry, PrelaunchOp } from "./four_cade_prelaunch"
+import { FOUR_CADE_PRELAUNCH_DB, PrelaunchOp, FourCadeEntry, fetchFourCadeDisk, fetchFourCadePrelaunch, parsePrelaunchScript, extractPackedBinary } from "./four_cade_prelaunch_db"
 // depack6502 is available for future use but not needed for the packed binary
 // runtime decompression approach (the Apple II decompresses at boot time).
 // import { depack6502 } from "./depack6502"
 
 /** FNV-1a 32-bit hash of a Uint8Array — fast, synchronous, collision-resistant for disk identification. */
-export const fourCadeDiskHash = (data: Uint8Array): string => {
-  let h = 0x811c9dc5 | 0
-  for (let i = 0; i < data.length; i++) {
-    h ^= data[i]
-    h = Math.imul(h, 0x01000193)
+
+/** Lazily built index: normalized name → display name (DB key) */
+let fourCadeNameIndex: Map<string, string> | undefined
+
+const normalizeFourCadeName = (name: string): string =>
+  name.toLowerCase().replace(/[^a-z0-9]/g, "")
+
+const getFourCadeNameIndex = (): Map<string, string> => {
+  if (!fourCadeNameIndex) {
+    fourCadeNameIndex = new Map()
+    for (const key of Object.keys(FOUR_CADE_PRELAUNCH_DB)) {
+      fourCadeNameIndex.set(normalizeFourCadeName(key), key)
+    }
   }
-  return (h >>> 0).toString(16).padStart(8, "0")
+  return fourCadeNameIndex
 }
 
-/** Look up 4cade prelaunch metadata for a DOS 3.3 disk image. */
-const lookupFourCadePrelaunch = (diskImage: Uint8Array): FourCadePrelaunchEntry | undefined => {
-  const hash = fourCadeDiskHash(diskImage)
-  return FOUR_CADE_PRELAUNCH_DB[hash]
+/**
+ * Look up 4cade prelaunch metadata by bookmark title.
+ * Strips common suffixes like " (4am crack)" and normalizes for comparison.
+ */
+export const lookupFourCadeByTitle = (title: string): FourCadeEntry | undefined => {
+  const cleaned = title
+    .replace(/\s*\(4am.*?\)\s*$/i, "")
+    .replace(/\s*\(.*?crack.*?\)\s*$/i, "")
+    .replace(/\s*\[.*?\]\s*$/g, "")
+    .trim()
+  const key = getFourCadeNameIndex().get(normalizeFourCadeName(cleaned))
+  return key ? FOUR_CADE_PRELAUNCH_DB[key] : undefined
 }
 
 /**
@@ -1907,113 +1923,6 @@ const findDirectLoadCandidate = (image: Uint8Array): {
  * overlaid on top — producing the correct runtime memory state without needing
  * the floppy-boot capture.
  */
-const compositeAllBinaries = (image: Uint8Array): {
-  compositeData: Uint8Array
-  loadAddress: number
-  totalLength: number
-} | undefined => {
-  if (!isLikelyDos33Volume(image) || !dosLogicalImageHasValidCatalog(image)) return undefined
-  const { entries } = readDos33Catalog(image)
-
-  // First pass: determine the combined memory extent
-  let lowestAddr = 0xFFFF
-  let highestEnd = 0
-  const binaries: Array<{ loadAddress: number; data: Uint8Array }> = []
-
-  for (const entry of entries) {
-    if (entry.sectorCount < 1) continue
-    if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) continue
-    const bytes = readDosFileBytes(image, entry.tsListTrack, entry.tsListSector)
-    if (bytes.length < 4) continue
-    const loadAddress = bytes[0] | (bytes[1] << 8)
-    const binaryLength = bytes[2] | (bytes[3] << 8)
-    if (binaryLength < 1) continue
-    if (loadAddress < 0x0400 || loadAddress > 0xBF00) continue
-    const endAddr = Math.min(loadAddress + binaryLength, 0xBF00)
-    const data = bytes.slice(4, 4 + (endAddr - loadAddress))
-    if (data.length === 0) continue
-    binaries.push({ loadAddress, data })
-    if (loadAddress < lowestAddr) lowestAddr = loadAddress
-    if (endAddr > highestEnd) highestEnd = endAddr
-  }
-
-  if (binaries.length === 0 || highestEnd <= lowestAddr) return undefined
-
-  // Second pass: composite all binaries into one buffer (catalog order)
-  const totalLength = highestEnd - lowestAddr
-  const compositeData = new Uint8Array(totalLength)
-  for (const bin of binaries) {
-    const offset = bin.loadAddress - lowestAddr
-    compositeData.set(bin.data, offset)
-  }
-
-  return { compositeData, loadAddress: lowestAddr, totalLength }
-}
-
-/**
- * Scans a memory dump for a floppy disk read routine (RWTS) by looking for the
- * characteristic nibble-read pattern: LDA $C08C,X / BPL $xx (bytes BD 8C C0 10 xx).
- * If found in the $0200-$0FFF range, walks backward to find the subroutine entry
- * (the byte after the nearest RTS/JMP/BRK/RTI). Returns the entry address or undefined.
- */
-const detectFloppyRwtsAddress = (memoryDump: Uint8Array): number | undefined => {
-  // Search for BD 8C C0 10 (LDA $C08C,X / BPL) in the low memory region
-  const searchStart = 0x0200
-  const searchEnd = Math.min(0x1000, memoryDump.length)
-  for (let i = searchStart; i < searchEnd - 4; i++) {
-    if (memoryDump[i] === 0xBD && memoryDump[i + 1] === 0x8C &&
-        memoryDump[i + 2] === 0xC0 && memoryDump[i + 3] === 0x10) {
-      // Found the nibble-read pattern. RWTS routines in DOS 3.3 / 4am cracks
-      // are almost always page-aligned ($0600, $0B00, etc.), so use the page
-      // boundary rather than a fragile backward scan that can be fooled by
-      // instruction operands matching terminator bytes.
-      const entry = i & 0xFF00
-      return entry
-    }
-  }
-  return undefined
-}
-
-/**
- * Finds the entry point address for a DOS 3.3 disk by examining all binary files
- * and determining which one contains actual 6502 code (vs. data like sprites).
- * A binary starting with JMP ($4C), JSR ($20), SEI ($78), CLD ($D8), or LDX ($A2)
- * is likely code. If no code binary is found, falls back to the largest binary's
- * load address (standard BRUN behavior).
- */
-const findCodeEntryAddress = (image: Uint8Array, fallbackAddress: number): number => {
-  if (!isLikelyDos33Volume(image) || !dosLogicalImageHasValidCatalog(image)) return fallbackAddress
-  const { entries } = readDos33Catalog(image)
-  // Common 6502 entry-point opcodes
-  const codeOpcodes = new Set([0x4C, 0x20, 0x78, 0xD8, 0xA2, 0xA9, 0x2C, 0xAD, 0x8D, 0xEA])
-  let codeCandidate: { loadAddress: number; binaryLength: number } | undefined
-
-  for (const entry of entries) {
-    if (entry.sectorCount < 1) continue
-    if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) continue
-    const bytes = readDosFileBytes(image, entry.tsListTrack, entry.tsListSector)
-    if (bytes.length < 8) continue
-    const loadAddress = bytes[0] | (bytes[1] << 8)
-    const binaryLength = bytes[2] | (bytes[3] << 8)
-    if (binaryLength < 256) continue
-    if (loadAddress < 0x0400 || loadAddress > 0x9600) continue
-    const firstByte = bytes[4]
-    // If the first byte is a common code opcode, this is likely the entry binary
-    if (codeOpcodes.has(firstByte)) {
-      // Prefer the binary that starts with JMP ($4C) — the strongest signal
-      if (firstByte === 0x4C) {
-        return loadAddress
-      }
-      // Otherwise remember as candidate (prefer larger code binaries)
-      if (!codeCandidate || binaryLength > codeCandidate.binaryLength) {
-        codeCandidate = { loadAddress, binaryLength }
-      }
-    }
-  }
-  return codeCandidate?.loadAddress ?? fallbackAddress
-}
-
-
 /**
  * Classifies a DOS 3.3 image that may be incompatible with DOS.MASTER as either
  * "dos" (normal), "dosup" (genuinely non-exportable), or "4cade" (exportable
@@ -2051,7 +1960,11 @@ const classifyDosUpOrDirect = (image: Uint8Array): VtocType => {
  * greeting is empty — either way bypassed by direct SmartPort block loading.
  * WOZ images are fully bit-decoded and probed under every sector order before being classified.
  */
-export const determineVtocType = (filename: string, data: Uint8Array): VtocType => {
+export const determineVtocType = (filename: string, data: Uint8Array, title?: string): VtocType => {
+  // Title-based override: if the bookmark title matches a known 4cade game
+  // (e.g. "Conan (4am crack)"), classify immediately without needing disk data.
+  if (title && lookupFourCadeByTitle(title)) return "4cade"
+
   const ext = filename.toLowerCase().split(".").pop() || ""
 
   // Detect WOZ by magic header bytes rather than file extension — the emulator
@@ -2093,7 +2006,8 @@ export const determineVtocType = (filename: string, data: Uint8Array): VtocType 
       return classifyDosUpOrDirect(data)
     }
   }
-  return kind === "unknown" ? "other" : kind
+  const baseType = kind === "unknown" ? "other" : kind
+  return baseType
 }
 
 // In ProDOS a "system program" is any file of type $FF (SYS) loaded at $2000; the
@@ -2300,7 +2214,6 @@ const preprocessInputFilesForMenu = async (
   files: BuildInputFile[],
   menuEntries?: MenuDiskEntry[],
   reservedNames?: Set<string>,
-  zpCaptureCallback?: (menuIndex: number, entryAddress: number, captureMemory?: boolean) => Promise<CaptureBootResult | null>,
 ) => {
   const outputFiles: BuildInputFile[] = []
   const directoryPlans: DirectoryImportPlan[] = []
@@ -2329,271 +2242,50 @@ const preprocessInputFilesForMenu = async (
     const isWozContainer = sourceFilename.toLowerCase().endsWith(".woz")
     const wozExtractedFiles = menuEntries?.[i]?.wozExtractedProDosFiles
 
-    // "4cade" disks: composite all binaries from the DOS 3.3 catalog into a
-    // single memory region for direct block-loading on the HDV. Multi-binary games
-    // (e.g. BurgerTime: sprite data at $0C00, code overlay at $6400) are handled by
-    // loading ALL files in catalog order — later files overwrite earlier ones where
-    // they overlap, producing the correct runtime memory layout.
-    // When zpCaptureCallback is available, we additionally boot the floppy at ludicrous
-    // speed to capture the true memory state (handles self-modifying boot loaders).
+    // "4cade" disks: fetch the compressed game binary and prelaunch script from
+    // the 4cade GitHub repo, parse the prelaunch to determine the decompression
+    // sequence, then write the packed binary + relay to the HDV.
     if (kind === "4cade") {
-      let dosImage: Uint8Array | undefined
-      if (isWozContainer) {
-        dosImage = loadWozAndExtractDosImage(file.data)
-      } else {
-        dosImage = file.data
-      }
-      if (dosImage) {
-        // Look up known 4cade prelaunch metadata for this disk image
-        const prelaunch = lookupFourCadePrelaunch(dosImage)
-        if (prelaunch) {
-        }
+      // Title-based matching against the 4cade game database
+      const displayName = menuEntries?.[i]?.displayName
+      const fourCadeEntry = displayName ? lookupFourCadeByTitle(displayName) : undefined
 
-        // --- Packed binary path: store compressed data, decompress at runtime ---
-        // The packed binary is written directly to the HDV. At runtime, the relay
-        // loads it at its load address, applies pre-decompression patches (which
-        // modify the decompressor stub), calls JSR to decompress, then applies
-        // post-decompression patches and game init — exactly like 4cade/Total Replay.
-        if (prelaunch?.packedBinary && prelaunch.packedLoadAddress !== undefined) {
-          const packedBytes = Uint8Array.from(atob(prelaunch.packedBinary), c => c.charCodeAt(0))
+      if (fourCadeEntry) {
+        try {
+          // Fetch compressed disk and prelaunch from GitHub
+          const [poData, prelaunchSource] = await Promise.all([
+            fetchFourCadeDisk(fourCadeEntry),
+            fetchFourCadePrelaunch(fourCadeEntry),
+          ])
 
-          fourCadeEntries.push({
-            menuIndex: i,
-            binaryData: packedBytes,
-            loadAddress: prelaunch.packedLoadAddress,
-            binaryLength: packedBytes.length,
-            entryAddress: prelaunch.entry,
-            capturedZeroPage: undefined,
-            prelaunch,
-            isPackedBinary: true,
-          })
+          // Extract the packed binary from the .po disk
+          const packed = extractPackedBinary(poData)
+          if (packed) {
+            // Parse the prelaunch script to get the operation sequence
+            const parsed = parsePrelaunchScript(prelaunchSource)
+            if (parsed) {
+              fourCadeEntries.push({
+                menuIndex: i,
+                binaryData: packed.data,
+                loadAddress: packed.loadAddress,
+                binaryLength: packed.data.length,
+                entryAddress: parsed.entry,
+                capturedZeroPage: undefined,
+                prelaunch: parsed,
+              })
 
-          menuProDosPrefixes[i] = undefined
-          menuProDosCommands[i] = undefined
-          continue
-        }
-
-        // Composite all binary files from catalog into one memory region
-        const composite = compositeAllBinaries(dosImage)
-        if (composite) {
-          // Determine the actual code entry point
-          const entryAddress = findCodeEntryAddress(dosImage, composite.loadAddress)
-          // Start with the deterministic composite as fallback binary data.
-          let binaryData: Uint8Array = composite.compositeData
-          let loadAddress = composite.loadAddress
-          let binaryLength = composite.totalLength
-          let capturedZeroPage: Uint8Array | undefined
-          let floppyPatchAddress: number | undefined
-
-          if (zpCaptureCallback) {
-            // Boot the floppy at ludicrous speed and capture both zero page AND
-            // full memory at the game's entry point. The memory dump is essential
-            // for games whose boot process loads extra data outside cataloged file
-            // ranges (e.g. $0900-$0BFF) or decrypts code regions in place.
-            //
-            // When a prelaunch match is found, capture at the game's MAIN LOOP
-            // entry (e.g. $A300 for BurgerTime) instead of the init entry ($6400).
-            // This lets the game complete its entire boot process — joystick test,
-            // data loading, decompression — before we snapshot. The result is a
-            // fully-loaded memory state that needs no init calls at runtime.
-            const captureBreakpoint = prelaunch ? prelaunch.entry : entryAddress
-            const captureResult = await zpCaptureCallback(i, captureBreakpoint, true)
-            if (captureResult) {
-              // Pack ZP (256 bytes) + game's $BF00 page (256 bytes) into a
-              // single 512-byte block.  The relay reads this block to $BE00,
-              // which fills:
-              //   $BE00-$BEFF → ZP snapshot (copied to $0000 by the relay)
-              //   $BF00-$BFFF → game data (directly in place)
-              // This is essential because DOS 3.3 games treat $BF00-$BFFF as
-              // regular RAM (e.g. BurgerTime's $91B4 does CMP $BF73,X), but
-              // ProDOS overwrites it with its global page.  Without this, the
-              // game finds MLI vectors instead of expected data and hangs.
-              const zpSlice = captureResult.earlyLowMemory
-                ? captureResult.earlyLowMemory.slice(0, 256)
-                : captureResult.zeroPage
-              const bf00Slice = captureResult.earlyLowMemory
-                ? captureResult.earlyLowMemory.slice(0xBF00, 0xC000)
-                : new Uint8Array(256)
-              capturedZeroPage = new Uint8Array(512)
-              capturedZeroPage.set(zpSlice instanceof Uint8Array ? zpSlice : new Uint8Array(zpSlice), 0)
-              capturedZeroPage.set(bf00Slice instanceof Uint8Array ? bf00Slice : new Uint8Array(bf00Slice), 256)
-              if (captureResult.memoryDump) {
-                // Build memory image from early capture (two-stage capture):
-                // Use earlyLowMemory for the entire range ($0400-$BDFF).
-                // The early capture has the correct boot-loaded state with all code intact
-                // (including $8500+ which the game calls via JSR $8500).
-                // The RWTS is patched to CLC+RTS so no disk reads occur — the game uses
-                // whatever data is already in memory from the boot load.
-                const EXTENDED_START = 0x0400
-                // For prelaunch games, capture the entire main memory ($0400-$BDFF)
-                // because the boot process loads code/data far beyond the DOS catalog
-                // range (e.g. BurgerTime's main loop at $A300 isn't cataloged).
-                // Cap at $BE00 (not $C000) to leave room for the ZP scratch block:
-                // the relay loads ZP into the page right after game data, and
-                // $BE00 is safely below the I/O region ($C000+).
-                const compositeEnd = prelaunch
-                  ? 0xBE00
-                  : composite.loadAddress + composite.totalLength
-                const extendedLength = compositeEnd - EXTENDED_START
-                if (captureResult.earlyLowMemory && captureResult.earlyLowMemory.length >= compositeEnd) {
-                  binaryData = new Uint8Array(captureResult.earlyLowMemory.slice(EXTENDED_START, compositeEnd))
-                  // Diagnostic: verify $6400 in composite
-                  const off6400 = 0x6400 - EXTENDED_START
-                } else {
-                  // Fallback: single-stage capture, use memoryDump for everything
-                  binaryData = captureResult.memoryDump.slice(EXTENDED_START, EXTENDED_START + extendedLength)
-                }
-                loadAddress = EXTENDED_START
-                binaryLength = extendedLength
-              } else {
-              }
-              // If late capture provided a PC, log it but don't use it as entry
-              // (jumping mid-execution would have wrong stack state).
-              // Instead, detect the floppy RWTS and patch it to RTS so the
-              // game can re-run its init without needing a floppy drive.
-              if (captureResult.capturedPC !== undefined) {
-              }
-              // Detect RWTS in captured memory. Try early low memory first (captured
-              // at the entry breakpoint before the game's init overwrites $0600),
-              // then fall back to the late memory dump.
-              if (captureResult.earlyLowMemory) {
-                floppyPatchAddress = detectFloppyRwtsAddress(captureResult.earlyLowMemory)
-              }
-              if (floppyPatchAddress === undefined && captureResult.memoryDump) {
-                floppyPatchAddress = detectFloppyRwtsAddress(captureResult.memoryDump)
-              }
-            } else {
+              menuProDosPrefixes[i] = undefined
+              menuProDosCommands[i] = undefined
+              continue
             }
           }
-
-          if (capturedZeroPage) {
-            // Log key ZP values for debugging game state
-            const zp = capturedZeroPage
-          }
-          if (binaryData) {
-            // Log first bytes at key addresses relative to loadAddress
-            const off0900 = 0x0900 - loadAddress
-            const off6400 = 0x6400 - loadAddress
-            const off6500 = 0x6500 - loadAddress
-            const off645D = 0x645D - loadAddress
-            if (off0900 >= 0 && off0900 + 4 <= binaryData.length) {
-            }
-            if (off6400 >= 0 && off6400 + 4 <= binaryData.length) {
-            }
-            if (off645D >= 0 && off645D + 32 <= binaryData.length) {
-            }
-            if (off6500 >= 0 && off6500 + 48 <= binaryData.length) {
-            }
-            // Dump code around the floppy access at $6434
-            const off6420 = 0x6420 - loadAddress
-            const off6440 = 0x6440 - loadAddress
-            const off04C0 = 0x04C0 - loadAddress
-            const off0600 = 0x0600 - loadAddress
-            const off8000 = 0x8000 - loadAddress
-            if (off6420 >= 0 && off6420 + 32 <= binaryData.length) {
-            }
-            if (off6440 >= 0 && off6440 + 32 <= binaryData.length) {
-            }
-            if (off04C0 >= 0 && off04C0 + 32 <= binaryData.length) {
-            }
-            if (off0600 >= 0 && off0600 + 32 <= binaryData.length) {
-            }
-            if (off8000 >= 0 && off8000 + 32 <= binaryData.length) {
-            }
-            const off68B0 = 0x68B0 - loadAddress
-            if (off68B0 >= 0 && off68B0 + 96 <= binaryData.length) {
-            }
-            const off80C0 = 0x80C0 - loadAddress
-            if (off80C0 >= 0 && off80C0 + 48 <= binaryData.length) {
-            }
-            const off0800 = 0x0800 - loadAddress
-            if (off0800 >= 0 && off0800 + 48 <= binaryData.length) {
-            }
-            // Additional diagnostics: $80E0-$80FF (→$04E0-$04FF after copy)
-            const off80E0 = 0x80E0 - loadAddress
-            if (off80E0 >= 0 && off80E0 + 32 <= binaryData.length) {
-            }
-            // $8000-$803F full (→$0400-$043F, includes entry at $0401)
-            if (off8000 >= 0 && off8000 + 64 <= binaryData.length) {
-            }
-            // T0/S0 boot sector details (chain-loader code at $0800)
-            if (dosImage && dosImage.length >= 256) {
-            }
-          }
-
-          // When a 4cade prelaunch match is found, apply the prelaunch patches
-          // to the captured memory and use the prelaunch init/entry flow instead
-          // of the generic RWTS shim approach.
-          if (prelaunch) {
-            for (const patch of prelaunch.patches) {
-              const off = patch.addr - loadAddress
-              if (off >= 0 && off < binaryData.length) {
-                const oldVal = binaryData[off]
-                binaryData[off] = patch.val
-              }
-            }
-            // Also disable the low-level floppy RWTS. The prelaunch patches
-            // disable high-level read routines ($9014, $9053), but the game
-            // may also call the RWTS directly (e.g. JSR $06C3). In 4cade's
-            // packed binary $0600 contains game data (no RWTS), but our memory
-            // capture has the real floppy RWTS which hangs waiting for disk
-            // nibbles that never arrive. Fill the entire RWTS area with RTS
-            // ($60) so ANY call into $0600-$07FF returns immediately, and put
-            // CLC ($18) at the base entry for a clean "no error" return.
-            if (floppyPatchAddress !== undefined) {
-              const rwtsBase = floppyPatchAddress
-              const rwtsEnd = rwtsBase + 0x0200
-              const baseOff = rwtsBase - loadAddress
-              const endOff = rwtsEnd - loadAddress
-              if (baseOff >= 0 && endOff <= binaryData.length) {
-                binaryData.fill(0x60, baseOff, endOff)
-                binaryData[baseOff] = 0x18  // CLC at entry
-              }
-              // BurgerTime (and similar games) stores compressed copies of low
-              // memory at $8000+ (offset $7C00) which get decompressed back to
-              // $0000+ during level init.  This restores the original RWTS and
-              // DOS page-3 vectors, overwriting our RTS fills.  Neutralise the
-              // mirror copies so that the decompressed data is also harmless.
-              const MIRROR_OFFSET = 0x7C00
-              // Mirror of RWTS ($0600-$07FF → $8200-$83FF)
-              const rwtsM = rwtsBase + MIRROR_OFFSET
-              const rwtsMOff = rwtsM - loadAddress
-              const rwtsMEnd = rwtsMOff + 0x0200
-              if (rwtsMOff >= 0 && rwtsMEnd <= binaryData.length) {
-                binaryData.fill(0x60, rwtsMOff, rwtsMEnd)
-                binaryData[rwtsMOff] = 0x18
-              }
-              // Mirror of page 3 ($0300-$03FF → $7F00-$7FFF)
-              const p3M = 0x0300 + MIRROR_OFFSET  // $7F00
-              const p3MOff = p3M - loadAddress
-              const p3MEnd = p3MOff + 0x0100
-              if (p3MOff >= 0 && p3MEnd <= binaryData.length) {
-                binaryData.fill(0x60, p3MOff, p3MEnd)
-              }
-            }
-            fourCadeEntries.push({
-              menuIndex: i,
-              binaryData,
-              loadAddress,
-              binaryLength,
-              entryAddress: prelaunch.entry,
-              capturedZeroPage,
-              prelaunch,
-            })
-          } else {
-            fourCadeEntries.push({
-              menuIndex: i,
-              binaryData,
-              loadAddress,
-              binaryLength,
-              entryAddress,
-              capturedZeroPage,
-              floppyPatchAddress,
-              rawDiskImage: dosImage,
-            })
-          }
+        } catch {
+          // Fetch failed — fall through to legacy composite approach
         }
       }
+
+      // No 4cade DB match or fetch failed — skip this disk for direct-load export.
+      // (Only disks with a known 4cade prelaunch can be block-loaded.)
       menuProDosPrefixes[i] = undefined
       menuProDosCommands[i] = undefined
       continue
@@ -4736,7 +4428,6 @@ export const buildProDosHdv = async (
   prodos243Base?: Uint8Array,
   menuEntries?: MenuDiskEntry[],
   dosMasterSlot: number = DOSMASTER_SLOT,
-  zpCaptureCallback?: (menuIndex: number, entryAddress: number, captureMemory?: boolean) => Promise<CaptureBootResult | null>,
 ): Promise<Uint8Array> => {
   let hdv = prodos243Base
   if (!hdv) {
@@ -4775,7 +4466,7 @@ export const buildProDosHdv = async (
   rootScan.existingNames.add(SCREENSHOT_SUBDIR)
   // Reserve helper-program subdirectory name to avoid root-path exhaustion.
   rootScan.existingNames.add(HELPER_SUBDIR)
-  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, fourCadeEntries } = await preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames, zpCaptureCallback)
+  const { outputFiles, directoryPlans, menuProDosCommands, menuProDosPrefixes, menuNeedsAliasShim, runtimeVolumes, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, fourCadeEntries } = await preprocessInputFilesForMenu(files, menuEntries, rootScan.existingNames)
   let fileCount = rootScan.fileCount
   const currentTotalBlocks = readLittleEndian16(rootHeader, volumeEntryOffset + 37)
   const bitmapStartBlock = readLittleEndian16(rootHeader, volumeEntryOffset + 35)
@@ -4894,14 +4585,14 @@ export const buildProDosHdv = async (
 
       // Packed binary: runtime decompression relay (loads compressed data, decompresses on Apple II)
       // Non-packed: flat memory relay (loads decompressed snapshot, restores ZP)
-      const isPackedBinary = !!(entry as any).isPackedBinary
-      const relayData = isPackedBinary
+      const hasPrelaunchSequence = entry.prelaunch && entry.prelaunch.sequence.length > 0
+      const relayData = hasPrelaunchSequence
         ? createPackedBinaryRelay(
             fourCadeStartBlock,
             entry.loadAddress,
             gameBlockCount,
             unitNumber,
-            entry.prelaunch.packedSequence!,
+            entry.prelaunch!.sequence,
             entry.entryAddress,
           )
         : createPrelaunchRelay(
@@ -4909,13 +4600,11 @@ export const buildProDosHdv = async (
             entry.loadAddress,
             gameBlockCount,
             unitNumber,
-            entry.prelaunch.patches,
-            entry.prelaunch.calls,
+            [],   // no patches for fallback path
+            [],   // no calls for fallback path
             entry.entryAddress,
             hasZP,
           )
-
-      const seqLen = entry.prelaunch.packedSequence?.length ?? 0
 
       helperFiles.push({
         name: relayName,
@@ -5104,12 +4793,8 @@ export const buildProDosHdv = async (
           if (isChainLoader && capturedTsValid) {
             // Patch $80C0 to RTS — skip chain-loader, preserve captured $0900
             entry.binaryData[off80C0] = 0x60  // RTS
-          } else if (isChainLoader) {
           }
         }
-
-        // Diagnostic: show what's at $80C0 and $80DE after patching
-        const off80DE = 0x80DE - entry.loadAddress
       }
 
       // Patch floppy seek/motor routines to RTS. The new $04C0 (from $80C0)
@@ -5121,7 +4806,6 @@ export const buildProDosHdv = async (
       for (const addr of floppyRoutines) {
         const off = addr - entry.loadAddress
         if (off >= 0 && off < entry.binaryData.length) {
-          const oldByte = entry.binaryData[off]
           entry.binaryData[off] = 0x60  // RTS
         }
       }

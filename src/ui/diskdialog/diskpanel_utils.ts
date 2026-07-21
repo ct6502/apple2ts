@@ -1,11 +1,11 @@
-import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH } from "../../common/prodos_hdv"
+import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH, determineVtocType } from "../../common/prodos_hdv"
 import { RUN_MODE } from "../../common/utility"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { diskImages } from "../devices/disk/diskimages"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
 import { handleInputParams } from "../inputparams"
 import { DiskCollectionSortMode, getPreferenceVtocType } from "../localstorage"
-import { passSetRunMode, captureBootZeroPage } from "../main2worker"
+import { passSetRunMode } from "../main2worker"
 import { showGlobalProgressModal } from "../ui_utilities"
 import { loadAndConvertImageToHires } from "./screenshot_utils"
 
@@ -284,9 +284,17 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
 
     // Override fileKinds for disks whose VTOC type was determined to be "4cade"
     // (DOS 3.3 binaries that overlap DOS memory and must be block-loaded directly).
+    // Also re-check at export time using the actual downloaded buffer, since the
+    // VTOC pre-check may have failed (CORS) and defaulted to "dos".
     for (let i = 0; i < orderedDownloadedDisks.length; i++) {
       if (orderedDownloadedDisks[i].item.vtocType === "4cade") {
         fileKinds[i] = "4cade"
+      } else if (fileKinds[i] !== "prodos") {
+        const disk = orderedDownloadedDisks[i]
+        const recheck = determineVtocType(disk.filename, disk.buffer, disk.item.title)
+        if (recheck === "4cade") {
+          fileKinds[i] = "4cade"
+        }
       }
     }
 
@@ -306,9 +314,6 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
         // whose greeting was not named HELLO does not fail with FILE NOT FOUND.
         const greeting = ensureDosVolumeHasHelloGreeting(data)
         data = greeting.image
-        if (greeting.action === "injected") {
-          console.log(`[HDV Export] Injected HELLO greeting into ${downloadedDisk.filename}: ${greeting.command}`)
-        }
       }
       return {
         name: downloadedDisk.filename.split(".")[0].slice(0, 15),
@@ -344,32 +349,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       wozExtractedProDosFiles: wozExtractedByIndex.get(index),
     }))
 
-    // Zero-page capture callback: for replay disks, boot the original
-    // floppy in the emulator at ludicrous speed to capture the zero page
-    // state at the game's entry point.  This ensures the HDV boot replicates
-    // the exact zero page environment the game expects from its floppy loader.
-    const zpCaptureCallback = async (menuIndex: number, entryAddress: number, captureMemory?: boolean): Promise<CaptureBootResult | null> => {
-      const disk = orderedDownloadedDisks[menuIndex]
-      if (!disk) return null
-      console.log(`[HDV Export] Capturing ZP${captureMemory ? ' + memory (with disk I/O wait)' : ''} for "${disk.filename}" at entry $${entryAddress.toString(16).toUpperCase()}...`)
-      const result = await captureBootZeroPage({
-        diskImage: disk.buffer,
-        filename: disk.filename,
-        entryAddress,
-        timeoutMs: captureMemory ? 25000 : 15000,
-        captureMemory,
-        waitForDiskIo: captureMemory ? true : undefined,
-        postEntryDelayMs: captureMemory ? 5000 : undefined,
-      })
-      if (result) {
-        console.log(`[HDV Export] ZP capture succeeded for "${disk.filename}"${result.memoryDump ? ` (memory dump: ${result.memoryDump.length} bytes)` : ''}`)
-      } else {
-        console.warn(`[HDV Export] ZP capture timed out for "${disk.filename}"`)
-      }
-      return result
-    }
-
-    const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries, undefined, zpCaptureCallback)
+    const hdvData = await buildProDosHdv(fileEntries, "APPLE2TS", undefined, menuEntries)
     downloadExportHdv(hdvData, "APPLE2TS.HDV")
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

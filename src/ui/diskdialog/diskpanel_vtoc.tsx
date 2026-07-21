@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { determineVtocType, VTOC_REFRESH } from "../../common/prodos_hdv"
+import { determineVtocType, lookupFourCadeByTitle, VTOC_REFRESH } from "../../common/prodos_hdv"
 import { hasSessionVtocFailure, addSessionVtocFailure, removeSessionVtocFailure, setPreferenceVtocType } from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
 import { showGlobalProgressModal } from "../ui_utilities"
@@ -222,14 +222,13 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     fetchDiskBufferForItem(pending).then((data) => {
       settled = true
       if (!data) {
-        // Download failed (CORS/network). For Internet Archive disks, assume
-        // exportable (type "dos") since the metadata endpoint is often
-        // CORS-blocked from localhost even though the actual disk download
-        // succeeds during export. For other disks, remember the failure for
-        // this browser session so it is not re-attempted on every render.
+        // Download failed (CORS/network). For Internet Archive disks, try
+        // title-based matching against the 4cade DB first; fall back to "dos"
+        // since the actual disk download often succeeds during export.
         if (pending.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
           if (!cancelled) {
-            persistVtocType(pending, "dos")
+            const vtoc = lookupFourCadeByTitle(pending.title) ? "4cade" : "dos"
+            persistVtocType(pending, vtoc)
             setVtocCheckPass((pass) => pass + 1)
           }
         } else {
@@ -245,7 +244,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       }
       const filename = getExportFilename(pending, data)
       // Cache the determined VTOC (and persist it for bookmarks).
-      persistVtocType(pending, determineVtocType(filename, data))
+      persistVtocType(pending, determineVtocType(filename, data, pending.title))
       // Advance to the next pending disk. We no longer rely on the collection
       // re-render (which changes visibleCandidates identity) to re-run this
       // effect, so bump the pass counter explicitly.
