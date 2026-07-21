@@ -28,7 +28,7 @@ const PopupMenu = (props: PopupMenuProps) => {
         h += 12
       } else {
         w = Math.max(w, menuItem.label.length * 10)
-        h += 26
+        h += menuItem.isHeading ? 24 : 26
       }
     })
     h += 22
@@ -55,13 +55,37 @@ const PopupMenu = (props: PopupMenuProps) => {
                 key={`popup-${menuIndex}-${menuIndex}`}
                 style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
               </div>
+              : menuItem.isHeading
+                ? <div
+                  key={`popup-${menuIndex}-${menuIndex}`}
+                  style={{
+                    cursor: "default",
+                    fontWeight: 800,
+                    padding: "5px 8px 2px",
+                  }}>
+                  {menuItem.label}
+                </div>
               : <div
                 key={`popup-${menuIndex}-${menuIndex}`}
-                className="droplist-option" style={{ padding: "5px" }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+                aria-disabled={menuItem.isDisabled || undefined}
+                className="droplist-option"
+                style={{
+                  cursor: menuItem.isDisabled ? "default" : "pointer",
+                  opacity: menuItem.isDisabled ? 0.5 : 1,
+                  padding: "5px",
+                }}
+                onMouseOver={(e) => {
+                  if (!menuItem.isDisabled)
+                    e.currentTarget.style.backgroundColor = "#ccc"
+                }}
+                onMouseOut={(e) => {
+                  if (!menuItem.isDisabled)
+                    e.currentTarget.style.backgroundColor = "inherit"
+                }}
                 onClick={async (e) => {
                   e.stopPropagation()
+                  if (menuItem.isDisabled)
+                    return
                   if (menuItem.onClick) {
                     await menuItem.onClick()
                   }
