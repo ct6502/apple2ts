@@ -270,7 +270,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       }
     }
 
-    const fileKinds: Array<"dos" | "prodos" | "unknown" | "replay"> = orderedDownloadedDisks.map((downloadedDisk) =>
+    const fileKinds: Array<"dos" | "prodos" | "unknown" | "4cade"> = orderedDownloadedDisks.map((downloadedDisk) =>
       classifyImageKind(downloadedDisk.filename, downloadedDisk.buffer)
     )
 
@@ -282,11 +282,11 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       fileKinds[index] = "dos"
     }
 
-    // Override fileKinds for disks whose VTOC type was determined to be "replay"
+    // Override fileKinds for disks whose VTOC type was determined to be "4cade"
     // (DOS 3.3 binaries that overlap DOS memory and must be block-loaded directly).
     for (let i = 0; i < orderedDownloadedDisks.length; i++) {
-      if (orderedDownloadedDisks[i].item.vtocType === "replay") {
-        fileKinds[i] = "replay"
+      if (orderedDownloadedDisks[i].item.vtocType === "4cade") {
+        fileKinds[i] = "4cade"
       }
     }
 
@@ -351,13 +351,15 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
     const zpCaptureCallback = async (menuIndex: number, entryAddress: number, captureMemory?: boolean): Promise<CaptureBootResult | null> => {
       const disk = orderedDownloadedDisks[menuIndex]
       if (!disk) return null
-      console.log(`[HDV Export] Capturing ZP${captureMemory ? ' + memory' : ''} for "${disk.filename}" at entry $${entryAddress.toString(16).toUpperCase()}...`)
+      console.log(`[HDV Export] Capturing ZP${captureMemory ? ' + memory (with disk I/O wait)' : ''} for "${disk.filename}" at entry $${entryAddress.toString(16).toUpperCase()}...`)
       const result = await captureBootZeroPage({
         diskImage: disk.buffer,
         filename: disk.filename,
         entryAddress,
-        timeoutMs: 15000,
+        timeoutMs: captureMemory ? 25000 : 15000,
         captureMemory,
+        waitForDiskIo: captureMemory ? true : undefined,
+        postEntryDelayMs: captureMemory ? 5000 : undefined,
       })
       if (result) {
         console.log(`[HDV Export] ZP capture succeeded for "${disk.filename}"${result.memoryDump ? ` (memory dump: ${result.memoryDump.length} bytes)` : ''}`)

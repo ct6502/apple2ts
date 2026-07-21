@@ -288,6 +288,7 @@ const processHardDriveBlockAccess = () => {
     }
     case 1: {
       if (blockStart + 512 > dataLen) {
+        console.warn(`[HD READ] block=${block} OUT OF RANGE (blockStart=${blockStart}, dataLen=${dataLen})`)
         setCarry()
         return
       }

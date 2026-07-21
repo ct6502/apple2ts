@@ -66,6 +66,9 @@ let captureSavedBreakpoints: BreakpointMap | null = null
 let captureTimeoutId: ReturnType<typeof setTimeout> | null = null
 let captureCallback: ((result: CaptureBootResult | null) => void) | null = null
 let captureRequest: CaptureBootStateRequest | null = null
+let captureWaitingForPostDelay = false
+let capturePostDelayId: ReturnType<typeof setTimeout> | null = null
+let captureEarlyLowMemory: Uint8Array | null = null
 
 export const setTracing = (doTracing: boolean) => {
   tracing = doTracing
@@ -314,7 +317,14 @@ const finishCaptureBootState = (timedOut = false) => {
     if (captureRequest?.captureMemory) {
       result.memoryDump = getCpuMemoryDump()
     }
-    console.log(`[Capture] Hit entry point, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ''}`)
+    if (captureWaitingForPostDelay) {
+      // Two-stage capture: record the PC at time of late capture
+      result.capturedPC = s6502.PC
+      result.earlyLowMemory = captureEarlyLowMemory ?? undefined
+      console.log(`[Capture] Late capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, '0')}, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ''}${result.earlyLowMemory ? ` + ${result.earlyLowMemory.length} bytes early low memory` : ''}`)
+    } else {
+      console.log(`[Capture] Hit entry point, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ''}`)
+    }
   }
 
   // Clear the timeout
@@ -322,6 +332,12 @@ const finishCaptureBootState = (timedOut = false) => {
     clearTimeout(captureTimeoutId)
     captureTimeoutId = null
   }
+  if (capturePostDelayId) {
+    clearTimeout(capturePostDelayId)
+    capturePostDelayId = null
+  }
+  captureWaitingForPostDelay = false
+  captureEarlyLowMemory = null
 
   // Restore previous emulator state
   captureActive = false
@@ -487,6 +503,30 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
     // If a zero-page capture is active and we just hit the breakpoint,
     // complete the capture before doing anything else.
     if (captureActive) {
+      if (captureRequest?.waitForDiskIo && !captureWaitingForPostDelay) {
+        // Two-stage capture: entry breakpoint confirmed boot succeeded.
+        // Resume execution and capture later (after disk I/O completes).
+        captureWaitingForPostDelay = true
+        const delayMs = captureRequest.postEntryDelayMs ?? 3000
+        console.log(`[Capture] Hit entry $${captureRequest.entryAddress.toString(16).toUpperCase()}, resuming for ${delayMs}ms to let disk I/O finish...`)
+        // Save full memory now (before the game's init modifies code regions).
+        // This preserves code at $6400+, RWTS at $0600, etc.
+        // Late capture provides disk-read buffer data ($8000+).
+        captureEarlyLowMemory = getCpuMemoryDump()
+        // Clear the one-shot breakpoint so it doesn't fire again
+        doSetBreakpoints(new BreakpointMap())
+        // Resume at ludicrous speed
+        cpuRunMode = RUN_MODE.RUNNING
+        // Set the delayed capture timer
+        capturePostDelayId = setTimeout(() => {
+          capturePostDelayId = null
+          if (captureActive) {
+            console.log(`[Capture] Post-entry delay elapsed, pausing to capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, '0')}`)
+            doSetRunMode(RUN_MODE.PAUSED)
+          }
+        }, delayMs)
+        return
+      }
       finishCaptureBootState()
       return
     }
