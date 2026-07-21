@@ -2,23 +2,23 @@ declare module "list-react-files"
 
 declare module "*.png" {
    const value: string
-   export = value;
+   export = value
 }
 declare module "*.mp3" {
    const value: string
-   export = value;
+   export = value
 }
 declare module "*.woz" {
    const value: string
-   export = value;
+   export = value
 }
 declare module "*.po" {
   const value: string
-  export = value;
+  export = value
 }
 declare module "*.hdv" {
   const value: string
-  export = value;
+  export = value
 }
 
 type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
@@ -278,7 +278,7 @@ type GamePadActuatorEffect = {
 
 type KeyMap = {
   [key: string]: string;
-};
+}
 
 type GameLibraryItem = {
   address: number,
