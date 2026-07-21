@@ -3,7 +3,7 @@ import pluginJs from "@eslint/js"
 import tseslint from "typescript-eslint"
 import pluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
-import stylisticJs from "@stylistic/eslint-plugin-js"
+import stylistic from "@stylistic/eslint-plugin"
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -15,7 +15,7 @@ export default [
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
     plugins: {
       "react-hooks": reactHooks,
-      "@stylistic/js": stylisticJs,
+      "@stylistic": stylistic,
     },
     languageOptions: { globals: globals.browser },
     rules: {
@@ -24,8 +24,8 @@ export default [
       // every JSX file. Turn off warnings so it doesn't complain.
       "react/react-in-jsx-scope": "off", // Disable rule that requires React to be in scope
       "react/jsx-uses-react": "off", // Disable rule that checks for React usage in JSX
-      "@stylistic/js/quotes": ["error", "double"],
-      "@stylistic/js/semi": ["error", "never"],
+      "@stylistic/quotes": ["error", "double"],
+      "@stylistic/semi": ["error", "never"],
     },
     settings: {
       react: {
