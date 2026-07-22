@@ -646,7 +646,13 @@ export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }
-  return (hiResLines === 192) ? hiResCurrent : hiResCurrent.slice(0, 40 * hiResLines)
+  if (hiResLines === 192) {
+    return hiResCurrent
+  }
+  if (hiResCurrent === hiResSingle) {
+    return hiResCurrent.slice(0, 40 * hiResLines)
+  }
+  return hiResCurrent.slice(0, 80 * hiResLines)
 }
 
 export const getDataBlock = (addr: number) => {
