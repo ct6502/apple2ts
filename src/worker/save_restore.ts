@@ -4,7 +4,7 @@ import { getDriveSaveState, restoreDriveSaveState } from "./devices/drivestate"
 import { handleGameSetup } from "./games/game_mappings"
 import { s6502, getStackDump, setState6502, setStackDump } from "./instructions"
 import { memory, memoryReset, RamWorksMaxBank, setRamWorks, updateAddressTables } from "./memory"
-import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, updateExternalMachineState } from "./motherboard"
+import { configureMachine, doReset, doSetMachineName, doSetRunMode, getMachineName, getSoftSwitches, synchronizeVideoTiming, updateExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { passRequestThumbnail } from "./worker2main"
 
@@ -136,6 +136,7 @@ export const setApple2State = (newState: Apple2SaveState, version: number) => {
     setStackDump(newState.stackDump)
   }
   updateAddressTables()
+  synchronizeVideoTiming(new6502.cycleCount)
   // Force the help text to be reset if necessary.
   handleGameSetup(true)
 }

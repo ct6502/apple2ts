@@ -1,10 +1,36 @@
-import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver, memGetC000 } from "./memory"
+import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver, memGetC000, exportMemoryToHiresLine, getHires, publishHiresFrame } from "./memory"
 import { RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
 import { SWITCHES } from "./softswitches"
 
 type ExpectValue = (i: number) => void
+
+test("HGR display changes only when a completed frame is published", () => {
+  const oldText = SWITCHES.TEXT.isSet
+  const oldHires = SWITCHES.HIRES.isSet
+  const oldPage2 = SWITCHES.PAGE2.isSet
+  memoryReset()
+  SWITCHES.TEXT.isSet = false
+  SWITCHES.HIRES.isSet = true
+  SWITCHES.PAGE2.isSet = false
+
+  memory[0x2000] = 0x11
+  exportMemoryToHiresLine(0)
+  publishHiresFrame()
+  expect(getHires()[0]).toEqual(0x11)
+
+  memory[0x2000] = 0x22
+  exportMemoryToHiresLine(0)
+  expect(getHires()[0]).toEqual(0x11)
+
+  publishHiresFrame()
+  expect(getHires()[0]).toEqual(0x22)
+
+  SWITCHES.TEXT.isSet = oldText
+  SWITCHES.HIRES.isSet = oldHires
+  SWITCHES.PAGE2.isSet = oldPage2
+})
 
 const doWriteIndexToMemory = (offset: number, start: number, end: number) => {
   for (let i = start; i <= end; i++) {

@@ -613,6 +613,10 @@ const hiResSingle = new Uint8Array(40 * 192)
 const hiResDouble = new Uint8Array(80 * 192)
 let hiResCurrent = hiResSingle
 let hiResLines = 192
+const hiResPublishedSingle = new Uint8Array(hiResSingle.length)
+const hiResPublishedDouble = new Uint8Array(hiResDouble.length)
+let hiResPublished = hiResPublishedSingle
+let hiResPublishedLines = 192
 
 export const exportMemoryToHiresLine = (line: number) => {
   const doubleRes = SWITCHES.DHIRES.isSet && SWITCHES.COLUMN80.isSet
@@ -642,11 +646,22 @@ export const exportMemoryToHiresLine = (line: number) => {
   }
 }
 
+export const publishHiresFrame = () => {
+  if (hiResCurrent === hiResDouble) {
+    hiResPublishedDouble.set(hiResDouble)
+    hiResPublished = hiResPublishedDouble
+  } else {
+    hiResPublishedSingle.set(hiResSingle)
+    hiResPublished = hiResPublishedSingle
+  }
+  hiResPublishedLines = hiResLines
+}
+
 export const getHires = () => {
   if (SWITCHES.TEXT.isSet || !SWITCHES.HIRES.isSet) {
     return new Uint8Array()
   }
-  return (hiResLines === 192) ? hiResCurrent : hiResCurrent.slice(0, 40 * hiResLines)
+  return (hiResPublishedLines === 192) ? hiResPublished : hiResPublished.slice(0, 40 * hiResPublishedLines)
 }
 
 export const getDataBlock = (addr: number) => {
@@ -688,4 +703,3 @@ export const getMemoryDump = () => {
   }
   return dump
 }
-

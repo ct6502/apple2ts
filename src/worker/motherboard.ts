@@ -18,6 +18,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   getZeroPage,
   memSet,
   exportMemoryToHiresLine,
+  publishHiresFrame,
   getDataBlock} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
@@ -35,6 +36,7 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails } from "./save_restore"
+import { advanceVideoByCpuDelta, createVideoScanout, VISIBLE_SCANLINES } from "./video_timing"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -66,6 +68,26 @@ const endVBL = (): void => {
   SWITCHES.VBL.isSet = false
 }
 
+const videoTiming = createVideoScanout({
+  setVbl: (active) => {
+    if (active) {
+      if (!SWITCHES.VBL.isSet) startVBL()
+    } else {
+      endVBL()
+    }
+  },
+  exportScanline: exportMemoryToHiresLine,
+  publishFrame: publishHiresFrame,
+})
+
+export const synchronizeVideoTiming = (cycleCount: number) => {
+  videoTiming.synchronize(cycleCount)
+  for (let line = 0; line < VISIBLE_SCANLINES; line++) {
+    exportMemoryToHiresLine(line)
+  }
+  publishHiresFrame()
+}
+
 export const getSoftSwitches = () => {
   const softSwitches: { [name: string]: boolean } = {}
   for (const key in SWITCHES) {
@@ -80,11 +102,13 @@ export const getMachineName = () => {
 
 export const doSetState6502 = (newState: STATE6502) => {
   setState6502(newState)
+  synchronizeVideoTiming(newState.cycleCount)
   updateExternalMachineState()
 }
 
 export const doSetCycleCount = (count: number) => {
   setCycleCount(count)
+  synchronizeVideoTiming(count)
   updateExternalMachineState()
 }
 
@@ -136,6 +160,7 @@ const resetMachine = () => {
 
 export const doBoot = () => {
   setCycleCount(0)
+  videoTiming.reset()
   memoryReset()
   doSetRom(machineName)
   configureMachine()
@@ -235,6 +260,7 @@ export const doSetMemory = (addr: number, value: number) => {
   // pass our updated data to the main thread.
   if (addr >= 0x2000 && addr <= 0x5FFF && cpuRunMode === RUN_MODE.PAUSED) {
     exportMemoryToHiresLine(hiresAddressToLine(addr))
+    publishHiresFrame()
   }
   updateExternalMachineState()
 }
@@ -535,27 +561,14 @@ const doAdvance6502 = () => {
     doSetRunMode(RUN_MODE.RUNNING)
   }
   let cycleTotal = 0
-  let currentLine = -1
   if (cyclesToRun > 0) {
     cycleToRunStart = s6502.cycleCount
   }
   for (;;) {
-    const cycles = processInstruction(tracing ? updateTrace : null)
-    if (cycles < 0) break
-    cycleTotal += cycles
-    if (cycleTotal < 4550) {
-      // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
-      if (!SWITCHES.VBL.isSet) {
-        startVBL()
-      }
-    } else {
-      endVBL()
-      const line = Math.floor((cycleTotal - 4550) / 65)
-      if (line !== currentLine && line < 192) {
-        currentLine = line
-        exportMemoryToHiresLine(line)
-      }
-    }
+    const cycleCountBefore = s6502.cycleCount
+    const result = processInstruction(tracing ? updateTrace : null)
+    cycleTotal += advanceVideoByCpuDelta(videoTiming, cycleCountBefore, s6502.cycleCount)
+    if (result < 0) break
     if (cyclesToRun > 0 && (s6502.cycleCount - cycleToRunStart) >= cyclesToRun) {
       cyclesToRun = 0
       doSetRunMode(RUN_MODE.PAUSED)
