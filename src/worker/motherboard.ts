@@ -543,14 +543,15 @@ const doAdvance6502 = () => {
     const cycles = processInstruction(tracing ? updateTrace : null)
     if (cycles < 0) break
     cycleTotal += cycles
-    if (cycleTotal < 4550) {
+    const cycleInFrame = s6502.cycleCount % 17030
+    if (cycleInFrame < 4550) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {
         startVBL()
       }
     } else {
       endVBL()
-      const line = Math.floor((cycleTotal - 4550) / 65)
+      const line = Math.floor((cycleInFrame - 4550) / 65)
       if (line !== currentLine && line < 192) {
         currentLine = line
         exportMemoryToHiresLine(line)
