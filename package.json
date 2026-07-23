@@ -55,7 +55,7 @@
     "@types/w3c-web-serial": "^1.0.8",
     "@types/wicg-file-system-access": "^2023.10.6",
     "@vitejs/plugin-basic-ssl": "^2.1.0",
-    "@vitejs/plugin-react-swc": "^4.0.1",
+    "@vitejs/plugin-react": "^6.0.4",
     "eslint": "^9.34.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -80,5 +80,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
   }
 }
