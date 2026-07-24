@@ -93,6 +93,8 @@ type DisplayProps = {
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
 
+type VERA_SLOT = 0 | 2 | 4
+
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
 type MachineState = {
@@ -126,6 +128,7 @@ type MachineState = {
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   tracelog: Array<string>,
+  veraSlot: VERA_SLOT,
   zeroPage: Uint8Array
 }
 

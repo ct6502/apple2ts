@@ -345,6 +345,15 @@ export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
   slotIOCallbackTable[slot] = fn
 }
 
+export const clearSlot = (slot: number) => {
+  if (slot < 1 || slot > 7) return
+  memory.fill(0, SLOTstart + (slot - 1) * 0x100, SLOTstart + slot * 0x100)
+  memory.fill(0, SLOTC8start + (slot - 1) * 0x800, SLOTC8start + slot * 0x800)
+  slotHasCard[slot] = 0
+  slotIOC8Space[slot] = 0
+  slotIOCallbackTable[slot] = undefined
+}
+
 /**
  * Add peripheral card ROM.
  *
@@ -694,4 +703,3 @@ export const getMemoryDump = () => {
   }
   return dump
 }
-

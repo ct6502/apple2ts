@@ -153,6 +153,10 @@ export const registerCycleCountCallback = (fn: (userdata: number) => void, userd
   cycleCountCallbacks.push(fn)
   cycleCountCBdata.push(userdata)
 }
+export const resetCycleCountCallbacks = () => {
+  cycleCountCallbacks.length = 0
+  cycleCountCBdata.length = 0
+}
 const processCycleCountCallbacks = () => {
   for (let i = 0; i < cycleCountCallbacks.length; i++) {
     cycleCountCallbacks[i](cycleCountCBdata[i])    

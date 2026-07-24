@@ -93,6 +93,7 @@ export enum MSG_MAIN {
   TIME_TRAVEL_STEP,
   TRACING,
   TRACE_SETTINGS,
+  VERA_SLOT,
 }
 
 export enum COLOR_MODE {

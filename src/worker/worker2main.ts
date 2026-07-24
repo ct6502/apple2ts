@@ -3,6 +3,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
+  doSetVeraSlot,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
@@ -256,6 +257,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
+        break
+      case MSG_MAIN.VERA_SLOT:
+        doSetVeraSlot(e.data.payload as VERA_SLOT)
         break
       case MSG_MAIN.REVERSE_YAXIS:
         setReverseYAxis(e.data.payload)

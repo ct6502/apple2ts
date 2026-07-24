@@ -227,6 +227,13 @@ export const passSetMachineName = (name: MACHINE_NAME) => {
   machineState.machineName = name
 }
 
+export const passSetVeraSlot = (slot: VERA_SLOT) => {
+  doPostMessage(MSG_MAIN.VERA_SLOT, slot)
+  // This will also come from the emulator, but set it here so the UI updates
+  // if the emulator hasn't been booted yet.
+  machineState.veraSlot = slot
+}
+
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
   doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
@@ -293,6 +300,7 @@ let machineState: MachineState = {
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
   tracelog: new Array<string>(),
+  veraSlot: 0,
   zeroPage: new Uint8Array(256).fill(255)
 }
 
@@ -537,6 +545,10 @@ export const handleGetMemSize = () => {
 
 export const handleGetMachineName = () => {
   return machineState.machineName
+}
+
+export const handleGetVeraSlot = () => {
+  return machineState.veraSlot
 }
 
 export const handleGetSoftSwitchDescriptions = () => {
