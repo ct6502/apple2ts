@@ -1,5 +1,16 @@
-import { setRamWorks, memGet, memSet, memory, memoryReset, memorySetForTests, setSlotDriver, memGetC000 } from "./memory"
-import { RamWorksMemoryStart } from "../common/utility"
+import {
+  exportMemoryToHiresLine,
+  getHires,
+  memGet,
+  memGetC000,
+  memory,
+  memoryReset,
+  memorySetForTests,
+  memSet,
+  setRamWorks,
+  setSlotDriver,
+} from "./memory"
+import { hiresLineToAddress, RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
 import { SWITCHES } from "./softswitches"
@@ -28,6 +39,64 @@ const doTestMemory = (offset: number, start: number, end: number, expectValue: E
 }
 
 const expectIndex = (i: number = 0) => i
+
+test.each([
+  ["HGR full", false, false, 192, 40 * 192],
+  ["HGR mixed", false, true, 160, 40 * 160],
+  ["DHGR full", true, false, 192, 80 * 192],
+  ["DHGR mixed", true, true, 160, 80 * 160],
+])("%s exports the expected frame", (_name, doubleHires, mixed, lines, expectedLength) => {
+  const videoSwitches = [
+    SWITCHES.TEXT,
+    SWITCHES.HIRES,
+    SWITCHES.MIXED,
+    SWITCHES.PAGE2,
+    SWITCHES.STORE80,
+    SWITCHES.COLUMN80,
+    SWITCHES.DHIRES,
+    SWITCHES.VIDEO7_MONO,
+    SWITCHES.VIDEO7_160,
+  ]
+  const oldSwitchValues = videoSwitches.map(videoSwitch => videoSwitch.isSet)
+
+  try {
+    memorySetForTests(true)
+    SWITCHES.TEXT.isSet = false
+    SWITCHES.HIRES.isSet = true
+    SWITCHES.MIXED.isSet = mixed
+    SWITCHES.PAGE2.isSet = false
+    SWITCHES.STORE80.isSet = false
+    SWITCHES.COLUMN80.isSet = doubleHires
+    SWITCHES.DHIRES.isSet = doubleHires
+    SWITCHES.VIDEO7_MONO.isSet = false
+    SWITCHES.VIDEO7_160.isSet = false
+
+    const firstAddress = hiresLineToAddress(0x2000, 0)
+    const lastAddress = hiresLineToAddress(0x2000, lines - 1) + 39
+    memory[firstAddress] = 0x11
+    memory[lastAddress] = 0x22
+    memory[RamWorksMemoryStart + firstAddress] = 0x33
+    memory[RamWorksMemoryStart + lastAddress] = 0x44
+
+    exportMemoryToHiresLine(0)
+    exportMemoryToHiresLine(lines - 1)
+    const frame = getHires()
+
+    expect(frame).toHaveLength(expectedLength)
+    if (doubleHires) {
+      expect(frame.slice(0, 2)).toEqual(Uint8Array.from([0x33, 0x11]))
+      expect(frame.slice(-2)).toEqual(Uint8Array.from([0x44, 0x22]))
+    } else {
+      expect(frame[0]).toEqual(0x11)
+      expect(frame.at(-1)).toEqual(0x22)
+    }
+  } finally {
+    videoSwitches.forEach((videoSwitch, index) => {
+      videoSwitch.isSet = oldSwitchValues[index]
+    })
+    exportMemoryToHiresLine(0)
+  }
+})
 
 test("readMainMemIndex", () => {
   memorySetForTests()
