@@ -395,7 +395,7 @@ interface OpenerWindow {
 
 type PopupMenuItem = {
   label: string,
-  isDisabled?: boolean,
+  isDisabled?: boolean | (() => boolean),
   isHeading?: boolean,
   icon?: IconDefinition,
   svg?: JSX.Element,

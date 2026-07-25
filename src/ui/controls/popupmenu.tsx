@@ -13,6 +13,13 @@ const PopupMenu = (props: PopupMenuProps) => {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
 
+  const isItemDisabled = (menuItem: PopupMenuItem): boolean => {
+    if (typeof menuItem.isDisabled === "function") {
+      return menuItem.isDisabled()
+    }
+    return !!menuItem.isDisabled
+  }
+
   const getPopupLocationStyle = () => {
     if (!props.location) {
       return {}
@@ -67,24 +74,25 @@ const PopupMenu = (props: PopupMenuProps) => {
                 </div>
               : <div
                 key={`popup-${menuIndex}-${menuIndex}`}
-                aria-disabled={menuItem.isDisabled || undefined}
+                aria-disabled={isItemDisabled(menuItem) || undefined}
                 className="droplist-option"
                 style={{
-                  cursor: menuItem.isDisabled ? "default" : "pointer",
-                  opacity: menuItem.isDisabled ? 0.5 : 1,
+                  cursor: isItemDisabled(menuItem) ? "default" : "pointer",
+                  opacity: isItemDisabled(menuItem) ? 0.5 : 1,
                   padding: "5px",
+                  pointerEvents: isItemDisabled(menuItem) ? "none" : "auto",
                 }}
                 onMouseOver={(e) => {
-                  if (!menuItem.isDisabled)
+                  if (!isItemDisabled(menuItem))
                     e.currentTarget.style.backgroundColor = "#ccc"
                 }}
                 onMouseOut={(e) => {
-                  if (!menuItem.isDisabled)
+                  if (!isItemDisabled(menuItem))
                     e.currentTarget.style.backgroundColor = "inherit"
                 }}
                 onClick={async (e) => {
                   e.stopPropagation()
-                  if (menuItem.isDisabled)
+                  if (isItemDisabled(menuItem))
                     return
                   if (menuItem.onClick) {
                     await menuItem.onClick()

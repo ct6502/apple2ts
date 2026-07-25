@@ -5,7 +5,7 @@ import { loadOneDriveScript } from "./cloudscriptloader"
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
-const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
+const applicationId = "cbd9893a-d674-4a22-b85e-bc258b75aedf"
 const readWriteScope = "onedrive.readwrite"
 const authUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
 
@@ -16,12 +16,10 @@ export class OneDriveCloudDrive implements CloudProvider {
   async ensureScriptsLoaded() {
     await loadOneDriveScript()
   }
-
   requestAuthToken(callback: (authToken: string) => void) {
     if (!g_accessToken) {
       const baseUrl = new URL(window.location.href)
-      const port = baseUrl.port != "" ? `:${baseUrl.port}` : ""
-      const redirectUri = `${baseUrl.protocol}//${baseUrl.hostname}${port}?cloudProvider=OneDrive`
+      const redirectUri = `${baseUrl.origin}${baseUrl.pathname}?cloudProvider=OneDrive`
 
       // The redirect URI must be percent-encoded, otherwise its own query string
       // (?cloudProvider=OneDrive) is parsed as part of the login.live.com URL and
@@ -223,7 +221,8 @@ const launchPicker = async (action: string, view: string, filter?: string) => {
         advanced: {
             filter: filter ?? "",
             endpointHint: "api.onedrive.com",
-            isConsumerAccount: true
+            isConsumerAccount: true,
+            redirectUri: `${window.location.origin}${window.location.pathname}`
         },
         success: function (files) { resolve(files) },
         cancel: function () { resolve(null) },

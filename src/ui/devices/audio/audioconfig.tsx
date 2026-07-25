@@ -8,7 +8,10 @@ import {
 import PopupMenu from "../../controls/popupmenu"
 import { getMidiDeviceOptions, handleMidiDeviceSelect, isMidiDeviceSelected } from "./midiselect"
 
+import { useTranslation } from "../../../i18n/useTranslation"
+
 export const AudioConfig = () => {
+  const { t } = useTranslation()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
@@ -22,7 +25,7 @@ export const AudioConfig = () => {
       <button
         id="basic-button"
         className="push-button"
-        title="Audio Configuration"
+        title={t("audio.configuration")}
         onClick={handleClick}
       >
         <FontAwesomeIcon icon={faMusic} />
@@ -32,7 +35,7 @@ export const AudioConfig = () => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          { label: "Mockingboard", isHeading: true },
+          { label: t("audio.mockingboard") || "Mockingboard", isHeading: true },
           ...Array.from(Array(MockingboardNames.length).keys()).map((i) => (
             {
               label: MockingboardNames[i],
@@ -43,7 +46,7 @@ export const AudioConfig = () => {
             }
           )),
           ...[{ label: "-" }],
-          { label: "MIDI", isHeading: true },
+          { label: t("audio.midi") || "MIDI", isHeading: true },
           ...midiOptions.map((option) => (
             {
               label: option.label,

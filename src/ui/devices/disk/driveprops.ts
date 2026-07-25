@@ -269,6 +269,22 @@ export const handleSetDiskFromCloudData = async (
   }
 }
 
+// Normalize GitHub URLs to raw.githubusercontent.com to avoid CORS issues.
+// github.com/{owner}/{repo}/raw/refs/heads/{branch}/{path}
+//   -> raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+// github.com/{owner}/{repo}/raw/refs/tags/{tag}/{path}
+//   -> raw.githubusercontent.com/{owner}/{repo}/{tag}/{path}
+const normalizeGitHubUrl = (url: string): string => {
+  const ghRawMatch = url.match(
+    /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/raw\/refs\/(heads|tags)\/([^/]+)\/(.+)$/
+  )
+  if (ghRawMatch) {
+    const [, owner, repo, , refName, filePath] = ghRawMatch
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${refName}/${filePath}`
+  }
+  return url
+}
+
 type ProxyCandidate = {
   id: string,
   url: string,
@@ -458,9 +474,10 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
     }
   }, 3 * 1000)
 }
-
 export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void) => {
+  // Normalize GitHub URLs to avoid CORS redirect issues
+  url = normalizeGitHubUrl(url)
   // Check if it's a local file (not http/https URL)
   const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
   
@@ -524,6 +541,8 @@ export const handleSetDiskFromURL = async (url: string,
       console.warn(`Unable to resolve Internet Archive disk image for "${identifier}"`)
       if (callback) {
         callback(null)
+      } else {
+        showGlobalProgressModal(false)
       }
       return
     }
@@ -743,7 +762,10 @@ const resetAllDiskDrives = () => {
 const checkForHelpFile = async (disk: string) => {
   const helpFile = replaceSuffix(disk, "txt")
   try {
-    const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
+    let help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
+    if (!help.ok) {
+      help = await fetch("https://raw.githubusercontent.com/anomixer/apple2ts/disks/public/disks/" + helpFile)
+    }
     let helptext = "<Default>"
     if (help.ok) {
       helptext = await help.text()
@@ -767,8 +789,21 @@ export const handleSetDiskFromFile = async (disk: string,
   callback?: (buffer: ArrayBuffer | null) => void) => {
   let data: ArrayBuffer
   try {
-    const res = await fetch("disks/" + disk)
-    data = await res.arrayBuffer()
+    let res = await fetch("disks/" + disk)
+    let buffer = await res.arrayBuffer()
+    
+    // If fetch failed or returned a small file (likely HTML 404 page), try remote
+    if (!res.ok || buffer.byteLength < 10000) {
+      console.log(`Local fetch failed or returned invalid size (${buffer.byteLength} bytes). Trying remote...`)
+      const remoteUrl = "https://raw.githubusercontent.com/anomixer/apple2ts/disks/public/disks/" + disk
+      res = await fetch(remoteUrl)
+      if (!res.ok) {
+        console.error(`Failed to load disk from remote: ${disk}`)
+        return
+      }
+      buffer = await res.arrayBuffer()
+    }
+    data = buffer
   } catch {
     if (callback) {
       callback(null)

@@ -6,8 +6,10 @@ import {
 import { handleGetMachineName, handleGetMemSize } from "../main2worker"
 import { setPreferenceMachineName, setPreferenceRamWorks } from "../localstorage"
 import PopupMenu from "../controls/popupmenu"
+import { useTranslation } from "../../i18n/useTranslation"
 
 export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
+  const { t } = useTranslation()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
@@ -15,8 +17,8 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
   }
 
   const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"]
-  const roms = ["Apple II+", "Apple IIe (unenhanced)", "Apple IIe (enhanced)"]
-  const names = ["64 KB (AUX)", "512 KB", "1024 KB", "4 MB", "8 MB"]
+  const roms = [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee")]
+  const names = [t("machine.ram.64kb_aux"), t("machine.ram.512kb"), t("machine.ram.1024kb"), t("machine.ram.4mb"), t("machine.ram.8mb")]
   const sizes = [64, 512, 1024, 4096, 8192]
   const extraMemSize = handleGetMemSize()
   const machineName = handleGetMachineName()
@@ -26,7 +28,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       <button
         id="basic-button"
         className="push-button"
-        title="Machine Configuration"
+        title={t("machine.configuration")}
         onClick={handleClick}
       >
         <FontAwesomeIcon icon={faGear} />

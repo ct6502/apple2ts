@@ -4,11 +4,12 @@ import {
   } from "../main2worker"
 import PopupMenu from "./popupmenu"
 import { useState } from "react"
+import LanguageSwitch from "./languageswitch"
 import { setPreferenceBoolean, setPreferenceTouchJoystickMode, setPreferenceTouchJoystickSensitivity } from "../localstorage"
 import { getTiltSensorJoystick, getTouchJoyStickMode, getTouchJoystickSensitivity } from "../ui_settings"
-
 const KeyboardButtons = (props: DisplayProps) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
+
 
   const isTouchDevice = "ontouchstart" in document.documentElement
 
@@ -28,23 +29,25 @@ const KeyboardButtons = (props: DisplayProps) => {
   }
 
   return <span>
-    {!isTouchDevice && <>
-      <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
-        title={`Button 1 (${navigator.platform.startsWith("Mac") ? "Option Left" : "Alt Left"})`}
-        onTouchStart={() => tryButtonPressRelease(true, "left", true)}
-        onTouchEnd={() => tryButtonPressRelease(true, "left", false)}
-        onMouseDown={() => tryButtonPressRelease(false, "left", true)}
-        onMouseUp={() => tryButtonPressRelease(false, "left", false)}>
-      </button>
-      <button className={`joystick-button ${handleGetRightButton() ? "joystick-active" : ""}`}
-        title={`Button 2 (${navigator.platform.startsWith("Mac") ? "Option Right" : "Alt Right"})`}
-        onTouchStart={() => tryButtonPressRelease(true, "right", true)}
-        onTouchEnd={() => tryButtonPressRelease(true, "right", false)}
-        onMouseDown={() => tryButtonPressRelease(false, "right", true)}
-        onMouseUp={() => tryButtonPressRelease(false, "right", false)}>
-      </button>
-      </>
-    }
+    <span className="flex-row" style={{ alignItems: "center" }}>
+      {!isTouchDevice && <>
+        <button className={`joystick-button ${handleGetLeftButton() ? "joystick-active" : ""}`}
+          title={`Button 1 (${navigator.platform.startsWith("Mac") ? "Option Left" : "Alt Left"})`}
+          onTouchStart={() => tryButtonPressRelease(true, "left", true)}
+          onTouchEnd={() => tryButtonPressRelease(true, "left", false)}
+          onMouseDown={() => tryButtonPressRelease(false, "left", true)}
+          onMouseUp={() => tryButtonPressRelease(false, "left", false)}>
+        </button>
+        <button className={`joystick-button ${handleGetRightButton() ? "joystick-active" : ""}`}
+          title={`Button 2 (${navigator.platform.startsWith("Mac") ? "Option Right" : "Alt Right"})`}
+          onTouchStart={() => tryButtonPressRelease(true, "right", true)}
+          onTouchEnd={() => tryButtonPressRelease(true, "right", false)}
+          onMouseDown={() => tryButtonPressRelease(false, "right", true)}
+          onMouseUp={() => tryButtonPressRelease(false, "right", false)}>
+        </button>
+      </>}
+      <LanguageSwitch />
+    </span>
     <PopupMenu
       location={popupLocation}
       onClose={() => { setPopupLocation(undefined) }}

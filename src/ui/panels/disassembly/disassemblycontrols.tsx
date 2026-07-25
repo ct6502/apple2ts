@@ -21,8 +21,10 @@ import { bpStepOver } from "../../img/icon_stepover"
 import { setDisassemblyAddress, setDisassemblyVisibleMode } from "./disassembly_utilities"
 import SaveDisassemblyDialog from "./savedisassemblydialog"
 import TraceDialog from "./tracedialog"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const DisassemblyControls = (props: DisassemblyProps) => {
+  const { t } = useTranslation()
   // The tooltips obscure the first line of disassembly.
   // Only show them until each button has been clicked once.
   const [tooltipOverShow, setTooltipOverShow] = useState(true)
@@ -100,7 +102,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         onKeyDown={handleDisassembleAddrKeyDown}
       />
       <button className="push-button" id="tour-debug-pause"
-        title={runMode === RUN_MODE.PAUSED ? "Resume" : "Pause"}
+        title={runMode === RUN_MODE.PAUSED ? t("debug.resume") : t("debug.pause")}
         onClick={() => {
           handleSetCPUState(runMode === RUN_MODE.PAUSED ?
             RUN_MODE.RUNNING : RUN_MODE.PAUSED)
@@ -115,7 +117,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       </button>
       <div className="flex-row" id="tour-debug-controls">
       <button className="push-button"
-        title={tooltipOverShow ? "Step Over" : ""}
+        title={tooltipOverShow ? t("debug.stepOver") : ""}
         onClick={() => {
           setTooltipOverShow(false)
           passStepOver()
@@ -125,7 +127,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         <svg width="23" height="23" className="fill-color">{bpStepOver}</svg>
       </button>
       <button className="push-button"
-        title={tooltipIntoShow ? "Step Into" : ""}
+        title={tooltipIntoShow ? t("debug.stepInto") : ""}
         onClick={() => {
           setTooltipIntoShow(false)
           passStepInto()
@@ -135,7 +137,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         <svg width="23" height="23" className="fill-color">{bpStepInto}</svg>
       </button>
       <button className="push-button"
-        title={tooltipOutShow ? "Step Out" : ""}
+        title={tooltipOutShow ? t("debug.stepOut") : ""}
         onClick={() => {
           setTooltipOutShow(false)
           passStepOut()
@@ -152,7 +154,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
       </button> */}
       </div>
       <button className="push-button"
-        title="Load Symbol Table"
+        title={t("debug.loadSymbolTable") || "Load Symbol Table"}
         onClick={showSymbolTableFileOpen}>
         <div className="icon-container">
           <FontAwesomeIcon icon={faFolderOpen} />
@@ -160,7 +162,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
         </div>
       </button>
       <button className="push-button"
-        title="Save Disassembly"
+        title={t("saveDisassembly.title")}
         onClick={() => setShowSaveDisassembly(true)}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="icon-container">
@@ -172,7 +174,7 @@ const DisassemblyControls = (props: DisassemblyProps) => {
           onClose={() => setShowSaveDisassembly(false)} />
       }
       <button className="push-button"
-        title="Trace"
+        title={t("debugControls.trace")}
         onClick={turnOnTracing}
         disabled={runMode !== RUN_MODE.PAUSED}>
         <div className="icon-container">

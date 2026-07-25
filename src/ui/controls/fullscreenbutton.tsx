@@ -3,10 +3,13 @@ import {
   faExpand,
 } from "@fortawesome/free-solid-svg-icons"
 
+import { useTranslation } from "../../i18n/useTranslation"
+
 const FullScreenButton = () => {
+  const { t } = useTranslation()
   const isTouchDevice = "ontouchstart" in document.documentElement
   return (
-    <button className="push-button" title="Full Screen"
+    <button className="push-button" title={t("fullscreen.fullScreen")}
       style={{ display: isTouchDevice ? "none" : "" }}
       onClick={() => {
         const canvas = document.getElementById("apple2canvas") as HTMLCanvasElement

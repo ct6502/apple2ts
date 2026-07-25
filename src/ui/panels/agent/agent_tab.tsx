@@ -11,9 +11,10 @@ import { formatMarkdown } from "./agent_formatmarkdown"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCog, faPlay, faStop } from "@fortawesome/free-solid-svg-icons"
 import { passRequestMemoryDump } from "../../main2worker"
-
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const AgentTab = () => {
+  const { t } = useTranslation()
 
   if (isMinimalTheme()) {
     import("../panels.minimal.css")
@@ -102,7 +103,7 @@ const AgentTab = () => {
     addToHistory(userInput) // Save to history
     setInputValue("")
     setIsProcessing(true)
-    setStreamingStatus("Processing...")
+    setStreamingStatus(t("agent.processing"))
     setStreamingMessage(null)
     setTokenUsage(null)
     // Request latest memory dump for agent context. This is critical to do before
@@ -131,7 +132,7 @@ const AgentTab = () => {
           throw new Error("Request cancelled by user")
         }
         
-        setStreamingStatus(status)
+        setStreamingStatus(status === "Processing..." ? t("agent.processing") : status)
         if (streamingText !== undefined || streamingToolCalls !== undefined) {
           // Update streaming message with new content and/or tool calls
           setStreamingMessage(prev => ({
@@ -238,20 +239,20 @@ const AgentTab = () => {
 
   const initialMessage = !isAgentConfigured() ? (
     <div className="agent-setup-prompt">
-      <h3>🤖 AI Agent Setup</h3>
-      <p>Click the gear icon below to configure your AI assistant.</p>
+      <h3>{t("agent.setupTitle")}</h3>
+      <p>{t("agent.setupInstruction")}</p>
     </div>) :
       (messages.length === 0 && (
         <div>
-          <p>Welcome to the Apple II assistant! I can help you with:</p>
+          <p>{t("agent.welcomeTitle")}</p>
           <ul>
-            <li>Inspecting CPU registers and memory</li>
-            <li>Controlling execution (boot, reset, step, breakpoints)</li>
-            <li>Loading programs and managing disks</li>
-            <li>Debugging 6502 assembly code</li>
-            <li>Reading screen content and system state</li>
+            <li>{t("agent.welcomeItem1")}</li>
+            <li>{t("agent.welcomeItem2")}</li>
+            <li>{t("agent.welcomeItem3")}</li>
+            <li>{t("agent.welcomeItem4")}</li>
+            <li>{t("agent.welcomeItem5")}</li>
           </ul>
-          <p>Just ask me anything!</p>
+          <p>{t("agent.welcomePrompt")}</p>
         </div>
       ))
 
@@ -266,12 +267,12 @@ const AgentTab = () => {
             className={`agent-message agent-message-${msg.role}`}
           >
             <div className="agent-message-header">
-              <span>{msg.role === "user" ? "You" : "🤖 Assistant"}</span>
+              <span>{msg.role === "user" ? t("agent.userRole") : t("agent.assistantRole")}</span>
               <span>
                 {msg.timestamp.toLocaleTimeString()}
                 {msg.usage && (
                   <span style={{ marginLeft: "8px", opacity: 0.6, fontSize: "0.9em" }}>
-                    • {msg.usage.inputTokens.toLocaleString()} in / {msg.usage.outputTokens.toLocaleString()} out
+                    {t("agent.tokens", { input: msg.usage.inputTokens.toLocaleString(), output: msg.usage.outputTokens.toLocaleString() })}
                   </span>
                 )}
               </span>
@@ -302,12 +303,12 @@ const AgentTab = () => {
         {streamingMessage && (
           <div className="agent-message agent-message-assistant agent-streaming">
             <div className="agent-message-header">
-              <span>🤖 Assistant</span>
+              <span>{t("agent.assistantRole")}</span>
               <span>
                 {streamingStatus && `⚙️ ${streamingStatus}`}
                 {tokenUsage && (
                   <span style={{ marginLeft: "10px", opacity: 0.7 }}>
-                    • {tokenUsage.inputTokens.toLocaleString()} in / {tokenUsage.outputTokens.toLocaleString()} out
+                    {t("agent.tokens", { input: tokenUsage.inputTokens.toLocaleString(), output: tokenUsage.outputTokens.toLocaleString() })}
                   </span>
                 )}
               </span>
@@ -338,7 +339,7 @@ const AgentTab = () => {
         {streamingStatus && !streamingMessage && (
           <div className="agent-message agent-message-assistant agent-streaming">
             <div className="agent-message-header">
-              <span>🤖 Assistant</span>
+              <span>{t("agent.assistantRole")}</span>
               <span>⚙️ {streamingStatus}</span>
             </div>
           </div>
@@ -355,7 +356,7 @@ const AgentTab = () => {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask me anything about the Apple II emulator... (Press Enter to send, Shift+Enter for new line)"
+          placeholder={t("agent.inputPlaceholder")}
           disabled={isProcessing || !isAgentConfigured()}
           spellCheck={true}
         />
@@ -368,13 +369,13 @@ const AgentTab = () => {
               onClick={isProcessing ? handleStop : handleSubmit}
               disabled={!isProcessing && !inputValue.trim()}
               className="agent-submit"
-              title={isProcessing ? "Stop" : "Send"}
+              title={isProcessing ? t("agent.stop") : t("agent.send")}
             >
               <FontAwesomeIcon icon={isProcessing ? faStop : faPlay} />
             </button>
         <button onClick={() => setShowConfig(true)}
           className="agent-submit"
-          title="Change configuration">
+          title={t("agent.changeConfiguration")}>
           <FontAwesomeIcon icon={faCog} />
         </button>
       </div>

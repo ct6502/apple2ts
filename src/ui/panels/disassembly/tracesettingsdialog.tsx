@@ -5,12 +5,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import EditField from "../../panels/editfield"
 import { getPreferenceTraceSettings, setPreferenceTraceSettings } from "../../localstorage"
+import { useTranslation } from "../../../i18n/useTranslation"
 import CheckBox from "../checkbox"
 
 const TraceSettingsDialog = (props:
   {
     onClose: () => void,
   }) => {
+  const { t } = useTranslation()
   const traceSettings = getPreferenceTraceSettings()
   const [numLines, setNumLines] = useState(traceSettings.numLines.toString())
   const [collapseLoops, setCollapseLoops] = useState(traceSettings.collapseLoops)
@@ -50,7 +52,7 @@ const TraceSettingsDialog = (props:
         style={{ left: "45%", top: "35%"}}>
         <div className="flex-column">
           <div className="flex-row-space-between">
-            <div className="dialog-title">Trace Settings</div>
+            <div className="dialog-title">{t("traceSettings.title")}</div>
             <button className="push-button"
               onClick={handleCancel}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
@@ -60,7 +62,7 @@ const TraceSettingsDialog = (props:
         </div>
         <div className="flex-column"
           style={{padding: "0.5em", paddingBottom: 0, paddingLeft: 0}}>
-          <EditField name="Number of lines to keep:"
+          <EditField name={t("traceSettings.numLines")}
             initialFocus={true}
             value={numLines}
             setValue={handleSetNumLines}
@@ -70,16 +72,16 @@ const TraceSettingsDialog = (props:
         <div className="flex-column"
           style={{paddingLeft: "0.5em"}}>
           <span className="warning-text">
-            {(parseInt(numLines) < 100  || parseInt(numLines) > 100000) ? "Must be between 100 and 100000" : "\u00A0"}
+            {(parseInt(numLines) < 100  || parseInt(numLines) > 100000) ? t("traceSettings.rangeWarning") : "\u00A0"}
           </span>
         </div>
-        <CheckBox name="Collapse loops by finding repeating lines"
+        <CheckBox name={t("traceSettings.collapseLoops")}
           checked={collapseLoops}
           setChecked={(checked: boolean) => {
             setCollapseLoops(checked)
             setPreferenceTraceSettings({ numLines: parseInt(numLines), collapseLoops: checked, ignoreRegisters })
           }} />
-        <CheckBox name="Ignore register values when finding repeating lines"
+        <CheckBox name={t("traceSettings.ignoreRegisters")}
           checked={ignoreRegisters}
           setChecked={(checked: boolean) => {
             setIgnoreRegisters(checked)

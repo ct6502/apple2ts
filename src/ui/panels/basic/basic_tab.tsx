@@ -3,7 +3,7 @@ import { faDatabase, faFile, faFolderOpen, faForwardStep, faGear, faListOl, faPl
 import { handleGetManualNumbering, handleGetCapitalizeBasic, isMinimalTheme } from "../../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import defaultProgram from "./basic_program.bas?raw"
+import defaultProgram from "./test_syntax.bas?raw"
 import BasicEditor from "./basic_editorview"
 import { BasicCompiler } from "./basic_compiler"
 import { handleGetRunMode, handleGetSpeedMode, handleGetStackString, handleGetState6502, handleGetZeroPage, passBasicStep, passPasteText, passSetRunMode, passSingleKeyPress } from "../../main2worker"
@@ -14,9 +14,11 @@ import { MaximumSpeedMode } from "../../controls/speeddropdown"
 import PopupMenu from "../../controls/popupmenu"
 import { BasicRenumber } from "./basic_renumber"
 import { BasicRebuildFromMemory } from "./basic_rebuild_memory"
+import { useTranslation } from "../../../i18n/useTranslation"
 import BasicDebugView from "./basic_debugview"
 
 const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
+  const { t } = useTranslation()
   const [programText, setProgramText] = useState<string>(() => {
     // Load from localStorage if available, otherwise use default
     const saved = getPreferenceBasicProgram()
@@ -36,6 +38,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
 
   useEffect(() => {
     setPreferenceBasicProgram(programText)
+
   }, [programText])
 
   let programError = ""
@@ -57,7 +60,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }
     return false
   }
-  
+
   const currentEditorLineNumber = () => {
     if (programText.trim() === "") {
       return 0
@@ -139,7 +142,8 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
         pasteProgramAndWait(text)
         // Another hack keep isRunning true while the program is pasted.
         setTimeout(() => {
-          setIsBooting(false)}, 300)
+          setIsBooting(false)
+        }, 300)
       }
     }, 100)
   }
@@ -199,6 +203,18 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }, 500)
   }
 
+  const handleNewButtonClick = async () => {
+    if (programText.trim() !== "") {
+      const confirmNew = window.confirm(
+        t("basic.newProgramWarning")
+      )
+      if (!confirmNew) {
+        return
+      }
+    }
+    setProgramText("")
+  }
+
   const handleImportButtonClick = async () => {
     const fileInput = document.createElement("input")
     fileInput.type = "file"
@@ -215,7 +231,7 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
     }
     fileInput.click()
   }
-  
+
   const handleExportButtonClick = async () => {
     const blob = new Blob([programText], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
@@ -236,27 +252,13 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   const handleRebuildClick = async () => {
     if (programText.trim() !== "") {
       const confirmRebuild = window.confirm(
-        "This will replace the current program with a version rebuilt from the Apple II memory. " +
-        "You will lose any unsaved changes. Are you sure?"
+        t("basic.rebuildWarning")
       )
       if (!confirmRebuild) {
         return
       }
     }
     BasicRebuildFromMemory(setProgramText)
-  }
-
-  const handleNewProgramClick = () => {
-    if (programText !== defaultProgram) {
-      const confirmNew = window.confirm(
-        "This will clear the current program. " +
-        "You will lose any unsaved changes. Are you sure?"
-      )
-      if (!confirmNew) {
-        return
-      }
-    }
-    setProgramText("")
   }
 
   const running = isRunning()
@@ -266,115 +268,115 @@ const BasicTab = (props: { updateDisplay: UpdateDisplay }) => {
   return (
     <div className="flex-column-gap debug-section">
       <BasicEditor value={programText} setValue={setProgramText}
-        highlightLine={highlightLine} readOnly={running}/>
+        highlightLine={highlightLine} readOnly={running} />
       <BasicDebugView/>
       <div className="flex-row">
         <div className="flex-row">
           <button
             className="push-button"
-            title="Run from Beginning"
+            title={t("basic.runFromBeginning")}
             onClick={handleRunButtonClick}>
-              <FontAwesomeIcon icon={faPlay} />
+            <FontAwesomeIcon icon={faPlay} />
           </button>
           <button
             className="push-button"
-            title="Break"
+            title={t("basic.break")}
             disabled={runMode === RUN_MODE.IDLE || !isRunning()}
             onClick={handleBreakButtonClick}>
-              <FontAwesomeIcon icon={faStop} />
+            <FontAwesomeIcon icon={faStop} />
           </button>
           <button
             className="push-button"
-            title="Continue Running"
+            title={t("basic.continueRunning")}
             disabled={runMode === RUN_MODE.IDLE || (running && runMode !== RUN_MODE.PAUSED)}
             onClick={handleContinueButtonClick}>
-              <FontAwesomeIcon icon={faRepeat} />
+            <FontAwesomeIcon icon={faRepeat} />
           </button>
           <button
             className="push-button"
-            title={"Step Program"}
+            title={t("basic.stepProgram")}
             disabled={(running && runMode !== RUN_MODE.PAUSED) || runMode === RUN_MODE.IDLE}
             onClick={handleStepButtonClick}>
-              <FontAwesomeIcon icon={faForwardStep} />
+            <FontAwesomeIcon icon={faForwardStep} />
           </button>
           <button
             className={paused ? "push-button button-active" : "push-button"}
-            title={paused ? "Resume Output" : "Freeze Output"}
+            title={paused ? t("basic.resumeOutput") : t("basic.freezeOutput")}
             disabled={!running || runMode === RUN_MODE.PAUSED || runMode === RUN_MODE.IDLE}
             onClick={handlePauseButtonClick}>
-              <FontAwesomeIcon icon={faSnowflake} />
+            <FontAwesomeIcon icon={faSnowflake} />
           </button>
           <button
             className="push-button"
-            title={"Import Program..."}
+            title={t("basic.importProgram")}
             onClick={handleImportButtonClick}>
-              <FontAwesomeIcon icon={faFolderOpen} />
+            <FontAwesomeIcon icon={faFolderOpen} />
           </button>
           <button
             className="push-button"
-            title={"Export Program..."}
+            title={t("basic.exportProgram")}
             onClick={handleExportButtonClick}>
-              <FontAwesomeIcon icon={faSave} />
+            <FontAwesomeIcon icon={faSave} />
           </button>
           <button
             className="push-button"
-            title="Renumber Program"
+            title={t("basic.renumberProgram")}
             onClick={handleRenumberClick}>
-              <FontAwesomeIcon icon={faListOl} />
+            <FontAwesomeIcon icon={faListOl} />
           </button>
-          </div>
+        </div>
 
-          <div className="flex-row" style={{ marginLeft: "10px" }}>
+        <div className="flex-row" style={{ marginLeft: "10px" }}>
           <button
             className="push-button"
-            title="New Program"
-            onClick={handleNewProgramClick}>
-              <FontAwesomeIcon icon={faFile} />
+            title={t("basic.newProgram")}
+            onClick={handleNewButtonClick}>
+            <FontAwesomeIcon icon={faFile} />
           </button>
           <button
             className={handleGetRunMode() === RUN_MODE.IDLE ?
               "push-button disabled" : "push-button"}
-            title="Rebuild Program from Memory"
+            title={t("basic.rebuildProgram")}
             disabled={handleGetRunMode() === RUN_MODE.IDLE}
             onClick={handleRebuildClick}>
-              <FontAwesomeIcon icon={faDatabase} />
+            <FontAwesomeIcon icon={faDatabase} />
           </button>
-          
+
           <button
             id="basic-button"
             className="push-button"
-            title="Display Settings"
+            title={t("basic.displaySettings")}
             onClick={handleSettingsClick}
           >
             <FontAwesomeIcon icon={faGear} />
-          </button>          
-          
-          <PopupMenu
-            location={popupLocation}
-            onClose={() => { setPopupLocation(undefined) }}
-            menuItems={[[
-              {
-                label: "Auto Line Numbering",
-                isSelected: () => { return handleGetManualNumbering() },
-                onClick: () => {
-                  setPreferenceBoolean("manualNumbering", !handleGetManualNumbering())
-                }
-              },
-              {
-                label: "Capitalize Keywords",
-                isSelected: () => { return handleGetCapitalizeBasic() },
-                onClick: () => {
-                  setPreferenceBoolean("capitalizeBasic", !handleGetCapitalizeBasic())
-                }
-              },
-            ]]}
-          />
-          </div>
+          </button>
+        </div>
+
+        <PopupMenu
+          location={popupLocation}
+          onClose={() => { setPopupLocation(undefined) }}
+          menuItems={[[
+            {
+              label: t("basic.autoLineNumbering"),
+              isSelected: () => { return handleGetManualNumbering() },
+              onClick: () => {
+                setPreferenceBoolean("manualNumbering", !handleGetManualNumbering())
+              }
+            },
+            {
+              label: t("basic.capitalizeKeywords"),
+              isSelected: () => { return handleGetCapitalizeBasic() },
+              onClick: () => {
+                setPreferenceBoolean("capitalizeBasic", !handleGetCapitalizeBasic())
+              }
+            },
+          ]]}
+        />
       </div>
-        {programError !== "" && <div
-          style={{ gridColumn: "span 2" }}
-          title={programError}
-          className="dbg-program-error">❌ {programError}</div>}
+      {programError !== "" && <div
+        style={{ gridColumn: "span 2" }}
+        title={programError}
+        className="dbg-program-error">❌ {programError}</div>}
     </div>
   )
 }
