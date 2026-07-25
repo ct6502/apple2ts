@@ -244,42 +244,31 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
 
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
+
     showGlobalProgressModal(true, "Fetching query results")
+    fetch(queryUrl)
+      .then(async response => {
+        if (response.ok) {
+          const json = await response.json()
+          if (json) {
+            if (pagedResults) {
+              setResults(results.concat(json.response.docs))
+            } else {
+              setDiskbookmarks(new DiskBookmarks())
+              setResults(json.response.docs)
+              setResultsCount(json.response.numFound)
+            }
 
-    const fetchMethods = [
-      () => fetch(queryUrl),
-      () => fetch("https://proxy.corsfix.com/?" + queryUrl, { headers: { "x-corsfix-cache": "true" } })
-    ]
-
-    let handled = false
-    for (const fetchFn of fetchMethods) {
-      try {
-        const response = await fetchFn()
-        if (!response.ok) continue
-        const json = await response.json()
-        if (json) {
-          if (pagedResults) {
-            setResults(results.concat(json.response.docs))
-          } else {
-            setDiskbookmarks(new DiskBookmarks())
-            setResults(json.response.docs)
-            setResultsCount(json.response.numFound)
+            const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
+            dialog.style.height = "85%"
           }
-          const dialog = document.getElementsByClassName("internet-archive-dialog")[0] as HTMLElement
-          dialog.style.height = "85%"
+        } else {
+          // $TODO: add error handling
         }
-        handled = true
-        break
-      } catch {
-        // try next method
-      }
-    }
-
-    if (!handled) {
-      console.error("All fetch methods failed for Internet Archive search:", queryUrl)
-    }
-
-    showGlobalProgressModal(false)
+      })
+      .finally(() => {
+        showGlobalProgressModal(false)
+      })
   }
 
   useEffect(() => {
