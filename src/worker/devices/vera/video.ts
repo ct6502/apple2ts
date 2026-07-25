@@ -10,7 +10,7 @@ import { psg_reset, psg_writereg, psg_render } from './psg'
   // @ts-ignore
 import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from './pcm'
 import { s6502 } from "../../instructions"
-import { passVeraFramebuffer, passVeraPsgWrite } from "../../worker2main"
+import { passVeraFramebuffer, passVeraPcmWrite, passVeraPsgWrite } from "../../worker2main"
 
 const VERA_VERSION_MAJOR = 47
 const VERA_VERSION_MINOR = 0
@@ -52,8 +52,30 @@ let opcode_addr: number = 0
 const MAX = (a: number, b: number) => ((a) > (b) ? a : b)
 
 const MHZ: number = 1
-// need to hook me up
-const audio_render = () => {}
+const AUDIO_SAMPLERATE = 25000000 / 512
+const PCM_RENDER_CHUNK = 1024
+let audio_last_cycle = 0
+let audio_sample_frac = 0
+const audio_dummy_buf = new Int16Array(PCM_RENDER_CHUNK * 2)
+
+const audio_render = () => {
+	const cycle_delta = s6502.cycleCount - audio_last_cycle
+	if (cycle_delta <= 0) {
+		audio_last_cycle = s6502.cycleCount
+		return
+	}
+
+	const samples_exact = audio_sample_frac + cycle_delta * AUDIO_SAMPLERATE / (MHZ * 1000000)
+	let samples = Math.trunc(samples_exact)
+	audio_sample_frac = samples_exact - samples
+	audio_last_cycle = s6502.cycleCount
+
+	while (samples > 0) {
+		const len = Math.min(samples, PCM_RENDER_CHUNK)
+		pcm_render(audio_dummy_buf, len)
+		samples -= len
+	}
+}
 
 let video_ram = new Uint8Array(0x20000)
 let palette = new Uint8Array(256 * 2)
@@ -211,6 +233,8 @@ export const video_reset = (): void => {
 	ntsc_scan_pos_y = 0
 	psg_reset()
 	pcm_reset()
+	audio_last_cycle = s6502.cycleCount
+	audio_sample_frac = 0
 }
 
 export const video_init = (): boolean => {
@@ -1033,6 +1057,7 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 }
 
 export const video_get_irq_out = (): boolean => {
+	audio_render()
 	let tmp_isr: number = isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
 	return (tmp_isr & ien) != 0
 }
@@ -1216,6 +1241,14 @@ const write_psg = (address: number, value: number): void => {
 	audio_render()
 	psg_writereg(reg, value)
 	passVeraPsgWrite({
+		cycle: s6502.cycleCount,
+		reg,
+		value,
+	})
+}
+
+const write_pcm = (reg: VeraPcmWrite["reg"], value: number): void => {
+	passVeraPcmWrite({
 		cycle: s6502.cycleCount,
 		reg,
 		value,
@@ -1507,7 +1540,7 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 		}
 		case 0x05: return (io_dcsel << 1) | io_addrsel
 		case 0x06: return ((irq_line & 0x100) >> 1) | ((scanline & 0x100) >> 2) | (ien & 0xF)
-		case 0x07: return isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
+		case 0x07: audio_render(); return isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
 		case 0x08: return scanline & 0xFF
 		case 0x09:
 		case 0x0A:
@@ -1884,9 +1917,9 @@ export const video_write = (reg: number, value: number): void => {
 			reg_layer[1][reg - 0x14] = value
 			refresh_layer_properties(1)
 			break
-		case 0x1B: audio_render(); pcm_write_ctrl(value); break
-		case 0x1C: audio_render(); pcm_write_rate(value); break
-		case 0x1D: audio_render(); pcm_write_fifo(value); break
+		case 0x1B: audio_render(); pcm_write_ctrl(value); write_pcm("ctrl", value); break
+		case 0x1C: audio_render(); pcm_write_rate(value); write_pcm("rate", value); break
+		case 0x1D: audio_render(); pcm_write_fifo(value); write_pcm("fifo", value); break
 		case 0x1E:
 		case 0x1F:
 			vera_spi_write(reg & 1, value)

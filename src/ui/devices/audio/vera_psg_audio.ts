@@ -41,3 +41,17 @@ export const playVeraPsgWrite = async (event: VeraPsgWrite) => {
     console.error("VERA PSG audioWorklet not available - must run on https")
   }
 }
+
+export const playVeraPcmWrite = async (event: VeraPcmWrite) => {
+  if (!isAudioEnabled()) return
+
+  try {
+    await initVeraPsgAudio()
+    if (veraPsgContext.state !== "running") {
+      await veraPsgContext.resume()
+    }
+    veraPsgNode.port.postMessage(event)
+  } catch {
+    console.error("VERA PSG audioWorklet not available - must run on https")
+  }
+}

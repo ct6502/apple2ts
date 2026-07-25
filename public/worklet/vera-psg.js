@@ -25,15 +25,41 @@ const volumeLut = new Uint16Array([
   270, 286, 303, 321, 341, 361, 382, 405, 429, 455, 482, 511,
 ])
 
+const pcmVolumeLut = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 8, 11, 14, 18, 23, 30, 38, 49, 64])
+
+const clampAudio = (value) => Math.max(-1, Math.min(1, value / 32768))
+
+const signExtend8To16 = (value) => ((value << 8) << 16) >> 16
+
+const signExtend16 = (value) => (value << 16) >> 16
+
 class VeraPsgProcessor extends AudioWorkletProcessor {
   constructor() {
     super()
     this.channels = Array.from({ length: 16 }, () => new Channel())
     this.noiseState = 1
     this.phaseScale = (25000000 / 512) / sampleRate
+    this.pcmFifo = new Uint8Array(4096)
+    this.pcmFifoWridx = 0
+    this.pcmFifoRdidx = 0
+    this.pcmFifoCnt = 0
+    this.pcmCtrl = 0
+    this.pcmRate = 0
+    this.pcmLoop = false
+    this.pcmCurL = 0
+    this.pcmCurR = 0
+    this.pcmPhase = 0
     this.port.onmessage = (e) => {
       const { reg, value } = e.data
-      this.writeReg(reg, value)
+      if (reg === "ctrl") {
+        this.writePcmCtrl(value)
+      } else if (reg === "rate") {
+        this.writePcmRate(value)
+      } else if (reg === "fifo") {
+        this.writePcmFifo(value)
+      } else {
+        this.writeReg(reg, value)
+      }
     }
   }
 
@@ -115,15 +141,131 @@ class VeraPsgProcessor extends AudioWorkletProcessor {
     }
   }
 
+  pcmFifoReset() {
+    this.pcmFifoWridx = 0
+    this.pcmFifoRdidx = 0
+    this.pcmFifoCnt = 0
+  }
+
+  pcmFifoRestart() {
+    this.pcmFifoRdidx = 0
+    this.pcmFifoCnt = this.pcmFifoWridx
+  }
+
+  writePcmCtrl(value) {
+    value &= 0xff
+    if ((value & 0xc0) === 0xc0) {
+      this.pcmLoop = true
+    } else {
+      this.pcmLoop = false
+      if (value & 0x80) {
+        this.pcmFifoReset()
+      }
+    }
+    if (value & 0x40) {
+      this.pcmFifoRestart()
+    }
+    this.pcmCtrl = value & 0x3f
+  }
+
+  writePcmRate(value) {
+    value &= 0xff
+    this.pcmRate = value > 128 ? 256 - value : value
+  }
+
+  writePcmFifo(value) {
+    if (this.pcmFifoCnt < 4095) {
+      this.pcmFifo[this.pcmFifoWridx++] = value & 0xff
+      if (this.pcmFifoWridx === 4096) {
+        this.pcmFifoWridx = 0
+      }
+      this.pcmFifoCnt++
+    }
+  }
+
+  readPcmFifo() {
+    if (this.pcmFifoCnt === 0) {
+      return 0
+    }
+    const result = this.pcmFifo[this.pcmFifoRdidx++]
+    if (this.pcmFifoRdidx === 4096) {
+      this.pcmFifoRdidx = 0
+    }
+    this.pcmFifoCnt--
+    return result
+  }
+
+  pcmUnderrun() {
+    this.pcmFifoCnt = 0
+    this.pcmFifoRdidx = this.pcmFifoWridx
+  }
+
+  renderPcmSample() {
+    const oldPhase = this.pcmPhase | 0
+    this.pcmPhase = (this.pcmPhase + this.pcmRate * this.phaseScale) % 256
+    const newPhase = this.pcmPhase | 0
+
+    if ((oldPhase & 0x80) !== (newPhase & 0x80)) {
+      if (this.pcmFifoCnt === 0) {
+        this.pcmCurL = 0
+        this.pcmCurR = 0
+      } else {
+        switch ((this.pcmCtrl >> 4) & 3) {
+          case 0:
+            this.pcmCurL = signExtend8To16(this.readPcmFifo())
+            this.pcmCurR = this.pcmCurL
+            break
+          case 1:
+            if (this.pcmFifoCnt < 2) {
+              this.pcmUnderrun()
+            } else {
+              this.pcmCurL = signExtend8To16(this.readPcmFifo())
+              this.pcmCurR = signExtend8To16(this.readPcmFifo())
+            }
+            break
+          case 2:
+            if (this.pcmFifoCnt < 2) {
+              this.pcmUnderrun()
+            } else {
+              const l = this.readPcmFifo() | (this.readPcmFifo() << 8)
+              this.pcmCurL = signExtend16(l)
+              this.pcmCurR = this.pcmCurL
+            }
+            break
+          case 3:
+            if (this.pcmFifoCnt < 4) {
+              this.pcmUnderrun()
+            } else {
+              const l = this.readPcmFifo() | (this.readPcmFifo() << 8)
+              const r = this.readPcmFifo() | (this.readPcmFifo() << 8)
+              this.pcmCurL = signExtend16(l)
+              this.pcmCurR = signExtend16(r)
+            }
+            break
+        }
+        if (this.pcmLoop && this.pcmFifoCnt === 0) {
+          this.pcmFifoRestart()
+        }
+      }
+    }
+
+    const volume = pcmVolumeLut[this.pcmCtrl & 0x0f]
+    return {
+      left: Math.trunc(this.pcmCurL * volume / 64),
+      right: Math.trunc(this.pcmCurR * volume / 64),
+    }
+  }
+
   process(inputs, outputs) {
     const output = outputs[0]
     const left = output[0]
     const right = output[1] || output[0]
 
     for (let i = 0; i < left.length; i++) {
-      const sample = this.renderSample()
-      left[i] = sample.left / 32768
-      right[i] = sample.right / 32768
+      const psg = this.renderSample()
+      const pcm = this.renderPcmSample()
+      left[i] = clampAudio(psg.left + pcm.left)
+      right[i] = clampAudio(psg.right + pcm.right)
     }
 
     return true

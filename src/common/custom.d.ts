@@ -35,6 +35,12 @@ type VeraPsgWrite = {
   value: number,
 }
 
+type VeraPcmWrite = {
+  cycle: number,
+  reg: "ctrl" | "rate" | "fifo",
+  value: number,
+}
+
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
 }
