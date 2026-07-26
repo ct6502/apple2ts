@@ -194,6 +194,14 @@ export const setPreferencePrinterDialogPosition = (position: { x: number, y: num
   }
 }
 
+export const setPreferencePageLength = (pageLength: number) => {
+  if (pageLength === -1) {
+    localStorage.removeItem("pageLength")
+  } else {
+    localStorage.setItem("pageLength", JSON.stringify(pageLength))
+  }
+}
+
 const gameDataDrive = "GAME_DATA-DRIVE"
 const gameDataData = "GAME_DATA-DATA"
 
@@ -404,6 +412,22 @@ export const resetPreferences = () => {
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
+  setPreferenceDebugTabLeftWidth(-1)
+  setPreferencePrinterDialogPosition({ x: -1, y: -1 })
+  setPreferencePageLength(-1)
+}
+
+export const getPreferencePageLength = (): number => {
+  let value = 11
+  const item = localStorage.getItem("pageLength")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch {
+      localStorage.removeItem("pageLength")
+    }
+  }
+  return value
 }
 
 export const getPreferenceNewReleasesChecked = () => {

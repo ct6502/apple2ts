@@ -11,10 +11,12 @@ import {
 import { imagewriter2 } from "./imagewriter2"
 import { imagewriterDumpScreen } from "./imagewriterdumpscreen"
 import { CopyCanvas } from "./copycanvas"
-import { getPreferencePrinterDialogPosition, setPreferencePrinterDialogPosition } from "../../localstorage"
+import { getPreferencePageLength, getPreferencePrinterDialogPosition, setPreferencePrinterDialogPosition } from "../../localstorage"
+import { PrinterDialogConfig } from "./printerdialog_config"
 
 export interface PageImageProps {
-  imageData: string
+  imageData: string,
+  pageLength: number
 }
 
 const PageImage = (props: PageImageProps) => {
@@ -23,7 +25,7 @@ const PageImage = (props: PageImageProps) => {
       src={props.imageData}
       alt="Printed page"
       className="printer-canvas"
-      style={{ width: "540px", height: "700px" }}
+      style={{ width: `${1224 / 2.5}px`, height: `${props.pageLength * 144 / 2.5}px` }}
     />
   </div>
 }
@@ -105,6 +107,8 @@ const PrinterDialog = (props: PrinterDialogProps) => {
 
   const hasPrinterData = props.printer.hasData()
 
+  const pageLength = getPreferencePageLength()
+
   return (
     <div
       tabIndex={0} // Make the div focusable
@@ -148,6 +152,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
                 onClick={props.printer.load()}>
                 <FontAwesomeIcon icon={faFolderOpen} />
               </button> */}
+              <PrinterDialogConfig printer={props.printer} />
               <button className="push-button"
                 style={{ color: `${buttonColor}` }}
                 title="Dump Current Screen to Printer"
@@ -194,9 +199,9 @@ const PrinterDialog = (props: PrinterDialogProps) => {
             padding: "10px"
           }}>
             {props.printer.getPages().map((pageData, index) => (
-              <PageImage key={index} imageData={pageData} />
+              <PageImage key={index} imageData={pageData} pageLength={pageLength} />
             ))}
-            <CopyCanvas srcCanvas={props.canvas} />
+            {(props.printer.hasRenderedData() || !props.printer.hasData()) && <CopyCanvas srcCanvas={props.canvas} pageLength={pageLength} />}
           </div>
         </div>
       </div>

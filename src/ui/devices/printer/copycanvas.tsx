@@ -2,16 +2,15 @@ import { useRef, useEffect } from "react"
 
 export interface CopyCanvasProps {
   srcCanvas: HTMLCanvasElement
+  pageLength: number
 }
 
 export const CopyCanvas = (props: CopyCanvasProps) => {
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { srcCanvas, ...rest } = props
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // these dimensions represent a max dpi page
-  const width = 1360
-  const height = 1584
+  const width = 1224
+  const height = props.pageLength * 144
   const marginx = 0
   const marginy = 0
 
@@ -43,9 +42,9 @@ export const CopyCanvas = (props: CopyCanvasProps) => {
   }, [canvasRef, props.srcCanvas, height, width])
 
   return <div className="printer-paper">
-      <canvas ref={canvasRef} {...rest}
+      <canvas ref={canvasRef}
         className="printer-canvas"
-        style={{ width: "540px", height: "700px" }}
+        style={{ width: `${width / 2.5}px`, height: `${height / 2.5}px` }}
         hidden={false}
         width={width} height={height} />
     </div>
