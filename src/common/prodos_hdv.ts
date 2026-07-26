@@ -3460,11 +3460,11 @@ const createPackedBinaryRelay = (
     // second-stage decompression code to $BF00, then JMPs here (via the
     // modified JMP at the callback_vector address).  We MUST call the
     // second-stage decompressor with JSR $BF00 to actually decompress the game.
-    // After decompression returns, switch LC to rwRam2 so our BRK vector
-    // at $FFFE/$FFFF ($DFFC → RTI) remains accessible, then RTS to game entry.
+    // After decompression returns, switch LC to readRom (matching 4cade's
+    // +DISABLE_ACCEL_AND_HIDE_ARTWORK_LC which ends with STA $C082).
+    // The game will set its own LC banking as needed.
     prelaunchBytes.push(0x20, 0x00, 0xBF)                                       // JSR $BF00 (run stage-2 decompressor)
-    prelaunchBytes.push(0x2C, 0x83, 0xC0)                                       // BIT $C083
-    prelaunchBytes.push(0x2C, 0x83, 0xC0)                                       // BIT $C083 (LC read/write RAM bank 2)
+    prelaunchBytes.push(0x8D, 0x82, 0xC0)                                       // STA $C082 (read ROM, no write — matches 4cade)
     prelaunchBytes.push(0x60)                                                    // RTS
   }
 
