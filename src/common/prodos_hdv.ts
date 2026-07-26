@@ -5802,6 +5802,36 @@ export const buildProDosHdv = async (
   }
 
   const rootEntriesNeeded = filePlans.filter((p) => !p.parentDirectoryNode).length + rootDirectoryNodes.length
+
+  // Expand root directory if needed by appending new linked blocks
+  if (rootEntriesNeeded > freeSlots.length) {
+    const additionalEntries = rootEntriesNeeded - freeSlots.length
+    const additionalBlocks = Math.ceil(additionalEntries / DIR_ENTRIES_PER_BLOCK)
+    const newBlocks = allocateFreeBlocks(additionalBlocks)
+    if (newBlocks.length < additionalBlocks) {
+      throw new Error(`Not enough free blocks to expand root directory.`)
+    }
+    // Link the last existing directory block to the first new block
+    const lastExistingBlock = newDirBlocks[newDirBlocks.length - 1]
+    const lastExistingBlockData = new Uint8Array(newHdv.buffer, lastExistingBlock * BLOCK_SIZE, BLOCK_SIZE)
+    writeLittleEndian16(lastExistingBlockData, 2, newBlocks[0])  // next pointer
+
+    for (let i = 0; i < newBlocks.length; i++) {
+      const blockNum = newBlocks[i]
+      const blockData = new Uint8Array(newHdv.buffer, blockNum * BLOCK_SIZE, BLOCK_SIZE)
+      blockData.fill(0)
+      const prevBlock = i === 0 ? lastExistingBlock : newBlocks[i - 1]
+      const nextBlock = i + 1 < newBlocks.length ? newBlocks[i + 1] : 0
+      writeLittleEndian16(blockData, 0, prevBlock)   // prev pointer
+      writeLittleEndian16(blockData, 2, nextBlock)   // next pointer
+      // All 13 slots in new blocks are free
+      for (let slot = 0; slot < DIR_ENTRIES_PER_BLOCK; slot++) {
+        freeSlots.push({ block: blockNum, slot })
+      }
+      newDirBlocks.push(blockNum)
+    }
+  }
+
   if (rootEntriesNeeded > freeSlots.length) {
     throw new Error(`Not enough free directory entries. Need ${rootEntriesNeeded}, have ${freeSlots.length}.`)
   }
