@@ -4,7 +4,7 @@
 // Port to typescript and mods by Michael Morrison
 // All rights reserved. License: 2-clause BSD
 
-let fifo = new Uint8Array(4096)
+const fifo = new Uint8Array(4096)
 let fifo_wridx = 0
 let fifo_rdidx = 0
 let fifo_cnt = 0
@@ -102,7 +102,7 @@ export const pcm_is_fifo_almost_empty = () => {
 export const pcm_render = (buf: Int16Array, num_samples: number) => {
 	let buf_idx = 0
 	while (num_samples--) {
-		let old_phase = phase
+		const old_phase = phase
 		phase += rate
 		phase &= 0xFF
 		if ((old_phase & 0x80) != (phase & 0x80)) {
@@ -131,7 +131,7 @@ export const pcm_render = (buf: Int16Array, num_samples: number) => {
 							fifo_cnt = 0
 							fifo_rdidx = fifo_wridx
 						} else {
-							let l = read_fifo() | (read_fifo() << 8)
+							const l = read_fifo() | (read_fifo() << 8)
 							cur_l = (l << 16) >> 16
 							cur_r = cur_l
 						}
@@ -142,9 +142,9 @@ export const pcm_render = (buf: Int16Array, num_samples: number) => {
 							fifo_cnt = 0
 							fifo_rdidx = fifo_wridx
 						} else {
-							let l = read_fifo() | (read_fifo() << 8)
+							const l = read_fifo() | (read_fifo() << 8)
 							cur_l = (l << 16) >> 16
-							let r = read_fifo() | (read_fifo() << 8)
+							const r = read_fifo() | (read_fifo() << 8)
 							cur_r = (r << 16) >> 16
 						}
 						break

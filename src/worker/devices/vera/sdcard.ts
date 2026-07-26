@@ -18,7 +18,7 @@ let is_acmd : boolean
 let is_idle : boolean
 let is_initialized : boolean
 let ongoing_multiblock_read : boolean
-let sdcard_file: any = null
+let sdcard_file: unknown = null
 const NULL = null
 
 const rxbuf = new Uint8Array(3 + 512)
@@ -26,7 +26,7 @@ let rxbuf_idx: number = 0
 let lba: number = 0
 let last_cmd: number = 0
 
-let response: any = []
+let response: Uint8Array | null = new Uint8Array(1)
 let response_length = 0
 let response_counter = 0
 let selected = false
@@ -122,12 +122,37 @@ const CMD55 = 55
 const CMD58 = 58
 
 // Stubs for missing C-API functions
-const x16open = (path: string, mode: string): any => null
-const x16close = (file: any): void => {}
-const x16seek = (file: any, offset: number, whence: number): void => {}
-const x16read = (file: any, dest: any, size: number, count: number): number => 0
-const x16write = (file: any, src: any, size: number, count: number): number => 0
-const x16size = (file: any): number => 0
+const x16open = (_path: string, _mode: string): unknown => {
+	void _path
+	void _mode
+	return null
+}
+const x16close = (_file: unknown): void => {
+	void _file
+}
+const x16seek = (_file: unknown, _offset: number, _whence: number): void => {
+	void _file
+	void _offset
+	void _whence
+}
+const x16read = (_file: unknown, _dest: Uint8Array, _size: number, _count: number): number => {
+	void _file
+	void _dest
+	void _size
+	void _count
+	return 0
+}
+const x16write = (_file: unknown, _src: Uint8Array, _size: number, _count: number): number => {
+	void _file
+	void _src
+	void _size
+	void _count
+	return 0
+}
+const x16size = (_file: unknown): number => {
+	void _file
+	return 0
+}
 const XSEEK_SET = 0
 
 export const sdcard_set_path = (path: string): void =>
@@ -179,7 +204,7 @@ export const sdcard_select = (select: boolean): void =>
 
 const set_response_csd = (): void =>
 {
-	const rr = [
+	const rr = new Uint8Array([
 		0xff, // dummy
 		0xff, // dummy
 		0x00, // R1 response
@@ -201,8 +226,8 @@ const set_response_csd = (): void =>
 		0x40, // WRITE_BL_LEN (1:0) [7:6], WRITE_BL_PARTIAL [5], RESERVED [4:0]
 		0x00, // FILE_FORMAT_GRP [7] = 0, COPY [6], PERM_WRITE_PROTECT [5], TMP_WRITE_PROTECT [4], RESERVED [3:0]
 		0x01 // CRC[7:1], ALWAYS_1 [0]
-		]
-	let c_size = (x16size(sdcard_file) >> 19)-1
+		])
+	const c_size = (x16size(sdcard_file) >> 19)-1
 	rr[12] |= (c_size >> 16) & 0x3f
 	rr[13] = (c_size >> 8) & 0xff
 	rr[14] = c_size & 0xff
@@ -213,19 +238,19 @@ const set_response_csd = (): void =>
 
 const set_response_r1 = (): void =>
 {
-	let r1 = is_idle ? 1 : 0
-	response[0] = r1
+	const r1 = is_idle ? 1 : 0
+	response = new Uint8Array([r1])
 	response_length = 1
 }
 
 const set_response_r2 = (): void =>
 {
 	if (is_initialized) {
-		const r2 = [0x00, 0x00]
+		const r2 = new Uint8Array([0x00, 0x00])
 		response = r2
 		response_length = r2.length
 	} else {
-		const r2 = [0x1F, 0xFF]
+		const r2 = new Uint8Array([0x1F, 0xFF])
 		response = r2
 		response_length = r2.length
 	}
@@ -233,14 +258,14 @@ const set_response_r2 = (): void =>
 
 const set_response_r3 = (): void =>
 {
-	const r3 = [0xC0, 0xFF, 0x80, 0x00]
+	const r3 = new Uint8Array([0xC0, 0xFF, 0x80, 0x00])
 	response = r3
 	response_length = r3.length
 }
 
 const set_response_r7 = (): void =>
 {
-	const r7 = [1, 0x00, 0x00, 0x01, 0xAA]
+	const r7 = new Uint8Array([1, 0x00, 0x00, 0x01, 0xAA])
 	response = r7
 	response_length = r7.length
 }
@@ -313,9 +338,6 @@ const sdcard_handle = (inbyte: number): number =>
 			}
 
 			last_cmd = rxbuf[0]
-if (false) {
-			console.log("*** SD %sCMD%d -> Response:", (rxbuf[0] & 0x80) ? "A" : "", rxbuf[0] & 0x3F)
-}
 			switch (rxbuf[0]) {
 				case CMD0: {
 					// GO_IDLE_STATE: Resets the SD Memory Card
@@ -420,25 +442,16 @@ if (false) {
 				}
 			}
 			response_counter = 0
-if (false) {
-			for (let i = 0; i < (response_length < 16 ? response_length : 16); i++) {
-				console.log(" %02X", response[i])
-			}
-			console.log("\n")
-}
 
 		} else if (rxbuf_idx == 515) {
 			rxbuf_idx = 0
 			// Check for 'start block' byte
 			if (last_cmd == CMD24 && rxbuf[0] == 0xFE) {
-if (false) {
-				console.log("*** SD Writing LBA %d\n", lba)
-}
 				if (lba * 512 >= x16size(sdcard_file)) {
 					// do nothing?
 				} else {
 					x16seek(sdcard_file, lba * 512, XSEEK_SET)
-					let bytes_written = x16write(sdcard_file, rxbuf.subarray(1), 1, 512)
+					const bytes_written = x16write(sdcard_file, rxbuf.subarray(1), 1, 512)
 					if (bytes_written != 512) {
 						console.log("Warning: short write!\n")
 					}

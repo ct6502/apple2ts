@@ -51,7 +51,8 @@ export const enableVera = (enable = true, aslot = 3) => {
 
 let prevCycleCount = 0
 
-const cycleCountCallback = (slot: number) => {
+const cycleCountCallback = (_slot: number) => {
+  void _slot
   if (prevCycleCount)
   {
     const cycleDelta = s6502.cycleCount - prevCycleCount
@@ -79,4 +80,3 @@ const handleVeraIO = (addr: number, val = -1): number => {
   }
   return 0
 }
-

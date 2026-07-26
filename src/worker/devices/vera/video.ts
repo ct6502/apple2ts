@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // Commander X16 Emulator
 // Copyright (c) 2019 Michael Steil
 // Copyright (c) 2020 Frank van den Hoef
 // Port to typescript and mods by Michael Morrison
 // All rights reserved. License: 2-clause BSD
 
-import { vera_spi_read, vera_spi_write } from './sdcard'
+import { vera_spi_read, vera_spi_write } from "./sdcard"
   // @ts-ignore
-import { psg_reset, psg_writereg, psg_render } from './psg'
+import { psg_reset, psg_writereg } from "./psg"
   // @ts-ignore
-import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from './pcm'
+import { pcm_reset, pcm_is_fifo_almost_empty, pcm_read_ctrl, pcm_read_rate, pcm_write_ctrl, pcm_write_rate, pcm_write_fifo, pcm_render } from "./pcm"
 import { s6502 } from "../../instructions"
 import { passVeraFramebuffer, passVeraPcmWrite, passVeraPsgWrite } from "../../worker2main"
 
@@ -42,12 +43,10 @@ const SCREEN_HEIGHT = 480
 const printf = console.log
 const INT_MAX = Number.MAX_SAFE_INTEGER
 const INT_MIN = Number.MIN_SAFE_INTEGER
-let warp_mode: boolean = false
-// @ts-ignore
-let activity_led: number = 0
-let log_video: boolean = false
-let enable_midline: boolean = false
-let opcode_addr: number = 0
+const warp_mode: boolean = false
+const log_video: boolean = false
+const enable_midline: boolean = false
+const opcode_addr: number = 0
 // When rendering a layer line, we can amortize some of the cost by calculating multiple pixels at a time.
 const MAX = (a: number, b: number) => ((a) > (b) ? a : b)
 
@@ -77,29 +76,29 @@ const audio_render = () => {
 	}
 }
 
-let video_ram = new Uint8Array(0x20000)
-let palette = new Uint8Array(256 * 2)
-let sprite_data = new Array(NUM_SPRITES).fill(null).map(() => new Uint8Array(8))
+const video_ram = new Uint8Array(0x20000)
+const palette = new Uint8Array(256 * 2)
+const sprite_data = new Array(NUM_SPRITES).fill(null).map(() => new Uint8Array(8))
 // I/O registers
-let io_addr = new Uint32Array(2)
-let io_rddata = new Uint8Array(2)
-let io_inc = new Uint8Array(2)
+const io_addr = new Uint32Array(2)
+const io_rddata = new Uint8Array(2)
+const io_inc = new Uint8Array(2)
 let io_addrsel: number = 0
 let io_dcsel: number = 0
 let ien: number = 0
 let isr: number = 0
 let irq_line: number = 0
-let reg_layer = new Array(2).fill(null).map(() => new Uint8Array(7))
+const reg_layer = new Array(2).fill(null).map(() => new Uint8Array(7))
 const COMPOSER_SLOTS = 4*64
-let reg_composer = new Uint8Array(COMPOSER_SLOTS)
-let prev_reg_composer = new Array(2).fill(null).map(() => new Uint8Array(COMPOSER_SLOTS))
-let layer_line = new Array(2).fill(null).map(() => new Uint8Array(SCREEN_WIDTH))
-let sprite_line_col = new Uint8Array(SCREEN_WIDTH)
-let sprite_line_z = new Uint8Array(SCREEN_WIDTH)
-let sprite_line_mask = new Uint8Array(SCREEN_WIDTH)
+const reg_composer = new Uint8Array(COMPOSER_SLOTS)
+const prev_reg_composer = new Array(2).fill(null).map(() => new Uint8Array(COMPOSER_SLOTS))
+const layer_line = new Array(2).fill(null).map(() => new Uint8Array(SCREEN_WIDTH))
+const sprite_line_col = new Uint8Array(SCREEN_WIDTH)
+const sprite_line_z = new Uint8Array(SCREEN_WIDTH)
+const sprite_line_mask = new Uint8Array(SCREEN_WIDTH)
 let sprite_line_collisions: number = 0
-let layer_line_enable = new Uint8Array(2)
-let old_layer_line_enable = new Uint8Array(2)
+const layer_line_enable = new Uint8Array(2)
+const old_layer_line_enable = new Uint8Array(2)
 let old_sprite_line_enable: boolean = false
 let sprite_line_enable: boolean = false
 ////////////////////////////////////////////////////////////
@@ -138,11 +137,11 @@ let fx_multiplier: boolean
 let fx_subtract: boolean
 let fx_affine_clip: boolean
 let fx_16bit_hop_align: number
-let fx_nibble_bit = new Uint8Array(2)
-let fx_nibble_incr = new Uint8Array(2)
-let fx_cache = new Uint8Array(4)
+const fx_nibble_bit = new Uint8Array(2)
+const fx_nibble_incr = new Uint8Array(2)
+const fx_cache = new Uint8Array(4)
 let fx_mult_accumulator: number
-let vera_version_string = new Uint8Array(["V".charCodeAt(0),
+const vera_version_string = new Uint8Array(["V".charCodeAt(0),
 	VERA_VERSION_MAJOR,
 	VERA_VERSION_MINOR,
 	VERA_VERSION_PATCH
@@ -152,8 +151,8 @@ let vga_scan_pos_y: number = 0
 let ntsc_half_cnt: number = 0
 let ntsc_scan_pos_y: number = 0
 let frame_count: number = 0
-let framebuffer = new Uint8ClampedArray(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
-let default_palette = new Uint16Array([
+const framebuffer = new Uint8ClampedArray(SCREEN_WIDTH * SCREEN_HEIGHT * 4)
+const default_palette = new Uint16Array([
 0x000,0xfff,0x800,0xafe,0xc4c,0x0c5,0x00a,0xee7,0xd85,0x640,0xf77,0x333,0x777,0xaf6,0x08f,0xbbb,0x000,0x111,0x222,0x333,0x444,0x555,0x666,0x777,0x888,0x999,0xaaa,0xbbb,0xccc,0xddd,0xeee,0xfff,0x211,0x433,0x644,0x866,0xa88,0xc99,0xfbb,0x211,0x422,0x633,0x844,0xa55,0xc66,0xf77,0x200,0x411,0x611,0x822,0xa22,0xc33,0xf33,0x200,0x400,0x600,0x800,0xa00,0xc00,0xf00,0x221,0x443,0x664,0x886,0xaa8,0xcc9,0xfeb,0x211,0x432,0x653,0x874,0xa95,0xcb6,0xfd7,0x210,0x431,0x651,0x862,0xa82,0xca3,0xfc3,0x210,0x430,0x640,0x860,0xa80,0xc90,0xfb0,0x121,0x343,0x564,0x786,0x9a8,0xbc9,0xdfb,0x121,0x342,0x463,0x684,0x8a5,0x9c6,0xbf7,0x120,0x241,0x461,0x582,0x6a2,0x8c3,0x9f3,0x120,0x240,0x360,0x480,0x5a0,0x6c0,0x7f0,0x121,0x343,0x465,0x686,0x8a8,0x9ca,0xbfc,0x121,0x242,0x364,0x485,0x5a6,0x6c8,0x7f9,0x020,0x141,0x162,0x283,0x2a4,0x3c5,0x3f6,0x020,0x041,0x061,0x082,0x0a2,0x0c3,0x0f3,0x122,0x344,0x466,0x688,0x8aa,0x9cc,0xbff,0x122,0x244,0x366,0x488,0x5aa,0x6cc,0x7ff,0x022,0x144,0x166,0x288,0x2aa,0x3cc,0x3ff,0x022,0x044,0x066,0x088,0x0aa,0x0cc,0x0ff,0x112,0x334,0x456,0x668,0x88a,0x9ac,0xbcf,0x112,0x224,0x346,0x458,0x56a,0x68c,0x79f,0x002,0x114,0x126,0x238,0x24a,0x35c,0x36f,0x002,0x014,0x016,0x028,0x02a,0x03c,0x03f,0x112,0x334,0x546,0x768,0x98a,0xb9c,0xdbf,0x112,0x324,0x436,0x648,0x85a,0x96c,0xb7f,0x102,0x214,0x416,0x528,0x62a,0x83c,0x93f,0x102,0x204,0x306,0x408,0x50a,0x60c,0x70f,0x212,0x434,0x646,0x868,0xa8a,0xc9c,0xfbe,0x211,0x423,0x635,0x847,0xa59,0xc6b,0xf7d,0x201,0x413,0x615,0x826,0xa28,0xc3a,0xf3c,0x201,0x403,0x604,0x806,0xa08,0xc09,0xf0b
 ])
 
@@ -274,8 +273,8 @@ interface video_layer_properties {
 }
 
 const NUM_LAYERS = 2
-let layer_properties: video_layer_properties[] = new Array(NUM_LAYERS).fill(null).map(() => ({} as video_layer_properties))
-let prev_layer_properties: video_layer_properties[][] = new Array(2).fill(null).map(() => new Array(NUM_LAYERS).fill(null).map(() => ({} as video_layer_properties)))
+const layer_properties: video_layer_properties[] = new Array(NUM_LAYERS).fill(null).map(() => ({} as video_layer_properties))
+const prev_layer_properties: video_layer_properties[][] = new Array(2).fill(null).map(() => new Array(NUM_LAYERS).fill(null).map(() => ({} as video_layer_properties)))
 const calc_layer_eff_x = (props: video_layer_properties, x: number): number => {
 	return (x + props.hscroll) & (props.layerw_max)
 }
@@ -296,9 +295,9 @@ const calc_layer_map_addr_base2 = (props: video_layer_properties, eff_x: number,
 //	return props.map_base + ((eff_y / props.tileh) * props.mapw + (eff_x / props.tilew)) * 2
 //}
 const refresh_layer_properties = (layer: number): void => {
-	let props: video_layer_properties = layer_properties[layer]
-	let prev_layerw_max: number = props.layerw_max
-	let prev_hscroll: number = props.hscroll
+	const props: video_layer_properties = layer_properties[layer]
+	const prev_layerw_max: number = props.layerw_max
+	const prev_hscroll: number = props.hscroll
 	props.color_depth    = reg_layer[layer][0] & 0x3
 	props.map_base       = reg_layer[layer][1] << 9
 	props.tile_base      = (reg_layer[layer][2] & 0xFC) << 9
@@ -348,7 +347,7 @@ const refresh_layer_properties = (layer: number): void => {
 		let min_eff_x: number = INT_MAX
 		let max_eff_x: number = INT_MIN
 		for (let x: number = 0; x < SCREEN_WIDTH; ++x) {
-			let eff_x: number = calc_layer_eff_x(props, x)
+			const eff_x: number = calc_layer_eff_x(props, x)
 			if (eff_x < min_eff_x) {
 				min_eff_x = eff_x
 			}
@@ -382,9 +381,9 @@ interface video_sprite_properties {
 	sprite_address: number
 	palette_offset: number
 }
-let sprite_properties: video_sprite_properties[] = new Array(128).fill(null).map(() => ({} as video_sprite_properties))
+const sprite_properties: video_sprite_properties[] = new Array(128).fill(null).map(() => ({} as video_sprite_properties))
 const refresh_sprite_properties = (sprite: number): void => {
-	let props: video_sprite_properties = sprite_properties[sprite]
+	const props: video_sprite_properties = sprite_properties[sprite]
 	props.sprite_zdepth = (sprite_data[sprite][6] >> 2) & 3
 	props.sprite_collision_mask = sprite_data[sprite][6] & 0xf0
 	props.sprite_x = sprite_data[sprite][2] | (sprite_data[sprite][3] & 3) << 8
@@ -414,10 +413,10 @@ interface video_palette {
 	entries: Uint32Array
 	dirty: boolean
 }
-let video_palette: video_palette = { entries: new Uint32Array(256), dirty: false }
+const video_palette: video_palette = { entries: new Uint32Array(256), dirty: false }
 const refresh_palette = (): void => {
-	let out_mode: number = reg_composer[0] & 3
-	let chroma_disable: boolean = ((reg_composer[0] & 0x07) == 6)
+	const out_mode: number = reg_composer[0] & 3
+	const chroma_disable: boolean = ((reg_composer[0] & 0x07) == 6)
 	for (let i: number = 0; i < 256; ++i) {
 		let r: number = 0
 		let g: number = 0
@@ -429,7 +428,7 @@ const refresh_palette = (): void => {
 			g = 0
 			b = 255
 		} else {
-			let entry: number = palette[i * 2] | palette[i * 2 + 1] << 8
+			const entry: number = palette[i * 2] | palette[i * 2 + 1] << 8
 			r = ((entry >> 8) & 0xf) << 4 | ((entry >> 8) & 0xf)
 			g = ((entry >> 4) & 0xf) << 4 | ((entry >> 4) & 0xf)
 			b = (entry & 0xf) << 4 | (entry & 0xf)
@@ -447,7 +446,7 @@ const expand_4bpp_data = (dst: Uint8Array, src_addr: number, dst_size: number): 
 	let dst_idx = 0
 	let src_idx = src_addr
 	while (dst_size >= 2) {
-		let val = video_ram[src_idx++]
+		const val = video_ram[src_idx++]
 		dst[dst_idx++] = val >> 4
 		dst[dst_idx++] = val & 0xf
 		dst_size -= 2
@@ -462,7 +461,7 @@ const render_sprite_line = (y: number): void => {
 	for (let i: number = 0; i < NUM_SPRITES; i++) {
 		// one clock per lookup
 		sprite_budget--; if (sprite_budget == 0) break
-		let props: video_sprite_properties = sprite_properties[i]
+		const props: video_sprite_properties = sprite_properties[i]
 		if (props.sprite_zdepth == 0) {
 			continue
 		}
@@ -472,13 +471,13 @@ const render_sprite_line = (y: number): void => {
 			continue
 		}
 
-		let eff_sy: number = props.vflip ? ((props.sprite_height - 1) - (y - props.sprite_y)) : (y - props.sprite_y)
+		const eff_sy: number = props.vflip ? ((props.sprite_height - 1) - (y - props.sprite_y)) : (y - props.sprite_y)
 		let eff_sx: number = (props.hflip ? (props.sprite_width - 1) : 0)
-		let eff_sx_incr: number = props.hflip ? -1 : 1
-		let bitmap_data: number = props.sprite_address + (eff_sy << (props.sprite_width_log2 - (1 - props.color_mode)))
-		let unpacked_sprite_line = new Uint8Array(64)
-		let width: number = (props.sprite_width<64? props.sprite_width : 64)
-		let vram_fetch_mask: number = ((2 - props.color_mode) << 2) - 1
+		const eff_sx_incr: number = props.hflip ? -1 : 1
+		const bitmap_data: number = props.sprite_address + (eff_sy << (props.sprite_width_log2 - (1 - props.color_mode)))
+		const unpacked_sprite_line = new Uint8Array(64)
+		const width: number = (props.sprite_width<64? props.sprite_width : 64)
+		const vram_fetch_mask: number = ((2 - props.color_mode) << 2) - 1
 		if (props.color_mode == 0) {
 			// 4bpp
 			expand_4bpp_data(unpacked_sprite_line, bitmap_data, width)
@@ -488,7 +487,7 @@ const render_sprite_line = (y: number): void => {
 		}
 
 		for (let sx: number = 0; sx < props.sprite_width; ++sx) {
-			let line_x: number = props.sprite_x + sx
+			const line_x: number = props.sprite_x + sx
 			if (line_x >= SCREEN_WIDTH) {
 				eff_sx += eff_sx_incr
 				continue
@@ -520,17 +519,17 @@ const render_sprite_line = (y: number): void => {
 }
 
 const render_layer_line_text = (layer: number, y: number): void => {
-	let props: video_layer_properties = prev_layer_properties[1][layer]
-	let props0: video_layer_properties = prev_layer_properties[0][layer]
-	let max_pixels_per_byte: number = (8 >> props.color_depth) - 1
-	let eff_y: number = calc_layer_eff_y(props0, y)
-	let yy: number = eff_y & props.tileh_max
+	const props: video_layer_properties = prev_layer_properties[1][layer]
+	const props0: video_layer_properties = prev_layer_properties[0][layer]
+	const max_pixels_per_byte: number = (8 >> props.color_depth) - 1
+	const eff_y: number = calc_layer_eff_y(props0, y)
+	const yy: number = eff_y & props.tileh_max
 	// additional bytes to reach the correct line of the tile
-	let y_add: number = (yy << props.tilew_log2) >> 3
-	let map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
-	let map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
-	let size: number = (map_addr_end - map_addr_begin) + 2
-	let tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
+	const y_add: number = (yy << props.tilew_log2) >> 3
+	const map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
+	const map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
+	const size: number = (map_addr_end - map_addr_begin) + 2
+	const tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let tile_start: number = 0
@@ -539,12 +538,12 @@ const render_layer_line_text = (layer: number, y: number): void => {
 	let s: number = 0
 	let color_shift: number = 0
 	{
-		let eff_x: number = calc_layer_eff_x(props, 0)
-		let xx: number = eff_x & props.tilew_max
+		const eff_x: number = calc_layer_eff_x(props, 0)
+		const xx: number = eff_x & props.tilew_max
 		// extract all information from the map
-		let map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
-		let tile_index: number = tile_bytes[map_addr]
-		let byte1: number = tile_bytes[map_addr + 1]
+		const map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
+		const tile_index: number = tile_bytes[map_addr]
+		const byte1: number = tile_bytes[map_addr + 1]
 		if (!props.text_mode_256c) {
 			fg_color = byte1 & 15
 			bg_color = byte1 >> 4
@@ -556,8 +555,8 @@ const render_layer_line_text = (layer: number, y: number): void => {
 		// offset within tilemap of the current tile
 		tile_start = tile_index << props.tile_size_log2
 		// additional bytes to reach the correct column of the tile
-		let x_add: number = xx >> 3
-		let tile_offset: number = tile_start + y_add + x_add
+		const x_add: number = xx >> 3
+		const tile_offset: number = tile_start + y_add + x_add
 		s           = video_space_read(props.tile_base + tile_offset)
 		color_shift = max_pixels_per_byte - (xx & 0x7)
 	}
@@ -565,14 +564,14 @@ const render_layer_line_text = (layer: number, y: number): void => {
 	// Render tile line.
 	for (let x: number = 0; x < SCREEN_WIDTH; x++) {
 		// Scrolling
-		let eff_x: number = calc_layer_eff_x(props, x)
-		let xx: number = eff_x & props.tilew_max
+		const eff_x: number = calc_layer_eff_x(props, x)
+		const xx: number = eff_x & props.tilew_max
 		if ((eff_x & 0x7) == 0) {
 			if ((eff_x & props.tilew_max) == 0) {
 				// extract all information from the map
-				let map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
-				let tile_index: number = tile_bytes[map_addr]
-				let byte1: number = tile_bytes[map_addr + 1]
+				const map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
+				const tile_index: number = tile_bytes[map_addr]
+				const byte1: number = tile_bytes[map_addr + 1]
 				if (!props.text_mode_256c) {
 					fg_color = byte1 & 15
 					bg_color = byte1 >> 4
@@ -586,32 +585,32 @@ const render_layer_line_text = (layer: number, y: number): void => {
 			}
 
 			// additional bytes to reach the correct column of the tile
-			let x_add: number = xx >> 3
-			let tile_offset: number = tile_start + y_add + x_add
+			const x_add: number = xx >> 3
+			const tile_offset: number = tile_start + y_add + x_add
 			s           = video_space_read(props.tile_base + tile_offset)
 			color_shift = max_pixels_per_byte
 		}
 
 		// convert tile byte to indexed color
-		let col_index: number = (s >> color_shift) & 1
+		const col_index: number = (s >> color_shift) & 1
 		--color_shift
 		layer_line[layer][x] = col_index ? fg_color : bg_color
 	}
 }
 
 const render_layer_line_tile = (layer: number, y: number): void => {
-	let props: video_layer_properties = prev_layer_properties[1][layer]
-	let props0: video_layer_properties = prev_layer_properties[0][layer]
-	let max_pixels_per_byte: number = (8 >> props.color_depth) - 1
-	let eff_y: number = calc_layer_eff_y(props0, y)
-	let yy: number = eff_y & props.tileh_max
-	let yy_flip: number = yy ^ props.tileh_max
-	let y_add: number = (yy << ((props.tilew_log2 + props.color_depth - 3) & 31))
-	let y_add_flip: number = (yy_flip << ((props.tilew_log2 + props.color_depth - 3) & 31))
-	let map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
-	let map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
-	let size: number = (map_addr_end - map_addr_begin) + 2
-	let tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
+	const props: video_layer_properties = prev_layer_properties[1][layer]
+	const props0: video_layer_properties = prev_layer_properties[0][layer]
+	const max_pixels_per_byte: number = (8 >> props.color_depth) - 1
+	const eff_y: number = calc_layer_eff_y(props0, y)
+	const yy: number = eff_y & props.tileh_max
+	const yy_flip: number = yy ^ props.tileh_max
+	const y_add: number = (yy << ((props.tilew_log2 + props.color_depth - 3) & 31))
+	const y_add_flip: number = (yy_flip << ((props.tilew_log2 + props.color_depth - 3) & 31))
+	const map_addr_begin: number = calc_layer_map_addr_base2(props, props.min_eff_x, eff_y)
+	const map_addr_end: number = calc_layer_map_addr_base2(props, props.max_eff_x, eff_y)
+	const size: number = (map_addr_end - map_addr_begin) + 2
+	const tile_bytes = new Uint8Array(512) // max 256 tiles, 2 bytes each.
   // @ts-ignore
 	video_space_read_range(tile_bytes, map_addr_begin, size)
 	let palette_offset: number = 0
@@ -622,11 +621,11 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 	let color_shift: number = 0
 	let color_shift_incr: number = 0
 	{
-		let eff_x: number = calc_layer_eff_x(props, 0)
+		const eff_x: number = calc_layer_eff_x(props, 0)
 		// extract all information from the map
-		let map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
-		let byte0: number = tile_bytes[map_addr]
-		let byte1: number = tile_bytes[map_addr + 1]
+		const map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
+		const byte0: number = tile_bytes[map_addr]
+		const byte1: number = tile_bytes[map_addr + 1]
 		// Tile Flipping
   // @ts-ignore
 		vflip = (byte1 >> 3) & 1
@@ -634,7 +633,7 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 		hflip = (byte1 >> 2) & 1
 		palette_offset = byte1 & 0xf0
 		// offset within tilemap of the current tile
-		let tile_index: number = byte0 | ((byte1 & 3) << 8)
+		const tile_index: number = byte0 | ((byte1 & 3) << 8)
 		tile_start                = tile_index << props.tile_size_log2
 		color_shift_incr = hflip ? props.bits_per_pixel : -props.bits_per_pixel
 		let xx: number = eff_x & props.tilew_max
@@ -646,21 +645,21 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 		}
 
 		// additional bytes to reach the correct column of the tile
-		let x_add: number = (xx << props.color_depth) >> 3
-		let tile_offset: number = tile_start + (vflip ? y_add_flip : y_add) + x_add
+		const x_add: number = (xx << props.color_depth) >> 3
+		const tile_offset: number = tile_start + (vflip ? y_add_flip : y_add) + x_add
 		s = video_space_read(props.tile_base + tile_offset)
 	}
 
 
 	// Render tile line.
 	for (let x: number = 0; x < SCREEN_WIDTH; x++) {
-		let eff_x: number = calc_layer_eff_x(props, x)
+		const eff_x: number = calc_layer_eff_x(props, x)
 		if ((eff_x & max_pixels_per_byte) == 0) {
 			if ((eff_x & props.tilew_max) == 0) {
 				// extract all information from the map
-				let map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
-				let byte0: number = tile_bytes[map_addr]
-				let byte1: number = tile_bytes[map_addr + 1]
+				const map_addr: number = calc_layer_map_addr_base2(props, eff_x, eff_y) - map_addr_begin
+				const byte0: number = tile_bytes[map_addr]
+				const byte1: number = tile_bytes[map_addr + 1]
 				// Tile Flipping
   // @ts-ignore
 				vflip = (byte1 >> 3) & 1
@@ -668,7 +667,7 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 				hflip = (byte1 >> 2) & 1
 				palette_offset = byte1 & 0xf0
 				// offset within tilemap of the current tile
-				let tile_index: number = byte0 | ((byte1 & 3) << 8)
+				const tile_index: number = byte0 | ((byte1 & 3) << 8)
 				tile_start                = tile_index << props.tile_size_log2
 				color_shift_incr = hflip ? props.bits_per_pixel : -props.bits_per_pixel
 			}
@@ -682,8 +681,8 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 			}
 
 			// additional bytes to reach the correct column of the tile
-			let x_add: number = (xx << props.color_depth) >> 3
-			let tile_offset: number = tile_start + (vflip ? y_add_flip : y_add) + x_add
+			const x_add: number = (xx << props.color_depth) >> 3
+			const tile_offset: number = tile_start + (vflip ? y_add_flip : y_add) + x_add
 			s = video_space_read(props.tile_base + tile_offset)
 		}
 
@@ -703,20 +702,20 @@ const render_layer_line_tile = (layer: number, y: number): void => {
 
 
 const render_layer_line_bitmap = (layer: number, y: number): void => {
-	let props: video_layer_properties = prev_layer_properties[1][layer]
+	const props: video_layer_properties = prev_layer_properties[1][layer]
 //	let props0: video_layer_properties = prev_layer_properties[0][layer]
-	let yy: number = y % props.tileh
+	const yy: number = y % props.tileh
 	// additional bytes to reach the correct line of the tile
-	let y_add: number = (yy * props.tilew * props.bits_per_pixel) >> 3
+	const y_add: number = (yy * props.tilew * props.bits_per_pixel) >> 3
 	// Render tile line.
 	for (let x: number = 0; x < SCREEN_WIDTH; x++) {
-		let xx: number = x % props.tilew
+		const xx: number = x % props.tilew
 		// extract all information from the map
-		let palette_offset: number = reg_layer[layer][4] & 0xf
+		const palette_offset: number = reg_layer[layer][4] & 0xf
 		// additional bytes to reach the correct column of the tile
-		let x_add: number = (xx * props.bits_per_pixel) >> 3
-		let tile_offset: number = y_add + x_add
-		let s: number = video_space_read(props.tile_base + tile_offset)
+		const x_add: number = (xx * props.bits_per_pixel) >> 3
+		const tile_offset: number = y_add + x_add
+		const s: number = video_space_read(props.tile_base + tile_offset)
 		// convert tile byte to indexed color
 		let col_index: number = (s >> (props.first_color_pos - ((xx & props.color_fields_max) << props.color_depth))) & props.color_mask
 		// Apply Palette Offset
@@ -756,10 +755,10 @@ let eff_x_fp: number = 0
 
 const render_line = (y: number, scan_pos_x: number): void => {
 
-	let col_line = new Uint8Array(SCREEN_WIDTH)
-	let dc_video: number = reg_composer[0]
-	let vstart: number = reg_composer[6] << 1
-	let vstop: number = reg_composer[7] << 1
+	const col_line = new Uint8Array(SCREEN_WIDTH)
+	const dc_video: number = reg_composer[0]
+	const vstart: number = reg_composer[6] << 1
+	const vstop: number = reg_composer[7] << 1
   // @ts-ignore
 	if (y != y_prev) {
 		y_prev = y
@@ -818,8 +817,8 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		eff_x_fp = 0
 	}
 
-	let out_mode: number = reg_composer[0] & 3
-	let border_color: number = reg_composer[3]
+	const out_mode: number = reg_composer[0] & 3
+	const border_color: number = reg_composer[3]
 	let hstart: number = reg_composer[4] << 2
 	let hstop: number = reg_composer[5] << 2
   // @ts-ignore
@@ -899,11 +898,11 @@ const render_line = (y: number, scan_pos_x: number): void => {
 				col_line[x] = border_color
 			}
 
-			let scale: number = reg_composer[1]
+			const scale: number = reg_composer[1]
   // @ts-ignore
 			for (let x: number = MAX(hstart, s_pos_x_p); x < hstop && x < s_pos_x; ++x) {
   // @ts-ignore
-				let eff_x: number = eff_x_fp >> 16
+				const eff_x: number = eff_x_fp >> 16
 				col_line[x] = (eff_x < SCREEN_WIDTH) ? calculate_line_col_index(sprite_line_z[eff_x], sprite_line_col[eff_x], layer_line[0][eff_x], layer_line[1][eff_x]) : 0
   // @ts-ignore
 				eff_x_fp += (scale << 9)
@@ -920,7 +919,7 @@ const render_line = (y: number, scan_pos_x: number): void => {
 		let fb_idx: number = (y * SCREEN_WIDTH + s_pos_x_p) * 4
   // @ts-ignore
 		for (let x: number = s_pos_x_p; x < s_pos_x; x++) {
-			let entry = video_palette.entries[col_line[x]]
+			const entry = video_palette.entries[col_line[x]]
 			
 			// Note: The original C emulator rendered pixels in BGRA order with an empty Alpha channel 
 			// because it was using SDL_PIXELFORMAT_ARGB8888. 
@@ -973,7 +972,7 @@ const update_isr_and_coll = (y: number, compare: number): void => {
 export const video_step = (mhz: number, steps: number, midline: boolean): boolean => {
 	let y: number = 0
   // @ts-ignore
-	let ntsc_mode: boolean = reg_composer[0] & 2
+	const ntsc_mode: boolean = reg_composer[0] & 2
 	let new_frame: boolean = false
 	vga_scan_pos_x += PIXEL_FREQ * steps / mhz
 	if (vga_scan_pos_x > VGA_SCAN_WIDTH) {
@@ -1058,7 +1057,7 @@ export const video_step = (mhz: number, steps: number, midline: boolean): boolea
 
 export const video_get_irq_out = (): boolean => {
 	audio_render()
-	let tmp_isr: number = isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
+	const tmp_isr: number = isr | (pcm_is_fifo_almost_empty() ? 8 : 0)
 	return (tmp_isr & ien) != 0
 }
 
@@ -1093,7 +1092,7 @@ export const video_end = (): void => {
 }
 
 
-let increments = new Int16Array([
+const increments = new Int16Array([
 	0,   0,
 	1,   -1,
 	2,   -2,
@@ -1111,14 +1110,8 @@ let increments = new Int16Array([
 	320, -320,
 	640, -640,
 ])
-  // @ts-ignore
-const video_get_address = (sel: number): number => {
-	let address: number = io_addr[sel]
-	return address & 0x1ffff
-}
-
 const get_and_inc_address = (sel: number, write: boolean): number => {
-	let address: number = io_addr[sel]
+	const address: number = io_addr[sel]
 	let incr: number = increments[io_inc[sel]]
 	if (fx_4bit_mode && fx_nibble_incr[sel] && !incr) {
 		if (fx_nibble_bit[sel]) {
@@ -1188,8 +1181,8 @@ const fx_affine_prefetch = (): void => {
 	let address: number = 0
 	let affine_x_tile: number = (fx_x_pixel_position >> 19) & 0xff
 	let affine_y_tile: number = (fx_y_pixel_position >> 19) & 0xff
-	let affine_x_sub_tile: number = (fx_x_pixel_position >> 16) & 0x07
-	let affine_y_sub_tile: number = (fx_y_pixel_position >> 16) & 0x07
+	const affine_x_sub_tile: number = (fx_x_pixel_position >> 16) & 0x07
+	const affine_y_sub_tile: number = (fx_y_pixel_position >> 16) & 0x07
 	if (!fx_affine_clip) { // wrap
 		affine_x_tile &= fx_affine_map_size - 1
 		affine_y_tile &= fx_affine_map_size - 1
@@ -1205,7 +1198,7 @@ const fx_affine_prefetch = (): void => {
 		// Get the address within the tile map
 		address = fx_affine_map_base + (affine_y_tile * fx_affine_map_size) + affine_x_tile
 		// Now translate that to the tile base address
-		let affine_tile_idx: number = video_space_read(address)
+		const affine_tile_idx: number = video_space_read(address)
   // @ts-ignore
 		address = fx_affine_tile_base + (affine_tile_idx << (6 - fx_4bit_mode))
 		// Now add the sub-tile address
@@ -1226,7 +1219,7 @@ const video_space_read = (address: number): number => {
 	return video_ram[address & 0x1FFFF]
 }
 
-const video_space_read_range = (dest: any, address: number, size: number): void => {
+const video_space_read_range = (dest: Uint8Array, address: number, size: number): void => {
 	if (address >= ADDR_VRAM_START && (address+size) <= ADDR_VRAM_END) {
 		for (let i = 0; i < size; i++) dest[i] = video_ram[address + i]
 	} else {
@@ -1254,21 +1247,6 @@ const write_pcm = (reg: VeraPcmWrite["reg"], value: number): void => {
 		value,
 	})
 }
-
-  // @ts-ignore
-const video_space_write = (address: number, value: number): void => {
-	video_ram[address & 0x1FFFF] = value
-	if (address >= ADDR_PSG_START && address < ADDR_PSG_END) {
-		write_psg(address, value)
-	} else if (address >= ADDR_PALETTE_START && address < ADDR_PALETTE_END) {
-		palette[address & 0x1ff] = value
-		video_palette.dirty = true
-	} else if (address >= ADDR_SPRDATA_START && address < ADDR_SPRDATA_END) {
-		sprite_data[(address >> 3) & 0x7f][address & 0x7] = value
-		refresh_sprite_properties((address >> 3) & 0x7f)
-	}
-}
-
 
 const fx_video_space_write = (address: number, nibble: boolean, value: number): void => {
 	if (fx_4bit_mode) {
@@ -1314,10 +1292,6 @@ const fx_vram_cache_write = (address: number, value: number, mask: number): void
 	}
 }
 
-  // @ts-ignore
-const video_get_fx_accum = (): number => {
-	return fx_mult_accumulator
-}
 const video_get_dc_value = (reg: number): number => {
 	switch (reg & 0x1F) {
 		case 0x00:
@@ -1490,7 +1464,7 @@ const check_not_writeonly = (reg: number): void => {
 
 export const video_read = (reg: number, debugOn: boolean): number => {
   // @ts-ignore
-	let ntsc_mode: boolean = reg_composer[0] & 2
+	const ntsc_mode: boolean = reg_composer[0] & 2
 	let scanline: number = ntsc_mode ? ntsc_scan_pos_y % SCAN_HEIGHT : vga_scan_pos_y
 	if (scanline >= 512) scanline=511
 	check_not_writeonly(reg)
@@ -1504,16 +1478,16 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 				return io_rddata[reg - 3]
 			}
 
-			let addr_nibble: boolean = !!fx_nibble_bit[reg - 3]
-			let address: number = get_and_inc_address(reg - 3, false)
-			let value: number = io_rddata[reg - 3]
+			const addr_nibble: boolean = !!fx_nibble_bit[reg - 3]
+			const address: number = get_and_inc_address(reg - 3, false)
+			const value: number = io_rddata[reg - 3]
 			if (reg == 4 && fx_addr1_mode == 3)
 				fx_affine_prefetch()
 			else
 				io_rddata[reg - 3] = video_space_read(io_addr[reg - 3])
 			if (fx_cache_fill) {
 				if (fx_4bit_mode) {
-					let nibble_read: number = (addr_nibble ? ((value & 0x0f) << 4) : (value & 0xf0))
+					const nibble_read: number = (addr_nibble ? ((value & 0x0f) << 4) : (value & 0xf0))
 					if (fx_cache_nibble_index) {
 						fx_cache[fx_cache_byte_index] = (fx_cache[fx_cache_byte_index] & 0xf0) | (nibble_read >> 4)
   // @ts-ignore
@@ -1546,7 +1520,7 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 		case 0x0A:
 		case 0x0B:
 		case 0x0C: {
-			let i: number = reg - 0x09 + (io_dcsel << 2)
+			const i: number = reg - 0x09 + (io_dcsel << 2)
 			if (debugOn) return video_get_dc_value(i)
 			switch (i) {
 				case 0x00:
@@ -1566,15 +1540,16 @@ export const video_read = (reg: number, debugOn: boolean): number => {
 					fx_mult_accumulator = 0
 					// fall out of the switch
 					break
-				case 0x19: // DCSEL=6, 0x9F2A
+				case 0x19: { // DCSEL=6, 0x9F2A
 					 // <- as: void the error in some compilers about a declaration after a label
-					let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
+					const m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 					if (fx_subtract)
 						fx_mult_accumulator -= m_result
 					else
 						fx_mult_accumulator += m_result
 					// fall out of the switch
 					break
+				}
 				default:
 					// The rest of the space is write-only,
 					// so reading the values out instead returns the version string.
@@ -1640,7 +1615,7 @@ export const video_write = (reg: number, value: number): void => {
 		case 0x04: {
 			if (fx_2bit_poking && fx_addr1_mode) {
 				fx_2bit_poking = false
-				let mask: number = value >> 6
+				const mask: number = value >> 6
 				switch (mask) {
 					case 0x00:
 						video_ram[io_addr[1] & 0x1FFFF] = (fx_cache[fx_cache_byte_index] & 0xc0) | (io_rddata[1] & 0x3f)
@@ -1660,16 +1635,16 @@ export const video_write = (reg: number, value: number): void => {
 
 			if (enable_midline)
 				video_step(MHZ, 0, true) // potential midline raster effect
-			let nibble: boolean = !!fx_nibble_bit[reg - 3]
+			const nibble: boolean = !!fx_nibble_bit[reg - 3]
 			let address: number = get_and_inc_address(reg - 3, true)
 			if (log_video) {
 				printf("WRITE video_space[$%X] = $%02X\n", address, value)
 			}
 
 			let wrdata_to_use: number = 0
-			let ram_wrdata = new Uint8Array(4)
-			let nibble_mask = new Uint8Array(4)
-			let cache_to_use = new Uint8Array(4)
+			const ram_wrdata = new Uint8Array(4)
+			const nibble_mask = new Uint8Array(4)
+			const cache_to_use = new Uint8Array(4)
 			if (fx_multiplier) {
 				let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 				if (fx_subtract)
@@ -1760,7 +1735,7 @@ export const video_write = (reg: number, value: number): void => {
 		case 0x0B:
 		case 0x0C: {
 			video_step(MHZ, 0, true) // potential midline raster effect
-			let i: number = reg - 0x09 + (io_dcsel << 2)
+			const i: number = reg - 0x09 + (io_dcsel << 2)
 			if (i == 0) {
 				// if progressive mode field goes from 0 to 1
 				// or if mode goes from vga to something else with
@@ -1815,7 +1790,7 @@ export const video_write = (reg: number, value: number): void => {
   // @ts-ignore
 					fx_subtract = (value & 0x20) >> 5
 					if (value & 0x40) { // accumulate
-						let m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
+						const m_result: number = (((fx_cache[1] << 8) | fx_cache[0]) << 16 >> 16) * (((fx_cache[3] << 8) | fx_cache[2]) << 16 >> 16)
 						if (fx_subtract)
 							fx_mult_accumulator -= m_result
 						else
@@ -1927,95 +1902,36 @@ export const video_write = (reg: number, value: number): void => {
 	}
 }
 
-  // @ts-ignore
-const video_is_tilemap_address = (addr: number): boolean => {
-	for (let l: number = 0; l < 2; ++l) {
-		let props: video_layer_properties = layer_properties[l]
-		if (addr < props.map_base) {
-			continue
-		}
-		if (addr >= props.map_base + (2 << (props.mapw_log2 + props.maph_log2))) {
-			continue
-		}
-
-		return true
-	}
-	return false
-}
-
-  // @ts-ignore
-const video_is_tiledata_address = (addr: number): boolean => {
-	for (let l: number = 0; l < 2; ++l) {
-		let props: video_layer_properties = layer_properties[l]
-		if (addr < props.tile_base) {
-			continue
-		}
-		let tile_size: number = props.tilew * props.tileh * props.bits_per_pixel / 8
-		if (addr >= props.tile_base + tile_size * (props.bits_per_pixel == 1 ? 256 : 1024)) {
-			continue
-		}
-
-		return true
-	}
-	return false
-}
-
-  // @ts-ignore
-const video_is_special_address = (addr: number): boolean => {
-	return addr >= 0x1F9C0
-}
-
 // These helpers use element counts, not byte counts. The port calls them only
 // with same-width typed arrays or object arrays that model C structs.
-const memset = (dest: any, val: number, size: number) => {
-	if (dest && dest.fill) {
-		dest.fill(val, 0, size)
-		return
-	}
-	for (let i = 0; i < size; i++) dest[i] = val
+type NumericTypedArray = Uint8Array | Uint8ClampedArray | Uint16Array | Uint32Array | Int16Array | Int32Array
+type MutableArrayLike<T> = {
+	length: number,
+	[index: number]: T,
 }
 
-const memcpy = (dest: any, src: any, size: number) => {
-	if (dest && dest.set && src && src.subarray) {
-		dest.set(src.subarray(0, size), 0)
+const memset = (dest: NumericTypedArray, val: number, size: number) => {
+	dest.fill(val, 0, size)
+}
+
+const memcpy = <T>(dest: MutableArrayLike<T>, src: MutableArrayLike<T>, size: number) => {
+	if (ArrayBuffer.isView(dest) && ArrayBuffer.isView(src)) {
+		const typedDest = dest as unknown as Uint8Array
+		const typedSrc = src as unknown as Uint8Array
+		typedDest.set(typedSrc.subarray(0, size), 0)
 		return
 	}
-	if (dest && dest.set && src && src.slice) {
-		dest.set(src.slice(0, size), 0)
-		return
-	}
+	const mutableDest = dest as MutableArrayLike<unknown>
 	for (let i = 0; i < size; i++) {
-		if (ArrayBuffer.isView(dest[i]) && ArrayBuffer.isView(src[i]) && "set" in dest[i]) {
-			dest[i].set(src[i])
-		} else if (typeof src[i] === "object" && src[i] !== null) {
-			if (!dest[i]) dest[i] = Array.isArray(src[i]) ? [] : {}
-			Object.assign(dest[i], src[i])
+		const srcValue = src[i]
+		const destValue = mutableDest[i]
+		if (ArrayBuffer.isView(destValue) && ArrayBuffer.isView(srcValue)) {
+			(destValue as unknown as Uint8Array).set(srcValue as unknown as Uint8Array)
+		} else if (typeof srcValue === "object" && srcValue !== null) {
+			if (!destValue) mutableDest[i] = Array.isArray(srcValue) ? [] : {}
+			Object.assign(mutableDest[i] as object, srcValue)
 		} else {
-			dest[i] = src[i]
+			mutableDest[i] = srcValue
 		}
 	}
-}
-
-  // @ts-ignore
-const sprintf = (out: any, format: string, ...args: any[]) => {
-    let i = 0
-    let res = format.replace(/%[0-9]*[a-zA-Z]/g, (match) => {
-        let val = args[i++]
-        if (match.endsWith('X') || match.endsWith('x')) {
-            let widthStr = match.substring(1, match.length - 1)
-            let width = parseInt(widthStr, 10) || 0
-            let str = Number(val).toString(16)
-            if (match.endsWith('X')) str = str.toUpperCase()
-            return str.padStart(width, '0')
-        }
-        return String(val)
-    })
-    // If 'out' is an array, we write char codes into it
-    if (Array.isArray(out)) {
-        for (let j = 0; j < res.length; j++) {
-            out[j] = res.charCodeAt(j)
-        }
-        out[res.length] = 0 // null terminator
-    }
-    return res
 }
