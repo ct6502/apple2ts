@@ -178,45 +178,43 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
     if (getArrowKeysAsJoystick()) {
       switch (key) {
         case ARROW.LEFT:
-          if (arrowGamePad[0] === 0) {
-            arrowGamePad[0] = -1
-          } else if (arrowGamePad[0] < -4) {
-            arrowGamePad[0] = -4
-          }
+          arrowGamePad[0] = -1
           break
         case ARROW.RIGHT:
-          if (arrowGamePad[0] === 0) {
-            arrowGamePad[0] = 1
-          } else if (arrowGamePad[0] > 4) {
-            arrowGamePad[0] = 4
-          }
+          arrowGamePad[0] = 1
           break
         case ARROW.UP:
-          if (arrowGamePad[1] === 0) {
-            arrowGamePad[1] = -1
-          } else if (arrowGamePad[1] < -4) {
-            arrowGamePad[1] = -4
-          }
+          arrowGamePad[1] = -1
           break
         case ARROW.DOWN:
-          if (arrowGamePad[1] === 0) {
-            arrowGamePad[1] = 1
-          } else if (arrowGamePad[1] > 4) {
-            arrowGamePad[1] = 4
-          }
+          arrowGamePad[1] = 1
           break
       }
+      checkArrowKeyGamepadValues()
     }
   } else {
     switch (key) {
-      case ARROW.LEFT:  // fall through
-      case ARROW.RIGHT:
-        arrowGamePad[0] = 5
+      case ARROW.LEFT:
+        if (arrowGamePad[0] < 0) {
+          arrowGamePad[0] = 0
+        }
         break
-      case ARROW.UP:  // fall through
+      case ARROW.RIGHT:
+        if (arrowGamePad[0] > 0) {
+          arrowGamePad[0] = 0
+        }
+        break
+      case ARROW.UP:
+        if (arrowGamePad[1] < 0) {
+          arrowGamePad[1] = 0
+        }
+        break
       case ARROW.DOWN:
-        arrowGamePad[1] = 5
+        if (arrowGamePad[1] > 0) {
+          arrowGamePad[1] = 0
+        }
         break
     }
+    checkArrowKeyGamepadValues()
   }
 }
