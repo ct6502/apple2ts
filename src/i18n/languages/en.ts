@@ -194,7 +194,7 @@ export const en = {
 {{keyMod}}\u2190 Back in Time      {{keyMod}}\u2192 Forward in Time
 Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option
-Joystick:     press Numpad 8/2/4/6 (7/9/1/3), 0/.`,
+Joystick Keys: Numpad 8/2/4/6 (7/9/1/3), 0/5, ./Enter`,
     urlParametersBody: `address=1234 (hex load address for hex data)
 appmode=game|embed
 capslock=off
