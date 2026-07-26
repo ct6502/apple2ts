@@ -19,7 +19,7 @@ import {
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
-import { checkGamepad, handleArrowKey, ensureGamepadEventListeners } from "./devices/gamepad"
+import { checkGamepad, handleArrowKey, handleDiagonalKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
@@ -154,6 +154,13 @@ const Apple2Canvas = (props: DisplayProps) => {
     Numpad2: 10,
   }
 
+  const diagonalKeys: { [key: string]: boolean } = {
+    Numpad7: true,
+    Numpad9: true,
+    Numpad1: true,
+    Numpad3: true,
+  }
+
   const getArrowKeyName = (e: keyEvent): string | null => {
     if (e.code in arrowKeys) return e.code
     if (e.key in arrowKeys) return e.key
@@ -263,6 +270,18 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const isKeyboardLoop = inKeyboardLoop()
 
+    if (e.code in diagonalKeys) {
+      if (e.repeat) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+      handleDiagonalKey(e.code, false)
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+
     const arrowKey = getArrowKeyName(e)
     if (arrowKey) {
       if (e.repeat) {
@@ -349,6 +368,8 @@ const Apple2Canvas = (props: DisplayProps) => {
       passAppleCommandKeyRelease(true)
     } else if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
+    } else if (e.code in diagonalKeys) {
+      handleDiagonalKey(e.code, true)
     } else if (arrowKey) {
       handleArrowKey(arrowKeys[arrowKey], true)
     }

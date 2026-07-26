@@ -218,3 +218,47 @@ export const handleArrowKey = (key: ARROW, release: boolean) => {
     checkArrowKeyGamepadValues()
   }
 }
+
+export const handleDiagonalKey = (code: string, release: boolean) => {
+  if (!getArrowKeysAsJoystick()) return
+  if (!release) {
+    switch (code) {
+      case "Numpad7":
+        arrowGamePad[0] = -1
+        arrowGamePad[1] = -1
+        break
+      case "Numpad9":
+        arrowGamePad[0] = 1
+        arrowGamePad[1] = -1
+        break
+      case "Numpad1":
+        arrowGamePad[0] = -1
+        arrowGamePad[1] = 1
+        break
+      case "Numpad3":
+        arrowGamePad[0] = 1
+        arrowGamePad[1] = 1
+        break
+    }
+  } else {
+    switch (code) {
+      case "Numpad7":
+        if (arrowGamePad[0] < 0) arrowGamePad[0] = 0
+        if (arrowGamePad[1] < 0) arrowGamePad[1] = 0
+        break
+      case "Numpad9":
+        if (arrowGamePad[0] > 0) arrowGamePad[0] = 0
+        if (arrowGamePad[1] < 0) arrowGamePad[1] = 0
+        break
+      case "Numpad1":
+        if (arrowGamePad[0] < 0) arrowGamePad[0] = 0
+        if (arrowGamePad[1] > 0) arrowGamePad[1] = 0
+        break
+      case "Numpad3":
+        if (arrowGamePad[0] > 0) arrowGamePad[0] = 0
+        if (arrowGamePad[1] > 0) arrowGamePad[1] = 0
+        break
+    }
+  }
+  checkArrowKeyGamepadValues()
+}
