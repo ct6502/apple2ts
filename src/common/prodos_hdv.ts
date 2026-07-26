@@ -2309,11 +2309,17 @@ const preprocessInputFilesForMenu = async (
               menuProDosPrefixes[i] = undefined
               menuProDosCommands[i] = undefined
               continue
+            } else {
+              console.warn(`[4cade] "${displayName}": prelaunch script parsed but returned no sequence`)
             }
+          } else {
+            console.warn(`[4cade] "${displayName}": no BIN files found in .po disk`)
           }
-        } catch {
-          // Fetch failed — fall through to legacy composite approach
+        } catch (e) {
+          console.warn(`[4cade] "${displayName}": fetch/parse failed:`, e instanceof Error ? e.message : e)
         }
+      } else {
+        console.warn(`[4cade] "${displayName}": no match in 4cade database`)
       }
 
       // No 4cade DB match or fetch failed — skip this disk for direct-load export.
@@ -3394,21 +3400,14 @@ const createPackedBinaryRelay = (
   // These bytes will be copied to $0106 at runtime.
   const prelaunchBytes: number[] = []
 
-  // Prefix: zero $0200-$03FF before the game's prelaunch operations.
-  // The SAN INC decompressor's LZ back-references may point to addresses below
-  // the output region ($0800).  Our relay/loader remnants at $0200-$03FF differ
-  // from 4cade's state, corrupting decompressed output.  Zeroing these 512 bytes
-  // ensures a clean dictionary matching depack6502's all-zeros initial state.
-  // (Relay at $0300 is no longer executing when this runs from $0106.)
-  prelaunchBytes.push(0xA9, 0x00)                                               // LDA #$00
-  prelaunchBytes.push(0xA2, 0x00)                                               // LDX #$00
-  // .loop:
-  prelaunchBytes.push(0x9D, 0x00, 0x02)                                         // STA $0200,X
-  prelaunchBytes.push(0x9D, 0x00, 0x03)                                         // STA $0300,X
-  prelaunchBytes.push(0xE8)                                                      // INX
-  prelaunchBytes.push(0xD0, 0xF7)                                               // BNE .loop (rel=-9)
+  // Track callback vector placeholder positions for patching
+  let cbVectorLoIdx = -1  // index in prelaunchBytes of callback addr lo byte
+  let cbVectorHiIdx = -1  // index in prelaunchBytes of callback addr hi byte
+  let cbBodyOffset = -1   // byte offset where callback body starts
+  let skipCallbackOps = false  // skip ops after jmp_decompress (callback body is just RTS)
 
   for (const step of sequence) {
+    if (skipCallbackOps) continue  // callback body ops are no-ops for us
     switch (step.op) {
       case "patch":
         prelaunchBytes.push(0xA9, step.val & 0xFF)                              // LDA #val
@@ -3427,19 +3426,64 @@ const createPackedBinaryRelay = (
       case "rdRam2":
         prelaunchBytes.push(0x8D, 0x80, 0xC0)                                   // STA $C080
         break
+      case "callback_vector":
+        // LDA #<callback; STA loAddr; LDA #>callback; STA hiAddr
+        // The callback address bytes are placeholders — patched below.
+        prelaunchBytes.push(0xA9)
+        cbVectorLoIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00)                                                // placeholder lo
+        prelaunchBytes.push(0x8D, step.loAddr & 0xFF, (step.loAddr >> 8) & 0xFF) // STA loAddr
+        prelaunchBytes.push(0xA9)
+        cbVectorHiIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00)                                                // placeholder hi
+        prelaunchBytes.push(0x8D, step.hiAddr & 0xFF, (step.hiAddr >> 8) & 0xFF) // STA hiAddr
+        break
+      case "jmp_decompress":
+        prelaunchBytes.push(0x4C, step.addr & 0xFF, (step.addr >> 8) & 0xFF)    // JMP addr
+        cbBodyOffset = prelaunchBytes.length  // callback body starts here
+        // The decompressor leaves LC in r/w mode (game data may extend to
+        // $D000-$FFFF in LC bank 2).  Do NOT switch to ROM-read here — the game
+        // or decompressor needs LC readable after callback return.  Our JSR stubs
+        // ($DFB4/$DFAE) are no-ops, so the callback is just RTS.
+        skipCallbackOps = true  // skip remaining ops (they're no-op JSR stubs + readRom)
+        break
     }
   }
-  // Final JMP to game entry point
-  prelaunchBytes.push(0x4C, entryAddress & 0xFF, (entryAddress >> 8) & 0xFF)
+
+  // Patch callback vector with computed address if this is a callback-based prelaunch.
+  // The callback body is assembled right after the JMP, at $0106 + cbBodyOffset.
+  if (cbVectorLoIdx >= 0 && cbVectorHiIdx >= 0 && cbBodyOffset >= 0) {
+    const cbAddr = 0x0106 + cbBodyOffset
+    prelaunchBytes[cbVectorLoIdx] = cbAddr & 0xFF
+    prelaunchBytes[cbVectorHiIdx] = (cbAddr >> 8) & 0xFF
+    // Callback body: The SAN INC decompressor's first stage copies its
+    // second-stage decompression code to $BF00, then JMPs here (via the
+    // modified JMP at the callback_vector address).  We MUST call the
+    // second-stage decompressor with JSR $BF00 to actually decompress the game.
+    // After decompression returns, switch LC to rwRam2 so our BRK vector
+    // at $FFFE/$FFFF ($DFFC → RTI) remains accessible, then RTS to game entry.
+    prelaunchBytes.push(0x20, 0x00, 0xBF)                                       // JSR $BF00 (run stage-2 decompressor)
+    prelaunchBytes.push(0x2C, 0x83, 0xC0)                                       // BIT $C083
+    prelaunchBytes.push(0x2C, 0x83, 0xC0)                                       // BIT $C083 (LC read/write RAM bank 2)
+    prelaunchBytes.push(0x60)                                                    // RTS
+  }
+
+  // Final JMP to game entry point (skipped for callback-based prelaunches
+  // where the decompressor handles the entry jump internally).
+  if (entryAddress >= 0) {
+    prelaunchBytes.push(0x4C, entryAddress & 0xFF, (entryAddress >> 8) & 0xFF)
+  }
 
   // PrelaunchInit stub: 22 bytes at $EA-$FF (matches 4cade exactly)
+  // PrelaunchInit — NO firmware dispatch (avoids $FBB4 → STA $C007 → empty slot BRK).
+  // Direct ZP writes replace JSR $FE89/$FE93/$FE84. Soft switches/HOME done in Phase 5.
   const PREINIT_BYTES = [
-    0x8D, 0x82, 0xC0,       // $EA: STA $C082       (read ROM, no write)
-    0x20, 0x89, 0xFE,       // $ED: JSR $FE89       (IN#0 → KSW=$FD1B)
-    0x20, 0x93, 0xFE,       // $F0: JSR $FE93       (PR#0 → CSW=$FDF0)
-    0x20, 0x84, 0xFE,       // $F3: JSR $FE84       (NORMAL)
-    0x20, 0x2F, 0xFB,       // $F6: JSR $FB2F       (TEXT)
-    0x20, 0x58, 0xFC,       // $F9: JSR $FC58       (HOME)
+    0xA9, 0xF0, 0x85, 0x36, // $EA: LDA #$F0, STA $36  (CSWL)
+    0xA9, 0x1B, 0x85, 0x38, // $EE: LDA #$1B, STA $38  (KSWL)
+    0xA9, 0xFD,              // $F2: LDA #$FD
+    0x85, 0x37,              // $F4: STA $37             (CSWH → CSW=$FDF0)
+    0x85, 0x39,              // $F6: STA $39             (KSWH → KSW=$FD1B)
+    0xA9, 0xFF, 0x85, 0x32, // $F8: LDA #$FF, STA $32  (INVFLG — NORMAL mode)
     0x78,                    // $FC: SEI
     0x4C, 0x06, 0x01,       // $FD: JMP $0106
   ]
@@ -3516,10 +3560,10 @@ const createPackedBinaryRelay = (
   // ======= PHASE 5: LaunchInternal setup =======
   // Matches 4cade's LaunchInternal: wipe ZP, reset aux switches, seed RNDSEED.
   code.push(0x8D, 0x82, 0xC0)                                 // STA $C082 (read ROM, no write)
+  code.push(0x8D, 0x06, 0xC0)                                 // STA $C006 (INTCXROM — internal ROM for all slots)
   code.push(0x8D, 0x00, 0xC0)                                 // STA $C000 (80STORE off)
   code.push(0x8D, 0x02, 0xC0)                                 // STA $C002 (READMAINMEM)
   code.push(0x8D, 0x04, 0xC0)                                 // STA $C004 (WRITEMAINMEM)
-  code.push(0x8D, 0x06, 0xC0)                                 // STA $C006 (SLOTCXROM — slot card ROMs accessible)
   code.push(0x8D, 0x08, 0xC0)                                 // STA $C008 (ALTZP off)
   code.push(0x8D, 0x0C, 0xC0)                                 // STA $C00C (CLR80VID)
   code.push(0x8D, 0x0E, 0xC0)                                 // STA $C00E (ALTCHAR off)
@@ -3535,6 +3579,23 @@ const createPackedBinaryRelay = (
   // Seed RNDSEED ($4E=$65, $4F=$02) — matches 4cade's LaunchInternal
   code.push(0xA9, 0x65, 0x85, 0x4E)                           // LDA #$65, STA $4E
   code.push(0xA9, 0x02, 0x85, 0x4F)                           // LDA #$02, STA $4F
+  // Set text window (ZP wipe left $21/$23 at 0; HOME needs valid window)
+  code.push(0xA9, 0x28, 0x85, 0x21)                           // LDA #$28, STA $21 (WNDWDTH=40)
+  code.push(0xA9, 0x18, 0x85, 0x23)                           // LDA #$18, STA $23 (WNDBTM=24)
+  // SETTXT via soft switches (no firmware dispatch)
+  code.push(0x2C, 0x51, 0xC0)                                 // BIT $C051 (TEXT)
+  code.push(0x2C, 0x54, 0xC0)                                 // BIT $C054 (PAGE1)
+  code.push(0x2C, 0x56, 0xC0)                                 // BIT $C056 (LORES)
+  // HOME: clear text page $0400-$07FF with $A0 (space)
+  code.push(0xA9, 0xA0)                                       // LDA #$A0
+  code.push(0xA0, 0x00)                                       // LDY #$00
+  const homeLoop = code.length
+  code.push(0x99, 0x00, 0x04)                                 // STA $0400,Y
+  code.push(0x99, 0x00, 0x05)                                 // STA $0500,Y
+  code.push(0x99, 0x00, 0x06)                                 // STA $0600,Y
+  code.push(0x99, 0x00, 0x07)                                 // STA $0700,Y
+  code.push(0xC8)                                              // INY
+  code.push(0xD0, (homeLoop - (code.length + 2)) & 0xFF)      // BNE homeLoop
   // Reset stack and disable interrupts
   code.push(0xA2, 0xFF, 0x9A)                                 // LDX #$FF, TXS
   code.push(0x78)                                              // SEI

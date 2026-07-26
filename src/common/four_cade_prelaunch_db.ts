@@ -524,6 +524,8 @@ export type PrelaunchOp =
   | { op: "readRom" }                             // STA $C082 — LC read ROM, no write
   | { op: "rwRam2" }                              // BIT $C083; BIT $C083 — LC read/write RAM bank 2
   | { op: "rdRam2" }                              // STA $C080 — LC read RAM bank 2, no write
+  | { op: "callback_vector"; loAddr: number; hiAddr: number }  // store callback address at loAddr/hiAddr
+  | { op: "jmp_decompress"; addr: number }        // JMP to decompressor (callback-based, no return)
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
 export type ParsedPrelaunch = {
@@ -558,14 +560,34 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let hasDecompress = false
   let pendingLdaVal: number | undefined
 
-  if (source.includes("!pseudopc") || source.includes("callback")) return undefined
+  if (source.includes("!pseudopc")) return undefined
   if (source.match(/jmp\s+\(/i)) return undefined
+
+  // Callback detection state — handles decompressors that JMP to a routine
+  // which calls back into the prelaunch code after decompression (e.g. Frogger).
+  let callbackLoAddr: number | undefined
+  let callbackHiAddr: number | undefined
+  let pendingCallbackLo = false
+  let pendingCallbackHi = false
+  let inCallbackBody = false
 
   const lines = source.split(/\r?\n/)
   for (const rawLine of lines) {
     const line = rawLine.replace(/;.*$/, "").trim()
     if (!line) continue
     if (line.startsWith("!") || line.startsWith("*=")) continue
+
+    // Detect callback label (e.g. "callback" or "callback:" on its own line)
+    if (line.match(/^callback\b:?$/i)) { inCallbackBody = true; continue }
+
+    // In callback body: skip JSR and instruction-level lines (they may include
+    // ProDOS MLI calls with inline parameters we can't reproduce).  Only process
+    // recognized macros which provide essential cleanup (DISABLE_ACCEL, etc.).
+    if (inCallbackBody) {
+      if (line.match(/^rts\b/i)) break  // end of callback
+      // Only process + macros in callback body (they're handled below)
+      if (!line.startsWith("+")) { pendingLdaVal = undefined; continue }
+    }
 
     // 4cade macro expansions — must match acme macros in src/macros.a exactly.
     // LC bank 2 function addresses: EnableAccelerator=$DFB7, DisableAccelerator=$DFB4,
@@ -585,15 +607,24 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     if (line.match(/^\+READ_RAM2_NO_WRITE\b/)) { ops.push({ op: "rdRam2" }); continue }
     if (line.startsWith("+")) continue
 
+    // Detect callback address setup: lda #<callback / lda #>callback
+    if (line.match(/^lda\s+#<\w+/i)) { pendingCallbackLo = true; pendingLdaVal = undefined; continue }
+    if (line.match(/^lda\s+#>\w+/i)) { pendingCallbackHi = true; pendingLdaVal = undefined; continue }
+
     const ldaHexMatch = line.match(/^lda\s+#\$([0-9a-fA-F]{1,2})\b/i)
     if (ldaHexMatch) { pendingLdaVal = parseInt(ldaHexMatch[1], 16); continue }
     const ldaDecMatch = line.match(/^lda\s+#(\d+)\b/i)
     if (ldaDecMatch) { pendingLdaVal = parseInt(ldaDecMatch[1], 10) & 0xFF; continue }
 
     const staMatch = line.match(/^sta\s+\$([0-9a-fA-F]{2,4})\b/i)
-    if (staMatch && pendingLdaVal !== undefined) {
-      ops.push({ op: "patch", addr: parseInt(staMatch[1], 16), val: pendingLdaVal })
-      continue
+    if (staMatch) {
+      const addr = parseInt(staMatch[1], 16)
+      if (pendingCallbackLo) { callbackLoAddr = addr; pendingCallbackLo = false; continue }
+      if (pendingCallbackHi) { callbackHiAddr = addr; pendingCallbackHi = false; continue }
+      if (pendingLdaVal !== undefined) {
+        ops.push({ op: "patch", addr, val: pendingLdaVal })
+        continue
+      }
     }
 
     const jsrMatch = line.match(/^jsr\s+\$([0-9a-fA-F]{2,4})\b/i)
@@ -606,11 +637,25 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     }
 
     const jmpMatch = line.match(/^jmp\s+\$([0-9a-fA-F]{2,4})\b/i)
-    if (jmpMatch) { entry = parseInt(jmpMatch[1], 16); break }
+    if (jmpMatch) {
+      const addr = parseInt(jmpMatch[1], 16)
+      // Callback-based decompress: JMP before any JSR decompress, with callback vector set
+      if (!hasDecompress && callbackLoAddr !== undefined && callbackHiAddr !== undefined) {
+        ops.push({ op: "callback_vector", loAddr: callbackLoAddr, hiAddr: callbackHiAddr })
+        ops.push({ op: "jmp_decompress", addr })
+        hasDecompress = true
+        continue  // don't break — callback body follows
+      }
+      entry = addr
+      break
+    }
 
     pendingLdaVal = undefined
   }
 
+  // Callback-based prelaunches have no explicit entry — the decompressor handles it.
+  // Use entry = -1 to signal this to the relay generator.
+  if (entry === undefined && inCallbackBody) entry = -1
   if (entry === undefined) return undefined
   if (!hasDecompress && ops.length === 0) return undefined
   return { sequence: ops, entry }
