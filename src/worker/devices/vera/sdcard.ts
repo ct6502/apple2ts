@@ -1,4 +1,8 @@
-// Vera Card for Apple2TS copyright Michael Morrison (codebythepound@gmail.com)
+// Commander X16 Emulator
+// Copyright (c) 2019 Michael Steil
+// Copyright (c) 2020 Frank van den Hoef
+// Port to typescript and mods by Michael Morrison
+// All rights reserved. License: 2-clause BSD
 
 const SPI_CLOCK_RATE_MHZ = 12 // really 12.5, but it won't matter
 

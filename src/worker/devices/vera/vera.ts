@@ -27,13 +27,11 @@ const veraInit = (): boolean => {
 }
 
 export const initVera = () => {
-  console.log("[VERA] initVera")
   video_reset()
   sdcard_select(false)
 }
 
 export const resetVera = () => {
-  console.log("[VERA] resetVera")
   video_reset()
 }
 

@@ -1,3 +1,9 @@
+// Commander X16 Emulator
+// Copyright (c) 2019 Michael Steil
+// Copyright (c) 2020 Frank van den Hoef
+// Port to typescript and mods by Michael Morrison
+// All rights reserved. License: 2-clause BSD
+
 const WF_PULSE = 0
 const WF_SAWTOOTH = 1
 const WF_TRIANGLE = 2
