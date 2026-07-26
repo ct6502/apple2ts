@@ -234,9 +234,20 @@ export const zhTW = {
   "print": {
     "printer": "印表機",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "列印",
     "clear": "清除",
-    "save": "儲存輸出"
+    "save": "儲存輸出",
+    "dumpScreen": "將目前螢幕傳送到印表機",
+    "dumpScreenInverse": "將目前螢幕傳送（反色）",
+    "sendToPrinter": "傳送到印表機",
+    "tearOff": "撕下頁面並重設",
+    "printedPage": "已列印頁面",
+    "printerConfig": "印表機設定",
+    "pageLength": "頁面長度",
+    "pageLengthLetter": "11英吋（信紙）",
+    "pageLengthA4": "11.7英吋（A4）",
+    "pageLengthTwelve": "12英吋"
   },
   "device": {
     "machineConfiguration": "機器配置",

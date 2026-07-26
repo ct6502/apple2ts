@@ -135,7 +135,7 @@ LANGUAGES.forEach(lang => {
   const targetPath = path.join(LANG_DIR, `${lang}.ts`);
   const targetObj = parseFile(targetPath);
   const merged = sync(sourceObj, targetObj, lang);
-  const output = `export const ${EXPORT_NAMES[lang]} = ${JSON.stringify(merged, null, 2)};\n`;
+  const output = `export const ${EXPORT_NAMES[lang]} = ${JSON.stringify(merged, null, 2)}\n`;
   fs.writeFileSync(targetPath, output);
   console.log(`\u2705 Synced: ${lang}.ts`);
 });

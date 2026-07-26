@@ -234,9 +234,20 @@ export const es = {
   "print": {
     "printer": "Impresora",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "Imprimir",
     "clear": "Limpiar",
-    "save": "Guardar Salida"
+    "save": "Guardar Salida",
+    "dumpScreen": "Volcar pantalla actual a la impresora",
+    "dumpScreenInverse": "Volcar pantalla actual (Inverso)",
+    "sendToPrinter": "Enviar a la impresora",
+    "tearOff": "Arrancar página y restablecer",
+    "printedPage": "Página impresa",
+    "printerConfig": "Configuración de la impresora",
+    "pageLength": "Longitud de página",
+    "pageLengthLetter": "11 pulgadas (Carta)",
+    "pageLengthA4": "11,7 pulgadas (A4)",
+    "pageLengthTwelve": "12 pulgadas"
   },
   "device": {
     "machineConfiguration": "Configuración de Máquina",
@@ -256,9 +267,12 @@ export const es = {
     "diskIsApple2TSCollection": "El disco es parte de la colección Apple2TS",
     "diskIsInternetArchive": "El disco es parte del Internet Archive",
     "clickToRemoveFromCollection": "Haz clic para quitar de la colección de discos",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Haz clic para añadir a la colección de discos",
     "diskIsSyncedVia": "El disco se sincroniza vía",
-    "loadDiskIntoDrive": "Cargar Disco en Unidad"
+    "loadDiskIntoDrive": "Cargar Disco en Unidad",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "Retroceder en el Tiempo",

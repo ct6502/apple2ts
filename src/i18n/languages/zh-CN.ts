@@ -234,9 +234,20 @@ export const zhCN = {
   "print": {
     "printer": "打印机",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "打印",
     "clear": "清除",
-    "save": "保存输出"
+    "save": "保存输出",
+    "dumpScreen": "将当前屏幕发送到打印机",
+    "dumpScreenInverse": "将当前屏幕发送（反色）",
+    "sendToPrinter": "发送到打印机",
+    "tearOff": "撕下页面并重置",
+    "printedPage": "已打印页面",
+    "printerConfig": "打印机配置",
+    "pageLength": "页面长度",
+    "pageLengthLetter": "11英寸（信纸）",
+    "pageLengthA4": "11.7英寸（A4）",
+    "pageLengthTwelve": "12英寸"
   },
   "device": {
     "machineConfiguration": "机器配置",

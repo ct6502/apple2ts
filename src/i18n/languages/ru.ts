@@ -234,9 +234,20 @@ export const ru = {
   "print": {
     "printer": "Принтер",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "Печать",
     "clear": "Очистить",
-    "save": "Сохранить вывод"
+    "save": "Сохранить вывод",
+    "dumpScreen": "Вывести текущий экран на принтер",
+    "dumpScreenInverse": "Вывести текущий экран (Инверсия)",
+    "sendToPrinter": "Отправить на принтер",
+    "tearOff": "Оторвать страницу и сбросить",
+    "printedPage": "Напечатанная страница",
+    "printerConfig": "Настройка принтера",
+    "pageLength": "Длина страницы",
+    "pageLengthLetter": "11 дюймов (Letter)",
+    "pageLengthA4": "11,7 дюймов (A4)",
+    "pageLengthTwelve": "12 дюймов"
   },
   "device": {
     "machineConfiguration": "Конфигурация машины",
@@ -256,9 +267,12 @@ export const ru = {
     "diskIsApple2TSCollection": "Диск является частью коллекции Apple2TS",
     "diskIsInternetArchive": "Диск является частью Internet Archive",
     "clickToRemoveFromCollection": "Нажмите, чтобы удалить из коллекции дисков",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Нажмите, чтобы добавить в коллекцию дисков",
     "diskIsSyncedVia": "Диск синхронизирован через",
-    "loadDiskIntoDrive": "Загрузить диск в привод"
+    "loadDiskIntoDrive": "Загрузить диск в привод",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "Вернуться во времени",

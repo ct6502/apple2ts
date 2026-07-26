@@ -7,6 +7,7 @@ import { constructAudio, playAudio } from "../../../common/utility"
 import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
 import { setSerialConfigCallback } from "../../main2worker"
 import { getSerialMode } from "../serial/serialhub"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 enum AUDIO {
   TURN_ON = 0,
@@ -17,6 +18,7 @@ const PRINTER_DURATIONS = [0.7083, 1.292, 2.459, 3.625, 4.125, 5.375, 6.5, 7.625
 const CLIP_LENGTH = PRINTER_DURATIONS[PRINTER_DURATIONS.length - 1]
 
 const ImageWriter = () => {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [canvas] = useState(document.createElement("canvas"))
   const [isPrinting, setIsPrinting] = useState(false)
@@ -135,7 +137,7 @@ const ImageWriter = () => {
       <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
         style={{ borderWidth: 0 }}
         src={img1} alt="iwii"
-        title="ImageWriter II (Slot 1)"
+        title={t("print.imageWriterII")}
         height="57px"
         onClick={() => { setOpen(true) }} />
       <PrinterDialog

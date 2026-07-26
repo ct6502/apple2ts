@@ -264,9 +264,20 @@ tour=main|debug|settings
   print: {
     printer: "Printer",
     imageWriter: "ImageWriter",
+    imageWriterII: "ImageWriter II (Slot 1)",
     print: "Print",
     clear: "Clear",
-    save: "Save Output"
+    save: "Save Output",
+    dumpScreen: "Dump Current Screen to Printer",
+    dumpScreenInverse: "Dump Current Screen (Inverse)",
+    sendToPrinter: "Send to Printer",
+    tearOff: "Tear off Page and Reset",
+    printedPage: "Printed page",
+    printerConfig: "Printer Configuration",
+    pageLength: "Page Length",
+    pageLengthLetter: "11 inch (Letter)",
+    pageLengthA4: "11.7 inch (A4)",
+    pageLengthTwelve: "12 inch"
   },
   device: {
     machineConfiguration: "Machine Configuration",

@@ -234,9 +234,20 @@ export const nl = {
   "print": {
     "printer": "Printer",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "Afdrukken",
     "clear": "Wissen",
-    "save": "Output Opslaan"
+    "save": "Output Opslaan",
+    "dumpScreen": "Huidig scherm naar printer sturen",
+    "dumpScreenInverse": "Huidig scherm sturen (Omgekeerd)",
+    "sendToPrinter": "Naar printer sturen",
+    "tearOff": "Pagina afscheuren en resetten",
+    "printedPage": "Afgedrukte pagina",
+    "printerConfig": "Printerconfiguratie",
+    "pageLength": "Paginalengte",
+    "pageLengthLetter": "11 inch (Letter)",
+    "pageLengthA4": "11,7 inch (A4)",
+    "pageLengthTwelve": "12 inch"
   },
   "device": {
     "machineConfiguration": "Machine Configuratie",
@@ -256,9 +267,12 @@ export const nl = {
     "diskIsApple2TSCollection": "Disk is onderdeel van de Apple2TS collectie",
     "diskIsInternetArchive": "Disk is onderdeel van Internet Archive",
     "clickToRemoveFromCollection": "Klik om uit disk collectie te verwijderen",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Klik om toe te voegen aan schijfverzameling",
     "diskIsSyncedVia": "Disk is gesynchroniseerd via",
-    "loadDiskIntoDrive": "Disk Laden in Drive"
+    "loadDiskIntoDrive": "Disk Laden in Drive",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "Terug in de Tijd",

@@ -234,9 +234,20 @@ export const sv = {
   "print": {
     "printer": "Skrivare",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "Skriv ut",
     "clear": "Rensa",
-    "save": "Spara Utdata"
+    "save": "Spara Utdata",
+    "dumpScreen": "Dumpa aktuell skärm till skrivaren",
+    "dumpScreenInverse": "Dumpa aktuell skärm (Inverterad)",
+    "sendToPrinter": "Skicka till skrivaren",
+    "tearOff": "Riv av sidan och återställ",
+    "printedPage": "Utskriven sida",
+    "printerConfig": "Skrivarkonfiguration",
+    "pageLength": "Sidlängd",
+    "pageLengthLetter": "11 tum (Letter)",
+    "pageLengthA4": "11,7 tum (A4)",
+    "pageLengthTwelve": "12 tum"
   },
   "device": {
     "machineConfiguration": "Maskinkonfiguration",
@@ -256,9 +267,12 @@ export const sv = {
     "diskIsApple2TSCollection": "Disk är del av Apple2TS-samlingen",
     "diskIsInternetArchive": "Disk är del av Internet Archive",
     "clickToRemoveFromCollection": "Klicka för att ta bort från disksamling",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Klicka för att lägga till i skivsamlingen",
     "diskIsSyncedVia": "Disk är synkroniserad via",
-    "loadDiskIntoDrive": "Ladda Disk i Enhet"
+    "loadDiskIntoDrive": "Ladda Disk i Enhet",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "Gå Tillbaka i Tiden",

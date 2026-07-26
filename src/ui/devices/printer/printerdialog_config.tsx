@@ -6,6 +6,7 @@ import {
 import PopupMenu from "../../controls/popupmenu"
 import { Printer } from "./iwii"
 import { getPreferencePageLength } from "../../localstorage"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 export const PrinterDialogConfig = (props: { printer: Printer }) => {
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
@@ -18,6 +19,7 @@ export const PrinterDialogConfig = (props: { printer: Printer }) => {
     props.printer.setPageLength(length)
   }
 
+  const { t } = useTranslation()
   const pageLength = getPreferencePageLength()
 
   return (
@@ -25,7 +27,7 @@ export const PrinterDialogConfig = (props: { printer: Printer }) => {
       <button
         id="basic-button"
         className="push-button"
-        title="Printer Configuration"
+        title={t("print.printerConfig")}
         onClick={handleClick}
       >
         <FontAwesomeIcon icon={faGear} />
@@ -35,10 +37,10 @@ export const PrinterDialogConfig = (props: { printer: Printer }) => {
         location={popupLocation}
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
-          {label: "Page Length", isHeading: true},
-          {label: "11 inch (Letter)", isSelected: () => {return pageLength === 11}, onClick: () => { setPageLength(11) }},
-          {label: "11.7 inch (A4)", isSelected: () => {return pageLength === 11.7}, onClick: () => { setPageLength(11.7) }},
-          {label: "12 inch", isSelected: () => {return pageLength === 12}, onClick: () => { setPageLength(12) }},
+          {label: t("print.pageLength"), isHeading: true},
+          {label: t("print.pageLengthLetter"), isSelected: () => {return pageLength === 11}, onClick: () => { setPageLength(11) }},
+          {label: t("print.pageLengthA4"), isSelected: () => {return pageLength === 11.7}, onClick: () => { setPageLength(11.7) }},
+          {label: t("print.pageLengthTwelve"), isSelected: () => {return pageLength === 12}, onClick: () => { setPageLength(12) }},
         ]]}
       />
     </span>

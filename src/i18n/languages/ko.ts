@@ -234,9 +234,20 @@ export const ko = {
   "print": {
     "printer": "프린터",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "인쇄",
     "clear": "지우기",
-    "save": "출력 저장"
+    "save": "출력 저장",
+    "dumpScreen": "현재 화면을 프린터로 출력",
+    "dumpScreenInverse": "현재 화면 출력 (반전)",
+    "sendToPrinter": "프린터로 보내기",
+    "tearOff": "페이지 떼어내기 및 초기화",
+    "printedPage": "인쇄된 페이지",
+    "printerConfig": "프린터 구성",
+    "pageLength": "페이지 길이",
+    "pageLengthLetter": "11인치 (레터)",
+    "pageLengthA4": "11.7인치 (A4)",
+    "pageLengthTwelve": "12인치"
   },
   "device": {
     "machineConfiguration": "머신 구성",
@@ -256,9 +267,12 @@ export const ko = {
     "diskIsApple2TSCollection": "디스크가 Apple2TS 컴렉션의 일부입니다",
     "diskIsInternetArchive": "디스크가 Internet Archive의 일부입니다",
     "clickToRemoveFromCollection": "클릭하여 디스크 컬렉션에서 제거",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "클릭하여 디스크 컬렉션에 추가",
     "diskIsSyncedVia": "디스크가 동기화됨",
-    "loadDiskIntoDrive": "드라이브에 디스크 로드"
+    "loadDiskIntoDrive": "드라이브에 디스크 로드",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "시간을 거슬러 올라가기",

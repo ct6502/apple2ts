@@ -13,17 +13,19 @@ import { imagewriterDumpScreen } from "./imagewriterdumpscreen"
 import { CopyCanvas } from "./copycanvas"
 import { getPreferencePageLength, getPreferencePrinterDialogPosition, setPreferencePrinterDialogPosition } from "../../localstorage"
 import { PrinterDialogConfig } from "./printerdialog_config"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 export interface PageImageProps {
   imageData: string,
-  pageLength: number
+  pageLength: number,
+  altText: string
 }
 
 const PageImage = (props: PageImageProps) => {
   return <div className="printer-paper" style={{ marginBottom: "0px", borderBottom: "2px dashed #999", paddingBottom: "10px" }}>
     <img 
       src={props.imageData}
-      alt="Printed page"
+      alt={props.altText}
       className="printer-canvas"
       style={{ width: `${1224 / 2.5}px`, height: `${props.pageLength * 144 / 2.5}px` }}
     />
@@ -39,6 +41,7 @@ export interface PrinterDialogProps {
 
 const PrinterDialog = (props: PrinterDialogProps) => {
   const { open } = props
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState([0, 0])
   const [dragging, setDragging] = useState(false)
@@ -155,7 +158,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
               <PrinterDialogConfig printer={props.printer} />
               <button className="push-button"
                 style={{ color: `${buttonColor}` }}
-                title="Dump Current Screen to Printer"
+                title={t("print.dumpScreen")}
                 onClick={async () => {
                   await imagewriterDumpScreen()
                 }}>
@@ -163,7 +166,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
               </button>
               <button className="push-button"
                 style={{ color: `${buttonColor}` }}
-                title="Dump Current Screen (Inverse)"
+                title={t("print.dumpScreenInverse")}
                 onClick={async () => {
                   await imagewriterDumpScreen(true)
                 }}>
@@ -172,20 +175,19 @@ const PrinterDialog = (props: PrinterDialogProps) => {
               <button className="push-button"
                 disabled={!hasPrinterData}
                 style={{ color: `${buttonColor}` }}
-                title="Send to Printer"
+                title={t("print.sendToPrinter")}
                 onClick={handlePrint}>
                 <FontAwesomeIcon icon={faPrint} />
               </button>
               <button className="push-button"
                 disabled={!hasPrinterData}
                 style={{ color: `${buttonColor}` }}
-                title="Tear off Page and Reset"
+                title={t("print.tearOff")}
                 onClick={handleClear}>
                 <FontAwesomeIcon icon={faTrashCan} />
               </button>
               <button className="push-button"
                 style={{ color: `${buttonColor}` }}
-                title="Close Dialog"
                 onClick={() => props.onClose()}>
                 <FontAwesomeIcon icon={faXmark} />
               </button>
@@ -199,7 +201,7 @@ const PrinterDialog = (props: PrinterDialogProps) => {
             padding: "10px"
           }}>
             {props.printer.getPages().map((pageData, index) => (
-              <PageImage key={index} imageData={pageData} pageLength={pageLength} />
+              <PageImage key={index} imageData={pageData} pageLength={pageLength} altText={t("print.printedPage")} />
             ))}
             {(props.printer.hasRenderedData() || !props.printer.hasData()) && <CopyCanvas srcCanvas={props.canvas} pageLength={pageLength} />}
           </div>

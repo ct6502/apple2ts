@@ -234,9 +234,20 @@ export const fr = {
   "print": {
     "printer": "Imprimante",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "Imprimer",
     "clear": "Effacer",
-    "save": "Sauvegarder la Sortie"
+    "save": "Sauvegarder la Sortie",
+    "dumpScreen": "Copier l'écran actuel vers l'imprimante",
+    "dumpScreenInverse": "Copier l'écran actuel (Inversé)",
+    "sendToPrinter": "Envoyer à l'imprimante",
+    "tearOff": "Arracher la page et réinitialiser",
+    "printedPage": "Page imprimée",
+    "printerConfig": "Configuration de l'imprimante",
+    "pageLength": "Longueur de page",
+    "pageLengthLetter": "11 pouces (Lettre)",
+    "pageLengthA4": "11,7 pouces (A4)",
+    "pageLengthTwelve": "12 pouces"
   },
   "device": {
     "machineConfiguration": "Configuration de la Machine",
@@ -256,9 +267,12 @@ export const fr = {
     "diskIsApple2TSCollection": "Le disque fait partie de la collection Apple2TS",
     "diskIsInternetArchive": "Le disque fait partie d'Internet Archive",
     "clickToRemoveFromCollection": "Cliquer pour retirer de la collection de disques",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Cliquez pour ajouter à la collection de disques",
     "diskIsSyncedVia": "Le disque est synchronisé via",
-    "loadDiskIntoDrive": "Charger le Disque dans le Lecteur"
+    "loadDiskIntoDrive": "Charger le Disque dans le Lecteur",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "Remonter dans le Temps",

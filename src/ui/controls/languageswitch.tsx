@@ -1,6 +1,4 @@
 import React, { useState } from "react"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faGlobe } from "@fortawesome/free-solid-svg-icons"
 import { useTranslation } from "../../i18n/useTranslation"
 import { Language, LanguageNames } from "../../i18n"
 import PopupMenu from "./popupmenu"
@@ -45,15 +43,10 @@ const LanguageSwitch: React.FC = () => {
     <span>
       <button
         className="push-button"
-        title={`${getCurrentLanguageName()} - 選擇語言 / Select Language`}
+        title={`${getCurrentLanguageName()} - Language 語言`}
         onClick={handleClick}
-        style={{ position: "relative", minWidth: "45px" }}
       >
-        <FontAwesomeIcon
-          icon={faGlobe}
-          style={{ fontSize: "0.8em", marginRight: "4px" }}
-        />
-        <span style={{ fontSize: "0.8em" }}>
+        <span style={{ fontSize: "1em" }}>
           {getCurrentFlag()}
         </span>
       </button>

@@ -234,9 +234,20 @@ export const ja = {
   "print": {
     "printer": "プリンタ",
     "imageWriter": "ImageWriter",
+    "imageWriterII": "ImageWriter II (Slot 1)",
     "print": "印刷",
     "clear": "クリア",
-    "save": "出力を保存"
+    "save": "出力を保存",
+    "dumpScreen": "現在の画面をプリンタに出力",
+    "dumpScreenInverse": "現在の画面を出力（反転）",
+    "sendToPrinter": "プリンタに送信",
+    "tearOff": "ページを切り取りリセット",
+    "printedPage": "印刷されたページ",
+    "printerConfig": "プリンタ設定",
+    "pageLength": "ページの長さ",
+    "pageLengthLetter": "11インチ（レター）",
+    "pageLengthA4": "11.7インチ（A4）",
+    "pageLengthTwelve": "12インチ"
   },
   "device": {
     "machineConfiguration": "マシン構成",
@@ -256,9 +267,12 @@ export const ja = {
     "diskIsApple2TSCollection": "このディスクはApple2TSコレクションの一部です",
     "diskIsInternetArchive": "このディスクはInternet Archiveの一部です",
     "clickToRemoveFromCollection": "クリックしてディスクコレクションから削除",
+    "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "クリックしてディスクコレクションに追加",
     "diskIsSyncedVia": "ディスクは同期済みです",
-    "loadDiskIntoDrive": "ドライブにディスクを読み込み"
+    "loadDiskIntoDrive": "ドライブにディスクを読み込み",
+    "cloudAuthRequired": "auth required",
+    "signIn": "Sign in"
   },
   "debugControls": {
     "goBackInTime": "時間を戻る",
