@@ -520,9 +520,10 @@ export const FOUR_CADE_PRELAUNCH_DB: Record<string, FourCadeEntry> = {
 export type PrelaunchOp =
   | { op: "patch"; addr: number; val: number }   // LDA #val; STA addr
   | { op: "call"; addr: number }                  // JSR addr
-  | { op: "decompress" }                          // JSR to packed binary entry
+  | { op: "decompress"; addr: number }            // JSR to decompressor entry
   | { op: "readRom" }                             // STA $C082 — LC read ROM, no write
   | { op: "rwRam2" }                              // BIT $C083; BIT $C083 — LC read/write RAM bank 2
+  | { op: "rdRam2" }                              // STA $C080 — LC read RAM bank 2, no write
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
 export type ParsedPrelaunch = {
@@ -566,23 +567,28 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     if (!line) continue
     if (line.startsWith("!") || line.startsWith("*=")) continue
 
-    if (line.match(/^\+ENABLE_ACCEL_LC\b/)) { ops.push({ op: "rwRam2" }); continue }
-    if (line.match(/^\+ENABLE_ACCEL_AND_HIDE_ARTWORK_LC\b/)) { ops.push({ op: "rwRam2" }); continue }
-    if (line.match(/^\+ENABLE_ACCEL_AND_HIDE_ARTWORK\b/)) { ops.push({ op: "rwRam2" }); ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+ENABLE_ACCEL\b/)) { ops.push({ op: "rwRam2" }); ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+DISABLE_ACCEL_AND_HIDE_ARTWORK_LC\b/)) { ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+DISABLE_ACCEL_AND_HIDE_ARTWORK\b/)) { ops.push({ op: "rwRam2" }); ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+DISABLE_ACCEL_LC\b/)) { ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+DISABLE_ACCEL\b/)) { ops.push({ op: "rwRam2" }); ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+HIDE_ARTWORK_LC\b/)) { ops.push({ op: "readRom" }); continue }
-    if (line.match(/^\+HIDE_ARTWORK\b/)) { ops.push({ op: "readRom" }); continue }
+    // 4cade macro expansions — must match acme macros in src/macros.a exactly.
+    // LC bank 2 function addresses: EnableAccelerator=$DFB7, DisableAccelerator=$DFB4,
+    // HideLaunchArtworkLC2=$DFAE (all in LC bank 2, stubbed to RTS in our relay).
+    if (line.match(/^\+ENABLE_ACCEL_LC\b/)) { ops.push({ op: "rwRam2" }, { op: "call", addr: 0xDFB7 }); continue }
+    if (line.match(/^\+ENABLE_ACCEL_AND_HIDE_ARTWORK_LC\b/)) { ops.push({ op: "rwRam2" }, { op: "call", addr: 0xDFB7 }, { op: "call", addr: 0xDFAE }); continue }
+    if (line.match(/^\+ENABLE_ACCEL_AND_HIDE_ARTWORK\b/)) { ops.push({ op: "rwRam2" }, { op: "call", addr: 0xDFB7 }, { op: "call", addr: 0xDFAE }, { op: "readRom" }); continue }
+    if (line.match(/^\+ENABLE_ACCEL\b/)) { ops.push({ op: "rwRam2" }, { op: "call", addr: 0xDFB7 }, { op: "readRom" }); continue }
+    if (line.match(/^\+DISABLE_ACCEL_AND_HIDE_ARTWORK_LC\b/)) { ops.push({ op: "call", addr: 0xDFB4 }, { op: "call", addr: 0xDFAE }, { op: "readRom" }); continue }
+    if (line.match(/^\+DISABLE_ACCEL_AND_HIDE_ARTWORK\b/)) { ops.push({ op: "rwRam2" }, { op: "call", addr: 0xDFB4 }, { op: "call", addr: 0xDFAE }, { op: "readRom" }); continue }
+    if (line.match(/^\+DISABLE_ACCEL_LC\b/)) { ops.push({ op: "call", addr: 0xDFB4 }, { op: "readRom" }); continue }
+    if (line.match(/^\+DISABLE_ACCEL\b/)) { ops.push({ op: "rwRam2" }, { op: "call", addr: 0xDFB4 }, { op: "readRom" }); continue }
+    if (line.match(/^\+HIDE_ARTWORK_LC\b/)) { ops.push({ op: "call", addr: 0xDFAE }, { op: "readRom" }); continue }
+    if (line.match(/^\+HIDE_ARTWORK\b/)) { ops.push({ op: "rdRam2" }, { op: "call", addr: 0xDFAE }, { op: "readRom" }); continue }
     if (line.match(/^\+READ_ROM_NO_WRITE\b/)) { ops.push({ op: "readRom" }); continue }
     if (line.match(/^\+READ_RAM2_WRITE_RAM2\b/)) { ops.push({ op: "rwRam2" }); continue }
-    if (line.match(/^\+READ_RAM2_NO_WRITE\b/)) { ops.push({ op: "rwRam2" }); continue }
+    if (line.match(/^\+READ_RAM2_NO_WRITE\b/)) { ops.push({ op: "rdRam2" }); continue }
     if (line.startsWith("+")) continue
 
-    const ldaMatch = line.match(/^lda\s+#\$([0-9a-fA-F]{1,2})\b/i)
-    if (ldaMatch) { pendingLdaVal = parseInt(ldaMatch[1], 16); continue }
+    const ldaHexMatch = line.match(/^lda\s+#\$([0-9a-fA-F]{1,2})\b/i)
+    if (ldaHexMatch) { pendingLdaVal = parseInt(ldaHexMatch[1], 16); continue }
+    const ldaDecMatch = line.match(/^lda\s+#(\d+)\b/i)
+    if (ldaDecMatch) { pendingLdaVal = parseInt(ldaDecMatch[1], 10) & 0xFF; continue }
 
     const staMatch = line.match(/^sta\s+\$([0-9a-fA-F]{2,4})\b/i)
     if (staMatch && pendingLdaVal !== undefined) {
@@ -593,8 +599,9 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     const jsrMatch = line.match(/^jsr\s+\$([0-9a-fA-F]{2,4})\b/i)
     if (jsrMatch) {
       pendingLdaVal = undefined
-      if (!hasDecompress) { hasDecompress = true; ops.push({ op: "decompress" }) }
-      else { ops.push({ op: "call", addr: parseInt(jsrMatch[1], 16) }) }
+      const addr = parseInt(jsrMatch[1], 16)
+      if (!hasDecompress) { hasDecompress = true; ops.push({ op: "decompress", addr }) }
+      else { ops.push({ op: "call", addr }) }
       continue
     }
 
@@ -614,12 +621,24 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
  * The main game binary is the first non-system file in the ProDOS directory.
  */
 export const extractPackedBinary = (poData: Uint8Array): { data: Uint8Array; loadAddress: number } | undefined => {
+  const files = extractAllBinFiles(poData)
+  return files.length > 0 ? files[0] : undefined
+}
+
+/**
+ * Extract ALL non-system BIN files from a 4cade .po disk.
+ * Returns them in directory order. The first is the main packed binary;
+ * additional entries are supplementary files (title screen, game code, etc.)
+ * that the game's loader would read from disk via ProDOS MLI calls.
+ */
+export const extractAllBinFiles = (poData: Uint8Array): Array<{ data: Uint8Array; loadAddress: number; name: string }> => {
+  const results: Array<{ data: Uint8Array; loadAddress: number; name: string }> = []
   const blockSize = 512
   const block2off = 2 * blockSize
-  if (poData.length < block2off + blockSize) return undefined
+  if (poData.length < block2off + blockSize) return results
 
   const volByte = poData[block2off + 4]
-  if (((volByte >> 4) & 0xF) !== 0xF) return undefined
+  if (((volByte >> 4) & 0xF) !== 0xF) return results
   const entryLength = poData[block2off + 4 + 0x1F] || 0x27
 
   let dirBlock = 2
@@ -681,10 +700,10 @@ export const extractPackedBinary = (poData: Uint8Array): { data: Uint8Array; loa
       }
 
       if (fileData) {
-        return { data: fileData, loadAddress: auxType }
+        results.push({ data: fileData, loadAddress: auxType, name })
       }
     }
     dirBlock = poData[off + 2] | (poData[off + 3] << 8)
   }
-  return undefined
+  return results
 }
