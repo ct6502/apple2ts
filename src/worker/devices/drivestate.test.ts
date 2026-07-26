@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
 import path from "path"
 import * as fs from "fs"
 import { doSetEmuDriveNewData } from "./drivestate"
@@ -7,11 +8,48 @@ import { s6502 } from "../instructions"
 import { processInstruction } from "../cpu6502"
 import { RUN_MODE } from "../../common/utility"
 
+// Increase test timeout to 60 seconds as we might need to download disk images.
+jest.setTimeout(60000)
+
 // Test tricky WOZ disk images.
-const testDiskImage = (disk: string, address: number, minCycleCount: number, maxCycleCount: number) => {
+const testDiskImage = async (disk: string, address: number, minCycleCount: number, maxCycleCount: number) => {
   setIsTesting()
   const filePath = path.resolve(__dirname, "../../../public/disks/", disk)
-  const data = fs.readFileSync(filePath)
+  let data: Buffer
+
+  if (fs.existsSync(filePath)) {
+    data = fs.readFileSync(filePath)
+  } else {
+    const url = `https://raw.githubusercontent.com/anomixer/apple2ts/disks/public/disks/${encodeURIComponent(disk)}`
+    console.log(`Downloading missing test disk image: ${url}`)
+    try {
+      if (typeof fetch === "function") {
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        const arrayBuffer = await response.arrayBuffer()
+        data = Buffer.from(arrayBuffer)
+      } else {
+        // Fallback for older Node versions using https module
+        data = await new Promise<Buffer>((resolve, reject) => {
+          const https = require("https")
+          https.get(url, (res: any) => {
+            if (res.statusCode !== 200) {
+              reject(new Error(`HTTP ${res.statusCode}`))
+              return
+            }
+            const chunks: any[] = []
+            res.on("data", (chunk: any) => chunks.push(chunk))
+            res.on("end", () => resolve(Buffer.concat(chunks)))
+          }).on("error", reject)
+        })
+      }
+    } catch (error) {
+      throw new Error(`Failed to download missing disk image ${disk} for testing: ${error}`)
+    }
+  }
+
   const props: DriveProps = {
     index: 2,
     hardDrive: false,

@@ -1,41 +1,39 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Step } from "react-joyride"
 
-export const tourMain: Step[] = [
+export const getTourMain = (t: any): Step[] => [
   {
     target: "body",
     placement: "center",
-    content: "Welcome to the Apple2TS emulator! " +
-      "To learn more, press the Next button."
+    content: t("tour.welcome") + " " + t("tour.clickNext")
   },
   {
     target: "#tour-boot-button",
-    content: "Click here to start the emulator.",
+    content: t("tour.bootButton"),
   },
   {
     target: "#tour-reset-button",
-    content: "Click here to Reset the Apple II and either reboot or enter BASIC.",
+    content: t("tour.resetButton"),
   },
   {
     target: "#tour-disk-images",
-    content: "Choose one of the installed disk images.",
+    content: t("tour.diskImages"),
   },
   {
     target: "#tour-floppy-disks",
-    content: "Or click one of the floppy disk icons to load a disk image.",
+    content: t("tour.floppyDisks"),
   },
   {
     target: "#tour-saverestore",
-    content: "You can save and restore the complete state of the emulator using these buttons.",
+    content: t("tour.saveRestore"),
   },
   {
     target: "#tour-theme-button",
-    content: "Click here to change the emulator UI theme."
+    content: t("tour.themeButton")
   },
   {
     target: "body",
     placement: "center",
-    content: "You have reached the end of the tour. Click on the globe " +
-      "tour button to try one of the other tours, " +
-      "or press Finish to start using the emulator.",
+    content: t("tour.endTour") + " " + t("tour.tourSelectorHint")
   },
 ]

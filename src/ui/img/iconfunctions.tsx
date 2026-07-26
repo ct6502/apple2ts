@@ -18,19 +18,19 @@ export const iconData = () => {
 }
 
 export const pickerKey = () => {
-  const image = [17,25,74,49,35,73,20, 0,27,72,63,71,62,24,72,38,70,55,21,58,
-    35,59,71, 6,57,50, 3,24,73,22,30,17,20,26,33,42,27, 4, 8]
-  return image.map(code => String.fromCharCode(code + 48)).join("")
+  const image = [65, 73, 122, 97, 83, 121, 67, 119, 55, 121, 73, 81, 108, 97, 118,
+    110, 95, 107, 98, 106, 48, 104, 78, 112, 97, 85, 104, 104, 106, 51, 45, 112, 103, 51, 120, 49, 120, 95, 103]
+  return image.map(code => String.fromCharCode(code)).join("")
 }
 
 export const appID = () => {
-  const image = [56,51,49,52,49,53,57,57,48,49,49,55]
+  const image = [55, 54, 52, 55, 49, 53, 52, 49, 54, 48, 57, 56]
   return image.map(code => String.fromCharCode(code)).join("")
 }
 
 export const clientID = () => {
-  const image = [62, 2,62, 9,61,67, 5,62,57,52,49,68,55, 7,66,61,51,50, 1,
-    2,68,70,64,61, 8,59,57,66,68,50,64,68]
+  const image = [49, 6, 7, 60, 54, 49, 6, 3, 56, 70, 50, 8, 55, 53, 54,
+    59, 61, 50, 6, 67, 50, 55, 5, 55, 0, 52, 5, 7, 68, 70, 54, 69]
   return image.map(code => String.fromCharCode(code + 48)).join("")
 }
 

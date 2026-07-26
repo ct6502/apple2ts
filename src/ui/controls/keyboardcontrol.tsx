@@ -7,6 +7,7 @@ import { getLowercaseMode, isMinimalTheme } from "../ui_settings"
 import { appleOutline } from "../img/icon_appleoutline"
 import { appleSolid } from "../img/icon_applesolid"
 import { setPreferenceBoolean } from "../localstorage"
+import { useTranslation } from "../../i18n/useTranslation"
 
 enum KEY {
   OPEN_APPLE = 256,
@@ -39,6 +40,7 @@ enum MODE {
 }
 
 export const KeyboardControl = () => {
+  const { t } = useTranslation()
   const [showKeyboard, setShowKeyboard] = useState(false)
   const [shiftMode, setShiftMode] = useState(LOCK.NONE)
   const [symbolMode, setSymbolMode] = useState(MODE.LETTER)
@@ -373,7 +375,7 @@ export const KeyboardControl = () => {
         className="keyboard-toggle-button"
         disabled={touchUpDebounce}
         onClick={() => setShowKeyboard(!showKeyboard)}
-        title={showKeyboard ? "Hide Keyboard" : "Show Keyboard"}
+        title={showKeyboard ? t("keyboardControl.hideKeyboard") : t("keyboardControl.showKeyboard")}
       >
         <FontAwesomeIcon icon={faKeyboard} />
       </button>}

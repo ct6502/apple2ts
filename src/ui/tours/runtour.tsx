@@ -1,13 +1,15 @@
 import { ACTIONS, EventData, EVENTS, Joyride, Step } from "react-joyride"
 import { useGlobalContext } from "../globalcontext"
-import { tourMain } from "./tourmain"
-import { tourSettings } from "./toursettings"
-import { tourDebug } from "./tourdebug"
+import { getTourMain } from "./tourmain"
+import { getTourSettings } from "./toursettings"
+import { getTourDebug } from "./tourdebug"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGlobe } from "@fortawesome/free-solid-svg-icons"
 import { DropdownButton } from "../controls/dropdownbutton"
+import { useTranslation } from "../../i18n/useTranslation"
 
 const RunTour = () => {
+  const { t } = useTranslation()
   const { runTour: runTour, setRunTour: setRunTour,
     tourIndex: tourIndex, setTourIndex: setTourIndex } = useGlobalContext()
 
@@ -21,7 +23,7 @@ const RunTour = () => {
     if (data.type === EVENTS.STEP_AFTER) {
       // Update state to advance the tour
       setTourIndex(data.index + (data.action === ACTIONS.PREV ? -1 : 1))
-    }  
+    }
     if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE) {
       setRunTour("")
       setTourIndex(0)
@@ -43,13 +45,13 @@ const RunTour = () => {
 
   switch (runTour.toLowerCase()) {
     case "main":
-      tour = tourMain
+      tour = getTourMain(t)
       break
     case "debug":
-      tour = tourDebug
+      tour = getTourDebug(t)
       break
     case "settings":
-      tour = tourSettings
+      tour = getTourSettings(t)
       break
     default:
       break
@@ -75,49 +77,54 @@ const RunTour = () => {
   }
 
   const locale = {
-    back: "Back",
-    close: "Close",
-    last: "Finish",
-    next: "Next",
-    skip: "Close",
+    back: t("tour.back"),
+    close: t("tour.close"),
+    last: t("tour.last"),
+    next: t("tour.next"),
+    nextLabelWithProgress: t("tour.nextLabelWithProgress"),
+    skip: t("tour.skip"),
   }
 
   return (
     <span>
-    {(tour.length > 0) &&
-      <div className="modal-overlay"
-        style={{backgroundColor: "inherit"}}
-        tabIndex={0} // Make the div focusable
-      >
-      <Joyride
-        onEvent={handleJoyrideCallback}
-        steps={tour}
-        locale={locale}
-        options={{
-          showProgress: true,
-          buttons: ["back", "close", "primary", "skip"],
-          blockTargetInteraction: false,
-        }}
-        run={tour.length > 0}
-        continuous={true}
-        stepIndex={tourIndex}
-        styles={{
-          tooltipContent: {
-            textAlign: "left",
-          },
-          floater: {
-            zIndex: 10000,
-          },
-        }}
-      />
-      </div>
+      {(tour.length > 0) &&
+        <div className="modal-overlay"
+          style={{backgroundColor: "inherit"}}
+          tabIndex={0} // Make the div focusable
+        >
+        <Joyride
+          onEvent={handleJoyrideCallback}
+          steps={tour}
+          locale={locale}
+          options={{
+            showProgress: true,
+            buttons: ["back", "close", "primary", "skip"],
+            blockTargetInteraction: false,
+          }}
+          run={tour.length > 0}
+          continuous={true}
+          stepIndex={tourIndex}
+          styles={{
+            tooltipContent: {
+              textAlign: "left",
+            },
+            floater: {
+              zIndex: 10000,
+            },
+          }}
+        />
+        </div>
       }
-      <DropdownButton 
-        currentIndex = {-1}
-        itemNames = {["Guided Tour: Main", "Guided Tour: Settings", "Guided Tour: Debug"]}
-        closeCallback = {selectGuidedTour}
-        icon = {<FontAwesomeIcon icon={faGlobe}/>}
-        tooltip = "Guided Tour"
+      <DropdownButton
+        currentIndex={-1}
+        itemNames={[
+          t("tour.mainLabel"),
+          t("tour.settingsLabel"),
+          t("tour.debugLabel")
+        ]}
+        closeCallback={selectGuidedTour}
+        icon={<FontAwesomeIcon icon={faGlobe} />}
+        tooltip={t("tour.guidedTour")}
       />
     </span>
   )

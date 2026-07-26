@@ -9,6 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { RUN_MODE } from "../../../common/utility"
 import { handleGetRunMode, handleGetTracelog, passSetCyclesToRun } from "../../main2worker"
+import { useTranslation } from "../../../i18n/useTranslation"
 import TraceSettingsDialog from "./tracesettingsdialog"
 import { handleSetCPUState } from "../../controller"
 import EditField from "../editfield"
@@ -23,6 +24,7 @@ const TraceDialog = (props: {
   dialogPositionY: number,
   setDialogPosition: (x: number, y: number) => void
 }) => {
+  const { t } = useTranslation()
   const { dialogPositionX, dialogPositionY, setDialogPosition } = props
   const dialogRef = useRef<HTMLDivElement>(null)
   const traceLogRef = useRef<HTMLDivElement>(null)
@@ -151,7 +153,7 @@ const TraceDialog = (props: {
           <div className="flex-row-space-between"
             onMouseDown={(e) => handleMouseDown(e)}
             style={{ cursor: "move" }}>
-            <div className="dialog-title">Trace</div>
+            <div className="dialog-title">{t("debugControls.trace")}</div>
             <button className="push-button"
               onClick={props.cancelDialog}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
@@ -164,7 +166,7 @@ const TraceDialog = (props: {
           <div className="flex-row">
           <button
             className="push-button"
-            title={"Download Trace Log"}
+            title={t("debugControls.downloadTraceLog") || "Download Trace Log"}
             disabled={currentTracelog.length === 0}
             onClick={() => handleDownloadButtonClick(currentTracelog)}>
               <FontAwesomeIcon icon={faSave} />
@@ -193,7 +195,7 @@ const TraceDialog = (props: {
           <span className="bigger-font" style={{ alignSelf: "center" }}>&nbsp;cycles</span>
           </div>
           <button className="push-button"
-            title="Settings"
+            title={t("traceSettings.settings")}
             onClick={() => setShowSettings(true)}
             disabled={runMode !== RUN_MODE.PAUSED}>
             <div className="icon-container">

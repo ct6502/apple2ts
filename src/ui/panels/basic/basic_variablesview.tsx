@@ -1,4 +1,5 @@
 import { handleGetBasicMemory, passExecuteBasicCommand } from "../../main2worker"
+import { useTranslation } from "../../../i18n/useTranslation"
 import { useState } from "react"
 
 enum TYPE {
@@ -8,6 +9,7 @@ enum TYPE {
 }
 
 const BasicVariablesView = () => {
+  const { t } = useTranslation()
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editValue, setEditValue] = useState("")
 
@@ -167,8 +169,8 @@ const BasicVariablesView = () => {
       </colgroup>
       <thead>
         <tr className="default-font">
-          <th>Variable</th>
-          <th>Value</th>
+          <th>{t("basic.variable")}</th>
+          <th>{t("basic.value")}</th>
         </tr>
       </thead>
       <tbody>

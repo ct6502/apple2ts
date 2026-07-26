@@ -12,6 +12,7 @@ import ExpectinTab from "./expectin/expectintab"
 import HelpTab from "./help/helptab"
 import { defaultHelpText } from "./help/defaulthelptext"
 import BasicTab from "./basic/basic_tab"
+import { useTranslation } from "../../i18n/useTranslation"
 import AgentTab from "./agent/agent_tab"
 import { setPreferenceBoolean } from "../localstorage"
 
@@ -30,6 +31,8 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   const helpText = (currentHelpText.length > 1 && currentHelpText !== "<Default>") ? currentHelpText : defaultHelpText
   const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
   const showHighlight = !isFlyoutOpen && newHelpTextCrc != defaultHelpTextCrc
+
+  const { t } = useTranslation()
 
   const forceRefresh = () => {
     // Force a refresh to pick up the new canvas size
@@ -71,7 +74,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
     <Flyout
       icon={faInfoCircle}
       position="top-right"
-      title="debug panel"
+      title={t("controls.debugPanel")}
       highlight={showHighlight}
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => {
@@ -82,32 +85,32 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         {!isSmall && <div className={`${props.narrow ? "flex-row" : "flex-column"} dbg-tab-row`}>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 0 ? " dbg-tab-active" : ""}`}
-            title="Help"
+            title={t("debug.helpTab")}
             onClick={handleTabClick(0)}>
             <FontAwesomeIcon icon={faHelp} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 1 ? " dbg-tab-active" : ""}`}
-            title="Debugging"
+            title={t("debug.debugTab")}
             id="tour-debug-button"
             onClick={handleTabClick(1)}>
             <FontAwesomeIcon icon={faBug} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 2 ? " dbg-tab-active" : ""}`}
-            title="Applesoft BASIC"
+            title={t("debug.basicTab")}
             onClick={handleTabClick(2)}>
             <b>{"]"}</b><FontAwesomeIcon icon={faApple as never} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 3 ? " dbg-tab-active" : ""}`}
-            title="Apple exPectin"
+            title={t("debug.expectinTab")}
             onClick={handleTabClick(3)}>
             <FontAwesomeIcon icon={faCode} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 4 ? " dbg-tab-active" : ""}`}
-            title="Agent"
+            title={t("debug.agentTab")}
             onClick={handleTabClick(4)}>
             <FontAwesomeIcon icon={faRobot} size="lg" />
           </div>
@@ -120,7 +123,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           <DebugTab updateDisplay={props.updateDisplay} />
         }
         {(activeTab == 2 && !isSmall) && 
-          <BasicTab updateDisplay={props.updateDisplay}  />
+          <BasicTab updateDisplay={props.updateDisplay} />
         }
         {(activeTab == 3 && !isSmall) && 
           <ExpectinTab />

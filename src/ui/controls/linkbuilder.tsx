@@ -9,6 +9,7 @@ import { getLowercaseMode, getColorMode, getCrtDistortion, getGhosting, getShowS
 import { UI_THEME } from "../../common/utility"
 import { isAudioEnabled } from "../devices/audio/speaker"
 import { handleGetIsDebugging, handleGetMachineName, handleGetMemSize, handleGetSpeedMode } from "../main2worker"
+import { useTranslation } from "../../i18n/useTranslation"
 
 export enum TAB {
   DISK,
@@ -17,12 +18,35 @@ export enum TAB {
 }
 
 const LinkBuilder = () => {
+  const { t } = useTranslation()
   const [showBuilder, setShowBuilder] = useState(false)
 
-  const colorNames = ["Color", "Color (no fringing)", "Green Screen", "Amber Screen", "White Screen", "Inverse White"]
+  const colorNames = [
+    t("linkBuilder.colorNames.color"),
+    t("linkBuilder.colorNames.nofringe"),
+    t("linkBuilder.colorNames.green"),
+    t("linkBuilder.colorNames.amber"),
+    t("linkBuilder.colorNames.white"),
+    t("linkBuilder.colorNames.inverse")
+  ]
   const colorModes = ["color", "nofringe", "green", "amber", "white", "inverse"]
-  const speedNames = ["Snail", "Slow", "1 MHz (default)", "2 MHz", "3 MHz", "4 MHz", "Warp"]
-  const gameModes = ["Normal", "Game (no drives or tabs)", "Embed (hide all controls)"]
+  
+  const speedNames = [
+    t("linkBuilder.speedNames.snail"),
+    t("linkBuilder.speedNames.slow"),
+    t("linkBuilder.speedNames.normal"),
+    t("linkBuilder.speedNames.two"),
+    t("linkBuilder.speedNames.three"),
+    t("linkBuilder.speedNames.four"),
+    t("linkBuilder.speedNames.warp")
+  ]
+  const speedParams = ["snail", "slow", "normal", "two", "three", "fast", "warp"]
+
+  const gameModes = [
+    t("linkBuilder.gameModes.normal"),
+    t("linkBuilder.gameModes.game"),
+    t("linkBuilder.gameModes.embed")
+  ]
   const [appmode, setAppmode] = useState("")
 
   // Reverse the logic for these so the default is false and the checkbox is on,
@@ -41,22 +65,50 @@ const LinkBuilder = () => {
   const [loadBlock, setLoadBlock] = useState("")
   const [hexBlock, setHexBlock] = useState("")
   const [machine, setMachine] = useState("")
-  const [ramdisk, setRamdisk] = useState("64")
+  const [ramdisk, setRamdisk] = useState("")
   const [scanlines, setScanlines] = useState(false)
   const [selectedDisk, setSelectedDisk] = useState("")
   const [speed, setSpeed] = useState("")
   const [theme, setTheme] = useState("")
   const [tabSection, setTabSection] = useState(TAB.DISK)
 
-  const isCustomURL = selectedDisk === "" || selectedDisk.toLowerCase().includes("custom")
+  const machineValues = [
+    t("linkBuilder.machines.enhanced"),
+    t("linkBuilder.machines.unenhanced"),
+    t("linkBuilder.machines.apple2p")
+  ]
+
+  const ramdiskValues = [
+    t("linkBuilder.ramDiskSizes.default"),
+    t("linkBuilder.ramDiskSizes.512"),
+    t("linkBuilder.ramDiskSizes.1024"),
+    t("linkBuilder.ramDiskSizes.4096"),
+    t("linkBuilder.ramDiskSizes.8192")
+  ]
+  const ramdiskParams = ["64", "512", "1024", "4096", "8192"]
+
+  const themeValues = [
+    t("linkBuilder.themes.classic"),
+    t("linkBuilder.themes.dark"),
+    t("linkBuilder.themes.minimal")
+  ]
+  const themeParams = ["classic", "dark", "minimal"]
+
+  const diskNames = [t("linkBuilder.customDiskUrlOption"), ...diskImages.map(disk => disk.title).sort()]
+  const isCustomURL = selectedDisk === "" || selectedDisk === t("linkBuilder.customDiskUrlOption")
 
   // When fragmentURL changes, generate the link
   const generateLink = () => {
     let link = `${window.location.origin}`
     const params = []
-    if (appmode.length > 0 && appmode !== "Normal") {
-      params.push(`appmode=${appmode.split(" ")[0]}`)
+
+    const appmodeIndex = gameModes.indexOf(appmode)
+    if (appmodeIndex === 1) {
+      params.push("appmode=game")
+    } else if (appmodeIndex === 2) {
+      params.push("appmode=embed")
     }
+
     if (lowercaseMode) {
       params.push("capslock=off")
     }
@@ -90,14 +142,19 @@ const LinkBuilder = () => {
     if (hexAddress) {
       params.push(`address=${encodeURIComponent(hexAddress)}`)
     }
-    if (machine.toLowerCase().includes("unenhanced")) {
+
+    const machineIndex = machineValues.indexOf(machine)
+    if (machineIndex === 1) { // unenhanced
       params.push("machine=apple2eu")
-    } else if (machine.includes("II+")) {
+    } else if (machineIndex === 2) { // II+
       params.push("machine=apple2p")
     }
-    if (ramdisk && !ramdisk.startsWith("64")) {
-      params.push("ramdisk=" + ramdisk)
+
+    const ramIndex = ramdiskValues.indexOf(ramdisk)
+    if (ramIndex > 0) {
+      params.push("ramdisk=" + ramdiskParams[ramIndex])
     }
+
     if (runprogoff) {
       params.push("run=false")
     }
@@ -107,19 +164,15 @@ const LinkBuilder = () => {
     if (soundoff) {
       params.push("sound=off")
     }
-    if (speed && !speed.startsWith("1")) {
-      let speedParam = speed.toLowerCase()
-      if (speedParam.startsWith("2")) {
-        speedParam = "two"
-      } else if (speedParam.startsWith("3")) {
-        speedParam = "three"
-      } else if (speedParam.startsWith("4")) {
-        speedParam = "fast"
-      }
-      params.push(`speed=${speedParam}`)
+
+    const speedIndex = speedNames.indexOf(speed)
+    if (speedIndex !== -1 && speedIndex !== 2) { // 2 is "1 MHz (default)"
+      params.push(`speed=${speedParams[speedIndex]}`)
     }
-    if (theme && !theme.toLowerCase().startsWith("classic")) {
-      params.push(`theme=${theme.toLowerCase()}`)
+
+    const themeIndex = themeValues.indexOf(theme)
+    if (themeIndex > 0) {
+      params.push(`theme=${themeParams[themeIndex]}`)
     }
 
     for (let i = 0; i < params.length; i++) {
@@ -141,9 +194,6 @@ const LinkBuilder = () => {
 
   const link = generateLink()
 
-  // put custom url at the front of the list, then all the disk images sorted alphabetically
-  const diskNames = ["Custom URL", ...diskImages.map(disk => disk.title).sort()]
-
   const testKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Allow control keys, backspace, delete, arrows, tab, etc.
     const safeKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight",
@@ -158,11 +208,11 @@ const LinkBuilder = () => {
   }
 
   const resetAllSettings = () => {
-    setAppmode("")
+    setAppmode(gameModes[0])
     setLowercaseMode(false)
     setRunprogoff(false)
     setSoundoff(false)
-    setColormode("")
+    setColormode(colorNames[0])
     setCrtdistort(false)
     setDebug(false)
     setGhosting(false)
@@ -170,12 +220,12 @@ const LinkBuilder = () => {
     setTextBlock("")
     setLoadBlock("")
     setHexBlock("")
-    setMachine("")
-    setRamdisk("")
+    setMachine(machineValues[0])
+    setRamdisk(ramdiskValues[0])
     setScanlines(false)
     setSelectedDisk("")
-    setSpeed("")
-    setTheme("")
+    setSpeed(speedNames[2])
+    setTheme(themeValues[0])
   }
 
   const retrieveFromEmulatorSettings = () => {
@@ -191,20 +241,27 @@ const LinkBuilder = () => {
     setTextBlock("")
     setHexBlock("")
     setHexAddress("")
+    
     const machineName = handleGetMachineName()
-    setMachine(machineName === "APPLE2P" ? "Apple II+" :
-      machineName === "APPLE2EU" ? "Apple IIe unenhanced" : "Apple IIe enhanced")
+    setMachine(machineName === "APPLE2P" ? machineValues[2] :
+      machineName === "APPLE2EU" ? machineValues[1] : machineValues[0])
+    
     const mem = handleGetMemSize()
-    setRamdisk(mem > 8000 ? "8192" : mem > 4000 ? "4096" : mem > 1000 ? "1024" : mem > 500 ? "512" : "64")
+    const memIndex = mem > 8000 ? 4 : mem > 4000 ? 3 : mem > 1000 ? 2 : mem > 500 ? 1 : 0
+    setRamdisk(ramdiskValues[memIndex])
+    
     const currentSpeed = handleGetSpeedMode()
     if (currentSpeed >= -2 && currentSpeed <= 4) {
       setSpeed(speedNames[currentSpeed + 2])
     } else {
       setSpeed("")
     }
+    
     setSelectedDisk("")
+    
     const mytheme = getTheme()
-    setTheme(mytheme === UI_THEME.CLASSIC ? "Classic" : mytheme === UI_THEME.DARK ? "Dark" : "Minimal")
+    setTheme(mytheme === UI_THEME.CLASSIC ? themeValues[0] : mytheme === UI_THEME.DARK ? themeValues[1] : themeValues[2])
+    
     if (isEmbedMode()) {
       setAppmode(gameModes[2])
     } else if (isGameMode()) {
@@ -225,7 +282,7 @@ const LinkBuilder = () => {
       <div className="floating-dialog flex-column"
           style={{ left: "35%", top: "10%", width: "70%", maxWidth: "600px" }}>
         <div className="flex-row-space-between" style={{ marginLeft: "10px", marginRight: "10px" }}>
-          <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>Link Builder</div>
+          <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>{t("linkBuilder.title")}</div>
           <button className="push-button"
             type="button"
             onClick={() => setShowBuilder(false)}>
@@ -236,53 +293,53 @@ const LinkBuilder = () => {
 
         <div className="flex-row">
           <div className="flex-column">
-            <Droplist name="User interface: "
+            <Droplist name={t("linkBuilder.userInterface")}
               value={appmode}
               values={gameModes}
               setValue={setAppmode} />
 
-            <Droplist name="Machine: "
+            <Droplist name={t("linkBuilder.machine")}
               value={machine}
-              values={["Apple IIe enhanced", "Apple IIe unenhanced", "Apple II+"]}
+              values={machineValues}
               setValue={setMachine} />
 
-            <Droplist name="Color mode: "
+            <Droplist name={t("linkBuilder.colorMode")}
               value={colormode}
               values={colorNames}
               setValue={setColormode} />
 
-            <Droplist name="Size of RAM disk (kb): "
+            <Droplist name={t("linkBuilder.ramDiskSize")}
               value={ramdisk}
-              values={["64 (default)", "512", "1024", "4096", "8192"]}
+              values={ramdiskValues}
               setValue={setRamdisk} />
 
-            <Droplist name="Speed of emulator: "
-              value={speed !== "" ? speed : "1 MHz (default)"}
+            <Droplist name={t("linkBuilder.emulatorSpeed")}
+              value={speed !== "" ? speed : speedNames[2]}
               values={speedNames}
               setValue={setSpeed} />
 
-            <Droplist name="User Interface Theme: "
-              value={theme !== "" ? theme : "Classic"}
-              values={["Classic", "Dark", "Minimal"]}
+            <Droplist name={t("linkBuilder.uiTheme")}
+              value={theme !== "" ? theme : themeValues[0]}
+              values={themeValues}
               setValue={setTheme} />
           </div>
           <div className="flex-column" style={{marginLeft: "20px"}}>
-            <CheckBox name="CRT Distortion"
+            <CheckBox name={t("linkBuilder.crtDistortion")}
               checked={crtdistort}
               setChecked={setCrtdistort} />
-            <CheckBox name="CRT Ghosting"
+            <CheckBox name={t("linkBuilder.crtGhosting")}
               checked={ghosting}
               setChecked={setGhosting} />
-            <CheckBox name="CRT Scanlines"
+            <CheckBox name={t("linkBuilder.crtScanlines")}
               checked={scanlines}
               setChecked={setScanlines} />
-            <CheckBox name="Capslock"
+            <CheckBox name={t("linkBuilder.capsLock")}
               checked={!lowercaseMode}
               setChecked={(on: boolean) => {setLowercaseMode(!on)}} />
-            <CheckBox name="Show debug tab"
+            <CheckBox name={t("linkBuilder.showDebugTab")}
               checked={debug}
               setChecked={setDebug} />
-            <CheckBox name="Sound"
+            <CheckBox name={t("linkBuilder.sound")}
               checked={!soundoff}
               setChecked={(on: boolean) => {setSoundoff(!on)}} />
           </div>
@@ -291,7 +348,7 @@ const LinkBuilder = () => {
         <div className="horiz-rule" style={{marginTop: "15px"}}></div>
 
         <div className="flex-row" style={{marginBottom: "15px"}}>
-          <div className="dialog-title">On startup: </div>
+          <div className="dialog-title">{t("linkBuilder.onStartup")}</div>
           <input type="radio"
             id="Address"
             name="breakAt"
@@ -300,7 +357,7 @@ const LinkBuilder = () => {
             className="check-radio-box"
             checked={tabSection === TAB.DISK}
             onChange={() => { setTabSection(TAB.DISK) }} />
-          <label htmlFor="Address" className="dialog-title flush-left">Load Disk Image</label>
+          <label htmlFor="Address" className="dialog-title flush-left">{t("linkBuilder.loadDiskImage")}</label>
           <input type="radio"
             id="Watchpoint"
             name="watch"
@@ -309,7 +366,7 @@ const LinkBuilder = () => {
             className="check-radio-box"
             checked={tabSection === TAB.TEXT}
             onChange={() => { setTabSection(TAB.TEXT) }} />
-          <label htmlFor="Watchpoint" className="dialog-title flush-left">Load BASIC Program</label>
+          <label htmlFor="Watchpoint" className="dialog-title flush-left">{t("linkBuilder.loadBasicProgram")}</label>
           <input type="radio"
             id="Instruction"
             name="instruction"
@@ -318,17 +375,17 @@ const LinkBuilder = () => {
             className="check-radio-box"
             checked={tabSection === TAB.HEX}
             onChange={() => { setTabSection(TAB.HEX) }} />
-          <label htmlFor="Instruction" className="dialog-title flush-left">Load Hex Code</label>
+          <label htmlFor="Instruction" className="dialog-title flush-left">{t("linkBuilder.loadHexCode")}</label>
         </div>
 
         {tabSection === TAB.DISK &&
           <div style={{minHeight: "150px"}}>
-            <Droplist name="Disk image to load on startup: "
+            <Droplist name={t("linkBuilder.diskImageToLoad")}
               value={selectedDisk}
               values={diskNames}
               setValue={setSelectedDisk} />
 
-            <div className="dialog-title">Custom disk image URL:</div>
+            <div className="dialog-title">{t("linkBuilder.customDiskUrl")}</div>
 
             <div style={{marginLeft: "10px", marginRight: "10px"}}>
             <EditField
@@ -338,7 +395,7 @@ const LinkBuilder = () => {
               placeholder="http://example.com/disk.dsk" />
             </div>
 
-            <EditField name="Text to type after loading disk: "
+            <EditField name={t("linkBuilder.textToType")}
               value={loadBlock}
               setValue={setLoadBlock}
               placeholder="CHOP"
@@ -354,9 +411,9 @@ const LinkBuilder = () => {
               value={textBlock}
               rows={5}
               onChange={(e) => setTextBlock(e.target.value)}
-              placeholder={"Enter Text or BASIC code here"}
+              placeholder={t("linkBuilder.enterTextPlaceholder")}
             />
-            <CheckBox name="Run BASIC program after loading"
+            <CheckBox name={t("linkBuilder.runBasicAfterLoading")}
               checked={!runprogoff}
               setChecked={(on: boolean) => {setRunprogoff(!on)}} />
           </div>
@@ -370,15 +427,15 @@ const LinkBuilder = () => {
               rows={4}
               onChange={(e) => setHexBlock(e.target.value)}
               onKeyDown={testKey}
-              placeholder={"Enter hexadecimal code here, e.g. A9 01 8D 00 03"}
+              placeholder={t("linkBuilder.enterHexPlaceholder")}
             />
-            <EditField name={"Hex load address: $"}
+            <EditField name={t("linkBuilder.hexLoadAddress")}
               value={hexAddress}
               setValue={setHexAddress}
               isHex={true}
               placeholder="0300"
               width="5em" />
-            <CheckBox name="Run Hex program after loading"
+            <CheckBox name={t("linkBuilder.runHexAfterLoading")}
               checked={!runprogoff}
               setChecked={(on: boolean) => {setRunprogoff(!on)}} />
           </div>
@@ -389,9 +446,9 @@ const LinkBuilder = () => {
 
         {/* Show final link, readonly textarea for now */}
         <div className="flex-row-space-between" style={{ marginRight: "10px" }}>
-          <div className="dialog-title">Final URL:</div>
+          <div className="dialog-title">{t("linkBuilder.finalUrl")}</div>
           <button className="push-button"
-            title="Copy to Clipboard"
+            title={t("linkBuilder.copyToClipboard")}
             onClick={() => { navigator.clipboard.writeText(link) }}>
             <FontAwesomeIcon icon={faClipboard} />
           </button>
@@ -408,15 +465,15 @@ const LinkBuilder = () => {
         <div className="flex-row-space-between" style={{ margin: "10px" }}>
           <button className="push-button text-button"
             onClick={() => { window.open(link, "_blank") }}>
-            <span className="centered-title">Try It</span>
+            <span className="centered-title">{t("linkBuilder.tryIt")}</span>
           </button>
           <button className="push-button text-button"
             onClick={resetAllSettings}>
-            <span className="centered-title">Reset</span>
+            <span className="centered-title">{t("linkBuilder.reset")}</span>
           </button>
           <button className="push-button text-button"
             onClick={() => { setShowBuilder(false) }}>
-            <span className="centered-title">Close</span>
+            <span className="centered-title">{t("linkBuilder.close")}</span>
           </button>
         </div>
 
@@ -425,7 +482,7 @@ const LinkBuilder = () => {
     }
 
     <button className="push-button"
-      title="Link Builder"
+      title={t("linkBuilder.buttonTitle")}
       onClick={() => {
         retrieveFromEmulatorSettings()
         setShowBuilder(true)

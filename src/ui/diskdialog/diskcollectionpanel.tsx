@@ -18,6 +18,7 @@ import { isMinimalTheme } from "../ui_settings"
 import { faCircle, faStar as faStarOutline } from "@fortawesome/free-regular-svg-icons"
 import { getDiskImageUrlFromIdentifier } from "../devices/disk/internetarchive_utils"
 import { showGlobalProgressModal } from "../ui_utilities"
+import { useTranslation } from "../../i18n/useTranslation"
 import { OneDriveCloudDrive } from "../devices/disk/onedriveclouddrive"
 import { GoogleDrive } from "../devices/disk/googledrive"
 import { sortDisks, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, getDiskCollection, getExportFilename, isDiskExportable, getExportBadgeInfo, loadDisk, createHdv } from "./diskpanel_utils"
@@ -112,6 +113,7 @@ type DiskCollectionPanelProps = DisplayProps & {
 }
 
 const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
+  const { t } = useTranslation()
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
   const [diskBookmarks, setDiskBookmarks] = useState<DiskBookmarks>(() => new DiskBookmarks())
   const [diskCollection, setDiskCollection] = useState<DiskCollectionItem[]>(() => getDiskCollection(new DiskBookmarks(), newReleases))
@@ -149,7 +151,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const tabs = [
     {
       icon: faFloppyDisk,
-      label: "Show Apple2TS collection",
+      label: t("collection.showApple2TSCollection"),
       disks: sortDisks(
         diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE),
         sortModeByTab[TAB_INDEX.BUILT_IN]
@@ -158,7 +160,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     },
     {
       icon: faClock,
-      label: "Show new releases",
+      label: t("collection.showNewReleases"),
       disks: sortDisks(
         diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE),
         sortModeByTab[TAB_INDEX.NEW_RELEASES]
@@ -167,7 +169,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     },
     {
       icon: faStar,
-      label: "Show favorites",
+      label: t("collection.showFavorites"),
       disks: sortDisks(
         diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
         sortModeByTab[TAB_INDEX.FAVORITES]
@@ -176,7 +178,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     },
     {
       icon: faDownload,
-      label: "Export disks to HDV",
+      label: t("collection.exportDisksToHdv") || "Export disks to HDV",
       // Show disks whose VTOC is known and exportable. HDV images and disks with
       // a cached VTOC appear immediately; other disks appear only after their
       // bytes download successfully and their VTOC is determined, so unreachable
@@ -456,7 +458,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     <Flyout
       icon={faFloppyDisk}
       buttonId="tour-disk-images"
-      title="disk collection"
+      title={t("collection.diskCollection")}
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => {
         if (isFlyoutOpen) {
@@ -489,13 +491,13 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           key={`dcp-auth-bar-${providerName}`}
           className="dcp-auth-bar"
           onClick={(e) => e.stopPropagation()}>
-          <span className="dcp-auth-bar-text">{`${cloudProviderDisplayName(providerName)} auth required`}</span>
+          <span className="dcp-auth-bar-text">{`${cloudProviderDisplayName(providerName)} ${t("collection.cloudAuthRequired") || "auth required"}`}</span>
           <button
             className="dcp-auth-bar-button"
             onClick={(e) => {
               e.stopPropagation()
               handleCloudSignIn(providerName)
-            }}>Sign in</button>
+            }}>{t("collection.signIn") || "Sign in"}</button>
         </div>
       ))}
       <div className="disk-collection-panel"
@@ -522,7 +524,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 <DiskItemTitle
                   text={diskCollectionItem.title}
                   className={`dcp-item-title ${diskCollectionItem.detailsUrl ? "dcp-item-title-link" : ""}`}
-                  title={diskCollectionItem.detailsUrl ? `Click to show details for "${diskCollectionItem.title}"` : diskCollectionItem.title}
+                  title={diskCollectionItem.detailsUrl ? `${t("collection.clickToShowDetails")} "${diskCollectionItem.title}"` : diskCollectionItem.title}
                   onClick={(e) => {
                     if (activeTab != TAB_INDEX.EXPORT && diskCollectionItem.detailsUrl) {
                       handleHelpClick(diskCollectionItem)(e as React.MouseEvent<HTMLElement>)
@@ -532,7 +534,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               {diskCollectionItem.lastUpdated > minDate && <div className="dcp-item-updated">{dateFormatter.format(diskCollectionItem.lastUpdated)}</div>}
               <div
                 className="dcp-item-image-box"
-                title={`Click to load disk "${diskCollectionItem.title}"`}
+                title={`${t("collection.clickToLoadDisk")} "${diskCollectionItem.title}"`}
                 onClick={() => {
                   if (activeTab != TAB_INDEX.EXPORT) {
                     loadDisk(-1, diskCollectionItem, props.updateDisplay)
@@ -547,15 +549,15 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                     <div
                       className="dcp-item-bookmark"
                       title={isBookmarkPendingRemoval
-                        ? "Click to keep in disk collection"
-                        : "Click to mark for removal from disk collection"}
+                        ? t("collection.clickToKeepInCollection") || "Click to keep in disk collection"
+                        : t("collection.clickToRemoveFromCollection") || "Click to mark for removal from disk collection"}
                       onClick={handleBookmarkClick(diskCollectionItem)}>
                       <FontAwesomeIcon icon={isBookmarkPendingRemoval ? faStarOutline : faStar} size="lg" className="dcp-item-bookmark-icon" />
                     </div>}
                   {activeTab == TAB_INDEX.EXPORT && isDiskExportable(diskCollectionItem) &&
                     <div
                       className="dcp-item-select"
-                      title={`Click to ${selectedDisks.includes(diskCollectionItem) ? "remove to" : "add from"} selected disks`}
+                      title={selectedDisks.includes(diskCollectionItem) ? t("collection.clickToRemoveFromSelected") || "Click to remove from selected disks" : t("collection.clickToAddToSelected") || "Click to add to selected disks"}
                       onClick={isDisabledForExport ? undefined : handleSelectedClick(diskCollectionItem)}
                       onContextMenu={isDisabledForExport ? undefined : handleItemRightClick(diskCollectionItem)}>
                       <FontAwesomeIcon icon={selectedDisks.includes(diskCollectionItem) ? faCheckCircle : faCircle} size="lg" className="dcp-item-select-icon" />
@@ -565,7 +567,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                 <div className="dcp-item-icon-row">
                   <div className="dcp-item-icon-left-group">
                     {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.NEW_RELEASE &&
-                      <div className="dcp-item-new" title="Disk is a new release">
+                      <div className="dcp-item-new" title={t("collection.diskIsNewRelease")}>
                         <FontAwesomeIcon icon={faClock} size="lg" className="dcp-item-new-icon" onClick={(event) => {
                           if (activeTab != TAB_INDEX.EXPORT) {
                             event.stopPropagation()
@@ -574,7 +576,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                         <div className="dcp-item-new-icon-bg">&nbsp;</div>
                       </div>}
                     {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.A2TS_ARCHIVE &&
-                      <div className="dcp-item-a2ts" title="Disk is part of the Apple2TS collection">
+                      <div className="dcp-item-a2ts" title={t("collection.diskIsApple2TSCollection")}>
                         <FontAwesomeIcon icon={faFloppyDisk} size="lg" className="dcp-item-a2ts-icon" onClick={(event) => {
                           if (activeTab != TAB_INDEX.EXPORT) {
                             event.stopPropagation()
@@ -583,7 +585,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                         <div className="dcp-item-a2ts-icon-bg">&nbsp;</div>
                       </div>}
                     {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE &&
-                      <div className="dcp-item-ia" title="Disk is part of the Internet Archive">
+                      <div className="dcp-item-ia" title={t("collection.diskIsInternetArchive")}>
                         <svg
                           className="dcp-item-ia-icon"
                           onClick={(event) => {
@@ -596,7 +598,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                         <div className="dcp-item-ia-icon-bg">&nbsp;</div>
                       </div>}
                     {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
-                      <div className="dcp-item-cloud" title={`Disk is synced via ${diskCollectionItem.cloudData?.providerName}`}>
+                      <div className="dcp-item-cloud" title={`${t("collection.diskIsSyncedVia")} ${diskCollectionItem.cloudData?.providerName}`}>
                         <FontAwesomeIcon icon={faCloud} size="lg" className="dcp-item-cloud-icon" onClick={(event) => {
                           if (activeTab != TAB_INDEX.EXPORT) {
                             event.stopPropagation()
@@ -628,7 +630,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                     {activeTab == TAB_INDEX.EXPORT &&
                       <div
                         className="dcp-item-report"
-                        title="Report an export issue"
+                        title={t("collection.reportExportIssue") || "Report an export issue"}
                         onClick={(event) => {
                           event.stopPropagation()
                           const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=Export+to+HDV+issue:+${encodeURIComponent(diskCollectionItem.title)}`
@@ -674,7 +676,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               if (activeTab == TAB_INDEX.EXPORT) {
                 handleExportClick()
               }
-            }}>Export</button>
+            }}>{t("collection.export") || "Export"}</button>
         </div>
       </div>
       <PopupMenu
@@ -689,7 +691,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
         menuItems={[[
           ...[0, 1].map((i) => (
             {
-              label: `Load Disk into Drive ${DISK_DRIVE_LABELS[i]}`,
+              label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
               icon: faHardDrive,
               isSelected: () => { return false },
               onClick: () => {
@@ -702,7 +704,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           ...[{ label: "-" }],
           ...[2, 3].map((i) => (
             {
-              label: `Load Disk into Drive ${DISK_DRIVE_LABELS[i]}`,
+              label: `${t("collection.loadDiskIntoDrive")} ${DISK_DRIVE_LABELS[i]}`,
               icon: faFloppyDisk,
               isSelected: () => { return false },
               onClick: () => {

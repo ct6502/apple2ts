@@ -3,6 +3,7 @@ import { validateApiKeyFormat, getProviderDisplayName, saveAgentConfig, loadAgen
 import { getAgent } from "../../mcp/mcp_agent"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 interface OllamaModel {
   name: string
@@ -16,6 +17,7 @@ const AgentTabConfig = (props: {
   setShowConfig: (show: boolean) => void,
   onConfigChange?: () => void
 }) => {
+  const { t } = useTranslation()
   const initialConfig = loadAgentConfig()
   const initialProvider: ProviderType = initialConfig?.provider ?? "anthropic"
   const initialModel = initialConfig?.model || getDefaultModel(initialProvider)
@@ -90,7 +92,7 @@ const AgentTabConfig = (props: {
     e?.preventDefault() // Prevent form submission page reload
     
     if (!validateApiKeyFormat(provider, apiKey)) {
-      alert(`Invalid API key format for ${getProviderDisplayName(provider)}`)
+      alert(t("agent.invalidKeyFormat").replace("{{provider}}", getProviderDisplayName(provider)))
       return
     }
     
@@ -189,7 +191,7 @@ return (
         style={{ left: "35%", top: "25%", width: "70%", maxWidth: "500px" }}>
       <div className="agent-config-panel">
       <div className="flex-row-space-between">
-        <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>Configure AI Agent</div>
+        <div className="dialog-title" style={{padding: 0, paddingTop: "6px"}}>{t("agent.configTitle")}</div>
         <button className="push-button"
           type="button"
           onClick={() => props.setShowConfig(false)}>
@@ -199,7 +201,7 @@ return (
       <div className="horiz-rule" style={{ marginTop: "2px", marginBottom: "10px" }}></div>
       <form className="agent-config-form" onSubmit={handleConfigSave}>
         <label>
-          Provider:
+          {t("agent.provider")}
           <select 
             value={provider} 
             onChange={(e) => handleProviderChange(e.target.value as ProviderType)}
@@ -213,7 +215,7 @@ return (
         </label>
         
         <label>
-          Model:
+          {t("agent.model")}
           {provider === "ollama" ? (
             <select 
               value={isCustomModel ? "custom" : model} 
@@ -269,7 +271,7 @@ return (
         )}
         
         <label>
-          {provider === "ollama" ? "Ollama URL:" : "API Key:"}
+          {provider === "ollama" ? t("agent.ollamaUrl") : t("agent.apiKey")}
           <input
             type={provider === "ollama" ? "text" : "password"}
             value={apiKey}
@@ -282,19 +284,19 @@ return (
         <div className="flex-row">
           <button className="push-button text-button"
             type="submit" disabled={!apiKey}>
-            <span className="centered-title">Save</span>
+            <span className="centered-title">{t("agent.save")}</span>
           </button>
           <button type="button" className="push-button text-button"
             onClick={handleClearConfig}>
-            <span className="centered-title">Clear</span>
+            <span className="centered-title">{t("agent.clear")}</span>
           </button>
         </div>
         
         <div className="agent-config-info">
           <small>
             {provider === "ollama"
-              ? "Ollama runs locally on your machine. Make sure you have Ollama installed and running. Download from "
-              : `Your API key is stored locally in your browser and never sent to apple2ts.com. Get your ${getProviderDisplayName(provider)} API key at `
+              ? t("agent.ollamaWarning")
+              : t("agent.storageWarning").replace("{{provider}}", getProviderDisplayName(provider))
             }
             <a href={getApiKeyLink().url} target="_blank" rel="noopener noreferrer">{getApiKeyLink().text}</a>
           </small>
@@ -309,8 +311,10 @@ return (
     {(() => {
       const providerInfo = agent.getProviderInfo()
       return (providerInfo && isAgentConfigured()) 
-        ? `Provider: ${providerInfo.name} (${currentConfig?.model || "default"})` 
-        : "Provider not configured - click the gear icon to set up your AI agent"
+        ? t("agent.providerConfigured")
+            .replace("{{provider}}", providerInfo.name)
+            .replace("{{model}}", currentConfig?.model || "default")
+        : t("agent.providerNotConfigured")
     })()}
   </div>
 </div>

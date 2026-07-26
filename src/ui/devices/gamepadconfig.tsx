@@ -7,7 +7,10 @@ import PopupMenu from "../controls/popupmenu"
 import { getArrowKeysAsJoystick } from "../ui_settings"
 import { getPreferenceBoolean, setPreferenceBoolean } from "../localstorage"
 
+import { useTranslation } from "../../i18n/useTranslation"
+
 export const GamepadConfig = () => {
+  const { t } = useTranslation()
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
   const handleClick = (event: React.MouseEvent) => {
@@ -23,7 +26,7 @@ export const GamepadConfig = () => {
       <button
         id="basic-button"
         className="push-button"
-        title="Joystick Configuration"
+        title={t("config.joystick")}
         onClick={handleClick}
       >
         <FontAwesomeIcon icon={faGamepad} />
@@ -34,21 +37,21 @@ export const GamepadConfig = () => {
         onClose={() => { setPopupLocation(undefined) }}
         menuItems={[[
             {
-              label: "Use Arrow Keys as Joystick",
+              label: t("gamepad.useArrowKeys"),
               isSelected: () => {return arrowKeysAsJoystick},
               onClick: () => {
                 setPreferenceBoolean("arrowKeysAsJoystick", !arrowKeysAsJoystick)
               }
             },
             {
-              label: "Reverse Y-Axis for Joystick",
+              label: t("gamepad.reverseYAxis"),
               isSelected: () => {return reverseYAxis},
               onClick: () => {
                 setPreferenceBoolean("reverseYAxis", !reverseYAxis)
               }
             },
             {
-              label: "Sirius Joyport Mode",
+              label: t("gamepad.siriusJoyport"),
               isSelected: () => {return siriusJoyport},
               onClick: () => {
                 setPreferenceBoolean("siriusJoyport", !siriusJoyport)

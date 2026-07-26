@@ -10,6 +10,7 @@ import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { handleSetDiskFromURL } from "./driveprops"
 import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const queryMaxRows = 25
 const queryFormat = "https://archive.org/advancedsearch.php?" + [
@@ -97,6 +98,7 @@ interface InternetDialogResultProps {
 }
 
 const InternetArchiveResult = (props: InternetDialogResultProps) => {
+  const { t } = useTranslation()
   const handleTileClick = async () => {
     const cloudData: CloudData = {
       providerName: "InternetArchive",
@@ -159,13 +161,13 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
   return (
     <div
       className={`iad-result-tile ${props.lastResult ? "iad-result-last" : ""}`}
-      title="Click to load disk image">
+      title={t("disk.clickToLoadDiskImage")}>
       <div className="iad-result-bookmark">
         <FontAwesomeIcon
           size="2x"
           className="iad-result-bookmark-icon"
           onClick={bookmarked ? handleBookmarkRemoveClicked : handleBookmarkAddClicked}
-          title={`Click to ${bookmarked ? "remove from" : "add to"} disk collection`}
+          title={bookmarked ? t("disk.clickToRemoveFromDiskCollection") : t("disk.clickToAddToDiskCollection")}
           icon={bookmarked ? faStarSolid : faStarOutline} />
       </div>
       <img className="iad-result-image" src={screenshotUrl.toString()} onClick={handleTileClick}></img>
@@ -174,10 +176,10 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
       </div>
       <div className="iad-result-creator" title={props.creator}>
         {props.creator
-          ? `by ${props.creator}`
+          ? t("disk.byCreator", { creator: props.creator })
           : ""}
       </div>
-      <div className="iad-stats" title="Click to view details" onClick={handleStatsClick}>
+      <div className="iad-stats" title={t("disk.clickToViewDetails")} onClick={handleStatsClick}>
         <div className="iad-stats-row">
           <svg className="iad-stats-icon" style={{
             gridRow: "1/3",
@@ -211,6 +213,7 @@ export interface InternetArchiveDialogProps {
 }
 
 const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
+  const { t } = useTranslation()
   const [results, setResults] = useState<InternetDialogResultProps[]>([])
   const [diskBookmarks, setDiskbookmarks] = useState<DiskBookmarks>(new DiskBookmarks())
   const [resultsCount, setResultsCount] = useState<number>(0)
@@ -330,17 +333,18 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
                 className="iad-search-box"
                 name="search"
                 type="text"
-                placeholder="Type the name of a software title or click one of the categories above"
+                placeholder={t("internetArchive.searchPlaceholder")}
                 autoCorrect="off"
                 autoComplete="off"
                 spellCheck="false"
                 autoFocus
                 onChange={(event) => { setQuery(event.target.value) }}
                 onKeyDown={handleSearchBoxKeyDown} />
-              <input className="iad-search-button"
+              <input
+                className="iad-search-button"
                 name="searchButton"
                 type="button"
-                value="GO"
+                value={t("internetArchive.go")}
                 onClick={handleSearchButtonClick} />
             </div>
           </div>
