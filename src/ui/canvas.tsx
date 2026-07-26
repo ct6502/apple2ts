@@ -241,6 +241,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
     }
+    const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
+    if (getArrowKeysAsJoystick() && isNumpadFireButton) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     if (isBrowserAltKey) {
       e.preventDefault()
       e.stopPropagation()
@@ -368,9 +374,17 @@ const Apple2Canvas = (props: DisplayProps) => {
     const arrowKey = getArrowKeyName(e)
     if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
-    } else if (isClosedAppleUp(e)) {
+    }
+    if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
-    } else if (e.code in diagonalKeys) {
+    }
+    const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
+    if (getArrowKeysAsJoystick() && isNumpadFireButton) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+    if (e.code in diagonalKeys) {
       handleDiagonalKey(e.code, true)
     } else if (arrowKey) {
       handleArrowKey(arrowKeys[arrowKey], true)
