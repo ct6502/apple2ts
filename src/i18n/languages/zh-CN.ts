@@ -9,7 +9,8 @@ export const zhCN = {
     "restoreState": "恢复状态",
     "toggleSound": "切换音效",
     "settings": "设置",
-    "debugPanel": "调试面板"
+    "debugPanel": "调试面板",
+    "reportIssue": "报告问题"
   },
   "config": {
     "speed": "速度",

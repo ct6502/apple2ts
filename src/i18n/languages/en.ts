@@ -9,7 +9,8 @@ export const en = {
     restoreState: "Restore State",
     toggleSound: "Toggle Sound",
     settings: "Settings",
-    debugPanel: "Debug Panel"
+    debugPanel: "Debug Panel",
+    reportIssue: "Report an Issue"
   },
   config: {
     speed: "Emulator Speed",

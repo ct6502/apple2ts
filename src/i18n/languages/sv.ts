@@ -9,7 +9,8 @@ export const sv = {
     "restoreState": "Återställ Tillstånd",
     "toggleSound": "Växla Ljud",
     "settings": "Inställningar",
-    "debugPanel": "Debug Panel"
+    "debugPanel": "Debug Panel",
+    "reportIssue": "Rapportera ett problem"
   },
   "config": {
     "speed": "Hastighet",

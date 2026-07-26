@@ -9,7 +9,8 @@ export const ru = {
     "restoreState": "Восстановить состояние",
     "toggleSound": "Переключить звук",
     "settings": "Настройки",
-    "debugPanel": "Панель отладки"
+    "debugPanel": "Панель отладки",
+    "reportIssue": "Сообщить о проблеме"
   },
   "config": {
     "speed": "Скорость",

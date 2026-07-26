@@ -9,7 +9,8 @@ export const fr = {
     "restoreState": "Restaurer l'État",
     "toggleSound": "Basculer le Son",
     "settings": "Paramètres",
-    "debugPanel": "Panneau de Débogage"
+    "debugPanel": "Panneau de Débogage",
+    "reportIssue": "Signaler un problème"
   },
   "config": {
     "speed": "Vitesse",

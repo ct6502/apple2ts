@@ -9,7 +9,8 @@ export const nl = {
     "restoreState": "Status Herstellen",
     "toggleSound": "Geluid Omschakelen",
     "settings": "Instellingen",
-    "debugPanel": "Debug Panel"
+    "debugPanel": "Debug Panel",
+    "reportIssue": "Een probleem melden"
   },
   "config": {
     "speed": "Snelheid",
