@@ -24,7 +24,7 @@ import { handleCopyToClipboard } from "./copycanvas"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
+import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme, getArrowKeysAsJoystick } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
@@ -313,7 +313,9 @@ const Apple2Canvas = (props: DisplayProps) => {
           currentCommand = ""
         }
       } else {
-        startHardwareKeyboard(e.code, arrowKeyCodes[arrowKey] || 0)
+        if (!getArrowKeysAsJoystick()) {
+          startHardwareKeyboard(e.code, arrowKeyCodes[arrowKey] || 0)
+        }
         handleArrowKey(arrowKeys[arrowKey], false)
       }
       e.preventDefault()
