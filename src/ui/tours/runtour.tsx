@@ -20,11 +20,19 @@ const RunTour = () => {
       if (completed) return
     }
     console.log(`handleJoyrideCallback action=${data.action} type=${data.type} index=${data.index} ti=${tourIndex}`)
+
     if (data.type === EVENTS.STEP_AFTER) {
-      // Update state to advance the tour
-      setTourIndex(data.index + (data.action === ACTIONS.PREV ? -1 : 1))
+      if (data.action === ACTIONS.PREV) {
+        setTourIndex(Math.max(0, data.index - 1))
+      } else {
+        setTourIndex(data.index + 1)
+      }
+    } else if (data.type === EVENTS.TARGET_NOT_FOUND) {
+      console.warn(`Joyride target not found for step index ${data.index}, advancing...`)
+      setTourIndex(data.index + 1)
     }
-    if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE) {
+
+    if (data.type === EVENTS.TOUR_END || data.action === ACTIONS.SKIP || data.action === ACTIONS.CLOSE || data.status === "finished" || data.status === "skipped") {
       setRunTour("")
       setTourIndex(0)
       // If our URL contains the "tour" parameter, be sure to turn it off
@@ -89,8 +97,7 @@ const RunTour = () => {
     <span>
       {(tour.length > 0) &&
         <div className="modal-overlay"
-          style={{backgroundColor: "inherit"}}
-          tabIndex={0} // Make the div focusable
+          style={{backgroundColor: "inherit", pointerEvents: "none"}}
         >
         <Joyride
           onEvent={handleJoyrideCallback}
