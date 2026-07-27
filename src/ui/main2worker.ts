@@ -10,6 +10,7 @@ import { doSetUIDriveProps } from "./devices/disk/driveprops"
 import { setEnhancedMidi } from "./devices/audio/enhancedmidi"
 import { receiveMidiData } from "./devices/audio/midiinterface"
 import { playMockingboard } from "./devices/audio/mockingboard_audio"
+import { playVeraPcmWrite, playVeraPsgWrite } from "./devices/audio/vera_psg_audio"
 import { emulatorSoundEnable, clickSpeaker } from "./devices/audio/speaker"
 import { doPlayDriveSound } from "./devices/disk/drivesounds"
 import { receiveCommData } from "./devices/serial/serialhub"
@@ -226,6 +227,13 @@ export const passSetMachineName = (name: MACHINE_NAME) => {
   machineState.machineName = name
 }
 
+export const passSetVeraSlot = (slot: VERA_SLOT) => {
+  doPostMessage(MSG_MAIN.VERA_SLOT, slot)
+  // This will also come from the emulator, but set it here so the UI updates
+  // if the emulator hasn't been booted yet.
+  machineState.veraSlot = slot
+}
+
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
   doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
@@ -292,6 +300,7 @@ let machineState: MachineState = {
   textPage: new Uint8Array(1).fill(32),
   timeTravelThumbnails: new Array<TimeTravelThumbnail>(),
   tracelog: new Array<string>(),
+  veraSlot: 0,
   zeroPage: new Uint8Array(256).fill(255)
 }
 
@@ -346,6 +355,16 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       playMockingboard(mboard)
       break
     }
+    case MSG_WORKER.VERA_PSG_WRITE: {
+      const psgWrite = e.data.payload as VeraPsgWrite
+      playVeraPsgWrite(psgWrite)
+      break
+    }
+    case MSG_WORKER.VERA_PCM_WRITE: {
+      const pcmWrite = e.data.payload as VeraPcmWrite
+      playVeraPcmWrite(pcmWrite)
+      break
+    }
     case MSG_WORKER.COMM_DATA: {
       const commdata = e.data.payload as Uint8Array
       receiveCommData(commdata)
@@ -388,6 +407,10 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       if (serialConfigCallback) serialConfigCallback(serialConfig)
       break
     }
+    case MSG_WORKER.VERA_FRAME: {
+      latestVeraFrame = e.data.payload as { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number }
+      break
+    }
     default:
       console.error("main2worker: unknown msg: " + JSON.stringify(e.data))
       break
@@ -399,6 +422,11 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
 // easy to just stash them here.
 let showAppleMouse = false
 let softSwitchDescriptions = [""]
+let latestVeraFrame: { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number } | null = null
+
+export const handleGetVeraFrame = () => {
+  return latestVeraFrame
+}
 
 export const handleGetShowAppleMouse = () => {
   const isFullscreen = document.fullscreenElement !== null
@@ -522,6 +550,10 @@ export const handleGetMemSize = () => {
 
 export const handleGetMachineName = () => {
   return machineState.machineName
+}
+
+export const handleGetVeraSlot = () => {
+  return machineState.veraSlot
 }
 
 export const handleGetSoftSwitchDescriptions = () => {

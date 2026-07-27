@@ -310,7 +310,7 @@ export const updateAddressTables = () => {
 export const specialJumpTable = new Map<number, () => void>()
 
 // Custom callbacks for mem get/set to $C090-$C0FF slot I/O and $C100-$C7FF.
-const slotIOCallbackTable = new Array<AddressCallback>(8)
+const slotIOCallbackTable = new Array<AddressCallback | undefined>(8)
 
 // Determines whether slot has C800 space ROM or not
 const slotIOC8Space = new Uint8Array(8)
@@ -343,6 +343,15 @@ const checkSlotIO = (addr: number, value = -1) => {
 export const setSlotIOCallback = (slot: number, fn: AddressCallback) => {
   slotHasCard[slot] = 1
   slotIOCallbackTable[slot] = fn
+}
+
+export const clearSlot = (slot: number) => {
+  if (slot < 1 || slot > 7) return
+  memory.fill(0, SLOTstart + (slot - 1) * 0x100, SLOTstart + slot * 0x100)
+  memory.fill(0, SLOTC8start + (slot - 1) * 0x800, SLOTC8start + slot * 0x800)
+  slotHasCard[slot] = 0
+  slotIOC8Space[slot] = 0
+  slotIOCallbackTable[slot] = undefined
 }
 
 /**
@@ -694,4 +703,3 @@ export const getMemoryDump = () => {
   }
   return dump
 }
-

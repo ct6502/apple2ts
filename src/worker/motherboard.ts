@@ -18,13 +18,15 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   getZeroPage,
   memSet,
   exportMemoryToHiresLine,
-  getDataBlock} from "./memory"
+  getDataBlock,
+  clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, resetCycleCountCallbacks, setStepOut } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
+import { enableVera, resetVera } from "./devices/vera/vera"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
@@ -47,6 +49,7 @@ let cpuRunMode = RUN_MODE.IDLE
 let cyclesToRun = 0
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
+let veraSlot: VERA_SLOT = 0
 let takeSnapshot = false
 let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
@@ -116,10 +119,20 @@ let didConfiguration = false
 export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
+  resetCycleCountCallbacks()
+  clearSlot(2)
+  clearSlot(4)
   enableSerialCard()
-  enablePassportCard(true, 2)
-  enableMockingboard(true, 4)
+  if (veraSlot !== 2) {
+    enablePassportCard(true, 2)
+  }
+  if (veraSlot !== 4) {
+    enableMockingboard(true, 4)
+  }
   enableMouseCard(true, 5)
+  if (veraSlot !== 0) {
+    enableVera(true, veraSlot)
+  }
   enableDiskDrive()
   enableHardDrive()
   get6502Instructions()
@@ -130,8 +143,13 @@ const resetMachine = () => {
   setButtonState()
   resetMouse()
   resetPassport()
+  if (veraSlot !== 0) {
+    resetVera()
+  }
   resetSerial()
-  resetMockingboard(4)
+  if (veraSlot !== 4) {
+    resetMockingboard(4)
+  }
 }
 
 export const doBoot = () => {
@@ -243,6 +261,14 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   machineName = name
   doSetRom(machineName)
   if (reset) doReset()
+  updateExternalMachineState()
+}
+
+export const doSetVeraSlot = (slot: VERA_SLOT) => {
+  if (slot !== 0 && slot !== 2 && slot !== 4) return
+  if (veraSlot === slot) return
+  veraSlot = slot
+  didConfiguration = false
   updateExternalMachineState()
 }
 
@@ -492,6 +518,7 @@ export const updateExternalMachineState = () => {
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
     tracelog: cpuRunMode === RUN_MODE.PAUSED ? getTracelog() : [],
+    veraSlot: veraSlot,
     zeroPage: getZeroPage(),
   }
   passMachineState(state)

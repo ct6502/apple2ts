@@ -3,6 +3,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
+  doSetVeraSlot,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
@@ -42,6 +43,22 @@ const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
       console.error(`worker2main: doPostMessage error: ${error}`)
     }
   }
+}
+
+export const passVeraFramebuffer = (fb: Uint8ClampedArray<ArrayBuffer>, dcVideo: number) => {
+  if (dcVideo !== 0) {
+    doPostMessage(MSG_WORKER.VERA_FRAME, { fb, dcVideo })
+  } else {
+    doPostMessage(MSG_WORKER.VERA_FRAME, { dcVideo })
+  }
+}
+
+export const passVeraPsgWrite = (event: VeraPsgWrite) => {
+  doPostMessage(MSG_WORKER.VERA_PSG_WRITE, event)
+}
+
+export const passVeraPcmWrite = (event: VeraPcmWrite) => {
+  doPostMessage(MSG_WORKER.VERA_PCM_WRITE, event)
 }
 
 export const passMachineState = (state: MachineState) => {
@@ -244,6 +261,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
+        break
+      case MSG_MAIN.VERA_SLOT:
+        doSetVeraSlot(e.data.payload as VERA_SLOT)
         break
       case MSG_MAIN.REVERSE_YAXIS:
         setReverseYAxis(e.data.payload)

@@ -1,7 +1,7 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetMachineName,
-  handleGetSoftSwitches} from "./main2worker"
+  handleGetSoftSwitches } from "./main2worker"
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
@@ -532,6 +532,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     // Clear all our drawing and let the background show through again.
     ctx.clearRect(0, 0, width, height)
   }
+
   hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)
