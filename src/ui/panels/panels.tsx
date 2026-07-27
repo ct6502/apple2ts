@@ -111,15 +111,15 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 4 ? " dbg-tab-active" : ""}`}
-            title={t("debug.agentTab")}
+            title="VERA Monitor"
             onClick={handleTabClick(4)}>
-            <FontAwesomeIcon icon={faRobot} size="lg" />
+            <FontAwesomeIcon icon={faDesktop} size="lg" />
           </div>
           <div
             className={`dbg-tab ${tabClass} ${activeTab == 5 ? " dbg-tab-active" : ""}`}
-            title="VERA Monitor"
+            title={t("debug.agentTab")}
             onClick={handleTabClick(5)}>
-            <FontAwesomeIcon icon={faDesktop} size="lg" />
+            <FontAwesomeIcon icon={faRobot} size="lg" />
           </div>
         </div>
         }
@@ -136,10 +136,10 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
           <ExpectinTab />
         }
         {(activeTab == 4 && !isSmall) && 
-          <AgentTab />
+          <VeraTab />
         }
         {(activeTab == 5 && !isSmall) && 
-          <VeraTab />
+          <AgentTab />
         }
       </div>
     </Flyout>
