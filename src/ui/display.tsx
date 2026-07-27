@@ -183,8 +183,10 @@ const DisplayApple2 = () => {
   const status = <div className="default-font footer-item">
   <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
   <br />
-  <>Apple2TS ©{new Date().getFullYear()}&nbsp;Chris Torrence&nbsp;
-  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a></>
+  <span>©{new Date().getFullYear()}&nbsp;Chris Torrence and the Apple2TS contributors<br/>
+  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a>&nbsp;&nbsp;
+  <a href="https://ct6502.org/privacy/">Privacy Policy</a>
+  </span>
   </div>
 
   if (isEmbedMode()) {
