@@ -9,7 +9,8 @@ export const ja = {
     "restoreState": "状態を復元",
     "toggleSound": "音声切替",
     "settings": "設定",
-    "debugPanel": "デバッグパネル"
+    "debugPanel": "デバッグパネル",
+    "reportIssue": "問題を報告"
   },
   "config": {
     "speed": "速度",

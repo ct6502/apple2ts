@@ -9,7 +9,8 @@ export const ko = {
     "restoreState": "상태 복원",
     "toggleSound": "소리 토글",
     "settings": "설정",
-    "debugPanel": "디버그 패널"
+    "debugPanel": "디버그 패널",
+    "reportIssue": "문제 보고"
   },
   "config": {
     "speed": "속도",

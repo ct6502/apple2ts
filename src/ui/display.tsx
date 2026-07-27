@@ -25,8 +25,10 @@ import { getTheme, isEmbedMode, isGameMode, isMinimalTheme, setHelpText, getColo
 import { messagelistener } from "./api/messagelistener"
 import { CRTStartup } from "./graphics"
 import { startRemoteControlBridge } from "./api/remotecontrol"
+import { useTranslation } from "../i18n/useTranslation"
 
 const DisplayApple2 = () => {
+  const { t } = useTranslation()
   const [myInit, setMyInit] = useState(false)
   const [renderCount, setRenderCount] = useState(0)
   const [currentSpeed, setCurrentSpeed] = useState(1.02)
@@ -182,7 +184,7 @@ const DisplayApple2 = () => {
   <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
   <br />
   <>Apple2TS ©{new Date().getFullYear()}&nbsp;Chris Torrence&nbsp;
-  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">Report an Issue</a></>
+  <a id="reportIssue" href="https://github.com/ct6502/apple2ts/issues">{t("controls.reportIssue")}</a></>
   </div>
 
   if (isEmbedMode()) {

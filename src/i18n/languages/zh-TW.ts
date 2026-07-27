@@ -9,7 +9,8 @@ export const zhTW = {
     "restoreState": "還原狀態",
     "toggleSound": "切換音效",
     "settings": "設定",
-    "debugPanel": "除錯面板"
+    "debugPanel": "除錯面板",
+    "reportIssue": "回報問題"
   },
   "config": {
     "speed": "模擬器速度",
