@@ -1,8 +1,7 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetMachineName,
-  handleGetSoftSwitches,
-  handleGetVeraFrame} from "./main2worker"
+  handleGetSoftSwitches } from "./main2worker"
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
