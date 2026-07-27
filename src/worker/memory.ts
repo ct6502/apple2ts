@@ -310,7 +310,7 @@ export const updateAddressTables = () => {
 export const specialJumpTable = new Map<number, () => void>()
 
 // Custom callbacks for mem get/set to $C090-$C0FF slot I/O and $C100-$C7FF.
-const slotIOCallbackTable = new Array<AddressCallback>(8)
+const slotIOCallbackTable = new Array<AddressCallback | undefined>(8)
 
 // Determines whether slot has C800 space ROM or not
 const slotIOC8Space = new Uint8Array(8)
