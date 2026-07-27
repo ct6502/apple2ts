@@ -408,7 +408,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
       break
     }
     case MSG_WORKER.VERA_FRAME: {
-      latestVeraFrame = e.data.payload as { fb?: Uint8ClampedArray, dcVideo: number }
+      latestVeraFrame = e.data.payload as { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number }
       break
     }
     default:
@@ -422,7 +422,7 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
 // easy to just stash them here.
 let showAppleMouse = false
 let softSwitchDescriptions = [""]
-let latestVeraFrame: { fb?: Uint8ClampedArray, dcVideo: number } | null = null
+let latestVeraFrame: { fb?: Uint8ClampedArray<ArrayBuffer>, dcVideo: number } | null = null
 
 export const handleGetVeraFrame = () => {
   return latestVeraFrame
