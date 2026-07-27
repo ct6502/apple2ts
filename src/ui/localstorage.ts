@@ -1,8 +1,8 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { COLOR_MODE, RUN_MODE, UI_THEME } from "../common/utility"
+import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetRunMode, passSetShowDebugTab, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
@@ -121,7 +121,6 @@ export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
     localStorage.setItem("veraSlot", JSON.stringify(slot))
   }
   passSetVeraSlot(slot)
-  passSetRunMode(RUN_MODE.NEED_BOOT)
 }
 
 export const setPreferenceSpeedMode = (mode = 0) => {
