@@ -319,9 +319,7 @@ const Apple2Canvas = (props: DisplayProps) => {
           currentCommand = ""
         }
       } else {
-        if (!getArrowKeysAsJoystick()) {
-          startHardwareKeyboard(e.code, arrowKeyCodes[arrowKey] || 0)
-        }
+        startHardwareKeyboard(e.code, arrowKeyCodes[arrowKey] || 0)
         handleArrowKey(arrowKeys[arrowKey], false)
       }
       e.preventDefault()
