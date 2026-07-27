@@ -146,6 +146,8 @@ const vera_version_string = new Uint8Array(["V".charCodeAt(0),
 	VERA_VERSION_MINOR,
 	VERA_VERSION_PATCH
 ])
+const col_line = new Uint8Array(SCREEN_WIDTH)
+const unpacked_sprite_line = new Uint8Array(64)
 let vga_scan_pos_x: number = 0
 let vga_scan_pos_y: number = 0
 let ntsc_half_cnt: number = 0
@@ -475,7 +477,6 @@ const render_sprite_line = (y: number): void => {
 		let eff_sx: number = (props.hflip ? (props.sprite_width - 1) : 0)
 		const eff_sx_incr: number = props.hflip ? -1 : 1
 		const bitmap_data: number = props.sprite_address + (eff_sy << (props.sprite_width_log2 - (1 - props.color_mode)))
-		const unpacked_sprite_line = new Uint8Array(64)
 		const width: number = (props.sprite_width<64? props.sprite_width : 64)
 		const vram_fetch_mask: number = ((2 - props.color_mode) << 2) - 1
 		if (props.color_mode == 0) {
@@ -755,7 +756,6 @@ let eff_x_fp: number = 0
 
 const render_line = (y: number, scan_pos_x: number): void => {
 
-	const col_line = new Uint8Array(SCREEN_WIDTH)
 	const dc_video: number = reg_composer[0]
 	const vstart: number = reg_composer[6] << 1
 	const vstop: number = reg_composer[7] << 1
