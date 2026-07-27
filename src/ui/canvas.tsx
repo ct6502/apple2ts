@@ -19,12 +19,12 @@ import {
 } from "./main2worker"
 import { ARROW, RUN_MODE, convertAppleKey, MouseEventSimple, UI_THEME } from "../common/utility"
 import { ProcessDisplay, getCanvasSize, handleGetOverrideHires, canvasCoordToNormScreenCoord, xmargin, ymargin } from "./graphics"
-import { checkGamepad, handleArrowKey, ensureGamepadEventListeners } from "./devices/gamepad"
+import { checkGamepad, handleArrowKey, handleDiagonalKey, ensureGamepadEventListeners } from "./devices/gamepad"
 import { handleCopyToClipboard } from "./copycanvas"
 import { handleFileSave } from "./savestate"
 import { handleSetCPUState } from "./controller"
 import { setPreferenceSpeedMode } from "./localstorage"
-import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme } from "./ui_settings"
+import { getUseOpenAppleKey, getLowercaseMode, getShowScanlines, isMinimalTheme, getTheme, getArrowKeysAsJoystick } from "./ui_settings"
 import { KeyboardControl } from "./controls/keyboardcontrol"
 import HgrMagnifier from "./hgrmagnifier"
 import { useGlobalContext } from "./globalcontext"
@@ -136,6 +136,11 @@ const Apple2Canvas = (props: DisplayProps) => {
     ArrowRight: ARROW.RIGHT,
     ArrowUp: ARROW.UP,
     ArrowDown: ARROW.DOWN,
+    // Numpad 8/2/4/6 Joystick Mapping (Immune to NumLock)
+    Numpad4: ARROW.LEFT,
+    Numpad6: ARROW.RIGHT,
+    Numpad8: ARROW.UP,
+    Numpad2: ARROW.DOWN,
   }
 
   const arrowKeyCodes: { [key: string]: number } = {
@@ -143,28 +148,45 @@ const Apple2Canvas = (props: DisplayProps) => {
     ArrowRight: 21,
     ArrowUp: 11,
     ArrowDown: 10,
+    Numpad4: 8,
+    Numpad6: 21,
+    Numpad8: 11,
+    Numpad2: 10,
+  }
+
+  const diagonalKeys: { [key: string]: boolean } = {
+    Numpad7: true,
+    Numpad9: true,
+    Numpad1: true,
+    Numpad3: true,
+  }
+
+  const getArrowKeyName = (e: keyEvent): string | null => {
+    if (e.code in arrowKeys) return e.code
+    if (e.key in arrowKeys) return e.key
+    return null
   }
 
   const isMac = navigator.platform.startsWith("Mac")
 
   const isOpenAppleDown = (e: keyEvent) => {
     const useOpenAppleKey = getUseOpenAppleKey()
-    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft")
+    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
   }
 
   const isOpenAppleUp = (e: keyEvent) => {
     const useOpenAppleKey = getUseOpenAppleKey()
-    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft")
+    return e.code === "AltLeft" || (useOpenAppleKey && e.code === "MetaLeft") || e.code === "Numpad0" || e.code === "Numpad5"
   }
 
   const isClosedAppleDown = (e: keyEvent) => {
     const useOpenAppleKey = getUseOpenAppleKey()
-    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight")
+    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
   }
 
   const isClosedAppleUp = (e: keyEvent) => {
     const useOpenAppleKey = getUseOpenAppleKey()
-    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight")
+    return e.code === "AltRight" || (useOpenAppleKey && e.code === "MetaRight") || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
   }
 
   const isMetaSequence = (e: keyEvent): boolean => {
@@ -219,6 +241,12 @@ const Apple2Canvas = (props: DisplayProps) => {
     if (isClosedAppleDown(e)) {
       passAppleCommandKeyPress(false)
     }
+    const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
+    if (getArrowKeysAsJoystick() && isNumpadFireButton) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
     if (isBrowserAltKey) {
       e.preventDefault()
       e.stopPropagation()
@@ -248,7 +276,20 @@ const Apple2Canvas = (props: DisplayProps) => {
 
     const isKeyboardLoop = inKeyboardLoop()
 
-    if (e.key in arrowKeys) {
+    if (e.code in diagonalKeys) {
+      if (e.repeat) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+      handleDiagonalKey(e.code, false)
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+
+    const arrowKey = getArrowKeyName(e)
+    if (arrowKey) {
       if (e.repeat) {
         e.preventDefault()
         e.stopPropagation()
@@ -256,10 +297,10 @@ const Apple2Canvas = (props: DisplayProps) => {
       }
 
       if (isKeyboardLoop && recallBuffer.length > 0 &&
-        (arrowKeys[e.key] === ARROW.UP || arrowKeys[e.key] === ARROW.DOWN)) {
-        if (arrowKeys[e.key] === ARROW.UP) {
+        (arrowKeys[arrowKey] === ARROW.UP || arrowKeys[arrowKey] === ARROW.DOWN)) {
+        if (arrowKeys[arrowKey] === ARROW.UP) {
           recallIndex = Math.max(0, recallIndex - 1)
-        } else if (arrowKeys[e.key] === ARROW.DOWN) {
+        } else if (arrowKeys[arrowKey] === ARROW.DOWN) {
           recallIndex = Math.min(recallBuffer.length, recallIndex + 1)
         }
         const recallCommand = recallBuffer[recallIndex]
@@ -278,8 +319,10 @@ const Apple2Canvas = (props: DisplayProps) => {
           currentCommand = ""
         }
       } else {
-        startHardwareKeyboard(e.code, arrowKeyCodes[e.key])
-        handleArrowKey(arrowKeys[e.key], false)
+        if (!getArrowKeysAsJoystick()) {
+          startHardwareKeyboard(e.code, arrowKeyCodes[arrowKey] || 0)
+        }
+        handleArrowKey(arrowKeys[arrowKey], false)
       }
       e.preventDefault()
       e.stopPropagation()
@@ -328,12 +371,23 @@ const Apple2Canvas = (props: DisplayProps) => {
   const handleKeyUp = (e: keyEvent) => {
     const isBrowserAltKey = e.code === "AltLeft" || e.code === "AltRight"
     stopHardwareKeyboard(e.code)
+    const arrowKey = getArrowKeyName(e)
     if (isOpenAppleUp(e)) {
       passAppleCommandKeyRelease(true)
-    } else if (isClosedAppleUp(e)) {
+    }
+    if (isClosedAppleUp(e)) {
       passAppleCommandKeyRelease(false)
-    } else if (e.key in arrowKeys) {
-      handleArrowKey(arrowKeys[e.key], true)
+    }
+    const isNumpadFireButton = e.code === "Numpad0" || e.code === "Numpad5" || e.code === "NumpadDecimal" || e.code === "NumpadEnter"
+    if (getArrowKeysAsJoystick() && isNumpadFireButton) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+    if (e.code in diagonalKeys) {
+      handleDiagonalKey(e.code, true)
+    } else if (arrowKey) {
+      handleArrowKey(arrowKeys[arrowKey], true)
     }
     if (keyHandled) {
       setKeyHandled(false)
