@@ -239,9 +239,10 @@ export const checkSoftSwitches = (addr: number,
     if (!calledFromMemSet && addr <= 0xC00F) {
       popKey()
     }
-    if (addr === 0xC010) {
+    if (addr >= 0xC010) {
       clearKeyStrobe()
-    } else if (addr !== 0xC000) {
+    }
+    if (addr !== 0xC000 && addr !== 0xC010) {
       memSetC000(addr, rand())
     }
     return
