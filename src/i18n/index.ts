@@ -48,6 +48,34 @@ const translations = {
   "ru": ru
 }
 
+type TranslationCatalog = Record<string, unknown>
+
+// Look up nested translation keys.
+const lookupTranslation = (catalog: TranslationCatalog, key: string): string | undefined => {
+  let value: unknown = catalog
+  for (const part of key.split(".")) {
+    value = (value as Record<string, unknown>)?.[part]
+  }
+  return typeof value === "string" ? value : undefined
+}
+
+export const translateFromCatalogs = (
+  selectedLanguage: TranslationCatalog,
+  english: TranslationCatalog,
+  key: string,
+  params?: Record<string, string>,
+): string => {
+  let result = lookupTranslation(selectedLanguage, key) ?? lookupTranslation(english, key) ?? key
+
+  if (params) {
+    Object.keys(params).forEach(param => {
+      result = result.replace(`{{${param}}}`, params[param])
+    })
+  }
+
+  return result
+}
+
 class I18n {
   private currentLanguage: Language = "en"
   
@@ -118,24 +146,8 @@ class I18n {
     return this.currentLanguage
   }
   
-  // 支援巢狀屬性的翻譯函數
   t(key: string, params?: Record<string, string>): string {
-    const keys = key.split(".")
-    let value: unknown = translations[this.currentLanguage]
-    
-    for (const k of keys) {
-      value = (value as Record<string, unknown>)?.[k]
-    }
-    
-    let result = (value as string) || key
-
-    if (params) {
-      Object.keys(params).forEach(param => {
-        result = result.replace(`{{${param}}}`, params[param])
-      })
-    }
-    
-    return result
+    return translateFromCatalogs(translations[this.currentLanguage], en, key, params)
   }
 }
 
