@@ -482,7 +482,7 @@ const doGetStackString = () => {
 
 let didPassSoftSwitchDescriptions = false
 
-export const updateExternalMachineState = () => {
+export const getExternalMachineState = () => {
   // Make sure the push button values are up to date, since they can
   // be modifed by other softswitches (like for the Sirius Joyport).
   memGet(SWITCHES.PB0.isSetAddr)
@@ -507,7 +507,7 @@ export const updateExternalMachineState = () => {
     lores: getTextPage(true),
     machineName: machineName,
     memoryDump: getMemoryDump(),
-    noDelayMode: !SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet,
+    noDelayMode: !SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet && machineName !== "APPLE2P",
     ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,
     s6502: s6502,
@@ -521,6 +521,12 @@ export const updateExternalMachineState = () => {
     veraSlot: veraSlot,
     zeroPage: getZeroPage(),
   }
+  console.log(state.noDelayMode)
+  return state
+}
+
+export const updateExternalMachineState = () => {
+  const state = getExternalMachineState()
   passMachineState(state)
   // We need to pass this just once to the UI thread, so it can display
   // the list of soft switches in the breakpoint dialog. Crossing my fingers

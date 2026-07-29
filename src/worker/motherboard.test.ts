@@ -3,7 +3,7 @@ import { getHires, memory, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doSetCycleCount, doSetRunMode, doSetSpeedMode } from "./motherboard"
+import { doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 
@@ -57,4 +57,22 @@ test("slow CPU refresh reaches the bottom HGR scanline", () => {
     jest.clearAllTimers()
     jest.useRealTimers()
   }
+})
+
+// Weird "no delay mode" (issue #24) should not be available on the Apple II+
+test("noDelayMode", () => {
+  SWITCHES.COLUMN80.isSet = false
+  SWITCHES.DHIRES.isSet = true
+  const state1 = getExternalMachineState()
+  expect(state1.noDelayMode).toEqual(true)
+  doSetMachineName("APPLE2P")
+  SWITCHES.COLUMN80.isSet = false
+  SWITCHES.DHIRES.isSet = true
+  const state2 = getExternalMachineState()
+  expect(state2.noDelayMode).toEqual(false)
+  doSetMachineName("APPLE2EE")
+  SWITCHES.COLUMN80.isSet = false
+  SWITCHES.DHIRES.isSet = true
+  const state3 = getExternalMachineState()
+  expect(state3.noDelayMode).toEqual(true)
 })
