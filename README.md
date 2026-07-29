@@ -254,6 +254,20 @@ Don't forget to append the trailing back quote ` at the end of the file.
 
 ![Process Instruction](images/Process%20Instruction.png)
 
+## Major Contributors
+
+Chris Torrence — Project creator and primary maintainer, responsible for the core Apple II emulator architecture, CPU, graphics, disk support, UI, etc.
+
+Lawrence Sanchez (boredsenseless) — Built and maintains the disk collection/launcher system, including cloud drive support, Internet Archive and favorites, and HDV export functionality.
+
+Mike Morrison (code-bythepound) — Hardware card emulation including the VERA display adapter, SuperSerial card and ImageWriter, and MIDI support.
+
+anomixer — Full internationalization (i18n) with 13 languages, improved joystick/numpad input handling, and integrated Ollama and Google Gemini AI providers.
+
+Dongsu Jang — Implemented a CLI/server interface with REST APIs.
+
+3AMCinnamonRoll — Fixed raster timing, stabilized the memory map UI, added keyboard mode selection, improved HGR/DHGR frame exports, and improve CI/linting.
+
 ## Additional Info and Sponsors
 
 <a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
