@@ -1,10 +1,27 @@
 import { BREAKPOINT_RESULT, doSetBreakpoints, hitBreakpoint } from "../cpu6502"
 import { BRK_ILLEGAL_65C02, BRK_INSTR, BreakpointMap, BreakpointNew } from "../../common/breakpoint"
+import { setPC } from "../instructions"
+import { memSet } from "../memory"
 import { opCodes } from "../../common/opcodes"
 
 
 const bpMap: BreakpointMap = new BreakpointMap()
 doSetBreakpoints(bpMap)
+const testOpcode = 0xEA
+
+const setInstructionBreakpoint = (memoryBank: string, pc: number) => {
+  bpMap.clear()
+  const bp = BreakpointNew()
+  bp.address = testOpcode | BRK_INSTR
+  bp.instruction = true
+  bp.memoryBank = memoryBank
+  bpMap.set(bp.address, bp)
+  setPC(pc)
+}
+
+const expectInstructionBreakpoint = (result: BREAKPOINT_RESULT) => {
+  expect(hitBreakpoint(testOpcode, 0)).toEqual(result)
+}
 
 // ************ Instructions - test all properties ************
 
@@ -77,5 +94,57 @@ test("hitInstruction with hexvalue", () => {
 
 // ************ Instructions memory bank ************
 
-// TODO: Need to do tests...
+test.each([
+  ["MAIN", 0xC002, 0xC003],
+  ["AUX", 0xC003, 0xC002]
+])("hitInstruction memory bank %s", (memoryBank, matchingSwitch, nonmatchingSwitch) => {
+  setInstructionBreakpoint(memoryBank, 0x0300)
 
+  memSet(nonmatchingSwitch, 1)
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.NO_BREAK)
+  memSet(matchingSwitch, 1)
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.BREAK)
+})
+
+test("hitInstruction memory bank ROM", () => {
+  setInstructionBreakpoint("ROM", 0xD000)
+
+  memSet(0xC083, 1)  // enable R/W RAM, bank 2
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.NO_BREAK)
+  memSet(0xC082, 1)  // enable ROM
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.BREAK)
+})
+
+test.each([
+  ["MAIN-DXXX-1", 0xC008, 0xC009, 0xC08B, 0xC083],
+  ["MAIN-DXXX-2", 0xC008, 0xC009, 0xC083, 0xC08B],
+  ["AUX-DXXX-1", 0xC009, 0xC008, 0xC08B, 0xC083],
+  ["AUX-DXXX-2", 0xC009, 0xC008, 0xC083, 0xC08B]
+])("hitInstruction memory bank %s",
+  (memoryBank, matchingRam, nonmatchingRam, matchingBank, nonmatchingBank) => {
+    setInstructionBreakpoint(memoryBank, 0xD000)
+
+    memSet(matchingRam, 1)
+    memSet(matchingBank, 1)
+    expectInstructionBreakpoint(BREAKPOINT_RESULT.BREAK)
+
+    memSet(nonmatchingBank, 1)
+    expectInstructionBreakpoint(BREAKPOINT_RESULT.NO_BREAK)
+
+    memSet(matchingBank, 1)
+    memSet(nonmatchingRam, 1)
+    expectInstructionBreakpoint(BREAKPOINT_RESULT.NO_BREAK)
+  }
+)
+
+test.each([
+  ["CXXX-ROM", 0xC007, 0xC006],
+  ["CXXX-CARD", 0xC006, 0xC007]
+])("hitInstruction memory bank %s", (memoryBank, matchingSwitch, nonmatchingSwitch) => {
+  setInstructionBreakpoint(memoryBank, 0xC100)
+
+  memSet(nonmatchingSwitch, 1)
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.NO_BREAK)
+  memSet(matchingSwitch, 1)
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.BREAK)
+})
