@@ -22,7 +22,7 @@
 - ✅ 西班牙文語言包 (`languages/es.ts`) - 350+ 翻譯項目
 - ✅ 法文語言包 (`languages/fr.ts`) - 350+ 翻譯項目
 - ✅ 義大利文語言包 (`languages/it.ts`) - 350+ 翻譯項目
-- ✅ 葡萄牙文語言包 (`languages/pt.ts`) - 350+ 翻譯項目
+- ✅ 巴西葡萄牙文語言包 (`languages/pt-BR.ts`) - 350+ 翻譯項目
 - ✅ 日文語言包 (`languages/ja.ts`) - 350+ 翻譯項目
 - ✅ 韓文語言包 (`languages/ko.ts`) - 350+ 翻譯項目
 - ✅ 荷蘭文語言包 (`languages/nl.ts`) - 350+ 翻譯項目
@@ -68,7 +68,7 @@
 | Español | `es` | 100% | 西班牙文完整翻譯 |
 | Français | `fr` | 100% | 法文完整翻譯 |
 | Italiano | `it` | 100% | 義大利文完整翻譯 |
-| Português | `pt` | 100% | 葡萄牙文完整翻譯 |
+| Português (Brasil) | `pt-BR` | 100% | 巴西葡萄牙文完整翻譯 |
 | 日本語 | `ja` | 100% | 日文完整翻譯 |
 | 한국어 | `ko` | 100% | 韓文完整翻譯 |
 | Nederlands | `nl` | 100% | 荷蘭文完整翻譯 |
@@ -90,7 +90,7 @@ src/
 │       ├── es.ts            # 西班牙文語言包
 │       ├── fr.ts            # 法文語言包
 │       ├── it.ts            # 義大利文語言包
-│       ├── pt.ts            # 葡萄牙文語言包
+│       ├── pt-BR.ts         # 巴西葡萄牙文語言包
 │       ├── ja.ts            # 日文語言包
 │       ├── ko.ts            # 韓文語言包
 │       ├── nl.ts            # 荷蘭文語言包
@@ -467,4 +467,3 @@ handleSetDiskData(...)  // 載入新磁碟
 - **翻譯引擎與模組更新**：
   - 更新 `src/i18n/i18n_master.cjs` 字典矩陣，加入 `Trace Settings`, `Variable` 與 `Value` 等核心語句翻譯。
   - 將所有上游變更中之硬編碼字串全數變數化（使用 React Hooks），並使用 Master 腳本自動生成包含 13 種語言之擴充套件檔，並成功替換前端元件。
-
