@@ -5,50 +5,58 @@ import { es } from "./languages/es"
 import { de } from "./languages/de"
 import { fr } from "./languages/fr"
 import { it } from "./languages/it"
-import { pt } from "./languages/pt"
+import { ptBR } from "./languages/pt-BR"
 import { ja } from "./languages/ja"
 import { ko } from "./languages/ko"
 import { nl } from "./languages/nl"
 import { sv } from "./languages/sv"
 import { ru } from "./languages/ru"
 
-export type Language = "en" | "zh-TW" | "zh-CN" | "es" | "de" | "fr" | "it" | "pt" | "ja" | "ko" | "nl" | "sv" | "ru"
+export type Language = "en" | "zh-TW" | "zh-CN" | "es" | "de" | "fr" | "it" | "pt-BR" | "ja" | "ko" | "nl" | "sv" | "ru"
 export type TranslationKey = keyof typeof en
 
-// 語言顯示名稱（用原生語言顯示）
-export const LanguageNames: Record<Language, string> = {
-  "en": "English",
-  "zh-TW": "繁體中文",
-  "zh-CN": "简体中文",
-  "es": "Español",
-  "de": "Deutsch",
-  "fr": "Français",
-  "it": "Italiano",
-  "pt": "Português",
-  "ja": "日本語",
-  "ko": "한국어",
-  "nl": "Nederlands",
-  "sv": "Svenska",
-  "ru": "Русский"
-}
-
-const translations = {
-  "en": en,
-  "zh-TW": zhTW,
-  "zh-CN": zhCN,
-  "es": es,
-  "de": de,
-  "fr": fr,
-  "it": it,
-  "pt": pt,
-  "ja": ja,
-  "ko": ko,
-  "nl": nl,
-  "sv": sv,
-  "ru": ru
-}
-
 type TranslationCatalog = Record<string, unknown>
+
+type LanguageDefinition = {
+  id: Language
+  name: string
+  flag: string
+  catalog: TranslationCatalog
+  browserPrimaryLanguage?: string
+}
+
+// Keep each shipped catalog's identity, menu metadata, and browser alias together.
+const languageDefinitions: readonly LanguageDefinition[] = [
+  { id: "en", name: "English", flag: "🇺🇸", catalog: en, browserPrimaryLanguage: "en" },
+  { id: "zh-TW", name: "繁體中文", flag: "🇹🇼", catalog: zhTW },
+  { id: "zh-CN", name: "简体中文", flag: "🇨🇳", catalog: zhCN },
+  { id: "es", name: "Español", flag: "🇪🇸", catalog: es, browserPrimaryLanguage: "es" },
+  { id: "de", name: "Deutsch", flag: "🇩🇪", catalog: de, browserPrimaryLanguage: "de" },
+  { id: "fr", name: "Français", flag: "🇫🇷", catalog: fr, browserPrimaryLanguage: "fr" },
+  { id: "it", name: "Italiano", flag: "🇮🇹", catalog: it, browserPrimaryLanguage: "it" },
+  { id: "pt-BR", name: "Português (Brasil)", flag: "🇧🇷", catalog: ptBR, browserPrimaryLanguage: "pt" },
+  { id: "ja", name: "日本語", flag: "🇯🇵", catalog: ja, browserPrimaryLanguage: "ja" },
+  { id: "ko", name: "한국어", flag: "🇰🇷", catalog: ko, browserPrimaryLanguage: "ko" },
+  { id: "nl", name: "Nederlands", flag: "🇳🇱", catalog: nl, browserPrimaryLanguage: "nl" },
+  { id: "sv", name: "Svenska", flag: "🇸🇪", catalog: sv, browserPrimaryLanguage: "sv" },
+  { id: "ru", name: "Русский", flag: "🇷🇺", catalog: ru, browserPrimaryLanguage: "ru" },
+]
+
+export const AllLanguages = languageDefinitions.map(({ id }) => id)
+export const LanguageNames = Object.fromEntries(
+  languageDefinitions.map(({ id, name }) => [id, name]),
+) as Record<Language, string>
+export const LanguageFlags = Object.fromEntries(
+  languageDefinitions.map(({ id, flag }) => [id, flag]),
+) as Record<Language, string>
+
+const translations = Object.fromEntries(
+  languageDefinitions.map(({ id, catalog }) => [id, catalog]),
+) as Record<Language, TranslationCatalog>
+
+const legacySavedLanguageIds: Readonly<Record<string, Language>> = {
+  pt: "pt-BR",
+}
 
 // Look up nested translation keys.
 const lookupTranslation = (catalog: TranslationCatalog, key: string): string | undefined => {
@@ -76,58 +84,61 @@ export const translateFromCatalogs = (
   return result
 }
 
-class I18n {
+type LanguageStorage = Pick<Storage, "getItem" | "setItem">
+
+export class I18n {
   private currentLanguage: Language = "en"
   
-  constructor() {
-    // 從 localStorage 讀取語言設定
-    const saved = localStorage.getItem("apple2ts-language")
-    if (saved && this.isValidLanguage(saved)) {
-      this.currentLanguage = saved as Language
+  constructor(
+    private readonly storage: LanguageStorage = localStorage,
+    browserLanguage = navigator.language,
+  ) {
+    // Read the saved language setting.
+    const saved = this.storage.getItem("apple2ts-language")
+    const migrated = saved && (legacySavedLanguageIds[saved] ?? saved)
+    if (migrated && this.isValidLanguage(migrated)) {
+      this.currentLanguage = migrated
+      if (migrated !== saved) {
+        this.storage.setItem("apple2ts-language", migrated)
+      }
     } else {
-      // 偵測瀏覽器語言
-      this.currentLanguage = this.detectBrowserLanguage()
+      // Detect the browser language.
+      this.currentLanguage = this.detectBrowserLanguage(browserLanguage)
     }
   }
   
-  private isValidLanguage(lang: string): boolean {
-    return ["en", "zh-TW", "zh-CN", "es", "de", "fr", "it", "pt", "ja", "ko", "nl", "sv", "ru"].includes(lang)
+  private isValidLanguage(lang: string): lang is Language {
+    return languageDefinitions.some(({ id }) => id === lang)
   }
   
-  private detectBrowserLanguage(): Language {
-    const browserLang = navigator.language.toLowerCase()
+  private detectBrowserLanguage(browserLanguage: string): Language {
+    const [primaryLanguage, ...subtags] = browserLanguage.toLowerCase().split("-")
     
-    // 檢測中文變體
-    if (browserLang.includes("zh")) {
-      if (browserLang.includes("tw") || browserLang.includes("hant") || browserLang.includes("mo")) {
-        return "zh-TW"  // 繁體中文（台灣、香港、澳門）
+    // Detect Chinese variants.
+    if (primaryLanguage === "zh") {
+      if (subtags.includes("tw") || subtags.includes("hant") || subtags.includes("mo")) {
+        return "zh-TW"  // Traditional Chinese (Taiwan, Hong Kong, Macau)
       }
-      if (browserLang.includes("cn") || browserLang.includes("hans") || browserLang.includes("sg")) {
-        return "zh-CN"  // 簡體中文（中國大陸、新加坡）
+      if (subtags.includes("cn") || subtags.includes("hans") || subtags.includes("sg")) {
+        return "zh-CN"  // Simplified Chinese (Mainland China, Singapore)
       }
-      return "zh-TW"  // 預設繁體中文
+      return "zh-TW"  // Default to Traditional Chinese.
     }
     
-    // 檢測其他語言
-    if (browserLang.startsWith("es")) return "es"  // 西班牙文
-    if (browserLang.startsWith("de")) return "de"  // 德文
-    if (browserLang.startsWith("fr")) return "fr"  // 法文
-    if (browserLang.startsWith("it")) return "it"  // 義大利文
-    if (browserLang.startsWith("pt")) return "pt"  // 葡萄牙文
-    if (browserLang.startsWith("ja")) return "ja"  // 日文
-    if (browserLang.startsWith("ko")) return "ko"  // 韓文
-    if (browserLang.startsWith("nl")) return "nl"  // 荷蘭文
-    if (browserLang.startsWith("sv")) return "sv"  // 瑞典文
-    if (browserLang.startsWith("ru")) return "ru"  // 俄文
+    // pt intentionally selects pt-BR until a pt-PT catalog exists.
+    const matchingLanguage = languageDefinitions.find(
+      ({ browserPrimaryLanguage }) => browserPrimaryLanguage === primaryLanguage,
+    )
+    if (matchingLanguage) return matchingLanguage.id
     
-    return "en"  // 預設英文
+    return "en"  // Default to English.
   }
   
   private listeners: ((lang: Language) => void)[] = []
 
   setLanguage(lang: Language) {
     this.currentLanguage = lang
-    localStorage.setItem("apple2ts-language", lang)
+    this.storage.setItem("apple2ts-language", lang)
     this.emitChange()
   }
 

@@ -1,4 +1,4 @@
-export const pt = {
+export const ptBR = {
   "controls": {
     "boot": "Iniciar",
     "reset": "Reiniciar",
