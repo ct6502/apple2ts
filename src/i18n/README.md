@@ -18,7 +18,7 @@
 - **功能**：快速生成 i18n 引擎、切換按鈕、13 國語言結構包以及範例面板。
 - **執行方式**：
   ```bash
-  node src/i18n/i18n_bootstrap.cjs
+  node src/i18n/archive/i18n_initial_bootstrap.cjs
   ```
 
 ---

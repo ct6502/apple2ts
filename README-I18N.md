@@ -103,7 +103,7 @@ src/
 
 ### 6. 開發者工具
 - ✅ **i18n Master 腳本 (`src/i18n/i18n_master.cjs`)** - 一鍵同步所有語系結構並自動翻譯常用詞彙
-- ✅ **i18n Bootstrap 腳本 (`src/i18n/i18n_bootstrap.cjs`)** - 快速為新專案變出完整的多國語言轉生架構
+- ✅ **i18n Bootstrap 腳本 (`src/i18n/archive/i18n_initial_bootstrap.cjs`)** - 快速為新專案變出完整的多國語言轉生架構
 - ✅ **AI 代理維護指令** - 位於 `src/i18n/README.md`，內含專供 AI Agent 遵循的維護規範與工作流
 
 
@@ -290,7 +290,7 @@ t(key: string): string {
 
 ### 開發者工具
 - **`src/i18n/i18n_master.cjs`**：自動化結構同步與維護。
-- **`src/i18n/i18n_bootstrap.cjs`**：新專案快速佈署架構。
+- **`src/i18n/archive/i18n_initial_bootstrap.cjs`**：新專案快速佈署架構。
 
 ---
 

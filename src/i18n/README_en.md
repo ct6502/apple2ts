@@ -18,7 +18,7 @@ Use this if you want to port the same 13-language i18n architecture to a differe
 - **What it does**: Generates the i18n engine, language switcher, all 13 language stubs, and an example panel.
 - **Run with**:
   ```bash
-  node src/i18n/i18n_bootstrap.cjs
+  node src/i18n/archive/i18n_initial_bootstrap.cjs
   ```
 
 ---

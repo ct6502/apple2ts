@@ -7,6 +7,9 @@ const path = require('path');
  * This tool reincarnates a standard React app into a 13-language localized one,
  * pre-populated with the comprehensive structure used in Apple2TS.
  * 
+ * NOTE: This script was used to create the initial i18n structure and is not
+ * intended for regular use. It is provided here for reference.
+ * 
  * Usage: node i18n_bootstrap.cjs
  */
 
