@@ -7,6 +7,7 @@ import {
   memoryReset,
   memorySetForTests,
   memSet,
+  doSetRom,
   setRamWorks,
   setSlotDriver,
 } from "./memory"
@@ -14,6 +15,7 @@ import { hiresLineToAddress, RamWorksMemoryStart } from "../common/utility"
 import { setIsTesting } from "./worker2main"
 import { getApple2State, setApple2State } from "./save_restore"
 import { SWITCHES } from "./softswitches"
+import { setKeyboardState } from "./devices/keyboard"
 
 type ExpectValue = (i: number) => void
 
@@ -39,6 +41,31 @@ const doTestMemory = (offset: number, start: number, end: number, expectValue: E
 }
 
 const expectIndex = (i: number = 0) => i
+
+test.each([
+  ["reads", (address: number) => memGet(address)],
+  ["writes", (address: number) => memSet(address, 0)],
+])("Apple II+ $C010-$C01F %s clear the keyboard strobe", (_name, access) => {
+  doSetRom("APPLE2P")
+  memoryReset()
+  const random = jest.spyOn(Math, "random").mockReturnValue(0.5)
+  try {
+    for (let address = 0xC010; address <= 0xC01F; address++) {
+      setKeyboardState({isDown: true, key: 0x41, repeat: false})
+      expect(memGetC000(0xC000)).toBe(0xC1)
+      access(address)
+      expect(memGetC000(0xC000)).toBe(0x41)
+      if (address > 0xC010) {
+        expect(memGetC000(address)).toBe(0x5A)
+      }
+    }
+  } finally {
+    random.mockRestore()
+    setKeyboardState({isDown: false, key: 0, repeat: false})
+    doSetRom("APPLE2EE")
+    memoryReset()
+  }
+})
 
 test.each([
   ["HGR full", false, false, 192, 40 * 192],
