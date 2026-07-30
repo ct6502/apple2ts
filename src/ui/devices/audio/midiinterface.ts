@@ -86,7 +86,8 @@ export const setMidiInIndex = (index: number) => {
   {
     midiInIndex = index
     console.log("Selecting MidiIn Device: " + midiInDevices[midiInIndex].name)
-    //device.addEventListener('midimessage', midiMessageReceived);
+    //ERuncommented
+    device.addEventListener('midimessage', midiMessageReceived);
   }
 }
 
@@ -144,35 +145,39 @@ const initDevices = () => {
   
   const inputs = midi.inputs.values()
   for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-    //console.log("Midi In: " + input.value.name);
+    //ERuncommented
+    console.log("Midi In: " + input.value.name);
     midiInDevices.push(input.value)
   }
 
   // don't listen on midi-through if we are sending on midi-through
-  if (midiInDevices.length > 1)
+  // ER changed >1 to >0
+  if (midiInDevices.length > 0)
   {
     // pick last one
     if (midiInIndex != midiInDevices.length-1)
     {
       midiInIndex = midiInDevices.length-1
-      //const device = midiInDevices[midiInIndex];
-      //device.addEventListener('midimessage', midiMessageReceived);
-      //console.log("Selecting MidiInDevice: " + device.name);
+      //ERuncommented
+      const device = midiInDevices[midiInIndex];
+      device.addEventListener('midimessage', midiMessageReceived);
+      console.log("Selecting MidiInDevice: " + device.name);
     }
   }
   else
     midiInIndex = -1
 }
 
-//const midiMessageReceived = (event: MIDIMessageEvent) => {
-//  const data = new Uint8Array(event.data);
-//  let txt = "Recv: [" + data[0].toString(16);
-//  for(let i=1;i<data.length;i++)
-//    txt += (" " + data[i].toString(16));
-//  txt += "]";
-//  console.log(txt);
-//  passRxMidiData(data);
-//}
+//ERuncommented but commented out console.log after verifying data received
+const midiMessageReceived = (event: MIDIMessageEvent) => {
+  const data = new Uint8Array(event.data);
+  let txt = "Recv: [" + data[0].toString(16);
+  for(let i=1;i<data.length;i++)
+    txt += (" " + data[i].toString(16));
+  txt += "]";
+  //console.log(txt);
+  passRxMidiData(data);
+}
 
 // probably not necessary
 const doActiveSense = false
@@ -219,6 +224,9 @@ const msg: number[] = []
 const rtMsg: number[] = []
 let state : State = State.COMMAND
 
+// initial value is used to detect running status error
+let prevStatus : number = 0xFF 
+
 export const receiveMidiData = (data: Uint8Array) => {
   // Fall back to the built-in synth if no external output is selected.
   if (midiOutIndex === -1 && !useSoftSynth && SoftSynth.isSoftSynthAvailable()) {
@@ -240,7 +248,9 @@ export const receiveMidiData = (data: Uint8Array) => {
   for(let i=0;i<data.length;i++)
   {
     const byte = data[i]
-    msg.push(byte)
+
+    //msg.push moved to state machine logic below in order to handle Running Status
+    //msg.push(byte)
 
     switch(state)
     {
@@ -252,7 +262,16 @@ export const receiveMidiData = (data: Uint8Array) => {
           msg.pop()
         }
         else
-          state = State.ARGS1
+          //changed == to != in statement below
+          if ((byte & 0x80) != 0x80)
+          {
+            state = State.ARGS1
+            msg.push(byte)
+          } else
+          {
+            state = State.COMMAND
+            msg.length = 0 // out of alignment before current message complete
+          }
         break
 
       case State.ARGS1:
@@ -263,57 +282,85 @@ export const receiveMidiData = (data: Uint8Array) => {
           msg.pop()
         }
         else
+        {
           state = State.COMMAND
+          msg.push(byte)
+        }
         break
 
       case State.SYSEX:
+        //console.log("MIDI: SYSEX: ", byte.toString(16))
         if (byte === 0xF7)
           state = State.COMMAND
+          msg.push(byte)
         break
         
       case State.COMMAND:
-        switch(byte & 0xF0)
+        if ((byte & 0x80) != 0x80) // running status
         {
-          case 0x80:
-          case 0x90:
-          case 0xA0:
-          case 0xB0:
-          case 0xE0:
-            state = State.ARGS2
-            break
-          
-          case 0xC0:
-          case 0xD0:
+          msg.push(prevStatus)
+          msg.push(byte)
+          if (((prevStatus & 0xF0) == 0xC0) || ((prevStatus &0xF0) == 0xD0))
+          {
+            state = State.COMMAND
+          }
+          else 
+          {
             state = State.ARGS1
-            break
-
-          case 0xF0:
-            switch(byte)
-            {
-              case 0xF0:
-                state = State.SYSEX
-                break
-              case 0xF2:
-                state = State.ARGS2
-                break
-              case 0xF1:
-              case 0xF3:
-                state = State.ARGS1
-                break
-              default:
-                // remain in State.COMMAND, 1 byte arg
-                break
-            }
-            break
-
-          default:
-            // out of alignment / bad data?
-            // stay in command state
-            console.log("MIDI: byte unexpected: ", byte.toString(16))
-            msg.length = 0
-            break
+          }
         }
-        break
+        else
+        {
+          switch(byte & 0xF0)
+          {
+            case 0x80:
+            case 0x90:
+            case 0xA0:
+            case 0xB0:
+            case 0xE0:
+              state = State.ARGS2
+              msg.push(byte)
+              prevStatus = byte
+              break
+            
+            case 0xC0:
+            case 0xD0:
+              state = State.ARGS1
+              msg.push(byte)
+              prevStatus = byte
+              break
+
+            case 0xF0:
+              switch(byte)
+              {
+                case 0xF0:
+                  state = State.SYSEX
+                  //console.log("MIDI: SYSEX: ", byte.toString(16))
+                  msg.push(byte)
+                  break
+                case 0xF2:
+                  state = State.ARGS2
+                  break
+                case 0xF1:
+                case 0xF3:
+                  state = State.ARGS1
+                  break
+                default:
+                  // remain in State.COMMAND, 1 byte arg
+                  break
+              }
+              break
+
+            default:
+              // out of alignment / bad data?
+              // stay in command state
+              console.log("MIDI: byte unexpected: ", byte.toString(16))
+              state = State.COMMAND
+              msg.length = 0
+              break
+          }
+          break
+        }
     }
 
     // always send interleaved realtime messages
