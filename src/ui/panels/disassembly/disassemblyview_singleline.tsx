@@ -1,9 +1,20 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { isBranchInstruction, ROMmemoryStart, toHex } from "../../../common/utility"
-import { handleGetAddressGetTable, handleGetMemoryDump, handleGetState6502 } from "../../main2worker"
+import {
+  handleGetAddressGetTable,
+  handleGetMachineName,
+  handleGetMemoryDump,
+  handleGetState6502,
+} from "../../main2worker"
 import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 import { getSymbolForAddress } from "./disassembly_utilities"
 import { willTakeBranch } from "../../../common/util_disassemble"
+import {
+  getDisassemblyTooltip,
+  getDisassemblyWriteValue,
+  getZeroPagePointer,
+} from "./disassembly_tooltips"
+import type { TooltipFormatKey, TooltipTranslator } from "./disassembly_tooltips"
 
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
@@ -35,41 +46,89 @@ const getShiftedMemoryValue = (addr: number) => {
   return -1
 }
 
-const getOperandTooltip = (operand: string, addr: number) => {
-  let title = ""
+const getOperandTooltip = (
+  opcode: string,
+  operand: string,
+  addr: number,
+  instructionAddress: number,
+  translate: TooltipTranslator,
+) => {
+  const formatKey = (key: TooltipFormatKey) => `debug.disassemblyTooltips.formats.${key}`
+  let addressDescription = ""
+  let effectiveAddress = addr
+  let value = -1
   if (operand.includes(",X)")) {
     const xreg = handleGetState6502().XReg
     // pre-indexing: add X to the address before finding the actual address
-    const preIndex = addr + xreg
-    const addrInd = getShiftedMemoryValue(preIndex) + 256 * getShiftedMemoryValue(preIndex + 1)
-    const value = getShiftedMemoryValue(addrInd)
-    title = `($${toHex(addr)} + $${toHex(xreg)} = $${toHex(preIndex)}) => address = $${toHex(addrInd)}  value = $${toHex(value)}`
+    const preIndex = (addr + xreg) & 0xFF
+    const addrInd = getZeroPagePointer(preIndex, getShiftedMemoryValue)
+    effectiveAddress = addrInd
+    value = getShiftedMemoryValue(effectiveAddress)
+    addressDescription = translate(formatKey("preIndexedAddress"), {
+      base: `$${toHex(addr)}`,
+      index: `$${toHex(xreg)}`,
+      pointer: `$${toHex(preIndex)}`,
+      effectiveAddress: `$${toHex(effectiveAddress)}`,
+    })
   } else if (operand.includes("),Y")) {
     const yreg = handleGetState6502().YReg
     // post-indexing: find the address from memory and then add Y
-    const addrInd = getShiftedMemoryValue(addr) + 256 * getShiftedMemoryValue(addr + 1)
-    const addrNew = addrInd + yreg
-    const value = getShiftedMemoryValue(addrNew)
-    title = `address $${toHex(addrInd)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
+    const addrInd = getZeroPagePointer(addr, getShiftedMemoryValue)
+    effectiveAddress = (addrInd + yreg) & 0xFFFF
+    value = getShiftedMemoryValue(effectiveAddress)
+    addressDescription = translate(formatKey("indexedAddress"), {
+      base: `$${toHex(addrInd)}`,
+      index: `$${toHex(yreg)}`,
+      effectiveAddress: `$${toHex(effectiveAddress)}`,
+    })
   } else if (operand.includes(",X")) {
     const xreg = handleGetState6502().XReg
-    const addrNew = addr + xreg
-    const value = getShiftedMemoryValue(addrNew)
-    title = `address $${toHex(addr)} + $${toHex(xreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
+    const mask = /\$[0-9A-Fa-f]{2},X/.test(operand) ? 0xFF : 0xFFFF
+    effectiveAddress = (addr + xreg) & mask
+    value = getShiftedMemoryValue(effectiveAddress)
+    addressDescription = translate(formatKey("indexedAddress"), {
+      base: `$${toHex(addr)}`,
+      index: `$${toHex(xreg)}`,
+      effectiveAddress: `$${toHex(effectiveAddress)}`,
+    })
   } else if (operand.includes(",Y")) {
     const yreg = handleGetState6502().YReg
-    const addrNew = addr + yreg
-    const value = getShiftedMemoryValue(addrNew)
-    title = `address $${toHex(addr)} + $${toHex(yreg)} = $${toHex(addrNew)}  value = $${toHex(value)}`
+    const mask = /\$[0-9A-Fa-f]{2},Y/.test(operand) ? 0xFF : 0xFFFF
+    effectiveAddress = (addr + yreg) & mask
+    value = getShiftedMemoryValue(effectiveAddress)
+    addressDescription = translate(formatKey("indexedAddress"), {
+      base: `$${toHex(addr)}`,
+      index: `$${toHex(yreg)}`,
+      effectiveAddress: `$${toHex(effectiveAddress)}`,
+    })
   } else if (operand.includes(")")) {
-    const addrInd = getShiftedMemoryValue(addr) + 256 * getShiftedMemoryValue(addr + 1)
-    const value = getShiftedMemoryValue(addrInd)
-    title = `address = $${toHex(addrInd)}  value = $${toHex(value)}`
+    const addrInd = getZeroPagePointer(addr, getShiftedMemoryValue)
+    effectiveAddress = addrInd
+    value = getShiftedMemoryValue(effectiveAddress)
+    addressDescription = translate(formatKey("indirectAddress"), {
+      effectiveAddress: `$${toHex(effectiveAddress)}`,
+    })
   } else if (operand.includes("$")) {
-    const value = getShiftedMemoryValue(addr)
-    title = `value = $${toHex(value)}`
+    value = getShiftedMemoryValue(effectiveAddress)
   }
-  return title
+
+  const state = handleGetState6502()
+  const needsCurrentRegisterValue = ["STA", "STX", "STY"].includes(opcode)
+  const writeValue = needsCurrentRegisterValue && instructionAddress !== state.PC
+    ? -1
+    : getDisassemblyWriteValue(opcode, value, state)
+  const semanticTooltip = getDisassemblyTooltip(
+    handleGetMachineName(), effectiveAddress, opcode, writeValue, translate,
+    operand,
+  )
+  if (semanticTooltip !== undefined) {
+    return [addressDescription, semanticTooltip].filter(Boolean).join("  ")
+  }
+
+  const valueDescription = value >= 0
+    ? translate(formatKey("value"), {value: `$${toHex(value)}`})
+    : ""
+  return [addressDescription, valueDescription].filter(Boolean).join("  ")
 }
 
 
@@ -105,7 +164,13 @@ const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number
   return null
 }
 
-const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number) => void) => {
+const getOperand = (
+  opcode: string,
+  operand: string,
+  instructionAddress: number,
+  onJumpClick: (addr: number) => void,
+  translate: TooltipTranslator,
+) => {
   if (["BPL", "BMI", "BVC", "BVS", "BCC",
     "BCS", "BNE", "BEQ", "BRA", "JSR", "JMP"].includes(opcode)) {
     const result = getJumpLink(opcode, operand, onJumpClick)
@@ -129,7 +194,7 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
     const addr = (ops.length > 1) ? parseInt(ops[1].slice(1), 16) : -1
     if (addr >= 0) {
       className = "disassembly-address"
-      title += getOperandTooltip(operand, addr)
+      title += getOperandTooltip(opcode, operand, addr, instructionAddress, translate)
       const symbol = getSymbolForAddress(addr)
       if (symbol) {
         operand = ops[0] + symbol + (ops[2] || "")
@@ -139,7 +204,12 @@ const getOperand = (opcode: string, operand: string, onJumpClick: (addr: number)
   return <span title={title} className={className}>{(operand + "         ").slice(0, 10)}</span>
 }
 
-export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => void, width: number) => {
+export const getChromacodedLine = (
+  line: string,
+  onJumpClick: (addr: number) => void,
+  width: number,
+  translate: TooltipTranslator,
+) => {
   const opcode = line.slice(16, 19)
   const addr = parseInt(line.slice(0, 4), 16)
   let symbol = getSymbolForAddress(addr) || ""
@@ -150,5 +220,5 @@ export const getChromacodedLine = (line: string, onJumpClick: (addr: number) => 
   symbol = " ".repeat(Math.max(2, maxSymLengthWithoutShift - symbol.length)) + symbol + " "
   return <span className={borderStyle(opcode)}>{hexcodes}{symbol}
     <span className="disassembly-opcode">{opcode} </span>
-    {getOperand(opcode, line.slice(20), onJumpClick)}</span>
+    {getOperand(opcode, line.slice(20), addr, onJumpClick, translate)}</span>
 }
