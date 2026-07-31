@@ -21,7 +21,10 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint-fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "review-disassembly-tooltips": "node tools/render-disassembly-tooltip-review.mjs",
+    "write-disassembly-tooltip-reviews": "node tools/render-disassembly-tooltip-review.mjs --write",
+    "test-disassembly-tooltip-review": "node --test tools/render-disassembly-tooltip-review.test.mjs"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
