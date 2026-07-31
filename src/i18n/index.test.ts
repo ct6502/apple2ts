@@ -5,6 +5,8 @@ describe("translateFromCatalogs", () => {
     debug: {
       tooltip: "English value: {{value}}",
       englishOnly: "English fallback",
+      repeated: "{{value}} then {{value}}",
+      separateValues: "{{first}} then {{second}}",
     },
   }
 
@@ -27,6 +29,18 @@ describe("translateFromCatalogs", () => {
   test("returns the key path when neither catalog contains a key", () => {
     expect(translateFromCatalogs({}, english, "debug.missing"))
       .toBe("debug.missing")
+  })
+
+  test("replaces every occurrence of a template variable", () => {
+    expect(translateFromCatalogs({}, english, "debug.repeated", {value: "$03"}))
+      .toBe("$03 then $03")
+  })
+
+  test("does not interpolate placeholder text inside a replacement value", () => {
+    expect(translateFromCatalogs({}, english, "debug.separateValues", {
+      first: "{{second}}",
+      second: "$03",
+    })).toBe("{{second}} then $03")
   })
 })
 

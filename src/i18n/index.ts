@@ -50,7 +50,7 @@ export const LanguageFlags = Object.fromEntries(
   languageDefinitions.map(({ id, flag }) => [id, flag]),
 ) as Record<Language, string>
 
-const translations = Object.fromEntries(
+export const LanguageCatalogs = Object.fromEntries(
   languageDefinitions.map(({ id, catalog }) => [id, catalog]),
 ) as Record<Language, TranslationCatalog>
 
@@ -76,8 +76,8 @@ export const translateFromCatalogs = (
   let result = lookupTranslation(selectedLanguage, key) ?? lookupTranslation(english, key) ?? key
 
   if (params) {
-    Object.keys(params).forEach(param => {
-      result = result.replace(`{{${param}}}`, params[param])
+    result = result.replace(/{{([^{}]+)}}/g, (token, param: string) => {
+      return Object.prototype.hasOwnProperty.call(params, param) ? params[param] : token
     })
   }
 
@@ -158,7 +158,7 @@ export class I18n {
   }
   
   t(key: string, params?: Record<string, string>): string {
-    return translateFromCatalogs(translations[this.currentLanguage], en, key, params)
+    return translateFromCatalogs(LanguageCatalogs[this.currentLanguage], en, key, params)
   }
 }
 

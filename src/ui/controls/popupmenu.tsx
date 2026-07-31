@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 type PopupMenuProps = {
@@ -12,6 +13,26 @@ type PopupMenuProps = {
 const PopupMenu = (props: PopupMenuProps) => {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [posStyle, setPosStyle] = useState<{ left: number, top: number } | undefined>(undefined)
+
+  useEffect(() => {
+    if (!props.location || !menuRef.current) {
+      setPosStyle(undefined)
+      return
+    }
+    const rect = menuRef.current.getBoundingClientRect()
+    const [x, y] = props.location
+    // Account for the browser window's position on the physical screen.
+    // window.screenY + chrome height gives the top of the viewport in screen coords.
+    const chromeHeight = window.outerHeight - window.innerHeight
+    const maxRight = Math.min(window.innerWidth, window.screen.availWidth - window.screenX)
+    const maxBottom = Math.min(window.innerHeight, window.screen.availHeight - window.screenY - chromeHeight)
+    setPosStyle({
+      left: Math.max(0, Math.min(x, maxRight - rect.width)),
+      top: Math.max(0, Math.min(y, maxBottom - rect.height)),
+    })
+  }, [props.location])
 
   const isItemDisabled = (menuItem: PopupMenuItem): boolean => {
     if (typeof menuItem.isDisabled === "function") {
@@ -20,41 +41,15 @@ const PopupMenu = (props: PopupMenuProps) => {
     return !!menuItem.isDisabled
   }
 
-  const getPopupLocationStyle = () => {
-    if (!props.location) {
-      return {}
-    }
-
-    const [x, y] = props.location
-    let w = 0
-    let h = 0
-
-    props.menuItems[props.menuIndex || 0].filter(value => value.isVisible == undefined || value.isVisible()).map((menuItem) => {
-      if (menuItem.label == "-") {
-        w = Math.max(w, 9)
-        h += 12
-      } else {
-        w = Math.max(w, menuItem.label.length * 10)
-        h += menuItem.isHeading ? 24 : 26
-      }
-    })
-    h += 22
-
-    return {
-      left: Math.min(x, window.innerWidth - w),
-      top: Math.min(y, window.innerHeight - h),
-      ...props.style
-    }
-  }
-
   return (
     props.location
       ? <div className="modal-overlay"
         style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
         onClick={props.onClose}>
-        <div className="floating-dialog flex-column droplist-option"
+        <div ref={menuRef}
+          className="floating-dialog flex-column droplist-option"
           onClick={(e) => e.stopPropagation()}
-          style={getPopupLocationStyle()}>
+          style={{ ...posStyle, visibility: posStyle ? "visible" : "hidden", ...props.style }}>
           {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
             (menuItem.isVisible == undefined || menuItem.isVisible()) &&
             (menuItem.label == "-"
