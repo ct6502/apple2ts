@@ -86,7 +86,6 @@ export const setMidiInIndex = (index: number) => {
   {
     midiInIndex = index
     console.log("Selecting MidiIn Device: " + midiInDevices[midiInIndex].name)
-    //ERuncommented
     device.addEventListener('midimessage', midiMessageReceived);
   }
 }
@@ -145,7 +144,6 @@ const initDevices = () => {
   
   const inputs = midi.inputs.values()
   for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-    //ERuncommented
     console.log("Midi In: " + input.value.name);
     midiInDevices.push(input.value)
   }
@@ -158,7 +156,6 @@ const initDevices = () => {
     if (midiInIndex != midiInDevices.length-1)
     {
       midiInIndex = midiInDevices.length-1
-      //ERuncommented
       const device = midiInDevices[midiInIndex];
       device.addEventListener('midimessage', midiMessageReceived);
       console.log("Selecting MidiInDevice: " + device.name);
@@ -168,13 +165,12 @@ const initDevices = () => {
     midiInIndex = -1
 }
 
-//ERuncommented but commented out console.log after verifying data received
 const midiMessageReceived = (event: MIDIMessageEvent) => {
   const data = new Uint8Array(event.data);
-  let txt = "Recv: [" + data[0].toString(16);
-  for(let i=1;i<data.length;i++)
-    txt += (" " + data[i].toString(16));
-  txt += "]";
+  //let txt = "Recv: [" + data[0].toString(16);
+  //for(let i=1;i<data.length;i++)
+  //  txt += (" " + data[i].toString(16));
+  //txt += "]";
   //console.log(txt);
   passRxMidiData(data);
 }
@@ -225,7 +221,8 @@ const rtMsg: number[] = []
 let state : State = State.COMMAND
 
 // initial value is used to detect running status error
-let prevStatus : number = 0xFF 
+const noStsSeenYet : number = 0xFF
+let prevStatus : number = noStsSeenYet 
 
 export const receiveMidiData = (data: Uint8Array) => {
   // Fall back to the built-in synth if no external output is selected.
@@ -250,7 +247,6 @@ export const receiveMidiData = (data: Uint8Array) => {
     const byte = data[i]
 
     //msg.push moved to state machine logic below in order to handle Running Status
-    //msg.push(byte)
 
     switch(state)
     {
@@ -266,7 +262,8 @@ export const receiveMidiData = (data: Uint8Array) => {
           if ((byte & 0x80) != 0x80)
           {
             state = State.ARGS1
-            msg.push(byte)
+            if (prevStatus != noStsSeenYet)
+              msg.push(byte)
           } else
           {
             state = State.COMMAND
@@ -284,7 +281,8 @@ export const receiveMidiData = (data: Uint8Array) => {
         else
         {
           state = State.COMMAND
-          msg.push(byte)
+          if (prevStatus != noStsSeenYet)
+            msg.push(byte)
         }
         break
 
@@ -292,21 +290,24 @@ export const receiveMidiData = (data: Uint8Array) => {
         //console.log("MIDI: SYSEX: ", byte.toString(16))
         if (byte === 0xF7)
           state = State.COMMAND
-          msg.push(byte)
+        msg.push(byte)
         break
         
       case State.COMMAND:
-        if ((byte & 0x80) != 0x80) // running status
+        if ((byte & 0x80) != 0x80) // handle running status - reuse previous status byte
         {
-          msg.push(prevStatus)
-          msg.push(byte)
-          if (((prevStatus & 0xF0) == 0xC0) || ((prevStatus &0xF0) == 0xD0))
+          if (prevStatus != noStsSeenYet)
           {
-            state = State.COMMAND
-          }
-          else 
-          {
-            state = State.ARGS1
+            msg.push(prevStatus)
+            msg.push(byte)
+            if (((prevStatus & 0xF0) == 0xC0) || ((prevStatus & 0xF0) == 0xD0))
+            {
+              state = State.COMMAND   // messages Cx and Dx have one data byte
+            }
+            else 
+            {
+              state = State.ARGS1 // message has 2 data bytes
+            }
           }
         }
         else
