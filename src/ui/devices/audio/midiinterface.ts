@@ -86,6 +86,7 @@ export const setMidiInIndex = (index: number) => {
   {
     midiInIndex = index
     console.log("Selecting MidiIn Device: " + midiInDevices[midiInIndex].name)
+    const device = midiInDevices[midiInIndex]
     device.addEventListener('midimessage', midiMessageReceived);
   }
 }
@@ -149,7 +150,7 @@ const initDevices = () => {
   }
 
   // don't listen on midi-through if we are sending on midi-through
-  // ER changed >1 to >0
+  // changed >1 to >0 in order to enable Midi IN
   if (midiInDevices.length > 0)
   {
     // pick last one
@@ -167,11 +168,14 @@ const initDevices = () => {
 
 const midiMessageReceived = (event: MIDIMessageEvent) => {
   const data = new Uint8Array(event.data);
-  //let txt = "Recv: [" + data[0].toString(16);
-  //for(let i=1;i<data.length;i++)
-  //  txt += (" " + data[i].toString(16));
-  //txt += "]";
-  //console.log(txt);
+  if (DEBUG)
+  {
+    let txt = "Recv: [" + data[0].toString(16);
+    for(let i=1;i<data.length;i++)
+      txt += (" " + data[i].toString(16));
+    txt += "]";
+    console.log(txt);
+  }
   passRxMidiData(data);
 }
 
@@ -220,7 +224,7 @@ const msg: number[] = []
 const rtMsg: number[] = []
 let state : State = State.COMMAND
 
-// initial value is used to detect running status error
+// initial value is used to detect running status error when status byte not received yet
 const noStsSeenYet : number = 0xFF
 let prevStatus : number = noStsSeenYet 
 
@@ -258,7 +262,6 @@ export const receiveMidiData = (data: Uint8Array) => {
           msg.pop()
         }
         else
-          //changed == to != in statement below
           if ((byte & 0x80) != 0x80)
           {
             state = State.ARGS1
@@ -287,7 +290,8 @@ export const receiveMidiData = (data: Uint8Array) => {
         break
 
       case State.SYSEX:
-        //console.log("MIDI: SYSEX: ", byte.toString(16))
+        if (DEBUG)
+          console.log("MIDI: SYSEX: ", byte.toString(16))
         if (byte === 0xF7)
           state = State.COMMAND
         msg.push(byte)
@@ -336,7 +340,8 @@ export const receiveMidiData = (data: Uint8Array) => {
               {
                 case 0xF0:
                   state = State.SYSEX
-                  //console.log("MIDI: SYSEX: ", byte.toString(16))
+                  if (DEBUG)
+                    console.log("MIDI: SYSEX: ", byte.toString(16))
                   msg.push(byte)
                   break
                 case 0xF2:
