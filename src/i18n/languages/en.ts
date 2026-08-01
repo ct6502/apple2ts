@@ -298,6 +298,7 @@ export const en = {
     loadDiskFromDeviceReadOnly: "Load Disk from Device (Read-Only)",
     loadDiskFromDeviceReadWrite: "Load Disk from Device (Read/Write)",
     loadDiskFromInternetArchive: "Load Disk from Internet Archive",
+    loadDiskFromDemoZoo: "Load Disk from DemoZoo",
     loadDiskFromOneDrive: "Load Disk from OneDrive",
     loadDiskFromGoogleDrive: "Load Disk from Google Drive",
     syncEveryMinute: "Sync Every Minute",
@@ -310,6 +311,7 @@ export const en = {
     diskDrivesAndDevices: "disk drives and devices",
     syncedAt: "Synced {{date}}",
     clickToLoadDiskImage: "Click to load disk image",
+    downloadingDisk: "Downloading disk",
     clickToRemoveFromDiskCollection: "Click to remove from disk collection",
     clickToAddToDiskCollection: "Click to add to disk collection",
     byCreator: "by {{creator}}",
@@ -469,6 +471,25 @@ tour=main|debug|settings
   internetArchive: {
     searchPlaceholder: "Type the name of a software title or click one of the categories above",
     go: "GO"
+  },
+  demoZoo: {
+    searchPlaceholder: "Search DemoZoo (title, author)...",
+    go: "GO",
+    all: "All",
+    demo: "Demo",
+    intro: "Intro",
+    cracktro: "Cracktro",
+    music: "Music",
+    previous: "Previous",
+    next: "Next",
+    firstPage: "First page",
+    lastPage: "Last page",
+    pageInput: "Page number",
+    pageOf: "Page {{page}} of {{pages}}",
+    noProductions: "No DemoZoo productions found.",
+    youtubeOnly: "This production only has a YouTube video link available:",
+    externalOnly: "This production only has an external DemoZoo link available:",
+    openInNewTab: "Open in New Tab"
   },
   basic: {
     newProgram: "New Program",

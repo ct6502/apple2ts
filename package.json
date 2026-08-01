@@ -1,7 +1,7 @@
 {
   "name": "apple2ts",
   "private": true,
-  "version": "3.5.0",
+  "version": "3.5.1",
   "license": "MIT",
   "homepage": "https://apple2ts.com",
   "type": "module",
@@ -13,11 +13,14 @@
     "@fortawesome/fontawesome-common-types": "7.1.0"
   },
   "scripts": {
+    "prestart": "node tools/fetch-demozoo.mjs --prompt",
     "predeploy": "npm run build",
+    "prebuild": "node tools/fetch-demozoo.mjs --no-prompt",
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
     "host": "vite --open --host",
     "build": "tsc && vite build",
+    "build:cloudflare": "npm run build && node tools/build-cloudflare-worker.mjs",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint-fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",

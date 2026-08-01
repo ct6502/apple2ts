@@ -14,9 +14,14 @@ import React from "react"
 import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../common/utility"
 import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
+import { svgDemoZooLogo } from "../../img/icon_demozoo"
 import { passSetDriveProps } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import InternetArchivePopup from "./internetarchivedialog"
+import DemoZooDialog from "./demozoodialog"
+
+const demoZooEnabled = import.meta.env.VITE_DEMOZOO_ENABLED === "true" ||
+  (typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname))
 import { DiskBookmarks } from "./diskbookmarks"
 import { determineVtocType } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
@@ -57,6 +62,7 @@ const DiskDrive = (props: DiskDriveProps) => {
   const diskBookmarks = new DiskBookmarks()
 
   const [internetDialogDialogOpen, setInternetDialogDialogOpen] = useState<boolean>(false)
+  const [demoZooDialogOpen, setDemoZooDialogOpen] = useState<boolean>(false)
   const [menuOpen, setMenuOpen] = useState<number>(-1)
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
@@ -521,6 +527,14 @@ const DiskDrive = (props: DiskDriveProps) => {
               }
             },
             {
+              label: t("disk.loadDiskFromDemoZoo"),
+              svg: svgDemoZooLogo,
+              isVisible: () => demoZooEnabled,
+              onClick: () => {
+                setDemoZooDialogOpen(true)
+              }
+            },
+            {
               label: t("disk.loadDiskFromOneDrive"),
               icon: faCloud,
               isVisible: () => { return !isElectron },
@@ -541,6 +555,12 @@ const DiskDrive = (props: DiskDriveProps) => {
         open={internetDialogDialogOpen}
         onClose={() => { setInternetDialogDialogOpen(false) }}>
       </InternetArchivePopup>
+
+      <DemoZooDialog
+        driveIndex={dprops.index}
+        open={demoZooDialogOpen}
+        onClose={() => { setDemoZooDialogOpen(false) }}>
+      </DemoZooDialog>
     </span>
   )
 }
