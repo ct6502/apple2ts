@@ -197,6 +197,12 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
       }
     }
   }
+  // A newly loaded floppy is the disk the user expects to boot next. Keep
+  // the worker's selected drive in sync; otherwise a second DemoZoo load can
+  // boot the previously selected floppy after the first program changed it.
+  if (!isHardDrive) {
+    currentDrive = index
+  }
   driveState[index] = initDriveState(index, drive, isHardDrive)
   driveState[index].filename = props.filename
   driveData[index] = decodeDiskData(driveState[index], props.diskData)

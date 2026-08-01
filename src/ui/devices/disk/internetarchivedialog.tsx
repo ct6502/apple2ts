@@ -171,7 +171,7 @@ const InternetArchiveResult = (props: InternetDialogResultProps) => {
           icon={bookmarked ? faStarSolid : faStarOutline} />
       </div>
       <img className="iad-result-image" src={screenshotUrl.toString()} onClick={handleTileClick}></img>
-      <div className="iad-result-title" title={props.title}>
+      <div className="iad-result-title" title={props.title} onClick={handleTileClick}>
         {props.title}
       </div>
       <div className="iad-result-creator" title={props.creator}>
@@ -244,9 +244,12 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
 
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
+    const requestUrl = /\.pages\.dev$/i.test(window.location.hostname)
+      ? `/api/disk-direct?url=${encodeURIComponent(queryUrl)}`
+      : queryUrl
 
     showGlobalProgressModal(true, "Fetching query results")
-    fetch(queryUrl)
+    fetch(requestUrl)
       .then(async response => {
         if (response.ok) {
           const json = await response.json()
