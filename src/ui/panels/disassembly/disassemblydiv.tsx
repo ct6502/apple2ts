@@ -7,6 +7,7 @@ import { getDisassembly, getDisassemblyVisibleMode, getDisassemblyAddress, setDi
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const nlines = 40
 let lastRepositionedAddress = -1
@@ -18,6 +19,7 @@ const DisassemblyDiv = (props: {
   setAllowScrollEvent: (value: boolean) => void,
   refresh: () => void}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
+  const { t } = useTranslation()
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const scrollToRef = useRef<HTMLDivElement>(null)
 
@@ -173,7 +175,7 @@ const DisassemblyDiv = (props: {
             className={"breakpoint-position " + getBreakpointStyle(bp[index])}
             data-key={bp[index].address}
             onClick={handleBreakpointClick} />)}
-        {getChromacodedLine(line, onJumpClick, width)}
+        {getChromacodedLine(line, onJumpClick, width, t)}
       </div>
     ))}
     {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
@@ -181,4 +183,3 @@ const DisassemblyDiv = (props: {
 }
 
 export default DisassemblyDiv
-
