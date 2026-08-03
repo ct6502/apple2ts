@@ -450,6 +450,51 @@ const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void
   return lastResponse
 }
 
+const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
+  try {
+    const parsed = new URL(url)
+    if (/\.pages\.dev$/i.test(window.location.hostname) && parsed.hostname === "demozoo.org") {
+      return await fetch(`/api/demozoo-direct${parsed.pathname}${parsed.search}`)
+    }
+  } catch {
+    return null
+  }
+
+  return fetchWithCorsProxy(url)
+}
+
+const fetchExternalDownloadPage = async (url: string): Promise<Response | null> => {
+  if (/\.pages\.dev$/i.test(window.location.hostname)) {
+    try {
+      return await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+    } catch {
+      return null
+    }
+  }
+
+  return fetchWithCorsProxy(url)
+}
+
+const findDirectDownloadOnExternalPage = async (url: string): Promise<string> => {
+  if (isDemoZooDiskDownload(url)) return url
+
+  const response = await fetchExternalDownloadPage(url)
+  if (!response?.ok) return ""
+
+  const html = await response.text()
+  const hrefPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi
+  for (const match of html.matchAll(hrefPattern)) {
+    try {
+      const candidate = new URL(match[1].trim(), url).toString()
+      if (isDemoZooDiskDownload(candidate)) return candidate
+    } catch {
+      // Ignore malformed links.
+    }
+  }
+
+  return ""
+}
+
 
 
 let timerId: NodeJS.Timeout|null = null
@@ -553,11 +598,12 @@ export const handleSetDiskFromURL = async (url: string,
     if (match) {
       const prodId = match[1]
       try {
-        const apiRes = await fetchWithCorsProxy(`https://demozoo.org/api/v1/productions/${prodId}/`)
+        const apiRes = await fetchDemoZooResource(`https://demozoo.org/api/v1/productions/${prodId}/?format=json`)
         if (apiRes && apiRes.ok) {
           const prodData = await apiRes.json()
           if (prodData && prodData.download_links && prodData.download_links.length > 0) {
-            url = chooseDemoZooDownload(prodData.download_links)
+            const downloadUrl = chooseDemoZooDownload(prodData.download_links)
+            url = await findDirectDownloadOnExternalPage(downloadUrl) || downloadUrl
             if (url.includes("files.scene.org/view/")) {
               url = url.replace("files.scene.org/view/", "files.scene.org/get/")
             }
