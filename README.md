@@ -175,6 +175,8 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
 
 ### DemoZoo Testing
 
+The Cloudflare Pages workflow is opt-in. To enable it for a repository, create the repository variable `CLOUDFLARE_PAGES_ENABLED` with the value `true`, and configure the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. The optional `CLOUDFLARE_PAGES_PROJECT` variable selects the Pages project name and defaults to `apple2ts`.
+
 1. On the Cloudflare Pages deployment, refresh the browser, click on hard drive 1, choose _Load Disk from DemoZoo_, and verify that the DemoZoo production list opens with screenshots and page navigation.
 1. Use the type filters (Demo, Game, Intro, Cracktro, and Music), then open a production and verify that its disk image loads and boots.
 1. Open a production with only a YouTube link and verify that the confirmation dialog opens a new browser tab when accepted.
