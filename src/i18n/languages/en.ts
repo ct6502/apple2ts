@@ -98,10 +98,10 @@ export const en = {
         auxiliaryBankUnknown: "Select auxiliary bank using {{addressing}} addressing; start paddle timers",
         auxiliaryBank: "Select auxiliary bank {{bank}} using {{addressing}} addressing; start paddle timers",
         preIndexedAddress:
-          "({{base}} + {{index}} = {{pointer}}) => address = {{effectiveAddress}}",
-        indexedAddress: "address {{base}} + {{index}} = {{effectiveAddress}}",
-        indirectAddress: "address = {{effectiveAddress}}",
-        value: "value = {{value}}",
+          "Address: {{effectiveAddress}} ⇐ ({{base}} + {{index}} = {{pointer}})",
+        indexedAddress: "Address: {{effectiveAddress}} = {{base}} + {{index}}",
+        indirectAddress: "Address: {{effectiveAddress}}",
+        value: "Value: {{value}}",
       },
       states: {
         "1": "1",
