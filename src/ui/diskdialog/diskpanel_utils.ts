@@ -150,7 +150,7 @@ export const loadDisk = (
   // Only force idle when actually loading into a drive. Background fetches for
   // export/VTOC pass a callback (and often driveIndex -1) and must not disrupt
   // the currently running program/canvas state.
-  if (!callback && driveIndex >= 0) {
+  if (!callback) {
     passSetRunMode(RUN_MODE.IDLE)
   }
 
