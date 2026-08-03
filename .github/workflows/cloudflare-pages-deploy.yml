@@ -10,9 +10,6 @@ permissions:
 
 jobs:
   deploy:
-    # Manual runs are an explicit deployment request; push runs still require
-    # the repository variable so Cloudflare's Git integration can stay off.
-    if: github.event_name == 'workflow_dispatch' || vars.CLOUDFLARE_PAGES_ENABLED == 'true'
     runs-on: ubuntu-latest
     env:
       VITE_DEMOZOO_ENABLED: "true"
