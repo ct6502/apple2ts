@@ -254,6 +254,16 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           diskCollectionItem.cloudData.downloadUrl = downloadUrl.toString()
           fileSize = newFileSize
         }
+      } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO) {
+        // DemoZoo favorites store the production page as their URL, so their
+        // actual disk size is only known after the API/external-link resolver
+        // downloads and parses the disk image.
+        await new Promise<void>((resolve) => {
+          loadDisk(-1, diskCollectionItem, props.updateDisplay, (buffer) => {
+            fileSize = buffer ? buffer.byteLength : 0
+            resolve()
+          })
+        })
       }
       diskCollectionItem.cloudData.fileSize = fileSize
 
