@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/api/demozoo-direct/*", "/api/disk-direct"],
+  "exclude": []
+}

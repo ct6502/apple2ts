@@ -1,5 +1,33 @@
 # Changelog
 
+## [v3.5.1](https://github.com/ct6502/apple2ts/tree/v3.5.1) (2026-08-02)
+
+**Implemented enhancements:**
+
+- Added a DemoZoo Apple II production browser with dynamic page discovery, type filters, screenshots, and pagination.
+- Added DemoZoo direct disk loading for `.dsk`, `.woz`, `.po`, `.nib`, `.2mg`, `.img`, `.zip`, and related archive formats.
+- Added local curl-based DemoZoo fetching for development, with Corsfix fallback for GitHub Pages.
+- Added complete i18n coverage for the DemoZoo interface.
+- Added separate GitHub Pages and Cloudflare Pages deployments. GitHub Pages keeps the static emulator, while Cloudflare Pages provides the server-side proxy required by DemoZoo.
+- Added Cloudflare Pages Functions for DemoZoo metadata, Internet Archive search/metadata, and external disk-image downloads.
+- Added direct-link discovery for external production pages, including Brutal Deluxe pages that link to a disk image indirectly.
+- Generalized external-page discovery to all DemoZoo download providers, with fallback across multiple disk-image links when one source is unavailable.
+- Added a compact `dosmaster18.zip` fallback for Cloudflare Pages, while preserving the original `.po` image for other deployments.
+- Added first/previous/next/last DemoZoo page controls with an Enter-to-jump page number input.
+- Preserves the last DemoZoo page, search text, and type filter between dialog sessions.
+- Made Cloudflare Pages deployment opt-in through the `CLOUDFLARE_PAGES_ENABLED` repository variable.
+
+**Fixed bugs:**
+
+- Selects direct disk files instead of informational download pages.
+- Boots the newly loaded DemoZoo disk and keeps the selected floppy drive synchronized when changing disks.
+- Prevents DemoZoo refreshes from running automatically on every `npm start`.
+- Fixes DemoZoo proxy routing and external disk downloads on the Cloudflare Pages deployment.
+- Fixes Internet Archive search and metadata resolution when the browser origin is `apple2ts.pages.dev`.
+- Makes Internet Archive result titles clickable and closes the DemoZoo dialog immediately after a disk loads.
+- Adds retries and a pinned Wrangler version for transient Cloudflare Pages Function publish failures.
+- Fixes DemoZoo restoring the latest saved page instead of resetting to page 1 when the dialog is reopened.
+
 ## [v3.5.0](https://github.com/ct6502/apple2ts/tree/v3.5.0) (2026-07-14)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.4.0...v3.5.0)

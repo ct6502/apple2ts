@@ -81,7 +81,6 @@ const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
   return [
     { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url },
     { id: "corsfix-param", url: "https://proxy.corsfix.com/?url=" + encodedUrl },
-    { id: "corsproxy-encoded", url: "https://corsproxy.io/?" + encodedUrl },
     { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
   ]
 }
@@ -95,6 +94,16 @@ const iaResolveInflight = new Map<string, Promise<[URL | undefined, number]>>()
 
 const IA_CACHE_TTL_MS = 30 * 60 * 1000
 const IA_NEGATIVE_CACHE_TTL_MS = 2 * 60 * 1000
+
+const fetchCloudflareProxy = async (url: string): Promise<Response | null> => {
+  if (!/\.pages\.dev$/i.test(window.location.hostname)) return null
+  try {
+    const response = await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+    return response.ok ? response : null
+  } catch {
+    return null
+  }
+}
 
 export const generateUrlFromInternetArchiveId = (identifier: string): URL => {
   return new URL(internetArchiveUrlProtocol + identifier)
@@ -138,14 +147,21 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
       }
     }
 
+    const cloudflareResponse = await fetchCloudflareProxy(detailsUrl)
+    if (cloudflareResponse) {
+      await processDiskImageResponse(cloudflareResponse)
+    }
+
     // Try a direct fetch first: archive.org sends permissive CORS headers, so
     // this succeeds in the browser and avoids depending on the CORS proxies.
     // Only fall back to the proxies if the direct request fails. The resolve
     // result is cached (positive and negative) below, so this doesn't hammer
     // Internet Archive with repeated requests.
     try {
-      const response = await fetch(detailsUrl)
-      await processDiskImageResponse(response)
+      if (!newDiskImageUrl) {
+        const response = await fetch(detailsUrl)
+        await processDiskImageResponse(response)
+      }
     } catch {
       // Direct fetch failed (likely CORS); fall back to the proxies below.
     }
