@@ -15,6 +15,7 @@
 - Added a compact `dosmaster18.zip` fallback for Cloudflare Pages, while preserving the original `.po` image for other deployments.
 - Added first/previous/next/last DemoZoo page controls with an Enter-to-jump page number input.
 - Preserves the last DemoZoo page, search text, and type filter between dialog sessions.
+- Made Cloudflare Pages deployment opt-in through the `CLOUDFLARE_PAGES_ENABLED` repository variable.
 
 **Fixed bugs:**
 
