@@ -398,6 +398,7 @@ export const zhCN = {
     "diskIsNewRelease": "磁盘是新发行版",
     "diskIsApple2TSCollection": "磁盘是 Apple2TS 收藏的一部分",
     "diskIsInternetArchive": "磁盘是 Internet Archive 的一部分",
+    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "点击从磁盘收藏中移除",
     "clickToKeepInCollection": "点击以保留在磁盘收藏中",
     "clickToAddToCollection": "点击加入磁盘收藏",

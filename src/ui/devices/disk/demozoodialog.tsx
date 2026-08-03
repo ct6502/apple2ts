@@ -74,7 +74,7 @@ const DemoZooResultCard = (props: DemoZooDialogResultProps) => {
     e.stopPropagation()
     const itemId = `demozoo_${item.id}`
     props.diskBookmarks.set({
-      type: DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE,
+      type: DISK_COLLECTION_ITEM_TYPE.DEMOZOO,
       id: itemId,
       title: item.title,
       screenshotUrl: new URL(item.screenshotUrl || "https://demozoo.org/static/images/demozoo-logo.png"),

@@ -27,6 +27,8 @@
 - Makes Internet Archive result titles clickable and closes the DemoZoo dialog immediately after a disk loads.
 - Adds retries and a pinned Wrangler version for transient Cloudflare Pages Function publish failures.
 - Fixes DemoZoo restoring the latest saved page instead of resetting to page 1 when the dialog is reopened.
+- Fixes DemoZoo favorites resolving through the Cloudflare proxy and loading external disk-image links.
+- Marks DemoZoo favorites separately from Internet Archive disks and allows export after the disk format is verified.
 
 ## [v3.5.0](https://github.com/ct6502/apple2ts/tree/v3.5.0) (2026-07-14)
 

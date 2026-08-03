@@ -398,6 +398,7 @@ export const fr = {
     "diskIsNewRelease": "Le disque est une nouvelle sortie",
     "diskIsApple2TSCollection": "Le disque fait partie de la collection Apple2TS",
     "diskIsInternetArchive": "Le disque fait partie d'Internet Archive",
+    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Cliquer pour retirer de la collection de disques",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Cliquez pour ajouter à la collection de disques",

@@ -13,7 +13,8 @@ export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
   INTERNET_ARCHIVE,
   NEW_RELEASE,
-  CLOUD_DRIVE
+  CLOUD_DRIVE,
+  DEMOZOO
 }
 
 export enum TAB_INDEX {
@@ -108,8 +109,14 @@ export const getDiskCollection = (diskBookmarks: DiskBookmarks, newReleases: Dis
 
   // Load favorites
   for (const diskBookmark of diskBookmarks) {
+    // DemoZoo bookmarks were originally stored as INTERNET_ARCHIVE before
+    // DemoZoo got its own collection type. Detect those old entries so they
+    // render with the DemoZoo badge without requiring users to re-favorite them.
+    const isDemoZooBookmark = diskBookmark.cloudData?.providerName === "DemoZoo" ||
+      diskBookmark.detailsUrl?.toString().includes("demozoo.org/productions/")
+    const bookmarkType = isDemoZooBookmark ? DISK_COLLECTION_ITEM_TYPE.DEMOZOO : diskBookmark.type
     const item: DiskCollectionItem = {
-      type: diskBookmark.type,
+      type: bookmarkType,
       title: diskBookmark.title,
       lastUpdated: new Date(diskBookmark.lastUpdated),
       diskUrl: diskBookmark.diskUrl ? diskBookmark.diskUrl : "",
