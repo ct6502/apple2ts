@@ -54,14 +54,15 @@ const isDemoZooDiskDownload = (url: string) => {
   }
 }
 
-const chooseDemoZooDownload = (links: Array<{ url: string; link_class?: string }>) => {
+const chooseDemoZooDownloads = (links: Array<{ url: string; link_class?: string }>) => {
   return [...links]
     .filter(link => Boolean(link.url))
     .sort((left, right) => {
       const leftScore = isDemoZooDiskDownload(left.url) ? 100 : /download/i.test(left.link_class || "") ? 10 : 0
       const rightScore = isDemoZooDiskDownload(right.url) ? 100 : /download/i.test(right.link_class || "") ? 10 : 0
       return rightScore - leftScore
-    })[0]?.url || ""
+    })
+    .map(link => link.url)
 }
 
 export const handleGetFilename = (index: number) => {
@@ -593,6 +594,7 @@ export const handleSetDiskFromURL = async (url: string,
   }
 
   // Resolve DemoZoo production web page URL to direct download link if needed
+  let alternateDownloadUrls: string[] = []
   if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|nib|2mg|img)$/i.test(url)) {
     const match = url.match(/productions\/(\d+)/)
     if (match) {
@@ -602,11 +604,18 @@ export const handleSetDiskFromURL = async (url: string,
         if (apiRes && apiRes.ok) {
           const prodData = await apiRes.json()
           if (prodData && prodData.download_links && prodData.download_links.length > 0) {
-            const downloadUrl = chooseDemoZooDownload(prodData.download_links)
-            url = await findDirectDownloadOnExternalPage(downloadUrl) || downloadUrl
-            if (url.includes("files.scene.org/view/")) {
-              url = url.replace("files.scene.org/view/", "files.scene.org/get/")
+            const resolvedUrls: string[] = []
+            for (const downloadUrl of chooseDemoZooDownloads(prodData.download_links)) {
+              const resolvedUrl = await findDirectDownloadOnExternalPage(downloadUrl) || downloadUrl
+              const normalizedUrl = resolvedUrl.includes("files.scene.org/view/")
+                ? resolvedUrl.replace("files.scene.org/view/", "files.scene.org/get/")
+                : resolvedUrl
+              if (!resolvedUrls.includes(normalizedUrl)) {
+                resolvedUrls.push(normalizedUrl)
+              }
             }
+            alternateDownloadUrls = resolvedUrls
+            url = alternateDownloadUrls[0] || url
           }
         }
       } catch (err) {
@@ -633,23 +642,31 @@ export const handleSetDiskFromURL = async (url: string,
   // hosts). The disk VTOC check that drives these downloads is serialized one
   // request at a time, so this does not flood Internet Archive with parallel
   // requests (the cause of the earlier 429 throttling).
-  if (shouldUseCloudflareDiskProxy(url)) {
-    response = await fetchWithCloudflareDiskProxy(url)
-  } else if (shouldAttemptDirectFetch(url)) {
-    try {
-      response = await fetch(url)
-      if (!response.ok) {
+  const downloadUrlsToTry = [url, ...alternateDownloadUrls.filter(candidate => candidate !== url)]
+  for (const candidateUrl of downloadUrlsToTry) {
+    url = candidateUrl
+    response = null
+
+    if (shouldUseCloudflareDiskProxy(url)) {
+      response = await fetchWithCloudflareDiskProxy(url)
+    } else if (shouldAttemptDirectFetch(url)) {
+      try {
+        response = await fetch(url)
+        if (!response.ok) {
+          response = null
+        }
+      } catch {
+        // Expected for many cross-origin sources; fall through to proxy chain.
         response = null
       }
-    } catch {
-      // Expected for many cross-origin sources; fall through to proxy chain.
-      response = null
     }
-  }
 
-  if (!response || !response.ok) {
-    logFetchDebug("Direct fetch failed, trying corsfix proxy")
+    if (!response || !response.ok) {
+      logFetchDebug("Direct fetch failed, trying corsfix proxy")
       response = await fetchWithCorsProxy(url, debug)
+    }
+
+    if (response?.ok) break
   }
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
