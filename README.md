@@ -175,7 +175,14 @@ Apple2TS uses its built-in software synthesizer by default. Selecting **Enable E
 
 ### DemoZoo Testing
 
-The Cloudflare Pages workflow is opt-in. To enable it for a repository, create the repository variable `CLOUDFLARE_PAGES_ENABLED` with the value `true`, and configure the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets. The optional `CLOUDFLARE_PAGES_PROJECT` variable selects the Pages project name and defaults to `apple2ts`.
+The Cloudflare Pages workflow is opt-in and requires the following repository configuration:
+
+- **Required repository variable:** `CLOUDFLARE_PAGES_ENABLED=true`
+- **Required repository secret:** `CLOUDFLARE_API_TOKEN`, containing a Cloudflare API token that can deploy to Pages
+- **Required repository secret:** `CLOUDFLARE_ACCOUNT_ID`, containing the Cloudflare account ID that owns the Pages project
+- **Optional repository variable:** `CLOUDFLARE_PAGES_PROJECT`, containing the existing Cloudflare Pages project name; it defaults to `apple2ts`
+
+The Cloudflare Pages project must be created in the specified Cloudflare account before the workflow runs. The API token and account ID are configured in GitHub under **Settings → Secrets and variables → Actions**. The enable flag and project name are repository variables; the API token and account ID are repository secrets. Repositories that do not set `CLOUDFLARE_PAGES_ENABLED=true` skip the Cloudflare deployment and are unaffected.
 
 1. On the Cloudflare Pages deployment, refresh the browser, click on hard drive 1, choose _Load Disk from DemoZoo_, and verify that the DemoZoo production list opens with screenshots and page navigation.
 1. Use the type filters (Demo, Game, Intro, Cracktro, and Music), then open a production and verify that its disk image loads and boots.
