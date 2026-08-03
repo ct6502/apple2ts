@@ -453,7 +453,7 @@ const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void
 const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
   try {
     const parsed = new URL(url)
-    if (/\.pages\.dev$/i.test(window.location.hostname) && parsed.hostname === "demozoo.org") {
+    if ((import.meta.env.DEV || /\.pages\.dev$/i.test(window.location.hostname)) && parsed.hostname === "demozoo.org") {
       return await fetch(`/api/demozoo-direct${parsed.pathname}${parsed.search}`)
     }
   } catch {
