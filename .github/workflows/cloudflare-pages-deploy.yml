@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.repository == 'anomixer/apple2ts'
+    if: vars.CLOUDFLARE_PAGES_ENABLED == 'true'
     runs-on: ubuntu-latest
     env:
       VITE_DEMOZOO_ENABLED: "true"
