@@ -154,10 +154,14 @@ describe("disassembly tooltip table", () => {
       .toBe("Enable annunciator 3")
   })
 
-  test("describes Video7 switches on every model where Apple2TS applies them", () => {
-    expect(getDisassemblyTooltip("APPLE2P", 0xC079, "STA", 0))
-      .toBe("Enable Video7 160-column mode")
-  })
+  test.each(["APPLE2P", "APPLE2EU", "APPLE2EE"] as MACHINE_NAME[])(
+    "does not describe internal Video7 overrides as %s hardware addresses", machine => {
+      for (let address = 0xC078; address <= 0xC07D; address++) {
+        expect(getDisassemblyTooltip(machine, address, "LDA", 0)).toBeUndefined()
+        expect(getDisassemblyTooltip(machine, address, "STA", 0)).toBeUndefined()
+      }
+    },
+  )
 
   test("describes auxiliary-bank addressing", () => {
     expect(getDisassemblyTooltip("APPLE2EE", 0xC073, "LDA", 12)).toBe("")

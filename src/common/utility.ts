@@ -95,6 +95,7 @@ export enum MSG_MAIN {
   TRACING,
   TRACE_SETTINGS,
   VERA_SLOT,
+  VIDEO7_OVERRIDE,
 }
 
 export enum COLOR_MODE {

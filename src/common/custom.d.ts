@@ -101,6 +101,13 @@ type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
 
 type VERA_SLOT = 0 | 2 | 4
 
+type Video7Mode = "160x192" | "monochrome" | "mixed"
+
+type Video7Override = {
+  mode: Video7Mode,
+  enabled: boolean,
+}
+
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
 type MachineState = {

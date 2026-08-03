@@ -262,19 +262,6 @@ const DISASSEMBLY_TOOLTIP_DEFINITIONS: readonly DisassemblyTooltipDefinition[] =
   define(APPLE2EX, addresses(0xC073), {write: RAMWORKS_AUX_BANK_SELECTOR}),
   {machines: ALL_MACHINES, address: 0xC074,
     access: text("laser128exCompatibilityNotEmulated")},
-  {machines: ALL_MACHINES, address: 0xC078,
-    access: text("disableVideo7160ColumnMode")},
-  {machines: ALL_MACHINES, address: 0xC079,
-    access: text("enableVideo7160ColumnMode")},
-  {machines: ALL_MACHINES, address: 0xC07A,
-    access: text("disableVideo7MonochromeMode")},
-  {machines: ALL_MACHINES, address: 0xC07B,
-    access: text("enableVideo7MonochromeMode")},
-  {machines: ALL_MACHINES, address: 0xC07C,
-    access: text("disableVideo7MixedMode")},
-  {machines: ALL_MACHINES, address: 0xC07D,
-    access: text("enableVideo7MixedMode")},
-
   // Language Card switches. Odd reads arm and then enable writes; writes reset
   // the prewrite latch but otherwise preserve the current write-enable state.
   {machines: ALL_MACHINES, address: 0xC080,

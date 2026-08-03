@@ -4,7 +4,7 @@ import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, g
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
-import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
+import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
   syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
@@ -550,6 +550,12 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
   if (addresses && (addresses[0] <= 0xC00F || addresses[0] >= 0xC050)) {
     updateAddressTables()
   }
+  updateExternalMachineState()
+}
+
+export const forceVideo7Override = (override: Video7Override) => {
+  setVideo7Override(override.mode, override.enabled)
+  updateAddressTables()
   updateExternalMachineState()
 }
 
