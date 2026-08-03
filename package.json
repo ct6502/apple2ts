@@ -34,7 +34,8 @@
     "review-disassembly-tooltips": "node tools/render-disassembly-tooltip-review.mjs",
     "review-disassembly-translation-keys": "node tools/render-disassembly-tooltip-review.mjs --keys",
     "write-disassembly-tooltip-reviews": "node tools/render-disassembly-tooltip-review.mjs --write",
-    "test-disassembly-tooltip-review": "node --test tools/render-disassembly-tooltip-review.test.mjs"
+    "test-disassembly-tooltip-review": "node --test tools/render-disassembly-tooltip-review.test.mjs",
+    "test-po-catalog": "node --test tools/i18n/*.test.mjs"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
@@ -72,6 +73,7 @@
     "eslint": "^9.34.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "gettext-parser": "^9.1.1",
     "gh-pages": "^6.3.0",
     "globals": "^17.7.0",
     "jest": "^30.0.5",
