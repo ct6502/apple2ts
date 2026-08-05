@@ -521,7 +521,6 @@ export const getExternalMachineState = () => {
     veraSlot: veraSlot,
     zeroPage: getZeroPage(),
   }
-  console.log(state.noDelayMode)
   return state
 }
 
