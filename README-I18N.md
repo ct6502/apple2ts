@@ -367,8 +367,8 @@ Apple2TS 現已部署到 GitHub Pages，可通過以下網址訪問：
 #### GitHub Actions 工作流程優化
 8. **部署流程修復：**
    - **問題：** 複雜的 GitHub Pages API 權限問題
-   - **解決：** 回歸簡單可靠的 gh-pages 套件部署
-   - **优化：** 使用 `GITHUB_TOKEN` 而非自定義 `GH_SECRET`
+   - **解決：** 使用官方 GitHub Actions（`actions/upload-pages-artifact` + `actions/deploy-pages`）搭配內建 `GITHUB_TOKEN`
+   - **優化：** 無需自定義 PAT 或 `GH_SECRET`，GitHub 在每次工作流程執行時自動注入短期權杖，無需手動管理或定期更新
 
 ### 技術解決方案總結
 
