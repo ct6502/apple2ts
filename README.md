@@ -7,7 +7,6 @@ Copyright (c) 2026 Chris Torrence and the Apple2TS contributors
 Copyright in individual contributions remains with their respective authors. “Apple2TS contributors” does not imply collective ownership of every part of the project or an assignment of contributor copyright.
 
 ![node.js CI](https://github.com/ct6502/apple2ts/actions/workflows/main-build-deploy.yml/badge.svg)
-![build/deploy](https://github.com/chris-torrence/apple2ts/actions/workflows/pages/pages-build-deployment/badge.svg)
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
@@ -288,7 +287,5 @@ Dongsu Jang — Implemented a CLI/server interface with REST APIs.
 ## Additional Info and Sponsors
 
 <a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
-
-[![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
 
 [Turtle icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/turtle)
