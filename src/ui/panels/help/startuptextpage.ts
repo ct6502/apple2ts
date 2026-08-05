@@ -23,7 +23,7 @@ const constructStartupTextPage = (machineName: MACHINE_NAME) => {
 
 TypeScript Apple II Emulator
 
-(c) ${new Date().getFullYear()} Chris Torrence`
+(c) ${new Date().getFullYear()} C.Torrence + collaborators`
 
   if (!isGameMode()) {
     emulatorStartText +=`
