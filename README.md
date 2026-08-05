@@ -7,7 +7,6 @@ Copyright (c) 2026 Chris Torrence and the Apple2TS contributors
 Copyright in individual contributions remains with their respective authors. “Apple2TS contributors” does not imply collective ownership of every part of the project or an assignment of contributor copyright.
 
 ![node.js CI](https://github.com/ct6502/apple2ts/actions/workflows/main-build-deploy.yml/badge.svg)
-![build/deploy](https://github.com/chris-torrence/apple2ts/actions/workflows/pages/pages-build-deployment/badge.svg)
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
@@ -89,9 +88,7 @@ There should be no errors generated. If you see errors, be sure to check that yo
 
 ### Deployment
 
-When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. The `main-build-deploy.yml` workflow should fire off two Github Actions. The first will build and test the code, while the second (using `npm run deploy`) will deploy the build to Github Pages.
-
-For the Github Actions, the secrets.GH_SECRET needs to be set to your current Personal Access Token. This needs to be regenerated each year. To do this, go under your main profile, choose Developer Settings -> Personal access tokens -> Fine-grained tokens, choose "gp-pages deploy". Choose an expiration date for one year in the future. Copy the new PAT and save it somewhere safe. Once you have the new Github PAT, you can set it on the repo. Under [Settings](https://github.com/ct6502/apple2ts/settings), choose "Secrets and variables" -> "Actions", then click Edit on the GH_SECRET.
+When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. Both workflows lint, build, and test the code. For pushes to `main`, the workflow also deploys the build to Github Pages using the built-in `GITHUB_TOKEN` — no Personal Access Token or repository secret is required.
 
 ## Upgrade Packages
 
@@ -290,7 +287,5 @@ Dongsu Jang — Implemented a CLI/server interface with REST APIs.
 ## Additional Info and Sponsors
 
 <a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
-
-[![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
 
 [Turtle icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/turtle)
