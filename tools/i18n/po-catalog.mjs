@@ -39,16 +39,15 @@ const boundaryNewlineCounts = message => ({
   trailing: message.match(/\n*$/)[0].length,
 })
 
-const describeBoundaryNewlineDifference = (source, translation) => {
-  const sourceCounts = boundaryNewlineCounts(source)
-  const translationCounts = boundaryNewlineCounts(translation)
+const describeBoundaryNewlines = (message, role) => {
+  const counts = boundaryNewlineCounts(message)
   return [
-    ["leading newlines", sourceCounts.leading, translationCounts.leading],
-    ["trailing newlines", sourceCounts.trailing, translationCounts.trailing],
+    ["leading newlines", counts.leading],
+    ["trailing newlines", counts.trailing],
   ]
-    .filter(([, sourceCount, translationCount]) => sourceCount !== translationCount)
-    .map(([boundary, sourceCount, translationCount]) => (
-      `${boundary}: source=${sourceCount}, translation=${translationCount}`
+    .filter(([, count]) => count > 0)
+    .map(([boundary, count]) => (
+      `${role} ${boundary}=${count}`
     ))
 }
 
@@ -204,7 +203,7 @@ const ANALYSIS_STATUSES = [
   "unmerged",
   "missing",
   "stale-source",
-  "boundary-newline-mismatch",
+  "boundary-newline",
   "placeholder-mismatch",
   "english-identical",
   "translated",
@@ -251,27 +250,26 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
         ...review,
       }
     }
+    const boundaryNewlines = [
+      ...describeBoundaryNewlines(sourceItem.msgid, "source"),
+      ...describeBoundaryNewlines(translation, "translation"),
+    ]
+    if (boundaryNewlines.length > 0) {
+      return {
+        key,
+        status: "boundary-newline",
+        source: sourceItem.msgid,
+        translation: translation.length > 0 ? translation : null,
+        boundaryNewlines,
+        ...review,
+      }
+    }
     if (translation.length === 0) {
       return {
         key,
         status: "missing",
         source: sourceItem.msgid,
         translation: null,
-        ...review,
-      }
-    }
-
-    const boundaryNewlineDifferences = describeBoundaryNewlineDifference(
-      sourceItem.msgid,
-      translation,
-    )
-    if (boundaryNewlineDifferences.length > 0) {
-      return {
-        key,
-        status: "boundary-newline-mismatch",
-        source: sourceItem.msgid,
-        translation,
-        boundaryNewlineDifferences,
         ...review,
       }
     }
@@ -334,6 +332,13 @@ export const compilePoCatalog = (
 
   if (sourceLanguage) {
     for (const [key, item] of sourceMessages) {
+      const boundaryNewlines = describeBoundaryNewlines(item.msgid, "source")
+      if (boundaryNewlines.length > 0) {
+        throw new Error(
+          `Boundary newlines are not allowed for ${key}: `
+          + boundaryNewlines.join("; "),
+        )
+      }
       messages.push({key, value: item.msgid})
     }
   } else {
@@ -362,10 +367,10 @@ export const compilePoCatalog = (
           + entry.placeholderDifferences.join("; "),
         )
       }
-      if (entry.status === "boundary-newline-mismatch") {
+      if (entry.status === "boundary-newline") {
         throw new Error(
-          `Boundary newline mismatch for ${entry.key}: `
-          + entry.boundaryNewlineDifferences.join("; "),
+          `Boundary newlines are not allowed for ${entry.key}: `
+          + entry.boundaryNewlines.join("; "),
         )
       }
       if (entry.status === "translated" || entry.status === "english-identical") {

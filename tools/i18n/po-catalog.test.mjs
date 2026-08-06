@@ -240,7 +240,7 @@ msgstr "Suivant (Étape {step})"
     )
   })
 
-  it("rejects translation boundary newlines that differ from English", () => {
+  it("rejects boundary newlines in source messages and translations", () => {
     assert.throws(
       () => compilePoCatalog(po(`
 msgctxt "controls.boot"
@@ -248,8 +248,8 @@ msgid "Boot"
 msgstr "\\nBoot"
 `), {sourceCatalog: english}),
       new Error(
-        "Boundary newline mismatch for controls.boot: "
-        + "leading newlines: source=0, translation=1",
+        "Boundary newlines are not allowed for controls.boot: "
+        + "translation leading newlines=1",
       ),
     )
 
@@ -257,15 +257,11 @@ msgstr "\\nBoot"
       () => compilePoCatalog(po(`
 msgctxt "controls.boot"
 msgid "Boot\\n"
-msgstr "Démarrer"
-`), {sourceCatalog: po(`
-msgctxt "controls.boot"
-msgid "Boot\\n"
 msgstr ""
-`)}),
+`), {sourceLanguage: true}),
       new Error(
-        "Boundary newline mismatch for controls.boot: "
-        + "trailing newlines: source=1, translation=0",
+        "Boundary newlines are not allowed for controls.boot: "
+        + "source trailing newlines=1",
       ),
     )
 
@@ -280,10 +276,27 @@ msgid "\\n\\nBoot"
 msgstr ""
 `)}),
       new Error(
-        "Boundary newline mismatch for controls.boot: "
-        + "leading newlines: source=2, translation=1",
+        "Boundary newlines are not allowed for controls.boot: "
+        + "source leading newlines=2; translation leading newlines=1",
       ),
     )
+  })
+
+  it("allows translator-controlled internal newlines", () => {
+    const source = po(`
+msgctxt "controls.boot"
+msgid "Boot\\nnow"
+msgstr ""
+`)
+    const translation = po(`
+msgctxt "controls.boot"
+msgid "Boot\\nnow"
+msgstr "Démarrer\\nmaintenant"
+`)
+
+    assert.deepEqual(compilePoCatalog(translation, {sourceCatalog: source}), {
+      controls: {boot: "Démarrer\nmaintenant"},
+    })
   })
 
   it("rejects entries without stable semantic keys", () => {
@@ -487,7 +500,7 @@ msgstr "Orphelin"
       unmerged: 1,
       missing: 0,
       "stale-source": 0,
-      "boundary-newline-mismatch": 0,
+      "boundary-newline": 0,
       "placeholder-mismatch": 1,
       "english-identical": 1,
       translated: 2,
