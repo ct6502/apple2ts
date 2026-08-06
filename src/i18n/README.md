@@ -1,67 +1,61 @@
-# Apple2TS i18n 開發者指南 (Developer Guide)
+# Apple2TS i18n 開發者指南
 
-本目錄包含 Apple2TS 的國際化（i18n）核心引擎及維護工具。當您從上游專案合併（Merge）新功能或需要新增翻譯項目時，請參考以下流程。
+Apple2TS 使用 gettext PO 檔案保存供翻譯者編輯的訊息，同時保留現有的執行階段翻譯 API。
+完整的維護細節請參閱 [English developer guide](README_en.md)。
 
-## 🛠️ 維護工具箱 (Maintenance Tools)
+## 來源檔案與產生的檔案
 
-### 1. `i18n_master.cjs` - 已停用
-請勿使用此腳本。它會將英文複製到缺少鍵值的語系檔案，使未翻譯項目難以辨識。現在執行時不會修改檔案。在計畫中的 PO 流程取代這些檔案之前，請將英文鍵值加入 `en.ts`，並只將實際翻譯加入適用的語系檔案。
+- `catalogs/messages.pot` 是英文訊息的權威範本。穩定的翻譯鍵存放在
+  `msgctxt`，英文文字存放在 `msgid`。
+- `catalogs/<locale>.po` 的 `msgstr` 存放各語系翻譯。
+- `languages/*.ts` 是應用程式使用的產生檔案，請勿直接編輯。
 
-### 2. `i18n_bootstrap.cjs` - 封存參考
-原始啟動腳本保留在 `archive/` 中作為實作歷史。請勿將它用於目前維護或新專案；它會將英文複製到每個語系，且不會產生目前的執行階段回退行為。
+`msgstr` 為空時，執行階段會回退至英文。fuzzy 標記表示翻譯仍待人工確認；只要
+`msgstr` 不為空，Apple2TS 仍會將該翻譯納入產生的 TypeScript。初次移轉所保留的
+非英文翻譯都標記為 fuzzy，翻譯者確認後可逐項清除。
 
----
+## 指令
 
-## 🔄 合併與新增翻譯流程 (Workflow)
+```bash
+# 將 POT 變更合併到所有 PO 檔案（會修改翻譯者檔案）。
+npm run update-i18n-catalogs
 
-當您需要新增翻譯項目（例如新增了一個「印表機選單」功能）時：
+# 編輯 POT 或 PO 後重新產生 TypeScript 語系檔案。
+npm run generate-i18n-catalogs
 
-1. **更新英文原檔**：
-   編輯 `src/i18n/languages/en.ts`，加入新的鍵值對（Key-Value）。
-   ```typescript
-   printer: {
-     print: "Print Now",
-     clear: "Clear Buffer"
-   }
-   ```
+# 不修改檔案，確認產生的語系檔案為最新版本。
+npm run check-i18n-catalogs
 
-2. **加入現有翻譯**：
-   只在有實際翻譯時，才將新鍵值加入對應的語系檔案。不要只為了讓所有目錄結構相同而複製英文。若名稱或技術用語在目標語系中確實應保持相同，則可保留。
+# 測試 PO 解析、驗證、報告、更新及產生流程。
+npm run test-po-catalog
+```
 
-   只有在來源或審查已確定某個現有語系項目是從英文原文複製的佔位內容，而非有意翻譯時，才刪除該項目。僅因內容與英文相同並不足以刪除；已確認的名稱與技術用語可能合理地保持相同。
+一般建置與測試會自動執行不修改檔案的同步檢查。`update-i18n-catalogs` 會修改 PO
+檔案，並需要 GNU gettext `msgmerge`。
 
-3. **保留缺少的翻譯**：
-   語系檔案缺少鍵值時，執行階段會從 `en.ts` 取得英文。這能讓應用程式保持可讀，同時使未翻譯項目仍可辨識。
+## 新增或修改英文訊息
 
-4. **在組件中使用**：
-   ```tsx
-   import { useTranslation } from "../../i18n/useTranslation";
-   // ...
-   const { t } = useTranslation();
-   return <button title={t("printer.print")}>{t("printer.print")}</button>;
-   ```
+1. 在 `catalogs/messages.pot` 新增或修改項目。只修改英文措辭時，保留既有的
+   `msgctxt`。
+2. 執行 `npm run update-i18n-catalogs`。既有翻譯會保留並標記為 fuzzy，先前英文
+   也會留供比較。
+3. 檢查受影響的 `msgstr`。確認翻譯符合目前英文後再清除 fuzzy。缺少翻譯時保持
+   空白，讓執行階段回退至英文。
+4. 執行 `npm run generate-i18n-catalogs`，再執行相關專案檢查。
 
-## 📁 目錄結構說明
+PO 檔案可直接編輯，也可使用 Poedit、Weblate 等標準工具。
 
-- `index.ts`: i18n 核心管理類別，負責語系偵測、儲存與翻譯匹配。
-- `useTranslation.ts`: React Hook，讓前端組件能即時響應語系變更。
-- `languages/`: 存放 13 國語系的實體資料檔（`.ts` 格式以支援類型檢查）。
-- `i18n_master.cjs`: 防止繼續使用舊同步流程的停用提示。
-- `archive/`: 歷史啟動素材，不屬於目前的維護流程。
+## 插值變數
 
----
+執行階段訊息使用 `{{name}}` 變數；部分元件範本使用 `{name}`。翻譯可調整變數
+順序，但必須保留語法、拼寫及出現次數。產生程序會驗證所有非空翻譯，包括 fuzzy
+翻譯。
 
-## 🤖 AI 代理維護指令 (Instructions for AI Agents)
+## 目錄結構
 
-如果你是正在協助維護此專案的 AI 助手，在處理國際化（i18n）相關任務時，請**務必**遵守以下規則：
-
-1.  **優先讀取 `en.ts`**：始終將 `src/i18n/languages/en.ts` 視為唯一的結構標準（Source of Truth）。
-2.  **新增翻譯的標準動作**：
-    *   先在 `en.ts` 中定義新的 Key 與英文內容。
-    *   只將已確認的翻譯加入適用的語系檔案。
-    *   不要執行 `i18n_master.cjs`，也不要為了補齊結構而複製英文。
-3.  **保留有意的回退**：其他語言檔（如 `zh-TW.ts`）在尚無翻譯時可省略 `en.ts` 中的鍵值，執行階段會自動顯示英文。
-4.  **UI 組件修改**：在修改任何 UI 組件（`.tsx`）時，若看到硬編碼的字串，請將其轉換為 `t("category.key")` 格式。
-5.  **插值語法**：翻譯字串中若有動態變數，請使用 `{{variable}}` 語法，並在呼叫 `t` 時傳入變數，例：`t("disk.syncedAt", { date: "2024-01-01" })`。
-
-當使用者要求「新增功能」或「修復翻譯」時，請保留現有翻譯，並只加入任務已確認的翻譯。
+- `index.ts` — 語言選擇、儲存、回退及查詢。
+- `useTranslation.ts` — 可回應語言變更的 React Hook。
+- `catalogs/` — 權威 POT 與 PO 翻譯檔案。
+- `languages/` — 應用程式使用的產生 TypeScript 語系檔案。
+- `tools/i18n/` — 可重現的產生、報告與驗證工具。
+- `archive/` — 歷史啟動素材，不屬於目前維護流程。

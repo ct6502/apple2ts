@@ -1,7 +1,7 @@
 # Apple2TS 完整多國語言支援實作完成報告
 
-> 此文件保留歷史實作記錄。`src/i18n/i18n_master.cjs` 已停用；請以
-> `src/i18n/README.md` 的現行翻譯維護指引為準。
+> 此文件保留原始 i18n 實作報告與歷史紀錄。現行的 gettext PO 維護流程、檔案結構及
+> 翻譯審查政策請參閱 `src/i18n/README.md` 或 `src/i18n/README_en.md`。
 
 ## 📋 專案概述
 
@@ -104,9 +104,9 @@ src/
         └── languageswitch.tsx  # 語言切換組件
 ```
 
-### 6. 歷史開發者工具
-- **i18n Master 腳本 (`src/i18n/i18n_master.cjs`)** - 舊版以此同步語系結構並翻譯常用詞彙；現已停用
-- **i18n Bootstrap 腳本 (`src/i18n/archive/i18n_initial_bootstrap.cjs`)** - 舊版以此為新專案產生多國語言架構；現僅保留為歷史參考
+### 6. 開發者工具
+- ✅ **gettext PO 工作流程 (`src/i18n/catalogs/`)** - 使用穩定鍵值、翻譯審查標記及可重現的 TypeScript 產生程序
+- ✅ **i18n Bootstrap 腳本 (`src/i18n/archive/i18n_initial_bootstrap.cjs`)** - 快速為新專案變出完整的多國語言轉生架構
 - ✅ **AI 代理維護指令** - 位於 `src/i18n/README.md`，內含專供 AI Agent 遵循的維護規範與工作流
 
 
@@ -144,7 +144,7 @@ src/
 
 ### 啟動專案
 ```bash
-npm ci --ignore-scripts
+npm install
 npm start
 ```
 
@@ -283,17 +283,18 @@ t(key: string): string {
 
 ## 📝 維護與擴展說明
 
-目前的翻譯維護請以詳細的開發者指南為準：
+為了維持 13 國語言的一致性與品質，請務必參考詳細的開發者指南：
 - **詳細指南：** `src/i18n/README.md` (包含 AI 代理指令與工具用法)
 
 ### 核心維護工作流
-1. **添加新翻譯**：在 `src/i18n/languages/en.ts` 加入新鍵值。
-2. **加入可用翻譯**：只在有實際翻譯時，才將新鍵值加入對應的語系檔案；缺少的鍵值會在執行階段回退至英文。
+1. **添加英文訊息**：在 `src/i18n/catalogs/messages.pot` 加入或更新項目。
+2. **更新語系目錄**：執行 `npm run update-i18n-catalogs`，再執行 `npm run generate-i18n-catalogs`。
 3. **組件應用**：使用 `useTranslation` hook 定位翻譯項目。
 
-### 封存工具
-- **`src/i18n/i18n_master.cjs`**：已停用；請勿執行舊版同步流程。
-- **`src/i18n/archive/i18n_initial_bootstrap.cjs`**：僅供查閱歷史實作，不適用於目前維護或新專案。
+### 開發者工具
+- **`tools/i18n/`**：PO 更新、驗證、報告及 TypeScript 產生工具。
+- **`src/i18n/catalogs/`**：權威 POT 與各語系 PO 檔案。
+- **`src/i18n/archive/i18n_initial_bootstrap.cjs`**：新專案快速佈署架構。
 
 ---
 

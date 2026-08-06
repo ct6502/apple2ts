@@ -21,7 +21,7 @@
   "scripts": {
     "prestart": "node tools/fetch-demozoo.mjs --prompt",
     "predeploy": "npm run build",
-    "prebuild": "node tools/fetch-demozoo.mjs --no-prompt",
+    "prebuild": "npm run check-i18n-catalogs && node tools/fetch-demozoo.mjs --no-prompt",
     "deploy": "gh-pages -d dist",
     "start": "vite --open",
     "host": "vite --open --host",
@@ -30,12 +30,16 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint-fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
+    "pretest": "npm run check-i18n-catalogs && npm run test-po-catalog",
     "test": "jest",
     "review-disassembly-tooltips": "node tools/render-disassembly-tooltip-review.mjs",
     "review-disassembly-translation-keys": "node tools/render-disassembly-tooltip-review.mjs --keys",
     "write-disassembly-tooltip-reviews": "node tools/render-disassembly-tooltip-review.mjs --write",
     "test-disassembly-tooltip-review": "node --test tools/render-disassembly-tooltip-review.test.mjs",
-    "test-po-catalog": "node --test tools/i18n/*.test.mjs"
+    "test-po-catalog": "node --test tools/i18n/*.test.mjs",
+    "update-i18n-catalogs": "node tools/i18n/update-catalogs.mjs",
+    "generate-i18n-catalogs": "node tools/i18n/generate-catalogs.mjs",
+    "check-i18n-catalogs": "node tools/i18n/generate-catalogs.mjs --check"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
