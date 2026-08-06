@@ -87,15 +87,11 @@ msgstr "Dernier"
     )
   })
 
-  it("omits missing and fuzzy translations so runtime English fallback remains authoritative", () => {
+  it("includes active fuzzy translations", () => {
     const catalog = compilePoCatalog(po(`
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Démarrer"
-
-msgctxt "controls.reset"
-msgid "Reset"
-msgstr ""
 
 #, fuzzy
 msgctxt "disk.save"
@@ -111,10 +107,23 @@ msgstr "Enregistrer le disque"
       controls: {
         boot: "Démarrer",
       },
+      disk: {
+        save: "Enregistrer le disque",
+      },
     })
   })
 
-  it("omits fuzzy translations when flags occupy multiple lines", () => {
+  it("omits empty translations for runtime English fallback", () => {
+    const catalog = compilePoCatalog(po(`
+msgctxt "controls.reset"
+msgid "Reset"
+msgstr ""
+`), {sourceCatalog: english})
+
+    assert.deepEqual(catalog, {})
+  })
+
+  it("includes fuzzy translations when flags occupy multiple lines", () => {
     const catalog = compilePoCatalog(po(`
 #, fuzzy
 #, python-brace-format
@@ -123,7 +132,11 @@ msgid "Boot"
 msgstr "Ancien démarrage"
 `), {sourceCatalog: english})
 
-    assert.deepEqual(catalog, {})
+    assert.deepEqual(catalog, {
+      controls: {
+        boot: "Ancien démarrage",
+      },
+    })
   })
 
   it("accepts matching repeated placeholders", () => {
@@ -140,6 +153,26 @@ msgstr "{{value}} puis {{value}} à {{address}}"
     })
   })
 
+  it("accepts the runtime's complete nonempty brace-free placeholder grammar", () => {
+    const source = po(`
+msgctxt "debug.runtimeGrammar"
+msgid "{{user-name}} then {{ spaced name }}"
+msgstr ""
+`)
+    const catalog = compilePoCatalog(po(`
+#, fuzzy
+msgctxt "debug.runtimeGrammar"
+msgid "{{user-name}} then {{ spaced name }}"
+msgstr "{{ spaced name }} puis {{user-name}}"
+`), {sourceCatalog: source})
+
+    assert.deepEqual(catalog, {
+      debug: {
+        runtimeGrammar: "{{ spaced name }} puis {{user-name}}",
+      },
+    })
+  })
+
   it("rejects missing, unexpected, and differently repeated placeholders", () => {
     assert.throws(
       () => compilePoCatalog(po(`
@@ -149,8 +182,60 @@ msgstr "{{value}} puis {{wrong}}"
 `), {sourceCatalog: english}),
       new Error(
         "Placeholder mismatch for debug.repeated: "
-        + "address: source=1, translation=0; value: source=2, translation=1; "
-        + "wrong: source=0, translation=1",
+        + "{{address}}: source=1, translation=0; {{value}}: source=2, translation=1; "
+        + "{{wrong}}: source=0, translation=1",
+      ),
+    )
+  })
+
+  it("validates placeholders in fuzzy translations", () => {
+    assert.throws(
+      () => compilePoCatalog(po(`
+#, fuzzy
+msgctxt "debug.repeated"
+msgid "{{value}} then {{value}} at {{address}}"
+msgstr "{{value}} puis {{wrong}}"
+`), {sourceCatalog: english}),
+      new Error(
+        "Placeholder mismatch for debug.repeated: "
+        + "{{address}}: source=1, translation=0; {{value}}: source=2, translation=1; "
+        + "{{wrong}}: source=0, translation=1",
+      ),
+    )
+  })
+
+  it("rejects malformed placeholders", () => {
+    assert.throws(
+      () => compilePoCatalog(po(`
+#, fuzzy
+msgctxt "debug.disassemblyTooltips.formats.value"
+msgid "value = {{value}}"
+msgstr "valeur = {{value}"
+`), {sourceCatalog: english}),
+      new Error(
+        "Placeholder mismatch for debug.disassemblyTooltips.formats.value: "
+        + "translation contains malformed placeholder syntax; "
+        + "{{value}}: source=1, translation=0",
+      ),
+    )
+  })
+
+  it("validates component-owned single-brace placeholders", () => {
+    const source = po(`
+msgctxt "tour.nextLabelWithProgress"
+msgid "Next (Step {step} of {steps})"
+msgstr ""
+`)
+    assert.throws(
+      () => compilePoCatalog(po(`
+#, fuzzy
+msgctxt "tour.nextLabelWithProgress"
+msgid "Next (Step {step} of {steps})"
+msgstr "Suivant (Étape {step})"
+`), {sourceCatalog: source}),
+      new Error(
+        "Placeholder mismatch for tour.nextLabelWithProgress: "
+        + "{steps}: source=1, translation=0",
       ),
     )
   })
@@ -346,6 +431,17 @@ msgstr "Enregistrer le disque"
     )
   })
 
+  it("can require every source message to exist in the translation catalog", () => {
+    assert.throws(
+      () => compilePoCatalog(po(`
+msgctxt "controls.boot"
+msgid "Boot"
+msgstr "Démarrer"
+`), {requireMerged: true, sourceCatalog: english}),
+      new Error("Translation catalog has not been merged for: controls.reset"),
+    )
+  })
+
   it("requires the current English catalog when compiling a translation", () => {
     assert.throws(
       () => compilePoCatalog(po(`
@@ -388,23 +484,24 @@ msgstr "Orphelin"
 `))
 
     assert.deepEqual(report.counts, {
-      missing: 1,
-      fuzzy: 1,
+      unmerged: 1,
+      missing: 0,
       "stale-source": 0,
       "boundary-newline-mismatch": 0,
       "placeholder-mismatch": 1,
       "english-identical": 1,
-      translated: 1,
+      translated: 2,
       orphaned: 1,
+      fuzzy: 1,
     })
     assert.deepEqual(
       report.entries.map(({key, status}) => ({key, status})),
       [
         {key: "controls.boot", status: "translated"},
         {key: "controls.reset", status: "english-identical"},
-        {key: "debug.disassemblyTooltips.formats.value", status: "missing"},
+        {key: "debug.disassemblyTooltips.formats.value", status: "unmerged"},
         {key: "debug.repeated", status: "placeholder-mismatch"},
-        {key: "disk.save", status: "fuzzy"},
+        {key: "disk.save", status: "translated"},
         {key: "orphan.message", status: "orphaned"},
       ],
     )
@@ -413,6 +510,29 @@ msgstr "Orphelin"
       source: "Old message",
       translation: "Ancien message",
     }])
+  })
+
+  it("reports fuzzy review state and retained previous English separately", () => {
+    const report = analyzePoCatalog(english, po(`
+#, fuzzy
+#| msgid "Save Disk"
+msgctxt "disk.save"
+msgid "Save Disk Image"
+msgstr "Enregistrer le disque"
+`))
+
+    assert.deepEqual(
+      report.entries.find(({key}) => key === "disk.save"),
+      {
+        key: "disk.save",
+        status: "translated",
+        source: "Save Disk Image",
+        translation: "Enregistrer le disque",
+        fuzzy: true,
+        previousSource: "Save Disk",
+      },
+    )
+    assert.equal(report.counts.fuzzy, 1)
   })
 
   it("reports stale source even when the translation is empty", () => {
@@ -430,6 +550,7 @@ msgstr ""
         source: "Save Disk Image",
         translationSource: "Save Disk",
         translation: "",
+        fuzzy: false,
       },
     )
   })

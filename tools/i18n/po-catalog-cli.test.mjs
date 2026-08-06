@@ -27,6 +27,7 @@ msgstr ""
 `)
 
 const translation = po(`
+#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Démarrer"
@@ -119,6 +120,28 @@ export const fr = {
     assert.equal(await readFile(outputPath, "utf8"), "stale\n")
   })
 
+  it("detects a translation catalog that was not merged with the source", async () => {
+    const {sourcePath, inputPath, outputPath} = await makeFixture()
+    await writeFile(inputPath, po(`
+msgctxt "controls.boot"
+msgid "Boot"
+msgstr "Démarrer"
+`))
+
+    const result = run([
+      "compile",
+      "--source", sourcePath,
+      "--require-merged",
+      "--input", inputPath,
+      "--export", "fr",
+      "--output", outputPath,
+      "--check",
+    ])
+
+    assert.equal(result.status, 2)
+    assert.match(result.stderr, /Translation catalog has not been merged for: controls.reset/)
+  })
+
   it("rejects an output alias that identifies the input file", async () => {
     const {directory, sourcePath, inputPath} = await makeFixture()
     const outputPath = join(directory, "fr-alias.po")
@@ -149,11 +172,16 @@ export const fr = {
     assert.equal(result.status, 0)
     assert.equal(result.stderr, "")
     const report = JSON.parse(result.stdout)
-    assert.equal(report.schemaVersion, 1)
+    assert.equal(report.schemaVersion, 2)
     assert.equal(report.source, sourcePath)
     assert.equal(report.input, inputPath)
     assert.equal(report.counts.translated, 1)
     assert.equal(report.counts.missing, 1)
+    assert.equal(report.counts.fuzzy, 1)
+    assert.equal(
+      report.entries.find(({key}) => key === "controls.boot").fuzzy,
+      true,
+    )
   })
 
   it("uses a distinct exit status for invalid invocation", () => {

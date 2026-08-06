@@ -23,6 +23,7 @@ if (arguments_.length > 1 || (arguments_.length === 1 && arguments_[0] !== "--ch
     const code = await run([
       "compile",
       ...(sourceLanguage ? ["--source-language"] : ["--source", sourceCatalog]),
+      ...(!sourceLanguage ? ["--require-merged"] : []),
       "--input", sourceLanguage ? sourceCatalog : resolve(catalogDirectory, `${locale}.po`),
       "--export", exportName,
       "--output", resolve(outputDirectory, `${locale}.ts`),

@@ -13,7 +13,7 @@ import {
 } from "./po-catalog.mjs"
 
 const HELP = `Usage:
-  node tools/i18n/po-catalog-cli.mjs compile --input FILE --export NAME --output FILE [--source FILE | --source-language] [--check]
+  node tools/i18n/po-catalog-cli.mjs compile --input FILE --export NAME --output FILE [--source FILE | --source-language] [--require-merged] [--check]
   node tools/i18n/po-catalog-cli.mjs report --source FILE --input FILE
 
 Commands:
@@ -22,7 +22,7 @@ Commands:
 `
 
 const VALUE_OPTIONS = new Set(["--source", "--input", "--export", "--output"])
-const FLAG_OPTIONS = new Set(["--source-language", "--check"])
+const FLAG_OPTIONS = new Set(["--source-language", "--require-merged", "--check"])
 
 const parseArguments = argv => {
   if (argv.length === 0 || argv[0] === "help" || argv.includes("--help")) {
@@ -125,7 +125,11 @@ const compile = async options => {
 
   const input = await readUtf8(inputPath)
   const sourceCatalog = sourcePath === undefined ? undefined : await readUtf8(sourcePath)
-  const catalog = compilePoCatalog(input, {sourceLanguage, sourceCatalog})
+  const catalog = compilePoCatalog(input, {
+    requireMerged: options["--require-merged"] === true,
+    sourceLanguage,
+    sourceCatalog,
+  })
   const rendered = renderTypeScriptCatalog(exportName, catalog)
 
   let existing
@@ -155,7 +159,13 @@ const compile = async options => {
 }
 
 const report = async options => {
-  rejectOptions(options, ["--export", "--output", "--source-language", "--check"])
+  rejectOptions(options, [
+    "--export",
+    "--output",
+    "--source-language",
+    "--require-merged",
+    "--check",
+  ])
   const sourceArgument = requireOption(options, "--source")
   const inputArgument = requireOption(options, "--input")
   const sourcePath = resolve(sourceArgument)
@@ -165,7 +175,7 @@ const report = async options => {
     await readUtf8(inputPath),
   )
   process.stdout.write(`${JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     source: sourceArgument,
     input: inputArgument,
     ...analysis,

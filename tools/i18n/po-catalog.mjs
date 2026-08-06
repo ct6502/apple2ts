@@ -1,25 +1,37 @@
+import { Buffer } from "node:buffer"
+
 import { po as poParser } from "gettext-parser"
 
-const PLACEHOLDER_PATTERN = /\{\{([^{}]+)\}\}/g
+const PLACEHOLDER_PATTERN = /\{\{([^{}]+)\}\}|(?<!\{)\{([^{}]+)\}(?!\})/g
 const RESERVED_KEY_SEGMENTS = new Set(["__proto__", "constructor", "prototype"])
 
-const countPlaceholders = message => {
+const inspectPlaceholders = message => {
   const counts = new Map()
   for (const match of message.matchAll(PLACEHOLDER_PATTERN)) {
-    counts.set(match[1], (counts.get(match[1]) ?? 0) + 1)
+    const placeholder = match[0]
+    counts.set(placeholder, (counts.get(placeholder) ?? 0) + 1)
   }
-  return counts
+  const remainder = message.replaceAll(PLACEHOLDER_PATTERN, "")
+  return {counts, malformed: /[{}]/.test(remainder)}
 }
 
 const describePlaceholderDifference = (source, translation) => {
-  const sourceCounts = countPlaceholders(source)
-  const translationCounts = countPlaceholders(translation)
+  const sourceInspection = inspectPlaceholders(source)
+  const translationInspection = inspectPlaceholders(translation)
+  const sourceCounts = sourceInspection.counts
+  const translationCounts = translationInspection.counts
   const names = [...new Set([...sourceCounts.keys(), ...translationCounts.keys()])].sort()
-  return names
-    .filter(name => sourceCounts.get(name) !== translationCounts.get(name))
-    .map(name => (
-      `${name}: source=${sourceCounts.get(name) ?? 0}, translation=${translationCounts.get(name) ?? 0}`
-    ))
+  return [
+    ...(sourceInspection.malformed ? ["source contains malformed placeholder syntax"] : []),
+    ...(translationInspection.malformed
+      ? ["translation contains malformed placeholder syntax"]
+      : []),
+    ...names
+      .filter(name => sourceCounts.get(name) !== translationCounts.get(name))
+      .map(name => (
+        `${name}: source=${sourceCounts.get(name) ?? 0}, translation=${translationCounts.get(name) ?? 0}`
+      )),
+  ]
 }
 
 const boundaryNewlineCounts = message => ({
@@ -50,6 +62,36 @@ const isFuzzy = item => (
     .some(flag => flag.trim() === "fuzzy") ?? false
 )
 
+const setFuzzy = (item, fuzzy) => {
+  const flags = new Set(
+    item.comments?.flag?.split(/[,\s]+/).filter(Boolean) ?? [],
+  )
+  if (fuzzy) flags.add("fuzzy")
+  else flags.delete("fuzzy")
+
+  if (flags.size > 0) {
+    item.comments = {...item.comments, flag: [...flags].join(", ")}
+  } else if (item.comments) {
+    delete item.comments.flag
+    if (Object.keys(item.comments).length === 0) delete item.comments
+  }
+}
+
+const previousSource = item => {
+  const previous = item?.comments?.previous
+  if (!previous) return undefined
+
+  const parsed = poParser.parse(Buffer.from(
+    `msgid ""\nmsgstr ""\n\n${previous}\nmsgstr ""\n`,
+  ), {validation: true})
+  for (const entries of Object.values(parsed.translations)) {
+    for (const previousItem of Object.values(entries)) {
+      if (previousItem.msgid.length > 0) return previousItem.msgid
+    }
+  }
+  return undefined
+}
+
 const setNestedValue = (catalog, key, value) => {
   const parts = key.split(".")
   if (parts.some(part => part.length === 0)) {
@@ -79,6 +121,10 @@ const setNestedValue = (catalog, key, value) => {
 
 const readActiveMessages = source => {
   const po = poParser.parse(source, {validation: true})
+  return readParsedActiveMessages(po)
+}
+
+const readParsedActiveMessages = po => {
   const messages = new Map()
 
   for (const [context, entries] of Object.entries(po.translations)) {
@@ -99,6 +145,44 @@ const readActiveMessages = source => {
   return messages
 }
 
+export const preparePoCatalogForMerge = (sourceCatalog, translationCatalog) => {
+  const source = poParser.parse(sourceCatalog, {validation: true})
+  const translation = poParser.parse(translationCatalog, {validation: true})
+  const sourceMessages = readParsedActiveMessages(source)
+  readParsedActiveMessages(translation)
+  let changed = false
+
+  for (const [context, entries] of Object.entries(translation.translations)) {
+    if (!context) continue
+    for (const [storedMsgid, item] of Object.entries(entries)) {
+      const sourceItem = sourceMessages.get(context)
+      if (!sourceItem || item.msgid === sourceItem.msgid) continue
+
+      const oldSource = item.msgid
+      delete entries[storedMsgid]
+      item.msgid = sourceItem.msgid
+      entries[item.msgid] = item
+      changed = true
+
+      if ((item.msgstr?.[0] ?? "").length > 0) {
+        item.comments = {
+          ...item.comments,
+          previous: `msgid ${JSON.stringify(oldSource)}`,
+        }
+        setFuzzy(item, true)
+      } else {
+        if (item.comments) {
+          delete item.comments.previous
+          if (Object.keys(item.comments).length === 0) delete item.comments
+        }
+        setFuzzy(item, false)
+      }
+    }
+  }
+
+  return changed ? poParser.compile(translation).toString() : translationCatalog
+}
+
 const readObsoleteMessages = source => {
   const po = poParser.parse(source, {validation: true})
   const messages = []
@@ -117,8 +201,8 @@ const readObsoleteMessages = source => {
 }
 
 const ANALYSIS_STATUSES = [
+  "unmerged",
   "missing",
-  "fuzzy",
   "stale-source",
   "boundary-newline-mismatch",
   "placeholder-mismatch",
@@ -139,12 +223,23 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
     const sourceItem = sourceMessages.get(key)
     const translationItem = translationMessages.get(key)
     const translation = translationItem?.msgstr[0] ?? ""
+    const retainedSource = translationItem && previousSource(translationItem)
+    const review = {
+      fuzzy: translationItem ? isFuzzy(translationItem) : false,
+      ...(retainedSource !== undefined ? {previousSource: retainedSource} : {}),
+    }
 
     if (!sourceItem) {
-      return {key, status: "orphaned", source: null, translation}
+      return {key, status: "orphaned", source: null, translation, ...review}
     }
     if (!translationItem) {
-      return {key, status: "missing", source: sourceItem.msgid, translation: null}
+      return {
+        key,
+        status: "unmerged",
+        source: sourceItem.msgid,
+        translation: null,
+        ...review,
+      }
     }
     if (translationItem.msgid !== sourceItem.msgid) {
       return {
@@ -153,13 +248,17 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
         source: sourceItem.msgid,
         translationSource: translationItem.msgid,
         translation,
+        ...review,
       }
     }
-    if (isFuzzy(translationItem)) {
-      return {key, status: "fuzzy", source: sourceItem.msgid, translation}
-    }
     if (translation.length === 0) {
-      return {key, status: "missing", source: sourceItem.msgid, translation: null}
+      return {
+        key,
+        status: "missing",
+        source: sourceItem.msgid,
+        translation: null,
+        ...review,
+      }
     }
 
     const boundaryNewlineDifferences = describeBoundaryNewlineDifference(
@@ -173,6 +272,7 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
         source: sourceItem.msgid,
         translation,
         boundaryNewlineDifferences,
+        ...review,
       }
     }
 
@@ -187,6 +287,7 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
         source: sourceItem.msgid,
         translation,
         placeholderDifferences,
+        ...review,
       }
     }
     return {
@@ -194,14 +295,18 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
       status: translation === sourceItem.msgid ? "english-identical" : "translated",
       source: sourceItem.msgid,
       translation,
+      ...review,
     }
   })
 
   return {
-    counts: Object.fromEntries(ANALYSIS_STATUSES.map(status => [
-      status,
-      entries.filter(entry => entry.status === status).length,
-    ])),
+    counts: {
+      ...Object.fromEntries(ANALYSIS_STATUSES.map(status => [
+        status,
+        entries.filter(entry => entry.status === status).length,
+      ])),
+      fuzzy: entries.filter(entry => entry.fuzzy).length,
+    },
     entries,
   }
 }
@@ -213,7 +318,7 @@ export const analyzePoCatalog = (sourceCatalog, translationCatalog) => ({
 
 export const compilePoCatalog = (
   source,
-  {sourceLanguage = false, sourceCatalog} = {},
+  {requireMerged = false, sourceLanguage = false, sourceCatalog} = {},
 ) => {
   if (!sourceLanguage && sourceCatalog === undefined) {
     throw new Error("A current source catalog is required for translated catalogs")
@@ -233,6 +338,10 @@ export const compilePoCatalog = (
     }
   } else {
     const analysis = analyzeActivePoCatalog(sourceCatalog, source)
+    const unmerged = analysis.entries.find(entry => entry.status === "unmerged")
+    if (requireMerged && unmerged) {
+      throw new Error(`Translation catalog has not been merged for: ${unmerged.key}`)
+    }
     const orphaned = analysis.entries.find(entry => entry.status === "orphaned")
     if (orphaned) {
       throw new Error(`Translation has no current source message: ${orphaned.key}`)
