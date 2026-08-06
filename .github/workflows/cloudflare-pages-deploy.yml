@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: 24.x
           cache: npm
+          npm-version: '>=12'
 
       - name: Install dependencies
         run: npm ci
