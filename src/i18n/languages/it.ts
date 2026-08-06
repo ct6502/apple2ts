@@ -404,7 +404,12 @@ export const it = {
     "diskIsSyncedVia": "Disco sincronizzato tramite",
     "loadDiskIntoDrive": "Carica Disco nell'Unità",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "Esporta dischi in HDV",
+    "export": "Esporta",
+    "clickToRemoveFromSelected": "Clic per rimuovere dai dischi selezionati",
+    "clickToAddToSelected": "Clic per aggiungere ai dischi selezionati",
+    "reportExportIssue": "Segnala un problema di esportazione"
   },
   "debugControls": {
     "goBackInTime": "Torna Indietro nel Tempo",

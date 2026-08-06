@@ -436,7 +436,12 @@ touch key once to enable it then touch the desired letter key.`,
     diskIsSyncedVia: "Disk is synced via",
     loadDiskIntoDrive: "Load Disk into Drive",
     cloudAuthRequired: "auth required",
-    signIn: "Sign in"
+    signIn: "Sign in",
+    exportDisksToHdv: "Export disks to HDV",
+    export: "Export",
+    clickToRemoveFromSelected: "Click to remove from selected disks",
+    clickToAddToSelected: "Click to add to selected disks",
+    reportExportIssue: "Report an export issue"
   },
   debugControls: {
     goBackInTime: "Go Back in Time",

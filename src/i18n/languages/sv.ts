@@ -404,7 +404,12 @@ export const sv = {
     "diskIsSyncedVia": "Disk är synkroniserad via",
     "loadDiskIntoDrive": "Ladda Disk i Enhet",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "Exportera diskar till HDV",
+    "export": "Exportera",
+    "clickToRemoveFromSelected": "Klicka för att ta bort från valda diskar",
+    "clickToAddToSelected": "Klicka för att lägga till i valda diskar",
+    "reportExportIssue": "Rapportera ett exportproblem"
   },
   "debugControls": {
     "goBackInTime": "Gå Tillbaka i Tiden",

@@ -404,7 +404,12 @@ export const ptBR = {
     "diskIsSyncedVia": "Disco sincronizado via",
     "loadDiskIntoDrive": "Carregar Disco na Unidade",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "Exportar discos para HDV",
+    "export": "Exportar",
+    "clickToRemoveFromSelected": "Clique para remover dos discos selecionados",
+    "clickToAddToSelected": "Clique para adicionar aos discos selecionados",
+    "reportExportIssue": "Reportar um problema de exportação"
   },
   "debugControls": {
     "goBackInTime": "Voltar no Tempo",

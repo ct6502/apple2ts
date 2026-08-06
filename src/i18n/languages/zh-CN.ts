@@ -404,7 +404,12 @@ export const zhCN = {
     "diskIsSyncedVia": "磁盘通过同步",
     "loadDiskIntoDrive": "加载磁盘到驱动器",
     "cloudAuthRequired": "需要验证",
-    "signIn": "登录"
+    "signIn": "登录",
+    "exportDisksToHdv": "将磁盘导出为HDV",
+    "export": "导出",
+    "clickToRemoveFromSelected": "点击从已选磁盘中移除",
+    "clickToAddToSelected": "点击添加到已选磁盘",
+    "reportExportIssue": "报告导出问题"
   },
   "debugControls": {
     "goBackInTime": "回到过去",

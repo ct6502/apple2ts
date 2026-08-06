@@ -404,7 +404,12 @@ export const ru = {
     "diskIsSyncedVia": "Диск синхронизирован через",
     "loadDiskIntoDrive": "Загрузить диск в привод",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "Экспорт дисков в HDV",
+    "export": "Экспорт",
+    "clickToRemoveFromSelected": "Нажмите, чтобы удалить из выбранных дисков",
+    "clickToAddToSelected": "Нажмите, чтобы добавить к выбранным дискам",
+    "reportExportIssue": "Сообщить о проблеме экспорта"
   },
   "debugControls": {
     "goBackInTime": "Вернуться во времени",

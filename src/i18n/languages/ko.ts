@@ -404,7 +404,12 @@ export const ko = {
     "diskIsSyncedVia": "디스크가 동기화됨",
     "loadDiskIntoDrive": "드라이브에 디스크 로드",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "디스크를 HDV로 내보내기",
+    "export": "내보내기",
+    "clickToRemoveFromSelected": "클릭하여 선택에서 제거",
+    "clickToAddToSelected": "클릭하여 선택에 추가",
+    "reportExportIssue": "내보내기 문제 보고"
   },
   "debugControls": {
     "goBackInTime": "시간을 거슬러 올라가기",

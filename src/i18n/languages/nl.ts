@@ -404,7 +404,12 @@ export const nl = {
     "diskIsSyncedVia": "Disk is gesynchroniseerd via",
     "loadDiskIntoDrive": "Disk Laden in Drive",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "Schijven exporteren naar HDV",
+    "export": "Exporteren",
+    "clickToRemoveFromSelected": "Klik om te verwijderen uit geselecteerde schijven",
+    "clickToAddToSelected": "Klik om toe te voegen aan geselecteerde schijven",
+    "reportExportIssue": "Exportprobleem melden"
   },
   "debugControls": {
     "goBackInTime": "Terug in de Tijd",

@@ -404,7 +404,12 @@ export const zhTW = {
     "diskIsSyncedVia": "磁碟透過同步",
     "loadDiskIntoDrive": "載入磁碟到磁碟機",
     "cloudAuthRequired": "需要驗證",
-    "signIn": "登入"
+    "signIn": "登入",
+    "exportDisksToHdv": "將磁碟匯出為HDV",
+    "export": "匯出",
+    "clickToRemoveFromSelected": "點擊從已選磁碟中移除",
+    "clickToAddToSelected": "點擊新增至已選磁碟",
+    "reportExportIssue": "回報匯出問題"
   },
   "debugControls": {
     "goBackInTime": "回到過去",

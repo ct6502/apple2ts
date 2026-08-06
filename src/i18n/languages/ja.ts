@@ -404,7 +404,12 @@ export const ja = {
     "diskIsSyncedVia": "ディスクは同期済みです",
     "loadDiskIntoDrive": "ドライブにディスクを読み込み",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "ディスクをHDVにエクスポート",
+    "export": "エクスポート",
+    "clickToRemoveFromSelected": "クリックして選択から削除",
+    "clickToAddToSelected": "クリックして選択に追加",
+    "reportExportIssue": "エクスポートの問題を報告"
   },
   "debugControls": {
     "goBackInTime": "時間を戻る",
