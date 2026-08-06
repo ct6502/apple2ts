@@ -61,6 +61,34 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   colorMode: COLOR_MODE, width: number, height: number, crtDistortion: boolean) => {
   const textPage = handleGetTextPage()
   if (textPage.length === 0) return false
+
+  // Startup text page: Unicode codepoints stored directly — render without Apple II byte encoding
+  if (textPage instanceof Uint16Array) {
+    const cwidth = width * (1 - 2 * xmargin) / 40
+    const cheight = height * (1 - 2 * ymargin) / 24
+    const xmarginPx = xmargin * width
+    const ymarginPx = ymargin * height
+    const hiddenWidth = 560 / 40
+    const hiddenHeight = 384 / 24
+    const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
+    ctx.font = `${cheight}px PrintChar21`
+    hiddenContext.font = `${hiddenHeight}px PrintChar21`
+    ctx.fillStyle = colorFill
+    hiddenContext.fillStyle = colorFill
+    for (let j = 0; j < 24; j++) {
+      const yoffset = ymarginPx + (j + 1) * cheight - 2
+      const yoffsetHidden = (j + 1) * hiddenHeight - 2
+      for (let i = 0; i < 40; i++) {
+        const v = String.fromCodePoint(textPage[40 * j + i] || 0x20)
+        if (!crtDistortion) {
+          ctx.fillText(v, xmarginPx + i * cwidth, yoffset)
+        }
+        hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
+      }
+    }
+    return true
+  }
+
   const switches = handleGetSoftSwitches()
   // See Video-7 RGB-SL7 manual, section 7.1, p. 35
   // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf

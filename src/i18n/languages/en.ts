@@ -341,25 +341,11 @@ export const en = {
 {{keyMod}}\u2190 Back in Time      {{keyMod}}\u2192 Forward in Time
 Open Apple:   press Left Alt/Option
 Closed Apple: press Right Alt/Option
-Joystick Keys: Numpad 8/2/4/6 (7/9/1/3), 0/5, ./Enter`,
-    urlParametersBody: `address=1234 (hex load address for hex data)
-appmode=game|embed
-capslock=off
-color=color|nofringe|green|amber|white|inverse
-crtdistort=on|off
-debug=on
-ghosting=on|off
-hex=hexadecimal program to load at address
-machine=apple2p|apple2eu|apple2ee (II+, IIe, IIe enh)
-ramdisk=64|512|1024|4096|8192
-run=false (do not run Hex or BASIC program)
-scanlines=on|off
-sound=off
-speed=snail|slow|normal|two|three|fast|warp
-text=<a href="https://www.urlencoder.org" target="_blank" rel="noopener noreferrer">urlencoded</a> string or BASIC program to paste
-theme=classic|dark|minimal
-tour=main|debug|settings
-#urltodiskimage`,
+Joystick Keys: Numpad 8/2/4/6 (7/9/1/3), 0/5, ./Enter
+
+For the on-screen keyboard, to use CTRL or ESC keys,
+touch key once to enable it then touch the desired letter key.`,
+    urlParametersBody: "For optional URL parameters, append them to the URL after a question mark (?) and separate multiple parameters with an ampersand (&). Use # to specify the disk image. See the Link Builder dialog for examples.",
     examplesBody: `<a href="https://apple2ts.com/?debug=on#Replay" target="_blank">Total Replay with debugging</a>
 <a href="https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay" target="_blank">Total Replay, load Choplifter, embedded mode</a>
 <a href="https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg" target="_blank">A2Desktop 2MG with fast speed and white color</a>
@@ -642,6 +628,10 @@ tour=main|debug|settings
     ollamaWarning: "Ollama runs locally on your machine. Make sure you have Ollama installed and running. Download from ",
     providerNotConfigured: "Provider not configured - click the gear icon to set up your AI agent",
     providerConfigured: "Provider: {{provider}} ({{model}})",
-    invalidKeyFormat: "Invalid API key format for {{provider}}"
-  }
+    invalidKeyFormat: "Invalid API key format for {{provider}}"  },
+  startup: {
+    welcome: "Welcome to Apple2TS",
+    subtitle: "TypeScript Apple II Emulator",
+    copyright: "(c) {{year}} C.Torrence + collaborators",
+    diskCollections: "Click on the Disk Collections icon\nto load a built-in disk or game.",  }
 }

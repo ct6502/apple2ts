@@ -317,8 +317,8 @@ export const nl = {
     "ctrlKey": "Om een control karakter te versturen, druk eenmaal op de ctrl knop. Tik dan op het scherm om het toetsenbord te tonen en druk op de gewenste toets. De ctrl knop wordt automatisch losgelaten.",
     "ctrlLock": "Om meerdere control karakters te versturen, druk tweemaal op de ctrl knop om het te vergrendelen (aangegeven door een groene stip). Tik dan op het scherm om het toetsenbord te tonen en druk op de gewenste toetsen. Druk opnieuw op de ctrl knop om het los te laten.",
     "appleKeys": "De open apple en closed apple toetsen gedragen zich hetzelfde als de ctrl toets.",
-    "shortcutsTable": "{{keyMod}}B Opstarten         {{arrowMod}}1 1 MHz (Normaal)\n{{keyMod}}C Scherm Kopiëren   {{arrowMod}}2 2 MHz\n{{keyMod}}O Status Openen     {{arrowMod}}3 3 MHz\n{{keyMod}}R Resetten          {{arrowMod}}4 4 MHz (Snel)\n{{keyMod}}S Status Opslaan    {{arrowMod}}5 Belachelijk/Warp\n{{keyMod}}V Plakken           {{arrowMod}}0 Slakkengang (0.1 MHz)\n{{keyMod}}← Tijd Terug      {{keyMod}}→ Tijd Vooruit\nOpen Apple:   druk op Linker Alt/Option\nClosed Apple: Druk Rechter Alt/Option\nJoystick-toetsen: Numeriek toetsenbord 8/2/4/6 (7/9/1/3), 0/5, ./Enter",
-    "urlParametersBody": "address=1234 (hex-laadadres voor hex-data)\nappmode=game|embed (game|ingesloten)\ncapslock=off (caps lock uit)\ncolor=color|nofringe|green|amber|white|inverse (kleurmodus)\ncrtdistort=on|off (CRT vervorming)\ndebug=on (debug modus)\nghosting=on|off (nagloeien)\nhex=hexadecimaal programma om op adres te laden\nmachine=apple2p|apple2eu|apple2ee (II+, IIe, IIe uitgebreid)\nramdisk=64|512|1024|4096|8192\nrun=false (Hex of BASIC-programma niet uitvoeren)\nscanlines=on|off (scanlijnen)\nsound=off (geluid uit)\nspeed=snail|slow|normal|two|three|fast|warp (snelheid)\ntext=<a href=\"https://www.urlencoder.org\" target=\"_blank\" rel=\"noopener noreferrer\">urlencoded</a> string of BASIC programma om te plakken\ntheme=classic|dark|minimal (thema)\ntour=main|debug|settings (rondleiding)\n#urltodiskimage (url naar disk image)",
+    "shortcutsTable": "{{keyMod}}B Opstarten         {{arrowMod}}1 1 MHz (Normaal)\n{{keyMod}}C Scherm Kopiëren   {{arrowMod}}2 2 MHz\n{{keyMod}}O Status Openen     {{arrowMod}}3 3 MHz\n{{keyMod}}R Resetten          {{arrowMod}}4 4 MHz (Snel)\n{{keyMod}}S Status Opslaan    {{arrowMod}}5 Belachelijk/Warp\n{{keyMod}}V Plakken           {{arrowMod}}0 Slakkengang (0.1 MHz)\n{{keyMod}}← Tijd Terug      {{keyMod}}→ Tijd Vooruit\nOpen Apple:   druk op Linker Alt/Option\nClosed Apple: Druk Rechter Alt/Option\nJoystick-toetsen: Numeriek toetsenbord 8/2/4/6 (7/9/1/3), 0/5, ./Enter\n\nVoor schermtoetsenbord, CTRL of ESC gebruiken:\ntoets eenmalig aanraken om te activeren dan gewenste toets.",
+    "urlParametersBody": "Voor optionele URL-parameters voegt u deze toe aan de URL na een vraagteken (?) en scheidt u meerdere parameters met een ampersand (&). Gebruik # om de schijfkopie op te geven. Zie het dialoogvenster Link Builder voor voorbeelden.",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay met debugging</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay, laad Choplifter, ingesloten modus</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2DeskTop 2MG met hoge snelheid en witte kleur</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">Ingesloten Applesoft BASIC Programma</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Binair Bestand met Hex Adres</a>",
     "links": "Links",
     "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS Desktop-app</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS Proxy by Corsfix</a>"
@@ -597,5 +597,11 @@ export const nl = {
     "providerNotConfigured": "Provider not configured - click the gear icon to set up your AI agent",
     "providerConfigured": "Provider: {{provider}} ({{model}})",
     "invalidKeyFormat": "Invalid API key format for {{provider}}"
+  },
+  "startup": {
+    "welcome": "Welkom bij Apple2TS",
+    "subtitle": "Apple II Emulator in TypeScript",
+    "copyright": "(c) {{year}} C.Torrence + medewerkers",
+    "diskCollections": "Klik op het icoon Disk collectie\nom een spel te laden."
   }
 }

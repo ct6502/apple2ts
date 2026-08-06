@@ -317,8 +317,8 @@ export const sv = {
     "ctrlKey": "För att skicka ett kontrolltecken, tryck på ctrl-knappen en gång. Tryck sedan på skärmen för att visa tangentbordet och tryck på önskad tangent. Ctrl-knappen kommer automatiskt att släppas.",
     "ctrlLock": "För att skicka flera kontrolltecken, tryck på ctrl-knappen två gånger för att låsa den (visas med en grön prick). Tryck sedan på skärmen för att visa tangentbordet och tryck på önskade tangenter. Tryck på ctrl-knappen igen för att släppa den.",
     "appleKeys": "Open apple och closed apple tangenterna beter sig på samma sätt som ctrl-tangenten.",
-    "shortcutsTable": "{{keyMod}}B Starta            {{arrowMod}}1 1 MHz (Normal)\n{{keyMod}}C Kopiera Skärm     {{arrowMod}}2 2 MHz\n{{keyMod}}O Öppna Tillstånd   {{arrowMod}}3 3 MHz\n{{keyMod}}R Återställ         {{arrowMod}}4 4 MHz (Snabb)\n{{keyMod}}S Spara Tillstånd   {{arrowMod}}5 Löjlig/Warp\n{{keyMod}}V Klistra in text     {{arrowMod}}0 Snigelfart (0.1 MHz)\n{{keyMod}}← Tid bakåt      {{keyMod}}→ Tid framåt\nOpen Apple:   tryck på Vänster Alt/Option\nClosed Apple: Höger Alt/Option\nJoystick-tangenter: Numeriska 8/2/4/6 (7/9/1/3), 0/5, ./Enter",
-    "urlParametersBody": "address=1234 (hexladdningsadress för hexdata)\nappmode=game|embed (spel|inbäddad)\ncapslock=off (caps lock av)\ncolor=color|nofringe|green|amber|white|inverse (färgläge)\ncrtdistort=on|off (CRT-förvrängning)\ndebug=on (felsökningsläge)\nghosting=on|off (efterlysning)\nhex=hexadecimalt program att ladda på adress\nmachine=apple2p|apple2eu|apple2ee (II+, IIe, IIe förbättrad)\nramdisk=64|512|1024|4096|8192\nrun=false (kör inte Hex eller BASIC-program)\nscanlines=on|off (skanningslinjer)\nsound=off (ljud av)\nspeed=snail|slow|normal|two|three|fast|warp (hastighet)\ntext=<a href=\"https://www.urlencoder.org\" target=\"_blank\" rel=\"noopener noreferrer\">urlencoded</a> sträng eller BASIC-program att klistra in\ntheme=classic|dark|minimal (tema)\ntour=main|debug|settings (tur)\n#urltodiskimage (url till diskavbildning)",
+    "shortcutsTable": "{{keyMod}}B Starta            {{arrowMod}}1 1 MHz (Normal)\n{{keyMod}}C Kopiera Skärm     {{arrowMod}}2 2 MHz\n{{keyMod}}O Öppna Tillstånd   {{arrowMod}}3 3 MHz\n{{keyMod}}R Återställ         {{arrowMod}}4 4 MHz (Snabb)\n{{keyMod}}S Spara Tillstånd   {{arrowMod}}5 Löjlig/Warp\n{{keyMod}}V Klistra in text     {{arrowMod}}0 Snigelfart (0.1 MHz)\n{{keyMod}}← Tid bakåt      {{keyMod}}→ Tid framåt\nOpen Apple:   tryck på Vänster Alt/Option\nClosed Apple: Höger Alt/Option\nJoystick-tangenter: Numeriska 8/2/4/6 (7/9/1/3), 0/5, ./Enter\n\nFör skärmtangentbordet, CTRL eller ESC:\ntrycka en gång för att aktivera sedan önskad tangent.",
+    "urlParametersBody": "För valfria URL-parametrar, lägg till dem i URL:en efter ett frågetecken (?) och separera flera parametrar med ett et-tecken (&). Använd # för att ange skivavbildningen. Se dialogrutan Länkbyggaren för exempel.",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay med felsökning</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay, ladda Choplifter, inbäddat läge</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2Desktop 2MG med snabb hastighet och vit färg</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">Inbäddat Applesoft BASIC Program</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Binärfil med Hex-adress</a>",
     "links": "Länkar",
     "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS skrivbordsapp</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS-proxy av Corsfix</a>"
@@ -597,5 +597,11 @@ export const sv = {
     "providerNotConfigured": "Provider not configured - click the gear icon to set up your AI agent",
     "providerConfigured": "Provider: {{provider}} ({{model}})",
     "invalidKeyFormat": "Invalid API key format for {{provider}}"
+  },
+  "startup": {
+    "welcome": "Välkommen till Apple2TS",
+    "subtitle": "Apple II-emulator i TypeScript",
+    "copyright": "(c) {{year}} C.Torrence + medarbetare",
+    "diskCollections": "Klicka på ikonen Disksamling\nför att ladda ett inbyggt spel."
   }
 }

@@ -1,3 +1,4 @@
+import { i18n } from "../../../i18n"
 import { isGameMode } from "../../ui_settings"
 
 
@@ -15,38 +16,17 @@ const idx = (i: number) => {
 
 let initStartupTextPage = false
 let startupTextMachineName: MACHINE_NAME | "" = ""
-const startupTextPage = new Uint8Array(40 * 24)
+let startupTextLanguage = ""
+const startupTextPage = new Uint16Array(40 * 24)
 
 const constructStartupTextPage = (machineName: MACHINE_NAME) => {
 
-  let emulatorStartText = `Welcome to Apple2TS
+  const year = String(new Date().getFullYear())
+  let emulatorStartText = `${i18n.t("startup.welcome")}
 
-TypeScript Apple II Emulator
+${i18n.t("startup.subtitle")}
 
-(c) ${new Date().getFullYear()} C.Torrence + collaborators`
-
-  if (!isGameMode()) {
-    emulatorStartText +=`
-
-Click on the Disk Collections icon
-to load a built-in disk or game.
-`
-  }
-
-  // const isMac = navigator.platform.startsWith('Mac')
-  // const keyMod = isMac ? `Cmd+` : 'Alt+'
-  // const arrowMod = isMac ? 'Cmd+' : 'Ctrl+'
-  const isTouchDevice = "ontouchstart" in document.documentElement
-
-  if (isTouchDevice) {
-    emulatorStartText += `\n\nTo show keyboard, touch screen.
-To send special keys, touch the
-arrows, esc, or tab buttons.
-To send Ctrl or Open Apple keys,
-touch button to enable it, then
-touch screen to show keyboard.
-Touch twice to lock it on.`
-  }
+${i18n.t("startup.copyright", { year })}`
 
   let mode = "]["
   switch (machineName) {
@@ -57,6 +37,10 @@ Touch twice to lock it on.`
   }
 
   emulatorStartText += `\n\nApple ${mode} mode`
+
+  if (!isGameMode()) {
+    emulatorStartText += `\n\n${i18n.t("startup.diskCollections")}\n`
+  }
 
   if (machineName === "APPLE2P") {
     emulatorStartText = emulatorStartText.toUpperCase()
@@ -71,7 +55,7 @@ Touch twice to lock it on.`
   textPage[0] = "*".repeat(40)
   textPage[23] = "*".repeat(40)
   for (let j = 1; j < 23; j++) {
-    const len = (38 - textPage[j].length) / 2
+    const len = Math.max(0, (38 - textPage[j].length) / 2)
     const left = " ".repeat(Math.floor(len))
     const right = " ".repeat(Math.ceil(len))
     textPage[j] = `*${left}${textPage[j]}${right}*`
@@ -80,28 +64,29 @@ Touch twice to lock it on.`
   for (let j = 0; j < 24; j++) {
     for (let i = 0; i < 40; i++) {
       const c = textPage[j].charCodeAt(i)
-      startupTextPage[40 * j + i] = (c + 128) % 256
+      startupTextPage[40 * j + i] = isNaN(c) ? 0x20 : c
     }
   }
 }
 
 export const getStartupTextPage = (machineName: MACHINE_NAME) => {
 
-  if (!initStartupTextPage || startupTextMachineName !== machineName) {
+  if (!initStartupTextPage || startupTextMachineName !== machineName || startupTextLanguage !== i18n.getLanguage()) {
     constructStartupTextPage(machineName)
     initStartupTextPage = true
     startupTextMachineName = machineName
+    startupTextLanguage = i18n.getLanguage()
   }
   
   // Move asterisk every few frames
   frameCounter++
   if (frameCounter % 3 !== 0) {
     // Put back the old asterisk
-    startupTextPage[idx(index)] = 170  // "*" plus high bit
+    startupTextPage[idx(index)] = 0x2A  // '*'
     // Move to new position
     index = (index + 1) % 126
     // Place new blank space
-    startupTextPage[idx(index)] = 160  // space plus high bit
+    startupTextPage[idx(index)] = 0x20  // space
   }
   
   return startupTextPage
