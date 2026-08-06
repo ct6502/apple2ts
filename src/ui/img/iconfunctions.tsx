@@ -17,19 +17,33 @@ export const iconData = () => {
   return image.map(code => String.fromCharCode(code + 45)).join("")
 }
 
+const isAnomixerDomain = () => {
+  if (typeof window === "undefined") return true
+  const host = window.location.hostname.toLowerCase()
+  return host.includes("pages.dev") || host.includes("github.io") || host.includes("anomixer") || host === "localhost" || host === "127.0.0.1"
+}
+
 export const pickerKey = () => {
-  const image = [65, 73, 122, 97, 83, 121, 68, 48, 75, 120, 111, 119, 110, 72, 120,
-    86, 118, 103, 69, 106, 83, 107, 119, 54, 105, 98, 51, 72, 121, 70, 78, 65, 68, 74, 81, 90, 75, 52, 56]
+  const image = isAnomixerDomain()
+    ? [65, 73, 122, 97, 83, 121, 67, 119, 55, 121, 73, 81, 108, 97, 118,
+      110, 95, 107, 98, 106, 48, 104, 78, 112, 97, 85, 104, 104, 106, 51, 45, 112, 103, 51, 120, 49, 120, 95, 103]
+    : [65, 73, 122, 97, 83, 121, 68, 48, 75, 120, 111, 119, 110, 72, 120,
+      86, 118, 103, 69, 106, 83, 107, 119, 54, 105, 98, 51, 72, 121, 70, 78, 65, 68, 74, 81, 90, 75, 52, 56]
   return image.map(code => String.fromCharCode(code)).join("")
 }
 
 export const appID = () => {
-  const image = [56, 51, 49, 52, 49, 53, 57, 57, 48, 49, 49, 55]
+  const image = isAnomixerDomain()
+    ? [55, 54, 52, 55, 49, 53, 52, 49, 54, 48, 57, 56]
+    : [56, 51, 49, 52, 49, 53, 57, 57, 48, 49, 49, 55]
   return image.map(code => String.fromCharCode(code)).join("")
 }
 
 export const clientID = () => {
-  const image = [62, 2, 62, 9, 61, 67, 5, 62, 57, 52, 49, 68, 55, 7, 66, 61, 51, 50, 1, 2, 68, 70, 64, 61, 8, 59, 57, 66, 68, 50, 64, 68]
+  const image = isAnomixerDomain()
+    ? [49, 6, 7, 60, 54, 49, 6, 3, 56, 70, 50, 8, 55, 53, 54,
+      59, 61, 50, 6, 67, 50, 55, 5, 55, 0, 52, 5, 7, 68, 70, 54, 69]
+    : [62, 2, 62, 9, 61, 67, 5, 62, 57, 52, 49, 68, 55, 7, 66, 61, 51, 50, 1, 2, 68, 70, 64, 61, 8, 59, 57, 66, 68, 50, 64, 68]
   return image.map(code => String.fromCharCode(code + 48)).join("")
 }
 
