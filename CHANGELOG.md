@@ -1,32 +1,54 @@
 # Changelog
 
-## [v3.5.1](https://github.com/ct6502/apple2ts/tree/v3.5.1) (2026-08-02)
+## [v3.5.2](https://github.com/ct6502/apple2ts/tree/v3.5.2) (2026-08-06)
+
+[Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.5.0...v3.5.2)
 
 **Implemented enhancements:**
 
-- Added a DemoZoo Apple II production browser with dynamic page discovery, type filters, screenshots, and pagination.
-- Added DemoZoo direct disk loading for `.dsk`, `.woz`, `.po`, `.nib`, `.2mg`, `.img`, `.zip`, and related archive formats.
-- Added local curl-based DemoZoo fetching for development, with Corsfix fallback for GitHub Pages.
-- Added complete i18n coverage for the DemoZoo interface.
-- Added separate GitHub Pages and Cloudflare Pages deployments. GitHub Pages keeps the static emulator, while Cloudflare Pages provides the server-side proxy required by DemoZoo.
-- Added Cloudflare Pages Functions for DemoZoo metadata, Internet Archive search/metadata, and external disk-image downloads.
-- Added direct-link discovery for external production pages, including Brutal Deluxe pages that link to a disk image indirectly.
-- Generalized external-page discovery to all DemoZoo download providers, with fallback across multiple disk-image links when one source is unavailable.
-- Added a compact `dosmaster18.zip` fallback for Cloudflare Pages, while preserving the original `.po` image for other deployments.
-- Added first/previous/next/last DemoZoo page controls with an Enter-to-jump page number input.
-- Preserves the last DemoZoo page, search text, and type filter between dialog sessions.
-- Made Cloudflare Pages deployment opt-in through the `CLOUDFLARE_PAGES_ENABLED` repository variable.
+- Enable MIDI IN when external MIDI device selected, fix bug with Sysex messages sent from Apple [\#288](https://github.com/ct6502/apple2ts/issues/288)
+- Proposal: Default `arrowKeysAsJoystick` to false \(now that Numpad joystick is available\) [\#272](https://github.com/ct6502/apple2ts/issues/272)
+- Add support for UK paper size in ImageWriter II [\#250](https://github.com/ct6502/apple2ts/issues/250)
+- In debug view, hover over a softswitch or other well-known address should have a tooltip with info [\#82](https://github.com/ct6502/apple2ts/issues/82)
 
 **Fixed bugs:**
 
-- Selects direct disk files instead of informational download pages.
-- Boots the newly loaded DemoZoo disk and keeps the selected floppy drive synchronized when changing disks.
-- Prevents DemoZoo refreshes from running automatically on every `npm start`.
-- Fixes DemoZoo proxy routing and external disk downloads on the Cloudflare Pages deployment.
-- Fixes Internet Archive search and metadata resolution when the browser origin is `apple2ts.pages.dev`.
-- Makes Internet Archive result titles clickable and closes the DemoZoo dialog immediately after a disk loads.
-- Adds retries and a pinned Wrangler version for transient Cloudflare Pages Function publish failures.
-- Fixes DemoZoo restoring the latest saved page instead of resetting to page 1 when the dialog is reopened.
+- Test slack integration [\#253](https://github.com/ct6502/apple2ts/issues/253)
+- Unable to use debugger properly unless current resolution allows all panels to be displayed completely [\#249](https://github.com/ct6502/apple2ts/issues/249)
+
+**Closed issues:**
+
+- fix\(ui\): keep the language menu on screen [\#284](https://github.com/ct6502/apple2ts/issues/284)
+- Clarify and retire the legacy i18n bootstrap script [\#282](https://github.com/ct6502/apple2ts/issues/282)
+- Limit no-delay HGR rendering to Apple IIe models [\#276](https://github.com/ct6502/apple2ts/issues/276)
+- Memory Map width jitters as language-card status changes [\#261](https://github.com/ct6502/apple2ts/issues/261)
+- Memory Map width jitters as language-card status changes [\#260](https://github.com/ct6502/apple2ts/issues/260)
+- Fix mixed-DHGR frame truncation in getHires\(\) [\#256](https://github.com/ct6502/apple2ts/issues/256)
+
+**Merged pull requests:**
+
+- Fix ESLint failures in midiinterface.ts from PR \#292 MIDI IN changes [\#294](https://github.com/ct6502/apple2ts/pull/294) ([Copilot](https://github.com/apps/copilot-swe-agent))
+- feat: integrate DemoZoo with Cloudflare Pages [\#293](https://github.com/ct6502/apple2ts/pull/293) ([anomixer](https://github.com/anomixer))
+- feat\(debugger\): add contextual I/O disassembly tooltips [\#291](https://github.com/ct6502/apple2ts/pull/291) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- fix\(i18n\): properly replace repeated placeholders in translated strings [\#290](https://github.com/ct6502/apple2ts/pull/290) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- fix\(emulator\): clear Apple II+ keyboard strobe across $C010-$C01F [\#287](https://github.com/ct6502/apple2ts/pull/287) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- fix\(debugger\): correct SETAN0 address in Apple II+ symbol table [\#286](https://github.com/ct6502/apple2ts/pull/286) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- fix\(i18n\): correct locale identity and language matching [\#285](https://github.com/ct6502/apple2ts/pull/285) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- fix\(i18n\): fall back to English for missing translations [\#281](https://github.com/ct6502/apple2ts/pull/281) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- fix: preserve large-disk state during time-travel restore [\#270](https://github.com/ct6502/apple2ts/pull/270) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- test: cover memory-bank filtering for instruction breakpoints [\#268](https://github.com/ct6502/apple2ts/pull/268) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- feat: Add Numpad keyboard joystick mapping and 8-way diagonal support [\#266](https://github.com/ct6502/apple2ts/pull/266) ([anomixer](https://github.com/anomixer))
+- VERA Integration [\#265](https://github.com/ct6502/apple2ts/pull/265) ([code-bythepound](https://github.com/code-bythepound))
+- fix: Fix Guided Tour next button click navigation and focus [\#264](https://github.com/ct6502/apple2ts/pull/264) ([anomixer](https://github.com/anomixer))
+- feat: Add i18n support with 13 languages, language selector, and UI localizations [\#263](https://github.com/ct6502/apple2ts/pull/263) ([anomixer](https://github.com/anomixer))
+- fix\(ui\): prevent width jitter in the debugger Memory Map panel [\#262](https://github.com/ct6502/apple2ts/pull/262) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Add HGR and DHGR frame export regression coverage [\#259](https://github.com/ct6502/apple2ts/pull/259) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Fix raster updates at slow CPU speeds [\#258](https://github.com/ct6502/apple2ts/pull/258) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Preserve more GitHub Actions history [\#255](https://github.com/ct6502/apple2ts/pull/255) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Skip GitHub Pages deployment in forks [\#254](https://github.com/ct6502/apple2ts/pull/254) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Migrate to unified ESLint Stylistic plugin [\#252](https://github.com/ct6502/apple2ts/pull/252) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Request external MIDI access on demand [\#251](https://github.com/ct6502/apple2ts/pull/251) ([3amcinnamonroll](https://github.com/3amcinnamonroll))
+- Fix: Disk fetch perf issue [\#247](https://github.com/ct6502/apple2ts/pull/247) ([boredsenseless](https://github.com/boredsenseless))
 
 ## [v3.5.0](https://github.com/ct6502/apple2ts/tree/v3.5.0) (2026-07-14)
 
@@ -71,7 +93,6 @@
 **Implemented enhancements:**
 
 - Link Builder to make it easier to construct an Apple2TS URL [\#228](https://github.com/ct6502/apple2ts/issues/228)
-- Add MCP server interface [\#218](https://github.com/ct6502/apple2ts/issues/218)
 
 **Fixed bugs:**
 
