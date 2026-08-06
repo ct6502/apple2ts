@@ -1,64 +1,101 @@
-# Apple2TS i18n 開發者指南
+# Apple2TS i18n Developer Guide
 
-Apple2TS 使用 gettext PO 檔案保存供翻譯者編輯的訊息，同時保留現有的執行階段翻譯 API。
-完整的維護細節請參閱 [English developer guide](README_en.md)。
+Apple2TS stores translator-facing messages in gettext PO catalogs while
+retaining the existing runtime translation API. For primary English tooltip
+wording, follow the [Tooltip Style Guide](TOOLTIP_STYLE.md).
 
-## 來源檔案與產生的檔案
+The original Traditional Chinese
+[implementation report](archive/initial-implementation-report_zh-TW.md) is
+preserved as project history.
 
-- `catalogs/messages.pot` 是英文訊息的權威範本。穩定的翻譯鍵存放在
-  `msgctxt`，英文文字存放在 `msgid`。
-- `catalogs/<locale>.po` 的 `msgstr` 存放各語系翻譯。
-- `languages/*.ts` 是應用程式使用的產生檔案，請勿直接編輯。
+## Sources and generated files
 
-`msgstr` 為空時，執行階段會回退至英文。fuzzy 標記表示翻譯仍待人工確認；只要
-`msgstr` 不為空，Apple2TS 仍會將該翻譯納入產生的 TypeScript。初次移轉所保留的
-非英文翻譯都標記為 fuzzy，翻譯者確認後可逐項清除。
+- `catalogs/messages.pot` is the authoritative English message template.
+  Stable translation keys are stored in `msgctxt`; English text is stored in
+  `msgid`.
+- `catalogs/<locale>.po` stores each locale's translations in `msgstr`.
+- `languages/*.ts` is generated application input. Do not edit it directly.
 
-## 指令
+An empty `msgstr` is omitted from the generated locale catalog, so the runtime
+falls back to English. A fuzzy flag marks a translation for human review but
+does not disable it: Apple2TS intentionally includes nonempty fuzzy
+translations in generated TypeScript, similar to gettext's `--use-fuzzy`
+option.
+
+The initial migration marks retained non-English translations fuzzy because
+their alignment with current English has not been confirmed. Translators can
+clear that marker entry by entry after review.
+
+## Commands
 
 ```bash
-# 將 POT 變更合併到所有 PO 檔案（會修改翻譯者檔案）。
+# Merge POT changes into every PO catalog. This modifies translator files.
 npm run update-i18n-catalogs
 
-# 編輯 POT 或 PO 後重新產生 TypeScript 語系檔案。
+# Regenerate TypeScript catalogs after editing POT or PO files.
 npm run generate-i18n-catalogs
 
-# 不修改檔案，確認產生的語系檔案為最新版本。
+# Verify generated catalogs without modifying them.
 npm run check-i18n-catalogs
 
-# 測試 PO 解析、驗證、報告、更新及產生流程。
+# Test PO parsing, validation, reporting, updating, and generation.
 npm run test-po-catalog
 ```
 
-一般建置與測試會自動執行不修改檔案的同步檢查。`update-i18n-catalogs` 會修改 PO
-檔案，並需要 GNU gettext `msgmerge`。
+Normal builds and tests run the non-mutating freshness checks automatically.
+Those checks use only the repository's Node dependencies. The intentionally
+mutating update command also requires GNU gettext `msgmerge`.
 
-## 新增或修改英文訊息
+## Adding or changing English messages
 
-1. 在 `catalogs/messages.pot` 新增或修改項目。只修改英文措辭時，保留既有的
-   `msgctxt`。
-2. 執行 `npm run update-i18n-catalogs`。既有翻譯會保留並標記為 fuzzy，先前英文
-   也會留供比較。
-3. 檢查受影響的 `msgstr`。確認翻譯符合目前英文後再清除 fuzzy。缺少翻譯時保持
-   空白，讓執行階段回退至英文。
-4. 執行 `npm run generate-i18n-catalogs`，再執行相關專案檢查。
+1. Add or update the entry in `catalogs/messages.pot`. Keep an existing
+   `msgctxt` stable when only its English wording changes.
+2. Run `npm run update-i18n-catalogs`.
 
-PO 檔案可直接編輯，也可使用 Poedit、Weblate 等標準工具。
+   The updater matches stable `msgctxt` values before invoking `msgmerge`, so a
+   rewritten English message retains its existing translation, becomes fuzzy,
+   and keeps the previous English wording for comparison. New entries are
+   added, and removed entries become obsolete. Each locale is staged before
+   replacement; a failure preserves the affected original and reports any
+   earlier catalogs already updated.
+3. Review the affected `msgstr` values. Clear fuzzy only after confirming a
+   translation against current English. Leave missing translations empty so
+   runtime fallback remains visible; do not copy English merely to complete
+   catalog structure.
+4. Run `npm run generate-i18n-catalogs`, then the relevant project checks.
 
-## 插值變數
+PO files can be edited directly or with standard tools such as Poedit and
+Weblate.
 
-執行階段訊息使用 `{{name}}` 變數；部分元件範本使用 `{name}`。翻譯可調整變數
-順序，但必須保留語法、拼寫及出現次數。產生程序會驗證所有非空翻譯，包括 fuzzy
-翻譯。
+## Interpolation
 
-目錄訊息不可以換行開頭或結尾；訊息周圍的間距由顯示程式碼處理。本身就是
-多行的內容可保留內部換行，翻譯者也可依譯文需要調整其位置。
+Runtime messages use `{{name}}` placeholders. Some component templates use
+`{name}` placeholders. A translation may reorder placeholders, but must retain
+their syntax, spelling, and occurrence count. Generation validates every
+nonempty translation, including fuzzy ones, and rejects missing, unexpected,
+renamed, malformed, or differently repeated placeholders.
 
-## 目錄結構
+Catalog messages must not begin or end with newlines; rendering code owns the
+spacing around them. Inherently multiline content may contain internal line
+breaks, and translators may place those breaks where their wording requires.
 
-- `index.ts` — 語言選擇、儲存、回退及查詢。
-- `useTranslation.ts` — 可回應語言變更的 React Hook。
-- `catalogs/` — 權威 POT 與 PO 翻譯檔案。
-- `languages/` — 應用程式使用的產生 TypeScript 語系檔案。
-- `tools/i18n/` — 可重現的產生、報告與驗證工具。
-- `archive/` — 歷史啟動素材，不屬於目前維護流程。
+```po
+msgctxt "disk.syncedAt"
+msgid "Synced {{date}}"
+msgstr "Synchronisé {{date}}"
+```
+
+The existing runtime API is unchanged:
+
+```tsx
+t("disk.syncedAt", {date: "2026-08-06"})
+```
+
+## Directory structure
+
+- `index.ts` — language selection, persistence, fallback, and lookup.
+- `useTranslation.ts` — reactive React translation hook.
+- `catalogs/` — authoritative POT and PO translator files.
+- `languages/` — generated TypeScript catalogs consumed by the application.
+- `tools/i18n/` — deterministic generation, reporting, and validation tools.
+- `archive/` — historical bootstrap material; not part of this workflow.
