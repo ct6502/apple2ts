@@ -22,6 +22,24 @@ const describePlaceholderDifference = (source, translation) => {
     ))
 }
 
+const boundaryNewlineCounts = message => ({
+  leading: message.match(/^\n*/)[0].length,
+  trailing: message.match(/\n*$/)[0].length,
+})
+
+const describeBoundaryNewlineDifference = (source, translation) => {
+  const sourceCounts = boundaryNewlineCounts(source)
+  const translationCounts = boundaryNewlineCounts(translation)
+  return [
+    ["leading newlines", sourceCounts.leading, translationCounts.leading],
+    ["trailing newlines", sourceCounts.trailing, translationCounts.trailing],
+  ]
+    .filter(([, sourceCount, translationCount]) => sourceCount !== translationCount)
+    .map(([boundary, sourceCount, translationCount]) => (
+      `${boundary}: source=${sourceCount}, translation=${translationCount}`
+    ))
+}
+
 const compareKeys = (left, right) => (
   left < right ? -1 : left > right ? 1 : 0
 )
@@ -44,10 +62,11 @@ const setNestedValue = (catalog, key, value) => {
 
   let target = catalog
   for (const part of parts.slice(0, -1)) {
-    if (typeof target[part] === "string") {
+    const hasPart = Object.hasOwn(target, part)
+    if (hasPart && typeof target[part] === "string") {
       throw new Error(`Semantic-key path collides with a message: ${key}`)
     }
-    target[part] ??= {}
+    if (!hasPart) target[part] = {}
     target = target[part]
   }
 
@@ -88,7 +107,7 @@ const readObsoleteMessages = source => {
       messages.push({
         key: context || null,
         source: item.msgid,
-        translation: item.msgstr[0] ?? "",
+        translation: item.msgstr?.[0] ?? "",
       })
     }
   }
@@ -101,13 +120,14 @@ const ANALYSIS_STATUSES = [
   "missing",
   "fuzzy",
   "stale-source",
+  "boundary-newline-mismatch",
   "placeholder-mismatch",
   "english-identical",
   "translated",
   "orphaned",
 ]
 
-export const analyzePoCatalog = (sourceCatalog, translationCatalog) => {
+const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
   const sourceMessages = readActiveMessages(sourceCatalog)
   const translationMessages = readActiveMessages(translationCatalog)
   const keys = [...new Set([
@@ -142,6 +162,20 @@ export const analyzePoCatalog = (sourceCatalog, translationCatalog) => {
       return {key, status: "missing", source: sourceItem.msgid, translation: null}
     }
 
+    const boundaryNewlineDifferences = describeBoundaryNewlineDifference(
+      sourceItem.msgid,
+      translation,
+    )
+    if (boundaryNewlineDifferences.length > 0) {
+      return {
+        key,
+        status: "boundary-newline-mismatch",
+        source: sourceItem.msgid,
+        translation,
+        boundaryNewlineDifferences,
+      }
+    }
+
     const placeholderDifferences = describePlaceholderDifference(
       sourceItem.msgid,
       translation,
@@ -169,9 +203,13 @@ export const analyzePoCatalog = (sourceCatalog, translationCatalog) => {
       entries.filter(entry => entry.status === status).length,
     ])),
     entries,
-    obsolete: readObsoleteMessages(translationCatalog),
   }
 }
+
+export const analyzePoCatalog = (sourceCatalog, translationCatalog) => ({
+  ...analyzeActivePoCatalog(sourceCatalog, translationCatalog),
+  obsolete: readObsoleteMessages(translationCatalog),
+})
 
 export const compilePoCatalog = (
   source,
@@ -194,11 +232,14 @@ export const compilePoCatalog = (
       messages.push({key, value: item.msgid})
     }
   } else {
-    const analysis = analyzePoCatalog(sourceCatalog, source)
-    for (const entry of analysis.entries) {
-      if (entry.status === "orphaned") {
-        throw new Error(`Translation has no current source message: ${entry.key}`)
-      }
+    const analysis = analyzeActivePoCatalog(sourceCatalog, source)
+    const orphaned = analysis.entries.find(entry => entry.status === "orphaned")
+    if (orphaned) {
+      throw new Error(`Translation has no current source message: ${orphaned.key}`)
+    }
+    const entriesByKey = new Map(analysis.entries.map(entry => [entry.key, entry]))
+    for (const key of sourceMessages.keys()) {
+      const entry = entriesByKey.get(key)
       if (entry.status === "stale-source") {
         throw new Error(
           `Translation source is stale for ${entry.key}: `
@@ -212,13 +253,18 @@ export const compilePoCatalog = (
           + entry.placeholderDifferences.join("; "),
         )
       }
+      if (entry.status === "boundary-newline-mismatch") {
+        throw new Error(
+          `Boundary newline mismatch for ${entry.key}: `
+          + entry.boundaryNewlineDifferences.join("; "),
+        )
+      }
       if (entry.status === "translated" || entry.status === "english-identical") {
         messages.push({key: entry.key, value: entry.translation})
       }
     }
   }
 
-  messages.sort((left, right) => compareKeys(left.key, right.key))
   const catalog = {}
   for (const {key, value} of messages) setNestedValue(catalog, key, value)
   return catalog
@@ -228,5 +274,6 @@ export const renderTypeScriptCatalog = (exportName, catalog) => {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(exportName)) {
     throw new Error(`Invalid TypeScript export name: ${exportName}`)
   }
-  return `export const ${exportName} = ${JSON.stringify(catalog, null, 2)}\n`
+  return "// Generated by npm run generate-i18n-catalogs. Do not edit directly.\n\n"
+    + `export const ${exportName} = ${JSON.stringify(catalog, null, 2)}\n`
 }
