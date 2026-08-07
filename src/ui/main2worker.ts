@@ -238,6 +238,10 @@ export const passSetSoftSwitches = (addresses: Array<number> | null) => {
   doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
 
+export const passSetVideo7Override = (mode: Video7Mode, enabled: boolean) => {
+  doPostMessage(MSG_MAIN.VIDEO7_OVERRIDE, {mode, enabled})
+}
+
 export const passSetDriveNewData = (props: DriveProps) => {
   doPostMessage(MSG_MAIN.DRIVE_NEW_DATA, props)
 }

@@ -61,12 +61,6 @@ The Value column uses representative runtime values only to make conditional too
 | $C06F | Read | $80 | Paddle 3 Timer Mirror = `ACTIVE` (bit 7 = `1`) |
 | $C070 | Read/write |  | Start paddle timers |
 | $C074 | Read/write |  | Laser 128EX compatibility = NOT EMULATED |
-| $C078 | Read/write |  | Disable Video7 160-column mode |
-| $C079 | Read/write |  | Enable Video7 160-column mode |
-| $C07A | Read/write |  | Disable Video7 monochrome mode |
-| $C07B | Read/write |  | Enable Video7 monochrome mode |
-| $C07C | Read/write |  | Disable Video7 mixed mode |
-| $C07D | Read/write |  | Enable Video7 mixed mode |
 | $C080 | Read |  | Select LC bank 2; use RAM for reads; disable writes |
 | $C080 | Write |  | Select LC bank 2; use RAM for reads; reset prewrite latch |
 | $C081 | Read |  | Select LC bank 2; use ROM for reads; arm/enable writes |

@@ -110,12 +110,6 @@ The Value column uses representative runtime values only to make conditional too
 | $C071 | Write | $03 | Select auxiliary bank $03 using Neptune addressing; start paddle timers |
 | $C073 | Write | $03 | Select auxiliary bank $03 using RamWorks addressing; start paddle timers |
 | $C074 | Read/write |  | Laser 128EX compatibility = NOT EMULATED |
-| $C078 | Read/write |  | Disable Video7 160-column mode |
-| $C079 | Read/write |  | Enable Video7 160-column mode |
-| $C07A | Read/write |  | Disable Video7 monochrome mode |
-| $C07B | Read/write |  | Enable Video7 monochrome mode |
-| $C07C | Read/write |  | Disable Video7 mixed mode |
-| $C07D | Read/write |  | Enable Video7 mixed mode |
 | $C080 | Read |  | Select LC bank 2; use RAM for reads; disable writes |
 | $C080 | Write |  | Select LC bank 2; use RAM for reads; reset prewrite latch |
 | $C081 | Read |  | Select LC bank 2; use ROM for reads; arm/enable writes |

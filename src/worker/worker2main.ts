@@ -1,5 +1,6 @@
 import { doSetRunMode, doSetSpeedMode,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches, 
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches,
+  forceVideo7Override,
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
@@ -270,6 +271,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)
+        break
+      case MSG_MAIN.VIDEO7_OVERRIDE:
+        forceVideo7Override(e.data.payload as Video7Override)
         break
       case MSG_MAIN.SIRIUS_JOYPORT:
         setSiriusJoyport(e.data.payload)

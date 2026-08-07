@@ -154,9 +154,11 @@ export const SWITCHES = {
   }),
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
-  VIDEO7_160: NewSwitch(0xC078, 0xC079, 0),  // Video7 fake softswitch
-  VIDEO7_MONO: NewSwitch(0xC07A, 0xC07B, 0),  // Video7 fake softswitch
-  VIDEO7_MIXED: NewSwitch(0xC07C, 0xC07D, 0),  // Video7 fake softswitch
+  // Internal display-mode flags. Real Video-7 hardware selects these modes
+  // through the AN3/80COL clock sequence handled below.
+  VIDEO7_160: NewSwitch(0, 0, 0),
+  VIDEO7_MONO: NewSwitch(0, 0, 0),
+  VIDEO7_MIXED: NewSwitch(0, 0, 0),
   // 0xC080...0xC08F are banked RAM soft switches and are handled manually
   // We don't need entries here, except for our special BSR_PREWRITE and BSR_WRITE.
   // We will put these in 0xC080 and 0xC088 so they get saved and restored.
@@ -210,6 +212,16 @@ const video7clock = (onoff: boolean) => {
 
     v7clock = onoff
   }
+}
+
+const video7ModeSwitches: Record<Video7Mode, SoftSwitch> = {
+  "160x192": SWITCHES.VIDEO7_160,
+  monochrome: SWITCHES.VIDEO7_MONO,
+  mixed: SWITCHES.VIDEO7_MIXED,
+}
+
+export const setVideo7Override = (mode: Video7Mode, enabled: boolean) => {
+  video7ModeSwitches[mode].isSet = enabled
 }
 
 // When debugging is enabled, don't print out these softswitches since they

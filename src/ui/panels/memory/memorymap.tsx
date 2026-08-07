@@ -1,7 +1,8 @@
 // import { handleGetStackString } from "../main2worker";
 
 import { RUN_MODE } from "../../../common/utility"
-import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches, passSetSoftSwitches } from "../../main2worker"
+import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches,
+  passSetSoftSwitches, passSetVideo7Override } from "../../main2worker"
 import type { CSSProperties } from "react"
 
 const MEMORY_MAP_LABELS = {
@@ -88,6 +89,13 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
   const setSoftSwitches = (switches: Array<number>) => {
     if (handleGetRunMode() === RUN_MODE.PAUSED) {
       passSetSoftSwitches(switches)
+      props.updateDisplay()
+    }
+  }
+
+  const setVideo7Override = (mode: Video7Mode, enabled: boolean) => {
+    if (handleGetRunMode() === RUN_MODE.PAUSED) {
+      passSetVideo7Override(mode, enabled)
       props.updateDisplay()
     }
   }
@@ -193,11 +201,11 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
         <CheckedBox name="Dbl Hires" runMode={runMode} checked={switches.DHIRES}
           func={() => setSoftSwitches([switches.DHIRES ? 0xC05F : 0xC05E])} />
         <CheckedBox name="V7 160x" runMode={runMode} checked={switches.VIDEO7_160}
-          func={() => setSoftSwitches([switches.VIDEO7_160 ? 0xC078 : 0xC079])} />
+          func={() => setVideo7Override("160x192", !switches.VIDEO7_160)} />
         <CheckedBox name="V7 Mono" runMode={runMode} checked={switches.VIDEO7_MONO}
-          func={() => setSoftSwitches([switches.VIDEO7_MONO ? 0xC07A : 0xC07B])} />
+          func={() => setVideo7Override("monochrome", !switches.VIDEO7_MONO)} />
         <CheckedBox name="V7 Mixed" runMode={runMode} checked={switches.VIDEO7_MIXED}
-          func={() => setSoftSwitches([switches.VIDEO7_MIXED ? 0xC07C : 0xC07D])} />
+          func={() => setVideo7Override("mixed", !switches.VIDEO7_MIXED)} />
         <CheckedBox name="Cxxx ROM" runMode={runMode} checked={switches.INTCXROM}
           func={() => setSoftSwitches([switches.INTCXROM ? 0xC006 : 0xC007])} />
         <CheckedBox name="C300 ROM" runMode={runMode} checked={switches.SLOTC3ROM}
