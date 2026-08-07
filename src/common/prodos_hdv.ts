@@ -342,6 +342,59 @@ const generateMenuSourceProgram = (
   return `${lines.join("\r")}\r`
 }
 
+const MENU_RELAY_BOOTSTRAP_ADDRESS = 0x2000
+const PRODOS_RELAY_WRAPPER_ADDRESS = 0x2000
+const PRODOS_RELAY_PAYLOAD_ADDRESS = 0x2100
+
+export const createProDosRelayWrapper = (relay: Uint8Array, runInPlace = false) => {
+  if (relay.length > 512) throw new Error("ProDOS relay exceeds two pages")
+
+  const bytes = new Uint8Array(0x300)
+  bytes.set(runInPlace
+    ? [0x4C, 0x00, 0x21]
+    : [
+      0xA0, 0x00,
+      0xB9, 0x00, 0x21, 0x99, 0x00, 0x03,
+      0xB9, 0x00, 0x22, 0x99, 0x00, 0x04,
+      0xC8, 0xD0, 0xF1,
+      0x4C, 0x00, 0x03,
+    ])
+  bytes.set(relay, PRODOS_RELAY_PAYLOAD_ADDRESS - PRODOS_RELAY_WRAPPER_ADDRESS)
+  return bytes
+}
+
+export const createMenuRelayBootstrap = () => {
+  const code: number[] = []
+
+  code.push(0xAD, 0x30, 0xBF)
+  const staMliUnitOffset = code.length
+  code.push(0x8D, 0x00, 0x00)
+  code.push(0x20, 0x00, 0xBF, 0x80)
+  const mliParameterPointerOffset = code.length
+  code.push(0x00, 0x00)
+  const mliBcsOffset = code.length
+  code.push(0xB0, 0x00)
+  code.push(0x4C, 0x00, 0x03)
+
+  const errorOffset = code.length
+  code.push(0x00)
+  code[mliBcsOffset + 1] = (errorOffset - (mliBcsOffset + 2)) & 0xFF
+
+  const mliParamsOffset = code.length
+  code.push(0x03, 0x00, 0x00, 0x03, 0x00, 0x00)
+  const mliParamsAddress = MENU_RELAY_BOOTSTRAP_ADDRESS + mliParamsOffset
+  code[staMliUnitOffset + 1] = (mliParamsAddress + 1) & 0xFF
+  code[staMliUnitOffset + 2] = (mliParamsAddress + 1) >> 8
+  code[mliParameterPointerOffset] = mliParamsAddress & 0xFF
+  code[mliParameterPointerOffset + 1] = mliParamsAddress >> 8
+
+  return {
+    bytes: new Uint8Array(code),
+    blockLoOffsets: [mliParamsOffset + 4],
+    blockHiOffsets: [mliParamsOffset + 5],
+  }
+}
+
 const generateMenuLaunchProgram = (
   menuEntries: MenuDiskEntry[],
   dosRuntimeLauncher: string | undefined,
@@ -352,7 +405,7 @@ const generateMenuLaunchProgram = (
   runtimeVolumeByMenuIndex?: Array<number | undefined>,
   runtimeHelloModeByMenuIndex?: Array<number | undefined>,
   menuNeedsAliasShim?: boolean[],
-  fourCadeRelayBlockInfo?: Array<{ startBlock: number; blockCount: number } | undefined>,
+  fourCadeRelayBlockInfo?: Array<{ startBlock: number; blockCount: number; helperName: string } | undefined>,
   hdSlot?: number,
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
@@ -382,25 +435,6 @@ const generateMenuLaunchProgram = (
 
   lines.push("10 D$=CHR$(4):PRINT D$;\"CLOSE\"")
 
-  // POKE a direct device-driver block-loader at $0200 (512 decimal).
-  // This bypasses BASIC.SYSTEM's file buffer management entirely, avoiding
-  // "NO BUFFERS AVAILABLE" errors that occur when BASIC.SYSTEM's internal
-  // buffer pool is exhausted after RUN chains.
-  // The loader reads N blocks to $0300 via JSR $CnC0, then JMP $0300.
-  const has4cadeGames = fourCadeRelayBlockInfo?.some((info) => !!info) ?? false
-  if (has4cadeGames && hdSlot !== undefined) {
-    const unit = (hdSlot & 0x07) << 4
-    const driverHi = 192 + hdSlot  // $C0 + slot
-    // Bytes: LDA #1;STA $42;LDA #unit;STA $43;LDA #0;STA $44;LDA #3;STA $45;
-    //        LDA #blkLo;STA $46;LDA #blkHi;STA $47;LDX #count;
-    //        JSR $CnC0;BCS +15;INC $45;INC $45;INC $46;BNE +2;INC $47;DEX;BNE -18;JMP $0300;BRK
-    lines.push(`12 POKE 512,169:POKE 513,1:POKE 514,133:POKE 515,66:POKE 516,169:POKE 517,${unit}:POKE 518,133:POKE 519,67:POKE 520,169:POKE 521,0`)
-    lines.push(`13 POKE 522,133:POKE 523,68:POKE 524,169:POKE 525,3:POKE 526,133:POKE 527,69:POKE 528,169:POKE 529,0:POKE 530,133:POKE 531,70`)
-    lines.push(`14 POKE 532,169:POKE 533,0:POKE 534,133:POKE 535,71:POKE 536,162:POKE 537,1:POKE 538,32:POKE 539,192:POKE 540,${driverHi}:POKE 541,176`)
-    lines.push(`15 POKE 542,15:POKE 543,230:POKE 544,69:POKE 545,230:POKE 546,69:POKE 547,230:POKE 548,70:POKE 549,208:POKE 550,2:POKE 551,230`)
-    lines.push(`16 POKE 552,71:POKE 553,202:POKE 554,208:POKE 555,238:POKE 556,76:POKE 557,0:POKE 558,3:POKE 559,0`)
-  }
-
   lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count}),Z(${count}),ZB(${count})`)
   lines.push(`22 I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
   lines.push("24 RESTORE")
@@ -415,10 +449,7 @@ const generateMenuLaunchProgram = (
   lines.push("60 IF K(I)=2 THEN TEXT:GOSUB 150:PRINT D$;\"PREFIX \";P$(I):PRINT D$;\"CATALOG\":END")
   lines.push("70 IF K(I)=3 THEN TEXT:GOSUB 150:PRINT D$;R$(I):END")
   lines.push("80 IF K(I)=4 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":GOTO 220")
-  // Line 85: Direct block-load relay via device driver (no file buffers needed).
-  // Patches the pre-POKEd loader at $0200 with game-specific block number and count,
-  // then CALL 512 runs it: reads relay block(s) to $0300, JMP $0300.
-  lines.push(`85 IF K(I)=6 THEN TEXT:POKE 529,Z(I)-256*INT(Z(I)/256):POKE 533,INT(Z(I)/256):POKE 537,ZB(I):CALL 512:END`)
+  lines.push("85 IF K(I)=6 THEN TEXT:PRINT D$;R$(I):END")
   lines.push("90 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("100 GOTO 220")
   lines.push("150 IF S(I)=0 THEN RETURN")
@@ -453,6 +484,7 @@ const generateMenuLaunchProgram = (
       const relayInfo = fourCadeRelayBlockInfo?.[idx]
       if (relayInfo) {
         launchCode = 6
+        runCmd = `BRUN ${helperSubdir}/${relayInfo.helperName}`
         zpHasSnapshot = relayInfo.startBlock
         zpBlock = relayInfo.blockCount
       } else {
@@ -3384,18 +3416,15 @@ const createOfflineDecompRelay = (
  *
  * Layout in relay block: [relay code] [PrelaunchInit data (22 bytes)] [prelaunch data]
  */
-const createPackedBinaryRelay = (
+export const createPackedBinaryRelay = (
   startBlock: number,
   loadAddress: number,
   blockCount: number,
-  unitNumber: number,
+  _unitNumber: number,
   sequence: PrelaunchOp[],
   entryAddress: number,
+  relayLoadAddress = RELAY_LOAD_ADDRESS,
 ): Uint8Array => {
-  const slot = (unitNumber >> 4) & 0x07
-  const DRIVER_ADDR_LO = 0xC0
-  const DRIVER_ADDR_HI = 0xC0 + slot
-
   // --- Assemble the prelaunch script into raw 6502 bytes ---
   // These bytes will be copied to $0106 at runtime.
   const prelaunchBytes: number[] = []
@@ -3491,30 +3520,49 @@ const createPackedBinaryRelay = (
   const code: number[] = []
 
   // ======= PHASE 1: Block-read loop — load packed binary from HD =======
-  code.push(0xA9, 0x01, 0x85, 0x42)                          // LDA #1, STA $42 (READ)
-  code.push(0xA9, unitNumber & 0xFF, 0x85, 0x43)             // LDA #unit, STA $43
-  code.push(0xA9, loadAddress & 0xFF, 0x85, 0x44)            // LDA #bufLo, STA $44
-  code.push(0xA9, (loadAddress >> 8) & 0xFF, 0x85, 0x45)     // LDA #bufHi, STA $45
-  code.push(0xA9, startBlock & 0xFF, 0x85, 0x46)             // LDA #blkLo, STA $46
-  code.push(0xA9, (startBlock >> 8) & 0xFF, 0x85, 0x47)      // LDA #blkHi, STA $47
-  code.push(0xA9, blockCount & 0xFF, 0x85, 0xF4)             // LDA #countLo, STA $F4
-  code.push(0xA9, (blockCount >> 8) & 0xFF, 0x85, 0xF5)      // LDA #countHi, STA $F5
+  code.push(0xAD, 0x30, 0xBF)                                 // LDA $BF30
+  const staMliUnitOffset = code.length
+  code.push(0x8D, 0x00, 0x00)                                 // STA mliParams+1
 
-  const loopOffset = code.length
-  code.push(0x20, DRIVER_ADDR_LO, DRIVER_ADDR_HI)            // JSR $CnC0
-  const bcsIdx = code.length
-  code.push(0xB0, 0x00)                                       // BCS DONE (patched below)
-  code.push(0xA5, 0x45, 0x18, 0x69, 0x02, 0x85, 0x45)       // advance buf (+512)
-  code.push(0xE6, 0x46, 0xD0, 0x02, 0xE6, 0x47)             // advance block
-  code.push(0x38, 0xA5, 0xF4, 0xE9, 0x01, 0x85, 0xF4)       // dec count lo
-  code.push(0xA5, 0xF5, 0xE9, 0x00, 0x85, 0xF5)             // dec count hi
-  code.push(0x05, 0xF4)                                       // ORA $F4
-  const bneIdx = code.length
-  code.push(0xD0, (loopOffset - (bneIdx + 2)) & 0xFF)        // BNE LOOP
+  const mliLoopOffset = code.length
+  code.push(0x20, 0x00, 0xBF, 0x80)                           // JSR $BF00; READ_BLOCK
+  const mliParameterPointerOffset = code.length
+  code.push(0x00, 0x00)                                       // .word mliParams
+  const mliBcsOffset = code.length
+  code.push(0xB0, 0x00)                                       // BCS error
+  const incMliBufferHi1Offset = code.length
+  code.push(0xEE, 0x00, 0x00)                                 // INC mliParams+3
+  const incMliBufferHi2Offset = code.length
+  code.push(0xEE, 0x00, 0x00)                                 // INC mliParams+3
+  const incMliBlockLoOffset = code.length
+  code.push(0xEE, 0x00, 0x00)                                 // INC mliParams+4
+  code.push(0xD0, 0x03)                                       // BNE count
+  const incMliBlockHiOffset = code.length
+  code.push(0xEE, 0x00, 0x00)                                 // INC mliParams+5
+  code.push(0x38)                                              // SEC
+  const ldaMliCountLoOffset = code.length
+  code.push(0xAD, 0x00, 0x00)                                 // LDA mliCount
+  code.push(0xE9, 0x01)                                       // SBC #1
+  const staMliCountLoOffset = code.length
+  code.push(0x8D, 0x00, 0x00)                                 // STA mliCount
+  const ldaMliCountHiOffset = code.length
+  code.push(0xAD, 0x00, 0x00)                                 // LDA mliCount+1
+  code.push(0xE9, 0x00)                                       // SBC #0
+  const staMliCountHiOffset = code.length
+  code.push(0x8D, 0x00, 0x00)                                 // STA mliCount+1
+  const oraMliCountLoOffset = code.length
+  code.push(0x0D, 0x00, 0x00)                                 // ORA mliCount
+  code.push(0xD0, (mliLoopOffset - (code.length + 2)) & 0xFF) // BNE mliLoop
+  const jmpMliDoneOffset = code.length
+  code.push(0x4C, 0x00, 0x00)                                 // JMP done
 
-  // --- Patch BCS target to here (DONE label) ---
+  const errorOffset = code.length
+  code.push(0x00)                                              // BRK
   const doneOffset = code.length
-  code[bcsIdx + 1] = (doneOffset - (bcsIdx + 2)) & 0xFF
+  code[mliBcsOffset + 1] = (errorOffset - (mliBcsOffset + 2)) & 0xFF
+  const doneAddress = relayLoadAddress + doneOffset
+  code[jmpMliDoneOffset + 1] = doneAddress & 0xFF
+  code[jmpMliDoneOffset + 2] = doneAddress >> 8
 
   // ======= PHASE 2: Stub LC bank 2 functions and set safe BRK vector =======
   // The prelaunch script JSRs to EnableAccelerator ($DFB7), DisableAccelerator
@@ -3586,16 +3634,6 @@ const createPackedBinaryRelay = (
   code.push(0x2C, 0x51, 0xC0)                                 // BIT $C051 (TEXT)
   code.push(0x2C, 0x54, 0xC0)                                 // BIT $C054 (PAGE1)
   code.push(0x2C, 0x56, 0xC0)                                 // BIT $C056 (LORES)
-  // HOME: clear text page $0400-$07FF with $A0 (space)
-  code.push(0xA9, 0xA0)                                       // LDA #$A0
-  code.push(0xA0, 0x00)                                       // LDY #$00
-  const homeLoop = code.length
-  code.push(0x99, 0x00, 0x04)                                 // STA $0400,Y
-  code.push(0x99, 0x00, 0x05)                                 // STA $0500,Y
-  code.push(0x99, 0x00, 0x06)                                 // STA $0600,Y
-  code.push(0x99, 0x00, 0x07)                                 // STA $0700,Y
-  code.push(0xC8)                                              // INY
-  code.push(0xD0, (homeLoop - (code.length + 2)) & 0xFF)      // BNE homeLoop
   // Reset stack and disable interrupts
   code.push(0xA2, 0xFF, 0x9A)                                 // LDX #$FF, TXS
   code.push(0x78)                                              // SEI
@@ -3610,14 +3648,41 @@ const createPackedBinaryRelay = (
   // Prelaunch data (variable length)
   const prelaunchDataOffset = code.length
   code.push(...prelaunchBytes)
+  const mliParamsOffset = code.length
+  code.push(
+    0x03, 0x00,
+    loadAddress & 0xFF, (loadAddress >> 8) & 0xFF,
+    startBlock & 0xFF, (startBlock >> 8) & 0xFF,
+  )
+  const mliCountOffset = code.length
+  code.push(blockCount & 0xFF, (blockCount >> 8) & 0xFF)
+
+  const mliParamsAddress = relayLoadAddress + mliParamsOffset
+  const mliCountAddress = relayLoadAddress + mliCountOffset
+  const patchAbsolute = (offset: number, address: number) => {
+    code[offset + 1] = address & 0xFF
+    code[offset + 2] = address >> 8
+  }
+  patchAbsolute(staMliUnitOffset, mliParamsAddress + 1)
+  code[mliParameterPointerOffset] = mliParamsAddress & 0xFF
+  code[mliParameterPointerOffset + 1] = mliParamsAddress >> 8
+  patchAbsolute(incMliBufferHi1Offset, mliParamsAddress + 3)
+  patchAbsolute(incMliBufferHi2Offset, mliParamsAddress + 3)
+  patchAbsolute(incMliBlockLoOffset, mliParamsAddress + 4)
+  patchAbsolute(incMliBlockHiOffset, mliParamsAddress + 5)
+  patchAbsolute(ldaMliCountLoOffset, mliCountAddress)
+  patchAbsolute(staMliCountLoOffset, mliCountAddress)
+  patchAbsolute(ldaMliCountHiOffset, mliCountAddress + 1)
+  patchAbsolute(staMliCountHiOffset, mliCountAddress + 1)
+  patchAbsolute(oraMliCountLoOffset, mliCountAddress)
 
   // --- Patch copy-loop source addresses ---
   // Phase 3: LDA prelaunchData-1+RELAY_LOAD_ADDRESS,X
-  const prelaunchAbsAddr = RELAY_LOAD_ADDRESS + prelaunchDataOffset - 1
+  const prelaunchAbsAddr = relayLoadAddress + prelaunchDataOffset - 1
   code[prelaunchCopySrcIdx + 1] = prelaunchAbsAddr & 0xFF
   code[prelaunchCopySrcIdx + 2] = (prelaunchAbsAddr >> 8) & 0xFF
   // Phase 4: LDA preinitData-1+RELAY_LOAD_ADDRESS,X
-  const preinitAbsAddr = RELAY_LOAD_ADDRESS + preinitDataOffset - 1
+  const preinitAbsAddr = relayLoadAddress + preinitDataOffset - 1
   code[preinitCopySrcIdx + 1] = preinitAbsAddr & 0xFF
   code[preinitCopySrcIdx + 2] = (preinitAbsAddr >> 8) & 0xFF
 
@@ -5220,7 +5285,7 @@ export const buildProDosHdv = async (
     throw new Error(`Not enough contiguous free blocks. Need ${count}, best run was ${consecutive}.`)
   }
 
-  const fourCadeRelayBlockInfo: Array<{ startBlock: number; blockCount: number } | undefined> = []
+  const fourCadeRelayBlockInfo: Array<{ startBlock: number; blockCount: number; helperName: string } | undefined> = []
   const fourCadeRelayBinaries: Array<Uint8Array> = []
   const fourCadeBlockRanges: Array<{ startBlock: number; blockCount: number }> = []
   const unitNumber = ((dosMasterSlot & 0x07) << 4)  // slot N drive 1
@@ -5248,7 +5313,8 @@ export const buildProDosHdv = async (
 
       const fourCadeStartBlock = allocateContiguousFreeBlocks(totalBlockCount)
       fourCadeBlockRanges.push({ startBlock: fourCadeStartBlock, blockCount: totalBlockCount })
-      fourCadeRelayBlockInfo[entry.menuIndex] = { startBlock: fourCadeStartBlock, blockCount: relayBlockCount }
+      const helperName = `RLY${String(entry.menuIndex + 1).padStart(2, "0")}`
+      fourCadeRelayBlockInfo[entry.menuIndex] = { startBlock: fourCadeStartBlock, blockCount: relayBlockCount, helperName }
 
       // Game data starts at fourCadeStartBlock + relayBlockCount (after the relay block)
       const gameDataStartBlock = fourCadeStartBlock + relayBlockCount
@@ -5263,6 +5329,7 @@ export const buildProDosHdv = async (
           unitNumber,
           entry.prelaunch!.sequence,
           entry.entryAddress,
+          PRODOS_RELAY_PAYLOAD_ADDRESS,
         )
       } else {
         relayData = createPrelaunchRelay(
@@ -5278,6 +5345,12 @@ export const buildProDosHdv = async (
       }
 
       fourCadeRelayBinaries.push(relayData)
+      helperFiles.push({
+        name: helperName,
+        type: PRODOS_FILE_TYPE_BINARY,
+        data: createProDosRelayWrapper(relayData, hasPrelaunchSequence),
+        auxType: PRODOS_RELAY_WRAPPER_ADDRESS,
+      })
       continue
     }
 
@@ -5290,7 +5363,8 @@ export const buildProDosHdv = async (
 
     const fourCadeStartBlock = allocateContiguousFreeBlocks(totalBlockCount)
     fourCadeBlockRanges.push({ startBlock: fourCadeStartBlock, blockCount: totalBlockCount })
-    fourCadeRelayBlockInfo[entry.menuIndex] = { startBlock: fourCadeStartBlock, blockCount: relayBlockCount }
+    const helperName = `RLY${String(entry.menuIndex + 1).padStart(2, "0")}`
+    fourCadeRelayBlockInfo[entry.menuIndex] = { startBlock: fourCadeStartBlock, blockCount: relayBlockCount, helperName }
 
     // Game data starts after relay block
     const gameDataStartBlock = fourCadeStartBlock + relayBlockCount
@@ -5482,22 +5556,26 @@ export const buildProDosHdv = async (
 
 
     if (hasZP) {
-      fourCadeRelayBinaries.push(createDirectLoadRelayWithZP(
+      const relayData = createDirectLoadRelayWithZP(
         gameDataStartBlock,
         entry.loadAddress,
         gameBlockCount,
         entry.entryAddress,
         unitNumber,
         effectiveFloppyPatch,
-      ))
+      )
+      fourCadeRelayBinaries.push(relayData)
+      helperFiles.push({ name: helperName, type: PRODOS_FILE_TYPE_BINARY, data: createProDosRelayWrapper(relayData), auxType: PRODOS_RELAY_WRAPPER_ADDRESS })
     } else {
-      fourCadeRelayBinaries.push(createDirectLoadRelay(
+      const relayData = createDirectLoadRelay(
         gameDataStartBlock,
         entry.loadAddress,
         gameBlockCount,
         entry.entryAddress,
         unitNumber,
-      ))
+      )
+      fourCadeRelayBinaries.push(relayData)
+      helperFiles.push({ name: helperName, type: PRODOS_FILE_TYPE_BINARY, data: createProDosRelayWrapper(relayData), auxType: PRODOS_RELAY_WRAPPER_ADDRESS })
     }
   }
 
@@ -6028,8 +6106,8 @@ export const buildProDosHdv = async (
   // 4cade binaries are stored as contiguous blocks within the volume (allocated
   // from the bitmap above). Block layout per game:
   //   [relay 1 block] [game data N blocks] [ZP 0-1 block] [DSK 0-M blocks]
-  // The relay binary is loaded directly by MENULAUNCH via device driver calls
-  // (bypassing BASIC.SYSTEM's file buffer management entirely).
+  // MENULAUNCH BRUNs a per-game helper file; these raw relay blocks remain part
+  // of the existing contiguous game-data layout.
   if (fourCadeEntries.length > 0) {
     for (let i = 0; i < fourCadeEntries.length; i++) {
       const entry = fourCadeEntries[i]
