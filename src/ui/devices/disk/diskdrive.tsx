@@ -20,7 +20,8 @@ import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import InternetArchivePopup from "./internetarchivedialog"
 import DemoZooDialog from "./demozoodialog"
 
-const demoZooEnabled = import.meta.env.VITE_DEMOZOO_ENABLED === "true" ||
+const demoZooEnabled = import.meta.env.DEV ||
+  import.meta.env.VITE_DEMOZOO_ENABLED === "true" ||
   (typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname))
 import { DiskBookmarks } from "./diskbookmarks"
 import { determineVtocType } from "../../../common/prodos_hdv"

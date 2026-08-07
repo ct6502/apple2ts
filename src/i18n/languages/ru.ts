@@ -398,6 +398,7 @@ export const ru = {
     "diskIsNewRelease": "Диск является новым выпуском",
     "diskIsApple2TSCollection": "Диск является частью коллекции Apple2TS",
     "diskIsInternetArchive": "Диск является частью Internet Archive",
+    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Нажмите, чтобы удалить из коллекции дисков",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Нажмите, чтобы добавить в коллекцию дисков",

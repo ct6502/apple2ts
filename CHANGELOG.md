@@ -13,6 +13,16 @@
 
 **Fixed bugs:**
 
+- Selects direct disk files instead of informational download pages.
+- Boots the newly loaded DemoZoo disk and keeps the selected floppy drive synchronized when changing disks.
+- Prevents DemoZoo refreshes from running automatically on every `npm start`.
+- Fixes DemoZoo proxy routing and external disk downloads on the Cloudflare Pages deployment.
+- Fixes Internet Archive search and metadata resolution when the browser origin is `apple2ts.pages.dev`.
+- Makes Internet Archive result titles clickable and closes the DemoZoo dialog immediately after a disk loads.
+- Adds retries and a pinned Wrangler version for transient Cloudflare Pages Function publish failures.
+- Fixes DemoZoo restoring the latest saved page instead of resetting to page 1 when the dialog is reopened.
+- Fixes DemoZoo favorites resolving through the Cloudflare proxy and loading external disk-image links.
+- Marks DemoZoo favorites separately from Internet Archive disks and allows export after the disk format is verified.
 - Test slack integration [\#253](https://github.com/ct6502/apple2ts/issues/253)
 - Unable to use debugger properly unless current resolution allows all panels to be displayed completely [\#249](https://github.com/ct6502/apple2ts/issues/249)
 

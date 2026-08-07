@@ -398,6 +398,7 @@ export const ptBR = {
     "diskIsNewRelease": "O disco é um novo lançamento",
     "diskIsApple2TSCollection": "O disco faz parte da coleção Apple2TS",
     "diskIsInternetArchive": "O disco faz parte do Internet Archive",
+    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Clique para remover da coleção de discos",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Clique para adicionar à coleção de discos",

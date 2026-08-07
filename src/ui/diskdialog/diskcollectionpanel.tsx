@@ -4,6 +4,7 @@ import Flyout from "../flyout"
 import { faCommentDots, faCheckCircle, faClock, faCloud, faDownload, faFloppyDisk, faHardDrive, faStar } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { svgInternetArchiveLogo } from "../img/icon_internetarchive"
+import { svgDemoZooLogo } from "../img/icon_demozoo"
 import PopupMenu from "../controls/popupmenu"
 import { DISK_DRIVE_LABELS } from "../devices/disk/diskdrive"
 import { newReleases } from "../devices/disk/newreleases"
@@ -171,7 +172,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       icon: faStar,
       label: t("collection.showFavorites"),
       disks: sortDisks(
-        diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE),
+        diskCollection.filter(x => x.type == DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE || x.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE || x.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO),
         sortModeByTab[TAB_INDEX.FAVORITES]
       ),
       isHighlighted: false
@@ -253,6 +254,16 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           diskCollectionItem.cloudData.downloadUrl = downloadUrl.toString()
           fileSize = newFileSize
         }
+      } else if (diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO) {
+        // DemoZoo favorites store the production page as their URL, so their
+        // actual disk size is only known after the API/external-link resolver
+        // downloads and parses the disk image.
+        await new Promise<void>((resolve) => {
+          loadDisk(-1, diskCollectionItem, props.updateDisplay, (buffer) => {
+            fileSize = buffer ? buffer.byteLength : 0
+            resolve()
+          })
+        })
       }
       diskCollectionItem.cloudData.fileSize = fileSize
 
@@ -595,6 +606,19 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                           }}
                           fill="#ffffff"
                           viewBox="0 0 55 55">{svgInternetArchiveLogo}</svg>
+                        <div className="dcp-item-ia-icon-bg">&nbsp;</div>
+                      </div>}
+                    {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.DEMOZOO &&
+                      <div className="dcp-item-ia" title={t("collection.diskIsDemoZoo")}>
+                        <span
+                          className="dcp-item-ia-icon"
+                          onClick={(event) => {
+                            if (activeTab != TAB_INDEX.EXPORT) {
+                              event.stopPropagation()
+                            }
+                          }}>
+                          {svgDemoZooLogo}
+                        </span>
                         <div className="dcp-item-ia-icon-bg">&nbsp;</div>
                       </div>}
                     {diskCollectionItem.type == DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
