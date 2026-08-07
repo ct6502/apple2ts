@@ -72,7 +72,6 @@ export const en = {
     basicTab: "Applesoft BASIC",
     expectinTab: "Apple exPectin",
     breakpoints: "Breakpoints",
-    disassembly: "Disassembly",
     memory: "Memory",
     stack: "Stack",
     state: "CPU State",
@@ -86,143 +85,158 @@ export const en = {
     pause: "Pause",
     loadSymbolTable: "Load Symbol Table",
     agentTab: "Agent",
-    disassemblyTooltips: {
-      // Formats own grammar, word order, and punctuation. Labels and states
-      // below are standalone diagnostic terms inserted through named fields.
-      formats: {
-        unknown: "{{label}} = UNKNOWN",
-        bit7: "{{label}} = {{state}} (bit 7 = {{bit}})",
-        withAction: "{{status}}; {{action}}",
-        keyboardUnknown: "Keyboard = UNKNOWN",
-        keyboard: "Keyboard = \"{{character}}\"; Strobe is {{state}} (bit 7 = {{bit}})",
-        auxiliaryBankUnknown: "Select auxiliary bank using {{addressing}} addressing; start paddle timers",
-        auxiliaryBank: "Select auxiliary bank {{bank}} using {{addressing}} addressing; start paddle timers",
-        preIndexedAddress:
-          "Address: {{effectiveAddress}} ⇐ ({{base}} + {{index}} = {{pointer}})",
-        indexedAddress: "Address: {{effectiveAddress}} = {{base}} + {{index}}",
-        indirectAddress: "Address: {{effectiveAddress}}",
-        value: "Value: {{value}}",
-      },
-      states: {
-        "1": "1",
-        "2": "2",
-        no: "NO",
-        yes: "YES",
-        rom: "ROM",
-        ram: "RAM",
-        off: "OFF",
-        on: "ON",
-        active: "ACTIVE",
-        inactive: "INACTIVE",
-        released: "RELEASED",
-        pressed: "PRESSED",
-        expired: "EXPIRED",
-        clear: "CLEAR",
-        set: "SET",
-      },
-      labels: {
-        anyKeyDown: "Any Key Down",
-        languageCardBank: "Language Card Bank",
-        languageCardReadSource: "Language Card Read Source",
-        auxiliaryMemoryReads: "Auxiliary-Memory Reads",
-        auxiliaryMemoryWrites: "Auxiliary-Memory Writes",
-        internalCxRom: "Internal $Cx ROM",
-        auxiliaryZeroPageAndStack: "Auxiliary Zero Page and Stack",
-        slot3Rom: "Slot 3 ROM",
-        page2DisplayMemoryBanking: "PAGE2 Display-Memory Banking",
-        verticalBlank: "Vertical Blank",
-        textMode: "Text Mode",
-        mixedDisplay: "Mixed Display",
-        displayPage: "Display Page",
-        hiResMode: "Hi-Res Mode",
-        alternateCharacterSet: "Alternate Character Set",
-        "80ColumnDisplay": "80-Column Display",
-        pushbutton0: "Pushbutton 0",
-        pushbutton1: "Pushbutton 1",
-        pushbutton2: "Pushbutton 2",
-        paddle0Timer: "Paddle 0 Timer",
-        paddle1Timer: "Paddle 1 Timer",
-        paddle2Timer: "Paddle 2 Timer",
-        paddle3Timer: "Paddle 3 Timer",
-        pushbutton0Mirror: "Pushbutton 0 Mirror",
-        pushbutton1Mirror: "Pushbutton 1 Mirror",
-        pushbutton2Mirror: "Pushbutton 2 Mirror",
-        paddle0TimerMirror: "Paddle 0 Timer Mirror",
-        paddle1TimerMirror: "Paddle 1 Timer Mirror",
-        paddle2TimerMirror: "Paddle 2 Timer Mirror",
-        paddle3TimerMirror: "Paddle 3 Timer Mirror",
-      },
-      text: {
-        clearKeyboardStrobe: "Clear keyboard strobe",
-        writeIgnoredOnAppleIiPlus: "Write ignored on Apple II+",
-        disablePage2DisplayMemoryBanking: "Disable PAGE2 display-memory banking",
-        enablePage2DisplayMemoryBanking: "Enable PAGE2 display-memory banking",
-        selectMainMemoryForReads: "Select main memory for reads",
-        selectAuxiliaryMemoryForReads: "Select auxiliary memory for reads",
-        selectMainMemoryForWrites: "Select main memory for writes",
-        selectAuxiliaryMemoryForWrites: "Select auxiliary memory for writes",
-        selectSlotRomForC100Cfff: "Select slot ROM for $C100-$CFFF",
-        selectInternalRomForC100Cfff: "Select internal ROM for $C100-$CFFF",
-        selectMainZeroPageAndStack: "Select main zero page and stack",
-        selectAuxiliaryZeroPageAndStack: "Select auxiliary zero page and stack",
-        selectInternalRomForC300C3ff: "Select internal ROM for $C300-$C3FF",
-        selectSlot3Rom: "Select slot 3 ROM",
-        select40ColumnDisplay: "Select 40-column display",
-        select80ColumnDisplay: "Select 80-column display",
-        selectPrimaryCharacterSet: "Select primary character set",
-        selectAlternateCharacterSet: "Select alternate character set",
-        toggleCassetteOutput: "Toggle cassette output",
-        toggleSpeakerOutput: "Toggle speaker output",
-        pulseGamePortStrobe: "Pulse game-port strobe",
-        apple2tsEmulationMarkerAlwaysCd: "Apple2TS emulation marker always = $CD",
-        selectGraphicsMode: "Select graphics mode",
-        selectTextMode: "Select text mode",
-        selectFullScreenDisplay: "Select full-screen display",
-        selectMixedGraphicsText: "Select mixed graphics/text",
-        selectDisplayPage1: "Select display page 1",
-        selectDisplayPage2: "Select display page 2",
-        selectLoResGraphics: "Select lo-res graphics",
-        selectHiResGraphics: "Select hi-res graphics",
-        disableAnnunciator0: "Disable annunciator 0",
-        enableAnnunciator0: "Enable annunciator 0",
-        disableAnnunciator1: "Disable annunciator 1",
-        enableAnnunciator1: "Enable annunciator 1",
-        disableAnnunciator2: "Disable annunciator 2",
-        enableAnnunciator2: "Enable annunciator 2",
-        disableAnnunciator3EnableDhires: "Disable annunciator 3; enable DHIRES",
-        enableAnnunciator3DisableDhires: "Enable annunciator 3; disable DHIRES",
-        disableAnnunciator3: "Disable annunciator 3",
-        enableAnnunciator3: "Enable annunciator 3",
-        sampleCassetteInput: "Sample cassette input",
-        sampleCassetteInputMirror: "Sample cassette-input mirror",
-        startPaddleTimers: "Start paddle timers",
-        laser128exCompatibilityNotEmulated: "Laser 128EX compatibility = NOT EMULATED",
-        selectLcBank2UseRamForReadsDisableWrites:
-          "Select LC bank 2; use RAM for reads; disable writes",
-        selectLcBank2UseRamForReadsResetPrewriteLatch:
-          "Select LC bank 2; use RAM for reads; reset prewrite latch",
-        selectLcBank2UseRomForReadsArmEnableWrites:
-          "Select LC bank 2; use ROM for reads; arm/enable writes",
-        selectLcBank2UseRomForReadsResetPrewriteLatch:
-          "Select LC bank 2; use ROM for reads; reset prewrite latch",
-        selectLcBank2UseRomForReadsDisableWrites:
-          "Select LC bank 2; use ROM for reads; disable writes",
-        selectLcBank2UseRamForReadsArmEnableWrites:
-          "Select LC bank 2; use RAM for reads; arm/enable writes",
-        selectLcBank1UseRamForReadsDisableWrites:
-          "Select LC bank 1; use RAM for reads; disable writes",
-        selectLcBank1UseRamForReadsResetPrewriteLatch:
-          "Select LC bank 1; use RAM for reads; reset prewrite latch",
-        selectLcBank1UseRomForReadsArmEnableWrites:
-          "Select LC bank 1; use ROM for reads; arm/enable writes",
-        selectLcBank1UseRomForReadsResetPrewriteLatch:
-          "Select LC bank 1; use ROM for reads; reset prewrite latch",
-        selectLcBank1UseRomForReadsDisableWrites:
-          "Select LC bank 1; use ROM for reads; disable writes",
-        selectLcBank1UseRamForReadsArmEnableWrites:
-          "Select LC bank 1; use RAM for reads; arm/enable writes",
-        triggerMultipleSoftSwitchOperations: "Trigger multiple soft-switch operations",
-      },
+    disassembly: "Disassembly",
+  },
+  disassembly: {
+    // Each message is one complete tooltip implication. The disassembler can
+    // present several implications from one memory access as separate lines.
+    // Name messages for their hardware concern and reuse them only when the
+    // complete implication has the same meaning in both contexts.
+    // Every message is one complete rendered line. Interpolation supplies
+    // runtime data, never separately translated words or sentence fragments.
+    // Computed effective address and current memory value.
+    memory: {
+      effectiveAddress: "Effective address: {{notation}}",
+      value: "Value: {{notation}}",
+    },
+    // Keyboard input and strobe behavior.
+    keyboard: {
+      character: "Keyboard: \"{{character}}\"",
+      strobeClear: "Keyboard strobe: CLEAR (MSB = 0)",
+      strobeSet: "Keyboard strobe: SET (MSB = 1)",
+      anyKeyDownClear: "Any-key-down flag: CLEAR (MSB = 0)",
+      anyKeyDownSet: "Any-key-down flag: SET (MSB = 1)",
+      clearStrobe: "Clear keyboard strobe",
+    },
+    // Cassette input and output.
+    cassette: {
+      toggleOutput: "Toggle cassette output",
+      sampleInput: "Sample cassette input",
+      sampleInputMirror: "Sample cassette-input mirror",
+    },
+    // Speaker output.
+    speaker: {
+      toggleOutput: "Toggle speaker output",
+    },
+    // Supplemental INFO and WARNING messages.
+    notice: {
+      emulatorIdentifier: "INFO: Apple2TS emulator identifier: $CD",
+      noWriteEffect: "INFO: This write has no effect on {{machine}}",
+      multipleTriggers: "WARNING: This instruction triggers the soft switch multiple times",
+      unknownWrite: "WARNING: This instruction writes an unknown value",
+    },
+    // ROM source and mapping.
+    rom: {
+      intCxOff: "Internal $Cx ROM: OFF (MSB = 0)",
+      intCxOn: "Internal $Cx ROM: ON (MSB = 1)",
+      slot3Off: "Slot 3 ROM: OFF (MSB = 0)",
+      slot3On: "Slot 3 ROM: ON (MSB = 1)",
+      internal: "Select internal ROM for {{range}}",
+      slot: "Select slot ROM for {{range}}",
+    },
+    // Language Card banking and access.
+    languageCard: {
+      bank1: "Language Card bank: 1 (MSB = 0)",
+      bank2: "Language Card bank: 2 (MSB = 1)",
+      readSourceRom: "Language Card read source: ROM (MSB = 0)",
+      readSourceRam: "Language Card read source: RAM (MSB = 1)",
+      selectBank: "Language Card: Select bank {{bank}}",
+      useRamForReads: "Language Card: Use RAM for reads",
+      useRomForReads: "Language Card: Use ROM for reads",
+      disableWrites: "Language Card: Disable writes",
+      resetPrewriteLatch: "Language Card: Reset prewrite latch",
+      armOrEnableWrites: "Language Card: Arm or enable writes",
+    },
+    // Auxiliary-memory routing and expansion banks.
+    auxMemory: {
+      readStatusOff: "Auxiliary-memory reads: OFF (MSB = 0)",
+      readStatusOn: "Auxiliary-memory reads: ON (MSB = 1)",
+      readMain: "Select main memory for reads",
+      readAuxiliary: "Select auxiliary memory for reads",
+      writeStatusOff: "Auxiliary-memory writes: OFF (MSB = 0)",
+      writeStatusOn: "Auxiliary-memory writes: ON (MSB = 1)",
+      writeMain: "Select main memory for writes",
+      writeAuxiliary: "Select auxiliary memory for writes",
+      selectExpansionBank:
+        "Select auxiliary expansion bank {{bank}} using {{addressing}} addressing",
+      altzpMain: "Select main zero page, stack, and bank-switched RAM",
+      altzpAuxiliary: "Select auxiliary zero page, stack, and bank-switched RAM",
+      altzpStatusMain: "Zero page, stack, and bank-switched RAM: MAIN (MSB = 0)",
+      altzpStatusAuxiliary:
+        "Zero page, stack, and bank-switched RAM: AUXILIARY (MSB = 1)",
+    },
+    // Which memory supplies the display.
+    displayMemory: {
+      "80storeStatusOff": "PAGE2 selects display page 1 or 2 (MSB = 0)",
+      "80storeStatusOn": "PAGE2 selects main or auxiliary display memory (MSB = 1)",
+      "80storeOff": "Make PAGE2 select display page 1 or 2",
+      "80storeOn": "Make PAGE2 select main or auxiliary display memory",
+      page2StatusClear: "Display-memory selection: PAGE 1 OR MAIN (MSB = 0)",
+      page2StatusSet: "Display-memory selection: PAGE 2 OR AUXILIARY (MSB = 1)",
+      selectPage1: "Select display page 1",
+      selectPage2: "Select display page 2",
+      page2Clear: "Select display page 1, or main display memory with 80STORE",
+      page2Set: "Select display page 2, or auxiliary display memory with 80STORE",
+    },
+    // How and when video is rendered.
+    display: {
+      altCharsetStatusOff: "Alternate character set: OFF (MSB = 0)",
+      altCharsetStatusOn: "Alternate character set: ON (MSB = 1)",
+      selectPrimaryCharset: "Select primary character set",
+      selectAlternateCharset: "Select alternate character set",
+      textModeStatusOff: "Text mode: OFF (MSB = 0)",
+      textModeStatusOn: "Text mode: ON (MSB = 1)",
+      selectGraphicsMode: "Select graphics mode",
+      selectTextMode: "Select text mode",
+      mixedDisplayStatusOff: "Mixed display: OFF (MSB = 0)",
+      mixedDisplayStatusOn: "Mixed display: ON (MSB = 1)",
+      selectFullScreenDisplay: "Select full-screen display",
+      selectMixedDisplay: "Select mixed graphics/text",
+      hiresModeStatusOff: "Hi-res mode: OFF (MSB = 0)",
+      hiresModeStatusOn: "Hi-res mode: ON (MSB = 1)",
+      selectLoresGraphics: "Select lo-res graphics",
+      selectHiresGraphics: "Select hi-res graphics",
+      disableDhires: "Disable DHIRES",
+      enableDhires: "Enable DHIRES",
+      verticalBlankActive: "Vertical blank: ACTIVE (MSB = 0)",
+      verticalBlankInactive: "Vertical blank: INACTIVE (MSB = 1)",
+      column80StatusOff: "80-column display: OFF (MSB = 0)",
+      column80StatusOn: "80-column display: ON (MSB = 1)",
+      setWidth: "Set display width to {{columns}} columns",
+    },
+    // Annunciator output.
+    annunciator: {
+      disable: "Disable annunciator {{number}}",
+      enable: "Enable annunciator {{number}}",
+    },
+    // TransWarp-specific software intent.
+    transWarp: {
+      configuredMaximum: "TransWarp: Select configured maximum speed",
+      oneMhz: "TransWarp: Select 1 MHz",
+      disableUntilColdBoot: "TransWarp: Disable acceleration until cold boot",
+    },
+    // Laser 128EX-specific software intent.
+    laser128ex: {
+      oneMhz: "Laser 128EX: Select 1 MHz maximum CPU speed",
+      twoPointThreeMhz: "Laser 128EX: Select 2.3 MHz maximum CPU speed",
+      threePointSixMhz: "Laser 128EX: Select 3.6 MHz maximum CPU speed",
+      disableDiskSlowdown:
+        "Laser 128EX: Disable automatic 1 MHz slowdown for port 7 disk access (write-once bit 5)",
+      enableDiskSlowdown:
+        "Laser 128EX: Enable automatic 1 MHz slowdown for port 7 disk access (write-once bit 5)",
+    },
+    // Game-port input and output.
+    gameIO: {
+      pulseStrobe: "Pulse game-port strobe",
+      startPaddleTimers: "Start paddle timers",
+      buttonReleased: "Pushbutton {{number}}: RELEASED (MSB = 0)",
+      buttonPressed: "Pushbutton {{number}}: PRESSED (MSB = 1)",
+      paddleExpired: "Paddle {{number}} timer: EXPIRED (MSB = 0)",
+      paddleActive: "Paddle {{number}} timer: ACTIVE (MSB = 1)",
+      buttonMirrorReleased: "Pushbutton {{number}} mirror: RELEASED (MSB = 0)",
+      buttonMirrorPressed: "Pushbutton {{number}} mirror: PRESSED (MSB = 1)",
+      paddleMirrorExpired: "Paddle {{number}} timer mirror: EXPIRED (MSB = 0)",
+      paddleMirrorActive: "Paddle {{number}} timer mirror: ACTIVE (MSB = 1)",
     },
   },
   tour: {

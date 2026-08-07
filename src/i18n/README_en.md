@@ -2,6 +2,9 @@
 
 This directory contains the core internationalization (i18n) engine and maintenance tools for Apple2TS. Refer to this guide when merging upstream changes or adding new translation keys.
 
+For primary English tooltip wording, follow the canonical forms in
+[Tooltip Style Guide](TOOLTIP_STYLE.md).
+
 ## 🛠️ Maintenance Tools
 
 ### 1. `i18n_master.cjs` — Deprecated
