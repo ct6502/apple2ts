@@ -3,7 +3,7 @@ export const ja = {
     "boot": "起動",
     "reset": "リセット",
     "copyScreen": "画面をコピー",
-    "copyText": "Copy Text",
+    "copyText": "テキストをコピー",
     "pasteText": "テキストを貼り付け",
     "saveState": "状態を保存",
     "restoreState": "状態を復元",
@@ -192,7 +192,7 @@ export const ja = {
     "urlParametersBody": "オプションのURLパラメータは、URLにクエスチョンマーク(?)の後に追加し、複数のパラメータはアンパサンド(&)で区切ります。ディスクイメージの指定には#を使用します。例についてはリンクビルダーダイアログを参照してください。",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">デバッグ付きTotal Replay</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay、Choplifterをロード、埋め込みモード</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">高速・白黒表示のA2DeskTop 2MG</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">埋め込みApplesoft BASICプログラム</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Hexアドレス付きバイナリファイル</a>",
     "links": "リンク",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS デスクトップアプリ</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix による CORS プロキシ</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS デスクトップアプリ</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix による CORS プロキシ</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "ロード中...",
@@ -474,5 +474,11 @@ export const ja = {
     "providerNotConfigured": "Provider not configured - click the gear icon to set up your AI agent",
     "providerConfigured": "Provider: {{provider}} ({{model}})",
     "invalidKeyFormat": "Invalid API key format for {{provider}}"
+  },
+  "startup": {
+    "welcome": "Apple2TS へようこそ",
+    "subtitle": "TypeScript Apple II エミュレーター",
+    "copyright": "(c) {{year}} C.Torrence + 協力者",
+    "diskCollections": "ディスクコレクションアイコンをクリック\nして内蔵ディスクやゲームを読込む。"
   }
 }

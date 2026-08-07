@@ -192,7 +192,7 @@ export const zhTW = {
     "urlParametersBody": "對於可選的URL參數，在URL後面加上問號(?)並附加參數，多個參數之間用(&)符號分隔。使用#指定磁碟映像。有關範例，請參閱連結建立器對話框。",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay (含除錯)</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay (載入 Choplifter，嵌入模式)</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2Desktop 2MG (快速，黑白)</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">嵌入式 Applesoft BASIC 程式</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">具有十六進位位址的二進位檔案</a>",
     "links": "連結",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 桌面應用程式</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 桌面應用程式</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "載入中...",
@@ -474,5 +474,11 @@ export const zhTW = {
     "providerNotConfigured": "尚未設定提供商 - 請點擊齒輪圖示以設定您的 AI 代理",
     "providerConfigured": "提供商：{{provider}} ({{model}})",
     "invalidKeyFormat": "{{provider}} 的 API 金鑰格式不正確"
+  },
+  "startup": {
+    "welcome": "歡迎使用 Apple2TS",
+    "subtitle": "TypeScript Apple II 模擬器",
+    "copyright": "(c) {{year}} C.Torrence + 協作者",
+    "diskCollections": "點擊磁碟集合圖示\n載入內建磁碟或遊戲。"
   }
 }

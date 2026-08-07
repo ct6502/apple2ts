@@ -3,7 +3,7 @@ export const de = {
     "boot": "Starten",
     "reset": "Zurücksetzen",
     "copyScreen": "Bildschirm Kopieren",
-    "copyText": "Copy Text",
+    "copyText": "Text Kopieren",
     "pasteText": "Text Einfügen",
     "saveState": "Zustand Speichern",
     "restoreState": "Zustand Wiederherstellen",
@@ -192,7 +192,7 @@ export const de = {
     "urlParametersBody": "Für optionale URL-Parameter fügen Sie diese nach einem Fragezeichen (?) an die URL an und trennen Sie mehrere Parameter mit einem Kaufmanns-Und (&). Verwenden Sie # um das Disk-Image anzugeben. Beispiele finden Sie im Link-Builder-Dialog.",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay mit Debugging</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay, Choplifter laden, eingebetteter Modus</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2DeskTop 2MG mit schneller Geschwindigkeit und weißer Farbe</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">Eingebettetes Applesoft BASIC-Programm</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Binärdatei mit Hex-Adresse</a>",
     "links": "Links",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS Desktop-App</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS Proxy by Corsfix</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS Desktop-App</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS Proxy by Corsfix</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "Laden...",

@@ -347,7 +347,8 @@ touch key once to enable it then touch the desired letter key.`,
 <a href="https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin" target="_blank">Binary File with Hex Address</a>`,
     links: "Links",
     linksBody: `<a href="https://ct6502.org/apple2ts/" target="_blank">Apple2TS Desktop App</a>
-<a href="https://corsfix.com" target="_blank">CORS Proxy by Corsfix</a>`
+<a href="https://corsfix.com" target="_blank">CORS Proxy by Corsfix</a>
+<a href="https://poppyworks.itch.io/silver" target="_blank">Silver CJK Pixel Font</a>`
   },
   messages: {
     loading: "Loading...",

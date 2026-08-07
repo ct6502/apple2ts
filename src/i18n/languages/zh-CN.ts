@@ -192,7 +192,7 @@ export const zhCN = {
     "urlParametersBody": "对于可选的URL参数，在URL后面加上问号(?)并附加参数，多个参数之间用(&)符号分隔。使用#指定磁盘镜像。有关示例，请参阅链接生成器对话框。",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay (含调试)</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay (加载 Choplifter，嵌入模式)</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2Desktop 2MG (快速，黑白)</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">嵌入式 Applesoft BASIC 程序</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">具有十六进制地址的二进制文件</a>",
     "links": "链接",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 桌面应用程序</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 桌面应用程序</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "加载中...",
@@ -474,5 +474,11 @@ export const zhCN = {
     "providerNotConfigured": "尚未配置提供商 - 请点击齿轮图标以配置您的 AI 代理",
     "providerConfigured": "提供商：{{provider}} ({{model}})",
     "invalidKeyFormat": "{{provider}} 的 API 密钥格式不正确"
+  },
+  "startup": {
+    "welcome": "欢迎使用 Apple2TS",
+    "subtitle": "TypeScript Apple II 模拟器",
+    "copyright": "(c) {{year}} C.Torrence + 合作者",
+    "diskCollections": "点击磁盘集合图标\n加载内置磁盘或游戏。"
   }
 }

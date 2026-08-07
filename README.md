@@ -288,4 +288,6 @@ Dongsu Jang — Implemented a CLI/server interface with REST APIs.
 
 <a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
 
+Silver CJK Pixel Font is courtesy of [Poppy Works](https://poppyworks.itch.io/silver), and is used under a CC BY 4.0 license.
+
 [Turtle icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/turtle)

@@ -3,7 +3,7 @@ export const sv = {
     "boot": "Starta",
     "reset": "Återställ",
     "copyScreen": "Kopiera Skärm",
-    "copyText": "Copy Text",
+    "copyText": "Kopiera text",
     "pasteText": "Klistra Text",
     "saveState": "Spara Tillstånd",
     "restoreState": "Återställ Tillstånd",
@@ -192,7 +192,7 @@ export const sv = {
     "urlParametersBody": "För valfria URL-parametrar, lägg till dem i URL:en efter ett frågetecken (?) och separera flera parametrar med ett et-tecken (&). Använd # för att ange skivavbildningen. Se dialogrutan Länkbyggaren för exempel.",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay med felsökning</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay, ladda Choplifter, inbäddat läge</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2Desktop 2MG med snabb hastighet och vit färg</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">Inbäddat Applesoft BASIC Program</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Binärfil med Hex-adress</a>",
     "links": "Länkar",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS skrivbordsapp</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS-proxy av Corsfix</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS skrivbordsapp</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS-proxy av Corsfix</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "Laddar...",

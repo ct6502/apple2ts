@@ -3,7 +3,7 @@ export const ko = {
     "boot": "부팅",
     "reset": "재설정",
     "copyScreen": "화면 복사",
-    "copyText": "Copy Text",
+    "copyText": "텍스트 복사",
     "pasteText": "텍스트 붙여넣기",
     "saveState": "상태 저장",
     "restoreState": "상태 복원",
@@ -192,7 +192,7 @@ export const ko = {
     "urlParametersBody": "선택적 URL 매개변수는 URL에 물음표(?) 뒤에 추가하고, 여러 매개변수는 앰퍼샌드(&)로 구분합니다. 디스크 이미지를 지정하려면 #을 사용합니다. 예시는 링크 빌더 대화상자를 참조하세요.",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">디버깅이 포함된 Total Replay</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay, Choplifter 로드, 임베디드 모드</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">빠른 속도와 흑백 색상의 A2DeskTop 2MG</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">임베디드 Applesoft BASIC 프로그램</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">16진수 주소가 있는 바이너리 파일</a>",
     "links": "링크",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 데스크톱 앱</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix의 CORS 프록시</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 데스크톱 앙</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix의 CORS 프록시</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "로딩 중...",
@@ -474,5 +474,11 @@ export const ko = {
     "providerNotConfigured": "Provider not configured - click the gear icon to set up your AI agent",
     "providerConfigured": "Provider: {{provider}} ({{model}})",
     "invalidKeyFormat": "Invalid API key format for {{provider}}"
+  },
+  "startup": {
+    "welcome": "Apple2TS에 오신 것을 환영합니다",
+    "subtitle": "TypeScript Apple II 에뮬레이터",
+    "copyright": "(c) {{year}} C.Torrence + 협력자",
+    "diskCollections": "디스크 컬렉션 아이콘을 클릭하여\n기본 디스크 또는 게임을 불러오세요."
   }
 }
