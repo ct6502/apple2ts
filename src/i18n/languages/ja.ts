@@ -317,8 +317,8 @@ export const ja = {
     "ctrlKey": "制御文字を送信するには、ctrlボタンを一度押します。その後、画面をタップしてキーボードを表示し、目的のキーを押します。ctrlボタンは自動的に解除されます。",
     "ctrlLock": "複数の制御文字を送信するには、ctrlボタンを2回押してロックします（緑の点で示されます）。その後、画面をタップしてキーボードを表示し、目的のキーを押します。ctrlボタンを再度押して解除します。",
     "appleKeys": "open appleおよびclosed appleキーはctrlキーと同じように動作します。",
-    "shortcutsTable": "{{keyMod}}B 起動              {{arrowMod}}1 1 MHz (通常速度)\n{{keyMod}}C 画面をコピー      {{arrowMod}}2 2 MHz\n{{keyMod}}O 状態を開く        {{arrowMod}}3 3 MHz\n{{keyMod}}R リセット          {{arrowMod}}4 4 MHz (高速)\n{{keyMod}}S 状態を保存        {{arrowMod}}5 ワープ速度\n{{keyMod}}V テキストを貼り付け   {{arrowMod}}0 蝸牛速度 (0.1 MHz)\n{{keyMod}}← 時間を戻す      {{keyMod}}→ 時間を進める\nOpen Apple:   左Alt/Optionを押す\nClosed Apple: 右Alt/Optionを押す\nジョイスティック: テンキー 8/2/4/6 (7/9/1/3), 0/5, ./Enter",
-    "urlParametersBody": "address=1234 (16進データの16進ロードアドレス)\nappmode=game|embed (ゲーム|埋め込み)\ncapslock=off (caps lock オフ)\ncolor=color|nofringe|green|amber|white|inverse (カラーモード)\ncrtdistort=on|off (CRT歪曲)\ndebug=on (デバッグモード)\nghosting=on|off (残光効果)\nhex=指定アドレスにロードする16進数プログラム\nmachine=apple2p|apple2eu|apple2ee (II+, 拡張IIe, 非拡張IIe)\nramdisk=64|512|1024|4096|8192\nrun=false (HexまたはBASICプログラムを実行しない)\nscanlines=on|off (スキャンライン)\nsound=off (音声オフ)\nspeed=snail|slow|normal|two|three|fast|warp (速度)\ntext=<a href=\"https://www.urlencoder.org\" target=\"_blank\" rel=\"noopener noreferrer\">urlencoded</a> 貼り付ける文字列またはBASICプログラム\ntheme=classic|dark|minimal (テーマ)\ntour=main|debug|settings (ツアー)\n#urltodiskimage (ディスクイメージへのURL)",
+    "shortcutsTable": "{{keyMod}}B 起動              {{arrowMod}}1 1 MHz (通常速度)\n{{keyMod}}C 画面をコピー      {{arrowMod}}2 2 MHz\n{{keyMod}}O 状態を開く        {{arrowMod}}3 3 MHz\n{{keyMod}}R リセット          {{arrowMod}}4 4 MHz (高速)\n{{keyMod}}S 状態を保存        {{arrowMod}}5 ワープ速度\n{{keyMod}}V テキストを貼り付け   {{arrowMod}}0 蝸牛速度 (0.1 MHz)\n{{keyMod}}← 時間を戻す      {{keyMod}}→ 時間を進める\nOpen Apple:   左Alt/Optionを押す\nClosed Apple: 右Alt/Optionを押す\nジョイスティック: テンキー 8/2/4/6 (7/9/1/3), 0/5, ./Enter\n\n画面キーボードでCTRLやESCを使う場合は\nキーを一度タッチして有効化し、目的のキーを押してください。",
+    "urlParametersBody": "オプションのURLパラメータは、URLにクエスチョンマーク(?)の後に追加し、複数のパラメータはアンパサンド(&)で区切ります。ディスクイメージの指定には#を使用します。例についてはリンクビルダーダイアログを参照してください。",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">デバッグ付きTotal Replay</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay、Choplifterをロード、埋め込みモード</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">高速・白黒表示のA2DeskTop 2MG</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">埋め込みApplesoft BASICプログラム</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Hexアドレス付きバイナリファイル</a>",
     "links": "リンク",
     "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS デスクトップアプリ</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix による CORS プロキシ</a>"
@@ -405,7 +405,12 @@ export const ja = {
     "diskIsSyncedVia": "ディスクは同期済みです",
     "loadDiskIntoDrive": "ドライブにディスクを読み込み",
     "cloudAuthRequired": "auth required",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "exportDisksToHdv": "ディスクをHDVにエクスポート",
+    "export": "エクスポート",
+    "clickToRemoveFromSelected": "クリックして選択から削除",
+    "clickToAddToSelected": "クリックして選択に追加",
+    "reportExportIssue": "エクスポートの問題を報告"
   },
   "debugControls": {
     "goBackInTime": "時間を戻る",

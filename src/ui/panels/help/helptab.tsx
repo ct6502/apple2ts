@@ -41,8 +41,8 @@ ${shortcuts}
 `
     }
 
-    helpText = `${t("help.title")} - ${t("help.subtitle")}<br/>
-(c) ${new Date().getFullYear()} Chris Torrence and <a href="https://github.com/ct6502/apple2ts/graphs/contributors?all=1" target="_blank" rel="noopener noreferrer">contributors</a><br/><br/>
+    helpText = `${t("help.title")} - ${t("help.subtitle")}
+(c) ${new Date().getFullYear()} Chris Torrence and <a href="https://github.com/ct6502/apple2ts/graphs/contributors?all=1" target="_blank" rel="noopener noreferrer">contributors</a><br/>
 ${content}
 <b>${t("help.diskImages")}</b> hdv, 2mg, dsk, woz, po, do, bin, bas
 

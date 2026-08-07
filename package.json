@@ -1,7 +1,7 @@
 {
   "name": "apple2ts",
   "private": true,
-  "version": "3.5.1",
+  "version": "3.5.2",
   "license": "MIT",
   "homepage": "https://apple2ts.com",
   "type": "module",
@@ -10,7 +10,13 @@
     "npm": ">=11"
   },
   "overrides": {
-    "@fortawesome/fontawesome-common-types": "7.1.0"
+    "@fortawesome/fontawesome-common-types": "7.1.0",
+    "@eslint/eslintrc": {
+      "js-yaml": "4.3.1"
+    },
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "3.15.1"
+    }
   },
   "scripts": {
     "prestart": "node tools/fetch-demozoo.mjs --prompt",
@@ -39,7 +45,7 @@
     "@fortawesome/react-fontawesome": "^3.2.0",
     "buffer": "^6.0.3",
     "codemirror": "^6.0.2",
-    "fflate": "^0.8.2",
+    "fflate": "^0.8.3",
     "pako": "^3.0.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -67,9 +73,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "gh-pages": "^6.3.0",
     "globals": "^17.7.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "jest-util": "^29.7.0",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
+    "jest-util": "^30.0.5",
     "ts-jest": "^29.4.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.42.0",
@@ -88,6 +94,7 @@
     ]
   },
   "allowScripts": {
-    "fsevents@2.3.3": true
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
   }
 }

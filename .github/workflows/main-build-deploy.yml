@@ -31,6 +31,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        npm-version: '>=12'
     # clean install
     - run: npm ci --ignore-scripts
     - run: npm run lint

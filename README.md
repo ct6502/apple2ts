@@ -36,7 +36,7 @@ Be sure to install `node.js` and `npm` on your system using either `nvm` (the No
 In the project directory, to run the app in development mode:
 
 ```
-npm install
+npm ci --ignore-scripts
 npm start
 ```
 
@@ -75,7 +75,7 @@ Run in watch mode:
 To builds the app for production:
 
 ```sh
-npm install
+npm ci --ignore-scripts
 npm run build
 ```
 
@@ -100,7 +100,7 @@ When you check in code changes to Github, Github will automatically run one of t
 npm install -g npm-check-updates
 npm outdated
 ncu --upgrade
-npm install
+npm ci --ignore-scripts
 ```
 
 ## VS Code Chrome Debugging

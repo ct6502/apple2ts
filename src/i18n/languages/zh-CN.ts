@@ -317,8 +317,8 @@ export const zhCN = {
     "ctrlKey": "要发送控制字符，请按一次 Ctrl 按钮。然后点击屏幕显示键盘并按所需的按键。Ctrl 按钮将自动释放。",
     "ctrlLock": "要发送多个控制字符，请按两次 Ctrl 按钮以锁定（以绿点表示）。然后点击屏幕显示键盘并按所需的按键。再次按 Ctrl 按钮以释放。",
     "appleKeys": "Open Apple 和 Closed Apple 键的行为与 Ctrl 键相同。",
-    "shortcutsTable": "{{keyMod}}B 启动              {{arrowMod}}1 1 MHz (正常速度)\n{{keyMod}}C 复制屏幕          {{arrowMod}}2 2 MHz\n{{keyMod}}O 开启状态          {{arrowMod}}3 3 MHz\n{{keyMod}}R 重置              {{arrowMod}}4 4 MHz (快速)\n{{keyMod}}S 保存状态          {{arrowMod}}5 极速/曲速\n{{keyMod}}V 粘贴文字          {{arrowMod}}0 蜗牛速度 (0.1 MHz)\n{{keyMod}}← 回到过去        {{keyMod}}→ 向前跳跃\nOpen Apple:   按左侧 Alt/Option\nClosed Apple: 按右侧 Alt/Option\n摇杆按键:     右侧数字键 8/2/4/6 (7/9/1/3), 0/5, ./Enter",
-    "urlParametersBody": "address=1234 (十六进制数据的十六进制加载地址)\nappmode=game|embed (应用程序模式：游戏|嵌入)\ncapslock=off (大写锁定：关闭)\ncolor=color|nofringe|green|amber|white|inverse (颜色模式)\ncrtdistort=on|off (CRT 失真效果)\ndebug=on (调试模式)\nghosting=on|off (残影效果)\nhex=在指定地址加载的十六进制程序\nmachine=apple2p|apple2eu|apple2ee (机器型号：II+, 增强型 IIe, 非增强型 IIe)\nramdisk=64|512|1024|4096|8192 (RAM 磁盘大小)\nrun=false (不运行 Hex 或 BASIC 程序)\nscanlines=on|off (扫描线)\nsound=off (音效：关闭)\nspeed=snail|slow|normal|two|three|fast|warp (速度)\ntext=<a href=\"https://www.urlencoder.org\" target=\"_blank\" rel=\"noopener noreferrer\">urlencoded</a> string or BASIC program to paste (要粘贴的 urlencoded 字符串或 BASIC 程序)\ntheme=classic|dark|minimal (布景主题)\ntour=main|debug|settings (导览)\n#urltodiskimage (磁盘映射文件网址)",
+    "shortcutsTable": "{{keyMod}}B 启动              {{arrowMod}}1 1 MHz (正常速度)\n{{keyMod}}C 复制屏幕          {{arrowMod}}2 2 MHz\n{{keyMod}}O 开启状态          {{arrowMod}}3 3 MHz\n{{keyMod}}R 重置              {{arrowMod}}4 4 MHz (快速)\n{{keyMod}}S 保存状态          {{arrowMod}}5 极速/曲速\n{{keyMod}}V 粘贴文字          {{arrowMod}}0 蜗牛速度 (0.1 MHz)\n{{keyMod}}← 回到过去        {{keyMod}}→ 向前跳跃\nOpen Apple:   按左侧 Alt/Option\nClosed Apple: 按右侧 Alt/Option\n摇杆按键:     右侧数字键 8/2/4/6 (7/9/1/3), 0/5, ./Enter\n\n屏幕键盘：使用CTRL或ESC键时，\n点击一次启用，然后点击所需的按键。",
+    "urlParametersBody": "对于可选的URL参数，在URL后面加上问号(?)并附加参数，多个参数之间用(&)符号分隔。使用#指定磁盘镜像。有关示例，请参阅链接生成器对话框。",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay (含调试)</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay (加载 Choplifter，嵌入模式)</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2Desktop 2MG (快速，黑白)</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">嵌入式 Applesoft BASIC 程序</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">具有十六进制地址的二进制文件</a>",
     "links": "链接",
     "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 桌面应用程序</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>"
@@ -405,7 +405,12 @@ export const zhCN = {
     "diskIsSyncedVia": "磁盘通过同步",
     "loadDiskIntoDrive": "加载磁盘到驱动器",
     "cloudAuthRequired": "需要验证",
-    "signIn": "登录"
+    "signIn": "登录",
+    "exportDisksToHdv": "将磁盘导出为HDV",
+    "export": "导出",
+    "clickToRemoveFromSelected": "点击从已选磁盘中移除",
+    "clickToAddToSelected": "点击添加到已选磁盘",
+    "reportExportIssue": "报告导出问题"
   },
   "debugControls": {
     "goBackInTime": "回到过去",

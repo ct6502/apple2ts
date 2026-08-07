@@ -141,7 +141,7 @@ src/
 
 ### 啟動專案
 ```bash
-npm install
+npm ci --ignore-scripts
 npm start
 ```
 

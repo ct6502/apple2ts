@@ -3,21 +3,17 @@ import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
-import { crc32 } from "../../common/utility"
 import { getHelpText, getTabView, getTheme, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
 import ExpectinTab from "./expectin/expectintab"
 import HelpTab from "./help/helptab"
-import { defaultHelpText } from "./help/defaulthelptext"
 import BasicTab from "./basic/basic_tab"
 import { useTranslation } from "../../i18n/useTranslation"
 import AgentTab from "./agent/agent_tab"
 import VeraTab from "./vera/veratab"
 import { setPreferenceBoolean } from "../localstorage"
-
-const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
 
@@ -29,9 +25,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   }
 
   const currentHelpText = getHelpText()
-  const helpText = (currentHelpText.length > 1 && currentHelpText !== "<Default>") ? currentHelpText : defaultHelpText
-  const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
-  const showHighlight = !isFlyoutOpen && newHelpTextCrc != defaultHelpTextCrc
+  const showHighlight = !isFlyoutOpen && currentHelpText.length > 1 && currentHelpText !== "<Default>"
 
   const { t } = useTranslation()
 
