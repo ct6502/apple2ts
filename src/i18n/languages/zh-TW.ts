@@ -95,10 +95,10 @@ export const zhTW = {
         "keyboard": "Keyboard = \"{{character}}\"; Strobe is {{state}} (bit 7 = {{bit}})",
         "auxiliaryBankUnknown": "Select auxiliary bank using {{addressing}} addressing; start paddle timers",
         "auxiliaryBank": "Select auxiliary bank {{bank}} using {{addressing}} addressing; start paddle timers",
-        "preIndexedAddress": "Address: {{effectiveAddress}} ⇐ ({{base}} + {{index}} = {{pointer}})",
-        "indexedAddress": "Address: {{effectiveAddress}} = {{base}} + {{index}}",
-        "indirectAddress": "Address: {{effectiveAddress}}",
-        "value": "Value: {{value}}"
+        "preIndexedAddress": "({{base}} + {{index}} = {{pointer}}) => address = {{effectiveAddress}}",
+        "indexedAddress": "address {{base}} + {{index}} = {{effectiveAddress}}",
+        "indirectAddress": "address = {{effectiveAddress}}",
+        "value": "value = {{value}}"
       },
       "states": {
         "1": "1",
