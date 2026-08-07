@@ -4,22 +4,16 @@ This directory contains the core internationalization (i18n) engine and maintena
 
 ## 🛠️ Maintenance Tools
 
-### 1. `i18n_master.cjs` — Sync & Maintain Language Files
-Run this script after adding keys to `en.ts` or merging upstream code that introduces new translatable strings.
-- **What it does**: Uses `en.ts` as the source of truth and automatically fills in missing keys across all 12 other language files.
-- **Smart defaults**: Preserves existing translations; uses a built-in dictionary to auto-translate common technical terms (e.g. Load, Save, Disk) for new keys.
-- **Run with**:
-  ```bash
-  node src/i18n/i18n_master.cjs
-  ```
+### 1. `i18n_master.cjs` — Deprecated
+Do not use this script. It filled missing locale keys with copied English,
+which hid untranslated entries. It now exits without changing files. Until
+the planned PO workflow replaces these files, add English keys to `en.ts` and
+add only real translations to the applicable locale files.
 
-### 2. `i18n_bootstrap.cjs` — Bootstrap a New Project
-Use this if you want to port the same 13-language i18n architecture to a different React project.
-- **What it does**: Generates the i18n engine, language switcher, all 13 language stubs, and an example panel.
-- **Run with**:
-  ```bash
-  node src/i18n/archive/i18n_initial_bootstrap.cjs
-  ```
+### 2. `i18n_bootstrap.cjs` — Archived Reference
+The original bootstrap is retained under `archive/` as implementation history.
+Do not run it for current maintenance or new projects: it copies English into
+every locale and does not generate the current runtime fallback behavior.
 
 ---
 
@@ -36,14 +30,20 @@ Example: you've added a new "Printer Menu" feature and need translations for it.
    }
    ```
 
-2. **Sync all languages in one step**:
-   Run `i18n_master.cjs` — it will add the new structure to every language file automatically.
-   ```bash
-   node src/i18n/i18n_master.cjs
-   ```
+2. **Add available translations**:
+   Add the new key only to locale files for which you have an actual
+   translation. Do not copy the English value merely to make every catalog
+   structurally identical. An intentionally identical name or technical term
+   may remain when it is valid locale text.
 
-3. **Refine specific translations (optional)**:
-   If the auto-generated defaults aren't accurate enough for a particular language, manually edit that file (e.g. `zh-TW.ts` or `ja.ts`).
+   Remove an existing locale entry when its provenance or review establishes
+   that it is placeholder English copied from the source rather than an
+   intentional translation. Equality with English alone is not sufficient:
+   validated names and technical terms may legitimately match.
+
+3. **Leave unavailable translations absent**:
+   The runtime falls back to `en.ts` when a locale key is missing. This keeps
+   the application readable while leaving untranslated entries identifiable.
 
 4. **Use translations in a component**:
    ```tsx
@@ -58,7 +58,8 @@ Example: you've added a new "Printer Menu" feature and need translations for it.
 - `index.ts` — Core i18n manager: language detection, persistence, and translation lookup.
 - `useTranslation.ts` — React hook that lets components reactively respond to language changes.
 - `languages/` — The 13 language data files (`.ts` format for type checking).
-- `*.cjs` — Automation scripts for maintenance tasks.
+- `i18n_master.cjs` — Deprecated guard retained to prevent use of the old sync workflow.
+- `archive/` — Historical bootstrap material; not the current maintenance workflow.
 
 ---
 
@@ -69,10 +70,11 @@ If you are an AI assistant maintaining this project, follow these rules when wor
 1. **Treat `en.ts` as the single source of truth.** Always refer to `src/i18n/languages/en.ts` for the canonical key structure.
 2. **Standard workflow for adding translations**:
    - Define the new key and English value in `en.ts` first.
-   - Immediately run `node src/i18n/i18n_master.cjs` to propagate changes.
-   - Do **not** manually edit all 13 language files individually unless making precise per-language adjustments.
-3. **Detect structural drift**: If you notice a language file (e.g. `zh-TW.ts`) is missing keys that exist in `en.ts`, run `node src/i18n/i18n_master.cjs` to resync.
+   - Add only verified translations to the applicable locale files.
+   - Do not run `i18n_master.cjs` or copy English values to complete catalog structure.
+3. **Preserve intentional fallback**: A locale file such as `zh-TW.ts` may omit an `en.ts` key when no translation exists. The runtime will display English automatically.
 4. **Hardcoded strings in UI components**: When editing any `.tsx` file, convert hardcoded strings to `t("category.key")` calls.
 5. **Interpolation syntax**: For dynamic values in translation strings, use `{{variable}}` syntax and pass the variable when calling `t`, e.g. `t("disk.syncedAt", { date: "2024-01-01" })`.
 
-When a user asks you to add a feature or fix a translation, proactively check and run the sync workflow to keep all 13 languages complete.
+When a user asks you to add a feature or fix a translation, preserve existing
+translations and add only translations supported by the task.
