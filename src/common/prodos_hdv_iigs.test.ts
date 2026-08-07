@@ -2,6 +2,8 @@ import {
   createMenuRelayBootstrap,
   createPackedBinaryRelay,
   createProDosRelayWrapper,
+  determineVtocType,
+  lookupFourCadeByTitle,
 } from "./prodos_hdv"
 import { processInstruction } from "../worker/cpu6502"
 import { reset6502, s6502, setCycleCount, setPC } from "../worker/instructions"
@@ -25,6 +27,13 @@ const branchTarget = (baseAddress: number, bytes: Uint8Array, offset: number) =>
 }
 
 describe("IIgs 4cade block loading", () => {
+  test("recognizes archive titles with combined crack suffixes as 4cade", () => {
+    const title = "CHIVALRY (4AM AND SAN INC CRACK)"
+
+    expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("standard")
+    expect(determineVtocType("chivalry.po", new Uint8Array(), title)).toBe("4cade")
+  })
+
   test("wraps the relay at a ProDOS-safe load address", () => {
     const relay = Uint8Array.from({ length: 395 }, (_, index) => index & 0xFF)
     const wrapper = createProDosRelayWrapper(relay)

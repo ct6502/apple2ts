@@ -530,7 +530,7 @@ export type PrelaunchOp =
 /** Runtime prelaunch data parsed from a fetched .a file. */
 export type ParsedPrelaunch = {
   sequence: PrelaunchOp[]
-  entry: number      // JMP target (game entry point)
+  entry: number | "loadAddress" // JMP target, or the last ProRWTS load address
 }
 
 const FOUR_CADE_BASE_URL = "https://raw.githubusercontent.com/a2-4am/4cade/v6.0.1"
@@ -561,7 +561,6 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let pendingLdaVal: number | undefined
 
   if (source.includes("!pseudopc")) return undefined
-  if (source.match(/jmp\s+\(/i)) return undefined
 
   // Callback detection state — handles decompressors that JMP to a routine
   // which calls back into the prelaunch code after decompression (e.g. Frogger).
@@ -634,6 +633,13 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
       if (!hasDecompress) { hasDecompress = true; ops.push({ op: "decompress", addr }) }
       else { ops.push({ op: "call", addr }) }
       continue
+    }
+
+    const indirectJmpMatch = line.match(/^jmp\s+\(\s*([^)]+?)\s*\)/i)
+    if (indirectJmpMatch) {
+      if (indirectJmpMatch[1].toLowerCase() !== "ldrlo2") return undefined
+      entry = "loadAddress"
+      break
     }
 
     const jmpMatch = line.match(/^jmp\s+\$([0-9a-fA-F]{2,4})\b/i)

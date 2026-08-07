@@ -64,7 +64,14 @@ type FourCadeDiskMetadata = {
   floppyPatchAddress?: number    // address of RWTS to patch to RTS (disable floppy reads)
   rawDiskImage?: Uint8Array      // original floppy DSK image for HD read shim
   prelaunch?: { sequence: PrelaunchOp[]; entry: number }  // when set, use 4cade-style init calls (no RWTS shim)
-  supplementaryFiles?: Array<{ data: Uint8Array; loadAddress: number; name: string }>  // extra BIN files to pre-load (multi-file games)
+  supplementaryFiles?: Array<{
+    data: Uint8Array
+    loadAddress: number
+    name: string
+    type: number
+    relativePath?: string
+    creationSortKey?: number
+  }>  // companion files used by multi-file games and runtime loaders
 }
 
 import { FOUR_CADE_PRELAUNCH_DB, PrelaunchOp, FourCadeEntry, fetchFourCadeDisk, fetchFourCadePrelaunch, parsePrelaunchScript, extractAllBinFiles } from "./four_cade_prelaunch_db"
@@ -325,7 +332,7 @@ const generateMenuSourceProgram = (
   }
   lines.push("1220 RETURN")
 
-  lines.push(`2000 POKE ${MENU_SELECTED_INDEX_ADDRESS},I:PRINT D$;"CLOSE":PRINT D$;"RUN ${helperSubdir}/MENULAUNCH":RETURN`)
+  lines.push(`2000 POKE ${MENU_SELECTED_INDEX_ADDRESS},I:HOME:PRINT D$;"CLOSE":PRINT D$;"RUN ${helperSubdir}/MENULAUNCH":RETURN`)
 
   // Startup render is explicit so initial display matches the first disk.
   lines.push("3000 HOME")
@@ -2322,19 +2329,31 @@ const preprocessInputFilesForMenu = async (
             // Parse the prelaunch script to get the operation sequence
             const parsed = parsePrelaunchScript(prelaunchSource)
             if (parsed) {
-              // Supplementary files (beyond the main packed binary) are
-              // pre-loaded at their addresses after decompression.  Multi-file
-              // games (e.g. Conan) store title/main/level code as separate
-              // ProDOS BIN files that the game's loader would read via MLI.
-              const supplementary = allFiles.slice(1).map(f => ({ data: f.data, loadAddress: f.loadAddress, name: f.name }))
+              const entryAddress = parsed.entry === "loadAddress" ? packed.loadAddress : parsed.entry
+              const resolvedPrelaunch = { sequence: parsed.sequence, entry: entryAddress }
+              // Preserve every non-system companion file. Some games use extra
+              // BIN files, while standard.a loaders such as Chivalry open large
+              // typeless data files through ProDOS MLI at runtime.
+              const SYSTEM_FILES_TO_SKIP = new Set(["PRODOS", "LOADER.SYSTEM"])
+              const supplementary = extractProDosFilesRecursive(poData)
+                .filter((f) => !SYSTEM_FILES_TO_SKIP.has(f.name))
+                .filter((f) => !(f.type === PRODOS_FILE_TYPE_BINARY && f.name === packed.name))
+                .map((f) => ({
+                  data: f.data,
+                  loadAddress: f.auxType,
+                  name: f.name,
+                  type: f.type,
+                  relativePath: f.relativePath,
+                  creationSortKey: f.creationSortKey,
+                }))
               fourCadeEntries.push({
                 menuIndex: i,
                 binaryData: packed.data,
                 loadAddress: packed.loadAddress,
                 binaryLength: packed.data.length,
-                entryAddress: parsed.entry,
+                entryAddress,
                 capturedZeroPage: undefined,
-                prelaunch: parsed,
+                prelaunch: resolvedPrelaunch,
                 supplementaryFiles: supplementary.length > 0 ? supplementary : undefined,
               })
 
@@ -5579,16 +5598,17 @@ export const buildProDosHdv = async (
     }
   }
 
-  // Add supplementary game files (e.g. CONAN.TITLE, CONAN.MAIN) as ProDOS BIN files
-  // in the volume root so the game's runtime file loader can find them via ProDOS MLI.
+  // Add companion game files so runtime ProDOS loaders can open them by name.
   for (const entry of fourCadeEntries) {
     if (entry.supplementaryFiles && entry.supplementaryFiles.length > 0) {
       for (const sf of entry.supplementaryFiles) {
         withStartup.push({
           name: sf.name,
-          type: PRODOS_FILE_TYPE_BINARY,
+          type: sf.type,
           data: sf.data,
           auxType: sf.loadAddress,
+          relativePath: sf.relativePath,
+          creationSortKey: sf.creationSortKey,
         })
       }
     }
@@ -6156,5 +6176,5 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
-export const VTOC_REFRESH = 7
+export const VTOC_REFRESH = 8
 
