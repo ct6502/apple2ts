@@ -75,7 +75,7 @@ const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] =>
   return [mode, value]
 }
 
-let labels: { [key: string]: number } = {}
+let labels: Record<string, number> = {}
 
 const getOperandModeValue =
   (pc: number, instr: string, operand: string, pass: 1 | 2): [ADDR_MODE, number] => {

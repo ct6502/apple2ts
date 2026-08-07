@@ -234,7 +234,7 @@ export const convertAppleKey = (e: KeyboardEvent, lowercase: boolean,
       key = String.fromCharCode(key).toUpperCase().charCodeAt(0)
     }
   } else {
-    const keymap: { [key: string]: number } = {
+    const keymap: Record<string, number> = {
       Enter: 13,
       ArrowRight: 21,
       ArrowLeft: 8,
