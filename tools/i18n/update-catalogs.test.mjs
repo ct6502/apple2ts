@@ -48,7 +48,7 @@ describe("updateCatalogs", () => {
       {
         command: "msgmerge",
         arguments_: [
-          "--previous", "--update", "--backup=none",
+          "--previous", "--no-fuzzy-matching", "--update", "--backup=none",
           resolve("/catalogs/de.po"), "/catalogs/messages.pot",
         ],
         runOptions: {stdio: "inherit"},
@@ -56,7 +56,7 @@ describe("updateCatalogs", () => {
       {
         command: "msgmerge",
         arguments_: [
-          "--previous", "--update", "--backup=none",
+          "--previous", "--no-fuzzy-matching", "--update", "--backup=none",
           resolve("/catalogs/pt-BR.po"), "/catalogs/messages.pot",
         ],
         runOptions: {stdio: "inherit"},

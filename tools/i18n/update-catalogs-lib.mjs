@@ -64,6 +64,7 @@ export const updateCatalogs = ({
 
     const result = run("msgmerge", [
       "--previous",
+      "--no-fuzzy-matching",
       "--update",
       "--backup=none",
       staged.input,

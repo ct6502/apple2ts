@@ -55,9 +55,11 @@ mutating update command also requires GNU gettext `msgmerge`.
    The updater matches stable `msgctxt` values before invoking `msgmerge`, so a
    rewritten English message retains its existing translation, becomes fuzzy,
    and keeps the previous English wording for comparison. New entries are
-   added, and removed entries become obsolete. Each locale is staged before
-   replacement; a failure preserves the affected original and reports any
-   earlier catalogs already updated.
+   added, and removed entries become obsolete. It disables cross-key fuzzy
+   matching because the stable `msgctxt`, not similar English wording,
+   identifies a message. Each locale is staged before replacement; a failure
+   preserves the affected original and reports any earlier catalogs already
+   updated.
 3. Review the affected `msgstr` values. Clear fuzzy only after confirming a
    translation against current English. Leave missing translations empty so
    runtime fallback remains visible; do not copy English merely to complete
