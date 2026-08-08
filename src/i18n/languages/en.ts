@@ -322,7 +322,7 @@ export const en = {
     "urlParametersBody": "For optional URL parameters, append them to the URL after a question mark (?) and separate multiple parameters with an ampersand (&). Use # to specify the disk image. See the Link Builder dialog for examples.",
     "examplesBody": "<a href=\"https://apple2ts.com/?debug=on#Replay\" target=\"_blank\">Total Replay with debugging</a>\n<a href=\"https://apple2ts.com/?speed=normal&appmode=embed&text=chop#Replay\" target=\"_blank\">Total Replay, load Choplifter, embedded mode</a>\n<a href=\"https://apple2ts.com/?color=white&speed=fast#https://a2desktop.s3.amazonaws.com/A2DeskTop-1.4-en_800k.2mg\" target=\"_blank\">A2Desktop 2MG with fast speed and white color</a>\n<a href=\"https://apple2ts.com/?color=green&text=10%3F%22Welcome%20to%20Apple2TS%21%22%3AGOTO10\" target=\"_blank\">Embedded Applesoft BASIC Program</a>\n<a href=\"https://apple2ts.com/?address=07FD#https://github.com/ct6502/apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" target=\"_blank\">Binary File with Hex Address</a>",
     "links": "Links",
-    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS Desktop App</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS Proxy by Corsfix</a>"
+    "linksBody": "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS Desktop App</a>\n<a href=\"https://corsfix.com\" target=\"_blank\">CORS Proxy by Corsfix</a>\n<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK Pixel Font</a>"
   },
   "messages": {
     "loading": "Loading...",
