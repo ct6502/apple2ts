@@ -34,11 +34,20 @@ const translationKeyCalls = sourceFile => {
       const callee = node.expression
       const isTranslationCall = ts.isIdentifier(callee)
         ? callee.text === "t"
-        : ts.isPropertyAccessExpression(callee) && callee.name.text === "t"
+        : ts.isPropertyAccessExpression(callee)
+          && ts.isIdentifier(callee.expression)
+          && callee.expression.text === "i18n"
+          && callee.name.text === "t"
       const argument = node.arguments[0]
-      if (isTranslationCall && argument
-          && (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument))) {
-        calls.push(argument.text)
+      if (isTranslationCall) {
+        const {line} = sourceFile.getLineAndCharacterOfPosition(node.getStart())
+        calls.push({
+          key: argument
+            && (ts.isStringLiteral(argument) || ts.isNoSubstitutionTemplateLiteral(argument))
+            ? argument.text
+            : undefined,
+          line: line + 1,
+        })
       }
     }
     ts.forEachChild(node, visit)
@@ -82,8 +91,13 @@ describe("catalog configuration", () => {
         true,
         file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
       )
-      for (const key of translationKeyCalls(sourceFile)) {
-        if (!englishKeys.has(key)) missing.push(`${relative(".", file)}: ${key}`)
+      for (const {key, line} of translationKeyCalls(sourceFile)) {
+        const location = `${relative(".", file)}:${line}`
+        if (key === undefined) {
+          missing.push(`${location}: translation key must be a string literal`)
+        } else if (!englishKeys.has(key)) {
+          missing.push(`${location}: missing ${key}`)
+        }
       }
     }
 

@@ -17,6 +17,14 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
   const showScanlines = getShowScanlines()
   const ghosting = getGhosting()
   const crtDistortion = getCrtDistortion()
+  const colorNames = [
+    t("colors.color"),
+    t("colors.nofringe"),
+    t("colors.green"),
+    t("colors.amber"),
+    t("colors.white"),
+    t("colors.inverse"),
+  ]
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
   const handleClick = (event: React.MouseEvent) => {
@@ -46,7 +54,7 @@ export const DisplayConfig = (props: { updateDisplay: UpdateDisplay }) => {
         menuItems={[[
           ...Object.values(COLOR_MODE).filter(value => typeof value === "number").map((i) => (
             {
-              label: t(`colors.${(["color", "nofringe", "green", "amber", "white", "inverse"])[i]}`),
+              label: colorNames[i],
               isSelected: () => { return i == colorMode },
               onClick: () => {
                 setPreferenceColorMode(i)

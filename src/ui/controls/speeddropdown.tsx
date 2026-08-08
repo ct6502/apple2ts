@@ -12,10 +12,9 @@ import { setPreferenceSpeedMode } from "../localstorage"
 import { snailIcon } from "../img/icon_snail"
 import { turtleIcon } from "../img/icon_turtle"
 
-const speedNames = ["0.1 MHz (Snail)", "0.5 MHz (Slow)", "1 MHz", "2 MHz",
-  "3 MHz", "4 MHz (Fast)", "Ludicrous"]
+const MinimumSpeedMode = -2
 
-export const MaximumSpeedMode = speedNames.length - 2 - 1
+export const MaximumSpeedMode = 4
 
 import { useTranslation } from "../../i18n/useTranslation"
 
@@ -32,16 +31,23 @@ export const SpeedDropdown = (props: { updateDisplay: UpdateDisplay }) => {
     <FontAwesomeIcon key="3" icon={faTruckFast} style={{ fontSize: `${iconSize}px` }} />,
     <FontAwesomeIcon key="4" icon={faRocket} style={{ fontSize: `${iconSize}px` }} />
   ]
-  const icon = icons[speedMode + 2] // Adjust for the first two modes (snail and turtle)
+  const speedIndex = speedMode - MinimumSpeedMode
+  const icon = icons[speedIndex]
+  const speedLabels = [
+    t("speed.snail"),
+    t("speed.slow"),
+    t("speed.normal"),
+    t("speed.two"),
+    t("speed.three"),
+    t("speed.fast"),
+    t("speed.warp"),
+  ]
 
   return (
     <DropdownButton
-      currentIndex={speedMode + 2}
-      itemNames={speedNames.map((name, index) => {
-        const speedKeys = ["snail", "slow", "normal", "two", "three", "fast", "warp"]
-        return t(`speed.${speedKeys[index]}`)
-      })}
-      closeCallback={(index: number) => { setPreferenceSpeedMode(index - 2); props.updateDisplay() }}
+      currentIndex={speedIndex}
+      itemNames={speedLabels}
+      closeCallback={(index: number) => { setPreferenceSpeedMode(index + MinimumSpeedMode); props.updateDisplay() }}
       icon={icon}
       icons={icons}
       tooltip={t("config.speed")}
