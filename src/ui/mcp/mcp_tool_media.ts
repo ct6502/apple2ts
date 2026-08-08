@@ -133,7 +133,7 @@ export function toolEjectDisk(drive: number): MCPToolResult {
 }
 
 // Map ASCII codes for arrow keys to ARROW enum
-const arrowKeys: { [key: number]: ARROW } = {
+const arrowKeys: Record<number, ARROW> = {
   8: ARROW.LEFT,
   21: ARROW.RIGHT,
   11: ARROW.UP,

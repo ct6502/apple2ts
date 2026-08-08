@@ -125,7 +125,7 @@ export const getDiskImageUrlFromIdentifier = async (identifier: string): Promise
     let newDiskImageUrl: URL | undefined
     let fileSize = -1
     const detailsUrl = `https://archive.org/details/${identifier}?output=json`
-    const favicon: { [key: string]: string } = {}
+    const favicon: Record<string, string> = {}
     favicon[iconKey()] = iconData()
 
     const processDiskImageResponse = async (response: Response) => {

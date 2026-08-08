@@ -7,7 +7,7 @@ interface OpCode {
 }
 
 export const opCodes = new Array<OpCode>(256)
-export const opTable: { [key: string]: number[] } = {}
+export const opTable: Record<string, number[]> = {}
 
 const PCODE = (name: string, mode: ADDR_MODE, pcode: number, bytes: number) => {
   console.assert(!opCodes[pcode], "Duplicate instruction: " + name + " mode=" + mode)

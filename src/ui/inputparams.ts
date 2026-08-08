@@ -62,7 +62,7 @@ export const handleInputParams = (paramString = "") => {
   }
 
   const speed = params.get("speed")
-  const speedMap: { [key: string]: number } = {
+  const speedMap: Record<string, number> = {
     snail: -2,
     slow: -1,
     normal: 0,

@@ -49,7 +49,7 @@ const ControlButtons = (props: DisplayProps) => {
         </button>
       </span>
     }
-    <button className="push-button" title={t("controls.copyText") || "Copy Text"}
+    <button className="push-button" title={t("controls.copyText")}
       disabled={handleGetTextPage().length === 0}
       onClick={() => handleCopyToClipboard()}>
       <FontAwesomeIcon icon={faClipboard} />
