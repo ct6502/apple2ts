@@ -6,7 +6,7 @@ import {
   lookupFourCadeByTitle,
 } from "./prodos_hdv"
 import { processInstruction } from "../worker/cpu6502"
-import { reset6502, s6502, setCycleCount, setPC } from "../worker/instructions"
+import { reset6502, s6502, setAccumulator, setCycleCount, setPC } from "../worker/instructions"
 import { memory, updateAddressTables } from "../worker/memory"
 
 const findSequence = (bytes: Uint8Array, sequence: number[]) => {
@@ -46,6 +46,13 @@ describe("IIgs 4cade block loading", () => {
 
     expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("bubble.bobble")
     expect(determineVtocType("bubble bobble.po", new Uint8Array(), title)).toBe("4cade")
+  })
+
+  test("recognizes Pitfall II's full 4am archive title as 4cade", () => {
+    const title = "Pitfall II: Lost Caverns (4am crack)"
+
+    expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("pitfall.ii")
+    expect(determineVtocType("pitfall ii.po", new Uint8Array(), title)).toBe("4cade")
   })
 
   test("wraps the relay at a ProDOS-safe load address", () => {
@@ -194,6 +201,66 @@ describe("IIgs 4cade block loading", () => {
       0x4C, 0x00, 0x60,
       0x8D, 0x82, 0xC0, 0xEE, 0xF4, 0x03, 0x6C, 0xFC, 0xFF,
     ])).toBeGreaterThan(0)
+  })
+
+  test("installs Pitfall II's reset handler and callback routines on the stack page", () => {
+    const clearPrefix = [0xA9, 0xA0, 0xA2, 0x00, 0x9D, 0x00, 0x04]
+    const callback1 = [0x38, 0xE9, 0x08, 0xC9, 0x02, 0x90, 0x03, 0x4C, 0x0A, 0xAE, 0x4C, 0xF9, 0xAD]
+    const callback2 = [0x38, 0xE9, 0x08, 0xC9, 0x02, 0x90, 0x03, 0x4C, 0x0A, 0xAE, 0x4C, 0x21, 0xAE]
+    const relay = createPackedBinaryRelay(2, 0x0800, 28, 0x70, [
+      { op: "reset_handler", mode: "rdRam2" },
+      { op: "install_routine", loAddr: 0x2DF6, hiAddr: 0x2DF7, bytes: callback1 },
+      { op: "install_routine", loAddr: 0x2E07, hiAddr: 0x2E08, bytes: callback2 },
+    ], 0x6000)
+    const prelaunchOffset = findSequence(relay, clearPrefix)
+    const callback1Offset = findSequence(relay, callback1)
+    const callback2Offset = findSequence(relay, callback2)
+    const callback1Store = findSequence(relay, [0x8D, 0xF6, 0x2D, 0xA9])
+    const callback2Store = findSequence(relay, [0x8D, 0x07, 0x2E, 0xA9])
+    const callback1Address = 0x0106 + callback1Offset - prelaunchOffset
+    const callback2Address = 0x0106 + callback2Offset - prelaunchOffset
+
+    expect(findSequence(relay, [0x8D, 0xF2, 0x03, 0xA9])).toBeGreaterThan(0)
+    expect(findSequence(relay, [0x8D, 0x80, 0xC0, 0x6C, 0xFC, 0xFF])).toBeGreaterThan(0)
+    expect(callback1Address).toBeGreaterThanOrEqual(0x0106)
+    expect(callback2Address).toBeGreaterThan(callback1Address)
+    expect(relay[callback1Store - 1] | (relay[callback1Store + 4] << 8)).toBe(callback1Address)
+    expect(relay[callback2Store - 1] | (relay[callback2Store + 4] << 8)).toBe(callback2Address)
+
+    reset6502()
+    memory.fill(0)
+    memory.set(relay.slice(prelaunchOffset), 0x0106)
+    updateAddressTables()
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 5000 && s6502.PC !== 0x6000; instruction++) {
+      processInstruction()
+    }
+
+    const resetAddress = memory[0x03F2] | (memory[0x03F3] << 8)
+    expect(s6502.PC).toBe(0x6000)
+    expect(memory[0x03F4]).toBe(memory[0x03F3] ^ 0xA5)
+    expect(Array.from(memory.slice(resetAddress, resetAddress + 6))).toEqual([
+      0x8D, 0x80, 0xC0, 0x6C, 0xFC, 0xFF,
+    ])
+    expect(memory[0x2DF6] | (memory[0x2DF7] << 8)).toBe(callback1Address)
+    expect(memory[0x2E07] | (memory[0x2E08] << 8)).toBe(callback2Address)
+    expect(Array.from(memory.slice(callback1Address, callback1Address + callback1.length)))
+      .toEqual(callback1)
+    expect(Array.from(memory.slice(callback2Address, callback2Address + callback2.length)))
+      .toEqual(callback2)
+
+    const runCallback = (address: number, accumulator: number) => {
+      setAccumulator(accumulator)
+      setPC(address)
+      for (let instruction = 0; instruction < 8 && s6502.PC < 0xAD00; instruction++) {
+        processInstruction()
+      }
+      return s6502.PC
+    }
+    expect(runCallback(callback1Address, 8)).toBe(0xADF9)
+    expect(runCallback(callback1Address, 10)).toBe(0xAE0A)
+    expect(runCallback(callback2Address, 8)).toBe(0xAE21)
+    expect(runCallback(callback2Address, 10)).toBe(0xAE0A)
   })
 
   test("encodes all packed blocks in the ProDOS MLI state", () => {

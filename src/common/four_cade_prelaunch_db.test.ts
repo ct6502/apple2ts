@@ -30,6 +30,7 @@ describe("4cade prelaunch parsing", () => {
       beq +
       lda #$ad
       sta $96A
+    +
       jmp ($20)
     `)
 
@@ -66,5 +67,60 @@ describe("4cade prelaunch parsing", () => {
 
     expect(parsed?.sequence).toContainEqual({ op: "reset_vector" })
     expect(parsed?.entry).toBe(0x6000)
+  })
+
+  test("preserves Pitfall II's reset handler and dual callbacks without enabling cheats", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL_AND_HIDE_ARTWORK_LC
+      lda #$60
+      sta $3D34
+      jsr $0800
+      +RESET_VECTOR reset
+      lda #$4C
+      sta $2DF5
+      sta $2E06
+      lda #<callback1
+      sta $2DF6
+      lda #>callback1
+      sta $2DF7
+      lda #<callback2
+      sta $2E07
+      lda #>callback2
+      sta $2E08
+      lda MachineStatus
+      and #CHEATS_ENABLED
+      beq +
+      lda #$60
+      sta $243D
+    +
+      +DISABLE_ACCEL_LC
+      jmp $6000
+    reset
+      +READ_RAM2_NO_WRITE
+      jmp ($FFFC)
+    callback1
+      sec
+      sbc #8
+      cmp #2
+      bcc +
+    - jmp $AE0A
+    + jmp $ADF9
+    callback2
+      sec
+      sbc #8
+      cmp #2
+      bcs -
+      jmp $AE21
+    `)
+
+    expect(parsed?.entry).toBe(0x6000)
+    expect(parsed?.sequence).toContainEqual({ op: "reset_handler", mode: "rdRam2" })
+    expect(parsed?.sequence).toContainEqual(expect.objectContaining({
+      op: "install_routine", loAddr: 0x2DF6, hiAddr: 0x2DF7,
+    }))
+    expect(parsed?.sequence).toContainEqual(expect.objectContaining({
+      op: "install_routine", loAddr: 0x2E07, hiAddr: 0x2E08,
+    }))
+    expect(parsed?.sequence).not.toContainEqual({ op: "patch", addr: 0x243D, val: 0x60 })
   })
 })

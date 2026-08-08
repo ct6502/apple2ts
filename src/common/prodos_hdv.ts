@@ -92,6 +92,7 @@ const getFourCadeNameIndex = (): Map<string, string> => {
     for (const key of Object.keys(FOUR_CADE_PRELAUNCH_DB)) {
       fourCadeNameIndex.set(normalizeFourCadeName(key), key)
     }
+    fourCadeNameIndex.set(normalizeFourCadeName("Pitfall II: Lost Caverns"), "Pitfall II")
   }
   return fourCadeNameIndex
 }
@@ -3467,6 +3468,10 @@ export const createPackedBinaryRelay = (
   let skipCallbackOps = false  // skip ops after jmp_decompress (callback body is just RTS)
   let resetVectorLoIdx = -1
   let resetVectorHiIdx = -1
+  let resetHandlerLoIdx = -1
+  let resetHandlerHiIdx = -1
+  let resetHandlerMode: "rdRam2" | undefined
+  const installedRoutines: Array<{ loIdx: number; hiIdx: number; bytes: number[] }> = []
 
   for (const step of sequence) {
     if (skipCallbackOps) continue  // callback body ops are no-ops for us
@@ -3524,6 +3529,26 @@ export const createPackedBinaryRelay = (
         prelaunchBytes.push(0x49, 0xA5)                                         // EOR #$A5
         prelaunchBytes.push(0x8D, 0xF4, 0x03)                                   // STA $03F4
         break
+      case "reset_handler":
+        prelaunchBytes.push(0xA9)
+        resetHandlerLoIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00, 0x8D, 0xF2, 0x03)                             // LDA #lo; STA $03F2
+        prelaunchBytes.push(0xA9)
+        resetHandlerHiIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00, 0x8D, 0xF3, 0x03)                             // LDA #hi; STA $03F3
+        prelaunchBytes.push(0x49, 0xA5, 0x8D, 0xF4, 0x03)                       // EOR #$A5; STA $03F4
+        resetHandlerMode = step.mode
+        break
+      case "install_routine": {
+        prelaunchBytes.push(0xA9)
+        const loIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00, 0x8D, step.loAddr & 0xFF, step.loAddr >> 8)
+        prelaunchBytes.push(0xA9)
+        const hiIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00, 0x8D, step.hiAddr & 0xFF, step.hiAddr >> 8)
+        installedRoutines.push({ loIdx, hiIdx, bytes: step.bytes })
+        break
+      }
     }
   }
 
@@ -3562,6 +3587,21 @@ export const createPackedBinaryRelay = (
     prelaunchBytes.push(0x8D, 0x82, 0xC0)                                       // STA $C082 (read ROM, no write)
     prelaunchBytes.push(0xEE, 0xF4, 0x03)                                       // INC $03F4
     prelaunchBytes.push(0x6C, 0xFC, 0xFF)                                       // JMP ($FFFC)
+  }
+
+  if (resetHandlerLoIdx >= 0 && resetHandlerHiIdx >= 0 && resetHandlerMode) {
+    const resetAddress = 0x0106 + prelaunchBytes.length
+    prelaunchBytes[resetHandlerLoIdx] = resetAddress & 0xFF
+    prelaunchBytes[resetHandlerHiIdx] = resetAddress >> 8
+    if (resetHandlerMode === "rdRam2") prelaunchBytes.push(0x8D, 0x80, 0xC0)   // STA $C080
+    prelaunchBytes.push(0x6C, 0xFC, 0xFF)                                       // JMP ($FFFC)
+  }
+
+  for (const routine of installedRoutines) {
+    const routineAddress = 0x0106 + prelaunchBytes.length
+    prelaunchBytes[routine.loIdx] = routineAddress & 0xFF
+    prelaunchBytes[routine.hiIdx] = routineAddress >> 8
+    prelaunchBytes.push(...routine.bytes)
   }
 
   // PrelaunchInit stub: 22 bytes at $EA-$FF (matches 4cade exactly)
@@ -6217,5 +6257,5 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
-export const VTOC_REFRESH = 9
+export const VTOC_REFRESH = 10
 

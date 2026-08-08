@@ -527,6 +527,8 @@ export type PrelaunchOp =
   | { op: "callback_vector"; loAddr: number; hiAddr: number }  // store callback address at loAddr/hiAddr
   | { op: "jmp_decompress"; addr: number }        // JMP to decompressor (callback-based, no return)
   | { op: "reset_vector" }                        // install trailing stack-page reset handler in $3F2 and LC $FFFC
+  | { op: "reset_handler"; mode: "rdRam2" }       // install named stack-page reset handler in $3F2
+  | { op: "install_routine"; loAddr: number; hiAddr: number; bytes: number[] }
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
 export type PrelaunchEntry = number | "loadAddress" | { indirect: number }
@@ -563,6 +565,9 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let hasDecompress = false
   let pendingLdaVal: number | undefined
   let parsingResetVector = false
+  let sawMachineStatus = false
+  let sawCheatsMask = false
+  let skippingCheatBlock = false
 
   if (source.includes("!pseudopc")) return undefined
 
@@ -573,6 +578,14 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   const hasCanonicalResetVector =
     /lda\s+#<reset\b[\s\S]*?sta\s+\$3F2\b[\s\S]*?sta\s+\$FFFC\b[\s\S]*?lda\s+#>reset\b[\s\S]*?sta\s+\$3F3\b[\s\S]*?sta\s+\$FFFD\b[\s\S]*?eor\s+#\$A5\b[\s\S]*?sta\s+\$3F4\b/i.test(sourceWithoutComments) &&
     /^\s*reset\b:?\s*\n\s*\+READ_ROM_NO_WRITE\b\s*\n\s*inc\s+\$3F4\b\s*\n\s*jmp\s+\(\s*\$FFFC\s*\)/im.test(sourceWithoutComments)
+  const hasReadRam2ResetHandler =
+    /^\s*reset\b:?\s*\n\s*\+READ_RAM2_NO_WRITE\b\s*\n\s*jmp\s+\(\s*\$FFFC\s*\)/im.test(sourceWithoutComments)
+  const dualCallbackSetup = sourceWithoutComments.match(
+    /lda\s+#<callback1\b\s*\n\s*sta\s+\$([0-9a-f]{2,4})\b\s*\n\s*lda\s+#>callback1\b\s*\n\s*sta\s+\$([0-9a-f]{2,4})\b\s*\n\s*lda\s+#<callback2\b\s*\n\s*sta\s+\$([0-9a-f]{2,4})\b\s*\n\s*lda\s+#>callback2\b\s*\n\s*sta\s+\$([0-9a-f]{2,4})\b/i,
+  )
+  const hasDualArithmeticCallbackBodies =
+    /^\s*callback1\b:?\s*\n\s*sec\b\s*\n\s*sbc\s+#8\b\s*\n\s*cmp\s+#2\b\s*\n\s*bcc\s+\+\s*\n\s*-\s*jmp\s+\$AE0A\b\s*\n\s*\+\s*jmp\s+\$ADF9\b/im.test(sourceWithoutComments) &&
+    /^\s*callback2\b:?\s*\n\s*sec\b\s*\n\s*sbc\s+#8\b\s*\n\s*cmp\s+#2\b\s*\n\s*bcs\s+-\s*\n\s*jmp\s+\$AE21\b/im.test(sourceWithoutComments)
 
   // Callback detection state — handles decompressors that JMP to a routine
   // which calls back into the prelaunch code after decompression (e.g. Frogger).
@@ -587,6 +600,30 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     const line = rawLine.replace(/;.*$/, "").trim()
     if (!line) continue
     if (line.startsWith("!") || line.startsWith("*=")) continue
+
+    if (skippingCheatBlock) {
+      if (line === "+") skippingCheatBlock = false
+      continue
+    }
+    if (line.match(/^\+GET_MACHINE_STATUS(?:_LC_RW)?\b/i)) {
+      sawMachineStatus = true
+      continue
+    }
+    if (line.match(/^lda\s+MachineStatus\b/i)) {
+      sawMachineStatus = true
+      pendingLdaVal = undefined
+      continue
+    }
+    if (sawMachineStatus && line.match(/^and\s+#CHEATS_ENABLED\b/i)) {
+      sawCheatsMask = true
+      continue
+    }
+    if (sawCheatsMask && line.match(/^beq\s+\+\s*$/i)) {
+      skippingCheatBlock = true
+      sawMachineStatus = false
+      sawCheatsMask = false
+      continue
+    }
 
     if (parsingResetVector) {
       if (line.match(/^sta\s+\$3F4\b/i)) parsingResetVector = false
@@ -621,6 +658,10 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     if (line.match(/^\+READ_ROM_NO_WRITE\b/)) { ops.push({ op: "readRom" }); continue }
     if (line.match(/^\+READ_RAM2_WRITE_RAM2\b/)) { ops.push({ op: "rwRam2" }); continue }
     if (line.match(/^\+READ_RAM2_NO_WRITE\b/)) { ops.push({ op: "rdRam2" }); continue }
+    if (hasReadRam2ResetHandler && line.match(/^\+RESET_VECTOR\s+reset\b/i)) {
+      ops.push({ op: "reset_handler", mode: "rdRam2" })
+      continue
+    }
     if (line.startsWith("+")) continue
 
     if (hasCanonicalResetVector && line.match(/^lda\s+#<reset\b/i)) {
@@ -694,6 +735,20 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   if (entry === undefined && inCallbackBody) entry = -1
   if (entry === undefined) return undefined
   if (!hasDecompress && ops.length === 0) return undefined
+  if (dualCallbackSetup && hasDualArithmeticCallbackBodies) {
+    ops.push({
+      op: "install_routine",
+      loAddr: parseInt(dualCallbackSetup[1], 16),
+      hiAddr: parseInt(dualCallbackSetup[2], 16),
+      bytes: [0x38, 0xE9, 0x08, 0xC9, 0x02, 0x90, 0x03, 0x4C, 0x0A, 0xAE, 0x4C, 0xF9, 0xAD],
+    })
+    ops.push({
+      op: "install_routine",
+      loAddr: parseInt(dualCallbackSetup[3], 16),
+      hiAddr: parseInt(dualCallbackSetup[4], 16),
+      bytes: [0x38, 0xE9, 0x08, 0xC9, 0x02, 0x90, 0x03, 0x4C, 0x0A, 0xAE, 0x4C, 0x21, 0xAE],
+    })
+  }
   return { sequence: ops, entry }
 }
 
