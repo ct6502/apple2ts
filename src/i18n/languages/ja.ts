@@ -271,7 +271,6 @@ export const ja = {
     "diskIsNewRelease": "このディスクは新しいリリースです",
     "diskIsApple2TSCollection": "このディスクはApple2TSコレクションの一部です",
     "diskIsInternetArchive": "このディスクはInternet Archiveの一部です",
-    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "クリックしてディスクコレクションから削除",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "クリックしてディスクコレクションに追加",

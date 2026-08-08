@@ -24,7 +24,7 @@ msgstr "Скопировать экран"
 #, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
-msgstr "Copy Text"
+msgstr "Копировать текст"
 
 #, fuzzy
 msgctxt "controls.pasteText"
@@ -1432,7 +1432,10 @@ msgid ""
 msgstr ""
 "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Настольное "
 "приложение Apple2TS</a>\n"
-"<a href=\"https://corsfix.com\" target=\"_blank\">CORS прокси от Corsfix</a>"
+"<a href=\"https://corsfix.com\" target=\"_blank\">CORS прокси от "
+"Corsfix</a>\n"
+"<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK "
+"Pixel Font</a>"
 
 #, fuzzy
 msgctxt "messages.loading"
@@ -2614,20 +2617,26 @@ msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
 msgstr "Invalid API key format for {{provider}}"
 
+#, fuzzy
 msgctxt "startup.welcome"
 msgid "Welcome to Apple2TS"
-msgstr ""
+msgstr "Добро пожаловать в Apple2TS"
 
+#, fuzzy
 msgctxt "startup.subtitle"
 msgid "TypeScript Apple II Emulator"
-msgstr ""
+msgstr "Эмулятор Apple II на TypeScript"
 
+#, fuzzy
 msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
-msgstr ""
+msgstr "(c) {{year}} C.Torrence + соавторы"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"Нажмите значок Коллекций дисков\n"
+"для загрузки диска или игры."

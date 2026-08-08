@@ -24,7 +24,7 @@ msgstr "Copia Schermo"
 #, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
-msgstr "Copy Text"
+msgstr "Copia testo"
 
 #, fuzzy
 msgctxt "controls.pasteText"
@@ -1430,7 +1430,9 @@ msgid ""
 msgstr ""
 "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">App desktop "
 "Apple2TS</a>\n"
-"<a href=\"https://corsfix.com\" target=\"_blank\">Proxy CORS di Corsfix</a>"
+"<a href=\"https://corsfix.com\" target=\"_blank\">Proxy CORS di Corsfix</a>\n"
+"<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK "
+"Pixel Font</a>"
 
 #, fuzzy
 msgctxt "messages.loading"

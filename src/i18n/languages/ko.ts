@@ -271,7 +271,6 @@ export const ko = {
     "diskIsNewRelease": "디스크가 새로운 릴리스입니다",
     "diskIsApple2TSCollection": "디스크가 Apple2TS 컴렉션의 일부입니다",
     "diskIsInternetArchive": "디스크가 Internet Archive의 일부입니다",
-    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "클릭하여 디스크 컬렉션에서 제거",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "클릭하여 디스크 컬렉션에 추가",

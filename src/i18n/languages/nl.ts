@@ -271,7 +271,6 @@ export const nl = {
     "diskIsNewRelease": "Disk is een nieuwe release",
     "diskIsApple2TSCollection": "Disk is onderdeel van de Apple2TS collectie",
     "diskIsInternetArchive": "Disk is onderdeel van Internet Archive",
-    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Klik om uit disk collectie te verwijderen",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Klik om toe te voegen aan schijfverzameling",

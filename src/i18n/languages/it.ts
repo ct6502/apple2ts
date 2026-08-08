@@ -271,7 +271,6 @@ export const it = {
     "diskIsNewRelease": "Il disco è una nuova uscita",
     "diskIsApple2TSCollection": "Il disco fa parte della collezione Apple2TS",
     "diskIsInternetArchive": "Il disco fa parte di Internet Archive",
-    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Clicca per rimuovere dalla collezione di dischi",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Clicca per aggiungere alla collezione di dischi",

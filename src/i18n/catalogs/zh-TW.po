@@ -1371,7 +1371,9 @@ msgid ""
 msgstr ""
 "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS "
 "桌面應用程式</a>\n"
-"<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>"
+"<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix 提供的 CORS 代理</a>\n"
+"<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK "
+"Pixel Font</a>"
 
 #, fuzzy
 msgctxt "messages.loading"
@@ -2545,20 +2547,26 @@ msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
 msgstr "{{provider}} 的 API 金鑰格式不正確"
 
+#, fuzzy
 msgctxt "startup.welcome"
 msgid "Welcome to Apple2TS"
-msgstr ""
+msgstr "歡迎使用 Apple2TS"
 
+#, fuzzy
 msgctxt "startup.subtitle"
 msgid "TypeScript Apple II Emulator"
-msgstr ""
+msgstr "TypeScript Apple II 模擬器"
 
+#, fuzzy
 msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
-msgstr ""
+msgstr "(c) {{year}} C.Torrence + 協作者"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"點擊磁碟集合圖示\n"
+"載入內建磁碟或遊戲。"

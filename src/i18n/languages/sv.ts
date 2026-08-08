@@ -271,7 +271,6 @@ export const sv = {
     "diskIsNewRelease": "Disk är en ny version",
     "diskIsApple2TSCollection": "Disk är del av Apple2TS-samlingen",
     "diskIsInternetArchive": "Disk är del av Internet Archive",
-    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Klicka för att ta bort från disksamling",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Klicka för att lägga till i skivsamlingen",

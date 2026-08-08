@@ -24,7 +24,7 @@ msgstr "화면 복사"
 #, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
-msgstr "Copy Text"
+msgstr "텍스트 복사"
 
 #, fuzzy
 msgctxt "controls.pasteText"
@@ -1388,8 +1388,10 @@ msgid ""
 "<a href=\"https://corsfix.com\" target=\"_blank\">CORS Proxy by Corsfix</a>"
 msgstr ""
 "<a href=\"https://ct6502.org/apple2ts/\" target=\"_blank\">Apple2TS 데스크톱 "
-"앱</a>\n"
-"<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix의 CORS 프록시</a>"
+"앙</a>\n"
+"<a href=\"https://corsfix.com\" target=\"_blank\">Corsfix의 CORS 프록시</a>\n"
+"<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK "
+"Pixel Font</a>"
 
 #, fuzzy
 msgctxt "messages.loading"
@@ -2571,20 +2573,26 @@ msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
 msgstr "Invalid API key format for {{provider}}"
 
+#, fuzzy
 msgctxt "startup.welcome"
 msgid "Welcome to Apple2TS"
-msgstr ""
+msgstr "Apple2TS에 오신 것을 환영합니다"
 
+#, fuzzy
 msgctxt "startup.subtitle"
 msgid "TypeScript Apple II Emulator"
-msgstr ""
+msgstr "TypeScript Apple II 에뮬레이터"
 
+#, fuzzy
 msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
-msgstr ""
+msgstr "(c) {{year}} C.Torrence + 협력자"
 
+#, fuzzy
 msgctxt "startup.diskCollections"
 msgid ""
 "Click on the Disk Collections icon\n"
 "to load a built-in disk or game."
 msgstr ""
+"디스크 컬렉션 아이콘을 클릭하여\n"
+"기본 디스크 또는 게임을 불러오세요."
