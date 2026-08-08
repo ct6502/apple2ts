@@ -22,6 +22,7 @@ let worker: Worker | null = null
 let saveStateCallback: (sState: EmulatorSaveState) => void
 let bootCallback: (() => void) | null = null
 let serialConfigCallback: ((config: SerialConfig) => void) | null = null
+let captureBootStateResolve: ((result: CaptureBootResult | null) => void) | null = null
 
 export const setMain2Worker = (workerIn: Worker) => {
   worker = workerIn
@@ -268,6 +269,17 @@ export const passRequestMemoryDump = () => {
   doPostMessage(MSG_MAIN.GET_MEMORY, true)
 }
 
+// Boot a floppy disk image in the emulator at ludicrous speed, capture
+// zero page ($00-$FF) when the given entry address is reached, then restore
+// the previous emulator state.  Returns a 256-byte Uint8Array on success
+// or null on timeout.
+export const captureBootZeroPage = (req: CaptureBootStateRequest): Promise<CaptureBootResult | null> => {
+  return new Promise((resolve) => {
+    captureBootStateResolve = resolve
+    doPostMessage(MSG_MAIN.CAPTURE_BOOT_STATE, req)
+  })
+}
+
 // This is a cached memory dump, updated whenever the main requests a new one.
 // Currently only used by the AI Agent, since it may want to look at memory
 // even when the emulator is not paused.
@@ -409,6 +421,14 @@ export const doOnMessage = (e: MessageEvent): {speed: number, helptext: string} 
     case MSG_WORKER.SERIAL_CONFIG_CHANGE: {
       const serialConfig = e.data.payload as SerialConfig
       if (serialConfigCallback) serialConfigCallback(serialConfig)
+      break
+    }
+    case MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE: {
+      const result = e.data.payload as CaptureBootResult | null
+      if (captureBootStateResolve) {
+        captureBootStateResolve(result)
+        captureBootStateResolve = null
+      }
       break
     }
     case MSG_WORKER.VERA_FRAME: {

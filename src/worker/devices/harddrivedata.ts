@@ -271,7 +271,6 @@ const processHardDriveBlockAccess = () => {
   const blockStart = 512 * block
   const bufferAddr = memGet(0x44) + 256 * memGet(0x45)
   ds.status = ` ${toHex(block, 4)}`
-//  console.log(`cmd=${firmwareCommandNumber} ${ds.status}`)
 
   switch (firmwareCommandNumber) {
     case 0: {
@@ -289,6 +288,7 @@ const processHardDriveBlockAccess = () => {
     }
     case 1: {
       if (blockStart + 512 > dataLen) {
+        console.warn(`[HD READ] block=${block} OUT OF RANGE (blockStart=${blockStart}, dataLen=${dataLen})`)
         setCarry()
         return
       }

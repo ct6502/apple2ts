@@ -389,10 +389,7 @@ const logFetchDebug = (...args: unknown[]) => {
 const shouldAttemptDirectFetch = (url: string): boolean => {
   try {
     const parsed = new URL(url)
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return true
-    }
-    return parsed.origin === window.location.origin
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
   } catch {
     // If URL parsing fails, keep prior behavior and try direct fetch.
     return true
@@ -520,8 +517,8 @@ export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
   debug?: (message: string) => void): Promise<boolean> => {
   debug?.(`handleSetDiskFromURL(${url}) drive=${index}`)
-  // Check if it's a local file (not http/https URL)
-  const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://")
+  // Check if it's a local file (not http/https URL and not Internet Archive)
+  const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith(internetArchiveUrlProtocol)
   
   if (isLocalFile) {
     if (url.startsWith("file://") || url.startsWith("/") || /^[A-Za-z]:/.test(url)) {

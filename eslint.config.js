@@ -88,5 +88,12 @@ export default [
         }
       ]
     }
+  },
+  {
+    // Common-layer integration tests may exercise worker implementations.
+    files: ["src/common/**/*.test.ts"],
+    rules: {
+      "no-restricted-imports": "off"
+    }
   }
 ]

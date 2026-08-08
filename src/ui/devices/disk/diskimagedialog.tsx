@@ -20,6 +20,7 @@ const DiskImageDialog = (props: DiskImageDialogProps) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="floating-dialog"
+        onClick={(e) => e.stopPropagation()}
         style={{ left: "5%", top: "2%" }}>
         <div style={{
           display: "inline",

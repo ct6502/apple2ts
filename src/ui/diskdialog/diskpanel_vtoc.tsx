@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react"
-import { determineVtocType } from "../../common/prodos_hdv"
-import { hasSessionVtocFailure, addSessionVtocFailure, setPreferenceVtocType } from "../localstorage"
+import { determineVtocType, lookupFourCadeByTitle, VTOC_REFRESH } from "../../common/prodos_hdv"
+import { hasSessionVtocFailure, addSessionVtocFailure, removeSessionVtocFailure, setPreferenceVtocType } from "../localstorage"
 import { isMinimalTheme } from "../ui_settings"
 import { showGlobalProgressModal } from "../ui_utilities"
-import { TAB_INDEX, isDiskExportable, getExportFilename, DISK_COLLECTION_ITEM_TYPE } from "./diskpanel_utils"
+import { isDiskExportable, getExportFilename, DISK_COLLECTION_ITEM_TYPE, TAB_INDEX, diskItemKey } from "./diskpanel_utils"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { handleSetDiskFromCloudData, handleSetDiskFromFile, handleSetDiskFromURL } from "../devices/disk/driveprops"
+import { clearIaResolveCache, internetArchiveUrlProtocol } from "../devices/disk/internetarchive_utils"
 
 type DiskPanelVtocProps = {
   activeTab: number,
@@ -15,6 +16,10 @@ type DiskPanelVtocProps = {
   exportQueue: DiskCollectionItem[],
   downloadedDisks: DownloadedExportDisk[],
   visibleCandidates: DiskCollectionItem[],
+  authRefresh: number,
+  cloudProviderHasAuthToken: (providerName: string) => boolean,
+  setForceVtocCheck: React.Dispatch<React.SetStateAction<((disk: DiskCollectionItem) => void) | null>>,
+  setActiveVtocCheckKey?: (key: string | null) => void,
 }
 
 // Downloads a disk's bytes without disturbing the running emulator. Unlike
@@ -49,11 +54,37 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // a fresh pass for the newly visible disks.
   const vtocActiveTabRef = useRef<number | null>(null)
   const vtocProgressVisibleRef = useRef(false)
+  // Tracks the last authRefresh value so a sign-in clears attempted cloud disks.
+  const vtocAuthRefreshRef = useRef<number>(props.authRefresh)
+  // When true, the next single-disk VTOC check skips the progress modal (user
+  // clicked the export badge to force a check for one specific disk).
+  const suppressProgressRef = useRef(false)
 
-  // Stable identity for a disk across re-renders (bookmark id, cloud item id,
-  // disk URL, or finally the title).
-  const itemKey = (item: DiskCollectionItem): string =>
-    item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
+  const itemKey = diskItemKey
+  const { setDiskCollection, setForceVtocCheck } = props
+
+  // Expose a force-check function to the parent without mutating a ref prop.
+  useEffect(() => {
+    const forceVtocCheck = (disk: DiskCollectionItem) => {
+      const key = itemKey(disk)
+      disk.vtocType = undefined
+      disk.vtocVersion = undefined
+      removeSessionVtocFailure(disk.diskUrl?.toString() || "")
+      // Clear the Internet Archive negative cache so the identifier is
+      // re-resolved from scratch instead of returning the cached failure.
+      if (disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE && disk.diskUrl?.startsWith(internetArchiveUrlProtocol)) {
+        clearIaResolveCache(disk.diskUrl.substring(internetArchiveUrlProtocol.length))
+      }
+      vtocResolveAttempted.current.delete(key)
+      suppressProgressRef.current = true
+      setDiskCollection((prev) => [...prev])
+      setVtocCheckPass((pass) => pass + 1)
+    }
+    setForceVtocCheck(() => forceVtocCheck)
+    return () => {
+      setForceVtocCheck(null)
+    }
+  }, [itemKey, setDiskCollection, setForceVtocCheck])
 
   // Stores a determined VTOC type onto the in-memory collection item and persists
   // it so it only needs to be determined once. Bookmarks keep their type in their
@@ -62,18 +93,19 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // a stale URL-cache value (and vice versa).
   const persistVtocType = (diskCollectionItem: DiskCollectionItem, vtocType: VtocType) => {
     diskCollectionItem.vtocType = vtocType
+    diskCollectionItem.vtocVersion = VTOC_REFRESH
 
     if (diskCollectionItem.bookmarkId) {
       const bookmark = props.diskBookmarks.get(diskCollectionItem.bookmarkId)
       if (bookmark) {
         bookmark.vtocType = vtocType
+        bookmark.vtocVersion = VTOC_REFRESH
         props.diskBookmarks.set(bookmark)
       }
     } else {
-      // A disk's VTOC type never changes, so cache it by URL. This lets
-      // non-bookmarked disks (e.g. new releases) avoid re-downloading their bytes
-      // to redetermine the VTOC on every visit.
-      setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType)
+      // Cache by URL so non-bookmarked disks (e.g. new releases) avoid
+      // re-downloading their bytes to redetermine the VTOC on every visit.
+      setPreferenceVtocType(diskCollectionItem.diskUrl.toString(), vtocType, VTOC_REFRESH)
     }
 
     // Trigger a re-render so the export filter reflects the new VTOC type.
@@ -114,6 +146,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
+      props.setActiveVtocCheckKey?.(null)
       vtocActiveTabRef.current = null
       return
     }
@@ -125,6 +158,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
+      props.setActiveVtocCheckKey?.(null)
       return
     }
 
@@ -135,21 +169,25 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       vtocResolveAttempted.current.clear()
     }
 
+    // After a cloud sign-in, clear attempted disks so cloud disks that were
+    // previously skipped (no auth token) get picked up for VTOC resolution.
+    if (vtocAuthRefreshRef.current !== props.authRefresh) {
+      vtocAuthRefreshRef.current = props.authRefresh
+      vtocResolveAttempted.current.clear()
+    }
+
     // Only resolve disks that are visible in the current tab, so we don't
-    // background-download disks the user can't see. The Export tab is the
-    // superset of all exportable disks, but its rendered list is pre-filtered to
-    // already-determined disks; use the full exportable candidate set for it so
-    // its not-yet-determined disks still get resolved when it's navigated to.
-    // Cloud disks (Google Drive / OneDrive) are never background-probed here:
-    // fetching them requires an auth token and would trigger an auth popup. Their
-    // VTOC type is determined synchronously from the in-memory bytes when the
-    // bookmark is added, and any remaining auth happens when the disk is actually
-    // exported.
+    // background-download disks the user can't see. Cloud disks (Google Drive /
+    // OneDrive) are only probed when their provider has an auth token; without a
+    // token the fetch would fail or trigger an auth popup. After a successful
+    // sign-in, authRefresh bumps and this effect re-runs with the cloud disks
+    // now eligible.
     const pendingCandidates = props.visibleCandidates.filter((item) =>
       item.vtocType === undefined &&
-      item.type !== DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE &&
       isDiskExportable(item) &&
-      !hasSessionVtocFailure(item.diskUrl.toString())
+      !hasSessionVtocFailure(item.diskUrl.toString()) &&
+      (item.type !== DISK_COLLECTION_ITEM_TYPE.CLOUD_DRIVE ||
+        props.cloudProviderHasAuthToken(item.cloudData?.providerName || ""))
     )
     const pending = pendingCandidates.find((item) =>
       !vtocResolveAttempted.current.has(itemKey(item))
@@ -159,18 +197,17 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
         showGlobalProgressModal(false)
         vtocProgressVisibleRef.current = false
       }
+      props.setActiveVtocCheckKey?.(null)
       return
     }
 
     const currentDisk = vtocResolveAttempted.current.size + 1
     const totalDisks = vtocResolveAttempted.current.size + pendingCandidates.length
-    const shouldShowVtocProgress = props.activeTab === TAB_INDEX.EXPORT
-    if (shouldShowVtocProgress) {
+    const suppressProgress = suppressProgressRef.current
+    suppressProgressRef.current = false
+    if (!suppressProgress && props.activeTab === TAB_INDEX.EXPORT) {
       showGlobalProgressModal(true, `Fetching disk metadata ${currentDisk}/${totalDisks}`)
       vtocProgressVisibleRef.current = true
-    } else if (vtocProgressVisibleRef.current) {
-      showGlobalProgressModal(false)
-      vtocProgressVisibleRef.current = false
     }
 
     vtocResolveAttempted.current.add(itemKey(pending))
@@ -178,20 +215,27 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     // cleanup below doesn't read a ref during teardown (which lint flags).
     const attempted = vtocResolveAttempted.current
     const pendingKey = itemKey(pending)
+    props.setActiveVtocCheckKey?.(pendingKey)
     let cancelled = false
     let settled = false
 
     fetchDiskBufferForItem(pending).then((data) => {
       settled = true
       if (!data) {
-        // Download failed (CORS/network). Remember the failure for this browser
-        // session -- even if this effect was cancelled/re-run in the meantime --
-        // so it is not re-attempted on every render (an infinite retry loop) or
-        // on reload. It is retried in a new session. Only advance the pass when
-        // still mounted; a cancelled run's successor will pick the next disk.
-        addSessionVtocFailure(pending.diskUrl.toString())
-        if (!cancelled) {
-          setVtocCheckPass((pass) => pass + 1)
+        // Download failed (CORS/network). For Internet Archive disks, try
+        // title-based matching against the 4cade DB first; fall back to "dos"
+        // since the actual disk download often succeeds during export.
+        if (pending.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
+          if (!cancelled) {
+            const vtoc = lookupFourCadeByTitle(pending.title) ? "4cade" : "dos"
+            persistVtocType(pending, vtoc)
+            setVtocCheckPass((pass) => pass + 1)
+          }
+        } else {
+          addSessionVtocFailure(pending.diskUrl.toString())
+          if (!cancelled) {
+            setVtocCheckPass((pass) => pass + 1)
+          }
         }
         return
       }
@@ -200,7 +244,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       }
       const filename = getExportFilename(pending, data)
       // Cache the determined VTOC (and persist it for bookmarks).
-      persistVtocType(pending, determineVtocType(filename, data))
+      persistVtocType(pending, determineVtocType(filename, data, pending.title))
       // Advance to the next pending disk. We no longer rely on the collection
       // re-render (which changes visibleCandidates identity) to re-run this
       // effect, so bump the pass counter explicitly.
@@ -208,16 +252,22 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
     })
       .catch(() => {
         settled = true
-        // A rejected fetch is a definitive failure; remember it regardless of
-        // cancellation so it is never retried this session.
-        addSessionVtocFailure(pending.diskUrl.toString())
-        if (!cancelled) {
-          setVtocCheckPass((pass) => pass + 1)
+        if (pending.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE) {
+          if (!cancelled) {
+            persistVtocType(pending, "dos")
+            setVtocCheckPass((pass) => pass + 1)
+          }
+        } else {
+          addSessionVtocFailure(pending.diskUrl.toString())
+          if (!cancelled) {
+            setVtocCheckPass((pass) => pass + 1)
+          }
         }
       })
 
     return () => {
       cancelled = true
+      props.setActiveVtocCheckKey?.(null)
       // If this effect re-ran (e.g. diskCollection changed during the panel-open
       // re-render storm) before the fetch settled, un-mark the disk so it is
       // retried on the next pass. Otherwise it would be stranded with an
@@ -229,7 +279,7 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, visibleCandidatesKey])
+  }, [props.activeTab, props.isFlyoutOpen, vtocCheckPass, props.exportQueue.length, props.downloadedDisks.length, visibleCandidatesKey, props.authRefresh])
 
   return (<></>)
 }

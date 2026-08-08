@@ -12,6 +12,7 @@ export type DiskBookmark = {
   lastUpdated: Date,
   cloudData?: CloudData,
   vtocType?: VtocType
+  vtocVersion?: number
 }
 
 export class DiskBookmarks {

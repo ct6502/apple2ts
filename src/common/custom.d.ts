@@ -394,7 +394,31 @@ type DisassemblyProps = {
   refresh: () => void,
 }
 
-type VtocType = "dos" | "prodos" | "other" | "dosup"
+type VtocType = "dos" | "prodos" | "other" | "dosup" | "4cade"
+
+type CaptureBootStateRequest = {
+  diskImage: Uint8Array
+  filename: string
+  entryAddress: number
+  timeoutMs?: number
+  captureMemory?: boolean
+  /** When true, don't capture at the entry breakpoint. Instead, resume execution
+   *  and capture after an additional delay (letting disk reads finish). */
+  waitForDiskIo?: boolean
+  /** Extra milliseconds to run after hitting entryAddress before capturing (default 3000). */
+  postEntryDelayMs?: number
+}
+
+type CaptureBootResult = {
+  zeroPage: Uint8Array
+  memoryDump?: Uint8Array
+  /** The PC at the time of capture (only set when waitForDiskIo is used). */
+  capturedPC?: number
+  /** Low memory ($0000-$0FFF) captured at the entry breakpoint BEFORE disk I/O
+   *  overwrites it. Used for RWTS detection since the late capture may have
+   *  overwritten the floppy routine. Only set when waitForDiskIo is used. */
+  earlyLowMemory?: Uint8Array
+}
 
 type DiskCollectionItem = {
   type: DISK_COLLECTION_ITEM_TYPE,
@@ -408,6 +432,7 @@ type DiskCollectionItem = {
   params?: string,
   fileSize: number,
   vtocType?: VtocType,
+  vtocVersion?: number,
   exportDisabled?: boolean
 }
 
