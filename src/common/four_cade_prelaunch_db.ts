@@ -519,6 +519,7 @@ export const FOUR_CADE_PRELAUNCH_DB: Record<string, FourCadeEntry> = {
 /** A single operation in the packed binary launch sequence. */
 export type PrelaunchOp =
   | { op: "patch"; addr: number; val: number }   // LDA #val; STA addr
+  | { op: "inc_reset_checksum" }                 // INC $3F4 — force reset to reboot
   | { op: "call"; addr: number }                  // JSR addr
   | { op: "decompress"; addr: number }            // JSR to decompressor entry
   | { op: "readRom" }                             // STA $C082 — LC read ROM, no write
@@ -614,18 +615,26 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   // which calls back into the prelaunch code after decompression (e.g. Frogger).
   let callbackLoAddr: number | undefined
   let callbackHiAddr: number | undefined
+  let callbackLoSymbol: string | undefined
+  let callbackHiSymbol: string | undefined
   let pendingCallbackLo = false
   let pendingCallbackHi = false
   let inCallbackBody = false
 
   for (const rawLine of lines) {
-    const line = rawLine.replace(/;.*$/, "").trim()
+    let line = rawLine.replace(/;.*$/, "").trim()
     if (!line) continue
     if (line.startsWith("!") || line.startsWith("*=")) continue
 
     if (skippingCheatBlock) {
-      if (line === "+") skippingCheatBlock = false
-      continue
+      const endCheatBlock = line.match(/^\+\s*(.*)$/)
+      if (!endCheatBlock) continue
+      skippingCheatBlock = false
+      line = endCheatBlock[1].trim()
+      if (!line) continue
+    } else {
+      const localLabel = line.match(/^[+-]\s+(.+)$/)
+      if (localLabel) line = localLabel[1].trim()
     }
     if (line.match(/^\+GET_MACHINE_STATUS(?:_LC_RW)?\b/i)) {
       sawMachineStatus = true
@@ -684,6 +693,7 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
       ops.push({ op: "reset_handler", mode: "rdRam2" })
       continue
     }
+    if (line.match(/^\+(?:FORCE_REBOOT|RESET_VECTOR)\b/i)) return undefined
     if (line.startsWith("+")) continue
 
     if (hasCanonicalResetVector && line.match(/^lda\s+#<reset\b/i)) {
@@ -693,15 +703,25 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
       continue
     }
 
+    if (line.match(/^inc\s+\$0?3F4\b/i)) {
+      ops.push({ op: "inc_reset_checksum" })
+      pendingLdaVal = undefined
+      continue
+    }
+
     // Detect callback address setup: lda #<callback / lda #>callback
-    if (line.match(/^lda\s+#<\w+/i)) {
+    const callbackLoMatch = line.match(/^lda\s+#<(\w+)/i)
+    if (callbackLoMatch) {
       if (skippedForwardHelperRegion) return undefined
+      callbackLoSymbol = callbackLoMatch[1].toLowerCase()
       pendingCallbackLo = true
       pendingLdaVal = undefined
       continue
     }
-    if (line.match(/^lda\s+#>\w+/i)) {
+    const callbackHiMatch = line.match(/^lda\s+#>(\w+)/i)
+    if (callbackHiMatch) {
       if (skippedForwardHelperRegion) return undefined
+      callbackHiSymbol = callbackHiMatch[1].toLowerCase()
       pendingCallbackHi = true
       pendingLdaVal = undefined
       continue
@@ -731,6 +751,7 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
       else { ops.push({ op: "call", addr }) }
       continue
     }
+    if (line.match(/^jsr\s+[a-z_@]/i)) return undefined
 
     const indirectJmpMatch = line.match(/^jmp\s+\(\s*([^)]+?)\s*\)/i)
     if (indirectJmpMatch) {
@@ -750,6 +771,7 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
       const addr = parseInt(jmpMatch[1], 16)
       // Callback-based decompress: JMP before any JSR decompress, with callback vector set
       if (!hasDecompress && callbackLoAddr !== undefined && callbackHiAddr !== undefined) {
+        if (callbackLoSymbol !== "callback" || callbackHiSymbol !== "callback") return undefined
         ops.push({ op: "callback_vector", loAddr: callbackLoAddr, hiAddr: callbackHiAddr })
         ops.push({ op: "jmp_decompress", addr })
         hasDecompress = true

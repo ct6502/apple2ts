@@ -177,4 +177,56 @@ describe("4cade prelaunch parsing", () => {
       jmp $B700
     `)).toBeUndefined()
   })
+
+  test("parses Technocop's inline cheat label and reset checksum increment", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL_LC
+      inc $3F4
+      lda MachineStatus
+      and #CHEATS_ENABLED
+      pha
+      lda #$60
+      sta $A01
+      +READ_ROM_NO_WRITE
+      jsr $800
+      pla
+      beq +
+      ldy #2
+    - lda hook_cheat, y
+      sta $FA85, y
+      dey
+      bpl -
+    + +DISABLE_ACCEL_AND_HIDE_ARTWORK_LC
+      jmp $F800
+    `)
+
+    expect(parsed).toEqual({
+      sequence: [
+        { op: "rwRam2" },
+        { op: "call", addr: 0xDFB7 },
+        { op: "inc_reset_checksum" },
+        { op: "patch", addr: 0x0A01, val: 0x60 },
+        { op: "readRom" },
+        { op: "decompress", addr: 0x0800 },
+        { op: "call", addr: 0xDFB4 },
+        { op: "call", addr: 0xDFAE },
+        { op: "readRom" },
+      ],
+      entry: 0xF800,
+    })
+  })
+
+  test("rejects inline-label scripts with unsupported launch semantics", () => {
+    expect(parsePrelaunchScript("jsr HideLaunchArtworkLC2\njmp $800")).toBeUndefined()
+    expect(parsePrelaunchScript("+RESET_VECTOR $100\njsr $800\njmp $900")).toBeUndefined()
+    expect(parsePrelaunchScript(`
+      lda #<callback1
+      sta $948F
+      lda #>callback1
+      sta $9490
+      jmp $5200
+    callback1
+      rts
+    `)).toBeUndefined()
+  })
 })

@@ -63,6 +63,13 @@ describe("IIgs 4cade block loading", () => {
     expect(determineVtocType("chrono warrior.po", new Uint8Array(), title)).toBe("4cade")
   })
 
+  test("recognizes Technocop's SAN INC archive title as 4cade", () => {
+    const title = "TECHNOCOP (SAN INC PACK)"
+
+    expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("technocop")
+    expect(determineVtocType("technocop.po", new Uint8Array(), title)).toBe("4cade")
+  })
+
   test("wraps the relay at a ProDOS-safe load address", () => {
     const relay = Uint8Array.from({ length: 395 }, (_, index) => index & 0xFF)
     const wrapper = createProDosRelayWrapper(relay)
@@ -316,6 +323,54 @@ describe("IIgs 4cade block loading", () => {
     expect(memory[0x2079]).toBe(0x60)
     expect(memory[0xBC90]).toBe(0)
     expect(memory[0xBC91]).toBe(0)
+  })
+
+  test("launches Technocop with a forced reboot and no cheat hooks", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL_LC
+      inc $3F4
+      lda MachineStatus
+      and #CHEATS_ENABLED
+      pha
+      lda #$60
+      sta $A01
+      +READ_ROM_NO_WRITE
+      jsr $800
+      pla
+      beq +
+      ldy #2
+    - lda hook_cheat, y
+      sta $FA85, y
+      dey
+      bpl -
+    + +DISABLE_ACCEL_AND_HIDE_ARTWORK_LC
+      jmp $F800
+    `)
+    expect(parsed).toBeDefined()
+    if (!parsed || typeof parsed.entry !== "number") throw new Error("Technocop did not parse")
+
+    const relay = createPackedBinaryRelay(2, 0x0800, 1, 0x70, parsed.sequence, parsed.entry)
+    const clearPrefix = [0xA9, 0xA0, 0xA2, 0x00, 0x9D, 0x00, 0x04]
+    const prelaunchOffset = findSequence(relay, clearPrefix)
+
+    reset6502()
+    memory.fill(0)
+    memory.set(relay.slice(prelaunchOffset), 0x0106)
+    memory[0xDFB7] = 0x60
+    memory[0xDFB4] = 0x60
+    memory[0xDFAE] = 0x60
+    memory.set([0x2C, 0x83, 0xC0, 0x2C, 0x83, 0xC0, 0x60], 0x0800)
+    memory[0x03F4] = 0xA5
+    updateAddressTables()
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 3000 && s6502.PC !== 0xF800; instruction++) {
+      processInstruction()
+    }
+
+    expect(s6502.PC).toBe(0xF800)
+    expect(memory[0x03F4]).toBe(0xA6)
+    expect(memory[0x0A01]).toBe(0x60)
+    expect(memory[0xFA85]).toBe(0)
   })
 
   test("encodes all packed blocks in the ProDOS MLI state", () => {

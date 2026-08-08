@@ -3092,6 +3092,9 @@ const createOfflineDecompRelay = (
           postOpsCode.push(0xA9, step.val & 0xFF)                             // LDA #val
           postOpsCode.push(0x8D, step.addr & 0xFF, (step.addr >> 8) & 0xFF)   // STA addr
           break
+        case "inc_reset_checksum":
+          postOpsCode.push(0xEE, 0xF4, 0x03)                                 // INC $03F4
+          break
         case "call":
           if (!STUB_ADDRS.has(step.addr)) {
             postOpsCode.push(0x20, step.addr & 0xFF, (step.addr >> 8) & 0xFF) // JSR addr
@@ -3280,6 +3283,9 @@ const createOfflineDecompRelay = (
     switch (step.op) {
       case "patch":
         decompressed[step.addr] = step.val & 0xFF
+        break
+      case "inc_reset_checksum":
+        decompressed[0x03F4] = (decompressed[0x03F4] + 1) & 0xFF
         break
       case "call": {
         const saved = new Uint8Array(decompressed)
@@ -3479,6 +3485,9 @@ export const createPackedBinaryRelay = (
       case "patch":
         prelaunchBytes.push(0xA9, step.val & 0xFF)                              // LDA #val
         prelaunchBytes.push(0x8D, step.addr & 0xFF, (step.addr >> 8) & 0xFF)    // STA addr
+        break
+      case "inc_reset_checksum":
+        prelaunchBytes.push(0xEE, 0xF4, 0x03)                                  // INC $03F4
         break
       case "call":
       case "decompress":
