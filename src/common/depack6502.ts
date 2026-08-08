@@ -42,10 +42,6 @@ export const depack6502 = (
   mem[TRAMP + 2] = (loadAddress >> 8) & 0xFF
   mem[TRAMP + 3] = 0x00 // BRK → halt
 
-  // If a halt address is specified, stop when PC reaches it instead of
-  // placing a BRK (which the decompressor would overwrite with game data).
-  const savedHaltByte = 0  // unused now but kept for API compat
-
   let PC = TRAMP
   let A = 0, X = 0, Y = 0, SP = 0xFF
   let N = false, V = false, D = false, I = true, Z = true, C = false

@@ -2991,7 +2991,7 @@ const createPrelaunchRelay = (
  *   relay = 6502 code for the runtime relay block
  *   flatBinary = decompressed game data: [$0800-$BFFF] + [$D000-$FFFF]
  */
-const createOfflineDecompRelay = (
+export const createOfflineDecompRelay = (
   startBlock: number,
   packedData: Uint8Array,
   loadAddress: number,

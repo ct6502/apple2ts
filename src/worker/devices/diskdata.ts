@@ -2,7 +2,7 @@ import { passDriveSound } from "../worker2main"
 import { s6502 } from "../instructions"
 import { toHex, DRIVE } from "../../common/utility"
 import { getCurrentDriveData, getCurrentDriveState, passDriveData, setCurrentDrive } from "./drivestate"
-import { setSlotDriver, setSlotIOCallback, memGetRaw } from "../memory"
+import { setSlotDriver, setSlotIOCallback } from "../memory"
 import { disk2driver } from "../roms/slot_disk2_cx00"
 
 let motorOffTimeout: NodeJS.Timeout | number = 0
@@ -153,8 +153,6 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
   ds.trackLocation++
   return bit
 }
-
-const randByte = () => Math.floor(256 * Math.random())
 
 // When no disk is loaded, return a repeating D5-AA-97 pattern instead of
 // random noise.  This causes DOS 3.3 RWTS sector-read loops to fail their
