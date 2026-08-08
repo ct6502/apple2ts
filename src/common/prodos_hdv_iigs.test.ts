@@ -373,6 +373,58 @@ describe("IIgs 4cade block loading", () => {
     expect(memory[0xFA85]).toBe(0)
   })
 
+  test("launches Talon with a standalone $0100 reset wrapper", () => {
+    const parsed = parsePrelaunchScript(`
+      lda #$60
+      sta $919B
+      jsr $3FF8
+      +RESET_VECTOR $100
+      +GET_MACHINE_STATUS
+      and #CHEATS_ENABLED
+      beq +
+      lda #$60
+      sta $18E9
+    + jmp $BE9B
+    `)
+    expect(parsed).toBeDefined()
+    if (!parsed || typeof parsed.entry !== "number") throw new Error("Talon did not parse")
+
+    const relay = createPackedBinaryRelay(2, 0x3FF8, 1, 0x70, parsed.sequence, parsed.entry)
+    const copyOffset = findSequence(relay, [0xA2, 0x06, 0xBD])
+    const copySource = readWord(relay, copyOffset + 3)
+    const clearPrefix = [0xA9, 0xA0, 0xA2, 0x00, 0x9D, 0x00, 0x04]
+    const prelaunchOffset = findSequence(relay, clearPrefix)
+
+    expect(copyOffset).toBeGreaterThan(0)
+    expect(Array.from(relay.slice(copySource - 0x0300 + 1, copySource - 0x0300 + 7))).toEqual([
+      0x8D, 0x82, 0xC0, 0x6C, 0xFC, 0xFF,
+    ])
+
+    reset6502()
+    memory.fill(0)
+    memory.set(relay, 0x0300)
+    updateAddressTables()
+    setPC(0x0300 + copyOffset)
+    for (let instruction = 0; instruction < 32 && s6502.PC !== 0x0300 + copyOffset + 11; instruction++) {
+      processInstruction()
+    }
+    expect(Array.from(memory.slice(0x0100, 0x0106))).toEqual([
+      0x8D, 0x82, 0xC0, 0x6C, 0xFC, 0xFF,
+    ])
+
+    memory.set(relay.slice(prelaunchOffset), 0x0106)
+    memory[0x3FF8] = 0x60
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 3000 && s6502.PC !== 0xBE9B; instruction++) {
+      processInstruction()
+    }
+
+    expect(s6502.PC).toBe(0xBE9B)
+    expect(memory[0x919B]).toBe(0x60)
+    expect(memory[0x18E9]).toBe(0)
+    expect(Array.from(memory.slice(0x03F2, 0x03F5))).toEqual([0x00, 0x01, 0xA4])
+  })
+
   test("encodes all packed blocks in the ProDOS MLI state", () => {
     const relay = createPackedBinaryRelay(2, 0x0800, 6, 0x70, [], -1)
     expect(findSequence(relay, [3, 0, 0, 8, 2, 0, 6, 0])).toBeGreaterThan(0)

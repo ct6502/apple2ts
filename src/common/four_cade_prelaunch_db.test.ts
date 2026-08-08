@@ -216,9 +216,33 @@ describe("4cade prelaunch parsing", () => {
     })
   })
 
+  test("preserves Talon's reset vector without enabling cheats", () => {
+    const parsed = parsePrelaunchScript(`
+      lda #$60
+      sta $919B
+      jsr $3FF8
+      +RESET_VECTOR $100
+      +GET_MACHINE_STATUS
+      and #CHEATS_ENABLED
+      beq +
+      lda #$60
+      sta $18E9
+    + jmp $BE9B
+    `)
+
+    expect(parsed).toEqual({
+      sequence: [
+        { op: "patch", addr: 0x919B, val: 0x60 },
+        { op: "decompress", addr: 0x3FF8 },
+        { op: "reset_vector_100" },
+      ],
+      entry: 0xBE9B,
+    })
+  })
+
   test("rejects inline-label scripts with unsupported launch semantics", () => {
     expect(parsePrelaunchScript("jsr HideLaunchArtworkLC2\njmp $800")).toBeUndefined()
-    expect(parsePrelaunchScript("+RESET_VECTOR $100\njsr $800\njmp $900")).toBeUndefined()
+    expect(parsePrelaunchScript("+RESET_VECTOR $200\njsr $800\njmp $900")).toBeUndefined()
     expect(parsePrelaunchScript(`
       lda #<callback1
       sta $948F

@@ -528,6 +528,7 @@ export type PrelaunchOp =
   | { op: "callback_vector"; loAddr: number; hiAddr: number }  // store callback address at loAddr/hiAddr
   | { op: "jmp_decompress"; addr: number }        // JMP to decompressor (callback-based, no return)
   | { op: "reset_vector" }                        // install trailing stack-page reset handler in $3F2 and LC $FFFC
+  | { op: "reset_vector_100" }                    // point the page-3 reset vector at the launcher's $0100 reboot wrapper
   | { op: "reset_handler"; mode: "rdRam2" }       // install named stack-page reset handler in $3F2
   | { op: "install_routine"; loAddr: number; hiAddr: number; bytes: number[] }
 
@@ -691,6 +692,12 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     if (line.match(/^\+READ_RAM2_NO_WRITE\b/)) { ops.push({ op: "rdRam2" }); continue }
     if (hasReadRam2ResetHandler && line.match(/^\+RESET_VECTOR\s+reset\b/i)) {
       ops.push({ op: "reset_handler", mode: "rdRam2" })
+      continue
+    }
+    const numericResetVector = line.match(/^\+RESET_VECTOR\s+\$([0-9a-f]+)\b/i)
+    if (numericResetVector) {
+      if (parseInt(numericResetVector[1], 16) !== 0x0100) return undefined
+      ops.push({ op: "reset_vector_100" })
       continue
     }
     if (line.match(/^\+(?:FORCE_REBOOT|RESET_VECTOR)\b/i)) return undefined

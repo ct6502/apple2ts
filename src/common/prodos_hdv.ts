@@ -3436,6 +3436,8 @@ const createOfflineDecompRelay = (
  *   3. Copy the prelaunch script bytes to $0106 (stack page) — this is critical
  *      because SAN INC uses the entire 64 KB as an LZ dictionary; the stack page
  *      contents must match what 4cade has at decompression time
+ *      Numeric $0100 reset vectors also install a standalone ROM-reboot wrapper
+ *      at $0100-$0105, replacing 4cade's unavailable UI re-entry target.
  *   4. Copy PrelaunchInit stub to $EA-$FF (zero page)
  *   5. LaunchInternal: wipe ZP $00-$4D, seed RNDSEED, reset aux switches,
  *      clear keyboard, reset stack, SEI
@@ -3477,6 +3479,7 @@ export const createPackedBinaryRelay = (
   let resetHandlerLoIdx = -1
   let resetHandlerHiIdx = -1
   let resetHandlerMode: "rdRam2" | undefined
+  let usesResetVector100 = false
   const installedRoutines: Array<{ loIdx: number; hiIdx: number; bytes: number[] }> = []
 
   for (const step of sequence) {
@@ -3537,6 +3540,12 @@ export const createPackedBinaryRelay = (
         prelaunchBytes.push(0x8D, 0xFD, 0xFF)                                   // STA $FFFD
         prelaunchBytes.push(0x49, 0xA5)                                         // EOR #$A5
         prelaunchBytes.push(0x8D, 0xF4, 0x03)                                   // STA $03F4
+        break
+      case "reset_vector_100":
+        usesResetVector100 = true
+        prelaunchBytes.push(0xA9, 0x00, 0x8D, 0xF2, 0x03)                       // LDA #$00; STA $03F2
+        prelaunchBytes.push(0xA9, 0x01, 0x8D, 0xF3, 0x03)                       // LDA #$01; STA $03F3
+        prelaunchBytes.push(0x49, 0xA5, 0x8D, 0xF4, 0x03)                       // EOR #$A5; STA $03F4
         break
       case "reset_handler":
         prelaunchBytes.push(0xA9)
@@ -3707,6 +3716,16 @@ export const createPackedBinaryRelay = (
   code.push(0xCA)                                              // DEX
   code.push(0xD0, 0xF7)                                       // BNE loop (back to LDA)
 
+  let reentryCopySrcIdx = -1
+  if (usesResetVector100) {
+    code.push(0xA2, 0x06)                                     // LDX #6
+    reentryCopySrcIdx = code.length
+    code.push(0xBD, 0x00, 0x00)                               // LDA reentryData-1,X (patched below)
+    code.push(0x9D, 0xFF, 0x00)                               // STA $00FF,X
+    code.push(0xCA)                                            // DEX
+    code.push(0xD0, 0xF7)                                     // BNE loop (back to LDA)
+  }
+
   // ======= PHASE 4: Copy PrelaunchInit stub to $EA-$FF =======
   code.push(0xA2, PREINIT_BYTES.length)                        // LDX #22
   const preinitCopySrcIdx = code.length
@@ -3758,6 +3777,11 @@ export const createPackedBinaryRelay = (
   // Prelaunch data (variable length)
   const prelaunchDataOffset = code.length
   code.push(...prelaunchBytes)
+  const reentryDataOffset = code.length
+  if (usesResetVector100) {
+    code.push(0x8D, 0x82, 0xC0)                               // STA $C082 (read ROM, no write)
+    code.push(0x6C, 0xFC, 0xFF)                               // JMP ($FFFC) (ROM reset vector)
+  }
   const mliParamsOffset = code.length
   code.push(
     0x03, 0x00,
@@ -3791,6 +3815,11 @@ export const createPackedBinaryRelay = (
   const prelaunchAbsAddr = relayLoadAddress + prelaunchDataOffset - 1
   code[prelaunchCopySrcIdx + 1] = prelaunchAbsAddr & 0xFF
   code[prelaunchCopySrcIdx + 2] = (prelaunchAbsAddr >> 8) & 0xFF
+  if (reentryCopySrcIdx >= 0) {
+    const reentryAbsAddr = relayLoadAddress + reentryDataOffset - 1
+    code[reentryCopySrcIdx + 1] = reentryAbsAddr & 0xFF
+    code[reentryCopySrcIdx + 2] = reentryAbsAddr >> 8
+  }
   // Phase 4: LDA preinitData-1+RELAY_LOAD_ADDRESS,X
   const preinitAbsAddr = relayLoadAddress + preinitDataOffset - 1
   code[preinitCopySrcIdx + 1] = preinitAbsAddr & 0xFF
