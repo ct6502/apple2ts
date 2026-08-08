@@ -339,9 +339,9 @@ const finishCaptureBootState = (timedOut = false) => {
       // Two-stage capture: record the PC at time of late capture
       result.capturedPC = s6502.PC
       result.earlyLowMemory = captureEarlyLowMemory ?? undefined
-      console.log(`[Capture] Late capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, '0')}, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ''}${result.earlyLowMemory ? ` + ${result.earlyLowMemory.length} bytes early low memory` : ''}`)
+      console.log(`[Capture] Late capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")}, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ""}${result.earlyLowMemory ? ` + ${result.earlyLowMemory.length} bytes early low memory` : ""}`)
     } else {
-      console.log(`[Capture] Hit entry point, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ''}`)
+      console.log(`[Capture] Hit entry point, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ""}`)
     }
   }
 
@@ -547,7 +547,7 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
         capturePostDelayId = setTimeout(() => {
           capturePostDelayId = null
           if (captureActive) {
-            console.log(`[Capture] Post-entry delay elapsed, pausing to capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, '0')}`)
+            console.log(`[Capture] Post-entry delay elapsed, pausing to capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")}`)
             doSetRunMode(RUN_MODE.PAUSED)
           }
         }, delayMs)

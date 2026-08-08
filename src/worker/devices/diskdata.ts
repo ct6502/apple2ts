@@ -328,7 +328,7 @@ export const handleDriveSoftSwitches: AddressCallback =
       MOTOR_RUNNING = true
       if (floppyAccessLogCount < 20) {
         floppyAccessLogCount++
-        console.log(`[Floppy] Motor ON  at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4,'0')} track=${ds.quarterTrack/4} cycle=${s6502.cycleCount}`)
+        console.log(`[Floppy] Motor ON  at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")} track=${ds.quarterTrack/4} cycle=${s6502.cycleCount}`)
       }
       startMotor(ds)
       dumpData(ds)

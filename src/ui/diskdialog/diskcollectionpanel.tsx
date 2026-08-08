@@ -142,7 +142,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   const suppressClickUntilRef = useRef(0)
   const popupOpenRef = useRef(false)
   const primaryPressRef = useRef(false)
-  const forceVtocCheckRef = useRef<((disk: DiskCollectionItem) => void) | null>(null)
+  const [forceVtocCheck, setForceVtocCheck] = useState<((disk: DiskCollectionItem) => void) | null>(null)
   const [activeVtocCheckKey, setActiveVtocCheckKey] = useState<string | null>(null)
 
   useEffect(() => {
@@ -232,8 +232,6 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     event.preventDefault()
   }
 
-  const shouldSuppressClick = () => Date.now() < suppressClickUntilRef.current
-
   const handleItemRightClick = (diskCollectionItem: DiskCollectionItem) => (event: React.MouseEvent<HTMLElement>) => {
     // Some browsers fire a trailing click after context-menu gestures.
     primaryPressRef.current = false
@@ -266,7 +264,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       event.stopPropagation()
       return
     }
-    if (shouldSuppressClick()) {
+    if (Date.now() < suppressClickUntilRef.current) {
       event.stopPropagation()
       return
     }
@@ -371,7 +369,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
       event.stopPropagation()
       return
     }
-    if (shouldSuppressClick()) {
+    if (Date.now() < suppressClickUntilRef.current) {
       event.stopPropagation()
       return
     }
@@ -519,8 +517,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
     return hdvSize <= 0 || hdvSize > maxHdvBytes
   }
 
-  const commitPendingBookmarkRemovals = (refreshBookmarks: boolean = true) => {
-    const pending = pendingBookmarkRemovalsRef.current
+  const commitPendingBookmarkRemovals = (pending: Set<string>, refreshBookmarks: boolean = true) => {
     if (pending.size > 0) {
       const bookmarks = new DiskBookmarks()
       pending.forEach((bookmarkId) => {
@@ -537,7 +534,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
   }
 
   const dismissDiskCollection = (notifyParent: boolean = true) => {
-    commitPendingBookmarkRemovals()
+    commitPendingBookmarkRemovals(pendingBookmarkRemovals)
     setIsFlyoutOpen(false)
     if (notifyParent) {
       props.onDismissDialog?.()
@@ -546,7 +543,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
 
   useEffect(() => {
     return () => {
-      commitPendingBookmarkRemovals(false)
+      commitPendingBookmarkRemovals(pendingBookmarkRemovalsRef.current, false)
     }
   }, [])
 
@@ -632,7 +629,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
               className={`dcp-item${isDisabledForExport ? " dcp-item-disabled" : ""}`}
               onContextMenu={handleItemRightClick(diskCollectionItem)}
               onClickCapture={(e) => {
-                if (shouldSuppressClick()) {
+                if (Date.now() < suppressClickUntilRef.current) {
                   e.preventDefault()
                   e.stopPropagation()
                 }
@@ -654,7 +651,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                   e.stopPropagation()
                   return
                 }
-                if (shouldSuppressClick()) {
+                if (Date.now() < suppressClickUntilRef.current) {
                   e.preventDefault()
                   e.stopPropagation()
                   return
@@ -685,7 +682,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                       e.stopPropagation()
                       return
                     }
-                    if (shouldSuppressClick()) {
+                    if (Date.now() < suppressClickUntilRef.current) {
                       e.preventDefault()
                       e.stopPropagation()
                       return
@@ -717,7 +714,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                     event.stopPropagation()
                     return
                   }
-                  if (shouldSuppressClick()) {
+                  if (Date.now() < suppressClickUntilRef.current) {
                     event.preventDefault()
                     event.stopPropagation()
                     return
@@ -852,7 +849,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                           onMouseUp={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation()
-                            forceVtocCheckRef.current?.(diskCollectionItem)
+                            forceVtocCheck?.(diskCollectionItem)
                           }}>
                           <FontAwesomeIcon icon={faDownload} size="lg" className="dcp-item-export-badge-icon" />
                           <div className="dcp-item-export-badge-icon-bg">&nbsp;</div>
@@ -1025,7 +1022,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
           : tabs[activeTab].disks.filter(isDiskExportable)}
         authRefresh={authRefresh}
         cloudProviderHasAuthToken={cloudProviderHasAuthToken}
-        forceVtocCheckRef={forceVtocCheckRef}
+        setForceVtocCheck={setForceVtocCheck}
         setActiveVtocCheckKey={setActiveVtocCheckKey}
       />
       </div>

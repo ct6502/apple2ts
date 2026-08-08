@@ -78,6 +78,8 @@ type FourCadeDiskMetadata = {
 
 import { FOUR_CADE_PRELAUNCH_DB, PrelaunchOp, FourCadeEntry, fetchFourCadeDisk, fetchFourCadePrelaunch, parsePrelaunchScript, extractAllBinFiles } from "./four_cade_prelaunch_db"
 import { depack6502, run6502OnMem } from "./depack6502"
+// The HDV builder needs the immutable IIe ROM image when preparing offline relays.
+// eslint-disable-next-line no-restricted-imports
 import { romBase64 } from "../worker/roms/rom_2e"
 
 /** FNV-1a 32-bit hash of a Uint8Array — fast, synchronous, collision-resistant for disk identification. */
@@ -416,7 +418,6 @@ const generateMenuLaunchProgram = (
   runtimeHelloModeByMenuIndex?: Array<number | undefined>,
   menuNeedsAliasShim?: boolean[],
   fourCadeRelayBlockInfo?: Array<{ startBlock: number; blockCount: number; helperName: string } | undefined>,
-  hdSlot?: number,
 ): string => {
   const hasDosMasterRuntime = !!dosRuntimeLauncher
   const PATCH_LINE = 2500
@@ -1354,7 +1355,7 @@ const tryRewriteGreetingCommandForDosMaster = (
   const bytes = readDosFileBytes(image, greetingEntry.tsListTrack, greetingEntry.tsListSector)
   let text = ""
   for (const b of bytes) text += String.fromCharCode(b & 0x7f)
-  const quoted = [...text.matchAll(/"([^\"]{2,80})"/g)]
+  const quoted = [...text.matchAll(/"([^"]{2,80})"/g)]
   const binaryNames = new Map<string, string>()
   for (const entry of entries) {
     if ((entry.typeByte & 0x7f) !== DOS33_TYPE_BINARY) continue
@@ -1362,7 +1363,11 @@ const tryRewriteGreetingCommandForDosMaster = (
   }
 
   for (const match of quoted) {
-    const cmd = (match[1] ?? "").replace(/[\x00-\x1f]/g, "").trim().toUpperCase()
+    const cmd = Array.from(match[1] ?? "")
+      .filter((character) => character.charCodeAt(0) >= 0x20)
+      .join("")
+      .trim()
+      .toUpperCase()
     // A compact custom DOS command of the form "B?<name>" (e.g. BNPACMAN) where
     // DOS.MASTER does not know the alias but does support BRUN.
     if (!/^B[A-Z][A-Z0-9.$#_ -]{1,30}$/.test(cmd)) continue
@@ -5593,7 +5598,7 @@ export const buildProDosHdv = async (
       const shim = createFloppyReadShim(dskBaseBlock, unitNumber)
 
       // Helper: apply RWTS patches at a given base.
-      const applyRwtsPatch = (base: number, label: string) => {
+      const applyRwtsPatch = (base: number) => {
         const shimAddr = base + 0x0200       // $0600 or $8200
         const readEntryAddr = base + 0x02C3  // $06C3 or $82C3
         const loaderAddr = base + 0x03DC     // $07DC or $83DC
@@ -5635,7 +5640,7 @@ export const buildProDosHdv = async (
       }
 
       // Apply patches to the direct area ($0400+) for any pre-copy calls
-      applyRwtsPatch(0x0400, "direct")
+      applyRwtsPatch(0x0400)
 
       // Also apply chain-loader bypass to direct $04C0 (same detection)
       const off04C0direct = 0x04C0 - entry.loadAddress
@@ -5665,7 +5670,7 @@ export const buildProDosHdv = async (
       const srcBase = 0x8000
       const srcOff = srcBase - entry.loadAddress
       if (srcOff >= 0 && srcOff + 0x0500 <= entry.binaryData.length) {
-        applyRwtsPatch(srcBase, "source")
+        applyRwtsPatch(srcBase)
         // Mirror boot sector (T0/S0) from the DSK to $8400-$84FF: the game's
         // copy at $68B0 copies $8000-$84FF → $0400-$08FF. The boot sector
         // was originally loaded to $0800 by the Apple II boot ROM. Our captured
@@ -5830,7 +5835,7 @@ export const buildProDosHdv = async (
     helperFiles.push({
       name: "MENULAUNCH",
       type: 0xFC,
-      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim, fourCadeRelayBlockInfo, dosMasterSlot)),
+      data: tokenizeApplesoftBasic(generateMenuLaunchProgram(menuEntries, dosRuntimeLauncher, menuProDosCommands, menuProDosPrefixes, HELPER_SUBDIR, includeAliasShimFile ? aliasShimInstallCommand : undefined, runtimeVolumeByMenuIndex, runtimeHelloModeByMenuIndex, menuNeedsAliasShim, fourCadeRelayBlockInfo)),
       auxType: 0x0801,
     })
   }
@@ -6093,7 +6098,7 @@ export const buildProDosHdv = async (
     const additionalBlocks = Math.ceil(additionalEntries / DIR_ENTRIES_PER_BLOCK)
     const newBlocks = allocateFreeBlocks(additionalBlocks)
     if (newBlocks.length < additionalBlocks) {
-      throw new Error(`Not enough free blocks to expand root directory.`)
+      throw new Error("Not enough free blocks to expand root directory.")
     }
     // Link the last existing directory block to the first new block
     const lastExistingBlock = newDirBlocks[newDirBlocks.length - 1]

@@ -18,7 +18,7 @@ type DiskPanelVtocProps = {
   visibleCandidates: DiskCollectionItem[],
   authRefresh: number,
   cloudProviderHasAuthToken: (providerName: string) => boolean,
-  forceVtocCheckRef?: React.MutableRefObject<((disk: DiskCollectionItem) => void) | null>,
+  setForceVtocCheck: React.Dispatch<React.SetStateAction<((disk: DiskCollectionItem) => void) | null>>,
   setActiveVtocCheckKey?: (key: string | null) => void,
 }
 
@@ -60,31 +60,31 @@ export const DiskPanelVtoc = (props: DiskPanelVtocProps) => {
   // clicked the export badge to force a check for one specific disk).
   const suppressProgressRef = useRef(false)
 
-  // Expose a force-check function to the parent via ref.
-  useEffect(() => {
-    if (props.forceVtocCheckRef) {
-      props.forceVtocCheckRef.current = (disk: DiskCollectionItem) => {
-        const key = itemKey(disk)
-        disk.vtocType = undefined
-        disk.vtocVersion = undefined
-        removeSessionVtocFailure(disk.diskUrl?.toString() || "")
-        // Clear the Internet Archive negative cache so the identifier is
-        // re-resolved from scratch instead of returning the cached failure.
-        if (disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE && disk.diskUrl?.startsWith(internetArchiveUrlProtocol)) {
-          clearIaResolveCache(disk.diskUrl.substring(internetArchiveUrlProtocol.length))
-        }
-        vtocResolveAttempted.current.delete(key)
-        suppressProgressRef.current = true
-        props.setDiskCollection((prev) => [...prev])
-        setVtocCheckPass((pass) => pass + 1)
-      }
-    }
-    return () => {
-      if (props.forceVtocCheckRef) props.forceVtocCheckRef.current = null
-    }
-  })
-
   const itemKey = diskItemKey
+  const { setDiskCollection, setForceVtocCheck } = props
+
+  // Expose a force-check function to the parent without mutating a ref prop.
+  useEffect(() => {
+    const forceVtocCheck = (disk: DiskCollectionItem) => {
+      const key = itemKey(disk)
+      disk.vtocType = undefined
+      disk.vtocVersion = undefined
+      removeSessionVtocFailure(disk.diskUrl?.toString() || "")
+      // Clear the Internet Archive negative cache so the identifier is
+      // re-resolved from scratch instead of returning the cached failure.
+      if (disk.type === DISK_COLLECTION_ITEM_TYPE.INTERNET_ARCHIVE && disk.diskUrl?.startsWith(internetArchiveUrlProtocol)) {
+        clearIaResolveCache(disk.diskUrl.substring(internetArchiveUrlProtocol.length))
+      }
+      vtocResolveAttempted.current.delete(key)
+      suppressProgressRef.current = true
+      setDiskCollection((prev) => [...prev])
+      setVtocCheckPass((pass) => pass + 1)
+    }
+    setForceVtocCheck(() => forceVtocCheck)
+    return () => {
+      setForceVtocCheck(null)
+    }
+  }, [itemKey, setDiskCollection, setForceVtocCheck])
 
   // Stores a determined VTOC type onto the in-memory collection item and persists
   // it so it only needs to be determined once. Bookmarks keep their type in their

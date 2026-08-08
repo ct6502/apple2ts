@@ -640,31 +640,31 @@ export const run6502OnMem = (
 
       // --- ASL ---
       case 0x0A: C = !!(A & 0x80); A = setNZ(A << 1); break
-      case 0x06: { const a = zpAddr(); let v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
-      case 0x16: { const a = zpXAddr(); let v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
-      case 0x0E: { const a = absAddr(); let v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
-      case 0x1E: { const a = absXAddr(); let v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
+      case 0x06: { const a = zpAddr(); const v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
+      case 0x16: { const a = zpXAddr(); const v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
+      case 0x0E: { const a = absAddr(); const v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
+      case 0x1E: { const a = absXAddr(); const v = rd(a); C = !!(v & 0x80); wr(a, setNZ(v << 1)); break }
 
       // --- LSR ---
       case 0x4A: C = !!(A & 1); A = setNZ(A >> 1); break
-      case 0x46: { const a = zpAddr(); let v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
-      case 0x56: { const a = zpXAddr(); let v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
-      case 0x4E: { const a = absAddr(); let v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
-      case 0x5E: { const a = absXAddr(); let v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
+      case 0x46: { const a = zpAddr(); const v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
+      case 0x56: { const a = zpXAddr(); const v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
+      case 0x4E: { const a = absAddr(); const v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
+      case 0x5E: { const a = absXAddr(); const v = rd(a); C = !!(v & 1); wr(a, setNZ(v >> 1)); break }
 
       // --- ROL ---
       case 0x2A: { const oc = C; C = !!(A & 0x80); A = setNZ((A << 1) | (oc ? 1 : 0)); break }
-      case 0x26: { const a = zpAddr(); let v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
-      case 0x36: { const a = zpXAddr(); let v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
-      case 0x2E: { const a = absAddr(); let v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
-      case 0x3E: { const a = absXAddr(); let v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
+      case 0x26: { const a = zpAddr(); const v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
+      case 0x36: { const a = zpXAddr(); const v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
+      case 0x2E: { const a = absAddr(); const v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
+      case 0x3E: { const a = absXAddr(); const v = rd(a); const oc = C; C = !!(v & 0x80); wr(a, setNZ((v << 1) | (oc ? 1 : 0))); break }
 
       // --- ROR ---
       case 0x6A: { const oc = C; C = !!(A & 1); A = setNZ((A >> 1) | (oc ? 0x80 : 0)); break }
-      case 0x66: { const a = zpAddr(); let v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
-      case 0x76: { const a = zpXAddr(); let v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
-      case 0x6E: { const a = absAddr(); let v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
-      case 0x7E: { const a = absXAddr(); let v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
+      case 0x66: { const a = zpAddr(); const v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
+      case 0x76: { const a = zpXAddr(); const v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
+      case 0x6E: { const a = absAddr(); const v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
+      case 0x7E: { const a = absXAddr(); const v = rd(a); const oc = C; C = !!(v & 1); wr(a, setNZ((v >> 1) | (oc ? 0x80 : 0))); break }
 
       // --- Transfers ---
       case 0xAA: X = setNZ(A); break
