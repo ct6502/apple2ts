@@ -117,6 +117,7 @@ export const fr = {
 
     assert.equal(result.status, 1)
     assert.match(result.stderr, /Generated catalog is stale:/)
+    assert.match(result.stderr, /rerunning compile without --check/)
     assert.equal(await readFile(outputPath, "utf8"), "stale\n")
   })
 
@@ -140,6 +141,7 @@ msgstr "Démarrer"
 
     assert.equal(result.status, 2)
     assert.match(result.stderr, /Translation catalog has not been merged for: controls.reset/)
+    assert.match(result.stderr, /Update the supplied translation catalog from its source catalog\./)
   })
 
   it("rejects an output alias that identifies the input file", async () => {

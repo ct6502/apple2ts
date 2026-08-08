@@ -439,7 +439,26 @@ msgstr "Enregistrer le disque"
 `), {sourceCatalog: english}),
       new Error(
         "Translation source is stale for disk.save: "
-        + "expected \"Save Disk Image\", received \"Save Disk\"",
+        + "expected \"Save Disk Image\", received \"Save Disk\". "
+        + "Update the supplied translation catalog from its source catalog.",
+      ),
+    )
+  })
+
+  it("directs contributors to update catalogs with orphaned active entries", () => {
+    assert.throws(
+      () => compilePoCatalog(po(`
+msgctxt "controls.boot"
+msgid "Boot"
+msgstr "Démarrer"
+
+msgctxt "removed.message"
+msgid "Removed"
+msgstr "Supprimé"
+`), {sourceCatalog: english}),
+      new Error(
+        "Translation has no current source message: removed.message. "
+        + "Update the supplied translation catalog from its source catalog.",
       ),
     )
   })
@@ -451,7 +470,10 @@ msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Démarrer"
 `), {requireMerged: true, sourceCatalog: english}),
-      new Error("Translation catalog has not been merged for: controls.reset"),
+      new Error(
+        "Translation catalog has not been merged for: controls.reset. "
+        + "Update the supplied translation catalog from its source catalog.",
+      ),
     )
   })
 

@@ -4,6 +4,7 @@ import { po as poParser } from "gettext-parser"
 
 const PLACEHOLDER_PATTERN = /\{\{([^{}]+)\}\}|(?<!\{)\{([^{}]+)\}(?!\})/g
 const RESERVED_KEY_SEGMENTS = new Set(["__proto__", "constructor", "prototype"])
+const UPDATE_CATALOG_HINT = "Update the supplied translation catalog from its source catalog."
 
 const inspectPlaceholders = message => {
   const counts = new Map()
@@ -345,11 +346,15 @@ export const compilePoCatalog = (
     const analysis = analyzeActivePoCatalog(sourceCatalog, source)
     const unmerged = analysis.entries.find(entry => entry.status === "unmerged")
     if (requireMerged && unmerged) {
-      throw new Error(`Translation catalog has not been merged for: ${unmerged.key}`)
+      throw new Error(
+        `Translation catalog has not been merged for: ${unmerged.key}. ${UPDATE_CATALOG_HINT}`,
+      )
     }
     const orphaned = analysis.entries.find(entry => entry.status === "orphaned")
     if (orphaned) {
-      throw new Error(`Translation has no current source message: ${orphaned.key}`)
+      throw new Error(
+        `Translation has no current source message: ${orphaned.key}. ${UPDATE_CATALOG_HINT}`,
+      )
     }
     const entriesByKey = new Map(analysis.entries.map(entry => [entry.key, entry]))
     for (const key of sourceMessages.keys()) {
@@ -358,7 +363,8 @@ export const compilePoCatalog = (
         throw new Error(
           `Translation source is stale for ${entry.key}: `
           + `expected ${JSON.stringify(entry.source)}, `
-          + `received ${JSON.stringify(entry.translationSource)}`,
+          + `received ${JSON.stringify(entry.translationSource)}. `
+          + UPDATE_CATALOG_HINT,
         )
       }
       if (entry.status === "placeholder-mismatch") {

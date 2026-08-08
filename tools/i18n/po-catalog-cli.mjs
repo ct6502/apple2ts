@@ -142,6 +142,7 @@ const compile = async options => {
   if (options["--check"]) {
     if (existing !== rendered) {
       process.stderr.write(`Generated catalog is stale: ${outputPath}\n`)
+      process.stderr.write("Regenerate this output by rerunning compile without --check.\n")
       return 1
     }
     process.stdout.write(`Catalog is current: ${outputPath}\n`)
