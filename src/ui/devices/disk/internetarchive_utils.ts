@@ -1,5 +1,5 @@
 import { iconKey, iconData, iconName } from "../../img/iconfunctions"
-import { apple2tsProxyPath } from "./apple2tsproxy"
+import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
 
 export const internetArchiveUrlProtocol = "a2ia://"
 
@@ -97,7 +97,7 @@ const IA_CACHE_TTL_MS = 30 * 60 * 1000
 const IA_NEGATIVE_CACHE_TTL_MS = 2 * 60 * 1000
 
 const fetchCloudflareProxy = async (url: string): Promise<Response | null> => {
-  if (!/\.pages\.dev$/i.test(window.location.hostname)) return null
+  if (!hasApple2tsProxy && !/\.pages\.dev$/i.test(window.location.hostname)) return null
   try {
     const response = await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
     return response.ok ? response : null
