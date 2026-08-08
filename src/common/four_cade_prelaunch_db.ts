@@ -568,8 +568,31 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let sawMachineStatus = false
   let sawCheatsMask = false
   let skippingCheatBlock = false
+  let skippedForwardHelperRegion = false
 
   if (source.includes("!pseudopc")) return undefined
+
+  const sourceLines = source.split(/\r?\n/)
+  const firstStatementIndex = sourceLines.findIndex((rawLine) => {
+    const line = rawLine.replace(/;.*$/, "").trim()
+    return line.length > 0 && !line.startsWith("!") && !line.startsWith("*=")
+  })
+  const forwardMainMatch = firstStatementIndex >= 0
+    ? sourceLines[firstStatementIndex].replace(/;.*$/, "").trim()
+      .match(/^jmp\s+([a-z_][a-z0-9_.]*)$/i)
+    : undefined
+  let lines = sourceLines
+  if (forwardMainMatch) {
+    const mainLabel = forwardMainMatch[1].toLowerCase()
+    const mainLabelIndex = sourceLines.findIndex((rawLine, index) => {
+      if (index <= firstStatementIndex) return false
+      const line = rawLine.replace(/;.*$/, "").trim().replace(/:$/, "").toLowerCase()
+      return line === mainLabel
+    })
+    if (mainLabelIndex < 0) return undefined
+    lines = sourceLines.slice(mainLabelIndex + 1)
+    skippedForwardHelperRegion = true
+  }
 
   const sourceWithoutComments = source
     .split(/\r?\n/)
@@ -595,7 +618,6 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let pendingCallbackHi = false
   let inCallbackBody = false
 
-  const lines = source.split(/\r?\n/)
   for (const rawLine of lines) {
     const line = rawLine.replace(/;.*$/, "").trim()
     if (!line) continue
@@ -672,8 +694,18 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     }
 
     // Detect callback address setup: lda #<callback / lda #>callback
-    if (line.match(/^lda\s+#<\w+/i)) { pendingCallbackLo = true; pendingLdaVal = undefined; continue }
-    if (line.match(/^lda\s+#>\w+/i)) { pendingCallbackHi = true; pendingLdaVal = undefined; continue }
+    if (line.match(/^lda\s+#<\w+/i)) {
+      if (skippedForwardHelperRegion) return undefined
+      pendingCallbackLo = true
+      pendingLdaVal = undefined
+      continue
+    }
+    if (line.match(/^lda\s+#>\w+/i)) {
+      if (skippedForwardHelperRegion) return undefined
+      pendingCallbackHi = true
+      pendingLdaVal = undefined
+      continue
+    }
 
     const ldaHexMatch = line.match(/^lda\s+#\$([0-9a-fA-F]{1,2})\b/i)
     if (ldaHexMatch) { pendingLdaVal = parseInt(ldaHexMatch[1], 16); continue }

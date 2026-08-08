@@ -5,6 +5,7 @@ import {
   determineVtocType,
   lookupFourCadeByTitle,
 } from "./prodos_hdv"
+import { parsePrelaunchScript } from "./four_cade_prelaunch_db"
 import { processInstruction } from "../worker/cpu6502"
 import { reset6502, s6502, setAccumulator, setCycleCount, setPC } from "../worker/instructions"
 import { memory, updateAddressTables } from "../worker/memory"
@@ -53,6 +54,13 @@ describe("IIgs 4cade block loading", () => {
 
     expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("pitfall.ii")
     expect(determineVtocType("pitfall ii.po", new Uint8Array(), title)).toBe("4cade")
+  })
+
+  test("recognizes Chrono Warrior's SAN INC archive title as 4cade", () => {
+    const title = "CHRONO WARRIOR (SAN INC PACK)"
+
+    expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("chrono.warrior")
+    expect(determineVtocType("chrono warrior.po", new Uint8Array(), title)).toBe("4cade")
   })
 
   test("wraps the relay at a ProDOS-safe load address", () => {
@@ -261,6 +269,53 @@ describe("IIgs 4cade block loading", () => {
     expect(runCallback(callback1Address, 10)).toBe(0xAE0A)
     expect(runCallback(callback2Address, 8)).toBe(0xAE21)
     expect(runCallback(callback2Address, 10)).toBe(0xAE0A)
+  })
+
+  test("launches Chrono Warrior without installing its cheat-only callback", () => {
+    const parsed = parsePrelaunchScript(`
+      jmp skip
+    callback
+      jsr $BC9D
+      rts
+    skip
+      +ENABLE_ACCEL_LC
+      lda #$60
+      sta $2079
+      jsr $2000
+      +GET_MACHINE_STATUS_LC_RW
+      and #CHEATS_ENABLED
+      beq +
+      lda #<callback
+      sta $BC90
+      lda #>callback
+      sta $BC91
+    +
+      +DISABLE_ACCEL_LC
+      jmp $1B40
+    `)
+    expect(parsed).toBeDefined()
+    if (!parsed || typeof parsed.entry !== "number") throw new Error("Chrono Warrior did not parse")
+
+    const relay = createPackedBinaryRelay(2, 0x2000, 1, 0x70, parsed.sequence, parsed.entry)
+    const clearPrefix = [0xA9, 0xA0, 0xA2, 0x00, 0x9D, 0x00, 0x04]
+    const prelaunchOffset = findSequence(relay, clearPrefix)
+
+    reset6502()
+    memory.fill(0)
+    memory.set(relay.slice(prelaunchOffset), 0x0106)
+    memory[0xDFB7] = 0x60  // EnableAccelerator in LC bank 2
+    memory[0xDFB4] = 0x60  // DisableAccelerator in LC bank 2
+    memory[0x2000] = 0x60  // decompressor stub
+    updateAddressTables()
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 3000 && s6502.PC !== 0x1B40; instruction++) {
+      processInstruction()
+    }
+
+    expect(s6502.PC).toBe(0x1B40)
+    expect(memory[0x2079]).toBe(0x60)
+    expect(memory[0xBC90]).toBe(0)
+    expect(memory[0xBC91]).toBe(0)
   })
 
   test("encodes all packed blocks in the ProDOS MLI state", () => {

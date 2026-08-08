@@ -123,4 +123,58 @@ describe("4cade prelaunch parsing", () => {
     }))
     expect(parsed?.sequence).not.toContainEqual({ op: "patch", addr: 0x243D, val: 0x60 })
   })
+
+  test("follows Chrono Warrior's forward jump past its cheat-only callback", () => {
+    const parsed = parsePrelaunchScript(`
+      jmp skip
+    callback
+      jsr $BC9D
+      lda #0
+      rts
+    skip
+      +ENABLE_ACCEL_LC
+      lda #$60
+      sta $2079
+      jsr $2000
+      +GET_MACHINE_STATUS_LC_RW
+      and #CHEATS_ENABLED
+      beq +
+      lda #<callback
+      sta $BC90
+      lda #>callback
+      sta $BC91
+    +
+      +DISABLE_ACCEL_LC
+      jmp $1B40
+    `)
+
+    expect(parsed).toEqual({
+      sequence: [
+        { op: "rwRam2" },
+        { op: "call", addr: 0xDFB7 },
+        { op: "patch", addr: 0x2079, val: 0x60 },
+        { op: "decompress", addr: 0x2000 },
+        { op: "call", addr: 0xDFB4 },
+        { op: "readRom" },
+      ],
+      entry: 0x1B40,
+    })
+  })
+
+  test("rejects forward-main scripts that require their skipped callback", () => {
+    expect(parsePrelaunchScript(`
+      jmp main
+    callback
+      jsr $BD00
+      rts
+    main
+      +ENABLE_ACCEL
+      jsr $800
+      lda #<callback
+      sta $B7B8
+      lda #>callback
+      sta $B7B9
+      jmp $B700
+    `)).toBeUndefined()
+  })
 })
