@@ -282,19 +282,16 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       fileKinds[index] = "dos"
     }
 
-    // Override fileKinds for disks whose VTOC type was determined to be "4cade"
-    // (DOS 3.3 binaries that overlap DOS memory and must be block-loaded directly).
-    // Also re-check at export time using the actual downloaded buffer, since the
-    // VTOC pre-check may have failed (CORS) and defaulted to "dos".
+    // Re-check with the downloaded bytes so stale cached classifications cannot
+    // override a real ProDOS volume, while title-matched 4cade disks still use
+    // their direct-load path.
     for (let i = 0; i < orderedDownloadedDisks.length; i++) {
-      if (orderedDownloadedDisks[i].item.vtocType === "4cade") {
+      const disk = orderedDownloadedDisks[i]
+      const recheck = determineVtocType(disk.filename, disk.buffer, disk.item.title)
+      if (recheck === "prodos") {
+        fileKinds[i] = "prodos"
+      } else if (disk.item.vtocType === "4cade" || recheck === "4cade") {
         fileKinds[i] = "4cade"
-      } else if (fileKinds[i] !== "prodos") {
-        const disk = orderedDownloadedDisks[i]
-        const recheck = determineVtocType(disk.filename, disk.buffer, disk.item.title)
-        if (recheck === "4cade") {
-          fileKinds[i] = "4cade"
-        }
       }
     }
 

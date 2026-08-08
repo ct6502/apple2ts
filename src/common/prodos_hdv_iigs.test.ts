@@ -28,6 +28,10 @@ const branchTarget = (baseAddress: number, bytes: Uint8Array, offset: number) =>
 }
 
 describe("IIgs 4cade block loading", () => {
+  test("keeps a large ProDOS image titled Aztec out of the 4cade path", () => {
+    expect(determineVtocType("Aztec.po", new Uint8Array(819200), "Aztec")).toBe("prodos")
+  })
+
   test("recognizes archive titles with combined crack suffixes as 4cade", () => {
     const title = "CHIVALRY (4AM AND SAN INC CRACK)"
 
@@ -475,6 +479,56 @@ describe("IIgs 4cade block loading", () => {
     ])
     expect(memory[0x2218]).toBe(0x01)
     expect(s6502.StackPtr).toBe(0xFD)
+  })
+
+  test("launches Spare Change through its stack callback", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL
+      lda #$60
+      sta $2778
+      jsr $2700
+      lda #>(callback - 1)
+      pha
+      lda #<(callback - 1)
+      pha
+      sec
+      php
+      jmp $BD26
+    callback
+      +DISABLE_ACCEL_AND_HIDE_ARTWORK
+      jmp $2000
+    `)
+    expect(parsed).toBeDefined()
+    if (!parsed || typeof parsed.entry !== "number") throw new Error("Spare Change did not parse")
+
+    const harnessSequence = parsed.sequence.map((step) =>
+      step.op === "call" || step.op === "decompress" ? { ...step, addr: 0x0200 } : step,
+    )
+    const relay = createPackedBinaryRelay(2, 0x2700, 1, 0x70, harnessSequence, parsed.entry)
+    const clearPrefix = [0xA9, 0xA0, 0xA2, 0x00, 0x9D, 0x00, 0x04]
+    const prelaunchOffset = findSequence(relay, clearPrefix)
+    const stackJumpTailOffset = findSequence(relay, [0x38, 0x08, 0x4C, 0x26, 0xBD])
+    const callbackAddress = 0x0106 + stackJumpTailOffset + 5 - prelaunchOffset
+    const returnAddress = callbackAddress - 1
+
+    expect(stackJumpTailOffset).toBeGreaterThan(prelaunchOffset)
+    expect(relay[stackJumpTailOffset - 5]).toBe(returnAddress >> 8)
+    expect(relay[stackJumpTailOffset - 2]).toBe(returnAddress & 0xFF)
+
+    reset6502()
+    memory.fill(0)
+    memory.set(relay.slice(prelaunchOffset), 0x0106)
+    memory[0x0200] = 0x60
+    memory.set([0x28, 0x60], 0xBD26) // PLP; RTS to callback
+    updateAddressTables()
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 3000 && s6502.PC !== 0x2000; instruction++) {
+      processInstruction()
+    }
+
+    expect(s6502.PC).toBe(0x2000)
+    expect(memory[0x2778]).toBe(0x60)
+    expect(s6502.StackPtr).toBe(0xFF)
   })
 
   test("encodes all packed blocks in the ProDOS MLI state", () => {

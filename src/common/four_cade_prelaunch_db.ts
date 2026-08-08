@@ -532,6 +532,7 @@ export type PrelaunchOp =
   | { op: "reset_handler"; mode: "rdRam2" }       // install named stack-page reset handler in $3F2
   | { op: "inline_rts_vector"; loAddr: number; hiAddr: number }
   | { op: "stack_entry"; returnAddress: number }
+  | { op: "stack_callback_jmp"; addr: number }
   | { op: "install_routine"; loAddr: number; hiAddr: number; bytes: number[] }
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
@@ -574,6 +575,7 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let skippingCheatBlock = false
   let skippedForwardHelperRegion = false
   let skipInstalledRoutineSetupLines = 0
+  let skipStackCallbackSetupLines = 0
 
   if (source.includes("!pseudopc")) return undefined
 
@@ -624,6 +626,9 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   const stackEntryMatch = sourceWithoutComments.match(
     /lda\s+#\$([0-9a-f]{1,2})\b\s*\n\s*pha\b\s*\n\s*lda\s+#\$([0-9a-f]{1,2})\b\s*\n\s*pha\b\s*\n\s*rts\b/i,
   )
+  const stackCallbackSetup = sourceWithoutComments.match(
+    /lda\s+#>\(\s*callback\s*-\s*1\s*\)\s*\n\s*pha\b\s*\n\s*lda\s+#<\(\s*callback\s*-\s*1\s*\)\s*\n\s*pha\b\s*\n\s*sec\b\s*\n\s*php\b\s*\n\s*jmp\s+\$([0-9a-f]{2,4})\b/i,
+  )
 
   // Callback detection state — handles decompressors that JMP to a routine
   // which calls back into the prelaunch code after decompression (e.g. Frogger).
@@ -652,6 +657,10 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     }
     if (skipInstalledRoutineSetupLines > 0) {
       skipInstalledRoutineSetupLines--
+      continue
+    }
+    if (skipStackCallbackSetupLines > 0) {
+      skipStackCallbackSetupLines--
       continue
     }
     if (line.match(/^\+GET_MACHINE_STATUS(?:_LC_RW)?\b/i)) {
@@ -687,6 +696,13 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     // recognized macros which provide essential cleanup (DISABLE_ACCEL, etc.).
     if (inCallbackBody) {
       if (line.match(/^rts\b/i)) break  // end of callback
+      const stackCallbackEntry = stackCallbackSetup
+        ? line.match(/^jmp\s+\$([0-9a-fA-F]{2,4})\b/i)
+        : undefined
+      if (stackCallbackEntry) {
+        entry = parseInt(stackCallbackEntry[1], 16)
+        break
+      }
       // Only process + macros in callback body (they're handled below)
       if (!line.startsWith("+")) { pendingLdaVal = undefined; continue }
     }
@@ -770,6 +786,13 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
         entry = -1
         break
       }
+    }
+
+    if (stackCallbackSetup && line.match(/^lda\s+#>\(\s*callback\s*-\s*1\s*\)/i)) {
+      ops.push({ op: "stack_callback_jmp", addr: parseInt(stackCallbackSetup[1], 16) })
+      skipStackCallbackSetupLines = 6
+      pendingLdaVal = undefined
+      continue
     }
 
     const ldaHexMatch = line.match(/^lda\s+#\$([0-9a-fA-F]{1,2})\b/i)

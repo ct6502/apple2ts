@@ -2026,11 +2026,19 @@ const classifyDosUpOrDirect = (image: Uint8Array): VtocType => {
  * WOZ images are fully bit-decoded and probed under every sector order before being classified.
  */
 export const determineVtocType = (filename: string, data: Uint8Array, title?: string): VtocType => {
+  const ext = filename.toLowerCase().split(".").pop() || ""
+  const size140k = 35 * 16 * 256
+
+  // A real large ProDOS block volume outranks a colliding 4cade title. The 4cade
+  // source containers are 140K images; built-in disks such as Aztec are 800K.
+  if (data.length > size140k && data.length % 512 === 0 &&
+    classifyImageKind(filename, data) === "prodos") {
+    return "prodos"
+  }
+
   // Title-based override: if the bookmark title matches a known 4cade game
   // (e.g. "Conan (4am crack)"), classify immediately without needing disk data.
   if (title && lookupFourCadeByTitle(title)) return "4cade"
-
-  const ext = filename.toLowerCase().split(".").pop() || ""
 
   // Detect WOZ by magic header bytes rather than file extension — the emulator
   // may internally convert DSK→WOZ or cloud providers may alter filenames, so
@@ -3582,6 +3590,15 @@ export const createPackedBinaryRelay = (
         prelaunchBytes.push(0xA9, step.returnAddress >> 8, 0x48)                // LDA #high; PHA
         prelaunchBytes.push(0xA9, step.returnAddress & 0xFF, 0x48, 0x60)        // LDA #low; PHA; RTS
         break
+      case "stack_callback_jmp": {
+        const callbackAddress = 0x0106 + prelaunchBytes.length + 11
+        const returnAddress = callbackAddress - 1
+        prelaunchBytes.push(0xA9, returnAddress >> 8, 0x48)                     // LDA #>callback-1; PHA
+        prelaunchBytes.push(0xA9, returnAddress & 0xFF, 0x48)                   // LDA #<callback-1; PHA
+        prelaunchBytes.push(0x38, 0x08)                                        // SEC; PHP
+        prelaunchBytes.push(0x4C, step.addr & 0xFF, (step.addr >> 8) & 0xFF)    // JMP addr
+        break
+      }
       case "install_routine": {
         prelaunchBytes.push(0xA9)
         const loIdx = prelaunchBytes.length
@@ -6320,5 +6337,5 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
-export const VTOC_REFRESH = 10
+export const VTOC_REFRESH = 11
 

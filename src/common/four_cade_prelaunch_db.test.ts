@@ -277,6 +277,41 @@ describe("4cade prelaunch parsing", () => {
     })
   })
 
+  test("preserves Spare Change's stack callback after decompression", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL
+      lda #$60
+      sta $2778
+      jsr $2700
+      lda #>(callback - 1)
+      pha
+      lda #<(callback - 1)
+      pha
+      sec
+      php
+      jmp $BD26
+    callback
+      +DISABLE_ACCEL_AND_HIDE_ARTWORK
+      jmp $2000
+    `)
+
+    expect(parsed).toEqual({
+      sequence: [
+        { op: "rwRam2" },
+        { op: "call", addr: 0xDFB7 },
+        { op: "readRom" },
+        { op: "patch", addr: 0x2778, val: 0x60 },
+        { op: "decompress", addr: 0x2700 },
+        { op: "stack_callback_jmp", addr: 0xBD26 },
+        { op: "rwRam2" },
+        { op: "call", addr: 0xDFB4 },
+        { op: "call", addr: 0xDFAE },
+        { op: "readRom" },
+      ],
+      entry: 0x2000,
+    })
+  })
+
   test("rejects inline-label scripts with unsupported launch semantics", () => {
     expect(parsePrelaunchScript("jsr HideLaunchArtworkLC2\njmp $800")).toBeUndefined()
     expect(parsePrelaunchScript("+RESET_VECTOR $200\njsr $800\njmp $900")).toBeUndefined()
