@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
+      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'github-pages-test' }}
       url: ${{ steps.deployment.outputs.page_url }}
     strategy:
       matrix:
