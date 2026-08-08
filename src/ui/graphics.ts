@@ -1,9 +1,10 @@
 import { handleGetAltCharSet, handleGetTextPage,
   handleGetLores, handleGetHires, handleGetNoDelayMode, passSetSoftSwitches,
   handleGetMachineName,
-  handleGetSoftSwitches} from "./main2worker"
+  handleGetSoftSwitches } from "./main2worker"
 import { convertTextPageValueToASCII, COLOR_MODE, TEST_GRAPHICS, hiresLineToAddress, toHex } from "../common/utility"
 import { convertColorsToRGBA, getHiresColors, getHiresGreen } from "./graphicshgr"
+import { i18n } from "../i18n"
 import { TEXT_AMBER, TEXT_GREEN, TEXT_WHITE, loresAmber, loresColors, loresGreen, loresWhite, translateDHGR } from "./graphicscolors"
 import { getColorMode, getCrtDistortion, getGhosting, isEmbedMode, isGameMode, isMinimalTheme } from "./ui_settings"
 import { doCRTStartup } from "./crtstartup"
@@ -61,6 +62,47 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   colorMode: COLOR_MODE, width: number, height: number, crtDistortion: boolean) => {
   const textPage = handleGetTextPage()
   if (textPage.length === 0) return false
+
+  // Startup text page: Unicode codepoints stored directly — render without Apple II byte encoding
+  if (textPage instanceof Uint16Array) {
+    const xmarginPx = xmargin * width
+    const ymarginPx = ymargin * height
+    const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
+    const useSilverFont = ["ru", "zh-TW", "zh-CN", "ja", "ko"].includes(i18n.getLanguage())
+    const isCyrillic = i18n.getLanguage() === "ru"
+    const cwidth = width * (1 - 2 * xmargin) / 40
+    const cheight = height * (1 - 2 * ymargin) / 24
+    const hiddenWidth = 560 / 40
+    const hiddenHeight = 384 / 24
+    const isCJKIdeograph = (cp: number) => (cp >= 0x400)
+    ctx.fillStyle = colorFill
+    hiddenContext.fillStyle = colorFill
+    // Two passes so we only switch fonts twice: CJK at normal size, everything else larger
+    const passes = useSilverFont ? [true, false] : [false]
+    for (const renderCJK of passes) {
+      const startupFont = renderCJK ? "Silver" : "PrintChar21"
+      const fontScale = renderCJK ? (isCyrillic ? 2 : 1.3) : 1
+      const fontSize = cheight * fontScale
+      const hiddenFontSize = hiddenHeight * fontScale
+      ctx.font = `${fontSize}px ${startupFont}`
+      hiddenContext.font = `${hiddenFontSize}px ${startupFont}`
+      for (let j = 0; j < 24; j++) {
+        const yoffset = ymarginPx + (j + 1) * cheight - 2
+        const yoffsetHidden = (j + 1) * hiddenHeight - 2
+        for (let i = 0; i < 40; i++) {
+          const cp = textPage[40 * j + i] || 0x20
+          if (useSilverFont && isCJKIdeograph(cp) !== renderCJK) continue
+          const v = String.fromCodePoint(cp)
+          if (!crtDistortion) {
+            ctx.fillText(v, xmarginPx + i * cwidth, yoffset)
+          }
+          hiddenContext.fillText(v, i * hiddenWidth, yoffsetHidden)
+        }
+      }
+    }
+    return true
+  }
+
   const switches = handleGetSoftSwitches()
   // See Video-7 RGB-SL7 manual, section 7.1, p. 35
   // https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/video/Video-7%20RGB-SL7.pdf
@@ -532,6 +574,7 @@ export const ProcessDisplay = (ctx: CanvasRenderingContext2D,
     // Clear all our drawing and let the background show through again.
     ctx.clearRect(0, 0, width, height)
   }
+
   hiddenContext.imageSmoothingEnabled = false
   hiddenContext.fillStyle = "#000000"
   hiddenContext.fillRect(0, 0, 560, 384)

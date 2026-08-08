@@ -5,6 +5,8 @@
  * Uses ProDOS 2.4.3 as a base and appends disk images to it
  */
 
+import { unzipSync } from "fflate"
+
 export type ProDosFileKind = "seedling" | "sapling" | "tree"
 
 export type ProDosFileEntry = {
@@ -5334,12 +5336,35 @@ export const buildProDosHdv = async (
   let hdv = prodos243Base
   if (!hdv) {
     try {
-      const dosMasterBase = "disks/dosmaster18.po"
-      const response = await fetch(dosMasterBase)
-      if (!response.ok) {
-        throw new Error(`Failed to load required base image: ${dosMasterBase}`)
+      const baseImages = typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname)
+        ? ["disks/dosmaster18.zip", "disks/dosmaster18.po"]
+        : ["disks/dosmaster18.po", "disks/dosmaster18.zip"]
+      let lastError: unknown
+
+      for (const dosMasterBase of baseImages) {
+        try {
+          const response = await fetch(dosMasterBase)
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+          }
+          const data = new Uint8Array(await response.arrayBuffer())
+          if (dosMasterBase.endsWith(".zip")) {
+            const files = unzipSync(data)
+            const image = Object.entries(files).find(([name]) => name.toLowerCase().endsWith("dosmaster18.po"))?.[1]
+            if (!image) throw new Error("dosmaster18.po was not found in archive")
+            hdv = image
+          } else {
+            hdv = data
+          }
+          break
+        } catch (error) {
+          lastError = error
+        }
       }
-      hdv = new Uint8Array(await response.arrayBuffer())
+
+      if (!hdv) {
+        throw new Error(`Failed to load required base image: ${String(lastError)}`)
+      }
     } catch (e) {
       console.error("Failed to load dosmaster18.po base:", e)
       throw new Error("Could not load dosmaster18.po base disk")

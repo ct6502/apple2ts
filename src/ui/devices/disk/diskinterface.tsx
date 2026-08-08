@@ -6,10 +6,11 @@ import { useState } from "react"
 import Flyout from "../../flyout"
 import ImageWriter from "../printer/imagewriter"
 import { isMinimalTheme } from "../../ui_settings"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const DiskInterface = (props: DisplayProps) => {
+  const { t } = useTranslation()
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
-
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const isScreenNarrow = width < height
@@ -17,7 +18,7 @@ const DiskInterface = (props: DisplayProps) => {
   return (
     <Flyout
       icon={faHdd}
-      title="disk drives and devices"
+      title={t("disk.diskDrivesAndDevices")}
       isOpen={() => { return isFlyoutOpen }}
       onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
       position="bottom-left">

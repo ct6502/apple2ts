@@ -46,6 +46,9 @@ export enum MSG_WORKER {
   INSTRUCTIONS,
   SERIAL_CONFIG_CHANGE,
   CAPTURE_BOOT_STATE_RESPONSE,
+  VERA_FRAME,
+  VERA_PCM_WRITE,
+  VERA_PSG_WRITE,
 }
 
 export enum MSG_MAIN {
@@ -64,6 +67,7 @@ export enum MSG_MAIN {
   GET_MEMORY,
   GET_SAVE_STATE,
   GET_SAVE_STATE_SNAPSHOTS,
+  KEYBOARD_STATE,
   KEYPRESS,
   KEYRELEASE,
   MACHINE_NAME,
@@ -92,6 +96,8 @@ export enum MSG_MAIN {
   TRACING,
   TRACE_SETTINGS,
   CAPTURE_BOOT_STATE,
+  VERA_SLOT,
+  VIDEO7_OVERRIDE,
 }
 
 export enum COLOR_MODE {
@@ -230,7 +236,7 @@ export const convertAppleKey = (e: KeyboardEvent, lowercase: boolean,
       key = String.fromCharCode(key).toUpperCase().charCodeAt(0)
     }
   } else {
-    const keymap: { [key: string]: number } = {
+    const keymap: Record<string, number> = {
       Enter: 13,
       ArrowRight: 21,
       ArrowLeft: 8,

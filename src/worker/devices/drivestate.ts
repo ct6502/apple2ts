@@ -43,6 +43,7 @@ const initializeDriveState = () => {
 
 const driveState: DriveState[] = []
 const driveData: Array<Uint8Array> = []
+const largeDiskSnapshotThreshold = 32_000_000
 
 initializeDriveState()
 
@@ -112,8 +113,9 @@ export const passDriveData = () => {
 export const getDriveSaveState = (full: boolean): DriveSaveState => {
   const data: string[] = new Array(driveState.length).fill("")
   for (let i=0; i < driveState.length; i++) {
-    // Always save small disk images (< 32Mb), or if a full save was requested
-    if (full || driveData[i].length < 32000000) {
+    // Time-travel snapshots include media below the threshold;
+    // portable save states include all media.
+    if (full || driveData[i].length < largeDiskSnapshotThreshold) {
       data[i] = Buffer.from(driveData[i]).toString("base64")
     }
   }
@@ -130,6 +132,8 @@ export const getDriveSaveState = (full: boolean): DriveSaveState => {
 }
 
 export const restoreDriveSaveState = (newState: DriveSaveState) => {
+  const previousDriveState = driveState.map((state) => ({...state}))
+  const previousDriveData = [...driveData]
   passDriveSound(DRIVE.MOTOR_OFF)
   currentDrive = newState.currentDrive
   // If this is an old save state, we may need to adjust the current drive.
@@ -141,9 +145,15 @@ export const restoreDriveSaveState = (newState: DriveSaveState) => {
   for (let i=0; i < newState.driveState.length; i++) {
     // Make sure our drive had data.
     if (Object.keys(newState.driveState[i]).length > 0) {
-      driveState[dindex] = { ...newState.driveState[i] } as DriveState
       if (newState.driveData[i] !== "") {
+        driveState[dindex] = { ...newState.driveState[i] } as DriveState
         driveData[dindex] = new Uint8Array(Buffer.from(newState.driveData[i], "base64"))
+      } else if (previousDriveData[dindex].length >= largeDiskSnapshotThreshold) {
+        // Time-travel snapshots intentionally exclude large-disk data. Retain
+        // both the current data and its metadata; the historical metadata
+        // describes disk data that was not restored.
+        driveState[dindex] = previousDriveState[dindex]
+        driveData[dindex] = previousDriveData[dindex]
       }
     }
     // See if we had a second hard drive in our save state or not.
@@ -187,6 +197,12 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
       }
     }
   }
+  // A newly loaded floppy is the disk the user expects to boot next. Keep
+  // the worker's selected drive in sync; otherwise a second DemoZoo load can
+  // boot the previously selected floppy after the first program changed it.
+  if (!isHardDrive) {
+    currentDrive = index
+  }
   driveState[index] = initDriveState(index, drive, isHardDrive)
   driveState[index].filename = props.filename
   driveData[index] = decodeDiskData(driveState[index], props.diskData)
@@ -216,4 +232,3 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].writableFileHandle = props.writableFileHandle
   passDriveData()
 }
-

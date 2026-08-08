@@ -516,6 +516,10 @@ body.dark-mode .memtable-highlight {
   user-select: none;
 }
 
+.memory-map td:nth-child(2) {
+  min-width: var(--memory-map-label-width);
+}
+
 body.dark-mode .memory-map td {
   border-color: var(--text-color-dark);
 }

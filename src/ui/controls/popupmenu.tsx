@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 type PopupMenuProps = {
@@ -12,32 +13,32 @@ type PopupMenuProps = {
 const PopupMenu = (props: PopupMenuProps) => {
 
   const isTouchDevice = "ontouchstart" in document.documentElement
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [posStyle, setPosStyle] = useState<{ left: number, top: number } | undefined>(undefined)
 
-  const getPopupLocationStyle = () => {
-    if (!props.location) {
-      return {}
+  useEffect(() => {
+    if (!props.location || !menuRef.current) {
+      setPosStyle(undefined)
+      return
     }
-
+    const rect = menuRef.current.getBoundingClientRect()
     const [x, y] = props.location
-    let w = 0
-    let h = 0
-
-    props.menuItems[props.menuIndex || 0].filter(value => value.isVisible == undefined || value.isVisible()).map((menuItem) => {
-      if (menuItem.label == "-") {
-        w = Math.max(w, 9)
-        h += 12
-      } else {
-        w = Math.max(w, menuItem.label.length * 10)
-        h += 26
-      }
+    // Account for the browser window's position on the physical screen.
+    // window.screenY + chrome height gives the top of the viewport in screen coords.
+    const chromeHeight = window.outerHeight - window.innerHeight
+    const maxRight = Math.min(window.innerWidth, window.screen.availWidth - window.screenX)
+    const maxBottom = Math.min(window.innerHeight, window.screen.availHeight - window.screenY - chromeHeight)
+    setPosStyle({
+      left: Math.max(0, Math.min(x, maxRight - rect.width)),
+      top: Math.max(0, Math.min(y, maxBottom - rect.height)),
     })
-    h += 22
+  }, [props.location])
 
-    return {
-      left: Math.min(x, window.innerWidth - w),
-      top: Math.min(y, window.innerHeight - h),
-      ...props.style
+  const isItemDisabled = (menuItem: PopupMenuItem): boolean => {
+    if (typeof menuItem.isDisabled === "function") {
+      return menuItem.isDisabled()
     }
+    return !!menuItem.isDisabled
   }
 
   return (
@@ -45,9 +46,10 @@ const PopupMenu = (props: PopupMenuProps) => {
       ? <div className="modal-overlay"
         style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
         onClick={props.onClose}>
-        <div className="floating-dialog flex-column droplist-option"
+        <div ref={menuRef}
+          className="floating-dialog flex-column droplist-option"
           onClick={(e) => e.stopPropagation()}
-          style={getPopupLocationStyle()}>
+          style={{ ...posStyle, visibility: posStyle ? "visible" : "hidden", ...props.style }}>
           {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
             (menuItem.isVisible == undefined || menuItem.isVisible()) &&
             (menuItem.label == "-"
@@ -55,13 +57,38 @@ const PopupMenu = (props: PopupMenuProps) => {
                 key={`popup-${menuIndex}-${menuIndex}`}
                 style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
               </div>
+              : menuItem.isHeading
+                ? <div
+                  key={`popup-${menuIndex}-${menuIndex}`}
+                  style={{
+                    cursor: "default",
+                    fontWeight: 800,
+                    padding: "5px 8px 2px",
+                  }}>
+                  {menuItem.label}
+                </div>
               : <div
                 key={`popup-${menuIndex}-${menuIndex}`}
-                className="droplist-option" style={{ padding: "5px" }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#ccc"}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = "inherit"}
+                aria-disabled={isItemDisabled(menuItem) || undefined}
+                className="droplist-option"
+                style={{
+                  cursor: isItemDisabled(menuItem) ? "default" : "pointer",
+                  opacity: isItemDisabled(menuItem) ? 0.5 : 1,
+                  padding: "5px",
+                  pointerEvents: isItemDisabled(menuItem) ? "none" : "auto",
+                }}
+                onMouseOver={(e) => {
+                  if (!isItemDisabled(menuItem))
+                    e.currentTarget.style.backgroundColor = "#ccc"
+                }}
+                onMouseOut={(e) => {
+                  if (!isItemDisabled(menuItem))
+                    e.currentTarget.style.backgroundColor = "inherit"
+                }}
                 onClick={async (e) => {
                   e.stopPropagation()
+                  if (isItemDisabled(menuItem))
+                    return
                   if (menuItem.onClick) {
                     await menuItem.onClick()
                   }

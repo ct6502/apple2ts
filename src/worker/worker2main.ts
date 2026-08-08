@@ -1,8 +1,10 @@
 import { doSetRunMode, doSetSpeedMode,
-  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches, 
+  doStepInto, doStepOver, doStepOut, doSetBinaryBlock, doSetIsDebugging, doSetState6502, doTakeSnapshot, doSetPastedText, forceSoftSwitches,
+  forceVideo7Override,
   doSetMemory,
   doSetMachineName,
   doSetRamWorks,
+  doSetVeraSlot,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
@@ -11,7 +13,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetCyclesToRun,
   startCaptureBootState} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
-import { apple2KeyRelease, sendTextToEmulator } from "./devices/keyboard"
+import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
 import { DRIVE, MSG_MAIN, MSG_WORKER, RUN_MODE } from "../common/utility"
 import { doSetBasicStep, doSetBreakpoints } from "./cpu6502"
@@ -43,6 +45,22 @@ const doPostMessage = (msg: MSG_WORKER, payload: MessagePayload) => {
       console.error(`worker2main: doPostMessage error: ${error}`)
     }
   }
+}
+
+export const passVeraFramebuffer = (fb: Uint8ClampedArray<ArrayBuffer>, dcVideo: number) => {
+  if (dcVideo !== 0) {
+    doPostMessage(MSG_WORKER.VERA_FRAME, { fb, dcVideo })
+  } else {
+    doPostMessage(MSG_WORKER.VERA_FRAME, { dcVideo })
+  }
+}
+
+export const passVeraPsgWrite = (event: VeraPsgWrite) => {
+  doPostMessage(MSG_WORKER.VERA_PSG_WRITE, event)
+}
+
+export const passVeraPcmWrite = (event: VeraPcmWrite) => {
+  doPostMessage(MSG_WORKER.VERA_PCM_WRITE, event)
 }
 
 export const passMachineState = (state: MachineState) => {
@@ -182,6 +200,9 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.RESTORE_STATE:
         doRestoreSaveState(e.data.payload as EmulatorSaveState, true)
         break
+      case MSG_MAIN.KEYBOARD_STATE:
+        setKeyboardState(e.data.payload as KeyboardState)
+        break
       case MSG_MAIN.KEYPRESS:
         sendTextToEmulator(e.data.payload as number)
         break
@@ -247,11 +268,17 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.MACHINE_NAME:
         doSetMachineName(e.data.payload as MACHINE_NAME)
         break
+      case MSG_MAIN.VERA_SLOT:
+        doSetVeraSlot(e.data.payload as VERA_SLOT)
+        break
       case MSG_MAIN.REVERSE_YAXIS:
         setReverseYAxis(e.data.payload)
         break
       case MSG_MAIN.SOFTSWITCHES:
         forceSoftSwitches(e.data.payload)
+        break
+      case MSG_MAIN.VIDEO7_OVERRIDE:
+        forceVideo7Override(e.data.payload as Video7Override)
         break
       case MSG_MAIN.SIRIUS_JOYPORT:
         setSiriusJoyport(e.data.payload)

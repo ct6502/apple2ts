@@ -1,7 +1,35 @@
 // import { handleGetStackString } from "../main2worker";
 
 import { RUN_MODE } from "../../../common/utility"
-import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches, passSetSoftSwitches } from "../../main2worker"
+import { handleGetC800Slot, handleGetRunMode, handleGetSoftSwitches,
+  passSetSoftSwitches, passSetVideo7Override } from "../../main2worker"
+import type { CSSProperties } from "react"
+
+const MEMORY_MAP_LABELS = {
+  zeroPage: "Zero Page",
+  stack: "6502 Stack",
+  text: "Text",
+  hgr: "HGR",
+  internalRom: "Internal ROM",
+  slotRom: "Slot ROM",
+  rom: "ROM",
+  readWriteRam: "R/W RAM",
+  readRam: "Read RAM",
+  readRomWriteRam: "RdROM/WrRAM",
+  bank1: "Bank 1",
+  bank2: "Bank 2",
+} as const
+
+const formatSlotLabel = (slot: number) => `Slot ${slot}`
+
+const memoryMapLabelWidth = Math.max(
+  ...Object.values(MEMORY_MAP_LABELS).map(label => label.length),
+  formatSlotLabel(7).length,
+)
+
+const memoryMapStyle = {
+  "--memory-map-label-width": `${memoryMapLabelWidth}ch`,
+} as CSSProperties
 
 const CheckedBox = (props: {name: string, runMode: number, checked: boolean, func: () => void}) => {
   return <span style={{display: "inline-flex", userSelect: "none"}}>
@@ -21,17 +49,19 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
   const switches = handleGetSoftSwitches()
   if (Object.keys(switches).length <= 1) return (<div></div>)
   const altZP = switches.ALTZP
-  let bankSwitchedRam = "ROM"
-  let bankD000 = "ROM\n "
+  let bankSwitchedRam: string = MEMORY_MAP_LABELS.rom
+  let bankD000 = `${MEMORY_MAP_LABELS.rom}\n `
   let classBSR = "mem-rom"
   if (switches.BSRREADRAM || switches.BSR_WRITE) {
     classBSR = altZP ? "mem-aux" : ""
     if (switches.BSRREADRAM && switches.BSR_WRITE) {
-      bankSwitchedRam = "R/W RAM"
+      bankSwitchedRam = MEMORY_MAP_LABELS.readWriteRam
     } else {
-      bankSwitchedRam = switches.BSRREADRAM ? "Read RAM" : "Rd ROM/Wr RAM"
+      bankSwitchedRam = switches.BSRREADRAM ?
+        MEMORY_MAP_LABELS.readRam : MEMORY_MAP_LABELS.readRomWriteRam
     }
-    bankD000 = bankSwitchedRam + "\nBank " + (switches.BSRBANK2 ? "2" : "1")
+    bankD000 = bankSwitchedRam + "\n" +
+      (switches.BSRBANK2 ? MEMORY_MAP_LABELS.bank2 : MEMORY_MAP_LABELS.bank1)
   }
   const auxRead = switches.RAMRD
   const auxWrite = switches.RAMWRT
@@ -52,12 +82,20 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
   // 255 is our flag for internal C8ROM
   const c800Slot = internalCxRom ? 255 : handleGetC800Slot()
   const c800SlotText = (c800Slot < 255) ?
-    (c800Slot > 0 ? `Slot ${c800Slot}` : "Slot ROM") : "Internal ROM"
+    (c800Slot > 0 ? formatSlotLabel(c800Slot) : MEMORY_MAP_LABELS.slotRom) :
+    MEMORY_MAP_LABELS.internalRom
   const runMode = handleGetRunMode()
 
   const setSoftSwitches = (switches: Array<number>) => {
     if (handleGetRunMode() === RUN_MODE.PAUSED) {
       passSetSoftSwitches(switches)
+      props.updateDisplay()
+    }
+  }
+
+  const setVideo7Override = (mode: Video7Mode, enabled: boolean) => {
+    if (handleGetRunMode() === RUN_MODE.PAUSED) {
+      passSetVideo7Override(mode, enabled)
       props.updateDisplay()
     }
   }
@@ -101,34 +139,34 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
     <div>
       <div className="bigger-font" style={{ marginBottom: "6px" }}>Memory Map</div>
       <div className="flex-row-gap">
-      <table className="memory-map mono-text">
+      <table className="memory-map mono-text" style={memoryMapStyle}>
         <tbody>
           <tr>
-            <td>$0000</td><td className={altZP ? "mem-aux" : ""}>Zero Page</td>
+            <td>$0000</td><td className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.zeroPage}</td>
           </tr>
           <tr>
-            <td>$0100</td><td className={altZP ? "mem-aux" : ""}>6502 Stack</td>
+            <td>$0100</td><td className={altZP ? "mem-aux" : ""}>{MEMORY_MAP_LABELS.stack}</td>
           </tr>
           <tr>
             <td>$0200</td><td className={isAux ? "mem-aux" : ""}></td>
           </tr>
           <tr>
-            <td>$0400</td><td className={textIsAux ? "mem-aux" : ""}>{videoIsPage2 ? "" : "Text"}</td>
+            <td>$0400</td><td className={textIsAux ? "mem-aux" : ""}>{videoIsPage2 ? "" : MEMORY_MAP_LABELS.text}</td>
           </tr>
           <tr>
-            <td>$0800</td><td className={isAux ? "mem-aux" : ""}>{videoIsPage2 ? "Text" : ""}</td>
+            <td>$0800</td><td className={isAux ? "mem-aux" : ""}>{videoIsPage2 ? MEMORY_MAP_LABELS.text : ""}</td>
           </tr>
           <tr>
-            <td>$2000</td><td className={hgrIsAux ? "mem-aux" : ""}>{videoIsPage2 ? "" : "HGR"}</td>
+            <td>$2000</td><td className={hgrIsAux ? "mem-aux" : ""}>{videoIsPage2 ? "" : MEMORY_MAP_LABELS.hgr}</td>
           </tr>
           <tr>
-            <td>$4000</td><td className={isAux ? "mem-aux" : ""}>{videoIsPage2 ? "HGR" : ""}</td>
+            <td>$4000</td><td className={isAux ? "mem-aux" : ""}>{videoIsPage2 ? MEMORY_MAP_LABELS.hgr : ""}</td>
           </tr>
           <tr>
-            <td>$C1-$C7</td><td className={internalCxRom ? "mem-rom" : ""}>{internalCxRom ? "Internal ROM" : "Slot ROM"}</td>
+            <td>$C1-$C7</td><td className={internalCxRom ? "mem-rom" : ""}>{internalCxRom ? MEMORY_MAP_LABELS.internalRom : MEMORY_MAP_LABELS.slotRom}</td>
           </tr>
           <tr>
-            <td>$C300</td><td className={internalC3Rom ? "mem-rom" : ""}>{internalC3Rom ? "Internal ROM" : "Slot ROM"}</td>
+            <td>$C300</td><td className={internalC3Rom ? "mem-rom" : ""}>{internalC3Rom ? MEMORY_MAP_LABELS.internalRom : MEMORY_MAP_LABELS.slotRom}</td>
           </tr>
           <tr>
             <td>$C800</td><td className={(c800Slot === 255) ? "mem-rom" : ""}>{c800SlotText}</td>
@@ -163,11 +201,11 @@ const MemoryMap = (props: {updateDisplay: UpdateDisplay}) => {
         <CheckedBox name="Dbl Hires" runMode={runMode} checked={switches.DHIRES}
           func={() => setSoftSwitches([switches.DHIRES ? 0xC05F : 0xC05E])} />
         <CheckedBox name="V7 160x" runMode={runMode} checked={switches.VIDEO7_160}
-          func={() => setSoftSwitches([switches.VIDEO7_160 ? 0xC078 : 0xC079])} />
+          func={() => setVideo7Override("160x192", !switches.VIDEO7_160)} />
         <CheckedBox name="V7 Mono" runMode={runMode} checked={switches.VIDEO7_MONO}
-          func={() => setSoftSwitches([switches.VIDEO7_MONO ? 0xC07A : 0xC07B])} />
+          func={() => setVideo7Override("monochrome", !switches.VIDEO7_MONO)} />
         <CheckedBox name="V7 Mixed" runMode={runMode} checked={switches.VIDEO7_MIXED}
-          func={() => setSoftSwitches([switches.VIDEO7_MIXED ? 0xC07C : 0xC07D])} />
+          func={() => setVideo7Override("mixed", !switches.VIDEO7_MIXED)} />
         <CheckedBox name="Cxxx ROM" runMode={runMode} checked={switches.INTCXROM}
           func={() => setSoftSwitches([switches.INTCXROM ? 0xC006 : 0xC007])} />
         <CheckedBox name="C300 ROM" runMode={runMode} checked={switches.SLOTC3ROM}

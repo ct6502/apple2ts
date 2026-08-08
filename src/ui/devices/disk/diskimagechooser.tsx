@@ -2,8 +2,10 @@ const floppyDisks = window.assetRegistry.diskicons
 import DiskImageDialog from "./diskimagedialog"
 import { handleSetDiskFromFile } from "./driveprops"
 import { useState } from "react"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 export const DiskImageChooser = (props: DisplayProps) => {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   const handleClickOpen = () => {
@@ -22,7 +24,7 @@ export const DiskImageChooser = (props: DisplayProps) => {
       <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
         src={floppyDisks} alt="disks"
         id="tour-disk-images"
-        title="Choose disk image"
+        title={t("collection.chooseDiskImage")}
         onClick={handleClickOpen} />
       {open &&
         <DiskImageDialog

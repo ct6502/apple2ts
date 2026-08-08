@@ -13,6 +13,34 @@ const setKeyStrobe = (key: number) => {
   memSetC000(0xC010, (key & 0b11111111) | 128, 16)
 }
 
+let keyboardRepeatKey = 0
+let nextKeyboardRepeatTime = 0
+const Apple2eRepeatDelayMs = 600
+const Apple2eRepeatRateMs = 75
+
+export const setKeyboardState = (state: KeyboardState) => {
+  if (!state.isDown || state.key <= 0) {
+    keyboardRepeatKey = 0
+    apple2KeyRelease()
+    return
+  }
+  keyboardRepeatKey = handleKeyMapping(String.fromCharCode(state.key)).charCodeAt(0)
+  setKeyStrobe(keyboardRepeatKey)
+  if (!state.repeat) {
+    keyboardRepeatKey = 0
+    return
+  }
+  nextKeyboardRepeatTime = performance.now() + Apple2eRepeatDelayMs
+}
+
+export const pollKeyboardRepeat = () => {
+  if (!keyboardRepeatKey) return
+  const now = performance.now()
+  if (now < nextKeyboardRepeatTime) return
+  setKeyStrobe(keyboardRepeatKey)
+  nextKeyboardRepeatTime = now + Apple2eRepeatRateMs
+}
+
 export const clearKeyStrobe = () => {
   // Here, we only clear the high bit for $C00x, not $C01x (AKD, any-key-down).
   // We will clear AKD when the key is released (below).

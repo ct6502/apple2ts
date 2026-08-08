@@ -5,23 +5,8 @@ import * as SoftSynth from "./softsynth"
 let useSoftSynth = true
 const DEBUG = false
 
-const connect = () => {
-  if (navigator.requestMIDIAccess)
-  {
-    console.log("Midi Connect")
-    navigator.requestMIDIAccess({ sysex: true })
-    .then(
-      (midi) => midiReady(midi),
-      (err) => console.log("requestMIDIAccess fails", err))
-  }
-  else
-    console.log("WebMidi not supported") 
-}
-
-// execute on load
-connect()
-
-let midiAccess: MIDIAccess
+let midiAccess: MIDIAccess | undefined
+let midiAccessRequest: Promise<boolean> | undefined
 
 const midiReady = (midi: MIDIAccess) => {
   // Also react to device changes.
@@ -32,20 +17,64 @@ const midiReady = (midi: MIDIAccess) => {
 
 let midiInIndex  = -1
 let midiOutIndex = -1
-export let midiInDevices: MIDIInput[]
-export let midiOutDevices: MIDIOutput[]
+export let midiInDevices: MIDIInput[] = []
+export let midiOutDevices: MIDIOutput[] = []
+
+export const isWebMidiSupported = () => {
+  return typeof navigator !== "undefined" && !!navigator.requestMIDIAccess
+}
+
+export const hasWebMidiAccess = () => {
+  return midiAccess !== undefined
+}
+
+export const requestWebMidiAccess = async (): Promise<boolean> => {
+  if (midiAccess)
+    return true
+
+  if (!isWebMidiSupported()) {
+    console.log("Web MIDI not supported")
+    return false
+  }
+
+  if (midiAccessRequest)
+    return midiAccessRequest
+
+  console.log("Requesting MIDI access")
+  midiAccessRequest = navigator.requestMIDIAccess({ sysex: true })
+    .then((midi) => {
+      midiReady(midi)
+      return true
+    })
+    .catch((err) => {
+      console.log("requestMIDIAccess fails", err)
+      return false
+    })
+
+  try {
+    return await midiAccessRequest
+  } finally {
+    midiAccessRequest = undefined
+  }
+}
 
 export const getMidiOutIndex = (): number => {
   return midiOutIndex
 }
 
 export const setMidiOutIndex = (index: number) => {
+  if (index < -1 || index >= midiOutDevices.length) {
+    console.warn(`Cannot select MIDI output index ${index}; selection unchanged.`)
+    return false
+  }
+
   if (midiOutIndex != index)
   {
     midiOutIndex = index
     if (midiOutIndex != -1)
-      console.log("Selecting MidiOut Device: " + midiOutDevices[midiOutIndex].name)
+      console.log("Selecting MIDI output: " + midiOutDevices[midiOutIndex].name)
   }
+  return true
 }
 
 export const getMidiInIndex = (): number => {
@@ -57,16 +86,32 @@ export const setMidiInIndex = (index: number) => {
   {
     midiInIndex = index
     console.log("Selecting MidiIn Device: " + midiInDevices[midiInIndex].name)
-    //device.addEventListener('midimessage', midiMessageReceived);
+    const device = midiInDevices[midiInIndex]
+    device.addEventListener("midimessage", midiMessageReceived)
   }
 }
 
 const initDevices = () => {
 
-  const midi: MIDIAccess = midiAccess
+  const midi = midiAccess
 
   if (!midi)
     return
+
+  const selectedOutput = midiOutDevices[midiOutIndex]
+  const selectedOutputId = selectedOutput?.id
+  const fallbackToBuiltInSynth = () => {
+    midiOutIndex = -1
+    if (!useSoftSynth) {
+      const outputName = selectedOutput?.name || "Unknown MIDI Output"
+      if (SoftSynth.isSoftSynthAvailable()) {
+        console.warn(`MIDI output "${outputName}" is no longer available; using the built-in synthesizer.`)
+        enableSoftSynth()
+      } else {
+        console.warn(`MIDI output "${outputName}" is no longer available; no MIDI output is selected.`)
+      }
+    }
+  }
 
   // Reset.
   midiInDevices = []
@@ -74,52 +119,66 @@ const initDevices = () => {
 
   const outputs = midi.outputs.values()
   for (let output = outputs.next(); output && !output.done; output = outputs.next()) {
-    //console.log("Midi Out: " + output.value.name);
-    midiOutDevices.push(output.value)
+    if (output.value.state !== "disconnected")
+      midiOutDevices.push(output.value)
   }
 
   if (midiOutDevices.length)
   {
-    // pick last one
-    if (midiOutIndex != midiOutDevices.length-1)
+    if (selectedOutputId !== undefined)
     {
-      midiOutIndex = midiOutDevices.length-1
-      const device = midiOutDevices[midiOutIndex]
-      console.log("Selecting MidiOutDevice: " + device.name)
+      midiOutIndex = midiOutDevices.findIndex((device) => device.id === selectedOutputId)
+      if (midiOutIndex === -1)
+        fallbackToBuiltInSynth()
     }
+    else
+    {
+      midiOutIndex = 0
+      const device = midiOutDevices[midiOutIndex]
+      console.log("Selecting MIDI output: " + device.name)
+    }
+  }
+  else
+  {
+    fallbackToBuiltInSynth()
   }
   
   const inputs = midi.inputs.values()
   for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
-    //console.log("Midi In: " + input.value.name);
+    console.log("Midi In: " + input.value.name)
     midiInDevices.push(input.value)
   }
 
   // don't listen on midi-through if we are sending on midi-through
-  if (midiInDevices.length > 1)
+  // changed >1 to >0 in order to enable Midi IN
+  if (midiInDevices.length > 0)
   {
     // pick last one
     if (midiInIndex != midiInDevices.length-1)
     {
       midiInIndex = midiInDevices.length-1
-      //const device = midiInDevices[midiInIndex];
-      //device.addEventListener('midimessage', midiMessageReceived);
-      //console.log("Selecting MidiInDevice: " + device.name);
+      const device = midiInDevices[midiInIndex]
+      device.addEventListener("midimessage", midiMessageReceived)
+      console.log("Selecting MidiInDevice: " + device.name)
     }
   }
   else
     midiInIndex = -1
 }
 
-//const midiMessageReceived = (event: MIDIMessageEvent) => {
-//  const data = new Uint8Array(event.data);
-//  let txt = "Recv: [" + data[0].toString(16);
-//  for(let i=1;i<data.length;i++)
-//    txt += (" " + data[i].toString(16));
-//  txt += "]";
-//  console.log(txt);
-//  passRxMidiData(data);
-//}
+const midiMessageReceived = (event: MIDIMessageEvent) => {
+  if (!event.data) return
+  const data = new Uint8Array(event.data)
+  if (DEBUG)
+  {
+    let txt = "Recv: [" + data[0].toString(16)
+    for(let i=1;i<data.length;i++)
+      txt += (" " + data[i].toString(16))
+    txt += "]"
+    console.log(txt)
+  }
+  passRxMidiData(data)
+}
 
 // probably not necessary
 const doActiveSense = false
@@ -130,7 +189,7 @@ const activeSense = () => {
 }
 
 const parseAndSendMsg = (msg: number[]) => {
-  // Determine the output device (hardware MIDI or software synth)
+  // Determine the output device (Web MIDI or built-in synth)
   const device = (useSoftSynth || midiOutIndex === -1) 
     ? SoftSynth as unknown as MIDIOutput  // Software synth has compatible send() API
     : midiOutDevices[midiOutIndex]
@@ -166,8 +225,12 @@ const msg: number[] = []
 const rtMsg: number[] = []
 let state : State = State.COMMAND
 
+// initial value is used to detect running status error when status byte not received yet
+const noStsSeenYet: number = 0xFF
+let prevStatus: number = noStsSeenYet
+
 export const receiveMidiData = (data: Uint8Array) => {
-  // Initialize software synth if needed and no hardware MIDI available
+  // Fall back to the built-in synth if no external output is selected.
   if (midiOutIndex === -1 && !useSoftSynth && SoftSynth.isSoftSynthAvailable()) {
     console.log("No MIDI interface detected. Using built-in software synthesizer.")
     SoftSynth.initSoftSynth()
@@ -187,7 +250,8 @@ export const receiveMidiData = (data: Uint8Array) => {
   for(let i=0;i<data.length;i++)
   {
     const byte = data[i]
-    msg.push(byte)
+
+    //msg.push moved to state machine logic below in order to handle Running Status
 
     switch(state)
     {
@@ -199,7 +263,16 @@ export const receiveMidiData = (data: Uint8Array) => {
           msg.pop()
         }
         else
-          state = State.ARGS1
+          if ((byte & 0x80) != 0x80)
+          {
+            state = State.ARGS1
+            if (prevStatus != noStsSeenYet)
+              msg.push(byte)
+          } else
+          {
+            state = State.COMMAND
+            msg.length = 0 // out of alignment before current message complete
+          }
         break
 
       case State.ARGS1:
@@ -210,59 +283,92 @@ export const receiveMidiData = (data: Uint8Array) => {
           msg.pop()
         }
         else
+        {
           state = State.COMMAND
+          if (prevStatus != noStsSeenYet)
+            msg.push(byte)
+        }
         break
 
       case State.SYSEX:
+        if (DEBUG)
+          console.log("MIDI: SYSEX: ", byte.toString(16))
         if (byte === 0xF7)
           state = State.COMMAND
+        msg.push(byte)
         break
         
       case State.COMMAND:
-        switch(byte & 0xF0)
+        if ((byte & 0x80) != 0x80) // handle running status - reuse previous status byte
         {
-          case 0x80:
-          case 0x90:
-          case 0xA0:
-          case 0xB0:
-          case 0xE0:
-            state = State.ARGS2
-            break
-          
-          case 0xC0:
-          case 0xD0:
-            state = State.ARGS1
-            break
-
-          case 0xF0:
-            switch(byte)
+          if (prevStatus != noStsSeenYet)
+          {
+            msg.push(prevStatus)
+            msg.push(byte)
+            if (((prevStatus & 0xF0) == 0xC0) || ((prevStatus & 0xF0) == 0xD0))
             {
-              case 0xF0:
-                state = State.SYSEX
-                break
-              case 0xF2:
-                state = State.ARGS2
-                break
-              case 0xF1:
-              case 0xF3:
-                state = State.ARGS1
-                break
-              default:
-                // remain in State.COMMAND, 1 byte arg
-                break
+              state = State.COMMAND   // messages Cx and Dx have one data byte
             }
-            break
-
-          default:
-            // out of alignment / bad data?
-            // stay in command state
-            console.log("MIDI: byte unexpected: ", byte.toString(16))
-            msg.length = 0
-            break
+            else
+            {
+              state = State.ARGS1 // message has 2 data bytes
+            }
+          }
         }
-        break
-    }
+        else
+        {
+          switch(byte & 0xF0)
+          {
+            case 0x80:
+            case 0x90:
+            case 0xA0:
+            case 0xB0:
+            case 0xE0:
+              state = State.ARGS2
+              msg.push(byte)
+              prevStatus = byte
+              break
+            
+            case 0xC0:
+            case 0xD0:
+              state = State.ARGS1
+              msg.push(byte)
+              prevStatus = byte
+              break
 
+            case 0xF0:
+              switch(byte)
+              {
+                case 0xF0:
+                  state = State.SYSEX
+                  if (DEBUG)
+                    console.log("MIDI: SYSEX: ", byte.toString(16))
+                  msg.push(byte)
+                  break
+                case 0xF2:
+                  state = State.ARGS2
+                  break
+                case 0xF1:
+                case 0xF3:
+                  state = State.ARGS1
+                  break
+                default:
+                  // remain in State.COMMAND, 1 byte arg
+                  break
+              }
+              break
+
+            default:
+              // out of alignment / bad data?
+              // stay in command state
+              console.log("MIDI: byte unexpected: ", byte.toString(16))
+              state = State.COMMAND
+              msg.length = 0
+              break
+          }
+          break
+        }
+    }
     // always send interleaved realtime messages
     if (rtMsg.length > 0)
     {
@@ -309,4 +415,3 @@ export const isSoftSynthAvailable = () => {
 export const setSoftSynthMasterVolume = (volume: number) => {
   SoftSynth.setMasterVolume(volume)
 }
-

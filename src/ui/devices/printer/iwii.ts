@@ -11,6 +11,7 @@ export const receivePrinterData = (data: Uint8Array) => {
   if (isOutput && doSetPrinting) doSetPrinting()
 }
 
+import { getPreferencePageLength, setPreferencePageLength } from "../../localstorage"
 import { Font,
          DraftFont,
          CspFont,
@@ -24,6 +25,7 @@ export interface Printer {
   shutdown(): void;
   reset(): void;
   localReset(): void;
+  setPageLength(length: number): void;
 
   save() : void;
   load() : void;
@@ -38,11 +40,45 @@ export interface Printer {
   currentData: Uint8Array;
   dataLength: number;
   hasData(): boolean;
+  hasRenderedData(): boolean;
   reprint(): void;
   getPages(): string[];
 }
 
 const BUFFER_CHUNK_SIZE = 16384 // 16K
+
+let _canvas: HTMLCanvasElement
+let _ctx: CanvasRenderingContext2D
+let _dbg = false
+let _lfSpacing = 24 // default 6 "lines" per inch
+let _nlfSpacing = 0
+let _autoCRonLF = false
+let _swa = 0x50
+let _swb = 0x24
+let _autoLFonCR = false
+let _autoLFonFull = false
+let _language = 0  // "american"
+let _softSelect = false
+let _perfSkip = false
+let _ignoreBit8 = 0x7f
+let _gfxchars = 0
+const _tbm = 0 //10;
+const _lrm = 0 //40;  // 1/4" margins
+let _lmargin = _lrm
+let _rmargin = 0
+let _tmargin = _tbm
+const _dpih = 144
+let _bmargin = getPreferencePageLength() * _dpih
+const _paperDPI = 180
+const _scaleFactor = 4 // resolution multiplier for sharper output
+let _dpi = _paperDPI
+let _tof = _tmargin
+const _lm = _lmargin
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _pages: any[] = []
+let _renders = 0
+let _px = _lm
+let _py = _tof
 
 export const ImageWriterII : Printer = {
   startup: (canvas) => { return initcanvas(canvas) },
@@ -51,6 +87,11 @@ export const ImageWriterII : Printer = {
     this.localReset()
     this.currentData = new Uint8Array(BUFFER_CHUNK_SIZE)
     this.dataLength = 0
+  },
+
+  setPageLength: function(length: number) {
+    _bmargin = length * _dpih
+    setPreferencePageLength(length)
   },
 
   localReset: function() {
@@ -91,6 +132,7 @@ export const ImageWriterII : Printer = {
   dataLength: 0,
 
   hasData: function () { return this.dataLength > 0 },
+  hasRenderedData: function () { return _renders > 0 },
 
   reprint: function () {
     _dbg = true
@@ -150,7 +192,7 @@ export const ImageWriterII : Printer = {
     let html = "<html><head>"
     html += "<style> @page { size: auto;  margin: 0mm; } </style>"
     html += "</head><body style='margin:0;padding:0;'>"
-    const divStyle = "position:relative;width:8.5in;height:11in;page-break-after:always;"
+    const divStyle = `position:relative;width:8.5in;height:${_bmargin / _dpih}in;page-break-after:always;`
     const imgStyle = "position:absolute;margin:auto;left:0;right:0;top:0;bottom:0;width:94%;height:94%;"  
     // add all previous pages
     for(let i=0;i<_pages.length;i++)
@@ -244,39 +286,6 @@ const CustomFont : Font = {
   data: CustomFontData,
   table: CustomFontTable,
 }
-
-let _canvas: HTMLCanvasElement
-let _ctx: CanvasRenderingContext2D
-let _dbg = false
-let _lfSpacing = 24 // default 6 "lines" per inch
-let _nlfSpacing = 0
-let _autoCRonLF = false
-let _swa = 0x50
-let _swb = 0x24
-let _autoLFonCR = false
-let _autoLFonFull = false
-let _language = 0  // "american"
-let _softSelect = false
-let _perfSkip = false
-let _ignoreBit8 = 0x7f
-let _gfxchars = 0
-const _tbm = 0 //10;
-const _lrm = 0 //40;  // 1/4" margins
-let _lmargin = _lrm
-let _rmargin = 0
-let _tmargin = _tbm
-let _bmargin = 0
-const _paperDPI = 180
-const _dpih = 144
-const _scaleFactor = 4 // resolution multiplier for sharper output
-let _dpi = _paperDPI
-let _tof = _tmargin
-const _lm = _lmargin
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _pages: any[] = []
-let _renders = 0
-let _px = _lm
-let _py = _tof
  
 let command: Array<string> = []
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -688,9 +697,9 @@ function setleftmargin(column:number)
   dbg("lmargin: " + _lmargin)
 }
 
-function setpagelength(offset:number)
+function setpagelength(length: number)
 {
-  _bmargin = offset / _dpih
+  _bmargin = length / _dpih
   dbg("pagelength: " + _bmargin)
 }
 
@@ -1159,7 +1168,8 @@ function output(ch: string)
 // reset defaults
 function reset()
 {
-  resizeCanvas(_paperDPI*8, _dpih*11)
+  _bmargin = getPreferencePageLength() * _dpih
+  resizeCanvas(_paperDPI * 8, _bmargin)
 
   _lfSpacing = 24
   _lmargin = 0

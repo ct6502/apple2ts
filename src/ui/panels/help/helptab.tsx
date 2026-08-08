@@ -1,36 +1,66 @@
-import React, { } from "react"
+import React from "react"
 import "./helppanel.css"
-import { defaultHelpText } from "./defaulthelptext"
 import { UI_THEME } from "../../../common/utility"
 import { isMinimalTheme } from "../../ui_settings"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 type HelpPanelProps = {
   helptext: string,
   theme: UI_THEME,
 }
 
-//const defaultHelpTextCrc = crc32(new TextEncoder().encode(defaultHelpText))
-
-// Use the React.memo() function to optimize the HelpPanel component.
-// It was re-rendering on every machine state update, which was ridiculous.
-// Now it only re-renders when the help text changes.
 const HelpTab = React.memo((props: HelpPanelProps) => {
-  //  const [setHelpTextCrc] = useState(defaultHelpTextCrc)
-
+  const { t } = useTranslation()
   const paperheight = window.innerHeight ? window.innerHeight - 170 : (window.outerHeight - 170)
-  const helpText = (props.helptext.length > 1 && props.helptext !== "<Default>") ? props.helptext : defaultHelpText
+
+  // If helpText is empty or default, use our translated default help text
+  let helpText = props.helptext
+  if (!helpText || helpText.length <= 1 || helpText === "<Default>" || helpText.includes("Welcome to Apple2TS")) {
+    const isMac = navigator.platform.startsWith("Mac")
+    const keyMod = isMac ? "O~" : "Alt+"
+    const arrowMod = isMac ? "O~" : "Ctrl+"
+    const isTouchDevice = "ontouchstart" in document.documentElement
+
+    let content = ""
+    if (isTouchDevice) {
+      content = `
+<b>${t("help.mobileInstructions")}</b>
+${t("help.tapScreen")}
+${t("help.arrowKeys")}
+${t("help.ctrlKey")}
+${t("help.ctrlLock")}
+${t("help.appleKeys")}
+`
+    } else {
+      const shortcuts = t("help.shortcutsTable")
+        .replace(/{{keyMod}}/g, keyMod)
+        .replace(/{{arrowMod}}/g, arrowMod)
+
+      content = `<b>${t("help.keyboardShortcuts")}</b>
+${shortcuts}
+`
+    }
+
+    helpText = `${t("help.title")} - ${t("help.subtitle")}
+(c) ${new Date().getFullYear()} Chris Torrence and <a href="https://github.com/ct6502/apple2ts/graphs/contributors?all=1" target="_blank" rel="noopener noreferrer">contributors</a><br/>
+${content}
+<b>${t("help.diskImages")}</b> hdv, 2mg, dsk, woz, po, do, bin, bas
+
+<b>${t("help.urlParameters")}</b>
+${t("help.urlParametersBody")}
+
+<b>${t("help.examples")}</b>
+${t("help.examplesBody")}
+
+<b>${t("help.links")}</b>
+${t("help.linksBody")}`
+  }
+
   const isDarkMode = props.theme == UI_THEME.DARK
 
   if (isMinimalTheme()) {
     import("./helppanel.minimal.css")
   }
-
-  //  const newHelpTextCrc = crc32(new TextEncoder().encode(helpText))
-
-  // useMemo(() => {
-  //   setHelpTextCrc(newHelpTextCrc)
-  // // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [])
 
   const isTouchDevice = "ontouchstart" in document.documentElement
   const height = window.innerHeight ? window.innerHeight : (window.outerHeight - 120)
@@ -55,9 +85,6 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
   return prevProps.helptext === nextProps.helptext && prevProps.theme === nextProps.theme
 })
 
-// Avoid a lint error "Component definition is missing display name".
-// Presumably this is because this component is wrapped in a React.memo
-// so the displayName cannot be inferred from the TSX.
 HelpTab.displayName = "HelpPanel"
 
 export default HelpTab

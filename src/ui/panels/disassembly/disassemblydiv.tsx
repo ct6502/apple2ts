@@ -7,8 +7,10 @@ import { getDisassembly, getDisassemblyVisibleMode, getDisassemblyAddress, setDi
 import { getChromacodedLine } from "./disassemblyview_singleline"
 import React, { useEffect, useRef } from "react"
 import { useGlobalContext } from "../../globalcontext"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const nlines = 40
+let lastRepositionedAddress = -1
 
  
 const DisassemblyDiv = (props: { 
@@ -17,6 +19,7 @@ const DisassemblyDiv = (props: {
   setAllowScrollEvent: (value: boolean) => void,
   refresh: () => void}) => {
   const { updateBreakpoint, setUpdateBreakpoint } = useGlobalContext()
+  const { t } = useTranslation()
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const scrollToRef = useRef<HTMLDivElement>(null)
 
@@ -62,8 +65,10 @@ const DisassemblyDiv = (props: {
   
   let disArray = getDisassembly().split("\n").slice(0, nlines)
   const hasDisassembly = disArray.length > 1
-  let foundLine = false
   const visibleMode = getDisassemblyVisibleMode()
+  const currentAddress = getDisassemblyAddress()
+  let foundLine = visibleMode === DISASSEMBLE_VISIBLE.RESET &&
+                  lastRepositionedAddress === currentAddress
   if (isPaused && hasDisassembly && visibleMode !== DISASSEMBLE_VISIBLE.RESET) {
     const visibleLine = (visibleMode === DISASSEMBLE_VISIBLE.CURRENT_PC) ?
       handleGetState6502().PC : getDisassemblyAddress()
@@ -86,6 +91,10 @@ const DisassemblyDiv = (props: {
   }
 
   useEffect(() => {
+    if (!isPaused) {
+      lastRepositionedAddress = -1
+    }
+
     if (!isPaused || !hasDisassembly || foundLine) {
       return
     }
@@ -96,9 +105,11 @@ const DisassemblyDiv = (props: {
 
     scrollTimeoutRef.current = setTimeout(() => {
       if (props.disassemblyRef?.current && scrollToRef.current) {
+        const container = props.disassemblyRef.current
         const line = scrollToRef.current
         props.setAllowScrollEvent(false)
-        line.scrollIntoView()
+        container.scrollTop += line.getBoundingClientRect().top - container.getBoundingClientRect().top
+        lastRepositionedAddress = getDisassemblyAddress()
       }
     }, 20)
 
@@ -152,8 +163,6 @@ const DisassemblyDiv = (props: {
     bottomHalf.push(i)
   }
 
-  // console.log("getDisassemblyDiv ", props.update, disArray[0])
-
   return <div style={{ width: "24em" }}>
     {topHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
     {disArray.map((line, index) => (
@@ -166,7 +175,7 @@ const DisassemblyDiv = (props: {
             className={"breakpoint-position " + getBreakpointStyle(bp[index])}
             data-key={bp[index].address}
             onClick={handleBreakpointClick} />)}
-        {getChromacodedLine(line, onJumpClick, width)}
+        {getChromacodedLine(line, onJumpClick, width, t)}
       </div>
     ))}
     {bottomHalf.map((line) => (<div key={line}>{toHex(line, 4)}</div>))}
@@ -174,4 +183,3 @@ const DisassemblyDiv = (props: {
 }
 
 export default DisassemblyDiv
-

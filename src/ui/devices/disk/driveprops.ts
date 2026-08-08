@@ -4,7 +4,7 @@ import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
 import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
-import { iconKey, iconData, iconName } from "../../img/iconfunctions"
+
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
@@ -39,6 +39,31 @@ const initDriveProps = (index: number, drive: number, hardDrive: boolean): Drive
 
 const driveProps: DriveProps[] = [initDriveProps(0, 1, true), initDriveProps(1, 2, true),
   initDriveProps(2, 1, false), initDriveProps(3, 2, false)]
+
+const demoZooDiskDownloadExtensions = [
+  ".hdv", ".2mg", ".dsk", ".woz", ".po", ".do", ".bin", ".bas", ".nib", ".2img", ".d13", ".dc", ".img",
+  ".zip", ".7z", ".gz", ".tar"
+]
+
+const isDemoZooDiskDownload = (url: string) => {
+  try {
+    const pathname = decodeURIComponent(new URL(url).pathname).toLowerCase()
+    return demoZooDiskDownloadExtensions.some(extension => pathname.endsWith(extension))
+  } catch {
+    return false
+  }
+}
+
+const chooseDemoZooDownloads = (links: Array<{ url: string; link_class?: string }>) => {
+  return [...links]
+    .filter(link => Boolean(link.url))
+    .sort((left, right) => {
+      const leftScore = isDemoZooDiskDownload(left.url) ? 100 : /download/i.test(left.link_class || "") ? 10 : 0
+      const rightScore = isDemoZooDiskDownload(right.url) ? 100 : /download/i.test(right.link_class || "") ? 10 : 0
+      return rightScore - leftScore
+    })
+    .map(link => link.url)
+}
 
 export const handleGetFilename = (index: number) => {
   let f = driveProps[index].filename
@@ -346,10 +371,10 @@ const sortProxyCandidatesForDomain = (domain: string, candidates: ProxyCandidate
 const getCorsProxyCandidates = (url: string): ProxyCandidate[] => {
   const encodedUrl = encodeURIComponent(url)
   return [
-    { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url },
+    // The encoded form is the reliable Corsfix form for binary URLs. The
+    // raw form can return a successful HTML response instead of the file.
     { id: "corsfix-param", url: "https://proxy.corsfix.com/?url=" + encodedUrl },
-    { id: "corsproxy-encoded", url: "https://corsproxy.io/?" + encodedUrl },
-    { id: "corsfix-encoded", url: "https://proxy.corsfix.com/?" + encodedUrl },
+    { id: "corsfix-raw", url: "https://proxy.corsfix.com/?" + url }
   ]
 }
 
@@ -364,17 +389,34 @@ const logFetchDebug = (...args: unknown[]) => {
 const shouldAttemptDirectFetch = (url: string): boolean => {
   try {
     const parsed = new URL(url)
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return true
-    }
-    return parsed.origin === window.location.origin
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
   } catch {
     // If URL parsing fails, keep prior behavior and try direct fetch.
     return true
   }
 }
 
-const fetchWithCorsProxy = async (url: string) => {
+const shouldUseCloudflareDiskProxy = (url: string): boolean => {
+  try {
+    const target = new URL(url)
+    return /^https?:$/i.test(target.protocol) &&
+      target.origin !== window.location.origin &&
+      /\.pages\.dev$/i.test(window.location.hostname)
+  } catch {
+    return false
+  }
+}
+
+const fetchWithCloudflareDiskProxy = async (url: string): Promise<Response | null> => {
+  try {
+    const response = await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+    return response.ok ? response : null
+  } catch {
+    return null
+  }
+}
+
+const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void) => {
   let lastResponse: Response | null = null
   const domain = getProxyTargetDomain(url)
   const candidates = sortProxyCandidatesForDomain(domain, getCorsProxyCandidates(url))
@@ -382,17 +424,19 @@ const fetchWithCorsProxy = async (url: string) => {
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i]
     const proxyUrl = candidate.url
-    const proxyName = proxyUrl.includes("corsproxy.io") ? "corsproxy.io" : "corsfix"
+    const proxyName = "corsfix"
     try {
       const response = await fetch(proxyUrl)
 
       if (response.ok) {
+        debug?.(`Corsfix ${candidate.id}: HTTP ${response.status}`)
         noteProxyScore(domain, candidate.id, true)
         logFetchDebug(`Proxy fetch succeeded via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
         return response
       }
 
       noteProxyScore(domain, candidate.id, false)
+      debug?.(`Corsfix ${candidate.id}: HTTP ${response.status}`)
       logFetchDebug(`Proxy attempt failed (${response.status}) via ${proxyName} (attempt ${i + 1}/${candidates.length})`)
       lastResponse = response
     } catch (error) {
@@ -404,42 +448,52 @@ const fetchWithCorsProxy = async (url: string) => {
   return lastResponse
 }
 
-const fetchWithCT6502Proxy = async (url: string) => {
-  const headers: { [key: string]: string } = {}
-  headers[iconKey()] = iconData()
-
+const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
   try {
-    const response = await fetch(iconName() + url)
-    if (response.ok) {
-      logFetchDebug("CT6502 proxy fetch succeeded")
-    } else {
-      logFetchDebug(`CT6502 proxy failed (${response.status})`)
-
-      const keyedResponse = await fetch(iconName() + url, { headers })
-      if (keyedResponse.ok) {
-        logFetchDebug("CT6502 keyed proxy fetch succeeded")
-      } else {
-        logFetchDebug(`CT6502 keyed proxy failed (${keyedResponse.status})`)
-      }
-      return keyedResponse
+    const parsed = new URL(url)
+    if ((import.meta.env.DEV || /\.pages\.dev$/i.test(window.location.hostname)) && parsed.hostname === "demozoo.org") {
+      return await fetch(`/api/demozoo-direct${parsed.pathname}${parsed.search}`)
     }
-    return response
-  } catch (error) {
-    logFetchDebug("CT6502 proxy errored, retrying keyed", error)
+  } catch {
+    return null
+  }
+
+  return fetchWithCorsProxy(url)
+}
+
+const fetchExternalDownloadPage = async (url: string): Promise<Response | null> => {
+  if (/\.pages\.dev$/i.test(window.location.hostname)) {
     try {
-      const keyedResponse = await fetch(iconName() + url, { headers })
-      if (keyedResponse.ok) {
-        logFetchDebug("CT6502 keyed proxy fetch succeeded")
-      } else {
-        logFetchDebug(`CT6502 keyed proxy failed (${keyedResponse.status})`)
-      }
-      return keyedResponse
-    } catch (keyedError) {
-      logFetchDebug("CT6502 keyed proxy errored", keyedError)
+      return await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+    } catch {
       return null
     }
   }
+
+  return fetchWithCorsProxy(url)
 }
+
+const findDirectDownloadOnExternalPage = async (url: string): Promise<string> => {
+  if (isDemoZooDiskDownload(url)) return url
+
+  const response = await fetchExternalDownloadPage(url)
+  if (!response?.ok) return ""
+
+  const html = await response.text()
+  const hrefPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi
+  for (const match of html.matchAll(hrefPattern)) {
+    try {
+      const candidate = new URL(match[1].trim(), url).toString()
+      if (isDemoZooDiskDownload(candidate)) return candidate
+    } catch {
+      // Ignore malformed links.
+    }
+  }
+
+  return ""
+}
+
+
 
 let timerId: NodeJS.Timeout|null = null
 
@@ -460,7 +514,9 @@ const diskImageLocalStorageSync = (url: string, index: number) => {
 }
 
 export const handleSetDiskFromURL = async (url: string,
-  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void) => {
+  updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
+  debug?: (message: string) => void): Promise<boolean> => {
+  debug?.(`handleSetDiskFromURL(${url}) drive=${index}`)
   // Check if it's a local file (not http/https URL and not Internet Archive)
   const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith(internetArchiveUrlProtocol)
   
@@ -481,22 +537,22 @@ export const handleSetDiskFromURL = async (url: string,
           setDiskImageToLocalStorage(index, new Uint8Array(buffer))
         }
         diskImageLocalStorageSync(url, index)
-        return
+        return true
       } catch (error) {
         console.error(`Error loading local file: ${url}`, error)
-        return
+        return false
       }
     }
     
     // Otherwise, try to find matching disk image in collections
     const match = findMatchingDiskImage(url)
     if ( !match.diskUrl ) {
-      return
+      return false
     }
     url = match.diskUrl
     if (!URL.canParse(url) && updateDisplay) {
       handleSetDiskFromFile(url, updateDisplay, index)
-      return
+      return true
     }
   }
 
@@ -525,7 +581,43 @@ export const handleSetDiskFromURL = async (url: string,
       if (callback) {
         callback(null)
       }
-      return
+      return false
+    }
+  }
+
+  // Transform scene.org view URL to direct download URL
+  if (url.includes("files.scene.org/view/")) {
+    url = url.replace("files.scene.org/view/", "files.scene.org/get/")
+  }
+
+  // Resolve DemoZoo production web page URL to direct download link if needed
+  let alternateDownloadUrls: string[] = []
+  if (url.includes("demozoo.org/productions/") && !/\.(zip|dsk|po|woz|nib|2mg|img)$/i.test(url)) {
+    const match = url.match(/productions\/(\d+)/)
+    if (match) {
+      const prodId = match[1]
+      try {
+        const apiRes = await fetchDemoZooResource(`https://demozoo.org/api/v1/productions/${prodId}/?format=json`)
+        if (apiRes && apiRes.ok) {
+          const prodData = await apiRes.json()
+          if (prodData && prodData.download_links && prodData.download_links.length > 0) {
+            const resolvedUrls: string[] = []
+            for (const downloadUrl of chooseDemoZooDownloads(prodData.download_links)) {
+              const resolvedUrl = await findDirectDownloadOnExternalPage(downloadUrl) || downloadUrl
+              const normalizedUrl = resolvedUrl.includes("files.scene.org/view/")
+                ? resolvedUrl.replace("files.scene.org/view/", "files.scene.org/get/")
+                : resolvedUrl
+              if (!resolvedUrls.includes(normalizedUrl)) {
+                resolvedUrls.push(normalizedUrl)
+              }
+            }
+            alternateDownloadUrls = resolvedUrls
+            url = alternateDownloadUrls[0] || url
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to resolve DemoZoo production download link:", err)
+      }
     }
   }
 
@@ -547,28 +639,32 @@ export const handleSetDiskFromURL = async (url: string,
   // hosts). The disk VTOC check that drives these downloads is serialized one
   // request at a time, so this does not flood Internet Archive with parallel
   // requests (the cause of the earlier 429 throttling).
-  if (shouldAttemptDirectFetch(url)) {
-    try {
-      response = await fetch(url)
-      if (!response.ok) {
+  const downloadUrlsToTry = [url, ...alternateDownloadUrls.filter(candidate => candidate !== url)]
+  for (const candidateUrl of downloadUrlsToTry) {
+    url = candidateUrl
+    response = null
+
+    if (shouldUseCloudflareDiskProxy(url)) {
+      response = await fetchWithCloudflareDiskProxy(url)
+    } else if (shouldAttemptDirectFetch(url)) {
+      try {
+        response = await fetch(url)
+        if (!response.ok) {
+          response = null
+        }
+      } catch {
+        // Expected for many cross-origin sources; fall through to proxy chain.
         response = null
       }
-    } catch {
-      // Expected for many cross-origin sources; fall through to proxy chain.
-      response = null
     }
+
+    if (!response || !response.ok) {
+      logFetchDebug("Direct fetch failed, trying corsfix proxy")
+      response = await fetchWithCorsProxy(url, debug)
+    }
+
+    if (response?.ok) break
   }
-
-  // If direct fetch failed, try CT6502 proxy (fastest based on benchmarks)
-  if (!response || !response.ok) {
-    logFetchDebug("Direct fetch failed, trying CT6502 proxy")
-    response = await fetchWithCT6502Proxy(url)
-  }
-
-  if (!response || !response.ok) {
-    logFetchDebug("CT6502 proxy failed, trying CORS proxies")
-    response = await fetchWithCorsProxy(url)
-
     if (!response || !response.ok) {
       console.error(`❌ All fetch methods failed for: ${url}`)
       if (!callback) {
@@ -597,16 +693,26 @@ export const handleSetDiskFromURL = async (url: string,
       
       if (callback) {
         callback(null)
-        return
+        return false
       } else {
-        setTimeout(() => alert(errorMessage), 100)
-        return
+        console.warn(errorMessage)
+        return false
       }
     }
-  }
 
   try {
     const fileBuffer = await response.arrayBuffer()
+    debug?.(`Downloaded ${fileBuffer.byteLength} bytes from ${url}`)
+
+    // Do not pass a Corsfix error/challenge page to the disk parser merely
+    // because the proxy returned HTTP 200.
+    if (fileBuffer.byteLength < 1024) {
+      throw new Error(`Downloaded response is too small to be a disk image (${fileBuffer.byteLength} bytes)`)
+    }
+    const responseHead = new TextDecoder().decode(fileBuffer.slice(0, 256)).trimStart().toLowerCase()
+    if (responseHead.startsWith("<!doctype html") || responseHead.startsWith("<html") || responseHead.includes("just a moment")) {
+      throw new Error("Downloaded response is an HTML error page, not a disk image")
+    }
 
     // Try to get filename from Content-Disposition header first
     const contentDisposition = response.headers.get("content-disposition")
@@ -633,26 +739,26 @@ export const handleSetDiskFromURL = async (url: string,
       }
     }
 
-    if (url.toLowerCase().endsWith(".zip")) {
-      const unzipper = new fflate.Unzip()
-      unzipper.register(fflate.UnzipInflate)
-
-      unzipper.onfile = file => {
-        const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLocaleLowerCase()
-        if (FILE_SUFFIXES_DISK.includes(fileExtension)) {
-          file.ondata = (_err, data) => {
-            // Ignore index files, etc.
-            if (data.length > 1024) {
-              name = file.name
-              buffer = data
-              return
-            }
+    let downloadPath = url.toLowerCase()
+    try {
+      downloadPath = new URL(url).pathname.toLowerCase()
+    } catch {
+      // Keep the raw URL for local/blob-style inputs.
+    }
+    if (downloadPath.endsWith(".zip")) {
+      try {
+        const unzipped = fflate.unzipSync(new Uint8Array(fileBuffer))
+        for (const fileName of Object.keys(unzipped)) {
+          const fileExtension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase()
+          if (FILE_SUFFIXES_DISK.includes(fileExtension) && unzipped[fileName].length > 1024) {
+            name = fileName
+            buffer = unzipped[fileName].buffer
+            break
           }
-          file.start()
-          return
         }
+      } catch (err) {
+        console.error("Failed to unzip disk image:", err)
       }
-      unzipper.push(new Uint8Array(fileBuffer), true)
     } else {
       if (name === "") {
         const urlObj = new URL(url)
@@ -673,6 +779,10 @@ export const handleSetDiskFromURL = async (url: string,
         resetAllDiskDrives()
         
         handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+        // Loading a disk from a remote URL must boot it even when the
+        // emulator was already paused or had previously run a program.
+        passSetRunMode(RUN_MODE.NEED_BOOT)
+        debug?.(`Disk buffer installed as ${name}; NEED_BOOT sent`)
       }
     } else {
       if (callback) {
@@ -681,13 +791,16 @@ export const handleSetDiskFromURL = async (url: string,
         console.error("❌ No buffer data available after download")
         // $TODO: Add error handling
       }
+      return false
     }
+    return true
   } catch (error) {
     console.error(`❌ Error processing download for "${url}":`, error)
     console.error("Error details:", error instanceof Error ? error.message : String(error))
     if (callback) {
       callback(null)
     }
+    return false
   } finally {
     if (!callback) {
       showGlobalProgressModal(false)

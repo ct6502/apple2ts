@@ -38,13 +38,14 @@ export const handleCopyToClipboard = () => {
     const useApple2PlusMap = machineName === "APPLE2P"
     let output = ""
     const hasMouseText = machineName === "APPLE2EE"
+    const isUnicodePage = textPage instanceof Uint16Array
     for (let j = 0; j < nlines; j++) {
       let line = ""
       for (let i = 0; i < ncharsPerLine; i++) {
         const value = textPage[j * ncharsPerLine + i]
-        const c = convertTextPageValueToASCII(
-          value, isAltCharSet, hasMouseText, hasLowerCase, useApple2PlusMap
-        )
+        const c = isUnicodePage
+          ? String.fromCodePoint(value || 0x20)
+          : convertTextPageValueToASCII(value, isAltCharSet, hasMouseText, hasLowerCase, useApple2PlusMap)
         line += c
       }
       line = line.trimEnd()

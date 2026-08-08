@@ -3,50 +3,44 @@
 
 name: Node.js CI
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 on:
   push:
     branches: [ main ]
 
 jobs:
-  # Cleanup old workflow runs (keep only last 3)
-  cleanup:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Delete old workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          retain_days: 0
-          keep_minimum_runs: 3
-
   build:
-    env:
-      MY_EMAIL: 5461379+ct6502@users.noreply.github.com
-      MY_NAME: Chris Torrence
-      MY_USERNAME: ct6502
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     strategy:
       matrix:
         node-version: [24.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v5
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v5
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        npm-version: '>=12'
     # clean install
-    - run: npm ci
+    - run: npm ci --ignore-scripts
     - run: npm run lint
     - run: npm run build
     - run: npm test
-    # set the correct git username/email for authentication
-    - run: git config --global user.email $MY_EMAIL
-    - run: git config --global user.name "$MY_NAME"
-    # authenticate with GitHub so we can do subsequent git operations
-    - run: git remote set-url origin https://$MY_USERNAME:${{ secrets.GH_SECRET }}@github.com/ct6502/apple2ts.git
-    # push the build (within the dist directory) to the gh-pages branch
-    - run: npm run deploy
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v4
+      with:
+        path: dist
+    - name: Deploy GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

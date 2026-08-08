@@ -2,26 +2,44 @@ declare module "list-react-files"
 
 declare module "*.png" {
    const value: string
-   export = value;
+   export = value
 }
 declare module "*.mp3" {
    const value: string
-   export = value;
+   export = value
 }
 declare module "*.woz" {
    const value: string
-   export = value;
+   export = value
 }
 declare module "*.po" {
   const value: string
-  export = value;
+  export = value
 }
 declare module "*.hdv" {
   const value: string
-  export = value;
+  export = value
 }
 
 type MessagePayload = object | number | string | boolean | EmuGamepad[] | null
+
+type KeyboardState = {
+  key: number,
+  isDown: boolean,
+  repeat: boolean,
+}
+
+type VeraPsgWrite = {
+  cycle: number,
+  reg: number,
+  value: number,
+}
+
+type VeraPcmWrite = {
+  cycle: number,
+  reg: "ctrl" | "rate" | "fifo",
+  value: number,
+}
 
 interface PCodeFunc {
   (valueLo: number, valueHi: number): number;
@@ -81,6 +99,15 @@ type DisplayProps = {
 
 type MACHINE_NAME = "APPLE2EU" | "APPLE2EE" | "APPLE2P"
 
+type VERA_SLOT = 0 | 2 | 4
+
+type Video7Mode = "160x192" | "monochrome" | "mixed"
+
+type Video7Override = {
+  mode: Video7Mode,
+  enabled: boolean,
+}
+
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
 type MachineState = {
@@ -114,6 +141,7 @@ type MachineState = {
   textPage: Uint8Array,
   timeTravelThumbnails: Array<TimeTravelThumbnail>,
   tracelog: Array<string>,
+  veraSlot: VERA_SLOT,
   zeroPage: Uint8Array
 }
 
@@ -272,7 +300,7 @@ type GamePadActuatorEffect = {
 
 type KeyMap = {
   [key: string]: string;
-};
+}
 
 type GameLibraryItem = {
   address: number,
@@ -414,6 +442,8 @@ interface OpenerWindow {
 
 type PopupMenuItem = {
   label: string,
+  isDisabled?: boolean | (() => boolean),
+  isHeading?: boolean,
   icon?: IconDefinition,
   svg?: JSX.Element,
   isVisible?: () => boolean,

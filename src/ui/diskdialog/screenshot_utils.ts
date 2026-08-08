@@ -428,7 +428,7 @@ const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | nu
     }
   }
 
-  const headers: { [key: string]: string } = {}
+  const headers: Record<string, string> = {}
   headers[iconKey()] = iconData()
 
   try {

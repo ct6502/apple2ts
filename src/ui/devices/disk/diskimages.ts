@@ -116,6 +116,16 @@ export const diskImages: DiskCollectionItem[] = [
     fileSize: 33553920
   },
   {
+    title: "Tass Times in Tonetown",
+    diskUrl: "Tass Times.2mg",
+    imageUrl: "disks/Tass%20Times.png",
+    detailsUrl: "https://www.mobygames.com/game/90/tass-times-in-tonetown/",
+    type: undefined,
+    lastUpdated: new Date(0),
+    fileSize: 819264,
+    params: "color=nofringe",
+  },
+  {
     title: "Ultima IV",
     diskUrl: "Ultima%20IV.hdv",
     imageUrl: "disks/Ultima%20IV.png",

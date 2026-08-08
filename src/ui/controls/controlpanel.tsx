@@ -5,11 +5,13 @@ import ControlButtons from "./controlbuttons"
 import DebugButtons from "./debugbuttons"
 import FullScreenButton from "./fullscreenbutton"
 import KeyboardButtons from "./keyboardbuttons"
+import { useTranslation } from "../../i18n/useTranslation"
 import { useState } from "react"
 import { isGameMode } from "../ui_settings"
 
 const ControlPanel = (props: DisplayProps) => {
   const [isFlyoutOpen, setIsFlyoutOpen] = useState(false)
+  const { t } = useTranslation()
 
   const handleFlyoutClick = () => {
       setIsFlyoutOpen(!isFlyoutOpen)
@@ -18,19 +20,19 @@ const ControlPanel = (props: DisplayProps) => {
   return (
     <Flyout
       icon={faWrench}
-      title="settings"
+      title={t("controls.settings")}
       isOpen={() => { return isFlyoutOpen }}
       onClick={handleFlyoutClick}
       position="top-left">
       <span className="flex-column">
         <span className={isGameMode() ? "flex-row flexwrap" : ""}>
-        <span className={isGameMode() ? "flex-row" : "flex-row flexwrap"} id="tour-controlbuttons">
-          <ControlButtons {...props} />
-          <DebugButtons {...props} />
-          <FullScreenButton />
-        </span>
-        <ConfigButtons {...props} />
-        <KeyboardButtons {...props} />
+          <span className={isGameMode() ? "flex-row" : "flex-row flexwrap"} id="tour-controlbuttons">
+            <ControlButtons {...props} />
+            <DebugButtons {...props} />
+            <FullScreenButton />
+          </span>
+          <ConfigButtons {...props} />
+          <KeyboardButtons {...props} />
         </span>
       </span>
     </Flyout>

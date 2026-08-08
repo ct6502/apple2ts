@@ -17,7 +17,10 @@ const speedNames = ["0.1 MHz (Snail)", "0.5 MHz (Slow)", "1 MHz", "2 MHz",
 
 export const MaximumSpeedMode = speedNames.length - 2 - 1
 
+import { useTranslation } from "../../i18n/useTranslation"
+
 export const SpeedDropdown = (props: { updateDisplay: UpdateDisplay }) => {
+  const { t } = useTranslation()
   const speedMode = handleGetSpeedMode()
   const iconSize = 22
   const icons = [
@@ -34,11 +37,14 @@ export const SpeedDropdown = (props: { updateDisplay: UpdateDisplay }) => {
   return (
     <DropdownButton
       currentIndex={speedMode + 2}
-      itemNames={speedNames}
+      itemNames={speedNames.map((name, index) => {
+        const speedKeys = ["snail", "slow", "normal", "two", "three", "fast", "warp"]
+        return t(`speed.${speedKeys[index]}`)
+      })}
       closeCallback={(index: number) => { setPreferenceSpeedMode(index - 2); props.updateDisplay() }}
       icon={icon}
       icons={icons}
-      tooltip="Emulator Speed"
+      tooltip={t("config.speed")}
     />
   )
 }

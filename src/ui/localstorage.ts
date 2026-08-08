@@ -2,7 +2,7 @@ import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
 import { COLOR_MODE, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
@@ -94,6 +94,33 @@ export const setPreferenceRamWorks = (size = 64) => {
     localStorage.setItem("ramWorks", JSON.stringify(size))
   }
   passSetRamWorks(size)
+}
+
+const isVeraSlot = (slot: number): slot is VERA_SLOT => {
+  return slot === 0 || slot === 2 || slot === 4
+}
+
+export const getPreferenceVeraSlot = (): VERA_SLOT => {
+  const veraSlot = localStorage.getItem("veraSlot")
+  if (veraSlot) {
+    try {
+      const slot = JSON.parse(veraSlot)
+      if (isVeraSlot(slot)) return slot
+    } catch {
+      // Invalid data is cleared below.
+    }
+    localStorage.removeItem("veraSlot")
+  }
+  return 0
+}
+
+export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
+  if (slot === 0) {
+    localStorage.removeItem("veraSlot")
+  } else {
+    localStorage.setItem("veraSlot", JSON.stringify(slot))
+  }
+  passSetVeraSlot(slot)
 }
 
 export const setPreferenceSpeedMode = (mode = 0) => {
@@ -191,6 +218,14 @@ export const setPreferencePrinterDialogPosition = (position: { x: number, y: num
     localStorage.removeItem("printerDialogPosition")
   } else {
     localStorage.setItem("printerDialogPosition", JSON.stringify(position))
+  }
+}
+
+export const setPreferencePageLength = (pageLength: number) => {
+  if (pageLength === -1) {
+    localStorage.removeItem("pageLength")
+  } else {
+    localStorage.setItem("pageLength", JSON.stringify(pageLength))
   }
 }
 
@@ -338,6 +373,8 @@ export const loadPreferences = () => {
     }
   }
 
+  passSetVeraSlot(getPreferenceVeraSlot())
+
   const reverseYAxis = localStorage.getItem("reverseYAxis")
   if (reverseYAxis) {
     try {
@@ -404,6 +441,22 @@ export const resetPreferences = () => {
   setPreferenceNewReleasesChecked()
   localStorage.removeItem("binaryRunAddress")
   setPreferenceTraceSettings()
+  setPreferenceDebugTabLeftWidth(-1)
+  setPreferencePrinterDialogPosition({ x: -1, y: -1 })
+  setPreferencePageLength(-1)
+}
+
+export const getPreferencePageLength = (): number => {
+  let value = 11
+  const item = localStorage.getItem("pageLength")
+  if (item) {
+    try {
+      value = JSON.parse(item)
+    } catch {
+      localStorage.removeItem("pageLength")
+    }
+  }
+  return value
 }
 
 export const getPreferenceNewReleasesChecked = () => {

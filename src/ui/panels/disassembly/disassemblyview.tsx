@@ -33,11 +33,11 @@ const DisassemblyView = (props: DisassemblyProps) => {
     if (!allowScrollEvent && !isMouseDown) {
       return
     }
-    allowScrollEvent = false
     if (timeoutIdRef.current !== null) {
       clearTimeout(timeoutIdRef.current)
     }
     timeoutIdRef.current = setTimeout(() => {
+      allowScrollEvent = false
       if (disassemblyRef.current) {
         const div = disassemblyRef.current
         const rect = div.getBoundingClientRect()
@@ -162,6 +162,8 @@ const DisassemblyView = (props: DisassemblyProps) => {
         onWheel={handleEnableScroll}
         onMouseDown={() => {isMouseDown = true}}
         onMouseUp={() => {isMouseDown = false}}
+        onTouchStart={() => {isMouseDown = true}}
+        onTouchEnd={() => {isMouseDown = false; allowScrollEvent = true}}
         onMouseMove={handleCodeMouseMove}
         onMouseLeave={handleCodeMouseLeave}
         onClick={handleCodeClick}>

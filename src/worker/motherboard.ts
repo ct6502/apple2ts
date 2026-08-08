@@ -4,7 +4,7 @@ import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, g
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState, doSetEmuDriveNewData } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
-import { SWITCHES, overrideSoftSwitch, resetSoftSwitches,
+import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
   syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
@@ -19,17 +19,19 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   getMemoryDump as getCpuMemoryDump,
   memSet,
   exportMemoryToHiresLine,
-  getDataBlock} from "./memory"
+  getDataBlock,
+  clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, setStepOut, doSetBreakpoints } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, resetCycleCountCallbacks, setStepOut, doSetBreakpoints } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
+import { enableVera, resetVera } from "./devices/vera/vera"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
-import { sendPastedText } from "./devices/keyboard"
+import { pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
@@ -49,6 +51,7 @@ let cpuRunMode = RUN_MODE.IDLE
 let cyclesToRun = 0
 let nextFrameTime = 0
 let machineName: MACHINE_NAME = "APPLE2EE"
+let veraSlot: VERA_SLOT = 0
 let takeSnapshot = false
 let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
@@ -134,10 +137,20 @@ let didConfiguration = false
 export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
+  resetCycleCountCallbacks()
+  clearSlot(2)
+  clearSlot(4)
   enableSerialCard()
-  enablePassportCard(true, 2)
-  enableMockingboard(true, 4)
+  if (veraSlot !== 2) {
+    enablePassportCard(true, 2)
+  }
+  if (veraSlot !== 4) {
+    enableMockingboard(true, 4)
+  }
   enableMouseCard(true, 5)
+  if (veraSlot !== 0) {
+    enableVera(true, veraSlot)
+  }
   enableDiskDrive()
   enableHardDrive()
   get6502Instructions()
@@ -148,8 +161,13 @@ const resetMachine = () => {
   setButtonState()
   resetMouse()
   resetPassport()
+  if (veraSlot !== 0) {
+    resetVera()
+  }
   resetSerial()
-  resetMockingboard(4)
+  if (veraSlot !== 4) {
+    resetMockingboard(4)
+  }
 }
 
 export const doBoot = () => {
@@ -396,6 +414,14 @@ export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   updateExternalMachineState()
 }
 
+export const doSetVeraSlot = (slot: VERA_SLOT) => {
+  if (slot !== 0 && slot !== 2 && slot !== 4) return
+  if (veraSlot === slot) return
+  veraSlot = slot
+  didConfiguration = false
+  updateExternalMachineState()
+}
+
 // Temporarily hijack the CPU to change the string variable value.
 // Put the string `name="value"` into the $200 input buffer and then call
 // the Applesoft routine to parse it and set the new value.
@@ -636,7 +662,7 @@ const doGetStackString = () => {
 
 let didPassSoftSwitchDescriptions = false
 
-export const updateExternalMachineState = () => {
+export const getExternalMachineState = () => {
   // Make sure the push button values are up to date, since they can
   // be modifed by other softswitches (like for the Sirius Joyport).
   memGet(SWITCHES.PB0.isSetAddr)
@@ -661,7 +687,7 @@ export const updateExternalMachineState = () => {
     lores: getTextPage(true),
     machineName: machineName,
     memoryDump: getMemoryDump(),
-    noDelayMode: !SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet,
+    noDelayMode: !SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet && machineName !== "APPLE2P",
     ramWorksBank: RamWorksBankGet(),
     runMode: cpuRunMode,
     s6502: s6502,
@@ -672,8 +698,14 @@ export const updateExternalMachineState = () => {
     textPage: getTextPage(),
     timeTravelThumbnails: getTimeTravelThumbnails(),
     tracelog: cpuRunMode === RUN_MODE.PAUSED ? getTracelog() : [],
+    veraSlot: veraSlot,
     zeroPage: getZeroPage(),
   }
+  return state
+}
+
+export const updateExternalMachineState = () => {
+  const state = getExternalMachineState()
   passMachineState(state)
   // We need to pass this just once to the UI thread, so it can display
   // the list of soft switches in the breakpoint dialog. Crossing my fingers
@@ -700,6 +732,12 @@ export const forceSoftSwitches = (addresses: Array<number> | null) => {
   updateExternalMachineState()
 }
 
+export const forceVideo7Override = (override: Video7Override) => {
+  setVideo7Override(override.mode, override.enabled)
+  updateAddressTables()
+  updateExternalMachineState()
+}
+
 //let quickReturn = 0
 let cycleToRunStart = -1
 
@@ -723,15 +761,15 @@ const doAdvance6502 = () => {
     const cycles = processInstruction(tracing ? updateTrace : null)
     if (cycles < 0) break
     cycleTotal += cycles
-
-    if (cycleTotal < 4550) {
+    const cycleInFrame = s6502.cycleCount % 17030
+    if (cycleInFrame < 4550) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
       if (!SWITCHES.VBL.isSet) {
         startVBL()
       }
     } else {
       endVBL()
-      const line = Math.floor((cycleTotal - 4550) / 65)
+      const line = Math.floor((cycleInFrame - 4550) / 65)
       if (line !== currentLine && line < 192) {
         currentLine = line
         exportMemoryToHiresLine(line)
@@ -756,6 +794,7 @@ const doAdvance6502 = () => {
     Math.round(speedInCyclesPerMS / 100) / 10
   
   handleGamepads()
+  pollKeyboardRepeat()
   updateExternalMachineState()
   if (takeSnapshot) {
     takeSnapshot = false

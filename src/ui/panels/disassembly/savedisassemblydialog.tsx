@@ -7,12 +7,14 @@ import EditField from "../../panels/editfield"
 import { getDisassembly, getDisassemblyAddress, getLineAsPlaintext } from "./disassembly_utilities"
 import { toHex } from "../../../common/utility"
 import { handleGetState6502 } from "../../main2worker"
+import { useTranslation } from "../../../i18n/useTranslation"
 import CheckBox from "../checkbox"
 
 const SaveDisassemblyDialog = (props:
   {
     onClose: () => void,
   }) => {
+  const { t } = useTranslation()
   const [includeLabels, setIncludeLabels] = useState(true)
   const [includeSeparator, setIncludeSeparator] = useState(true)
   const [startAddress, setStartAddress] = useState(() => {
@@ -86,7 +88,7 @@ const SaveDisassemblyDialog = (props:
         style={{ left: "45%", top: "35%" }}>
         <div className="flex-column">
           <div className="flex-row-space-between">
-            <div className="dialog-title">Save Disassembly</div>
+            <div className="dialog-title">{t("saveDisassembly.title")}</div>
             <button className="push-button"
               onClick={handleCancel}>
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: "0.8em" }} />
@@ -97,13 +99,13 @@ const SaveDisassemblyDialog = (props:
         <div className="flex-column" style={{alignItems: "flex-start"}}>
         <div className="flex-column"
           style={{paddingLeft: "0.5em", paddingTop: "0.5em", alignItems: "flex-end"}}>
-          <EditField name="Start address $"
+          <EditField name={t("saveDisassembly.startAddress")}
             initialFocus={true}
             value={startAddress}
             setValue={handleSetStartAddress}
             isHex={true}
             width="5em" />
-          <EditField name="End address $"
+          <EditField name={t("saveDisassembly.endAddress")}
             initialFocus={true}
             value={endAddress}
             setValue={handleSetEndAddress}
@@ -111,10 +113,10 @@ const SaveDisassemblyDialog = (props:
             width="5em" />
         </div>
         </div>
-        <CheckBox name="Include symbol labels"
+        <CheckBox name={t("saveDisassembly.includeLabels")}
           checked={includeLabels}
           setChecked={(checked) => setIncludeLabels(checked)} />
-        <CheckBox name="Separator lines after JMP, RTS"
+        <CheckBox name={t("saveDisassembly.separatorLines")}
           checked={includeSeparator}
           setChecked={(checked) => setIncludeSeparator(checked)} />
         <div className="flex-row"
@@ -123,11 +125,11 @@ const SaveDisassemblyDialog = (props:
             <button className="push-button text-button"
               onClick={handleSaveDisassembly}
               disabled={startAddress === "" || endAddress === ""}>
-              <span className="centered-title">OK</span>
+              <span className="centered-title">{t("messages.ok")}</span>
             </button>
             <button className="push-button text-button"
               onClick={handleCancel}>
-              <span className="centered-title">Cancel</span>
+              <span className="centered-title">{t("messages.cancel")}</span>
             </button>
           </div>
         </div>

@@ -25,10 +25,11 @@ mcp_agent.ts              - Main orchestrator
 ## Currently Supported
 
 ### Providers
-- ✅ **Anthropic Claude** (3.5 Sonnet, 3 Opus, 3 Sonnet, 3 Haiku)
-- 🚧 OpenAI GPT (architecture ready, implementation pending)
+- ✅ **Anthropic Claude** (Sonnet 4.6, Opus 4.8, Haiku 4.5)
+- ✅ **OpenAI ChatGPT** (GPT-5.4, GPT-5.5)
+- ✅ **DeepSeek AI** (V4 Flash, V4 Pro)
 - ✅ **Google Gemini** (Gemini 3.5, Gemini 3.1, Gemini 2.5)
-- ✅ **Ollama (Local)** (with models like ornith:9b, qwen2.5-coder, etc.)
+- ✅ **Ollama (Local)** (ornith:9b, qwen2.5-coder, llama3.1, etc.)
 
 ### Features
 - Chat interface with message history
@@ -55,14 +56,14 @@ mcp_agent.ts              - Main orchestrator
 ### 2. Configure the Agent
 
 In the Apple2TS app:
-1. Navigate to the Agent tab
-2. Click "Get Started"
-3. Select your provider (currently only Anthropic Claude)
-4. Choose your model
-5. Enter your API key
-6. Click "Save Configuration"
+1. Navigate to the Agent tab.
+2. Click "Get Started" or the gear icon.
+3. Select your provider.
+4. Enter your API Key or Ollama URL (defaults to `http://localhost:11434`).
+5. Choose or type your model.
+6. Click "Save Configuration".
 
-Your API key is stored locally in your browser and never sent to apple2ts.com.
+Your settings/API keys are stored locally in your browser and never sent to remote servers.
 
 ### 3. Start Chatting
 

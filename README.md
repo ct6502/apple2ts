@@ -1,9 +1,12 @@
 # Apple2TS - Apple II Emulator in Typescript
 
-Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significant contributions from Michael Morrison (codebythepound&lt;at&gt;gmail&lt;dot&gt;com). Thanks also to the Apple II community for feedback, bug reports, and feature requests.
+Created by Chris Torrence (chris&lt;at&gt;ct6502&lt;dot&gt;org), with significant contributions from @boredsenseless (Lawrence Sanchez), codebythepound (Michael Morrison), and @anomixer. Thanks also to the Apple II community for feedback, bug reports, and feature requests.
+
+Copyright (c) 2026 Chris Torrence and the Apple2TS contributors
+
+Copyright in individual contributions remains with their respective authors. “Apple2TS contributors” does not imply collective ownership of every part of the project or an assignment of contributor copyright.
 
 ![node.js CI](https://github.com/ct6502/apple2ts/actions/workflows/main-build-deploy.yml/badge.svg)
-![build/deploy](https://github.com/chris-torrence/apple2ts/actions/workflows/pages/pages-build-deployment/badge.svg)
 
 This project was originally create using [Create React App](https://github.com/facebook/create-react-app) and was then migrated to [vite](https://vitejs.dev/guide/) following [these steps](https://darekkay.com/blog/create-react-app-to-vite/).
 
@@ -33,7 +36,7 @@ Be sure to install `node.js` and `npm` on your system using either `nvm` (the No
 In the project directory, to run the app in development mode:
 
 ```
-npm install
+npm ci --ignore-scripts
 npm start
 ```
 
@@ -72,7 +75,7 @@ Run in watch mode:
 To builds the app for production:
 
 ```sh
-npm install
+npm ci --ignore-scripts
 npm run build
 ```
 
@@ -85,9 +88,7 @@ There should be no errors generated. If you see errors, be sure to check that yo
 
 ### Deployment
 
-When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. The `main-build-deploy.yml` workflow should fire off two Github Actions. The first will build and test the code, while the second (using `npm run deploy`) will deploy the build to Github Pages.
-
-For the Github Actions, the secrets.GH_SECRET needs to be set to your current Personal Access Token. This needs to be regenerated each year. To do this, go under your main profile, choose Developer Settings -> Personal access tokens -> Fine-grained tokens, choose "gp-pages deploy". Choose an expiration date for one year in the future. Copy the new PAT and save it somewhere safe. Once you have the new Github PAT, you can set it on the repo. Under [Settings](https://github.com/ct6502/apple2ts/settings), choose "Secrets and variables" -> "Actions", then click Edit on the GH_SECRET.
+When you check in code changes to Github, Github will automatically run one of two workflows. The `main-build-deploy.yml` workflow will run for code checked into the main branch, while `pull-request-build-only.yml` will run for pull requests. Both workflows lint, build, and test the code. For pushes to `main`, the workflow also deploys the build to Github Pages using the built-in `GITHUB_TOKEN` — no Personal Access Token or repository secret is required.
 
 ## Upgrade Packages
 
@@ -99,7 +100,7 @@ For the Github Actions, the secrets.GH_SECRET needs to be set to your current Pe
 npm install -g npm-check-updates
 npm outdated
 ncu --upgrade
-npm install
+npm ci --ignore-scripts
 ```
 
 ## VS Code Chrome Debugging
@@ -130,6 +131,10 @@ In VS Code, add breakpoints to the test code. Then open up `package.json`, hover
 the "test" script, and select 'Debug Script'.
 
 ## Testing
+
+### MIDI Testing
+
+Apple2TS uses its built-in software synthesizer by default. Selecting **Enable External MIDI…** from the **Audio Configuration** menu may trigger a browser permission prompt before external MIDI outputs are listed. If the selected output disappears, Apple2TS returns to its built-in synthesizer. On macOS, the [built-in IAC Driver](https://support.apple.com/guide/audio-midi-setup/transfer-midi-information-between-apps-ams1013/mac) can provide virtual MIDI buses for testing.
 
 ### If you change disk drive code
 
@@ -164,6 +169,25 @@ the "test" script, and select 'Debug Script'.
 1. Refresh browser, click on hard drive 1, choose _Load Disk from Internet Archive_, choose _Apple II Library: Games_, then on one of the disk images, click on the bottom portion (tooltip should say _Click to view details_). Verify the IA page for that game opens up in a new tab.
 1. Back in the emulator, in the Internet Archive dialog, click on the "unfilled star" for one of the games. Click somewhere else to dismiss dialog. Click on _Choose Disk Image_, verify that the game is at the top of the list. Select it and verify that the game boots.
 1. Click on _Choose Disk Image_, click on the "filled star" for the game to remove the game from the list. The game should immediately disappear from the list.
+
+### DemoZoo Testing
+
+The Cloudflare Pages workflow is opt-in and requires the following repository configuration:
+
+- **Required repository variable:** `CLOUDFLARE_PAGES_ENABLED=true`
+- **Required repository secret:** `CLOUDFLARE_API_TOKEN`, containing a Cloudflare API token that can deploy to Pages
+- **Required repository secret:** `CLOUDFLARE_ACCOUNT_ID`, containing the Cloudflare account ID that owns the Pages project
+- **Optional repository variable:** `CLOUDFLARE_PAGES_PROJECT`, containing the existing Cloudflare Pages project name; it defaults to `apple2ts`
+
+The Cloudflare Pages project must be created in the specified Cloudflare account before the workflow runs. The API token and account ID are configured in GitHub under **Settings → Secrets and variables → Actions**. The enable flag and project name are repository variables; the API token and account ID are repository secrets. Repositories that do not set `CLOUDFLARE_PAGES_ENABLED=true` skip the Cloudflare deployment and are unaffected.
+
+1. On the Cloudflare Pages deployment, refresh the browser, click on hard drive 1, choose _Load Disk from DemoZoo_, and verify that the DemoZoo production list opens with screenshots and page navigation.
+1. Use the type filters (Demo, Game, Intro, Cracktro, and Music), then open a production and verify that its disk image loads and boots.
+1. Open a production with only a YouTube link and verify that the confirmation dialog opens a new browser tab when accepted.
+1. Open a production whose DemoZoo download link is an external project page, such as Brutal Deluxe or another provider, and verify that the direct `.dsk`, `.woz`, `.po`, or `.zip` image is discovered and loaded.
+1. Test a production with multiple download links where the first source is unavailable, and verify that the next working disk-image link is tried automatically.
+1. Refresh the browser and repeat the test with another production to verify that the disk is replaced and the new production boots.
+1. On the GitHub Pages deployment, verify that DemoZoo is not shown; DemoZoo is available through the Cloudflare Pages deployment because its server-side proxy avoids browser CORS restrictions.
 
 
 ## Localhost Certificates
@@ -246,10 +270,24 @@ Don't forget to append the trailing back quote ` at the end of the file.
 
 ![Process Instruction](images/Process%20Instruction.png)
 
+## Major Contributors
+
+Chris Torrence — Project creator and primary maintainer, responsible for the core Apple II emulator architecture, CPU, graphics, disk support, UI, etc.
+
+Lawrence Sanchez (boredsenseless) — Built and maintains the disk collection/launcher system, including cloud drive support, Internet Archive and favorites, and HDV export functionality.
+
+Mike Morrison (code-bythepound) — Hardware card emulation including the VERA display adapter, SuperSerial card and ImageWriter, and MIDI support.
+
+anomixer — Full internationalization (i18n) with 13 languages, improved joystick/numpad input handling, and integrated Ollama and Google Gemini AI providers.
+
+Dongsu Jang — Implemented a CLI/server interface with REST APIs.
+
+3AMCinnamonRoll — Fixed raster timing, stabilized the memory map UI, added keyboard mode selection, improved HGR/DHGR frame exports, and improve CI/linting.
+
 ## Additional Info and Sponsors
 
 <a href="https://corsfix.com"><img src="public/assets/corsfix.png" alt="Corsfix" width="32" style="vertical-align: middle"></a> [CORS Proxy by Corsfix](https://corsfix.com)
 
-[![sponsored-by-grida](https://s3.us-west-1.amazonaws.com/brand.grida.co/badges-for-github/sponsored-by-grida-oss-program.png)](https://grida.co)
+Silver CJK Pixel Font is courtesy of [Poppy Works](https://poppyworks.itch.io/silver), and is used under a CC BY 4.0 license.
 
 [Turtle icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/turtle)
