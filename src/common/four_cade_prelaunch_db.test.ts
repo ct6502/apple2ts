@@ -19,7 +19,25 @@ describe("4cade prelaunch parsing", () => {
     })
   })
 
-  test("continues to reject unsupported indirect vectors", () => {
-    expect(parsePrelaunchScript("+HIDE_ARTWORK\njmp ($20)")).toBeUndefined()
+  test("preserves Phaser Fire's numeric indirect entry vector", () => {
+    const parsed = parsePrelaunchScript(`
+      +HIDE_ARTWORK
+      lda #$60
+      sta $4074
+      jsr $4000
+      +GET_MACHINE_STATUS
+      and #CHEATS_ENABLED
+      beq +
+      lda #$ad
+      sta $96A
+      jmp ($20)
+    `)
+
+    expect(parsed?.entry).toEqual({ indirect: 0x20 })
+    expect(parsed?.sequence).toContainEqual({ op: "decompress", addr: 0x4000 })
+  })
+
+  test("continues to reject symbolic indirect vectors other than ldrlo2", () => {
+    expect(parsePrelaunchScript("+HIDE_ARTWORK\njmp (resetVector)")).toBeUndefined()
   })
 })

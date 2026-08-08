@@ -528,9 +528,11 @@ export type PrelaunchOp =
   | { op: "jmp_decompress"; addr: number }        // JMP to decompressor (callback-based, no return)
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
+export type PrelaunchEntry = number | "loadAddress" | { indirect: number }
+
 export type ParsedPrelaunch = {
   sequence: PrelaunchOp[]
-  entry: number | "loadAddress" // JMP target, or the last ProRWTS load address
+  entry: PrelaunchEntry
 }
 
 const FOUR_CADE_BASE_URL = "https://raw.githubusercontent.com/a2-4am/4cade/v6.0.1"
@@ -556,7 +558,7 @@ export const fetchFourCadePrelaunch = async (entry: FourCadeEntry): Promise<stri
  */
 export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefined => {
   const ops: PrelaunchOp[] = []
-  let entry: number | undefined
+  let entry: PrelaunchEntry | undefined
   let hasDecompress = false
   let pendingLdaVal: number | undefined
 
@@ -637,8 +639,14 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
 
     const indirectJmpMatch = line.match(/^jmp\s+\(\s*([^)]+?)\s*\)/i)
     if (indirectJmpMatch) {
-      if (indirectJmpMatch[1].toLowerCase() !== "ldrlo2") return undefined
-      entry = "loadAddress"
+      const target = indirectJmpMatch[1].trim()
+      if (target.toLowerCase() === "ldrlo2") {
+        entry = "loadAddress"
+      } else {
+        const targetMatch = target.match(/^\$([0-9a-fA-F]{1,4})$/)
+        if (!targetMatch) return undefined
+        entry = { indirect: parseInt(targetMatch[1], 16) }
+      }
       break
     }
 

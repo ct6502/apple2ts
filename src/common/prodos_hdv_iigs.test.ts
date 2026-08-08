@@ -34,6 +34,13 @@ describe("IIgs 4cade block loading", () => {
     expect(determineVtocType("chivalry.po", new Uint8Array(), title)).toBe("4cade")
   })
 
+  test("recognizes Phaser Fire's SAN INC archive title as 4cade", () => {
+    const title = "PHASER FIRE (SAN INC CRACK)"
+
+    expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("phaser.fire")
+    expect(determineVtocType("phaser fire.po", new Uint8Array(), title)).toBe("4cade")
+  })
+
   test("wraps the relay at a ProDOS-safe load address", () => {
     const relay = Uint8Array.from({ length: 395 }, (_, index) => index & 0xFF)
     const wrapper = createProDosRelayWrapper(relay)
@@ -135,6 +142,13 @@ describe("IIgs 4cade block loading", () => {
       branchTarget(baseAddress, relay, offset),
     )
     expect(relay[errorAddresses[0] - baseAddress]).toBe(0x00)
+  })
+
+  test("emits a numeric indirect jump for Phaser Fire", () => {
+    const relay = createPackedBinaryRelay(2, 0x4000, 1, 0x70, [], { indirect: 0x20 })
+
+    expect(findSequence(relay, [0x6C, 0x20, 0x00])).toBeGreaterThan(0)
+    expect(findSequence(relay, [0x4C, 0x20, 0x00])).toBe(-1)
   })
 
   test("encodes all packed blocks in the ProDOS MLI state", () => {

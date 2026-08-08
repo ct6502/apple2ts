@@ -63,7 +63,7 @@ type FourCadeDiskMetadata = {
   capturedZeroPage?: Uint8Array  // 512-byte block: ZP (0-255) + $BF00 page (256-511)
   floppyPatchAddress?: number    // address of RWTS to patch to RTS (disable floppy reads)
   rawDiskImage?: Uint8Array      // original floppy DSK image for HD read shim
-  prelaunch?: { sequence: PrelaunchOp[]; entry: number }  // when set, use 4cade-style init calls (no RWTS shim)
+  prelaunch?: { sequence: PrelaunchOp[]; entry: number | { indirect: number } }  // when set, use 4cade-style init calls (no RWTS shim)
   supplementaryFiles?: Array<{
     data: Uint8Array
     loadAddress: number
@@ -2329,8 +2329,9 @@ const preprocessInputFilesForMenu = async (
             // Parse the prelaunch script to get the operation sequence
             const parsed = parsePrelaunchScript(prelaunchSource)
             if (parsed) {
-              const entryAddress = parsed.entry === "loadAddress" ? packed.loadAddress : parsed.entry
-              const resolvedPrelaunch = { sequence: parsed.sequence, entry: entryAddress }
+              const resolvedEntry = parsed.entry === "loadAddress" ? packed.loadAddress : parsed.entry
+              const entryAddress = typeof resolvedEntry === "number" ? resolvedEntry : packed.loadAddress
+              const resolvedPrelaunch = { sequence: parsed.sequence, entry: resolvedEntry }
               // Preserve every non-system companion file. Some games use extra
               // BIN files, while standard.a loaders such as Chivalry open large
               // typeless data files through ProDOS MLI at runtime.
@@ -3441,7 +3442,7 @@ export const createPackedBinaryRelay = (
   blockCount: number,
   _unitNumber: number,
   sequence: PrelaunchOp[],
-  entryAddress: number,
+  entryAddress: number | { indirect: number },
   relayLoadAddress = RELAY_LOAD_ADDRESS,
 ): Uint8Array => {
   // --- Assemble the prelaunch script into raw 6502 bytes ---
@@ -3518,8 +3519,12 @@ export const createPackedBinaryRelay = (
 
   // Final JMP to game entry point (skipped for callback-based prelaunches
   // where the decompressor handles the entry jump internally).
-  if (entryAddress >= 0) {
-    prelaunchBytes.push(0x4C, entryAddress & 0xFF, (entryAddress >> 8) & 0xFF)
+  if (typeof entryAddress === "number") {
+    if (entryAddress >= 0) {
+      prelaunchBytes.push(0x4C, entryAddress & 0xFF, (entryAddress >> 8) & 0xFF)
+    }
+  } else {
+    prelaunchBytes.push(0x6C, entryAddress.indirect & 0xFF, (entryAddress.indirect >> 8) & 0xFF)
   }
 
   // PrelaunchInit stub: 22 bytes at $EA-$FF (matches 4cade exactly)
@@ -5347,7 +5352,7 @@ export const buildProDosHdv = async (
           gameBlockCount,
           unitNumber,
           entry.prelaunch!.sequence,
-          entry.entryAddress,
+          entry.prelaunch!.entry,
           PRODOS_RELAY_PAYLOAD_ADDRESS,
         )
       } else {
