@@ -399,6 +399,7 @@ export const en = {
     "diskIsNewRelease": "Disk is a new release",
     "diskIsApple2TSCollection": "Disk is part of the Apple2TS collection",
     "diskIsInternetArchive": "Disk is part of the Internet Archive",
+    "diskIsDemoZoo": "Disk is part of DemoZoo",
     "clickToRemoveFromCollection": "Click to remove from disk collection",
     "clickToKeepInCollection": "Click to keep in disk collection",
     "clickToAddToCollection": "Click to add to disk collection",
