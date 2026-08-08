@@ -103,7 +103,7 @@ const getFourCadeNameIndex = (): Map<string, string> => {
 export const lookupFourCadeByTitle = (title: string): FourCadeEntry | undefined => {
   const cleaned = title
     .replace(/\s*\(4am.*?\)\s*$/i, "")
-    .replace(/\s*\(.*?crack.*?\)\s*$/i, "")
+    .replace(/\s*\(.*?(?:crack|pack).*?\)\s*$/i, "")
     .replace(/\s*\[.*?\]\s*$/g, "")
     .trim()
   const key = getFourCadeNameIndex().get(normalizeFourCadeName(cleaned))
@@ -3447,13 +3447,26 @@ export const createPackedBinaryRelay = (
 ): Uint8Array => {
   // --- Assemble the prelaunch script into raw 6502 bytes ---
   // These bytes will be copied to $0106 at runtime.
-  const prelaunchBytes: number[] = []
+  // The $0300 relay occupies part of text page 1. Clear it only after execution
+  // has moved to the stack-page prelaunch, so no active relay bytes are erased.
+  const prelaunchBytes: number[] = [
+    0xA9, 0xA0,                                                 // LDA #$A0 (blank text character)
+    0xA2, 0x00,                                                 // LDX #$00
+    0x9D, 0x00, 0x04,                                           // STA $0400,X
+    0x9D, 0x00, 0x05,                                           // STA $0500,X
+    0x9D, 0x00, 0x06,                                           // STA $0600,X
+    0x9D, 0x00, 0x07,                                           // STA $0700,X
+    0xE8,                                                       // INX
+    0xD0, 0xF1,                                                 // BNE clear loop
+  ]
 
   // Track callback vector placeholder positions for patching
   let cbVectorLoIdx = -1  // index in prelaunchBytes of callback addr lo byte
   let cbVectorHiIdx = -1  // index in prelaunchBytes of callback addr hi byte
   let cbBodyOffset = -1   // byte offset where callback body starts
   let skipCallbackOps = false  // skip ops after jmp_decompress (callback body is just RTS)
+  let resetVectorLoIdx = -1
+  let resetVectorHiIdx = -1
 
   for (const step of sequence) {
     if (skipCallbackOps) continue  // callback body ops are no-ops for us
@@ -3496,6 +3509,21 @@ export const createPackedBinaryRelay = (
         // ($DFB4/$DFAE) are no-ops, so the callback is just RTS.
         skipCallbackOps = true  // skip remaining ops (they're no-op JSR stubs + readRom)
         break
+      case "reset_vector":
+        prelaunchBytes.push(0x2C, 0x83, 0xC0, 0x2C, 0x83, 0xC0)                // BIT $C083 x2 (LC bank 2 r/w)
+        prelaunchBytes.push(0xA9)
+        resetVectorLoIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00)                                                // reset address lo placeholder
+        prelaunchBytes.push(0x8D, 0xF2, 0x03)                                   // STA $03F2
+        prelaunchBytes.push(0x8D, 0xFC, 0xFF)                                   // STA $FFFC
+        prelaunchBytes.push(0xA9)
+        resetVectorHiIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00)                                                // reset address hi placeholder
+        prelaunchBytes.push(0x8D, 0xF3, 0x03)                                   // STA $03F3
+        prelaunchBytes.push(0x8D, 0xFD, 0xFF)                                   // STA $FFFD
+        prelaunchBytes.push(0x49, 0xA5)                                         // EOR #$A5
+        prelaunchBytes.push(0x8D, 0xF4, 0x03)                                   // STA $03F4
+        break
     }
   }
 
@@ -3525,6 +3553,15 @@ export const createPackedBinaryRelay = (
     }
   } else {
     prelaunchBytes.push(0x6C, entryAddress.indirect & 0xFF, (entryAddress.indirect >> 8) & 0xFF)
+  }
+
+  if (resetVectorLoIdx >= 0 && resetVectorHiIdx >= 0) {
+    const resetAddress = 0x0106 + prelaunchBytes.length
+    prelaunchBytes[resetVectorLoIdx] = resetAddress & 0xFF
+    prelaunchBytes[resetVectorHiIdx] = (resetAddress >> 8) & 0xFF
+    prelaunchBytes.push(0x8D, 0x82, 0xC0)                                       // STA $C082 (read ROM, no write)
+    prelaunchBytes.push(0xEE, 0xF4, 0x03)                                       // INC $03F4
+    prelaunchBytes.push(0x6C, 0xFC, 0xFF)                                       // JMP ($FFFC)
   }
 
   // PrelaunchInit stub: 22 bytes at $EA-$FF (matches 4cade exactly)
@@ -5353,7 +5390,6 @@ export const buildProDosHdv = async (
           unitNumber,
           entry.prelaunch!.sequence,
           entry.prelaunch!.entry,
-          PRODOS_RELAY_PAYLOAD_ADDRESS,
         )
       } else {
         relayData = createPrelaunchRelay(
@@ -5372,7 +5408,7 @@ export const buildProDosHdv = async (
       helperFiles.push({
         name: helperName,
         type: PRODOS_FILE_TYPE_BINARY,
-        data: createProDosRelayWrapper(relayData, hasPrelaunchSequence),
+        data: createProDosRelayWrapper(relayData),
         auxType: PRODOS_RELAY_WRAPPER_ADDRESS,
       })
       continue
@@ -6181,5 +6217,5 @@ export const PRODOS_FILE_TYPE_DOS_MASTER = 0xF1
 // Bump this whenever new VTOC detection logic is introduced (e.g. new exportable
 // categories). Cached VTOC results older than this version are re-evaluated so
 // disks previously classified as non-exportable can be reclassified.
-export const VTOC_REFRESH = 8
+export const VTOC_REFRESH = 9
 

@@ -41,6 +41,13 @@ describe("IIgs 4cade block loading", () => {
     expect(determineVtocType("phaser fire.po", new Uint8Array(), title)).toBe("4cade")
   })
 
+  test("recognizes Bubble Bobble's SAN INC archive title as 4cade", () => {
+    const title = "BUBBLE BOBBLE (SAN INC PACK)"
+
+    expect(lookupFourCadeByTitle(title)?.prelaunch).toBe("bubble.bobble")
+    expect(determineVtocType("bubble bobble.po", new Uint8Array(), title)).toBe("4cade")
+  })
+
   test("wraps the relay at a ProDOS-safe load address", () => {
     const relay = Uint8Array.from({ length: 395 }, (_, index) => index & 0xFF)
     const wrapper = createProDosRelayWrapper(relay)
@@ -73,16 +80,40 @@ describe("IIgs 4cade block loading", () => {
     )
   })
 
-  test("runs a relocated packed relay without touching ProDOS global pages", () => {
-    const relay = createPackedBinaryRelay(2, 0x0800, 1, 0x70, [], -1, 0x2100)
-    const wrapper = createProDosRelayWrapper(relay, true)
-    const parameterOffset = findSequence(relay, [3, 0, 0, 8, 2, 0, 1, 0])
+  test("relocates a packed relay below its loaded payload", () => {
+    const relay = createPackedBinaryRelay(2, 0x0800, 34, 0x70, [], -1)
+    const wrapper = createProDosRelayWrapper(relay)
+    const parameterOffset = findSequence(relay, [3, 0, 0, 8, 2, 0, 34, 0])
     const mliOffset = findSequence(relay, [0x20, 0x00, 0xBF, 0x80])
 
-    expect(Array.from(wrapper.slice(0, 3))).toEqual([0x4C, 0x00, 0x21])
+    expect(Array.from(wrapper.slice(0, 3))).toEqual([0xA0, 0x00, 0xB9])
     expect(wrapper.slice(0x100, 0x100 + relay.length)).toEqual(relay)
-    expect(readWord(relay, mliOffset + 4)).toBe(0x2100 + parameterOffset)
+    expect(readWord(relay, mliOffset + 4)).toBe(0x0300 + parameterOffset)
     expect(findSequence(relay, [0x20, 0xC0, 0xC7])).toBe(-1)
+  })
+
+  test("clears relay bytes from the text page before prelaunch", () => {
+    const relay = createPackedBinaryRelay(2, 0x0800, 34, 0x70, [], 0x6000)
+    const clearBytes = [
+      0xA9, 0xA0, 0xA2, 0x00,
+      0x9D, 0x00, 0x04, 0x9D, 0x00, 0x05,
+      0x9D, 0x00, 0x06, 0x9D, 0x00, 0x07,
+      0xE8, 0xD0, 0xF1,
+    ]
+    const clearOffset = findSequence(relay, clearBytes)
+
+    expect(clearOffset).toBeGreaterThan(0)
+    reset6502()
+    memory.fill(0x41, 0x0400, 0x0800)
+    memory.set(relay.slice(clearOffset, clearOffset + clearBytes.length + 3), 0x0106)
+    updateAddressTables()
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 2000 && s6502.PC !== 0x6000; instruction++) {
+      processInstruction()
+    }
+
+    expect(s6502.PC).toBe(0x6000)
+    expect(memory.slice(0x0400, 0x0800)).toEqual(new Uint8Array(0x400).fill(0xA0))
   })
 
   test("installs a runtime MLI bootstrap outside page 2", () => {
@@ -149,6 +180,20 @@ describe("IIgs 4cade block loading", () => {
 
     expect(findSequence(relay, [0x6C, 0x20, 0x00])).toBeGreaterThan(0)
     expect(findSequence(relay, [0x4C, 0x20, 0x00])).toBe(-1)
+  })
+
+  test("installs Bubble Bobble's trailing reset handler", () => {
+    const relay = createPackedBinaryRelay(2, 0x0800, 1, 0x70, [
+      { op: "reset_vector" },
+    ], 0x6000)
+
+    expect(findSequence(relay, [
+      0xA9, 0x37, 0x8D, 0xF2, 0x03, 0x8D, 0xFC, 0xFF,
+      0xA9, 0x01, 0x8D, 0xF3, 0x03, 0x8D, 0xFD, 0xFF,
+      0x49, 0xA5, 0x8D, 0xF4, 0x03,
+      0x4C, 0x00, 0x60,
+      0x8D, 0x82, 0xC0, 0xEE, 0xF4, 0x03, 0x6C, 0xFC, 0xFF,
+    ])).toBeGreaterThan(0)
   })
 
   test("encodes all packed blocks in the ProDOS MLI state", () => {

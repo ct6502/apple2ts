@@ -526,6 +526,7 @@ export type PrelaunchOp =
   | { op: "rdRam2" }                              // STA $C080 — LC read RAM bank 2, no write
   | { op: "callback_vector"; loAddr: number; hiAddr: number }  // store callback address at loAddr/hiAddr
   | { op: "jmp_decompress"; addr: number }        // JMP to decompressor (callback-based, no return)
+  | { op: "reset_vector" }                        // install trailing stack-page reset handler in $3F2 and LC $FFFC
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
 export type PrelaunchEntry = number | "loadAddress" | { indirect: number }
@@ -561,8 +562,17 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let entry: PrelaunchEntry | undefined
   let hasDecompress = false
   let pendingLdaVal: number | undefined
+  let parsingResetVector = false
 
   if (source.includes("!pseudopc")) return undefined
+
+  const sourceWithoutComments = source
+    .split(/\r?\n/)
+    .map((line) => line.replace(/;.*$/, ""))
+    .join("\n")
+  const hasCanonicalResetVector =
+    /lda\s+#<reset\b[\s\S]*?sta\s+\$3F2\b[\s\S]*?sta\s+\$FFFC\b[\s\S]*?lda\s+#>reset\b[\s\S]*?sta\s+\$3F3\b[\s\S]*?sta\s+\$FFFD\b[\s\S]*?eor\s+#\$A5\b[\s\S]*?sta\s+\$3F4\b/i.test(sourceWithoutComments) &&
+    /^\s*reset\b:?\s*\n\s*\+READ_ROM_NO_WRITE\b\s*\n\s*inc\s+\$3F4\b\s*\n\s*jmp\s+\(\s*\$FFFC\s*\)/im.test(sourceWithoutComments)
 
   // Callback detection state — handles decompressors that JMP to a routine
   // which calls back into the prelaunch code after decompression (e.g. Frogger).
@@ -577,6 +587,11 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     const line = rawLine.replace(/;.*$/, "").trim()
     if (!line) continue
     if (line.startsWith("!") || line.startsWith("*=")) continue
+
+    if (parsingResetVector) {
+      if (line.match(/^sta\s+\$3F4\b/i)) parsingResetVector = false
+      continue
+    }
 
     // Detect callback label (e.g. "callback" or "callback:" on its own line)
     if (line.match(/^callback\b:?$/i)) { inCallbackBody = true; continue }
@@ -607,6 +622,13 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     if (line.match(/^\+READ_RAM2_WRITE_RAM2\b/)) { ops.push({ op: "rwRam2" }); continue }
     if (line.match(/^\+READ_RAM2_NO_WRITE\b/)) { ops.push({ op: "rdRam2" }); continue }
     if (line.startsWith("+")) continue
+
+    if (hasCanonicalResetVector && line.match(/^lda\s+#<reset\b/i)) {
+      ops.push({ op: "reset_vector" })
+      parsingResetVector = true
+      pendingLdaVal = undefined
+      continue
+    }
 
     // Detect callback address setup: lda #<callback / lda #>callback
     if (line.match(/^lda\s+#<\w+/i)) { pendingCallbackLo = true; pendingLdaVal = undefined; continue }
