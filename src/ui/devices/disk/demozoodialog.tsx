@@ -9,6 +9,7 @@ import { svgDemoZooLogo, svgDemoZooTitle } from "../../img/icon_demozoo"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { handleSetDiskFromURL } from "./driveprops"
+import { apple2tsProxyPath } from "./apple2tsproxy"
 import { useTranslation } from "../../../i18n/useTranslation"
 interface DemoZooItem {
   id: number
@@ -254,14 +255,14 @@ const resolveExternalDownloadUrls = async (url: string): Promise<string[]> => {
 
 const fetchDemoZooServerText = async (url: string): Promise<string> => {
   const parsed = new URL(url)
-  const response = await fetch(`/api/demozoo-direct${parsed.pathname}${parsed.search}`)
+  const response = await fetch(apple2tsProxyPath(`/api/demozoo-direct${parsed.pathname}${parsed.search}`))
   if (!response.ok) throw new Error(`DemoZoo server fetch failed: ${response.status}`)
   return response.text()
 }
 
 const fetchExternalServerText = async (url: string): Promise<string> => {
   if (/\.pages\.dev$/i.test(window.location.hostname)) {
-    const response = await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+    const response = await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
     if (!response.ok) throw new Error(`External server fetch failed: ${response.status}`)
     return response.text()
   }
