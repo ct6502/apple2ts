@@ -1,7 +1,7 @@
 # Apple2TS 完整多國語言支援實作完成報告
 
-> 此文件保留歷史實作記錄。`src/i18n/i18n_master.cjs` 已停用；請以
-> `src/i18n/README.md` 的現行翻譯維護指引為準。
+> 此文件保留原始 i18n 實作報告與歷史紀錄。現行的 gettext PO 維護流程、檔案結構及
+> 翻譯審查政策請參閱 [`../README.md`](../README.md)。
 
 ## 📋 專案概述
 
@@ -104,10 +104,26 @@ src/
         └── languageswitch.tsx  # 語言切換組件
 ```
 
-### 6. 歷史開發者工具
-- **i18n Master 腳本 (`src/i18n/i18n_master.cjs`)** - 舊版以此同步語系結構並翻譯常用詞彙；現已停用
-- **i18n Bootstrap 腳本 (`src/i18n/archive/i18n_initial_bootstrap.cjs`)** - 舊版以此為新專案產生多國語言架構；現僅保留為歷史參考
-- ✅ **AI 代理維護指令** - 位於 `src/i18n/README.md`，內含專供 AI Agent 遵循的維護規範與工作流
+### 6. 開發者工具
+- ✅ **i18n Master 腳本 (`src/i18n/i18n_master.cjs`)** - 一鍵同步所有語系結構並自動翻譯常用詞彙
+- ✅ **i18n Bootstrap 腳本 (`src/i18n/archive/i18n_initial_bootstrap.cjs`)** - 快速為新專案變出完整的多國語言轉生架構
+- ✅ **AI 代理維護指令** - 初始開發者指南中的規範與工作流，保留於下節
+
+### 7. 初始維護流程與 AI 代理指引
+
+最初的開發者指南將 `languages/en.ts` 視為語系結構的唯一標準。新增英文鍵值後，
+`i18n_master.cjs` 會補齊其餘 12 種語言：常用技術詞彙使用腳本內建翻譯，
+其他內容則先保留英文，再視需要手動調整特定語系。
+
+當時給 AI 代理的指引也要求：
+
+- 以 `en.ts` 為準，新增鍵值後立即執行 `i18n_master.cjs`。
+- 發現其他語系缺少英文鍵值時，使用同一腳本同步結構。
+- 將 UI 元件中的硬編碼字串改為 `t("category.key")`。
+- 動態訊息使用 `{{variable}}` 插值語法，並由 `t` 傳入變數。
+
+這些規則記錄了初始 TypeScript 語系工作流；現行維護方式請以
+[`../README.md`](../README.md) 的 gettext PO 指南為準。
 
 
 ## 🔧 修改的現有檔案
@@ -144,7 +160,7 @@ src/
 
 ### 啟動專案
 ```bash
-npm ci --ignore-scripts
+npm install
 npm start
 ```
 
@@ -283,17 +299,17 @@ t(key: string): string {
 
 ## 📝 維護與擴展說明
 
-目前的翻譯維護請以詳細的開發者指南為準：
-- **詳細指南：** `src/i18n/README.md` (包含 AI 代理指令與工具用法)
+以下內容保留初始開發者指南所採用的維護方式。現行流程請參閱
+[`../README.md`](../README.md)。
 
 ### 核心維護工作流
 1. **添加新翻譯**：在 `src/i18n/languages/en.ts` 加入新鍵值。
-2. **加入可用翻譯**：只在有實際翻譯時，才將新鍵值加入對應的語系檔案；缺少的鍵值會在執行階段回退至英文。
+2. **自動同步**：執行 `node src/i18n/i18n_master.cjs` 自動補齊所有語系並翻譯常用詞。
 3. **組件應用**：使用 `useTranslation` hook 定位翻譯項目。
 
-### 封存工具
-- **`src/i18n/i18n_master.cjs`**：已停用；請勿執行舊版同步流程。
-- **`src/i18n/archive/i18n_initial_bootstrap.cjs`**：僅供查閱歷史實作，不適用於目前維護或新專案。
+### 開發者工具
+- **`src/i18n/i18n_master.cjs`**：自動化結構同步與維護。
+- **`src/i18n/archive/i18n_initial_bootstrap.cjs`**：新專案快速佈署架構。
 
 ---
 

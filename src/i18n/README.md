@@ -1,67 +1,103 @@
-# Apple2TS i18n 開發者指南 (Developer Guide)
+# Apple2TS i18n Developer Guide
 
-本目錄包含 Apple2TS 的國際化（i18n）核心引擎及維護工具。當您從上游專案合併（Merge）新功能或需要新增翻譯項目時，請參考以下流程。
+Apple2TS stores translator-facing messages in gettext PO catalogs while
+retaining the existing runtime translation API. For primary English tooltip
+wording, follow the [Tooltip Style Guide](TOOLTIP_STYLE.md).
 
-## 🛠️ 維護工具箱 (Maintenance Tools)
+The original Traditional Chinese
+[implementation report](archive/initial-implementation-report_zh-TW.md) is
+preserved as project history.
 
-### 1. `i18n_master.cjs` - 已停用
-請勿使用此腳本。它會將英文複製到缺少鍵值的語系檔案，使未翻譯項目難以辨識。現在執行時不會修改檔案。在計畫中的 PO 流程取代這些檔案之前，請將英文鍵值加入 `en.ts`，並只將實際翻譯加入適用的語系檔案。
+## Sources and generated files
 
-### 2. `i18n_bootstrap.cjs` - 封存參考
-原始啟動腳本保留在 `archive/` 中作為實作歷史。請勿將它用於目前維護或新專案；它會將英文複製到每個語系，且不會產生目前的執行階段回退行為。
+- `catalogs/messages.pot` is the authoritative English message template.
+  Stable translation keys are stored in `msgctxt`; English text is stored in
+  `msgid`.
+- `catalogs/<locale>.po` stores each locale's translations in `msgstr`.
+- `languages/*.ts` is generated application input. Do not edit it directly.
 
----
+An empty `msgstr` is omitted from the generated locale catalog, so the runtime
+falls back to English. A fuzzy flag marks a translation for human review but
+does not disable it: Apple2TS intentionally includes nonempty fuzzy
+translations in generated TypeScript, similar to gettext's `--use-fuzzy`
+option.
 
-## 🔄 合併與新增翻譯流程 (Workflow)
+The initial migration marks retained non-English translations fuzzy because
+their alignment with current English has not been confirmed. Translators can
+clear that marker entry by entry after review.
 
-當您需要新增翻譯項目（例如新增了一個「印表機選單」功能）時：
+## Commands
 
-1. **更新英文原檔**：
-   編輯 `src/i18n/languages/en.ts`，加入新的鍵值對（Key-Value）。
-   ```typescript
-   printer: {
-     print: "Print Now",
-     clear: "Clear Buffer"
-   }
-   ```
+```bash
+# Merge POT changes into every PO catalog. This modifies translator files.
+npm run update-i18n-catalogs
 
-2. **加入現有翻譯**：
-   只在有實際翻譯時，才將新鍵值加入對應的語系檔案。不要只為了讓所有目錄結構相同而複製英文。若名稱或技術用語在目標語系中確實應保持相同，則可保留。
+# Regenerate TypeScript catalogs after editing POT or PO files.
+npm run generate-i18n-catalogs
 
-   只有在來源或審查已確定某個現有語系項目是從英文原文複製的佔位內容，而非有意翻譯時，才刪除該項目。僅因內容與英文相同並不足以刪除；已確認的名稱與技術用語可能合理地保持相同。
+# Verify generated catalogs without modifying them.
+npm run check-i18n-catalogs
 
-3. **保留缺少的翻譯**：
-   語系檔案缺少鍵值時，執行階段會從 `en.ts` 取得英文。這能讓應用程式保持可讀，同時使未翻譯項目仍可辨識。
+# Test PO parsing, validation, reporting, updating, and generation.
+npm run test-po-catalog
+```
 
-4. **在組件中使用**：
-   ```tsx
-   import { useTranslation } from "../../i18n/useTranslation";
-   // ...
-   const { t } = useTranslation();
-   return <button title={t("printer.print")}>{t("printer.print")}</button>;
-   ```
+Normal builds and tests run the non-mutating freshness checks automatically.
+Those checks use only the repository's Node dependencies. The intentionally
+mutating update command also requires GNU gettext `msgmerge`.
 
-## 📁 目錄結構說明
+## Adding or changing English messages
 
-- `index.ts`: i18n 核心管理類別，負責語系偵測、儲存與翻譯匹配。
-- `useTranslation.ts`: React Hook，讓前端組件能即時響應語系變更。
-- `languages/`: 存放 13 國語系的實體資料檔（`.ts` 格式以支援類型檢查）。
-- `i18n_master.cjs`: 防止繼續使用舊同步流程的停用提示。
-- `archive/`: 歷史啟動素材，不屬於目前的維護流程。
+1. Add or update the entry in `catalogs/messages.pot`. Keep an existing
+   `msgctxt` stable when only its English wording changes.
+2. Run `npm run update-i18n-catalogs`.
 
----
+   The updater matches stable `msgctxt` values before invoking `msgmerge`, so a
+   rewritten English message retains its existing translation, becomes fuzzy,
+   and keeps the previous English wording for comparison. New entries are
+   added, and removed entries become obsolete. It disables cross-key fuzzy
+   matching because the stable `msgctxt`, not similar English wording,
+   identifies a message. Each locale is staged before replacement; a failure
+   preserves the affected original and reports any earlier catalogs already
+   updated.
+3. Review the affected `msgstr` values. Clear fuzzy only after confirming a
+   translation against current English. Leave missing translations empty so
+   runtime fallback remains visible; do not copy English merely to complete
+   catalog structure.
+4. Run `npm run generate-i18n-catalogs`, then the relevant project checks.
 
-## 🤖 AI 代理維護指令 (Instructions for AI Agents)
+PO files can be edited directly or with standard tools such as Poedit and
+Weblate.
 
-如果你是正在協助維護此專案的 AI 助手，在處理國際化（i18n）相關任務時，請**務必**遵守以下規則：
+## Interpolation
 
-1.  **優先讀取 `en.ts`**：始終將 `src/i18n/languages/en.ts` 視為唯一的結構標準（Source of Truth）。
-2.  **新增翻譯的標準動作**：
-    *   先在 `en.ts` 中定義新的 Key 與英文內容。
-    *   只將已確認的翻譯加入適用的語系檔案。
-    *   不要執行 `i18n_master.cjs`，也不要為了補齊結構而複製英文。
-3.  **保留有意的回退**：其他語言檔（如 `zh-TW.ts`）在尚無翻譯時可省略 `en.ts` 中的鍵值，執行階段會自動顯示英文。
-4.  **UI 組件修改**：在修改任何 UI 組件（`.tsx`）時，若看到硬編碼的字串，請將其轉換為 `t("category.key")` 格式。
-5.  **插值語法**：翻譯字串中若有動態變數，請使用 `{{variable}}` 語法，並在呼叫 `t` 時傳入變數，例：`t("disk.syncedAt", { date: "2024-01-01" })`。
+Runtime messages use `{{name}}` placeholders. Some component templates use
+`{name}` placeholders. A translation may reorder placeholders, but must retain
+their syntax, spelling, and occurrence count. Generation validates every
+nonempty translation, including fuzzy ones, and rejects missing, unexpected,
+renamed, malformed, or differently repeated placeholders.
 
-當使用者要求「新增功能」或「修復翻譯」時，請保留現有翻譯，並只加入任務已確認的翻譯。
+Catalog messages must not begin or end with newlines; rendering code owns the
+spacing around them. Inherently multiline content may contain internal line
+breaks, and translators may place those breaks where their wording requires.
+
+```po
+msgctxt "disk.syncedAt"
+msgid "Synced {{date}}"
+msgstr "Synchronisé {{date}}"
+```
+
+The existing runtime API is unchanged:
+
+```tsx
+t("disk.syncedAt", {date: "2026-08-06"})
+```
+
+## Directory structure
+
+- `index.ts` — language selection, persistence, fallback, and lookup.
+- `useTranslation.ts` — reactive React translation hook.
+- `catalogs/` — authoritative POT and PO translator files.
+- `languages/` — generated TypeScript catalogs consumed by the application.
+- `tools/i18n/` — deterministic generation, reporting, and validation tools.
+- `archive/` — historical bootstrap material; not part of this workflow.
