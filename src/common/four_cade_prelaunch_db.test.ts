@@ -240,6 +240,43 @@ describe("4cade prelaunch parsing", () => {
     })
   })
 
+  test("preserves Hard Hat Mack's patcher and stack-built entry", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL_AND_HIDE_ARTWORK
+      lda #<patcher
+      sta $9431
+      lda #>patcher
+      sta $942E
+      jsr $4856
+    patcher rts
+      lda #1
+      sta $2218
+      +DISABLE_ACCEL
+      lda #$07
+      pha
+      lda #$FF
+      pha
+      rts
+    `)
+
+    expect(parsed).toEqual({
+      sequence: [
+        { op: "rwRam2" },
+        { op: "call", addr: 0xDFB7 },
+        { op: "call", addr: 0xDFAE },
+        { op: "readRom" },
+        { op: "inline_rts_vector", loAddr: 0x9431, hiAddr: 0x942E },
+        { op: "decompress", addr: 0x4856 },
+        { op: "patch", addr: 0x2218, val: 0x01 },
+        { op: "rwRam2" },
+        { op: "call", addr: 0xDFB4 },
+        { op: "readRom" },
+        { op: "stack_entry", returnAddress: 0x07FF },
+      ],
+      entry: -1,
+    })
+  })
+
   test("rejects inline-label scripts with unsupported launch semantics", () => {
     expect(parsePrelaunchScript("jsr HideLaunchArtworkLC2\njmp $800")).toBeUndefined()
     expect(parsePrelaunchScript("+RESET_VECTOR $200\njsr $800\njmp $900")).toBeUndefined()

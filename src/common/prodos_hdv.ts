@@ -3480,6 +3480,8 @@ export const createPackedBinaryRelay = (
   let resetHandlerHiIdx = -1
   let resetHandlerMode: "rdRam2" | undefined
   let usesResetVector100 = false
+  let inlineRtsLoIdx = -1
+  let inlineRtsHiIdx = -1
   const installedRoutines: Array<{ loIdx: number; hiIdx: number; bytes: number[] }> = []
 
   for (const step of sequence) {
@@ -3493,9 +3495,20 @@ export const createPackedBinaryRelay = (
         prelaunchBytes.push(0xEE, 0xF4, 0x03)                                  // INC $03F4
         break
       case "call":
-      case "decompress":
         prelaunchBytes.push(0x20, step.addr & 0xFF, (step.addr >> 8) & 0xFF)    // JSR addr
         break
+      case "decompress": {
+        prelaunchBytes.push(0x20, step.addr & 0xFF, (step.addr >> 8) & 0xFF)    // JSR addr
+        if (inlineRtsLoIdx >= 0 && inlineRtsHiIdx >= 0) {
+          const routineAddress = 0x0106 + prelaunchBytes.length
+          prelaunchBytes[inlineRtsLoIdx] = routineAddress & 0xFF
+          prelaunchBytes[inlineRtsHiIdx] = routineAddress >> 8
+          prelaunchBytes.push(0x60)                                            // inline RTS continuation guard
+          inlineRtsLoIdx = -1
+          inlineRtsHiIdx = -1
+        }
+        break
+      }
       case "readRom":
         prelaunchBytes.push(0x8D, 0x82, 0xC0)                                   // STA $C082
         break
@@ -3556,6 +3569,18 @@ export const createPackedBinaryRelay = (
         prelaunchBytes.push(0x00, 0x8D, 0xF3, 0x03)                             // LDA #hi; STA $03F3
         prelaunchBytes.push(0x49, 0xA5, 0x8D, 0xF4, 0x03)                       // EOR #$A5; STA $03F4
         resetHandlerMode = step.mode
+        break
+      case "inline_rts_vector":
+        prelaunchBytes.push(0xA9)
+        inlineRtsLoIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00, 0x8D, step.loAddr & 0xFF, step.loAddr >> 8)
+        prelaunchBytes.push(0xA9)
+        inlineRtsHiIdx = prelaunchBytes.length
+        prelaunchBytes.push(0x00, 0x8D, step.hiAddr & 0xFF, step.hiAddr >> 8)
+        break
+      case "stack_entry":
+        prelaunchBytes.push(0xA9, step.returnAddress >> 8, 0x48)                // LDA #high; PHA
+        prelaunchBytes.push(0xA9, step.returnAddress & 0xFF, 0x48, 0x60)        // LDA #low; PHA; RTS
         break
       case "install_routine": {
         prelaunchBytes.push(0xA9)

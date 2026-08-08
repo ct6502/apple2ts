@@ -425,6 +425,58 @@ describe("IIgs 4cade block loading", () => {
     expect(Array.from(memory.slice(0x03F2, 0x03F5))).toEqual([0x00, 0x01, 0xA4])
   })
 
+  test("launches Hard Hat Mack with its embedded patcher routine", () => {
+    const parsed = parsePrelaunchScript(`
+      +ENABLE_ACCEL_AND_HIDE_ARTWORK
+      lda #<patcher
+      sta $9431
+      lda #>patcher
+      sta $942E
+      jsr $4856
+    patcher rts
+      lda #1
+      sta $2218
+      +DISABLE_ACCEL
+      lda #$07
+      pha
+      lda #$FF
+      pha
+      rts
+    `)
+    expect(parsed).toBeDefined()
+    if (!parsed || typeof parsed.entry !== "number") throw new Error("Hard Hat Mack did not parse")
+
+    const relay = createPackedBinaryRelay(2, 0x4856, 1, 0x70, parsed.sequence, parsed.entry)
+    const clearPrefix = [0xA9, 0xA0, 0xA2, 0x00, 0x9D, 0x00, 0x04]
+    const prelaunchOffset = findSequence(relay, clearPrefix)
+
+    reset6502()
+    memory.fill(0)
+    memory.set(relay.slice(prelaunchOffset), 0x0106)
+    memory[0xDFAE] = 0x60
+    memory[0xDFB4] = 0x60
+    memory[0xDFB7] = 0x60
+    memory.set([
+      0xAD, 0x2E, 0x94, 0x48, // LDA $942E; PHA
+      0xAD, 0x31, 0x94, 0x48, // LDA $9431; PHA
+      0x60,                   // RTS to byte after inline patcher RTS
+    ], 0x4856)
+    updateAddressTables()
+    setPC(0x0106)
+    for (let instruction = 0; instruction < 3000 && s6502.PC !== 0x0800; instruction++) {
+      processInstruction()
+    }
+
+    const patcherAddress = memory[0x9431] | (memory[0x942E] << 8)
+    expect(s6502.PC).toBe(0x0800)
+    expect(memory[patcherAddress]).toBe(0x60)
+    expect(Array.from(memory.slice(patcherAddress + 1, patcherAddress + 6))).toEqual([
+      0xA9, 0x01, 0x8D, 0x18, 0x22,
+    ])
+    expect(memory[0x2218]).toBe(0x01)
+    expect(s6502.StackPtr).toBe(0xFD)
+  })
+
   test("encodes all packed blocks in the ProDOS MLI state", () => {
     const relay = createPackedBinaryRelay(2, 0x0800, 6, 0x70, [], -1)
     expect(findSequence(relay, [3, 0, 0, 8, 2, 0, 6, 0])).toBeGreaterThan(0)

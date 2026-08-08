@@ -530,6 +530,8 @@ export type PrelaunchOp =
   | { op: "reset_vector" }                        // install trailing stack-page reset handler in $3F2 and LC $FFFC
   | { op: "reset_vector_100" }                    // point the page-3 reset vector at the launcher's $0100 reboot wrapper
   | { op: "reset_handler"; mode: "rdRam2" }       // install named stack-page reset handler in $3F2
+  | { op: "inline_rts_vector"; loAddr: number; hiAddr: number }
+  | { op: "stack_entry"; returnAddress: number }
   | { op: "install_routine"; loAddr: number; hiAddr: number; bytes: number[] }
 
 /** Runtime prelaunch data parsed from a fetched .a file. */
@@ -571,6 +573,7 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   let sawCheatsMask = false
   let skippingCheatBlock = false
   let skippedForwardHelperRegion = false
+  let skipInstalledRoutineSetupLines = 0
 
   if (source.includes("!pseudopc")) return undefined
 
@@ -611,6 +614,16 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
   const hasDualArithmeticCallbackBodies =
     /^\s*callback1\b:?\s*\n\s*sec\b\s*\n\s*sbc\s+#8\b\s*\n\s*cmp\s+#2\b\s*\n\s*bcc\s+\+\s*\n\s*-\s*jmp\s+\$AE0A\b\s*\n\s*\+\s*jmp\s+\$ADF9\b/im.test(sourceWithoutComments) &&
     /^\s*callback2\b:?\s*\n\s*sec\b\s*\n\s*sbc\s+#8\b\s*\n\s*cmp\s+#2\b\s*\n\s*bcs\s+-\s*\n\s*jmp\s+\$AE21\b/im.test(sourceWithoutComments)
+  const singleRtsRoutineSetup = sourceWithoutComments.match(
+    /lda\s+#<([a-z_][a-z0-9_.]*)\b\s*\n\s*sta\s+\$([0-9a-f]{2,4})\b\s*\n\s*lda\s+#>\1\b\s*\n\s*sta\s+\$([0-9a-f]{2,4})\b/i,
+  )
+  const singleRtsRoutineSymbol = singleRtsRoutineSetup?.[1].toLowerCase()
+  const hasSingleRtsRoutine = singleRtsRoutineSymbol !== undefined && new RegExp(
+    `^[ \\t]*${singleRtsRoutineSymbol}\\b:?[ \\t]+rts\\b`, "im",
+  ).test(sourceWithoutComments)
+  const stackEntryMatch = sourceWithoutComments.match(
+    /lda\s+#\$([0-9a-f]{1,2})\b\s*\n\s*pha\b\s*\n\s*lda\s+#\$([0-9a-f]{1,2})\b\s*\n\s*pha\b\s*\n\s*rts\b/i,
+  )
 
   // Callback detection state — handles decompressors that JMP to a routine
   // which calls back into the prelaunch code after decompression (e.g. Frogger).
@@ -636,6 +649,10 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     } else {
       const localLabel = line.match(/^[+-]\s+(.+)$/)
       if (localLabel) line = localLabel[1].trim()
+    }
+    if (skipInstalledRoutineSetupLines > 0) {
+      skipInstalledRoutineSetupLines--
+      continue
     }
     if (line.match(/^\+GET_MACHINE_STATUS(?:_LC_RW)?\b/i)) {
       sawMachineStatus = true
@@ -719,6 +736,16 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
     // Detect callback address setup: lda #<callback / lda #>callback
     const callbackLoMatch = line.match(/^lda\s+#<(\w+)/i)
     if (callbackLoMatch) {
+      if (hasSingleRtsRoutine && singleRtsRoutineSetup &&
+          callbackLoMatch[1].toLowerCase() === singleRtsRoutineSymbol) {
+        ops.push({
+          op: "inline_rts_vector",
+          loAddr: parseInt(singleRtsRoutineSetup[2], 16),
+          hiAddr: parseInt(singleRtsRoutineSetup[3], 16),
+        })
+        skipInstalledRoutineSetupLines = 3
+        continue
+      }
       if (skippedForwardHelperRegion) return undefined
       callbackLoSymbol = callbackLoMatch[1].toLowerCase()
       pendingCallbackLo = true
@@ -732,6 +759,17 @@ export const parsePrelaunchScript = (source: string): ParsedPrelaunch | undefine
       pendingCallbackHi = true
       pendingLdaVal = undefined
       continue
+    }
+
+    if (stackEntryMatch) {
+      const stackEntryHigh = parseInt(stackEntryMatch[1], 16)
+      const stackEntryLda = line.match(/^lda\s+#\$([0-9a-f]{1,2})\b/i)
+      if (stackEntryLda && parseInt(stackEntryLda[1], 16) === stackEntryHigh) {
+        const returnAddress = (stackEntryHigh << 8) | parseInt(stackEntryMatch[2], 16)
+        ops.push({ op: "stack_entry", returnAddress })
+        entry = -1
+        break
+      }
     }
 
     const ldaHexMatch = line.match(/^lda\s+#\$([0-9a-fA-F]{1,2})\b/i)
