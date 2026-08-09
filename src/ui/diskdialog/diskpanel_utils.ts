@@ -1,4 +1,4 @@
-import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv } from "../../common/prodos_hdv"
+import { ImportedDiskFile, loadWozAndExtractProDosFiles, loadWozAndExtractDosImage, classifyImageKind, stripTwoImgHeader, ensureDosVolumeHasHelloGreeting, PRODOS_FILE_TYPE_TEXT, PRODOS_FILE_TYPE_DOS_MASTER, MenuDiskEntry, buildProDosHdv, VTOC_REFRESH, determineVtocType } from "../../common/prodos_hdv"
 import { RUN_MODE } from "../../common/utility"
 import { DiskBookmarks } from "../devices/disk/diskbookmarks"
 import { diskImages } from "../devices/disk/diskimages"
@@ -80,21 +80,34 @@ export const getKnownFileSizeForUrl = (newReleases: DiskCollectionItem[],
 //    set directly by file extension (no download or decode needed).
 //  - Bookmarks persist their own VTOC type in their dbm- entry (the item is built
 //    with vtocType: diskBookmark.vtocType), so that stored value is authoritative
-//    and nothing further is restored here for them.
+//    and nothing further is restored here for them -- unless the stored version
+//    predates the current VTOC_REFRESH, in which case the type is cleared so the
+//    background VTOC pass re-evaluates it.
 //  - Other disks (built-in images, new releases) have no per-disk store, so a VTOC
 //    type determined in a previous session is restored from the permanent
-//    URL-keyed local-storage cache.
+//    URL-keyed local-storage cache (version-checked the same way).
 // Anything still undefined is resolved later by the background effect, but only
 // if the disk is small enough to ever be exported.
 const restoreCachedVtocType = (item: DiskCollectionItem) => {
+  // If the item already has a vtocType but its version is stale, clear it so
+  // the background VTOC pass re-determines it with the latest detection logic.
+  if (item.vtocType !== undefined && (item.vtocVersion ?? 0) < VTOC_REFRESH) {
+    item.vtocType = undefined
+    item.vtocVersion = undefined
+  }
   if (item.vtocType !== undefined) return
   const url = item.diskUrl?.toString() || ""
   if (url.toLowerCase().split(/[?#]/)[0].endsWith(".hdv")) {
     item.vtocType = "prodos"
+    item.vtocVersion = VTOC_REFRESH
     return
   }
   if (item.bookmarkId) return
-  item.vtocType = getPreferenceVtocType(url)
+  const cached = getPreferenceVtocType(url, VTOC_REFRESH)
+  if (cached) {
+    item.vtocType = cached.type
+    item.vtocVersion = cached.version
+  }
 }
 
 export const getDiskCollection = (diskBookmarks: DiskBookmarks, newReleases: DiskCollectionItem[]) => {
@@ -125,7 +138,8 @@ export const getDiskCollection = (diskBookmarks: DiskBookmarks, newReleases: Dis
       bookmarkId: diskBookmark.id,
       cloudData: diskBookmark.cloudData,
       fileSize: diskBookmark.cloudData?.fileSize || getKnownFileSizeForUrl(newReleases, diskBookmark.diskUrl?.toString()) || -1,
-      vtocType: diskBookmark.vtocType
+      vtocType: diskBookmark.vtocType,
+      vtocVersion: diskBookmark.vtocVersion
     }
     restoreCachedVtocType(item)
     newDiskCollection.push(item)
@@ -212,6 +226,11 @@ export const downloadExportHdv = (data: Uint8Array, filename: string) => {
   URL.revokeObjectURL(url)
 }
 
+// Stable identity for a disk across re-renders (bookmark id, cloud item id,
+// disk URL, or finally the title).
+export const diskItemKey = (item: DiskCollectionItem): string =>
+  item.bookmarkId || item.cloudData?.itemId || item.diskUrl?.toString() || item.title
+
 // Determine the export badge state and tooltip for a disk. Exportable disks show
 // a green badge; disks that cannot be exported show an orange badge explaining
 // why; disks whose VTOC hasn't been determined yet show a yellow "pending" badge.
@@ -258,7 +277,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       }
     }
 
-    const fileKinds = orderedDownloadedDisks.map((downloadedDisk) =>
+    const fileKinds: Array<"dos" | "prodos" | "unknown" | "4cade"> = orderedDownloadedDisks.map((downloadedDisk) =>
       classifyImageKind(downloadedDisk.filename, downloadedDisk.buffer)
     )
 
@@ -268,6 +287,19 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
 
     for (const [index] of wozDosImageByIndex) {
       fileKinds[index] = "dos"
+    }
+
+    // Re-check with the downloaded bytes so stale cached classifications cannot
+    // override a real ProDOS volume, while title-matched 4cade disks still use
+    // their direct-load path.
+    for (let i = 0; i < orderedDownloadedDisks.length; i++) {
+      const disk = orderedDownloadedDisks[i]
+      const recheck = determineVtocType(disk.filename, disk.buffer, disk.item.title)
+      if (recheck === "prodos") {
+        fileKinds[i] = "prodos"
+      } else if (disk.item.vtocType === "4cade" || recheck === "4cade") {
+        fileKinds[i] = "4cade"
+      }
     }
 
     const fileEntries = orderedDownloadedDisks.map((downloadedDisk, index) => {
@@ -286,9 +318,6 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
         // whose greeting was not named HELLO does not fail with FILE NOT FOUND.
         const greeting = ensureDosVolumeHasHelloGreeting(data)
         data = greeting.image
-        if (greeting.action === "injected") {
-          console.log(`[HDV Export] Injected HELLO greeting into ${downloadedDisk.filename}: ${greeting.command}`)
-        }
       }
       return {
         name: downloadedDisk.filename.split(".")[0].slice(0, 15),

@@ -24,7 +24,7 @@ const demoZooEnabled = import.meta.env.DEV ||
   import.meta.env.VITE_DEMOZOO_ENABLED === "true" ||
   (typeof window !== "undefined" && /\.pages\.dev$/i.test(window.location.hostname))
 import { DiskBookmarks } from "./diskbookmarks"
-import { determineVtocType } from "../../../common/prodos_hdv"
+import { determineVtocType, VTOC_REFRESH } from "../../../common/prodos_hdv"
 import { isFileSystemApiSupported } from "../../ui_utilities"
 import { useTranslation } from "../../../i18n/useTranslation"
 
@@ -252,13 +252,24 @@ const DiskDrive = (props: DiskDriveProps) => {
   const diskLabelClass = `disk-label${dprops.diskHasChanges ? " disk-label-unsaved" : ""}${isTouchDevice ? " disk-label-small" : ""}`
 
   return (
-    <span className="flex-column">
+    <span
+      className="flex-column"
+      onContextMenu={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        handleMenuClick(event)
+      }}>
       <span className="flex-row">
         <span className="flex-column">
           <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
             src={img1} alt={filename}
             id={dprops.index === 2 ? "tour-floppy-disks" : ""}
             title={diskDriveLabel}
+            onContextMenu={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              handleMenuClick(event)
+            }}
             onClick={handleMenuClick} />
           <FontAwesomeIcon
             icon={faRotate}
@@ -319,7 +330,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                     lastUpdated: new Date(Date.now()),
                     diskUrl: dprops.cloudData.downloadUrl,
                     cloudData: dprops.cloudData,
-                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData)
+                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData),
+                    vtocVersion: VTOC_REFRESH
                   })
                 }
               }
@@ -423,7 +435,8 @@ const DiskDrive = (props: DiskDriveProps) => {
                     screenshotUrl: getImageDataUrlFromCanvas(),
                     lastUpdated: new Date(dprops.cloudData.lastSyncTime),
                     cloudData: dprops.cloudData,
-                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData)
+                    vtocType: determineVtocType(dprops.cloudData.fileName || filename, dprops.diskData),
+                    vtocVersion: VTOC_REFRESH
                   })
                 }
               }

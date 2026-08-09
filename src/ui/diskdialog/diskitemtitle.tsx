@@ -7,7 +7,8 @@ export const DiskItemTitle = (props: {
   text: string,
   className: string,
   title: string,
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void,
+  onMouseDown?: (e: React.MouseEvent<HTMLDivElement>) => void,
+  onMouseUp?: (e: React.MouseEvent<HTMLDivElement>) => void,
 }) => {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -32,6 +33,13 @@ export const DiskItemTitle = (props: {
   }, [props.text])
 
   return (
-    <div ref={ref} className={props.className} title={props.title} onClick={props.onClick}>{props.text}</div>
+    <div
+      ref={ref}
+      className={props.className}
+      title={props.title}
+      onMouseDown={props.onMouseDown}
+      onMouseUp={props.onMouseUp}>
+      {props.text}
+    </div>
   )
 }

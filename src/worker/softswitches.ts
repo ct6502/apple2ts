@@ -5,6 +5,7 @@ import { resetJoystick, checkJoystickValues, checkPushButtonValues } from "./dev
 import { s6502 } from "./instructions"
 import { toHex } from "../common/utility"
 
+
 type tSetFunc = ((addr: number, cycleCount: number) => void) | null
 
 type SoftSwitch = {
@@ -17,6 +18,7 @@ type SoftSwitch = {
 }
 
 const sswitchArray: Array<SoftSwitch> = []
+const loggedUnknownSwitches = new Set<number>()
 
 const NewSwitch = (offAddr: number, onAddr: number, isSetAddr: number,
   writeOnly = false,
@@ -269,7 +271,10 @@ export const checkSoftSwitches = (addr: number,
   }
   const sswitch1 = sswitchArray[addr - 0xC000]
   if (!sswitch1) {
-    console.error("Unknown softswitch " + toHex(addr))
+    if (!loggedUnknownSwitches.has(addr)) {
+      console.error("Unknown softswitch " + toHex(addr))
+      loggedUnknownSwitches.add(addr)
+    }
     memSetC000(addr, rand())
     return
   }
