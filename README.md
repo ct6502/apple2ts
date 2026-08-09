@@ -187,7 +187,11 @@ The Cloudflare Pages project must be created in the specified Cloudflare account
 1. Open a production whose DemoZoo download link is an external project page, such as Brutal Deluxe or another provider, and verify that the direct `.dsk`, `.woz`, `.po`, or `.zip` image is discovered and loaded.
 1. Test a production with multiple download links where the first source is unavailable, and verify that the next working disk-image link is tried automatically.
 1. Refresh the browser and repeat the test with another production to verify that the disk is replaced and the new production boots.
-1. On the GitHub Pages deployment, verify that DemoZoo is not shown; DemoZoo is available through the Cloudflare Pages deployment because its server-side proxy avoids browser CORS restrictions.
+1. On a GitHub Pages deployment, DemoZoo can be enabled with an external proxy. Set these repository variables under **Settings → Secrets and variables → Actions → Variables**:
+   - `VITE_DEMOZOO_ENABLED=true`
+   - `VITE_DEMOZOO_PROXY_URL=https://<your-proxy-project>.pages.dev`
+   The proxy project must expose the DemoZoo and disk proxy endpoints used by Apple2TS. The frontend then routes DemoZoo/API, external download-page, and disk-image requests through that proxy, avoiding browser CORS restrictions.
+2. On the Cloudflare Pages deployment, DemoZoo uses the same-origin Pages Functions and does not require `VITE_DEMOZOO_PROXY_URL`. Verify that the DemoZoo production list opens with screenshots and page navigation.
 
 
 ## Localhost Certificates

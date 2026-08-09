@@ -10,13 +10,16 @@ permissions:
 
 on:
   push:
-    branches: [ main, a2ts-proxytest ]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_DEMOZOO_ENABLED: ${{ vars.VITE_DEMOZOO_ENABLED || 'false' }}
+      VITE_DEMOZOO_PROXY_URL: ${{ vars.VITE_DEMOZOO_PROXY_URL || '' }}
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'github-pages-test' }}
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     strategy:
       matrix:
@@ -24,11 +27,6 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v5
-    - name: Configure DemoZoo proxy test build
-      if: github.ref == 'refs/heads/a2ts-proxytest'
-      run: |
-        echo "VITE_DEMOZOO_ENABLED=true" >> "$GITHUB_ENV"
-        echo "VITE_DEMOZOO_PROXY_URL=https://apple2ts-proxy.pages.dev" >> "$GITHUB_ENV"
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v5
     - name: Use Node.js ${{ matrix.node-version }}
