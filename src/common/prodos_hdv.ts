@@ -311,11 +311,11 @@ export const generateMenuSourceProgram = (
   lines.push("45 K0=PEEK(49152)-128:X=PEEK(49168)")
   if (hasKeyboardPage) {
     lines.push("46 IF G=0 AND K0=27 THEN G=1:POKE 49237,0:GOTO 40")
-    lines.push("47 IF G=1 THEN G=0:POKE 49236,0")
+    lines.push("47 IF G=1 AND K0=27 THEN G=0:POKE 49236,0:GOTO 40")
   }
   lines.push("50 IF K0=8 THEN I=I-1:IF I<1 THEN I=MAX")
   lines.push("60 IF K0=21 THEN I=I+1:IF I>MAX THEN I=1")
-  lines.push("70 IF K0=8 OR K0=21 THEN GOSUB 1000:GOTO 40")
+  lines.push("70 IF K0=8 OR K0=21 THEN G=0:POKE 49236,0:GOSUB 1000:GOTO 40")
   lines.push("80 IF K0=13 OR K0=32 THEN GOSUB 2000:GOTO 40")
   lines.push("85 IF K0>96 AND K0<123 THEN K0=K0-32")
   lines.push("86 IF (K0<48 OR K0>57) AND (K0<65 OR K0>90) THEN 90")
@@ -325,7 +325,7 @@ export const generateMenuSourceProgram = (
   lines.push("90 FOR J=1 TO MAX")
   lines.push("91 IF ASC(MID$(C$,J,1))=K0 THEN P=J:J=MAX")
   lines.push("92 NEXT")
-  lines.push("93 IF P>0 THEN I=P:GOSUB 1000")
+  lines.push("93 IF P>0 THEN G=0:POKE 49236,0:I=P:GOSUB 1000")
   lines.push("94 GOTO 40")
 
   lines.push("1000 HOME")
