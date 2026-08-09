@@ -29,7 +29,7 @@ const branchTarget = (baseAddress: number, bytes: Uint8Array, offset: number) =>
 }
 
 describe("IIgs 4cade block loading", () => {
-  test("menu uses full HGR and jumps to the first case-insensitive title initial", () => {
+  test("menu uses full HGR and cycles adjacent case-insensitive title initials", () => {
     const source = generateMenuSourceProgram([
       { filename: "ALPHA", displayName: "Aztec" },
       { filename: "ANOTHER", displayName: "Apple Panic" },
@@ -38,9 +38,12 @@ describe("IIgs 4cade block loading", () => {
 
     expect(source).toContain("20 MAX=3:I=1:G=0:C$=\"AAB\"")
     expect(source).toContain("85 IF K0>96 AND K0<123 THEN K0=K0-32")
-    expect(source).toContain("87 P=0:FOR J=1 TO MAX")
-    expect(source).toContain("88 IF ASC(MID$(C$,J,1))=K0 THEN P=J:J=MAX")
-    expect(source).toContain("89 NEXT:IF P>0 THEN I=P:GOSUB 1000")
+    expect(source).toContain("87 P=0:IF ASC(MID$(C$,I,1))=K0 THEN P=I+1:IF P>MAX THEN P=1")
+    expect(source).toContain("88 IF P>0 THEN IF ASC(MID$(C$,P,1))<>K0 THEN P=0")
+    expect(source).toContain("89 IF P>0 THEN 93")
+    expect(source).toContain("90 FOR J=1 TO MAX")
+    expect(source).toContain("91 IF ASC(MID$(C$,J,1))=K0 THEN P=J:J=MAX")
+    expect(source).toContain("93 IF P>0 THEN I=P:GOSUB 1000")
     expect(source).toContain("40 IF PEEK(49152)<128 THEN 40")
     expect(source).toContain("46 IF G=0 AND K0=27 THEN G=1:POKE 49237,0:GOTO 40")
     expect(source).toContain("47 IF G=1 THEN G=0:POKE 49236,0")
