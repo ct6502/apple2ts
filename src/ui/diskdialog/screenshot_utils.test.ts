@@ -23,7 +23,7 @@ describe("screenshot menu controls", () => {
     }
     const context = contextState as unknown as CanvasRenderingContext2D
 
-    stampMenuControls(context, true)
+    stampMenuControls(context, true, "", false)
 
     expect(operations).toContain("roundRect:10,10,36,23,4")
     expect(operations).toContain("fillText:ESC,28,21.5")
@@ -42,7 +42,7 @@ describe("screenshot menu controls", () => {
     expect(context.lineJoin).toBe("round")
   })
 
-  test("positions available initials on QWERTY rows and omits the current initial", () => {
+  test("positions available initials on QWERTY rows", () => {
     const operations: string[] = []
     const contextState = {
       fillStyle: "",
@@ -75,13 +75,17 @@ describe("screenshot menu controls", () => {
     expect(operations).toContain("fillText:Q,13.5,94.5")
     expect(operations).toContain("roundRect:42,133,27,23")
     expect(operations).toContain("fillText:Z,55.5,144.5")
-    expect(operations).toContain("fillText:ESC,28,21.5")
+    expect(operations.some(operation => operation.startsWith("fillText:ESC,"))).toBe(false)
     expect(operations.some(operation => operation.startsWith("fillText:SHIFT,"))).toBe(false)
     expect(operations).toContain("fillText:A,27.5,119.5")
+    expect(operations.some(operation => operation.startsWith("fillText:ESC,"))).toBe(false)
+    expect(operations).not.toContain("roundRect:41,162,123,23")
+    expect(operations).not.toContain("roundRect:187,162,23,23")
+    expect(operations).not.toContain("roundRect:216,162,23,23")
     expect(contextState.font).toBe("bold 15px sans-serif")
   })
 
-  test("shows ESC but omits alphanumeric keys from the plain screenshot controls", () => {
+  test("shows ESC and bottom controls but omits alphanumeric keys from the plain screenshot", () => {
     const operations: string[] = []
     const context = {
       fillStyle: "",
@@ -104,11 +108,14 @@ describe("screenshot menu controls", () => {
 
     expect(operations).toContain("roundRect:10,10,36,23")
     expect(operations).toContain("fillText:ESC,28,21.5")
+    expect(operations).toContain("roundRect:41,162,123,23")
+    expect(operations).toContain("roundRect:187,162,23,23")
+    expect(operations).toContain("roundRect:216,162,23,23")
     expect(operations.some(operation => operation.startsWith("fillText:SHIFT,"))).toBe(false)
     expect(operations.some(operation => operation.startsWith("fillText:A,"))).toBe(false)
   })
 
-  test("omits arrow keys but keeps the spacebar for a single disk", () => {
+  test("omits arrow keys but keeps ESC and the spacebar on HGR1 for a single disk", () => {
     Object.defineProperty(globalThis, "Path2D", {
       configurable: true,
       value: class {
@@ -135,7 +142,7 @@ describe("screenshot menu controls", () => {
       stroke: () => undefined,
     } as unknown as CanvasRenderingContext2D
 
-    stampMenuControls(context, false)
+    stampMenuControls(context, false, "", false)
 
     expect(operations).toHaveLength(4)
   })

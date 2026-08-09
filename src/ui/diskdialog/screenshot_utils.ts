@@ -303,15 +303,16 @@ export const stampMenuControls = (
 
   context.save()
   context.scale(2, 1)
-  stampEscapeKey(context)
   if (showAlphanumericKeys) {
     stampAlphanumericKeys(context, availableInitials, y)
-  }
-  stampSpacebar(context, x, y)
-  if (showNavigation) {
-    const leftX = x + SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP
-    const rightX = leftX + ARROW_KEY_SIZE + ARROW_KEY_GAP
-    stampNavigationKeys(context, leftX, rightX, y)
+  } else {
+    stampEscapeKey(context)
+    stampSpacebar(context, x, y)
+    if (showNavigation) {
+      const leftX = x + SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP
+      const rightX = leftX + ARROW_KEY_SIZE + ARROW_KEY_GAP
+      stampNavigationKeys(context, leftX, rightX, y)
+    }
   }
   context.restore()
 }
