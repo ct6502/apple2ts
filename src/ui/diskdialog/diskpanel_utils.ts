@@ -360,7 +360,7 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       sourceFilename: disk.filename,
       displayName: disk.item.title,
       screenshotData: screenshots[index].data?.plain,
-      keyboardScreenshotData: screenshots[index].data?.keyboard,
+      keyboardScreenshotData: showScreenshotNavigation ? screenshots[index].data?.keyboard : undefined,
       imageKind: fileKinds[index],
       wozExtractedProDosFiles: wozExtractedByIndex.get(index),
     }))

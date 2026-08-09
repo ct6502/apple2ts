@@ -306,7 +306,7 @@ export const stampMenuControls = (
   if (showAlphanumericKeys) {
     stampAlphanumericKeys(context, availableInitials, y)
   } else {
-    stampEscapeKey(context)
+    if (showNavigation) stampEscapeKey(context)
     stampSpacebar(context, x, y)
     if (showNavigation) {
       const leftX = x + SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP

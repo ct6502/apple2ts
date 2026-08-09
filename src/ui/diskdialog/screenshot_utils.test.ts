@@ -115,7 +115,7 @@ describe("screenshot menu controls", () => {
     expect(operations.some(operation => operation.startsWith("fillText:A,"))).toBe(false)
   })
 
-  test("omits arrow keys but keeps ESC and the spacebar on HGR1 for a single disk", () => {
+  test("omits ESC and arrow keys but keeps the spacebar on HGR1 for a single disk", () => {
     Object.defineProperty(globalThis, "Path2D", {
       configurable: true,
       value: class {
@@ -144,6 +144,6 @@ describe("screenshot menu controls", () => {
 
     stampMenuControls(context, false, "", false)
 
-    expect(operations).toHaveLength(4)
+    expect(operations).toHaveLength(2)
   })
 })

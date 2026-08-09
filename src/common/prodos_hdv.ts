@@ -291,6 +291,7 @@ export const generateMenuSourceProgram = (
 ): string => {
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
+  const hasKeyboardPage = count > 1
   const runtimeVolumes: number[] = []
   for (let i = 0; i < count; i++) {
     runtimeVolumes[i] = runtimeVolumeByMenuIndex?.[i] ?? (i + 1)
@@ -308,8 +309,10 @@ export const generateMenuSourceProgram = (
   lines.push("30 GOSUB 1000")
   lines.push("40 IF PEEK(49152)<128 THEN 40")
   lines.push("45 K0=PEEK(49152)-128:X=PEEK(49168)")
-  lines.push("46 IF G=0 AND K0=27 THEN G=1:POKE 49237,0:GOTO 40")
-  lines.push("47 IF G=1 THEN G=0:POKE 49236,0")
+  if (hasKeyboardPage) {
+    lines.push("46 IF G=0 AND K0=27 THEN G=1:POKE 49237,0:GOTO 40")
+    lines.push("47 IF G=1 THEN G=0:POKE 49236,0")
+  }
   lines.push("50 IF K0=8 THEN I=I-1:IF I<1 THEN I=MAX")
   lines.push("60 IF K0=21 THEN I=I+1:IF I>MAX THEN I=1")
   lines.push("70 IF K0=8 OR K0=21 THEN GOSUB 1000:GOTO 40")
@@ -327,16 +330,20 @@ export const generateMenuSourceProgram = (
 
   lines.push("1000 HOME")
   lines.push("1005 IF I<1 OR I>MAX THEN I=1")
-  // GRAPHICS + FULL + HIRES. Keep the currently selected HGR page visible.
-  lines.push("1010 POKE 49232,0:POKE 49234,0:POKE 49239,0")
+  // GRAPHICS + FULL + HIRES. Multi-disk menus preserve the currently selected page.
+  lines.push(hasKeyboardPage
+    ? "1010 POKE 49232,0:POKE 49234,0:POKE 49239,0"
+    : "1010 POKE 49232,0:POKE 49234,0:POKE 49236,0:POKE 49239,0")
   // The screenshot filename is SCREEN + the zero-padded index, which is a pure
   // function of I, so compute it at runtime instead of emitting one IF-line per
   // disk. This keeps MENUSRC's size constant regardless of the disk count.
   lines.push("1011 N$=STR$(I):IF I<10 THEN N$=\"0\"+N$")
   lines.push(`1012 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
-  lines.push(`1013 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/KEY"+N$+",A$4000"`)
-  lines.push("1014 IF G=0 THEN POKE 49236,0")
-  lines.push("1015 IF G=1 THEN POKE 49237,0")
+  if (hasKeyboardPage) {
+    lines.push(`1013 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/KEY"+N$+",A$4000"`)
+    lines.push("1014 IF G=0 THEN POKE 49236,0")
+    lines.push("1015 IF G=1 THEN POKE 49237,0")
+  }
   lines.push("1020 RETURN")
 
   lines.push(`2000 POKE ${MENU_SELECTED_INDEX_ADDRESS},I:HOME:PRINT D$;"CLOSE":PRINT D$;"RUN ${helperSubdir}/MENULAUNCH":RETURN`)

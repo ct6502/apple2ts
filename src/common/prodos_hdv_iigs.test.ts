@@ -60,6 +60,18 @@ describe("IIgs 4cade block loading", () => {
     expect(source).not.toContain("INVERSE")
   })
 
+  test("single-disk menu omits the keyboard page and Escape transition", () => {
+    const source = generateMenuSourceProgram([
+      { filename: "ALPHA", displayName: "Aztec" },
+    ], undefined, [], [], "A2TSHLP")
+
+    expect(source).toContain("1010 POKE 49232,0:POKE 49234,0:POKE 49236,0:POKE 49239,0")
+    expect(source).toContain("BLOAD SHOTS/SCREEN\"+N$+\",A$2000")
+    expect(source).not.toContain("BLOAD SHOTS/KEY")
+    expect(source).not.toContain("K0=27")
+    expect(source).not.toContain("POKE 49237")
+  })
+
   test("keeps a large ProDOS image titled Aztec out of the 4cade path", () => {
     expect(determineVtocType("Aztec.po", new Uint8Array(819200), "Aztec")).toBe("prodos")
   })
