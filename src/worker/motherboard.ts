@@ -2,7 +2,7 @@
 import { passMachineState, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
 import { hiresAddressToLine, RUN_MODE, TEST_DEBUG } from "../common/utility"
-import { resetFloppyDrives, doPauseDrive, getHardDriveState } from "./devices/drivestate"
+import { resetFloppyDrives, doPauseDrive, getHardDriveState, doSetEmuDriveNewData } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   restoreSoftSwitches, getSoftSwitchDescriptions, 
@@ -16,13 +16,14 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   RamWorksBankGet,
   doSetRom,
   getZeroPage,
+  getMemoryDump as getCpuMemoryDump,
   memSet,
   exportMemoryToHiresLine,
   getDataBlock,
   clearSlot} from "./memory"
 import { setButtonState, handleGamepads } from "./devices/joystick"
 import { handleGameSetup } from "./games/game_mappings"
-import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, resetCycleCountCallbacks, setStepOut } from "./cpu6502"
+import { breakpointMap, clearInterrupts, doSetBreakpointSkipOnce, processInstruction, resetCycleCountCallbacks, setStepOut, doSetBreakpoints } from "./cpu6502"
 import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
@@ -33,10 +34,11 @@ import { enableDiskDrive } from "./devices/diskdata"
 import { pollKeyboardRepeat, sendPastedText } from "./devices/keyboard"
 import { enableHardDrive } from "./devices/harddrivedata"
 import { parseAssembly } from "./utility/assembler"
+import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
-import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails } from "./save_restore"
+import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, doGetSaveState, doRestoreSaveState } from "./save_restore"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -54,6 +56,22 @@ let takeSnapshot = false
 let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
 let speedTracker: Array<{time: number, cycles: number}> = []
+
+// === Zero-page capture state ===
+// When active, the emulator boots a floppy at ludicrous speed, waits for a
+// breakpoint at the game entry address, snapshots zero page, then restores
+// the previous emulator state and posts the result back to the UI.
+let captureActive = false
+let captureSavedState: EmulatorSaveState | null = null
+let captureSavedSpeedMode = 0
+let captureSavedRunMode: RUN_MODE = RUN_MODE.IDLE
+let captureSavedBreakpoints: BreakpointMap | null = null
+let captureTimeoutId: ReturnType<typeof setTimeout> | null = null
+let captureCallback: ((result: CaptureBootResult | null) => void) | null = null
+let captureRequest: CaptureBootStateRequest | null = null
+let captureWaitingForPostDelay = false
+let capturePostDelayId: ReturnType<typeof setTimeout> | null = null
+let captureEarlyLowMemory: Uint8Array | null = null
 
 export const setTracing = (doTracing: boolean) => {
   tracing = doTracing
@@ -230,6 +248,138 @@ export const doSetSpeedMode = (speedModeIn: number) => {
   resetRefreshCounter()
 }
 
+// Boot a floppy disk image, run at ludicrous speed until the given entry
+// address is reached, then capture zero page ($00-$FF) and restore the
+// previous emulator state.  The callback receives a 256-byte Uint8Array
+// on success, or null on timeout.
+export const startCaptureBootState = (
+  req: CaptureBootStateRequest,
+  callback: (result: CaptureBootResult | null) => void
+) => {
+  // 1. Save current emulator state (full, including disk data)
+  captureSavedState = doGetSaveState(true)
+  captureSavedSpeedMode = speedMode
+  captureSavedRunMode = cpuRunMode
+  captureSavedBreakpoints = new BreakpointMap(breakpointMap)
+  captureCallback = callback
+  captureRequest = req
+
+  // 2. Load the floppy image into slot 6 drive 1
+  const driveProps: DriveProps = {
+    index: 2,  // slot 6 drive 1
+    hardDrive: false,
+    drive: 1,
+    filename: req.filename,
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: true,
+    diskData: req.diskImage,
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }
+  doSetEmuDriveNewData(driveProps, true)
+
+  // Clear any existing hard drive so floppy boots
+  const emptyDriveProps: DriveProps = {
+    index: 0,
+    hardDrive: true,
+    drive: 1,
+    filename: "",
+    status: "",
+    motorRunning: false,
+    diskHasChanges: false,
+    isWriteProtected: true,
+    diskData: new Uint8Array(0),
+    lastAppleWriteTime: 0,
+    cloudData: null,
+    writableFileHandle: null,
+    lastLocalFileWriteTime: 0,
+  }
+  doSetEmuDriveNewData(emptyDriveProps, true)
+
+  // 3. Set a hidden one-shot breakpoint at the entry address
+  const bp = BreakpointNew()
+  bp.address = req.entryAddress
+  bp.once = true
+  bp.hidden = true
+  const captureBreakpoints = new BreakpointMap()
+  captureBreakpoints.set(req.entryAddress, bp)
+  doSetBreakpoints(captureBreakpoints)
+
+  // 4. Set ludicrous speed
+  doSetSpeedMode(4)
+
+  // 5. Start a fresh boot
+  captureActive = true
+  doSetRunMode(RUN_MODE.NEED_BOOT)
+
+  // 6. Safety timeout
+  const timeoutMs = req.timeoutMs ?? 15000
+  captureTimeoutId = setTimeout(() => {
+    if (captureActive) {
+      console.warn(`[Capture] Timed out after ${timeoutMs}ms waiting for entry at $${req.entryAddress.toString(16).toUpperCase()}`)
+      finishCaptureBootState(true)
+    }
+  }, timeoutMs)
+}
+
+const finishCaptureBootState = (timedOut = false) => {
+  // Read zero page (and optionally full memory) before restoring state
+  let result: CaptureBootResult | null = null
+  if (!timedOut) {
+    const zp = getZeroPage()
+    result = { zeroPage: zp }
+    if (captureRequest?.captureMemory) {
+      result.memoryDump = getCpuMemoryDump()
+    }
+    if (captureWaitingForPostDelay) {
+      // Two-stage capture: record the PC at time of late capture
+      result.capturedPC = s6502.PC
+      result.earlyLowMemory = captureEarlyLowMemory ?? undefined
+      console.log(`[Capture] Late capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")}, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ""}${result.earlyLowMemory ? ` + ${result.earlyLowMemory.length} bytes early low memory` : ""}`)
+    } else {
+      console.log(`[Capture] Hit entry point, captured ${zp.length} bytes of zero page${result.memoryDump ? ` + ${result.memoryDump.length} bytes memory dump` : ""}`)
+    }
+  }
+
+  // Clear the timeout
+  if (captureTimeoutId) {
+    clearTimeout(captureTimeoutId)
+    captureTimeoutId = null
+  }
+  if (capturePostDelayId) {
+    clearTimeout(capturePostDelayId)
+    capturePostDelayId = null
+  }
+  captureWaitingForPostDelay = false
+  captureEarlyLowMemory = null
+
+  // Restore previous emulator state
+  captureActive = false
+  if (captureSavedState) {
+    doRestoreSaveState(captureSavedState, false)
+    captureSavedState = null
+  }
+  if (captureSavedBreakpoints) {
+    doSetBreakpoints(captureSavedBreakpoints)
+    captureSavedBreakpoints = null
+  }
+  doSetSpeedMode(captureSavedSpeedMode)
+  // Restore the run mode (the emulator may have been running, paused, or idle)
+  cpuRunMode = captureSavedRunMode
+  updateExternalMachineState()
+
+  // Send result
+  if (captureCallback) {
+    captureCallback(result)
+    captureCallback = null
+  }
+  captureRequest = null
+}
+
 export const doSetAppMode = (mode: string) => {
   appMode = mode
 }
@@ -376,6 +526,36 @@ export const doSetRunMode = (cpuRunModeIn: RUN_MODE, doShowDebugTab = true) => {
   }
   cpuRunMode = cpuRunModeIn
   if (cpuRunMode === RUN_MODE.PAUSED) {
+    // If a zero-page capture is active and we just hit the breakpoint,
+    // complete the capture before doing anything else.
+    if (captureActive) {
+      if (captureRequest?.waitForDiskIo && !captureWaitingForPostDelay) {
+        // Two-stage capture: entry breakpoint confirmed boot succeeded.
+        // Resume execution and capture later (after disk I/O completes).
+        captureWaitingForPostDelay = true
+        const delayMs = captureRequest.postEntryDelayMs ?? 3000
+        console.log(`[Capture] Hit entry $${captureRequest.entryAddress.toString(16).toUpperCase()}, resuming for ${delayMs}ms to let disk I/O finish...`)
+        // Save full memory now (before the game's init modifies code regions).
+        // This preserves code at $6400+, RWTS at $0600, etc.
+        // Late capture provides disk-read buffer data ($8000+).
+        captureEarlyLowMemory = getCpuMemoryDump()
+        // Clear the one-shot breakpoint so it doesn't fire again
+        doSetBreakpoints(new BreakpointMap())
+        // Resume at ludicrous speed
+        cpuRunMode = RUN_MODE.RUNNING
+        // Set the delayed capture timer
+        capturePostDelayId = setTimeout(() => {
+          capturePostDelayId = null
+          if (captureActive) {
+            console.log(`[Capture] Post-entry delay elapsed, pausing to capture at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")}`)
+            doSetRunMode(RUN_MODE.PAUSED)
+          }
+        }, delayMs)
+        return
+      }
+      finishCaptureBootState()
+      return
+    }
     syncSoftSwitchStatusFlags()
     if (gameSetupTimerID) {
       clearInterval(gameSetupTimerID)

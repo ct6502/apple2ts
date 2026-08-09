@@ -25,6 +25,7 @@ export const willTakeBranch = (opcode: string, PStatus: number) => {
 
 export const getInstructionString = (addr: number, code: PCodeInstr1,
   vLo: number, vHi: number, PStatus: number) => {
+  if (!code) return `${toHex(addr, 4)}: ???`
   if (addr >> 8 === 0xC0) {
     let codename = "---"
     if (addr >= 0xC010 && addr <= 0xC01F) {

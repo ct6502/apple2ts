@@ -10,7 +10,8 @@ import { doSetRunMode, doSetSpeedMode,
   doSetAppMode,
   setTracing,
   doExecuteBasicCommand,
-  doSetCyclesToRun} from "./motherboard"
+  doSetCyclesToRun,
+  startCaptureBootState} from "./motherboard"
 import { doSetEmuDriveNewData, doSetEmuDriveProps } from "./devices/drivestate"
 import { apple2KeyRelease, setKeyboardState, sendTextToEmulator } from "./devices/keyboard"
 import { pressAppleCommandKey, setGamepads, setReverseYAxis } from "./devices/joystick"
@@ -128,6 +129,10 @@ export const pass6502Instructions = (instructions: Array<PCodeInstr1>) => {
 
 export const passSerialConfig = (config: SerialConfig) => {
   doPostMessage(MSG_WORKER.SERIAL_CONFIG_CHANGE, config)
+}
+
+export const passCaptureBootStateResponse = (result: CaptureBootResult | null) => {
+  doPostMessage(MSG_WORKER.CAPTURE_BOOT_STATE_RESPONSE, result)
 }
 
 // We do this weird check so we can safely run this code from the node.js
@@ -289,6 +294,13 @@ if (typeof self !== "undefined") {
       case MSG_MAIN.TRACE_SETTINGS:
         setTraceSettings(e.data.payload)
         break
+      case MSG_MAIN.CAPTURE_BOOT_STATE: {
+        const req = e.data.payload as CaptureBootStateRequest
+        startCaptureBootState(req, (result) => {
+          passCaptureBootStateResponse(result)
+        })
+        break
+      }
       default:
         console.error(`worker2main: unhandled msg: ${JSON.stringify(e.data)}`)
         break
