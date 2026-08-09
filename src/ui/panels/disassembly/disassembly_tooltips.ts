@@ -1,29 +1,46 @@
 type MemoryOperation = "read" | "write" | "read-modify-write" | "multiple-access"
+type AddressWrapMask = "$FF" | "$FFFF"
 export type TooltipTranslator = (key: string, params?: Record<string, string>) => string
 
 type EnglishCatalog = (typeof import("../../../i18n/languages/en"))["en"]
-type TooltipCatalog = EnglishCatalog["debug"]["disassemblyTooltips"]
-type TooltipTextKey = keyof TooltipCatalog["text"]
-type TooltipLabelKey = keyof TooltipCatalog["labels"]
-type TooltipStateKey = keyof TooltipCatalog["states"]
-export type TooltipFormatKey = keyof TooltipCatalog["formats"]
+type TooltipCatalog = EnglishCatalog["disassembly"]
+type TooltipGroup = {
+  [Key in keyof TooltipCatalog]: TooltipCatalog[Key] extends Record<string, string>
+    ? Key
+    : never
+}[keyof TooltipCatalog]
+type TooltipGroupedKey = {
+  [Group in TooltipGroup]:
+    `${Extract<Group, string>}.${Extract<keyof TooltipCatalog[Group], string>}`
+}[TooltipGroup]
+type TooltipGroupedMessageKey<Group extends TooltipGroup> =
+  Group extends TooltipGroup
+    ? Extract<keyof TooltipCatalog[Group], string>
+    : never
 
-const tooltipKey = <Group extends keyof TooltipCatalog>(
-  group: Group,
-  key: Extract<keyof TooltipCatalog[Group], string>,
-) => `debug.disassemblyTooltips.${group}.${key}`
+type TooltipGroupedMessagePath = `disassembly.${TooltipGroupedKey}`
+export type DisassemblyMessageKey = TooltipGroupedMessagePath
+export type DisassemblyTooltipMessage = {
+  key: DisassemblyMessageKey
+  params?: Record<string, string>
+}
+type TooltipGroupedMessageDescriptor<Group extends TooltipGroup> = {
+  kind: "grouped-message"
+  group: Group
+  key: TooltipGroupedMessageKey<Group>
+  params?: Record<string, string>
+}
+type AnyTooltipGroupedMessageDescriptor = {
+  [Group in TooltipGroup]: TooltipGroupedMessageDescriptor<Group>
+}[TooltipGroup]
 
 type TooltipDescriptor =
-  | {kind: "text", key: TooltipTextKey}
-  | {
-    kind: "bit7"
-    labelKey: TooltipLabelKey
-    clearKey: TooltipStateKey
-    setKey: TooltipStateKey
-    actionKey?: TooltipTextKey
-  }
+  | AnyTooltipGroupedMessageDescriptor
+  | {kind: "sequence", parts: readonly TooltipDescriptor[]}
+  | {kind: "msb-choice", zero: TooltipDescriptor, one: TooltipDescriptor}
   | {kind: "keyboard"}
   | {kind: "aux-bank-selector", addressing: string}
+  | {kind: "accelerator-control"}
 
 type DisassemblyTooltipRow = {
   machines: readonly MACHINE_NAME[]
@@ -43,17 +60,61 @@ const ALL_MACHINES: readonly MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"
 const APPLE2EX: readonly MACHINE_NAME[] = ["APPLE2EU", "APPLE2EE"]
 const APPLE2P: readonly MACHINE_NAME[] = ["APPLE2P"]
 
-const text = (key: TooltipTextKey): TooltipDescriptor => ({kind: "text", key})
-const bit7 = (
-  labelKey: TooltipLabelKey,
-  clearKey: TooltipStateKey,
-  setKey: TooltipStateKey,
-  actionKey?: TooltipTextKey,
-): TooltipDescriptor =>
-  ({kind: "bit7", labelKey, clearKey, setKey, actionKey})
+const sequence = (...parts: readonly TooltipDescriptor[]): TooltipDescriptor =>
+  ({kind: "sequence", parts})
 const keyboard = (): TooltipDescriptor => ({kind: "keyboard"})
 const auxiliaryBankSelector = (addressing: string): TooltipDescriptor =>
   ({kind: "aux-bank-selector", addressing})
+const acceleratorControl = (): TooltipDescriptor => ({kind: "accelerator-control"})
+const groupedMessage = <Group extends TooltipGroup>(
+  group: Group,
+  key: TooltipGroupedMessageKey<Group>,
+  params?: Record<string, string>,
+): TooltipGroupedMessageDescriptor<Group> => ({kind: "grouped-message", group, key, params})
+const msbMessages = <Group extends TooltipGroup>(
+  group: Group,
+  zero: TooltipGroupedMessageKey<Group>,
+  one: TooltipGroupedMessageKey<Group>,
+  params?: Record<string, string>,
+): TooltipDescriptor => ({
+  kind: "msb-choice",
+  zero: groupedMessage(group, zero, params) as AnyTooltipGroupedMessageDescriptor,
+  one: groupedMessage(group, one, params) as AnyTooltipGroupedMessageDescriptor,
+})
+const setAnnunciator = (
+  number: "0" | "1" | "2" | "3",
+  action: "disable" | "enable",
+): TooltipDescriptor => groupedMessage("annunciator", action, {
+  number,
+})
+const setDisplayWidth = (columns: "40" | "80"): TooltipDescriptor =>
+  groupedMessage("display", "setWidth", {columns})
+const selectRomForRange = (
+  source: "internal" | "slot",
+  range: string,
+): TooltipDescriptor => groupedMessage(
+  "rom",
+  source,
+  {range},
+)
+type LanguageCardWriteMode = "disable-writes" | "reset-prewrite-latch" | "arm-or-enable-writes"
+const LANGUAGE_CARD_WRITE_KEYS: Record<
+  LanguageCardWriteMode,
+  TooltipGroupedMessageKey<"languageCard">
+> = {
+  "disable-writes": "disableWrites",
+  "reset-prewrite-latch": "resetPrewriteLatch",
+  "arm-or-enable-writes": "armOrEnableWrites",
+}
+const languageCard = (
+  bank: "1" | "2",
+  readSource: "ram" | "rom",
+  writeMode: LanguageCardWriteMode,
+): TooltipDescriptor => sequence(
+  groupedMessage("languageCard", "selectBank", {bank}),
+  groupedMessage("languageCard", readSource === "ram" ? "useRamForReads" : "useRomForReads"),
+  groupedMessage("languageCard", LANGUAGE_CARD_WRITE_KEYS[writeMode]),
+)
 
 const addressRange = (start: number, end: number) =>
   Array.from({length: end - start + 1}, (_, offset) => start + offset)
@@ -64,13 +125,56 @@ const define = (
   descriptors: Omit<DisassemblyTooltipRow, "machines" | "address">,
 ): DisassemblyTooltipDefinition => ({machines, addresses, ...descriptors})
 
+const LANGUAGE_CARD_SWITCHES = [
+  [0xC080, "2", "ram", "disable-writes"],
+  [0xC081, "2", "rom", "arm-or-enable-writes"],
+  [0xC082, "2", "rom", "disable-writes"],
+  [0xC083, "2", "ram", "arm-or-enable-writes"],
+  [0xC084, "2", "ram", "disable-writes"],
+  [0xC085, "2", "rom", "arm-or-enable-writes"],
+  [0xC086, "2", "rom", "disable-writes"],
+  [0xC087, "2", "ram", "arm-or-enable-writes"],
+  [0xC088, "1", "ram", "disable-writes"],
+  [0xC089, "1", "rom", "arm-or-enable-writes"],
+  [0xC08A, "1", "rom", "disable-writes"],
+  [0xC08B, "1", "ram", "arm-or-enable-writes"],
+  [0xC08C, "1", "ram", "disable-writes"],
+  [0xC08D, "1", "rom", "arm-or-enable-writes"],
+  [0xC08E, "1", "rom", "disable-writes"],
+  [0xC08F, "1", "ram", "arm-or-enable-writes"],
+] as const satisfies readonly (readonly [number, "1" | "2", "ram" | "rom", LanguageCardWriteMode])[]
+
+const defineLanguageCardSwitches = (
+  machines: readonly MACHINE_NAME[],
+): readonly DisassemblyTooltipDefinition[] => LANGUAGE_CARD_SWITCHES.map(([
+  address, bank, readSource, readAccessWriteMode,
+]) => ({
+  machines,
+  address,
+  read: languageCard(bank, readSource, readAccessWriteMode),
+  write: languageCard(bank, readSource, "reset-prewrite-latch"),
+}))
+
 // These shared descriptors are intentionally one semantic source for every
 // matching address.
 const KEYBOARD_READ = keyboard()
-const CLEAR_KEYBOARD_STROBE = text("clearKeyboardStrobe")
-const WRITE_IGNORED_ON_APPLE2P = text("writeIgnoredOnAppleIiPlus")
-const NEPTUNE_AUX_BANK_SELECTOR = auxiliaryBankSelector("Neptune")
-const RAMWORKS_AUX_BANK_SELECTOR = auxiliaryBankSelector("RamWorks")
+const CLEAR_KEYBOARD_STROBE = groupedMessage("keyboard", "clearStrobe")
+const NO_WRITE_EFFECT_ON_APPLE2P = groupedMessage("notice", "noWriteEffect", {
+  machine: "Apple II+",
+})
+const PADDLE_TRIGGER = groupedMessage("gameIO", "startPaddleTimers")
+const NEPTUNE_AUX_BANK_SELECTOR = sequence(
+  PADDLE_TRIGGER,
+  auxiliaryBankSelector("Neptune"),
+)
+const RAMWORKS_AUX_BANK_SELECTOR = sequence(
+  PADDLE_TRIGGER,
+  auxiliaryBankSelector("RamWorks"),
+)
+const ACCELERATOR_CONTROL = sequence(
+  PADDLE_TRIGGER,
+  acceleratorControl(),
+)
 
 const expandDefinitions = (
   definitions: readonly DisassemblyTooltipDefinition[],
@@ -102,32 +206,35 @@ const expandDefinitions = (
 const DISASSEMBLY_TOOLTIP_DEFINITIONS: readonly DisassemblyTooltipDefinition[] = [
   // Apple IIe keyboard reads and write-only memory switches.
   define(APPLE2EX, addressRange(0xC000, 0xC00F), {read: KEYBOARD_READ}),
-  define(APPLE2EX, addresses(0xC000), {write: text("disablePage2DisplayMemoryBanking")}),
-  define(APPLE2EX, addresses(0xC001), {write: text("enablePage2DisplayMemoryBanking")}),
-  define(APPLE2EX, addresses(0xC002), {write: text("selectMainMemoryForReads")}),
-  define(APPLE2EX, addresses(0xC003), {write: text("selectAuxiliaryMemoryForReads")}),
-  define(APPLE2EX, addresses(0xC004), {write: text("selectMainMemoryForWrites")}),
-  define(APPLE2EX, addresses(0xC005), {write: text("selectAuxiliaryMemoryForWrites")}),
-  define(APPLE2EX, addresses(0xC006), {write: text("selectSlotRomForC100Cfff")}),
-  define(APPLE2EX, addresses(0xC007), {write: text("selectInternalRomForC100Cfff")}),
-  define(APPLE2EX, addresses(0xC008), {write: text("selectMainZeroPageAndStack")}),
-  define(APPLE2EX, addresses(0xC009), {write: text("selectAuxiliaryZeroPageAndStack")}),
-  define(APPLE2EX, addresses(0xC00A), {write: text("selectInternalRomForC300C3ff")}),
-  define(APPLE2EX, addresses(0xC00B), {write: text("selectSlot3Rom")}),
-  define(APPLE2EX, addresses(0xC00C), {write: text("select40ColumnDisplay")}),
-  define(APPLE2EX, addresses(0xC00D), {write: text("select80ColumnDisplay")}),
-  define(APPLE2EX, addresses(0xC00E), {write: text("selectPrimaryCharacterSet")}),
-  define(APPLE2EX, addresses(0xC00F), {write: text("selectAlternateCharacterSet")}),
+  define(APPLE2EX, addresses(0xC000), {write: groupedMessage("displayMemory", "80storeOff")}),
+  define(APPLE2EX, addresses(0xC001), {write: groupedMessage("displayMemory", "80storeOn")}),
+  define(APPLE2EX, addresses(0xC002), {write: groupedMessage("auxMemory", "readMain")}),
+  define(APPLE2EX, addresses(0xC003), {write: groupedMessage("auxMemory", "readAuxiliary")}),
+  define(APPLE2EX, addresses(0xC004), {write: groupedMessage("auxMemory", "writeMain")}),
+  define(APPLE2EX, addresses(0xC005), {write: groupedMessage("auxMemory", "writeAuxiliary")}),
+  define(APPLE2EX, addresses(0xC006), {write: selectRomForRange("slot", "$C100-$CFFF")}),
+  define(APPLE2EX, addresses(0xC007), {write: selectRomForRange("internal", "$C100-$CFFF")}),
+  define(APPLE2EX, addresses(0xC008), {write: groupedMessage("auxMemory", "altzpMain")}),
+  define(APPLE2EX, addresses(0xC009), {write: groupedMessage("auxMemory", "altzpAuxiliary")}),
+  define(APPLE2EX, addresses(0xC00A), {write: selectRomForRange("internal", "$C300-$C3FF")}),
+  define(APPLE2EX, addresses(0xC00B), {write: selectRomForRange("slot", "$C300-$C3FF")}),
+  define(APPLE2EX, addresses(0xC00C), {write: setDisplayWidth("40")}),
+  define(APPLE2EX, addresses(0xC00D), {write: setDisplayWidth("80")}),
+  define(APPLE2EX, addresses(0xC00E), {write: groupedMessage("display", "selectPrimaryCharset")}),
+  define(APPLE2EX, addresses(0xC00F), {write: groupedMessage("display", "selectAlternateCharset")}),
 
   // On the Apple II+, $C000-$C00F are keyboard mirrors rather than IIe
   // memory-management switches. Writes are ignored.
   define(APPLE2P, addressRange(0xC000, 0xC00F), {
     read: KEYBOARD_READ,
-    write: WRITE_IGNORED_ON_APPLE2P,
+    write: NO_WRITE_EFFECT_ON_APPLE2P,
   }),
 
   define(APPLE2EX, addresses(0xC010), {
-    read: bit7("anyKeyDown", "no", "yes", "clearKeyboardStrobe"),
+    read: sequence(
+      msbMessages("keyboard", "anyKeyDownClear", "anyKeyDownSet"),
+      CLEAR_KEYBOARD_STROBE,
+    ),
     write: CLEAR_KEYBOARD_STROBE,
   }),
   define(APPLE2P, addresses(0xC010), {access: CLEAR_KEYBOARD_STROBE}),
@@ -142,176 +249,151 @@ const DISASSEMBLY_TOOLTIP_DEFINITIONS: readonly DisassemblyTooltipDefinition[] =
   // Apple IIe status reads. Writes in this range clear the keyboard strobe.
   define(APPLE2EX, addressRange(0xC011, 0xC01F), {write: CLEAR_KEYBOARD_STROBE}),
   {machines: APPLE2EX, address: 0xC011,
-    read: bit7("languageCardBank", "1", "2")},
+    read: msbMessages("languageCard", "bank1", "bank2")},
   {machines: APPLE2EX, address: 0xC012,
-    read: bit7("languageCardReadSource", "rom", "ram")},
+    read: msbMessages("languageCard", "readSourceRom", "readSourceRam")},
   {machines: APPLE2EX, address: 0xC013,
-    read: bit7("auxiliaryMemoryReads", "off", "on")},
+    read: msbMessages("auxMemory", "readStatusOff", "readStatusOn")},
   {machines: APPLE2EX, address: 0xC014,
-    read: bit7("auxiliaryMemoryWrites", "off", "on")},
+    read: msbMessages("auxMemory", "writeStatusOff", "writeStatusOn")},
   {machines: APPLE2EX, address: 0xC015,
-    read: bit7("internalCxRom", "off", "on")},
+    read: msbMessages("rom", "intCxOff", "intCxOn")},
   {machines: APPLE2EX, address: 0xC016,
-    read: bit7("auxiliaryZeroPageAndStack", "off", "on")},
+    read: msbMessages("auxMemory", "altzpStatusMain", "altzpStatusAuxiliary")},
   {machines: APPLE2EX, address: 0xC017,
-    read: bit7("slot3Rom", "off", "on")},
+    read: msbMessages("rom", "slot3Off", "slot3On")},
   {machines: APPLE2EX, address: 0xC018,
-    read: bit7("page2DisplayMemoryBanking", "off", "on")},
+    read: msbMessages("displayMemory", "80storeStatusOff", "80storeStatusOn")},
   {machines: APPLE2EX, address: 0xC019,
-    read: bit7("verticalBlank", "active", "inactive")},
+    read: msbMessages("display", "verticalBlankActive", "verticalBlankInactive")},
   {machines: APPLE2EX, address: 0xC01A,
-    read: bit7("textMode", "off", "on")},
+    read: msbMessages("display", "textModeStatusOff", "textModeStatusOn")},
   {machines: APPLE2EX, address: 0xC01B,
-    read: bit7("mixedDisplay", "off", "on")},
+    read: msbMessages("display", "mixedDisplayStatusOff", "mixedDisplayStatusOn")},
   {machines: APPLE2EX, address: 0xC01C,
-    read: bit7("displayPage", "1", "2")},
+    read: msbMessages("displayMemory", "page2StatusClear", "page2StatusSet")},
   {machines: APPLE2EX, address: 0xC01D,
-    read: bit7("hiResMode", "off", "on")},
+    read: msbMessages("display", "hiresModeStatusOff", "hiresModeStatusOn")},
   {machines: APPLE2EX, address: 0xC01E,
-    read: bit7("alternateCharacterSet", "off", "on")},
+    read: msbMessages("display", "altCharsetStatusOff", "altCharsetStatusOn")},
   {machines: APPLE2EX, address: 0xC01F,
-    read: bit7("80ColumnDisplay", "off", "on")},
+    read: msbMessages("display", "column80StatusOff", "column80StatusOn")},
 
   {machines: ALL_MACHINES, address: 0xC020,
-    access: text("toggleCassetteOutput")},
+    access: groupedMessage("cassette", "toggleOutput")},
   {machines: ALL_MACHINES, address: 0xC030,
-    access: text("toggleSpeakerOutput")},
+    access: groupedMessage("speaker", "toggleOutput")},
   {machines: ALL_MACHINES, address: 0xC040,
-    access: text("pulseGamePortStrobe")},
+    access: groupedMessage("gameIO", "pulseStrobe")},
   {machines: ALL_MACHINES, address: 0xC04F,
-    access: text("apple2tsEmulationMarkerAlwaysCd")},
+    access: groupedMessage("notice", "emulatorIdentifier")},
 
   // Display and annunciator action switches.
   {machines: ALL_MACHINES, address: 0xC050,
-    access: text("selectGraphicsMode")},
+    access: groupedMessage("display", "selectGraphicsMode")},
   {machines: ALL_MACHINES, address: 0xC051,
-    access: text("selectTextMode")},
+    access: groupedMessage("display", "selectTextMode")},
   {machines: ALL_MACHINES, address: 0xC052,
-    access: text("selectFullScreenDisplay")},
+    access: groupedMessage("display", "selectFullScreenDisplay")},
   {machines: ALL_MACHINES, address: 0xC053,
-    access: text("selectMixedGraphicsText")},
-  {machines: ALL_MACHINES, address: 0xC054,
-    access: text("selectDisplayPage1")},
-  {machines: ALL_MACHINES, address: 0xC055,
-    access: text("selectDisplayPage2")},
+    access: groupedMessage("display", "selectMixedDisplay")},
+  {machines: APPLE2P, address: 0xC054,
+    access: groupedMessage("displayMemory", "selectPage1")},
+  {machines: APPLE2EX, address: 0xC054,
+    access: groupedMessage("displayMemory", "page2Clear")},
+  {machines: APPLE2P, address: 0xC055,
+    access: groupedMessage("displayMemory", "selectPage2")},
+  {machines: APPLE2EX, address: 0xC055,
+    access: groupedMessage("displayMemory", "page2Set")},
   {machines: ALL_MACHINES, address: 0xC056,
-    access: text("selectLoResGraphics")},
+    access: groupedMessage("display", "selectLoresGraphics")},
   {machines: ALL_MACHINES, address: 0xC057,
-    access: text("selectHiResGraphics")},
+    access: groupedMessage("display", "selectHiresGraphics")},
   {machines: ALL_MACHINES, address: 0xC058,
-    access: text("disableAnnunciator0")},
+    access: setAnnunciator("0", "disable")},
   {machines: ALL_MACHINES, address: 0xC059,
-    access: text("enableAnnunciator0")},
+    access: setAnnunciator("0", "enable")},
   {machines: ALL_MACHINES, address: 0xC05A,
-    access: text("disableAnnunciator1")},
+    access: setAnnunciator("1", "disable")},
   {machines: ALL_MACHINES, address: 0xC05B,
-    access: text("enableAnnunciator1")},
+    access: setAnnunciator("1", "enable")},
   {machines: ALL_MACHINES, address: 0xC05C,
-    access: text("disableAnnunciator2")},
+    access: setAnnunciator("2", "disable")},
   {machines: ALL_MACHINES, address: 0xC05D,
-    access: text("enableAnnunciator2")},
+    access: setAnnunciator("2", "enable")},
   {machines: APPLE2EX, address: 0xC05E,
-    access: text("disableAnnunciator3EnableDhires")},
+    access: sequence(setAnnunciator("3", "disable"), groupedMessage("display", "enableDhires"))},
   {machines: APPLE2EX, address: 0xC05F,
-    access: text("enableAnnunciator3DisableDhires")},
+    access: sequence(setAnnunciator("3", "enable"), groupedMessage("display", "disableDhires"))},
   {machines: APPLE2P, address: 0xC05E,
-    access: text("disableAnnunciator3")},
+    access: setAnnunciator("3", "disable")},
   {machines: APPLE2P, address: 0xC05F,
-    access: text("enableAnnunciator3")},
+    access: setAnnunciator("3", "enable")},
 
   // Inputs. Writes have no useful state to display, so their matched cells are
   // intentionally empty and suppress the generic raw-byte tooltip.
   {machines: ALL_MACHINES, address: 0xC060,
-    read: text("sampleCassetteInput")},
+    read: groupedMessage("cassette", "sampleInput")},
   {machines: ALL_MACHINES, address: 0xC061,
-    read: bit7("pushbutton0", "released", "pressed")},
+    read: msbMessages("gameIO", "buttonReleased", "buttonPressed", {number: "0"})},
   {machines: ALL_MACHINES, address: 0xC062,
-    read: bit7("pushbutton1", "released", "pressed")},
+    read: msbMessages("gameIO", "buttonReleased", "buttonPressed", {number: "1"})},
   {machines: ALL_MACHINES, address: 0xC063,
-    read: bit7("pushbutton2", "released", "pressed")},
+    read: msbMessages("gameIO", "buttonReleased", "buttonPressed", {number: "2"})},
   {machines: ALL_MACHINES, address: 0xC064,
-    read: bit7("paddle0Timer", "expired", "active")},
+    read: msbMessages("gameIO", "paddleExpired", "paddleActive", {number: "0"})},
   {machines: ALL_MACHINES, address: 0xC065,
-    read: bit7("paddle1Timer", "expired", "active")},
+    read: msbMessages("gameIO", "paddleExpired", "paddleActive", {number: "1"})},
   {machines: ALL_MACHINES, address: 0xC066,
-    read: bit7("paddle2Timer", "expired", "active")},
+    read: msbMessages("gameIO", "paddleExpired", "paddleActive", {number: "2"})},
   {machines: ALL_MACHINES, address: 0xC067,
-    read: bit7("paddle3Timer", "expired", "active")},
+    read: msbMessages("gameIO", "paddleExpired", "paddleActive", {number: "3"})},
   {machines: ALL_MACHINES, address: 0xC068,
-    read: text("sampleCassetteInputMirror")},
+    read: groupedMessage("cassette", "sampleInputMirror")},
   {machines: ALL_MACHINES, address: 0xC069,
-    read: bit7("pushbutton0Mirror", "released", "pressed")},
+    read: msbMessages(
+      "gameIO", "buttonMirrorReleased", "buttonMirrorPressed", {number: "0"},
+    )},
   {machines: ALL_MACHINES, address: 0xC06A,
-    read: bit7("pushbutton1Mirror", "released", "pressed")},
+    read: msbMessages(
+      "gameIO", "buttonMirrorReleased", "buttonMirrorPressed", {number: "1"},
+    )},
   {machines: ALL_MACHINES, address: 0xC06B,
-    read: bit7("pushbutton2Mirror", "released", "pressed")},
+    read: msbMessages(
+      "gameIO", "buttonMirrorReleased", "buttonMirrorPressed", {number: "2"},
+    )},
   {machines: ALL_MACHINES, address: 0xC06C,
-    read: bit7("paddle0TimerMirror", "expired", "active")},
+    read: msbMessages(
+      "gameIO", "paddleMirrorExpired", "paddleMirrorActive", {number: "0"},
+    )},
   {machines: ALL_MACHINES, address: 0xC06D,
-    read: bit7("paddle1TimerMirror", "expired", "active")},
+    read: msbMessages(
+      "gameIO", "paddleMirrorExpired", "paddleMirrorActive", {number: "1"},
+    )},
   {machines: ALL_MACHINES, address: 0xC06E,
-    read: bit7("paddle2TimerMirror", "expired", "active")},
+    read: msbMessages(
+      "gameIO", "paddleMirrorExpired", "paddleMirrorActive", {number: "2"},
+    )},
   {machines: ALL_MACHINES, address: 0xC06F,
-    read: bit7("paddle3TimerMirror", "expired", "active")},
-  {machines: ALL_MACHINES, address: 0xC070,
-    access: text("startPaddleTimers")},
+    read: msbMessages(
+      "gameIO", "paddleMirrorExpired", "paddleMirrorActive", {number: "3"},
+    )},
+  // The motherboard decodes every read and write in $C070-$C07F as a
+  // paddle trigger. A card or clone may add another effect without replacing
+  // this base Apple II behavior.
+  define(ALL_MACHINES, addressRange(0xC070, 0xC07F), {access: PADDLE_TRIGGER}),
 
   // Auxiliary-card conventions. The instruction tells us the convention and
   // requested bank byte, not whether a configured device accepts it.
   define(APPLE2EX, addresses(0xC071), {write: NEPTUNE_AUX_BANK_SELECTOR}),
   define(APPLE2EX, addresses(0xC073), {write: RAMWORKS_AUX_BANK_SELECTOR}),
-  {machines: ALL_MACHINES, address: 0xC074,
-    access: text("laser128exCompatibilityNotEmulated")},
-  // Language Card switches. Odd reads arm and then enable writes; writes reset
-  // the prewrite latch but otherwise preserve the current write-enable state.
-  {machines: ALL_MACHINES, address: 0xC080,
-    read: text("selectLcBank2UseRamForReadsDisableWrites"),
-    write: text("selectLcBank2UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC081,
-    read: text("selectLcBank2UseRomForReadsArmEnableWrites"),
-    write: text("selectLcBank2UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC082,
-    read: text("selectLcBank2UseRomForReadsDisableWrites"),
-    write: text("selectLcBank2UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC083,
-    read: text("selectLcBank2UseRamForReadsArmEnableWrites"),
-    write: text("selectLcBank2UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC084,
-    read: text("selectLcBank2UseRamForReadsDisableWrites"),
-    write: text("selectLcBank2UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC085,
-    read: text("selectLcBank2UseRomForReadsArmEnableWrites"),
-    write: text("selectLcBank2UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC086,
-    read: text("selectLcBank2UseRomForReadsDisableWrites"),
-    write: text("selectLcBank2UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC087,
-    read: text("selectLcBank2UseRamForReadsArmEnableWrites"),
-    write: text("selectLcBank2UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC088,
-    read: text("selectLcBank1UseRamForReadsDisableWrites"),
-    write: text("selectLcBank1UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC089,
-    read: text("selectLcBank1UseRomForReadsArmEnableWrites"),
-    write: text("selectLcBank1UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC08A,
-    read: text("selectLcBank1UseRomForReadsDisableWrites"),
-    write: text("selectLcBank1UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC08B,
-    read: text("selectLcBank1UseRamForReadsArmEnableWrites"),
-    write: text("selectLcBank1UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC08C,
-    read: text("selectLcBank1UseRamForReadsDisableWrites"),
-    write: text("selectLcBank1UseRamForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC08D,
-    read: text("selectLcBank1UseRomForReadsArmEnableWrites"),
-    write: text("selectLcBank1UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC08E,
-    read: text("selectLcBank1UseRomForReadsDisableWrites"),
-    write: text("selectLcBank1UseRomForReadsResetPrewriteLatch")},
-  {machines: ALL_MACHINES, address: 0xC08F,
-    read: text("selectLcBank1UseRamForReadsArmEnableWrites"),
-    write: text("selectLcBank1UseRamForReadsResetPrewriteLatch")},
+  define(ALL_MACHINES, addresses(0xC074), {write: ACCELERATOR_CONTROL}),
+  // Slot 0 supplies an optional Language Card on the II+. Equivalent bank-
+  // switched memory is built into the IIe motherboard. Odd reads arm and then
+  // enable writes; writes reset the prewrite latch but otherwise preserve the
+  // current write-enable state.
+  ...defineLanguageCardSwitches(APPLE2P),
+  ...defineLanguageCardSwitches(APPLE2EX),
 ]
 
 export const DISASSEMBLY_TOOLTIP_ROWS = expandDefinitions(DISASSEMBLY_TOOLTIP_DEFINITIONS)
@@ -365,6 +447,49 @@ export const getZeroPagePointer = (
   return readByte(lowAddress) + 256 * readByte((lowAddress + 1) & 0xFF)
 }
 
+export const formatPreIndexedAddressNotation = (
+  base: string,
+  index: string,
+  pointer: string,
+  effectiveAddress: string,
+  wrapMask?: AddressWrapMask,
+) => `${effectiveAddress} = (${pointer}), ${pointer} = ${wrapMask
+  ? `(${base} + ${index}) & ${wrapMask}`
+  : `${base} + ${index}`}`
+
+export const formatIndexedAddressNotation = (
+  base: string,
+  index: string,
+  effectiveAddress: string,
+  wrapMask?: AddressWrapMask,
+) => `${effectiveAddress} = ${wrapMask
+  ? `(${base} + ${index}) & ${wrapMask}`
+  : `${base} + ${index}`}`
+
+export const getAddressWrapMask = (
+  base: number,
+  index: number,
+  mask: 0xFF | 0xFFFF,
+) => base + index > mask ? (mask === 0xFF ? "$FF" : "$FFFF") : undefined
+
+const LEFT_TO_RIGHT_ISOLATE = "\u2066"
+const POP_DIRECTIONAL_ISOLATE = "\u2069"
+
+export const isolateTechnicalNotation = (notation: string) =>
+  `${LEFT_TO_RIGHT_ISOLATE}${notation}${POP_DIRECTIONAL_ISOLATE}`
+
+export const formatMemoryTooltip = (
+  kind: TooltipGroupedMessageKey<"memory">,
+  notation: string,
+  translate: TooltipTranslator,
+) => translate(`disassembly.memory.${kind}`, {
+  notation: isolateTechnicalNotation(notation),
+})
+
+export const joinDisassemblyTooltipLines = (
+  ...lines: readonly (string | undefined)[]
+) => lines.filter(Boolean).join("\n")
+
 const formatKeyboardCharacter = (value: number) => {
   const key = value & 0x7F
   if (key === 0x7F) return "DEL"
@@ -374,57 +499,147 @@ const formatKeyboardCharacter = (value: number) => {
   return String.fromCharCode(key)
 }
 
-const formatDescriptor = (
+const groupedTooltipMessage = <Group extends TooltipGroup>(
+  group: Group,
+  key: TooltipGroupedMessageKey<Group>,
+  params?: Record<string, string>,
+): DisassemblyTooltipMessage => ({
+  key: `disassembly.${group}.${key}` as TooltipGroupedMessagePath,
+  ...(params ? {params} : {}),
+})
+const warningMessage = (
+  key: "multipleTriggers" | "unknownWrite",
+): DisassemblyTooltipMessage => groupedTooltipMessage("notice", key)
+
+export const renderDisassemblyTooltipMessages = (
+  messages: readonly DisassemblyTooltipMessage[],
+  translate: TooltipTranslator,
+) => messages.map(({key, params}) => translate(key, params))
+
+const resolveDescriptor = (
   descriptor: TooltipDescriptor,
   value: number,
-  translate: TooltipTranslator,
-) => {
+): readonly DisassemblyTooltipMessage[] => {
   switch (descriptor.kind) {
-    case "text":
-      return translate(tooltipKey("text", descriptor.key))
-    case "bit7": {
-      const label = translate(tooltipKey("labels", descriptor.labelKey))
-      if (value < 0) {
-        return translate(tooltipKey("formats", "unknown"), {label})
-      }
-      const isSet = (value & 0x80) !== 0
-      const stateKey = isSet ? descriptor.setKey : descriptor.clearKey
-      const status = translate(tooltipKey("formats", "bit7"), {
-        label,
-        state: translate(tooltipKey("states", stateKey)),
-        bit: isSet ? "1" : "0",
-      })
-      return descriptor.actionKey
-        ? translate(tooltipKey("formats", "withAction"), {
-          status,
-          action: translate(tooltipKey("text", descriptor.actionKey)),
-        })
-        : status
-    }
+    case "sequence":
+      return descriptor.parts.flatMap((part) => resolveDescriptor(part, value))
+    case "msb-choice":
+      return value < 0
+        ? []
+        : resolveDescriptor((value & 0x80) === 0 ? descriptor.zero : descriptor.one, value)
+    case "grouped-message":
+      return [groupedTooltipMessage(descriptor.group, descriptor.key, descriptor.params)]
     case "keyboard": {
-      if (value < 0) return translate(tooltipKey("formats", "keyboardUnknown"))
+      if (value < 0) return []
       const strobe = (value & 0x80) !== 0
-      return translate(tooltipKey("formats", "keyboard"), {
-        character: formatKeyboardCharacter(value),
-        state: translate(tooltipKey("states", strobe ? "set" : "clear")),
-        bit: strobe ? "1" : "0",
-      })
+      return [
+        groupedTooltipMessage("keyboard", "character", {
+          character: formatKeyboardCharacter(value),
+        }),
+        groupedTooltipMessage("keyboard", strobe ? "strobeSet" : "strobeClear"),
+      ]
     }
     case "aux-bank-selector":
-      return value < 0
-        ? translate(tooltipKey("formats", "auxiliaryBankUnknown"), {
-          addressing: descriptor.addressing,
-        })
-        : translate(tooltipKey("formats", "auxiliaryBank"), {
-          bank: `$${(value & 0xFF).toString(16).toUpperCase().padStart(2, "0")}`,
-          addressing: descriptor.addressing,
-        })
+      return value < 0 ? [] : [groupedTooltipMessage("auxMemory", "selectExpansionBank", {
+        bank: `$${(value & 0xFF).toString(16).toUpperCase().padStart(2, "0")}`,
+        addressing: descriptor.addressing,
+      })]
+    case "accelerator-control": {
+      if (value < 0) return []
+
+      const controlValue = value & 0xFF
+      const effects: DisassemblyTooltipMessage[] = []
+      switch (controlValue) {
+        case 0:
+          effects.push(groupedTooltipMessage("transWarp", "configuredMaximum"))
+          break
+        case 1:
+          effects.push(groupedTooltipMessage("transWarp", "oneMhz"))
+          break
+        case 3:
+          effects.push(groupedTooltipMessage("transWarp", "disableUntilColdBoot"))
+          break
+      }
+
+      const laserSpeedKey: TooltipGroupedMessageKey<"laser128ex"> = controlValue < 0x80
+        ? "oneMhz"
+        : controlValue < 0xC0 ? "twoPointThreeMhz" : "threePointSixMhz"
+      const laserSpeedSelection = groupedTooltipMessage("laser128ex", laserSpeedKey)
+      const laserDiskSlowdown = groupedTooltipMessage(
+        "laser128ex",
+        (controlValue & 0x20) === 0
+          ? "disableDiskSlowdown"
+          : "enableDiskSlowdown",
+      )
+
+      effects.push(laserSpeedSelection, laserDiskSlowdown)
+      return effects
+    }
   }
 }
 
 // undefined means the address is not in the semantic table and should retain
-// the generic value tooltip. An empty string means the address is known but
+// the generic value tooltip. An empty array means the address is known but
 // this operation has no meaningful state or action to display.
+export const getDisassemblyTooltipMessages = (
+  machine: MACHINE_NAME,
+  address: number,
+  opcode: string,
+  value: number,
+  operand = "",
+): readonly DisassemblyTooltipMessage[] | undefined => {
+  const row = tooltipRowsByMachineAndAddress.get(`${machine}:${address}`)
+  if (!row) return undefined
+
+  const operation = getMemoryOperation(opcode, operand)
+  if (operation === "read-modify-write" || operation === "multiple-access") {
+    const warning = warningMessage("multipleTriggers")
+    if (address < 0xC070 || address > 0xC07F) return [warning]
+
+    const descriptor = row.write ?? row.access
+    if (!descriptor) return [warning]
+    const semanticValue = operation === "read-modify-write" ? -1 : value
+    const effects = resolveDescriptor(descriptor, semanticValue)
+    if (effects.length === 0) return [warning]
+    const [paddleEffect, ...otherEffects] = effects
+    if (address === 0xC074 && operation === "read-modify-write") {
+      return [
+        paddleEffect,
+        warningMessage("unknownWrite"),
+        ...otherEffects,
+      ]
+    }
+    if (operation === "read-modify-write") {
+      if (machine !== "APPLE2P" && (address === 0xC071 || address === 0xC073)) {
+        return [
+          paddleEffect,
+          warningMessage("unknownWrite"),
+          ...otherEffects,
+        ]
+      }
+      return effects
+    }
+    return [paddleEffect, warning, ...otherEffects]
+  }
+
+  const descriptor = operation === "write"
+    ? row.write ?? row.access
+    : row.read ?? row.access
+  return descriptor ? resolveDescriptor(descriptor, value) : []
+}
+
+export const getDisassemblyTooltipLines = (
+  machine: MACHINE_NAME,
+  address: number,
+  opcode: string,
+  value: number,
+  translate: TooltipTranslator,
+  operand = "",
+): readonly string[] | undefined => {
+  const messages = getDisassemblyTooltipMessages(machine, address, opcode, value, operand)
+  return messages && renderDisassemblyTooltipMessages(messages, translate)
+}
+
 export const getDisassemblyTooltip = (
   machine: MACHINE_NAME,
   address: number,
@@ -432,17 +647,5 @@ export const getDisassemblyTooltip = (
   value: number,
   translate: TooltipTranslator,
   operand = "",
-): string | undefined => {
-  const row = tooltipRowsByMachineAndAddress.get(`${machine}:${address}`)
-  if (!row) return undefined
-
-  const operation = getMemoryOperation(opcode, operand)
-  if (operation === "read-modify-write" || operation === "multiple-access") {
-    return translate(tooltipKey("text", "triggerMultipleSoftSwitchOperations"))
-  }
-
-  const descriptor = operation === "write"
-    ? row.write ?? row.access
-    : row.read ?? row.access
-  return descriptor ? formatDescriptor(descriptor, value, translate) : ""
-}
+): string | undefined =>
+  getDisassemblyTooltipLines(machine, address, opcode, value, translate, operand)?.join("\n")

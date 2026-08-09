@@ -75,6 +75,12 @@ input:focus {
   font-display: block;
 }
 
+@font-face {
+  font-family: Silver;
+  src: url(./fonts/Silver.woff2);
+  font-display: block;
+}
+
 .flex-row {
   display: flex;
   flex-direction: row;

@@ -37,6 +37,7 @@ const recallBuffer: string[] = []
 let recallIndex = 99
 
 type keyEvent = KeyboardEvent<HTMLTextAreaElement> | KeyboardEvent<HTMLCanvasElement>
+type ArrowKeyCode = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown" | "Numpad4" | "Numpad6" | "Numpad8" | "Numpad2"
 let mainCanvas : HTMLCanvasElement | null = null
 
 const Apple2Canvas = (props: DisplayProps) => {
@@ -77,7 +78,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     }
   }
 
-  const metaKeyHandlers: { [key: string]: () => void } = {
+  const metaKeyHandlers: Record<string, () => void> = {
     ArrowLeft: () => passGoBackInTime(),
     ArrowRight: () => passGoForwardInTime(),
     b: () => handleSetCPUState(RUN_MODE.NEED_BOOT),
@@ -131,7 +132,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     })
   }
 
-  const arrowKeys: { [key: string]: ARROW } = {
+  const arrowKeys: Record<ArrowKeyCode, ARROW> = {
     ArrowLeft: ARROW.LEFT,
     ArrowRight: ARROW.RIGHT,
     ArrowUp: ARROW.UP,
@@ -143,7 +144,7 @@ const Apple2Canvas = (props: DisplayProps) => {
     Numpad2: ARROW.DOWN,
   }
 
-  const arrowKeyCodes: { [key: string]: number } = {
+  const arrowKeyCodes: Record<ArrowKeyCode, number> = {
     ArrowLeft: 8,
     ArrowRight: 21,
     ArrowUp: 11,
@@ -154,16 +155,16 @@ const Apple2Canvas = (props: DisplayProps) => {
     Numpad2: 10,
   }
 
-  const diagonalKeys: { [key: string]: boolean } = {
+  const diagonalKeys: Record<string, boolean> = {
     Numpad7: true,
     Numpad9: true,
     Numpad1: true,
     Numpad3: true,
   }
 
-  const getArrowKeyName = (e: keyEvent): string | null => {
-    if (e.code in arrowKeys) return e.code
-    if (e.key in arrowKeys) return e.key
+  const getArrowKeyName = (e: keyEvent): ArrowKeyCode | null => {
+    if (e.code in arrowKeys) return e.code as ArrowKeyCode
+    if (e.key in arrowKeys) return e.key as ArrowKeyCode
     return null
   }
 

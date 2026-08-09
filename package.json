@@ -32,6 +32,7 @@
     "preview": "vite preview",
     "test": "jest",
     "review-disassembly-tooltips": "node tools/render-disassembly-tooltip-review.mjs",
+    "review-disassembly-translation-keys": "node tools/render-disassembly-tooltip-review.mjs --keys",
     "write-disassembly-tooltip-reviews": "node tools/render-disassembly-tooltip-review.mjs --write",
     "test-disassembly-tooltip-review": "node --test tools/render-disassembly-tooltip-review.test.mjs"
   },

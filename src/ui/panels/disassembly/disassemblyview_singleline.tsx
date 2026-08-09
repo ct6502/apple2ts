@@ -10,11 +10,17 @@ import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons"
 import { getSymbolForAddress } from "./disassembly_utilities"
 import { willTakeBranch } from "../../../common/util_disassemble"
 import {
+  formatIndexedAddressNotation,
+  formatPreIndexedAddressNotation,
+  formatMemoryTooltip,
   getDisassemblyTooltip,
   getDisassemblyWriteValue,
+  getAddressWrapMask,
   getZeroPagePointer,
+  isolateTechnicalNotation,
+  joinDisassemblyTooltipLines,
 } from "./disassembly_tooltips"
-import type { TooltipFormatKey, TooltipTranslator } from "./disassembly_tooltips"
+import type { TooltipTranslator } from "./disassembly_tooltips"
 
 // const fWeight = (opcode: string) => {
 //   if ((["BPL", "BMI", "BVC", "BVS", "BCC", "BCS", "BNE", "BEQ", "JSR", "JMP", "RTS"]).includes(opcode)) return "bold"
@@ -53,7 +59,8 @@ const getOperandTooltip = (
   instructionAddress: number,
   translate: TooltipTranslator,
 ) => {
-  const formatKey = (key: TooltipFormatKey) => `debug.disassemblyTooltips.formats.${key}`
+  const formatEffectiveAddressTooltip = (notation: string) =>
+    formatMemoryTooltip("effectiveAddress", notation, translate)
   let addressDescription = ""
   let effectiveAddress = addr
   let value = -1
@@ -64,50 +71,46 @@ const getOperandTooltip = (
     const addrInd = getZeroPagePointer(preIndex, getShiftedMemoryValue)
     effectiveAddress = addrInd
     value = getShiftedMemoryValue(effectiveAddress)
-    addressDescription = translate(formatKey("preIndexedAddress"), {
-      base: `$${toHex(addr)}`,
-      index: `$${toHex(xreg)}`,
-      pointer: `$${toHex(preIndex)}`,
-      effectiveAddress: `$${toHex(effectiveAddress)}`,
-    })
+    addressDescription = formatEffectiveAddressTooltip(formatPreIndexedAddressNotation(
+      `$${toHex(addr)}`,
+      `$${toHex(xreg)}`,
+      `$${toHex(preIndex)}`,
+      `$${toHex(effectiveAddress)}`,
+      getAddressWrapMask(addr, xreg, 0xFF),
+    ))
   } else if (operand.includes("),Y")) {
     const yreg = handleGetState6502().YReg
     // post-indexing: find the address from memory and then add Y
     const addrInd = getZeroPagePointer(addr, getShiftedMemoryValue)
     effectiveAddress = (addrInd + yreg) & 0xFFFF
     value = getShiftedMemoryValue(effectiveAddress)
-    addressDescription = translate(formatKey("indexedAddress"), {
-      base: `$${toHex(addrInd)}`,
-      index: `$${toHex(yreg)}`,
-      effectiveAddress: `$${toHex(effectiveAddress)}`,
-    })
+    addressDescription = formatEffectiveAddressTooltip(formatIndexedAddressNotation(
+      `$${toHex(addrInd)}`, `$${toHex(yreg)}`, `$${toHex(effectiveAddress)}`,
+      getAddressWrapMask(addrInd, yreg, 0xFFFF),
+    ))
   } else if (operand.includes(",X")) {
     const xreg = handleGetState6502().XReg
     const mask = /\$[0-9A-Fa-f]{2},X/.test(operand) ? 0xFF : 0xFFFF
     effectiveAddress = (addr + xreg) & mask
     value = getShiftedMemoryValue(effectiveAddress)
-    addressDescription = translate(formatKey("indexedAddress"), {
-      base: `$${toHex(addr)}`,
-      index: `$${toHex(xreg)}`,
-      effectiveAddress: `$${toHex(effectiveAddress)}`,
-    })
+    addressDescription = formatEffectiveAddressTooltip(formatIndexedAddressNotation(
+      `$${toHex(addr)}`, `$${toHex(xreg)}`, `$${toHex(effectiveAddress)}`,
+      getAddressWrapMask(addr, xreg, mask),
+    ))
   } else if (operand.includes(",Y")) {
     const yreg = handleGetState6502().YReg
     const mask = /\$[0-9A-Fa-f]{2},Y/.test(operand) ? 0xFF : 0xFFFF
     effectiveAddress = (addr + yreg) & mask
     value = getShiftedMemoryValue(effectiveAddress)
-    addressDescription = translate(formatKey("indexedAddress"), {
-      base: `$${toHex(addr)}`,
-      index: `$${toHex(yreg)}`,
-      effectiveAddress: `$${toHex(effectiveAddress)}`,
-    })
+    addressDescription = formatEffectiveAddressTooltip(formatIndexedAddressNotation(
+      `$${toHex(addr)}`, `$${toHex(yreg)}`, `$${toHex(effectiveAddress)}`,
+      getAddressWrapMask(addr, yreg, mask),
+    ))
   } else if (operand.includes(")")) {
     const addrInd = getZeroPagePointer(addr, getShiftedMemoryValue)
     effectiveAddress = addrInd
     value = getShiftedMemoryValue(effectiveAddress)
-    addressDescription = translate(formatKey("indirectAddress"), {
-      effectiveAddress: `$${toHex(effectiveAddress)}`,
-    })
+    addressDescription = formatEffectiveAddressTooltip(`$${toHex(effectiveAddress)}`)
   } else if (operand.includes("$")) {
     value = getShiftedMemoryValue(effectiveAddress)
   }
@@ -122,13 +125,13 @@ const getOperandTooltip = (
     operand,
   )
   if (semanticTooltip !== undefined) {
-    return [addressDescription, semanticTooltip].filter(Boolean).join("  ")
+    return joinDisassemblyTooltipLines(addressDescription, semanticTooltip)
   }
 
   const valueDescription = value >= 0
-    ? translate(formatKey("value"), {value: `$${toHex(value)}`})
+    ? formatMemoryTooltip("value", `$${toHex(value)}`, translate)
     : ""
-  return [addressDescription, valueDescription].filter(Boolean).join("  ")
+  return joinDisassemblyTooltipLines(addressDescription, valueDescription)
 }
 
 
@@ -155,7 +158,7 @@ const getJumpLink = (opcode: string, operand: string, onJumpClick: (addr: number
       takebranch = willTakeBranch(opcode, s6502.PStatus) ? yes : no
     }
     return <span>{ops[0]}<span className="disassembly-link"
-        title={`$${toHex(addr)}`}
+        title={isolateTechnicalNotation(`$${toHex(addr)}`)}
         onClick={() => {onJumpClick(addr)}}>{ops[1]}</span>
       <span>{ops[2]}</span>
       {takebranch}
@@ -187,7 +190,9 @@ const getOperand = (
       if (cvalue <= 31) cvalue += 64
       char = ` = "${caret}${String.fromCharCode(cvalue)}"`
     }
-    title += `${value.toString()} = ${(value | 256).toString(2).slice(1)}${char}`
+    title += isolateTechnicalNotation(
+      `${value.toString()} = ${(value | 256).toString(2).slice(1)}${char}`,
+    )
     className = "disassembly-immediate"
   } else {
     const ops = operand.split(/(\$[0-9A-Fa-f]{2,4})/)
