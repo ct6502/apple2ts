@@ -57,6 +57,10 @@ let gameSetupTimerID: NodeJS.Timeout | number = 0
 let tracing = TEST_DEBUG
 let speedTracker: Array<{time: number, cycles: number}> = []
 
+export const resetCpuSpeedForTesting = () => {
+  cpuSpeed = 0
+}
+
 // === Zero-page capture state ===
 // When active, the emulator boots a floppy at ludicrous speed, waits for a
 // breakpoint at the game entry address, snapshots zero page, then restores
@@ -79,12 +83,12 @@ export const setTracing = (doTracing: boolean) => {
 
 // methods to capture start and end of VBL for other devices that may need it (mouse)
 const startVBL = (): void => {
-  SWITCHES.VBL.isSet = true
+  SWITCHES.VBLINV.isSet = false
   onMouseVBL()
 }
 
 const endVBL = (): void => {
-  SWITCHES.VBL.isSet = false
+  SWITCHES.VBLINV.isSet = true
 }
 
 export const getSoftSwitches = () => {
@@ -764,7 +768,9 @@ const doAdvance6502 = () => {
     const cycleInFrame = s6502.cycleCount % 17030
     if (cycleInFrame < 4550) {
       // Return "low" for 70 scan lines out of 262 (70 * 65 cycles = 4550)
-      if (!SWITCHES.VBL.isSet) {
+      // Note that VBLINV is the inverse of the vertical blanking status,
+      // so if it's set then vertical blanking needs to be activated.
+      if (SWITCHES.VBLINV.isSet) {
         startVBL()
       }
     } else {

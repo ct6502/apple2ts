@@ -10,7 +10,7 @@ let dataRegister = 0
 let dataRegHold = false
 let cycleRemainder = 0
 let motorOnTime = 0
-let floppyAccessLogCount = 0
+// let floppyAccessLogCount = 0
 const doDebugDrive = false
 
 enum SWITCH {
@@ -326,10 +326,10 @@ export const handleDriveSoftSwitches: AddressCallback =
   switch (addr) {
     case SWITCH.MOTOR_ON:  // $C089,X
       MOTOR_RUNNING = true
-      if (floppyAccessLogCount < 20) {
-        floppyAccessLogCount++
-        console.log(`[Floppy] Motor ON  at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")} track=${ds.quarterTrack/4} cycle=${s6502.cycleCount}`)
-      }
+      // if (floppyAccessLogCount < 20) {
+      //   floppyAccessLogCount++
+      //   console.log(`[Floppy] Motor ON  at PC=$${s6502.PC.toString(16).toUpperCase().padStart(4, "0")} track=${ds.quarterTrack/4} cycle=${s6502.cycleCount}`)
+      // }
       startMotor(ds)
       dumpData(ds)
       break

@@ -111,7 +111,7 @@ export const SWITCHES = {
   KBRDSTROBE: NewSwitch(0xC010, 0, 0, false),  // we will clear the keystrobe in checkSoftSwitches
   BSRBANK2: NewSwitch(0, 0, 0xC011),    // status location, not a switch
   BSRREADRAM: NewSwitch(0, 0, 0xC012),  // status location, not a switch
-  VBL: NewSwitch(0, 0, 0xC019),  // vertical blanking status location, not a switch
+  VBLINV: NewSwitch(0, 0, 0xC019),  // vertical blanking status (inverse)
   CASSOUT: NewSwitch(0xC020, 0, 0),  // random value filled in checkSoftSwitches
   SPEAKER: NewSwitch(0xC030, 0, 0, false, (addr, cycleCount) => {
     memSetC000(0xC030, rand())

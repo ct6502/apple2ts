@@ -1,9 +1,9 @@
 import { processInstruction } from "./cpu6502"
-import { getHires, memory, updateAddressTables } from "./memory"
+import { getHires, memGet, memory, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
 import { parseAssembly } from "./utility/assembler"
-import { doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState } from "./motherboard"
+import { doBoot, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
 
@@ -48,7 +48,7 @@ test("slow CPU refresh reaches the bottom HGR scanline", () => {
     }
 
     expect(getHires()[40 * 191]).toEqual(0x5A)
-    expect(SWITCHES.VBL.isSet).toEqual(true)
+    expect(SWITCHES.VBLINV.isSet).toEqual(false)
   } finally {
     doSetRunMode(RUN_MODE.PAUSED)
     SWITCHES.TEXT.isSet = oldText
@@ -75,4 +75,37 @@ test("noDelayMode", () => {
   SWITCHES.DHIRES.isSet = true
   const state3 = getExternalMachineState()
   expect(state3.noDelayMode).toEqual(true)
+})
+
+test("test VBL $C019 value", () => {
+  jest.useFakeTimers()
+  setIsTesting()
+  try {
+    doBoot()
+    resetCpuSpeedForTesting()
+    doSetRunMode(RUN_MODE.RUNNING)
+    const stepMs = 100  // 1000 steps × 1ms = 1 second
+    let countWithinVBL = 0
+    const refreshMax = 1000
+    for (let refresh = 1; refresh <= refreshMax; refresh++) {
+      jest.advanceTimersByTime(stepMs)
+      if (refresh > 10) {
+        doSetRunMode(RUN_MODE.NEED_RESET)
+      }
+      // The cycle count will steadily increase and we will "randomly" be
+      // either within or outside of the vertical blank period
+      const withinVBL = (s6502.cycleCount % 17030) < 4550
+      if (withinVBL) {
+        countWithinVBL++
+      }
+      expect(memGet(0xC019)).toEqual(withinVBL ? 0x00 : 0x80)
+    }
+    // within VBL should be 4550 / 17030 ≈ 0.267 of the time
+    expect(countWithinVBL).toBeGreaterThan(0.2 * refreshMax)
+    expect(countWithinVBL).toBeLessThan(0.31 * refreshMax)
+  } finally {
+    doSetRunMode(RUN_MODE.PAUSED)
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  }
 })
