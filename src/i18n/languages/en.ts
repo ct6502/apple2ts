@@ -87,7 +87,10 @@ export const en = {
     "pause": "Pause",
     "loadSymbolTable": "Load Symbol Table",
     "agentTab": "Agent",
-    "disassembly": "Disassembly"
+    "disassembly": "Disassembly",
+    "breakOnce": "Break once then remove",
+    "basicLineNumber": "BASIC Line Number: ",
+    "any": "Any"
   },
   "disassembly": {
     "memory": {

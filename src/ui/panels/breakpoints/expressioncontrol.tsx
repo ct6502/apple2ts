@@ -2,6 +2,7 @@ import { Droplist } from "../droplist"
 import EditField from "../editfield"
 import { toHex } from "../../../common/utility"
 import { useState } from "react"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 interface ExpressionControlProps {
   expr: BreakpointExpression;
@@ -11,6 +12,7 @@ interface ExpressionControlProps {
 
 const ExpressionControl = (props: ExpressionControlProps) => {
   //  const [triggerUpdate, setTriggerUpdate] = useState(false)
+  const { t } = useTranslation()
   const [bpAddress, setBpAddress] = useState(toHex(props.expr.address))
   const [bpValue, setBpValue] = useState(toHex(props.expr.value))
 
@@ -58,7 +60,7 @@ const ExpressionControl = (props: ExpressionControlProps) => {
         value={bpAddress}
         setValue={handleAddressChange}
         isHex={true}
-        placeholder="Any"
+        placeholder={t("debug.any")}
         width="3em" />
     }
     <Droplist

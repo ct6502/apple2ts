@@ -7,6 +7,7 @@ import { toHex } from "../../../common/utility"
 import { handleGetSoftSwitchDescriptions } from "../../main2worker"
 import Breakpoint_Actions from "./breakpoint_actions"
 import CheckBox from "../checkbox"
+import Breakpoint_Once from "./breakpoint_once"
 
 const BPEdit_Watchpoint = (props: {
   breakpoint: Breakpoint,
@@ -105,6 +106,8 @@ const BPEdit_Watchpoint = (props: {
         isDisabled={isBankDisabledForAddress} />
 
       <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
+
+      <Breakpoint_Once breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )
 }

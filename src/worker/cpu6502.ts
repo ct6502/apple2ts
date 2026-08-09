@@ -266,6 +266,7 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     const lineNum = memGet(0x75) + (memGet(0x76) << 8)
     const bp = breakpointMap.get(lineNum)
     if (bp && !bp.disabled) {
+      if (bp.once) breakpointMap.delete(lineNum)
       return BREAKPOINT_RESULT.HIDDEN_BREAK
     }
   }

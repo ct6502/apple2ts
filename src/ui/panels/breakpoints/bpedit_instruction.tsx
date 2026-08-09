@@ -7,6 +7,7 @@ import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/m
 import { opCodeNames, opCodes, opTable } from "../../../common/opcodes"
 import Breakpoint_Actions from "./breakpoint_actions"
 import CheckBox from "../checkbox"
+import Breakpoint_Once from "./breakpoint_once"
 
 const addressModes = [
   "Implied",
@@ -211,6 +212,8 @@ const BPEdit_Instruction = (props: {
         isDisabled={() => false} />
 
       <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
+
+      <Breakpoint_Once breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )
 }

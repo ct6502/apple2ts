@@ -5,11 +5,14 @@ import { MEMORY_BANKS, MemoryBankKeys, MemoryBankNames } from "../../../common/m
 import { toHex } from "../../../common/utility"
 import ExpressionControl from "./expressioncontrol"
 import Breakpoint_Actions from "./breakpoint_actions"
+import Breakpoint_Once from "./breakpoint_once"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 const BPEdit_Breakpoint = (props: {
   breakpoint: Breakpoint,
   setBreakpoint: (bp: Breakpoint) => void,
 }) => {
+  const { t } = useTranslation()
   const [bpAddress, setBpAddress] = useState(props.breakpoint.address >= 0 ?
     props.breakpoint.basic ? props.breakpoint.address.toString() : toHex(props.breakpoint.address) : "")
 
@@ -69,10 +72,9 @@ const BPEdit_Breakpoint = (props: {
           setValue={handleAddressChange}
           isHex={!props.breakpoint.basic}
           isNumber={props.breakpoint.basic}
-          placeholder="Any"
+          placeholder={t("debug.any")}
           width="5em" />
       </div>
-      {!props.breakpoint.basic && <div>
       <div style={{ marginTop: "16px" }}>
         <EditField name="Hit&nbsp;Count: "
           value={props.breakpoint.hitcount.toString()}
@@ -104,7 +106,7 @@ const BPEdit_Breakpoint = (props: {
         isDisabled={isBankDisabledForAddress} />
 
       <Breakpoint_Actions breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
-      </div>}
+      <Breakpoint_Once breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint}/>
     </div>
   )
 }

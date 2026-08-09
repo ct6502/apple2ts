@@ -285,6 +285,18 @@ msgctxt "debug.disassembly"
 msgid "Disassembly"
 msgstr ""
 
+msgctxt "debug.breakOnce"
+msgid "Break once then remove"
+msgstr ""
+
+msgctxt "debug.basicLineNumber"
+msgid "BASIC Line Number: "
+msgstr ""
+
+msgctxt "debug.any"
+msgid "Any"
+msgstr ""
+
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
 msgstr ""

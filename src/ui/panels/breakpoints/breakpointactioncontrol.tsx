@@ -2,6 +2,7 @@ import { Droplist } from "../droplist"
 import EditField from "../editfield"
 import { toHex } from "../../../common/utility"
 import { useState } from "react"
+import { useTranslation } from "../../../i18n/useTranslation"
 
 interface BreakpointActionControlProps {
   action: BreakpointAction;
@@ -9,6 +10,7 @@ interface BreakpointActionControlProps {
 }
 
 const BreakpointActionControl = (props: BreakpointActionControlProps) => {
+  const { t } = useTranslation()
   const [bpAddress, setBpAddress] = useState(toHex(props.action.address))
   const [bpValue, setBpValue] = useState(toHex(props.action.value))
 
@@ -90,7 +92,7 @@ const BreakpointActionControl = (props: BreakpointActionControlProps) => {
           value={bpAddress}
           setValue={handleAddressChange}
           isHex={true}
-          placeholder="Any"
+          placeholder={t("debug.any")}
           width="3em" />
         </span>
       }

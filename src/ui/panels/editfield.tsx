@@ -58,7 +58,7 @@ const EditField = (props: EditFieldProps) => {
       onKeyDown={props.isHex || props.isNumber ? testKey : undefined}
       placeholder={props.placeholder}
       value={props.value}
-      style={{ width: props.width || "100%", textAlign: "right" }}
+      style={{ width: props.width || "100%" }}
       onChange={(e) => handleValueChange(e)} />
     {props.warning &&
       <div className="warning-div flex-row">

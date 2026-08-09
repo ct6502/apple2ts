@@ -130,7 +130,7 @@ const BreakpointEdit = (props: {
               className="check-radio-box"
               checked={props.breakpoint.basic}
               onChange={(e) => { handleBreakAtChange(e) }} />
-            <label htmlFor="Basic" className="dialog-title flush-left">Basic</label>
+            <label htmlFor="Basic" className="dialog-title flush-left">BASIC</label>
           </div>
 
           {isBreakpoint && <BPEdit_Breakpoint breakpoint={props.breakpoint} setBreakpoint={props.setBreakpoint} />}
