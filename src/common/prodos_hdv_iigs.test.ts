@@ -3,6 +3,7 @@ import {
   createPackedBinaryRelay,
   createProDosRelayWrapper,
   determineVtocType,
+  generateMenuSourceProgram,
   lookupFourCadeByTitle,
 } from "./prodos_hdv"
 import { parsePrelaunchScript } from "./four_cade_prelaunch_db"
@@ -28,6 +29,35 @@ const branchTarget = (baseAddress: number, bytes: Uint8Array, offset: number) =>
 }
 
 describe("IIgs 4cade block loading", () => {
+  test("menu uses full HGR and jumps to the first case-insensitive title initial", () => {
+    const source = generateMenuSourceProgram([
+      { filename: "ALPHA", displayName: "Aztec" },
+      { filename: "ANOTHER", displayName: "Apple Panic" },
+      { filename: "BETA", displayName: "Blazing Paddles" },
+    ], undefined, [], [], "A2TSHLP")
+
+    expect(source).toContain("20 MAX=3:I=1:G=0:C$=\"AAB\"")
+    expect(source).toContain("85 IF K0>96 AND K0<123 THEN K0=K0-32")
+    expect(source).toContain("87 P=0:FOR J=1 TO MAX")
+    expect(source).toContain("88 IF ASC(MID$(C$,J,1))=K0 THEN P=J:J=MAX")
+    expect(source).toContain("89 NEXT:IF P>0 THEN I=P:GOSUB 1000")
+    expect(source).toContain("40 IF PEEK(49152)<128 THEN 40")
+    expect(source).toContain("46 IF K0<>27 THEN 50")
+    expect(source).toContain("47 G=1-G:IF G=0 THEN POKE 49236,0:GOTO 40")
+    expect(source).toContain("48 POKE 49237,0:GOTO 40")
+    expect(source).toContain("1010 POKE 49232,0:POKE 49234,0:POKE 49239,0")
+    expect(source).not.toContain("1010 POKE 49232,0:POKE 49234,0:POKE 49236,0")
+    expect(source).toContain("BLOAD SHOTS/SCREEN\"+N$+\",A$2000")
+    expect(source).toContain("BLOAD SHOTS/KEY\"+N$+\",A$4000")
+    expect(source).toContain("1014 IF G=0 THEN POKE 49236,0")
+    expect(source).toContain("1015 IF G=1 THEN POKE 49237,0")
+    expect(source).not.toContain("PEEK(49251)")
+    expect(source).not.toContain("POKE 49235")
+    expect(source).not.toContain("VTAB")
+    expect(source).not.toContain("HTAB")
+    expect(source).not.toContain("INVERSE")
+  })
+
   test("keeps a large ProDOS image titled Aztec out of the 4cade path", () => {
     expect(determineVtocType("Aztec.po", new Uint8Array(819200), "Aztec")).toBe("prodos")
   })

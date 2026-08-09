@@ -7,7 +7,7 @@ import { handleInputParams } from "../inputparams"
 import { DiskCollectionSortMode, getPreferenceVtocType } from "../localstorage"
 import { passSetRunMode } from "../main2worker"
 import { showGlobalProgressModal } from "../ui_utilities"
-import { loadAndConvertImageToHires } from "./screenshot_utils"
+import { HiresScreenshotSet, loadAndConvertImageToHires } from "./screenshot_utils"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,
@@ -333,10 +333,21 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
     // Apple2TS logo into the corner. Conversion is deterministic; the source image is
     // fetched through a localStorage cache (see resolveScreenshotUrlWithCache) so each
     // screenshot only hits the network/app assets once across exports.
-    const screenshots: Array<{ name: string; data: Uint8Array | null }> = []
+    const screenshots: Array<{ name: string; data: HiresScreenshotSet | null }> = []
+    const showScreenshotNavigation = orderedDownloadedDisks.length > 1
+    const titleInitials = orderedDownloadedDisks
+      .map(disk => disk.item.title.trimStart().charAt(0).toUpperCase())
+      .filter(initial => /^[A-Z0-9]$/.test(initial))
+      .join("")
     for (let index = 0; index < orderedDownloadedDisks.length; index++) {
       const disk = orderedDownloadedDisks[index]
-      const screenshotData = await loadAndConvertImageToHires(disk.item.imageUrl, true, index + 1)
+      const screenshotData = await loadAndConvertImageToHires(
+        disk.item.imageUrl,
+        true,
+        index + 1,
+        showScreenshotNavigation,
+        titleInitials,
+      )
       screenshots.push({
         name: disk.filename.split(".")[0].slice(0, 15),
         data: screenshotData,
@@ -348,7 +359,8 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
       filename: disk.filename.split(".")[0].slice(0, 15),
       sourceFilename: disk.filename,
       displayName: disk.item.title,
-      screenshotData: screenshots[index].data || undefined,
+      screenshotData: screenshots[index].data?.plain,
+      keyboardScreenshotData: screenshots[index].data?.keyboard,
       imageKind: fileKinds[index],
       wozExtractedProDosFiles: wozExtractedByIndex.get(index),
     }))
