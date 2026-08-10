@@ -16,12 +16,16 @@ export const doSetBreakpointSkipOnce = () => {
   breakpointSkipOnce = true
 }
 
-export const setStepOut = () => {
-  // If we have a new Step Out, remove any old "hit once" breakpoints
+const removeHiddenHitOnceBreakpoints = () => {
   const bpTmp = new BreakpointMap(breakpointMap)
   bpTmp.forEach((bp, key) => {
-    if (bp.once) breakpointMap.delete(key)
+    if (bp.once && bp.hidden) breakpointMap.delete(key)
   })
+}
+
+export const setStepOut = () => {
+  // If we have a new Step Out, remove any old hidden stepping breakpoints.
+  removeHiddenHitOnceBreakpoints()
   const addr = getLastJSR()
   if (addr < 0) return
   if (breakpointMap.get(addr)) return
@@ -33,11 +37,9 @@ export const setStepOut = () => {
 }
 
 export const doSetBasicStep = () => {
-  const bpTmp = new BreakpointMap(breakpointMap)
-  bpTmp.forEach((bp, key) => {
-    if (bp.once) breakpointMap.delete(key)
-  })
+  removeHiddenHitOnceBreakpoints()
   const addr = 0xD805
+  if (breakpointMap.get(addr)) return
   const bp = BreakpointNew()
   bp.address = addr
   bp.once = true
@@ -46,7 +48,7 @@ export const doSetBasicStep = () => {
 }
 
 export const doSetBreakpoints = (bp: BreakpointMap) => {
-  // This will automatically erase any "hit once" breakpoints, which is okay.
+  // Replacing the UI-configured map also erases hidden stepping breakpoints.
   breakpointMap = bp
 }
 
@@ -120,7 +122,9 @@ export const isWatchpoint = (addr: number, value: number, set: boolean) => {
   if (!bp || !bp.watchpoint || bp.disabled) return false
   if (bp.hexvalue >= 0 && bp.hexvalue !== value) return false
   if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, addr)) return false
-  return set ? bp.memset : bp.memget
+  const matched = set ? bp.memset : bp.memget
+  if (matched && bp.once) breakpointMap.delete(addr)
+  return matched
 }
 
 
@@ -265,16 +269,29 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
     // Look for BASIC breakpoints
     const lineNum = memGet(0x75) + (memGet(0x76) << 8)
     const bp = breakpointMap.get(lineNum)
-    if (bp && !bp.disabled) {
+    if (bp?.basic && !bp.disabled) {
       if (bp.once) breakpointMap.delete(lineNum)
       return BREAKPOINT_RESULT.HIDDEN_BREAK
     }
   }
-  const bp = breakpointMap.get(s6502.PC) ||
-    breakpointMap.get(-1) ||
-    breakpointMap.get(instr | BRK_INSTR) ||
-    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL_65C02)) ||
-    (instr >= 0 && breakpointMap.get(BRK_ILLEGAL_6502))
+  let breakpointKey = s6502.PC
+  let bp = breakpointMap.get(breakpointKey)
+  if (!bp) {
+    breakpointKey = -1
+    bp = breakpointMap.get(breakpointKey)
+  }
+  if (!bp) {
+    breakpointKey = instr | BRK_INSTR
+    bp = breakpointMap.get(breakpointKey)
+  }
+  if (!bp && instr >= 0) {
+    breakpointKey = BRK_ILLEGAL_65C02
+    bp = breakpointMap.get(breakpointKey)
+  }
+  if (!bp && instr >= 0) {
+    breakpointKey = BRK_ILLEGAL_6502
+    bp = breakpointMap.get(breakpointKey)
+  }
 
     if (!bp || bp.disabled || bp.watchpoint) return BREAKPOINT_RESULT.NO_BREAK
 
@@ -307,7 +324,7 @@ export const hitBreakpoint = (instr = -1, vLo = 0, vHi = 0, code: PCodeInstr | n
   if (bp.memoryBank && !checkMemoryBank(bp.memoryBank, s6502.PC)) {
     return BREAKPOINT_RESULT.NO_BREAK
   }
-  if (bp.once) breakpointMap.delete(s6502.PC)
+  if (bp.once) breakpointMap.delete(breakpointKey)
   return processBreakpointActions(bp, vLo, vHi, code)
 }
 

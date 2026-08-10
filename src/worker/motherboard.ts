@@ -669,8 +669,8 @@ let didPassSoftSwitchDescriptions = false
 export const getExternalMachineState = () => {
   // Make sure the push button values are up to date, since they can
   // be modifed by other softswitches (like for the Sirius Joyport).
-  memGet(SWITCHES.PB0.isSetAddr)
-  memGet(SWITCHES.PB1.isSetAddr)
+  memGet(SWITCHES.PB0.isSetAddr, false)
+  memGet(SWITCHES.PB1.isSetAddr, false)
   const state: MachineState = {
     addressGetTable: addressGetTable,
     altChar: SWITCHES.ALTCHARSET.isSet,
@@ -681,7 +681,7 @@ export const getExternalMachineState = () => {
     canGoBackward: getGoBackwardIndex() >= 0,
     canGoForward: getGoForwardIndex() >= 0,
     c800Slot: C800SlotGet(),
-    cout: memGet(0x0039) << 8 | memGet(0x0038),
+    cout: memGet(0x0039, false) << 8 | memGet(0x0038, false),
     cpuSpeed: cpuSpeed,
     extraRamSize: 64 * (RamWorksMaxBank + 1),
     hires: getHires(),

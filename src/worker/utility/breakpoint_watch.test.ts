@@ -34,6 +34,21 @@ test("watchpoints", () => {
   expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
 })
 
+test("hit-once watchpoint removes its map entry", () => {
+  bpMap.clear()
+  const bp = BreakpointNew()
+  bp.address = 0x3000
+  bp.watchpoint = true
+  bp.memget = true
+  bp.once = true
+  bpMap.set(bp.address, bp)
+
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.BREAK)
+  memGet(bp.address, true)
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
+})
+
 // ************ Watchpoints memory bank ************
 
 test("watchpoints memory bank", () => {
