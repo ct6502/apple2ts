@@ -11,9 +11,15 @@ import { resetPreferences, setPreferenceBoolean, setPreferenceTheme } from "../l
 import { DisplayConfig } from "../devices/displayconfig"
 import RunTour from "../tours/runtour"
 import { appleOutline } from "../img/icon_appleoutline"
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import PopupMenu from "./popupmenu"
-import { audioEnable, isAudioEnabled } from "../devices/audio/speaker"
+import {
+  audioEnable,
+  canShowAudioControl,
+  getAudioStatus,
+  retrySpeakerAudio,
+  subscribeAudioStatus,
+} from "../devices/audio/speaker"
 import { SerialPortSelect } from "../devices/serial/serialselect"
 import { SpeedDropdown } from "./speeddropdown"
 import { getLowercaseMode, getUseOpenAppleKey, getTheme, isGameMode } from "../ui_settings"
@@ -21,6 +27,7 @@ import { useTranslation } from "../../i18n/useTranslation"
 import { AudioConfig } from "../devices/audio/audioconfig"
 import { GamepadConfig } from "../devices/gamepadconfig"
 import LinkBuilder from "./linkbuilder"
+import { ControlAvailabilityIcon } from "./controlavailabilityicon"
 
 const isTouchDevice = "ontouchstart" in document.documentElement
 const isMac = navigator.platform.startsWith("Mac")
@@ -31,6 +38,11 @@ const ConfigButtons = (props: DisplayProps) => {
   const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = (isMac ? "Cmd" : "Alt")
   const themeNames = [t("themes.classic"), t("themes.dark"), t("themes.minimal")]
+  const audioStatus = useSyncExternalStore(subscribeAudioStatus, getAudioStatus)
+  const audioUnavailable = audioStatus === "unavailable"
+  const audioTitle = audioUnavailable
+    ? t("controls.retrySound")
+    : t("controls.toggleSound")
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
 
@@ -45,10 +57,21 @@ const ConfigButtons = (props: DisplayProps) => {
       <DisplayConfig updateDisplay={props.updateDisplay} />
 
       <button className="push-button"
-        title={t("controls.toggleSound")}
-        style={{ display: typeof AudioContext !== "undefined" ? "" : "none" }}
-        onClick={() => { audioEnable(!isAudioEnabled()); props.updateDisplay() }}>
-        <FontAwesomeIcon icon={isAudioEnabled() ? faVolumeHigh : faVolumeXmark} />
+        title={audioTitle}
+        aria-label={audioTitle}
+        style={{
+          display: canShowAudioControl() ? "" : "none",
+        }}
+        onClick={() => {
+          if (audioUnavailable) {
+            void retrySpeakerAudio()
+          } else {
+            audioEnable(audioStatus === "muted")
+          }
+        }}>
+        <ControlAvailabilityIcon unavailable={audioUnavailable}>
+          <FontAwesomeIcon icon={audioStatus === "muted" ? faVolumeXmark : faVolumeHigh} />
+        </ControlAvailabilityIcon>
       </button>
     </div>
 

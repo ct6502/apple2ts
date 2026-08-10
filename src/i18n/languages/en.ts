@@ -10,6 +10,7 @@ export const en = {
     "saveState": "Save State",
     "restoreState": "Restore State",
     "toggleSound": "Toggle Sound",
+    "retrySound": "Sound unavailable. Retry sound.",
     "settings": "Settings",
     "debugPanel": "Debug Panel",
     "reportIssue": "Report an Issue"

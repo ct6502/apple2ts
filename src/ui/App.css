@@ -171,6 +171,24 @@ body.dark-mode .push-button:active {
   pointer-events: none;
 }
 
+.control-availability-icon {
+  display: inline-flex;
+  position: relative;
+}
+
+.control-unavailable-badge {
+  position: absolute;
+  right: -0.35em;
+  bottom: -0.25em;
+  color: #d00000;
+  font-size: 0.55em;
+  filter: drop-shadow(0 0 1px white);
+}
+
+body.dark-mode .control-unavailable-badge {
+  filter: drop-shadow(0 0 1px black);
+}
+
 .key-button {
   color: var(--text-color);
   border-width: 1px;

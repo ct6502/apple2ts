@@ -46,6 +46,10 @@ msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
 msgstr "Attiva/Disattiva Suono"
 
+msgctxt "controls.retrySound"
+msgid "Sound unavailable. Retry sound."
+msgstr ""
+
 #, fuzzy
 msgctxt "controls.settings"
 msgid "Settings"

@@ -6,7 +6,11 @@
 import { COLOR_MODE } from "../../common/utility"
 import { passSetMachineName, passSpeedMode } from "../main2worker"
 import { setPreferenceColorMode } from "../localstorage"
-import { audioEnable } from "../devices/audio/speaker"
+import {
+  audioEnable,
+  getAudioStatus,
+  retrySpeakerAudio,
+} from "../devices/audio/speaker"
 import type { MCPToolResult } from "./mcp_server"
 
 /**
@@ -136,9 +140,18 @@ export function toolSetColorMode(colorMode: string): MCPToolResult {
  * Enable or disable sound
  * @param enabled true to enable sound, false to disable
  */
-export function toolSetSound(enabled: boolean): MCPToolResult {
+export async function toolSetSound(enabled: boolean): Promise<MCPToolResult> {
   try {
     audioEnable(enabled)
+    if (enabled && getAudioStatus() === "unavailable") {
+      await retrySpeakerAudio()
+    }
+    if (enabled && getAudioStatus() === "unavailable") {
+      return {
+        success: false,
+        error: "Sound is unavailable",
+      }
+    }
 
     return {
       success: true,
