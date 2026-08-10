@@ -162,6 +162,10 @@ const KEYBOARD_KEY_HEIGHT = 23
 const KEYBOARD_COLUMN_GAP = 1
 const ESC_KEY_WIDTH = 36
 const ESC_KEY_MARGIN = 10
+const KEY_VERTICAL_OFFSET = -5
+const DISK_POSITION_LINE_HEIGHT = 3
+const DISK_POSITION_BOTTOM_MARGIN = 3
+const DISK_POSITION_CIRCLE_RADIUS = 3.5
 const KEYBOARD_ROWS = [
   { characters: "1234567890", offset: 0 },
   { characters: "QWERTYUIOP", offset: 0 },
@@ -255,7 +259,7 @@ export const stampAlphanumericKeys = (
       .filter(character => /[A-Z0-9]/.test(character)),
   )
 
-  const top = LOGO_NATIVE_SIZE + LOGO_OUTLINE * 2 + KEYBOARD_TOP_MARGIN
+  const top = LOGO_NATIVE_SIZE + LOGO_OUTLINE * 2 + KEYBOARD_TOP_MARGIN + KEY_VERTICAL_OFFSET
   const bottom = controlsY - KEYBOARD_BOTTOM_MARGIN
   const rowGap = Math.floor((bottom - top - KEYBOARD_ROWS.length * KEYBOARD_KEY_HEIGHT) / (KEYBOARD_ROWS.length - 1))
 
@@ -289,31 +293,61 @@ const stampEscapeKey = (context: CanvasRenderingContext2D) => {
   )
 }
 
+export const stampDiskPosition = (
+  context: CanvasRenderingContext2D,
+  diskCount: number,
+  currentDiskIndex: number,
+) => {
+  if (diskCount <= 1) return
+  const lineY = 192 - DISK_POSITION_BOTTOM_MARGIN - DISK_POSITION_LINE_HEIGHT
+  const segmentWidth = 280 / (diskCount + 1)
+  context.fillStyle = "#fff"
+  context.fillRect(0, lineY, 280, DISK_POSITION_LINE_HEIGHT)
+  context.fillStyle = "#000"
+  for (let segment = 1; segment <= diskCount + 1; segment++) {
+    const dividerX = Math.min(279, Math.round(segment * segmentWidth))
+    context.fillRect(dividerX, lineY, 1, DISK_POSITION_LINE_HEIGHT)
+  }
+
+  const safeIndex = Math.max(1, Math.min(currentDiskIndex, diskCount))
+  const circleX = Math.round(safeIndex * segmentWidth)
+  const circleY = lineY + DISK_POSITION_LINE_HEIGHT / 2
+  context.beginPath()
+  context.arc(circleX, circleY, DISK_POSITION_CIRCLE_RADIUS, 0, Math.PI * 2)
+  context.fillStyle = "#fff"
+  context.fill()
+  context.lineWidth = 1
+  context.strokeStyle = "#000"
+  context.stroke()
+}
+
 export const stampMenuControls = (
   context: CanvasRenderingContext2D,
   showNavigation: boolean,
   availableInitials = "",
   showAlphanumericKeys = true,
+  diskCount = 0,
+  currentDiskIndex = 1,
 ) => {
   const controlsWidth = showNavigation
     ? SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP + ARROW_KEY_SIZE + ARROW_KEY_GAP + ARROW_KEY_SIZE
     : SPACEBAR_WIDTH
   const x = Math.floor((280 - controlsWidth) / 2)
-  const y = 192 - SPACEBAR_HEIGHT - SPACEBAR_BOTTOM_MARGIN
+  const y = 192 - SPACEBAR_HEIGHT - SPACEBAR_BOTTOM_MARGIN + KEY_VERTICAL_OFFSET
 
   context.save()
   context.scale(2, 1)
   if (showAlphanumericKeys) {
     stampAlphanumericKeys(context, availableInitials, y)
-  } else {
-    if (showNavigation) stampEscapeKey(context)
-    stampSpacebar(context, x, y)
-    if (showNavigation) {
-      const leftX = x + SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP
-      const rightX = leftX + ARROW_KEY_SIZE + ARROW_KEY_GAP
-      stampNavigationKeys(context, leftX, rightX, y)
-    }
   }
+  if (showNavigation) stampEscapeKey(context)
+  stampSpacebar(context, x, y)
+  if (showNavigation) {
+    const leftX = x + SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP
+    const rightX = leftX + ARROW_KEY_SIZE + ARROW_KEY_GAP
+    stampNavigationKeys(context, leftX, rightX, y)
+  }
+  stampDiskPosition(context, diskCount, currentDiskIndex)
   context.restore()
 }
 
@@ -322,6 +356,8 @@ const stampMenuControlsIntoHires = (
   showNavigation: boolean,
   availableInitials: string,
   showAlphanumericKeys: boolean,
+  diskCount: number,
+  currentDiskIndex: number,
 ) => {
   const canvas = document.createElement("canvas")
   canvas.width = 560
@@ -329,7 +365,14 @@ const stampMenuControlsIntoHires = (
   const context = canvas.getContext("2d")
   if (!context) return
 
-  stampMenuControls(context, showNavigation, availableInitials, showAlphanumericKeys)
+  stampMenuControls(
+    context,
+    showNavigation,
+    availableInitials,
+    showAlphanumericKeys,
+    diskCount,
+    currentDiskIndex,
+  )
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
   const controlsHires = convertCanvasToHires(imageData, false)
 
@@ -670,6 +713,8 @@ const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | nu
  * @param watermarkFrameIndex Frame index used for animated runningGuy.gif watermark.
  * @param showNavigation When true, stamps left/right navigation keys.
  * @param availableInitials Initial characters represented by exported titles.
+ * @param diskCount Number of exported disks represented by the position indicator.
+ * @param currentDiskIndex One-based disk index shown by the position indicator.
  * @returns Plain and keyboard-overlay hi-res pages, or null if loading fails.
  */
 export const loadAndConvertImageToHires = async (
@@ -678,6 +723,8 @@ export const loadAndConvertImageToHires = async (
   watermarkFrameIndex = 0,
   showNavigation = true,
   availableInitials = "",
+  diskCount = 0,
+  currentDiskIndex = 1,
 ): Promise<HiresScreenshotSet | null> => {
   const logo = stampLogo ? await loadFallbackWatermarkImage() : null
   const watermark = stampLogo
@@ -685,9 +732,23 @@ export const loadAndConvertImageToHires = async (
     : null
   const buildScreenshotSet = (hiresData: Uint8Array): HiresScreenshotSet => {
     const plain = hiresData.slice()
-    stampMenuControlsIntoHires(plain, showNavigation, availableInitials, false)
+    stampMenuControlsIntoHires(
+      plain,
+      showNavigation,
+      availableInitials,
+      false,
+      diskCount,
+      currentDiskIndex,
+    )
     const keyboard = hiresData.slice()
-    stampMenuControlsIntoHires(keyboard, showNavigation, availableInitials, true)
+    stampMenuControlsIntoHires(
+      keyboard,
+      showNavigation,
+      availableInitials,
+      true,
+      diskCount,
+      currentDiskIndex,
+    )
     if (watermark) {
       stampLogoIntoHires(plain, watermark)
       stampLogoIntoHires(keyboard, watermark)

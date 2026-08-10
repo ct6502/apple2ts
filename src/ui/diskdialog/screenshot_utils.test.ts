@@ -1,6 +1,34 @@
-import { stampMenuControls } from "./screenshot_utils"
+import { stampDiskPosition, stampMenuControls } from "./screenshot_utils"
 
 describe("screenshot menu controls", () => {
+  test("draws n plus one segments and marks the current disk", () => {
+    const operations: string[] = []
+    const contextState = {
+      fillStyle: "",
+      lineWidth: 0,
+      strokeStyle: "",
+      fillRect: (x: number, y: number, width: number, height: number) =>
+        operations.push(`fillRect:${contextState.fillStyle}:${x},${y},${width},${height}`),
+      beginPath: () => operations.push("beginPath"),
+      arc: (x: number, y: number, radius: number, start: number, end: number) =>
+        operations.push(`arc:${x},${y},${radius},${start},${end}`),
+      fill: () => operations.push(`fill:${contextState.fillStyle}`),
+      stroke: () => operations.push(`stroke:${contextState.strokeStyle}:${contextState.lineWidth}`),
+    }
+    const context = contextState as unknown as CanvasRenderingContext2D
+
+    stampDiskPosition(context, 3, 2)
+
+    expect(operations).toContain("fillRect:#fff:0,186,280,3")
+    expect(operations).toContain("fillRect:#000:70,186,1,3")
+    expect(operations).toContain("fillRect:#000:140,186,1,3")
+    expect(operations).toContain("fillRect:#000:210,186,1,3")
+    expect(operations).toContain("fillRect:#000:279,186,1,3")
+    expect(operations).toContain(`arc:140,187.5,3.5,0,${Math.PI * 2}`)
+    expect(operations).toContain("fill:#fff")
+    expect(operations).toContain("stroke:#000:1")
+  })
+
   test("draws a spaced keyboard row with below-only shadows and straight-line arrows", () => {
     const operations: string[] = []
     const contextState = {
@@ -27,16 +55,16 @@ describe("screenshot menu controls", () => {
 
     expect(operations).toContain("roundRect:10,10,36,23,4")
     expect(operations).toContain("fillText:ESC,28,21.5")
-    expect(operations).toContain("roundRect:41,163,123,23,4")
-    expect(operations).toContain("roundRect:41,162,123,23,4")
-    expect(operations).toContain("roundRect:187,163,23,23,4")
-    expect(operations).toContain("roundRect:187,162,23,23,4")
-    expect(operations).toContain("roundRect:216,163,23,23,4")
-    expect(operations).toContain("roundRect:216,162,23,23,4")
-    expect(operations).toContain("moveTo:204,173.5")
-    expect(operations).toContain("lineTo:193,173.5")
-    expect(operations).toContain("moveTo:222,173.5")
-    expect(operations).toContain("lineTo:233,173.5")
+    expect(operations).toContain("roundRect:41,158,123,23,4")
+    expect(operations).toContain("roundRect:41,157,123,23,4")
+    expect(operations).toContain("roundRect:187,158,23,23,4")
+    expect(operations).toContain("roundRect:187,157,23,23,4")
+    expect(operations).toContain("roundRect:216,158,23,23,4")
+    expect(operations).toContain("roundRect:216,157,23,23,4")
+    expect(operations).toContain("moveTo:204,168.5")
+    expect(operations).toContain("lineTo:193,168.5")
+    expect(operations).toContain("moveTo:222,168.5")
+    expect(operations).toContain("lineTo:233,168.5")
     expect(operations.filter(operation => operation === "stroke:#000:2")).toHaveLength(6)
     expect(context.lineCap).toBe("round")
     expect(context.lineJoin).toBe("round")
@@ -57,6 +85,10 @@ describe("screenshot menu controls", () => {
       beginPath: () => undefined,
       roundRect: (x: number, y: number, width: number, height: number) =>
         operations.push(`roundRect:${x},${y},${width},${height}`),
+      fillRect: (x: number, y: number, width: number, height: number) =>
+        operations.push(`fillRect:${contextState.fillStyle}:${x},${y},${width},${height}`),
+      arc: (x: number, y: number, radius: number) =>
+        operations.push(`arc:${x},${y},${radius}`),
       moveTo: () => undefined,
       lineTo: () => undefined,
       fillText: (text: string, x: number, y: number) => operations.push(`fillText:${text},${x},${y}`),
@@ -65,24 +97,25 @@ describe("screenshot menu controls", () => {
     }
     const context = contextState as unknown as CanvasRenderingContext2D
 
-    stampMenuControls(context, true, "AQZ19")
+    stampMenuControls(context, true, "AQZ19", true, 3, 2)
 
-    expect(operations).toContain("roundRect:0,58,27,23")
-    expect(operations).toContain("fillText:1,13.5,69.5")
-    expect(operations).toContain("roundRect:224,58,27,23")
-    expect(operations).toContain("fillText:9,237.5,69.5")
-    expect(operations).toContain("roundRect:0,83,27,23")
-    expect(operations).toContain("fillText:Q,13.5,94.5")
-    expect(operations).toContain("roundRect:42,133,27,23")
-    expect(operations).toContain("fillText:Z,55.5,144.5")
-    expect(operations.some(operation => operation.startsWith("fillText:ESC,"))).toBe(false)
+    expect(operations).toContain("roundRect:0,53,27,23")
+    expect(operations).toContain("fillText:1,13.5,64.5")
+    expect(operations).toContain("roundRect:224,53,27,23")
+    expect(operations).toContain("fillText:9,237.5,64.5")
+    expect(operations).toContain("roundRect:0,78,27,23")
+    expect(operations).toContain("fillText:Q,13.5,89.5")
+    expect(operations).toContain("roundRect:42,128,27,23")
+    expect(operations).toContain("fillText:Z,55.5,139.5")
+    expect(operations).toContain("fillText:ESC,28,21.5")
     expect(operations.some(operation => operation.startsWith("fillText:SHIFT,"))).toBe(false)
-    expect(operations).toContain("fillText:A,27.5,119.5")
-    expect(operations.some(operation => operation.startsWith("fillText:ESC,"))).toBe(false)
-    expect(operations).not.toContain("roundRect:41,162,123,23")
-    expect(operations).not.toContain("roundRect:187,162,23,23")
-    expect(operations).not.toContain("roundRect:216,162,23,23")
-    expect(contextState.font).toBe("bold 15px sans-serif")
+    expect(operations).toContain("fillText:A,27.5,114.5")
+    expect(operations).toContain("roundRect:41,157,123,23")
+    expect(operations).toContain("roundRect:187,157,23,23")
+    expect(operations).toContain("roundRect:216,157,23,23")
+    expect(operations).toContain("fillRect:#fff:0,186,280,3")
+    expect(operations).toContain("arc:140,187.5,3.5")
+    expect(contextState.font).toBe("bold 12px sans-serif")
   })
 
   test("shows ESC and bottom controls but omits alphanumeric keys from the plain screenshot", () => {
@@ -108,9 +141,9 @@ describe("screenshot menu controls", () => {
 
     expect(operations).toContain("roundRect:10,10,36,23")
     expect(operations).toContain("fillText:ESC,28,21.5")
-    expect(operations).toContain("roundRect:41,162,123,23")
-    expect(operations).toContain("roundRect:187,162,23,23")
-    expect(operations).toContain("roundRect:216,162,23,23")
+    expect(operations).toContain("roundRect:41,157,123,23")
+    expect(operations).toContain("roundRect:187,157,23,23")
+    expect(operations).toContain("roundRect:216,157,23,23")
     expect(operations.some(operation => operation.startsWith("fillText:SHIFT,"))).toBe(false)
     expect(operations.some(operation => operation.startsWith("fillText:A,"))).toBe(false)
   })
@@ -137,6 +170,8 @@ describe("screenshot menu controls", () => {
       scale: () => undefined,
       beginPath: () => undefined,
       roundRect: () => operations.push("spacebar"),
+      fillRect: () => operations.push("indicator"),
+      arc: () => operations.push("indicator"),
       fillText: () => undefined,
       fill: () => undefined,
       stroke: () => undefined,
@@ -145,5 +180,6 @@ describe("screenshot menu controls", () => {
     stampMenuControls(context, false, "", false)
 
     expect(operations).toHaveLength(2)
+    expect(operations).not.toContain("indicator")
   })
 })

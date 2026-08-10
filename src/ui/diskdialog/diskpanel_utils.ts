@@ -347,6 +347,8 @@ export const createHdv = async (orderedDownloadedDisks: DownloadedExportDisk[]) 
         index + 1,
         showScreenshotNavigation,
         titleInitials,
+        orderedDownloadedDisks.length,
+        index + 1,
       )
       screenshots.push({
         name: disk.filename.split(".")[0].slice(0, 15),
