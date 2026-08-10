@@ -8,6 +8,7 @@ import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DI
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { internetArchiveUrlProtocol, getDiskImageUrlFromIdentifier } from "./internetarchive_utils"
+import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
 import { newReleases } from "./newreleases"
 import { DiskBookmarks } from "./diskbookmarks"
 import { parseGameList } from "./totalreplayutilities"
@@ -401,7 +402,7 @@ const shouldUseCloudflareDiskProxy = (url: string): boolean => {
     const target = new URL(url)
     return /^https?:$/i.test(target.protocol) &&
       target.origin !== window.location.origin &&
-      /\.pages\.dev$/i.test(window.location.hostname)
+      (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname))
   } catch {
     return false
   }
@@ -409,7 +410,7 @@ const shouldUseCloudflareDiskProxy = (url: string): boolean => {
 
 const fetchWithCloudflareDiskProxy = async (url: string): Promise<Response | null> => {
   try {
-    const response = await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+    const response = await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
     return response.ok ? response : null
   } catch {
     return null
@@ -451,8 +452,8 @@ const fetchWithCorsProxy = async (url: string, debug?: (message: string) => void
 const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
   try {
     const parsed = new URL(url)
-    if ((import.meta.env.DEV || /\.pages\.dev$/i.test(window.location.hostname)) && parsed.hostname === "demozoo.org") {
-      return await fetch(`/api/demozoo-direct${parsed.pathname}${parsed.search}`)
+    if ((import.meta.env.DEV || hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname)) && parsed.hostname === "demozoo.org") {
+      return await fetch(apple2tsProxyPath(`/api/demozoo-direct${parsed.pathname}${parsed.search}`))
     }
   } catch {
     return null
@@ -462,9 +463,9 @@ const fetchDemoZooResource = async (url: string): Promise<Response | null> => {
 }
 
 const fetchExternalDownloadPage = async (url: string): Promise<Response | null> => {
-  if (/\.pages\.dev$/i.test(window.location.hostname)) {
+  if (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname)) {
     try {
-      return await fetch(`/api/disk-direct?url=${encodeURIComponent(url)}`)
+      return await fetch(apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(url)}`))
     } catch {
       return null
     }

@@ -15,6 +15,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_DEMOZOO_ENABLED: ${{ vars.VITE_DEMOZOO_ENABLED || 'false' }}
+      VITE_DEMOZOO_PROXY_URL: ${{ vars.VITE_DEMOZOO_PROXY_URL || '' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

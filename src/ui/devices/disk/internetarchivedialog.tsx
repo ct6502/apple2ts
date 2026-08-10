@@ -10,6 +10,7 @@ import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import { showGlobalProgressModal } from "../../ui_utilities"
 import { handleSetDiskFromURL } from "./driveprops"
 import { generateUrlFromInternetArchiveId } from "./internetarchive_utils"
+import { apple2tsProxyPath, hasApple2tsProxy } from "./apple2tsproxy"
 import { useTranslation } from "../../../i18n/useTranslation"
 
 const queryMaxRows = 25
@@ -244,8 +245,8 @@ const InternetArchiveDialog = (props: InternetArchiveDialogProps) => {
 
     const pageNumber = pagedResults ? (results.length / queryMaxRows) + 1 : 1
     const queryUrl = formatString(queryFormat, newQuery || "*", newCollection.id, pageNumber.toString())
-    const requestUrl = /\.pages\.dev$/i.test(window.location.hostname)
-      ? `/api/disk-direct?url=${encodeURIComponent(queryUrl)}`
+    const requestUrl = (hasApple2tsProxy || /\.pages\.dev$/i.test(window.location.hostname))
+      ? apple2tsProxyPath(`/api/disk-direct?url=${encodeURIComponent(queryUrl)}`)
       : queryUrl
 
     showGlobalProgressModal(true, "Fetching query results")
