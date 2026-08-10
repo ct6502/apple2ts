@@ -7,7 +7,7 @@ import { handleInputParams } from "../inputparams"
 import { DiskCollectionSortMode, getPreferenceVtocType } from "../localstorage"
 import { passSetRunMode } from "../main2worker"
 import { showGlobalProgressModal } from "../ui_utilities"
-import { HiresScreenshotSet, loadAndConvertImageToHires } from "./screenshot_utils"
+import { loadAndConvertImageToHires } from "./screenshot_utils"
 
 export enum DISK_COLLECTION_ITEM_TYPE {
   A2TS_ARCHIVE,

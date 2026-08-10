@@ -6,11 +6,6 @@ import { iconData, iconKey, iconName } from "../img/iconfunctions"
 
 type Rgb = [number, number, number]
 
-export type HiresScreenshotSet = {
-  plain: Uint8Array
-  keyboard: Uint8Array
-}
-
 const sampleBilinear = (imageData: ImageData, x: number, y: number): Rgb => {
   const w = imageData.width
   const h = imageData.height
