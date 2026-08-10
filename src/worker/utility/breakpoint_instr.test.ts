@@ -55,6 +55,19 @@ test("hitInstruction All Opcodes", () => {
   }
 })
 
+test("hit-once instruction breakpoint removes its opcode-keyed map entry", () => {
+  bpMap.clear()
+  const bp = BreakpointNew()
+  bp.address = testOpcode | BRK_INSTR
+  bp.instruction = true
+  bp.once = true
+  bpMap.set(bp.address, bp)
+  setPC(0x0300)
+
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.BREAK)
+  expectInstructionBreakpoint(BREAKPOINT_RESULT.NO_BREAK)
+})
+
 test("hitInstruction Illegal Opcodes", () => {
   // Now test all illegal opcodes
   bpMap.clear()

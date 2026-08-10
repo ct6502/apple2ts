@@ -1,4 +1,4 @@
-import { processInstruction } from "./cpu6502"
+import { BREAKPOINT_RESULT, breakpointMap, doSetBreakpoints, hitBreakpoint, processInstruction } from "./cpu6502"
 import { getHires, memGet, memory, updateAddressTables } from "./memory"
 import { s6502, setPC } from "./instructions"
 import { hiresLineToAddress, RUN_MODE, TEST_DEBUG, TEST_GRAPHICS } from "../common/utility"
@@ -6,6 +6,7 @@ import { parseAssembly } from "./utility/assembler"
 import { doBoot, doSetCycleCount, doSetMachineName, doSetRunMode, doSetSpeedMode, getExternalMachineState, resetCpuSpeedForTesting } from "./motherboard"
 import { SWITCHES } from "./softswitches"
 import { setIsTesting } from "./worker2main"
+import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 
 // Make sure we don't accidentally leave debug mode on.
 test("debugMode", () => {
@@ -107,5 +108,29 @@ test("test VBL $C019 value", () => {
     doSetRunMode(RUN_MODE.PAUSED)
     jest.clearAllTimers()
     jest.useRealTimers()
+  }
+})
+
+test.each([
+  ["$C061", SWITCHES.PB0.isSetAddr],
+  ["$C062", SWITCHES.PB1.isSetAddr],
+  ["$0038", 0x0038],
+  ["$0039", 0x0039],
+])("machine-state polling does not consume a watchpoint at %s", (_label, address) => {
+  const breakpoints = new BreakpointMap()
+  const breakpoint = BreakpointNew()
+  breakpoint.address = address
+  breakpoint.watchpoint = true
+  breakpoint.memget = true
+  breakpoint.once = true
+  breakpoints.set(breakpoint.address, breakpoint)
+  doSetBreakpoints(breakpoints)
+
+  try {
+    getExternalMachineState()
+    expect(breakpointMap.get(breakpoint.address)).toBe(breakpoint)
+    expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
+  } finally {
+    doSetBreakpoints(new BreakpointMap())
   }
 })

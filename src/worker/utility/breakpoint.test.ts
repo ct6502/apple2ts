@@ -1,4 +1,4 @@
-import { BREAKPOINT_RESULT, doSetBreakpoints, hitBreakpoint } from "../cpu6502"
+import { BREAKPOINT_RESULT, doSetBasicStep, doSetBreakpoints, hitBreakpoint } from "../cpu6502"
 import { setPC, setX } from "../instructions"
 import { memGet, memSet } from "../memory"
 import { BreakpointMap, BreakpointNew } from "../../common/breakpoint"
@@ -70,6 +70,76 @@ test("hitBreakpoint", () => {
   expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.BREAK)
 })
 
+test("hit-once any-address breakpoint removes its map entry", () => {
+  bpMap.clear()
+  const bp = BreakpointNew()
+  bp.once = true
+  bpMap.set(-1, bp)
+  setPC(0x2000)
+
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.BREAK)
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
+})
+
+test("BASIC line lookup ignores a non-BASIC breakpoint with the same key", () => {
+  bpMap.clear()
+  const lineNumber = 100
+  const bp = BreakpointNew()
+  bp.address = lineNumber
+  bp.once = true
+  bpMap.set(bp.address, bp)
+  memSet(0x75, lineNumber & 0xFF)
+  memSet(0x76, lineNumber >> 8)
+  setPC(0xD805)
+
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
+  expect(bpMap.get(bp.address)).toBe(bp)
+})
+
+test("hit-once BASIC breakpoint removes its line-number map entry", () => {
+  bpMap.clear()
+  const lineNumber = 100
+  const bp = BreakpointNew()
+  bp.address = lineNumber
+  bp.basic = true
+  bp.once = true
+  bpMap.set(bp.address, bp)
+  memSet(0x75, lineNumber & 0xFF)
+  memSet(0x76, lineNumber >> 8)
+  setPC(0xD805)
+
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.HIDDEN_BREAK)
+  expect(hitBreakpoint()).toEqual(BREAKPOINT_RESULT.NO_BREAK)
+})
+
+test("stepping preserves user-created hit-once breakpoints", () => {
+  bpMap.clear()
+  const bp = BreakpointNew()
+  bp.address = 0x2000
+  bp.once = true
+  bpMap.set(bp.address, bp)
+  const oldHiddenStep = BreakpointNew()
+  oldHiddenStep.address = 0x3000
+  oldHiddenStep.once = true
+  oldHiddenStep.hidden = true
+  bpMap.set(oldHiddenStep.address, oldHiddenStep)
+
+  doSetBasicStep()
+  expect(bpMap.get(bp.address)).toBe(bp)
+  expect(bpMap.has(oldHiddenStep.address)).toBe(false)
+})
+
+test("BASIC stepping preserves a user breakpoint at its internal stop address", () => {
+  bpMap.clear()
+  const bp = BreakpointNew()
+  bp.address = 0xD805
+  bp.once = true
+  bpMap.set(bp.address, bp)
+
+  doSetBasicStep()
+
+  expect(bpMap.get(bp.address)).toBe(bp)
+})
 
 // ************ Breakpoints memory bank ************
 
