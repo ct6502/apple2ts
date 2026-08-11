@@ -8,6 +8,12 @@ const QR_HGR_GZIP_BASE64 =
 
 const QR_HGR_BINARY_LENGTH = 3787
 const QR_HGR_TRAMPOLINE_OFFSET = 0x1000
+const QR_HGR_MODE_ROUTINE_OFFSET = 0x0140
+const QR_HGR_MODE_ROUTINE = Uint8Array.from([
+  0xd0, 0x04,
+  0xea, 0xea, 0xea, 0x60,
+  0xea, 0xea, 0xea, 0x60,
+])
 
 // Reads parameters from $7020-$7024, invokes QR.BIN at $6000 with interrupts
 // disabled, then returns to Applesoft. This is the upstream demo convention.
@@ -26,6 +32,7 @@ export const createQrHgrRuntimeBinary = (): Uint8Array => {
   if (qrBinary.length !== QR_HGR_BINARY_LENGTH) {
     throw new Error(`Unexpected QR.BIN length: ${qrBinary.length}`)
   }
+  qrBinary.set(QR_HGR_MODE_ROUTINE, QR_HGR_MODE_ROUTINE_OFFSET)
 
   const scaler = createQrHgrScalerBinary()
   const scalerOffset = QR_HGR_SCALER_ADDRESS - 0x6000

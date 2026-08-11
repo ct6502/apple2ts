@@ -87,7 +87,11 @@ describe("IIgs 4cade block loading", () => {
     expect(source).not.toContain("QRSCALE")
     expect(source).toContain("3010 A$=U$+T$(I):L=LEN(A$):FOR J=1 TO L:POKE 28708+J,ASC(MID$(A$,J,1)):NEXT")
     expect(source).toContain("3020 POKE 28704,37:POKE 28705,112:POKE 28706,L:POKE 28707,0:POKE 28708,0")
-    expect(source).toContain("3030 HGR2:POKE 230,32:CALL 28672:CALL 33792:POKE 49234,0:POKE 49236,0:POKE 49168,0")
+    const doubleBufferedGeneration = "3030 HGR:HGR2:POKE 230,32:CALL 28672:CALL 33792:POKE 49168,0"
+    expect(source).toContain(doubleBufferedGeneration)
+    expect(doubleBufferedGeneration.indexOf("HGR:")).toBeLessThan(doubleBufferedGeneration.indexOf("HGR2"))
+    expect(doubleBufferedGeneration.indexOf("HGR2")).toBeLessThan(doubleBufferedGeneration.indexOf("CALL 28672"))
+    expect(doubleBufferedGeneration).not.toContain("POKE 49233")
     expect(source).toContain("3040 IF PEEK(49152)<128 THEN 3040")
     expect(source).toContain("3050 X=PEEK(49168):RETURN")
     expect(source).toContain("\"Broken+Disk+%26+Demo\"")
