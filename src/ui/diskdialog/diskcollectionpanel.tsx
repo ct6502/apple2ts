@@ -864,7 +864,7 @@ const DiskCollectionPanel = (props: DiskCollectionPanelProps) => {
                         title={t("collection.reportExportIssue") || "Report an export issue"}
                         onClick={(event) => {
                           event.stopPropagation()
-                          const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=Export+to+HDV+issue:+${encodeURIComponent(diskCollectionItem.title)}`
+                          const reportUrl = `https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=%5BExport+to+HDV%5D+Issue+with+disk+${encodeURIComponent(diskCollectionItem.title)}`
                           window.open(reportUrl, "_blank", "noopener,noreferrer")
                         }}>
                         <FontAwesomeIcon icon={faCommentDots} size="lg" className="dcp-item-report-icon" />

@@ -6,6 +6,7 @@
  */
 
 import { unzipSync } from "fflate"
+import { createQrHgrRuntimeBinary } from "./qr_hgr"
 
 export type ProDosFileKind = "seedling" | "sapling" | "tree"
 
@@ -273,6 +274,19 @@ const DOS_DISPATCH_HELLO_MODE_ADDRESS = 0x047a
 const DOS_IBSLOT_ADDRESS = 0xb7e9
 const MENU_SELECTED_INDEX_ADDRESS = 0x0479
 const HELPER_SUBDIR = "A2TSHLP"
+const ISSUE_REPORT_URL = "https://github.com/ct6502/apple2ts/issues/new?assignees=boredsenseless&labels=bug&title=%5BExport+to+HDV%5D+Error+launching+disk+"
+const QR_VERSION_6_BYTE_CAPACITY = 134
+
+const encodeIssueTitle = (title: string): string => {
+  let encoded = ""
+  const availableLength = QR_VERSION_6_BYTE_CAPACITY - ISSUE_REPORT_URL.length
+  for (const character of title) {
+    const fragment = new URLSearchParams({ title: character }).toString().slice("title=".length)
+    if (encoded.length + fragment.length > availableLength) break
+    encoded += fragment
+  }
+  return encoded
+}
 
 /**
  * Generates a tokenized Applesoft BASIC program that draws screenshots and
@@ -302,7 +316,8 @@ export const generateMenuSourceProgram = (
     .join("")
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 MAX=${count}:I=1:G=0:C$="${titleInitials}"`)
+  lines.push(`20 MAX=${count}:I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
+  lines.push(`21 G=0:C$="${titleInitials}"`)
   lines.push("25 IF PEEK(49152)<128 THEN 30")
   lines.push("26 X=PEEK(49168)")
   lines.push("27 GOTO 25")
@@ -404,7 +419,7 @@ export const createMenuRelayBootstrap = () => {
   }
 }
 
-const generateMenuLaunchProgram = (
+export const generateMenuLaunchProgram = (
   menuEntries: MenuDiskEntry[],
   dosRuntimeLauncher: string | undefined,
   menuProDosCommands: Array<string | undefined>,
@@ -442,11 +457,12 @@ const generateMenuLaunchProgram = (
   const toDataString = (value: string | undefined) => (value || "").replace(/"/g, "'")
 
   lines.push("10 D$=CHR$(4):PRINT D$;\"CLOSE\"")
+  lines.push(`12 U$="${ISSUE_REPORT_URL}"`)
 
-  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count}),Z(${count}),ZB(${count})`)
+  lines.push(`20 MAX=${count}:DIM K(${count}),V(${count}),P$(${count}),R$(${count}),S(${count}),H(${count}),Z(${count}),ZB(${count}),T$(${count})`)
   lines.push(`22 I=PEEK(${MENU_SELECTED_INDEX_ADDRESS}):IF I<1 OR I>MAX THEN I=1`)
   lines.push("24 RESTORE")
-  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J),Z(J),ZB(J):NEXT")
+  lines.push("26 FOR J=1 TO MAX:READ K(J),V(J),P$(J),R$(J),S(J),H(J),Z(J),ZB(J),T$(J):NEXT")
   if (hasDosMasterRuntime) {
     lines.push("30 IF K(I)=0 THEN TEXT:HOME:POKE " + DOS_DISPATCH_VOLUME_ADDRESS + ",V(I):POKE " + DOS_DISPATCH_HELLO_MODE_ADDRESS + ",H(I):" + dosRuntimeRunStatements + ":END")
   } else {
@@ -456,7 +472,7 @@ const generateMenuLaunchProgram = (
   lines.push("50 IF K(I)=1 THEN TEXT:GOSUB 150:PRINT D$;\"PREFIX \";P$(I):PRINT D$;R$(I):END")
   lines.push("60 IF K(I)=2 THEN TEXT:GOSUB 150:PRINT D$;\"PREFIX \";P$(I):PRINT D$;\"CATALOG\":END")
   lines.push("70 IF K(I)=3 THEN TEXT:GOSUB 150:PRINT D$;R$(I):END")
-  lines.push("80 IF K(I)=4 THEN VTAB 24:HTAB 1:INVERSE:PRINT \"PRODOS FILES IMPORTED\":NORMAL:PRINT D$;\"CATALOG\":GOTO 220")
+  lines.push("80 IF K(I)=4 THEN GOSUB 3000:GOTO 220")
   lines.push("85 IF K(I)=6 THEN TEXT:PRINT D$;R$(I):END")
   lines.push("90 VTAB 24:HTAB 1:INVERSE:PRINT \"DOS.MASTER LAUNCH REQUESTED\":NORMAL")
   lines.push("100 GOTO 220")
@@ -466,7 +482,13 @@ const generateMenuLaunchProgram = (
   } else {
     lines.push("160 RETURN")
   }
-  lines.push(`220 PRINT D$;"RUN ${helperSubdir}/MENUSRC":END`)
+  lines.push(`220 TEXT:HOME:PRINT CHR$(4);"RUN ${helperSubdir}/MENUSRC":END`)
+  lines.push(`3000 PRINT D$;"BLOAD ${helperSubdir}/QR.BIN,A$6000"`)
+  lines.push("3010 A$=U$+T$(I):L=LEN(A$):FOR J=1 TO L:POKE 28708+J,ASC(MID$(A$,J,1)):NEXT")
+  lines.push("3020 POKE 28704,37:POKE 28705,112:POKE 28706,L:POKE 28707,0:POKE 28708,0")
+  lines.push("3030 HGR2:POKE 230,32:CALL 28672:CALL 33792:POKE 49234,0:POKE 49236,0:POKE 49168,0")
+  lines.push("3040 IF PEEK(49152)<128 THEN 3040")
+  lines.push("3050 X=PEEK(49168):RETURN")
 
   let dataLine = 9000
   for (let idx = 0; idx < count; idx++) {
@@ -518,7 +540,10 @@ const generateMenuLaunchProgram = (
       }
     }
 
-    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode + "," + zpHasSnapshot + "," + zpBlock)
+    const issueTitle = launchCode === 4
+      ? encodeIssueTitle(menuEntries[idx]?.displayName || menuEntries[idx]?.filename || "Unknown disk")
+      : ""
+    lines.push(dataLine + " DATA " + launchCode + "," + volume + ",\"" + toDataString(prefix) + "\",\"" + toDataString(runCmd) + "\"," + shimFlag + "," + helloMode + "," + zpHasSnapshot + "," + zpBlock + ",\"" + issueTitle + "\"")
     dataLine += 10
   }
 
@@ -5823,6 +5848,12 @@ export const buildProDosHdv = async (
   })
 
   if (menuEntries && menuEntries.length > 0) {
+    helperFiles.push({
+      name: "QR.BIN",
+      type: PRODOS_FILE_TYPE_BINARY,
+      data: createQrHgrRuntimeBinary(),
+      auxType: 0x6000,
+    })
     helperFiles.push({
       name: "MENUSRC",
       type: 0xFC,
