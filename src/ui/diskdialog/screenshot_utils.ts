@@ -137,7 +137,258 @@ const getRunningGuyFrameCanvas = async (frameIndex: number): Promise<HTMLCanvasE
 }
 
 const LOGO_NATIVE_SIZE = 48
-const LOGO_OUTLINE = 2
+const LOGO_OUTLINE = 3
+const SPACEBAR_WIDTH = 123
+const SPACEBAR_HEIGHT = 23
+const SPACEBAR_BOTTOM_MARGIN = 7
+const SPACEBAR_SHADOW_OFFSET_X = 0
+const SPACEBAR_SHADOW_OFFSET_Y = 1
+const ARROW_KEY_SIZE = SPACEBAR_HEIGHT
+const ARROW_KEY_GAP = 6
+const SPACEBAR_ARROW_GAP = ARROW_KEY_SIZE
+const ARROW_GLYPH_INSET = 6
+const ARROW_GLYPH_HEAD_SIZE = 5
+const KEY_RADIUS = 4
+const KEYBOARD_MARGIN_X = 0
+const KEYBOARD_TOP_MARGIN = 4
+const KEYBOARD_BOTTOM_MARGIN = 4
+const KEYBOARD_KEY_WIDTH = 27
+const KEYBOARD_KEY_HEIGHT = 23
+const KEYBOARD_COLUMN_GAP = 1
+const ESC_KEY_WIDTH = 36
+const ESC_KEY_MARGIN = 10
+const KEY_VERTICAL_OFFSET = -5
+const DISK_POSITION_LINE_HEIGHT = 3
+const DISK_POSITION_BOTTOM_MARGIN = 3
+const DISK_POSITION_CIRCLE_RADIUS = 3.5
+const KEYBOARD_ROWS = [
+  { characters: "1234567890", offset: 0 },
+  { characters: "QWERTYUIOP", offset: 0 },
+  { characters: "ASDFGHJKL", offset: 0.5 },
+  { characters: "ZXCVBNM", offset: 1.5 },
+] as const
+
+const drawKeycap = (
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) => {
+  context.beginPath()
+  context.roundRect(
+    x + SPACEBAR_SHADOW_OFFSET_X,
+    y + SPACEBAR_SHADOW_OFFSET_Y,
+    width,
+    height,
+    KEY_RADIUS,
+  )
+  context.fillStyle = "#000"
+  context.fill()
+  context.lineWidth = 2
+  context.strokeStyle = "#fff"
+  context.stroke()
+
+  context.beginPath()
+  context.roundRect(x, y, width, height, KEY_RADIUS)
+  context.fillStyle = "#fff"
+  context.fill()
+  context.lineWidth = 2
+  context.strokeStyle = "#000"
+  context.stroke()
+}
+
+const drawArrowGlyph = (
+  context: CanvasRenderingContext2D,
+  nativeX: number,
+  nativeY: number,
+  direction: "left" | "right",
+) => {
+  const centerY = nativeY + ARROW_KEY_SIZE / 2
+  const tipX = direction === "left" ? nativeX + ARROW_GLYPH_INSET : nativeX + ARROW_KEY_SIZE - ARROW_GLYPH_INSET
+  const tailX = direction === "left" ? nativeX + ARROW_KEY_SIZE - ARROW_GLYPH_INSET : nativeX + ARROW_GLYPH_INSET
+  const headX = direction === "left" ? tipX + ARROW_GLYPH_HEAD_SIZE : tipX - ARROW_GLYPH_HEAD_SIZE
+
+  context.beginPath()
+  context.moveTo(tailX, centerY)
+  context.lineTo(tipX, centerY)
+  context.moveTo(headX, centerY - ARROW_GLYPH_HEAD_SIZE)
+  context.lineTo(tipX, centerY)
+  context.lineTo(headX, centerY + ARROW_GLYPH_HEAD_SIZE)
+  context.strokeStyle = "#000"
+  context.lineWidth = 2
+  context.lineCap = "round"
+  context.lineJoin = "round"
+  context.stroke()
+}
+
+export const stampNavigationKeys = (
+  context: CanvasRenderingContext2D,
+  leftX: number,
+  rightX: number,
+  y: number,
+) => {
+  drawKeycap(context, leftX, y, ARROW_KEY_SIZE, ARROW_KEY_SIZE)
+  drawArrowGlyph(context, leftX, y, "left")
+  drawKeycap(context, rightX, y, ARROW_KEY_SIZE, ARROW_KEY_SIZE)
+  drawArrowGlyph(context, rightX, y, "right")
+}
+
+export const stampSpacebar = (
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+) => {
+  drawKeycap(context, x, y, SPACEBAR_WIDTH, SPACEBAR_HEIGHT)
+}
+
+export const stampAlphanumericKeys = (
+  context: CanvasRenderingContext2D,
+  availableInitials: string,
+  controlsY: number,
+) => {
+  const visibleInitials = new Set(
+    availableInitials
+      .toUpperCase()
+      .split("")
+      .filter(character => /[A-Z0-9]/.test(character)),
+  )
+
+  const top = LOGO_NATIVE_SIZE + LOGO_OUTLINE * 2 + KEYBOARD_TOP_MARGIN + KEY_VERTICAL_OFFSET
+  const bottom = controlsY - KEYBOARD_BOTTOM_MARGIN
+  const rowGap = Math.floor((bottom - top - KEYBOARD_ROWS.length * KEYBOARD_KEY_HEIGHT) / (KEYBOARD_ROWS.length - 1))
+
+  context.font = "bold 15px sans-serif"
+  context.textAlign = "center"
+  context.textBaseline = "middle"
+  for (let rowIndex = 0; rowIndex < KEYBOARD_ROWS.length; rowIndex++) {
+    const row = KEYBOARD_ROWS[rowIndex]
+    const y = top + rowIndex * (KEYBOARD_KEY_HEIGHT + rowGap)
+    for (let column = 0; column < row.characters.length; column++) {
+      const character = row.characters[column]
+      if (!visibleInitials.has(character)) continue
+      const x = KEYBOARD_MARGIN_X + (column + row.offset) * (KEYBOARD_KEY_WIDTH + KEYBOARD_COLUMN_GAP)
+      drawKeycap(context, x, y, KEYBOARD_KEY_WIDTH, KEYBOARD_KEY_HEIGHT)
+      context.fillStyle = "#000"
+      context.fillText(character, x + KEYBOARD_KEY_WIDTH / 2, y + KEYBOARD_KEY_HEIGHT / 2)
+    }
+  }
+}
+
+const stampEscapeKey = (context: CanvasRenderingContext2D) => {
+  context.font = "bold 12px sans-serif"
+  context.textAlign = "center"
+  context.textBaseline = "middle"
+  drawKeycap(context, ESC_KEY_MARGIN, ESC_KEY_MARGIN, ESC_KEY_WIDTH, KEYBOARD_KEY_HEIGHT)
+  context.fillStyle = "#000"
+  context.fillText(
+    "ESC",
+    ESC_KEY_MARGIN + ESC_KEY_WIDTH / 2,
+    ESC_KEY_MARGIN + KEYBOARD_KEY_HEIGHT / 2,
+  )
+}
+
+export const stampDiskPosition = (
+  context: CanvasRenderingContext2D,
+  diskCount: number,
+  currentDiskIndex: number,
+) => {
+  if (diskCount <= 1) return
+  const lineY = 192 - DISK_POSITION_BOTTOM_MARGIN - DISK_POSITION_LINE_HEIGHT
+  const segmentWidth = 280 / (diskCount + 1)
+  context.fillStyle = "#fff"
+  context.fillRect(0, lineY, 280, DISK_POSITION_LINE_HEIGHT)
+  context.fillStyle = "#000"
+  for (let segment = 1; segment <= diskCount + 1; segment++) {
+    const dividerX = Math.min(279, Math.round(segment * segmentWidth))
+    context.fillRect(dividerX, lineY, 1, DISK_POSITION_LINE_HEIGHT)
+  }
+
+  const safeIndex = Math.max(1, Math.min(currentDiskIndex, diskCount))
+  const circleX = Math.round(safeIndex * segmentWidth)
+  const circleY = lineY + DISK_POSITION_LINE_HEIGHT / 2
+  context.beginPath()
+  context.arc(circleX, circleY, DISK_POSITION_CIRCLE_RADIUS, 0, Math.PI * 2)
+  context.fillStyle = "#fff"
+  context.fill()
+  context.lineWidth = 1
+  context.strokeStyle = "#000"
+  context.stroke()
+}
+
+export const stampMenuControls = (
+  context: CanvasRenderingContext2D,
+  showNavigation: boolean,
+  availableInitials = "",
+  showAlphanumericKeys = true,
+  diskCount = 0,
+  currentDiskIndex = 1,
+) => {
+  const controlsWidth = showNavigation
+    ? SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP + ARROW_KEY_SIZE + ARROW_KEY_GAP + ARROW_KEY_SIZE
+    : SPACEBAR_WIDTH
+  const x = Math.floor((280 - controlsWidth) / 2)
+  const y = 192 - SPACEBAR_HEIGHT - SPACEBAR_BOTTOM_MARGIN + KEY_VERTICAL_OFFSET
+
+  context.save()
+  context.scale(2, 1)
+  if (showAlphanumericKeys) {
+    stampAlphanumericKeys(context, availableInitials, y)
+  }
+  if (showNavigation) stampEscapeKey(context)
+  stampSpacebar(context, x, y)
+  if (showNavigation) {
+    const leftX = x + SPACEBAR_WIDTH + SPACEBAR_ARROW_GAP
+    const rightX = leftX + ARROW_KEY_SIZE + ARROW_KEY_GAP
+    stampNavigationKeys(context, leftX, rightX, y)
+  }
+  stampDiskPosition(context, diskCount, currentDiskIndex)
+  context.restore()
+}
+
+const stampMenuControlsIntoHires = (
+  hiresData: Uint8Array,
+  showNavigation: boolean,
+  availableInitials: string,
+  showAlphanumericKeys: boolean,
+  diskCount: number,
+  currentDiskIndex: number,
+) => {
+  const canvas = document.createElement("canvas")
+  canvas.width = 560
+  canvas.height = 192
+  const context = canvas.getContext("2d")
+  if (!context) return
+
+  stampMenuControls(
+    context,
+    showNavigation,
+    availableInitials,
+    showAlphanumericKeys,
+    diskCount,
+    currentDiskIndex,
+  )
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+  const controlsHires = convertCanvasToHires(imageData, false)
+
+  for (let y = 0; y < 192; y++) {
+    const rowBase =
+      (y & 0x07) * 0x400 +
+      ((y >> 3) & 0x07) * 0x80 +
+      ((y >> 6) & 0x03) * 0x28
+    for (let x = 0; x < 280; x++) {
+      const leftAlpha = imageData.data[(y * 560 + x * 2) * 4 + 3]
+      const rightAlpha = imageData.data[(y * 560 + x * 2 + 1) * 4 + 3]
+      if (leftAlpha < 128 && rightAlpha < 128) continue
+
+      const byteIndex = rowBase + Math.floor(x / 7)
+      const bit = 1 << (x % 7)
+      if (controlsHires[byteIndex] & bit) hiresData[byteIndex] |= bit
+      else hiresData[byteIndex] &= ~bit
+      hiresData[byteIndex] = (hiresData[byteIndex] & 0x7f) | (controlsHires[byteIndex] & 0x80)
+    }
+  }
+}
 
 // 8-neighbor dilation of a binary mask by one pixel.
 const dilateMask = (mask: Uint8Array, size: number): Uint8Array => {
@@ -176,7 +427,7 @@ const dilateMask = (mask: Uint8Array, size: number): Uint8Array => {
 const stampLogoIntoHires = (hiresData: Uint8Array, logo: CanvasImageSource): void => {
   const logoSize = LOGO_NATIVE_SIZE
   const outline = LOGO_OUTLINE
-  const stampSize = logoSize + outline * 2 // 52: leaves room for the outline ring
+  const stampSize = logoSize + outline * 2
 
   // 1. Rasterize the logo, inset by the outline width, on a transparent canvas.
   const stampCanvas = document.createElement("canvas")
@@ -189,34 +440,35 @@ const stampLogoIntoHires = (hiresData: Uint8Array, logo: CanvasImageSource): voi
   const stamp = sctx.getImageData(0, 0, stampSize, stampSize)
   const sd = stamp.data
 
-  // 2. Body mask = opaque logo pixels; dilate twice for two 1px outline rings.
+  // 2. Body mask = opaque logo pixels; use a 2px white ring and 1px black edge.
   const body = new Uint8Array(stampSize * stampSize)
   for (let i = 0; i < body.length; i++) {
     body[i] = sd[i * 4 + 3] > 128 ? 1 : 0
   }
   const dil1 = dilateMask(body, stampSize) // body + inner ring
-  const dil2 = dilateMask(dil1, stampSize) // body + inner ring + outer ring
+  const dil2 = dilateMask(dil1, stampSize) // body + 2px white ring
+  const dil3 = dilateMask(dil2, stampSize) // body + white ring + black edge
 
-  // 3. Paint the outline: inner ring white, outer ring black, rest transparent.
+  // 3. Paint the outline: two inner rings white, outer ring black.
   for (let i = 0; i < body.length; i++) {
     if (body[i]) continue // keep the original logo color
     const o = i * 4
-    if (dil1[i]) {
+    if (dil2[i]) {
       sd[o] = 255; sd[o + 1] = 255; sd[o + 2] = 255; sd[o + 3] = 255
-    } else if (dil2[i]) {
+    } else if (dil3[i]) {
       sd[o] = 0; sd[o + 1] = 0; sd[o + 2] = 0; sd[o + 3] = 255
     } else {
       sd[o + 3] = 0
     }
   }
   sctx.putImageData(stamp, 0, 0)
-  const covered = dil2
+  const covered = dil3
 
   // 4. Convert the stamp to hi-res in isolation at its final absolute position
   //    (upper-right corner of the screen). The fine canvas is 560 wide (2×
   //    native horizontally) × 192 tall, so x parity and byte/palette layout
   //    match the page exactly. Dithering is disabled so the logo stays crisp.
-  const originX = 280 - stampSize // 228
+  const originX = 280 - stampSize
   const originY = 0 // upper-right corner
   const fineCanvas = document.createElement("canvas")
   fineCanvas.width = 560
@@ -454,27 +706,65 @@ const fetchScreenshotViaProxy = async (absoluteUrl: string): Promise<string | nu
  * @param imageUrl URL to load (http/https, data URL, or relative path)
  * @param stampLogo When true, watermarks the export screenshot.
  * @param watermarkFrameIndex Frame index used for animated runningGuy.gif watermark.
- * @returns Hi-res binary data (8KB for 280×192) or null if load fails
+ * @param showNavigation When true, stamps left/right navigation keys.
+ * @param availableInitials Initial characters represented by exported titles.
+ * @param diskCount Number of exported disks represented by the position indicator.
+ * @param currentDiskIndex One-based disk index shown by the position indicator.
+ * @returns Plain and keyboard-overlay hi-res pages, or null if loading fails.
  */
 export const loadAndConvertImageToHires = async (
   imageUrl?: string,
   stampLogo = false,
   watermarkFrameIndex = 0,
-): Promise<Uint8Array | null> => {
+  showNavigation = true,
+  availableInitials = "",
+  diskCount = 0,
+  currentDiskIndex = 1,
+): Promise<HiresScreenshotSet | null> => {
   const logo = stampLogo ? await loadFallbackWatermarkImage() : null
   const watermark = stampLogo
     ? (await getRunningGuyFrameCanvas(watermarkFrameIndex)) || logo
     : null
-  const buildFallbackHires = (): Uint8Array | null => {
+  const buildScreenshotSet = (hiresData: Uint8Array): HiresScreenshotSet => {
+    const plain = hiresData.slice()
+    stampMenuControlsIntoHires(
+      plain,
+      showNavigation,
+      availableInitials,
+      false,
+      diskCount,
+      currentDiskIndex,
+    )
+    const keyboard = hiresData.slice()
+    stampMenuControlsIntoHires(
+      keyboard,
+      showNavigation,
+      availableInitials,
+      true,
+      diskCount,
+      currentDiskIndex,
+    )
+    if (watermark) {
+      stampLogoIntoHires(plain, watermark)
+      stampLogoIntoHires(keyboard, watermark)
+    }
+    return { plain, keyboard }
+  }
+  const buildFallbackHires = (): HiresScreenshotSet | null => {
     if (!stampLogo) return null
-    const hiresData = new Uint8Array(8192)
-    if (watermark) stampLogoIntoHires(hiresData, watermark)
-    return hiresData
+    const canvas = document.createElement("canvas")
+    canvas.width = 560
+    canvas.height = 192
+    const context = canvas.getContext("2d")
+    if (!context) return null
+    context.fillStyle = "#000"
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    return buildScreenshotSet(convertCanvasToHires(context.getImageData(0, 0, canvas.width, canvas.height)))
   }
 
   if (!imageUrl) return buildFallbackHires()
 
-  const convertLoadedImage = (img: HTMLImageElement): Uint8Array | null => {
+  const convertLoadedImage = (img: HTMLImageElement): HiresScreenshotSet | null => {
     try {
       const canvas = document.createElement("canvas")
       canvas.width = 560
@@ -482,20 +772,17 @@ export const loadAndConvertImageToHires = async (
       const ctx = canvas.getContext("2d")
       if (!ctx) return buildFallbackHires()
 
-      // Clear and draw image scaled to hi-res dimensions.
-      // Mixed mode only shows top 160 lines as graphics.
+      // Clear and draw the image across the full hi-res screen.
       ctx.fillStyle = "#000"
       ctx.fillRect(0, 0, 560, 192)
       ctx.imageSmoothingEnabled = true
-      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 560, 160)
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 560, 192)
 
       // Convert to hi-res format, then stamp the logo directly into the
       // hi-res bytes so it stays crisp instead of being blurred/fringed by
       // the color-matching pipeline.
       const imageData = ctx.getImageData(0, 0, 560, 192)
-      const hiresData = convertCanvasToHires(imageData)
-      if (watermark) stampLogoIntoHires(hiresData, watermark)
-      return hiresData
+      return buildScreenshotSet(convertCanvasToHires(imageData))
     } catch (e) {
       console.error("Error converting image to hi-res:", e)
       return buildFallbackHires()

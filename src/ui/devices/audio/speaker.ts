@@ -1,6 +1,31 @@
-let audioContext: AudioContext
-let speaker: AudioWorkletNode
-export const isAudioEnabled = () => (isAudioButtonEnabled && emulatorSoundEnabled)
+let audioContext: AudioContext | undefined
+let speaker: AudioWorkletNode | undefined
+let initializationPromise: Promise<void> | undefined
+let audioUnavailable = false
+
+export type AudioStatus = "enabled" | "muted" | "unavailable"
+
+export const isAudioEnabled = () => (
+  isAudioButtonEnabled && emulatorSoundEnabled && !audioUnavailable
+)
+
+export const canShowAudioControl = () => typeof AudioContext !== "undefined"
+
+export const getAudioStatus = (): AudioStatus => {
+  if (audioUnavailable) return "unavailable"
+  return isAudioButtonEnabled ? "enabled" : "muted"
+}
+
+const audioStatusListeners = new Set<() => void>()
+
+export const subscribeAudioStatus = (listener: () => void) => {
+  audioStatusListeners.add(listener)
+  return () => audioStatusListeners.delete(listener)
+}
+
+const emitAudioStatus = () => {
+  audioStatusListeners.forEach(listener => listener())
+}
 
 const audioContexts = new Array<(enable: boolean) => void>()
 
@@ -12,14 +37,20 @@ export const registerAudioContext = (fn: (enable: boolean) => void) => {
   if (!isAudioEnabled()) {
     fn(false)
   }
+  return () => {
+    const index = audioContexts.indexOf(fn)
+    if (index >= 0) audioContexts.splice(index, 1)
+  }
 }
 
 let isAudioButtonEnabled = true
 let emulatorSoundEnabled = true
 
 export const audioEnable = (enable: boolean) => {
+  if (isAudioButtonEnabled === enable) return
   isAudioButtonEnabled = enable
   changeAudioContexts()
+  emitAudioStatus()
 }
 
 export const emulatorSoundEnable = (enable: boolean) => {
@@ -28,54 +59,107 @@ export const emulatorSoundEnable = (enable: boolean) => {
 }
 
 const changeAudioContexts = () => {
-  if (isAudioButtonEnabled && emulatorSoundEnabled) {
+  if (isAudioEnabled()) {
     audioContexts.forEach(fn => fn(true))
   } else {
     audioContexts.forEach(fn => fn(false))
   }
 }
 
-const enableContext = (enable: boolean) => {
+const enableContext = (context: AudioContext, enable: boolean) => {
   if (enable) {
-    audioContext.resume()
+    void context.resume()
   } else {
-    audioContext.suspend()
+    void context.suspend()
   }
 }
 
-const startOscillator = async () => {
-  audioContext = new AudioContext({latencyHint: 0, sampleRate: 44100})
-  registerAudioContext(enableContext)
+let unregisterSpeakerContext: (() => void) | undefined
+
+const closeContext = (context: AudioContext) => {
+  if (context.state === "closed") return
+  void context.close().catch(error => {
+    console.error("Unable to close the failed speaker audio context.", error)
+  })
+}
+
+const makeAudioUnavailable = (message: string, error: unknown) => {
+  console.error(message, error)
+  const failedContext = audioContext
+  unregisterSpeakerContext?.()
+  unregisterSpeakerContext = undefined
+  audioContext = undefined
+  speaker = undefined
+  initializationPromise = undefined
+  audioUnavailable = true
+  changeAudioContexts()
+  emitAudioStatus()
+  if (failedContext) closeContext(failedContext)
+}
+
+type SpeakerInitializationStage =
+  | "creating the audio context"
+  | "loading the speaker worklet"
+  | "creating the speaker worklet node"
+  | "connecting the speaker output"
+
+const initializeOscillator = async () => {
+  let context: AudioContext | undefined
+  let stage: SpeakerInitializationStage = "creating the audio context"
   try {
-    await audioContext.audioWorklet.addModule("worklet/oscillator.js")
-    speaker = new AudioWorkletNode(audioContext, "oscillator")
-    speaker.connect(audioContext.destination)
-  } catch {
-    console.error("audioWorklet not available - must run on https")
-    isAudioButtonEnabled = false
-    emulatorSoundEnabled = false
+    const createdContext = new AudioContext({latencyHint: 0, sampleRate: 44100})
+    context = createdContext
+    stage = "loading the speaker worklet"
+    await createdContext.audioWorklet.addModule("worklet/oscillator.js")
+    stage = "creating the speaker worklet node"
+    const node = new AudioWorkletNode(createdContext, "oscillator")
+    stage = "connecting the speaker output"
+    node.connect(createdContext.destination)
+
+    audioContext = createdContext
+    speaker = node
+    audioUnavailable = false
+    unregisterSpeakerContext = registerAudioContext(
+      enable => enableContext(createdContext, enable),
+    )
+    changeAudioContexts()
+    emitAudioStatus()
+  } catch (error) {
+    makeAudioUnavailable(
+      `Unable to initialize speaker audio while ${stage}.`,
+      error,
+    )
+    if (context) closeContext(context)
   }
 }
 
-const getAudioContext = () => {
-  if (!audioContext) {
-    startOscillator()
-  }
-  return audioContext
+const startOscillator = () => {
+  initializationPromise ??= initializeOscillator()
+  return initializationPromise
+}
+
+export const retrySpeakerAudio = async () => {
+  if (!audioUnavailable) return
+  if (initializationPromise) return initializationPromise
+  await startOscillator()
 }
 
 // https://marcgg.com/blog/2016/11/01/javascript-audio/
 export const clickSpeaker = (cycleCount: number) => {
   if (!(isAudioEnabled())) return
-  if (getAudioContext().state !== "running") {
-    audioContext.resume()
+  if (!audioContext || !speaker) {
+    void startOscillator()
+    return
+  }
+  if (audioContext.state !== "running") {
+    void audioContext.resume()
   }
   try {
-    if (speaker) {
-      speaker.port.postMessage(cycleCount)
-    }
-  } catch {
-    console.error("error")
+    speaker.port.postMessage(cycleCount)
+  } catch (error) {
+    makeAudioUnavailable(
+      "Unable to send a speaker event to the audio worklet.",
+      error,
+    )
   }
 }
-

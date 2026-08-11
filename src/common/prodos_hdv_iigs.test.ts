@@ -3,6 +3,7 @@ import {
   createPackedBinaryRelay,
   createProDosRelayWrapper,
   determineVtocType,
+  generateMenuSourceProgram,
   lookupFourCadeByTitle,
 } from "./prodos_hdv"
 import { parsePrelaunchScript } from "./four_cade_prelaunch_db"
@@ -28,6 +29,50 @@ const branchTarget = (baseAddress: number, bytes: Uint8Array, offset: number) =>
 }
 
 describe("IIgs 4cade block loading", () => {
+  test("menu uses full HGR and cycles adjacent case-insensitive title initials", () => {
+    const source = generateMenuSourceProgram([
+      { filename: "ALPHA", displayName: "Aztec" },
+      { filename: "ANOTHER", displayName: "Apple Panic" },
+      { filename: "BETA", displayName: "Blazing Paddles" },
+    ], undefined, [], [], "A2TSHLP")
+
+    expect(source).toContain("20 MAX=3:I=1:G=0:C$=\"AAB\"")
+    expect(source).toContain("85 IF K0>96 AND K0<123 THEN K0=K0-32")
+    expect(source).toContain("87 P=0:IF ASC(MID$(C$,I,1))=K0 THEN P=I+1:IF P>MAX THEN P=1")
+    expect(source).toContain("88 IF P>0 THEN IF ASC(MID$(C$,P,1))<>K0 THEN P=0")
+    expect(source).toContain("89 IF P>0 THEN 93")
+    expect(source).toContain("90 FOR J=1 TO MAX")
+    expect(source).toContain("91 IF ASC(MID$(C$,J,1))=K0 THEN P=J:J=MAX")
+    expect(source).toContain("70 IF K0=8 OR K0=21 THEN G=0:POKE 49236,0:GOSUB 1000:GOTO 40")
+    expect(source).toContain("93 IF P>0 THEN G=0:POKE 49236,0:I=P:GOSUB 1000")
+    expect(source).toContain("40 IF PEEK(49152)<128 THEN 40")
+    expect(source).toContain("46 IF G=0 AND K0=27 THEN G=1:POKE 49237,0:GOTO 40")
+    expect(source).toContain("47 IF G=1 AND K0=27 THEN G=0:POKE 49236,0:GOTO 40")
+    expect(source).toContain("1010 POKE 49232,0:POKE 49234,0:POKE 49239,0")
+    expect(source).not.toContain("1010 POKE 49232,0:POKE 49234,0:POKE 49236,0")
+    expect(source).toContain("BLOAD SHOTS/SCREEN\"+N$+\",A$2000")
+    expect(source).toContain("BLOAD SHOTS/KEY\"+N$+\",A$4000")
+    expect(source).toContain("1014 IF G=0 THEN POKE 49236,0")
+    expect(source).toContain("1015 IF G=1 THEN POKE 49237,0")
+    expect(source).not.toContain("PEEK(49251)")
+    expect(source).not.toContain("POKE 49235")
+    expect(source).not.toContain("VTAB")
+    expect(source).not.toContain("HTAB")
+    expect(source).not.toContain("INVERSE")
+  })
+
+  test("single-disk menu omits the keyboard page and Escape transition", () => {
+    const source = generateMenuSourceProgram([
+      { filename: "ALPHA", displayName: "Aztec" },
+    ], undefined, [], [], "A2TSHLP")
+
+    expect(source).toContain("1010 POKE 49232,0:POKE 49234,0:POKE 49236,0:POKE 49239,0")
+    expect(source).toContain("BLOAD SHOTS/SCREEN\"+N$+\",A$2000")
+    expect(source).not.toContain("BLOAD SHOTS/KEY")
+    expect(source).not.toContain("K0=27")
+    expect(source).not.toContain("POKE 49237")
+  })
+
   test("keeps a large ProDOS image titled Aztec out of the 4cade path", () => {
     expect(determineVtocType("Aztec.po", new Uint8Array(819200), "Aztec")).toBe("prodos")
   })
