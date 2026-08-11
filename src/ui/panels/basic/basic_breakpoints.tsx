@@ -77,26 +77,17 @@ class BreakpointMarker extends GutterMarker {
   }
 }
 
-// Dummy marker to force CodeMirror to measure all lines
-// Without this, markers on early lines render at incorrect positions
 class DummyMarker extends GutterMarker {
   toDOM() {
     const span = document.createElement("span")
     span.style.display = "none"
     return span
   }
-
-  eq() {
-    return true
-  }
+  eq() { return true }
 }
 
 const dummyMarkerInstance = new DummyMarker()
 
-/**
- * Create the breakpoint gutter extension
- * @param onToggle Callback when a breakpoint is toggled, receives the BASIC line number
- */
 export const createBreakpointGutter = (
   onToggle: (line: number) => void
 ) => {
@@ -108,30 +99,23 @@ export const createBreakpointGutter = (
       const lastLine = view.state.doc.lines
       const basicLineNum = extractBasicLineNumber(lineObj.text)
       
-      // Check for real breakpoints first
       if (basicLineNum >= 0) {
         const breakpoints = handleGetBreakpoints()
         const breakpoint = breakpoints.get(basicLineNum)
-        
         if (breakpoint && !breakpoint.hidden && breakpoint.basic) {
           const debugInfo = `editor-line-${lineNumber}-basic-${basicLineNum}-pos-${lineBlock.from}`
           return new BreakpointMarker(breakpoint.disabled, debugInfo)
         }
       }
       
-      // Always add a dummy marker to the last line to force CodeMirror to measure all lines
-      // Without this, markers on earlier lines appear at incorrect positions
-      if (lineNumber === lastLine) {
-        return dummyMarkerInstance
-      }
-      
+      // Dummy marker on last line forces CodeMirror to measure all line positions
+      if (lineNumber === lastLine) return dummyMarkerInstance
       return null
     },
     domEventHandlers: {
-      click: (view, line) => {
-        const lineObj = view.state.doc.lineAt(line.from)
+      click: (_view, line) => {
+        const lineObj = _view.state.doc.lineAt(line.from)
         const basicLineNum = extractBasicLineNumber(lineObj.text)
-        
         if (basicLineNum >= 0) {
           onToggle(basicLineNum)
           return true
@@ -141,6 +125,7 @@ export const createBreakpointGutter = (
     }
   })
 }
+
 
 /**
  * Toggle a breakpoint for a BASIC line number

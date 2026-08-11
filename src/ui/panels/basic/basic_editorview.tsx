@@ -66,7 +66,6 @@ const BasicEditor = (props: EditorProps) => {
       props.onBreakpointsChange(newBreakpoints)
     }
     
-    // Reconfigure the gutter completely to force update
     if (viewRef.current) {
       viewRef.current.dispatch({
         effects: breakpointCompartment.current.reconfigure(
@@ -225,7 +224,6 @@ const BasicEditor = (props: EditorProps) => {
   // Update breakpoints gutter when breakpoints change externally
   useEffect(() => {
     if (viewRef.current && props.breakpoints) {
-      // Reconfigure the gutter to force update
       viewRef.current.dispatch({
         effects: breakpointCompartment.current.reconfigure(
           createBreakpointGutter(handleBreakpointToggleRef.current!)
