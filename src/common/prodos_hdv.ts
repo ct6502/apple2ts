@@ -22,6 +22,7 @@ export type MenuDiskEntry = {
   sourceFilename?: string
   displayName?: string
   screenshotData?: Uint8Array
+  keyboardScreenshotData?: Uint8Array
   imageKind?: "dos" | "prodos" | "unknown" | "4cade"
   wozExtractedProDosFiles?: ImportedDiskFile[]
 }
@@ -145,14 +146,6 @@ const createMenuMetadataFile = (entries: Array<{ filename: string; screenshotBlo
   }
   
   return data
-}
-
-const formatMenuScreenTitle = (name: string) => {
-  // Reserve 2 of the 34 columns for the leading/trailing spaces so safeName never exceeds 34.
-  const safeName = " " + name.replace(/"/g, "'").slice(0, 32).toUpperCase() + " "
-  const leftPad = Math.max(0, Math.floor((34 - safeName.length) / 2))
-  const rightPad = Math.max(0, 34 - safeName.length - leftPad)
-  return { safeName, leftPad, rightPad }
 }
 
 // Applesoft BASIC keyword token table, sorted longest-first so greedy matching
@@ -285,7 +278,7 @@ const HELPER_SUBDIR = "A2TSHLP"
  * Generates a tokenized Applesoft BASIC program that draws screenshots and
  * supports left/right navigation among disk images.
  */
-const generateMenuSourceProgram = (
+export const generateMenuSourceProgram = (
   menuEntries: MenuDiskEntry[],
   dosRuntimeLauncher: string | undefined,
   menuProDosCommands: Array<string | undefined>,
@@ -298,58 +291,62 @@ const generateMenuSourceProgram = (
 ): string => {
   const lines: string[] = []
   const count = Math.max(1, Math.min(menuEntries.length, 99))
-  const showNavigationArrows = count > 1
+  const hasKeyboardPage = count > 1
   const runtimeVolumes: number[] = []
   for (let i = 0; i < count; i++) {
     runtimeVolumes[i] = runtimeVolumeByMenuIndex?.[i] ?? (i + 1)
   }
-  const diskTitles = menuEntries.slice(0, count).map((entry) => entry.displayName || entry.filename)
+  const titleInitials = Array.from({ length: count }, (_, index) => menuEntries[index])
+    .map((entry) => (entry?.displayName || entry?.filename || "").trimStart().charAt(0).toUpperCase())
+    .map((initial) => /^[A-Z0-9]$/.test(initial) ? initial : " ")
+    .join("")
 
   lines.push("10 D$=CHR$(4)")
-  lines.push(`20 MAX=${count}:I=1`)
+  lines.push(`20 MAX=${count}:I=1:G=0:C$="${titleInitials}"`)
   lines.push("25 IF PEEK(49152)<128 THEN 30")
   lines.push("26 X=PEEK(49168)")
   lines.push("27 GOTO 25")
   lines.push("30 GOSUB 1000")
   lines.push("40 IF PEEK(49152)<128 THEN 40")
   lines.push("45 K0=PEEK(49152)-128:X=PEEK(49168)")
+  if (hasKeyboardPage) {
+    lines.push("46 IF G=0 AND K0=27 THEN G=1:POKE 49237,0:GOTO 40")
+    lines.push("47 IF G=1 AND K0=27 THEN G=0:POKE 49236,0:GOTO 40")
+  }
   lines.push("50 IF K0=8 THEN I=I-1:IF I<1 THEN I=MAX")
   lines.push("60 IF K0=21 THEN I=I+1:IF I>MAX THEN I=1")
-  lines.push("70 IF K0=8 OR K0=21 THEN GOSUB 1000:GOTO 40")
+  lines.push("70 IF K0=8 OR K0=21 THEN G=0:POKE 49236,0:GOSUB 1000:GOTO 40")
   lines.push("80 IF K0=13 OR K0=32 THEN GOSUB 2000:GOTO 40")
-  lines.push("90 GOTO 40")
+  lines.push("85 IF K0>96 AND K0<123 THEN K0=K0-32")
+  lines.push("86 IF (K0<48 OR K0>57) AND (K0<65 OR K0>90) THEN 90")
+  lines.push("87 P=0:IF ASC(MID$(C$,I,1))=K0 THEN P=I+1:IF P>MAX THEN P=1")
+  lines.push("88 IF P>0 THEN IF ASC(MID$(C$,P,1))<>K0 THEN P=0")
+  lines.push("89 IF P>0 THEN 93")
+  lines.push("90 FOR J=1 TO MAX")
+  lines.push("91 IF ASC(MID$(C$,J,1))=K0 THEN P=J:J=MAX")
+  lines.push("92 NEXT")
+  lines.push("93 IF P>0 THEN G=0:POKE 49236,0:I=P:GOSUB 1000")
+  lines.push("94 GOTO 40")
 
   lines.push("1000 HOME")
   lines.push("1005 IF I<1 OR I>MAX THEN I=1")
-  // GRAPHICS + MIXED + PAGE1 + HIRES for screenshot + bottom text lines.
-  lines.push("1010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
+  // GRAPHICS + FULL + HIRES. Multi-disk menus preserve the currently selected page.
+  lines.push(hasKeyboardPage
+    ? "1010 POKE 49232,0:POKE 49234,0:POKE 49239,0"
+    : "1010 POKE 49232,0:POKE 49234,0:POKE 49236,0:POKE 49239,0")
   // The screenshot filename is SCREEN + the zero-padded index, which is a pure
   // function of I, so compute it at runtime instead of emitting one IF-line per
   // disk. This keeps MENUSRC's size constant regardless of the disk count.
   lines.push("1011 N$=STR$(I):IF I<10 THEN N$=\"0\"+N$")
   lines.push(`1012 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN"+N$+",A$2000"`)
-  for (let idx = 1; idx <= count; idx++) {
-    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[idx - 1])
-    const leftArrow = showNavigationArrows ? "<- " : "   "
-    const rightArrow = showNavigationArrows ? " ->" : "   "
-    const lineNo = 1120 + idx
-    lines.push(lineNo + " IF I=" + idx + " THEN VTAB 22:HTAB 1:PRINT \"" + leftArrow + " ".repeat(leftPad) + "\";:INVERSE:PRINT \"" + safeName + "\";:NORMAL:PRINT \"" + " ".repeat(rightPad) + rightArrow + "\";")
+  if (hasKeyboardPage) {
+    lines.push(`1013 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/KEY"+N$+",A$4000"`)
+    lines.push("1014 IF G=0 THEN POKE 49236,0")
+    lines.push("1015 IF G=1 THEN POKE 49237,0")
   }
-  lines.push("1220 RETURN")
+  lines.push("1020 RETURN")
 
   lines.push(`2000 POKE ${MENU_SELECTED_INDEX_ADDRESS},I:HOME:PRINT D$;"CLOSE":PRINT D$;"RUN ${helperSubdir}/MENULAUNCH":RETURN`)
-
-  // Startup render is explicit so initial display matches the first disk.
-  lines.push("3000 HOME")
-  lines.push("3010 POKE 49232,0:POKE 49235,0:POKE 49236,0:POKE 49239,0")
-  lines.push(`3020 PRINT D$;"BLOAD ${SCREENSHOT_SUBDIR}/SCREEN${String(1).padStart(2, "0")},A$2000"`)
-  {
-    const { safeName, leftPad, rightPad } = formatMenuScreenTitle(diskTitles[0])
-    const leftArrow = showNavigationArrows ? "<- " : "   "
-    const rightArrow = showNavigationArrows ? " ->" : "   "
-    lines.push("3030 VTAB 22:HTAB 1:PRINT \"" + leftArrow + " ".repeat(leftPad) + "\";:INVERSE:PRINT \"" + safeName + "\";:NORMAL:PRINT \"" + " ".repeat(rightPad) + rightArrow + "\";")
-  }
-  lines.push("3040 RETURN")
 
   return `${lines.join("\r")}\r`
 }
@@ -5862,6 +5859,14 @@ export const buildProDosHdv = async (
           data: entry.screenshotData,
           auxType: 0x2000,
         })
+        if (entry.keyboardScreenshotData && entry.keyboardScreenshotData.length > 0) {
+          screenshotFiles.push({
+            name: `KEY${String(i + 1).padStart(2, "0")}`,
+            type: PRODOS_FILE_TYPE_BINARY,
+            data: entry.keyboardScreenshotData,
+            auxType: 0x4000,
+          })
+        }
       }
     }
   }

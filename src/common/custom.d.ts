@@ -29,6 +29,11 @@ type KeyboardState = {
   repeat: boolean,
 }
 
+type HiresScreenshotSet = {
+  plain: Uint8Array,
+  keyboard: Uint8Array,
+}
+
 type VeraPsgWrite = {
   cycle: number,
   reg: number,
