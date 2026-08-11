@@ -178,8 +178,6 @@ export const zhTW = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "TypeScript Apple IIe 模擬器",
-    "startTour": "按一下 <b>開始導覽</b> 地球儀",
-    "startTourAction": "按鈕開始模擬器的引導式導覽。",
     "keyboardShortcuts": "鍵盤快捷鍵",
     "diskImages": "磁碟映像檔：",
     "urlParameters": "選用的 URL 參數",

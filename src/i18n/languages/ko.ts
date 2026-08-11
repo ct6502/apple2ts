@@ -178,8 +178,6 @@ export const ko = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "TypeScript Apple IIe 에뮬레이터",
-    "startTour": "투어 시작 클릭",
-    "startTourAction": "버튼을 눌러 에뮬레이터의 가이드 투어를 시작하세요.",
     "keyboardShortcuts": "키보드 단축키",
     "diskImages": "디스크 이미지:",
     "urlParameters": "선택적 URL 매개변수",

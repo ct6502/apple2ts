@@ -178,8 +178,6 @@ export const ru = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "Эмулятор Apple IIe на TypeScript",
-    "startTour": "Нажмите на глобус <b>Начать экскурсию</b>",
-    "startTourAction": "чтобы начать ознакомительную экскурсию по эмулятору.",
     "keyboardShortcuts": "Горячие клавиши",
     "diskImages": "Образы дисков:",
     "urlParameters": "Опциональные параметры URL",
