@@ -55,11 +55,12 @@ mutating update command also requires GNU gettext `msgmerge`.
    The updater matches stable `msgctxt` values before invoking `msgmerge`, so a
    rewritten English message retains its existing translation, becomes fuzzy,
    and keeps the previous English wording for comparison. New entries are
-   added, and removed entries become obsolete. It disables cross-key fuzzy
-   matching because the stable `msgctxt`, not similar English wording,
-   identifies a message. Each locale is staged before replacement; a failure
-   preserves the affected original and reports any earlier catalogs already
-   updated.
+   added, and removed entries are deleted rather than retained as obsolete
+   `#~` messages; Git history preserves their earlier translations. It disables
+   cross-key fuzzy matching because the stable `msgctxt`, not similar English
+   wording, identifies a message. Each locale is staged before replacement; a
+   failure preserves the affected original and reports any earlier catalogs
+   already updated.
 3. Review the affected `msgstr` values. Clear fuzzy only after confirming a
    translation against current English. Leave missing translations empty so
    runtime fallback remains visible; do not copy English merely to complete
@@ -67,7 +68,8 @@ mutating update command also requires GNU gettext `msgmerge`.
 4. Run `npm run generate-i18n-catalogs`, then the relevant project checks.
 
 PO files can be edited directly or with standard tools such as Poedit and
-Weblate.
+Weblate. The non-writing catalog check rejects obsolete messages so direct and
+external edits cannot bypass the cleanup policy.
 
 ## Interpolation
 

@@ -154,9 +154,15 @@ export const preparePoCatalogForMerge = (sourceCatalog, translationCatalog) => {
 
   for (const [context, entries] of Object.entries(translation.translations)) {
     if (!context) continue
+    const sourceItem = sourceMessages.get(context)
+    if (!sourceItem) {
+      delete translation.translations[context]
+      changed = true
+      continue
+    }
+
     for (const [storedMsgid, item] of Object.entries(entries)) {
-      const sourceItem = sourceMessages.get(context)
-      if (!sourceItem || item.msgid === sourceItem.msgid) continue
+      if (item.msgid === sourceItem.msgid) continue
 
       const oldSource = item.msgid
       delete entries[storedMsgid]
@@ -178,6 +184,11 @@ export const preparePoCatalogForMerge = (sourceCatalog, translationCatalog) => {
         setFuzzy(item, false)
       }
     }
+  }
+
+  if (Object.keys(translation.obsolete ?? {}).length > 0) {
+    delete translation.obsolete
+    changed = true
   }
 
   return changed ? poParser.compile(translation).toString() : translationCatalog
@@ -325,6 +336,16 @@ export const compilePoCatalog = (
   const sourceMessages = sourceLanguage
     ? readActiveMessages(source)
     : readActiveMessages(sourceCatalog)
+  const obsolete = (sourceLanguage || requireMerged) && readObsoleteMessages(source)[0]
+  if (obsolete) {
+    const hint = sourceLanguage
+      ? "Remove obsolete messages from the source catalog."
+      : UPDATE_CATALOG_HINT
+    throw new Error(
+      "Catalog contains an obsolete message: "
+      + `${obsolete.key ?? obsolete.source}. ${hint}`,
+    )
+  }
   const sourceTopology = {}
   for (const key of sourceMessages.keys()) {
     setNestedValue(sourceTopology, key, "")

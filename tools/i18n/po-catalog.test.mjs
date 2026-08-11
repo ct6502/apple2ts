@@ -410,6 +410,33 @@ msgstr "Démarrer"
     }])
   })
 
+  it("rejects obsolete entries when a fully merged catalog is required", () => {
+    assert.throws(
+      () => compilePoCatalog(`${english}
+#~ msgctxt "obsolete.message"
+#~ msgid "Old message"
+#~ msgstr "Ancien message"
+`, {requireMerged: true, sourceCatalog: english}),
+      new Error(
+        "Catalog contains an obsolete message: obsolete.message. "
+        + "Update the supplied translation catalog from its source catalog.",
+      ),
+    )
+  })
+
+  it("rejects obsolete entries in the source catalog", () => {
+    assert.throws(
+      () => compilePoCatalog(`${english}
+#~ msgctxt "obsolete.message"
+#~ msgid "Old message"
+`, {sourceLanguage: true}),
+      new Error(
+        "Catalog contains an obsolete message: obsolete.message. "
+        + "Remove obsolete messages from the source catalog.",
+      ),
+    )
+  })
+
   it("validates complete source topology when compiling a partial translation", () => {
     const collidingEnglish = po(`
 msgctxt "controls"
