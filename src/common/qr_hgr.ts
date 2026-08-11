@@ -8,12 +8,15 @@ const QR_HGR_GZIP_BASE64 =
 
 const QR_HGR_BINARY_LENGTH = 3787
 const QR_HGR_TRAMPOLINE_OFFSET = 0x1000
-const QR_HGR_MODE_ROUTINE_OFFSET = 0x0140
-const QR_HGR_MODE_ROUTINE = Uint8Array.from([
-  0xd0, 0x04,
-  0xea, 0xea, 0xea, 0x60,
-  0xea, 0xea, 0xea, 0x60,
+const QR_HGR_INIT_ROUTINE_OFFSET = 0x0140
+const QR_HGR_INIT_SHIM_ADDRESS = 0x6f00
+const QR_HGR_INIT_SHIM_OFFSET = QR_HGR_INIT_SHIM_ADDRESS - 0x6000
+const QR_HGR_INIT_SHIMS = Uint8Array.from([
+  0x20, 0xe2, 0xf3, 0x2c, 0x52, 0xc0, 0x60,
+  0x20, 0xd8, 0xf3, 0x2c, 0x52, 0xc0, 0x60,
 ])
+const QR_HGR_INVERT_PIXEL_OFFSET = 0x014a
+const QR_HGR_SCALED_PIXEL_ADDRESS = 0x8400
 
 // Reads parameters from $7020-$7024, invokes QR.BIN at $6000 with interrupts
 // disabled, then returns to Applesoft. This is the upstream demo convention.
@@ -32,24 +35,30 @@ export const createQrHgrRuntimeBinary = (): Uint8Array => {
   if (qrBinary.length !== QR_HGR_BINARY_LENGTH) {
     throw new Error(`Unexpected QR.BIN length: ${qrBinary.length}`)
   }
-  qrBinary.set(QR_HGR_MODE_ROUTINE, QR_HGR_MODE_ROUTINE_OFFSET)
+  qrBinary.set([
+    0xd0, 0x04,
+    0x20, QR_HGR_INIT_SHIM_ADDRESS & 0xff, QR_HGR_INIT_SHIM_ADDRESS >> 8, 0x60,
+    0x20, (QR_HGR_INIT_SHIM_ADDRESS + 7) & 0xff, (QR_HGR_INIT_SHIM_ADDRESS + 7) >> 8, 0x60,
+  ], QR_HGR_INIT_ROUTINE_OFFSET)
+  qrBinary.set([
+    0x4c,
+    QR_HGR_SCALED_PIXEL_ADDRESS & 0xff,
+    QR_HGR_SCALED_PIXEL_ADDRESS >> 8,
+  ], QR_HGR_INVERT_PIXEL_OFFSET)
 
-  const scaler = createQrHgrScalerBinary()
-  const scalerOffset = QR_HGR_SCALER_ADDRESS - 0x6000
-  const runtime = new Uint8Array(scalerOffset + scaler.length)
+  const scaledPixelRenderer = createQrHgrScaledPixelBinary()
+  const rendererOffset = QR_HGR_SCALED_PIXEL_ADDRESS - 0x6000
+  const runtime = new Uint8Array(rendererOffset + scaledPixelRenderer.length)
   runtime.set(qrBinary)
+  runtime.set(QR_HGR_INIT_SHIMS, QR_HGR_INIT_SHIM_OFFSET)
   runtime.set(QR_HGR_TRAMPOLINE, QR_HGR_TRAMPOLINE_OFFSET)
-  runtime.set(scaler, scalerOffset)
+  runtime.set(scaledPixelRenderer, rendererOffset)
   return runtime
 }
 
-const QR_HGR_SCALER_ADDRESS = 0x8400
-const QR_HGR_SOURCE_X = 49
-const QR_HGR_SOURCE_Y = 7
 const QR_HGR_SCALE = 4
-const QR_HGR_MODULE_BUFFER = 0x9200
 
-export const createQrHgrScalerBinary = (): Uint8Array => {
+export const createQrHgrScaledPixelBinary = (): Uint8Array => {
   const code: number[] = []
   const labels = new Map<string, number>()
   const absoluteFixups: Array<{ offset: number; label: string }> = []
@@ -65,76 +74,24 @@ export const createQrHgrScalerBinary = (): Uint8Array => {
     branchFixups.push({ offset: code.length - 1, label: target })
   }
 
-  const bufferPointer = 0x06
-  const pixelPointer = 0x08
-
-  emit(0xa5, 0x06); absolute(0x8d, "saved06")
-  emit(0xa5, 0x07); absolute(0x8d, "saved07")
-  emit(0xa5, 0x08); absolute(0x8d, "saved08")
-  emit(0xa5, 0x09); absolute(0x8d, "saved09")
+  const pixelPointer = 0x06
 
   emit(0xad, 0xd7, 0x00, 0x0a)
   absolute(0x8d, "sizeTimesTwo")
   emit(0xa9, 140, 0x38)
   absolute(0xed, "sizeTimesTwo")
-  absolute(0x8d, "destinationX")
+  absolute(0x8d, "originX")
   emit(0xa9, 96, 0x38)
   absolute(0xed, "sizeTimesTwo")
-  absolute(0x8d, "destinationY")
-  emit(0xa9, QR_HGR_MODULE_BUFFER & 0xff, 0x85, bufferPointer)
-  emit(0xa9, QR_HGR_MODULE_BUFFER >> 8, 0x85, bufferPointer + 1)
-  emit(0xa9, 0x00)
-  absolute(0x8d, "moduleRow")
+  absolute(0x8d, "originY")
 
-  label("captureRow")
-  emit(0xa9, 0x00)
-  absolute(0x8d, "moduleColumn")
-  label("captureColumn")
-  absolute(0xad, "moduleColumn")
-  emit(0x18, 0x69, QR_HGR_SOURCE_X)
-  absolute(0x8d, "pixelX")
-  absolute(0xad, "moduleRow")
-  emit(0x18, 0x69, QR_HGR_SOURCE_Y)
-  absolute(0x8d, "pixelY")
-  absolute(0x20, "isDarkPixel")
-  branch(0x90, "captureLight")
-  emit(0xa9, 0x01)
-  branch(0xd0, "storeModule")
-  label("captureLight")
-  emit(0xa9, 0x00)
-  label("storeModule")
-  emit(0xa0, 0x00, 0x91, bufferPointer)
-  absolute(0x20, "incrementBuffer")
-  absolute(0xee, "moduleColumn")
-  absolute(0xad, "moduleColumn")
-  emit(0xcd, 0xd7, 0x00)
-  branch(0xd0, "captureColumn")
-  absolute(0xee, "moduleRow")
-  absolute(0xad, "moduleRow")
-  emit(0xcd, 0xd7, 0x00)
-  branch(0xd0, "captureRow")
-
-  emit(0xa9, 0x00, 0xa2, 0x00)
-  label("clearHgr")
-  for (let page = 0x20; page <= 0x3f; page++) emit(0x9d, 0x00, page)
-  emit(0xe8)
-  branch(0xd0, "clearHgr")
-
-  emit(0xa9, QR_HGR_MODULE_BUFFER & 0xff, 0x85, bufferPointer)
-  emit(0xa9, QR_HGR_MODULE_BUFFER >> 8, 0x85, bufferPointer + 1)
-  absolute(0xad, "destinationY")
-  absolute(0x8d, "outputY")
-  emit(0xa9, 0x00)
-  absolute(0x8d, "moduleRow")
-
-  label("drawRow")
-  absolute(0xad, "destinationX")
+  emit(0xad, 0xcf, 0x00, 0x0a, 0x0a, 0x18)
+  absolute(0x6d, "originX")
   absolute(0x8d, "outputX")
-  emit(0xa9, 0x00)
-  absolute(0x8d, "moduleColumn")
-  label("drawColumn")
-  emit(0xa0, 0x00, 0xb1, bufferPointer)
-  branch(0xf0, "skipModule")
+  emit(0xad, 0xce, 0x00, 0x0a, 0x0a, 0x18)
+  absolute(0x6d, "originY")
+  absolute(0x8d, "outputY")
+
   emit(0xa9, 0x00)
   absolute(0x8d, "scaleY")
   label("drawPixelRow")
@@ -158,58 +115,7 @@ export const createQrHgrScalerBinary = (): Uint8Array => {
   absolute(0xad, "scaleY")
   emit(0xc9, QR_HGR_SCALE)
   branch(0xd0, "drawPixelRow")
-
-  label("skipModule")
-  absolute(0x20, "incrementBuffer")
-  absolute(0xad, "outputX")
-  emit(0x18, 0x69, QR_HGR_SCALE)
-  absolute(0x8d, "outputX")
-  absolute(0xee, "moduleColumn")
-  absolute(0xad, "moduleColumn")
-  emit(0xcd, 0xd7, 0x00)
-  branch(0xf0, "drawRowDone")
-  absolute(0x4c, "drawColumn")
-
-  label("drawRowDone")
-  absolute(0xad, "outputY")
-  emit(0x18, 0x69, QR_HGR_SCALE)
-  absolute(0x8d, "outputY")
-  absolute(0xee, "moduleRow")
-  absolute(0xad, "moduleRow")
-  emit(0xcd, 0xd7, 0x00)
-  branch(0xf0, "scalingDone")
-  absolute(0x4c, "drawRow")
-  label("scalingDone")
-  absolute(0xad, "saved09"); emit(0x85, 0x09)
-  absolute(0xad, "saved08"); emit(0x85, 0x08)
-  absolute(0xad, "saved07"); emit(0x85, 0x07)
-  absolute(0xad, "saved06"); emit(0x85, 0x06)
-  emit(0x2c, 0x52, 0xc0, 0x2c, 0x54, 0xc0, 0x2c, 0x50, 0xc0, 0x60)
-
-  label("incrementBuffer")
-  emit(0xe6, bufferPointer)
-  branch(0xd0, "bufferIncremented")
-  emit(0xe6, bufferPointer + 1)
-  label("bufferIncremented")
   emit(0x60)
-
-  label("isDarkPixel")
-  absolute(0xac, "pixelY")
-  absolute(0xb9, "rowLow")
-  emit(0x85, pixelPointer)
-  absolute(0xb9, "rowHigh")
-  emit(0x85, pixelPointer + 1)
-  absolute(0xac, "pixelX")
-  absolute(0xb9, "pixelByte")
-  emit(0xaa)
-  absolute(0xb9, "pixelMask")
-  absolute(0x8d, "mask")
-  emit(0x8a, 0xa8, 0xb1, pixelPointer)
-  absolute(0x2d, "mask")
-  branch(0xf0, "darkPixel")
-  emit(0x18, 0x60)
-  label("darkPixel")
-  emit(0x38, 0x60)
 
   label("setPixel")
   absolute(0xac, "pixelY")
@@ -222,13 +128,12 @@ export const createQrHgrScalerBinary = (): Uint8Array => {
   absolute(0x8d, "mask")
   absolute(0xb9, "pixelByte")
   emit(0xa8, 0xb1, pixelPointer)
-  absolute(0x0d, "mask")
+  absolute(0x4d, "mask")
   emit(0x91, pixelPointer, 0x60)
 
   for (const variable of [
-    "sizeTimesTwo", "destinationX", "destinationY", "moduleRow", "moduleColumn",
-    "outputX", "outputY", "scaleX", "scaleY", "pixelX", "pixelY", "mask",
-    "saved06", "saved07", "saved08", "saved09",
+    "sizeTimesTwo", "originX", "originY", "outputX", "outputY",
+    "scaleX", "scaleY", "pixelX", "pixelY", "mask",
   ]) {
     label(variable)
     emit(0x00)
@@ -252,7 +157,7 @@ export const createQrHgrScalerBinary = (): Uint8Array => {
   for (const fixup of absoluteFixups) {
     const target = labels.get(fixup.label)
     if (target === undefined) throw new Error(`Missing QR scaler label: ${fixup.label}`)
-    const address = QR_HGR_SCALER_ADDRESS + target
+    const address = QR_HGR_SCALED_PIXEL_ADDRESS + target
     code[fixup.offset] = address & 0xff
     code[fixup.offset + 1] = address >> 8
   }
