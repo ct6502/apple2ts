@@ -70,11 +70,11 @@ msgid "Caps Lock"
 msgstr ""
 
 msgctxt "config.useOpenApple"
-msgid "Use as Open Apple key"
+msgid "Use {{modKey}} key for Open Apple"
 msgstr ""
 
 msgctxt "config.useShortcuts"
-msgid "Use for keyboard shortcuts"
+msgid "Use {{modKey}} key for Keyboard Shortcuts"
 msgstr ""
 
 msgctxt "config.useArrowKeys"

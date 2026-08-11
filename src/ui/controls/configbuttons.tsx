@@ -30,9 +30,13 @@ const ConfigButtons = (props: DisplayProps) => {
   const lowercaseMode = getLowercaseMode()
   const useOpenAppleKey = getUseOpenAppleKey()
   const modKey = (isMac ? "Cmd" : "Alt")
+  const modKeyDisplay = isMac ? "⌘" : "alt"
   const themeNames = [t("themes.classic"), t("themes.dark"), t("themes.minimal")]
 
   const [popupLocation, setPopupLocation] = useState<[number, number]>()
+  const cmdKeyTitle = useOpenAppleKey
+    ? t("config.useOpenApple", { modKey })
+    : t("config.useShortcuts", { modKey })
 
   const handleClick = (event: React.MouseEvent) => {
     setPopupLocation([event.clientX, event.clientY])
@@ -60,11 +64,11 @@ const ConfigButtons = (props: DisplayProps) => {
           <span className="text-key" style={{ fontSize: "18pt" }}>{lowercaseMode ? "a" : "A"}</span>
         </button>
         <button className="push-button"
-          title={useOpenAppleKey ? `${t("config.useOpenApple").replace("Open Apple", modKey + " " + t("keyboard.openApple"))}` : `${t("config.useShortcuts").replace("keyboard shortcuts", modKey + " " + t("help.keyboardShortcuts"))}`}
+          title={cmdKeyTitle}
           onClick={() => { setPreferenceBoolean("useOpenAppleKey", !useOpenAppleKey); props.updateDisplay() }}>
           {useOpenAppleKey ?
             <svg width="28" height="28" className="fill-color">{appleOutline}</svg> :
-            <span className={(modKey === "Alt") ? "text-key" : ""}>{modKey.toLowerCase()}</span>}
+            <span className={(modKey === "Alt") ? "text-key" : ""}>{modKeyDisplay}</span>}
         </button>
         </>
       }
