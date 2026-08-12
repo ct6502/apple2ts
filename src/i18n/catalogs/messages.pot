@@ -1068,14 +1068,6 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr ""
 
-msgctxt "help.startTour"
-msgid "Click on the <b>Start Tour</b> globe"
-msgstr ""
-
-msgctxt "help.startTourAction"
-msgid "button to begin a guided tour of the emulator."
-msgstr ""
-
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr ""

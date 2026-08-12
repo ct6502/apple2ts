@@ -178,8 +178,6 @@ export const ptBR = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "Emulador de Apple IIe em TypeScript",
-    "startTour": "Clique no globo <b>Iniciar Tour</b>",
-    "startTourAction": "para iniciar um tour guiado pelo emulador.",
     "keyboardShortcuts": "Atalhos de Teclado",
     "diskImages": "Imagens de disco:",
     "urlParameters": "Parâmetros de URL Opcionais",

@@ -1279,16 +1279,6 @@ msgid "TypeScript Apple IIe Emulator"
 msgstr "Эмулятор Apple IIe на TypeScript"
 
 #, fuzzy
-msgctxt "help.startTour"
-msgid "Click on the <b>Start Tour</b> globe"
-msgstr "Нажмите на глобус <b>Начать экскурсию</b>"
-
-#, fuzzy
-msgctxt "help.startTourAction"
-msgid "button to begin a guided tour of the emulator."
-msgstr "чтобы начать ознакомительную экскурсию по эмулятору."
-
-#, fuzzy
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Горячие клавиши"

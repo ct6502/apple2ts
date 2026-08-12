@@ -178,8 +178,6 @@ export const zhCN = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "TypeScript Apple IIe 模拟器",
-    "startTour": "点击 <b>开始导览</b> 地球仪",
-    "startTourAction": "按钮开始模拟器的引导式导览。",
     "keyboardShortcuts": "键盘快捷键",
     "diskImages": "磁盘映像文件：",
     "urlParameters": "可选的 URL 参数",

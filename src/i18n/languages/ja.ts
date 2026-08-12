@@ -178,8 +178,6 @@ export const ja = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "TypeScript Apple IIe エミュレータ",
-    "startTour": "ツアー開始をクリック",
-    "startTourAction": "ボタンでエミュレータのガイド付きツアーを開始します。",
     "keyboardShortcuts": "キーボードショートカット",
     "diskImages": "ディスクイメージ:",
     "urlParameters": "オプションのURLパラメータ",

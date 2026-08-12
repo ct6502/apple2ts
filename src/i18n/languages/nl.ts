@@ -178,8 +178,6 @@ export const nl = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "TypeScript Apple IIe Emulator",
-    "startTour": "Klik op de globe <b>Tour Starten</b>",
-    "startTourAction": "knop om een rondleiding door de emulator te beginnen.",
     "keyboardShortcuts": "Sneltoetsen",
     "diskImages": "Disk images:",
     "urlParameters": "Optionele URL Parameters",

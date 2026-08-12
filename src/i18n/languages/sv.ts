@@ -178,8 +178,6 @@ export const sv = {
   "help": {
     "title": "Apple2TS",
     "subtitle": "TypeScript Apple IIe Emulator",
-    "startTour": "Klicka på globen <b>Starta Tour</b>",
-    "startTourAction": "för att börja en guidad rundtur av emulatorn.",
     "keyboardShortcuts": "Kortkommandon",
     "diskImages": "Diskavbildningar:",
     "urlParameters": "Valfria URL-parametrar",
