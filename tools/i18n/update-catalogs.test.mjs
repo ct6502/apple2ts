@@ -112,6 +112,61 @@ msgstr "Enregistrer le disque"
     )
   })
 
+  it("removes messages absent from the source instead of making them obsolete", () => {
+    const directory = mkdtempSync(join(tmpdir(), "apple2ts-po-update-removed-"))
+    temporaryDirectories.push(directory)
+    const source = join(directory, "messages.pot")
+    const input = join(directory, "fr.po")
+    const sourceText = `msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+
+msgctxt "disk.save"
+msgid "Save Disk"
+msgstr ""
+`
+    writeFileSync(source, sourceText)
+    writeFileSync(input, `msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+
+msgctxt "disk.save"
+msgid "Save Disk"
+msgstr "Enregistrer le disque"
+
+msgctxt "help.removed"
+msgid "Removed help"
+msgstr "Aide supprimée"
+
+#~ msgctxt "help.alreadyObsolete"
+#~ msgid "Already obsolete"
+#~ msgstr "Déjà obsolète"
+`)
+
+    const code = updateCatalogs({
+      catalogDirectory: directory,
+      locales: ["fr"],
+      source,
+      run: () => ({status: 0}),
+    })
+
+    assert.equal(code, 0)
+    const updated = readFileSync(input, "utf8")
+    assert.deepEqual(compilePoCatalog(updated, {sourceCatalog: sourceText}), {
+      disk: {save: "Enregistrer le disque"},
+    })
+    assert.deepEqual(analyzePoCatalog(sourceText, updated).obsolete, [])
+    assert.doesNotMatch(updated, /help\.(?:removed|alreadyObsolete)/)
+
+    assert.equal(updateCatalogs({
+      catalogDirectory: directory,
+      locales: ["fr"],
+      source,
+      run: () => ({status: 0}),
+    }), 0)
+    assert.equal(readFileSync(input, "utf8"), updated)
+  })
+
   it("preserves the original catalog and removes staging after msgmerge fails", () => {
     const directory = mkdtempSync(join(tmpdir(), "apple2ts-po-update-failure-"))
     temporaryDirectories.push(directory)
