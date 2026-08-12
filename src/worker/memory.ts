@@ -317,9 +317,6 @@ const slotIOC8Space = new Uint8Array(8)
 
 const checkSlotIO = (addr: number, value = -1) => {
   const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
-  if (slot === 2 || slot === 4 || slot === 5) {
-    console.log(`[SlotIO] Access slot ${slot} at $${addr.toString(16).toUpperCase()} (val=${value})`)
-  }
   if (addr >= 0xC100) {
     manageC800(slot)
     if (!slotIsActive(slot))

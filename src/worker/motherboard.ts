@@ -793,8 +793,11 @@ const doAdvance6502 = () => {
     let cycles = 0
     if (softCard.activeCpu === "Z80") {
       let tstates = 0
-      while (tstates < 64 && softCard.activeCpu === "Z80") {
-        tstates += softCard.stepZ80()
+      let count = 0
+      while (tstates < 64 && count < 32 && softCard.activeCpu === "Z80") {
+        const stepT = softCard.stepZ80() || 4
+        tstates += stepT
+        count++
       }
       cycles = Math.max(1, Math.round(tstates / 2))
       s6502.cycleCount += cycles
