@@ -232,3 +232,7 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].writableFileHandle = props.writableFileHandle
   passDriveData()
 }
+
+export const hasHardDriveMounted = () => {
+  return driveData[0].length > 0 || driveData[1].length > 0
+}

@@ -41,6 +41,7 @@ import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, doGetSaveState, doRestoreSaveState } from "./save_restore"
 import { SoftCard } from "./devices/softcard"
 import { setSlotIOCallback } from "./memory"
+import { hasHardDriveMounted } from "./devices/drivestate"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -180,7 +181,9 @@ export const configureMachine = () => {
     enableVera(true, veraSlot)
   }
   enableDiskDrive()
-  enableHardDrive()
+  if (!softCard.enabled || hasHardDriveMounted()) {
+    enableHardDrive()
+  }
   get6502Instructions()
 }
 
