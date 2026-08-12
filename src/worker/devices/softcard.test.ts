@@ -5,8 +5,8 @@ declare const expect: any
 import { SoftCard, SOFTCARD_ROM } from "./softcard"
 
 test("SoftCard initial state", () => {
-  const card = new SoftCard(5)
-  expect(card.slot).toBe(5)
+  const card = new SoftCard(2)
+  expect(card.slot).toBe(2)
   expect(card.activeCpu).toBe("6502")
 })
 
@@ -16,16 +16,16 @@ test("SoftCard ROM signature", () => {
   expect(SOFTCARD_ROM[0x0b]).toBe(0x01)
 })
 
-test("SoftCard toggle switch detection ($C0D0 for Slot 5)", () => {
-  const card = new SoftCard(5)
-  expect(card.isToggleSwitch(0xc0d0)).toBe(true)
-  expect(card.isToggleSwitch(0xc0d1)).toBe(true)
-  expect(card.isToggleSwitch(0xc0d9)).toBe(false)
-  expect(card.isToggleSwitch(0xc0a0)).toBe(false)
+test("SoftCard toggle switch detection ($C0A0 for Slot 2)", () => {
+  const card = new SoftCard(2)
+  expect(card.isToggleSwitch(0xc0a0)).toBe(true)
+  expect(card.isToggleSwitch(0xc0a1)).toBe(true)
+  expect(card.isToggleSwitch(0xc0a9)).toBe(false)
+  expect(card.isToggleSwitch(0xc0c0)).toBe(false)
 })
 
 test("SoftCard Z80 address remapping", () => {
-  const card = new SoftCard(5)
+  const card = new SoftCard(2)
   // Z80 0x0000 - 0xEFFF -> Apple II 0x1000 - 0xFFFF
   expect(card.translateZ80Address(0x0000)).toBe(0x1000)
   expect(card.translateZ80Address(0x2000)).toBe(0x3000)
@@ -41,16 +41,16 @@ test("SoftCard Z80 address remapping", () => {
 
 test("SoftCard CPU toggle on read/write", () => {
   const memory = new Uint8Array(0x10000)
-  const card = new SoftCard(5)
+  const card = new SoftCard(2)
   card.setMemoryBus({
     read: (addr) => memory[addr],
     write: (addr, val) => { memory[addr] = val },
   })
 
   expect(card.activeCpu).toBe("6502")
-  card.readByte(0xc0d0)
+  card.readByte(0xc0a0)
   expect(card.activeCpu).toBe("Z80")
-  card.writeByte(0xc0d0, 0x00)
+  card.writeByte(0xc0a0, 0x00)
   expect(card.activeCpu).toBe("6502")
 })
 
