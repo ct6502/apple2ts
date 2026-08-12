@@ -792,8 +792,11 @@ const doAdvance6502 = () => {
   for (;;) {
     let cycles = 0
     if (softCard.activeCpu === "Z80") {
-      const z80TStates = softCard.stepZ80()
-      cycles = Math.max(1, Math.round(z80TStates / 2))
+      let tstates = 0
+      while (tstates < 64 && softCard.activeCpu === "Z80") {
+        tstates += softCard.stepZ80()
+      }
+      cycles = Math.max(1, Math.round(tstates / 2))
       s6502.cycleCount += cycles
     } else {
       cycles = processInstruction(tracing ? updateTrace : null)
