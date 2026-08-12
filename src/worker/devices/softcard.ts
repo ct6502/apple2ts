@@ -26,13 +26,13 @@ const ADDRESS_MAPPING = [
 
 export class SoftCard implements Z80Bus {
   enabled = true
-  slot = 4
+  slot = 2
   activeCpu: ActiveCpuType = "6502"
   z80: Z80
   private z80Initialized = false
   private memoryBus: MotherboardMemoryBus | null = null
 
-  constructor(slot = 4) {
+  constructor(slot = 2) {
     this.slot = slot
     this.z80 = new Z80(this)
   }

@@ -1,13 +1,13 @@
 import { SoftCard } from "./softcard"
 
 test("SoftCard initial state", () => {
-  const card = new SoftCard(4)
-  expect(card.slot).toBe(4)
+  const card = new SoftCard(2)
+  expect(card.slot).toBe(2)
   expect(card.activeCpu).toBe("6502")
 })
 
 test("SoftCard Z80 address remapping (web-a2e / MAME piecewise 6-bank mapping)", () => {
-  const card = new SoftCard(4)
+  const card = new SoftCard(2)
 
   // Z80 $0000-$AFFF -> Apple II $1000-$BFFF (44KB RAM)
   expect(card.translateZ80Address(0x0000)).toBe(0x1000)
@@ -25,7 +25,7 @@ test("SoftCard Z80 address remapping (web-a2e / MAME piecewise 6-bank mapping)",
 
   // Z80 $E000-$EFFF -> Apple II $C000-$CFFF (I/O space)
   expect(card.translateZ80Address(0xe000)).toBe(0xc000)
-  expect(card.translateZ80Address(0xe400)).toBe(0xc400) // $En00 -> $Cn00
+  expect(card.translateZ80Address(0xe200)).toBe(0xc200) // $En00 -> $Cn00
 
   // Z80 $F000-$FFFF -> Apple II $0000-$0FFF (Zero page / stack)
   expect(card.translateZ80Address(0xf000)).toBe(0x0000)
@@ -33,18 +33,18 @@ test("SoftCard Z80 address remapping (web-a2e / MAME piecewise 6-bank mapping)",
 })
 
 test("SoftCard Z80 write to Apple II $Cn00 deactivates Z80", () => {
-  const card = new SoftCard(4)
+  const card = new SoftCard(2)
   card.activateZ80()
   expect(card.activeCpu).toBe("Z80")
 
-  // Writing to Z80 $E400 (translates to Apple II $C400 for Slot 4) deactivates Z80
-  card.writeByte(0xe400, 0x00)
+  // Writing to Z80 $E200 (translates to Apple II $C200 for Slot 2) deactivates Z80
+  card.writeByte(0xe200, 0x00)
   expect(card.activeCpu).toBe("6502")
 })
 
 test("Z80 execution NOP and LD instructions", () => {
   const memory = new Uint8Array(0x10000)
-  const card = new SoftCard(4)
+  const card = new SoftCard(2)
   card.setMemoryBus({
     read: (addr) => memory[addr],
     write: (addr, val) => { memory[addr] = val },

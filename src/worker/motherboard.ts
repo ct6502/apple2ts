@@ -139,7 +139,7 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-export const softCard = new SoftCard(4)
+export const softCard = new SoftCard(2)
 
 let didConfiguration = false
 export const configureMachine = () => {
