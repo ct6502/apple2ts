@@ -139,7 +139,7 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-export const softCard = new SoftCard(4)
+export const softCard = new SoftCard(5)
 
 let didConfiguration = false
 export const configureMachine = () => {
@@ -148,6 +148,7 @@ export const configureMachine = () => {
   resetCycleCountCallbacks()
   clearSlot(2)
   clearSlot(4)
+  clearSlot(5)
 
   enableSerialCard()
 
@@ -172,7 +173,9 @@ export const configureMachine = () => {
   if (veraSlot !== 4 && (!softCard.enabled || softCard.slot !== 4)) {
     enableMockingboard(true, 4)
   }
-  enableMouseCard(true, 5)
+  if (!softCard.enabled || softCard.slot !== 5) {
+    enableMouseCard(true, 5)
+  }
   if (veraSlot !== 0) {
     enableVera(true, veraSlot)
   }
