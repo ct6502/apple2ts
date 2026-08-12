@@ -39,8 +39,8 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, doGetSaveState, doRestoreSaveState } from "./save_restore"
-import { SoftCard } from "./devices/softcard"
-import { setSlotIOCallback } from "./memory"
+import { SoftCard, SOFTCARD_ROM } from "./devices/softcard"
+import { setSlotDriver, setSlotIOCallback } from "./memory"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -154,6 +154,7 @@ export const configureMachine = () => {
     read: (addr: number) => memGet(addr, false),
     write: (addr: number, val: number) => memSet(addr, val),
   })
+  setSlotDriver(softCard.slot, SOFTCARD_ROM)
   setSlotIOCallback(softCard.slot, (addr: number) => {
     if (softCard.isToggleSwitch(addr)) {
       softCard.toggleCpu()

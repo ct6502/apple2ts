@@ -2,6 +2,18 @@ import { Z80, Z80Bus } from "../z80"
 
 export type ActiveCpuType = "6502" | "Z80"
 
+/**
+ * Standard 256-byte Microsoft SoftCard Slot ROM signature.
+ * Offset 0x05 = 0x38 (SEC), Offset 0x07 = 0x18 (CLC), Offset 0x0B = 0x01 (Pascal Card Type).
+ * This signature allows 6502 CP/M bootloaders to discover the Z80 SoftCard in Slot 2/4/5.
+ */
+export const SOFTCARD_ROM = new Uint8Array([
+  0xa2, 0x00, 0x86, 0xf8, 0xc6, 0x38, 0xce, 0x18,
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+  0x4c, 0x00, 0xc2, 0x00, 0x00, 0x00, 0x00, 0x00,
+  ...new Array(232).fill(0)
+])
+
 export interface MotherboardMemoryBus {
   read(address: number): number
   write(address: number, value: number): void

@@ -1,9 +1,19 @@
-import { SoftCard } from "./softcard"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare const test: any
+declare const expect: any
+
+import { SoftCard, SOFTCARD_ROM } from "./softcard"
 
 test("SoftCard initial state", () => {
   const card = new SoftCard(2)
   expect(card.slot).toBe(2)
   expect(card.activeCpu).toBe("6502")
+})
+
+test("SoftCard ROM signature", () => {
+  expect(SOFTCARD_ROM[0x05]).toBe(0x38)
+  expect(SOFTCARD_ROM[0x07]).toBe(0x18)
+  expect(SOFTCARD_ROM[0x0b]).toBe(0x01)
 })
 
 test("SoftCard toggle switch detection ($C0A0 for Slot 2)", () => {
