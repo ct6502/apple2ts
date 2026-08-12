@@ -39,8 +39,8 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, doGetSaveState, doRestoreSaveState } from "./save_restore"
-import { SoftCard, SOFTCARD_ROM } from "./devices/softcard"
-import { setSlotDriver, setSlotIOCallback } from "./memory"
+import { SoftCard } from "./devices/softcard"
+import { setSlotIOCallback } from "./memory"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -139,7 +139,7 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-export const softCard = new SoftCard(2)
+export const softCard = new SoftCard(4)
 
 let didConfiguration = false
 export const configureMachine = () => {
@@ -158,22 +158,24 @@ export const configureMachine = () => {
       read: (addr: number) => memGet(addr, false),
       write: (addr: number, val: number) => memSet(addr, val),
     })
-    setSlotDriver(softCard.slot, SOFTCARD_ROM)
-    setSlotIOCallback(softCard.slot, (addr: number) => {
-      if (softCard.isToggleSwitch(addr)) {
-        softCard.toggleCpu()
+    setSlotIOCallback(softCard.slot, (addr: number, value = -1) => {
+      // 6502 writing to $Cn00 activates Z80
+      if (addr === (0xc000 | (softCard.slot << 8)) && value >= 0) {
+        softCard.activateZ80()
       }
       return -1
     })
   }
 
-  if (veraSlot !== 2 && softCard.slot !== 2) {
+  if (veraSlot !== 2 && (!softCard.enabled || softCard.slot !== 2)) {
     enablePassportCard(true, 2)
   }
-  if (veraSlot !== 4) {
+  if (veraSlot !== 4 && (!softCard.enabled || softCard.slot !== 4)) {
     enableMockingboard(true, 4)
   }
-  enableMouseCard(true, 5)
+  if (!softCard.enabled || softCard.slot !== 5) {
+    enableMouseCard(true, 5)
+  }
   if (veraSlot !== 0) {
     enableVera(true, veraSlot)
   }

@@ -1,62 +1,50 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-declare const test: any
-declare const expect: any
-
-import { SoftCard, SOFTCARD_ROM } from "./softcard"
+import { SoftCard } from "./softcard"
 
 test("SoftCard initial state", () => {
-  const card = new SoftCard(2)
-  expect(card.slot).toBe(2)
+  const card = new SoftCard(4)
+  expect(card.slot).toBe(4)
   expect(card.activeCpu).toBe("6502")
 })
 
-test("SoftCard ROM signature", () => {
-  expect(SOFTCARD_ROM[0x05]).toBe(0x38)
-  expect(SOFTCARD_ROM[0x07]).toBe(0x18)
-  expect(SOFTCARD_ROM[0x0b]).toBe(0x01)
-})
+test("SoftCard Z80 address remapping (web-a2e / MAME piecewise 6-bank mapping)", () => {
+  const card = new SoftCard(4)
 
-test("SoftCard toggle switch detection ($C0A0 for Slot 2)", () => {
-  const card = new SoftCard(2)
-  expect(card.isToggleSwitch(0xc0a0)).toBe(true)
-  expect(card.isToggleSwitch(0xc0a1)).toBe(true)
-  expect(card.isToggleSwitch(0xc0a9)).toBe(false)
-  expect(card.isToggleSwitch(0xc0c0)).toBe(false)
-})
-
-test("SoftCard Z80 address remapping", () => {
-  const card = new SoftCard(2)
-  // Z80 0x0000 - 0xEFFF -> Apple II 0x1000 - 0xFFFF
+  // Z80 $0000-$AFFF -> Apple II $1000-$BFFF (44KB RAM)
   expect(card.translateZ80Address(0x0000)).toBe(0x1000)
   expect(card.translateZ80Address(0x2000)).toBe(0x3000)
-  expect(card.translateZ80Address(0xefff)).toBe(0xffff)
+  expect(card.translateZ80Address(0xafff)).toBe(0xbfff)
 
-  // Z80 0xF000 - 0xFFFF -> Apple II 0x0000 - 0x0FFF
+  // Z80 $B000-$BFFF -> Apple II $D000-$DFFF (Language Card bank 2)
+  expect(card.translateZ80Address(0xb000)).toBe(0xd000)
+
+  // Z80 $C000-$CFFF -> Apple II $E000-$EFFF (Language Card)
+  expect(card.translateZ80Address(0xc000)).toBe(0xe000)
+
+  // Z80 $D000-$DFFF -> Apple II $F000-$FFFF (Language Card)
+  expect(card.translateZ80Address(0xd000)).toBe(0xf000)
+
+  // Z80 $E000-$EFFF -> Apple II $C000-$CFFF (I/O space)
+  expect(card.translateZ80Address(0xe000)).toBe(0xc000)
+  expect(card.translateZ80Address(0xe400)).toBe(0xc400) // $En00 -> $Cn00
+
+  // Z80 $F000-$FFFF -> Apple II $0000-$0FFF (Zero page / stack)
   expect(card.translateZ80Address(0xf000)).toBe(0x0000)
   expect(card.translateZ80Address(0xffff)).toBe(0x0fff)
-
-  // I/O space bypass (0xC000 - 0xC0FF)
-  expect(card.translateZ80Address(0xc0c0)).toBe(0xc0c0)
 })
 
-test("SoftCard CPU toggle on read/write", () => {
-  const memory = new Uint8Array(0x10000)
-  const card = new SoftCard(2)
-  card.setMemoryBus({
-    read: (addr) => memory[addr],
-    write: (addr, val) => { memory[addr] = val },
-  })
-
-  expect(card.activeCpu).toBe("6502")
-  card.readByte(0xc0a0)
+test("SoftCard Z80 write to Apple II $Cn00 deactivates Z80", () => {
+  const card = new SoftCard(4)
+  card.activateZ80()
   expect(card.activeCpu).toBe("Z80")
-  card.writeByte(0xc0a0, 0x00)
+
+  // Writing to Z80 $E400 (translates to Apple II $C400 for Slot 4) deactivates Z80
+  card.writeByte(0xe400, 0x00)
   expect(card.activeCpu).toBe("6502")
 })
 
 test("Z80 execution NOP and LD instructions", () => {
   const memory = new Uint8Array(0x10000)
-  const card = new SoftCard(2)
+  const card = new SoftCard(4)
   card.setMemoryBus({
     read: (addr) => memory[addr],
     write: (addr, val) => { memory[addr] = val },
@@ -70,7 +58,7 @@ test("Z80 execution NOP and LD instructions", () => {
   memory[0x1001] = 0x3e // LD A, 0x42
   memory[0x1002] = 0x42
 
-  card.activeCpu = "Z80"
+  card.activateZ80()
   expect(card.z80.pc).toBe(0x0000)
 
   card.stepZ80() // NOP

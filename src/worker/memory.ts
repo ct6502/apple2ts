@@ -315,9 +315,11 @@ const slotIOCallbackTable = new Array<AddressCallback | undefined>(8)
 // Determines whether slot has C800 space ROM or not
 const slotIOC8Space = new Uint8Array(8)
 
-// Value = -1 indicates that this was a read/get operation
 const checkSlotIO = (addr: number, value = -1) => {
   const slot = ((addr >> 8) === 0xC0) ? ((addr - 0xC080) >> 4) : ((addr >> 8) - 0xC0)
+  if (slot === 2 || slot === 4 || slot === 5) {
+    console.log(`[SlotIO] Access slot ${slot} at $${addr.toString(16).toUpperCase()} (val=${value})`)
+  }
   if (addr >= 0xC100) {
     manageC800(slot)
     if (!slotIsActive(slot))
