@@ -2,7 +2,6 @@
 // Ported from hardware-accurate web-a2e implementation (by Mike Daley / MAME a2softcard.cpp)
 
 import { Z80, Z80Bus } from "../z80"
-import { memory, addressGetTable } from "../memory"
 
 export type ActiveCpuType = "6502" | "Z80"
 
@@ -56,23 +55,6 @@ export class SoftCard implements Z80Bus {
 
   readByte(address: number): number {
     const appleAddr = this.translateZ80Address(address)
-    const page = appleAddr >>> 8
-
-    // Fast direct RAM access for $0000 - $BFFF (main RAM)
-    if (page < 0xc0) {
-      const shifted = addressGetTable[page]
-      return memory[shifted + (appleAddr & 0xff)]
-    }
-
-    // Fast direct RAM access for $D000 - $FFFF (Language Card / Upper RAM)
-    if (page >= 0xd0) {
-      const shifted = addressGetTable[page]
-      if (shifted >= 0) {
-        return memory[shifted + (appleAddr & 0xff)]
-      }
-    }
-
-    // Fallback for I/O and slot space ($C000 - $CFFF)
     if (this.memoryBus) {
       return this.memoryBus.read(appleAddr) & 0xff
     }
@@ -89,27 +71,6 @@ export class SoftCard implements Z80Bus {
       return
     }
 
-    const page = appleAddr >>> 8
-
-    // Fast direct RAM write for $0000 - $BFFF
-    if (page < 0xc0) {
-      const shifted = addressGetTable[page]
-      if (shifted >= 0) {
-        memory[shifted + (appleAddr & 0xff)] = value & 0xff
-        return
-      }
-    }
-
-    // Fast direct RAM write for $D000 - $FFFF
-    if (page >= 0xd0) {
-      const shifted = addressGetTable[page]
-      if (shifted >= 0) {
-        memory[shifted + (appleAddr & 0xff)] = value & 0xff
-        return
-      }
-    }
-
-    // Fallback for I/O / softswitches ($C000 - $CFFF)
     if (this.memoryBus) {
       this.memoryBus.write(appleAddr, value & 0xff)
     }
