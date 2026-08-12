@@ -39,6 +39,8 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, doGetSaveState, doRestoreSaveState } from "./save_restore"
+import { SoftCard } from "./devices/softcard"
+import { setSlotIOCallback } from "./memory"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -137,6 +139,8 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
+export const softCard = new SoftCard(2)
+
 let didConfiguration = false
 export const configureMachine = () => {
   if (didConfiguration) return
@@ -144,6 +148,19 @@ export const configureMachine = () => {
   resetCycleCountCallbacks()
   clearSlot(2)
   clearSlot(4)
+
+  // Configure SoftCard Z80 expansion card
+  softCard.setMemoryBus({
+    read: (addr: number) => memGet(addr, false),
+    write: (addr: number, val: number) => memSet(addr, val),
+  })
+  setSlotIOCallback(softCard.slot, (addr: number) => {
+    if (softCard.isToggleSwitch(addr)) {
+      softCard.toggleCpu()
+    }
+    return -1
+  })
+
   enableSerialCard()
   if (veraSlot !== 2) {
     enablePassportCard(true, 2)
@@ -161,6 +178,7 @@ export const configureMachine = () => {
 }
 
 const resetMachine = () => {
+  softCard.reset()
   resetFloppyDrives()
   setButtonState()
   resetMouse()
@@ -762,7 +780,14 @@ const doAdvance6502 = () => {
     cycleToRunStart = s6502.cycleCount
   }
   for (;;) {
-    const cycles = processInstruction(tracing ? updateTrace : null)
+    let cycles = 0
+    if (softCard.activeCpu === "Z80") {
+      const z80TStates = softCard.stepZ80()
+      cycles = Math.max(1, Math.round(z80TStates / 2))
+      s6502.cycleCount += cycles
+    } else {
+      cycles = processInstruction(tracing ? updateTrace : null)
+    }
     if (cycles < 0) break
     cycleTotal += cycles
     const cycleInFrame = s6502.cycleCount % 17030
