@@ -151,7 +151,9 @@ export const configureMachine = () => {
   clearSlot(4)
   clearSlot(5)
 
-  enableSerialCard()
+  if (!softCard.enabled) {
+    enableSerialCard()
+  }
 
   if (softCard.enabled) {
     clearSlot(softCard.slot)
@@ -174,7 +176,7 @@ export const configureMachine = () => {
   if (veraSlot !== 4 && (!softCard.enabled || softCard.slot !== 4)) {
     enableMockingboard(true, 4)
   }
-  if (!softCard.enabled || softCard.slot !== 5) {
+  if (!softCard.enabled) {
     enableMouseCard(true, 5)
   }
   if (veraSlot !== 0) {
