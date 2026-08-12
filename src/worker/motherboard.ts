@@ -139,7 +139,7 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-export const softCard = new SoftCard(2)
+export const softCard = new SoftCard(4)
 
 let didConfiguration = false
 export const configureMachine = () => {
@@ -149,24 +149,27 @@ export const configureMachine = () => {
   clearSlot(2)
   clearSlot(4)
 
-  // Configure SoftCard Z80 expansion card
-  softCard.setMemoryBus({
-    read: (addr: number) => memGet(addr, false),
-    write: (addr: number, val: number) => memSet(addr, val),
-  })
-  setSlotDriver(softCard.slot, SOFTCARD_ROM)
-  setSlotIOCallback(softCard.slot, (addr: number) => {
-    if (softCard.isToggleSwitch(addr)) {
-      softCard.toggleCpu()
-    }
-    return -1
-  })
-
   enableSerialCard()
-  if (veraSlot !== 2) {
+
+  if (softCard.enabled) {
+    clearSlot(softCard.slot)
+    softCard.setMemoryBus({
+      read: (addr: number) => memGet(addr, false),
+      write: (addr: number, val: number) => memSet(addr, val),
+    })
+    setSlotDriver(softCard.slot, SOFTCARD_ROM)
+    setSlotIOCallback(softCard.slot, (addr: number) => {
+      if (softCard.isToggleSwitch(addr)) {
+        softCard.toggleCpu()
+      }
+      return -1
+    })
+  }
+
+  if (veraSlot !== 2 && (!softCard.enabled || softCard.slot !== 2)) {
     enablePassportCard(true, 2)
   }
-  if (veraSlot !== 4) {
+  if (veraSlot !== 4 && (!softCard.enabled || softCard.slot !== 4)) {
     enableMockingboard(true, 4)
   }
   enableMouseCard(true, 5)

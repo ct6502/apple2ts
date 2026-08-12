@@ -21,13 +21,13 @@ export interface MotherboardMemoryBus {
 
 export class SoftCard implements Z80Bus {
   enabled = true
-  slot = 2 // Default Slot 2 (0xC0A0 - 0xC0AF) to avoid collision with Slot 4 Mockingboard
+  slot = 4 // Default Slot 4 (0xC0C0 - 0xC0CF) - Standard Microsoft SoftCard slot
   activeCpu: ActiveCpuType = "6502"
   z80: Z80
 
   private memoryBus: MotherboardMemoryBus | null = null
 
-  constructor(slot = 2) {
+  constructor(slot = 4) {
     this.slot = slot
     this.z80 = new Z80(this)
   }
