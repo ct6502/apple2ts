@@ -19,7 +19,8 @@ test("SoftCard ROM signature", () => {
 test("SoftCard toggle switch detection ($C0A0 for Slot 2)", () => {
   const card = new SoftCard(2)
   expect(card.isToggleSwitch(0xc0a0)).toBe(true)
-  expect(card.isToggleSwitch(0xc0a9)).toBe(true)
+  expect(card.isToggleSwitch(0xc0a1)).toBe(true)
+  expect(card.isToggleSwitch(0xc0a9)).toBe(false)
   expect(card.isToggleSwitch(0xc0c0)).toBe(false)
 })
 

@@ -43,12 +43,12 @@ export class SoftCard implements Z80Bus {
 
   /**
    * Check if an address corresponds to the SoftCard toggle softswitch ($C0n0).
-   * Slot 4: 0xC0C0, Slot 2: 0xC0A0
+   * Slot 2: 0xC0A0, Slot 4: 0xC0C0
    */
   isToggleSwitch(address: number): boolean {
-    const slotOffset = (this.slot + 8) << 4 // Slot 4 -> 0xC0, Slot 2 -> 0xA0
+    const slotOffset = (this.slot + 8) << 4 // Slot 2 -> 0xA0, Slot 4 -> 0xC0
     const targetBase = 0xc000 | slotOffset
-    return (address & 0xfff0) === targetBase
+    return address === targetBase || address === (targetBase + 1)
   }
 
   /**
