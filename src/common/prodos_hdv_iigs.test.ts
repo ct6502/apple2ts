@@ -3,6 +3,7 @@ import {
   createPackedBinaryRelay,
   createProDosRelayWrapper,
   determineVtocType,
+  generateMenuLaunchProgram,
   generateMenuSourceProgram,
   lookupFourCadeByTitle,
 } from "./prodos_hdv"
@@ -36,7 +37,8 @@ describe("IIgs 4cade block loading", () => {
       { filename: "BETA", displayName: "Blazing Paddles" },
     ], undefined, [], [], "A2TSHLP")
 
-    expect(source).toContain("20 MAX=3:I=1:G=0:C$=\"AAB\"")
+    expect(source).toContain("20 MAX=3:I=PEEK(1145):IF I<1 OR I>MAX THEN I=1")
+    expect(source).toContain("21 G=0:C$=\"AAB\"")
     expect(source).toContain("85 IF K0>96 AND K0<123 THEN K0=K0-32")
     expect(source).toContain("87 P=0:IF ASC(MID$(C$,I,1))=K0 THEN P=I+1:IF P>MAX THEN P=1")
     expect(source).toContain("88 IF P>0 THEN IF ASC(MID$(C$,P,1))<>K0 THEN P=0")
@@ -71,6 +73,29 @@ describe("IIgs 4cade block loading", () => {
     expect(source).not.toContain("BLOAD SHOTS/KEY")
     expect(source).not.toContain("K0=27")
     expect(source).not.toContain("POKE 49237")
+  })
+
+  test("shows an issue QR code for an unlaunchable imported disk and returns to its screen", () => {
+    const source = generateMenuLaunchProgram([
+      { filename: "BROKEN", displayName: "Broken Disk & Demo", imageKind: "prodos" },
+    ], undefined, [], [], "A2TSHLP")
+
+    expect(source).not.toContain("PRODOS FILES IMPORTED")
+    expect(source).toContain("80 IF K(I)=4 THEN GOSUB 3000:GOTO 220")
+    expect(source).toContain("3000 PRINT D$;\"BLOAD A2TSHLP/QR.BIN,A$6000\"")
+    expect(source).not.toContain("PRINT CHR$(7)")
+    expect(source).not.toContain("QRSCALE")
+    expect(source).toContain("3010 A$=U$+T$(I):L=LEN(A$):FOR J=1 TO L:POKE 28708+J,ASC(MID$(A$,J,1)):NEXT")
+    expect(source).toContain("3020 POKE 28704,37:POKE 28705,112:POKE 28706,L:POKE 28707,0:POKE 28708,0")
+    const visibleGeneration = "3030 CALL 28672:POKE 49168,0"
+    expect(source).toContain(visibleGeneration)
+    expect(visibleGeneration).not.toContain("HGR")
+    expect(visibleGeneration).not.toContain("POKE 49236")
+    expect(visibleGeneration).not.toContain("CALL 33792")
+    expect(source).toContain("3040 IF PEEK(49152)<128 THEN 3040")
+    expect(source).toContain("3050 X=PEEK(49168):RETURN")
+    expect(source).toContain("\"Broken+Disk+%26+Demo\"")
+    expect(source).toContain("220 TEXT:HOME:PRINT CHR$(4);\"RUN A2TSHLP/MENUSRC\":END")
   })
 
   test("keeps a large ProDOS image titled Aztec out of the 4cade path", () => {
