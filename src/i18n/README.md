@@ -67,9 +67,12 @@ mutating update command also requires GNU gettext `msgmerge`.
    catalog structure.
 4. Run `npm run generate-i18n-catalogs`, then the relevant project checks.
 
-PO files can be edited directly or with standard tools such as Poedit and
-Weblate. The non-writing catalog check rejects obsolete messages so direct and
-external edits cannot bypass the cleanup policy.
+Translators can use
+[Weblate](https://hosted.weblate.org/projects/apple2ts/browser-emulator/) or
+edit PO files with standard tools such as Poedit. Contributors changing
+English messages or catalog structure should follow the workflow above. The
+non-writing catalog check rejects obsolete messages so direct and external
+edits cannot bypass the cleanup policy.
 
 ## Interpolation
 
