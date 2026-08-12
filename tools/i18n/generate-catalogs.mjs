@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { mkdir } from "node:fs/promises"
 import { resolve } from "node:path"
 import process from "node:process"
 
@@ -19,6 +20,10 @@ if (arguments_.length > 1 || (arguments_.length === 1 && arguments_[0] !== "--ch
   const check = arguments_[0] === "--check"
   let result = 0
   let generatedCatalogHintWritten = false
+
+  if (!check) {
+    await mkdir(outputDirectory, {recursive: true})
+  }
 
   for (const {locale, exportName, sourceLanguage = false} of catalogs) {
     try {

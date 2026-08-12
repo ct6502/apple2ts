@@ -14,7 +14,8 @@ preserved as project history.
   Stable translation keys are stored in `msgctxt`; English text is stored in
   `msgid`.
 - `catalogs/<locale>.po` stores each locale's translations in `msgstr`.
-- `languages/*.ts` is generated application input. Do not edit it directly.
+- `languages/*.ts` is ignored, generated application input. Do not edit or
+  commit it.
 
 An empty `msgstr` is omitted from the generated locale catalog, so the runtime
 falls back to English. A fuzzy flag marks a translation for human review but
@@ -32,7 +33,7 @@ clear that marker entry by entry after review.
 # Merge POT changes into every PO catalog. This modifies translator files.
 npm run update-i18n-catalogs
 
-# Regenerate TypeScript catalogs after editing POT or PO files.
+# Regenerate TypeScript catalogs without running another project command.
 npm run generate-i18n-catalogs
 
 # Verify generated catalogs without modifying them.
@@ -42,9 +43,11 @@ npm run check-i18n-catalogs
 npm run test-po-catalog
 ```
 
-Normal builds and tests run the non-mutating freshness checks automatically.
-Those checks use only the repository's Node dependencies. The intentionally
-mutating update command also requires GNU gettext `msgmerge`.
+Application, lint, test, and tooltip-review commands regenerate TypeScript
+catalogs automatically. The generated files are ignored so translator pull
+requests contain only POT or PO source changes. Generation and checks use only
+the repository's Node dependencies. The intentionally mutating update command
+also requires GNU gettext `msgmerge`.
 
 ## Adding or changing English messages
 
@@ -65,7 +68,8 @@ mutating update command also requires GNU gettext `msgmerge`.
    translation against current English. Leave missing translations empty so
    runtime fallback remains visible; do not copy English merely to complete
    catalog structure.
-4. Run `npm run generate-i18n-catalogs`, then the relevant project checks.
+4. Run the relevant project checks. They regenerate the TypeScript catalogs
+   automatically.
 
 Translators can use
 [Weblate](https://hosted.weblate.org/projects/apple2ts/browser-emulator/) or
@@ -103,6 +107,7 @@ t("disk.syncedAt", {date: "2026-08-06"})
 - `index.ts` — language selection, persistence, fallback, and lookup.
 - `useTranslation.ts` — reactive React translation hook.
 - `catalogs/` — authoritative POT and PO translator files.
-- `languages/` — generated TypeScript catalogs consumed by the application.
+- `languages/` — ignored, generated TypeScript catalogs consumed by the
+  application.
 - `tools/i18n/` — deterministic generation, reporting, and validation tools.
 - `archive/` — historical bootstrap material; not part of this workflow.
