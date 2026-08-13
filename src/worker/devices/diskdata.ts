@@ -154,11 +154,13 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
   return bit
 }
 
-// When no disk is loaded, return 0x00 so ProDOS/DOS3.3 RWTS times out immediately.
+// When no disk is loaded, return 0x80 so DOS 3.3 and ProDOS RWTS read loops
+// (which wait for bit 7 = 1 via BPL) can decrement their Y retry counter and
+// time out immediately in ~1ms with an I/O ERROR.
 const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // const tracklocSave = ds.trackLocation
-  // If no disk then return 0x00 so ProDOS RWTS times out immediately in ~1ms
-  if (dd.length === 0) return 0x00
+  // If no disk then return 0x80 so DOS 3.3 and ProDOS RWTS time out immediately in ~1ms
+  if (dd.length === 0) return 0x80
   let result = 0
 
   // Read individual bits and combine them.
