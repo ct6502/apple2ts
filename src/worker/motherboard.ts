@@ -162,13 +162,9 @@ export const configureMachine = () => {
       write: (addr: number, val: number) => memSet(addr, val),
     })
     setSlotIOCallback(softCard.slot, (addr: number, value = -1) => {
-      // Writing to $Cn00 toggles Z80 active state (matching web-a2e writeROM)
+      // 6502 writing to $Cn00 activates Z80
       if (addr === (0xc000 | (softCard.slot << 8)) && value >= 0) {
-        if (softCard.activeCpu === "6502") {
-          softCard.activateZ80()
-        } else {
-          softCard.deactivateZ80()
-        }
+        softCard.activateZ80()
       }
       return -1
     })
