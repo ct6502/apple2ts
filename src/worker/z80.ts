@@ -1098,10 +1098,90 @@ export class Z80 {
     }
   }
 
+  private sbcHL(val: number): void {
+    const c = (this.f & Z80.FLAG_C) !== 0 ? 1 : 0
+    const hl = this.hl
+    const res = hl - val - c
+    const res16 = res & 0xffff
+    const carryBits = hl ^ val ^ res16
+    this.f = Z80.FLAG_N |
+             (res16 === 0 ? Z80.FLAG_Z : 0) |
+             ((res16 >> 8) & Z80.FLAG_S) |
+             ((carryBits & 0x1000) !== 0 ? Z80.FLAG_H : 0) |
+             ((carryBits & 0x8000) !== 0 ? Z80.FLAG_PV : 0) |
+             (res < 0 ? Z80.FLAG_C : 0)
+    this.hl = res16
+  }
+
+  private adcHL(val: number): void {
+    const c = (this.f & Z80.FLAG_C) !== 0 ? 1 : 0
+    const hl = this.hl
+    const res = hl + val + c
+    const res16 = res & 0xffff
+    const carryBits = hl ^ val ^ res16
+    this.f = (res16 === 0 ? Z80.FLAG_Z : 0) |
+             ((res16 >> 8) & Z80.FLAG_S) |
+             ((carryBits & 0x1000) !== 0 ? Z80.FLAG_H : 0) |
+             ((carryBits & 0x8000) !== 0 ? Z80.FLAG_PV : 0) |
+             (res > 0xffff ? Z80.FLAG_C : 0)
+    this.hl = res16
+  }
+
   // Extended ED Prefix
   private executeEDPrefix(): number {
     const edOp = this.fetch8()
     switch (edOp) {
+      // LD I, A
+      case 0x47: this.i = this.a; return 9
+      // LD R, A
+      case 0x4f: this.r = this.a; return 9
+      // LD A, I
+      case 0x57: {
+        this.a = this.i
+        this.f = (this.f & Z80.FLAG_C) | (this.a === 0 ? Z80.FLAG_Z : 0) | (this.a & Z80.FLAG_S) | (this.iff2 ? Z80.FLAG_PV : 0)
+        return 9
+      }
+      // LD A, R
+      case 0x5f: {
+        this.a = this.r
+        this.f = (this.f & Z80.FLAG_C) | (this.a === 0 ? Z80.FLAG_Z : 0) | (this.a & Z80.FLAG_S) | (this.iff2 ? Z80.FLAG_PV : 0)
+        return 9
+      }
+      // LD (nn), BC / DE / HL / SP
+      case 0x43: { const addr = this.fetch16(); this.write16(addr, this.bc); return 20 }
+      case 0x53: { const addr = this.fetch16(); this.write16(addr, this.de); return 20 }
+      case 0x63: { const addr = this.fetch16(); this.write16(addr, this.hl); return 20 }
+      case 0x73: { const addr = this.fetch16(); this.write16(addr, this.sp); return 20 }
+      // LD BC / DE / HL / SP, (nn)
+      case 0x4b: { const addr = this.fetch16(); this.bc = this.read16(addr); return 20 }
+      case 0x5b: { const addr = this.fetch16(); this.de = this.read16(addr); return 20 }
+      case 0x6b: { const addr = this.fetch16(); this.hl = this.read16(addr); return 20 }
+      case 0x7b: { const addr = this.fetch16(); this.sp = this.read16(addr); return 20 }
+      // SBC HL, BC / DE / HL / SP
+      case 0x42: this.sbcHL(this.bc); return 15
+      case 0x52: this.sbcHL(this.de); return 15
+      case 0x62: this.sbcHL(this.hl); return 15
+      case 0x72: this.sbcHL(this.sp); return 15
+      // ADC HL, BC / DE / HL / SP
+      case 0x4a: this.adcHL(this.bc); return 15
+      case 0x5a: this.adcHL(this.de); return 15
+      case 0x6a: this.adcHL(this.hl); return 15
+      case 0x7a: this.adcHL(this.sp); return 15
+      // NEG
+      case 0x44: case 0x54: case 0x64: case 0x74:
+      case 0x4c: case 0x5c: case 0x6c: case 0x7c: {
+        const oldA = this.a
+        this.a = 0
+        this.sub8(oldA)
+        return 8
+      }
+      // RETN / RETI
+      case 0x45: case 0x55: case 0x65: case 0x75:
+      case 0x4d: case 0x5d: case 0x6d: case 0x7d: {
+        this.pc = this.pop16()
+        this.iff1 = this.iff2
+        return 14
+      }
       // LDI
       case 0xa0: {
         const val = this.read8(this.hl)
@@ -1126,6 +1206,74 @@ export class Z80 {
         }
         return 16
       }
+      // LDD
+      case 0xa8: {
+        const val = this.read8(this.hl)
+        this.write8(this.de, val)
+        this.hl = (this.hl - 1) & 0xffff
+        this.de = (this.de - 1) & 0xffff
+        this.bc = (this.bc - 1) & 0xffff
+        this.f = (this.f & (Z80.FLAG_S | Z80.FLAG_Z | Z80.FLAG_C)) | (this.bc !== 0 ? Z80.FLAG_PV : 0)
+        return 16
+      }
+      // LDDR
+      case 0xb8: {
+        const val = this.read8(this.hl)
+        this.write8(this.de, val)
+        this.hl = (this.hl - 1) & 0xffff
+        this.de = (this.de - 1) & 0xffff
+        this.bc = (this.bc - 1) & 0xffff
+        this.f = (this.f & (Z80.FLAG_S | Z80.FLAG_Z | Z80.FLAG_C)) | (this.bc !== 0 ? Z80.FLAG_PV : 0)
+        if (this.bc !== 0) {
+          this.pc = (this.pc - 2) & 0xffff
+          return 21
+        }
+        return 16
+      }
+      // CPI
+      case 0xa1: {
+        const val = this.read8(this.hl)
+        const res = (this.a - val) & 0xff
+        this.hl = (this.hl + 1) & 0xffff
+        this.bc = (this.bc - 1) & 0xffff
+        this.f = (Z80.FLAG_N) | (res === 0 ? Z80.FLAG_Z : 0) | (res & Z80.FLAG_S) | (this.bc !== 0 ? Z80.FLAG_PV : 0) | (this.f & Z80.FLAG_C)
+        return 16
+      }
+      // CPIR
+      case 0xb1: {
+        const val = this.read8(this.hl)
+        const res = (this.a - val) & 0xff
+        this.hl = (this.hl + 1) & 0xffff
+        this.bc = (this.bc - 1) & 0xffff
+        this.f = (Z80.FLAG_N) | (res === 0 ? Z80.FLAG_Z : 0) | (res & Z80.FLAG_S) | (this.bc !== 0 ? Z80.FLAG_PV : 0) | (this.f & Z80.FLAG_C)
+        if (this.bc !== 0 && res !== 0) {
+          this.pc = (this.pc - 2) & 0xffff
+          return 21
+        }
+        return 16
+      }
+      // CPD
+      case 0xa9: {
+        const val = this.read8(this.hl)
+        const res = (this.a - val) & 0xff
+        this.hl = (this.hl - 1) & 0xffff
+        this.bc = (this.bc - 1) & 0xffff
+        this.f = (Z80.FLAG_N) | (res === 0 ? Z80.FLAG_Z : 0) | (res & Z80.FLAG_S) | (this.bc !== 0 ? Z80.FLAG_PV : 0) | (this.f & Z80.FLAG_C)
+        return 16
+      }
+      // CPDR
+      case 0xb9: {
+        const val = this.read8(this.hl)
+        const res = (this.a - val) & 0xff
+        this.hl = (this.hl - 1) & 0xffff
+        this.bc = (this.bc - 1) & 0xffff
+        this.f = (Z80.FLAG_N) | (res === 0 ? Z80.FLAG_Z : 0) | (res & Z80.FLAG_S) | (this.bc !== 0 ? Z80.FLAG_PV : 0) | (this.f & Z80.FLAG_C)
+        if (this.bc !== 0 && res !== 0) {
+          this.pc = (this.pc - 2) & 0xffff
+          return 21
+        }
+        return 16
+      }
       // IM 0, 1, 2
       case 0x46: case 0x66: this.im = 0; return 8
       case 0x56: case 0x76: this.im = 1; return 8
@@ -1137,19 +1285,130 @@ export class Z80 {
   // IX / IY Prefix (DD / FD)
   private executeIXIYPrefix(isIX: boolean): number {
     const prefixOp = this.fetch8()
-    // Simple fallback logic for IX/IY indexing
+    const getReg = (): number => isIX ? this.ix : this.iy
+    const setReg = (val: number): void => { if (isIX) this.ix = val & 0xffff; else this.iy = val & 0xffff }
+
+    // LD IX/IY, nn
     if (prefixOp === 0x21) {
-      const val = this.fetch16()
-      if (isIX) this.ix = val; else this.iy = val
+      setReg(this.fetch16())
       return 14
     }
-    if (prefixOp === 0x09 || prefixOp === 0x19 || prefixOp === 0x29 || prefixOp === 0x39) {
-      const regVal = prefixOp === 0x09 ? this.bc : prefixOp === 0x19 ? this.de : prefixOp === 0x29 ? (isIX ? this.ix : this.iy) : this.sp
-      const base = isIX ? this.ix : this.iy
-      const res = base + regVal
-      if (isIX) this.ix = res & 0xffff; else this.iy = res & 0xffff
+    // LD (nn), IX/IY
+    if (prefixOp === 0x22) {
+      this.write16(this.fetch16(), getReg())
+      return 20
+    }
+    // LD IX/IY, (nn)
+    if (prefixOp === 0x2a) {
+      setReg(this.read16(this.fetch16()))
+      return 20
+    }
+    // INC IX/IY
+    if (prefixOp === 0x23) {
+      setReg(getReg() + 1)
+      return 10
+    }
+    // DEC IX/IY
+    if (prefixOp === 0x2b) {
+      setReg(getReg() - 1)
+      return 10
+    }
+    // POP IX/IY
+    if (prefixOp === 0xe1) {
+      setReg(this.pop16())
+      return 14
+    }
+    // PUSH IX/IY
+    if (prefixOp === 0xe5) {
+      this.push16(getReg())
       return 15
     }
+    // LD SP, IX/IY
+    if (prefixOp === 0xf9) {
+      this.sp = getReg()
+      return 10
+    }
+    // EX (SP), IX/IY
+    if (prefixOp === 0xe3) {
+      const tmp = this.read16(this.sp)
+      this.write16(this.sp, getReg())
+      setReg(tmp)
+      return 23
+    }
+    // JP (IX/IY)
+    if (prefixOp === 0xe9) {
+      this.pc = getReg()
+      return 8
+    }
+    // ADD IX/IY, rr
+    if (prefixOp === 0x09 || prefixOp === 0x19 || prefixOp === 0x29 || prefixOp === 0x39) {
+      const regVal = prefixOp === 0x09 ? this.bc : prefixOp === 0x19 ? this.de : prefixOp === 0x29 ? getReg() : this.sp
+      const base = getReg()
+      const res = base + regVal
+      const carryBits = base ^ regVal ^ res
+      this.f = (this.f & (Z80.FLAG_S | Z80.FLAG_Z | Z80.FLAG_PV)) |
+               ((carryBits & 0x1000) !== 0 ? Z80.FLAG_H : 0) |
+               (res > 0xffff ? Z80.FLAG_C : 0)
+      setReg(res)
+      return 15
+    }
+
+    // IX/IY Displacement Opcodes: (IX+d) / (IY+d)
+    // INC (IX+d)
+    if (prefixOp === 0x34) {
+      const d = this.fetchSigned8()
+      const addr = (getReg() + d) & 0xffff
+      const val = this.inc8(this.read8(addr))
+      this.write8(addr, val)
+      return 23
+    }
+    // DEC (IX+d)
+    if (prefixOp === 0x35) {
+      const d = this.fetchSigned8()
+      const addr = (getReg() + d) & 0xffff
+      const val = this.dec8(this.read8(addr))
+      this.write8(addr, val)
+      return 23
+    }
+    // LD (IX+d), n
+    if (prefixOp === 0x36) {
+      const d = this.fetchSigned8()
+      const val = this.fetch8()
+      this.write8((getReg() + d) & 0xffff, val)
+      return 19
+    }
+    // LD r, (IX+d)  (opcodes 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E)
+    if ([0x46, 0x4e, 0x56, 0x5e, 0x66, 0x6e, 0x7e].includes(prefixOp)) {
+      const d = this.fetchSigned8()
+      const val = this.read8((getReg() + d) & 0xffff)
+      const rIdx = (prefixOp - 0x40) >> 3
+      this.setRegByIdx(rIdx, val)
+      return 19
+    }
+    // LD (IX+d), r  (opcodes 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x77)
+    if ([0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x77].includes(prefixOp)) {
+      const d = this.fetchSigned8()
+      const rIdx = prefixOp & 0x07
+      this.write8((getReg() + d) & 0xffff, this.getRegByIdx(rIdx))
+      return 19
+    }
+    // ALU A, (IX+d): ADD(0x86), ADC(0x8E), SUB(0x96), SBC(0x9E), AND(0xA6), XOR(0xAE), OR(0xB6), CP(0xBE)
+    if ([0x86, 0x8e, 0x96, 0x9e, 0xa6, 0xae, 0xb6, 0xbe].includes(prefixOp)) {
+      const d = this.fetchSigned8()
+      const val = this.read8((getReg() + d) & 0xffff)
+      switch (prefixOp) {
+        case 0x86: this.add8(val); break
+        case 0x8e: this.adc8(val); break
+        case 0x96: this.sub8(val); break
+        case 0x9e: this.sbc8(val); break
+        case 0xa6: this.and8(val); break
+        case 0xae: this.xor8(val); break
+        case 0xb6: this.or8(val); break
+        case 0xbe: this.cp8(val); break
+      }
+      return 19
+    }
+
     // Default fallback execute normal opcode
     return this.executeOpcode(prefixOp)
   }
