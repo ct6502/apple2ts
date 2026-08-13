@@ -201,7 +201,7 @@ export const handleSetDiskOrFileFromBuffer = (
     }
   } else {
     // Force hard drive images to be in "0" or "1" (slot 7 drive 1 or 2)
-    if (isHardDriveImage(fname)) {
+    if (isHardDriveImage(fname, buffer?.byteLength)) {
       if (index < 0 || index > 1) newIndex = 0
     } else {
       if (index < 2) newIndex = 2
