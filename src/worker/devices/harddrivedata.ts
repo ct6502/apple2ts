@@ -110,6 +110,14 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
     // Store number of SmartPort devices in the status buffer.
     memSet(bufferAddr, 2)
   } else if (unitNumber <= 2) {
+    const [,, dataLen] = getHardDriveData(unitNumber)
+    if (dataLen === 0) {
+      setAccumulator(0x2F)  // device offline / no media
+      setX(0)
+      setY(0)
+      setCarry(true)
+      return
+    }
     // Status byte
     // Bit   Function
     //  7    1 = block device; 0 = character device
@@ -121,8 +129,6 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
     //  1    Reserved; must = 0
     //  0    1 = device currently open (character devices only)
     memSet(bufferAddr, 0xF0)
-    // We assume that the unit number is the same as the drive number.
-    const [,, dataLen] = getHardDriveData(unitNumber)
     const nblocks = dataLen / 512
     memSet(bufferAddr + 1, nblocks & 0xFF)
     memSet(bufferAddr + 2, nblocks >>> 8)
@@ -134,7 +140,7 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
     setAccumulator(0x28)  // bad drive/unit number
     setX(0)
     setY(0)
-    setCarry()
+    setCarry(true)
   }
 }
 
@@ -142,6 +148,13 @@ const handleSmartPortDeviceStatus = (unitNumber: number, bufferAddr: number) => 
 const handleSmartPortDeviceInformationBlock = (unitNumber: number, bufferAddr: number) => {
   // We assume that the unit number is the same as the drive number.
   const [,, dataLen] = getHardDriveData(unitNumber)
+  if (dataLen === 0) {
+    setAccumulator(0x2F)  // device offline / no media
+    setX(0)
+    setY(0)
+    setCarry(true)
+    return
+  }
   const nblocks = dataLen / 512
   // claim we are a 3.5" drive if 1600 or less blocks
   const deviceType = nblocks > 1600 ? 0x02 : 0x01  // 1 = 3.5 drive 2 = hard disk
@@ -179,7 +192,7 @@ const handleSmartPortStatus = (spParamList: number, unitNumber: number, bufferAd
   if (memGet(spParamList) !== 3) {
     console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
     setAccumulator(4)  // bad parameter count
-    setCarry()
+    setCarry(true)
     return
   }
   const statusCode = memGet(spParamList + 4)
@@ -190,7 +203,7 @@ const handleSmartPortStatus = (spParamList: number, unitNumber: number, bufferAd
     case 1: // illegal
     case 2: // illegal
       setAccumulator(0x21)
-      setCarry()
+      setCarry(true)
       break
     case 3:  // return Device Information Block (DIB)
     case 4:  // same as case 3
@@ -198,6 +211,8 @@ const handleSmartPortStatus = (spParamList: number, unitNumber: number, bufferAd
       break
     default:
       console.error(`SmartPort statusCode ${statusCode} not implemented`)
+      setAccumulator(0x21)
+      setCarry(true)
       break
   }
 }
@@ -228,13 +243,23 @@ const processSmartPortAccess = () => {
     case 1: {
       if (memGet(spParamList) !== 0x03) {
         console.error(`Incorrect SmartPort parameter count at address ${spParamList}`)
-        setCarry()
+        setCarry(true)
+        return
+      }
+      const [dd, offset, dataLen] = getHardDriveData(unitNumber)
+      if (dataLen === 0) {
+        setAccumulator(0x2F)  // device offline / no media
+        setCarry(true)
         return
       }
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
-      const [dd, offset] = getHardDriveData(unitNumber)
+      if (blockStart + 512 > dataLen) {
+        setAccumulator(0x27)  // I/O Error
+        setCarry(true)
+        return
+      }
       const dataRead = dd.slice(blockStart + offset, blockStart + 512 + offset)
       setMemoryBlock(bufferAddr, dataRead)
       break
