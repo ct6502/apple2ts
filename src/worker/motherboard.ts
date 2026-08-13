@@ -280,9 +280,7 @@ export const doBoot = () => {
   const ds = getHardDriveState(1)
   if (ds.filename === "") {
     enableHardDrive(false)
-    if (!softCard.enabled || hasHardDriveMounted()) {
-      setTimeout(() => { enableHardDrive() }, 200)
-    }
+    setTimeout(() => { enableHardDrive(true) }, 200)
   }
 }
 

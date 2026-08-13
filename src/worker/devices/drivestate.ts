@@ -2,6 +2,7 @@ import { Buffer } from "buffer"
 import { passDriveProps, passDriveSound } from "../worker2main"
 import { decodeDiskData } from "./decodedisk"
 import { doPauseDiskDrive, doResetDiskDrive } from "./diskdata"
+import { enableHardDrive } from "./harddrivedata"
 import { DRIVE, isHardDriveImage } from "../../common/utility"
 
 const initDriveState = (index: number, drive: number, hardDrive: boolean): DriveState => {
@@ -210,6 +211,9 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
     driveState[index].filename = ""
     passDriveData()
     return
+  }
+  if (isHardDrive) {
+    enableHardDrive(true)
   }
   driveState[index].motorRunning = props.motorRunning
   driveState[index].cloudData = props.cloudData
