@@ -173,6 +173,22 @@ export const configureMachine = () => {
   softCard.enabled = false
   veraSlot = 0
 
+  const setupSoftCard = (slot: number) => {
+    clearSlot(slot)
+    softCard.slot = slot
+    softCard.enabled = true
+    softCard.setMemoryBus({
+      read: (addr: number) => memGet(addr, false),
+      write: (addr: number, val: number) => memSet(addr, val),
+    })
+    setSlotIOCallback(slot, (addr: number, value = -1) => {
+      if ((addr >> 8) === (0xC0 + slot) && value >= 0) {
+        softCard.activateZ80()
+      }
+      return -1
+    })
+  }
+
   // Slot 1
   if (currentSlotConfig[1] === "ssc") {
     enableSerialCard()
@@ -180,19 +196,7 @@ export const configureMachine = () => {
 
   // Slot 2
   if (currentSlotConfig[2] === "softcard") {
-    clearSlot(2)
-    softCard.slot = 2
-    softCard.enabled = true
-    softCard.setMemoryBus({
-      read: (addr: number) => memGet(addr, false),
-      write: (addr: number, val: number) => memSet(addr, val),
-    })
-    setSlotIOCallback(2, (addr: number, value = -1) => {
-      if ((addr >> 8) === 0xC2 && value >= 0) {
-        softCard.activateZ80()
-      }
-      return -1
-    })
+    setupSoftCard(2)
   } else if (currentSlotConfig[2] === "passport") {
     enablePassportCard(true, 2)
   } else if (currentSlotConfig[2] === "vera") {
@@ -208,6 +212,8 @@ export const configureMachine = () => {
   } else if (currentSlotConfig[4] === "vera") {
     enableVera(true, 4)
     veraSlot = 4
+  } else if (currentSlotConfig[4] === "softcard") {
+    setupSoftCard(4)
   }
 
   // Slot 5
@@ -215,6 +221,8 @@ export const configureMachine = () => {
     enableMouseCard(true, 5)
   } else if (currentSlotConfig[5] === "mockingboard") {
     enableMockingboard(true, 5)
+  } else if (currentSlotConfig[5] === "softcard") {
+    setupSoftCard(5)
   }
 
   // Slot 6

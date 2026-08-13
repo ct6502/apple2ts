@@ -64,8 +64,8 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
     if (slot === 1) options = ["none", "ssc"]
     else if (slot === 2) options = ["none", "vera", "passport", "softcard"]
     else if (slot === 3) options = machineName === "APPLE2P" ? ["none"] : ["aux"]
-    else if (slot === 4) options = ["none", "mouse", "mockingboard", "vera"]
-    else if (slot === 5) options = ["none", "mouse", "mockingboard"]
+    else if (slot === 4) options = ["none", "mouse", "mockingboard", "vera", "softcard"]
+    else if (slot === 5) options = ["none", "mouse", "mockingboard", "softcard"]
     else if (slot === 6) options = ["none", "disk2"]
     else if (slot === 7) options = ["none", "smartport"]
 
