@@ -140,7 +140,9 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
-export const softCard = new SoftCard(2)
+// CP/M 2.23 boot code activates the Z80 by writing to $C400 (Slot 4), not Slot 2.
+// See: Track 0 Sector 5 offset $C6: STA $C400 in Microsoft SoftCard CP/M disk.
+export const softCard = new SoftCard(4)
 
 let didConfiguration = false
 export const configureMachine = () => {
@@ -156,14 +158,15 @@ export const configureMachine = () => {
   }
 
   if (softCard.enabled) {
+    // SoftCard is in Slot 4: CP/M boot code activates Z80 via STA $C400
     clearSlot(softCard.slot)
     softCard.setMemoryBus({
       read: (addr: number) => memGet(addr, false),
       write: (addr: number, val: number) => memSet(addr, val),
     })
     setSlotIOCallback(softCard.slot, (addr: number, value = -1) => {
-      // 6502 writing to $Cn00 activates Z80
-      if (addr === (0xc000 | (softCard.slot << 8)) && value >= 0) {
+      // 6502 writing to $Cn00 (any offset) activates Z80
+      if ((addr >> 8) === (0xC0 + softCard.slot) && value >= 0) {
         softCard.activateZ80()
       }
       return -1
@@ -173,7 +176,11 @@ export const configureMachine = () => {
   if (veraSlot !== 2 && (!softCard.enabled || softCard.slot !== 2)) {
     enablePassportCard(true, 2)
   }
-  if (veraSlot !== 4 && (!softCard.enabled || softCard.slot !== 4)) {
+  // When SoftCard is in Slot 4, move Mockingboard to Slot 5
+  // (VERA can only be 0/2/4, so Slot 5 is never a VERA slot)
+  if (softCard.enabled) {
+    enableMockingboard(true, 5)
+  } else if (veraSlot !== 4) {
     enableMockingboard(true, 4)
   }
   if (!softCard.enabled) {
@@ -183,6 +190,8 @@ export const configureMachine = () => {
     enableVera(true, veraSlot)
   }
   enableDiskDrive()
+  // When SoftCard is active, don't load hard drive (CP/M doesn't need it and
+  // an empty SmartPort can confuse the boot sequence)
   if (!softCard.enabled || hasHardDriveMounted()) {
     enableHardDrive()
   }
