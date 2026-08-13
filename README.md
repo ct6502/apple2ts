@@ -45,6 +45,15 @@ Refer to the guide above for detailed setup, including environment configuration
 
 ---
 
+## Translations
+
+Help translate Apple2TS online with
+[Weblate](https://hosted.weblate.org/projects/apple2ts/browser-emulator/).
+Developers changing English messages or catalog structure should follow the
+[Apple2TS i18n Developer Guide](src/i18n/README.md).
+
+---
+
 ## Development
 
 Be sure to install `node.js` and `npm` on your system using either `nvm` (the Node version manager) or the Node installer. Either one should work fine.
