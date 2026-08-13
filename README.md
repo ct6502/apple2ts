@@ -12,6 +12,20 @@ This project was originally create using [Create React App](https://github.com/f
 
 Note: The integrated server and CLI were moved out of this repository into `apple2ts-server`.
 
+## Dynamic Slot Manager
+
+Apple2TS features a flexible **Slot Manager** system allowing real-time configuration of expansion cards across Slots 1 through 7 via the Machine Settings menu:
+
+- **Slot 1**: Super Serial Card (Printer / Serial Communications)
+- **Slot 2**: Microsoft Z-80 SoftCard (CP/M 2.23), VERA Graphics Card, Passport MIDI Card
+- **Slot 3**: Aux Card (128K RAM / 80-Col / dHGR) on Apple IIe; locked to `None` on Apple II+
+- **Slot 4**: Mockingboard Sound Card, Apple II Mouse Card, VERA Graphics Card
+- **Slot 5**: Apple II Mouse Card, Mockingboard Sound Card (Dual Mockingboards supported!)
+- **Slot 6**: Disk II Floppy Controller (140KB 5.25" floppies)
+- **Slot 7**: SmartPort Hard Drive Card (800KB 3.5" disks, 2MB–32MB hard drive images)
+
+Single-instance cards automatically handle slot exclusivity, and UI peripheral buttons (printer, floppy drives, hard drives) dynamically disable and grey out when their respective slot is set to `None`.
+
 ---
 
 ## AI Agent Integration
