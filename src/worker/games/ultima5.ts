@@ -46,7 +46,7 @@ Ctrl+V    set music volume 0-9
 For Dual Mockingboard Support:
 1) Open Settings (gear icon) and assign Mockingboard to both Slot 4 & Slot 5.
 2) In Ultima V, go to Activate Music -> Change Music Configuration, add Mockingboard A to Slot 4 and Slot 5, and press Enter.
-3) A total of 12 voices will be initialized. Press the initial letter of any song title to play music.
+3) A total of 12 voices will be initialized. Press the initial letter of any song title to play music (e.g., Ultima Theme & Stones use 7–8 polyphonic voices).
 
 For MIDI Support:
 1) Launch a WebMIDI supported player (such as https://signal.vercel.app/) in a separate tab, and leave it running.  Be sure to allow WebMIDI support. You may need to go into the Settings and enable "Inputs" from your system's WebMIDI driver.
