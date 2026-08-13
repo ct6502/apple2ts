@@ -15,7 +15,7 @@ import { CLOUD_SYNC, crc32, FILE_SUFFIXES_DISK, uint32toBytes } from "../../../c
 import PopupMenu from "../../controls/popupmenu"
 import { svgInternetArchiveLogo } from "../../img/icon_internetarchive"
 import { svgDemoZooLogo } from "../../img/icon_demozoo"
-import { passSetDriveProps } from "../../main2worker"
+import { passSetDriveProps, handleGetSlotConfig } from "../../main2worker"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
 import InternetArchivePopup from "./internetarchivedialog"
 import DemoZooDialog from "./demozoodialog"
@@ -210,7 +210,12 @@ const DiskDrive = (props: DiskDriveProps) => {
     setInternetDialogDialogOpen(true)
   }
 
+  const slotConfig = handleGetSlotConfig()
+  const slot = dprops.index < 2 ? 7 : 6
+  const isSlotDisabled = slotConfig[slot] === "none"
+
   const handleMenuClick = (event: React.MouseEvent) => {
+    if (isSlotDisabled) return
     let menuIndex = -1
 
     if (!dprops.cloudData || dprops.cloudData.syncStatus == CLOUD_SYNC.INACTIVE) {
@@ -254,10 +259,16 @@ const DiskDrive = (props: DiskDriveProps) => {
   return (
     <span
       className="flex-column"
+      style={{
+        opacity: isSlotDisabled ? 0.4 : 1,
+        filter: isSlotDisabled ? "grayscale(100%)" : "none",
+        pointerEvents: isSlotDisabled ? "none" : "auto",
+        cursor: isSlotDisabled ? "not-allowed" : "pointer",
+      }}
       onContextMenu={(event) => {
         event.preventDefault()
         event.stopPropagation()
-        handleMenuClick(event)
+        if (!isSlotDisabled) handleMenuClick(event)
       }}>
       <span className="flex-row">
         <span className="flex-column">
@@ -268,9 +279,9 @@ const DiskDrive = (props: DiskDriveProps) => {
             onContextMenu={(event) => {
               event.preventDefault()
               event.stopPropagation()
-              handleMenuClick(event)
+              if (!isSlotDisabled) handleMenuClick(event)
             }}
-            onClick={handleMenuClick} />
+            onClick={(event) => { if (!isSlotDisabled) handleMenuClick(event) }} />
           <FontAwesomeIcon
             icon={faRotate}
             className={`fa-fw disk-clouddrive ${cloudDriveStatusClassName}`}>

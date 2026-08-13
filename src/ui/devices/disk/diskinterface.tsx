@@ -7,6 +7,7 @@ import Flyout from "../../flyout"
 import ImageWriter from "../printer/imagewriter"
 import { isMinimalTheme } from "../../ui_settings"
 import { useTranslation } from "../../../i18n/useTranslation"
+import { handleGetSlotConfig } from "../../main2worker"
 
 const DiskInterface = (props: DisplayProps) => {
   const { t } = useTranslation()
@@ -15,13 +16,17 @@ const DiskInterface = (props: DisplayProps) => {
   const width = window.innerWidth ? window.innerWidth : (window.outerWidth - 20)
   const isScreenNarrow = width < height
 
+  const slotConfig = handleGetSlotConfig()
+  const allSlotsDisabled = slotConfig[1] === "none" && slotConfig[6] === "none" && slotConfig[7] === "none"
+
   return (
-    <Flyout
-      icon={faHdd}
-      title={t("disk.diskDrivesAndDevices")}
-      isOpen={() => { return isFlyoutOpen }}
-      onClick={() => { setIsFlyoutOpen(!isFlyoutOpen) }}
-      position="bottom-left">
+    <span style={{ opacity: allSlotsDisabled ? 0.4 : 1, filter: allSlotsDisabled ? "grayscale(100%)" : "none", pointerEvents: allSlotsDisabled ? "none" : "auto", cursor: allSlotsDisabled ? "not-allowed" : "pointer" }}>
+      <Flyout
+        icon={faHdd}
+        title={t("disk.diskDrivesAndDevices")}
+        isOpen={() => { return isFlyoutOpen && !allSlotsDisabled }}
+        onClick={() => { if (!allSlotsDisabled) setIsFlyoutOpen(!isFlyoutOpen) }}
+        position="bottom-left">
       <div className={`${isMinimalTheme() && isScreenNarrow ? "flex-column" : "flex-row"} flexwrap`}>
         <span className="flex-row">
           {!isMinimalTheme() && <DiskImageChooser {...props} />}
@@ -40,6 +45,7 @@ const DiskInterface = (props: DisplayProps) => {
         </span>
       </div>
     </Flyout>
+    </span>
   )
 }
 

@@ -5,7 +5,7 @@ import PrinterDialog from "./printerdialog"
 import { ImageWriterII, registerSetPrinting } from "./iwii"
 import { constructAudio, playAudio } from "../../../common/utility"
 import { isAudioEnabled, registerAudioContext } from "../audio/speaker"
-import { setSerialConfigCallback } from "../../main2worker"
+import { handleGetSlotConfig, setSerialConfigCallback } from "../../main2worker"
 import { getSerialMode } from "../serial/serialhub"
 import { useTranslation } from "../../../i18n/useTranslation"
 
@@ -26,6 +26,9 @@ const ImageWriter = () => {
   const audioDevicesRef = useRef<Array<AudioDevice | undefined>>([])
   const audioStartTimeRef = useRef<number>(0)
   const setPrintCallsRef = useRef<number>(0)
+
+  const slotConfig = handleGetSlotConfig()
+  const isPrinterDisabled = slotConfig[1] === "none"
 
   const playPrinterAudio = (audio: AUDIO, audioFile: string, duration: number, loop: boolean) => {
     if (!isAudioEnabled()) {
@@ -133,13 +136,13 @@ const ImageWriter = () => {
   const isTouchDevice = "ontouchstart" in document.documentElement
 
   return (
-    <span className="flex-column">
+    <span className="flex-column" style={{ opacity: isPrinterDisabled ? 0.4 : 1, filter: isPrinterDisabled ? "grayscale(100%)" : "none", pointerEvents: isPrinterDisabled ? "none" : "auto" }}>
       <img className={`disk-image${isTouchDevice ? " disk-image-small" : ""}`}
-        style={{ borderWidth: 0 }}
+        style={{ borderWidth: 0, cursor: isPrinterDisabled ? "not-allowed" : "pointer" }}
         src={img1} alt="iwii"
         title={t("print.imageWriterII")}
         height="57px"
-        onClick={() => { setOpen(true) }} />
+        onClick={() => { if (!isPrinterDisabled) setOpen(true) }} />
       <PrinterDialog
         open={open}
         onClose={() => { setOpen(false) }}
