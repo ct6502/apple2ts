@@ -154,20 +154,11 @@ const getNextBit = (ds: DriveState, dd: Uint8Array) => {
   return bit
 }
 
-// When no disk is loaded, return a repeating D5-AA-97 pattern instead of
-// random noise.  This causes DOS 3.3 RWTS sector-read loops to fail their
-// address-field check quickly (97 ≠ expected 96), decrementing the retry
-// counter every 3 reads so the RWTS times out in milliseconds instead of
-// hanging forever on random data that almost never matches D5.
-const NODISK_PATTERN = [0xD5, 0xAA, 0x97]
-let noDiskPatternIdx = 0
-
+// When no disk is loaded, return 0x00 so ProDOS/DOS3.3 RWTS times out immediately.
 const getNextByte = (ds: DriveState, dd: Uint8Array, cycles: number) => {
   // const tracklocSave = ds.trackLocation
-  // If no disk then return a fast-fail pattern.
-  // Programs that check for no-disk (like anti-m) will still get a read
-  // error, but the RWTS timeout happens in milliseconds, not minutes.
-  if (dd.length === 0) return NODISK_PATTERN[noDiskPatternIdx++ % 3]
+  // If no disk then return 0x00 so ProDOS RWTS times out immediately in ~1ms
+  if (dd.length === 0) return 0x00
   let result = 0
 
   // Read individual bits and combine them.
