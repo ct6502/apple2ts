@@ -76,6 +76,13 @@ export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
     localStorage.setItem("machineName", JSON.stringify(name))
   }
   passSetMachineName(name)
+
+  const slotConfig = getPreferenceSlotConfig()
+  const newSlot3 = name === "APPLE2P" ? "none" : "aux"
+  if (slotConfig[3] !== newSlot3) {
+    slotConfig[3] = newSlot3
+    setPreferenceSlotConfig(slotConfig)
+  }
 }
 
 export const setPreferenceMockingboardMode = (mode = 0) => {

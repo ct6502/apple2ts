@@ -493,7 +493,10 @@ export const doSetMemory = (addr: number, value: number) => {
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   machineName = name
+  currentSlotConfig[3] = name === "APPLE2P" ? "none" : "aux"
+  didConfiguration = false
   doSetRom(machineName)
+  configureMachine()
   if (reset) doReset()
   updateExternalMachineState()
 }
