@@ -485,10 +485,20 @@ export const getSymbolTables = (machineName: string) => {
   return [machineSymbolTable, userSymbolTable]
 }
 
-export const isHardDriveImage = (filename: string) => {
+export const isHardDriveImage = (filename: string, fileSize?: number) => {
   const f = filename.toLowerCase()
-  const suffixes = HARD_DRIVE_SUFFIXES.split(",")
-  return suffixes.some(suffix => f.endsWith(suffix))
+  if (f.endsWith(".hdv") || f.endsWith(".2mg") || f.endsWith(".2meg")) {
+    return true
+  }
+  if (f.endsWith(".po")) {
+    // 5.25" floppy is 140KB (143360 bytes), 3.5" floppy is 800KB (819200 bytes)
+    // Only classify .po as hard drive image if size > 800KB (819200 bytes)
+    if (fileSize !== undefined) {
+      return fileSize > 819200
+    }
+    return false
+  }
+  return false
 }
 
 export const constructAudio = (mp3track: string) => {
