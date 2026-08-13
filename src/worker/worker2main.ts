@@ -5,6 +5,7 @@ import { doSetRunMode, doSetSpeedMode,
   doSetMachineName,
   doSetRamWorks,
   doSetVeraSlot,
+  doSetSlotConfig,
   doSetCycleCount,
   doSetShowDebugTab,
   doSetAppMode,
@@ -270,6 +271,9 @@ if (typeof self !== "undefined") {
         break
       case MSG_MAIN.VERA_SLOT:
         doSetVeraSlot(e.data.payload as VERA_SLOT)
+        break
+      case MSG_MAIN.SLOT_CONFIG:
+        doSetSlotConfig(e.data.payload as SlotConfig)
         break
       case MSG_MAIN.REVERSE_YAXIS:
         setReverseYAxis(e.data.payload)

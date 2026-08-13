@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState, doSetEmuDriveNewData } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -141,47 +141,94 @@ export const doSetShowDebugTab = (show: boolean) => {
 // }
 
 export const softCard = new SoftCard(2)
+let currentSlotConfig: SlotConfig = { ...DEFAULT_SLOT_CONFIG }
+
+export const doSetSlotConfig = (config: SlotConfig) => {
+  currentSlotConfig = { ...config }
+  didConfiguration = false
+  updateExternalMachineState()
+}
+
+export const getSlotConfig = () => {
+  return currentSlotConfig
+}
 
 let didConfiguration = false
 export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   resetCycleCountCallbacks()
-  clearSlot(2)
-  clearSlot(4)
-  clearSlot(5)
 
-  enableSerialCard()
+  for (let s = 1; s <= 7; s++) {
+    clearSlot(s)
+  }
 
-  if (softCard.enabled) {
-    clearSlot(softCard.slot)
+  // Ensure Slot 3 is locked to 'aux' on IIe, or 'none' on II+
+  if (machineName === "APPLE2P") {
+    currentSlotConfig[3] = "none"
+  } else {
+    currentSlotConfig[3] = "aux"
+  }
+
+  softCard.enabled = false
+  veraSlot = 0
+
+  // Slot 1
+  if (currentSlotConfig[1] === "ssc") {
+    enableSerialCard()
+  }
+
+  // Slot 2
+  if (currentSlotConfig[2] === "softcard") {
+    clearSlot(2)
+    softCard.slot = 2
+    softCard.enabled = true
     softCard.setMemoryBus({
       read: (addr: number) => memGet(addr, false),
       write: (addr: number, val: number) => memSet(addr, val),
     })
-    setSlotIOCallback(softCard.slot, (addr: number, value = -1) => {
-      // 6502 writing to $Cn00 activates Z80
-      if ((addr >> 8) === (0xC0 + softCard.slot) && value >= 0) {
+    setSlotIOCallback(2, (addr: number, value = -1) => {
+      if ((addr >> 8) === 0xC2 && value >= 0) {
         softCard.activateZ80()
       }
       return -1
     })
+  } else if (currentSlotConfig[2] === "passport") {
+    enablePassportCard(true, 2)
+  } else if (currentSlotConfig[2] === "vera") {
+    enableVera(true, 2)
+    veraSlot = 2
   }
 
-  if (veraSlot !== 2 && (!softCard.enabled || softCard.slot !== 2)) {
-    enablePassportCard(true, 2)
-  }
-  if (veraSlot !== 4 && (!softCard.enabled || softCard.slot !== 4)) {
+  // Slot 4
+  if (currentSlotConfig[4] === "mockingboard") {
     enableMockingboard(true, 4)
+  } else if (currentSlotConfig[4] === "mouse") {
+    enableMouseCard(true, 4)
+  } else if (currentSlotConfig[4] === "vera") {
+    enableVera(true, 4)
+    veraSlot = 4
   }
-  enableMouseCard(true, 5)
-  if (veraSlot !== 0) {
-    enableVera(true, veraSlot)
+
+  // Slot 5
+  if (currentSlotConfig[5] === "mouse") {
+    enableMouseCard(true, 5)
+  } else if (currentSlotConfig[5] === "mockingboard") {
+    enableMockingboard(true, 5)
   }
-  enableDiskDrive()
-  if (!softCard.enabled || hasHardDriveMounted()) {
-    enableHardDrive()
+
+  // Slot 6
+  if (currentSlotConfig[6] === "disk2") {
+    enableDiskDrive()
   }
+
+  // Slot 7
+  if (currentSlotConfig[7] === "smartport") {
+    if (!softCard.enabled || hasHardDriveMounted()) {
+      enableHardDrive()
+    }
+  }
+
   get6502Instructions()
 }
 
@@ -195,8 +242,11 @@ const resetMachine = () => {
     resetVera()
   }
   resetSerial()
-  if (veraSlot !== 4) {
+  if (currentSlotConfig[4] === "mockingboard") {
     resetMockingboard(4)
+  }
+  if (currentSlotConfig[5] === "mockingboard") {
+    resetMockingboard(5)
   }
 }
 
@@ -726,6 +776,7 @@ export const getExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
+    slotConfig: currentSlotConfig,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
     stackString: doGetStackString(),

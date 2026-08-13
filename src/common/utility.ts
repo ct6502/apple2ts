@@ -98,6 +98,17 @@ export enum MSG_MAIN {
   CAPTURE_BOOT_STATE,
   VERA_SLOT,
   VIDEO7_OVERRIDE,
+  SLOT_CONFIG,
+}
+
+export const DEFAULT_SLOT_CONFIG: SlotConfig = {
+  1: "ssc",
+  2: "softcard",
+  3: "aux",
+  4: "mockingboard",
+  5: "mouse",
+  6: "disk2",
+  7: "smartport",
 }
 
 export enum COLOR_MODE {

@@ -115,6 +115,18 @@ type Video7Override = {
 
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
+type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport"
+
+type SlotConfig = {
+  1: SLOT_CARD_ID,
+  2: SLOT_CARD_ID,
+  3: SLOT_CARD_ID,
+  4: SLOT_CARD_ID,
+  5: SLOT_CARD_ID,
+  6: SLOT_CARD_ID,
+  7: SLOT_CARD_ID,
+}
+
 type MachineState = {
   addressGetTable: number[],
   altChar: boolean,
@@ -140,6 +152,7 @@ type MachineState = {
   runMode: number,
   s6502: STATE6502,
   showDebugTab: boolean,
+  slotConfig: SlotConfig,
   softSwitches: {[name: string]: boolean},
   speedMode: number,
   stackString: string,
@@ -453,7 +466,8 @@ type PopupMenuItem = {
   svg?: JSX.Element,
   isVisible?: () => boolean,
   isSelected?: () => boolean,
-  onClick?: () => void
+  onClick?: () => void,
+  subMenu?: Array<PopupMenuItem>
 }
 
 type MessageLoadProgram = {
