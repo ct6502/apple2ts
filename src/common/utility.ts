@@ -491,10 +491,11 @@ export const isHardDriveImage = (filename: string, fileSize?: number) => {
     return true
   }
   if (f.endsWith(".po")) {
-    // 5.25" floppy is 140KB (143360 bytes), 3.5" floppy is 800KB (819200 bytes)
-    // Only classify .po as hard drive image if size > 800KB (819200 bytes)
+    // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
+    // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
+    // is treated as a Slot 7 SmartPort hard drive image.
     if (fileSize !== undefined) {
-      return fileSize > 819200
+      return fileSize > 143360
     }
     return false
   }
