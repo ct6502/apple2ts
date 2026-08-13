@@ -234,7 +234,12 @@ const processSmartPortAccess = () => {
       const block = memGet(spParamList + 4) + 256 * memGet(spParamList + 5) +
         65536 * memGet(spParamList + 6)
       const blockStart = 512 * block
-      const [dd, offset] = getHardDriveData(unitNumber)
+      const [dd, offset, dataLen] = getHardDriveData(unitNumber)
+      if (dataLen === 0 || blockStart + 512 > dataLen) {
+        setAccumulator(0x27)  // ProDOS I/O ERROR ($27)
+        setCarry(true)
+        return
+      }
       const dataRead = dd.slice(blockStart + offset, blockStart + 512 + offset)
       setMemoryBlock(bufferAddr, dataRead)
       break
