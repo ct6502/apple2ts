@@ -49,6 +49,26 @@ requests contain only POT or PO source changes. Generation and checks use only
 the repository's Node dependencies. The intentionally mutating update command
 also requires GNU gettext `msgmerge`.
 
+## Adding a language
+
+Add `catalogs/<locale>.po` with the same canonical BCP 47 locale in its
+`Language` header. Catalog generation discovers the file, compiles it, and
+adds it to the generated runtime language registry. A newly discovered locale
+uses its locale ID as its initial menu name, a neutral globe as its icon, and
+English as its fallback. Exact browser locale matches work automatically;
+language-only catalogs also match regional browser locales.
+
+Use `tools/i18n/language-policies.mjs` only for information the locale ID
+cannot supply safely: a polished menu name or icon, menu ordering, legacy
+saved-language aliases, browser-locale exceptions, or an intermediate fallback
+locale. The generator rejects invalid or noncanonical locale IDs, mismatched
+PO headers, duplicate identities, and policy entries that reference a missing
+catalog.
+
+Automatic registration makes a catalog mechanically available. New scripts,
+right-to-left languages, and unusually long translations may still need font
+and layout review.
+
 ## Adding or changing English messages
 
 1. Add or update the entry in `catalogs/messages.pot`. Keep an existing
@@ -107,7 +127,7 @@ t("disk.syncedAt", {date: "2026-08-06"})
 - `index.ts` — language selection, persistence, fallback, and lookup.
 - `useTranslation.ts` — reactive React translation hook.
 - `catalogs/` — authoritative POT and PO translator files.
-- `languages/` — ignored, generated TypeScript catalogs consumed by the
-  application.
+- `languages/` — ignored, generated TypeScript catalogs and language registry
+  consumed by the application.
 - `tools/i18n/` — deterministic generation, reporting, and validation tools.
 - `archive/` — historical bootstrap material; not part of this workflow.

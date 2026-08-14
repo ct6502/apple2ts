@@ -1,15 +1,28 @@
 import assert from "node:assert/strict"
-import { globSync, readFileSync, readdirSync } from "node:fs"
-import { basename, extname, relative, resolve } from "node:path"
+import {
+  globSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
+import { tmpdir } from "node:os"
+import { basename, extname, join, relative, resolve } from "node:path"
 import { describe, it } from "node:test"
 import ts from "typescript"
 
 import {
   catalogDirectory,
   catalogs,
+  discoverCatalogs,
   outputDirectory,
   sourceCatalog,
 } from "./catalog-config.mjs"
+import {
+  createLanguageDefinitions,
+  createLanguageRegistrySource,
+} from "./language-registry.mjs"
 import { compilePoCatalog } from "./po-catalog.mjs"
 
 const localeNames = entries => entries.map(entry => entry.locale).sort()
@@ -17,6 +30,17 @@ const fileStems = (directory, extension) => readdirSync(directory)
   .filter(file => extname(file) === extension)
   .map(file => basename(file, extension))
   .sort()
+
+const translationCatalog = language => `msgid ""\nmsgstr ""\n"Language: ${language}\\n"\n"Content-Type: text/plain; charset=utf-8\\n"\n\nmsgctxt "test.message"\nmsgid "Message"\nmsgstr ""\n`
+
+const withCatalogDirectory = callback => {
+  const directory = mkdtempSync(join(tmpdir(), "apple2ts-i18n-catalogs-"))
+  try {
+    callback(directory)
+  } finally {
+    rmSync(directory, {recursive: true, force: true})
+  }
+}
 
 const flattenKeys = (catalog, prefix = "", keys = new Set()) => {
   for (const [name, value] of Object.entries(catalog)) {
@@ -63,16 +87,77 @@ describe("catalog configuration", () => {
       fileStems(catalogDirectory, ".po"),
       configured.filter(locale => locale !== "en"),
     )
-    assert.deepEqual(fileStems(outputDirectory, ".ts"), configured)
+    assert.deepEqual(
+      fileStems(outputDirectory, ".ts"),
+      [...configured, "registry"].sort(),
+    )
   })
 
-  it("covers every language catalog imported by the runtime", () => {
-    const runtimeSource = readFileSync(resolve("src/i18n/index.ts"), "utf8")
-    const runtimeCatalogs = [...runtimeSource.matchAll(
-      /from "\.\/languages\/([^"\n]+)"/g,
+  it("registers every generated language catalog for the runtime", () => {
+    const registrySource = readFileSync(resolve(outputDirectory, "registry.ts"), "utf8")
+    const runtimeCatalogs = [...registrySource.matchAll(
+      /from "\.\/([^"\n]+)"/g,
     )].map(match => match[1]).sort()
 
     assert.deepEqual(runtimeCatalogs, localeNames(catalogs))
+  })
+
+  it("makes a newly discovered PO catalog selectable with safe defaults", () => {
+    withCatalogDirectory(directory => {
+      writeFileSync(resolve(directory, "eo.po"), translationCatalog("eo"))
+      const discovered = discoverCatalogs({directory, source: sourceCatalog})
+      const definitions = createLanguageDefinitions(discovered, {})
+      const esperanto = definitions.find(({locale}) => locale === "eo")
+
+      assert.equal(esperanto?.name, "eo")
+      assert.equal(esperanto?.flag, "🌐")
+
+      const registry = createLanguageRegistrySource(discovered, {
+        policies: {},
+        savedAliases: {},
+        browserAliases: [],
+        fallbacks: {},
+      })
+      assert.match(registry, /import \{ eo \} from "\.\/eo"/)
+      assert.match(registry, /id: "eo", name: "eo", flag: "🌐", catalog: eo/)
+    })
+  })
+
+  it("rejects invalid, mismatched, and duplicate locale identities", () => {
+    withCatalogDirectory(directory => {
+      writeFileSync(resolve(directory, "not_a_locale.po"), translationCatalog("not_a_locale"))
+      assert.throws(
+        () => discoverCatalogs({directory, source: sourceCatalog}),
+        /not a valid BCP 47 locale/,
+      )
+    })
+
+    withCatalogDirectory(directory => {
+      writeFileSync(resolve(directory, "fr.po"), translationCatalog("de"))
+      assert.throws(
+        () => discoverCatalogs({directory, source: sourceCatalog}),
+        /Catalog fr\.po identifies itself as de/,
+      )
+    })
+
+    withCatalogDirectory(directory => {
+      writeFileSync(resolve(directory, "fr-CA.po"), translationCatalog("fr-CA"))
+      writeFileSync(resolve(directory, "fr-FR.po"), translationCatalog("fr-CA"))
+      assert.throws(
+        () => discoverCatalogs({directory, source: sourceCatalog}),
+        /Duplicate catalog locale: fr-CA/,
+      )
+    })
+  })
+
+  it("rejects language policy that references a missing catalog", () => {
+    assert.throws(
+      () => createLanguageDefinitions(catalogs, {
+        ...Object.fromEntries(catalogs.map(({locale}) => [locale, {}])),
+        eo: {name: "Esperanto"},
+      }),
+      /Language policy references missing catalog: eo/,
+    )
   })
 
   it("defines every literal translation key used by application source", () => {
