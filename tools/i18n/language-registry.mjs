@@ -7,6 +7,7 @@ import {
 } from "./language-policies.mjs"
 
 const serialized = value => JSON.stringify(value, null, 2)
+const compareLocaleIds = (left, right) => left < right ? -1 : left > right ? 1 : 0
 
 const assertKnownLanguage = (languages, language, description) => {
   if (!languages.has(language)) {
@@ -34,7 +35,7 @@ export const createLanguageDefinitions = (
       }
     })
     .sort((left, right) => left.order - right.order
-      || left.locale.localeCompare(right.locale))
+      || compareLocaleIds(left.locale, right.locale))
 }
 
 export const createLanguageRegistrySource = (catalogs, {

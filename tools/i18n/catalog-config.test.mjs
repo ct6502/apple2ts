@@ -146,6 +146,15 @@ describe("catalog configuration", () => {
     assert.equal(localeExportName("new"), "catalogNew")
   })
 
+  it("orders unconfigured locale IDs deterministically", () => {
+    const definitions = createLanguageDefinitions([
+      {locale: "zu", exportName: "catalogZu"},
+      {locale: "af", exportName: "catalogAf"},
+    ], {})
+
+    assert.deepEqual(definitions.map(({locale}) => locale), ["af", "zu"])
+  })
+
   it("rejects invalid, mismatched, and duplicate locale identities", () => {
     withCatalogDirectory(directory => {
       writeFileSync(resolve(directory, "not_a_locale.po"), translationCatalog("not_a_locale"))
