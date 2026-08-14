@@ -1,5 +1,10 @@
 export const defaultLanguageFlag = "🌐"
 
+// Normalize known translation-platform identifiers to canonical runtime IDs.
+export const catalogIdentityAliases = {
+  "en@pirate": "en-x-pirate",
+}
+
 // PO files register languages automatically. Keep only user-facing overrides
 // and locale-specific behavior that cannot be inferred safely from a locale ID.
 export const languagePolicies = {

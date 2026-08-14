@@ -16,6 +16,7 @@ import {
   catalogDirectory,
   catalogs,
   discoverCatalogs,
+  localeExportName,
   outputDirectory,
   sourceCatalog,
 } from "./catalog-config.mjs"
@@ -118,9 +119,31 @@ describe("catalog configuration", () => {
         browserAliases: [],
         fallbacks: {},
       })
-      assert.match(registry, /import \{ eo \} from "\.\/eo"/)
-      assert.match(registry, /id: "eo", name: "eo", flag: "🌐", catalog: eo/)
+      assert.match(registry, /import \{ catalogEo \} from "\.\/eo"/)
+      assert.match(
+        registry,
+        /id: "eo", name: "eo", flag: "🌐", catalog: catalogEo/,
+      )
     })
+  })
+
+  it("normalizes Weblate's Pirate locale to canonical BCP 47", () => {
+    withCatalogDirectory(directory => {
+      writeFileSync(
+        resolve(directory, "en@pirate.po"),
+        translationCatalog("en@pirate"),
+      )
+      const discovered = discoverCatalogs({directory, source: sourceCatalog})
+      const pirate = discovered.find(({locale}) => locale === "en-x-pirate")
+
+      assert.equal(pirate?.exportName, "catalogEnXPirate")
+      assert.equal(pirate?.input, resolve(directory, "en@pirate.po"))
+    })
+  })
+
+  it("prefixes generated exports that would otherwise be reserved words", () => {
+    assert.equal(Intl.getCanonicalLocales("new")[0], "new")
+    assert.equal(localeExportName("new"), "catalogNew")
   })
 
   it("rejects invalid, mismatched, and duplicate locale identities", () => {

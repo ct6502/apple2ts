@@ -3,16 +3,20 @@ import { extname, resolve } from "node:path"
 
 import { po as poParser } from "gettext-parser"
 
+import { catalogIdentityAliases } from "./language-policies.mjs"
+
 const root = resolve(import.meta.dirname, "../..")
 
 export const catalogDirectory = resolve(root, "src/i18n/catalogs")
 export const outputDirectory = resolve(root, "src/i18n/languages")
 export const sourceCatalog = resolve(catalogDirectory, "messages.pot")
 
-export const localeExportName = locale => locale.replace(
-  /-([a-zA-Z0-9])/g,
-  (_match, character) => character.toUpperCase(),
-)
+export const localeExportName = locale => locale === "en"
+  ? "en"
+  : `catalog${locale
+    .split("-")
+    .map(part => `${part[0].toUpperCase()}${part.slice(1)}`)
+    .join("")}`
 
 const canonicalLocale = (locale, description) => {
   let canonical
@@ -27,13 +31,19 @@ const canonicalLocale = (locale, description) => {
   return canonical
 }
 
+const catalogIdentity = (locale, description, aliases) => canonicalLocale(
+  aliases[locale] ?? locale,
+  description,
+)
+
 export const discoverCatalogs = ({
+  aliases = catalogIdentityAliases,
   directory = catalogDirectory,
   source = sourceCatalog,
 } = {}) => {
   const discovered = [{
     locale: "en",
-    exportName: "en",
+    exportName: localeExportName("en"),
     input: source,
     sourceLanguage: true,
   }]
@@ -42,7 +52,7 @@ export const discoverCatalogs = ({
   for (const file of readdirSync(directory).sort()) {
     if (extname(file) !== ".po") continue
     const locale = file.slice(0, -3)
-    const identity = canonicalLocale(locale, `Catalog filename ${file}`)
+    const identity = catalogIdentity(locale, `Catalog filename ${file}`, aliases)
     const input = resolve(directory, file)
     let parsed
     try {
@@ -54,9 +64,10 @@ export const discoverCatalogs = ({
     if (!headerLanguage) {
       throw new Error(`Catalog ${file} is missing its Language header`)
     }
-    const headerIdentity = canonicalLocale(
+    const headerIdentity = catalogIdentity(
       headerLanguage,
       `Language header in ${file}`,
+      aliases,
     )
     if (identities.has(headerIdentity)) {
       throw new Error(`Duplicate catalog locale: ${headerIdentity}`)

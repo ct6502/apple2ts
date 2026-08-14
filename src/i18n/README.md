@@ -61,8 +61,10 @@ language-only catalogs also match regional browser locales.
 Use `tools/i18n/language-policies.mjs` only for information the locale ID
 cannot supply safely: a polished menu name or icon, menu ordering, legacy
 saved-language aliases, browser-locale exceptions, or an intermediate fallback
-locale. The generator rejects invalid or noncanonical locale IDs, mismatched
-PO headers, duplicate identities, and policy entries that reference a missing
+locale. The same file maps known translation-platform identifiers to canonical
+runtime IDs; for example, Weblate's `en@pirate` becomes `en-x-pirate`. The
+generator rejects invalid or noncanonical unmapped locale IDs, mismatched PO
+headers, duplicate identities, and policy entries that reference a missing
 catalog.
 
 Automatic registration makes a catalog mechanically available. New scripts,
