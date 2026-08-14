@@ -5,6 +5,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-08-15 04:19+0000\n"
+"Last-Translator: reducedradius "
+"<137701630+flytothehighest@users.noreply.github.com>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/apple2ts/browser-emulator/zh_Hans/>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 2026.9.dev0\n"
 
 #, fuzzy
 msgctxt "controls.boot"
@@ -55,27 +62,23 @@ msgctxt "controls.settings"
 msgid "Settings"
 msgstr "设置"
 
-#, fuzzy
 msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr "调试面板"
 
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
 msgstr "报告问题"
 
-#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
-msgstr "速度"
+msgstr "模拟器速度"
 
 #, fuzzy
 msgctxt "config.display"
 msgid "Display Settings"
 msgstr "显示设置"
 
-#, fuzzy
 msgctxt "config.theme"
 msgid "Theme"
 msgstr "主题"
@@ -85,7 +88,6 @@ msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "重置所有设置"
 
-#, fuzzy
 msgctxt "config.capsLock"
 msgid "Caps Lock"
 msgstr "大写锁定"
@@ -137,32 +139,26 @@ msgctxt "machine.models.apple2p"
 msgid "Apple II+"
 msgstr "Apple II+"
 
-#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr "Apple IIe (unenhanced)"
+msgstr "Apple IIe (未增强)"
 
-#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr "Apple IIe (enhanced)"
+msgstr "Apple IIe (增强版)"
 
-#, fuzzy
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
 msgstr "64 KB (AUX)"
 
-#, fuzzy
 msgctxt "machine.ram.512kb"
 msgid "512 KB"
 msgstr "512 KB"
 
-#, fuzzy
 msgctxt "machine.ram.1024kb"
 msgid "1024 KB"
 msgstr "1024 KB"
 
-#, fuzzy
 msgctxt "machine.ram.4mb"
 msgid "4 MB"
 msgstr "4 MB"
@@ -172,17 +168,14 @@ msgctxt "machine.ram.8mb"
 msgid "8 MB"
 msgstr "8 MB"
 
-#, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
 msgstr "蜗牛速度 (0.1 MHz)"
 
-#, fuzzy
 msgctxt "speed.slow"
 msgid "Slow Speed (0.5 MHz)"
 msgstr "慢速 (0.5 MHz)"
 
-#, fuzzy
 msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
 msgstr "正常速度 (1 MHz)"
@@ -247,17 +240,14 @@ msgctxt "themes.dark"
 msgid "Dark"
 msgstr "深色"
 
-#, fuzzy
 msgctxt "themes.minimal"
 msgid "Minimal"
 msgstr "简约"
 
-#, fuzzy
 msgctxt "debug.helpPanel"
 msgid "Show help panel"
 msgstr "显示帮助面板"
 
-#, fuzzy
 msgctxt "debug.debugPanel"
 msgid "Show debugging panel"
 msgstr "显示调试面板"
@@ -292,7 +282,6 @@ msgctxt "debug.breakpoints"
 msgid "Breakpoints"
 msgstr "断点"
 
-#, fuzzy
 msgctxt "debug.memory"
 msgid "Memory"
 msgstr "内存"
