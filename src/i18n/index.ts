@@ -1,46 +1,16 @@
 import { en } from "./languages/en"
-import { zhTW } from "./languages/zh-TW"
-import { zhCN } from "./languages/zh-CN"
-import { es } from "./languages/es"
-import { de } from "./languages/de"
-import { fr } from "./languages/fr"
-import { it } from "./languages/it"
-import { ptBR } from "./languages/pt-BR"
-import { ja } from "./languages/ja"
-import { ko } from "./languages/ko"
-import { nl } from "./languages/nl"
-import { sv } from "./languages/sv"
-import { ru } from "./languages/ru"
+import {
+  browserLanguageAliases,
+  languageDefinitions,
+  languageFallbacks,
+  legacySavedLanguageIds,
+} from "./languages/registry"
+import type { RegisteredLanguage } from "./languages/registry"
 
-export type Language = "en" | "zh-TW" | "zh-CN" | "es" | "de" | "fr" | "it" | "pt-BR" | "ja" | "ko" | "nl" | "sv" | "ru"
+export type Language = RegisteredLanguage
 export type TranslationKey = keyof typeof en
 
 type TranslationCatalog = Record<string, unknown>
-
-type LanguageDefinition = {
-  id: Language
-  name: string
-  flag: string
-  catalog: TranslationCatalog
-  browserPrimaryLanguage?: string
-}
-
-// Keep each shipped catalog's identity, menu metadata, and browser alias together.
-const languageDefinitions: readonly LanguageDefinition[] = [
-  { id: "en", name: "English", flag: "🇺🇸", catalog: en, browserPrimaryLanguage: "en" },
-  { id: "zh-TW", name: "繁體中文", flag: "🇹🇼", catalog: zhTW },
-  { id: "zh-CN", name: "简体中文", flag: "🇨🇳", catalog: zhCN },
-  { id: "es", name: "Español", flag: "🇪🇸", catalog: es, browserPrimaryLanguage: "es" },
-  { id: "de", name: "Deutsch", flag: "🇩🇪", catalog: de, browserPrimaryLanguage: "de" },
-  { id: "fr", name: "Français", flag: "🇫🇷", catalog: fr, browserPrimaryLanguage: "fr" },
-  { id: "it", name: "Italiano", flag: "🇮🇹", catalog: it, browserPrimaryLanguage: "it" },
-  { id: "pt-BR", name: "Português (Brasil)", flag: "🇧🇷", catalog: ptBR, browserPrimaryLanguage: "pt" },
-  { id: "ja", name: "日本語", flag: "🇯🇵", catalog: ja, browserPrimaryLanguage: "ja" },
-  { id: "ko", name: "한국어", flag: "🇰🇷", catalog: ko, browserPrimaryLanguage: "ko" },
-  { id: "nl", name: "Nederlands", flag: "🇳🇱", catalog: nl, browserPrimaryLanguage: "nl" },
-  { id: "sv", name: "Svenska", flag: "🇸🇪", catalog: sv, browserPrimaryLanguage: "sv" },
-  { id: "ru", name: "Русский", flag: "🇷🇺", catalog: ru, browserPrimaryLanguage: "ru" },
-]
 
 export const AllLanguages = languageDefinitions.map(({ id }) => id)
 export const LanguageNames = Object.fromEntries(
@@ -52,11 +22,7 @@ export const LanguageFlags = Object.fromEntries(
 
 export const LanguageCatalogs = Object.fromEntries(
   languageDefinitions.map(({ id, catalog }) => [id, catalog]),
-) as Record<Language, TranslationCatalog>
-
-const legacySavedLanguageIds: Readonly<Record<string, Language>> = {
-  pt: "pt-BR",
-}
+) as unknown as Record<Language, TranslationCatalog>
 
 // Look up nested translation keys.
 const lookupTranslation = (catalog: TranslationCatalog, key: string): string | undefined => {
@@ -72,8 +38,16 @@ export const translateFromCatalogs = (
   english: TranslationCatalog,
   key: string,
   params?: Record<string, string>,
+): string => translateFromCatalogChain([selectedLanguage, english], key, params)
+
+const translateFromCatalogChain = (
+  catalogs: readonly TranslationCatalog[],
+  key: string,
+  params?: Record<string, string>,
 ): string => {
-  let result = lookupTranslation(selectedLanguage, key) ?? lookupTranslation(english, key) ?? key
+  let result = catalogs
+    .map(catalog => lookupTranslation(catalog, key))
+    .find(value => value !== undefined) ?? key
 
   if (params) {
     result = result.replace(/{{([^{}]+)}}/g, (token, param: string) => {
@@ -112,25 +86,30 @@ export class I18n {
   }
   
   private detectBrowserLanguage(browserLanguage: string): Language {
-    const [primaryLanguage, ...subtags] = browserLanguage.toLowerCase().split("-")
-    
-    // Detect Chinese variants.
-    if (primaryLanguage === "zh") {
-      if (subtags.includes("tw") || subtags.includes("hant") || subtags.includes("mo")) {
-        return "zh-TW"  // Traditional Chinese (Taiwan, Hong Kong, Macau)
-      }
-      if (subtags.includes("cn") || subtags.includes("hans") || subtags.includes("sg")) {
-        return "zh-CN"  // Simplified Chinese (Mainland China, Singapore)
-      }
-      return "zh-TW"  // Default to Traditional Chinese.
+    let canonicalLanguage
+    try {
+      [canonicalLanguage] = Intl.getCanonicalLocales(browserLanguage)
+    } catch {
+      return "en"
     }
-    
-    // pt intentionally selects pt-BR until a pt-PT catalog exists.
-    const matchingLanguage = languageDefinitions.find(
-      ({ browserPrimaryLanguage }) => browserPrimaryLanguage === primaryLanguage,
+    const normalizedLanguage = canonicalLanguage.toLowerCase()
+
+    const exactLanguage = languageDefinitions.find(
+      ({ id }) => id.toLowerCase() === normalizedLanguage,
     )
-    if (matchingLanguage) return matchingLanguage.id
-    
+    if (exactLanguage) return exactLanguage.id
+
+    const alias = browserLanguageAliases.find(({ range }) => {
+      const normalizedRange = range.toLowerCase()
+      return normalizedLanguage === normalizedRange
+        || normalizedLanguage.startsWith(`${normalizedRange}-`)
+    })
+    if (alias) return alias.language
+
+    const [primaryLanguage] = canonicalLanguage.split("-")
+    const primaryCatalog = languageDefinitions.find(({ id }) => id === primaryLanguage)
+    if (primaryCatalog) return primaryCatalog.id
+
     return "en"  // Default to English.
   }
   
@@ -158,7 +137,12 @@ export class I18n {
   }
   
   t(key: string, params?: Record<string, string>): string {
-    return translateFromCatalogs(LanguageCatalogs[this.currentLanguage], en, key, params)
+    const fallbackLanguage = languageFallbacks[this.currentLanguage]
+    return translateFromCatalogChain([
+      LanguageCatalogs[this.currentLanguage],
+      ...(fallbackLanguage ? [LanguageCatalogs[fallbackLanguage]] : []),
+      en,
+    ], key, params)
   }
 }
 

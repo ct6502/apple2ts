@@ -34,6 +34,7 @@ export const stageCatalogUpdate = ({input, source}) => {
 }
 
 export const updateCatalogs = ({
+  catalogInputs = {},
   catalogDirectory,
   locales,
   source,
@@ -53,7 +54,7 @@ export const updateCatalogs = ({
 
   const updated = []
   for (const locale of locales) {
-    const input = resolve(catalogDirectory, `${locale}.po`)
+    const input = catalogInputs[locale] ?? resolve(catalogDirectory, `${locale}.po`)
     let staged
     try {
       staged = stage({input, source})
