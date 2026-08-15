@@ -94,11 +94,13 @@ describe("Portuguese language identity", () => {
 })
 
 describe("generated language registry", () => {
-  test("preserves the current language menu", () => {
-    expect(AllLanguages).toEqual([
+  test("preserves the established language menu order when catalogs are added", () => {
+    const establishedLanguages = [
       "en", "zh-TW", "zh-CN", "es", "de", "fr", "it",
       "pt-BR", "ja", "ko", "nl", "sv", "ru",
-    ])
+    ]
+
+    expect(AllLanguages.slice(0, establishedLanguages.length)).toEqual(establishedLanguages)
     expect(LanguageNames["pt-BR"]).toBe("Português (Brasil)")
     expect(LanguageFlags["zh-TW"]).toBe("🇹🇼")
   })
