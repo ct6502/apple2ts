@@ -85,8 +85,10 @@ describe("catalog configuration", () => {
   it("covers every translator and generated catalog", () => {
     const configured = localeNames(catalogs)
     assert.deepEqual(
-      fileStems(catalogDirectory, ".po"),
-      configured.filter(locale => locale !== "en"),
+      globSync(resolve(catalogDirectory, "*.po")).sort(),
+      catalogs.filter(({sourceLanguage}) => !sourceLanguage)
+        .map(({input}) => input)
+        .sort(),
     )
     assert.deepEqual(
       fileStems(outputDirectory, ".ts"),
