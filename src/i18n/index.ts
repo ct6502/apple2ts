@@ -146,5 +146,17 @@ export class I18n {
   }
 }
 
+export const synchronizeDocumentLanguage = (
+  languageSource: Pick<I18n, "getLanguage" | "subscribe">,
+  root: Pick<HTMLElement, "lang"> = document.documentElement,
+) => {
+  const updateLanguage = (language: Language) => {
+    root.lang = language
+  }
+
+  updateLanguage(languageSource.getLanguage())
+  return languageSource.subscribe(updateLanguage)
+}
+
 export const i18n = new I18n()
 export const t = i18n.t.bind(i18n)

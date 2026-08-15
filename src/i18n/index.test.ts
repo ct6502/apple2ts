@@ -3,6 +3,7 @@ import {
   I18n,
   LanguageFlags,
   LanguageNames,
+  synchronizeDocumentLanguage,
   translateFromCatalogs,
 } from "./index"
 
@@ -111,5 +112,22 @@ describe("generated language registry", () => {
     const i18n = new I18n(createStorage(null), "not_a_locale")
 
     expect(i18n.getLanguage()).toBe("en")
+  })
+})
+
+describe("document language", () => {
+  test("stays synchronized with the selected locale", () => {
+    const i18n = new I18n(createStorage("pt-BR"), "en-US")
+    const root = {lang: ""}
+    const unsubscribe = synchronizeDocumentLanguage(i18n, root)
+
+    expect(root.lang).toBe("pt-BR")
+
+    i18n.setLanguage("fr")
+    expect(root.lang).toBe("fr")
+
+    unsubscribe()
+    i18n.setLanguage("de")
+    expect(root.lang).toBe("fr")
   })
 })
