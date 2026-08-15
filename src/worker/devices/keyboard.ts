@@ -50,8 +50,8 @@ export const clearKeyStrobe = () => {
 
 export const apple2KeyRelease = () => {
   // Here, the key has been released and we clear the AKD flag.
-  const keyvalue = memGetC000(0xC000) & 0b01111111
-  memSetC000(0xC000, keyvalue, 32)
+  const keyvalue = memGetC000(0xC010) & 0b01111111
+  memSetC000(0xC010, keyvalue, 16)
 }
 
 // Make sure that key presses get processed in a timely manner,

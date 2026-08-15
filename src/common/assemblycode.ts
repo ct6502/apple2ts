@@ -1,3 +1,4 @@
+// Nested loop
 export const code = `
         ORG   $300
 OVER    LDA   #$00
@@ -11,6 +12,42 @@ LOOPY   INY
         BNE   LOOPA  ; do inner X loop again, 256 times
         JMP   OVER   ; do outer loop forever
         RTS
+`
+
+// 300: A9 FF 85 06 85 07 85 08 E6 06 D0 06 E6 07 D0 02 E6 08 2C 00 C0 10 F1 2C 10 C0 A9 00 85 24 A5 08 20 DA FD A5 07 20 DA FD A5 06 20 DA FD 4C 00 03
+export const codeCountKeyPressDelay = `
+; ------------------------------------------------------------
+; Keyboard counter demo for Apple II
+; Counts keys pressed during a 1-second interval and prints them.
+; ------------------------------------------------------------
+KEYBD    = $C000      ; keyboard data latch
+KBDSTRB  = $C010      ; keyboard strobe: reading any address here clears latch
+PRBYTE   = $FDDA
+HCUR     = $24        ; horizontal cursor position
+        org $300
+start:
+        lda #$ff
+        sta $06
+        sta $07
+        sta $08
+nokey   inc $06
+        bne cont
+        inc $07
+        bne cont
+        inc $08
+cont    bit KEYBD
+        bpl nokey
+; A key is waiting. Read the key to acknowledge it, then clear the strobe.
+        bit KBDSTRB
+        lda #$00
+        sta HCUR
+        lda $08
+        jsr PRBYTE
+        lda $07
+        jsr PRBYTE
+        lda $06
+        jsr PRBYTE
+        jmp start
 `
 
 export const codeMotor = `
