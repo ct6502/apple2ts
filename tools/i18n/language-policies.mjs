@@ -21,6 +21,7 @@ export const languagePolicies = {
   nl: {name: "Nederlands", flag: "🇳🇱", order: 10},
   sv: {name: "Svenska", flag: "🇸🇪", order: 11},
   ru: {name: "Русский", flag: "🇷🇺", order: 12},
+  "en-x-pirate": {name: "Pirate", flag: "🏴‍☠️", order: 13},
 }
 
 export const legacyLanguageAliases = {
