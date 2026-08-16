@@ -217,7 +217,10 @@ export const handleInputParams = (paramString = "") => {
       // Add a newline so running a program from Total Replay works.
       // This may need to be revisited in the future if someone complains
       // about the additional newline.
-      const cmd = text + "\n"
+      // https://github.com/ct6502/apple2ts/issues/197
+      // Do not add the newline if we are sending a non-ASCII character (like ESC)
+      const nonASCIIchar = text.length === 1 && text.charCodeAt(0) < 32
+      const cmd = text + (nonASCIIchar ? "" : "\n")
       const waitForBoot = setInterval(() => {
         // Wait a bit to give the emulator time to start and boot any disks.
         const cycleCount = handleGetState6502().cycleCount
