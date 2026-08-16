@@ -13,225 +13,181 @@ msgstr ""
 "PO-Revision-Date: 2026-08-15 04:24+0000\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
-#, fuzzy
 msgctxt "controls.boot"
 msgid "Boot"
 msgstr "Set Sail"
 
-#, fuzzy
 msgctxt "controls.reset"
 msgid "Reset"
-msgstr "Reset Ship"
+msgstr "Walk the Reset Plank"
 
-#, fuzzy
 msgctxt "controls.copyScreen"
 msgid "Copy Screen"
-msgstr "Copy Screen"
+msgstr "Capture th' View"
 
-#, fuzzy
 msgctxt "controls.copyText"
 msgid "Copy Text"
-msgstr "Copy Text"
+msgstr "Plunder th' Text"
 
-#, fuzzy
 msgctxt "controls.pasteText"
 msgid "Paste Text"
-msgstr "Paste Text"
+msgstr "Stow th' Text"
 
-#, fuzzy
 msgctxt "controls.saveState"
 msgid "Save State"
 msgstr "Stash State"
 
-#, fuzzy
 msgctxt "controls.restoreState"
 msgid "Restore State"
-msgstr "Restore State"
+msgstr "Restore th' Stash"
 
-#, fuzzy
 msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
-msgstr "Toggle Sound"
+msgstr "Toggle th' Squawkin'"
 
-#, fuzzy
 msgctxt "controls.retrySound"
 msgid "Sound unavailable. Retry sound."
-msgstr "Sound be unavailable. Try again."
+msgstr "Squawkin' be unavailable, matey. Give 'er another go."
 
-#, fuzzy
 msgctxt "controls.settings"
 msgid "Settings"
 msgstr "Ship's Settings"
 
-#, fuzzy
 msgctxt "controls.debugPanel"
 msgid "Debug Panel"
 msgstr "Debuggin' Deck"
 
-#, fuzzy
 msgctxt "controls.reportIssue"
 msgid "Report an Issue"
-msgstr "Report Trouble"
+msgstr "Report Scurvy Trouble"
 
-#, fuzzy
 msgctxt "config.speed"
 msgid "Emulator Speed"
-msgstr "Emulator Speed"
+msgstr "Ship's Speed"
 
-#, fuzzy
 msgctxt "config.display"
 msgid "Display Settings"
 msgstr "Display Rigging"
 
-#, fuzzy
 msgctxt "config.theme"
 msgid "Theme"
-msgstr "Theme"
+msgstr "Ship's Colors"
 
-#, fuzzy
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "Reset All Rigging"
 
-#, fuzzy
 msgctxt "config.capsLock"
 msgid "Caps Lock"
-msgstr "Caps Lock"
+msgstr "SHOUTIN' LOCK"
 
-#, fuzzy
 msgctxt "config.useOpenApple"
 msgid "Use {{modKey}} key for Open Apple"
 msgstr "Use {{modKey}} key fer Open Apple"
 
-#, fuzzy
 msgctxt "config.useShortcuts"
 msgid "Use {{modKey}} key for Keyboard Shortcuts"
 msgstr "Use {{modKey}} key fer Keyboard Shortcuts"
 
-#, fuzzy
 msgctxt "config.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
-msgstr "Use Arrow Keys as Joystick"
+msgstr "Use Arrow Keys fer Steerin' Stick"
 
-#, fuzzy
 msgctxt "config.scanlines"
 msgid "CRT Scanlines"
-msgstr "CRT Scanlines"
+msgstr "Ghostly Scan Lines"
 
-#, fuzzy
 msgctxt "config.ghosting"
 msgid "Phosphor Ghosting"
-msgstr "Phosphor Ghosting"
+msgstr "Phantom Glow"
 
-#, fuzzy
 msgctxt "config.crtDistortion"
 msgid "CRT Distortion"
-msgstr "CRT Distortion"
+msgstr "Curvy Glass"
 
-#, fuzzy
 msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "Joystick Rigging"
 
-#, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "Machine Rigging"
 
-#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr "Apple II+"
+msgstr "Apple II+ (Ol' Reliable)"
 
-#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
 msgstr "Apple IIe (unenhanced)"
 
-#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
 msgstr "Apple IIe (enhanced)"
 
-#, fuzzy
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
-msgstr "64 KB (AUX)"
+msgstr "64 KB (Extra Cargo Hold)"
 
-#, fuzzy
 msgctxt "machine.ram.512kb"
 msgid "512 KB"
-msgstr "512 KB"
+msgstr "512 KB (Mighty Hold)"
 
-#, fuzzy
 msgctxt "machine.ram.1024kb"
 msgid "1024 KB"
-msgstr "1024 KB"
+msgstr "1024 KB (Big Hold)"
 
-#, fuzzy
 msgctxt "machine.ram.4mb"
 msgid "4 MB"
-msgstr "4 MB"
+msgstr "4 MB (Treasure Trove)"
 
-#, fuzzy
 msgctxt "machine.ram.8mb"
 msgid "8 MB"
-msgstr "8 MB"
+msgstr "8 MB (Captain's Hold)"
 
-#, fuzzy
 msgctxt "speed.snail"
 msgid "Snail Speed (0.1 MHz)"
-msgstr "Snail Speed (0.1 MHz)"
+msgstr "Barnacle Speed (0.1 MHz)"
 
-#, fuzzy
 msgctxt "speed.slow"
 msgid "Slow Speed (0.5 MHz)"
-msgstr "Slow Speed (0.5 MHz)"
+msgstr "Turtle Speed (0.5 MHz)"
 
-#, fuzzy
 msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
-msgstr "Normal Speed (1 MHz)"
+msgstr "Sailin' Speed (1 MHz)"
 
-#, fuzzy
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr "2 MHz"
+msgstr "Fair Wind (2 MHz)"
 
-#, fuzzy
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr "3 MHz"
+msgstr "Strong Gale (3 MHz)"
 
-#, fuzzy
 msgctxt "speed.fast"
 msgid "Fast Speed (4 MHz)"
-msgstr "Fast Speed (4 MHz)"
+msgstr "Full Sail (4 MHz)"
 
-#, fuzzy
 msgctxt "speed.warp"
 msgid "Ludicrous/Warp Speed"
-msgstr "Ludicrous/Warp Speed"
+msgstr "Kraken Speed"
 
-#, fuzzy
 msgctxt "colors.color"
 msgid "Color"
-msgstr "Color"
+msgstr "Full Color"
 
-#, fuzzy
 msgctxt "colors.nofringe"
 msgid "Color (no fringe)"
-msgstr "Color (no fringe)"
+msgstr "Color (No Bleedin')"
 
-#, fuzzy
 msgctxt "colors.green"
 msgid "Green"
-msgstr "Green"
+msgstr "Seaweed Green"
 
-#, fuzzy
 msgctxt "colors.amber"
 msgid "Amber"
-msgstr "Amber"
+msgstr "Treasure Amber"
 
 #, fuzzy
 msgctxt "colors.white"
@@ -243,142 +199,115 @@ msgctxt "colors.inverse"
 msgid "Black and White (inverse)"
 msgstr "Black an' White (inverse)"
 
-#, fuzzy
 msgctxt "themes.classic"
 msgid "Classic"
-msgstr "Classic"
+msgstr "Olde Timey"
 
-#, fuzzy
 msgctxt "themes.dark"
 msgid "Dark"
-msgstr "Dark"
+msgstr "Dead of Night"
 
-#, fuzzy
 msgctxt "themes.minimal"
 msgid "Minimal"
-msgstr "Minimal"
+msgstr "Bare Bones"
 
-#, fuzzy
 msgctxt "debug.helpPanel"
 msgid "Show help panel"
-msgstr "Show help panel"
+msgstr "Show th' Ship's Manual"
 
 #, fuzzy
 msgctxt "debug.debugPanel"
 msgid "Show debugging panel"
 msgstr "Show debuggin' deck"
 
-#, fuzzy
 msgctxt "debug.expectinPanel"
 msgid "Show Apple exPectin panel"
 msgstr "Show Apple exPectin panel"
 
-#, fuzzy
 msgctxt "debug.helpTab"
 msgid "Help"
 msgstr "Ship's Help"
 
-#, fuzzy
 msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "Debugging"
 
-#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
 msgstr "Applesoft BASIC"
 
-#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
 msgstr "Apple exPectin"
 
-#, fuzzy
 msgctxt "debug.breakpoints"
 msgid "Breakpoints"
-msgstr "Breakpoints"
+msgstr "Anchor Points"
 
-#, fuzzy
 msgctxt "debug.memory"
 msgid "Memory"
-msgstr "Memory"
+msgstr "Treasure Map"
 
-#, fuzzy
 msgctxt "debug.stack"
 msgid "Stack"
-msgstr "Stack"
+msgstr "Th' Stack"
 
-#, fuzzy
 msgctxt "debug.state"
 msgid "CPU State"
-msgstr "CPU State"
+msgstr "Brain Box State"
 
-#, fuzzy
 msgctxt "debug.registers"
 msgid "Registers"
-msgstr "Registers"
+msgstr "Ship's Counters"
 
-#, fuzzy
 msgctxt "debug.flags"
 msgid "Flags"
-msgstr "Flags"
+msgstr "Signal Flags"
 
-#, fuzzy
 msgctxt "debug.step"
 msgid "Step"
-msgstr "Step"
+msgstr "One Step"
 
-#, fuzzy
 msgctxt "debug.stepOver"
 msgid "Step Over"
-msgstr "Step Over"
+msgstr "Hop Over"
 
-#, fuzzy
 msgctxt "debug.stepInto"
 msgid "Step Into"
-msgstr "Step Into"
+msgstr "Dive Into"
 
-#, fuzzy
 msgctxt "debug.stepOut"
 msgid "Step Out"
-msgstr "Step Out"
+msgstr "Surface"
 
-#, fuzzy
 msgctxt "debug.resume"
 msgid "Resume"
 msgstr "Carry On"
 
-#, fuzzy
 msgctxt "debug.pause"
 msgid "Pause"
-msgstr "Pause"
+msgstr "Drop Anchor"
 
-#, fuzzy
 msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
-msgstr "Load Symbol Table"
+msgstr "Load th' Chart"
 
-#, fuzzy
 msgctxt "debug.agentTab"
 msgid "Agent"
-msgstr "Agent"
+msgstr "First Mate"
 
-#, fuzzy
 msgctxt "debug.disassembly"
 msgid "Disassembly"
-msgstr "Disassembly"
+msgstr "Code Map"
 
-#, fuzzy
 msgctxt "debug.breakOnce"
 msgid "Break once then remove"
-msgstr "Break once then remove"
+msgstr "Stop once then cast it off"
 
-#, fuzzy
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number: "
 msgstr "BASIC Line Number: "
 
-#, fuzzy
 msgctxt "debug.any"
 msgid "Any"
 msgstr "Any"
@@ -418,30 +347,25 @@ msgctxt "disassembly.keyboard.anyKeyDownSet"
 msgid "Any-key-down flag: SET (MSB = 1)"
 msgstr "Any-key-down flag: SET (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.clearStrobe"
 msgid "Clear keyboard strobe"
 msgstr "Clear keyboard strobe"
 
-#, fuzzy
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
 msgstr "Toggle cassette output"
 
-#, fuzzy
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
 msgstr "Sample cassette input"
 
-#, fuzzy
 msgctxt "disassembly.cassette.sampleInputMirror"
 msgid "Sample cassette-input mirror"
 msgstr "Sample cassette-input mirror"
 
-#, fuzzy
 msgctxt "disassembly.speaker.toggleOutput"
 msgid "Toggle speaker output"
-msgstr "Toggle speaker output"
+msgstr "Toggle th' squawker"
 
 #, fuzzy
 msgctxt "disassembly.notice.emulatorIdentifier"
@@ -774,15 +698,13 @@ msgctxt "disassembly.display.setWidth"
 msgid "Set display width to {{columns}} columns"
 msgstr "Set display width to {{columns}} columns"
 
-#, fuzzy
 msgctxt "disassembly.annunciator.disable"
 msgid "Disable annunciator {{number}}"
-msgstr "Disable annunciator {{number}}"
+msgstr "Silence bell {{number}}"
 
-#, fuzzy
 msgctxt "disassembly.annunciator.enable"
 msgid "Enable annunciator {{number}}"
-msgstr "Enable annunciator {{number}}"
+msgstr "Ring bell {{number}}"
 
 #, fuzzy
 msgctxt "disassembly.transWarp.configuredMaximum"
@@ -1107,15 +1029,13 @@ msgctxt "tour.last"
 msgid "Finish"
 msgstr "Make Port"
 
-#, fuzzy
 msgctxt "tour.next"
 msgid "Next"
-msgstr "Next"
+msgstr "Ahead"
 
-#, fuzzy
 msgctxt "tour.nextLabelWithProgress"
 msgid "Next (Step {step} of {steps})"
-msgstr "Next (Step {step} of {steps})"
+msgstr "Ahead (Step {step} o' {steps})"
 
 #, fuzzy
 msgctxt "tour.skip"
@@ -1142,80 +1062,65 @@ msgctxt "tour.debugLabel"
 msgid "Guided Tour: Debug"
 msgstr "Captain's Tour: Debuggin'"
 
-#, fuzzy
 msgctxt "disk.drive1"
 msgid "Drive 1"
-msgstr "Drive 1"
+msgstr "Port Drive"
 
-#, fuzzy
 msgctxt "disk.drive2"
 msgid "Drive 2"
-msgstr "Drive 2"
+msgstr "Starboard Drive"
 
-#, fuzzy
 msgctxt "disk.hardDisk"
 msgid "Hard Disk"
-msgstr "Hard Disk"
+msgstr "Ironclad Disk"
 
-#, fuzzy
 msgctxt "disk.eject"
 msgid "Eject Disk"
 msgstr "Cast Out Disk"
 
-#, fuzzy
 msgctxt "disk.insert"
 msgid "Insert Disk"
 msgstr "Load Disk Aboard"
 
-#, fuzzy
 msgctxt "disk.writeProtected"
 msgid "Write Protected"
-msgstr "Write Protected"
+msgstr "Under Lock"
 
-#, fuzzy
 msgctxt "disk.readWrite"
 msgid "Read/Write"
-msgstr "Read/Write"
+msgstr "Open Fer Business"
 
-#, fuzzy
 msgctxt "disk.empty"
 msgid "Empty"
-msgstr "Empty"
+msgstr "Empty Hold"
 
-#, fuzzy
 msgctxt "disk.loading"
 msgid "Loading..."
 msgstr "Loadin'..."
 
-#, fuzzy
 msgctxt "disk.selectDisk"
 msgid "Select Disk Image"
 msgstr "Choose a Disk Chart"
 
-#, fuzzy
 msgctxt "disk.browse"
 msgid "Browse"
-msgstr "Survey"
+msgstr "Search th' Seas"
 
-#, fuzzy
 msgctxt "disk.internetArchive"
 msgid "Internet Archive"
-msgstr "Internet Archive"
+msgstr "Davy Jones' Archive"
 
-#, fuzzy
 msgctxt "disk.totalReplay"
 msgid "Total Replay"
-msgstr "Total Replay"
+msgstr "Total Replay (Best Games)"
 
-#, fuzzy
 msgctxt "disk.newReleases"
 msgid "New Releases"
-msgstr "New Booty"
+msgstr "Fresh Plunder"
 
-#, fuzzy
 msgctxt "disk.writeProtectDisk"
 msgid "Write Protect Disk"
-msgstr "Write Protect Disk"
+msgstr "Lock th' Disk"
 
 #, fuzzy
 msgctxt "disk.saveDiskToDevice"
@@ -1232,180 +1137,145 @@ msgctxt "disk.removeDiskFromCollection"
 msgid "Remove Disk from Collection"
 msgstr "Cast Disk Out of Hoard"
 
-#, fuzzy
 msgctxt "disk.downloadDisk"
 msgid "Download Disk"
-msgstr "Download Disk"
+msgstr "Plunder th' Disk"
 
-#, fuzzy
 msgctxt "disk.downloadAndEjectDisk"
 msgid "Download and Eject Disk"
-msgstr "Download an' Eject Disk"
+msgstr "Plunder an' Eject Disk"
 
-#, fuzzy
 msgctxt "disk.ejectDisk"
 msgid "Eject Disk"
 msgstr "Cast Out Disk"
 
-#, fuzzy
 msgctxt "disk.saveDiskToOneDrive"
 msgid "Save Disk to OneDrive"
-msgstr "Save Disk to OneDrive"
+msgstr "Stash Disk in OneDrive"
 
-#, fuzzy
 msgctxt "disk.saveDiskToGoogleDrive"
 msgid "Save Disk to Google Drive"
-msgstr "Save Disk to Google Drive"
+msgstr "Stash Disk in Google Drive"
 
-#, fuzzy
 msgctxt "disk.loadDisk"
 msgid "Load Disk"
 msgstr "Load Disk Aboard"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDevice"
 msgid "Load Disk"
-msgstr "Load Disk Aboard"
+msgstr "Load Disk from Yer Device"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDeviceReadOnly"
 msgid "Load Disk from Device (Read-Only)"
-msgstr "Load Disk from Device (Read-Only)"
+msgstr "Load Disk from Device (Locked Down)"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDeviceReadWrite"
 msgid "Load Disk from Device (Read/Write)"
-msgstr "Load Disk from Device (Read/Write)"
+msgstr "Load Disk from Device (Editable)"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
-msgstr "Load Disk from Internet Archive"
+msgstr "Load from Davy Jones' Archive"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
-msgstr "Load Disk from DemoZoo"
+msgstr "Load from DemoZoo"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromOneDrive"
 msgid "Load Disk from OneDrive"
-msgstr "Load Disk from OneDrive"
+msgstr "Load from OneDrive"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromGoogleDrive"
 msgid "Load Disk from Google Drive"
-msgstr "Load Disk from Google Drive"
+msgstr "Load from Google Drive"
 
-#, fuzzy
 msgctxt "disk.syncEveryMinute"
 msgid "Sync Every Minute"
 msgstr "Sync Every Minute"
 
-#, fuzzy
 msgctxt "disk.syncEvery5Minutes"
 msgid "Sync Every 5 Minutes"
 msgstr "Sync Every 5 Minutes"
 
-#, fuzzy
 msgctxt "disk.pauseSyncing"
 msgid "Pause Syncing"
 msgstr "Pause Syncing"
 
-#, fuzzy
 msgctxt "disk.syncNow"
 msgid "Sync Now"
-msgstr "Sync Now"
+msgstr "Sync Right Now"
 
-#, fuzzy
 msgctxt "disk.modified"
 msgid "modified"
-msgstr "modified"
+msgstr "changed"
 
-#, fuzzy
 msgctxt "disk.synced"
 msgid "Synced"
 msgstr "Synced"
 
-#, fuzzy
 msgctxt "disk.diskImage"
 msgid "Disk Image"
 msgstr "Disk Image"
 
-#, fuzzy
 msgctxt "disk.diskDrivesAndDevices"
 msgid "disk drives and devices"
 msgstr "disk drives an' devices"
 
-#, fuzzy
 msgctxt "disk.syncedAt"
 msgid "Synced {{date}}"
 msgstr "Synced {{date}}"
 
-#, fuzzy
 msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image"
-msgstr "Click to load disk image"
+msgstr "Click to load disk aboard"
 
-#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
-msgstr "Downloadin' disk"
+msgstr "Plunderin' disk"
 
-#, fuzzy
 msgctxt "disk.clickToRemoveFromDiskCollection"
 msgid "Click to remove from disk collection"
 msgstr "Click to remove from disk hoard"
 
-#, fuzzy
 msgctxt "disk.clickToAddToDiskCollection"
 msgid "Click to add to disk collection"
 msgstr "Click to add to disk hoard"
 
-#, fuzzy
 msgctxt "disk.byCreator"
 msgid "by {{creator}}"
 msgstr "by {{creator}}"
 
-#, fuzzy
 msgctxt "disk.clickToViewDetails"
 msgid "Click to view details"
-msgstr "Click to view details"
+msgstr "Click fer more info"
 
-#, fuzzy
 msgctxt "help.title"
 msgid "Apple2TS"
 msgstr "Apple2TS"
 
-#, fuzzy
 msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr "TypeScript Apple IIe Emulator"
 
-#, fuzzy
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
-msgstr "Keyboard Shortcuts"
+msgstr "Key Commands"
 
-#, fuzzy
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "Disk images:"
 
-#, fuzzy
 msgctxt "help.urlParameters"
 msgid "Optional URL Parameters"
 msgstr "Optional URL Parameters"
 
-#, fuzzy
 msgctxt "help.examples"
 msgid "Examples"
 msgstr "Examples"
 
-#, fuzzy
 msgctxt "help.mobileInstructions"
 msgid "Mobile platforms:"
-msgstr "Mobile platforms:"
+msgstr "Fer mobile contraptions:"
 
 #, fuzzy
 msgctxt "help.tapScreen"
@@ -1526,7 +1396,6 @@ msgstr ""
 "apple2ts/raw/refs/heads/main/public/disks/snoggle_0x7FD.bin\" "
 "target=\"_blank\">Binary File wit' Hex Address</a>"
 
-#, fuzzy
 msgctxt "help.links"
 msgid "Links"
 msgstr "Links"
@@ -1546,550 +1415,443 @@ msgstr ""
 "<a href=\"https://poppyworks.itch.io/silver\" target=\"_blank\">Silver CJK "
 "Pixel Font</a>"
 
-#, fuzzy
 msgctxt "messages.loading"
 msgid "Loading..."
 msgstr "Loadin'..."
 
-#, fuzzy
 msgctxt "messages.error"
 msgid "Error"
-msgstr "Trouble"
+msgstr "Arrr, Trouble!"
 
-#, fuzzy
 msgctxt "messages.success"
 msgid "Success"
-msgstr "Success"
+msgstr "Avast! Success!"
 
-#, fuzzy
 msgctxt "messages.confirm"
 msgid "Confirm"
 msgstr "Confirm Orders"
 
-#, fuzzy
 msgctxt "messages.cancel"
 msgid "Cancel"
 msgstr "Belay"
 
-#, fuzzy
 msgctxt "messages.ok"
 msgid "OK"
 msgstr "Aye"
 
-#, fuzzy
 msgctxt "messages.on"
 msgid "on"
-msgstr "on"
+msgstr "aye"
 
-#, fuzzy
 msgctxt "messages.off"
 msgid "off"
-msgstr "off"
+msgstr "nay"
 
-#, fuzzy
 msgctxt "messages.confirmTheme"
 msgid "Reload the emulator and apply this theme now?"
-msgstr "Reload the emulator an' apply this theme now, matey?"
+msgstr "Reload th' emulator an' apply this theme now, matey?"
 
-#, fuzzy
 msgctxt "messages.confirmReset"
 msgid "Reset all settings to default values?"
-msgstr "Reset all rigging to default values, matey?"
+msgstr "Reset all rigging to default, matey?"
 
-#, fuzzy
 msgctxt "messages.fileNotFound"
 msgid "File not found"
-msgstr "File lost at sea"
+msgstr "Lost at sea, matey!"
 
-#, fuzzy
 msgctxt "messages.invalidFile"
 msgid "Invalid file format"
-msgstr "Invalid file format"
+msgstr "Cursed file format!"
 
-#, fuzzy
 msgctxt "messages.diskInserted"
 msgid "Disk inserted"
-msgstr "Disk inserted"
+msgstr "Disk loaded aboard!"
 
-#, fuzzy
 msgctxt "messages.diskEjected"
 msgid "Disk ejected"
-msgstr "Disk ejected"
+msgstr "Disk cast overboard!"
 
-#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr "Caps Lock"
+msgstr "SHOUTIN' LOCK"
 
-#, fuzzy
 msgctxt "keyboard.shift"
 msgid "Shift"
 msgstr "Shift"
 
-#, fuzzy
 msgctxt "keyboard.ctrl"
 msgid "Ctrl"
 msgstr "Ctrl"
 
-#, fuzzy
 msgctxt "keyboard.alt"
 msgid "Alt"
 msgstr "Alt"
 
-#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
 msgstr "Open Apple"
 
-#, fuzzy
 msgctxt "keyboard.closedApple"
 msgid "Closed Apple"
 msgstr "Closed Apple"
 
-#, fuzzy
 msgctxt "keyboard.escape"
 msgid "Escape"
 msgstr "Escape"
 
-#, fuzzy
 msgctxt "keyboard.tab"
 msgid "Tab"
 msgstr "Tab"
 
-#, fuzzy
 msgctxt "keyboard.enter"
 msgid "Enter"
 msgstr "Enter"
 
-#, fuzzy
 msgctxt "keyboard.space"
 msgid "Space"
 msgstr "Space"
 
-#, fuzzy
 msgctxt "keyboard.backspace"
 msgid "Backspace"
 msgstr "Backspace"
 
-#, fuzzy
 msgctxt "keyboard.delete"
 msgid "Delete"
-msgstr "Scuttle"
+msgstr "Walk th' Plank"
 
-#, fuzzy
 msgctxt "keyboard.return"
 msgid "Return"
 msgstr "Return"
 
-#, fuzzy
 msgctxt "audio.speaker"
 msgid "Speaker"
-msgstr "Speaker"
+msgstr "Squawker"
 
-#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockingboard"
+msgstr "Music Box"
 
-#, fuzzy
 msgctxt "audio.midi"
 msgid "MIDI"
 msgstr "MIDI"
 
-#, fuzzy
 msgctxt "audio.configuration"
 msgid "Audio Configuration"
 msgstr "Sound Rigging"
 
-#, fuzzy
 msgctxt "audio.volume"
 msgid "Volume"
-msgstr "Volume"
+msgstr "Loudness"
 
-#, fuzzy
 msgctxt "audio.mute"
 msgid "Mute"
-msgstr "Mute"
+msgstr "Silence"
 
-#, fuzzy
 msgctxt "audio.waveform"
 msgid "Waveform"
-msgstr "Waveform"
+msgstr "Wave Shape"
 
-#, fuzzy
 msgctxt "print.printer"
 msgid "Printer"
-msgstr "Printer"
+msgstr "Printin' Press"
 
-#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
 msgstr "ImageWriter"
 
-#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
 msgstr "ImageWriter II (Slot 1)"
 
-#, fuzzy
 msgctxt "print.print"
 msgid "Print"
-msgstr "Print"
+msgstr "Print It"
 
-#, fuzzy
 msgctxt "print.clear"
 msgid "Clear"
 msgstr "Clear Deck"
 
-#, fuzzy
 msgctxt "print.save"
 msgid "Save Output"
-msgstr "Save Output"
+msgstr "Save th' Pages"
 
-#, fuzzy
 msgctxt "print.dumpScreen"
 msgid "Dump Current Screen to Printer"
-msgstr "Dump Current Screen to Printer"
+msgstr "Print What's On Screen"
 
-#, fuzzy
 msgctxt "print.dumpScreenInverse"
 msgid "Dump Current Screen (Inverse)"
-msgstr "Dump Current Screen (Inverse)"
+msgstr "Print Screen (Backwards)"
 
-#, fuzzy
 msgctxt "print.sendToPrinter"
 msgid "Send to Printer"
-msgstr "Send to Printer"
+msgstr "Send to th' Press"
 
-#, fuzzy
 msgctxt "print.tearOff"
 msgid "Tear off Page and Reset"
 msgstr "Tear off Page an' Reset"
 
-#, fuzzy
 msgctxt "print.printedPage"
 msgid "Printed page"
 msgstr "Printed page"
 
-#, fuzzy
 msgctxt "print.printerConfig"
 msgid "Printer Configuration"
 msgstr "Printer Rigging"
 
-#, fuzzy
 msgctxt "print.pageLength"
 msgid "Page Length"
 msgstr "Page Length"
 
-#, fuzzy
 msgctxt "print.pageLengthLetter"
 msgid "11 inch (Letter)"
 msgstr "11 inch (Letter)"
 
-#, fuzzy
 msgctxt "print.pageLengthA4"
 msgid "11.7 inch (A4)"
 msgstr "11.7 inch (A4)"
 
-#, fuzzy
 msgctxt "print.pageLengthTwelve"
 msgid "12 inch"
 msgstr "12 inch"
 
-#, fuzzy
 msgctxt "device.machineConfiguration"
 msgid "Machine Configuration"
 msgstr "Machine Rigging"
 
-#, fuzzy
 msgctxt "device.midiDeviceSelect"
 msgid "MIDI Device Select"
 msgstr "MIDI Device Select"
 
-#, fuzzy
 msgctxt "device.serialPortSelect"
 msgid "Serial Port Select"
 msgstr "Serial Port Select"
 
-#, fuzzy
 msgctxt "device.mockingboardWaveform"
 msgid "Mockingboard wave form"
-msgstr "Mockingboard wave form"
+msgstr "Music Box wave form"
 
-#, fuzzy
 msgctxt "collection.showApple2TSCollection"
 msgid "Show Apple2TS Collection"
 msgstr "Show Apple2TS Hoard"
 
-#, fuzzy
 msgctxt "collection.showNewReleases"
 msgid "Show new releases"
-msgstr "Show new releases"
+msgstr "Show fresh plunder"
 
-#, fuzzy
 msgctxt "collection.showFavorites"
 msgid "Show favorites"
 msgstr "Show favorites"
 
-#, fuzzy
 msgctxt "collection.chooseDiskImage"
 msgid "Choose disk image"
-msgstr "Choose disk image"
+msgstr "Disk Hoard"
 
-#, fuzzy
 msgctxt "collection.diskCollection"
 msgid "Disk collection"
 msgstr "Disk hoard"
 
-#, fuzzy
 msgctxt "collection.clickToShowDetails"
 msgid "Click to show details for"
 msgstr "Click to show details fer"
 
-#, fuzzy
 msgctxt "collection.clickToLoadDisk"
 msgid "Click to load disk"
-msgstr "Click to load disk"
+msgstr "Click to load disk aboard"
 
-#, fuzzy
 msgctxt "collection.diskIsNewRelease"
 msgid "Disk is a new release"
-msgstr "Disk is a new release"
+msgstr "Fresh treasure, this be!"
 
-#, fuzzy
 msgctxt "collection.diskIsApple2TSCollection"
 msgid "Disk is part of the Apple2TS collection"
 msgstr "Disk is part of the Apple2TS hoard"
 
-#, fuzzy
 msgctxt "collection.diskIsInternetArchive"
 msgid "Disk is part of the Internet Archive"
-msgstr "Disk is part of the Internet Archive"
+msgstr "Disk is from Davy Jones' Archive"
 
-#, fuzzy
 msgctxt "collection.diskIsDemoZoo"
 msgid "Disk is part of DemoZoo"
-msgstr "Disk is part of DemoZoo"
+msgstr "Disk is from DemoZoo"
 
-#, fuzzy
 msgctxt "collection.clickToRemoveFromCollection"
 msgid "Click to remove from disk collection"
 msgstr "Click to remove from disk hoard"
 
-#, fuzzy
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
 msgstr "Click to keep in disk hoard"
 
-#, fuzzy
 msgctxt "collection.clickToAddToCollection"
 msgid "Click to add to disk collection"
 msgstr "Click to add to disk hoard"
 
-#, fuzzy
 msgctxt "collection.diskIsSyncedVia"
 msgid "Disk is synced via"
-msgstr "Disk is synced via"
+msgstr "Disk synced via"
 
-#, fuzzy
 msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
 msgstr "Load Disk into Drive"
 
-#, fuzzy
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
-msgstr "auth required"
+msgstr "sign in required"
 
-#, fuzzy
 msgctxt "collection.signIn"
 msgid "Sign in"
-msgstr "Sign Aboard"
+msgstr "Come Aboard"
 
-#, fuzzy
 msgctxt "collection.exportDisksToHdv"
 msgid "Export disks to HDV"
 msgstr "Export disks to HDV"
 
-#, fuzzy
 msgctxt "collection.export"
 msgid "Export"
-msgstr "Export"
+msgstr "Ship Out"
 
-#, fuzzy
 msgctxt "collection.clickToRemoveFromSelected"
 msgid "Click to remove from selected disks"
 msgstr "Click to remove from selected disks"
 
-#, fuzzy
 msgctxt "collection.clickToAddToSelected"
 msgid "Click to add to selected disks"
 msgstr "Click to add to selected disks"
 
-#, fuzzy
 msgctxt "collection.reportExportIssue"
 msgid "Report an export issue"
-msgstr "Report an export issue"
+msgstr "Report trouble wit' export"
 
-#, fuzzy
 msgctxt "debugControls.goBackInTime"
 msgid "Go Back in Time"
-msgstr "Go Back in Time"
+msgstr "Turn Back th' Clock"
 
-#, fuzzy
 msgctxt "debugControls.takeSnapshot"
 msgid "Take a Snapshot"
-msgstr "Take a Snapshot"
+msgstr "Mark th' Moment"
 
-#, fuzzy
 msgctxt "debugControls.goForwardInTime"
 msgid "Go Forward in Time"
-msgstr "Go Forward in Time"
+msgstr "Move Ahead in Time"
 
 #, fuzzy
 msgctxt "debugControls.saveStateWithSnapshots"
 msgid "Save State with Snapshots"
 msgstr "Save State wit' Snapshots"
 
-#, fuzzy
 msgctxt "debugControls.resume"
 msgid "Resume"
-msgstr "Carry On"
+msgstr "Hoist Anchor"
 
-#, fuzzy
 msgctxt "debugControls.pause"
 msgid "Pause"
-msgstr "Pause"
+msgstr "Drop Anchor"
 
-#, fuzzy
 msgctxt "debugControls.hotReloadEnabled"
 msgid "Hot Reload Enabled"
 msgstr "Hot Reload Enabled"
 
-#, fuzzy
 msgctxt "debugControls.hotReloadDisabled"
 msgid "Hot Reload Disabled"
 msgstr "Hot Reload Disabled"
 
-#, fuzzy
 msgctxt "debugControls.trace"
 msgid "Trace"
-msgstr "Trace"
+msgstr "Follow th' Trail"
 
-#, fuzzy
 msgctxt "debugControls.tracing"
 msgid "Tracing"
-msgstr "Tracing"
+msgstr "Trackin'"
 
-#, fuzzy
 msgctxt "debugControls.downloadTraceLog"
 msgid "Download Trace Log"
-msgstr "Download Trace Log"
+msgstr "Download th' Log"
 
-#, fuzzy
 msgctxt "fullscreen.fullScreen"
 msgid "Full Screen"
-msgstr "Full Screen"
+msgstr "Crow's Nest View"
 
-#, fuzzy
 msgctxt "internetArchive.searchPlaceholder"
 msgid "Type the name of a software title or click one of the categories above"
-msgstr "Type the name of a software title or click one of the categories above"
+msgstr "Type th' name of a software title or click one o' th' categories above"
 
-#, fuzzy
 msgctxt "internetArchive.go"
 msgid "GO"
-msgstr "GO"
+msgstr "SAIL!"
 
-#, fuzzy
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr "Search DemoZoo (title, author)..."
+msgstr "Search DemoZoo (title, scallywag)..."
 
-#, fuzzy
 msgctxt "demoZoo.go"
 msgid "GO"
-msgstr "GO"
+msgstr "SAIL!"
 
-#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
-msgstr "All"
+msgstr "All Hands"
 
-#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
 msgstr "Demo"
 
-#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
 msgstr "Intro"
 
-#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
 msgstr "Cracktro"
 
-#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
 msgstr "Music"
 
-#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
-msgstr "Aft"
+msgstr "Astern"
 
-#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
-msgstr "Next"
+msgstr "Forward"
 
-#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
 msgstr "First page"
 
-#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
 msgstr "Last page"
 
-#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
 msgstr "Page number"
 
-#, fuzzy
 msgctxt "demoZoo.pageOf"
 msgid "Page {{page}} of {{pages}}"
-msgstr "Page {{page}} of {{pages}}"
+msgstr "Page {{page}} o' {{pages}}"
 
 #, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
 msgstr "No DemoZoo productions found, matey."
 
-#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
-msgstr "This production only has a YouTube video link available:"
+msgstr "This production only has a YouTube link:"
 
-#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
-msgstr "This production only has an external DemoZoo link available:"
+msgstr "This production only has an external DemoZoo link:"
 
-#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
-msgstr "Open in New Tab"
+msgstr "Open in New Porthole"
 
-#, fuzzy
 msgctxt "basic.newProgram"
 msgid "New Program"
-msgstr "New Program"
+msgstr "Fresh Code"
 
 #, fuzzy
 msgctxt "basic.newProgramWarning"
@@ -2100,70 +1862,57 @@ msgstr ""
 "This shall clear the current program. Ye shall lose any unsaved changes. Be "
 "ye sure, matey?"
 
-#, fuzzy
 msgctxt "basic.runFromBeginning"
 msgid "Run from Beginning"
-msgstr "Run from Beginning"
+msgstr "Run from th' Top"
 
-#, fuzzy
 msgctxt "basic.break"
 msgid "Break"
-msgstr "Break"
+msgstr "Stop!"
 
-#, fuzzy
 msgctxt "basic.continueRunning"
 msgid "Continue Running"
-msgstr "Continue Runnin'"
+msgstr "Keep Runnin'"
 
-#, fuzzy
 msgctxt "basic.stepProgram"
 msgid "Step Program"
-msgstr "Step Program"
+msgstr "Step Carefully"
 
-#, fuzzy
 msgctxt "basic.resumeOutput"
 msgid "Resume Output"
-msgstr "Resume Output"
+msgstr "Keep Talkin'"
 
-#, fuzzy
 msgctxt "basic.freezeOutput"
 msgid "Freeze Output"
-msgstr "Freeze Output"
+msgstr "Hush Now"
 
-#, fuzzy
 msgctxt "basic.importProgram"
 msgid "Import Program..."
-msgstr "Import Program..."
+msgstr "Load Code Aboard..."
 
-#, fuzzy
 msgctxt "basic.exportProgram"
 msgid "Export Program..."
-msgstr "Export Program..."
+msgstr "Save Code Ashore..."
 
-#, fuzzy
 msgctxt "basic.renumberProgram"
 msgid "Renumber Program"
-msgstr "Renumber Program"
+msgstr "Recount th' Lines"
 
-#, fuzzy
 msgctxt "basic.rebuildProgram"
 msgid "Rebuild Program from Memory"
-msgstr "Rebuild Program from Memory"
+msgstr "Rebuild from Memory"
 
-#, fuzzy
 msgctxt "basic.displaySettings"
 msgid "Display Settings"
-msgstr "Display Rigging"
+msgstr "Flying Colours"
 
-#, fuzzy
 msgctxt "basic.autoLineNumbering"
 msgid "Auto Line Numbering"
 msgstr "Auto Line Numbering"
 
-#, fuzzy
 msgctxt "basic.capitalizeKeywords"
 msgid "Capitalize Keywords"
-msgstr "Capitalize Keywords"
+msgstr "SHOUT Orders"
 
 #, fuzzy
 msgctxt "basic.rebuildWarning"
@@ -2174,442 +1923,357 @@ msgstr ""
 "This shall replace the current program wit' a version rebuilt from the Apple "
 "II memory. Ye shall lose any unsaved changes. Be ye sure, matey?"
 
-#, fuzzy
 msgctxt "basic.variable"
 msgid "Variable"
 msgstr "Variable"
 
-#, fuzzy
 msgctxt "basic.value"
 msgid "Value"
 msgstr "Value"
 
-#, fuzzy
 msgctxt "expectin.runScript"
 msgid "Run Script"
-msgstr "Run Script"
+msgstr "Run th' Script"
 
-#, fuzzy
 msgctxt "expectin.stopScript"
 msgid "Stop Script"
-msgstr "Stop Script"
+msgstr "Belay th' Script"
 
-#, fuzzy
 msgctxt "saveDisassembly.title"
 msgid "Save Disassembly"
-msgstr "Save Disassembly"
+msgstr "Save Code Map"
 
-#, fuzzy
 msgctxt "saveDisassembly.startAddress"
 msgid "Start address $"
 msgstr "Start address $"
 
-#, fuzzy
 msgctxt "saveDisassembly.endAddress"
 msgid "End address $"
 msgstr "End address $"
 
-#, fuzzy
 msgctxt "saveDisassembly.includeLabels"
 msgid "Include symbol labels"
 msgstr "Include symbol labels"
 
-#, fuzzy
 msgctxt "saveDisassembly.separatorLines"
 msgid "Separator lines after JMP, RTS"
 msgstr "Separator lines after JMP, RTS"
 
-#, fuzzy
 msgctxt "gamepad.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
-msgstr "Use Arrow Keys as Joystick"
+msgstr "Use Arrow Keys fer Steerin'"
 
-#, fuzzy
 msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Sirius Joyport Mode"
 
-#, fuzzy
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
 msgstr "Reverse Y-Axis fer Joystick"
 
-#, fuzzy
 msgctxt "traceSettings.title"
 msgid "Trace Settings"
 msgstr "Trace Rigging"
 
-#, fuzzy
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
-msgstr "Number of lines to keep:"
+msgstr "Number o' lines to keep:"
 
-#, fuzzy
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
 msgstr "Must be between 100 an' 100000"
 
-#, fuzzy
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
-msgstr "Find repeating lines an' collapse loops"
+msgstr "Find repeatin' lines an' collapse loops"
 
-#, fuzzy
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
-msgstr "Ignore register values when finding repeating lines"
+msgstr "Ignore register values when findin' repeatin' lines"
 
-#, fuzzy
 msgctxt "traceSettings.settings"
 msgid "Settings"
 msgstr "Ship's Settings"
 
-#, fuzzy
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
-msgstr "Hide Keyboard"
+msgstr "Hide th' Keys"
 
-#, fuzzy
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
-msgstr "Show Keyboard"
+msgstr "Show th' Keys"
 
-#, fuzzy
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
-msgstr "Link Builder"
+msgstr "Link Forger"
 
-#, fuzzy
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
-msgstr "Link Builder"
+msgstr "Link Forger"
 
-#, fuzzy
 msgctxt "linkBuilder.userInterface"
 msgid "User interface: "
-msgstr "User interface: "
+msgstr "Interface: "
 
-#, fuzzy
 msgctxt "linkBuilder.machine"
 msgid "Machine: "
 msgstr "Machine: "
 
-#, fuzzy
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode: "
-msgstr "Color mode: "
+msgstr "Color: "
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb): "
-msgstr "Size of RAM disk (kb): "
+msgstr "RAM disk size (kb): "
 
-#, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator: "
-msgstr "Speed of emulator: "
+msgstr "Ship's speed: "
 
-#, fuzzy
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme: "
-msgstr "User Interface Theme: "
+msgstr "Theme: "
 
-#, fuzzy
 msgctxt "linkBuilder.crtDistortion"
 msgid "CRT Distortion"
-msgstr "CRT Distortion"
+msgstr "Curvy Glass"
 
-#, fuzzy
 msgctxt "linkBuilder.crtGhosting"
 msgid "CRT Ghosting"
-msgstr "CRT Ghosting"
+msgstr "Phantom Glow"
 
-#, fuzzy
 msgctxt "linkBuilder.crtScanlines"
 msgid "CRT Scanlines"
-msgstr "CRT Scanlines"
+msgstr "Ghostly Scan Lines"
 
 #, fuzzy
 msgctxt "linkBuilder.capsLock"
 msgid "Capslock"
 msgstr "Capslock"
 
-#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
-msgstr "Show debug tab"
+msgstr "Show debuggin' deck"
 
-#, fuzzy
 msgctxt "linkBuilder.sound"
 msgid "Sound"
-msgstr "Sound"
+msgstr "Squawkin'"
 
-#, fuzzy
 msgctxt "linkBuilder.onStartup"
 msgid "On startup: "
 msgstr "On startup: "
 
-#, fuzzy
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
 msgstr "Load Disk Image"
 
-#, fuzzy
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
 msgstr "Load BASIC Program"
 
-#, fuzzy
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
 msgstr "Load Hex Code"
 
-#, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup: "
-msgstr "Disk image to load on startup: "
+msgstr "Disk to load on startup: "
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
-msgstr "Custom disk image URL:"
+msgstr "Custom disk URL:"
 
 #, fuzzy
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk: "
 msgstr "Text to type after loadin' disk: "
 
-#, fuzzy
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
-msgstr "Enter Text or BASIC code here"
+msgstr "Enter text or BASIC code here"
 
-#, fuzzy
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
 msgstr "Run BASIC program after loadin'"
 
-#, fuzzy
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
-msgstr "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
+msgstr "Enter hex code here, e.g. A9 01 8D 00 03"
 
-#, fuzzy
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
 msgstr "Hex load address: $"
 
-#, fuzzy
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
-msgstr "Run Hex program after loadin'"
+msgstr "Run hex program after loadin'"
 
-#, fuzzy
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
-msgstr "Final URL:"
+msgstr "Finished Link:"
 
-#, fuzzy
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
 msgstr "Copy to Clipboard"
 
-#, fuzzy
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
-msgstr "Try It"
+msgstr "Give It a Go"
 
-#, fuzzy
 msgctxt "linkBuilder.reset"
 msgid "Reset"
 msgstr "Reset Ship"
 
-#, fuzzy
 msgctxt "linkBuilder.close"
 msgid "Close"
 msgstr "Batten Down"
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
 msgstr "Custom URL"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
-msgstr "Normal"
+msgstr "Normal Sailin'"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
-msgstr "Game (no drives or tabs)"
+msgstr "Game Mode (clean deck)"
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
-msgstr "Embed (hide all controls)"
+msgstr "Embed (hidden rigging)"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
-msgstr "Color"
+msgstr "Full Color"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
-msgstr "Color (no fringing)"
+msgstr "Color (no bleedin')"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
-msgstr "Green Screen"
+msgstr "Seaweed Screen"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
-msgstr "Amber Screen"
+msgstr "Treasure Amber Screen"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
-msgstr "White Screen"
+msgstr "Ghostly White Screen"
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
-msgstr "Inverse White"
+msgstr "Backwards White"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.snail"
 msgid "Snail"
-msgstr "Snail"
+msgstr "Barnacle Speed"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.slow"
 msgid "Slow"
-msgstr "Slow"
+msgstr "Turtle"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
-msgstr "1 MHz (default)"
+msgstr "1 MHz (Sailin' speed)"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr "2 MHz"
+msgstr "2 MHz (Fair wind)"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr "3 MHz"
+msgstr "3 MHz (Strong gale)"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
-msgstr "4 MHz"
+msgstr "4 MHz (Full sail)"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Warp"
-msgstr "Warp"
+msgstr "Kraken!"
 
-#, fuzzy
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"
-msgstr "Apple IIe enhanced"
+msgstr "Apple IIe (Upgraded)"
 
-#, fuzzy
 msgctxt "linkBuilder.machines.unenhanced"
 msgid "Apple IIe unenhanced"
-msgstr "Apple IIe unenhanced"
+msgstr "Apple IIe (Original)"
 
-#, fuzzy
 msgctxt "linkBuilder.machines.apple2p"
 msgid "Apple II+"
-msgstr "Apple II+"
+msgstr "Apple II+ (Ol' Reliable)"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
-msgstr "Classic"
+msgstr "Olde Timey"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
-msgstr "Dark"
+msgstr "Dead o' Night"
 
-#, fuzzy
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
-msgstr "Minimal"
+msgstr "Bare Bones"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.512"
 msgid "512"
 msgstr "512"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.1024"
 msgid "1024"
 msgstr "1024"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.4096"
 msgid "4096"
 msgstr "4096"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
 msgstr "8192"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
 msgstr "64 (default)"
 
-#, fuzzy
 msgctxt "agent.tabTitle"
 msgid "Agent"
-msgstr "Agent"
+msgstr "First Mate"
 
-#, fuzzy
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
-msgstr "🤖 AI Agent Setup"
+msgstr "🤖 AI First Mate Setup"
 
 #, fuzzy
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
 msgstr "Click the gear icon below to configure yer AI assistant, matey."
 
-#, fuzzy
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
-msgstr "Welcome to the Apple II assistant! I can help ye wit':"
+msgstr "Ahoy! Welcome to th' Apple II assistant! I can help ye wit':"
 
-#, fuzzy
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
-msgstr "Inspecting CPU registers an' memory"
+msgstr "Inspectin' CPU registers an' memory"
 
-#, fuzzy
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
-msgstr "Controlling execution (boot, reset, step, breakpoints)"
+msgstr "Controllin' execution (boot, reset, step, breakpoints)"
 
-#, fuzzy
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
 msgstr "Loadin' programs an' managing disks"
 
-#, fuzzy
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
-msgstr "Debugging 6502 assembly code"
+msgstr "Debuggin' 6502 assembly code"
 
-#, fuzzy
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
 msgstr "Readin' screen content an' system state"
@@ -2619,15 +2283,13 @@ msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
 msgstr "Just ask me anything, matey!"
 
-#, fuzzy
 msgctxt "agent.userRole"
 msgid "You"
 msgstr "Ye"
 
-#, fuzzy
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
-msgstr "🤖 Assistant"
+msgstr "🤖 First Mate"
 
 #, fuzzy
 msgctxt "agent.inputPlaceholder"
@@ -2638,62 +2300,50 @@ msgstr ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, "
 "Shift+Enter fer new line)"
 
-#, fuzzy
 msgctxt "agent.stop"
 msgid "Stop"
 msgstr "Belay"
 
-#, fuzzy
 msgctxt "agent.send"
 msgid "Send"
-msgstr "Send"
+msgstr "Send Orders"
 
-#, fuzzy
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
 msgstr "Change rigging"
 
-#, fuzzy
 msgctxt "agent.processing"
 msgid "Processing..."
-msgstr "Processing..."
+msgstr "Thinkin'..."
 
-#, fuzzy
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
 msgstr "• {{input}} in / {{output}} out"
 
-#, fuzzy
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
-msgstr "Configure AI Agent"
+msgstr "Configure AI First Mate"
 
-#, fuzzy
 msgctxt "agent.provider"
 msgid "Provider:"
-msgstr "Provider:"
+msgstr "Service:"
 
-#, fuzzy
 msgctxt "agent.model"
 msgid "Model:"
-msgstr "Model:"
+msgstr "Brain:"
 
-#, fuzzy
 msgctxt "agent.apiKey"
 msgid "API Key:"
-msgstr "API Key:"
+msgstr "Secret Key:"
 
-#, fuzzy
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
 msgstr "Ollama URL:"
 
-#, fuzzy
 msgctxt "agent.save"
 msgid "Save"
 msgstr "Stash"
 
-#, fuzzy
 msgctxt "agent.clear"
 msgid "Clear"
 msgstr "Clear Deck"
@@ -2716,35 +2366,29 @@ msgstr ""
 "Ollama runs locally on yer machine. Make sure ye have Ollama installed an' "
 "runnin'. Download from "
 
-#, fuzzy
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
-msgstr "Provider not configured - click the gear icon to set up yer AI agent"
+msgstr "First Mate not configured - click th' gear to set up yer AI assistant"
 
-#, fuzzy
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
-msgstr "Provider: {{provider}} ({{model}})"
+msgstr "Service: {{provider}} ({{model}})"
 
-#, fuzzy
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
 msgstr "Invalid API key format fer {{provider}}"
 
-#, fuzzy
 msgctxt "startup.welcome"
 msgid "Welcome to Apple2TS"
-msgstr "Ahoy! Welcome to Apple2TS"
+msgstr "Arrr! This be ye Apple2TS"
 
-#, fuzzy
 msgctxt "startup.subtitle"
 msgid "TypeScript Apple II Emulator"
-msgstr "TypeScript Apple II Emulator"
+msgstr "Emulatin' yer olde Apple II"
 
-#, fuzzy
 msgctxt "startup.copyright"
 msgid "(c) {{year}} C.Torrence + collaborators"
-msgstr "(c) {{year}} C.Torrence + collaborators"
+msgstr "(c) {{year}} Cap'n Torrence & scallawags"
 
 #, fuzzy
 msgctxt "startup.diskCollections"
@@ -2753,4 +2397,4 @@ msgid ""
 "to load a built-in disk or game."
 msgstr ""
 "Click on the Disk Hoards icon\n"
-"to load a built-in disk or game, matey."
+"to load a disk or game, matey!"
