@@ -20,7 +20,7 @@ const LanguageSwitch: React.FC = () => {
   }
 
   return (
-    <span>
+    <span translate="no">
       <button
         className="push-button"
         title={`${getCurrentLanguageName()} - Language 語言`}
