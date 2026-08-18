@@ -12,6 +12,11 @@ if (process.argv.length !== 2) {
   process.exitCode = updateCatalogs({
     catalogDirectory,
     locales: catalogs.filter(catalog => !catalog.sourceLanguage).map(catalog => catalog.locale),
+    catalogInputs: Object.fromEntries(
+      catalogs
+        .filter(catalog => !catalog.sourceLanguage)
+        .map(({locale, input}) => [locale, input]),
+    ),
     source: sourceCatalog,
   })
 }
