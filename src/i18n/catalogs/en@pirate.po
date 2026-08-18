@@ -10,7 +10,7 @@ msgstr ""
 "Language-Team: English (Pirate) <https://hosted.weblate.org/projects/"
 "apple2ts/browser-emulator/en@pirate/>\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"PO-Revision-Date: 2026-08-18 05:58+0000\n"
+"PO-Revision-Date: 2026-08-18 14:02+0000\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
 msgctxt "controls.boot"
@@ -51,7 +51,7 @@ msgstr "Squawkin' be unavailable, matey. Give 'er another go."
 
 msgctxt "controls.settings"
 msgid "Settings"
-msgstr "Ship's Settings"
+msgstr "Ship's Rigging"
 
 msgctxt "controls.debugPanel"
 msgid "Debug Panel"
@@ -63,15 +63,15 @@ msgstr "Report Scurvy Trouble"
 
 msgctxt "config.speed"
 msgid "Emulator Speed"
-msgstr "Ship's Speed"
+msgstr "Ship's Gait"
 
 msgctxt "config.display"
 msgid "Display Settings"
-msgstr "Display Rigging"
+msgstr "Spy th' Rigging"
 
 msgctxt "config.theme"
 msgid "Theme"
-msgstr "Ship's Colors"
+msgstr "Ship's Liv'ry"
 
 msgctxt "config.resetSettings"
 msgid "Reset All Settings"
@@ -119,11 +119,11 @@ msgstr "Apple II+ (Ol' Reliable)"
 
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr "Apple IIe (unenhanced)"
+msgstr "Apple IIe (Stock Timber)"
 
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr "Apple IIe (enhanced)"
+msgstr "Apple IIe (Fully Rigged)"
 
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
@@ -2041,7 +2041,7 @@ msgstr "Curvy Glass"
 
 msgctxt "linkBuilder.crtGhosting"
 msgid "CRT Ghosting"
-msgstr "Phantom Glow"
+msgstr "LeChuck's Glow"
 
 msgctxt "linkBuilder.crtScanlines"
 msgid "CRT Scanlines"
