@@ -10,7 +10,7 @@ msgstr ""
 "Language-Team: English (Pirate) <https://hosted.weblate.org/projects/"
 "apple2ts/browser-emulator/en@pirate/>\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"PO-Revision-Date: 2026-08-18 05:51+0000\n"
+"PO-Revision-Date: 2026-08-18 05:58+0000\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
 msgctxt "controls.boot"
@@ -35,11 +35,11 @@ msgstr "Stow th' Text"
 
 msgctxt "controls.saveState"
 msgid "Save State"
-msgstr "Stash State"
+msgstr "Stash Treasure"
 
 msgctxt "controls.restoreState"
 msgid "Restore State"
-msgstr "Restore th' Stash"
+msgstr "Dig up th' Treasure"
 
 msgctxt "controls.toggleSound"
 msgid "Toggle Sound"
@@ -83,15 +83,15 @@ msgstr "SHOUTIN' LOCK"
 
 msgctxt "config.useOpenApple"
 msgid "Use {{modKey}} key for Open Apple"
-msgstr "Use {{modKey}} key fer Open Apple"
+msgstr "Harness {{modKey}} key fer Open Apple"
 
 msgctxt "config.useShortcuts"
 msgid "Use {{modKey}} key for Keyboard Shortcuts"
-msgstr "Use {{modKey}} key fer Keyboard Shortcuts"
+msgstr "Harness {{modKey}} key fer Keyboard Shortcuts"
 
 msgctxt "config.useArrowKeys"
 msgid "Use Arrow Keys as Joystick"
-msgstr "Use Arrow Keys fer Steerin' Stick"
+msgstr "Harness Arrow Keys fer Steerin' Stick"
 
 msgctxt "config.scanlines"
 msgid "CRT Scanlines"
@@ -213,7 +213,7 @@ msgstr "Bare Bones"
 
 msgctxt "debug.helpPanel"
 msgid "Show help panel"
-msgstr "Show th' Ship's Manual"
+msgstr "Signal SOS"
 
 #, fuzzy
 msgctxt "debug.debugPanel"
@@ -226,7 +226,7 @@ msgstr "Show Apple exPectin panel"
 
 msgctxt "debug.helpTab"
 msgid "Help"
-msgstr "Ship's Help"
+msgstr "SOS"
 
 msgctxt "debug.debugTab"
 msgid "Debugging"
