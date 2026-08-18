@@ -1,4 +1,10 @@
-import { I18n, translateFromCatalogs } from "./index"
+import {
+  AllLanguages,
+  I18n,
+  LanguageFlags,
+  LanguageNames,
+  translateFromCatalogs,
+} from "./index"
 
 describe("translateFromCatalogs", () => {
   const english = {
@@ -84,5 +90,26 @@ describe("Portuguese language identity", () => {
     const i18n = new I18n(createStorage(null), browserLanguage)
 
     expect(i18n.getLanguage()).toBe(expectedLanguage)
+  })
+})
+
+describe("generated language registry", () => {
+  test("preserves the established language menu order when catalogs are added", () => {
+    const establishedLanguages = [
+      "en", "zh-TW", "zh-CN", "es", "de", "fr", "it",
+      "pt-BR", "ja", "ko", "nl", "sv", "ru", "en-x-pirate",
+    ]
+
+    expect(AllLanguages.slice(0, establishedLanguages.length)).toEqual(establishedLanguages)
+    expect(LanguageNames["pt-BR"]).toBe("Português (Brasil)")
+    expect(LanguageFlags["zh-TW"]).toBe("🇹🇼")
+    expect(LanguageNames["en-x-pirate"]).toBe("Pirate")
+    expect(LanguageFlags["en-x-pirate"]).toBe("🏴‍☠️")
+  })
+
+  test("falls back to English for an invalid browser locale", () => {
+    const i18n = new I18n(createStorage(null), "not_a_locale")
+
+    expect(i18n.getLanguage()).toBe("en")
   })
 })

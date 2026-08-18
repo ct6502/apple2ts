@@ -11,6 +11,9 @@ src/worker/roms/65C02_extended_opcodes_test.bin
 /build
 /dist
 
+# generated from gettext catalogs
+/src/i18n/languages/*.ts
+
 # misc
 .DS_Store
 .env.local

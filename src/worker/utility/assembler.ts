@@ -4,13 +4,13 @@ import { toHex, isBranchInstruction, ADDR_MODE } from "../../common/utility"
 let doOutput = false
 
 type CodeLine = {
-  label: string,
+  labelDefine: string,
   instr: string,
   operand: string,
 }
 
 type LabelOperand = {
-  label: string,
+  labelUsed: string,
   operation: string,
   value: number,
   idx: string
@@ -20,12 +20,20 @@ const splitOperand = (operand: string) => {
   const idx = operand.split(",")
   const s = idx[0].split(/([+-])/)
   const labelOperand: LabelOperand = {
-    label: s[0] ? s[0] : "",
+    labelUsed: s[0] ? s[0].toUpperCase() : "",
     operation: s[1] ? s[1] : "",
     value: s[2] ? parseInt(s[2].replace("#","").replace("$","0x")) : 0,
     idx: idx[1] ? idx[1] : ""
   }
   return labelOperand
+}
+
+let syntaxError = ""
+const printError = (error: string) => {
+  console.error(error)
+  if (syntaxError) {
+    console.error(syntaxError)
+  }
 }
 
 const parseNumberOptionalAddressMode = (operand: string): [ADDR_MODE, number] => {
@@ -90,23 +98,23 @@ const getOperandModeValue =
       return parseNumberOptionalAddressMode(operand)
     }
     const labelOperand = splitOperand(operand)
-    if (labelOperand.label) {
+    if (labelOperand.labelUsed) {
       // See if we have an immediate value, like #CONST, <CONST >CONST
-      const lb = labelOperand.label.startsWith("<")
-      const hb = labelOperand.label.startsWith(">")
-      const isImmediate = labelOperand.label.startsWith("#") || hb || lb
+      const lb = labelOperand.labelUsed.startsWith("<")
+      const hb = labelOperand.labelUsed.startsWith(">")
+      const isImmediate = labelOperand.labelUsed.startsWith("#") || hb || lb
       if (isImmediate) {
-        labelOperand.label = labelOperand.label.substring(1)
+        labelOperand.labelUsed = labelOperand.labelUsed.substring(1)
       }
-      if (labelOperand.label in labels) {
-        value = labels[labelOperand.label]
+      if (labelOperand.labelUsed in labels) {
+        value = labels[labelOperand.labelUsed]
         if (hb) {
           value = (value >> 8) & 0xff
         } else if (lb) {
           value = value & 0xff
         }
       } else if (pass === 2) {
-        console.error("Missing label: " + labelOperand.label)
+        printError("Missing label: " + labelOperand.labelUsed)
       }
       if (labelOperand.operation && labelOperand.value) {
         switch (labelOperand.operation) {
@@ -140,7 +148,7 @@ const splitLine = (line: string, prevLabel: string) => {
   line = line.replace(/\s+/g, " ")
   const s = line.split(" ")
   const codeLine: CodeLine = {
-    label: s[0] ? s[0] : prevLabel,
+    labelDefine: s[0] ? s[0].replace(":", "").toUpperCase() : prevLabel,
     instr: s[1] ? s[1] : "",
     operand: s[2] ? s[2] : ""
   }
@@ -148,20 +156,20 @@ const splitLine = (line: string, prevLabel: string) => {
 }
 
 const handleLabel = (parts: CodeLine, pc: number) => {
-  if (parts.label in labels) {
-    console.error("Redefined label: " + parts.label)
+  if (parts.labelDefine in labels) {
+    console.error("Redefined label: " + parts.labelDefine)
   }
-  if (parts.instr === "EQU") {
+  if (parts.instr === "EQU" || parts.instr === "=") {
     //const [mode, value] = parseNumberOptionalAddressMode(parts.operand)
     const [mode, value] = getOperandModeValue(pc, parts.instr, parts.operand, 2)
     if (mode !== ADDR_MODE.ABS && mode !== ADDR_MODE.ZP_REL) {
       console.error("Illegal EQU value: " + parts.operand)
     }
     // console.log(`LABEL=${parts.label} VALUE=${value.toString(16)}`)
-    labels[parts.label] = value
+    labels[parts.labelDefine] = value
   } else {
     // console.log(`LABEL=${parts.label} PC=${pc.toString(16)}`)
-    labels[parts.label] = pc
+    labels[parts.labelDefine] = pc
   }
 }
 
@@ -226,7 +234,8 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
   let pc = orgStart
   const instructions: Array<number> = []
   let prevLabel = ""
-  code.forEach(line => {
+  code.forEach((line, index) => {
+    syntaxError = `Line ${index}: ${line}`
     line = (line.split(";"))[0].trimEnd().toUpperCase()
     if (!line) return
     let output = (line + "                   ").slice(0, 30) + toHex(pc, 4) + "- "
@@ -236,7 +245,7 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
 
     // Just a label by itself, just tack onto the beginning of next line.
     if (!codeLine.instr) {
-      prevLabel = codeLine.label
+      prevLabel = codeLine.labelDefine
       return
     }
 
@@ -252,11 +261,11 @@ const parseOnce = (code: Array<string>, pass: 1 | 2): Array<number> => {
       return
     }
 
-    if (pass === 1 && codeLine.label) {
+    if (pass === 1 && codeLine.labelDefine) {
       handleLabel(codeLine, pc)
     }
 
-    if (codeLine.instr === "EQU") {
+    if (codeLine.instr === "EQU" || codeLine.instr === "=") {
       return
     }
 

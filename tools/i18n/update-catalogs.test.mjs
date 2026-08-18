@@ -64,6 +64,27 @@ describe("updateCatalogs", () => {
     ])
   })
 
+  it("updates a catalog whose source filename maps to a canonical locale", () => {
+    const calls = []
+    const code = updateCatalogs({
+      catalogDirectory: "/catalogs",
+      catalogInputs: {"en-x-pirate": "/catalogs/en@pirate.po"},
+      locales: ["en-x-pirate"],
+      source: "/catalogs/messages.pot",
+      stage: unchangedStage,
+      run(command, arguments_) {
+        calls.push({command, arguments_})
+        return {status: 0}
+      },
+    })
+
+    assert.equal(code, 0)
+    assert.deepEqual(calls[1].arguments_, [
+      "--previous", "--no-fuzzy-matching", "--update", "--backup=none",
+      "/catalogs/en@pirate.po", "/catalogs/messages.pot",
+    ])
+  })
+
   it("retains a translation when stable-key English wording changes completely", () => {
     const directory = mkdtempSync(join(tmpdir(), "apple2ts-po-update-"))
     temporaryDirectories.push(directory)
