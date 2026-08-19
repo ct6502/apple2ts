@@ -84,7 +84,9 @@ const ConfigButtons = (props: DisplayProps) => {
         <button className={lockedKeyStyle(lowercaseMode ? 0 : 2)}
           title={`${t("config.capsLock")} (${lowercaseMode ? t("messages.off") : t("messages.on")})`}
           onClick={() => { setPreferenceBoolean("lowercaseMode", !lowercaseMode); props.updateDisplay() }}>
-          <span className="text-key" style={{ fontSize: "18pt" }}>{lowercaseMode ? "a" : "A"}</span>
+          <span translate="no" className="text-key" style={{ fontSize: "18pt" }}>
+            {lowercaseMode ? "a" : "A"}
+          </span>
         </button>
         <button className="push-button"
           title={cmdKeyTitle}
