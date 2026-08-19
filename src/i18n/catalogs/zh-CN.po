@@ -350,7 +350,7 @@ msgid "Break once then remove"
 msgstr ""
 
 msgctxt "debug.basicLineNumber"
-msgid "BASIC Line Number: "
+msgid "BASIC Line Number:"
 msgstr ""
 
 msgctxt "debug.any"
@@ -2072,32 +2072,32 @@ msgstr "链接生成器"
 
 #, fuzzy
 msgctxt "linkBuilder.userInterface"
-msgid "User interface: "
+msgid "User interface:"
 msgstr "用户界面："
 
 #, fuzzy
 msgctxt "linkBuilder.machine"
-msgid "Machine: "
+msgid "Machine:"
 msgstr "主机型号："
 
 #, fuzzy
 msgctxt "linkBuilder.colorMode"
-msgid "Color mode: "
+msgid "Color mode:"
 msgstr "颜色模式："
 
 #, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
-msgid "Size of RAM disk (kb): "
+msgid "Size of RAM disk (kb):"
 msgstr "RAM 磁盘大小 (KB)："
 
 #, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
-msgid "Speed of emulator: "
+msgid "Speed of emulator:"
 msgstr "模拟器速度："
 
 #, fuzzy
 msgctxt "linkBuilder.uiTheme"
-msgid "User Interface Theme: "
+msgid "User Interface Theme:"
 msgstr "界面主题："
 
 #, fuzzy
@@ -2132,7 +2132,7 @@ msgstr "音效"
 
 #, fuzzy
 msgctxt "linkBuilder.onStartup"
-msgid "On startup: "
+msgid "On startup:"
 msgstr "启动时："
 
 #, fuzzy
@@ -2152,7 +2152,7 @@ msgstr "加载 16 进制码"
 
 #, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
-msgid "Disk image to load on startup: "
+msgid "Disk image to load on startup:"
 msgstr "启动时加载的磁盘映像："
 
 #, fuzzy
@@ -2162,7 +2162,7 @@ msgstr "自定义磁盘映像网址："
 
 #, fuzzy
 msgctxt "linkBuilder.textToType"
-msgid "Text to type after loading disk: "
+msgid "Text to type after loading disk:"
 msgstr "加载磁盘后输入的文本："
 
 #, fuzzy
@@ -2477,13 +2477,13 @@ msgstr "清除"
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to "
-"apple2ts.com. Get your {{provider}} API key at "
+"apple2ts.com. Get your {{provider}} API key at"
 msgstr "您的 API 密钥会保存在本地浏览器中，绝不会发送至 apple2ts.com。获取您的 {{provider}} API 密钥："
 
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from "
+"and running. Download from"
 msgstr ""
 
 #, fuzzy

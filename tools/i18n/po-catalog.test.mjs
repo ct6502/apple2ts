@@ -240,7 +240,7 @@ msgstr "Suivant (Étape {step})"
     )
   })
 
-  it("rejects boundary newlines in source messages and translations", () => {
+  it("rejects boundary whitespace in source messages and translations", () => {
     assert.throws(
       () => compilePoCatalog(po(`
 msgctxt "controls.boot"
@@ -248,8 +248,8 @@ msgid "Boot"
 msgstr "\\nBoot"
 `), {sourceCatalog: english}),
       new Error(
-        "Boundary newlines are not allowed for controls.boot: "
-        + "translation leading newlines=1",
+        "Boundary whitespace is not allowed for controls.boot: "
+        + "translation leading whitespace=\"\\n\"",
       ),
     )
 
@@ -260,8 +260,8 @@ msgid "Boot\\n"
 msgstr ""
 `), {sourceLanguage: true}),
       new Error(
-        "Boundary newlines are not allowed for controls.boot: "
-        + "source trailing newlines=1",
+        "Boundary whitespace is not allowed for controls.boot: "
+        + "source trailing whitespace=\"\\n\"",
       ),
     )
 
@@ -276,8 +276,33 @@ msgid "\\n\\nBoot"
 msgstr ""
 `)}),
       new Error(
-        "Boundary newlines are not allowed for controls.boot: "
-        + "source leading newlines=2; translation leading newlines=1",
+        "Boundary whitespace is not allowed for controls.boot: "
+        + "source leading whitespace=\"\\n\\n\"; "
+        + "translation leading whitespace=\"\\n\"",
+      ),
+    )
+
+    assert.throws(
+      () => compilePoCatalog(po(`
+msgctxt "controls.boot"
+msgid "Boot "
+msgstr ""
+`), {sourceLanguage: true}),
+      new Error(
+        "Boundary whitespace is not allowed for controls.boot: "
+        + "source trailing whitespace=\" \"",
+      ),
+    )
+
+    assert.throws(
+      () => compilePoCatalog(po(`
+msgctxt "controls.boot"
+msgid "Boot"
+msgstr "\\tDémarrer"
+`), {sourceCatalog: english}),
+      new Error(
+        "Boundary whitespace is not allowed for controls.boot: "
+        + "translation leading whitespace=\"\\t\"",
       ),
     )
   })
@@ -549,7 +574,7 @@ msgstr "Orphelin"
       unmerged: 1,
       missing: 0,
       "stale-source": 0,
-      "boundary-newline": 0,
+      "boundary-whitespace": 0,
       "placeholder-mismatch": 1,
       "english-identical": 1,
       translated: 2,

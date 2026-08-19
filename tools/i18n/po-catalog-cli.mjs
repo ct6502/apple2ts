@@ -176,7 +176,7 @@ const report = async options => {
     await readUtf8(inputPath),
   )
   process.stdout.write(`${JSON.stringify({
-    schemaVersion: 2,
+    schemaVersion: 3,
     source: sourceArgument,
     input: inputArgument,
     ...analysis,

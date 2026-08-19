@@ -298,6 +298,7 @@ return (
               ? t("agent.ollamaWarning")
               : t("agent.storageWarning").replace("{{provider}}", getProviderDisplayName(provider))
             }
+            {" "}
             <a href={getApiKeyLink().url} target="_blank" rel="noopener noreferrer">{getApiKeyLink().text}</a>
           </small>
         </div>
