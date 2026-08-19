@@ -10,7 +10,7 @@ msgstr ""
 "Language-Team: English (Pirate) <https://hosted.weblate.org/projects/"
 "apple2ts/browser-emulator/en@pirate/>\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"PO-Revision-Date: 2026-08-18 14:02+0000\n"
+"PO-Revision-Date: 2026-08-20 04:41+0000\n"
 "X-Generator: Weblate 2026.9.dev0\n"
 
 msgctxt "controls.boot"
@@ -189,15 +189,13 @@ msgctxt "colors.amber"
 msgid "Amber"
 msgstr "Treasure Amber"
 
-#, fuzzy
 msgctxt "colors.white"
 msgid "Black and White"
-msgstr "Black an' White"
+msgstr "Light o'er Dark"
 
-#, fuzzy
 msgctxt "colors.inverse"
 msgid "Black and White (inverse)"
-msgstr "Black an' White (inverse)"
+msgstr "Dark o'er Light"
 
 msgctxt "themes.classic"
 msgid "Classic"
@@ -230,15 +228,15 @@ msgstr "SOS"
 
 msgctxt "debug.debugTab"
 msgid "Debugging"
-msgstr "Debugging"
+msgstr "Debuggin'"
 
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
-msgstr "Applesoft BASIC"
+msgstr "Applesoft BOOTY"
 
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
-msgstr "Apple exPectin"
+msgstr "Anti-scurvy Jelly (exPectin)"
 
 msgctxt "debug.breakpoints"
 msgid "Breakpoints"
@@ -306,96 +304,83 @@ msgstr "Stop once then cast it off"
 
 msgctxt "debug.basicLineNumber"
 msgid "BASIC Line Number: "
-msgstr "BASIC Line Number: "
+msgstr "BOOTY Line Number: "
 
 msgctxt "debug.any"
 msgid "Any"
-msgstr "Any"
+msgstr "Yer Choice"
 
-#, fuzzy
 msgctxt "disassembly.memory.effectiveAddress"
 msgid "Effective address: {{notation}}"
-msgstr "Effective address: {{notation}}"
+msgstr "Where'd It Go?: {{notation}}"
 
-#, fuzzy
 msgctxt "disassembly.memory.value"
 msgid "Value: {{notation}}"
 msgstr "Value: {{notation}}"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.character"
 msgid "Keyboard: \"{{character}}\""
-msgstr "Keyboard: \"{{character}}\""
+msgstr "Organ Key-Board: \"{{character}}\""
 
-#, fuzzy
 msgctxt "disassembly.keyboard.strobeClear"
 msgid "Keyboard strobe: CLEAR (MSB = 0)"
-msgstr "Keyboard strobe: CLEAR (MSB = 0)"
+msgstr "Organ Key strobe: CLEAR (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.strobeSet"
 msgid "Keyboard strobe: SET (MSB = 1)"
-msgstr "Keyboard strobe: SET (MSB = 1)"
+msgstr "Organ Key strobe: SET (MSB = 1)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownClear"
 msgid "Any-key-down flag: CLEAR (MSB = 0)"
-msgstr "Any-key-down flag: CLEAR (MSB = 0)"
+msgstr "Organ Key flag: CLEAR (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.keyboard.anyKeyDownSet"
 msgid "Any-key-down flag: SET (MSB = 1)"
-msgstr "Any-key-down flag: SET (MSB = 1)"
+msgstr "Organ Key flag: SET (MSB = 1)"
 
 msgctxt "disassembly.keyboard.clearStrobe"
 msgid "Clear keyboard strobe"
-msgstr "Clear keyboard strobe"
+msgstr "Scrub Organ Key strobe"
 
 msgctxt "disassembly.cassette.toggleOutput"
 msgid "Toggle cassette output"
-msgstr "Toggle cassette output"
+msgstr "Throw spinnaker toggle"
 
 msgctxt "disassembly.cassette.sampleInput"
 msgid "Sample cassette input"
-msgstr "Sample cassette input"
+msgstr "Sight yer spinnaker input"
 
 msgctxt "disassembly.cassette.sampleInputMirror"
 msgid "Sample cassette-input mirror"
-msgstr "Sample cassette-input mirror"
+msgstr "Sight yer looking-glass spinnaker input"
 
 msgctxt "disassembly.speaker.toggleOutput"
 msgid "Toggle speaker output"
 msgstr "Toggle th' squawker"
 
-#, fuzzy
 msgctxt "disassembly.notice.emulatorIdentifier"
 msgid "INFO: Apple2TS emulator identifier: $CD"
-msgstr "INFO: Apple2TS emulator identifier: $CD"
+msgstr "LEDGER: Apple2TS Letter of Marque: $CD"
 
-#, fuzzy
 msgctxt "disassembly.notice.noWriteEffect"
 msgid "INFO: This write has no effect on {{machine}}"
-msgstr "INFO: This write has no effect on {{machine}}"
+msgstr "LEDGER: This order falls on deaf ears aboard {{machine}}"
 
-#, fuzzy
 msgctxt "disassembly.notice.multipleTriggers"
 msgid "WARNING: This instruction triggers the soft switch multiple times"
-msgstr "WARNING: This instruction triggers the soft switch multiple times"
+msgstr "HEED: This order strikes the toggle pin many a time"
 
-#, fuzzy
 msgctxt "disassembly.notice.unknownWrite"
 msgid "WARNING: This instruction writes an unknown value"
-msgstr "WARNING: This instruction writes an unknown value"
+msgstr "HEED: This order scrawls an uncharted script"
 
-#, fuzzy
 msgctxt "disassembly.rom.intCxOff"
 msgid "Internal $Cx ROM: OFF (MSB = 0)"
-msgstr "Internal $Cx ROM: OFF (MSB = 0)"
+msgstr "Inboard $Cx ROM: OFF (MSB = 0)"
 
-#, fuzzy
 msgctxt "disassembly.rom.intCxOn"
 msgid "Internal $Cx ROM: ON (MSB = 1)"
-msgstr "Internal $Cx ROM: ON (MSB = 1)"
+msgstr "Inboard $Cx ROM: ON (MSB = 1)"
 
 #, fuzzy
 msgctxt "disassembly.rom.slot3Off"
