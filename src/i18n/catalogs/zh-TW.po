@@ -132,45 +132,37 @@ msgctxt "machine.configuration"
 msgid "Machine Configuration"
 msgstr "機器配置"
 
-#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr "Apple II+"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr "Apple IIe (unenhanced)"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr "Apple IIe (enhanced)"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
-msgstr "64 KB (AUX)"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.512kb"
 msgid "512 KB"
-msgstr "512 KB"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.1024kb"
 msgid "1024 KB"
-msgstr "1024 KB"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.4mb"
 msgid "4 MB"
-msgstr "4 MB"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.8mb"
 msgid "8 MB"
-msgstr "8 MB"
+msgstr ""
 
 #, fuzzy
 msgctxt "speed.snail"
@@ -187,15 +179,13 @@ msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
 msgstr "正常速度 (1 MHz)"
 
-#, fuzzy
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr "2 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr "3 MHz"
+msgstr ""
 
 #, fuzzy
 msgctxt "speed.fast"
@@ -277,15 +267,13 @@ msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "除錯"
 
-#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
-msgstr "Applesoft BASIC"
+msgstr ""
 
-#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
-msgstr "Apple exPectin"
+msgstr ""
 
 #, fuzzy
 msgctxt "debug.breakpoints"
@@ -1046,15 +1034,13 @@ msgctxt "disk.browse"
 msgid "Browse"
 msgstr "瀏覽"
 
-#, fuzzy
 msgctxt "disk.internetArchive"
 msgid "Internet Archive"
-msgstr "Internet Archive"
+msgstr ""
 
-#, fuzzy
 msgctxt "disk.totalReplay"
 msgid "Total Replay"
-msgstr "Total Replay"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.newReleases"
@@ -1196,10 +1182,9 @@ msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image"
 msgstr "點擊載入磁碟映像"
 
-#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
-msgstr "Downloading disk"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.clickToRemoveFromDiskCollection"
@@ -1464,45 +1449,37 @@ msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
 msgstr "大寫鎖定"
 
-#, fuzzy
 msgctxt "keyboard.shift"
 msgid "Shift"
-msgstr "Shift"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.ctrl"
 msgid "Ctrl"
-msgstr "Ctrl"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.alt"
 msgid "Alt"
-msgstr "Alt"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
-msgstr "Open Apple"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.closedApple"
 msgid "Closed Apple"
-msgstr "Closed Apple"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.escape"
 msgid "Escape"
-msgstr "Escape"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.tab"
 msgid "Tab"
-msgstr "Tab"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.enter"
 msgid "Enter"
-msgstr "Enter"
+msgstr ""
 
 #, fuzzy
 msgctxt "keyboard.space"
@@ -1519,20 +1496,18 @@ msgctxt "keyboard.delete"
 msgid "Delete"
 msgstr "刪除"
 
-#, fuzzy
 msgctxt "keyboard.return"
 msgid "Return"
-msgstr "Return"
+msgstr ""
 
 #, fuzzy
 msgctxt "audio.speaker"
 msgid "Speaker"
 msgstr "喇叭"
 
-#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockingboard"
+msgstr ""
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -1563,15 +1538,13 @@ msgctxt "print.printer"
 msgid "Printer"
 msgstr "印表機"
 
-#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
-msgstr "ImageWriter"
+msgstr ""
 
-#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
-msgstr "ImageWriter II (Slot 1)"
+msgstr ""
 
 #, fuzzy
 msgctxt "print.print"
@@ -1852,94 +1825,76 @@ msgctxt "demoZoo.go"
 msgid "GO"
 msgstr "搜尋"
 
-#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
-msgstr "All"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
-msgstr "Demo"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
-msgstr "Intro"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
-msgstr "Cracktro"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
-msgstr "Music"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
-msgstr "Previous"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
-msgstr "Next"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
-msgstr "First page"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
-msgstr "Last page"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr "Page number"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.pageOf"
 msgid "Page {{page}} of {{pages}}"
-msgstr "Page {{page}} of {{pages}}"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
-msgstr "No DemoZoo productions found."
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
-msgstr "This production only has a YouTube video link available:"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
-msgstr "This production only has an external DemoZoo link available:"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
-msgstr "Open in New Tab"
+msgstr ""
 
 #, fuzzy
 msgctxt "basic.newProgram"
 msgid "New Program"
 msgstr "新程式"
 
-#, fuzzy
 msgctxt "basic.newProgramWarning"
 msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
 "you sure?"
 msgstr ""
-"This will clear the current program. You will lose any unsaved changes. Are "
-"you sure?"
 
 #, fuzzy
 msgctxt "basic.runFromBeginning"
@@ -2333,20 +2288,17 @@ msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
 msgstr "1 MHz (預設)"
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr "2 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr "3 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
-msgstr "4 MHz"
+msgstr ""
 
 #, fuzzy
 msgctxt "linkBuilder.speedNames.warp"
@@ -2363,10 +2315,9 @@ msgctxt "linkBuilder.machines.unenhanced"
 msgid "Apple IIe unenhanced"
 msgstr "Apple IIe (非增強型)"
 
-#, fuzzy
 msgctxt "linkBuilder.machines.apple2p"
 msgid "Apple II+"
-msgstr "Apple II+"
+msgstr ""
 
 #, fuzzy
 msgctxt "linkBuilder.themes.classic"
