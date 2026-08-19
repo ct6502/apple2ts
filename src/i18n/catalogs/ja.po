@@ -85,10 +85,9 @@ msgctxt "config.resetSettings"
 msgid "Reset All Settings"
 msgstr "全設定をリセット"
 
-#, fuzzy
 msgctxt "config.capsLock"
 msgid "Caps Lock"
-msgstr "Caps Lock"
+msgstr ""
 
 #, fuzzy
 #| msgid "Use as Open Apple key"
@@ -127,50 +126,41 @@ msgctxt "config.joystick"
 msgid "Joystick Configuration"
 msgstr "ジョイスティック設定"
 
-#, fuzzy
 msgctxt "machine.configuration"
 msgid "Machine Configuration"
-msgstr "Machine Configuration"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.models.apple2p"
 msgid "Apple II+"
-msgstr "Apple II+"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.models.apple2eu"
 msgid "Apple IIe (unenhanced)"
-msgstr "Apple IIe (unenhanced)"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.models.apple2ee"
 msgid "Apple IIe (enhanced)"
-msgstr "Apple IIe (enhanced)"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.64kb_aux"
 msgid "64 KB (AUX)"
-msgstr "64 KB (AUX)"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.512kb"
 msgid "512 KB"
-msgstr "512 KB"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.1024kb"
 msgid "1024 KB"
-msgstr "1024 KB"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.4mb"
 msgid "4 MB"
-msgstr "4 MB"
+msgstr ""
 
-#, fuzzy
 msgctxt "machine.ram.8mb"
 msgid "8 MB"
-msgstr "8 MB"
+msgstr ""
 
 #, fuzzy
 msgctxt "speed.snail"
@@ -187,15 +177,13 @@ msgctxt "speed.normal"
 msgid "Normal Speed (1 MHz)"
 msgstr "通常速度 (1 MHz)"
 
-#, fuzzy
 msgctxt "speed.two"
 msgid "2 MHz"
-msgstr "2 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "speed.three"
 msgid "3 MHz"
-msgstr "3 MHz"
+msgstr ""
 
 #, fuzzy
 msgctxt "speed.fast"
@@ -277,15 +265,13 @@ msgctxt "debug.debugTab"
 msgid "Debugging"
 msgstr "デバッグ"
 
-#, fuzzy
 msgctxt "debug.basicTab"
 msgid "Applesoft BASIC"
-msgstr "Applesoft BASIC"
+msgstr ""
 
-#, fuzzy
 msgctxt "debug.expectinTab"
 msgid "Apple exPectin"
-msgstr "Apple exPectin"
+msgstr ""
 
 #, fuzzy
 msgctxt "debug.breakpoints"
@@ -352,10 +338,9 @@ msgctxt "debug.loadSymbolTable"
 msgid "Load Symbol Table"
 msgstr "シンボルテーブルを読み込む"
 
-#, fuzzy
 msgctxt "debug.agentTab"
 msgid "Agent"
-msgstr "Agent"
+msgstr ""
 
 #, fuzzy
 msgctxt "debug.disassembly"
@@ -1053,15 +1038,13 @@ msgctxt "disk.browse"
 msgid "Browse"
 msgstr "参照"
 
-#, fuzzy
 msgctxt "disk.internetArchive"
 msgid "Internet Archive"
-msgstr "Internet Archive"
+msgstr ""
 
-#, fuzzy
 msgctxt "disk.totalReplay"
 msgid "Total Replay"
-msgstr "Total Replay"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.newReleases"
@@ -1138,10 +1121,9 @@ msgctxt "disk.loadDiskFromInternetArchive"
 msgid "Load Disk from Internet Archive"
 msgstr "Internet Archiveからディスクを読み込み"
 
-#, fuzzy
 msgctxt "disk.loadDiskFromDemoZoo"
 msgid "Load Disk from DemoZoo"
-msgstr "Load Disk from DemoZoo"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.loadDiskFromOneDrive"
@@ -1203,10 +1185,9 @@ msgctxt "disk.clickToLoadDiskImage"
 msgid "Click to load disk image"
 msgstr "クリックしてディスクイメージを読み込む"
 
-#, fuzzy
 msgctxt "disk.downloadingDisk"
 msgid "Downloading disk"
-msgstr "Downloading disk"
+msgstr ""
 
 #, fuzzy
 msgctxt "disk.clickToRemoveFromDiskCollection"
@@ -1427,10 +1408,9 @@ msgctxt "messages.cancel"
 msgid "Cancel"
 msgstr "キャンセル"
 
-#, fuzzy
 msgctxt "messages.ok"
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
 #, fuzzy
 msgctxt "messages.on"
@@ -1472,80 +1452,67 @@ msgctxt "messages.diskEjected"
 msgid "Disk ejected"
 msgstr "ディスクが取り出されました"
 
-#, fuzzy
 msgctxt "keyboard.capsLock"
 msgid "Caps Lock"
-msgstr "Caps Lock"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.shift"
 msgid "Shift"
-msgstr "Shift"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.ctrl"
 msgid "Ctrl"
-msgstr "Ctrl"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.alt"
 msgid "Alt"
-msgstr "Alt"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.openApple"
 msgid "Open Apple"
-msgstr "Open Apple"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.closedApple"
 msgid "Closed Apple"
-msgstr "Closed Apple"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.escape"
 msgid "Escape"
-msgstr "Escape"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.tab"
 msgid "Tab"
-msgstr "Tab"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.enter"
 msgid "Enter"
-msgstr "Enter"
+msgstr ""
 
 #, fuzzy
 msgctxt "keyboard.space"
 msgid "Space"
 msgstr "スペース"
 
-#, fuzzy
 msgctxt "keyboard.backspace"
 msgid "Backspace"
-msgstr "Backspace"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.delete"
 msgid "Delete"
-msgstr "Delete"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboard.return"
 msgid "Return"
-msgstr "Return"
+msgstr ""
 
 #, fuzzy
 msgctxt "audio.speaker"
 msgid "Speaker"
 msgstr "スピーカー"
 
-#, fuzzy
 msgctxt "audio.mockingboard"
 msgid "Mockingboard"
-msgstr "Mockingboard"
+msgstr ""
 
 msgctxt "audio.midi"
 msgid "MIDI"
@@ -1576,15 +1543,13 @@ msgctxt "print.printer"
 msgid "Printer"
 msgstr "プリンタ"
 
-#, fuzzy
 msgctxt "print.imageWriter"
 msgid "ImageWriter"
-msgstr "ImageWriter"
+msgstr ""
 
-#, fuzzy
 msgctxt "print.imageWriterII"
 msgid "ImageWriter II (Slot 1)"
-msgstr "ImageWriter II (Slot 1)"
+msgstr ""
 
 #, fuzzy
 msgctxt "print.print"
@@ -1730,10 +1695,9 @@ msgctxt "collection.clickToRemoveFromCollection"
 msgid "Click to remove from disk collection"
 msgstr "クリックしてディスクコレクションから削除"
 
-#, fuzzy
 msgctxt "collection.clickToKeepInCollection"
 msgid "Click to keep in disk collection"
-msgstr "Click to keep in disk collection"
+msgstr ""
 
 #, fuzzy
 msgctxt "collection.clickToAddToCollection"
@@ -1750,15 +1714,13 @@ msgctxt "collection.loadDiskIntoDrive"
 msgid "Load Disk into Drive"
 msgstr "ドライブにディスクを読み込み"
 
-#, fuzzy
 msgctxt "collection.cloudAuthRequired"
 msgid "auth required"
-msgstr "auth required"
+msgstr ""
 
-#, fuzzy
 msgctxt "collection.signIn"
 msgid "Sign in"
-msgstr "Sign in"
+msgstr ""
 
 #, fuzzy
 msgctxt "collection.exportDisksToHdv"
@@ -1855,104 +1817,84 @@ msgctxt "internetArchive.go"
 msgid "GO"
 msgstr "検索"
 
-#, fuzzy
 msgctxt "demoZoo.searchPlaceholder"
 msgid "Search DemoZoo (title, author)..."
-msgstr "Search DemoZoo (title, author)..."
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.go"
 msgid "GO"
-msgstr "GO"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.all"
 msgid "All"
-msgstr "All"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.demo"
 msgid "Demo"
-msgstr "Demo"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.intro"
 msgid "Intro"
-msgstr "Intro"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.cracktro"
 msgid "Cracktro"
-msgstr "Cracktro"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.music"
 msgid "Music"
-msgstr "Music"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.previous"
 msgid "Previous"
-msgstr "Previous"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.next"
 msgid "Next"
-msgstr "Next"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.firstPage"
 msgid "First page"
-msgstr "First page"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.lastPage"
 msgid "Last page"
-msgstr "Last page"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.pageInput"
 msgid "Page number"
-msgstr "Page number"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.pageOf"
 msgid "Page {{page}} of {{pages}}"
-msgstr "Page {{page}} of {{pages}}"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.noProductions"
 msgid "No DemoZoo productions found."
-msgstr "No DemoZoo productions found."
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.youtubeOnly"
 msgid "This production only has a YouTube video link available:"
-msgstr "This production only has a YouTube video link available:"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.externalOnly"
 msgid "This production only has an external DemoZoo link available:"
-msgstr "This production only has an external DemoZoo link available:"
+msgstr ""
 
-#, fuzzy
 msgctxt "demoZoo.openInNewTab"
 msgid "Open in New Tab"
-msgstr "Open in New Tab"
+msgstr ""
 
 #, fuzzy
 msgctxt "basic.newProgram"
 msgid "New Program"
 msgstr "新規プログラム"
 
-#, fuzzy
 msgctxt "basic.newProgramWarning"
 msgid ""
 "This will clear the current program. You will lose any unsaved changes. Are "
 "you sure?"
 msgstr ""
-"This will clear the current program. You will lose any unsaved changes. Are "
-"you sure?"
 
 #, fuzzy
 msgctxt "basic.runFromBeginning"
@@ -2081,320 +2023,259 @@ msgctxt "gamepad.siriusJoyport"
 msgid "Sirius Joyport Mode"
 msgstr "Siriusジョイポートモード"
 
-#, fuzzy
 msgctxt "gamepad.reverseYAxis"
 msgid "Reverse Y-Axis for Joystick"
-msgstr "Reverse Y-Axis for Joystick"
+msgstr ""
 
 #, fuzzy
 msgctxt "traceSettings.title"
 msgid "Trace Settings"
 msgstr "トレース設定"
 
-#, fuzzy
 msgctxt "traceSettings.numLines"
 msgid "Number of lines to keep:"
-msgstr "Number of lines to keep:"
+msgstr ""
 
-#, fuzzy
 msgctxt "traceSettings.rangeWarning"
 msgid "Must be between 100 and 100000"
-msgstr "Must be between 100 and 100000"
+msgstr ""
 
-#, fuzzy
 msgctxt "traceSettings.collapseLoops"
 msgid "Find repeating lines and collapse loops"
-msgstr "Find repeating lines and collapse loops"
+msgstr ""
 
-#, fuzzy
 msgctxt "traceSettings.ignoreRegisters"
 msgid "Ignore register values when finding repeating lines"
-msgstr "Ignore register values when finding repeating lines"
+msgstr ""
 
 #, fuzzy
 msgctxt "traceSettings.settings"
 msgid "Settings"
 msgstr "設定"
 
-#, fuzzy
 msgctxt "keyboardControl.hideKeyboard"
 msgid "Hide Keyboard"
-msgstr "Hide Keyboard"
+msgstr ""
 
-#, fuzzy
 msgctxt "keyboardControl.showKeyboard"
 msgid "Show Keyboard"
-msgstr "Show Keyboard"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.title"
 msgid "Link Builder"
-msgstr "Link Builder"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.buttonTitle"
 msgid "Link Builder"
-msgstr "Link Builder"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.userInterface"
 msgid "User interface: "
-msgstr "User interface: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.machine"
 msgid "Machine: "
-msgstr "Machine: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorMode"
 msgid "Color mode: "
-msgstr "Color mode: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
 msgid "Size of RAM disk (kb): "
-msgstr "Size of RAM disk (kb): "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
 msgid "Speed of emulator: "
-msgstr "Speed of emulator: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.uiTheme"
 msgid "User Interface Theme: "
-msgstr "User Interface Theme: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.crtDistortion"
 msgid "CRT Distortion"
-msgstr "CRT Distortion"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.crtGhosting"
 msgid "CRT Ghosting"
-msgstr "CRT Ghosting"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.crtScanlines"
 msgid "CRT Scanlines"
-msgstr "CRT Scanlines"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.capsLock"
 msgid "Capslock"
-msgstr "Capslock"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.showDebugTab"
 msgid "Show debug tab"
-msgstr "Show debug tab"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.sound"
 msgid "Sound"
-msgstr "Sound"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.onStartup"
 msgid "On startup: "
-msgstr "On startup: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.loadDiskImage"
 msgid "Load Disk Image"
-msgstr "Load Disk Image"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.loadBasicProgram"
 msgid "Load BASIC Program"
-msgstr "Load BASIC Program"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.loadHexCode"
 msgid "Load Hex Code"
-msgstr "Load Hex Code"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
 msgid "Disk image to load on startup: "
-msgstr "Disk image to load on startup: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrl"
 msgid "Custom disk image URL:"
-msgstr "Custom disk image URL:"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.textToType"
 msgid "Text to type after loading disk: "
-msgstr "Text to type after loading disk: "
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.enterTextPlaceholder"
 msgid "Enter Text or BASIC code here"
-msgstr "Enter Text or BASIC code here"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.runBasicAfterLoading"
 msgid "Run BASIC program after loading"
-msgstr "Run BASIC program after loading"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.enterHexPlaceholder"
 msgid "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
-msgstr "Enter hexadecimal code here, e.g. A9 01 8D 00 03"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.hexLoadAddress"
 msgid "Hex load address: $"
-msgstr "Hex load address: $"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.runHexAfterLoading"
 msgid "Run Hex program after loading"
-msgstr "Run Hex program after loading"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.finalUrl"
 msgid "Final URL:"
-msgstr "Final URL:"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.copyToClipboard"
 msgid "Copy to Clipboard"
-msgstr "Copy to Clipboard"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.tryIt"
 msgid "Try It"
-msgstr "Try It"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.reset"
 msgid "Reset"
-msgstr "Reset"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.close"
 msgid "Close"
-msgstr "Close"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.customDiskUrlOption"
 msgid "Custom URL"
-msgstr "Custom URL"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.normal"
 msgid "Normal"
-msgstr "Normal"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.game"
 msgid "Game (no drives or tabs)"
-msgstr "Game (no drives or tabs)"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.gameModes.embed"
 msgid "Embed (hide all controls)"
-msgstr "Embed (hide all controls)"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.color"
 msgid "Color"
-msgstr "Color"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.nofringe"
 msgid "Color (no fringing)"
-msgstr "Color (no fringing)"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.green"
 msgid "Green Screen"
-msgstr "Green Screen"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.amber"
 msgid "Amber Screen"
-msgstr "Amber Screen"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.white"
 msgid "White Screen"
-msgstr "White Screen"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.colorNames.inverse"
 msgid "Inverse White"
-msgstr "Inverse White"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.snail"
 msgid "Snail"
-msgstr "Snail"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.slow"
 msgid "Slow"
-msgstr "Slow"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.normal"
 msgid "1 MHz (default)"
-msgstr "1 MHz (default)"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.two"
 msgid "2 MHz"
-msgstr "2 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.three"
 msgid "3 MHz"
-msgstr "3 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.four"
 msgid "4 MHz"
-msgstr "4 MHz"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.speedNames.warp"
 msgid "Warp"
-msgstr "Warp"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.machines.enhanced"
 msgid "Apple IIe enhanced"
-msgstr "Apple IIe enhanced"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.machines.unenhanced"
 msgid "Apple IIe unenhanced"
-msgstr "Apple IIe unenhanced"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.machines.apple2p"
 msgid "Apple II+"
-msgstr "Apple II+"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.themes.classic"
 msgid "Classic"
-msgstr "Classic"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.themes.dark"
 msgid "Dark"
-msgstr "Dark"
+msgstr ""
 
-#, fuzzy
 msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
-msgstr "Minimal"
+msgstr ""
 
 msgctxt "linkBuilder.ramDiskSizes.512"
 msgid "512"
@@ -2412,172 +2293,135 @@ msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
 msgstr "8192"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.default"
 msgid "64 (default)"
-msgstr "64 (default)"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.tabTitle"
 msgid "Agent"
-msgstr "Agent"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.setupTitle"
 msgid "🤖 AI Agent Setup"
-msgstr "🤖 AI Agent Setup"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.setupInstruction"
 msgid "Click the gear icon below to configure your AI assistant."
-msgstr "Click the gear icon below to configure your AI assistant."
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomeTitle"
 msgid "Welcome to the Apple II assistant! I can help you with:"
-msgstr "Welcome to the Apple II assistant! I can help you with:"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomeItem1"
 msgid "Inspecting CPU registers and memory"
-msgstr "Inspecting CPU registers and memory"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomeItem2"
 msgid "Controlling execution (boot, reset, step, breakpoints)"
-msgstr "Controlling execution (boot, reset, step, breakpoints)"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomeItem3"
 msgid "Loading programs and managing disks"
-msgstr "Loading programs and managing disks"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomeItem4"
 msgid "Debugging 6502 assembly code"
-msgstr "Debugging 6502 assembly code"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomeItem5"
 msgid "Reading screen content and system state"
-msgstr "Reading screen content and system state"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.welcomePrompt"
 msgid "Just ask me anything!"
-msgstr "Just ask me anything!"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.userRole"
 msgid "You"
-msgstr "You"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.assistantRole"
 msgid "🤖 Assistant"
-msgstr "🤖 Assistant"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.inputPlaceholder"
 msgid ""
 "Ask me anything about the Apple II emulator... (Press Enter to send, "
 "Shift+Enter for new line)"
 msgstr ""
-"Ask me anything about the Apple II emulator... (Press Enter to send, "
-"Shift+Enter for new line)"
 
-#, fuzzy
 msgctxt "agent.stop"
 msgid "Stop"
-msgstr "Stop"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.send"
 msgid "Send"
-msgstr "Send"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.changeConfiguration"
 msgid "Change configuration"
-msgstr "Change configuration"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.processing"
 msgid "Processing..."
-msgstr "Processing..."
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.tokens"
 msgid "• {{input}} in / {{output}} out"
-msgstr "• {{input}} in / {{output}} out"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.configTitle"
 msgid "Configure AI Agent"
-msgstr "Configure AI Agent"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.provider"
 msgid "Provider:"
-msgstr "Provider:"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.model"
 msgid "Model:"
-msgstr "Model:"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.apiKey"
 msgid "API Key:"
-msgstr "API Key:"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.ollamaUrl"
 msgid "Ollama URL:"
-msgstr "Ollama URL:"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.save"
 msgid "Save"
-msgstr "Save"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.clear"
 msgid "Clear"
-msgstr "Clear"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to "
 "apple2ts.com. Get your {{provider}} API key at "
 msgstr ""
-"Your API key is stored locally in your browser and never sent to "
-"apple2ts.com. Get your {{provider}} API key at "
 
-#, fuzzy
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed "
 "and running. Download from "
 msgstr ""
-"Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from "
 
-#, fuzzy
 msgctxt "agent.providerNotConfigured"
 msgid "Provider not configured - click the gear icon to set up your AI agent"
-msgstr "Provider not configured - click the gear icon to set up your AI agent"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.providerConfigured"
 msgid "Provider: {{provider}} ({{model}})"
-msgstr "Provider: {{provider}} ({{model}})"
+msgstr ""
 
-#, fuzzy
 msgctxt "agent.invalidKeyFormat"
 msgid "Invalid API key format for {{provider}}"
-msgstr "Invalid API key format for {{provider}}"
+msgstr ""
 
 #, fuzzy
 msgctxt "startup.welcome"
