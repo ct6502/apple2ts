@@ -1,7 +1,7 @@
 // Chris Torrence, 2022
 import { passMachineState, passSoftSwitchDescriptions } from "./worker2main"
 import { s6502, setState6502, reset6502, setCycleCount, setPC, getStackString, get6502Instructions } from "./instructions"
-import { hiresAddressToLine, RUN_MODE, TEST_DEBUG } from "../common/utility"
+import { hiresAddressToLine, RUN_MODE, TEST_DEBUG, DEFAULT_SLOT_CONFIG } from "../common/utility"
 import { resetFloppyDrives, doPauseDrive, getHardDriveState, doSetEmuDriveNewData } from "./devices/drivestate"
 // import { slot_omni } from "./roms/slot_omni_cx00"
 import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
@@ -39,6 +39,9 @@ import { code } from "../common/assemblycode"
 import { clearTracelog, getTracelog, updateTrace } from "./tracelog"
 import { getSiriusJoyport, setSiriusJoyport } from "./devices/sirius_joyport"
 import { doSnapshot, fixSaveStates, getGoBackwardIndex, getGoForwardIndex, getTempStateIndex, getTimeTravelThumbnails, doGetSaveState, doRestoreSaveState } from "./save_restore"
+import { SoftCard } from "./devices/softcard"
+import { setSlotIOCallback } from "./memory"
+import { hasHardDriveMounted } from "./devices/drivestate"
 
 let speedMode = 0
 let cpuSpeed = 0
@@ -137,30 +140,108 @@ export const doSetShowDebugTab = (show: boolean) => {
 //   console.log(`memSet time = ${tdiff}`)
 // }
 
+export const softCard = new SoftCard(2)
+let currentSlotConfig: SlotConfig = { ...DEFAULT_SLOT_CONFIG }
+
+export const doSetSlotConfig = (config: SlotConfig) => {
+  currentSlotConfig = { ...config }
+  didConfiguration = false
+  updateExternalMachineState()
+}
+
+export const getSlotConfig = () => {
+  return currentSlotConfig
+}
+
 let didConfiguration = false
 export const configureMachine = () => {
   if (didConfiguration) return
   didConfiguration = true
   resetCycleCountCallbacks()
-  clearSlot(2)
-  clearSlot(4)
-  enableSerialCard()
-  if (veraSlot !== 2) {
+
+  for (let s = 1; s <= 7; s++) {
+    clearSlot(s)
+  }
+
+  // Ensure Slot 3 is locked to 'aux' on IIe, or 'none' on II+
+  if (machineName === "APPLE2P") {
+    currentSlotConfig[3] = "none"
+  } else {
+    currentSlotConfig[3] = "aux"
+  }
+
+  softCard.enabled = false
+  veraSlot = 0
+
+  const setupSoftCard = (slot: number) => {
+    clearSlot(slot)
+    softCard.slot = slot
+    softCard.enabled = true
+    softCard.setMemoryBus({
+      read: (addr: number) => memGet(addr, false),
+      write: (addr: number, val: number) => memSet(addr, val),
+    })
+    setSlotIOCallback(slot, (addr: number, value = -1) => {
+      if ((addr >> 8) === (0xC0 + slot) && value >= 0) {
+        softCard.activateZ80()
+      }
+      return -1
+    })
+  }
+
+  // Slot 1
+  if (currentSlotConfig[1] === "ssc") {
+    enableSerialCard()
+  }
+
+  // Slot 2
+  if (currentSlotConfig[2] === "softcard") {
+    setupSoftCard(2)
+  } else if (currentSlotConfig[2] === "passport") {
     enablePassportCard(true, 2)
+  } else if (currentSlotConfig[2] === "vera") {
+    enableVera(true, 2)
+    veraSlot = 2
   }
-  if (veraSlot !== 4) {
+
+  // Slot 4
+  if (currentSlotConfig[4] === "mockingboard") {
     enableMockingboard(true, 4)
+  } else if (currentSlotConfig[4] === "mouse") {
+    enableMouseCard(true, 4)
+  } else if (currentSlotConfig[4] === "vera") {
+    enableVera(true, 4)
+    veraSlot = 4
+  } else if (currentSlotConfig[4] === "softcard") {
+    setupSoftCard(4)
   }
-  enableMouseCard(true, 5)
-  if (veraSlot !== 0) {
-    enableVera(true, veraSlot)
+
+  // Slot 5
+  if (currentSlotConfig[5] === "mouse") {
+    enableMouseCard(true, 5)
+  } else if (currentSlotConfig[5] === "mockingboard") {
+    enableMockingboard(true, 5)
+  } else if (currentSlotConfig[5] === "softcard") {
+    setupSoftCard(5)
   }
-  enableDiskDrive()
-  enableHardDrive()
+
+  // Slot 6
+  if (currentSlotConfig[6] === "disk2") {
+    enableDiskDrive()
+  }
+
+  // Slot 7
+  if (currentSlotConfig[7] === "smartport") {
+    if (!softCard.enabled || hasHardDriveMounted()) {
+      enableHardDrive()
+    }
+  }
+
   get6502Instructions()
 }
 
 const resetMachine = () => {
+  softCard.reset()
   resetFloppyDrives()
   setButtonState()
   resetMouse()
@@ -169,8 +250,11 @@ const resetMachine = () => {
     resetVera()
   }
   resetSerial()
-  if (veraSlot !== 4) {
+  if (currentSlotConfig[4] === "mockingboard") {
     resetMockingboard(4)
+  }
+  if (currentSlotConfig[5] === "mockingboard") {
+    resetMockingboard(5)
   }
 }
 
@@ -185,7 +269,9 @@ export const doBoot = () => {
   }
 //  testTiming()
 
-  enableHardDrive()
+  if (!softCard.enabled || hasHardDriveMounted()) {
+    enableHardDrive()
+  }
 
   doReset()
   // This is a hack. If we don't currently have a hard drive image on boot,
@@ -194,7 +280,9 @@ export const doBoot = () => {
   const ds = getHardDriveState(1)
   if (ds.filename === "") {
     enableHardDrive(false)
-    setTimeout(() => { enableHardDrive() }, 200)
+    if (!softCard.enabled || hasHardDriveMounted()) {
+      setTimeout(() => { enableHardDrive() }, 200)
+    }
   }
 }
 
@@ -413,7 +501,10 @@ export const doSetMemory = (addr: number, value: number) => {
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   machineName = name
+  currentSlotConfig[3] = name === "APPLE2P" ? "none" : "aux"
+  didConfiguration = false
   doSetRom(machineName)
+  configureMachine()
   if (reset) doReset()
   updateExternalMachineState()
 }
@@ -696,6 +787,7 @@ export const getExternalMachineState = () => {
     runMode: cpuRunMode,
     s6502: s6502,
     showDebugTab: showDebugTab,
+    slotConfig: currentSlotConfig,
     softSwitches: getSoftSwitches(),
     speedMode: speedMode,
     stackString: doGetStackString(),
@@ -762,7 +854,14 @@ const doAdvance6502 = () => {
     cycleToRunStart = s6502.cycleCount
   }
   for (;;) {
-    const cycles = processInstruction(tracing ? updateTrace : null)
+    let cycles = 0
+    if (softCard.activeCpu === "Z80") {
+      const stepT = softCard.stepZ80() || 4
+      cycles = Math.max(1, Math.round(stepT / 2))
+      s6502.cycleCount += cycles
+    } else {
+      cycles = processInstruction(tracing ? updateTrace : null)
+    }
     if (cycles < 0) break
     cycleTotal += cycles
     const cycleInFrame = s6502.cycleCount % 17030

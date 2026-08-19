@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCaretRight } from "@fortawesome/free-solid-svg-icons"
 
 type PopupMenuProps = {
   location: [number, number] | undefined
@@ -15,10 +16,14 @@ const PopupMenu = (props: PopupMenuProps) => {
   const isTouchDevice = "ontouchstart" in document.documentElement
   const menuRef = useRef<HTMLDivElement>(null)
   const [posStyle, setPosStyle] = useState<{ left: number, top: number } | undefined>(undefined)
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [activeSubMenu, setActiveSubMenu] = useState<{ parentIndex: number, location: [number, number], items: PopupMenuItem[] } | null>(null)
 
   useEffect(() => {
     if (!props.location || !menuRef.current) {
       setPosStyle(undefined)
+      setActiveSubMenu(null)
+      setHoveredIndex(null)
       return
     }
     const rect = menuRef.current.getBoundingClientRect()
@@ -54,12 +59,12 @@ const PopupMenu = (props: PopupMenuProps) => {
             (menuItem.isVisible == undefined || menuItem.isVisible()) &&
             (menuItem.label == "-"
               ? <div
-                key={`popup-${menuIndex}-${menuIndex}`}
+                key={`popup-${menuIndex}`}
                 style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
               </div>
               : menuItem.isHeading
                 ? <div
-                  key={`popup-${menuIndex}-${menuIndex}`}
+                  key={`popup-${menuIndex}`}
                   style={{
                     cursor: "default",
                     fontWeight: 800,
@@ -68,7 +73,7 @@ const PopupMenu = (props: PopupMenuProps) => {
                   {menuItem.label}
                 </div>
               : <div
-                key={`popup-${menuIndex}-${menuIndex}`}
+                key={`popup-${menuIndex}`}
                 aria-disabled={isItemDisabled(menuItem) || undefined}
                 className="droplist-option"
                 style={{
@@ -76,33 +81,71 @@ const PopupMenu = (props: PopupMenuProps) => {
                   opacity: isItemDisabled(menuItem) ? 0.5 : 1,
                   padding: "5px",
                   pointerEvents: isItemDisabled(menuItem) ? "none" : "auto",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: (hoveredIndex === menuIndex || (activeSubMenu && activeSubMenu.parentIndex === menuIndex)) ? "#ccc" : "inherit",
                 }}
                 onMouseOver={(e) => {
-                  if (!isItemDisabled(menuItem))
-                    e.currentTarget.style.backgroundColor = "#ccc"
+                  if (!isItemDisabled(menuItem)) {
+                    setHoveredIndex(menuIndex)
+                    if (menuItem.subMenu && menuItem.subMenu.length > 0) {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setActiveSubMenu({
+                        parentIndex: menuIndex,
+                        location: [rect.right - 4, rect.top],
+                        items: menuItem.subMenu
+                      })
+                    } else {
+                      setActiveSubMenu(null)
+                    }
+                  }
                 }}
-                onMouseOut={(e) => {
-                  if (!isItemDisabled(menuItem))
-                    e.currentTarget.style.backgroundColor = "inherit"
+                onMouseOut={() => {
+                  setHoveredIndex(null)
                 }}
                 onClick={async (e) => {
                   e.stopPropagation()
                   if (isItemDisabled(menuItem))
                     return
+                  if (menuItem.subMenu && menuItem.subMenu.length > 0) {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setActiveSubMenu({
+                      parentIndex: menuIndex,
+                      location: [rect.right - 4, rect.top],
+                      items: menuItem.subMenu
+                    })
+                    return
+                  }
                   if (menuItem.onClick) {
                     await menuItem.onClick()
                   }
                   props.onClose()
                 }}>
-                {menuItem.isSelected != undefined && menuItem.isSelected()
-                  ? "\u2714\u2009"
-                  : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
-                {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
-                {menuItem.svg && menuItem.svg}
-                {`${menuItem.label}\u2004`}
+                <span>
+                  {menuItem.isSelected != undefined && menuItem.isSelected()
+                    ? "\u2714\u2009"
+                    : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
+                  {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+                  {menuItem.svg && menuItem.svg}
+                  {`${menuItem.label}\u2004`}
+                </span>
+                {menuItem.subMenu && menuItem.subMenu.length > 0 && (
+                  <FontAwesomeIcon icon={faCaretRight} style={{ marginLeft: "12px", opacity: 0.7 }} />
+                )}
               </div>)
           ))}
         </div>
+        {activeSubMenu && (
+          <PopupMenu
+            location={activeSubMenu.location}
+            menuItems={[activeSubMenu.items]}
+            onClose={() => {
+              setActiveSubMenu(null)
+              props.onClose()
+            }}
+          />
+        )}
       </div>
       : <div></div>
   )

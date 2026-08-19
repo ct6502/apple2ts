@@ -186,7 +186,7 @@ export const doSetEmuDriveNewData = (props: DriveProps, forceIndex: boolean = fa
   let isHardDrive = props.hardDrive
   if (!forceIndex) {
     if (props.filename !== "") {
-      if (isHardDriveImage(props.filename)) {
+      if (isHardDriveImage(props.filename, props.diskData?.length)) {
         isHardDrive = true
         index = (props.drive <= 1) ? 0 : 1
         drive = index + 1
@@ -231,4 +231,8 @@ export const doSetEmuDriveProps = (props: DriveProps) => {
   driveState[index].cloudData = props.cloudData
   driveState[index].writableFileHandle = props.writableFileHandle
   passDriveData()
+}
+
+export const hasHardDriveMounted = () => {
+  return driveData[0].length > 0 || driveData[1].length > 0
 }

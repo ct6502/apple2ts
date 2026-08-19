@@ -76,7 +76,7 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
   driveState.diskHasChanges = false
   const fname = driveState.filename.toLowerCase()
   if (diskData.length > 10000) {
-    if (isHardDriveImage(fname)) {
+    if (isHardDriveImage(fname, diskData?.length)) {
       driveState.hardDrive = true
       driveState.status = ""
       if (fname.endsWith(".hdv") || fname.endsWith(".po") || fname.endsWith(".2meg") || fname.endsWith(".2mg")) {

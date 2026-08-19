@@ -1,4 +1,4 @@
-import { interruptRequest, nonMaskableInterrupt, registerCycleCountCallback } from "../cpu6502"
+import { interruptRequest, registerCycleCountCallback } from "../cpu6502"
 import { s6502 } from "../instructions"
 import { debugSlot, memGetSlotROM, memSetSlotROM, setSlotIOCallback } from "../memory"
 import { passMockingboard } from "../worker2main"
@@ -137,14 +137,14 @@ const getRegisters = (slot: number, chip: number) => {
 const compareArrays = (a: number[], b: number[]) =>
   a.length === b.length && a.every((x, i) => x === b[i])
 
-const prev: MockingboardSound = {slot: -1, chip: -1, params: [-1]}
+const prevParamsMap = new Map<string, number[]>()
 
 let doPassRegisters = (slot: number, chip: number) => {
   const params = getRegisters(slot, chip)
-  if (slot === prev.slot && chip === prev.chip && compareArrays(params, prev.params)) return
-  prev.slot = slot
-  prev.chip = chip
-  prev.params = params
+  const key = `${slot}:${chip}`
+  const prev = prevParamsMap.get(key)
+  if (prev && compareArrays(params, prev)) return
+  prevParamsMap.set(key, params)
   passMockingboard({slot, chip, params})
 }
 
@@ -190,15 +190,18 @@ const handleInterruptFlag = (slot: number, chip: number, value: number) => {
     // Turn off any interrupt bits that are set in our value.
     // Leave other bits alone.
     ifr &= (127 - (value & 127))
-    memSetSlotROM(slot, IFR[chip], ifr)
   }
   // Real 6522: IRQ line is asserted only when (IFR & IER & 0x7F) != 0
+  // Bit 7 of IFR indicates whether IRQ is active for this VIA chip.
   const ier = memGetSlotROM(slot, IER[chip])
   const active = (ifr & ier & 0x7F) !== 0
-  switch (chip) {
-    case 0: interruptRequest(slot, active); break
-    case 1: nonMaskableInterrupt(active); break
+  if (active) {
+    ifr |= 128
+  } else {
+    ifr &= 127
   }
+  memSetSlotROM(slot, IFR[chip], ifr)
+  interruptRequest(slot, active)
 }
 
 const handleInterruptEnable = (slot: number, chip: number, value: number) => {

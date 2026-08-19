@@ -1,6 +1,6 @@
 import { RUN_MODE, DRIVE, MSG_WORKER, MSG_MAIN,
   MouseEventSimple, default6502State, TEST_DEBUG, 
-  DISASSEMBLE_VISIBLE} from "../common/utility"
+  DISASSEMBLE_VISIBLE, DEFAULT_SLOT_CONFIG} from "../common/utility"
 import { getStartupTextPage } from "./panels/help/startuptextpage"
 import { doRumble } from "./devices/gamepad"
 import { BreakpointMap } from "../common/breakpoint"
@@ -235,6 +235,11 @@ export const passSetVeraSlot = (slot: VERA_SLOT) => {
   machineState.veraSlot = slot
 }
 
+export const passSetSlotConfig = (config: SlotConfig) => {
+  doPostMessage(MSG_MAIN.SLOT_CONFIG, config)
+  machineState.slotConfig = config
+}
+
 export const passSetSoftSwitches = (addresses: Array<number> | null) => {
   doPostMessage(MSG_MAIN.SOFTSWITCHES, addresses)
 }
@@ -310,6 +315,7 @@ let machineState: MachineState = {
   runMode: RUN_MODE.IDLE,
   s6502: default6502State(),
   showDebugTab: false,
+  slotConfig: { ...DEFAULT_SLOT_CONFIG },
   speedMode: 0,
   softSwitches: {},
   stackString: "",
@@ -578,6 +584,10 @@ export const handleGetMachineName = () => {
 
 export const handleGetVeraSlot = () => {
   return machineState.veraSlot
+}
+
+export const handleGetSlotConfig = (): SlotConfig => {
+  return machineState.slotConfig || { ...DEFAULT_SLOT_CONFIG }
 }
 
 export const handleGetSoftSwitchDescriptions = () => {

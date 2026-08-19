@@ -98,6 +98,17 @@ export enum MSG_MAIN {
   CAPTURE_BOOT_STATE,
   VERA_SLOT,
   VIDEO7_OVERRIDE,
+  SLOT_CONFIG,
+}
+
+export const DEFAULT_SLOT_CONFIG: SlotConfig = {
+  1: "ssc",
+  2: "softcard",
+  3: "aux",
+  4: "mockingboard",
+  5: "mouse",
+  6: "disk2",
+  7: "smartport",
 }
 
 export enum COLOR_MODE {
@@ -485,10 +496,21 @@ export const getSymbolTables = (machineName: string) => {
   return [machineSymbolTable, userSymbolTable]
 }
 
-export const isHardDriveImage = (filename: string) => {
+export const isHardDriveImage = (filename: string, fileSize?: number) => {
   const f = filename.toLowerCase()
-  const suffixes = HARD_DRIVE_SUFFIXES.split(",")
-  return suffixes.some(suffix => f.endsWith(suffix))
+  if (f.endsWith(".hdv") || f.endsWith(".2mg") || f.endsWith(".2meg")) {
+    return true
+  }
+  if (f.endsWith(".po")) {
+    // 5.25" ProDOS floppy disk is 140KB (143360 bytes).
+    // Anything larger (e.g. 800KB 3.5" disk, 2MB, 16MB, 32MB hard drive images)
+    // is treated as a Slot 7 SmartPort hard drive image.
+    if (fileSize !== undefined) {
+      return fileSize > 143360
+    }
+    return false
+  }
+  return false
 }
 
 export const constructAudio = (mp3track: string) => {

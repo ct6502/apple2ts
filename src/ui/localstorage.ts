@@ -1,8 +1,8 @@
 import { BreakpointMap, BreakpointNew } from "../common/breakpoint"
 import { TraceSettingsDefault } from "../common/util_disassemble"
-import { COLOR_MODE, UI_THEME } from "../common/utility"
+import { COLOR_MODE, DEFAULT_SLOT_CONFIG, UI_THEME } from "../common/utility"
 import { changeMockingboardMode } from "./devices/audio/mockingboard_audio"
-import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
+import { passBreakpoints, passReverseYAxis, passSetMachineName, passSetRamWorks, passSetShowDebugTab, passSetSlotConfig, passSetTraceSettings, passSetVeraSlot, passSiriusJoyport, passSpeedMode, } from "./main2worker"
 import { setColorMode, setTheme, setTouchJoystickMode, setTouchJoystickSensitivity, setUIStateBoolean, BooleanKeyOf } from "./ui_settings"
 
 const booleanUIKeys: BooleanKeyOf<UIState>[] = ["lowercaseMode", "crtDistortion", "ghosting",
@@ -76,6 +76,13 @@ export const setPreferenceMachineName = (name: MACHINE_NAME = "APPLE2EE") => {
     localStorage.setItem("machineName", JSON.stringify(name))
   }
   passSetMachineName(name)
+
+  const slotConfig = getPreferenceSlotConfig()
+  const newSlot3 = name === "APPLE2P" ? "none" : "aux"
+  if (slotConfig[3] !== newSlot3) {
+    slotConfig[3] = newSlot3
+    setPreferenceSlotConfig(slotConfig)
+  }
 }
 
 export const setPreferenceMockingboardMode = (mode = 0) => {
@@ -121,6 +128,27 @@ export const setPreferenceVeraSlot = (slot: VERA_SLOT = 0) => {
     localStorage.setItem("veraSlot", JSON.stringify(slot))
   }
   passSetVeraSlot(slot)
+}
+
+export const getPreferenceSlotConfig = (): SlotConfig => {
+  const saved = localStorage.getItem("slotConfig")
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      if (parsed && typeof parsed === "object" && parsed[1] && parsed[7]) {
+        return parsed as SlotConfig
+      }
+    } catch {
+      // Clear invalid slotConfig
+    }
+    localStorage.removeItem("slotConfig")
+  }
+  return { ...DEFAULT_SLOT_CONFIG }
+}
+
+export const setPreferenceSlotConfig = (config: SlotConfig) => {
+  localStorage.setItem("slotConfig", JSON.stringify(config))
+  passSetSlotConfig(config)
 }
 
 export const setPreferenceSpeedMode = (mode = 0) => {

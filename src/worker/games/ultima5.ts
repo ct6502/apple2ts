@@ -43,10 +43,16 @@ Ctrl+S    toggle sound
 Ctrl+T    toggle speed
 Ctrl+V    set music volume 0-9
 ---
+For Dual Mockingboard Support:
+1) Open Settings (gear icon) and assign Mockingboard to both Slot 4 & Slot 5.
+2) In Ultima V, go to Activate Music -> Change Music Configuration, add Mockingboard A to Slot 4 and Slot 5, and press Enter.
+3) A total of 12 voices will be initialized. Press the initial letter of any song title to play music (e.g., Ultima Theme & Stones use 7–8 polyphonic voices).
+
 For MIDI Support:
-1) Launch a WebMIDI supported player (such as https://signal.vercel.app/) in a separate tab, and leave it running.  Be sure to allow WebMIDI support. You may need to go into the Settings and enable "Inputs" from your system's WebMIDI driver.
-2) In U5, Go to Activate Music -> Change Music Configuration, add Passport to slot 2, and hit enter. 
-3) In the Midi Information screen, select Channel 1 (default), 16 voices, and then enter the numbers 1-15 for "Midi Number" in each song (where Ultima Theme is '1' and Rule Britannia is '15'). Then hit enter on each song to test.
+1) Open Settings (gear icon) and assign Passport MIDI Card to Slot 2.
+2) In Audio Configuration (music icon), select Apple2TS Built-in Synthesizer. If using External MIDI, launch a WebMIDI-supported player/synthesizer (such as https://signalmidi.app/ or Munt MT-32 emulator) in a separate tab or app and grant WebMIDI access.
+3) In Ultima V, navigate to Activate Music -> Change Music Configuration, add Passport to Slot 2, and press Enter.
+4) In the MIDI Information screen, select Channel 1 (default) and 16 voices, then enter numbers 1–15 for "MIDI Number" for each song (where Ultima Theme is '1' and Rule Britannia is '15'). Press Enter on each song title to test playback.
 
 `
 

@@ -5,7 +5,15 @@ import { loadOneDriveScript } from "./cloudscriptloader"
 export const DEFAULT_SYNC_INTERVAL = 1 * 60 * 1000
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
-const applicationId = "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
+const isAnomixerDomain = () => {
+  if (typeof window === "undefined") return true
+  const host = window.location.hostname.toLowerCase()
+  return host.includes("pages.dev") || host.includes("github.io") || host.includes("anomixer") || host === "localhost" || host === "127.0.0.1"
+}
+// anomixer: use own Azure App ID; upstream: 74fef3d4-4cf3-4de9-b2d7-ef63f9add409
+const applicationId = isAnomixerDomain()
+  ? "cbd9893a-d674-4a22-b85e-bc258b75aedf"
+  : "74fef3d4-4cf3-4de9-b2d7-ef63f9add409"
 const readWriteScope = "onedrive.readwrite"
 const authUrl = new URL(`https://login.live.com/oauth20_authorize.srf?client_id=${applicationId}&scope=${readWriteScope}&response_type=token&redirect_uri=`)
 
