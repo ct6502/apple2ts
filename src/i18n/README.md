@@ -135,7 +135,7 @@ their syntax, spelling, and occurrence count. Generation validates every
 nonempty translation, including fuzzy ones, and rejects missing, unexpected,
 renamed, malformed, or differently repeated placeholders.
 
-Catalog messages must not begin or end with newlines; rendering code owns the
+Catalog messages must not begin or end with whitespace; rendering code owns the
 spacing around them. Inherently multiline content may contain internal line
 breaks, and translators may place those breaks where their wording requires.
 

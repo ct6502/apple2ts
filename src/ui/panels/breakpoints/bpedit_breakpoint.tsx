@@ -66,7 +66,7 @@ const BPEdit_Breakpoint = (props: {
   return (
     <div>
       <div className="flex-row">
-        <EditField name={props.breakpoint.basic ? "BASIC Line Number: " : "Address: $"}
+        <EditField name={props.breakpoint.basic ? t("debug.basicLineNumber") : "Address: $"}
           initialFocus={true}
           value={bpAddress}
           setValue={handleAddressChange}

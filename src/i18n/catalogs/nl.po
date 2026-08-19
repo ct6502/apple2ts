@@ -345,7 +345,7 @@ msgid "Break once then remove"
 msgstr ""
 
 msgctxt "debug.basicLineNumber"
-msgid "BASIC Line Number: "
+msgid "BASIC Line Number:"
 msgstr ""
 
 msgctxt "debug.any"
@@ -2104,27 +2104,27 @@ msgid "Link Builder"
 msgstr ""
 
 msgctxt "linkBuilder.userInterface"
-msgid "User interface: "
+msgid "User interface:"
 msgstr ""
 
 msgctxt "linkBuilder.machine"
-msgid "Machine: "
+msgid "Machine:"
 msgstr ""
 
 msgctxt "linkBuilder.colorMode"
-msgid "Color mode: "
+msgid "Color mode:"
 msgstr ""
 
 msgctxt "linkBuilder.ramDiskSize"
-msgid "Size of RAM disk (kb): "
+msgid "Size of RAM disk (kb):"
 msgstr ""
 
 msgctxt "linkBuilder.emulatorSpeed"
-msgid "Speed of emulator: "
+msgid "Speed of emulator:"
 msgstr ""
 
 msgctxt "linkBuilder.uiTheme"
-msgid "User Interface Theme: "
+msgid "User Interface Theme:"
 msgstr ""
 
 msgctxt "linkBuilder.crtDistortion"
@@ -2152,7 +2152,7 @@ msgid "Sound"
 msgstr ""
 
 msgctxt "linkBuilder.onStartup"
-msgid "On startup: "
+msgid "On startup:"
 msgstr ""
 
 msgctxt "linkBuilder.loadDiskImage"
@@ -2168,7 +2168,7 @@ msgid "Load Hex Code"
 msgstr ""
 
 msgctxt "linkBuilder.diskImageToLoad"
-msgid "Disk image to load on startup: "
+msgid "Disk image to load on startup:"
 msgstr ""
 
 msgctxt "linkBuilder.customDiskUrl"
@@ -2176,7 +2176,7 @@ msgid "Custom disk image URL:"
 msgstr ""
 
 msgctxt "linkBuilder.textToType"
-msgid "Text to type after loading disk: "
+msgid "Text to type after loading disk:"
 msgstr ""
 
 msgctxt "linkBuilder.enterTextPlaceholder"
@@ -2436,13 +2436,13 @@ msgstr ""
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to "
-"apple2ts.com. Get your {{provider}} API key at "
+"apple2ts.com. Get your {{provider}} API key at"
 msgstr ""
 
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from "
+"and running. Download from"
 msgstr ""
 
 msgctxt "agent.providerNotConfigured"

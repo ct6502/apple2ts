@@ -35,20 +35,20 @@ const describePlaceholderDifference = (source, translation) => {
   ]
 }
 
-const boundaryNewlineCounts = message => ({
-  leading: message.match(/^\n*/)[0].length,
-  trailing: message.match(/\n*$/)[0].length,
+const boundaryWhitespace = message => ({
+  leading: message.match(/^\s+/)?.[0] ?? "",
+  trailing: message.match(/\s+$/)?.[0] ?? "",
 })
 
-const describeBoundaryNewlines = (message, role) => {
-  const counts = boundaryNewlineCounts(message)
+const describeBoundaryWhitespace = (message, role) => {
+  const whitespace = boundaryWhitespace(message)
   return [
-    ["leading newlines", counts.leading],
-    ["trailing newlines", counts.trailing],
+    ["leading whitespace", whitespace.leading],
+    ["trailing whitespace", whitespace.trailing],
   ]
-    .filter(([, count]) => count > 0)
-    .map(([boundary, count]) => (
-      `${role} ${boundary}=${count}`
+    .filter(([, value]) => value.length > 0)
+    .map(([boundary, value]) => (
+      `${role} ${boundary}=${JSON.stringify(value)}`
     ))
 }
 
@@ -215,7 +215,7 @@ const ANALYSIS_STATUSES = [
   "unmerged",
   "missing",
   "stale-source",
-  "boundary-newline",
+  "boundary-whitespace",
   "placeholder-mismatch",
   "english-identical",
   "translated",
@@ -262,17 +262,17 @@ const analyzeActivePoCatalog = (sourceCatalog, translationCatalog) => {
         ...review,
       }
     }
-    const boundaryNewlines = [
-      ...describeBoundaryNewlines(sourceItem.msgid, "source"),
-      ...describeBoundaryNewlines(translation, "translation"),
+    const boundaryWhitespaceDetails = [
+      ...describeBoundaryWhitespace(sourceItem.msgid, "source"),
+      ...describeBoundaryWhitespace(translation, "translation"),
     ]
-    if (boundaryNewlines.length > 0) {
+    if (boundaryWhitespaceDetails.length > 0) {
       return {
         key,
-        status: "boundary-newline",
+        status: "boundary-whitespace",
         source: sourceItem.msgid,
         translation: translation.length > 0 ? translation : null,
-        boundaryNewlines,
+        boundaryWhitespace: boundaryWhitespaceDetails,
         ...review,
       }
     }
@@ -354,11 +354,11 @@ export const compilePoCatalog = (
 
   if (sourceLanguage) {
     for (const [key, item] of sourceMessages) {
-      const boundaryNewlines = describeBoundaryNewlines(item.msgid, "source")
-      if (boundaryNewlines.length > 0) {
+      const boundaryWhitespaceDetails = describeBoundaryWhitespace(item.msgid, "source")
+      if (boundaryWhitespaceDetails.length > 0) {
         throw new Error(
-          `Boundary newlines are not allowed for ${key}: `
-          + boundaryNewlines.join("; "),
+          `Boundary whitespace is not allowed for ${key}: `
+          + boundaryWhitespaceDetails.join("; "),
         )
       }
       messages.push({key, value: item.msgid})
@@ -394,10 +394,10 @@ export const compilePoCatalog = (
           + entry.placeholderDifferences.join("; "),
         )
       }
-      if (entry.status === "boundary-newline") {
+      if (entry.status === "boundary-whitespace") {
         throw new Error(
-          `Boundary newlines are not allowed for ${entry.key}: `
-          + entry.boundaryNewlines.join("; "),
+          `Boundary whitespace is not allowed for ${entry.key}: `
+          + entry.boundaryWhitespace.join("; "),
         )
       }
       if (entry.status === "translated" || entry.status === "english-identical") {

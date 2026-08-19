@@ -355,7 +355,7 @@ msgid "Break once then remove"
 msgstr ""
 
 msgctxt "debug.basicLineNumber"
-msgid "BASIC Line Number: "
+msgid "BASIC Line Number:"
 msgstr ""
 
 msgctxt "debug.any"
@@ -2080,32 +2080,32 @@ msgstr "連結產生器"
 
 #, fuzzy
 msgctxt "linkBuilder.userInterface"
-msgid "User interface: "
+msgid "User interface:"
 msgstr "使用者介面："
 
 #, fuzzy
 msgctxt "linkBuilder.machine"
-msgid "Machine: "
+msgid "Machine:"
 msgstr "主機型號："
 
 #, fuzzy
 msgctxt "linkBuilder.colorMode"
-msgid "Color mode: "
+msgid "Color mode:"
 msgstr "顏色模式："
 
 #, fuzzy
 msgctxt "linkBuilder.ramDiskSize"
-msgid "Size of RAM disk (kb): "
+msgid "Size of RAM disk (kb):"
 msgstr "RAM 磁碟大小 (KB)："
 
 #, fuzzy
 msgctxt "linkBuilder.emulatorSpeed"
-msgid "Speed of emulator: "
+msgid "Speed of emulator:"
 msgstr "模擬器速度："
 
 #, fuzzy
 msgctxt "linkBuilder.uiTheme"
-msgid "User Interface Theme: "
+msgid "User Interface Theme:"
 msgstr "介面主題："
 
 #, fuzzy
@@ -2140,7 +2140,7 @@ msgstr "音效"
 
 #, fuzzy
 msgctxt "linkBuilder.onStartup"
-msgid "On startup: "
+msgid "On startup:"
 msgstr "啟動時："
 
 #, fuzzy
@@ -2160,7 +2160,7 @@ msgstr "載入 16 進位碼"
 
 #, fuzzy
 msgctxt "linkBuilder.diskImageToLoad"
-msgid "Disk image to load on startup: "
+msgid "Disk image to load on startup:"
 msgstr "啟動時載入的磁碟映像檔："
 
 #, fuzzy
@@ -2170,7 +2170,7 @@ msgstr "自定義磁碟映像網址："
 
 #, fuzzy
 msgctxt "linkBuilder.textToType"
-msgid "Text to type after loading disk: "
+msgid "Text to type after loading disk:"
 msgstr "載入磁碟後輸入的文字："
 
 #, fuzzy
@@ -2486,14 +2486,14 @@ msgstr "清除"
 msgctxt "agent.storageWarning"
 msgid ""
 "Your API key is stored locally in your browser and never sent to "
-"apple2ts.com. Get your {{provider}} API key at "
+"apple2ts.com. Get your {{provider}} API key at"
 msgstr "您的 API 金鑰會儲存在本機瀏覽器中，絕不會傳送至 apple2ts.com。取得您的 {{provider}} API 金鑰："
 
 #, fuzzy
 msgctxt "agent.ollamaWarning"
 msgid ""
 "Ollama runs locally on your machine. Make sure you have Ollama installed "
-"and running. Download from "
+"and running. Download from"
 msgstr "Ollama 會在您的本機電腦上執行。請確保您已安裝並啟動 Ollama。下載網址："
 
 #, fuzzy

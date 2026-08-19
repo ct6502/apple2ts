@@ -174,7 +174,7 @@ msgstr "Démarrer"
     assert.equal(result.status, 0)
     assert.equal(result.stderr, "")
     const report = JSON.parse(result.stdout)
-    assert.equal(report.schemaVersion, 2)
+    assert.equal(report.schemaVersion, 3)
     assert.equal(report.source, sourcePath)
     assert.equal(report.input, inputPath)
     assert.equal(report.counts.translated, 1)
@@ -183,6 +183,41 @@ msgstr "Démarrer"
     assert.equal(
       report.entries.find(({key}) => key === "controls.boot").fuzzy,
       true,
+    )
+  })
+
+  it("reports boundary whitespace with its exact location and value", async () => {
+    const {sourcePath, inputPath} = await makeFixture()
+    await writeFile(inputPath, po(`
+msgctxt "controls.boot"
+msgid "Boot"
+msgstr "Démarrer "
+
+msgctxt "controls.reset"
+msgid "Reset"
+msgstr ""
+`))
+
+    const result = run([
+      "report",
+      "--source", sourcePath,
+      "--input", inputPath,
+    ])
+
+    assert.equal(result.status, 0)
+    const report = JSON.parse(result.stdout)
+    assert.equal(report.schemaVersion, 3)
+    assert.equal(report.counts["boundary-whitespace"], 1)
+    assert.deepEqual(
+      report.entries.find(({key}) => key === "controls.boot"),
+      {
+        key: "controls.boot",
+        status: "boundary-whitespace",
+        source: "Boot",
+        translation: "Démarrer ",
+        boundaryWhitespace: ["translation trailing whitespace=\" \""],
+        fuzzy: false,
+      },
     )
   })
 
