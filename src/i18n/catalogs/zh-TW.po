@@ -1221,7 +1221,6 @@ msgctxt "disk.clickToViewDetails"
 msgid "Click to view details"
 msgstr "點擊查看詳情"
 
-#, fuzzy
 msgctxt "help.title"
 msgid "Apple2TS"
 msgstr "Apple2TS"
@@ -1535,7 +1534,6 @@ msgctxt "audio.mockingboard"
 msgid "Mockingboard"
 msgstr "Mockingboard"
 
-#, fuzzy
 msgctxt "audio.midi"
 msgid "MIDI"
 msgstr "MIDI"
@@ -2385,22 +2383,18 @@ msgctxt "linkBuilder.themes.minimal"
 msgid "Minimal"
 msgstr "簡約"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.512"
 msgid "512"
 msgstr "512"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.1024"
 msgid "1024"
 msgstr "1024"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.4096"
 msgid "4096"
 msgstr "4096"
 
-#, fuzzy
 msgctxt "linkBuilder.ramDiskSizes.8192"
 msgid "8192"
 msgstr "8192"
