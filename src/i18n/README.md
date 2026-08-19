@@ -71,6 +71,33 @@ Automatic registration makes a catalog mechanically available. New scripts,
 right-to-left languages, and unusually long translations may still need font
 and layout review.
 
+## Translating with Weblate
+
+The [Browser Emulator component on
+Weblate](https://hosted.weblate.org/projects/apple2ts/browser-emulator/) uses
+the GitHub App integration. The normal contribution flow is:
+
+1. Save translations in Weblate. Weblate keeps them pending until its commit
+   schedule runs or a maintainer selects **Commit**.
+2. Weblate creates or updates a GitHub pull request. Review the PO diff and let
+   the Apple2TS catalog checks finish.
+3. Merge a Weblate pull request with **Create a merge commit**. Do not squash
+   or rebase it; Weblate uses its original commit identities when it
+   synchronizes later changes.
+4. GitHub notifies Weblate of the merge, and Weblate updates its repository
+   automatically. A manual **Update** is not part of the normal flow.
+
+Direct PO pull requests remain supported. After one merges, the same GitHub
+notification imports it into Weblate. If Weblate reports an update conflict or
+produces an unexpectedly broad diff, stop and reconcile the GitHub and Weblate
+changes before using a reset operation.
+
+Weblate quality checks are review aids. Dismiss a check only when the specific
+translation intentionally differs, such as deliberate capitalization or end
+punctuation. Keep structural checks for placeholders, markup, newlines,
+leading or trailing whitespace, and technical notation active. Do not disable
+a check for every language to accommodate one intentional translation.
+
 ## Adding or changing English messages
 
 1. Add or update the entry in `catalogs/messages.pot`. Keep an existing
