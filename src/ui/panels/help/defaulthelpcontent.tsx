@@ -17,8 +17,8 @@ const LinkList = ({ links }: {
 
 export const DefaultHelpContent = ({ t }: {t: Translate}) => {
   const isMac = navigator.platform.startsWith("Mac")
-  const keyMod = isMac ? "O~" : "Alt+"
-  const arrowMod = isMac ? "O~" : "Ctrl+"
+  const keyMod = isMac ? "⌘" : "Alt+"
+  const arrowMod = isMac ? "⌘" : "Ctrl+"
   const isTouchDevice = "ontouchstart" in document.documentElement
   const helpExamples = [
     {
