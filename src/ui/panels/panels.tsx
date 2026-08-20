@@ -14,6 +14,7 @@ import { useTranslation } from "../../i18n/useTranslation"
 import AgentTab from "./agent/agent_tab"
 import VeraTab from "./vera/veratab"
 import { setPreferenceBoolean } from "../localstorage"
+import { isDefaultHelp } from "./help/helpselection"
 
 const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) => {
 
@@ -25,7 +26,7 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
   }
 
   const currentHelpText = getHelpText()
-  const showHighlight = !isFlyoutOpen && currentHelpText.length > 1 && currentHelpText !== "<Default>"
+  const showHighlight = !isFlyoutOpen && !isDefaultHelp(currentHelpText)
 
   const { t } = useTranslation()
 
