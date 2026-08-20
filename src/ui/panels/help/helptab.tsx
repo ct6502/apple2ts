@@ -9,6 +9,7 @@ import { isDefaultHelp } from "./helpselection"
 type HelpPanelProps = {
   helptext: string,
   theme: UI_THEME,
+  useOpenAppleKey: boolean,
 }
 
 const HelpTab = React.memo((props: HelpPanelProps) => {
@@ -36,13 +37,21 @@ const HelpTab = React.memo((props: HelpPanelProps) => {
       }}>
       <div className={isDarkMode ? "" : "help-paper"}>
         {showDefaultHelp
-          ? <pre className={helpClassName}><DefaultHelpContent t={t} /></pre>
+          ? <pre className={helpClassName}>
+            <DefaultHelpContent
+              t={t}
+              useOpenAppleKey={props.useOpenAppleKey}
+              isTouchDevice={isTouchDevice}
+            />
+          </pre>
           : <pre className={helpClassName} dangerouslySetInnerHTML={{ __html: props.helptext }} />}
       </div>
     </div>
   )
 }, (prevProps, nextProps) => {
-  return prevProps.helptext === nextProps.helptext && prevProps.theme === nextProps.theme
+  return prevProps.helptext === nextProps.helptext
+    && prevProps.theme === nextProps.theme
+    && prevProps.useOpenAppleKey === nextProps.useOpenAppleKey
 })
 
 HelpTab.displayName = "HelpPanel"

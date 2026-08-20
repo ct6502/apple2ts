@@ -15,4 +15,13 @@ describe("DefaultHelpContent", () => {
     expect(html).toContain("href=\"https://apple2ts.com/?debug=on#Replay\"")
     expect(html).toContain("rel=\"noopener noreferrer\"")
   })
+
+  it("explains unavailable shortcuts while the modifier controls Open Apple", () => {
+    const t = jest.fn((key: string) => key)
+
+    renderToStaticMarkup(<DefaultHelpContent t={t} useOpenAppleKey isTouchDevice={false} />)
+
+    expect(t).toHaveBeenCalledWith("help.shortcutsUnavailable", { keyMod: "Alt" })
+    expect(t).not.toHaveBeenCalledWith("help.shortcutsTable", expect.anything())
+  })
 })

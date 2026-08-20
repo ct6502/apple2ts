@@ -1254,6 +1254,11 @@ msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Sneltoetsen"
 
+#, fuzzy
+msgctxt "help.shortcutsUnavailable"
+msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr "Emulatorsneltoetsen met {{keyMod}} zijn niet beschikbaar zolang die toets aan Open Apple is toegewezen. Met Ctrl+0 tot en met Ctrl+5 kunt u nog steeds de emulatorsnelheid kiezen."
+
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr ""

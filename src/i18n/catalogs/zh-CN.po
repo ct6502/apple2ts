@@ -1219,6 +1219,11 @@ msgid "Keyboard Shortcuts"
 msgstr "键盘快捷键"
 
 #, fuzzy
+msgctxt "help.shortcutsUnavailable"
+msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr "当 {{keyMod}} 键被指定为 Open Apple 时，使用该键的模拟器快捷键不可用。Ctrl+0 到 Ctrl+5 仍可选择模拟器速度。"
+
+#, fuzzy
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "磁盘映像文件："

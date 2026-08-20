@@ -1076,6 +1076,10 @@ msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr ""
 
+msgctxt "help.shortcutsUnavailable"
+msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr ""
+
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr ""
