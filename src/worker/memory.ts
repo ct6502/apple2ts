@@ -473,10 +473,9 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
     if (page >= 0xC1 && page <= 0xC7) {
       if (page === 0xC3 && videoTerm.enabled) {
         // Videx VideoTerm: serve ROM bytes directly without calling checkSlotIO.
-        // checkSlotIO would trigger manageC800(3), which overwrites the $C800-$CFFF
-        // mapping that ProDOS's disk controller firmware relies on, causing ProDOS to
-        // hang at the splash screen. Our $C8xx override below handles Videx C8 space.
-        value = videoTerm.readMemory(addr)
+        // Also support No Slot Clock (NSC) serial bit-stream read at $C3xx for NS.CLOCK.SYSTEM.
+        const nscVal = noSlotClock.read(addr)
+        value = (nscVal >= 0) ? nscVal : videoTerm.readMemory(addr)
       } else if (page == 0xC3 && (SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet)) {
         // NSC answers in slot C3 memory to be compatible with standard ProDOS driver and A2osX
         value = noSlotClock.read(addr)
