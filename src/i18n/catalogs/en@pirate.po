@@ -1183,6 +1183,10 @@ msgctxt "help.subtitle"
 msgid "TypeScript Apple IIe Emulator"
 msgstr ""
 
+msgctxt "help.credit"
+msgid "(c) {{year}} Chris Torrence and the Apple2TS contributors"
+msgstr ""
+
 msgctxt "help.keyboardShortcuts"
 msgid "Keyboard Shortcuts"
 msgstr "Key Commands"
