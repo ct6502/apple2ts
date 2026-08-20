@@ -150,10 +150,7 @@ export const SWITCHES = {
   FASTCHIP_SPEED: NewSwitch(0xC06D, 0, 0, false, (addr) => {mirrorHighBitPlusRand(addr)}),  // used by Total Replay
   C06E: NewSwitch(0, 0, 0xC06E, false, (addr) => {mirrorHighBitPlusRand(addr)}),
   C06F: NewSwitch(0, 0, 0xC06F, false, (addr) => {mirrorHighBitPlusRand(addr)}),
-  JOYSTICKRESET: NewSwitch(0, 0, 0xC070, false, (addr, cycleCount) => {
-    resetJoystick(cycleCount)
-    memSetC000(0xC070, rand())
-  }),
+  // C070: Joystick reset is handled below since $C070...$C07F triggers it
   BANKSEL: NewSwitch(0xC073, 0, 0),  // Applied Engineering RamWorks
   LASER128EX: NewSwitch(0xC074, 0, 0),  // used by Total Replay (ignored)
   // Internal display-mode flags. Real Video-7 hardware selects these modes
@@ -270,14 +267,6 @@ export const checkSoftSwitches = (addr: number,
     return
   }
   const sswitch1 = sswitchArray[addr - 0xC000]
-  if (!sswitch1) {
-    if (!loggedUnknownSwitches.has(addr)) {
-      console.error("Unknown softswitch " + toHex(addr))
-      loggedUnknownSwitches.add(addr)
-    }
-    memSetC000(addr, rand())
-    return
-  }
   // All addresses from $C000-C00F will read the keyboard and keystrobe
   if (addr <= 0xC00F) {
     if (!calledFromMemSet) {
@@ -286,6 +275,19 @@ export const checkSoftSwitches = (addr: number,
   } else if (addr === 0xC010 || (addr <= 0xC01F && calledFromMemSet)) {
     // R/W to $C010 or any write to $C011-$C01F will clear the keyboard strobe
     clearKeyStrobe()
+  } else if (addr >= 0xC070 && addr <= 0xC07F) {
+    // Start the joystick timers
+    resetJoystick(cycleCount)
+    memSetC000(addr, rand())
+    // If this isn't an overloaded soft switch (like $C073) then return
+    if (!sswitch1) return
+  } else if (!sswitch1) {
+    if (!loggedUnknownSwitches.has(addr)) {
+      console.error("Unknown softswitch " + toHex(addr))
+      loggedUnknownSwitches.add(addr)
+    }
+    memSetC000(addr, rand())
+    return
   }
   if (sswitch1.setFunc) {
     // Be sure to set the isSet before calling our custom set function.

@@ -1,4 +1,4 @@
-import { memGet, memSet, memoryReset } from "./memory"
+import { memGet, memGetC000, memSet, memSetC000, memoryReset } from "./memory"
 import { getSoftSwitchDescriptions, resetSoftSwitches, setVideo7Override, SWITCHES } from "./softswitches"
 
 const video7Modes: Array<[Video7Mode, keyof typeof SWITCHES]> = [
@@ -97,5 +97,24 @@ test("soft-switch discovery does not advertise internal Video-7 overrides", () =
   const descriptions = getSoftSwitchDescriptions()
   for (let address = 0xC078; address <= 0xC07D; address++) {
     expect(descriptions[address]).toBeUndefined()
+  }
+})
+
+test("$C07x returns random noise", () => {
+  for (let addr = 0xC070; addr <= 0xC07F; addr++) {
+    let minn = 0xFF
+    let maxx = 0x00
+    for (let i = 0; i < 1000; i++) {
+      // Mess up the joystick timer
+      memSetC000(0xC064, 0)
+      const v = memGet(addr)
+      // Make sure joystick timer was reset
+      expect(memGetC000(0xC064)).toBe(0x80)
+      minn = Math.min(v, minn)
+      maxx = Math.max(v, maxx)
+    }
+    // After 1000 random values we expect the min/max to cover almost the full range
+    expect(minn).toBeLessThanOrEqual(0x10)
+    expect(maxx).toBeGreaterThanOrEqual(0xA0)
   }
 })
