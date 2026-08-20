@@ -15,11 +15,19 @@ const LinkList = ({ links }: {
   </React.Fragment>
 ))}</>
 
-export const DefaultHelpContent = ({ t }: {t: Translate}) => {
+export const DefaultHelpContent = ({
+  t,
+  useOpenAppleKey = false,
+  isTouchDevice = "ontouchstart" in document.documentElement,
+}: {
+  t: Translate,
+  useOpenAppleKey?: boolean,
+  isTouchDevice?: boolean,
+}) => {
   const isMac = navigator.platform.startsWith("Mac")
   const keyMod = isMac ? "⌘" : "Alt+"
   const arrowMod = isMac ? "⌘" : "Ctrl+"
-  const isTouchDevice = "ontouchstart" in document.documentElement
+  const shortcutKeyName = isMac ? "Command" : "Alt"
   const helpExamples = [
     {
       label: t("help.exampleLinks.totalReplayDebugging"),
@@ -72,7 +80,9 @@ export const DefaultHelpContent = ({ t }: {t: Translate}) => {
       {t("help.appleKeys")}{"\n"}
     </> : <>
       <b>{t("help.keyboardShortcuts")}</b>{"\n"}
-      {t("help.shortcutsTable", { keyMod, arrowMod })}{"\n"}
+      {useOpenAppleKey
+        ? t("help.shortcutsUnavailable", { keyMod: shortcutKeyName })
+        : t("help.shortcutsTable", { keyMod, arrowMod })}{"\n"}
     </>}
     {"\n"}<b>{t("help.diskImages")}</b>{" "}hdv, 2mg, dsk, woz, po, do, bin, bas
     {"\n\n"}<b>{t("help.urlParameters")}</b>{"\n"}

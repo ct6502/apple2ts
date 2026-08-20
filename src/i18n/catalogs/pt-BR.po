@@ -1257,6 +1257,11 @@ msgid "Keyboard Shortcuts"
 msgstr "Atalhos de Teclado"
 
 #, fuzzy
+msgctxt "help.shortcutsUnavailable"
+msgid "{{keyMod}} emulator shortcuts are unavailable while that key is assigned to Open Apple. Ctrl+0 through Ctrl+5 still select emulator speed."
+msgstr "Os atalhos do emulador com {{keyMod}} ficam indisponíveis enquanto essa tecla estiver atribuída à função Open Apple. Com Ctrl+0 a Ctrl+5, ainda é possível selecionar a velocidade do emulador."
+
+#, fuzzy
 msgctxt "help.diskImages"
 msgid "Disk images:"
 msgstr "Imagens de disco:"

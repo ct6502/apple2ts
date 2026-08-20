@@ -3,7 +3,7 @@ import Flyout from "../flyout"
 import { faInfo as faHelp, faInfoCircle, faBug, faCode, faRobot, faDesktop } from "@fortawesome/free-solid-svg-icons"
 import { faApple } from "@fortawesome/free-brands-svg-icons"
 import { handleGetShowDebugTab, passSetDebug, passSetShowDebugTab } from "../main2worker"
-import { getHelpText, getTabView, getTheme, isMinimalTheme } from "../ui_settings"
+import { getHelpText, getTabView, getTheme, getUseOpenAppleKey, isMinimalTheme } from "../ui_settings"
 import { useEffect, useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import DebugTab from "./debugtab"
@@ -119,7 +119,11 @@ const DebugSection = (props: { updateDisplay: UpdateDisplay, narrow: boolean }) 
         </div>
         }
         {(activeTab == 0 || isSmall) &&
-          <HelpTab helptext={getHelpText()} theme={getTheme()} />
+          <HelpTab
+            helptext={getHelpText()}
+            theme={getTheme()}
+            useOpenAppleKey={getUseOpenAppleKey()}
+          />
         }
         {(activeTab == 1 && !isSmall) &&
           <DebugTab updateDisplay={props.updateDisplay} />
