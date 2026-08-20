@@ -129,8 +129,8 @@ const processTextPage = (ctx: CanvasRenderingContext2D,
   const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
   const colorFill = ["#FFFFFF", "#FFFFFF", TEXT_GREEN, TEXT_AMBER, TEXT_WHITE, TEXT_WHITE][colorMode]
   const hasMouseText = machineName === "APPLE2EE"
-  const hasLowerCase = machineName !== "APPLE2P"
-  const useApple2PlusMap = machineName === "APPLE2P"
+  const hasLowerCase = (nchars === 80) || (machineName !== "APPLE2P")
+  const useApple2PlusMap = (nchars !== 80) && (machineName === "APPLE2P")
   const colors = [loresColors, loresColors, loresGreen, loresAmber, loresWhite][colorMode]
 
   // First draw all the background colors. That way our background rects

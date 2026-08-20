@@ -18,7 +18,7 @@ Apple2TS features a flexible **Slot Manager** system allowing real-time configur
 
 - **Slot 1**: *Super Serial Card (Printer / Serial Communications)
 - **Slot 2**: *Microsoft Z-80 SoftCard (CP/M), VERA Graphics Card, Passport MIDI Card
-- **Slot 3**: *Aux Card (128K RAM / 80-Col / dHGR) on Apple IIe; locked to `None` on Apple II+
+- **Slot 3**: *Aux Card (Apple 64KB Extended 80-Col Card or Applied Engineering RamWorks III 512KB–8MB RAM / 80-Col / dHGR) on Apple IIe; *Videx VideoTerm 80-Col Card on Apple II+
 - **Slot 4**: *Mockingboard Sound Card, Apple II Mouse Card, VERA Graphics Card, Microsoft Z-80 SoftCard
 - **Slot 5**: *Apple II Mouse Card, Microsoft Z-80 SoftCard, Mockingboard Sound Card (Dual Mockingboards supported for Ultima V!)
 - **Slot 6**: *Disk II Floppy Controller (140KB 5.25" floppies)

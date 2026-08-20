@@ -115,7 +115,7 @@ type Video7Override = {
 
 type TOUCH_JOYSTICK_MODE = "off" | "left" | "right"
 
-type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport"
+type SLOT_CARD_ID = "none" | "ssc" | "softcard" | "aux" | "videoterm" | "mockingboard" | "mouse" | "vera" | "passport" | "disk2" | "smartport"
 
 type SlotConfig = {
   1: SLOT_CARD_ID,

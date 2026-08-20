@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+**Implemented enhancements:**
+
+- Add Applied Engineering (AE) RamWorks III auxiliary memory expansion card emulation on Apple IIe, supporting 512KB, 1MB, 4MB, and up to 8MB RAM bank switching with auxiliary 80-column and dHGR support.
+- Add Videx VideoTerm 80-Column Display Card emulation in Slot 3 for Apple II/II+ (MC6845 CRTC, 2KB static VRAM, bank switching, and official Videx 2.4 firmware ROM).
+- Implement Videx Soft Video Switch auto-switching: automatic display handover between 80-column text, 40-column text, and Apple II graphics (`GR`, `HGR`, `HGR2`). Note: In accordance with authentic Videx hardware behavior, `PR#0` resets character vectors to 40-column without resetting the display; returning the display to 40-column can be done via `Ctrl-Reset`.
+- Support MC6845 CRTC hardware scrolling (R12/R13 start address) and cursor positioning (R14/R15) for CP/M and terminal software.
+- Enable full ASCII lowercase support in 80-column mode on Apple II+ models.
+- Support genuine Videx card identification signatures in Slot 3 ROM ($C30B=0x01, $C30C=0x82) for peripheral card detectors (such as Card Cat) and Microsoft Z80 CP/M BIOS.
+
+**Fixed bugs:**
+
+- Fix ProDOS boot freeze on Apple II+ with Slot 3 cards by preventing premature I/O activation and avoiding slot scan conflicts with disk controller firmware.
+- Fix CP/M 80-column screen corruption and solid white attribute boxes caused by inverted ASCII character rendering.
+
 ## [v3.5.2](https://github.com/ct6502/apple2ts/tree/v3.5.2) (2026-08-06)
 
 [Full Changelog](https://github.com/ct6502/apple2ts/compare/v3.5.0...v3.5.2)
