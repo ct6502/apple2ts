@@ -59,9 +59,8 @@ export const DefaultHelpContent = ({ t }: {t: Translate}) => {
 
   return <>
     {t("help.title")} - {t("help.subtitle")}{"\n"}
-    (c) {new Date().getFullYear()} Chris Torrence and{" "}
     <HelpLink href="https://github.com/ct6502/apple2ts/graphs/contributors?all=1">
-      contributors
+      {t("help.credit", { year: String(new Date().getFullYear()) })}
     </HelpLink>
     {isTouchDevice ? "\n\n\n" : "\n\n"}
     {isTouchDevice ? <>
