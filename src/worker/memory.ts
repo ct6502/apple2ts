@@ -9,6 +9,7 @@ import { Buffer } from "buffer"
 import { RamWorksMemoryStart, RamWorksPage, ROMpage, ROMmemoryStart, hiresLineToAddress } from "../common/utility"
 import { isWatchpoint, setWatchpointBreak } from "./cpu6502"
 import { noSlotClock } from "./nsc"
+import { videoTerm } from "./devices/videoterm"
 
 // 0x00000: main memory
 // 0x10000...13FFF: ROM (including page $C0 soft switches)
@@ -129,14 +130,21 @@ export const setRamWorks = (size: number) => {
   }
 }
 
+let auxCardEnabled = true
+export const setAuxCardEnabled = (enabled: boolean) => {
+  auxCardEnabled = enabled
+  updateAddressTables()
+}
+export const getAuxCardEnabled = () => auxCardEnabled
+
 const updateMainAuxMemoryTable = () => {
-  const offsetAuxRead = SWITCHES.RAMRD.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetAuxWrite = SWITCHES.RAMWRT.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetPage2 = SWITCHES.PAGE2.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
-  const offsetTextPageRead = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxRead
-  const offsetTextPageWrite = SWITCHES.STORE80.isSet ? offsetPage2 : offsetAuxWrite
-  const offsetHgrPageRead = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
-  const offsetHgrPageWrite = (SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxWrite
+  const offsetAuxRead = (auxCardEnabled && SWITCHES.RAMRD.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetAuxWrite = (auxCardEnabled && SWITCHES.RAMWRT.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetPage2 = (auxCardEnabled && SWITCHES.PAGE2.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetTextPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet) ? offsetPage2 : offsetAuxRead
+  const offsetTextPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet) ? offsetPage2 : offsetAuxWrite
+  const offsetHgrPageRead = (auxCardEnabled && SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxRead
+  const offsetHgrPageWrite = (auxCardEnabled && SWITCHES.STORE80.isSet && SWITCHES.HIRES.isSet) ? offsetPage2 : offsetAuxWrite
   for (let i = 2; i < 256; i++) {
     addressGetTable[i] = i + offsetAuxRead
     addressSetTable[i] = i + offsetAuxWrite
@@ -155,7 +163,7 @@ const updateReadBankSwitchedRamTable = () => {
   // if (SWITCHES.ALTZP.isSet) {  // DEBUG
   //   console.log(`RamWorksPage: ${toHex(RamWorksPage)}, RamWorksBankGet(): ${RamWorksBankGet()}`)
   // }
-  const offsetZP = SWITCHES.ALTZP.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetZP = (auxCardEnabled && SWITCHES.ALTZP.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   addressGetTable[0] = offsetZP
   addressGetTable[1] = 1 + offsetZP
   addressSetTable[0] = offsetZP
@@ -179,7 +187,7 @@ const updateReadBankSwitchedRamTable = () => {
 }
 
 const updateWriteBankSwitchedRamTable = () => {
-  const offsetZP = SWITCHES.ALTZP.isSet ? (RamWorksPage + RamWorksBankGet() * 256) : 0
+  const offsetZP = (auxCardEnabled && SWITCHES.ALTZP.isSet) ? (RamWorksPage + RamWorksBankGet() * 256) : 0
   const writeRAM = SWITCHES.BSR_WRITE.isSet
   // Start out with Slot ROM and regular ROM as not writeable
   for (let i = 0xC0; i <= 0xFF; i++) {
@@ -224,16 +232,6 @@ const internalC8ROMIsActive = () => {
   if (SWITCHES.INTCXROM.isSet || SWITCHES.INTC8ROM.isSet) {
     return true
   }
-  // CT, I disabled this because it broke the a2audit test,
-  // and I couldn't find a reference for this "one cycle".
-  // If it is true that this should happen for one cycle after $CFFF,
-  // then we need to add some kind of counter to turn it off.
-  // Will happen for one cycle after $CFFF in slot ROM,
-  // or if $CFFF was accessed outside of slot ROM space.
-  // if (C800SlotGet() === 0 || C800SlotGet() === 255) {
-  //   return true
-  // }
-  // $C800-$CFFF Slot ROM is active
   return false
 }
 
@@ -425,6 +423,13 @@ export const readWriteAuxMem = (addr: number, write = false) => {
 }
 
 const memGetSoftSwitch = (addr: number): number => {
+  if (addr === 0xC058 && videoTerm.enabled) {
+    // Videx Soft Video Switch: AN0 off -> switch to 40-col display
+    videoTerm.active = false
+  } else if (addr === 0xC059 && videoTerm.enabled) {
+    // Videx Soft Video Switch: AN0 on -> switch to Videx 80-col display
+    videoTerm.active = true
+  }
   if (addr >= 0xC090) {
     checkSlotIO(addr)
   } else {
@@ -466,18 +471,32 @@ export const memGet = (addr: number, checkWatchpoints = true): number => {
   } else {
     value = -1
     if (page >= 0xC1 && page <= 0xC7) {
-      if (page == 0xC3 && (SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet)) {
+      if (page === 0xC3 && videoTerm.enabled) {
+        // Videx VideoTerm: serve ROM bytes directly without calling checkSlotIO.
+        // checkSlotIO would trigger manageC800(3), which overwrites the $C800-$CFFF
+        // mapping that ProDOS's disk controller firmware relies on, causing ProDOS to
+        // hang at the splash screen. Our $C8xx override below handles Videx C8 space.
+        value = videoTerm.readMemory(addr)
+      } else if (page == 0xC3 && (SWITCHES.INTCXROM.isSet || !SWITCHES.SLOTC3ROM.isSet)) {
         // NSC answers in slot C3 memory to be compatible with standard ProDOS driver and A2osX
         value = noSlotClock.read(addr)
+        checkSlotIO(addr)
       } else {
         // Empty slots return random bus noise.
         if (slotIsActive(page - 0xC0) && !slotHasCard[page - 0xC0]) {
           value = Math.floor(256 * Math.random())
         }
+        checkSlotIO(addr)
       }
-      checkSlotIO(addr)
+    } else if (page >= 0xC8 && page <= 0xCD && videoTerm.enabled) {
+      value = videoTerm.readMemory(addr)
     } else if (addr === 0xCFFF) {
       manageC800(0xFF)
+    }
+    if (videoTerm.enabled && videoTerm.active && (addr === 0xFDF0 || addr === 0xFE89 || addr === 0xFB2F)) {
+      // Direct execution of Monitor 40-column COUT1 ($FDF0), SETVID/PR#0 ($FE89), or INIT ($FB2F):
+      // switch back to 40-column display
+      videoTerm.active = false
     }
     if (value < 0) {
       const shifted = addressGetTable[page]
@@ -497,6 +516,13 @@ export const memGetRaw = (addr: number): number => {
 }
 
 const memSetSoftSwitch = (addr: number, value: number) => {
+  if (addr === 0xC058 && videoTerm.enabled) {
+    // Videx Soft Video Switch: AN0 off -> switch to 40-col display
+    videoTerm.active = false
+  } else if (addr === 0xC059 && videoTerm.enabled) {
+    // Videx Soft Video Switch: AN0 on -> switch to Videx 80-col display
+    videoTerm.active = true
+  }
   // these are write-only soft switches that don't work like the others, since
   // we need the full byte of data being written
   if (addr === 0xC071 || addr === 0xC073) {
@@ -520,8 +546,18 @@ export const memSet = (addr: number, value: number) => {
   if (page === 0xC0) {
     memSetSoftSwitch(addr, value)
   } else {
+    if (addr === 0x37 && videoTerm.enabled) {
+      // CSW High Byte written: $FD = Monitor COUT1 (40-col), $C3 = Slot 3 Videx (80-col)
+      if (value === 0xFD) {
+        videoTerm.active = false
+      } else if (value === 0xC3) {
+        videoTerm.active = true
+      }
+    }
     if (page >= 0xC1 && page <= 0xC7) {
       checkSlotIO(addr, value)
+    } else if (page >= 0xCC && page <= 0xCD && videoTerm.enabled) {
+      videoTerm.writeMemory(addr, value)
     } else if (addr === 0xCFFF) {
       manageC800(0xFF)
     }
@@ -553,6 +589,20 @@ const offset = [
 ]
 
 export const getTextPage = (getLores = false) => {
+  if (videoTerm.enabled && videoTerm.active && !getLores) {
+    // If we're in full graphics mode (GR, HGR2, or full HGR), return empty
+    // so the graphics renderer renders the Apple II motherboard graphics.
+    if (!SWITCHES.TEXT.isSet && !SWITCHES.MIXED.isSet) {
+      return new Uint8Array()
+    }
+    // If in MIXED mode (4 lines of 40-col text at bottom), Videx Soft Video Switch
+    // selects motherboard video output so the 4 lines are rendered in 40-column.
+    if (!SWITCHES.TEXT.isSet && SWITCHES.MIXED.isSet) {
+      // fall through to standard 40-column text page processing below
+    } else {
+      return videoTerm.getTextPage()
+    }
+  }
   let jstart = 0
   let jend = 24
   let is80column = false
@@ -561,13 +611,13 @@ export const getTextPage = (getLores = false) => {
       return new Uint8Array()
     }
     jend = SWITCHES.MIXED.isSet ? 20 : 24
-    is80column = SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet
+    is80column = auxCardEnabled && SWITCHES.COLUMN80.isSet && SWITCHES.DHIRES.isSet
   } else {
     if (!SWITCHES.TEXT.isSet && !SWITCHES.MIXED.isSet) {
       return new Uint8Array()
     }
     if (!SWITCHES.TEXT.isSet && SWITCHES.MIXED.isSet) jstart = 20
-    is80column = SWITCHES.COLUMN80.isSet
+    is80column = auxCardEnabled && SWITCHES.COLUMN80.isSet
   }
 
   if (is80column) {

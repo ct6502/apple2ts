@@ -16,17 +16,24 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
 
   const machineNames: MACHINE_NAME[] = ["APPLE2P", "APPLE2EU", "APPLE2EE"]
   const roms = [t("machine.models.apple2p"), t("machine.models.apple2eu"), t("machine.models.apple2ee")]
-  const names = [t("machine.ram.64kb_aux"), t("machine.ram.512kb"), t("machine.ram.1024kb"), t("machine.ram.4mb"), t("machine.ram.8mb")]
-  const sizes = [64, 512, 1024, 4096, 8192]
   const extraMemSize = handleGetMemSize()
   const machineName = handleGetMachineName()
   const slotConfig = handleGetSlotConfig()
+
+  const getAuxCardLabel = (sizeKb = extraMemSize): string => {
+    if (sizeKb <= 64) {
+      return "Apple 699-0221 (64KB / 80-Col / dHGR)"
+    }
+    const sizeStr = sizeKb >= 1024 ? `${sizeKb / 1024}MB` : `${sizeKb}KB`
+    return `AE RamWorks III (${sizeStr} / 80-Col / dHGR)`
+  }
 
   const cardLabels: Record<SLOT_CARD_ID, string> = {
     none: "None",
     ssc: "Super Serial Card",
     softcard: "Microsoft Z-80 SoftCard",
-    aux: "Aux Card (128K RAM / 80-Col / dHGR)",
+    aux: getAuxCardLabel(extraMemSize),
+    videoterm: "Videx VideoTerm 80-Col Card",
     mockingboard: "Mockingboard Sound Card",
     mouse: "Apple II Mouse Card",
     vera: "VERA Graphics Card",
@@ -35,7 +42,7 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
     smartport: "SmartPort Hard Drive Card",
   }
 
-  const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID) => {
+  const handleSelectSlotCard = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7, cardId: SLOT_CARD_ID, ramSizeKb = 64) => {
     const currentConfig = handleGetSlotConfig()
     const newConfig = { ...currentConfig }
 
@@ -54,16 +61,60 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       setPreferenceVeraSlot(0)
     }
 
+    if (slot === 3) {
+      if (cardId === "aux") {
+        setPreferenceRamWorks(ramSizeKb)
+      }
+    }
+
     newConfig[slot] = cardId
     setPreferenceSlotConfig(newConfig)
     props.updateDisplay()
   }
 
   const getSlotSubMenu = (slot: 1 | 2 | 3 | 4 | 5 | 6 | 7): PopupMenuItem[] => {
+    if (slot === 3) {
+      if (machineName === "APPLE2P") {
+        return [
+          {
+            label: "None",
+            isSelected: () => slotConfig[3] === "none",
+            onClick: () => handleSelectSlotCard(3, "none"),
+          },
+          {
+            label: "*Videx VideoTerm 80-Col Card",
+            isSelected: () => slotConfig[3] === "videoterm",
+            onClick: () => handleSelectSlotCard(3, "videoterm"),
+          },
+        ]
+      }
+
+      // Apple IIe options
+      const auxOptions: { label: string; sizeKb: number; isDefault?: boolean }[] = [
+        { label: "*Apple 699-0221 (64KB / 80-Col / dHGR)", sizeKb: 64, isDefault: true },
+        { label: "AE RamWorks III (512KB / 80-Col / dHGR)", sizeKb: 512 },
+        { label: "AE RamWorks III (1MB / 80-Col / dHGR)", sizeKb: 1024 },
+        { label: "AE RamWorks III (4MB / 80-Col / dHGR)", sizeKb: 4096 },
+        { label: "AE RamWorks III (8MB / 80-Col / dHGR)", sizeKb: 8192 },
+      ]
+
+      return [
+        {
+          label: "None",
+          isSelected: () => slotConfig[3] === "none",
+          onClick: () => handleSelectSlotCard(3, "none"),
+        },
+        ...auxOptions.map((opt) => ({
+          label: opt.label,
+          isSelected: () => slotConfig[3] === "aux" && (opt.sizeKb === 64 ? extraMemSize <= 64 : extraMemSize === opt.sizeKb),
+          onClick: () => handleSelectSlotCard(3, "aux", opt.sizeKb),
+        })),
+      ]
+    }
+
     let options: SLOT_CARD_ID[] = []
     if (slot === 1) options = ["none", "ssc"]
     else if (slot === 2) options = ["none", "vera", "passport", "softcard"]
-    else if (slot === 3) options = machineName === "APPLE2P" ? ["none"] : ["aux"]
     else if (slot === 4) options = ["none", "mouse", "mockingboard", "vera", "softcard"]
     else if (slot === 5) options = ["none", "mouse", "mockingboard", "softcard"]
     else if (slot === 6) options = ["none", "disk2"]
@@ -73,7 +124,6 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
       const isDefault =
         (slot === 1 && cardId === "ssc") ||
         (slot === 2 && cardId === "softcard") ||
-        (slot === 3 && ((machineName === "APPLE2P" && cardId === "none") || (machineName !== "APPLE2P" && cardId === "aux"))) ||
         (slot === 4 && cardId === "mockingboard") ||
         (slot === 5 && cardId === "mouse") ||
         (slot === 6 && cardId === "disk2") ||
@@ -113,23 +163,11 @@ export const MachineConfig = (props: { updateDisplay: UpdateDisplay }) => {
             }
           )),
           ...[{ label: "-" }],
-          ...Array.from(Array(5).keys()).map((i) => (
-            {
-              label: names[i],
-              isSelected: () => { return extraMemSize === sizes[i] },
-              onClick: () => {
-                setPreferenceRamWorks(sizes[i])
-                props.updateDisplay()
-              }
-            }
-          )),
-          ...[{ label: "-" }],
           ...[{ label: "Slot Manager", isHeading: true }],
           ...([1, 2, 3, 4, 5, 6, 7] as const).map((slot) => {
             const currentCard = slotConfig[slot]
             return {
               label: `Slot ${slot}: ${cardLabels[currentCard]}`,
-              isDisabled: slot === 3,
               subMenu: getSlotSubMenu(slot)
             }
           })

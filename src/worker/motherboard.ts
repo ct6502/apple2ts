@@ -11,6 +11,7 @@ import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable,
   getBasePlusAuxMemory,
   setRamWorks,
+  setAuxCardEnabled,
   RamWorksMaxBank,
   C800SlotGet,
   RamWorksBankGet,
@@ -28,6 +29,7 @@ import { enableSerialCard, resetSerial } from "./devices/superserial/serial"
 import { enableMouseCard } from "./devices/mouse"
 import { enablePassportCard, resetPassport } from "./devices/passport/passport"
 import { enableVera, resetVera } from "./devices/vera/vera"
+import { videoTerm, enableVideoTerm, disableVideoTerm } from "./devices/videoterm"
 import { enableMockingboard, resetMockingboard } from "./devices/mockingboard"
 import { resetMouse, onMouseVBL } from "./devices/mouse"
 import { enableDiskDrive } from "./devices/diskdata"
@@ -163,11 +165,15 @@ export const configureMachine = () => {
     clearSlot(s)
   }
 
-  // Ensure Slot 3 is locked to 'aux' on IIe, or 'none' on II+
+  // Ensure Slot 3 is configured properly: on IIe default to 'aux' or 'none', on II+ allow 'videoterm' or 'none'
   if (machineName === "APPLE2P") {
-    currentSlotConfig[3] = "none"
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm") {
+      currentSlotConfig[3] = "videoterm"
+    }
   } else {
-    currentSlotConfig[3] = "aux"
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux") {
+      currentSlotConfig[3] = "aux"
+    }
   }
 
   softCard.enabled = false
@@ -203,6 +209,14 @@ export const configureMachine = () => {
     enableVera(true, 2)
     veraSlot = 2
   }
+
+  // Slot 3
+  if (currentSlotConfig[3] === "videoterm") {
+    enableVideoTerm()
+  } else {
+    disableVideoTerm()
+  }
+  setAuxCardEnabled(currentSlotConfig[3] === "aux")
 
   // Slot 4
   if (currentSlotConfig[4] === "mockingboard") {
@@ -242,6 +256,7 @@ export const configureMachine = () => {
 
 const resetMachine = () => {
   softCard.reset()
+  videoTerm.reset()
   resetFloppyDrives()
   setButtonState()
   resetMouse()
@@ -501,7 +516,15 @@ export const doSetMemory = (addr: number, value: number) => {
 
 export const doSetMachineName = (name: MACHINE_NAME, reset = true) => {
   machineName = name
-  currentSlotConfig[3] = name === "APPLE2P" ? "none" : "aux"
+  if (name === "APPLE2P") {
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "videoterm") {
+      currentSlotConfig[3] = "videoterm"
+    }
+  } else {
+    if (currentSlotConfig[3] !== "none" && currentSlotConfig[3] !== "aux") {
+      currentSlotConfig[3] = "aux"
+    }
+  }
   didConfiguration = false
   doSetRom(machineName)
   configureMachine()

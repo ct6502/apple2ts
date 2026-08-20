@@ -34,8 +34,8 @@ export const handleCopyToClipboard = () => {
     const ncharsPerLine = textPage.length / nlines
     const machineName = handleGetMachineName()
     const isAltCharSet = machineName === "APPLE2P" ? false : handleGetAltCharSet()
-    const hasLowerCase = machineName !== "APPLE2P"
-    const useApple2PlusMap = machineName === "APPLE2P"
+    const hasLowerCase = (ncharsPerLine === 80) || (machineName !== "APPLE2P")
+    const useApple2PlusMap = (ncharsPerLine !== 80) && (machineName === "APPLE2P")
     let output = ""
     const hasMouseText = machineName === "APPLE2EE"
     const isUnicodePage = textPage instanceof Uint16Array
