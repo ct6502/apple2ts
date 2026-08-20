@@ -46,6 +46,46 @@
   font-size: 1em;
 }
 
+.help-shortcuts {
+  display: table;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.help-shortcut-row {
+  display: table-row;
+}
+
+.help-shortcut-key,
+.help-shortcut-label {
+  display: table-cell;
+}
+
+.help-shortcut-key {
+  padding-right: 1ch;
+  white-space: nowrap;
+}
+
+.help-shortcut-label {
+  padding-right: 2ch;
+}
+
+.help-shortcut-separator {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.help-shortcut-row > .help-shortcut-label:nth-last-child(2) {
+  padding-right: 0;
+}
+
 
 
 .help-text-light {

@@ -24,4 +24,52 @@ describe("DefaultHelpContent", () => {
     expect(t).toHaveBeenCalledWith("help.shortcutsUnavailable", { keyMod: "Alt" })
     expect(t).not.toHaveBeenCalledWith("help.shortcutsTable", expect.anything())
   })
+
+  it("renders shortcut keys and translated labels in aligned table cells", () => {
+    const t = jest.fn((key: string) => `[${key}]`)
+
+    const html = renderToStaticMarkup(
+      <DefaultHelpContent t={t} useOpenAppleKey={false} isTouchDevice={false} />
+    )
+
+    const shortcuts = [
+      ["Alt+B", "controls.boot"],
+      ["Ctrl+0", "speed.snail"],
+      ["Alt+C", "controls.copyScreen"],
+      ["Ctrl+1", "speed.normal"],
+      ["Alt+O", "controls.restoreState"],
+      ["Ctrl+2", "speed.two"],
+      ["Alt+R", "controls.reset"],
+      ["Ctrl+3", "speed.three"],
+      ["Alt+S", "controls.saveState"],
+      ["Ctrl+4", "speed.fast"],
+      ["Alt+V", "controls.pasteText"],
+      ["Ctrl+5", "speed.warp"],
+      ["Alt+←", "debugControls.goBackInTime"],
+      ["Alt+→", "debugControls.goForwardInTime"],
+    ]
+
+    expect(html).toContain("class=\"help-shortcuts\"")
+    expect(html).toContain(
+      "<kbd class=\"help-shortcut-key\">Alt+B</kbd>"
+        + "<span class=\"help-shortcut-separator\">: </span>"
+        + "<span class=\"help-shortcut-label\">[controls.boot]</span>"
+        + "<span class=\"help-shortcut-separator\">; </span>"
+        + "<kbd class=\"help-shortcut-key\">Ctrl+0</kbd>"
+        + "<span class=\"help-shortcut-separator\">: </span>"
+        + "<span class=\"help-shortcut-label\">[speed.snail]</span>"
+        + "<span class=\"help-shortcut-separator\">. </span>"
+    )
+    for (const [shortcut, translationKey] of shortcuts) {
+      const label = translationKey === "speed.normal"
+        ? `<strong>[${translationKey}]</strong>`
+        : `[${translationKey}]`
+      expect(html).toContain(
+        `<kbd class="help-shortcut-key">${shortcut}</kbd>`
+          + "<span class=\"help-shortcut-separator\">: </span>"
+          + `<span class="help-shortcut-label">${label}</span>`
+      )
+    }
+    expect(t).not.toHaveBeenCalledWith("help.shortcutsTable", expect.anything())
+  })
 })

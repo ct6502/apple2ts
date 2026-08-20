@@ -15,6 +15,29 @@ const LinkList = ({ links }: {
   </React.Fragment>
 ))}</>
 
+const ShortcutTable = ({
+  rows,
+}: {
+  rows: ReadonlyArray<readonly [string, string, string, string, boolean?]>,
+}) => (
+  <span className="help-shortcuts">
+    {rows.map(([leftKey, leftLabel, rightKey, rightLabel, emphasizeRight]) => (
+      <span className="help-shortcut-row" key={leftKey}>
+        <kbd className="help-shortcut-key">{leftKey}</kbd>
+        <span className="help-shortcut-separator">: </span>
+        <span className="help-shortcut-label">{leftLabel}</span>
+        <span className="help-shortcut-separator">; </span>
+        <kbd className="help-shortcut-key">{rightKey}</kbd>
+        <span className="help-shortcut-separator">: </span>
+        <span className="help-shortcut-label">
+          {emphasizeRight ? <strong>{rightLabel}</strong> : rightLabel}
+        </span>
+        <span className="help-shortcut-separator">. </span>
+      </span>
+    ))}
+  </span>
+)
+
 export const DefaultHelpContent = ({
   t,
   useOpenAppleKey = false,
@@ -28,6 +51,18 @@ export const DefaultHelpContent = ({
   const keyMod = isMac ? "⌘" : "Alt+"
   const arrowMod = isMac ? "⌘" : "Ctrl+"
   const shortcutKeyName = isMac ? "Command" : "Alt"
+  const shortcutRows = [
+    [`${keyMod}B`, t("controls.boot"), `${arrowMod}0`, t("speed.snail")],
+    [`${keyMod}C`, t("controls.copyScreen"), `${arrowMod}1`, t("speed.normal"), true],
+    [`${keyMod}O`, t("controls.restoreState"), `${arrowMod}2`, t("speed.two")],
+    [`${keyMod}R`, t("controls.reset"), `${arrowMod}3`, t("speed.three")],
+    [`${keyMod}S`, t("controls.saveState"), `${arrowMod}4`, t("speed.fast")],
+    [`${keyMod}V`, t("controls.pasteText"), `${arrowMod}5`, t("speed.warp")],
+    [
+      `${keyMod}←`, t("debugControls.goBackInTime"),
+      `${keyMod}→`, t("debugControls.goForwardInTime"),
+    ],
+  ] as const
   const helpExamples = [
     {
       label: t("help.exampleLinks.totalReplayDebugging"),
@@ -82,7 +117,13 @@ export const DefaultHelpContent = ({
       <b>{t("help.keyboardShortcuts")}</b>{"\n"}
       {useOpenAppleKey
         ? t("help.shortcutsUnavailable", { keyMod: shortcutKeyName })
-        : t("help.shortcutsTable", { keyMod, arrowMod })}{"\n"}
+        : <>
+          <ShortcutTable rows={shortcutRows} />
+          {"\n"}{t("help.openAppleKey")}
+          {"\n"}{t("help.closedAppleKey")}
+          {"\n"}{t("help.joystickKeys")}
+          {"\n\n"}{t("help.onScreenKeyboard")}
+        </>}{"\n"}
     </>}
     {"\n"}<b>{t("help.diskImages")}</b>{" "}hdv, 2mg, dsk, woz, po, do, bin, bas
     {"\n\n"}<b>{t("help.urlParameters")}</b>{"\n"}
