@@ -10,6 +10,7 @@ export const diskImages: DiskCollectionItem[] = [
   {
     title: "Eamon",
     diskUrl: "Eamon%201.po",
+    helpFile: "Eamon 1.txt",
     imageUrl: "disks/Eamon%201.png",
     detailsUrl: "https://eamon.wiki/Source:Eamon_Player%27s_Manual_(revised)",
     type: undefined,
@@ -87,6 +88,7 @@ export const diskImages: DiskCollectionItem[] = [
   {
     title: "Total Replay",
     diskUrl: "https://ct6502.org/wp-content/uploads/2026/06/TotalReplay.hdv_.zip",
+    helpFile: "TotalReplay.txt",
     // diskUrl: "TotalReplay.hdv",
     // diskUrl: "https://archive.org/download/TotalReplay/Total%20Replay%20v5.2.hdv",
     imageUrl: "disks/Total%20Replay.png",
@@ -98,6 +100,7 @@ export const diskImages: DiskCollectionItem[] = [
   {
     title: "Instant Replay",
     diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/TotalReplayII.hdv_.zip",
+    helpFile: "TotalReplayII.txt",
     // diskUrl: "https://archive.org/download/TotalReplay2/Total%20Replay%20II%20v1.0-alpha.4.hdv",
     imageUrl: "disks/Instant%20Replay.png",
     detailsUrl: "https://github.com/a2-4am/4sports",
@@ -108,6 +111,7 @@ export const diskImages: DiskCollectionItem[] = [
   {
     title: "Pitch Dark",
     diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/PitchDark.hdv_.zip",
+    helpFile: "PitchDark.txt",
     // diskUrl: "https://archive.org/download/PitchDark/00playable.hdv",
     imageUrl: "disks/Pitch%20Dark.png",
     detailsUrl: "https://archive.org/details/PitchDark",
@@ -146,6 +150,7 @@ export const diskImages: DiskCollectionItem[] = [
   {
     title: "Wizard Replay",
     diskUrl: "https://ct6502.org/wp-content/uploads/2026/01/WizardReplay.hdv_.zip",
+    helpFile: "WizardReplay.txt",
     // diskUrl: "https://archive.org/download/WizardReplay/Wizard%20Replay%20v2.0.hdv",
     imageUrl: "disks/WizardReplay.png",
     detailsUrl: "https://archive.org/details/WizardReplay",
@@ -154,3 +159,10 @@ export const diskImages: DiskCollectionItem[] = [
     fileSize: 33553920
     }
   ]
+
+export const internalDiskResources = [
+  {
+    diskUrl: "blank.po",
+    helpFile: "blank.txt"
+  }
+]

@@ -3,7 +3,7 @@ import { diskImages } from "./diskimages"
 import * as fflate from "fflate"
 import { OneDriveCloudDrive } from "./onedriveclouddrive"
 import { GoogleDrive } from "./googledrive"
-import { isHardDriveImage, RUN_MODE, MAX_DRIVES, replaceSuffix, FILE_SUFFIXES_DISK } from "../../../common/utility"
+import { isHardDriveImage, RUN_MODE, MAX_DRIVES, FILE_SUFFIXES_DISK } from "../../../common/utility"
 
 import { passSetDriveNewData, passSetDriveProps, passSetBinaryBlock, passPasteText, handleGetRunMode, passSetRunMode } from "../../main2worker"
 import { showGlobalProgressModal } from "../../ui_utilities"
@@ -15,6 +15,7 @@ import { parseGameList } from "./totalreplayutilities"
 import { getHotReload, setHelpText } from "../../ui_settings"
 import { getDiskImageFromLocalStorage, setDiskImageToLocalStorage } from "../../localstorage"
 import { DISK_COLLECTION_ITEM_TYPE } from "../../diskdialog/diskpanel_utils"
+import { createHelpTextSelector, findCatalogHelpFile } from "./helpfile"
 
 // Technically, all of these properties should be in the main2worker.ts file,
 // since they just maintain the state that needs to be passed to/from the
@@ -110,7 +111,9 @@ export const handleSetDiskData = (
   filename: string,
   cloudData: CloudData | null,
   writableFileHandle: WritableFileHandle | null,
-  lastLocalFileWriteTime: number) => {
+  lastLocalFileWriteTime: number,
+  helpFile?: string,
+  applyHelpText: (helpText: string) => void = setHelpText) => {
   if (cloudData) {
     cloudData.fileSize = data.length
   }
@@ -129,7 +132,7 @@ export const handleSetDiskData = (
   }
   passSetDriveNewData(propsForWorker)
   if (filename) {
-    checkForHelpFile(filename)
+    selectHelpText(helpFile, applyHelpText)
   }
 
 }
@@ -178,7 +181,8 @@ export const handleSetDiskOrFileFromBuffer = (
   buffer: ArrayBuffer,
   filename: string,
   cloudData: CloudData | null,
-  writableFileHandle: WritableFileHandle | null) => {
+  writableFileHandle: WritableFileHandle | null,
+  helpFile?: string) => {
 
   // Sanity check for strange downloads with no filename.
   if (buffer.byteLength === 143360 && !filename.includes(".")) {
@@ -206,7 +210,7 @@ export const handleSetDiskOrFileFromBuffer = (
     } else {
       if (index < 2) newIndex = 2
     }
-    handleSetDiskData(newIndex, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now())
+    handleSetDiskData(newIndex, new Uint8Array(buffer), filename, cloudData, writableFileHandle, Date.now(), helpFile)
     if (handleGetRunMode() === RUN_MODE.IDLE) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     } else {
@@ -518,6 +522,7 @@ export const handleSetDiskFromURL = async (url: string,
   updateDisplay?: UpdateDisplay, index = 0, cloudData?: CloudData, callback?: (buffer: ArrayBuffer | null) => void,
   debug?: (message: string) => void): Promise<boolean> => {
   debug?.(`handleSetDiskFromURL(${url}) drive=${index}`)
+  let helpFile = findCatalogHelpFile(url)
   // Check if it's a local file (not http/https URL and not Internet Archive)
   const isLocalFile = !url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith(internetArchiveUrlProtocol)
   
@@ -528,13 +533,13 @@ export const handleSetDiskFromURL = async (url: string,
         const state = getDiskImageFromLocalStorage()
         if (state) {
           resetAllDiskDrives()
-          index = handleSetDiskOrFileFromBuffer(state.index, state.data.buffer, url, null, null)
+          index = handleSetDiskOrFileFromBuffer(state.index, state.data.buffer, url, null, null, helpFile)
         } else {
           const response = await fetch(url)
           const buffer = await response.arrayBuffer()
           const fileName = url.split("/").pop() || url        
           resetAllDiskDrives()
-          index = handleSetDiskOrFileFromBuffer(index, buffer, fileName, cloudData || null, null)
+          index = handleSetDiskOrFileFromBuffer(index, buffer, fileName, cloudData || null, null, helpFile)
           setDiskImageToLocalStorage(index, new Uint8Array(buffer))
         }
         diskImageLocalStorageSync(url, index)
@@ -551,6 +556,7 @@ export const handleSetDiskFromURL = async (url: string,
       return false
     }
     url = match.diskUrl
+    helpFile ??= match.helpFile
     if (!URL.canParse(url) && updateDisplay) {
       handleSetDiskFromFile(url, updateDisplay, index)
       return true
@@ -779,7 +785,7 @@ export const handleSetDiskFromURL = async (url: string,
         // If we are loading from a URL, reset all drives. Fixes issue#186
         resetAllDiskDrives()
         
-        handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null)
+        handleSetDiskOrFileFromBuffer(index, buffer, name, cloudData || null, null, helpFile)
         // Loading a disk from a remote URL must boot it even when the
         // emulator was already paused or had previously run a program.
         passSetRunMode(RUN_MODE.NEED_BOOT)
@@ -854,31 +860,34 @@ const resetAllDiskDrives = () => {
   }
 }
 
-const checkForHelpFile = async (disk: string) => {
-  const helpFile = replaceSuffix(disk, "txt")
+const loadHelpText = async (helpFile: string) => {
   try {
     const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
-    let helptext = "<Default>"
-    if (help.ok) {
-      helptext = await help.text()
-      // Hack: when running on localhost, if the file is missing it just
-      // returns the index.html. So just return an empty string instead.
-      if (helptext.startsWith("<!DOCTYPE html>")) {
-        helptext = "<Default>"
-      }
-      if (helpFile === "TotalReplay.txt") {
-        helptext = parseGameList(helptext)
-      }
-      setHelpText(helptext)
-    }      
+    if (!help.ok) {
+      return "<Default>"
+    }
+    let helptext = await help.text()
+    // Hack: when running on localhost, if the file is missing it just
+    // returns the index.html. So just return an empty string instead.
+    if (helptext.startsWith("<!DOCTYPE html>")) {
+      helptext = "<Default>"
+    }
+    if (helpFile === "TotalReplay.txt") {
+      helptext = parseGameList(helptext)
+    }
+    return helptext
   } catch {
     // If we don't have a help text file, just revert to the default text.
-    setHelpText("<Default>")  }
+    return "<Default>"
+  }
 }
+
+const selectHelpText = createHelpTextSelector(loadHelpText)
 
 export const handleSetDiskFromFile = async (disk: string,
   updateDisplay: UpdateDisplay | null, driveIndex: number = -1,
   callback?: (buffer: ArrayBuffer | null) => void) => {
+  const configuredHelpFile = findCatalogHelpFile(disk)
   let data: ArrayBuffer
   try {
     const res = await fetch("disks/" + disk)
@@ -907,32 +916,24 @@ export const handleSetDiskFromFile = async (disk: string,
       driveIndex = 0
     }
 
-    handleSetDiskData(driveIndex, new Uint8Array(data), disk, null, null, -1)
+    handleSetDiskData(
+      driveIndex,
+      new Uint8Array(data),
+      disk,
+      null,
+      null,
+      -1,
+      configuredHelpFile,
+      (helpText) => {
+        setHelpText(helpText)
+        updateDisplay?.(0, helpText)
+      }
+    )
 
     if (needsBoot) {
       passSetRunMode(RUN_MODE.NEED_BOOT)
     }
 
-    const helpFile = replaceSuffix(disk, "txt")
-    try {
-      const help = await fetch("disks/" + helpFile, { credentials: "include", redirect: "error" })
-      let helptext = "<Default>"
-      if (help.ok) {
-        helptext = await help.text()
-        // Hack: when running on localhost, if the file is missing it just
-        // returns the index.html. So just return an empty string instead.
-        if (helptext.startsWith("<!DOCTYPE html>")) {
-          helptext = "<Default>"
-        }
-        if (helpFile.includes("Total%20Replay")) {
-        helptext = parseGameList(helptext)
-      }
-        updateDisplay?.(0, helptext)
-      }      
-    } catch {
-      // If we don't have a help text file, just revert to the default text.
-      updateDisplay?.(0, "<Default>")
-    }
   }
 }
 
