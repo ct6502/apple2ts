@@ -455,6 +455,7 @@ type DiskCollectionItem = {
   lastUpdated: Date,
   imageUrl?: string,
   diskUrl: string,
+  helpFile?: string,
   detailsUrl?: string,
   bookmarkId?: string,
   cloudData?: CloudData,
