@@ -9,6 +9,7 @@ import { SWITCHES, overrideSoftSwitch, resetSoftSwitches, setVideo7Override,
   syncSoftSwitchStatusFlags} from "./softswitches"
 import { memory, memGet, getTextPage, getHires, memoryReset,
   updateAddressTables, setMemoryBlock, addressGetTable,
+  setMappedMemoryBlock,
   getBasePlusAuxMemory,
   setRamWorks,
   setAuxCardEnabled,
@@ -730,6 +731,22 @@ export const doSetBinaryBlock = (addr: number, data: Uint8Array, run: boolean) =
     }
   }
   doAutoboot(loadBlock)
+}
+
+export const doRunBinary = (addr: number, data: Uint8Array, entryAddress = addr) => {
+  // A direct run starts from reset hardware state before execution resumes.
+  configureMachine()
+  doReset()
+  setMemoryBlock(addr, data)
+  setPC(entryAddress)
+  doSetRunMode(RUN_MODE.RUNNING, false)
+}
+
+export const doLoadBinary = (addr: number, data: Uint8Array) => {
+  // A direct load changes memory without changing CPU or device state.
+  configureMachine()
+  updateAddressTables()
+  setMappedMemoryBlock(addr, data)
 }
 
 export const doSetPastedText = (text: string) => {

@@ -83,7 +83,8 @@ export async function executeMCPTool(call: MCPToolCall): Promise<MCPToolResult> 
         return toolLoadBinary(
           args.data as number[],
           args.address as number,
-          args.run as boolean
+          args.run as boolean,
+          args.entryAddress as number
         )
 
       // Symbol & Metadata

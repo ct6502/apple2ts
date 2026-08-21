@@ -99,6 +99,8 @@ export enum MSG_MAIN {
   VERA_SLOT,
   VIDEO7_OVERRIDE,
   SLOT_CONFIG,
+  RUN_BINARY,
+  LOAD_BINARY,
 }
 
 export const DEFAULT_SLOT_CONFIG: SlotConfig = {

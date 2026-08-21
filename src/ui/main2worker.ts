@@ -186,6 +186,16 @@ export const passSetBinaryBlock = (address: number, data: Uint8Array, run = fals
   doPostMessage(MSG_MAIN.SET_BINARY_BLOCK, memBlock)
 }
 
+export const passRunBinary = (address: number, data: Uint8Array, entryAddress = address) => {
+  const binary: RunBinary = {address, data, entryAddress}
+  doPostMessage(MSG_MAIN.RUN_BINARY, binary)
+}
+
+export const passLoadBinary = (address: number, data: Uint8Array) => {
+  const binary: LoadBinary = {address, data}
+  doPostMessage(MSG_MAIN.LOAD_BINARY, binary)
+}
+
 export const passExecuteBasicCommand = (command: string) => {
   doPostMessage(MSG_MAIN.EXECUTE_BASIC_COMMAND, command)
 }
