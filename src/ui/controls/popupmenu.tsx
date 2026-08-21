@@ -8,6 +8,7 @@ type PopupMenuProps = {
   menuIndex?: number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   style?: any
+  submenu?: boolean
   onClose: () => void
 }
 
@@ -46,108 +47,122 @@ const PopupMenu = (props: PopupMenuProps) => {
     return !!menuItem.isDisabled
   }
 
-  return (
-    props.location
-      ? <div className="modal-overlay"
-        style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
-        onClick={props.onClose}>
-        <div ref={menuRef}
-          className="floating-dialog flex-column droplist-option"
-          onClick={(e) => e.stopPropagation()}
-          style={{ ...posStyle, visibility: posStyle ? "visible" : "hidden", ...props.style }}>
-          {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
-            (menuItem.isVisible == undefined || menuItem.isVisible()) &&
-            (menuItem.label == "-"
-              ? <div
-                key={`popup-${menuIndex}`}
-                style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
-              </div>
-              : menuItem.isHeading
-                ? <div
-                  key={`popup-${menuIndex}`}
-                  style={{
-                    cursor: "default",
-                    fontWeight: 800,
-                    padding: "5px 8px 2px",
-                  }}>
-                  {menuItem.label}
-                </div>
-              : <div
-                key={`popup-${menuIndex}`}
-                aria-disabled={isItemDisabled(menuItem) || undefined}
-                className="droplist-option"
-                style={{
-                  cursor: isItemDisabled(menuItem) ? "default" : "pointer",
-                  opacity: isItemDisabled(menuItem) ? 0.5 : 1,
-                  padding: "5px",
-                  pointerEvents: isItemDisabled(menuItem) ? "none" : "auto",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  backgroundColor: (hoveredIndex === menuIndex || (activeSubMenu && activeSubMenu.parentIndex === menuIndex)) ? "#ccc" : "inherit",
-                }}
-                onMouseOver={(e) => {
-                  if (!isItemDisabled(menuItem)) {
-                    setHoveredIndex(menuIndex)
-                    if (menuItem.subMenu && menuItem.subMenu.length > 0) {
-                      const rect = e.currentTarget.getBoundingClientRect()
-                      setActiveSubMenu({
-                        parentIndex: menuIndex,
-                        location: [rect.right - 4, rect.top],
-                        items: menuItem.subMenu
-                      })
-                    } else {
-                      setActiveSubMenu(null)
-                    }
-                  }
-                }}
-                onMouseOut={() => {
-                  setHoveredIndex(null)
-                }}
-                onClick={async (e) => {
-                  e.stopPropagation()
-                  if (isItemDisabled(menuItem))
-                    return
-                  if (menuItem.subMenu && menuItem.subMenu.length > 0) {
-                    const rect = e.currentTarget.getBoundingClientRect()
-                    setActiveSubMenu({
-                      parentIndex: menuIndex,
-                      location: [rect.right - 4, rect.top],
-                      items: menuItem.subMenu
-                    })
-                    return
-                  }
-                  if (menuItem.onClick) {
-                    await menuItem.onClick()
-                  }
-                  props.onClose()
-                }}>
-                <span>
-                  {menuItem.isSelected != undefined && menuItem.isSelected()
-                    ? "\u2714\u2009"
-                    : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
-                  {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
-                  {menuItem.svg && menuItem.svg}
-                  {`${menuItem.label}\u2004`}
-                </span>
-                {menuItem.subMenu && menuItem.subMenu.length > 0 && (
-                  <FontAwesomeIcon icon={faCaretRight} style={{ marginLeft: "12px", opacity: 0.7 }} />
-                )}
-              </div>)
-          ))}
-        </div>
-        {activeSubMenu && (
-          <PopupMenu
-            location={activeSubMenu.location}
-            menuItems={[activeSubMenu.items]}
-            onClose={() => {
-              setActiveSubMenu(null)
-              props.onClose()
+  if (!props.location) {
+    return null
+  }
+
+  const popupMenuDiv =
+    <div ref={menuRef}
+      className="floating-dialog flex-column droplist-option"
+      onClick={(e) => e.stopPropagation()}
+      style={{ ...posStyle,
+        visibility: posStyle ? "visible" : "hidden",
+        ...props.style,
+        zIndex: props.submenu ? 9991 : 9990 }}>
+      {props.menuItems[props.menuIndex || 0].map((menuItem, menuIndex) => (
+        (menuItem.isVisible == undefined || menuItem.isVisible()) &&
+        (menuItem.label == "-"
+          ? <div
+            key={`popup-${menuIndex}`}
+            style={{ borderTop: "1px solid #aaa", margin: "5px 0" }}>
+          </div>
+          : menuItem.isHeading
+            ? <div
+              key={`popup-${menuIndex}`}
+              style={{
+                cursor: "default",
+                fontWeight: 800,
+                padding: "5px 8px 2px",
+              }}>
+              {menuItem.label}
+            </div>
+          : <div
+            key={`popup-${menuIndex}`}
+            aria-disabled={isItemDisabled(menuItem) || undefined}
+            className="droplist-option"
+            style={{
+              cursor: isItemDisabled(menuItem) ? "default" : "pointer",
+              opacity: isItemDisabled(menuItem) ? 0.5 : 1,
+              padding: "5px",
+              pointerEvents: isItemDisabled(menuItem) ? "none" : "auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: (hoveredIndex === menuIndex || (activeSubMenu && activeSubMenu.parentIndex === menuIndex)) ? "#ccc" : "inherit",
             }}
-          />
-        )}
-      </div>
-      : <div></div>
+            onMouseOver={(e) => {
+              if (!isItemDisabled(menuItem)) {
+                setHoveredIndex(menuIndex)
+                if (menuItem.subMenu && menuItem.subMenu.length > 0) {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setActiveSubMenu({
+                    parentIndex: menuIndex,
+                    location: [rect.right - 4, rect.top],
+                    items: menuItem.subMenu
+                  })
+                } else {
+                  setActiveSubMenu(null)
+                }
+              }
+            }}
+            onMouseOut={() => {
+              setHoveredIndex(null)
+            }}
+            onClick={async (e) => {
+              e.stopPropagation()
+              if (isItemDisabled(menuItem))
+                return
+              if (menuItem.subMenu && menuItem.subMenu.length > 0) {
+                const rect = e.currentTarget.getBoundingClientRect()
+                setActiveSubMenu({
+                  parentIndex: menuIndex,
+                  location: [rect.right - 4, rect.top],
+                  items: menuItem.subMenu
+                })
+                return
+              }
+              if (menuItem.onClick) {
+                await menuItem.onClick()
+              }
+              props.onClose()
+            }}>
+            <span>
+              {menuItem.isSelected != undefined && menuItem.isSelected()
+                ? "\u2714\u2009"
+                : `${isTouchDevice ? "\u2003" : "\u2004"}\u2007`}
+              {menuItem.icon && <FontAwesomeIcon icon={menuItem.icon} style={{ width: "24px" }} />}
+              {menuItem.svg && menuItem.svg}
+              {`${menuItem.label}\u2004`}
+            </span>
+            {menuItem.subMenu && menuItem.subMenu.length > 0 && (
+              <FontAwesomeIcon icon={faCaretRight} style={{ marginLeft: "12px", opacity: 0.7 }} />
+            )}
+          </div>)
+      ))}
+    </div>
+
+  // If we are a submenu we do not need our modal-overlay since we're already inside it
+  if (props.submenu) {
+    return <>{popupMenuDiv}</>
+  }
+
+  return (
+    <div className="modal-overlay"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+      onClick={props.onClose}>
+      {popupMenuDiv}
+      {activeSubMenu && (
+        <PopupMenu
+          location={activeSubMenu.location}
+          menuItems={[activeSubMenu.items]}
+          onClose={() => {
+            setActiveSubMenu(null)
+            // props.onClose()
+          }}
+          submenu={true}
+        />
+      )}
+    </div>
   )
 }
 
