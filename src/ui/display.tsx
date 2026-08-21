@@ -6,6 +6,8 @@ import {
   doOnMessage,
   setMain2Worker,
   handleGetMemSize,
+  handleGetMachineName,
+  handleGetSlotConfig,
   passSetRunMode,
   setBootCallback} from "./main2worker"
 import Apple2Canvas from "./canvas"
@@ -178,7 +180,11 @@ const DisplayApple2 = () => {
       document.body.style.marginTop = isLandscape ? "10px" : "0"
     }
   }, [isTouchDevice, isLandscape])
-  const mem = handleGetMemSize() + 64
+  const machineName = handleGetMachineName()
+  const slotConfig = handleGetSlotConfig()
+  const isApple2Plus = machineName === "APPLE2P"
+  const hasAuxCard = !isApple2Plus && slotConfig[3] === "aux"
+  const mem = isApple2Plus ? 64 : (hasAuxCard ? (handleGetMemSize() + 64) : 64)
   const memSize = (mem > 1100) ? ((mem / 1024).toFixed() + " MB") : (mem + " KB")
   const status = <div className="default-font footer-item">
   <>{currentSpeed} MHz, {memSize}, FPS: {avgFPS.toFixed(1)}</>
