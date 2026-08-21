@@ -137,7 +137,9 @@ export const handleSetDiskData = (
   }
   passSetDriveNewData(propsForWorker)
   if (filename) {
-    selectHelpText(helpFile, applyHelpText)
+    setTimeout(() => {
+      selectHelpText(helpFile, applyHelpText)
+    }, 150)
   }
 
 }
@@ -906,12 +908,11 @@ export const handleSetDiskFromFile = async (disk: string,
     
     if (driveIndex < 0) {
       needsBoot = true
-      driveIndex = 0
     }
     
     if (needsBoot) {
       resetAllDiskDrives()
-      driveIndex = 0
+      driveIndex = isHardDriveImage(disk, data.byteLength) ? 0 : 2
     }
 
     handleSetDiskData(

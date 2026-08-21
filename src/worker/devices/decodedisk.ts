@@ -79,9 +79,7 @@ export const decodeDiskData = (driveState: DriveState, diskData: Uint8Array): Ui
     if (isHardDriveImage(fname, diskData?.length)) {
       driveState.hardDrive = true
       driveState.status = ""
-      if (fname.endsWith(".hdv") || fname.endsWith(".po") || fname.endsWith(".2meg") || fname.endsWith(".2mg")) {
-        return diskData
-      }
+      return diskData
     }
     // We might have a DSK file that has already been renamed as a WOZ
     // but is still in DSK format. So double check the disk data length.

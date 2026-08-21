@@ -85,5 +85,14 @@ export const newReleases: DiskCollectionItem[] = [
     detailsUrl: "https://www.the8bitguy.com/product/quarx-for-apple-iie-iic-iigs-and-laser-128/",
     fileSize: 143360,
   },
-
+  {
+    title: "Sean's Garage Giveaway - demo",
+    diskUrl: "GarageGiveaway-Demo.po",
+    imageUrl: "disks/GarageGiveaway.png",
+    helpFile: "GarageGiveaway.txt",
+    detailsUrl: "https://www.8bitshack.net/seans-garage-giveaway",
+    type: undefined,
+    lastUpdated: new Date(0),
+    fileSize: 143360,
+  },
 ]

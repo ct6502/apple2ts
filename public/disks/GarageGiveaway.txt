@@ -1,0 +1,23 @@
+Sean's Garage Giveaway - Demo
+Play the first 5 levels! <a href="https://www.kickstarter.com/projects/8-bit-shack/seans-garage-giveaway/" target="_blank">Back the Kickstarter!</a>
+8-Bit Shack 2026
+
+Sean’s Garage Giveaway drops you into the middle of this legendary event. As the garage door rolls open and the crowd surges forward, your mission is simple: collect as many retro computers and hidden treasures as you can before the shelves are picked clean. But keep your eyes open. Somewhere on those shelves sits a small red box. Nobody knows what’s inside. We’re not saying it’s worth extra points. We’re not saying it isn’t. And don’t be surprised if a legendary figure wanders through the garage with sharpie in hand. A signed machine might become one of your most valuable finds...if you can catch him. 
+
+
+<b>Main Menu</b>
+D     Demo mode
+T     Thank you screen
+E     Dedications
+S     High scores
+P     Play game
+I     Instructions
+Q     Quit to Plasma prompt
+
+<b>Game play</b>
+Arrows/WASD/IJKL  Movement
+P or ESC          Pause
+Ctrl+Q            Quit
+Ctrl+S            Toggle sound
+C                 Calibrate joystick
+Buttons           Steal an item
